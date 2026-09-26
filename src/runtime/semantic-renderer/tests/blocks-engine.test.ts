@@ -1,7 +1,8 @@
 // The blocks engine lays every container and group region out as a block of
 // its own and joins the lines between blocks through ports on their edges.
-// What this catches: room a block keeps for trunks that do not use it, and
-// lines between blocks that turn back on themselves or run along a border.
+// What this catches: room a block keeps for trunks that do not use it, lines
+// between blocks that turn back on themselves or run along a border, and
+// lines that join on the way to a card and part again.
 
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
@@ -11,11 +12,14 @@ import {
 	bodyShift,
 	corridorPoints,
 	routeCrosses,
+	routeEnds,
 	routePoints,
+	sharedStretches,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import agentWorkbench from "./agent-workbench.json";
 import oneBrowserTwoUses from "./one-browser-two-uses.json";
+import oneCommand from "./one-command.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
 import owningTheChild from "./owning-the-child.json";
 import tightWallPort from "./tight-wall-port.json";
@@ -341,4 +345,20 @@ test("lines from different cards leave a region by their own ports, not along it
 	const content = orderedFixture(oneBrowserTwoUses);
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	expect(alongWalls(routePoints(drawn.svg), regionBox(drawn.svg, "drawing"))).toEqual([]);
+});
+
+// Taken from a dogfood view: two RPC lines from cards in the container reach
+// Codex session in its region. Joined at the region's port, each parted again
+// to its label beside the card; with its label before the join instead, the
+// joined line left the container along its bottom border. Ports of their own
+// keep the two lines apart all the way, which here reads better.
+test("lines that join on the way to a card stay joined, without running along a border", async () => {
+	const content = orderedFixture(oneCommand);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const [routes, ends] = [corridorPoints(drawn.svg), routeEnds(drawn.svg)];
+	const [queue, typed] = [routes.get("b9HU99hH")!, routes.get("Qh7VZ9MQ")!];
+	const [one, other] = [ends.get("b9HU99hH")!, ends.get("Qh7VZ9MQ")!];
+	const together = Math.hypot(one.x - other.x, one.y - other.y) < 1;
+	expect(together || sharedStretches(queue, typed).length === 0).toBeTrue();
+	expect(alongWalls(routePoints(drawn.svg), drawn.atlas.nodes["7TAwfrZF"]!)).toEqual([]);
 });

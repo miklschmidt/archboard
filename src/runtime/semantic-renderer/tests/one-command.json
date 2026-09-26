@@ -1,0 +1,141 @@
+{
+	"nodes": [
+		{
+			"id": "7TAwfrZF",
+			"order": 1000,
+			"name": "Agent workbench",
+			"kind": "service",
+			"responsibility": "Everything archboard owns around one private Codex child, inside the Archboard server"
+		},
+		{
+			"id": "u2LFaG7R",
+			"order": 3000,
+			"name": "Browser gateway",
+			"kind": "module",
+			"responsibility": "The one door a browser has into the workbench: snapshots out, admitted commands in, one lease at a time",
+			"parent": "7TAwfrZF"
+		},
+		{
+			"id": "FxzIjbIO",
+			"order": 5000,
+			"name": "Codex transport",
+			"kind": "module",
+			"responsibility": "One newline-framed JSON object at a time each way, correlated to its request, and each tool call routed to the owner registered for its namespace",
+			"parent": "7TAwfrZF",
+			"groups": ["child"]
+		},
+		{
+			"id": "jylkTBp7",
+			"order": 6000,
+			"name": "Codex session",
+			"kind": "module",
+			"responsibility": "One initialized session and the reviewed methods it will send",
+			"parent": "7TAwfrZF",
+			"groups": ["child"]
+		},
+		{
+			"id": "2ffhMTdn",
+			"order": 8000,
+			"name": "Workhorse queue",
+			"kind": "module",
+			"responsibility": "Codex's queue of messages waiting for the workhorse: list, add, edit, reorder, delete, or start one now",
+			"parent": "7TAwfrZF",
+			"groups": ["workhorse"]
+		},
+		{
+			"id": "giL6EI28",
+			"order": 10000,
+			"name": "Codex app-server",
+			"kind": "external",
+			"responsibility": "The Codex binary, run as one private child over stdio in the Archboard-only Codex home"
+		},
+		{
+			"id": "tzyaOHwF",
+			"order": 11000,
+			"name": "Browser pane",
+			"kind": "service",
+			"responsibility": "The pane a user works in: it holds the lease, sends commands and draws the published state"
+		}
+	],
+	"edges": [
+		{
+			"id": "FZnS78FX",
+			"order": 3000,
+			"from": "jylkTBp7",
+			"to": "FxzIjbIO",
+			"kind": "rpc",
+			"label": "one JSON-RPC request per method",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "3vlSu8a3",
+			"order": 4000,
+			"from": "FxzIjbIO",
+			"to": "giL6EI28",
+			"kind": "rpc",
+			"label": "JSON-RPC over stdio",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "b9HU99hH",
+			"order": 6000,
+			"from": "2ffhMTdn",
+			"to": "jylkTBp7",
+			"kind": "rpc",
+			"label": "thread/queue/add, update, reorder, delete, start",
+			"emphasis": "normal"
+		},
+		{
+			"id": "Qh7VZ9MQ",
+			"order": 9000,
+			"from": "u2LFaG7R",
+			"to": "jylkTBp7",
+			"kind": "rpc",
+			"label": "a typed message: turn/start or turn/steer",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "Lo6Q7GDB",
+			"order": 10000,
+			"from": "tzyaOHwF",
+			"to": "u2LFaG7R",
+			"kind": "event",
+			"label": "lease, commands, snapshots",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "2wlebJ2T",
+			"order": 12000,
+			"from": "u2LFaG7R",
+			"to": "tzyaOHwF",
+			"kind": "event",
+			"label": "one snapshot, then deltas",
+			"emphasis": "normal"
+		},
+		{
+			"id": "EZEiVlsE",
+			"order": 21000,
+			"from": "u2LFaG7R",
+			"to": "2ffhMTdn",
+			"kind": "call",
+			"label": "queue, edit, reorder or start a message",
+			"emphasis": "normal"
+		}
+	]
+}
