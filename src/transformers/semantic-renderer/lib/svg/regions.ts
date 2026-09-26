@@ -1,7 +1,8 @@
 // Group regions (TASK-347): the cards one group places inside one container,
-// on a faint band of the group's colour with the group's name in its corner.
-// A band is a backdrop, never an obstacle: lines cross it, and it takes no
-// pointer, so whatever lies on it is picked as before.
+// inside an outline of the group's colour with the group's name in its corner.
+// The outline has no fill, so the cards and lines in it read on the page as
+// everywhere else. It is never an obstacle: lines cross it, and it takes no
+// pointer, so whatever lies inside it is picked as before.
 import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 import { BAND_RADIUS } from "@/transformers/semantic-renderer/lib/design";
 import type { DrawingRegion } from "@/transformers/semantic-renderer/lib/drawing";
@@ -12,15 +13,15 @@ import { semanticInk } from "@/transformers/semantic-renderer/lib/svg/appearance
 import { mixed } from "@/transformers/semantic-renderer/lib/svg/colour";
 import { lines, tag, textNode, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 
-/** How much of the group's colour the band carries over the page. */
-const BAND_TINT = 0.08;
-/** How much of the group's colour the band's edge carries. */
+/** How much of the group's colour the outline carries over the page. */
 const EDGE_TINT = 0.32;
+/** How wide the outline is drawn: twice a card's border, so a region reads as a zone, not a card. */
+const EDGE_WIDTH = 2;
 /** How far the caption's words lean from the group's colour toward the text colour. */
 const CAPTION_DEPTH = 0.35;
 
 /**
- * Paint one group's region: its band and its caption.
+ * Paint one group's region: its outline and its caption.
  * @param region The region.
  * @param palette The page's colours.
  * @param policy The vault's policy, for the group's colour.
@@ -43,9 +44,9 @@ function paintRegion(region: DrawingRegion, palette: Palette, policy: SemanticPo
 				width: coord(box.width),
 				height: coord(box.height),
 				rx: BAND_RADIUS,
-				fill: mixed(palette.background, ink, BAND_TINT),
+				fill: "none",
 				stroke: mixed(palette.background, ink, EDGE_TINT),
-				"stroke-width": 1,
+				"stroke-width": EDGE_WIDTH,
 			}),
 			...caption.measured.runs.map((run) =>
 				textNode(

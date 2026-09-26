@@ -71,7 +71,7 @@ function regionBox(
 }
 
 test.each(["track", "blocks"] as const)(
-	"the %s engine gathers the cards a group places into one region, captioned with its name",
+	"the %s engine gathers the cards a group places into one outlined region, captioned with its name",
 	async (layout) => {
 		const drawn = await renderArchitecture({ content, theme: "light", policy, layout });
 		for (const [group, members, name] of [
@@ -91,6 +91,12 @@ test.each(["track", "blocks"] as const)(
 			for (const id of members) expect(inside(id), `${id} inside ${group}`).toBeTrue();
 			for (const id of ["cli", "feed"]) expect(inside(id), `${id} outside ${group}`).toBeFalse();
 			expect(drawn.svg).toContain(`>${name}</text>`);
+			// An outline, never a tinted band: what it holds reads on the page as elsewhere.
+			const outline = new RegExp(
+				`<g data-semantic-kind="group-region" data-group="${group}"[^>]*>\\s*<rect[^>]*>`,
+				"u",
+			).exec(drawn.svg)![0];
+			expect(outline).toMatch(/fill(:|=")none/u);
 		}
 	},
 );
