@@ -250,11 +250,12 @@ function besideWalls(points: readonly DrawnPoint[], regions: readonly Walls[]): 
 // Reduced from dogfood boards: a line ran down beside a group region's wall
 // half a lane away, or a lane away, where it read as part of the region's
 // outline: a region's wall is a thin line with no inset, and a lane off it
-// reads as closer than a lane off a card. The last is a board whose groups
+// reads as closer than a lane off a card. The third is a board whose groups
 // are packed as blocks of their own, where a trunk of four lines ran a lane
-// off one of them for its whole height.
+// off one of them for its whole height. In the last a region's wall, fitted
+// to what it holds, stood as near a line inside it as a card's inset.
 test("a line keeps a lane and a half from a group region's wall it runs beside", async () => {
-	for (const fixture of [durableWriteBoundary, oneCommand, commandGroups]) {
+	for (const fixture of [durableWriteBoundary, oneCommand, commandGroups, browserApplication]) {
 		const drawing = await renderArchitecture({
 			content: orderedFixture(fixture),
 			theme: "light",
