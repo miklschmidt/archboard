@@ -9,6 +9,8 @@ export {
 	COMPOUND_OPTIONS,
 	settleLabels,
 	improveProjection,
+	projectLabelChannels,
+	routeGraph,
 	type ArchitectureDrawing,
 	type DrawingEdge,
 	type LabelAttempt,

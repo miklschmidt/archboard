@@ -12,6 +12,7 @@ import {
 	ROUTE_OBSTACLE_CLEARANCE,
 } from "@/transformers/semantic-renderer/config";
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
+import { candidates } from "@/transformers/semantic-renderer/lib/layout/straight-candidates";
 import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
 import {
 	boxOf,
@@ -36,11 +37,6 @@ export type AlignedPins = Map<string, Map<string, AlignedPin[]>>;
 function pinsAt(pins: AlignedPins, id: string, channel: string): readonly AlignedPin[] {
 	return pins.get(id)?.get(channel) ?? [];
 }
-
-const AXES = [
-	["x", "width", "y", "height", "SOUTH", "NORTH"],
-	["y", "height", "x", "width", "EAST", "WEST"],
-] as const;
 
 /**
  * Physical distance along a shared face; pins on separate faces do not collide.
@@ -68,26 +64,6 @@ function seed(index: number, count: number, face: Face): AlignedPin {
 }
 
 /**
- * Prefer the reserved label center for vertical channels when one is supplied.
- * @param one Source card bounds.
- * @param two Target card bounds.
- * @param axis Shared span axis.
- * @param extent Dimension along that axis.
- * @param anchor Optional label center.
- * @returns Preferred global channel coordinate.
- */
-function preferredCoordinate(
-	one: Box,
-	two: Box,
-	axis: "x" | "y",
-	extent: "width" | "height",
-	anchor?: number,
-): number {
-	if (axis === "x" && anchor !== undefined) return anchor;
-	return (one[axis] + one[extent] / 2 + two[axis] + two[extent] / 2) / 2;
-}
-
-/**
  * A self-loop uses two private native classes, so neither can be shared with an aligned pin.
  * @param index Channel's sorted index.
  * @param count Number of channels.
@@ -98,52 +74,6 @@ function selfLoopPins(index: number, count: number): readonly AlignedPin[] {
 		{ face: "EAST", position: (index + 1 / 3) / count },
 		{ face: "SOUTH", position: (index + 2 / 3) / count },
 	];
-}
-
-/**
- * Candidate straight channels through two overlapping endpoint spans.
- * @param one Source card bounds.
- * @param two Target card bounds.
- * @param anchor Optional reserved-label center on the horizontal axis.
- * @returns One ordered group of source and target pins per available axis.
- */
-function candidates(one: Box, two: Box, anchor?: number): [AlignedPin, AlignedPin][][] {
-	const result: [AlignedPin, AlignedPin][][] = [];
-	for (const [axis, extent, cross, crossExtent, forward, reverse] of AXES) {
-		const low = Math.max(one[axis], two[axis]) + ROUTE_NUDGE_DISTANCE;
-		const high = Math.min(one[axis] + one[extent], two[axis] + two[extent]) - ROUTE_NUDGE_DISTANCE;
-		if (low > high) continue;
-		if (
-			Math.max(one[cross], two[cross]) <
-			Math.min(one[cross] + one[crossExtent], two[cross] + two[crossExtent])
-		)
-			continue;
-		const faces =
-			one[cross] < two[cross] ? ([forward, reverse] as const) : ([reverse, forward] as const);
-		/**
-		 * Keep the card center inside the common available span.
-		 * @param coordinate Unclamped card center.
-		 * @returns A point in the usable span.
-		 */
-		const clamp = (coordinate: number): number => Math.max(low, Math.min(high, coordinate));
-		const balanced = clamp(preferredCoordinate(one, two, axis, extent, anchor));
-		const coordinates = [
-			...new Set([
-				balanced,
-				(low + high) / 2,
-				clamp(one[axis] + one[extent] / 2),
-				clamp(two[axis] + two[extent] / 2),
-			]),
-		].toSorted((a, b) => Math.abs(a - balanced) - Math.abs(b - balanced) || a - b);
-		const pair: [AlignedPin, AlignedPin][] = [];
-		for (const coordinate of coordinates)
-			pair.push([
-				{ face: faces[0], position: (coordinate - one[axis]) / one[extent] },
-				{ face: faces[1], position: (coordinate - two[axis]) / two[extent] },
-			]);
-		result.push(pair);
-	}
-	return result;
 }
 
 /** Construct stable, noncolliding candidate pins before native connector registration. */
@@ -206,9 +136,10 @@ class PinCandidates {
 		)) {
 			const node = this.nodes.get(id)!;
 			const channel = relationshipChannel(edge, id);
+			const far = farCards(edge, id);
 			for (const { pin, corridor } of projectedCardPins(node, edge)) {
 				if (!this.available(id, channel, pin)) continue;
-				if (!this.clearCorridor(corridor, new Set([id]), edge.id)) continue;
+				if (!this.clearCorridor(corridor, new Set([id]), edge.id, far)) continue;
 				this.record(id, channel, pin);
 			}
 		}
@@ -305,15 +236,24 @@ class PinCandidates {
 
 	/**
 	 * Validate projected and paired pins against the same buffered cards and labels.
+	 * A rail continues the route's own run, which starts at its far card, so that
+	 * card only has to stay unentered: its clearance is where the run leaves it.
 	 * @param segment Proposed straight corridor.
 	 * @param endpoints Cards touched by this corridor.
 	 * @param edgeId Relationship whose own label remains traversable.
+	 * @param reached The route's far cards, which the corridor may touch but never enter.
 	 * @returns Whether every foreign obstacle leaves the corridor clear.
 	 */
-	private clearCorridor(segment: Box, endpoints: ReadonlySet<string>, edgeId: string): boolean {
+	private clearCorridor(
+		segment: Box,
+		endpoints: ReadonlySet<string>,
+		edgeId: string,
+		reached: ReadonlySet<string> = new Set(),
+	): boolean {
 		for (const [id, node] of this.nodes) {
 			if (endpoints.has(id)) continue;
-			if (boxesOverlap(segment, inflate(obstacleOf(node), CARD_ROUTE_CLEARANCE))) return false;
+			const clearance = reached.has(id) ? 0 : CARD_ROUTE_CLEARANCE;
+			if (boxesOverlap(segment, inflate(obstacleOf(node), clearance))) return false;
 		}
 		return this.clearLabels(segment, edgeId);
 	}
@@ -500,6 +440,19 @@ export function refinedPins(
 		),
 	);
 	return added || tracks.size > 0 ? selected.pins : undefined;
+}
+
+/**
+ * The cards a rail onto one endpoint may run up to: the route's other ends.
+ * A route forced through its reserved label passes the label's centre
+ * instead, so a straight rail between its cards would not be taken.
+ * @param edge The relationship.
+ * @param id The endpoint the rail reaches.
+ * @returns The far cards whose clearance a rail may cross.
+ */
+function farCards(edge: ElkExtendedEdge, id: string): ReadonlySet<string> {
+	if (edge.layoutOptions?.["archboard.route-label"] === "true") return new Set();
+	return new Set([...edge.sources, ...edge.targets].filter((end) => end !== id));
 }
 
 /**
