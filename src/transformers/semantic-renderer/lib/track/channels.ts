@@ -245,14 +245,23 @@ function joining(group: readonly Net[], side: "top" | "bottom"): Net[] {
 }
 
 /**
+ * The stretch of a face a port may stand on, clear of its corners.
+ * @param face The face's box.
+ * @returns Its lowest and highest x.
+ */
+function portReach(face: Box): [number, number] {
+	const margin = Math.min(PORT_MARGIN, face.width / 2);
+	return [face.x + margin, face.x + face.width - margin];
+}
+
+/**
  * Spread the ports on one face, each as close to its other end as spacing allows.
  * @param face The face's box.
  * @param wanted Each port's preferred x, in the order the ports must keep.
  * @returns The ports' x, in the same order.
  */
 function spreadPorts(face: Box, wanted: readonly number[]): number[] {
-	const low = face.x + Math.min(PORT_MARGIN, face.width / 2);
-	const high = face.x + face.width - Math.min(PORT_MARGIN, face.width / 2);
+	const [low, high] = portReach(face);
 	const count = wanted.length;
 	const gap = count > 1 ? Math.min(LANE, (high - low) / (count - 1)) : 0;
 	const ports = wanted.map((x) => Math.min(high, Math.max(low, x)));
@@ -346,7 +355,48 @@ function requestFor(members: readonly Net[], side: "top" | "bottom"): PortReques
 }
 
 /**
- * Give the ports on one face of a card.
+ * Where ports that want to stand beyond one end of a face ask to stand
+ * instead: two or more such lines turn onto the face anyway, and packed a
+ * lane apart at its corner their arrowheads read as one line forking. They
+ * spread evenly over the stretch from that end to the face's middle, or to
+ * the nearest port that wants a place on the face where that is nearer the
+ * end: the outermost at the end, none on the stretch's inner end.
+ * @param face The face's box.
+ * @param wanted Each port's preferred x, lowest first.
+ * @returns The x each asks for.
+ */
+function fanned(face: Box, wanted: readonly number[]): number[] {
+	const [low, high] = portReach(face);
+	const middle = face.x + face.width / 2;
+	const within = wanted.filter((x) => x >= low && x <= high);
+	const asked = [...wanted];
+	const above = wanted.flatMap((x, index) => (x > high ? [index] : []));
+	spreadOver(asked, above, Math.max(middle, ...within), high);
+	const below = wanted.flatMap((x, index) => (x < low ? [index] : []));
+	spreadOver(asked, below.toReversed(), Math.min(middle, ...within), low);
+	return asked;
+}
+
+/**
+ * Spread two or more ports evenly over a stretch of a face, the last at its
+ * end and none at its start; a lone port is left where it asked.
+ * @param asked Every port's x on the face; the spread ones change in place.
+ * @param ports The ports to spread, from the stretch's start to its end.
+ * @param start Where the stretch starts.
+ * @param end Where it ends: the face's end.
+ */
+function spreadOver(asked: number[], ports: readonly number[], start: number, end: number): void {
+	if (ports.length < 2) return;
+	ports.forEach((index, at) => {
+		asked[index] = end - ((end - start) * (ports.length - 1 - at)) / ports.length;
+	});
+}
+
+/**
+ * Give the ports on one face of a card. On a top face the lines that meet it
+ * from beyond one end fan out along it ({@link fanned}); on a bottom face they
+ * stay a lane apart, as fanning them there sent a line leaving a card out
+ * along its container's wall.
  * @param item The card.
  * @param requests Its requests on that face.
  */
@@ -354,9 +404,10 @@ function placePorts(item: Item, requests: readonly PortRequest[]): void {
 	const ordered = requests.toSorted(
 		(one, other) => one.wanted - other.wanted || one.order - other.order,
 	);
+	const wanted = ordered.map((request) => request.wanted);
 	const ports = spreadPorts(
 		item.box,
-		ordered.map(({ wanted }) => wanted),
+		ordered[0]?.side === "bottom" ? fanned(item.box, wanted) : wanted,
 	);
 	ordered.forEach(({ nets, side }, index) => {
 		for (const net of nets) {
