@@ -129,12 +129,13 @@ volume and speed; it is neither measured real-world activity nor connection impo
 _Avoid_: emphasis, pulse count
 
 **Traffic volume**:
-The rate at which illustrated traffic dots enter a connection, expressed in dots
-per second.
+The mean rate at which illustrated traffic shots are fired along a connection,
+expressed in shots per second; the moments between them vary.
 _Avoid_: dot count, traffic speed
 
 **Traffic speed**:
-The distance an illustrated traffic dot travels along a connection per second.
+The authored pace of illustrated traffic along a connection, in diagram units per
+second. A shot flies a fixed multiple of it, so a higher speed is a faster line.
 _Avoid_: traversal duration, traffic volume
 
 **Emphasis**:

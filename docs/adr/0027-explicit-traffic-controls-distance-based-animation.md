@@ -21,6 +21,28 @@ a second, which keeps the spacing of 80 units the slower defaults had. Each
 layer of a comet is one dash pattern over the whole route, spaced and advanced
 as the rates below say.
 
+Amended by the rail-gun traffic change (2026-09-26): traffic is shots, not a
+steady stream. The volume V is still the mean number of marks a second, but the
+moments a line fires vary: each gap is between 0.3 and 1.7 of the mean gap,
+drawn from a small generator seeded by the relationship's id, over a cycle of
+eight shots scaled so its mean gap is exactly 1/V. The cycle repeats, and the
+same board draws the same bytes every time. A shot flies 15 times the authored
+speed S, so at the defaults a 300-unit line is crossed in a quarter of a
+second, and S still says which lines run hotter. A shot is a streak: a bright
+head, longer than it is wide, ringed by the page's own background and glowing
+as before, and a long thin tail that fades from the head's colour into the
+line's. The tail is as long as the shot flies in 260 ms, and at most 45% of its
+line and 70% of the shortest distance between two shots, so a streak never
+fills a short line and two shots never merge. Shots in flight together are
+dashes of one pattern over the route, so none is dropped however high the
+volume. A still picture, which is the SVG at time zero, shows exactly one
+streak on each traffic line, resting where no label cuts it; the shots start
+a moment later. A line too short for a whole streak shows none at rest. Mean
+gaps are held between 20 ms and an hour, so extreme values stay finite and
+small. The rates and spacings below describe the old steady stream: the
+volume, the independence of route length and the off states still hold, the
+spacing S/V and the traversal times do not.
+
 Current moving dots use a fixed traversal duration, so long connections animate
 faster than short connections. TASK-203 separates traffic from emphasis and makes
 volume and speed independent, so agents can communicate traffic deliberately.
@@ -44,7 +66,8 @@ Traffic, traffic volume and traffic speed are defined in
 - Route length must not change the configured speed. Emphasis does not supply
   traffic, volume or speed implicitly.
 - Traffic starts distributed along the route, illustrating ongoing flow without
-  waiting for the route to fill from its source.
+  waiting for the route to fill from its source. (As amended: a still picture
+  shows one streak at rest on the line, and the shots start from there.)
 - Removed comparison edges and reduced-motion readers show no moving dots.
   SVG exports retain animation where supported, without adding an export legend.
 - These are animation properties, not measured real-world traffic. Do not expose

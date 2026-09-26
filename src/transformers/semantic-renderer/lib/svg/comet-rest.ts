@@ -1,7 +1,6 @@
-// Where a stream's comets rest: the still picture, and the moment its clock
-// starts. Labels are drawn over the comets, so a comet resting where a label's
-// border cuts its glow reads as a blob stuck to the label; each stream starts
-// its clock where none does.
+// Where a line's traffic rests: the one streak a still picture shows on it.
+// Labels are drawn over the traffic, so a streak resting where a label's border
+// cuts its glow reads as a blob stuck to the label; it rests where none does.
 import { inflate, type Box, type Point } from "@/transformers/semantic-renderer/lib/geometry";
 import {
 	curveBounds,
@@ -10,7 +9,7 @@ import {
 	type Curve,
 } from "@/transformers/semantic-renderer/lib/layout/curves";
 
-/** The air a resting comet's glow keeps from a label's border. */
+/** The air a resting streak's glow keeps from a label's border. */
 const LABEL_AIR = 2;
 
 /** How finely a resting place is chosen along its route, in diagram units. */
@@ -20,8 +19,8 @@ const REST_STEP = 0.5;
 const CHORDS = 16;
 
 /**
- * How a resting comet's glow meets the labels drawn over it: clear of them,
- * wholly under one, or cut by a label's border.
+ * How a resting streak's glow meets the labels drawn over it: clear of them,
+ * wholly under one, or cut by a label's border. Lower is better.
  */
 const COVER = { clear: 0, hidden: 1, cut: 2 } as const;
 
@@ -41,8 +40,8 @@ function holds(box: Box, point: Point): boolean {
 }
 
 /**
- * How the labels drawn over a comet meet its glow at one place.
- * @param point Where the comet's head is.
+ * How the labels drawn over a streak meet its glow at one place.
+ * @param point Where the streak's head is.
  * @param glow The glow's radius.
  * @param labels The labels drawn over it.
  * @returns How much of the glow they take: clear, hidden or cut.
@@ -97,67 +96,66 @@ function traced(curve: Curve): Point[] {
 }
 
 /**
- * How badly the comets of one stream would rest at one place: every head a
- * label cuts outweighs every head one hides.
- * @param covers How the labels meet a glow at each traced point of the route.
- * @param rest How far along the route the first head rests.
- * @param spacing How far apart the heads are.
- * @returns The weight: lower is better, and 0 is every head clear.
+ * Where a line's resting streak puts its head along the route it rides: half
+ * way, unless a label drawn over the traffic would cut the head's glow there,
+ * when the nearest place none does, or failing that the nearest place a label
+ * hides it wholly. It stays at least a glow from both ends of the route, so a
+ * still picture shows a whole streak, never a glow alone at a card; a route
+ * too short for that rests its streak just before its start, where none of it
+ * shows.
+ * @param ride The route the traffic rides.
+ * @param length How long that route is.
+ * @param glow The radius of a streak's glow.
+ * @param labels The labels drawn over the traffic.
+ * @returns How far along the route the resting head is.
  */
-function restWeight(covers: readonly number[], rest: number, spacing: number): number {
-	let weight = 0;
-	for (let along = rest; along / REST_STEP < covers.length; along += spacing) {
-		const cover = covers[Math.round(along / REST_STEP)] ?? COVER.clear;
-		weight += cover === COVER.cut ? covers.length : cover;
-	}
-	return weight;
+function restingPlace(ride: Curve, length: number, glow: number, labels: readonly Box[]): number {
+	const half = length / 2;
+	if (half < glow) return -glow;
+	const reach = inflate(curveBounds(ride), glow + LABEL_AIR);
+	const near = labels.filter((label) => overlaps(label, reach));
+	if (near.length === 0) return half;
+	return leastCovered(traced(ride), nearestFirst(half, glow), glow, near);
 }
 
 /**
- * Where the first comet of a stream rests along the route it rides: half a
- * spacing from its start, unless a label drawn over the comets would cut a
- * resting comet's glow there, when the nearest place none does, or failing
- * that the place fewest do. It stays at least a glow from where the route
- * starts and from where the comet behind would rest, so a still picture shows
- * whole comets, never one's glow alone at the card it leaves.
- * @param ride The route the comets ride.
- * @param spacing How far apart the comets travel.
- * @param glow The radius of a comet's glow.
- * @param labels The labels drawn over the comets.
- * @returns How far along the route the first comet's head rests.
+ * The first of some places where the labels leave a streak's glow clear, or
+ * failing that the first where they cover it least.
+ * @param points Points every {@link REST_STEP} along the route.
+ * @param places The places to try, in order.
+ * @param glow The radius of a streak's glow.
+ * @param labels The labels drawn over the traffic.
+ * @returns The place.
  */
-function restingPlace(ride: Curve, spacing: number, glow: number, labels: readonly Box[]): number {
-	const half = spacing / 2;
-	const reach = inflate(curveBounds(ride), glow + LABEL_AIR);
-	const near = labels.filter((label) => overlaps(label, reach));
-	if (near.length === 0 || spacing < glow * 2) return half;
-	const covers = traced(ride).map((point) => coverAt(point, glow, near));
-	let best = { rest: half, weight: Number.POSITIVE_INFINITY };
-	for (const rest of nearestFirst(half, glow, (covers.length - 1) * REST_STEP)) {
-		const weight = restWeight(covers, rest, spacing);
-		if (weight < best.weight) best = { rest, weight };
-		if (best.weight === 0) break;
+function leastCovered(
+	points: readonly Point[],
+	places: readonly number[],
+	glow: number,
+	labels: readonly Box[],
+): number {
+	let best = { rest: places[0]!, cover: Number.POSITIVE_INFINITY };
+	for (const rest of places) {
+		const point = points[Math.round(rest / REST_STEP)];
+		const cover = point === undefined ? COVER.clear : coverAt(point, glow, labels);
+		if (cover < best.cover) best = { rest, cover };
+		if (best.cover === COVER.clear) break;
 	}
 	return best.rest;
 }
 
 /**
- * The places a stream's first comet may rest, nearest half a spacing first:
- * at least a glow from the route's start and from where the comet behind
- * rests, and on the route. A route shorter than half a spacing rests no
- * comet on it wherever its clock starts, so it keeps half a spacing.
- * @param half Half the spacing between comets.
- * @param glow The radius of a comet's glow.
- * @param length How long the route is.
+ * The places a resting head may be, nearest half way first: at least a glow
+ * from both ends of the route.
+ * @param half Half the route's length.
+ * @param glow The radius of a streak's glow.
  * @returns The places, in the order they are tried.
  */
-function nearestFirst(half: number, glow: number, length: number): number[] {
-	if (half > length) return [half];
-	const places: number[] = [];
+function nearestFirst(half: number, glow: number): number[] {
+	const places = [half];
 	for (let away = REST_STEP; away <= half - glow; away += REST_STEP) {
 		places.push(half - away, half + away);
 	}
-	return [half, ...places.filter((place) => place <= length)];
+	return places;
 }
 
 /**

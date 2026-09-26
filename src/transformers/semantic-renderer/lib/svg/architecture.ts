@@ -217,6 +217,7 @@ function paintEdgeLine(
 			standing === "removed" || edge.traffic === undefined
 				? ""
 				: travellingPulses({
+						id: edge.id,
 						curve: routed.curve,
 						headReach: arrowheadReach(appearance.arrowhead, width),
 						colour: relationshipInk(edge, palette, standing, policy, appearance),

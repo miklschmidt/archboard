@@ -32,6 +32,34 @@ const FLOW_CYCLE_CAP_MS = 16_000;
  */
 const FLOW_PULSE_RAMP = 0.08;
 
+// ── A relationship's traffic: shots fired along its line (ADR 0027) ──────
+
+/**
+ * How much of a shot's travel its streak's tail spans: the tail is as long as
+ * the shot travels in this time, so a faster line draws a longer streak. Pulls
+ * against the line it rides: a streak much longer than this fills a short line
+ * and reads as a lit segment rather than a shot, which is why the renderer also
+ * caps it at a share of the line.
+ */
+const TRAFFIC_STREAK_MS = 260;
+
+/**
+ * How long the still picture holds before the first shot fires: the picture at
+ * time zero shows one streak at rest on each line, and the shots start this
+ * much later. Pulls against being seen: it only has to be later than time zero,
+ * which is the moment every still picture is taken, and short enough that
+ * nobody watching the page sees the traffic wait.
+ */
+const TRAFFIC_STILL_MS = 16;
+
+/**
+ * The shortest and longest mean gap between two shots on one line, however
+ * much traffic its author asked for. Past the shortest, shots fired faster than
+ * a screen draws blur into one line; past the longest, nobody watches long
+ * enough to see the next. Both keep the timing a finite number a browser reads.
+ */
+const TRAFFIC_GAP_LIMITS_MS = Object.freeze({ shortest: 20, longest: 3_600_000 });
+
 // ── One picture of a board turning into the next ─────────────────────────
 
 /**
@@ -159,4 +187,7 @@ export {
 	PICTURE_TRANSITION_MS,
 	PICTURE_TRANSITION_PHASES,
 	PRESENTATION_STEP_MS,
+	TRAFFIC_GAP_LIMITS_MS,
+	TRAFFIC_STILL_MS,
+	TRAFFIC_STREAK_MS,
 };

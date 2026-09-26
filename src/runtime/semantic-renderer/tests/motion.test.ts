@@ -2,6 +2,11 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 import { describe, expect, test } from "bun:test";
 import { type VariantContent } from "@/shared/semantic-board/index";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
+import {
+	headsOn,
+	launchGaps,
+	trafficLayers,
+} from "@/runtime/semantic-renderer/tests/drawn-traffic";
 
 /** What a moving mark looks like in the markup, whichever grammar drew it. */
 const MOTION = /<animate(?:Motion|Transform)?\b|@keyframes|animation:/u;
@@ -156,7 +161,7 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 		expect(pulsesOn(rendered.svg, "plain")).toBe(0);
 	});
 
-	test("equal defaults use fixed entry intervals and prepopulate different route lengths", async () => {
+	test("shots cross short and long lines at the same speed, a multiple of the authored one", async () => {
 		const content = variant({
 			nodes: [
 				{ id: "a", name: "A", kind: "service" },
@@ -164,92 +169,132 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 				{ id: "c", name: "C", kind: "service" },
 			],
 			edges: [
-				{ id: "ab", from: "a", to: "b", kind: "call", traffic: {} },
-				{ id: "bc", from: "b", to: "c", kind: "call" },
+				{ id: "ab", from: "a", to: "b", kind: "call", traffic: { speed: 80, volume: 1 } },
+				{ id: "bc", from: "b", to: "c", kind: "call", traffic: { speed: 160, volume: 1 } },
 				{ id: "ac", from: "a", to: "c", kind: "call", traffic: { speed: 80, volume: 1 } },
 			],
 		});
 		const { svg } = await renderSemanticView({ content, grammar: "architecture", theme: "light" });
-		for (const id of ["ab", "ac"]) {
-			const group = svg.split(`data-semantic-id="${id}"`)[1]!.split("data-semantic-id=")[0]!;
-			// Every layer of a comet, head and tail alike, repeats once per
-			// spacing and moves one spacing per interval, so the whole comet
-			// keeps the speed and the entry rate the traffic asked for.
-			const layers = [
-				...group.matchAll(
-					/<path d="[^"]*"[^>]*stroke-dasharray="([^ ]+) ([^"]+)"[^>]*>\s*<animate([^>]+)>/gu,
-				),
-			];
+		const speeds = (id: string) => {
+			const layers = trafficLayers(svg, id);
 			expect(layers.length).toBeGreaterThan(1);
-			for (const [, dash, gap, animation] of layers) {
-				const spacing = Number(dash) + Number(gap);
-				const interval = Number(animation!.match(/dur="([^s]+)s"/u)![1]);
-				const from = Number(animation!.match(/from="([^"]+)"/u)![1]);
-				const to = Number(animation!.match(/to="([^"]+)"/u)![1]);
-				expect(spacing).toBeCloseTo(80, 5);
-				expect(interval).toBe(1);
-				expect(from - to).toBeCloseTo(80, 5);
-				expect(animation).toContain('calcMode="linear"');
-			}
-		}
-	});
-	test("a still picture shows whole comets clear of both ends of their line", async () => {
-		// Two stacked cards: one straight run a little shorter than the spacing,
-		// which put the resting comet's head and its ring on the arrowhead.
-		const content = variant({
-			nodes: [
-				{ id: "a", name: "A", kind: "service" },
-				{ id: "b", name: "B", kind: "service" },
-			],
-			edges: [{ id: "ab", from: "a", to: "b", kind: "call", emphasis: "hero", traffic: {} }],
-		});
-		for (const layout of ["graphviz", "track", "blocks"] as const) {
-			const { svg } = await renderSemanticView({
-				content,
-				grammar: "architecture",
-				theme: "light",
-				layout,
-			});
-			const group = svg.split('data-semantic-id="ab"')[1]!.split("data-semantic-id=")[0]!;
-			const line = /<path d="([^"]+)"[^>]*marker-end=[^>]*>/u.exec(group)!;
-			const width = Number(/stroke-width="([^"]+)"/u.exec(line[0])![1]);
-			const lineEnd = endOf(line[1]!);
-			// A filled head's ink reaches four line widths back from the route's end.
-			const headBase = 4 * width;
-			const layers = [
-				...group.matchAll(
-					/<path d="([^"]+)"[^>]*stroke-width="([^"]+)"[^>]*stroke-dasharray="([^ ]+) ([^"]+)"[^>]*stroke-dashoffset="([^"]+)"/gu,
-				),
-			].map(([, d, stroke, dash, gap, offset]) => ({
-				end: endOf(d!),
-				reach: Number(stroke) / 2,
-				dash: Number(dash),
-				spacing: Number(dash) + Number(gap),
-				offset: Number(offset),
-			}));
-			expect(layers.length).toBeGreaterThan(1);
-			const glow = Math.max(...layers.map(({ reach }) => reach));
+			// The train is one cycle long, so it moves exactly its own pattern each cycle.
 			for (const layer of layers) {
-				// Every solid layer's round end stops at the arrowhead's base; only
-				// the faint glow may reach over it.
-				if (layer.reach < glow) {
-					expect(
-						Math.hypot(lineEnd.x - layer.end.x, lineEnd.y - layer.end.y),
-					).toBeGreaterThanOrEqual(headBase + layer.reach - 0.05);
-				}
-				// At rest, every comet's head is at least a glow from the line's start,
-				// and from where the comet behind it rests, so no glow sits alone on
-				// the card the line leaves.
-				const rest =
-					(((layer.dash - layer.offset) % layer.spacing) + layer.spacing) % layer.spacing;
-				expect(Math.min(rest, layer.spacing - rest)).toBeGreaterThanOrEqual(glow);
+				expect(layer.travel).toBeCloseTo(
+					layer.train.reduce((sum, value) => sum + value, 0),
+					6,
+				);
 			}
+			return layers.map((layer) => layer.travel / layer.cycle);
+		};
+		const [short, long] = [trafficLayers(svg, "ab")[0]!, trafficLayers(svg, "ac")[0]!];
+		expect(Math.abs(short.still[1]! - long.still[1]!)).toBeGreaterThan(50);
+		const shot = speeds("ab")[0]!;
+		for (const speed of [...speeds("ab"), ...speeds("ac")]) expect(speed).toBeCloseTo(shot, 3);
+		// The authored speed still says which line runs hotter, and a shot is far
+		// faster than the stroll it asked for.
+		for (const speed of speeds("bc")) expect(speed).toBeCloseTo(shot * 2, 3);
+		expect(shot).toBeGreaterThan(80 * 5);
+	});
+
+	test("the mean launch rate over a cycle equals the volume, at irregular moments", async () => {
+		const drawnWith = async (volume: number) =>
+			(
+				await renderSemanticView({
+					content: variant({
+						nodes: SAMPLE.nodes,
+						edges: [
+							{ id: "one", from: "api", to: "store", kind: "call", traffic: { volume } },
+							{ id: "two", from: "store", to: "api", kind: "call", traffic: { volume } },
+						],
+					}),
+					grammar: "architecture",
+					theme: "light",
+				})
+			).svg;
+		for (const volume of [0.25, 1, 2.5]) {
+			const svg = await drawnWith(volume);
+			for (const id of ["one", "two"]) {
+				for (const layer of trafficLayers(svg, id)) {
+					const gaps = launchGaps(layer);
+					expect(gaps.length).toBeGreaterThanOrEqual(8);
+					expect(gaps.length / layer.cycle).toBeCloseTo(volume, 6);
+					// Irregular, within the jitter around the mean gap.
+					expect(Math.max(...gaps) / Math.min(...gaps)).toBeGreaterThan(1.5);
+					for (const gap of gaps) {
+						expect(gap * volume).toBeGreaterThan(0.2);
+						expect(gap * volume).toBeLessThan(2);
+					}
+				}
+			}
+			// Each relationship draws its own rhythm, the same one every time.
+			expect(launchGaps(trafficLayers(svg, "one")[0]!)).not.toEqual(
+				launchGaps(trafficLayers(svg, "two")[0]!),
+			);
+			expect(await drawnWith(volume)).toBe(svg);
 		}
 	});
-	test("a still picture rests every comet clear of the labels drawn over it", async () => {
-		// Two stacked cards: the label sits on the line where half a spacing
-		// from its start rests the comet, cut by the label's border or hidden
-		// under it, whichever the layout gives.
+
+	test("a still picture shows one whole streak on its line, clear of both ends", async () => {
+		// Two stacked cards: one straight run, drawn by every engine, with traffic
+		// sparse and so dense that many shots are in flight at once.
+		let shown = 0;
+		for (const traffic of [{}, { volume: 40 }, { speed: 4, volume: 0.1 }]) {
+			const content = variant({
+				nodes: [
+					{ id: "a", name: "A", kind: "service" },
+					{ id: "b", name: "B", kind: "service" },
+				],
+				edges: [{ id: "ab", from: "a", to: "b", kind: "call", emphasis: "hero", traffic }],
+			});
+			for (const layout of ["graphviz", "track", "blocks"] as const) {
+				const { svg } = await renderSemanticView({
+					content,
+					grammar: "architecture",
+					theme: "light",
+					layout,
+				});
+				const group = svg.split('data-semantic-id="ab"')[1]!.split("data-semantic-id=")[0]!;
+				const line = /<path d="([^"]+)"[^>]*marker-end=[^>]*>/u.exec(group)!;
+				const lineEnd = endOf(line[1]!);
+				// A filled head's ink reaches four line widths back from the route's end.
+				const headBase = 4 * Number(/stroke-width="([^"]+)"/u.exec(line[0])![1]);
+				const layers = trafficLayers(svg, "ab");
+				expect(layers.length).toBeGreaterThan(1);
+				const glow = Math.max(...layers.map(({ width }) => width / 2));
+				const [x0, y0, x1, y1] = layers[0]!.d.match(/[\d.]+/gu)!.map(Number);
+				const length = Math.hypot(x1! - x0!, y1! - y0!);
+				const rests = layers.map((layer) => {
+					// Nothing moves at time zero, the moment every still picture is taken.
+					for (const begin of layer.begins) expect(begin).toBeGreaterThan(0);
+					const heads = headsOn(layer.still, layer.offset, length);
+					// A line too short for a whole streak shows none rather than a glow on a card.
+					expect(heads).toHaveLength(length < glow * 2 ? 0 : 1);
+					// Every solid layer's round end stops at the arrowhead's base; only
+					// the faint glow may reach over it.
+					if (layer.width / 2 < glow) {
+						const end = endOf(layer.d);
+						expect(Math.hypot(lineEnd.x - end.x, lineEnd.y - end.y)).toBeGreaterThanOrEqual(
+							headBase + layer.width / 2 - 0.05,
+						);
+					}
+					return heads[0];
+				});
+				if (length < glow * 2) continue;
+				shown += 1;
+				// Every layer ends on the one head, which is at least a glow from both
+				// ends of the line, so no glow sits alone on a card.
+				for (const rest of rests) expect(rest!).toBeCloseTo(rests[0]!, 1);
+				expect(rests[0]!).toBeGreaterThanOrEqual(glow);
+				expect(length - rests[0]!).toBeGreaterThanOrEqual(glow);
+			}
+		}
+		expect(shown).toBeGreaterThan(0);
+	});
+
+	test("a still picture rests its streak clear of the labels drawn over it", async () => {
+		// Two stacked cards: the label sits on the line half way along, cut by
+		// the label's border or hidden under it, whichever the layout gives.
 		const content = variant({
 			nodes: [
 				{ id: "a", name: "A", kind: "service" },
@@ -264,36 +309,24 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 				theme: "light",
 				layout,
 			});
-			// The glow is the stream's widest layer, and its dash is the head alone.
-			const [, d, width, spacing, offset] =
-				/<g class="ab-pulse"[^>]*><path d="(M[\d.]+,[\d.]+ L[\d.]+,[\d.]+)"[^>]*stroke-width="([^"]+)"[^>]*stroke-dasharray="0 ([^"]+)" stroke-dashoffset="([^"]+)"/u.exec(
-					svg,
-				)!;
-			const [x0, y0, x1, y1] = d!.match(/[\d.]+/gu)!.map(Number);
+			const layers = trafficLayers(svg, "ab");
+			const glow = Math.max(...layers.map(({ width }) => width / 2));
+			const [x0, y0, x1, y1] = layers[0]!.d.match(/[\d.]+/gu)!.map(Number);
 			const length = Math.hypot(x1! - x0!, y1! - y0!);
-			const glow = Number(width) / 2;
+			const [along] = headsOn(layers[0]!.still, layers[0]!.offset, length);
+			const head = {
+				x: x0! + ((x1! - x0!) * along!) / length,
+				y: y0! + ((y1! - y0!) * along!) / length,
+			};
 			const [, x, y, w, h] =
 				/data-semantic-id="ab"><rect x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"/u
 					.exec(svg)!
 					.map(Number);
-			let heads = 0;
-			for (
-				let along = Number(spacing) - Number(offset);
-				along <= length;
-				along += Number(spacing)
-			) {
-				const head = {
-					x: x0! + ((x1! - x0!) * along) / length,
-					y: y0! + ((y1! - y0!) * along) / length,
-				};
-				const gap = Math.hypot(
-					Math.max(x! - head.x, 0, head.x - x! - w!),
-					Math.max(y! - head.y, 0, head.y - y! - h!),
-				);
-				expect(gap).toBeGreaterThanOrEqual(glow);
-				heads += 1;
-			}
-			expect(heads).toBeGreaterThan(0);
+			const gap = Math.hypot(
+				Math.max(x! - head.x, 0, head.x - x! - w!),
+				Math.max(y! - head.y, 0, head.y - y! - h!),
+			);
+			expect(gap).toBeGreaterThanOrEqual(glow);
 		}
 	});
 	for (const traffic of [
@@ -315,13 +348,18 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 			const calm = await drawnWith({ speed: 1, volume: 1 });
 			expect(pulsesOn(svg, "busy")).toBe(1);
 			// However extreme, traffic draws about as much as ordinary traffic does.
-			expect(svg.length).toBeLessThan(calm.svg.length * 1.5);
-			const duration = svg.match(/dur="([^s]+)s"/u)![1]!;
-			expect(duration).not.toContain("e");
-			expect(Number(duration)).toBeGreaterThan(0);
-			const spacing = Number(svg.match(/stroke-dasharray="[^ "]+ ([^"]+)"/u)![1]);
-			expect(spacing).toBeGreaterThan(0);
-			expect(Number.isFinite(spacing)).toBe(true);
+			expect(svg.length).toBeLessThan(calm.svg.length * 1.1);
+			for (const layer of trafficLayers(svg, "busy")) {
+				expect(layer.cycleWritten).not.toContain("e");
+				expect(layer.cycle).toBeGreaterThan(0);
+				for (const pattern of [layer.still, layer.train]) {
+					for (const value of pattern) {
+						expect(Number.isFinite(value)).toBe(true);
+						expect(value).toBeGreaterThanOrEqual(0);
+					}
+					expect(pattern.reduce((sum, value) => sum + value, 0)).toBeGreaterThan(0);
+				}
+			}
 		});
 	}
 });
