@@ -6,7 +6,9 @@
 // middle, so the fan's lines land unevenly on it; and a wrap standing a card
 // in a line's way, or away from the port its one line leaves; and the label
 // of a line leaving a container standing beside it, where the card the line
-// leads into follows it out past the container's wall.
+// leads into follows it out past the container's wall; and a board's
+// containers stacked or not by a near tie, given to the page that fits the
+// pane better however little, at the cost of a crossing.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -14,9 +16,11 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
 import { routeLabels, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import { scorecardOf } from "@/runtime/semantic-renderer/tests/drawn-scorecard";
 import loweredRegion from "./lowered-region.json";
 import underPort from "./under-port.json";
 import browserApplication from "./browser-application.json";
+import workingWithAnAgent from "./working-with-an-agent.json";
 import skillEvaluation from "./skill-evaluation.json";
 import wrappedBlocker from "./wrapped-blocker.json";
 
@@ -239,6 +243,28 @@ test("a line leaving a container stands its label below the container", async ()
 	expect(label.y).toBeGreaterThanOrEqual(frame.y + frame.height);
 });
 
+/** The vocabulary of the Browser application board's fixtures. */
+const browserPolicy = SemanticPolicySchema.parse({
+	levels: ["system", "service", "module"],
+	nodeKinds: Object.fromEntries(
+		["system", "service", "module", "ui"].map((kind) => [kind, { name: kind, icon: "RiBox3Line" }]),
+	),
+	relationshipKinds: {
+		call: { name: "Call", dash: "solid", arrowhead: "filled" },
+		http: { name: "HTTP", color: "sky", dash: "solid", arrowhead: "filled" },
+		event: { name: "Event", color: "fuchsia", dash: "dashed", arrowhead: "open" },
+		data: { name: "Data", color: "teal", dash: "solid", arrowhead: "filled" },
+		render: { name: "Render", color: "pink", dash: "solid", arrowhead: "filled" },
+	},
+	groups: {
+		drawing: { name: "Drawing", color: "violet" },
+		panes: { name: "Live panes", color: "teal" },
+		walkthrough: { name: "Walkthroughs", color: "cyan" },
+		voice: { name: "Voice", color: "yellow" },
+		agent: { name: "Agent", color: "fuchsia" },
+	},
+});
+
 // Taken from a board of this repository: its containers laid stacked scored
 // within a twentieth of laid as Graphviz ranks them, on a page far taller
 // than the pane's proportions, and a wider clearance off group regions'
@@ -247,32 +273,28 @@ test("a board that reads about as well stacked keeps the page that fits the pane
 	const drawing = await renderArchitecture({
 		content: orderedFixture(browserApplication),
 		theme: "light",
-		policy: SemanticPolicySchema.parse({
-			levels: ["system", "service", "module"],
-			nodeKinds: Object.fromEntries(
-				["system", "service", "module", "ui"].map((kind) => [
-					kind,
-					{ name: kind, icon: "RiBox3Line" },
-				]),
-			),
-			relationshipKinds: {
-				call: { name: "Call", dash: "solid", arrowhead: "filled" },
-				http: { name: "HTTP", color: "sky", dash: "solid", arrowhead: "filled" },
-				event: { name: "Event", color: "fuchsia", dash: "dashed", arrowhead: "open" },
-				data: { name: "Data", color: "teal", dash: "solid", arrowhead: "filled" },
-				render: { name: "Render", color: "pink", dash: "solid", arrowhead: "filled" },
-			},
-			groups: {
-				drawing: { name: "Drawing", color: "violet" },
-				panes: { name: "Live panes", color: "teal" },
-				walkthrough: { name: "Walkthroughs", color: "cyan" },
-				voice: { name: "Voice", color: "yellow" },
-				agent: { name: "Agent", color: "fuchsia" },
-			},
-		}),
+		policy: browserPolicy,
 		layout: "track",
 	});
 	expect(drawing.width / drawing.height).toBeGreaterThan(
 		REFERENCE_PANE.width / REFERENCE_PANE.height,
 	);
+});
+
+// Taken from a board of this repository: its containers laid stacked scored
+// within a twentieth of laid as Graphviz ranks them, one crossing more on a
+// page that fit the pane only a little better, and a wider clearance off a
+// container's wall tipped it to the stacked layout, its lines through a group
+// region they have no card in. A near tie goes to the better fit only where
+// the page fits clearly better.
+test("a board that reads about as well stacked on a page that fits no clearly better keeps the better score", async () => {
+	const content = orderedFixture(workingWithAnAgent);
+	const drawing = await renderArchitecture({
+		content,
+		theme: "light",
+		policy: browserPolicy,
+		layout: "track",
+	});
+	const crossings = scorecardOf(drawing, content).find(({ name }) => name === "crossings")!;
+	expect(crossings.value).toBe(0);
 });
