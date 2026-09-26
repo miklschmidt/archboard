@@ -2,7 +2,8 @@
 // catches: a chain of one-in, one-out cards stepping sideways rank by rank,
 // its lines leaving and entering its cards off centre, and a fan whose
 // wrap lowers a group region whole refused, so the region stands on a row
-// of its own above the fan's other cards.
+// of its own above the fan's other cards, and a card fed by a fan standing
+// off its middle, so the fan's lines land unevenly on it.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -96,4 +97,33 @@ test("a wrapped fan stands a group region beside its other cards", async () => {
 		["n2", "n3", "n4", "n7"],
 	].map((ids) => ids.map((id) => drawing.atlas.nodes[id]!));
 	expect(members!.some((member) => others!.some((other) => beside(member, other)))).toBe(true);
+});
+
+// Reduced from a real hosting board, names replaced: two mirrored pairs of
+// servers, each pair feeding one database through labelled lines. Graphviz
+// left one database anywhere between its two servers.
+test("a card two cards of one rank feed stands midway under them", async () => {
+	const feeds = { da: ["v0", "v1"], db: ["v2", "v3"] };
+	const content = orderedFixture({
+		nodes: ["v0", "v1", "v2", "v3", "da", "db"].map((id) => ({
+			id,
+			name: `Part ${id}`,
+			kind: "service",
+			responsibility: "legacy work",
+		})),
+		edges: Object.entries(feeds).flatMap(([to, from]) =>
+			from.map((one) => ({
+				id: `${one}${to}`,
+				from: one,
+				to,
+				kind: "data",
+				label: "Database connection",
+			})),
+		),
+	});
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	for (const [to, from] of Object.entries(feeds)) {
+		const [one, other] = from.map((id) => centre(drawing.atlas.nodes[id]!));
+		expect(Math.abs(centre(drawing.atlas.nodes[to]!) - (one! + other!) / 2)).toBeLessThan(1);
+	}
 });

@@ -370,6 +370,50 @@ class Columns {
 	}
 
 	/**
+	 * Whether an item is a card not yet lined up with another.
+	 * @param name The item.
+	 * @returns True when it is.
+	 */
+	loose(name: string): boolean {
+		return this.room.card?.(name) === true && !this.held.has(name);
+	}
+
+	/**
+	 * The cards a card's lines join, when they make a fan of it: two or more
+	 * cards, and nothing else, all on one rank above it or below it. A card
+	 * already lined up with another has no fan.
+	 * @param name The item.
+	 * @returns Their boxes, or nothing.
+	 */
+	fanOf(name: string): Box[] | undefined {
+		const ends = new Set(
+			this.joins.flatMap(({ tail, head }) =>
+				tail === name ? [head] : head === name ? [tail] : [],
+			),
+		);
+		if (!this.loose(name) || [...ends].some((end) => this.room.card?.(end) !== true))
+			return undefined;
+		const fan = [...ends].map((end) => this.boxes.get(end)!);
+		return fans(this.boxes.get(name)!, fan) ? fan : undefined;
+	}
+
+	/**
+	 * Centre a card on the fan its lines make, midway between the fan's outer
+	 * centres, where it may stand there. Graphviz draws each line through its
+	 * label's box as two legs it weighs alike, which add up to the same
+	 * wherever the card stands between two cards it joins, so it leaves the
+	 * card at any point of that stretch.
+	 * @param name The item.
+	 */
+	centre(name: string): void {
+		const centres = this.fanOf(name)?.map((end) => middle(end));
+		if (centres === undefined) return;
+		const at = this.moved(name, (Math.min(...centres) + Math.max(...centres)) / 2);
+		if (Math.abs(middle(at) - middle(this.boxes.get(name)!)) >= 0.5 && this.free(name, at))
+			this.boxes.set(name, at);
+	}
+
+	/**
 	 * Line one line's ends up, when one of them may move under or over the
 	 * other, and its label onto the line.
 	 * @param join The line.
@@ -405,6 +449,23 @@ function apart(one: Box, other: Box): boolean {
 }
 
 /**
+ * Whether cards make a fan of a card: two or more, all on one rank, and
+ * all above it or all below it.
+ * @param at The card.
+ * @param fan The cards its lines join.
+ * @returns True when they do.
+ */
+function fans(at: Box, fan: readonly Box[]): boolean {
+	if (fan.length < 2) return false;
+	const rank = fan[0]!.y + fan[0]!.height / 2;
+	return (
+		fan.every((end) => Math.abs(end.y + end.height / 2 - rank) < 0.5) &&
+		(fan.every((end) => end.y + end.height <= at.y) ||
+			fan.every((end) => at.y + at.height <= end.y))
+	);
+}
+
+/**
  * Line up the joined cards Graphviz stacked a few points out of one column.
  * A line through its label's box pulls its two ends into line no harder than
  * it lets them stand apart, so each end leans toward its other lines and the
@@ -424,6 +485,7 @@ function alignColumns(boxes: Map<string, Box>, joins: readonly Join[], room: Roo
 		const shift = Math.abs(columns.offset(join));
 		if (shift >= 0.5 && shift <= NEAR_MISS) columns.lineUp(join);
 	}
+	for (const name of boxes.keys()) columns.centre(name);
 	// Widening one card can line its edges up with a third's.
 	while (columns.stacked().some((join) => columns.even(join)));
 }
