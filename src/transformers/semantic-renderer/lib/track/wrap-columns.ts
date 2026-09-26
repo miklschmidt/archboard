@@ -315,4 +315,4 @@ function clearWrap(columns: Columns, wrap: Wrap | undefined): string[] {
 	return columns.stacked().flatMap((join) => clearLine(columns, wrap, join) ?? []);
 }
 
-export { clearWrap, openParts, type Wrap };
+export { clearWrap, type Wrap };
