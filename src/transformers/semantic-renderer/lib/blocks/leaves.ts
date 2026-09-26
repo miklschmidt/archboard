@@ -46,11 +46,16 @@ function cornerHeader(leaves: readonly ElkNode[], id: string): void {
  * keeps clear of the header, as a settled one does. Only the Blocks engine
  * settles a block's ports from its parent and routes the block again, so
  * there nothing slides, nor at the root, which has no ports of its own.
- * @param scene The block's scene, whose sliding ports are set.
+ * Either way the scene learns which cards are the block's ports.
+ * @param scene The block's scene, whose ports and sliding ports are set.
  * @param block The block.
  * @param nesting How containers and group regions are drawn.
  */
 function letPortsSlide(scene: Scene, block: Block, nesting: Nesting): void {
+	for (const port of block.ports.keys()) {
+		const item = scene.cards.get(port);
+		if (item !== undefined) scene.ports.add(item);
+	}
 	if (block.kind === "root" || nesting === "blocks") return;
 	for (const [item, stretch] of slidesOf(scene, block)) scene.slides.set(item, stretch);
 }

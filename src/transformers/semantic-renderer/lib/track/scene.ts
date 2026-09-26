@@ -121,6 +121,12 @@ class Scene {
 	 * nothing outside it has read where they stand.
 	 */
 	readonly slides = new Map<Item, readonly [number, number]>();
+	/**
+	 * A block's own ports: where one stands while the block is routed is not
+	 * where it ends, since it slides onto its line or is settled from the
+	 * block's parent, so no line is judged by a step into one.
+	 */
+	readonly ports = new Set<Item>();
 
 	/**
 	 * Read every placed item and group them into bands by their centres.

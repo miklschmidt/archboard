@@ -478,7 +478,7 @@ function pullOntoPorts(
 	if (pullToPorts(scene, chains, portsOf(nets))) {
 		followLanes(nets);
 		settleLabels(scene, nets);
-		assignPorts(nets);
+		assignPorts(nets, scene.ports);
 	}
 	if (pullIntoTrunks(scene, routes, nets)) followLanes(nets);
 }
@@ -521,11 +521,11 @@ function routeScene(
 	]);
 	const nets = [...routed.values()].flatMap((route) => route.nets);
 	bundleTrunks(nets);
-	assignPorts(nets);
+	assignPorts(nets, scene.ports);
 	slideLabels(scene, nets);
 	if (straightenIntoContainers(scene, [...chains.values()])) followLanes(nets);
 	if (unstrandLanes(scene, [...chains.values()])) followLanes(nets);
-	assignPorts(nets);
+	assignPorts(nets, scene.ports);
 	pullOntoPorts(scene, [...chains.values()], [...routed.values()], nets);
 	closeJogs(
 		scene,
