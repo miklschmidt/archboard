@@ -18,6 +18,12 @@ const FACE_MARGIN = 20;
 const SEARCH_STEPS = 64;
 /** How far a lane keeps from a container wall it passes beside: half a lane. */
 const WALL_CLEARANCE = LANE / 2;
+/**
+ * How far a lane keeps from a group region's wall where it has the room: a
+ * lane and a half. A region's wall is a thin line with no inset, and a line
+ * a lane off it, as off a card, reads as part of its outline.
+ */
+const REGION_CLEARANCE = 1.5 * LANE;
 
 /** Where a chain touches a band. */
 interface Station {
@@ -178,15 +184,15 @@ function laneRuns(chains: readonly Chain[]): LaneRun[] {
 }
 
 /**
- * The stretch a group region's wall keeps a lane off: a lane either side,
- * or, where a card stands nearer, only up to the lane that card keeps, so
- * the gap between them still holds a line at half a lane from the wall.
+ * The stretch a group region's wall keeps a lane off: a lane and a half
+ * either side, or, where a card stands nearer, only up to the lane that card
+ * keeps, so the gap between them still holds a line at half a lane from the wall.
  * @param wall The wall.
  * @param items What the band's items keep a lane off.
  * @returns The stretch, open at both ends.
  */
 function besideRegion(wall: number, items: readonly [number, number][]): [number, number] {
-	let [low, high] = [wall - LANE, wall + LANE];
+	let [low, high] = [wall - REGION_CLEARANCE, wall + REGION_CLEARANCE];
 	for (const [start, end] of items) {
 		if (end > low && end <= wall - WALL_CLEARANCE) low = end;
 		if (start < high && start >= wall + WALL_CLEARANCE) high = start;
@@ -216,7 +222,7 @@ class Occupancy {
 		for (const { band, left, end } of scene.headings())
 			this.taken[band]!.push([left - LANE, end + LANE]);
 		// A lane keeps off the walls of the containers it passes, as off a card,
-		// and a lane off a group region's, which has no inset of its own.
+		// and further off a group region's, which has no inset of its own.
 		scene.bands.forEach((_, band) => {
 			const held = [...this.taken[band]!];
 			for (const [id, walls] of scene.walled(band))

@@ -12,9 +12,11 @@ import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
 import { routeLabels, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import loweredRegion from "./lowered-region.json";
 import underPort from "./under-port.json";
+import browserApplication from "./browser-application.json";
 import skillEvaluation from "./skill-evaluation.json";
 import wrappedBlocker from "./wrapped-blocker.json";
 
@@ -235,4 +237,42 @@ test("a line leaving a container stands its label below the container", async ()
 	const frame = drawing.atlas.nodes["lib"]!;
 	const label = routeLabels(drawing.svg).get("ax")!;
 	expect(label.y).toBeGreaterThanOrEqual(frame.y + frame.height);
+});
+
+// Taken from a board of this repository: its containers laid stacked scored
+// within a twentieth of laid as Graphviz ranks them, on a page far taller
+// than the pane's proportions, and a wider clearance off group regions'
+// walls tipped it to the tall page.
+test("a board that reads about as well stacked keeps the page that fits the pane better", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(browserApplication),
+		theme: "light",
+		policy: SemanticPolicySchema.parse({
+			levels: ["system", "service", "module"],
+			nodeKinds: Object.fromEntries(
+				["system", "service", "module", "ui"].map((kind) => [
+					kind,
+					{ name: kind, icon: "RiBox3Line" },
+				]),
+			),
+			relationshipKinds: {
+				call: { name: "Call", dash: "solid", arrowhead: "filled" },
+				http: { name: "HTTP", color: "sky", dash: "solid", arrowhead: "filled" },
+				event: { name: "Event", color: "fuchsia", dash: "dashed", arrowhead: "open" },
+				data: { name: "Data", color: "teal", dash: "solid", arrowhead: "filled" },
+				render: { name: "Render", color: "pink", dash: "solid", arrowhead: "filled" },
+			},
+			groups: {
+				drawing: { name: "Drawing", color: "violet" },
+				panes: { name: "Live panes", color: "teal" },
+				walkthrough: { name: "Walkthroughs", color: "cyan" },
+				voice: { name: "Voice", color: "yellow" },
+				agent: { name: "Agent", color: "fuchsia" },
+			},
+		}),
+		layout: "track",
+	});
+	expect(drawing.width / drawing.height).toBeGreaterThan(
+		REFERENCE_PANE.width / REFERENCE_PANE.height,
+	);
 });

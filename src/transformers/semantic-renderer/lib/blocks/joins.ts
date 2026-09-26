@@ -263,4 +263,4 @@ function layJoined<Placed extends Page>(
 	return best;
 }
 
-export { joinWays, kindOf, layJoined, type Drawn };
+export { NEAR, joinWays, kindOf, layJoined, type Drawn };

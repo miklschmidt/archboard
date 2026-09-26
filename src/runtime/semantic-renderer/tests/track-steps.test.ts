@@ -202,7 +202,7 @@ function regionWalls(svg: string): Walls[] {
 
 /**
  * The columns where a line runs down beside a region's wall for more than a
- * lane, nearer it than a lane.
+ * lane, nearer it than a lane and a half.
  * @param points The line's corridor.
  * @param regions Every region's walls.
  * @returns Those columns.
@@ -217,7 +217,7 @@ function besideWalls(points: readonly DrawnPoint[], regions: readonly Walls[]): 
 				Math.min(bottom, walls.bottom) - Math.max(top, walls.top) > 16 &&
 				[walls.left, walls.right].some((wall) => {
 					const apart = Math.abs(from.x - wall);
-					return apart > 0.5 && apart < 16;
+					return apart > 0.5 && apart < 24;
 				}),
 		);
 		return beside ? [from.x] : [];
@@ -225,8 +225,10 @@ function besideWalls(points: readonly DrawnPoint[], regions: readonly Walls[]): 
 }
 
 // Reduced from dogfood boards: a line ran down beside a group region's wall
-// half a lane away, where it read as part of the region's outline.
-test("a line keeps a lane from a group region's wall it runs beside", async () => {
+// half a lane away, or a lane away, where it read as part of the region's
+// outline: a region's wall is a thin line with no inset, and a lane off it
+// reads as closer than a lane off a card.
+test("a line keeps a lane and a half from a group region's wall it runs beside", async () => {
 	for (const fixture of [durableWriteBoundary, oneCommand]) {
 		const drawing = await renderArchitecture({
 			content: orderedFixture(fixture),

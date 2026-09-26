@@ -1,0 +1,441 @@
+{
+	"nodes": [
+		{
+			"id": "yAFyqal3",
+			"order": 1000,
+			"name": "Browser client",
+			"kind": "system",
+			"responsibility": "The viewer: it owns the camera, the active view, the walkthrough position and what somebody picked out, and writes nothing"
+		},
+		{
+			"id": "HggZR41l",
+			"order": 2000,
+			"name": "Application composition",
+			"kind": "module",
+			"responsibility": "Connects pane and feature owners",
+			"parent": "yAFyqal3"
+		},
+		{
+			"id": "dtYjWvlf",
+			"order": 3000,
+			"name": "Semantic viewer",
+			"kind": "module",
+			"responsibility": "Reads and explores rendered boards",
+			"parent": "yAFyqal3",
+			"groups": ["drawing"]
+		},
+		{
+			"id": "xsn0RvSi",
+			"order": 4000,
+			"name": "Pane session",
+			"kind": "module",
+			"responsibility": "Keeps each pane in server contact",
+			"parent": "yAFyqal3",
+			"groups": ["panes"]
+		},
+		{
+			"id": "HCghQa6I",
+			"order": 5000,
+			"name": "Workspace routing",
+			"kind": "module",
+			"responsibility": "Restores pane display intent",
+			"parent": "yAFyqal3",
+			"groups": ["panes"]
+		},
+		{
+			"id": "zWQG6LJZ",
+			"order": 6000,
+			"name": "Board catalog",
+			"kind": "module",
+			"responsibility": "Lists boards available to open",
+			"parent": "yAFyqal3"
+		},
+		{
+			"id": "0x47EMoO",
+			"order": 7000,
+			"name": "Workbench client",
+			"kind": "service",
+			"responsibility": "The agent bar under the panes and the conversation beside them: the agent's state and its one action, Talk, the composer, and the conversation with its work, plans and approvals",
+			"parent": "yAFyqal3",
+			"groups": ["agent"]
+		},
+		{
+			"id": "0SRnYXnC",
+			"order": 8000,
+			"name": "Voice session",
+			"kind": "module",
+			"responsibility": "The live voice this tab holds for one pane: availability, start and stop, mute, recovery",
+			"parent": "yAFyqal3",
+			"groups": ["voice"]
+		},
+		{
+			"id": "4LDuKQvq",
+			"order": 9000,
+			"name": "Code target",
+			"kind": "module",
+			"responsibility": "Opens the code a subject is bound to",
+			"parent": "yAFyqal3"
+		},
+		{
+			"id": "G4NHQC25",
+			"order": 10000,
+			"name": "Archboard server",
+			"kind": "service",
+			"responsibility": "Owns every board and answers every read"
+		},
+		{
+			"id": "c4LPnwh5",
+			"order": 11000,
+			"name": "Shell",
+			"kind": "ui",
+			"responsibility": "The desktop frame: header, navigator, the panes, the agent bar under them and the conversation panel beside them",
+			"parent": "yAFyqal3"
+		},
+		{
+			"id": "hDWpDois",
+			"order": 12000,
+			"name": "Browser renderer",
+			"kind": "module",
+			"responsibility": "Draws a board in this tab: the tab's own canvas for measuring, a worker pool for the layout",
+			"parent": "yAFyqal3",
+			"groups": ["drawing"]
+		},
+		{
+			"id": "6uWT4mUj",
+			"order": 13000,
+			"name": "Server requests",
+			"kind": "module",
+			"responsibility": "The one way this tab speaks JSON to the Archboard server",
+			"parent": "yAFyqal3"
+		},
+		{
+			"id": "zs2QxCu7",
+			"order": 14000,
+			"name": "Agent setup",
+			"kind": "module",
+			"responsibility": "Talking needs no setup: a message or Talk is held and carried through sign-in, Codex starting and the conversation's creation",
+			"parent": "yAFyqal3",
+			"groups": ["agent"]
+		},
+		{
+			"id": "941UBxya",
+			"order": 15000,
+			"name": "Workbench transport",
+			"kind": "module",
+			"responsibility": "The agent's channel on one pane socket: the server's agent state in, the controllers' commands out",
+			"parent": "yAFyqal3",
+			"groups": ["agent"]
+		},
+		{
+			"id": "0yb2VbKc",
+			"order": 16000,
+			"name": "Voice subtitles",
+			"kind": "ui",
+			"responsibility": "The voice's words over the pane it runs for, measured into two lines",
+			"parent": "yAFyqal3",
+			"groups": ["voice"]
+		},
+		{
+			"id": "fscW90Xt",
+			"order": 17000,
+			"name": "Walkthrough recording",
+			"kind": "module",
+			"responsibility": "A page recording one walkthrough: it captures its own tab, mixes the voice into the file, and moves the pane a step at a time as the voice paces it",
+			"parent": "yAFyqal3",
+			"groups": ["walkthrough"]
+		}
+	],
+	"edges": [
+		{
+			"id": "4dl0EE8i",
+			"order": 1000,
+			"from": "HggZR41l",
+			"to": "c4LPnwh5",
+			"kind": "render",
+			"label": "the desktop frame",
+			"emphasis": "normal"
+		},
+		{
+			"id": "x9gy2EYu",
+			"order": 2000,
+			"from": "HggZR41l",
+			"to": "xsn0RvSi",
+			"kind": "call",
+			"label": "a session per pane; open a board in one",
+			"emphasis": "normal"
+		},
+		{
+			"id": "zfz9dQDf",
+			"order": 3000,
+			"from": "HCghQa6I",
+			"to": "HggZR41l",
+			"kind": "call",
+			"label": "restore through the workspace port",
+			"emphasis": "normal"
+		},
+		{
+			"id": "4iVsoxG0",
+			"order": 4000,
+			"from": "zWQG6LJZ",
+			"to": "dtYjWvlf",
+			"kind": "call",
+			"label": "the vault's board listing",
+			"emphasis": "normal"
+		},
+		{
+			"id": "pqG9kqlF",
+			"order": 5000,
+			"from": "dtYjWvlf",
+			"to": "G4NHQC25",
+			"kind": "http",
+			"label": "board documents, listing, policy",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "PuILGsjg",
+			"order": 6000,
+			"from": "xsn0RvSi",
+			"to": "G4NHQC25",
+			"kind": "event",
+			"label": "the pane socket: registration and news",
+			"emphasis": "hero"
+		},
+		{
+			"id": "Cw08FQeQ",
+			"order": 9000,
+			"from": "xsn0RvSi",
+			"to": "4LDuKQvq",
+			"kind": "call",
+			"label": "open the bound code",
+			"emphasis": "normal"
+		},
+		{
+			"id": "ygbcyDVT",
+			"order": 10000,
+			"from": "4LDuKQvq",
+			"to": "6uWT4mUj",
+			"kind": "call",
+			"label": "request activation",
+			"emphasis": "normal"
+		},
+		{
+			"id": "VbLQ6rfX",
+			"order": 11000,
+			"from": "HggZR41l",
+			"to": "dtYjWvlf",
+			"kind": "render",
+			"label": "one stage per pane",
+			"emphasis": "hero"
+		},
+		{
+			"id": "G55H6teG",
+			"order": 12000,
+			"from": "dtYjWvlf",
+			"to": "hDWpDois",
+			"kind": "call",
+			"label": "draw this board here",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "WchncnH1",
+			"order": 13000,
+			"from": "HggZR41l",
+			"to": "0x47EMoO",
+			"kind": "render",
+			"label": "agent bar, conversation, Talk",
+			"emphasis": "normal"
+		},
+		{
+			"id": "chjmKQLj",
+			"order": 14000,
+			"from": "6uWT4mUj",
+			"to": "G4NHQC25",
+			"kind": "http",
+			"label": "JSON",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "vo87NlJg",
+			"order": 15000,
+			"from": "HggZR41l",
+			"to": "HCghQa6I",
+			"kind": "call",
+			"label": "opening address; write what panes show",
+			"emphasis": "normal"
+		},
+		{
+			"id": "ep2NF6Z5",
+			"order": 16000,
+			"from": "HggZR41l",
+			"to": "zWQG6LJZ",
+			"kind": "call",
+			"label": "the listing, read again on pane news",
+			"emphasis": "normal"
+		},
+		{
+			"id": "fbpFPAWn",
+			"order": 17000,
+			"from": "zWQG6LJZ",
+			"to": "xsn0RvSi",
+			"kind": "call",
+			"label": "the live panes' inventory",
+			"emphasis": "muted"
+		},
+		{
+			"id": "NcFmPj3W",
+			"order": 18000,
+			"from": "c4LPnwh5",
+			"to": "zWQG6LJZ",
+			"kind": "call",
+			"label": "the navigator's outline",
+			"emphasis": "muted"
+		},
+		{
+			"id": "5U5bpM9T",
+			"order": 19000,
+			"from": "xsn0RvSi",
+			"to": "6uWT4mUj",
+			"kind": "call",
+			"label": "report the pane, show a board, take back",
+			"emphasis": "normal"
+		},
+		{
+			"id": "ZDhACWtE",
+			"order": 20000,
+			"from": "xsn0RvSi",
+			"to": "dtYjWvlf",
+			"kind": "event",
+			"label": "a board's new version",
+			"emphasis": "hero"
+		},
+		{
+			"id": "rcSUaP1b",
+			"order": 21000,
+			"from": "xsn0RvSi",
+			"to": "941UBxya",
+			"kind": "call",
+			"label": "one per socket generation",
+			"emphasis": "normal"
+		},
+		{
+			"id": "EAT8ges2",
+			"order": 22000,
+			"from": "941UBxya",
+			"to": "G4NHQC25",
+			"kind": "event",
+			"label": "agent commands and snapshots",
+			"emphasis": "normal"
+		},
+		{
+			"id": "kZtsu0nq",
+			"order": 23000,
+			"from": "HggZR41l",
+			"to": "941UBxya",
+			"kind": "call",
+			"label": "controllers over the focused pane's",
+			"emphasis": "normal"
+		},
+		{
+			"id": "md5cpNZV",
+			"order": 24000,
+			"from": "HggZR41l",
+			"to": "zs2QxCu7",
+			"kind": "call",
+			"label": "send, Talk, narrate",
+			"emphasis": "normal"
+		},
+		{
+			"id": "FWzvKaC4",
+			"order": 25000,
+			"from": "zs2QxCu7",
+			"to": "941UBxya",
+			"kind": "call",
+			"label": "sign in, create the conversation, deliver",
+			"emphasis": "normal"
+		},
+		{
+			"id": "UBmrpsBg",
+			"order": 26000,
+			"from": "zs2QxCu7",
+			"to": "0SRnYXnC",
+			"kind": "call",
+			"label": "start voice",
+			"emphasis": "normal"
+		},
+		{
+			"id": "qKwYD1B2",
+			"order": 27000,
+			"from": "HggZR41l",
+			"to": "0SRnYXnC",
+			"kind": "call",
+			"label": "a session for voice's pane; mute, stop",
+			"emphasis": "normal"
+		},
+		{
+			"id": "DTRtWKab",
+			"order": 28000,
+			"from": "0SRnYXnC",
+			"to": "941UBxya",
+			"kind": "data",
+			"label": "the pane's agent and media state",
+			"emphasis": "normal"
+		},
+		{
+			"id": "vm1xFAYO",
+			"order": 29000,
+			"from": "HggZR41l",
+			"to": "0yb2VbKc",
+			"kind": "render",
+			"label": "over voice's pane",
+			"emphasis": "normal"
+		},
+		{
+			"id": "4zVUlTbS",
+			"order": 30000,
+			"from": "HggZR41l",
+			"to": "fscW90Xt",
+			"kind": "call",
+			"label": "the recorder, when the address asks",
+			"emphasis": "normal"
+		},
+		{
+			"id": "UEuRPGRJ",
+			"order": 31000,
+			"from": "fscW90Xt",
+			"to": "zs2QxCu7",
+			"kind": "call",
+			"label": "Talk, as a recording",
+			"emphasis": "normal"
+		},
+		{
+			"id": "5y8UuVhP",
+			"order": 32000,
+			"from": "fscW90Xt",
+			"to": "0SRnYXnC",
+			"kind": "call",
+			"label": "live and loud yet; stop",
+			"emphasis": "normal"
+		},
+		{
+			"id": "Gxh1Pbx3",
+			"order": 33000,
+			"from": "fscW90Xt",
+			"to": "dtYjWvlf",
+			"kind": "data",
+			"label": "the step to show",
+			"emphasis": "normal"
+		}
+	]
+}
