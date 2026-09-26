@@ -42,6 +42,12 @@ interface Band {
 	firstTrack: number;
 }
 
+/** Where a station of a line stands: its band and its x. */
+interface Spot {
+	readonly band: number;
+	readonly x: number;
+}
+
 /** A frame: its placed node, its depth and every card or frame inside it. */
 interface Frame {
 	readonly node: ElkNode;
@@ -278,16 +284,47 @@ class Scene {
 	}
 
 	/**
-	 * The frames and group regions whose body covers an x on a band, as a key a lane must keep.
-	 * @param band The band.
-	 * @param x The x.
-	 * @returns The ids of the frames and regions covering it, joined.
+	 * Whether a station stands inside a frame: on a band the frame covers, between its walls.
+	 * @param id The frame.
+	 * @param station The station.
+	 * @returns True when it is inside.
 	 */
-	framesAt(band: number, x: number): string {
-		return [...this.walled(band)]
-			.filter(([, [low, high]]) => x > low && x < high)
-			.map(([id]) => id)
-			.join(",");
+	inside(id: string, station: Spot): boolean {
+		const walls = this.walled(station.band).get(id);
+		return walls !== undefined && station.x > walls[0] && station.x < walls[1];
+	}
+
+	/**
+	 * Whether some stations of a line may stand on a column for the frames it
+	 * lies in: inside every frame both stations either side of them stand in,
+	 * outside every frame neither does, and either where one does, so the line
+	 * crosses a frame's wall only where it must, and once. A group region is no
+	 * frame: a line may cross into one.
+	 * @param between The stations, and the stations either side of them.
+	 * @param between.lanes The stations.
+	 * @param between.before The station above them.
+	 * @param between.after The station below them.
+	 * @param x The column.
+	 * @returns True when the column keeps them so.
+	 */
+	keepsFrames(
+		between: {
+			readonly lanes: readonly Spot[];
+			readonly before: Spot;
+			readonly after: Spot;
+		},
+		x: number,
+	): boolean {
+		const { lanes, before, after } = between;
+		return lanes.every(({ band }) =>
+			// The cached walls, frames only.
+			[...this.walled(band)]
+				.filter(([id]) => this.frames.has(id))
+				.every(([id, [low, high]]) => {
+					const above = this.inside(id, before);
+					return above !== this.inside(id, after) || (x > low && x < high) === above;
+				}),
+		);
 	}
 
 	/**

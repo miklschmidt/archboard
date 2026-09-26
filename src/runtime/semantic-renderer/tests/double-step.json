@@ -1,0 +1,427 @@
+{
+	"nodes": [
+		{
+			"id": "xJIh6Jdp",
+			"order": 1000,
+			"name": "Browser client",
+			"kind": "service",
+			"responsibility": "Mounts one viewer in each pane",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/ui/application/components/ApplicationPane.tsx"
+			},
+			"drillDown": {
+				"board": "Browser application",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "pZRxBz2h",
+			"order": 2000,
+			"name": "Semantic viewer",
+			"kind": "module",
+			"responsibility": "Explores one rendered architecture",
+			"description": "The read-only semantic-board-canvas module. The board the server holds defines content; the picture is drawn in this page from it, or by the server's render route; local state defines only how a user reads it (ADR 0023).",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/ui/semantic-board-canvas/index.ts"
+			}
+		},
+		{
+			"id": "tmwUm8BL",
+			"order": 3000,
+			"name": "Fetch semantic reads",
+			"kind": "function",
+			"responsibility": "Decode the listing, a board, a render and the vault check",
+			"description": "Plain fetch to the semantic read routes; refused, unreachable or invalid replies become explicit viewer failures carrying the server's code. There is no write call.",
+			"parent": "pZRxBz2h",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts"
+			}
+		},
+		{
+			"id": "ntOE7caV",
+			"order": 4000,
+			"name": "Resolve board meaning",
+			"kind": "function",
+			"responsibility": "Inspect subjects and variants",
+			"description": "Parses the board document, resolves the shown variant, describes nodes, edges, flows, steps, bindings, containment, and proposal standing.",
+			"parent": "pZRxBz2h",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/ui/semantic-board-canvas/lib/board-document.ts"
+			}
+		},
+		{
+			"id": "3KqRuOEN",
+			"order": 5000,
+			"name": "Render stage states",
+			"kind": "function",
+			"responsibility": "Present every reachable state",
+			"description": "The renderedView and stageBody functions in SemanticBoardStage.tsx present loading, waiting, empty, error, stale and drawn states, with the inspector, variant, view and walkthrough controls and the drill trail, from the entry point's query and reading state.",
+			"parent": "pZRxBz2h",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx"
+			}
+		},
+		{
+			"id": "UDkL7Tn6",
+			"order": 7000,
+			"name": "Select semantic subjects",
+			"kind": "function",
+			"responsibility": "Map gestures through the atlas",
+			"description": "Accepts only semantic IDs present in the server atlas and toggles the shared attention mark on rendered groups.",
+			"parent": "pZRxBz2h",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/ui/semantic-board-canvas/lib/subjects.ts"
+			}
+		},
+		{
+			"id": "yUjSLnkw",
+			"order": 8000,
+			"name": "Follow drill-downs",
+			"kind": "function",
+			"responsibility": "Navigate linked board levels",
+			"description": "Resolves a link's exact current or named target variant against the target board's document and says its lifecycle before it is opened; a named variant that is gone is reported, never swapped for the current one. The trail back is the entry point's drill navigation (use-drill-down.ts).",
+			"parent": "pZRxBz2h",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/ui/semantic-board-canvas/lib/drill-target.ts"
+			}
+		},
+		{
+			"id": "z0dvHsUt",
+			"order": 9000,
+			"name": "Drive walkthrough focus",
+			"kind": "function",
+			"responsibility": "Focus each narrative beat",
+			"description": "Maps beat subjects through the atlas to a focus rectangle and reports named subjects missing from the current view.",
+			"parent": "pZRxBz2h",
+			"groups": ["walkthrough"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/ui/semantic-board-canvas/lib/narrative.ts"
+			}
+		},
+		{
+			"id": "VC7yvPZB",
+			"order": 10000,
+			"name": "Refresh changed boards",
+			"kind": "function",
+			"responsibility": "Invalidate live cached drawings",
+			"description": "Hears a board's new version from the pane socket and, for the board on screen (or a name it had before a rename), cancels its reads in flight and invalidates its pictures and its document, keeping the last usable picture on screen.",
+			"parent": "pZRxBz2h",
+			"groups": ["panes"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/ui/semantic-board-canvas/hooks/use-semantic-board-changes.ts"
+			}
+		},
+		{
+			"id": "aYC7if1N",
+			"order": 11000,
+			"name": "Viewer entry point",
+			"kind": "function",
+			"responsibility": "Mount queries and reading state",
+			"description": "SemanticBoardStage, mounted by ApplicationPane. It asks the query cache for the picture of the reading on screen, owns the reading hooks (drill trail, level, variant, walkthrough, fit, report) and hands the answer to renderedView.",
+			"parent": "pZRxBz2h",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx"
+			}
+		},
+		{
+			"id": "38hwLCO1",
+			"order": 12000,
+			"name": "Picture source",
+			"kind": "function",
+			"responsibility": "Where a pane's pictures come from: the renderer this page installed at start, or the server's render route",
+			"parent": "pZRxBz2h",
+			"groups": ["drawing"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/ui/semantic-board-canvas/lib/picture-source.ts"
+			}
+		},
+		{
+			"id": "AaCxSfhT",
+			"order": 13000,
+			"name": "Picture cache",
+			"kind": "function",
+			"responsibility": "Holds a drawing only as a read-only cache, stamped with the version, policy and renderer build it was made for",
+			"description": "ADR 0023: the browser owns presentation and nothing else. A stamp that no longer matches is not shown.",
+			"parent": "pZRxBz2h",
+			"groups": ["drawing"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/ui/semantic-board-canvas/lib/picture-cache.ts"
+			}
+		},
+		{
+			"id": "F90402mH",
+			"order": 14000,
+			"name": "Draw here",
+			"kind": "module",
+			"responsibility": "Draws the board in this tab, with the tab's own canvas and worker pool",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/ui/browser-renderer/index.ts"
+			},
+			"drillDown": {
+				"board": "Semantic renderer",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "IJkVbMK2",
+			"order": 16000,
+			"name": "Local pictures",
+			"kind": "function",
+			"responsibility": "Draws a picture in this page from the board and policy the cache holds, and keeps it",
+			"description": "Shows a kept picture only when its stamp matches the board's version, the policy and the renderer build; forgets pictures of boards that moved when the server lists them; draws a changed board's readings again ahead of time.",
+			"parent": "pZRxBz2h",
+			"groups": ["drawing"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/ui/semantic-board-canvas/lib/local-pictures.ts"
+			}
+		},
+		{
+			"id": "VcgeYlnZ",
+			"order": 17000,
+			"name": "Keep fitted",
+			"kind": "function",
+			"responsibility": "Fits the whole reading, or the walkthrough step, until somebody pans or zooms",
+			"description": "A new board, variant or view fits the entire selected reading; each walkthrough step takes the camera back and fits its subjects; a new picture glides from the last reading, and leaving a presentation glides back.",
+			"parent": "pZRxBz2h",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/ui/semantic-board-canvas/hooks/use-auto-fit.ts"
+			}
+		},
+		{
+			"id": "LayJIvbq",
+			"order": 18000,
+			"name": "Walkthrough position",
+			"kind": "function",
+			"responsibility": "Which walkthrough is open and at which step: chosen by hand, or driven by narration or a recording",
+			"parent": "pZRxBz2h",
+			"groups": ["walkthrough"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/ui/semantic-board-canvas/hooks/use-walkthrough.ts"
+			}
+		},
+		{
+			"id": "gT3UJ3yd",
+			"order": 19000,
+			"name": "Report the reading",
+			"kind": "function",
+			"responsibility": "Tells the pane what is on screen, only when it changes",
+			"description": "Board, resolved variant, view, selection, the drawn version and where a presented walkthrough has got to: what the pane session reports to the server, what an agent and voice read, and what a recording paces itself by.",
+			"parent": "pZRxBz2h",
+			"groups": ["panes"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/ui/semantic-board-canvas/hooks/use-reported-reading.ts"
+			}
+		},
+		{
+			"id": "J6P3Mhjb",
+			"order": 20000,
+			"name": "Archboard server",
+			"kind": "service",
+			"responsibility": "Answers the semantic read routes",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/server/archboard/lib/semantic-board-routes.ts"
+			},
+			"drillDown": {
+				"board": "Archboard server",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		}
+	],
+	"edges": [
+		{
+			"id": "SBeG5Ns0",
+			"order": 1000,
+			"from": "xJIh6Jdp",
+			"to": "aYC7if1N",
+			"kind": "render",
+			"label": "mount in pane, with any driven step",
+			"emphasis": "normal"
+		},
+		{
+			"id": "axWdg78p",
+			"order": 5000,
+			"from": "ntOE7caV",
+			"to": "3KqRuOEN",
+			"kind": "data",
+			"label": "inspection and standing",
+			"emphasis": "normal"
+		},
+		{
+			"id": "I1b9UiOY",
+			"order": 7000,
+			"from": "3KqRuOEN",
+			"to": "UDkL7Tn6",
+			"kind": "call",
+			"label": "pick attention",
+			"emphasis": "normal"
+		},
+		{
+			"id": "EIAfMMlW",
+			"order": 8000,
+			"from": "yUjSLnkw",
+			"to": "ntOE7caV",
+			"kind": "call",
+			"label": "read the target board",
+			"emphasis": "normal"
+		},
+		{
+			"id": "8HTCy24H",
+			"order": 10000,
+			"from": "3KqRuOEN",
+			"to": "LayJIvbq",
+			"kind": "call",
+			"label": "choose and step",
+			"emphasis": "normal"
+		},
+		{
+			"id": "ttcJkRoJ",
+			"order": 11000,
+			"from": "z0dvHsUt",
+			"to": "VcgeYlnZ",
+			"kind": "data",
+			"label": "the step's focus",
+			"emphasis": "normal"
+		},
+		{
+			"id": "R4zJCAXX",
+			"order": 14000,
+			"from": "IJkVbMK2",
+			"to": "AaCxSfhT",
+			"kind": "call",
+			"label": "a drawing stamped for this version",
+			"emphasis": "normal"
+		},
+		{
+			"id": "9yW8SET1",
+			"order": 15000,
+			"from": "IJkVbMK2",
+			"to": "F90402mH",
+			"kind": "call",
+			"label": "draw it here",
+			"emphasis": "hero"
+		},
+		{
+			"id": "1BAA71RA",
+			"order": 17000,
+			"from": "38hwLCO1",
+			"to": "IJkVbMK2",
+			"kind": "call",
+			"label": "the page's own renderer",
+			"emphasis": "hero"
+		},
+		{
+			"id": "YjZLgBKG",
+			"order": 18000,
+			"from": "38hwLCO1",
+			"to": "tmwUm8BL",
+			"kind": "call",
+			"label": "the render route, otherwise",
+			"emphasis": "muted"
+		},
+		{
+			"id": "V9ngTrE9",
+			"order": 20000,
+			"from": "tmwUm8BL",
+			"to": "J6P3Mhjb",
+			"kind": "http",
+			"label": "semantic read routes",
+			"emphasis": "normal"
+		},
+		{
+			"id": "UubWA3xG",
+			"order": 21000,
+			"from": "aYC7if1N",
+			"to": "VcgeYlnZ",
+			"kind": "call",
+			"label": "fit until the camera is moved",
+			"emphasis": "normal"
+		},
+		{
+			"id": "aZWI05I3",
+			"order": 23000,
+			"from": "aYC7if1N",
+			"to": "LayJIvbq",
+			"kind": "call",
+			"label": "open step, and any driven one",
+			"emphasis": "normal"
+		},
+		{
+			"id": "ReedyDWe",
+			"order": 24000,
+			"from": "aYC7if1N",
+			"to": "z0dvHsUt",
+			"kind": "call",
+			"label": "the step's focus, once its picture is up",
+			"emphasis": "normal"
+		},
+		{
+			"id": "pjGLTugH",
+			"order": 25000,
+			"from": "z0dvHsUt",
+			"to": "UDkL7Tn6",
+			"kind": "call",
+			"label": "subject boxes in the atlas",
+			"emphasis": "normal"
+		},
+		{
+			"id": "TQiSprch",
+			"order": 26000,
+			"from": "3KqRuOEN",
+			"to": "yUjSLnkw",
+			"kind": "call",
+			"label": "resolve a link before following it",
+			"emphasis": "normal"
+		},
+		{
+			"id": "zhpc5qbc",
+			"order": 27000,
+			"from": "aYC7if1N",
+			"to": "gT3UJ3yd",
+			"kind": "call",
+			"label": "what is on screen",
+			"emphasis": "normal"
+		},
+		{
+			"id": "Pz4KA2iT",
+			"order": 28000,
+			"from": "gT3UJ3yd",
+			"to": "xJIh6Jdp",
+			"kind": "call",
+			"label": "board, variant, view, selection, step",
+			"emphasis": "normal"
+		},
+		{
+			"id": "Kx7K0XLU",
+			"order": 29000,
+			"from": "xJIh6Jdp",
+			"to": "VC7yvPZB",
+			"kind": "event",
+			"label": "a board's new version",
+			"emphasis": "normal"
+		}
+	]
+}

@@ -1,8 +1,9 @@
 // How often the track engine's lines step sideways (visual polish): each test
 // is a step a visual review found in real boards, reduced to a fixture. What
 // this catches: a long line whose lanes no one column holds stepping in
-// every channel it passes, and a line stepped aside from another it joins
-// at one port anyway.
+// every channel it passes, a line stepped aside from another it joins at one
+// port anyway, and a line that leaves a group region on a second track where
+// the first one runs clear.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -10,7 +11,9 @@ import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { corridorPoints, type DrawnPoint } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import onePointPort from "./one-point-port.json";
+import doubleStep from "./double-step.json";
 import staircase from "./staircase.json";
+import walkthroughStair from "./walkthrough-stair.json";
 
 /** The vocabulary the fixtures reduced from dogfood boards draw with, its groups in the vault's order. */
 const policy = SemanticPolicySchema.parse({
@@ -19,15 +22,20 @@ const policy = SemanticPolicySchema.parse({
 		module: { name: "Module", icon: "RiBox3Line" },
 		function: { name: "Function", icon: "RiCodeSSlashLine" },
 		external: { name: "External", icon: "RiExternalLinkLine" },
+		ui: { name: "User interface", icon: "RiLayoutLine" },
 	},
 	relationshipKinds: {
 		call: { name: "Call", dash: "solid", arrowhead: "filled" },
 		rpc: { name: "RPC", color: "violet", dash: "solid", arrowhead: "filled" },
+		http: { name: "HTTP", color: "sky", dash: "solid", arrowhead: "filled" },
 		event: { name: "Event", color: "fuchsia", dash: "dashed", arrowhead: "open" },
 		dependency: { name: "Dependency", dash: "dotted", arrowhead: "open" },
+		data: { name: "Data", color: "teal", dash: "solid", arrowhead: "filled" },
+		render: { name: "Render", color: "pink", dash: "solid", arrowhead: "filled" },
 	},
 	groups: {
 		drawing: { name: "Drawing", color: "violet" },
+		panes: { name: "Live panes", color: "teal" },
 		walkthrough: { name: "Walkthroughs", color: "cyan" },
 		voice: { name: "Voice", color: "yellow" },
 		workhorse: { name: "Workhorse", color: "sky" },
@@ -75,5 +83,34 @@ test("a line into a port another line drops into is not stepped aside from it", 
 		policy,
 	});
 	const points = corridorPoints(drawing.svg).get("mxl6bmYW")!;
+	expect(sidewaysLevels(points).size).toBeLessThanOrEqual(2);
+});
+
+// Reduced from a dogfood board: a line leaves a group region for a card far
+// below it. Its lanes were held to the region Graphviz drew the first one in,
+// so the line stepped down to a second track in the same empty channel
+// before running on outside the region.
+test("a line leaving a group region runs on the track it is already on", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(walkthroughStair),
+		theme: "light",
+		layout: "track",
+		policy,
+	});
+	const points = corridorPoints(drawing.svg).get("P1XYQl8l")!;
+	expect(sidewaysLevels(points).size).toBeLessThanOrEqual(1);
+});
+
+// Reduced from a dogfood board: a line's lanes stood on three columns, the
+// middle one meeting neither the lane above it nor the one below, so the line
+// stepped sideways twice in two channels where one step would do.
+test("a line steps once where one step joins the columns above and below", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(doubleStep),
+		theme: "light",
+		layout: "track",
+		policy,
+	});
+	const points = corridorPoints(drawing.svg).get("UubWA3xG")!;
 	expect(sidewaysLevels(points).size).toBeLessThanOrEqual(2);
 });

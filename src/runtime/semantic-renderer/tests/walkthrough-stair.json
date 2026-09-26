@@ -1,0 +1,214 @@
+{
+	"nodes": [
+		{
+			"id": "jChkQdeE",
+			"order": 1000,
+			"name": "Rasterize command",
+			"kind": "service",
+			"responsibility": "Asks the Archboard server for the SVG, then photographs it here and writes the receipt",
+			"groups": ["drawing"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/cli/commands/semantic-rasterize.ts"
+			},
+			"drillDown": {
+				"board": "Command interface",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "8c0zvhQW",
+			"order": 4000,
+			"name": "Raster session",
+			"kind": "function",
+			"responsibility": "Draws one SVG at a time in the page it opened: writes the file, loads it, proves the page ready, sets the scale and shoots",
+			"groups": ["drawing"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/semantic-rasterizer/lib/session.ts"
+			}
+		},
+		{
+			"id": "AVCQVNqI",
+			"order": 6000,
+			"name": "DevTools connection",
+			"kind": "function",
+			"responsibility": "One socket to a target: its calls and events, the page's last complaints, and a Blob streamed into a file",
+			"parent": "IzgAi2R1",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/headless-chromium/lib/devtools.ts"
+			}
+		},
+		{
+			"id": "R9St060W",
+			"order": 10000,
+			"name": "Chromium",
+			"kind": "external",
+			"responsibility": "The browser that paints the SVG, runs the recording page and answers over DevTools",
+			"description": "Found on this machine, or named by ARCHBOARD_RENDERER_CHROMIUM. Archboard neither ships nor manages it beyond its own child process group."
+		},
+		{
+			"id": "IzgAi2R1",
+			"order": 11000,
+			"name": "Headless browser",
+			"kind": "module",
+			"responsibility": "The one place archboard starts a browser of its own: private, reachable only over loopback DevTools, and proved gone",
+			"description": "ADR 0020. The rasterizer and the walkthrough recorder both start their Chromium here, each in its own process group and temporary root; what the pages show is the caller's business.",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/headless-chromium/index.ts"
+			}
+		},
+		{
+			"id": "ShT7QadJ",
+			"order": 12000,
+			"name": "Chromium executable",
+			"kind": "function",
+			"responsibility": "Which Chromium to run, spawning it in its own group and temp root, and making that whole group go away",
+			"parent": "IzgAi2R1",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/headless-chromium/lib/process.ts"
+			}
+		},
+		{
+			"id": "2UcHnREN",
+			"order": 13000,
+			"name": "Archboard server",
+			"kind": "service",
+			"responsibility": "Draws the SVG, serves the recording page and starts the voice that narrates it",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/server/archboard"
+			},
+			"drillDown": {
+				"board": "Archboard server",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "QSI6gCrL",
+			"order": 14000,
+			"name": "Record command",
+			"kind": "service",
+			"responsibility": "Picks the walkthrough, has it recorded to the file named, and discards the board afterwards when asked",
+			"groups": ["walkthrough"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/cli/commands/semantic-record.ts"
+			},
+			"drillDown": {
+				"board": "Command interface",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "hlLOugjc",
+			"order": 16000,
+			"name": "Page driver",
+			"kind": "function",
+			"responsibility": "Waits until the page is ready, starts it from a user gesture, follows each step and streams the finished file out",
+			"description": "Everything the page says crosses as the shared recording state and is parsed as such, so a page from another build is refused rather than guessed at.",
+			"groups": ["walkthrough"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/walkthrough-recorder/lib/drive.ts"
+			}
+		},
+		{
+			"id": "T1TYskKQ",
+			"order": 19000,
+			"name": "Recording page",
+			"kind": "ui",
+			"responsibility": "The server's own page on one board: shows the pane alone, paces each step by the voice, and records its tab into one file",
+			"description": "The tab capture is picture only. The voice plays through a muted audio element, so nobody hears a recording, and its stream is mixed into the file through one Web Audio destination whose track is there from the first frame. The browser writes the container itself: MP4 with H.264, or WebM with VP9.",
+			"groups": ["walkthrough"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/ui/walkthrough-recording/index.ts"
+			}
+		}
+	],
+	"edges": [
+		{
+			"id": "wI4kxS9L",
+			"order": 5000,
+			"from": "ShT7QadJ",
+			"to": "R9St060W",
+			"kind": "call",
+			"label": "spawn in its own group and temp root",
+			"emphasis": "normal"
+		},
+		{
+			"id": "aYI0EhkT",
+			"order": 6000,
+			"from": "8c0zvhQW",
+			"to": "AVCQVNqI",
+			"kind": "call",
+			"label": "one socket to the page",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "DIvMjVOy",
+			"order": 15000,
+			"from": "jChkQdeE",
+			"to": "2UcHnREN",
+			"kind": "http",
+			"label": "the SVG, faces embedded",
+			"emphasis": "normal"
+		},
+		{
+			"id": "P1XYQl8l",
+			"order": 16000,
+			"from": "QSI6gCrL",
+			"to": "2UcHnREN",
+			"kind": "http",
+			"label": "read the board; discard it when asked",
+			"emphasis": "normal"
+		},
+		{
+			"id": "IOU51tal",
+			"order": 22000,
+			"from": "hlLOugjc",
+			"to": "T1TYskKQ",
+			"kind": "rpc",
+			"label": "state, start, file",
+			"description": "Through the one global the page publishes, evaluated over the recorder's DevTools connection.",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "yWqRrF8i",
+			"order": 25000,
+			"from": "R9St060W",
+			"to": "2UcHnREN",
+			"kind": "http",
+			"label": "load the page on the board",
+			"emphasis": "normal"
+		},
+		{
+			"id": "4SigiIMB",
+			"order": 26000,
+			"from": "T1TYskKQ",
+			"to": "2UcHnREN",
+			"kind": "event",
+			"label": "voice as a recording; each step shown",
+			"description": "The page asks the server's agent for voice narrating this walkthrough as a recording, and reports each step it shows, which the server tells the voice model as it does a step chosen by hand.",
+			"emphasis": "normal"
+		}
+	]
+}

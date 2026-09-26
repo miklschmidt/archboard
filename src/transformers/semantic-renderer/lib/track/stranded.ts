@@ -52,7 +52,8 @@ function meetingColumn(station: Station, near: number): number {
  * the station it leads into or the one it leaves, the first that is free and
  * crosses no more lines than where it stands: a
  * label that stood in its way may have moved aside, and a run left where it
- * stood turns twice to reach its ends.
+ * stood turns twice to reach its ends. A run that stays on several columns
+ * has its steps closed instead ({@link closeSteps}).
  * @param scene The scene, its labels slid.
  * @param chains Every relationship's chain.
  * @returns Whether any run moved.
@@ -64,19 +65,89 @@ function unstrandLanes(scene: Scene, chains: readonly Chain[]): boolean {
 	);
 	return runs
 		.map((run) => {
-			const x = run.lanes[0]!.x;
-			const straight = run.lanes.every((lane) => lane.x === x);
-			if (straight && (meetsStraight(run.before, x) || meetsStraight(run.after, x))) return false;
 			const free = freeWithout(scene, runs, run);
-			const crossed = inversions(run, x, bands);
-			const column = [run.after, run.before]
+			return unstrandRun(run, free, bands) || closeSteps(run, free, bands);
+		})
+		.some(Boolean);
+}
+
+/**
+ * Move a run that stands on no one column, or on one neither of its ends
+ * reaches straight, onto the column of the station it leads into or the one
+ * it leaves, the first that is free and crosses no more lines.
+ * @param run The run.
+ * @param free What each band holds without it.
+ * @param bands Every chain's stations, by band.
+ * @returns Whether it moved.
+ */
+function unstrandRun(
+	run: LaneRun,
+	free: Occupancy,
+	bands: readonly ReadonlyMap<number, Station>[],
+): boolean {
+	const x = run.lanes[0]!.x;
+	const straight = run.lanes.every((lane) => lane.x === x);
+	if (straight && (meetsStraight(run.before, x) || meetsStraight(run.after, x))) return false;
+	const crossed = inversions(run, x, bands);
+	const column = [run.after, run.before]
+		.map((station) => meetingColumn(station, x))
+		.find((one) => free.fits(run, one) && inversions(run, one, bands) <= crossed);
+	if (column === undefined) return false;
+	for (const lane of run.lanes) lane.x = column;
+	return true;
+}
+
+/**
+ * Close the steps inside a run that stays on several columns: each piece of
+ * it on one column that meets neither the piece or label above it nor the one
+ * below it moves onto the column of one of them, the lower first, where that
+ * is free and crosses no more lines. The line then changes column once where
+ * it changed twice. A card is left to its port, which is placed later.
+ * @param run The run.
+ * @param free What each band holds without it.
+ * @param bands Every chain's stations, by band.
+ * @returns Whether any piece moved.
+ */
+function closeSteps(
+	run: LaneRun,
+	free: Occupancy,
+	bands: readonly ReadonlyMap<number, Station>[],
+): boolean {
+	// Lowest first, so a piece that joins the one below it is where the next one up can join.
+	return piecesOf(run)
+		.toReversed()
+		.map((piece) => {
+			const x = piece.lanes[0]!.x;
+			if (meetsStraight(piece.before, x) || meetsStraight(piece.after, x)) return false;
+			const crossed = inversions(piece, x, bands);
+			const column = [piece.after, piece.before]
+				.filter(({ kind }) => kind !== "card")
 				.map((station) => meetingColumn(station, x))
-				.find((one) => free.fits(run.lanes, one) && inversions(run, one, bands) <= crossed);
+				.find((one) => free.fits(piece, one) && inversions(piece, one, bands) <= crossed);
 			if (column === undefined) return false;
-			for (const lane of run.lanes) lane.x = column;
+			for (const lane of piece.lanes) lane.x = column;
 			return true;
 		})
 		.some(Boolean);
+}
+
+/**
+ * A run's lanes in pieces, each the lanes that stand on one column, with the
+ * stations either side of it.
+ * @param run The run.
+ * @returns The pieces, top to bottom.
+ */
+function piecesOf(run: LaneRun): LaneRun[] {
+	const pieces: LaneRun[] = [];
+	let start = 0;
+	run.lanes.forEach((lane, index) => {
+		const next = run.lanes[index + 1];
+		if (next !== undefined && next.x === lane.x) return;
+		const before = run.lanes[start - 1] ?? run.before;
+		pieces.push({ lanes: run.lanes.slice(start, index + 1), before, after: next ?? run.after });
+		start = index + 1;
+	});
+	return pieces;
 }
 
 /**
@@ -114,7 +185,7 @@ function pullRun(
 	ports: ReadonlyMap<Station, number>,
 ): boolean {
 	const x = portBeside(run, ports);
-	if (x === undefined || !freeWithout(scene, runs, run).fits(run.lanes, x)) return false;
+	if (x === undefined || !freeWithout(scene, runs, run).fits(run, x)) return false;
 	for (const lane of run.lanes) lane.x = x;
 	return true;
 }
@@ -157,7 +228,7 @@ function straightenIntoContainers(scene: Scene, chains: readonly Chain[]): boole
  */
 function straighten(scene: Scene, run: LaneRun, occupancy: Occupancy): boolean {
 	const { lanes, before, after } = run;
-	const x = straightOn(scene, before, after).find((column) => occupancy.fits(lanes, column));
+	const x = straightOn(scene, before, after).find((column) => occupancy.fits(run, column));
 	const moved = x !== undefined && lanes.some((lane) => lane.x !== x);
 	if (moved) for (const lane of lanes) lane.x = x;
 	for (const lane of lanes) occupancy.take(lane);
