@@ -10,7 +10,7 @@ import {
 	CONTAINER_INSET,
 } from "@/transformers/semantic-renderer/config";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
-import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
+import { LANE, REGION_CLEARANCE } from "@/transformers/semantic-renderer/lib/track/chains";
 import {
 	frameShapes,
 	regionShapes,
@@ -19,7 +19,10 @@ import {
 } from "@/transformers/semantic-renderer/lib/track/containers";
 import { REGION_CAPTION_INSET, type Scene } from "@/transformers/semantic-renderer/lib/track/scene";
 
-/** Room a group region keeps beside its members. */
+/**
+ * Room a group region keeps beside its members; beside a line it holds it
+ * keeps the clearance a lane keeps from its wall.
+ */
 const REGION_INSET = 14;
 
 /** One container whose side walls are fitted. */
@@ -28,6 +31,8 @@ interface Fitting {
 	box: Box;
 	/** The room it keeps beside what it holds. */
 	readonly inset: number;
+	/** The room it keeps beside a line it holds. */
+	readonly clearance: number;
 	/** The narrowest it may be: its heading's width. */
 	readonly narrowest: number;
 	/** Its title row or caption. */
@@ -83,7 +88,7 @@ function uprightsIn(lines: readonly (readonly Point[])[], box: Box): number[] {
 /**
  * Pull a container's side walls in to one inset from the outermost thing it
  * holds: its cards and labels, the containers inside it and the lines
- * through it. A wall never moves out, never leaves the container narrower
+ * through it, a group region's wall a lane and a half from a line. A wall never moves out, never leaves the container narrower
  * than its heading, and never carries the heading's words onto a line that
  * crosses the heading's row, which the router set one lane past the words.
  * @param fitting The container; its box is replaced.
@@ -97,19 +102,19 @@ function fitSide(
 	inner: readonly Fitting[],
 	lines: readonly (readonly Point[])[],
 ): void {
-	const { box, inset, narrowest, heading, words } = fitting;
+	const { box, inset, clearance, narrowest, heading, words } = fitting;
 	const held = [...items.filter((one) => overlaps(one, box)), ...inner.map((one) => one.box)];
 	const uprights = uprightsIn(lines, box);
-	const lows = [...held.map(({ x }) => x), ...uprights];
-	if (lows.length === 0) return;
-	const highs = [...held.map(({ x, width }) => x + width), ...uprights];
+	if (held.length + uprights.length === 0) return;
+	const lows = [...held.map(({ x }) => x - inset), ...uprights.map((x) => x - clearance)];
+	const highs = [
+		...held.map(({ x, width }) => x + width + inset),
+		...uprights.map((x) => x + clearance),
+	];
 	const crossing = uprightsIn(lines, { ...heading, x: box.x, width: box.width });
 	const right = box.x + box.width;
-	let low = Math.max(
-		box.x,
-		Math.min(Math.min(...lows) - inset, ...crossing.map((x) => x - LANE - words)),
-	);
-	let high = Math.min(right, Math.max(...highs) + inset);
+	let low = Math.max(box.x, Math.min(...lows, ...crossing.map((x) => x - LANE - words)));
+	let high = Math.min(right, Math.max(...highs));
 	if (high - low < narrowest) {
 		high = Math.min(right, low + narrowest);
 		low = Math.max(box.x, high - narrowest);
@@ -184,13 +189,15 @@ function fitSides(
 		const title = scene.titles.get(id)!;
 		const words = scene.words.get(title)!;
 		const narrowest = words + ARCHITECTURE_HEADER_PADDING;
-		return { box, inset: CONTAINER_INSET, narrowest, heading: scene.moved(title, left), words };
+		const heading = scene.moved(title, left);
+		return { box, inset: CONTAINER_INSET, clearance: CONTAINER_INSET, narrowest, heading, words };
 	});
 	const banded = regions.map(({ box, caption }): Fitting => {
 		const words = REGION_CAPTION_INSET + caption.width;
 		return {
 			box,
 			inset: REGION_INSET,
+			clearance: REGION_CLEARANCE,
 			narrowest: words + REGION_CAPTION_INSET,
 			heading: caption,
 			words,

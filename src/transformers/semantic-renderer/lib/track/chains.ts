@@ -494,6 +494,7 @@ export {
 	FACE_MARGIN,
 	LANE,
 	Occupancy,
+	REGION_CLEARANCE,
 	chainOf,
 	crossingsOf,
 	freeWithout,
