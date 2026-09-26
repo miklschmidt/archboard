@@ -1,0 +1,206 @@
+{
+	"nodes": [
+		{
+			"id": "4P7YZdnj",
+			"order": 1000,
+			"name": "Pepperisl quartz",
+			"kind": "service",
+			"responsibility": "Lan eagl meadow: alpha lant pep islan orang ti h river alpha timbere or",
+			"drillDown": {
+				"board": "Archboard server",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "hoh4xPWb",
+			"order": 2000,
+			"name": "Lantern fal kettle",
+			"kind": "function",
+			"responsibility": "Gard bravo su gard carbo quart"
+		},
+		{
+			"id": "tcwsrSQv",
+			"order": 4000,
+			"name": "Kett mea carbonal",
+			"kind": "function",
+			"responsibility": "Bravo q harborca needleora delt need, ea riv kett ti r falc br rive fa quar"
+		},
+		{
+			"id": "i2CrY6Xj",
+			"order": 5000,
+			"name": "Carbonmea timberneedl",
+			"kind": "function",
+			"responsibility": "Timberp peppe timbermea riveral",
+			"groups": ["writes"]
+		},
+		{
+			"id": "1gdbsn6M",
+			"order": 9000,
+			"name": "Carbo garde islan",
+			"kind": "function",
+			"responsibility": "Lantern lan meadowj deltais",
+			"groups": ["writes"]
+		},
+		{
+			"id": "qTv7HuBw",
+			"order": 10000,
+			"name": "Harbor kett lanternlant",
+			"kind": "function",
+			"responsibility": "Quartz summi quartz fa a meado need: b quartzalpha, h need bra me garden",
+			"groups": ["writes"]
+		},
+		{
+			"id": "lkf45vPe",
+			"order": 17000,
+			"name": "Timber delta",
+			"kind": "function",
+			"responsibility": "River harbo f carb islandb ne: isl peppe lant timberb qu, oran lan gar kett jung or"
+		},
+		{
+			"id": "uZ8BMtTA",
+			"order": 18000,
+			"name": "Peppe pep harb",
+			"kind": "function",
+			"responsibility": "Falcon ora river'l falc garde har timb alph is, kettle fa harbo alpha quar b harbor timberd lant rive",
+			"groups": ["writes"]
+		},
+		{
+			"id": "UFO3ulXp",
+			"order": 20000,
+			"name": "Quart eagle",
+			"kind": "function",
+			"responsibility": "Alp kettle is d harb qua quart: p peppe lant island ora falco, or jungl't bravo is ke, qua ora garde ju",
+			"groups": ["writes"]
+		}
+	],
+	"edges": [
+		{
+			"id": "hx5UtSvH",
+			"order": 1000,
+			"from": "4P7YZdnj",
+			"to": "hoh4xPWb",
+			"kind": "call",
+			"label": "quartzi alpha",
+			"emphasis": "normal"
+		},
+		{
+			"id": "k1IwXpzd",
+			"order": 3000,
+			"from": "4P7YZdnj",
+			"to": "tcwsrSQv",
+			"kind": "call",
+			"label": "alph alphaea river",
+			"emphasis": "normal"
+		},
+		{
+			"id": "i6pk24Ov",
+			"order": 4000,
+			"from": "4P7YZdnj",
+			"to": "i2CrY6Xj",
+			"kind": "call",
+			"label": "islan needleeag harbor",
+			"emphasis": "normal"
+		},
+		{
+			"id": "smLdyKlp",
+			"order": 8000,
+			"from": "4P7YZdnj",
+			"to": "1gdbsn6M",
+			"kind": "call",
+			"label": "garden needlepepp",
+			"emphasis": "hero"
+		},
+		{
+			"id": "VWo4vJh0",
+			"order": 11000,
+			"from": "1gdbsn6M",
+			"to": "i2CrY6Xj",
+			"kind": "call",
+			"label": "bravo riversummi",
+			"emphasis": "normal"
+		},
+		{
+			"id": "EqTEFYDa",
+			"order": 12000,
+			"from": "uZ8BMtTA",
+			"to": "qTv7HuBw",
+			"kind": "data",
+			"label": "timber islandbrav needl",
+			"emphasis": "hero"
+		},
+		{
+			"id": "a85kagAw",
+			"order": 16000,
+			"from": "1gdbsn6M",
+			"to": "uZ8BMtTA",
+			"kind": "call",
+			"label": "needl su carbo mea gard summ ri",
+			"emphasis": "hero"
+		},
+		{
+			"id": "rs3a5Xhm",
+			"order": 17000,
+			"from": "1gdbsn6M",
+			"to": "UFO3ulXp",
+			"kind": "call",
+			"label": "lant lan meado sum fal alph",
+			"emphasis": "normal"
+		},
+		{
+			"id": "EKOObsIQ",
+			"order": 18000,
+			"from": "1gdbsn6M",
+			"to": "lkf45vPe",
+			"kind": "call",
+			"label": "eag alpha bra carb needler ga",
+			"emphasis": "normal"
+		},
+		{
+			"id": "CfW74kWK",
+			"order": 19000,
+			"from": "tcwsrSQv",
+			"to": "lkf45vPe",
+			"kind": "call",
+			"label": "m deltal gard jungl isl river",
+			"emphasis": "normal"
+		},
+		{
+			"id": "Wv77mINZ",
+			"order": 20000,
+			"from": "tcwsrSQv",
+			"to": "UFO3ulXp",
+			"kind": "call",
+			"label": "peppert timb de gar river ti mead",
+			"emphasis": "muted"
+		},
+		{
+			"id": "C0t1t0gb",
+			"order": 21000,
+			"from": "tcwsrSQv",
+			"to": "qTv7HuBw",
+			"kind": "data",
+			"label": "s harborca needlela",
+			"emphasis": "muted"
+		},
+		{
+			"id": "8Let5OXd",
+			"order": 23000,
+			"from": "uZ8BMtTA",
+			"to": "UFO3ulXp",
+			"kind": "call",
+			"label": "kett car ket eagl'c jungl",
+			"emphasis": "normal"
+		},
+		{
+			"id": "V478HCgq",
+			"order": 24000,
+			"from": "uZ8BMtTA",
+			"to": "lkf45vPe",
+			"kind": "call",
+			"label": "jung falconn lante falcon al ga",
+			"emphasis": "normal"
+		}
+	]
+}

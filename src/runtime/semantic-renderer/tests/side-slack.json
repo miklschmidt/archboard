@@ -1,0 +1,122 @@
+{
+	"nodes": [
+		{
+			"id": "n0",
+			"name": "alphaal harbor",
+			"kind": "module",
+			"responsibility": "del kettle: ri eagl lan summit, fal meadow timb, gar needleneedl alphaalp har oran bravobra island pep, car jungle quartzq"
+		},
+		{
+			"id": "n1",
+			"name": "bravobravob islandislan",
+			"kind": "module",
+			"responsibility": "eagleeag lant sum falconf meadow",
+			"parent": "n0"
+		},
+		{
+			"id": "n2",
+			"name": "carbonca jungle",
+			"kind": "module",
+			"responsibility": "falco mea timberti gardenga needle",
+			"parent": "n0",
+			"groups": ["drawing"]
+		},
+		{
+			"id": "n3",
+			"name": "delta kettlek",
+			"kind": "module",
+			"responsibility": "gar need alpha harb ora bravo isl pep carb: junglejungle, quart del kett, rive, eagleeag",
+			"parent": "n0",
+			"groups": ["voice"]
+		},
+		{
+			"id": "n4",
+			"name": "eagle lante",
+			"kind": "module",
+			"responsibility": "harborh orang br islan: p carbonc ju quar de kett riv eagleea lantern summits, falco meadowme tim gar needleneedlene alphaalp",
+			"parent": "n0",
+			"groups": ["workhorse"]
+		},
+		{
+			"id": "n5",
+			"name": "falco meadowmea",
+			"kind": "module",
+			"responsibility": "isl pepperp carbo jung qua delt ke rive eag, lanternl summ fal meado",
+			"parent": "n0",
+			"groups": ["voice"]
+		},
+		{
+			"id": "n6",
+			"name": "gardengarde needlenee",
+			"kind": "module",
+			"responsibility": "j quar deltadelt ket riverriverr: ea lanternl sum fal mea, timbe gar needl alph har oran, bra islan pep carb j quar de k rive ea lan summi falco me",
+			"parent": "n0",
+			"groups": ["walkthrough"]
+		}
+	],
+	"edges": [
+		{
+			"id": "e0",
+			"from": "n1",
+			"to": "n2",
+			"kind": "call",
+			"label": "lan summi fal mead"
+		},
+		{
+			"id": "e1",
+			"from": "n1",
+			"to": "n4",
+			"kind": "call",
+			"label": "mead, timb, gardeng"
+		},
+		{
+			"id": "e2",
+			"from": "n4",
+			"to": "n3",
+			"kind": "call",
+			"label": "needl alpha"
+		},
+		{
+			"id": "e3",
+			"from": "n1",
+			"to": "n3",
+			"kind": "call",
+			"label": "o bravobr isl pepperp carb; jung, quar"
+		},
+		{
+			"id": "e4",
+			"from": "n1",
+			"to": "n5",
+			"kind": "call",
+			"label": "pepp carbonc jung"
+		},
+		{
+			"id": "e5",
+			"from": "n1",
+			"to": "n6",
+			"kind": "call",
+			"label": "qua deltadel, kett riv eagleea lant"
+		},
+		{
+			"id": "e6",
+			"from": "n6",
+			"to": "n4",
+			"kind": "call",
+			"label": "rive, ea l summitsum"
+		},
+		{
+			"id": "e7",
+			"from": "n6",
+			"to": "n3",
+			"kind": "call",
+			"label": "summ fal mead tim; gard"
+		},
+		{
+			"id": "e8",
+			"from": "n6",
+			"to": "n2",
+			"kind": "call",
+			"label": "tim gard ne alph"
+		}
+	]
+}
