@@ -582,6 +582,7 @@ export {
 	crossingsOf,
 	freeWithout,
 	inversions,
+	labelStation,
 	laneRuns,
 	meetsAt,
 	meets,
