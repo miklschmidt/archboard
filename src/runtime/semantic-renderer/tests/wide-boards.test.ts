@@ -216,6 +216,42 @@ function wallHugs(drawing: RenderedDiagram): string[] {
 }
 
 /**
+ * The label boxes that stand across a container's edge: over part of a frame
+ * or group region without standing wholly inside it, below its top edge.
+ * @param drawing The rendered board.
+ * @returns Each such label's relationship id and the container's corner.
+ */
+function labelsAcrossWalls(drawing: RenderedDiagram): string[] {
+	const boxes =
+		/<g data-semantic-kind="(?:region"[^>]*data-depiction="container|group-region)"[^>]*>\s*(?:<rect class="ab-halo"[^>]*>\s*)?<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/gu;
+	// Labels are read on the page, so the containers are moved onto it with them.
+	const shift = bodyShift(drawing.svg);
+	const containers = [...drawing.svg.matchAll(boxes)].map(([, x, y, width, height]) => ({
+		x: Number(x) + shift.x,
+		y: Number(y) + shift.y,
+		width: Number(width),
+		height: Number(height),
+	}));
+	return [...routeLabels(drawing.svg)].flatMap(([id, label]) =>
+		containers
+			.filter((box) => {
+				const overlaps =
+					label.x < box.x + box.width &&
+					box.x < label.x + label.width &&
+					label.y < box.y + box.height &&
+					box.y < label.y + label.height;
+				const inside =
+					label.x >= box.x &&
+					label.x + label.width <= box.x + box.width &&
+					label.y > box.y &&
+					label.y + label.height <= box.y + box.height;
+				return overlaps && !inside;
+			})
+			.map((box) => `${id} across ${box.x},${box.y}`),
+	);
+}
+
+/**
  * The routes that run on a slant anywhere longer than a rounded corner: a
  * route is drawn across and down, and a slant is a route that lost its way.
  * @param drawing The rendered board.
@@ -259,6 +295,7 @@ for (const board of cases) {
 			});
 			expectIntact(drawing, content);
 			expect(slants(drawing), "routes on a slant").toEqual([]);
+			expect(labelsAcrossWalls(drawing), "labels across a container's edge").toEqual([]);
 			if (layout === "track") {
 				expect(nearLanes(drawing), "lines closer than a lane").toEqual([]);
 				expect(wallHugs(drawing), "lines along a container's wall").toEqual([]);

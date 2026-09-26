@@ -412,9 +412,10 @@ class Relay {
 
 	/**
 	 * Where a label box's centre may not stand on its band: within a card's
-	 * clearance of a card, title row or caption, a label's of a label, a lane
-	 * of another line's lane, or a container's inset of a frame's or region's
-	 * wall, which it never straddles.
+	 * clearance of a card, title row or the caption it keeps clear of
+	 * ({@link Scene.captionsFor}), a label's of a label, a lane of another
+	 * line's lane, or a container's inset of a frame's or region's wall, which
+	 * it never straddles.
 	 * @param chain The label's chain.
 	 * @param label The box.
 	 * @returns The intervals its centre keeps out of.
@@ -422,8 +423,8 @@ class Relay {
 	labelWalls(chain: Chain, label: Item): Span[] {
 		const half = label.box.width / 2;
 		const { band } = label;
-		const { cards, titles, regions, labels } = this.scene;
-		const solid = [...cards.values(), ...titles.values(), ...regions.map(({ caption }) => caption)];
+		const { cards, titles, labels } = this.scene;
+		const solid = [...cards.values(), ...titles.values(), ...this.scene.captionsFor(label)];
 		const others = [...labels.values()].filter((item) => item !== label);
 		const lanes = this.chains
 			.filter((other) => other !== chain)
