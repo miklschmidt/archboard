@@ -135,8 +135,9 @@ function canvasFor(laid: Size, drawn: Box | undefined, margin: number): Canvas {
 	if (drawn === undefined) {
 		return { width: laid.width, height: laid.height, shiftX: 0, shiftY: 0 };
 	}
-	const shiftX = Math.max(0, margin - drawn.x);
-	const shiftY = Math.max(0, margin - drawn.y);
+	// A whole-unit shift keeps every one-unit outline on the pixel grid.
+	const shiftX = Math.ceil(Math.max(0, margin - drawn.x));
+	const shiftY = Math.ceil(Math.max(0, margin - drawn.y));
 	return {
 		width: Math.ceil(Math.max(laid.width, drawn.x + drawn.width + margin) + shiftX),
 		height: Math.ceil(Math.max(laid.height, drawn.y + drawn.height + margin) + shiftY),

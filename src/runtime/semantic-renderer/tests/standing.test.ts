@@ -21,6 +21,7 @@ import {
 	type DrawnGroup,
 } from "@/runtime/semantic-renderer/tests/drawn-subjects";
 import { colourIn, paintedIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
+import { arrangementOf } from "@/runtime/semantic-renderer/tests/drawn-atlas";
 
 /**
  * One architecture, as its own contract reads it.
@@ -192,17 +193,17 @@ describe("a picture nobody stated a standing for", () => {
 	test("keeps this simple fixture's cards stable while comparison channels change", async () => {
 		// This fixture needs separate comparison channels without additional card
 		// space. More crowded boards may need new layout reservations as routes change.
-		const plain = await drawn();
-		const compared = await drawn(STANDING);
+		// A pin on a subject at the page's edge may move the whole drawing in to
+		// keep the margin; the arrangement is what must hold still.
+		const plain = arrangementOf(await drawn());
+		const compared = arrangementOf(await drawn(STANDING));
 		expect(compared.atlas.nodes).toEqual(plain.atlas.nodes);
 		expect(compared.atlas.regions).toEqual(plain.atlas.regions);
 		expect(compared.atlas.edges).not.toEqual(plain.atlas.edges);
 
-		const sequence = drawnSequence();
-		const comparedSequence = drawnSequence(SEQUENCE_STANDING);
-		expect(comparedSequence.width).toBe(sequence.width);
-		expect(comparedSequence.height).toBe(sequence.height);
-		expect(comparedSequence.atlas).toEqual(sequence.atlas);
+		const sequence = arrangementOf(drawnSequence());
+		const comparedSequence = arrangementOf(drawnSequence(SEQUENCE_STANDING));
+		expect(comparedSequence).toEqual(sequence);
 	});
 });
 

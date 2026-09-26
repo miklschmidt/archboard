@@ -3,6 +3,7 @@ import { renderArchitecture, renderBoard } from "@/runtime/semantic-renderer/ind
 import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
+import { arrangementOf } from "@/runtime/semantic-renderer/tests/drawn-atlas";
 
 test("a nested proposal lays out its comparison content fresh and retains subject standing", async () => {
 	const retained = [
@@ -58,8 +59,9 @@ test("a nested proposal lays out its comparison content fresh and retains subjec
 		fonts: "linked",
 		policy: DEFAULT_SEMANTIC_POLICY,
 	});
-	expect(proposal.reply.atlas).toEqual(fresh.atlas);
-	expect([proposal.reply.width, proposal.reply.height]).toEqual([fresh.width, fresh.height]);
+	// The proposal's pins may move the drawing in from the page's edge; its
+	// arrangement is the fresh one's.
+	expect(arrangementOf(proposal.reply)).toEqual(arrangementOf(fresh));
 	expect(proposal.reply.changes?.standing).toEqual({
 		cloud: "unchanged",
 		cluster: "unchanged",

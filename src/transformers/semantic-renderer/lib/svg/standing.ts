@@ -37,10 +37,13 @@
 //
 // ## What it deliberately does not touch
 //
-// Geometry. Every mark here is painted inside a box the layout had already
+// Geometry. Every mark here is painted on a box the layout had already
 // decided on, or under a route that was already routed. Channel allocation
 // happens earlier in the layout owner and may change routes and their space
-// requirements when comparison standings differ. This painter moves nothing.
+// requirements when comparison standings differ. This painter moves nothing
+// against anything else: where a corner mark reaches past a subject on the
+// page's top or left margin, the page grows to keep the margin
+// ({@link markedBox}) and the whole drawing moves in by that much, as one.
 //
 // The selection halo. That ring sits three units *outside* a subject and is
 // invisible until a viewer puts `is-selected` on the group; the standing sits on
@@ -65,7 +68,7 @@
 // dispute altogether, because one map held one mark per subject.
 
 import type { ChangeKind } from "@/shared/semantic-board/index";
-import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
+import { coord, union, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { tag, wrap, type Attributes } from "@/transformers/semantic-renderer/lib/svg/primitives";
 
@@ -261,12 +264,11 @@ function standingOutline(
 /**
  * The pin on a subject's top-left corner.
  *
- * Inside the box rather than astride its corner, for two reasons that agree: a
- * mark reaching outside a subject would be a mark the atlas does not cover and
- * the page margin has to make room for, and a mark astride the corner would sit
- * exactly where the selection ring passes. Six units in clears a card's icon
- * chip, a container's title block and a flow frame's header alike, because all
- * three are set in further than that.
+ * Centred just inside the corner and large enough to read at a glance, so it
+ * stands on the corner and reaches past the subject's outline. The page counts
+ * that reach ({@link markedBox}): a pinned subject on the page's top or left
+ * margin moves the drawing in, and the pin keeps the margin every other edge
+ * keeps. The atlas covers the subject, not its pin.
  * @param box The subject's box.
  * @param standing How it stands, or undefined when this is not a proposal.
  * @param palette The theme's colours.
@@ -352,9 +354,11 @@ const BADGE_SIZE = 11;
  *
  * A silhouette no standing wears: the three pins are discs, and this is the
  * shape that means "look at this before you trust it" everywhere else a person
- * has seen one.
+ * has seen one. It reaches this far from its centre, to each side, above and
+ * below, which the page counts where it reaches past a subject.
  */
-const BADGE_GLYPH = "M0,-5.2 L5.4,4.4 H-5.4 Z";
+const BADGE_REACH = { side: 5.4, above: 5.2, below: 4.4 };
+const BADGE_GLYPH = `M0,-${BADGE_REACH.above} L${BADGE_REACH.side},${BADGE_REACH.below} H-${BADGE_REACH.side} Z`;
 const BADGE_BANG = "M0,-2.4 V0.9";
 const BADGE_DOT = "M0,2.6 V2.9";
 
@@ -388,11 +392,11 @@ function warningMark(x: number, y: number, palette: Palette): string {
  * The warning on a box's top-right corner.
  *
  * The mirror of the standing pin's corner, so a subject that is both marked
- * says both without either mark moving. It sits inside the box for the same two
- * reasons the pin does — the atlas covers what is inside a subject, and the
- * selection ring passes just outside it — and inside the right-hand padding
- * every box already leaves, so no word is ever nearer to it than the padding
- * allows and nothing had to be re-measured to make room.
+ * says both without either mark moving. Centred as far in from the corner as
+ * the pin, it reaches a little past the outline, and the page counts that reach
+ * as it counts the pin's ({@link markedBox}); inside, it stands in the
+ * right-hand padding every box already leaves, so no word is ever nearer to it
+ * than the padding allows and nothing had to be re-measured to make room.
  * @param box The subject's box.
  * @param unsettled Whether the board says this subject is undecided.
  * @param palette The theme's colours.
@@ -403,6 +407,32 @@ function warningBadge(box: Box, unsettled: boolean, palette: Palette): string {
 		return "";
 	}
 	return warningMark(box.x + box.width - PIN_INSET, box.y + PIN_INSET, palette);
+}
+
+/**
+ * What a subject's box and the marks on its corners cover, which the page must
+ * hold: its pin where it stands for something, and its warning where the board
+ * says it is undecided. Nothing is added where neither is drawn.
+ * @param box The subject's box.
+ * @param standing How it stands, or undefined when this is not a proposal.
+ * @param unsettled Whether the board says it is undecided.
+ * @returns The box, grown to its marks.
+ */
+function markedBox(box: Box, standing: SubjectStanding | undefined, unsettled: boolean): Box {
+	const pin = {
+		x: box.x + PIN_INSET - PIN_RADIUS,
+		y: box.y + PIN_INSET - PIN_RADIUS,
+		width: 2 * PIN_RADIUS,
+		height: 2 * PIN_RADIUS,
+	};
+	const badge = {
+		x: box.x + box.width - PIN_INSET - BADGE_REACH.side,
+		y: box.y + PIN_INSET - BADGE_REACH.above,
+		width: 2 * BADGE_REACH.side,
+		height: BADGE_REACH.above + BADGE_REACH.below,
+	};
+	const pinned = standing !== undefined && PIN_GLYPH[standing] !== "";
+	return union([box, ...(pinned ? [pin] : []), ...(unsettled ? [badge] : [])])!;
 }
 
 /**
@@ -449,6 +479,7 @@ export {
 	type UnsettledOf,
 	BADGE_SIZE,
 	TRAFFIC_ATTRIBUTE,
+	markedBox,
 	standingInk,
 	standingsFrom,
 	subjectGroup,
