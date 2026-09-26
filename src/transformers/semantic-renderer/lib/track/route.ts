@@ -18,10 +18,11 @@ import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
 import {
 	LANE,
 	chainOf,
-	straightenLanes,
 	type Station,
 	type Chain,
+	type LaneRun,
 } from "@/transformers/semantic-renderer/lib/track/chains";
+import { straightenLanes } from "@/transformers/semantic-renderer/lib/track/straighten";
 import {
 	assignPorts,
 	assignTracks,
@@ -374,13 +375,28 @@ function feedOf(
  * @param index The place of the net that joins the trunk.
  * @returns The lane and the column, or nothing.
  */
-function trunkFeed(own: readonly Net[], index: number): { lane: Station; x: number } | undefined {
+function trunkFeed(
+	own: readonly Net[],
+	index: number,
+): { lane: Station; x: number; run: LaneRun } | undefined {
 	const feed = feedOf(own, index);
 	if (feed?.lane.kind !== "lane" || feed.x === undefined) return undefined;
 	const { lane, x, below } = feed;
 	return Math.abs(x - lane.x) >= STRAIGHT && covers(own[index]!, below, x)
-		? { lane, x }
+		? { lane, x, run: feedRun(own, index, below) }
 		: undefined;
+}
+
+/**
+ * The lane that feeds a trunk as a run of its own, with the stations above and below it.
+ * @param own The line's nets, top to bottom.
+ * @param index The place of the net that joins the trunk.
+ * @param below Whether the trunk shares the lower face.
+ * @returns The run.
+ */
+function feedRun(own: readonly Net[], index: number, below: boolean): LaneRun {
+	const [upper, lower] = below ? [own[index - 1]!, own[index]!] : [own[index]!, own[index + 1]!];
+	return { lanes: [upper.bottom], before: upper.top, after: lower.bottom };
 }
 
 /**
@@ -401,14 +417,16 @@ function covers(net: Net, below: boolean, x: number): boolean {
 
 /**
  * Whether a lane may stand at an x: a lane clear of every card, label, title
- * row and other lane on its band, in the same frames.
+ * row and other lane on its band, in the frames the stations either side of
+ * it ask ({@link Scene.keepsFrames}).
  * @param scene The scene.
  * @param nets Every net.
- * @param lane The lane.
+ * @param run The lane, with the stations above and below it.
  * @param x The x.
  * @returns True when it is free.
  */
-function laneFree(scene: Scene, nets: readonly Net[], lane: Station, x: number): boolean {
+function laneFree(scene: Scene, nets: readonly Net[], run: LaneRun, x: number): boolean {
+	const lane = run.lanes[0]!;
 	const items = [...scene.cards.values(), ...scene.labels.values(), ...scene.titles.values()]
 		.filter((item) => item.band === lane.band)
 		.map(({ box }) => [box.x - LANE, box.x + box.width + LANE] as const);
@@ -417,7 +435,7 @@ function laneFree(scene: Scene, nets: readonly Net[], lane: Station, x: number):
 		.filter((station) => station.kind === "lane" && station.band === lane.band && station !== lane)
 		.map((station) => [station.x - LANE, station.x + LANE] as const);
 	const clear = [...items, ...lanes].every(([low, high]) => x <= low || x >= high);
-	return clear && scene.framesAt(lane.band, x) === scene.framesAt(lane.band, lane.x);
+	return clear && scene.keepsFrames(run, x);
 }
 
 /**
@@ -436,7 +454,7 @@ function pullIntoTrunks(scene: Scene, routes: readonly Routed[], nets: readonly 
 		own.forEach((_, index) => {
 			// One at a time, so a lane moved first is where the next one must keep clear of.
 			const feed = trunkFeed(own, index);
-			if (feed === undefined || !laneFree(scene, nets, feed.lane, feed.x)) return;
+			if (feed === undefined || !laneFree(scene, nets, feed.run, feed.x)) return;
 			feed.lane.x = feed.x;
 			moved = true;
 		});

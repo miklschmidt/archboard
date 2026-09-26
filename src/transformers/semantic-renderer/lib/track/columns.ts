@@ -9,6 +9,7 @@
 // with it, on a column no other line holds: taking one another line holds only
 // moved the step onto that line. It moves only to step fewer times, and never
 // to cross more lines.
+import { LABEL_CARD_CLEARANCE } from "@/transformers/semantic-renderer/config";
 import {
 	LANE,
 	Occupancy,
@@ -56,8 +57,8 @@ function clearHeadings(scene: Scene, chains: readonly Chain[]): void {
 /**
  * Stand every line that has a label on one column from card to card, where
  * one is free: free of every other line's lanes on every band its own lanes
- * pass, keeping each lane in its frames, and leaving its label a lane clear
- * of everything else on the label's band, in the same frames. Of the free
+ * pass, keeping the frames its cards ask ({@link Scene.keepsFrames}), and leaving its
+ * label a lane clear of everything else on the label's band. Of the free
  * columns a line takes the one that crosses fewest other lines, then steps
  * fewest times, and none that crosses more lines or steps as often as it does
  * where it stands. Longer lines choose first.
@@ -115,7 +116,7 @@ function columnOf(
 	const labels = middle.filter(({ kind }) => kind === "label");
 	const occupancy = new Occupancy(scene, new Set(labels.map(({ item }) => item!)));
 	others.forEach((lane) => occupancy.take(lane));
-	const fits = fitting(scene, occupancy, middle);
+	const fits = fitting(scene, occupancy, stretch);
 	const wanted = labels[0]!.x;
 	const [low, high] = [reachOf(before), reachOf(after)];
 	const both = [Math.max(low[0], high[0]), Math.min(low[1], high[1])] as const;
@@ -208,26 +209,25 @@ function stepsOf(own: readonly Station[], xs: readonly number[]): number {
  * Whether a line's stations between its cards may all stand on one column.
  * @param scene The placed scene.
  * @param occupancy What each band holds, the line's own label boxes left out.
- * @param middle The stations.
+ * @param stretch The stations between the line's cards, and its cards.
  * @returns The test for a column.
  */
-function fitting(
-	scene: Scene,
-	occupancy: Occupancy,
-	middle: readonly Station[],
-): (x: number) => boolean {
+function fitting(scene: Scene, occupancy: Occupancy, stretch: Stretch): (x: number) => boolean {
+	const { middle, before, after } = stretch;
 	const lanes = middle.filter(({ kind }) => kind === "lane");
 	const labels = middle.filter(({ kind }) => kind === "label");
 	const extent = extentOf(scene);
 	return (x) =>
-		occupancy.fits(lanes, x) &&
+		occupancy.fits({ lanes, before, after }, x) &&
+		scene.keepsFrames({ lanes: labels, before, after }, x) &&
 		labels.every((label) => labelFits(scene, { occupancy, extent }, label, x));
 }
 
 /**
  * Whether a label box may stand centred on a column: a lane clear of
- * everything else on its band, in the same frames as where it stands, and
- * within the scene's extent, since a label out past it widens the page.
+ * everything else on its band, a card's clearance from a group region's
+ * caption row it would reach above ({@link Scene.captionsFor}), and within
+ * the scene's extent, since a label out past it widens the page.
  * @param scene The placed scene.
  * @param room What the label keeps clear of.
  * @param room.occupancy What each band holds, the label's own box left out.
@@ -251,7 +251,13 @@ function labelFits(
 		room.occupancy.taken[label.band]!.every(([low, high]) => right <= low || left >= high) &&
 		x - width / 2 >= room.extent[0] &&
 		x + width / 2 <= room.extent[1] &&
-		scene.framesAt(label.band, x) === scene.framesAt(label.band, label.x)
+		scene
+			.captionsFor(label.item!)
+			.every(
+				({ box }) =>
+					x + width / 2 <= box.x - LABEL_CARD_CLEARANCE ||
+					x - width / 2 >= box.x + box.width + LABEL_CARD_CLEARANCE,
+			)
 	);
 }
 
