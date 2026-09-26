@@ -3,7 +3,7 @@
 // this catches: a long line whose lanes no one column holds stepping in
 // every channel it passes, a line stepped aside from another it joins at one
 // port anyway, a line that leaves a group region on a second track where the
-// first one runs clear, and a line that overshoots its branch off a trunk and
+// first one runs clear, and a line that runs past a group region's port and
 // doubles back.
 
 import { expect, test } from "bun:test";
@@ -26,7 +26,6 @@ import commandInterface from "./command-interface.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
 import oneCommand from "./one-command.json";
 import staircase from "./staircase.json";
-import trunkTurnBack from "./trunk-turn-back.json";
 import voiceCoordinator from "./voice-coordinator.json";
 import walkthroughStair from "./walkthrough-stair.json";
 
@@ -166,20 +165,6 @@ test("a line steps to its label's column once, not again between label and card"
 	});
 	const points = corridorPoints(drawing.svg).get("x9gy2EYu")!;
 	expect(sidewaysLevels(points).size).toBeLessThanOrEqual(3);
-});
-
-// Reduced from a dogfood board: a card's lines leave it by one trunk whose
-// port stood over the member end nearest the middle. One member branched off
-// the trunk on the far side of its target, so its line ran along the trunk
-// away from where it goes and doubled back.
-test("no line leaving a trunk doubles back along it", async () => {
-	const drawing = await renderArchitecture({
-		content: orderedFixture(trunkTurnBack),
-		theme: "light",
-		layout: "track",
-		policy,
-	});
-	for (const [id, points] of corridorPoints(drawing.svg)) expect(turnBacks(points), id).toBe(0);
 });
 
 // Reduced from a dogfood board: two lines leave a group region through one

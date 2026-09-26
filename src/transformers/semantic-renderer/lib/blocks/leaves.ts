@@ -70,18 +70,6 @@ function letPortsSlide(
 }
 
 /**
- * Tell a block's scene which of its cards are the block's own ports.
- * @param scene The block's scene.
- * @param block The block.
- */
-function markPorts(scene: Scene, block: Block): void {
-	for (const port of block.ports.keys()) {
-		const item = scene.cards.get(port);
-		if (item !== undefined) scene.ports.add(item);
-	}
-}
-
-/**
  * A pin as a block's scene reads it: a sliver as tall as its child block, at its port's x.
  * @param tree The blocks.
  * @param laid Every block laid out so far.
@@ -122,4 +110,4 @@ function slidesOf(scene: Scene, block: Block): [Item, readonly [number, number]]
 	});
 }
 
-export { PORT, cornerHeader, letPortsSlide, markPorts, pinnedLeaf };
+export { PORT, cornerHeader, letPortsSlide, pinnedLeaf };
