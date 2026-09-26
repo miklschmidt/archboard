@@ -22,9 +22,11 @@ import {
 	type Side,
 	type Size,
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
+import { openStretch, type Span } from "@/transformers/semantic-renderer/lib/blocks/open-edge";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { spreadPorts } from "@/transformers/semantic-renderer/lib/track/channels";
 import {
+	TRUNK_CLEARANCE,
 	TrunkRouter,
 	packedScore,
 	roomNeeded,
@@ -356,22 +358,13 @@ class PackLayout {
 	 */
 	placePorts(side: Side, width: number, y: number): void {
 		const { block, insets } = this;
-		const lines = [...block.lines.values()];
 		const ports = [...block.ports].filter(([, at]) => at === side).map(([port]) => port);
-		const wanted = ports
-			.map((port) => {
-				const reached = lines
-					.flatMap((line) =>
-						line.tail === port ? [line.head] : line.head === port ? [line.tail] : [],
-					)
-					.filter((end) => this.tree.pins.has(end))
-					.map((end) => this.pinX(end));
-				return { port, x: reached.reduce((sum, x) => sum + x, 0) / Math.max(1, reached.length) };
-			})
-			.toSorted((one, other) => one.x - other.x);
 		const header = block.header;
 		const low = insets.side + (side === "top" && header !== undefined ? header.width + LANE : 0);
 		const high = Math.max(width - insets.side, low + LANE * (ports.length + 1));
+		const wanted = ports
+			.map((port) => ({ port, x: this.wantedX(port, { side, y, edge: [low, high] }) }))
+			.toSorted((one, other) => one.x - other.x);
 		const xs = spreadPorts(
 			{ x: low, y: 0, width: high - low, height: 0 },
 			wanted.map(({ x }) => x),
@@ -384,6 +377,35 @@ class PackLayout {
 				height: PORT,
 			}),
 		);
+	}
+
+	/**
+	 * Where one of the block's own ports wants to stand: over or under the
+	 * pins its lines reach, on a stretch of its edge that no other packed
+	 * block stands against, a lane clear of their sides, since a trunk
+	 * reaches a port under a block only round it.
+	 * @param port The port.
+	 * @param at Its edge, the height it stands at, and the stretch it may stand on.
+	 * @param at.side The edge.
+	 * @param at.y The height.
+	 * @param at.edge The stretch.
+	 * @returns Its x.
+	 */
+	wantedX(port: string, at: { side: Side; y: number; edge: Span }): number {
+		const pins = [...this.block.lines.values()]
+			.flatMap((line) => (line.tail === port ? [line.head] : line.head === port ? [line.tail] : []))
+			.filter((end) => this.tree.pins.has(end));
+		const x = pins.reduce((sum, end) => sum + this.pinX(end), 0) / Math.max(1, pins.length);
+		const reached = new Set(pins.map((end) => this.tree.pins.get(end)!.block.id));
+		const against = this.block.items
+			.filter((item) => !reached.has(item))
+			.map((item) => this.boxes.get(item)!)
+			.filter(
+				(box) =>
+					(at.side === "top" ? box.y - at.y : at.y - box.y - box.height) < HEAD_GAP + this.gap,
+			);
+		const [low, high] = openStretch(at.edge, against, TRUNK_CLEARANCE + LANE, x);
+		return Math.min(high, Math.max(low, x));
 	}
 
 	/**
