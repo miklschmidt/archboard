@@ -270,6 +270,13 @@ function meets(one: Station, other: Station): boolean {
 	return one === other || (one.item !== undefined && one.item === other.item);
 }
 
+/** What the chains a line crosses in one channel count, between its stations above and below it. */
+type Counted = (
+	crossed: readonly ReadonlyMap<number, Station>[],
+	upper: Station,
+	lower: Station,
+) => number;
+
 /**
  * How many other chains a line would cross between each band and the next,
  * its lanes and label standing at some x: those whose order against it
@@ -277,12 +284,14 @@ function meets(one: Station, other: Station): boolean {
  * @param own The chain's stations, or a run of them with the stations either side.
  * @param xs Where each of them stands; a card's is ignored.
  * @param bands Every chain's stations, by band.
+ * @param counted What the chains crossed in one channel count: one each, unless told.
  * @returns The count.
  */
 function crossingsOf(
 	own: readonly Station[],
 	xs: readonly number[],
 	bands: readonly ReadonlyMap<number, Station>[],
+	counted?: Counted,
 ): number {
 	return own.slice(1).reduce((count, lower, index) => {
 		const upper = own[index]!;
@@ -294,7 +303,7 @@ function crossingsOf(
 				return false;
 			return (top - meetsAt(one, two.x)) * (bottom - meetsAt(two, one.x)) < 0;
 		});
-		return count + crossed.length;
+		return count + (counted?.(crossed, upper, lower) ?? crossed.length);
 	}, 0);
 }
 
@@ -569,6 +578,7 @@ export {
 	straightenIntoContainers,
 	straightenLanes,
 	type Chain,
+	type Counted,
 	type LaneRun,
 	type Station,
 };
