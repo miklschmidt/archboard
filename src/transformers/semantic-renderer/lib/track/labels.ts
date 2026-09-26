@@ -6,8 +6,9 @@
 // could reach it straight: a point both cards' faces cover, or as near as the
 // band allows, and then to the middle of that stretch where the room allows. An end that shares a trunk's port is not aimed at: the trunk
 // turns on its track wherever the box stands. Cards, title rows, lanes and frame walls stay where they are;
-// boxes between them keep their order and spacing, placed as close to where
-// they want to be as the gap allows.
+// boxes between them keep their spacing and their order, or the order of
+// where they want to be when that crosses fewer lines or as few
+// (`label-runs.ts`), placed as close to where they want to be as the gap allows.
 import {
 	CONTAINER_INSET,
 	LABEL_CARD_CLEARANCE,
@@ -15,6 +16,7 @@ import {
 } from "@/transformers/semantic-renderer/config";
 import { LANE, type Station } from "@/transformers/semantic-renderer/lib/track/chains";
 import { sharedAt, type Net } from "@/transformers/semantic-renderer/lib/track/channels";
+import { placeRun, type Slider } from "@/transformers/semantic-renderer/lib/track/label-runs";
 import { Scene, centreX, type Item } from "@/transformers/semantic-renderer/lib/track/scene";
 
 /** Room kept between a sliding box and a card or lane beside it. */
@@ -23,14 +25,6 @@ const LABEL_GAP = LANE;
 const FACE_MARGIN = 20;
 /** The bound of a stretch with nothing on one side: beyond any drawing. */
 const OPEN_REACH = 1_000_000;
-
-/** A label box that may slide, where it wants its centre, and where its line reaches it straight. */
-interface Slider {
-	readonly item: Item;
-	readonly wanted: number;
-	/** The x its line reaches it at straight from the station above, and from the one below. */
-	readonly reaches: readonly (readonly [number, number])[];
-}
 
 /** Something that stays put on a band, as an interval a box may not enter. */
 type Wall = readonly [number, number];
@@ -101,6 +95,7 @@ function slidersOf(nets: readonly Net[]): Slider[] {
 						item,
 						wanted: wantedCentre(item, above, below),
 						reaches: [reachFrom(above, "top"), reachFrom(below, "bottom")],
+						ends: [above.topX, below.bottomX],
 					},
 				];
 	});
@@ -183,118 +178,6 @@ function stretchOf(walls: readonly Wall[], item: Item): [number, number] {
 	return [Math.max(-OPEN_REACH, ...left), Math.min(OPEN_REACH, ...right)];
 }
 
-/** A placement's cost: how many lines jog at their labels, how many of those jogs are too short to turn whole, then how far the boxes stand from where they want to be. */
-type Cost = readonly [number, number, number];
-
-/** The shortest jog a line turns with two whole bends and a straight run between them. */
-const WHOLE_JOG = 2 * LANE;
-
-/** How far outside a reach still counts as in it: rounding, not a jog. */
-const TOLERANCE = 1e-6;
-
-/**
- * What one box costs standing at one centre.
- * @param slider The box.
- * @param centre Its centre.
- * @returns How many of its two lines jog there, and how far it stands from its wanted centre.
- */
-function costAt(slider: Slider, centre: number): Cost {
-	const off = slider.reaches.map(([low, high]) => Math.max(low - centre, centre - high, 0));
-	return [
-		off.filter((d) => d > TOLERANCE).length,
-		off.filter((d) => d > TOLERANCE && d < WHOLE_JOG - TOLERANCE).length,
-		Math.abs(centre - slider.wanted),
-	];
-}
-
-/**
- * Whether one cost is lower than another: fewer jogs, then less displacement.
- * @param one A cost.
- * @param other Another.
- * @returns True when the first is lower.
- */
-function cheaper(one: Cost, other: Cost): boolean {
-	if (one[0] !== other[0]) return one[0] < other[0];
-	if (one[1] !== other[1]) return one[1] < other[1];
-	return one[2] < other[2] - TOLERANCE;
-}
-
-/**
- * Place boxes that share one stretch: in their order, spaced, so that the
- * fewest lines jog, then each as near its wanted centre as that allows. A
- * box's cost changes only at its reaches' edges and its wanted centre, so
- * some best placement has every box at one of those points of its own or of
- * a box packed against it; each box tries them all, carried along the packed
- * row, and keeps the cheapest left neighbour that leaves it room.
- * @param sliders The boxes, left to right.
- * @param low The stretch's left edge.
- * @param high The stretch's right edge.
- */
-function placeRun(sliders: readonly Slider[], low: number, high: number): void {
-	const widths = sliders.map(({ item }) => item.box.width);
-	const gaps = widths.map((width, index) =>
-		index === 0 ? 0 : (widths[index - 1]! + width) / 2 + LABEL_LABEL_CLEARANCE,
-	);
-	const offsets = gaps.map((_, index) =>
-		gaps.slice(0, index + 1).reduce((sum, gap) => sum + gap, 0),
-	);
-	const first = low + widths[0]! / 2;
-	const last = high - widths.at(-1)! / 2 - offsets.at(-1)!;
-	if (last < first) return;
-	const anchors = [
-		first,
-		last,
-		...sliders.flatMap((slider, index) =>
-			[
-				slider.wanted,
-				...slider.reaches.flatMap(([one, other]) => [
-					one - WHOLE_JOG,
-					one,
-					other,
-					other + WHOLE_JOG,
-				]),
-			].map((x) => x - offsets[index]!),
-		),
-	];
-	type Step = { centre: number; cost: Cost; from: number };
-	const steps: Step[][] = [];
-	sliders.forEach((slider, index) => {
-		const centres = [
-			...new Set(anchors.map((x) => Math.min(last, Math.max(first, x)) + offsets[index]!)),
-		];
-		steps.push(
-			centres.flatMap((centre): Step[] => {
-				const own = costAt(slider, centre);
-				if (index === 0) return [{ centre, cost: own, from: -1 }];
-				let best: Step | undefined;
-				let from = -1;
-				steps[index - 1]!.forEach((step, at) => {
-					if (step.centre > centre - gaps[index]! + TOLERANCE) return;
-					if (best === undefined || cheaper(step.cost, best.cost)) [best, from] = [step, at];
-				});
-				return best === undefined
-					? []
-					: [
-							{
-								centre,
-								cost: [best.cost[0] + own[0], best.cost[1] + own[1], best.cost[2] + own[2]],
-								from,
-							},
-						];
-			}),
-		);
-	});
-	let at = steps
-		.at(-1)!
-		.reduce((best, step, index, all) => (cheaper(step.cost, all[best]!.cost) ? index : best), 0);
-	for (let index = sliders.length - 1; index >= 0; index -= 1) {
-		const step = steps[index]![at]!;
-		const { item } = sliders[index]!;
-		item.box = { ...item.box, x: step.centre - item.box.width / 2 };
-		at = step.from;
-	}
-}
-
 /**
  * Slide every label box toward where its line can reach it straight, then
  * move the nets through it with it.
@@ -313,11 +196,7 @@ function slideLabels(scene: Scene, nets: readonly Net[]): void {
 		}
 		for (const [key, run] of runs) {
 			const [low, high] = key.split(",").map(Number);
-			placeRun(
-				run.toSorted((one, other) => one.item.box.x - other.item.box.x),
-				low!,
-				high!,
-			);
+			placeRun(run, low!, high!);
 		}
 	});
 	settleLabels(scene, nets);
