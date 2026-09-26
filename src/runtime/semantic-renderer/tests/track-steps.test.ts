@@ -15,6 +15,7 @@ import {
 	type DrawnPoint,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
+import { scorecardOf } from "@/runtime/semantic-renderer/tests/drawn-scorecard";
 import onePointPort from "./one-point-port.json";
 import regionPortTurnBack from "./region-port-turn-back.json";
 import boardRasterizer from "./board-rasterizer.json";
@@ -329,4 +330,16 @@ test("a line runs inside the drawing rather than round it", async () => {
 		const points = corridorPoints(drawing.svg).get(id)!;
 		expect(throughForeign(points, regionWalls(drawing.svg)), id).toEqual([]);
 	}
+});
+
+// Taken from a board of this repository, its groups packed as blocks of their
+// own: a pin on a group's block was settled only between its line's two ends
+// as they stood, and the board's lines into its groups crossed each other
+// eleven times where three will do. An end facing a pin stands where the
+// board routed the line first turning from it, and the pin moves onto the line.
+test("a packed group's pin stands where the board's line turns to it", async () => {
+	const content = orderedFixture(commandGroups);
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
+	const crossings = scorecardOf(drawing, content).find(({ name }) => name === "crossings")!;
+	expect(crossings.value).toBeLessThanOrEqual(3);
 });
