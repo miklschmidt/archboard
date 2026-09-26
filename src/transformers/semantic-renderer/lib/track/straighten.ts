@@ -71,10 +71,11 @@ function columnsOf(
 		return nearest(lane.x, (x) => occupancy.fits(one, x), occupancy.edges([lane])) ?? lane.x;
 	});
 	const pieces: number[] = [];
+	const drawn = new Map([run.before, ...run.lanes].map((station) => [station, station.x]));
 	let before = run.before;
 	while (pieces.length < run.lanes.length) {
 		const start = pieces.length;
-		const { end, x } = longestPiece(scene, { run, start, before }, occupancy, bands);
+		const { end, x } = longestPiece(scene, { run, start, before, drawn }, occupancy, bands);
 		// A piece placed is where the next one leaves from.
 		for (const lane of run.lanes.slice(start, end)) {
 			[lane.x, before] = [x ?? alone[start]!, lane];
@@ -96,22 +97,28 @@ function columnsOf(
  * @param from.run The run.
  * @param from.start The place of its first lane.
  * @param from.before The station above that lane, placed.
+ * @param from.drawn Where the run's stations stood before any piece was placed.
  * @param occupancy What each band holds so far.
  * @param bands Every chain's stations, by band.
  * @returns Where the stretch ends, past its last lane, and its column if one holds it.
  */
 function longestPiece(
 	scene: Scene,
-	from: { run: LaneRun; start: number; before: Station },
+	from: {
+		run: LaneRun;
+		start: number;
+		before: Station;
+		drawn: ReadonlyMap<Station, number>;
+	},
 	occupancy: Occupancy,
 	bands: readonly ReadonlyMap<number, Station>[],
 ): { end: number; x: number | undefined } {
-	const { run, start, before } = from;
+	const { run, start, before, drawn } = from;
 	let found: { end: number; x: number | undefined } = { end: start + 1, x: undefined };
 	for (let end = start + 1; end <= run.lanes.length; end += 1) {
 		const lanes = run.lanes.slice(start, end);
 		const after = run.lanes[end] ?? run.after;
-		const x = columnOf(scene, { lanes, before, after }, occupancy, bands);
+		const x = columnOf(scene, { lanes, before, after }, occupancy, bands, drawn);
 		if (x === undefined) break;
 		found = { end, x };
 	}
@@ -153,6 +160,7 @@ function fromPort(
  * @param run The run.
  * @param occupancy What each band holds so far.
  * @param bands Every chain's stations, by band.
+ * @param drawn Where the run's stations stood before any of it moved, when some did.
  * @returns The column, or nothing when no column is free on every band.
  */
 function columnOf(
@@ -160,6 +168,7 @@ function columnOf(
 	run: LaneRun,
 	occupancy: Occupancy,
 	bands: readonly ReadonlyMap<number, Station>[],
+	drawn: ReadonlyMap<Station, number> = new Map(),
 ): number | undefined {
 	const { lanes, before, after } = run;
 	const straight = straightOn(scene, before, after);
@@ -176,20 +185,25 @@ function columnOf(
 	];
 	const counts = free.map((x) => inversions(run, x, bands));
 	const fewest = Math.min(...counts);
-	return fewest > standingCrossings(run, bands) ? undefined : free[counts.indexOf(fewest)];
+	return fewest > standingCrossings(run, bands, drawn) ? undefined : free[counts.indexOf(fewest)];
 }
 
 /**
- * How many other chains a run crosses where its lanes stand.
+ * How many other chains a run crosses where Graphviz drew it.
  * @param run The run.
  * @param bands Every chain's stations, by band.
+ * @param drawn Where its stations stood before any of the run moved.
  * @returns The count.
  */
-function standingCrossings(run: LaneRun, bands: readonly ReadonlyMap<number, Station>[]): number {
+function standingCrossings(
+	run: LaneRun,
+	bands: readonly ReadonlyMap<number, Station>[],
+	drawn: ReadonlyMap<Station, number>,
+): number {
 	const own = [run.before, ...run.lanes, run.after];
 	return crossingsOf(
 		own,
-		own.map(({ x }) => x),
+		own.map((station) => drawn.get(station) ?? station.x),
 		bands,
 	);
 }
