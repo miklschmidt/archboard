@@ -95,6 +95,7 @@ export function routeGraph(avoid: AvoidEngine, graph: ElkNode): ElkNode {
  */
 function refinedRoutes(avoid: AvoidEngine, graph: ElkNode): ElkNode {
 	const endpoints = new EndpointOptions();
+	endpoints.refuse(graph.edges ?? [], requestOf(graph).refusedEnds);
 	const pins = settle(avoid, graph, endpoints);
 	if (pins === undefined) return graph;
 	const candidate = structuredClone(graph);

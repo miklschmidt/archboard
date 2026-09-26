@@ -18,6 +18,8 @@ const RouteRequestSchema = z.object({
 	laneChannels: z.boolean().default(false),
 	/** Reserved labels move onto the channel their cards share (label-centring.ts). */
 	centredLabels: z.boolean().default(false),
+	/** Line ends refused a face, as line:card:FACE, so unrelated lines on one stroke part (stacked-runs.ts). */
+	refusedEnds: z.array(z.string()).readonly().default([]),
 });
 
 /** What a reading may ask of its routes; anything left out is not asked. */
