@@ -349,7 +349,10 @@ function meetingX(station: Station, item: Item): number {
  * comes from or goes to, when it stands within a jog's width of it and can
  * move there clear of its neighbours: the line then runs straight through its
  * label instead of jogging a few points on either side of it, which a corner
- * could not turn whole.
+ * could not turn whole. Drawn inline, the station below is tried first, so a
+ * step the line must still take stands above its label, not between the
+ * label and the card below, just over the arrowhead; the Blocks engine keeps
+ * trying the station above first.
  * @param scene The scene.
  * @param nets Every net.
  */
@@ -357,10 +360,13 @@ function settleOnLanes(scene: Scene, nets: readonly Net[]): void {
 	const lanes = lanesByBand(scene, nets);
 	// In the board's order, so which of two neighbours moves first never depends on the document's.
 	const ordered = nets.toSorted((one, other) => one.order - other.order);
-	const pairs = [
-		...ordered.map((net) => [net.bottom, net.top] as const),
-		...ordered.map((net) => [net.top, net.bottom] as const),
-	].filter(([label, other]) => label.kind === "label" && other.kind !== "label");
+	const [below, above] = [
+		ordered.map((net) => [net.top, net.bottom] as const),
+		ordered.map((net) => [net.bottom, net.top] as const),
+	];
+	const pairs = (scene.inline ? [...below, ...above] : [...above, ...below]).filter(
+		([label, other]) => label.kind === "label" && other.kind !== "label",
+	);
 	const settled = new Set<Item>();
 	for (const [label, other] of pairs) {
 		const item = label.item!;

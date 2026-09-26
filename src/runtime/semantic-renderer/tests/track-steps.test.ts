@@ -148,6 +148,21 @@ test("a line steps once where one step joins the columns above and below", async
 	expect(sidewaysLevels(points).size).toBeLessThanOrEqual(3);
 });
 
+// Taken from a board of this repository: a line into a card stacked under
+// another in a group region went round the upper card, then stepped to its
+// label and again, a lane, from the label to the lower card's port, a
+// staircase just above its arrowhead. It steps once, above its label.
+test("a line steps to its label's column once, not again between label and card", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(browserApplication),
+		theme: "light",
+		layout: "track",
+		policy,
+	});
+	const points = corridorPoints(drawing.svg).get("x9gy2EYu")!;
+	expect(sidewaysLevels(points).size).toBeLessThanOrEqual(3);
+});
+
 // Reduced from a dogfood board: a card's lines leave it by one trunk whose
 // port stood over the member end nearest the middle. One member branched off
 // the trunk on the far side of its target, so its line ran along the trunk
