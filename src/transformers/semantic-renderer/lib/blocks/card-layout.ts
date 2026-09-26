@@ -391,21 +391,16 @@ class CardLayout {
 	 * Route the placed block's lines on tracks and read it back.
 	 * @param placed The placed block.
 	 * @param held The width the block keeps at least.
-	 * @param settled The ports its parent settled, which stay where they stand.
 	 * @returns The laid-out block.
 	 */
-	routed(
-		placed: ElkNode & { edges: ElkExtendedEdge[] },
-		held: number,
-		settled: ReadonlySet<string> = new Set(),
-	): Laid {
+	routed(placed: ElkNode & { edges: ElkExtendedEdge[] }, held: number): Laid {
 		const scene = new Scene(placed);
 		scene.edgesPage = this.edgesPage();
 		scene.inline = this.tree.nesting !== "blocks";
 		for (const item of this.block.items)
 			if (this.tree.blocks.get(item)?.kind === "region")
 				scene.regionBlocks.add(scene.cards.get(item)!);
-		letPortsSlide(scene, this.block, this.tree.nesting, settled);
+		letPortsSlide(scene, this.block, this.tree.nesting);
 		const lines = routeScene(
 			scene,
 			placed.edges.map((edge) => {
@@ -452,7 +447,7 @@ class CardLayout {
 			else if (this.tree.pins.has(leaf.id))
 				leaf.x = pinnedLeaf(this.tree, this.laid, leaf.id, centres).x;
 		}
-		return this.routed(placed, held, new Set(ports.keys()));
+		return this.routed(placed, held);
 	}
 
 	/**

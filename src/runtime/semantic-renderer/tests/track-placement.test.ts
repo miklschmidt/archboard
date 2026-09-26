@@ -6,7 +6,8 @@
 // of a line leaving a container standing beside it, where the card the line
 // leads into follows it out past the container's wall; and a board's
 // containers stacked or not by a near tie, given to the page that fits the
-// pane better however little, at the cost of a crossing.
+// pane better however little, at the cost of a crossing; and a group
+// region's ports held where its parent settled them, off their lines.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -18,6 +19,7 @@ import { scorecardOf } from "@/runtime/semantic-renderer/tests/drawn-scorecard";
 import loweredRegion from "./lowered-region.json";
 import underPort from "./under-port.json";
 import browserApplication from "./browser-application.json";
+import grading from "./grading.json";
 import workingWithAnAgent from "./working-with-an-agent.json";
 import skillEvaluation from "./skill-evaluation.json";
 import wrappedBlocker from "./wrapped-blocker.json";
@@ -257,4 +259,34 @@ test("a board that reads about as well stacked on a page that fits no clearly be
 	});
 	const crossings = scorecardOf(drawing, content).find(({ name }) => name === "crossings")!;
 	expect(crossings.value).toBe(0);
+});
+
+// Taken from a board of this repository: a group region packed as a block of
+// its own is routed again from where its parent settled its ports, and those
+// ports were held there, so three lines out of it through its bottom wall
+// stepped aside where each could run straight down from its card.
+test("a group region routed again slides its settled ports onto their lines", async () => {
+	const content = orderedFixture(grading);
+	const drawing = await renderArchitecture({
+		content,
+		theme: "light",
+		policy: SemanticPolicySchema.parse({
+			levels: ["service"],
+			nodeKinds: Object.fromEntries(
+				["module", "external"].map((kind) => [kind, { name: kind, icon: "RiBox3Line" }]),
+			),
+			relationshipKinds: {
+				call: { name: "Call", dash: "solid", arrowhead: "filled" },
+				data: { name: "Data", color: "teal", dash: "solid", arrowhead: "filled" },
+			},
+			groups: { grading: { name: "Grading", color: "purple" } },
+		}),
+		layout: "track",
+	});
+	const members = new Set(
+		content.nodes.filter(({ groups }) => groups?.includes("grading")).map(({ id }) => id),
+	);
+	const leaving = content.edges.filter(({ from, to }) => members.has(from) && !members.has(to));
+	expect(leaving.length).toBeGreaterThan(0);
+	for (const { id } of leaving) expect(dropsStraight(drawing.svg, id), id).toBe(true);
 });
