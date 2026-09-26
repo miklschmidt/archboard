@@ -7,7 +7,7 @@
 // relationship's lines are joined end to end (`assembly.ts`).
 import type { ElkNode } from "@archboard/elk-rs";
 import type { Viz } from "@viz-js/viz";
-import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
+import { REFERENCE_PANE, fitIn } from "@/shared/shell-geometry/index";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import { Assembly, type Placed } from "@/transformers/semantic-renderer/lib/blocks/assembly";
@@ -514,16 +514,22 @@ function drawingScore(placed: Placed): number {
 
 /**
  * Whether a board laid with its groups packed reads better than laid inline:
- * it scores higher and draws no more line. Blocks standing side by side can
- * trade a line's straight run for one round both blocks, which the score
- * alone does not see.
+ * it scores higher, draws no more line, and fits the pane no worse. Blocks
+ * standing side by side can trade a line's straight run for one round both
+ * blocks, which the score alone does not see; and packing is for a page the
+ * board's own ranks spread out, so a packing that fits worse only buys its
+ * crossings with lines run round the blocks.
  * @param packed The drawing with groups packed.
  * @param inline The drawing with groups inline.
  * @returns True when the packed one reads better.
  */
 function readsBetterPacked(packed: Placed, inline: Placed): boolean {
 	const [packs, inlines] = [packed, inline].map(({ edges }) => edges.map(({ points }) => points));
-	return drawingScore(packed) > drawingScore(inline) && lineLength(packs!) <= lineLength(inlines!);
+	return (
+		drawingScore(packed) > drawingScore(inline) &&
+		lineLength(packs!) <= lineLength(inlines!) &&
+		fitIn(packed) >= fitIn(inline)
+	);
 }
 
 /**
@@ -575,4 +581,4 @@ function hasRegions(tree: BlockTree): boolean {
 	return [...tree.root.clusters.values()].some(({ kind }) => kind === "region");
 }
 
-export { BLOCKS_PLACED, placeBlocks };
+export { BLOCKS_PLACED, placeBlocks, readsBetterPacked };
