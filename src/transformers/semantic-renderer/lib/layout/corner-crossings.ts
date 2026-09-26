@@ -1,26 +1,22 @@
-// Contacts at rounded corners, which never carry a hop. A straight line that
-// crosses a corner stays whole and the corner is cut beneath it; where two
-// corners touch, the later-painted one stays whole. Routes where they run
-// together, or leave or join each other's line, are one line there, not a
-// crossing: that is a join, and a dot marks it.
+// Contacts at rounded corners, which never carry a hop. A corner stays whole
+// and the line it touches is cut beneath it: a turn cut away leaves one line
+// ending where another starts. Where two corners touch, the later-painted one
+// stays whole. Routes where they run together, or leave or join each other's
+// line, are one line there, not a crossing: that is a join, and a dot marks it.
 import type { DrawingEdge } from "@/transformers/semantic-renderer/lib/drawing";
-import { BRIDGE_RADIUS } from "@/transformers/semantic-renderer/lib/design";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { curveBoxes } from "@/transformers/semantic-renderer/lib/layout/curve-clearance";
 import {
 	curveBounds,
-	EPSILON,
 	segmentStart,
 	type Curve,
 } from "@/transformers/semantic-renderer/lib/layout/curves";
 import {
 	across,
-	along,
 	crossingKey,
 	extentOf,
 	fixedOf,
 	overlaps,
-	pieceOf,
 	SHARED_INK,
 	type Axis,
 	type Bridge,
@@ -43,70 +39,6 @@ interface Scene {
 	readonly runOf: ReadonlyMap<string, Run>;
 	readonly cleared: Set<string>;
 	readonly touch: (a: Piece, b: Piece) => boolean;
-}
-
-/**
- * One coordinate of a cubic at a given fraction of its run.
- * @param values The start, two controls and end on one axis.
- * @param t Position along the cubic.
- * @returns The coordinate on that axis.
- */
-function cubicAt(values: readonly [number, number, number, number], t: number): number {
-	const rest = 1 - t;
-	return (
-		rest * rest * rest * values[0] +
-		3 * rest * rest * t * values[1] +
-		3 * rest * t * t * values[2] +
-		t * t * t * values[3]
-	);
-}
-
-/**
- * Locate one axis value inside a monotone rounded quarter-turn, ends included.
- * @param values Cubic control positions on the intersected axis.
- * @param coordinate The straight route's fixed coordinate.
- * @returns A curve fraction, if the turn reaches the coordinate.
- */
-function cubicFractionAt(
-	values: readonly [number, number, number, number],
-	coordinate: number,
-): number | undefined {
-	const increasing = values[3] > values[0];
-	if (coordinate < Math.min(values[0], values[3]) - EPSILON) return undefined;
-	if (coordinate > Math.max(values[0], values[3]) + EPSILON) return undefined;
-	let low = 0;
-	let high = 1;
-	for (let iteration = 0; iteration < 32; iteration += 1) {
-		const middle = (low + high) / 2;
-		if (cubicAt(values, middle) < coordinate === increasing) low = middle;
-		else high = middle;
-	}
-	return (low + high) / 2;
-}
-
-/**
- * Where a rounded corner meets a straight run's line, when it crosses it.
- * @param run The straight route.
- * @param corner The other route's corner.
- * @returns The distance along the run, when the turn meets its line inside it.
- */
-function cornerCrossingOf(run: Run, corner: Piece): number | undefined {
-	const segment = corner.curve.segments[0];
-	if (segment?.kind !== "cubic") return undefined;
-	const from = corner.curve.from;
-	const fixedAxis = across(run.axis);
-	const fixedValues = [
-		from[fixedAxis],
-		segment.first[fixedAxis],
-		segment.second[fixedAxis],
-		segment.to[fixedAxis],
-	] as const;
-	const fraction = cubicFractionAt(fixedValues, fixedOf(run));
-	if (fraction === undefined) return undefined;
-	const axis = run.axis;
-	const values = [from[axis], segment.first[axis], segment.second[axis], segment.to[axis]] as const;
-	const at = along(run, cubicAt(values, fraction));
-	return Math.min(at, run.length - at) <= EPSILON ? undefined : at;
 }
 
 /**
@@ -218,41 +150,21 @@ function crosses(scene: Scene, upper: Piece, lower: Piece): boolean {
 }
 
 /**
- * The cut beneath a straight piece where a corner crosses its line.
- * @param scene The routes.
- * @param corner The corner.
- * @param straight The straight piece.
- * @returns The straight line's ink there, clearing the corner, or nothing when the corner only grazes it.
- */
-function straightOver(scene: Scene, corner: Piece, straight: Piece): Bridge | undefined {
-	const run = scene.runOf.get(crossingKey(straight, straight));
-	const at = run === undefined ? undefined : cornerCrossingOf(run, corner);
-	if (run === undefined || at === undefined) return undefined;
-	return {
-		edgeId: scene.edges[straight.edgeIndex]!.edge.id,
-		under: [scene.edges[corner.edgeIndex]!.edge.id],
-		curve: pieceOf(run, at, BRIDGE_RADIUS),
-	};
-}
-
-/**
- * Clear every contact one corner makes: the straight lines crossing it stay
- * whole over it, and it stays whole over everything else it touches.
+ * Clear every contact one corner makes: it stays whole over everything it
+ * touches, since a line whose turn is cut away reads as two lines, one ending
+ * where the other starts.
  * @param scene The routes and what is settled.
  * @param upper The corner.
- * @returns The cutouts.
+ * @returns The cutout, when the corner touches anything.
  */
 function clearCorner(scene: Scene, upper: Piece): Bridge[] {
 	const under = new Set<string>();
-	const cuts: Bridge[] = [];
 	for (const lower of scene.pieces.filter((piece) => crosses(scene, upper, piece))) {
 		scene.cleared.add(crossingKey(upper, lower));
-		const cut = straightOver(scene, upper, lower);
-		if (cut === undefined) under.add(scene.edges[lower.edgeIndex]!.edge.id);
-		else cuts.push(cut);
+		under.add(scene.edges[lower.edgeIndex]!.edge.id);
 	}
 	const edgeId = scene.edges[upper.edgeIndex]!.edge.id;
-	return under.size === 0 ? cuts : [...cuts, { edgeId, under: [...under], curve: upper.curve }];
+	return under.size === 0 ? [] : [{ edgeId, under: [...under], curve: upper.curve }];
 }
 
 /**

@@ -69,9 +69,9 @@ function crossingCutouts(
 ): Cutout[] {
 	const byId = new Map(edges.map((route) => [route.edge.id, route]));
 	return bridges.flatMap((bridge) => {
-		// A cut beneath a straight line is its one straight piece; a hop or a turn is curved.
-		const [first, ...rest] = bridge.curve.segments;
-		const gap = rest.length === 0 && first?.kind === "line" ? CUT_GAP : BRIDGE_INK_GAP;
+		// A cut beneath a line is one piece of it, straight or a turn; a hop is a
+		// hump of several pieces, whose arc already says it crosses.
+		const gap = bridge.curve.segments.length === 1 ? CUT_GAP : BRIDGE_INK_GAP;
 		const markup = tag("path", {
 			d: pathOf(bridge.curve),
 			fill: "none",

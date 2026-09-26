@@ -3,13 +3,18 @@
 // One rule, for every engine, since every engine hands its routes to this pass.
 // Where two lines cross, one of them hops over the other: a small arc centred
 // on the crossing. A hop stands only where both lines run straight and alone
-// for the hop's reach and a clear margin on every side of the crossing, so no
-// bend, no join and no arrowhead is ever part of its shape, and it always
+// for the hop's reach and a clear margin on every side of the crossing, and
+// the hopping line a bend's room further, so no bend, no join and no
+// arrowhead is ever part of its shape or drawn beside it, and it always
 // bulges the same way (up, or right), so two hops never face each other. Where
 // no such spot exists nothing rises: the line that runs straighter through the
 // crossing stays whole, and the other is cut beneath it. A trunk is one drawn
 // line (`drawn-lines.ts`): a line crosses it once, and it hops as its drawer does.
-import { BRIDGE_RADIUS, BRIDGE_CLEARANCE } from "@/transformers/semantic-renderer/lib/design";
+import {
+	BEND_RADIUS,
+	BRIDGE_RADIUS,
+	BRIDGE_CLEARANCE,
+} from "@/transformers/semantic-renderer/lib/design";
 import type {
 	ArchitectureDrawing,
 	DrawingEdge,
@@ -48,6 +53,13 @@ const HOP_MARGIN = 6;
 
 /** How far a hop's clear stretch reaches from its crossing, along either line. */
 const HOP_REACH = BRIDGE_RADIUS + HOP_MARGIN;
+
+/**
+ * How much further the hopping line itself runs straight before it turns: a
+ * bend a few points past a hop draws one squiggle, the hop and the turn
+ * bulging the same way.
+ */
+const HOP_BEND_ROOM = BEND_RADIUS;
 
 /** How much straighter one line must run through a crossing to stay whole over the other. */
 const STRAIGHTER = 0.5;
@@ -186,7 +198,7 @@ function roomFor(
 	margin: number,
 ): boolean {
 	const places = group.map(({ crossing }) => crossing.point[run.axis]);
-	const reach = margin + HOP_REACH;
+	const reach = margin + HOP_REACH + HOP_BEND_ROOM;
 	return (
 		straightThrough(runs, run, Math.min(...places) - reach, Math.max(...places) + reach) &&
 		group.every(({ crossing, other }) => {
