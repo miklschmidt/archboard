@@ -114,6 +114,10 @@ class Clusters {
 	readonly names = new Map<string, string>();
 	/** The width of each card evened with the card over or under it. */
 	readonly widths = new Map<string, number>();
+	/** Whether a title pulled up as hard as down is left tied, for Graphviz to break. */
+	keepTies = false;
+	/** Whether some title was pulled up as hard as down. */
+	tied = false;
 
 	/**
 	 * Make every cluster of a block in its graph, each headed by its title.
@@ -244,16 +248,19 @@ class Clusters {
 	 * it on whichever rank between is least crowded, far above its members.
 	 * One more on one of its edges down stands it on the rank just above them,
 	 * and costs every other ranking just what it cost before.
-	 * @param edges Every edge of the block's graph; a tied title's first edge down is made heavier.
+	 * @param edges Every edge of the block's graph; a tied title's first edge down is made heavier, unless ties are kept.
 	 */
 	untie(edges: readonly Edge[]): void {
 		const pulls = pullsDown(edges);
-		for (const cluster of this.block.clusters.keys()) {
+		const downs = [...this.block.clusters.keys()].flatMap((cluster) => {
 			const title = titleOf(cluster);
 			const down = edges.find(({ tail, attributes }) => tail === title && attributes?.["weight"]);
-			if (pulls.get(title) === 0 && down !== undefined)
-				down.attributes = { ...down.attributes, weight: Number(down.attributes!["weight"]) + 1 };
-		}
+			return pulls.get(title) === 0 && down !== undefined ? [down] : [];
+		});
+		this.tied = downs.length > 0;
+		if (this.keepTies) return;
+		for (const down of downs)
+			down.attributes = { ...down.attributes, weight: Number(down.attributes!["weight"]) + 1 };
 	}
 
 	/**

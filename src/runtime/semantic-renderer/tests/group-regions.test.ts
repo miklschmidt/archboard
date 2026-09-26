@@ -11,6 +11,7 @@ import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import { routeLabels, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
+import nestedRegion from "./nested-region.json";
 import sideSlack from "./side-slack.json";
 
 const policy = SemanticPolicySchema.parse({
@@ -94,46 +95,21 @@ test.each(["track", "blocks"] as const)(
 	},
 );
 
+// Reduced from a dogfood view, names replaced: each region's one card no line
+// inside it holds is entered from cards several ranks down, and the region's
+// caption floated above them over an empty band.
 test("a group region inside a container starts on the rank just above its first member", async () => {
-	// Each region's one card no line inside it holds is entered from cards
-	// several ranks down; the region's caption must not float above them.
-	const nested = orderedFixture({
-		nodes: [
-			{ id: "bench", name: "Workbench", kind: "service" },
-			{ id: "ctx", name: "Context", kind: "module", parent: "bench" },
-			{ id: "deliver", name: "Delivery", kind: "module", parent: "bench", groups: ["routes"] },
-			{ id: "link", name: "Link", kind: "module", parent: "bench", groups: ["routes"] },
-			{ id: "session", name: "Session", kind: "module", parent: "bench", groups: ["state"] },
-			{ id: "wire", name: "Wire", kind: "module", parent: "bench", groups: ["state"] },
-			{ id: "server", name: "Server", kind: "module" },
-		],
-		edges: [
-			{ id: "e1", from: "ctx", to: "deliver", kind: "call", label: "a change" },
-			{ id: "e2", from: "deliver", to: "link", kind: "call", label: "check the link" },
-			{ id: "e3", from: "deliver", to: "session", kind: "call", label: "inject into the session" },
-			{
-				id: "e4",
-				from: "link",
-				to: "session",
-				kind: "call",
-				label: "list and read the candidates",
-			},
-			{ id: "e5", from: "session", to: "wire", kind: "call", label: "one request per method" },
-			{ id: "e6", from: "wire", to: "server", kind: "call", label: "over stdio" },
-		],
-	});
+	const nested = orderedFixture(nestedRegion);
 	const drawn = await renderArchitecture({
 		content: nested,
 		theme: "light",
 		policy,
 		layout: "track",
 	});
-	for (const [group, members] of [
-		["state", ["session", "wire"]],
-		["routes", ["deliver", "link"]],
-	] as const) {
+	for (const group of ["state", "routes"]) {
 		const band = regionBox(drawn.svg, group);
-		const first = Math.min(...members.map((id) => drawn.atlas.nodes[id]!.y));
+		const members = nested.nodes.filter(({ groups }) => groups?.includes(group));
+		const first = Math.min(...members.map(({ id }) => drawn.atlas.nodes[id]!.y));
 		const between = Object.entries(drawn.atlas.nodes)
 			.filter(([, box]) => box.y > band.y && box.y + box.height < first)
 			.map(([id]) => id);
