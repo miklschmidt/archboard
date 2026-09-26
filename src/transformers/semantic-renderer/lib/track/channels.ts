@@ -12,16 +12,14 @@
 //
 // Cards spread their ports along a face, each as close to the other end as
 // spacing allows; each channel's units — a trunk, or a lone net — get tracks
-// in the order that crosses least, each on the highest track below the
-// overlapping units above it.
+// as tracks.ts stacks them.
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { LANE, reachOf, type Station } from "@/transformers/semantic-renderer/lib/track/chains";
 import type { Item } from "@/transformers/semantic-renderer/lib/track/scene";
+import { stackUnits, type Unit } from "@/transformers/semantic-renderer/lib/track/tracks";
 
 /** How far a port keeps from a card's corner. */
 const PORT_MARGIN = 20;
-/** The cost of an order that runs two lines down one column: never taken when avoidable. */
-const STACKED = 100;
 
 /** Relationships that share a port and a track at one card face. */
 interface Trunk {
@@ -63,13 +61,8 @@ interface PortRequest {
 }
 
 /** What a channel assigns tracks to: a trunk, or a lone net that turns. */
-interface Unit {
+interface NetUnit extends Unit {
 	readonly nets: readonly Net[];
-	readonly tops: readonly number[];
-	readonly bottoms: readonly number[];
-	readonly low: number;
-	readonly high: number;
-	readonly order: number;
 }
 
 /**
@@ -398,7 +391,7 @@ function assignPorts(nets: readonly Net[]): void {
  * @param nets The channel's nets.
  * @returns The units that turn.
  */
-function unitsOf(nets: readonly Net[]): Unit[] {
+function unitsOf(nets: readonly Net[]): NetUnit[] {
 	const groups = new Map<Trunk | Net, readonly Net[]>();
 	for (const net of nets) groups.set(net.trunk ?? net, net.trunk?.nets ?? [net]);
 	return [...groups.values()].map(unitOf).filter((unit) => unit.high - unit.low > 0.5);
@@ -409,7 +402,7 @@ function unitsOf(nets: readonly Net[]): Unit[] {
  * @param members Its nets.
  * @returns The unit.
  */
-function unitOf(members: readonly Net[]): Unit {
+function unitOf(members: readonly Net[]): NetUnit {
 	const tops = [...new Set(members.filter(({ wall }) => wall !== "top").map(({ topX }) => topX))];
 	const bottoms = [
 		...new Set(members.filter(({ wall }) => wall !== "bottom").map(({ bottomX }) => bottomX)),
@@ -428,130 +421,6 @@ function unitOf(members: readonly Net[]): Unit {
 }
 
 /**
- * Whether two units' runs overlap, so they cannot share a track.
- * @param one A unit.
- * @param other Another unit.
- * @returns True when they overlap.
- */
-function overlap(one: Unit, other: Unit): boolean {
-	return one.low - LANE / 2 < other.high + LANE / 2 && other.low - LANE / 2 < one.high + LANE / 2;
-}
-
-/**
- * How many of some pins fall strictly inside a unit's run.
- * @param pins The pins' x.
- * @param unit The unit.
- * @returns How many would cross its track.
- */
-function inside(pins: readonly number[], unit: Unit): number {
-	return pins.filter((x) => x > unit.low && x < unit.high).length;
-}
-
-/**
- * How many crossings one unit above another costs; a lower pin within a lane
- * of an upper one would run two lines down one column, or closer than a lane
- * beside each other, which is never allowed.
- * @param above The unit on the higher track.
- * @param below The unit on the lower track.
- * @returns The cost.
- */
-function costAbove(above: Unit, below: Unit): number {
-	const stacked = below.tops.some((top) =>
-		above.bottoms.some((bottom) => Math.abs(top - bottom) < LANE),
-	);
-	return stacked ? STACKED : inside(below.tops, above) + inside(above.bottoms, below);
-}
-
-/**
- * How much a unit would rather be above the units it overlaps than below them.
- * @param unit The unit.
- * @param units Every turning unit in its channel.
- * @returns The balance of its preferences.
- */
-function preferenceOf(unit: Unit, units: readonly Unit[]): number {
-	return units.reduce(
-		(sum, other) =>
-			other === unit || !overlap(unit, other)
-				? sum
-				: sum + Math.sign(costAbove(other, unit) - costAbove(unit, other)),
-		0,
-	);
-}
-
-/**
- * Whether one unit must be above another: below it, the other would run a
- * line down the column of one of its own.
- * @param above The unit that would be higher.
- * @param below The unit that would be lower.
- * @returns True when the other order would stack two lines in one column.
- */
-function mustBeAbove(above: Unit, below: Unit): boolean {
-	return (
-		overlap(above, below) && costAbove(below, above) >= STACKED && costAbove(above, below) < STACKED
-	);
-}
-
-/**
- * The units in their preferred order, except that no unit is placed before
- * a unit that must be above it.
- * @param preferred The units, most wanting to be high first.
- * @returns The order to give tracks in.
- */
-function keepingStacks(preferred: readonly Unit[]): Unit[] {
-	const waiting = [...preferred];
-	const ordered: Unit[] = [];
-	while (waiting.length > 0) {
-		const ready = waiting.findIndex(
-			(unit) => !waiting.some((other) => other !== unit && mustBeAbove(other, unit)),
-		);
-		ordered.push(...waiting.splice(Math.max(ready, 0), 1));
-	}
-	return ordered;
-}
-
-/**
- * Stack a channel's units on tracks: the order that crosses least, each unit
- * on the highest track below every overlapping unit above it.
- * @param units The units that turn.
- * @returns Each unit's track.
- */
-function stackUnits(units: readonly Unit[]): Map<Unit, number> {
-	const preference = new Map(units.map((unit) => [unit, preferenceOf(unit, units)]));
-	const ordered = keepingStacks(
-		units.toSorted(
-			(one, other) =>
-				preference.get(other)! - preference.get(one)! ||
-				one.low - other.low ||
-				one.order - other.order,
-		),
-	);
-	const tracks = new Map<Unit, number>();
-	for (const unit of ordered) {
-		const above = [...tracks].filter(([other]) => overlap(unit, other)).map(([, track]) => track);
-		tracks.set(unit, above.length === 0 ? 0 : Math.max(...above) + 1);
-	}
-	return tracks;
-}
-
-/**
- * A unit that is no net: a run between pins that rise from its track and pins that drop from it.
- * @param tops The x of the lines that leave it upward.
- * @param bottoms The x of the lines that leave it downward.
- * @param order Its tie-break.
- * @returns The unit.
- */
-function unitAcross(tops: readonly number[], bottoms: readonly number[], order: number): Unit {
-	return {
-		nets: [],
-		tops,
-		bottoms,
-		low: Math.min(...tops, ...bottoms),
-		high: Math.max(...tops, ...bottoms),
-		order,
-	};
-}
-
-/**
  * Assign the tracks of one channel: the order that crosses least, each unit on
  * the highest track below every overlapping unit above it.
  * @param nets The channel's nets.
@@ -563,14 +432,4 @@ function assignTracks(nets: readonly Net[]): number {
 	return tracks.size === 0 ? 0 : Math.max(...tracks.values()) + 1;
 }
 
-export {
-	assignPorts,
-	assignTracks,
-	bundleTrunks,
-	sharedAt,
-	spreadPorts,
-	stackUnits,
-	unitAcross,
-	type Net,
-	type Unit,
-};
+export { assignPorts, assignTracks, bundleTrunks, sharedAt, spreadPorts, type Net };

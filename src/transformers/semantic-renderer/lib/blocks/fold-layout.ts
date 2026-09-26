@@ -16,13 +16,13 @@ import {
 	type Face,
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
+import { spreadPorts } from "@/transformers/semantic-renderer/lib/track/channels";
+import { TRACK_TOP, channelHeight } from "@/transformers/semantic-renderer/lib/track/route";
 import {
-	spreadPorts,
 	stackUnits,
 	unitAcross,
 	type Unit,
-} from "@/transformers/semantic-renderer/lib/track/channels";
-import { TRACK_TOP, channelHeight } from "@/transformers/semantic-renderer/lib/track/route";
+} from "@/transformers/semantic-renderer/lib/track/tracks";
 
 /** Room a gutter keeps either side of its lanes. */
 const GUTTER_MARGIN = 20;
