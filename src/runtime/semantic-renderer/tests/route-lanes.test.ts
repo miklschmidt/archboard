@@ -142,3 +142,28 @@ test("two unrelated lines into facing sides of one row do not share a track", as
 	const gaps = besideGaps(routes.get("install")!, routes.get("offscreen")!);
 	expect(gaps.filter((gap) => gap <= 2)).toEqual([]);
 });
+
+test("unrelated lines ending on facing sides of unequal cards run a whole lane apart", async () => {
+	// Each card's incoming pin sits a quarter down its side, so the cards'
+	// unequal heights put the two held end runs a few units apart.
+	const routes = await routedRuns(
+		[
+			{ id: "provider", pos: "190,346", width: 340, height: 88 },
+			{ id: "factory", pos: "722,346", width: 326, height: 72 },
+			{ id: "near", pos: "425,740", width: 100, height: 40 },
+			{ id: "far", pos: "504,640", width: 100, height: 40 },
+			{ id: "low1", pos: "190,60", width: 200, height: 40 },
+			{ id: "low2", pos: "722,60", width: 200, height: 40 },
+		],
+		[
+			["select", "far", "provider"],
+			["create", "near", "factory"],
+			["out1", "provider", "low1"],
+			["out2", "factory", "low2"],
+		],
+		"0,0,1000,800",
+	);
+	const gaps = besideGaps(routes.get("select")!, routes.get("create")!);
+	expect(gaps.length).toBeGreaterThan(0);
+	for (const gap of gaps) expect(gap).toBeGreaterThanOrEqual(16 - 0.01);
+});
