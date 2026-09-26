@@ -176,7 +176,7 @@ export class RoutingScene {
 	/**
 	 * The used pins with every lone port centred, when the routes ask for it.
 	 * @param edges Settled refined relationships.
-	 * @returns The used pins for the last solve, or nothing when none moved.
+	 * @returns The used pins and the moved channels to hold, or nothing when none moved.
 	 */
 	centrePorts(edges: readonly ElkExtendedEdge[]): PinFeedback | undefined {
 		if (!this.request.centredPorts) return undefined;
