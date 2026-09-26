@@ -13,7 +13,7 @@ import {
 	type VendorNode,
 } from "@/transformers/semantic-renderer/lib/blocks/card-graph";
 import type { Band, Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
-import { cornerHeader } from "@/transformers/semantic-renderer/lib/blocks/leaves";
+import { cornerHeader, letPortsSlide } from "@/transformers/semantic-renderer/lib/blocks/leaves";
 import {
 	headerOf,
 	type Block,
@@ -360,7 +360,7 @@ class CardLayout {
 			width: Math.abs(right! - left!),
 		});
 		const placed = this.placed(centres, polylines, clusters);
-		const laid = this.routed(placed, 0);
+		const laid = this.routed(placed, 0, true);
 		return { ...laid, reroute: this.rerouted.bind(this, placed, laid.width) };
 	}
 
@@ -368,10 +368,13 @@ class CardLayout {
 	 * Route the placed block's lines on tracks and read it back.
 	 * @param placed The placed block.
 	 * @param held The width the block keeps at least.
+	 * @param first Whether its parent has yet to read its ports, which no settling moves later.
 	 * @returns The laid-out block.
 	 */
-	routed(placed: ElkNode & { edges: ElkExtendedEdge[] }, held: number): Laid {
+	routed(placed: ElkNode & { edges: ElkExtendedEdge[] }, held: number, first = false): Laid {
 		const scene = new Scene(placed);
+		if (first && this.block.kind !== "root" && this.tree.nesting !== "blocks")
+			letPortsSlide(scene, this.block);
 		const lines = routeScene(
 			scene,
 			placed.edges.map((edge) => {
