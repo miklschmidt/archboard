@@ -18,6 +18,7 @@ import {
 	type Curve,
 } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
+import { markRadius } from "@/transformers/semantic-renderer/lib/svg/junctions";
 import { pulseBreadth } from "@/transformers/semantic-renderer/lib/svg/pulse";
 import { strokeWidthOf } from "@/transformers/semantic-renderer/lib/svg/styles";
 
@@ -70,13 +71,15 @@ function crossingCutouts(
 	const byId = new Map(edges.map((route) => [route.edge.id, route]));
 	return bridges.flatMap((bridge) => {
 		// A cut beneath a line is one piece of it, straight or a turn; a hop is a
-		// hump of several pieces, whose arc already says it crosses.
+		// hump of several pieces, whose arc already says it crosses. A cut beside
+		// a join clears the join's mark as well as the line.
 		const gap = bridge.curve.segments.length === 1 ? CUT_GAP : BRIDGE_INK_GAP;
+		const width = strokeWidthOf(byId.get(bridge.edgeId)!.edge);
 		const markup = tag("path", {
 			d: pathOf(bridge.curve),
 			fill: "none",
 			stroke: "black",
-			"stroke-width": strokeWidthOf(byId.get(bridge.edgeId)!.edge) + gap * 2,
+			"stroke-width": bridge.join ? (markRadius(width) + CUT_GAP) * 2 : width + gap * 2,
 			"stroke-linecap": "round",
 			"stroke-linejoin": "round",
 		});

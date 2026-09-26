@@ -126,9 +126,16 @@ test("crossing clearances share the drawn curve and narrowly clear the ink benea
 	for (const cutout of [...cutouts.values()].flat()) {
 		const upper = lines.find((route) => follows(cutout.path, route.paths[0]!));
 		expect(upper, "a cutout follows existing upper-route ink").toBeDefined();
-		// Narrow beneath an arc; wide enough to see where a straight line crosses unhopped.
+		// Narrow beneath an arc; wide enough to see where a straight line crosses
+		// unhopped; beside a join, wide enough to clear the join's mark as well
+		// (its radius, the line's width and 1.6, and the gap, 3, on each side).
 		const cut = /^M[-\d.,]+ L[-\d.,]+$/u.test(cutout.path);
-		expect(cutout.width - upper!.width).toBeCloseTo(cut ? 6 : 3, 5);
+		const extra = cutout.width - upper!.width;
+		const allowed = cut ? [6, upper!.width + 2 * (1.6 + 3)] : [3];
+		expect(
+			allowed.some((width) => Math.abs(extra - width) < 1e-5),
+			`${extra}`,
+		).toBe(true);
 		crossings += 1;
 	}
 	for (const upper of lines) {

@@ -95,6 +95,8 @@ interface DrawingBridge {
 	readonly edgeId: string;
 	readonly under: readonly string[];
 	readonly curve: Curve;
+	/** A join on the upper line stands on this piece: the cut clears its mark too. */
+	readonly join?: true;
 }
 
 /**
