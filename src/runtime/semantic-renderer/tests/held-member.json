@@ -1,0 +1,142 @@
+{
+	"nodes": [
+		{
+			"id": "n0",
+			"name": "alphaalphaa islan",
+			"kind": "module",
+			"responsibility": "eagl lan summ garde nee alphaalphaa island pepp delta kettlek r falcon meadow"
+		},
+		{
+			"id": "n1",
+			"name": "brav jungleju",
+			"kind": "module",
+			"responsibility": "fal meadow timb harborhar ora bravo jungleju quar eag lanternlant su gardeng ne alp isl"
+		},
+		{
+			"id": "n2",
+			"name": "deltadeltad kettleket",
+			"kind": "module",
+			"responsibility": "gard nee alpha isla pe delt kettl river fa meado timbertim harb ora bra junglejungle quar eagl lan sum garde needl"
+		},
+		{
+			"id": "n3",
+			"name": "eagle lanternla",
+			"kind": "module",
+			"responsibility": "harbo o brav jung qu eagleeagleea lant sum garde needlene alphaa is pep delta kettlekett riv fa",
+			"groups": ["g0"]
+		},
+		{
+			"id": "n4",
+			"name": "falco meadowm",
+			"kind": "module",
+			"responsibility": "isl pepperpe deltade ket riverriverr fal mea timberti har ora bravobr ju",
+			"groups": ["g0"]
+		},
+		{
+			"id": "n5",
+			"name": "gardengar needleneed",
+			"kind": "module",
+			"responsibility": "jungl quartzqu eagleeagl lante sum gard needleneed alp islandislan pep del ke riv falconfalc mea ti h oran",
+			"groups": ["g1"]
+		},
+		{
+			"id": "n6",
+			"name": "harborha orang",
+			"kind": "function",
+			"responsibility": "kettl river falconfal meadow tim harb orangeo br jungle quart eag lanternla sum gardeng nee alphaalp isl pe d kett",
+			"parent": "n2"
+		},
+		{
+			"id": "n7",
+			"name": "islandisl pepp",
+			"kind": "function",
+			"responsibility": "l summ ga nee alphaa islandisl pepp delta ke river falconf me tim harbo orangeo bravobr jun qu eag lante summitsu",
+			"parent": "n2"
+		},
+		{
+			"id": "n8",
+			"name": "jungleju quartzqu",
+			"kind": "function",
+			"responsibility": "meado timb harborha ora bravo jung qu e lanternlant summi gar needle alp isla pepperp de ket river falcon mea timb harborha oran",
+			"parent": "n2"
+		},
+		{
+			"id": "n9",
+			"name": "kettlek riverr",
+			"kind": "module",
+			"responsibility": "needl alp islandislan pep delta ke rive fa mea timbertimbe harborh ora bravobr jung qu eagleeag lant sum gardeng needl a islandisl peppe del kettl"
+		}
+	],
+	"edges": [
+		{
+			"id": "e0",
+			"from": "n3",
+			"to": "n0",
+			"kind": "event",
+			"label": "g need alph isla pep deltadeltad"
+		},
+		{
+			"id": "e1",
+			"from": "n0",
+			"to": "n1",
+			"kind": "call",
+			"label": "harborha orangeo bra jungle quartzqu"
+		},
+		{
+			"id": "e2",
+			"from": "n0",
+			"to": "n5",
+			"kind": "call",
+			"label": "islan pep deltadelt kett"
+		},
+		{
+			"id": "e3",
+			"from": "n5",
+			"to": "n6",
+			"kind": "event",
+			"label": "junglejun quartzq eagl la summits gardeng ne alph"
+		},
+		{
+			"id": "e4",
+			"from": "n8",
+			"to": "n4",
+			"kind": "call",
+			"label": "kett river falconfalconfalconf"
+		},
+		{
+			"id": "e5",
+			"from": "n3",
+			"to": "n6",
+			"kind": "event",
+			"label": "lanternla summitsummitsu gardengardengard needl"
+		},
+		{
+			"id": "e6",
+			"from": "n6",
+			"to": "n7",
+			"kind": "call",
+			"label": "me timb harborharbor orang"
+		},
+		{
+			"id": "e7",
+			"from": "n6",
+			"to": "n8",
+			"kind": "call",
+			"label": "nee al i peppe de kettl"
+		},
+		{
+			"id": "e8",
+			"from": "n8",
+			"to": "n9",
+			"kind": "call",
+			"label": "orange bra jung"
+		},
+		{
+			"id": "e9",
+			"from": "n9",
+			"to": "n4",
+			"kind": "call",
+			"label": "pepperpepp de ket riverriverr falcon"
+		}
+	]
+}
