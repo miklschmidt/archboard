@@ -262,6 +262,17 @@ function standingOutline(
 }
 
 /**
+ * Whether a subject of some standing wears a pin in its corner: every
+ * standing but unchanged, which has no glyph. The page is fitted to the
+ * pins this says are drawn.
+ * @param standing The standing, if the picture is a proposal.
+ * @returns True when it does.
+ */
+function drawsPin(standing: SubjectStanding | undefined): standing is SubjectStanding {
+	return standing !== undefined && PIN_GLYPH[standing] !== "";
+}
+
+/**
  * The pin on a subject's top-left corner.
  *
  * Centred just inside the corner and large enough to read at a glance, so it
@@ -275,7 +286,7 @@ function standingOutline(
  * @returns The pin, or nothing to draw.
  */
 function standingPin(box: Box, standing: SubjectStanding | undefined, palette: Palette): string {
-	const ink = standing === undefined ? undefined : standingInk(standing, palette);
+	const ink = drawsPin(standing) ? standingInk(standing, palette) : undefined;
 	if (standing === undefined || ink === undefined) {
 		return "";
 	}
@@ -431,8 +442,7 @@ function markedBox(box: Box, standing: SubjectStanding | undefined, unsettled: b
 		width: 2 * BADGE_REACH.side,
 		height: BADGE_REACH.above + BADGE_REACH.below,
 	};
-	const pinned = standing !== undefined && PIN_GLYPH[standing] !== "";
-	return union([box, ...(pinned ? [pin] : []), ...(unsettled ? [badge] : [])])!;
+	return union([box, ...(drawsPin(standing) ? [pin] : []), ...(unsettled ? [badge] : [])])!;
 }
 
 /**

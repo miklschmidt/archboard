@@ -32,6 +32,8 @@ function margins(drawing: RenderedDiagram): {
 		x: shift.x + Number(x) - Number(r),
 		y: shift.y + Number(y) - Number(r),
 	}));
+	// No pin found would leave nothing to measure, and every margin met.
+	expect(pins.length).toBeGreaterThan(0);
 	const boxes = [...Object.values(drawing.atlas.nodes), ...Object.values(drawing.atlas.regions)];
 	return {
 		left: Math.min(...pins.map(({ x }) => x)),
