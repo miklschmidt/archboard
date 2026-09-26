@@ -82,6 +82,51 @@ function markSubjects(surface: Element, attended: ReadonlySet<string>): void {
 		const id = group.getAttribute(SUBJECT_ATTRIBUTE);
 		group.classList.toggle(SELECTED_CLASS, id !== null && attended.has(id));
 	}
+	raiseSelected(surface);
+}
+
+/**
+ * The groups a selection draws over everything else: a card, a line, a step.
+ * Never a container, a group's region, a flow or a participant's lifeline,
+ * each of which runs under what it holds or crosses.
+ */
+const RAISED = "[data-semantic-kind='edge'],[data-semantic-kind='step'],[data-depiction='card']";
+
+/** Where each raised group stood before it was raised, to go back to when it is let go. */
+const raisedFrom = new WeakMap<Element, Comment>();
+
+/**
+ * Draw every selected card, line and step over the rest of the picture, and
+ * put each one no longer selected back where the picture drew it. A picture
+ * draws its parts in layers, so a selected line ran under the lines and
+ * labels drawn after it; raised, it is drawn last among its siblings, in
+ * the order the picture drew the selected ones.
+ * @param surface The element the picture was put into.
+ */
+function raiseSelected(surface: Element): void {
+	for (const group of surface.querySelectorAll(`[${SUBJECT_ATTRIBUTE}]`)) {
+		raise(group, group.classList.contains(SELECTED_CLASS) && group.matches(RAISED));
+	}
+}
+
+/**
+ * Draw one group last among its siblings, leaving a mark where it stood, or
+ * put it back on its mark.
+ * @param group The group.
+ * @param raised Whether it is drawn last.
+ */
+function raise(group: Element, raised: boolean): void {
+	const slot = raisedFrom.get(group);
+	if (raised === (slot !== undefined)) return;
+	if (slot === undefined) {
+		const mark = group.ownerDocument.createComment("");
+		group.before(mark);
+		raisedFrom.set(group, mark);
+		group.parentNode?.append(group);
+	} else {
+		slot.replaceWith(group);
+		raisedFrom.delete(group);
+	}
 }
 
 /** The class the surface carries while one group is under inspection. */
@@ -177,6 +222,7 @@ function keepingMarks(surface: Element, stage: () => void): void {
 			group.classList.add(...marks);
 		}
 	}
+	raiseSelected(surface);
 }
 
 export {

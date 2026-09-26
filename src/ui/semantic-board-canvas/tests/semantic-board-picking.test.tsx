@@ -35,6 +35,31 @@ test("clicking a card reports its semantic id, and the given selection is drawn"
 	);
 });
 
+/**
+ * The picture's subjects, in the order they are drawn.
+ * @returns Each group's semantic id.
+ */
+function drawn(): (string | null)[] {
+	return [...surface().querySelectorAll("[data-semantic-id]")].map((group) =>
+		group.getAttribute("data-semantic-id"),
+	);
+}
+
+test("what is picked is drawn over the rest of the picture, and goes back to its place when let go", async () => {
+	server.reply = { status: 200, body: drawing(1) };
+	mountStage(null, { live: true });
+	await settle();
+	expect(drawn()).toEqual(["n1", "e1", "ghost"]);
+	act(() => {
+		fireEvent.click(inPicture("wire"));
+	});
+	expect(drawn()).toEqual(["n1", "ghost", "e1"]);
+	act(() => {
+		fireEvent.keyDown(viewport(), { key: "Escape" });
+	});
+	expect(drawn()).toEqual(["n1", "e1", "ghost"]);
+});
+
 test("a real press picks what it landed on, whatever the click says afterwards", async () => {
 	// The browser retargets a click to whichever element holds the pointer, and
 	// it fires the click after a pan has already moved the diagram. Both mean a
