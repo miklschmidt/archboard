@@ -403,6 +403,9 @@ class CardLayout {
 		const scene = new Scene(placed);
 		scene.edgesPage = this.edgesPage();
 		scene.inline = this.tree.nesting !== "blocks";
+		for (const item of this.block.items)
+			if (this.tree.blocks.get(item)?.kind === "region")
+				scene.regionBlocks.add(scene.cards.get(item)!);
 		markPorts(scene, this.block);
 		letPortsSlide(scene, this.block, this.tree.nesting, settled);
 		const lines = routeScene(

@@ -20,6 +20,7 @@ import regionPortTurnBack from "./region-port-turn-back.json";
 import boardRasterizer from "./board-rasterizer.json";
 import browserApplication from "./browser-application.json";
 import codexWorkhorse from "./codex-workhorse.json";
+import commandGroups from "./command-groups.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
 import oneCommand from "./one-command.json";
 import staircase from "./staircase.json";
@@ -55,6 +56,7 @@ const policy = SemanticPolicySchema.parse({
 		workhorse: { name: "Workhorse", color: "sky" },
 		child: { name: "Codex child", color: "indigo" },
 		agent: { name: "Agent", color: "fuchsia" },
+		checks: { name: "Vault checks", color: "pink" },
 	},
 });
 
@@ -245,9 +247,11 @@ function besideWalls(points: readonly DrawnPoint[], regions: readonly Walls[]): 
 // Reduced from dogfood boards: a line ran down beside a group region's wall
 // half a lane away, or a lane away, where it read as part of the region's
 // outline: a region's wall is a thin line with no inset, and a lane off it
-// reads as closer than a lane off a card.
+// reads as closer than a lane off a card. The last is a board whose groups
+// are packed as blocks of their own, where a trunk of four lines ran a lane
+// off one of them for its whole height.
 test("a line keeps a lane and a half from a group region's wall it runs beside", async () => {
-	for (const fixture of [durableWriteBoundary, oneCommand]) {
+	for (const fixture of [durableWriteBoundary, oneCommand, commandGroups]) {
 		const drawing = await renderArchitecture({
 			content: orderedFixture(fixture),
 			theme: "light",
