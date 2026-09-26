@@ -243,11 +243,21 @@ test("a torn render answer is a failure, and never looks like an empty board", a
 	).toBe("error");
 });
 
-test("a picture seen from far away is told so, and told again when zoomed in to read", async () => {
+test("a picture seen from far away is told so through a pan, and told again when zoomed in to read", async () => {
 	server.reply = { status: 200, body: { ...drawing(1), width: 4000, height: 3000 } };
 	mountStage();
 	await settle();
 	// Fitted, a card's responsibility is too small to read: its name is drawn instead.
+	expect(surface().classList.contains("is-far")).toBe(true);
+	// A pan redraws the surface's class, and the far view stays through it.
+	act(() => {
+		fireEvent.pointerDown(viewport(), { pointerId: 1, button: 0, clientX: 40, clientY: 40 });
+		fireEvent.pointerMove(viewport(), { pointerId: 1, clientX: 90, clientY: 40 });
+	});
+	expect(surface().classList.contains("is-far")).toBe(true);
+	act(() => {
+		fireEvent.pointerUp(viewport(), { pointerId: 1, clientX: 90, clientY: 40 });
+	});
 	expect(surface().classList.contains("is-far")).toBe(true);
 	for (let press = 0; press < 20; press += 1)
 		act(() => {
