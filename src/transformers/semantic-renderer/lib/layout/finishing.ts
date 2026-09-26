@@ -6,12 +6,14 @@
 // and Browser application's "Working with an agent" from 0 to 4.
 //
 // So each pass finishes a settled drawing only where it has what the pass
-// cures: a line along the wall of a frame it does not stay inside, or a line
-// that hooks into a card's side past the card's corner. The same placement,
-// with the same reservations, is routed once more with the pass's option, and
-// that drawing is kept when it has fewer of them, every label still finds a
-// box, it has no more crossings, no line has more bends, and every line that
-// stayed inside a frame still does. A route that takes a detour is not worth
+// cures: a line along the wall of a frame it does not stay inside, a line
+// that leaves a card by its side although its other card stands straight
+// below or above it, or a line that hooks into a card's side past the card's
+// corner. The same placement, with the same reservations, is routed once more
+// with the pass's options, and that drawing is kept when it has fewer of them
+// (or as many with fewer bends in all), every label still finds a box, it has
+// no more crossings, no line has more bends, and every line that stayed
+// inside a frame still does. A route that takes a detour is not worth
 // what it cures, fewer bends elsewhere do not pay for one line made worse, and
 // a relationship within a frame belongs inside it even when the only room is
 // on its wall: its cards stand the frame's inset from the wall, which leaves
@@ -20,6 +22,7 @@ import type {
 	ArchitectureDrawing,
 	DrawingEdge,
 } from "@/transformers/semantic-renderer/lib/drawing";
+import { ROUTE_NUDGE_DISTANCE } from "@/transformers/semantic-renderer/config";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { verticesOf } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { untidiness } from "@/transformers/semantic-renderer/lib/layout/even-pins";
@@ -174,6 +177,42 @@ function hooks(box: Box, route: readonly Point[]): boolean {
 }
 
 /**
+ * The line ends of a drawing that leave a card by its side although the
+ * card and the line's other card stand one above the other with a shared
+ * span a straight line could drop through.
+ * @param drawing The drawing.
+ * @returns One key for every such end.
+ */
+export function wrongFaces(drawing: ArchitectureDrawing): string[] {
+	const cards = new Map(drawing.cards.map(({ measured, box }) => [measured.node.id, box]));
+	return drawing.edges.flatMap(({ edge, curve }) => {
+		const [from, to] = [cards.get(edge.from), cards.get(edge.to)];
+		if (from === undefined || to === undefined || !stackedOver(from, to)) return [];
+		const points = verticesOf(curve);
+		const ends = [
+			[edge.from, points],
+			[edge.to, points.toReversed()],
+		] as const;
+		return ends.flatMap(([card, route]) =>
+			Math.abs(route[0]!.y - route[1]!.y) < 0.01 ? [`${edge.id}:${card}`] : [],
+		);
+	});
+}
+
+/**
+ * Whether two cards stand one above the other and share a span wide enough
+ * for a line to keep its nudging distance from both cards' corners.
+ * @param one A card.
+ * @param other The other card.
+ * @returns True when a straight vertical line could join them.
+ */
+function stackedOver(one: Box, other: Box): boolean {
+	const shared = Math.min(one.x + one.width, other.x + other.width) - Math.max(one.x, other.x);
+	const apart = one.y + one.height <= other.y || other.y + other.height <= one.y;
+	return apart && shared >= 2 * ROUTE_NUDGE_DISTANCE;
+}
+
+/**
  * How many bends each line of a drawing takes.
  * @param drawing The drawing.
  * @returns Bends by relationship id.
@@ -213,6 +252,35 @@ function noWorse(clear: ArchitectureDrawing, settled: ArchitectureDrawing): bool
 	);
 }
 
+/**
+ * Whether a finishing routing cures more than the settled drawing: fewer of
+ * what the pass cures, or as many with fewer bends in all. A reserved label
+ * moved onto one line's straight channel can push its neighbour off another,
+ * which then enters its card's side with fewer bends than it took before
+ * (IIS Ingress Migration's "Today: DNS points here" and its fallback).
+ * @param finish The finishing routing.
+ * @param settled The settled drawing.
+ * @param cured What the pass cures in a drawing, one key for each.
+ * @returns True when it cures more.
+ */
+function cures(
+	finish: ArchitectureDrawing,
+	settled: ArchitectureDrawing,
+	cured: (drawing: ArchitectureDrawing) => readonly string[],
+): boolean {
+	const [after, before] = [cured(finish).length, cured(settled).length];
+	return after < before || (after === before && totalBends(finish) < totalBends(settled));
+}
+
+/**
+ * How many bends a drawing's lines take together.
+ * @param drawing The drawing.
+ * @returns The total.
+ */
+function totalBends(drawing: ArchitectureDrawing): number {
+	return [...bendsOf(drawing).values()].reduce((sum, bends) => sum + bends, 0);
+}
+
 /** A drawing and the reading that routed it. */
 interface Finish<Reading> {
 	readonly reading: Reading;
@@ -221,9 +289,10 @@ interface Finish<Reading> {
 
 /**
  * One finishing pass: the settled drawing, or, when it has what the pass
- * cures, its placement routed once more with the pass's option, if that has
- * fewer of them, keeps every label and is no worse ({@link noWorse}). A
- * routing the router or the route checks refuse keeps the settled drawing.
+ * cures, its placement routed once more with the pass's options, if that
+ * cures more ({@link cures}), keeps every label and is no worse
+ * ({@link noWorse}). A routing the router or the route checks refuse keeps
+ * the settled drawing.
  * @param settled The settled drawing and its reading.
  * @param cured What the pass cures in a drawing, one key for each.
  * @param reroute Routes the same placement with the pass's option, given what it cures; nothing when a label finds no box.
@@ -238,7 +307,7 @@ export async function finished<Reading>(
 	if (found.length === 0) return settled;
 	const finish = await reroute([...new Set(found)]).catch(() => undefined);
 	return finish !== undefined &&
-		cured(finish.drawing).length < found.length &&
+		cures(finish.drawing, settled.drawing, cured) &&
 		noWorse(finish.drawing, settled.drawing)
 		? finish
 		: settled;

@@ -42,14 +42,17 @@ import {
 } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import { SOLVE_STAGE, rendererHost } from "@/transformers/semantic-renderer/lib/host";
 import { fittedPage } from "@/transformers/semantic-renderer/lib/layout/page-fit";
-import { EVEN_PINS, tidierSettlement } from "@/transformers/semantic-renderer/lib/layout/even-pins";
-import { CLEAR_WALLS } from "@/transformers/semantic-renderer/lib/layout/frame-walls";
+import { tidierSettlement } from "@/transformers/semantic-renderer/lib/layout/even-pins";
 import {
 	crowdedWalls,
 	finished,
 	sideHooks,
+	wrongFaces,
 } from "@/transformers/semantic-renderer/lib/layout/finishing";
-import { CORNER_PINS } from "@/transformers/semantic-renderer/lib/layout/pin-feedback";
+import {
+	requestOptions,
+	type RouteRequest,
+} from "@/transformers/semantic-renderer/lib/layout/route-requests";
 
 /** One measured architecture in the engine's solving frame. */
 interface Problem {
@@ -57,12 +60,8 @@ interface Problem {
 	readonly measured: MeasuredArchitecture;
 	readonly standings?: Readonly<Record<string, ChangeKind>> | undefined;
 	readonly columns: number;
-	/** Whether its routes are asked for evened pins (even-pins.ts). */
-	readonly evenPins?: boolean;
-	/** The frame walls its routes keep clear of (frame-walls.ts). */
-	readonly clearWalls?: readonly string[];
-	/** Whether its routes are offered corner pins (pin-feedback.ts). */
-	readonly cornerPins?: boolean;
+	/** What its routes are asked for (route-requests.ts); nothing beyond the ordinary when absent. */
+	readonly route?: RouteRequest;
 }
 
 /**
@@ -242,24 +241,39 @@ function columnReading(problem: Problem): ColumnReading {
 		page: () => reading.place(new Set()).then(boxOf),
 		/**
 		 * The complete drawing: the tidier of plain and evened pins, then
-		 * finished clear of frame walls and of hooks into a card's side (finishing.ts).
+		 * finished clear of frame walls, of side exits between stacked cards
+		 * and of hooks into a card's side (finishing.ts). Side exits go
+		 * first, so a line they turn into a hook can still be cured.
 		 * @returns The settled reading.
 		 */
 		settle: async () => {
 			const kept = await tidierSettlement(
 				settleReading(reading),
-				settleReading({ ...reading, evenPins: true }),
+				settleReading(asking(reading, { evenPins: true })),
 			);
 			const reroute = rerouting(kept.reserved);
 			const walled = await finished(kept, crowdedWalls, (clearWalls) =>
-				reroute({ ...kept.reading, clearWalls }),
+				reroute(asking(kept.reading, { clearWalls })),
 			);
-			const hooked = await finished(walled, sideHooks, () =>
-				reroute({ ...walled.reading, cornerPins: true }),
+			const faced = await finished(walled, wrongFaces, () =>
+				reroute(asking(walled.reading, { laneChannels: true, centredLabels: true })),
+			);
+			const hooked = await finished(faced, sideHooks, () =>
+				reroute(asking(faced.reading, { cornerPins: true })),
 			);
 			return hooked.drawing;
 		},
 	};
+}
+
+/**
+ * A reading whose routes are asked for more.
+ * @param reading The reading.
+ * @param more What else its routes are asked for.
+ * @returns The same reading and placements, asking for both.
+ */
+function asking(reading: Reading, more: RouteRequest): Reading {
+	return { ...reading, route: { ...reading.route, ...more } };
 }
 
 /**
@@ -316,16 +330,16 @@ function graphForLabels(problem: Problem, reserved: ReadonlySet<string>): ElkNod
  * Ask a placed graph's forced labels to be routed through.
  * @param placed A placement of the reading, which stays as it is.
  * @param forced Labels that require a route through their reserved box.
- * @param routing How its routes are asked for: evened pins, the frame walls to keep clear of, and corner pins.
+ * @param route What its routes are asked for.
  * @returns The routing input.
  */
 function forceLabels(
 	placed: ElkNode,
 	forced: ReadonlyMap<string, LabelAnchor | undefined>,
-	routing: Pick<Problem, "evenPins" | "clearWalls" | "cornerPins">,
+	route: RouteRequest = {},
 ): ElkNode {
 	const graph = structuredClone(placed);
-	graph.layoutOptions = { ...graph.layoutOptions, ...routeOptions(routing) };
+	graph.layoutOptions = { ...graph.layoutOptions, ...requestOptions(route) };
 	for (const edge of graph.edges ?? []) {
 		if (!forced.has(edge.id)) continue;
 		edge.layoutOptions = {
@@ -335,26 +349,6 @@ function forceLabels(
 		};
 	}
 	return graph;
-}
-
-/**
- * The routing options a reading asks its routes for.
- * @param routing How the routes are asked for.
- * @param routing.evenPins Whether every pin of a shape costs the same.
- * @param routing.clearWalls The frame walls to keep clear of.
- * @param routing.cornerPins Whether a route that hooks past a card's corner is offered the face it passed.
- * @returns The graph options that ask for them.
- */
-function routeOptions({
-	evenPins = false,
-	clearWalls = [],
-	cornerPins = false,
-}: Pick<Problem, "evenPins" | "clearWalls" | "cornerPins">): Record<string, string> {
-	return {
-		[EVEN_PINS]: String(evenPins),
-		[CLEAR_WALLS]: JSON.stringify(clearWalls),
-		[CORNER_PINS]: String(cornerPins),
-	};
 }
 
 /**
@@ -518,7 +512,7 @@ async function drawAttempt(
 > {
 	const { content, measured } = problem;
 	const laidOut = await rendererHost().solve(
-		forceLabels(await problem.place(reserved), forced, problem),
+		forceLabels(await problem.place(reserved), forced, problem.route),
 		{
 			...solveOptions(problem),
 			[SOLVE_STAGE]: "route",

@@ -8,7 +8,7 @@
 import { expect, test } from "bun:test";
 import type { ElkNode } from "@archboard/elk-rs";
 import { AvoidLib } from "libavoid-js";
-import { routeGraph } from "@/runtime/semantic-renderer/layout";
+import { requestOptions, routeGraph } from "@/runtime/semantic-renderer/layout";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 
 test("a line passing its target's top corner enters the top instead of hooking into the side", async () => {
@@ -18,7 +18,7 @@ test("a line passing its target's top corner enters the top instead of hooking i
 		id: "root",
 		width: 1200,
 		height: 400,
-		layoutOptions: { "archboard.route.corner-pins": "true" },
+		layoutOptions: requestOptions({ cornerPins: true }),
 		children: [
 			{ id: "source", x: 700, y: 20, width: 340, height: 88 },
 			target,

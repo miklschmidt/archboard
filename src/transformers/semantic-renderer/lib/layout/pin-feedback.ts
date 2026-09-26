@@ -7,9 +7,6 @@ import { ROUTE_LANE } from "@/transformers/semantic-renderer/lib/layout/routing-
 
 type PinProjection = { pin: AlignedPin; corridor: Box };
 
-/** The routing option that offers corner pins ({@link projectedCardPins}). */
-export const CORNER_PINS = "archboard.route.corner-pins";
-
 /**
  * Read one endpoint's actual attachment from a complete native route.
  * @param node Endpoint card.

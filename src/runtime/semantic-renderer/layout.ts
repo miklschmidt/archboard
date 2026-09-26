@@ -11,6 +11,7 @@ export {
 	settleLabels,
 	improveProjection,
 	projectLabelChannels,
+	requestOptions,
 	routeGraph,
 	type ArchitectureDrawing,
 	type DrawingEdge,

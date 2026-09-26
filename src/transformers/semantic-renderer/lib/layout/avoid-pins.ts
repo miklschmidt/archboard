@@ -13,6 +13,7 @@ import {
 } from "@/transformers/semantic-renderer/config";
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import { candidates } from "@/transformers/semantic-renderer/lib/layout/straight-candidates";
+import type { Requested } from "@/transformers/semantic-renderer/lib/layout/route-requests";
 import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
 import {
 	boxOf,
@@ -26,6 +27,12 @@ import { inflate, type Box } from "@/transformers/semantic-renderer/lib/geometry
 
 export type AlignedPin = { face: Face; position: number };
 export type AlignedPins = Map<string, Map<string, AlignedPin[]>>;
+
+/** What a route request asks of the pins offered (route-requests.ts). */
+type PinRequest = Pick<Requested, "cornerPins" | "laneChannels">;
+
+/** Pins asked for nothing beyond the ordinary. */
+const ORDINARY_PINS: PinRequest = { cornerPins: false, laneChannels: false };
 
 /**
  * Read physical alternatives in a shared endpoint channel.
@@ -81,8 +88,8 @@ class PinCandidates {
 	readonly pins: AlignedPins = new Map();
 	/** Tracks another route holds, which no pin on the same face may come within a lane of. */
 	tracks: ReadonlyMap<string, readonly AlignedPin[]> = new Map();
-	/** Whether rails include the near corner of a face a route hooks past (pin-feedback.ts). */
-	corners = false;
+	/** Whether rails include the near corner of a face a route hooks past, and straight channels every lane of a shared span. */
+	request = ORDINARY_PINS;
 	private readonly selfLoops = new Map<string, Set<string>>();
 
 	/**
@@ -139,7 +146,7 @@ class PinCandidates {
 			const node = this.nodes.get(id)!;
 			const channel = relationshipChannel(edge, id);
 			const far = farCards(edge, id);
-			for (const { pin, corridor } of projectedCardPins(node, edge, this.corners)) {
+			for (const { pin, corridor } of projectedCardPins(node, edge, this.request.cornerPins)) {
 				if (!this.available(id, channel, pin)) continue;
 				if (!this.clearCorridor(corridor, new Set([id]), edge.id, far)) continue;
 				this.record(id, channel, pin);
@@ -164,7 +171,12 @@ class PinCandidates {
 		edgeId: string,
 		anchor?: number,
 	): void {
-		for (const axis of candidates(boxOf(source), boxOf(target), anchor)) {
+		for (const axis of candidates(
+			boxOf(source),
+			boxOf(target),
+			anchor,
+			this.request.laneChannels,
+		)) {
 			for (const [from, to] of axis) {
 				const accepted = this.addPair(
 					source.id,
@@ -370,19 +382,23 @@ class PinCandidates {
  * @param nodes Placed scene nodes.
  * @param channels Sorted connection channels at every endpoint.
  * @param edges All scene relationships.
+ * @param request What the routes ask of their pins.
  * @returns Available aligned pins.
  */
 export function alignedPins(
 	nodes: ReadonlyMap<string, ElkNode>,
 	channels: ReadonlyMap<string, readonly string[]>,
 	edges: readonly ElkExtendedEdge[],
+	request = ORDINARY_PINS,
 ): AlignedPins {
 	// The first pass protects every seed. The refinement can release seeds
 	// replaced by real matched pins, without losing those feasible alternatives.
 	const selected = new PinCandidates(nodes, channels, edges);
+	selected.request = request;
 	for (const edge of edges.toSorted((one, two) => semanticOrder(one) - semanticOrder(two)))
 		selected.add(edge);
 	const refined = new PinCandidates(nodes, channels, edges, selected.pins);
+	refined.request = request;
 	for (const edge of edges.toSorted((one, two) => semanticOrder(one) - semanticOrder(two)))
 		refined.add(edge);
 	return refined.pins;
@@ -419,20 +435,20 @@ function collectUsedPins(
  * @param nodes Placed scene nodes.
  * @param channels Sorted connection channels at every endpoint.
  * @param edges Complete baseline relationships.
- * @param corners Whether to offer the near corner of a face a route hooks past.
+ * @param request What the routes ask of their pins.
  * @returns Refined alternatives, or nothing when no new pin could be offered.
  */
 export function refinedPins(
 	nodes: ReadonlyMap<string, ElkNode>,
 	channels: ReadonlyMap<string, readonly string[]>,
 	edges: readonly ElkExtendedEdge[],
-	corners = false,
+	request = ORDINARY_PINS,
 ): AlignedPins | undefined {
 	const used = collectUsedPins(nodes, edges);
 	const tracks = separateEndRuns(nodes, edges, (card) => used.get(card));
 	const selected = new PinCandidates(nodes, channels, edges, used, used);
 	selected.tracks = tracks;
-	selected.corners = corners;
+	selected.request = request;
 	for (const [id, byChannel] of used)
 		selected.pins.set(id, new Map([...byChannel].map(([channel, pins]) => [channel, [...pins]])));
 	for (const edge of edges.toSorted((one, two) => semanticOrder(one) - semanticOrder(two))) {

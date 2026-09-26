@@ -1,0 +1,122 @@
+{
+	"nodes": [
+		{
+			"id": "a",
+			"name": "Etaoi shrdlucmf",
+			"kind": "service",
+			"responsibility": "Oinshrdluc fwypetaoi shrd ucmfwy eta inshrdl Cmfwy etaoi, hrdluc fwy Etaoinshr lucmfw",
+			"order": 1000
+		},
+		{
+			"id": "b",
+			"name": "Taoin hrdlucmfw",
+			"kind": "module",
+			"responsibility": "Ins rdlucmf-ypetao NSHR lucmfw pe a insh dluc fwy, taoinshrdl cm wyp taoinsh, luc fwyp taoi shrd ucmfwy et oin hrdlu mfwypetaoi shr luc fwypetaoi",
+			"parent": "a",
+			"order": 5000
+		},
+		{
+			"id": "c",
+			"name": "Aoins rdlucmf",
+			"kind": "module",
+			"responsibility": "Nsh dlucmfwypet oinshrd ucm wyp taoinshr lucmfwy et oins rdlu",
+			"parent": "a",
+			"order": 6000
+		},
+		{
+			"id": "d",
+			"name": "Oinshr lucm",
+			"kind": "module",
+			"responsibility": "Shrdl cmfwyp tao Nshrdlucm wypeta in hrdlu mf, peta in hrd ucmfw petaoin hr Lucm: ype aoinshrdlu, fwy etaoins, dlu mfw petaoin hrdl cmf ypetaoin",
+			"parent": "a",
+			"order": 7000
+		},
+		{
+			"id": "e",
+			"name": "Inshr luc-fwypet",
+			"kind": "external",
+			"responsibility": "Hrd Ucmfw petaoi, hrd uc fwy etaoins rdluc fwyp taoin hr luc Fwypetaoi-shrd Ucmfw peta",
+			"order": 10000
+		},
+		{
+			"id": "f",
+			"name": "Nshrd-ucmfwy etaoinsh",
+			"kind": "module",
+			"responsibility": "Rdluc fwy etaoin hrdlucmfw peta i shrd ucmfwyp ta i shrdl: mfw petao nshrdlucm wypetao, shrdluc fwyp",
+			"parent": "a",
+			"order": 18000
+		},
+		{
+			"id": "g",
+			"name": "Shrdlucm wypetao",
+			"kind": "module",
+			"responsibility": "Dlucm w peta'i shrdlucm wyp taoinsh dlucm wypetao nshr lucmfw pet oinshr luc fwypeta inshrdlucm",
+			"parent": "a",
+			"order": 19000
+		}
+	],
+	"edges": [
+		{
+			"id": "e0",
+			"from": "c",
+			"to": "b",
+			"kind": "rpc",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "ucm WYPE-AOI shrdluc fwy etaoin",
+			"order": 3000
+		},
+		{
+			"id": "e1",
+			"from": "b",
+			"to": "e",
+			"kind": "rpc",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "CMFW-PET oins rdluc",
+			"order": 4000
+		},
+		{
+			"id": "e2",
+			"from": "d",
+			"to": "c",
+			"kind": "data",
+			"emphasis": "normal",
+			"label": "mfwype/aoin hrd ucmfwy/etao: shr lucmfwypet",
+			"order": 5000
+		},
+		{
+			"id": "e3",
+			"from": "g",
+			"to": "f",
+			"kind": "event",
+			"emphasis": "normal",
+			"label": "f ypetaoi shrdl cmfwyp",
+			"order": 26000
+		},
+		{
+			"id": "e4",
+			"from": "f",
+			"to": "c",
+			"kind": "rpc",
+			"emphasis": "normal",
+			"label": "wypeta/inshrd_ucmfw peta ins rdlucmfwy",
+			"order": 27000
+		},
+		{
+			"id": "e5",
+			"from": "f",
+			"to": "d",
+			"kind": "call",
+			"emphasis": "muted",
+			"label": "ypeta ins rdlu mfwyp",
+			"order": 28000
+		}
+	]
+}
