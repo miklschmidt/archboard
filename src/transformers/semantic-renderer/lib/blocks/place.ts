@@ -130,6 +130,16 @@ function bestOf(block: Block, laid: Laid, insets: Insets): number {
 }
 
 /**
+ * Whether two measures of a block stand within a near tie of each other.
+ * @param one A measure.
+ * @param other Another.
+ * @returns True when they do.
+ */
+function near(one: number, other: number): boolean {
+	return Math.abs(one - other) <= NEAR * Math.min(one, other);
+}
+
+/**
  * A block of cards laid out whole: with the containers a line from another
  * container enters stacked below it, when that reads better, or else as
  * Graphviz ranks them.
@@ -163,7 +173,6 @@ function stackedOrNot(
 	const stacks = (pick: (laying: Laying) => Laid): boolean => {
 		const [one, other] = [bestOf(block, pick(stacked), insets), bestOf(block, pick(plain), insets)];
 		const [fits, flat] = [fitIn(pick(stacked)), fitIn(pick(plain))];
-		const near = (a: number, b: number): boolean => Math.abs(a - b) <= NEAR * Math.min(a, b);
 		return near(one, other) && !near(fits, flat) ? fits > flat : one > other;
 	};
 	const [tied, pulled] = [stacks(({ tied: one }) => one), stacks(settled)];
