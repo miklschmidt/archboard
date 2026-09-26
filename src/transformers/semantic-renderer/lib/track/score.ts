@@ -157,8 +157,10 @@ function across(one: Box, other: Box): boolean {
 
 /**
  * Whether a wrap, laid out, sinks a card rather than wrapping it: some
- * lowered card has no card of its own cluster in the row above standing over
- * it, so it stands off on a late rank of its own, away from its neighbours.
+ * lowered card has no card in the row above standing over it, so it stands
+ * off on a late rank of its own, away from its neighbours. A card with a
+ * card of its own cluster in a higher row must stand under one of those; the
+ * topmost cards of a cluster the wrap lowered whole may stand under any.
  * @param plan The wrap: every card of the rank and its row.
  * @param boxes Where the wrap laid each card.
  * @param around The innermost cluster around a card, if any.
@@ -169,16 +171,14 @@ function sinks(
 	boxes: ReadonlyMap<string, Box>,
 	around: (card: string) => string | undefined,
 ): boolean {
-	return [...plan].some(
-		([card, row]) =>
-			row > 0 &&
-			![...plan].some(
-				([other, above]) =>
-					above === row - 1 &&
-					around(other) === around(card) &&
-					across(boxes.get(other)!, boxes.get(card)!),
-			),
-	);
+	const cards = [...plan];
+	return cards.some(([card, row]) => {
+		if (row === 0) return false;
+		const kin = cards.filter(([other]) => around(other) === around(card));
+		const led = kin.some(([, above]) => above < row);
+		const under = (led ? kin : cards).filter(([, above]) => above === row - 1);
+		return !under.some(([other]) => across(boxes.get(other)!, boxes.get(card)!));
+	});
 }
 
 export { anchored, crossingsOf, readsBetter, scoreOf, sinks, wrapPlans, type Weighed };
