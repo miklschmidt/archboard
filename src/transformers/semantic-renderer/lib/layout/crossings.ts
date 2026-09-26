@@ -2,14 +2,18 @@
 //
 // One rule, for every engine, since every engine hands its routes to this pass.
 // Where two lines cross, one of them hops over the other: a small arc centred
-// on the crossing. A hop stands only where both lines run straight and alone
-// for the hop's reach and a clear margin on every side of the crossing, and
-// the hopping line a bend's room further, so no bend, no join and no
-// arrowhead is ever part of its shape or drawn beside it, and it always
-// bulges the same way (up, or right), so two hops never face each other. Where
-// no such spot exists nothing rises: the line that runs straighter through the
-// crossing stays whole, and the other is cut beneath it. A trunk is one drawn
-// line (`drawn-lines.ts`): a line crosses it once, and it hops as its drawer does.
+// on the crossing, which always bulges the same way (up, or right), so two
+// hops never face each other. The line with more straight room rises. A hop
+// stands where the rising line runs straight and alone past its feet and the
+// line beneath runs straight under its crest, and the crest touches no card,
+// label, title, arrowhead or other line. The rising line keeps a bend's room
+// past each foot where either line can, so a bend and a hop never read as one
+// squiggle, and less where neither can, since a crossing with no arc reads as
+// no crossing at all. A straight line may also hop over another route's
+// rounded corner (`corner-crossings.ts`). Only where no hop can stand is a
+// line cut: the line that runs straighter through the crossing stays whole,
+// and the other is cut beneath it. A trunk is one drawn line
+// (`drawn-lines.ts`): a line crosses it once, and it hops as its drawer does.
 import {
 	BEND_RADIUS,
 	BRIDGE_RADIUS,
@@ -20,7 +24,11 @@ import type {
 	DrawingEdge,
 } from "@/transformers/semantic-renderer/lib/drawing";
 import { inflate, type Box } from "@/transformers/semantic-renderer/lib/geometry";
-import { cornerClearances } from "@/transformers/semantic-renderer/lib/layout/corner-crossings";
+import {
+	cornerClearances,
+	cornerContacts,
+	type CornerContact,
+} from "@/transformers/semantic-renderer/lib/layout/corner-crossings";
 import { curveBoxes } from "@/transformers/semantic-renderer/lib/layout/curve-clearance";
 import {
 	curveBounds,
@@ -34,8 +42,9 @@ import {
 	crossingKey,
 	crossingOf,
 	drawnCrossings,
+	extentOf,
 	joinNear,
-	onLine,
+	lineRuns,
 	onRun,
 	overlaps,
 	pieceOf,
@@ -49,18 +58,29 @@ import {
 } from "@/transformers/semantic-renderer/lib/layout/drawn-lines";
 import { unfoldCrossings } from "@/transformers/semantic-renderer/lib/layout/folded-crossings";
 
-/** Straight line a hop keeps beyond its feet, on both lines, before a bend, a join or an end's approach. */
+/** Straight line kept past a hop, before a bend, a join or an end's approach. */
 const HOP_MARGIN = 6;
 
-/** How far a hop's clear stretch reaches from its crossing, along either line. */
+/** How far the line beneath a hop runs straight toward the side it bulges to: under its crest and on past it. */
 const HOP_REACH = BRIDGE_RADIUS + HOP_MARGIN;
 
 /**
- * How much further the hopping line itself runs straight before it turns: a
- * bend a few points past a hop draws one squiggle, the hop and the turn
- * bulging the same way.
+ * How far the line beneath a hop runs straight on the other side, so it is
+ * seen to pass beneath rather than to end at the line or turn onto it.
  */
-const HOP_BEND_ROOM = BEND_RADIUS;
+const FAR_REACH = BRIDGE_CLEARANCE;
+
+/**
+ * The straight line the rising line keeps past each of a hop's feet, first
+ * where either line has it and then where neither does. A bend a few points
+ * past a hop draws one squiggle with it, so a bend's room is kept wherever one
+ * of the lines has it; where neither does, an arc beside a turn still reads as
+ * a crossing, and a cut does not.
+ */
+const ROOMS = [HOP_MARGIN + BEND_RADIUS, HOP_MARGIN] as const;
+
+/** Straight line on a crossing's shorter side past which a line has all the room a hop could want. */
+const RISE_CAP = BRIDGE_RADIUS + ROOMS[0];
 
 /** How much straighter one line must run through a crossing to stay whole over the other. */
 const STRAIGHTER = 0.5;
@@ -68,18 +88,31 @@ const STRAIGHTER = 0.5;
 /** How near a join a cut must be to keep the joining line whole: within a hop's radius. */
 const JOIN_REACH = BRIDGE_RADIUS;
 
+/** One piece of one route. */
+type Piece = Pick<Run, "edgeIndex" | "segmentIndex">;
+
+/** What a hop passes over: another drawn line, or another route's rounded corner. */
+type Contact = DrawnCrossing | CornerContact;
+
 /** A crossing along one candidate upper run. */
 interface Candidate {
 	readonly at: number;
-	readonly crossing: DrawnCrossing;
-	/** The line it would cross. */
-	readonly other: Line;
+	readonly contact: Contact;
+	/** The pieces the hop passes over, which its crest may touch. */
+	readonly beneath: readonly Piece[];
+	/** The routes it passes over, cut beneath its crest. */
+	readonly under: readonly string[];
+	/** Whether the run's line is the one to try raising first there. */
+	readonly first: boolean;
 }
 
 /** Everything settling the crossings reads and records. */
 interface Settling {
 	readonly drawing: ArchitectureDrawing;
 	readonly runs: readonly Run[];
+	readonly crossings: readonly DrawnCrossing[];
+	/** Each run's candidates, in order along it. */
+	readonly candidates: ReadonlyMap<Run, readonly Candidate[]>;
 	/** Cards, labels, titles and every accepted hop, which a new hop must keep clear of. */
 	readonly occupied: Box[];
 	readonly bridges: Bridge[];
@@ -87,7 +120,7 @@ interface Settling {
 	readonly replacements: readonly Map<number, Curve[]>[];
 	/** Pairs of pieces whose contact is marked. */
 	readonly crossed: Set<string>;
-	readonly hopped: Set<DrawnCrossing>;
+	readonly hopped: Set<Contact>;
 }
 
 /**
@@ -158,14 +191,14 @@ function occupiedBoxes(drawing: ArchitectureDrawing): Box[] {
  * Keep a hump away from every route piece but the lines it crosses and rides.
  * Refined cubic bounds preserve clearance without treating empty hulls as ink.
  * @param drawing The original drawing.
- * @param allowed The runs on the lines the hump rides and crosses.
+ * @param allowed The pieces of the lines the hump rides and passes over.
  * @param bounds The hump bounds, including ink clearance.
  * @param curve The proposed bridge.
  * @returns Whether another route piece occupies that space.
  */
 function routeObstructs(
 	drawing: ArchitectureDrawing,
-	allowed: readonly Run[],
+	allowed: readonly Piece[],
 	bounds: Box,
 	curve: Curve,
 ): boolean {
@@ -188,50 +221,48 @@ function routeObstructs(
 }
 
 /**
- * Whether both lines run straight and alone around every crossing of a cluster.
+ * Whether the rising line runs straight and alone around every crossing of a
+ * cluster, the given room past each foot. Each line beneath was checked when
+ * its crossing became a candidate.
  * @param runs Every run.
  * @param run The upper run.
  * @param group The cluster.
- * @param margin How far the crest runs on past the outer crossings.
+ * @param reach How far past the outer crossings the line must run straight.
  * @returns True when a hop may stand there.
  */
 function roomFor(
 	runs: readonly Run[],
 	run: Run,
 	group: readonly Candidate[],
-	margin: number,
+	reach: number,
 ): boolean {
-	const places = group.map(({ crossing }) => crossing.point[run.axis]);
-	const reach = margin + HOP_REACH + HOP_BEND_ROOM;
-	return (
-		straightThrough(runs, run, Math.min(...places) - reach, Math.max(...places) + reach) &&
-		group.every(({ crossing, other }) => {
-			const beneath = crossing.point[other.drawer.axis];
-			return straightThrough(runs, other.drawer, beneath - HOP_REACH, beneath + HOP_REACH);
-		})
-	);
+	const places = group.map(({ contact }) => contact.point[run.axis]);
+	return straightThrough(runs, run, Math.min(...places) - reach, Math.max(...places) + reach);
 }
 
 /**
- * A cluster gets one hop only where both lines run straight and alone around
- * every crossing in it, and the hop's whole footprint has clear room.
+ * A cluster gets one hop only where the rising line runs straight and alone
+ * around every crossing in it, and the hop's whole footprint has clear room.
  * @param state The drawing, its runs and what is occupied.
  * @param run The upper run.
  * @param group A cluster of crossings along it.
+ * @param room The straight line the rising line keeps past each foot.
  * @returns The bridge curve if it is safe to introduce.
  */
-function hopFor(state: Settling, run: Run, group: readonly Candidate[]): Curve | undefined {
+function hopFor(
+	state: Settling,
+	run: Run,
+	group: readonly Candidate[],
+	room: number,
+): Curve | undefined {
 	// A crest over several lines runs on past the outer ones, so each passes
 	// under its flat and none meets it where it turns.
 	const margin = group.length > 1 ? BRIDGE_CLEARANCE : 0;
-	if (!roomFor(state.runs, run, group, margin)) return undefined;
+	if (!roomFor(state.runs, run, group, margin + BRIDGE_RADIUS + room)) return undefined;
 	const curve = hump(run, group[0]!.at - margin, group.at(-1)!.at + margin);
 	const bounds = inflate(curveBounds(curve), BRIDGE_CLEARANCE);
 	if (state.occupied.some((box) => overlaps(bounds, box))) return undefined;
-	const lines = [run, ...group.map(({ other }) => other.drawer)];
-	const allowed = state.runs.filter((candidate) =>
-		lines.some((line) => candidate === line || onLine(line, candidate)),
-	);
+	const allowed = [...lineRuns(state.runs, run), ...group.flatMap(({ beneath }) => beneath)];
 	return routeObstructs(state.drawing, allowed, bounds, curve) ? undefined : curve;
 }
 
@@ -276,42 +307,153 @@ function idsOf(edges: readonly DrawingEdge[], line: Line): string[] {
 }
 
 /**
- * Mark every pair of runs a drawn crossing stands for as settled.
+ * Mark every pair of pieces a contact stands for as settled.
  * @param crossed The settled pairs.
- * @param crossing The crossing.
+ * @param contact The crossing, or the contact with a corner.
  */
-function settle(crossed: Set<string>, crossing: DrawnCrossing): void {
-	for (const one of crossing.lines[0].members) {
-		for (const other of crossing.lines[1].members) crossed.add(crossingKey(one, other));
+function settle(crossed: Set<string>, contact: Contact): void {
+	if ("lines" in contact) {
+		for (const one of contact.lines[0].members) {
+			for (const other of contact.lines[1].members) crossed.add(crossingKey(one, other));
+		}
+	} else {
+		for (const member of contact.members) crossed.add(crossingKey(member, contact.corner));
 	}
 }
 
 /**
- * The unmarked crossings a run draws one of the lines of, where the other line
- * is painted before it (or, in the fallback pass, after it), in order along it.
- * @param state What is settled so far.
- * @param crossings Every crossing.
- * @param run The run.
- * @param fallback Whether this is the pass that tries the earlier-painted line.
- * @returns The candidates.
+ * Whether a line runs straight and alone beneath where a hop over it would
+ * stand: under the crest and on past it on the side the hop bulges to, and a
+ * little way on the other side.
+ * @param runs Every run.
+ * @param run The run drawing the line beneath.
+ * @param at Where the rising line runs, on that run's axis.
+ * @param far How far it runs on the other side; less than nothing where it starts past the rising line.
+ * @returns True when a hop may pass over it there.
  */
-function candidatesFor(
-	state: Settling,
+function passesBeneath(runs: readonly Run[], run: Run, at: number, far: number): boolean {
+	// A hop bulges up from a line across, toward lower y along a line down,
+	// and right of a line down, toward higher x along a line across.
+	return run.axis === "y"
+		? straightThrough(runs, run, at - HOP_REACH, at + far)
+		: straightThrough(runs, run, at - far, at + HOP_REACH);
+}
+
+/**
+ * Which of a crossing's lines stays whole over the other: the one that runs
+ * straighter through it, else the later-painted.
+ * @param runs Every run.
+ * @param crossing The crossing.
+ * @param cap How much straight line on the shorter side counts at most.
+ * @returns Whether it is the first line.
+ */
+function firstAbove(runs: readonly Run[], crossing: DrawnCrossing, cap: number): boolean {
+	const [one, other] = crossing.lines.map(({ drawer }) =>
+		Math.min(cap, straightness(runs, drawer, crossing.point[drawer.axis])),
+	);
+	return Math.abs(one! - other!) < STRAIGHTER
+		? crossing.lines[0].drawer.edgeIndex > crossing.lines[1].drawer.edgeIndex
+		: one! > other!;
+}
+
+/**
+ * A crossing as a candidate for each of its lines to rise at, where the other
+ * line passes beneath. The line with more straight room, up to all a hop could
+ * want, is the one to raise first.
+ * @param runs Every run.
+ * @param edges The routes.
+ * @param crossing The crossing.
+ * @returns Each rising run and its candidate.
+ */
+function crossingCandidates(
+	runs: readonly Run[],
+	edges: readonly DrawingEdge[],
+	crossing: DrawnCrossing,
+): (readonly [Run, Candidate])[] {
+	const firstRises = firstAbove(runs, crossing, RISE_CAP);
+	return crossing.lines.flatMap((line, mine): (readonly [Run, Candidate])[] => {
+		const other = crossing.lines[1 - mine]!;
+		const beneath = other.drawer;
+		if (!passesBeneath(runs, beneath, crossing.point[beneath.axis], FAR_REACH)) return [];
+		const run = line.drawer;
+		const candidate = {
+			at: along(run, crossing.point[run.axis]),
+			contact: crossing,
+			beneath: lineRuns(runs, beneath),
+			under: idsOf(edges, other),
+			first: (mine === 0) === firstRises,
+		};
+		return [[run, candidate]];
+	});
+}
+
+/**
+ * A contact with a rounded corner as a candidate for the straight line to
+ * rise at, where the straight run the corner turns onto passes beneath the
+ * hop. Only the straight line can rise there.
+ * @param runs Every run.
+ * @param edges The routes.
+ * @param contact The contact.
+ * @returns The straight line's run and its candidate.
+ */
+function cornerCandidates(
+	runs: readonly Run[],
+	edges: readonly DrawingEdge[],
+	contact: CornerContact,
+): (readonly [Run, Candidate])[] {
+	const { onward, run } = contact;
+	const at = contact.point[onward.axis];
+	const { low, high } = extentOf(onward);
+	// The onward run starts past the line, at the corner's end.
+	const start = Math.min(Math.abs(low - at), Math.abs(high - at));
+	if (!passesBeneath(runs, onward, at, -start)) return [];
+	const beneath = [contact.corner, ...lineRuns(runs, onward)];
+	const under = [...new Set(beneath.map(({ edgeIndex }) => edges[edgeIndex]!.edge.id))];
+	return [[run, { at: along(run, contact.point[run.axis]), contact, beneath, under, first: true }]];
+}
+
+/**
+ * Every run's candidates, in order along it, found once: what a crossing
+ * needs to carry a hop does not change as hops are placed.
+ * @param runs Every run.
+ * @param edges The routes.
+ * @param crossings Every crossing of two drawn lines.
+ * @returns The candidates by run.
+ */
+function candidatesByRun(
+	runs: readonly Run[],
+	edges: readonly DrawingEdge[],
 	crossings: readonly DrawnCrossing[],
-	run: Run,
-	fallback: boolean,
-): Candidate[] {
-	return crossings
-		.flatMap((crossing): Candidate[] => {
-			const mine = crossing.lines.findIndex(({ drawer }) => drawer === run);
-			if (mine === -1 || state.hopped.has(crossing)) return [];
-			const other = crossing.lines[1 - mine]!;
-			const order = other.drawer.edgeIndex - run.edgeIndex;
-			return (fallback ? order > 0 : order < 0)
-				? [{ at: along(run, crossing.point[run.axis]), crossing, other }]
-				: [];
-		})
-		.toSorted((a, b) => a.at - b.at);
+): ReadonlyMap<Run, readonly Candidate[]> {
+	const byRun = new Map<Run, Candidate[]>();
+	const found = [
+		...crossings.flatMap((crossing) => crossingCandidates(runs, edges, crossing)),
+		...cornerContacts(edges, runs).flatMap((contact) => cornerCandidates(runs, edges, contact)),
+	];
+	for (const [run, candidate] of found) byRun.set(run, [...(byRun.get(run) ?? []), candidate]);
+	for (const list of byRun.values()) list.sort((a, b) => a.at - b.at);
+	return byRun;
+}
+
+/**
+ * The clusters of unmarked candidates a run could rise over, in order along
+ * it: each cluster of several, since hops that close would collide, and each
+ * single one where the run's line rises first (or, in the second pass,
+ * second). A crossing no hop can pass over is no candidate, so it never joins
+ * a neighbour's crest and sinks it.
+ * @param state What is settled so far.
+ * @param run The run.
+ * @param second Whether this is the pass that tries the line that rises second.
+ * @param apart Whether to take each crossing on its own rather than in clusters.
+ * @returns The clusters.
+ */
+function groupsFor(state: Settling, run: Run, second: boolean, apart: boolean): Candidate[][] {
+	const open = (state.candidates.get(run) ?? []).filter(
+		({ contact }) => !state.hopped.has(contact),
+	);
+	return (apart ? open.map((one) => [one]) : crossingGroups(open)).filter(
+		(group) => group.length > 1 || group[0]!.first !== second,
+	);
 }
 
 /**
@@ -319,20 +461,23 @@ function candidatesFor(
  * @param state What is settled so far, extended in place.
  * @param run The run.
  * @param group The cluster.
+ * @param room The straight line the run keeps past each foot.
+ * @returns Whether it rose.
  */
-function raise(state: Settling, run: Run, group: readonly Candidate[]): void {
-	const curve = hopFor(state, run, group);
-	if (curve === undefined) return;
+function raise(state: Settling, run: Run, group: readonly Candidate[], room: number): boolean {
+	const curve = hopFor(state, run, group, room);
+	if (curve === undefined) return false;
 	const { edges } = state.drawing;
-	for (const { crossing } of group) {
-		state.hopped.add(crossing);
-		settle(state.crossed, crossing);
+	for (const { contact } of group) {
+		state.hopped.add(contact);
+		settle(state.crossed, contact);
 	}
-	const under = group.flatMap(({ other }) => idsOf(edges, other));
-	state.bridges.push({ edgeId: edges[run.edgeIndex]!.edge.id, under: [...new Set(under)], curve });
+	const under = [...new Set(group.flatMap((candidate) => candidate.under))];
+	state.bridges.push({ edgeId: edges[run.edgeIndex]!.edge.id, under, curve });
 	const replacement = state.replacements[run.edgeIndex]!;
 	replacement.set(run.segmentIndex, [...(replacement.get(run.segmentIndex) ?? []), curve]);
 	state.occupied.push(inflate(curveBounds(curve), BRIDGE_CLEARANCE));
+	return true;
 }
 
 /**
@@ -369,27 +514,39 @@ function cutBeneath(
  * @returns Whether the one staying whole joins there, and whether it is the first line.
  */
 function upperOf(runs: readonly Run[], crossing: DrawnCrossing): readonly [boolean, boolean] {
-	const [one, other] = crossing.lines;
 	const [oneJoins, otherJoins] = crossing.lines.map(({ drawer }) =>
 		joinNear(runs, drawer, crossing.point[drawer.axis], JOIN_REACH),
 	);
 	if (oneJoins !== otherJoins) return [true, oneJoins!];
-	const oneStraight = straightness(runs, one.drawer, crossing.point[one.drawer.axis]);
-	const otherStraight = straightness(runs, other.drawer, crossing.point[other.drawer.axis]);
-	const oneAbove =
-		Math.abs(oneStraight - otherStraight) < STRAIGHTER
-			? one.drawer.edgeIndex > other.drawer.edgeIndex
-			: oneStraight > otherStraight;
-	return [false, oneAbove];
+	return [false, firstAbove(runs, crossing, Infinity)];
 }
 
 /**
- * Raises one line over each crossing where a hop fits, preferring later-painted
- * ink, and cuts the other line beneath the straighter one wherever none does.
- * No placement moves, and painters and interaction geometry share the
- * resulting curves. A crossing folded into two corners first moves onto
- * straight runs, taking a label on a moved lane along. Contacts at rounded
- * corners are cut the same way, the straight line staying whole.
+ * Raise every line that has the given room over the crossings it rises at,
+ * first the lines that rise first, then the others; and then, where a
+ * cluster's one crest could not stand, over each crossing of it on its own,
+ * once the other lines have had their turn to rise there.
+ * @param state What is settled so far, extended in place.
+ * @param room The straight line a rising line keeps past each foot.
+ */
+function raiseAll(state: Settling, room: number): void {
+	for (const apart of [false, true]) {
+		for (const second of [false, true]) {
+			for (const run of state.runs) {
+				for (const group of groupsFor(state, run, second, apart)) raise(state, run, group, room);
+			}
+		}
+	}
+}
+
+/**
+ * Raises one line over each crossing where a hop fits, the line with more
+ * room first, and cuts the other line beneath the straighter one wherever
+ * none does. No placement moves, and painters and interaction geometry share
+ * the resulting curves. A crossing folded into two corners first moves onto
+ * straight runs, taking a label on a moved lane along. A straight line hops
+ * over a rounded corner where it can; every other contact at a corner is cut,
+ * the corner staying whole.
  * @param settled The drawing after routing, rounding and label placement.
  * @returns Updated edges and the local ink each crossing clears beneath it.
  */
@@ -404,21 +561,16 @@ function bridgeCrossings(settled: ArchitectureDrawing): {
 	const state: Settling = {
 		drawing,
 		runs,
+		crossings,
+		candidates: candidatesByRun(runs, edges, crossings),
 		occupied: occupiedBoxes(drawing),
 		bridges: [],
 		replacements: edges.map(() => new Map<number, Curve[]>()),
 		crossed: new Set(),
 		hopped: new Set(),
 	};
-	// Prefer later-painted ink, then try the other line at still-unmarked crossings.
-	for (const fallback of [false, true]) {
-		for (const run of runs) {
-			for (const group of crossingGroups(candidatesFor(state, crossings, run, fallback))) {
-				raise(state, run, group);
-			}
-		}
-	}
-	for (const crossing of crossings.filter((one) => !state.hopped.has(one))) {
+	for (const room of ROOMS) raiseAll(state, room);
+	for (const crossing of state.crossings.filter((one) => !state.hopped.has(one))) {
 		state.bridges.push(cutBeneath(edges, runs, crossing));
 		settle(state.crossed, crossing);
 	}

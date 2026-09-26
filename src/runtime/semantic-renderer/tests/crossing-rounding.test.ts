@@ -7,41 +7,8 @@ import {
 	curveClearanceIssue,
 	type ArchitectureDrawing,
 	type DrawingEdge,
-	type Point,
 } from "@/runtime/semantic-renderer/layout";
-
-const ROUTES: readonly (readonly Point[])[] = [
-	[
-		{ x: 0, y: 50 },
-		{ x: 100, y: 50 },
-	],
-	[
-		{ x: 50, y: 0 },
-		{ x: 50, y: 65 },
-		{ x: 100, y: 65 },
-	],
-];
-
-/**
- * Rounded routes as they reach crossing treatment.
- * @param routes The fixed orthogonal routes.
- * @returns The complete geometry presented to bridge placement.
- */
-function drawing(routes: readonly (readonly Point[])[] = ROUTES): ArchitectureDrawing {
-	const edges: DrawingEdge[] = routes.map((points, index) => ({
-		edge: {
-			id: String(index),
-			order: (index + 1) * 1000,
-			from: `source${index}`,
-			to: `target${index}`,
-			kind: "call",
-			emphasis: "normal",
-		},
-		curve: curveThrough(points),
-		path: "",
-	}));
-	return { direction: "down", width: 120, height: 100, cards: [], containers: [], edges };
-}
+import { drawing } from "./fixed-routes";
 
 /**
  * Whether a curve is one straight piece along x or y.
@@ -58,24 +25,10 @@ function straightPiece(curve: DrawingEdge["curve"]): boolean {
 }
 
 // Cloud Infrastructure, Common-WebLib and every engine's hop-on-bend: a hop
-// within its reach of a bend, on either line, fuses with the bend into a knot.
-test("a crossing within a hop's reach of a bend is cut beneath the straight line, never hopped", () => {
+// over a turn, or beside its own, fuses with the turn into a knot.
+test("a crossing is cut beneath the straight line where the other turns under the crest and has no room to rise", () => {
 	for (const routes of [
-		// The other route turns seven units past the crossing.
-		ROUTES,
-		// ... or four units past it, turning back.
-		[
-			[
-				{ x: 0, y: 50 },
-				{ x: 100, y: 50 },
-			],
-			[
-				{ x: 50, y: 0 },
-				{ x: 50, y: 62 },
-				{ x: 0, y: 62 },
-			],
-		],
-		// ... or four units before its own turn, running across.
+		// The other route turns four units past the crossing, toward the crest.
 		[
 			[
 				{ x: 0, y: -60 },
@@ -87,22 +40,32 @@ test("a crossing within a hop's reach of a bend is cut beneath the straight line
 				{ x: 12, y: 80 },
 			],
 		],
+		// ... or eight units past it.
+		[
+			[
+				{ x: 0, y: 50 },
+				{ x: 100, y: 50 },
+			],
+			[
+				{ x: 50, y: 100 },
+				{ x: 50, y: 34 },
+				{ x: 100, y: 34 },
+			],
+		],
 	]) {
 		const before = drawing(routes);
 		const result = bridgeCrossings(before);
-		// Neither route moves: nothing rises beside a bend.
 		expect(result.edges).toEqual(before.edges);
-		// The straight route stays whole, and the other is cut beneath its ink.
 		expect(result.bridges).toHaveLength(1);
-		expect(result.bridges[0]!.edgeId).toBe("0");
-		expect(result.bridges[0]!.under).toEqual(["1"]);
+		expect(result.bridges[0]).toMatchObject({ edgeId: "0", under: ["1"] });
 		expect(straightPiece(result.bridges[0]!.curve)).toBe(true);
 	}
 });
 
 // Board persistence, Board viewer and Voice coordinator: a corner cut beneath
 // a straight line left its route ending where the line past the turn began.
-test("a rounded corner that crosses a straight line stays whole, and the line is cut beneath it", () => {
+// Here the corner runs on beside the line, under where a hop's shoulder would be.
+test("a rounded corner that turns beside a straight line stays whole, and the line is cut beneath it", () => {
 	const before = drawing([
 		[
 			{ x: -20, y: -64 },
@@ -124,92 +87,6 @@ test("a rounded corner that crosses a straight line stays whole, and the line is
 	const [corner] = result.bridges[0]!.curve.segments;
 	expect(result.bridges[0]!.curve.segments).toHaveLength(1);
 	expect(corner?.kind).toBe("cubic");
-});
-
-// Browser application and Agent workbench: a branch bent off its trunk and
-// hopped a line a few points later, the turn and the hop one squiggle.
-test("a line that turns just before a crossing does not hop it; the line it crosses does", () => {
-	const result = bridgeCrossings(
-		drawing([
-			[
-				{ x: 0, y: 50 },
-				{ x: 200, y: 50 },
-			],
-			[
-				{ x: 40, y: 27 },
-				{ x: 90, y: 27 },
-				{ x: 90, y: 120 },
-			],
-		]),
-	);
-	expect(result.bridges).toHaveLength(1);
-	expect(result.bridges[0]!.edgeId).toBe("0");
-	expect(result.bridges[0]!.under).toEqual(["1"]);
-	expect(result.bridges[0]!.curve.segments.length).toBeGreaterThan(1);
-});
-
-// Archboard server (graphviz): a line crossed a fan-in trunk where one of its
-// routes joined it, and the trunk was cut there, so the line ran straight
-// through the join's mark and read as a four-way join.
-test("a line joining a trunk at a crossing keeps the trunk whole, the other line cut clear of the join", () => {
-	for (const [x, joined] of [
-		[160, true],
-		[164.8, true],
-		[168, false],
-	] as const) {
-		const result = bridgeCrossings(
-			drawing([
-				[
-					{ x: 0, y: 100 },
-					{ x: 200, y: 100 },
-				],
-				[
-					{ x: 152, y: 0 },
-					{ x: 152, y: 100 },
-					{ x: 200, y: 100 },
-				],
-				[
-					{ x, y: 0 },
-					{ x, y: 200 },
-				],
-			]),
-		);
-		const cut = result.bridges.find(({ under }) => under.includes("2"));
-		expect(cut?.edgeId === "0" && cut.join === true, `x=${x}`).toBe(joined);
-	}
-});
-
-// Browser application and Command interface: two lines twelve apart hopped one
-// line with arcs bulging toward each other, drawing a closed ring around it.
-test("a crossing with room on both lines hops, centred, and every hop bulges the same way", () => {
-	const result = bridgeCrossings(
-		drawing([
-			[
-				{ x: 50, y: 0 },
-				{ x: 50, y: 100 },
-			],
-			[
-				{ x: 0, y: 50 },
-				{ x: 100, y: 50 },
-			],
-			[
-				{ x: 0, y: 62 },
-				{ x: 100, y: 62 },
-			],
-		]),
-	);
-	const hops = result.bridges.filter((bridge) => bridge.curve.segments.length > 1);
-	// The later line rises over the earlier one, its crest on the crossing.
-	expect(hops[0]).toMatchObject({ edgeId: "1", under: ["0"] });
-	expect(hops[0]!.curve.segments[0]!.to).toEqual({ x: 50, y: 43 });
-	for (const hop of hops) {
-		const crest = hop.curve.segments[0]!.to;
-		const across = hop.curve.segments.at(-1)!.to.y === hop.curve.from.y;
-		// Up from a line across, right of a line down: never toward each other.
-		expect(across ? crest.y < hop.curve.from.y : crest.x > hop.curve.from.x).toBe(true);
-	}
-	// Both crossings are marked, one way or the other.
-	expect(result.bridges).toHaveLength(2);
 });
 
 // Track and Blocks draw a trunk as one route per relationship, on top of each
