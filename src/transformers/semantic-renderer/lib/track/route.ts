@@ -33,7 +33,7 @@ import { settleLabels, slideLabels } from "@/transformers/semantic-renderer/lib/
 import { Scene, centreX } from "@/transformers/semantic-renderer/lib/track/scene";
 import { Containers } from "@/transformers/semantic-renderer/lib/track/containers";
 import { closeJogs, openNotches } from "@/transformers/semantic-renderer/lib/track/jogs";
-import { partCollinear } from "@/transformers/semantic-renderer/lib/track/parting";
+import { collinearPairs, partCollinear } from "@/transformers/semantic-renderer/lib/track/parting";
 import { relayLaps } from "@/transformers/semantic-renderer/lib/track/relay";
 import {
 	clearHeadings,
@@ -498,7 +498,8 @@ function pullOntoPorts(
 function partAndClose(scene: Scene, chains: readonly Chain[], routed: readonly Routed[]): void {
 	const routes = routed.map((route) => route.nets);
 	partCollinear(scene, chains, routes);
-	closeJogs(scene, chains, routes);
+	// Closing a jog never stands two lines parted just now back on one column.
+	closeJogs(scene, chains, routes, collinearPairs);
 	openNotches(scene, chains, routes);
 	for (const nets of routes) settleStraights(nets);
 }

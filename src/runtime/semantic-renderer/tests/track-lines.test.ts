@@ -28,6 +28,7 @@ import {
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { drawnTexts } from "@/runtime/semantic-renderer/tests/drawn-text";
+import commandGroups from "./command-groups.json";
 import headingCrossing from "./heading-crossing.json";
 import laneOrder from "./lane-order.json";
 import marginLap from "./margin-lap.json";
@@ -67,6 +68,7 @@ const policy = SemanticPolicySchema.parse({
 		render: { name: "Render", color: "pink", dash: "solid", arrowhead: "filled" },
 	},
 	groups: {
+		writes: { name: "Board writes", color: "orange" },
 		drawing: { name: "Drawing", color: "violet" },
 		panes: { name: "Live panes", color: "teal" },
 		walkthrough: { name: "Walkthroughs", color: "cyan" },
@@ -74,6 +76,7 @@ const policy = SemanticPolicySchema.parse({
 		workhorse: { name: "Workhorse", color: "sky" },
 		child: { name: "Codex child", color: "indigo" },
 		agent: { name: "Agent", color: "fuchsia" },
+		checks: { name: "Vault checks", color: "pink" },
 	},
 });
 
@@ -386,30 +389,42 @@ test("a container standing over another keeps a container's inset from it", asyn
 
 // Reduced from a dogfood board, names replaced: a line came down onto its track
 // and turned where another turned off the track below and went on down, one
-// lane over, and the two read as one line with a kink.
-test("a line ending on a track and another leaving the track below stand apart", async () => {
-	const drawing = await renderArchitecture({
-		content: orderedFixture(readAsOne),
-		theme: "light",
-		layout: "track",
-		policy,
-	});
-	const uprights = [...corridorPoints(drawing.svg)].flatMap(([id, points]) =>
-		points.slice(1).flatMap((end, index) => {
-			const start = points[index]!;
-			const upright = start.x === end.x && Math.abs(start.y - end.y) > 0.5;
-			return upright
-				? [{ id, x: end.x, top: Math.min(start.y, end.y), bottom: Math.max(start.y, end.y) }]
-				: [];
-		}),
-	);
-	for (const one of uprights)
-		for (const other of uprights.filter(({ id }) => id !== one.id)) {
-			const gap = other.top - one.bottom;
-			const lined = Math.abs(one.x - other.x) < TWO_BENDS && gap > 0 && gap <= 2 * TWO_BENDS + 8;
-			expect(lined, `${one.id} runs on into ${other.id}`).toBe(false);
-		}
-});
+// lane over, and the two read as one line with a kink. The second, taken from
+// a board of this repository, had the two parted, and a later pass closing a
+// short step moved one back onto the other's column.
+test.each([
+	["read-as-one", readAsOne],
+	["command-groups", commandGroups],
+] as const)(
+	"a line ending on a track and another leaving the track below stand apart (%s)",
+	async (_, fixture) => {
+		const drawing = await renderArchitecture({
+			content: orderedFixture(fixture),
+			theme: "light",
+			layout: "track",
+			policy,
+		});
+		const routes = corridorPoints(drawing.svg);
+		// Lines drawn joined, on one trunk, are one line where they meet.
+		const joined = (one: string, other: string): boolean =>
+			sharedStretches(routes.get(one)!, routes.get(other)!).length > 0;
+		const uprights = [...routes].flatMap(([id, points]) =>
+			points.slice(1).flatMap((end, index) => {
+				const start = points[index]!;
+				const upright = start.x === end.x && Math.abs(start.y - end.y) > 0.5;
+				return upright
+					? [{ id, x: end.x, top: Math.min(start.y, end.y), bottom: Math.max(start.y, end.y) }]
+					: [];
+			}),
+		);
+		for (const one of uprights)
+			for (const other of uprights.filter(({ id }) => id !== one.id && !joined(id, one.id))) {
+				const gap = other.top - one.bottom;
+				const lined = Math.abs(one.x - other.x) < TWO_BENDS && gap > 0 && gap <= 2 * TWO_BENDS + 8;
+				expect(lined, `${one.id} runs on into ${other.id}`).toBe(false);
+			}
+	},
+);
 
 // Reduced from a dogfood board, names replaced: under Blocks, lines of one
 // kind from one block reach a card in another through one port. Each carrying
