@@ -40,6 +40,12 @@ interface LabelAttempt {
 	readonly unused: readonly string[];
 }
 
+/** A settled drawing and the reservations it was placed with. */
+interface Settled {
+	readonly drawing: ArchitectureDrawing;
+	readonly reserved: ReadonlySet<string>;
+}
+
 /** Solve once with dedicated placement space for the requested labels. */
 type Solve = (reserved: ReadonlySet<string>) => Promise<LabelAttempt>;
 
@@ -89,20 +95,20 @@ function releasesOf(unused: readonly string[]): (readonly string[])[] {
  * @param reserved The reservations the drawing was settled with.
  * @param settled The settled attempt, every label placed.
  * @param rounds The rounds still allowed.
- * @returns The last release's drawing that holds, or the settled one.
+ * @returns The last release's drawing that holds, or the settled one, with its reservations.
  */
 async function releaseUnused(
 	solves: Solves,
 	reserved: ReadonlySet<string>,
 	settled: LabelAttempt,
 	rounds = RELEASE_ROUNDS,
-): Promise<ArchitectureDrawing> {
+): Promise<Settled> {
 	const unused = settled.unused.filter((id) => reserved.has(id));
 	const released = await firstRelease(solves, reserved, settled, releasesOf(unused));
 	return released === undefined
-		? settled.drawing
+		? { drawing: settled.drawing, reserved }
 		: rounds <= 1
-			? released.attempt.drawing
+			? { drawing: released.attempt.drawing, reserved: released.kept }
 			: releaseUnused(solves, released.kept, released.attempt, rounds - 1);
 }
 
@@ -180,9 +186,9 @@ function noLarger(one: ArchitectureDrawing, other: ArchitectureDrawing): boolean
  * Labels own their measured rows; they never enlarge every gap in the board.
  * @param solves Places, or solves, with a set of reservations.
  * @param reserved Labels already found to require dedicated engine space.
- * @returns A complete drawing with every relationship and label present.
+ * @returns A complete drawing with every relationship and label present, and the reservations it keeps.
  */
-async function settleLabels(solves: Solves, reserved: Set<string>): Promise<ArchitectureDrawing> {
+async function settleLabels(solves: Solves, reserved: Set<string>): Promise<Settled> {
 	const attempt = await solves.solve(reserved);
 	if (attempt.missing.length > 0) {
 		reserveMissing(attempt, reserved);

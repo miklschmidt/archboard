@@ -81,16 +81,16 @@ function tidierThan(one: ArchitectureDrawing, other: ArchitectureDrawing): boole
  * settlement the router refuses leaves the other; both refused is refused.
  * @param plain The reading settled with plain pins.
  * @param even The reading settled with evened pins.
- * @returns The drawing kept.
+ * @returns The settlement kept.
  */
-async function tidierSettlement(
-	plain: Promise<ArchitectureDrawing>,
-	even: Promise<ArchitectureDrawing>,
-): Promise<ArchitectureDrawing> {
+async function tidierSettlement<Settled extends { readonly drawing: ArchitectureDrawing }>(
+	plain: Promise<Settled>,
+	even: Promise<Settled>,
+): Promise<Settled> {
 	const [one, other] = await Promise.allSettled([plain, even]);
 	if (other.status === "rejected") return plain;
 	if (one.status === "rejected") return other.value;
-	return tidierThan(other.value, one.value) ? other.value : one.value;
+	return tidierThan(other.value.drawing, one.value.drawing) ? other.value : one.value;
 }
 
-export { EVEN_PINS, centreHandicap, tidierSettlement };
+export { EVEN_PINS, centreHandicap, tidierSettlement, untidiness };

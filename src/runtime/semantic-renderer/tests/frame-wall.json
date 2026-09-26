@@ -1,0 +1,34 @@
+{
+	"nodes": [
+		{
+			"id": "f",
+			"name": "Alpha frame",
+			"kind": "service",
+			"responsibility": "Bravo carbon delta eagle"
+		},
+		{
+			"id": "p",
+			"name": "Carbon delta",
+			"kind": "module",
+			"responsibility": "Eagle falcon garden harbor island jungle",
+			"parent": "f"
+		},
+		{
+			"id": "q",
+			"name": "Delta eagle",
+			"kind": "module",
+			"responsibility": "Falcon garden harbor island jungle kettle",
+			"parent": "f"
+		},
+		{
+			"id": "s",
+			"name": "Eagle falcon",
+			"kind": "service",
+			"responsibility": "Garden harbor island jungle kettle lantern"
+		}
+	],
+	"edges": [
+		{ "id": "e0", "from": "p", "to": "q", "kind": "call" },
+		{ "id": "e1", "from": "p", "to": "s", "kind": "data" }
+	]
+}

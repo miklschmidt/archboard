@@ -25,3 +25,6 @@ export const ANCHOR_CARD_CLEARANCE = CARD_ROUTE_CLEARANCE + ROUTE_OBSTACLE_CLEAR
  * to follow each line and the hops of one line need to clear the other.
  */
 export const ROUTE_LANE = 16;
+
+/** How far a line keeps off a frame wall, so the wall never takes the line's colour. */
+export const WALL_CLEARANCE = ROUTE_LANE / 2;

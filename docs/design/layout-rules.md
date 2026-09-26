@@ -1742,3 +1742,39 @@ On the two galleries, no drawing gains a crossing:
 Settling twice doubles a reading's label rounds. Archboard server's whole
 drawing then runs past the 20 s budget of its wide-boards test on a loaded
 machine; making it fast is the next step, not a reason to keep the crossings.
+
+## 36. Lines keep off frame walls, as a finishing step (2026-09-26)
+
+A frame is drawn `CONTAINER_INSET` (20) around its cards, and a card's routing
+box reaches `CARD_ROUTE_CLEARANCE` (20) out from it, so for every card on a
+frame's west, east or south inset the routing-box edge is the wall. libavoid
+builds its channels on those edges and ran lines exactly on the wall, where the
+frame edge takes the line's colour: Auditlog's `filter, sort, paginate` down
+Portal API's left wall, and Board viewer's `semantic read routes` 1 px inside
+Semantic viewer's right wall, in the 2 px passage between Picture cache and
+Archboard server, which Graphviz keeps only the cluster margin outside the frame.
+
+A card facing a wall to clear reaches further out (`frame-walls.ts`), so its
+routing box ends `WALL_CLEARANCE` (half a lane) beyond the wall, within half
+the free passage in front of it. A passage too narrow to hold a line even half
+a clearance off the wall is closed instead, which sends Board viewer's line into
+Archboard server's top.
+
+Routed that way from the start, the reach moved which labels were reserved and
+so the placement: Agent workbench went from 15 to 18 crossings and Board
+rasterizer from 2777 to 3495 wide. It is therefore a finishing step
+(`clear-walls.ts`). After a reading is settled, and plain or evened pins
+chosen, the walls that lines run along without staying inside that frame are
+named, and the same placement with the same reservations is routed once more
+clear of them. That drawing is kept only when it has fewer such lines, every
+label still finds a box, it has no more crossings, no line has more bends, and
+no line leaves a frame it stayed inside. A relationship within a frame stays
+inside even on its wall (`containment-calls.test.ts`), since its cards leave no
+lane inside: Board viewer's `Drive walkthrough focus` line keeps to the wall.
+
+Only the two drawings with such a line change; totals are otherwise equal:
+
+| vault   | crossings | length          | bends       | lines on a wall |
+| ------- | --------- | --------------- | ----------- | --------------- |
+| dogfood | 171 → 171 | 363.9k → 364.0k | 2079 → 2077 | 2 → 1           |
+| work    | 26 → 26   | 90.4k → 90.4k   | 505 → 505   | 1 → 0           |

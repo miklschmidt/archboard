@@ -13,6 +13,12 @@ import {
 	ROUTE_LANE,
 } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 import {
+	grown,
+	pinPlacement,
+	routingInsets,
+	type Insets,
+} from "@/transformers/semantic-renderer/lib/layout/frame-walls";
+import {
 	boxCentre,
 	inflate,
 	type Box,
@@ -61,12 +67,14 @@ export class RoutingScene {
 	 * @param endpoints Shared faces still capable of a complete rounded approach.
 	 * @param closedFrames Frames whose bodies no unrelated route may enter.
 	 * @param evenPins Whether every pin of a shape costs the same (even-pins.ts).
+	 * @param reach Each card's extra reach toward a frame wall (frame-walls.ts).
 	 */
 	constructor(
 		private readonly avoid: AvoidEngine,
 		private readonly endpoints: EndpointOptions,
 		private readonly closedFrames: ReadonlySet<string> = new Set(),
 		private readonly evenPins = false,
+		private readonly reach: ReadonlyMap<string, Insets> = new Map(),
 	) {
 		this.router = new avoid.Router(avoid.RouterFlag.OrthogonalRouting.value);
 		this.router.setRoutingParameter(avoid.RoutingParameter.shapeBufferDistance, SHAPE_CLEARANCE);
@@ -116,7 +124,7 @@ export class RoutingScene {
 	 */
 	private registerNode(node: ElkNode, closed: boolean): void {
 		if (closed) this.closedBodies.push(boxOf(node));
-		this.shape(node.id, closed ? boxOf(node) : inflate(obstacleOf(node), nodeInset(node)));
+		this.shape(node.id, closed ? boxOf(node) : grown(obstacleOf(node), this.insets(node.id)));
 	}
 
 	/**
@@ -272,24 +280,30 @@ export class RoutingScene {
 	): void {
 		const shape = this.shapes.get(id)!;
 		const box = this.obstacles.get(id)!;
-		const inset = nodeInset(this.nodes.get(id));
-		for (const [x, y, direction] of faces) {
-			const at = {
-				x: x === 0.5 ? (inset + (box.width - 2 * inset) * position) / box.width : x,
-				y: y === 0.5 ? (inset + (box.height - 2 * inset) * position) / box.height : y,
-			};
+		const inset = this.insets(id);
+		for (const side of faces) {
+			const { at, offset } = pinPlacement(box, inset, side, position);
 			const pin = new this.avoid.ShapeConnectionPin(
 				shape,
 				pinClass,
 				at.x,
 				at.y,
 				true,
-				inset,
-				direction,
+				offset,
+				side[2],
 			);
 			pin.setExclusive(false);
-			if (this.evenPins) pin.setConnectionCost(centreHandicap(box, at, inset));
+			if (this.evenPins) pin.setConnectionCost(centreHandicap(box, at, offset));
 		}
+	}
+
+	/**
+	 * How far a native obstacle's routing box reaches past its visible shape.
+	 * @param id Native obstacle identity.
+	 * @returns Its inset on each face; labels and arrival corridors have none.
+	 */
+	private insets(id: string): Insets {
+		return routingInsets(this.nodes.get(id), this.reach.get(id));
 	}
 
 	/**
@@ -492,15 +506,6 @@ function labelFaces(edge: ElkExtendedEdge, source: Box, target: Box): readonly [
 	const axis = horizontal ? "x" : "y";
 	const faces: readonly [Face, Face] = horizontal ? ["WEST", "EAST"] : ["NORTH", "SOUTH"];
 	return boxCentre(source)[axis] > boxCentre(target)[axis] ? [faces[1], faces[0]] : faces;
-}
-
-/**
- * Every semantic endpoint solid needs an inset pin inside its enlarged native obstacle.
- * @param node The semantic node, absent for labels and frame-arrival corridors.
- * @returns Native shape expansion; the visible endpoint remains at its card or title border.
- */
-function nodeInset(node: ElkNode | undefined): number {
-	return node === undefined ? 0 : CARD_ROUTE_EXPANSION;
 }
 
 /**
