@@ -34,10 +34,9 @@ import { eitherRouting } from "@/transformers/semantic-renderer/lib/layout/check
 import { verticesOf } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { cornerPorts } from "@/transformers/semantic-renderer/lib/layout/lone-pins";
 import { sideHooks } from "@/transformers/semantic-renderer/lib/layout/pin-feedback";
-import { ROUTE_LANE } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 import {
 	crowdedJoinCount,
-	stackedLength,
+	stackedLanes,
 	stackKeys,
 	touchKeys,
 	trackKeys,
@@ -134,7 +133,7 @@ function defectsIn(drawing: ArchitectureDrawing): readonly number[] {
 			touchKeys(drawing).length +
 			trackKeys(drawing).length +
 			crowdedJoinCount(drawing),
-		Math.round(stackedLength(drawing) / ROUTE_LANE),
+		stackedLanes(drawing),
 		sideHooks(drawing).length,
 	];
 }

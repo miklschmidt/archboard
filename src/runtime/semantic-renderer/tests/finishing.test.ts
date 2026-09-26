@@ -180,6 +180,29 @@ test("a pass may not cure a hook by crowding a fan's branches into one blot", as
 	expect(await finishing(settled, crowded)).toBe(settled);
 });
 
+test("a pass that parts one of two stacks of the same two lines is kept", async () => {
+	const one = {
+		id: "one",
+		from: "p",
+		to: "q",
+		points: at([0, 400], [300, 400], [300, 500], [600, 500]),
+	};
+	/**
+	 * A line on one's stroke along its first run, and along its last run or beside it.
+	 * @param last Where its last run lies.
+	 * @returns The line.
+	 */
+	const other = (last: number): Line => ({
+		id: "other",
+		from: "r",
+		to: "s",
+		points: at([50, 380], [50, 400], [250, 400], [250, last], [550, last], [550, 700]),
+	});
+	const settled = sketch(cards, [hooked(0), one, other(500)]);
+	const parted = sketch(cards, [hooked(0), one, other(530)]);
+	expect(await finishing(settled, parted)).toBe(parted);
+});
+
 test("a routing the router refuses keeps the settled drawing, and a fault is thrown", async () => {
 	const settled = sketch(cards, [hooked(0)]);
 	const refused = new Error("NativeRouteUnavailable: no route clear of obstacles");
