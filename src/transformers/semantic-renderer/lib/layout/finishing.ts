@@ -13,21 +13,16 @@
 // alone on a card face beside its corner (lone-pins.ts). The same placement,
 // with the same reservations, is routed once more with the pass's options,
 // and that drawing is kept when it cures more: it brings no defect of any
-// kind the settled drawing did not have, a label another line crowds and two
-// lines that touch or run as a double track counted too, and has fewer
-// defects together, or the same defects with fewer bends in all. Refusing
-// only fresh defects of the pass's own kind let Voice coordinator's hook
-// pass cure hooks by crowding a label. It must also keep every label, have no more crossings, counting two
-// unrelated lines on one stroke as one, give no line more bends unless it
-// saves a crossing and takes no more bends in all (Browser application's
-// "Recording a walkthrough" parted a stack and cured three hooks for one
-// line's extra bend), and keep every line that stayed inside a frame inside
-// it. A pass that refuses a line the face it ended on lets that line take
-// more bends: parting two lines that swap sides on one stroke shows a
-// crossing that was always there. A route that takes a detour is not worth
-// what it cures, and a relationship within a frame belongs inside it even
-// when the only room is on its wall: its cards stand the frame's inset from
-// the wall, which leaves no lane inside.
+// kind the settled drawing did not have, a label another line crowds, two
+// lines that touch or run as a double track, crowded joins and the length
+// unrelated lines share a stroke over counted too, and has fewer defects
+// together. Refusing only fresh defects of the pass's own kind let Voice
+// coordinator's hook pass cure hooks by crowding a label. It must also have
+// no more crossings, counting two unrelated lines on one stroke as one, and
+// give no line more bends unless it saves a crossing and takes no more bends
+// in all (Browser application's "Recording a walkthrough" parted a stack and
+// cured three hooks for one line's extra bend). A route that takes a detour
+// is not worth what it cures.
 import type {
 	ArchitectureDrawing,
 	DrawingEdge,
@@ -43,7 +38,6 @@ import { sideHooks } from "@/transformers/semantic-renderer/lib/layout/pin-feedb
 import type { RouteRequest } from "@/transformers/semantic-renderer/lib/layout/route-requests";
 import {
 	crowdedJoinCount,
-	refusedLines,
 	stackedEnds,
 	stackedLanes,
 	stackKeys,
@@ -221,46 +215,18 @@ function bendsOf(drawing: ArchitectureDrawing): ReadonlyMap<string, number> {
 }
 
 /**
- * Whether every line that stays inside a frame in one drawing still does in another.
- * @param clear The walled routing.
- * @param settled The settled drawing.
- * @returns True when no line left a frame it stayed inside.
- */
-function keepsInside(clear: ArchitectureDrawing, settled: ArchitectureDrawing): boolean {
-	const lines = new Map(clear.edges.map((line) => [line.edge.id, line]));
-	return settled.edges.every((line) =>
-		settled.containers.every(
-			({ box }) => !inside(line, box) || inside(lines.get(line.edge.id) ?? line, box),
-		),
-	);
-}
-
-/**
  * Whether a finishing routing is no worse than the settled drawing: no more
- * crossings, unrelated lines on one stroke counted (even-pins.ts), no line
- * with more bends apart from the lines the pass itself sends another way, or,
- * where it saves a crossing, no more bends in all, and no line out of a frame
- * it stayed inside.
+ * crossings, unrelated lines on one stroke counted (even-pins.ts), and no
+ * line with more bends, or, where it saves a crossing, no more bends in all.
  * @param clear The finishing routing.
  * @param settled The settled drawing.
- * @param excused The lines the pass sends another way.
  * @returns True when it may replace the settled drawing.
  */
-function noWorse(
-	clear: ArchitectureDrawing,
-	settled: ArchitectureDrawing,
-	excused: ReadonlySet<string>,
-): boolean {
+function noWorse(clear: ArchitectureDrawing, settled: ArchitectureDrawing): boolean {
 	const [crossings, before] = [crossingsSeen(clear) - crossingsSeen(settled), bendsOf(settled)];
-	return (
-		crossings <= 0 &&
-		(crossings < 0
-			? totalBends(clear) <= totalBends(settled)
-			: [...bendsOf(clear)].every(
-					([id, bends]) => excused.has(id) || bends <= (before.get(id) ?? Infinity),
-				)) &&
-		keepsInside(clear, settled)
-	);
+	if (crossings > 0) return false;
+	if (crossings < 0) return totalBends(clear) <= totalBends(settled);
+	return [...bendsOf(clear)].every(([id, bends]) => bends <= (before.get(id) ?? Infinity));
 }
 
 /**
@@ -292,21 +258,16 @@ function defectsOf(drawing: ArchitectureDrawing): ReadonlySet<string> {
 /**
  * Whether a finishing routing cures more than the settled drawing: it brings
  * no defect of any kind the settled drawing did not have, and has fewer
- * defects, or the same defects with fewer bends in all. Refusing only fresh
- * defects of a pass's own kind let IIS Ingress Migration's wrong-face pass
- * move a side hook from one line to its neighbour, and Voice coordinator's
- * hook pass crowd a label.
+ * defects. Refusing only fresh defects of a pass's own kind let IIS Ingress
+ * Migration's wrong-face pass move a side hook from one line to its
+ * neighbour, and Voice coordinator's hook pass crowd a label.
  * @param finish The finishing routing.
  * @param settled The settled drawing.
  * @returns True when it cures more.
  */
 function cures(finish: ArchitectureDrawing, settled: ArchitectureDrawing): boolean {
 	const [after, before] = [defectsOf(finish), defectsOf(settled)];
-	if ([...after].some((key) => !before.has(key))) return false;
-	return (
-		after.size < before.size ||
-		(after.size === before.size && totalBends(finish) < totalBends(settled))
-	);
+	return [...after].every((key) => before.has(key)) && after.size < before.size;
 }
 
 /**
@@ -328,16 +289,6 @@ interface FinishingPass {
 	readonly defects: (drawing: ArchitectureDrawing) => readonly string[];
 	/** What its routes are asked, given what it found. */
 	readonly ask: (found: readonly string[]) => RouteRequest;
-	/** The lines it sends another way, given what it found, which may take more bends. */
-	readonly excused: (found: readonly string[]) => ReadonlySet<string>;
-}
-
-/**
- * No line is excused.
- * @returns No lines.
- */
-function noneExcused(): ReadonlySet<string> {
-	return new Set();
 }
 
 /**
@@ -396,28 +347,25 @@ function centringPorts(): RouteRequest {
  * so a line they turn into a hook can still be cured.
  */
 const FINISHING_PASSES: readonly FinishingPass[] = [
-	{ kind: "wall", found: crowdedWalls, defects: wallHugs, ask: clearing, excused: noneExcused },
+	{ kind: "wall", found: crowdedWalls, defects: wallHugs, ask: clearing },
 	{
 		kind: "face",
 		found: wrongFaces,
 		defects: wrongFaces,
 		ask: droppingStraight,
-		excused: noneExcused,
 	},
 	{
 		kind: "hook",
 		found: sideHooks,
 		defects: sideHooks,
 		ask: enteringCorners,
-		excused: noneExcused,
 	},
-	{ kind: "stack", found: stackedEnds, defects: stackKeys, ask: refusing, excused: refusedLines },
+	{ kind: "stack", found: stackedEnds, defects: stackKeys, ask: refusing },
 	{
 		kind: "port",
 		found: bunchedPorts,
 		defects: bunchedPorts,
 		ask: centringPorts,
-		excused: noneExcused,
 	},
 ];
 
@@ -451,7 +399,7 @@ async function finishedBy<Reading>(
 	});
 	return finish !== undefined &&
 		cures(finish.drawing, settled.drawing) &&
-		noWorse(finish.drawing, settled.drawing, pass.excused(found))
+		noWorse(finish.drawing, settled.drawing)
 		? finish
 		: settled;
 }

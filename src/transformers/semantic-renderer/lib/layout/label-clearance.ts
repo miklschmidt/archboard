@@ -76,9 +76,9 @@ export function crowdedLabels(drawing: ArchitectureDrawing): string[] {
 }
 
 /**
- * Whether the cleared drawing is kept: no more labels another line crowds,
- * and a drawing tidier than the ordinary one, each label it clears counted as
- * a defect saved (even-pins.ts). A cleared drawing that clears no label is
+ * Whether the cleared drawing is kept: a drawing tidier than the ordinary
+ * one, each label it clears counted as a defect saved and each it crowds as
+ * one brought (even-pins.ts). A cleared drawing that clears no label is
  * another settlement of the same reading, kept where it is tidier: What the
  * CLI can be asked drew 4 crossings so where the ordinary drawing drew 10.
  * @param cleared The drawing with reserved labels' full clearance.
@@ -86,9 +86,11 @@ export function crowdedLabels(drawing: ArchitectureDrawing): string[] {
  * @returns True when the cleared drawing is kept.
  */
 function clearer(cleared: ArchitectureDrawing, ordinary: ArchitectureDrawing): boolean {
-	const [clear, crowded] = [crowdedLabels(cleared).length, crowdedLabels(ordinary).length];
-	if (clear > crowded) return false;
-	return tidierThan(cleared, ordinary, crowded - clear);
+	return tidierThan(
+		cleared,
+		ordinary,
+		crowdedLabels(ordinary).length - crowdedLabels(cleared).length,
+	);
 }
 
 /**
