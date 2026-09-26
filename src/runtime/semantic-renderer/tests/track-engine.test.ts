@@ -14,6 +14,7 @@ import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import {
 	corridorPoints,
+	routeEnds,
 	routeLabels,
 	routePoints,
 	type DrawnPoint,
@@ -204,9 +205,9 @@ test("a wrapped rank stands each lowered card under one of its row above", async
 	const rank = content.edges.filter(({ from }) => from === "hub").map(({ to }) => to);
 	const parentOf = new Map(content.nodes.map(({ id, parent }) => [id, parent]));
 	const box = (id: string) => drawing.atlas.nodes[id]!;
-	const middle = (id: string): number => Math.round(box(id).y + box(id).height / 2);
-	const rows = [...new Set(rank.map(middle))].toSorted((one, other) => one - other);
-	const rowOf = (id: string): number => rows.indexOf(middle(id));
+	const top = (id: string): number => Math.round(box(id).y);
+	const rows = [...new Set(rank.map(top))].toSorted((one, other) => one - other);
+	const rowOf = (id: string): number => rows.indexOf(top(id));
 	for (const card of rank.filter((id) => rowOf(id) > 0)) {
 		const over = rank.filter(
 			(other) =>
@@ -281,4 +282,33 @@ test("a wrap into three rows or more keeps its columns", async () => {
 	for (const [index, row] of rows.entries())
 		for (const box of index === 0 ? [] : row)
 			expect(rows[index - 1]!.some(({ x }) => Math.abs(x - box.x) <= 1)).toBeTrue();
+});
+
+// Reduced from the dogfood Variant reconciliation view: a short and a tall card
+// on one rank were centred on one height, so their tops stepped and the lines
+// into them from one label row ended at two heights.
+test("cards on one rank stand on one top, and the lines into them end there", async () => {
+	const content = orderedFixture({
+		nodes: [
+			{ id: "hub", name: "Transitions", kind: "module" },
+			{
+				id: "tall",
+				name: "Adopt",
+				kind: "module",
+				responsibility:
+					"Makes a settled draft current, or gives a board its first current variant; refuses a draft derived from an older architecture unless forced",
+			},
+			{ id: "short", name: "Shelve", kind: "module", responsibility: "Lets a proposal go" },
+		],
+		edges: [
+			{ id: "a", from: "hub", to: "tall", kind: "call", label: "adopt a draft" },
+			{ id: "s", from: "hub", to: "short", kind: "call", label: "shelve a proposal" },
+		],
+	});
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const [tall, short] = [drawing.atlas.nodes["tall"]!, drawing.atlas.nodes["short"]!];
+	expect(tall.height).toBeGreaterThan(short.height);
+	expect(short.y).toBe(tall.y);
+	const ends = routeEnds(drawing.svg);
+	expect(ends.get("s")!.y).toBe(ends.get("a")!.y);
 });
