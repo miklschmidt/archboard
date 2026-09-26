@@ -26,6 +26,7 @@ import {
 	type DrawnPoint,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
+import { drawnTexts } from "@/runtime/semantic-renderer/tests/drawn-text";
 import headingCrossing from "./heading-crossing.json";
 import laneOrder from "./lane-order.json";
 import marginLap from "./margin-lap.json";
@@ -208,20 +209,14 @@ test("two labelled lines into one card enter it evenly", async () => {
  * @returns Each line's box, top to bottom.
  */
 function headingLines(svg: string): { x: number; end: number; top: number; bottom: number }[] {
-	return [
-		...svg.matchAll(/data-depiction="container"[^>]*>([\s\S]*?)(?=<g data-semantic-kind=|$)/gu),
-	].flatMap(([, head]) =>
-		[
-			...head!.matchAll(
-				/<text[^>]*x="([\d.]+)" y="([\d.]+)"[^>]*font-size="([\d.]+)"[^>]*>([^<]*)</gu,
-			),
-		].map(([, x, y, size, words]) => ({
-			x: Number(x),
-			end: Number(x) + words!.length * Number(size) * 0.4,
-			top: Number(y) - Number(size),
-			bottom: Number(y),
-		})),
-	);
+	return drawnTexts(svg)
+		.filter(({ subject }) => subject.kind === "region")
+		.map(({ x, y, size, text }) => ({
+			x,
+			end: x + text.length * size * 0.4,
+			top: y - size,
+			bottom: y,
+		}));
 }
 
 // Reduced from a dogfood board, names replaced: Graphviz stands a frame's

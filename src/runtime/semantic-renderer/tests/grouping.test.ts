@@ -63,9 +63,6 @@ describe("a card's body takes its group's colour and its chip its type's", () =>
 				expect(body).toContain('fill-opacity="0.07"');
 				expect(markup).toContain('data-body-color="green"');
 			}
-			// Each card and region carries its name, for a viewer that keeps it readable when small.
-			expect(groupOf(drawn, "node", "gate")!.markup).toContain('data-caption="Gateway"');
-			expect(groupOf(drawn, "region", "cloud")!.markup).toContain('data-caption="Azure"');
 			// A container colours nothing inside it, however its own kind is coloured.
 			expect(groupOf(drawn, "node", "side")!.markup).toContain('data-body-color="neutral"');
 			expect(groupOf(drawn, "region", "cloud")!.markup).toContain('data-body-color="neutral"');

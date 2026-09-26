@@ -25,6 +25,11 @@ import { faceRules, SANS_STACK } from "@/transformers/semantic-renderer/lib/font
 import { themeColor } from "@/transformers/semantic-renderer/lib/host";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { escapeXml, lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
+import {
+	FAR_CLASS,
+	FAR_VIEW_CLASS,
+	NEAR_CLASS,
+} from "@/transformers/semantic-renderer/lib/svg/measured-cards";
 import { PULSE_CLASS } from "@/transformers/semantic-renderer/lib/svg/pulse";
 import {
 	HEAD_REF_X,
@@ -134,6 +139,11 @@ function stylesheet(palette: Palette, fonts: FontSource): string {
 			"[data-semantic-kind]{cursor:pointer}",
 			".ab-halo{opacity:0}",
 			`.is-selected .ab-halo{opacity:1;stroke:${palette.selection}}`,
+			// Seen from far away, a card is its name: a viewer puts the far class
+			// on the picture when a card's own name would be too small to read,
+			// and each card shows its name and chip grown to fill it instead.
+			`.${FAR_VIEW_CLASS} .${FAR_CLASS}{display:inline}`,
+			`.${FAR_VIEW_CLASS} .${NEAR_CLASS}{display:none}`,
 			// Group emphasis is a viewer's reading, toggled on the picture the way
 			// selection is: the surface says one group is under inspection, its
 			// members and the wiring between them stand as drawn, its immediate
