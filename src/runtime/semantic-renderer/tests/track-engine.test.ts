@@ -218,3 +218,40 @@ test("a wrapped rank stands each lowered card under one of its row above", async
 		expect(over.length, card).toBeGreaterThan(0);
 	}
 });
+
+// Reduced from the dogfood CLI board: laid with its columns free, a wrap into
+// three or four rows pushed each lowered card aside by the lines to the rows
+// below it, so the cards stepped diagonally down the rows.
+test("a wrap into three rows or more keeps its columns", async () => {
+	const commands = Array.from({ length: 8 }, (_, index) => `c${index}`);
+	const content = orderedFixture({
+		nodes: [
+			{ id: "hub", name: "Execution", kind: "module", responsibility: "Runs every command" },
+			...commands.map((id, index) => ({
+				id,
+				name: `Command ${index}`,
+				kind: "module",
+				responsibility: `command ${index}: one thing a person can ask, with text that wraps`,
+			})),
+			{ id: "sink", name: "Client", kind: "module", responsibility: "Sends every request" },
+		],
+		edges: commands.flatMap((id, index) => [
+			{ id: `in${index}`, from: "hub", to: id, kind: "call", label: "validated input" },
+			{ id: `out${index}`, from: id, to: "sink", kind: "call", label: "operation" },
+		]),
+	});
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const boxes = commands.map((id) => drawing.atlas.nodes[id]!).toSorted((a, b) => a.y - b.y);
+	// Cards that share some height stand in one row.
+	const rows: (typeof boxes)[] = [];
+	for (const box of boxes) {
+		const row = rows.at(-1);
+		if (row !== undefined && box.y < Math.max(...row.map(({ y, height }) => y + height)))
+			row.push(box);
+		else rows.push([box]);
+	}
+	expect(rows.length).toBeGreaterThanOrEqual(3);
+	for (const [index, row] of rows.entries())
+		for (const box of index === 0 ? [] : row)
+			expect(rows[index - 1]!.some(({ x }) => Math.abs(x - box.x) <= 1)).toBeTrue();
+});

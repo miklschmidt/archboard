@@ -52,7 +52,10 @@ interface Arrangement {
 	readonly lowered?: ReadonlyMap<string, number>;
 	/** Whether the cards no line touches are set out as a grid. */
 	readonly grid?: boolean;
-	/** Whether a wrap's rows keep their columns, each lowered card under the one above it. */
+	/**
+	 * Whether a wrap's rows keep their columns, each lowered card under the
+	 * one above it: always for a wrap of three rows or more on the track engine.
+	 */
 	readonly columns?: boolean;
 	/**
 	 * Whether a container a line from another container enters is held below
