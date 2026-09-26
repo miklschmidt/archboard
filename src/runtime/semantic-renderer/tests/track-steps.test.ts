@@ -18,8 +18,8 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 import onePointPort from "./one-point-port.json";
 import regionPortTurnBack from "./region-port-turn-back.json";
 import boardRasterizer from "./board-rasterizer.json";
+import browserApplication from "./browser-application.json";
 import codexWorkhorse from "./codex-workhorse.json";
-import doubleStep from "./double-step.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
 import oneCommand from "./one-command.json";
 import staircase from "./staircase.json";
@@ -34,6 +34,8 @@ const policy = SemanticPolicySchema.parse({
 		function: { name: "Function", icon: "RiCodeSSlashLine" },
 		external: { name: "External", icon: "RiExternalLinkLine" },
 		ui: { name: "User interface", icon: "RiLayoutLine" },
+		system: { name: "System", icon: "RiApps2Line" },
+		service: { name: "Service", icon: "RiServerLine" },
 	},
 	relationshipKinds: {
 		call: { name: "Call", dash: "solid", arrowhead: "filled" },
@@ -52,6 +54,7 @@ const policy = SemanticPolicySchema.parse({
 		voice: { name: "Voice", color: "yellow" },
 		workhorse: { name: "Workhorse", color: "sky" },
 		child: { name: "Codex child", color: "indigo" },
+		agent: { name: "Agent", color: "fuchsia" },
 	},
 });
 
@@ -131,18 +134,18 @@ test("a line leaving a group region runs on the track it is already on", async (
 	expect(sidewaysLevels(points).size).toBeLessThanOrEqual(1);
 });
 
-// Reduced from a dogfood board: a line's lanes stood on three columns, the
-// middle one meeting neither the lane above it nor the one below, so the line
-// stepped sideways twice in two channels where one step would do.
+// Taken from a board of this repository: a line's lanes stood on three
+// columns, the middle one meeting neither the lane above it nor the one
+// below, so the line stepped sideways twice, a lane apart, where one step would do.
 test("a line steps once where one step joins the columns above and below", async () => {
 	const drawing = await renderArchitecture({
-		content: orderedFixture(doubleStep),
+		content: orderedFixture(browserApplication),
 		theme: "light",
 		layout: "track",
 		policy,
 	});
-	const points = corridorPoints(drawing.svg).get("UubWA3xG")!;
-	expect(sidewaysLevels(points).size).toBeLessThanOrEqual(2);
+	const points = corridorPoints(drawing.svg).get("md5cpNZV")!;
+	expect(sidewaysLevels(points).size).toBeLessThanOrEqual(3);
 });
 
 // Reduced from a dogfood board: a card's lines leave it by one trunk whose

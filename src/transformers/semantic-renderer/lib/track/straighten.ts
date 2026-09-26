@@ -153,9 +153,11 @@ function fromPort(
  * (straight on for a run to or from a container, else the column of the
  * station it leads into, the one it leaves, or its own lanes', and the free
  * one nearest them), the one that crosses fewest other lines, the first of
- * them on a tie, and none that crosses more lines than the run where it
- * stands: Graphviz ordered its lanes to cross few lines, and a straight
- * column that crosses more trades a step for a crossing.
+ * them on a tie, and, drawn inline, none that crosses more lines than the
+ * run where it stands: Graphviz ordered its lanes to cross few lines, and a
+ * straight column that crosses more trades a step for a crossing. The Blocks
+ * engine packs a block among others after it is routed, and there the
+ * crossings it saved cost bends and crossings elsewhere.
  * @param scene The placed scene.
  * @param run The run.
  * @param occupancy What each band holds so far.
@@ -185,7 +187,8 @@ function columnOf(
 	];
 	const counts = free.map((x) => inversions(run, x, bands));
 	const fewest = Math.min(...counts);
-	return fewest > standingCrossings(run, bands, drawn) ? undefined : free[counts.indexOf(fewest)];
+	const crossesMore = scene.inline && fewest > standingCrossings(run, bands, drawn);
+	return crossesMore ? undefined : free[counts.indexOf(fewest)];
 }
 
 /**

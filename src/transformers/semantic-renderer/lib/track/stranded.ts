@@ -52,8 +52,10 @@ function meetingColumn(station: Station, near: number): number {
  * the station it leads into or the one it leaves, the first that is free and
  * crosses no more lines than where it stands: a
  * label that stood in its way may have moved aside, and a run left where it
- * stood turns twice to reach its ends. A run that stays on several columns
- * has its steps closed instead ({@link closeSteps}).
+ * stood turns twice to reach its ends. Drawn inline, a run that stays on
+ * several columns has its steps closed instead ({@link closeSteps}); the
+ * Blocks engine packs a block among others after it is routed, and there
+ * closing them cost more bends than it saved.
  * @param scene The scene, its labels slid.
  * @param chains Every relationship's chain.
  * @returns Whether any run moved.
@@ -66,7 +68,7 @@ function unstrandLanes(scene: Scene, chains: readonly Chain[]): boolean {
 	return runs
 		.map((run) => {
 			const free = freeWithout(scene, runs, run);
-			return unstrandRun(run, free, bands) || closeSteps(run, free, bands);
+			return unstrandRun(run, free, bands) || (scene.inline && closeSteps(run, free, bands));
 		})
 		.some(Boolean);
 }
