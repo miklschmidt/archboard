@@ -68,17 +68,15 @@ test("a chain between a pull and a fan stands on one column", async () => {
 });
 
 /**
- * Whether two boxes share some height, side by side.
- * @param one A box.
+ * Whether two cards stand on one row: a row's cards share their top edge.
+ * @param one A card.
  * @param one.y Its top.
- * @param one.height Its height.
  * @param other Another.
  * @param other.y Its top.
- * @param other.height Its height.
  * @returns True when they do.
  */
-function beside(one: { y: number; height: number }, other: { y: number; height: number }): boolean {
-	return one.y < other.y + other.height && other.y < one.y + one.height;
+function onOneRow(one: { y: number }, other: { y: number }): boolean {
+	return Math.abs(one.y - other.y) < 1;
 }
 
 // Reduced from a board of this repository, names replaced: a hub fans out to
@@ -103,7 +101,7 @@ test("a wrapped fan stands a group region beside its other cards", async () => {
 		["n5", "n6"],
 		["n2", "n3", "n4", "n7"],
 	].map((ids) => ids.map((id) => drawing.atlas.nodes[id]!));
-	expect(members!.some((member) => others!.some((other) => beside(member, other)))).toBe(true);
+	expect(members!.some((member) => others!.some((other) => onOneRow(member, other)))).toBe(true);
 });
 
 // Reduced from a real hosting board, names replaced: two mirrored pairs of
