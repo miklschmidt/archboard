@@ -26,6 +26,7 @@ import {
 import { subjectGroups, type SubjectGroup } from "@/ui/semantic-board-canvas/lib/picture-pairing";
 import { keepingMarks } from "@/ui/semantic-board-canvas/lib/subjects";
 import {
+	restagePicture,
 	stagePicture,
 	type PictureTransition,
 } from "@/ui/semantic-board-canvas/lib/picture-transition";
@@ -194,7 +195,7 @@ function enterPicture(surface: HTMLElement, drawing: SemanticDrawing): PictureTr
 	/** Land on the picture exactly as the server drew it, keeping the viewer's marks on it. */
 	function finish(): void {
 		keepingMarks(surface, () => {
-			stagePicture(surface, drawing.svg);
+			restagePicture(surface, drawing.svg);
 		});
 	}
 	stagePicture(surface, drawing.svg);
