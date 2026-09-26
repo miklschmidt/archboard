@@ -14,9 +14,11 @@ import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import {
 	LABEL_ROUTE_CLEARANCE,
 	ROUTE_NUDGE_DISTANCE,
+	ROUTE_OPEN_CORRIDOR,
 } from "@/transformers/semantic-renderer/config";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
+	cornersOf,
 	corridorPoints,
 	distanceToRoute,
 	routeLabels,
@@ -25,6 +27,7 @@ import {
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import archboard from "./archboard.json";
+import readingABoard from "./reading-a-board.json";
 
 /** The vocabulary of the fixture, in the dogfood vault's order. */
 const policy = SemanticPolicySchema.parse({
@@ -107,4 +110,55 @@ test("a reserved label keeps a label's clearance from every other line", async (
 			.map(([line]) => `${label}<-${line}`),
 	);
 	expect(crowded).toEqual([]);
+});
+
+/** The pitch of neighbouring parallel lines. */
+const LANE = 16;
+
+/**
+ * The straight runs of a drawn line, as the axis each keeps and the stretch it spans.
+ * @param points The drawn points.
+ * @returns Its runs, a vertical run keeping x and a level one y.
+ */
+function runsOf(points: readonly DrawnPoint[]) {
+	return points.slice(1).flatMap((point, index) => {
+		const previous = points[index]!;
+		const vertical = Math.abs(point.x - previous.x) < 0.01;
+		if (!vertical && Math.abs(point.y - previous.y) >= 0.01) return [];
+		const [one, other] = vertical ? [previous.y, point.y] : [previous.x, point.x];
+		return [
+			{
+				vertical,
+				at: vertical ? point.x : point.y,
+				from: Math.min(one, other),
+				to: Math.max(one, other),
+			},
+		];
+	});
+}
+
+test("a port away from its face's corners stays put, so no line runs a part-lane beside another", async () => {
+	const content = orderedFixture(readingABoard);
+	const drawn = await renderArchitecture({ content, theme: "light", layout: "graphviz" });
+	const lines = [...routePoints(drawn.svg)].map(
+		([id, points]) => [id, runsOf(cornersOf(points))] as const,
+	);
+	const doubled = lines.flatMap(([id, runs], index) =>
+		lines
+			.slice(index + 1)
+			.flatMap(([other, theirs]) =>
+				runs.some((run) =>
+					theirs.some(
+						(against) =>
+							run.vertical === against.vertical &&
+							Math.abs(run.at - against.at) > ROUTE_OPEN_CORRIDOR &&
+							Math.abs(run.at - against.at) < LANE - 0.5 &&
+							Math.min(run.to, against.to) - Math.max(run.from, against.from) >= LANE,
+					),
+				)
+					? [`${id}|${other}`]
+					: [],
+			),
+	);
+	expect(doubled).toEqual([]);
 });

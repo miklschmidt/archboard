@@ -158,8 +158,9 @@ function routesClear(
 
 /**
  * Whether an end run can move across to a new place: the strip it sweeps is
- * clear of other cards, of other lines' reserved labels and of other lines
- * running beside it.
+ * clear of other cards, of other lines running beside it and of other lines'
+ * reserved labels by a label's own clearance, so a moved port never crowds a
+ * label, which the finishing step counts against it (finishing.ts).
  * @param nodes Placed semantic nodes.
  * @param edges The routed relationships.
  * @param mine The relationships on the moving pin.
@@ -189,9 +190,24 @@ function sweepClear(
 }
 
 /**
+ * Whether a port's lines may move with it: it stands within a lane of its
+ * face's corner, which is all {@link bunchedPorts} finds, and every line on
+ * it turns after its end run.
+ * @param box The card.
+ * @param face The face.
+ * @param own The end runs on the port.
+ * @returns True when the port may move.
+ */
+function movable(box: Box, face: Face, own: readonly EndRun[]): boolean {
+	if (own.length === 0 || own.some((run) => run.turn === 0)) return false;
+	const [axis, extent] = alongFace(face);
+	return Math.min(own[0]!.at - box[axis], box[axis] + box[extent] - own[0]!.at) < ROUTE_LANE;
+}
+
+/**
  * Where a lone channel pin on a face moves: the face's middle, when it still
- * stands at its channel's card-wide slot, every line on it turns after its
- * end run, and every end run can sweep across clear.
+ * stands at its channel's card-wide slot, its lines may move with it
+ * ({@link movable}), and every end run can sweep across clear.
  * @param nodes Placed semantic nodes.
  * @param edges The routed relationships.
  * @param runs Every route's end runs.
@@ -209,8 +225,8 @@ function centred(
 	const [card, pin] = lone;
 	if (Math.abs(pin.position - slot) > 1e-6 || Math.abs(slot - 0.5) < 1e-6) return undefined;
 	const own = runs.filter((run) => run.card === card && samePin(run.pin, pin));
-	if (own.length === 0 || own.some((run) => run.turn === 0)) return undefined;
 	const box = boxOf(nodes.get(card)!);
+	if (!movable(box, pin.face, own)) return undefined;
 	const [axis, extent] = alongFace(pin.face);
 	const at = box[axis] + box[extent] / 2;
 	const mine = new Set(own.map((run) => run.edge.id));
