@@ -73,8 +73,6 @@ class Placement {
 	readonly reserved = new Map<string, ElkLabel>();
 	readonly labelParents = new Map<string, Cluster>();
 	readonly packed = new Map<string, Offset[]>();
-	/** The rank line Graphviz centred each card and packed frame on, as it wrote it. */
-	readonly rankLines = new Map<ElkNode, number>();
 	readonly connected: ReadonlySet<string>;
 	readonly edges: ElkExtendedEdge[];
 	readonly result: ElkNode;
@@ -307,7 +305,6 @@ class Placement {
 		const shape = node ?? this.reserved.get(object.name);
 		if (shape === undefined || object.pos === undefined) return;
 		const point = coordinates(object.pos);
-		if (node !== undefined) this.rankLines.set(node, point[1]!);
 		const { width, height } = dimensions(shape);
 		Object.assign(shape, {
 			x: point[0]! - width / 2 - origin[0]! + PLACEMENT_MARGIN,
@@ -349,24 +346,6 @@ class Placement {
 			const positions = row.map(({ label }) => label.x!).toSorted((one, other) => one - other);
 			row.sort((one, other) => one.center - other.center || one.order - other.order);
 			for (const [index, { label }] of row.entries()) label.x = positions[index]!;
-		}
-	}
-
-	/**
-	 * Give every card on one rank the height of the rank's tallest card.
-	 * Graphviz centres a rank's cards on one line, so a shorter card's top and
-	 * bottom stood half the difference inside its neighbours', and every line,
-	 * arrowhead and label tied to those edges stepped with them. The tallest
-	 * card already bounds the rank, so a card grows only into room it keeps.
-	 */
-	evenRanks(): void {
-		const ranks = new Map<number, ElkNode[]>();
-		for (const [card, line] of this.rankLines)
-			if (!this.packed.has(card.id)) ranks.set(line, [...(ranks.get(line) ?? []), card]);
-		for (const rank of ranks.values()) {
-			const height = Math.max(...rank.map((node) => node.height!));
-			for (const node of rank)
-				Object.assign(node, { y: node.y! - (height - node.height!) / 2, height });
 		}
 	}
 
@@ -542,7 +521,6 @@ export function placeGraph(viz: Viz, input: ElkNode, options: LayoutOptions): El
 	placed.unpack();
 	orderSiblingSlots(placed.result);
 	placed.orderLabels();
-	placed.evenRanks();
 	placed.lineUp(bounds.width + 2 * PLACEMENT_MARGIN);
 	for (const node of [...placed.nodes.values()].toReversed()) placed.tighten(node);
 	return {
