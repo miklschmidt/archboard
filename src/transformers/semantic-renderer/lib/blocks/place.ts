@@ -354,7 +354,7 @@ function packsBlocks(tree: BlockTree, block: Block, nesting: Nesting): boolean {
  * @param earlier.exits The wall each port moves to.
  * @param earlier.packings Each block of blocks' packing.
  * @param nesting How containers and group regions are drawn.
- * @param apart The joins whose lines keep ports of their own, by key.
+ * @param apart The blocks whose joins keep ports of their own, by id.
  * @returns The blocks, every block laid out, and each block of blocks' packing.
  */
 function layAll(
@@ -438,7 +438,7 @@ function besides(one: Box | undefined, other: Box | undefined): boolean {
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
  * @param nesting How containers and group regions are drawn.
- * @param apart The joins whose lines keep ports of their own, by key.
+ * @param apart The blocks whose joins keep ports of their own, by id.
  * @returns The blocks, every block laid out.
  */
 function layOut(
@@ -471,17 +471,17 @@ function layOut(
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
  * @param nesting How containers and group regions are drawn.
- * @returns The blocks, every block laid out.
+ * @returns The blocks, and the drawing's geometry.
  */
 function layJoinedOut(
 	viz: Viz,
 	avoid: AvoidEngine,
 	graph: ElkNode,
 	nesting: Nesting,
-): { tree: BlockTree; laid: Map<string, Laid> } {
+): { tree: BlockTree; placed: Placed } {
 	return layJoined((apart) => {
-		const drawn = layOut(viz, avoid, graph, nesting, apart);
-		return { ...drawn, lines: new Assembly(drawn.tree, drawn.laid).placed().edges };
+		const { tree, laid } = layOut(viz, avoid, graph, nesting, apart);
+		return { tree, placed: new Assembly(tree, laid).placed() };
 	});
 }
 
@@ -538,9 +538,8 @@ function readsBetterPacked(packed: Placed, inline: Placed): boolean {
  * @returns The hierarchy, with the drawing's geometry on its root.
  */
 function placeBlocks(viz: Viz, avoid: AvoidEngine, graph: ElkNode, inline = false): ElkNode {
-	const first = layJoinedOut(viz, avoid, graph, inline ? "inline" : "blocks");
-	const drawn = new Assembly(first.tree, first.laid).placed();
-	const placed = inline && hasRegions(first.tree) ? betterOf(viz, avoid, graph, drawn) : drawn;
+	const { tree, placed: drawn } = layJoinedOut(viz, avoid, graph, inline ? "inline" : "blocks");
+	const placed = inline && hasRegions(tree) ? betterOf(viz, avoid, graph, drawn) : drawn;
 	return {
 		id: graph.id,
 		x: 0,
@@ -561,8 +560,7 @@ function placeBlocks(viz: Viz, avoid: AvoidEngine, graph: ElkNode, inline = fals
  * @returns The drawing's geometry.
  */
 function betterOf(viz: Viz, avoid: AvoidEngine, graph: ElkNode, inline: Placed): Placed {
-	const { tree, laid } = layJoinedOut(viz, avoid, graph, "groups");
-	const packed = new Assembly(tree, laid).placed();
+	const packed = layJoinedOut(viz, avoid, graph, "groups").placed;
 	return readsBetterPacked(packed, inline) ? packed : inline;
 }
 

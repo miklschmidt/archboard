@@ -172,7 +172,7 @@ class BlockTree {
 	readonly routes = new Map<string, Route>();
 	/** Where each pin meets its child block: the block and its port. */
 	readonly pins = new Map<string, { readonly block: Block; readonly port: string }>();
-	/** Every join of lines of one kind on the way to one card, by its key. */
+	/** The blocks that joins of lines on the way to one card move labels to, by id. */
 	readonly joining: ReadonlySet<string>;
 	/** The relationships that keep ports of their own rather than join others, by id. */
 	readonly apart: ReadonlySet<string>;
@@ -184,7 +184,7 @@ class BlockTree {
 	 * the port it would otherwise be: an earlier layout's answer, where it
 	 * stood the block beside the block its trunk goes to.
 	 * @param nesting How containers and group regions are drawn.
-	 * @param apart The joins whose lines keep ports of their own, by key.
+	 * @param apart The blocks whose joins keep ports of their own, by id.
 	 */
 	constructor(
 		graph: ElkNode,
