@@ -1,13 +1,15 @@
 // How often the track engine's lines step sideways (visual polish): each test
 // is a step a visual review found in real boards, reduced to a fixture. What
 // this catches: a long line whose lanes no one column holds stepping in
-// every channel it passes.
+// every channel it passes, and a line stepped aside from another it joins
+// at one port anyway.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { corridorPoints, type DrawnPoint } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
+import onePointPort from "./one-point-port.json";
 import staircase from "./staircase.json";
 
 /** The vocabulary the fixtures reduced from dogfood boards draw with, its groups in the vault's order. */
@@ -59,4 +61,19 @@ test("a long line no one column holds takes as few columns as hold it", async ()
 	});
 	for (const [id, points] of corridorPoints(drawing.svg))
 		expect(sidewaysLevels(points).size, id).toBeLessThanOrEqual(4);
+});
+
+// Reduced from a dogfood board: two lines leave a group region through its one
+// port, one of them straight down into it. Read as two lines lined up end to
+// end, the other was stepped a lane aside just before the port they share,
+// where they are drawn joined anyway.
+test("a line into a port another line drops into is not stepped aside from it", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(onePointPort),
+		theme: "light",
+		layout: "track",
+		policy,
+	});
+	const points = corridorPoints(drawing.svg).get("mxl6bmYW")!;
+	expect(sidewaysLevels(points).size).toBeLessThanOrEqual(2);
 });
