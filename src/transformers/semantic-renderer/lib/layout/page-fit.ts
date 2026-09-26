@@ -1,10 +1,11 @@
-// The Graphviz page came from the placement, not from what is drawn: its root
+// A page comes from its placement, not from what is drawn: Graphviz's root
 // bounds and margin, the cluster margins and title anchors that tightening
-// took off the frames, and the reserved label slots a settled drawing used
-// elsewhere. The painter only ever grows a page, so that slack became uneven
-// margins, 52 points at the top against 24 elsewhere, or an 80-point band
-// down one side. A settled drawing is moved to the margin and its page cut to
-// what it draws, so every side keeps the same margin.
+// took off the frames, the reserved label slots a settled drawing used
+// elsewhere, or a block's inset around a frame at its edge. The painter only
+// ever grows a page, so that slack became uneven margins, 52 points at the
+// top against 24 elsewhere, or an 80-point band down one side. Every engine's
+// settled drawing is moved to the margin and its page cut to what it draws,
+// so every side keeps the same margin.
 import type {
 	ArchitectureDrawing,
 	DrawingNode,
@@ -56,7 +57,13 @@ function fittedPage(drawing: ArchitectureDrawing): ArchitectureDrawing {
 		}),
 		...(drawing.regions === undefined
 			? {}
-			: { regions: drawing.regions.map((region) => ({ ...region, box: moved(region.box, by) })) }),
+			: {
+					regions: drawing.regions.map((region) => ({
+						...region,
+						box: moved(region.box, by),
+						caption: { ...region.caption, box: moved(region.caption.box, by) },
+					})),
+				}),
 	};
 }
 
