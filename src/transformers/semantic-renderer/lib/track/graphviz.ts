@@ -3,6 +3,7 @@
 import type { Graph } from "@viz-js/viz";
 import { z } from "zod";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
+import { closeSlots, type Holds } from "@/transformers/semantic-renderer/lib/track/hold-slots";
 import { clearWrap, type Wrap } from "@/transformers/semantic-renderer/lib/track/wrap-columns";
 
 /** A point in diagram coordinates. */
@@ -157,6 +158,8 @@ interface Room {
 	readonly card?: (name: string) => boolean;
 	/** The wrap the block's rank was placed by, whose lowered cards may step out of a line's way. */
 	readonly wrap?: Wrap;
+	/** The invisible holds the block's containers keep their members with, which may stand a member a slot off its wall. */
+	readonly holds?: Holds;
 }
 
 /**
@@ -480,6 +483,8 @@ function fans(at: Box, fan: readonly Box[]): boolean {
 
 /**
  * Line up the joined cards Graphviz stacked a few points out of one column.
+ * First, where the room names the holds, a member a hold stood a slot in from
+ * its container's wall moves onto it.
  * A line through its label's box pulls its two ends into line no harder than
  * it lets them stand apart, so each end leans toward its other lines and the
  * line jogs. One end is moved under or over the other, and the label onto the
@@ -495,6 +500,7 @@ function fans(at: Box, fan: readonly Box[]): boolean {
  */
 function alignColumns(boxes: Map<string, Box>, joins: readonly Join[], room: Room): void {
 	const columns = new Columns(boxes, joins, room);
+	closeSlots(columns, room.holds);
 	for (const join of columns.stacked()) {
 		const shift = Math.abs(columns.offset(join));
 		if (shift >= 0.5 && shift <= NEAR_MISS) columns.lineUp(join);

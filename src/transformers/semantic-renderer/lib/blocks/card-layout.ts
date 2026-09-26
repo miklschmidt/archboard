@@ -341,10 +341,9 @@ class CardLayout {
 			return;
 		}
 		const name = `label:${line.edge.id}`;
-		// A line leaving a container may stand its label on the rank just above its lower end.
 		const down = weight + leavingPull(this.clusters, tail, head);
 		this.graph.edges.push(
-			...this.clusters.holdLabel(tail, head, box(name, label.width!, label.height!)),
+			...this.clusters.holdLabel(tail, head, box(name, label.width!, label.height!), this.links()),
 			{ tail, head: name, attributes: { id: `${id}:1`, minlen, weight } },
 			{ tail: name, head, attributes: { id: `${id}:2`, weight: down } },
 		);

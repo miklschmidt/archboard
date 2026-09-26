@@ -15,6 +15,12 @@ import {
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Block, Size } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import {
+	anchorOf,
+	enteredFrame,
+	type Link,
+} from "@/transformers/semantic-renderer/lib/blocks/anchors";
+import { NODE_GAP } from "@/transformers/semantic-renderer/lib/blocks/card-graph";
+import {
 	alignColumns,
 	box,
 	numbers,
@@ -120,6 +126,8 @@ class Clusters {
 	tied = false;
 	/** Whether the label of a line leaving a container is pulled onto its lower end. */
 	pullsLeaving = false;
+	/** Whether the label of a line entering a container is held below a line from inside it. */
+	anchorsLabels = false;
 
 	/**
 	 * Make every cluster of a block in its graph, each headed by its title.
@@ -199,26 +207,25 @@ class Clusters {
 	 * container's title, so the label stands over the card it leads into
 	 * rather than beside the container on a rank the container spans; else in
 	 * the innermost cluster around both ends. A group region is no boundary a
-	 * line must go round, so a label never moves into one.
+	 * line must go round, so a label never moves into one. Where labels are
+	 * anchored, it is held below a labelled line into the same card from
+	 * inside the container instead (anchors.ts).
 	 * @param tail The line's upper end.
 	 * @param head Its lower end.
 	 * @param label The label's node.
+	 * @param links Every line Graphviz ranks.
 	 * @returns The edge holding the label below its cluster's title, if it needs one.
 	 */
-	holdLabel(tail: string, head: string, label: VendorNode): Edge[] {
-		const theirs = new Set(this.around(tail));
-		const entered = isTitle(head)
-			? undefined
-			: this.around(head).find(
-					(id) => !theirs.has(id) && this.block.clusters.get(id)!.kind === "frame",
-				);
+	holdLabel(tail: string, head: string, label: VendorNode, links: readonly Link[]): Edge[] {
+		const entered = enteredFrame(this, tail, head);
 		if (entered === undefined) {
 			this.common(tail, head).nodes.push(label);
 			return [];
 		}
 		this.graphs.get(entered)!.nodes.push(label);
 		const attributes = { style: "invis", weight: TITLE_WEIGHT };
-		return [{ tail: titleOf(entered), head: label.name, attributes }];
+		const upper = this.anchorsLabels ? anchorOf(this, tail, head, entered, links) : undefined;
+		return [{ tail: upper ?? titleOf(entered), head: label.name, attributes }];
 	}
 
 	/**
@@ -418,6 +425,16 @@ class Clusters {
 			card: (name) => cards.has(name),
 			wrap: {
 				rows: lowered,
+				/**
+				 * The innermost cluster around a card.
+				 * @param card The card.
+				 * @returns The cluster, if any.
+				 */
+				around: (card) => this.block.clusterOf.get(card),
+			},
+			holds: {
+				// A hold's chain is 2 points wide and keeps a node gap from the member it passes.
+				slot: NODE_GAP + 2,
 				/**
 				 * The innermost cluster around a card.
 				 * @param card The card.

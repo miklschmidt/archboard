@@ -124,4 +124,4 @@ function holdSources(block: Block, graph: VendorGraph, nodeOf: (name: string) =>
 	);
 }
 
-export { emptyGraph, holdSources, placedLabel, walledPoints, type VendorNode };
+export { NODE_GAP, emptyGraph, holdSources, placedLabel, walledPoints, type VendorNode };

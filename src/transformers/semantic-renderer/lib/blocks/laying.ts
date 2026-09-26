@@ -4,12 +4,13 @@
 // crowded rank, far above its members; pulling it down one more stands it on
 // the rank just above them. Graphviz may answer that changed graph with
 // another ranking of the whole block, so the block is laid both ways and the
-// pulled one kept only where it crosses and draws no more line. The label of a
-// line leaving a container is pulled down the same way, where it stood beside
-// the container (leaving.ts).
+// pulled one kept only where it crosses and draws no more line. Remedies to
+// the labels of lines leaving and entering containers change the graph the
+// same way, and are kept on the same terms.
 import type { Viz } from "@viz-js/viz";
 import type { CardLayout } from "@/transformers/semantic-renderer/lib/blocks/card-layout";
 import type { Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
+import { anchorable } from "@/transformers/semantic-renderer/lib/blocks/anchors";
 import { labelsBeside } from "@/transformers/semantic-renderer/lib/blocks/leaving";
 import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { crossingsOf } from "@/transformers/semantic-renderer/lib/track/score";
@@ -29,20 +30,134 @@ interface Laying {
 	readonly untied: () => Laid | undefined;
 }
 
+/** A layout of a block, and the block laid out by it. */
+type Layout = readonly [CardLayout, Laid];
+
+/**
+ * A change to how a block is ranked that mends something its layout shows.
+ * Graphviz answers the changed graph with another ranking of the whole
+ * block, so the changed layout is only kept where it reads no worse.
+ */
+interface Remedy {
+	/**
+	 * Make the change on a fresh layout, before it is built.
+	 * @param layout The layout.
+	 */
+	readonly apply: (layout: CardLayout) => void;
+	/**
+	 * Whether a laid-out block shows what the change mends.
+	 * @param laid The layout and the block laid out.
+	 * @returns True when it does.
+	 */
+	readonly needed: (laid: Layout) => boolean;
+	/**
+	 * Whether the changed layout is kept over the one before.
+	 * @param after The changed layout.
+	 * @param before The layout before.
+	 * @returns True when it is.
+	 */
+	readonly kept: (after: Layout, before: Layout) => boolean;
+}
+
+/**
+ * How many lines' labels a layout stands beside a container the line leaves.
+ * @param layout The layout and the block laid out.
+ * @returns How many.
+ */
+function beside(layout: Layout): number {
+	const [making, laid] = layout;
+	return labelsBeside(making.clusters, making.links(), laid);
+}
+
+/**
+ * How much page a laid-out block takes.
+ * @param laid The block laid out.
+ * @returns Its area.
+ */
+function area(laid: Laid): number {
+	return laid.width * laid.height;
+}
+
+/**
+ * Pull the label of every line leaving a container onto the line's lower end.
+ * @param layout A fresh layout.
+ */
+function pullLeaving(layout: CardLayout): void {
+	layout.clusters.pullsLeaving = true;
+}
+
+/**
+ * Hold the label of every line entering a container below a line from inside it.
+ * @param layout A fresh layout.
+ */
+function anchorLabels(layout: CardLayout): void {
+	layout.clusters.anchorsLabels = true;
+}
+
+/**
+ * Whether a layout stands some leaving label beside its container.
+ * @param layout The layout and the block laid out.
+ * @returns True when it does.
+ */
+function besideSome(layout: Layout): boolean {
+	return beside(layout) > 0;
+}
+
+/**
+ * Whether a layout could anchor some entering label.
+ * @param layout The layout and the block laid out.
+ * @returns True when it could.
+ */
+function anchorsSome(layout: Layout): boolean {
+	return anchorable(layout[0].clusters, layout[0].links());
+}
+
+/**
+ * Whether a layout with its leaving labels pulled down stands fewer beside
+ * their containers than the one before, and reads no worse.
+ * @param after The pulled layout.
+ * @param before The layout before.
+ * @returns True when it does.
+ */
+function fewerBeside(after: Layout, before: Layout): boolean {
+	return beside(after) < beside(before) && readsNoWorse(after[1], before[1]);
+}
+
+/**
+ * Whether a layout with its entering labels anchored reads no worse than the
+ * one before, on no more page.
+ * @param after The anchored layout.
+ * @param before The layout before.
+ * @returns True when it does.
+ */
+function noLarger(after: Layout, before: Layout): boolean {
+	return readsNoWorse(after[1], before[1]) && area(after[1]) <= area(before[1]);
+}
+
+/**
+ * The remedies a block's layout is tried with, in turn: the label of a line
+ * leaving a container pulled onto the line's lower end where one stood
+ * beside the container (leaving.ts), and the label of a line entering one
+ * held below a line from inside it (anchors.ts).
+ */
+const REMEDIES: readonly Remedy[] = [
+	{ apply: pullLeaving, needed: besideSome, kept: fewerBeside },
+	{ apply: anchorLabels, needed: anchorsSome, kept: noLarger },
+];
+
 /**
  * A block of cards laid out with its titles left tied, and the way to lay it
  * with them pulled onto their members, which only a layout that is weighed
- * that way pays for; both with its leaving labels pulled down where that
- * stands them clear of their containers.
+ * that way pays for; both with every remedy its layout keeps.
  * @param viz The initialized Graphviz instance.
  * @param make A fresh layout of the block.
  * @returns The block laid out.
  */
 function layBoth(viz: Viz, make: () => CardLayout): Laying {
-	const plain = tiedLayout(viz, make);
-	const pulled = leavingPulled(viz, make, plain);
-	const [tying, tied] = pulled ?? plain;
-	const remake = pulled === undefined ? make : pulling(make);
+	const [remake, [tying, tied]] = REMEDIES.reduce<[() => CardLayout, Layout]>(
+		([making, laid], remedy) => remedied(viz, making, laid, remedy),
+		[make, tiedLayout(viz, make)],
+	);
 	let untied: Laid | undefined;
 	return {
 		tied,
@@ -63,48 +178,39 @@ function layBoth(viz: Viz, make: () => CardLayout): Laying {
  * @param make A fresh layout of the block.
  * @returns The layout and the block laid out.
  */
-function tiedLayout(viz: Viz, make: () => CardLayout): [CardLayout, Laid] {
+function tiedLayout(viz: Viz, make: () => CardLayout): Layout {
 	const tying = make();
 	tying.clusters.keepTies = true;
 	return [tying, tying.lay(viz)];
 }
 
 /**
- * The way to make a block's layout with the label of every line leaving a
- * container pulled onto the line's lower end.
- * @param make A fresh layout of the block.
- * @returns The way.
- */
-function pulling(make: () => CardLayout): () => CardLayout {
-	return () => {
-		const layout = make();
-		layout.clusters.pullsLeaving = true;
-		return layout;
-	};
-}
-
-/**
- * The block laid out again with its leaving labels pulled down, where its
- * plain layout stands one beside the container its line leaves; kept only
- * where that stands fewer beside, crosses no more and draws no clearly more
- * line, since the pull re-ranks the whole block.
+ * A block laid out again with a remedy, where its layout needs it and the
+ * remedied layout is kept, and the way to make that layout afresh.
  * @param viz The initialized Graphviz instance.
  * @param make A fresh layout of the block.
- * @param plain The block's plain layout, laid out with its titles tied.
- * @returns The pulled layout and the block laid out, or nothing.
+ * @param laid The block laid out so far, with its titles tied.
+ * @param remedy The remedy.
+ * @returns The way to make the layout kept, and the block laid out by it.
  */
-function leavingPulled(
+function remedied(
 	viz: Viz,
 	make: () => CardLayout,
-	plain: [CardLayout, Laid],
-): [CardLayout, Laid] | undefined {
-	const [layout, laid] = plain;
-	const beside = labelsBeside(layout.clusters, layout.links(), laid);
-	if (beside === 0) return undefined;
-	const pulled = tiedLayout(viz, pulling(make));
-	const [again, relaid] = pulled;
-	if (labelsBeside(again.clusters, again.links(), relaid) >= beside) return undefined;
-	return readsNoWorse(relaid, laid) ? pulled : undefined;
+	laid: Layout,
+	remedy: Remedy,
+): [() => CardLayout, Layout] {
+	if (!remedy.needed(laid)) return [make, laid];
+	/**
+	 * A fresh layout of the block with the remedy.
+	 * @returns The layout.
+	 */
+	const remade = (): CardLayout => {
+		const layout = make();
+		remedy.apply(layout);
+		return layout;
+	};
+	const again = tiedLayout(viz, remade);
+	return remedy.kept(again, laid) ? [remade, again] : [make, laid];
 }
 
 /**

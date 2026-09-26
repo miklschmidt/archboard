@@ -9,7 +9,7 @@
 import type { Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import type { Clusters } from "@/transformers/semantic-renderer/lib/blocks/clusters";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
-import type { Join } from "@/transformers/semantic-renderer/lib/track/graphviz";
+import type { Link } from "@/transformers/semantic-renderer/lib/blocks/anchors";
 
 /**
  * The containers a line leaves: frames its upper end stands in and its lower
@@ -57,11 +57,7 @@ function beside(one: Box, other: Box): boolean {
  * @param laid The block laid out.
  * @returns How many.
  */
-function labelsBeside(
-	clusters: Clusters,
-	links: readonly (Join & { labelled: boolean })[],
-	laid: Laid,
-): number {
+function labelsBeside(clusters: Clusters, links: readonly Link[], laid: Laid): number {
 	const frames = new Map((laid.frames ?? []).map(({ id, box }) => [id, box]));
 	return links.filter(({ tail, head, labelled, label }) => {
 		const at = label === undefined ? undefined : laid.boxes.get(label);
