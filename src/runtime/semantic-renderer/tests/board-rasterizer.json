@@ -6,9 +6,7 @@
 			"name": "Rasterize command",
 			"kind": "module",
 			"responsibility": "Asks the Archboard server for the SVG, then photographs it here and writes the receipt",
-			"groups": [
-				"drawing"
-			]
+			"groups": ["drawing"]
 		},
 		{
 			"id": "KyQxypRC",
@@ -16,9 +14,7 @@
 			"name": "Rasterizer",
 			"kind": "module",
 			"responsibility": "Admits one job at a time, starts a browser only when there is work, and retires one that failed a capture",
-			"groups": [
-				"drawing"
-			]
+			"groups": ["drawing"]
 		},
 		{
 			"id": "7N0JLb2b",
@@ -26,9 +22,7 @@
 			"name": "Bounds and limits",
 			"kind": "function",
 			"responsibility": "The region, the bitmap size, and the refusal when either is past what may be drawn",
-			"groups": [
-				"drawing"
-			]
+			"groups": ["drawing"]
 		},
 		{
 			"id": "8c0zvhQW",
@@ -36,9 +30,7 @@
 			"name": "Raster session",
 			"kind": "function",
 			"responsibility": "Draws one SVG at a time in the page it opened: writes the file, loads it, proves the page ready, sets the scale and shoots",
-			"groups": [
-				"drawing"
-			]
+			"groups": ["drawing"]
 		},
 		{
 			"id": "6uHnaygd",
@@ -62,9 +54,7 @@
 			"name": "Page readiness",
 			"kind": "function",
 			"responsibility": "What the page must say before it is photographed, and what the answer must be",
-			"groups": [
-				"drawing"
-			]
+			"groups": ["drawing"]
 		},
 		{
 			"id": "ctgF3OPk",
@@ -72,9 +62,7 @@
 			"name": "PNG header",
 			"kind": "function",
 			"responsibility": "The two numbers from the IHDR of the answered image",
-			"groups": [
-				"drawing"
-			]
+			"groups": ["drawing"]
 		},
 		{
 			"id": "EqEyDg2D",
@@ -82,9 +70,7 @@
 			"name": "Receipt",
 			"kind": "function",
 			"responsibility": "What was drawn, at what scale, and from which SVG",
-			"groups": [
-				"drawing"
-			]
+			"groups": ["drawing"]
 		},
 		{
 			"id": "R9St060W",
@@ -121,9 +107,7 @@
 			"name": "Record command",
 			"kind": "module",
 			"responsibility": "Picks the walkthrough, has it recorded to the file named, and discards the board afterwards when asked",
-			"groups": [
-				"walkthrough"
-			]
+			"groups": ["walkthrough"]
 		},
 		{
 			"id": "ZAj4RMzN",
@@ -131,9 +115,7 @@
 			"name": "Walkthrough recorder",
 			"kind": "module",
 			"responsibility": "Starts the browser a recording needs, opens the page at 1920x1080, and moves the file into place only once that browser has stopped",
-			"groups": [
-				"walkthrough"
-			]
+			"groups": ["walkthrough"]
 		},
 		{
 			"id": "hlLOugjc",
@@ -141,9 +123,7 @@
 			"name": "Page driver",
 			"kind": "function",
 			"responsibility": "Waits until the page is ready, starts it from a user gesture, follows each step and streams the finished file out",
-			"groups": [
-				"walkthrough"
-			]
+			"groups": ["walkthrough"]
 		},
 		{
 			"id": "gN7rfqFF",
@@ -151,9 +131,7 @@
 			"name": "Sound conversion",
 			"kind": "function",
 			"responsibility": "Rewrites an MP4's Opus sound as AAC with ffmpeg, the picture copied, so the file plays with sound in Safari",
-			"groups": [
-				"walkthrough"
-			]
+			"groups": ["walkthrough"]
 		},
 		{
 			"id": "PhFc1AJ9",
@@ -161,9 +139,7 @@
 			"name": "ffmpeg",
 			"kind": "external",
 			"responsibility": "Converts the sound and moves the index to the front, so playback starts before the file has arrived",
-			"groups": [
-				"walkthrough"
-			]
+			"groups": ["walkthrough"]
 		},
 		{
 			"id": "T1TYskKQ",
@@ -171,9 +147,7 @@
 			"name": "Recording page",
 			"kind": "ui",
 			"responsibility": "The server's own page on one board: shows the pane alone, paces each step by the voice, and records its tab into one file",
-			"groups": [
-				"walkthrough"
-			]
+			"groups": ["walkthrough"]
 		}
 	],
 	"edges": [
