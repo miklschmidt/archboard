@@ -151,13 +151,13 @@ interface GroupMarks {
  *
  * Its own classes rather than the attention ring, so a subject can be attended
  * and a member at once and say both. The surface carries the class that lets
- * everything else recede, so a picture with no group under inspection is drawn
- * exactly as it was: the stylesheet's group rules all hang under it.
+ * everything else recede ({@link surfaceMarks}), so a picture with no group
+ * under inspection is drawn exactly as it was: the stylesheet's group rules
+ * all hang under it.
  * @param surface The element the picture was put into.
  * @param marks What to light, keep readable, and treat as context; null for none.
  */
 function markGroupFocus(surface: Element, marks: GroupMarks | null): void {
-	surface.classList.toggle(GROUP_FOCUS_CLASS, marks !== null);
 	for (const group of surface.querySelectorAll(`[${SUBJECT_ATTRIBUTE}]`)) {
 		const id = group.getAttribute(SUBJECT_ATTRIBUTE) ?? "";
 		for (const role of ["members", "boundary", "context"] as const) {
@@ -170,14 +170,19 @@ function markGroupFocus(surface: Element, marks: GroupMarks | null): void {
 const FAR_VIEW_CLASS = "is-far";
 
 /**
- * Say on the picture whether it is seen from far away, where each card draws
- * its name larger in place of its responsibility: the picture carries both,
- * and its own stylesheet draws the one this class asks for.
- * @param surface The element the picture was put into.
- * @param far Whether it is seen from far away.
+ * The classes the surface itself carries for the picture's stylesheet: that a
+ * group is under inspection, and that the picture is seen from far away,
+ * where each card draws its name larger in place of its responsibility. They
+ * are part of the surface's rendered class, never toggled on it afterwards: a
+ * render that writes the surface's class (a pan starting, say) would wipe a
+ * class put there by hand.
+ * @param state What the surface says.
+ * @param state.focused Whether a group is under inspection.
+ * @param state.far Whether the picture is seen from far away.
+ * @returns The classes, each with a leading space, or nothing.
  */
-function markFarView(surface: Element, far: boolean): void {
-	surface.classList.toggle(FAR_VIEW_CLASS, far);
+function surfaceMarks({ focused, far }: { focused: boolean; far: boolean }): string {
+	return `${focused ? ` ${GROUP_FOCUS_CLASS}` : ""}${far ? ` ${FAR_VIEW_CLASS}` : ""}`;
 }
 
 /** Every class the viewer puts on a subject's group; none of them is the renderer's. */
@@ -232,10 +237,10 @@ export {
 	SUBJECT_ATTRIBUTE,
 	isSubject,
 	keepingMarks,
-	markFarView,
 	markGroupFocus,
 	markSubjects,
 	subjectAt,
 	subjectBox,
+	surfaceMarks,
 	type GroupMarks,
 };

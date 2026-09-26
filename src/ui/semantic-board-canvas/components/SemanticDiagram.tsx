@@ -46,10 +46,10 @@ import {
 } from "@/ui/semantic-board-canvas/lib/picture-departure";
 import { NO_FOCUS, subjectMarks, type BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
 import {
-	markFarView,
 	markGroupFocus,
 	markSubjects,
 	subjectAt,
+	surfaceMarks,
 	type GroupMarks,
 } from "@/ui/semantic-board-canvas/lib/subjects";
 
@@ -410,12 +410,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	}, [picture, groupMarks]);
 	// Seen from far away, each card's name is drawn larger in place of what it
 	// says it does, which nobody reads at that size.
-	const far = view.scale < FAR_SCALE;
-	useLayoutEffect(() => {
-		if (picture !== null) {
-			markFarView(picture.surface, far);
-		}
-	}, [picture, far]);
+	const marks = surfaceMarks({ focused: groupMarks !== null, far: view.scale < FAR_SCALE });
 
 	const onPointerDown = useCallback(
 		(event: PointerEvent<HTMLElement>): void => {
@@ -575,7 +570,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 						ref={setSurface}
 						data-slot="semantic-board-surface"
 						style={surfaceStyle}
-						className={`${surfaceClass(panning, reducedMotion, camera.instant)}${presentationMarks(props.presenting).surface}`}
+						className={`${surfaceClass(panning, reducedMotion, camera.instant)}${presentationMarks(props.presenting).surface}${marks}`}
 					/>
 				</div>
 				{/* oxlint-enable jsx-a11y/no-noninteractive-tabindex */}

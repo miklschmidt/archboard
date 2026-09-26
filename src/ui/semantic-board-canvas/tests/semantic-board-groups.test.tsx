@@ -256,6 +256,13 @@ test("choosing a group lights its members across containers, keeps the boundary 
 	await choose("fulfillment");
 	expect(slot("semantic-board-stage")?.getAttribute("data-group")).toBe("fulfillment");
 	expect(slot("semantic-board-surface")?.classList.contains("is-group-focus")).toBe(true);
+	// A pan redraws the surface's class, and the inspection stays through it.
+	act(() => {
+		const viewport = slot("semantic-board-viewport")!;
+		fireEvent.pointerDown(viewport, { pointerId: 1, button: 0, clientX: 40, clientY: 40 });
+		fireEvent.pointerMove(viewport, { pointerId: 1, clientX: 90, clientY: 40 });
+	});
+	expect(slot("semantic-board-surface")?.classList.contains("is-group-focus")).toBe(true);
 	// Members in both containers, and the wiring between them; the immediate
 	// neighbours and the relationships that cross the boundary; and the
 	// containers, which are context and never members.
