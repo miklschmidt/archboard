@@ -25,7 +25,11 @@ interface Station {
 	readonly band: number;
 	/** The card or label box; absent for a lane. */
 	readonly item?: Item;
-	/** The lane's x, or the label's centre; a lane moves when its run is straightened. */
+	/**
+	 * The lane's x, or the label's centre; a lane moves when its run is
+	 * straightened. A label's is read from its box and written to it, so a
+	 * label that slides stands where every later step reads it.
+	 */
 	x: number;
 }
 
@@ -93,13 +97,41 @@ function stationOn(
 	through: { label?: Item | undefined; polyline: readonly Point[]; upper: Item; lower: Item },
 ): Station {
 	const { label, polyline, upper, lower } = through;
-	if (label?.band === band) return { kind: "label", band, item: label, x: centreX(label) };
+	if (label?.band === band) return labelStation(label, band);
 	const { top, bottom } = scene.bands[band]!;
 	const share = (band - upper.band) / (lower.band - upper.band);
 	const x =
 		polylineX(polyline, (top + bottom) / 2) ??
 		centreX(upper) + (centreX(lower) - centreX(upper)) * share;
 	return { kind: "lane", band, x };
+}
+
+/**
+ * A label's station, its x the centre of its box.
+ * @param item The label box.
+ * @param band Its band.
+ * @returns The station.
+ */
+function labelStation(item: Item, band: number): Station {
+	return {
+		kind: "label",
+		band,
+		item,
+		/**
+		 * The centre of the box.
+		 * @returns The x.
+		 */
+		get x(): number {
+			return centreX(item);
+		},
+		/**
+		 * Stand the box centred on an x.
+		 * @param x The x.
+		 */
+		set x(x: number) {
+			item.box = { ...item.box, x: x - item.box.width / 2 };
+		},
+	};
 }
 
 /**
@@ -223,8 +255,10 @@ class Occupancy {
  * relationship then descends in one line instead of jogging at every channel.
  * A run prefers the column of the station it leads into, then the one it
  * leaves, except that a run to or from a container prefers a column both its
- * neighbours reach straight; longer runs choose first, and a run with no free
- * column keeps Graphviz's lanes.
+ * neighbours reach straight; longer runs choose first. A run no one column is
+ * free for takes as few columns as hold it, from the top down: Graphviz's
+ * lanes drift a little from band to band along a long line, and a lane left
+ * on each drew a step in every channel.
  * @param scene The placed scene.
  * @param chains Every relationship's chain.
  */
@@ -235,15 +269,81 @@ function straightenLanes(scene: Scene, chains: readonly Chain[]): void {
 		({ stations }) => new Map(stations.map((station) => [station.band, station])),
 	);
 	for (const run of runs) {
-		const chosen = columnOf(scene, run, occupancy, bands);
-		for (const lane of run.lanes) {
-			lane.x =
-				chosen ??
-				nearest(lane.x, (x) => occupancy.fits([lane], x), occupancy.edges([lane])) ??
-				lane.x;
+		const xs = columnsOf(scene, run, occupancy, bands);
+		run.lanes.forEach((lane, index) => {
+			lane.x = xs[index]!;
 			occupancy.take(lane);
+		});
+	}
+}
+
+/**
+ * Where each lane of a run stands: all on one column where one holds them,
+ * else on as few columns as hold them from the top down, unless that crosses
+ * more lines than each lane standing alone on the free x nearest it.
+ * @param scene The placed scene.
+ * @param run The run.
+ * @param occupancy What each band holds so far.
+ * @param bands Every chain's stations, by band.
+ * @returns Each lane's x, top to bottom.
+ */
+function columnsOf(
+	scene: Scene,
+	run: LaneRun,
+	occupancy: Occupancy,
+	bands: readonly ReadonlyMap<number, Station>[],
+): number[] {
+	const whole = columnOf(scene, run, occupancy, bands);
+	if (whole !== undefined) return run.lanes.map(() => whole);
+	const alone = run.lanes.map(
+		(lane) => nearest(lane.x, (x) => occupancy.fits([lane], x), occupancy.edges([lane])) ?? lane.x,
+	);
+	const pieces: number[] = [];
+	let before = run.before;
+	while (pieces.length < run.lanes.length) {
+		const start = pieces.length;
+		const { end, x } = longestPiece(scene, { run, start, before }, occupancy, bands);
+		// A piece placed is where the next one leaves from.
+		for (const lane of run.lanes.slice(start, end)) {
+			[lane.x, before] = [x ?? alone[start]!, lane];
+			pieces.push(lane.x);
 		}
 	}
+	const own = [run.before, ...run.lanes, run.after];
+	const [split, apart] = [pieces, alone].map((xs) =>
+		crossingsOf(own, [run.before.x, ...xs, run.after.x], bands),
+	);
+	return split! <= apart! ? pieces : alone;
+}
+
+/**
+ * The longest stretch of a run's lanes from one of them down that one column
+ * holds, and that column; a lane no column holds is a stretch of its own.
+ * @param scene The placed scene.
+ * @param from Where the stretch starts.
+ * @param from.run The run.
+ * @param from.start The place of its first lane.
+ * @param from.before The station above that lane, placed.
+ * @param occupancy What each band holds so far.
+ * @param bands Every chain's stations, by band.
+ * @returns Where the stretch ends, past its last lane, and its column if one holds it.
+ */
+function longestPiece(
+	scene: Scene,
+	from: { run: LaneRun; start: number; before: Station },
+	occupancy: Occupancy,
+	bands: readonly ReadonlyMap<number, Station>[],
+): { end: number; x: number | undefined } {
+	const { run, start, before } = from;
+	let found: { end: number; x: number | undefined } = { end: start + 1, x: undefined };
+	for (let end = start + 1; end <= run.lanes.length; end += 1) {
+		const lanes = run.lanes.slice(start, end);
+		const after = run.lanes[end] ?? run.after;
+		const x = columnOf(scene, { lanes, before, after }, occupancy, bands);
+		if (x === undefined) break;
+		found = { end, x };
+	}
+	return found;
 }
 
 /**
@@ -358,75 +458,6 @@ function columnOf(
 }
 
 /**
- * Once the labels have slid, try every run of lanes to or from a container
- * on its straight column again: a label that stood in its way before sliding
- * may have moved aside. Every other lane stays where it is.
- * @param scene The scene, its labels slid.
- * @param chains Every relationship's chain.
- * @returns Whether any run moved.
- */
-function straightenIntoContainers(scene: Scene, chains: readonly Chain[]): boolean {
-	const runs = laneRuns(chains);
-	const straight = runs.filter(({ before, after }) => straightOn(scene, before, after).length > 0);
-	const occupancy = new Occupancy(scene);
-	for (const { lanes } of runs.filter((run) => !straight.includes(run)))
-		for (const lane of lanes) occupancy.take(lane);
-	return straight.map((run) => straighten(scene, run, occupancy)).some(Boolean);
-}
-
-/**
- * Move each run of lanes that stands closer than a lane to the card port it
- * leaves or enters onto that port's column, where the column is free on every
- * band the run passes: the line would jog less than a lane at the card, and
- * run too near a line through the port beside it.
- * @param scene The scene.
- * @param chains Every relationship's chain.
- * @param ports The port x each run's end lane wants, by that lane.
- * @returns Whether any run moved.
- */
-function pullToPorts(
-	scene: Scene,
-	chains: readonly Chain[],
-	ports: ReadonlyMap<Station, number>,
-): boolean {
-	const runs = laneRuns(chains);
-	return runs.map((run) => pullRun(scene, runs, run, ports)).some(Boolean);
-}
-
-/**
- * Move one run of lanes onto the column of a card port less than a lane
- * from it, when that column is free on every band it passes.
- * @param scene The scene.
- * @param runs Every run of lanes.
- * @param run The run.
- * @param ports The port x each run's end lane wants, by that lane.
- * @returns Whether it moved.
- */
-function pullRun(
-	scene: Scene,
-	runs: readonly LaneRun[],
-	run: LaneRun,
-	ports: ReadonlyMap<Station, number>,
-): boolean {
-	const x = portBeside(run, ports);
-	if (x === undefined || !freeWithout(scene, runs, run).fits(run.lanes, x)) return false;
-	for (const lane of run.lanes) lane.x = x;
-	return true;
-}
-
-/**
- * The port a run of lanes stands closer than a lane to, if any.
- * @param run The run.
- * @param ports The port x each run's end lane wants, by that lane.
- * @returns The port's x.
- */
-function portBeside(run: LaneRun, ports: ReadonlyMap<Station, number>): number | undefined {
-	const x = ports.get(run.lanes[0]!) ?? ports.get(run.lanes.at(-1)!);
-	const off = x === undefined ? 0 : Math.abs(x - run.lanes[0]!.x);
-	return off >= 0.5 && off < LANE ? x : undefined;
-}
-
-/**
  * What each band holds with every run but one in place.
  * @param scene The scene.
  * @param runs Every run of lanes.
@@ -464,22 +495,6 @@ function moveRun(scene: Scene, chains: readonly Chain[], lane: Station, x: numbe
  */
 function runOf(chains: readonly Chain[], lane: Station): LaneRun | undefined {
 	return laneRuns(chains).find(({ lanes }) => lanes.includes(lane));
-}
-
-/**
- * Move one run to or from a container onto its straight column, when that is free.
- * @param scene The scene.
- * @param run The run.
- * @param occupancy What each band holds; the run's lanes are added.
- * @returns Whether it moved.
- */
-function straighten(scene: Scene, run: LaneRun, occupancy: Occupancy): boolean {
-	const { lanes, before, after } = run;
-	const x = straightOn(scene, before, after).find((column) => occupancy.fits(lanes, column));
-	const moved = x !== undefined && lanes.some((lane) => lane.x !== x);
-	if (moved) for (const lane of lanes) lane.x = x;
-	for (const lane of lanes) occupancy.take(lane);
-	return moved;
 }
 
 /**
@@ -572,10 +587,9 @@ export {
 	meets,
 	moveRun,
 	nearest,
-	pullToPorts,
 	reachOf,
 	runOf,
-	straightenIntoContainers,
+	straightOn,
 	straightenLanes,
 	type Chain,
 	type Counted,

@@ -78,11 +78,7 @@ function straightenThroughLabels(scene: Scene, chains: readonly Chain[]): void {
 		const others = lanes.filter((lane) => !stretch.middle.includes(lane));
 		const x = columnOf(scene, stretch, others, bands);
 		if (x === undefined) continue;
-		for (const station of stretch.middle) {
-			station.x = x;
-			if (station.item !== undefined)
-				station.item.box = { ...station.item.box, x: x - station.item.box.width / 2 };
-		}
+		for (const station of stretch.middle) station.x = x;
 	}
 }
 
