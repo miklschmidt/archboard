@@ -430,3 +430,45 @@ describe("which pictures are continuous", () => {
 		expect(continuousPictures(picture([A], [], { view }), picture([B], [], { view }))).toBe(true);
 	});
 });
+
+describe("the traffic's clock", () => {
+	test("a picture that lands keeps its animation clock instead of starting it again", () => {
+		// The page's SVG clock, stood in for: a replaced picture's clock starts at nought.
+		const clocks = new WeakMap<Element, number>();
+		const prototype = window.SVGSVGElement.prototype;
+		Object.defineProperty(prototype, "getCurrentTime", {
+			configurable: true,
+			/**
+			 * A picture's clock.
+			 * @returns Where it stands, in seconds.
+			 */
+			value(this: Element): number {
+				return clocks.get(this) ?? 0;
+			},
+		});
+		Object.defineProperty(prototype, "setCurrentTime", {
+			configurable: true,
+			/**
+			 * Set a picture's clock.
+			 * @param seconds Where it stands.
+			 */
+			value(this: Element, seconds: number): void {
+				clocks.set(this, seconds);
+			},
+		});
+		try {
+			const surface = surfaceElement();
+			const before = picture([A, B], [AB]);
+			const after = picture([{ ...A, box: { x: 300, y: 210, width: 100, height: 60 } }, B], [AB]);
+			surface.innerHTML = before.svg;
+			clocks.set(surface.querySelector("svg")!, 4.2);
+			const transition = transitionPicture(surface, before, after);
+			expect(clocks.get(surface.querySelector("svg")!)).toBe(4.2);
+			transition.finish();
+			expect(clocks.get(surface.querySelector("svg")!)).toBe(4.2);
+		} finally {
+			Reflect.deleteProperty(prototype, "getCurrentTime");
+			Reflect.deleteProperty(prototype, "setCurrentTime");
+		}
+	});
+});
