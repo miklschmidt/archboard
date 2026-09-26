@@ -237,12 +237,63 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 						Math.hypot(lineEnd.x - layer.end.x, lineEnd.y - layer.end.y),
 					).toBeGreaterThanOrEqual(headBase + layer.reach - 0.05);
 				}
-				// At rest, every comet's head is half a spacing from the line's start,
-				// so no glow sits alone on the card the line leaves.
+				// At rest, every comet's head is at least a glow from the line's start,
+				// and from where the comet behind it rests, so no glow sits alone on
+				// the card the line leaves.
 				const rest =
 					(((layer.dash - layer.offset) % layer.spacing) + layer.spacing) % layer.spacing;
 				expect(Math.min(rest, layer.spacing - rest)).toBeGreaterThanOrEqual(glow);
 			}
+		}
+	});
+	test("a still picture rests every comet clear of the labels drawn over it", async () => {
+		// Two stacked cards: the label sits on the line where half a spacing
+		// from its start rests the comet, cut by the label's border or hidden
+		// under it, whichever the layout gives.
+		const content = variant({
+			nodes: [
+				{ id: "a", name: "A", kind: "service" },
+				{ id: "b", name: "B", kind: "service" },
+			],
+			edges: [{ id: "ab", from: "a", to: "b", kind: "call", label: "reads rows", traffic: {} }],
+		});
+		for (const layout of ["graphviz", "track", "blocks"] as const) {
+			const { svg } = await renderSemanticView({
+				content,
+				grammar: "architecture",
+				theme: "light",
+				layout,
+			});
+			// The glow is the stream's widest layer, and its dash is the head alone.
+			const [, d, width, spacing, offset] =
+				/<g class="ab-pulse"[^>]*><path d="(M[\d.]+,[\d.]+ L[\d.]+,[\d.]+)"[^>]*stroke-width="([^"]+)"[^>]*stroke-dasharray="0 ([^"]+)" stroke-dashoffset="([^"]+)"/u.exec(
+					svg,
+				)!;
+			const [x0, y0, x1, y1] = d!.match(/[\d.]+/gu)!.map(Number);
+			const length = Math.hypot(x1! - x0!, y1! - y0!);
+			const glow = Number(width) / 2;
+			const [, x, y, w, h] =
+				/data-semantic-id="ab"><rect x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"/u
+					.exec(svg)!
+					.map(Number);
+			let heads = 0;
+			for (
+				let along = Number(spacing) - Number(offset);
+				along <= length;
+				along += Number(spacing)
+			) {
+				const head = {
+					x: x0! + ((x1! - x0!) * along) / length,
+					y: y0! + ((y1! - y0!) * along) / length,
+				};
+				const gap = Math.hypot(
+					Math.max(x! - head.x, 0, head.x - x! - w!),
+					Math.max(y! - head.y, 0, head.y - y! - h!),
+				);
+				expect(gap).toBeGreaterThanOrEqual(glow);
+				heads += 1;
+			}
+			expect(heads).toBeGreaterThan(0);
 		}
 	});
 	for (const traffic of [
