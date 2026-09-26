@@ -49,6 +49,8 @@ interface Bridge {
 	readonly edgeId: string;
 	readonly under: readonly string[];
 	readonly curve: Curve;
+	/** A join on the upper line stands on this piece: the cut clears its mark too. */
+	readonly join?: true;
 }
 
 /**
@@ -330,6 +332,46 @@ function straightThrough(runs: readonly Run[], run: Run, low: number, high: numb
 }
 
 /**
+ * Whether a drawn line joins or parts near a coordinate: one of its routes
+ * ends inside another route's run on that line there, where the painter
+ * draws a junction mark.
+ * @param runs Every run.
+ * @param run The run drawing the line.
+ * @param coordinate The coordinate on its axis.
+ * @param reach How near counts.
+ * @returns True when a join stands within reach.
+ */
+function joinNear(runs: readonly Run[], run: Run, coordinate: number, reach: number): boolean {
+	const line = lineRuns(runs, run);
+	return line.some((one) => {
+		const { low, high } = extentOf(one);
+		return [low, high].some(
+			(end) => Math.abs(end - coordinate) <= reach && endsInside(line, one, end),
+		);
+	});
+}
+
+/**
+ * Whether a run's end lies inside another route's run on the same line, clear
+ * of that run's own ends: two routes a hair apart that turn together are one
+ * line turning, not a join.
+ * @param line Every run on the line.
+ * @param one The run.
+ * @param end The end's coordinate on the line's axis.
+ * @returns True when another route runs on past it.
+ */
+function endsInside(line: readonly Run[], one: Run, end: number): boolean {
+	return line.some((other) => {
+		const span = extentOf(other);
+		return (
+			other.edgeIndex !== one.edgeIndex &&
+			end > span.low + SHARED_INK &&
+			end < span.high - SHARED_INK
+		);
+	});
+}
+
+/**
  * How far a drawn line runs straight and alone on either side of a coordinate.
  * @param runs Every run.
  * @param run The run drawing the line there.
@@ -474,6 +516,7 @@ export {
 	drawnCrossings,
 	extentOf,
 	fixedOf,
+	joinNear,
 	onLine,
 	onRun,
 	overlaps,

@@ -148,6 +148,37 @@ test("a line that turns just before a crossing does not hop it; the line it cros
 	expect(result.bridges[0]!.curve.segments.length).toBeGreaterThan(1);
 });
 
+// Archboard server (graphviz): a line crossed a fan-in trunk where one of its
+// routes joined it, and the trunk was cut there, so the line ran straight
+// through the join's mark and read as a four-way join.
+test("a line joining a trunk at a crossing keeps the trunk whole, the other line cut clear of the join", () => {
+	for (const [x, joined] of [
+		[160, true],
+		[164.8, true],
+		[168, false],
+	] as const) {
+		const result = bridgeCrossings(
+			drawing([
+				[
+					{ x: 0, y: 100 },
+					{ x: 200, y: 100 },
+				],
+				[
+					{ x: 152, y: 0 },
+					{ x: 152, y: 100 },
+					{ x: 200, y: 100 },
+				],
+				[
+					{ x, y: 0 },
+					{ x, y: 200 },
+				],
+			]),
+		);
+		const cut = result.bridges.find(({ under }) => under.includes("2"));
+		expect(cut?.edgeId === "0" && cut.join === true, `x=${x}`).toBe(joined);
+	}
+});
+
 // Browser application and Command interface: two lines twelve apart hopped one
 // line with arcs bulging toward each other, drawing a closed ring around it.
 test("a crossing with room on both lines hops, centred, and every hop bulges the same way", () => {

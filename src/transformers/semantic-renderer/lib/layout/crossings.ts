@@ -34,6 +34,7 @@ import {
 	crossingKey,
 	crossingOf,
 	drawnCrossings,
+	joinNear,
 	onLine,
 	onRun,
 	overlaps,
@@ -63,6 +64,9 @@ const HOP_BEND_ROOM = BEND_RADIUS;
 
 /** How much straighter one line must run through a crossing to stay whole over the other. */
 const STRAIGHTER = 0.5;
+
+/** How near a join a cut must be to keep the joining line whole: within a hop's radius. */
+const JOIN_REACH = BRIDGE_RADIUS;
 
 /** A crossing along one candidate upper run. */
 interface Candidate {
@@ -332,8 +336,10 @@ function raise(state: Settling, run: Run, group: readonly Candidate[]): void {
 }
 
 /**
- * Where no hop fits, the line that runs straighter through the crossing, or
- * else the later-painted one, stays whole, and the other is cut beneath it.
+ * Where no hop fits, a line that joins or parts at the crossing stays whole,
+ * since cutting it would sever the join from its mark; else the line that
+ * runs straighter through the crossing, or else the later-painted one. The
+ * other is cut beneath it, clear of the join's mark when there is one.
  * @param edges The routes.
  * @param runs Every run.
  * @param crossing The crossing.
@@ -344,20 +350,37 @@ function cutBeneath(
 	runs: readonly Run[],
 	crossing: DrawnCrossing,
 ): Bridge {
+	const [joined, oneAbove] = upperOf(runs, crossing);
 	const [one, other] = crossing.lines;
-	const oneStraight = straightness(runs, one.drawer, crossing.point[one.drawer.axis]);
-	const otherStraight = straightness(runs, other.drawer, crossing.point[other.drawer.axis]);
-	const oneAbove =
-		Math.abs(oneStraight - otherStraight) < STRAIGHTER
-			? one.drawer.edgeIndex > other.drawer.edgeIndex
-			: oneStraight > otherStraight;
 	const [upper, lower] = oneAbove ? [one, other] : [other, one];
 	const at = along(upper.drawer, crossing.point[upper.drawer.axis]);
 	return {
 		edgeId: edges[upper.drawer.edgeIndex]!.edge.id,
 		under: idsOf(edges, lower),
 		curve: pieceOf(upper.drawer, at, BRIDGE_RADIUS),
+		...(joined ? { join: true as const } : {}),
 	};
+}
+
+/**
+ * Which of a crossing's two lines stays whole where no hop fits.
+ * @param runs Every run.
+ * @param crossing The crossing.
+ * @returns Whether the one staying whole joins there, and whether it is the first line.
+ */
+function upperOf(runs: readonly Run[], crossing: DrawnCrossing): readonly [boolean, boolean] {
+	const [one, other] = crossing.lines;
+	const [oneJoins, otherJoins] = crossing.lines.map(({ drawer }) =>
+		joinNear(runs, drawer, crossing.point[drawer.axis], JOIN_REACH),
+	);
+	if (oneJoins !== otherJoins) return [true, oneJoins!];
+	const oneStraight = straightness(runs, one.drawer, crossing.point[one.drawer.axis]);
+	const otherStraight = straightness(runs, other.drawer, crossing.point[other.drawer.axis]);
+	const oneAbove =
+		Math.abs(oneStraight - otherStraight) < STRAIGHTER
+			? one.drawer.edgeIndex > other.drawer.edgeIndex
+			: oneStraight > otherStraight;
+	return [false, oneAbove];
 }
 
 /**

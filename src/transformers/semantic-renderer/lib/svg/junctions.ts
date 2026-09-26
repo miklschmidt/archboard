@@ -373,7 +373,7 @@ function junctionMarks(
 	if (junctions.length === 0) return "";
 	const marks = junctions.map(({ point, until, route, width }) => {
 		const ink = lines[route]!.ink;
-		const radius = width + JUNCTION_REACH;
+		const radius = markRadius(width);
 		return until === undefined
 			? tag("circle", { cx: coord(point.x), cy: coord(point.y), r: coord(radius), fill: ink })
 			: tag("path", {
@@ -387,4 +387,13 @@ function junctionMarks(
 	return wrap("g", { class: "ab-junctions", "pointer-events": "none" }, marks.join(""));
 }
 
-export { junctionMarks, junctionsOf };
+/**
+ * How far a junction mark reaches from its point on a line of some width.
+ * @param width The line's width.
+ * @returns The mark's radius.
+ */
+function markRadius(width: number): number {
+	return width + JUNCTION_REACH;
+}
+
+export { junctionMarks, junctionsOf, markRadius };
