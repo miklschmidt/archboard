@@ -7,6 +7,7 @@ export {
 	curveThrough,
 	curveClearanceIssue,
 	COMPOUND_OPTIONS,
+	EndpointOptions,
 	settleLabels,
 	improveProjection,
 	projectLabelChannels,

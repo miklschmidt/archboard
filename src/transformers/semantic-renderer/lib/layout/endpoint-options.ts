@@ -8,6 +8,8 @@ import {
 	type Face,
 } from "@/transformers/semantic-renderer/lib/layout/avoid-geometry";
 import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
+import { simplify, straightenShortJogs } from "@/transformers/semantic-renderer/lib/layout/curves";
+import { SHARED_INK } from "@/transformers/semantic-renderer/lib/layout/drawn-lines";
 
 /**
  * Identify the physical face from its outward endpoint run.
@@ -88,7 +90,12 @@ export class EndpointOptions {
 	private rejectEdge(edge: ElkExtendedEdge, nodes: ReadonlyMap<string, ElkNode>): boolean {
 		const section = edge.sections?.[0];
 		if (!section || edge.sources[0] === edge.targets[0]) return false;
-		const points = [section.startPoint, ...(section.bendPoints ?? []), section.endPoint];
+		// A jog narrower than a stroke is straightened when the route is drawn,
+		// so it never makes an approach cramped.
+		const points = straightenShortJogs(
+			simplify([section.startPoint, ...(section.bendPoints ?? []), section.endPoint]),
+			SHARED_INK,
+		);
 		const from = edge.sources[0]!;
 		const to = edge.targets[0]!;
 		return (
