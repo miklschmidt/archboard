@@ -138,19 +138,27 @@ test("a line leaving a group region runs on the track it is already on", async (
 	expect(sidewaysLevels(points).size).toBeLessThanOrEqual(1);
 });
 
-// Taken from a board of this repository: a line's lanes stood on three
-// columns, the middle one meeting neither the lane above it nor the one
-// below, so the line stepped sideways twice, a lane apart, where one step would do.
-test("a line steps once where one step joins the columns above and below", async () => {
-	const drawing = await renderArchitecture({
-		content: orderedFixture(browserApplication),
-		theme: "light",
-		layout: "track",
-		policy,
-	});
-	const points = corridorPoints(drawing.svg).get("md5cpNZV")!;
-	expect(sidewaysLevels(points).size).toBeLessThanOrEqual(3);
-});
+// Taken from boards of this repository: a line's lanes stood on several
+// columns, a middle one meeting neither the lane above it nor the one below,
+// so the line stepped sideways twice where one step would do. In the first
+// the step stood between a label and its card; in the second, a run left
+// stepped once the other runs were straightened.
+test.each([
+	["browser application", browserApplication, "md5cpNZV", 3],
+	["command interface", commandInterface, "REIYPxdO", 2],
+] as const)(
+	"a line steps once where one step joins the columns above and below (%s)",
+	async (_, fixture, id, levels) => {
+		const drawing = await renderArchitecture({
+			content: orderedFixture(fixture),
+			theme: "light",
+			layout: "track",
+			policy,
+		});
+		const points = corridorPoints(drawing.svg).get(id)!;
+		expect(sidewaysLevels(points).size).toBeLessThanOrEqual(levels);
+	},
+);
 
 // Taken from a board of this repository: a line into a card stacked under
 // another in a group region went round the upper card, then stepped to its
