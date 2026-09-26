@@ -53,7 +53,7 @@ function SemanticLegend(props: {
 							))}
 						</ul>
 						<p className="text-muted-foreground text-body mt-3 leading-relaxed">
-							Line weight shows emphasis. Moving dots illustrate authored traffic.
+							Line weight shows emphasis. Streaks illustrate authored traffic.
 						</p>
 					</LegendSection>
 				)}
