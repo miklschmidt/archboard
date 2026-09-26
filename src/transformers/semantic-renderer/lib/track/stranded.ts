@@ -52,10 +52,8 @@ function meetingColumn(station: Station, near: number): number {
  * the station it leads into or the one it leaves, the first that is free and
  * crosses no more lines than where it stands: a
  * label that stood in its way may have moved aside, and a run left where it
- * stood turns twice to reach its ends. Drawn inline, a run that stays on
- * several columns has its steps closed instead ({@link closeSteps}); the
- * Blocks engine packs a block among others after it is routed, and there
- * closing them cost more bends than it saved.
+ * stood turns twice to reach its ends. A run that stays on several columns
+ * has its steps closed instead ({@link closeSteps}).
  * @param scene The scene, its labels slid.
  * @param chains Every relationship's chain.
  * @returns Whether any run moved.
@@ -64,22 +62,21 @@ function unstrandLanes(scene: Scene, chains: readonly Chain[]): boolean {
 	return eachRun(
 		scene,
 		chains,
-		(run, free, bands) =>
-			unstrandRun(run, free, bands) || (scene.inline && closeSteps(run, free, bands)),
+		(run, free, bands) => unstrandRun(run, free, bands) || closeSteps(run, free, bands),
 	);
 }
 
 /**
- * Drawn inline, close the steps inside every run of lanes again once the
- * labels have settled onto the lanes toward their cards' ports: a label that
- * moved onto the lane below it leaves the piece above it meeting neither
- * neighbour ({@link closeSteps}).
+ * Close the steps inside every run of lanes again once the labels have
+ * settled onto the lanes toward their cards' ports: a label that moved onto
+ * the lane below it leaves the piece above it meeting neither neighbour
+ * ({@link closeSteps}).
  * @param scene The scene, its labels settled.
  * @param chains Every relationship's chain.
  * @returns Whether any run moved.
  */
 function closeLaneSteps(scene: Scene, chains: readonly Chain[]): boolean {
-	return scene.inline && eachRun(scene, chains, closeSteps);
+	return eachRun(scene, chains, closeSteps);
 }
 
 /**
