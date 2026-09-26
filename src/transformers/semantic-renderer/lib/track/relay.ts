@@ -30,6 +30,13 @@ import {
 } from "@/transformers/semantic-renderer/lib/track/chains";
 import { extentOf } from "@/transformers/semantic-renderer/lib/track/labels";
 import {
+	byBand,
+	onBand,
+	readingsOf,
+	take,
+	type Relaid,
+} from "@/transformers/semantic-renderer/lib/track/readings";
+import {
 	JOG,
 	MIN_STEP,
 	backtrack,
@@ -269,34 +276,76 @@ class Relay {
 	}
 
 	/**
-	 * Relay one chain onto its cheapest free route, when that saves enough.
+	 * Relay one chain onto its cheapest free route, its label box on its own
+	 * band or another its line passes, when that saves enough.
 	 * @param chain The chain.
 	 */
 	relay(chain: Chain): void {
-		const { stations } = chain;
-		const middle = stations.slice(1, -1);
+		const index = this.chains.indexOf(chain);
+		const old = chain.stations.map(({ x }) => x);
+		const standing = this.counts().map((counted) => this.cost(chain.stations, old, counted));
 		const occupancy = this.occupancyWithout(chain);
-		const xs = this.columnsFor(chain, occupancy);
-		const masks = middle.map((station) => this.freeAt(chain, station, xs, occupancy));
-		const chosen = this.cheapest(chain, xs, masks);
-		if (chosen === undefined) return;
-		const route = [stations[0]!.x, ...chosen, stations.at(-1)!.x];
-		const old = stations.map(({ x }) => x);
-		if (!this.saves(stations, route, old)) return;
-		middle.forEach((station, index) => {
-			station.x = chosen[index]!;
-			const { item } = station;
-			if (item !== undefined) item.box = { ...item.box, x: station.x - item.box.width / 2 };
+		const relaid = readingsOf(this.scene, chain).flatMap((stations) => {
+			this.bands[index] = byBand(stations);
+			return this.relaid(chain, stations, occupancy, standing);
 		});
+		const best = relaid.reduce<Relaid | undefined>(
+			(one, other) => (one === undefined || other.cost < one.cost ? other : one),
+			undefined,
+		);
+		this.bands[index] = byBand(best?.stations ?? chain.stations);
+		if (best !== undefined) take(chain, best, this.scene);
 	}
 
 	/**
-	 * What each band holds besides one chain: every item, and every other chain's lanes.
+	 * The two ways a route's crossings are counted: line by line, and trunk by
+	 * trunk. They differ only where a route crosses a trunk, whose lines are
+	 * drawn as one there: counted line by line, a route over a trunk is dearer
+	 * than it looks; counted by trunks, a lap over one is cheaper, and one lap
+	 * kept moves the lines relayed after it. A route is taken when it saves
+	 * enough by either.
+	 * @returns The counts; nothing counts each line once.
+	 */
+	counts(): (Counted | undefined)[] {
+		return [undefined, this.trunksAmong.bind(this)];
+	}
+
+	/**
+	 * The cheapest free route for one reading of a chain's stations, when it
+	 * saves enough over where the chain stands.
+	 * @param chain The chain.
+	 * @param stations The reading: its stations, its label box on one band.
+	 * @param occupancy What the chain's bands hold besides it.
+	 * @param standing What the chain costs where it stands, by each count.
+	 * @returns The route, or nothing.
+	 */
+	relaid(
+		chain: Chain,
+		stations: readonly Station[],
+		occupancy: Occupancy,
+		standing: readonly number[],
+	): Relaid[] {
+		const xs = this.columnsFor(stations, occupancy);
+		const masks = stations
+			.slice(1, -1)
+			.map((station) => this.freeAt(chain, station, xs, occupancy));
+		const chosen = this.cheapest(stations, xs, masks);
+		if (chosen === undefined) return [];
+		const route = [stations[0]!.x, ...chosen, stations.at(-1)!.x];
+		const costs = this.counts().map((counted) => this.cost(stations, route, counted));
+		const saves = costs.some((cost, at) => cost <= standing[at]! - SAVING);
+		return saves ? [{ stations, route, cost: costs[0]! }] : [];
+	}
+
+	/**
+	 * What each band holds besides one chain: every item but its label box,
+	 * and every other chain's lanes.
 	 * @param chain The chain.
 	 * @returns The occupancy.
 	 */
 	occupancyWithout(chain: Chain): Occupancy {
-		const occupancy = new Occupancy(this.scene);
+		const own = chain.stations.flatMap(({ kind, item }) => (kind === "label" ? [item!] : []));
+		const occupancy = new Occupancy(this.scene, new Set(own));
 		for (const other of this.chains)
 			if (other !== chain)
 				for (const station of other.stations) if (station.kind === "lane") occupancy.take(station);
@@ -306,12 +355,11 @@ class Relay {
 	/**
 	 * The columns a chain's route may take: the scene's, the edges of what its
 	 * bands hold, where its stations stand and the edges of its ends' reach.
-	 * @param chain The chain.
+	 * @param stations The chain's stations.
 	 * @param occupancy What its bands hold besides it.
 	 * @returns The x, ascending.
 	 */
-	columnsFor(chain: Chain, occupancy: Occupancy): number[] {
-		const { stations } = chain;
+	columnsFor(stations: readonly Station[], occupancy: Occupancy): number[] {
 		return [
 			...new Set([
 				...this.columns,
@@ -354,7 +402,9 @@ class Relay {
 			...framesOff(this.scene, station, endFrames(this.scene, chain)),
 			[-Infinity, left + half],
 			[right - half, Infinity],
-			...(item === undefined ? occupancy.taken[station.band]! : this.labelWalls(chain, item)),
+			...(item === undefined
+				? occupancy.taken[station.band]!
+				: this.labelWalls(chain, item, station.band)),
 		];
 	}
 
@@ -366,13 +416,14 @@ class Relay {
 	 * it never straddles.
 	 * @param chain The label's chain.
 	 * @param label The box.
+	 * @param band The band it would stand on.
 	 * @returns The intervals its centre keeps out of.
 	 */
-	labelWalls(chain: Chain, label: Item): Span[] {
+	labelWalls(chain: Chain, label: Item, band: number): Span[] {
 		const half = label.box.width / 2;
-		const { band } = label;
 		const { cards, titles, labels } = this.scene;
-		const solid = [...cards.values(), ...titles.values(), ...this.scene.captionsFor(label)];
+		const placed = band === label.band ? label : onBand(this.scene, label, band);
+		const solid = [...cards.values(), ...titles.values(), ...this.scene.captionsFor(placed)];
 		const others = [...labels.values()].filter((item) => item !== label);
 		const lanes = this.chains
 			.filter((other) => other !== chain)
@@ -456,17 +507,16 @@ class Relay {
 	 * stands on counts one; a jog for each change of column; and at each end
 	 * the travel from the card's reach. One pass down the stations, each
 	 * column's best from the columns above found in one sweep each way.
-	 * @param chain The chain.
+	 * @param stations The chain's stations.
 	 * @param xs The columns.
 	 * @param masks Which columns each middle station may stand on.
 	 * @returns Each middle station's x, or nothing when no route is free.
 	 */
 	cheapest(
-		chain: Chain,
+		stations: readonly Station[],
 		xs: readonly number[],
 		masks: readonly Uint8Array[],
 	): number[] | undefined {
-		const { stations } = chain;
 		const [upper, lower] = [stations[0]!, stations.at(-1)!];
 		const traffic = new Map(
 			stations
