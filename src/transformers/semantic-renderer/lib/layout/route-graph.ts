@@ -3,6 +3,7 @@ import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import { RoutingScene } from "@/transformers/semantic-renderer/lib/layout/avoid-routing";
 import { EndpointOptions } from "@/transformers/semantic-renderer/lib/layout/endpoint-options";
 import { ForeignFrames } from "@/transformers/semantic-renderer/lib/layout/foreign-frames";
+import { joinSqueezedTrunks } from "@/transformers/semantic-renderer/lib/layout/squeezed-trunks";
 import type { AlignedPins } from "@/transformers/semantic-renderer/lib/layout/avoid-pins";
 import {
 	isNativeRouteUnavailable,
@@ -67,13 +68,26 @@ function settle(
 }
 
 /**
+ * Route a placed graph, with lines that share a pin joined where the router
+ * squeezed them apart.
+ * @param avoid Initialized native router.
+ * @param graph Complete globally placed semantic geometry.
+ * @returns The hierarchy with finite orthogonal relationship routes.
+ */
+export function routeGraph(avoid: AvoidEngine, graph: ElkNode): ElkNode {
+	const routed = refinedRoutes(avoid, graph);
+	joinSqueezedTrunks(routed.edges ?? []);
+	return routed;
+}
+
+/**
  * Route once, then offer one optional native refinement informed by the settled paths.
  * Failed optional routes retain the complete baseline; unrelated failures still propagate.
  * @param avoid Initialized native router.
  * @param graph Complete globally placed semantic geometry.
  * @returns The hierarchy with finite orthogonal relationship routes.
  */
-export function routeGraph(avoid: AvoidEngine, graph: ElkNode): ElkNode {
+function refinedRoutes(avoid: AvoidEngine, graph: ElkNode): ElkNode {
 	const endpoints = new EndpointOptions();
 	const pins = settle(avoid, graph, endpoints);
 	if (pins === undefined) return graph;
