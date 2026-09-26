@@ -21,6 +21,7 @@ export {
 	foldColumns,
 } from "@/transformers/semantic-renderer/lib/layout/fold-columns";
 export { chooseReading } from "@/transformers/semantic-renderer/lib/layout/column-readings";
+export { placeRun, type Slider } from "@/transformers/semantic-renderer/lib/track/label-runs";
 export {
 	settleLabels,
 	type LabelAttempt,
