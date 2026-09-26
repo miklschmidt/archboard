@@ -2,8 +2,9 @@
 // is a step a visual review found in real boards, reduced to a fixture. What
 // this catches: a long line whose lanes no one column holds stepping in
 // every channel it passes, a line stepped aside from another it joins at one
-// port anyway, and a line that leaves a group region on a second track where
-// the first one runs clear.
+// port anyway, a line that leaves a group region on a second track where the
+// first one runs clear, and a line that overshoots its branch off a trunk and
+// doubles back.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -13,6 +14,7 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 import onePointPort from "./one-point-port.json";
 import doubleStep from "./double-step.json";
 import staircase from "./staircase.json";
+import trunkTurnBack from "./trunk-turn-back.json";
 import walkthroughStair from "./walkthrough-stair.json";
 
 /** The vocabulary the fixtures reduced from dogfood boards draw with, its groups in the vault's order. */
@@ -55,6 +57,24 @@ function sidewaysLevels(points: readonly DrawnPoint[]): Set<number> {
 			.filter((point, index) => point.y === points[index]!.y && point.x !== points[index]!.x)
 			.map(({ y }) => y),
 	);
+}
+
+/**
+ * How many times a drawn route doubles back: runs sideways one way, then,
+ * after going down, the other way, each farther than a lane.
+ * @param points The route's corridor, hops taken out.
+ * @returns How many times it turns back.
+ */
+function turnBacks(points: readonly DrawnPoint[]): number {
+	const runs: number[] = [];
+	points.slice(1).forEach((point, index) => {
+		const step = point.y === points[index]!.y ? point.x - points[index]!.x : 0;
+		if (step === 0) return;
+		if (Math.sign(runs.at(-1) ?? 0) === Math.sign(step)) runs[runs.length - 1]! += step;
+		else runs.push(step);
+	});
+	return runs.slice(1).filter((run, index) => Math.abs(run) > 16 && Math.abs(runs[index]!) > 16)
+		.length;
 }
 
 // Reduced from a dogfood board: a long line's lanes drift a little from band
@@ -113,4 +133,18 @@ test("a line steps once where one step joins the columns above and below", async
 	});
 	const points = corridorPoints(drawing.svg).get("UubWA3xG")!;
 	expect(sidewaysLevels(points).size).toBeLessThanOrEqual(2);
+});
+
+// Reduced from a dogfood board: a card's lines leave it by one trunk whose
+// port stood over the member end nearest the middle. One member branched off
+// the trunk on the far side of its target, so its line ran along the trunk
+// away from where it goes and doubled back.
+test("no line leaving a trunk doubles back along it", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(trunkTurnBack),
+		theme: "light",
+		layout: "track",
+		policy,
+	});
+	for (const [id, points] of corridorPoints(drawing.svg)) expect(turnBacks(points), id).toBe(0);
 });
