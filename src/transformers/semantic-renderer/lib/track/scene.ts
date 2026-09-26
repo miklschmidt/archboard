@@ -317,9 +317,11 @@ class Scene {
 
 	/**
 	 * Whether some stations of a line may stand on a column for the frames it
-	 * lies in: inside every frame or group region both stations either side
-	 * of them stand in, outside every one neither does, and either where one
-	 * does, so the line crosses a wall only where it must, and once.
+	 * lies in: inside every frame both stations either side of them stand in,
+	 * outside every frame neither does, and either where one does, so the line
+	 * crosses a frame's wall only where it must, and once. A group region is
+	 * no frame: a lane keeps a lane and a half off its wall, and no board
+	 * straightens one into a region its line has no card in.
 	 * @param between The stations, and the stations either side of them.
 	 * @param between.lanes The stations.
 	 * @param between.before The station above them.
@@ -337,10 +339,12 @@ class Scene {
 	): boolean {
 		const { lanes, before, after } = between;
 		return lanes.every(({ band }) =>
-			[...this.walled(band)].every(([id, [low, high]]) => {
-				const above = this.inside(id, before);
-				return above !== this.inside(id, after) || (x > low && x < high) === above;
-			}),
+			[...this.walled(band)]
+				.filter(([id]) => this.frames.has(id))
+				.every(([id, [low, high]]) => {
+					const above = this.inside(id, before);
+					return above !== this.inside(id, after) || (x > low && x < high) === above;
+				}),
 		);
 	}
 
