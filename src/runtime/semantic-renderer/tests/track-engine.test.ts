@@ -219,6 +219,33 @@ test("a wrapped rank stands each lowered card under one of its row above", async
 	}
 });
 
+// A card whose note is a little narrower than the widest card stood a few
+// points inside the column of the card under it, so their edges stepped.
+test("two joined cards stacked on one centre take one width", async () => {
+	const content = orderedFixture({
+		nodes: [
+			{
+				id: "a",
+				name: "Gateway",
+				kind: "module",
+				responsibility: "Answers every request the gateway sends on to it",
+			},
+			{
+				id: "b",
+				name: "Service",
+				kind: "module",
+				responsibility:
+					"Holds every board the vault keeps and writes each one through one atomic write",
+			},
+		],
+		edges: [{ id: "e", from: "a", to: "b", kind: "call", label: "requests" }],
+	});
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const [upper, lower] = [drawing.atlas.nodes["a"]!, drawing.atlas.nodes["b"]!];
+	expect(upper.x).toBeCloseTo(lower.x, 2);
+	expect(upper.x + upper.width).toBeCloseTo(lower.x + lower.width, 2);
+});
+
 // Reduced from the dogfood CLI board: laid with its columns free, a wrap into
 // three or four rows pushed each lowered card aside by the lines to the rows
 // below it, so the cards stepped diagonally down the rows.
