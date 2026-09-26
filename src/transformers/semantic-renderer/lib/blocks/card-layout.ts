@@ -384,13 +384,17 @@ class CardLayout {
 	 * Route the placed block's lines on tracks and read it back.
 	 * @param placed The placed block.
 	 * @param held The width the block keeps at least.
-	 * @param settled Whether its ports were settled, and stay where they stand.
+	 * @param settled The ports its parent settled, which stay where they stand.
 	 * @returns The laid-out block.
 	 */
-	routed(placed: ElkNode & { edges: ElkExtendedEdge[] }, held: number, settled = false): Laid {
+	routed(
+		placed: ElkNode & { edges: ElkExtendedEdge[] },
+		held: number,
+		settled: ReadonlySet<string> = new Set(),
+	): Laid {
 		const scene = new Scene(placed);
 		markPorts(scene, this.block);
-		if (!settled) letPortsSlide(scene, this.block, this.tree.nesting);
+		letPortsSlide(scene, this.block, this.tree.nesting, settled);
 		const lines = routeScene(
 			scene,
 			placed.edges.map((edge) => {
@@ -437,7 +441,7 @@ class CardLayout {
 			else if (this.tree.pins.has(leaf.id))
 				leaf.x = pinnedLeaf(this.tree, this.laid, leaf.id, centres).x;
 		}
-		return this.routed(placed, held, true);
+		return this.routed(placed, held, new Set(ports.keys()));
 	}
 
 	/**

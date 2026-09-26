@@ -335,13 +335,15 @@ class Settle {
 	}
 
 	/**
-	 * Whether a line in a block of blocks settles a pin: it ends on one, and
-	 * both its ends stand in the block.
+	 * Whether a line in a block of blocks is read to settle its pins: every
+	 * line of a packed block, and in a block of cards drawn inline one that
+	 * ends on a pin with both its ends standing in the block.
 	 * @param block The block of blocks.
 	 * @param ends The line's ends.
-	 * @returns True when it does.
+	 * @returns True when it is.
 	 */
 	settles(block: Block, ends: readonly string[]): boolean {
+		if (!this.cardsInline(block)) return true;
 		const { tree, laid } = this.settling;
 		const { boxes } = laid.get(block.id)!;
 		return (
