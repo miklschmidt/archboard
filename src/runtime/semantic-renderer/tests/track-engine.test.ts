@@ -6,20 +6,25 @@
 // container of cards nothing connects drawn as one long row again, a line
 // into a wide container that aims at its middle and comes back to its port,
 // a tall board of containers drawn as one column, or folded through one,
-// containers side by side sharing one border, and a wrapped rank that sinks a
-// card to a late row of its own, away from the cards it stands with.
+// containers side by side sharing one border, a wrapped rank that sinks a
+// card to a late row of its own, away from the cards it stands with, a deep
+// wrap stepping diagonally, stacked cards out of one column or width, cards
+// of one row on different tops, and a small page won by more rows.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import {
 	corridorPoints,
+	routeEnds,
 	routeLabels,
 	routePoints,
 	type DrawnPoint,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import containerDetour from "./container-detour.json";
+import fittingWrap from "./fitting-wrap.json";
 import sunkWrap from "./sunk-wrap.json";
 
 const TARGETS = ["one", "two", "three", "four", "five"];
@@ -204,9 +209,9 @@ test("a wrapped rank stands each lowered card under one of its row above", async
 	const rank = content.edges.filter(({ from }) => from === "hub").map(({ to }) => to);
 	const parentOf = new Map(content.nodes.map(({ id, parent }) => [id, parent]));
 	const box = (id: string) => drawing.atlas.nodes[id]!;
-	const middle = (id: string): number => Math.round(box(id).y + box(id).height / 2);
-	const rows = [...new Set(rank.map(middle))].toSorted((one, other) => one - other);
-	const rowOf = (id: string): number => rows.indexOf(middle(id));
+	const top = (id: string): number => Math.round(box(id).y);
+	const rows = [...new Set(rank.map(top))].toSorted((one, other) => one - other);
+	const rowOf = (id: string): number => rows.indexOf(top(id));
 	for (const card of rank.filter((id) => rowOf(id) > 0)) {
 		const over = rank.filter(
 			(other) =>
@@ -217,4 +222,113 @@ test("a wrapped rank stands each lowered card under one of its row above", async
 		);
 		expect(over.length, card).toBeGreaterThan(0);
 	}
+});
+
+// A card whose note is a little narrower than the widest card stood a few
+// points inside the column of the card under it, so their edges stepped.
+test("two joined cards stacked on one centre take one width", async () => {
+	const content = orderedFixture({
+		nodes: [
+			{
+				id: "a",
+				name: "Gateway",
+				kind: "module",
+				responsibility: "Answers every request the gateway sends on to it",
+			},
+			{
+				id: "b",
+				name: "Service",
+				kind: "module",
+				responsibility:
+					"Holds every board the vault keeps and writes each one through one atomic write",
+			},
+		],
+		edges: [{ id: "e", from: "a", to: "b", kind: "call", label: "requests" }],
+	});
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const [upper, lower] = [drawing.atlas.nodes["a"]!, drawing.atlas.nodes["b"]!];
+	expect(upper.x).toBeCloseTo(lower.x, 2);
+	expect(upper.x + upper.width).toBeCloseTo(lower.x + lower.width, 2);
+});
+
+// Reduced from the dogfood CLI board: laid with its columns free, a wrap into
+// three or four rows pushed each lowered card aside by the lines to the rows
+// below it, so the cards stepped diagonally down the rows.
+test("a wrap into three rows or more keeps its columns", async () => {
+	const commands = Array.from({ length: 8 }, (_, index) => `c${index}`);
+	const content = orderedFixture({
+		nodes: [
+			{ id: "hub", name: "Execution", kind: "module", responsibility: "Runs every command" },
+			...commands.map((id, index) => ({
+				id,
+				name: `Command ${index}`,
+				kind: "module",
+				responsibility: `command ${index}: one thing a person can ask, with text that wraps`,
+			})),
+			{ id: "sink", name: "Client", kind: "module", responsibility: "Sends every request" },
+		],
+		edges: commands.flatMap((id, index) => [
+			{ id: `in${index}`, from: "hub", to: id, kind: "call", label: "validated input" },
+			{ id: `out${index}`, from: id, to: "sink", kind: "call", label: "operation" },
+		]),
+	});
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const boxes = commands.map((id) => drawing.atlas.nodes[id]!).toSorted((a, b) => a.y - b.y);
+	// Cards that share some height stand in one row.
+	const rows: (typeof boxes)[] = [];
+	for (const box of boxes) {
+		const row = rows.at(-1);
+		if (row !== undefined && box.y < Math.max(...row.map(({ y, height }) => y + height)))
+			row.push(box);
+		else rows.push([box]);
+	}
+	expect(rows.length).toBeGreaterThanOrEqual(3);
+	for (const [index, row] of rows.entries())
+		for (const box of index === 0 ? [] : row)
+			expect(rows[index - 1]!.some(({ x }) => Math.abs(x - box.x) <= 1)).toBeTrue();
+});
+
+// Reduced from the dogfood Variant reconciliation view: a short and a tall card
+// on one rank were centred on one height, so their tops stepped and the lines
+// into them from one label row ended at two heights.
+test("cards on one rank stand on one top, and the lines into them end there", async () => {
+	const content = orderedFixture({
+		nodes: [
+			{ id: "hub", name: "Transitions", kind: "module" },
+			{
+				id: "tall",
+				name: "Adopt",
+				kind: "module",
+				responsibility:
+					"Makes a settled draft current, or gives a board its first current variant; refuses a draft derived from an older architecture unless forced",
+			},
+			{ id: "short", name: "Shelve", kind: "module", responsibility: "Lets a proposal go" },
+		],
+		edges: [
+			{ id: "a", from: "hub", to: "tall", kind: "call", label: "adopt a draft" },
+			{ id: "s", from: "hub", to: "short", kind: "call", label: "shelve a proposal" },
+		],
+	});
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const [tall, short] = [drawing.atlas.nodes["tall"]!, drawing.atlas.nodes["short"]!];
+	expect(tall.height).toBeGreaterThan(short.height);
+	expect(short.y).toBe(tall.y);
+	const ends = routeEnds(drawing.svg);
+	expect(ends.get("s")!.y).toBe(ends.get("a")!.y);
+});
+
+// Reduced from a dogfood view, names replaced: a fan too wide for the pane
+// wraps, and a wrap into two rows and a narrower one into three both fit the
+// pane at full scale; the smaller page won, and the fan stepped down three rows.
+test("of two wraps that both fit the pane, the one into fewer rows is kept", async () => {
+	const content = orderedFixture(fittingWrap);
+	const policy = SemanticPolicySchema.parse({
+		levels: ["service"],
+		nodeKinds: { module: { name: "Module", icon: "RiBox3Line" } },
+		relationshipKinds: { call: { name: "Call", dash: "solid", arrowhead: "filled" } },
+		groups: { routes: { name: "Routes", color: "violet" } },
+	});
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
+	const targets = content.edges.map(({ to }) => drawing.atlas.nodes[to]!);
+	expect(new Set(targets.map(({ y }) => y)).size).toBe(2);
 });

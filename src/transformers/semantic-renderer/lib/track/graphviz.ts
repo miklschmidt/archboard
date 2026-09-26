@@ -147,6 +147,13 @@ interface Room {
 	 * @returns The span it must stay within, or nothing for one that stays where it is.
 	 */
 	readonly within: (name: string) => { left: number; right: number } | undefined;
+	/**
+	 * Whether an item is a card, whose width may be evened with the card over
+	 * or under it; without it no item is.
+	 * @param name The item.
+	 * @returns True for a card.
+	 */
+	readonly card?: (name: string) => boolean;
 }
 
 /**
@@ -298,6 +305,71 @@ class Columns {
 	}
 
 	/**
+	 * The cards stacked on one centre with an item that moves, which move with
+	 * it so the column stays one: every card over or under it on its centre
+	 * that is not lined up with another and may stand on the new centre. A
+	 * label on that centre belongs to some other line, and stays.
+	 * @param name The item that moves.
+	 * @param centre Its new centre.
+	 * @returns The cards.
+	 */
+	carried(name: string, centre: number): string[] {
+		const was = this.boxes.get(name)!;
+		return [...this.boxes]
+			.filter(
+				([other, at]) =>
+					other !== name &&
+					this.room.card?.(other) === true &&
+					!this.held.has(other) &&
+					Math.abs(middle(at) - middle(was)) < 0.5 &&
+					apart(at, was),
+			)
+			.map(([other]) => other)
+			.filter((other) => this.free(other, this.moved(other, centre)));
+	}
+
+	/**
+	 * The narrower of two joined cards stacked on one centre, when their
+	 * widths differ by no more than a near miss, and the other's width.
+	 * @param join The line between them.
+	 * @returns The narrower card and the width it would take, or nothing.
+	 */
+	uneven(join: Join): [string, number] | undefined {
+		const { tail, head } = join;
+		if (!this.cards(join) || Math.abs(this.offset(join)) >= 0.5) return undefined;
+		const [one, other] = [this.boxes.get(tail)!, this.boxes.get(head)!];
+		const short = Math.abs(one.width - other.width);
+		if (short < 0.5 || short > NEAR_MISS) return undefined;
+		return one.width < other.width ? [tail, other.width] : [head, one.width];
+	}
+
+	/**
+	 * Whether both ends of a line are cards.
+	 * @param join The line.
+	 * @returns True when they are.
+	 */
+	cards(join: Join): boolean {
+		return this.room.card?.(join.tail) === true && this.room.card(join.head);
+	}
+
+	/**
+	 * Widen the narrower of two joined cards stacked on one centre to the
+	 * other's width, when their edges miss each other by no more than a near
+	 * miss between them, so the column's edges run straight down.
+	 * @param join The line between them.
+	 * @returns True when a card was widened.
+	 */
+	even(join: Join): boolean {
+		const [narrow, width] = this.uneven(join) ?? [];
+		if (narrow === undefined) return false;
+		const at = this.boxes.get(narrow)!;
+		const widened = { ...at, x: middle(at) - width! / 2, width: width! };
+		if (!this.free(narrow, widened)) return false;
+		this.boxes.set(narrow, widened);
+		return true;
+	}
+
+	/**
 	 * Line one line's ends up, when one of them may move under or over the
 	 * other, and its label onto the line.
 	 * @param join The line.
@@ -312,6 +384,8 @@ class Columns {
 		).find(([name, centre]) => !this.held.has(name) && this.free(name, this.moved(name, centre)));
 		if (choice === undefined) return;
 		const [name, centre] = choice;
+		for (const other of this.carried(name, centre))
+			this.boxes.set(other, this.moved(other, centre));
 		this.boxes.set(name, this.moved(name, centre));
 		this.held.add(tail).add(head);
 		if (label === undefined || !this.boxes.has(label)) return;
@@ -321,12 +395,25 @@ class Columns {
 }
 
 /**
+ * Whether one box stands wholly above or below another.
+ * @param one A box.
+ * @param other Another.
+ * @returns True when they share no height.
+ */
+function apart(one: Box, other: Box): boolean {
+	return one.y + one.height <= other.y || other.y + other.height <= one.y;
+}
+
+/**
  * Line up the joined cards Graphviz stacked a few points out of one column.
  * A line through its label's box pulls its two ends into line no harder than
  * it lets them stand apart, so each end leans toward its other lines and the
  * line jogs. One end is moved under or over the other, and the label onto the
  * line, where that crowds nothing and stays clear of every other line; never
  * an end already lined up with another card, whose straight line would bend.
+ * The cards stacked on the moved end's centre move with it. Last, where the
+ * room names the cards, two joined cards on one centre whose widths differ
+ * by no more than a near miss are made one width.
  * @param boxes Every item Graphviz placed; the moved ones are replaced.
  * @param joins Every line between two items, upper end first.
  * @param room What a moved item must keep to.
@@ -337,6 +424,8 @@ function alignColumns(boxes: Map<string, Box>, joins: readonly Join[], room: Roo
 		const shift = Math.abs(columns.offset(join));
 		if (shift >= 0.5 && shift <= NEAR_MISS) columns.lineUp(join);
 	}
+	// Widening one card can line its edges up with a third's.
+	while (columns.stacked().some((join) => columns.even(join)));
 }
 
 export {
