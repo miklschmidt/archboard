@@ -59,7 +59,7 @@ export interface AvoidEngine {
 		proportional: boolean,
 		offset: number,
 		direction: number,
-	) => { setExclusive(exclusive: boolean): void };
+	) => { setExclusive(exclusive: boolean): void; setConnectionCost(cost: number): void };
 	ConnEnd: { new (point: AvoidPoint): Owned; new (shape: object, pin: number): Owned };
 	ConnRef: new (router: AvoidRouter, from: Owned, to: Owned) => AvoidConnection;
 	Checkpoint: new (point: AvoidPoint) => Owned;

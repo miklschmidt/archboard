@@ -43,6 +43,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import { SOLVE_STAGE, rendererHost } from "@/transformers/semantic-renderer/lib/host";
 import { fittedPage } from "@/transformers/semantic-renderer/lib/layout/page-fit";
+import { EVEN_PINS, tidierSettlement } from "@/transformers/semantic-renderer/lib/layout/even-pins";
 
 /** One measured architecture in the engine's solving frame. */
 interface Problem {
@@ -50,6 +51,8 @@ interface Problem {
 	readonly measured: MeasuredArchitecture;
 	readonly standings?: Readonly<Record<string, ChangeKind>> | undefined;
 	readonly columns: number;
+	/** Whether its routes are asked for evened pins (even-pins.ts). */
+	readonly evenPins?: boolean;
 }
 
 /**
@@ -129,13 +132,8 @@ function drawingLabel(
 ): Pick<DrawingEdge, "label"> {
 	if (result.layoutOptions?.["archboard.route-label"] !== "true") return {};
 	const label = measured.labels.get(result.id);
-	if (label === undefined) {
-		return {};
-	}
 	const shape = result.labels?.[0];
-	if (shape === undefined) {
-		return {};
-	}
+	if (label === undefined || shape === undefined) return {};
 	return { label: { measured: label, box: boxOf(shape) } };
 }
 
@@ -229,7 +227,8 @@ function columnReading(problem: Problem): ColumnReading {
 		 * The complete drawing.
 		 * @returns The settled reading.
 		 */
-		settle: () => settleReading(reading),
+		settle: () =>
+			tidierSettlement(settleReading(reading), settleReading({ ...reading, evenPins: true })),
 	};
 }
 
@@ -371,13 +370,16 @@ function graphForLabels(problem: Problem, reserved: ReadonlySet<string>): ElkNod
  * Ask a placed graph's forced labels to be routed through.
  * @param placed A placement of the reading, which stays as it is.
  * @param forced Labels that require a route through their reserved box.
+ * @param evenPins Whether its routes are asked for evened pins.
  * @returns The routing input.
  */
 function forceLabels(
 	placed: ElkNode,
 	forced: ReadonlyMap<string, LabelAnchor | undefined>,
+	evenPins = false,
 ): ElkNode {
 	const graph = structuredClone(placed);
+	graph.layoutOptions = { ...graph.layoutOptions, [EVEN_PINS]: String(evenPins) };
 	for (const edge of graph.edges ?? []) {
 		if (!forced.has(edge.id)) continue;
 		edge.layoutOptions = {
@@ -549,10 +551,13 @@ async function drawAttempt(
 	LabelAttempt & { readonly reservedBoxes: ReadonlyMap<string, NonNullable<DrawingEdge["label"]>> }
 > {
 	const { content, measured } = problem;
-	const laidOut = await rendererHost().solve(forceLabels(await problem.place(reserved), forced), {
-		...solveOptions(problem),
-		[SOLVE_STAGE]: "route",
-	});
+	const laidOut = await rendererHost().solve(
+		forceLabels(await problem.place(reserved), forced, problem.evenPins),
+		{
+			...solveOptions(problem),
+			[SOLVE_STAGE]: "route",
+		},
+	);
 	const nodes = drawingNodes(laidOut.children ?? [], measured, 0);
 	const extent = boxOf(laidOut);
 	const solved = drawingEdges(content, laidOut, measured);

@@ -2,6 +2,7 @@ import type { ElkNode } from "@archboard/elk-rs";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import { RoutingScene } from "@/transformers/semantic-renderer/lib/layout/avoid-routing";
 import { EndpointOptions } from "@/transformers/semantic-renderer/lib/layout/endpoint-options";
+import { EVEN_PINS } from "@/transformers/semantic-renderer/lib/layout/even-pins";
 import { ForeignFrames } from "@/transformers/semantic-renderer/lib/layout/foreign-frames";
 import { joinSqueezedTrunks } from "@/transformers/semantic-renderer/lib/layout/squeezed-trunks";
 import type { AlignedPins } from "@/transformers/semantic-renderer/lib/layout/avoid-pins";
@@ -21,6 +22,15 @@ function visitNodes(scene: RoutingScene, graph: ElkNode): void {
 }
 
 /**
+ * Whether a graph's routes are asked for evened pins (even-pins.ts).
+ * @param graph The placed graph.
+ * @returns True when every pin of a shape should cost the same.
+ */
+function evenPins(graph: ElkNode): boolean {
+	return graph.layoutOptions?.[EVEN_PINS] === "true";
+}
+
+/**
  * Settle routes and endpoint faces for one set of native physical pin alternatives.
  * @param avoid Initialized native router.
  * @param graph Complete globally placed geometry.
@@ -36,9 +46,10 @@ function settle(
 ): AlignedPins | undefined {
 	const frames = new ForeignFrames(graph);
 	const edges = graph.edges ?? [];
+	const even = evenPins(graph);
 	let routed = false;
 	for (;;) {
-		const scene = new RoutingScene(avoid, endpoints);
+		const scene = new RoutingScene(avoid, endpoints, new Set(), even);
 		try {
 			edges.forEach(positionReservedLabel);
 			visitNodes(scene, graph);
@@ -56,7 +67,7 @@ function settle(
 					endpoints,
 					scene,
 					routes,
-					(closed) => new RoutingScene(avoid, endpoints, closed),
+					(closed) => new RoutingScene(avoid, endpoints, closed, even),
 				)
 			)
 				continue;
