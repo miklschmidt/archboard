@@ -112,6 +112,8 @@ class Clusters {
 	readonly graphs = new Map<string, Nested>();
 	/** Each Graphviz cluster's name, by the cluster it draws. */
 	readonly names = new Map<string, string>();
+	/** The width of each card evened with the card over or under it. */
+	readonly widths = new Map<string, number>();
 
 	/**
 	 * Make every cluster of a block in its graph, each headed by its title.
@@ -373,6 +375,7 @@ class Clusters {
 	 * @param placed.clusters Every cluster's box.
 	 * @param placed.polylines Every vendor edge's polyline, by id.
 	 * @param placed.width The block's width.
+	 * @param placed.cards The block's cards, whose widths may be evened with the card over or under them.
 	 */
 	lineUp(
 		joins: readonly Join[],
@@ -382,9 +385,10 @@ class Clusters {
 			clusters: ReadonlyMap<string, Box>;
 			polylines: ReadonlyMap<string, readonly string[]>;
 			width: number;
+			cards: ReadonlyMap<string, unknown>;
 		},
 	): void {
-		const { boxes, clusters, polylines, width } = placed;
+		const { boxes, clusters, polylines, width, cards } = placed;
 		for (const [id, at] of clusters) boxes.set(`cluster:${id}`, at);
 		alignColumns(boxes, joins, {
 			gap: LINED_UP_GAP,
@@ -395,7 +399,14 @@ class Clusters {
 			 * @returns Its span, or nothing when it stays.
 			 */
 			within: (name) => this.spanOf(name, clusters, width),
+			/**
+			 * Whether a vendor node is a card.
+			 * @param name The vendor node.
+			 * @returns True for a card.
+			 */
+			card: (name) => cards.has(name),
 		});
+		for (const [name, at] of boxes) if (cards.has(name)) this.widths.set(name, at.width);
 		for (const [name, { x, width: wide }] of boxes) {
 			const centre = centres.get(name);
 			if (centre !== undefined) centres.set(name, { x: x + wide / 2, y: centre.y });
