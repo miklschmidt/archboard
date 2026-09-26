@@ -38,6 +38,7 @@ import throughCard from "./through-card.json";
 import throughLabel from "./through-label.json";
 import trunkFan from "./trunk-fan.json";
 import twinLines from "./twin-lines.json";
+import workingWithAnAgent from "./working-with-an-agent.json";
 
 /** The room a container keeps around what it holds, and between it and a container it stands over. */
 const CONTAINER_INSET = 20;
@@ -53,19 +54,26 @@ const policy = SemanticPolicySchema.parse({
 		module: { name: "Module", icon: "RiBox3Line" },
 		function: { name: "Function", icon: "RiCodeSSlashLine" },
 		external: { name: "External", icon: "RiExternalLinkLine" },
+		service: { name: "Service", icon: "RiServerLine" },
+		system: { name: "System", icon: "RiApps2Line" },
+		ui: { name: "User interface", icon: "RiLayoutLine" },
 	},
 	relationshipKinds: {
 		call: { name: "Call", dash: "solid", arrowhead: "filled" },
 		rpc: { name: "RPC", color: "violet", dash: "solid", arrowhead: "filled" },
 		event: { name: "Event", color: "fuchsia", dash: "dashed", arrowhead: "open" },
 		dependency: { name: "Dependency", dash: "dotted", arrowhead: "open" },
+		data: { name: "Data", color: "teal", dash: "solid", arrowhead: "filled" },
+		render: { name: "Render", color: "pink", dash: "solid", arrowhead: "filled" },
 	},
 	groups: {
 		drawing: { name: "Drawing", color: "violet" },
+		panes: { name: "Live panes", color: "teal" },
 		walkthrough: { name: "Walkthroughs", color: "cyan" },
 		voice: { name: "Voice", color: "yellow" },
 		workhorse: { name: "Workhorse", color: "sky" },
 		child: { name: "Codex child", color: "indigo" },
+		agent: { name: "Agent", color: "fuchsia" },
 	},
 });
 
@@ -83,18 +91,27 @@ function sidewaysSteps(points: readonly DrawnPoint[]): number[] {
 	return uprights.slice(1).map((x, index) => Math.abs(x - uprights[index]!));
 }
 
-// Reduced from a dogfood board, names replaced: lines leaving one shared port
-// stepped a few points aside where a lane or a label stood just off their column.
-test("a line steps sideways by no less than its two bends need, or runs straight", async () => {
-	const drawing = await renderArchitecture({
-		content: orderedFixture(shortStep),
-		theme: "light",
-		layout: "track",
-	});
-	for (const [id, points] of routePoints(drawing.svg))
-		for (const step of sidewaysSteps(points))
-			expect(step > 0.5 && step < TWO_BENDS, `${id} steps ${step}`).toBe(false);
-});
+// Reduced from dogfood boards, names replaced in the first: lines leaving one
+// shared port stepped a few points aside where a lane or a label stood just
+// off their column; and a lane held a few points off its label's column by
+// the box beside the label, where no move could close the step.
+test.each([
+	["short step", shortStep],
+	["working with an agent", workingWithAnAgent],
+])(
+	"a line steps sideways by no less than its two bends need, or runs straight (%s)",
+	async (_, fixture) => {
+		const drawing = await renderArchitecture({
+			content: orderedFixture(fixture),
+			theme: "light",
+			layout: "track",
+			policy,
+		});
+		for (const [id, points] of routePoints(drawing.svg))
+			for (const step of sidewaysSteps(points))
+				expect(step > 0.5 && step < TWO_BENDS, `${id} steps ${step}`).toBe(false);
+	},
+);
 
 // Reduced from a dogfood board, names replaced: a line rising into the card
 // above turned on the channel's first track, 8 px under that card.
