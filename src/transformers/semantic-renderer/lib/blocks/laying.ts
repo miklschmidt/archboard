@@ -114,13 +114,14 @@ function anchorsSome(layout: Layout): boolean {
 
 /**
  * Whether a layout with its leaving labels pulled down stands fewer beside
- * their containers than the one before, and reads no worse.
+ * their containers than the one before, and reads no worse on no more page:
+ * the pull may answer with another ranking of the whole block.
  * @param after The pulled layout.
  * @param before The layout before.
  * @returns True when it does.
  */
 function fewerBeside(after: Layout, before: Layout): boolean {
-	return beside(after) < beside(before) && readsNoWorse(after[1], before[1]);
+	return beside(after) < beside(before) && noLarger(after, before);
 }
 
 /**
