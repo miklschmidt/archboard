@@ -164,22 +164,48 @@ function bestWrap(
 	const { laid, stacked } = laying;
 	const worth = block.kind === "root" ? WORTH_WRAPPING : WORTH_WRAPPING_INSIDE;
 	const gridded = new CardLayout(block, laid, tree, insets).looseCards().some(grids)
-		? [new CardLayout(block, laid, tree, insets, { grid: true, stacked }).lay(viz)]
+		? [{ laid: new CardLayout(block, laid, tree, insets, { grid: true, stacked }).lay(viz) }]
 		: [];
 	// A wrap that sinks a card stands it off on a late rank, away from its
 	// neighbours; it may fit the page better, but it is no wrap.
 	const wraps = wrapsOf(laying.whole, block, tree).flatMap((lowered) =>
 		columnChoices(lowered, tree.nesting)
-			.map((columns) =>
-				new CardLayout(block, laid, tree, insets, { lowered, stacked, columns }).lay(viz),
-			)
-			.filter(({ boxes }) => !sinks(lowered, boxes, (card) => block.clusterOf.get(card))),
+			.map((columns) => ({
+				laid: new CardLayout(block, laid, tree, insets, { lowered, stacked, columns }).lay(viz),
+				rows: 1 + Math.max(...lowered.values()),
+			}))
+			.filter(({ laid: { boxes } }) => !sinks(lowered, boxes, (card) => block.clusterOf.get(card))),
 	);
-	const best = [...gridded, ...wraps].reduce<Laid | undefined>(
-		(one, other) => (one === undefined || readsBetter(weighed(other), weighed(one)) ? other : one),
+	const best = [...gridded, ...wraps].reduce<Wrapped | undefined>(
+		(one, other) => (one === undefined || wrapsBetter(other, one) ? other : one),
 		undefined,
 	);
-	return best !== undefined && scored(best) > scored(laying.whole) * worth ? best : undefined;
+	return best !== undefined && scored(best.laid) > scored(laying.whole) * worth
+		? best.laid
+		: undefined;
+}
+
+/** A wrap or grid laid out, and how many rows a wrap deals its rank into. */
+interface Wrapped {
+	readonly laid: Laid;
+	readonly rows?: number;
+}
+
+/**
+ * Whether one wrap reads better than another: it scores higher, or, as well,
+ * deals its rank into fewer rows. Two wraps that both fit the reference pane
+ * at full scale score the same, and one dealt into more rows only saves
+ * area: a wrap is for a rank too wide for the pane, and each row more steps
+ * the rank further from how it reads.
+ * @param one A wrap.
+ * @param other Another.
+ * @returns True when the first reads better.
+ */
+function wrapsBetter(one: Wrapped, other: Wrapped): boolean {
+	const tied = Math.abs(scored(one.laid) - scored(other.laid)) <= 1e-9;
+	if (tied && one.rows !== undefined && other.rows !== undefined && one.rows !== other.rows)
+		return one.rows < other.rows;
+	return readsBetter(weighed(one.laid), weighed(other.laid));
 }
 
 /**
