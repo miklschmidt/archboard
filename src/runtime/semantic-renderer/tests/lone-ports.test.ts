@@ -19,6 +19,10 @@ import {
 	ROUTE_OPEN_CORRIDOR,
 } from "@/transformers/semantic-renderer/config";
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
+import { instance } from "@viz-js/viz";
+import { AvoidLib } from "libavoid-js";
+import { createLayoutEngine } from "@/transformers/semantic-renderer/engine";
+import { SOLVE_STAGE } from "@/transformers/semantic-renderer/host";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { centredPins, relationshipChannel } from "@/runtime/semantic-renderer/layout";
 import {
@@ -31,6 +35,7 @@ import {
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import archboard from "./archboard.json";
+import heldPort from "./held-port.json";
 import readingABoard from "./reading-a-board.json";
 
 /** The vocabulary of the fixture, in the dogfood vault's order. */
@@ -223,4 +228,18 @@ test("a lone port moves to its face's middle only across a strip clear of cards 
 		labels: [{ x: 80, y: 95, width: 80, height: 20 }],
 	};
 	expect(centredPort({ edges: [labelled] })).toBeLessThan(0.5);
+});
+
+test("a port centred on its face keeps that face in the last solve", async () => {
+	// A placed view of the work vault, text taken out: the line into the lower
+	// card's west face is alone there, beside its top corner, and is centred.
+	// Offered the whole card again, the router took the top face's seed and
+	// joined another line's trunk, where a third line crossed under the join.
+	await AvoidLib.load();
+	const solve = createLayoutEngine(await instance(), AvoidLib.getInstance());
+	const routed = solve(structuredClone(heldPort) as ElkNode, { [SOLVE_STAGE]: "route" });
+	const card = routed.children!.find(({ id }) => id === "Tgn9tpSj")!;
+	const end = routed.edges!.find(({ id }) => id === "YkYEwnYD")!.sections![0]!.endPoint;
+	expect(end.x).toBeCloseTo(card.x!, 1);
+	expect(end.y).toBeCloseTo(card.y! + card.height! / 2, 1);
 });
