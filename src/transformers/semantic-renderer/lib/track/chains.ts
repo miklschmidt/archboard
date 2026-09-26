@@ -224,7 +224,7 @@ class Occupancy {
 	/** What each band holds but the stretches its walls keep a lane off. */
 	readonly held: [number, number][][];
 	/** The stretch each wall keeps a lane off, on each band, by the wall. */
-	readonly walls: Map<string, readonly [number, number]>[];
+	readonly walls: Map<string, [number, number]>[];
 
 	/**
 	 * Start with every item's box, widened by a lane either side.
