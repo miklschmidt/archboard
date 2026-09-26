@@ -53,11 +53,19 @@ function layBoth(viz: Viz, make: () => CardLayout): Laying {
 }
 
 /**
+ * How much more line a block with its titles pulled onto their members may
+ * draw and still be kept: a few points more is a line routed round a label
+ * it now keeps clear of, while another ranking of the whole block draws a
+ * fifth more (Board viewer, 16.9k against 20.0k).
+ */
+const LONGER_SHARE = 0.05;
+
+/**
  * A block with its tied titles pulled onto their members, a nested title on
- * the rank just above them, unless that crosses or draws more line: pulling
- * a title down is meant to move only the title, but Graphviz may answer the
- * changed graph with another ranking of the whole block, whose longer lines
- * the score does not see.
+ * the rank just above them, unless that crosses more or draws clearly more
+ * line: pulling a title down is meant to move only the title, but Graphviz
+ * may answer the changed graph with another ranking of the whole block,
+ * whose longer lines the score does not see.
  * @param laying The block laid out both ways.
  * @returns The layout kept.
  */
@@ -66,7 +74,8 @@ function settled(laying: Laying): Laid {
 	const untied = laying.untied();
 	if (untied === undefined) return tied;
 	const crosses = crossingsOf(untied.lines.values()) > crossingsOf(tied.lines.values());
-	const longer = lineLength(untied.lines.values()) > lineLength(tied.lines.values());
+	const longer =
+		lineLength(untied.lines.values()) > lineLength(tied.lines.values()) * (1 + LONGER_SHARE);
 	return crosses || longer ? tied : untied;
 }
 
