@@ -327,6 +327,8 @@ class TrunkRouter {
 		router.setRoutingParameter(avoid.RoutingParameter.idealNudgingDistance, LANE);
 		router.setRoutingParameter(avoid.RoutingParameter.segmentPenalty, TRUNK_TURN);
 		router.setRoutingParameter(avoid.RoutingParameter.crossingPenalty, TRUNK_CROSSING);
+		// Two trunks libavoid lays on one column read as one line: part them.
+		router.setRoutingOption(avoid.RoutingOption.nudgeOrthogonalTouchingColinearSegments, true);
 		const header = this.block.header === undefined ? [] : [headerOf(this.block)];
 		const owned = this.directed ? [...this.block.ports.keys()] : [];
 		const shapes = new Map(
