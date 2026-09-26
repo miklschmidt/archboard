@@ -402,6 +402,7 @@ class CardLayout {
 	): Laid {
 		const scene = new Scene(placed);
 		scene.edgesPage = this.edgesPage();
+		scene.inline = this.tree.nesting !== "blocks";
 		markPorts(scene, this.block);
 		letPortsSlide(scene, this.block, this.tree.nesting, settled);
 		const lines = routeScene(

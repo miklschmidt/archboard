@@ -132,6 +132,11 @@ class Scene {
 	 * where a line run beyond everything it holds laps round the drawing.
 	 */
 	edgesPage = false;
+	/**
+	 * Whether the scene is drawn by the Track engine, its containers and group
+	 * regions inline, rather than packed as blocks of their own.
+	 */
+	inline = false;
 
 	/**
 	 * Read every placed item and group them into bands by their centres.
