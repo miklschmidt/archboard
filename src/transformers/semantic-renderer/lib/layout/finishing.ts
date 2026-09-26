@@ -1,17 +1,21 @@
-// Keeping lines off frame walls (frame-walls.ts) is a finishing step. Moving
-// lines off walls moves where labels land, so which labels are reserved and
-// the placement those reservations buy: routed that way from the start, Agent
-// workbench and Board rasterizer settled on other placements that read worse.
+// Finishing passes: routing options that would move label reservations, and
+// so placements, if every routing pass used them. Routed that way from the
+// start, keeping lines off frame walls (frame-walls.ts) took Agent workbench
+// from 15 to 18 crossings and Board rasterizer from 2777 to 3495 wide, and
+// corner pins (pin-feedback.ts) took Board rasterizer from 7 to 11 crossings
+// and Browser application's "Working with an agent" from 0 to 4.
 //
-// So a settled drawing is finished only where a line runs along the wall of a
-// frame it does not stay inside. Its placement is routed once more clear of
-// those walls, and that drawing is kept when it has fewer lines along walls,
-// every label still finds a box, it has no more crossings, no line has more
-// bends, and every line that stayed inside a frame still does. A wall-clear
-// route that takes a detour is not worth the wall, fewer bends elsewhere do
-// not pay for one line made worse, and a relationship within a frame belongs
-// inside it even when the only room is on its wall: its cards stand the
-// frame's inset from the wall, which leaves no lane inside.
+// So each pass finishes a settled drawing only where it has what the pass
+// cures: a line along the wall of a frame it does not stay inside, or a line
+// that hooks into a card's side past the card's corner. The same placement,
+// with the same reservations, is routed once more with the pass's option, and
+// that drawing is kept when it has fewer of them, every label still finds a
+// box, it has no more crossings, no line has more bends, and every line that
+// stayed inside a frame still does. A route that takes a detour is not worth
+// what it cures, fewer bends elsewhere do not pay for one line made worse, and
+// a relationship within a frame belongs inside it even when the only room is
+// on its wall: its cards stand the frame's inset from the wall, which leaves
+// no lane inside.
 import type {
 	ArchitectureDrawing,
 	DrawingEdge,
@@ -125,7 +129,7 @@ function inside(line: DrawingEdge, frame: Box): boolean {
  * @param drawing The drawing.
  * @returns One wall key for every such run.
  */
-function crowdedWalls(drawing: ArchitectureDrawing): string[] {
+export function crowdedWalls(drawing: ArchitectureDrawing): string[] {
 	const walls = wallsOf(drawing);
 	return drawing.edges.flatMap((line) => {
 		const outside = walls.filter((wall) => !inside(line, wall.frame));
@@ -133,6 +137,40 @@ function crowdedWalls(drawing: ArchitectureDrawing): string[] {
 			outside.filter((wall) => along(run, wall)).map(({ key }) => key),
 		);
 	});
+}
+
+/**
+ * The line ends of a drawing that hook into a card's side: the end's run
+ * leaves the side and turns along it to beyond the card's top or bottom.
+ * @param drawing The drawing.
+ * @returns One key for every such end.
+ */
+export function sideHooks(drawing: ArchitectureDrawing): string[] {
+	const cards = new Map(drawing.cards.map(({ measured, box }) => [measured.node.id, box]));
+	return drawing.edges.flatMap(({ edge, curve }) => {
+		const points = verticesOf(curve);
+		const ends = [
+			[edge.from, points],
+			[edge.to, points.toReversed()],
+		] as const;
+		return ends.flatMap(([card, route]) => {
+			const box = cards.get(card);
+			return box !== undefined && hooks(box, route) ? [`${edge.id}:${card}`] : [];
+		});
+	});
+}
+
+/**
+ * Whether a route leaves a card's side and turns along it to beyond the card's top or bottom.
+ * @param box The card.
+ * @param route The route ordered away from the card.
+ * @returns True when its side stub turns past the card's corner.
+ */
+function hooks(box: Box, route: readonly Point[]): boolean {
+	const [tip, bend, after] = [route[0]!, route[1]!, route[2]];
+	if (after === undefined || Math.abs(tip.y - bend.y) >= 0.01) return false;
+	if (Math.abs(bend.x - after.x) >= 0.01) return false;
+	return after.y < box.y || after.y > box.y + box.height;
 }
 
 /**
@@ -175,25 +213,33 @@ function noWorse(clear: ArchitectureDrawing, settled: ArchitectureDrawing): bool
 	);
 }
 
+/** A drawing and the reading that routed it. */
+interface Finish<Reading> {
+	readonly reading: Reading;
+	readonly drawing: ArchitectureDrawing;
+}
+
 /**
- * The settled drawing, or, when a line of it runs along the wall of a frame it
- * does not stay inside, its placement routed clear of those walls, if that has
- * fewer such lines, keeps every label and is no worse ({@link noWorse}). A
- * walled routing the router or the route checks refuse keeps the settled drawing.
- * @param settled The settled drawing.
- * @param walled Routes the same placement clear of the walls named; nothing when a label finds no box.
- * @returns The drawing kept.
+ * One finishing pass: the settled drawing, or, when it has what the pass
+ * cures, its placement routed once more with the pass's option, if that has
+ * fewer of them, keeps every label and is no worse ({@link noWorse}). A
+ * routing the router or the route checks refuse keeps the settled drawing.
+ * @param settled The settled drawing and its reading.
+ * @param cured What the pass cures in a drawing, one key for each.
+ * @param reroute Routes the same placement with the pass's option, given what it cures; nothing when a label finds no box.
+ * @returns The drawing kept and its reading.
  */
-export async function clearOfWalls(
-	settled: ArchitectureDrawing,
-	walled: (walls: readonly string[]) => Promise<ArchitectureDrawing | undefined>,
-): Promise<ArchitectureDrawing> {
-	const crowded = crowdedWalls(settled);
-	if (crowded.length === 0) return settled;
-	const clear = await walled([...new Set(crowded)]).catch(() => undefined);
-	return clear !== undefined &&
-		crowdedWalls(clear).length < crowded.length &&
-		noWorse(clear, settled)
-		? clear
+export async function finished<Reading>(
+	settled: Finish<Reading>,
+	cured: (drawing: ArchitectureDrawing) => readonly string[],
+	reroute: (found: readonly string[]) => Promise<Finish<Reading> | undefined>,
+): Promise<Finish<Reading>> {
+	const found = cured(settled.drawing);
+	if (found.length === 0) return settled;
+	const finish = await reroute([...new Set(found)]).catch(() => undefined);
+	return finish !== undefined &&
+		cured(finish.drawing).length < found.length &&
+		noWorse(finish.drawing, settled.drawing)
+		? finish
 		: settled;
 }

@@ -7,6 +7,9 @@ import { ROUTE_LANE } from "@/transformers/semantic-renderer/lib/layout/routing-
 
 type PinProjection = { pin: AlignedPin; corridor: Box };
 
+/** The routing option that offers corner pins ({@link projectedCardPins}). */
+export const CORNER_PINS = "archboard.route.corner-pins";
+
 /**
  * Read one endpoint's actual attachment from a complete native route.
  * @param node Endpoint card.
@@ -118,25 +121,97 @@ function projection(
 }
 
 /**
- * Offer continuations of the router's own straight runs, without inventing a path.
+ * Offer continuations of the router's own straight runs, without inventing a
+ * path, and, when asked, the near corner of a face a route hooks past ({@link cornerPin}).
  * @param node Ordinary endpoint card.
  * @param edge Complete native relationship.
+ * @param corners Whether to offer corner pins.
  * @returns Candidate attachment corridors for the existing collision policy to validate.
  */
-export function projectedCardPins(node: ElkNode, edge: ElkExtendedEdge): PinProjection[] {
+export function projectedCardPins(
+	node: ElkNode,
+	edge: ElkExtendedEdge,
+	corners = false,
+): PinProjection[] {
 	const section = edge.sections?.[0];
 	if (!section) return [];
 	const points = [section.startPoint, ...(section.bendPoints ?? []), section.endPoint];
-	return points.slice(1).flatMap((point, index) => {
-		const previous = points[index]!;
-		const candidate = projection(
-			boxOf(node),
-			previous,
-			point,
-			Math.abs(previous.x - point.x) < 0.001,
-		);
-		return candidate ? [candidate] : [];
+	const box = boxOf(node);
+	return [
+		...(corners ? cornerPins(node, edge, points) : []),
+		...points.slice(1).flatMap((point, index) => {
+			const previous = points[index]!;
+			const candidate = projection(box, previous, point, Math.abs(previous.x - point.x) < 0.001);
+			return candidate ? [candidate] : [];
+		}),
+	];
+}
+
+/**
+ * The corner pins of a card at each of a route's ends on it.
+ * @param node The card.
+ * @param edge The relationship.
+ * @param points Its route from source to target.
+ * @returns A pin for each end that hooks past the card's corner.
+ */
+function cornerPins(
+	node: ElkNode,
+	edge: ElkExtendedEdge,
+	points: readonly Point[],
+): PinProjection[] {
+	const ends = [
+		...(edge.sources[0] === node.id ? [points] : []),
+		...(edge.targets[0] === node.id ? [points.toReversed()] : []),
+	];
+	return ends.flatMap((route) => {
+		const corner = cornerPin(boxOf(node), route);
+		return corner ? [corner] : [];
 	});
+}
+
+/**
+ * The top or bottom face just inside the corner a route hooks past. A line
+ * that drops down the gutter beside its card, past the card's corner, and
+ * turns into its side a few points below (Renderer layout's "measure every
+ * word") could have entered the face it passed with one bend fewer; the
+ * face's only pin was its channel's seed, far along it, so the router took
+ * the side. The run past the corner only lies a card clearance outside the
+ * card, so the face never sees it as a rail of its own.
+ * @param box The card.
+ * @param route The route ordered away from the card.
+ * @returns The pin 12 points inside the corner it passed, and the corridor the carried-on run and drop take.
+ */
+function cornerPin(box: Box, route: readonly Point[]): PinProjection | undefined {
+	const [tip, bend, after] = [route[0]!, route[1]!, route[2]];
+	if (after === undefined || !hooksPast(box, tip, bend, after)) return undefined;
+	const above = after.y < box.y;
+	const x = Math.max(
+		box.x + ROUTE_NUDGE_DISTANCE,
+		Math.min(box.x + box.width - ROUTE_NUDGE_DISTANCE, bend.x),
+	);
+	const face = above ? box.y : box.y + box.height;
+	return {
+		pin: { face: above ? "NORTH" : "SOUTH", position: (x - box.x) / box.width },
+		corridor: {
+			x: Math.min(x, bend.x),
+			y: Math.min(after.y, face),
+			width: Math.abs(bend.x - x),
+			height: Math.abs(after.y - face),
+		},
+	};
+}
+
+/**
+ * Whether a route leaves a card's side and turns along it to beyond the card's top or bottom.
+ * @param box The card.
+ * @param tip The route's end on the card.
+ * @param bend Its first bend.
+ * @param after The end of the run after that bend.
+ * @returns True when the side stub turns past the card's corner.
+ */
+function hooksPast(box: Box, tip: Point, bend: Point, after: Point): boolean {
+	if (Math.abs(tip.y - bend.y) >= 0.001 || Math.abs(bend.x - after.x) >= 0.001) return false;
+	return after.y < box.y || after.y > box.y + box.height;
 }
 
 /** One route's first or last run, which the router holds on its card's pin. */

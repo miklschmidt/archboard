@@ -1763,7 +1763,7 @@ Archboard server's top.
 Routed that way from the start, the reach moved which labels were reserved and
 so the placement: Agent workbench went from 15 to 18 crossings and Board
 rasterizer from 2777 to 3495 wide. It is therefore a finishing step
-(`clear-walls.ts`). After a reading is settled, and plain or evened pins
+(`finishing.ts`). After a reading is settled, and plain or evened pins
 chosen, the walls that lines run along without staying inside that frame are
 named, and the same placement with the same reservations is routed once more
 clear of them. That drawing is kept only when it has fewer such lines, every
@@ -1778,3 +1778,31 @@ Only the two drawings with such a line change; totals are otherwise equal:
 | ------- | --------- | --------------- | ----------- | --------------- |
 | dogfood | 171 → 171 | 363.9k → 364.0k | 2079 → 2077 | 2 → 1           |
 | work    | 26 → 26   | 90.4k → 90.4k   | 505 → 505   | 1 → 0           |
+
+## 37. A line that hooks past a corner enters the face it passed (2026-09-26)
+
+A line from a card up and off to the side dropped down the gutter beside its
+target, a card clearance outside it, past the target's top corner, and turned
+into the target's side a few points below: Renderer layout's `measure every
+word`, Codex session's `decode parameters and answer`, the Kubernetes runtime's
+`export request`. The top face's only pin was its channel's seed, often 170
+points along the face, and the refinement offers a rail only for a run that
+already lies over the face, so the router took the side. The refinement now
+also offers, for a route that hooks past a corner, the top or bottom face 12
+points inside that corner (`pin-feedback.ts`, `cornerPin`), and libavoid still
+chooses by cost.
+
+Offered in every routing pass, corner pins moved reservations and placements
+as the wall clearance did (section 36): dogfood went from 171 to 187 crossings,
+Browser application's `Working with an agent` from 0 to 4. So they are the
+second finishing pass: a settled drawing with a line that hooks into a card's
+side is routed once more with corner pins, and kept on the same terms.
+Renderer layout keeps its hooks: its rerouted drawing gives `fold into the
+chosen columns` five bends and leaves its label without a run.
+
+No drawing's crossings change and no placement moves:
+
+| vault   | crossings | length          | bends       | side hooks |
+| ------- | --------- | --------------- | ----------- | ---------- |
+| dogfood | 171 → 171 | 364.0k → 362.2k | 2077 → 1994 | 181 → 140  |
+| work    | 26 → 26   | 90.4k → 89.6k   | 505 → 469   | 33 → 15    |

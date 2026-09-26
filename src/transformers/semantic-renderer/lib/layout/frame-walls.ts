@@ -12,7 +12,7 @@
 // it, so the face reaches across it and closes it: a line into Board viewer's
 // Archboard server, which stands the cluster margin outside the frame, ran
 // 1 px inside the wall between it and Picture cache. Which walls to clear is
-// the finishing step's choice (clear-walls.ts).
+// the finishing step's choice (finishing.ts).
 import type { ElkNode } from "@archboard/elk-rs";
 import { z } from "zod";
 import { ROUTE_OPEN_CORRIDOR } from "@/transformers/semantic-renderer/config";

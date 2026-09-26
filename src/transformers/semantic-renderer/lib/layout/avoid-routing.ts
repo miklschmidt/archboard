@@ -148,10 +148,11 @@ export class RoutingScene {
 	/**
 	 * Ask the allocator for one improvement informed by complete native routes.
 	 * @param edges Settled baseline relationships.
+	 * @param corners Whether to offer the near corner of a face a route hooks past.
 	 * @returns A new feasible pin map, or nothing when the baseline offers every candidate.
 	 */
-	refinePorts(edges: readonly ElkExtendedEdge[]): AlignedPins | undefined {
-		return refinedPins(this.nodes, this.channels, edges);
+	refinePorts(edges: readonly ElkExtendedEdge[], corners = false): AlignedPins | undefined {
+		return refinedPins(this.nodes, this.channels, edges, corners);
 	}
 
 	/**
