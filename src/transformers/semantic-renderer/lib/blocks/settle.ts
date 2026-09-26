@@ -311,7 +311,7 @@ class Settle {
 	/**
 	 * Where one end of a trunk in a block of blocks may stand, in the block's
 	 * coordinates: a pin on a block inside, the block's own port where its
-	 * parent settled it, its header, or anywhere along a card's face.
+	 * parent settled it, or its header.
 	 * @param block The block of blocks.
 	 * @param end The end.
 	 * @param own Where the block's own ports were settled.
@@ -326,10 +326,6 @@ class Settle {
 			return [low + at, high + at];
 		}
 		if (end === headerOf(block)) return [box!.x, box!.x + box!.width];
-		if (this.settling.tree.cards.has(end) && box !== undefined) {
-			const [low, high] = spreadPorts(box, [-Infinity, Infinity]);
-			return [low!, high!];
-		}
 		const x = own.get(end) ?? middle(box!);
 		return [x, x];
 	}

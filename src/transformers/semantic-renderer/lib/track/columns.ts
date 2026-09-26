@@ -219,7 +219,6 @@ function fitting(scene: Scene, occupancy: Occupancy, stretch: Stretch): (x: numb
 	const extent = extentOf(scene);
 	return (x) =>
 		occupancy.fits({ lanes, before, after }, x) &&
-		scene.keepsFrames({ lanes: labels, before, after }, x) &&
 		labels.every((label) => labelFits(scene, { occupancy, extent }, label, x));
 }
 

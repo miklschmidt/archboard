@@ -96,23 +96,21 @@ function kept(at: Box): [number, number] {
 }
 
 /**
- * What stays of a span once some stretches are taken out of it: the parts a
- * line can stand in, so none narrower than a unit unless the span itself is.
+ * What stays of a span once some stretches are taken out of it.
  * @param span The span.
  * @param taken The stretches, each open at both ends.
  * @returns The free parts, left to right, each closed.
  */
 function openParts(span: [number, number], taken: readonly [number, number][]): [number, number][] {
-	const least = Math.min(1, span[1] - span[0]);
 	const parts: [number, number][] = [];
 	let low = span[0];
 	for (const [start, end] of taken.toSorted(([one], [other]) => one - other)) {
 		if (end <= low || start >= span[1]) continue;
-		parts.push([low, start]);
+		if (start >= low) parts.push([low, start]);
 		low = end;
 	}
-	parts.push([low, span[1]]);
-	return parts.filter(([from, to]) => to - from >= least);
+	if (low <= span[1]) parts.push([low, span[1]]);
+	return parts;
 }
 
 /**
