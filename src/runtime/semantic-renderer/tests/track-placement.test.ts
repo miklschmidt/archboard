@@ -15,6 +15,7 @@ import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { routeLabels, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import loweredRegion from "./lowered-region.json";
 import underPort from "./under-port.json";
+import skillEvaluation from "./skill-evaluation.json";
 import wrappedBlocker from "./wrapped-blocker.json";
 
 const WORDS = "alpha bravo delta eagle falcon garden harbor island jungle kettle lantern meadow";
@@ -173,6 +174,20 @@ test("a wrapped card stands aside from a line that drops straight past it", asyn
 		layout: "track",
 	});
 	expect(dropsStraight(drawing.svg, "e6")).toBe(true);
+});
+
+// Taken from a board of this repository: a wrapped card stepped out of its
+// column to open one for a line past it, but that line's label still turned
+// it round the next card, so the step bought nothing and cost the column.
+test("a wrapped card keeps its column where stepping aside straightens no line", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(skillEvaluation),
+		theme: "light",
+		policy: wrapPolicy,
+		layout: "track",
+	});
+	const [card, above] = [drawing.atlas.nodes["7LcGoxWH"]!, drawing.atlas.nodes["PEfE7dCL"]!];
+	expect(card.x + card.width / 2).toBeCloseTo(above.x + above.width / 2, 0);
 });
 
 // Reduced from a board of this repository, names replaced: two cards below a
