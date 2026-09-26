@@ -222,6 +222,7 @@ class CardLayout {
 			...(stacked ? this.clusters.enteringEdges(links) : []),
 			...this.wrapHolds(),
 		);
+		this.clusters.untie(graph.edges);
 		holdSources(this.block, this.graph, (name) => this.nodeOf(name));
 	}
 
