@@ -37,6 +37,7 @@ import {
 	subjectGroups,
 	type SubjectGroup,
 } from "@/ui/semantic-board-canvas/lib/picture-pairing";
+import { clockOf, setClock } from "@/ui/semantic-board-canvas/lib/picture-clock";
 import { SUBJECT_ATTRIBUTE, keepingMarks } from "@/ui/semantic-board-canvas/lib/subjects";
 
 /** A transition in progress: where it is, and how it ends. */
@@ -127,16 +128,22 @@ function continuousPictures(before: SemanticDrawing, after: SemanticDrawing): bo
  * @param svg The picture.
  */
 function stagePicture(surface: HTMLElement, svg: string): void {
-	// A picture's traffic runs on its own animation clock, which starts again
-	// at nought whenever its markup is replaced: a transition that lands, a
-	// flight that ends. The clock carries over, so the comets run on instead
-	// of jumping back to where they rest.
-	// A page without SVG animation has no clock to carry.
-	const last = surface.querySelector("svg");
-	const clock = last !== null && "getCurrentTime" in last ? last.getCurrentTime() : undefined;
 	surface.innerHTML = svg;
-	const next = surface.querySelector("svg");
-	if (clock !== undefined && next !== null && "setCurrentTime" in next) next.setCurrentTime(clock);
+}
+
+/**
+ * Put a picture of the board already on the surface up again: another version
+ * of it, or the same picture landing after a transition. Its traffic runs on
+ * rather than jumping back, since a picture's animation clock starts again at
+ * nought whenever its markup is written; a different board starts its own
+ * clock, so a sequence tells its exchange from the first step.
+ * @param surface The element the picture is put into.
+ * @param svg The picture.
+ */
+function restagePicture(surface: HTMLElement, svg: string): void {
+	const clock = clockOf(surface.querySelector("svg"));
+	stagePicture(surface, svg);
+	setClock(surface.querySelector("svg"), clock);
 }
 
 /**
@@ -326,7 +333,7 @@ function transitionPicture(
 	/** Land on the new picture exactly as the server drew it, keeping the viewer's marks on it. */
 	function finish(): void {
 		keepingMarks(surface, () => {
-			stagePicture(surface, after.svg);
+			restagePicture(surface, after.svg);
 		});
 	}
 	const holder = surface.ownerDocument.createElement("div");
@@ -381,6 +388,7 @@ function transitionPicture(
 export {
 	TRANSITION_ATTRIBUTE,
 	continuousPictures,
+	restagePicture,
 	sharedShift,
 	stagePicture,
 	transitionPicture,

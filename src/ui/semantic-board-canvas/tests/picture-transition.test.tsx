@@ -14,6 +14,7 @@ import { PICTURE_TRANSITION_PHASES } from "@/shared/timing/timing";
 import {
 	TRANSITION_ATTRIBUTE,
 	continuousPictures,
+	enterPicture,
 	transitionPicture,
 } from "@/ui/semantic-board-canvas/transitions";
 import {
@@ -432,7 +433,7 @@ describe("which pictures are continuous", () => {
 });
 
 describe("the traffic's clock", () => {
-	test("a picture that lands keeps its animation clock instead of starting it again", () => {
+	test("a picture of the same board keeps its animation clock, and another board starts its own", () => {
 		// The page's SVG clock, stood in for: a replaced picture's clock starts at nought.
 		const clocks = new WeakMap<Element, number>();
 		const prototype = window.SVGSVGElement.prototype;
@@ -466,6 +467,12 @@ describe("the traffic's clock", () => {
 			expect(clocks.get(surface.querySelector("svg")!)).toBe(4.2);
 			transition.finish();
 			expect(clocks.get(surface.querySelector("svg")!)).toBe(4.2);
+			// Another board starts its own clock, so a sequence is told from its first step.
+			const entrance = enterPicture(surface, picture([B], []));
+			expect(clocks.get(surface.querySelector("svg")!)).toBeUndefined();
+			clocks.set(surface.querySelector("svg")!, 1.5);
+			entrance.finish();
+			expect(clocks.get(surface.querySelector("svg")!)).toBe(1.5);
 		} finally {
 			Reflect.deleteProperty(prototype, "getCurrentTime");
 			Reflect.deleteProperty(prototype, "setCurrentTime");
