@@ -15,6 +15,7 @@ export {
 	projectLabelChannels,
 } from "@/transformers/semantic-renderer/lib/layout/label-runs";
 export { routeGraph } from "@/transformers/semantic-renderer/lib/layout/route-graph";
+export { EndpointOptions } from "@/transformers/semantic-renderer/lib/layout/endpoint-options";
 export {
 	foldColumnCounts,
 	foldColumns,
