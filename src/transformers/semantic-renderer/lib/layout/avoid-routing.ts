@@ -15,6 +15,7 @@ import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import {
 	CARD_ROUTE_EXPANSION,
+	LABEL_ROUTE_EXPANSION,
 	ROUTE_LANE,
 } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 import {
@@ -45,12 +46,14 @@ import {
 import {
 	boxOf,
 	boxesOverlap,
-	contains,
 	facePoint,
 	frameArrivalPoint,
 	FACES,
 	obstacleOf,
 	SIDES,
+	endpointFace,
+	internalFrame,
+	positionOnFace,
 	type Face,
 } from "@/transformers/semantic-renderer/lib/layout/avoid-geometry";
 
@@ -58,6 +61,15 @@ type ConnectionEnd = InstanceType<AvoidEngine["ConnEnd"]>;
 
 /** What a scene's routes are asked for, with each card's reach toward a wall to clear. */
 type SceneRequest = Omit<Requested, "clearWalls"> & { readonly reach: ReadonlyMap<string, Insets> };
+
+/**
+ * The same inset on every face.
+ * @param inset The inset.
+ * @returns The insets.
+ */
+function uniformInsets(inset: number): Insets {
+	return { NORTH: inset, SOUTH: inset, WEST: inset, EAST: inset };
+}
 
 /** One native obstacle scene; the router owns its shapes, shared pins and connectors. */
 export class RoutingScene {
@@ -258,7 +270,7 @@ export class RoutingScene {
 					);
 				continue;
 			}
-			this.shape(`label_${edge.id}`, box);
+			this.shape(`label_${edge.id}`, inflate(box, this.labelExpansion()));
 		}
 	}
 
@@ -315,11 +327,20 @@ export class RoutingScene {
 	}
 
 	/**
+	 * How far a reserved label's routing box reaches past the label.
+	 * @returns The label expansion when the routes ask for the full clearance, else none.
+	 */
+	private labelExpansion(): number {
+		return this.request.labelClearance ? LABEL_ROUTE_EXPANSION : 0;
+	}
+
+	/**
 	 * How far a native obstacle's routing box reaches past its visible shape.
 	 * @param id Native obstacle identity.
-	 * @returns Its inset on each face; labels and arrival corridors have none.
+	 * @returns Its inset on each face; a label's keeps its pins on its visible border, and arrival corridors have none.
 	 */
 	private insets(id: string): Insets {
+		if (id.startsWith("label_")) return uniformInsets(this.labelExpansion());
 		return routingInsets(this.nodes.get(id), this.request.reach.get(id));
 	}
 
@@ -526,25 +547,6 @@ function labelFaces(edge: ElkExtendedEdge, source: Box, target: Box): readonly [
 }
 
 /**
- * Locate a semantic perimeter point on a solid title face when they overlap.
- * A channel port can meet the title partway down a frame's east or west face.
- * @param box The title obstacle.
- * @param side The semantic endpoint face.
- * @param at The actual perimeter point.
- * @returns Its proportional title pin position, or nothing for a transparent perimeter.
- */
-function positionOnFace(box: Box, side: Face, at: Point): number | undefined {
-	const position =
-		side === "EAST" || side === "WEST" ? (at.y - box.y) / box.height : (at.x - box.x) / box.width;
-	const projected = facePoint(box, side, position);
-	return position >= 0 &&
-		position <= 1 &&
-		Math.hypot(projected.x - at.x, projected.y - at.y) < 0.001
-		? position
-		: undefined;
-}
-
-/**
  * The local footprint that gives an incoming frame arrow room to turn.
  * The scene's ordinary buffer supplies the rest of the head-and-bend run.
  * @param at The visible endpoint.
@@ -563,38 +565,4 @@ function arrivalCorridor(at: Point, side: Face): Box {
 		width: dx === 0 ? 2 * half : length,
 		height: dy === 0 ? 2 * half : length,
 	};
-}
-
-/**
- * Whether this frame endpoint refers to one of its own descendants.
- * @param node The endpoint.
- * @param target The opposite semantic endpoint.
- * @returns Whether it connects at the visible title divider.
- */
-function internalFrame(node: ElkNode, target: ElkNode): boolean {
-	return Boolean(node.children?.length) && contains(boxOf(node), boxOf(target));
-}
-
-/**
- * Face nearest the opposite semantic shape, without placement-engine port rules.
- * @param node The endpoint.
- * @param target The opposite semantic endpoint.
- * @returns The natural physical face.
- */
-function endpointFace(node: ElkNode, target: ElkNode): Face {
-	if (internalFrame(node, target)) return "SOUTH";
-	return towardFace(boxOf(node), boxOf(target));
-}
-
-/**
- * Nearest cardinal face between two placed boxes.
- * @param box The endpoint's semantic bounds.
- * @param toward The opposite semantic bounds.
- * @returns The face toward the other shape's center.
- */
-function towardFace(box: Box, toward: Box): Face {
-	const dx = toward.x + toward.width / 2 - box.x - box.width / 2;
-	const dy = toward.y + toward.height / 2 - box.y - box.height / 2;
-	if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? "EAST" : "WEST";
-	return dy > 0 ? "SOUTH" : "NORTH";
 }

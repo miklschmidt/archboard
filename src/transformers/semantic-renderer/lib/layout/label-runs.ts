@@ -9,7 +9,7 @@ import {
 	type Obstacles,
 } from "@/transformers/semantic-renderer/lib/layout/label-run-geometry";
 import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
-import { ANCHOR_CARD_CLEARANCE } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
+import { anchorClearance } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 import { packChannels } from "@/transformers/semantic-renderer/lib/layout/label-channels";
 import { projectionCoordinates } from "@/transformers/semantic-renderer/lib/layout/label-projections";
 // Measured badges use clear runs in the layout owner. A missing fit requests
@@ -100,11 +100,13 @@ class LabelPlacement {
 	 * @param drawing Current native routes and available reservations.
 	 * @param measured Measured semantic labels.
 	 * @param eligible When present, propose waypoints only for these relationships.
+	 * @param anchorAir How far a proposed waypoint keeps from a card.
 	 */
 	constructor(
 		private readonly drawing: ArchitectureDrawing,
 		private readonly measured: MeasuredArchitecture["labels"],
 		private readonly eligible?: ReadonlySet<string>,
+		anchorAir = anchorClearance(),
 	) {
 		this.pieces = piecesOf(drawing.edges);
 		this.labels = new Map(
@@ -117,7 +119,7 @@ class LabelPlacement {
 			inflate(
 				box,
 				this.eligible !== undefined && box.width > 0 && box.height > 0
-					? Math.max(this.nodeAir, ANCHOR_CARD_CLEARANCE)
+					? Math.max(this.nodeAir, anchorAir)
 					: this.nodeAir,
 			),
 		);
@@ -480,14 +482,16 @@ function placeLabelsOnRuns(
  * @param drawing Native routes with all reserved label boxes retained.
  * @param measured Measured semantic labels.
  * @param eligible Relationships now requiring a waypoint.
+ * @param anchorAir How far a waypoint keeps from a card (routing-clearance.ts).
  * @returns An atomic set of feasible anchors, or no changes when the proposal is invalid.
  */
 function anchorLabelsOnRuns(
 	drawing: ArchitectureDrawing,
 	measured: MeasuredArchitecture["labels"],
 	eligible: ReadonlySet<string>,
+	anchorAir = anchorClearance(),
 ): ReadonlyMap<string, LabelAnchor> {
-	const placement = new LabelPlacement(drawing, measured, eligible);
+	const placement = new LabelPlacement(drawing, measured, eligible, anchorAir);
 	placement.place();
 	return placement.anchors();
 }
@@ -497,14 +501,16 @@ function anchorLabelsOnRuns(
  * @param drawing Native routes with their current reserved boxes.
  * @param measured Measured semantic labels.
  * @param eligible Forced labels whose final routes lack bend clearance.
+ * @param anchorAir How far a waypoint keeps from a card (routing-clearance.ts).
  * @returns One atomic set of small physical channel corrections.
  */
 function alignLabelRows(
 	drawing: ArchitectureDrawing,
 	measured: MeasuredArchitecture["labels"],
 	eligible: ReadonlySet<string>,
+	anchorAir = anchorClearance(),
 ): ReadonlyMap<string, LabelAnchor> {
-	const placement = new LabelPlacement(drawing, measured, eligible);
+	const placement = new LabelPlacement(drawing, measured, eligible, anchorAir);
 	placement.alignRows();
 	return placement.anchors();
 }
@@ -514,14 +520,16 @@ function alignLabelRows(
  * @param drawing Current native geometry.
  * @param measured Measured semantic labels.
  * @param eligible Forced reservations that may move together.
+ * @param anchorAir How far a waypoint keeps from a card (routing-clearance.ts).
  * @returns Collision-validated native waypoint proposals.
  */
 function projectLabelChannels(
 	drawing: ArchitectureDrawing,
 	measured: MeasuredArchitecture["labels"],
 	eligible: ReadonlySet<string>,
+	anchorAir = anchorClearance(),
 ): ReadonlyMap<string, LabelAnchor> {
-	const placement = new LabelPlacement(drawing, measured, eligible);
+	const placement = new LabelPlacement(drawing, measured, eligible, anchorAir);
 	placement.projectChannels();
 	return placement.anchors();
 }

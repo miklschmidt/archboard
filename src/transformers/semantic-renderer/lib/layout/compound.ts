@@ -1,6 +1,6 @@
 // One layout owner settles cards, frames, ports, routes and label boxes together.
 // No subsequent paint or atlas pass is allowed to repair these coordinates.
-import type { ElkExtendedEdge, ElkNode, ElkShape, LayoutOptions } from "@archboard/elk-rs";
+import type { ElkExtendedEdge, ElkNode, LayoutOptions } from "@archboard/elk-rs";
 import {
 	chooseReading,
 	type ColumnReading,
@@ -14,6 +14,7 @@ import type {
 	MeasuredArchitecture,
 } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
+import { boxOf } from "@/transformers/semantic-renderer/lib/layout/avoid-geometry";
 import {
 	type LabelAnchor,
 	anchorLabelsOnRuns,
@@ -43,6 +44,7 @@ import {
 import { SOLVE_STAGE, rendererHost } from "@/transformers/semantic-renderer/lib/host";
 import { fittedPage } from "@/transformers/semantic-renderer/lib/layout/page-fit";
 import { tidierSettlement } from "@/transformers/semantic-renderer/lib/layout/even-pins";
+import { clearerDrawing } from "@/transformers/semantic-renderer/lib/layout/label-clearance";
 import {
 	crowdedWalls,
 	finished,
@@ -50,6 +52,7 @@ import {
 	wrongFaces,
 } from "@/transformers/semantic-renderer/lib/layout/finishing";
 import { bunchedPorts } from "@/transformers/semantic-renderer/lib/layout/lone-pins";
+import { anchorClearance } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 import {
 	refusedLines,
 	stackCrossings,
@@ -85,19 +88,6 @@ interface SettledReading {
 	readonly reading: Reading;
 	readonly drawing: ArchitectureDrawing;
 	readonly reserved: ReadonlySet<string>;
-}
-
-/**
- * Read a complete box in the global coordinates returned by placement.
- * @param shape A node or edge label after layout.
- * @returns The geometry shared by painter and atlas.
- */
-function boxOf(shape: ElkShape): Box {
-	const { x, y, width, height } = shape;
-	if (x === undefined || y === undefined || width === undefined || height === undefined) {
-		throw new Error(`Layout omitted geometry for ${shape.id}`);
-	}
-	return { x, y, width, height };
 }
 
 /**
@@ -246,40 +236,57 @@ function columnReading(problem: Problem): ColumnReading {
 		 */
 		page: () => reading.place(new Set()).then(boxOf),
 		/**
-		 * The complete drawing: the tidier of plain and evened pins, then
-		 * finished clear of frame walls, of side exits between stacked cards,
-		 * of hooks into a card's side, of unrelated lines on one stroke and
-		 * of lone ports crowding a corner (finishing.ts). Side exits go first, so a line they turn into a
-		 * hook can still be cured.
+		 * The complete drawing: the tidier of plain and evened pins, finished, with and
+		 * without reserved labels' full clearance, whichever is clearer (label-clearance.ts).
 		 * @returns The settled reading.
 		 */
-		settle: async () => {
-			const kept = await tidierSettlement(
-				settleReading(reading),
-				settleReading(asking(reading, { evenPins: true })),
-			);
-			const reroute = rerouting(kept.reserved);
-			const walled = await finished(kept, crowdedWalls, (clearWalls) =>
-				reroute(asking(kept.reading, { clearWalls })),
-			);
-			const faced = await finished(walled, wrongFaces, () =>
-				reroute(asking(walled.reading, { laneChannels: true, centredLabels: true })),
-			);
-			const hooked = await finished(faced, sideHooks, () =>
-				reroute(asking(faced.reading, { cornerPins: true })),
-			);
-			const parted = await finished(
-				hooked,
-				stackedEnds,
-				(refusedEnds) => reroute(asking(hooked.reading, { refusedEnds })),
-				{ excused: refusedLines, hidden: stackCrossings },
-			);
-			const centred = await finished(parted, bunchedPorts, () =>
-				reroute(asking(parted.reading, { centredPorts: true })),
-			);
-			return centred.drawing;
-		},
+		settle: () =>
+			clearerDrawing(finishedWith(reading, {}), finishedWith(reading, { labelClearance: true })),
 	};
+}
+
+/**
+ * A reading settled with plain and with evened pins, the tidier finished.
+ * @param reading The reading.
+ * @param route What else its routes are asked for.
+ * @returns The finished drawing.
+ */
+function finishedWith(reading: Reading, route: RouteRequest): Promise<ArchitectureDrawing> {
+	return tidierSettlement(
+		settleReading(asking(reading, route)),
+		settleReading(asking(reading, { ...route, evenPins: true })),
+	).then(finishedDrawing);
+}
+
+/**
+ * A settled reading finished clear of frame walls, of side exits between
+ * stacked cards, of hooks into a card's side, of unrelated lines on one
+ * stroke and of lone ports crowding a corner (finishing.ts). Side exits go
+ * first, so a line they turn into a hook can still be cured.
+ * @param kept The settled reading.
+ * @returns The finished drawing.
+ */
+async function finishedDrawing(kept: SettledReading): Promise<ArchitectureDrawing> {
+	const reroute = rerouting(kept.reserved);
+	const walled = await finished(kept, crowdedWalls, (clearWalls) =>
+		reroute(asking(kept.reading, { clearWalls })),
+	);
+	const faced = await finished(walled, wrongFaces, () =>
+		reroute(asking(walled.reading, { laneChannels: true, centredLabels: true })),
+	);
+	const hooked = await finished(faced, sideHooks, () =>
+		reroute(asking(faced.reading, { cornerPins: true })),
+	);
+	const parted = await finished(
+		hooked,
+		stackedEnds,
+		(refusedEnds) => reroute(asking(hooked.reading, { refusedEnds })),
+		{ excused: refusedLines, hidden: stackCrossings },
+	);
+	const centred = await finished(parted, bunchedPorts, () =>
+		reroute(asking(parted.reading, { centredPorts: true })),
+	);
+	return centred.drawing;
 }
 
 /**
@@ -441,7 +448,12 @@ async function attemptLabels(
 			return { edge, curve, path, ...(label === undefined ? {} : { label }) };
 		}),
 	};
-	const anchors = anchorLabelsOnRuns(drawing, problem.measured.labels, eligible);
+	const anchors = anchorLabelsOnRuns(
+		drawing,
+		problem.measured.labels,
+		eligible,
+		anchorClearance(problem.route),
+	);
 	const next = new Map([...eligible].map((id) => [id, anchors.get(id) ?? forced.get(id)]));
 	return attemptLabels(problem, reserved, next);
 }
@@ -477,10 +489,20 @@ async function correctLabelChannels(
 		}),
 	};
 	if (invalid.size === 0) {
-		const anchors = projectLabelChannels(drawing, problem.measured.labels, new Set(forced.keys()));
+		const anchors = projectLabelChannels(
+			drawing,
+			problem.measured.labels,
+			new Set(forced.keys()),
+			anchorClearance(problem.route),
+		);
 		return improveLabelChannels(problem, reserved, forced, attempt, anchors);
 	}
-	const anchors = alignLabelRows(drawing, problem.measured.labels, invalid);
+	const anchors = alignLabelRows(
+		drawing,
+		problem.measured.labels,
+		invalid,
+		anchorClearance(problem.route),
+	);
 	const changed = [...anchors].filter(([id, box]) => {
 		const previous = attempt.reservedBoxes.get(id)!.box;
 		return Math.hypot(previous.x - box.x, previous.y - box.y) > 0.000001;

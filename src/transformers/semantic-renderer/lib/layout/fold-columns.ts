@@ -5,6 +5,8 @@ import {
 	DIAGRAM_MARGIN,
 	LABEL_CARD_CLEARANCE,
 	LABEL_LABEL_CLEARANCE,
+	LABEL_ROUTE_CLEARANCE,
+	ROUTE_OPEN_CORRIDOR,
 } from "@/transformers/semantic-renderer/config";
 import { covering, type Box, type Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { boxOf } from "@/transformers/semantic-renderer/lib/layout/avoid-geometry";
@@ -298,6 +300,16 @@ function translateLabels(
 }
 
 /**
+ * The gap between two reserved labels stacked in one gutter: room for a line
+ * to pass between them, clear of both by the clearance the router keeps from
+ * a reserved label, and never less than two labels keep from each other.
+ */
+const STACKED_LABEL_GAP = Math.max(
+	LABEL_LABEL_CLEARANCE,
+	2 * LABEL_ROUTE_CLEARANCE + ROUTE_OPEN_CORRIDOR,
+);
+
+/**
  * Give each reserved continuation label its own vertical space in the gutter.
  * @param graph Drawing extent to enlarge when reservations need more room.
  * @param gutters Reserved labels grouped by their actual column gutter.
@@ -313,7 +325,7 @@ function stackLabels(graph: ElkNode, gutters: readonly ElkLabel[][]): void {
 				boxOf(one).y - boxOf(other).y || (order.get(one.id) ?? 0) - (order.get(other.id) ?? 0),
 		)) {
 			label.y = Math.max(boxOf(label).y, bottom);
-			bottom = label.y + boxOf(label).height + LABEL_LABEL_CLEARANCE;
+			bottom = label.y + boxOf(label).height + STACKED_LABEL_GAP;
 			graph.height = Math.max(graph.height!, label.y + boxOf(label).height + DIAGRAM_MARGIN);
 		}
 	}

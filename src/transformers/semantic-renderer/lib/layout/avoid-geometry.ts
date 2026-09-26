@@ -99,3 +99,56 @@ export function boxesOverlap(one: Box, other: Box): boolean {
 		one.y + one.height > other.y
 	);
 }
+
+/**
+ * Locate a semantic perimeter point on a solid title face when they overlap.
+ * A channel port can meet the title partway down a frame's east or west face.
+ * @param box The title obstacle.
+ * @param side The semantic endpoint face.
+ * @param at The actual perimeter point.
+ * @returns Its proportional title pin position, or nothing for a transparent perimeter.
+ */
+export function positionOnFace(box: Box, side: Face, at: Point): number | undefined {
+	const position =
+		side === "EAST" || side === "WEST" ? (at.y - box.y) / box.height : (at.x - box.x) / box.width;
+	const projected = facePoint(box, side, position);
+	return position >= 0 &&
+		position <= 1 &&
+		Math.hypot(projected.x - at.x, projected.y - at.y) < 0.001
+		? position
+		: undefined;
+}
+
+/**
+ * Whether this frame endpoint refers to one of its own descendants.
+ * @param node The endpoint.
+ * @param target The opposite semantic endpoint.
+ * @returns Whether it connects at the visible title divider.
+ */
+export function internalFrame(node: ElkNode, target: ElkNode): boolean {
+	return Boolean(node.children?.length) && contains(boxOf(node), boxOf(target));
+}
+
+/**
+ * Face nearest the opposite semantic shape, without placement-engine port rules.
+ * @param node The endpoint.
+ * @param target The opposite semantic endpoint.
+ * @returns The natural physical face.
+ */
+export function endpointFace(node: ElkNode, target: ElkNode): Face {
+	if (internalFrame(node, target)) return "SOUTH";
+	return towardFace(boxOf(node), boxOf(target));
+}
+
+/**
+ * Nearest cardinal face between two placed boxes.
+ * @param box The endpoint's semantic bounds.
+ * @param toward The opposite semantic bounds.
+ * @returns The face toward the other shape's center.
+ */
+export function towardFace(box: Box, toward: Box): Face {
+	const dx = toward.x + toward.width / 2 - box.x - box.width / 2;
+	const dy = toward.y + toward.height / 2 - box.y - box.height / 2;
+	if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? "EAST" : "WEST";
+	return dy > 0 ? "SOUTH" : "NORTH";
+}
