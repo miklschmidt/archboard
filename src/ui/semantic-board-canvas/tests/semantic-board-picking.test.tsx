@@ -46,7 +46,13 @@ function drawn(): (string | null)[] {
 }
 
 test("what is picked is drawn over the rest of the picture, and goes back to its place when let go", async () => {
-	server.reply = { status: 200, body: drawing(1) };
+	const body = drawing(1);
+	// A line's traffic is painted apart from it, and rises and is marked with it.
+	body["svg"] = String(body["svg"]).replace(
+		'<g data-semantic-kind="node" data-semantic-id="ghost">',
+		'<g data-traffic="e1"><path id="shot"></path></g><g data-semantic-kind="node" data-semantic-id="ghost">',
+	);
+	server.reply = { status: 200, body };
 	mountStage(null, { live: true });
 	await settle();
 	expect(drawn()).toEqual(["n1", "e1", "ghost"]);
@@ -54,10 +60,14 @@ test("what is picked is drawn over the rest of the picture, and goes back to its
 		fireEvent.click(inPicture("wire"));
 	});
 	expect(drawn()).toEqual(["n1", "ghost", "e1"]);
+	const traffic = surface().querySelector("[data-traffic='e1']")!;
+	expect(traffic.previousElementSibling?.getAttribute("data-semantic-id")).toBe("e1");
+	expect(traffic.classList).toContain("is-selected");
 	act(() => {
 		fireEvent.keyDown(viewport(), { key: "Escape" });
 	});
 	expect(drawn()).toEqual(["n1", "e1", "ghost"]);
+	expect(traffic.nextElementSibling?.getAttribute("data-semantic-id")).toBe("ghost");
 });
 
 test("a real press picks what it landed on, whatever the click says afterwards", async () => {

@@ -201,6 +201,13 @@ function standingsFrom(stated: StatedStandings | undefined): StandingOf {
 }
 
 /**
+ * The attribute a relationship's traffic layer carries, naming the
+ * relationship: the layer is drawn apart from its line, over every line, and a
+ * viewer lights, dims and raises it with the line it names.
+ */
+const TRAFFIC_ATTRIBUTE = "data-traffic";
+
+/**
  * The attributes every drawn subject's group carries: what it is, which subject
  * it is, how it stands, and the ghosting that half of a removal is.
  *
@@ -441,6 +448,7 @@ export {
 	type SubjectKind,
 	type UnsettledOf,
 	BADGE_SIZE,
+	TRAFFIC_ATTRIBUTE,
 	standingInk,
 	standingsFrom,
 	subjectGroup,
