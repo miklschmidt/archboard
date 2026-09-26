@@ -12,6 +12,7 @@ import {
 	curveThrough,
 	simplify,
 } from "@/transformers/semantic-renderer/lib/layout/curves";
+import { boxOf } from "@/transformers/semantic-renderer/lib/layout/avoid-geometry";
 import { forcedLabel } from "@/transformers/semantic-renderer/lib/layout/avoid-routes";
 
 type End = "start" | "end";
@@ -72,7 +73,7 @@ function runAt(points: readonly Point[], index: number): readonly ["x" | "y", nu
 function movable(leg: Leg, index: number): boolean {
 	if (index === 0 || index + 1 >= leg.points.length - 1) return false;
 	const [from, to] = [leg.points[index]!, leg.points[index + 1]!];
-	return !forcedLabel(leg.edge) || !touches(from, to, leg.edge.labels![0]! as Box);
+	return !forcedLabel(leg.edge) || !touches(from, to, boxOf(leg.edge.labels![0]!));
 }
 
 /**
@@ -105,7 +106,7 @@ function moveRun(leg: Leg, index: number, at: number): boolean {
 		corner === index || corner === index + 1 ? { ...point, [across]: at } : point,
 	);
 	const route = simplify(leg.end === "start" ? points : points.toReversed());
-	const label = forcedLabel(leg.edge) ? (leg.edge.labels![0]! as Box) : undefined;
+	const label = forcedLabel(leg.edge) ? boxOf(leg.edge.labels![0]!) : undefined;
 	if (curveClearanceIssue(curveThrough(route), label) !== undefined) return false;
 	const section = leg.edge.sections![0]!;
 	section.bendPoints = route.slice(1, -1);
