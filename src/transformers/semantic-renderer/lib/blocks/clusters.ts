@@ -59,6 +59,22 @@ function isTitle(name: string): boolean {
 	return name.startsWith("title:");
 }
 
+/**
+ * How much harder a graph's edges pull each vendor node down than up: the
+ * weight of its edges down less the weight of its edges up.
+ * @param edges The graph's edges.
+ * @returns The pull, by vendor node.
+ */
+function pullsDown(edges: readonly Edge[]): Map<string, number> {
+	const pulls = new Map<string, number>();
+	for (const { tail, head, attributes } of edges) {
+		const weight = Number(attributes?.["weight"] ?? 1);
+		pulls.set(tail, (pulls.get(tail) ?? 0) + weight);
+		pulls.set(head, (pulls.get(head) ?? 0) - weight);
+	}
+	return pulls;
+}
+
 /** Which vendor nodes Graphviz must rank below which, as edges are added. */
 class Below {
 	readonly next = new Map<string, string[]>();
@@ -217,6 +233,25 @@ class Clusters {
 		const member = isTitle(head) ? head.slice("title:".length) : head;
 		const around = this.block.clusterOf.get(member);
 		return around !== undefined && this.around(tail).includes(around);
+	}
+
+	/**
+	 * Pull every title a little harder onto its members where it is pulled up
+	 * exactly as hard as down: a nested title is a member of its parent, and
+	 * when it holds one member, nothing else ranks it, so Graphviz would stand
+	 * it on whichever rank between is least crowded, far above its members.
+	 * One more on one of its edges down stands it on the rank just above them,
+	 * and costs every other ranking just what it cost before.
+	 * @param edges Every edge of the block's graph; a tied title's first edge down is made heavier.
+	 */
+	untie(edges: readonly Edge[]): void {
+		const pulls = pullsDown(edges);
+		for (const cluster of this.block.clusters.keys()) {
+			const title = titleOf(cluster);
+			const down = edges.find(({ tail, attributes }) => tail === title && attributes?.["weight"]);
+			if (pulls.get(title) === 0 && down !== undefined)
+				down.attributes = { ...down.attributes, weight: Number(down.attributes!["weight"]) + 1 };
+		}
 	}
 
 	/**
