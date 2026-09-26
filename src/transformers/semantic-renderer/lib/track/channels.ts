@@ -20,8 +20,6 @@ import { stackUnits, type Unit } from "@/transformers/semantic-renderer/lib/trac
 
 /** How far a port keeps from a card's corner. */
 const PORT_MARGIN = 20;
-/** The least sideways step a net takes that counts as a step. */
-const STRAIGHT = 0.5;
 
 /** Relationships that share a port and a track at one card face. */
 interface Trunk {
@@ -52,14 +50,6 @@ interface Net {
 	 * entering by one.
 	 */
 	wall?: "top" | "bottom";
-}
-
-/** What a port request reads beyond its own nets. */
-interface Lines {
-	/** Every line's nets, by its relationship, top to bottom. */
-	readonly nets: ReadonlyMap<string, readonly Net[]>;
-	/** The block's own ports, which follow their lines once the block is settled. */
-	readonly ports: ReadonlySet<Item>;
 }
 
 /** One port a face must give: a trunk's, or a lone net's end. */
@@ -289,17 +279,15 @@ function otherEnd(net: Net, side: "top" | "bottom"): number {
 /**
  * Every port request, by the card it is made on: one per trunk sharing that
  * face, one per lone net ending there.
- * @param nets Every net, each line's in channel order.
- * @param ports The block's own ports.
+ * @param nets Every net.
  * @returns The requests, keyed by card.
  */
-function portRequests(nets: readonly Net[], ports: ReadonlySet<Item>): Map<Item, PortRequest[]> {
+function portRequests(nets: readonly Net[]): Map<Item, PortRequest[]> {
 	const faces = new Map<Item, PortRequest[]>();
 	const asked = { top: new Set<Trunk>(), bottom: new Set<Trunk>() };
-	const lines: Lines = { nets: linesOf(nets), ports };
 	for (const net of nets) {
 		for (const side of ["top", "bottom"] as const) {
-			const request = requestOf(net, side, { asked: asked[side], lines });
+			const request = requestOf(net, side, asked[side]);
 			if (request === undefined) continue;
 			const item = net[side].item!;
 			faces.set(item, [...(faces.get(item) ?? []), request]);
@@ -321,113 +309,38 @@ function sharedAt(net: Net, side: "top" | "bottom"): Trunk | undefined {
 }
 
 /**
- * Every line's nets, by its relationship, top to bottom.
- * @param nets Every net, each line's in channel order.
- * @returns The nets of each line.
- */
-function linesOf(nets: readonly Net[]): Map<string, Net[]> {
-	const lines = new Map<string, Net[]>();
-	for (const net of nets) lines.set(net.edge, [...(lines.get(net.edge) ?? []), net]);
-	return lines;
-}
-
-/**
  * The port one end of a net asks for: its trunk's, the first time the trunk
  * is met, or its own.
  * @param net The net.
  * @param side Which end.
- * @param known What the request is made with.
- * @param known.asked The trunks that have asked already on this side.
- * @param known.lines Every line's nets, and the block's own ports.
+ * @param asked The trunks that have asked already on this side.
  * @returns The request, or nothing when that end is not on a card or its trunk has asked.
  */
-function requestOf(
-	net: Net,
-	side: "top" | "bottom",
-	known: { asked: Set<Trunk>; lines: Lines },
-): PortRequest | undefined {
+function requestOf(net: Net, side: "top" | "bottom", asked: Set<Trunk>): PortRequest | undefined {
 	if (net[side].kind !== "card") return undefined;
 	const shared = sharedAt(net, side);
-	if (shared === undefined) return requestFor([net], side, known.lines);
-	if (known.asked.has(shared)) return undefined;
-	known.asked.add(shared);
-	return requestFor(shared.nets, side, known.lines);
+	if (shared === undefined) return requestFor([net], side);
+	if (asked.has(shared)) return undefined;
+	asked.add(shared);
+	return requestFor(shared.nets, side);
 }
 
 /**
- * How far a net steps sideways from the end it is entered by: to its other
- * end's x, or, where that end is a card, only as far as the card's face,
- * whose port follows the line anywhere along it.
- * @param net The net.
- * @param from The end it is entered by.
- * @returns The step, signed.
- */
-function stepFrom(net: Net, from: "top" | "bottom"): number {
-	const to = from === "top" ? "bottom" : "top";
-	const [start, end] = [xAt(net, from), xAt(net, to)];
-	if (net[to].kind !== "card") return end - start;
-	const [low, high] = reachOf(net[to]);
-	return Math.min(high, Math.max(low, start)) - start;
-}
-
-/**
- * The x a net has at one end.
- * @param net The net.
- * @param side The end.
- * @returns The x.
- */
-function xAt(net: Net, side: "top" | "bottom"): number {
-	return side === "top" ? net.topX : net.bottomX;
-}
-
-/**
- * Whether a trunk's member turns back once it leaves the trunk: past the
- * column it branches at, the first step its line must take sideways heads
- * back toward the port, so the line overshoots and doubles back. A step into
- * one of the block's own ports is no step: the port follows its line later.
- * @param net The member.
- * @param side Which end the trunk shares.
- * @param port Where the port would stand.
- * @param lines Every line's nets, and the block's own ports.
- * @returns True when it turns back.
- */
-function turnsBack(net: Net, side: "top" | "bottom", port: number, lines: Lines): boolean {
-	const own = lines.nets.get(net.edge)!;
-	const index = own.indexOf(net);
-	const onward = side === "top" ? own.slice(index + 1) : own.slice(0, index).toReversed();
-	const far = side === "top" ? "bottom" : "top";
-	const stop = onward.findIndex(
-		({ [far]: end }) => end.item !== undefined && lines.ports.has(end.item),
-	);
-	const settled = stop === -1 ? onward : onward.slice(0, stop);
-	const step = settled.map((next) => stepFrom(next, side)).find((dx) => Math.abs(dx) > STRAIGHT);
-	return step !== undefined && Math.sign(step) === -Math.sign(otherEnd(net, side) - port);
-}
-
-/**
- * One port for some nets on one face, wanted over one of their other ends:
- * that net runs straight from the port, and every other branches off the
- * trunk at least a lane away, never close enough to hook. Of the ends, the
- * one fewest members turn back from, so no line overshoots its branch and
- * doubles back along the trunk; then the one nearest the middle of them all;
- * then the one the board lists first.
+ * One port for some nets on one face, wanted over the other end nearest the
+ * middle of them all: that net runs straight from the port, and every other
+ * branches off the trunk at least a lane away, never close enough to hook.
  * @param members The nets sharing the port.
  * @param side Which end.
- * @param lines Every line's nets, and the block's own ports.
  * @returns The request.
  */
-function requestFor(members: readonly Net[], side: "top" | "bottom", lines: Lines): PortRequest {
+function requestFor(members: readonly Net[], side: "top" | "bottom"): PortRequest {
 	const ends = members
 		.toSorted((one, other) => one.order - other.order)
 		.map((member) => otherEnd(member, side));
 	const middle = ends.reduce((sum, x) => sum + x, 0) / ends.length;
-	const scored = ends.map((x) => ({
-		x,
-		back: members.filter((member) => turnsBack(member, side, x, lines)).length,
-		off: Math.abs(x - middle),
-	}));
-	const { x: wanted } = scored.reduce((one, other) =>
-		other.back < one.back || (other.back === one.back && other.off < one.off - 0.01) ? other : one,
+	// Of two ends as near the middle, the one the board lists first.
+	const wanted = ends.reduce((one, other) =>
+		Math.abs(other - middle) < Math.abs(one - middle) - 0.01 ? other : one,
 	);
 	return { nets: members, side, wanted, order: Math.min(...members.map(({ order }) => order)) };
 }
@@ -456,12 +369,11 @@ function placePorts(item: Item, requests: readonly PortRequest[]): void {
 /**
  * Give every net its x at both ends: cards spread their ports, labels and lanes
  * keep their x. Twice, so a port can follow the other end's port.
- * @param nets Every net, each line's in channel order.
- * @param ports The block's own ports, which follow their lines later.
+ * @param nets Every net.
  */
-function assignPorts(nets: readonly Net[], ports: ReadonlySet<Item>): void {
+function assignPorts(nets: readonly Net[]): void {
 	for (let pass = 0; pass < 2; pass += 1) {
-		for (const [item, requests] of portRequests(nets, ports)) {
+		for (const [item, requests] of portRequests(nets)) {
 			placePorts(
 				item,
 				requests.filter(({ side }) => side === "top"),
