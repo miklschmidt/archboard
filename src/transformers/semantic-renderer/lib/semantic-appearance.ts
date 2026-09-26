@@ -8,9 +8,9 @@ import {
 /** The independent visual channels of a node in this reading. */
 interface NodeAppearance {
 	readonly container: boolean;
-	/** Its body's colour: the colour of the group it is placed with (TASK-347). */
+	/** Its body's colour: a card's placing group's, a container's own kind's (ADR 0038). */
 	readonly bodyColor?: PaletteColor | undefined;
-	/** The group whose colour it takes, if any. */
+	/** The group whose colour a card takes, if any. */
 	readonly group?: string | undefined;
 	/** That group's name, as the vault configures it. */
 	readonly groupName?: string | undefined;
@@ -34,9 +34,10 @@ function ownDefinition<Definition>(
 }
 
 /**
- * Resolve each drawn subject's channels: its body takes the colour of the
- * group it is placed with, and its chip the colour of its type. A container
- * colours nothing inside it; that is a group's role (TASK-347).
+ * Resolve each drawn subject's channels: a card's body takes the colour of
+ * the group it is placed with, a container's frame the colour of its own
+ * kind, and every chip the colour of its type. A container colours nothing
+ * inside it; that is a group's role (TASK-347, ADR 0038).
  * @param nodes Subjects present in the drawing.
  * @param policy The current vault policy.
  * @returns Appearance keyed by existing subject identity.
@@ -49,17 +50,29 @@ function nodeAppearances(
 	const placing = placingGroups(nodes, policy);
 	const resolved = new Map<string, NodeAppearance>();
 	for (const node of nodes) {
-		const group = placing.get(node.id);
-		const placed = group === undefined ? undefined : ownDefinition(policy.groups, group);
-		resolved.set(node.id, {
-			container: parents.has(node.id),
-			bodyColor: placed?.color,
-			group,
-			groupName: placed?.name,
-			...typeAppearance(node.kind, policy),
-		});
+		const type = typeAppearance(node.kind, policy);
+		resolved.set(
+			node.id,
+			parents.has(node.id)
+				? { container: true, bodyColor: type.typeColor, ...type }
+				: { container: false, ...groupColour(placing.get(node.id), policy), ...type },
+		);
 	}
 	return resolved;
+}
+
+/**
+ * A card's body colour: its placing group's.
+ * @param group The group that places it, if any.
+ * @param policy The current vault policy.
+ * @returns The group, its name and its colour, or nothing for a card no group places.
+ */
+function groupColour(
+	group: string | undefined,
+	policy: SemanticPolicy,
+): Pick<NodeAppearance, "bodyColor" | "group" | "groupName"> {
+	const placed = group === undefined ? undefined : ownDefinition(policy.groups, group);
+	return { bodyColor: placed?.color, group, groupName: placed?.name };
 }
 
 /**

@@ -63,9 +63,13 @@ describe("a card's body takes its group's colour and its chip its type's", () =>
 				expect(body).toContain('fill-opacity="0.07"');
 				expect(markup).toContain('data-body-color="green"');
 			}
-			// A container colours nothing inside it, however its own kind is coloured.
+			// A container draws its own frame in its kind's colour and passes none to what it holds.
 			expect(groupOf(drawn, "node", "side")!.markup).toContain('data-body-color="neutral"');
-			expect(groupOf(drawn, "region", "cloud")!.markup).toContain('data-body-color="neutral"');
+			const frame = groupOf(drawn, "region", "cloud")!.markup;
+			expect(frame).toContain('data-body-color="blue"');
+			expect(frame.match(/<rect(?![^>]*class="ab-halo")[^>]*>/)![0]).toContain(
+				`fill="${themeColor(theme, "--semantic-blue")}"`,
+			);
 			// A group with one member among its siblings places nobody.
 			expect(groupOf(drawn, "node", "lone")!.markup).toContain('data-body-color="neutral"');
 			// The chip keeps its type's colour.
