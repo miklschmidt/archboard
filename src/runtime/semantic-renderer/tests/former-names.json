@@ -1,0 +1,225 @@
+{
+	"nodes": [
+		{
+			"id": "4P7YZdnj",
+			"name": "Archboard server",
+			"kind": "service",
+			"responsibility": "The only caller: every read and every write of a board comes through it",
+			"order": 1000
+		},
+		{
+			"id": "hoh4xPWb",
+			"name": "Address and locate",
+			"kind": "function",
+			"responsibility": "Maps names to safe vault paths",
+			"order": 2000
+		},
+		{
+			"id": "tcwsrSQv",
+			"name": "Read and validate",
+			"kind": "function",
+			"responsibility": "Reads a coherent aggregate from disk, by its name or a name it used to have",
+			"order": 4000
+		},
+		{
+			"id": "i2CrY6Xj",
+			"name": "Lifecycle transitions",
+			"kind": "function",
+			"responsibility": "Defines board lifecycle changes",
+			"groups": ["writes"],
+			"order": 5000
+		},
+		{
+			"id": "1gdbsn6M",
+			"name": "Write under lease",
+			"kind": "function",
+			"responsibility": "Commits one durable version",
+			"groups": ["writes"],
+			"order": 9000
+		},
+		{
+			"id": "qTv7HuBw",
+			"name": "Atomic file replacement",
+			"kind": "function",
+			"responsibility": "Fsyncs every change to a board file: a replacement, a move and an unlink",
+			"groups": ["writes"],
+			"order": 10000
+		},
+		{
+			"id": "lkf45vPe",
+			"name": "Former names",
+			"kind": "function",
+			"responsibility": "Which board a name answers to: the board that carries it, else the one that used to",
+			"order": 17000
+		},
+		{
+			"id": "uZ8BMtTA",
+			"name": "Place the file",
+			"kind": "function",
+			"responsibility": "Writes the board's file where its name puts it, moving it there first when a rename changed that name",
+			"groups": ["writes"],
+			"order": 18000
+		},
+		{
+			"id": "UFO3ulXp",
+			"name": "Board lease",
+			"kind": "function",
+			"responsibility": "One writer at a time per board: a lease file beside the board, an agent's claim on it, and who holds it",
+			"groups": ["writes"],
+			"order": 20000
+		}
+	],
+	"edges": [
+		{
+			"id": "hx5UtSvH",
+			"from": "4P7YZdnj",
+			"to": "hoh4xPWb",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "address board",
+			"order": 1000
+		},
+		{
+			"id": "k1IwXpzd",
+			"from": "4P7YZdnj",
+			"to": "tcwsrSQv",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "read current bytes",
+			"order": 3000
+		},
+		{
+			"id": "i6pk24Ov",
+			"from": "4P7YZdnj",
+			"to": "i2CrY6Xj",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "state requested change",
+			"order": 4000
+		},
+		{
+			"id": "smLdyKlp",
+			"from": "4P7YZdnj",
+			"to": "1gdbsn6M",
+			"kind": "call",
+			"emphasis": "hero",
+			"label": "submit transition",
+			"order": 8000
+		},
+		{
+			"id": "E4f3pKJb",
+			"from": "1gdbsn6M",
+			"to": "hoh4xPWb",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "resolve target",
+			"order": 9000
+		},
+		{
+			"id": "9O4o9jcE",
+			"from": "1gdbsn6M",
+			"to": "tcwsrSQv",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "read under lease",
+			"order": 10000
+		},
+		{
+			"id": "VWo4vJh0",
+			"from": "1gdbsn6M",
+			"to": "i2CrY6Xj",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "apply transition",
+			"order": 11000
+		},
+		{
+			"id": "EqTEFYDa",
+			"from": "uZ8BMtTA",
+			"to": "qTv7HuBw",
+			"kind": "data",
+			"emphasis": "hero",
+			"label": "commit serialized board",
+			"order": 12000
+		},
+		{
+			"id": "a85kagAw",
+			"from": "1gdbsn6M",
+			"to": "uZ8BMtTA",
+			"kind": "call",
+			"emphasis": "hero",
+			"label": "write it where its name puts it",
+			"order": 16000
+		},
+		{
+			"id": "rs3a5Xhm",
+			"from": "1gdbsn6M",
+			"to": "UFO3ulXp",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "hold the board for the pass",
+			"order": 17000
+		},
+		{
+			"id": "EKOObsIQ",
+			"from": "1gdbsn6M",
+			"to": "lkf45vPe",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "the board the name answers to",
+			"order": 18000
+		},
+		{
+			"id": "CfW74kWK",
+			"from": "tcwsrSQv",
+			"to": "lkf45vPe",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "a former name opens the board",
+			"order": 19000
+		},
+		{
+			"id": "Wv77mINZ",
+			"from": "tcwsrSQv",
+			"to": "UFO3ulXp",
+			"kind": "call",
+			"emphasis": "muted",
+			"label": "migrate only if the lease is free",
+			"order": 20000
+		},
+		{
+			"id": "C0t1t0gb",
+			"from": "tcwsrSQv",
+			"to": "qTv7HuBw",
+			"kind": "data",
+			"emphasis": "muted",
+			"label": "a migrated document",
+			"order": 21000
+		},
+		{
+			"id": "8Let5OXd",
+			"from": "uZ8BMtTA",
+			"to": "UFO3ulXp",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "take the new name's lease",
+			"order": 23000
+		},
+		{
+			"id": "V478HCgq",
+			"from": "uZ8BMtTA",
+			"to": "lkf45vPe",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "does another board answer to it",
+			"order": 24000
+		}
+	],
+	"standing": {
+		"i2CrY6Xj": "changed",
+		"1gdbsn6M": "changed",
+		"qTv7HuBw": "changed",
+		"uZ8BMtTA": "changed",
+		"UFO3ulXp": "changed"
+	}
+}

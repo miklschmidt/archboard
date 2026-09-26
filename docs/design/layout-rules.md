@@ -1730,7 +1730,8 @@ per routing pass by crossings did worse (202; Semantic renderer 7 to 15), since
 every pass still reshuffles the reservations. Each reading is therefore settled
 with plain and with evened pins, and the tidier drawing is kept: fewer
 crossings as a reader sees them (`crossingsOf`), then fewer bends, then less
-line.
+line. (Superseded by section 38: both settlements are finished first, and the
+tidier may have no more of any defect a reader sees.)
 
 On the two galleries, no drawing gains a crossing:
 
@@ -1756,7 +1757,8 @@ Archboard server, which Graphviz keeps only the cluster margin outside the frame
 
 A card facing a wall to clear reaches further out (`frame-walls.ts`), so its
 routing box ends `WALL_CLEARANCE` (half a lane) beyond the wall, within half
-the free passage in front of it. A passage too narrow to hold a line even half
+the free passage in front of it. (Since section 38 it reaches a whole lane
+beyond the wall where the passage has room.) A passage too narrow to hold a line even half
 a clearance off the wall is closed instead, which sends Board viewer's line into
 Archboard server's top.
 
@@ -1768,7 +1770,8 @@ chosen, the walls that lines run along without staying inside that frame are
 named, and the same placement with the same reservations is routed once more
 clear of them. That drawing is kept only when it has fewer such lines, every
 label still finds a box, it has no more crossings, no line has more bends, and
-no line leaves a frame it stayed inside. A relationship within a frame stays
+no line leaves a frame it stayed inside. (Section 38 states the terms every
+finishing pass is now kept on.) A relationship within a frame stays
 inside even on its wall (`containment-calls.test.ts`), since its cards leave no
 lane inside: Board viewer's `Drive walkthrough focus` line keeps to the wall.
 
@@ -1789,7 +1792,7 @@ word`, Codex session's `decode parameters and answer`, the Kubernetes runtime's
 points along the face, and the refinement offers a rail only for a run that
 already lies over the face, so the router took the side. The refinement now
 also offers, for a route that hooks past a corner, the top or bottom face 12
-points inside that corner (`pin-feedback.ts`, `cornerPin`), and libavoid still
+points inside that corner (20 since, clear of a proposal's change badge) (`pin-feedback.ts`, `cornerPin`), and libavoid still
 chooses by cost.
 
 Offered in every routing pass, corner pins moved reservations and placements
@@ -1806,3 +1809,59 @@ No drawing's crossings change and no placement moves:
 | ------- | --------- | --------------- | ----------- | ---------- |
 | dogfood | 171 → 171 | 364.0k → 362.2k | 2077 → 1994 | 181 → 140  |
 | work    | 26 → 26   | 90.4k → 89.6k   | 505 → 469   | 33 → 15    |
+
+## 38. No settlement or pass may bring a defect a reader sees (2026-09-26)
+
+Ranked on crossings alone, with two unrelated lines on one stroke counted as a
+crossing, evened pins kept Command interface's whole drawing with a 450 px
+trunk of two unrelated lines (`the stated board, doing and version` and
+`validated input`, 1.6 px apart) for the crossings it saved, on a page 14%
+larger. And the finishing passes refused only a new defect of their own kind,
+so Voice coordinator's hook pass cured hooks by crowding a label.
+
+Three rules now hold every choice between drawings:
+
+- **A settlement may have no more of any defect a reader sees**
+  (`even-pins.ts`, `defectsIn`): drawn crossings; pairs of lines a reader
+  takes for one — unrelated lines on one stroke, unrelated lines side by side
+  within half a lane, and lines whose corner lies within half a lane of the
+  other's stroke, which now includes two lines from one card that turn head
+  to head (Auditlog's `ApplyOffsets` and `filter, sort, paginate`) but not a
+  line branching off a trunk it shares; the lanes' worth of line drawn on one
+  stroke; and line ends hooking into a card's side. Among drawings that pass,
+  the one with fewer of these together, ports beside a card's corner counted
+  too (IIS Ingress Migration's `US steering`), is kept, then fewer line ends
+  across the reading direction, fewer bends and less line. The growth bound of
+  section 35 applies per defect saved.
+- **Plain and evened settlements are each finished before one is chosen**
+  (`compound.ts`). Finishing only the chosen one left the other no chance to
+  cure its hooks and trunks: Skill evaluation kept nine hooks, Renderer layout
+  five.
+- **A finishing pass brings no defect of any kind** (`finishing.ts`, `cures`),
+  a crowded label, a touch and a double track included.
+
+The reserved-label clearance (`label-clearance.ts`) is judged the same way: the
+cleared drawing is kept when it crowds no more labels and is tidier, each
+label it clears counted as a defect saved; its placement may differ from the
+ordinary one. Held to the ordinary placement, What the CLI can be asked kept 10
+crossings and a trunk where the cleared placement draws 4 and none.
+
+A line out of a frame keeps a whole lane from the wall where the passage has
+room (`frame-walls.ts`); at half a lane, Auditlog's `2 - One timestamp type`
+still traced Portal API's outline.
+
+Against the merge base `d8fd1bb7` (crossings, stacks of unrelated lines and
+their length, lines that touch, hooks into a card's side, ports within 16 px of
+a corner, labels within 12 px of another line):
+
+| vault   | crossings | stacks (length)     | touches | hooks    | corner ports | crowded labels |
+| ------- | --------- | ------------------- | ------- | -------- | ------------ | -------------- |
+| dogfood | 212 → 191 | 22 (2318) → 6 (860) | 12 → 16 | 144 → 64 | 54 → 46      | 21 → 15        |
+| work    | 35 → 33   | 2 (76) → 0          | 3 → 1   | 29 → 11  | 20 → 13      | 4 → 3          |
+
+The touches counted here are a looser review measure (two bends within 11 px
+of lines that share no end); the dogfood rise is Skill evaluation's fan of five
+lines leaving Author run on one trunk. Six drawings draw a crossing or two more
+than the base, each where a stack of unrelated lines that hid a crossing is
+parted (Agent workbench, Archboard server, Board persistence, Recording a
+walkthrough, Skill evaluation, Platform Phone API).

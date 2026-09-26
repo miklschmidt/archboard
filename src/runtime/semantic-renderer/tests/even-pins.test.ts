@@ -6,6 +6,12 @@
 // as cheap as its face in the reading direction: a fan from one card to the
 // cards below it left by the card's sides, dropped through the gaps between
 // its targets and entered them from the side (Skill evaluation's "Grading").
+// A settlement is kept only with no more of any defect a reader sees: ranked
+// on crossings alone, evened pins kept Command interface's 450 px trunk of
+// two unrelated lines, and two lines from one card turning head to head
+// (Auditlog's "ApplyOffsets"), for the crossings they saved; and a crossing
+// saved does not pay for two ports beside a card's corner (IIS Ingress
+// Migration's "US steering").
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -103,5 +109,64 @@ test("a line leaves a card in the reading direction rather than save a bend by i
 	const aside = at([100, 25], [250, 25], [250, 200]);
 	const plain = sketch(cards, [{ id: "line", from: "source", to: "target", points: down }]);
 	const even = sketch(cards, [{ id: "line", from: "source", to: "target", points: aside }]);
+	expect(await kept(plain, even)).toBe("plain");
+});
+
+/**
+ * Two long lines that cross twice where they start at the page's left, and never where they start right of it.
+ * @param left Whether they start at the left.
+ * @returns The lines.
+ */
+function long(left: boolean): Line[] {
+	const x = left ? 500 : 3000;
+	return [
+		{ id: "down", from: "p", to: "q", points: at([x, 0], [x, 2000]) },
+		{ id: "across", from: "r", to: "s", points: at([400, 1000], [2400, 1000]) },
+		{ id: "under", from: "t", to: "u", points: at([400, 1500], [2400, 1500]) },
+	];
+}
+
+test("a longer trunk of unrelated lines is not kept for the crossings it saves", async () => {
+	const plain = sketch({}, [
+		{ id: "one", from: "a", to: "b", points: at([0, 0], [100, 0], [100, 40], [200, 40]) },
+		{ id: "other", from: "c", to: "d", points: at([300, 5], [100, 5], [100, 25], [0, 25]) },
+		...long(true),
+	]);
+	const even = sketch({}, [
+		{ id: "one", from: "a", to: "b", points: at([0, 0], [100, 0], [100, 300], [200, 300]) },
+		{ id: "other", from: "c", to: "d", points: at([300, 50], [100, 50], [100, 250], [0, 250]) },
+		...long(false),
+	]);
+	expect(await kept(plain, even)).toBe("plain");
+});
+
+test("two lines from one card that turn head to head are not kept for the crossing they save", async () => {
+	const turning = at([0, 0], [0, 100], [-100, 100], [-100, 200]);
+	const plain = sketch({}, [
+		{ id: "turning", from: "s", to: "t", points: turning },
+		{ id: "apart", from: "s", to: "u", points: at([-150, 0], [-150, 300], [0, 300]) },
+		...long(true).slice(0, 2),
+	]);
+	const even = sketch({}, [
+		{ id: "turning", from: "s", to: "t", points: turning },
+		{ id: "facing", from: "s", to: "u", points: at([-150, 0], [-150, 100], [0, 100], [0, 200]) },
+		...long(false).slice(0, 2),
+	]);
+	expect(await kept(plain, even)).toBe("plain");
+});
+
+test("a crossing saved does not pay for two ports beside a card's corner", async () => {
+	const cards = {
+		source: { x: 0, y: 0, width: 100, height: 50 },
+		target: { x: 0, y: 200, width: 100, height: 50 },
+	};
+	const plain = sketch(cards, [
+		{ id: "line", from: "source", to: "target", points: at([50, 50], [50, 200]) },
+		...long(true).slice(0, 2),
+	]);
+	const even = sketch(cards, [
+		{ id: "line", from: "source", to: "target", points: at([5, 50], [5, 200]) },
+		...long(false).slice(0, 2),
+	]);
 	expect(await kept(plain, even)).toBe("plain");
 });

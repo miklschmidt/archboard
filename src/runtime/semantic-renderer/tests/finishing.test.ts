@@ -4,11 +4,13 @@
 // stated board, doing and version"), the wrong-face pass moved a side hook
 // from one line to its neighbour and was kept for it (IIS Ingress
 // Migration's "Today: DNS points here" and its fallback), and a pass could
-// cure one defect by bringing another no pass looked for.
+// cure two defects by bringing one of another kind: a crowded label (Voice
+// coordinator) or two lines whose corners interlock a few pixels apart
+// (Platform Public API's "Authentication and usage").
 // What this catches: an ordinary L taken for a hook, a pass trading a defect
-// for another of its kind, a pass curing one defect by crowding a label or by
-// joining two unrelated lines at a corner, and a fault in a pass's routing
-// being taken for a refusal.
+// for another of its kind, a pass curing defects by crowding a label or by
+// joining two unrelated lines at or near a corner, and a fault in a pass's
+// routing being taken for a refusal.
 
 import { expect, test } from "bun:test";
 import { finished, type ArchitectureDrawing } from "@/runtime/semantic-renderer/layout";
@@ -120,7 +122,7 @@ test("a pass may not move a hook onto another line, whatever else it cures", asy
 	expect(await finishing(settled, traded)).toBe(settled);
 });
 
-test("a pass may not cure a hook by bringing a line against another's label", async () => {
+test("a pass may not cure hooks by bringing a line against another's label", async () => {
 	const labelled = {
 		id: "labelled",
 		from: "source1000",
@@ -128,21 +130,33 @@ test("a pass may not cure a hook by bringing a line against another's label", as
 		points: at([1050, 50], [1050, 100], [1300, 100], [1300, 200]),
 		label: { x: 228, y: 130, width: 60, height: 20 },
 	};
-	const settled = sketch(cards, [hooked(0), labelled]);
-	const crowding = sketch(cards, [entering(0), labelled]);
+	const settled = sketch(cards, [hooked(0), hooked(500), labelled]);
+	const crowding = sketch(cards, [entering(0), entering(500), labelled]);
 	expect(await finishing(settled, crowding)).toBe(settled);
 });
 
-test("a pass may not cure a hook by letting an unrelated line turn where it turns", async () => {
+test("a pass may not cure hooks by letting an unrelated line turn where it turns", async () => {
 	const meeting = {
 		id: "meeting",
 		from: "source1000",
 		to: "target1000",
 		points: at([1050, 50], [1050, 70], [220, 70], [220, 100], [1300, 100], [1300, 200]),
 	};
-	const settled = sketch(cards, [hooked(0), meeting]);
-	const touching = sketch(cards, [entering(0), meeting]);
+	const settled = sketch(cards, [hooked(0), hooked(500), meeting]);
+	const touching = sketch(cards, [entering(0), entering(500), meeting]);
 	expect(await finishing(settled, touching)).toBe(settled);
+});
+
+test("a pass may not cure a hook by turning a line a few pixels from an unrelated line's corner", async () => {
+	const near = {
+		id: "near",
+		from: "source500",
+		to: "target500",
+		points: at([550, 50], [550, 70], [226, 70], [226, 95], [750, 95], [750, 200]),
+	};
+	const settled = sketch(cards, [hooked(0), near]);
+	const interlocked = sketch(cards, [entering(0), near]);
+	expect(await finishing(settled, interlocked)).toBe(settled);
 });
 
 test("a routing the router refuses keeps the settled drawing, and a fault is thrown", async () => {
