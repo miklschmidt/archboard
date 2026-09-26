@@ -45,6 +45,7 @@ import {
 	crowdedJoinCount,
 	refusedLines,
 	stackedEnds,
+	stackedLanes,
 	stackKeys,
 	touchKeys,
 	trackKeys,
@@ -265,8 +266,13 @@ function noWorse(
 /**
  * Every defect of a drawing that a finishing pass cures, and every label
  * another line crowds, every pair of lines that touch and every pair of
- * unrelated lines that run as a double track, each keyed by its kind. No pass
- * may bring any of them ({@link cures}).
+ * unrelated lines that run as a double track, each keyed by its kind.
+ * Crowded joins and every lane's worth of line two unrelated lines share a
+ * stroke over are counted rather than named, since which lines they carry
+ * and where they lie shift with every route beside them. Keyed by their pair
+ * of lines alone, two stacks of the same two lines were one defect, and a
+ * pass that parted one of them cured nothing. No pass may bring any of them
+ * ({@link cures}).
  * @param drawing The drawing.
  * @returns The defects.
  */
@@ -279,6 +285,7 @@ function defectsOf(drawing: ArchitectureDrawing): ReadonlySet<string> {
 		...touchKeys(drawing).map((key) => `touch:${key}`),
 		...trackKeys(drawing).map((key) => `track:${key}`),
 		...Array.from({ length: crowdedJoinCount(drawing) }, (_, index) => `join:${index}`),
+		...Array.from({ length: stackedLanes(drawing) }, (_, index) => `stacked:${index}`),
 	]);
 }
 

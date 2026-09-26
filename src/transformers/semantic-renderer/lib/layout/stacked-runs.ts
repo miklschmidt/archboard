@@ -194,12 +194,15 @@ export function stackKeys(drawing: ArchitectureDrawing): string[] {
 }
 
 /**
- * How long a drawing draws unrelated lines on one stroke, all its stacks together.
+ * How many lanes' worth of line a drawing draws on one stroke with an
+ * unrelated line, all its stacks together, so a longer stack is more of a
+ * defect and a shorter one less.
  * @param drawing The drawing.
- * @returns The length its stacks share.
+ * @returns The length its stacks share, in lanes.
  */
-export function stackedLength(drawing: ArchitectureDrawing): number {
-	return stacksOf(linesOf(drawing)).reduce((sum, { from, to }) => sum + to - from, 0);
+export function stackedLanes(drawing: ArchitectureDrawing): number {
+	const length = stacksOf(linesOf(drawing)).reduce((sum, { from, to }) => sum + to - from, 0);
+	return Math.round(length / ROUTE_LANE);
 }
 
 /**
