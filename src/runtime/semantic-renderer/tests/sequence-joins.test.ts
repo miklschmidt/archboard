@@ -1,6 +1,7 @@
 // Where the parts of a drawn sequence meet: a lifeline and the card it hangs
-// from, an arrowhead and the bar or lifeline it points at, and a flow's title
-// rule and the frame around it.
+// from, an arrowhead and the bar or lifeline it points at, a message's words
+// and the lifelines either side of them, and a flow's title rule and the frame
+// around it.
 //
 // Each is read back off the drawn document, in the one frame of reference a
 // subject's own group is drawn in, so the page's shift never enters a comparison.
@@ -9,6 +10,7 @@ import { expect, test } from "bun:test";
 import { renderDataFlow } from "@/runtime/semantic-renderer/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { subjectGroups, type DrawnGroup } from "@/runtime/semantic-renderer/tests/drawn-subjects";
+import { labelPlates } from "@/runtime/semantic-renderer/tests/drawn-text";
 
 /** Every `name="number"` attribute of one start tag. */
 const NUMBER = /\s([\w-]+)="(-?[\d.]+)"/g;
@@ -57,10 +59,10 @@ function cardOf(groups: readonly DrawnGroup[], id: string): { top: number; botto
 	return { top: box("y"), bottom: box("y") + box("height") };
 }
 
-test("every lifeline starts the same short way under its own card, however tall the card", () => {
-	// Cards in one header row share a top edge but not a height: one with a
-	// responsibility of several lines is taller. A lifeline that starts under the
-	// tallest card leaves every shorter card floating above its own column.
+test("the heads of one flow stand one height, so every lifeline starts level under its card", () => {
+	// Cards in one header row share a top edge, and one with a responsibility of
+	// several lines needs more height. Heads of their own heights started their
+	// lifelines at as many heights down the page.
 	const rendered = renderDataFlow({
 		theme: "light",
 		content: orderedFixture({
@@ -89,7 +91,7 @@ test("every lifeline starts the same short way under its own card, however tall 
 	});
 	const groups = subjectGroups(rendered.svg);
 	const cards = ["a", "b", "c"].map((id) => cardOf(groups, id));
-	expect(new Set(cards.map((card) => card.bottom)).size).toBe(3);
+	expect(new Set(cards.map((card) => card.bottom)).size).toBe(1);
 	const gaps = ["a", "b", "c"].map((id, index) => {
 		const column = groups.find((group) => group.id === id && group.markup.includes("<line"))!;
 		return numbersOf(column, "line")("y1") - cards[index]!.bottom;
@@ -239,4 +241,48 @@ test("a flow's title rule keeps the same inset from both sides of a frame its wo
 	const left = rule("x1") - frame("x");
 	expect(left).toBeGreaterThan(0);
 	expect(frame("x") + frame("width") - rule("x2")).toBeCloseTo(left, 2);
+});
+
+test("a message's words stand between the lifelines either side of them", () => {
+	// A label wider than the gap it names ran across the next lifeline, and one
+	// centred over an arrow that passes a column stood on that column's lifeline.
+	const rendered = renderDataFlow({
+		theme: "light",
+		content: orderedFixture({
+			nodes: ["a", "b", "c"].map((id) => ({ id, name: `Part ${id}`, kind: "service" })),
+			flows: [
+				{
+					id: "f",
+					name: "One exchange",
+					participants: ["a", "b", "c"],
+					steps: [
+						{ id: "s1", from: "a", to: "c", label: "past one column", kind: "async" },
+						{
+							id: "s2",
+							from: "b",
+							to: "b",
+							label: "a label on a loop that runs on well past the next lifeline",
+							kind: "self",
+						},
+						{
+							id: "s3",
+							from: "b",
+							to: "c",
+							label: "an unusually long label for a short hop between two columns",
+							kind: "sync",
+						},
+					],
+				},
+			],
+		}),
+	});
+	const lifelines = ["a", "b", "c"].map((id) => {
+		const card = rendered.atlas.nodes[id]!;
+		return card.x + card.width / 2;
+	});
+	const plates = labelPlates(rendered.svg, "step");
+	expect(plates.size).toBe(3);
+	for (const [id, plate] of plates)
+		for (const x of lifelines)
+			expect(x > plate.x && x < plate.x + plate.width, `${id} across ${x}`).toBe(false);
 });

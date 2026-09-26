@@ -4,13 +4,24 @@
 // it qualifies, never truncated, and the message's row grows to hold it.
 
 import type { FlowStep, MessageKind, SemanticFlow } from "@/shared/semantic-board/index";
-import { NOTE_SIZE, TEXT_LINE_HEIGHT } from "@/transformers/semantic-renderer/lib/design";
+import {
+	NOTE_SIZE,
+	PILL_PADDING_X,
+	PILL_TEXT_SIZE,
+	TEXT_LINE_HEIGHT,
+} from "@/transformers/semantic-renderer/lib/design";
 import type { TextRun } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
-import { measureNoteLines } from "@/transformers/semantic-renderer/lib/measurement";
+import {
+	measureMessageLines,
+	measureNoteLines,
+} from "@/transformers/semantic-renderer/lib/measurement";
 import {
 	ACTIVATION_HALF_WIDTH,
 	COLUMN_GAP,
+	LABEL_BAR_CLEARANCE,
+	MESSAGE_LINE_STEP,
+	SELF_LABEL_GAP,
 	MESSAGE_PITCH,
 	SELF_LOOP_EXTENT,
 	SELF_MESSAGE_PITCH,
@@ -144,6 +155,63 @@ function placeNote(
 	};
 }
 
+/** A message's words as drawn: their lines, and where a long hop centres them. */
+interface MessageWords {
+	/** Every line, complete, with its painted width. */
+	readonly lines: readonly { readonly text: string; readonly width: number }[];
+	/** The x a crossing message's plate is centred on; a self-message's plate starts at its loop. */
+	readonly centre?: number | undefined;
+}
+
+/**
+ * The widest a message's plate may be, and where a crossing message's plate is
+ * centred. A plate stands between two lifelines, clear of the bars on them: a
+ * message to the next column centred on the gap it crosses, one that passes
+ * columns on the gap nearest its middle on the sender's side, since its middle
+ * is a lifeline whenever it passes an odd number of them. A self-message's
+ * plate runs from its loop to the next column; on the last column nothing
+ * stands to its right.
+ * @param step The message.
+ * @param ends Where it runs.
+ * @param bounds The flow's columns.
+ * @returns The room, and the centre of a crossing message's plate.
+ */
+function roomFor(
+	step: FlowStep,
+	ends: MessageEnds,
+	bounds: ColumnBounds,
+): { readonly width: number; readonly centre?: number } {
+	const clear = ACTIVATION_HALF_WIDTH + LABEL_BAR_CLEARANCE;
+	if (step.kind === "self") {
+		const last = ends.fromX >= bounds.lastCentre;
+		return {
+			width: last ? Infinity : bounds.pitch - clear - ACTIVATION_HALF_WIDTH - SELF_LABEL_GAP,
+		};
+	}
+	const hops = Math.max(1, Math.round(Math.abs(ends.toX - ends.fromX) / bounds.pitch));
+	const direction = Math.sign(ends.toX - ends.fromX);
+	return {
+		width: bounds.pitch - clear * 2,
+		centre: ends.fromX + direction * (Math.floor((hops - 1) / 2) + 0.5) * bounds.pitch,
+	};
+}
+
+/**
+ * A message's words, wrapped to the room its plate has.
+ * @param step The message.
+ * @param ends Where it runs.
+ * @param bounds The flow's columns.
+ * @returns Its lines, and its plate's centre when that moves.
+ */
+function wordsFor(step: FlowStep, ends: MessageEnds, bounds: ColumnBounds): MessageWords {
+	const room = roomFor(step, ends, bounds);
+	const limit = Number.isFinite(room.width)
+		? room.width - PILL_PADDING_X * 2
+		: Number.MAX_SAFE_INTEGER;
+	const lines = measureMessageLines(labelFor(step), limit, PILL_TEXT_SIZE, MESSAGE_LINE_STEP);
+	return { lines, centre: room.centre };
+}
+
 /**
  * The label as drawn: a repeated step says so rather than being drawn twice.
  * @param step The message.
@@ -165,8 +233,10 @@ function pitchOf(kind: MessageKind): number {
 
 export {
 	type ColumnBounds,
+	type MessageWords,
 	type PlacedNote,
 	labelFor,
+	wordsFor,
 	pitchOf,
 	placeNote,
 	requiredNoteColumnWidth,

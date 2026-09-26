@@ -227,6 +227,28 @@ function measureLabel(text: string): MeasuredLabel {
 }
 
 /**
+ * Wrap a sequence message's words, balanced, so no line runs wider than the
+ * room between the lifelines it is drawn between.
+ * @param text The message's words.
+ * @param width The widest a line may be.
+ * @param fontSize The size the words are set at.
+ * @param lineHeight The room each line takes.
+ * @returns Every line, complete, with its painted width.
+ */
+function measureMessageLines(
+	text: string,
+	width: number,
+	fontSize: number,
+	lineHeight: number,
+): { readonly text: string; readonly width: number }[] {
+	const style = { ...LABEL, fontSize, lineHeight };
+	const prepared = prepare(text, style);
+	return layoutWithLines(prepared, balancedWrapWidth(prepared, width), lineHeight)
+		.lines.map(({ text: line }) => line.trimEnd())
+		.map((line) => ({ text: line, width: exactWidth(line, style) }));
+}
+
+/**
  * Measure a group's name as the caption its region is drawn with: one line.
  * @param name The group's name.
  * @returns Its box and its line.
@@ -285,4 +307,4 @@ function measureArchitecture(
 	};
 }
 
-export { measureArchitecture, measureNoteLines };
+export { measureArchitecture, measureMessageLines, measureNoteLines };

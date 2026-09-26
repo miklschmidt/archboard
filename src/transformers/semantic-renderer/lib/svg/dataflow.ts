@@ -33,9 +33,11 @@ import type {
 import {
 	BAND_RADIUS,
 	DIAGRAM_MARGIN,
+	PILL_HEIGHT,
 	PILL_RADIUS,
 } from "@/transformers/semantic-renderer/lib/design";
 import {
+	MESSAGE_LINE_STEP,
 	STEP_NOTE_PADDING_X,
 	STEP_NOTE_PADDING_Y,
 } from "@/transformers/semantic-renderer/lib/sequence-design";
@@ -138,15 +140,15 @@ function stepAttributes(
 }
 
 /**
- * One message's label, on its opaque plate.
- * @param text What the message is.
+ * One message's label, on its opaque plate, a line at a time, each centred.
+ * @param words What the message is, wrapped.
  * @param box Where the plate goes.
  * @param styles The palette's attribute bundles.
  * @param outline What this step's standing does to the plate's rule, if anything.
  * @returns The plate and its words.
  */
 function paintLabel(
-	text: string,
+	words: readonly { readonly text: string }[],
 	box: Box,
 	styles: SvgStyles,
 	outline: Readonly<Attributes>,
@@ -161,15 +163,19 @@ function paintLabel(
 			...styles.pill,
 			...outline,
 		}) +
-		textNode(
-			{
-				x: coord(box.x + box.width / 2),
-				y: coord(box.y + box.height * PILL_BASELINE),
-				"text-anchor": "middle",
-				...styles.pillText,
-			},
-			text,
-		)
+		words
+			.map(({ text }, index) =>
+				textNode(
+					{
+						x: coord(box.x + box.width / 2),
+						y: coord(box.y + PILL_HEIGHT * PILL_BASELINE + index * MESSAGE_LINE_STEP),
+						"text-anchor": "middle",
+						...styles.pillText,
+					},
+					text,
+				),
+			)
+			.join("")
 	);
 }
 
@@ -330,7 +336,7 @@ function paintStepWords(
 	const plate = labelBox(placed, activeAt);
 	const styles = stylesFor(palette);
 	const words = lines([
-		paintLabel(placed.label, plate, styles, standingOutline(standing, palette)),
+		paintLabel(placed.words.lines, plate, styles, standingOutline(standing, palette)),
 		paintNote(placed, styles),
 		// On the leading edge of the plate, clear of its words.
 		warningOnLine({ x: plate.x, y: plate.y + plate.height / 2 }, unsettled, palette),
