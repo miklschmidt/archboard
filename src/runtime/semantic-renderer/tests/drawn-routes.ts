@@ -331,6 +331,29 @@ function distanceToSegment(point: DrawnPoint, one: DrawnPoint, other: DrawnPoint
 }
 
 /**
+ * The stretches of ink two drawn routes share: each run of the first
+ * route's segments that lie on the second, within a point, as its length.
+ * @param one A route's points.
+ * @param other Another's.
+ * @returns Each shared stretch's length, in order along the first route.
+ */
+function sharedStretches(one: readonly DrawnPoint[], other: readonly DrawnPoint[]): number[] {
+	const on = (point: DrawnPoint): boolean =>
+		other.slice(1).some((next, index) => distanceToSegment(point, other[index]!, next) < 1);
+	const stretches: number[] = [];
+	let open = false;
+	one.slice(1).forEach((next, index) => {
+		const last = one[index]!;
+		const shared =
+			on(last) && on({ x: (last.x + next.x) / 2, y: (last.y + next.y) / 2 }) && on(next);
+		if (shared && !open) stretches.push(0);
+		if (shared) stretches.push(stretches.pop()! + Math.hypot(next.x - last.x, next.y - last.y));
+		open = shared;
+	});
+	return stretches.filter((length) => length > 1);
+}
+
+/**
  * Whether two boxes overlap.
  * @param one One box.
  * @param other The other.
@@ -357,4 +380,5 @@ export {
 	routeEnds,
 	routeLabels,
 	routePoints,
+	sharedStretches,
 };
