@@ -188,7 +188,9 @@ function across(one: Box, other: Box): boolean {
  * lowered card has no card in the row above standing over it, so it stands
  * off on a late rank of its own, away from its neighbours. A card with a
  * card of its own cluster in a higher row must stand under one of those; the
- * topmost cards of a cluster the wrap lowered whole may stand under any.
+ * topmost cards of a cluster the wrap lowered whole may stand under any. The
+ * cards outside every cluster count as one cluster of their own, so a
+ * lowered one of them with none of them higher may stand under any card too.
  * @param plan The wrap: every card of the rank and its row.
  * @param boxes Where the wrap laid each card.
  * @param around The innermost cluster around a card, if any.
