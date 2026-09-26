@@ -118,6 +118,8 @@ class Clusters {
 	keepTies = false;
 	/** Whether some title was pulled up as hard as down. */
 	tied = false;
+	/** Whether the label of a line leaving a container is pulled onto its lower end. */
+	pullsLeaving = false;
 
 	/**
 	 * Make every cluster of a block in its graph, each headed by its title.

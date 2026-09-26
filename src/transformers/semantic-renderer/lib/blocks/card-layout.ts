@@ -40,6 +40,7 @@ import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { routeScene, trunkKind } from "@/transformers/semantic-renderer/lib/track/route";
 import { fitSides } from "@/transformers/semantic-renderer/lib/track/sides";
 import { Clusters, isTitle, titleOf } from "@/transformers/semantic-renderer/lib/blocks/clusters";
+import { leavingPull } from "@/transformers/semantic-renderer/lib/blocks/leaving";
 import { gridEdges, wrapEdges } from "@/transformers/semantic-renderer/lib/track/grid";
 import { anchored } from "@/transformers/semantic-renderer/lib/track/score";
 import { placedChains } from "@/transformers/semantic-renderer/lib/track/stairs";
@@ -340,10 +341,12 @@ class CardLayout {
 			return;
 		}
 		const name = `label:${line.edge.id}`;
+		// A line leaving a container may stand its label on the rank just above its lower end.
+		const down = weight + leavingPull(this.clusters, tail, head);
 		this.graph.edges.push(
 			...this.clusters.holdLabel(tail, head, box(name, label.width!, label.height!)),
 			{ tail, head: name, attributes: { id: `${id}:1`, minlen, weight } },
-			{ tail: name, head, attributes: { id: `${id}:2`, weight } },
+			{ tail: name, head, attributes: { id: `${id}:2`, weight: down } },
 		);
 	}
 

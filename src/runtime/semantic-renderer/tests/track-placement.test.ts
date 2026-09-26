@@ -4,13 +4,15 @@
 // lowers a group region whole refused, so the region stands on a row of its
 // own above the fan's other cards; a card fed by a fan standing off its
 // middle, so the fan's lines land unevenly on it; and a wrap standing a card
-// in a line's way, or away from the port its one line leaves.
+// in a line's way, or away from the port its one line leaves; and the label
+// of a line leaving a container standing beside it, where the card the line
+// leads into follows it out past the container's wall.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
-import { routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import { routeLabels, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import loweredRegion from "./lowered-region.json";
 import underPort from "./under-port.json";
 import wrappedBlocker from "./wrapped-blocker.json";
@@ -185,4 +187,39 @@ test("a wrapped card whose one line leaves a region stands under it", async () =
 		layout: "track",
 	});
 	for (const id of ["e3", "e6"]) expect(dropsStraight(drawing.svg, id), id).toBe(true);
+});
+
+// Two chained cards in a container, both with a labelled line to a card below
+// it: the first line's label stood beside the container on the second card's
+// rank, and the card below followed it out past the container's wall.
+test("a line leaving a container stands its label below the container", async () => {
+	const content = orderedFixture({
+		nodes: [
+			{ id: "lib", name: "Shared library", kind: "system", responsibility: "One shared release" },
+			{
+				id: "a",
+				name: "Customer behaviour",
+				kind: "module",
+				parent: "lib",
+				responsibility: "Public contract rules live inside the monolith",
+			},
+			{
+				id: "b",
+				name: "Ambient glue",
+				kind: "module",
+				parent: "lib",
+				responsibility: "Caches, auth and logging create implicit runtime dependencies",
+			},
+			{ id: "x", name: "Data library", kind: "module", responsibility: "Generated model" },
+		],
+		edges: [
+			{ id: "ab", from: "a", to: "b", kind: "call", label: "uses ambient helpers" },
+			{ id: "ax", from: "a", to: "x", kind: "call", label: "uses generated model" },
+			{ id: "bx", from: "b", to: "x", kind: "call", label: "reads the model too" },
+		],
+	});
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const frame = drawing.atlas.nodes["lib"]!;
+	const label = routeLabels(drawing.svg).get("ax")!;
+	expect(label.y).toBeGreaterThanOrEqual(frame.y + frame.height);
 });
