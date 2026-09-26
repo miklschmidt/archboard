@@ -21,11 +21,9 @@ import {
 	type Block,
 	type BlockTree,
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
+import { openStretch, type Span } from "@/transformers/semantic-renderer/lib/blocks/open-edge";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { spreadPorts } from "@/transformers/semantic-renderer/lib/track/channels";
-
-/** The stretch of an edge a port may stand on: its lowest and highest x. */
-type Span = readonly [number, number];
 
 /** What settling reads and writes: every block laid out, and how each block of blocks is packed. */
 interface Settling {
@@ -104,33 +102,6 @@ function spread(span: Span, wanted: readonly number[]): number[] {
 	return xs;
 }
 
-/**
- * The stretches of an edge no blocked stretch covers.
- * @param edge The edge.
- * @param blocked The blocked stretches.
- * @returns The free ones, left to right.
- */
-function freeOf(edge: Span, blocked: readonly Span[]): Span[] {
-	const free: Span[] = [];
-	let from = edge[0];
-	for (const [low, high] of blocked.toSorted((one, other) => one[0] - other[0])) {
-		if (low > from) free.push([from, Math.min(low, edge[1])]);
-		from = Math.max(from, high);
-	}
-	if (from < edge[1]) free.push([from, edge[1]]);
-	return free;
-}
-
-/**
- * How far an x stands outside a span.
- * @param span The span.
- * @param x The x.
- * @returns The distance, zero inside it.
- */
-function apart(span: Span, x: number): number {
-	return Math.max(span[0] - x, x - span[1], 0);
-}
-
 /** The top-down walk that settles every block's ports and routes each block again. */
 class Settle {
 	/**
@@ -186,14 +157,10 @@ class Settle {
 		const inner = laid.get(block.id)!;
 		const top = block.ports.get(port) === "top";
 		const face = top ? (inner.boxes.get(headerOf(block))?.height ?? 0) : inner.height;
-		const blocked = block.items
+		const against = block.items
 			.map((item) => inner.boxes.get(item)!)
-			.filter((box) => (top ? box.y - face : face - box.y - box.height) < PACK_GAP)
-			.map((box): Span => [box.x - TRUNK_CLEARANCE, box.x + box.width + TRUNK_CLEARANCE]);
-		const x = middle(inner.boxes.get(port)!);
-		return (
-			freeOf(edge, blocked).toSorted((one, other) => apart(one, x) - apart(other, x))[0] ?? edge
-		);
+			.filter((box) => (top ? box.y - face : face - box.y - box.height) < PACK_GAP);
+		return openStretch(edge, against, TRUNK_CLEARANCE, middle(inner.boxes.get(port)!));
 	}
 
 	/**
