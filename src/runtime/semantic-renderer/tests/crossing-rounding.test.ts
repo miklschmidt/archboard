@@ -2,13 +2,12 @@
 // whichever crossings a placement engine chooses for a whole board.
 import { expect, test } from "bun:test";
 import {
-	bridgeCrossings,
 	curveThrough,
 	curveClearanceIssue,
 	type ArchitectureDrawing,
 	type DrawingEdge,
 } from "@/runtime/semantic-renderer/layout";
-import { drawing } from "./fixed-routes";
+import { bridged, drawing } from "./fixed-routes";
 
 /**
  * Whether a curve is one straight piece along x or y.
@@ -54,7 +53,7 @@ test("a crossing is cut beneath the straight line where the other turns under th
 		],
 	]) {
 		const before = drawing(routes);
-		const result = bridgeCrossings(before);
+		const result = bridged(before);
 		expect(result.edges).toEqual(before.edges);
 		expect(result.bridges).toHaveLength(1);
 		expect(result.bridges[0]).toMatchObject({ edgeId: "0", under: ["1"] });
@@ -79,7 +78,7 @@ test("a rounded corner that turns beside a straight line stays whole, and the li
 			{ x: 6, y: 100 },
 		],
 	]);
-	const result = bridgeCrossings(before);
+	const result = bridged(before);
 	expect(result.edges).toEqual(before.edges);
 	expect(result.bridges).toHaveLength(1);
 	expect(result.bridges[0]!.edgeId).toBe("1");
@@ -100,14 +99,14 @@ test("a line crosses a trunk once, wherever it is painted among the trunk's rout
 		{ x: 50, y: 0 },
 		{ x: 50, y: 100 },
 	];
-	const between = bridgeCrossings(drawing([down, across, down]));
+	const between = bridged(drawing([down, across, down]));
 	expect(between.bridges).toHaveLength(1);
 	expect(between.bridges[0]!.edgeId).toBe("1");
 	expect(between.bridges[0]!.under.toSorted()).toEqual(["0", "2"]);
 	// A trunk painted over the line rises as one: its drawer hops, and the
 	// route beneath it keeps its ink, which the painter leaves to the drawer.
 	const trunk = drawing([across, down, down]);
-	const over = bridgeCrossings(trunk);
+	const over = bridged(trunk);
 	expect(over.bridges).toHaveLength(1);
 	expect(over.bridges[0]).toMatchObject({ edgeId: "1", under: ["0"] });
 	expect(over.edges[2]).toEqual(trunk.edges[2]!);
@@ -116,7 +115,7 @@ test("a line crosses a trunk once, wherever it is painted among the trunk's rout
 // Blocks: routes of one kind on one trunk, sharing no card, erased each
 // other's shared turns and the turns where they part.
 test("routes that run together through a turn, and part from each other, cut nothing", () => {
-	const result = bridgeCrossings(
+	const result = bridged(
 		drawing([
 			[
 				{ x: 0, y: 0 },
@@ -170,7 +169,7 @@ test("opposing rounded corners clear unrelated ink without deforming either rout
 		containers: [],
 		edges,
 	};
-	const result = bridgeCrossings(before);
+	const result = bridged(before);
 	expect(result.edges).toEqual(edges);
 	expect(result.bridges).toHaveLength(1);
 	expect(result.bridges[0]!.edgeId).toBe("1");
@@ -182,10 +181,10 @@ test("opposing rounded corners clear unrelated ink without deforming either rout
 	// The same geometric contact can be an intentional fan-in trunk.
 	const shared = structuredClone(edges);
 	for (const edge of shared) edge.edge.to = "target";
-	expect(bridgeCrossings({ ...before, edges: shared }).bridges).toEqual([]);
+	expect(bridged({ ...before, edges: shared }).bridges).toEqual([]);
 	// Different kinds use distinct ports, even when they name the same target.
 	shared[0]!.edge.kind = "event";
-	const distinct = bridgeCrossings({ ...before, edges: shared });
+	const distinct = bridged({ ...before, edges: shared });
 	expect(distinct.bridges).toHaveLength(1);
 	expect(distinct.edges).toEqual(shared);
 });
@@ -213,7 +212,7 @@ test("routes that cross where they turn onto one row get a bridge on straight ru
 		{ ...before.edges[0]!, label: { box: label, measured: { width: 60, height: 20, runs: [] } } },
 		before.edges[1]!,
 	];
-	const result = bridgeCrossings({ ...before, width: 240, height: 160, edges });
+	const result = bridged({ ...before, width: 240, height: 160, edges });
 	const bridge = result.bridges.find((one) => one.curve.segments.length > 1);
 	expect(bridge, "a raised arc, not only a corner cutout").toBeDefined();
 	expect([bridge!.edgeId, ...bridge!.under].toSorted()).toEqual(["0", "1"]);
@@ -255,7 +254,7 @@ test("a fan's line that turns back across its sibling's lane drops a lane before
 		...drawn,
 		edge: { ...drawn.edge, from: "hub" },
 	}));
-	const result = bridgeCrossings({ ...before, width: 300, height: 260, edges });
+	const result = bridged({ ...before, width: 300, height: 260, edges });
 	expect(result.bridges).toEqual([]);
 	for (const [index, { curve }] of result.edges.entries()) {
 		expect(curve.from).toEqual(routes[index]![0]!);

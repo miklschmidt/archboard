@@ -32,10 +32,18 @@ interface MeasuredLabel {
 	readonly runs: readonly TextRun[];
 }
 
+/** How a relationship's line is drawn, as the vault's policy says, where crossings are settled. */
+interface LineLook {
+	readonly dash: "solid" | "dashed" | "dotted";
+	readonly arrowhead: "filled" | "open" | "none";
+}
+
 /** All measured subjects, keyed by their existing architectural identities. */
 interface MeasuredArchitecture {
 	readonly nodes: ReadonlyMap<string, MeasuredNode>;
 	readonly labels: ReadonlyMap<string, MeasuredLabel>;
+	/** How each line is drawn, by relationship id: its dash and its head, as the vault's policy says. */
+	readonly lines: ReadonlyMap<string, LineLook>;
 	/** The group each node is placed with, and each placing group's measured caption (TASK-347). */
 	readonly groups?: MeasuredGroups | undefined;
 }
@@ -116,6 +124,7 @@ export type {
 	TextRun,
 	MeasuredNode,
 	MeasuredLabel,
+	LineLook,
 	MeasuredArchitecture,
 	MeasuredGroups,
 	DrawingNode,

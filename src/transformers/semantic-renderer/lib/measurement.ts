@@ -21,8 +21,9 @@ import {
 	type SemanticNode,
 	type VariantContent,
 } from "@/shared/semantic-board/index";
-import type { SemanticPolicy } from "@/shared/semantic-policy/index";
+import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
 import { canvasWidth, cssFont } from "@/transformers/semantic-renderer/lib/canvas-text";
+import { lineAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import type {
 	MeasuredArchitecture,
 	MeasuredLabel,
@@ -538,12 +539,16 @@ function measureCaption(name: string): MeasuredLabel {
 /**
  * Measure every architectural subject before placement or SVG emission.
  * @param content The already validated semantic content.
- * @param policy The vault's groups, in order, when groups gather and colour cards.
- * @returns Text, card minima, container headers, relationship labels and group captions.
+ * @param policy The vault's groups, in order, when groups gather and colour cards, and its
+ * relationship kinds, which say how each line is drawn.
+ * @param steps The lines that are flow steps drawn on the board.
+ * @returns Text, card minima, container headers, relationship labels, how each line is
+ * drawn, and group captions.
  */
 function measureArchitecture(
 	content: VariantContent,
-	policy: Pick<SemanticPolicy, "groups"> = { groups: {} },
+	policy: Pick<SemanticPolicy, "groups" | "relationshipKinds"> = DEFAULT_SEMANTIC_POLICY,
+	steps: ReadonlySet<string> = new Set(),
 ): MeasuredArchitecture {
 	const containers = new Set(content.nodes.flatMap((node) => (node.parent ? [node.parent] : [])));
 	const placing = placingGroups(content.nodes, policy);
@@ -553,6 +558,12 @@ function measureArchitecture(
 		),
 		labels: new Map(
 			content.edges.flatMap((edge) => (edge.label ? [[edge.id, measureLabel(edge.label)]] : [])),
+		),
+		lines: new Map(
+			content.edges.map((edge) => {
+				const { dash, arrowhead } = lineAppearance(edge.kind, policy, steps.has(edge.id));
+				return [edge.id, { dash, arrowhead }];
+			}),
 		),
 		...(placing.size === 0
 			? {}

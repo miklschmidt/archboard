@@ -1,8 +1,7 @@
 // Crossings along one line close enough for their hops to touch, on fixed
 // route geometry: who rises over them, under how many arcs.
 import { expect, test } from "bun:test";
-import { bridgeCrossings } from "@/runtime/semantic-renderer/layout";
-import { across, down, drawing, hops } from "./fixed-routes";
+import { across, bridged, down, drawing, hops } from "./fixed-routes";
 
 // Command interface and Skill evaluation: two lines sixteen apart crossing one
 // line each hopped it cleanly, and became one long brace on the line they cross.
@@ -13,7 +12,7 @@ test("lines crossing a line sixteen apart each hop it, where every hop fits", ()
 		[across(50), down(50, 0, 150), across(66)],
 	]) {
 		const line = String(routes.indexOf(routes.find((points) => points[0]!.x === 50)!));
-		const result = bridgeCrossings(drawing(routes));
+		const result = bridged(drawing(routes));
 		expect(result.bridges).toHaveLength(2);
 		for (const bridge of result.bridges) {
 			expect(hops(bridge)).toBe(true);
@@ -35,7 +34,7 @@ test("where lines too close to hop one each cross a line, it rises over them und
 		[across(50), turning, across(62)],
 	]) {
 		const line = String(routes.indexOf(turning));
-		const result = bridgeCrossings(drawing(routes));
+		const result = bridged(drawing(routes));
 		expect(result.bridges).toHaveLength(1);
 		expect(result.bridges[0]!.edgeId).toBe(line);
 		expect(hops(result.bridges[0]!)).toBe(true);
@@ -48,7 +47,7 @@ test("where lines too close to hop one each cross a line, it rises over them und
 // Where a cluster holds a crossing no hop can pass over, its line still rises
 // over the crossings it can, one at a time.
 test("a line rises over one crossing of a cluster whose crest cannot stand", () => {
-	const result = bridgeCrossings(
+	const result = bridged(
 		drawing([
 			across(50),
 			// Turns eight below the crossing: it cannot rise, but a hop passes over it.
@@ -69,7 +68,7 @@ test("a line rises over one crossing of a cluster whose crest cannot stand", () 
 // Code review: a crest over two lines spanned a line ending between them,
 // whose cut beneath then erased its arrowhead under ink no longer there.
 test("a crest never spans a crossing it does not hop", () => {
-	const result = bridgeCrossings(drawing([down(40), down(60), down(50, 100, 47), across(50)]));
+	const result = bridged(drawing([down(40), down(60), down(50, 100, 47), across(50)]));
 	for (const bridge of result.bridges.filter(hops)) {
 		const xs = [bridge.curve.from.x, bridge.curve.segments.at(-1)!.to.x];
 		const ys = [bridge.curve.from.y, bridge.curve.segments.at(-1)!.to.y];
@@ -81,7 +80,7 @@ test("a crest never spans a crossing it does not hop", () => {
 // Browser application (blocks): a line hopped one line and was hopped by
 // another sixteen apart, the two arcs one knot.
 test("a line is above or beneath along all of one cluster, never both", () => {
-	const result = bridgeCrossings(
+	const result = bridged(
 		drawing([
 			// Turns fourteen below its second crossing: it can hop that one alone, but
 			// has no room for a crest over both.
@@ -107,7 +106,7 @@ test("a line is above or beneath along all of one cluster, never both", () => {
 // Agent workbench (blocks): a solid line rose over two dashed lines sixteen
 // apart under one long brace, where cutting them reads cleaner.
 test("dashed lines close together beneath a solid line are cut, not hopped under one crest", () => {
-	const result = bridgeCrossings(
+	const result = bridged(
 		drawing([down(50, 0, 150), across(50), across(66)], [{}, { kind: "event" }, { kind: "event" }]),
 	);
 	expect(result.bridges).toHaveLength(2);
@@ -120,7 +119,7 @@ test("dashed lines close together beneath a solid line are cut, not hopped under
 // Agent workbench (blocks): a line hopped one line sixteen past where a
 // weightier line it could not rise over was cut through it.
 test("a line rises over part of a cluster only where it stays whole at the rest", () => {
-	const result = bridgeCrossings(
+	const result = bridged(
 		drawing(
 			[
 				// Starts twenty above the weightier line, too near to rise over it.
@@ -142,7 +141,7 @@ test("a line rises over part of a cluster only where it stays whole at the rest"
 // Archboard server (blocks): a line hopped a line eight points from where a
 // weightier line hopped it, the two arcs one knot.
 test("hops on crossing lines keep a hop's radius between them", () => {
-	const result = bridgeCrossings(
+	const result = bridged(
 		drawing(
 			[
 				across(50, 0, 150),

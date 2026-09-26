@@ -13,6 +13,7 @@ import {
 import type {
 	ArchitectureDrawing,
 	DrawingEdge,
+	LineLook,
 } from "@/transformers/semantic-renderer/lib/drawing";
 import { inflate, type Box, type Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { curveBoxes } from "@/transformers/semantic-renderer/lib/layout/curve-clearance";
@@ -31,7 +32,6 @@ import {
 	type Axis,
 	type Run,
 } from "@/transformers/semantic-renderer/lib/layout/drawn-lines";
-import { relationshipAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 
 /** Straight line kept past a hop, before a bend, a join or an end's approach. */
 const HOP_MARGIN = 6;
@@ -155,15 +155,26 @@ function passesBeneath(runs: readonly Run[], run: Run, point: Point): boolean {
 }
 
 /**
+ * How a relationship's line is drawn: as measurement settled it, or solid with
+ * a filled head, as a relationship of a kind the vault does not know is.
+ * @param lines How each line is drawn, by relationship id.
+ * @param id The relationship.
+ * @returns Its dash and head.
+ */
+function lookOf(lines: ReadonlyMap<string, LineLook>, id: string): LineLook {
+	return lines.get(id) ?? { dash: "solid", arrowhead: "filled" };
+}
+
+/**
  * The box an arrowhead is drawn in: its route's last stretch of approach, and
  * as far to either side.
  * @param edge The route.
+ * @param look How it is drawn.
  * @returns The box, when the route ends in a head on a straight piece.
  */
-function arrowheadBox(edge: DrawingEdge): Box | undefined {
+function arrowheadBox(edge: DrawingEdge, look: LineLook): Box | undefined {
 	const last = edge.curve.segments.at(-1);
-	if (last?.kind !== "line" || relationshipAppearance(edge.edge.kind).arrowhead === "none")
-		return undefined;
+	if (last?.kind !== "line" || look.arrowhead === "none") return undefined;
 	const from = segmentStart(edge.curve, edge.curve.segments.length - 1);
 	const length = Math.hypot(last.to.x - from.x, last.to.y - from.y);
 	if (length === 0) return undefined;
@@ -184,9 +195,10 @@ function arrowheadBox(edge: DrawingEdge): Box | undefined {
 /**
  * Cards, labels, container titles and arrowheads must retain their space.
  * @param drawing The settled drawing.
+ * @param lines How each line is drawn, by relationship id.
  * @returns What a hop keeps clear of, without excluding container interiors.
  */
-function keepoutsOf(drawing: ArchitectureDrawing): Keepout[] {
+function keepoutsOf(drawing: ArchitectureDrawing, lines: ReadonlyMap<string, LineLook>): Keepout[] {
 	return [
 		...drawing.cards.map((card) => ({ box: card.box })),
 		...drawing.containers.map((container) => ({
@@ -194,7 +206,7 @@ function keepoutsOf(drawing: ArchitectureDrawing): Keepout[] {
 		})),
 		...drawing.edges.flatMap((edge) => (edge.label === undefined ? [] : [{ box: edge.label.box }])),
 		...drawing.edges.flatMap((edge, edgeIndex) => {
-			const box = arrowheadBox(edge);
+			const box = arrowheadBox(edge, lookOf(lines, edge.edge.id));
 			return box === undefined ? [] : [{ box, edgeIndex }];
 		}),
 	];
@@ -312,6 +324,7 @@ export {
 	crowded,
 	HOP_MARGIN,
 	keepoutsOf,
+	lookOf,
 	passesBeneath,
 	replaceRuns,
 	type Hop,

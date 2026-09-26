@@ -183,5 +183,9 @@ test("cached preparation keeps faces and sizes distinct across repeated renders"
 		expect(run.width).toBe(exactWidth(run));
 	}
 	expect(new Set(runs.map((run) => run.width)).size).toBeGreaterThan(2);
-	expect(measureArchitecture(emptyContent())).toEqual({ nodes: new Map(), labels: new Map() });
+	expect(measureArchitecture(emptyContent())).toEqual({
+		nodes: new Map(),
+		labels: new Map(),
+		lines: new Map(),
+	});
 });

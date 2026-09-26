@@ -1,8 +1,7 @@
 // Which of two crossing lines rises, and what a hop keeps clear of, on fixed
 // route geometry.
 import { expect, test } from "bun:test";
-import { bridgeCrossings } from "@/runtime/semantic-renderer/layout";
-import { across, down, drawing, hops } from "./fixed-routes";
+import { across, bridged, down, drawing, hops } from "./fixed-routes";
 
 // Archboard server (blocks): a muted line rose over a hero one and broke it.
 test("the more emphasised line rises, wherever it is painted", () => {
@@ -14,7 +13,7 @@ test("the more emphasised line rises, wherever it is painted", () => {
 		const looks = [{}, {}];
 		looks[hero] = { emphasis: "hero" as const };
 		looks[other] = { emphasis: "muted" as const };
-		const result = bridgeCrossings(drawing(routes, looks));
+		const result = bridged(drawing(routes, looks));
 		expect(result.bridges).toHaveLength(1);
 		expect(result.bridges[0]!.edgeId).toBe(String(hero));
 		expect(hops(result.bridges[0]!)).toBe(true);
@@ -25,7 +24,7 @@ test("the more emphasised line rises, wherever it is painted", () => {
 // showed, and the solid line read as broken.
 test("a solid line rises over a dashed one, and a dashed line never rises over a solid one", () => {
 	// The dashed line is painted later and would rise between equals.
-	const over = bridgeCrossings(drawing([down(50), across(50)], [{}, { kind: "event" }]));
+	const over = bridged(drawing([down(50), across(50)], [{}, { kind: "event" }]));
 	expect(over.bridges).toHaveLength(1);
 	expect(over.bridges[0]).toMatchObject({ edgeId: "0", under: ["1"] });
 	expect(hops(over.bridges[0]!)).toBe(true);
@@ -35,7 +34,7 @@ test("a solid line rises over a dashed one, and a dashed line never rises over a
 		{ x: 50, y: 58 },
 		{ x: 100, y: 58 },
 	];
-	const cut = bridgeCrossings(drawing([turning, across(50)], [{}, { kind: "event" }]));
+	const cut = bridged(drawing([turning, across(50)], [{}, { kind: "event" }]));
 	expect(cut.bridges).toHaveLength(1);
 	expect(cut.bridges[0]).toMatchObject({ edgeId: "0", under: ["1"] });
 	expect(hops(cut.bridges[0]!)).toBe(false);
@@ -44,7 +43,7 @@ test("a solid line rises over a dashed one, and a dashed line never rises over a
 // Every engine: between two lines that both have all the room a hop wants,
 // the longer one rose, and hops moved about with every edit far away.
 test("between two lines with all the room a hop wants, the later-painted rises", () => {
-	const result = bridgeCrossings(drawing([down(50, 0, 300), across(100)]));
+	const result = bridged(drawing([down(50, 0, 300), across(100)]));
 	expect(result.bridges).toHaveLength(1);
 	expect(result.bridges[0]).toMatchObject({ edgeId: "1", under: ["0"] });
 });
@@ -61,7 +60,7 @@ test("a hop stands only where the line beneath runs straight well past its crest
 			{ x: 50, y: turn },
 			{ x: 100, y: turn },
 		];
-		const result = bridgeCrossings(drawing([beneath, across(50)]));
+		const result = bridged(drawing([beneath, across(50)]));
 		expect(result.bridges).toHaveLength(1);
 		expect(hops(result.bridges[0]!), `turn at ${turn}`).toBe(hopped);
 	}
@@ -75,14 +74,14 @@ test("a hop keeps a card's or a label's clearance from it", () => {
 		{ ...plain.edges[0]!, label: { box: label, measured: { width: 30, height: 8, runs: [] } } },
 		plain.edges[1]!,
 	];
-	const result = bridgeCrossings({ ...plain, edges });
+	const result = bridged({ ...plain, edges });
 	expect(result.bridges.some(hops)).toBe(false);
 });
 
 // Archboard server (graphviz): an arc stood fifteen points from the tip of the
 // arrowhead of the line it crossed.
 test("a hop keeps clear of another line's arrowhead", () => {
-	const result = bridgeCrossings(drawing([down(50, 0, 200), across(100, 150, 35)]));
+	const result = bridged(drawing([down(50, 0, 200), across(100, 150, 35)]));
 	expect(result.bridges).toHaveLength(1);
 	expect(hops(result.bridges[0]!)).toBe(false);
 });
@@ -95,10 +94,10 @@ test("a solid line hops a dashed one only with a bend's room past its feet", () 
 		{ x: 50, y: 72 },
 		{ x: 100, y: 72 },
 	];
-	const result = bridgeCrossings(drawing([turning, across(50)], [{}, { kind: "event" }]));
+	const result = bridged(drawing([turning, across(50)], [{}, { kind: "event" }]));
 	expect(result.bridges).toHaveLength(1);
 	expect(hops(result.bridges[0]!)).toBe(false);
 	// With a solid line beneath it, it rises with less.
-	const solid = bridgeCrossings(drawing([turning, across(50)]));
+	const solid = bridged(drawing([turning, across(50)]));
 	expect(solid.bridges.some(hops)).toBe(true);
 });

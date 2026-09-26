@@ -32,6 +32,7 @@ import {
 import type {
 	ArchitectureDrawing,
 	DrawingEdge,
+	LineLook,
 } from "@/transformers/semantic-renderer/lib/drawing";
 import { cornerClearances } from "@/transformers/semantic-renderer/lib/layout/corner-crossings";
 import type { Curve } from "@/transformers/semantic-renderer/lib/layout/curves";
@@ -55,12 +56,12 @@ import {
 	crowded,
 	HOP_MARGIN,
 	keepoutsOf,
+	lookOf,
 	passesBeneath,
 	replaceRuns,
 	type Hop,
 	type HopScene,
 } from "@/transformers/semantic-renderer/lib/layout/hop-geometry";
-import { relationshipAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 
 /** The straight line a rising line keeps past each foot: a bend's room, so a bend a few points past a hop never draws one squiggle with it. */
 const FULL_ROOM = HOP_MARGIN + BEND_RADIUS;
@@ -109,6 +110,8 @@ interface Plan {
 
 /** Everything settling the crossings reads and records. */
 interface Settling extends HopScene {
+	/** How each line is drawn, by relationship id. */
+	readonly lines: ReadonlyMap<string, LineLook>;
 	/** Each crossing's cluster along each of its two lines. */
 	readonly clusters: ReadonlyMap<DrawnCrossing, readonly [Cluster, Cluster]>;
 	readonly bridges: Bridge[];
@@ -297,32 +300,32 @@ function settle(crossed: Set<string>, crossing: DrawnCrossing): void {
 
 /**
  * How a line stands when choosing which rises: its emphasis, then whether it
- * is drawn solid.
- * @param edges The routes.
+ * is drawn solid, as the vault's policy draws its relationship.
+ * @param state The routes and how each is drawn.
  * @param line The line.
  * @returns Its weight and solidity.
  */
-function standingOf(edges: readonly DrawingEdge[], line: Line): readonly [number, number] {
-	const { edge } = edges[line.drawer.edgeIndex]!;
-	return [WEIGHT[edge.emphasis], relationshipAppearance(edge.kind).dash === "solid" ? 1 : 0];
+function standingOf(state: Settling, line: Line): readonly [number, number] {
+	const { edge } = state.drawing.edges[line.drawer.edgeIndex]!;
+	return [WEIGHT[edge.emphasis], lookOf(state.lines, edge.id).dash === "solid" ? 1 : 0];
 }
 
 /**
  * How far one line stands ahead of another it would rise over, in weight and
  * in solidity; or nothing where it may not rise over it at all: a dashed or
  * dotted line over a solid one.
- * @param edges The routes.
+ * @param state The routes and how each is drawn.
  * @param upper The line that would stay whole.
  * @param lower The line beneath it.
  * @returns The lead in weight and in solidity.
  */
 function leadOver(
-	edges: readonly DrawingEdge[],
+	state: Settling,
 	upper: Line,
 	lower: Line,
 ): readonly [number, number] | undefined {
-	const [weight, solid] = standingOf(edges, upper);
-	const [under, solidUnder] = standingOf(edges, lower);
+	const [weight, solid] = standingOf(state, upper);
+	const [under, solidUnder] = standingOf(state, lower);
 	if (solid < solidUnder) return undefined;
 	return [weight - under, solid - solidUnder];
 }
@@ -382,7 +385,7 @@ function planOf(
 ): Plan[] {
 	const [cuts, cluster] = cutting;
 	const leads = pairsOf(rises, cuts, cluster).map(([upper, lower]) =>
-		leadOver(state.drawing.edges, upper, lower),
+		leadOver(state, upper, lower),
 	);
 	if (leads.some((lead) => lead === undefined)) return [];
 	// A dashed line cut beneath a solid one still reads as crossed; it is not
@@ -425,12 +428,11 @@ function wholeOf(cluster: Cluster): Rise {
  * @returns The plan, when every crosser may do one or the other.
  */
 function oneEach(state: Settling, cluster: Cluster): Plan[] {
-	const { edges } = state.drawing;
 	const rises: Rise[] = [];
 	const cuts: DrawnCrossing[] = [];
 	for (const crossing of cluster.crossings) {
 		const [line, crosser] = sidesOf(cluster, crossing);
-		if (leadOver(edges, crosser, line) === undefined) {
+		if (leadOver(state, crosser, line) === undefined) {
 			cuts.push(crossing);
 			continue;
 		}
@@ -516,7 +518,7 @@ function upperOf(state: Settling, crossing: DrawnCrossing): readonly [boolean, b
 	);
 	if (oneJoins !== otherJoins) return [true, oneJoins!];
 	const [one, other] = crossing.lines.map((line) => [
-		...standingOf(state.drawing.edges, line),
+		...standingOf(state, line),
 		straightness(runs, line.drawer, crossing.point[line.drawer.axis]) / STRAIGHTER,
 		line.drawer.edgeIndex,
 	]);
@@ -531,9 +533,13 @@ function upperOf(state: Settling, crossing: DrawnCrossing): readonly [boolean, b
  * corners first moves onto straight runs, taking a label on a moved lane
  * along. Contacts at rounded corners are cut, the corner staying whole.
  * @param settled The drawing after routing, rounding and label placement.
+ * @param lines How each line is drawn, by relationship id, as measurement settled it.
  * @returns Updated edges and the local ink each crossing clears beneath it.
  */
-function bridgeCrossings(settled: ArchitectureDrawing): {
+function bridgeCrossings(
+	settled: ArchitectureDrawing,
+	lines: ReadonlyMap<string, LineLook>,
+): {
 	readonly edges: readonly DrawingEdge[];
 	readonly bridges: readonly Bridge[];
 } {
@@ -546,7 +552,8 @@ function bridgeCrossings(settled: ArchitectureDrawing): {
 		drawing,
 		runs,
 		clusters: of,
-		keepouts: keepoutsOf(drawing),
+		lines,
+		keepouts: keepoutsOf(drawing, lines),
 		hops: [],
 		bridges: [],
 		replacements: edges.map(() => new Map<number, Curve[]>()),
