@@ -335,6 +335,7 @@ class Scene {
 }
 
 export {
+	REGION_CAPTION_INSET,
 	Scene,
 	TRACK_POLYLINE,
 	TRACK_REGIONS,
