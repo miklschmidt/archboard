@@ -45,19 +45,8 @@ import { SOLVE_STAGE, rendererHost } from "@/transformers/semantic-renderer/lib/
 import { fittedPage } from "@/transformers/semantic-renderer/lib/layout/page-fit";
 import { tidierSettlement } from "@/transformers/semantic-renderer/lib/layout/even-pins";
 import { clearerDrawing } from "@/transformers/semantic-renderer/lib/layout/label-clearance";
-import {
-	crowdedWalls,
-	finished,
-	sideHooks,
-	wrongFaces,
-} from "@/transformers/semantic-renderer/lib/layout/finishing";
-import { bunchedPorts } from "@/transformers/semantic-renderer/lib/layout/lone-pins";
+import { finished } from "@/transformers/semantic-renderer/lib/layout/finishing";
 import { anchorClearance } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
-import {
-	refusedLines,
-	stackCrossings,
-	stackedEnds,
-} from "@/transformers/semantic-renderer/lib/layout/stacked-runs";
 import {
 	requestOptions,
 	type RouteRequest,
@@ -261,32 +250,14 @@ function finishedWith(reading: Reading, route: RouteRequest): Promise<Architectu
 /**
  * A settled reading finished clear of frame walls, of side exits between
  * stacked cards, of hooks into a card's side, of unrelated lines on one
- * stroke and of lone ports crowding a corner (finishing.ts). Side exits go
- * first, so a line they turn into a hook can still be cured.
+ * stroke and of lone ports crowding a corner (finishing.ts).
  * @param kept The settled reading.
  * @returns The finished drawing.
  */
 async function finishedDrawing(kept: SettledReading): Promise<ArchitectureDrawing> {
 	const reroute = rerouting(kept.reserved);
-	const walled = await finished(kept, crowdedWalls, (clearWalls) =>
-		reroute(asking(kept.reading, { clearWalls })),
-	);
-	const faced = await finished(walled, wrongFaces, () =>
-		reroute(asking(walled.reading, { laneChannels: true, centredLabels: true })),
-	);
-	const hooked = await finished(faced, sideHooks, () =>
-		reroute(asking(faced.reading, { cornerPins: true })),
-	);
-	const parted = await finished(
-		hooked,
-		stackedEnds,
-		(refusedEnds) => reroute(asking(hooked.reading, { refusedEnds })),
-		{ excused: refusedLines, hidden: stackCrossings },
-	);
-	const centred = await finished(parted, bunchedPorts, () =>
-		reroute(asking(parted.reading, { centredPorts: true })),
-	);
-	return centred.drawing;
+	const done = await finished(kept, (reading, request) => reroute(asking(reading, request)));
+	return done.drawing;
 }
 
 /**

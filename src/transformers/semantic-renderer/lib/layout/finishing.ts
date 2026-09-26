@@ -8,21 +8,26 @@
 // So each pass finishes a settled drawing only where it has what the pass
 // cures: a line along the wall of a frame it does not stay inside, a line
 // that leaves a card by its side although its other card stands straight
-// below or above it, or a line that hooks into a card's side past the card's
+// below or above it, a line that hooks into a card's side past the card's
 // corner, two unrelated lines on one stroke (stacked-runs.ts), or a port
-// alone on a card face beside its corner (lone-pins.ts). The same
-// placement, with the same reservations, is routed once more with the pass's
-// options, and that drawing is kept when it has fewer of them
-// (or as many with fewer bends in all), every label still finds a box, it has
-// no more crossings, no line has more bends, and every line that stayed
-// inside a frame still does. A pass that refuses a line the face it ended on
-// lets that line take more bends, and counts the crossings a stack hides:
-// parting two lines that swap sides on one stroke shows a crossing that was
-// always there. A route that takes a detour is not worth
-// what it cures, fewer bends elsewhere do not pay for one line made worse, and
-// a relationship within a frame belongs inside it even when the only room is
-// on its wall: its cards stand the frame's inset from the wall, which leaves
-// no lane inside.
+// alone on a card face beside its corner (lone-pins.ts). The same placement,
+// with the same reservations, is routed once more with the pass's options,
+// and that drawing is kept when it cures more: no defect of the pass's own
+// kind that the settled drawing did not have, so a pass never moves a defect
+// from one line to its neighbour, and fewer defects of every kind together,
+// a label another line crowds and two unrelated lines that touch counted
+// too, or the same defects with fewer bends in all. It must also keep every
+// label, have no more crossings, counting two unrelated lines on one stroke
+// as one, give no line more bends, unless it saves a crossing and takes no
+// more bends in all (Browser application's "Recording a walkthrough" parted
+// a stack and cured three hooks for one line's extra bend), and keep every
+// line that stayed inside a frame inside it. A pass that refuses a line the face it ended on lets that
+// line take more bends: parting two lines that swap sides on one stroke shows
+// a crossing that was always there. A route that takes a detour is not worth
+// what it cures, fewer bends elsewhere do not pay for one line made worse,
+// and a relationship within a frame belongs inside it even when the only
+// room is on its wall: its cards stand the frame's inset from the wall, which
+// leaves no lane inside.
 import type {
 	ArchitectureDrawing,
 	DrawingEdge,
@@ -30,7 +35,18 @@ import type {
 import { ROUTE_NUDGE_DISTANCE } from "@/transformers/semantic-renderer/config";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { verticesOf } from "@/transformers/semantic-renderer/lib/layout/curves";
-import { untidiness } from "@/transformers/semantic-renderer/lib/layout/even-pins";
+import { refusedRouting } from "@/transformers/semantic-renderer/lib/layout/checked-routes";
+import { crossingsSeen } from "@/transformers/semantic-renderer/lib/layout/even-pins";
+import { crowdedLabels } from "@/transformers/semantic-renderer/lib/layout/label-clearance";
+import { bunchedPorts } from "@/transformers/semantic-renderer/lib/layout/lone-pins";
+import { hooksPast } from "@/transformers/semantic-renderer/lib/layout/pin-feedback";
+import type { RouteRequest } from "@/transformers/semantic-renderer/lib/layout/route-requests";
+import {
+	refusedLines,
+	stackedEnds,
+	stackKeys,
+	touchKeys,
+} from "@/transformers/semantic-renderer/lib/layout/stacked-runs";
 import {
 	WALL_FACES,
 	wallOf,
@@ -133,27 +149,37 @@ function inside(line: DrawingEdge, frame: Box): boolean {
 }
 
 /**
- * The walls of a drawing that a line runs along without staying inside their frame.
+ * The runs of a drawing's lines along the wall of a frame they do not stay inside.
  * @param drawing The drawing.
- * @returns One wall key for every such run.
+ * @returns Each such line's id and the wall's key.
  */
-export function crowdedWalls(drawing: ArchitectureDrawing): string[] {
+function wallRuns(drawing: ArchitectureDrawing): (readonly [string, string])[] {
 	const walls = wallsOf(drawing);
 	return drawing.edges.flatMap((line) => {
 		const outside = walls.filter((wall) => !inside(line, wall.frame));
 		return runsOf(verticesOf(line.curve)).flatMap((run) =>
-			outside.filter((wall) => along(run, wall)).map(({ key }) => key),
+			outside.filter((wall) => along(run, wall)).map(({ key }) => [line.edge.id, key] as const),
 		);
 	});
 }
 
 /**
- * The line ends of a drawing that hook into a card's side: the end's run
- * leaves the side and turns along it to beyond the card's top or bottom.
+ * The walls of a drawing that a line runs along without staying inside their frame.
+ * @param drawing The drawing.
+ * @returns One wall key for every such run.
+ */
+function crowdedWalls(drawing: ArchitectureDrawing): string[] {
+	return wallRuns(drawing).map(([, wall]) => wall);
+}
+
+/**
+ * The line ends of a drawing that hook into a card's side: the end's short
+ * run leaves the side and turns along it to beyond the card's top or bottom
+ * ({@link hooksPast}).
  * @param drawing The drawing.
  * @returns One key for every such end.
  */
-export function sideHooks(drawing: ArchitectureDrawing): string[] {
+function sideHooks(drawing: ArchitectureDrawing): string[] {
 	const cards = new Map(drawing.cards.map(({ measured, box }) => [measured.node.id, box]));
 	return drawing.edges.flatMap(({ edge, curve }) => {
 		const points = verticesOf(curve);
@@ -176,9 +202,7 @@ export function sideHooks(drawing: ArchitectureDrawing): string[] {
  */
 function hooks(box: Box, route: readonly Point[]): boolean {
 	const [tip, bend, after] = [route[0]!, route[1]!, route[2]];
-	if (after === undefined || Math.abs(tip.y - bend.y) >= 0.01) return false;
-	if (Math.abs(bend.x - after.x) >= 0.01) return false;
-	return after.y < box.y || after.y > box.y + box.height;
+	return after !== undefined && hooksPast(box, tip, bend, after);
 }
 
 /**
@@ -188,7 +212,7 @@ function hooks(box: Box, route: readonly Point[]): boolean {
  * @param drawing The drawing.
  * @returns One key for every such end.
  */
-export function wrongFaces(drawing: ArchitectureDrawing): string[] {
+function wrongFaces(drawing: ArchitectureDrawing): string[] {
 	const cards = new Map(drawing.cards.map(({ measured, box }) => [measured.node.id, box]));
 	return drawing.edges.flatMap(({ edge, curve }) => {
 		const [from, to] = [cards.get(edge.from), cards.get(edge.to)];
@@ -243,48 +267,68 @@ function keepsInside(clear: ArchitectureDrawing, settled: ArchitectureDrawing): 
 
 /**
  * Whether a finishing routing is no worse than the settled drawing: no more
- * crossings, no line with more bends, apart from the lines the pass itself
- * sends another way, and no line out of a frame it stayed inside.
+ * crossings, unrelated lines on one stroke counted (even-pins.ts), no line
+ * with more bends apart from the lines the pass itself sends another way, or,
+ * where it saves a crossing, no more bends in all, and no line out of a frame
+ * it stayed inside.
  * @param clear The finishing routing.
  * @param settled The settled drawing.
  * @param excused The lines the pass sends another way.
- * @param hidden The crossings a drawing hides from the ordinary count.
  * @returns True when it may replace the settled drawing.
  */
 function noWorse(
 	clear: ArchitectureDrawing,
 	settled: ArchitectureDrawing,
 	excused: ReadonlySet<string>,
-	hidden: (drawing: ArchitectureDrawing) => number,
 ): boolean {
-	const before = bendsOf(settled);
+	const [crossings, before] = [crossingsSeen(clear) - crossingsSeen(settled), bendsOf(settled)];
 	return (
-		untidiness(clear)[0]! + hidden(clear) <= untidiness(settled)[0]! + hidden(settled) &&
-		[...bendsOf(clear)].every(
-			([id, bends]) => excused.has(id) || bends <= (before.get(id) ?? Infinity),
-		) &&
+		crossings <= 0 &&
+		(crossings < 0
+			? totalBends(clear) <= totalBends(settled)
+			: [...bendsOf(clear)].every(
+					([id, bends]) => excused.has(id) || bends <= (before.get(id) ?? Infinity),
+				)) &&
 		keepsInside(clear, settled)
 	);
 }
 
 /**
- * Whether a finishing routing cures more than the settled drawing: fewer of
- * what the pass cures, or as many with fewer bends in all. A reserved label
- * moved onto one line's straight channel can push its neighbour off another,
- * which then enters its card's side with fewer bends than it took before
- * (IIS Ingress Migration's "Today: DNS points here" and its fallback).
+ * Every defect of a drawing that a finishing pass cures, and every label
+ * another line crowds and every pair of unrelated lines that touch, which no
+ * pass may bring, each keyed by its kind.
+ * @param drawing The drawing.
+ * @returns The defects.
+ */
+function defectsOf(drawing: ArchitectureDrawing): ReadonlySet<string> {
+	return new Set([
+		...FINISHING_PASSES.flatMap(({ kind, defects }) =>
+			defects(drawing).map((key) => `${kind}:${key}`),
+		),
+		...crowdedLabels(drawing).map((key) => `label:${key}`),
+		...touchKeys(drawing).map((key) => `touch:${key}`),
+	]);
+}
+
+/**
+ * Whether a finishing routing cures more than the settled drawing. It may
+ * not trade a defect for another of its own kind (IIS Ingress Migration's
+ * wrong-face pass moved a side hook from one line to its neighbour), it must
+ * have fewer defects of every kind together, or, with the same defects and
+ * no new one, fewer bends in all.
  * @param finish The finishing routing.
  * @param settled The settled drawing.
- * @param cured What the pass cures in a drawing, one key for each.
+ * @param kind The kind of defect the pass cures.
  * @returns True when it cures more.
  */
-function cures(
-	finish: ArchitectureDrawing,
-	settled: ArchitectureDrawing,
-	cured: (drawing: ArchitectureDrawing) => readonly string[],
-): boolean {
-	const [after, before] = [cured(finish).length, cured(settled).length];
-	return after < before || (after === before && totalBends(finish) < totalBends(settled));
+function cures(finish: ArchitectureDrawing, settled: ArchitectureDrawing, kind: string): boolean {
+	const [after, before] = [defectsOf(finish), defectsOf(settled)];
+	const fresh = [...after].filter((key) => !before.has(key));
+	if (fresh.some((key) => key.startsWith(`${kind}:`))) return false;
+	return (
+		after.size < before.size ||
+		(fresh.length === 0 && after.size === before.size && totalBends(finish) < totalBends(settled))
+	);
 }
 
 /**
@@ -296,27 +340,108 @@ function totalBends(drawing: ArchitectureDrawing): number {
 	return [...bendsOf(drawing).values()].reduce((sum, bends) => sum + bends, 0);
 }
 
-/** How a finishing pass is judged beyond the ordinary rules. */
-interface Judged {
-	/** The lines the pass sends another way, given what it cures, which may take more bends. */
+/** One finishing pass: what it cures, and what it asks of the routes to cure it. */
+interface FinishingPass {
+	/** The kind of defect it cures. */
+	readonly kind: string;
+	/** What it finds to cure in a drawing, as its routes are asked to cure them. */
+	readonly found: (drawing: ArchitectureDrawing) => readonly string[];
+	/** The defects of its kind a drawing has, one key for each. */
+	readonly defects: (drawing: ArchitectureDrawing) => readonly string[];
+	/** What its routes are asked, given what it found. */
+	readonly ask: (found: readonly string[]) => RouteRequest;
+	/** The lines it sends another way, given what it found, which may take more bends. */
 	readonly excused: (found: readonly string[]) => ReadonlySet<string>;
-	/** The crossings a drawing hides from the ordinary count, which the pass may uncover. */
-	readonly hidden: (drawing: ArchitectureDrawing) => number;
 }
 
-/** A pass that sends no line another way and uncovers no crossing. */
-const ORDINARY: Judged = {
-	/**
-	 * No line is excused.
-	 * @returns No lines.
-	 */
-	excused: () => new Set(),
-	/**
-	 * No crossing is hidden.
-	 * @returns None.
-	 */
-	hidden: () => 0,
-};
+/**
+ * No line is excused.
+ * @returns No lines.
+ */
+function noneExcused(): ReadonlySet<string> {
+	return new Set();
+}
+
+/**
+ * The lines of a drawing along the wall of a frame they leave.
+ * @param drawing The drawing.
+ * @returns One line@wall key for every such run.
+ */
+function wallHugs(drawing: ArchitectureDrawing): string[] {
+	return wallRuns(drawing).map(([line, wall]) => `${line}@${wall}`);
+}
+
+/**
+ * Routes asked to keep off walls.
+ * @param clearWalls The walls.
+ * @returns The request.
+ */
+function clearing(clearWalls: readonly string[]): RouteRequest {
+	return { clearWalls };
+}
+
+/**
+ * Routes asked for every lane of a shared span and reserved labels on their cards' channel.
+ * @returns The request.
+ */
+function droppingStraight(): RouteRequest {
+	return { laneChannels: true, centredLabels: true };
+}
+
+/**
+ * Routes offered the face a hook passes.
+ * @returns The request.
+ */
+function enteringCorners(): RouteRequest {
+	return { cornerPins: true };
+}
+
+/**
+ * Routes asked to leave line ends off the faces they stacked from.
+ * @param refusedEnds The line ends.
+ * @returns The request.
+ */
+function refusing(refusedEnds: readonly string[]): RouteRequest {
+	return { refusedEnds };
+}
+
+/**
+ * Routes asked to centre ports alone beside a corner.
+ * @returns The request.
+ */
+function centringPorts(): RouteRequest {
+	return { centredPorts: true };
+}
+
+/**
+ * The finishing passes, in the order they run. Side exits go before hooks,
+ * so a line they turn into a hook can still be cured.
+ */
+const FINISHING_PASSES: readonly FinishingPass[] = [
+	{ kind: "wall", found: crowdedWalls, defects: wallHugs, ask: clearing, excused: noneExcused },
+	{
+		kind: "face",
+		found: wrongFaces,
+		defects: wrongFaces,
+		ask: droppingStraight,
+		excused: noneExcused,
+	},
+	{
+		kind: "hook",
+		found: sideHooks,
+		defects: sideHooks,
+		ask: enteringCorners,
+		excused: noneExcused,
+	},
+	{ kind: "stack", found: stackedEnds, defects: stackKeys, ask: refusing, excused: refusedLines },
+	{
+		kind: "port",
+		found: bunchedPorts,
+		defects: bunchedPorts,
+		ask: centringPorts,
+		excused: noneExcused,
+	},
+];
 
 /** A drawing and the reading that routed it. */
 interface Finish<Reading> {
@@ -329,25 +454,45 @@ interface Finish<Reading> {
  * cures, its placement routed once more with the pass's options, if that
  * cures more ({@link cures}), keeps every label and is no worse
  * ({@link noWorse}). A routing the router or the route checks refuse keeps
- * the settled drawing.
+ * the settled drawing; a fault is thrown.
  * @param settled The settled drawing and its reading.
- * @param cured What the pass cures in a drawing, one key for each.
- * @param reroute Routes the same placement with the pass's option, given what it cures; nothing when a label finds no box.
- * @param judged How a pass that sends lines another way or uncovers crossings is judged.
+ * @param pass The pass.
+ * @param reroute Routes the same placement asking for more; nothing when a label finds no box.
  * @returns The drawing kept and its reading.
  */
-export async function finished<Reading>(
+async function finishedBy<Reading>(
 	settled: Finish<Reading>,
-	cured: (drawing: ArchitectureDrawing) => readonly string[],
-	reroute: (found: readonly string[]) => Promise<Finish<Reading> | undefined>,
-	judged: Judged = ORDINARY,
+	pass: FinishingPass,
+	reroute: (request: RouteRequest) => Promise<Finish<Reading> | undefined>,
 ): Promise<Finish<Reading>> {
-	const found = cured(settled.drawing);
+	const found = pass.found(settled.drawing);
 	if (found.length === 0) return settled;
-	const finish = await reroute([...new Set(found)]).catch(() => undefined);
+	const finish = await reroute(pass.ask([...new Set(found)])).catch((error: unknown) => {
+		if (refusedRouting(error)) return undefined;
+		throw error;
+	});
 	return finish !== undefined &&
-		cures(finish.drawing, settled.drawing, cured) &&
-		noWorse(finish.drawing, settled.drawing, judged.excused(found), judged.hidden)
+		cures(finish.drawing, settled.drawing, pass.kind) &&
+		noWorse(finish.drawing, settled.drawing, pass.excused(found))
 		? finish
 		: settled;
+}
+
+/**
+ * A settled drawing finished by every pass in turn.
+ * @param settled The settled drawing and its reading.
+ * @param reroute Routes a reading's placement once more asking for more; nothing when a label finds no box.
+ * @returns The finished drawing and its reading.
+ */
+export function finished<Reading>(
+	settled: Finish<Reading>,
+	reroute: (reading: Reading, request: RouteRequest) => Promise<Finish<Reading> | undefined>,
+): Promise<Finish<Reading>> {
+	return FINISHING_PASSES.reduce(
+		(earlier, pass) =>
+			earlier.then((finish) =>
+				finishedBy(finish, pass, (request) => reroute(finish.reading, request)),
+			),
+		Promise.resolve(settled),
+	);
 }

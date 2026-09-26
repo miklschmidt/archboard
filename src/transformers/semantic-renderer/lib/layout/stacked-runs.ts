@@ -147,36 +147,54 @@ function linesOf(drawing: ArchitectureDrawing): Line[] {
 }
 
 /**
- * Which side of its track a run's line takes at one end of a stretch.
- * @param run The run.
- * @param end Where the stretch ends along the run.
- * @returns -1 or 1 for the side the line turns to there, 0 when it runs on along the track or ends.
+ * The pairs of unrelated lines a drawing draws on one stroke, where a reader
+ * cannot tell which line goes where.
+ * @param drawing The drawing.
+ * @returns One key for every stack, naming its two lines.
  */
-function sideAt(run: Run, end: number): number {
-	const [across, , along] = AXES[run.vertical ? "vertical" : "horizontal"];
-	const { points } = run.line;
-	const corner = [run.index, run.index + 1].find(
-		(index) => Math.abs(points[index]![along] - end) < 0.5,
+export function stackKeys(drawing: ArchitectureDrawing): string[] {
+	return stacksOf(linesOf(drawing)).map(({ runs }) =>
+		runs
+			.map(({ line }) => line.id)
+			.toSorted()
+			.join("|"),
 	);
-	if (corner === undefined) return 0;
-	const beyond = points[corner === run.index ? corner - 1 : corner + 1];
-	return beyond === undefined ? 0 : Math.sign(beyond[across] - run.at);
 }
 
 /**
- * How many crossings a drawing hides in its stacks: two lines that share a
- * stroke and leave it each on the side the other came from cross inside it,
- * where no reader can see them, so parting them shows a crossing that was
- * always there.
- * @param drawing The drawing.
- * @returns The hidden crossings.
+ * Whether a corner of one line lies on another line's stroke.
+ * @param corner The corner.
+ * @param run A run of another line.
+ * @returns True when they meet, where they read as a junction.
  */
-export function stackCrossings(drawing: ArchitectureDrawing): number {
-	return stacksOf(linesOf(drawing)).filter(({ runs: [one, other], from, to }) => {
-		const low = sideAt(one, from) - sideAt(other, from);
-		const high = sideAt(one, to) - sideAt(other, to);
-		return low * high < 0;
-	}).length;
+function meets(corner: Point, run: Run): boolean {
+	const [across, , along] = AXES[run.vertical ? "vertical" : "horizontal"];
+	return (
+		Math.abs(corner[across] - run.at) <= ONE_STROKE &&
+		corner[along] >= run.from - ONE_STROKE &&
+		corner[along] <= run.to + ONE_STROKE
+	);
+}
+
+/**
+ * The pairs of unrelated lines a drawing lets touch: a corner of one on the
+ * other's stroke reads as a junction that joins them (Board persistence's
+ * "every current binding's file" turning where "rename transition" turns).
+ * @param drawing The drawing.
+ * @returns One key for every touching pair, naming its two lines.
+ */
+export function touchKeys(drawing: ArchitectureDrawing): string[] {
+	const lines = linesOf(drawing);
+	const runs = lines.map(runsOf);
+	return lines.flatMap((line, index) =>
+		lines.flatMap((other, at) =>
+			at === index ||
+			related(line, other) ||
+			!line.points.slice(1, -1).some((corner) => runs[at]!.some((run) => meets(corner, run)))
+				? []
+				: [[line.id, other.id].toSorted().join("|")],
+		),
+	);
 }
 
 /**

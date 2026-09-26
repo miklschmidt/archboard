@@ -1,0 +1,141 @@
+{
+	"nodes": [
+		{
+			"id": "a",
+			"name": "Grading session",
+			"kind": "module",
+			"responsibility": "Stages a read-only workspace and grades the ungraded runs in chunks, in one resumed session of the grader chosen by name",
+			"order": 12000
+		},
+		{
+			"id": "b",
+			"name": "Codex grader",
+			"kind": "module",
+			"responsibility": "One grader runner: a resumed thread, pictures attached, usage read as the thread's running total",
+			"order": 13000
+		},
+		{
+			"id": "c",
+			"name": "Claude grader",
+			"kind": "module",
+			"responsibility": "The other grader runner: a resumed session, read-only tools, pictures opened from the workspace",
+			"order": 14000
+		},
+		{
+			"id": "d",
+			"name": "Report",
+			"kind": "module",
+			"responsibility": "Joins every run with the verdict of each grader that graded it, and says where two graders agree",
+			"order": 15000
+		},
+		{
+			"id": "e",
+			"name": "Codex CLI",
+			"kind": "external",
+			"responsibility": "The author, and one of the two graders; pinned to an exact version a batch refuses to differ from",
+			"order": 19000
+		},
+		{
+			"id": "f",
+			"name": "Claude CLI",
+			"kind": "external",
+			"responsibility": "The other grader, run with read-only tools and none of the operator's settings",
+			"order": 20000
+		},
+		{
+			"id": "g",
+			"name": "Skill citations",
+			"kind": "module",
+			"responsibility": "Keeps the batch's copy of the candidate skill, and holds every cited passage, catalogue row and rubric section to a heading the skill has",
+			"order": 2500
+		},
+		{
+			"id": "h",
+			"name": "Grader retry",
+			"kind": "module",
+			"responsibility": "Holds each answer to what the report reads, and asks once more in the same session for the runs an answer fell short on",
+			"order": 12500
+		},
+		{
+			"id": "i",
+			"name": "Comparison",
+			"kind": "module",
+			"responsibility": "Per scenario, per workflow and for the broad case: what moved between the arms, a mean held to the noise the batch measures in itself",
+			"order": 15500
+		}
+	],
+	"edges": [
+		{
+			"id": "e0",
+			"from": "a",
+			"to": "b",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "one chunk of blinded runs",
+			"order": 16000
+		},
+		{
+			"id": "e1",
+			"from": "a",
+			"to": "c",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "one chunk of blinded runs",
+			"order": 17000
+		},
+		{
+			"id": "e2",
+			"from": "b",
+			"to": "e",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "resume the grading thread",
+			"order": 18000
+		},
+		{
+			"id": "e3",
+			"from": "c",
+			"to": "f",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "resume the grading session",
+			"order": 19000
+		},
+		{
+			"id": "e4",
+			"from": "d",
+			"to": "a",
+			"kind": "data",
+			"emphasis": "normal",
+			"label": "each grader's filed verdicts",
+			"order": 20000
+		},
+		{
+			"id": "e5",
+			"from": "a",
+			"to": "h",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "which answers fell short",
+			"order": 33000
+		},
+		{
+			"id": "e6",
+			"from": "d",
+			"to": "i",
+			"kind": "call",
+			"emphasis": "hero",
+			"label": "one grader's report",
+			"order": 35000
+		},
+		{
+			"id": "e7",
+			"from": "d",
+			"to": "g",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "resolve each finding's passage",
+			"order": 38000
+		}
+	]
+}

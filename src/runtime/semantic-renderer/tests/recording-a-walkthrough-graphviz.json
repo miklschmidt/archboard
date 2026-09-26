@@ -1,0 +1,142 @@
+{
+	"nodes": [
+		{
+			"id": "a",
+			"name": "Browser client",
+			"kind": "service",
+			"responsibility": "The viewer: it owns the camera, the active view, the walkthrough position and what somebody picked out, and writes nothing",
+			"order": 1000
+		},
+		{
+			"id": "b",
+			"name": "Application composition",
+			"kind": "module",
+			"responsibility": "Connects pane and feature owners",
+			"parent": "a",
+			"order": 2000
+		},
+		{
+			"id": "c",
+			"name": "Semantic viewer",
+			"kind": "module",
+			"responsibility": "Reads and explores rendered boards",
+			"parent": "a",
+			"order": 3000
+		},
+		{
+			"id": "d",
+			"name": "Voice session",
+			"kind": "module",
+			"responsibility": "The live voice this tab holds for one pane: availability, start and stop, mute, recovery",
+			"parent": "a",
+			"order": 8000
+		},
+		{
+			"id": "e",
+			"name": "Agent setup",
+			"kind": "module",
+			"responsibility": "Talking needs no setup: a message or Talk is held and carried through sign-in, Codex starting and the conversation's creation",
+			"parent": "a",
+			"order": 14000
+		},
+		{
+			"id": "f",
+			"name": "Voice subtitles",
+			"kind": "service",
+			"responsibility": "The voice's words over the pane it runs for, measured into two lines",
+			"parent": "a",
+			"order": 16000
+		},
+		{
+			"id": "g",
+			"name": "Walkthrough recording",
+			"kind": "module",
+			"responsibility": "A page recording one walkthrough: it captures its own tab, mixes the voice into the file, and moves the pane a step at a time as the voice paces it",
+			"parent": "a",
+			"order": 17000
+		}
+	],
+	"edges": [
+		{
+			"id": "e0",
+			"from": "b",
+			"to": "c",
+			"kind": "render",
+			"emphasis": "hero",
+			"label": "one stage per pane",
+			"order": 11000
+		},
+		{
+			"id": "e1",
+			"from": "b",
+			"to": "e",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "send, Talk, narrate",
+			"order": 24000
+		},
+		{
+			"id": "e2",
+			"from": "e",
+			"to": "d",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "start voice",
+			"order": 26000
+		},
+		{
+			"id": "e3",
+			"from": "b",
+			"to": "d",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "a session for voice's pane; mute, stop",
+			"order": 27000
+		},
+		{
+			"id": "e4",
+			"from": "b",
+			"to": "f",
+			"kind": "render",
+			"emphasis": "normal",
+			"label": "over voice's pane",
+			"order": 29000
+		},
+		{
+			"id": "e5",
+			"from": "b",
+			"to": "g",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "the recorder, when the address asks",
+			"order": 30000
+		},
+		{
+			"id": "e6",
+			"from": "g",
+			"to": "e",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "Talk, as a recording",
+			"order": 31000
+		},
+		{
+			"id": "e7",
+			"from": "g",
+			"to": "d",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "live and loud yet; stop",
+			"order": 32000
+		},
+		{
+			"id": "e8",
+			"from": "g",
+			"to": "c",
+			"kind": "data",
+			"emphasis": "normal",
+			"label": "the step to show",
+			"order": 33000
+		}
+	]
+}

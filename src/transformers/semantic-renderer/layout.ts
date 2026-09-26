@@ -16,6 +16,9 @@ export {
 } from "@/transformers/semantic-renderer/lib/layout/label-runs";
 export { publishRoutes } from "@/transformers/semantic-renderer/lib/layout/avoid-routes";
 export { routeGraph } from "@/transformers/semantic-renderer/lib/layout/route-graph";
+export { tidierSettlement } from "@/transformers/semantic-renderer/lib/layout/even-pins";
+export { finished } from "@/transformers/semantic-renderer/lib/layout/finishing";
+export { clearerDrawing } from "@/transformers/semantic-renderer/lib/layout/label-clearance";
 export { requestOptions } from "@/transformers/semantic-renderer/lib/layout/route-requests";
 export { EndpointOptions } from "@/transformers/semantic-renderer/lib/layout/endpoint-options";
 export {
