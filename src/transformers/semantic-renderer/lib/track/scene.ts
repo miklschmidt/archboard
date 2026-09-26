@@ -292,6 +292,28 @@ class Scene {
 	}
 
 	/**
+	 * The title band of every group region a label box reaches down into: its
+	 * caption row, the region's whole width, where the box stands level with
+	 * the caption. A label moved sideways keeps a card's clearance from them.
+	 * @param label The label box.
+	 * @returns Each title band, as an item on the caption's band.
+	 */
+	titleBandsFor(label: Item): Item[] {
+		const [top, bottom] = [label.box.y, label.box.y + label.box.height];
+		return this.regions
+			.filter(
+				({ caption: { band, box } }) =>
+					band === label.band &&
+					top < box.y + box.height + ROW_MARGIN &&
+					bottom > box.y - ROW_MARGIN,
+			)
+			.map(({ box, caption }) => ({
+				box: { ...caption.box, x: box.x, width: box.width },
+				band: caption.band,
+			}));
+	}
+
+	/**
 	 * The last band a frame covers.
 	 * @param id The frame.
 	 * @returns Its lowest member's band.
