@@ -31,9 +31,10 @@ has no placing group. Board-level cards count as one container. A group id the
 configuration does not define never places a card.
 
 **The cards placed with one group in one container are gathered into a
-region.** The layout draws each such region as a faint band tinted with the
-group's colour and captioned with the group's name. Lines may cross a region,
-and a column fold never splits one.
+region.** The layout draws each such region as an outline in the group's
+colour, twice as wide as a card's border and with no fill, captioned with the
+group's name (the user chose the outline over a tinted band on 2026-09-26).
+Lines may cross a region, and a column fold never splits one.
 
 **A card's body colour comes from its placing group.** Its border and tint are
 the group's colour, and a card with no placing group is neutral. The icon chip

@@ -58,8 +58,8 @@ part in and the part does not list is a membership the board lacks.
 Groups carry the color of the cards. Every configured group has a required
 `color` from the curated palette. A card is placed with its first group, in
 `config.yaml` order, that another drawn card in the same container shares; the
-cards placed with one group in one container are gathered into a region tinted
-with that group's color, and each takes its body color from it. A card placed
+cards placed with one group in one container are gathered into a region
+outlined in that group's color, and each takes its body color from it. A card placed
 with no group is neutral. A container's kind colors only the container, never
 the cards inside it, and each node's icon chip says its own kind
 (`nodeKinds.<kind>.color`). Color is configuration, never on a board or a node:
