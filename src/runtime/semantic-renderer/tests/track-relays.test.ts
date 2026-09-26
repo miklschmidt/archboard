@@ -4,16 +4,26 @@
 // a card inside a frame run round the outside of another card because it was
 // kept out of the frame it ends in, and a labelled line run out to the edge
 // of the drawing and back because its label's band had room only there, and
-// a line into a group region run out beside the region to its label and back.
+// a line into a group region run out beside the region to its label and back,
+// and two lines into one block whose ports Graphviz stood beside the block's
+// header drawn end to end a few points apart, so that they read as one.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
-import { routeLabels, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import {
+	corridorPoints,
+	routeLabels,
+	routePoints,
+} from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import frameDrop from "./frame-drop.json";
 import labelBand from "./label-band.json";
 import regionLabel from "./region-label.json";
+import stackedPorts from "./stacked-ports.json";
+
+/** The spacing of neighbouring lanes. */
+const LANE = 16;
 
 /** The vocabulary the fixtures reduced from dogfood boards draw with, its groups in the vault's order. */
 const policy = SemanticPolicySchema.parse({
@@ -35,6 +45,9 @@ const policy = SemanticPolicySchema.parse({
 		writes: { name: "Board writes", color: "orange" },
 		drawing: { name: "Drawing", color: "violet" },
 		walkthrough: { name: "Walkthroughs", color: "cyan" },
+		voice: { name: "Voice", color: "yellow" },
+		workhorse: { name: "Workhorse", color: "sky" },
+		child: { name: "Codex child", color: "indigo" },
 	},
 });
 
@@ -75,6 +88,36 @@ test("a line into a group region keeps its label between its ends", async () => 
 	expect(label.x + label.width).toBeLessThanOrEqual(
 		Math.max(...ends.map(({ x, width }) => x + width)),
 	);
+});
+
+// Reduced from a dogfood board, names replaced: two lines entered a group
+// region's block by top ports Graphviz stood right of the block's header,
+// far from the lines' labels; nothing moved the ports, and one line's drop off
+// its port stood end to end with the other's drop into its label.
+test("lines into a block by its own ports never stand end to end", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(stackedPorts),
+		theme: "light",
+		layout: "track",
+		policy,
+	});
+	const uprights = [...corridorPoints(drawing.svg)].flatMap(([id, points]) =>
+		points.slice(1).flatMap((end, index) => {
+			const start = points[index]!;
+			const upright = start.x === end.x && Math.abs(start.y - end.y) > 0.5;
+			return upright
+				? [{ id, x: end.x, top: Math.min(start.y, end.y), bottom: Math.max(start.y, end.y) }]
+				: [];
+		}),
+	);
+	for (const one of uprights)
+		for (const other of uprights.filter(({ id }) => id !== one.id)) {
+			const gap = other.top - one.bottom;
+			// A trunk's lines share one column exactly; a few points apart is two lines.
+			const apart = Math.abs(one.x - other.x);
+			const lined = apart >= 0.5 && apart < LANE / 2 && gap > 0 && gap <= 3 * LANE;
+			expect(lined, `${one.id} runs on into ${other.id}`).toBe(false);
+		}
 });
 
 /**

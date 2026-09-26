@@ -507,6 +507,39 @@ function nudgeLabel(scene: Scene, nets: readonly Net[], item: Item, x: number): 
 }
 
 /**
+ * Slide a block's own port along the block's edge to an x, when only this net
+ * runs through it, the x is on its stretch, and it keeps a lane from the
+ * block's other sliding ports.
+ * @param scene The scene.
+ * @param nets Every net.
+ * @param net The net through the port.
+ * @param end Which of its ends is the port.
+ * @param x The x.
+ * @returns Whether it moved.
+ */
+function slidePort(
+	scene: Scene,
+	nets: readonly Net[],
+	net: Net,
+	end: "top" | "bottom",
+	x: number,
+): boolean {
+	const item = net[end].item!;
+	const [low, high] = scene.slides.get(item)!;
+	const shared = nets.some(
+		(other) => other !== net && (other.top.item === item || other.bottom.item === item),
+	);
+	const crowded = [...scene.slides.keys()].some(
+		(other) => other !== item && other.band === item.band && Math.abs(centreX(other) - x) < LANE,
+	);
+	if (x < low || x > high || shared || crowded) return false;
+	item.box = { ...item.box, x: x - item.box.width / 2 };
+	if (end === "top") net.topX = x;
+	else net.bottomX = x;
+	return true;
+}
+
+/**
  * The x of every lane, by the band it passes.
  * @param scene The placed scene.
  * @param nets Every net.
@@ -522,4 +555,4 @@ function lanesByBand(scene: Scene, nets: readonly Net[]): number[][] {
 	return lanes;
 }
 
-export { extentOf, nudgeLabel, settleLabels, slideLabels };
+export { extentOf, nudgeLabel, settleLabels, slideLabels, slidePort };

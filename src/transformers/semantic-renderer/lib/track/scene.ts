@@ -109,6 +109,12 @@ class Scene {
 	private readonly walls = new Map<number, ReadonlyMap<string, readonly [number, number]>>();
 	readonly regions: Region[] = [];
 	readonly bands: Band[] = [];
+	/**
+	 * A block's own ports that may still slide along its top or bottom edge,
+	 * each with the stretch it may stand on: while the block is first routed,
+	 * nothing outside it has read where they stand.
+	 */
+	readonly slides = new Map<Item, readonly [number, number]>();
 
 	/**
 	 * Read every placed item and group them into bands by their centres.

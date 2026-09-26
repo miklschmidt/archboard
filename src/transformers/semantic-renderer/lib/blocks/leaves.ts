@@ -2,6 +2,9 @@
 // off: the header in its corner, with the ports on its rank beside it.
 import type { ElkNode } from "@archboard/elk-rs";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
+import { extentOf } from "@/transformers/semantic-renderer/lib/track/labels";
+import type { Scene } from "@/transformers/semantic-renderer/lib/track/scene";
+import type { Block } from "@/transformers/semantic-renderer/lib/blocks/tree";
 
 /**
  * Whether two leaves share some height.
@@ -35,4 +38,24 @@ function cornerHeader(leaves: readonly ElkNode[], id: string): void {
 	}
 }
 
-export { cornerHeader };
+/**
+ * Let a block's own top and bottom ports slide along its edge while it is
+ * first routed: Graphviz stands them beside the header, which may hold a
+ * port away from its line, and a port may then move onto that line's column.
+ * A top port keeps clear of the header, as a settled one does.
+ * @param scene The block's scene, whose sliding ports are set.
+ * @param block The block.
+ */
+function letPortsSlide(scene: Scene, block: Block): void {
+	const [left, right] = extentOf(scene);
+	const clear = block.header === undefined ? left : Math.max(left, block.header.width + LANE);
+	const faces = [...block.ports].filter(([, side]) => side === "top" || side === "bottom");
+	for (const [port, side] of faces) {
+		const item = scene.cards.get(port);
+		if (item === undefined) continue;
+		const low = side === "top" ? clear : left;
+		scene.slides.set(item, [low, Math.max(low, right)]);
+	}
+}
+
+export { cornerHeader, letPortsSlide };
