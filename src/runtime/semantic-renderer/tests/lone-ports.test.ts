@@ -1,15 +1,28 @@
-// A port alone on a card face stands clear of the face's corners. Every
+// A line end and a label keep clear of what is not theirs. Every
 // relationship channel at a card has one slot along the whole card, and a
 // port alone on its face used to keep that slot: the last of five channels
 // left its face 8.8 px from the corner while the middle was free, and its
-// label hung past the card. What this catches: the Graphviz engine leaving a
-// lone port in its card-wide slot beside a corner.
+// label hung past the card. A reserved label is an obstacle the router kept
+// lines only its buffer from, so another line could pass 8 px from it, where
+// a label on its own run keeps 12.
+// What this catches: the Graphviz engine leaving a lone port in its
+// card-wide slot beside a corner, and routing a line past a reserved label
+// closer than a label's clearance.
 
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
-import { ROUTE_NUDGE_DISTANCE } from "@/transformers/semantic-renderer/config";
+import {
+	LABEL_ROUTE_CLEARANCE,
+	ROUTE_NUDGE_DISTANCE,
+} from "@/transformers/semantic-renderer/config";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { routePoints, type DrawnPoint } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import {
+	corridorPoints,
+	distanceToRoute,
+	routeLabels,
+	routePoints,
+	type DrawnPoint,
+} from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import archboard from "./archboard.json";
 
@@ -77,6 +90,21 @@ test("a port alone on a card face keeps its nudging distance from the corners", 
 		([, corners]) =>
 			corners.every((corner) => Math.abs(corner - corners[0]!) < 1) &&
 			corners[0]! < ROUTE_NUDGE_DISTANCE - 0.5,
+	);
+	expect(crowded).toEqual([]);
+});
+
+test("a reserved label keeps a label's clearance from every other line", async () => {
+	const content = orderedFixture(archboard);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "graphviz" });
+	const routes = corridorPoints(drawn.svg);
+	const crowded = [...routeLabels(drawn.svg)].flatMap(([label, box]) =>
+		[...routes]
+			.filter(
+				([line, points]) =>
+					line !== label && distanceToRoute(box, points) < LABEL_ROUTE_CLEARANCE - 0.5,
+			)
+			.map(([line]) => `${label}<-${line}`),
 	);
 	expect(crowded).toEqual([]);
 });

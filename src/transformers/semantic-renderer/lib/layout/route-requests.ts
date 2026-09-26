@@ -18,6 +18,8 @@ const RouteRequestSchema = z.object({
 	laneChannels: z.boolean().default(false),
 	/** Reserved labels move onto the channel their cards share (label-centring.ts). */
 	centredLabels: z.boolean().default(false),
+	/** Reserved labels keep the clearance of a label on its own run from other lines (routing-clearance.ts). */
+	labelClearance: z.boolean().default(false),
 	/** A port alone on a face near its corner moves to the face's middle (lone-pins.ts). */
 	centredPorts: z.boolean().default(false),
 	/** Line ends refused a face, as line:card:FACE, so unrelated lines on one stroke part (stacked-runs.ts). */

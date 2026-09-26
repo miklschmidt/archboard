@@ -12,6 +12,7 @@
 // Only the finishing pass that cures such side exits asks for it
 // (finishing.ts): moved in every routing pass, labels would change which
 // labels stay reserved, and so the placements.
+import { requestOf } from "@/transformers/semantic-renderer/lib/layout/route-requests";
 import type { ElkExtendedEdge, ElkLabel, ElkNode } from "@archboard/elk-rs";
 import {
 	CONTAINER_INSET,
@@ -20,7 +21,7 @@ import {
 } from "@/transformers/semantic-renderer/config";
 import { boxesOverlap, boxOf } from "@/transformers/semantic-renderer/lib/layout/avoid-geometry";
 import {
-	ANCHOR_CARD_CLEARANCE,
+	anchorClearance,
 	CARD_ROUTE_CLEARANCE,
 } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 import { inflate, type Box } from "@/transformers/semantic-renderer/lib/geometry";
@@ -45,6 +46,8 @@ interface Page {
 	readonly cards: ReadonlyMap<string, Box>;
 	readonly frames: readonly (ElkNode & Box)[];
 	readonly labels: readonly Reserved[];
+	/** How far a forced label keeps from a card (routing-clearance.ts). */
+	readonly anchorAir: number;
 }
 
 /**
@@ -127,7 +130,7 @@ function pageOf(graph: ElkNode): Page {
 		nodes.filter((node) => !node.children?.length).map((node) => [node.id, boxOf(node)]),
 	);
 	const labels = (graph.edges ?? []).flatMap((edge) => reservedOf(edge, frames, graph.width ?? 0));
-	return { cards, frames, labels };
+	return { cards, frames, labels, anchorAir: anchorClearance(requestOf(graph)) };
 }
 
 /**
@@ -201,7 +204,7 @@ function fits(page: Page, row: readonly Reserved[], xs: readonly number[]): bool
 			height: Number(frame.layoutOptions?.["archboard.header.size"] ?? 0),
 		})),
 		...page.labels.filter((other) => other.row !== row[0]!.row).map(({ box }) => box),
-	].map((box) => inflate(box, ANCHOR_CARD_CLEARANCE));
+	].map((box) => inflate(box, page.anchorAir));
 	return row.every(({ box, span }, index) => {
 		const moved = { ...box, x: xs[index]! };
 		return (

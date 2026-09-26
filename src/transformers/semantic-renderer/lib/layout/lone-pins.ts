@@ -13,7 +13,7 @@
 // would otherwise take the shorter seed another face offers near the corner. Which drawings
 // are routed so is the finishing step's choice (finishing.ts).
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
-import { ROUTE_OBSTACLE_CLEARANCE } from "@/transformers/semantic-renderer/config";
+import { LABEL_ROUTE_CLEARANCE } from "@/transformers/semantic-renderer/config";
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import { inflate, type Box, type Point } from "@/transformers/semantic-renderer/lib/geometry";
 import {
@@ -180,7 +180,7 @@ function sweepClear(
 		: { x: run.from, y: low, width: run.to - run.from, height: high - low };
 	const labels = edges
 		.filter((edge) => !mine.has(edge.id) && forcedLabel(edge))
-		.map((edge) => inflate(boxOf(edge.labels![0]!), ROUTE_OBSTACLE_CLEARANCE));
+		.map((edge) => inflate(boxOf(edge.labels![0]!), LABEL_ROUTE_CLEARANCE));
 	return (
 		cardsClear(nodes, run, sweep) &&
 		labels.every((label) => !boxesOverlap(sweep, label)) &&

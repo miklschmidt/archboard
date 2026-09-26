@@ -9,12 +9,16 @@ import {
 } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 import {
 	ROUTE_NUDGE_DISTANCE,
+	LABEL_ROUTE_CLEARANCE,
 	ROUTE_OBSTACLE_CLEARANCE,
 } from "@/transformers/semantic-renderer/config";
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import { candidates } from "@/transformers/semantic-renderer/lib/layout/straight-candidates";
 import { centreLonePins } from "@/transformers/semantic-renderer/lib/layout/lone-pins";
-import type { Requested } from "@/transformers/semantic-renderer/lib/layout/route-requests";
+import {
+	requestOf,
+	type Requested,
+} from "@/transformers/semantic-renderer/lib/layout/route-requests";
 import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
 import {
 	boxOf,
@@ -30,10 +34,10 @@ export type AlignedPin = { face: Face; position: number };
 export type AlignedPins = Map<string, Map<string, AlignedPin[]>>;
 
 /** What a route request asks of the pins offered (route-requests.ts). */
-type PinRequest = Pick<Requested, "cornerPins" | "laneChannels" | "centredPorts">;
+type PinRequest = Omit<Requested, "clearWalls">;
 
 /** Pins asked for nothing beyond the ordinary. */
-const ORDINARY_PINS: PinRequest = { cornerPins: false, laneChannels: false, centredPorts: false };
+const ORDINARY_PINS: PinRequest = requestOf({ id: "ordinary" });
 
 /**
  * Read physical alternatives in a shared endpoint channel.
@@ -274,6 +278,14 @@ class PinCandidates {
 	}
 
 	/**
+	 * How far a channel keeps from a foreign reserved label: as far as native routing does.
+	 * @returns The label clearance when the routes ask for it, else the router's buffer.
+	 */
+	private labelAir(): number {
+		return this.request.labelClearance ? LABEL_ROUTE_CLEARANCE : ROUTE_OBSTACLE_CLEARANCE;
+	}
+
+	/**
 	 * Aligned channels must clear the same foreign label obstacles as native routing.
 	 * @param segment Proposed physical channel.
 	 * @param ownId Its relationship, whose own label is traversable.
@@ -284,7 +296,7 @@ class PinCandidates {
 			if (edge.id === ownId || edge.layoutOptions?.["archboard.route-label"] !== "true")
 				return true;
 			return (edge.labels ?? []).every(
-				(label) => !boxesOverlap(segment, inflate(boxOf(label), ROUTE_OBSTACLE_CLEARANCE)),
+				(label) => !boxesOverlap(segment, inflate(boxOf(label), this.labelAir())),
 			);
 		});
 	}
