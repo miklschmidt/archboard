@@ -191,3 +191,25 @@ test("a label moved onto its line keeps out of a group region's title band", asy
 			expect(boxesOverlap(label, title), `${id} in the title band of ${group}`).toBeFalse();
 	}
 });
+
+// Reduced from a real ingress board, names replaced: a container gathered
+// with its own members into one group region, and a line into the container
+// itself. Settling the region's pins read a box for the container, which is
+// no card of the region's block, and the drawing failed.
+test("a line into a container grouped with its members is drawn", async () => {
+	const drawn = await renderArchitecture({
+		content: orderedFixture({
+			nodes: [
+				{ id: "gate", name: "Gateway", kind: "service" },
+				{ id: "host", name: "Web host", kind: "service", groups: ["state"] },
+				{ id: "one", name: "First site", kind: "module", parent: "host", groups: ["state"] },
+				{ id: "two", name: "Second site", kind: "module", parent: "host", groups: ["state"] },
+			],
+			edges: [{ id: "in", from: "gate", to: "host", kind: "call", label: "falls back to" }],
+		}),
+		theme: "light",
+		policy,
+		layout: "track",
+	});
+	expect(routePoints(drawn.svg).get("in")?.length).toBeGreaterThan(1);
+});
