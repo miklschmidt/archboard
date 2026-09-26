@@ -169,7 +169,7 @@ function bestWrap(
 	// A wrap that sinks a card stands it off on a late rank, away from its
 	// neighbours; it may fit the page better, but it is no wrap.
 	const wraps = wrapsOf(laying.whole, block, tree).flatMap((lowered) =>
-		[false, true]
+		columnChoices(lowered, tree.nesting)
 			.map((columns) =>
 				new CardLayout(block, laid, tree, insets, { lowered, stacked, columns }).lay(viz),
 			)
@@ -180,6 +180,21 @@ function bestWrap(
 		undefined,
 	);
 	return best !== undefined && scored(best) > scored(laying.whole) * worth ? best : undefined;
+}
+
+/**
+ * Whether a wrap's rows may be laid with their columns free, as well as held.
+ * Left free, a lowered card is pushed aside by the lines to every row below
+ * it, so on the track engine's ranks a wrap deeper than two rows steps down
+ * diagonally: it keeps its columns. The blocks engine packs such a block
+ * among others, where holding its columns drew more crossings than it saved.
+ * @param lowered How far each wrapped item is lowered.
+ * @param nesting How the board's containers and group regions are drawn.
+ * @returns The choices to lay the wrap with.
+ */
+function columnChoices(lowered: ReadonlyMap<string, number>, nesting: Nesting): boolean[] {
+	const deep = Math.max(0, ...lowered.values()) > 1;
+	return deep && nesting !== "blocks" ? [true] : [false, true];
 }
 
 /**
