@@ -12,6 +12,7 @@ import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
 import {
 	SAME,
 	moved,
+	leftShortOf,
 	type Insets,
 	type Laid,
 } from "@/transformers/semantic-renderer/lib/blocks/laid";
@@ -53,8 +54,9 @@ const WORTH_LAYING = 0.8;
 interface Packing {
 	readonly across: boolean;
 	readonly groups: readonly (readonly number[])[];
-	/** Room between two packed blocks, when their trunks need more than the least. */
+	/** Room between two packed blocks, and left of them, when trunks need more than the least. */
 	readonly gap?: number;
+	readonly margin?: number;
 }
 
 /**
@@ -117,6 +119,8 @@ class PackLayout {
 	held = 0;
 	/** Room between two packed blocks, for the trunks that pass between them. */
 	gap = PACK_GAP;
+	/** Room left of the packed blocks, for trunks that run round the leftmost. */
+	margin = 0;
 
 	/**
 	 * Start the layout of a block of blocks.
@@ -221,10 +225,11 @@ class PackLayout {
 	}
 
 	/**
-	 * Place the items packed one way, each group centred along its row or column and aligned across it.
+	 * Place the items packed one way, with its room, each group centred along its row or column and aligned across it.
 	 * @param packing The packing.
 	 */
 	place(packing: Packing): void {
+		[this.gap, this.margin] = [packing.gap ?? PACK_GAP, packing.margin ?? 0];
 		const top = this.insets.top + this.headRoom();
 		const size = this.sizeOf(packing);
 		const length = packing.across ? size.width : size.height;
@@ -239,7 +244,7 @@ class PackLayout {
 				const cross = deep;
 				const [x, y] = packing.across ? [along, cross] : [cross, along];
 				this.boxes.set(this.block.items[index]!, {
-					x: this.insets.side + x,
+					x: this.insets.side + this.margin + x,
 					y: top + y,
 					width,
 					height,
@@ -380,10 +385,9 @@ class PackLayout {
 	}
 
 	/**
-	 * Where one of the block's own ports wants to stand: over or under the
-	 * pins its lines reach, on a stretch of its edge that no other packed
-	 * block stands against, a lane clear of their sides, since a trunk
-	 * reaches a port under a block only round it.
+	 * Where one of the block's own ports wants to stand: over or under the pins its lines reach,
+	 * on a stretch of its edge that no other packed block stands against, a lane clear of their
+	 * sides, since a trunk reaches a port under a block only round it.
 	 * @param port The port.
 	 * @param at Its edge, the height it stands at, and the stretch it may stand on.
 	 * @param at.side The edge.
@@ -475,23 +479,21 @@ class PackLayout {
 	}
 
 	/**
-	 * The block as laid out, or laid out again with wider gaps when its
-	 * trunks crowd a gap closer than a lane apart.
+	 * The block as laid out, or again with wider gaps where its trunks crowd one
+	 * closer than a lane apart, and room on its left where one runs nearer its left wall than its inset.
 	 * @param avoid The initialized libavoid module.
 	 * @param laid The block as this layout laid it out.
 	 * @returns The laid-out block.
 	 */
 	widened(avoid: AvoidEngine, laid: Laid & { packing: Packing }): Laid & { packing: Packing } {
-		const room = roomNeeded(
-			this.block.items.map((id) => this.boxes.get(id)!),
-			[...this.lines.values()],
-			this.gap,
-		);
-		if (room <= this.gap) return laid;
+		const boxes = this.block.items.map((id) => this.boxes.get(id)!);
+		const room = roomNeeded(boxes, [...this.lines.values()], this.gap);
+		const short = leftShortOf(this.lines.values(), this.insets.side);
+		if (room <= this.gap && short === 0) return laid;
 		const again = new PackLayout(this.block, this.laid, this.tree, this.insets);
-		again.settled = this.settled;
-		again.held = this.held;
-		return again.layOut(avoid, { ...laid.packing, gap: room });
+		[again.settled, again.held] = [this.settled, this.held];
+		const margin = (laid.packing.margin ?? 0) + short;
+		return again.layOut(avoid, { ...laid.packing, gap: Math.max(room, this.gap), margin });
 	}
 
 	/**
@@ -501,13 +503,12 @@ class PackLayout {
 	 * @returns The laid-out block, and the packing it used.
 	 */
 	layOut(avoid: AvoidEngine, packing: Packing): Laid & { packing: Packing } {
-		this.gap = packing.gap ?? PACK_GAP;
 		this.place(packing);
 		this.alignPins();
 		const size = this.sizeOf(packing);
 		const { side, top } = this.insets;
 		const width = Math.max(
-			Math.max(size.width, this.block.header?.width ?? 0) + 2 * side,
+			Math.max(size.width, this.block.header?.width ?? 0) + 2 * side + this.margin,
 			this.held,
 		);
 		const ended = [...this.block.ports.values()].includes("bottom");

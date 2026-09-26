@@ -145,34 +145,36 @@ test("blocks are packed the way their trunks run, not only the way the page fits
 });
 
 /**
- * Whether a coordinate lies on either of two edges, within a point.
+ * Whether a coordinate lies on either of two edges, within some distance.
  * @param at The coordinate.
- * @param low One edge.
- * @param high The other.
+ * @param edges The two edges.
+ * @param within How near counts as on one.
  * @returns True when it does.
  */
-function on(at: number, low: number, high: number): boolean {
-	return Math.abs(at - low) < 1 || Math.abs(at - high) < 1;
+function on(at: number, edges: readonly [number, number], within: number): boolean {
+	return edges.some((edge) => Math.abs(at - edge) < within);
 }
 
 /**
  * Every route with a run longer than a lane that lies on one of a box's
- * edges, within a point.
+ * edges, within a point or some other distance.
  * @param routes Every route's points.
  * @param box The box.
+ * @param within How near counts as on an edge.
  * @returns The routes' ids.
  */
 function alongWalls(
 	routes: ReadonlyMap<string, readonly { x: number; y: number }[]>,
 	box: { x: number; y: number; width: number; height: number },
+	within = 1,
 ): string[] {
 	return [...routes].flatMap(([id, points]) =>
 		points.slice(1).some((point, index) => {
 			const last = points[index]!;
 			if (point.x === last.x && Math.abs(point.y - last.y) > 16)
-				return on(point.x, box.x, box.x + box.width);
+				return on(point.x, [box.x, box.x + box.width], within);
 			if (point.y === last.y && Math.abs(point.x - last.x) > 16)
-				return on(point.y, box.y, box.y + box.height);
+				return on(point.y, [box.y, box.y + box.height], within);
 			return false;
 		})
 			? [id]
@@ -254,6 +256,15 @@ function steps(points: readonly { x: number; y: number }[]): number[] {
 		runs.slice(1).map((at, index) => Math.abs(at - runs[index]!)),
 	);
 }
+
+// Reduced from a dogfood view: a trunk round the leftmost block of a container
+// ran four points inside the container's left wall, as it keeps from the right.
+test("a trunk round a container's leftmost block keeps the container's inset from its wall", async () => {
+	const content = orderedFixture(workingWithAnAgent);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const inset = alongWalls(routePoints(drawn.svg), drawn.atlas.nodes["yAFyqal3"]!, CONTAINER_INSET);
+	expect(inset).toEqual([]);
+});
 
 test("a trunk between blocks side by side runs straight from wall to wall", async () => {
 	const content = orderedFixture(workingWithAnAgent);
