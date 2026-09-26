@@ -6,11 +6,14 @@
 // container of cards nothing connects drawn as one long row again, a line
 // into a wide container that aims at its middle and comes back to its port,
 // a tall board of containers drawn as one column, or folded through one,
-// containers side by side sharing one border, and a wrapped rank that sinks a
-// card to a late row of its own, away from the cards it stands with.
+// containers side by side sharing one border, a wrapped rank that sinks a
+// card to a late row of its own, away from the cards it stands with, a deep
+// wrap stepping diagonally, stacked cards out of one column or width, cards
+// of one row on different tops, and a small page won by more rows.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import {
 	corridorPoints,
@@ -21,6 +24,7 @@ import {
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import containerDetour from "./container-detour.json";
+import fittingWrap from "./fitting-wrap.json";
 import sunkWrap from "./sunk-wrap.json";
 
 const TARGETS = ["one", "two", "three", "four", "five"];
@@ -311,4 +315,20 @@ test("cards on one rank stand on one top, and the lines into them end there", as
 	expect(short.y).toBe(tall.y);
 	const ends = routeEnds(drawing.svg);
 	expect(ends.get("s")!.y).toBe(ends.get("a")!.y);
+});
+
+// Reduced from a dogfood view, names replaced: a fan too wide for the pane
+// wraps, and a wrap into two rows and a narrower one into three both fit the
+// pane at full scale; the smaller page won, and the fan stepped down three rows.
+test("of two wraps that both fit the pane, the one into fewer rows is kept", async () => {
+	const content = orderedFixture(fittingWrap);
+	const policy = SemanticPolicySchema.parse({
+		levels: ["service"],
+		nodeKinds: { module: { name: "Module", icon: "RiBox3Line" } },
+		relationshipKinds: { call: { name: "Call", dash: "solid", arrowhead: "filled" } },
+		groups: { routes: { name: "Routes", color: "violet" } },
+	});
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
+	const targets = content.edges.map(({ to }) => drawing.atlas.nodes[to]!);
+	expect(new Set(targets.map(({ y }) => y)).size).toBe(2);
 });
