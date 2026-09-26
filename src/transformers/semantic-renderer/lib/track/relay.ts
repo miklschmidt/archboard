@@ -4,16 +4,15 @@
 // so a long line, and the label box on it, can drift to the outermost slot
 // of every rank it passes; its lanes then keep that side, and the line laps
 // the drawing. Once the lanes are straightened, each chain whose middle
-// strays well outside both its ends' reach, or whose line travels sideways
-// well beyond what its ends need, looks for the cheapest free route over the
-// same bands: its lanes on any free column, its label box anywhere free along
-// its own band or a band beside it, each within the scene and inside the
-// frames it stood in, or those its own ends stand in. A route costs its
-// sideways travel and a crossing's worth for each line it crosses, or each
-// trunk; the chain takes the new route only when that saves more than a few
-// lanes. A crossing is worth as much as the detour that makes a lap, so a lap
-// is undone only where each crossing that adds buys back at least that much.
-// A chain kept where it stood is tried again once the others have moved.
+// strays well outside both its ends' reach looks for the cheapest free route
+// over the same bands: its lanes on any free column, its label box anywhere
+// free along its own band or a band beside it, each within the scene and
+// inside the frames it stood in, or those its own ends stand in. A route costs
+// its sideways travel and a crossing's worth for each line it crosses, or
+// each trunk; the chain takes the new route only when that saves more than a
+// few lanes. A crossing is worth as much as the detour that makes a lap, so a
+// lap is undone only where each crossing that adds buys back at least that
+// much. A chain kept where it stood is tried again once the others have moved.
 import {
 	CONTAINER_INSET,
 	LABEL_CARD_CLEARANCE,
@@ -84,9 +83,7 @@ function outside(x: number, span: Span): number {
 
 /**
  * Whether a chain laps: a station between its ends stands more than a
- * couple of lanes outside where either end reaches, or its line travels
- * sideways more than it needs by more than a new route must save: a line
- * that runs out to a label standing between its ends and back laps too.
+ * couple of lanes outside where either end reaches.
  * @param chain The chain.
  * @returns True when it strays.
  */
@@ -94,24 +91,7 @@ function strays(chain: Chain): boolean {
 	const { stations } = chain;
 	const [upper, lower] = [reachOf(stations[0]!), reachOf(stations.at(-1)!)];
 	const span: Span = [Math.min(upper[0], lower[0]), Math.max(upper[1], lower[1])];
-	if (stations.slice(1, -1).some(({ x }) => outside(x, span) > STRAY)) return true;
-	const least = Math.max(0, upper[0] - lower[1], lower[0] - upper[1]);
-	return travelOf(stations) - least > SAVING;
-}
-
-/**
- * How far a chain's line travels sideways, from station to station.
- * @param stations The chain's stations.
- * @returns The travel.
- */
-function travelOf(stations: readonly Station[]): number {
-	return stations
-		.slice(1)
-		.reduce(
-			(sum, lower, index) =>
-				sum + Math.abs(meetsAt(stations[index]!, lower.x) - meetsAt(lower, stations[index]!.x)),
-			0,
-		);
+	return stations.slice(1, -1).some(({ x }) => outside(x, span) > STRAY);
 }
 
 /**
