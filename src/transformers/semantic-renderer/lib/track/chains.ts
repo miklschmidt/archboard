@@ -215,8 +215,11 @@ class Occupancy {
 	) {
 		this.taken = scene.bands.map(() => []);
 		const items = [...scene.cards.values(), ...scene.labels.values()];
-		for (const { box, band } of items.filter((item) => !without.has(item)))
-			this.taken[band]!.push([box.x - LANE, box.x + box.width + LANE]);
+		for (const item of items.filter((one) => !without.has(one))) {
+			const { box, band } = item;
+			const clearance = scene.regionBlocks.has(item) ? REGION_CLEARANCE : LANE;
+			this.taken[band]!.push([box.x - clearance, box.x + box.width + clearance]);
+		}
 		// A title row or caption takes only the room its words are painted in:
 		// a line into its container crosses the row beside them.
 		for (const { band, left, end } of scene.headings())

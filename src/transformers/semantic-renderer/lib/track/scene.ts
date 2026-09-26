@@ -128,6 +128,11 @@ class Scene {
 	 */
 	readonly ports = new Set<Item>();
 	/**
+	 * The blocks of group regions packed whole among the scene's cards, whose
+	 * walls a lane keeps a region's clearance from rather than a card's.
+	 */
+	readonly regionBlocks = new Set<Item>();
+	/**
 	 * Whether the scene's sides are the page's: the whole board drawn inline,
 	 * where a line run beyond everything it holds laps round the drawing.
 	 */
