@@ -87,20 +87,6 @@ test("a crossing within a hop's reach of a bend is cut beneath the straight line
 				{ x: 12, y: 80 },
 			],
 		],
-		// ... or its rounded corner itself crosses the straight route.
-		[
-			[
-				{ x: -20, y: -64 },
-				{ x: 0, y: -64 },
-				{ x: 0, y: 18 },
-				{ x: -8, y: 18 },
-			],
-			[
-				{ x: -100, y: 0 },
-				{ x: 6, y: 0 },
-				{ x: 6, y: 100 },
-			],
-		],
 	]) {
 		const before = drawing(routes);
 		const result = bridgeCrossings(before);
@@ -112,6 +98,54 @@ test("a crossing within a hop's reach of a bend is cut beneath the straight line
 		expect(result.bridges[0]!.under).toEqual(["1"]);
 		expect(straightPiece(result.bridges[0]!.curve)).toBe(true);
 	}
+});
+
+// Board persistence, Board viewer and Voice coordinator: a corner cut beneath
+// a straight line left its route ending where the line past the turn began.
+test("a rounded corner that crosses a straight line stays whole, and the line is cut beneath it", () => {
+	const before = drawing([
+		[
+			{ x: -20, y: -64 },
+			{ x: 0, y: -64 },
+			{ x: 0, y: 18 },
+			{ x: -8, y: 18 },
+		],
+		[
+			{ x: -100, y: 0 },
+			{ x: 6, y: 0 },
+			{ x: 6, y: 100 },
+		],
+	]);
+	const result = bridgeCrossings(before);
+	expect(result.edges).toEqual(before.edges);
+	expect(result.bridges).toHaveLength(1);
+	expect(result.bridges[0]!.edgeId).toBe("1");
+	expect(result.bridges[0]!.under).toEqual(["0"]);
+	const [corner] = result.bridges[0]!.curve.segments;
+	expect(result.bridges[0]!.curve.segments).toHaveLength(1);
+	expect(corner?.kind).toBe("cubic");
+});
+
+// Browser application and Agent workbench: a branch bent off its trunk and
+// hopped a line a few points later, the turn and the hop one squiggle.
+test("a line that turns just before a crossing does not hop it; the line it crosses does", () => {
+	const result = bridgeCrossings(
+		drawing([
+			[
+				{ x: 0, y: 50 },
+				{ x: 200, y: 50 },
+			],
+			[
+				{ x: 40, y: 27 },
+				{ x: 90, y: 27 },
+				{ x: 90, y: 120 },
+			],
+		]),
+	);
+	expect(result.bridges).toHaveLength(1);
+	expect(result.bridges[0]!.edgeId).toBe("0");
+	expect(result.bridges[0]!.under).toEqual(["1"]);
+	expect(result.bridges[0]!.curve.segments.length).toBeGreaterThan(1);
 });
 
 // Browser application and Command interface: two lines twelve apart hopped one
