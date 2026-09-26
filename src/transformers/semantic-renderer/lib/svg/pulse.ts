@@ -1,5 +1,5 @@
 import { type SemanticEdge } from "@/shared/semantic-board/index";
-import { coord, type Point } from "@/transformers/semantic-renderer/lib/geometry";
+import { coord, type Box, type Point } from "@/transformers/semantic-renderer/lib/geometry";
 import {
 	pathOf,
 	pointOnSegment,
@@ -7,6 +7,7 @@ import {
 	type Curve,
 	type Segment,
 } from "@/transformers/semantic-renderer/lib/layout/curves";
+import { restingPlace } from "@/transformers/semantic-renderer/lib/svg/comet-rest";
 import { tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
 	colourId,
@@ -47,6 +48,8 @@ interface Pulse {
 	/** The page the comets are drawn on: its background, its neutral line colour and its text colour. */
 	readonly page: Pick<Palette, "background" | "edge" | "foreground">;
 	readonly traffic: NonNullable<SemanticEdge["traffic"]>;
+	/** Every relationship's label, drawn over the comets: no resting comet sits half under one. */
+	readonly labels: readonly Box[];
 }
 
 /** The longest tail a comet draws, in diagram units, however far apart comets travel. */
@@ -223,12 +226,12 @@ function timecount(seconds: number): string {
  *
  * A dash pattern shifted back by the dash's own length puts the dash's far end
  * on the head, so every layer rides the same clock and stays behind its head
- * on straight and bent routes alike. At rest the heads sit half a spacing
- * apart from the route's ends, so a picture that does not move shows whole
- * comets, never one's glow alone at the card it leaves.
+ * on straight and bent routes alike. At rest the first head sits where
+ * {@link restingPlace} puts it, which is what a picture that does not move shows.
  * @param stream The route, the spacing between comets and their clock.
  * @param stream.path The route.
  * @param stream.spacing How far apart comets travel.
+ * @param stream.rest How far along the route the first head rests.
  * @param stream.seconds How long one comet takes to reach the next one's place.
  * @param layer How long, thick, opaque and in what colour this layer is.
  * @param layer.length How far back from the head it reaches.
@@ -239,7 +242,12 @@ function timecount(seconds: number): string {
  * @returns The layer's path.
  */
 function cometLayer(
-	stream: { readonly path: string; readonly spacing: number; readonly seconds: string },
+	stream: {
+		readonly path: string;
+		readonly spacing: number;
+		readonly rest: number;
+		readonly seconds: string;
+	},
 	layer: {
 		readonly length: number;
 		readonly width: number;
@@ -249,13 +257,14 @@ function cometLayer(
 		readonly moat?: true;
 	},
 ): string {
-	const { path, spacing, seconds } = stream;
+	const { path, spacing, rest, seconds } = stream;
 	const { width, opacity, colour, moat } = layer;
 	// Rounded once, so the dash and its gap add up to exactly one spacing and
 	// the pattern repeats where the clock says it does.
 	const length = Number(coord(layer.length));
-	// Half a spacing on, rather than half back, so the far end of the clock stays finite.
-	const offset = Number(coord(length + spacing / 2));
+	// The dash ends at the rest a spacing on, rather than back, so the far end
+	// of the clock stays finite.
+	const offset = Number(coord(length + spacing - rest));
 	return wrap(
 		"path",
 		{
@@ -292,7 +301,7 @@ function cometLayer(
  * populated at load, and any volume without one element per comet (ADR 0027).
  * The tail is what a round dot never said: which way the relationship flows,
  * even in a picture that does not move.
- * @param pulse Route, line ink, line width and authored traffic.
+ * @param pulse Route, line ink, line width, authored traffic and the labels drawn over it.
  * @returns The animated comet stream, retained in exported SVGs.
  */
 function travellingPulses(pulse: Pulse): string {
@@ -310,7 +319,8 @@ function travellingPulses(pulse: Pulse): string {
 	// ringed by the page, would blunt the arrowhead into a dark block.
 	const ride = shortenedBy(pulse.curve, pulse.headReach + head / 2 + COMET_MOAT);
 	if (ride === undefined) return "";
-	const stream = { path: pathOf(ride), spacing, seconds };
+	const rest = restingPlace(ride, spacing, (head * COMET_GLOW.width) / 2, pulse.labels);
+	const stream = { path: pathOf(ride), spacing, rest, seconds };
 	return wrap(
 		"g",
 		{ class: PULSE_CLASS, "pointer-events": "none" },

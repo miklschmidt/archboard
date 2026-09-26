@@ -8,7 +8,13 @@ import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 import type { DiagramAtlas } from "@/shared/semantic-board/index";
 import type { DrawingEdge, PaintedDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import { DIAGRAM_MARGIN, PILL_RADIUS } from "@/transformers/semantic-renderer/lib/design";
-import { canvasFor, coord, inflate, union } from "@/transformers/semantic-renderer/lib/geometry";
+import {
+	canvasFor,
+	coord,
+	inflate,
+	union,
+	type Box,
+} from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { atlasBoxes } from "@/transformers/semantic-renderer/lib/atlas";
 import { farSizeOf } from "@/transformers/semantic-renderer/lib/measurement";
@@ -153,6 +159,7 @@ function edgeMarker(id: string, head: "filled" | "open" | "none", ink: string): 
  * @param policy Current vault policy.
  * @param mask Optional narrow cutouts beneath higher connections.
  * @param step Whether this line is a flow step drawn on the board, not an authored relationship.
+ * @param labels Every relationship's label, drawn over its traffic marks.
  * @returns The connection group.
  */
 function paintEdgeLine(
@@ -162,6 +169,7 @@ function paintEdgeLine(
 	policy: SemanticPolicy,
 	mask: string | undefined,
 	step: boolean,
+	labels: readonly Box[],
 ): string {
 	const { edge, path } = routed;
 	const styles = stylesFor(palette);
@@ -216,6 +224,7 @@ function paintEdgeLine(
 						lineWidth: width,
 						page: palette,
 						traffic: edge.traffic,
+						labels,
 					}),
 		]),
 	);
@@ -314,6 +323,7 @@ function paintArchitecture(
 	const labelled = edges.flatMap(({ edge, label }) =>
 		label === undefined ? [] : [{ id: edge.id, box: label.box }],
 	);
+	const labels = labelled.map(({ box }) => box);
 	const framed = containers.map(({ measured, box }) => ({ id: measured.node.id, box }));
 	const regioned = (drawing.regions ?? []).map(({ box }) => box);
 	const cardBoxes = cards.map(({ measured, box }) => ({ id: measured.node.id, box }));
@@ -349,6 +359,7 @@ function paintArchitecture(
 				policy,
 				masks.get(edge.edge.id),
 				derived.has(edge.edge.id),
+				labels,
 			),
 		),
 		// Over the lines they join, under the cards and every relationship's words.
