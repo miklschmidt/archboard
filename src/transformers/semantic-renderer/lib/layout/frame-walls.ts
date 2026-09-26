@@ -4,8 +4,10 @@
 // frame's wall, and libavoid, which builds its channels on routing-box edges,
 // runs lines exactly on the wall, where the frame edge takes the line's colour
 // (Board viewer's "draw it here", the Auditlog views). A card facing a wall a
-// route is asked to clear reaches a little further out, so its routing box
-// ends WALL_CLEARANCE beyond the wall and lines keep off it. The reach never
+// route is asked to clear reaches further out, so its routing box ends a lane
+// beyond the wall where the passage has room and lines keep off it: ended half
+// a lane out, a line out of the Auditlog "One timestamp type" view's Portal
+// API frame still traced the frame's outline 8 px off it. The reach never
 // takes more than half of the free passage in front of that face, so a line
 // can still pass between the frame and its neighbour. A passage too narrow to
 // keep a line even half a clearance off the wall can only carry a line along
@@ -24,6 +26,7 @@ import {
 import {
 	CARD_ROUTE_CLEARANCE,
 	CARD_ROUTE_EXPANSION,
+	ROUTE_LANE,
 	WALL_CLEARANCE,
 } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 
@@ -96,13 +99,12 @@ function gapInFront(own: Box, other: Box): number | undefined {
  * @param frame Its frame's box.
  * @param face The face.
  * @param others Footprints of every node outside the frame and not holding it.
- * @returns The extra reach: enough to end a wall clearance outside the wall, within half the free
- * passage in front, and the whole passage when half of it would hold a line too close to the wall.
+ * @returns The extra reach: enough to end a lane outside the wall, within half the free passage in
+ * front, and the whole passage when half of it would hold a line too close to the wall.
  */
 function faceReach(card: Box, frame: Box, face: WallFace, others: readonly Box[]): number {
-	const wanted =
-		turned(card, face).x - turned(frame, face).x + WALL_CLEARANCE - CARD_ROUTE_CLEARANCE;
-	if (wanted <= 0 || wanted >= 2 * WALL_CLEARANCE) return 0;
+	const clear = turned(card, face).x - turned(frame, face).x - CARD_ROUTE_CLEARANCE;
+	if (clear >= ROUTE_LANE || clear <= -WALL_CLEARANCE) return 0;
 	const own = turned(inflate(card, CARD_ROUTE_CLEARANCE), face);
 	const passage = Math.min(
 		...others.flatMap((other) => {
@@ -112,7 +114,7 @@ function faceReach(card: Box, frame: Box, face: WallFace, others: readonly Box[]
 	);
 	const room = (passage - ROUTE_OPEN_CORRIDOR) / 2;
 	if (room < WALL_CLEARANCE / 2) return passage;
-	return Math.min(wanted, room);
+	return Math.min(ROUTE_LANE - clear, room);
 }
 
 /**
