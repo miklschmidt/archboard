@@ -1,17 +1,12 @@
+// Paint measured cards and frames: the words at supplied baselines, near and far.
 import {
 	ARCHITECTURE_CARD_PADDING,
 	ARCHITECTURE_HEADER_PADDING,
 } from "@/transformers/semantic-renderer/config";
-// Paint the measured words at supplied baselines. No fitting happens here.
-import {
-	CARD_RADIUS,
-	BAND_RADIUS,
-	ICON_CHIP_SIZE,
-} from "@/transformers/semantic-renderer/lib/design";
-import { farSizeOf, measureFarTitle } from "@/transformers/semantic-renderer/lib/measurement";
-import type { DrawingNode, TextRun } from "@/transformers/semantic-renderer/lib/drawing";
-import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
-import { fontAttributes } from "@/transformers/semantic-renderer/lib/fonts";
+import { CARD_RADIUS, BAND_RADIUS } from "@/transformers/semantic-renderer/lib/design";
+import { farSizeOf } from "@/transformers/semantic-renderer/lib/measurement";
+import type { DrawingNode } from "@/transformers/semantic-renderer/lib/drawing";
+import { coord } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import type { NodeAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import {
@@ -20,8 +15,10 @@ import {
 	typeChip,
 } from "@/transformers/semantic-renderer/lib/svg/appearance";
 import { halo } from "@/transformers/semantic-renderer/lib/svg/cards";
-import { lines, tag, textNode, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
+import { nearLayer, paintFarTitle } from "@/transformers/semantic-renderer/lib/svg/far-view";
+import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { stylesFor } from "@/transformers/semantic-renderer/lib/svg/styles";
+import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
 import {
 	standingOutline,
 	standingPin,
@@ -29,78 +26,6 @@ import {
 	warningBadge,
 	type SubjectStanding,
 } from "@/transformers/semantic-renderer/lib/svg/standing";
-
-/**
- * Emit measured lines without changing their content, font or placement.
- * @param runs The prepared lines and local baselines.
- * @param box The box their coordinates are relative to.
- * @param palette The selected theme.
- * @returns SVG text elements.
- */
-function paintTextRuns(runs: readonly TextRun[], box: Box, palette: Palette): string {
-	return lines(
-		runs.map((run) =>
-			textNode(
-				{
-					"xml:space": "preserve",
-					x: coord(box.x + run.x),
-					y: coord(box.y + run.y),
-					fill:
-						run.role === "title"
-							? palette.foreground
-							: run.role === "label"
-								? palette.pillText
-								: palette.muted,
-					...fontAttributes(run.font),
-					"font-size": run.fontSize,
-				},
-				run.text,
-			),
-		),
-	);
-}
-
-/** The part of a card drawn when the picture is seen near: its chip, name and responsibility. */
-const NEAR_CLASS = "ab-near";
-/** The part drawn when it is seen from far away: its name and chip, grown to fill it. */
-const FAR_CLASS = "ab-far";
-/** The class a viewer puts on the picture while it is seen from far away. */
-const FAR_VIEW_CLASS = "is-far";
-
-/**
- * A card's name and chip as they are drawn from far away, hidden until a
- * viewer says the picture is far: the name grown, the chip grown to match,
- * the responsibility left out.
- * @param name The card's name.
- * @param box The card's box.
- * @param size The name's size.
- * @param look Its type chip's colour and glyph, and the selected theme.
- * @param look.appearance Its type chip's colour and glyph.
- * @param look.palette The selected theme.
- * @returns The far layer.
- */
-function paintFarTitle(
-	name: string,
-	box: Box,
-	size: number,
-	{ appearance, palette }: { appearance: NodeAppearance; palette: Palette },
-): string {
-	const far = measureFarTitle(name, box, size);
-	const scale = far.chip.size / ICON_CHIP_SIZE;
-	// Hidden by its own attribute, so a reader of the picture that ignores its
-	// stylesheet draws the card as it is seen near.
-	return wrap(
-		"g",
-		{ class: FAR_CLASS, display: "none" },
-		wrap(
-			"g",
-			{
-				transform: `translate(${coord(box.x + far.chip.x)},${coord(box.y + far.chip.y)}) scale(${coord(scale)})`,
-			},
-			typeChip(0, 0, appearance, palette),
-		) + paintTextRuns(far.runs, box, palette),
-	);
-}
 
 /**
  * A frame's name and chip as they are drawn from far away: as large as its
@@ -157,9 +82,7 @@ function paintMeasuredCard(
 				...bodyAttributes(appearance),
 				...standingOutline(standing, palette),
 			}),
-			wrap(
-				"g",
-				{ class: NEAR_CLASS },
+			nearLayer(
 				typeChip(chipX, chipY, appearance, palette) + paintTextRuns(measured.runs, box, palette),
 			),
 			paintFarTitle(measured.node.name, box, farSize, { appearance, palette }),
@@ -241,9 +164,7 @@ function paintMeasuredHeader(
 			...appearanceAttributes(appearance),
 		},
 		lines([
-			wrap(
-				"g",
-				{ class: NEAR_CLASS },
+			nearLayer(
 				typeChip(
 					placed.box.x + ARCHITECTURE_HEADER_PADDING,
 					placed.box.y + ARCHITECTURE_HEADER_PADDING,
@@ -257,12 +178,4 @@ function paintMeasuredHeader(
 	);
 }
 
-export {
-	FAR_CLASS,
-	FAR_VIEW_CLASS,
-	NEAR_CLASS,
-	paintTextRuns,
-	paintMeasuredCard,
-	paintMeasuredFrame,
-	paintMeasuredHeader,
-};
+export { paintMeasuredCard, paintMeasuredFrame, paintMeasuredHeader };

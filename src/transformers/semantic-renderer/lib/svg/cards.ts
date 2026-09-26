@@ -49,6 +49,7 @@ import {
 	appearanceAttributes,
 	typeChip,
 } from "@/transformers/semantic-renderer/lib/svg/appearance";
+import { nearLayer, paintFarTitle } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { lines, tag, textNode, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
 	standingOutline,
@@ -99,6 +100,7 @@ function halo(box: Box, radius: number, styles: SvgStyles): string {
  * @param standing How this node stands against the variant it came from, when the caller said.
  * @param unsettled Whether the board says nobody has decided this node yet.
  * @param appearance Resolved containment and type channels.
+ * @param farSize Its name's size from far away, one for every card of the picture.
  * @returns The card's group.
  */
 function paintCard(
@@ -107,6 +109,7 @@ function paintCard(
 	standing: SubjectStanding | undefined,
 	unsettled: boolean,
 	appearance: NodeAppearance,
+	farSize: number,
 ): string {
 	const styles = stylesFor(palette);
 	const { node, box, titleSize, notes } = placed;
@@ -157,14 +160,19 @@ function paintCard(
 				...bodyAttributes(appearance),
 				...standingOutline(standing, palette),
 			}),
-			typeChip(
-				box.x + CARD_PADDING_X,
-				box.y + (box.height - ICON_CHIP_SIZE) / 2,
-				appearance,
-				palette,
+			nearLayer(
+				lines([
+					typeChip(
+						box.x + CARD_PADDING_X,
+						box.y + (box.height - ICON_CHIP_SIZE) / 2,
+						appearance,
+						palette,
+					),
+					title,
+					note,
+				]),
 			),
-			title,
-			note,
+			paintFarTitle(node.name, box, farSize, { appearance, palette }),
 			standingPin(box, standing, palette),
 			// The opposite corner from the pin, inside the padding the words already
 			// stop short of, so a card can say both at once and neither mark lands on

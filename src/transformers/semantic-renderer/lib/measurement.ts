@@ -302,11 +302,12 @@ function measureFarTitle(
 	box: { width: number; height: number },
 	size: number,
 ): FarTitle {
-	return farTitleAt(name, box, size, farLines(name, box, size) ?? [name]);
+	return farTitleAt(name, box, size, farLines(name, box, size) ?? farWrap(name, box, size));
 }
 
 /**
- * A far name's lines at one size, when they fit the card beside the chip.
+ * A far name's lines at one size, when they fit the card beside the chip,
+ * broken only between words.
  * @param name The card's name.
  * @param box The card's size.
  * @param box.width Its width.
@@ -320,17 +321,46 @@ function farLines(
 	size: number,
 ): string[] | undefined {
 	const style = { ...TITLE, fontSize: size, lineHeight: size * FAR_LINE };
-	const room = box.width - FAR_PADDING * 2 - farChip(box, size) - size / 2;
+	const lines = farWrap(name, box, size);
+	// A balanced wrap narrower than a word breaks the word, which a name never is.
+	const whole = lines.join(" ") === name.split(/\s+/u).join(" ");
+	const fits =
+		whole &&
+		lines.length * style.lineHeight <= box.height - FAR_PADDING * 2 &&
+		lines.every((line) => exactWidth(line, style) <= farRoom(box, size));
+	return fits ? lines : undefined;
+}
+
+/**
+ * A far name wrapped, balanced, to the room beside the chip at one size, as
+ * the name drawn near would wrap: a word wider than the room breaks.
+ * @param name The card's name.
+ * @param box The card's size.
+ * @param box.width Its width.
+ * @param box.height Its height.
+ * @param size The name's size.
+ * @returns The lines.
+ */
+function farWrap(name: string, box: { width: number; height: number }, size: number): string[] {
+	const style = { ...TITLE, fontSize: size, lineHeight: size * FAR_LINE };
 	const prepared = prepare(name, style);
-	const lines = layoutWithLines(
+	return layoutWithLines(
 		prepared,
-		balancedWrapWidth(prepared, room),
+		balancedWrapWidth(prepared, farRoom(box, size)),
 		style.lineHeight,
 	).lines.map(({ text }) => text.trimEnd());
-	const fits =
-		lines.length * style.lineHeight <= box.height - FAR_PADDING * 2 &&
-		lines.every((line) => exactWidth(line, style) <= room);
-	return fits ? lines : undefined;
+}
+
+/**
+ * The width a far name has beside its chip at one size.
+ * @param box The card's size.
+ * @param box.width Its width.
+ * @param box.height Its height.
+ * @param size The name's size.
+ * @returns The width.
+ */
+function farRoom(box: { width: number; height: number }, size: number): number {
+	return box.width - FAR_PADDING * 2 - farChip(box, size) - size / 2;
 }
 
 /**
