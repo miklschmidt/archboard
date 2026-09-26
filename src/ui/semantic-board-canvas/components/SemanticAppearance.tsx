@@ -60,14 +60,17 @@ function appearanceSentences(subject: Subject, appearance: AppliedAppearance): s
 }
 
 /**
- * Describe the body color and the group responsible for it.
- * @param appearance Its depicted group.
+ * Describe the body color and what gives it: a card's group, a container's own kind.
+ * @param appearance Its applied appearance.
  * @returns One sentence explaining its body.
  */
 function bodyExplanation(appearance: AppliedAppearance): string {
-	const depiction = appearance.depiction === "container" ? "Container" : "Card";
-	if (appearance.group === "") return `${depiction} body is neutral because no group places it.`;
-	return `${depiction} border and tint use ${appearance.bodyColor} from the ${appearance.group} group.`;
+	if (appearance.depiction === "container")
+		return appearance.bodyColor === "neutral"
+			? `Container body is neutral because ${appearance.typeName} has no colour.`
+			: `Container border and tint use ${appearance.bodyColor} from its ${appearance.typeName} kind.`;
+	if (appearance.group === "") return "Card body is neutral because no group places it.";
+	return `Card border and tint use ${appearance.bodyColor} from the ${appearance.group} group.`;
 }
 
 export { SemanticAppearance };
