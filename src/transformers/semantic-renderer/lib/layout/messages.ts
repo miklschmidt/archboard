@@ -15,20 +15,18 @@ import {
 	NEST_INSET,
 	PILL_HEIGHT,
 	PILL_PADDING_X,
-	PILL_TEXT_SIZE,
 } from "@/transformers/semantic-renderer/lib/design";
 import {
 	ACTIVATION_HALF_WIDTH,
 	arrowStandoff,
 	MESSAGE_LABEL_GAP,
+	MESSAGE_LINE_STEP,
 	SELF_LABEL_GAP,
 	SELF_LOOP_CORNER,
 	SELF_LOOP_EXTENT,
 	SELF_LOOP_REACH,
 } from "@/transformers/semantic-renderer/lib/sequence-design";
-import { PILL_FONT } from "@/transformers/semantic-renderer/lib/fonts";
 import { covering, type Box } from "@/transformers/semantic-renderer/lib/geometry";
-import { measure } from "@/transformers/semantic-renderer/lib/text";
 import { pitchOf } from "@/transformers/semantic-renderer/lib/layout/step-rows";
 import type { ActiveAt, PlacedStep } from "@/transformers/semantic-renderer/lib/layout/dataflow";
 
@@ -88,28 +86,31 @@ function selfStart(placed: PlacedStep, activated: boolean): number {
 }
 
 /**
- * How wide a message's label plate is.
- * @param label The label as drawn.
- * @returns Its width, padding included.
+ * How big a message's label plate is: as wide as its widest line, and one
+ * pill tall with a line's step more for every line past the first.
+ * @param placed The message.
+ * @returns Its size, padding included.
  */
-function pillWidth(label: string): number {
-	return measure(label, PILL_FONT, PILL_TEXT_SIZE) + PILL_PADDING_X * 2;
+function pillSize(placed: PlacedStep): { readonly width: number; readonly height: number } {
+	let widest = 0;
+	for (const line of placed.words.lines) widest = Math.max(widest, line.width);
+	return {
+		width: widest + PILL_PADDING_X * 2,
+		height: PILL_HEIGHT + (placed.words.lines.length - 1) * MESSAGE_LINE_STEP,
+	};
 }
 
 /**
- * A crossing message's label: centred over the arrow, sitting just above it.
+ * A crossing message's label: centred on the gap between lifelines its layout
+ * chose, sitting just above the arrow.
  * @param placed The message.
  * @param ends Where its arrow begins and ends.
  * @returns The plate's box.
  */
 function pillBox(placed: PlacedStep, ends: Ends): Box {
-	const width = pillWidth(placed.label);
-	return {
-		x: (ends.start + ends.end) / 2 - width / 2,
-		y: placed.y - MESSAGE_LABEL_GAP - PILL_HEIGHT,
-		width,
-		height: PILL_HEIGHT,
-	};
+	const { width, height } = pillSize(placed);
+	const centre = placed.words.centre ?? (ends.start + ends.end) / 2;
+	return { x: centre - width / 2, y: placed.y - MESSAGE_LABEL_GAP - height, width, height };
 }
 
 /**
@@ -123,11 +124,12 @@ function pillBox(placed: PlacedStep, ends: Ends): Box {
  * @returns The plate's box.
  */
 function selfPillBox(placed: PlacedStep, activated: boolean): Box {
+	const { width, height } = pillSize(placed);
 	return {
 		x: selfStart(placed, activated) + SELF_LABEL_GAP,
-		y: placed.y - MESSAGE_LABEL_GAP - PILL_HEIGHT,
-		width: pillWidth(placed.label),
-		height: PILL_HEIGHT,
+		y: placed.y - MESSAGE_LABEL_GAP - height,
+		width,
+		height,
 	};
 }
 

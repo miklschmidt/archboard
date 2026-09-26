@@ -42,6 +42,12 @@ const LIFELINE_DASH = "3 5";
 const ACTIVATION_HALF_WIDTH = 6;
 /** The corner radius of an activation bar. */
 const ACTIVATION_RADIUS = 3;
+/**
+ * How far an activation bar runs past the call that starts it and the reply
+ * that ends it: past its rounded corner and half an arrowhead, so the arrow
+ * meets a straight side.
+ */
+const BAR_OVERHANG = 8;
 
 /** How far right a self-message reaches, and how far it drops before turning back. */
 const SELF_LOOP_REACH = 52;
@@ -57,6 +63,10 @@ const SELF_LOOP_EXTENT = SELF_LOOP_DROP + SELF_LOOP_CORNER * 2;
 const MESSAGE_LABEL_GAP = 5;
 /** How far a self-message's label stands off the loop it names. */
 const SELF_LABEL_GAP = 8;
+/** The step from one line of a wrapped message label to the next. */
+const MESSAGE_LINE_STEP = 12;
+/** How far a message's label keeps from the bars and lifelines either side of it. */
+const LABEL_BAR_CLEARANCE = 4;
 
 /**
  * A step's note: a caveat drawn under the message it qualifies, in the card
@@ -125,6 +135,7 @@ export {
 	FLOW_GAP,
 	ACTIVATION_HALF_WIDTH,
 	ACTIVATION_RADIUS,
+	BAR_OVERHANG,
 	STEP_HEAD,
 	arrowStandoff,
 	SELF_LOOP_REACH,
@@ -132,6 +143,8 @@ export {
 	SELF_LOOP_CORNER,
 	SELF_LOOP_EXTENT,
 	MESSAGE_LABEL_GAP,
+	MESSAGE_LINE_STEP,
+	LABEL_BAR_CLEARANCE,
 	SELF_LABEL_GAP,
 	STEP_NOTE_GAP,
 	STEP_NOTE_INSET,

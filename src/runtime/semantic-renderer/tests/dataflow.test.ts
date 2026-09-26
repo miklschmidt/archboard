@@ -281,17 +281,16 @@ describe("renderDataFlow", () => {
 		// the atlas: a plate measured in the wrong face overflows this, not that.
 		expect(spanFits(span, labelPlates(rendered.svg, "step").get("s5")!)).toBe(true);
 
-		// A label longer than the hop it names is the case that decides whether the
-		// atlas box is really the line *and* its words: a label shorter than its
-		// arrow is covered by the arrow alone, so it proves nothing.
-		const long = drawnTexts(rendered.svg).find((text) => text.subject.id === "s9")!;
-		const room = rendered.atlas.edges["s9"]!;
-		const arrow = rendered.atlas.nodes["vault"]!.x - rendered.atlas.nodes["io"]!.x;
-		expect(drawnSpan(long, faces).right - drawnSpan(long, faces).left).toBeGreaterThan(arrow);
-		expect(spanFits(drawnSpan(long, faces), room)).toBe(true);
-		expect(spanFits(drawnSpan(long, faces), labelPlates(rendered.svg, "step").get("s9")!)).toBe(
-			true,
-		);
+		// A label longer than the hop it names wraps onto lines of its own, and
+		// every one of them is the message's words too, in the atlas and on the plate.
+		const long = drawnTexts(rendered.svg).filter((text) => text.subject.id === "s9");
+		expect(long.length).toBeGreaterThan(1);
+		for (const line of long) {
+			expect(spanFits(drawnSpan(line, faces), rendered.atlas.edges["s9"]!)).toBe(true);
+			expect(spanFits(drawnSpan(line, faces), labelPlates(rendered.svg, "step").get("s9")!)).toBe(
+				true,
+			);
+		}
 	});
 
 	test("a repeated step says so rather than being drawn twice", () => {

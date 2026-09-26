@@ -44,7 +44,7 @@ import {
 	FLOW_BOTTOM_PADDING,
 	FLOW_GAP,
 	LIFELINE_GAP,
-	MESSAGE_PITCH,
+	MESSAGE_LINE_STEP,
 	SELF_LOOP_EXTENT,
 	STEP_NOTE_GAP,
 } from "@/transformers/semantic-renderer/lib/sequence-design";
@@ -53,10 +53,13 @@ import {
 	pitchOf,
 	placeNote,
 	requiredNoteColumnWidth,
+	wordsFor,
 	type ColumnBounds,
+	type MessageWords,
 	type PlacedNote,
 } from "@/transformers/semantic-renderer/lib/layout/step-rows";
 import { frameSpan } from "@/transformers/semantic-renderer/lib/layout/messages";
+import { activationsFor } from "@/transformers/semantic-renderer/lib/layout/activations";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { CARD_TITLE_FONT } from "@/transformers/semantic-renderer/lib/fonts";
 import { fittedSize, measure } from "@/transformers/semantic-renderer/lib/text";
@@ -94,6 +97,8 @@ interface PlacedStep {
 	readonly step: FlowStep;
 	/** The label as drawn, with a repeat count folded in when there is one. */
 	readonly label: string;
+	/** The label's lines, wrapped to the room between the lifelines it stands between. */
+	readonly words: MessageWords;
 	/** The height its line runs at. */
 	readonly y: number;
 	/** The lifeline it leaves. */
@@ -246,112 +251,6 @@ function measureColumns(
 }
 
 /**
- * Whether one message is the reply that answers a call.
- * @param candidate The message that might be the reply.
- * @param node The participant that received the call.
- * @param caller The participant that made it.
- * @returns True when it answers that call.
- */
-function answers(candidate: PlacedStep, node: string, caller: string): boolean {
-	return (
-		candidate.step.kind === "return" && candidate.step.from === node && candidate.step.to === caller
-	);
-}
-
-/**
- * The first later reply that answers a call and has not already answered one.
- * @param steps Every message of the flow, in order.
- * @param index The call being answered.
- * @param claimed Which messages have already been spent answering a call.
- * @returns Its position, or -1 when nothing answers the call.
- */
-function answerIndex(
-	steps: readonly PlacedStep[],
-	index: number,
-	claimed: ReadonlySet<number>,
-): number {
-	const call = steps[index];
-	if (call === undefined) {
-		return -1;
-	}
-	return steps.findIndex(
-		(candidate, position) =>
-			position > index &&
-			!claimed.has(position) &&
-			answers(candidate, call.step.to, call.step.from),
-	);
-}
-
-/**
- * The lowest row a participant is still involved in, from a given message on.
- * @param steps Every message of the flow, in order.
- * @param from Where to start looking.
- * @param node The participant.
- * @returns The height of its last involvement.
- */
-function lastInvolvement(steps: readonly PlacedStep[], from: number, node: string): number {
-	let lowest = steps[from]?.y ?? 0;
-	for (const candidate of steps.slice(from)) {
-		if (candidate.step.from === node || candidate.step.to === node) {
-			lowest = Math.max(lowest, candidate.y);
-		}
-	}
-	return lowest;
-}
-
-/**
- * Nested or unanswered calls hand one column overlapping stretches; one bar per
- * busy run is what keeps the column readable. The bars arrive ordered by top,
- * because a message's height only ever grows.
- * @param bars The stretches, in the order they were found.
- * @returns The stretches, merged where they touch.
- */
-function mergedBars(bars: readonly ActivationBar[]): ActivationBar[] {
-	const merged: { top: number; bottom: number }[] = [];
-	for (const bar of bars) {
-		const current = merged[merged.length - 1];
-		if (current !== undefined && bar.top <= current.bottom) {
-			current.bottom = Math.max(current.bottom, bar.bottom);
-		} else {
-			merged.push({ ...bar });
-		}
-	}
-	return merged;
-}
-
-/**
- * Where one participant is busy.
- *
- * A synchronous call is the one kind whose sender waits, so it is the one kind
- * that activates its receiver: the bar starts where the call arrives and runs to
- * the reply that answers it. A call nothing answers keeps its receiver busy
- * through that participant's last involvement, because the drawing never shows
- * the work finishing. An asynchronous message and a self-message activate
- * nothing — neither implies that anybody is waiting.
- * @param node The participant.
- * @param steps Every message of the flow, in order.
- * @returns Its activation bars, in order and merged.
- */
-function activationsFor(node: string, steps: readonly PlacedStep[]): ActivationBar[] {
-	const claimed = new Set<number>();
-	const bars: ActivationBar[] = [];
-	for (const [index, call] of steps.entries()) {
-		if (call.step.kind !== "sync" || call.step.to !== node) {
-			continue;
-		}
-		const answer = answerIndex(steps, index, claimed);
-		const answered = steps[answer];
-		if (answered === undefined) {
-			bars.push({ top: call.y, bottom: lastInvolvement(steps, index, node) + MESSAGE_PITCH / 3 });
-			continue;
-		}
-		claimed.add(answer);
-		bars.push({ top: call.y, bottom: answered.y });
-	}
-	return mergedBars(bars);
-}
-
-/**
  * Which columns are busy where, as one question a caller can ask.
  * @param columns The flow's columns.
  * @returns Whether a given participant is busy at a given height.
@@ -420,10 +319,14 @@ function placeSteps(
 		const count = Math.min(step.repeat ?? 1, MAX_PULSES_PER_STEP);
 		const fromX = centreOf.get(step.from) ?? 0;
 		const toX = centreOf.get(step.to) ?? 0;
+		const words = wordsFor(step, { fromX, toX, y }, bounds);
+		// A label stands above its arrow, so every line past the first lowers the row.
+		y += (words.lines.length - 1) * MESSAGE_LINE_STEP;
 		const note = placeNote(step, { fromX, toX, y }, bounds);
 		placed.push({
 			step,
 			label: labelFor(step),
+			words,
 			y,
 			fromX,
 			toX,
@@ -484,7 +387,7 @@ function layoutFlow(
 	const headerTop = top + CONTAINER_TOP_PAD;
 	const headerHeight = flow.summary === undefined ? HEADER_HEIGHT : HEADER_HEIGHT_WITH_NOTE;
 	const cardsTop = headerTop + headerHeight + HEADER_GAP;
-	const cards = nodes.map((node, index) =>
+	const placedCards = nodes.map((node, index) =>
 		placeColumnCard(
 			node,
 			centres[index] ?? 0,
@@ -493,12 +396,12 @@ function layoutFlow(
 			measurement.notes.get(node.id) ?? [],
 		),
 	);
-	// Every lifeline starts under its own card, but the first message waits for
-	// the tallest one, so no card's lines sit on a message's words.
+	// The heads are one row of one height, so every lifeline starts level.
 	const tallest = largest(
-		cards.map((card) => card.box.height),
+		placedCards.map((card) => card.box.height),
 		0,
 	);
+	const cards = placedCards.map((card) => ({ ...card, box: { ...card.box, height: tallest } }));
 	const firstRow = cardsTop + tallest + LIFELINE_GAP + FIRST_MESSAGE_DROP;
 
 	const steps = placeSteps(
