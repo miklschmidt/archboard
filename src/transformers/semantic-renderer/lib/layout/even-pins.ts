@@ -18,9 +18,6 @@ import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { verticesOf } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { crossingsOf } from "@/transformers/semantic-renderer/lib/track/score";
 
-/** The routing option that asks for evened pins. */
-const EVEN_PINS = "archboard.route.even-pins";
-
 /**
  * The cost that evens out libavoid's charge for reaching a pin from its
  * shape's centre, so every pin of a shape costs the same in total.
@@ -93,4 +90,4 @@ async function tidierSettlement<Settled extends { readonly drawing: Architecture
 	return tidierThan(other.value.drawing, one.value.drawing) ? other.value : one.value;
 }
 
-export { EVEN_PINS, centreHandicap, tidierSettlement, untidiness };
+export { centreHandicap, tidierSettlement, untidiness };

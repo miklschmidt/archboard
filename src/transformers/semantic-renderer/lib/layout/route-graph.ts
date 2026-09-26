@@ -2,10 +2,10 @@ import type { ElkNode } from "@archboard/elk-rs";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import { RoutingScene } from "@/transformers/semantic-renderer/lib/layout/avoid-routing";
 import { EndpointOptions } from "@/transformers/semantic-renderer/lib/layout/endpoint-options";
-import { EVEN_PINS } from "@/transformers/semantic-renderer/lib/layout/even-pins";
-import { CORNER_PINS } from "@/transformers/semantic-renderer/lib/layout/pin-feedback";
 import { ForeignFrames } from "@/transformers/semantic-renderer/lib/layout/foreign-frames";
 import { wallReach } from "@/transformers/semantic-renderer/lib/layout/frame-walls";
+import { centreLabels } from "@/transformers/semantic-renderer/lib/layout/label-centring";
+import { requestOf } from "@/transformers/semantic-renderer/lib/layout/route-requests";
 import { joinSqueezedTrunks } from "@/transformers/semantic-renderer/lib/layout/squeezed-trunks";
 import type { AlignedPins } from "@/transformers/semantic-renderer/lib/layout/avoid-pins";
 import {
@@ -24,24 +24,6 @@ function visitNodes(scene: RoutingScene, graph: ElkNode): void {
 }
 
 /**
- * Whether a graph's routes are asked for evened pins (even-pins.ts).
- * @param graph The placed graph.
- * @returns True when every pin of a shape should cost the same.
- */
-function evenPins(graph: ElkNode): boolean {
-	return graph.layoutOptions?.[EVEN_PINS] === "true";
-}
-
-/**
- * Whether a graph's routes are offered corner pins (pin-feedback.ts).
- * @param graph The placed graph.
- * @returns True when a route that hooks past a card's corner may enter the face it passed.
- */
-function cornerPins(graph: ElkNode): boolean {
-	return graph.layoutOptions?.[CORNER_PINS] === "true";
-}
-
-/**
  * Settle routes and endpoint faces for one set of native physical pin alternatives.
  * @param avoid Initialized native router.
  * @param graph Complete globally placed geometry.
@@ -57,11 +39,11 @@ function settle(
 ): AlignedPins | undefined {
 	const frames = new ForeignFrames(graph);
 	const edges = graph.edges ?? [];
-	const even = evenPins(graph);
-	const reach = wallReach(graph);
+	const requested = requestOf(graph);
+	const request = { ...requested, reach: wallReach(graph, requested.clearWalls) };
 	let routed = false;
 	for (;;) {
-		const scene = new RoutingScene(avoid, endpoints, new Set(), even, reach);
+		const scene = new RoutingScene(avoid, endpoints, new Set(), request);
 		try {
 			edges.forEach(positionReservedLabel);
 			visitNodes(scene, graph);
@@ -79,11 +61,11 @@ function settle(
 					endpoints,
 					scene,
 					routes,
-					(closed) => new RoutingScene(avoid, endpoints, closed, even, reach),
+					(closed) => new RoutingScene(avoid, endpoints, closed, request),
 				)
 			)
 				continue;
-			return pins === undefined ? scene.refinePorts(edges, cornerPins(graph)) : undefined;
+			return pins === undefined ? scene.refinePorts(edges) : undefined;
 		} finally {
 			scene.router.delete();
 		}
@@ -98,6 +80,7 @@ function settle(
  * @returns The hierarchy with finite orthogonal relationship routes.
  */
 export function routeGraph(avoid: AvoidEngine, graph: ElkNode): ElkNode {
+	if (requestOf(graph).centredLabels) centreLabels(graph);
 	const routed = refinedRoutes(avoid, graph);
 	joinSqueezedTrunks(routed.edges ?? []);
 	return routed;

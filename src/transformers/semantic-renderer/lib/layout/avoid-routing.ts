@@ -1,5 +1,6 @@
 import { EndpointOptions } from "@/transformers/semantic-renderer/lib/layout/endpoint-options";
 import { centreHandicap } from "@/transformers/semantic-renderer/lib/layout/even-pins";
+import type { Requested } from "@/transformers/semantic-renderer/lib/layout/route-requests";
 import {
 	APPROACH_STRAIGHT,
 	ROUTE_OBSTACLE_CLEARANCE as SHAPE_CLEARANCE,
@@ -50,6 +51,9 @@ import {
 
 type ConnectionEnd = InstanceType<AvoidEngine["ConnEnd"]>;
 
+/** What a scene's routes are asked for, with each card's reach toward a wall to clear. */
+type SceneRequest = Omit<Requested, "clearWalls"> & { readonly reach: ReadonlyMap<string, Insets> };
+
 /** One native obstacle scene; the router owns its shapes, shared pins and connectors. */
 export class RoutingScene {
 	readonly router: InstanceType<AvoidEngine["Router"]>;
@@ -66,15 +70,13 @@ export class RoutingScene {
 	 * @param avoid The initialized libavoid module.
 	 * @param endpoints Shared faces still capable of a complete rounded approach.
 	 * @param closedFrames Frames whose bodies no unrelated route may enter.
-	 * @param evenPins Whether every pin of a shape costs the same (even-pins.ts).
-	 * @param reach Each card's extra reach toward a frame wall (frame-walls.ts).
+	 * @param request What the routes are asked for (route-requests.ts), with each card's reach toward a wall to clear.
 	 */
 	constructor(
 		private readonly avoid: AvoidEngine,
 		private readonly endpoints: EndpointOptions,
-		private readonly closedFrames: ReadonlySet<string> = new Set(),
-		private readonly evenPins = false,
-		private readonly reach: ReadonlyMap<string, Insets> = new Map(),
+		private readonly closedFrames: ReadonlySet<string>,
+		private readonly request: SceneRequest,
 	) {
 		this.router = new avoid.Router(avoid.RouterFlag.OrthogonalRouting.value);
 		this.router.setRoutingParameter(avoid.RoutingParameter.shapeBufferDistance, SHAPE_CLEARANCE);
@@ -142,17 +144,16 @@ export class RoutingScene {
 			}
 		}
 		for (const [id, present] of channels) this.channels.set(id, [...present].toSorted());
-		this.aligned = pins ?? alignedPins(this.nodes, this.channels, edges);
+		this.aligned = pins ?? alignedPins(this.nodes, this.channels, edges, this.request);
 	}
 
 	/**
 	 * Ask the allocator for one improvement informed by complete native routes.
 	 * @param edges Settled baseline relationships.
-	 * @param corners Whether to offer the near corner of a face a route hooks past.
 	 * @returns A new feasible pin map, or nothing when the baseline offers every candidate.
 	 */
-	refinePorts(edges: readonly ElkExtendedEdge[], corners = false): AlignedPins | undefined {
-		return refinedPins(this.nodes, this.channels, edges, corners);
+	refinePorts(edges: readonly ElkExtendedEdge[]): AlignedPins | undefined {
+		return refinedPins(this.nodes, this.channels, edges, this.request);
 	}
 
 	/**
@@ -294,7 +295,7 @@ export class RoutingScene {
 				side[2],
 			);
 			pin.setExclusive(false);
-			if (this.evenPins) pin.setConnectionCost(centreHandicap(box, at, offset));
+			if (this.request.evenPins) pin.setConnectionCost(centreHandicap(box, at, offset));
 		}
 	}
 
@@ -304,7 +305,7 @@ export class RoutingScene {
 	 * @returns Its inset on each face; labels and arrival corridors have none.
 	 */
 	private insets(id: string): Insets {
-		return routingInsets(this.nodes.get(id), this.reach.get(id));
+		return routingInsets(this.nodes.get(id), this.request.reach.get(id));
 	}
 
 	/**

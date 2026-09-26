@@ -14,7 +14,6 @@
 // 1 px inside the wall between it and Picture cache. Which walls to clear is
 // the finishing step's choice (finishing.ts).
 import type { ElkNode } from "@archboard/elk-rs";
-import { z } from "zod";
 import { ROUTE_OPEN_CORRIDOR } from "@/transformers/semantic-renderer/config";
 import { inflate, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import {
@@ -30,9 +29,6 @@ import {
 
 /** How far a routing box reaches past its visible shape on each face. */
 export type Insets = Readonly<Record<Face, number>>;
-
-/** The routing option naming the walls routes keep clear of, as a JSON list of {@link wallOf} keys. */
-export const CLEAR_WALLS = "archboard.route.clear-walls";
 
 /** A placed node and the frames it stands in, outermost first. */
 interface Placed {
@@ -120,14 +116,13 @@ function faceReach(card: Box, frame: Box, face: WallFace, others: readonly Box[]
 }
 
 /**
- * The reach of each card whose routing box would otherwise end on or just inside its frame's wall.
+ * The reach of each card whose routing box would otherwise end on or just inside a wall to clear.
  * @param graph The placed graph.
+ * @param clear The walls to clear, as {@link wallOf} keys.
  * @returns Extra reach per face, by card id; cards facing no wall to clear are absent.
  */
-export function wallReach(graph: ElkNode): ReadonlyMap<string, Insets> {
-	const walls = new Set(
-		z.array(z.string()).parse(JSON.parse(graph.layoutOptions?.[CLEAR_WALLS] ?? "[]")),
-	);
+export function wallReach(graph: ElkNode, clear: readonly string[]): ReadonlyMap<string, Insets> {
+	const walls = new Set(clear);
 	if (walls.size === 0) return new Map();
 	const placed = placedNodes(graph.children ?? []);
 	return new Map(
