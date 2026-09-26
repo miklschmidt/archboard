@@ -50,6 +50,11 @@ import {
 	wrongFaces,
 } from "@/transformers/semantic-renderer/lib/layout/finishing";
 import {
+	refusedLines,
+	stackCrossings,
+	stackedEnds,
+} from "@/transformers/semantic-renderer/lib/layout/stacked-runs";
+import {
 	requestOptions,
 	type RouteRequest,
 } from "@/transformers/semantic-renderer/lib/layout/route-requests";
@@ -241,9 +246,10 @@ function columnReading(problem: Problem): ColumnReading {
 		page: () => reading.place(new Set()).then(boxOf),
 		/**
 		 * The complete drawing: the tidier of plain and evened pins, then
-		 * finished clear of frame walls, of side exits between stacked cards
-		 * and of hooks into a card's side (finishing.ts). Side exits go
-		 * first, so a line they turn into a hook can still be cured.
+		 * finished clear of frame walls, of side exits between stacked cards,
+		 * of hooks into a card's side and of unrelated lines on one stroke
+		 * (finishing.ts). Side exits go first, so a line they turn into a
+		 * hook can still be cured.
 		 * @returns The settled reading.
 		 */
 		settle: async () => {
@@ -261,7 +267,13 @@ function columnReading(problem: Problem): ColumnReading {
 			const hooked = await finished(faced, sideHooks, () =>
 				reroute(asking(faced.reading, { cornerPins: true })),
 			);
-			return hooked.drawing;
+			const parted = await finished(
+				hooked,
+				stackedEnds,
+				(refusedEnds) => reroute(asking(hooked.reading, { refusedEnds })),
+				{ excused: refusedLines, hidden: stackCrossings },
+			);
+			return parted.drawing;
 		},
 	};
 }

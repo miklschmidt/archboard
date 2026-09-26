@@ -69,6 +69,21 @@ export class EndpointOptions {
 	}
 
 	/**
+	 * Refuse line ends the faces they were asked to leave, as line:card:FACE keys.
+	 * @param edges The relationships.
+	 * @param ends The refused ends.
+	 */
+	refuse(edges: readonly ElkExtendedEdge[], ends: readonly string[]): void {
+		for (const key of ends) {
+			const [line, card, face] = key.split(":");
+			const edge = edges.find(({ id }) => id === line);
+			const side = FACES.find((one) => one === face);
+			if (edge !== undefined && card !== undefined && side !== undefined)
+				this.removeFace(card, relationshipChannel(edge, card), side);
+		}
+	}
+
+	/**
 	 * Remove unusable endpoint faces before routing again. Every retry removes a
 	 * face, and one alternative always remains, so this search is finite.
 	 * @param edges Complete native routes from the current scene.

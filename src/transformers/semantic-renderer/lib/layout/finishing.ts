@@ -9,11 +9,15 @@
 // cures: a line along the wall of a frame it does not stay inside, a line
 // that leaves a card by its side although its other card stands straight
 // below or above it, or a line that hooks into a card's side past the card's
-// corner. The same placement, with the same reservations, is routed once more
-// with the pass's options, and that drawing is kept when it has fewer of them
+// corner, or two unrelated lines on one stroke (stacked-runs.ts). The same
+// placement, with the same reservations, is routed once more with the pass's
+// options, and that drawing is kept when it has fewer of them
 // (or as many with fewer bends in all), every label still finds a box, it has
 // no more crossings, no line has more bends, and every line that stayed
-// inside a frame still does. A route that takes a detour is not worth
+// inside a frame still does. A pass that refuses a line the face it ended on
+// lets that line take more bends, and counts the crossings a stack hides:
+// parting two lines that swap sides on one stroke shows a crossing that was
+// always there. A route that takes a detour is not worth
 // what it cures, fewer bends elsewhere do not pay for one line made worse, and
 // a relationship within a frame belongs inside it even when the only room is
 // on its wall: its cards stand the frame's inset from the wall, which leaves
@@ -237,17 +241,27 @@ function keepsInside(clear: ArchitectureDrawing, settled: ArchitectureDrawing): 
 }
 
 /**
- * Whether a routing clear of walls is no worse than the settled drawing: no
- * more crossings, no line with more bends, and no line out of a frame it stayed inside.
- * @param clear The walled routing.
+ * Whether a finishing routing is no worse than the settled drawing: no more
+ * crossings, no line with more bends, apart from the lines the pass itself
+ * sends another way, and no line out of a frame it stayed inside.
+ * @param clear The finishing routing.
  * @param settled The settled drawing.
+ * @param excused The lines the pass sends another way.
+ * @param hidden The crossings a drawing hides from the ordinary count.
  * @returns True when it may replace the settled drawing.
  */
-function noWorse(clear: ArchitectureDrawing, settled: ArchitectureDrawing): boolean {
+function noWorse(
+	clear: ArchitectureDrawing,
+	settled: ArchitectureDrawing,
+	excused: ReadonlySet<string>,
+	hidden: (drawing: ArchitectureDrawing) => number,
+): boolean {
 	const before = bendsOf(settled);
 	return (
-		untidiness(clear)[0]! <= untidiness(settled)[0]! &&
-		[...bendsOf(clear)].every(([id, bends]) => bends <= (before.get(id) ?? Infinity)) &&
+		untidiness(clear)[0]! + hidden(clear) <= untidiness(settled)[0]! + hidden(settled) &&
+		[...bendsOf(clear)].every(
+			([id, bends]) => excused.has(id) || bends <= (before.get(id) ?? Infinity),
+		) &&
 		keepsInside(clear, settled)
 	);
 }
@@ -281,6 +295,28 @@ function totalBends(drawing: ArchitectureDrawing): number {
 	return [...bendsOf(drawing).values()].reduce((sum, bends) => sum + bends, 0);
 }
 
+/** How a finishing pass is judged beyond the ordinary rules. */
+interface Judged {
+	/** The lines the pass sends another way, given what it cures, which may take more bends. */
+	readonly excused: (found: readonly string[]) => ReadonlySet<string>;
+	/** The crossings a drawing hides from the ordinary count, which the pass may uncover. */
+	readonly hidden: (drawing: ArchitectureDrawing) => number;
+}
+
+/** A pass that sends no line another way and uncovers no crossing. */
+const ORDINARY: Judged = {
+	/**
+	 * No line is excused.
+	 * @returns No lines.
+	 */
+	excused: () => new Set(),
+	/**
+	 * No crossing is hidden.
+	 * @returns None.
+	 */
+	hidden: () => 0,
+};
+
 /** A drawing and the reading that routed it. */
 interface Finish<Reading> {
 	readonly reading: Reading;
@@ -296,19 +332,21 @@ interface Finish<Reading> {
  * @param settled The settled drawing and its reading.
  * @param cured What the pass cures in a drawing, one key for each.
  * @param reroute Routes the same placement with the pass's option, given what it cures; nothing when a label finds no box.
+ * @param judged How a pass that sends lines another way or uncovers crossings is judged.
  * @returns The drawing kept and its reading.
  */
 export async function finished<Reading>(
 	settled: Finish<Reading>,
 	cured: (drawing: ArchitectureDrawing) => readonly string[],
 	reroute: (found: readonly string[]) => Promise<Finish<Reading> | undefined>,
+	judged: Judged = ORDINARY,
 ): Promise<Finish<Reading>> {
 	const found = cured(settled.drawing);
 	if (found.length === 0) return settled;
 	const finish = await reroute([...new Set(found)]).catch(() => undefined);
 	return finish !== undefined &&
 		cures(finish.drawing, settled.drawing, cured) &&
-		noWorse(finish.drawing, settled.drawing)
+		noWorse(finish.drawing, settled.drawing, judged.excused(found), judged.hidden)
 		? finish
 		: settled;
 }
