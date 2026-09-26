@@ -359,7 +359,7 @@ class CardLayout {
 			if (id !== undefined && pos !== undefined) polylines.set(id, polylinePoints(pos, origin));
 		const [centres, clusters] = [centresOf(output, origin), this.clusters.boxes(output, origin)];
 		const boxes = boxesOf(nodesIn(this.graph), centres);
-		for (const pin of this.pins()) boxes.set(pin, this.pinned(pin, centres) as Box);
+		for (const pin of this.pins()) boxes.set(pin, this.pinned(pin, centres));
 		// A line from a child block is lined up where it leaves the block, at its pin.
 		const atPins = this.links((end) => (this.tree.pins.has(end) ? end : this.vendorOf(end)));
 		const width = Math.abs(right! - left!);
@@ -560,7 +560,7 @@ class CardLayout {
 	 * @param centres Every vendor node's centre.
 	 * @returns The placed pin.
 	 */
-	pinned(pin: string, centres: ReadonlyMap<string, Point>): ElkNode {
+	pinned(pin: string, centres: ReadonlyMap<string, Point>): ElkNode & Box {
 		const { block: child, port } = this.tree.pins.get(pin)!;
 		const inner = this.laid.get(child.id)!;
 		const at = inner.boxes.get(port)!;
