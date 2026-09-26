@@ -247,6 +247,7 @@ function keepsClean(nets: readonly Net[], guard: (net: Net) => boolean): () => b
  * @param one.net The net.
  * @param one.end Which end of the net it stands at.
  * @param x The column.
+ * @param piece Whether a run of lanes moves only the piece of it the station stands in.
  * @returns Whether it moved.
  */
 function moveStation(
@@ -255,8 +256,9 @@ function moveStation(
 	nets: readonly Net[],
 	{ station, net, end }: { station: Station; net: Net; end: End },
 	x: number,
+	piece: boolean,
 ): boolean {
-	if (station.kind === "lane") return station.x === x || moveRun(scene, chains, station, x);
+	if (station.kind === "lane") return station.x === x || moveRun(scene, chains, station, x, piece);
 	if (station.kind === "label") return nudgeLabel(scene, nets, station.item!, x);
 	return movePort(scene, nets, net, end, x);
 }
@@ -272,6 +274,7 @@ function moveStation(
  * @param stretch The stations, each with the net arriving at it.
  * @param x The column.
  * @param guard Which steps the move must not open on another line.
+ * @param piece Whether each run of lanes moves only the piece of it on the stretch.
  * @param better Whether the drawing is better for the move, asked once it is made.
  * @returns Whether it moved.
  */
@@ -282,6 +285,7 @@ function moveStretch(
 	stretch: readonly { station: Station; net: Net; end: End }[],
 	x: number,
 	guard: (net: Net) => boolean,
+	piece: boolean,
 	better: () => boolean = () => true,
 ): boolean {
 	const saved = save(
@@ -291,7 +295,7 @@ function moveStretch(
 		stretch.map(({ station }) => station),
 	);
 	const kept = keepsClean(nets, guard);
-	const moved = stretch.every((one) => moveStation(scene, chains, nets, one, x));
+	const moved = stretch.every((one) => moveStation(scene, chains, nets, one, x, piece));
 	if (moved) follow(nets);
 	const done = moved && kept() && better();
 	if (!done) restore(saved);
@@ -343,7 +347,7 @@ function close(
 	return (["top", "bottom"] as const).some((end) => {
 		const x = xAt(net, end === "top" ? "bottom" : "top");
 		const stretch = stretchBeyond(route, index, end);
-		return moveStretch(scene, chains, nets, stretch, x, kinked, noMore(nets, kept));
+		return moveStretch(scene, chains, nets, stretch, x, kinked, false, noMore(nets, kept));
 	});
 }
 
@@ -436,8 +440,8 @@ function closeCardStep(
 	if (!tooShort(inNet.bottomX, outNet.topX)) return false;
 	const [out, inward] = [cardSide(outOf, "top"), cardSide(into, "bottom")];
 	return (
-		moveStretch(scene, chains, nets, out, inNet.bottomX, kinked, noMore(nets, kept)) ||
-		moveStretch(scene, chains, nets, inward, outNet.topX, kinked, noMore(nets, kept))
+		moveStretch(scene, chains, nets, out, inNet.bottomX, kinked, false, noMore(nets, kept)) ||
+		moveStretch(scene, chains, nets, inward, outNet.topX, kinked, false, noMore(nets, kept))
 	);
 }
 
@@ -490,7 +494,15 @@ function openNotches(
 			(["top", "bottom"] as const).some((end) => {
 				const other = xAt(net, end === "top" ? "bottom" : "top");
 				const x = other + Math.sign(xAt(net, end) - other) * 2 * BEND_RADIUS;
-				return moveStretch(scene, chains, nets, stretchBeyond(route, index, end), x, notched);
+				return moveStretch(
+					scene,
+					chains,
+					nets,
+					stretchBeyond(route, index, end),
+					x,
+					notched,
+					false,
+				);
 			});
 		});
 }

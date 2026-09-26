@@ -39,6 +39,7 @@ import throughCard from "./through-card.json";
 import throughLabel from "./through-label.json";
 import trunkFan from "./trunk-fan.json";
 import twinLines from "./twin-lines.json";
+import voiceCoordinator from "./voice-coordinator.json";
 import workingWithAnAgent from "./working-with-an-agent.json";
 
 /** The room a container keeps around what it holds, and between it and a container it stands over. */
@@ -391,10 +392,13 @@ test("a container standing over another keeps a container's inset from it", asyn
 // and turned where another turned off the track below and went on down, one
 // lane over, and the two read as one line with a kink. The second, taken from
 // a board of this repository, had the two parted, and a later pass closing a
-// short step moved one back onto the other's column.
+// short step moved one back onto the other's column. In the third, the one
+// line's run of lanes stepped round a label above, so no move of the whole
+// run was free.
 test.each([
 	["read-as-one", readAsOne],
 	["command-groups", commandGroups],
+	["voice-coordinator", voiceCoordinator],
 ] as const)(
 	"a line ending on a track and another leaving the track below stand apart (%s)",
 	async (_, fixture) => {

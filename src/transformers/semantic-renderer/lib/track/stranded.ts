@@ -12,6 +12,7 @@ import {
 	freeWithout,
 	inversions,
 	laneRuns,
+	piecesOf,
 	reachOf,
 	straightOn,
 	type Chain,
@@ -155,25 +156,6 @@ function closeSteps(
 			return true;
 		})
 		.some(Boolean);
-}
-
-/**
- * A run's lanes in pieces, each the lanes that stand on one column, with the
- * stations either side of it.
- * @param run The run.
- * @returns The pieces, top to bottom.
- */
-function piecesOf(run: LaneRun): LaneRun[] {
-	const pieces: LaneRun[] = [];
-	let start = 0;
-	run.lanes.forEach((lane, index) => {
-		const next = run.lanes[index + 1];
-		if (next !== undefined && next.x === lane.x) return;
-		const before = run.lanes[start - 1] ?? run.before;
-		pieces.push({ lanes: run.lanes.slice(start, index + 1), before, after: next ?? run.after });
-		start = index + 1;
-	});
-	return pieces;
 }
 
 /**
