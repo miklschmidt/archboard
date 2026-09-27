@@ -2254,12 +2254,6 @@ wall`).
   left as its words stand a lane's room clear of every line, or less where
   the lines leave less (`captionIn`), over the lines as they run once their
   steps are taken out.
-- **A line into a container itself asks no packed block to slide**
-  (`slides.ts` `enters`). Its port on the container settles anywhere along
-  the face the line reaches straight, so sliding the chain above onto it
-  only stood the chain off the container's middle. Blocks chose the slid
-  packing for the ingress board's pool only by 0.4 of a jog that settling
-  takes out, where a rounding error had hidden it before.
 - **The board is laid out as it is decided without them**
   (`place.ts` `layJoinedOut`): which joins part, which ports move to side
   walls, how blocks pack and which port orders hold are chosen on the board
