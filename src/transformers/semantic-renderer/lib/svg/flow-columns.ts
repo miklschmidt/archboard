@@ -24,6 +24,7 @@ import {
 	type Attributes,
 } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
+	PART_ATTRIBUTE,
 	standingOutline,
 	subjectGroup,
 	type SubjectStanding,
@@ -99,7 +100,7 @@ function paintColumn(
 	const ink = standingOutline(standing, palette)["stroke"];
 	return wrap(
 		"g",
-		subjectGroup("node", column.card.node.id, standing),
+		{ ...subjectGroup("node", column.card.node.id, standing), [PART_ATTRIBUTE]: "lifeline" },
 		lines([
 			halo(columnStrip(column, layout), ACTIVATION_RADIUS, styles),
 			tag("line", {

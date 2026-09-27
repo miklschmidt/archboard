@@ -184,7 +184,7 @@ function farViewRules(): string[] {
 		`.${NEAR_CLASS}{${shown}}`,
 		`.${FAR_VIEW_CLASS} .${FAR_CLASS}{${shown}}`,
 		`.${FAR_VIEW_CLASS} .${NEAR_CLASS}{${hidden}}`,
-		`@media(prefers-reduced-motion:reduce){.${FAR_CLASS},.${NEAR_CLASS}{transition:none}}`,
+		`@media(prefers-reduced-motion:reduce){.${FAR_CLASS},.${NEAR_CLASS},.${FAR_VIEW_CLASS} .${FAR_CLASS},.${FAR_VIEW_CLASS} .${NEAR_CLASS}{transition:none}}`,
 	];
 }
 

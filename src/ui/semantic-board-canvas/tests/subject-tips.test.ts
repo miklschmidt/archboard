@@ -3,14 +3,15 @@
 // What these catch: a tip that repeats what the card already draws, one that
 // leaves out what the far view hides, a label's tip that loses the kind of
 // line it names, and a container whose whole frame, rather than its header,
-// answers the pointer.
+// answers the pointer, a lifeline that answers for its participant, and a
+// double-click that opens anything but a card or a container's header.
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 
 import { SemanticVariantSchema } from "@/shared/semantic-board/index";
 import { withFixtureOrders } from "@/ui/semantic-board-canvas/tests/fixture-orders";
-import { subjectTip, tipTargetAt } from "@/ui/semantic-board-canvas/tips";
+import { openableAt, subjectTip, tipTargetAt } from "@/ui/semantic-board-canvas/tips";
 
 beforeAll(() => {
 	GlobalRegistrator.register();
@@ -68,6 +69,7 @@ function drawn(): SVGSVGElement {
 		`<g data-semantic-kind="edge" data-semantic-id="e1" data-type-name="Calls"><path id="wire"></path></g>` +
 		`<g data-semantic-kind="edge" data-semantic-id="e1" data-semantic-part="label"><rect id="pill"></rect></g>` +
 		`<g data-semantic-kind="region" data-semantic-id="c1" data-semantic-part="header"><text id="title"></text></g>` +
+		`<g data-semantic-kind="node" data-semantic-id="n1" data-semantic-part="lifeline"><rect id="bar"></rect></g>` +
 		`</svg>`;
 	const rule = document.querySelector("#rule");
 	if (rule !== null) {
@@ -133,4 +135,13 @@ test("a container answers the pointer on its header band, not across its frame",
 	expect(subjectTip(VARIANT, tipTargetAt(at(picture, "title"), 0)!, false)?.body).toBe(
 		"One process per vault.",
 	);
+});
+
+test("a double-click opens a card or a container by its header, and a lifeline has no tip", () => {
+	const picture = drawn();
+	expect(openableAt(at(picture, "card"), 0)).toBe("n1");
+	expect(openableAt(at(picture, "frame"), 20)).toBe("c1");
+	expect(openableAt(at(picture, "frame"), 60)).toBeNull();
+	expect(openableAt(at(picture, "pill"), 0)).toBeNull();
+	expect(tipTargetAt(at(picture, "bar"), 0)).toBeNull();
 });

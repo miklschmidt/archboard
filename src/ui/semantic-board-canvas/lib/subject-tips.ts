@@ -56,8 +56,9 @@ function tipTargetAt(target: EventTarget | null, clientY: number): TipTarget | n
  */
 function partOf(group: Element, id: string, clientY: number): TipTarget | null {
 	const part = group.getAttribute(PART_ATTRIBUTE);
-	if (part === "label" || part === "header") {
-		return { id, part, anchor: group };
+	if (part !== null) {
+		// A participant's lifeline runs the page's height: its card says who it is.
+		return part === "label" || part === "header" ? { id, part, anchor: group } : null;
 	}
 	const kind = group.getAttribute("data-semantic-kind");
 	if (kind === "node") {
@@ -86,6 +87,18 @@ function headerBand(frame: Element, id: string, clientY: number): TipTarget | nu
 	return clientY <= rule.getBoundingClientRect().top
 		? { id, part: "header", anchor: header }
 		: null;
+}
+
+/**
+ * The subject a double-click under the pointer opens: a card, or a container
+ * by its header, the parts whose tips say what a double-click does.
+ * @param target What the pointer is over.
+ * @param clientY Where the pointer is, down the screen.
+ * @returns The subject, or null over a label or anywhere else.
+ */
+function openableAt(target: EventTarget | null, clientY: number): string | null {
+	const part = tipTargetAt(target, clientY);
+	return part === null || part.part === "label" ? null : part.id;
 }
 
 /**
@@ -158,4 +171,4 @@ function saying(tip: SubjectTip): SubjectTip | null {
 	return Object.values(tip).some((line) => line !== undefined && line !== "") ? tip : null;
 }
 
-export { subjectTip, tipTargetAt, type SubjectTip, type TipTarget };
+export { openableAt, subjectTip, tipTargetAt, type SubjectTip, type TipTarget };
