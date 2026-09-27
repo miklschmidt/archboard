@@ -7,7 +7,6 @@
 // chooser and the finishing passes count each one as a crossing more
 // (even-pins.ts, crossingsSeen), so none of them trades into one.
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
-import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { verticesOf } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { ROUTE_LANE } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 import { crossingPlaces, type Run } from "@/transformers/semantic-renderer/lib/track/score";
@@ -41,17 +40,7 @@ function nearBend(run: Run, at: number, axis: "x" | "y"): boolean {
  * @returns Their number.
  */
 export function corneredCrossings(drawing: ArchitectureDrawing): number {
-	return corneredAmong(drawing.edges.map(({ curve }) => verticesOf(curve)));
-}
-
-/**
- * The places some lines cross within a lane of a bend of either line, as
- * {@link corneredCrossings} counts them.
- * @param lines Every line's corners.
- * @returns Their number.
- */
-export function corneredAmong(lines: readonly (readonly Point[])[]): number {
-	const places = crossingPlaces(lines).filter(
+	const places = crossingPlaces(drawing.edges.map(({ curve }) => verticesOf(curve))).filter(
 		({ level, upright }) =>
 			nearBend(level, upright.from.x, "x") || nearBend(upright, level.from.y, "y"),
 	);

@@ -45,16 +45,10 @@ const ONE_STROKE = 2.5;
 const NEAR = ROUTE_LANE / 2 + 0.5;
 
 /** A routed line as the stack rules read it: its source, its target and its corners. */
-export interface Line {
+interface Line {
 	readonly id: string;
 	readonly ends: readonly [string, string];
 	readonly points: readonly Point[];
-	/**
-	 * The trunks the line is drawn on together with other lines by design,
-	 * where an engine draws lines through shared ports as one (the block
-	 * engine's joins and trunks), each by a key.
-	 */
-	readonly trunks?: readonly string[];
 }
 
 /** One straight run of a line. */
@@ -111,14 +105,12 @@ function runsOf(line: Line): Run[] {
  * joining another, as unrelated lines do: Board persistence's "take the new
  * name's lease" left Place the file apart from "does another board answer to
  * it" and rode the trunk into Former names, and Read and validate's two lines
- * left its side apart and shared one stroke for 34 px. Two lines an engine
- * draws on one trunk by design are related too.
+ * left its side apart and shared one stroke for 34 px.
  * @param one A line.
  * @param other Another.
  * @returns True when they have an end in common.
  */
 function related(one: Line, other: Line): boolean {
-	if (one.trunks?.some((shared) => other.trunks?.includes(shared)) === true) return true;
 	return tipsOf(one).some(([card, tip]) =>
 		tipsOf(other).some(
 			([theirs, point]) => theirs === card && Math.hypot(tip.x - point.x, tip.y - point.y) <= NEAR,
@@ -254,29 +246,6 @@ export function trackedLanes(drawing: ArchitectureDrawing): number {
 }
 
 /**
- * What some lines' strokes show a reader, as a drawing's are counted: the
- * stacks of unrelated lines on one stroke ({@link stackKeys}), the lanes'
- * worth of line they draw on one stroke or side by side nearer than a lane
- * ({@link stackedLanes}, {@link trackedLanes}), and the pairs of unrelated
- * lines that touch ({@link touchKeys}). The lines are an engine's that forks
- * the lines of one end by design, drawing a junction mark where they part:
- * the track engine's fork of two lines out of Grading session, one jogging
- * 10 px where the other turned, counted as a touch, took Skill evaluation's
- * groups packed at 8 more bends and a third more line.
- * @param lines The lines.
- * @returns Their stacks, those lanes, and their touching pairs.
- */
-export function strokesOf(lines: readonly Line[]): {
-	stacks: number;
-	lanes: number;
-	touches: number;
-} {
-	const stacks = stacksOf(lines);
-	const lanes = lanesOf(stacks) + lanesOf(stacksOf(lines, BESIDE));
-	return { stacks: stacks.length, lanes, touches: touchesAmong(lines, true).length };
-}
-
-/**
  * How many lanes long some stacks are together.
  * @param stacks The stacks.
  * @returns Their shared length, in lanes.
@@ -388,21 +357,11 @@ function branches(line: Line, corner: number, other: Line, runs: readonly Run[])
  * @returns One key for every touching pair, naming its two lines.
  */
 export function touchKeys(drawing: ArchitectureDrawing): string[] {
-	return touchesAmong(linesOf(drawing));
-}
-
-/**
- * The pairs of some lines that touch, as {@link touchKeys} finds them.
- * @param lines The lines.
- * @param forked Whether lines that share an end fork by design, drawn with a
- * junction mark where they part, so only unrelated lines touch.
- * @returns One key for every touching pair, naming its two lines.
- */
-function touchesAmong(lines: readonly Line[], forked = false): string[] {
+	const lines = linesOf(drawing);
 	const runs = lines.map(runsOf);
 	const touching = lines.flatMap((line, index) =>
 		lines.flatMap((other, at) =>
-			at !== index && !(forked && related(line, other)) && touches(line, other, runs[at]!)
+			at !== index && touches(line, other, runs[at]!)
 				? [[line.id, other.id].toSorted().join("|")]
 				: [],
 		),

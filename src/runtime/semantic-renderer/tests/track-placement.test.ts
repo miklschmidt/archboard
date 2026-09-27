@@ -5,14 +5,16 @@
 // and a wrap standing a card in a line's way, or away from the port its one
 // line leaves; and the label of a line leaving a container standing beside
 // it, where the card the line leads into follows it out past the container's
-// wall; and a board's containers stacked or not, or its wraps chosen, on how
-// the page fits ahead of how its lines read (ADR 0039); and a group region's
-// ports held where its parent settled them, off their lines.
+// wall; and a board's containers stacked or not by a near tie, given to the
+// page that fits the pane better however little, at the cost of a crossing;
+// and a group region's ports held where its parent settled them, off their
+// lines.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
 import {
 	corridorPoints,
 	routeLabels,
@@ -26,7 +28,6 @@ import browserApplication from "./browser-application.json";
 import grading from "./grading.json";
 import reservedLane from "./reserved-label-lane.json";
 import workingWithAnAgent from "./working-with-an-agent.json";
-import skillEvaluation from "./skill-evaluation.json";
 import wrappedBlocker from "./wrapped-blocker.json";
 
 /**
@@ -96,7 +97,7 @@ test("a card two cards of one rank feed stands midway under them", async () => {
 const wrapPolicy = SemanticPolicySchema.parse({
 	levels: ["service"],
 	nodeKinds: Object.fromEntries(
-		["module", "function", "service", "external", "config"].map((kind) => [
+		["module", "function", "service", "external"].map((kind) => [
 			kind,
 			{ name: kind, icon: "RiBox3Line" },
 		]),
@@ -104,11 +105,9 @@ const wrapPolicy = SemanticPolicySchema.parse({
 	relationshipKinds: {
 		call: { name: "Call", dash: "solid", arrowhead: "filled" },
 		data: { name: "Data", color: "teal", dash: "solid", arrowhead: "filled" },
-		http: { name: "HTTP", color: "sky", dash: "solid", arrowhead: "filled" },
 	},
 	groups: {
 		inner: { name: "Inner", color: "purple" },
-		grading: { name: "Grading", color: "amber" },
 		writes: { name: "Board writes", color: "orange" },
 		drawing: { name: "Drawing", color: "violet" },
 		panes: { name: "Live panes", color: "teal" },
@@ -128,31 +127,18 @@ function dropsStraight(svg: string, id: string): boolean {
 	return points.every((point) => Math.abs(point.x - points[0]!.x) < 0.5);
 }
 
-// Taken from a board of this repository: a wrap stood a card with no line of
-// its own to either end in the column between Author run and Skill install,
-// and 'install the arm being measured' stepped around it.
+// Reduced from a board of this repository, names replaced: a wrap stood a
+// card with no line of its own to either end in the column between a card
+// and the card its line drops to, and the line stepped around it.
 test("a wrapped card stands aside from a line that drops straight past it", async () => {
+	const content = orderedFixture(wrappedBlocker);
 	const drawing = await renderArchitecture({
-		content: orderedFixture(skillEvaluation),
+		content,
 		theme: "light",
 		policy: wrapPolicy,
 		layout: "track",
 	});
-	expect(dropsStraight(drawing.svg, "25DiejPQ")).toBe(true);
-});
-
-// Reduced from a board of this repository, names replaced: of two ways to
-// wrap its widest rank, the board took the one that fit the pane better,
-// where one line ran across another at its label; the other crosses nothing.
-test("a board's wraps are ranked on how they read before how they fit", async () => {
-	const drawing = await renderArchitecture({
-		content: orderedFixture(wrappedBlocker),
-		theme: "light",
-		policy: wrapPolicy,
-		layout: "track",
-	});
-	const routes = corridorPoints(drawing.svg);
-	expect(routesCross(routes.get("e1")!, routes.get("e5")!)).toBe(false);
+	expect(dropsStraight(drawing.svg, "e6")).toBe(true);
 });
 
 // Reduced from a board of this repository, names replaced: two cards below a
@@ -253,20 +239,20 @@ const browserPolicy = SemanticPolicySchema.parse({
 	},
 });
 
-// Taken from a board of this repository: laid as Graphviz ranks them, its
-// containers fit the pane better, and 'the step to show' from Walkthrough
-// recording ran across four lines out of Pane session; stacked, on a taller
-// page, it crosses none of them. A container stacks where that reads better.
-test("a board stacks its containers where that reads better, on whatever page", async () => {
+// Taken from a board of this repository: its containers laid stacked scored
+// within a twentieth of laid as Graphviz ranks them, on a page far taller
+// than the pane's proportions, and a wider clearance off group regions'
+// walls tipped it to the tall page.
+test("a board that reads about as well stacked keeps the page that fits the pane better", async () => {
 	const drawing = await renderArchitecture({
 		content: orderedFixture(browserApplication),
 		theme: "light",
 		policy: browserPolicy,
 		layout: "track",
 	});
-	const routes = corridorPoints(drawing.svg);
-	for (const id of ["rcSUaP1b", "PuILGsjg", "Cw08FQeQ", "5U5bpM9T"])
-		expect(routesCross(routes.get(id)!, routes.get("Gxh1Pbx3")!), id).toBe(false);
+	expect(drawing.width / drawing.height).toBeGreaterThan(
+		REFERENCE_PANE.width / REFERENCE_PANE.height,
+	);
 });
 
 // Taken from a board of this repository: its containers laid stacked scored
