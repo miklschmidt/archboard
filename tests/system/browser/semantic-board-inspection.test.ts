@@ -193,7 +193,8 @@ test("a person reads containment, code and the level below it, and writes nothin
 						name: "board-io",
 						kind: "module",
 						parent: "Engine",
-						description: "The one place a note is read or written, synchronously on purpose.",
+						// One word longer than any tip is wide: a path, as descriptions carry them.
+						description: `The one place a note is read or written, synchronously on purpose. It lives at ${"src/runtime/engine/".repeat(8)}board-io.ts on the branch that introduced it.`,
 						binding: { repo: "archboard", path: "src/runtime/engine/board-io.ts" },
 						drillDown: { board: "engine", variant: { kind: "named", name: "as built" } },
 					},
@@ -239,6 +240,30 @@ test("a person reads containment, code and the level below it, and writes nothin
 	expect(Object.keys(ids).toSorted()).toEqual(["module", "other", "planned", "service", "system"]);
 	expect(await drawnInside(browser, ids["service"] ?? "", ids["system"] ?? "")).toBe(true);
 	expect(await drawnInside(browser, ids["module"] ?? "", ids["service"] ?? "")).toBe(true);
+
+	// Resting the pointer on the card opens its tip, and a word longer than the
+	// tip is wide breaks inside it rather than running out past its edge.
+	await browser.eval(
+		`(() => { const card = document.querySelector("${SURFACE} [data-semantic-id='${ids["module"] ?? ""}']");` +
+			` const at = card.getBoundingClientRect();` +
+			` card.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerId: 1, isPrimary: true,` +
+			`   clientX: Math.round(at.x + at.width / 2), clientY: Math.round(at.y + at.height / 2) })); })()`,
+	);
+	const tip = await pollUntil(
+		() =>
+			browser.eval<{ width: number; widest: number; right: number } | null>(
+				`(() => { const tip = document.querySelector("[data-slot='semantic-subject-tip']");` +
+					` if (tip === null) return null;` +
+					` const box = tip.getBoundingClientRect();` +
+					` const widest = Math.max(...[...tip.querySelectorAll("p")].map((line) => line.scrollWidth));` +
+					` return { width: tip.clientWidth, widest, right: box.right }; })()`,
+			),
+		(seen) => seen !== null,
+		"the card's tip to open",
+		WAIT,
+	);
+	expect(tip!.widest).toBeLessThanOrEqual(tip!.width);
+	expect(tip!.right).toBeLessThanOrEqual(await browser.eval<number>("innerWidth"));
 
 	// The sidebar opens on the board, and a pick turns it to the selection.
 	expect(await sidebarTab(browser.eval.bind(browser))).toBe("board");

@@ -1,9 +1,18 @@
-// The tip over the part of the picture the pointer rests on.
+// The tip over the part of the picture the pointer rests on: a small card that
+// says what the part is, drawn as the picture draws its kind, and what the
+// picture leaves out about it.
 
-import type { JSX } from "react";
+import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type JSX } from "react";
 
+import { lineInk } from "@/transformers/semantic-renderer/index";
+import { TooltipContent, Tooltip } from "@/ui/components/tooltip";
+import {
+	RelationshipSample,
+	TypeSample,
+} from "@/ui/semantic-board-canvas/components/SemanticTypeSamples";
+import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
-import { Tooltip, TooltipContent } from "@/ui/components/tooltip";
+import { paletteInk } from "@/ui/semantic-board-canvas/lib/palette";
 import {
 	subjectTip,
 	type SubjectTip,
@@ -32,13 +41,41 @@ function SemanticSubjectTip(props: {
 		<Tooltip open>
 			<TooltipContent
 				anchor={target.anchor}
-				sideOffset={8}
+				sideOffset={10}
+				look="card"
 				data-slot="semantic-subject-tip"
-				className="max-w-sm flex-col items-start gap-1 py-2"
+				className="w-max min-w-56 flex-col items-stretch gap-2.5"
+				style={accentOf(tip.appearance)}
 			>
 				<TipLines tip={tip} />
 			</TooltipContent>
 		</Tooltip>
+	);
+}
+
+/**
+ * A tip's lines, in reading order: what it is about, what the far view hides,
+ * the longer account, and what a double-click does.
+ * @param props The tip.
+ * @param props.tip What it says.
+ * @returns The lines that have something to say.
+ */
+function TipLines(props: { readonly tip: SubjectTip }): JSX.Element {
+	const { tip } = props;
+	return (
+		<>
+			<TipHeading tip={tip} />
+			{tip.lead !== undefined && <p className="text-body">{tip.lead}</p>}
+			{tip.body !== undefined && <TipBody key={tip.body} text={tip.body} />}
+			{tip.hint !== undefined && (
+				<p
+					data-slot="semantic-subject-tip-hint"
+					className="border-border text-technical text-muted-foreground border-t pt-2"
+				>
+					{tip.hint}
+				</p>
+			)}
+		</>
 	);
 }
 
@@ -59,21 +96,82 @@ function tipOver(
 }
 
 /**
- * A tip's lines, in reading order: what leads, what kind of line a label
- * names, the longer account, and what a double-click does.
- * @param props The tip.
- * @param props.tip Its lines.
- * @returns The lines that have something to say.
+ * The tip's edge in the ink the picture draws the part's kind with: a card's
+ * kind colour, a line's colour at its line strength.
+ * @param appearance How the picture draws the part, when it names its type.
+ * @returns The edge's style, or none when the picture names no type.
  */
-function TipLines(props: { readonly tip: SubjectTip }): JSX.Element {
-	const { lead, kind, body, hint } = props.tip;
+function accentOf(appearance: AppliedAppearance | undefined): CSSProperties | undefined {
+	if (appearance === undefined) return undefined;
+	const ink =
+		appearance.depiction === ""
+			? lineInk(paletteInk(appearance.lineColor, "--diagram-edge"))
+			: paletteInk(appearance.typeColor);
+	return { borderLeftColor: ink, borderLeftWidth: 3 };
+}
+
+/**
+ * What the tip is about: the kind drawn small, as the picture draws it, beside
+ * the part's name or a label's words and the kind's name.
+ * @param props The tip.
+ * @param props.tip What it says.
+ * @returns The heading.
+ */
+function TipHeading(props: { readonly tip: SubjectTip }): JSX.Element {
+	const { title, kind, appearance } = props.tip;
 	return (
-		<>
-			{lead !== undefined && <p className="font-medium">{lead}</p>}
-			{kind !== undefined && <p className="text-technical text-background/60">{kind}</p>}
-			{body !== undefined && <p className="text-background/80 line-clamp-8">{body}</p>}
-			{hint !== undefined && <p className="text-technical text-background/60 pt-0.5">{hint}</p>}
-		</>
+		<div data-slot="semantic-subject-tip-heading" className="flex items-center gap-2.5">
+			{appearance !== undefined &&
+				(appearance.depiction === "" ? (
+					<RelationshipSample appearance={appearance} />
+				) : (
+					<TypeSample appearance={appearance} />
+				))}
+			<div className="flex min-w-0 flex-col">
+				<p className="leading-snug font-semibold">{title}</p>
+				{kind !== undefined && (
+					<p className="text-technical text-muted-foreground leading-snug">{kind}</p>
+				)}
+			</div>
+		</div>
+	);
+}
+
+/** How many lines of a description a tip shows before it points to the inspector. */
+const BODY_LINES = 10;
+
+/**
+ * A description, as its author broke it into lines, shown up to
+ * {@link BODY_LINES} lines. A longer one ends in an ellipsis and says where the
+ * rest is. It is keyed by its text, so another description is measured afresh.
+ * @param props The description.
+ * @param props.text What it says.
+ * @returns The description.
+ */
+function TipBody(props: { readonly text: string }): JSX.Element {
+	const body = useRef<HTMLParagraphElement>(null);
+	const [cut, setCut] = useState(false);
+	useLayoutEffect(() => {
+		const shown = body.current;
+		setCut(shown !== null && shown.scrollHeight > shown.clientHeight + 1);
+	}, []);
+	const style = useMemo<CSSProperties>(() => ({ WebkitLineClamp: BODY_LINES }), []);
+	return (
+		<div className="flex flex-col gap-1.5">
+			<p
+				ref={body}
+				data-slot="semantic-subject-tip-body"
+				className="text-body text-popover-foreground/85 [display:-webkit-box] overflow-hidden leading-relaxed whitespace-pre-line [-webkit-box-orient:vertical]"
+				style={style}
+			>
+				{props.text}
+			</p>
+			{cut && (
+				<p data-slot="semantic-subject-tip-more" className="text-technical text-muted-foreground">
+					Select it to read the rest in the inspector.
+				</p>
+			)}
+		</div>
 	);
 }
 
