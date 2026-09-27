@@ -391,7 +391,13 @@ function travellingPulses(pulse: Pulse): string {
 	const glow = head * COMET_GLOW.width;
 	const volley: Volley = {
 		path: pathOf(ride),
-		rest: restingPlace(ride, length, glow / 2, pulse.labels),
+		// The two thickest layers of the tail read as the streak's body.
+		rest: restingPlace(
+			ride,
+			length,
+			{ glow: glow / 2, body: tail * STREAK_TAIL_LAYERS[2].reach },
+			pulse.labels,
+		),
 		still: Math.ceil(length + glow) + 1,
 		spacings,
 		period: spacings.reduce((sum, spacing) => sum + spacing, 0),

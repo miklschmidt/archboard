@@ -1,7 +1,14 @@
 // Where a line's traffic rests: the one streak a still picture shows on it.
 // Labels are drawn over the traffic, so a streak resting where a label's border
 // cuts its glow reads as a blob stuck to the label; it rests where none does.
+// A streak whose glow merely clears a label still reads as stuck to it: Agent
+// workbench's "turn/start when idle" rested 2 px above its own label, and
+// Board rasterizer's "CDP over a WebSocket" rested below its label with its
+// tail running up out of the label's border. So a streak, its head and the
+// body of its tail, rests a lane from every label where its line has room, as
+// a line keeps a lane from another.
 import { inflate, type Box, type Point } from "@/transformers/semantic-renderer/lib/geometry";
+import { ROUTE_LANE } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 import {
 	curveBounds,
 	pointOnSegment,
@@ -19,10 +26,11 @@ const REST_STEP = 0.5;
 const CHORDS = 16;
 
 /**
- * How a resting streak's glow meets the labels drawn over it: clear of them,
- * wholly under one, or cut by a label's border. Lower is better.
+ * How a resting streak's glow meets the labels drawn over it: a lane or more
+ * from every one, clear of them, wholly under one, or cut by a label's border.
+ * Lower is better.
  */
-const COVER = { clear: 0, hidden: 1, cut: 2 } as const;
+const COVER = { apart: 0, clear: 1, hidden: 2, cut: 3 } as const;
 
 /**
  * Whether a point lies inside a box.
@@ -39,18 +47,38 @@ function holds(box: Box, point: Point): boolean {
 	);
 }
 
+/** A resting streak as the labels over it are judged against. */
+interface Streak {
+	/** The radius of its glow. */
+	readonly glow: number;
+	/** How far behind its head its tail reads as its body. */
+	readonly body: number;
+}
+
 /**
- * How the labels drawn over a streak meet its glow at one place.
- * @param point Where the streak's head is.
- * @param glow The glow's radius.
+ * How the labels drawn over a streak meet it with its head at one place.
+ * @param points Points every {@link REST_STEP} along the route.
+ * @param at The index of the head's point.
+ * @param streak The streak.
  * @param labels The labels drawn over it.
- * @returns How much of the glow they take: clear, hidden or cut.
+ * @returns How much of it they take: apart, clear, hidden or cut.
  */
-function coverAt(point: Point, glow: number, labels: readonly Box[]): number {
+function coverAt(
+	points: readonly Point[],
+	at: number,
+	streak: Streak,
+	labels: readonly Box[],
+): number {
+	const { glow, body } = streak;
+	const head = points[at];
+	if (head === undefined) return COVER.apart;
+	const lanes = labels.map((label) => inflate(label, glow + ROUTE_LANE));
+	const behind = points.slice(Math.max(0, at - Math.round(body / REST_STEP)), at + 1);
+	if (behind.every((point) => !lanes.some((lane) => holds(lane, point)))) return COVER.apart;
 	let cover: number = COVER.clear;
 	for (const label of labels) {
-		if (holds(inflate(label, -glow), point)) cover = Math.max(cover, COVER.hidden);
-		else if (holds(inflate(label, glow + LABEL_AIR), point)) return COVER.cut;
+		if (holds(inflate(label, -glow), head)) cover = Math.max(cover, COVER.hidden);
+		else if (holds(inflate(label, glow + LABEL_AIR), head)) return COVER.cut;
 	}
 	return cover;
 }
@@ -97,48 +125,48 @@ function traced(curve: Curve): Point[] {
 
 /**
  * Where a line's resting streak puts its head along the route it rides: half
- * way, unless a label drawn over the traffic would cut the head's glow there,
- * when the nearest place none does, or failing that the nearest place a label
- * hides it wholly. It stays at least a glow from both ends of the route, so a
- * still picture shows a whole streak, never a glow alone at a card; a route
- * too short for that rests its streak just before its start, where none of it
- * shows.
+ * way, unless a label drawn over the traffic stands within a lane of the
+ * streak there, when the nearest place none does, failing that the nearest
+ * place no label's border cuts the head's glow, and failing that the nearest
+ * place a label hides it wholly. It stays at least a glow from both ends of
+ * the route, so a still picture shows a whole streak, never a glow alone at a
+ * card; a route too short for that rests its streak just before its start,
+ * where none of it shows.
  * @param ride The route the traffic rides.
  * @param length How long that route is.
- * @param glow The radius of a streak's glow.
+ * @param streak The streak's glow and the body of its tail.
  * @param labels The labels drawn over the traffic.
  * @returns How far along the route the resting head is.
  */
-function restingPlace(ride: Curve, length: number, glow: number, labels: readonly Box[]): number {
+function restingPlace(ride: Curve, length: number, streak: Streak, labels: readonly Box[]): number {
 	const half = length / 2;
-	if (half < glow) return -glow;
-	const reach = inflate(curveBounds(ride), glow + LABEL_AIR);
+	if (half < streak.glow) return -streak.glow;
+	const reach = inflate(curveBounds(ride), streak.glow + ROUTE_LANE);
 	const near = labels.filter((label) => overlaps(label, reach));
 	if (near.length === 0) return half;
-	return leastCovered(traced(ride), nearestFirst(half, glow), glow, near);
+	return leastCovered(traced(ride), nearestFirst(half, streak.glow), streak, near);
 }
 
 /**
- * The first of some places where the labels leave a streak's glow clear, or
- * failing that the first where they cover it least.
+ * The first of some places where the labels leave a streak a lane clear, or
+ * failing that the first where they cover its head least.
  * @param points Points every {@link REST_STEP} along the route.
  * @param places The places to try, in order.
- * @param glow The radius of a streak's glow.
+ * @param streak The streak.
  * @param labels The labels drawn over the traffic.
  * @returns The place.
  */
 function leastCovered(
 	points: readonly Point[],
 	places: readonly number[],
-	glow: number,
+	streak: Streak,
 	labels: readonly Box[],
 ): number {
 	let best = { rest: places[0]!, cover: Number.POSITIVE_INFINITY };
 	for (const rest of places) {
-		const point = points[Math.round(rest / REST_STEP)];
-		const cover = point === undefined ? COVER.clear : coverAt(point, glow, labels);
+		const cover = coverAt(points, Math.round(rest / REST_STEP), streak, labels);
 		if (cover < best.cover) best = { rest, cover };
-		if (best.cover === COVER.clear) break;
+		if (best.cover === COVER.apart) break;
 	}
 	return best.rest;
 }
@@ -168,4 +196,4 @@ function overlaps(a: Box, b: Box): boolean {
 	return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 }
 
-export { restingPlace };
+export { restingPlace, type Streak };
