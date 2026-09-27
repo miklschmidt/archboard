@@ -16,6 +16,7 @@ export {
 	EndpointOptions,
 	finished,
 	settleLabels,
+	shownDrawing,
 	tidierSettlement,
 	improveProjection,
 	projectLabelChannels,

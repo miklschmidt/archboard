@@ -48,6 +48,8 @@ import type {
 } from "@/transformers/semantic-renderer/lib/drawing";
 import { measureArchitecture } from "@/transformers/semantic-renderer/lib/measurement";
 import { withStepLines } from "@/transformers/semantic-renderer/lib/step-lines";
+import { lineLooks } from "@/transformers/semantic-renderer/lib/semantic-appearance";
+import { shownContent, shownDrawing, unshownOf } from "@/transformers/semantic-renderer/lib/shown";
 import { PALETTE, type Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { paintArchitecture } from "@/transformers/semantic-renderer/lib/svg/architecture";
 import { paintDataFlow } from "@/transformers/semantic-renderer/lib/svg/dataflow";
@@ -273,7 +275,9 @@ function layoutRemembered(
  * @throws {SemanticRenderError} When there is nothing to draw.
  */
 async function renderArchitecture(request: DiagramRenderRequest): Promise<RenderedDiagram> {
-	if (request.content.nodes.length === 0) {
+	const unshown = unshownOf(request.standing, request.paintStanding);
+	const told = shownContent(request.content, unshown);
+	if (told.nodes.length === 0) {
 		throw new SemanticRenderError(
 			"NOTHING_TO_RENDER",
 			"this architecture has no nodes, so there is no diagram to draw",
@@ -290,13 +294,20 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		policy,
 		stepLines.derived,
 	);
-	const painting = paintArchitecture(
+	const shown = shownDrawing(
 		drawing,
+		unshown,
+		lineLooks(stepLines.content.edges, policy, stepLines.derived),
+	);
+	const painting = paintArchitecture(
+		shown,
 		PALETTE,
 		standingsFrom(request.paintStanding === false ? undefined : request.standing),
 		unsettledFrom(request.unsettled),
 		policy,
 		stepLines.derived,
+		// The page is the comparison's page whether or not its marks are drawn.
+		{ drawing, standingOf: standingsFrom(request.standing) },
 	);
 	const page = pageFor(painting, PALETTE, request.unbuilt);
 
@@ -304,8 +315,8 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		width: page.width,
 		height: page.height,
 		palette: PALETTE,
-		title: plannedTitle(titleFor(request.content), request.unbuilt),
-		description: descriptionFor(drawing.containers.map((held) => held.measured.node.name)),
+		title: plannedTitle(titleFor(told), request.unbuilt),
+		description: descriptionFor(shown.containers.map((held) => held.measured.node.name)),
 		fonts: request.fonts ?? "linked",
 		body: page.body,
 		reading: drawing.direction,
@@ -382,7 +393,9 @@ function sequenceDescriptionFor(content: VariantContent): string {
  */
 function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
 	const { content } = request;
-	if (content.flows.length === 0) {
+	const unshown = unshownOf(request.standing, request.paintStanding);
+	const told = shownContent(content, unshown);
+	if (told.flows.length === 0) {
 		throw new SemanticRenderError(
 			"NOTHING_TO_RENDER",
 			"this content has no flow, so there is no sequence to draw",
@@ -396,6 +409,7 @@ function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
 		standingsFrom(request.paintStanding === false ? undefined : request.standing),
 		unsettledFrom(request.unsettled),
 		request.policy ?? DEFAULT_SEMANTIC_POLICY,
+		{ unshown, standingOf: standingsFrom(request.standing) },
 	);
 	const page = pageFor(painting, PALETTE, request.unbuilt);
 
@@ -403,8 +417,8 @@ function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
 		width: page.width,
 		height: page.height,
 		palette: PALETTE,
-		title: plannedTitle(sequenceTitleFor(content), request.unbuilt),
-		description: sequenceDescriptionFor(content),
+		title: plannedTitle(sequenceTitleFor(told), request.unbuilt),
+		description: sequenceDescriptionFor(told),
 		fonts: request.fonts ?? "linked",
 		body: page.body,
 		theme: request.theme,

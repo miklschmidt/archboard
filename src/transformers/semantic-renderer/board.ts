@@ -13,8 +13,6 @@ import {
 	findView,
 	addressedVariant,
 	nothingBuilt,
-	scopedContent,
-	type DrawnProposal,
 	type DiagramGrammar,
 	type DiagramTheme,
 	type LayoutEngineName,
@@ -92,26 +90,6 @@ function toldStanding(variant: SemanticVariant): ToldStanding | null {
 }
 
 /**
- * Choose the picture's content while retaining comparison standings for routing.
- * @param proposal The compared drawing.
- * @param variant The variant itself.
- * @param scope The view being read.
- * @param comparison Whether comparison treatment is visible.
- * @returns The content and standing for either reading.
- */
-function pictureOf(
-	proposal: DrawnProposal,
-	variant: SemanticVariant,
-	scope: ViewScope,
-	comparison: boolean,
-) {
-	return {
-		content: comparison ? proposal.content : scopedContent(variant.content, scope),
-		...(proposal.changes === null ? {} : { standing: proposal.changes.standing }),
-	};
-}
-
-/**
  * Draw one variant of a board, or say that there is nothing on it yet.
  *
  * An empty board is not an error: it is a board somebody has just made and has
@@ -140,8 +118,9 @@ async function drawnReply(
 	},
 ): Promise<SemanticRenderReply> {
 	const reading = readingOf(view);
-	// The comparison restores what the variant lacks of the one it is read against;
-	// a clean reading below draws only the variant's own content.
+	// The comparison restores what the variant lacks of the one it is read against.
+	// A picture without the comparison is laid out from the same content and
+	// leaves what stands removed undrawn, so the toggle moves nothing.
 	const proposal = drawingOf(board, variant, reading.scope);
 	// A subject nobody has decided yet is drawn with a warning on it, so a reader
 	// looking at the picture rather than the panel still knows not to trust it.
@@ -161,7 +140,8 @@ async function drawnReply(
 	try {
 		const picture = await renderSemanticView({
 			policy: how.policy,
-			...pictureOf(proposal, variant, reading.scope, how.comparison),
+			content: proposal.content,
+			...(proposal.changes === null ? {} : { standing: proposal.changes.standing }),
 			paintStanding: how.comparison,
 			grammar: reading.grammar,
 			theme: how.theme,
