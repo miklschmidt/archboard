@@ -21,7 +21,7 @@ interface GroupChoice {
 	/** Whether the vault configuration defines it. */
 	readonly configured: boolean;
 	/** Its colour's name, when the vault defines it. */
-	readonly color: string | undefined;
+	readonly color: GroupNames[string]["color"] | undefined;
 }
 
 /** A chosen group, and its members. */

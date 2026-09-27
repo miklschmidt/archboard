@@ -247,17 +247,15 @@ function Described(props: DescribedProps): JSX.Element | null {
 	);
 }
 
-/** How the panel names groups, which one is selected, and how to select one. */
+/** How the panel names groups, and how to select one. */
 interface GroupControls {
 	/** What the vault calls each group, by id. */
 	readonly names: GroupNames;
-	/** The selected group's id, or null for none. */
-	readonly selected: string | null;
 	/**
 	 * Select a group's members, when the pane around the panel can.
-	 * @param group The group's id, or null to let go.
+	 * @param group The group's id.
 	 */
-	readonly onChoose?: ((group: string | null) => void) | undefined;
+	readonly onChoose?: ((group: string) => void) | undefined;
 }
 
 /** Inputs for one membership. */
@@ -280,16 +278,14 @@ interface MembershipProps {
 function Membership(props: MembershipProps): JSX.Element {
 	const { group, controls } = props;
 	const choose = useCallback((): void => {
-		controls.onChoose?.(controls.selected === group ? null : group);
+		controls.onChoose?.(group);
 	}, [controls, group]);
 	const configured = Object.hasOwn(controls.names, group);
-	const selected = controls.selected === group;
 	return (
 		<Button
 			type="button"
-			variant={selected ? "secondary" : "outline"}
+			variant="outline"
 			size="sm"
-			aria-pressed={selected}
 			disabled={controls.onChoose === undefined}
 			data-slot="semantic-inspector-group"
 			data-group={group}
@@ -304,7 +300,7 @@ function Membership(props: MembershipProps): JSX.Element {
 		>
 			<SemanticGroupChip
 				color={configured ? controls.names[group]?.color : undefined}
-				selected={selected}
+				selected={false}
 			/>
 			{groupLabel(group, controls.names)}
 			{!configured && <span className="text-muted-foreground"> (not configured)</span>}

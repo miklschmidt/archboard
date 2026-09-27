@@ -6,12 +6,13 @@
 import { useMemo, type CSSProperties, type JSX } from "react";
 
 import { cn } from "@/ui/components/class-names";
+import type { GroupChoice } from "@/ui/semantic-board-canvas/lib/groups";
 import { paletteInk } from "@/ui/semantic-board-canvas/lib/palette";
 
 /** Inputs for a group's chip. */
 interface SemanticGroupChipProps {
 	/** The group's colour's name, or undefined when the vault does not define the group. */
-	readonly color: string | undefined;
+	readonly color: GroupChoice["color"];
 	/** Whether the group is selected. */
 	readonly selected: boolean;
 }

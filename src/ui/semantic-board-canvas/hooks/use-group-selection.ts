@@ -10,7 +10,10 @@
 // state of this one, is a pane whose group means nothing any more — the ids
 // belong to one variant of one board. Returning starts afresh instead of
 // resurrecting the old choice. A change of view keeps it, because a view
-// narrows the picture and not the group.
+// narrows the picture and not the group. A group the variant stops using is
+// let go too, since the list no longer offers it to let go of, and so is a
+// group when a walkthrough opens, whoever opened it: the picture says one of
+// the two at a time.
 //
 // What the choice selects is derived here too, from the board document, so
 // that a board change refreshes it through the query it already invalidates.
@@ -18,7 +21,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 
-import type { SemanticVariant } from "@/shared/semantic-board/index";
+import { groupsUsed, type SemanticVariant } from "@/shared/semantic-board/index";
 import {
 	groupChoices,
 	groupSelection,
@@ -75,15 +78,26 @@ function chosenHere(
 }
 
 /**
- * Whether navigation left the remembered choice, allowing an unresolved variant during refresh.
+ * Whether the remembered choice is over: navigation left it, the variant no
+ * longer uses the group, or a walkthrough opened. A variant still loading
+ * ends nothing.
  * @param place The remembered choice.
  * @param board The board now shown.
- * @param variant The resolved variant, or null while the document loads.
- * @returns Whether to forget the old choice for good.
+ * @param variant The variant now shown, or null while the document loads.
+ * @param presenting Whether a walkthrough is open.
+ * @returns Whether to forget the choice for good.
  */
-function leftPlace(place: GroupPlace | null, board: string, variant: string | null): boolean {
+function choiceOver(
+	place: GroupPlace | null,
+	board: string,
+	variant: SemanticVariant | null,
+	presenting: boolean,
+): boolean {
+	if (place === null) return false;
+	if (presenting || place.board !== board) return true;
 	return (
-		place !== null && (place.board !== board || (variant !== null && place.variant !== variant))
+		variant !== null &&
+		(place.variant !== variant.id || !groupsUsed(variant.content).includes(place.group))
 	);
 }
 
@@ -92,14 +106,19 @@ function leftPlace(place: GroupPlace | null, board: string, variant: string | nu
  * and what that selects.
  * @param board The board on screen.
  * @param variant The variant on screen, whole, or null while it has not arrived.
+ * @param presenting Whether a walkthrough is open.
  * @returns The names, the choices, the selection and the one way to change it.
  */
-function useGroupSelection(board: string, variant: SemanticVariant | null): GroupSelectionState {
+function useGroupSelection(
+	board: string,
+	variant: SemanticVariant | null,
+	presenting: boolean,
+): GroupSelectionState {
 	const shown = variant === null ? null : variant.id;
 	const policy = useQuery(vaultCheckQuery());
 	const names = policy.data === undefined ? NO_GROUP_NAMES : policy.data.policy.groups;
 	const [place, setPlace] = useState<GroupPlace | null>(null);
-	if (leftPlace(place, board, shown)) {
+	if (choiceOver(place, board, variant, presenting)) {
 		setPlace(null);
 	}
 	const group = chosenHere(place, board, shown);
