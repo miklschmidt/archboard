@@ -26,6 +26,7 @@ import commandGroups from "./command-groups.json";
 import commandInterface from "./command-interface.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
 import oneCommand from "./one-command.json";
+import oneCommandPath from "./one-command-path.json";
 import staircase from "./staircase.json";
 import voiceCoordinator from "./voice-coordinator.json";
 import walkthroughStair from "./walkthrough-stair.json";
@@ -436,3 +437,21 @@ test("a packed group's pin stands where the board's line turns to it", async () 
 	const crossings = scorecardOf(drawing, content).find(({ name }) => name === "crossings")!;
 	expect(crossings.value).toBeLessThanOrEqual(3);
 });
+
+// Taken from a board of this repository: Graphviz ranked a line's label beside
+// a card that blocks the one column both of the line's cards reach, so the
+// line stepped aside just below its source. The band above had room for the
+// label on that column, and the line runs straight with its label there.
+test.each(["track", "blocks"] as const)(
+	"a labelled line runs straight when its label fits on a neighbouring band (%s)",
+	async (layout) => {
+		const drawing = await renderArchitecture({
+			content: orderedFixture(oneCommandPath),
+			theme: "light",
+			layout,
+			policy,
+		});
+		const points = corridorPoints(drawing.svg).get("lkwXJ78e")!;
+		expect(sidewaysLevels(points).size).toBe(0);
+	},
+);

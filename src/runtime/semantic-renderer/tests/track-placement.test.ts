@@ -22,7 +22,7 @@ import browserApplication from "./browser-application.json";
 import grading from "./grading.json";
 import reservedLane from "./reserved-label-lane.json";
 import workingWithAnAgent from "./working-with-an-agent.json";
-import skillEvaluation from "./skill-evaluation.json";
+import whatTheCliCanBeAsked from "./what-the-cli-can-be-asked.json";
 import wrappedBlocker from "./wrapped-blocker.json";
 
 /**
@@ -115,7 +115,14 @@ const wrapPolicy = SemanticPolicySchema.parse({
 		call: { name: "Call", dash: "solid", arrowhead: "filled" },
 		data: { name: "Data", color: "teal", dash: "solid", arrowhead: "filled" },
 	},
-	groups: { inner: { name: "Inner", color: "purple" } },
+	groups: {
+		inner: { name: "Inner", color: "purple" },
+		writes: { name: "Board writes", color: "orange" },
+		drawing: { name: "Drawing", color: "violet" },
+		panes: { name: "Live panes", color: "teal" },
+		walkthrough: { name: "Walkthroughs", color: "cyan" },
+		checks: { name: "Vault checks", color: "pink" },
+	},
 });
 
 /**
@@ -144,16 +151,16 @@ test("a wrapped card stands aside from a line that drops straight past it", asyn
 });
 
 // Taken from a board of this repository: a wrapped card stepped out of its
-// column to open one for a line past it, but that line's label still turned
-// it round the next card, so the step bought nothing and cost the column.
+// column to open one for a line past it, but that line still ran where it
+// had, so the step bought nothing and cost the column.
 test("a wrapped card keeps its column where stepping aside straightens no line", async () => {
 	const drawing = await renderArchitecture({
-		content: orderedFixture(skillEvaluation),
+		content: orderedFixture(whatTheCliCanBeAsked),
 		theme: "light",
 		policy: wrapPolicy,
 		layout: "track",
 	});
-	const [card, above] = [drawing.atlas.nodes["7LcGoxWH"]!, drawing.atlas.nodes["PEfE7dCL"]!];
+	const [card, above] = [drawing.atlas.nodes["4oWqpsOB"]!, drawing.atlas.nodes["cw2FjFYV"]!];
 	expect(card.x + card.width / 2).toBeCloseTo(above.x + above.width / 2, 0);
 });
 
