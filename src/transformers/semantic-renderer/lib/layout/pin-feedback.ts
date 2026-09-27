@@ -245,7 +245,8 @@ function standingPinShare(node: ElkNode, face: Face): number {
  * @returns True unless the card wears a pin and this one stands beside it.
  */
 export function clearOfStandingPin(node: ElkNode, pin: AlignedPin): boolean {
-	return pin.position >= standingPinShare(node, pin.face);
+	// A pin seated at the share itself is clear of the pin, however it rounds.
+	return pin.position >= standingPinShare(node, pin.face) - 1e-9;
 }
 
 /**
