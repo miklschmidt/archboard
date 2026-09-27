@@ -10,7 +10,11 @@ import { z } from "zod";
 const TRACK_POLYLINE = "archboard.track.polyline";
 /** The layout option on a frame that carries its title row's box, as `x,y,width,height`. */
 const TRACK_TITLE = "archboard.track.title";
-/** The layout option on a frame that carries the room it keeps below what it holds past its inset. */
+/**
+ * The layout option on a frame laid out as the region round it (`blocks/lone.ts`):
+ * the region's inset, which it keeps below what it holds past its own and
+ * which its own face stands in from its title row.
+ */
 const TRACK_BELOW = "archboard.track.below";
 /** The root layout option that carries every group region, as JSON `PlacedRegion` rows. */
 const TRACK_REGIONS = "archboard.track.regions";
@@ -35,6 +39,33 @@ interface Item {
 	band: number;
 	/** How far a card's own faces stand in from its box, for a card laid out as its region. */
 	inset?: number;
+}
+
+/**
+ * The stretch of an item's box its own face spans: all of it, but for a card
+ * laid out as the region round it, whose face stands in from the box.
+ * @param item The item.
+ * @returns The face's box.
+ */
+function cardFace(item: Item): Box {
+	const inset = item.inset ?? 0;
+	return { ...item.box, x: item.box.x + inset, width: item.box.width - 2 * inset };
+}
+
+/**
+ * A frame's title row, as its layout option carries it, and how far in from
+ * its left edge the title's words reach. A frame laid out as the region
+ * round it is reached on its own face, the region's inset in from the row.
+ * @param node The frame.
+ * @param title Its title row's layout option.
+ * @returns The row and its words' reach.
+ */
+function titleRow(node: ElkNode, title: string): { item: Item; words: number } {
+	const [x, y, width, height, words] = title.split(",").map(Number);
+	const inset = Number(node.layoutOptions?.[TRACK_BELOW] ?? 0);
+	const item: Item = { box: { x: x!, y: y!, width: width!, height: height! }, band: -1 };
+	if (inset > 0) item.inset = inset;
+	return { item, words: words! };
 }
 
 /** One band: the items on one rank, and where it lies before and after spacing. */
@@ -227,10 +258,9 @@ class Scene {
 				this.cards.set(node.id, { box: boxOf(node, node.id), band: -1 });
 				continue;
 			}
-			const [x, y, width, height, words] = title.split(",").map(Number);
-			const item = { box: { x: x!, y: y!, width: width!, height: height! }, band: -1 };
+			const { item, words } = titleRow(node, title);
 			this.titles.set(node.id, item);
-			this.words.set(item, words!);
+			this.words.set(item, words);
 			this.frames.set(node.id, { node, depth, members: [] });
 			this.visit(node.children ?? [], depth + 1, [...frames, node.id]);
 		}
@@ -441,6 +471,7 @@ export {
 	TRACK_REGIONS,
 	TRACK_TITLE,
 	centreX,
+	cardFace,
 	type Band,
 	type Frame,
 	type Item,

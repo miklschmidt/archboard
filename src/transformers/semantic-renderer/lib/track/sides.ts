@@ -190,7 +190,9 @@ function fitSides(
 		const words = scene.words.get(title)!;
 		const narrowest = words + ARCHITECTURE_HEADER_PADDING;
 		const heading = scene.moved(title, left);
-		return { box, inset: CONTAINER_INSET, clearance: CONTAINER_INSET, narrowest, heading, words };
+		// A frame laid out as the region round it keeps the region's inset too.
+		const inset = CONTAINER_INSET + (title.inset ?? 0);
+		return { box, inset, clearance: inset, narrowest, heading, words };
 	});
 	const banded = regions.map(({ box, caption }): Fitting => {
 		const words = REGION_CAPTION_INSET + caption.width;

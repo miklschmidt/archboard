@@ -4,9 +4,10 @@
 // this catches: a region round one card or container laid out as a cluster
 // or block of its own, which reordered the board's ranks, stood a container
 // off the lines into it and ran lines through cards; a line that stops on the
-// region's wall short of its card; a caption painted over a line into the
-// card; and a label lost from a line into a container a packed region holds.
-
+// region's wall, or in its inset beside the node, short of its node; a
+// container alone in its region fitted tighter round what it holds; a caption
+// painted over a line into the card; and a label lost from a line into a
+// container a packed region holds.
 import { expect, test } from "bun:test";
 import type { RenderedDiagram } from "@/runtime/semantic-renderer/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -19,6 +20,7 @@ import {
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
+import aSpokenInstruction from "./a-spoken-instruction.json";
 import legacyRouting from "./legacy-routing.json";
 import recordingAWalkthrough from "./recording-a-walkthrough.json";
 import startingAWorkhorse from "./starting-a-workhorse.json";
@@ -30,6 +32,7 @@ const policy = SemanticPolicySchema.parse({
 		service: { name: "Service", icon: "RiServerLine" },
 		system: { name: "System", icon: "RiApps2Line" },
 		ui: { name: "Interface", icon: "RiLayoutLine" },
+		function: { name: "Function", icon: "RiCodeLine" },
 	},
 	relationshipKinds: {
 		call: { name: "Call", dash: "solid", arrowhead: "filled" },
@@ -38,6 +41,7 @@ const policy = SemanticPolicySchema.parse({
 		render: { name: "Render", color: "pink", dash: "solid", arrowhead: "filled" },
 		rpc: { name: "RPC", color: "violet", dash: "solid", arrowhead: "filled" },
 		dependency: { name: "Dependency", dash: "dotted", arrowhead: "open" },
+		event: { name: "Event", color: "fuchsia", dash: "dashed", arrowhead: "open" },
 	},
 	groups: {
 		writes: { name: "Board writes", color: "orange" },
@@ -49,6 +53,7 @@ const policy = SemanticPolicySchema.parse({
 		state: { name: "Server state", color: "teal" },
 		panes: { name: "Live panes", color: "teal" },
 		checks: { name: "Vault checks", color: "pink" },
+		workhorse: { name: "Workhorse", color: "sky" },
 	},
 });
 
@@ -69,16 +74,14 @@ function drawn(content: VariantContent, layout: Engine): Promise<RenderedDiagram
 }
 
 /**
- * The cards a group alone places in their container or at the board level.
+ * The cards and containers a group alone places in their container or at
+ * the board level.
  * @param content The board.
  * @returns Their ids.
  */
-function loneCards(content: VariantContent): string[] {
-	const parents = new Set(
-		content.nodes.flatMap(({ parent }) => (parent === undefined ? [] : [parent])),
-	);
+function loneNodes(content: VariantContent): string[] {
 	return content.nodes
-		.filter(({ id, groups }) => groups?.[0] !== undefined && !parents.has(id))
+		.filter(({ groups }) => groups?.[0] !== undefined)
 		.filter(
 			(node) =>
 				!content.nodes.some(
@@ -95,7 +98,7 @@ function loneCards(content: VariantContent): string[] {
  * @returns It, with no region round one card.
  */
 function ungrouped(content: VariantContent): VariantContent {
-	const lone = new Set(loneCards(content));
+	const lone = new Set(loneNodes(content));
 	return {
 		...content,
 		nodes: content.nodes.map(({ groups, ...node }) =>
@@ -177,31 +180,63 @@ function onOutline({ x, y }: { x: number; y: number }, box: Box): boolean {
 }
 
 /**
+ * Whether a point stands in a box or on its outline.
+ * @param point The point.
+ * @param point.x Its x.
+ * @param point.y Its y.
+ * @param box The box.
+ * @returns True when it does.
+ */
+function within({ x, y }: { x: number; y: number }, box: Box): boolean {
+	return x > box.x - 2 && x < box.x + box.width + 2 && y > box.y - 2 && y < box.y + box.height + 2;
+}
+
+/**
  * The cards of a drawing, read row by row: every card's id, ordered by the
- * rank its top stands on, then from left to right.
+ * row it stands on, then from left to right. A row is the height of the
+ * topmost card on it, and a card stands on the first row it shares some
+ * height with: a card a region round it lowers under its caption stays on
+ * its rank's row.
  * @param drawing The drawing.
  * @param cards The cards to read.
  * @returns Their ids, in reading order.
  */
 function readingOrder(drawing: RenderedDiagram, cards: readonly string[]): string[] {
-	const boxes = cards.map((id) => ({ id, box: drawing.atlas.nodes[id]! }));
-	const rows = [...new Set(boxes.map(({ box }) => box.y))].toSorted((one, other) => one - other);
-	const rowOf = (box: Box): number =>
-		rows.findIndex((top) => box.y < top + 1 && box.y + box.height > top - 1);
+	const boxes = cards
+		.map((id) => ({ id, box: drawing.atlas.nodes[id]! }))
+		.toSorted((one, other) => one.box.y - other.box.y);
+	const rows: Box[] = [];
+	const rowOf = new Map<string, number>();
+	for (const { id, box } of boxes) {
+		const at = rows.findIndex((row) => box.y < row.y + row.height && box.y + box.height > row.y);
+		if (at === -1) rows.push(box);
+		rowOf.set(id, at === -1 ? rows.length - 1 : at);
+	}
 	return boxes
-		.toSorted((one, other) => rowOf(one.box) - rowOf(other.box) || one.box.x - other.box.x)
+		.toSorted((one, other) => rowOf.get(one.id)! - rowOf.get(other.id)! || one.box.x - other.box.x)
 		.map(({ id }) => id);
 }
 
-// Reduced from a dogfood view: three regions round one card each, laid out
-// as clusters of their own, pulled their cards off the ranks the board stood
-// them on, stood the voice region as a tall sparse band and bent the lines
-// round it.
-test.each(["track", "blocks"] as const)(
-	"the %s engine reads the cards of a board as it does without its regions round one card",
-	async (layout) => {
-		const content = orderedFixture(recordingAWalkthrough);
-		expect(loneCards(content).length).toBeGreaterThan(0);
+// Reduced from dogfood views. Recording a walkthrough: three regions round
+// one card each, laid out as clusters of their own, pulled their cards off
+// the ranks the board stood them on, stood the voice region as a tall sparse
+// band and bent the lines round it. A spoken instruction becomes work: a port
+// settled on the inset beside the card alone in its region stepped the line
+// out of it, and for that bend the board kept a port order that stood the
+// cards of a container the other way round.
+const readAsWithout = {
+	"Recording a walkthrough": recordingAWalkthrough,
+	"A spoken instruction": aSpokenInstruction,
+};
+test.each(
+	Object.keys(readAsWithout).flatMap((board) =>
+		(["track", "blocks"] as const).map((layout) => [board, layout] as const),
+	),
+)(
+	"%s: the %s engine reads the cards as it does without its regions round one node",
+	async (board, layout) => {
+		const content = orderedFixture(readAsWithout[board as keyof typeof readAsWithout]);
+		expect(loneNodes(content).length).toBeGreaterThan(0);
 		const cards = content.nodes
 			.filter(({ id }) => !content.nodes.some(({ parent }) => parent === id))
 			.map(({ id }) => id);
@@ -213,6 +248,34 @@ test.each(["track", "blocks"] as const)(
 	},
 );
 
+/**
+ * The line ends at a card or container alone in its region that stop short
+ * of it: off a card's outline, or outside a container, whose lines may meet
+ * its title row.
+ * @param content The board.
+ * @param drawing Its drawing.
+ * @returns Each such end, by its line's id.
+ */
+function endsOffNode(content: VariantContent, drawing: RenderedDiagram): string[] {
+	const lone = new Set(loneNodes(content));
+	const containers = new Set(content.nodes.flatMap(({ parent }) => parent ?? []));
+	const routes = routePoints(drawing.svg);
+	const meets = (node: string, at: { x: number; y: number }): boolean => {
+		const box = drawing.atlas.nodes[node]!;
+		return containers.has(node) ? within(at, box) : onOutline(at, box);
+	};
+	return content.edges.flatMap((edge) => {
+		const points = routes.get(edge.id)!;
+		const ends = [
+			{ node: edge.from, at: points[0]!, end: "from" },
+			{ node: edge.to, at: points.at(-1)!, end: "to" },
+		];
+		return ends
+			.filter(({ node, at }) => lone.has(node) && !meets(node, at))
+			.map(({ end }) => `${edge.id} ${end}`);
+	});
+}
+
 // Reduced from a dogfood view: the region round one card drawn inline in a
 // block of cards packed on its own ran three lines through the card beside it.
 test.each(["track", "blocks"] as const)(
@@ -221,15 +284,71 @@ test.each(["track", "blocks"] as const)(
 		const content = orderedFixture(startingAWorkhorse);
 		const drawing = await drawn(content, layout);
 		expect(routesThroughCards(drawing, content)).toEqual([]);
-		const lone = new Set(loneCards(content));
-		const routes = routePoints(drawing.svg);
-		for (const edge of content.edges) {
-			const points = routes.get(edge.id)!;
-			if (lone.has(edge.from))
-				expect(onOutline(points[0]!, drawing.atlas.nodes[edge.from]!), edge.id).toBeTrue();
-			if (lone.has(edge.to))
-				expect(onOutline(points.at(-1)!, drawing.atlas.nodes[edge.to]!), edge.id).toBeTrue();
-		}
+		expect(endsOffNode(content, drawing)).toEqual([]);
+	},
+);
+
+// A container alone in its region, inside another container.
+const loneContainer = {
+	nodes: [
+		{ id: "outer", name: "Outer", kind: "system" },
+		{ id: "inner", name: "Inner", kind: "system", parent: "outer", groups: ["state"] },
+		{ id: "kid", name: "Kid", kind: "module", parent: "inner" },
+		{ id: "sib", name: "Sib", kind: "module", parent: "outer" },
+		{ id: "top", name: "Top", kind: "service" },
+	],
+	edges: [
+		{ id: "in", from: "top", to: "inner", kind: "call" },
+		{ id: "down", from: "sib", to: "kid", kind: "call" },
+		{ id: "out", from: "inner", to: "sib", kind: "call" },
+	],
+};
+
+// A line may reach the wall of a region round one node anywhere along it,
+// the region's inset beside the node included: into a container drawn
+// inline alone in its region, and between cards alone in theirs in two
+// containers packed apart, it stopped in that inset, beside its node.
+const besideTheNode = {
+	"a container alone in its region inside another": loneContainer,
+	"cards alone in their regions in two containers": {
+		nodes: [
+			{ id: "left", name: "Left", kind: "system" },
+			{ id: "reader", name: "Reader", kind: "module", parent: "left", groups: ["state"] },
+			{ id: "other", name: "Other", kind: "module", parent: "left" },
+			{ id: "right", name: "Right", kind: "system" },
+			{ id: "writer", name: "Writer", kind: "module", parent: "right", groups: ["state"] },
+			{ id: "second", name: "Other two", kind: "module", parent: "right" },
+		],
+		edges: [
+			{ id: "across", from: "reader", to: "writer", kind: "call" },
+			{ id: "in", from: "other", to: "reader", kind: "call" },
+			{ id: "on", from: "writer", to: "second", kind: "call" },
+			{ id: "back", from: "second", to: "reader", kind: "call" },
+		],
+	},
+};
+test.each(
+	Object.keys(besideTheNode).flatMap((board) =>
+		(["track", "blocks"] as const).map((layout) => [board, layout] as const),
+	),
+)("%s: the %s engine carries every line on to the node", async (board, layout) => {
+	const content = orderedFixture(besideTheNode[board as keyof typeof besideTheNode]);
+	expect(endsOffNode(content, await drawn(content, layout))).toEqual([]);
+});
+
+// A container alone in its region, drawn inline, was fitted to what it holds
+// by a container's inset from the region's walls, and its own walls then
+// stood that much less round what it holds.
+test.each(["track", "blocks"] as const)(
+	"the %s engine keeps a container alone in its region as far round what it holds as without the region",
+	async (layout) => {
+		const content = orderedFixture(loneContainer);
+		const margins = async (board: VariantContent): Promise<number[]> => {
+			const { atlas } = await drawn(board, layout);
+			const [inner, kid] = [atlas.nodes["inner"]!, atlas.nodes["kid"]!];
+			return [kid.x - inner.x, inner.x + inner.width - kid.x - kid.width].map(Math.round);
+		};
+		expect(await margins(content)).toEqual(await margins(ungrouped(content)));
 	},
 );
 
