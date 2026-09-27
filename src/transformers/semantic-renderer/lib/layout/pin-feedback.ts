@@ -4,6 +4,7 @@ import { boxOf, type Face } from "@/transformers/semantic-renderer/lib/layout/av
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import { verticesOf } from "@/transformers/semantic-renderer/lib/layout/curves";
+import type { Line } from "@/transformers/semantic-renderer/lib/layout/stacked-runs";
 import type { Requested } from "@/transformers/semantic-renderer/lib/layout/route-requests";
 import { ROUTE_NUDGE_DISTANCE } from "@/transformers/semantic-renderer/config";
 import { PINNED_STANDING } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
@@ -349,15 +350,29 @@ export function hooksPast(box: Box, tip: Point, bend: Point, after: Point): bool
  */
 export function sideHooks(drawing: ArchitectureDrawing): string[] {
 	const cards = new Map(drawing.cards.map(({ measured, box }) => [measured.node.id, box]));
-	return drawing.edges.flatMap(({ edge, curve }) => {
-		const points = verticesOf(curve);
+	const lines = drawing.edges.map(({ edge, curve }) => ({
+		id: edge.id,
+		ends: [edge.from, edge.to] as const,
+		points: verticesOf(curve),
+	}));
+	return hookedEnds(lines, cards);
+}
+
+/**
+ * The ends of some lines that hook into a card's side, as {@link sideHooks} finds them.
+ * @param lines Each line's id, its source and target, and its corners.
+ * @param cards Every card's box, by id.
+ * @returns One key for every such end.
+ */
+export function hookedEnds(lines: readonly Line[], cards: ReadonlyMap<string, Box>): string[] {
+	return lines.flatMap(({ id, ends: [from, to], points }) => {
 		const ends = [
-			[edge.from, points],
-			[edge.to, points.toReversed()],
+			[from, points],
+			[to, points.toReversed()],
 		] as const;
 		return ends.flatMap(([card, route]) => {
 			const box = cards.get(card);
-			return box !== undefined && hooks(box, route) ? [`${edge.id}:${card}`] : [];
+			return box !== undefined && hooks(box, route) ? [`${id}:${card}`] : [];
 		});
 	});
 }

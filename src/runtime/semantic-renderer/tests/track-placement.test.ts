@@ -1,13 +1,13 @@
 // Where the track engine stands a card sideways (TASK-349). What this
 // catches: a fan whose wrap lowers a group region whole refused, so the
-// region stands on a row of its own above the fan's other cards; a card fed by a fan standing off its
-// middle, so the fan's lines land unevenly on it; and a wrap standing a card
-// in a line's way, or away from the port its one line leaves; and the label
-// of a line leaving a container standing beside it, where the card the line
-// leads into follows it out past the container's wall; and a board's
-// containers stacked or not, or its wraps chosen, on how the page fits ahead
-// of how the lines read (ADR 0039); and a group region's ports held where
-// its parent settled them, off their lines.
+// region stands on a row of its own above the fan's other cards; a card fed
+// by a fan standing off its middle, so the fan's lines land unevenly on it;
+// and a wrap standing a card in a line's way, or away from the port its one
+// line leaves; and the label of a line leaving a container standing beside
+// it, where the card the line leads into follows it out past the container's
+// wall; and a board's containers stacked or not, or its wraps chosen, on how
+// the page fits ahead of how its lines read (ADR 0039); and a group region's
+// ports held where its parent settled them, off their lines.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -18,9 +18,9 @@ import {
 	routeLabels,
 	routePoints,
 	routesCross,
+	turnsOf,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
-import { scorecardOf } from "@/runtime/semantic-renderer/tests/drawn-scorecard";
-import loweredRegion from "./lowered-region.json";
+import startingAWorkhorse from "./starting-a-workhorse.json";
 import underPort from "./under-port.json";
 import browserApplication from "./browser-application.json";
 import grading from "./grading.json";
@@ -40,41 +40,27 @@ function centre({ x, width }: { x: number; width: number }): number {
 	return x + width / 2;
 }
 
-/**
- * Whether two cards stand on one row: a row's cards share their top edge.
- * @param one A card.
- * @param one.y Its top.
- * @param other Another.
- * @param other.y Its top.
- * @returns True when they do.
- */
-function onOneRow(one: { y: number }, other: { y: number }): boolean {
-	return Math.abs(one.y - other.y) < 1;
-}
-
-// Reduced from a board of this repository, names replaced: a hub fans out to
-// four cards and to two cards of one group region, one of which a line from
-// above also enters.
+// Taken from a board of this repository: Workhorse start fans out to cards
+// and to the two cards of Codex child, which the wrap lowers whole; refused,
+// the region stood on a row of its own, and 'thread/start with the authored
+// body' turned three times to reach it.
 test("a wrapped fan stands a group region beside its other cards", async () => {
 	const policy = SemanticPolicySchema.parse({
 		levels: ["service"],
 		nodeKinds: { module: { name: "Module", icon: "RiBox3Line" } },
 		relationshipKinds: {
 			call: { name: "Call", dash: "solid", arrowhead: "filled" },
-			uses: { name: "Uses", dash: "dotted", arrowhead: "open" },
+			rpc: { name: "RPC", color: "violet", dash: "solid", arrowhead: "filled" },
+			dependency: { name: "Dependency", dash: "dotted", arrowhead: "open" },
 		},
 		groups: {
-			inner: { name: "Inner", color: "indigo" },
-			outer: { name: "Outer", color: "yellow" },
+			voice: { name: "Voice", color: "yellow" },
+			child: { name: "Codex child", color: "indigo" },
 		},
 	});
-	const content = orderedFixture(loweredRegion);
+	const content = orderedFixture(startingAWorkhorse);
 	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "track" });
-	const [members, others] = [
-		["n5", "n6"],
-		["n2", "n3", "n4", "n7"],
-	].map((ids) => ids.map((id) => drawing.atlas.nodes[id]!));
-	expect(members!.some((member) => others!.some((other) => onOneRow(member, other)))).toBe(true);
+	expect(turnsOf(corridorPoints(drawing.svg).get("W87z7uEB")!)).toBeLessThanOrEqual(4);
 });
 
 // Reduced from a real hosting board, names replaced: two mirrored pairs of
@@ -287,7 +273,8 @@ test("a board stacks its containers where that reads better, on whatever page", 
 // within a twentieth of laid as Graphviz ranks them, one crossing more on a
 // page that fit the pane only a little better, and a wider clearance off a
 // container's wall tipped it to the stacked layout, its lines through a group
-// region they have no card in. Fit never buys a crossing.
+// region they have no card in: 'the pane socket: registration and news'
+// crossed 'controllers over the focused pane's'. Fit never buys a crossing.
 test("a board stays as Graphviz ranks its containers where stacking them crosses more", async () => {
 	const content = orderedFixture(workingWithAnAgent);
 	const drawing = await renderArchitecture({
@@ -296,8 +283,8 @@ test("a board stays as Graphviz ranks its containers where stacking them crosses
 		policy: browserPolicy,
 		layout: "track",
 	});
-	const crossings = scorecardOf(drawing, content).find(({ name }) => name === "crossings")!;
-	expect(crossings.value).toBe(0);
+	const routes = corridorPoints(drawing.svg);
+	expect(routesCross(routes.get("PuILGsjg")!, routes.get("kZtsu0nq")!)).toBe(false);
 });
 
 // Taken from a board of this repository: a group region packed as a block of

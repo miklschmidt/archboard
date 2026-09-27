@@ -18,7 +18,6 @@ import {
 	sharedStretches,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
-import { scorecardOf } from "@/runtime/semantic-renderer/tests/drawn-scorecard";
 import agentWorkbench from "./agent-workbench.json";
 import archboardServer from "./archboard-server.json";
 import browserApplication from "./browser-application.json";
@@ -408,12 +407,13 @@ test("lines that join on the way to a card stay joined, without running along a 
 
 // Taken from a board of this repository: in its channels a line wanted a
 // track above most of the lines it shares the channel with and was given one
-// above lines it then crossed, where another order crosses fewer.
+// above lines it then crossed, where another order crosses fewer: 'agent
+// bar, conversation, Talk' crossed 'the listing, read again on pane news'.
 test("the lines of one channel take the track order that crosses least", async () => {
 	const content = orderedFixture(browserApplication);
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "blocks", policy });
-	const crossings = scorecardOf(drawing, content).find(({ name }) => name === "crossings")!;
-	expect(crossings.value).toBeLessThanOrEqual(38);
+	const routes = corridorPoints(drawing.svg);
+	expect(routesCross(routes.get("WchncnH1")!, routes.get("ep2NF6Z5")!)).toBe(false);
 });
 
 // Taken from a board of this repository: drawn inline, 'admits writes' from
