@@ -204,7 +204,9 @@ function pairCrossings(lines: readonly (readonly Point[])[]): number {
  * weighed a drawing before ADR 0039: each crossing half as much again for
  * each line through it past the first, and its line at a crossing's worth
  * for every {@link LINE_PER_CROSSING}; costing about as much, the page that
- * fits the reference pane better.
+ * fits the reference pane better. It weighs the drawing with the steps its
+ * lines need not take taken out, as the reading measures do; before ADR
+ * 0039 it weighed the drawing with them.
  * @param one A drawing.
  * @param other Another.
  * @returns True when the first costs less.
@@ -240,7 +242,7 @@ function costOf(placed: Page): number {
 function drawsBetter(one: Drawn<Page>, other: Drawn<Page>): boolean {
 	const [parted, fewest] = [partedOf(one), partedOf(other)];
 	if (parted !== fewest) return parted < fewest;
-	const [mine, theirs] = [one, other].map(({ tree, placed }) => weighedPlaced(tree, placed));
+	const [mine, theirs] = [one, other].map(({ placed }) => weighedPlaced(placed));
 	return takes(mine!, theirs!, costsLess(one.placed, other.placed));
 }
 

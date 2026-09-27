@@ -1,15 +1,12 @@
 // How readable a routed layout is, and the ways to wrap a wide rank (TASK-349).
-// A choice an engine makes between two layouts of one board is made on how
-// easily each reads, its measures compared in the order of ADR 0039
-// (`readingOrder`); its fit to the reference pane only breaks a tie between
-// layouts that read alike. A choice between two whole drawings that also
-// weighs them as it did before holds to that earlier pick wherever the
-// reading order's pick reads worse than it on some measure (`takes`). A wrap
-// or a fold exists to fit the page, and the bends and line it adds are its
-// price: it is taken where it has no more defects and fits materially better
-// (`worthTaking`). A layout chosen before the drawing a reader sees exists is
-// weighed on its fit less a share for each crossing, its fit standing for how
-// that drawing will read (`scoreOf`).
+// Two layouts of one board are compared on how easily each reads, their
+// measures in the order of ADR 0039 (`readingOrder`), and their fit to the
+// reference pane only breaks a tie between layouts that read alike. Every
+// chooser ADR 0039 changed also weighs its two layouts as it did before, and
+// takes the pick of its reading measures only where the two agree or that
+// pick is no worse on any measure (`takes`). The earlier weighings, and the
+// choices made before the drawing a reader sees exists, weigh a layout's fit
+// less a share for each crossing (`scoreOf`).
 import { fitIn } from "@/shared/shell-geometry/index";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 
@@ -39,7 +36,7 @@ interface Crossing {
 
 /**
  * What a layout is weighed on: its page, its crossings and its lines between
- * columns, and what else a reader sees in it where its lines are known. A
+ * columns, and what else a reader sees in it where an engine counts it. A
  * score ({@link scoreOf}) weighs only the page, the crossings and the lines
  * between columns.
  */
@@ -48,11 +45,6 @@ interface Weighed {
 	readonly height: number;
 	readonly crossings: number;
 	readonly bus?: number;
-	/**
-	 * Its crossings on a line's corner and its stacks of unrelated lines on
-	 * one stroke, each one crossing more.
-	 */
-	readonly knots?: number;
 	/**
 	 * The lanes' worth of line unrelated lines draw on one stroke or side by
 	 * side nearer than a lane.
@@ -162,15 +154,15 @@ function costOf(layout: Weighed): number {
 
 /**
  * A layout's reading measures, in the order of ADR 0039, each nothing where
- * it is not weighed: its crossings, each on a corner or in a stack one more;
- * the line unrelated lines draw on one stroke or side by side; its hooks and
- * touching lines; its bends; and its route length.
+ * it is not counted: its crossings; the line unrelated lines draw on one
+ * stroke or side by side; its hooks and touching lines; its bends; and its
+ * route length.
  * @param layout What is weighed.
  * @returns The measures.
  */
 function measuresOf(layout: Weighed): [number, number, number, number, number] {
-	const { knots = 0, tracks = 0, hooks = 0, bends = 0, length = 0 } = layout;
-	return [costOf(layout) + knots, tracks, hooks, bends, length];
+	const { tracks = 0, hooks = 0, bends = 0, length = 0 } = layout;
+	return [costOf(layout), tracks, hooks, bends, length];
 }
 
 /**
@@ -186,9 +178,9 @@ function firstDifference(mine: readonly number[], theirs: readonly number[]): nu
 
 /**
  * How one layout's defects compare with another's, in the order of ADR
- * 0039: its crossings, each on a corner or in a stack one more; then the
- * line unrelated lines draw on one stroke or side by side; then its hooks
- * and touching lines. These a chooser never trades for fit.
+ * 0039: its crossings; then, as many, the line unrelated lines draw on one
+ * stroke or side by side; then, as much, its hooks and touching lines. The
+ * first of them the two differ on decides, whatever the later ones say.
  * @param one A layout.
  * @param other Another.
  * @returns Below zero when the first has fewer, above when more, zero when alike.
@@ -236,9 +228,9 @@ function readsBetter(one: Weighed, other: Weighed): boolean {
 
 /**
  * Whether one layout reads no worse than another on any measure of ADR 0039:
- * its crossings, each on a corner or in a stack one more; the line unrelated
- * lines draw on one stroke or side by side; its hooks and touching lines;
- * its bends; and its route length, within {@link NEAR_LENGTH}.
+ * its crossings; the line unrelated lines draw on one stroke or side by
+ * side; its hooks and touching lines; its bends; and its route length,
+ * within {@link NEAR_LENGTH}.
  * @param one A layout.
  * @param other Another.
  * @returns True when it is nowhere worse.
@@ -254,17 +246,17 @@ function noWorse(one: Weighed, other: Weighed): boolean {
 }
 
 /**
- * Whether a chooser takes the first of two layouts, every chooser weighing
- * them both on ADR 0039's reading measures and as it did before: its
- * reading pick where its earlier weighing agrees, or where that pick reads
- * no worse than the earlier one on any measure ({@link noWorse}); else the
- * earlier pick. Two layouts often trade one measure for another, and the
- * reading pick then reads worse somewhere than the one taken before: What
- * the CLI can be asked (Blocks) parted two lines into Board client for two
- * hops fewer, and drew 14% more line and one line running on into the
- * other's arrow at the card's corner; Archboard server whole (Track) packed
- * its groups for 13 hops fewer, at 23 bends more, three crossings on a
- * corner and a stack.
+ * Whether a chooser ADR 0039 changed takes the first of two layouts, the
+ * guard every such chooser keeps: its reading pick where its earlier
+ * weighing, from before the ADR, agrees; or where that pick reads no worse
+ * than the earlier one on any measure ({@link noWorse}); else the earlier
+ * pick. Two layouts often trade one measure for another, and the reading
+ * pick then reads worse somewhere than the one taken before: What the CLI
+ * can be asked (Blocks) parted two lines into Board client for two hops
+ * fewer, and drew 14% more line; Archboard server whole (Track) packed its
+ * groups for 13 hops fewer, at 23 bends more; One command from a pane
+ * (Blocks) held a port order for two crossings fewer and ran three unrelated
+ * lines side by side along its bottom.
  * @param one A layout.
  * @param other Another.
  * @param earlier Whether the earlier weighing takes the first.
@@ -297,11 +289,13 @@ function fitsBetter(one: Weighed, other: Weighed): boolean {
 
 /**
  * A layout's fit to the reference pane, less a share for every crossing it
- * costs its reader ({@link CROSSING_SHARE}). It weighs only the layouts that
- * are chosen before the drawing a reader sees exists, so their fit stands
- * for how that drawing will read: a wrap of a block inside the board, laid
- * out before its parent packs it, and a packing of blocks, weighed on its
- * trunks before its blocks' lines are joined through their ports. Ranked on
+ * costs its reader ({@link CROSSING_SHARE}): how every chooser weighed its
+ * layouts before ADR 0039, and so the earlier weighing its guard keeps
+ * ({@link takes}). It alone weighs the layouts chosen before the drawing a
+ * reader sees exists, whose fit stands for how that drawing will read: a
+ * wrap of a block inside the board, laid out before its parent packs it,
+ * and a packing of blocks, weighed on its trunks before its blocks' lines
+ * are joined through their ports. Ranked on
  * their own crossings first, those choices crossed Archboard server whole
  * 69 -> 109 times and Board persistence whole 9 -> 12 (Blocks). A fold of a
  * block of cards is weighed on it too: its crossings are estimated as the

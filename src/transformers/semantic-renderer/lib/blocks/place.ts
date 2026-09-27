@@ -5,11 +5,11 @@
 // (`card-layout.ts`), its widest rank wrapped into rows (`wraps.ts`) or its
 // ranks folded into columns (`fold.ts`) where that is worth taking. Last,
 // every block is put where its parent placed it and each relationship's
-// lines are joined end to end (`assembly.ts`). A choice between two layouts
-// of a board is made on how each reads, as drawn (`weighing.ts`); the joins
-// and the packing of a board's groups keep their earlier weighing's pick
-// wherever the other reads worse on some measure, and settling ports keeps
-// its score.
+// lines are joined end to end (`assembly.ts`). Whether a block's containers
+// stack, the joins, and the packing of a board's groups take the layout that
+// reads better, as drawn (`weighing.ts`), only where their earlier weighing
+// agrees or it reads no worse anywhere (`takes` in track/score.ts); settling
+// ports, holding a port order and wrapping keep their earlier weighing.
 import type { ElkNode } from "@archboard/elk-rs";
 import type { Viz } from "@viz-js/viz";
 import { fitIn } from "@/shared/shell-geometry/index";
@@ -37,13 +37,7 @@ import { routedWeighed } from "@/transformers/semantic-renderer/lib/blocks/trunk
 import { weighedLaid, weighedPlaced } from "@/transformers/semantic-renderer/lib/blocks/weighing";
 import { BlockTree, type Block, type Side } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { PAGE_MARGIN } from "@/transformers/semantic-renderer/lib/track/route";
-import {
-	crossingsOf,
-	readsBetter,
-	scoreOf,
-	takes,
-	type Weighed,
-} from "@/transformers/semantic-renderer/lib/track/score";
+import { crossingsOf, scoreOf, takes } from "@/transformers/semantic-renderer/lib/track/score";
 
 /** Room a group region keeps around its members. */
 const REGION_INSET = 14;
@@ -73,20 +67,8 @@ function insetsOf(block: Block): Insets {
  */
 function layCards(viz: Viz, tree: BlockTree, block: Block, laid: Map<string, Laid>): Laid {
 	const insets = insetsOf(block);
-	const wraps = new Map<Laid, Laid | undefined>();
-	/**
-	 * The block's best wrap, laid out once for each way it stands whole.
-	 * @param whole The block laid out whole.
-	 * @param stacked Whether its containers stack.
-	 * @returns The wrap, or nothing when the block stays whole.
-	 */
-	const wrapOf = (whole: Laid, stacked: boolean): Laid | undefined => {
-		if (!wraps.has(whole))
-			wraps.set(whole, bestWrap(viz, tree, block, { laid, whole, stacked, insets }));
-		return wraps.get(whole);
-	};
-	const { whole, stacked } = stackedOrNot(viz, tree, block, { laid, wrapOf });
-	const wrapped = wrapOf(whole, stacked);
+	const { whole, stacked } = stackedOrNot(viz, tree, block, laid);
+	const wrapped = bestWrap(viz, tree, block, { laid, whole, stacked, insets });
 	if (wrapped !== undefined) return wrapped;
 	const walled = [...block.ports.values()].some((side) => side === "left" || side === "right");
 	const plan = walled ? undefined : foldPlan(block, whole, insets, weighed(whole));
@@ -129,14 +111,14 @@ function bestScore(block: Block, laid: Laid): number {
 
 /**
  * A block of cards laid out whole: with the containers a line from another
- * container enters stacked below it, when that reads better, or else as
- * Graphviz ranks them.
+ * container enters stacked below it, or else as Graphviz ranks them. Stacked
+ * is taken where it scores better as before ADR 0039 ({@link scoresStacked})
+ * and its lines as drawn read better, or where either way it is chosen reads
+ * no worse on any measure than the other ({@link takes}).
  * @param viz The initialized Graphviz instance.
  * @param tree The blocks.
  * @param block The block.
- * @param laying Every block laid out so far, and this one's best wrap.
- * @param laying.laid Every block laid out so far.
- * @param laying.wrapOf The best wrap of this block laid out whole one way, if one is taken.
+ * @param laid Every block laid out so far.
  * @returns The block laid out, and whether it stacks. Its titles are pulled
  * onto their members where that crosses and draws no more line, and may
  * change whether it stacks only when the choice then draws no more line.
@@ -145,10 +127,7 @@ function stackedOrNot(
 	viz: Viz,
 	tree: BlockTree,
 	block: Block,
-	{
-		laid,
-		wrapOf,
-	}: { laid: Map<string, Laid>; wrapOf: (whole: Laid, stacked: boolean) => Laid | undefined },
+	laid: Map<string, Laid>,
 ): { whole: Laid; stacked: boolean } {
 	const insets = insetsOf(block);
 	const plain = layBoth(viz, () => new CardLayout(block, laid, tree, insets));
@@ -156,41 +135,12 @@ function stackedOrNot(
 		return { whole: settled(plain), stacked: false };
 	const stacked = layBoth(viz, () => new CardLayout(block, laid, tree, insets, { stacked: true }));
 	const ways = { stacked, plain };
-	/**
-	 * What the block is weighed on laid out one way, at its best.
-	 * @param stacks Whether it stacks.
-	 * @param pick Which of that way's titles is weighed.
-	 * @param wrapping Whether it is weighed wrapped where a wrap is taken.
-	 * @returns What it is weighed on.
-	 */
-	const weigh = (stacks: boolean, pick: (laying: Laying) => Laid, wrapping: boolean): Weighed => {
-		const one = pick(stacks ? stacked : plain);
-		return weighedLaid(tree, block, (wrapping ? wrapOf(one, stacks) : undefined) ?? one);
-	};
-	/**
-	 * Whether the block reads better stacked, in the order of ADR 0039.
-	 * Stacked containers often read best wrapped, so each is weighed at its
-	 * best; a wrap is laid out only for the way the titles settle, which
-	 * decides the choice unless pulling them down draws more line: laid out
-	 * for the tied titles too, Board viewer (Track) took 1050 ms where it had
-	 * taken 585.
-	 * @param pick Which of each way the titles stand is weighed.
-	 * @param wrapping Whether each is weighed wrapped where a wrap is taken.
-	 * @returns True when it does.
-	 */
-	const reads = (pick: (laying: Laying) => Laid, wrapping: boolean): boolean =>
-		readsBetter(weigh(true, pick, wrapping), weigh(false, pick, wrapping));
-	const read = pulledOrTied(
-		ways,
-		reads(({ tied }) => tied, false),
-		reads(settled, true),
-	);
 	const earlier = pulledOrTied(
 		ways,
 		scoresStacked(block, ways, ({ tied }) => tied),
 		scoresStacked(block, ways, settled),
 	);
-	const chosen = takes(weigh(true, settled, true), weigh(false, settled, true), earlier, read);
+	const chosen = takes(weighedLaid(settled(stacked)), weighedLaid(settled(plain)), earlier);
 	return { whole: settled(chosen ? stacked : plain), stacked: chosen };
 }
 
@@ -423,7 +373,7 @@ function readsBetterPacked(packed: Drawn<Placed>, inline: Drawn<Placed>): boolea
 			scoreOf({ ...other, crossings: crossingsOf(inlines!) }) &&
 		lineLength(packs!) <= lineLength(inlines!) &&
 		fitIn(one) >= fitIn(other);
-	return takes(weighedPlaced(packed.tree, one), weighedPlaced(inline.tree, other), earlier);
+	return takes(weighedPlaced(one), weighedPlaced(other), earlier);
 }
 
 /**

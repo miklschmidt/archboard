@@ -1,11 +1,9 @@
 // How the layout choosers compare two layouts (ADR 0039), on layouts weighed
 // by hand: each measure decides only between layouts alike on every earlier
-// one, fit only between layouts that read alike, a wrap or a fold is taken
-// only for fit it gains materially with no more defects, and a choice that
-// also weighs two whole drawings as it did before keeps that earlier pick
-// wherever the reading order's pick reads worse on some measure. What this
-// catches: a rank of the order dropped or moved, fit buying a reading
-// measure, and a fold or a guarded choice taking a layout that reads worse.
+// one, fit only between layouts that read alike, and a chooser keeps its
+// earlier pick wherever its reading pick reads worse on some measure. What
+// this catches: a rank of the order dropped or moved, fit buying a reading
+// measure, and a guarded choice taking a layout that reads worse.
 
 import { expect, test } from "bun:test";
 import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
@@ -16,7 +14,6 @@ const clean: Weighed = {
 	width: REFERENCE_PANE.width,
 	height: REFERENCE_PANE.height,
 	crossings: 4,
-	knots: 0,
 	tracks: 0,
 	hooks: 0,
 	bends: 20,
@@ -48,14 +45,6 @@ test("each reading measure decides before every later one and before fit", () =>
 		expect(readsBetter(cramped, worse), JSON.stringify(here)).toBe(true);
 		expect(readsBetter(worse, cramped), JSON.stringify(here)).toBe(false);
 	}
-});
-
-test("a crossing on a corner or in a stack counts as one crossing more", () => {
-	const knotted: Weighed = { ...clean, crossings: 3, knots: 1 };
-	const crossed: Weighed = { ...clean, crossings: 4, bends: 10 };
-	// Alike on crossings, so the bends decide.
-	expect(readsBetter(crossed, knotted)).toBe(true);
-	expect(readsBetter({ ...knotted, knots: 2 }, { ...crossed, bends: 30 })).toBe(false);
 });
 
 test("route lengths within a twentieth of each other are alike, and fit decides", () => {
