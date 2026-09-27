@@ -20,7 +20,7 @@ import { CardLayout } from "@/transformers/semantic-renderer/lib/blocks/card-lay
 import { foldBlock, foldPlan } from "@/transformers/semantic-renderer/lib/blocks/fold";
 import { FoldLayout } from "@/transformers/semantic-renderer/lib/blocks/fold-layout";
 import { corners, type Insets, type Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
-import { grownInsets } from "@/transformers/semantic-renderer/lib/blocks/lone";
+import { grownInsets, withoutLoneRegions } from "@/transformers/semantic-renderer/lib/blocks/lone";
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { bestWrap, weighed } from "@/transformers/semantic-renderer/lib/blocks/wraps";
 import {
@@ -343,7 +343,11 @@ function settledOrNot(
 
 /**
  * Lay a measured hierarchy out with every join of lines to one card kept
- * whole the way that reads better (`joins.ts`).
+ * whole the way that reads better (`joins.ts`). Which joins part is chosen
+ * on the board without its regions round one node (`lone.ts`): such a
+ * region gathers nothing and joins no line, but the room it takes moves the
+ * routes round it, and What the CLI can be asked (Blocks), weighed with its
+ * three, parted four lines into Board client for a hop more and 21% more line.
  * @param viz The initialized Graphviz instance.
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
@@ -356,10 +360,29 @@ function layJoinedOut(
 	graph: ElkNode,
 	nesting: Nesting,
 ): Drawn<Placed> {
-	return layJoined((apart) => {
-		const { tree, laid } = layOut(viz, avoid, graph, nesting, apart);
-		return { tree, placed: Assembly.unstepped(new Assembly(tree, laid).placed()) };
-	});
+	const plain = withoutLoneRegions(graph);
+	const { best, apart } = layJoined((kept) => drawnOut(viz, avoid, plain ?? graph, nesting, kept));
+	return plain === undefined ? best : drawnOut(viz, avoid, graph, nesting, apart);
+}
+
+/**
+ * Lay a measured hierarchy out with some blocks' joins apart, and join its lines.
+ * @param viz The initialized Graphviz instance.
+ * @param avoid The initialized libavoid module.
+ * @param graph The measured hierarchy.
+ * @param nesting How containers and group regions are drawn.
+ * @param apart The blocks whose joins keep ports of their own, by id.
+ * @returns The blocks, and the drawing's geometry.
+ */
+function drawnOut(
+	viz: Viz,
+	avoid: AvoidEngine,
+	graph: ElkNode,
+	nesting: Nesting,
+	apart: ReadonlySet<string>,
+): Drawn<Placed> {
+	const { tree, laid } = layOut(viz, avoid, graph, nesting, apart);
+	return { tree, placed: Assembly.unstepped(new Assembly(tree, laid).placed()) };
 }
 
 /**

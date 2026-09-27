@@ -78,12 +78,58 @@ function placingGroup(
 	siblings: readonly ElkNode[],
 ): string | undefined {
 	const group = node.layoutOptions?.[PLACING_GROUP];
-	const shared = siblings.some(
-		(one) => one !== node && one.layoutOptions?.[PLACING_GROUP] === group,
-	);
-	if (group === undefined || shared) return group;
+	if (group === undefined || !aloneIn(node, siblings)) return group;
 	lone.set(node.id, { group, caption: captions.get(group) ?? { width: 1, height: 1 } });
 	return undefined;
+}
+
+/**
+ * Whether a node is alone among its siblings in its placing group.
+ * @param node The node.
+ * @param siblings The nodes of its parent, itself among them.
+ * @returns True when it is.
+ */
+function aloneIn(node: ElkNode, siblings: readonly ElkNode[]): boolean {
+	const group = node.layoutOptions?.[PLACING_GROUP];
+	return (
+		group !== undefined &&
+		!siblings.some((one) => one !== node && one.layoutOptions?.[PLACING_GROUP] === group)
+	);
+}
+
+/**
+ * Whether some node among some nodes, or inside them, is alone in its placing group.
+ * @param nodes The nodes of one parent.
+ * @returns True when one is.
+ */
+function holdsLone(nodes: readonly ElkNode[]): boolean {
+	return nodes.some((node) => aloneIn(node, nodes) || holdsLone(node.children ?? []));
+}
+
+/**
+ * Some nodes of one parent, and every node inside them, each alone in its
+ * placing group placed by none.
+ * @param nodes The nodes.
+ * @returns Them, so placed.
+ */
+function plainNodes(nodes: readonly ElkNode[]): ElkNode[] {
+	return nodes.map((node) => {
+		const children = node.children === undefined ? {} : { children: plainNodes(node.children) };
+		if (!aloneIn(node, nodes)) return { ...node, ...children };
+		const { [PLACING_GROUP]: _placed, ...options } = node.layoutOptions!;
+		return { ...node, ...children, layoutOptions: options };
+	});
+}
+
+/**
+ * A measured hierarchy with no region round one node: every node alone in
+ * its placing group placed by none.
+ * @param graph The measured hierarchy.
+ * @returns It, or nothing when no node is alone in its group.
+ */
+function withoutLoneRegions(graph: ElkNode): ElkNode | undefined {
+	const nodes = graph.children ?? [];
+	return holdsLone(nodes) ? { ...graph, children: plainNodes(nodes) } : undefined;
 }
 
 /**
@@ -365,6 +411,7 @@ export {
 	regionRound,
 	titleRow,
 	placingGroup,
+	withoutLoneRegions,
 	type Lone,
 	type Stop,
 };
