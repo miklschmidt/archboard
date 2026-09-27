@@ -1,10 +1,11 @@
 // Steps a joined line need not take, taken out (steps.ts). What this catches:
 // a line joined from pieces routed in different blocks that steps sideways
-// and on, or doubles back, where one turn would do; and a slide that takes a
-// step out by moving a trunk, the line's run through its label, or a stretch
-// into a card, a title band, a wall it did not cross, onto another line's
-// axis, beside it, across it where it did not cross or where that line
-// turns, or into a jog too short for its bends.
+// and on, or doubles back, where one turn would do, alone or on a trunk; and
+// a slide that takes a step out by moving part of a trunk, a line's end run
+// or its run through its label, or by running a new stretch into a card, a
+// title band, a wall it did not cross, along a wall, onto another line's
+// axis, beside it, across it where it did not cross or where that line turns,
+// or into a jog too short for its bends.
 import { expect, test } from "bun:test";
 import { unstepped, type Point } from "@/transformers/semantic-renderer/layout";
 
@@ -75,7 +76,14 @@ test("a step stays where it is the line's run through its label", () => {
 	expect(unstepped([{ points: DOUBLING, label }], NOTHING)[0]).toEqual(DOUBLING);
 });
 
-test("a step another line shares is a trunk and stays", () => {
+test("lines that share a step's whole run between two turns slide it together", () => {
+	const branch = [...DOUBLING, { x: 300, y: 200 }];
+	const [one, other] = unstepped([{ points: DOUBLING }, { points: branch }], NOTHING);
+	expect(one).toEqual(ON_FIRST);
+	expect(other).toEqual([...ON_FIRST, { x: 300, y: 200 }]);
+});
+
+test("a step another line shares only part of stays", () => {
 	const trunk = { points: line([100, 150], [200, 150]) };
 	expect(unstepped([{ points: DOUBLING }, trunk], NOTHING)[0]).toEqual(DOUBLING);
 });
@@ -83,6 +91,11 @@ test("a step another line shares is a trunk and stays", () => {
 test("a slide runs level no nearer a container's title band than a lane", () => {
 	const bands = [{ x: 0, y: 0, width: 300, height: 80 }];
 	expect(unstepped([{ points: DOUBLING }], { ...NOTHING, bands })[0]).toEqual(ON_LAST);
+});
+
+test("a slide runs along a wall no nearer than a lane", () => {
+	const walls = [{ x: -50, y: -100, width: 450, height: 140 }];
+	expect(unstepped([{ points: DOUBLING }], { ...NOTHING, walls })[0]).toEqual(ON_LAST);
 });
 
 test.each([

@@ -287,7 +287,13 @@ class Assembly {
 			...placed.titles.map(({ box }) => box),
 		];
 		const walls = [...placed.frames, ...placed.regions].map(({ box }) => box);
-		const bands = placed.titles.map(({ band }) => band);
+		const bands = [
+			...placed.titles.map(({ band }) => band),
+			...placed.regions.map(({ box, caption }) => ({
+				...box,
+				height: caption.y + caption.height - box.y,
+			})),
+		];
 		const routes = unstepped(placed.edges, { boxes, walls, bands });
 		return {
 			...placed,

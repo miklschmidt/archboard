@@ -16,14 +16,28 @@
 import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { corners } from "@/transformers/semantic-renderer/lib/blocks/laid";
-import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
+import { LANE, REGION_CLEARANCE } from "@/transformers/semantic-renderer/lib/track/chains";
+import {
+	SAME,
+	crosses,
+	fresh,
+	grown,
+	lengthOf,
+	onOne,
+	runsOf,
+	sameSpan,
+	samePoint,
+	shared,
+	spanOf,
+	through,
+	wallSpans,
+	type Span,
+} from "@/transformers/semantic-renderer/lib/blocks/spans";
 
 /** How far a line's new stretch keeps from a card, a title or a label. */
 const CLEARANCE = LANE / 2;
 /** The shortest run between two turns, whose two bends need room. */
 const SHORTEST = 2 * BEND_RADIUS;
-/** How close two coordinates are and still one. */
-const SAME = 0.5;
 /** How far apart two lines on one axis still read as one. */
 const HANDOFF = 4 * LANE;
 /** How many times every line is looked at again, after the others moved. */
@@ -45,19 +59,11 @@ interface Surroundings {
 	readonly bands: readonly Box[];
 }
 
-/** A straight run of a line: level runs keep their y, upright ones their x. */
-interface Run {
-	readonly from: Point;
-	readonly to: Point;
-}
+/** The lines one slide moves, by index, with their points after it. */
+type Moved = Map<number, Point[]>;
 
-/** A run read along its axis: where across it stands, and its low and high ends along. */
-interface Span {
-	readonly level: boolean;
-	readonly at: number;
-	readonly low: number;
-	readonly high: number;
-}
+/** What a line a slide moves is weighed against, given every line the slide moves. */
+type Weigher = (moved: ReadonlySet<number>, line: number) => Weighing;
 
 /** Everything a slide of one line is weighed against. */
 interface Weighing {
@@ -69,126 +75,6 @@ interface Weighing {
 	/** Every title band, grown by a lane. */
 	readonly bands: readonly Box[];
 	readonly label: Box | undefined;
-}
-
-/**
- * A line's runs.
- * @param points Its points.
- * @returns The runs, in order.
- */
-function runsOf(points: readonly Point[]): Run[] {
-	return points.slice(1).map((to, index) => ({ from: points[index]!, to }));
-}
-
-/**
- * A run read along its axis.
- * @param run The run.
- * @returns Its span.
- */
-function spanOf(run: Run): Span {
-	const { from, to } = run;
-	const level = Math.abs(from.y - to.y) < Math.abs(from.x - to.x);
-	const [one, other] = level ? [from.x, to.x] : [from.y, to.y];
-	return {
-		level,
-		at: level ? from.y : from.x,
-		low: Math.min(one, other),
-		high: Math.max(one, other),
-	};
-}
-
-/**
- * How far along two spans share.
- * @param one A span.
- * @param other Another.
- * @returns The shared length, negative when they are apart.
- */
-function shared(one: Span, other: Span): number {
-	return Math.min(one.high, other.high) - Math.max(one.low, other.low);
-}
-
-/**
- * Whether two spans lie on one line and share some of it.
- * @param one A span.
- * @param other Another.
- * @returns True when they do.
- */
-function onOne(one: Span, other: Span): boolean {
-	return (
-		one.level === other.level && Math.abs(one.at - other.at) < SAME && shared(one, other) > SAME
-	);
-}
-
-/**
- * The stretches of a span no span on its line covers.
- * @param span The span.
- * @param cover The spans that may cover it.
- * @returns The uncovered stretches.
- */
-function uncovered(span: Span, cover: readonly Span[]): Span[] {
-	let left: Span[] = [span];
-	for (const one of cover.filter((other) => onOne(span, other)))
-		left = left.flatMap((piece) =>
-			[
-				{ ...piece, high: Math.min(piece.high, one.low) },
-				{ ...piece, low: Math.max(piece.low, one.high) },
-			].filter(({ low, high }) => high - low > SAME),
-		);
-	return left;
-}
-
-/**
- * The stretches of one line's runs another line's runs do not cover.
- * @param line The line.
- * @param cover The other.
- * @returns The stretches.
- */
-function fresh(line: readonly Point[], cover: readonly Point[]): Span[] {
-	const covering = runsOf(cover).map(spanOf);
-	return runsOf(line).flatMap((run) => uncovered(spanOf(run), covering));
-}
-
-/**
- * Whether a span runs through a box.
- * @param span The span.
- * @param box The box.
- * @returns True when it does.
- */
-function through(span: Span, box: Box): boolean {
-	const [low, high, across, deep] = span.level
-		? [box.x, box.x + box.width, box.y, box.height]
-		: [box.y, box.y + box.height, box.x, box.width];
-	return span.at > across && span.at < across + deep && span.high > low && span.low < high;
-}
-
-/**
- * A box grown on every side.
- * @param box The box.
- * @param by How far.
- * @returns The grown box.
- */
-function grown(box: Box, by: number): Box {
-	return { x: box.x - by, y: box.y - by, width: box.width + 2 * by, height: box.height + 2 * by };
-}
-
-/**
- * Whether a value lies along a span, clear of its ends.
- * @param value The value.
- * @param span The span.
- * @returns True when it does.
- */
-function within(value: number, span: Span): boolean {
-	return value > span.low + 1 && value < span.high - 1;
-}
-
-/**
- * Whether two square spans cross, each through the other clear of its ends.
- * @param one A span.
- * @param other A span square to it.
- * @returns True when they do.
- */
-function crosses(one: Span, other: Span): boolean {
-	return within(other.at, one) && within(one.at, other);
 }
 
 /**
@@ -255,27 +141,28 @@ function wallCrossings(points: readonly Point[], walls: readonly Box[]): number[
 }
 
 /**
- * A box's four walls.
- * @param box The box.
- * @returns Its top, bottom, left and right walls.
+ * Whether a line leaves and meets its cards the way it did: its first and
+ * last runs run the same way. A line that shares a trunk's step can have its
+ * own end run on the run that vanishes.
+ * @param next The line after a slide.
+ * @param old The line before.
+ * @returns True when they do.
  */
-function wallSpans(box: Box): Span[] {
-	const [right, bottom] = [box.x + box.width, box.y + box.height];
-	return [
-		{ level: true, at: box.y, low: box.x, high: right },
-		{ level: true, at: bottom, low: box.x, high: right },
-		{ level: false, at: box.x, low: box.y, high: bottom },
-		{ level: false, at: right, low: box.y, high: bottom },
-	];
+function keepsEnds(next: readonly Point[], old: readonly Point[]): boolean {
+	return (
+		wayOf(next[0]!, next[1]!) === wayOf(old[0]!, old[1]!) &&
+		wayOf(next.at(-2)!, next.at(-1)!) === wayOf(old.at(-2)!, old.at(-1)!)
+	);
 }
 
 /**
- * A run's length.
- * @param run The run.
- * @returns Its length.
+ * The way a run runs, as the sign of its step in x and y.
+ * @param from Its start.
+ * @param to Its end.
+ * @returns The way.
  */
-function lengthOf(run: Run): number {
-	return Math.abs(run.to.x - run.from.x) + Math.abs(run.to.y - run.from.y);
+function wayOf(from: Point, to: Point): string {
+	return `${Math.sign(to.x - from.x)},${Math.sign(to.y - from.y)}`;
 }
 
 /**
@@ -289,21 +176,6 @@ function roomy(next: readonly Point[], old: readonly Point[]): boolean {
 	return runsOf(next)
 		.slice(1, -1)
 		.every((run) => lengthOf(run) >= SHORTEST || was.some((span) => sameSpan(span, spanOf(run))));
-}
-
-/**
- * Whether two spans are one.
- * @param one A span.
- * @param other Another.
- * @returns True when they are.
- */
-function sameSpan(one: Span, other: Span): boolean {
-	return (
-		one.level === other.level &&
-		Math.abs(one.at - other.at) < SAME &&
-		Math.abs(one.low - other.low) < SAME &&
-		Math.abs(one.high - other.high) < SAME
-	);
 }
 
 /**
@@ -321,22 +193,82 @@ function slid(points: readonly Point[], index: number, onto: Point): Point[] {
 	});
 }
 
+/** One slide: the run between two turns, by its index, and the point whose axis it slides onto. */
+interface Slide {
+	readonly at: number;
+	readonly onto: Point;
+}
+
 /**
- * Every line one slide takes a step out of: each run between two turns slid
- * onto the axis of the run before the turn before it, or after the turn after
- * it, so the run between vanishes. A line's first and last runs meet cards
- * and never vanish.
+ * Every slide that takes a step out of a line: each run between two turns
+ * slid onto the axis of the run before the turn before it, or after the turn
+ * after it, so the run between vanishes. A line's first and last runs meet
+ * cards and never vanish.
  * @param points The line.
- * @returns The slid lines, simplified: a run a slide turns back on itself
- * is only as long as it reaches.
+ * @returns The slides.
  */
-function slides(points: readonly Point[]): Point[][] {
+function slidesOf(points: readonly Point[]): Slide[] {
 	const last = points.length - 1;
-	const out: Point[][] = [];
-	for (let index = 1; index + 2 <= last; index += 1)
-		for (const onto of [index - 1, index + 2].filter((one) => one > 0 && one < last))
-			out.push(corners(slid(points, index, points[onto]!)));
+	const out: Slide[] = [];
+	for (let at = 1; at + 2 <= last; at += 1)
+		for (const onto of [at - 1, at + 2].filter((one) => one > 0 && one < last))
+			out.push({ at, onto: points[onto]! });
 	return out;
+}
+
+/**
+ * Where a line runs the same run between two turns as another: the run's index.
+ * @param route The line.
+ * @param run The run's two ends.
+ * @returns The index, or -1 when the line does not turn at both its ends.
+ */
+function runIn(route: readonly Point[], run: readonly [Point, Point]): number {
+	return route.findIndex(
+		(point, at) =>
+			at > 0 &&
+			at + 2 < route.length &&
+			samePoint(point, run[0]) &&
+			samePoint(route[at + 1]!, run[1]),
+	);
+}
+
+/**
+ * The lines one slide moves: the line, and every line sharing a stretch it
+ * moves, a trunk, which slides the same run with it. A line that shares the
+ * stretch but not the whole run between two turns cannot follow.
+ * @param routes Every line's points.
+ * @param line The line slid.
+ * @param slide The slide.
+ * @returns Each moved line's points, by index, or nothing when a sharer cannot follow.
+ */
+function trunkOf(
+	routes: readonly (readonly Point[])[],
+	line: number,
+	slide: Slide,
+): Moved | undefined {
+	const route = routes[line]!;
+	const run = [route[slide.at]!, route[slide.at + 1]!] as const;
+	const moved: Moved = new Map([[line, corners(slid(route, slide.at, slide.onto))]]);
+	for (const member of moved.keys()) {
+		const gone = fresh(routes[member]!, moved.get(member)!);
+		for (const [other, points] of routes.entries()) {
+			if (moved.has(other) || !sharesAny(points, gone)) continue;
+			const at = runIn(points, run);
+			if (at < 0) return undefined;
+			moved.set(other, corners(slid(points, at, slide.onto)));
+		}
+	}
+	return moved;
+}
+
+/**
+ * Whether a line runs along any of some stretches.
+ * @param points The line.
+ * @param stretches The stretches.
+ * @returns True when it does.
+ */
+function sharesAny(points: readonly Point[], stretches: readonly Span[]): boolean {
+	return runsOf(points).some((run) => stretches.some((span) => onOne(span, spanOf(run))));
 }
 
 /**
@@ -377,17 +309,34 @@ function movesClear(added: readonly Span[], gone: readonly Span[], weighing: Wei
 
 /**
  * Whether a new stretch runs through a box, runs level through a title band,
- * or crowds another line.
+ * runs along a wall, or crowds another line.
  * @param span The stretch.
  * @param weighing What its line is weighed against.
  * @returns True when it does.
  */
 function blocked(span: Span, weighing: Weighing): boolean {
-	const { others, boxes, bands } = weighing;
+	const { others, boxes, bands, walls } = weighing;
 	return (
 		boxes.some((box) => through(span, box)) ||
 		(span.level && bands.some((band) => through(span, band))) ||
+		walls.some((box) => hugs(span, box)) ||
 		crowds(span, others)
+	);
+}
+
+/**
+ * Whether a stretch runs along one of a box's walls nearer than a lane and a
+ * half: a wall is a thin line, and a line a lane off it reads as its outline.
+ * @param span The stretch.
+ * @param box The box.
+ * @returns True when it does.
+ */
+function hugs(span: Span, box: Box): boolean {
+	return wallSpans(box).some(
+		(wall) =>
+			wall.level === span.level &&
+			Math.abs(wall.at - span.at) < REGION_CLEARANCE &&
+			shared(span, wall) > SAME,
 	);
 }
 
@@ -402,47 +351,86 @@ function costOf(line: readonly Point[], others: readonly Span[]): number {
 }
 
 /**
- * The best slide that takes a step out of a line, if any keeps it clear:
- * the one crossing fewest lines, then the shortest.
- * @param points The line.
- * @param weighing What it is weighed against.
- * @returns The slid line, or nothing.
+ * Whether every line a slide moves keeps its shape and stays clear of the lines it does not move.
+ * @param moved Each moved line's points, by index.
+ * @param routes Every line's points before the slide.
+ * @param weigh What a moved line is weighed against.
+ * @returns True when they all do.
  */
-function bestSlide(points: readonly Point[], weighing: Weighing): Point[] | undefined {
-	const kept = slides(points).filter(
-		(next) => roomy(next, points) && keepsClear(next, points, weighing),
-	);
-	const costs = kept.map((next) => costOf(next, weighing.others));
-	const best = costs.indexOf(Math.min(...costs));
-	return best < 0 ? undefined : kept[best];
+function fits(moved: Moved, routes: readonly (readonly Point[])[], weigh: Weigher): boolean {
+	const lines = new Set(moved.keys());
+	return [...moved].every(([line, next]) => {
+		const old = routes[line]!;
+		return (
+			next.length <= old.length &&
+			keepsEnds(next, old) &&
+			roomy(next, old) &&
+			keepsClear(next, old, weigh(lines, line))
+		);
+	});
 }
 
 /**
- * What one line is weighed against: every other line as it stands now, and
- * every box, other lines' labels among them, grown by the room kept.
+ * What a slide costs: every line it moves, among the lines it does not.
+ * @param moved Each moved line's points, by index.
+ * @param weigh What a moved line is weighed against.
+ * @returns The cost.
+ */
+function slideCost(moved: Moved, weigh: Weigher): number {
+	const lines = new Set(moved.keys());
+	return [...moved].reduce((sum, [line, next]) => sum + costOf(next, weigh(lines, line).others), 0);
+}
+
+/**
+ * The best slide that takes a step out of a line, if any keeps every line it
+ * moves clear: the one crossing fewest lines, then the shortest.
+ * @param routes Every line's points.
+ * @param line The line.
+ * @param weigh What a moved line is weighed against.
+ * @returns The lines it moves, or nothing.
+ */
+function bestSlide(
+	routes: readonly (readonly Point[])[],
+	line: number,
+	weigh: Weigher,
+): Moved | undefined {
+	const kept = slidesOf(routes[line]!).flatMap((slide) => {
+		const moved = trunkOf(routes, line, slide);
+		return moved !== undefined && fits(moved, routes, weigh) ? [moved] : [];
+	});
+	const costs = kept.map((moved) => slideCost(moved, weigh));
+	return kept[costs.indexOf(Math.min(...costs))];
+}
+
+/**
+ * What one line is weighed against: every line a slide does not move as it
+ * stands now, and every box, other lines' labels among them, grown by the room kept.
  * @param lines Every line.
  * @param routes Every line's points as they stand now.
- * @param index The line.
  * @param around What every line keeps clear of.
- * @returns The weighing.
+ * @returns The weighing, given the lines a slide moves and the line weighed.
  */
 function weighingOf(
 	lines: readonly Drawn[],
 	routes: readonly (readonly Point[])[],
-	index: number,
 	around: Surroundings,
-): Weighing {
-	const others = routes.flatMap((route, at) => (at === index ? [] : runsOf(route).map(spanOf)));
-	const labels = lines.flatMap(({ label }, at) =>
-		at === index || label === undefined ? [] : [label],
+): Weigher {
+	const runs = routes.map((route) => runsOf(route).map(spanOf));
+	const boxes = [...around.boxes].map((box) => grown(box, CLEARANCE));
+	const labels = lines.map(({ label }) =>
+		label === undefined ? undefined : grown(label, CLEARANCE),
 	);
-	return {
-		others,
-		boxes: [...around.boxes, ...labels].map((box) => grown(box, CLEARANCE)),
+	const bands = around.bands.map((band) => grown(band, LANE));
+	return (moved, line) => ({
+		others: runs.flatMap((spans, at) => (moved.has(at) ? [] : spans)),
+		boxes: [
+			...boxes,
+			...labels.flatMap((label, at) => (at === line || label === undefined ? [] : [label])),
+		],
 		walls: around.walls,
-		bands: around.bands.map((band) => grown(band, LANE)),
-		label: lines[index]!.label,
-	};
+		bands,
+		label: lines[line]!.label,
+	});
 }
 
 /**
@@ -454,17 +442,17 @@ function weighingOf(
 function unstepped(lines: readonly Drawn[], around: Surroundings): Point[][] {
 	const routes = lines.map(({ points }) => corners(points));
 	for (let pass = 0; pass < PASSES; pass += 1) {
-		let moved = false;
-		for (let index = 0; index < routes.length; index += 1)
+		let slides = 0;
+		for (let line = 0; line < routes.length; line += 1)
 			for (
-				let next = bestSlide(routes[index]!, weighingOf(lines, routes, index, around));
-				next !== undefined;
-				next = bestSlide(routes[index]!, weighingOf(lines, routes, index, around))
+				let moved = bestSlide(routes, line, weighingOf(lines, routes, around));
+				moved !== undefined;
+				moved = bestSlide(routes, line, weighingOf(lines, routes, around))
 			) {
-				routes[index] = next;
-				moved = true;
+				for (const [one, next] of moved) routes[one] = next;
+				slides += 1;
 			}
-		if (!moved) break;
+		if (slides === 0) break;
 	}
 	return routes;
 }
