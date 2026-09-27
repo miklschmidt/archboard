@@ -23,7 +23,7 @@ import {
 } from "@/shared/semantic-board/index";
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
 import { canvasWidth, cssFont } from "@/transformers/semantic-renderer/lib/canvas-text";
-import { lineAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
+import { lineLooks } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import type {
 	MeasuredArchitecture,
 	MeasuredLabel,
@@ -559,12 +559,7 @@ function measureArchitecture(
 		labels: new Map(
 			content.edges.flatMap((edge) => (edge.label ? [[edge.id, measureLabel(edge.label)]] : [])),
 		),
-		lines: new Map(
-			content.edges.map((edge) => {
-				const { dash, arrowhead } = lineAppearance(edge.kind, policy, steps.has(edge.id));
-				return [edge.id, { dash, arrowhead }];
-			}),
-		),
+		lines: lineLooks(content.edges, policy, steps),
 		...(placing.size === 0
 			? {}
 			: {

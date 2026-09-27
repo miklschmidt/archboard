@@ -1,4 +1,5 @@
-import { placingGroups, type SemanticNode } from "@/shared/semantic-board/index";
+import { placingGroups, type SemanticEdge, type SemanticNode } from "@/shared/semantic-board/index";
+import type { LineLook } from "@/transformers/semantic-renderer/lib/drawing";
 import {
 	DEFAULT_SEMANTIC_POLICY,
 	type PaletteColor,
@@ -137,4 +138,24 @@ function lineAppearance(
 	return step ? STEP_APPEARANCE : relationshipAppearance(kind, policy);
 }
 
-export { type NodeAppearance, nodeAppearances, lineAppearance, relationshipAppearance };
+/**
+ * How each line is drawn, by relationship id, as the vault's policy says.
+ * @param edges The lines.
+ * @param policy The vault's relationship kinds.
+ * @param steps The lines that are flow steps drawn on the board.
+ * @returns Each line's dash and head.
+ */
+function lineLooks(
+	edges: readonly SemanticEdge[],
+	policy: Pick<SemanticPolicy, "relationshipKinds">,
+	steps: ReadonlySet<string>,
+): ReadonlyMap<string, LineLook> {
+	return new Map(
+		edges.map((edge) => {
+			const { dash, arrowhead } = lineAppearance(edge.kind, policy, steps.has(edge.id));
+			return [edge.id, { dash, arrowhead }];
+		}),
+	);
+}
+
+export { type NodeAppearance, nodeAppearances, lineAppearance, lineLooks, relationshipAppearance };

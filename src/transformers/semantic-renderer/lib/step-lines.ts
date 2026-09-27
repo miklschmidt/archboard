@@ -54,27 +54,68 @@ function lineOf(step: FlowStep, order: number): SemanticEdge {
 }
 
 /**
- * The content with one derived line per flow message between two distinct
- * participants, on a board that holds no relationships of its own. A second
- * step over the same pair in the same direction rides the first; a return, a
- * self step, a step to a container and a step whose participant is not in
- * this reading draw nothing.
- * @param content The variant content.
- * @returns The drawable content and the derived ids.
+ * One line for each pair of participants a drawable message runs between. A
+ * pair's line is the first message over it that the variant holds, or the
+ * first message over it when the variant holds none. Whether a message the
+ * variant holds is drawable is asked of the variant's own reading: a
+ * participant is not a container there only because the comparison restored
+ * a child the variant removed.
+ * @param content The content laid out.
+ * @param held The variant's own reading of the view.
+ * @returns The lines, in the order their pairs first appear.
  */
-function withStepLines(content: VariantContent): StepLines {
-	// A board that has relationships is drawn from them: a flow there restates
-	// the wiring as messages and answers, and drawing those again doubles every
-	// line. Only a board with no relationships at all reads its exchange this way.
-	if (content.edges.length > 0) return { content, derived: new Set() };
-	const joined = new Set<string>();
-	const lines: SemanticEdge[] = [];
+function stepLinesOf(content: VariantContent, held: VariantContent): SemanticEdge[] {
+	const own = new Set(held.flows.flatMap(({ steps }) => steps.map(({ id }) => id)));
+	const riders = new Map<string, SemanticEdge>();
 	for (const [index, step] of content.flows.flatMap((flow) => flow.steps).entries()) {
 		const pair = `${step.from}>${step.to}`;
-		if (joined.has(pair) || !drawable(step, content)) continue;
-		joined.add(pair);
-		lines.push(lineOf(step, (index + 1) * 1000));
+		const reading = own.has(step.id) ? held : content;
+		if (drawable(step, reading) && takesPair(riders.get(pair), step, own)) {
+			riders.set(pair, lineOf(step, (index + 1) * 1000));
+		}
 	}
+	return [...riders.values()];
+}
+
+/**
+ * Whether a message becomes its pair's line: the pair has none yet, or its
+ * line is a message the variant does not hold and this one it does.
+ * @param riding The pair's line so far, if any.
+ * @param step The message.
+ * @param own The ids of the messages the variant holds.
+ * @returns True when the message takes the pair.
+ */
+function takesPair(
+	riding: SemanticEdge | undefined,
+	step: FlowStep,
+	own: ReadonlySet<string>,
+): boolean {
+	return riding === undefined || (!own.has(riding.id) && own.has(step.id));
+}
+
+/**
+ * The content with one derived line per flow message between two distinct
+ * participants, on a board that holds no relationships of its own. Further
+ * steps over the same pair in the same direction ride one line; a return, a
+ * self step, a step to a container and a step whose participant is not in
+ * this reading draw nothing.
+ *
+ * On a variant read against another, the content laid out holds what the
+ * variant lost as well, and a picture without the comparison draws only what
+ * the variant's own reading of the view holds. So whether the board has
+ * relationships of its own is asked of that reading, and a pair's line is a
+ * message it holds whenever one rides the pair. Neither choice depends on
+ * whether the comparison is shown, so both pictures lay out the same lines.
+ * @param content The content laid out.
+ * @param held The variant's own reading of the view.
+ * @returns The drawable content and the derived ids.
+ */
+function withStepLines(content: VariantContent, held: VariantContent): StepLines {
+	// A board that has relationships is drawn from them: a flow there restates
+	// the wiring as messages and answers, and drawing those again doubles every
+	// line. Only a board with no relationships of its own reads its exchange this way.
+	if (held.edges.length > 0) return { content, derived: new Set() };
+	const lines = stepLinesOf(content, held);
 	const derived = new Set(lines.map((line) => line.id));
 	return derived.size === 0
 		? { content, derived }
