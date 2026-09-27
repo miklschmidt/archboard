@@ -12,11 +12,18 @@
 // (Auditlog's "ApplyOffsets"), for the crossings they saved; and a crossing
 // saved does not pay for two ports beside a card's corner (IIS Ingress
 // Migration's "US steering"), nor for a fan whose branches crowd into one
-// blot (Skill evaluation's six lines out of Author run, branching 9 px apart).
+// blot (Skill evaluation's six lines out of Author run, branching 9 px apart);
+// hooks cured do not pay for a crossing brought either. Evening the charge
+// counts the inset a side pin stands inside its card's routing box, so every
+// pin of a card costs the same in all.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { tidierSettlement, type ArchitectureDrawing } from "@/runtime/semantic-renderer/layout";
+import {
+	centreHandicap,
+	tidierSettlement,
+	type ArchitectureDrawing,
+} from "@/runtime/semantic-renderer/layout";
 import { roundBridges, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { at, sketch, type Line } from "@/runtime/semantic-renderer/tests/sketched-drawings";
@@ -219,4 +226,46 @@ test("two lines whose end runs meet on one stroke are not a trunk that costs a s
 	const plain = sketch({}, [...apart, ...long(true).slice(0, 2)]);
 	const even = sketch({}, [...facing, ...long(false).slice(0, 2)]);
 	expect(await kept(plain, even)).toBe("even");
+});
+
+test("hooks cured do not pay for a crossing brought", async () => {
+	const cards = {
+		source: { x: 0, y: 0, width: 100, height: 50 },
+		target: { x: 200, y: 200, width: 200, height: 60 },
+		source2: { x: 500, y: 0, width: 100, height: 50 },
+		target2: { x: 700, y: 200, width: 200, height: 60 },
+	};
+	const lines = (shift: number, hooked: boolean): Line => ({
+		id: `line${shift}`,
+		from: shift === 0 ? "source" : "source2",
+		to: shift === 0 ? "target" : "target2",
+		points: (hooked
+			? at([50, 50], [50, 100], [180, 100], [180, 230], [200, 230])
+			: at([50, 50], [50, 100], [260, 100], [260, 200])
+		).map(({ x, y }) => ({ x: x + shift, y })),
+	});
+	const plain = sketch(cards, [lines(0, true), lines(500, true), ...long(false).slice(0, 2)]);
+	const even = sketch(cards, [lines(0, false), lines(500, false), ...long(true).slice(0, 2)]);
+	expect(await kept(plain, even)).toBe("plain");
+});
+
+test("every pin of a card costs the same once libavoid charges its distance from the centre", () => {
+	const box = { x: 0, y: 0, width: 200, height: 100 };
+	const inset = 8;
+	// A pin on a side face stands the inset inside the routing box, nearer the centre.
+	const inward = (share: number): number => (share === 0 ? inset : share === 1 ? -inset : 0);
+	const totals = [
+		{ x: 0, y: 0.3 },
+		{ x: 1, y: 0.7 },
+		{ x: 0.4, y: 0 },
+		{ x: 0.6, y: 1 },
+	].map((at) => {
+		const pin = {
+			x: at.x * box.width + inward(at.x),
+			y: at.y * box.height + inward(at.y),
+		};
+		const charge = Math.abs(pin.x - box.width / 2) + Math.abs(pin.y - box.height / 2);
+		return centreHandicap(box, at, inset) + charge;
+	});
+	for (const total of totals) expect(total).toBeCloseTo(totals[0]!, 6);
 });
