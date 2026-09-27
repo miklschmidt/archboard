@@ -2007,8 +2007,9 @@ no test owned.
   settlement that saved a crossing and a crowded label for thirteen more
   bends and wound through its frame; a drawing that turns its lines more
   than two bends for each defect it saves is not tidier.
-- **The pin pass excuses one bend** (`finishing.ts` `noWorse`): a line it
-  sends off a pin may take one bend more, and no more.
+- **The pin pass excuses one bend a pin** (`finishing.ts` `noWorse`): a
+  line it sends off a pin may take one bend more for each pin it leaves, as
+  the pass clears one card at a time, and no more.
 - **A resting streak keeps clear of where other lines meet its own**
   (`comet-rest.ts` `meetingPlaces`): the hops it carries or passes under and
   the stretches it shares with another line, as it keeps clear of labels;
@@ -2034,3 +2035,51 @@ Against `ed9c7d8d` (the same measures as section 40):
 | ------- | --------- | --------------- | ------- | -------- | ------------ | -------- | ------------- | ------------------- |
 | dogfood | 212 → 192 | 22 (2318) → 0   | 12 → 3  | 144 → 30 | 54 → 33      | 5 → 0    | 9 → 6         | 7 → 6               |
 | work    | 35 → 33   | 2 (76) → 0      | 3 → 0   | 29 → 8   | 20 → 13      | 0 → 0    | 1 → 1         | 0 → 0               |
+
+## 42. Crossings on a corner, lines side by side, side exits card by card (2026-09-27)
+
+Round 6's reviews, judged against `ed9c7d8d`, left Agent workbench whole
+knotted above Thread link, Board persistence whole reading worse at three
+spots, and two rules no test owned.
+
+- **A crossing within a lane of a bend counts twice** (`cornered-crossings.ts`,
+  in `even-pins.ts` `crossingsSeen` and as a defect `finishing.ts` `cures`
+  counts). Curing Agent workbench's hook into Thread link's side crossed the
+  purple line 9.6 px before its bend and a grey line 12.6 px before its own,
+  with two grey lines 10 px apart; that cure is now refused, and the drawing
+  there is the base's. A crossing a lane from a bend is an ordinary one: the
+  base draws two at exactly 16 px in the same place.
+- **A settlement may not run more lanes of unrelated lines side by side
+  nearer than a lane** (`stacked-runs.ts` `trackedLanes`, in `defectsIn`).
+  Board persistence's evened settlement ran its teal `a migrated document`
+  11 px from two unrelated lines for 377 px; it now keeps the plain
+  settlement, where the teal, `the links out of every board` and `check the
+vault` all read cleanly. The cost is a page as wide as the base's (3781 px
+  against the evened 2901), four hooks where the evened settlement had one
+  (the base eleven), and Read and validate's two lines leaving its left side
+  18 px on one stroke before they part. No other drawing changes. Counted in
+  the finishing passes as well, lines side by side refused Archboard
+  server's parting of three lines stacked out of one card, and Board
+  persistence's hook cures, so they are not.
+- **Side exits cured card by card** (`finishing.ts` face pass `askByCard`,
+  `route-requests.ts` `centredLines`, `label-centring.ts`): where moving
+  every reserved label onto its cards' channel is refused, one card's lines'
+  labels move alone. Board rasterizer's `One browser, two uses` drops `spawn,
+read the port, stop the group` straight into Chromium executable's top.
+  Board persistence's `the links out of every board` is not cured this way:
+  its label's row moves other lines into a hook and a crowded label.
+- **A resting streak ranks by the room it keeps** (`comet-rest.ts`): short of
+  a lane, how deep it runs onto a hop or a shared stretch counts, so it
+  rests off a hop's middle; a label drawn over it hides it, so a glow that
+  reaches a label keeps no room from it and no less. Counted as deep,
+  Command interface's `requestJson` rested against a junction dot to keep
+  its tail from under its own label. Track and Blocks share the painter:
+  two streaks move, off a junction dot to below their label.
+
+Against `ed9c7d8d` (the measures of section 40, and crossings within a lane
+of a bend):
+
+| vault   | crossings | stacks (length)    | touches | hooks    | corner ports | by a pin | double tracks | crossings at a join | on a corner |
+| ------- | --------- | ------------------ | ------- | -------- | ------------ | -------- | ------------- | ------------------- | ----------- |
+| dogfood | 212 → 191 | 22 (2318) → 2 (30) | 12 → 3  | 144 → 33 | 54 → 32      | 5 → 0    | 9 → 4         | 7 → 6               | 43 → 22     |
+| work    | 35 → 33   | 2 (76) → 0         | 3 → 0   | 29 → 8   | 20 → 12      | 0 → 0    | 1 → 1         | 0 → 0               | 2 → 1       |
