@@ -386,7 +386,7 @@ describe("authoring and opening a semantic board", () => {
 		const drawn = await (
 			await fetch(`${server.base}/api/semantic-boards/render?board=pipeline&variant=${proposal.id}`)
 		).json();
-		expect(drawn.changes.predecessor.id).toBe(baseline.id);
+		expect(drawn.changes.against.id).toBe(baseline.id);
 		// The one node the proposal added is the one thing labelled as added.
 		expect(drawn.changes.standing[queue.id]).toBe("added");
 		for (const node of baseline.content.nodes) {
