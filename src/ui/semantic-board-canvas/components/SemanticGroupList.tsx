@@ -75,7 +75,9 @@ function SemanticGroupList(props: SemanticGroupListProps): JSX.Element {
 		<fieldset
 			data-slot="semantic-group-list"
 			aria-label="Select a group's parts"
-			className="flex flex-col items-stretch gap-0.5 border-0 p-0"
+			// A fieldset is as wide as its widest name unless told otherwise,
+			// and a name that runs past the sidebar then never truncates.
+			className="flex min-w-0 flex-col items-stretch gap-0.5 border-0 p-0"
 		>
 			{choices.map((choice) => (
 				<GroupButton

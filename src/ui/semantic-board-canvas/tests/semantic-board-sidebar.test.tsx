@@ -11,7 +11,6 @@ import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
 import {
-	cameraNow,
 	drawing,
 	inPicture,
 	mountStage,
@@ -21,6 +20,7 @@ import {
 	settle,
 	viewport,
 } from "@/ui/semantic-board-canvas/tests/stage-harness";
+import { cameraNow } from "@/ui/semantic-board-canvas/tests/camera-probes";
 
 /**
  * Which tab the sidebar has open.

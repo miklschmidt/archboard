@@ -14,7 +14,6 @@ import { expect, test } from "bun:test";
 
 import { PRESENTATION_STEP_MS } from "@/shared/timing/timing";
 import {
-	cameraNow,
 	chooseVariantInShell,
 	drawing,
 	mountStage,
@@ -25,6 +24,7 @@ import {
 	surface,
 	viewport,
 } from "@/ui/semantic-board-canvas/tests/stage-harness";
+import { cameraNow } from "@/ui/semantic-board-canvas/tests/camera-probes";
 
 /** The view the variant offers, which one step is told through. */
 const VIEW = { id: "vw1", name: "The writer alone", grammar: "architecture" } as const;

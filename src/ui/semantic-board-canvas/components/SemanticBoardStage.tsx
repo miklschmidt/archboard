@@ -208,14 +208,14 @@ interface RenderView extends SemanticBoardStageProps {
 	readonly onCloseNarrative: () => void;
 	/** Leave the guided reading and choose a view of this level. */
 	readonly onChooseView: (view: string | null) => void;
-	/** Read an explanation, letting any selected group go. */
+	/** Read an explanation; opening one lets any selected group go. */
 	readonly onChooseWalkthrough: (walkthrough: string | null) => void;
 	/** Every group the variant on screen uses. */
 	readonly groups: readonly GroupChoice[];
 	/** How the inspector names memberships and selects one. */
 	readonly groupControls: GroupControls;
 	/** The selected group and its members, or null. */
-	readonly selectedGroup: GroupSelection | null;
+	readonly group: GroupSelection | null;
 	/** Select a group's members in place of the selection and any guided reading; null to let go. */
 	readonly onChooseGroup: (group: string | null) => void;
 	/** The sidebar's tab and collapse state. */
@@ -462,14 +462,19 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 	// resolved variant it was chosen on: a walk into another board, or to
 	// another state of this one, drops it, while a change of view keeps it.
 	// Selecting a group replaces what was picked out and leaves any guided
-	// reading; picking anything out, or opening an explanation, lets the group go.
+	// reading; picking anything out lets the group go, and so does an
+	// explanation opening, whoever opens it.
 	//
 	// What was picked out is reported as what it is, not only as an id. The pane
 	// is the one place that knows: it has the board open and has just drawn the
 	// thing. A shell told only "sTn4eQ" would need a second read of the board to
 	// tell a step from the flow that holds it, or to say out loud what a person
 	// just clicked on.
-	const grouped = useGroupSelection(drill.board, reading === null ? null : reading.variant);
+	const grouped = useGroupSelection(
+		drill.board,
+		reading === null ? null : reading.variant,
+		narrative.open !== null,
+	);
 	const chooseGroup = grouped.choose;
 	const held = reading?.subject;
 	const onPick = useCallback(
@@ -489,22 +494,9 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		},
 		[choose, chooseGroup, onSelect],
 	);
-	const onChooseWalkthrough = useCallback(
-		(walkthrough: string | null): void => {
-			if (walkthrough !== null) {
-				chooseGroup(null);
-			}
-			choose(walkthrough);
-		},
-		[choose, chooseGroup],
-	);
 	const groupControls = useMemo(
-		() => ({
-			names: grouped.names,
-			selected: grouped.selected === null ? null : grouped.selected.group,
-			onChoose: onChooseGroup,
-		}),
-		[grouped.names, grouped.selected, onChooseGroup],
+		() => ({ names: grouped.names, onChoose: onChooseGroup }),
+		[grouped.names, onChooseGroup],
 	);
 
 	// Empty views retain their resolved identity for the pane and its address.
@@ -583,10 +575,10 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		missing,
 		onCloseNarrative,
 		onChooseView,
-		onChooseWalkthrough,
+		onChooseWalkthrough: choose,
 		groups: grouped.choices,
 		groupControls,
-		selectedGroup: grouped.selected,
+		group: grouped.selected,
 		onChooseGroup,
 	});
 }

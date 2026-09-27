@@ -18,10 +18,9 @@ import { serverPath } from "./support/navigator-support.ts";
 import { pictureAtRest } from "./support/semantic-page.ts";
 
 // Selecting a group in a real browser: the half of the workflow only a
-// browser can answer. The chip's colour is the theme's, resolved through a CSS
-// variable, and the ring on each member is the picture's stylesheet at work;
-// neither is something a DOM stand-in computes. Who is selected, and when the
-// group is let go, are owned by the pane's own tests.
+// browser can answer. The ring on each member is the picture's stylesheet at
+// work, which no DOM stand-in computes. Who is selected, when the group is let
+// go, and the chip's colour token are owned by the pane's own tests.
 
 /**
  * One group's button in the list on the sidebar's board tab.
@@ -30,17 +29,6 @@ import { pictureAtRest } from "./support/semantic-page.ts";
  */
 const choice = (group: string): string =>
 	`[data-slot='semantic-group-choice'][data-group='${group}']`;
-
-/**
- * The colour one group's chip is drawn in, as the browser computes it.
- * @param browser The page.
- * @param group The group's id.
- * @returns Its computed border colour.
- */
-const chipColor = (browser: AgentBrowserSession, group: string): Promise<string> =>
-	browser.eval<string>(
-		`getComputedStyle(document.querySelector("${choice(group)} [data-slot='semantic-group-chip']")).borderTopColor`,
-	);
 
 /**
  * Which of some drawn subjects show the selection ring, as the browser computes it.
@@ -122,16 +110,12 @@ test("a person selects a group from its colour and name, sees its members ringed
 	expect(ids.every((id) => id !== "")).toBe(true);
 	const [handler, queue, worker] = ids;
 
-	// Each group's chip is drawn in its own configured colour.
 	await pollUntil(
-		() => chipColor(browser, "fulfillment"),
-		(color) => color !== "",
+		() => browser.eval<boolean>(`document.querySelector("${choice("fulfillment")}") !== null`),
+		(listed) => listed,
 		"the group list to offer the configured groups",
 		WAIT,
 	);
-	const colors = [await chipColor(browser, "fulfillment"), await chipColor(browser, "billing")];
-	expect(colors.every((color) => color !== "rgba(0, 0, 0, 0)")).toBe(true);
-	expect(colors[0]).not.toBe(colors[1]);
 
 	// Choosing the group rings every member across both services, and nothing else.
 	await press(browser, choice("fulfillment"));

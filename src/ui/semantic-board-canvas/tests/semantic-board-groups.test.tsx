@@ -9,6 +9,7 @@ import { announceSemanticBoardChange } from "@/ui/semantic-board-canvas";
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
 import {
 	chooseVariantInShell,
+	driveInShell,
 	mountStage,
 	openSidebarTab,
 	server,
@@ -297,6 +298,15 @@ test("selecting a group replaces the picked subject, and picking a subject lets 
 	expect(selected()).toEqual(["g"]);
 	openSidebarTab("board");
 	expect(listed()).toBeNull();
+
+	// Escape lets a selected group go, as it lets a picked subject go.
+	await toggle("billing");
+	act(() => {
+		fireEvent.keyDown(slot("semantic-board-viewport")!, { key: "Escape" });
+	});
+	await settled();
+	expect(listed()).toBeNull();
+	expect(selected()).toEqual([]);
 });
 
 test("a membership in the inspector selects the same group, with its colour", async () => {
@@ -340,6 +350,10 @@ test("an id the configuration no longer defines is still listed, by its id, with
 	await settled();
 	expect(choice("billing").getAttribute("data-configured")).toBe("false");
 	expect(choice("billing").textContent).toBe("billing");
+	expect(
+		choice("billing").querySelector<HTMLElement>("[data-slot='semantic-group-chip']")?.style
+			.borderColor,
+	).toBe("");
 	await toggle("billing");
 	expect(selected()).toEqual(["w", "l"]);
 });
@@ -359,6 +373,24 @@ test("a board change refreshes who the selected group selects", async () => {
 	await settled();
 	expect(listed()).toBe("billing");
 	expect(selected()).toEqual(["l"]);
+
+	// Once nothing belongs to it, the list no longer offers it to let go of,
+	// so the selection lets go by itself.
+	server.documents["pipeline"] = boardOf(
+		NODES.map((node) => (node.id === "w" || node.id === "l" ? { ...node, groups: [] } : node)),
+	);
+	await act(async () => {
+		announceSemanticBoardChange("pipeline", 3);
+	});
+	await settled();
+	expect(listed()).toBeNull();
+	expect(selected()).toEqual([]);
+	server.documents["pipeline"] = boardOf();
+	await act(async () => {
+		announceSemanticBoardChange("pipeline", 4);
+	});
+	await settled();
+	expect(listed()).toBeNull();
 });
 
 test("moving to another variant drops the group; changing the view keeps it", async () => {
@@ -411,7 +443,8 @@ test("moving to another variant drops the group; changing the view keeps it", as
 	expect(listed()).toBeNull();
 });
 
-test("selecting a group leaves a walkthrough, and opening a walkthrough lets the group go", async () => {
+/** Put a board whose variant tells one walkthrough, about the gateway, in front of a pane. */
+function servingWalkthrough(): void {
 	server.documents["pipeline"] = {
 		...boardOf(),
 		variants: [
@@ -435,6 +468,10 @@ test("selecting a group leaves a walkthrough, and opening a walkthrough lets the
 	};
 	server.reply = { status: 200, body: picture() };
 	server.vault = vaultWith(GROUPS);
+}
+
+test("selecting a group leaves a walkthrough, and opening a walkthrough lets the group go", async () => {
+	servingWalkthrough();
 	mountStage();
 	await settled();
 	await act(async () => {
@@ -451,6 +488,18 @@ test("selecting a group leaves a walkthrough, and opening a walkthrough lets the
 	await act(async () => {
 		fireEvent.click(walkthrough());
 	});
+	await settled();
+	expect(slot("semantic-presentation")).not.toBeNull();
+	expect(listed()).toBeNull();
+	expect(selected()).toEqual(["g"]);
+});
+
+test("a walkthrough a narration opens lets the group go too", async () => {
+	servingWalkthrough();
+	mountStage(null, { live: true });
+	await settled();
+	await toggle("fulfillment");
+	driveInShell({ request: "narration-1", walkthrough: "wt", beat: 0 });
 	await settled();
 	expect(slot("semantic-presentation")).not.toBeNull();
 	expect(listed()).toBeNull();

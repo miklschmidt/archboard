@@ -29,7 +29,7 @@ interface PresentationView {
 	/** The pane's camera, which keeps its fits clear of the caption. */
 	readonly camera: { readonly reserve: (bottom: number) => void };
 	/** The selected group and its members, or null. */
-	readonly selectedGroup: GroupSelection | null;
+	readonly group: GroupSelection | null;
 }
 
 /**
@@ -74,9 +74,9 @@ function pictureMarks(view: PresentationView): {
 	readonly group: GroupSelection | null;
 	readonly veil: ReadonlySet<string> | null;
 } {
-	const { selectedGroup, narrative, focus } = view;
+	const { group, narrative, focus } = view;
 	const veiled = narrative.open !== null && focus.drawn.length > 0;
-	return { group: selectedGroup, veil: veiled ? new Set(focus.drawn) : null };
+	return { group, veil: veiled ? new Set(focus.drawn) : null };
 }
 
 /**

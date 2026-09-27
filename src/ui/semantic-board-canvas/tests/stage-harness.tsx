@@ -340,12 +340,20 @@ function paneReading(options: MountOptions): Record<string, unknown> {
 	return stated;
 }
 
+/** A step the shell asks a pane to present. */
+type Driven = MountOptions["driven"];
+
 /**
- * The shell's hold on a held pane's variant, which the navigator changes: a
- * pane does not offer its own board's states, so a test changes them from here.
+ * The shell's hold on a held pane's variant, which the navigator changes, and
+ * on the step it asks the pane to present, which a narration or an agent
+ * starts: neither is the pane's own control, so a test changes them from here.
  */
-const shellHold: { setVariant: ((variant: string | undefined) => void) | null } = {
+const shellHold: {
+	setVariant: ((variant: string | undefined) => void) | null;
+	setDriven: ((driven: Driven) => void) | null;
+} = {
 	setVariant: null,
+	setDriven: null,
 };
 
 /**
@@ -359,6 +367,20 @@ function chooseVariantInShell(variant: string | undefined): void {
 	}
 	act(() => {
 		set(variant);
+	});
+}
+
+/**
+ * Ask the held pane to present a step, as a narration started from the shell does.
+ * @param driven The step.
+ */
+function driveInShell(driven: Driven): void {
+	const set = shellHold.setDriven;
+	if (set === null) {
+		throw new Error("No held pane is mounted; mount with { live: true }.");
+	}
+	act(() => {
+		set(driven);
 	});
 }
 
@@ -399,10 +421,13 @@ function Held(props: HeldProps): JSX.Element {
 	const [picked, setPicked] = useState<string | null>(props.selection);
 	const [variant, setVariant] = useState<string | undefined>(props.variant);
 	const [view, setView] = useState<string | undefined>(props.view);
+	const [driven, setDriven] = useState<Driven>(props.driven);
 	useEffect(() => {
 		shellHold.setVariant = setVariant;
+		shellHold.setDriven = setDriven;
 		return (): void => {
 			shellHold.setVariant = null;
+			shellHold.setDriven = null;
 		};
 	}, []);
 	/**
@@ -434,6 +459,7 @@ function Held(props: HeldProps): JSX.Element {
 		onVariantChange,
 		view,
 		onViewChange,
+		driven,
 		selection: picked,
 		onSelect,
 	});
@@ -509,54 +535,6 @@ function viewport(): HTMLElement {
 	return part("semantic-board-viewport");
 }
 
-/** Where the pane is looking, read back off the surface. */
-interface ReadCamera {
-	readonly x: number;
-	readonly y: number;
-	readonly scale: number;
-}
-
-/**
- * Where the pane is looking, as the surface's transform says.
- * @returns The camera.
- */
-function cameraNow(): ReadCamera {
-	const said = /translate\((-?[\d.]+)px, (-?[\d.]+)px\) scale\(([\d.]+)\)/.exec(
-		surface().style.transform,
-	);
-	if (said === null) {
-		throw new Error(`The surface is not transformed: "${surface().style.transform}"`);
-	}
-	return { x: Number(said[1]), y: Number(said[2]), scale: Number(said[3]) };
-}
-
-/**
- * A wheel notch over one point of the viewport.
- *
- * The coordinates are attached rather than passed in: this DOM's `WheelEvent`
- * drops the mouse half of its initialiser, and where the pointer is, is the
- * whole of what a zoom about it depends on.
- * @param deltaY How far the wheel turned; negative comes closer.
- * @param at Where the pointer is, in the viewport.
- * @returns The event to dispatch.
- */
-function wheelAt(deltaY: number, at: readonly [number, number]): WheelEvent {
-	const event = new WheelEvent("wheel", { deltaY, bubbles: true, cancelable: true });
-	Object.defineProperty(event, "clientX", { value: at[0] });
-	Object.defineProperty(event, "clientY", { value: at[1] });
-	return event;
-}
-
-/**
- * Which point of the diagram is under one point of the viewport.
- * @param camera Where the pane is looking.
- * @param at The viewport point.
- * @returns The diagram point.
- */
-function diagramPointUnder(camera: ReadCamera, at: readonly [number, number]): [number, number] {
-	return [(at[0] - camera.x) / camera.scale, (at[1] - camera.y) / camera.scale];
-}
-
 /**
  * The element inside the picture with this id.
  * @param id The id in the fake drawing's markup.
@@ -581,16 +559,13 @@ export {
 	NO_SUCH_BOARD,
 	UNREADABLE,
 	chooseVariantInShell,
+	driveInShell,
 	mountStage,
 	openSidebarTab,
 	stageState,
 	part,
 	surface,
 	viewport,
-	cameraNow,
-	wheelAt,
-	diagramPointUnder,
 	inPicture,
 	type Mounted,
-	type ReadCamera,
 };

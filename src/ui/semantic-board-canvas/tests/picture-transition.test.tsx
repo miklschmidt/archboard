@@ -257,7 +257,7 @@ describe("leaving and arriving", () => {
 	test("a subject only the new picture has waits for the moves, then a card grows in and a line draws on", () => {
 		const surface = surfaceElement();
 		const before = picture([A], []);
-		const after = picture([A, B], [AB]);
+		const after = picture([A, B], [{ ...AB, traffic: true }]);
 		surface.innerHTML = before.svg;
 		const transition = transitionPicture(surface, before, after);
 		const card = surface.querySelector<SVGGElement>(`g[data-semantic-id="n2"]`)!;
@@ -265,6 +265,10 @@ describe("leaving and arriving", () => {
 		const stroke = line.querySelectorAll("path")[1]!;
 		expect(Number(card.style.opacity)).toBe(0);
 		expect(Number(line.style.opacity)).toBe(0);
+		// Its traffic, in a layer of its own, waits for the line to be drawn.
+		expect(surface.querySelector<SVGElement>(`g[data-traffic="e1"] .ab-pulse`)?.style.opacity).toBe(
+			"0",
+		);
 		expect(stroke.hasAttribute("marker-end")).toBe(false);
 		expect(Number(stroke.getAttribute("stroke-dashoffset"))).toBeCloseTo(90, 3);
 		transition.seek(PICTURE_TRANSITION_PHASES.enterStart);

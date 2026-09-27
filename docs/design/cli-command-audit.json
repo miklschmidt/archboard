@@ -1667,7 +1667,7 @@
 			"exits": [0, 1, 2, 3],
 			"prerequisites": ["server"],
 			"relationships": ["GET /api/semantic-boards/board", "GET /api/vault/check"],
-			"semantics": "derived from the whole variant before any view narrows it, by the same pure inspection the browser runs; a configured empty group answers empty, an id neither configured nor used is refused",
+			"semantics": "derived from the whole variant before any view narrows it, by the shared pure inspection; a configured empty group answers empty, an id neither configured nor used is refused",
 			"ordering": "read the board, resolve the variant, read the policy, inspect, then print",
 			"nextFields": ["group.configured", "members[].id", "boundaryEdges[].direction"],
 			"workflow": "necessary composition",
