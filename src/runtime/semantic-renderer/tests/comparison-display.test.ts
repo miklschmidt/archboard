@@ -125,13 +125,13 @@ test("hiding comparison marks keeps the routes of continuing relationships", asy
  * @param draft The draft's content.
  * @param how The engine, and the view when it is one.
  * @param how.layout The engine.
- * @param how.view A data-flow view over everything, when asked for.
+ * @param how.view The view's grammar and scope, when the drawing is of one.
  * @returns Both drawings.
  */
 async function bothModes(
 	current: unknown,
 	draft: unknown,
-	how: { layout?: LayoutEngineName; view?: boolean },
+	how: { layout?: LayoutEngineName; view?: { grammar: string; scope?: unknown } },
 ): Promise<{ compared: RenderedDiagram; plain: RenderedDiagram }> {
 	const board = SemanticBoardSchema.parse({
 		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
@@ -143,7 +143,7 @@ async function bothModes(
 		createdAt: "2026-09-27T00:00:00.000Z",
 		updatedAt: "2026-09-27T00:00:00.000Z",
 		current: "current",
-		views: how.view === true ? [{ id: "flow", name: "Flow", grammar: "data-flow" }] : [],
+		views: how.view === undefined ? [] : [{ id: "view", name: "View", ...how.view }],
 		variants: [
 			{ id: "current", name: "Current", lifecycle: "current", content: orderedFixture(current) },
 			{
@@ -156,7 +156,7 @@ async function bothModes(
 		],
 	});
 	const ask = { variant: "draft", fonts: "linked", layout: how.layout } as const;
-	const view = how.view === true ? { view: "flow" } : {};
+	const view = how.view === undefined ? {} : { view: "view" };
 	const [compared, plain] = await Promise.all([
 		renderBoard(board, { ...ask, ...view }, DEFAULT_SEMANTIC_POLICY),
 		renderBoard(board, { ...ask, ...view, comparison: false }, DEFAULT_SEMANTIC_POLICY),
@@ -267,7 +267,7 @@ test("turning the comparison off moves no participant or message of a sequence",
 				},
 			],
 		},
-		{ view: true },
+		{ view: { grammar: "data-flow" } },
 	);
 	expectSamePlaces(drawings, ["old", "s2", "f2", "s5"]);
 	expect(routeEnds(drawings.plain.svg, "step")).toEqual(
@@ -292,4 +292,85 @@ test("a line is not hopped or cut where it crosses a line that is not drawn", ()
 			settled.edges.find(({ edge }) => edge.id !== unshown)!.curve,
 		);
 	}
+});
+
+test("a board drawn from its flow keeps a line for every message the draft keeps", async () => {
+	const nodes = [
+		{ id: "web", name: "Console", kind: "ui" },
+		{ id: "api", name: "Orders API", kind: "service" },
+	];
+	const flow = { id: "f1", name: "Place an order", participants: ["web", "api"] };
+	const first = { id: "s1", from: "web", to: "api", label: "place order", kind: "sync" };
+	const again = { id: "s2", from: "web", to: "api", label: "confirm", kind: "sync" };
+	// The draft drops the first of two messages over one pair: the pair's line is the one it keeps.
+	const riding = await bothModes(
+		{ nodes, edges: [], flows: [{ ...flow, steps: [first, again] }] },
+		{ nodes, edges: [], flows: [{ ...flow, steps: [again] }] },
+		{},
+	);
+	expect(Object.keys(riding.plain.atlas.edges)).toEqual([again.id]);
+	expect(riding.plain.atlas.edges).toEqual(riding.compared.atlas.edges);
+	// The draft drops every relationship and keeps its flow: the flow's messages join the cards.
+	const wiring = { id: "call", from: "web", to: "api", kind: "call" };
+	const unwired = await bothModes(
+		{ nodes, edges: [wiring], flows: [{ ...flow, steps: [first] }] },
+		{ nodes, edges: [], flows: [{ ...flow, steps: [first] }] },
+		{},
+	);
+	expectSamePlaces(unwired, [wiring.id]);
+	expect(Object.keys(unwired.plain.atlas.edges)).toEqual([first.id]);
+});
+
+test("a view without its comparison draws only what the draft's own view holds", async () => {
+	const nodes = [
+		{ id: "gate", name: "Gateway", kind: "service" },
+		{ id: "api", name: "Orders API", kind: "service" },
+		{ id: "store", name: "Order store", kind: "database" },
+	];
+	const orders = { id: "ga", from: "gate", to: "api", kind: "call" };
+	const writes = { id: "as", from: "api", to: "store", kind: "call" };
+	// The view selects both lines; the draft drops the one that needs the store.
+	const drawings = await bothModes(
+		{ nodes, edges: [orders, writes] },
+		{ nodes, edges: [orders] },
+		{
+			view: {
+				grammar: "architecture",
+				scope: { kind: "selection", edges: [orders.id, writes.id] },
+			},
+		},
+	);
+	expectSamePlaces(drawings, [writes.id, "store"]);
+	expect(Object.keys(drawings.plain.atlas.nodes).toSorted()).toEqual(["api", "gate"]);
+});
+
+test("lines keep their lanes where a card that is not drawn held them apart", () => {
+	// Two routes whose rows fold a crossing into their corners, and a card
+	// between the lanes they would exchange onto.
+	const folded = drawing([
+		[
+			{ x: 0, y: 50 },
+			{ x: 60, y: 50 },
+			{ x: 60, y: 100 },
+			{ x: 100, y: 100 },
+		],
+		[
+			{ x: 100, y: 50 },
+			{ x: 40, y: 50 },
+			{ x: 40, y: 0 },
+			{ x: 0, y: 0 },
+		],
+	]);
+	const [node] = orderedFixture({ nodes: [{ id: "gone", name: "Gone", kind: "service" }] }).nodes;
+	const measured = { node: node!, width: 10, height: 10, headerHeight: 10, runs: [] };
+	const settled = {
+		...folded,
+		cards: [{ measured, box: { x: 45, y: 20, width: 10, height: 10 }, depth: 0 }],
+	};
+	const whole = { ...settled, bridged: bridged(settled) };
+	const lines = new Map(whole.edges.map(({ edge }) => [edge.id, LINE] as const));
+	const shown = shownDrawing(whole, new Set([node!.id]), lines);
+	expect(shown.bridged.edges.map(({ curve }) => curve)).toEqual(
+		whole.bridged.edges.map(({ curve }) => curve),
+	);
 });

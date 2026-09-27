@@ -514,8 +514,8 @@ function paintDataFlow(
 	standingOf: StandingOf,
 	unsettledOf: UnsettledOf,
 	policy: SemanticPolicy,
-	page: { unshown: ReadonlySet<string>; standingOf: StandingOf } = {
-		unshown: new Set(),
+	page: { unshown: ReadonlySet<string> | undefined; standingOf: StandingOf } = {
+		unshown: undefined,
 		standingOf,
 	},
 ): DataFlowPainting {

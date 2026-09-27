@@ -49,7 +49,7 @@ import type {
 import { measureArchitecture } from "@/transformers/semantic-renderer/lib/measurement";
 import { withStepLines } from "@/transformers/semantic-renderer/lib/step-lines";
 import { lineLooks } from "@/transformers/semantic-renderer/lib/semantic-appearance";
-import { shownContent, shownDrawing, unshownOf } from "@/transformers/semantic-renderer/lib/shown";
+import { shownContent, shownDrawing } from "@/transformers/semantic-renderer/lib/shown";
 import { PALETTE, type Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { paintArchitecture } from "@/transformers/semantic-renderer/lib/svg/architecture";
 import { paintDataFlow } from "@/transformers/semantic-renderer/lib/svg/dataflow";
@@ -125,8 +125,22 @@ interface DiagramRenderRequest {
 	 * persisted anywhere (ADR 0023).
 	 */
 	readonly standing?: StatedStandings | undefined;
-	/** Hide standing marks while retaining standing-aware relationship routing; shown by default. */
+	/**
+	 * Whether the picture marks how each subject stands. True when absent.
+	 * False draws the picture without its comparison: no subject is marked, but
+	 * the layout still reads the standing, so every line runs the route it runs
+	 * with the marks.
+	 */
 	readonly paintStanding?: boolean | undefined;
+	/**
+	 * The ids of the content that are laid out but not drawn. A picture without
+	 * its comparison names here what the variant itself does not hold, such as
+	 * what stands removed. Those subjects still take their place in the layout,
+	 * and the page stays the size of the whole layout, so every subject that is
+	 * drawn stands where it stands in the picture with the comparison. Their
+	 * places are left empty. Absent means everything is drawn.
+	 */
+	readonly unshown?: ReadonlySet<string> | undefined;
 	/**
 	 * Which of this variant's subjects the board says nobody has decided yet.
 	 *
@@ -275,7 +289,7 @@ function layoutRemembered(
  * @throws {SemanticRenderError} When there is nothing to draw.
  */
 async function renderArchitecture(request: DiagramRenderRequest): Promise<RenderedDiagram> {
-	const unshown = unshownOf(request.standing, request.paintStanding);
+	const { unshown } = request;
 	const told = shownContent(request.content, unshown);
 	if (told.nodes.length === 0) {
 		throw new SemanticRenderError(
@@ -284,7 +298,7 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		);
 	}
 
-	const stepLines = withStepLines(request.content);
+	const stepLines = withStepLines(request.content, request.standing);
 	const policy = request.policy ?? DEFAULT_SEMANTIC_POLICY;
 	const drawing = await layoutRemembered(
 		request.content,
@@ -384,16 +398,18 @@ function sequenceDescriptionFor(content: VariantContent): string {
 /**
  * One variant's flows, drawn as a stack of message sequences.
  *
- * Every flow the content holds is drawn, because the caller has already said
- * what it wants seen: a view scoped to one exchange arrives here holding that
- * one, and an unscoped one arrives holding them all.
+ * Every flow the content holds is laid out, because the caller has already
+ * said what it wants seen: a view scoped to one exchange arrives here holding
+ * that one, and an unscoped one arrives holding them all. Every flow is drawn
+ * too, except for what the request says to leave undrawn. A picture without
+ * its comparison leaves out the flows, participants and messages the variant
+ * does not hold, and the rest keep the places they have with the comparison.
  * @param request What to draw, and on which ground.
  * @returns The document, its size and its atlas.
- * @throws {SemanticRenderError} When the content holds no flow.
+ * @throws {SemanticRenderError} When no flow is left to draw.
  */
 function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
-	const { content } = request;
-	const unshown = unshownOf(request.standing, request.paintStanding);
+	const { content, unshown } = request;
 	const told = shownContent(content, unshown);
 	if (told.flows.length === 0) {
 		throw new SemanticRenderError(
