@@ -1,5 +1,9 @@
 # Container rules — Graphviz adoption
 
+> History. The Graphviz engine these rules describe was removed by
+> [ADR 0040](../adr/0040-track-and-blocks-replace-the-graphviz-engine.md);
+> Track and Blocks lay out every board now.
+
 TASK-278 replaces the ELK layout audited below. Spacing and clearance values
 are editable in [`config.ts`](../../src/transformers/semantic-renderer/config.ts);
 values use diagram pixels, independent of camera zoom. Rebuild the frontend,
