@@ -11,6 +11,13 @@
 // where Graphviz counts crossings seen, then hooks and touching lines. The
 // bends and line of its lines between columns are the price of any fold.
 //
+// The unfolded reading is settled every way its settlement weighs (plain and
+// evened pins, reserved labels with and without their full clearance), and
+// the fold only the way the unfolded reading was kept. Settled every way, a
+// fold was kept the same way as its unfolded reading on every board of both
+// vaults that settles one (19 drawings, measured 2026-09-27), and the three
+// other ways were two fifths of Archboard server's routing.
+//
 // A page's size is fixed by placement, and a settled reading's page is its
 // placement with the labels it reserved, so a placement ranks a count for one
 // solve where settling it takes its label rounds, each placed and routed. It
@@ -35,37 +42,47 @@ import {
 /** The size of a page. */
 type Page = Pick<ArchitectureDrawing, "width" | "height">;
 
+/** A reading's complete drawing and the way it was settled. */
+interface SettledReading<Way> {
+	readonly drawing: ArchitectureDrawing;
+	readonly way: Way;
+}
+
 /** One column count's reading of the board. */
-interface ColumnReading {
+interface ColumnReading<Way> {
 	/** Its page placed with no label reserved, routing nothing. */
 	readonly page: () => Promise<Page>;
-	/** Its complete drawing; throws when the reading cannot be routed. */
-	readonly settle: () => Promise<ArchitectureDrawing>;
+	/** Its complete drawing, settled every way or the one way asked; throws when the reading cannot be routed. */
+	readonly settle: (way?: Way) => Promise<SettledReading<Way>>;
 }
 
 /**
  * Settle the unfolded reading, then the one column count whose placement
- * the material-gain rule chooses, and keep the better of the two.
+ * the material-gain rule chooses, the way the unfolded reading was settled,
+ * and keep the better of the two.
  * @param readingOf The board read in a column count, asked once per count.
  * @returns The complete reading kept.
  */
-async function chooseReading(
-	readingOf: (columns: number) => ColumnReading,
+async function chooseReading<Way>(
+	readingOf: (columns: number) => ColumnReading<Way>,
 ): Promise<ArchitectureDrawing> {
-	const baseline = await readingOf(1).settle();
+	const { drawing: baseline, way } = await readingOf(1).settle();
 	const folds = columnCounts(baseline, requiredFit(baseline)).map((columns) => readingOf(columns));
 	const pages = await Promise.all(folds.map((reading) => reading.page()));
-	let kept: { page: Page; reading?: ColumnReading } = { page: baseline };
+	let kept: { page: Page; reading?: ColumnReading<Way> } = { page: baseline };
 	for (const [index, reading] of folds.entries()) {
 		const page = pages[index]!;
 		if (better(page, kept.page)) kept = { page, reading };
 	}
 	if (kept.reading === undefined) return baseline;
 	// A count the router refuses keeps the unfolded reading; a fault is thrown.
-	const candidate = await kept.reading.settle().catch((error: unknown) => {
-		if (refusedRouting(error)) return undefined;
-		throw error;
-	});
+	const candidate = await kept.reading.settle(way).then(
+		({ drawing }) => drawing,
+		(error: unknown) => {
+			if (refusedRouting(error)) return undefined;
+			throw error;
+		},
+	);
 	return candidate !== undefined && readsBetter(candidate, baseline) ? candidate : baseline;
 }
 
@@ -163,4 +180,4 @@ function columnCounts(drawing: ArchitectureDrawing, minimumFit: number): number[
 	);
 }
 
-export { chooseReading, type ColumnReading };
+export { chooseReading, type ColumnReading, type SettledReading };

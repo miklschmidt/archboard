@@ -1,20 +1,24 @@
 // One layout owner settles cards, frames, ports, routes and label boxes together.
 // No subsequent paint or atlas pass is allowed to repair these coordinates.
-import type { ElkExtendedEdge, ElkNode, LayoutOptions } from "@archboard/elk-rs";
+import type { ElkNode, LayoutOptions } from "@archboard/elk-rs";
 import {
 	chooseReading,
 	type ColumnReading,
+	type SettledReading as SettledWay,
 } from "@/transformers/semantic-renderer/lib/layout/column-readings";
 import type { ChangeKind, VariantContent } from "@/shared/semantic-board/index";
 import type {
 	ArchitectureDrawing,
 	PaintedDrawing,
 	DrawingEdge,
-	DrawingNode,
 	MeasuredArchitecture,
 } from "@/transformers/semantic-renderer/lib/drawing";
-import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
+import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { boxOf } from "@/transformers/semantic-renderer/lib/layout/avoid-geometry";
+import {
+	drawingEdges,
+	drawingNodes,
+} from "@/transformers/semantic-renderer/lib/layout/solved-drawing";
 import {
 	type LabelAnchor,
 	anchorLabelsOnRuns,
@@ -30,12 +34,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/layout/label-reservations";
 import { bridgeCrossings } from "@/transformers/semantic-renderer/lib/layout/crossings";
 import { unfoldCrossings } from "@/transformers/semantic-renderer/lib/layout/folded-crossings";
-import {
-	curveClearanceIssue,
-	curveThrough,
-	pathOf,
-	simplify,
-} from "@/transformers/semantic-renderer/lib/layout/curves";
+import { curveClearanceIssue } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { checked } from "@/transformers/semantic-renderer/lib/layout/checked-routes";
 import {
 	COMPOUND_OPTIONS,
@@ -44,12 +43,14 @@ import {
 import { SOLVE_STAGE, rendererHost } from "@/transformers/semantic-renderer/lib/host";
 import { fittedPage } from "@/transformers/semantic-renderer/lib/layout/page-fit";
 import { tidierSettlement } from "@/transformers/semantic-renderer/lib/layout/even-pins";
-import { clearerDrawing } from "@/transformers/semantic-renderer/lib/layout/label-clearance";
+import { clearerSettlement } from "@/transformers/semantic-renderer/lib/layout/label-clearance";
 import { finished } from "@/transformers/semantic-renderer/lib/layout/finishing";
 import { anchorClearance } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 import {
 	requestOptions,
+	wayOf,
 	type RouteRequest,
+	type SettlementWay,
 } from "@/transformers/semantic-renderer/lib/layout/route-requests";
 
 /** One measured architecture in the engine's solving frame. */
@@ -79,106 +80,8 @@ interface SettledReading {
 	readonly reserved: ReadonlySet<string>;
 }
 
-/**
- * Collect each semantic subject exactly once, retaining containment depth.
- * @param nodes The laid-out hierarchy.
- * @param measured The semantic meaning and precomputed text for each node.
- * @param depth The depth of this level.
- * @returns Final node geometry in parent-before-child order.
- */
-function drawingNodes(
-	nodes: readonly ElkNode[],
-	measured: MeasuredArchitecture,
-	depth: number,
-): DrawingNode[] {
-	return nodes.flatMap((node) => {
-		const value = measured.nodes.get(node.id);
-		if (value === undefined) {
-			throw new Error(`Layout returned an unknown architecture node: ${node.id}`);
-		}
-		return [
-			{ measured: value, box: boxOf(node), depth },
-			...drawingNodes(node.children ?? [], measured, depth + 1),
-		];
-	});
-}
-
-/**
- * Join the engine's route into the same rounded geometry the SVG paints.
- * @param result One laid-out semantic edge.
- * @returns Its continuous curve, with no duplicate or collinear waypoints.
- */
-function pointsOf(result: ElkExtendedEdge): Point[] {
-	const sections = result.sections ?? [];
-	if (sections.length !== 1) {
-		throw new Error(`Layout did not return one complete route for relationship ${result.id}`);
-	}
-	const points = sections.flatMap((section) => [
-		section.startPoint,
-		...(section.bendPoints ?? []),
-		section.endPoint,
-	]);
-	return points;
-}
-
-/**
- * Read a reserved label box; other measured labels will use clear route runs.
- * @param result The laid-out relationship.
- * @param measured The measured words and dimensions.
- * @returns Its final label when the relationship carries one.
- */
-function drawingLabel(
-	result: ElkExtendedEdge,
-	measured: MeasuredArchitecture,
-): Pick<DrawingEdge, "label"> {
-	if (result.layoutOptions?.["archboard.route-label"] !== "true") return {};
-	const label = measured.labels.get(result.id);
-	const shape = result.labels?.[0];
-	if (label === undefined || shape === undefined) return {};
-	return { label: { measured: label, box: boxOf(shape) } };
-}
-
-/**
- * Match final route and label geometry to every relationship in the view.
- * @param content The semantic connections in drawing order.
- * @param laidOut The engine's complete graph.
- * @param measured Text measurement for the optional label.
- * @returns Every drawn edge; missing routes are errors, never silent omissions.
- */
-function drawingEdges(
-	content: VariantContent,
-	laidOut: ElkNode,
-	measured: MeasuredArchitecture,
-): DrawingEdge[] {
-	const results = new Map(laidOut.edges?.map((edge) => [edge.id, edge]));
-	const labels = new Map(
-		[...results].flatMap(([id, result]) => {
-			const label = drawingLabel(result, measured).label;
-			return label === undefined ? [] : [[id, label] as const];
-		}),
-	);
-	const routes = new Map(
-		content.edges.map((edge) => [edge.id, simplify(pointsOf(results.get(edge.id)!))]),
-	);
-	return content.edges
-		.toSorted((one, other) => one.order - other.order)
-		.map((edge) => {
-			const result = results.get(edge.id);
-			if (result === undefined) {
-				throw new Error(`Layout did not return relationship ${edge.id}`);
-			}
-			const points = routes.get(edge.id)!;
-			const measuredLabel = labels.get(edge.id);
-			const label = measuredLabel === undefined ? {} : { label: measuredLabel };
-			const curve = curveThrough(points);
-			return {
-				edge,
-				curve,
-				path: pathOf(curve),
-				...label,
-			};
-		});
-}
+/** A finished drawing and the reading that routed it. */
+type Finished = Omit<SettledReading, "reserved">;
 
 /**
  * Route with measured spacing, reserving only labels that need their own layer.
@@ -208,7 +111,7 @@ async function layoutCompound(
  * @param problem Measured content and requested downward column count.
  * @returns Its unreserved page and its settlement.
  */
-function columnReading(problem: Problem): ColumnReading {
+function columnReading(problem: Problem): ColumnReading<SettlementWay> {
 	const reading: Reading = {
 		...problem,
 		place: rememberSolves((reserved) =>
@@ -226,11 +129,22 @@ function columnReading(problem: Problem): ColumnReading {
 		page: () => reading.place(new Set()).then(boxOf),
 		/**
 		 * The complete drawing: the tidier of plain and evened pins, each finished, with
-		 * and without reserved labels' full clearance, whichever is clearer (label-clearance.ts).
-		 * @returns The settled reading.
+		 * and without reserved labels' full clearance, whichever is clearer
+		 * (label-clearance.ts); or settled and finished the one way asked.
+		 * @param way The one way to settle it, if asked.
+		 * @returns The settled reading and the way it was settled.
 		 */
-		settle: () =>
-			clearerDrawing(finishedWith(reading, {}), finishedWith(reading, { labelClearance: true })),
+		settle: (way) =>
+			(way === undefined
+				? clearerSettlement(
+						finishedWith(reading, {}),
+						finishedWith(reading, { labelClearance: true }),
+					)
+				: settleReading(asking(reading, way)).then(finishedReading)
+			).then(({ reading: kept, drawing }): SettledWay<SettlementWay> => ({
+				drawing,
+				way: wayOf(kept.route),
+			})),
 	};
 }
 
@@ -238,13 +152,13 @@ function columnReading(problem: Problem): ColumnReading {
  * A reading settled with plain and with evened pins, each finished, the tidier kept.
  * @param reading The reading.
  * @param route What else its routes are asked for.
- * @returns The finished drawing.
+ * @returns The finished reading.
  */
-function finishedWith(reading: Reading, route: RouteRequest): Promise<ArchitectureDrawing> {
+function finishedWith(reading: Reading, route: RouteRequest): Promise<Finished> {
 	return tidierSettlement(
 		settleReading(asking(reading, route)).then(finishedReading),
 		settleReading(asking(reading, { ...route, evenPins: true })).then(finishedReading),
-	).then(({ drawing }) => drawing);
+	);
 }
 
 /**
@@ -253,9 +167,9 @@ function finishedWith(reading: Reading, route: RouteRequest): Promise<Architectu
  * stroke, of line ends beside a card's standing pin and of lone ports
  * crowding a corner (finishing.ts).
  * @param kept The settled reading.
- * @returns The finished drawing.
+ * @returns The finished drawing and the reading that routed it.
  */
-function finishedReading(kept: SettledReading): Promise<{ drawing: ArchitectureDrawing }> {
+function finishedReading(kept: SettledReading): Promise<Finished> {
 	const reroute = rerouting(kept.reserved);
 	return finished(
 		kept,
@@ -294,7 +208,7 @@ function asking(reading: Reading, more: RouteRequest): Reading {
  */
 function rerouting(
 	reserved: ReadonlySet<string>,
-): (reading: Reading) => Promise<Omit<SettledReading, "reserved"> | undefined> {
+): (reading: Reading) => Promise<Finished | undefined> {
 	return async (reading) => {
 		const attempt = await attemptLabels(reading, reserved);
 		return attempt.missing.length === 0

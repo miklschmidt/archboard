@@ -1,7 +1,7 @@
 // A board taller than the pane may read better folded into columns. The
 // column count is chosen on each count's placement, and only the chosen count
-// is settled (TASK-342), and kept only when it also scores higher once each
-// crossing takes its share of the fit. The engine's pages for a real board
+// is settled (TASK-342), the one way the unfolded reading was kept, and kept
+// only when it also scores higher once each crossing takes its share of the fit. The engine's pages for a real board
 // are its own to change, so the rule is held against readings whose answers
 // are fixed here.
 
@@ -69,7 +69,7 @@ function unfolded(): ArchitectureDrawing {
  * @param baseline The settled unfolded reading.
  * @param placed Each folded count's placed fit; a count not named fits as the settled baseline does.
  * @param settled Each folded count's settled drawing, or its refusal.
- * @returns The readings, and the column counts settled, in the order asked.
+ * @returns The readings, the column counts settled and the way each was asked to be settled, in the order asked.
  */
 function readingsFrom(
 	baseline: ArchitectureDrawing,
@@ -77,16 +77,20 @@ function readingsFrom(
 	settled: (columns: number) => ArchitectureDrawing,
 ) {
 	const asked: number[] = [];
+	const ways: (string | undefined)[] = [];
 	const readingOf = (columns: number) => ({
 		// The unfolded placement reserves no label, so it fits better than its
 		// settled page; a fold is measured against the settled page.
 		page: async () => pageAt(columns === 1 ? 0.95 : (placed[columns] ?? 0.5)),
-		settle: async () => {
+		settle: async (way?: string) => {
 			asked.push(columns);
-			return columns === 1 ? baseline : settled(columns);
+			ways.push(way);
+			return columns === 1
+				? { drawing: baseline, way: "evened" }
+				: { drawing: settled(columns), way: way ?? "every" };
 		},
 	});
-	return { readingOf, asked };
+	return { readingOf, asked, ways };
 }
 
 /**
@@ -151,18 +155,19 @@ function foldDrawing(lines: readonly { from: Point; to: Point }[]): Architecture
 }
 
 describe("a board taller than the pane", () => {
-	test("settles only the column count whose placement fits materially better", async () => {
+	test("settles only the column count whose placement fits materially better, the way the unfolded reading was", async () => {
 		const baseline = unfolded();
 		const folded = { ...unfolded(), ...pageAt(0.9) };
 		// Four columns replace two; three and five fit better than the count
 		// kept before them, but by less than the material gain.
-		const { readingOf, asked } = readingsFrom(
+		const { readingOf, asked, ways } = readingsFrom(
 			baseline,
 			{ 2: 0.6, 3: 0.62, 4: 0.9, 5: 0.92 },
 			() => folded,
 		);
 		expect(await chooseReading(readingOf)).toBe(folded);
 		expect(asked).toEqual([1, 4]);
+		expect(ways).toEqual([undefined, "evened"]);
 	});
 
 	test.each([
