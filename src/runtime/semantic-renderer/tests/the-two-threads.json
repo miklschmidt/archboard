@@ -1,0 +1,157 @@
+{
+	"nodes": [
+		{
+			"id": "7TAwfrZF",
+			"order": 1000,
+			"name": "Agent workbench",
+			"kind": "service",
+			"responsibility": "Everything archboard owns around one private Codex child, inside the Archboard server"
+		},
+		{
+			"id": "FxzIjbIO",
+			"order": 5000,
+			"name": "Codex transport",
+			"kind": "module",
+			"responsibility": "One newline-framed JSON object at a time each way, correlated to its request, and each tool call routed to the owner registered for its namespace",
+			"parent": "7TAwfrZF",
+			"groups": ["child"]
+		},
+		{
+			"id": "jylkTBp7",
+			"order": 6000,
+			"name": "Codex session",
+			"kind": "module",
+			"responsibility": "One initialized session and the reviewed methods it will send",
+			"parent": "7TAwfrZF",
+			"groups": ["child"]
+		},
+		{
+			"id": "2ffhMTdn",
+			"order": 8000,
+			"name": "Workhorse queue",
+			"kind": "module",
+			"responsibility": "Codex's queue of messages waiting for the workhorse: list, add, edit, reorder, delete, or start one now",
+			"parent": "7TAwfrZF",
+			"groups": ["workhorse"]
+		},
+		{
+			"id": "Fg9dkGj3",
+			"order": 9000,
+			"name": "Voice coordinator",
+			"kind": "module",
+			"responsibility": "The separate fast thread voice attaches to, the voice model's subconscious, which routes sustained work to the workhorse",
+			"parent": "7TAwfrZF",
+			"groups": ["voice"]
+		},
+		{
+			"id": "tlC2W839",
+			"order": 13000,
+			"name": "Workhorse operations",
+			"kind": "module",
+			"responsibility": "The four things the coordinator may ask of a workhorse, one at a time: delegate, steer, inspect, manage its queue",
+			"parent": "7TAwfrZF",
+			"groups": ["workhorse"]
+		},
+		{
+			"id": "ZQxB1ZaK",
+			"order": 14000,
+			"name": "Realtime voice",
+			"kind": "module",
+			"responsibility": "Starts the realtime leg on the coordinator's thread, hands a narrated walkthrough's steps to the voice model, and carries its transcript back",
+			"parent": "7TAwfrZF",
+			"groups": ["voice"]
+		},
+		{
+			"id": "08zJvPJq",
+			"order": 17000,
+			"name": "Coordinator callbacks",
+			"kind": "module",
+			"responsibility": "While voice is live, workhorse news for the coordinator and pane news for the voice model, each once and in order",
+			"parent": "7TAwfrZF",
+			"groups": ["voice"]
+		}
+	],
+	"edges": [
+		{
+			"id": "FZnS78FX",
+			"order": 3000,
+			"from": "jylkTBp7",
+			"to": "FxzIjbIO",
+			"kind": "rpc",
+			"label": "one JSON-RPC request per method",
+			"emphasis": "hero"
+		},
+		{
+			"id": "b9HU99hH",
+			"order": 6000,
+			"from": "2ffhMTdn",
+			"to": "jylkTBp7",
+			"kind": "rpc",
+			"label": "thread/queue/add, update, reorder, delete, start",
+			"emphasis": "normal"
+		},
+		{
+			"id": "XAd3chIR",
+			"order": 7000,
+			"from": "Fg9dkGj3",
+			"to": "jylkTBp7",
+			"kind": "rpc",
+			"label": "thread/start and settings for the coordinator",
+			"emphasis": "normal"
+		},
+		{
+			"id": "uK6QAuru",
+			"order": 13000,
+			"from": "tlC2W839",
+			"to": "2ffhMTdn",
+			"kind": "call",
+			"label": "queue a delegation behind the running turn",
+			"emphasis": "normal"
+		},
+		{
+			"id": "mhknqBOz",
+			"order": 16000,
+			"from": "Fg9dkGj3",
+			"to": "tlC2W839",
+			"kind": "call",
+			"label": "delegate, steer, inspect, queue",
+			"emphasis": "hero"
+		},
+		{
+			"id": "TFjDY5zE",
+			"order": 17000,
+			"from": "ZQxB1ZaK",
+			"to": "jylkTBp7",
+			"kind": "rpc",
+			"label": "thread/realtime/start, append, stop",
+			"emphasis": "normal"
+		},
+		{
+			"id": "rOBpux5i",
+			"order": 22000,
+			"from": "tlC2W839",
+			"to": "jylkTBp7",
+			"kind": "rpc",
+			"label": "turn/start when idle, turn/steer",
+			"emphasis": "hero"
+		},
+		{
+			"id": "NztvEtjX",
+			"order": 23000,
+			"from": "FxzIjbIO",
+			"to": "08zJvPJq",
+			"kind": "event",
+			"label": "workhorse notifications, tell_coordinator calls",
+			"emphasis": "normal"
+		},
+		{
+			"id": "biUWQZMB",
+			"order": 24000,
+			"from": "08zJvPJq",
+			"to": "jylkTBp7",
+			"kind": "rpc",
+			"label": "news as a coordinator turn/start; pane news appended",
+			"emphasis": "normal"
+		}
+	]
+}
