@@ -29,7 +29,7 @@ export {
 } from "@/transformers/semantic-renderer/lib/layout/even-pins";
 export { finished } from "@/transformers/semantic-renderer/lib/layout/finishing";
 export { RouteCheckFailed } from "@/transformers/semantic-renderer/lib/layout/checked-routes";
-export { clearerDrawing } from "@/transformers/semantic-renderer/lib/layout/label-clearance";
+export { clearerSettlement } from "@/transformers/semantic-renderer/lib/layout/label-clearance";
 export { requestOptions } from "@/transformers/semantic-renderer/lib/layout/route-requests";
 export { wallOf, wallReach } from "@/transformers/semantic-renderer/lib/layout/frame-walls";
 export { centredPins } from "@/transformers/semantic-renderer/lib/layout/lone-pins";
