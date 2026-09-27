@@ -77,9 +77,12 @@ export interface AvoidEngine {
 
 /**
  * Bind initialized vendor engines without I/O or environment-specific loading.
+ * A solve's answer can depend on what the engines solved before it; an engine
+ * that must answer the same graph the same way every time is loaded with
+ * {@link loadLayoutEngine}.
  * @param viz The initialized Graphviz instance.
  * @param instance The initialized libavoid Embind module.
- * @returns A deterministic complete layout operation.
+ * @returns A complete layout operation.
  */
 export function createLayoutEngine(viz: Viz, instance: unknown) {
 	const avoid = z
