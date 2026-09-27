@@ -10,7 +10,8 @@
 // labels and so placements (Renderer layout went from 0 crossings to 1 and 4
 // hooks), so a finishing pass asks for seeds clear of the pin card by card.
 // What this catches: a corner pin or an aligned pin offered beside a standing
-// pin, a proposal's cards laid out without knowing which wear one, a seed
+// pin, a proposal's cards laid out without knowing which wear one or
+// finished without the pin pass, a seed
 // left beside the pin of a card the routes were asked to clear, a pin pass
 // refused for one card's cost or for the bend a line takes to leave the pin,
 // a card's clearance dropped when the next card is tried, and a line sent
@@ -32,6 +33,7 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 import { at, sketch, type Line } from "@/runtime/semantic-renderer/tests/sketched-drawings";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import type { StatedStandings } from "@/transformers/semantic-renderer/index";
+import pinnedSide from "./pinned-side.json";
 import proposal from "./renderer-layout-proposal.json";
 
 /** How far in from a card's top-left corner its standing pin is centred. */
@@ -121,29 +123,32 @@ test("a straight channel is not offered beside a standing pin", async () => {
 });
 
 test("no line of a proposal ends beside the standing pin a card wears", async () => {
-	const { standing, ...board } = proposal;
-	const drawing = await renderArchitecture({
-		content: orderedFixture(board),
-		standing: standing as StatedStandings,
-		theme: "light",
-		layout: "graphviz",
-	});
-	const routes = routePoints(drawing.svg);
-	const stated: Readonly<Record<string, string>> = standing;
-	const beside = board.edges.flatMap(({ id, from, to }) => {
-		const points = cornersOf(routes.get(id)!);
-		const ends = [
-			[from, points[0]!],
-			[to, points.at(-1)!],
-		] as const;
-		return ends.flatMap(([card, end]) => {
-			const box = drawing.atlas.nodes[card];
-			if (box === undefined || stated[card] === undefined) return [];
-			const fromPin = Math.hypot(end.x - box.x - PIN_INSET, end.y - box.y - PIN_INSET);
-			return fromPin < PIN_CLEARANCE - PIN_INSET ? [id] : [];
+	// In the second, "settles" is seeded on Card 2's left face beside its pin
+	// until the pin pass asks for its seeds clear of it.
+	for (const { standing, ...board } of [proposal, pinnedSide]) {
+		const drawing = await renderArchitecture({
+			content: orderedFixture(board),
+			standing: standing as StatedStandings,
+			theme: "light",
+			layout: "graphviz",
 		});
-	});
-	expect(beside).toEqual([]);
+		const routes = routePoints(drawing.svg);
+		const stated: Readonly<Record<string, string>> = standing;
+		const beside = board.edges.flatMap(({ id, from, to }) => {
+			const points = cornersOf(routes.get(id)!);
+			const ends = [
+				[from, points[0]!],
+				[to, points.at(-1)!],
+			] as const;
+			return ends.flatMap(([card, end]) => {
+				const box = drawing.atlas.nodes[card];
+				if (box === undefined || stated[card] === undefined) return [];
+				const fromPin = Math.hypot(end.x - box.x - PIN_INSET, end.y - box.y - PIN_INSET);
+				return fromPin < PIN_CLEARANCE - PIN_INSET ? [id] : [];
+			});
+		});
+		expect(beside).toEqual([]);
+	}
 });
 
 test("a card the routes are asked to clear has its seeds a lane from its standing pin's rim", async () => {
