@@ -3,6 +3,7 @@
 // the board's cards rank across containers as one layout. Here the block tree
 // reads them in; `clusters.ts` lays them out.
 import type { ElkNode } from "@archboard/elk-rs";
+import { z } from "zod";
 import { PLACING_GROUP } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
 import type { Block, BlockTree, Size } from "@/transformers/semantic-renderer/lib/blocks/tree";
@@ -13,7 +14,8 @@ import { cardOf } from "@/transformers/semantic-renderer/lib/blocks/card";
  * block of its own, every one inline as a cluster of the board's layout, or
  * containers inline with each group's region packed as a block.
  */
-type Nesting = "blocks" | "inline" | "groups";
+const NestingSchema = z.enum(["blocks", "inline", "groups"]);
+type Nesting = z.infer<typeof NestingSchema>;
 
 /**
  * A container or group region a block of cards draws inline: a cluster of the
@@ -159,4 +161,4 @@ function holds(block: Block, cluster: string, item: string): boolean {
 	return false;
 }
 
-export { addInline, holds, type Cluster, type Nesting };
+export { NestingSchema, addInline, holds, type Cluster, type Nesting };
