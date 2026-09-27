@@ -25,14 +25,10 @@ import {
 } from "@/transformers/semantic-renderer/lib/blocks/laying";
 import { PackLayout, type Packing } from "@/transformers/semantic-renderer/lib/blocks/pack";
 import { settlePorts } from "@/transformers/semantic-renderer/lib/blocks/settle";
+import { sidesOf } from "@/transformers/semantic-renderer/lib/blocks/sides";
 import { NEAR, layJoined } from "@/transformers/semantic-renderer/lib/blocks/joins";
 import { routedScore } from "@/transformers/semantic-renderer/lib/blocks/trunks";
-import {
-	BlockTree,
-	type Block,
-	type Line,
-	type Side,
-} from "@/transformers/semantic-renderer/lib/blocks/tree";
+import { BlockTree, type Block, type Side } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { grids } from "@/transformers/semantic-renderer/lib/track/grid";
 import { PAGE_MARGIN } from "@/transformers/semantic-renderer/lib/track/route";
 import {
@@ -399,56 +395,9 @@ function layAll(
 }
 
 /**
- * The leaving ports whose trunk goes to a block standing beside theirs, and
- * the wall of their block that faces it.
- * @param tree The blocks, laid out once.
- * @param laid Every block laid out.
- * @returns Each such port's wall, keyed `block|port`.
- */
-function exitsOf(tree: BlockTree, laid: ReadonlyMap<string, Laid>): Map<string, Side> {
-	const exits = new Map<string, Side>();
-	for (const block of tree.blocks.values())
-		for (const line of block.lines.values())
-			for (const [key, side] of facing(tree, laid.get(block.id)?.boxes, line)) exits.set(key, side);
-	return exits;
-}
-
-/**
- * The walls one line's two ports move to, when the blocks it joins stand side by side.
- * @param tree The blocks.
- * @param boxes Where the block the line is drawn in put its items.
- * @param line The line.
- * @returns Each port's wall, keyed `block|port`; none when the line does not join two blocks side by side.
- */
-function facing(
-	tree: BlockTree,
-	boxes: ReadonlyMap<string, Box> | undefined,
-	line: Line,
-): [string, Side][] {
-	const pins = [tree.pins.get(line.from), tree.pins.get(line.to)];
-	const [one, other] = pins.map((pin) =>
-		pin === undefined ? undefined : boxes?.get(pin.block.id),
-	);
-	if (!besides(one, other)) return [];
-	const walls: Side[] = other!.x > one!.x ? ["right", "left"] : ["left", "right"];
-	return pins.map((pin, index) => [`${pin!.block.id}|${pin!.port}`, walls[index]!]);
-}
-
-/**
- * Whether two boxes stand side by side: some height is in both.
- * @param one A box, if there is one.
- * @param other Another box, if there is one.
- * @returns True when both are there and share a height.
- */
-function besides(one: Box | undefined, other: Box | undefined): boolean {
-	if (one === undefined || other === undefined) return false;
-	return one.y < other.y + other.height && other.y < one.y + one.height;
-}
-
-/**
  * Lay a measured hierarchy out one way and route every relationship; when a
- * trunk joins two blocks that stand side by side, once more with that trunk
- * leaving its block by the wall that faces the other. Last, the ports on
+ * line's blocks do not stand the way its faces point, once more with every
+ * block of its chain crossed by the edges that face each other (`sides.ts`). Last, the ports on
  * every block's top and bottom are settled where both ends of their trunks
  * are known, and the blocks routed again with them there.
  * @param viz The initialized Graphviz instance.
@@ -466,7 +415,7 @@ function layOut(
 	apart: ReadonlySet<string>,
 ): { tree: BlockTree; laid: Map<string, Laid> } {
 	const first = layAll(viz, avoid, graph, undefined, nesting, apart);
-	const exits = exitsOf(first.tree, first.laid);
+	const exits = sidesOf(first.tree, first.laid);
 	const last =
 		exits.size === 0
 			? first
