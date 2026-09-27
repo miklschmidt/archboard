@@ -2,8 +2,10 @@
 // traffic alone: off the stretch it shares with another line out of one card,
 // and off a crossing's hop, whichever line carries the hop. Rested on either,
 // it read as either line's traffic ("requestJson" in Command interface,
-// "renderBoard on the core" in Semantic renderer). Keeping off a hop is owned
-// by comet-rest.test.ts, since no fixture's line carries one under every engine.
+// "renderBoard on the core" in Semantic renderer). Keeping off a hop, on the
+// line that carries it and on the line under it, is owned by
+// comet-rest.test.ts, since no fixture's line carries one under every engine;
+// this file owns the shared stretch and the junction on drawn boards.
 // Where no place keeps a lane from both its label and the stretch it shares,
 // its head keeps off the junction the stretch starts at and lets its tail
 // run under its label ("requestJson" in Command interface's whole).
