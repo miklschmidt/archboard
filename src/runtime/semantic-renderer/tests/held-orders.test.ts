@@ -12,6 +12,7 @@ import { scorecardOf } from "@/runtime/semantic-renderer/tests/drawn-scorecard";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import boardRequestPath from "./board-request-path.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
+import oneCommand from "./one-command.json";
 
 /** The vocabulary of the dogfood vault the fixtures are taken from. */
 const policy = SemanticPolicySchema.parse({
@@ -27,10 +28,14 @@ const policy = SemanticPolicySchema.parse({
 		http: { name: "HTTP", color: "sky", dash: "solid", arrowhead: "filled" },
 		data: { name: "Data", color: "teal", dash: "solid", arrowhead: "filled" },
 		render: { name: "Render", color: "pink", dash: "solid", arrowhead: "filled" },
+		rpc: { name: "RPC", color: "violet", dash: "solid", arrowhead: "filled" },
+		event: { name: "Event", color: "fuchsia", dash: "dashed", arrowhead: "open" },
 	},
 	groups: {
 		writes: { name: "Board writes", color: "orange" },
 		drawing: { name: "Drawing", color: "violet" },
+		workhorse: { name: "Workhorse", color: "sky" },
+		child: { name: "Codex child", color: "indigo" },
 	},
 });
 
@@ -51,4 +56,33 @@ test("a held order does not part lines joined on their way to a card", async () 
 	const content = orderedFixture(boardRequestPath);
 	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	expect(corridorPoints(drawing.svg).get("3verBPcG")!.length).toBeLessThan(16);
+});
+
+/**
+ * How many times a drawing's lines turn.
+ * @param svg The drawing.
+ * @returns The turns.
+ */
+function turns(svg: string): number {
+	return [...corridorPoints(svg).values()].reduce(
+		(sum, points) =>
+			sum +
+			points.slice(1, -1).filter((point, index) => {
+				const [before, after] = [points[index]!, points[index + 2]!];
+				return !(
+					(before.x === point.x && point.x === after.x) ||
+					(before.y === point.y && point.y === after.y)
+				);
+			}).length,
+		0,
+	);
+}
+
+// Taken from a board of this repository: held in order, Codex session's
+// block ranked again and scored better, crossing two lines fewer, but ran
+// 'a typed message' from Browser gateway the long way round Codex child.
+test("a held order is kept only where the board's lines turn no more often", async () => {
+	const content = orderedFixture(oneCommand);
+	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	expect(turns(drawing.svg)).toBeLessThanOrEqual(36);
 });
