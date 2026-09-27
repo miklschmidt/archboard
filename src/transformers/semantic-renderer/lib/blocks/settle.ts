@@ -33,7 +33,7 @@ import {
 	type Span,
 } from "@/transformers/semantic-renderer/lib/blocks/open-edge";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
-import { spreadPorts } from "@/transformers/semantic-renderer/lib/track/channels";
+import { portReach } from "@/transformers/semantic-renderer/lib/track/channels";
 
 /** What settling reads and writes: every block laid out, and how each block of blocks is packed. */
 interface Settling {
@@ -289,8 +289,7 @@ class Settle {
 		}
 		const card = tree.cards.has(other) ? inner.boxes.get(other) : undefined;
 		if (card === undefined) return undefined;
-		const [low, high] = spreadPorts(card, [-Infinity, Infinity]);
-		return [low!, high!];
+		return portReach(card);
 	}
 
 	/**
