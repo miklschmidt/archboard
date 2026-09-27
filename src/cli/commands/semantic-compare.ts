@@ -19,7 +19,7 @@ import { z } from "zod";
 import {
 	comparedWith,
 	compareVariants,
-	findVariant,
+	resolveVariant,
 	RenderedVariantSchema,
 	SubjectStandingSchema,
 	type FieldChange,
@@ -379,24 +379,31 @@ function counted(entries: readonly { readonly standing: string }[]): string | un
  * Where one relationship now lands, for a person reading the terminal.
  *
  * The line a proposal is reported in: the two parts it joins, what it carries,
- * and — when an end moved — which part it used to land on. That last half is
- * the whole reason this command exists, so it is said rather than left to be
- * worked out from the field list.
+ * and — when an end moved — which part it lands on in the variant it is read
+ * against. That last half is the whole reason this command exists, so it is
+ * said rather than left to be worked out from the field list.
  * @param edge The relationship as it stands.
  * @param names What each part is called.
+ * @param against What the variant it is read against is called.
  * @returns The line.
  */
-function relationshipLine(edge: ComparedEdge, names: ReadonlyMap<string, string>): string {
+function relationshipLine(
+	edge: ComparedEdge,
+	names: ReadonlyMap<string, string>,
+	against: string,
+): string {
 	const carries = edge.label === null ? "" : ` "${edge.label}"`;
 	const ends = edge.fields.filter((moved) => moved.field === "from" || moved.field === "to");
+	// Said as what the other side has rather than as what it "was": on history read against now,
+	// the other side is the later one.
 	const was =
 		ends.length === 0
 			? ""
-			: `, was ${ends
+			: `, ${ends
 					.map(
 						(moved) => `${moved.field} ${names.get(String(moved.before)) ?? String(moved.before)}`,
 					)
-					.join(" and ")}`;
+					.join(" and ")} on "${against}"`;
 	return (
 		`  ${edge.standing}: ${edge.fromName ?? edge.from} → ${edge.toName ?? edge.to}` +
 		`${carries} (${edge.kind}${was})`
@@ -432,7 +439,7 @@ function described(result: VariantComparisonResult): string[] {
 			`at version ${result.version}: ${counts || "nothing on either"}.`,
 		...result.edges
 			.filter((edge) => edge.standing !== "unchanged")
-			.map((edge) => relationshipLine(edge, names)),
+			.map((edge) => relationshipLine(edge, names, result.against.name)),
 	];
 }
 
@@ -457,13 +464,13 @@ function readAgainst(
 	variant: SemanticVariant,
 	named: string | undefined,
 ): SemanticVariant {
-	const found = named === undefined ? comparedWith(board, variant) : findVariant(board, named);
+	const found = named === undefined ? comparedWith(board, variant) : resolveVariant(board, named);
 	if (found !== undefined) {
 		return found;
 	}
 	if (named !== undefined) {
 		throw new CliUsageError(
-			`"${board.name}" has no variant "${named}" to read against. Its variants: ${quoted(board.variants)}.`,
+			`"${board.name}" has no variant "${named}" to read against. Its variants: ${board.variants.map((one) => `"${one.name}"`).join(", ")}.`,
 		);
 	}
 	const comparable = board.variants.filter((one) => comparedWith(board, one) !== undefined);
@@ -473,17 +480,8 @@ function readAgainst(
 				? "it is the current variant, and every other variant is read against it. "
 				: "the board has no current variant and this draft came from nothing. ") +
 			`Name another variant with --variant, or what to read this one against with --against. ` +
-			`Variants that have a comparison: ${quoted(comparable) || "none yet"}.`,
+			`Variants that have a comparison: ${comparable.map((one) => `"${one.name}"`).join(", ") || "none yet"}.`,
 	);
-}
-
-/**
- * Variants as a reader would type them.
- * @param variants The variants.
- * @returns Their names, quoted and comma-separated.
- */
-function quoted(variants: readonly SemanticVariant[]): string {
-	return variants.map((one) => `"${one.name}"`).join(", ");
 }
 
 const CompareInputSchema = z.object({
@@ -594,5 +592,6 @@ export {
 	VariantComparisonResultSchema,
 	type VariantComparisonResult,
 	comparisonAnswer,
+	described,
 	readAgainst,
 };

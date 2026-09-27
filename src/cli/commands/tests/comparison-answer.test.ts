@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { CliUsageError } from "@/cli/command-contract/contract";
 import {
 	comparisonAnswer,
+	described,
 	readAgainst,
 	VariantComparisonResultSchema,
 } from "@/cli/commands/semantic-compare";
@@ -276,6 +277,8 @@ describe("which variant the comparison reads against", () => {
 	test("the current variant has nothing to be read against unless one is named", () => {
 		expect(() => readAgainst(adopted, current!, undefined)).toThrow(CliUsageError);
 		expect(readAgainst(adopted, current!, "Lock files").id).toBe("v1");
+		// `current` names the designation, as it does for --variant.
+		expect(readAgainst(adopted, historical!, "current").id).toBe("v2");
 		// Naming the parent is how a superseded proposal is read for its own change.
 		expect(readAgainst(adopted, onHistory!, "v1").id).toBe("v1");
 		expect(() => readAgainst(adopted, onHistory!, "nowhere")).toThrow(CliUsageError);
@@ -286,4 +289,13 @@ describe("which variant the comparison reads against", () => {
 		expect(readAgainst(unbuilt, unbuilt.variants[1]!, undefined).id).toBe("v1");
 		expect(() => readAgainst(unbuilt, unbuilt.variants[0]!, undefined)).toThrow(CliUsageError);
 	});
+});
+
+test("a moved end is reported as where the variant it is read against lands it, named by that variant", () => {
+	// History read against now: the other side is the later state, so its end is not what was.
+	const history = { ...BASELINE, name: "As first built", lifecycle: "historical" as const };
+	const now = { ...PROPOSAL, name: "As it is", lifecycle: "current" as const };
+	const lines = described(comparisonAnswer({ name: "Board lease", version: 5 }, history, now, []));
+	const moved = lines.find((line) => line.includes("holdBoard") && line.includes("changed"));
+	expect(moved).toMatch(/to Lease table on "As it is"/);
 });

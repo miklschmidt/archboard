@@ -44,14 +44,20 @@ function boardOf(current: boolean): SemanticBoard {
 				id: "v1",
 				name: "As first built",
 				lifecycle: current ? "historical" : "draft",
-				content: { nodes: [GATEWAY, INTAKE] },
+				content: {
+					nodes: [GATEWAY, INTAKE],
+					edges: [{ id: "e1", from: "gw", to: "in", kind: "call", label: "read", order: 1000 }],
+				},
 			},
 			{
 				id: "v2",
 				name: "With a ledger",
 				lifecycle: current ? "current" : "draft",
 				parent: "v1",
-				content: { nodes: [GATEWAY, LEDGER] },
+				content: {
+					nodes: [GATEWAY, LEDGER],
+					edges: [{ id: "e1", from: "gw", to: "ld", kind: "call", label: "write", order: 1000 }],
+				},
 			},
 		],
 	});
@@ -103,6 +109,13 @@ test("a historical variant is read against the current one, and the current one 
 	// The voice explaining history's walkthrough hears the same marks.
 	expect(narratedSubjects(board, historical!, { ...beat, subjects: ["in"] })).toEqual([
 		{ name: "Legacy intake", standing: "added", moved: [] },
+	]);
+	// A field that moved is told as what now says, named as now, never as what history "was".
+	const [wire] = narratedSubjects(board, historical!, { ...beat, subjects: ["e1"] });
+	expect(wire?.standing).toBe("changed");
+	expect(wire?.moved).toEqual([
+		expect.stringMatching(/^to .*Ledger.*With a ledger/),
+		expect.stringMatching(/^label .*write.*With a ledger/),
 	]);
 	expect(narratedSubjects(board, current!, beat)).toEqual([
 		{ name: "Ledger", standing: null, moved: [] },

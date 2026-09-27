@@ -65,7 +65,11 @@ test("a step names what it highlights, and on a draft how each changed", () => {
 		{
 			name: 'Gateway → Ledger "write"',
 			standing: "changed",
-			moved: ["to was Legacy intake", 'label was "read"'],
+			// Each moved field names what the other side says and which side says it.
+			moved: [
+				expect.stringMatching(/^to .*Legacy intake.*Initial/),
+				expect.stringMatching(/^label .*read.*Initial/),
+			],
 		},
 		{ name: "Gateway", standing: "unchanged", moved: [] },
 	]);

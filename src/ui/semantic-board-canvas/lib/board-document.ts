@@ -210,7 +210,7 @@ interface Depiction {
 	 * The variant it is read against, or undefined when there is none: it is
 	 * the current variant, or a first draft on a board with no current one.
 	 */
-	readonly predecessor: SemanticVariant | undefined;
+	readonly against: SemanticVariant | undefined;
 	/**
 	 * How one subject stands against that variant.
 	 * @param id The semantic id.
@@ -273,7 +273,7 @@ function depictionOf(board: SemanticBoard, variant: SemanticVariant): Depiction 
 		return comparison === undefined ? [] : movedOn(comparison, id);
 	}
 
-	return { predecessor: against, standing, moved };
+	return { against, standing, moved };
 }
 
 type BoardReading =
