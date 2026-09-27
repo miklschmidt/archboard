@@ -11,6 +11,7 @@ import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
 import {
+	chooseVariantInShell,
 	drawing,
 	mountStage,
 	renderCalls,
@@ -56,30 +57,28 @@ function boardOf(
 	};
 }
 
-/** The board the pane is opened on: one node, with a link to the level below. */
-const PIPELINE = boardOf(
-	"pipeline",
-	[
-		{
-			id: "v1",
-			name: "as it is",
-			lifecycle: "current",
-			content: {
-				nodes: [
-					{
-						id: "n1",
-						name: "board-io",
-						kind: "module",
-						drillDown: { board: "engine", variant: { kind: "named", name: "as built" } },
-					},
-				],
-				edges: [],
+/** The current state of the board the pane is opened on: one node, with a link to the level below. */
+const PIPELINE_CURRENT = {
+	id: "v1",
+	name: "as it is",
+	lifecycle: "current",
+	content: {
+		nodes: [
+			{
+				id: "n1",
+				name: "board-io",
+				kind: "module",
+				drillDown: { board: "engine", variant: { kind: "named", name: "as built" } },
 			},
-		},
-	],
-	"v1",
-	[{ ...PIPELINE_VIEW, scope: { kind: "all" } }],
-);
+		],
+		edges: [],
+	},
+} as const;
+
+/** The board the pane is opened on. */
+const PIPELINE = boardOf("pipeline", [PIPELINE_CURRENT], "v1", [
+	{ ...PIPELINE_VIEW, scope: { kind: "all" } },
+]);
 
 /** The proposal the link above names. */
 const AS_BUILT = {
@@ -186,6 +185,45 @@ test("double-clicking a card opens the board it drills down to", async () => {
 	expect(stage?.getAttribute("data-board")).toBe("engine");
 	// The variant the link names, as the inspector's way in would have opened.
 	expect(buttons("semantic-variant-choice")[0]?.getAttribute("aria-pressed")).toBe("true");
+});
+
+test("a double-click whose board answers after the pane moved on opens nothing", async () => {
+	const proposed = {
+		...PIPELINE_CURRENT,
+		id: "v2",
+		name: "proposed",
+		lifecycle: "draft",
+		parent: "v1",
+	};
+	server.documents["pipeline"] = boardOf("pipeline", [PIPELINE_CURRENT, proposed], "v1", [
+		{ ...PIPELINE_VIEW, scope: { kind: "all" } },
+	]);
+	server.documents["engine"] = ENGINE;
+	const engineRead = Promise.withResolvers<void>();
+	server.held["engine"] = engineRead.promise;
+	server.reply = { status: 200, body: { ...drawing(1), views: [PIPELINE_VIEW] } };
+	mountStage(null, { live: true, onViewChange: ignoreChoice, onVariantChange: ignoreChoice });
+	await settle();
+	await act(async () => {
+		fireEvent.doubleClick(document.querySelector("#card")!);
+	});
+	// The reader moves to another state of this board before the board below answers.
+	server.reply = {
+		status: 200,
+		body: {
+			...drawing(1),
+			views: [PIPELINE_VIEW],
+			variant: { id: "v2", name: "proposed", lifecycle: "draft" },
+		},
+	};
+	chooseVariantInShell("v2");
+	await settle();
+	await act(async () => {
+		engineRead.resolve();
+	});
+	await settle();
+	// The pane never asks for a picture of the board below.
+	expect(renderCalls().filter((call) => call.includes("board=engine"))).toEqual([]);
 });
 
 test("while the board below is drawn, the board above stays on the pane only to be seen leaving", async () => {
