@@ -16,9 +16,9 @@
 // crowds as one brought: it is kept when it has no more of any defect the
 // veto counts, clears more labels than it crowds or ranks tidier, and grows
 // the page and its lines by no more than the defects it saves in all buy. So
-// a cleared drawing that crowds one more label is kept where it saves more
-// crossings than that, and one that clears labels is kept even where it
-// ranks a little untidier. Kept wherever it merely cost nothing, it
+// a cleared drawing that crowds one more label must still rank tidier, and
+// grows the page and its lines only by what it saves beyond that label buys;
+// one that clears labels is kept even where it ranks a little untidier. Kept wherever it merely cost nothing, it
 // moved lines round boards it cured nothing in, and put three labels a
 // clearance from lines that were far from them (Codex workhorse, Browser
 // application's "Recording a walkthrough"). A cleared settlement can reserve

@@ -250,7 +250,8 @@ function finishedWith(reading: Reading, route: RouteRequest): Promise<Architectu
 /**
  * A settled reading finished clear of frame walls, of side exits between
  * stacked cards, of hooks into a card's side, of unrelated lines on one
- * stroke and of lone ports crowding a corner (finishing.ts).
+ * stroke, of line ends beside a card's standing pin and of lone ports
+ * crowding a corner (finishing.ts).
  * @param kept The settled reading.
  * @returns The finished drawing.
  */
