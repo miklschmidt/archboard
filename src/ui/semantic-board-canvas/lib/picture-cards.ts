@@ -101,6 +101,11 @@ function axisAnchors(
 ): readonly [EdgeAnchor, EdgeAnchor] {
 	if (first === second) {
 		const offset = first - start;
+		/**
+		 * Keep both ends their one distance from the box's start.
+		 * @param at Where the box starts along this axis.
+		 * @returns Where the ends go.
+		 */
 		const together: EdgeAnchor = (at) => at + offset;
 		return [together, together];
 	}
