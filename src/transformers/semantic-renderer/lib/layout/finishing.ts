@@ -9,7 +9,8 @@
 // cures: a line along the wall of a frame it does not stay inside, a line
 // that leaves a card by its side although its other card stands straight
 // below or above it, a line that hooks into a card's side past the card's
-// corner, two unrelated lines on one stroke (stacked-runs.ts), or a port
+// corner, two unrelated lines on one stroke (stacked-runs.ts), a line that
+// ends beside the standing pin a card wears (pin-feedback.ts), or a port
 // alone on a card face beside its corner (lone-pins.ts). The same placement,
 // with the same reservations, is routed once more with the pass's options,
 // and that drawing is kept when it cures more: it brings no defect of any
@@ -22,7 +23,12 @@
 // give no line more bends unless it saves a crossing and takes no more bends
 // in all (Browser application's "Recording a walkthrough" parted a stack and
 // cured three hooks for one line's extra bend). A route that takes a detour
-// is not worth what it cures.
+// is not worth what it cures. A line the pin pass sends off a pin may take
+// more bends: "submit transition" into Board persistence's Write under lease
+// turns once more to drop onto its top face instead of landing 6 px from the
+// pin. The pin pass clears one card at a time, each kept where it cures more:
+// cleared together, Board persistence's three cards drew two more crossings
+// for one of them.
 import type {
 	ArchitectureDrawing,
 	DrawingEdge,
@@ -34,7 +40,7 @@ import { refusedRouting } from "@/transformers/semantic-renderer/lib/layout/chec
 import { crossingsSeen } from "@/transformers/semantic-renderer/lib/layout/even-pins";
 import { crowdedLabels } from "@/transformers/semantic-renderer/lib/layout/label-clearance";
 import { bunchedPorts } from "@/transformers/semantic-renderer/lib/layout/lone-pins";
-import { sideHooks } from "@/transformers/semantic-renderer/lib/layout/pin-feedback";
+import { pinnedEnds, sideHooks } from "@/transformers/semantic-renderer/lib/layout/pin-feedback";
 import type { RouteRequest } from "@/transformers/semantic-renderer/lib/layout/route-requests";
 import {
 	crowdedJoinCount,
@@ -217,16 +223,24 @@ function bendsOf(drawing: ArchitectureDrawing): ReadonlyMap<string, number> {
 /**
  * Whether a finishing routing is no worse than the settled drawing: no more
  * crossings, unrelated lines on one stroke counted (even-pins.ts), and no
- * line with more bends, or, where it saves a crossing, no more bends in all.
+ * line with more bends apart from the lines the pass sends another way, or,
+ * where it saves a crossing, no more bends in all.
  * @param clear The finishing routing.
  * @param settled The settled drawing.
+ * @param excused The lines the pass sends another way.
  * @returns True when it may replace the settled drawing.
  */
-function noWorse(clear: ArchitectureDrawing, settled: ArchitectureDrawing): boolean {
+function noWorse(
+	clear: ArchitectureDrawing,
+	settled: ArchitectureDrawing,
+	excused: ReadonlySet<string>,
+): boolean {
 	const [crossings, before] = [crossingsSeen(clear) - crossingsSeen(settled), bendsOf(settled)];
 	if (crossings > 0) return false;
 	if (crossings < 0) return totalBends(clear) <= totalBends(settled);
-	return [...bendsOf(clear)].every(([id, bends]) => bends <= (before.get(id) ?? Infinity));
+	return [...bendsOf(clear)].every(
+		([id, bends]) => excused.has(id) || bends <= (before.get(id) ?? Infinity),
+	);
 }
 
 /**
@@ -240,12 +254,13 @@ function noWorse(clear: ArchitectureDrawing, settled: ArchitectureDrawing): bool
  * pass that parted one of them cured nothing. No pass may bring any of them
  * ({@link cures}).
  * @param drawing The drawing.
+ * @param pinned The cards that wear a standing pin.
  * @returns The defects.
  */
-function defectsOf(drawing: ArchitectureDrawing): ReadonlySet<string> {
+function defectsOf(drawing: ArchitectureDrawing, pinned: Pinned): ReadonlySet<string> {
 	return new Set([
 		...FINISHING_PASSES.flatMap(({ kind, defects }) =>
-			defects(drawing).map((key) => `${kind}:${key}`),
+			defects(drawing, pinned).map((key) => `${kind}:${key}`),
 		),
 		...crowdedLabels(drawing).map((key) => `label:${key}`),
 		...touchKeys(drawing).map((key) => `touch:${key}`),
@@ -263,10 +278,11 @@ function defectsOf(drawing: ArchitectureDrawing): ReadonlySet<string> {
  * neighbour, and Voice coordinator's hook pass crowd a label.
  * @param finish The finishing routing.
  * @param settled The settled drawing.
+ * @param pinned The cards that wear a standing pin.
  * @returns True when it cures more.
  */
-function cures(finish: ArchitectureDrawing, settled: ArchitectureDrawing): boolean {
-	const [after, before] = [defectsOf(finish), defectsOf(settled)];
+function cures(finish: ArchitectureDrawing, settled: ArchitectureDrawing, pinned: Pinned): boolean {
+	const [after, before] = [defectsOf(finish, pinned), defectsOf(settled, pinned)];
 	return [...after].every((key) => before.has(key)) && after.size < before.size;
 }
 
@@ -279,16 +295,21 @@ function totalBends(drawing: ArchitectureDrawing): number {
 	return [...bendsOf(drawing).values()].reduce((sum, bends) => sum + bends, 0);
 }
 
+/** The cards of a board that wear a standing pin. */
+type Pinned = ReadonlySet<string>;
+
 /** One finishing pass: what it cures, and what it asks of the routes to cure it. */
 interface FinishingPass {
 	/** The kind of defect it cures. */
 	readonly kind: string;
 	/** What it finds to cure in a drawing, as its routes are asked to cure them. */
-	readonly found: (drawing: ArchitectureDrawing) => readonly string[];
+	readonly found: (drawing: ArchitectureDrawing, pinned: Pinned) => readonly string[];
 	/** The defects of its kind a drawing has, one key for each. */
-	readonly defects: (drawing: ArchitectureDrawing) => readonly string[];
+	readonly defects: (drawing: ArchitectureDrawing, pinned: Pinned) => readonly string[];
 	/** What its routes are asked, given what it found. */
 	readonly ask: (found: readonly string[]) => RouteRequest;
+	/** Set on a pass that cures one card at a time, whose lines may take more bends. */
+	readonly byCard?: true;
 }
 
 /**
@@ -335,6 +356,24 @@ function refusing(refusedEnds: readonly string[]): RouteRequest {
 }
 
 /**
+ * Routes asked to keep the cards of line ends beside a standing pin clear of it.
+ * @param pinnedAt The line ends, as line:card:FACE.
+ * @returns The request.
+ */
+function clearingPins(pinnedAt: readonly string[]): RouteRequest {
+	return { clearPins: [...new Set(pinnedAt.map(cardOf))] };
+}
+
+/**
+ * The card a line:card:FACE key names.
+ * @param key The key.
+ * @returns The card.
+ */
+function cardOf(key: string): string {
+	return key.split(":")[1]!;
+}
+
+/**
  * Routes asked to centre ports alone beside a corner.
  * @returns The request.
  */
@@ -361,6 +400,7 @@ const FINISHING_PASSES: readonly FinishingPass[] = [
 		ask: enteringCorners,
 	},
 	{ kind: "stack", found: stackedEnds, defects: stackKeys, ask: refusing },
+	{ kind: "pin", found: pinnedEnds, defects: pinnedEnds, ask: clearingPins, byCard: true },
 	{
 		kind: "port",
 		found: bunchedPorts,
@@ -375,31 +415,73 @@ interface Finish<Reading> {
 	readonly drawing: ArchitectureDrawing;
 }
 
+/** Routes a reading's placement once more asking for more; nothing when a label finds no box. */
+type Reroute<Reading> = (
+	reading: Reading,
+	request: RouteRequest,
+) => Promise<Finish<Reading> | undefined>;
+
 /**
  * One finishing pass: the settled drawing, or, when it has what the pass
  * cures, its placement routed once more with the pass's options, if that
  * cures more ({@link cures}), keeps every label and is no worse
- * ({@link noWorse}). A routing the router or the route checks refuse keeps
- * the settled drawing; a fault is thrown.
+ * ({@link noWorse}). A pass that cures by card tries each card in turn,
+ * asking again for every card kept so far.
  * @param settled The settled drawing and its reading.
  * @param pass The pass.
- * @param reroute Routes the same placement asking for more; nothing when a label finds no box.
+ * @param reroute Routes a reading's placement asking for more.
+ * @param pinned The cards that wear a standing pin.
  * @returns The drawing kept and its reading.
  */
 async function finishedBy<Reading>(
 	settled: Finish<Reading>,
 	pass: FinishingPass,
-	reroute: (request: RouteRequest) => Promise<Finish<Reading> | undefined>,
+	reroute: Reroute<Reading>,
+	pinned: Pinned,
 ): Promise<Finish<Reading>> {
-	const found = pass.found(settled.drawing);
+	const found = [...new Set(pass.found(settled.drawing, pinned))];
 	if (found.length === 0) return settled;
-	const finish = await reroute(pass.ask([...new Set(found)])).catch((error: unknown) => {
+	if (pass.byCard === undefined) return tried(settled, pass, found, reroute, pinned);
+	const cards = [...new Set(found.map(cardOf))];
+	const { kept } = await cards.reduce(
+		async (earlier, card) => {
+			const { kept: before, asked } = await earlier;
+			const asking = [...asked, ...found.filter((key) => cardOf(key) === card)];
+			const next = await tried(before, pass, asking, reroute, pinned);
+			return next === before ? { kept: before, asked } : { kept: next, asked: asking };
+		},
+		Promise.resolve({ kept: settled, asked: [] as readonly string[] }),
+	);
+	return kept;
+}
+
+/**
+ * The settled drawing, or its placement routed once more asking a pass to
+ * cure some of what it found, where that cures more and is no worse. A
+ * routing the router or the route checks refuse keeps the settled drawing; a
+ * fault is thrown.
+ * @param settled The settled drawing and its reading.
+ * @param pass The pass.
+ * @param found What it is asked to cure.
+ * @param reroute Routes a reading's placement asking for more.
+ * @param pinned The cards that wear a standing pin.
+ * @returns The drawing kept and its reading.
+ */
+async function tried<Reading>(
+	settled: Finish<Reading>,
+	pass: FinishingPass,
+	found: readonly string[],
+	reroute: Reroute<Reading>,
+	pinned: Pinned,
+): Promise<Finish<Reading>> {
+	const finish = await reroute(settled.reading, pass.ask(found)).catch((error: unknown) => {
 		if (refusedRouting(error)) return undefined;
 		throw error;
 	});
+	const excused = new Set(pass.byCard === undefined ? [] : found.map((key) => key.split(":")[0]!));
 	return finish !== undefined &&
-		cures(finish.drawing, settled.drawing) &&
-		noWorse(finish.drawing, settled.drawing)
+		cures(finish.drawing, settled.drawing, pinned) &&
+		noWorse(finish.drawing, settled.drawing, excused)
 		? finish
 		: settled;
 }
@@ -408,17 +490,16 @@ async function finishedBy<Reading>(
  * A settled drawing finished by every pass in turn.
  * @param settled The settled drawing and its reading.
  * @param reroute Routes a reading's placement once more asking for more; nothing when a label finds no box.
+ * @param pinned The cards that wear a standing pin.
  * @returns The finished drawing and its reading.
  */
 export function finished<Reading>(
 	settled: Finish<Reading>,
-	reroute: (reading: Reading, request: RouteRequest) => Promise<Finish<Reading> | undefined>,
+	reroute: Reroute<Reading>,
+	pinned: Pinned = new Set(),
 ): Promise<Finish<Reading>> {
 	return FINISHING_PASSES.reduce(
-		(earlier, pass) =>
-			earlier.then((finish) =>
-				finishedBy(finish, pass, (request) => reroute(finish.reading, request)),
-			),
+		(earlier, pass) => earlier.then((finish) => finishedBy(finish, pass, reroute, pinned)),
 		Promise.resolve(settled),
 	);
 }

@@ -2,18 +2,31 @@
 // with a 9.2 px radius. A line that lands beside it reads as pointing at the
 // pin: a corner pin 20 px in put Board persistence's "adopt a draft" 8 px
 // from the pin's rim, and a straight channel through Renderer layout's "place
-// grid" met Grid placement's top as near. Every pin a route is offered on
-// such a card keeps a lane from the standing pin's rim.
+// grid" met Grid placement's top as near. Every aligned pin a route is offered
+// on such a card keeps a lane from the standing pin's rim. A channel's seed
+// is its card-wide slot, and the first of two channels' slots on a left face
+// 72 px tall stands 18 px down it, 6 px from the rim ("submit transition"
+// into Board persistence's Write under lease). Moving every such seed moved
+// labels and so placements (Renderer layout went from 0 crossings to 1 and 4
+// hooks), so a finishing pass asks for seeds clear of the pin card by card.
 // What this catches: a corner pin or an aligned pin offered beside a standing
-// pin, and a proposal's cards laid out without knowing which wear one.
+// pin, a proposal's cards laid out without knowing which wear one, a seed
+// left beside the pin of a card the routes were asked to clear, and a pin
+// pass refused for one card's cost or for the bend a line takes to leave the pin.
 
 import { expect, test } from "bun:test";
 import type { ElkNode } from "@archboard/elk-rs";
 import { AvoidLib } from "libavoid-js";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { PINNED_STANDING, requestOptions, routeGraph } from "@/runtime/semantic-renderer/layout";
+import {
+	finished,
+	PINNED_STANDING,
+	requestOptions,
+	routeGraph,
+} from "@/runtime/semantic-renderer/layout";
 import { cornersOf, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
+import { at, sketch, type Line } from "@/runtime/semantic-renderer/tests/sketched-drawings";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import type { StatedStandings } from "@/transformers/semantic-renderer/index";
 import proposal from "./renderer-layout-proposal.json";
@@ -119,4 +132,77 @@ test("no line of a proposal ends beside the standing pin a card wears", async ()
 		});
 	});
 	expect(beside).toEqual([]);
+});
+
+test("a card the routes are asked to clear has its seeds a lane from its standing pin's rim", async () => {
+	// Two channels on the target: the call's seed is the first slot of its left face.
+	const target = { id: "target", x: 500, y: 200, width: 260, height: 72, ...pinned };
+	const graph = graphOf(
+		[
+			{ id: "source", x: 20, y: 20, width: 240, height: 72 },
+			{ id: "other", x: 20, y: 400, width: 240, height: 72 },
+			target,
+		],
+		{ clearPins: ["target"] },
+	);
+	graph.edges!.push({
+		id: "data",
+		sources: ["target"],
+		targets: ["other"],
+		layoutOptions: { "archboard.relationship.kind": "data" },
+	});
+	const end = await endOf(graph);
+	expect(end.x).toBeCloseTo(target.x, 1);
+	expect(fromPinnedCorner(target, end)).toBeGreaterThanOrEqual(PIN_CLEARANCE - 0.01);
+});
+
+/** Two cards that wear standing pins, the cards their lines come from, and one card pair's line. */
+const cards = {
+	a: { x: 200, y: 200, width: 200, height: 60 },
+	b: { x: 700, y: 200, width: 200, height: 60 },
+	fromA: { x: 0, y: 0, width: 100, height: 50 },
+	fromB: { x: 500, y: 0, width: 100, height: 50 },
+	left: { x: 560, y: 110, width: 40, height: 40 },
+	right: { x: 900, y: 110, width: 60, height: 40 },
+};
+
+/** A line across the page that a line into b's top would cross. */
+const across: Line = {
+	id: "across",
+	from: "left",
+	to: "right",
+	points: at([600, 130], [900, 130]),
+};
+
+test("a pin pass clears each card it can, and a line may turn once more to leave the pin", async () => {
+	const lines = (cleared: readonly string[]): Line[] => [
+		{
+			id: "intoA",
+			from: "fromA",
+			to: "a",
+			points: cleared.includes("a")
+				? at([50, 50], [50, 100], [250, 100], [250, 200])
+				: at([50, 50], [50, 210], [200, 210]),
+		},
+		{
+			id: "intoB",
+			from: "fromB",
+			to: "b",
+			points: cleared.includes("b")
+				? at([550, 50], [550, 90], [750, 90], [750, 200])
+				: at([550, 50], [550, 210], [700, 210]),
+		},
+		across,
+	];
+	const done = await finished(
+		{ reading: [] as readonly string[], drawing: sketch(cards, lines([])) },
+		(_, { clearPins }) =>
+			Promise.resolve(
+				clearPins === undefined
+					? undefined
+					: { reading: clearPins, drawing: sketch(cards, lines(clearPins)) },
+			),
+		new Set(["a", "b"]),
+	);
+	expect(done.reading).toEqual(["a"]);
 });
