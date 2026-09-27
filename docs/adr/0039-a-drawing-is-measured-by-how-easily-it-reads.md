@@ -66,16 +66,19 @@ section says how the engines do this.
 - **What each engine counts.** Graphviz counts, on its settled drawing,
   crossings and hooks. Its crossings are every place two lines cross, one
   more for each of those within a lane of a line's bend, and one for each
-  pair of unrelated lines drawn on one stroke (`crossingsSeen`). Its hooks
+  stretch of at least a lane on which two unrelated lines share one stroke
+  (`crossingsSeen`). Its hooks
   are line ends that hook into a card's side, pairs of lines that touch, and
   joins crowded into one blot. Track and Blocks count crossings, bends and
   route length on their lines as drawn. Where they choose whether a block's
   containers stack, a line that laps round the block past every card it
   holds counts as one crossing more: stacked, One write lands (Track) turned
   its lines less but sent 'announce the accepted write' down the page's
-  right edge. No engine counts double tracks, and Track and Blocks count no
-  hooks, and Graphviz no bends or route length: counting them changed no
-  drawing in either vault.
+  right edge. No chooser this decision changed counts double tracks, Track
+  and Blocks count no hooks, and Graphviz no bends or route length: counting
+  them changed no drawing in either vault. Graphviz's settlement of its
+  routes (`even-pins.ts`, which this decision did not change) does weigh
+  double tracks and lines on one stroke among the defects it refuses.
 - **The guard** (`takes`). Every chooser this decision changed makes two
   picks: the pick it made before this decision (its earlier weighing), and a
   reading pick. When the two picks agree, that is the choice. When they
@@ -105,8 +108,8 @@ section says how the engines do this.
   is the one change outside the guard: where two packings score alike, the
   smaller page is taken rather than the first packing tried. In Reading a
   board (Blocks) the first packing tried stepped 'one stage per pane' down
-  three bends, a lane beside the dashed 'a board's new version' for 180 px;
-  on the smaller page it turns once and hops the dashed line.
+  three bends, alongside the dashed 'a board's new version' for 180 px; on
+  the smaller page it turns once and hops the dashed line.
 
 ## Consequences
 

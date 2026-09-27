@@ -4,7 +4,7 @@
 // length, and the page. A block of cards also counts each line that laps
 // round it past every card it holds as a crossing: stacked, One write lands
 // (Track) turned its lines four times less, but sent 'announce the accepted
-// write' down the page's right edge a lane beside another line.
+// write' down the page's right edge alongside another line.
 import { corners, type Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
 import {

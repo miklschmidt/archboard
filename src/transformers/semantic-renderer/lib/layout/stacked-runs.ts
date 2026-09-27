@@ -172,7 +172,7 @@ type Band = readonly [number, number];
 /** Two runs on one stroke. */
 const STROKE: Band = [-1, ONE_STROKE];
 
-/** Two runs side by side nearer than half a lane: a double track a reader takes for one line. */
+/** Two runs side by side half a lane apart or nearer: a double track a reader takes for one line. */
 const TRACK: Band = [ONE_STROKE, NEAR];
 
 /**
@@ -259,8 +259,8 @@ function lanesOf(stacks: readonly Stack[]): number {
 }
 
 /**
- * The pairs of unrelated lines a drawing runs side by side nearer than half
- * a lane, a double track a reader takes for one line.
+ * The pairs of unrelated lines a drawing runs side by side half a lane apart
+ * or nearer, a double track a reader takes for one line.
  * @param drawing The drawing.
  * @returns One key for every such pair, naming its two lines.
  */
