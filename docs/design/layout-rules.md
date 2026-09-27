@@ -2253,17 +2253,28 @@ wall`).
   does, unless a line into the node crosses the band there; then as far
   left as its words stand a lane's room clear of every line, or less where
   the lines leave less (`captionIn`).
-- **The board is laid out as it is decided without them**
-  (`place.ts` `layJoinedOut`): which joins part, which ports move to side
-  walls, how blocks pack and which port orders hold are chosen on the board
-  with no region round one node, and the board is laid out once more with
-  its regions keeping them; only whether ports settle is weighed again. The
-  room such a region takes moves the routes round it, and each choice
-  weighed on them could turn: What the CLI can be asked (Blocks) parted four
-  lines into Board client for a hop more and 21% more line, and Working with
-  an agent (Blocks) moved four more ports to side walls and stood Pane
-  session off to the middle. Settled as the board without its regions
-  settled them, Command interface (Track) stepped four lines twice more each.
+- **Drawn as blocks, the board is laid out as it is decided without them**
+  (`solves.ts` `decidedWithout`): which joins part, which ports move to
+  side walls, how blocks pack and which port orders hold are chosen on the
+  board with no region round one node, and the board is drawn with its
+  regions keeping them; only whether ports settle is weighed again. The
+  room such a region takes moves the routes round it and the blocks packed
+  beside it, and each choice weighed on them could turn: What the CLI can
+  be asked (Blocks) parted four lines into Board client for a hop more and
+  21% more line, and Working with an agent (Blocks) moved four more ports to
+  side walls and stood Pane session off to the middle. Settled as the board
+  without its regions settled them, Command interface (Track) stepped four
+  lines twice more each. The board with its regions and every join whole,
+  the way 20 of 23 such drawings of both vaults keep, is laid out beside the choice,
+  deciding for itself; where the choice keeps that way and it decides
+  alike, as 18 of those 20 do, it is the drawing, and else the board is laid
+  out once more as decided. Laid out only after the choice, Command
+  interface (Blocks) drew in 895 ms where it drew in 724 without its
+  regions round one node.
+- **Drawn inline, the board decides with them.** Its cards rank in one
+  layout, and every drawing of both vaults decided alike with its regions
+  round one node and without: laid out twice, Browser application (Track)
+  drew in 639 ms where it drew in 340.
 - **No region of a group inside that group's region** (`measurement.ts`
   `gatheringGroups`). A container placed with a group stands in its region,
   and so does every member of the group inside it; the members are gathered
