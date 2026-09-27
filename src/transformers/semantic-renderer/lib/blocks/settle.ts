@@ -570,6 +570,25 @@ class Settle {
 }
 
 /**
+ * Where settling stands every movable inner block's ports, walked as it walks, routing nothing.
+ * @param settling The blocks, laid out; nothing is changed.
+ * @returns Each inner block's settled ports, by block.
+ */
+function settledPorts(settling: Settling): Map<string, Map<string, number>> {
+	const settle = new Settle(settling);
+	const out = new Map<string, Map<string, number>>();
+	const walk: [Block, ReadonlyMap<string, number>][] = [[settling.tree.root, new Map()]];
+	for (const [block, own] of walk) {
+		if (!settling.packings.has(block.id)) continue;
+		for (const [item, ports] of settle.settleIn(block, own)) {
+			out.set(item, ports);
+			walk.push([settling.tree.blocks.get(item)!, ports]);
+		}
+	}
+	return out;
+}
+
+/**
  * Settle every port on a block's top and bottom where both ends of its
  * trunk are known, and route every block again with its ports there.
  * @param settling The blocks, laid out; their layouts are replaced.
@@ -578,4 +597,4 @@ function settlePorts(settling: Settling): void {
 	new Settle(settling).block(settling.tree.root, new Map());
 }
 
-export { settlePorts };
+export { settlePorts, settledPorts, type Settling };

@@ -185,12 +185,14 @@ class BlockTree {
 	 * stood the block beside the block its trunk goes to.
 	 * @param nesting How containers and group regions are drawn.
 	 * @param apart The blocks whose joins keep ports of their own, by id.
+	 * @param orders Ports each block holds in an order on a face, keyed `block|face` (`orders.ts`).
 	 */
 	constructor(
 		graph: ElkNode,
 		readonly exits: ReadonlyMap<string, Side>,
 		readonly nesting: Nesting,
 		apart: ReadonlySet<string>,
+		readonly orders: ReadonlyMap<string, readonly string[]> = new Map(),
 	) {
 		this.captions = captionsOf(graph);
 		this.root = this.block(":root", "root", undefined, {});
