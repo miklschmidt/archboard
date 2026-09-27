@@ -374,7 +374,6 @@ function sinks(
 
 export {
 	anchored,
-	crossingPlaces,
 	crossingsOf,
 	lapsOf,
 	readingOrder,

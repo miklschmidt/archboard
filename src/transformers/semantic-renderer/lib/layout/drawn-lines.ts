@@ -512,7 +512,6 @@ export {
 	across,
 	along,
 	crossingKey,
-	crossingOf,
 	drawnCrossings,
 	extentOf,
 	fixedOf,

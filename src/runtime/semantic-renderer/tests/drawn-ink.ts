@@ -397,7 +397,6 @@ function overdrawnRun(drawing: RenderedDiagram, ids: readonly string[]): number 
 }
 
 export {
-	type Corridor,
 	type Ink,
 	type Reach,
 	type Run,
