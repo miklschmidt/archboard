@@ -418,9 +418,11 @@ interface Board {
  * line's blocks do not stand the way its faces point, once more with every
  * block of its chain crossed by the edges that face each other (`sides.ts`).
  * Where settling would swap ports on a block of cards' face, once more with
- * those ports held in the settled order (`orders.ts`), kept where it reads
- * better and crosses fewer lines: the held order is there to part lines that
- * cross, and a whole block ranked again may buy its score elsewhere. Last, the ports on every block's top and bottom are settled
+ * those ports held in the settled order (`orders.ts`), kept where it crosses
+ * fewer lines and turns no more often: the held order is there to part lines
+ * that cross, and a whole block ranked again may buy that with turns
+ * elsewhere. Not while a join is parted: the joins choice would then prefer a
+ * parted drawing that runs a line round a block. Last, the ports on every block's top and bottom are settled
  * where both ends of their trunks are known, and the blocks routed again with
  * them there.
  * @param viz The initialized Graphviz instance.
@@ -447,9 +449,7 @@ function layOut(
 	return [last, ...held]
 		.map((laying) => settledOrNot(laying, avoid))
 		.reduce((one, other) =>
-			other.score > one.score && other.crossings < one.crossings && other.bends <= one.bends
-				? other
-				: one,
+			other.crossings < one.crossings && other.bends <= one.bends ? other : one,
 		);
 }
 
@@ -457,12 +457,12 @@ function layOut(
  * A layout with its ports settled, unless the drawing reads better unsettled.
  * @param laying The layout; its blocks are replaced.
  * @param avoid The initialized libavoid module.
- * @returns The blocks, every block laid out, and how the drawing scores.
+ * @returns The blocks, every block laid out, and how often the drawing's lines cross and turn.
  */
 function settledOrNot(
 	laying: Board,
 	avoid: AvoidEngine,
-): { tree: BlockTree; laid: Map<string, Laid>; score: number; crossings: number; bends: number } {
+): { tree: BlockTree; laid: Map<string, Laid>; crossings: number; bends: number } {
 	const unsettled = new Map(laying.laid);
 	settlePorts({ ...laying, insetsOf, avoid });
 	const [was, is] = [unsettled, laying.laid].map((laid) =>
@@ -474,7 +474,6 @@ function settledOrNot(
 	return {
 		tree: laying.tree,
 		laid: laying.laid,
-		score: Math.max(was!, is!),
 		crossings: crossingsOf(lines),
 		bends,
 	};
