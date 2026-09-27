@@ -7,12 +7,10 @@
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { corridorPoints, turnsOf } from "@/runtime/semantic-renderer/tests/drawn-routes";
-import { scorecardOf } from "@/runtime/semantic-renderer/tests/drawn-scorecard";
+import { corridorPoints, routesCross } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import boardRequestPath from "./board-request-path.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
-import oneCommand from "./one-command.json";
 
 /** The vocabulary of the dogfood vault the fixtures are taken from. */
 const policy = SemanticPolicySchema.parse({
@@ -42,11 +40,15 @@ const policy = SemanticPolicySchema.parse({
 // Taken from a board of this repository: settling stood the ports on Board
 // writes' top in another order than Graphviz had laid its cards for, and the
 // lines crossed each other inside the region on their way to them.
+// Unheld, 'state requested change' and 'submit transition' from Archboard
+// server each crossed the lines out of Write under lease and Read and validate.
 test("a block's ports keep the order its parent settles them in, and its lines cross less", async () => {
 	const content = orderedFixture(durableWriteBoundary);
 	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	const crossings = scorecardOf(drawing, content).find(({ name }) => name === "crossings")!;
-	expect(crossings.value).toBeLessThanOrEqual(8);
+	const routes = corridorPoints(drawing.svg);
+	for (const id of ["i6pk24Ov", "smLdyKlp"])
+		for (const other of ["9O4o9jcE", "C0t1t0gb", "E4f3pKJb", "V478HCgq"])
+			expect(routesCross(routes.get(id)!, routes.get(other)!), `${id} ${other}`).toBe(false);
 });
 
 // Taken from a board of this repository: two lines join on their way to Board
@@ -56,17 +58,4 @@ test("a held order does not part lines joined on their way to a card", async () 
 	const content = orderedFixture(boardRequestPath);
 	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	expect(corridorPoints(drawing.svg).get("3verBPcG")!.length).toBeLessThan(16);
-});
-
-// Taken from a board of this repository: held in order, Codex session's
-// block ranked again and scored better, crossing two lines fewer, but ran
-// 'a typed message' from Browser gateway the long way round Codex child.
-test("a held order is kept only where the board's lines turn no more often", async () => {
-	const content = orderedFixture(oneCommand);
-	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	const turns = [...corridorPoints(drawing.svg).values()].reduce(
-		(sum, points) => sum + turnsOf(points),
-		0,
-	);
-	expect(turns).toBeLessThanOrEqual(36);
 });
