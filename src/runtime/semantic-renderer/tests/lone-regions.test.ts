@@ -23,6 +23,7 @@ import {
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import aSpokenInstruction from "./a-spoken-instruction.json";
 import boardRequestPath from "./board-request-path.json";
+import commandInterface from "./command-interface.json";
 import legacyRouting from "./legacy-routing.json";
 import recordingAWalkthrough from "./recording-a-walkthrough.json";
 import startingAWorkhorse from "./starting-a-workhorse.json";
@@ -345,21 +346,31 @@ test.each(
 	expect(endsOffNode(content, await drawn(content, layout))).toEqual([]);
 });
 
-// Reduced from a dogfood view: a line whose lane stood a little inside the
-// face of a card alone in its region, nearer its corner than a port is moved
-// to, stepped aside above the region to reach the card.
-test("the track engine turns a line into a card alone in its region no more than without the region", async () => {
-	const content = orderedFixture(boardRequestPath);
-	const turns = async (board: VariantContent): Promise<Map<string, number>> =>
-		new Map(
-			[...routePoints((await drawn(board, "track")).svg)].map(([id, points]) => [
-				id,
-				turnsOf(points),
-			]),
-		);
-	const [grouped, plain] = await Promise.all([turns(content), turns(ungrouped(content))]);
-	for (const [id, count] of grouped) expect(count, id).toBeLessThanOrEqual(plain.get(id)!);
-});
+// Reduced from dogfood boards. Board request path: a line whose lane stood a
+// little inside the face of a card alone in its region, nearer its corner
+// than a port is moved to, stepped aside above the region to reach the card.
+// Command interface: its ports settled as the board without its regions
+// round one card settled them, the four 'board operation' lines into Board
+// writes stepped twice more each.
+const turnsAsWithout = {
+	"Board request path": boardRequestPath,
+	"Command interface": commandInterface,
+};
+test.each(Object.keys(turnsAsWithout))(
+	"%s: the track engine turns no line more than without its regions round one card",
+	async (board) => {
+		const content = orderedFixture(turnsAsWithout[board as keyof typeof turnsAsWithout]);
+		const turns = async (drawnBoard: VariantContent): Promise<Map<string, number>> =>
+			new Map(
+				[...routePoints((await drawn(drawnBoard, "track")).svg)].map(([id, points]) => [
+					id,
+					turnsOf(points),
+				]),
+			);
+		const [grouped, plain] = await Promise.all([turns(content), turns(ungrouped(content))]);
+		for (const [id, count] of grouped) expect(count, id).toBeLessThanOrEqual(plain.get(id)!);
+	},
+);
 
 // A container alone in its region, drawn inline, was fitted to what it holds
 // by a container's inset from the region's walls, and its own walls then
