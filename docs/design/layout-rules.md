@@ -2222,7 +2222,14 @@ board without the region saw one.
   Once drawn, the card stands inside it and the region is drawn round it
   (`assembly.ts` `loneRegions`), and a line that stops on the region's wall
   is carried straight on to the card's face (`carriedLine`). The card's
-  ports stand on its own face, not the region's (`channels.ts` `faceOf`).
+  ports stand on its own face, not the region's (`scene.ts` `cardFace`):
+  a port settled against the one card its line runs to spans the card
+  (`settle.ts` `lineReach`), and a port moved along the face keeps a
+  corner's room from the grown box and stands on the card clear of its
+  rounded corner (`jogs.ts` `onFace`). Settled over the region's inset, A
+  spoken instruction becomes work (Blocks) stepped a line out of it and for
+  that bend kept a port order that turned a container's cards round; moved
+  there, a line between two such cards ended past the card's corner.
   Under Track a lane keeps a region's clearance off the grown box, as off a
   region packed whole; under Blocks it keeps a card's, since a block of
   cards is as wide as its Graphviz ranks and the lanes beside a region's
@@ -2235,9 +2242,13 @@ wall`).
   that inset more round it, and its title row as the track scene reads it
   holds the band, so the scene draws the region as the container; the
   container's box is taken back inside it once drawn (`card-layout.ts`
-  `read`). As a region cluster round the frame, the pool of hosts on the
-  ingress board stood right of the chain over it and its caption took a
-  band of its own, 120 px tall.
+  `read`). Its title row carries the region's inset as its face's, so a
+  line into it meets the container, and its walls are fitted both insets
+  from what it holds (`sides.ts`), not a container's inset from the
+  region's wall, which stood the container 6 px from its card. As a region
+  cluster round the frame, the pool of hosts on the ingress board stood
+  right of the chain over it and its caption took a band of its own, 120 px
+  tall.
 - **The caption** stands in the band's top-left corner as every region's
   does, unless a line into the node crosses the band there; then as far
   left as its words stand a lane's room clear of every line, or less where
@@ -2249,20 +2260,32 @@ wall`).
   only stood the chain off the container's middle. Blocks chose the slid
   packing for the ingress board's pool only by 0.4 of a jog that settling
   takes out, where a rounding error had hidden it before.
+- **The board is laid out as it is decided without them**
+  (`place.ts` `layJoinedOut`): which joins part, which ports move to side
+  walls, how blocks pack and which port orders hold are chosen on the board
+  with no region round one node, and the board is laid out once more with
+  its regions keeping them; only whether ports settle is weighed again. The
+  room such a region takes moves the routes round it, and each choice
+  weighed on them could turn: What the CLI can be asked (Blocks) parted four
+  lines into Board client for a hop more and 21% more line, and Working with
+  an agent (Blocks) moved four more ports to side walls and stood Pane
+  session off to the middle. Settled as the board without its regions
+  settled them, Command interface (Track) stepped four lines twice more each.
 - **A label into a block that packs blocks stays by its source**
   (`inline.ts` `labelHolder`): a region packing two containers draws only
   trunks, and the label of a line into one of them was lost.
 
 Against `40461250`, over the 46 drawings that change: no line runs through
-a card, no caption's words under a line, and hops are as they were but for
-Working with an agent (Blocks, 1 → 3), A spoken instruction becomes work
-(Blocks, 4 → 5, bends 19 → 24), What the CLI can be asked and Voice
-coordinator whole (Blocks, one more each); Recording a walkthrough (Blocks)
-loses its one. Bends are as they were but for those and Reading a board and
-the ingress board whole (Track, two more each). The Blocks drawings that
-move are ones where the grown box changes how Graphviz orders a block of
-cards; every other drawing reads as it did with its regions added, each
-taller by the bands.
+a card or ends beside one (158 such ends over both vaults and engines), and
+no caption's words under a line. Hops are as they were but for Voice
+coordinator whole (Blocks, 11 → 12). Bends are as they were but for Reading
+a board (Track, 16 → 18), Command interface whole and Voice coordinator
+whole (Blocks, two more each) and the ingress board whole (Track, 10 → 12),
+and fewer on What the CLI can be asked (Blocks 78 → 74, Track 102 → 98),
+Command interface whole and Browser application whole (Track) and One
+command from a pane (Blocks). Every other drawing reads as it did with its
+regions added, each taller by the bands. The slowest drawing, What the CLI
+can be asked, lays out in under 400 ms under either engine.
 
 The regression fixtures reduced from dogfood boards hold the memberships
 the boards hold. One guard is loosened: stacked, One command's `a typed
