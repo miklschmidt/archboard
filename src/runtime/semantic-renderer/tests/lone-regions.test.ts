@@ -26,6 +26,7 @@ import boardRequestPath from "./board-request-path.json";
 import commandInterface from "./command-interface.json";
 import legacyRouting from "./legacy-routing.json";
 import liveServerState from "./live-server-state.json";
+import readingABoard from "./reading-a-board-panes.json";
 import recordingAWalkthrough from "./recording-a-walkthrough.json";
 import startingAWorkhorse from "./starting-a-workhorse.json";
 import whatTheCliCanBeAsked from "./what-the-cli-can-be-asked.json";
@@ -374,10 +375,12 @@ test.each(
 // than a port is moved to, stepped aside above the region to reach the card.
 // Command interface: its ports settled as the board without its regions
 // round one card settled them, the four 'board operation' lines into Board
-// writes stepped twice more each.
+// writes stepped twice more each. Reading a board: a port a margin in from
+// Pane session's own face stepped its line aside under the region.
 const turnsAsWithout = {
 	"Board request path": boardRequestPath,
 	"Command interface": commandInterface,
+	"Reading a board": readingABoard,
 };
 test.each(Object.keys(turnsAsWithout))(
 	"%s: the track engine turns no line more than without its regions round one card",

@@ -335,10 +335,11 @@ function noMore(nets: readonly Net[], kept: Kept): () => boolean {
 
 /**
  * Close one net's short step by moving the stretch beyond one of its ends
- * onto the other end's column.
+ * onto the other end's column, with the lines that run straight on through
+ * the card it ends on ({@link throughCard}) when it cannot move alone.
  * @param scene The scene.
  * @param chains Every relationship's chain.
- * @param nets Every net.
+ * @param routes Every line's nets, top to bottom.
  * @param place The net and its line.
  * @param place.route The net's line, top to bottom.
  * @param place.index The net's place in it.
@@ -348,16 +349,52 @@ function noMore(nets: readonly Net[], kept: Kept): () => boolean {
 function close(
 	scene: Scene,
 	chains: readonly Chain[],
-	nets: readonly Net[],
+	routes: readonly (readonly Net[])[],
 	{ route, index }: Place,
 	kept: Kept,
 ): boolean {
 	const net = route[index]!;
+	const nets = routes.flat();
 	return (["top", "bottom"] as const).some((end) => {
 		const x = xAt(net, end === "top" ? "bottom" : "top");
 		const stretch = stretchBeyond(route, index, end);
-		return moveStretch(scene, chains, nets, stretch, x, kinked, false, noMore(nets, kept));
+		const through = throughCard(routes, stretch.at(-1)!);
+		return [stretch, ...(through.length === 0 ? [] : [[...stretch, ...through]])].some((moved) =>
+			moveStretch(scene, chains, nets, moved, x, kinked, false, noMore(nets, kept)),
+		);
 	});
+}
+
+/**
+ * The lines that run straight on through a card from where a stretch ends
+ * on it: each line that leaves its other face at the same x, and the
+ * straight stretch beyond. Moving the stretch's end alone would step the
+ * two through the card, so they move with it: in Reading a board (Track),
+ * the line out of Pane session kept a step of 16 px under its region, since
+ * its port could not move without notching the line into Pane session.
+ * @param routes Every line's nets, top to bottom.
+ * @param last The stretch's last station, with the net arriving at it.
+ * @param last.station The station.
+ * @param last.net The net.
+ * @param last.end Which end of the net it stands at.
+ * @returns The stations to move with it; none when it ends on no card.
+ */
+function throughCard(
+	routes: readonly (readonly Net[])[],
+	{ station, net, end }: { station: Station; net: Net; end: End },
+): { station: Station; net: Net; end: End }[] {
+	if (station.kind !== "card") return [];
+	const beyond = end === "top" ? "bottom" : "top";
+	const x = xAt(net, end);
+	return routes.flatMap((route) =>
+		route.flatMap((other, index) =>
+			other[beyond].item === station.item &&
+			other.wall === undefined &&
+			Math.abs(xAt(other, beyond) - x) <= STRAIGHT
+				? cardSide({ route, index }, beyond)
+				: [],
+		),
+	);
 }
 
 /**
@@ -473,7 +510,7 @@ function closeJogs(
 		const closed = routes.flatMap((route) =>
 			route.map((net, index) =>
 				kinked(net) && net.wall === undefined
-					? close(scene, chains, nets, { route, index }, kept)
+					? close(scene, chains, routes, { route, index }, kept)
 					: false,
 			),
 		);
