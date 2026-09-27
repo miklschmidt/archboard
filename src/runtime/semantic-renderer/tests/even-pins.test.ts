@@ -27,6 +27,7 @@
 // pin of a card costs the same in all.
 
 import { expect, test } from "bun:test";
+import { LayoutEngineSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
 	centreHandicap,
@@ -39,33 +40,39 @@ import { at, sketch, type Line } from "@/runtime/semantic-renderer/tests/sketche
 import gradingFan from "./grading-fan.json";
 import sideExit from "./side-exit.json";
 
-test("lines to cards beside their source leave along the shared trunk without hops", async () => {
-	const drawing = await renderArchitecture({
-		content: orderedFixture(sideExit),
-		theme: "light",
-		layout: "graphviz",
-	});
-	const hops = [...drawing.svg.matchAll(/ d="([^"]+)"/gu)].flatMap(([, path]) =>
-		roundBridges(path!),
-	);
-	expect(hops).toHaveLength(0);
-});
+test.each(LayoutEngineSchema.options)(
+	"lines to cards beside their source leave along the shared trunk without hops (%s)",
+	async (layout) => {
+		const drawing = await renderArchitecture({
+			content: orderedFixture(sideExit),
+			theme: "light",
+			layout,
+		});
+		const hops = [...drawing.svg.matchAll(/ d="([^"]+)"/gu)].flatMap(([, path]) =>
+			roundBridges(path!),
+		);
+		expect(hops).toHaveLength(0);
+	},
+);
 
-test("a fan from one card to the cards below it leaves by the bottom and enters their tops", async () => {
-	const content = orderedFixture(gradingFan);
-	const drawing = await renderArchitecture({ content, theme: "light", layout: "graphviz" });
-	const routes = routePoints(drawing.svg);
-	const fan = content.nodes.find(({ name }) => name === "Grading session")!.id;
-	const across = content.edges.flatMap(({ id, from }) => {
-		if (from !== fan) return [];
-		const points = routes.get(id)!;
-		const [leaving, entering] = [points.slice(0, 2), points.slice(-2)];
-		return [leaving, entering]
-			.filter(([one, other]) => Math.abs(one!.y - other!.y) < 0.01)
-			.map(() => id);
-	});
-	expect(across).toEqual([]);
-});
+test.each(LayoutEngineSchema.options)(
+	"a fan from one card to the cards below it leaves by the bottom and enters their tops (%s)",
+	async (layout) => {
+		const content = orderedFixture(gradingFan);
+		const drawing = await renderArchitecture({ content, theme: "light", layout });
+		const routes = routePoints(drawing.svg);
+		const fan = content.nodes.find(({ name }) => name === "Grading session")!.id;
+		const across = content.edges.flatMap(({ id, from }) => {
+			if (from !== fan) return [];
+			const points = routes.get(id)!;
+			const [leaving, entering] = [points.slice(0, 2), points.slice(-2)];
+			return [leaving, entering]
+				.filter(([one, other]) => Math.abs(one!.y - other!.y) < 0.01)
+				.map(() => id);
+		});
+		expect(across).toEqual([]);
+	},
+);
 
 /**
  * The settlement kept of a plain one and an evened one.

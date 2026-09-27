@@ -1,12 +1,16 @@
 // Two lines with no card in common must never share one stroke: drawn on one
 // coordinate they read as one line, and a trunk joining sources to the wrong
 // targets. Cards one routing gap apart leave room for one line between them.
-// What this catches: the Graphviz engine leaving two unrelated lines in such
-// a gap when both turn into it from the cards on either side.
+// What this catches: an engine leaving two unrelated lines in such a gap
+// when both turn into it from the cards on either side.
 
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema, type SemanticPolicy } from "@/shared/semantic-policy/index";
-import type { VariantContent } from "@/shared/semantic-board/index";
+import {
+	LayoutEngineSchema,
+	type LayoutEngineName,
+	type VariantContent,
+} from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { corridorPoints, type DrawnPoint } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
@@ -60,20 +64,17 @@ function runsOf(points: readonly DrawnPoint[]): Run[] {
 /**
  * The pairs of unrelated lines a drawing draws on one stroke.
  * @param content The board.
+ * @param layout The engine that draws it.
  * @param options The vocabulary, where the board needs its own.
  * @param options.policy The policy.
  * @returns One key for every such pair.
  */
 async function stackedPairs(
 	content: VariantContent,
+	layout: LayoutEngineName,
 	options: { readonly policy?: SemanticPolicy } = {},
 ): Promise<string[]> {
-	const drawn = await renderArchitecture({
-		content,
-		theme: "light",
-		layout: "graphviz",
-		...options,
-	});
+	const drawn = await renderArchitecture({ content, theme: "light", layout, ...options });
 	const routes = corridorPoints(drawn.svg);
 	const edges = content.edges;
 	return edges.flatMap((one, index) =>
@@ -94,6 +95,9 @@ async function stackedPairs(
 	);
 }
 
-test("unrelated lines never share one stroke in the gap between two cards", async () => {
-	expect(await stackedPairs(orderedFixture(agentWorkbench), { policy })).toEqual([]);
-});
+test.each(LayoutEngineSchema.options)(
+	"unrelated lines never share one stroke in the gap between two cards (%s)",
+	async (layout) => {
+		expect(await stackedPairs(orderedFixture(agentWorkbench), layout, { policy })).toEqual([]);
+	},
+);

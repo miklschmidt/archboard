@@ -10,6 +10,7 @@
 // inside needs no reach at all.
 
 import { expect, test } from "bun:test";
+import { LayoutEngineSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { wallOf, wallReach } from "@/runtime/semantic-renderer/layout";
 import { bodyShift, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
@@ -19,43 +20,46 @@ import frameWall from "./frame-wall.json";
 /** The distance a line keeps off a frame wall where the passage has room, and the length of a run that is not a jog. */
 const LANE = 16;
 
-test("a line out of a frame to a card beside it keeps a lane from the frame's side walls", async () => {
-	const { svg } = await renderArchitecture({
-		content: orderedFixture(frameWall),
-		theme: "light",
-		layout: "graphviz",
-	});
-	const shift = bodyShift(svg);
-	const frames =
-		/<g data-semantic-kind="region"[^>]*data-depiction="container"[^>]*>\s*(?:<rect class="ab-halo"[^>]*>\s*)?<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/gu;
-	const walls = [...svg.matchAll(frames)].flatMap(([, x, y, width, height]) => {
-		const [left, top] = [Number(x) + shift.x, Number(y) + shift.y];
-		const [right, bottom] = [left + Number(width), top + Number(height)];
-		return [
-			{ vertical: true, at: left, from: top, to: bottom },
-			{ vertical: true, at: right, from: top, to: bottom },
-		];
-	});
-	const hugs = [...routePoints(svg)].flatMap(([edge, points]) =>
-		points.slice(1).flatMap((point, index) => {
-			const previous = points[index]!;
-			const vertical = Math.abs(point.x - previous.x) < 0.01;
-			const [at, one, other] = vertical
-				? [point.x, previous.y, point.y]
-				: [point.y, previous.x, point.x];
-			return walls
-				.filter(
-					(wall) =>
-						wall.vertical === vertical &&
-						Math.abs(at - wall.at) < LANE - 0.5 &&
-						Math.min(Math.max(one, other), wall.to) - Math.max(Math.min(one, other), wall.from) >
-							LANE,
-				)
-				.map((wall) => `${edge} ${wall.at}`);
-		}),
-	);
-	expect(hugs).toEqual([]);
-});
+test.each(LayoutEngineSchema.options)(
+	"a line out of a frame to a card beside it keeps a lane from the frame's side walls (%s)",
+	async (layout) => {
+		const { svg } = await renderArchitecture({
+			content: orderedFixture(frameWall),
+			theme: "light",
+			layout,
+		});
+		const shift = bodyShift(svg);
+		const frames =
+			/<g data-semantic-kind="region"[^>]*data-depiction="container"[^>]*>\s*(?:<rect class="ab-halo"[^>]*>\s*)?<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/gu;
+		const walls = [...svg.matchAll(frames)].flatMap(([, x, y, width, height]) => {
+			const [left, top] = [Number(x) + shift.x, Number(y) + shift.y];
+			const [right, bottom] = [left + Number(width), top + Number(height)];
+			return [
+				{ vertical: true, at: left, from: top, to: bottom },
+				{ vertical: true, at: right, from: top, to: bottom },
+			];
+		});
+		const hugs = [...routePoints(svg)].flatMap(([edge, points]) =>
+			points.slice(1).flatMap((point, index) => {
+				const previous = points[index]!;
+				const vertical = Math.abs(point.x - previous.x) < 0.01;
+				const [at, one, other] = vertical
+					? [point.x, previous.y, point.y]
+					: [point.y, previous.x, point.x];
+				return walls
+					.filter(
+						(wall) =>
+							wall.vertical === vertical &&
+							Math.abs(at - wall.at) < LANE - 0.5 &&
+							Math.min(Math.max(one, other), wall.to) - Math.max(Math.min(one, other), wall.from) >
+								LANE,
+					)
+					.map((wall) => `${edge} ${wall.at}`);
+			}),
+		);
+		expect(hugs).toEqual([]);
+	},
+);
 
 test("a card inside a frame reaches a lane past a wall to clear, however far in it stands", () => {
 	/** How far a card's routing box reaches past it. */

@@ -19,6 +19,7 @@ import { expect, test } from "bun:test";
 import type { ElkNode } from "@archboard/elk-rs";
 import { AvoidLib } from "libavoid-js";
 import { DEFAULT_SEMANTIC_POLICY, SemanticPolicySchema } from "@/shared/semantic-policy/index";
+import { LayoutEngineSchema, type LayoutEngineName } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import type { StatedStandings } from "@/transformers/semantic-renderer/index";
 import { requestOptions, routeGraph } from "@/runtime/semantic-renderer/layout";
@@ -111,10 +112,12 @@ test("a line passing its target's top corner enters the top instead of hooking i
 /**
  * The lines of a finished drawing that hook into a card's side.
  * @param fixture The board, and how its subjects stand in the proposal it draws.
+ * @param layout The engine that draws it.
  * @returns The ids of the hooked lines, once for each hooked end.
  */
 async function hookedLines(
 	fixture: Parameters<typeof orderedFixture>[0] & { readonly standing: object },
+	layout: LayoutEngineName,
 ): Promise<string[]> {
 	const { standing, ...board } = fixture;
 	const content = orderedFixture(board);
@@ -123,7 +126,7 @@ async function hookedLines(
 		standing: standing as StatedStandings,
 		policy,
 		theme: "light",
-		layout: "graphviz",
+		layout,
 	});
 	const cards = drawing.atlas.nodes;
 	const routes = routePoints(drawing.svg);
@@ -136,27 +139,33 @@ async function hookedLines(
 	return hooks;
 }
 
-test("a finished drawing has no line hooking into a card's side past its corner", async () => {
-	expect(await hookedLines(rendererLayout)).toEqual([]);
-});
+test.each(LayoutEngineSchema.options)(
+	"a drawing has no line hooking into a card's side past its corner (%s)",
+	async (layout) => {
+		expect(await hookedLines(rendererLayout, layout)).toEqual([]);
+	},
+);
 
-test("lines down into a card enter its top rather than hook past it into its sides", async () => {
-	const { standing, ...board } = formerNames;
-	const former = board.nodes.find(({ name }) => name === "Former names")!.id;
-	const drawing = await renderArchitecture({
-		content: orderedFixture(board),
-		standing: standing as StatedStandings,
-		policy,
-		theme: "light",
-		layout: "graphviz",
-	});
-	const routes = routePoints(drawing.svg);
-	const down = new Set(["a former name opens the board", "the board the name answers to"]);
-	const entries = board.edges
-		.filter(({ to, label }) => to === former && down.has(label))
-		.map(({ id }) => {
-			const [last, before] = cornersOf(routes.get(id)!).toReversed();
-			return Math.abs(last!.x - before!.x) < 0.01 ? "top" : "side";
+test.each(LayoutEngineSchema.options)(
+	"lines down into a card enter its top rather than hook past it into its sides (%s)",
+	async (layout) => {
+		const { standing, ...board } = formerNames;
+		const former = board.nodes.find(({ name }) => name === "Former names")!.id;
+		const drawing = await renderArchitecture({
+			content: orderedFixture(board),
+			standing: standing as StatedStandings,
+			policy,
+			theme: "light",
+			layout,
 		});
-	expect(entries).toEqual(["top", "top"]);
-});
+		const routes = routePoints(drawing.svg);
+		const down = new Set(["a former name opens the board", "the board the name answers to"]);
+		const entries = board.edges
+			.filter(({ to, label }) => to === former && down.has(label))
+			.map(({ id }) => {
+				const [last, before] = cornersOf(routes.get(id)!).toReversed();
+				return Math.abs(last!.x - before!.x) < 0.01 ? "top" : "side";
+			});
+		expect(entries).toEqual(["top", "top"]);
+	},
+);

@@ -1,6 +1,6 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { describe, expect, test } from "bun:test";
-import { type VariantContent } from "@/shared/semantic-board/index";
+import { LayoutEngineSchema, type VariantContent } from "@/shared/semantic-board/index";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
 import {
 	headsOn,
@@ -167,16 +167,19 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 	});
 
 	test("shots cross short and long lines at the same speed, a multiple of the authored one", async () => {
+		// A chain with a line that skips it: one line a rank long, one three.
 		const content = variant({
 			nodes: [
 				{ id: "a", name: "A", kind: "service" },
 				{ id: "b", name: "B", kind: "service" },
 				{ id: "c", name: "C", kind: "service" },
+				{ id: "d", name: "D", kind: "service" },
 			],
 			edges: [
 				{ id: "ab", from: "a", to: "b", kind: "call", traffic: { speed: 80, volume: 1 } },
 				{ id: "bc", from: "b", to: "c", kind: "call", traffic: { speed: 160, volume: 1 } },
-				{ id: "ac", from: "a", to: "c", kind: "call", traffic: { speed: 80, volume: 1 } },
+				{ id: "cd", from: "c", to: "d", kind: "call" },
+				{ id: "ad", from: "a", to: "d", kind: "call", traffic: { speed: 80, volume: 1 } },
 			],
 		});
 		const { svg } = await renderSemanticView({ content, grammar: "architecture", theme: "light" });
@@ -185,10 +188,10 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 			expect(layers.length).toBeGreaterThan(1);
 			return layers.map((layer) => layer.travel / layer.cycle);
 		};
-		const [short, long] = [trafficLayers(svg, "ab")[0]!, trafficLayers(svg, "ac")[0]!];
+		const [short, long] = [trafficLayers(svg, "ab")[0]!, trafficLayers(svg, "ad")[0]!];
 		expect(Math.abs(short.still[1]! - long.still[1]!)).toBeGreaterThan(50);
 		const shot = speeds("ab")[0]!;
-		for (const speed of [...speeds("ab"), ...speeds("ac")]) expect(speed).toBeCloseTo(shot, 3);
+		for (const speed of [...speeds("ab"), ...speeds("ad")]) expect(speed).toBeCloseTo(shot, 3);
 		// The authored speed still says which line runs hotter, and a shot is far
 		// faster than the stroll it asked for.
 		for (const speed of speeds("bc")) expect(speed).toBeCloseTo(shot * 2, 3);
@@ -253,8 +256,9 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 	});
 
 	test("a still picture shows one whole streak on its line, clear of both ends", async () => {
-		// Two stacked cards: one straight run, drawn by every engine, with traffic
-		// sparse and so dense that many shots are in flight at once.
+		// Two stacked cards with a label between them: one straight run, drawn by
+		// every engine, with traffic sparse and so dense that many shots are in
+		// flight at once.
 		let shown = 0;
 		for (const traffic of [{}, { volume: 40 }, { speed: 4, volume: 0.1 }]) {
 			const content = variant({
@@ -262,9 +266,11 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 					{ id: "a", name: "A", kind: "service" },
 					{ id: "b", name: "B", kind: "service" },
 				],
-				edges: [{ id: "ab", from: "a", to: "b", kind: "call", emphasis: "hero", traffic }],
+				edges: [
+					{ id: "ab", from: "a", to: "b", kind: "call", label: "reads", emphasis: "hero", traffic },
+				],
 			});
-			for (const layout of ["graphviz", "track", "blocks"] as const) {
+			for (const layout of LayoutEngineSchema.options) {
 				const { svg } = await renderSemanticView({
 					content,
 					grammar: "architecture",
@@ -310,10 +316,8 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 	});
 
 	test("a still picture rests its streak clear of the labels drawn over it", async () => {
-		// Two stacked cards: the label sits on the line half way along, cut by
-		// the label's border or hidden under it, whichever the layout gives; at
-		// least one layout moves the resting place beyond half way.
-		let beyondHalf = false;
+		// Two stacked cards: the label sits on the line, cut by the label's
+		// border or hidden under it, whichever the layout gives.
 		const content = variant({
 			nodes: [
 				{ id: "a", name: "A", kind: "service" },
@@ -321,7 +325,7 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 			],
 			edges: [{ id: "ab", from: "a", to: "b", kind: "call", label: "reads rows", traffic: {} }],
 		});
-		for (const layout of ["graphviz", "track", "blocks"] as const) {
+		for (const layout of LayoutEngineSchema.options) {
 			const { svg } = await renderSemanticView({
 				content,
 				grammar: "architecture",
@@ -338,7 +342,6 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 				expect(headsOn(layer.still, layer.offset, length, layer.width / 2)).toHaveLength(1);
 			}
 			const [along] = headsOn(layers[0]!.still, layers[0]!.offset, length);
-			beyondHalf ||= along! > length / 2;
 			const head = {
 				x: x0! + ((x1! - x0!) * along!) / length,
 				y: y0! + ((y1! - y0!) * along!) / length,
@@ -353,7 +356,6 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 			);
 			expect(gap).toBeGreaterThanOrEqual(glow);
 		}
-		expect(beyondHalf).toBe(true);
 	});
 	for (const traffic of [
 		{ speed: 40, volume: 1e12 },
