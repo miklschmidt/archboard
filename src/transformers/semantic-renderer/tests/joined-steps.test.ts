@@ -3,8 +3,8 @@
 // and on, or doubles back, where one turn would do, alone or on a trunk; and
 // a slide that takes a step out by moving part of a trunk, by carrying a
 // trunk's line the long way round, by moving a line's end run or its run
-// through its label, or by running a new stretch into a card, a
-// title band, a wall it did not cross, along a wall, onto another line's
+// through its label, or by running a new stretch into a card or past it
+// nearer than the router keeps lines, a title band, a wall it did not cross, along a wall, onto another line's
 // axis, beside it, across it where it did not cross or where that line turns,
 // or into a jog too short for its bends.
 import { expect, test } from "bun:test";
@@ -57,7 +57,7 @@ test("a line that doubles back at a wall runs on without the loop", () => {
 
 test.each([
 	["a card where either slide would run", { boxes: [{ x: 120, y: 40, width: 60, height: 70 }] }],
-	["a wall either slide would cross", { walls: [{ x: 110, y: 0, width: 80, height: 120 }] }],
+	["a wall either slide would cross", { walls: [{ x: 130, y: 0, width: 40, height: 120 }] }],
 ])("a step stays where %s", (_, around) => {
 	expect(unstepped([{ points: DOUBLING }], { ...NOTHING, ...around })[0]).toEqual(DOUBLING);
 });
@@ -94,7 +94,12 @@ test("a slide runs level no nearer a container's title band than a lane", () => 
 	expect(unstepped([{ points: DOUBLING }], { ...NOTHING, bands })[0]).toEqual(ON_LAST);
 });
 
-test("a slide runs along a wall no nearer than a lane", () => {
+test("a slide passes a card no nearer than the router keeps lines from it", () => {
+	const boxes = [{ x: 120, y: 0, width: 60, height: 40 }];
+	expect(unstepped([{ points: DOUBLING }], { ...NOTHING, boxes })[0]).toEqual(ON_LAST);
+});
+
+test("a slide runs along a wall no nearer than a lane and a half", () => {
 	const walls = [{ x: -50, y: -100, width: 450, height: 140 }];
 	expect(unstepped([{ points: DOUBLING }], { ...NOTHING, walls })[0]).toEqual(ON_LAST);
 });
@@ -113,6 +118,14 @@ test("a slide carries no line of a trunk the long way round", () => {
 	const boxes = [{ x: 1150, y: 120, width: 100, height: 60 }];
 	const drawn = unstepped([{ points: far }, { points: near }], { ...NOTHING, boxes });
 	expect(drawn.map(reach)).toSatisfy(([one, other]) => one! <= reach(far) && other! <= reach(near));
+});
+
+test("a slide carries a trunk's line a little further to take its step out", () => {
+	const jog = line([950, 0], [950, 100], [1000, 100], [1000, 200], [1200, 200], [1200, 300]);
+	const near = line([1100, 0], [1100, 100], [1000, 100], [1000, 200], [1200, 200], [1200, 300]);
+	const boxes = [{ x: 1150, y: 120, width: 100, height: 60 }];
+	const [drawn] = unstepped([{ points: jog }, { points: near }], { ...NOTHING, boxes });
+	expect(drawn!.length).toBeLessThan(jog.length);
 });
 
 /**
