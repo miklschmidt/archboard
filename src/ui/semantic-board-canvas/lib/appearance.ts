@@ -5,6 +5,8 @@
 const SUBJECT = "data-semantic-id";
 /** The attribute naming the type the renderer drew a subject as. */
 const TYPE_NAME = "data-type-name";
+/** Where the renderer draws a kind's icon inside a subject's group. */
+const ICON = "[data-type-icon] svg";
 
 /** The renderer's appearance facts about one visible subject. */
 interface AppliedAppearance {
@@ -43,7 +45,13 @@ function pictureAppearances(svg: string): ReadonlyMap<string, AppliedAppearance>
 function drawnAppearance(picture: Element, id: string): AppliedAppearance | undefined {
 	const root = picture.closest("svg") ?? picture;
 	const group = root.querySelector(`[${SUBJECT}="${id}"][${TYPE_NAME}]`);
-	return group === null ? undefined : appearanceOf(group, id);
+	if (group === null) return undefined;
+	const drawn = appearanceOf(group, id);
+	// A container draws its kind's icon in its header, a group of its own
+	// apart from the frame that carries its type.
+	return drawn.iconSvg === ""
+		? { ...drawn, iconSvg: root.querySelector(`[${SUBJECT}="${id}"] ${ICON}`)?.outerHTML ?? "" }
+		: drawn;
 }
 
 /**
@@ -55,7 +63,7 @@ function drawnAppearance(picture: Element, id: string): AppliedAppearance | unde
 function appearanceOf(group: Element, id: string): AppliedAppearance {
 	return {
 		id,
-		iconSvg: group.querySelector("[data-type-icon] svg")?.outerHTML ?? "",
+		iconSvg: group.querySelector(ICON)?.outerHTML ?? "",
 		typeName: attribute(group, TYPE_NAME, ""),
 		typeKind: attribute(group, "data-type-kind", ""),
 		depiction: attribute(group, "data-depiction", ""),

@@ -4,6 +4,8 @@
 
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type JSX } from "react";
 
+import { cn } from "@/ui/components/class-names";
+
 import { lineInk } from "@/transformers/semantic-renderer/index";
 import { TooltipContent, Tooltip } from "@/ui/components/tooltip";
 import {
@@ -65,12 +67,12 @@ function TipLines(props: { readonly tip: SubjectTip }): JSX.Element {
 	return (
 		<>
 			<TipHeading tip={tip} />
-			{tip.lead !== undefined && <p className="text-body">{tip.lead}</p>}
+			{tip.lead !== undefined && <p className="text-body shrink-0">{tip.lead}</p>}
 			{tip.body !== undefined && <TipBody key={tip.body} text={tip.body} />}
 			{tip.hint !== undefined && (
 				<p
 					data-slot="semantic-subject-tip-hint"
-					className="border-border text-technical text-muted-foreground border-t pt-2"
+					className="border-border text-technical text-muted-foreground shrink-0 border-t pt-2"
 				>
 					{tip.hint}
 				</p>
@@ -120,7 +122,7 @@ function accentOf(appearance: AppliedAppearance | undefined): CSSProperties | un
 function TipHeading(props: { readonly tip: SubjectTip }): JSX.Element {
 	const { title, kind, appearance } = props.tip;
 	return (
-		<div data-slot="semantic-subject-tip-heading" className="flex items-center gap-2.5">
+		<div data-slot="semantic-subject-tip-heading" className="flex shrink-0 items-center gap-2.5">
 			{appearance !== undefined &&
 				(appearance.depiction === "" ? (
 					<RelationshipSample appearance={appearance} />
@@ -142,37 +144,66 @@ const BODY_LINES = 10;
 
 /**
  * A description, as its author broke it into lines, shown up to
- * {@link BODY_LINES} lines. A longer one ends in an ellipsis and says where the
- * rest is. It is keyed by its text, so another description is measured afresh.
+ * {@link BODY_LINES} lines, and fewer when the screen leaves the tip less
+ * room: it is the part of the tip that gives way. Cut short either way, it
+ * fades out and says where the rest is. It is keyed by its text, so another
+ * description is measured afresh.
  * @param props The description.
  * @param props.text What it says.
  * @returns The description.
  */
 function TipBody(props: { readonly text: string }): JSX.Element {
 	const body = useRef<HTMLParagraphElement>(null);
-	const [cut, setCut] = useState(false);
-	useLayoutEffect(() => {
-		const shown = body.current;
-		setCut(shown !== null && shown.scrollHeight > shown.clientHeight + 1);
-	}, []);
+	const cut = useCut(body);
 	const style = useMemo<CSSProperties>(() => ({ WebkitLineClamp: BODY_LINES }), []);
 	return (
-		<div className="flex flex-col gap-1.5">
+		<div className="flex min-h-0 flex-col gap-1.5">
 			<p
 				ref={body}
 				data-slot="semantic-subject-tip-body"
-				className="text-body text-popover-foreground/85 [display:-webkit-box] overflow-hidden leading-relaxed whitespace-pre-line [-webkit-box-orient:vertical]"
+				className={cn(
+					"text-body text-popover-foreground/85 [display:-webkit-box] min-h-0 overflow-hidden leading-relaxed whitespace-pre-line [-webkit-box-orient:vertical]",
+					cut && "[mask-image:linear-gradient(to_bottom,#000_calc(100%-1.75em),transparent)]",
+				)}
 				style={style}
 			>
 				{props.text}
 			</p>
 			{cut && (
-				<p data-slot="semantic-subject-tip-more" className="text-technical text-muted-foreground">
+				<p
+					data-slot="semantic-subject-tip-more"
+					className="text-technical text-muted-foreground shrink-0"
+				>
 					Select it to read the rest in the inspector.
 				</p>
 			)}
 		</div>
 	);
+}
+
+/**
+ * Whether an element shows less than it holds, kept up to date as its box changes.
+ * @param element The element's ref.
+ * @param element.current The element, once it is drawn.
+ * @returns True while some of it is hidden.
+ */
+function useCut(element: { readonly current: HTMLElement | null }): boolean {
+	const [cut, setCut] = useState(false);
+	useLayoutEffect(() => {
+		const shown = element.current;
+		if (shown === null) return undefined;
+		/** Compare what the element holds with what it shows. */
+		const measure = (): void => {
+			setCut(shown.scrollHeight > shown.clientHeight + 1);
+		};
+		measure();
+		const watching = new ResizeObserver(measure);
+		watching.observe(shown);
+		return () => {
+			watching.disconnect();
+		};
+	}, [element]);
+	return cut;
 }
 
 export { SemanticSubjectTip };

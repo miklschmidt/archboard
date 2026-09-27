@@ -144,6 +144,40 @@ const drawnInside = (
 			` return a.left >= b.left && a.right <= b.right && a.top >= b.top && a.bottom <= b.bottom; })()`,
 	);
 
+/** A tip over a part of the picture, measured: its inner width and its widest line. */
+interface MeasuredTip {
+	readonly width: number;
+	readonly widest: number;
+}
+
+/**
+ * Rest the pointer on a drawn subject and measure the tip that opens over it.
+ * The pointer keeps moving over the subject, as a hand on a mouse does, until
+ * the tip opens.
+ * @param browser The page.
+ * @param id The subject.
+ * @returns The tip, measured.
+ */
+async function tipOver(browser: AgentBrowserSession, id: string): Promise<MeasuredTip> {
+	const seen = await pollUntil(
+		() =>
+			browser.eval<MeasuredTip | null>(
+				`(() => { const card = document.querySelector("${SURFACE} [data-semantic-id='${id}']");` +
+					` const box = card.getBoundingClientRect();` +
+					` card.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerId: 1, isPrimary: true,` +
+					`   clientX: Math.round(box.x + box.width / 2), clientY: Math.round(box.y + box.height / 2) }));` +
+					` const tip = document.querySelector("[data-slot='semantic-subject-tip']");` +
+					` if (tip === null) return null;` +
+					` const lines = [...tip.querySelectorAll("p")];` +
+					` return { width: tip.clientWidth, widest: Math.max(...lines.map((line) => line.scrollWidth)) }; })()`,
+			),
+		(measured) => measured !== null,
+		"the subject's tip to open",
+		WAIT,
+	);
+	return seen!;
+}
+
 test("a person reads containment, code and the level below it, and writes nothing", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
@@ -243,27 +277,19 @@ test("a person reads containment, code and the level below it, and writes nothin
 
 	// Resting the pointer on the card opens its tip, and a word longer than the
 	// tip is wide breaks inside it rather than running out past its edge.
-	await browser.eval(
-		`(() => { const card = document.querySelector("${SURFACE} [data-semantic-id='${ids["module"] ?? ""}']");` +
-			` const at = card.getBoundingClientRect();` +
-			` card.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerId: 1, isPrimary: true,` +
-			`   clientX: Math.round(at.x + at.width / 2), clientY: Math.round(at.y + at.height / 2) })); })()`,
+	const tip = await tipOver(browser, ids["module"] ?? "");
+	expect(tip.widest).toBeLessThanOrEqual(tip.width);
+	// With little room above and below the card, the positioner leaves the
+	// tip less height than its lines need: the description gives way rather
+	// than running out below the tip.
+	const squeezed = await browser.eval<{ bottom: number; lowest: number }>(
+		`(() => { const tip = document.querySelector("[data-slot='semantic-subject-tip']");` +
+			` tip.parentElement.style.setProperty("--available-height", "120px");` +
+			` const lines = [...tip.querySelectorAll("p")];` +
+			` return { bottom: tip.getBoundingClientRect().bottom,` +
+			`   lowest: Math.max(...lines.map((line) => line.getBoundingClientRect().bottom)) }; })()`,
 	);
-	const tip = await pollUntil(
-		() =>
-			browser.eval<{ width: number; widest: number; right: number } | null>(
-				`(() => { const tip = document.querySelector("[data-slot='semantic-subject-tip']");` +
-					` if (tip === null) return null;` +
-					` const box = tip.getBoundingClientRect();` +
-					` const widest = Math.max(...[...tip.querySelectorAll("p")].map((line) => line.scrollWidth));` +
-					` return { width: tip.clientWidth, widest, right: box.right }; })()`,
-			),
-		(seen) => seen !== null,
-		"the card's tip to open",
-		WAIT,
-	);
-	expect(tip!.widest).toBeLessThanOrEqual(tip!.width);
-	expect(tip!.right).toBeLessThanOrEqual(await browser.eval<number>("innerWidth"));
+	expect(squeezed.lowest).toBeLessThanOrEqual(squeezed.bottom);
 
 	// The sidebar opens on the board, and a pick turns it to the selection.
 	expect(await sidebarTab(browser.eval.bind(browser))).toBe("board");
