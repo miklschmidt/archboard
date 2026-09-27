@@ -17,7 +17,7 @@ import {
 	walkLineRanges,
 } from "@chenglou/pretext";
 import {
-	placingGroups,
+	gatheringGroups,
 	type SemanticNode,
 	type VariantContent,
 } from "@/shared/semantic-board/index";
@@ -551,7 +551,7 @@ function measureArchitecture(
 	steps: ReadonlySet<string> = new Set(),
 ): MeasuredArchitecture {
 	const containers = new Set(content.nodes.flatMap((node) => (node.parent ? [node.parent] : [])));
-	const placing = placingGroups(content.nodes, policy);
+	const placing = gatheringGroups(content.nodes, policy);
 	return {
 		nodes: new Map(
 			content.nodes.map((node) => [node.id, measureNode(node, containers.has(node.id))]),

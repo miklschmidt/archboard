@@ -50,7 +50,11 @@ interface MeasuredArchitecture {
 
 /** Which group places each node, and the caption each placing group is drawn with. */
 interface MeasuredGroups {
-	/** A node's placing group, by node id; a node with none is absent. */
+	/**
+	 * A node's placing group, by node id, as regions gather it; a node with
+	 * none is absent, as is one inside a container its group places, which
+	 * stands in that group's region already.
+	 */
 	readonly placing: ReadonlyMap<string, string>;
 	/** Each placing group's name, measured as its region caption. */
 	readonly captions: ReadonlyMap<string, MeasuredLabel>;

@@ -209,9 +209,13 @@ These rules apply:
   lime, green, emerald, teal, cyan, sky, blue, indigo, violet, purple, fuchsia,
   pink and rose. Without a color, the kind is neutral.
 - `groups` is optional. Each group needs a `name` and a `color` from the same
-  colors. A node lists group keys in its `groups` array. Cards that share a
-  group in one container are drawn together in a region of the group's color,
-  and each card's body takes that color. To examine one group, run
+  colors. A node lists group keys in its `groups` array. A card or container is
+  placed with the first group, in the order `groups` lists them in
+  `config.yaml`, that it belongs to; the order of the node's own array does not
+  matter. That group draws a region of its color round the node and the other
+  nodes it places in the same container, one region in each container but none
+  inside a container the group already places, and a card's body takes that
+  color. To examine one group, run
   `archboard semantic inspect <board> --group <key>`.
 
 An icon is the React export name of a [Remix Icon](https://remixicon.com/), for

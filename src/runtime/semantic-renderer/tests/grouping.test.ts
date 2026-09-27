@@ -70,8 +70,8 @@ describe("a card's body takes its group's colour and its chip its type's", () =>
 			expect(frame.match(/<rect(?![^>]*class="ab-halo")[^>]*>/)![0]).toContain(
 				`fill="${themeColor(theme, "--semantic-blue")}"`,
 			);
-			// A group with one member among its siblings places nobody.
-			expect(groupOf(drawn, "node", "lone")!.markup).toContain('data-body-color="neutral"');
+			// A group's only member at its level still takes the group's colour (ADR 0038).
+			expect(groupOf(drawn, "node", "lone")!.markup).toContain('data-body-color="green"');
 			// The chip keeps its type's colour.
 			expect(groupOf(drawn, "node", "gate")!.markup).toContain('data-type-color="violet"');
 			expect(groupOf(drawn, "node", "lone")!.markup).toContain('data-type-color="green"');

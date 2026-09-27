@@ -126,13 +126,43 @@ function labelCover(head: Point, glow: number, labels: readonly Box[]): number {
 }
 
 /**
- * How near some points come to some boxes.
- * @param points The points.
+ * How near the points of a route come to some boxes, each point's distance
+ * read once however many places ask for it: a place asks for every point of
+ * its streak's body, and the next place along asks for nearly the same.
+ * @param points The route's points.
  * @param boxes The boxes.
- * @returns The least distance outside any box, negative inside one, infinite with no boxes.
+ * @returns How near the points from one index to another come: the least
+ * distance outside any box, negative inside one, infinite with no boxes.
  */
-function nearest(points: readonly Point[], boxes: readonly Box[]): number {
-	return Math.min(...points.flatMap((point) => boxes.map((box) => outside(box, point))));
+function nearness(
+	points: readonly Point[],
+	boxes: readonly Box[],
+): (from: number, to: number) => number {
+	const known = new Map<number, number>();
+	/**
+	 * How near one point comes to the boxes.
+	 * @param index The point's index.
+	 * @returns The distance.
+	 */
+	const at = (index: number): number => {
+		let distance = known.get(index);
+		if (distance === undefined) {
+			distance = Math.min(...boxes.map((box) => outside(box, points[index]!)));
+			known.set(index, distance);
+		}
+		return distance;
+	};
+	return (from, to) => {
+		let least = Number.POSITIVE_INFINITY;
+		for (let index = from; index <= to; index += 1) least = Math.min(least, at(index));
+		return least;
+	};
+}
+
+/** How near a route's points come to the labels and the places other lines meet it ({@link nearness}). */
+interface Near {
+	readonly met: (from: number, to: number) => number;
+	readonly labels: (from: number, to: number) => number;
 }
 
 /**
@@ -142,16 +172,23 @@ function nearest(points: readonly Point[], boxes: readonly Box[]): number {
  * @param points Points every {@link REST_STEP} along the route.
  * @param at The index of the head's point.
  * @param streak The streak.
- * @param around The labels drawn over it and the places other lines meet its line.
+ * @param what What meets it, and how near the route's points come to it.
+ * @param what.around The labels drawn over it and the places other lines meet its line.
+ * @param what.near How near the route's points come to them.
  * @returns How much of it they take, apart, clear, hidden or cut, and the room it keeps.
  */
-function coverAt(points: readonly Point[], at: number, streak: Streak, around: Around): Rest {
+function coverAt(
+	points: readonly Point[],
+	at: number,
+	streak: Streak,
+	{ around, near }: { around: Around; near: Near },
+): Rest {
 	const { glow, body } = streak;
 	const head = points[at];
 	if (head === undefined) return { cover: COVER.apart, room: ROUTE_LANE, met: ROUTE_LANE };
-	const behind = points.slice(Math.max(0, at - Math.round(body / REST_STEP)), at + 1);
-	const met = nearest(behind, around.met) - glow;
-	const labels = nearest(behind, around.labels) - glow;
+	const from = Math.max(0, at - Math.round(body / REST_STEP));
+	const met = near.met(from, at) - glow;
+	const labels = near.labels(from, at) - glow;
 	if (Math.min(met, labels) >= ROUTE_LANE) {
 		return { cover: COVER.apart, room: ROUTE_LANE, met: ROUTE_LANE };
 	}
@@ -259,9 +296,10 @@ function leastCovered(
 	streak: Streak,
 	around: Around,
 ): number {
+	const near = { met: nearness(points, around.met), labels: nearness(points, around.labels) };
 	let best = { rest: places[0]!, judged: { cover: Number.POSITIVE_INFINITY, room: 0, met: 0 } };
 	for (const rest of places) {
-		const judged = coverAt(points, Math.round(rest / REST_STEP), streak, around);
+		const judged = coverAt(points, Math.round(rest / REST_STEP), streak, { around, near });
 		if (better(judged, best.judged)) best = { rest, judged };
 		if (best.judged.cover === COVER.apart) break;
 	}

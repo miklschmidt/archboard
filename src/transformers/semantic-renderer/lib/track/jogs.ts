@@ -9,6 +9,9 @@
 // that would bend a line that ran straight on the moved station's other side
 // is not made.
 //
+// Drawn as blocks, a step at a label of any width that turns its line back
+// against its last step is closed the same way.
+//
 // A card a line enters on top and another leaves at the bottom a few points
 // over is such a step too: the two read as one line through the card with a
 // notch in it, and one end moves onto the other's column.
@@ -26,7 +29,8 @@ import {
 } from "@/transformers/semantic-renderer/lib/track/chains";
 import type { Net } from "@/transformers/semantic-renderer/lib/track/channels";
 import { nudgeLabel, slidePort } from "@/transformers/semantic-renderer/lib/track/labels";
-import { centreX, type Scene } from "@/transformers/semantic-renderer/lib/track/scene";
+import { centreX, cardFace, type Scene } from "@/transformers/semantic-renderer/lib/track/scene";
+import { CARD_RADIUS } from "@/transformers/semantic-renderer/lib/design";
 
 /** Under this, two stations stand in one column. */
 const STRAIGHT = 0.5;
@@ -75,6 +79,21 @@ function kinked(net: Net): boolean {
 }
 
 /**
+ * Whether a net from or to a label steps back against the line's last step
+ * before it: the line runs out one way to its label and back the other.
+ * @param route The line's nets, top to bottom.
+ * @param index The net's place in it.
+ * @returns True when it does.
+ */
+function turnsBack(route: readonly Net[], index: number): boolean {
+	const net = route[index]!;
+	if (net.top.kind !== "label" && net.bottom.kind !== "label") return false;
+	const before = route.slice(0, index).findLast((one) => step(one) > STRAIGHT);
+	if (before === undefined || step(net) <= STRAIGHT) return false;
+	return Math.sign(net.bottomX - net.topX) !== Math.sign(before.bottomX - before.topX);
+}
+
+/**
  * Where a net meets one of its stations.
  * @param net The net.
  * @param end Which end.
@@ -107,7 +126,9 @@ function trunkAt(net: Net, end: End): boolean {
 }
 
 /**
- * Whether an x stands on a card's face, clear of its corners.
+ * Whether an x stands on a card's face, clear of its corners: a corner's
+ * room in from its box, and on the card itself clear of its rounded corner,
+ * for a card laid out as the region round it (`cardFace`).
  * @param station The card.
  * @param x The x.
  * @returns True when a port may stand there.
@@ -115,7 +136,13 @@ function trunkAt(net: Net, end: End): boolean {
 function onFace(station: Station, x: number): boolean {
 	const { x: left, width } = station.item!.box;
 	const room = Math.min(CORNER_ROOM, width / 2);
-	return x >= left + room && x <= left + width - room;
+	const face = cardFace(station.item!);
+	return (
+		x >= left + room &&
+		x <= left + width - room &&
+		x >= face.x + CARD_RADIUS &&
+		x <= face.x + face.width - CARD_RADIUS
+	);
 }
 
 /**
@@ -326,10 +353,13 @@ function noMore(nets: readonly Net[], kept: Kept): () => boolean {
 
 /**
  * Close one net's short step by moving the stretch beyond one of its ends
- * onto the other end's column.
+ * onto the other end's column, with the lines that run straight on through
+ * the card it ends on ({@link throughCard}) when it cannot move alone.
  * @param scene The scene.
  * @param chains Every relationship's chain.
- * @param nets Every net.
+ * @param lines Every line's nets, top to bottom, and every net.
+ * @param lines.routes Every line's nets, top to bottom.
+ * @param lines.nets Every net.
  * @param place The net and its line.
  * @param place.route The net's line, top to bottom.
  * @param place.index The net's place in it.
@@ -339,16 +369,59 @@ function noMore(nets: readonly Net[], kept: Kept): () => boolean {
 function close(
 	scene: Scene,
 	chains: readonly Chain[],
-	nets: readonly Net[],
+	{ routes, nets }: { routes: readonly (readonly Net[])[]; nets: readonly Net[] },
 	{ route, index }: Place,
 	kept: Kept,
 ): boolean {
 	const net = route[index]!;
+	/**
+	 * Move some stations onto a column, where nothing the pass keeps grows.
+	 * @param x The column.
+	 * @param moved The stations, each with the net arriving at it.
+	 * @returns Whether they moved.
+	 */
+	const move = (x: number, moved: readonly { station: Station; net: Net; end: End }[]): boolean =>
+		moveStretch(scene, chains, nets, moved, x, kinked, false, noMore(nets, kept));
 	return (["top", "bottom"] as const).some((end) => {
 		const x = xAt(net, end === "top" ? "bottom" : "top");
 		const stretch = stretchBeyond(route, index, end);
-		return moveStretch(scene, chains, nets, stretch, x, kinked, false, noMore(nets, kept));
+		if (move(x, stretch)) return true;
+		const through = throughCard(routes, stretch.at(-1)!);
+		return through.length > 0 && move(x, [...stretch, ...through]);
 	});
+}
+
+/**
+ * The lines that run straight on through a card laid out as the region
+ * round it from where a stretch ends on it: each line that leaves its other
+ * face at the same x, and the straight stretch beyond. Moving the stretch's
+ * end alone would step the two through the card, so they move with it: in
+ * Reading a board (Track), the line out of Pane session kept a step of 16 px
+ * under its region, since its port could not move without notching the line
+ * into Pane session.
+ * @param routes Every line's nets, top to bottom.
+ * @param last The stretch's last station, with the net arriving at it.
+ * @param last.station The station.
+ * @param last.net The net.
+ * @param last.end Which end of the net it stands at.
+ * @returns The stations to move with it; none when it ends on no such card.
+ */
+function throughCard(
+	routes: readonly (readonly Net[])[],
+	{ station, net, end }: { station: Station; net: Net; end: End },
+): { station: Station; net: Net; end: End }[] {
+	if (station.kind !== "card" || station.item!.inset === undefined) return [];
+	const beyond = end === "top" ? "bottom" : "top";
+	const x = xAt(net, end);
+	return routes.flatMap((route) =>
+		route.flatMap((other, index) =>
+			other[beyond].item === station.item &&
+			other.wall === undefined &&
+			Math.abs(xAt(other, beyond) - x) <= STRAIGHT
+				? cardSide({ route, index }, beyond)
+				: [],
+		),
+	);
 }
 
 /**
@@ -446,7 +519,13 @@ function closeCardStep(
 }
 
 /**
- * Close every step too short for its two bends that a move can close.
+ * Close every step too short for its two bends that a move can close, and,
+ * in the first pass of a block the Blocks engine lays out, every step back
+ * at a label ({@link turnsBack}): drawn inline, the band spacing stands a
+ * label below a container, and moved beside its wall the label stood the
+ * card below out past it (`track-placement.test.ts`); and most such steps
+ * run round something, which tried in every pass cost Archboard server
+ * whole (Track) 5% more time.
  * @param scene The scene, its ports placed.
  * @param chains Every relationship's chain.
  * @param routes Every line's nets, top to bottom.
@@ -463,8 +542,9 @@ function closeJogs(
 	for (let pass = 0; pass < PASSES; pass += 1) {
 		const closed = routes.flatMap((route) =>
 			route.map((net, index) =>
-				kinked(net) && net.wall === undefined
-					? close(scene, chains, nets, { route, index }, kept)
+				(kinked(net) || (pass === 0 && !scene.inline && turnsBack(route, index))) &&
+				net.wall === undefined
+					? close(scene, chains, { routes, nets }, { route, index }, kept)
 					: false,
 			),
 		);

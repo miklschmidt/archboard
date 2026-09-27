@@ -4,10 +4,20 @@
 // reads them in; `clusters.ts` lays them out.
 import type { ElkNode } from "@archboard/elk-rs";
 import { z } from "zod";
-import { PLACING_GROUP } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
-import type { Block, BlockTree, Size } from "@/transformers/semantic-renderer/lib/blocks/tree";
-import { cardOf } from "@/transformers/semantic-renderer/lib/blocks/card";
+import type {
+	Block,
+	BlockTree,
+	Projection,
+	Size,
+} from "@/transformers/semantic-renderer/lib/blocks/tree";
+import {
+	bandOf,
+	cardAs,
+	frameHeader,
+	placingGroup,
+	type Lone,
+} from "@/transformers/semantic-renderer/lib/blocks/lone";
 
 /**
  * How a board's containers and group regions are drawn: each packed as a
@@ -28,8 +38,13 @@ interface Cluster {
 	readonly parent: string | undefined;
 	/** The group, for a region. */
 	readonly group: string | undefined;
-	/** A frame's title row or a region's caption. */
+	/**
+	 * A frame's title row or a region's caption; a container alone in its
+	 * group's region heads the region's caption band too (`lone.ts`).
+	 */
 	readonly header: Size;
+	/** The region round a container alone in it, laid out as the container. */
+	readonly lone?: Lone;
 }
 
 /**
@@ -93,18 +108,19 @@ function packedRegion(
  * @param within The cluster it sits in, if any.
  */
 function addFrame(tree: BlockTree, block: Block, node: ElkNode, within: string | undefined): void {
-	const header = Number(node.layoutOptions?.["archboard.header.size"] ?? 0);
+	const lone = tree.lone.get(node.id);
 	block.clusters.set(node.id, {
 		id: node.id,
 		kind: "frame",
 		parent: within,
 		group: undefined,
-		header: { width: node.width!, height: Math.max(1, header) },
+		header: frameHeader(node, lone && bandOf(lone)),
+		...(lone === undefined ? {} : { lone }),
 	});
 	const children = node.children!.toSorted(
 		(one, other) => semanticOrder(one) - semanticOrder(other),
 	);
-	for (const child of children) addInline(tree, block, child, node.id);
+	for (const child of children) addInline(tree, block, child, node.id, children);
 }
 
 /**
@@ -135,9 +151,17 @@ function placing(
  * @param block The block that lays the node out.
  * @param node The node.
  * @param around The cluster around it, if any.
+ * @param siblings The nodes of its parent, itself among them.
  */
-function addInline(tree: BlockTree, block: Block, node: ElkNode, around: string | undefined): void {
-	const { holder, within } = placing(tree, block, around, node.layoutOptions?.[PLACING_GROUP]);
+function addInline(
+	tree: BlockTree,
+	block: Block,
+	node: ElkNode,
+	around: string | undefined,
+	siblings: readonly ElkNode[],
+): void {
+	const group = placingGroup(tree.lone, tree.captions, node, siblings);
+	const { holder, within } = placing(tree, block, around, group);
 	if (within !== undefined) holder.clusterOf.set(node.id, within);
 	tree.holder.set(node.id, holder);
 	if (node.children?.length) {
@@ -145,7 +169,34 @@ function addInline(tree: BlockTree, block: Block, node: ElkNode, around: string 
 		return;
 	}
 	holder.items.push(node.id);
-	tree.cards.set(node.id, cardOf(node));
+	tree.cards.set(node.id, cardAs(node, tree.lone.get(node.id)));
+}
+
+/**
+ * The block that holds a relationship's label: the innermost block around
+ * its target that can hold one, or with the label before a join its
+ * source's, else the block that holds both ends.
+ * @param tree The blocks.
+ * @param projection Where the relationship is drawn.
+ * @param before Whether it carries its label before a join with others to its card.
+ * @returns The block.
+ */
+function labelHolder(tree: BlockTree, projection: Projection, before: boolean): Block {
+	const { at, out, into } = projection;
+	return before ? (out[0] ?? at) : (into.find((one) => holdsLabels(tree, one)) ?? out[0] ?? at);
+}
+
+/**
+ * Whether a block can hold a line's label: every block drawn inline can,
+ * and of the blocks packed each on its own, a block of cards. A block of
+ * blocks draws only trunks between them (`pack.ts`), so a label given to a
+ * region packing containers is lost.
+ * @param tree The blocks.
+ * @param block The block.
+ * @returns True when it can.
+ */
+function holdsLabels(tree: BlockTree, block: Block): boolean {
+	return tree.nesting !== "blocks" || !block.items.some((item) => tree.blocks.has(item));
 }
 
 /**
@@ -161,4 +212,4 @@ function holds(block: Block, cluster: string, item: string): boolean {
 	return false;
 }
 
-export { NestingSchema, addInline, holds, type Cluster, type Nesting };
+export { NestingSchema, addInline, holds, labelHolder, type Cluster, type Nesting };

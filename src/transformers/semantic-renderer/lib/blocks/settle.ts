@@ -34,6 +34,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/blocks/open-edge";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { portReach } from "@/transformers/semantic-renderer/lib/track/channels";
+import { cardIn } from "@/transformers/semantic-renderer/lib/blocks/lone";
 
 /** What settling reads and writes: every block laid out, and how each block of blocks is packed. */
 interface Settling {
@@ -289,7 +290,8 @@ class Settle {
 		}
 		const card = tree.cards.has(other) ? inner.boxes.get(other) : undefined;
 		if (card === undefined) return undefined;
-		return portReach(card);
+		const lone = tree.lone.get(other);
+		return portReach(lone === undefined ? card : cardIn(card, lone));
 	}
 
 	/**

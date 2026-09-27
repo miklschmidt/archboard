@@ -115,38 +115,21 @@ describe("the group a card is placed with", () => {
 			),
 		);
 
-	test("configuration order decides between two groups the siblings share", () => {
-		const nodes = [
-			{ id: "a", parent: "orders", groups: ["billing", "fulfillment"] },
-			{ id: "b", parent: "orders", groups: ["billing", "fulfillment"] },
-		];
-		expect(placing(nodes, ["fulfillment", "billing"])).toEqual({
-			a: "fulfillment",
-			b: "fulfillment",
-		});
-		expect(placing(nodes, ["billing", "fulfillment"])).toEqual({ a: "billing", b: "billing" });
-	});
-
-	test("a group with one member among the drawn nodes falls through to the next, or to none", () => {
+	test("a card is placed with its first configured group whether or not a sibling shares it", () => {
 		const nodes = [
 			{ id: "a", parent: "orders", groups: ["billing", "fulfillment"] },
 			{ id: "b", parent: "orders", groups: ["fulfillment"] },
-			{ id: "c", parent: "orders", groups: ["audit"] },
+			{ id: "c", parent: "shipping", groups: ["audit"] },
+			{ id: "d", groups: ["billing"] },
+			{ id: "e", parent: "orders" },
 		];
 		expect(placing(nodes, ["billing", "fulfillment", "audit"])).toEqual({
-			a: "fulfillment",
+			a: "billing",
 			b: "fulfillment",
+			c: "audit",
+			d: "billing",
 		});
-	});
-
-	test("siblings are counted within one parent, and the board level is one parent", () => {
-		const nodes = [
-			{ id: "a", parent: "orders", groups: ["billing"] },
-			{ id: "b", parent: "shipping", groups: ["billing"] },
-			{ id: "c", groups: ["billing"] },
-			{ id: "d", groups: ["billing"] },
-		];
-		expect(placing(nodes, ["billing"])).toEqual({ c: "billing", d: "billing" });
+		expect(placing(nodes, ["fulfillment", "billing", "audit"])["a"]).toBe("fulfillment");
 	});
 
 	test("a group the configuration does not define never places", () => {
@@ -156,7 +139,6 @@ describe("the group a card is placed with", () => {
 			{ id: "c", parent: "orders", groups: ["billing"] },
 		];
 		expect(placing(nodes, ["billing"])).toEqual({ a: "billing", c: "billing" });
-		expect(placing(nodes.slice(0, 2), ["billing"])).toEqual({});
 	});
 });
 

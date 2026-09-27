@@ -15,6 +15,7 @@ import {
 	routeLabels,
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import { groupOf } from "@/runtime/semantic-renderer/tests/drawn-subjects";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import codexWorkhorse from "./codex-workhorse.json";
 import nestedRegion from "./nested-region.json";
@@ -61,24 +62,53 @@ const content = orderedFixture({
 	],
 });
 
+/** A drawn box. */
+type Box = { x: number; y: number; width: number; height: number };
+
 /**
- * A region's band, read from the drawn document.
+ * Every region one group draws, read from the drawn document.
+ * @param svg The document.
+ * @param group The group.
+ * @returns Their boxes, in drawing order.
+ */
+function regionBoxes(svg: string, group: string): Box[] {
+	const markups = svg.matchAll(
+		new RegExp(
+			`<g data-semantic-kind="group-region" data-group="${group}"[^>]*>([\\s\\S]*?)</g>`,
+			"gu",
+		),
+	);
+	return [...markups].map(([, markup]) => {
+		const [x, y, width, height] = ["x", "y", "width", "height"].map((name) =>
+			Number(new RegExp(`<rect[^>]* ${name}="([^"]+)"`, "u").exec(markup!)![1]),
+		);
+		return { x: x!, y: y!, width: width!, height: height! };
+	});
+}
+
+/**
+ * A group's first region, read from the drawn document.
  * @param svg The document.
  * @param group The group.
  * @returns Its box.
  */
-function regionBox(
-	svg: string,
-	group: string,
-): { x: number; y: number; width: number; height: number } {
-	const markup = new RegExp(
-		`<g data-semantic-kind="group-region" data-group="${group}"[^>]*>([\\s\\S]*?)</g>`,
-		"u",
-	).exec(svg)![1]!;
-	const [x, y, width, height] = ["x", "y", "width", "height"].map((name) =>
-		Number(new RegExp(`<rect[^>]* ${name}="([^"]+)"`, "u").exec(markup)![1]),
+function regionBox(svg: string, group: string): Box {
+	return regionBoxes(svg, group)[0]!;
+}
+
+/**
+ * Whether one box lies wholly inside another.
+ * @param box The inner box.
+ * @param band The outer box.
+ * @returns True when it does.
+ */
+function within(box: Box, band: Box): boolean {
+	return (
+		box.x >= band.x &&
+		box.y >= band.y &&
+		box.x + box.width <= band.x + band.width &&
+		box.y + box.height <= band.y + band.height
 	);
-	return { x: x!, y: y!, width: width!, height: height! };
 }
 
 test.each(["track", "blocks"] as const)(
@@ -90,15 +120,7 @@ test.each(["track", "blocks"] as const)(
 			["state", ["store", "lease"], "Server state"],
 		] as const) {
 			const band = regionBox(drawn.svg, group);
-			const inside = (id: string): boolean => {
-				const box = drawn.atlas.nodes[id]!;
-				return (
-					box.x >= band.x &&
-					box.y >= band.y &&
-					box.x + box.width <= band.x + band.width &&
-					box.y + box.height <= band.y + band.height
-				);
-			};
+			const inside = (id: string): boolean => within(drawn.atlas.nodes[id]!, band);
 			for (const id of members) expect(inside(id), `${id} inside ${group}`).toBeTrue();
 			for (const id of ["cli", "feed"]) expect(inside(id), `${id} outside ${group}`).toBeFalse();
 			expect(drawn.svg).toContain(`>${name}</text>`);
@@ -117,6 +139,73 @@ test.each(["track", "blocks"] as const)(
 			].slice(1);
 			expect(Number(sizes[1])).toBeGreaterThan(Number(sizes[0]));
 		}
+	},
+);
+
+// The user's request of 2026-09-27 (ADR 0038): a group whose members are
+// spread over several containers and the board level draws a region in each,
+// round a lone member too, and the lone member takes the group's colour.
+test.each(["track", "blocks"] as const)(
+	"the %s engine draws a group's region in every container holding a member, one member or more",
+	async (layout) => {
+		const spread = orderedFixture({
+			nodes: [
+				{ id: "cli", name: "Agent CLI", kind: "module" },
+				{ id: "lone", name: "Board store", kind: "module", groups: ["state"] },
+				{ id: "one", name: "Read service", kind: "service" },
+				{ id: "a", name: "Read cache", kind: "module", parent: "one", groups: ["state"] },
+				{ id: "r", name: "Read route", kind: "module", parent: "one" },
+				{ id: "two", name: "Write service", kind: "service" },
+				{ id: "b", name: "Board lease", kind: "module", parent: "two", groups: ["state"] },
+				{ id: "c", name: "Change feed", kind: "module", parent: "two", groups: ["state"] },
+			],
+			edges: [
+				{ id: "e1", from: "cli", to: "r", kind: "call" },
+				{ id: "e2", from: "r", to: "a", kind: "call" },
+				{ id: "e3", from: "cli", to: "b", kind: "call" },
+				{ id: "e4", from: "b", to: "c", kind: "call" },
+				{ id: "e5", from: "c", to: "lone", kind: "call" },
+			],
+		});
+		const drawn = await renderArchitecture({ content: spread, theme: "light", policy, layout });
+		const cards = Object.keys(drawn.atlas.nodes);
+		const held = regionBoxes(drawn.svg, "state").map((band) =>
+			cards.filter((id) => within(drawn.atlas.nodes[id]!, band)).toSorted(),
+		);
+		expect(held.toSorted()).toEqual([["a"], ["b", "c"], ["lone"]]);
+		for (const id of ["lone", "a"])
+			expect(groupOf(drawn.svg, "node", id)!.markup).toContain('data-body-color="teal"');
+	},
+);
+
+// The rule of 2026-09-27 (ADR 0038): a container a group places stands in
+// that group's region, and so does every member of the group inside it. A
+// second region of the group round those members, as the ingress board drew
+// round the hosts of a pool its group placed, says nothing the outer one does
+// not; the members keep the group's colour.
+test.each(["track", "blocks"] as const)(
+	"the %s engine draws no region of a group inside that group's region",
+	async (layout) => {
+		const pooled = orderedFixture({
+			nodes: [
+				{ id: "gate", name: "Gateway", kind: "service" },
+				{ id: "pool", name: "Host pool", kind: "service", groups: ["state"] },
+				{ id: "one", name: "First host", kind: "module", parent: "pool", groups: ["state"] },
+				{ id: "two", name: "Second host", kind: "module", parent: "pool", groups: ["state"] },
+				{ id: "spare", name: "Spare host", kind: "module", parent: "pool" },
+			],
+			edges: [
+				{ id: "e1", from: "gate", to: "one", kind: "call" },
+				{ id: "e2", from: "gate", to: "two", kind: "call" },
+				{ id: "e3", from: "gate", to: "spare", kind: "call" },
+			],
+		});
+		const drawn = await renderArchitecture({ content: pooled, theme: "light", policy, layout });
+		const regions = regionBoxes(drawn.svg, "state");
+		expect(regions.length).toBe(1);
+		expect(within(drawn.atlas.nodes["pool"]!, regions[0]!)).toBeTrue();
+		for (const id of ["one", "two"])
+			expect(groupOf(drawn.svg, "node", id)!.markup).toContain('data-body-color="teal"');
 	},
 );
 

@@ -17,7 +17,11 @@ import {
 	type FrameShape,
 	type RegionShape,
 } from "@/transformers/semantic-renderer/lib/track/containers";
-import { REGION_CAPTION_INSET, type Scene } from "@/transformers/semantic-renderer/lib/track/scene";
+import {
+	REGION_CAPTION_INSET,
+	TRACK_WIDE,
+	type Scene,
+} from "@/transformers/semantic-renderer/lib/track/scene";
 
 /**
  * Room a group region keeps beside its members; beside a line it holds it
@@ -39,6 +43,11 @@ interface Fitting {
 	readonly heading: Box;
 	/** How far in from its left wall its heading's words end. */
 	readonly words: number;
+	/**
+	 * For a frame laid out as the region round it: how wide the region's
+	 * caption needs it, and its box fitted before it widened for that.
+	 */
+	wide?: { readonly width: number; fitted?: Box };
 }
 
 /**
@@ -73,6 +82,39 @@ function standsIn(point: Point, next: Point | undefined, box: Box): boolean {
 }
 
 /**
+ * The x of every line's end on a box's top or bottom wall.
+ * @param lines Every line's points.
+ * @param box The box.
+ * @returns The x's.
+ */
+function endsOn(lines: readonly (readonly Point[])[], box: Box): number[] {
+	return lines
+		.flatMap((points) => [points[0]!, points.at(-1)!])
+		.filter(
+			({ x, y }) =>
+				x > box.x &&
+				x < box.x + box.width &&
+				(Math.abs(y - box.y) < 0.5 || Math.abs(y - box.y - box.height) < 0.5),
+		)
+		.map(({ x }) => x);
+}
+
+/**
+ * A frame laid out as the region round it, fitted, widened for its region's
+ * caption: round the middle of the frame, inside the box its layout kept.
+ * @param fitted The frame's box, fitted to what it holds.
+ * @param width How wide the caption needs it.
+ * @param kept The box its layout kept.
+ * @returns The region's box.
+ */
+function widenedIn(fitted: Box, width: number, kept: Box): Box {
+	const wide = Math.max(fitted.width, Math.min(kept.width, width));
+	const centred = fitted.x - (wide - fitted.width) / 2;
+	const x = Math.max(kept.x, Math.min(centred, kept.x + kept.width - wide));
+	return { ...fitted, x, width: wide };
+}
+
+/**
  * The x of every point of a line inside a box, and of every upright run
  * that passes through it.
  * @param lines Every line's points.
@@ -91,6 +133,8 @@ function uprightsIn(lines: readonly (readonly Point[])[], box: Box): number[] {
  * through it, a group region's wall a lane and a half from a line. A wall never moves out, never leaves the container narrower
  * than its heading, and never carries the heading's words onto a line that
  * crosses the heading's row, which the router set one lane past the words.
+ * A frame laid out as the region round it holds the lines that end on it
+ * too, and then stands as wide as its caption needs round what it holds.
  * @param fitting The container; its box is replaced.
  * @param items Every card and label box.
  * @param inner The containers inside it, already fitted.
@@ -104,7 +148,7 @@ function fitSide(
 ): void {
 	const { box, inset, clearance, narrowest, heading, words } = fitting;
 	const held = [...items.filter((one) => overlaps(one, box)), ...inner.map((one) => one.box)];
-	const uprights = uprightsIn(lines, box);
+	const uprights = [...uprightsIn(lines, box), ...(fitting.wide ? endsOn(lines, box) : [])];
 	if (held.length + uprights.length === 0) return;
 	const lows = [...held.map(({ x }) => x - inset), ...uprights.map((x) => x - clearance)];
 	const highs = [
@@ -120,6 +164,9 @@ function fitSide(
 		low = Math.max(box.x, high - narrowest);
 	}
 	fitting.box = { ...box, x: low, width: high - low };
+	if (fitting.wide === undefined) return;
+	fitting.wide.fitted = fitting.box;
+	fitting.box = widenedIn(fitting.box, fitting.wide.width, box);
 }
 
 /**
@@ -190,7 +237,18 @@ function fitSides(
 		const words = scene.words.get(title)!;
 		const narrowest = words + ARCHITECTURE_HEADER_PADDING;
 		const heading = scene.moved(title, left);
-		return { box, inset: CONTAINER_INSET, clearance: CONTAINER_INSET, narrowest, heading, words };
+		// A frame laid out as the region round it keeps the region's inset too.
+		const inset = CONTAINER_INSET + (title.inset ?? 0);
+		const wide = scene.frames.get(id)!.node.layoutOptions?.[TRACK_WIDE];
+		return {
+			box,
+			inset,
+			clearance: inset,
+			narrowest,
+			heading,
+			words,
+			...(wide === undefined ? {} : { wide: { width: Number(wide) } }),
+		};
 	});
 	const banded = regions.map(({ box, caption }): Fitting => {
 		const words = REGION_CAPTION_INSET + caption.width;
@@ -205,7 +263,12 @@ function fitSides(
 	});
 	fitAll([...framed, ...banded], items, [...lines.values()]);
 	return {
-		frames: frames.map((frame, index) => ({ ...frame, box: framed[index]!.box })),
+		frames: frames.map((frame, index) => {
+			const { box, wide } = framed[index]!;
+			return wide === undefined
+				? { ...frame, box }
+				: { ...frame, box: wide.fitted ?? box, region: box };
+		}),
 		regions: regions.map((region, index) => {
 			const { box } = banded[index]!;
 			const caption = { ...region.caption, x: region.caption.x + box.x - region.box.x };
