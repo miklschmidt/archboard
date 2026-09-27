@@ -26,6 +26,8 @@ import oneCommand from "./one-command.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
 import owningTheChild from "./owning-the-child.json";
 import recordingAWalkthrough from "./recording-a-walkthrough.json";
+import requestPath from "./request-path.json";
+import theTwoThreads from "./the-two-threads.json";
 import tightWallPort from "./tight-wall-port.json";
 import twoChains from "./two-chains.json";
 import workingWithAnAgent from "./working-with-an-agent.json";
@@ -85,7 +87,7 @@ function regionBox(
 	return { x: x! + shift.x, y: y! + shift.y, width: width!, height: height! };
 }
 
-test("a container of blocks keeps no more room under its title than a container of cards", async () => {
+test("a container of blocks keeps as much room under its title as a container of cards", async () => {
 	const content = orderedFixture({
 		nodes: [
 			{ id: "grouped", name: "Board server", kind: "service" },
@@ -104,7 +106,21 @@ test("a container of blocks keeps no more room under its title than a container 
 	const { nodes } = drawn.atlas;
 	const packed = regionBox(drawn.svg, "state").y - nodes["grouped"]!.y;
 	const carded = nodes["queue"]!.y - nodes["plain"]!.y;
-	expect(packed).toBeLessThanOrEqual(carded);
+	expect(carded).toBe(packed);
+});
+
+test("a container a line leaves by its bottom keeps its inset under its lowest card", async () => {
+	const content = orderedFixture({
+		nodes: [
+			{ id: "child", name: "Codex child", kind: "service" },
+			{ id: "wire", name: "Codex transport", kind: "module", parent: "child" },
+			{ id: "server", name: "Archboard server", kind: "service" },
+		],
+		edges: [{ id: "e1", from: "wire", to: "server", kind: "call" }],
+	});
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const { child, wire } = drawn.atlas.nodes;
+	expect(child!.y + child!.height - (wire!.y + wire!.height)).toBe(wire!.x - child!.x);
 });
 
 test("a container's cards stand under its title, not beside it", async () => {
@@ -407,4 +423,65 @@ test("a board's groups are packed only where that fits the pane no worse", async
 	const content = orderedFixture(archboardServer);
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
 	expect(drawing.width).toBeGreaterThan(drawing.height);
+});
+
+// Taken from the IIS migration board: a line into a container itself ends on a
+// port no line inside the container runs through, which stood wherever the
+// container's block put it, and settling the trunk pulled the line off the
+// middle of the card it leaves toward that meaningless place.
+test("a line into a container itself leaves its card on the card's own column", async () => {
+	const content = orderedFixture({
+		nodes: [
+			{ id: "lb", name: "Legacy load balancer", kind: "service" },
+			{ id: "pool", name: "Windows VM pool", kind: "system" },
+			...["vm1", "vm2", "vm3", "vm4"].map((id) => ({
+				id,
+				name: `IIS ${id}`,
+				kind: "service",
+				parent: "pool",
+				groups: ["state"],
+			})),
+		],
+		edges: [{ id: "e1", from: "lb", to: "pool", kind: "call", label: "L4 forwarding" }],
+	});
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const card = drawn.atlas.nodes["lb"]!;
+	const route = routePoints(drawn.svg).get("e1")!;
+	for (const { x } of route) expect(x).toBeCloseTo(card.x + card.width / 2, 0);
+});
+
+// Reduced from a board of a work vault, names replaced: a line from a card
+// beside a container into a card standing high in it ran round the
+// container's inner block and entered its card from below, arrow up, since
+// the relationship back out of the container made it run upward, and only
+// blocks standing side by side took ports on their facing walls.
+test("a line into a container enters the card from the side its source stands on", async () => {
+	const content = orderedFixture(requestPath);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const card = drawn.atlas.nodes["42C5lYne"]!;
+	const end = routeEnds(drawn.svg).get("f3lzoqzb")!;
+	expect(end.y).toBeLessThan(card.y + card.height / 2);
+});
+
+// Taken from a board of this repository: packed into a column, the region a
+// line comes from stands below the one it enters, though Graphviz ranked the
+// line downward, and the line ran round the page to enter its card from above.
+test("a line into a block that stands above its source's block enters from below", async () => {
+	const content = orderedFixture(theTwoThreads);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const card = drawn.atlas.nodes["tlC2W839"]!;
+	expect(routeEnds(drawn.svg).get("mhknqBOz")!.y).toBeGreaterThan(card.y + card.height / 2);
+});
+
+// Reduced from the same board: a container's own port on its wall stood
+// level with the middle of the block inside it, not with that block's port
+// on the same wall, so the line out stepped between the two.
+test("a line out of nested containers by their walls runs level between them", async () => {
+	const content = orderedFixture(requestPath);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const route = corridorPoints(drawn.svg).get("FOrXU78u")!;
+	const levels = new Set(
+		route.slice(1).flatMap((point, index) => (point.y === route[index]!.y ? [point.y] : [])),
+	);
+	expect(levels.size).toBeLessThanOrEqual(2);
 });

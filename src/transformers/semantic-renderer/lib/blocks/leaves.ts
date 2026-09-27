@@ -2,7 +2,13 @@
 // off: the header in its corner, with the ports on its rank beside it.
 import type { ElkNode } from "@archboard/elk-rs";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
-import type { Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
+import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
+import {
+	CAPTION_INSET,
+	type Insets,
+	type Laid,
+} from "@/transformers/semantic-renderer/lib/blocks/laid";
+import type { Rim } from "@/transformers/semantic-renderer/lib/track/spacing";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { extentOf } from "@/transformers/semantic-renderer/lib/track/labels";
 import type { Item, Scene } from "@/transformers/semantic-renderer/lib/track/scene";
@@ -102,4 +108,18 @@ function slidesOf(scene: Scene, block: Block): [Item, readonly [number, number]]
 	});
 }
 
-export { PORT, cornerHeader, letPortsSlide, pinnedLeaf };
+/**
+ * The room a block of cards keeps where no line turns under its header, and
+ * over its bottom ports when they stand on its edge: its inset, as below a
+ * region's caption, which stands a little into its band.
+ * @param block The block.
+ * @param insets Its insets.
+ * @returns The room, or nothing when the block draws no edge.
+ */
+function rimOf(block: Block, insets: Insets): Rim | undefined {
+	if (block.header === undefined) return undefined;
+	const head = CONTAINER_INSET + (block.kind === "region" ? CAPTION_INSET : 0);
+	return [...block.ports.values()].includes("bottom") ? { head, foot: insets.side } : { head };
+}
+
+export { PORT, cornerHeader, letPortsSlide, pinnedLeaf, rimOf };

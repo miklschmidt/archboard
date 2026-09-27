@@ -1,0 +1,107 @@
+{
+	"nodes": [
+		{
+			"id": "fSvgsFBn",
+			"order": 1000,
+			"name": "Cloud region production target",
+			"kind": "system",
+			"responsibility": "Holds the production target and the regional resources it runs on."
+		},
+		{
+			"id": "8P3HctR4",
+			"order": 2000,
+			"name": "Container orchestration",
+			"kind": "system",
+			"parent": "fSvgsFBn",
+			"responsibility": "Runs the fixed-capacity production workloads target."
+		},
+		{
+			"id": "KpJL9Y0f",
+			"order": 3000,
+			"name": "Public clients",
+			"kind": "external",
+			"responsibility": "Sends public requests to the site."
+		},
+		{
+			"id": "42C5lYne",
+			"order": 4000,
+			"name": "Regional load balancer card",
+			"kind": "service",
+			"parent": "fSvgsFBn",
+			"responsibility": "Forwards ingress to worker ports."
+		},
+		{
+			"id": "ZsN5eHIV",
+			"order": 5000,
+			"name": "Ingress gateway card",
+			"kind": "service",
+			"parent": "8P3HctR4",
+			"responsibility": "Provides the ingress routing and ordinary server keys."
+		},
+		{
+			"id": "RsdfAtQ8",
+			"order": 6000,
+			"name": "Platform route card",
+			"kind": "route",
+			"parent": "8P3HctR4",
+			"responsibility": "Routes platform requests without any client certificate policy."
+		},
+		{
+			"id": "JnkTz8V4",
+			"order": 8000,
+			"name": "Stateless platform services",
+			"kind": "service",
+			"parent": "8P3HctR4",
+			"responsibility": "Frontend, portal API, exporter, mail renderer and the gateway."
+		},
+		{
+			"id": "WLY9p0FT",
+			"order": 9000,
+			"name": "Existing application stores",
+			"kind": "external",
+			"responsibility": "Stay outside the cluster and use their own connection strings."
+		}
+	],
+	"edges": [
+		{
+			"id": "f3lzoqzb",
+			"order": 1000,
+			"from": "KpJL9Y0f",
+			"to": "42C5lYne",
+			"kind": "call",
+			"label": "TCP 80 / 443"
+		},
+		{
+			"id": "aqRCM39b",
+			"order": 2000,
+			"from": "42C5lYne",
+			"to": "ZsN5eHIV",
+			"kind": "call",
+			"label": "ingress to worker ports"
+		},
+		{
+			"id": "vFhrXHUV",
+			"order": 3000,
+			"from": "ZsN5eHIV",
+			"to": "RsdfAtQ8",
+			"kind": "http",
+			"label": "Gateway routing"
+		},
+		{
+			"id": "lpxWb2Z1",
+			"order": 4000,
+			"from": "RsdfAtQ8",
+			"to": "JnkTz8V4",
+			"kind": "http",
+			"label": "Platform routes"
+		},
+		{
+			"id": "FOrXU78u",
+			"order": 5000,
+			"from": "JnkTz8V4",
+			"to": "WLY9p0FT",
+			"kind": "data",
+			"label": "External store connections"
+		}
+	]
+}

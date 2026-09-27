@@ -18,6 +18,7 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 import { scorecardOf } from "@/runtime/semantic-renderer/tests/drawn-scorecard";
 import onePointPort from "./one-point-port.json";
 import regionPortTurnBack from "./region-port-turn-back.json";
+import agentWorkbench from "./agent-workbench.json";
 import boardRasterizer from "./board-rasterizer.json";
 import browserApplication from "./browser-application.json";
 import codexWorkhorse from "./codex-workhorse.json";
@@ -25,6 +26,7 @@ import commandGroups from "./command-groups.json";
 import commandInterface from "./command-interface.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
 import oneCommand from "./one-command.json";
+import oneCommandPath from "./one-command-path.json";
 import staircase from "./staircase.json";
 import voiceCoordinator from "./voice-coordinator.json";
 import walkthroughStair from "./walkthrough-stair.json";
@@ -187,6 +189,19 @@ test("a line through a group region's port does not double back at it", async ()
 		policy,
 	});
 	for (const [id, points] of corridorPoints(drawing.svg)) expect(turnBacks(points), id).toBe(0);
+});
+
+// Taken from a board of this repository: a line out of Voice's top stepped
+// aside round a label inside the region, then back to the port the board
+// had settled on the region's wall, and on out the way it had come.
+test("a line out of a group region meets its port where it runs inside", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(agentWorkbench),
+		theme: "light",
+		layout: "track",
+		policy,
+	});
+	expect(turnBacks(corridorPoints(drawing.svg).get("mhknqBOz")!)).toBeLessThanOrEqual(1);
 });
 
 /** A group region's box as drawn: its left and right walls, its top and bottom. */
@@ -422,3 +437,21 @@ test("a packed group's pin stands where the board's line turns to it", async () 
 	const crossings = scorecardOf(drawing, content).find(({ name }) => name === "crossings")!;
 	expect(crossings.value).toBeLessThanOrEqual(3);
 });
+
+// Taken from a board of this repository: Graphviz ranked a line's label beside
+// a card that blocks the one column both of the line's cards reach, so the
+// line stepped aside just below its source. The band above had room for the
+// label on that column, and the line runs straight with its label there.
+test.each(["track", "blocks"] as const)(
+	"a labelled line runs straight when its label fits on a neighbouring band (%s)",
+	async (layout) => {
+		const drawing = await renderArchitecture({
+			content: orderedFixture(oneCommandPath),
+			theme: "light",
+			layout,
+			policy,
+		});
+		const points = corridorPoints(drawing.svg).get("lkwXJ78e")!;
+		expect(sidewaysLevels(points).size).toBe(0);
+	},
+);

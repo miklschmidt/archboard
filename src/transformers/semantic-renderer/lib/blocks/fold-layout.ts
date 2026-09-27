@@ -17,7 +17,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { spreadPorts } from "@/transformers/semantic-renderer/lib/track/channels";
-import { TRACK_TOP, channelHeight } from "@/transformers/semantic-renderer/lib/track/route";
+import { TRACK_TOP, channelHeight } from "@/transformers/semantic-renderer/lib/track/spacing";
 import {
 	stackUnits,
 	unitAcross,

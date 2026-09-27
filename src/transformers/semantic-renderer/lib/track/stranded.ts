@@ -12,12 +12,15 @@ import {
 	freeWithout,
 	inversions,
 	laneRuns,
+	piecesOf,
 	reachOf,
 	straightOn,
 	type Chain,
 	type LaneRun,
 	type Station,
 } from "@/transformers/semantic-renderer/lib/track/chains";
+import type { Net } from "@/transformers/semantic-renderer/lib/track/channels";
+import { slidePort } from "@/transformers/semantic-renderer/lib/track/labels";
 import { centreX, type Scene } from "@/transformers/semantic-renderer/lib/track/scene";
 
 /**
@@ -52,10 +55,8 @@ function meetingColumn(station: Station, near: number): number {
  * the station it leads into or the one it leaves, the first that is free and
  * crosses no more lines than where it stands: a
  * label that stood in its way may have moved aside, and a run left where it
- * stood turns twice to reach its ends. Drawn inline, a run that stays on
- * several columns has its steps closed instead ({@link closeSteps}); the
- * Blocks engine packs a block among others after it is routed, and there
- * closing them cost more bends than it saved.
+ * stood turns twice to reach its ends. A run that stays on several columns
+ * has its steps closed instead ({@link closeSteps}).
  * @param scene The scene, its labels slid.
  * @param chains Every relationship's chain.
  * @returns Whether any run moved.
@@ -64,22 +65,21 @@ function unstrandLanes(scene: Scene, chains: readonly Chain[]): boolean {
 	return eachRun(
 		scene,
 		chains,
-		(run, free, bands) =>
-			unstrandRun(run, free, bands) || (scene.inline && closeSteps(run, free, bands)),
+		(run, free, bands) => unstrandRun(run, free, bands) || closeSteps(run, free, bands),
 	);
 }
 
 /**
- * Drawn inline, close the steps inside every run of lanes again once the
- * labels have settled onto the lanes toward their cards' ports: a label that
- * moved onto the lane below it leaves the piece above it meeting neither
- * neighbour ({@link closeSteps}).
+ * Close the steps inside every run of lanes again once the labels have
+ * settled onto the lanes toward their cards' ports: a label that moved onto
+ * the lane below it leaves the piece above it meeting neither neighbour
+ * ({@link closeSteps}).
  * @param scene The scene, its labels settled.
  * @param chains Every relationship's chain.
  * @returns Whether any run moved.
  */
 function closeLaneSteps(scene: Scene, chains: readonly Chain[]): boolean {
-	return scene.inline && eachRun(scene, chains, closeSteps);
+	return eachRun(scene, chains, closeSteps);
 }
 
 /**
@@ -132,7 +132,7 @@ function unstrandRun(
  * it on one column that meets neither the piece or label above it nor the one
  * below it moves onto the column of one of them, the lower first, where that
  * is free and crosses no more lines. The line then changes column once where
- * it changed twice. A card is left to its port, which is placed later.
+ * it changed twice.
  * @param run The run.
  * @param free What each band holds without it.
  * @param bands Every chain's stations, by band.
@@ -151,7 +151,6 @@ function closeSteps(
 			if (meetsStraight(piece.before, x) || meetsStraight(piece.after, x)) return false;
 			const crossed = inversions(piece, x, bands);
 			const column = [piece.after, piece.before]
-				.filter(({ kind }) => kind !== "card")
 				.map((station) => meetingColumn(station, x))
 				.find((one) => free.fits(piece, one) && inversions(piece, one, bands) <= crossed);
 			if (column === undefined) return false;
@@ -159,25 +158,6 @@ function closeSteps(
 			return true;
 		})
 		.some(Boolean);
-}
-
-/**
- * A run's lanes in pieces, each the lanes that stand on one column, with the
- * stations either side of it.
- * @param run The run.
- * @returns The pieces, top to bottom.
- */
-function piecesOf(run: LaneRun): LaneRun[] {
-	const pieces: LaneRun[] = [];
-	let start = 0;
-	run.lanes.forEach((lane, index) => {
-		const next = run.lanes[index + 1];
-		if (next !== undefined && next.x === lane.x) return;
-		const before = run.lanes[start - 1] ?? run.before;
-		pieces.push({ lanes: run.lanes.slice(start, index + 1), before, after: next ?? run.after });
-		start = index + 1;
-	});
-	return pieces;
 }
 
 /**
@@ -264,4 +244,33 @@ function straighten(scene: Scene, run: LaneRun, occupancy: Occupancy): boolean {
 	for (const lane of lanes) occupancy.take(lane);
 	return moved;
 }
-export { closeLaneSteps, pullToPorts, straightenIntoContainers, unstrandLanes };
+/**
+ * Slide each of a block's own ports onto the column of the lane its line
+ * runs on beside it, where the port may stand there: the lane stood aside
+ * for a card or label inside the block, and a port left where the block's
+ * parent settled it steps the line back out to it just inside the wall.
+ * The parent's line follows the port when the parent is routed again.
+ * @param scene The scene, its ports placed.
+ * @param nets Every net.
+ */
+function portsOntoLanes(scene: Scene, nets: readonly Net[]): void {
+	for (const net of nets)
+		for (const end of ["top", "bottom"] as const) portOntoLane(scene, nets, net, end);
+}
+
+/**
+ * Slide one end of a net, where it is a block's own port, onto the column
+ * of the lane at its other end.
+ * @param scene The scene.
+ * @param nets Every net.
+ * @param net The net.
+ * @param end Which end is the port.
+ */
+function portOntoLane(scene: Scene, nets: readonly Net[], net: Net, end: "top" | "bottom"): void {
+	const far = net[end === "top" ? "bottom" : "top"];
+	const item = net[end].item;
+	if (item !== undefined && scene.slides.has(item) && far.kind === "lane")
+		slidePort(scene, nets, net, end, far.x);
+}
+
+export { portsOntoLanes, closeLaneSteps, pullToPorts, straightenIntoContainers, unstrandLanes };

@@ -5,7 +5,6 @@
 // problem: the blocks are packed in rows or columns in the order their lines
 // run, whichever fits the reference pane best, and libavoid routes the trunks
 // around them.
-import { fitIn } from "@/shared/shell-geometry/index";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
@@ -23,7 +22,14 @@ import {
 	type Side,
 	type Size,
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
+import { PORT } from "@/transformers/semantic-renderer/lib/blocks/leaves";
+import {
+	extentOf,
+	packingsOf,
+	type Packing,
+} from "@/transformers/semantic-renderer/lib/blocks/packings";
 import { openStretch, type Span } from "@/transformers/semantic-renderer/lib/blocks/open-edge";
+import { slideToTrunks } from "@/transformers/semantic-renderer/lib/blocks/slides";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { spreadPorts } from "@/transformers/semantic-renderer/lib/track/channels";
 import {
@@ -37,8 +43,6 @@ import {
 const PACK_GAP = 72;
 /** Room between a block's header or top ports and the blocks under it. */
 const HEAD_GAP = 48;
-/** The side of a port's square. */
-const PORT = 1;
 /** How far apart two ends may be and still be one straight run. */
 const STRAIGHT = 0.5;
 /** The pairs of edges two pins stand on when they face each other, over and under or side by side. */
@@ -46,69 +50,6 @@ const FACING = {
 	upright: new Set(["bottom>top", "top>bottom"]),
 	level: new Set(["right>left", "left>right"]),
 };
-/** The most blocks whose every packing is tried. */
-const EVERY_PACKING = 9;
-/** How nearly a packing's estimated fit must reach the best one's to be laid out and weighed. */
-const WORTH_LAYING = 0.8;
-/** How a block's items are packed: in rows read left to right, or in columns read down. */
-interface Packing {
-	readonly across: boolean;
-	readonly groups: readonly (readonly number[])[];
-	/** Room between two packed blocks, and left of them, when trunks need more than the least. */
-	readonly gap?: number;
-	readonly margin?: number;
-}
-
-/**
- * Every way to cut a sequence into consecutive groups.
- * @param count How many items are left.
- * @param sizes The group sizes chosen so far.
- * @returns Each cut as its group sizes.
- */
-function everyCut(count: number, sizes: readonly number[] = []): number[][] {
-	if (count === 0) return [[...sizes]];
-	return Array.from({ length: count }, (_, index) =>
-		everyCut(count - index - 1, [...sizes, index + 1]),
-	).flat();
-}
-
-/**
- * The cuts of a sequence worth trying: every one for a few items, else one
- * to four even groups.
- * @param count How many items.
- * @returns Each cut as its group sizes.
- */
-function cutsOf(count: number): number[][] {
-	if (count <= EVERY_PACKING) return everyCut(count);
-	return [1, 2, 3, 4].map((groups) =>
-		Array.from(
-			{ length: groups },
-			(_, group) =>
-				Math.floor(((group + 1) * count) / groups) - Math.floor((group * count) / groups),
-		),
-	);
-}
-
-/**
- * How long and how thick one group is: along the way it is read, and across it.
- * @param sizes Its items' sizes.
- * @param across Whether it is a row.
- * @param gap The room between two items.
- * @returns Its length and thickness.
- */
-function extentOf(
-	sizes: readonly Size[],
-	across: boolean,
-	gap: number,
-): { long: number; thick: number } {
-	const along = sizes.map(({ width, height }) => (across ? width : height));
-	const breadth = sizes.map(({ width, height }) => (across ? height : width));
-	return {
-		long: along.reduce((sum, value) => sum + value, 0) + (sizes.length - 1) * gap,
-		thick: Math.max(...breadth),
-	};
-}
-
 /** A block of blocks laid out: packed, and its trunks routed. */
 class PackLayout {
 	readonly boxes = new Map<string, Box>();
@@ -195,23 +136,11 @@ class PackLayout {
 	 * @returns The packings.
 	 */
 	packings(): Packing[] {
-		const order = this.sequence();
-		const candidates = [true, false].flatMap((across) =>
-			cutsOf(order.length).map((sizes) => ({
-				across,
-				groups: sizes.map((size, index) => {
-					const start = sizes.slice(0, index).reduce((sum, value) => sum + value, 0);
-					return order.slice(start, start + size);
-				}),
-			})),
-		);
-		const fits = candidates.map((packing) => {
+		const around = this.headRoom() + this.insets.top + this.insets.bottom;
+		return packingsOf(this.sequence(), (packing) => {
 			const { width, height } = this.sizeOf(packing);
-			const around = this.headRoom() + this.insets.top + this.insets.bottom;
-			return fitIn({ width: width + 2 * this.insets.side, height: height + around });
+			return { width: width + 2 * this.insets.side, height: height + around };
 		});
-		const best = Math.max(...fits);
-		return candidates.filter((_, index) => fits[index]! >= best * WORTH_LAYING);
 	}
 
 	/**
@@ -413,8 +342,8 @@ class PackLayout {
 	}
 
 	/**
-	 * Place the block's own ports on its side walls: each level with the
-	 * middle of the blocks its lines reach, within the block.
+	 * Place the block's own ports on its side walls, within the block: each level
+	 * with the pins its lines reach on that wall of their blocks, else their middle.
 	 * @param width The block's width.
 	 * @param span Where the packed items start and end.
 	 * @param span.top Where they start.
@@ -427,9 +356,10 @@ class PackLayout {
 			const reached = lines
 				.flatMap((line) => (line.to === port ? [line.from] : line.from === port ? [line.to] : []))
 				.flatMap((end) => {
-					const pin = this.tree.pins.get(end);
-					const owner = pin === undefined ? undefined : this.boxes.get(pin.block.id);
-					return owner === undefined ? [] : [owner.y + owner.height / 2];
+					const owner = this.boxes.get(this.tree.pins.get(end)?.block.id ?? "");
+					if (owner === undefined) return [];
+					const at = this.pinAt(end);
+					return [at.side === side ? at.y : owner.y + owner.height / 2];
 				});
 			const middle = reached.reduce((sum, y) => sum + y, 0) / Math.max(1, reached.length);
 			const y = Math.min(span.bottom, Math.max(span.top, middle));
@@ -458,13 +388,41 @@ class PackLayout {
 	 */
 	lay(avoid: AvoidEngine, kept?: Packing): Laid & { packing: Packing } {
 		if (kept !== undefined) return this.roomy(avoid, kept);
-		const tried = this.packings().map((packing) => {
-			const layout = new PackLayout(this.block, this.laid, this.tree, this.insets);
-			return { layout, laid: layout.layOut(avoid, packing) };
-		});
+		const tried = this.packings()
+			.flatMap((packing) =>
+				this.slid(packing) ? [packing, { ...packing, aligned: true }] : [packing],
+			)
+			.map((packing) => {
+				const layout = new PackLayout(this.block, this.laid, this.tree, this.insets);
+				return { layout, laid: layout.layOut(avoid, packing) };
+			});
 		const scores = tried.map(({ laid }) => packedScore(laid));
 		const { layout, laid } = tried[scores.indexOf(Math.max(...scores))]!;
 		return layout.widened(avoid, laid);
+	}
+
+	/**
+	 * Where the packed items stand, packed one way.
+	 * @param packing The packing.
+	 * @returns Their extent.
+	 */
+	extentOf(packing: Packing): Box {
+		const { width, height } = this.sizeOf(packing);
+		const [x, y] = [this.insets.side + this.margin, this.insets.top + this.headRoom()];
+		return { x, y, width, height };
+	}
+
+	/**
+	 * Whether some block of a packing would slide in line with the blocks its
+	 * lines reach: only then is the packing laid out that way as well.
+	 * @param packing The packing.
+	 * @returns True when one would.
+	 */
+	slid(packing: Packing): boolean {
+		const probe = new PackLayout(this.block, this.laid, this.tree, this.insets);
+		probe.place(packing);
+		probe.alignPins();
+		return slideToTrunks(probe, packing.across, probe.extentOf(packing));
 	}
 
 	/**
@@ -505,6 +463,7 @@ class PackLayout {
 	layOut(avoid: AvoidEngine, packing: Packing): Laid & { packing: Packing } {
 		this.place(packing);
 		this.alignPins();
+		if (packing.aligned === true) slideToTrunks(this, packing.across, this.extentOf(packing));
 		const size = this.sizeOf(packing);
 		const { side, top } = this.insets;
 		const width = Math.max(

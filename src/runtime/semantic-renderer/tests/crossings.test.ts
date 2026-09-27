@@ -297,16 +297,19 @@ test("no line shows through a removed relationship's label", async () => {
 });
 
 // Work vault: a kind the vault draws dashed but the default policy does not
-// know was judged solid, and rose over solid lines with an arc that barely showed.
+// know was judged solid, and rose over solid lines with an arc that barely
+// showed. A dashed line is never cut beneath a solid one either, since its gap
+// is lost among its dashes (the user, 2026-09-27).
 test("the crossing pass reads each line's dash from the vault's own policy", async () => {
 	const content = structuredClone(CROSSED);
 	for (const edge of content.edges) if (edge.from === "a") edge.kind = "stream";
 	/**
-	 * The lines that hop, with the stream kind drawn one way.
+	 * The lines cut beneath another where no hop stands, with the stream kind
+	 * drawn one way: a straight, round-capped piece of their mask.
 	 * @param dash How the vault draws a stream.
 	 * @returns Their ids.
 	 */
-	const hopping = async (dash: "solid" | "dashed"): Promise<string[]> => {
+	const cutBeneath = async (dash: "solid" | "dashed"): Promise<string[]> => {
 		const policy = {
 			...DEFAULT_SEMANTIC_POLICY,
 			relationshipKinds: {
@@ -315,11 +318,24 @@ test("the crossing pass reads each line's dash from the vault's own policy", asy
 			},
 		};
 		const { svg } = await renderArchitecture({ content, theme: "light", layout: "track", policy });
-		return routes(svg).flatMap(({ id, paths }) => (roundBridges(paths[0]!).length > 0 ? [id] : []));
+		const pieces = new Map(
+			[...svg.matchAll(/<mask id="([^"]+)"[^>]*>([\s\S]*?)<\/mask>/gu)].map((match) => [
+				match[1]!,
+				[...match[2]!.matchAll(/<path[^>]*>/gu)].map(([piece]) => piece),
+			]),
+		);
+		return routes(svg).flatMap(({ id, mask }) =>
+			(pieces.get(mask ?? "") ?? []).some(
+				(piece) => !/ d="[^"]*C/u.test(piece) && piece.includes('stroke-linecap="round"'),
+			)
+				? [id]
+				: [],
+		);
 	};
-	// Drawn solid, a stream line rises over a call it crosses; drawn dashed, never.
-	expect((await hopping("solid")).some((id) => id.startsWith("a"))).toBe(true);
-	expect((await hopping("dashed")).some((id) => id.startsWith("a"))).toBe(false);
+	// Drawn solid, a stream line is cut beneath a call where no hop stands;
+	// drawn dashed, the call is cut beneath it instead.
+	expect((await cutBeneath("solid")).some((id) => id.startsWith("a"))).toBe(true);
+	expect((await cutBeneath("dashed")).some((id) => id.startsWith("a"))).toBe(false);
 });
 
 // Reported from use: traffic on a line that joins lines without traffic

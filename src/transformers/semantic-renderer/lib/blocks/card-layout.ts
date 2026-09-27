@@ -17,6 +17,7 @@ import {
 	cornerHeader,
 	letPortsSlide,
 	pinnedLeaf,
+	rimOf,
 } from "@/transformers/semantic-renderer/lib/blocks/leaves";
 import {
 	headerOf,
@@ -44,6 +45,8 @@ import { gridEdges, wrapEdges } from "@/transformers/semantic-renderer/lib/track
 import { anchored, lapsOf } from "@/transformers/semantic-renderer/lib/track/score";
 import { keptSteps, type Aligned } from "@/transformers/semantic-renderer/lib/blocks/stepped";
 import {
+	besidePoints,
+	besideWalls,
 	entersBy,
 	innerPoints,
 	wallLines,
@@ -174,13 +177,17 @@ class CardLayout {
 		const first: Subgraph = {
 			graphAttributes: { rank: "source" },
 			nodes: [...header, ...tops].map((name) => this.nodeOf(name)),
-			edges: header.flatMap((tail) =>
-				tops.map((head) => ({ tail, head, attributes: { style: "invis" } })),
-			),
+			edges: [
+				...header.flatMap((tail) =>
+					tops.map((head) => ({ tail, head, attributes: { style: "invis" } })),
+				),
+				...this.heldEdges("top"),
+			],
 		};
 		const last: Subgraph = {
 			graphAttributes: { rank: "sink" },
 			nodes: bottoms.map((name) => this.nodeOf(name)),
+			edges: this.heldEdges("bottom"),
 		};
 		graph.subgraphs.push(...[first, last].filter(({ nodes }) => nodes!.length > 0));
 		const entering = [...block.lines.values()].filter(
@@ -190,6 +197,21 @@ class CardLayout {
 		graph.nodes.push(...[...stubs].map((stub) => box(stub, PORT, PORT)));
 		for (const line of this.boardOrder()) this.connect(line);
 		this.arrange();
+	}
+
+	/**
+	 * The invisible edges that hold the ports on one face in the order its
+	 * parent settles them in (`orders.ts`).
+	 * @param face The face.
+	 * @returns The edges, each port to the next.
+	 */
+	heldEdges(face: "top" | "bottom"): Edge[] {
+		const held = (this.tree.orders.get(`${this.block.id}|${face}`) ?? []).filter(
+			(port) => this.block.ports.get(port) === face,
+		);
+		return held
+			.slice(1)
+			.map((head, index) => ({ tail: held[index]!, head, attributes: { style: "invis" } }));
 	}
 
 	/**
@@ -401,24 +423,31 @@ class CardLayout {
 			if (this.tree.blocks.get(item)?.kind === "region")
 				scene.regionBlocks.add(scene.cards.get(item)!);
 		letPortsSlide(scene, this.block, this.tree.nesting);
+		const beside = besideWalls(this.block, this.tree, scene);
+		const straight = new Set(beside.map(({ key }) => key));
 		const lines = routeScene(
 			scene,
-			placed.edges.map((edge) => {
-				const line = this.block.lines.get(edge.id)!;
-				const wall = wallOf(this.block, line);
-				const enters = entersBy(this.block, line);
-				return {
-					id: edge.id,
-					order: Number(edge.layoutOptions?.["archboard.order"] ?? 0),
-					kind: trunkKind(edge),
-					placed: edge,
-					...(wall === undefined ? {} : { wall }),
-					...(enters === undefined ? {} : { enters }),
-				};
-			}),
+			placed.edges
+				.filter((edge) => !straight.has(edge.id))
+				.map((edge) => {
+					const line = this.block.lines.get(edge.id)!;
+					const wall = wallOf(this.block, line);
+					const enters = entersBy(this.block, line);
+					return {
+						id: edge.id,
+						order: Number(edge.layoutOptions?.["archboard.order"] ?? 0),
+						kind: trunkKind(edge),
+						placed: edge,
+						...(wall === undefined ? {} : { wall }),
+						...(enters === undefined ? {} : { enters }),
+					};
+				}),
 			this.insets.side,
 			this.insets.top,
+			rimOf(this.block, this.insets),
 		);
+		for (const [key, points] of besidePoints(scene, beside, this.insets.side))
+			lines.set(key, points);
 		return this.read(scene, lines, new Map(placed.edges.map((edge) => [edge.id, edge])), held);
 	}
 
@@ -439,9 +468,7 @@ class CardLayout {
 		centres: ReadonlyMap<string, Point>,
 		ports: ReadonlyMap<string, number>,
 	): Laid {
-		const leaves = [...(placed.children ?? [])];
-		for (let leaf = leaves.pop(); leaf !== undefined; leaf = leaves.pop()) {
-			leaves.push(...(leaf.children ?? []));
+		for (const leaf of placed.children ?? []) {
 			const x = ports.get(leaf.id);
 			if (x !== undefined) leaf.x = x - this.insets.side - leaf.width! / 2;
 			else if (this.tree.pins.has(leaf.id))
@@ -487,7 +514,7 @@ class CardLayout {
 			...reach.map((one) => one.x + one.width + side),
 		);
 		const tracks = wallLines(this.block, walled, boxes, width);
-		const laps = scene.edgesPage ? lapsOf(walled.values(), [...boxes.values()]) : 0;
+		const laps = lapsOf(walled.values(), [...boxes.values()]);
 		return {
 			laps,
 			width,

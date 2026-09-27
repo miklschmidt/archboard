@@ -102,7 +102,7 @@ function strays(chain: Chain): boolean {
 }
 
 /**
- * The frames and group regions a chain's two ends stand inside.
+ * The frames a chain's two ends stand inside.
  * @param scene The scene.
  * @param chain The chain.
  * @returns Their ids.
@@ -111,7 +111,8 @@ function endFrames(scene: Scene, chain: Chain): Set<string> {
 	const ends = [chain.stations[0]!, chain.stations.at(-1)!];
 	return new Set(
 		ends.flatMap((end) =>
-			[...scene.walled(end.band)]
+			scene
+				.frameWalls(end.band)
 				.filter(([, [low, high]]) => end.x > low && end.x < high)
 				.map(([id]) => id),
 		),
@@ -120,34 +121,24 @@ function endFrames(scene: Scene, chain: Chain): Set<string> {
 
 /**
  * Where a station may not stand for the frames it stood in: outside each
- * frame it stood inside, and inside each frame or group region it does not
- * stand inside, unless one of its line's own ends stands in it: Graphviz
- * runs a line past a frame's title row outside it even when the line ends
- * inside. A line relaid through a group region it has no card in reads as
- * part of that group.
+ * frame it stood inside, and inside each it stood outside, unless one of
+ * its line's own ends stands in that frame: Graphviz runs a line past a
+ * frame's title row outside it even when the line ends inside. A group
+ * region is no frame: a line may cross into one.
  * @param scene The scene.
  * @param station The station.
  * @param open The frames its line's ends stand in.
  * @returns The intervals it keeps out of.
  */
 function framesOff(scene: Scene, station: Station, open: ReadonlySet<string>): Span[] {
-	return [...scene.walled(station.band)].flatMap(([id, [low, high]]): Span[] => {
-		if (scene.frames.has(id) && station.x > low && station.x < high)
+	return scene.frameWalls(station.band).flatMap(([id, [low, high]]): Span[] => {
+		if (station.x > low && station.x < high)
 			return [
 				[-Infinity, low + EDGE],
 				[high - EDGE, Infinity],
 			];
 		return open.has(id) ? [] : [[low, high]];
 	});
-}
-
-/**
- * The bands a chain's lanes pass.
- * @param chain The chain.
- * @returns Their bands.
- */
-function laneBands(chain: Chain): number[] {
-	return chain.stations.filter(({ kind }) => kind === "lane").map(({ band }) => band);
 }
 
 /** What a chain costs where it stands, by each count, and how many lines it crosses there. */
@@ -379,7 +370,7 @@ class Relay {
 			[-Infinity, left + half],
 			[right - half, Infinity],
 			...(item === undefined
-				? occupancy.along(station.band, laneBands(chain))
+				? occupancy.taken[station.band]!
 				: this.labelWalls(chain, item, station.band)),
 		];
 	}
