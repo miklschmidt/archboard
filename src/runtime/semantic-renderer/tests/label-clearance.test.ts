@@ -12,8 +12,30 @@
 // both routings refused answered with nothing rather than the refusal.
 
 import { expect, test } from "bun:test";
-import { clearerDrawing, type ArchitectureDrawing } from "@/runtime/semantic-renderer/layout";
+import { clearerSettlement, type ArchitectureDrawing } from "@/runtime/semantic-renderer/layout";
 import { at, sketch } from "@/runtime/semantic-renderer/tests/sketched-drawings";
+
+/**
+ * The clearer of two settlements, each only its drawing.
+ * @param ordinary The ordinary drawing.
+ * @param cleared The cleared drawing.
+ * @returns The drawing kept.
+ */
+async function clearerDrawing(
+	ordinary: Promise<ArchitectureDrawing>,
+	cleared: Promise<ArchitectureDrawing>,
+): Promise<ArchitectureDrawing> {
+	return (await clearerSettlement(ordinary.then(settled), cleared.then(settled))).drawing;
+}
+
+/**
+ * A drawing as a settlement.
+ * @param drawing The drawing.
+ * @returns The settlement.
+ */
+function settled(drawing: ArchitectureDrawing): { drawing: ArchitectureDrawing } {
+	return { drawing };
+}
 
 const cards = {
 	top: { x: 0, y: 0, width: 100, height: 50 },

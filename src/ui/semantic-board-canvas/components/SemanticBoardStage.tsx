@@ -48,7 +48,7 @@ import {
 import type { GroupControls } from "@/ui/semantic-board-canvas/components/SemanticInspectorParts";
 import { useDeparture, type Leaving } from "@/ui/semantic-board-canvas/hooks/use-departure";
 import type { Departure } from "@/ui/semantic-board-canvas/lib/picture-departure";
-import { useGroupInspection } from "@/ui/semantic-board-canvas/hooks/use-group-focus";
+import { useGroupSelection } from "@/ui/semantic-board-canvas/hooks/use-group-selection";
 import {
 	usePresentationPosition,
 	type PresentationPosition,
@@ -71,7 +71,7 @@ import {
 	type WalkthroughReading,
 } from "@/ui/semantic-board-canvas/hooks/use-walkthrough";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
-import type { GroupChoice, GroupFocus } from "@/ui/semantic-board-canvas/lib/groups";
+import type { GroupChoice, GroupSelection } from "@/ui/semantic-board-canvas/lib/groups";
 import type { BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
 import { semanticRenderQuery } from "@/ui/semantic-board-canvas/lib/queries";
 
@@ -208,15 +208,15 @@ interface RenderView extends SemanticBoardStageProps {
 	readonly onCloseNarrative: () => void;
 	/** Leave the guided reading and choose a view of this level. */
 	readonly onChooseView: (view: string | null) => void;
-	/** Read an explanation, leaving any group inspection behind. */
+	/** Read an explanation; opening one lets any selected group go. */
 	readonly onChooseWalkthrough: (walkthrough: string | null) => void;
 	/** Every group the variant on screen uses. */
 	readonly groups: readonly GroupChoice[];
-	/** How the inspector names memberships and inspects one. */
+	/** How the inspector names memberships and selects one. */
 	readonly groupControls: GroupControls;
-	/** The group under inspection, read against the picture, or null. */
-	readonly groupFocus: GroupFocus | null;
-	/** Inspect a group, leaving any guided reading behind; null to stop. */
+	/** The selected group and its members, or null. */
+	readonly group: GroupSelection | null;
+	/** Select a group's members in place of the selection and any guided reading; null to let go. */
 	readonly onChooseGroup: (group: string | null) => void;
 	/** The sidebar's tab and collapse state. */
 	readonly sidebar: Sidebar;
@@ -458,56 +458,45 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		[choose, chooseView],
 	);
 
-	// Which group is under inspection is this pane's, kept on the board and the
-	// resolved variant it was chosen on: a walk into another board, or to another
-	// state of this one, drops it, while a change of view keeps it. Inspecting a
-	// group and following an explanation are two readings of one picture that
-	// each decide what is lit, so choosing one lets go of the other; picking a
-	// subject out is fine under either.
-	const source = useMemo(
-		() => ({ board: drill.board, variant: reading === null ? null : reading.variant, drawn }),
-		[drill.board, reading, drawn],
-	);
-	const inspecting = useGroupInspection(source);
-	const chooseGroup = inspecting.choose;
-	const onChooseGroup = useCallback(
-		(group: string | null): void => {
-			if (group !== null) {
-				choose(null);
-			}
-			chooseGroup(group);
-		},
-		[choose, chooseGroup],
-	);
-	const onChooseWalkthrough = useCallback(
-		(walkthrough: string | null): void => {
-			if (walkthrough !== null) {
-				chooseGroup(null);
-			}
-			choose(walkthrough);
-		},
-		[choose, chooseGroup],
-	);
-	const groupControls = useMemo(
-		() => ({
-			names: inspecting.names,
-			inspecting: inspecting.focus === null ? null : inspecting.focus.group,
-			onChoose: onChooseGroup,
-		}),
-		[inspecting.names, inspecting.focus, onChooseGroup],
-	);
-
+	// Which group is selected is this pane's, kept on the board and the
+	// resolved variant it was chosen on: a walk into another board, or to
+	// another state of this one, drops it, while a change of view keeps it.
+	// Selecting a group replaces what was picked out and leaves any guided
+	// reading; picking anything out lets the group go, and so does an
+	// explanation opening, whoever opens it.
+	//
 	// What was picked out is reported as what it is, not only as an id. The pane
 	// is the one place that knows: it has the board open and has just drawn the
 	// thing. A shell told only "sTn4eQ" would need a second read of the board to
 	// tell a step from the flow that holds it, or to say out loud what a person
 	// just clicked on.
+	const grouped = useGroupSelection(
+		drill.board,
+		reading === null ? null : reading.variant,
+		narrative.open !== null,
+	);
+	const chooseGroup = grouped.choose;
 	const held = reading?.subject;
 	const onPick = useCallback(
 		(id: string | null): void => {
+			chooseGroup(null);
 			onSelect(id, id === null || held === undefined ? undefined : held(id));
 		},
-		[held, onSelect],
+		[chooseGroup, held, onSelect],
+	);
+	const onChooseGroup = useCallback(
+		(group: string | null): void => {
+			if (group !== null) {
+				choose(null);
+				onSelect(null);
+			}
+			chooseGroup(group);
+		},
+		[choose, chooseGroup, onSelect],
+	);
+	const groupControls = useMemo(
+		() => ({ names: grouped.names, onChoose: onChooseGroup }),
+		[grouped.names, onChooseGroup],
 	);
 
 	// Empty views retain their resolved identity for the pane and its address.
@@ -586,10 +575,10 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		missing,
 		onCloseNarrative,
 		onChooseView,
-		onChooseWalkthrough,
-		groups: inspecting.choices,
+		onChooseWalkthrough: choose,
+		groups: grouped.choices,
 		groupControls,
-		groupFocus: inspecting.focus,
+		group: grouped.selected,
 		onChooseGroup,
 	});
 }

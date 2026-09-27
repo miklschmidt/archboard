@@ -11,6 +11,16 @@
 // where Graphviz counts crossings seen, then hooks and touching lines. The
 // bends and line of its lines between columns are the price of any fold.
 //
+// The unfolded reading is settled every way its settlement weighs (plain and
+// evened pins, reserved labels with and without their full clearance), and
+// the fold first only the way the unfolded reading was kept: a fold is read
+// as its unfolded reading was. Settled every way, a fold was kept the same way
+// as its unfolded reading on every current variant of both vaults that
+// settles one (19 drawings, measured 2026-09-27), and the three other ways
+// were two fifths of Archboard server's routing. A fold the router refuses
+// that way is settled every way, as before: on one draft of the work vault
+// the plain-pin fold is refused and the evened one routes.
+//
 // A page's size is fixed by placement, and a settled reading's page is its
 // placement with the labels it reserved, so a placement ranks a count for one
 // solve where settling it takes its label rounds, each placed and routed. It
@@ -35,38 +45,72 @@ import {
 /** The size of a page. */
 type Page = Pick<ArchitectureDrawing, "width" | "height">;
 
+/** A reading's complete drawing and the way it was settled. */
+interface SettledColumnReading<Way> {
+	readonly drawing: ArchitectureDrawing;
+	readonly way: Way;
+}
+
 /** One column count's reading of the board. */
-interface ColumnReading {
+interface ColumnReading<Way> {
 	/** Its page placed with no label reserved, routing nothing. */
 	readonly page: () => Promise<Page>;
-	/** Its complete drawing; throws when the reading cannot be routed. */
-	readonly settle: () => Promise<ArchitectureDrawing>;
+	/** Its complete drawing, settled every way or the one way asked; throws when the reading cannot be routed. */
+	readonly settle: (way?: Way) => Promise<SettledColumnReading<Way>>;
 }
 
 /**
  * Settle the unfolded reading, then the one column count whose placement
- * the material-gain rule chooses, and keep the better of the two.
+ * the material-gain rule chooses, the way the unfolded reading was settled
+ * or, when the router refuses that, every way, and keep the better of the two.
  * @param readingOf The board read in a column count, asked once per count.
  * @returns The complete reading kept.
  */
-async function chooseReading(
-	readingOf: (columns: number) => ColumnReading,
+async function chooseReading<Way>(
+	readingOf: (columns: number) => ColumnReading<Way>,
 ): Promise<ArchitectureDrawing> {
-	const baseline = await readingOf(1).settle();
+	const { drawing: baseline, way } = await readingOf(1).settle();
 	const folds = columnCounts(baseline, requiredFit(baseline)).map((columns) => readingOf(columns));
 	const pages = await Promise.all(folds.map((reading) => reading.page()));
-	let kept: { page: Page; reading?: ColumnReading } = { page: baseline };
+	let kept: { page: Page; reading?: ColumnReading<Way> } = { page: baseline };
 	for (const [index, reading] of folds.entries()) {
 		const page = pages[index]!;
 		if (better(page, kept.page)) kept = { page, reading };
 	}
 	if (kept.reading === undefined) return baseline;
-	// A count the router refuses keeps the unfolded reading; a fault is thrown.
-	const candidate = await kept.reading.settle().catch((error: unknown) => {
-		if (refusedRouting(error)) return undefined;
-		throw error;
-	});
+	const candidate = await settledFold(kept.reading, way);
 	return candidate !== undefined && readsBetter(candidate, baseline) ? candidate : baseline;
+}
+
+/**
+ * A fold settled the way its unfolded reading was kept or, when the router
+ * refuses that, every way.
+ * @param reading The fold.
+ * @param way The way its unfolded reading was kept.
+ * @returns Its drawing, or undefined when it cannot be routed any way.
+ */
+async function settledFold<Way>(
+	reading: ColumnReading<Way>,
+	way: Way,
+): Promise<ArchitectureDrawing | undefined> {
+	return (await routed(reading.settle(way))) ?? (await routed(reading.settle()));
+}
+
+/**
+ * A settled fold's drawing, or nothing when the router refuses it; a fault is thrown.
+ * @param settling The fold being settled.
+ * @returns The drawing, or undefined when it cannot be routed.
+ */
+function routed<Way>(
+	settling: Promise<SettledColumnReading<Way>>,
+): Promise<ArchitectureDrawing | undefined> {
+	return settling.then(
+		({ drawing }) => drawing,
+		(error: unknown) => {
+			if (refusedRouting(error)) return undefined;
+			throw error;
+		},
+	);
 }
 
 /**
@@ -163,4 +207,4 @@ function columnCounts(drawing: ArchitectureDrawing, minimumFit: number): number[
 	);
 }
 
-export { chooseReading, type ColumnReading };
+export { chooseReading, type ColumnReading, type SettledColumnReading };

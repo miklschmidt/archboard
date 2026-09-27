@@ -5,23 +5,30 @@
 // (`card-layout.ts`), its widest rank wrapped into rows (`wraps.ts`) or its
 // ranks folded into columns (`fold.ts`) where that is worth taking. Last,
 // every block is put where its parent placed it and each relationship's
-// lines are joined end to end (`assembly.ts`). Whether a block's containers
-// stack, the joins, and the packing of a board's groups take the layout that
-// reads better, as drawn (`weighing.ts`), only where their earlier weighing
-// agrees or it reads no worse anywhere (`takes` in track/score.ts); settling
-// ports, holding a port order and wrapping keep their earlier weighing.
+// lines are joined end to end (`assembly.ts`). One solve lays the board out
+// one way: which way its joins are kept and whether a board's groups are
+// packed are chosen where the renderer runs (`solves.ts`). Whether a block's
+// containers stack, the joins, and the packing of a board's groups take the
+// layout that reads better, as drawn (`weighing.ts`), only where their
+// earlier weighing agrees or it reads no worse anywhere (`takes` in
+// track/score.ts); settling ports, holding a port order and wrapping keep
+// their earlier weighing.
 import type { ElkNode } from "@archboard/elk-rs";
-import type { Viz } from "@viz-js/viz";
+import { z } from "zod";
 import { fitIn } from "@/shared/shell-geometry/index";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
-import { Assembly, type Placed } from "@/transformers/semantic-renderer/lib/blocks/assembly";
+import { Assembly } from "@/transformers/semantic-renderer/lib/blocks/assembly";
 import { CardLayout } from "@/transformers/semantic-renderer/lib/blocks/card-layout";
 import { foldBlock, foldPlan } from "@/transformers/semantic-renderer/lib/blocks/fold";
 import { FoldLayout } from "@/transformers/semantic-renderer/lib/blocks/fold-layout";
+import {
+	answeringOnce,
+	type Graphviz,
+} from "@/transformers/semantic-renderer/lib/blocks/graphviz-once";
 import { corners, type Insets, type Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
-import { grownInsets, withoutLoneRegions } from "@/transformers/semantic-renderer/lib/blocks/lone";
-import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
+import { grownInsets } from "@/transformers/semantic-renderer/lib/blocks/lone";
+import { NestingSchema, type Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { bestWrap, weighed } from "@/transformers/semantic-renderer/lib/blocks/wraps";
 import {
 	layBoth,
@@ -33,9 +40,8 @@ import { PackLayout, type Packing } from "@/transformers/semantic-renderer/lib/b
 import { settlePorts } from "@/transformers/semantic-renderer/lib/blocks/settle";
 import { sidesOf } from "@/transformers/semantic-renderer/lib/blocks/sides";
 import { heldOrders } from "@/transformers/semantic-renderer/lib/blocks/orders";
-import { layJoined, type Drawn } from "@/transformers/semantic-renderer/lib/blocks/joins";
 import { routedWeighed } from "@/transformers/semantic-renderer/lib/blocks/trunks";
-import { weighedLaid, weighedPlaced } from "@/transformers/semantic-renderer/lib/blocks/weighing";
+import { weighedLaid } from "@/transformers/semantic-renderer/lib/blocks/weighing";
 import { BlockTree, type Block, type Side } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { PAGE_MARGIN } from "@/transformers/semantic-renderer/lib/track/route";
 import { crossingsOf, scoreOf, takes } from "@/transformers/semantic-renderer/lib/track/score";
@@ -75,7 +81,7 @@ function plainInsets(block: Block): Insets {
  * @param laid Every block laid out so far; the columns are added to it.
  * @returns The laid-out block.
  */
-function layCards(viz: Viz, tree: BlockTree, block: Block, laid: Map<string, Laid>): Laid {
+function layCards(viz: Graphviz, tree: BlockTree, block: Block, laid: Map<string, Laid>): Laid {
 	const insets = insetsOf(block);
 	const { whole, stacked } = stackedOrNot(viz, tree, block, laid);
 	const wrapped = bestWrap(viz, tree, block, { laid, whole, stacked, insets });
@@ -134,7 +140,7 @@ function bestScore(block: Block, laid: Laid): number {
  * change whether it stacks only when the choice then draws no more line.
  */
 function stackedOrNot(
-	viz: Viz,
+	viz: Graphviz,
 	tree: BlockTree,
 	block: Block,
 	laid: Map<string, Laid>,
@@ -220,7 +226,7 @@ function packsBlocks(tree: BlockTree, block: Block, nesting: Nesting): boolean {
  * @returns The blocks, every block laid out, and each block of blocks' packing.
  */
 function layAll(
-	viz: Viz,
+	viz: Graphviz,
 	avoid: AvoidEngine,
 	graph: ElkNode,
 	earlier: Earlier = NOTHING_EARLIER,
@@ -281,7 +287,7 @@ interface Board {
  * @returns The blocks, every block laid out, and what the layout decided.
  */
 function layOut(
-	viz: Viz,
+	viz: Graphviz,
 	avoid: AvoidEngine,
 	graph: ElkNode,
 	nesting: Nesting,
@@ -318,7 +324,7 @@ function layOut(
  * @returns The blocks, every block laid out.
  */
 function layOutAs(
-	viz: Viz,
+	viz: Graphviz,
 	avoid: AvoidEngine,
 	graph: ElkNode,
 	nesting: Nesting,
@@ -368,133 +374,132 @@ function settledOrNot(
 	};
 }
 
+/** The root option naming how a solve draws the board's containers and group regions (`inline.ts`). */
+const BLOCKS_NESTING = "archboard.blocks.nesting";
+/** The root option naming the blocks whose joins a solve keeps apart, as a JSON list of ids (`joins.ts`). */
+const BLOCKS_APART = "archboard.blocks.apart";
 /**
- * Lay a measured hierarchy out with every join of lines to one card kept
- * whole the way that reads better (`joins.ts`). A board with regions round
- * one node (`lone.ts`) is laid out as its layout without them decides:
- * which joins part, which ports move to side walls, how blocks pack and
- * which port orders hold. Such a region gathers nothing
- * and joins no line, but the room it takes moves the routes round it, and
- * each of those choices weighed with it could turn: What the CLI can be
- * asked (Blocks) parted four lines into Board client for a hop more and 21%
- * more line, and Working with an agent (Blocks) moved four more ports to
- * side walls and stood Pane session off to the middle.
- * @param viz The initialized Graphviz instance.
- * @param avoid The initialized libavoid module.
- * @param graph The measured hierarchy.
- * @param nesting How containers and group regions are drawn.
- * @returns The blocks, and the drawing's geometry.
+ * The root option carrying what a solve decided (`layOut`), as JSON: on an
+ * answer, what the layout it laid decided; on a question, what the layout it
+ * asks for keeps (`layOutAs`).
  */
-function layJoinedOut(
-	viz: Viz,
-	avoid: AvoidEngine,
-	graph: ElkNode,
-	nesting: Nesting,
-): Drawn<Placed> {
-	const plain = withoutLoneRegions(graph);
-	const { best, apart } = layJoined((kept) => drawnOut(viz, avoid, plain ?? graph, nesting, kept));
-	if (plain === undefined) return best;
-	const { tree, laid } = layOutAs(viz, avoid, graph, nesting, apart, best.decided);
-	return { tree, placed: Assembly.unstepped(new Assembly(tree, laid).placed()) };
-}
+const BLOCKS_DECIDED = "archboard.blocks.decided";
 
 /**
- * Lay a measured hierarchy out with some blocks' joins apart, and join its lines.
- * @param viz The initialized Graphviz instance.
- * @param avoid The initialized libavoid module.
- * @param graph The measured hierarchy.
- * @param nesting How containers and group regions are drawn.
- * @param apart The blocks whose joins keep ports of their own, by id.
- * @returns The blocks, the drawing's geometry, and what the layout decided.
- */
-function drawnOut(
-	viz: Viz,
-	avoid: AvoidEngine,
-	graph: ElkNode,
-	nesting: Nesting,
-	apart: ReadonlySet<string>,
-): Drawn<Placed> & { decided: Earlier } {
-	const { tree, laid, decided } = layOut(viz, avoid, graph, nesting, apart);
-	return { tree, placed: Assembly.unstepped(new Assembly(tree, laid).placed()), decided };
-}
-
-/**
- * Whether a board laid with its groups packed reads better than laid inline
- * in the order of ADR 0039, and no worse anywhere than the drawing taken
- * before it ({@link takes}): packed, where it scores higher, draws no more
- * line, and fits the pane no worse. Blocks standing side by side can trade
- * a line's straight run for one round both blocks, which the score alone
- * does not see; and packing is for a page the board's own ranks spread out,
- * so a packing that fits worse only buys its crossings with lines run round
- * the blocks.
- * @param packed The drawing with groups packed.
- * @param inline The drawing with groups inline.
- * @returns True when the packed one reads better.
- */
-function readsBetterPacked(packed: Drawn<Placed>, inline: Drawn<Placed>): boolean {
-	const [one, other] = [packed.placed, inline.placed];
-	const [packs, inlines] = [one, other].map(({ edges }) => edges.map(({ points }) => points));
-	const earlier =
-		scoreOf({ ...one, crossings: crossingsOf(packs!) }) >
-			scoreOf({ ...other, crossings: crossingsOf(inlines!) }) &&
-		lineLength(packs!) <= lineLength(inlines!) &&
-		fitIn(one) >= fitIn(other);
-	return takes(weighedPlaced(one), weighedPlaced(other), earlier);
-}
-
-/**
- * Lay a measured hierarchy out as blocks and route every relationship. Drawn
- * inline, a board with groups is also laid with each group's region packed as
- * a block of its own, and the layout that reads better is kept: a group whose
- * members stand far apart in the board's ranks spans them all as a cluster,
- * a tall sparse band, but packed stands whole.
+ * Lay a measured hierarchy out as blocks one way and route every
+ * relationship: its containers and group regions drawn as its root options
+ * name, else packed as blocks, or inline when asked; the joins of the blocks
+ * they name kept apart; and, when they carry what another layout decided,
+ * laid out as it decided (`layOutAs`). Which way reads best is chosen where
+ * the renderer runs (`solves.ts`). The answer carries what the layout
+ * decided.
  * @param viz The initialized Graphviz instance.
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
  * @param inline Whether containers and group regions are drawn inline, as
- * clusters of the board's own layout, rather than packed as blocks.
+ * clusters of the board's own layout, when its options name no way.
  * @returns The hierarchy, with the drawing's geometry on its root.
  */
-function placeBlocks(viz: Viz, avoid: AvoidEngine, graph: ElkNode, inline = false): ElkNode {
-	const first = layJoinedOut(viz, avoid, graph, inline ? "inline" : "blocks");
-	const { placed } = inline && hasRegions(first.tree) ? betterOf(viz, avoid, graph, first) : first;
-	const drawn = JSON.stringify(placed);
+function placeBlocks(viz: Graphviz, avoid: AvoidEngine, graph: ElkNode, inline = false): ElkNode {
+	const options = graph.layoutOptions ?? {};
+	const nesting = NestingSchema.parse(options[BLOCKS_NESTING] ?? (inline ? "inline" : "blocks"));
+	const apart = new Set(ApartSchema.parse(JSON.parse(options[BLOCKS_APART] ?? "[]")));
+	const { tree, laid, decided } = laidAsAsked(
+		answeringOnce(viz),
+		avoid,
+		graph,
+		nesting,
+		apart,
+		options[BLOCKS_DECIDED],
+	);
+	const placed = Assembly.unstepped(new Assembly(tree, laid).placed());
 	return {
 		id: graph.id,
 		x: 0,
 		y: 0,
 		width: placed.width,
 		height: placed.height,
-		layoutOptions: { ...graph.layoutOptions, [BLOCKS_PLACED]: drawn },
+		layoutOptions: {
+			...graph.layoutOptions,
+			[BLOCKS_PLACED]: JSON.stringify(placed),
+			...decidedOptions(decided),
+		},
 	};
 }
 
 /**
- * The better of a board drawn inline and drawn with each group's region
- * packed as a block of its own.
- * @param viz The initialized Graphviz instance.
+ * Lay a measured hierarchy out one way: as another layout decided it would
+ * be when a solve carries that, else deciding for itself.
+ * @param viz Graphviz, answering each graph once.
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
- * @param inline The board drawn inline.
- * @returns The blocks and the drawing's geometry.
+ * @param nesting How containers and group regions are drawn.
+ * @param apart The blocks whose joins keep ports of their own, by id.
+ * @param asked What another layout decided, as JSON, if the solve carries it.
+ * @returns The blocks, every block laid out, and what the layout decided when it decided.
  */
-function betterOf(
-	viz: Viz,
+function laidAsAsked(
+	viz: Graphviz,
 	avoid: AvoidEngine,
 	graph: ElkNode,
-	inline: Drawn<Placed>,
-): Drawn<Placed> {
-	const packed = layJoinedOut(viz, avoid, graph, "groups");
-	return readsBetterPacked(packed, inline) ? packed : inline;
+	nesting: Nesting,
+	apart: ReadonlySet<string>,
+	asked: string | undefined,
+): { tree: BlockTree; laid: Map<string, Laid>; decided?: Earlier } {
+	if (asked === undefined) return layOut(viz, avoid, graph, nesting, apart);
+	return layOutAs(viz, avoid, graph, nesting, apart, earlierOf(asked));
+}
+
+/** The blocks a solve keeps apart. */
+const ApartSchema = z.array(z.string());
+
+/** What a layout decided, as a solve carries it. */
+const DecidedSchema = z.object({
+	exits: z.array(z.tuple([z.string(), z.enum(["top", "bottom", "left", "right"])])),
+	packings: z.array(
+		z.tuple([
+			z.string(),
+			z.object({
+				across: z.boolean(),
+				groups: z.array(z.array(z.number())),
+				gap: z.number().exactOptional(),
+				margin: z.number().exactOptional(),
+				aligned: z.boolean().exactOptional(),
+			}),
+		]),
+	),
+	orders: z.array(z.tuple([z.string(), z.array(z.string())])).optional(),
+});
+
+/**
+ * The answer's option that carries what its layout decided.
+ * @param decided What it decided, if it decided.
+ * @returns The option, as JSON; none when it laid out as another layout decided.
+ */
+function decidedOptions(decided: Earlier | undefined): Record<string, string> {
+	if (decided === undefined) return {};
+	const { exits, packings, orders } = decided;
+	return {
+		[BLOCKS_DECIDED]: JSON.stringify({
+			exits: [...exits],
+			packings: [...packings],
+			...(orders === undefined ? {} : { orders: [...orders] }),
+		}),
+	};
 }
 
 /**
- * Whether a board drawn inline gathers any group into a region.
- * @param tree The blocks.
- * @returns True when some cluster is a group's region.
+ * What a layout decided, read back from a solve.
+ * @param json What it decided, as JSON.
+ * @returns It.
  */
-function hasRegions(tree: BlockTree): boolean {
-	return [...tree.root.clusters.values()].some(({ kind }) => kind === "region");
+function earlierOf(json: string): Earlier {
+	const { exits, packings, orders } = DecidedSchema.parse(JSON.parse(json));
+	return {
+		exits: new Map(exits),
+		packings: new Map(packings),
+		...(orders === undefined ? {} : { orders: new Map(orders) }),
+	};
 }
 
-export { BLOCKS_PLACED, placeBlocks };
+export { BLOCKS_APART, BLOCKS_DECIDED, BLOCKS_NESTING, BLOCKS_PLACED, placeBlocks };

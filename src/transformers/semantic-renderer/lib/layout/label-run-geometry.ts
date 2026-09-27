@@ -75,16 +75,28 @@ function piecesOf(edges: readonly DrawingEdge[]): RoutePiece[] {
 function without(intervals: readonly Interval[], blocked: Interval): readonly Interval[] {
 	const [low, high] = blocked;
 	// Most obstacles miss every interval; those leave the intervals as they are.
-	if (intervals.every(([start, end]) => high <= start || low >= end)) return intervals;
-	return intervals.flatMap(([start, end]): Interval[] => {
-		if (high <= start || low >= end) return [[start, end]];
-		return [
-			...(low + ROUTE_SNAP >= start
-				? ([[start, Math.max(start, Math.min(low, end))]] as const)
-				: []),
-			...(high <= end + ROUTE_SNAP ? ([[Math.min(end, Math.max(high, start)), end]] as const) : []),
-		];
-	});
+	const hit = intervals.findIndex(([start, end]) => high > start && low < end);
+	if (hit === -1) return intervals;
+	const left = intervals.slice(0, hit);
+	for (const interval of intervals.slice(hit)) keepRemains(left, interval, blocked);
+	return left;
+}
+
+/**
+ * Add what an obstacle leaves of one interval, allowing only native half-unit
+ * route snapping.
+ * @param left The intervals kept so far, added to here.
+ * @param interval Available leading-edge positions.
+ * @param blocked Forbidden positions on the same axis.
+ */
+function keepRemains(left: Interval[], interval: Interval, blocked: Interval): void {
+	const [[start, end], [low, high]] = [interval, blocked];
+	if (high <= start || low >= end) {
+		left.push([start, end]);
+		return;
+	}
+	if (low + ROUTE_SNAP >= start) left.push([start, Math.max(start, Math.min(low, end))]);
+	if (high <= end + ROUTE_SNAP) left.push([Math.min(end, Math.max(high, start)), end]);
 }
 
 /**

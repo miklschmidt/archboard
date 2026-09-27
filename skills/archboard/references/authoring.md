@@ -82,11 +82,12 @@ whole variant: a member a view hides is still a member. A configured group
 nobody has joined answers empty; an id that is neither configured nor on any
 node is refused.
 
-On the canvas, pick a group from the sidebar's Board tab or a selected node's
-membership: its drawn members stand out across containers, boundary neighbours
-stay readable, and **Details** opens the complete report (every member,
-including those the view hides, internal relationships, directed incoming and
-outgoing boundary relationships, and their immediate neighbours).
+On the canvas, choosing a group in the sidebar's Board tab, where every group
+is listed with its colour, or a selected node's membership selects every drawn
+member across containers. The complete report (every member, including those
+the view hides, internal relationships, directed incoming and outgoing
+boundary relationships, and their immediate neighbours) is the answer of
+`archboard semantic inspect`.
 
 ### Bindings
 

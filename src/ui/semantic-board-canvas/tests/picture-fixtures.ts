@@ -35,6 +35,8 @@ interface Line {
 	readonly masked?: boolean;
 	/** Whether the line is drawn as a removed subject, its whole group a ghost. */
 	readonly ghost?: boolean;
+	/** Whether traffic rides the line, in its own layer over every line. */
+	readonly traffic?: boolean;
 }
 
 /**
@@ -78,6 +80,17 @@ function lineMarkup(line: Line): string {
 }
 
 /**
+ * A line's traffic as the renderer draws it: a pulse in a layer of its own.
+ * @param line The line.
+ * @returns Its layer, or nothing when no traffic rides it.
+ */
+function trafficMarkup(line: Line): string {
+	return line.traffic === true
+		? `<g data-traffic="${line.id}"><g class="ab-pulse"><path d="M0,0 L4,0" stroke="#999"/></g></g>`
+		: "";
+}
+
+/**
  * One drawn picture of the board `pipeline`.
  * @param cards Its cards.
  * @param lines Its lines.
@@ -94,6 +107,7 @@ function picture(
 	const svg =
 		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">` +
 		lines.map(lineMarkup).join("") +
+		lines.map(trafficMarkup).join("") +
 		cards.map(cardMarkup).join("") +
 		`</svg>`;
 	return {
