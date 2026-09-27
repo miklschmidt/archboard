@@ -54,7 +54,7 @@ import {
 	touchKeys,
 	trackedLanes,
 } from "@/transformers/semantic-renderer/lib/layout/stacked-runs";
-import { crossingsOf } from "@/transformers/semantic-renderer/lib/track/score";
+import { crossingsOf, type Weighed } from "@/transformers/semantic-renderer/lib/track/score";
 
 /** The share a drawing may grow its page or its lines by for every defect it saves. */
 const CROSSING_WORTH = 0.05;
@@ -226,6 +226,24 @@ function tidierThan(one: ArchitectureDrawing, other: ArchitectureDrawing, cured 
 }
 
 /**
+ * What a settled drawing is weighed on where a chooser weighs it on how it
+ * reads (`readingOrder` in track/score.ts): its crossings seen
+ * ({@link crossingsSeen}); its hooks into a card's side, its pairs of lines
+ * that touch and its crowded joins; and its page.
+ * @param drawing The drawing.
+ * @returns What it is weighed on.
+ */
+function drawingWeighed(drawing: ArchitectureDrawing): Weighed {
+	const [seen, touches, , hooks] = defectsIn(drawing);
+	return {
+		width: drawing.width,
+		height: drawing.height,
+		crossings: seen!,
+		hooks: hooks! + touches!,
+	};
+}
+
+/**
  * Whether one ranking is strictly better than another at the first place they differ.
  * @param ranked A drawing's ranking ({@link untidiness}).
  * @param against Another's.
@@ -252,4 +270,4 @@ async function tidierSettlement<Settled extends { readonly drawing: Architecture
 	return tidierThan(other.drawing, one.drawing) ? other : one;
 }
 
-export { centreHandicap, crossingsSeen, tidierSettlement, tidierThan };
+export { centreHandicap, crossingsSeen, drawingWeighed, tidierSettlement, tidierThan };

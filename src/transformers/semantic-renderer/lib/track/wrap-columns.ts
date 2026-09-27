@@ -29,8 +29,6 @@ interface Wrap {
 	 * @returns The cluster.
 	 */
 	readonly around: (card: string) => string | undefined;
-	/** The lowered cards that may not step out of a line's way. */
-	readonly refused?: ReadonlySet<string>;
 }
 
 /** The furthest a card standing in a line's way steps aside: four lanes. */
@@ -276,26 +274,21 @@ function into(stretch: [number, number], span: [number, number]): boolean {
 
 /**
  * Open a straight column for a line the wrap closed: move its lone lowered
- * end under its port, else step a lowered card in its way aside, one the
- * wrap does not refuse.
+ * end under its port, else step a lowered card in its way aside.
  * @param columns The placed items.
  * @param wrap The wrap.
  * @param join The line.
- * @returns The card that stepped aside, if one did.
  */
-function clearLine(columns: Columns, wrap: Wrap, join: Join): string | undefined {
-	if (moveUnderPort(columns, wrap, join) || straight(columns, join)) return undefined;
+function clearLine(columns: Columns, wrap: Wrap, join: Join): void {
+	if (moveUnderPort(columns, wrap, join) || straight(columns, join)) return;
 	const span = common(columns, join);
-	if (span === undefined) return undefined;
-	return standing(columns, join)
+	if (span === undefined) return;
+	standing(columns, join)
 		.filter(
 			([name, at]) =>
-				lowered(wrap, name) &&
-				wrap.refused?.has(name) !== true &&
-				columns.room.card?.(name) === true &&
-				into(kept(at), span),
+				lowered(wrap, name) && columns.room.card?.(name) === true && into(kept(at), span),
 		)
-		.find(([name]) => stepAside(columns, join, name))?.[0];
+		.some(([name]) => stepAside(columns, join, name));
 }
 
 /**
@@ -303,11 +296,10 @@ function clearLine(columns: Columns, wrap: Wrap, join: Join): string | undefined
  * way: every line stacked from one rank to a lower one, in turn.
  * @param columns The placed items, lined up.
  * @param wrap The wrap they were placed by, if any.
- * @returns The cards that stepped aside, which only routing shows were worth it.
  */
-function clearWrap(columns: Columns, wrap: Wrap | undefined): string[] {
-	if (wrap === undefined || ![...wrap.rows.values()].some((row) => row > 0)) return [];
-	return columns.stacked().flatMap((join) => clearLine(columns, wrap, join) ?? []);
+function clearWrap(columns: Columns, wrap: Wrap | undefined): void {
+	if (wrap === undefined || ![...wrap.rows.values()].some((row) => row > 0)) return;
+	for (const join of columns.stacked()) clearLine(columns, wrap, join);
 }
 
 export { clearWrap, type Wrap };

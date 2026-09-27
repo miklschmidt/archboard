@@ -297,9 +297,14 @@ function overlaps(a: Box, b: Box): boolean {
  * Where other lines meet each line of a drawing: the hops it carries or
  * passes under, and the stretches it shares with another line as one stroke.
  * @param drawing The drawing as painted.
+ * @param drawing.edges Its routes, each with its relationship.
+ * @param drawing.bridged Its bridges over the routes they cross.
  * @returns The places, by relationship id.
  */
-function meetingPlaces(drawing: PaintedDrawing): ReadonlyMap<string, readonly Box[]> {
+function meetingPlaces(drawing: {
+	readonly edges: readonly { readonly edge: { readonly id: string }; readonly curve: Curve }[];
+	readonly bridged: Pick<PaintedDrawing["bridged"], "bridges">;
+}): ReadonlyMap<string, readonly Box[]> {
 	const shared = sharedStretches(joinRoutes(drawing.edges, () => 1));
 	const { bridges } = drawing.bridged;
 	return new Map(

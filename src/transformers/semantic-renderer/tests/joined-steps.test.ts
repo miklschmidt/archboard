@@ -4,9 +4,11 @@
 // a slide that takes a step out by moving part of a trunk, by carrying a
 // trunk's line the long way round, by moving a line's end run or its run
 // through its label, or by running a new stretch into a card or past it
-// nearer than the router keeps lines, a title band, a wall it did not cross, along a wall, onto another line's
-// axis, beside it, across it where it did not cross or where that line turns,
-// or into a jog too short for its bends.
+// nearer than the router keeps lines, a title band, a wall it did not cross,
+// along a wall, onto another line's axis, beside it, across it where it did
+// not cross or where that line turns, or into a jog too short for its bends;
+// and a step left in place because a line that slides away later stood in
+// its way.
 import { expect, test } from "bun:test";
 import { unstepped, type Point } from "@/transformers/semantic-renderer/layout";
 
@@ -75,6 +77,13 @@ test("a step stays where either slide leaves a run too short for its two bends",
 test("a step stays where it is the line's run through its label", () => {
 	const label = { x: 130, y: 140, width: 40, height: 20 };
 	expect(unstepped([{ points: DOUBLING, label }], NOTHING)[0]).toEqual(DOUBLING);
+});
+
+test("a step another line held is taken out once that line has slid away", () => {
+	// Its middle run crosses one of the doubling line's slides and runs beside
+	// the other, until it slides onto the column of its first run.
+	const later = line([350, -100], [350, -60], [150, -60], [150, 90], [450, 90], [450, 300]);
+	expect(unstepped([{ points: DOUBLING }, { points: later }], NOTHING)[0]).toEqual(ON_FIRST);
 });
 
 test("lines that share a step's whole run between two turns slide it together", () => {

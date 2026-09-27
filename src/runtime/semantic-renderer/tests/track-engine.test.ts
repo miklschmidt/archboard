@@ -24,7 +24,7 @@ import {
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import containerDetour from "./container-detour.json";
-import fittingWrap from "./fitting-wrap.json";
+import variantReconciliation from "./variant-reconciliation.json";
 import sunkWrap from "./sunk-wrap.json";
 
 const TARGETS = ["one", "two", "three", "four", "five"];
@@ -317,18 +317,20 @@ test("cards on one rank stand on one top, and the lines into them end there", as
 	expect(ends.get("s")!.y).toBe(ends.get("a")!.y);
 });
 
-// Reduced from a dogfood view, names replaced: a fan too wide for the pane
-// wraps, and a wrap into two rows and a narrower one into three both fit the
-// pane at full scale; the smaller page won, and the fan stepped down three rows.
-test("of two wraps that both fit the pane, the one into fewer rows is kept", async () => {
-	const content = orderedFixture(fittingWrap);
+// Taken from a board of this repository: a fan too wide for the pane wraps,
+// and a wrap into two rows and a narrower one into three both fit the pane
+// at full scale. Taking the smaller page stepped the fan down three rows as
+// a staircase, where the wrap into two rows reads worse than the fan in one
+// row with its group packed, and that is kept.
+test("a fan never steps down three rows where two would do", async () => {
+	const content = orderedFixture(variantReconciliation);
 	const policy = SemanticPolicySchema.parse({
 		levels: ["service"],
-		nodeKinds: { module: { name: "Module", icon: "RiBox3Line" } },
+		nodeKinds: { function: { name: "Function", icon: "RiCodeLine" } },
 		relationshipKinds: { call: { name: "Call", dash: "solid", arrowhead: "filled" } },
-		groups: { routes: { name: "Routes", color: "violet" } },
+		groups: { writes: { name: "Board writes", color: "orange" } },
 	});
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
 	const targets = content.edges.map(({ to }) => drawing.atlas.nodes[to]!);
-	expect(new Set(targets.map(({ y }) => y)).size).toBe(2);
+	expect(new Set(targets.map(({ y }) => y)).size).toBeLessThanOrEqual(2);
 });

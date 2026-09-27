@@ -12,10 +12,10 @@ import {
 	routesCross,
 	turnsOf,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
-import archboardServer from "./archboard-server.json";
+import rendererLayout from "./renderer-layout.json";
 import liveServerState from "./live-server-state.json";
+import skillEvaluation from "./skill-evaluation.json";
 import twinLines from "./twin-lines.json";
-import whatTheCliCanBeAsked from "./what-the-cli-can-be-asked.json";
 import workhorseNews from "./workhorse-news-track.json";
 import workingWithAnAgent from "./working-with-an-agent.json";
 
@@ -30,6 +30,7 @@ const policy = SemanticPolicySchema.parse({
 		ui: { name: "User interface", icon: "RiLayoutLine" },
 		function: { name: "Function", icon: "RiCodeLine" },
 		system: { name: "System", icon: "RiApps2Line" },
+		config: { name: "Config", icon: "RiSettings3Line" },
 	},
 	relationshipKinds: {
 		call: { name: "Call", dash: "solid", arrowhead: "filled" },
@@ -51,6 +52,7 @@ const policy = SemanticPolicySchema.parse({
 		child: { name: "Codex child", color: "indigo" },
 		agent: { name: "Agent", color: "fuchsia" },
 		checks: { name: "Vault checks", color: "pink" },
+		grading: { name: "Grading", color: "amber" },
 	},
 });
 
@@ -66,12 +68,12 @@ async function linesOf(fixture: unknown, layout: "track" | "blocks") {
 	return Object.assign(corridorPoints(drawing.svg), { labels: routeLabels(drawing.svg) });
 }
 
-// Parting two lines that read as one stands one a lane off, which frees the
-// column a jog of 'discard under the board's lease' was held off by; it steps
-// twice without the jogs closed again.
-test("a jog is closed again once parting lines frees its column", async () => {
-	const lines = await linesOf(archboardServer, "track");
-	expect(turnsOf(lines.get("iqwlU6YF")!)).toBeLessThanOrEqual(4);
+// Taken from a board of this repository: 'route every relationship' from
+// Layout engine drops straight into Obstacle routing once the jog routing
+// left in it is closed again; without that it steps aside and back.
+test("a jog is closed again once routing frees its column", async () => {
+	const lines = await linesOf(rendererLayout, "track");
+	expect(turnsOf(lines.get("Qvp9SqT5")!)).toBe(0);
 });
 
 // Two lines pass beside a frame their stations stand either side of; moved
@@ -82,12 +84,12 @@ test("a lane keeps the frames either station beside it stands in", async () => {
 });
 
 // Blocks straightens a lane onto the column its line runs on even where the
-// straight lane crosses more than the stepped one: refused there, two of the
-// 'validated input' lines out of Contract execution stepped twice more, and
+// straight lane crosses more than the stepped one: refused there, 'rasterize
+// each picture' and 'photograph everything declared' each stepped twice, and
 // the whole of Archboard server crossed 69 -> 90 times.
 test("Blocks straightens a lane even where it crosses more", async () => {
-	const lines = await linesOf(whatTheCliCanBeAsked, "blocks");
-	for (const id of ["kcqc65Ye", "ZPdOT4dc"]) expect(turnsOf(lines.get(id)!)).toBeLessThanOrEqual(8);
+	const lines = await linesOf(skillEvaluation, "blocks");
+	for (const id of ["5TtCOktb", "b3s3lWZn"]) expect(turnsOf(lines.get(id)!), id).toBe(0);
 });
 
 // Blocks settles a label under the card above it before over the card below:

@@ -12,17 +12,14 @@ font, size, width, and baseline. A card grows to hold its text instead of shrink
 or truncating its title. See [the adapter contract](pretext-measurement-adapter.md)
 for the pinned upstream patch.
 
-`lib/layout/reading.ts` decides which way a page reads (ADR 0028). Every
-board is solved in one frame, the page reading down it; a board that reads
-left to right is the transposed problem solved in that frame and transposed
-back, so a face, a lane or a title band means one thing everywhere. A first
-render is settled both ways, and for a board with no frame each way folded
-toward the pane's shape as well (`lib/layout/reading-choice.ts`); the drawing
-that fits the reference pane best is kept, a folded one only within the bend
-bound and carrying at most one route across a fold, ties going to down and
-unfolded. A proposal keeps its predecessor's reading; the document carries
-`data-reading-direction` and, when folded, `data-reading-wrapped`. The
-conventions below are stated in the solving frame.
+Every board is solved reading down the page. A tall board is also folded into
+side-by-side columns (`lib/layout/column-readings.ts`). Whether the fold is
+kept follows ADR 0039's guard: it is weighed as before the ADR (a twentieth
+more fit and a higher score) and on its reading pick (a twentieth more fit and
+no more defects), and where the two disagree the reading pick is taken only if
+it is no worse on every measure the ADR orders.
+The document carries `data-reading-direction`. The conventions below are
+stated in that frame.
 
 `lib/layout/compound-graph.ts` translates semantic containment to an ELK hierarchy.
 Cards have measured dimensions; frames reserve their measured header and inset

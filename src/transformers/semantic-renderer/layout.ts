@@ -3,7 +3,7 @@
 // spacing, corner rounding, crossing bridges and the marks where routes join.
 export { bridgeCrossings } from "@/transformers/semantic-renderer/lib/layout/crossings";
 export { junctionsOf } from "@/transformers/semantic-renderer/lib/svg/junctions";
-export { restingPlace } from "@/transformers/semantic-renderer/lib/svg/comet-rest";
+export { meetingPlaces, restingPlace } from "@/transformers/semantic-renderer/lib/svg/comet-rest";
 export {
 	curveThrough,
 	curveClearanceIssue,
@@ -41,6 +41,7 @@ export {
 export { chooseReading } from "@/transformers/semantic-renderer/lib/layout/column-readings";
 export { placeRun, type Slider } from "@/transformers/semantic-renderer/lib/track/label-runs";
 export { unstepped } from "@/transformers/semantic-renderer/lib/blocks/steps";
+export { readsBetter, takes, type Weighed } from "@/transformers/semantic-renderer/lib/track/score";
 export {
 	settleLabels,
 	type LabelAttempt,

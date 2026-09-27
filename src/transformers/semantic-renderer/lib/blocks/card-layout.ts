@@ -33,7 +33,6 @@ import {
 	nodesIn,
 	numbers,
 	outputSchema,
-	type Output,
 	polylinePoints,
 	type Join,
 } from "@/transformers/semantic-renderer/lib/track/graphviz";
@@ -43,7 +42,6 @@ import { Clusters, isTitle, titleOf } from "@/transformers/semantic-renderer/lib
 import { leavingPull } from "@/transformers/semantic-renderer/lib/blocks/leaving";
 import { gridEdges, wrapEdges } from "@/transformers/semantic-renderer/lib/track/grid";
 import { anchored, lapsOf } from "@/transformers/semantic-renderer/lib/track/score";
-import { keptSteps, type Aligned } from "@/transformers/semantic-renderer/lib/blocks/stepped";
 import {
 	besidePoints,
 	besideWalls,
@@ -364,19 +362,25 @@ class CardLayout {
 	 * @returns The laid-out block.
 	 */
 	lay(viz: Viz): Laid {
-		this.build();
-		const output = outputSchema.parse(viz.renderJSON(this.graph, { yInvert: true }));
-		const { laid, placed, centres } = keptSteps((refused) => this.aligned(output, refused));
+		const { placed, centres } = this.lined(viz);
+		const laid = this.routed(placed, 0);
 		return { ...laid, reroute: this.rerouted.bind(this, placed, laid.width, centres) };
 	}
 
 	/**
-	 * The block lined up from where Graphviz placed it, placed and routed.
-	 * @param output Graphviz's output.
-	 * @param refused The wrapped cards that may not step out of a line's way.
-	 * @returns The block, and the cards that stepped aside.
+	 * The block ranked by Graphviz and lined up, its lines not yet routed:
+	 * where every item stands across the block is settled here, and routing
+	 * only opens the room between its ranks.
+	 * @param viz The initialized Graphviz instance.
+	 * @returns The placed block, every vendor node's centre, and every vendor node's box.
 	 */
-	aligned(output: Output, refused: ReadonlySet<string>): Aligned {
+	lined(viz: Viz): {
+		placed: ElkNode & { edges: ElkExtendedEdge[] };
+		centres: ReadonlyMap<string, Point>;
+		boxes: ReadonlyMap<string, Box>;
+	} {
+		this.build();
+		const output = outputSchema.parse(viz.renderJSON(this.graph, { yInvert: true }));
 		const [left, low, right, high] = numbers(output.bb);
 		const origin = { x: Math.min(left!, right!), y: Math.min(low!, high!) };
 		const polylines = new Map<string, string[]>();
@@ -388,17 +392,15 @@ class CardLayout {
 		// A line from a child block is lined up where it leaves the block, at its pin.
 		const atPins = this.links((end) => (this.tree.pins.has(end) ? end : this.vendorOf(end)));
 		const width = Math.abs(right! - left!);
-		const stepped = this.clusters.lineUp(atPins, centres, {
+		this.clusters.lineUp(atPins, centres, {
 			boxes,
 			clusters,
 			polylines,
 			width,
 			cards: this.tree.cards,
 			lowered: this.arranged.lowered,
-			refused,
 		});
-		const placed = this.placed(centres, polylines, clusters);
-		return { stepped, centres, placed, laid: this.routed(placed, 0) };
+		return { placed: this.placed(centres, polylines, clusters), centres, boxes };
 	}
 
 	/**
