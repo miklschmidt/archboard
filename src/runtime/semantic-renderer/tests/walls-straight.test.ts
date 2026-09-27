@@ -54,11 +54,10 @@ test("a line out of a container by its wall leaves its card's side when nothing 
 test("two lines out of one side of a card keep to the tracks", async () => {
 	const content = orderedFixture(ingressStages);
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	const corners = [...corridorPoints(drawn.svg).values()].reduce(
-		(sum, points) => sum + turnsOf(points),
-		0,
-	);
-	expect(corners).toBeLessThan(50);
+	// The two lines out of Floeo Btla Pstetineo's side of its container.
+	const routes = corridorPoints(drawn.svg);
+	for (const id of ["HH8tp1yP", "0j05s9wR"])
+		expect(turnsOf(routes.get(id)!), id).toBeLessThanOrEqual(4);
 });
 
 // Reduced from a board of a work vault, names replaced: the line into the
