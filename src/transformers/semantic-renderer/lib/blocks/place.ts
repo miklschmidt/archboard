@@ -13,7 +13,7 @@ import { Assembly, type Placed } from "@/transformers/semantic-renderer/lib/bloc
 import { CardLayout } from "@/transformers/semantic-renderer/lib/blocks/card-layout";
 import { foldBlock, foldPlan } from "@/transformers/semantic-renderer/lib/blocks/fold";
 import { FoldLayout } from "@/transformers/semantic-renderer/lib/blocks/fold-layout";
-import { corners, type Insets, type Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
+import type { Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { bestWrap, weighed } from "@/transformers/semantic-renderer/lib/blocks/wraps";
@@ -229,12 +229,10 @@ interface Board {
  * block of its chain crossed by the edges that face each other (`sides.ts`).
  * Where settling would swap ports on a block of cards' face, once more with
  * those ports held in the settled order (`orders.ts`), kept where it crosses
- * fewer lines and turns no more often: the held order is there to part lines
- * that cross, and a whole block ranked again may buy that with turns
- * elsewhere. Not while a join is parted: the joins choice would then prefer a
- * parted drawing that runs a line round a block. Last, the ports on every block's top and bottom are settled
- * where both ends of their trunks are known, and the blocks routed again with
- * them there.
+ * fewer lines. Not while a join is parted: the joins choice would then
+ * prefer a parted drawing that runs a line round a block. Last, the ports on
+ * every block's top and bottom are settled where both ends of their trunks
+ * are known, and the blocks routed again with them there.
  * @param viz The initialized Graphviz instance.
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
@@ -258,21 +256,19 @@ function layOut(
 		orders.size === 0 ? [] : [layAll(viz, avoid, graph, { ...kept, orders }, nesting, apart)];
 	return [last, ...held]
 		.map((laying) => settledOrNot(laying, avoid))
-		.reduce((one, other) =>
-			other.crossings < one.crossings && other.bends <= one.bends ? other : one,
-		);
+		.reduce((one, other) => (other.crossings < one.crossings ? other : one));
 }
 
 /**
  * A layout with its ports settled, unless the drawing reads better unsettled.
  * @param laying The layout; its blocks are replaced.
  * @param avoid The initialized libavoid module.
- * @returns The blocks, every block laid out, and how often the drawing's lines cross and turn.
+ * @returns The blocks, every block laid out, and how often the drawing's lines cross.
  */
 function settledOrNot(
 	laying: Board,
 	avoid: AvoidEngine,
-): { tree: BlockTree; laid: Map<string, Laid>; crossings: number; bends: number } {
+): { tree: BlockTree; laid: Map<string, Laid>; crossings: number } {
 	const unsettled = new Map(laying.laid);
 	settlePorts({ ...laying, insetsOf, avoid });
 	const [was, is] = [unsettled, laying.laid].map((laid) =>
@@ -280,13 +276,7 @@ function settledOrNot(
 	);
 	if (readsBetter(was!, is!)) for (const [id, laid] of unsettled) laying.laid.set(id, laid);
 	const [, lines] = pageAndLines(laying.tree, laying.laid);
-	const bends = lines.reduce((sum, points) => sum + corners(points).length - 2, 0);
-	return {
-		tree: laying.tree,
-		laid: laying.laid,
-		crossings: crossingsOf(lines),
-		bends,
-	};
+	return { tree: laying.tree, laid: laying.laid, crossings: crossingsOf(lines) };
 }
 
 /**
