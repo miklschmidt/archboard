@@ -353,9 +353,9 @@ interface ArchitecturePainting {
  * @param unsettledOf Whether a subject needs reconciliation.
  * @param policy Current vault policy.
  * @param derived Ids of the lines that are flow steps drawn on the board, not authored relationships.
- * @param page What the page holds: by default the drawing and its marks; for a drawing
- * that leaves out what its comparison would show, the whole layout and the marks the
- * comparison would draw, so what it keeps stands where it stands with them.
+ * @param page What the page holds: the whole layout and the marks the comparison would
+ * draw, so a drawing that leaves out what its comparison would show keeps everything
+ * else where it stands with them.
  * @returns The document body, bounds and matching atlas.
  */
 function paintArchitecture(
@@ -364,8 +364,8 @@ function paintArchitecture(
 	standingOf: StandingOf,
 	unsettledOf: UnsettledOf,
 	policy: SemanticPolicy,
-	derived: ReadonlySet<string> = new Set(),
-	page: HeldPage = { drawing, standingOf },
+	derived: ReadonlySet<string>,
+	page: HeldPage,
 ): ArchitecturePainting {
 	const { cards, containers } = drawing;
 	const { edges, bridges } = drawing.bridged;
@@ -380,8 +380,10 @@ function paintArchitecture(
 			),
 		),
 	]);
+	// Every node the page lays out, drawn or not, so leaving some out changes
+	// no kept card's colour or whether it draws as a container.
 	const appearances = nodeAppearances(
-		[...cards, ...containers].map(({ measured }) => measured.node),
+		[...page.drawing.cards, ...page.drawing.containers].map(({ measured }) => measured.node),
 		policy,
 	);
 	const { inked, labelled } = lineBoxes(edges);

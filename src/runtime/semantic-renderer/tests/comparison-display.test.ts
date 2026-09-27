@@ -1,15 +1,15 @@
 import { expect, test } from "bun:test";
 
-import { renderBoard, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
+import { renderBoard } from "@/runtime/semantic-renderer/index";
 import { shownDrawing } from "@/runtime/semantic-renderer/layout";
-import { routeEnds, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import { bothModes, expectSamePlaces } from "@/runtime/semantic-renderer/tests/comparison-modes";
+import { routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { across, bridged, down, drawing } from "@/runtime/semantic-renderer/tests/fixed-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import {
 	LayoutEngineSchema,
 	SemanticBoardSchema,
 	SEMANTIC_BOARD_SCHEMA_VERSION,
-	type LayoutEngineName,
 } from "@/shared/semantic-board/index";
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
 
@@ -118,82 +118,6 @@ test("hiding comparison marks keeps the routes of continuing relationships", asy
 	expect(routePoints(plain.reply.svg)).toEqual(routes);
 });
 
-/**
- * A board whose draft lacks what its current variant has, drawn with its
- * comparison and without, in one engine and one view.
- * @param current The current variant's content.
- * @param draft The draft's content.
- * @param how The engine, and the view when it is one.
- * @param how.layout The engine.
- * @param how.view The view's grammar and scope, when the drawing is of one.
- * @returns Both drawings.
- */
-async function bothModes(
-	current: unknown,
-	draft: unknown,
-	how: { layout?: LayoutEngineName; view?: { grammar: string; scope?: unknown } },
-): Promise<{ compared: RenderedDiagram; plain: RenderedDiagram }> {
-	const board = SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
-		kind: "semantic-board",
-		id: "board",
-		name: "Removals",
-		level: "system",
-		version: 1,
-		createdAt: "2026-09-27T00:00:00.000Z",
-		updatedAt: "2026-09-27T00:00:00.000Z",
-		current: "current",
-		views: how.view === undefined ? [] : [{ id: "view", name: "View", ...how.view }],
-		variants: [
-			{ id: "current", name: "Current", lifecycle: "current", content: orderedFixture(current) },
-			{
-				id: "draft",
-				name: "Draft",
-				lifecycle: "draft",
-				parent: "current",
-				content: orderedFixture(draft),
-			},
-		],
-	});
-	const ask = { variant: "draft", fonts: "linked", layout: how.layout } as const;
-	const view = how.view === undefined ? {} : { view: "view" };
-	const [compared, plain] = await Promise.all([
-		renderBoard(board, { ...ask, ...view }, DEFAULT_SEMANTIC_POLICY),
-		renderBoard(board, { ...ask, ...view, comparison: false }, DEFAULT_SEMANTIC_POLICY),
-	]);
-	if (!compared.ok || !plain.ok || !("svg" in compared.reply) || !("svg" in plain.reply)) {
-		throw new Error("Expected two drawn proposals");
-	}
-	return { compared: compared.reply, plain: plain.reply };
-}
-
-/**
- * Every subject of the drawing without its comparison stands where it stands
- * with it, and nothing that stands removed is drawn or can be picked.
- * @param drawings Both drawings.
- * @param drawings.compared The drawing with its comparison.
- * @param drawings.plain The drawing without it.
- * @param removed The ids that stand removed.
- */
-function expectSamePlaces(
-	{ compared, plain }: { compared: RenderedDiagram; plain: RenderedDiagram },
-	removed: readonly string[],
-): void {
-	for (const kind of ["nodes", "edges", "regions"] as const) {
-		const kept = Object.fromEntries(
-			Object.keys(plain.atlas[kind]).map((id) => [id, compared.atlas[kind][id]!]),
-		);
-		expect(plain.atlas[kind]).toEqual(kept);
-		for (const id of removed) expect(plain.atlas[kind][id]).toBeUndefined();
-	}
-	for (const id of removed) {
-		expect(compared.svg).toContain(`data-semantic-id="${id}"`);
-		expect(plain.svg).not.toContain(`data-semantic-id="${id}"`);
-	}
-	expect(plain.width).toBe(compared.width);
-	expect(plain.height).toBe(compared.height);
-}
-
 const everyNode = [
 	{ id: "gate", name: "Gateway", kind: "service" },
 	{ id: "api", name: "Orders API", kind: "service" },
@@ -227,54 +151,6 @@ test("turning the comparison off moves nothing a draft shares with its reference
 			expect(route).toEqual(routes.get(id)!);
 		}
 	}
-});
-
-test("turning the comparison off moves no participant or message of a sequence", async () => {
-	const nodes = [
-		{ id: "web", name: "Console", kind: "ui" },
-		{ id: "api", name: "Orders API", kind: "service" },
-		{ id: "old", name: "Legacy cache", kind: "database" },
-		{ id: "store", name: "Order store", kind: "database" },
-	];
-	const steps = [
-		{ id: "s1", from: "web", to: "api", label: "place order", kind: "sync" },
-		{ id: "s2", from: "api", to: "old", label: "read cache", kind: "sync" },
-		{ id: "s3", from: "api", to: "store", label: "write order", kind: "sync" },
-		{ id: "s4", from: "api", to: "web", label: "placed", kind: "return" },
-	];
-	const flow = { id: "f1", name: "Place an order", participants: ["web", "api", "old", "store"] };
-	// A participant's box covers its column in every flow, so the flow the draft
-	// drops has none it keeps.
-	const gone = { id: "f2", name: "Warm the cache", participants: ["old"] };
-	const warm = [{ id: "s5", from: "old", to: "old", label: "warm", kind: "self" }];
-	const drawings = await bothModes(
-		{
-			nodes,
-			edges: [],
-			flows: [
-				{ ...flow, steps },
-				{ ...gone, steps: warm },
-			],
-		},
-		{
-			nodes: nodes.filter(({ id }) => id !== "old"),
-			edges: [],
-			flows: [
-				{
-					...flow,
-					participants: ["web", "api", "store"],
-					steps: steps.filter(({ id }) => id !== "s2"),
-				},
-			],
-		},
-		{ view: { grammar: "data-flow" } },
-	);
-	expectSamePlaces(drawings, ["old", "s2", "f2", "s5"]);
-	expect(routeEnds(drawings.plain.svg, "step")).toEqual(
-		new Map(
-			[...routeEnds(drawings.compared.svg, "step")].filter(([id]) => !["s2", "s5"].includes(id)),
-		),
-	);
 });
 
 test("a line is not hopped or cut where it crosses a line that is not drawn", () => {
@@ -319,6 +195,44 @@ test("a board drawn from its flow keeps a line for every message the draft keeps
 	);
 	expectSamePlaces(unwired, [wiring.id]);
 	expect(Object.keys(unwired.plain.atlas.edges)).toEqual([first.id]);
+	// The draft drops the only child of a participant: the comparison draws it
+	// a container again, and the draft's own message still lands on it.
+	const child = { id: "wk", name: "Worker", kind: "module", parent: "api" };
+	const emptied = await bothModes(
+		{ nodes: [...nodes, child], edges: [], flows: [{ ...flow, steps: [first] }] },
+		{ nodes, edges: [], flows: [{ ...flow, steps: [first] }] },
+		{},
+	);
+	expectSamePlaces(emptied, [child.id]);
+	expect(Object.keys(emptied.plain.atlas.edges)).toEqual([first.id]);
+});
+
+/**
+ * How a subject's own group is drawn, apart from how it stands.
+ * @param svg The picture.
+ * @param id The subject.
+ * @returns Its opening tag, without its standing.
+ */
+function lookOf(svg: string, id: string): string | undefined {
+	return new RegExp(`<g[^>]*data-semantic-id="${id}"[^>]*>`, "u")
+		.exec(svg)?.[0]
+		.replace(/ data-semantic-standing="[^"]*"/u, "");
+}
+
+test("a frame whose only child the draft drops looks the same without its comparison", async () => {
+	const nodes = [
+		{ id: "svc", name: "Orders service", kind: "service" },
+		{ id: "db", name: "Order store", kind: "database" },
+	];
+	const child = { id: "mod", name: "Handler", kind: "module", parent: "svc" };
+	const writes = { id: "md", from: "mod", to: "db", kind: "call" };
+	const drawings = await bothModes(
+		{ nodes: [...nodes, child], edges: [writes] },
+		{ nodes, edges: [] },
+		{},
+	);
+	expectSamePlaces(drawings, [child.id, writes.id]);
+	expect(lookOf(drawings.plain.svg, "svc")).toBe(lookOf(drawings.compared.svg, "svc"));
 });
 
 test("a view without its comparison draws only what the draft's own view holds", async () => {
@@ -375,27 +289,6 @@ test("lines keep their lanes where a card that is not drawn held them apart", ()
 	);
 });
 
-test("a participant the draft keeps as a node but drops from a flow has no column there", async () => {
-	const nodes = [
-		{ id: "web", name: "Console", kind: "ui" },
-		{ id: "api", name: "Orders API", kind: "service" },
-		{ id: "store", name: "Order store", kind: "database" },
-	];
-	const place = { id: "s1", from: "web", to: "api", label: "place", kind: "sync" };
-	const write = { id: "s2", from: "api", to: "store", label: "write", kind: "sync" };
-	const flow = { id: "f1", name: "Place an order" };
-	const drawings = await bothModes(
-		{
-			nodes,
-			edges: [],
-			flows: [{ ...flow, participants: ["web", "api", "store"], steps: [place, write] }],
-		},
-		{ nodes, edges: [], flows: [{ ...flow, participants: ["web", "api"], steps: [place] }] },
-		{ view: { grammar: "data-flow" } },
-	);
-	expectSamePlaces(drawings, ["store", write.id]);
-});
-
 test("a view keeps the draft's own step lines where its comparison pulls a relationship in", async () => {
 	const nodes = [
 		{ id: "web", name: "Console", kind: "ui" },
@@ -419,52 +312,4 @@ test("a view keeps the draft's own step lines where its comparison pulls a relat
 	);
 	expectSamePlaces(drawings, ["store", wiring.id, write.id]);
 	expect(Object.keys(drawings.plain.atlas.edges)).toEqual([place.id]);
-});
-
-/**
- * The activation bars one participant's column draws.
- * @param svg The rendered document.
- * @param id The participant.
- * @returns Each bar's markup, in order.
- */
-function barsOf(svg: string, id: string): string[] {
-	const column = new RegExp(
-		`<g(?=[^>]*data-semantic-id="${id}")(?=[^>]*data-semantic-part="lifeline")[^>]*>([\\s\\S]*?)</g>`,
-	).exec(svg);
-	return [...(column?.[1] ?? "").matchAll(/<rect (?!class)[^>]*>/g)].map(([rect]) => rect);
-}
-
-test("a column draws no bar only messages the draft drops open or hold", async () => {
-	const nodes = [
-		{ id: "web", name: "Console", kind: "service" },
-		{ id: "api", name: "Orders API", kind: "service" },
-		{ id: "db", name: "Order store", kind: "database" },
-	];
-	const steps = [
-		{ id: "s1", from: "web", to: "api", label: "place", kind: "sync" },
-		{ id: "s2", from: "api", to: "db", label: "write", kind: "sync" },
-		{ id: "s3", from: "db", to: "api", label: "ok", kind: "return" },
-		{ id: "s4", from: "api", to: "db", label: "read", kind: "sync" },
-		{ id: "s5", from: "db", to: "api", label: "row", kind: "return" },
-		{ id: "s6", from: "api", to: "web", label: "done", kind: "return" },
-	];
-	const flow = { id: "f1", name: "Place an order", participants: ["web", "api", "db"] };
-	const without = (dropped: readonly string[]) =>
-		bothModes(
-			{ nodes, edges: [], flows: [{ ...flow, steps }] },
-			{
-				nodes,
-				edges: [],
-				flows: [{ ...flow, steps: steps.filter(({ id }) => !dropped.includes(id)) }],
-			},
-			{ view: { grammar: "data-flow" } },
-		);
-	// The draft drops the write and its answer: the store's bar for them goes.
-	const write = await without(["s2", "s3"]);
-	expect(barsOf(write.compared.svg, "db")).toHaveLength(2);
-	expect(barsOf(write.plain.svg, "db")).toEqual(barsOf(write.compared.svg, "db").slice(1));
-	expect(barsOf(write.plain.svg, "api")).toEqual(barsOf(write.compared.svg, "api"));
-	// The draft drops the read and keeps its answer, which still leaves the store's bar.
-	const read = await without(["s4"]);
-	expect(barsOf(read.plain.svg, "db")).toEqual(barsOf(read.compared.svg, "db"));
 });
