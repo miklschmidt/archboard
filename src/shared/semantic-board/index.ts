@@ -67,6 +67,7 @@ export {
 	groupsUsed,
 	inspectGroup,
 	isMemberOf,
+	gatheringGroups,
 	placingGroups,
 } from "@/shared/semantic-board/lib/groups";
 export {

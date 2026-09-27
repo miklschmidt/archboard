@@ -13,6 +13,7 @@ import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { extentOf } from "@/transformers/semantic-renderer/lib/track/labels";
 import type { Item, Scene } from "@/transformers/semantic-renderer/lib/track/scene";
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
+import { roomOf, sideRoom } from "@/transformers/semantic-renderer/lib/blocks/lone";
 import type { Block, BlockTree } from "@/transformers/semantic-renderer/lib/blocks/tree";
 
 /** The side of a port's square. */
@@ -68,6 +69,37 @@ function letPortsSlide(scene: Scene, block: Block, nesting: Nesting): void {
 }
 
 /**
+ * Mark the items of a block's scene that stand for group regions: a region
+ * packed whole, and a card laid out as the region it is alone in, whose own
+ * faces stand in from its box (`lone.ts`). A lane keeps a region's clearance
+ * off each, as a region's wall has no inset of its own; but under Blocks,
+ * off a packed region only: a block of cards is as wide as its Graphviz
+ * ranks, and kept off a card's region there, the lanes beside it pushed the
+ * next one along its container's wall (Recording a walkthrough).
+ * @param scene The block's scene, whose region items are set.
+ * @param block The block.
+ * @param tree The blocks.
+ */
+function markRegions(scene: Scene, block: Block, tree: BlockTree): void {
+	for (const item of block.items) {
+		const [lone, card] = [tree.lone.get(item), scene.cards.get(item)];
+		if (lone !== undefined) card!.inset = sideRoom(card!.box.width, lone);
+		if (keepsRegionClearance(tree, item, scene.inline)) scene.regionBlocks.add(card!);
+	}
+}
+
+/**
+ * Whether a lane keeps a region's clearance off an item of a block.
+ * @param tree The blocks.
+ * @param item The item.
+ * @param inline Whether the board is drawn by the Track engine.
+ * @returns True for a region packed whole, and under Track a card laid out as its region.
+ */
+function keepsRegionClearance(tree: BlockTree, item: string, inline: boolean): boolean {
+	return (inline && tree.lone.has(item)) || tree.blocks.get(item)?.kind === "region";
+}
+
+/**
  * A pin as a block's scene reads it: a sliver as tall as its child block, at its port's x.
  * @param tree The blocks.
  * @param laid Every block laid out so far.
@@ -111,7 +143,9 @@ function slidesOf(scene: Scene, block: Block): [Item, readonly [number, number]]
 /**
  * The room a block of cards keeps where no line turns under its header, and
  * over its bottom ports when they stand on its edge: its inset, as below a
- * region's caption, which stands a little into its band.
+ * region's caption, which stands a little into its band. Alone in a region,
+ * it keeps the inset it keeps in none: the region's own inset below stands
+ * outside its edge.
  * @param block The block.
  * @param insets Its insets.
  * @returns The room, or nothing when the block draws no edge.
@@ -119,7 +153,8 @@ function slidesOf(scene: Scene, block: Block): [Item, readonly [number, number]]
 function rimOf(block: Block, insets: Insets): Rim | undefined {
 	if (block.header === undefined) return undefined;
 	const head = CONTAINER_INSET + (block.kind === "region" ? CAPTION_INSET : 0);
-	return [...block.ports.values()].includes("bottom") ? { head, foot: insets.side } : { head };
+	const foot = insets.side - (block.lone === undefined ? 0 : roomOf(block.lone));
+	return [...block.ports.values()].includes("bottom") ? { head, foot } : { head };
 }
 
-export { PORT, cornerHeader, letPortsSlide, pinnedLeaf, rimOf };
+export { PORT, cornerHeader, letPortsSlide, markRegions, pinnedLeaf, rimOf };

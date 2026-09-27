@@ -232,9 +232,16 @@ function costOf(placed: Page): number {
 
 /**
  * Whether one drawing reads better than another: it parts fewer joined
- * lines; or, as few, it reads better in the order of ADR 0039 and no worse
- * anywhere than the drawing whose lines cost less ({@link costsLess}), or
- * else its lines cost less ({@link takes}).
+ * lines; or, as few, it draws no more line, and it reads better in the order
+ * of ADR 0039 and no worse anywhere than the drawing whose lines cost less
+ * ({@link costsLess}), or else its lines cost less ({@link takes}). A join
+ * kept another way that draws more line buys what it saves with runs a
+ * reader follows further, as a packing does (`solves.ts`): with a region
+ * round Pane session, Working with an agent (Blocks) kept its joins into
+ * Agent apart to fit the pane better, at a crossing more and 6% more line,
+ * and ran its lines into Agent from every side; with three regions round one
+ * card, What the CLI can be asked (Blocks) kept the lines into Board writes
+ * apart for one crossing fewer and drew 18% more line.
  * @param one A drawing.
  * @param other Another.
  * @returns True when the first reads better.
@@ -243,6 +250,7 @@ function drawsBetter(one: Drawn<Page>, other: Drawn<Page>): boolean {
 	const [parted, fewest] = [partedOf(one), partedOf(other)];
 	if (parted !== fewest) return parted < fewest;
 	const [mine, theirs] = [one, other].map(({ placed }) => weighedPlaced(placed));
+	if ((mine!.length ?? 0) > (theirs!.length ?? 0)) return false;
 	return takes(mine!, theirs!, costsLess(one.placed, other.placed));
 }
 

@@ -27,10 +27,25 @@ import {
 	type Join,
 	type Output,
 } from "@/transformers/semantic-renderer/lib/track/graphviz";
-import { TRACK_TITLE } from "@/transformers/semantic-renderer/lib/track/scene";
+import { LONE_INSET, titleRow, titleWidth } from "@/transformers/semantic-renderer/lib/blocks/lone";
+import type { Cluster } from "@/transformers/semantic-renderer/lib/blocks/inline";
 
 /** Room a group region keeps around its members. */
 const REGION_INSET = 14;
+
+/**
+ * The room a cluster keeps round what it holds, as Graphviz draws it and as
+ * a card inside it may move: a container's or a region's inset, and a
+ * container alone in its region keeps the region's more (`lone.ts`).
+ * @param cluster The cluster.
+ * @returns Its inset.
+ */
+function insetOf(cluster: Cluster): number {
+	return (
+		(cluster.kind === "frame" ? CONTAINER_INSET : REGION_INSET) +
+		(cluster.lone === undefined ? 0 : LONE_INSET)
+	);
+}
 /** The room a card moved into line keeps from its neighbours: half what Graphviz keeps. */
 const LINED_UP_GAP = 20;
 /** How strongly a title row holds each member below it. */
@@ -140,8 +155,8 @@ class Clusters {
 	) {
 		for (const [index, cluster] of [...block.clusters.values()].entries()) {
 			const name = `cluster_${index}`;
-			const inset = cluster.kind === "frame" ? CONTAINER_INSET : REGION_INSET;
-			const title = box(titleOf(cluster.id), cluster.header.width, cluster.header.height);
+			const inset = insetOf(cluster);
+			const title = box(titleOf(cluster.id), titleWidth(cluster, inset), cluster.header.height);
 			const made: Nested = {
 				name,
 				graphAttributes: { margin: inset },
@@ -374,8 +389,7 @@ class Clusters {
 		if (!this.block.items.includes(name) && !name.startsWith("label:")) return undefined;
 		const around = this.holding(name);
 		if (around === undefined) return { left: 0, right: width };
-		const inset =
-			this.block.clusters.get(around)!.kind === "frame" ? CONTAINER_INSET : REGION_INSET;
+		const inset = insetOf(this.block.clusters.get(around)!);
 		const bounds = boxes.get(around)!;
 		return { left: bounds.x + inset, right: bounds.x + bounds.width - inset };
 	}
@@ -498,13 +512,15 @@ class Clusters {
 		for (const cluster of this.block.clusters.values()) {
 			if (cluster.kind !== "frame") continue;
 			const bounds = boxes.get(cluster.id)!;
-			const title = centres.get(titleOf(cluster.id))!;
-			const row = [bounds.x, title.y - cluster.header.height / 2, bounds.width];
-			const words = cluster.header.width - ARCHITECTURE_HEADER_PADDING;
+			const head = {
+				centre: centres.get(titleOf(cluster.id))!.y,
+				height: cluster.header.height,
+				words: cluster.header.width - ARCHITECTURE_HEADER_PADDING,
+			};
 			frames.set(cluster.id, {
 				id: cluster.id,
 				...bounds,
-				layoutOptions: { [TRACK_TITLE]: [...row, cluster.header.height, words].join(",") },
+				layoutOptions: titleRow(bounds, head, cluster.lone),
 				children: [],
 			});
 		}

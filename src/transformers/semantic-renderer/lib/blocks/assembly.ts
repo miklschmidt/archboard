@@ -9,6 +9,13 @@ import {
 	shifted,
 	type Laid,
 } from "@/transformers/semantic-renderer/lib/blocks/laid";
+import {
+	captionIn,
+	cardIn,
+	carriedLine,
+	type Lone,
+	type Stop,
+} from "@/transformers/semantic-renderer/lib/blocks/lone";
 import { unstepped } from "@/transformers/semantic-renderer/lib/blocks/steps";
 import {
 	headerOf,
@@ -70,10 +77,36 @@ function framesAround(block: Block, card: string): number {
 	return count;
 }
 
+/**
+ * The innermost container a block draws inline around one of its items.
+ * @param block The block.
+ * @param item The item.
+ * @returns The container's id, if any.
+ */
+function clusterFrame(block: Block, item: string): string | undefined {
+	let at = block.clusterOf.get(item);
+	while (at !== undefined && block.clusters.get(at)!.kind !== "frame")
+		at = block.clusters.get(at)!.parent;
+	return at;
+}
+
+/**
+ * The innermost container a block is, or stands in.
+ * @param block The block.
+ * @returns The container's id, if any.
+ */
+function blockFrame(block: Block): string | undefined {
+	let at: Block | undefined = block;
+	while (at !== undefined && at.kind !== "frame") at = at.parent;
+	return at?.id;
+}
+
 /** Every block put where its parent placed it, and every relationship joined. */
 class Assembly {
 	readonly origins = new Map<string, Point>();
 	readonly depths = new Map<string, number>();
+	/** Every card or container alone in its region, laid out as its region's box. */
+	readonly lone: ReadonlyMap<string, { lone: Lone; block: Block; stop: Stop }>;
 
 	/**
 	 * Place every block from the root down.
@@ -87,6 +120,7 @@ class Assembly {
 		this.origins.set(tree.root.id, { x: 0, y: 0 });
 		this.depths.set(tree.root.id, 0);
 		this.descend(tree.root);
+		this.lone = this.loneLaid();
 	}
 
 	/**
@@ -133,12 +167,84 @@ class Assembly {
 		return [...this.tree.blocks.values()].flatMap((block) =>
 			block.items
 				.filter((item) => !this.tree.blocks.has(item))
-				.map((id) => ({
-					id,
-					box: this.inside(block, id),
-					depth: this.depths.get(block.id)! + framesAround(block, id),
-				})),
+				.map((id) => {
+					const lone = this.tree.lone.get(id);
+					const box = this.inside(block, id);
+					return {
+						id,
+						box: lone === undefined ? box : cardIn(box, lone),
+						depth: this.depths.get(block.id)! + framesAround(block, id),
+					};
+				}),
 		);
+	}
+
+	/**
+	 * Every region round one card or container that the blocks laid out as
+	 * its node (`lone.ts`), in the drawing, captioned clear of the lines into it.
+	 * @param lines Every line in the drawing.
+	 * @returns The regions.
+	 */
+	loneRegions(lines: readonly (readonly Point[])[]): PlacedRegion[] {
+		return [...this.lone].map(([id, { lone, block, stop }]) => {
+			const parent = clusterFrame(block, id) ?? blockFrame(block);
+			return {
+				group: lone.group,
+				...(parent === undefined ? {} : { parent }),
+				box: stop.region,
+				caption: captionIn(stop.region, lone, lines),
+				depth: this.depths.get(block.id)! + framesAround(block, id),
+			};
+		});
+	}
+
+	/**
+	 * Every card or container alone in its region, laid out as the region's
+	 * box: a card as an item of its block, a container as a block of its own
+	 * or as a cluster of the block that draws it inline.
+	 * @returns Each one's region, the block around it, and its region's box and its own, by id.
+	 */
+	loneLaid(): Map<string, { lone: Lone; block: Block; stop: Stop }> {
+		const found = new Map<string, { lone: Lone; block: Block; stop: Stop }>();
+		for (const [id, lone] of this.tree.lone) {
+			const frame = this.tree.blocks.get(id);
+			const block = frame?.parent ?? this.tree.holder.get(id)!;
+			const stop =
+				frame === undefined
+					? this.laidIn(block, id, lone)
+					: { region: this.boxOf(frame), card: this.frameBox(frame) };
+			found.set(id, { lone, block, stop });
+		}
+		return found;
+	}
+
+	/**
+	 * The box a block laid a card or container alone in its region out as,
+	 * and the node's own: a card's as an item, or round a container it draws
+	 * inline.
+	 * @param block The block.
+	 * @param id The card or container.
+	 * @param lone Its region.
+	 * @returns The boxes.
+	 */
+	laidIn(block: Block, id: string, lone: Lone): Stop {
+		const inline = this.laid.get(block.id)!.frames?.find((frame) => frame.id === id);
+		if (inline === undefined) {
+			const region = this.inside(block, id);
+			return { region, card: cardIn(region, lone) };
+		}
+		const origin = this.origins.get(block.id)!;
+		return { region: moved(inline.region!, origin), card: moved(inline.box, origin) };
+	}
+
+	/**
+	 * Where a line stops at a card or container alone in its region: that
+	 * region's box and the node's.
+	 * @param end The line's end.
+	 * @returns The boxes, when the end is such a node.
+	 */
+	loneEnd(end: string | undefined): Stop | undefined {
+		return end === undefined ? undefined : this.lone.get(end)?.stop;
 	}
 
 	/**
@@ -152,7 +258,7 @@ class Assembly {
 				.filter((block) => block.kind === "frame")
 				.map((block) => ({
 					id: block.id,
-					box: this.boxOf(block),
+					box: this.frameBox(block),
 					depth: this.depths.get(block.parent!.id)!,
 				})),
 			...blocks.flatMap((block) =>
@@ -163,6 +269,17 @@ class Assembly {
 				})),
 			),
 		];
+	}
+
+	/**
+	 * A container's box in the drawing: inside the region it was laid out as,
+	 * when it is alone in one (`lone.ts`).
+	 * @param block The container.
+	 * @returns Its box.
+	 */
+	frameBox(block: Block): Box {
+		const box = this.boxOf(block);
+		return block.lone === undefined ? box : cardIn(box, block.lone);
 	}
 
 	/**
@@ -230,7 +347,10 @@ class Assembly {
 		const label = this.laid.get(labelAt.id)!.boxes.has(`label:${edge.id}`)
 			? { label: this.inside(labelAt, `label:${edge.id}`) }
 			: {};
-		return { id: edge.id, points: corners(points), ...label };
+		const source = this.loneEnd(edge.sources[0]);
+		const target = this.loneEnd(edge.targets[0]);
+		const carried = carriedLine(corners(points), source, target);
+		return { id: edge.id, points: corners(carried), ...label };
 	}
 
 	/**
@@ -239,13 +359,14 @@ class Assembly {
 	 */
 	placed(): Placed {
 		const root = this.laid.get(this.tree.root.id)!;
+		const edges = this.tree.projections.map((projection) => this.joined(projection));
 		return {
 			width: root.width,
 			height: root.height,
 			cards: this.cards(),
 			frames: this.frames(),
-			regions: this.regions(),
-			edges: this.tree.projections.map((projection) => this.joined(projection)),
+			regions: [...this.regions(), ...this.loneRegions(edges.map(({ points }) => points))],
+			edges,
 			titles: this.titles(),
 		};
 	}
@@ -266,7 +387,9 @@ class Assembly {
 		});
 		const framed = [...this.tree.blocks.values()]
 			.filter((block) => block.kind === "frame")
-			.map((block) => ({ title: this.inside(block, headerOf(block)), frame: this.boxOf(block) }));
+			.map((block) => {
+				return { title: this.inside(block, headerOf(block)), frame: this.frameBox(block) };
+			});
 		return [...framed, ...inline].map(({ title, frame }) => ({
 			box: title,
 			band: { ...frame, height: title.y + title.height - frame.y },

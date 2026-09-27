@@ -1,9 +1,9 @@
 // The block engine's hierarchy. The board, every container and every group
-// region is a block, laid out on its own; a block's items are the cards and
-// the blocks directly inside it, so a block is as compact as what it holds
-// and its parent places it as one box. A block of blocks gathers the cards it
-// holds outside every block into a cluster, so each block holds cards alone
-// or blocks alone.
+// region round more than one node (`lone.ts`) is a block, laid out on its
+// own; a block's items are the cards and the blocks directly inside it, so a
+// block is as compact as what it holds and its parent places it as one box.
+// A block of blocks gathers the cards it holds outside every block into a
+// cluster, so each block holds cards alone or blocks alone.
 //
 // A relationship is drawn in the lowest block that holds both its ends, and
 // crosses the edge of every block below that through a port: out of the
@@ -16,16 +16,23 @@
 // the innermost block around its target, or else its source, next to the card
 // it names, unless that would part lines joined on the way to it (`joins.ts`).
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
-import { z } from "zod";
-import {
-	GROUP_CAPTIONS,
-	PLACING_GROUP,
-} from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
-import { addInline, holds, type Cluster } from "@/transformers/semantic-renderer/lib/blocks/inline";
-import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
+import {
+	addInline,
+	holds,
+	labelHolder,
+	type Cluster,
+	type Nesting,
+} from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { exitKey } from "@/transformers/semantic-renderer/lib/blocks/sides";
-import { cardOf, type Card } from "@/transformers/semantic-renderer/lib/blocks/card";
+import type { Card } from "@/transformers/semantic-renderer/lib/blocks/card";
+import {
+	captionsOf,
+	cardAs,
+	framed,
+	placingGroup,
+	type Lone,
+} from "@/transformers/semantic-renderer/lib/blocks/lone";
 import { CycleWalk } from "@/transformers/semantic-renderer/lib/blocks/cycles";
 import { joinWays, kindOf } from "@/transformers/semantic-renderer/lib/blocks/joins";
 
@@ -88,6 +95,8 @@ interface Block {
 	readonly clusters: Map<string, Cluster>;
 	/** The innermost inline cluster around each of its items and clusters. */
 	readonly clusterOf: Map<string, string>;
+	/** The region round a container alone in it, which it is laid out as (`lone.ts`). */
+	lone?: Lone;
 }
 
 /** Where one relationship is drawn: its block, and the blocks it leaves and enters. */
@@ -115,8 +124,6 @@ interface Route {
 	readonly labelAt: Block;
 }
 
-const CaptionsSchema = z.array(z.tuple([z.string(), z.number(), z.number()]));
-
 /**
  * The id of a block's header item.
  * @param block The block.
@@ -124,16 +131,6 @@ const CaptionsSchema = z.array(z.tuple([z.string(), z.number(), z.number()]));
  */
 function headerOf(block: Block): string {
 	return `header:${block.id}`;
-}
-
-/**
- * Each placing group's caption size, as measurement wrote it on the root.
- * @param graph The measured hierarchy.
- * @returns The sizes, by group.
- */
-function captionsOf(graph: ElkNode): Map<string, Size> {
-	const rows = CaptionsSchema.parse(JSON.parse(graph.layoutOptions?.[GROUP_CAPTIONS] ?? "[]"));
-	return new Map(rows.map(([id, width, height]) => [id, { width, height }]));
 }
 
 /**
@@ -165,8 +162,10 @@ class BlockTree {
 	readonly holder = new Map<string, Block>();
 	readonly root: Block;
 	readonly captions: ReadonlyMap<string, Size>;
-	/** Every card's measured size and peer group. */
+	/** Every card's measured size and peer group; a card alone in its region takes the region's box. */
 	readonly cards = new Map<string, Card>();
+	/** Every card alone in its group's region, by id (`lone.ts`). */
+	readonly lone = new Map<string, Lone>();
 	/** Every relationship's projection, in the board's order. */
 	readonly projections: readonly Projection[];
 	/** How each relationship is drawn, by id. */
@@ -213,16 +212,17 @@ class BlockTree {
 	 * @param id Its id.
 	 * @param kind What it is.
 	 * @param parent The block around it.
-	 * @param of What it is of: a region's group, and a frame's or region's header.
+	 * @param of What it is of: a group, a header, a region round it alone.
 	 * @param of.group The group.
 	 * @param of.header The header size.
+	 * @param of.lone The region.
 	 * @returns The block.
 	 */
 	block(
 		id: string,
 		kind: Block["kind"],
 		parent: Block | undefined,
-		of: { group?: string; header?: Size },
+		of: { group?: string; header?: Size; lone?: Lone | undefined },
 	): Block {
 		const made: Block = {
 			id,
@@ -230,6 +230,7 @@ class BlockTree {
 			parent,
 			group: of.group,
 			header: of.header,
+			...(of.lone === undefined ? {} : { lone: of.lone }),
 			items: [],
 			lines: new Map(),
 			ports: new Map(),
@@ -249,9 +250,11 @@ class BlockTree {
 	fill(block: Block, nodes: readonly ElkNode[]): void {
 		const ordered = nodes.toSorted((one, other) => semanticOrder(one) - semanticOrder(other));
 		for (const node of ordered) {
-			const group = node.layoutOptions?.[PLACING_GROUP];
-			if (this.nesting !== "blocks") addInline(this, block, node, undefined);
-			else this.add(group === undefined ? block : this.region(block, group), node);
+			if (this.nesting !== "blocks") addInline(this, block, node, undefined, ordered);
+			else {
+				const group = placingGroup(this.lone, this.captions, node, ordered);
+				this.add(group === undefined ? block : this.region(block, group), node);
+			}
 		}
 	}
 
@@ -264,13 +267,10 @@ class BlockTree {
 		if (!node.children?.length) {
 			holder.items.push(node.id);
 			this.holder.set(node.id, holder);
-			this.cards.set(node.id, cardOf(node));
+			this.cards.set(node.id, cardAs(node, this.lone.get(node.id)));
 			return;
 		}
-		const header = Number(node.layoutOptions?.["archboard.header.size"] ?? 0);
-		const frame = this.block(node.id, "frame", holder, {
-			header: { width: node.width!, height: Math.max(1, header) },
-		});
+		const frame = this.block(node.id, "frame", holder, framed(node, this.lone.get(node.id)));
 		this.fill(frame, node.children);
 	}
 
@@ -414,9 +414,9 @@ class BlockTree {
 	 * @param before Whether it carries its label before a join with others to its card.
 	 */
 	draw(projection: Projection, back: ReadonlySet<string>, before: boolean): void {
-		const { edge, at, out, into } = projection;
+		const { edge, at } = projection;
 		const upward = back.has(edge.id);
-		const labelAt = before ? (out[0] ?? at) : (into[0] ?? out[0] ?? at);
+		const labelAt = labelHolder(this, projection, before);
 		const leaving = this.leave(projection, upward, labelAt);
 		const entering = this.enter(projection, upward, labelAt);
 		const ranked = upward

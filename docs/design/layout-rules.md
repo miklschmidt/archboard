@@ -2198,3 +2198,155 @@ of them and crossed it 4 px from its bend, a crossing drawn with no hop.
 The measures against `ed9c7d8d` are section 42's; no count moves. Crossings
 drawn with no hop, a line cut beneath another: dogfood 56 → 40 (solid lines
 44 → 29), work 12 → 10 (solid 9 → 7).
+
+## 44. A region round one node (2026-09-27)
+
+The user asked that a group spread over several containers draw its region
+in each of them (ADR 0038, amended 2026-09-27). A card is now placed with
+its first configured group whether or not a sibling shares it, so a
+container or the board level holding one member draws a region round that
+one card or container: 18 dogfood drawings per engine and 5 of an ingress
+board's change.
+
+A region round one node gathers nothing, and laid out as a cluster or a
+block of its own it reordered the board's ranks, stood tall sparse bands and
+ran lines round them: at `b1f888ca` Recording a walkthrough (Track) bent
+22 times where it bent 12, Live server state (Blocks) hopped 9 times where
+it hopped 2, and three lines of Starting a workhorse (Blocks) ran through
+Thread tools. **Such a region is laid out as its node with a larger box**
+(`blocks/lone.ts`): the region's inset round the sides and below, and its
+caption band above, so placement and routing see one obstacle where the
+board without the region saw one.
+
+- **A card** takes the grown box as its size in every block (`cardAs`).
+  Once drawn, the card stands inside it and the region is drawn round it
+  (`assembly.ts` `loneRegions`), and a line that stops on the region's wall
+  is carried straight on to the card's face (`carriedLine`). The card's
+  ports stand on its own face, not the region's (`scene.ts` `cardFace`):
+  a port settled against the one card its line runs to spans the card
+  (`settle.ts` `lineReach`), and a port moved along the face keeps a
+  corner's room from the grown box and stands on the card clear of its
+  rounded corner (`jogs.ts` `onFace`). A port moved to close a step takes
+  the line that runs straight on through the card from it along
+  (`jogs.ts` `throughCard`): the ports of a card laid out as its region
+  stand a port's margin in from its own face, where a line planned over
+  the grown box does not reach, and moved alone each such port would have
+  notched the line through the card. Held there, the line out of Pane
+  session in Reading a board (Track) stepped 16 px aside under its region,
+  and a line on the ingress board (Track) a point and a half.
+  Settled over the region's inset, A
+  spoken instruction becomes work (Blocks) stepped a line out of it and for
+  that bend kept a port order that turned a container's cards round; moved
+  there, a line between two such cards ended past the card's corner.
+  Under Track a lane keeps a region's clearance off the grown box, as off a
+  region packed whole; under Blocks it keeps a card's, since a block of
+  cards is as wide as its Graphviz ranks and the lanes beside a region's
+  clearance pushed the next one along its container's wall (Recording a
+  walkthrough, `a line parted from another keeps off its container's
+wall`).
+- **A container** drawn as a block of its own keeps the region's inset more
+  on its sides and below, and its header holds the caption band
+  (`place.ts` `insetsOf`, `tree.ts` `add`). Drawn inline, its cluster keeps
+  that inset more round it, and its title row as the track scene reads it
+  holds the band, so the scene draws the region as the container; the
+  container's box is taken back inside it once drawn (`card-layout.ts`
+  `read`). Its title row carries the region's inset as its face's, so a
+  line into it meets the container, and its walls are fitted both insets
+  from what it holds (`sides.ts`), not a container's inset from the
+  region's wall, which stood the container 6 px from its card. As a region
+  cluster round the frame, the pool of hosts on the ingress board stood
+  right of the chain over it and its caption took a band of its own, 120 px
+  tall.
+- **The caption** stands in the band's top-left corner as every region's
+  does, unless a line into the node crosses the band there; then as far
+  left as its words stand a lane's room clear of every line, or less where
+  the lines leave less (`captionIn`).
+- **A caption wider than its node widens the region, not the node**, which
+  stands in its middle. A card's grown box is as wide as its caption needs
+  (`cardAs`). A container drawn as a block of its own is laid out, and
+  where its caption needs the region wider, laid out again with the room
+  it lacks added to its sides (`place.ts` `layAll`, `lone.ts` `widened`).
+  Drawn inline, its title row stands in its cluster as wide as the caption
+  needs beside the insets (`titleWidth`), so Graphviz keeps the room, and
+  once its walls are fitted to what it holds, and to the lines that end on
+  it, the region widens round it inside that room (`sides.ts` `fitSide`).
+  A known limit of Track: Graphviz spreads the ends of lines on the
+  container's own wall across the whole title width, so such a container
+  grows toward its caption's width and can stand off the region's middle.
+  No drawing in either vault has a caption wider than its container.
+  A container stood as wide as it was laid out, and a long group name ran
+  past the region's walls: a 460 px caption over a region 345 px wide
+  (Blocks) and 328 px (Track). No drawing of either vault changes; their
+  group names are short.
+- **The board decides in the layout it is drawn in**, with its regions
+  round one node, under both engines. Decided on the board without them
+  and laid out once more with them (`solves.ts`, `6e6dc768` to `2ac99f76`),
+  a drawing took one layout more than the board without its regions, and
+  its first render 26% to 56% longer: Command interface whole (Blocks) 775
+  → 1134 ms. The room such a region takes could turn two of the choices.
+  Measured on both vaults, it turns neither. Two heuristics hold that
+  outcome; neither guarantees it for another board:
+  - **Which ports move to side walls** (`blocks/sides.ts` `facingOf`):
+    two blocks stand above one another where they stand apart by no less
+    than their regions round one node add to their height (`grownIn`), a
+    tolerance counted from the regions, not a comparison with the board
+    laid out without them. A block beside
+    a column is centred on it, and in Working with an agent (Blocks) the
+    region round Pane session stood Voice 16 px up beside the cards over
+    Agent: the lines from Application composition into Voice moved to side
+    walls, Pane session stood off to the middle and the lines ran round
+    Voice. Every other move in both vaults stands its blocks at least
+    135 px beside each other.
+  - **Which joins part** (`joins.ts` `drawsBetter`): a join kept another way
+    is kept only where it draws no more line, as a packing is. With its
+    regions, What the CLI can be asked (Blocks) kept the lines into Board
+    writes apart for one crossing fewer and drew 18% more line, and Working
+    with an agent (Blocks) kept its joins into Agent apart to fit the pane
+    better, at a crossing more and 6% more line. No other drawing of either
+    vault turns; the guard weighs line length, not the region, so a
+    region can still turn a join whose ways draw as much line.
+- **No region of a group inside that group's region** (`semantic-board`
+  `gatheringGroups`). A container placed with a group stands in its region,
+  and so does every member of the group inside it; the members are gathered
+  into no second region of the group and keep its colour. The ingress board
+  drew one group's region round a pool and again round the pool's four
+  hosts.
+- **A line runs out and not back** (`jogs.ts` `turnsBack`): in a block of
+  cards the Blocks engine lays out, a step to or from a label that turns its
+  line back against its last step is closed as a kink is, by moving the
+  label or port onto the other end's column, whatever its width. The region
+  round Panes in Command interface (Blocks) held 'the stated board, doing
+  and version' a lane off its left wall, and the line ran right to its label
+  and back 40 px to pass the region. It straightens that drawing and Browser
+  application whole (Blocks) and adds no bend or hop to any. Drawn inline, a
+  label below a container stands there for the band spacing that keeps it
+  off the container's wall, and moved beside the wall it stood the card
+  below out past it (`track-placement.test.ts`). Tried in every pass and at
+  every step back, it made Archboard server whole (Track) 5% and Board
+  persistence (Blocks) 5% slower to lay out, so it is tried once, at labels.
+- **A label into a block that packs blocks stays by its source**
+  (`inline.ts` `labelHolder`): a region packing two containers draws only
+  trunks, and the label of a line into one of them was lost.
+
+Against `67d2f7f8` (visual-polish), over the 46 Track and Blocks drawings
+of both vaults that change: hops and bends are as they were or fewer, but
+for Working with an agent (Blocks, a hop more where 'start voice' crosses
+'controllers over the focused pane's'), Voice coordinator whole (Blocks,
+11 → 12 hops and 45 → 47 bends: the region round Workhorse operations
+widens it, and 'thread/start with the coordinator body' leaves Coordinator
+thread through the gap beside Authored instructions, which steps
+'its developer instructions, by digest' 32 px) and Recording a walkthrough
+(Blocks, a hop fewer for two bends). Fewer on One command from a pane
+(Blocks), Browser application whole and What the CLI can be asked (both
+engines) and Command interface whole (Track). Every other drawing reads as it did with
+its regions added, each taller by the bands.
+
+The regression fixtures reduced from dogfood boards hold the memberships
+the boards hold. One guard is loosened: stacked, One command's `a typed
+message` now steps twice, the second time into Codex child beside its
+caption where the region round Workhorse queue holds it a region's
+clearance off, and the guard still refuses the three turns of the drawing
+unstacked (`reading-first.test.ts`). That step reads worse than the straight
+line of the drawing without the region: the line passes left of the region
+a region's clearance off and enters Codex child right of its caption's
+words a lane off, and no column is clear of both.

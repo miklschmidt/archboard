@@ -38,10 +38,10 @@
       other: { name: Other, dash: solid, arrowhead: filled },
     },
   # A group is a concern that cuts across boards. It gathers the cards it
-  # places into one region per container and gives them its colour; a card
-  # goes with the first group in this order that it shares with a sibling
-  # (ADR 0038). The colours keep clear of the comparison colours and of
-  # each other where two groups meet on one board.
+  # places into one region per container, round a lone member too, and gives
+  # them its colour; a card goes with the first group in this order that it
+  # belongs to (ADR 0038). The colours keep clear of the comparison colours
+  # and of each other where two groups meet on one board.
   groups:
     {
       writes: { name: Board writes, color: orange },
