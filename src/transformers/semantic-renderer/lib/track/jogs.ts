@@ -80,14 +80,15 @@ function kinked(net: Net): boolean {
 }
 
 /**
- * Whether a net steps back against the line's last step before it: the line
- * runs out one way and back the other.
+ * Whether a net from or to a label steps back against the line's last step
+ * before it: the line runs out one way to its label and back the other.
  * @param route The line's nets, top to bottom.
  * @param index The net's place in it.
  * @returns True when it does.
  */
 function turnsBack(route: readonly Net[], index: number): boolean {
 	const net = route[index]!;
+	if (net.top.kind !== "label" && net.bottom.kind !== "label") return false;
 	const before = route.slice(0, index).findLast((one) => step(one) > STRAIGHT);
 	if (before === undefined || step(net) <= STRAIGHT) return false;
 	return Math.sign(net.bottomX - net.topX) !== Math.sign(before.bottomX - before.topX);
@@ -357,7 +358,9 @@ function noMore(nets: readonly Net[], kept: Kept): () => boolean {
  * the card it ends on ({@link throughCard}) when it cannot move alone.
  * @param scene The scene.
  * @param chains Every relationship's chain.
- * @param routes Every line's nets, top to bottom.
+ * @param lines Every line's nets, top to bottom, and every net.
+ * @param lines.routes Every line's nets, top to bottom.
+ * @param lines.nets Every net.
  * @param place The net and its line.
  * @param place.route The net's line, top to bottom.
  * @param place.index The net's place in it.
@@ -367,19 +370,25 @@ function noMore(nets: readonly Net[], kept: Kept): () => boolean {
 function close(
 	scene: Scene,
 	chains: readonly Chain[],
-	routes: readonly (readonly Net[])[],
+	{ routes, nets }: { routes: readonly (readonly Net[])[]; nets: readonly Net[] },
 	{ route, index }: Place,
 	kept: Kept,
 ): boolean {
 	const net = route[index]!;
-	const nets = routes.flat();
+	/**
+	 * Move some stations onto a column, where nothing the pass keeps grows.
+	 * @param x The column.
+	 * @param moved The stations, each with the net arriving at it.
+	 * @returns Whether they moved.
+	 */
+	const move = (x: number, moved: readonly { station: Station; net: Net; end: End }[]): boolean =>
+		moveStretch(scene, chains, nets, moved, x, kinked, false, noMore(nets, kept));
 	return (["top", "bottom"] as const).some((end) => {
 		const x = xAt(net, end === "top" ? "bottom" : "top");
 		const stretch = stretchBeyond(route, index, end);
+		if (move(x, stretch)) return true;
 		const through = throughCard(routes, stretch.at(-1)!);
-		return [stretch, ...(through.length === 0 ? [] : [[...stretch, ...through]])].some((moved) =>
-			moveStretch(scene, chains, nets, moved, x, kinked, false, noMore(nets, kept)),
-		);
+		return through.length > 0 && move(x, [...stretch, ...through]);
 	});
 }
 
@@ -528,7 +537,7 @@ function closeJogs(
 		const closed = routes.flatMap((route) =>
 			route.map((net, index) =>
 				(kinked(net) || turnsBack(route, index)) && net.wall === undefined
-					? close(scene, chains, routes, { route, index }, kept)
+					? close(scene, chains, { routes, nets }, { route, index }, kept)
 					: false,
 			),
 		);
