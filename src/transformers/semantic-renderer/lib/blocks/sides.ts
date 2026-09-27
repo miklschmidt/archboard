@@ -10,14 +10,19 @@
 // and down, else the faces toward each other.
 import type { Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
-import type { BlockTree, Projection, Side } from "@/transformers/semantic-renderer/lib/blocks/tree";
+import type {
+	BlockTree,
+	Face,
+	Projection,
+	Side,
+} from "@/transformers/semantic-renderer/lib/blocks/tree";
 
 /**
  * The edges of each block a line's chain crosses, where its outermost blocks
  * do not stand the way its faces point.
  * @param tree The blocks, laid out once.
  * @param laid Every block laid out.
- * @returns Each moved port's edge, keyed `block|port` by the port it would otherwise be.
+ * @returns Each moved port's edge, keyed by `exitKey` by the port it would otherwise be.
  */
 function sidesOf(tree: BlockTree, laid: ReadonlyMap<string, Laid>): Map<string, Side> {
 	const sides = new Map<string, Side>();
@@ -26,12 +31,12 @@ function sidesOf(tree: BlockTree, laid: ReadonlyMap<string, Laid>): Map<string, 
 		const upward = back.has(projection.edge.id);
 		const facing = facingOf(projection, laid, upward);
 		if (facing === undefined) continue;
-		const [outFace, inFace] = upward ? ["top", "bottom"] : ["bottom", "top"];
-		const along = tree.kindOf(projection.edge);
+		const [outFace, inFace]: [Face, Face] = upward ? ["top", "bottom"] : ["bottom", "top"];
+		const kind = tree.kindOf(projection.edge);
 		for (const block of projection.out)
-			sides.set(`${block.id}|port:out|${outFace}|${projection.to}|${along}`, facing[0]);
+			sides.set(exitKey(block.id, "out", outFace, `${projection.to}|${kind}`), facing[0]);
 		for (const block of projection.into)
-			sides.set(`${block.id}|port:in|${inFace}|${projection.from}|${along}`, facing[1]);
+			sides.set(exitKey(block.id, "in", inFace, `${projection.from}|${kind}`), facing[1]);
 	}
 	return sides;
 }
@@ -76,4 +81,16 @@ function sidesBetween(one: Box, other: Box): [Side, Side] {
 	return other.y > one.y ? ["bottom", "top"] : ["top", "bottom"];
 }
 
-export { sidesOf };
+/**
+ * The key a port's moved edge is kept by.
+ * @param block The block's id.
+ * @param way Whether the line leaves or enters the block there.
+ * @param face The face the tree gave the port.
+ * @param along What the lines through the port share: their far end and kind.
+ * @returns The key.
+ */
+function exitKey(block: string, way: "in" | "out", face: Face, along: string): string {
+	return `${block}|port:${way}|${face}|${along}`;
+}
+
+export { exitKey, sidesOf };

@@ -27,6 +27,7 @@ import durableWriteBoundary from "./durable-write-boundary.json";
 import owningTheChild from "./owning-the-child.json";
 import recordingAWalkthrough from "./recording-a-walkthrough.json";
 import requestPath from "./request-path.json";
+import theTwoThreads from "./the-two-threads.json";
 import tightWallPort from "./tight-wall-port.json";
 import twoChains from "./two-chains.json";
 import workingWithAnAgent from "./working-with-an-agent.json";
@@ -460,6 +461,16 @@ test("a line into a container enters the card from the side its source stands on
 	const card = drawn.atlas.nodes["42C5lYne"]!;
 	const end = routeEnds(drawn.svg).get("f3lzoqzb")!;
 	expect(end.y).toBeLessThan(card.y + card.height / 2);
+});
+
+// Taken from a board of this repository: packed into a column, the region a
+// line comes from stands below the one it enters, though Graphviz ranked the
+// line downward, and the line ran round the page to enter its card from above.
+test("a line into a block that stands above its source's block enters from below", async () => {
+	const content = orderedFixture(theTwoThreads);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const card = drawn.atlas.nodes["tlC2W839"]!;
+	expect(routeEnds(drawn.svg).get("mhknqBOz")!.y).toBeGreaterThan(card.y + card.height / 2);
 });
 
 // Reduced from the same board: a container's own port on its wall stood
