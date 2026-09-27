@@ -1,0 +1,222 @@
+{
+	"graph": {
+		"id": "architecture:root",
+		"layoutOptions": {
+			"archboard.group.captions": "[[\"writes\",146,42],[\"panes\",126.5199966430664,42]]",
+			"archboard.fold.columns": "1",
+			"archboard.route.request": "{\"evenPins\":false,\"clearWalls\":[],\"cornerPins\":true,\"cornerCards\":[],\"laneChannels\":false,\"centredLabels\":false,\"centredLines\":[],\"labelClearance\":true,\"clearPins\":[\"yiSc1qWU\"],\"centredPorts\":false,\"refusedEnds\":[]}"
+		},
+		"children": [
+			{
+				"id": "2naazvac",
+				"width": 340,
+				"height": 88,
+				"layoutOptions": {
+					"archboard.order": "1000",
+					"archboard.standing.pinned": "true",
+					"archboard.order-group": "[\"module\",\"Composes the middleware and mounts every route on the one application\"]"
+				},
+				"x": 1678.3,
+				"y": 227
+			},
+			{
+				"id": "K6P74fM7",
+				"width": 340,
+				"height": 88,
+				"layoutOptions": {
+					"archboard.order": "3000",
+					"archboard.standing.pinned": "true",
+					"archboard.order-group": "[\"module\",\"One admitted change at a time, with a drain timeout, so a stop never loses an accepted write\"]"
+				},
+				"x": 1897.3,
+				"y": 438.5
+			},
+			{
+				"id": "yiSc1qWU",
+				"width": 340,
+				"height": 88,
+				"layoutOptions": {
+					"archboard.order": "7000",
+					"archboard.standing.pinned": "true",
+					"archboard.order-group": "[\"module\",\"The sockets, what each pane is showing, and the news broadcast to every one of them\"]"
+				},
+				"x": 1752.3,
+				"y": 1683
+			},
+			{
+				"id": "ZuLyutvj",
+				"width": 340,
+				"height": 88,
+				"layoutOptions": {
+					"archboard.order": "8000",
+					"archboard.standing.pinned": "true",
+					"archboard.order-group": "[\"module\",\"Notices a board changed on disk that this process did not write\"]"
+				},
+				"x": 2116.3,
+				"y": 870
+			},
+			{
+				"id": "9G6CmNgt",
+				"width": 340,
+				"height": 88,
+				"layoutOptions": {
+					"archboard.order": "10000",
+					"archboard.standing.pinned": "true",
+					"archboard.order-group": "[\"service\",\"Owns the private Codex child and bridges it to the panes\"]"
+				},
+				"x": 2746.3,
+				"y": 1886
+			},
+			{
+				"id": "Eh7icS73",
+				"width": 340,
+				"height": 88,
+				"layoutOptions": {
+					"archboard.order": "12000",
+					"archboard.order-group": "[\"service\",\"Reads boards, says what each pane is showing, and writes nothing\"]"
+				},
+				"x": 1508.3,
+				"y": 1886
+			},
+			{
+				"id": "Ck9cBsJC",
+				"width": 340,
+				"height": 88,
+				"layoutOptions": {
+					"archboard.order": "14000",
+					"archboard.standing.pinned": "true",
+					"archboard.order-group": "[\"route\",\"An agent's claim on a board, its release, and the person's override\"]"
+				},
+				"x": 1515.3,
+				"y": 438.5
+			},
+			{
+				"id": "EAiFrCYk",
+				"width": 340,
+				"height": 88,
+				"layoutOptions": {
+					"archboard.order": "21000",
+					"archboard.group": "panes",
+					"archboard.standing.pinned": "true",
+					"archboard.order-group": "[\"module\",\"Tells every pane on a board who holds it and what they said they were doing\"]"
+				},
+				"x": 1519.3,
+				"y": 1480
+			}
+		],
+		"edges": [
+			{
+				"id": "dHru8Ng6",
+				"sources": ["2naazvac"],
+				"targets": ["yiSc1qWU"],
+				"layoutOptions": {
+					"archboard.order": "4000",
+					"archboard.relationship.kind": "dependency",
+					"archboard.relationship.standing": "changed"
+				},
+				"labels": [
+					{
+						"id": "dHru8Ng6:label",
+						"text": "mounts panes",
+						"width": 87.16000366210938,
+						"height": 31,
+						"x": 2602.7199981689455,
+						"y": 1187
+					}
+				]
+			},
+			{
+				"id": "4c7u4tN8",
+				"sources": ["ZuLyutvj"],
+				"targets": ["yiSc1qWU"],
+				"layoutOptions": {
+					"archboard.order": "9000",
+					"archboard.relationship.kind": "event",
+					"archboard.relationship.standing": "unchanged"
+				},
+				"labels": [
+					{
+						"id": "4c7u4tN8:label",
+						"text": "announce file change",
+						"width": 122.2300033569336,
+						"height": 31,
+						"x": 2047.1849983215334,
+						"y": 1093.5
+					}
+				]
+			},
+			{
+				"id": "fISQ9jAX",
+				"sources": ["yiSc1qWU"],
+				"targets": ["9G6CmNgt"],
+				"layoutOptions": {
+					"archboard.order": "10000",
+					"archboard.relationship.kind": "event",
+					"archboard.relationship.standing": "changed"
+				},
+				"labels": [
+					{
+						"id": "fISQ9jAX:label",
+						"text": "bridge browser session",
+						"width": 131.25,
+						"height": 31,
+						"x": 2325.675,
+						"y": 1813
+					}
+				]
+			},
+			{
+				"id": "VkGzebtq",
+				"sources": ["Eh7icS73"],
+				"targets": ["yiSc1qWU"],
+				"layoutOptions": {
+					"archboard.order": "17000",
+					"archboard.relationship.kind": "event",
+					"archboard.relationship.standing": "changed"
+				},
+				"labels": [
+					{
+						"id": "VkGzebtq:label",
+						"text": "what this pane is reading",
+						"width": 140.13999938964844,
+						"height": 31,
+						"x": 1608.2300003051757,
+						"y": 1813
+					}
+				]
+			},
+			{
+				"id": "VO9ngl7m",
+				"sources": ["yiSc1qWU"],
+				"targets": ["Eh7icS73"],
+				"layoutOptions": {
+					"archboard.order": "18000",
+					"archboard.relationship.kind": "event",
+					"archboard.relationship.standing": "unchanged"
+				},
+				"labels": [
+					{
+						"id": "VO9ngl7m:label",
+						"text": "board and agent news",
+						"width": 127.16999816894531,
+						"height": 31,
+						"x": 1790.7150009155273,
+						"y": 1813
+					}
+				]
+			}
+		],
+		"x": 0,
+		"y": 0,
+		"width": 3110.3,
+		"height": 2218
+	},
+	"options": {
+		"elk.spacing.labelNode": "16",
+		"elk.spacing.labelLabel": "24",
+		"elk.spacing.edgeLabel": "12",
+		"elk.layered.spacing.nodeNodeBetweenLayers": "32",
+		"archboard.fold.columns": "1",
+		"archboard.stage": "route"
+	}
+}
