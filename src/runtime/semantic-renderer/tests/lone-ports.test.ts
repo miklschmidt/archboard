@@ -25,10 +25,10 @@ import {
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import { instance } from "@viz-js/viz";
 import { AvoidLib } from "libavoid-js";
-import { createLayoutEngine } from "@/transformers/semantic-renderer/engine";
+import { createLayoutEngine, type AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import { SOLVE_STAGE } from "@/transformers/semantic-renderer/host";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { centredPins, relationshipChannel } from "@/runtime/semantic-renderer/layout";
+import { centredPins, relationshipChannel, routeGraph } from "@/runtime/semantic-renderer/layout";
 import {
 	cornersOf,
 	corridorPoints,
@@ -277,4 +277,35 @@ test("a port centred on its face keeps that face in the last solve", async () =>
 	const end = routed.edges!.find(({ id }) => id === "YkYEwnYD")!.sections![0]!.endPoint;
 	expect(end.x).toBeCloseTo(card.x!, 1);
 	expect(end.y).toBeCloseTo(card.y! + card.height! / 2, 1);
+});
+
+/**
+ * The routes of the placed view above, with the router refusing from one solve on.
+ * @param refused Which solve the router first refuses, counting from one; none when omitted.
+ * @returns Each route's section, as text.
+ */
+async function routesRefusing(refused = Infinity): Promise<string> {
+	await AvoidLib.load();
+	const avoid = AvoidLib.getInstance() as AvoidEngine;
+	let solves = 0;
+	const Router = function (flag: number) {
+		const router = new avoid.Router(flag);
+		const solve = router.processTransaction.bind(router);
+		router.processTransaction = () => {
+			solves += 1;
+			if (solves >= refused) throw new Error("NativeRouteUnavailable: refused");
+			return solve();
+		};
+		return router;
+	};
+	const refusing = Object.assign(Object.create(avoid) as AvoidEngine, { Router });
+	const routed = routeGraph(refusing, structuredClone(heldPort) as ElkNode);
+	return JSON.stringify(routed.edges!.map(({ sections }) => sections));
+}
+
+test("a later solve the router refuses keeps the last complete routing", async () => {
+	// The view is solved three times: routed, refined, then with its lone port centred.
+	const [refined, first] = [await routesRefusing(3), await routesRefusing(2)];
+	expect(refined).not.toBe(first);
+	expect(await routesRefusing()).not.toBe(refined);
 });
