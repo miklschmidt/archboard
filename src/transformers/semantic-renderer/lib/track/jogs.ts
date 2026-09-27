@@ -9,9 +9,10 @@
 // that would bend a line that ran straight on the moved station's other side
 // is not made.
 //
-// A step of any width that turns a line back against its last step is closed
-// the same way: the line ran out one way to its label and back the other to
-// reach its card.
+// In a block of cards the Blocks engine lays out, a step of any width at a
+// label that turns its line back against its last step is closed the same
+// way: the line ran out one way to its label and back the other to reach its
+// card.
 //
 // A card a line enters on top and another leaves at the bottom a few points
 // over is such a step too: the two read as one line through the card with a
@@ -92,6 +93,21 @@ function turnsBack(route: readonly Net[], index: number): boolean {
 	const before = route.slice(0, index).findLast((one) => step(one) > STRAIGHT);
 	if (before === undefined || step(net) <= STRAIGHT) return false;
 	return Math.sign(net.bottomX - net.topX) !== Math.sign(before.bottomX - before.topX);
+}
+
+/**
+ * Whether a step back at a label is closed ({@link turnsBack}): in a block of
+ * cards the Blocks engine lays out, not drawn inline, where a label below a
+ * container stands there for the band spacing that keeps it off the
+ * container's wall, and moved onto the column beside the wall it stood the
+ * card below out past the wall (`track-placement.test.ts`).
+ * @param scene The scene.
+ * @param route The line's nets, top to bottom.
+ * @param index The net's place in it.
+ * @returns True when it is.
+ */
+function backAt(scene: Scene, route: readonly Net[], index: number): boolean {
+	return !scene.inline && turnsBack(route, index);
 }
 
 /**
@@ -540,7 +556,7 @@ function closeJogs(
 	for (let pass = 0; pass < PASSES; pass += 1) {
 		const closed = routes.flatMap((route) =>
 			route.map((net, index) =>
-				(kinked(net) || (pass === 0 && turnsBack(route, index))) && net.wall === undefined
+				(kinked(net) || (pass === 0 && backAt(scene, route, index))) && net.wall === undefined
 					? close(scene, chains, { routes, nets }, { route, index }, kept)
 					: false,
 			),
