@@ -374,3 +374,97 @@ test("lines keep their lanes where a card that is not drawn held them apart", ()
 		whole.bridged.edges.map(({ curve }) => curve),
 	);
 });
+
+test("a participant the draft keeps as a node but drops from a flow has no column there", async () => {
+	const nodes = [
+		{ id: "web", name: "Console", kind: "ui" },
+		{ id: "api", name: "Orders API", kind: "service" },
+		{ id: "store", name: "Order store", kind: "database" },
+	];
+	const place = { id: "s1", from: "web", to: "api", label: "place", kind: "sync" };
+	const write = { id: "s2", from: "api", to: "store", label: "write", kind: "sync" };
+	const flow = { id: "f1", name: "Place an order" };
+	const drawings = await bothModes(
+		{
+			nodes,
+			edges: [],
+			flows: [{ ...flow, participants: ["web", "api", "store"], steps: [place, write] }],
+		},
+		{ nodes, edges: [], flows: [{ ...flow, participants: ["web", "api"], steps: [place] }] },
+		{ view: { grammar: "data-flow" } },
+	);
+	expectSamePlaces(drawings, ["store", write.id]);
+});
+
+test("a view keeps the draft's own step lines where its comparison pulls a relationship in", async () => {
+	const nodes = [
+		{ id: "web", name: "Console", kind: "ui" },
+		{ id: "api", name: "Orders API", kind: "service" },
+		{ id: "store", name: "Order store", kind: "database" },
+	];
+	// The store is in the view only through the message the draft drops, and
+	// with it the relationship the draft keeps but its own view does not show.
+	const wiring = { id: "k", from: "api", to: "store", kind: "call" };
+	const place = { id: "s1", from: "web", to: "api", label: "place", kind: "sync" };
+	const write = { id: "s2", from: "api", to: "store", label: "write", kind: "sync" };
+	const flow = { id: "f1", name: "Place an order" };
+	const drawings = await bothModes(
+		{
+			nodes,
+			edges: [wiring],
+			flows: [{ ...flow, participants: ["web", "api", "store"], steps: [place, write] }],
+		},
+		{ nodes, edges: [wiring], flows: [{ ...flow, participants: ["web", "api"], steps: [place] }] },
+		{ view: { grammar: "architecture", scope: { kind: "selection", flows: [flow.id] } } },
+	);
+	expectSamePlaces(drawings, ["store", wiring.id, write.id]);
+	expect(Object.keys(drawings.plain.atlas.edges)).toEqual([place.id]);
+});
+
+/**
+ * The activation bars one participant's column draws.
+ * @param svg The rendered document.
+ * @param id The participant.
+ * @returns Each bar's markup, in order.
+ */
+function barsOf(svg: string, id: string): string[] {
+	const column = new RegExp(
+		`<g(?=[^>]*data-semantic-id="${id}")(?=[^>]*data-semantic-part="lifeline")[^>]*>([\\s\\S]*?)</g>`,
+	).exec(svg);
+	return [...(column?.[1] ?? "").matchAll(/<rect (?!class)[^>]*>/g)].map(([rect]) => rect);
+}
+
+test("a column draws no bar only messages the draft drops open or hold", async () => {
+	const nodes = [
+		{ id: "web", name: "Console", kind: "service" },
+		{ id: "api", name: "Orders API", kind: "service" },
+		{ id: "db", name: "Order store", kind: "database" },
+	];
+	const steps = [
+		{ id: "s1", from: "web", to: "api", label: "place", kind: "sync" },
+		{ id: "s2", from: "api", to: "db", label: "write", kind: "sync" },
+		{ id: "s3", from: "db", to: "api", label: "ok", kind: "return" },
+		{ id: "s4", from: "api", to: "db", label: "read", kind: "sync" },
+		{ id: "s5", from: "db", to: "api", label: "row", kind: "return" },
+		{ id: "s6", from: "api", to: "web", label: "done", kind: "return" },
+	];
+	const flow = { id: "f1", name: "Place an order", participants: ["web", "api", "db"] };
+	const without = (dropped: readonly string[]) =>
+		bothModes(
+			{ nodes, edges: [], flows: [{ ...flow, steps }] },
+			{
+				nodes,
+				edges: [],
+				flows: [{ ...flow, steps: steps.filter(({ id }) => !dropped.includes(id)) }],
+			},
+			{ view: { grammar: "data-flow" } },
+		);
+	// The draft drops the write and its answer: the store's bar for them goes.
+	const write = await without(["s2", "s3"]);
+	expect(barsOf(write.compared.svg, "db")).toHaveLength(2);
+	expect(barsOf(write.plain.svg, "db")).toEqual(barsOf(write.compared.svg, "db").slice(1));
+	expect(barsOf(write.plain.svg, "api")).toEqual(barsOf(write.compared.svg, "api"));
+	// The draft drops the read and keeps its answer, which still leaves the store's bar.
+	const read = await without(["s4"]);
+	expect(barsOf(read.plain.svg, "db")).toEqual(barsOf(read.compared.svg, "db"));
+});

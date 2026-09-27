@@ -47,9 +47,9 @@ import type {
 	ReadingDirection,
 } from "@/transformers/semantic-renderer/lib/drawing";
 import { measureArchitecture } from "@/transformers/semantic-renderer/lib/measurement";
-import { withStepLines } from "@/transformers/semantic-renderer/lib/step-lines";
+import { withStepLines, type StepLines } from "@/transformers/semantic-renderer/lib/step-lines";
 import { lineLooks } from "@/transformers/semantic-renderer/lib/semantic-appearance";
-import { shownContent, shownDrawing } from "@/transformers/semantic-renderer/lib/shown";
+import { shownDrawing, unshownOf } from "@/transformers/semantic-renderer/lib/shown";
 import { PALETTE, type Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { paintArchitecture } from "@/transformers/semantic-renderer/lib/svg/architecture";
 import { paintDataFlow } from "@/transformers/semantic-renderer/lib/svg/dataflow";
@@ -133,14 +133,15 @@ interface DiagramRenderRequest {
 	 */
 	readonly paintStanding?: boolean | undefined;
 	/**
-	 * The ids of the content that are laid out but not drawn. A picture without
-	 * its comparison names here what the variant itself does not hold, such as
-	 * what stands removed. Those subjects still take their place in the layout,
-	 * and the page stays the size of the whole layout, so every subject that is
-	 * drawn stands where it stands in the picture with the comparison. Their
-	 * places are left empty. Absent means everything is drawn.
+	 * The variant's own reading of the view, when the content is more than
+	 * that: read against another variant, the content has what the variant
+	 * lacks of it put back. The layout reads it in either picture, so both lay
+	 * out alike. A picture without its comparison draws only what it holds:
+	 * the rest still takes its place in the layout, and the page stays the size
+	 * of the whole layout, so everything drawn stands where it stands with the
+	 * comparison. Absent means the content is the variant's own reading.
 	 */
-	readonly unshown?: ReadonlySet<string> | undefined;
+	readonly held?: VariantContent | undefined;
 	/**
 	 * Which of this variant's subjects the board says nobody has decided yet.
 	 *
@@ -230,8 +231,7 @@ const layouts = new Map<string, Promise<PaintedDrawing>>();
 
 /**
  * Lay out each distinct content and comparison channel set once per engine.
- * @param content The architecture to draw.
- * @param expanded The architecture after adding drawable flow-step lines.
+ * @param expanded The architecture to draw, with its drawable flow-step lines added.
  * @param standing Comparison standing used to keep marked relationships apart, and lines off
  * the pin a marked card wears.
  * @param engine The engine that lays it out.
@@ -241,7 +241,6 @@ const layouts = new Map<string, Promise<PaintedDrawing>>();
  * @returns Its deterministic layout.
  */
 function layoutRemembered(
-	content: VariantContent,
 	expanded: VariantContent,
 	standing: StatedStandings | undefined,
 	engine: LayoutEngineName,
@@ -260,7 +259,9 @@ function layoutRemembered(
 		look.dash,
 		look.arrowhead,
 	]);
-	const key = JSON.stringify([engine, content, standings, named, lines]);
+	// Which lines a flow draws depends on the variant's own reading as well as
+	// on the content, so the key is the content with those lines added.
+	const key = JSON.stringify([engine, expanded, [...steps], standings, named, lines]);
 	const known = layouts.get(key);
 	if (known !== undefined) {
 		layouts.delete(key);
@@ -283,14 +284,56 @@ function layoutRemembered(
 }
 
 /**
+ * What a request draws of what it lays out.
+ * @param request What to draw.
+ * @returns The variant's own reading of the view; whether the picture is
+ * without its comparison, and so draws only that; and what it then draws.
+ */
+function readingOf(request: DiagramRenderRequest): {
+	readonly held: VariantContent;
+	readonly plain: boolean;
+	readonly told: VariantContent;
+} {
+	const held = request.held ?? request.content;
+	const plain = request.paintStanding === false;
+	return { held, plain, told: plain ? held : request.content };
+}
+
+/**
+ * The drawing a picture paints: all of it with its comparison, and without it
+ * only what the variant's own reading of the view holds, where the whole
+ * layout put it.
+ * @param drawing The whole layout.
+ * @param stepLines The content laid out, and which of its lines are flow messages.
+ * @param reading What the request draws of it.
+ * @param reading.held The variant's own reading of the view.
+ * @param reading.plain Whether the picture is without its comparison.
+ * @param policy The vault's presentation policy, which says how each line is drawn.
+ * @returns The drawing to paint.
+ */
+function shownOf(
+	drawing: PaintedDrawing,
+	stepLines: StepLines,
+	{ held, plain }: { readonly held: VariantContent; readonly plain: boolean },
+	policy: SemanticPolicy,
+): PaintedDrawing {
+	if (!plain) return drawing;
+	return shownDrawing(
+		drawing,
+		unshownOf(stepLines.content, held),
+		lineLooks(stepLines.content.edges, policy, stepLines.derived),
+	);
+}
+
+/**
  * A semantic architecture in, one self-contained SVG plus its geometry out.
  * @param request What to draw, and on which ground.
  * @returns The document, its size and its atlas.
  * @throws {SemanticRenderError} When there is nothing to draw.
  */
 async function renderArchitecture(request: DiagramRenderRequest): Promise<RenderedDiagram> {
-	const { unshown } = request;
-	const told = shownContent(request.content, unshown);
+	const reading = readingOf(request);
+	const { held, plain, told } = reading;
 	if (told.nodes.length === 0) {
 		throw new SemanticRenderError(
 			"NOTHING_TO_RENDER",
@@ -298,25 +341,20 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		);
 	}
 
-	const stepLines = withStepLines(request.content, request.standing);
+	const stepLines = withStepLines(request.content, held);
 	const policy = request.policy ?? DEFAULT_SEMANTIC_POLICY;
 	const drawing = await layoutRemembered(
-		request.content,
 		stepLines.content,
 		request.standing,
 		request.layout ?? DEFAULT_LAYOUT_ENGINE,
 		policy,
 		stepLines.derived,
 	);
-	const shown = shownDrawing(
-		drawing,
-		unshown,
-		lineLooks(stepLines.content.edges, policy, stepLines.derived),
-	);
+	const shown = shownOf(drawing, stepLines, reading, policy);
 	const painting = paintArchitecture(
 		shown,
 		PALETTE,
-		standingsFrom(request.paintStanding === false ? undefined : request.standing),
+		standingsFrom(plain ? undefined : request.standing),
 		unsettledFrom(request.unsettled),
 		policy,
 		stepLines.derived,
@@ -330,7 +368,7 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		height: page.height,
 		palette: PALETTE,
 		title: plannedTitle(titleFor(told), request.unbuilt),
-		description: descriptionFor(shown.containers.map((held) => held.measured.node.name)),
+		description: descriptionFor(shown.containers.map(({ measured }) => measured.node.name)),
 		fonts: request.fonts ?? "linked",
 		body: page.body,
 		reading: drawing.direction,
@@ -400,17 +438,17 @@ function sequenceDescriptionFor(content: VariantContent): string {
  *
  * Every flow the content holds is laid out, because the caller has already
  * said what it wants seen: a view scoped to one exchange arrives here holding
- * that one, and an unscoped one arrives holding them all. Every flow is drawn
- * too, except for what the request says to leave undrawn. A picture without
- * its comparison leaves out the flows, participants and messages the variant
- * does not hold, and the rest keep the places they have with the comparison.
+ * that one, and an unscoped one arrives holding them all. A picture without
+ * its comparison draws of it only the flows, and in each flow the
+ * participants and messages, that the variant's own reading holds, and those
+ * keep the places they have with the comparison.
  * @param request What to draw, and on which ground.
  * @returns The document, its size and its atlas.
  * @throws {SemanticRenderError} When no flow is left to draw.
  */
 function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
-	const { content, unshown } = request;
-	const told = shownContent(content, unshown);
+	const { content } = request;
+	const { plain, told } = readingOf(request);
 	if (told.flows.length === 0) {
 		throw new SemanticRenderError(
 			"NOTHING_TO_RENDER",
@@ -422,10 +460,10 @@ function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
 		content.flows,
 		content.nodes,
 		PALETTE,
-		standingsFrom(request.paintStanding === false ? undefined : request.standing),
+		standingsFrom(plain ? undefined : request.standing),
 		unsettledFrom(request.unsettled),
 		request.policy ?? DEFAULT_SEMANTIC_POLICY,
-		{ unshown, standingOf: standingsFrom(request.standing) },
+		{ held: plain ? told.flows : undefined, standingOf: standingsFrom(request.standing) },
 	);
 	const page = pageFor(painting, PALETTE, request.unbuilt);
 
