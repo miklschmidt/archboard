@@ -447,3 +447,16 @@ test("a line into a container enters the card from the side its source stands on
 	const end = routeEnds(drawn.svg).get("f3lzoqzb")!;
 	expect(end.y).toBeLessThan(card.y + card.height / 2);
 });
+
+// Reduced from the same board: a container's own port on its wall stood
+// level with the middle of the block inside it, not with that block's port
+// on the same wall, so the line out stepped between the two.
+test("a line out of nested containers by their walls runs level between them", async () => {
+	const content = orderedFixture(requestPath);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const route = corridorPoints(drawn.svg).get("FOrXU78u")!;
+	const levels = new Set(
+		route.slice(1).flatMap((point, index) => (point.y === route[index]!.y ? [point.y] : [])),
+	);
+	expect(levels.size).toBeLessThanOrEqual(2);
+});
