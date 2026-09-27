@@ -6,10 +6,14 @@
 // lines only its buffer from, so another line could pass 8 px from it, where
 // a label on its own run keeps 12.
 // A lone port moves only where the strip its end run sweeps is clear of
-// other cards and of other lines' reserved labels.
+// other cards, of other lines running beside it and of other lines' reserved
+// labels, only while it stands at its channel's slot, and only when its lines
+// turn after their end run. Once moved it keeps its face in the last solve.
 // What this catches: the Graphviz engine leaving a lone port in its
-// card-wide slot beside a corner, moving one across a card or a label, and
-// routing a line past a reserved label closer than a label's clearance.
+// card-wide slot beside a corner, moving one across a card, a label or
+// beside another line, moving one a straight channel or another pass put
+// there, trading a centred port for another face's seed, and routing a line
+// past a reserved label closer than a label's clearance.
 
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
@@ -174,17 +178,22 @@ test("a port away from its face's corners stays put, so no line runs a part-lane
 
 /**
  * Where a lone port 10 px from its card's corner stands after centring, with other things in the way.
- * @param others Other cards, and other relationships with reserved labels.
+ * @param others Other cards and relationships, and how the port's own line is drawn.
  * @param others.cards Other cards.
  * @param others.edges Other relationships.
+ * @param others.at Where the port stands along its face, if not at its channel's slot.
+ * @param others.straight Whether its line runs straight on from the port to its target.
  * @returns The port's position along its face.
  */
 function centredPort(others: {
 	readonly cards?: readonly ElkNode[];
 	readonly edges?: readonly ElkExtendedEdge[];
+	readonly at?: number;
+	readonly straight?: true;
 }): number {
 	const source = { id: "source", x: 0, y: 0, width: 340, height: 88 };
 	const target = { id: "target", x: 500, y: 300, width: 340, height: 88 };
+	const x = (others.at ?? 10 / 340) * 340;
 	const line: ElkExtendedEdge = {
 		id: "line",
 		sources: ["source"],
@@ -193,12 +202,14 @@ function centredPort(others: {
 		sections: [
 			{
 				id: "s",
-				startPoint: { x: 10, y: 88 },
-				bendPoints: [
-					{ x: 10, y: 120 },
-					{ x: 670, y: 120 },
-				],
-				endPoint: { x: 670, y: 300 },
+				startPoint: { x, y: 88 },
+				bendPoints: others.straight
+					? []
+					: [
+							{ x, y: 120 },
+							{ x: 670, y: 120 },
+						],
+				endPoint: others.straight ? { x, y: 300 } : { x: 670, y: 300 },
 			},
 		],
 	};
@@ -210,7 +221,7 @@ function centredPort(others: {
 	]);
 	const nodes = new Map([source, target, ...(others.cards ?? [])].map((node) => [node.id, node]));
 	const used = new Map([
-		["source", new Map([[channel, [{ face: "SOUTH" as const, position: slot }]]])],
+		["source", new Map([[channel, [{ face: "SOUTH" as const, position: others.at ?? slot }]]])],
 	]);
 	const moved = centredPins(nodes, channels, [line, ...(others.edges ?? [])], used);
 	return (moved?.pins ?? used).get("source")!.get(channel)![0]!.position;
@@ -228,6 +239,30 @@ test("a lone port moves to its face's middle only across a strip clear of cards 
 		labels: [{ x: 80, y: 95, width: 80, height: 20 }],
 	};
 	expect(centredPort({ edges: [labelled] })).toBeLessThan(0.5);
+});
+
+test("a lone port stays where another line runs beside the strip, off its slot, or with a line running straight on", () => {
+	const far = { id: "far", x: 100, y: 500, width: 40, height: 40 };
+	const beside: ElkExtendedEdge = {
+		id: "beside",
+		sources: ["far"],
+		targets: ["target"],
+		layoutOptions: { "archboard.relationship.kind": "data" },
+		sections: [
+			{
+				id: "b",
+				startPoint: { x: 120, y: 500 },
+				bendPoints: [
+					{ x: 120, y: 100 },
+					{ x: 600, y: 100 },
+				],
+				endPoint: { x: 600, y: 300 },
+			},
+		],
+	};
+	expect(centredPort({ cards: [far], edges: [beside] })).toBeLessThan(0.5);
+	expect(centredPort({ at: 12 / 340 })).toBeLessThan(0.5);
+	expect(centredPort({ straight: true })).toBeLessThan(0.5);
 });
 
 test("a port centred on its face keeps that face in the last solve", async () => {
