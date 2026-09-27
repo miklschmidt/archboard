@@ -361,6 +361,43 @@ Superseded on 2026-09-27 by ADR 0039: a drawing is measured first by how easily
 it reads, and fit only breaks ties. The reference pane below stays the
 yardstick for fit.
 
+How each engine's choices weigh fit since ADR 0039:
+
+- **Graphviz's column fold** (`column-readings.ts`). The column count is still
+  chosen on placements by fit, since a fold is there to fit a tall board. The
+  settled fold is kept only where it reads no worse than the unfolded drawing:
+  no more of any defect the settling ranks drawings on (`even-pins.ts`
+  `noMoreDefects`: crossings seen, touches and crowded joins, stacked lanes,
+  hooks, lanes run side by side) and a material gain in fit. Six drawings
+  unfold: Command interface's One command's path, Cloud Infrastructure whole
+  and Regional entry, IIS Ingress Migration whole and Today: legacy routing,
+  each losing its crossings and most of its bends, and Archboard server
+  whole, whose fold crossed two lines fewer but ran 25 lanes more of
+  unrelated lines side by side and hooked three more ends.
+- **Track and Blocks** (`track/score.ts`). A layout's cost to its reader is
+  its crossings, each line that laps round a block as one more and each line
+  between folded columns as eight; `readsBetter` ranks on that cost and then
+  on fit. It decides whether a block's containers stack (each way weighed at
+  its best, wrapped or folded as it would be taken, so a stacking that only
+  reads well wrapped is not refused on its unwrapped layout), whether the
+  settled ports are kept, the best of the board's wraps, and whether a board
+  drawn inline packs its group regions (no longer also required to fit no
+  worse). The board's wrap is taken where it reads better, or reads as well
+  and fits clearly better (`worthTaking`). A block's joins (`joins.ts`) go to
+  the better fit only between drawings that cross alike and draw about as
+  much line.
+- **Kept on fit** (`scoreOf`, fit less a share for each crossing): a block of
+  blocks' packing (`pack.ts`) and the wrap of a block inside the board
+  (`wraps.ts`) are chosen before the drawing a reader sees exists, on the
+  trunks or the block alone. Ranked on their own crossings first, the packing
+  crossed Archboard server whole 69 to 109 times and the inside wrap Board
+  persistence whole 9 to 12 (Blocks). A fold of a block of cards (`fold.ts`)
+  is estimated with the block's unfolded crossings, so it trades no crossing,
+  only its lines between columns, the price of any fold, for the fit it
+  gains; counted as crossings against any fit they kept every chain unfolded,
+  and ignored they bent straight drawings that already fit. Which packings are
+  laid out at all is still bounded by their estimated fit (`packings.ts`).
+
 Page area was the layout suite's number, and area does not track what a
 reader gets: a 997 by 1468 column and a 3952 by 460 ribbon are the same
 area and fit the pane at 0.65 against 0.32. ADR 0028 makes fit the measure.
