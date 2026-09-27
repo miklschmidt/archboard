@@ -18,9 +18,11 @@ import {
 	bodyShift,
 	routeLabels,
 	routePoints,
+	turnsOf,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import aSpokenInstruction from "./a-spoken-instruction.json";
+import boardRequestPath from "./board-request-path.json";
 import legacyRouting from "./legacy-routing.json";
 import recordingAWalkthrough from "./recording-a-walkthrough.json";
 import startingAWorkhorse from "./starting-a-workhorse.json";
@@ -34,6 +36,7 @@ const policy = SemanticPolicySchema.parse({
 		system: { name: "System", icon: "RiApps2Line" },
 		ui: { name: "Interface", icon: "RiLayoutLine" },
 		function: { name: "Function", icon: "RiCodeLine" },
+		route: { name: "Route", icon: "RiRouteLine" },
 	},
 	relationshipKinds: {
 		call: { name: "Call", dash: "solid", arrowhead: "filled" },
@@ -336,6 +339,22 @@ test.each(
 )("%s: the %s engine carries every line on to the node", async (board, layout) => {
 	const content = orderedFixture(besideTheNode[board as keyof typeof besideTheNode]);
 	expect(endsOffNode(content, await drawn(content, layout))).toEqual([]);
+});
+
+// Reduced from a dogfood view: a line whose lane stood a little inside the
+// face of a card alone in its region, nearer its corner than a port is moved
+// to, stepped aside above the region to reach the card.
+test("the track engine turns a line into a card alone in its region no more than without the region", async () => {
+	const content = orderedFixture(boardRequestPath);
+	const turns = async (board: VariantContent): Promise<Map<string, number>> =>
+		new Map(
+			[...routePoints((await drawn(board, "track")).svg)].map(([id, points]) => [
+				id,
+				turnsOf(points),
+			]),
+		);
+	const [grouped, plain] = await Promise.all([turns(content), turns(ungrouped(content))]);
+	for (const [id, count] of grouped) expect(count, id).toBeLessThanOrEqual(plain.get(id)!);
 });
 
 // A container alone in its region, drawn inline, was fitted to what it holds
