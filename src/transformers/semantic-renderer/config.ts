@@ -11,8 +11,6 @@ export const PLANNED_FRAME_MARGIN = 16;
 export const PLANNED_FRAME_INSET = 8;
 /** Equal space below a container title and at its sides/bottom. */
 export const CONTAINER_INSET = 20;
-/** Preferred rank gap, subject to routing clearance. Reserved labels add their measured height. */
-export const RANK_GAP = 32;
 
 /** Label-to-card whitespace. */
 export const LABEL_CARD_CLEARANCE = 16;

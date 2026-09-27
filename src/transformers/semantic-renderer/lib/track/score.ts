@@ -376,7 +376,6 @@ export {
 	anchored,
 	crossingsOf,
 	lapsOf,
-	readingOrder,
 	readsBetter,
 	scoreOf,
 	scoresBetter,
@@ -384,6 +383,5 @@ export {
 	takes,
 	wrapPlans,
 	type Crossing,
-	type Run,
 	type Weighed,
 };
