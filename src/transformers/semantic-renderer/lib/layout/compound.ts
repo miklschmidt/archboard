@@ -256,7 +256,24 @@ function finishedWith(reading: Reading, route: RouteRequest): Promise<Architectu
  */
 function finishedReading(kept: SettledReading): Promise<{ drawing: ArchitectureDrawing }> {
 	const reroute = rerouting(kept.reserved);
-	return finished(kept, (reading, request) => reroute(asking(reading, request)));
+	return finished(
+		kept,
+		(reading, request) => reroute(asking(reading, request)),
+		pinnedCards(kept.reading.standings),
+	);
+}
+
+/**
+ * The subjects of a comparison that wear a standing pin (compound-graph.ts).
+ * @param standings How each subject stands, if the drawing is a comparison.
+ * @returns Every subject marked anything but unchanged.
+ */
+function pinnedCards(standings: Problem["standings"]): ReadonlySet<string> {
+	return new Set(
+		Object.entries(standings ?? {}).flatMap(([id, standing]) =>
+			standing === "unchanged" ? [] : [id],
+		),
+	);
 }
 
 /**

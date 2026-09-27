@@ -1,5 +1,6 @@
 import { EndpointOptions } from "@/transformers/semantic-renderer/lib/layout/endpoint-options";
 import { centreHandicap } from "@/transformers/semantic-renderer/lib/layout/even-pins";
+import { seedSlot } from "@/transformers/semantic-renderer/lib/layout/pin-feedback";
 import type { Requested } from "@/transformers/semantic-renderer/lib/layout/route-requests";
 import {
 	centredPins,
@@ -223,13 +224,12 @@ export class RoutingScene {
 		position: number,
 		pins: readonly AlignedPin[],
 	): void {
+		const [node, cleared] = [this.nodes.get(id)!, this.request.clearPins];
 		for (const face of FACES) {
 			if (!this.endpoints.allows(id, channel, face)) continue;
-			if (
-				!pins.some((pin) => pin.face === face) &&
-				this.seedAvailable(id, channel, { face, position })
-			)
-				this.registerPins(id, pinClass, [SIDES[face]], position);
+			const seed = { face, position: seedSlot(node, face, position, cleared) };
+			if (!pins.some((pin) => pin.face === face) && this.seedAvailable(id, channel, seed))
+				this.registerPins(id, pinClass, [SIDES[face]], seed.position);
 		}
 		for (const pin of pins.filter((candidate) =>
 			this.endpoints.allows(id, channel, candidate.face),
