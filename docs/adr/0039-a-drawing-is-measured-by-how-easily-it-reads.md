@@ -27,8 +27,7 @@ or the aspect ratio of the diagram, which is a kind of arbitrary goal.
 A drawing is measured first by how easily a reader follows it. These measures
 decide, compared in this order: a drawing better on an earlier measure reads
 better, whatever the later ones say, and a later measure decides only between
-drawings equal on every earlier one. One line's crossing on a corner, or
-hidden in a stack, counts as more than one clean crossing.
+drawings equal on every earlier one.
 
 - the reader invariants of ADR 0028: no route through a card, no fan of skips
   down a flank, bounded bends per route, every label on a straight run of its
@@ -43,38 +42,71 @@ hidden in a stack, counts as more than one clean crossing.
 - bends and route length.
 
 Fit and the aspect ratio of the page are a guideline. They break ties between
-drawings that read equally well. A chooser never trades a crossing, a stack, a
-hook or a crowded label for a better fit, and a review never counts a smaller
-fit as a regression on its own. A drawing that shows at 0.4 is still drawn and
+drawings that read equally well, and a review never counts a smaller fit as a
+regression on its own. A drawing that shows at 0.4 is still drawn and
 navigable, and panning it costs a reader less than a line they cannot follow.
-
 The reference pane stays the yardstick fit is measured against, and fit stays
 on the scorecard as the tie-breaker. Folding a tall board into columns, and
-wrapping a wide board's rank into rows, stay. They exist to fit the page, and
-the bends and route length they add are their price, so a fold or a wrap is
-weighed on every other measure and on fit: it is kept only where it has no
-more crossings, stacks, double tracks, hooks or touching lines than the
-drawing it replaces, and fits the reference pane materially better. For
-Graphviz's column fold that is a twentieth; for a board's wrap, a tenth, or a
-twentieth where it also cures a defect. A drawing that fits a twentieth better
-shows at about the same scale, which pays for none of the fold's price.
+wrapping a wide board's rank into rows, stay: they exist to fit the page, and
+the bends and route length they add are their price.
+
+A chooser takes a drawing other than the one it took before this decision
+only where that drawing is no worse on any number the engine counts. The next
+section says how the engines do this.
+
+### How the engines choose
+
+- **The comparison** (`readingOrder` in `lib/track/score.ts`). Two layouts
+  are compared on five numbers, in this order: crossings; the length of
+  unrelated lines drawn on one stroke or side by side closer than a lane;
+  hooks into a card's side and lines that touch; bends; route length. The
+  first number on which they differ decides. Two route lengths within a
+  twentieth of each other count as equal. When all five are equal, the layout
+  that fits the reference pane better wins, and then the smaller page.
+- **What each engine counts.** Graphviz counts all five on its settled
+  drawing, and counts a crossing on a line's corner as one crossing more.
+  Track and Blocks count crossings, bends and route length on their lines as
+  drawn, and a line that laps round a block of cards counts as one crossing
+  more. They do not count the other two: counting them changed no drawing in
+  either vault.
+- **The guard** (`takes`). Every chooser this decision changed makes two
+  picks: the pick it made before this decision (its earlier weighing), and a
+  reading pick. When the two picks agree, that is the choice. When they
+  differ, the reading pick is taken only if it is no worse than the earlier
+  pick on every one of the five numbers, route length within a twentieth.
+  Otherwise the earlier pick stays. Two drawings often trade one number for
+  another, and the guard stops a crossing saved from buying more bends, more
+  line or a hook.
+- **The reading picks.** Whether a block's containers stack, and whether a
+  board drawn inline packs its group regions: the comparison. Which way a
+  block's joins are kept whole: the way that parts fewer joins, and between
+  ways that part as many, the comparison. Graphviz's column fold: the fold
+  must fit the reference pane at least a twentieth better than the unfolded
+  drawing and have no more defects. Defects are compared in order: crossings
+  first; only when the crossings are equal, the length of stacked and
+  double-tracked line; only when that is equal too, hooks and touching lines.
+  So a fold with a crossing fewer and two hooks more passes this test, and
+  the guard then keeps the earlier pick unless the fold is no worse on every
+  number. A drawing that fits a twentieth better shows at about the same
+  scale, which pays for none of a fold's price.
+- **Choosers left on their earlier weighing.** Settling a block's ports:
+  held to the guard, it drew Public ownership (Blocks) with four more
+  crossings and IIS data with one more. The held
+  port order and the board's wrap: on every board of both vaults the guard
+  kept their earlier pick, so their earlier rule is kept. A block of blocks'
+  packing, the wrap of a block inside the board and the fold of a block of
+  cards are chosen before the drawing exists, on their fit less a share for
+  each crossing, their fit standing for how the finished drawing will read.
 
 ## Consequences
 
-- The choosers that rank by fit ahead of the reading measures change: Track's
-  score (`lib/track/score.ts`), Blocks' placement, packing and joins
-  (`lib/blocks/place.ts`, `pack.ts`, `joins.ts`), and Graphviz's column fold
-  (`lib/layout/fold-columns.ts`). Each is judged by the pictures it gives.
-- By those pictures, two whole drawings often trade one measure for another,
-  and the ordered comparison alone then takes a drawing that reads worse
-  somewhere than the one taken before. So the block engine's joins and its
-  packing of a board's groups also weigh their two drawings as they did
-  before, and take the ordered comparison's pick only where the two agree or
-  where it reads no worse on any measure; otherwise the earlier pick stands,
-  fit included. Settling a block's ports keeps its earlier score (fit less a
-  share per crossing) outright: on the ordered comparison it ran a line along
-  a frame's wall, and held to the earlier pick it led the joins to a crossing.
-  These are the exceptions to the rule that a chooser never trades a crossing
-  for fit, kept because no drawing may read worse than it did.
+- The choosers change as the section above says: Track's and Blocks'
+  stacking, joins and packing (`lib/blocks/place.ts`, `joins.ts`), and
+  Graphviz's column fold (`lib/layout/column-readings.ts`). Each is judged by
+  the pictures it gives.
+- A drawing that improved on the comparison alone but traded one number for
+  another goes back to the drawing it had before this decision, fit included.
+  Those trades are the cost of the rule that no drawing reads worse than it
+  did.
 - Picture reviews list a change of fit as information and judge the drawing by
   how it reads.
