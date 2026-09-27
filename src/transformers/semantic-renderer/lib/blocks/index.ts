@@ -3,10 +3,10 @@
 // relationship drawn on tracks through the ports where it crosses a block's
 // edge (`tree.ts`, `place.ts`). The track engine is the same engine with every
 // container and region drawn inline, as clusters of the board's one layout
-// (`inline.ts`, `clusters.ts`). Everything is laid out and routed where the
-// layout engines run; here the geometry becomes the drawing.
+// (`inline.ts`, `clusters.ts`). Each way to lay a board out is laid out and
+// routed where the layout engines run, and the one that reads best is chosen
+// here (`solves.ts`); here the geometry becomes the drawing.
 import type { ElkNode } from "@archboard/elk-rs";
-import { z } from "zod";
 import type { ChangeKind, VariantContent } from "@/shared/semantic-board/index";
 import type {
 	ArchitectureDrawing,
@@ -14,36 +14,11 @@ import type {
 	MeasuredArchitecture,
 	PaintedDrawing,
 } from "@/transformers/semantic-renderer/lib/drawing";
-import { SOLVE_STAGE, rendererHost } from "@/transformers/semantic-renderer/lib/host";
 import { bridgeCrossings } from "@/transformers/semantic-renderer/lib/layout/crossings";
 import { fittedPage } from "@/transformers/semantic-renderer/lib/layout/page-fit";
-import {
-	COMPOUND_OPTIONS,
-	compoundGraph,
-} from "@/transformers/semantic-renderer/lib/layout/compound-graph";
+import { compoundGraph } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import { curveThrough, pathOf, selfLoop } from "@/transformers/semantic-renderer/lib/layout/curves";
-import { BLOCKS_PLACED } from "@/transformers/semantic-renderer/lib/blocks/place";
-
-const BoxSchema = z.object({ x: z.number(), y: z.number(), width: z.number(), height: z.number() });
-const PointSchema = z.object({ x: z.number(), y: z.number() });
-const PlacedSchema = z.object({
-	width: z.number(),
-	height: z.number(),
-	cards: z.array(z.object({ id: z.string(), box: BoxSchema, depth: z.number() })),
-	frames: z.array(z.object({ id: z.string(), box: BoxSchema, depth: z.number() })),
-	regions: z.array(
-		z.object({
-			group: z.string(),
-			parent: z.string().optional(),
-			box: BoxSchema,
-			caption: BoxSchema,
-			depth: z.number(),
-		}),
-	),
-	edges: z.array(
-		z.object({ id: z.string(), points: z.array(PointSchema), label: BoxSchema.optional() }),
-	),
-});
+import { placedBlocks, type Placed } from "@/transformers/semantic-renderer/lib/blocks/solves";
 
 /**
  * The drawing the block engine's geometry describes.
@@ -55,7 +30,7 @@ const PlacedSchema = z.object({
 function drawingOf(
 	content: VariantContent,
 	measured: MeasuredArchitecture,
-	placed: z.infer<typeof PlacedSchema>,
+	placed: Placed,
 ): ArchitectureDrawing {
 	const cards = placed.cards.map(({ id, box, depth }) => ({
 		measured: measured.nodes.get(id)!,
@@ -120,11 +95,7 @@ async function drawnBlocks(
 	graph: ElkNode,
 	inline = false,
 ): Promise<PaintedDrawing> {
-	const solved = await rendererHost().solve(graph, {
-		...COMPOUND_OPTIONS,
-		[SOLVE_STAGE]: inline ? "track" : "blocks",
-	});
-	const placed = PlacedSchema.parse(JSON.parse(solved.layoutOptions?.[BLOCKS_PLACED] ?? "{}"));
+	const placed = await placedBlocks(graph, inline);
 	const drawing = fittedPage(drawingOf(content, measured, placed));
 	return { ...drawing, bridged: bridgeCrossings(drawing, measured.lines) };
 }
