@@ -146,11 +146,41 @@ function placingGroups(
 	return placed;
 }
 
+/**
+ * The group each node is gathered into a region with: the group it is
+ * placed with (ADR 0038), unless a container round it is placed with that
+ * group too. That container stands in the group's region, and so does
+ * everything inside it, so no region of the group is drawn inside it again.
+ * @param nodes The nodes drawn together.
+ * @param policy The vault's groups, in order.
+ * @returns Each gathered node's id with its group's id.
+ */
+function gatheringGroups(
+	nodes: readonly SemanticNode[],
+	policy: Pick<SemanticPolicy, "groups">,
+): Map<string, string> {
+	const placing = placingGroups(nodes, policy);
+	const parents = new Map(nodes.map(({ id, parent }) => [id, parent]));
+	/**
+	 * Whether a container round a node is placed with a group.
+	 * @param id The node.
+	 * @param group The group.
+	 * @returns True when one is.
+	 */
+	const inside = (id: string, group: string): boolean => {
+		for (let at = parents.get(id); at !== undefined; at = parents.get(at))
+			if (placing.get(at) === group) return true;
+		return false;
+	};
+	return new Map([...placing].filter(([id, group]) => !inside(id, group)));
+}
+
 export {
 	type BoundaryDirection,
 	type BoundaryEdge,
 	type GroupInspection,
 	groupsUsed,
+	gatheringGroups,
 	inspectGroup,
 	isMemberOf,
 	placingGroups,
