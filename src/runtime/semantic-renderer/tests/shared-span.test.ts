@@ -7,13 +7,16 @@
 // to reach from a side (IIS Ingress Migration's "Today: DNS points here"). A
 // label moved onto the span stands where its line meets each card's face,
 // not its corner: moved the nudging distance from a corner, Browser
-// application's "start voice" left Agent setup 12 px from its corner.
+// application's "start voice" left Agent setup 12 px from its corner. A row
+// of labels moves only where every label keeps clear of cards and of the
+// label before it, and only onto a channel no other card stands in.
 
 import { expect, test } from "bun:test";
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import { AvoidLib } from "libavoid-js";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { requestOptions, routeGraph } from "@/runtime/semantic-renderer/layout";
+import { LABEL_LABEL_CLEARANCE } from "@/transformers/semantic-renderer/config";
+import { centreLabels, requestOptions, routeGraph } from "@/runtime/semantic-renderer/layout";
 import { routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
@@ -90,4 +93,55 @@ test("a label moved onto a shared span keeps its line off the cards' corners", a
 	const lower = { id: "lower", x: 20, y: 272, width: 340, height: 88 };
 	const start = centred(upper, lower).sections![0]!.startPoint;
 	expect(start.x - upper.x).toBeGreaterThanOrEqual(FACE_INSET);
+});
+
+/**
+ * Where the reserved labels of lines from one card down to another stand once centred.
+ * @param labels Each line's label, where placement put it.
+ * @param others Other cards on the page.
+ * @returns Each label's box after centring.
+ */
+function centredLabels(
+	labels: readonly { x: number; y: number; width: number; height: number }[],
+	others: readonly ElkNode[] = [],
+): { x: number; width: number }[] {
+	const graph: ElkNode = {
+		id: "root",
+		width: 800,
+		height: 380,
+		children: [
+			{ id: "upper", x: 200, y: 20, width: 340, height: 88 },
+			{ id: "lower", x: 20, y: 272, width: 340, height: 88 },
+			...others,
+		],
+		edges: labels.map((label, index) => ({
+			id: `line${index}`,
+			sources: ["upper"],
+			targets: ["lower"],
+			labels: [{ ...label }],
+			layoutOptions: { "archboard.relationship.kind": "call", "archboard.route-label": "true" },
+		})),
+	};
+	centreLabels(graph);
+	return graph.edges!.map((edge) => ({ x: edge.labels![0]!.x!, width: edge.labels![0]!.width! }));
+}
+
+/** A label Graphviz put left of the span the two cards share, which runs from 200 to 360. */
+const LEFT = { x: 110, y: 174, width: 135, height: 32 };
+
+test("a label moved onto a shared span from its far side keeps its line off the lower card's corner", () => {
+	const [label] = centredLabels([{ ...LEFT, x: 380 }]);
+	expect(360 - (label!.x + label!.width / 2)).toBeGreaterThanOrEqual(FACE_INSET);
+});
+
+test("a label stays where a card stands in the channel or where it would meet a card", () => {
+	const inChannel = { id: "in", x: 205, y: 240, width: 30, height: 20 };
+	const besideChannel = { id: "beside", x: 260, y: 170, width: 40, height: 30 };
+	expect(centredLabels([LEFT], [inChannel])[0]!.x).toBe(LEFT.x);
+	expect(centredLabels([LEFT], [besideChannel])[0]!.x).toBe(LEFT.x);
+});
+
+test("labels moved onto one span in one row keep a label's clearance apart", () => {
+	const [one, other] = centredLabels([LEFT, { ...LEFT, x: 300 }]);
+	expect(other!.x - one!.x - one!.width).toBeGreaterThanOrEqual(LABEL_LABEL_CLEARANCE);
 });
