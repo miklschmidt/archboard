@@ -12,39 +12,34 @@
 // hops or is cut beneath one that is not drawn. The page is still the whole
 // layout's page, so the subjects left keep their places on it.
 
-import type { VariantContent } from "@/shared/semantic-board/index";
+import type { SemanticFlow, VariantContent } from "@/shared/semantic-board/index";
 import type { LineLook, PaintedDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
-import type { DataFlowLayout } from "@/transformers/semantic-renderer/lib/layout/dataflow";
+import type {
+	DataFlowLayout,
+	PlacedColumn,
+	PlacedStep,
+} from "@/transformers/semantic-renderer/lib/layout/dataflow";
 import { bridgeUnfolded } from "@/transformers/semantic-renderer/lib/layout/crossings";
 import { unfoldCrossings } from "@/transformers/semantic-renderer/lib/layout/folded-crossings";
 
 /**
- * Every subject content draws: its nodes, relationships, flows and their messages.
- * @param content The content.
- * @returns Their ids.
- */
-function idsOf(content: VariantContent): string[] {
-	return [
-		...content.nodes.map(({ id }) => id),
-		...content.edges.map(({ id }) => id),
-		...content.flows.flatMap((flow) => [flow.id, ...flow.steps.map(({ id }) => id)]),
-	];
-}
-
-/**
- * The subjects a picture without its comparison leaves out: everything laid
- * out that the variant's own reading of the view does not hold. That is what
- * stands removed, and whatever the restored content pulled into the view
- * that the variant's view would not show, such as the far end of a removed
- * relationship the view selects.
- * @param laid The content laid out: the variant with what it lacks put back, read through the view.
- * @param own The variant's own content, read through the same view.
+ * The cards and lines laid out that a reading does not hold: what a picture
+ * without its comparison leaves undrawn. That is what stands removed, and
+ * whatever the restored content pulled into the view that the variant's own
+ * view would not show, such as the far end of a removed relationship the view
+ * selects. A line drawn for a flow's message is held when the message is.
+ * @param laid The content laid out, its lines drawn for messages included.
+ * @param held The variant's own reading of the view.
  * @returns The ids left undrawn.
  */
-function unshownOf(laid: VariantContent, own: VariantContent): ReadonlySet<string> {
-	const held = new Set(idsOf(own));
-	return new Set(idsOf(laid).filter((id) => !held.has(id)));
+function unshownOf(laid: VariantContent, held: VariantContent): ReadonlySet<string> {
+	const kept = new Set([
+		...held.nodes.map(({ id }) => id),
+		...held.edges.map(({ id }) => id),
+		...held.flows.flatMap(({ steps }) => steps.map(({ id }) => id)),
+	]);
+	return new Set([...laid.nodes, ...laid.edges].map(({ id }) => id).filter((id) => !kept.has(id)));
 }
 
 /**
@@ -54,28 +49,6 @@ function unshownOf(laid: VariantContent, own: VariantContent): ReadonlySet<strin
  */
 function drawnOf(unshown: ReadonlySet<string>): (subject: { readonly id: string }) => boolean {
 	return ({ id }) => !unshown.has(id);
-}
-
-/**
- * The content a picture says it draws: without the subjects left out.
- * @param content The content laid out.
- * @param unshown The ids left out, when any are.
- * @returns What is drawn of it.
- */
-function shownContent(
-	content: VariantContent,
-	unshown: ReadonlySet<string> | undefined,
-): VariantContent {
-	if (unshown === undefined || unshown.size === 0) return content;
-	const shown = drawnOf(unshown);
-	return {
-		...content,
-		nodes: content.nodes.filter(shown),
-		edges: content.edges.filter(shown),
-		flows: content.flows
-			.filter(shown)
-			.map((flow) => ({ ...flow, steps: flow.steps.filter(shown) })),
-	};
 }
 
 /**
@@ -98,16 +71,16 @@ function inside(inner: Box, outer: Box): boolean {
  * the drawing's own, and only the hops and cuts where its lines cross are
  * settled again on what is left.
  * @param drawing The whole layout, as painted with its comparison.
- * @param unshown The ids left out, when any are.
+ * @param unshown The ids left out.
  * @param lines How each line is drawn, as measurement settled it.
  * @returns The drawing to paint.
  */
 function shownDrawing(
 	drawing: PaintedDrawing,
-	unshown: ReadonlySet<string> | undefined,
+	unshown: ReadonlySet<string>,
 	lines: ReadonlyMap<string, LineLook>,
 ): PaintedDrawing {
-	if (unshown === undefined || unshown.size === 0) return drawing;
+	if (unshown.size === 0) return drawing;
 	const shown = drawnOf(unshown);
 	const cards = drawing.cards.filter(({ measured }) => shown(measured.node));
 	const containers = drawing.containers.filter(({ measured }) => shown(measured.node));
@@ -131,27 +104,59 @@ function shownDrawing(
 }
 
 /**
- * A sequence without the flows, participants and messages left out; every
- * frame, column and message kept stands where it stood.
+ * Whether a message runs to or from a participant.
+ * @param placed The message.
+ * @param node The participant.
+ * @returns True when it does.
+ */
+function touches(placed: PlacedStep, node: string): boolean {
+	return placed.step.from === node || placed.step.to === node;
+}
+
+/**
+ * A column with the bars no kept message of its participant stands in. A bar
+ * only dropped messages opened or held is dropped with them; a bar a kept
+ * message stands in stays whole, since that message's ends are placed against it.
+ * @param column The column as laid out.
+ * @param steps The messages kept.
+ * @returns The column to paint.
+ */
+function shownColumn(column: PlacedColumn, steps: readonly PlacedStep[]): PlacedColumn {
+	const node = column.card.node.id;
+	const activations = column.activations.filter((bar) =>
+		steps.some((placed) => touches(placed, node) && bar.top <= placed.y && placed.y <= bar.bottom),
+	);
+	return { ...column, activations };
+}
+
+/**
+ * A sequence with only what the variant's own reading of the view holds: its
+ * flows, and in each of them its participants and messages, and the bars those
+ * messages stand in. Every frame, column and message kept stands where it stood.
  * @param layout The whole sequence, as laid out with its comparison.
- * @param unshown The ids left out, when any are.
+ * @param held The flows of the variant's own reading, when the picture is without its comparison.
  * @returns The sequence to paint.
  */
 function shownFlows(
 	layout: DataFlowLayout,
-	unshown: ReadonlySet<string> | undefined,
+	held: readonly SemanticFlow[] | undefined,
 ): DataFlowLayout {
-	if (unshown === undefined || unshown.size === 0) return layout;
+	if (held === undefined) return layout;
+	const own = new Map(held.map((flow) => [flow.id, flow]));
 	return {
 		...layout,
-		flows: layout.flows
-			.filter(({ flow }) => !unshown.has(flow.id))
-			.map((laid) => ({
-				...laid,
-				columns: laid.columns.filter(({ card }) => !unshown.has(card.node.id)),
-				steps: laid.steps.filter(({ step }) => !unshown.has(step.id)),
-			})),
+		flows: layout.flows.flatMap((laid) => {
+			const flow = own.get(laid.flow.id);
+			if (flow === undefined) return [];
+			const participants = new Set(flow.participants);
+			const messages = new Set(flow.steps.map(({ id }) => id));
+			const steps = laid.steps.filter(({ step }) => messages.has(step.id));
+			const columns = laid.columns
+				.filter(({ card }) => participants.has(card.node.id))
+				.map((column) => shownColumn(column, steps));
+			return [{ ...laid, columns, steps }];
+		}),
 	};
 }
 
-export { shownContent, shownDrawing, shownFlows, unshownOf };
+export { shownDrawing, shownFlows, unshownOf };

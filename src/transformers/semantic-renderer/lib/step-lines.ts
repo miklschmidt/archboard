@@ -9,7 +9,6 @@
 // board already holds.
 
 import type { FlowStep, SemanticEdge, VariantContent } from "@/shared/semantic-board/index";
-import type { StatedStandings } from "@/transformers/semantic-renderer/lib/svg/standing";
 
 /** The content as the architecture reading draws it, and which lines are steps. */
 interface StepLines {
@@ -55,49 +54,20 @@ function lineOf(step: FlowStep, order: number): SemanticEdge {
 }
 
 /**
- * Whether the variant keeps a subject: it does unless the subject stands removed.
- * @param subject The subject.
- * @param subject.id Its id.
- * @param standing How each subject stands against the variant it is read against, if any.
- * @returns True when the variant holds it.
- */
-function kept({ id }: { readonly id: string }, standing: StatedStandings | undefined): boolean {
-	return standing?.[id] !== "removed";
-}
-
-/**
- * Whether a step, rather than the one already riding its pair, is the pair's
- * line: the first step over a pair is, and a later one is when the variant
- * keeps it and not the one before it.
- * @param step The step.
- * @param riding The line already drawn over its pair, if any.
- * @param standing How each subject stands against the variant it is read against, if any.
- * @returns True when the step is the pair's line.
- */
-function replaces(
-	step: FlowStep,
-	riding: SemanticEdge | undefined,
-	standing: StatedStandings | undefined,
-): boolean {
-	return riding === undefined || (!kept(riding, standing) && kept(step, standing));
-}
-
-/**
- * One line for each pair of participants a drawable message runs between.
- * @param content The variant content.
- * @param standing How each subject stands against the variant it is read against, if any.
+ * One line for each pair of participants a drawable message runs between. A
+ * pair's line is the first message over it that the variant holds, or the
+ * first message over it when the variant holds none.
+ * @param content The content laid out.
+ * @param held The ids of the messages the variant itself holds.
  * @returns The lines, in the order their pairs first appear.
  */
-function stepLinesOf(
-	content: VariantContent,
-	standing: StatedStandings | undefined,
-): SemanticEdge[] {
+function stepLinesOf(content: VariantContent, held: ReadonlySet<string>): SemanticEdge[] {
 	const riders = new Map<string, SemanticEdge>();
 	for (const [index, step] of content.flows.flatMap((flow) => flow.steps).entries()) {
 		const pair = `${step.from}>${step.to}`;
-		if (drawable(step, content) && replaces(step, riders.get(pair), standing)) {
-			riders.set(pair, lineOf(step, (index + 1) * 1000));
-		}
+		const riding = riders.get(pair);
+		const replaces = riding === undefined || (!held.has(riding.id) && held.has(step.id));
+		if (drawable(step, content) && replaces) riders.set(pair, lineOf(step, (index + 1) * 1000));
 	}
 	return [...riders.values()];
 }
@@ -109,22 +79,25 @@ function stepLinesOf(
  * self step, a step to a container and a step whose participant is not in
  * this reading draw nothing.
  *
- * On a variant read against another, the content holds what the variant lost
- * as well, and a picture without the comparison leaves that out. So a board
- * whose relationships all stand removed still reads its exchange this way,
- * and a pair's line is a step the variant keeps whenever one rides it.
- * Neither choice depends on whether the comparison is shown, so both pictures
- * lay out the same lines.
- * @param content The variant content.
- * @param standing How each subject stands against the variant it is read against, if any.
+ * On a variant read against another, the content laid out holds what the
+ * variant lost as well, and a picture without the comparison draws only what
+ * the variant's own reading of the view holds. So whether the board has
+ * relationships of its own is asked of that reading, and a pair's line is a
+ * message it holds whenever one rides the pair. Neither choice depends on
+ * whether the comparison is shown, so both pictures lay out the same lines.
+ * @param content The content laid out.
+ * @param held The variant's own reading of the view; the content itself when absent.
  * @returns The drawable content and the derived ids.
  */
-function withStepLines(content: VariantContent, standing: StatedStandings | undefined): StepLines {
+function withStepLines(content: VariantContent, held: VariantContent = content): StepLines {
 	// A board that has relationships is drawn from them: a flow there restates
 	// the wiring as messages and answers, and drawing those again doubles every
 	// line. Only a board with no relationships of its own reads its exchange this way.
-	if (content.edges.some((edge) => kept(edge, standing))) return { content, derived: new Set() };
-	const lines = stepLinesOf(content, standing);
+	if (held.edges.length > 0) return { content, derived: new Set() };
+	const lines = stepLinesOf(
+		content,
+		new Set(held.flows.flatMap(({ steps }) => steps.map(({ id }) => id))),
+	);
 	const derived = new Set(lines.map((line) => line.id));
 	return derived.size === 0
 		? { content, derived }

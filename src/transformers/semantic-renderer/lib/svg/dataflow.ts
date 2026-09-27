@@ -503,7 +503,7 @@ interface DataFlowPainting {
  * @param page What the page holds beyond what is drawn: the flows, participants and
  * messages laid out but left out, and the marks the comparison would draw, so what is
  * drawn stands where it stands with them.
- * @param page.unshown The ids laid out and left out.
+ * @param page.held The flows as the variant's own reading holds them, when only those are drawn.
  * @param page.standingOf How each subject stands, for the marks the page holds.
  * @returns The page, its body and its atlas.
  */
@@ -514,13 +514,13 @@ function paintDataFlow(
 	standingOf: StandingOf,
 	unsettledOf: UnsettledOf,
 	policy: SemanticPolicy,
-	page: { unshown: ReadonlySet<string> | undefined; standingOf: StandingOf } = {
-		unshown: undefined,
+	page: { held: readonly SemanticFlow[] | undefined; standingOf: StandingOf } = {
+		held: undefined,
 		standingOf,
 	},
 ): DataFlowPainting {
 	const laid = layoutDataFlow(flows, nodes);
-	const layout = shownFlows(laid, page.unshown);
+	const layout = shownFlows(laid, page.held);
 	// Sequence columns are cards; containment is not depicted in this grammar.
 	const appearances = nodeAppearances(
 		nodes.map(({ parent: _parent, ...node }) => node),
