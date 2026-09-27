@@ -2252,8 +2252,7 @@ wall`).
 - **The caption** stands in the band's top-left corner as every region's
   does, unless a line into the node crosses the band there; then as far
   left as its words stand a lane's room clear of every line, or less where
-  the lines leave less (`captionIn`), over the lines as they run once their
-  steps are taken out.
+  the lines leave less (`captionIn`).
 - **The board is laid out as it is decided without them**
   (`place.ts` `layJoinedOut`): which joins part, which ports move to side
   walls, how blocks pack and which port orders hold are chosen on the board

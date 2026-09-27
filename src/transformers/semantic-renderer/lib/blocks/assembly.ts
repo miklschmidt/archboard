@@ -418,12 +418,6 @@ class Assembly {
 		const routes = unstepped(placed.edges, { boxes, walls, bands });
 		return {
 			...placed,
-			// A region round one node captions its band clear of the lines as they now run.
-			regions: placed.regions.map((region) =>
-				region.lone === undefined
-					? region
-					: { ...region, caption: captionIn(region.box, region.lone, routes) },
-			),
 			edges: placed.edges.map((edge, index) => ({ ...edge, points: routes[index]! })),
 		};
 	}
