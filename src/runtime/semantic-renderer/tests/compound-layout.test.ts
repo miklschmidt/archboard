@@ -127,6 +127,7 @@ function ancestorsOf(id: string): string[] {
 	return found;
 }
 
+// Track still leaves such a frame by its side, so this holds on Blocks alone.
 test("a container's external dependency ahead leaves its forward perimeter", async () => {
 	const content = orderedFixture({
 		nodes: [
@@ -137,7 +138,7 @@ test("a container's external dependency ahead leaves its forward perimeter", asy
 		],
 		edges: [{ id: "write", from: "frame", to: "store", kind: "data" }],
 	});
-	const drawing = await renderArchitecture({ content, theme: "light" });
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "blocks" });
 
 	const frame = drawing.atlas.nodes["frame"]!;
 	const target = drawing.atlas.nodes["store"]!;

@@ -15,6 +15,7 @@
 import { expect, test } from "bun:test";
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import { AvoidLib } from "libavoid-js";
+import { LayoutEngineSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { LABEL_LABEL_CLEARANCE } from "@/transformers/semantic-renderer/config";
 import { centreLabels, requestOptions, routeGraph } from "@/runtime/semantic-renderer/layout";
@@ -26,26 +27,29 @@ import sharedSpan from "./shared-span.json";
 /** The narrowest shared span a straight line keeps its nudging distance in. */
 const SHARED_SPAN = 24;
 
-test("a line between stacked cards with a shared span leaves neither by its side", async () => {
-	const content = orderedFixture(sharedSpan);
-	const drawing = await renderArchitecture({ content, theme: "light", layout: "graphviz" });
-	const cards = new Map(
-		Object.entries(drawing.atlas.nodes).filter(([id]) => !(id in drawing.atlas.regions)),
-	);
-	const routes = routePoints(drawing.svg);
-	const sideExits = content.edges.flatMap(({ id, from, to }) => {
-		const [one, other] = [cards.get(from), cards.get(to)];
-		if (one === undefined || other === undefined) return [];
-		const shared = Math.min(one.x + one.width, other.x + other.width) - Math.max(one.x, other.x);
-		const stacked = one.y + one.height <= other.y || other.y + other.height <= one.y;
-		if (!stacked || shared < SHARED_SPAN) return [];
-		const points = routes.get(id)!;
-		return [points, points.toReversed()]
-			.filter(([end, next]) => Math.abs(end!.y - next!.y) < 0.01)
-			.map(() => id);
-	});
-	expect(sideExits).toEqual([]);
-});
+test.each(LayoutEngineSchema.options)(
+	"a line between stacked cards with a shared span leaves neither by its side (%s)",
+	async (layout) => {
+		const content = orderedFixture(sharedSpan);
+		const drawing = await renderArchitecture({ content, theme: "light", layout });
+		const cards = new Map(
+			Object.entries(drawing.atlas.nodes).filter(([id]) => !(id in drawing.atlas.regions)),
+		);
+		const routes = routePoints(drawing.svg);
+		const sideExits = content.edges.flatMap(({ id, from, to }) => {
+			const [one, other] = [cards.get(from), cards.get(to)];
+			if (one === undefined || other === undefined) return [];
+			const shared = Math.min(one.x + one.width, other.x + other.width) - Math.max(one.x, other.x);
+			const stacked = one.y + one.height <= other.y || other.y + other.height <= one.y;
+			if (!stacked || shared < SHARED_SPAN) return [];
+			const points = routes.get(id)!;
+			return [points, points.toReversed()]
+				.filter(([end, next]) => Math.abs(end!.y - next!.y) < 0.01)
+				.map(() => id);
+		});
+		expect(sideExits).toEqual([]);
+	},
+);
 
 /** How far from a card's corner a line meets its face and reads as meeting the face. */
 const FACE_INSET = 20;

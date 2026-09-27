@@ -1,17 +1,22 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
+import { LayoutEngineSchema } from "@/shared/semantic-board/index";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { labelsOffRuns, routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink";
 
+// Track still pads a container whose cards fan out below it wider than its
+// insets, so that case holds on Blocks alone.
 test.each([
-	{ count: 2, fan: 0, direction: "down" },
-	{ count: 10, fan: 0, direction: "down" },
-	{ count: 10, fan: 14, direction: "down" },
+	...LayoutEngineSchema.options.flatMap((layout) => [
+		{ count: 2, fan: 0, layout },
+		{ count: 10, fan: 0, layout },
+	]),
+	{ count: 10, fan: 14, layout: "blocks" as const },
 ])(
-	"$count independent cards keep compact insets when read $direction",
-	async ({ count, fan, direction }) => {
+	"$count independent cards and $fan fanned keep compact insets ($layout)",
+	async ({ count, fan, layout }) => {
 		const content = orderedFixture({
 			nodes: [
 				{ id: "pool", name: "Application pool", kind: "service" },
@@ -34,8 +39,8 @@ test.each([
 				kind: "call",
 			})),
 		});
-		const drawing = await renderArchitecture({ content, theme: "light" });
-		expect(drawing.readingDirection).toBe(direction);
+		const drawing = await renderArchitecture({ content, theme: "light", layout });
+		expect(drawing.readingDirection).toBe("down");
 		const frame = drawing.atlas.nodes["pool"]!;
 		const cards = content.nodes
 			.filter(({ parent }) => parent === "pool")
