@@ -15,7 +15,8 @@
 // for a whole drawing: with evened pins no release of Browser application's
 // reserved rows kept its crossings down, so it stayed 2734 wide instead of
 // 2156 and drew 24 crossings instead of 15. Each reading is therefore settled
-// and finished both ways (compound.ts) and the tidier drawing is kept. It may
+// and finished both ways (compound.ts; a fold only the way its unfolded
+// reading was kept, column-readings.ts) and the tidier drawing is kept. It may
 // have no more of any defect a reader sees: crossings, each stack of two
 // unrelated lines counted as the crossing it may hide and each crossing within
 // a lane of a bend twice; lines that touch, and a fan's branches crowded into

@@ -7,7 +7,7 @@ export {
 	centreHandicap,
 	centreLabels,
 	chooseReading,
-	clearerDrawing,
+	clearerSettlement,
 	curveThrough,
 	curveClearanceIssue,
 	COMPOUND_OPTIONS,
