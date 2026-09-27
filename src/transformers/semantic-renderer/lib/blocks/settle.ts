@@ -348,10 +348,8 @@ class Settle {
 
 	/**
 	 * Where one end of a line settling a pin may stand: in a block of cards
-	 * drawn inline, an end facing a pin stands where the block routed the line
-	 * first turning from that pin, so the pin moves onto the line, and the pin
-	 * only where the line can reach it straight ({@link Settle.clearOf}); else
-	 * its span ({@link Settle.spanIn}).
+	 * drawn inline, the pin only where the line can reach it straight
+	 * ({@link Settle.clearOf}); else its span ({@link Settle.spanIn}).
 	 * @param block The block of blocks.
 	 * @param line The end, the line's other end and the line's key.
 	 * @param line.end The end.
@@ -367,9 +365,9 @@ class Settle {
 	): Span {
 		const { end, other, key } = line;
 		const { pins } = this.settling.tree;
-		const inline = this.cardsInline(block) && pins.has(end) !== pins.has(other);
-		if (inline && pins.has(end)) return this.clearOf(block, end, key, this.spanIn(block, end, own));
-		return (inline ? this.turnsOf(block, other, [key]) : undefined) ?? this.spanIn(block, end, own);
+		const span = this.spanIn(block, end, own);
+		const inline = this.cardsInline(block) && pins.has(end) && !pins.has(other);
+		return inline ? this.clearOf(block, end, key, span) : span;
 	}
 
 	/**
