@@ -40,8 +40,7 @@
 			"order": 5000,
 			"name": "Semantic authoring",
 			"kind": "module",
-			"responsibility": "The board list, new, edit, branch and show: the commands that state a board and read it back",
-			"groups": ["writes"]
+			"responsibility": "The board list, new, edit, branch and show: the commands that state a board and read it back"
 		},
 		{
 			"id": "OfRn3av3",

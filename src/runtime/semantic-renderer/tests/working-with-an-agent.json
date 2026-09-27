@@ -21,7 +21,6 @@
 			"kind": "module",
 			"order": 4000,
 			"parent": "yAFyqal3",
-			"groups": ["panes"],
 			"responsibility": "Keeps each pane in server contact"
 		},
 		{

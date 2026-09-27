@@ -39,8 +39,7 @@
 			"name": "Workhorse queue",
 			"kind": "module",
 			"responsibility": "Codex's queue of messages waiting for the workhorse: list, add, edit, reorder, delete, or start one now",
-			"parent": "7TAwfrZF",
-			"groups": ["workhorse"]
+			"parent": "7TAwfrZF"
 		},
 		{
 			"id": "giL6EI28",

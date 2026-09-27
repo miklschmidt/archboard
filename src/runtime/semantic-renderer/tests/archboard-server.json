@@ -74,8 +74,7 @@
 			"order": 10000,
 			"name": "Codex workbench",
 			"kind": "service",
-			"responsibility": "Owns the private Codex child and bridges it to the panes",
-			"groups": ["agent"]
+			"responsibility": "Owns the private Codex child and bridges it to the panes"
 		},
 		{
 			"id": "mTtiV3hX",

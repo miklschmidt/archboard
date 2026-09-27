@@ -31,7 +31,6 @@
 			"kind": "module",
 			"order": 7000,
 			"parent": "7TAwfrZF",
-			"groups": ["workhorse"],
 			"responsibility": "Which thread the Archboard server is bound to, made by the first message or Talk: the candidates, the binding, and the refusal when two disagree"
 		},
 		{

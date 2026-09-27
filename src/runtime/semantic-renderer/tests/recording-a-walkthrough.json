@@ -21,8 +21,7 @@
 			"name": "Semantic viewer",
 			"kind": "module",
 			"responsibility": "Reads and explores rendered boards",
-			"parent": "yAFyqal3",
-			"groups": ["drawing"]
+			"parent": "yAFyqal3"
 		},
 		{
 			"id": "0SRnYXnC",
@@ -39,8 +38,7 @@
 			"name": "Agent setup",
 			"kind": "module",
 			"responsibility": "Talking needs no setup: a message or Talk is held and carried through sign-in, Codex starting and the conversation's creation",
-			"parent": "yAFyqal3",
-			"groups": ["agent"]
+			"parent": "yAFyqal3"
 		},
 		{
 			"id": "0yb2VbKc",
@@ -57,8 +55,7 @@
 			"name": "Walkthrough recording",
 			"kind": "module",
 			"responsibility": "A page recording one walkthrough: it captures its own tab, mixes the voice into the file, and moves the pane a step at a time as the voice paces it",
-			"parent": "yAFyqal3",
-			"groups": ["walkthrough"]
+			"parent": "yAFyqal3"
 		}
 	],
 	"edges": [
