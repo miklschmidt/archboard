@@ -50,11 +50,16 @@ const COVER = { apart: 0, clear: 1, hidden: 2, cut: 3 } as const;
  * and no less: counted deeper, "requestJson" in Command interface rested
  * against a junction dot to keep its tail from under its own label. Room
  * ranks only within a kind of cover, so a head clear of every label whose
- * tail runs into one still rests before a head a label hides.
+ * tail runs into one still rests before a head a label hides. Between places
+ * that keep as much room, the one that keeps more from where other lines
+ * meet its own rests first, up to a lane: once a streak's tail reaches a
+ * label it keeps no room, and it rested with its glow a pixel from a hop
+ * where 10 px were to be had.
  */
 interface Rest {
 	readonly cover: number;
 	readonly room: number;
+	readonly met: number;
 }
 
 /**
@@ -143,23 +148,31 @@ function nearest(points: readonly Point[], boxes: readonly Box[]): number {
 function coverAt(points: readonly Point[], at: number, streak: Streak, around: Around): Rest {
 	const { glow, body } = streak;
 	const head = points[at];
-	if (head === undefined) return { cover: COVER.apart, room: ROUTE_LANE };
+	if (head === undefined) return { cover: COVER.apart, room: ROUTE_LANE, met: ROUTE_LANE };
 	const behind = points.slice(Math.max(0, at - Math.round(body / REST_STEP)), at + 1);
 	const met = nearest(behind, around.met) - glow;
 	const labels = nearest(behind, around.labels) - glow;
-	if (Math.min(met, labels) >= ROUTE_LANE) return { cover: COVER.apart, room: ROUTE_LANE };
-	return { cover: labelCover(head, glow, around.labels), room: Math.min(met, Math.max(labels, 0)) };
+	if (Math.min(met, labels) >= ROUTE_LANE) {
+		return { cover: COVER.apart, room: ROUTE_LANE, met: ROUTE_LANE };
+	}
+	return {
+		cover: labelCover(head, glow, around.labels),
+		room: Math.min(met, Math.max(labels, 0)),
+		met: Math.min(met, ROUTE_LANE),
+	};
 }
 
 /**
  * Whether one resting place reads better than another: less covered, or as
- * covered with more room.
+ * covered with more room, or as much room and more kept from where other
+ * lines meet its own.
  * @param one A place's judgement.
  * @param other Another's.
  * @returns True when the first is better.
  */
 function better(one: Rest, other: Rest): boolean {
-	return one.cover < other.cover || (one.cover === other.cover && one.room > other.room);
+	const gains = [other.cover - one.cover, one.room - other.room, one.met - other.met];
+	return (gains.find((gain) => gain !== 0) ?? 0) > 0;
 }
 
 /**
@@ -246,7 +259,7 @@ function leastCovered(
 	streak: Streak,
 	around: Around,
 ): number {
-	let best = { rest: places[0]!, judged: { cover: Number.POSITIVE_INFINITY, room: 0 } };
+	let best = { rest: places[0]!, judged: { cover: Number.POSITIVE_INFINITY, room: 0, met: 0 } };
 	for (const rest of places) {
 		const judged = coverAt(points, Math.round(rest / REST_STEP), streak, around);
 		if (better(judged, best.judged)) best = { rest, judged };
