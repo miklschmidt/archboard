@@ -254,9 +254,9 @@ function drawsBetter(one: Drawn<Page>, other: Drawn<Page>): boolean {
  * @param lay Lay the drawing out with some blocks' joins apart, by block id.
  * @returns The drawing laid out best, and the blocks whose joins it keeps apart.
  */
-function layJoined<Placed extends Page>(
-	lay: (apart: ReadonlySet<string>) => Drawn<Placed>,
-): { best: Drawn<Placed>; apart: ReadonlySet<string> } {
+function layJoined<Laid extends Drawn<Page>>(
+	lay: (apart: ReadonlySet<string>) => Laid,
+): { best: Laid; apart: ReadonlySet<string> } {
 	let best = lay(new Set());
 	const blocks = [...best.tree.joining];
 	let apart = new Set<string>();

@@ -27,6 +27,7 @@ import legacyRouting from "./legacy-routing.json";
 import recordingAWalkthrough from "./recording-a-walkthrough.json";
 import startingAWorkhorse from "./starting-a-workhorse.json";
 import whatTheCliCanBeAsked from "./what-the-cli-can-be-asked.json";
+import workingWithAnAgent from "./working-with-an-agent.json";
 
 const policy = SemanticPolicySchema.parse({
 	levels: ["service"],
@@ -227,15 +228,18 @@ function readingOrder(drawing: RenderedDiagram, cards: readonly string[]): strin
 // band and bent the lines round it. A spoken instruction becomes work: a port
 // settled on the inset beside the card alone in its region stepped the line
 // out of it, and for that bend the board kept a port order that stood the
-// cards of a container the other way round. What the CLI can be asked: the
-// room its three such regions took moved the routes round them, and the
-// board parted four lines into Board client for a hop more and 21% more
-// line, and wrapped its widest rank's cards into other rows.
+// cards of a container the other way round. The room regions round one card
+// take moves the routes round them, and the choices weighed on those routes
+// turned: What the CLI can be asked parted four lines into Board client for a
+// hop more and 21% more line, and wrapped its widest rank's cards into other
+// rows; Working with an agent moved four more ports to side walls and stood
+// Pane session off to the middle.
 const readAsWithout = [
 	["Recording a walkthrough", "track", recordingAWalkthrough],
 	["Recording a walkthrough", "blocks", recordingAWalkthrough],
 	["A spoken instruction becomes work", "blocks", aSpokenInstruction],
 	["What the CLI can be asked", "blocks", whatTheCliCanBeAsked],
+	["Working with an agent", "blocks", workingWithAnAgent],
 ] as const;
 test.each(readAsWithout)(
 	"%s: the %s engine reads the cards as it does without its regions round one node",
