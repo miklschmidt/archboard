@@ -28,9 +28,24 @@ import {
 	type Output,
 } from "@/transformers/semantic-renderer/lib/track/graphviz";
 import { LONE_INSET, titleRow } from "@/transformers/semantic-renderer/lib/blocks/lone";
+import type { Cluster } from "@/transformers/semantic-renderer/lib/blocks/inline";
 
 /** Room a group region keeps around its members. */
 const REGION_INSET = 14;
+
+/**
+ * The room a cluster keeps round what it holds, as Graphviz draws it and as
+ * a card inside it may move: a container's or a region's inset, and a
+ * container alone in its region keeps the region's more (`lone.ts`).
+ * @param cluster The cluster.
+ * @returns Its inset.
+ */
+function insetOf(cluster: Cluster): number {
+	return (
+		(cluster.kind === "frame" ? CONTAINER_INSET : REGION_INSET) +
+		(cluster.lone === undefined ? 0 : LONE_INSET)
+	);
+}
 /** The room a card moved into line keeps from its neighbours: half what Graphviz keeps. */
 const LINED_UP_GAP = 20;
 /** How strongly a title row holds each member below it. */
@@ -140,9 +155,7 @@ class Clusters {
 	) {
 		for (const [index, cluster] of [...block.clusters.values()].entries()) {
 			const name = `cluster_${index}`;
-			const inset =
-				(cluster.kind === "frame" ? CONTAINER_INSET : REGION_INSET) +
-				(cluster.lone === undefined ? 0 : LONE_INSET);
+			const inset = insetOf(cluster);
 			const title = box(titleOf(cluster.id), cluster.header.width, cluster.header.height);
 			const made: Nested = {
 				name,
@@ -376,10 +389,7 @@ class Clusters {
 		if (!this.block.items.includes(name) && !name.startsWith("label:")) return undefined;
 		const around = this.holding(name);
 		if (around === undefined) return { left: 0, right: width };
-		const cluster = this.block.clusters.get(around)!;
-		const inset =
-			(cluster.kind === "frame" ? CONTAINER_INSET : REGION_INSET) +
-			(cluster.lone === undefined ? 0 : LONE_INSET);
+		const inset = insetOf(this.block.clusters.get(around)!);
 		const bounds = boxes.get(around)!;
 		return { left: bounds.x + inset, right: bounds.x + bounds.width - inset };
 	}
