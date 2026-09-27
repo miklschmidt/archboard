@@ -29,12 +29,12 @@ const DiagramThemeSchema = z.enum(["light", "dark"]);
 type DiagramTheme = z.infer<typeof DiagramThemeSchema>;
 
 /**
- * Which engine lays an architecture out. Engines sit behind one seam and are
- * compared side by side (TASK-348); `graphviz` places with Graphviz and routes
- * with libavoid, `track` routes every relationship on an assigned track in the
- * channels between ranks (TASK-349).
+ * Which engine lays an architecture out, behind one seam (TASK-348, ADR 0040).
+ * `track` routes every relationship on an assigned track in the channels
+ * between ranks (TASK-349); `blocks` packs each container as a block and
+ * routes shared trunks between them (TASK-351).
  */
-const LayoutEngineSchema = z.enum(["graphviz", "track", "blocks"]);
+const LayoutEngineSchema = z.enum(["track", "blocks"]);
 type LayoutEngineName = z.infer<typeof LayoutEngineSchema>;
 /** The engine a render uses when it names none. */
 const DEFAULT_LAYOUT_ENGINE: LayoutEngineName = "track";

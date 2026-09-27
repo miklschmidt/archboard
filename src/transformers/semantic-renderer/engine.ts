@@ -4,9 +4,6 @@
 import type { ElkNode, LayoutOptions } from "@archboard/elk-rs";
 import type { Viz } from "@viz-js/viz";
 import { z } from "zod";
-import { placeGraph } from "@/transformers/semantic-renderer/lib/layout/graphviz-placement";
-import { routeGraph } from "@/transformers/semantic-renderer/lib/layout/route-graph";
-import { foldColumns } from "@/transformers/semantic-renderer/lib/layout/fold-columns";
 import { placeBlocks } from "@/transformers/semantic-renderer/lib/blocks/place";
 import { SOLVE_STAGE } from "@/transformers/semantic-renderer/lib/host";
 
@@ -97,11 +94,11 @@ export function createLayoutEngine(viz: Viz, instance: unknown) {
 		.parse(instance);
 	return (graph: ElkNode, options: LayoutOptions): ElkNode => {
 		const stage = options[SOLVE_STAGE];
-		if (stage === "route") return routeGraph(avoid, graph);
 		if (stage === "track") return placeBlocks(viz, avoid, graph, true);
 		if (stage === "blocks") return placeBlocks(viz, avoid, graph);
-		const reading = placeReading(viz, graph, options);
-		return stage === "place" ? reading : routeGraph(avoid, reading);
+		throw new Error(
+			`A solve names its stage in ${SOLVE_STAGE}, "track" or "blocks"; this one said ${String(stage)}.`,
+		);
 	};
 }
 
@@ -208,23 +205,4 @@ export async function loadLayoutEngine(
 		for (const { memory, held } of asLoaded) new Uint8Array(memory.buffer).set(held);
 		return solve(graph, options);
 	};
-}
-
-/**
- * Place a graph and fold it into the columns its options ask for.
- * @param viz The initialized Graphviz instance.
- * @param graph The measured graph.
- * @param options The options for this solve.
- * @returns The placed reading, naming the column count it was folded into.
- */
-function placeReading(viz: Viz, graph: ElkNode, options: LayoutOptions): ElkNode {
-	const placed = placeGraph(viz, graph, options);
-	const columns = Number(options["archboard.fold.columns"] ?? 1);
-	const folded = columns === 1 ? undefined : foldColumns(placed, columns);
-	const reading = folded ?? placed;
-	reading.layoutOptions = {
-		...reading.layoutOptions,
-		"archboard.fold.columns": String(folded === undefined ? 1 : columns),
-	};
-	return reading;
 }

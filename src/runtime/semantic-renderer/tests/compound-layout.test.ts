@@ -158,7 +158,7 @@ test("a container's external dependency ahead leaves its forward perimeter", asy
 // card, its lines off both centres and its container that much wider: every
 // member was held under the container's title, and each hold passed beside
 // the cards above it.
-test.each(["graphviz", "track"] as const)(
+test.each(LayoutEngineSchema.options)(
 	"a chain inside a container stands in one column (%s)",
 	async (layout) => {
 		const stages = ["a", "b", "c", "d"];
@@ -184,20 +184,14 @@ test.each(["graphviz", "track"] as const)(
 // let its two stacked ends stand 9 to 10 points out of one column, so their
 // edges almost lined up and the line jogged or sat off both centres. Stacked
 // ends stand in one column or clearly apart, never a near miss.
-test.each([
-	["graphviz", "wskEBeIy", "4nyk76pY"],
-	["track", "CtoOMxca", "wLF1X11D"],
-] as const)(
-	"stacked cards joined through a label share a column or stand clearly apart (%s)",
-	async (layout, upper, lower) => {
-		const content = orderedFixture(nearMiss);
-		const drawing = await renderArchitecture({ content, theme: "light", layout });
-		const [one, other] = [drawing.atlas.nodes[upper]!, drawing.atlas.nodes[lower]!];
-		expect(one.y + one.height).toBeLessThan(other.y);
-		const offset = Math.abs(one.x + one.width / 2 - (other.x + other.width / 2));
-		expect(offset < 0.05 || offset > 16).toBe(true);
-	},
-);
+test("stacked cards joined through a label share a column or stand clearly apart", async () => {
+	const content = orderedFixture(nearMiss);
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const [one, other] = [drawing.atlas.nodes["CtoOMxca"]!, drawing.atlas.nodes["wLF1X11D"]!];
+	expect(one.y + one.height).toBeLessThan(other.y);
+	const offset = Math.abs(one.x + one.width / 2 - (other.x + other.width / 2));
+	expect(offset < 0.05 || offset > 16).toBe(true);
+});
 
 // A page kept its placement's slack: under Graphviz a frame's trimmed title
 // margin left 52 points above the drawing against 24 below it, and under the

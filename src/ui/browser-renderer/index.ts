@@ -10,14 +10,18 @@
 // so the picture is the server's picture of that board, measured the way this
 // browser paints it.
 
-import type { SemanticBoard } from "@/shared/semantic-board/index";
+import { DEFAULT_LAYOUT_ENGINE, type SemanticBoard } from "@/shared/semantic-board/index";
 import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 import {
 	renderBoard,
 	type BoardRenderChoices,
 	type BoardRenderOutcome,
 } from "@/transformers/semantic-renderer/board";
-import { installRendererHost, type RendererHost } from "@/transformers/semantic-renderer/host";
+import {
+	installRendererHost,
+	SOLVE_STAGE,
+	type RendererHost,
+} from "@/transformers/semantic-renderer/host";
 import { loadDiagramFaces } from "@/ui/browser-renderer/lib/diagram-faces";
 import { loadDiagramIcons, loadedIconPaths } from "@/ui/browser-renderer/lib/diagram-icons";
 import {
@@ -37,7 +41,6 @@ let started: Promise<void> | undefined;
 /** Two boxes and an edge: the least a layout can be, to start an engine on. */
 const WARM_UP_GRAPH: Parameters<RendererHost["solve"]>[0] = {
 	id: "warm-up",
-	layoutOptions: { "elk.algorithm": "layered" },
 	children: [
 		{ id: "a", width: 10, height: 10 },
 		{ id: "b", width: 10, height: 10 },
@@ -72,7 +75,7 @@ function startBrowserRenderer(setup: BrowserRendererSetup): void {
 	// Start one engine now, while the page boots and reads the board, rather
 	// than when the first picture needs it: a worker's first solve initializes
 	// both engines, and a trivial graph pays that cost here.
-	void solve(WARM_UP_GRAPH, {}).catch(() => undefined);
+	void solve(WARM_UP_GRAPH, { [SOLVE_STAGE]: DEFAULT_LAYOUT_ENGINE }).catch(() => undefined);
 }
 
 /**

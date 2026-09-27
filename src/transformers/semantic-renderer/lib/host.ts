@@ -31,8 +31,8 @@ type ThemeColors = Readonly<Record<DiagramTheme, Readonly<Record<string, string>
 /** The place the renderer runs in. */
 interface RendererHost {
 	/**
-	 * Solve one graph with the layout engine: placed and routed, or one of the
-	 * two when the options name a {@link SOLVE_STAGE}. The engine solves a copy
+	 * Solve one graph with the layout engine, for the engine its options name
+	 * as their {@link SOLVE_STAGE}. The engine solves a copy
 	 * of the graph (a worker receives one), so the caller's graph is never
 	 * changed and may share its parts with other graphs.
 	 * @param graph The complete measured graph.
@@ -57,12 +57,10 @@ interface RendererHost {
 }
 
 /**
- * The option that asks a solve for one stage. `place` answers the graph
- * placed (and folded into its columns) with nothing routed: cards, frames and
- * reserved labels have their boxes and the page its size, which routing never
- * changes. `route` routes a graph a `place` answered. `track` places a graph
- * for the track engine (TASK-349): every label a box of its own and every
- * relationship's polyline written on it. Absent, a solve places and routes.
+ * The option that names which engine a solve places a graph for: `track`
+ * (TASK-349) or `blocks` (TASK-351). Either answers every card, frame and
+ * label its box and every relationship's polyline. A solve that names neither
+ * is refused.
  */
 const SOLVE_STAGE = "archboard.stage";
 
