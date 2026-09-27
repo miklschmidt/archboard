@@ -86,7 +86,9 @@ region of its own there. A region round one card or container gathers nothing
 to pack, so the layout lays it out as that node with a larger box, the region's
 outline and caption inside that box, and carries each line on from the
 region's wall to the card's own face. A caption wider than the node widens
-the region, not the node, which stands in its middle. The board is laid out
+the region, not the node, which stands in its middle; under Track a container
+with lines ending on its own wall can grow toward the caption's width instead
+(see section 44). The board is laid out
 once, with such regions. On both vaults, as measured, a region round one node
 adds its room without turning which ports move to side walls or which joins
 part; two heuristics keep those choices from turning where they were measured,

@@ -2270,6 +2270,10 @@ wall`).
   needs beside the insets (`titleWidth`), so Graphviz keeps the room, and
   once its walls are fitted to what it holds, and to the lines that end on
   it, the region widens round it inside that room (`sides.ts` `fitSide`).
+  A known limit of Track: Graphviz spreads the ends of lines on the
+  container's own wall across the whole title width, so such a container
+  grows toward its caption's width and can stand off the region's middle.
+  No drawing in either vault has a caption wider than its container.
   A container stood as wide as it was laid out, and a long group name ran
   past the region's walls: a 460 px caption over a region 345 px wide
   (Blocks) and 328 px (Track). No drawing of either vault changes; their
