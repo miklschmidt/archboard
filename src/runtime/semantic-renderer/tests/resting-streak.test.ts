@@ -3,8 +3,12 @@
 // and off a crossing's hop, whichever line carries the hop. Rested on either,
 // it read as either line's traffic ("requestJson" in Command interface,
 // "renderBoard on the core" in Semantic renderer).
+// Where no place keeps a lane from both its label and the stretch it shares,
+// its head keeps off the junction the stretch starts at and lets its tail
+// run under its label ("requestJson" in Command interface's whole).
 // What this catches: the painter judging a resting place against the labels
-// alone, not against the places other lines meet its line.
+// alone, not against the places other lines meet its line, and a tail under
+// a label counted as deep as a streak on a junction.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -13,6 +17,7 @@ import { headsOn, trafficLayers } from "@/runtime/semantic-renderer/tests/drawn-
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import branchingCloud from "./branching-cloud.json";
 import commandGroups from "./command-groups.json";
+import commandInterface from "./command-interface.json";
 import readingABoard from "./reading-a-board.json";
 
 /** The pitch of neighbouring parallel lines. */
@@ -104,3 +109,44 @@ test("a resting streak lies over no hop on its line, whichever line carries the 
 			for (const reach of reaches) expect(hop < head - reach || hop > head).toBe(true);
 	}
 });
+
+/**
+ * The point a distance along a drawn line, its bends taken by their control points.
+ * @param line The line's points.
+ * @param distance How far along it.
+ * @returns The point.
+ */
+function pointAlong(line: readonly DrawnPoint[], distance: number): DrawnPoint {
+	let left = distance;
+	for (const [index, next] of line.slice(1).entries()) {
+		const from = line[index]!;
+		const length = Math.hypot(next.x - from.x, next.y - from.y);
+		if (left <= length && length > 0) {
+			const t = left / length;
+			return { x: from.x + (next.x - from.x) * t, y: from.y + (next.y - from.y) * t };
+		}
+		left -= length;
+	}
+	return line.at(-1)!;
+}
+
+test("a resting streak with no lane's room lets its tail run under its label rather than rest on the junction it joins", async () => {
+	const { svg } = await renderArchitecture({
+		content: orderedFixture(commandInterface),
+		theme: "light",
+		layout: "graphviz",
+	});
+	const layers = trafficLayers(svg, "EBy8Rjwh");
+	const glow = Math.max(...layers.map(({ width }) => width / 2));
+	const head = pointAlong(
+		pointsIn(layers[0]!.d),
+		headsOn(layers[0]!.still, layers[0]!.offset, 1e4)[0]!,
+	);
+	const marks = /<g class="ab-junctions"[^>]*>(.*?)<\/g>/su.exec(svg)![1]!;
+	const dots = [...marks.matchAll(/cx="([\d.]+)" cy="([\d.]+)"/gu)].map(([, x, y]) => ({
+		x: Number(x),
+		y: Number(y),
+	}));
+	const nearest = Math.min(...dots.map(({ x, y }) => Math.hypot(x - head.x, y - head.y)));
+	expect(nearest).toBeGreaterThanOrEqual(glow);
+}, 30_000);

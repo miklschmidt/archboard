@@ -36,10 +36,26 @@ const CHORDS = 16;
 /**
  * How a resting streak's glow meets the labels drawn over it: a lane or more
  * from every one and from every place another line meets its own, clear of
- * the labels, wholly under one, or cut by a label's border. Lower is better;
- * short of a lane, a streak with more room reads better at each.
+ * the labels, wholly under one, or cut by a label's border. Lower is better.
  */
 const COVER = { apart: 0, clear: 1, hidden: 2, cut: 3 } as const;
+
+/**
+ * How a streak resting at one place is judged: how the labels meet it, then,
+ * short of a lane, how much room it keeps from the labels and from the
+ * places other lines meet its own. It is negative as deep as the streak runs
+ * onto a hop or a shared stretch, where it reads as the other line's traffic
+ * the more the nearer the middle. A label drawn over the streak hides it
+ * however deep, so a streak whose glow reaches a label keeps no room from it
+ * and no less: counted deeper, "requestJson" in Command interface rested
+ * against a junction dot to keep its tail from under its own label. Room
+ * ranks only within a kind of cover, so a head clear of every label whose
+ * tail runs into one still rests before a head a label hides.
+ */
+interface Rest {
+	readonly cover: number;
+	readonly room: number;
+}
 
 /**
  * Whether a point lies inside a box.
@@ -105,26 +121,45 @@ function labelCover(head: Point, glow: number, labels: readonly Box[]): number {
 }
 
 /**
+ * How near some points come to some boxes.
+ * @param points The points.
+ * @param boxes The boxes.
+ * @returns The least distance outside any box, negative inside one, infinite with no boxes.
+ */
+function nearest(points: readonly Point[], boxes: readonly Box[]): number {
+	return Math.min(...points.flatMap((point) => boxes.map((box) => outside(box, point))));
+}
+
+/**
  * How the labels drawn over a streak and the places other lines meet its own
  * meet it with its head at one place: apart when its head and body keep a
- * lane from all of them, else how its head meets the labels, the less room
- * the streak keeps the worse within each.
+ * lane from all of them, else how the labels meet it, and the room it keeps.
  * @param points Points every {@link REST_STEP} along the route.
  * @param at The index of the head's point.
  * @param streak The streak.
  * @param around The labels drawn over it and the places other lines meet its line.
- * @returns How much of it they take: apart, clear, hidden or cut, with a share for its room.
+ * @returns How much of it they take, apart, clear, hidden or cut, and the room it keeps.
  */
-function coverAt(points: readonly Point[], at: number, streak: Streak, around: Around): number {
+function coverAt(points: readonly Point[], at: number, streak: Streak, around: Around): Rest {
 	const { glow, body } = streak;
 	const head = points[at];
-	if (head === undefined) return COVER.apart;
-	const boxes = [...around.labels, ...around.met];
+	if (head === undefined) return { cover: COVER.apart, room: ROUTE_LANE };
 	const behind = points.slice(Math.max(0, at - Math.round(body / REST_STEP)), at + 1);
-	const room =
-		Math.min(...behind.flatMap((point) => boxes.map((box) => outside(box, point)))) - glow;
-	if (room >= ROUTE_LANE) return COVER.apart;
-	return labelCover(head, glow, around.labels) + (ROUTE_LANE - Math.max(room, 0)) / ROUTE_LANE / 2;
+	const met = nearest(behind, around.met) - glow;
+	const labels = nearest(behind, around.labels) - glow;
+	if (Math.min(met, labels) >= ROUTE_LANE) return { cover: COVER.apart, room: ROUTE_LANE };
+	return { cover: labelCover(head, glow, around.labels), room: Math.min(met, Math.max(labels, 0)) };
+}
+
+/**
+ * Whether one resting place reads better than another: less covered, or as
+ * covered with more room.
+ * @param one A place's judgement.
+ * @param other Another's.
+ * @returns True when the first is better.
+ */
+function better(one: Rest, other: Rest): boolean {
+	return one.cover < other.cover || (one.cover === other.cover && one.room > other.room);
 }
 
 /**
@@ -198,7 +233,7 @@ function restingPlace(ride: Curve, length: number, streak: Streak, around: Aroun
 /**
  * The first of some places where the labels and the places other lines meet
  * leave a streak a lane clear, or failing that the first where they cover it
- * least ({@link coverAt}).
+ * least and leave it the most room ({@link better}).
  * @param points Points every {@link REST_STEP} along the route.
  * @param places The places to try, in order.
  * @param streak The streak.
@@ -211,11 +246,11 @@ function leastCovered(
 	streak: Streak,
 	around: Around,
 ): number {
-	let best = { rest: places[0]!, cover: Number.POSITIVE_INFINITY };
+	let best = { rest: places[0]!, judged: { cover: Number.POSITIVE_INFINITY, room: 0 } };
 	for (const rest of places) {
-		const cover = coverAt(points, Math.round(rest / REST_STEP), streak, around);
-		if (cover < best.cover) best = { rest, cover };
-		if (best.cover === COVER.apart) break;
+		const judged = coverAt(points, Math.round(rest / REST_STEP), streak, around);
+		if (better(judged, best.judged)) best = { rest, judged };
+		if (best.judged.cover === COVER.apart) break;
 	}
 	return best.rest;
 }
