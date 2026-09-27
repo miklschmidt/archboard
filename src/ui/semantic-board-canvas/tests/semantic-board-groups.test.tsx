@@ -1,7 +1,6 @@
-// Inspecting one group from a pane: choosing it, seeing who is in it across
-// containers, what is lit and what recedes, which members this picture does
-// not draw, and letting go of it. Nothing here writes: a group under
-// inspection is the reader's, like the camera and the selection.
+// Selecting one group from a pane: the list of groups, selecting every member
+// across containers, and letting go of it. Nothing here writes: a selected
+// group is the reader's, like the camera and the selection.
 
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
@@ -10,6 +9,7 @@ import { announceSemanticBoardChange } from "@/ui/semantic-board-canvas";
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
 import {
 	chooseVariantInShell,
+	driveInShell,
 	mountStage,
 	openSidebarTab,
 	server,
@@ -155,13 +155,10 @@ function picture(hidden: readonly string[] = []): Record<string, unknown> {
 	};
 }
 
-/**
- * Put the board, a picture of it and the vault's groups in front of a pane.
- * @param hidden Subjects the picture leaves out.
- */
-function serving(hidden: readonly string[] = []): void {
+/** Put the board, a picture of it and the vault's groups in front of a pane. */
+function serving(): void {
 	server.documents["pipeline"] = boardOf();
-	server.reply = { status: 200, body: picture(hidden) };
+	server.reply = { status: 200, body: picture() };
 	server.vault = vaultWith(GROUPS);
 }
 
@@ -185,46 +182,54 @@ function slot(name: string): HTMLElement | null {
 }
 
 /**
- * The group control.
- * @returns The select.
+ * The group list's buttons.
+ * @returns Each group's button, in the order listed.
  */
-function chooser(): HTMLSelectElement {
-	const select = document.querySelector<HTMLSelectElement>("[data-slot='semantic-group-choice']");
-	if (select === null) throw new Error("no group control");
-	return select;
+function choices(): HTMLElement[] {
+	return [...document.querySelectorAll<HTMLElement>("[data-slot='semantic-group-choice']")];
 }
 
 /**
- * Choose a group through the control, the way a person does.
- * @param group The group's id, or "" for none.
+ * One group's button in the list.
+ * @param group The group's id.
+ * @returns The button.
  */
-async function choose(group: string): Promise<void> {
+function choice(group: string): HTMLElement {
+	const button = choices().find((each) => each.getAttribute("data-group") === group);
+	if (button === undefined) throw new Error(`no ${group} in the group list`);
+	return button;
+}
+
+/**
+ * The group the list shows selected.
+ * @returns Its id, or null for none.
+ */
+function listed(): string | null {
+	const pressed = choices().find((each) => each.getAttribute("aria-pressed") === "true");
+	return pressed?.getAttribute("data-group") ?? null;
+}
+
+/**
+ * Click a group in the list, the way a person does.
+ * @param group The group's id.
+ */
+async function toggle(group: string): Promise<void> {
 	await act(async () => {
-		fireEvent.change(chooser(), { target: { value: group } });
+		fireEvent.click(choice(group));
 	});
 	await settled();
 }
 
 /**
- * The classes one drawn subject carries.
- * @param id The subject's id.
- * @returns Its class list.
+ * The drawn subjects the picture marks selected.
+ * @returns Their ids, in the order of {@link EVERYTHING}.
  */
-function classesOf(id: string): string[] {
-	return [
-		...(document.querySelector(`[data-slot='semantic-board-surface'] [data-semantic-id='${id}']`)
-			?.classList ?? []),
-	];
-}
-
-/**
- * Which of some drawn subjects carry one group mark.
- * @param ids The subjects.
- * @param role The mark.
- * @returns The ids that carry it, in the order given.
- */
-function carrying(ids: readonly string[], role: string): string[] {
-	return ids.filter((id) => classesOf(id).includes(role));
+function selected(): string[] {
+	return EVERYTHING.filter((id) =>
+		document
+			.querySelector(`[data-slot='semantic-board-surface'] [data-semantic-id='${id}']`)
+			?.classList.contains("is-selected"),
+	);
 }
 
 /**
@@ -238,166 +243,154 @@ function walkthrough(): HTMLElement {
 /** Every drawn subject of the full picture. */
 const EVERYTHING = ["orders", "shipping", "h", "q", "w", "l", "g", "e1", "e2", "e3", "e4"];
 
-test("the control lists the groups the variant uses by their configured names, and nothing recedes until one is chosen", async () => {
+test("the list names each group the variant uses, in its colour, with nothing selected", async () => {
 	serving();
 	mountStage();
 	await settled();
-	const options = [...chooser().options].map((option) => option.textContent);
-	expect(options.slice(1)).toEqual(["Billing", "Fulfillment"]);
-	expect(slot("semantic-group-status")).toBeNull();
-	expect(slot("semantic-group-clear")).toBeNull();
-	expect(slot("semantic-board-surface")?.classList.contains("is-group-focus")).toBe(false);
+	expect(choices().map((button) => button.getAttribute("data-group"))).toEqual([
+		"billing",
+		"fulfillment",
+	]);
+	expect(choices().map((button) => button.textContent)).toEqual(["Billing", "Fulfillment"]);
+	expect(
+		choice("fulfillment").querySelector<HTMLElement>("[data-slot='semantic-group-chip']")?.style
+			.borderColor,
+	).toBe("var(--semantic-teal)");
+	expect(listed()).toBeNull();
+	expect(selected()).toEqual([]);
 });
 
-test("choosing a group lights its members across containers, keeps the boundary readable, and subdues the rest", async () => {
+test("clicking a group selects every member across containers, and clicking it again lets go", async () => {
 	serving();
 	mountStage();
 	await settled();
-	await choose("fulfillment");
+	await toggle("fulfillment");
+	expect(listed()).toBe("fulfillment");
 	expect(slot("semantic-board-stage")?.getAttribute("data-group")).toBe("fulfillment");
-	expect(slot("semantic-board-surface")?.classList.contains("is-group-focus")).toBe(true);
-	// A pan redraws the surface's class, and the inspection stays through it.
+	// The members in both containers; neither container, no relationship, and
+	// nothing outside the group.
+	expect(selected()).toEqual(["h", "q", "w"]);
+	await toggle("fulfillment");
+	expect(listed()).toBeNull();
+	expect(selected()).toEqual([]);
+});
+
+test("selecting a group replaces the picked subject, and picking a subject lets the group go", async () => {
+	serving();
+	const { picks } = mountStage("g", { live: true });
+	await settled();
+	openSidebarTab("board");
+	await toggle("billing");
+	expect(picks.at(-1)).toBeNull();
+	expect(selected()).toEqual(["w", "l"]);
+
 	act(() => {
 		const viewport = slot("semantic-board-viewport")!;
-		fireEvent.pointerDown(viewport, { pointerId: 1, button: 0, clientX: 40, clientY: 40 });
-		fireEvent.pointerMove(viewport, { pointerId: 1, clientX: 90, clientY: 40 });
-	});
-	expect(slot("semantic-board-surface")?.classList.contains("is-group-focus")).toBe(true);
-	// Members in both containers, and the wiring between them; the immediate
-	// neighbours and the relationships that cross the boundary; and the
-	// containers, which are context and never members.
-	expect(carrying(EVERYTHING, "is-group-member")).toEqual(["h", "q", "w", "e2", "e3"]);
-	expect(carrying(EVERYTHING, "is-group-boundary")).toEqual(["l", "g", "e1", "e4"]);
-	expect(carrying(EVERYTHING, "is-group-context")).toEqual(["orders", "shipping"]);
-	expect(slot("semantic-group-status")?.getAttribute("data-members")).toBe("3");
-	expect(slot("semantic-group-status")?.getAttribute("data-hidden")).toBe("0");
-});
-
-test("a member this picture does not draw is still counted, and its drawn container is context rather than a member", async () => {
-	// The worker is inside a collapsed Shipping: the board has it, the picture
-	// draws only its container.
-	serving(["w", "e3", "e4"]);
-	mountStage();
-	await settled();
-	await choose("fulfillment");
-	expect(slot("semantic-group-status")?.getAttribute("data-members")).toBe("3");
-	expect(slot("semantic-group-status")?.getAttribute("data-hidden")).toBe("1");
-	expect(slot("semantic-group-status")?.textContent).toContain("not drawn");
-	expect(classesOf("shipping")).toContain("is-group-context");
-	expect(classesOf("shipping")).not.toContain("is-group-member");
-});
-
-test("the group report identifies hidden members and all relationships with boundary direction", async () => {
-	serving(["w", "e3", "e4"]);
-	mountStage();
-	await settled();
-	await choose("fulfillment");
-	const report = slot("semantic-group-report")!;
-	const members = [...report.querySelectorAll("[data-node][data-hidden]")];
-	expect(
-		members
-			.filter((node) => node.getAttribute("data-hidden") === "true")
-			.map((node) => node.getAttribute("data-node")),
-	).toEqual(["w"]);
-	expect(report.querySelector("[data-node='w']")?.textContent).toContain("Worker");
-	expect(
-		[...report.querySelectorAll("[data-edge]")].map((edge) => edge.getAttribute("data-edge")),
-	).toEqual(["e2", "e3", "e1", "e4"]);
-	expect(report.querySelector("[data-edge='e1']")?.getAttribute("data-direction")).toBe("incoming");
-	expect(report.querySelector("[data-edge='e4']")?.getAttribute("data-direction")).toBe("outgoing");
-	expect(members.map((node) => node.getAttribute("data-node"))).toEqual(["h", "q", "w", "l", "g"]);
-});
-
-test("the clear control lets go, and so does choosing none", async () => {
-	serving();
-	mountStage();
-	await settled();
-	await choose("billing");
-	expect(chooser().value).toBe("billing");
-	await act(async () => {
-		fireEvent.click(slot("semantic-group-clear")!);
+		const card = document.querySelector(
+			"[data-slot='semantic-board-surface'] [data-semantic-id='g']",
+		)!;
+		fireEvent.pointerDown(card, { pointerId: 1, button: 0, clientX: 5, clientY: 5 });
+		fireEvent.pointerUp(viewport, { pointerId: 1, button: 0, clientX: 5, clientY: 5 });
+		fireEvent.click(card, { button: 0, clientX: 5, clientY: 5 });
 	});
 	await settled();
-	expect(chooser().value).toBe("");
-	expect(slot("semantic-board-surface")?.classList.contains("is-group-focus")).toBe(false);
-	expect(classesOf("w")).not.toContain("is-group-member");
-	await choose("billing");
-	await choose("");
-	expect(slot("semantic-group-status")).toBeNull();
+	expect(picks.at(-1)).toBe("g");
+	expect(selected()).toEqual(["g"]);
+	openSidebarTab("board");
+	expect(listed()).toBeNull();
+
+	// Escape lets a selected group go, as it lets a picked subject go.
+	await toggle("billing");
+	act(() => {
+		fireEvent.keyDown(slot("semantic-board-viewport")!, { key: "Escape" });
+	});
+	await settled();
+	expect(listed()).toBeNull();
+	expect(selected()).toEqual([]);
 });
 
-test("a membership in the inspector is the same choice, and picking a subject keeps the group", async () => {
+test("a membership in the inspector selects the same group, with its colour", async () => {
 	serving();
 	mountStage("w", { live: true });
 	await settled();
 	const memberships = [
 		...document.querySelectorAll<HTMLElement>("[data-slot='semantic-inspector-group']"),
 	];
-	expect(memberships.map((button) => button.textContent)).toEqual(["Billing", "Fulfillment"]);
+	expect(memberships.map((button) => button.getAttribute("data-group"))).toEqual([
+		"billing",
+		"fulfillment",
+	]);
+	expect(
+		memberships[0]?.querySelector<HTMLElement>("[data-slot='semantic-group-chip']")?.style
+			.borderColor,
+	).toBe("var(--semantic-amber)");
 	await act(async () => {
 		fireEvent.click(memberships[1]!);
 	});
 	await settled();
-	expect(
-		document
-			.querySelector("[data-slot='semantic-inspector-group'][data-group='fulfillment']")
-			?.getAttribute("aria-pressed"),
-	).toBe("true");
-	// The picked worker is both attended and a member: one does not hide the other.
-	expect(classesOf("w")).toContain("is-selected");
-	expect(classesOf("w")).toContain("is-group-member");
-	// And the board's own control says the same group.
+	expect(selected()).toEqual(["h", "q", "w"]);
 	openSidebarTab("board");
-	expect(chooser().value).toBe("fulfillment");
+	expect(listed()).toBe("fulfillment");
 });
 
-test("a variant with no memberships says so in the control's own place", async () => {
+test("a variant with no memberships says so in the list's own place", async () => {
 	server.documents["pipeline"] = boardOf(NODES.map(({ groups: _groups, ...node }) => node));
 	server.reply = { status: 200, body: picture() };
 	server.vault = vaultWith(GROUPS);
 	mountStage();
 	await settled();
-	expect(chooser().disabled).toBe(true);
-	expect(chooser().options[0]?.textContent).toBe("No groups");
+	expect(choices()).toEqual([]);
+	expect(slot("semantic-group-empty")).not.toBeNull();
 });
 
-test("an id the configuration no longer defines is still offered, by its id, and marked", async () => {
+test("an id the configuration no longer defines is still listed, by its id, without a colour", async () => {
 	serving();
 	server.vault = vaultWith({ fulfillment: GROUPS.fulfillment });
 	mountStage();
 	await settled();
-	const options = [...chooser().options].map((option) => option.textContent);
-	expect(options).toContain("billing (not configured)");
-	await choose("billing");
-	expect(slot("semantic-group-status")?.textContent).toContain("not configured");
+	expect(choice("billing").getAttribute("data-configured")).toBe("false");
+	expect(choice("billing").textContent).toBe("billing");
+	expect(
+		choice("billing").querySelector<HTMLElement>("[data-slot='semantic-group-chip']")?.style
+			.borderColor,
+	).toBe("");
+	await toggle("billing");
+	expect(selected()).toEqual(["w", "l"]);
 });
 
-test("the inspection follows the board and the configuration, and stays recoverable when the last member goes", async () => {
+test("a board change refreshes who the selected group selects", async () => {
 	serving();
 	mountStage();
 	await settled();
-	await choose("billing");
-	expect(slot("semantic-group-status")?.getAttribute("data-members")).toBe("2");
-
-	// The vault renames Billing: the name moves, the group does not.
-	server.vault = vaultWith({ ...GROUPS, billing: { name: "Invoicing", color: "amber" } });
+	await toggle("billing");
+	expect(selected()).toEqual(["w", "l"]);
+	server.documents["pipeline"] = boardOf(
+		NODES.map((node) => (node.id === "w" ? { ...node, groups: ["fulfillment"] } : node)),
+	);
 	await act(async () => {
 		announceSemanticBoardChange("pipeline", 2);
 	});
 	await settled();
-	// A rename reaches the pane through the checker's own cadence; a board
-	// change reaches it now. Both end in the same derived reading.
+	expect(listed()).toBe("billing");
+	expect(selected()).toEqual(["l"]);
+
+	// Once nothing belongs to it, the list no longer offers it to let go of,
+	// so the selection lets go by itself.
 	server.documents["pipeline"] = boardOf(
-		NODES.map((node) => (node.id === "l" || node.id === "w" ? { ...node, groups: [] } : node)),
+		NODES.map((node) => (node.id === "w" || node.id === "l" ? { ...node, groups: [] } : node)),
 	);
 	await act(async () => {
 		announceSemanticBoardChange("pipeline", 3);
 	});
 	await settled();
-	expect(chooser().value).toBe("billing");
-	expect(slot("semantic-group-status")?.getAttribute("data-members")).toBe("0");
-	expect(slot("semantic-group-status")?.textContent).toContain("No member");
-	expect(slot("semantic-group-clear")).not.toBeNull();
+	expect(listed()).toBeNull();
+	expect(selected()).toEqual([]);
+	server.documents["pipeline"] = boardOf();
+	await act(async () => {
+		announceSemanticBoardChange("pipeline", 4);
+	});
+	await settled();
+	expect(listed()).toBeNull();
 });
 
 test("moving to another variant drops the group; changing the view keeps it", async () => {
@@ -415,8 +408,8 @@ test("moving to another variant drops the group; changing the view keeps it", as
 	server.vault = vaultWith(GROUPS);
 	mountStage(null, { live: true });
 	await settled();
-	await choose("fulfillment");
-	expect(chooser().value).toBe("fulfillment");
+	await toggle("fulfillment");
+	expect(listed()).toBe("fulfillment");
 
 	// Another way of reading the same state: the group stays.
 	server.reply = { status: 200, body: { ...picture(["l", "e4"]), views: [view], view } };
@@ -426,7 +419,7 @@ test("moving to another variant drops the group; changing the view keeps it", as
 		);
 	});
 	await settled();
-	expect(chooser().value).toBe("fulfillment");
+	expect(listed()).toBe("fulfillment");
 
 	// Another state of the architecture: the ids belong to one variant, so the
 	// group is let go rather than carried across.
@@ -440,19 +433,18 @@ test("moving to another variant drops the group; changing the view keeps it", as
 	};
 	chooseVariantInShell("v2");
 	await settled();
-	expect(chooser().value).toBe("");
-	expect(slot("semantic-board-surface")?.classList.contains("is-group-focus")).toBe(false);
+	expect(listed()).toBeNull();
+	expect(selected()).toEqual([]);
 
 	// Returning is another navigation, not permission to restore the old choice.
 	server.reply = { status: 200, body: { ...picture(), views: [view] } };
 	chooseVariantInShell(undefined);
 	await settled();
-	expect(chooser().value).toBe("");
-	// The group is let go; what recedes now is whatever the step is not about.
-	expect(slot("semantic-board-stage")?.hasAttribute("data-group")).toBe(false);
+	expect(listed()).toBeNull();
 });
 
-test("inspecting a group leaves a walkthrough, and opening a walkthrough lets the group go", async () => {
+/** Put a board whose variant tells one walkthrough, about the gateway, in front of a pane. */
+function servingWalkthrough(): void {
 	server.documents["pipeline"] = {
 		...boardOf(),
 		variants: [
@@ -476,6 +468,10 @@ test("inspecting a group leaves a walkthrough, and opening a walkthrough lets th
 	};
 	server.reply = { status: 200, body: picture() };
 	server.vault = vaultWith(GROUPS);
+}
+
+test("selecting a group leaves a walkthrough, and opening a walkthrough lets the group go", async () => {
+	servingWalkthrough();
 	mountStage();
 	await settled();
 	await act(async () => {
@@ -484,16 +480,28 @@ test("inspecting a group leaves a walkthrough, and opening a walkthrough lets th
 	await settled();
 	expect(slot("semantic-presentation")).not.toBeNull();
 
-	await choose("fulfillment");
+	await toggle("fulfillment");
 	expect(slot("semantic-presentation")).toBeNull();
-	expect(chooser().value).toBe("fulfillment");
+	expect(slot("semantic-board-surface")?.classList.contains("is-veiled")).toBe(false);
+	expect(listed()).toBe("fulfillment");
 
 	await act(async () => {
 		fireEvent.click(walkthrough());
 	});
 	await settled();
 	expect(slot("semantic-presentation")).not.toBeNull();
-	expect(chooser().value).toBe("");
-	// The group is let go; what recedes now is whatever the step is not about.
-	expect(slot("semantic-board-stage")?.hasAttribute("data-group")).toBe(false);
+	expect(listed()).toBeNull();
+	expect(selected()).toEqual(["g"]);
+});
+
+test("a walkthrough a narration opens lets the group go too", async () => {
+	servingWalkthrough();
+	mountStage(null, { live: true });
+	await settled();
+	await toggle("fulfillment");
+	driveInShell({ request: "narration-1", walkthrough: "wt", beat: 0 });
+	await settled();
+	expect(slot("semantic-presentation")).not.toBeNull();
+	expect(listed()).toBeNull();
+	expect(selected()).toEqual(["g"]);
 });

@@ -10,8 +10,6 @@ import {
 	NOTHING_DRAWN,
 	NO_SUCH_BOARD,
 	UNREADABLE,
-	cameraNow,
-	diagramPointUnder,
 	drawing,
 	mountStage,
 	renderCalls,
@@ -21,8 +19,12 @@ import {
 	stageState,
 	surface,
 	viewport,
-	wheelAt,
 } from "@/ui/semantic-board-canvas/tests/stage-harness";
+import {
+	cameraNow,
+	diagramPointUnder,
+	wheelAt,
+} from "@/ui/semantic-board-canvas/tests/camera-probes";
 import { announceSemanticBoardChange } from "@/ui/semantic-board-canvas";
 
 test("a pane with no answer yet shows the shape of a diagram rather than a void", () => {

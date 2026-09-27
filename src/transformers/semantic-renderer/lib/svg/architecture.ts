@@ -8,7 +8,13 @@ import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 import type { DiagramAtlas } from "@/shared/semantic-board/index";
 import type { DrawingEdge, PaintedDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import { DIAGRAM_MARGIN, PILL_RADIUS } from "@/transformers/semantic-renderer/lib/design";
-import { canvasFor, coord, inflate, union } from "@/transformers/semantic-renderer/lib/geometry";
+import {
+	canvasFor,
+	coord,
+	inflate,
+	union,
+	type Box,
+} from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { atlasBoxes } from "@/transformers/semantic-renderer/lib/atlas";
 import { farSizeFor } from "@/transformers/semantic-renderer/lib/measurement";
@@ -281,6 +287,56 @@ function paintEdgeWords(
 			);
 }
 
+/**
+ * Where each line's ink and each line's words reach.
+ * @param edges The routes as painted.
+ * @returns Each line's inked box, and each of its words' box, by relationship id.
+ */
+function lineBoxes(edges: readonly DrawingEdge[]): {
+	inked: { id: string; box: Box }[];
+	labelled: { id: string; box: Box }[];
+} {
+	return {
+		inked: edges.map(({ edge, curve }) => ({
+			id: edge.id,
+			box: inflate(curveBounds(curve), strokeWidthOf(edge) / 2),
+		})),
+		labelled: edges.flatMap(({ edge, label }) =>
+			label === undefined ? [] : [{ id: edge.id, box: label.box }],
+		),
+	};
+}
+
+/**
+ * What the page must hold of a drawing: every card and frame with the marks on
+ * its corners, every line's ink and words, and every region.
+ * @param drawing The drawing.
+ * @param standingOf How each subject stands against the variant it is read against.
+ * @param unsettledOf Whether a subject needs reconciliation.
+ * @returns The box covering it all.
+ */
+function extentOf(
+	drawing: PaintedDrawing,
+	standingOf: StandingOf,
+	unsettledOf: UnsettledOf,
+): Box | undefined {
+	const { inked, labelled } = lineBoxes(drawing.bridged.edges);
+	const marked = [...drawing.cards, ...drawing.containers].map(({ measured, box }) =>
+		markedBox(box, standingOf(measured.node.id), unsettledOf(measured.node.id)),
+	);
+	return union([
+		...marked,
+		...[...inked, ...labelled].map(({ box }) => box),
+		...(drawing.regions ?? []).map(({ box }) => box),
+	]);
+}
+
+/** The drawing a page is fitted to, and how its subjects stand for the marks it holds. */
+interface HeldPage {
+	readonly drawing: PaintedDrawing;
+	readonly standingOf: StandingOf;
+}
+
 /** A painted drawing and the subject geometry a viewer interacts with. */
 interface ArchitecturePainting {
 	readonly width: number;
@@ -297,6 +353,9 @@ interface ArchitecturePainting {
  * @param unsettledOf Whether a subject needs reconciliation.
  * @param policy Current vault policy.
  * @param derived Ids of the lines that are flow steps drawn on the board, not authored relationships.
+ * @param page What the page holds: the whole layout and the marks the comparison would
+ * draw, so a drawing that leaves out what its comparison would show keeps everything
+ * else where it stands with them.
  * @returns The document body, bounds and matching atlas.
  */
 function paintArchitecture(
@@ -305,7 +364,8 @@ function paintArchitecture(
 	standingOf: StandingOf,
 	unsettledOf: UnsettledOf,
 	policy: SemanticPolicy,
-	derived: ReadonlySet<string> = new Set(),
+	derived: ReadonlySet<string>,
+	page: HeldPage,
 ): ArchitecturePainting {
 	const { cards, containers } = drawing;
 	const { edges, bridges } = drawing.bridged;
@@ -320,36 +380,30 @@ function paintArchitecture(
 			),
 		),
 	]);
+	// Every node the page lays out, drawn or not, so leaving some out changes
+	// no kept card's colour or whether it draws as a container.
 	const appearances = nodeAppearances(
-		[...cards, ...containers].map(({ measured }) => measured.node),
+		[...page.drawing.cards, ...page.drawing.containers].map(({ measured }) => measured.node),
 		policy,
 	);
-	const inked = edges.map(({ edge, curve }) => ({
-		id: edge.id,
-		box: inflate(curveBounds(curve), strokeWidthOf(edge) / 2),
-	}));
-	const labelled = edges.flatMap(({ edge, label }) =>
-		label === undefined ? [] : [{ id: edge.id, box: label.box }],
-	);
+	const { inked, labelled } = lineBoxes(edges);
 	const labels = labelled.map(({ box }) => box);
 	const met = meetingPlaces(drawing);
 	const framed = containers.map(({ measured, box }) => ({ id: measured.node.id, box }));
-	const regioned = (drawing.regions ?? []).map(({ box }) => box);
 	const cardBoxes = cards.map(({ measured, box }) => ({ id: measured.node.id, box }));
-	// The page holds the marks on the subjects' corners too.
-	const marked = [...cardBoxes, ...framed].map(({ id, box }) =>
-		markedBox(box, standingOf(id), unsettledOf(id)),
-	);
 	const canvas = canvasFor(
-		drawing,
-		union([...marked, ...[...inked, ...labelled].map(({ box }) => box), ...regioned]),
+		page.drawing,
+		extentOf(page.drawing, page.standingOf, unsettledOf),
 		DIAGRAM_MARGIN,
 	);
 	const boxes = containers.toSorted(
 		(a, b) => a.depth - b.depth || a.measured.node.order - b.measured.node.order,
 	);
 	const orderedCards = cards.toSorted((a, b) => a.measured.node.order - b.measured.node.order);
-	const farSize = farSizeFor(cards.map(({ measured, box }) => ({ name: measured.node.name, box })));
+	// One far size for every card the page holds, drawn or not, so leaving some out moves no name.
+	const farSize = farSizeFor(
+		page.drawing.cards.map(({ measured, box }) => ({ name: measured.node.name, box })),
+	);
 	const painted = lines([
 		definitions,
 		...boxes.map((held) =>

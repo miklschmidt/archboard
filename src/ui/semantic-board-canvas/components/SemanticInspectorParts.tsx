@@ -13,6 +13,7 @@ import { Button } from "@/ui/components/button";
 
 import type { CodeBinding } from "@/shared/code-target";
 import { Badge } from "@/ui/components/badge";
+import { SemanticGroupChip } from "@/ui/semantic-board-canvas/components/SemanticGroupChip";
 import { groupLabel, type GroupNames } from "@/ui/semantic-board-canvas/lib/groups";
 
 /** Inputs for a section heading. */
@@ -246,17 +247,15 @@ function Described(props: DescribedProps): JSX.Element | null {
 	);
 }
 
-/** How the panel names groups, which one is under inspection, and how to inspect one. */
+/** How the panel names groups, and how to select one. */
 interface GroupControls {
 	/** What the vault calls each group, by id. */
 	readonly names: GroupNames;
-	/** The group under inspection, or null for none. */
-	readonly inspecting: string | null;
 	/**
-	 * Inspect a group, when the pane around the panel can.
-	 * @param group The group's id, or null to stop.
+	 * Select a group's members, when the pane around the panel can.
+	 * @param group The group's id.
 	 */
-	readonly onChoose?: ((group: string | null) => void) | undefined;
+	readonly onChoose?: ((group: string) => void) | undefined;
 }
 
 /** Inputs for one membership. */
@@ -268,7 +267,7 @@ interface MembershipProps {
 }
 
 /**
- * One group the node belongs to, as the control that inspects it.
+ * One group the node belongs to, as the control that selects its members.
  *
  * Named by what the vault calls it and marked when the vault no longer does:
  * a membership in a group nobody defines is the board saying something the
@@ -279,24 +278,30 @@ interface MembershipProps {
 function Membership(props: MembershipProps): JSX.Element {
 	const { group, controls } = props;
 	const choose = useCallback((): void => {
-		controls.onChoose?.(controls.inspecting === group ? null : group);
+		controls.onChoose?.(group);
 	}, [controls, group]);
 	const configured = Object.hasOwn(controls.names, group);
 	return (
 		<Button
 			type="button"
-			variant={controls.inspecting === group ? "secondary" : "outline"}
+			variant="outline"
 			size="sm"
-			aria-pressed={controls.inspecting === group}
 			disabled={controls.onChoose === undefined}
 			data-slot="semantic-inspector-group"
 			data-group={group}
 			data-configured={configured}
 			title={
-				configured ? `Inspect ${groupLabel(group, controls.names)}` : `${group} is not configured`
+				configured
+					? `Select every part in ${groupLabel(group, controls.names)}`
+					: `${group} is not configured`
 			}
+			className="gap-2"
 			onClick={choose}
 		>
+			<SemanticGroupChip
+				color={configured ? controls.names[group]?.color : undefined}
+				selected={false}
+			/>
 			{groupLabel(group, controls.names)}
 			{!configured && <span className="text-muted-foreground"> (not configured)</span>}
 		</Button>
@@ -312,11 +317,9 @@ interface MembershipsProps {
 }
 
 /**
- * What the node belongs to, each membership as a control that inspects it.
- *
- * Words and a control rather than a colour: the picture never colours a group,
- * and a membership is something a reader acts on — inspecting the group is how
- * they see the rest of it across whatever contains each part.
+ * What the node belongs to, each membership as a control that selects the
+ * group's members: how a reader sees the rest of it across whatever contains
+ * each part.
  * @param props The memberships and the controls.
  * @returns The section, or nothing for a node in no group.
  */

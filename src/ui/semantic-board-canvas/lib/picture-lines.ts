@@ -25,6 +25,7 @@ import {
 	type Updater,
 } from "@/ui/semantic-board-canvas/lib/picture-motion";
 import { cloneElement, type SubjectGroup } from "@/ui/semantic-board-canvas/lib/picture-pairing";
+import { SUBJECT_ATTRIBUTE, TRAFFIC_ATTRIBUTE } from "@/ui/semantic-board-canvas/lib/subjects";
 
 /** How much of an arrival is spent fading in before the rest is drawing on. */
 const ARRIVE_FADE_SHARE = 0.25;
@@ -55,17 +56,40 @@ function linePaths(group: Element): LinePaths {
 }
 
 /**
+ * The pulses that ride a line: those a step carries in its own group, and a
+ * relationship's, drawn in a layer of their own over every line.
+ * @param group The line's group.
+ * @returns The pulses.
+ */
+function pulsesOn(group: Element): SVGElement[] {
+	const id = group.getAttribute(SUBJECT_ATTRIBUTE);
+	const layer = group
+		.closest("svg")
+		?.querySelectorAll<SVGElement>(`[${TRAFFIC_ATTRIBUTE}="${id}"] .ab-pulse`);
+	return [...group.querySelectorAll<SVGElement>(".ab-pulse"), ...(layer ?? [])];
+}
+
+/**
+ * Park the pulses that ride a line until the picture lands, where they come
+ * back with the finished picture: until then the line is between routes, or
+ * not drawn all the way.
+ * @param group The line's group.
+ */
+function parkPulses(group: Element): void {
+	for (const pulse of pulsesOn(group)) {
+		pulse.style.opacity = "0";
+	}
+}
+
+/**
  * Park what would draw wrongly while a line is in flight: the crossing mask,
- * which cuts gaps where the route used to cross others, and the traffic
- * pulses, which ride a path of their own. Both come back with the finished
- * picture.
+ * which cuts gaps where the route used to cross others, and the pulses, which
+ * ride the new route.
  * @param group The line's group.
  */
 function parkLineDressing(group: Element): void {
 	group.removeAttribute("mask");
-	for (const pulse of group.querySelectorAll<SVGElement>(".ab-pulse")) {
-		pulse.style.opacity = "0";
-	}
+	parkPulses(group);
 }
 
 /**
@@ -312,6 +336,7 @@ function drawOn(
 	end = 1,
 ): Updater {
 	const strokes = drawnPaths(group.element).flatMap((path) => prepareStroke(path) ?? []);
+	parkPulses(group.element);
 	return (progress: number): void => {
 		const arrived = phase(progress, start, end);
 		setOpacity(group.element, easeOut(phase(arrived, 0, ARRIVE_FADE_SHARE)));

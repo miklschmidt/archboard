@@ -170,6 +170,7 @@ describe("carrying a line", () => {
 			id: "e1",
 			d: "M110,40 L150,40 C160,40 160,50 160,60 L160,100",
 			masked: true,
+			traffic: true,
 		};
 		const before = picture([A, B], [AB]);
 		const after = picture([A, B], [rerouted]);
@@ -178,8 +179,12 @@ describe("carrying a line", () => {
 		const group = surface.querySelector(`g[data-semantic-id="e1"]`)!;
 		const stroke = group.querySelectorAll("path")[1]!;
 		expect(stroke.getAttribute("d")).toBe(AB.d);
-		// The crossing mask is parked while the route is somewhere between.
+		// The crossing mask and the traffic riding the new route are parked
+		// while the route is somewhere between.
 		expect(group.hasAttribute("mask")).toBe(false);
+		expect(surface.querySelector<SVGElement>(`g[data-traffic="e1"] .ab-pulse`)?.style.opacity).toBe(
+			"0",
+		);
 		transition.seek(0.5);
 		expect(stroke.getAttribute("d")).not.toBe(AB.d);
 		expect(stroke.getAttribute("d")).not.toBe(rerouted.d);
@@ -252,7 +257,7 @@ describe("leaving and arriving", () => {
 	test("a subject only the new picture has waits for the moves, then a card grows in and a line draws on", () => {
 		const surface = surfaceElement();
 		const before = picture([A], []);
-		const after = picture([A, B], [AB]);
+		const after = picture([A, B], [{ ...AB, traffic: true }]);
 		surface.innerHTML = before.svg;
 		const transition = transitionPicture(surface, before, after);
 		const card = surface.querySelector<SVGGElement>(`g[data-semantic-id="n2"]`)!;
@@ -260,6 +265,10 @@ describe("leaving and arriving", () => {
 		const stroke = line.querySelectorAll("path")[1]!;
 		expect(Number(card.style.opacity)).toBe(0);
 		expect(Number(line.style.opacity)).toBe(0);
+		// Its traffic, in a layer of its own, waits for the line to be drawn.
+		expect(surface.querySelector<SVGElement>(`g[data-traffic="e1"] .ab-pulse`)?.style.opacity).toBe(
+			"0",
+		);
 		expect(stroke.hasAttribute("marker-end")).toBe(false);
 		expect(Number(stroke.getAttribute("stroke-dashoffset"))).toBeCloseTo(90, 3);
 		transition.seek(PICTURE_TRANSITION_PHASES.enterStart);
@@ -411,9 +420,7 @@ describe("leaving and arriving", () => {
 		const before = picture([A, B], [AB]);
 		const after = picture([{ ...A, box: { x: 300, y: 10, width: 100, height: 60 } }, B], [AB]);
 		surface.innerHTML = before.svg;
-		surface
-			.querySelector(`g[data-semantic-id="n1"]`)
-			?.classList.add("is-selected", "is-group-member");
+		surface.querySelector(`g[data-semantic-id="n1"]`)?.classList.add("is-selected", "is-lit");
 		/**
 		 * The viewer's marks on one subject's group.
 		 * @param id The subject.
@@ -425,10 +432,10 @@ describe("leaving and arriving", () => {
 		const transition = transitionPicture(surface, before, after);
 		// A picture seen for a frame without them would show what they light or
 		// veil switch off and fade back in.
-		expect(marksOn("n1")).toEqual(["is-selected", "is-group-member"]);
+		expect(marksOn("n1")).toEqual(["is-selected", "is-lit"]);
 		transition.seek(0.5);
 		transition.finish();
-		expect(marksOn("n1")).toEqual(["is-selected", "is-group-member"]);
+		expect(marksOn("n1")).toEqual(["is-selected", "is-lit"]);
 		expect(marksOn("n2")).toEqual([]);
 	});
 });

@@ -13,7 +13,6 @@ import { act, fireEvent } from "@testing-library/react";
 
 import { PICTURE_TRANSITION_MS } from "@/shared/timing/timing";
 import {
-	cameraNow,
 	drawing,
 	surface,
 	viewport,
@@ -23,6 +22,7 @@ import {
 	server,
 	settle,
 } from "@/ui/semantic-board-canvas/tests/stage-harness";
+import { cameraNow } from "@/ui/semantic-board-canvas/tests/camera-probes";
 
 /**
  * One board document with a family of variants.

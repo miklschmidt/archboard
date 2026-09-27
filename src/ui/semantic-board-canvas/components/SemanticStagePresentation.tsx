@@ -1,18 +1,16 @@
 // What a semantic pane does while one of its walkthroughs is presented: the
 // caption over the picture, and the veil over whatever the step is not about.
 //
-// The veil is group inspection's own treatment, lit for the step's subjects:
-// one way of saying "this, and not the rest" in the picture, whichever of the
-// two is asking. A group somebody is inspecting is let go when a walkthrough
-// opens, so the two never compete for it.
+// A group somebody selected is let go when a walkthrough opens, and a
+// walkthrough is left when somebody selects a group: both say what the reader
+// is attending to, and the picture says one of them at a time.
 
 import type { JSX, ReactNode } from "react";
 
 import { SemanticPresentation } from "@/ui/semantic-board-canvas/components/SemanticPresentation";
 import type { WalkthroughReading } from "@/ui/semantic-board-canvas/hooks/use-walkthrough";
-import type { GroupFocus } from "@/ui/semantic-board-canvas/lib/groups";
+import type { GroupSelection } from "@/ui/semantic-board-canvas/lib/groups";
 import type { BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
-import type { GroupMarks } from "@/ui/semantic-board-canvas/lib/subjects";
 
 /** What the stage hands the presentation. */
 interface PresentationView {
@@ -30,12 +28,9 @@ interface PresentationView {
 	readonly overlay: ReactNode;
 	/** The pane's camera, which keeps its fits clear of the caption. */
 	readonly camera: { readonly reserve: (bottom: number) => void };
-	/** The group under inspection, or null. */
-	readonly groupFocus: GroupFocus | null;
+	/** The selected group and its members, or null. */
+	readonly group: GroupSelection | null;
 }
-
-/** Nothing receding: no group under inspection, no step presented. */
-const NO_MARKS = { groupId: null, groupMarks: null } as const;
 
 /**
  * The caption over the picture, while a walkthrough is presented.
@@ -70,24 +65,18 @@ function presentationOver(view: PresentationView): ReactNode {
 }
 
 /**
- * What the picture is told to light and let recede: the group under
- * inspection, or else the step presented.
+ * What the picture is told to mark beyond the single selection: the selected
+ * group's members, and the veil over what a presented step is not about.
  * @param view What the stage knows.
- * @returns Which group is inspected, and the marks to draw.
+ * @returns The selected group, and what the veil leaves standing.
  */
 function pictureMarks(view: PresentationView): {
-	readonly groupId: string | null;
-	readonly groupMarks: GroupMarks | null;
+	readonly group: GroupSelection | null;
+	readonly veil: ReadonlySet<string> | null;
 } {
-	const { groupFocus, narrative, focus } = view;
-	if (groupFocus !== null) {
-		return { groupId: groupFocus.group, groupMarks: groupFocus.emphasis };
-	}
-	if (narrative.open === null || focus.drawn.length === 0) {
-		return NO_MARKS;
-	}
-	const members = new Set(focus.drawn);
-	return { groupId: null, groupMarks: { members, boundary: new Set(), context: new Set() } };
+	const { group, narrative, focus } = view;
+	const veiled = narrative.open !== null && focus.drawn.length > 0;
+	return { group, veil: veiled ? new Set(focus.drawn) : null };
 }
 
 /**

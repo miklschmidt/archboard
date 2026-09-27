@@ -51,8 +51,8 @@ function waitingStage(view: WaitingView): JSX.Element {
 			onSelect={ignorePick}
 			reading={null}
 			reducedMotion={view.reducedMotion ?? false}
-			groupId={null}
-			groupMarks={null}
+			group={null}
+			veil={null}
 		/>
 	);
 }
