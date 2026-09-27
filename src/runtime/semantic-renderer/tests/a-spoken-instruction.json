@@ -1,0 +1,195 @@
+{
+	"nodes": [
+		{
+			"id": "5sWG4uuq",
+			"order": 4000,
+			"name": "Coordinator tools",
+			"kind": "module",
+			"responsibility": "Runs the tool calls the coordinator makes, once each, against a replay ledger"
+		},
+		{
+			"id": "ZDMIGM5P",
+			"order": 5000,
+			"name": "Tool contract",
+			"kind": "module",
+			"responsibility": "The frozen tool manifests and their digests: what the coordinator is allowed to ask for"
+		},
+		{
+			"id": "B0SAnbtM",
+			"order": 6000,
+			"name": "Coordinator callbacks",
+			"kind": "module",
+			"responsibility": "What the voice side is told while voice is live: workhorse news for the coordinator, pane news for the voice model",
+			"description": "Nothing is sent with no voice session. Every callback settles once as delivered, not delivered with a reason, or outcome unknown."
+		},
+		{
+			"id": "LHBPlItu",
+			"order": 11000,
+			"name": "Codex transport",
+			"kind": "module",
+			"responsibility": "Where a tool call or notification from the child arrives, routed to the owner registered for it",
+			"groups": ["child"]
+		},
+		{
+			"id": "4A6j6Xk3",
+			"order": 12000,
+			"name": "Codex session",
+			"kind": "module",
+			"responsibility": "The reviewed methods the coordinator and its realtime leg are started on",
+			"groups": ["child"],
+			"drillDown": {
+				"board": "Codex session",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "LIpURyJE",
+			"order": 13000,
+			"name": "Workhorse operations",
+			"kind": "module",
+			"responsibility": "Where anything sustained goes: the four operations the coordinator may ask of the workhorse, one at a time",
+			"groups": ["workhorse"],
+			"drillDown": {
+				"board": "Codex workhorse",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "5uPyMgoI",
+			"order": 14000,
+			"name": "Callback queue",
+			"kind": "function",
+			"responsibility": "Takes news, operation events and pane reports in order, drops the session's own writes, and delivers one at a time",
+			"parent": "B0SAnbtM"
+		},
+		{
+			"id": "hxZxt8Wy",
+			"order": 15000,
+			"name": "Workhorse news",
+			"kind": "function",
+			"responsibility": "A turn on the linked workhorse that ended or began waiting on the user, whoever started it, as one plain sentence",
+			"description": "Read from the workhorse thread's own turn/completed and thread/status/changed notifications: completed, failed, stopped or waiting, and a message from tell_coordinator. The sentence carries no identities; the coordinator reads the rest through inspect_workhorse.",
+			"parent": "B0SAnbtM"
+		},
+		{
+			"id": "eyQ2AZaA",
+			"order": 17000,
+			"name": "Callback delivery",
+			"kind": "function",
+			"responsibility": "Gives each callback one path: news to a coordinator turn, the user's own pane changes to the voice model, the rest recorded only",
+			"parent": "B0SAnbtM"
+		},
+		{
+			"id": "AjPVQ0BZ",
+			"order": 18000,
+			"name": "Outcome report",
+			"kind": "module",
+			"responsibility": "Gives the coordinator one piece of news as one turn/start, joining its running turn or starting one, and nothing while a recording holds the voice",
+			"description": "The prompt says what happened and what to do with it: say it under [FINAL] if the user is waiting on it, keep it to a [COMMENTARY] line otherwise, and start no new work because of it."
+		}
+	],
+	"edges": [
+		{
+			"id": "NfthRpE6",
+			"order": 7000,
+			"from": "LHBPlItu",
+			"to": "5sWG4uuq",
+			"kind": "event",
+			"label": "a tool call from the coordinator",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "FRlXCCgx",
+			"order": 8000,
+			"from": "5sWG4uuq",
+			"to": "ZDMIGM5P",
+			"kind": "call",
+			"label": "validate against the frozen manifest",
+			"emphasis": "normal"
+		},
+		{
+			"id": "gxWbt0Mt",
+			"order": 9000,
+			"from": "5sWG4uuq",
+			"to": "LIpURyJE",
+			"kind": "call",
+			"label": "route the sustained work",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "5QnOXTuc",
+			"order": 12000,
+			"from": "LIpURyJE",
+			"to": "5uPyMgoI",
+			"kind": "event",
+			"label": "operation events; only an unknown outcome is told",
+			"emphasis": "muted"
+		},
+		{
+			"id": "1joDYyhX",
+			"order": 13000,
+			"from": "eyQ2AZaA",
+			"to": "4A6j6Xk3",
+			"kind": "call",
+			"label": "pane news: realtime/appendText",
+			"emphasis": "normal"
+		},
+		{
+			"id": "yjIBH8F4",
+			"order": 15000,
+			"from": "LHBPlItu",
+			"to": "5uPyMgoI",
+			"kind": "event",
+			"label": "workhorse notifications, tell_coordinator calls",
+			"emphasis": "normal"
+		},
+		{
+			"id": "F1500O9D",
+			"order": 16000,
+			"from": "5uPyMgoI",
+			"to": "hxZxt8Wy",
+			"kind": "call",
+			"label": "is this notification news?",
+			"emphasis": "normal"
+		},
+		{
+			"id": "LJ71MbJ0",
+			"order": 21000,
+			"from": "5uPyMgoI",
+			"to": "eyQ2AZaA",
+			"kind": "call",
+			"label": "one at a time, in order",
+			"emphasis": "hero"
+		},
+		{
+			"id": "VdOucvLo",
+			"order": 22000,
+			"from": "eyQ2AZaA",
+			"to": "AjPVQ0BZ",
+			"kind": "call",
+			"label": "report the news",
+			"emphasis": "hero"
+		},
+		{
+			"id": "kdzh3hrY",
+			"order": 23000,
+			"from": "AjPVQ0BZ",
+			"to": "4A6j6Xk3",
+			"kind": "call",
+			"label": "turn/start on the coordinator thread",
+			"emphasis": "hero"
+		}
+	]
+}

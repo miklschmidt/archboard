@@ -15,7 +15,7 @@
 // as tracks.ts stacks them.
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { LANE, reachOf, type Station } from "@/transformers/semantic-renderer/lib/track/chains";
-import type { Item } from "@/transformers/semantic-renderer/lib/track/scene";
+import { cardFace, type Item } from "@/transformers/semantic-renderer/lib/track/scene";
 import { stackUnits, type Unit } from "@/transformers/semantic-renderer/lib/track/tracks";
 
 /** How far a port keeps from a card's corner. */
@@ -255,17 +255,6 @@ function portReach(face: Box): [number, number] {
 }
 
 /**
- * The stretch of a card's box its own face spans: all of it, but for a card
- * laid out as the region round it, whose face stands in from the box.
- * @param item The card.
- * @returns The face's box.
- */
-function faceOf(item: Item): Box {
-	const inset = item.inset ?? 0;
-	return { ...item.box, x: item.box.x + inset, width: item.box.width - 2 * inset };
-}
-
-/**
  * Spread the ports on one face, each as close to its other end as spacing allows.
  * @param face The face's box.
  * @param wanted Each port's preferred x, in the order the ports must keep.
@@ -417,7 +406,7 @@ function placePorts(item: Item, requests: readonly PortRequest[]): void {
 		(one, other) => one.wanted - other.wanted || one.order - other.order,
 	);
 	const wanted = ordered.map((request) => request.wanted);
-	const face = faceOf(item);
+	const face = cardFace(item);
 	const ports = spreadPorts(face, ordered[0]?.side === "bottom" ? fanned(face, wanted) : wanted);
 	ordered.forEach(({ nets, side }, index) => {
 		for (const net of nets) {
