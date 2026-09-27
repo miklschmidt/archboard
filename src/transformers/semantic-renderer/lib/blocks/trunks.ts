@@ -378,4 +378,4 @@ class TrunkRouter {
 	}
 }
 
-export { TRUNK_CLEARANCE, TRUNK_CROSSING, TrunkRouter, detourOf, packedWeighed, roomNeeded };
+export { TRUNK_CLEARANCE, TrunkRouter, packedWeighed, roomNeeded, routedWeighed };

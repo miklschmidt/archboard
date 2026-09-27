@@ -1,26 +1,20 @@
 // A block of cards' widest rank wrapped into rows, or its loose cards set out
-// as a grid, when that is worth taking over the block whole. The board's wrap
-// is weighed on how it reads (ADR 0039); a block inside the board is laid out
-// before its parent packs it, so its wrap is weighed on its score, its fit
-// standing for how well its parent can pack it (`scoreOf` in track/score.ts).
+// as a grid, when that scores clearly better than the block whole (`scoreOf`
+// in track/score.ts).
 import type { Viz } from "@viz-js/viz";
-import { REFERENCE_PANE, fitIn } from "@/shared/shell-geometry/index";
+import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
 import { CardLayout } from "@/transformers/semantic-renderer/lib/blocks/card-layout";
 import type { Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import { layBoth, settled, type Laying } from "@/transformers/semantic-renderer/lib/blocks/laying";
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import type { Block, BlockTree } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
-import { weighedLaid } from "@/transformers/semantic-renderer/lib/blocks/weighing";
 import { grids } from "@/transformers/semantic-renderer/lib/track/grid";
 import {
 	crossingsOf,
-	defectOrder,
-	fitsBetter,
 	scoreOf,
 	scoresBetter,
 	sinks,
-	worthTaking,
 	wrapPlans,
 	type Weighed,
 } from "@/transformers/semantic-renderer/lib/track/score";
@@ -91,24 +85,35 @@ function bestWrap(
 			.map((make) => wrapOf(layBoth(viz, make), lowered))
 			.filter(({ laid: { boxes } }) => !sinks(lowered, boxes, around)),
 	);
-	const root = block.kind === "root";
-	/**
-	 * What a wrap of the block is weighed on: the board's on how it reads, a
-	 * block inside it on its page and crossings alone ({@link worthWrapping}).
-	 * @param one The wrap laid out.
-	 * @returns What it is weighed on.
-	 */
-	const weigh = (one: Laid): Weighed => (root ? weighedLaid(tree, block, one) : weighed(one));
+	const worth = block.kind === "root" ? WORTH_WRAPPING : WORTH_WRAPPING_INSIDE;
 	// A wrap is chosen with its titles tied; only the chosen one is laid again with them pulled down.
 	const best = [...gridded, ...wraps].reduce<Wrapped | undefined>(
-		(one, other) => (one === undefined || wrapsBetter(other, one, { root, weigh }) ? other : one),
+		(one, other) => (one === undefined || wrapsBetter(other, one) ? other : one),
 		undefined,
 	);
-	if (best === undefined || !worthWrapping(weigh(best.laid), weigh(laying.whole), root))
+	if (best === undefined || scoreOf(weighed(best.laid)) <= scoreOf(weighed(laying.whole)) * worth)
 		return undefined;
 	const kept = settled({ tied: best.laid, untied: best.untied });
 	const sunk = sinks(best.lowered, kept.boxes, around);
 	return sunk ? best.laid : kept;
+}
+
+/**
+ * Whether one wrap reads better than another: it scores higher
+ * ({@link scoresBetter}), or, as well, deals its rank into fewer rows. Two
+ * wraps that both fit the reference pane at full scale score the same, and
+ * one dealt into more rows only saves area: a wrap is for a rank too wide
+ * for the pane, and each row more steps the rank further from how it reads.
+ * @param one A wrap.
+ * @param other Another.
+ * @returns True when the first reads better.
+ */
+function wrapsBetter(one: Wrapped, other: Wrapped): boolean {
+	const [mine, theirs] = [weighed(one.laid), weighed(other.laid)];
+	const tied = Math.abs(scoreOf(mine) - scoreOf(theirs)) <= 1e-9;
+	if (tied && one.rows !== undefined && other.rows !== undefined && one.rows !== other.rows)
+		return one.rows < other.rows;
+	return scoresBetter(mine, theirs);
 }
 
 /**
@@ -146,74 +151,6 @@ interface Wrapped {
 function wrapOf(laying: Laying, lowered?: ReadonlyMap<string, number>): Wrapped {
 	const rows = lowered === undefined ? {} : { rows: 1 + Math.max(...lowered.values()) };
 	return { laid: laying.tied, untied: laying.untied, lowered: lowered ?? new Map(), ...rows };
-}
-
-/**
- * Whether a block's best wrap is taken over the block whole. The board's is
- * taken where it has no more defects and fits the page clearly better, by
- * {@link WORTH_WRAPPING}, or by a twentieth with a defect fewer
- * ({@link worthTaking}). A block inside the board is laid out before its
- * parent packs it, so how its wrap will read is not known yet: its wrap is
- * taken where it scores clearly better ({@link scoreOf}), its fit standing
- * for how well its parent can pack it.
- * @param wrap The wrap.
- * @param whole The block whole.
- * @param root Whether the block is the board.
- * @returns True when the wrap is taken.
- */
-function worthWrapping(wrap: Weighed, whole: Weighed, root: boolean): boolean {
-	if (root) return worthTaking(wrap, whole, WORTH_WRAPPING);
-	return scoreOf(wrap) > scoreOf(whole) * WORTH_WRAPPING_INSIDE;
-}
-
-/**
- * Whether one wrap of a block is better than another, on what the block's
- * wraps are weighed on ({@link worthWrapping}), or, tied, deals its rank
- * into fewer rows. Two wraps that both fit the reference pane at full scale
- * fit it the same, and one dealt into more rows only saves area: a wrap is
- * for a rank too wide for the pane, and each row more steps the rank further
- * from how it reads.
- * @param one A wrap.
- * @param other Another.
- * @param weighing Whether the block is the board, and what a wrap is weighed on.
- * @param weighing.root Whether the block is the board.
- * @param weighing.weigh What a wrap laid out is weighed on.
- * @returns True when the first is better.
- */
-function wrapsBetter(
-	one: Wrapped,
-	other: Wrapped,
-	{ root, weigh }: { root: boolean; weigh: (laid: Laid) => Weighed },
-): boolean {
-	const [mine, theirs] = [weigh(one.laid), weigh(other.laid)];
-	const fewer = fewerRows(one, other);
-	if (fewer !== undefined && tied(mine, theirs, root)) return fewer;
-	return root ? fitsBetter(mine, theirs) : scoresBetter(mine, theirs);
-}
-
-/**
- * Whether one wrap deals its rank into fewer rows than another.
- * @param one A wrap.
- * @param other Another.
- * @returns True or false, or nothing when either is a grid or both deal as many rows.
- */
-function fewerRows(one: Wrapped, other: Wrapped): boolean | undefined {
-	if (one.rows === undefined || other.rows === undefined || one.rows === other.rows)
-		return undefined;
-	return one.rows < other.rows;
-}
-
-/**
- * Whether two wraps weigh the same, ignoring their area.
- * @param one A wrap.
- * @param other Another.
- * @param root Whether they wrap the board, and are weighed on how they read.
- * @returns True when they do.
- */
-function tied(one: Weighed, other: Weighed, root: boolean): boolean {
-	return root
-		? defectOrder(one, other) === 0 && fitIn(one) === fitIn(other)
-		: Math.abs(scoreOf(one) - scoreOf(other)) <= 1e-9;
 }
 
 /**

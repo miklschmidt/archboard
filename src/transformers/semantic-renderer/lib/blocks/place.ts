@@ -19,7 +19,7 @@ import { Assembly, type Placed } from "@/transformers/semantic-renderer/lib/bloc
 import { CardLayout } from "@/transformers/semantic-renderer/lib/blocks/card-layout";
 import { foldBlock, foldPlan } from "@/transformers/semantic-renderer/lib/blocks/fold";
 import { FoldLayout } from "@/transformers/semantic-renderer/lib/blocks/fold-layout";
-import type { Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
+import { corners, type Insets, type Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { bestWrap, weighed } from "@/transformers/semantic-renderer/lib/blocks/wraps";
 import {
@@ -33,7 +33,7 @@ import { settlePorts } from "@/transformers/semantic-renderer/lib/blocks/settle"
 import { sidesOf } from "@/transformers/semantic-renderer/lib/blocks/sides";
 import { heldOrders } from "@/transformers/semantic-renderer/lib/blocks/orders";
 import { layJoined, type Drawn } from "@/transformers/semantic-renderer/lib/blocks/joins";
-import { TRUNK_CROSSING, detourOf } from "@/transformers/semantic-renderer/lib/blocks/trunks";
+import { routedWeighed } from "@/transformers/semantic-renderer/lib/blocks/trunks";
 import { weighedLaid, weighedPlaced } from "@/transformers/semantic-renderer/lib/blocks/weighing";
 import { BlockTree, type Block, type Side } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { PAGE_MARGIN } from "@/transformers/semantic-renderer/lib/track/route";
@@ -102,17 +102,29 @@ function layCards(viz: Viz, tree: BlockTree, block: Block, laid: Map<string, Lai
 	return new FoldLayout(block, columns, laid, tree, insets).lay();
 }
 
+/** How near two scores or fits of a block are for the stacking choice's earlier weighing to call them tied. */
+const NEAR = 0.05;
+
 /**
- * How well a block laid out whole can read at its best: wrapped, or as it
- * stands.
- * @param tree The blocks.
+ * Whether two measures of a block stand within a near tie of each other.
+ * @param one A measure.
+ * @param other Another.
+ * @returns True when they do.
+ */
+function near(one: number, other: number): boolean {
+	return Math.abs(one - other) <= NEAR * Math.min(one, other);
+}
+
+/**
+ * How a block laid out whole scores at its best ({@link scoreOf}): as it
+ * stands, or folded.
  * @param block The block.
  * @param laid The block laid out whole.
- * @param wrapped Its best wrap, if one is taken.
- * @returns What its best is weighed on.
+ * @returns The better score.
  */
-function bestOf(tree: BlockTree, block: Block, laid: Laid, wrapped: Laid | undefined): Weighed {
-	return weighedLaid(tree, block, wrapped ?? laid);
+function bestScore(block: Block, laid: Laid): number {
+	const plan = foldPlan(block, laid, insetsOf(block), weighed(laid));
+	return Math.max(scoreOf(weighed(laid)), plan === undefined ? 0 : scoreOf(plan.weighed));
 }
 
 /**
@@ -143,29 +155,86 @@ function stackedOrNot(
 	if (!new CardLayout(block, laid, tree, insets).stacks())
 		return { whole: settled(plain), stacked: false };
 	const stacked = layBoth(viz, () => new CardLayout(block, laid, tree, insets, { stacked: true }));
+	const ways = { stacked, plain };
 	/**
-	 * Whether the block reads better stacked. Stacked containers often read
-	 * best wrapped or folded, so each is weighed at its best; a wrap is laid
-	 * out only for the way the titles settle, which decides the choice unless
-	 * pulling them down draws more line: laid out for the tied titles too,
-	 * Board viewer (Track) took 1050 ms where it had taken 585.
+	 * What the block is weighed on laid out one way, at its best.
+	 * @param stacks Whether it stacks.
+	 * @param pick Which of that way's titles is weighed.
+	 * @param wrapping Whether it is weighed wrapped where a wrap is taken.
+	 * @returns What it is weighed on.
+	 */
+	const weigh = (stacks: boolean, pick: (laying: Laying) => Laid, wrapping: boolean): Weighed => {
+		const one = pick(stacks ? stacked : plain);
+		return weighedLaid(tree, block, (wrapping ? wrapOf(one, stacks) : undefined) ?? one);
+	};
+	/**
+	 * Whether the block reads better stacked, in the order of ADR 0039.
+	 * Stacked containers often read best wrapped, so each is weighed at its
+	 * best; a wrap is laid out only for the way the titles settle, which
+	 * decides the choice unless pulling them down draws more line: laid out
+	 * for the tied titles too, Board viewer (Track) took 1050 ms where it had
+	 * taken 585.
 	 * @param pick Which of each way the titles stand is weighed.
 	 * @param wrapping Whether each is weighed wrapped where a wrap is taken.
 	 * @returns True when it does.
 	 */
-	const stacks = (pick: (laying: Laying) => Laid, wrapping: boolean): boolean => {
-		const [one, other] = [pick(stacked), pick(plain)];
-		return readsBetter(
-			bestOf(tree, block, one, wrapping ? wrapOf(one, true) : undefined),
-			bestOf(tree, block, other, wrapping ? wrapOf(other, false) : undefined),
-		);
-	};
-	const [tied, pulled] = [stacks(({ tied: one }) => one, false), stacks(settled, true)];
-	// Pulling titles down may change the choice only when that draws no more line.
-	const [was, is] = [tied, pulled].map((one) => settled(one ? stacked : plain));
-	const keeps = tied !== pulled && lineLength(is!.lines.values()) > lineLength(was!.lines.values());
-	const chosen = keeps ? tied : pulled;
+	const reads = (pick: (laying: Laying) => Laid, wrapping: boolean): boolean =>
+		readsBetter(weigh(true, pick, wrapping), weigh(false, pick, wrapping));
+	const read = pulledOrTied(
+		ways,
+		reads(({ tied }) => tied, false),
+		reads(settled, true),
+	);
+	const earlier = pulledOrTied(
+		ways,
+		scoresStacked(block, ways, ({ tied }) => tied),
+		scoresStacked(block, ways, settled),
+	);
+	const chosen = takes(weigh(true, settled, true), weigh(false, settled, true), earlier, read);
 	return { whole: settled(chosen ? stacked : plain), stacked: chosen };
+}
+
+/**
+ * Whether a block stacks, chosen with its titles tied and pulled down:
+ * pulling them down may change the choice only when that draws no more line.
+ * @param ways The block laid out stacked and plain.
+ * @param ways.stacked It stacked.
+ * @param ways.plain It plain.
+ * @param tied Whether it stacks, chosen with its titles tied.
+ * @param pulled Whether it stacks, chosen with them pulled down.
+ * @returns Whether it stacks.
+ */
+function pulledOrTied(
+	{ stacked, plain }: { stacked: Laying; plain: Laying },
+	tied: boolean,
+	pulled: boolean,
+): boolean {
+	const [was, is] = [tied, pulled].map((one) => settled(one ? stacked : plain));
+	return tied !== pulled && lineLength(is!.lines.values()) > lineLength(was!.lines.values())
+		? tied
+		: pulled;
+}
+
+/**
+ * Whether a block stacks on its score, as before ADR 0039: each way weighed
+ * at its best ({@link bestScore}), a near tie going to the page that fits
+ * the pane clearly better, as it does between a block's joins, and to the
+ * better score where neither page fits clearly better.
+ * @param block The block.
+ * @param ways The block laid out stacked and plain.
+ * @param ways.stacked It stacked.
+ * @param ways.plain It plain.
+ * @param pick Which of each way the titles stand is weighed.
+ * @returns True when it stacks.
+ */
+function scoresStacked(
+	block: Block,
+	{ stacked, plain }: { stacked: Laying; plain: Laying },
+	pick: (laying: Laying) => Laid,
+): boolean {
+	const [one, other] = [bestScore(block, pick(stacked)), bestScore(block, pick(plain))];
+	const [fits, flat] = [fitIn(pick(stacked)), fitIn(pick(plain))];
+	return near(one, other) && !near(fits, flat) ? fits > flat : one > other;
 }
 
 /**
@@ -267,56 +336,48 @@ function layOut(
 		orders.size === 0 ? [] : [layAll(viz, avoid, graph, { ...kept, orders }, nesting, apart)];
 	return [last, ...held]
 		.map((laying) => settledOrNot(laying, avoid))
-		.reduce((one, other) => (other.crossings < one.crossings ? other : one));
+		.reduce((one, other) =>
+			other.crossings < one.crossings && other.bends <= one.bends ? other : one,
+		);
 }
 
 /**
  * A layout with its ports settled, unless the drawing scores better
  * unsettled ({@link scoreOf}) on its lines as the blocks route them, before
  * the steps they need not take are taken out, the line its routes run round
- * what they pass counted as crossings at the trunk router's rate. Weighed
- * in the order of ADR 0039, on the lines as drawn, the settled layout of
+ * what they pass counted as crossings at the trunk router's rate. It is the
+ * one choice ADR 0039's measures do not weigh: on them, the settled layout of
  * Browser application (Blocks) ran "the pane socket" 480 px along Browser
  * client's bottom wall, where a reader cannot tell the line from the frame;
  * held to the score wherever it read worse on some measure ({@link takes}),
- * IIS data (Cloud Infrastructure, Blocks) settled a parted join that then
- * took a crossing its trunk had not.
+ * Public ownership (Common-WebLib, Blocks) crossed four lines more and IIS
+ * data (Cloud Infrastructure, Blocks) one, each settling a parted join.
  * @param laying The layout; its blocks are replaced.
  * @param avoid The initialized libavoid module.
- * @returns The blocks, every block laid out, and how often the drawing's lines cross.
+ * @returns The blocks, every block laid out, and how often the drawing's lines cross and turn.
  */
 function settledOrNot(
 	laying: Board,
 	avoid: AvoidEngine,
-): { tree: BlockTree; laid: Map<string, Laid>; crossings: number } {
+): { tree: BlockTree; laid: Map<string, Laid>; crossings: number; bends: number } {
 	const unsettled = new Map(laying.laid);
 	settlePorts({ ...laying, insetsOf, avoid });
-	const [was, is] = [unsettled, laying.laid].map((laid) =>
-		scoreOf(routedWeighed(new Assembly(laying.tree, laid).placed())),
-	);
+	const [was, is] = [unsettled, laying.laid].map((laid) => {
+		const placed = new Assembly(laying.tree, laid).placed();
+		return scoreOf(
+			routedWeighed(
+				placed,
+				placed.edges.map(({ points }) => points),
+			),
+		);
+	});
 	if (was! > is!) for (const [id, laid] of unsettled) laying.laid.set(id, laid);
-	const { edges } = new Assembly(laying.tree, laying.laid).placed();
+	const lines = new Assembly(laying.tree, laying.laid).placed().edges.map(({ points }) => points);
 	return {
 		tree: laying.tree,
 		laid: laying.laid,
-		crossings: crossingsOf(edges.map(({ points }) => points)),
-	};
-}
-
-/**
- * What a drawing as placed is weighed on in its score: its page, and its
- * crossings with the line its routes run round what they pass counted at
- * the trunk router's rate.
- * @param placed The drawing.
- * @returns Its page and crossings.
- */
-function routedWeighed(placed: Placed): Weighed {
-	const lines = placed.edges.map(({ points }) => points);
-	const detour = lines.reduce((sum, points) => sum + detourOf(points), 0);
-	return {
-		width: placed.width,
-		height: placed.height,
-		crossings: crossingsOf(lines) + detour / TRUNK_CROSSING,
+		crossings: crossingsOf(lines),
+		bends: lines.reduce((sum, points) => sum + corners(points).length - 2, 0),
 	};
 }
 

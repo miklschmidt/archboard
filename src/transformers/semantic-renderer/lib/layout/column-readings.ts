@@ -24,7 +24,13 @@ import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/d
 import { refusedRouting } from "@/transformers/semantic-renderer/lib/layout/checked-routes";
 import { foldColumnCounts } from "@/transformers/semantic-renderer/lib/layout/fold-columns";
 import { drawingWeighed } from "@/transformers/semantic-renderer/lib/layout/even-pins";
-import { worthTaking } from "@/transformers/semantic-renderer/lib/track/score";
+import {
+	crossingsOf,
+	defectOrder,
+	scoreOf,
+	takes,
+	type Weighed,
+} from "@/transformers/semantic-renderer/lib/track/score";
 
 /** The size of a page. */
 type Page = Pick<ArchitectureDrawing, "width" | "height">;
@@ -71,7 +77,23 @@ async function chooseReading(
  * @returns True when the fold is kept.
  */
 function readsBetter(candidate: ArchitectureDrawing, baseline: ArchitectureDrawing): boolean {
-	return worthTaking(drawingWeighed(candidate), drawingWeighed(baseline), 1 + WRAP_MIN_FIT_GAIN);
+	const [one, other] = [drawingWeighed(candidate), drawingWeighed(baseline)];
+	const earlier =
+		better(candidate, baseline) && scoreOf(scored(candidate)) > scoreOf(scored(baseline));
+	return takes(one, other, earlier, better(candidate, baseline) && defectOrder(one, other) <= 0);
+}
+
+/**
+ * What a settled drawing was scored on before ADR 0039: its page and its crossings.
+ * @param drawing The drawing.
+ * @returns Its size and crossing count.
+ */
+function scored(drawing: ArchitectureDrawing): Weighed {
+	const lines = drawing.edges.map(({ curve }) => [
+		curve.from,
+		...curve.segments.map(({ to }) => to),
+	]);
+	return { width: drawing.width, height: drawing.height, crossings: crossingsOf(lines) };
 }
 
 /**

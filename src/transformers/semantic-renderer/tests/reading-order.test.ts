@@ -9,12 +9,7 @@
 
 import { expect, test } from "bun:test";
 import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
-import {
-	readsBetter,
-	takes,
-	worthTaking,
-	type Weighed,
-} from "@/transformers/semantic-renderer/layout";
+import { readsBetter, takes, type Weighed } from "@/transformers/semantic-renderer/layout";
 
 /** A layout that fits the reference pane at full scale and reads cleanly. */
 const clean: Weighed = {
@@ -68,20 +63,6 @@ test("route lengths within a twentieth of each other are alike, and fit decides"
 	const cramped: Weighed = { ...clean, ...taller(1.5) };
 	expect(readsBetter(longer, cramped)).toBe(true);
 	expect(readsBetter({ ...longer, length: 10_600 }, cramped)).toBe(false);
-});
-
-test("a fold or a wrap is taken only with no more defects and materially more fit", () => {
-	const whole: Weighed = { ...clean, ...taller(2) };
-	const folded: Weighed = { ...clean, bends: 40, length: 14_000 };
-	expect(worthTaking(folded, whole, 1.1)).toBe(true);
-	// One defect more, however much better it fits.
-	expect(worthTaking({ ...folded, hooks: 1 }, whole, 1.1)).toBe(false);
-	// As few defects, fitting better by less than it must.
-	expect(worthTaking(folded, { ...whole, ...taller(1.08) }, 1.1)).toBe(false);
-	// A defect fewer lowers what it must gain to a twentieth, and no further.
-	const cured: Weighed = { ...folded, crossings: 3 };
-	expect(worthTaking(cured, { ...whole, ...taller(1.08) }, 1.1)).toBe(true);
-	expect(worthTaking(cured, { ...whole, ...taller(1.02) }, 1.1)).toBe(false);
 });
 
 test("a guarded choice takes the reading order's pick only where it is nowhere worse", () => {

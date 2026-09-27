@@ -11,7 +11,6 @@
 // weighed on its fit less a share for each crossing, its fit standing for how
 // that drawing will read (`scoreOf`).
 import { fitIn } from "@/shared/shell-geometry/index";
-import { WRAP_MIN_FIT_GAIN } from "@/transformers/semantic-renderer/config";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 
 /**
@@ -232,7 +231,7 @@ function readingOrder(one: Weighed, other: Weighed): number {
  */
 function readsBetter(one: Weighed, other: Weighed): boolean {
 	const order = readingOrder(one, other);
-	return order === 0 ? fitsBetterAlone(one, other) : order < 0;
+	return order === 0 ? fitsBetter(one, other) : order < 0;
 }
 
 /**
@@ -255,24 +254,30 @@ function noWorse(one: Weighed, other: Weighed): boolean {
 }
 
 /**
- * Whether a choice between two whole drawings that also weighs them as it
- * did before ADR 0039 takes the first: the reading order's pick
- * ({@link readsBetter}) where the earlier weighing agrees, or where that
- * pick reads no worse than the earlier one on any measure ({@link noWorse});
- * else the earlier pick. Two whole drawings often trade one measure for
- * another, and the reading order then takes a drawing that reads worse
- * somewhere than the one taken before: What the CLI can be asked (Blocks)
- * parted two lines into Board client for two hops fewer, and drew 14% more
- * line and one line running on into the other's arrow at the card's corner;
- * Archboard server whole (Track) packed its groups for 13 hops fewer, at 23
- * bends more, three crossings on a corner and a stack.
- * @param one A drawing.
+ * Whether a chooser takes the first of two layouts, every chooser weighing
+ * them both on ADR 0039's reading measures and as it did before: its
+ * reading pick where its earlier weighing agrees, or where that pick reads
+ * no worse than the earlier one on any measure ({@link noWorse}); else the
+ * earlier pick. Two layouts often trade one measure for another, and the
+ * reading pick then reads worse somewhere than the one taken before: What
+ * the CLI can be asked (Blocks) parted two lines into Board client for two
+ * hops fewer, and drew 14% more line and one line running on into the
+ * other's arrow at the card's corner; Archboard server whole (Track) packed
+ * its groups for 13 hops fewer, at 23 bends more, three crossings on a
+ * corner and a stack.
+ * @param one A layout.
  * @param other Another.
  * @param earlier Whether the earlier weighing takes the first.
+ * @param reads Whether the reading measures take it: by default, whether it
+ * reads better ({@link readsBetter}).
  * @returns True when the first is taken.
  */
-function takes(one: Weighed, other: Weighed, earlier: boolean): boolean {
-	const reads = readsBetter(one, other);
+function takes(
+	one: Weighed,
+	other: Weighed,
+	earlier: boolean,
+	reads = readsBetter(one, other),
+): boolean {
 	if (reads === earlier) return reads;
 	return reads ? noWorse(one, other) : !noWorse(other, one);
 }
@@ -284,7 +289,7 @@ function takes(one: Weighed, other: Weighed, earlier: boolean): boolean {
  * @param other Another.
  * @returns True when the first fits better.
  */
-function fitsBetterAlone(one: Weighed, other: Weighed): boolean {
+function fitsBetter(one: Weighed, other: Weighed): boolean {
 	const [fit, best] = [fitIn(one), fitIn(other)];
 	if (Math.abs(fit - best) > 1e-9) return fit > best;
 	return one.width * one.height < other.width * other.height;
@@ -323,42 +328,6 @@ function scoresBetter(one: Weighed, other: Weighed): boolean {
 	const [mine, theirs] = [scoreOf(one), scoreOf(other)];
 	if (Math.abs(mine - theirs) > 1e-9) return mine > theirs;
 	return one.width * one.height < other.width * other.height;
-}
-
-/**
- * Whether a layout made to fit the page, a wrap or a fold, is worth taking
- * over the layout it would replace: it has no more defects
- * ({@link defectOrder}) and fits the reference pane materially better, by
- * `worth`, or by a twentieth ({@link WRAP_MIN_FIT_GAIN}) where it has fewer
- * defects. The bends and line it adds between its rows or columns are the
- * price of any wrap or fold, which ADR 0039 keeps: ranked on them, no chain
- * of cards folded. Fitting a twentieth better, a drawing shows at about the
- * scale it did, which pays for none of that price: taken for one hook fewer
- * and a hundredth more fit, Live server state (Graphviz) folded into two
- * columns fed from below, with 37% more line.
- * @param one The wrap or fold.
- * @param other The layout it would replace.
- * @param worth How many times better it must fit, as few defects as it has.
- * @returns True when it is.
- */
-function worthTaking(one: Weighed, other: Weighed, worth: number): boolean {
-	const defects = defectOrder(one, other);
-	const gain = defects < 0 ? Math.min(worth, 1 + WRAP_MIN_FIT_GAIN) : worth;
-	return defects <= 0 && fitIn(one) > fitIn(other) * gain;
-}
-
-/**
- * Whether one of two layouts made to fit the page, two wraps of a block,
- * is better: it has fewer defects ({@link defectOrder}); or, as few, fits
- * the reference pane better; or as well on a smaller page. Their bends and
- * line are the price of wrapping, which {@link worthTaking} weighs.
- * @param one A layout.
- * @param other Another.
- * @returns True when the first is better.
- */
-function fitsBetter(one: Weighed, other: Weighed): boolean {
-	const defects = defectOrder(one, other);
-	return defects === 0 ? fitsBetterAlone(one, other) : defects < 0;
 }
 
 /**
@@ -458,14 +427,13 @@ export {
 	crossingPlaces,
 	crossingsOf,
 	defectOrder,
-	fitsBetter,
 	lapsOf,
+	noWorse,
 	readsBetter,
 	scoreOf,
 	scoresBetter,
 	sinks,
 	takes,
-	worthTaking,
 	wrapPlans,
 	type Crossing,
 	type Run,
