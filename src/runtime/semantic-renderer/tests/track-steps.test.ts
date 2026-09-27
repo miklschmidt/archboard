@@ -18,6 +18,7 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 import { scorecardOf } from "@/runtime/semantic-renderer/tests/drawn-scorecard";
 import onePointPort from "./one-point-port.json";
 import regionPortTurnBack from "./region-port-turn-back.json";
+import agentWorkbench from "./agent-workbench.json";
 import boardRasterizer from "./board-rasterizer.json";
 import browserApplication from "./browser-application.json";
 import codexWorkhorse from "./codex-workhorse.json";
@@ -187,6 +188,19 @@ test("a line through a group region's port does not double back at it", async ()
 		policy,
 	});
 	for (const [id, points] of corridorPoints(drawing.svg)) expect(turnBacks(points), id).toBe(0);
+});
+
+// Taken from a board of this repository: a line out of Voice's top stepped
+// aside round a label inside the region, then back to the port the board
+// had settled on the region's wall, and on out the way it had come.
+test("a line out of a group region meets its port where it runs inside", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(agentWorkbench),
+		theme: "light",
+		layout: "track",
+		policy,
+	});
+	expect(turnBacks(corridorPoints(drawing.svg).get("mhknqBOz")!)).toBeLessThanOrEqual(1);
 });
 
 /** A group region's box as drawn: its left and right walls, its top and bottom. */
