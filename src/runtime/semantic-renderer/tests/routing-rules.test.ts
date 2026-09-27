@@ -12,7 +12,7 @@ import {
 	routesCross,
 	turnsOf,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
-import archboardServer from "./archboard-server.json";
+import rendererLayout from "./renderer-layout.json";
 import liveServerState from "./live-server-state.json";
 import twinLines from "./twin-lines.json";
 import whatTheCliCanBeAsked from "./what-the-cli-can-be-asked.json";
@@ -66,12 +66,12 @@ async function linesOf(fixture: unknown, layout: "track" | "blocks") {
 	return Object.assign(corridorPoints(drawing.svg), { labels: routeLabels(drawing.svg) });
 }
 
-// Parting two lines that read as one stands one a lane off, which frees the
-// column a jog of 'discard under the board's lease' was held off by; it steps
-// twice without the jogs closed again.
-test("a jog is closed again once parting lines frees its column", async () => {
-	const lines = await linesOf(archboardServer, "track");
-	expect(turnsOf(lines.get("iqwlU6YF")!)).toBeLessThanOrEqual(4);
+// Taken from a board of this repository: 'route every relationship' from
+// Layout engine drops straight into Obstacle routing once the jog routing
+// left in it is closed again; without that it steps aside and back.
+test("a jog is closed again once routing frees its column", async () => {
+	const lines = await linesOf(rendererLayout, "track");
+	expect(turnsOf(lines.get("Qvp9SqT5")!)).toBe(0);
 });
 
 // Two lines pass beside a frame their stations stand either side of; moved

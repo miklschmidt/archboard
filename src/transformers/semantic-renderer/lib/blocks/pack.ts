@@ -3,8 +3,8 @@
 // ports that carries no label (the labels sit inside the blocks, next to the
 // cards they name). So this level is a packing problem and a sparse routing
 // problem: the blocks are packed in rows or columns in the order their lines
-// run, whichever fits the reference pane best, and libavoid routes the trunks
-// around them.
+// run, whichever scores best on its fit and its trunks' crossings and detours
+// (`scoreOf` in track/score.ts), and libavoid routes the trunks around them.
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
@@ -32,10 +32,11 @@ import { openStretch, type Span } from "@/transformers/semantic-renderer/lib/blo
 import { slideToTrunks } from "@/transformers/semantic-renderer/lib/blocks/slides";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { spreadPorts } from "@/transformers/semantic-renderer/lib/track/channels";
+import { scoresBetter } from "@/transformers/semantic-renderer/lib/track/score";
 import {
 	TRUNK_CLEARANCE,
 	TrunkRouter,
-	packedScore,
+	packedWeighed,
 	roomNeeded,
 } from "@/transformers/semantic-renderer/lib/blocks/trunks";
 
@@ -396,8 +397,9 @@ class PackLayout {
 				const layout = new PackLayout(this.block, this.laid, this.tree, this.insets);
 				return { layout, laid: layout.layOut(avoid, packing) };
 			});
-		const scores = tried.map(({ laid }) => packedScore(laid));
-		const { layout, laid } = tried[scores.indexOf(Math.max(...scores))]!;
+		const { layout, laid } = tried.reduce((one, other) =>
+			scoresBetter(packedWeighed(other.laid), packedWeighed(one.laid)) ? other : one,
+		);
 		return layout.widened(avoid, laid);
 	}
 
