@@ -37,10 +37,12 @@ interface Size {
 	readonly height: number;
 }
 
-/** A node alone in its group's region: the group and its caption's size. */
+/** A node alone in its group's region: the group, its caption's size, and a card's own width. */
 interface Lone {
 	readonly group: string;
 	readonly caption: Size;
+	/** A card's width: a caption wider than the card widens the region round it, not the card. */
+	readonly width?: number;
 }
 
 /** Where a line stops at a node alone in its region: that region's box and the node's. */
@@ -79,8 +81,23 @@ function placingGroup(
 ): string | undefined {
 	const group = node.layoutOptions?.[PLACING_GROUP];
 	if (group === undefined || !aloneIn(node, siblings)) return group;
-	lone.set(node.id, { group, caption: captions.get(group) ?? { width: 1, height: 1 } });
+	lone.set(node.id, loneOf(node, group, captions.get(group)));
 	return undefined;
+}
+
+/**
+ * A node's region round it alone.
+ * @param node The node.
+ * @param group Its placing group.
+ * @param caption The group's caption size, if measured.
+ * @returns The region.
+ */
+function loneOf(node: ElkNode, group: string, caption: Size | undefined): Lone {
+	return {
+		group,
+		caption: caption ?? { width: 1, height: 1 },
+		...(node.children?.length ? {} : { width: node.width! }),
+	};
 }
 
 /**
@@ -182,18 +199,32 @@ function cardAs(node: ElkNode, lone: Lone | undefined): Card {
 }
 
 /**
- * The card's or container's own box inside the box its region took.
+ * The card's or container's own box inside the box its region took: a card
+ * no wider than itself, in the middle of a region its caption widens.
  * @param region The region's box.
  * @param lone The region.
  * @returns The card's or container's box.
  */
 function cardIn(region: Box, lone: Lone): Box {
+	const side = sideRoom(region.width, lone);
 	return {
-		x: region.x + LONE_INSET,
+		x: region.x + side,
 		y: region.y + bandOf(lone),
-		width: region.width - 2 * LONE_INSET,
+		width: region.width - 2 * side,
 		height: region.height - bandOf(lone) - LONE_INSET,
 	};
+}
+
+/**
+ * How far in from each side of the box its region took a card or container
+ * stands: the region's inset, or more round a card its caption widens the
+ * region past.
+ * @param width The box's width.
+ * @param lone The region.
+ * @returns The room.
+ */
+function sideRoom(width: number, lone: Lone): number {
+	return lone.width === undefined ? LONE_INSET : Math.max(LONE_INSET, (width - lone.width) / 2);
 }
 
 /**
@@ -409,6 +440,7 @@ export {
 	framed,
 	grownInsets,
 	regionRound,
+	sideRoom,
 	titleRow,
 	placingGroup,
 	withoutLoneRegions,

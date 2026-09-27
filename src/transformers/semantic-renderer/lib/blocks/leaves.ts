@@ -13,7 +13,7 @@ import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { extentOf } from "@/transformers/semantic-renderer/lib/track/labels";
 import type { Item, Scene } from "@/transformers/semantic-renderer/lib/track/scene";
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
-import { LONE_INSET } from "@/transformers/semantic-renderer/lib/blocks/lone";
+import { LONE_INSET, sideRoom } from "@/transformers/semantic-renderer/lib/blocks/lone";
 import type { Block, BlockTree } from "@/transformers/semantic-renderer/lib/blocks/tree";
 
 /** The side of a port's square. */
@@ -82,9 +82,9 @@ function letPortsSlide(scene: Scene, block: Block, nesting: Nesting): void {
  */
 function markRegions(scene: Scene, block: Block, tree: BlockTree): void {
 	for (const item of block.items) {
-		if (tree.lone.has(item)) scene.cards.get(item)!.inset = LONE_INSET;
-		if (keepsRegionClearance(tree, item, scene.inline))
-			scene.regionBlocks.add(scene.cards.get(item)!);
+		const [lone, card] = [tree.lone.get(item), scene.cards.get(item)];
+		if (lone !== undefined) card!.inset = sideRoom(card!.box.width, lone);
+		if (keepsRegionClearance(tree, item, scene.inline)) scene.regionBlocks.add(card!);
 	}
 }
 
