@@ -338,7 +338,10 @@ function graphForLabels(problem: Problem, reserved: ReadonlySet<string>): ElkNod
 }
 
 /**
- * Ask a placed graph's forced labels to be routed through.
+ * Ask a placed graph's forced labels to be routed through. The routing input
+ * shares the placement's unchanged parts: the host copies a graph it solves
+ * and never changes the caller's (host.ts), and a copy of the whole placement
+ * for every route was a tenth of the renderer's own work (2026-09-27).
  * @param placed A placement of the reading, which stays as it is.
  * @param forced Labels that require a route through their reserved box.
  * @param route What its routes are asked for.
@@ -349,17 +352,22 @@ function forceLabels(
 	forced: ReadonlyMap<string, LabelAnchor | undefined>,
 	route: RouteRequest = {},
 ): ElkNode {
-	const graph = structuredClone(placed);
-	graph.layoutOptions = { ...graph.layoutOptions, ...requestOptions(route) };
-	for (const edge of graph.edges ?? []) {
-		if (!forced.has(edge.id)) continue;
-		edge.layoutOptions = {
-			...edge.layoutOptions,
-			"archboard.route-label": "true",
-			...anchorOptions(forced.get(edge.id)),
-		};
-	}
-	return graph;
+	return {
+		...placed,
+		layoutOptions: { ...placed.layoutOptions, ...requestOptions(route) },
+		edges: (placed.edges ?? []).map((edge) =>
+			forced.has(edge.id)
+				? {
+						...edge,
+						layoutOptions: {
+							...edge.layoutOptions,
+							"archboard.route-label": "true",
+							...anchorOptions(forced.get(edge.id)),
+						},
+					}
+				: edge,
+		),
+	};
 }
 
 /**
