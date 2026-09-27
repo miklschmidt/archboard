@@ -9,7 +9,8 @@
 // not its corner: moved the nudging distance from a corner, Browser
 // application's "start voice" left Agent setup 12 px from its corner. A row
 // of labels moves only where every label keeps clear of cards and of the
-// label before it, and only onto a channel no other card stands in.
+// label before it, inside its frame's inset, and only onto a channel no
+// other card stands in.
 
 import { expect, test } from "bun:test";
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
@@ -144,4 +145,37 @@ test("a label stays where a card stands in the channel or where it would meet a 
 test("labels moved onto one span in one row keep a label's clearance apart", () => {
 	const [one, other] = centredLabels([LEFT, { ...LEFT, x: 300 }]);
 	expect(other!.x - one!.x - one!.width).toBeGreaterThanOrEqual(LABEL_LABEL_CLEARANCE);
+});
+
+test("a label stays where sliding it onto the span would take it out of its frame's inset", () => {
+	// The frame holds both cards; slid onto the span, the wide label would end inside its inset.
+	const frame: ElkNode = {
+		id: "frame",
+		x: 100,
+		y: 0,
+		width: 500,
+		height: 380,
+		children: [
+			{ id: "upper", x: 200, y: 20, width: 340, height: 88 },
+			{ id: "lower", x: 120, y: 272, width: 340, height: 88 },
+		],
+	};
+	const label = { x: 300, y: 174, width: 300, height: 32 };
+	const graph: ElkNode = {
+		id: "root",
+		width: 800,
+		height: 380,
+		children: [frame],
+		edges: [
+			{
+				id: "line",
+				sources: ["upper"],
+				targets: ["lower"],
+				labels: [{ ...label }],
+				layoutOptions: { "archboard.relationship.kind": "call", "archboard.route-label": "true" },
+			},
+		],
+	};
+	centreLabels(graph);
+	expect(graph.edges![0]!.labels![0]!.x).toBe(label.x);
 });
