@@ -1,8 +1,9 @@
 // Steps a joined line need not take, taken out (steps.ts). What this catches:
 // a line joined from pieces routed in different blocks that steps sideways
 // and on, or doubles back, where one turn would do, alone or on a trunk; and
-// a slide that takes a step out by moving part of a trunk, a line's end run
-// or its run through its label, or by running a new stretch into a card, a
+// a slide that takes a step out by moving part of a trunk, by carrying a
+// trunk's line the long way round, by moving a line's end run or its run
+// through its label, or by running a new stretch into a card, a
 // title band, a wall it did not cross, along a wall, onto another line's
 // axis, beside it, across it where it did not cross or where that line turns,
 // or into a jog too short for its bends.
@@ -105,3 +106,25 @@ test.each([
 ])("a slide keeps off a new stretch %s", (_, other) => {
 	expect(unstepped([{ points: DOUBLING }, { points: other }], NOTHING)[0]).toEqual(ON_LAST);
 });
+
+test("a slide carries no line of a trunk the long way round", () => {
+	const far = line([0, 0], [0, 100], [1000, 100], [1000, 200], [1200, 200], [1200, 300]);
+	const near = line([1100, 0], [1100, 100], [1000, 100], [1000, 200], [1200, 200], [1200, 300]);
+	const boxes = [{ x: 1150, y: 120, width: 100, height: 60 }];
+	const drawn = unstepped([{ points: far }, { points: near }], { ...NOTHING, boxes });
+	expect(drawn.map(reach)).toSatisfy(([one, other]) => one! <= reach(far) && other! <= reach(near));
+});
+
+/**
+ * How far a line runs.
+ * @param points The line.
+ * @returns Its length.
+ */
+function reach(points: readonly Point[]): number {
+	return points
+		.slice(1)
+		.reduce(
+			(sum, to, at) => sum + Math.abs(to.x - points[at]!.x) + Math.abs(to.y - points[at]!.y),
+			0,
+		);
+}

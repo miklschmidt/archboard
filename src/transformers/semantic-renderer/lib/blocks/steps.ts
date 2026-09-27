@@ -10,9 +10,10 @@
 // become one. A slide is kept only where the line's new stretch stays clear
 // of every card, title and label, keeps a lane from every other line and
 // half a lane from every wall, crosses no more lines and no wall it did not
-// cross, and still runs through the line's own label. A run another line
-// shares, a trunk, never moves; nor does a line's first or last run leave
-// the card face it meets.
+// cross, and still runs through the line's own label. A run other lines
+// share, a trunk, moves only with all of them and only where none runs much
+// longer for it; a line's first or last run never leaves the card face it
+// meets.
 import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { corners } from "@/transformers/semantic-renderer/lib/blocks/laid";
@@ -40,6 +41,12 @@ const CLEARANCE = LANE / 2;
 const SHORTEST = 2 * BEND_RADIUS;
 /** How far apart two lines on one axis still read as one. */
 const HANDOFF = 4 * LANE;
+/**
+ * How much longer a slide may make a line it moves: a trunk's lines follow
+ * its slide, and a turn or two more to run with the trunk reads better than a
+ * step, but a way round a far channel does not.
+ */
+const CARRIED = 24 * LANE;
 /** How many times every line is looked at again, after the others moved. */
 const PASSES = 3;
 
@@ -341,13 +348,22 @@ function hugs(span: Span, box: Box): boolean {
 }
 
 /**
+ * How far a line runs.
+ * @param line The line.
+ * @returns Its length.
+ */
+function reach(line: readonly Point[]): number {
+	return runsOf(line).reduce((sum, run) => sum + lengthOf(run), 0);
+}
+
+/**
  * What a line costs among the others: every crossing before any length.
  * @param line The line.
  * @param others The other lines' runs.
  * @returns The cost.
  */
 function costOf(line: readonly Point[], others: readonly Span[]): number {
-	return crossings(line, others) * 1e6 + runsOf(line).reduce((sum, run) => sum + lengthOf(run), 0);
+	return crossings(line, others) * 1e6 + reach(line);
 }
 
 /**
@@ -363,6 +379,7 @@ function fits(moved: Moved, routes: readonly (readonly Point[])[], weigh: Weighe
 		const old = routes[line]!;
 		return (
 			next.length <= old.length &&
+			reach(next) <= reach(old) + CARRIED &&
 			keepsEnds(next, old) &&
 			roomy(next, old) &&
 			keepsClear(next, old, weigh(lines, line))
