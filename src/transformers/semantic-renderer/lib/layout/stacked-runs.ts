@@ -172,10 +172,14 @@ type Band = readonly [number, number];
 /** Two runs on one stroke. */
 const STROKE: Band = [-1, ONE_STROKE];
 
-/** Two runs side by side, a double track. */
+/** Two runs side by side nearer than half a lane: a double track a reader takes for one line. */
 const TRACK: Band = [ONE_STROKE, NEAR];
 
-/** Two runs side by side nearer than a lane, the pitch a reader needs to follow each line. */
+/**
+ * Two runs side by side nearer than a lane: a double track. Runs exactly a
+ * lane apart stand at the routers' channel pitch, which a reader follows as
+ * two lines, and are not one.
+ */
 const BESIDE: Band = [ONE_STROKE, ROUTE_LANE - 0.5];
 
 /**
