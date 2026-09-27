@@ -111,6 +111,15 @@ test("a pass that cures a hook keeps its routing", async () => {
 	expect(await finishing(settled, cured)).toBe(cured);
 });
 
+test("a pass that cures nothing keeps the settled drawing, however it routes", async () => {
+	const settled = sketch(cards, [hooked(0), entering(500)]);
+	const moved = sketch(cards, [
+		hooked(0),
+		line(500, at([50, 50], [50, 100], [260, 100], [260, 200])),
+	]);
+	expect(await finishing(settled, moved)).toBe(settled);
+});
+
 test("an ordinary L past a card's corner is not taken for a hook", async () => {
 	const settled = sketch(cards, [line(0, at([50, 50], [50, 230], [200, 230]))]);
 	expect((await requestsOf(settled)).filter(({ cornerPins }) => cornerPins)).toEqual([]);
