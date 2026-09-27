@@ -8,9 +8,11 @@
 // coordinator), two lines whose corners interlock a few pixels apart
 // (Platform Public API's "Authentication and usage"), or a fan whose branches
 // crowd into one blot (Skill evaluation's six lines out of Author run).
-// What this catches: an ordinary L taken for a hook, a pass trading a defect
-// for another of its kind, a pass curing defects by crowding a label or by
-// joining two unrelated lines at or near a corner, and a fault in a pass's
+// What this catches: an ordinary L taken for a hook, hooks left uncured
+// where curing them all at once is refused, two lines leaving one card at
+// one place on one stroke taken for a stack, a pass trading a defect for another of its kind, a pass curing defects by crowding a label or by
+// joining two unrelated lines at or near a corner or crossing one within a
+// lane of a bend, and a fault in a pass's
 // routing being taken for a refusal.
 
 import { expect, test } from "bun:test";
@@ -111,6 +113,15 @@ test("a pass that cures a hook keeps its routing", async () => {
 	expect(await finishing(settled, cured)).toBe(cured);
 });
 
+test("a pass that cures nothing keeps the settled drawing, however it routes", async () => {
+	const settled = sketch(cards, [hooked(0), entering(500)]);
+	const moved = sketch(cards, [
+		hooked(0),
+		line(500, at([50, 50], [50, 100], [260, 100], [260, 200])),
+	]);
+	expect(await finishing(settled, moved)).toBe(settled);
+});
+
 test("an ordinary L past a card's corner is not taken for a hook", async () => {
 	const settled = sketch(cards, [line(0, at([50, 50], [50, 230], [200, 230]))]);
 	expect((await requestsOf(settled)).filter(({ cornerPins }) => cornerPins)).toEqual([]);
@@ -206,6 +217,35 @@ test("a pass that parts one of two stacks of the same two lines is kept", async 
 });
 
 /**
+ * A second line out of the hub where the trunk leaves it, running down with
+ * the trunk and across below it or with it on one stroke.
+ * @param y Where it runs across: 100 on the trunk's stroke.
+ * @returns The line.
+ */
+function branch(y: number): Line {
+	return {
+		id: "branch",
+		from: "hub",
+		to: "u",
+		points: at([1500, 0], [1500, y], [1750, y], [1750, 300]),
+	};
+}
+
+test("a pass may run two lines from one card on one stroke", async () => {
+	// Lines that leave a card at one place read as one trunk that branches,
+	// not as a stack.
+	const trunk = {
+		id: "trunk",
+		from: "hub",
+		to: "t",
+		points: at([1500, 0], [1500, 100], [1800, 100], [1800, 300]),
+	};
+	const settled = sketch(cards, [hooked(0), trunk, branch(150)]);
+	const joined = sketch(cards, [entering(0), trunk, branch(100)]);
+	expect(await finishing(settled, joined)).toBe(joined);
+});
+
+/**
  * A line down the page, which crosses the line across it when it stands within its span.
  * @param x Where it stands.
  * @param detour How many bends it takes on the way, in pairs.
@@ -230,6 +270,29 @@ test("a pass may not cure a hook by bringing a crossing", async () => {
 	expect(await finishing(settled, crossed)).toBe(settled);
 });
 
+/**
+ * A line down across the line across the page that turns away a given distance below it.
+ * @param turn How far below the line across it turns.
+ * @returns The line.
+ */
+function turningDown(turn: number): Line {
+	return {
+		id: "turning",
+		from: "s",
+		to: "t",
+		points: at([2100, 900], [2100, 1000 + turn], [2050, 1000 + turn]),
+	};
+}
+
+test("a pass may not cure a hook by trading a crossing for one within a lane of a bend", async () => {
+	// Two clean crossings become one just before a line's bend: as many
+	// crossings seen, but a knot a reader sees at once (Agent workbench's
+	// Thread link).
+	const settled = sketch(cards, [hooked(0), across, down(2000), turningDown(100)]);
+	const knotted = sketch(cards, [entering(0), across, down(2500), turningDown(10)]);
+	expect(await finishing(settled, knotted)).toBe(settled);
+});
+
 test("a pass may not cure a hook by giving another line more bends", async () => {
 	const settled = sketch(cards, [hooked(0), entering(500)]);
 	const wound = sketch(cards, [entering(0), winding(500)]);
@@ -246,6 +309,102 @@ test("a pass that saves a crossing may give a line more bends, but no more in al
 	const detour = sketch(cards, [entering(0), down(2500, 1), across]);
 	expect(await finishing(settled, bent)).toBe(bent);
 	expect(await finishing(settled, detour)).toBe(settled);
+});
+
+/**
+ * Two hooked lines, each cured where its card is asked to be; the second's
+ * cure moves another line across the line across the page.
+ * @param cured The cards whose hooks are cured.
+ * @returns The drawing.
+ */
+function hooksCured(cured: readonly string[]): ArchitectureDrawing {
+	const second = cured.includes("target500");
+	return sketch(cards, [
+		cured.includes("target0") ? entering(0) : hooked(0),
+		second ? entering(500) : hooked(500),
+		down(second ? 700 : 2500),
+		across,
+	]);
+}
+
+test("hooks a pass may not cure together are cured card by card, each where it cures more", async () => {
+	// Cured at once, a label found no run: the routing is refused.
+	const done = await finished(
+		{ reading: [] as readonly string[], drawing: hooksCured([]) },
+		(_, request) =>
+			Promise.resolve(
+				request.cornerCards === undefined
+					? undefined
+					: { reading: request.cornerCards, drawing: hooksCured(request.cornerCards) },
+			),
+	);
+	expect(done.reading).toEqual(["target0"]);
+});
+
+test("side exits a pass may not cure together are cured for one card's lines at a time", async () => {
+	// Asked for every lane and every label at once, a label found no run: the
+	// routing is refused. Asked for one line's label alone, it drops straight.
+	const stacked = {
+		upper: { x: 3000, y: 0, width: 200, height: 50 },
+		lower: { x: 3000, y: 200, width: 200, height: 50 },
+	};
+	const round = at([3200, 25], [3230, 25], [3230, 225], [3200, 225]);
+	const straight = at([3100, 50], [3100, 200]);
+	const drawn = (cured: boolean): ArchitectureDrawing =>
+		sketch(stacked, [{ id: "exit", from: "upper", to: "lower", points: cured ? straight : round }]);
+	const done = await finished(
+		{ reading: [] as readonly string[], drawing: drawn(false) },
+		(_, request) =>
+			Promise.resolve(
+				request.centredLines === undefined
+					? undefined
+					: {
+							reading: request.centredLines,
+							drawing: drawn(request.centredLines.includes("exit")),
+						},
+			),
+	);
+	expect(done.reading).toEqual(["exit"]);
+});
+
+/**
+ * Two lines into the tops of two pinned cards, each beside its card's pin
+ * until the routes clear that card; clearing the second card winds the first
+ * line once more.
+ * @param cleared The cards the routes clear.
+ * @returns The drawing.
+ */
+function clearing(cleared: readonly string[]): ArchitectureDrawing {
+	const pinnedCards = {
+		a: { x: 0, y: 0, width: 200, height: 60 },
+		c: { x: 600, y: 0, width: 200, height: 60 },
+	};
+	const intoA = !cleared.includes("a")
+		? at([-100, -50], [10, -50], [10, 0])
+		: cleared.includes("c")
+			? at([-100, -100], [40, -100], [40, -30], [100, -30], [100, 0])
+			: at([-100, -100], [-100, -50], [100, -50], [100, 0]);
+	const intoC = cleared.includes("c")
+		? at([500, -50], [700, -50], [700, 0])
+		: at([500, -50], [610, -50], [610, 0]);
+	return sketch(pinnedCards, [
+		{ id: "intoA", from: "s", to: "a", points: intoA },
+		{ id: "intoC", from: "t", to: "c", points: intoC },
+	]);
+}
+
+test("a line sent off a pin takes one bend more for that pin, not again for the next card cleared", async () => {
+	const done = await finished(
+		{ reading: [] as readonly string[], drawing: clearing([]) },
+		(_, request) =>
+			Promise.resolve(
+				request.clearPins === undefined
+					? undefined
+					: { reading: request.clearPins, drawing: clearing(request.clearPins) },
+			),
+		new Set(["a", "c"]),
+	);
+	expect(done.reading).toEqual(["a"]);
 });
 
 /** What a finishing pass asks of its routes. */

@@ -151,7 +151,7 @@ class PinCandidates {
 			const node = this.nodes.get(id)!;
 			const channel = relationshipChannel(edge, id);
 			const far = farCards(edge, id);
-			for (const { pin, corridor } of projectedCardPins(node, edge, this.request.cornerPins)) {
+			for (const { pin, corridor } of projectedCardPins(node, edge, this.request)) {
 				if (!this.available(id, channel, pin)) continue;
 				if (!this.clearCorridor(corridor, new Set([id]), edge.id, far)) continue;
 				this.record(id, channel, pin);

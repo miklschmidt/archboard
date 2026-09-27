@@ -3,11 +3,12 @@
 // wins over a side pin that a route reaches with less length, so a line to a
 // target beside and just below its card drops out of the bottom and runs under
 // the trunk its siblings leave along, and every one of them hops it (Command
-// interface's "lifecycle command", Skill evaluation's "One author run"). Evening
-// that charge lets a line leave on the side it travels. Charging a side pin
-// even half a bend more moved labels, and so placements: Board rasterizer
-// went from 2777 to 3495 wide and Board persistence from 3381 to 3744 and
-// tangled, so the reading direction is kept by the choice below instead.
+// interface's "lifecycle command", Skill evaluation's "One author run").
+// Evening that charge lets a line leave on the side it travels. Charging a
+// side pin even half a bend more moved labels, and so placements: Board
+// rasterizer went from 2777 to 3495 wide and Board persistence from 3381 to
+// 3744 and tangled, so the reading direction is kept by the choice below
+// instead.
 //
 // Evened pins move routes, so they move where labels land, which labels are
 // reserved, and the placement those reservations buy. That can fall either way
@@ -15,23 +16,35 @@
 // reserved rows kept its crossings down, so it stayed 2734 wide instead of
 // 2156 and drew 24 crossings instead of 15. Each reading is therefore settled
 // and finished both ways (compound.ts) and the tidier drawing is kept. It may
-// have no more of any defect a reader sees: crossings, unrelated lines that
-// read as one, the length they share a stroke over, and hooks into a card's
-// side. Evened pins that saved crossings kept a 450 px trunk of two unrelated
-// lines in Command interface, and finishing only the settlement chosen left
-// the other no chance to cure its trunks (What the CLI can be asked). Among
-// drawings with no more of any, the one with fewer defects together, ports
-// beside a card's corner counted too, is kept; then fewer line ends across
-// the reading direction, so a fan into the cards below a card is not traded
-// for side exits with a bend fewer (Skill evaluation's "Grading"); then fewer
-// bends, then less line. A drawing that saves defects by growing its page or
-// its lines by more than each saved defect is worth is not tidier (Command
-// dispatch took a page a third taller with a third more line to save two
-// crossings).
+// have no more of any defect a reader sees: crossings, each stack of two
+// unrelated lines counted as the crossing it may hide and each crossing within
+// a lane of a bend twice; lines that touch, and a fan's branches crowded into
+// one blot; the length unrelated lines share a stroke over; hooks into a
+// card's side; and the length unrelated lines run side by side nearer than a
+// lane (Board persistence's evened settlement ran its teal line 11 px from two
+// others for 377 px). Counted on drawn crossings alone,
+// Board rasterizer kept two stacks 704 px long, a reader unable to tell which
+// line went where, for the one crossing parting them drew. Evened pins that saved crossings
+// kept a 450 px trunk of two unrelated lines in Command interface, and
+// finishing only the settlement chosen left the other no chance to cure its
+// trunks (What the CLI can be asked). Among drawings with no more of any, the
+// one with fewer crossings, hooks and ports beside a card's corner together is
+// kept; then fewer line ends across the reading direction, so a fan into the
+// cards below a card is not traded for side exits with a bend fewer (Skill
+// evaluation's "Grading"); then less line. A challenger that ranks no better
+// is kept only for defects the rank does not count that it cures (the labels a
+// cleared drawing clears, label-clearance.ts). A drawing that saves defects by
+// growing its page or its lines by more than each saved defect is worth is not
+// tidier (Command dispatch took a page a third taller with a third more line
+// to save two crossings), nor one that turns its lines more than two bends
+// for each (Board rasterizer's "One browser, two uses", its hooks cured card
+// by card, saved a crossing and a crowded label by thirteen more bends and
+// wound its lines through the frame).
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { eitherRouting } from "@/transformers/semantic-renderer/lib/layout/checked-routes";
 import { verticesOf } from "@/transformers/semantic-renderer/lib/layout/curves";
+import { corneredCrossings } from "@/transformers/semantic-renderer/lib/layout/cornered-crossings";
 import { cornerPorts } from "@/transformers/semantic-renderer/lib/layout/lone-pins";
 import { sideHooks } from "@/transformers/semantic-renderer/lib/layout/pin-feedback";
 import {
@@ -39,12 +52,15 @@ import {
 	stackedLanes,
 	stackKeys,
 	touchKeys,
-	trackKeys,
+	trackedLanes,
 } from "@/transformers/semantic-renderer/lib/layout/stacked-runs";
 import { crossingsOf } from "@/transformers/semantic-renderer/lib/track/score";
 
 /** The share a drawing may grow its page or its lines by for every defect it saves. */
 const CROSSING_WORTH = 0.05;
+
+/** How many more bends a drawing's lines may take together for every defect it saves. */
+const BENDS_WORTH = 2;
 
 /**
  * Whether a proportional pin position lies on one of its shape's edges.
@@ -85,25 +101,19 @@ function lengthOf(points: readonly Point[]): number {
 }
 
 /**
- * The crossings a reader sees in a drawing, and the places two unrelated
- * lines share one stroke, where a reader cannot tell which goes where and
- * which may hide a crossing (stacked-runs.ts).
+ * The crossings a reader sees in a drawing, each on a corner counted twice
+ * (cornered-crossings.ts), and the places two unrelated lines share one
+ * stroke, where a reader cannot tell which goes where and which may hide a
+ * crossing (stacked-runs.ts).
  * @param drawing The drawing.
  * @returns Their number.
  */
 function crossingsSeen(drawing: ArchitectureDrawing): number {
 	return (
-		crossingsOf(drawing.edges.map(({ curve }) => verticesOf(curve))) + stackKeys(drawing).length
+		crossingsOf(drawing.edges.map(({ curve }) => verticesOf(curve))) +
+		corneredCrossings(drawing) +
+		stackKeys(drawing).length
 	);
-}
-
-/**
- * How many bends a drawing's lines take together.
- * @param drawing The drawing.
- * @returns The bends.
- */
-function bendsIn(drawing: ArchitectureDrawing): number {
-	return drawing.edges.reduce((sum, { curve }) => sum + verticesOf(curve).length - 2, 0);
 }
 
 /**
@@ -116,25 +126,25 @@ function lineLength(drawing: ArchitectureDrawing): number {
 }
 
 /**
- * What a drawing may have no more of than the drawing it would replace: drawn
- * crossings, pairs of lines a reader takes for one (unrelated lines on one
- * stroke or side by side within half a lane, and lines that touch), the
- * lanes' worth of line
- * drawn on one stroke, and line ends hooking into a card's side. Ranked on
- * crossings seen alone, evened pins kept Command interface's 450 px trunk of
- * two unrelated lines for the crossings it saved.
+ * What a drawing may have no more of than the drawing it would replace:
+ * crossings seen ({@link crossingsSeen}); pairs of lines that touch, where a
+ * corner of one reads as a junction on the other, together with pairs of
+ * joins crowded into one blot;
+ * the lanes' worth of line unrelated lines draw on one stroke; line ends
+ * hooking into a card's side; and the lanes' worth of line unrelated lines run
+ * side by side nearer than a lane. Ranked on crossings seen alone, evened pins
+ * kept Command interface's 450 px trunk of two unrelated lines for the
+ * crossings it saved.
  * @param drawing A settled drawing.
- * @returns Its crossings, junctions, stacked lanes and hooks.
+ * @returns Its crossings seen, touching lines and crowded joins, stacked lanes, hooks, and lanes side by side.
  */
 function defectsIn(drawing: ArchitectureDrawing): readonly number[] {
 	return [
-		crossingsOf(drawing.edges.map(({ curve }) => verticesOf(curve))),
-		stackKeys(drawing).length +
-			touchKeys(drawing).length +
-			trackKeys(drawing).length +
-			crowdedJoinCount(drawing),
+		crossingsSeen(drawing),
+		touchKeys(drawing).length + crowdedJoinCount(drawing),
 		stackedLanes(drawing),
 		sideHooks(drawing).length,
+		trackedLanes(drawing),
 	];
 }
 
@@ -142,12 +152,12 @@ function defectsIn(drawing: ArchitectureDrawing): readonly number[] {
  * What a drawing is ranked on, most important first.
  * @param drawing A settled drawing.
  * @returns Its crossings and hooks together with the ports beside a card's corner, then its line
- * ends across the reading direction, bends and line length.
+ * ends across the reading direction and line length.
  */
 function untidiness(drawing: ArchitectureDrawing): readonly number[] {
 	const [crossings, , , hooks] = defectsIn(drawing);
 	const seen = crossings! + hooks! + cornerPorts(drawing).length;
-	return [seen, sideEnds(drawing), bendsIn(drawing), lineLength(drawing)];
+	return [seen, sideEnds(drawing), lineLength(drawing)];
 }
 
 /**
@@ -171,6 +181,15 @@ function sideEnds(drawing: ArchitectureDrawing): number {
 }
 
 /**
+ * How many times a drawing's lines turn together.
+ * @param drawing The drawing.
+ * @returns The bends.
+ */
+function bendCount(drawing: ArchitectureDrawing): number {
+	return drawing.edges.reduce((sum, { curve }) => sum + verticesOf(curve).length - 2, 0);
+}
+
+/**
  * How much bigger one drawing is than another, page and line alike.
  * @param one A drawing.
  * @param other Another.
@@ -187,9 +206,9 @@ function growth(one: ArchitectureDrawing, other: ArchitectureDrawing): number {
 /**
  * Whether one drawing is tidier than another: it has no more of any defect
  * ({@link defectsIn}), ranks strictly better or cures others that are not
- * ranked, and grows the page and
- * its lines by no more than every defect it saves buys
- * ({@link CROSSING_WORTH}). Two crossings saved do not pay for a page a
+ * ranked, and grows the page and its lines, and the bends its lines take, by
+ * no more than every defect it saves buys ({@link CROSSING_WORTH},
+ * {@link BENDS_WORTH}). Two crossings saved do not pay for a page a
  * third taller with a third more line (Command dispatch).
  * @param one The challenger.
  * @param other The drawing kept so far, which wins a tie.
@@ -202,6 +221,7 @@ function tidierThan(one: ArchitectureDrawing, other: ArchitectureDrawing, cured 
 	const [ranked, against] = [untidiness(one), untidiness(other)];
 	if (!ranksBetter(ranked, against) && cured <= 0) return false;
 	const saved = Math.max(0, against[0]! - ranked[0]!) + cured;
+	if (bendCount(one) - bendCount(other) > saved * BENDS_WORTH) return false;
 	return growth(one, other) <= saved * CROSSING_WORTH;
 }
 

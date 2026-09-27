@@ -4,6 +4,7 @@ import { boxOf, type Face } from "@/transformers/semantic-renderer/lib/layout/av
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import { verticesOf } from "@/transformers/semantic-renderer/lib/layout/curves";
+import type { Requested } from "@/transformers/semantic-renderer/lib/layout/route-requests";
 import { ROUTE_NUDGE_DISTANCE } from "@/transformers/semantic-renderer/config";
 import { PINNED_STANDING } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import { PIN_REACH } from "@/transformers/semantic-renderer/lib/svg/standing";
@@ -144,14 +145,15 @@ function projection(
  * path, and, when asked, the near corner of a face a route hooks past ({@link cornerPin}).
  * @param node Ordinary endpoint card.
  * @param edge Complete native relationship.
- * @param corners Whether to offer corner pins.
+ * @param asked Where the routes ask for corner pins: on every card, or on some.
  * @returns Candidate attachment corridors for the existing collision policy to validate.
  */
 export function projectedCardPins(
 	node: ElkNode,
 	edge: ElkExtendedEdge,
-	corners = false,
+	asked: Pick<Requested, "cornerPins" | "cornerCards">,
 ): PinProjection[] {
+	const corners = asked.cornerPins || asked.cornerCards.includes(node.id);
 	const section = edge.sections?.[0];
 	if (!section) return [];
 	const points = [section.startPoint, ...(section.bendPoints ?? []), section.endPoint];
@@ -222,6 +224,20 @@ function cornerPin(node: ElkNode, route: readonly Point[]): PinProjection | unde
 }
 
 /**
+ * How far along a face, as a share of it, a pin keeps from the top-left
+ * corner where a card wears its standing pin: {@link PINNED_CORNER_INSET} on
+ * the two faces that meet there, nothing elsewhere.
+ * @param node The card.
+ * @param face One of its faces.
+ * @returns The share of the face a pin keeps clear.
+ */
+function standingPinShare(node: ElkNode, face: Face): number {
+	if (node.layoutOptions?.[PINNED_STANDING] !== "true") return 0;
+	if (face !== "NORTH" && face !== "WEST") return 0;
+	return PINNED_CORNER_INSET / boxOf(node)[face === "NORTH" ? "width" : "height"];
+}
+
+/**
  * Whether a pin keeps {@link PINNED_CORNER_INSET} from the top-left corner
  * where a card wears its standing pin, on either face that meets there. A
  * straight channel through Renderer layout's "place grid" met Grid placement's
@@ -231,10 +247,65 @@ function cornerPin(node: ElkNode, route: readonly Point[]): PinProjection | unde
  * @returns True unless the card wears a pin and this one stands beside it.
  */
 export function clearOfStandingPin(node: ElkNode, pin: AlignedPin): boolean {
-	if (node.layoutOptions?.[PINNED_STANDING] !== "true") return true;
-	if (pin.face !== "NORTH" && pin.face !== "WEST") return true;
-	const box = boxOf(node);
-	return pin.position * (pin.face === "NORTH" ? box.width : box.height) >= PINNED_CORNER_INSET;
+	// A pin seated at the share itself is clear of the pin, however it rounds.
+	return pin.position >= standingPinShare(node, pin.face) - 1e-9;
+}
+
+/**
+ * Where a channel's seed stands on a face: its card-wide slot, or, on a card
+ * the routes ask to keep clear of its standing pin, just clear of the pin
+ * where the slot stands beside it. The first of two channels' slots on Board
+ * persistence's Write under lease stood 18 px down its left face, and
+ * "submit transition" ended 6 px from the pin's rim.
+ * @param node The card.
+ * @param face The face.
+ * @param slot The channel's slot, as a share of the face.
+ * @param cleared The cards the routes ask to keep clear of their standing pins.
+ * @returns The seed's position on the face.
+ */
+export function seedSlot(
+	node: ElkNode,
+	face: Face,
+	slot: number,
+	cleared: readonly string[],
+): number {
+	return cleared.includes(node.id) ? Math.max(slot, standingPinShare(node, face)) : slot;
+}
+
+/**
+ * The line ends of a drawing beside the standing pin a card wears: on its top
+ * or left face, within {@link PINNED_CORNER_INSET} of the corner the pin sits on.
+ * @param drawing The drawing.
+ * @param pinned The cards that wear a standing pin.
+ * @returns One line:card:FACE key for every such end.
+ */
+export function pinnedEnds(drawing: ArchitectureDrawing, pinned: ReadonlySet<string>): string[] {
+	const cards = new Map(drawing.cards.map(({ measured, box }) => [measured.node.id, box]));
+	return drawing.edges.flatMap(({ edge, curve }) => {
+		const points = verticesOf(curve);
+		const ends = [
+			[edge.from, points[0]!],
+			[edge.to, points.at(-1)!],
+		] as const;
+		return ends.flatMap(([card, end]) => {
+			const box = cards.get(card);
+			const face = box === undefined || !pinned.has(card) ? undefined : besidePin(box, end);
+			return face === undefined ? [] : [`${edge.id}:${card}:${face}`];
+		});
+	});
+}
+
+/**
+ * The face a line end meets beside a card's standing pin.
+ * @param box The card.
+ * @param end The line's end on it.
+ * @returns Its top or left face, or nothing when the end keeps clear of the pin.
+ */
+function besidePin(box: Box, end: Point): Face | undefined {
+	const beside = PINNED_CORNER_INSET - 0.01;
+	if (Math.abs(end.y - box.y) < 0.5 && end.x - box.x < beside) return "NORTH";
+	if (Math.abs(end.x - box.x) < 0.5 && end.y - box.y < beside) return "WEST";
+	return undefined;
 }
 
 /**

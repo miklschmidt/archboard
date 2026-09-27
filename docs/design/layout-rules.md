@@ -1900,11 +1900,12 @@ base `d8fd1bb7`, and some of its rules owned by no test.
 Rules that no test owned and no drawing needed alone were removed: finishing's
 cure by equal defects and fewer bends, its keep-inside-a-frame check and the
 stack pass's excused lines, the chooser's near-tie threshold and second count
-of junctions, the label-clearance guard the cured count already covers, the
-duplicate lone-pin centring in `refinedPins`, and `EndpointOptions.hold`.
-Together they change one drawing, the work vault's `Shared SQL boundary`,
-which draws 3 crossings instead of 4 and 39 bends instead of 47. Every other
-rule a drawing depends on has an owner that fails without it.
+of junctions, the label-clearance guard that refused a cleared drawing
+crowding more labels (the cured count weighs those labels instead, section
+40), the duplicate lone-pin centring in `refinedPins`, and
+`EndpointOptions.hold`. Together they change one drawing, the work vault's
+`Shared SQL boundary`, which draws 3 crossings instead of 4 and 39 bends
+instead of 47; section 40 restores `hold`, since that drawing read worse.
 
 Against the merge base `d8fd1bb7` (crossings, stacks of unrelated lines and
 their length, the review touch measure, hooks into a card's side, ports within
@@ -1920,3 +1921,215 @@ Six drawings draw a crossing or two more than the base, each where a stack of
 unrelated lines that hid a crossing is parted (Agent workbench, Archboard
 server, Durable write boundary, Recording a walkthrough, Skill evaluation,
 Platform Phone API).
+
+## 40. Standing pins cleared card by card, rules owned, streaks off labels (2026-09-27)
+
+Round 4's reviews, judged against the merge base `ed9c7d8d`, left two
+drawings reading worse, rules no test owned, and a traffic streak resting on
+its own label.
+
+- **A centred port keeps its face** (`endpoint-options.ts`, `hold`). Without
+  it the work vault's `Shared SQL boundary` traded the centred west port into
+  Context factory for the top face's seed, joined another line's trunk, and a
+  dotted line crossed 5 px under the join and ran 13 px beside the pink line
+  for 165 px. With it the drawing is the base drawing.
+- **A finishing pass sends line ends off a card's standing pin**
+  (`finishing.ts` pin pass, `pin-feedback.ts` `pinnedEnds` and `seedSlot`). A
+  channel's seed is its card-wide slot, so the first of two channels on a
+  72 px left face stands 18 px down it, 6 px from the pin's rim. Moving every
+  seed from the first solve moved labels and so placements (Renderer layout
+  whole went from 0 crossings to 1 and 4 hooks, Board persistence whole from
+  18 to 22), so the pass asks, one card at a time on the same placement, for
+  the seeds of a card with an end beside its pin to stand clear of it; the
+  lines it sends off may take a bend more. Cleared together, Board
+  persistence's three cards drew two more crossings for one of them. A corner
+  pin seated exactly at the pin's clearance is no longer refused by rounding.
+- **A resting streak keeps a lane from every label where its line has room**
+  (`comet-rest.ts`), its head and the body of its tail: Agent workbench's
+  `turn/start when idle` rested 2 px above its own label, and Board
+  rasterizer's `CDP over a WebSocket` under its label with its tail running up
+  out of the label's border.
+- **Rules without owners.** Every rule round 4's review found a drawing
+  depending on now has an owner that fails without it, and the lone-port
+  rules it listed as unneeded (the slot check, the refusal of an end run that
+  does not turn, the strip clear of other lines) are kept and owned: with
+  `hold` back, removing them changes six drawings. Removed as owned by no test
+  and needed by no drawing: the settlement veto's stack and double-track pair
+  counts, bends in the settlement rank, the wall reach's return for a card
+  deep inside its wall, and a straight channel's fallback at the span's ends.
+  A fault in settling a folded reading is thrown rather than kept as the
+  unfolded one.
+
+Board persistence whole is still laid out mirrored against the base. What
+flipped it: the evened settlement of the ordinary routing, `[18, 0, 0, 6]`
+against the plain one's `[18, 3, 0, 13]` (crossings, touches and crowded
+joins, stacked lanes, hooks), is kept, and its label reservations place the
+board anew. Its hook pass is refused: curing its seven hooks at once leaves
+two labels no run to sit on. Curing them card by card cures five, the teal
+`a migrated document` hook among them, but tried in every drawing it made
+Board rasterizer's `One browser, two uses` wind through its frame and ran
+two of Agent workbench's lines side by side, so it is not taken. Offering
+corner pins only on the hooked cards, rather than on every card, flipped
+Command dispatch back to its base stack. The teal line's 12 px double
+track beside `migrate only if the lease is free` is the router's nudging
+distance; the base draws two such tracks in the same drawing.
+
+Against the merge base `ed9c7d8d` (crossings, stacks of unrelated lines and
+their length, the review touch measure, hooks into a card's side, ports within
+16 px of a corner, line ends within 14 px of a standing pin's rim, unrelated
+lines closer than a lane for 100 px or more, crossings within a lane of a
+junction mark):
+
+| vault   | crossings | stacks (length)     | touches | hooks    | corner ports | by a pin | double tracks | crossings at a join |
+| ------- | --------- | ------------------- | ------- | -------- | ------------ | -------- | ------------- | ------------------- |
+| dogfood | 212 → 192 | 22 (2318) → 4 (808) | 12 → 4  | 144 → 63 | 54 → 30      | 5 → 1    | 9 → 6         | 7 → 7               |
+| work    | 35 → 33   | 2 (76) → 0          | 3 → 1   | 29 → 11  | 20 → 13      | 0 → 0    | 1 → 1         | 0 → 0               |
+
+## 41. Stacks counted as crossings, hooks cured card by card, streaks off hops (2026-09-27)
+
+Round 5's reviews, judged against `ed9c7d8d`, left Board persistence whole
+reading worse at four spots, Board rasterizer whole keeping 704 px of stacked
+unrelated lines, resting streaks on hops and past junction dots, and rules
+no test owned.
+
+- **The settlement veto counts crossings seen** (`even-pins.ts`
+  `defectsIn`): a stack of two unrelated lines counts as the crossing it may
+  hide, as finishing's `noWorse` already counted it. Board rasterizer whole
+  now keeps the evened settlement: both stacks and five hooks gone for two
+  more crossings and a page 188 px wider. Command interface whole parts two
+  stacks and cures three side hooks.
+- **Hooks cured card by card** (`finishing.ts` `askByCard`,
+  `route-requests.ts` `cornerCards`): where curing every hook at once is
+  not kept, the hook pass tries one card at a time, offering the face a hook
+  passed on that card alone and asking again for every card kept before it.
+  Board persistence whole goes from 6 hooks to 1 (`adopt a draft` into
+  Adopt's top, the teal `a migrated document` into Atomic file
+  replacement's top), Skill evaluation whole from 9 to 0, Command
+  interface whole from 6 to 1.
+- **A defect saved buys two bends** (`even-pins.ts` `BENDS_WORTH`). Cured
+  card by card, Board rasterizer's `One browser, two uses` took a
+  settlement that saved a crossing and a crowded label for thirteen more
+  bends and wound through its frame; a drawing that turns its lines more
+  than two bends for each defect it saves is not tidier.
+- **The pin pass excuses one bend a pin** (`finishing.ts` `noWorse`): a
+  line it sends off a pin may take one bend more for each pin it leaves, as
+  the pass clears one card at a time, and no more.
+- **A resting streak keeps clear of where other lines meet its own**
+  (`comet-rest.ts` `meetingPlaces`): the hops it carries or passes under and
+  the stretches it shares with another line, as it keeps clear of labels;
+  where no place keeps a lane from all of them it rests where it keeps the
+  most room. Track and Blocks share the painter: every one of their 333
+  moved streaks was looked at against `ed9c7d8d`, and none reads worse.
+- **Owners.** The pin pass's wiring through the compound layout (a rendered
+  proposal, `pinned-side.json`), its accumulated clearance, its top-face
+  ends, the label pre-filter a lane past the line, the exemption of two
+  lines sharing a card from stacks, and the frame inset in label centring
+  each have a test that fails without them. The side-exit span and the wall
+  run's lane are stated as part of what those defects are.
+
+Board persistence whole still keeps two of the four spots: the teal line
+runs 11 px under `migrate only if the lease is free` for about 330 px, and
+`the links out of every board` leaves Vault diagnostics' side with a crossing
+20 px from the face. The face pass that would drop it straight is refused:
+the routing it asks for hooks `submit transition` and crowds a label.
+
+Against `ed9c7d8d` (the same measures as section 40):
+
+| vault   | crossings | stacks (length) | touches | hooks    | corner ports | by a pin | double tracks | crossings at a join |
+| ------- | --------- | --------------- | ------- | -------- | ------------ | -------- | ------------- | ------------------- |
+| dogfood | 212 → 192 | 22 (2318) → 0   | 12 → 3  | 144 → 30 | 54 → 33      | 5 → 0    | 9 → 6         | 7 → 6               |
+| work    | 35 → 33   | 2 (76) → 0      | 3 → 0   | 29 → 8   | 20 → 13      | 0 → 0    | 1 → 1         | 0 → 0               |
+
+## 42. Crossings on a corner, lines side by side, side exits card by card (2026-09-27)
+
+Round 6's reviews, judged against `ed9c7d8d`, left Agent workbench whole
+knotted above Thread link, Board persistence whole reading worse at three
+spots, and two rules no test owned.
+
+- **A crossing within a lane of a bend counts twice** (`cornered-crossings.ts`,
+  in `even-pins.ts` `crossingsSeen` and as a defect `finishing.ts` `cures`
+  counts). Curing Agent workbench's hook into Thread link's side crossed the
+  purple line 9.6 px before its bend and a grey line 12.6 px before its own,
+  with two grey lines 10 px apart; that cure is now refused, and the drawing
+  there is the base's. A crossing a lane from a bend is an ordinary one: the
+  base draws two at exactly 16 px in the same place.
+- **A settlement may not run more lanes of unrelated lines side by side
+  nearer than a lane** (`stacked-runs.ts` `trackedLanes`, in `defectsIn`).
+  Board persistence's evened settlement ran its teal `a migrated document`
+  11 px from two unrelated lines for 377 px; it now keeps the plain
+  settlement, where the teal, `the links out of every board` and `check the
+vault` all read cleanly. The cost is a page as wide as the base's (3781 px
+  against the evened 2901), four hooks where the evened settlement had one
+  (the base eleven), and Read and validate's two lines leaving its left side
+  18 px on one stroke before they part. No other drawing changes. Counted in
+  the finishing passes as well, lines side by side refused Archboard
+  server's parting of three lines stacked out of one card, and Board
+  persistence's hook cures, so they are not.
+- **Side exits cured card by card** (`finishing.ts` face pass `askByCard`,
+  `route-requests.ts` `centredLines`, `label-centring.ts`): where moving
+  every reserved label onto its cards' channel is refused, one card's lines'
+  labels move alone. Board rasterizer's `One browser, two uses` drops `spawn,
+read the port, stop the group` straight into Chromium executable's top.
+  Board persistence's `the links out of every board` is not cured this way:
+  its label's row moves other lines into a hook and a crowded label.
+- **A resting streak ranks by the room it keeps** (`comet-rest.ts`): short of
+  a lane, how deep it runs onto a hop or a shared stretch counts, so it
+  rests off a hop's middle; a label drawn over it hides it, so a glow that
+  reaches a label keeps no room from it and no less. Counted as deep,
+  Command interface's `requestJson` rested against a junction dot to keep
+  its tail from under its own label. Track and Blocks share the painter:
+  two streaks move, off a junction dot to below their label.
+
+Against `ed9c7d8d` (the measures of section 40, and crossings within a lane
+of a bend):
+
+| vault   | crossings | stacks (length)    | touches | hooks    | corner ports | by a pin | double tracks | crossings at a join | on a corner |
+| ------- | --------- | ------------------ | ------- | -------- | ------------ | -------- | ------------- | ------------------- | ----------- |
+| dogfood | 212 → 191 | 22 (2318) → 2 (30) | 12 → 3  | 144 → 33 | 54 → 32      | 5 → 0    | 9 → 4         | 7 → 6               | 43 → 22     |
+| work    | 35 → 33   | 2 (76) → 0         | 3 → 0   | 29 → 8   | 20 → 12      | 0 → 0    | 1 → 1         | 0 → 0               | 2 → 1       |
+
+## 43. Lines that meet from apart, one definition of a crossing (2026-09-27)
+
+Round 7's reviews left Board persistence whole with a knot at Former names
+and two lines on one stroke out of Read and validate, and two halves of the
+corner rule no test owned.
+
+- **Two lines of one card that meet on one stroke from apart are a stack**
+  (`stacked-runs.ts` `related`, `ONE_STROKE`). Lines are related, so a
+  stroke they share can be their trunk, only where they meet one card at one
+  place, within half a lane; runs nearer than 2.5 px, under two ordinary
+  lines' widths, are one stroke. Board persistence's `take the new name's
+lease` rode 2.2 px beside the trunk into Former names from a different pin
+  of Place the file, and Read and validate's two lines left its side 30 px
+  apart and shared 34 px of stroke; both were uncounted and are now a stack
+  every chooser sees. No drawing changes: every cure the passes find brings
+  another defect. Refusing the trunk its side face draws the knot away, but
+  runs `the board the name answers to` 6 px beside `reconcile descendants`
+  for 84 px; refusing the grey line its side parts Read and validate's two
+  lines, but leaves the grey 12 px from the card's corner. The side-exit pass,
+  moving every label onto its channel, cures both but crosses Place the
+  file's teal 8 px before its bend and moves labels across the drawing;
+  moving Former names' labels alone, it parts Read and validate's lines but
+  keeps the knot and sends `reconcile descendants` round into Propagate
+  descendant edits' side.
+- **One definition of a crossing** (`track/score.ts` `crossingPlaces`):
+  every crossing with the two runs it joins; `crossingsOf` counts their
+  places and `cornered-crossings.ts` keeps those within a lane of a bend,
+  whichever line turns, before or after the crossing, each half owned.
+- **A resting streak with as much room keeps more from where other lines
+  meet its own** (`comet-rest.ts` `better`): once its tail reaches a label
+  it keeps no room, and it rested with its glow 1 px from a hop where 10 px
+  were to be had. Command interface's `requestJson` streak comes 5.5 px up
+  off the bend into the junction dot, to just below its label; `board
+operation` and three work streaks move 0.5 px.
+- **The pin pass excuses only the card it tries** (`finishing.ts` `byCard`):
+  a line cleared on one card could take a bend more on every later card
+  kept. No drawing changes.
+
+Platform Phone API whole keeps round 7's two lines into Database provider's
+side: round 6's top entry dropped `create selected context` 4 px beside one
+of them and crossed it 4 px from its bend, a crossing drawn with no hop.
+
+The measures against `ed9c7d8d` are section 42's; no count moves. Crossings
+drawn with no hop, a line cut beneath another: dogfood 56 → 40 (solid lines
+44 → 29), work 12 → 10 (solid 9 → 7).

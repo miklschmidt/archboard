@@ -1,6 +1,9 @@
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
-import { relationshipChannel } from "@/transformers/semantic-renderer/lib/layout/avoid-pins";
+import {
+	relationshipChannel,
+	type AlignedPins,
+} from "@/transformers/semantic-renderer/lib/layout/avoid-pins";
 import {
 	FACES,
 	boxOf,
@@ -80,6 +83,26 @@ export class EndpointOptions {
 			const side = FACES.find((one) => one === face);
 			if (edge !== undefined && card !== undefined && side !== undefined)
 				this.removeFace(card, relationshipChannel(edge, card), side);
+		}
+	}
+
+	/**
+	 * Keep each held channel to the faces its pins are on, so the router cannot
+	 * trade a centred pin for a seed another face offers nearer its corner.
+	 * @param pins Pins by card and channel.
+	 * @param held The card:channel keys to hold.
+	 */
+	hold(pins: AlignedPins, held: ReadonlySet<string>): void {
+		for (const key of held) {
+			const [card, channel] = [key.slice(0, key.indexOf(":")), key.slice(key.indexOf(":") + 1)];
+			const faces = new Set(
+				pins
+					.get(card)
+					?.get(channel)
+					?.map(({ face }) => face),
+			);
+			for (const face of FACES.filter((one) => faces.size > 0 && !faces.has(one)))
+				this.removeFace(card, channel, face);
 		}
 	}
 

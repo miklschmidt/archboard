@@ -250,13 +250,31 @@ function finishedWith(reading: Reading, route: RouteRequest): Promise<Architectu
 /**
  * A settled reading finished clear of frame walls, of side exits between
  * stacked cards, of hooks into a card's side, of unrelated lines on one
- * stroke and of lone ports crowding a corner (finishing.ts).
+ * stroke, of line ends beside a card's standing pin and of lone ports
+ * crowding a corner (finishing.ts).
  * @param kept The settled reading.
  * @returns The finished drawing.
  */
 function finishedReading(kept: SettledReading): Promise<{ drawing: ArchitectureDrawing }> {
 	const reroute = rerouting(kept.reserved);
-	return finished(kept, (reading, request) => reroute(asking(reading, request)));
+	return finished(
+		kept,
+		(reading, request) => reroute(asking(reading, request)),
+		pinnedCards(kept.reading.standings),
+	);
+}
+
+/**
+ * The subjects of a comparison that wear a standing pin (compound-graph.ts).
+ * @param standings How each subject stands, if the drawing is a comparison.
+ * @returns Every subject marked anything but unchanged.
+ */
+function pinnedCards(standings: Problem["standings"]): ReadonlySet<string> {
+	return new Set(
+		Object.entries(standings ?? {}).flatMap(([id, standing]) =>
+			standing === "unchanged" ? [] : [id],
+		),
+	);
 }
 
 /**

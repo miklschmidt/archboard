@@ -27,8 +27,13 @@ import {
 	ROUTE_LANE,
 } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 
-/** How close two parallel runs are drawn as one stroke. */
-const ONE_STROKE = 2;
+/**
+ * How close two parallel runs are drawn as one stroke: nearer than two
+ * ordinary lines' widths (1.4 px), so less than a line's width of air parts
+ * their ink. Board persistence's "take the new name's lease" ran 2.2 px
+ * beside the trunk into Former names.
+ */
+const ONE_STROKE = 2.5;
 
 /**
  * How near a corner of one line to another's stroke, or two parallel runs,
@@ -94,13 +99,35 @@ function runsOf(line: Line): Run[] {
 }
 
 /**
- * Whether two lines share an end, so a shared lane can be their trunk.
+ * Whether two lines share an end, so a shared lane can be their trunk: they
+ * meet one card at one place, within half a lane. Two lines of one card that
+ * leave or enter it apart and meet on one stroke further on read as one line
+ * joining another, as unrelated lines do: Board persistence's "take the new
+ * name's lease" left Place the file apart from "does another board answer to
+ * it" and rode the trunk into Former names, and Read and validate's two lines
+ * left its side apart and shared one stroke for 34 px.
  * @param one A line.
  * @param other Another.
  * @returns True when they have an end in common.
  */
 function related(one: Line, other: Line): boolean {
-	return other.ends.some((id) => one.ends.includes(id));
+	return tipsOf(one).some(([card, tip]) =>
+		tipsOf(other).some(
+			([theirs, point]) => theirs === card && Math.hypot(tip.x - point.x, tip.y - point.y) <= NEAR,
+		),
+	);
+}
+
+/**
+ * A line's two ends: each end's card and the point where the line meets it.
+ * @param line The line.
+ * @returns Its source end, then its target end.
+ */
+function tipsOf(line: Line): (readonly [string, Point])[] {
+	return [
+		[line.ends[0], line.points[0]!],
+		[line.ends[1], line.points.at(-1)!],
+	];
 }
 
 /**
@@ -147,6 +174,9 @@ const STROKE: Band = [-1, ONE_STROKE];
 
 /** Two runs side by side, a double track. */
 const TRACK: Band = [ONE_STROKE, NEAR];
+
+/** Two runs side by side nearer than a lane, the pitch a reader needs to follow each line. */
+const BESIDE: Band = [ONE_STROKE, ROUTE_LANE - 0.5];
 
 /**
  * Every pair of runs of unrelated lines that lie a band apart for a lane or
@@ -201,8 +231,27 @@ export function stackKeys(drawing: ArchitectureDrawing): string[] {
  * @returns The length its stacks share, in lanes.
  */
 export function stackedLanes(drawing: ArchitectureDrawing): number {
-	const length = stacksOf(linesOf(drawing)).reduce((sum, { from, to }) => sum + to - from, 0);
-	return Math.round(length / ROUTE_LANE);
+	return lanesOf(stacksOf(linesOf(drawing)));
+}
+
+/**
+ * How many lanes' worth of line a drawing runs beside an unrelated line
+ * nearer than a lane, all such runs together, so a longer double track is
+ * more of a defect and a shorter one less.
+ * @param drawing The drawing.
+ * @returns The length its double tracks share, in lanes.
+ */
+export function trackedLanes(drawing: ArchitectureDrawing): number {
+	return lanesOf(stacksOf(linesOf(drawing), BESIDE));
+}
+
+/**
+ * How many lanes long some stacks are together.
+ * @param stacks The stacks.
+ * @returns Their shared length, in lanes.
+ */
+function lanesOf(stacks: readonly Stack[]): number {
+	return Math.round(stacks.reduce((sum, { from, to }) => sum + to - from, 0) / ROUTE_LANE);
 }
 
 /**

@@ -3,9 +3,9 @@
 // below it: the top face's only pin was its channel's seed, far along the face,
 // so the router took the side (Renderer layout's "measure every word", Codex
 // session's "decode parameters and answer"). Offered the top face just inside
-// the corner it passed, the line enters there with one bend fewer, clear of
-// the change badge a proposal pins in that corner (Board persistence's
-// "adopt a draft"). A
+// the corner it passed, the line enters there with one bend fewer, far
+// enough in to read as meeting the face rather than the corner; a card that
+// wears a standing pin keeps it further off (standing-pin.test.ts). A
 // finished drawing is routed so only where it has such a hook (Renderer
 // layout's "Responsibilities"). A settlement that saves crossings may not buy
 // them with hooks either: evened pins hooked both lines into Former names'
@@ -42,10 +42,10 @@ const policy = SemanticPolicySchema.parse({
 });
 
 /**
- * How far from a card's top corner an arrow keeps clear of the change badge
- * pinned there: the badge's 12.2 px reach and half the widest arrowhead.
+ * How far inside a card's corner a line meets a face and still reads as
+ * meeting the face: its nudging distance and half the widest arrowhead.
  */
-const BADGE_CLEARANCE = 20;
+const FACE_INSET = 20;
 
 /** The longest side stub a hook has: a card's own corridor and a lane. */
 const HOOK_STUB = 36;
@@ -75,33 +75,37 @@ function hooksInto(box: Box, route: readonly DrawnPoint[]): boolean {
 test("a line passing its target's top corner enters the top instead of hooking into the side", async () => {
 	await AvoidLib.load();
 	const target = { id: "target", x: 20, y: 232, width: 340, height: 88 };
-	const graph: ElkNode = {
-		id: "root",
-		width: 1200,
-		height: 400,
-		layoutOptions: requestOptions({ cornerPins: true }),
-		children: [
-			{ id: "source", x: 700, y: 20, width: 340, height: 88 },
-			target,
-			{ id: "neighbour", x: 402, y: 232, width: 340, height: 88 },
-		],
-		edges: [
-			{
-				id: "call",
-				sources: ["source"],
-				targets: ["target"],
-				layoutOptions: { "archboard.relationship.kind": "call" },
-			},
-		],
-	};
-	const section = routeGraph(AvoidLib.getInstance() as AvoidEngine, graph).edges![0]!.sections![0]!;
-	expect(section.endPoint.y).toBeCloseTo(target.y, 1);
-	expect(section.bendPoints).toHaveLength(1);
-	const fromCorner = Math.min(
-		section.endPoint.x - target.x,
-		target.x + target.width - section.endPoint.x,
-	);
-	expect(fromCorner).toBeGreaterThanOrEqual(BADGE_CLEARANCE);
+	// Offered on every card, or on the hooked card alone.
+	for (const request of [{ cornerPins: true }, { cornerCards: ["target"] }]) {
+		const graph: ElkNode = {
+			id: "root",
+			width: 1200,
+			height: 400,
+			layoutOptions: requestOptions(request),
+			children: [
+				{ id: "source", x: 700, y: 20, width: 340, height: 88 },
+				target,
+				{ id: "neighbour", x: 402, y: 232, width: 340, height: 88 },
+			],
+			edges: [
+				{
+					id: "call",
+					sources: ["source"],
+					targets: ["target"],
+					layoutOptions: { "archboard.relationship.kind": "call" },
+				},
+			],
+		};
+		const section = routeGraph(AvoidLib.getInstance() as AvoidEngine, graph).edges![0]!
+			.sections![0]!;
+		expect(section.endPoint.y).toBeCloseTo(target.y, 1);
+		expect(section.bendPoints).toHaveLength(1);
+		const fromCorner = Math.min(
+			section.endPoint.x - target.x,
+			target.x + target.width - section.endPoint.x,
+		);
+		expect(fromCorner).toBeGreaterThanOrEqual(FACE_INSET);
+	}
 });
 
 /**

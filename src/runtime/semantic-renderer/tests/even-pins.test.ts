@@ -12,11 +12,27 @@
 // (Auditlog's "ApplyOffsets"), for the crossings they saved; and a crossing
 // saved does not pay for two ports beside a card's corner (IIS Ingress
 // Migration's "US steering"), nor for a fan whose branches crowd into one
-// blot (Skill evaluation's six lines out of Author run, branching 9 px apart).
+// blot (Skill evaluation's six lines out of Author run, branching 9 px apart);
+// hooks cured do not pay for a crossing brought either. A stack of unrelated
+// lines counts as the crossing it may hide, so a settlement may draw a
+// crossing to part one (Board rasterizer); so do two lines of one card that
+// leave it apart and meet on one stroke (Board persistence's Former names).
+// Nor does a defect saved pay for
+// more than two bends ("One browser, two uses" wound through its frame).
+// A crossing within a lane of a bend counts twice, so no settlement cures a
+// hook by knotting two lines at a corner (Agent workbench's Thread link),
+// nor by running two unrelated lines nearer than a lane (Board persistence).
+// Evening the charge
+// counts the inset a side pin stands inside its card's routing box, so every
+// pin of a card costs the same in all.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { tidierSettlement, type ArchitectureDrawing } from "@/runtime/semantic-renderer/layout";
+import {
+	centreHandicap,
+	tidierSettlement,
+	type ArchitectureDrawing,
+} from "@/runtime/semantic-renderer/layout";
 import { roundBridges, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { at, sketch, type Line } from "@/runtime/semantic-renderer/tests/sketched-drawings";
@@ -80,6 +96,55 @@ test("two unrelated lines on one stroke count against a settlement as a crossing
 	expect(await kept(plain, even)).toBe("plain");
 });
 
+test("two lines of one card that leave it apart and meet on one stroke count as a stack", async () => {
+	// Board persistence's "take the new name's lease" left Place the file
+	// apart from "does another board answer to it" and rode 2.2 px beside it
+	// into the trunk to Former names: parting them is worth a crossing.
+	const one = {
+		id: "one",
+		from: "a",
+		to: "b",
+		points: at([0, 50], [100, 50], [100, 150], [0, 150]),
+	};
+	const plain = sketch({}, [
+		one,
+		{
+			id: "other",
+			from: "a",
+			to: "d",
+			points: at([300, 60], [102.2, 60], [102.2, 140], [300, 140]),
+		},
+	]);
+	const even = sketch({}, [
+		one,
+		{ id: "other", from: "a", to: "d", points: at([300, 100], [50, 100]) },
+	]);
+	expect(await kept(plain, even)).toBe("even");
+});
+
+test("a stack of unrelated lines counts as the crossing it may hide, so parting it may draw one", async () => {
+	const cards = {
+		source: { x: 0, y: 300, width: 100, height: 50 },
+		target: { x: 200, y: 500, width: 200, height: 60 },
+	};
+	const shared = at([0, 50], [100, 50], [100, 150], [200, 150]);
+	const stacked = at([300, 60], [100, 60], [100, 140], [0, 140]);
+	const parted = at([300, 60], [150, 60], [150, 100], [0, 100]);
+	const hooked = at([50, 350], [50, 400], [180, 400], [180, 530], [200, 530]);
+	const entering = at([50, 350], [50, 400], [220, 400], [220, 500]);
+	const plain = sketch(cards, [
+		{ id: "one", from: "a", to: "b", points: shared },
+		{ id: "other", from: "c", to: "d", points: stacked },
+		{ id: "line", from: "source", to: "target", points: hooked },
+	]);
+	const even = sketch(cards, [
+		{ id: "one", from: "a", to: "b", points: shared },
+		{ id: "other", from: "c", to: "d", points: parted },
+		{ id: "line", from: "source", to: "target", points: entering },
+	]);
+	expect(await kept(plain, even)).toBe("even");
+});
+
 /**
  * One line across and two down, which cross it when they start above it.
  * @param top Where the two lines down start.
@@ -99,6 +164,31 @@ test("crossings saved buy only so much more page", async () => {
 	const alike = sketch({}, crossing(60), { width: 1000, height: 1050 });
 	expect(await kept(plain, taller)).toBe("plain");
 	expect(await kept(plain, alike)).toBe("even");
+});
+
+/**
+ * A long line along the page's foot, stepping down a few pixels at a time.
+ * @param steps How many steps it takes, each two bends.
+ * @returns The line.
+ */
+function stepping(steps: number): Line {
+	const corners = Array.from({ length: steps }, (_, step) => [
+		[1000 * (step + 1), 2000 + 4 * step],
+		[1000 * (step + 1), 2004 + 4 * step],
+	]).flat() as [number, number][];
+	return {
+		id: "foot",
+		from: "g",
+		to: "h",
+		points: at([0, 2000], ...corners, [8000, 2000 + 4 * steps]),
+	};
+}
+
+test("crossings saved buy only two more bends each", async () => {
+	// Two crossings saved: four more bends are paid for, six are not.
+	const plain = sketch({}, [...crossing(0), stepping(0)]);
+	expect(await kept(plain, sketch({}, [...crossing(60), stepping(2)]))).toBe("even");
+	expect(await kept(plain, sketch({}, [...crossing(60), stepping(3)]))).toBe("plain");
 });
 
 test("a line leaves a card in the reading direction rather than save a bend by its side", async () => {
@@ -219,4 +309,143 @@ test("two lines whose end runs meet on one stroke are not a trunk that costs a s
 	const plain = sketch({}, [...apart, ...long(true).slice(0, 2)]);
 	const even = sketch({}, [...facing, ...long(false).slice(0, 2)]);
 	expect(await kept(plain, even)).toBe("even");
+});
+
+/**
+ * A line from a source card to the target card below and right of it, shifted along the page.
+ * @param shift How far right the pair stands: 0 or 500.
+ * @param hooked Whether it hooks into the target's side rather than entering its top.
+ * @returns The line.
+ */
+function intoTarget(shift: number, hooked: boolean): Line {
+	return {
+		id: `line${shift}`,
+		from: shift === 0 ? "source" : "source2",
+		to: shift === 0 ? "target" : "target2",
+		points: (hooked
+			? at([50, 50], [50, 100], [180, 100], [180, 230], [200, 230])
+			: at([50, 50], [50, 100], [260, 100], [260, 200])
+		).map(({ x, y }) => ({ x: x + shift, y })),
+	};
+}
+
+test("hooks cured do not pay for a crossing brought", async () => {
+	const cards = {
+		source: { x: 0, y: 0, width: 100, height: 50 },
+		target: { x: 200, y: 200, width: 200, height: 60 },
+		source2: { x: 500, y: 0, width: 100, height: 50 },
+		target2: { x: 700, y: 200, width: 200, height: 60 },
+	};
+	const plain = sketch(cards, [
+		intoTarget(0, true),
+		intoTarget(500, true),
+		...long(false).slice(0, 2),
+	]);
+	const even = sketch(cards, [
+		intoTarget(0, false),
+		intoTarget(500, false),
+		...long(true).slice(0, 2),
+	]);
+	expect(await kept(plain, even)).toBe("plain");
+});
+
+/**
+ * Two lines that cross, one of them turning a given distance from the
+ * crossing: the line down after it, the line across after it, or the line
+ * down just before it.
+ * @param turn How far from the crossing the line turns.
+ * @returns Each way of turning, as its two lines.
+ */
+function turningNear(turn: number): Line[][] {
+	const across = { id: "across", from: "a", to: "b", points: at([400, 100], [700, 100]) };
+	const down = { id: "down", from: "c", to: "d", points: at([500, 0], [500, 110]) };
+	return [
+		[across, { ...down, points: at([500, 0], [500, 100 + turn], [600, 100 + turn]) }],
+		[{ ...across, points: at([400, 100], [500 + turn, 100], [500 + turn, 300]) }, down],
+		[across, { ...down, points: at([490, 100 - turn], [500, 100 - turn], [500, 300]) }],
+	];
+}
+
+test("a crossing within a lane of a bend is not kept for the hook it cures", async () => {
+	// Agent workbench's hook into Thread link, cured by crossing two lines
+	// just before their bends; a crossing a lane from a bend is an ordinary
+	// one, whichever line turns and on whichever side of the crossing.
+	const cards = {
+		source: { x: 0, y: 0, width: 100, height: 50 },
+		target: { x: 200, y: 200, width: 200, height: 60 },
+	};
+	const hooked = at([50, 50], [50, 100], [180, 100], [180, 230], [200, 230]);
+	const entering = at([50, 50], [50, 100], [220, 100], [220, 200]);
+	const [far, near] = [turningNear(16), turningNear(10)];
+	const chosen = await Promise.all(
+		far.map((lines, index) =>
+			kept(
+				sketch(cards, [{ id: "line", from: "source", to: "target", points: hooked }, ...lines]),
+				sketch(cards, [
+					{ id: "line", from: "source", to: "target", points: entering },
+					...near[index]!,
+				]),
+			),
+		),
+	);
+	expect(chosen).toEqual(["plain", "plain", "plain"]);
+});
+
+/**
+ * Two unrelated lines that run side by side across the page for 260 px.
+ * @param apart How far apart they run.
+ * @returns The lines.
+ */
+function beside(apart: number): Line[] {
+	return [
+		{ id: "upper", from: "a", to: "b", points: at([500, 0], [500, 100], [800, 100], [800, 300]) },
+		{
+			id: "lower",
+			from: "c",
+			to: "d",
+			points: at([460, 0], [460, 100 + apart], [760, 100 + apart], [760, 300]),
+		},
+	];
+}
+
+test("two unrelated lines side by side nearer than a lane are not kept for the hook it cures", async () => {
+	// Board persistence's evened settlement ran its teal "a migrated document"
+	// 11 px from two unrelated lines for 377 px; a lane apart is the pitch
+	// lines keep where they have room.
+	const cards = {
+		source: { x: 0, y: 0, width: 100, height: 50 },
+		target: { x: 200, y: 200, width: 200, height: 60 },
+	};
+	const hooked = at([50, 50], [50, 100], [180, 100], [180, 230], [200, 230]);
+	const entering = at([50, 50], [50, 100], [220, 100], [220, 200]);
+	const plain = sketch(cards, [
+		{ id: "line", from: "source", to: "target", points: hooked },
+		...beside(16),
+	]);
+	const even = sketch(cards, [
+		{ id: "line", from: "source", to: "target", points: entering },
+		...beside(11),
+	]);
+	expect(await kept(plain, even)).toBe("plain");
+});
+
+test("every pin of a card costs the same once libavoid charges its distance from the centre", () => {
+	const box = { x: 0, y: 0, width: 200, height: 100 };
+	const inset = 8;
+	// A pin on a side face stands the inset inside the routing box, nearer the centre.
+	const inward = (share: number): number => (share === 0 ? inset : share === 1 ? -inset : 0);
+	const totals = [
+		{ x: 0, y: 0.3 },
+		{ x: 1, y: 0.7 },
+		{ x: 0.4, y: 0 },
+		{ x: 0.6, y: 1 },
+	].map((place) => {
+		const pin = {
+			x: place.x * box.width + inward(place.x),
+			y: place.y * box.height + inward(place.y),
+		};
+		const charge = Math.abs(pin.x - box.width / 2) + Math.abs(pin.y - box.height / 2);
+		return centreHandicap(box, place, inset) + charge;
+	});
+	for (const total of totals) expect(total).toBeCloseTo(totals[0]!, 6);
 });

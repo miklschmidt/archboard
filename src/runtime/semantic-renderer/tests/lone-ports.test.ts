@@ -6,10 +6,14 @@
 // lines only its buffer from, so another line could pass 8 px from it, where
 // a label on its own run keeps 12.
 // A lone port moves only where the strip its end run sweeps is clear of
-// other cards and of other lines' reserved labels.
+// other cards, of other lines running beside it and of other lines' reserved
+// labels, only while it stands at its channel's slot, and only when its lines
+// turn after their end run. Once moved it keeps its face in the last solve.
 // What this catches: the Graphviz engine leaving a lone port in its
-// card-wide slot beside a corner, moving one across a card or a label, and
-// routing a line past a reserved label closer than a label's clearance.
+// card-wide slot beside a corner, moving one across a card, a label or
+// beside another line, moving one a straight channel or another pass put
+// there, trading a centred port for another face's seed, and routing a line
+// past a reserved label closer than a label's clearance.
 
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
@@ -19,8 +23,12 @@ import {
 	ROUTE_OPEN_CORRIDOR,
 } from "@/transformers/semantic-renderer/config";
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
+import { instance } from "@viz-js/viz";
+import { AvoidLib } from "libavoid-js";
+import { createLayoutEngine, type AvoidEngine } from "@/transformers/semantic-renderer/engine";
+import { SOLVE_STAGE } from "@/transformers/semantic-renderer/host";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { centredPins, relationshipChannel } from "@/runtime/semantic-renderer/layout";
+import { centredPins, relationshipChannel, routeGraph } from "@/runtime/semantic-renderer/layout";
 import {
 	cornersOf,
 	corridorPoints,
@@ -31,6 +39,7 @@ import {
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import archboard from "./archboard.json";
+import heldPort from "./held-port.json";
 import readingABoard from "./reading-a-board.json";
 
 /** The vocabulary of the fixture, in the dogfood vault's order. */
@@ -169,17 +178,22 @@ test("a port away from its face's corners stays put, so no line runs a part-lane
 
 /**
  * Where a lone port 10 px from its card's corner stands after centring, with other things in the way.
- * @param others Other cards, and other relationships with reserved labels.
+ * @param others Other cards and relationships, and how the port's own line is drawn.
  * @param others.cards Other cards.
  * @param others.edges Other relationships.
+ * @param others.at Where the port stands along its face, if not at its channel's slot.
+ * @param others.straight Whether its line runs straight on from the port to its target.
  * @returns The port's position along its face.
  */
 function centredPort(others: {
 	readonly cards?: readonly ElkNode[];
 	readonly edges?: readonly ElkExtendedEdge[];
+	readonly at?: number;
+	readonly straight?: true;
 }): number {
 	const source = { id: "source", x: 0, y: 0, width: 340, height: 88 };
 	const target = { id: "target", x: 500, y: 300, width: 340, height: 88 };
+	const x = (others.at ?? 10 / 340) * 340;
 	const line: ElkExtendedEdge = {
 		id: "line",
 		sources: ["source"],
@@ -188,12 +202,14 @@ function centredPort(others: {
 		sections: [
 			{
 				id: "s",
-				startPoint: { x: 10, y: 88 },
-				bendPoints: [
-					{ x: 10, y: 120 },
-					{ x: 670, y: 120 },
-				],
-				endPoint: { x: 670, y: 300 },
+				startPoint: { x, y: 88 },
+				bendPoints: others.straight
+					? []
+					: [
+							{ x, y: 120 },
+							{ x: 670, y: 120 },
+						],
+				endPoint: others.straight ? { x, y: 300 } : { x: 670, y: 300 },
 			},
 		],
 	};
@@ -205,7 +221,7 @@ function centredPort(others: {
 	]);
 	const nodes = new Map([source, target, ...(others.cards ?? [])].map((node) => [node.id, node]));
 	const used = new Map([
-		["source", new Map([[channel, [{ face: "SOUTH" as const, position: slot }]]])],
+		["source", new Map([[channel, [{ face: "SOUTH" as const, position: others.at ?? slot }]]])],
 	]);
 	const moved = centredPins(nodes, channels, [line, ...(others.edges ?? [])], used);
 	return (moved?.pins ?? used).get("source")!.get(channel)![0]!.position;
@@ -223,4 +239,73 @@ test("a lone port moves to its face's middle only across a strip clear of cards 
 		labels: [{ x: 80, y: 95, width: 80, height: 20 }],
 	};
 	expect(centredPort({ edges: [labelled] })).toBeLessThan(0.5);
+});
+
+test("a lone port stays where another line runs beside the strip, off its slot, or with a line running straight on", () => {
+	const far = { id: "far", x: 100, y: 500, width: 40, height: 40 };
+	const beside: ElkExtendedEdge = {
+		id: "beside",
+		sources: ["far"],
+		targets: ["target"],
+		layoutOptions: { "archboard.relationship.kind": "data" },
+		sections: [
+			{
+				id: "b",
+				startPoint: { x: 120, y: 500 },
+				bendPoints: [
+					{ x: 120, y: 100 },
+					{ x: 600, y: 100 },
+				],
+				endPoint: { x: 600, y: 300 },
+			},
+		],
+	};
+	expect(centredPort({ cards: [far], edges: [beside] })).toBeLessThan(0.5);
+	expect(centredPort({ at: 12 / 340 })).toBeLessThan(0.5);
+	expect(centredPort({ straight: true })).toBeLessThan(0.5);
+});
+
+test("a port centred on its face keeps that face in the last solve", async () => {
+	// A placed view of the work vault, text taken out: the line into the lower
+	// card's west face is alone there, beside its top corner, and is centred.
+	// Offered the whole card again, the router took the top face's seed and
+	// joined another line's trunk, where a third line crossed under the join.
+	await AvoidLib.load();
+	const solve = createLayoutEngine(await instance(), AvoidLib.getInstance());
+	const routed = solve(structuredClone(heldPort) as ElkNode, { [SOLVE_STAGE]: "route" });
+	const card = routed.children!.find(({ id }) => id === "Tgn9tpSj")!;
+	const end = routed.edges!.find(({ id }) => id === "YkYEwnYD")!.sections![0]!.endPoint;
+	expect(end.x).toBeCloseTo(card.x!, 1);
+	expect(end.y).toBeCloseTo(card.y! + card.height! / 2, 1);
+});
+
+/**
+ * The routes of the placed view above, with the router refusing from one solve on.
+ * @param refused Which solve the router first refuses, counting from one; none when omitted.
+ * @returns Each route's section, as text.
+ */
+async function routesRefusing(refused = Infinity): Promise<string> {
+	await AvoidLib.load();
+	const avoid = AvoidLib.getInstance() as AvoidEngine;
+	let solves = 0;
+	const Router = function (flag: number) {
+		const router = new avoid.Router(flag);
+		const solve = router.processTransaction.bind(router);
+		router.processTransaction = () => {
+			solves += 1;
+			if (solves >= refused) throw new Error("NativeRouteUnavailable: refused");
+			return solve();
+		};
+		return router;
+	};
+	const refusing = Object.assign(Object.create(avoid) as AvoidEngine, { Router });
+	const routed = routeGraph(refusing, structuredClone(heldPort) as ElkNode);
+	return JSON.stringify(routed.edges!.map(({ sections }) => sections));
+}
+
+test("a later solve the router refuses keeps the last complete routing", async () => {
+	// The view is solved three times: routed, refined, then with its lone port centred.
+	const [refined, first] = [await routesRefusing(3), await routesRefusing(2)];
+	expect(refined).not.toBe(first);
+	expect(await routesRefusing()).not.toBe(refined);
 });

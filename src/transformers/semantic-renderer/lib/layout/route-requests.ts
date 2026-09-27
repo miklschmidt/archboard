@@ -14,12 +14,18 @@ const RouteRequestSchema = z.object({
 	clearWalls: z.array(z.string()).readonly().default([]),
 	/** A route that hooks past a card's corner is offered the face it passed (pin-feedback.ts). */
 	cornerPins: z.boolean().default(false),
+	/** The cards on which a route that hooks past a corner is offered the face it passed, where cornerPins is not asked. */
+	cornerCards: z.array(z.string()).readonly().default([]),
 	/** A straight channel may take any lane of a shared span (straight-candidates.ts). */
 	laneChannels: z.boolean().default(false),
 	/** Reserved labels move onto the channel their cards share (label-centring.ts). */
 	centredLabels: z.boolean().default(false),
+	/** The lines whose reserved labels alone move so, where centredLabels is not asked. */
+	centredLines: z.array(z.string()).readonly().default([]),
 	/** Reserved labels keep the clearance of a label on its own run from other lines (routing-clearance.ts). */
 	labelClearance: z.boolean().default(false),
+	/** The cards whose seeds keep a lane from the standing pin they wear; aligned pins always do (pin-feedback.ts). */
+	clearPins: z.array(z.string()).readonly().default([]),
 	/** A port alone on a face near its corner moves to the face's middle (lone-pins.ts). */
 	centredPorts: z.boolean().default(false),
 	/** Line ends refused a face, as line:card:FACE, so unrelated lines on one stroke part (stacked-runs.ts). */
