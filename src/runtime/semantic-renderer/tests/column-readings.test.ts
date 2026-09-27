@@ -184,6 +184,27 @@ describe("a board taller than the pane", () => {
 		expect(await chooseReading(readingOf)).toBe(baseline);
 	});
 
+	test("settles the chosen count every way when the router refuses it the unfolded reading's way", async () => {
+		const baseline = unfolded();
+		const folded = { ...unfolded(), ...pageAt(0.9) };
+		const { readingOf, ways } = readingsFrom(baseline, { 3: 0.9 }, () => folded);
+		const refusingOneWay = (columns: number) => {
+			const reading = readingOf(columns);
+			return {
+				...reading,
+				settle: async (way?: string) => {
+					const settled = await reading.settle(way);
+					if (columns > 1 && way !== undefined) {
+						throw new RouteCheckFailed("a route cannot clear a card");
+					}
+					return settled;
+				},
+			};
+		};
+		expect(await chooseReading(refusingOneWay)).toBe(folded);
+		expect(ways).toEqual([undefined, "evened", undefined]);
+	});
+
 	test("throws a fault in settling the chosen count", async () => {
 		const { readingOf } = readingsFrom(unfolded(), { 3: 0.9 }, () => {
 			throw new TypeError("a pass read past a line's end");
