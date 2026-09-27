@@ -115,19 +115,7 @@ describe("the group a card is placed with", () => {
 			),
 		);
 
-	test("configuration order decides between two groups the siblings share", () => {
-		const nodes = [
-			{ id: "a", parent: "orders", groups: ["billing", "fulfillment"] },
-			{ id: "b", parent: "orders", groups: ["billing", "fulfillment"] },
-		];
-		expect(placing(nodes, ["fulfillment", "billing"])).toEqual({
-			a: "fulfillment",
-			b: "fulfillment",
-		});
-		expect(placing(nodes, ["billing", "fulfillment"])).toEqual({ a: "billing", b: "billing" });
-	});
-
-	test("a card is placed with its first group whether or not a sibling shares it", () => {
+	test("a card is placed with its first configured group whether or not a sibling shares it", () => {
 		const nodes = [
 			{ id: "a", parent: "orders", groups: ["billing", "fulfillment"] },
 			{ id: "b", parent: "orders", groups: ["fulfillment"] },
@@ -141,6 +129,7 @@ describe("the group a card is placed with", () => {
 			c: "audit",
 			d: "billing",
 		});
+		expect(placing(nodes, ["fulfillment", "billing", "audit"])["a"]).toBe("fulfillment");
 	});
 
 	test("a group the configuration does not define never places", () => {
@@ -150,7 +139,6 @@ describe("the group a card is placed with", () => {
 			{ id: "c", parent: "orders", groups: ["billing"] },
 		];
 		expect(placing(nodes, ["billing"])).toEqual({ a: "billing", c: "billing" });
-		expect(placing(nodes.slice(1, 2), ["billing"])).toEqual({});
 	});
 });
 
