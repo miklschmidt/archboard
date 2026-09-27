@@ -5,11 +5,14 @@
 // (`card-layout.ts`), its widest rank wrapped into rows (`wraps.ts`) or its
 // ranks folded into columns (`fold.ts`) where that is worth taking. Last,
 // every block is put where its parent placed it and each relationship's
-// lines are joined end to end (`assembly.ts`). Whether a block's containers
-// stack, the joins, and the packing of a board's groups take the layout that
-// reads better, as drawn (`weighing.ts`), only where their earlier weighing
-// agrees or it reads no worse anywhere (`takes` in track/score.ts); settling
-// ports, holding a port order and wrapping keep their earlier weighing.
+// lines are joined end to end (`assembly.ts`). One solve lays the board out
+// one way: which way its joins are kept and whether a board's groups are
+// packed are chosen where the renderer runs (`solves.ts`). Whether a block's
+// containers stack, the joins, and the packing of a board's groups take the
+// layout that reads better, as drawn (`weighing.ts`), only where their
+// earlier weighing agrees or it reads no worse anywhere (`takes` in
+// track/score.ts); settling ports, holding a port order and wrapping keep
+// their earlier weighing.
 import type { ElkNode } from "@archboard/elk-rs";
 import { z } from "zod";
 import { fitIn } from "@/shared/shell-geometry/index";
