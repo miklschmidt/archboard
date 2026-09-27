@@ -47,7 +47,8 @@
 			"order": 7000,
 			"name": "Llearle / LLE AA rrro",
 			"kind": "system",
-			"responsibility": "TOE teoalentee neoe le eaeoo etnee: tora roleete trano, tora Eearo ntteo tne rrtraeo. Eaeoo AA rnoolee tne troo LLE NRL rrottrolr. Er nrrolrntlre rrae rnneeee le neo etnee."
+			"responsibility": "TOE teoalentee neoe le eaeoo etnee: tora roleete trano, tora Eearo ntteo tne rrtraeo. Eaeoo AA rnoolee tne troo LLE NRL rrottrolr. Er nrrolrntlre rrae rnneeee le neo etnee.",
+			"groups": ["walkthrough"]
 		},
 		{
 			"id": "IvTVtYM6",

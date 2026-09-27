@@ -96,36 +96,6 @@ function aboveOf(block: Block): string | undefined {
 }
 
 /**
- * The vendor node heading a cluster: a frame's title row or a region's caption.
- * @param cluster The cluster's id.
- * @returns The node's name.
- */
-function titleOf(cluster: string): string {
-	return `title:${cluster}`;
-}
-
-/**
- * Hold the title of every cluster a block draws inline, outside any other, a
- * rank below the block's header or top ports. Graphviz ranks a title no line
- * enters with them, and its words, painted at its cluster's corner, then
- * stand over a port that a line out of the cluster slides to.
- * @param block The block.
- * @param graph Its Graphviz graph; the holds are added.
- */
-function holdTitles(block: Block, graph: VendorGraph): void {
-	const above = aboveOf(block);
-	if (above === undefined) return;
-	const outer = [...block.clusters.values()].filter(({ parent }) => parent === undefined);
-	graph.edges.push(
-		...outer.map(({ id }) => ({
-			tail: above,
-			head: titleOf(id),
-			attributes: { style: "invis", weight: 0, minlen: 1 },
-		})),
-	);
-}
-
-/**
  * Hold every item no line enters on a block's first rank of items, when the
  * block has ports on its bottom. Graphviz ranks those ports last and joins
  * every item no line leaves to them at no cost, so a short chain hangs from
@@ -135,7 +105,6 @@ function holdTitles(block: Block, graph: VendorGraph): void {
  * @param nodeOf The vendor node of an item.
  */
 function holdSources(block: Block, graph: VendorGraph, nodeOf: (name: string) => VendorNode): void {
-	holdTitles(block, graph);
 	if (![...block.ports.values()].includes("bottom")) return;
 	const entered = new Set(graph.edges.map(({ head }) => head));
 	const leaving = new Set(graph.edges.map(({ tail }) => tail));
@@ -155,4 +124,4 @@ function holdSources(block: Block, graph: VendorGraph, nodeOf: (name: string) =>
 	);
 }
 
-export { NODE_GAP, emptyGraph, holdSources, placedLabel, titleOf, walledPoints, type VendorNode };
+export { NODE_GAP, emptyGraph, holdSources, placedLabel, walledPoints, type VendorNode };

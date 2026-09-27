@@ -20,6 +20,7 @@ import { CardLayout } from "@/transformers/semantic-renderer/lib/blocks/card-lay
 import { foldBlock, foldPlan } from "@/transformers/semantic-renderer/lib/blocks/fold";
 import { FoldLayout } from "@/transformers/semantic-renderer/lib/blocks/fold-layout";
 import { corners, type Insets, type Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
+import { grownInsets } from "@/transformers/semantic-renderer/lib/blocks/lone";
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { bestWrap, weighed } from "@/transformers/semantic-renderer/lib/blocks/wraps";
 import {
@@ -50,6 +51,15 @@ const BLOCKS_PLACED = "archboard.blocks.placed";
  * @returns Its insets.
  */
 function insetsOf(block: Block): Insets {
+	return grownInsets(plainInsets(block), block.lone);
+}
+
+/**
+ * The room a block keeps around what it holds, alone in no region.
+ * @param block The block.
+ * @returns Its insets.
+ */
+function plainInsets(block: Block): Insets {
 	if (block.kind === "root") return { side: PAGE_MARGIN, top: PAGE_MARGIN, bottom: PAGE_MARGIN };
 	if (block.kind === "column" || block.kind === "cluster") return { side: 0, top: 0, bottom: 0 };
 	const inset = block.kind === "frame" ? CONTAINER_INSET : REGION_INSET;

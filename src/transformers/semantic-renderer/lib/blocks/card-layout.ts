@@ -16,6 +16,7 @@ import {
 	PORT,
 	cornerHeader,
 	letPortsSlide,
+	markRegions,
 	pinnedLeaf,
 	rimOf,
 } from "@/transformers/semantic-renderer/lib/blocks/leaves";
@@ -39,6 +40,7 @@ import {
 import { routeScene, trunkKind } from "@/transformers/semantic-renderer/lib/track/route";
 import { fitSides } from "@/transformers/semantic-renderer/lib/track/sides";
 import { Clusters, isTitle, titleOf } from "@/transformers/semantic-renderer/lib/blocks/clusters";
+import { frameShape } from "@/transformers/semantic-renderer/lib/blocks/lone";
 import { leavingPull } from "@/transformers/semantic-renderer/lib/blocks/leaving";
 import { gridEdges, wrapEdges } from "@/transformers/semantic-renderer/lib/track/grid";
 import { anchored, lapsOf } from "@/transformers/semantic-renderer/lib/track/score";
@@ -421,9 +423,7 @@ class CardLayout {
 		const scene = new Scene(placed);
 		scene.edgesPage = this.edgesPage();
 		scene.inline = this.tree.nesting !== "blocks";
-		for (const item of this.block.items)
-			if (this.tree.blocks.get(item)?.kind === "region")
-				scene.regionBlocks.add(scene.cards.get(item)!);
+		markRegions(scene, this.block, this.tree);
 		letPortsSlide(scene, this.block, this.tree.nesting);
 		const beside = besideWalls(this.block, this.tree, scene);
 		const straight = new Set(beside.map(({ key }) => key));
@@ -502,11 +502,11 @@ class CardLayout {
 			bottom: band.newTop + band.bottom - band.top,
 			items: this.block.items.filter((item) => scene.cards.get(item)?.band === index),
 		}));
-		const { frames, regions } = fitSides(scene, edges, lines, side);
+		const { frames: drawn, regions } = fitSides(scene, edges, lines, side);
 		const walled = new Map(lines);
 		const reach = [
 			...boxes.values(),
-			...frames.map((frame) => frame.box),
+			...drawn.map((frame) => frame.box),
 			...regions.map((region) => region.box),
 			...innerPoints(this.block, walled).map(({ x, y }) => ({ x, y, width: 0, height: 0 })),
 		];
@@ -517,6 +517,7 @@ class CardLayout {
 		);
 		const tracks = wallLines(this.block, walled, boxes, width);
 		const laps = lapsOf(walled.values(), [...boxes.values()]);
+		const frames = drawn.map((shape) => frameShape(shape, this.block.clusters.get(shape.id)?.lone));
 		return {
 			laps,
 			width,

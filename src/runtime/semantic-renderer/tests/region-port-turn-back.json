@@ -29,6 +29,7 @@
 			"name": "Semantic lifecycle",
 			"kind": "module",
 			"responsibility": "resolve, adopt and shelve: settling a proposal, moving the current designation, setting a proposal aside",
+			"groups": ["writes"],
 			"binding": {
 				"repo": "github.com/miklschmidt/archboard",
 				"path": "src/cli/commands/semantic-lifecycle.ts"

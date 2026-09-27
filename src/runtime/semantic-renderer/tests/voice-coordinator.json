@@ -91,7 +91,8 @@
 			"order": 13000,
 			"name": "Workhorse operations",
 			"kind": "module",
-			"responsibility": "Where anything sustained goes: the four operations the coordinator may ask of the workhorse, one at a time"
+			"responsibility": "Where anything sustained goes: the four operations the coordinator may ask of the workhorse, one at a time",
+			"groups": ["workhorse"]
 		},
 		{
 			"id": "5uPyMgoI",

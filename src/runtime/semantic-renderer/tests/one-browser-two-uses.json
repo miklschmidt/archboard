@@ -59,6 +59,7 @@
 			"name": "Walkthrough recorder",
 			"kind": "module",
 			"order": 15000,
+			"groups": ["walkthrough"],
 			"responsibility": "Starts the browser a recording needs, opens the page at 1920x1080, and moves the file into place only once that browser has stopped"
 		}
 	],

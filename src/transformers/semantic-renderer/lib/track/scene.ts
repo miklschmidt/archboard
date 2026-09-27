@@ -10,6 +10,8 @@ import { z } from "zod";
 const TRACK_POLYLINE = "archboard.track.polyline";
 /** The layout option on a frame that carries its title row's box, as `x,y,width,height`. */
 const TRACK_TITLE = "archboard.track.title";
+/** The layout option on a frame that carries the room it keeps below what it holds past its inset. */
+const TRACK_BELOW = "archboard.track.below";
 /** The root layout option that carries every group region, as JSON `PlacedRegion` rows. */
 const TRACK_REGIONS = "archboard.track.regions";
 /** How far a region's caption sits in from its band's left edge. */
@@ -31,6 +33,8 @@ const PlacedRegionSchema = z.object({
 interface Item {
 	box: Box;
 	band: number;
+	/** How far a card's own faces stand in from its box, for a card laid out as its region. */
+	inset?: number;
 }
 
 /** One band: the items on one rank, and where it lies before and after spacing. */
@@ -432,6 +436,7 @@ class Scene {
 export {
 	REGION_CAPTION_INSET,
 	Scene,
+	TRACK_BELOW,
 	TRACK_POLYLINE,
 	TRACK_REGIONS,
 	TRACK_TITLE,
