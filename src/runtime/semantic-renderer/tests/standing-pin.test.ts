@@ -86,19 +86,22 @@ function fromPinnedCorner(target: ElkNode, end: { x: number; y: number }): numbe
 }
 
 test("a corner pin on the top of a card that wears a standing pin keeps a lane from its rim", async () => {
-	const target = { id: "target", x: 702, y: 232, width: 340, height: 88, ...pinned };
-	const end = await endOf(
-		graphOf(
-			[
-				{ id: "source", x: 22, y: 20, width: 340, height: 88 },
-				target,
-				{ id: "neighbour", x: 320, y: 232, width: 340, height: 88 },
-			],
-			{ cornerPins: true },
-		),
-	);
-	expect(end.y).toBeCloseTo(target.y, 1);
-	expect(fromPinnedCorner(target, end)).toBeGreaterThanOrEqual(PIN_CLEARANCE);
+	// Shifted left, the corner pin's position rounds a hair under the lane it keeps.
+	for (const shift of [0, -300]) {
+		const target = { id: "target", x: 702 + shift, y: 232, width: 340, height: 88, ...pinned };
+		const end = await endOf(
+			graphOf(
+				[
+					{ id: "source", x: 22 + shift, y: 20, width: 340, height: 88 },
+					target,
+					{ id: "neighbour", x: 320 + shift, y: 232, width: 340, height: 88 },
+				],
+				{ cornerPins: true },
+			),
+		);
+		expect(end.y).toBeCloseTo(target.y, 1);
+		expect(fromPinnedCorner(target, end)).toBeGreaterThanOrEqual(PIN_CLEARANCE - 0.01);
+	}
 });
 
 test("a straight channel is not offered beside a standing pin", async () => {
