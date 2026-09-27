@@ -90,6 +90,13 @@ without such regions, so a region round one node adds its room and turns no
 other choice of the layout
 ([layout rules, section 44](../design/layout-rules.md#44-a-region-round-one-node-2026-09-27)).
 
+A group's region is not drawn inside a region of the same group. A container
+placed with a group stands in that group's region, and so do the group's
+members inside it, so no second region of that group is drawn round them;
+they keep the group's colour. An ingress board drew one group's region round
+a pool of hosts and again round the four hosts inside it, an outline that told
+the reader nothing the outer one had not.
+
 ## Considered and rejected
 
 **Placing a card only with a group a sibling shares.** It was the first rule

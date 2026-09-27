@@ -443,7 +443,8 @@ test.each(["track", "blocks"] as const)(
 	async (layout) => {
 		const drawing = await drawn(orderedFixture(legacyRouting), layout);
 		const [balancer, pool] = [drawing.atlas.nodes["zYCHWE5R"]!, drawing.atlas.nodes["2cGTPFaw"]!];
-		expect(regionsOf(drawing.svg, "walkthrough").length).toBe(2);
+		// Round the pool, and not again round its hosts inside it.
+		expect(regionsOf(drawing.svg, "walkthrough").length).toBe(1);
 		expect(Math.abs(balancer.x + balancer.width / 2 - (pool.x + pool.width / 2))).toBeLessThan(1);
 	},
 );
