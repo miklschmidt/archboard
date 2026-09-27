@@ -100,6 +100,7 @@ test("a card's tip adds what the card does not draw at this distance, and what a
 	const card = tipTargetAt(at(drawn(), "card"), 0)!;
 	expect(card.part).toBe("card");
 	const near = subjectTip(VARIANT, card, false)!;
+	expect(near.title).toBe("API");
 	expect(near.lead).toBeUndefined();
 	expect(near.body).toBe("Holds no state between requests.");
 	expect(near.hint).toContain("api");
@@ -118,12 +119,10 @@ test("a label's tip names its words and the kind of line the picture draws them 
 	const picture = drawn();
 	expect(tipTargetAt(at(picture, "wire"), 0)).toBeNull();
 	const label = tipTargetAt(at(picture, "pill"), 0);
-	expect(subjectTip(VARIANT, label!, false)).toEqual({
-		lead: "reads",
-		body: "Once per request.",
-		kind: "Calls",
-		hint: undefined,
-	});
+	const tip = subjectTip(VARIANT, label!, false)!;
+	expect(tip.title).toBe("reads");
+	expect(tip.kind).toBe("Calls");
+	expect(tip.body).toBe("Once per request.");
 });
 
 test("a container answers the pointer on its header band, not across its frame", () => {

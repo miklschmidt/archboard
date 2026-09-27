@@ -5,9 +5,11 @@
 // description; seen from far away it shows its name alone, so its tip is its
 // responsibility and description. A label shows its words, so its tip names the
 // kind of relationship or message it labels. A tip that would say nothing new
-// is not shown.
+// is not shown. Every tip is headed by what it is about, drawn the way the
+// picture draws it, so it reads on its own beside the part it explains.
 
-import type { SemanticVariant } from "@/shared/semantic-board/index";
+import type { SemanticEdge, SemanticNode, SemanticVariant } from "@/shared/semantic-board/index";
+import { drawnAppearance, type AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 
 /** The attribute naming the subject a group of the picture draws. */
 const SUBJECT_ATTRIBUTE = "data-semantic-id";
@@ -23,12 +25,16 @@ interface TipTarget {
 
 /** What a tip says, each line only when there is something to say. */
 interface SubjectTip {
-	/** The line that leads: a far card's responsibility, a label's words. */
+	/** What the tip is about: a card's name, a label's words. */
+	readonly title: string;
+	/** What kind of part, relationship or message it is, as the picture names it. */
+	readonly kind: string | undefined;
+	/** How the picture draws it, when the picture names its type. */
+	readonly appearance: AppliedAppearance | undefined;
+	/** What the far view hides: a card's responsibility. */
 	readonly lead: string | undefined;
 	/** The longer account: a description. */
 	readonly body: string | undefined;
-	/** What kind of relationship or message a label names. */
-	readonly kind: string | undefined;
 	/** What a double-click does, when it does something. */
 	readonly hint: string | undefined;
 }
@@ -113,15 +119,28 @@ function subjectTip(variant: SemanticVariant, target: TipTarget, far: boolean): 
 		return labelTip(variant, target);
 	}
 	const node = variant.content.nodes.find((candidate) => candidate.id === target.id);
-	if (node === undefined) {
-		return null;
-	}
-	return saying({
+	return node === undefined ? null : cardTip(node, target, far);
+}
+
+/**
+ * The tip over a card or a container's header: what the picture leaves out
+ * about the node at this distance, and what a double-click opens.
+ * @param node The node.
+ * @param target The part under the pointer.
+ * @param far Whether the picture is seen from far away.
+ * @returns The tip, or null when it would say nothing the picture does not.
+ */
+function cardTip(node: SemanticNode, target: TipTarget, far: boolean): SubjectTip | null {
+	const said = {
 		lead: far ? node.responsibility : undefined,
 		body: node.description,
-		kind: undefined,
 		hint: node.drillDown === undefined ? undefined : `Double-click to open ${node.drillDown.board}`,
-	});
+	};
+	if (!Object.values(said).some((line) => line !== undefined && line !== "")) {
+		return null;
+	}
+	const appearance = drawnAppearance(target.anchor, target.id);
+	return { title: node.name, kind: appearance?.typeName ?? node.kind, appearance, ...said };
 }
 
 /**
@@ -132,43 +151,31 @@ function subjectTip(variant: SemanticVariant, target: TipTarget, far: boolean): 
  * @returns The tip, or null when the variant does not hold the subject.
  */
 function labelTip(variant: SemanticVariant, target: TipTarget): SubjectTip | null {
+	const appearance = drawnAppearance(target.anchor, target.id);
 	const edge = variant.content.edges.find((candidate) => candidate.id === target.id);
 	if (edge !== undefined) {
-		return saying({
-			lead: edge.label,
-			body: edge.description,
-			kind: drawnKind(target) ?? edge.kind,
-			hint: undefined,
-		});
+		return edgeTip(edge, appearance);
 	}
 	const step = variant.content.flows
 		.flatMap((flow) => flow.steps)
 		.find((candidate) => candidate.id === target.id);
 	return step === undefined
 		? null
-		: saying({ lead: step.label, body: undefined, kind: `${step.kind} message`, hint: undefined });
+		: { ...UNSAID, title: step.label, kind: `${step.kind} message`, appearance };
 }
 
 /**
- * A relationship kind's name as the picture draws it, read from the line the
- * label belongs to.
- * @param target The label.
- * @returns The name, or undefined when the line does not say.
+ * The tip over a relationship's label.
+ * @param edge The relationship.
+ * @param appearance How the picture draws its line, when it names its kind.
+ * @returns The tip.
  */
-function drawnKind(target: TipTarget): string | undefined {
-	const line = target.anchor
-		.closest("svg")
-		?.querySelector(`[${SUBJECT_ATTRIBUTE}="${target.id}"][data-type-name]`);
-	return line?.getAttribute("data-type-name") ?? undefined;
+function edgeTip(edge: SemanticEdge, appearance: AppliedAppearance | undefined): SubjectTip {
+	const kind = appearance?.typeName ?? edge.kind;
+	return { ...UNSAID, title: edge.label ?? kind, kind, appearance, body: edge.description };
 }
 
-/**
- * A tip, when it says anything at all.
- * @param tip Its lines.
- * @returns The tip, or null when every line is empty.
- */
-function saying(tip: SubjectTip): SubjectTip | null {
-	return Object.values(tip).some((line) => line !== undefined && line !== "") ? tip : null;
-}
+/** The lines a label's tip leaves out unless it has them. */
+const UNSAID = { lead: undefined, body: undefined, hint: undefined } as const;
 
 export { openableAt, subjectTip, tipTargetAt, type SubjectTip, type TipTarget };
