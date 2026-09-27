@@ -1980,3 +1980,57 @@ junction mark):
 | ------- | --------- | ------------------- | ------- | -------- | ------------ | -------- | ------------- | ------------------- |
 | dogfood | 212 → 192 | 22 (2318) → 4 (808) | 12 → 4  | 144 → 63 | 54 → 30      | 5 → 1    | 9 → 6         | 7 → 7               |
 | work    | 35 → 33   | 2 (76) → 0          | 3 → 1   | 29 → 11  | 20 → 13      | 0 → 0    | 1 → 1         | 0 → 0               |
+
+## 41. Stacks counted as crossings, hooks cured card by card, streaks off hops (2026-09-27)
+
+Round 5's reviews, judged against `ed9c7d8d`, left Board persistence whole
+reading worse at four spots, Board rasterizer whole keeping 704 px of stacked
+unrelated lines, resting streaks on hops and past junction dots, and rules
+no test owned.
+
+- **The settlement veto counts crossings seen** (`even-pins.ts`
+  `defectsIn`): a stack of two unrelated lines counts as the crossing it may
+  hide, as finishing's `noWorse` already counted it. Board rasterizer whole
+  now keeps the evened settlement: both stacks and five hooks gone for two
+  more crossings and a page 188 px wider. Command interface whole parts two
+  stacks and cures three side hooks.
+- **Hooks cured card by card** (`finishing.ts` `askByCard`,
+  `route-requests.ts` `cornerCards`): where curing every hook at once is
+  not kept, the hook pass tries one card at a time, offering the face a hook
+  passed on that card alone and asking again for every card kept before it.
+  Board persistence whole goes from 6 hooks to 1 (`adopt a draft` into
+  Adopt's top, the teal `a migrated document` into Atomic file
+  replacement's top), Skill evaluation whole from 9 to 0, Command
+  interface whole from 6 to 1.
+- **A defect saved buys two bends** (`even-pins.ts` `BENDS_WORTH`). Cured
+  card by card, Board rasterizer's `One browser, two uses` took a
+  settlement that saved a crossing and a crowded label for thirteen more
+  bends and wound through its frame; a drawing that turns its lines more
+  than two bends for each defect it saves is not tidier.
+- **The pin pass excuses one bend** (`finishing.ts` `noWorse`): a line it
+  sends off a pin may take one bend more, and no more.
+- **A resting streak keeps clear of where other lines meet its own**
+  (`comet-rest.ts` `meetingPlaces`): the hops it carries or passes under and
+  the stretches it shares with another line, as it keeps clear of labels;
+  where no place keeps a lane from all of them it rests where it keeps the
+  most room. Track and Blocks share the painter: every one of their 333
+  moved streaks was looked at against `ed9c7d8d`, and none reads worse.
+- **Owners.** The pin pass's wiring through the compound layout (a rendered
+  proposal, `pinned-side.json`), its accumulated clearance, its top-face
+  ends, the label pre-filter a lane past the line, the exemption of two
+  lines sharing a card from stacks, and the frame inset in label centring
+  each have a test that fails without them. The side-exit span and the wall
+  run's lane are stated as part of what those defects are.
+
+Board persistence whole still keeps two of the four spots: the teal line
+runs 11 px under `migrate only if the lease is free` for about 330 px, and
+`the links out of every board` leaves Vault diagnostics' side with a crossing
+20 px from the face. The face pass that would drop it straight is refused:
+the routing it asks for hooks `submit transition` and crowds a label.
+
+Against `ed9c7d8d` (the same measures as section 40):
+
+| vault   | crossings | stacks (length) | touches | hooks    | corner ports | by a pin | double tracks | crossings at a join |
+| ------- | --------- | --------------- | ------- | -------- | ------------ | -------- | ------------- | ------------------- |
+| dogfood | 212 → 192 | 22 (2318) → 0   | 12 → 3  | 144 → 30 | 54 → 33      | 5 → 0    | 9 → 6         | 7 → 6               |
+| work    | 35 → 33   | 2 (76) → 0      | 3 → 0   | 29 → 8   | 20 → 13      | 0 → 0    | 1 → 1         | 0 → 0               |
