@@ -13,10 +13,11 @@ or truncating its title. See [the adapter contract](pretext-measurement-adapter.
 for the pinned upstream patch.
 
 Every board is solved reading down the page. A tall board is also folded into
-side-by-side columns (`lib/layout/column-readings.ts`), and the fold is kept
-only where it has no more defects than the unfolded drawing and fits the
-reference pane materially better, by a twentieth (ADR 0039: fit breaks ties,
-it never buys a defect, and a defect fewer never buys a fold on its own).
+side-by-side columns (`lib/layout/column-readings.ts`). Whether the fold is
+kept follows ADR 0039's guard: it is weighed as before the ADR (a twentieth
+more fit and a higher score) and on its reading pick (a twentieth more fit and
+no more defects), and where the two disagree the reading pick is taken only if
+it is no worse on every measure the ADR orders.
 The document carries `data-reading-direction`. The conventions below are
 stated in that frame.
 
