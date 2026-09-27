@@ -84,10 +84,14 @@ Its settled requirements and remaining design questions are in
 
 ## Explain the appearance
 
-The browser provides a visible-by-default, hideable legend and inspection that
-explains the applied appearance. The legend must have clear hierarchy and ample
-space rather than sacrificing aesthetics for compactness. Exported diagrams have
-no legends for now.
+The browser provides a visible-by-default, hideable legend that explains the
+applied appearance. The legend must have clear hierarchy and ample space rather
+than sacrificing aesthetics for compactness. Exported diagrams have no legends
+for now.
+
+Amended on 2026-09-27 by the user's decision: the inspector no longer has a
+section that explains the selected subject's colours, because a person can see
+them ("Users have eyes... usually."). The legend is the one explanation.
 
 Separating these channels makes a hosting migration readable without losing type,
 change or selection information. It intentionally permits a node's body appearance

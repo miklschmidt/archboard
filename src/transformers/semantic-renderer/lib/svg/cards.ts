@@ -93,6 +93,44 @@ function halo(box: Box, radius: number, styles: SvgStyles): string {
 }
 
 /**
+ * A card's border ink: its body's colour where a group colours it, else the
+ * page's card border.
+ * @param styles The palette's attribute bundles.
+ * @param appearance Resolved channels.
+ * @returns The ink.
+ */
+function cardInk(styles: SvgStyles, appearance: NodeAppearance): string {
+	return String(bodyAttributes(appearance)["stroke"] ?? styles.card.stroke);
+}
+
+/** How far behind a card the edge of the next one shows, where a card opens a board of its own. */
+const DECK_OFFSET = 4;
+
+/**
+ * The edge of a second card behind one that opens a board of its own: an
+ * outline, so a line into the card is never hidden under it, in the card's
+ * own border ink and drawn fainter.
+ * @param box The card's box.
+ * @param radius The card's corner radius.
+ * @param stroke The card's border ink.
+ * @returns The edge.
+ */
+function deck(box: Box, radius: number, stroke: string): string {
+	return tag("rect", {
+		class: "ab-deck",
+		x: coord(box.x + DECK_OFFSET),
+		y: coord(box.y + DECK_OFFSET),
+		width: coord(box.width),
+		height: coord(box.height),
+		rx: radius,
+		fill: "none",
+		stroke,
+		"stroke-width": 1,
+		"stroke-opacity": 0.55,
+	});
+}
+
+/**
  * One card: its name, the responsibility under it when there is one, and the
  * glyph that says what sort of thing it is.
  * @param placed The card.
@@ -149,6 +187,7 @@ function paintCard(
 		"g",
 		{ ...subjectGroup("node", node.id, standing), ...appearanceAttributes(appearance) },
 		lines([
+			node.drillDown === undefined ? "" : deck(box, CARD_RADIUS, cardInk(styles, appearance)),
 			halo(box, CARD_RADIUS, styles),
 			tag("rect", {
 				x: coord(box.x),
@@ -233,4 +272,4 @@ function paintHeader(
 	]);
 }
 
-export { halo, paintCard, paintHeader };
+export { cardInk, deck, halo, paintCard, paintHeader };

@@ -171,6 +171,23 @@ test("a board a level down offers its own views and its own states", async () =>
 	expect(buttons("semantic-variant-choice")[0]?.getAttribute("aria-pressed")).toBe("true");
 });
 
+test("double-clicking a card opens the board it drills down to", async () => {
+	server.documents["pipeline"] = PIPELINE;
+	server.documents["engine"] = ENGINE;
+	server.reply = { status: 200, body: { ...drawing(1), views: [PIPELINE_VIEW] } };
+	mountStage(null, { live: true, onViewChange: ignoreChoice, onVariantChange: ignoreChoice });
+	await settle();
+	server.reply = { status: 200, body: { ...drawing(1, "engine"), views: [...ENGINE_VIEWS] } };
+	await act(async () => {
+		fireEvent.doubleClick(document.querySelector("#card")!);
+	});
+	await settle();
+	const stage = document.querySelector("[data-slot='semantic-board-stage']");
+	expect(stage?.getAttribute("data-board")).toBe("engine");
+	// The variant the link names, as the inspector's way in would have opened.
+	expect(buttons("semantic-variant-choice")[0]?.getAttribute("aria-pressed")).toBe("true");
+});
+
 test("while the board below is drawn, the board above stays on the pane only to be seen leaving", async () => {
 	server.documents["pipeline"] = PIPELINE;
 	server.documents["engine"] = ENGINE;

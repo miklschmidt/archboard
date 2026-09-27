@@ -324,6 +324,8 @@ function stageBody(view: RenderView): JSX.Element {
 			drawing={answer}
 			selection={view.selection}
 			onSelect={view.onPick}
+			reading={view.reading}
+			onOpenDown={view.onOpenDown}
 			reducedMotion={view.reducedMotion ?? false}
 			stale={notice !== null}
 			notice={notice}

@@ -49,6 +49,7 @@ function waitingStage(view: WaitingView): JSX.Element {
 			departure={leaving.departure}
 			selection={null}
 			onSelect={ignorePick}
+			reading={null}
 			reducedMotion={view.reducedMotion ?? false}
 			groupId={null}
 			groupMarks={null}

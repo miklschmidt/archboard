@@ -61,16 +61,12 @@ interface StageSidebarView extends Omit<
 
 /**
  * The inspector, once there is a selection on a picture to explain it against.
- * @param props What the stage knows, and what the picture draws each kind with.
+ * @param props What the stage knows.
  * @param props.view What the stage knows.
- * @param props.appearances What the picture draws each kind with.
  * @returns The inspector, or what the tab says while nothing is selected.
  */
-function SelectionPanel(props: {
-	readonly view: StageSidebarView;
-	readonly appearances: ReadonlyMap<string, AppliedAppearance>;
-}): JSX.Element {
-	const { view, appearances } = props;
+function SelectionPanel(props: { readonly view: StageSidebarView }): JSX.Element {
+	const { view } = props;
 	const { selection, onOpenCode } = view;
 	const answer = view.render.data;
 	if (selection === null || answer === undefined) {
@@ -81,7 +77,6 @@ function SelectionPanel(props: {
 			board={answer.board}
 			variant={answer.variant.id}
 			selection={selection}
-			appearance={appearances.get(selection)}
 			onOpen={view.onOpenDown}
 			{...(onOpenCode === undefined ? {} : { onOpenCode })}
 			groups={view.groupControls}
@@ -126,7 +121,7 @@ function SemanticStageSidebar(props: {
 				/>
 			</SidebarPanel>
 			<SidebarPanel tab="selection">
-				<SelectionPanel view={view} appearances={appearances} />
+				<SelectionPanel view={view} />
 			</SidebarPanel>
 		</SemanticSidebar>
 	);

@@ -85,6 +85,7 @@ import {
 	standingPin,
 	standingSwipe,
 	subjectGroup,
+	PART_ATTRIBUTE,
 	warningBadge,
 	warningOnLine,
 	type StandingOf,
@@ -343,7 +344,8 @@ function paintStepWords(
 		// On the leading edge of the plate, clear of its words.
 		warningOnLine({ x: plate.x, y: plate.y + plate.height / 2 }, unsettled, palette),
 	]);
-	const { opacity, ...identity } = subjectGroup("step", placed.step.id, standing);
+	const { opacity, ...step } = subjectGroup("step", placed.step.id, standing);
+	const identity = { ...step, [PART_ATTRIBUTE]: "label" };
 	if (opacity === undefined) {
 		return wrap("g", identity, words);
 	}

@@ -12,8 +12,6 @@ interface NodeAppearance {
 	readonly bodyColor?: PaletteColor | undefined;
 	/** The group whose colour a card takes, if any. */
 	readonly group?: string | undefined;
-	/** That group's name, as the vault configures it. */
-	readonly groupName?: string | undefined;
 	readonly typeColor?: PaletteColor | undefined;
 	readonly icon: string;
 	readonly typeName: string;
@@ -65,14 +63,14 @@ function nodeAppearances(
  * A card's body colour: its placing group's.
  * @param group The group that places it, if any.
  * @param policy The current vault policy.
- * @returns The group, its name and its colour, or nothing for a card no group places.
+ * @returns The group and its colour, or nothing for a card no group places.
  */
 function groupColour(
 	group: string | undefined,
 	policy: SemanticPolicy,
-): Pick<NodeAppearance, "bodyColor" | "group" | "groupName"> {
+): Pick<NodeAppearance, "bodyColor" | "group"> {
 	const placed = group === undefined ? undefined : ownDefinition(policy.groups, group);
-	return { bodyColor: placed?.color, group, groupName: placed?.name };
+	return { bodyColor: placed?.color, group };
 }
 
 /**
