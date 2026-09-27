@@ -216,13 +216,23 @@ function growth(one: ArchitectureDrawing, other: ArchitectureDrawing): number {
  * @returns True when the challenger is kept.
  */
 function tidierThan(one: ArchitectureDrawing, other: ArchitectureDrawing, cured = 0): boolean {
-	const [mine, theirs] = [defectsIn(one), defectsIn(other)];
-	if (mine.some((value, at) => value > theirs[at]!)) return false;
+	if (!noMoreDefects(one, other)) return false;
 	const [ranked, against] = [untidiness(one), untidiness(other)];
 	if (!ranksBetter(ranked, against) && cured <= 0) return false;
 	const saved = Math.max(0, against[0]! - ranked[0]!) + cured;
 	if (bendCount(one) - bendCount(other) > saved * BENDS_WORTH) return false;
 	return growth(one, other) <= saved * CROSSING_WORTH;
+}
+
+/**
+ * Whether one drawing has no more of any defect than another ({@link defectsIn}).
+ * @param one A drawing.
+ * @param other Another.
+ * @returns True when it has no more of any.
+ */
+function noMoreDefects(one: ArchitectureDrawing, other: ArchitectureDrawing): boolean {
+	const [mine, theirs] = [defectsIn(one), defectsIn(other)];
+	return mine.every((value, at) => value <= theirs[at]!);
 }
 
 /**
@@ -252,4 +262,4 @@ async function tidierSettlement<Settled extends { readonly drawing: Architecture
 	return tidierThan(other.drawing, one.drawing) ? other : one;
 }
 
-export { centreHandicap, crossingsSeen, tidierSettlement, tidierThan };
+export { centreHandicap, crossingsSeen, noMoreDefects, tidierSettlement, tidierThan };
