@@ -1,0 +1,120 @@
+{
+	"nodes": [
+		{
+			"id": "Y70KOm9C",
+			"order": 4000,
+			"name": "Board routes",
+			"kind": "route",
+			"responsibility": "Mounts every board route and answers the reads: the family, the catalogue, one drawn view, the vault check",
+			"groups": ["drawing"]
+		},
+		{
+			"id": "wYcdVszt",
+			"order": 5000,
+			"name": "Semantic board store",
+			"kind": "module",
+			"responsibility": "The one place a board is read or written",
+			"groups": ["writes"],
+			"drillDown": {
+				"board": "Board persistence",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "xP18j2Co",
+			"order": 6000,
+			"name": "Semantic renderer",
+			"kind": "module",
+			"responsibility": "Draws one variant, view and theme as a self-contained document",
+			"groups": ["drawing"],
+			"drillDown": {
+				"board": "Semantic renderer",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "6a2R1ddu",
+			"order": 9000,
+			"name": "Code opener",
+			"kind": "module",
+			"responsibility": "Resolves a node's binding against this machine and opens it"
+		},
+		{
+			"id": "mTtiV3hX",
+			"order": 11000,
+			"name": "Agent CLI",
+			"kind": "service",
+			"responsibility": "Sends every board operation over HTTP and never writes a vault file itself",
+			"drillDown": {
+				"board": "Command interface",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "Eh7icS73",
+			"order": 12000,
+			"name": "Browser",
+			"kind": "service",
+			"responsibility": "Reads boards, says what each pane is showing, and writes nothing",
+			"drillDown": {
+				"board": "Browser application",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		}
+	],
+	"edges": [
+		{
+			"id": "2SS8e4D0",
+			"order": 6000,
+			"from": "Y70KOm9C",
+			"to": "wYcdVszt",
+			"kind": "call",
+			"label": "read the board family",
+			"emphasis": "normal"
+		},
+		{
+			"id": "4jlBP8Y2",
+			"order": 7000,
+			"from": "Y70KOm9C",
+			"to": "xP18j2Co",
+			"kind": "render",
+			"label": "render selected view",
+			"emphasis": "normal"
+		},
+		{
+			"id": "oYfZ2qnC",
+			"order": 11000,
+			"from": "6a2R1ddu",
+			"to": "wYcdVszt",
+			"kind": "call",
+			"label": "resolve node binding",
+			"emphasis": "normal"
+		},
+		{
+			"id": "sn8CVTf4",
+			"order": 13000,
+			"from": "mTtiV3hX",
+			"to": "Y70KOm9C",
+			"kind": "http",
+			"label": "read a board",
+			"emphasis": "normal"
+		},
+		{
+			"id": "3verBPcG",
+			"order": 16000,
+			"from": "Eh7icS73",
+			"to": "Y70KOm9C",
+			"kind": "http",
+			"label": "a board and its picture",
+			"emphasis": "normal"
+		}
+	]
+}

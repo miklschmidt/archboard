@@ -176,13 +176,17 @@ class CardLayout {
 		const first: Subgraph = {
 			graphAttributes: { rank: "source" },
 			nodes: [...header, ...tops].map((name) => this.nodeOf(name)),
-			edges: header.flatMap((tail) =>
-				tops.map((head) => ({ tail, head, attributes: { style: "invis" } })),
-			),
+			edges: [
+				...header.flatMap((tail) =>
+					tops.map((head) => ({ tail, head, attributes: { style: "invis" } })),
+				),
+				...this.heldEdges("top"),
+			],
 		};
 		const last: Subgraph = {
 			graphAttributes: { rank: "sink" },
 			nodes: bottoms.map((name) => this.nodeOf(name)),
+			edges: this.heldEdges("bottom"),
 		};
 		graph.subgraphs.push(...[first, last].filter(({ nodes }) => nodes!.length > 0));
 		const entering = [...block.lines.values()].filter(
@@ -192,6 +196,21 @@ class CardLayout {
 		graph.nodes.push(...[...stubs].map((stub) => box(stub, PORT, PORT)));
 		for (const line of this.boardOrder()) this.connect(line);
 		this.arrange();
+	}
+
+	/**
+	 * The invisible edges that hold the ports on one face in the order its
+	 * parent settles them in (`orders.ts`).
+	 * @param face The face.
+	 * @returns The edges, each port to the next.
+	 */
+	heldEdges(face: "top" | "bottom"): Edge[] {
+		const held = (this.tree.orders.get(`${this.block.id}|${face}`) ?? []).filter(
+			(port) => this.block.ports.get(port) === face,
+		);
+		return held
+			.slice(1)
+			.map((head, index) => ({ tail: held[index]!, head, attributes: { style: "invis" } }));
 	}
 
 	/**

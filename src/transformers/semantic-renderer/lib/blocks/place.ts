@@ -14,7 +14,7 @@ import { Assembly, type Placed } from "@/transformers/semantic-renderer/lib/bloc
 import { CardLayout } from "@/transformers/semantic-renderer/lib/blocks/card-layout";
 import { foldBlock, foldPlan } from "@/transformers/semantic-renderer/lib/blocks/fold";
 import { FoldLayout } from "@/transformers/semantic-renderer/lib/blocks/fold-layout";
-import type { Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
+import { corners, type Insets, type Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import {
@@ -26,6 +26,7 @@ import {
 import { PackLayout, type Packing } from "@/transformers/semantic-renderer/lib/blocks/pack";
 import { settlePorts } from "@/transformers/semantic-renderer/lib/blocks/settle";
 import { sidesOf } from "@/transformers/semantic-renderer/lib/blocks/sides";
+import { heldOrders } from "@/transformers/semantic-renderer/lib/blocks/orders";
 import { NEAR, layJoined } from "@/transformers/semantic-renderer/lib/blocks/joins";
 import { routedScore } from "@/transformers/semantic-renderer/lib/blocks/trunks";
 import { BlockTree, type Block, type Side } from "@/transformers/semantic-renderer/lib/blocks/tree";
@@ -363,9 +364,7 @@ function packsBlocks(tree: BlockTree, block: Block, nesting: Nesting): boolean {
  * @param viz The initialized Graphviz instance.
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
- * @param earlier What an earlier layout decided: the wall each port moves to, and each packing, kept.
- * @param earlier.exits The wall each port moves to.
- * @param earlier.packings Each block of blocks' packing.
+ * @param earlier What an earlier layout decided, kept.
  * @param nesting How containers and group regions are drawn.
  * @param apart The blocks whose joins keep ports of their own, by id.
  * @returns The blocks, every block laid out, and each block of blocks' packing.
@@ -374,18 +373,18 @@ function layAll(
 	viz: Viz,
 	avoid: AvoidEngine,
 	graph: ElkNode,
-	earlier: { exits: ReadonlyMap<string, Side>; packings: ReadonlyMap<string, Packing> } | undefined,
+	earlier: Earlier = NOTHING_EARLIER,
 	nesting: Nesting,
 	apart: ReadonlySet<string>,
-): { tree: BlockTree; laid: Map<string, Laid>; packings: Map<string, Packing> } {
-	const tree = new BlockTree(graph, earlier?.exits ?? new Map(), nesting, apart);
+): Board {
+	const tree = new BlockTree(graph, earlier.exits, nesting, apart, earlier.orders);
 	const laid = new Map<string, Laid>();
 	const packings = new Map<string, Packing>();
 	for (const block of tree.innermostFirst()) {
 		if (packsBlocks(tree, block, nesting)) {
 			const packed = new PackLayout(block, laid, tree, insetsOf(block)).lay(
 				avoid,
-				earlier?.packings.get(block.id),
+				earlier.packings.get(block.id),
 			);
 			packings.set(block.id, packed.packing);
 			laid.set(block.id, packed);
@@ -394,12 +393,36 @@ function layAll(
 	return { tree, laid, packings };
 }
 
+/** What an earlier layout decided, which a layout again keeps. */
+interface Earlier {
+	/** The edge each port moves to (`sides.ts`). */
+	readonly exits: ReadonlyMap<string, Side>;
+	/** Each block of blocks' packing. */
+	readonly packings: ReadonlyMap<string, Packing>;
+	/** The ports each block holds in an order on a face (`orders.ts`). */
+	readonly orders?: ReadonlyMap<string, readonly string[]>;
+}
+
+/** What a first layout keeps: nothing. */
+const NOTHING_EARLIER: Earlier = { exits: new Map(), packings: new Map() };
+
+/** The blocks, every block laid out, and each block of blocks' packing. */
+interface Board {
+	readonly tree: BlockTree;
+	readonly laid: Map<string, Laid>;
+	readonly packings: Map<string, Packing>;
+}
+
 /**
  * Lay a measured hierarchy out one way and route every relationship; when a
  * line's blocks do not stand the way its faces point, once more with every
- * block of its chain crossed by the edges that face each other (`sides.ts`). Last, the ports on
- * every block's top and bottom are settled where both ends of their trunks
- * are known, and the blocks routed again with them there.
+ * block of its chain crossed by the edges that face each other (`sides.ts`).
+ * Where settling would swap ports on a block of cards' face, once more with
+ * those ports held in the settled order (`orders.ts`), kept where it reads
+ * better and crosses fewer lines: the held order is there to part lines that
+ * cross, and a whole block ranked again may buy its score elsewhere. Last, the ports on every block's top and bottom are settled
+ * where both ends of their trunks are known, and the blocks routed again with
+ * them there.
  * @param viz The initialized Graphviz instance.
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
@@ -416,18 +439,45 @@ function layOut(
 ): { tree: BlockTree; laid: Map<string, Laid> } {
 	const first = layAll(viz, avoid, graph, undefined, nesting, apart);
 	const exits = sidesOf(first.tree, first.laid);
-	const last =
-		exits.size === 0
-			? first
-			: layAll(viz, avoid, graph, { exits, packings: first.packings }, nesting, apart);
-	const unsettled = new Map(last.laid);
-	settlePorts({ ...last, insetsOf, avoid });
-	if (
-		routedScore(...pageAndLines(last.tree, unsettled)) >
-		routedScore(...pageAndLines(last.tree, last.laid))
-	)
-		for (const [id, laid] of unsettled) last.laid.set(id, laid);
-	return last;
+	const kept = { exits, packings: first.packings };
+	const last = exits.size === 0 ? first : layAll(viz, avoid, graph, kept, nesting, apart);
+	const orders = apart.size > 0 ? new Map() : heldOrders({ ...last, insetsOf, avoid });
+	const held =
+		orders.size === 0 ? [] : [layAll(viz, avoid, graph, { ...kept, orders }, nesting, apart)];
+	return [last, ...held]
+		.map((laying) => settledOrNot(laying, avoid))
+		.reduce((one, other) =>
+			other.score > one.score && other.crossings < one.crossings && other.bends <= one.bends
+				? other
+				: one,
+		);
+}
+
+/**
+ * A layout with its ports settled, unless the drawing reads better unsettled.
+ * @param laying The layout; its blocks are replaced.
+ * @param avoid The initialized libavoid module.
+ * @returns The blocks, every block laid out, and how the drawing scores.
+ */
+function settledOrNot(
+	laying: Board,
+	avoid: AvoidEngine,
+): { tree: BlockTree; laid: Map<string, Laid>; score: number; crossings: number; bends: number } {
+	const unsettled = new Map(laying.laid);
+	settlePorts({ ...laying, insetsOf, avoid });
+	const [was, is] = [unsettled, laying.laid].map((laid) =>
+		routedScore(...pageAndLines(laying.tree, laid)),
+	);
+	if (was! > is!) for (const [id, laid] of unsettled) laying.laid.set(id, laid);
+	const [, lines] = pageAndLines(laying.tree, laying.laid);
+	const bends = lines.reduce((sum, points) => sum + corners(points).length - 2, 0);
+	return {
+		tree: laying.tree,
+		laid: laying.laid,
+		score: Math.max(was!, is!),
+		crossings: crossingsOf(lines),
+		bends,
+	};
 }
 
 /**
