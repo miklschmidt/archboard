@@ -16,6 +16,7 @@ import {
 	routeEnds,
 	routePoints,
 	sharedStretches,
+	turnsOf,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import agentWorkbench from "./agent-workbench.json";
@@ -416,18 +417,19 @@ test("the lines of one channel take the track order that crosses least", async (
 	expect(routesCross(routes.get("WchncnH1")!, routes.get("ep2NF6Z5")!)).toBe(false);
 });
 
-// Taken from a board of this repository: drawn inline, 'admits writes' from
-// HTTP application ran through the Board writes band across ten other
-// lines; with its groups packed as blocks of their own the board crosses
-// less, on a portrait page that fits the pane worse. A board's groups are
-// packed where that reads better and draws no more line, on whatever page.
-test("a board's groups are packed where that reads better, on whatever page", async () => {
+// Taken from a board of this repository: with its groups packed as blocks of
+// their own it crossed fewer lines, but 'one batch under the board's lease'
+// turned four times round the blocks and crossed five lines, three of them by
+// a corner. A board's groups stay inline where packing reads worse somewhere.
+test("a board's groups stay inline where packing them reads worse somewhere", async () => {
 	const content = orderedFixture(archboardServer);
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
 	const routes = [...corridorPoints(drawing.svg)];
-	const admits = routes.find(([id]) => id === "W2BXIpq7")![1];
-	const crossed = routes.filter(([id, points]) => id !== "W2BXIpq7" && routesCross(admits, points));
-	expect(crossed.length).toBeLessThanOrEqual(1);
+	const batch = routes.find(([id]) => id === "iG4T44Pd")![1];
+	expect(turnsOf(batch)).toBe(0);
+	expect(routes.filter(([id, points]) => id !== "iG4T44Pd" && routesCross(batch, points))).toEqual(
+		[],
+	);
 });
 
 // Taken from the IIS migration board: a line into a container itself ends on a

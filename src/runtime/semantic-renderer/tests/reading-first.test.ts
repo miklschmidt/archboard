@@ -1,10 +1,10 @@
-// Each choice between two whole layouts of a board ranks them on how they
-// read before how they fit the reference pane (ADR 0039): its crossings,
-// each on a corner or in a stack one more; the line unrelated lines draw on
-// one stroke or side by side; its hooks and touching lines; its bends; its
-// line; and only then its fit. What this catches: any of those choices going
-// back to a score that lets a better fit buy a crossing or a bend, read off
-// the named lines each choice moves.
+// Choices between two whole layouts of a board rank them on how they read
+// before how they fit the reference pane (ADR 0039), and the joins and the
+// packing of a board's groups hold to the pick of their earlier weighing
+// wherever that ranking's pick reads worse on some measure. What this
+// catches: a choice going back to a score that lets a better fit buy a
+// crossing or a bend, and a guarded choice taking a drawing that reads worse
+// somewhere for crossings it saves, read off the named lines each moves.
 
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
@@ -13,13 +13,13 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 import {
 	corridorPoints,
 	routesCross,
+	sharedStretches,
 	turnsOf,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import boardPersistence from "./board-persistence.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
-import oneBrowserTwoUses from "./one-browser-two-uses.json";
 import oneCommand from "./one-command.json";
-import theTwoThreads from "./the-two-threads.json";
+import whatTheCliCanBeAsked from "./what-the-cli-can-be-asked.json";
 
 /** The vocabulary of the fixtures, in the dogfood vault's order. */
 const policy = SemanticPolicySchema.parse({
@@ -62,9 +62,14 @@ const policy = SemanticPolicySchema.parse({
  * @param layout The engine.
  * @returns Each line's corridor.
  */
-async function linesOf(fixture: unknown, layout: "track" | "blocks") {
+async function linesOf(fixture: unknown, layout: "track" | "blocks", levels = policy.levels) {
 	const content = orderedFixture(fixture);
-	const drawing = await renderArchitecture({ content, theme: "light", layout, policy });
+	const drawing = await renderArchitecture({
+		content,
+		theme: "light",
+		layout,
+		policy: { ...policy, levels },
+	});
 	return corridorPoints(drawing.svg);
 }
 
@@ -76,23 +81,15 @@ test("a board stacks its containers where its lines then turn less, on whatever 
 	expect(turnsOf(lines.get("Qh7VZ9MQ")!)).toBeLessThanOrEqual(4);
 });
 
-// Taken from a board of this repository: left unsettled, its ports stood on
-// a page 36 px shorter, and 'launch, a 1920x1080 window, stop' stepped aside
-// on its way down; settled, it drops straight.
-test("a block settles its ports where its lines then run round less, on whatever page", async () => {
-	const lines = await linesOf(oneBrowserTwoUses, "blocks");
-	expect(turnsOf(lines.get("BN01aJai")!)).toBe(0);
-});
-
-// Taken from a board of this repository: its lines settled and not ran round
-// its blocks within a fraction of a crossing's worth of each other, and that
-// sliver decided before the lines' bends did: 'submit transition', 'rename
-// transition' and 'discard a whole board' each turned once more, on a page
-// 64 px taller.
-test("lines that run round a block within a sliver of each other are weighed on their bends", async () => {
-	const lines = await linesOf(boardPersistence, "blocks");
-	for (const id of ["s73zYKpi", "smLdyKlp", "wyTy54Ob"])
-		expect(turnsOf(lines.get(id)!), id).toBeLessThanOrEqual(8);
+// Taken from a board of this repository, with its vault's levels: whether its
+// containers stack is weighed on each way as it would be taken, wrapped
+// where a wrap is taken. Weighed whole, it took the other way, where 'take
+// the new name's lease' turned round a block and crossed 'a migrated
+// document', and the board crossed four lines more.
+test("a board stacks its containers or not on each way at its best, wrapped or whole", async () => {
+	const lines = await linesOf(boardPersistence, "track", ["system", "service", "module"]);
+	expect(turnsOf(lines.get("8Let5OXd")!)).toBe(0);
+	expect(routesCross(lines.get("8Let5OXd")!, lines.get("C0t1t0gb")!)).toBe(false);
 });
 
 // Taken from a board of this repository: drawn with its group packed, its
@@ -104,12 +101,12 @@ test("a board keeps its groups inline where packing them turns its lines more", 
 		expect(routesCross(lines.get("8Let5OXd")!, lines.get(id)!), id).toBe(false);
 });
 
-// Taken from a board of this repository: ranked on fit less a share per
-// crossing, its joins were kept whole the other way, and 'workhorse
-// notifications, tell_coordinator calls' turned on its way and crossed 'news
-// as a coordinator turn/start'.
-test("a join is kept whole the way whose lines cross less, on whatever page", async () => {
-	const lines = await linesOf(theTwoThreads, "blocks");
-	expect(turnsOf(lines.get("NztvEtjX")!)).toBe(0);
-	expect(routesCross(lines.get("NztvEtjX")!, lines.get("biUWQZMB")!)).toBe(false);
+// Taken from a board of this repository: its joins kept whole the other way
+// crossed fewer lines, and parted the two 'the drawn SVG' lines into
+// Board client, one running up the other's column and jogging aside a lane
+// short of the card, with 14% more line.
+test("a join is kept whole as before where the other way reads worse somewhere", async () => {
+	const lines = await linesOf(whatTheCliCanBeAsked, "blocks");
+	const shared = sharedStretches(lines.get("W0x3eks9")!, lines.get("I2CofSP0")!);
+	expect(Math.max(0, ...shared)).toBeGreaterThan(100);
 });

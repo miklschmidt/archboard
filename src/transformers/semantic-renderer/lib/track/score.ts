@@ -1,13 +1,17 @@
 // How readable a routed layout is, and the ways to wrap a wide rank (TASK-349).
-// Every choice an engine makes between two layouts of one board is made on
-// how easily each reads, its measures compared in the order of ADR 0039
+// A choice an engine makes between two layouts of one board is made on how
+// easily each reads, its measures compared in the order of ADR 0039
 // (`readingOrder`); its fit to the reference pane only breaks a tie between
-// layouts that read alike. A wrap or a fold exists to fit the page, and the
-// bends and line it adds are its price: it is taken where it has fewer
-// defects, or as few and fits clearly better (`worthTaking`). A layout chosen before the
-// drawing a reader sees exists is weighed on its fit less a share for each
-// crossing, its fit standing for how that drawing will read (`scoreOf`).
+// layouts that read alike. A choice between two whole drawings that also
+// weighs them as it did before holds to that earlier pick wherever the
+// reading order's pick reads worse than it on some measure (`takes`). A wrap
+// or a fold exists to fit the page, and the bends and line it adds are its
+// price: it is taken where it has no more defects and fits materially better
+// (`worthTaking`). A layout chosen before the drawing a reader sees exists is
+// weighed on its fit less a share for each crossing, its fit standing for how
+// that drawing will read (`scoreOf`).
 import { fitIn } from "@/shared/shell-geometry/index";
+import { WRAP_MIN_FIT_GAIN } from "@/transformers/semantic-renderer/config";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 
 /**
@@ -45,9 +49,15 @@ interface Weighed {
 	readonly height: number;
 	readonly crossings: number;
 	readonly bus?: number;
-	/** Its crossings on a line's corner and its stacks of unrelated lines on one stroke, each one crossing more. */
+	/**
+	 * Its crossings on a line's corner and its stacks of unrelated lines on
+	 * one stroke, each one crossing more.
+	 */
 	readonly knots?: number;
-	/** The lanes' worth of line unrelated lines draw on one stroke or side by side nearer than a lane. */
+	/**
+	 * The lanes' worth of line unrelated lines draw on one stroke or side by
+	 * side nearer than a lane.
+	 */
 	readonly tracks?: number;
 	/** Its line ends hooking into a card's side, and its pairs of lines that touch. */
 	readonly hooks?: number;
@@ -55,15 +65,6 @@ interface Weighed {
 	readonly length?: number;
 }
 
-/**
- * How near two layouts' crossings are for a reader to take them as alike: a
- * quarter of one. A choice that counts the line its routes run round a
- * block at a crossing's worth for so much line, or half a crossing for each
- * more line a trunk carries across another, weighs crossings in parts; ranked
- * on a sliver of detour, Board persistence settled its ports where three
- * lines each turned once more, on a page 64 px taller (Blocks).
- */
-const NEAR_CROSSING = 0.25;
 /** How near two layouts' route lengths are for a reader to take them as alike: a twentieth. */
 const NEAR_LENGTH = 0.05;
 
@@ -186,17 +187,16 @@ function firstDifference(mine: readonly number[], theirs: readonly number[]): nu
 
 /**
  * How one layout's defects compare with another's, in the order of ADR
- * 0039: its crossings, each on a corner or in a stack one more, alike
- * within {@link NEAR_CROSSING}; then the line unrelated lines draw on one
- * stroke or side by side; then its hooks and touching lines. These a
- * chooser never trades for fit.
+ * 0039: its crossings, each on a corner or in a stack one more; then the
+ * line unrelated lines draw on one stroke or side by side; then its hooks
+ * and touching lines. These a chooser never trades for fit.
  * @param one A layout.
  * @param other Another.
  * @returns Below zero when the first has fewer, above when more, zero when alike.
  */
 function defectOrder(one: Weighed, other: Weighed): number {
 	const [[crossings, ...mine], [against, ...theirs]] = [measuresOf(one), measuresOf(other)];
-	if (Math.abs(crossings - against) >= NEAR_CROSSING) return crossings - against;
+	if (crossings !== against) return crossings - against;
 	return firstDifference(mine.slice(0, 2), theirs.slice(0, 2));
 }
 
@@ -207,7 +207,8 @@ function defectOrder(one: Weighed, other: Weighed): number {
  * measure reads better whatever the later ones say.
  * @param one A layout.
  * @param other Another.
- * @returns Below zero when the first reads better, above when the other does, zero when they read alike.
+ * @returns Below zero when the first reads better, above when the other
+ * does, zero when they read alike.
  */
 function readingOrder(one: Weighed, other: Weighed): number {
 	const defects = defectOrder(one, other);
@@ -232,6 +233,48 @@ function readingOrder(one: Weighed, other: Weighed): number {
 function readsBetter(one: Weighed, other: Weighed): boolean {
 	const order = readingOrder(one, other);
 	return order === 0 ? fitsBetterAlone(one, other) : order < 0;
+}
+
+/**
+ * Whether one layout reads no worse than another on any measure of ADR 0039:
+ * its crossings, each on a corner or in a stack one more; the line unrelated
+ * lines draw on one stroke or side by side; its hooks and touching lines;
+ * its bends; and its route length, within {@link NEAR_LENGTH}.
+ * @param one A layout.
+ * @param other Another.
+ * @returns True when it is nowhere worse.
+ */
+function noWorse(one: Weighed, other: Weighed): boolean {
+	const [[crossings, ...mine], [against, ...theirs]] = [measuresOf(one), measuresOf(other)];
+	const [length, longest] = [mine.pop()!, theirs.pop()!];
+	return (
+		crossings <= against &&
+		mine.every((value, index) => value <= theirs[index]!) &&
+		length <= longest * (1 + NEAR_LENGTH)
+	);
+}
+
+/**
+ * Whether a choice between two whole drawings that also weighs them as it
+ * did before ADR 0039 takes the first: the reading order's pick
+ * ({@link readsBetter}) where the earlier weighing agrees, or where that
+ * pick reads no worse than the earlier one on any measure ({@link noWorse});
+ * else the earlier pick. Two whole drawings often trade one measure for
+ * another, and the reading order then takes a drawing that reads worse
+ * somewhere than the one taken before: What the CLI can be asked (Blocks)
+ * parted two lines into Board client for two hops fewer, and drew 14% more
+ * line and one line running on into the other's arrow at the card's corner;
+ * Archboard server whole (Track) packed its groups for 13 hops fewer, at 23
+ * bends more, three crossings on a corner and a stack.
+ * @param one A drawing.
+ * @param other Another.
+ * @param earlier Whether the earlier weighing takes the first.
+ * @returns True when the first is taken.
+ */
+function takes(one: Weighed, other: Weighed, earlier: boolean): boolean {
+	const reads = readsBetter(one, other);
+	if (reads === earlier) return reads;
+	return reads ? noWorse(one, other) : !noWorse(other, one);
 }
 
 /**
@@ -284,11 +327,15 @@ function scoresBetter(one: Weighed, other: Weighed): boolean {
 
 /**
  * Whether a layout made to fit the page, a wrap or a fold, is worth taking
- * over the layout it would replace: it has fewer defects
- * ({@link defectOrder}); or, as few, fits the reference pane clearly
- * better. The bends and line it adds between its rows or columns are the
+ * over the layout it would replace: it has no more defects
+ * ({@link defectOrder}) and fits the reference pane materially better, by
+ * `worth`, or by a twentieth ({@link WRAP_MIN_FIT_GAIN}) where it has fewer
+ * defects. The bends and line it adds between its rows or columns are the
  * price of any wrap or fold, which ADR 0039 keeps: ranked on them, no chain
- * of cards folded.
+ * of cards folded. Fitting a twentieth better, a drawing shows at about the
+ * scale it did, which pays for none of that price: taken for one hook fewer
+ * and a hundredth more fit, Live server state (Graphviz) folded into two
+ * columns fed from below, with 37% more line.
  * @param one The wrap or fold.
  * @param other The layout it would replace.
  * @param worth How many times better it must fit, as few defects as it has.
@@ -296,8 +343,8 @@ function scoresBetter(one: Weighed, other: Weighed): boolean {
  */
 function worthTaking(one: Weighed, other: Weighed, worth: number): boolean {
 	const defects = defectOrder(one, other);
-	if (defects !== 0) return defects < 0;
-	return fitIn(one) > fitIn(other) * worth;
+	const gain = defects < 0 ? Math.min(worth, 1 + WRAP_MIN_FIT_GAIN) : worth;
+	return defects <= 0 && fitIn(one) > fitIn(other) * gain;
 }
 
 /**
@@ -412,12 +459,13 @@ export {
 	crossingsOf,
 	defectOrder,
 	fitsBetter,
-	worthTaking,
 	lapsOf,
 	readsBetter,
 	scoreOf,
 	scoresBetter,
 	sinks,
+	takes,
+	worthTaking,
 	wrapPlans,
 	type Crossing,
 	type Run,
