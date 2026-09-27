@@ -49,9 +49,11 @@ const server: {
 	reply: Reply;
 	calls: string[];
 	documents: Record<string, unknown>;
+	/** Boards whose document is answered only once the promise settles. */
+	held: Record<string, Promise<unknown>>;
 	/** What the vault checker answers, or undefined for a checker that refuses. */
 	vault: unknown;
-} = { reply: "pending", calls: [], documents: {}, vault: undefined };
+} = { reply: "pending", calls: [], documents: {}, held: {}, vault: undefined };
 
 const realFetch = globalThis.fetch;
 
@@ -61,6 +63,7 @@ afterEach(() => {
 	server.reply = "pending";
 	server.calls = [];
 	server.documents = {};
+	server.held = {};
 	server.vault = undefined;
 });
 
@@ -188,7 +191,10 @@ function fakeFetch(input: RequestInfo | URL): Promise<Response> {
 	server.calls.push(url);
 	const board = documentAsked(url);
 	if (board !== null) {
-		return answered(documentReply(board));
+		const held = server.held[board];
+		return held === undefined
+			? answered(documentReply(board))
+			: held.then(() => answered(documentReply(board)));
 	}
 	if (url.startsWith(VAULT_ROUTE)) {
 		return answered(
