@@ -215,9 +215,9 @@ function standingsFrom(stated: StatedStandings | undefined): StandingOf {
 const TRAFFIC_ATTRIBUTE = "data-traffic";
 
 /**
- * The attribute on the one group of a subject drawn in two that holds its
- * words: a container's header, a relationship's or a message's label. A viewer
- * says more about a subject where its words are.
+ * The attribute on a group that draws one part of a subject drawn in two: a
+ * container's header, a relationship's or a message's label, a participant's
+ * lifeline. A viewer says more about a subject where its words are.
  */
 const PART_ATTRIBUTE = "data-semantic-part";
 

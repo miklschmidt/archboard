@@ -55,6 +55,7 @@ import {
 	takePointerToPan,
 	type Drag,
 } from "@/ui/semantic-board-canvas/lib/pointer-gesture";
+import { openableAt } from "@/ui/semantic-board-canvas/lib/subject-tips";
 import {
 	markGroupFocus,
 	markSubjects,
@@ -285,6 +286,21 @@ function useLeaving(
 }
 
 /**
+ * What the board says about the variant the picture on the surface draws. While
+ * another variant is being drawn the last picture stays up, and its tips and
+ * double-clicks must not read the variant that has not arrived.
+ * @param reading What the board says about the variant asked for, or null.
+ * @param drawing The picture on the surface.
+ * @returns The reading, when it is of the drawn variant; else null.
+ */
+function drawnReading(
+	reading: VariantReading | null,
+	drawing: SemanticDrawing,
+): VariantReading | null {
+	return reading?.variant?.id === drawing.variant.id ? reading : null;
+}
+
+/**
  * A drawn semantic board: pan, zoom and selection over the server's picture.
  * @param props The drawing, the selection and what to do with a pick.
  * @returns The stage.
@@ -352,7 +368,8 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	const marks = surfaceMarks({ focused: groupMarks !== null, far });
 	const tip = useSubjectTip({ drawing, camera: cameraTransform(view) });
 	const { dismiss: dismissTip, onHover } = tip;
-	const openDown = useDrillOpen(props.reading, props.onOpenDown);
+	const reading = drawnReading(props.reading, drawing);
+	const openDown = useDrillOpen(reading, props.onOpenDown);
 
 	const onPointerDown = useCallback(
 		(event: PointerEvent<HTMLElement>): void => {
@@ -449,12 +466,13 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		[onSelect, drawing.atlas],
 	);
 
-	// A double-click on a card opens the board one level down, when it has one.
+	// A double-click on a card, or a container's header, opens the board one
+	// level down, when it has one.
 	const onDoubleClick = useCallback(
 		(event: MouseEvent<HTMLElement>): void => {
-			openDown(subjectAt(event.target, drawing.atlas));
+			openDown(openableAt(event.target, event.clientY));
 		},
-		[openDown, drawing.atlas],
+		[openDown],
 	);
 
 	const onKeyDown = useCallback(
@@ -532,7 +550,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 					/>
 				</div>
 				{/* oxlint-enable jsx-a11y/no-noninteractive-tabindex */}
-				<SemanticSubjectTip target={tip.shown} reading={props.reading} far={far} />
+				<SemanticSubjectTip target={tip.shown} reading={reading} far={far} />
 				<LeavingPart departure={departure} at="spinner" />
 			</div>
 		</section>

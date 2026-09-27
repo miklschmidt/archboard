@@ -172,7 +172,6 @@ function paintEdgeLine(
 			"data-line-color": appearance.color ?? "neutral",
 			"data-line-dash": appearance.dash,
 			"data-arrowhead": appearance.arrowhead,
-			"data-emphasis": edge.emphasis,
 		},
 		lines([
 			edgeMarker(markerId, appearance.arrowhead, ink),

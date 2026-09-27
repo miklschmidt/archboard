@@ -29,7 +29,7 @@ function styledDrawing(color: string): Record<string, unknown> {
 	};
 }
 
-/** A readable architecture whose applied appearance the inspector explains. */
+/** A readable architecture whose applied appearance the legend explains. */
 const BOARD = {
 	schemaVersion: "2.0.0",
 	kind: "semantic-board",

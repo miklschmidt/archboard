@@ -344,7 +344,7 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 				y: y0! + ((y1! - y0!) * along!) / length,
 			};
 			const [, x, y, w, h] =
-				/data-semantic-id="ab"><rect x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"/u
+				/data-semantic-id="ab"[^>]*><rect x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"/u
 					.exec(svg)!
 					.map(Number);
 			const gap = Math.hypot(
