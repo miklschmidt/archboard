@@ -3,12 +3,12 @@
 // label reserved, side by side, and the count is chosen on those pages: in
 // increasing order, starting from the settled unfolded page, a count replaces
 // the page kept so far when it fits the reference pane materially better,
-// fewer columns winning ties. Only the chosen count is settled, and it is kept
-// when its settled drawing still fits materially better than the unfolded one;
-// a count the router refuses keeps the unfolded reading (TASK-342). The
-// settled fold must also read no worse: no more of any defect the settling
-// ranks drawings on (even-pins.ts), since fit only breaks a tie between
-// drawings that read equally well (ADR 0039).
+// fewer columns winning ties. Only the chosen count is settled; a count the
+// router refuses keeps the unfolded reading (TASK-342). The settled fold is
+// kept where it has fewer of the defects every engine compares in ADR 0039's
+// order, or as few and fits materially better (`worthTaking` in
+// track/score.ts): the bends and line of its lines between columns are the
+// price of any fold, and fit never buys a crossing.
 //
 // A page's size is fixed by placement, and a settled reading's page is its
 // placement with the labels it reserved, so a placement ranks a count for one
@@ -22,7 +22,8 @@ import { WRAP_MIN_FIT_GAIN } from "@/transformers/semantic-renderer/config";
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import { refusedRouting } from "@/transformers/semantic-renderer/lib/layout/checked-routes";
 import { foldColumnCounts } from "@/transformers/semantic-renderer/lib/layout/fold-columns";
-import { noMoreDefects } from "@/transformers/semantic-renderer/lib/layout/even-pins";
+import { drawingWeighed } from "@/transformers/semantic-renderer/lib/layout/even-pins";
+import { worthTaking } from "@/transformers/semantic-renderer/lib/track/score";
 
 /** The size of a page. */
 type Page = Pick<ArchitectureDrawing, "width" | "height">;
@@ -62,14 +63,14 @@ async function chooseReading(
 }
 
 /**
- * Whether a settled fold is kept over the unfolded drawing: it reads no worse
- * and fits the pane materially better.
+ * Whether a settled fold is kept over the unfolded drawing: it has fewer
+ * defects, or as few and fits the pane materially better ({@link worthTaking}).
  * @param candidate The fold.
  * @param baseline The unfolded drawing.
  * @returns True when the fold is kept.
  */
 function readsBetter(candidate: ArchitectureDrawing, baseline: ArchitectureDrawing): boolean {
-	return noMoreDefects(candidate, baseline) && better(candidate, baseline);
+	return worthTaking(drawingWeighed(candidate), drawingWeighed(baseline), 1 + WRAP_MIN_FIT_GAIN);
 }
 
 /**

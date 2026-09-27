@@ -10,28 +10,10 @@
 // a whole.
 import type { ElkExtendedEdge } from "@archboard/elk-rs";
 import type { BlockTree, Projection } from "@/transformers/semantic-renderer/lib/blocks/tree";
-import { lineLength } from "@/transformers/semantic-renderer/lib/blocks/laying";
+import { weighedPlaced, type Page } from "@/transformers/semantic-renderer/lib/blocks/weighing";
 import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
-import { crossingsOf } from "@/transformers/semantic-renderer/lib/track/score";
-import { fitIn } from "@/shared/shell-geometry/index";
-
-/**
- * How much line costs as much as one crossing: a crossing the reader has to
- * look twice at is worth a long run of line, and less than this lets a trunk
- * kept whole lose to lines that each hop what it hopped once.
- */
-const LINE_PER_CROSSING = 1000;
-
-/** How near the line two drawings that cross alike draw is for the page to decide between them: a twentieth. */
-const NEAR = 0.05;
-
-/** A drawing's page and every relationship's points, as drawn. */
-interface Page {
-	readonly width: number;
-	readonly height: number;
-	readonly edges: readonly { readonly id: string; readonly points: readonly Point[] }[];
-}
+import { readsBetter, type Weighed } from "@/transformers/semantic-renderer/lib/track/score";
 
 /** A drawing laid out one way: its blocks, and the drawing as placed. */
 interface Drawn<Placed extends Page> {
@@ -119,17 +101,6 @@ function runsOf(points: readonly Point[]): (readonly [Point, Point])[] {
 }
 
 /**
- * Whether a value lies strictly between two others, clear of both.
- * @param value The value.
- * @param one One end.
- * @param other The other end.
- * @returns True when it is inside.
- */
-function clear(value: number, one: number, other: number): boolean {
-	return value > Math.min(one, other) + 1 && value < Math.max(one, other) - 1;
-}
-
-/**
  * How long two routes run on one line, within a point.
  * @param one A route.
  * @param other Another.
@@ -176,6 +147,17 @@ function partedOf(drawn: Drawn<Page>): number {
 }
 
 /**
+ * Whether a value lies strictly between two others, clear of both.
+ * @param value The value.
+ * @param one One end.
+ * @param other The other end.
+ * @returns True when it is inside.
+ */
+function clear(value: number, one: number, other: number): boolean {
+	return value > Math.min(one, other) + 1 && value < Math.max(one, other) - 1;
+}
+
+/**
  * How many times one line crosses another, each pair of lines counted at
  * each place: a trunk of several lines crosses a line once for each of them,
  * as a join kept before its labels draws its trunk far across the drawing.
@@ -205,25 +187,21 @@ function pairCrossings(lines: readonly (readonly Point[])[]): number {
 }
 
 /**
- * What a drawing's lines cost: each crossing as the reader sees it, half as
+ * What a drawing is weighed on: its lines as drawn, each crossing half as
  * much again for each line through it past the first, since a trunk drawn
- * far across the drawing crosses for every line it carries; and its line at
- * a crossing's worth for every run as long as a trunk pays to avoid one.
- * @param placed The drawing.
- * @returns The crossings' cost and the line's.
+ * far across the drawing crosses for every line it carries.
+ * @param drawn The drawing.
+ * @returns What it is weighed on.
  */
-function costOf(placed: Page): { crossings: number; line: number } {
-	const points = placed.edges.map((line) => line.points);
-	const seen = crossingsOf(points);
-	const crossings = seen + (pairCrossings(points) - seen) / 2;
-	return { crossings, line: lineLength(points) / LINE_PER_CROSSING };
+function weighedJoins(drawn: Drawn<Page>): Weighed {
+	const weighed = weighedPlaced(drawn.tree, drawn.placed);
+	const pairs = pairCrossings(drawn.placed.edges.map(({ points }) => points));
+	return { ...weighed, crossings: weighed.crossings + (pairs - weighed.crossings) / 2 };
 }
 
 /**
  * Whether one drawing reads better than another: it parts fewer joined
- * lines; or, as few, its lines cost less; or, crossing alike and drawing
- * about as much line, its page fits the reference pane better, since two
- * layouts that read alike can stand the board in very different shapes.
+ * lines; or, as few, it reads better ({@link readsBetter}).
  * @param one A drawing.
  * @param other Another.
  * @returns True when the first reads better.
@@ -231,14 +209,7 @@ function costOf(placed: Page): { crossings: number; line: number } {
 function drawsBetter(one: Drawn<Page>, other: Drawn<Page>): boolean {
 	const [parted, fewest] = [partedOf(one), partedOf(other)];
 	if (parted !== fewest) return parted < fewest;
-	const [mine, theirs] = [costOf(one.placed), costOf(other.placed)];
-	const [cost, least] = [mine.crossings + mine.line, theirs.crossings + theirs.line];
-	const [fit, best] = [fitIn(one.placed), fitIn(other.placed)];
-	const alike =
-		Math.abs(mine.crossings - theirs.crossings) < 1e-9 &&
-		Math.abs(mine.line - theirs.line) <= NEAR * Math.min(mine.line, theirs.line);
-	if (!alike || Math.abs(fit - best) < 1e-9) return cost < least - 1e-9;
-	return fit > best;
+	return readsBetter(weighedJoins(one), weighedJoins(other));
 }
 
 /**

@@ -54,7 +54,7 @@ import {
 	touchKeys,
 	trackedLanes,
 } from "@/transformers/semantic-renderer/lib/layout/stacked-runs";
-import { crossingsOf } from "@/transformers/semantic-renderer/lib/track/score";
+import { crossingsOf, type Weighed } from "@/transformers/semantic-renderer/lib/track/score";
 
 /** The share a drawing may grow its page or its lines by for every defect it saves. */
 const CROSSING_WORTH = 0.05;
@@ -216,7 +216,8 @@ function growth(one: ArchitectureDrawing, other: ArchitectureDrawing): number {
  * @returns True when the challenger is kept.
  */
 function tidierThan(one: ArchitectureDrawing, other: ArchitectureDrawing, cured = 0): boolean {
-	if (!noMoreDefects(one, other)) return false;
+	const [mine, theirs] = [defectsIn(one), defectsIn(other)];
+	if (mine.some((value, at) => value > theirs[at]!)) return false;
 	const [ranked, against] = [untidiness(one), untidiness(other)];
 	if (!ranksBetter(ranked, against) && cured <= 0) return false;
 	const saved = Math.max(0, against[0]! - ranked[0]!) + cured;
@@ -225,14 +226,23 @@ function tidierThan(one: ArchitectureDrawing, other: ArchitectureDrawing, cured 
 }
 
 /**
- * Whether one drawing has no more of any defect than another ({@link defectsIn}).
- * @param one A drawing.
- * @param other Another.
- * @returns True when it has no more of any.
+ * What a settled drawing is weighed on, as every engine weighs a layout on
+ * how it reads (`readingOrder` in track/score.ts): its defects
+ * ({@link defectsIn}), its bends and its line length, and its page.
+ * @param drawing The drawing.
+ * @returns What it is weighed on.
  */
-function noMoreDefects(one: ArchitectureDrawing, other: ArchitectureDrawing): boolean {
-	const [mine, theirs] = [defectsIn(one), defectsIn(other)];
-	return mine.every((value, at) => value <= theirs[at]!);
+function drawingWeighed(drawing: ArchitectureDrawing): Weighed {
+	const [seen, touches, stacked, hooks, tracked] = defectsIn(drawing);
+	return {
+		width: drawing.width,
+		height: drawing.height,
+		crossings: seen!,
+		tracks: stacked! + tracked!,
+		hooks: hooks! + touches!,
+		bends: bendCount(drawing),
+		length: lineLength(drawing),
+	};
 }
 
 /**
@@ -262,4 +272,4 @@ async function tidierSettlement<Settled extends { readonly drawing: Architecture
 	return tidierThan(other.drawing, one.drawing) ? other : one;
 }
 
-export { centreHandicap, crossingsSeen, noMoreDefects, tidierSettlement, tidierThan };
+export { centreHandicap, crossingsSeen, drawingWeighed, tidierSettlement, tidierThan };

@@ -11,11 +11,12 @@ import { layBoth, settled, type Laying } from "@/transformers/semantic-renderer/
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import type { Block, BlockTree } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
+import { weighedLaid } from "@/transformers/semantic-renderer/lib/blocks/weighing";
 import { grids } from "@/transformers/semantic-renderer/lib/track/grid";
 import {
-	costOf,
 	crossingsOf,
-	readsBetter,
+	defectOrder,
+	fitsBetter,
 	scoreOf,
 	scoresBetter,
 	sinks,
@@ -71,31 +72,55 @@ function bestWrap(
 				),
 			]
 		: [];
+	/**
+	 * The innermost cluster around a card, if any.
+	 * @param card The card.
+	 * @returns The cluster.
+	 */
+	const around = (card: string): string | undefined => block.clusterOf.get(card);
 	// A wrap that sinks a card stands it off on a late rank, away from its
-	// neighbours; it may fit the page better, but it is no wrap.
+	// neighbours; it may fit the page better, but it is no wrap. Where a card
+	// stands across the block is settled before its lines are routed, so a
+	// wrap lined up that sinks one is not routed at all.
 	const wraps = wrapsOf(laying.whole, block, tree).flatMap((lowered) =>
 		columnChoices(lowered, tree.nesting)
-			.map((columns) =>
-				wrapOf(
-					layBoth(
-						viz,
-						() => new CardLayout(block, laid, tree, insets, { lowered, stacked, columns }),
-					),
-					lowered,
-				),
+			.map(
+				(columns) => () => new CardLayout(block, laid, tree, insets, { lowered, stacked, columns }),
 			)
-			.filter(({ laid: { boxes } }) => !sinks(lowered, boxes, (card) => block.clusterOf.get(card))),
+			.filter((make) => !sinks(lowered, linedUp(viz, make()), around))
+			.map((make) => wrapOf(layBoth(viz, make), lowered))
+			.filter(({ laid: { boxes } }) => !sinks(lowered, boxes, around)),
 	);
+	const root = block.kind === "root";
+	/**
+	 * What a wrap of the block is weighed on: the board's on how it reads, a
+	 * block inside it on its page and crossings alone ({@link worthWrapping}).
+	 * @param one The wrap laid out.
+	 * @returns What it is weighed on.
+	 */
+	const weigh = (one: Laid): Weighed => (root ? weighedLaid(tree, block, one) : weighed(one));
 	// A wrap is chosen with its titles tied; only the chosen one is laid again with them pulled down.
 	const best = [...gridded, ...wraps].reduce<Wrapped | undefined>(
-		(one, other) => (one === undefined || wrapsBetter(other, one, block) ? other : one),
+		(one, other) => (one === undefined || wrapsBetter(other, one, { root, weigh }) ? other : one),
 		undefined,
 	);
-	if (best === undefined || !worthWrapping(weighed(best.laid), weighed(laying.whole), block))
+	if (best === undefined || !worthWrapping(weigh(best.laid), weigh(laying.whole), root))
 		return undefined;
 	const kept = settled({ tied: best.laid, untied: best.untied });
-	const sunk = sinks(best.lowered, kept.boxes, (card) => block.clusterOf.get(card));
+	const sunk = sinks(best.lowered, kept.boxes, around);
 	return sunk ? best.laid : kept;
+}
+
+/**
+ * Where a layout of a block stands its items with its titles tied, lined up
+ * and not yet routed.
+ * @param viz The initialized Graphviz instance.
+ * @param layout A fresh layout of the block.
+ * @returns Every item's box.
+ */
+function linedUp(viz: Viz, layout: CardLayout): ReadonlyMap<string, Box> {
+	layout.clusters.keepTies = true;
+	return layout.lined(viz).boxes;
 }
 
 /** A wrap or grid laid out, and how many rows a wrap deals its rank into. */
@@ -125,18 +150,18 @@ function wrapOf(laying: Laying, lowered?: ReadonlyMap<string, number>): Wrapped 
 
 /**
  * Whether a block's best wrap is taken over the block whole. The board's is
- * taken where it reads better, or as well and fits the page clearly better
+ * taken where it reads better, or alike and fits the page clearly better
  * ({@link worthTaking}). A block inside the board is laid out before its
  * parent packs it, so how its wrap will read is not known yet: its wrap is
  * taken where it scores clearly better ({@link scoreOf}), its fit standing
  * for how well its parent can pack it.
  * @param wrap The wrap.
  * @param whole The block whole.
- * @param block The block.
+ * @param root Whether the block is the board.
  * @returns True when the wrap is taken.
  */
-function worthWrapping(wrap: Weighed, whole: Weighed, block: Block): boolean {
-	if (block.kind === "root") return worthTaking(wrap, whole, WORTH_WRAPPING);
+function worthWrapping(wrap: Weighed, whole: Weighed, root: boolean): boolean {
+	if (root) return worthTaking(wrap, whole, WORTH_WRAPPING);
 	return scoreOf(wrap) > scoreOf(whole) * WORTH_WRAPPING_INSIDE;
 }
 
@@ -149,15 +174,20 @@ function worthWrapping(wrap: Weighed, whole: Weighed, block: Block): boolean {
  * from how it reads.
  * @param one A wrap.
  * @param other Another.
- * @param block The block.
+ * @param weighing Whether the block is the board, and what a wrap is weighed on.
+ * @param weighing.root Whether the block is the board.
+ * @param weighing.weigh What a wrap laid out is weighed on.
  * @returns True when the first is better.
  */
-function wrapsBetter(one: Wrapped, other: Wrapped, block: Block): boolean {
-	const [mine, theirs] = [weighed(one.laid), weighed(other.laid)];
-	const root = block.kind === "root";
+function wrapsBetter(
+	one: Wrapped,
+	other: Wrapped,
+	{ root, weigh }: { root: boolean; weigh: (laid: Laid) => Weighed },
+): boolean {
+	const [mine, theirs] = [weigh(one.laid), weigh(other.laid)];
 	const fewer = fewerRows(one, other);
 	if (fewer !== undefined && tied(mine, theirs, root)) return fewer;
-	return root ? readsBetter(mine, theirs) : scoresBetter(mine, theirs);
+	return root ? fitsBetter(mine, theirs) : scoresBetter(mine, theirs);
 }
 
 /**
@@ -181,7 +211,7 @@ function fewerRows(one: Wrapped, other: Wrapped): boolean | undefined {
  */
 function tied(one: Weighed, other: Weighed, root: boolean): boolean {
 	return root
-		? costOf(one) === costOf(other) && fitIn(one) === fitIn(other)
+		? defectOrder(one, other) === 0 && fitIn(one) === fitIn(other)
 		: Math.abs(scoreOf(one) - scoreOf(other)) <= 1e-9;
 }
 

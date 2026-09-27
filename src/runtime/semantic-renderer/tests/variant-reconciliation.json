@@ -1,0 +1,99 @@
+{
+	"nodes": [
+		{
+			"id": "i2CrY6Xj",
+			"order": 5000,
+			"name": "Lifecycle transitions",
+			"kind": "function",
+			"responsibility": "Defines board lifecycle changes",
+			"groups": ["writes"]
+		},
+		{
+			"id": "xoapCJNG",
+			"order": 6000,
+			"name": "Edit semantic content",
+			"kind": "function",
+			"responsibility": "Resolves names into stable subjects",
+			"groups": ["writes"]
+		},
+		{
+			"id": "8CAH6rSD",
+			"order": 7000,
+			"name": "Propagate descendant edits",
+			"kind": "function",
+			"responsibility": "Carries parent changes into drafts",
+			"groups": ["writes"]
+		},
+		{
+			"id": "DJXluInA",
+			"order": 8000,
+			"name": "Settle disagreements",
+			"kind": "function",
+			"responsibility": "Answers the disagreements a proposal holds and carries the answer down",
+			"groups": ["writes"]
+		},
+		{
+			"id": "803TfwDf",
+			"order": 14000,
+			"name": "Adopt",
+			"kind": "function",
+			"responsibility": "Makes a settled draft current, or gives a board nobody had built its first current variant; refuses a draft derived from an architecture a later adoption superseded unless forced",
+			"groups": ["writes"]
+		},
+		{
+			"id": "eCpnhcUh",
+			"order": 15000,
+			"name": "Shelve",
+			"kind": "function",
+			"responsibility": "Lets a proposal go without deleting it, so every link that names it still opens it",
+			"groups": ["writes"]
+		}
+	],
+	"edges": [
+		{
+			"id": "kOdz3Hxq",
+			"order": 5000,
+			"from": "i2CrY6Xj",
+			"to": "xoapCJNG",
+			"kind": "call",
+			"label": "apply content edit",
+			"emphasis": "normal"
+		},
+		{
+			"id": "JRnj6xbQ",
+			"order": 6000,
+			"from": "i2CrY6Xj",
+			"to": "8CAH6rSD",
+			"kind": "call",
+			"label": "reconcile descendants",
+			"emphasis": "normal"
+		},
+		{
+			"id": "3yXrbLgg",
+			"order": 7000,
+			"from": "i2CrY6Xj",
+			"to": "DJXluInA",
+			"kind": "call",
+			"label": "settle disagreements",
+			"emphasis": "normal"
+		},
+		{
+			"id": "dWqqFFkC",
+			"order": 25000,
+			"from": "i2CrY6Xj",
+			"to": "803TfwDf",
+			"kind": "call",
+			"label": "adopt a draft",
+			"emphasis": "normal"
+		},
+		{
+			"id": "HyyLvPct",
+			"order": 26000,
+			"from": "i2CrY6Xj",
+			"to": "eCpnhcUh",
+			"kind": "call",
+			"label": "shelve a proposal",
+			"emphasis": "normal"
+		}
+	]
+}

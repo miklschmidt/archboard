@@ -363,29 +363,36 @@ yardstick for fit.
 
 How each engine's choices weigh fit since ADR 0039:
 
-- **Graphviz's column fold** (`column-readings.ts`). The column count is still
-  chosen on placements by fit, since a fold is there to fit a tall board. The
-  settled fold is kept only where it reads no worse than the unfolded drawing:
-  no more of any defect the settling ranks drawings on (`even-pins.ts`
-  `noMoreDefects`: crossings seen, touches and crowded joins, stacked lanes,
-  hooks, lanes run side by side) and a material gain in fit. Six drawings
-  unfold: Command interface's One command's path, Cloud Infrastructure whole
-  and Regional entry, IIS Ingress Migration whole and Today: legacy routing,
-  each losing its crossings and most of its bends, and Archboard server
-  whole, whose fold crossed two lines fewer but ran 25 lanes more of
-  unrelated lines side by side and hooked three more ends.
-- **Track and Blocks** (`track/score.ts`). A layout's cost to its reader is
-  its crossings, each line that laps round a block as one more and each line
-  between folded columns as eight; `readsBetter` ranks on that cost and then
-  on fit. It decides whether a block's containers stack (each way weighed at
-  its best, wrapped or folded as it would be taken, so a stacking that only
-  reads well wrapped is not refused on its unwrapped layout), whether the
-  settled ports are kept, the best of the board's wraps, and whether a board
-  drawn inline packs its group regions (no longer also required to fit no
-  worse). The board's wrap is taken where it reads better, or reads as well
-  and fits clearly better (`worthTaking`). A block's joins (`joins.ts`) go to
-  the better fit only between drawings that cross alike and draw about as
-  much line.
+- **One comparison** (`track/score.ts` `readingOrder`). Two layouts are
+  compared on their measures in the ADR's order, and a later measure decides
+  only between layouts alike on every earlier one: crossings, each on a
+  line's corner and each stack of two unrelated lines on one stroke one more
+  (alike within a quarter of a crossing, so a sliver of detour counted in
+  crossings' worth decides nothing); the lanes' worth of line unrelated lines
+  draw on one stroke or side by side nearer than a lane; hooks into a card's
+  side and lines that touch; bends; route length (alike within a twentieth);
+  then fit, then the smaller page. The Graphviz settlement's detectors weigh
+  the settled drawing (`even-pins.ts` `drawingWeighed`); the track and blocks
+  engines weigh their lines as drawn (`layout/reading-measures.ts`,
+  `blocks/weighing.ts`), where lines on one trunk by design are no stack and
+  lines out of one end fork there, so they do not touch.
+- **Choices between whole layouts** rank on it (`readsBetter`): whether a
+  block's containers stack (each way weighed at its best, wrapped or folded as
+  it would be taken), whether a layout's settled ports are kept (its lines'
+  detours counted as crossings at the trunk router's rate), whether a board
+  drawn inline packs its group regions, and which way a block's joins are
+  kept whole (a crossing half as much again for each more line a trunk
+  carries through it). Ranked on crossings and fit alone, Agent workbench's
+  The two threads (Blocks) kept its joins whole the way that crosses three
+  lines, where the other crosses one and turns less.
+- **Wraps and folds** exist to fit the page, and the bends and line they add
+  are their price: the board's wrap and Graphviz's column fold are taken
+  where they have fewer defects (the comparison up to hooks and touches), or
+  as few and fit clearly better (`worthTaking`), and the board's wraps are
+  ranked the same way (`fitsBetter`). Ranked on their bends too, no chain of
+  cards folded. Graphviz's column count is still
+  chosen on placements by fit. Archboard server whole (Graphviz) folds again:
+  it crosses fewer lines folded.
 - **Kept on fit** (`scoreOf`, fit less a share for each crossing): a block of
   blocks' packing (`pack.ts`) and the wrap of a block inside the board
   (`wraps.ts`) are chosen before the drawing a reader sees exists, on the
