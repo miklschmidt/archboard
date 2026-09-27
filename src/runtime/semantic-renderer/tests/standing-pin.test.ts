@@ -110,6 +110,12 @@ test("a straight channel is not offered beside a standing pin", async () => {
 		graphOf([{ id: "source", x: 0, y: 20, width: 240, height: 88 }, target], {}),
 	);
 	expect(fromPinnedCorner(target, end)).toBeGreaterThanOrEqual(PIN_CLEARANCE);
+	// Beside it, the span the cards share across lies all within the pin's clearance of the left face.
+	const beside = { id: "target", x: 400, y: 100, width: 340, height: 88, ...pinned };
+	const across = await endOf(
+		graphOf([{ id: "source", x: 0, y: 70, width: 240, height: 60 }, beside], {}),
+	);
+	expect(fromPinnedCorner(beside, across)).toBeGreaterThanOrEqual(PIN_CLEARANCE);
 });
 
 test("no line of a proposal ends beside the standing pin a card wears", async () => {
