@@ -1,5 +1,5 @@
 import { type SemanticEdge } from "@/shared/semantic-board/index";
-import { coord, type Box, type Point } from "@/transformers/semantic-renderer/lib/geometry";
+import { coord, type Point } from "@/transformers/semantic-renderer/lib/geometry";
 import {
 	pathOf,
 	pointOnSegment,
@@ -7,7 +7,7 @@ import {
 	type Curve,
 	type Segment,
 } from "@/transformers/semantic-renderer/lib/layout/curves";
-import { restingPlace } from "@/transformers/semantic-renderer/lib/svg/comet-rest";
+import { restingPlace, type Around } from "@/transformers/semantic-renderer/lib/svg/comet-rest";
 import {
 	shotSchedule,
 	type ShotSchedule,
@@ -55,8 +55,8 @@ interface Pulse {
 	/** The page the comets are drawn on: its background, its neutral line colour and its text colour. */
 	readonly page: Pick<Palette, "background" | "edge" | "foreground">;
 	readonly traffic: NonNullable<SemanticEdge["traffic"]>;
-	/** Every relationship's label, drawn over the traffic: no resting streak sits half under one. */
-	readonly labels: readonly Box[];
+	/** Every relationship's label, drawn over the traffic, and where other lines meet this one: a resting streak keeps clear of them. */
+	readonly around: Around;
 }
 
 /** How much of the line it rides a streak may cover at most, so a streak never fills a short line. */
@@ -368,7 +368,7 @@ function streakLayer(
  * layer is one dash pattern over the whole route, so shots in flight together
  * are dashes of one pattern and none is dropped, whatever the volume. A still
  * picture shows one streak at rest on the line, pointing the way it flows.
- * @param pulse Route, line ink, line width, authored traffic and the labels drawn over it.
+ * @param pulse Route, line ink, line width, authored traffic and what its resting streak keeps clear of.
  * @returns The animated traffic, retained in exported SVGs.
  */
 function travellingPulses(pulse: Pulse): string {
@@ -396,7 +396,7 @@ function travellingPulses(pulse: Pulse): string {
 			ride,
 			length,
 			{ glow: glow / 2, body: tail * STREAK_TAIL_LAYERS[2].reach },
-			pulse.labels,
+			pulse.around,
 		),
 		still: Math.ceil(length + glow) + 1,
 		spacings,
