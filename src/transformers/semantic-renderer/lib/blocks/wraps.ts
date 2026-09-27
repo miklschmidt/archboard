@@ -1,7 +1,7 @@
 // A block of cards' widest rank wrapped into rows, or its loose cards set out
 // as a grid, when that scores clearly better than the block whole (`scoreOf`
 // in track/score.ts).
-import type { Viz } from "@viz-js/viz";
+import type { Graphviz } from "@/transformers/semantic-renderer/lib/blocks/graphviz-once";
 import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
 import { CardLayout } from "@/transformers/semantic-renderer/lib/blocks/card-layout";
 import type { Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
@@ -53,7 +53,7 @@ function weighed(laid: Laid): Weighed {
  * @returns The best wrap, or nothing when the block stays whole.
  */
 function bestWrap(
-	viz: Viz,
+	viz: Graphviz,
 	tree: BlockTree,
 	block: Block,
 	laying: { laid: Map<string, Laid>; whole: Laid; stacked: boolean; insets: Insets },
@@ -123,7 +123,7 @@ function wrapsBetter(one: Wrapped, other: Wrapped): boolean {
  * @param layout A fresh layout of the block.
  * @returns Every item's box.
  */
-function linedUp(viz: Viz, layout: CardLayout): ReadonlyMap<string, Box> {
+function linedUp(viz: Graphviz, layout: CardLayout): ReadonlyMap<string, Box> {
 	layout.clusters.keepTies = true;
 	return layout.lined(viz).boxes;
 }
