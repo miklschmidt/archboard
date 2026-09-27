@@ -96,7 +96,7 @@ interface Block {
 	/** The innermost inline cluster around each of its items and clusters. */
 	readonly clusterOf: Map<string, string>;
 	/** The region round a container alone in it, which it is laid out as (`lone.ts`). */
-	readonly lone?: Lone;
+	lone?: Lone;
 }
 
 /** Where one relationship is drawn: its block, and the blocks it leaves and enters. */

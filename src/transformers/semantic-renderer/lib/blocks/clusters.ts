@@ -27,7 +27,7 @@ import {
 	type Join,
 	type Output,
 } from "@/transformers/semantic-renderer/lib/track/graphviz";
-import { LONE_INSET, titleRow } from "@/transformers/semantic-renderer/lib/blocks/lone";
+import { LONE_INSET, titleRow, titleWidth } from "@/transformers/semantic-renderer/lib/blocks/lone";
 import type { Cluster } from "@/transformers/semantic-renderer/lib/blocks/inline";
 
 /** Room a group region keeps around its members. */
@@ -156,7 +156,7 @@ class Clusters {
 		for (const [index, cluster] of [...block.clusters.values()].entries()) {
 			const name = `cluster_${index}`;
 			const inset = insetOf(cluster);
-			const title = box(titleOf(cluster.id), cluster.header.width, cluster.header.height);
+			const title = box(titleOf(cluster.id), titleWidth(cluster, inset), cluster.header.height);
 			const made: Nested = {
 				name,
 				graphAttributes: { margin: inset },

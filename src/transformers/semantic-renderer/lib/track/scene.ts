@@ -16,6 +16,12 @@ const TRACK_TITLE = "archboard.track.title";
  * which its own face stands in from its title row.
  */
 const TRACK_BELOW = "archboard.track.below";
+/**
+ * The layout option on a frame laid out as the region round it: how wide the
+ * region's caption needs it. The region stands that wide round the frame
+ * fitted to what it holds, where its layout kept the room (`sides.ts`).
+ */
+const TRACK_WIDE = "archboard.track.wide";
 /** The root layout option that carries every group region, as JSON `PlacedRegion` rows. */
 const TRACK_REGIONS = "archboard.track.regions";
 /** How far a region's caption sits in from its band's left edge. */
@@ -470,6 +476,7 @@ export {
 	TRACK_POLYLINE,
 	TRACK_REGIONS,
 	TRACK_TITLE,
+	TRACK_WIDE,
 	centreX,
 	cardFace,
 	type Band,

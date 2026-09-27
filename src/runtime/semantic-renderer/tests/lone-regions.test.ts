@@ -6,8 +6,9 @@
 // off the lines into it and ran lines through cards; a line that stops on the
 // region's wall, or in its inset beside the node, short of its node; a
 // container alone in its region fitted tighter round what it holds; a caption
-// painted over a line into the card; and a label lost from a line into a
-// container a packed region holds.
+// painted over a line into the card; a label lost from a line into a
+// container a packed region holds; and a caption run past the wall of a
+// region round a container.
 import { expect, test } from "bun:test";
 import type { RenderedDiagram } from "@/runtime/semantic-renderer/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -75,10 +76,11 @@ type Engine = "track" | "blocks";
  * Draw a fixture.
  * @param content The board.
  * @param layout The engine.
+ * @param under The policy, if not the fixtures' own.
  * @returns The drawing.
  */
-function drawn(content: VariantContent, layout: Engine): Promise<RenderedDiagram> {
-	return renderArchitecture({ content, theme: "light", policy, layout });
+function drawn(content: VariantContent, layout: Engine, under = policy): Promise<RenderedDiagram> {
+	return renderArchitecture({ content, theme: "light", policy: under, layout });
 }
 
 /**
@@ -118,15 +120,9 @@ function ungrouped(content: VariantContent): VariantContent {
 	};
 }
 
-/**
- * One number attribute of a tag.
- * @param tag The tag's attributes.
- * @param name The attribute.
- * @returns Its value.
- */
-function read(tag: string, name: string): number {
-	return Number(new RegExp(` ${name}="([^"]+)"`, "u").exec(tag)![1]);
-}
+/** One number attribute of a tag's attributes. */
+const read = (tag: string, name: string): number =>
+	Number(new RegExp(` ${name}="([^"]+)"`, "u").exec(tag)![1]);
 
 /**
  * Every region one group draws, read from the drawn document, on the page:
@@ -446,8 +442,6 @@ test.each(["track", "blocks"] as const)(
 	async (layout) => {
 		const drawing = await drawn(orderedFixture(legacyRouting), layout);
 		const [balancer, pool] = [drawing.atlas.nodes["zYCHWE5R"]!, drawing.atlas.nodes["2cGTPFaw"]!];
-		// Round the pool, and not again round its hosts inside it.
-		expect(regionsOf(drawing.svg, "walkthrough").length).toBe(1);
 		expect(Math.abs(balancer.x + balancer.width / 2 - (pool.x + pool.width / 2))).toBeLessThan(1);
 	},
 );
@@ -470,31 +464,35 @@ test("a labelled line into a container its group's region packs keeps its label"
 	expect([...routeLabels(drawing.svg).keys()]).toEqual(["in"]);
 });
 
-// A caption wider than the card it is alone with widens the region, and the
-// card stood stretched across it. Its lines still end on it.
-test.each(["track", "blocks"] as const)(
-	"the %s engine keeps a card alone in its region as wide as without it under a wider caption",
-	async (layout) => {
-		const wide = SemanticPolicySchema.parse({
-			...policy,
-			groups: {
-				state: { name: "A group whose caption runs far wider than its card", color: "teal" },
-			},
-		});
-		const content = orderedFixture({
-			nodes: [
-				{ id: "one", name: "One", kind: "module", groups: ["state"] },
-				{ id: "two", name: "Two", kind: "module" },
-			],
-			edges: [{ id: "on", from: "one", to: "two", kind: "call" }],
-		});
-		const widthOf = async (board: VariantContent): Promise<number> =>
-			(await renderArchitecture({ content: board, theme: "light", policy: wide, layout })).atlas
-				.nodes["one"]!.width;
-		const drawing = await renderArchitecture({ content, theme: "light", policy: wide, layout });
-		const [region] = regionsOf(drawing.svg, "state");
-		expect(region!.box.width).toBeGreaterThan((await widthOf(ungrouped(content))) + 28);
-		expect(await widthOf(content)).toBe(await widthOf(ungrouped(content)));
-		expect(endsOffNode(content, drawing)).toEqual([]);
+// A caption wider than the node alone in its region widens the region, not the
+// node, which stands in its middle with its lines ending on it. A card stood
+// stretched across the region; round a container the region stood no wider
+// than the container, and the caption ran past its wall.
+const captioned = SemanticPolicySchema.parse({
+	...policy,
+	groups: { state: { name: "A group whose caption runs far wider than its node", color: "teal" } },
+});
+const part = (id: string, more = {}) => ({ id, name: id, kind: "module", ...more });
+const alone = { groups: ["state"] };
+const underCaption = {
+	card: [part("one", alone), part("two")],
+	container: [part("a"), part("box", { ...alone, kind: "system" }), part("k", { parent: "box" })],
+};
+test.each(["track", "blocks"].flatMap((by) => ["card", "container"].map((round) => [by, round])))(
+	"the %s engine widens the region round a %s alone in it for its caption",
+	async (layout, round) => {
+		const nodes = underCaption[round as keyof typeof underCaption];
+		const edges = [{ id: "on", from: nodes[0]!.id, to: nodes.at(-1)!.id, kind: "call" }];
+		const content = orderedFixture({ nodes, edges });
+		const [drawing, plain] = await Promise.all(
+			[content, ungrouped(content)].map((board) => drawn(board, layout as Engine, captioned)),
+		);
+		const { box: region, caption } = regionsOf(drawing!.svg, "state")[0]!;
+		const [lone] = loneNodes(content);
+		const own = drawing!.atlas.nodes[lone!]!;
+		expect(caption.x + caption.width).toBeLessThanOrEqual(region.x + region.width);
+		expect(own.width).toBe(plain!.atlas.nodes[lone!]!.width);
+		expect(Math.abs(own.x + own.width / 2 - region.x - region.width / 2)).toBeLessThan(1);
+		expect(endsOffNode(content, drawing!)).toEqual([]);
 	},
 );

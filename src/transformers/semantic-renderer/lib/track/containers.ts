@@ -20,6 +20,8 @@ interface FrameShape {
 	readonly id: string;
 	readonly box: Box;
 	readonly depth: number;
+	/** The region round a frame alone in its group's region, laid out as that region (`blocks/lone.ts`). */
+	readonly region?: Box;
 }
 
 /** A group region's band and caption once the scene is spaced. */
