@@ -1,0 +1,176 @@
+{
+	"nodes": [
+		{
+			"id": "wYcdVszt",
+			"order": 5000,
+			"name": "Semantic board store",
+			"kind": "module",
+			"responsibility": "The one place a board is read or written",
+			"groups": ["writes"]
+		},
+		{
+			"id": "yiSc1qWU",
+			"order": 7000,
+			"name": "Pane registry",
+			"kind": "module",
+			"responsibility": "The sockets, what each pane is showing, and the news broadcast to every one of them",
+			"groups": ["panes"]
+		},
+		{
+			"id": "ZuLyutvj",
+			"order": 8000,
+			"name": "Disk change watcher",
+			"kind": "module",
+			"responsibility": "Notices a board changed on disk that this process did not write",
+			"groups": ["panes"]
+		},
+		{
+			"id": "9G6CmNgt",
+			"order": 10000,
+			"name": "Codex workbench",
+			"kind": "service",
+			"responsibility": "Owns the private Codex child and bridges it to the panes",
+			"groups": ["agent"]
+		},
+		{
+			"id": "Eh7icS73",
+			"order": 12000,
+			"name": "Browser",
+			"kind": "service",
+			"responsibility": "Reads boards, says what each pane is showing, and writes nothing"
+		},
+		{
+			"id": "ws1UusCP",
+			"order": 18000,
+			"name": "Pane routes",
+			"kind": "route",
+			"responsibility": "What each pane shows and where, pushed by the browser; the CLI opens, closes and shows panes through it",
+			"groups": ["panes"]
+		},
+		{
+			"id": "M9w3f93y",
+			"order": 19000,
+			"name": "Pane socket",
+			"kind": "module",
+			"responsibility": "One socket per page: registers it with the panes, and passes its agent messages to the Codex workbench",
+			"groups": ["panes"]
+		},
+		{
+			"id": "EAiFrCYk",
+			"order": 21000,
+			"name": "Board announcements",
+			"kind": "module",
+			"responsibility": "Tells every pane on a board who holds it and what they said they were doing",
+			"groups": ["panes"]
+		},
+		{
+			"id": "jpk7aRzD",
+			"order": 22000,
+			"name": "Change feed",
+			"kind": "module",
+			"responsibility": "Every settled board change as one stream with a cursor, read off the panes' announcements, for the agent's context",
+			"groups": ["panes"]
+		}
+	],
+	"edges": [
+		{
+			"id": "sgeiS1Hj",
+			"order": 8000,
+			"from": "ZuLyutvj",
+			"to": "wYcdVszt",
+			"kind": "call",
+			"label": "locate watched file",
+			"emphasis": "normal"
+		},
+		{
+			"id": "4c7u4tN8",
+			"order": 9000,
+			"from": "ZuLyutvj",
+			"to": "yiSc1qWU",
+			"kind": "event",
+			"label": "announce file change",
+			"emphasis": "normal"
+		},
+		{
+			"id": "fISQ9jAX",
+			"order": 10000,
+			"from": "M9w3f93y",
+			"to": "9G6CmNgt",
+			"kind": "event",
+			"label": "the page's agent messages",
+			"emphasis": "normal"
+		},
+		{
+			"id": "VkGzebtq",
+			"order": 17000,
+			"from": "Eh7icS73",
+			"to": "ws1UusCP",
+			"kind": "http",
+			"label": "what this pane is reading",
+			"emphasis": "normal"
+		},
+		{
+			"id": "VO9ngl7m",
+			"order": 18000,
+			"from": "yiSc1qWU",
+			"to": "Eh7icS73",
+			"kind": "event",
+			"label": "board and agent news",
+			"emphasis": "hero"
+		},
+		{
+			"id": "AjWTGwUA",
+			"order": 41000,
+			"from": "EAiFrCYk",
+			"to": "yiSc1qWU",
+			"kind": "call",
+			"label": "tell the panes on the board",
+			"emphasis": "normal"
+		},
+		{
+			"id": "Hjes93OK",
+			"order": 44000,
+			"from": "ws1UusCP",
+			"to": "yiSc1qWU",
+			"kind": "call",
+			"label": "record the pane; send it a board",
+			"emphasis": "normal"
+		},
+		{
+			"id": "ENymHNDK",
+			"order": 45000,
+			"from": "Eh7icS73",
+			"to": "M9w3f93y",
+			"kind": "event",
+			"label": "one socket per page",
+			"emphasis": "normal"
+		},
+		{
+			"id": "9i6d5e2R",
+			"order": 46000,
+			"from": "M9w3f93y",
+			"to": "yiSc1qWU",
+			"kind": "call",
+			"label": "register the page's socket",
+			"emphasis": "normal"
+		},
+		{
+			"id": "XsinJmCx",
+			"order": 48000,
+			"from": "yiSc1qWU",
+			"to": "jpk7aRzD",
+			"kind": "event",
+			"label": "every board broadcast",
+			"emphasis": "normal"
+		},
+		{
+			"id": "hjFA6kH4",
+			"order": 49000,
+			"from": "9G6CmNgt",
+			"to": "jpk7aRzD",
+			"kind": "data",
+			"label": "changes since its cursor",
+			"emphasis": "normal"
+		}
+	]
+}
