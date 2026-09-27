@@ -25,7 +25,10 @@ or the aspect ratio of the diagram, which is a kind of arbitrary goal.
 ## Decision
 
 A drawing is measured first by how easily a reader follows it. These measures
-decide:
+decide, compared in this order: a drawing better on an earlier measure reads
+better, whatever the later ones say, and a later measure decides only between
+drawings equal on every earlier one. One line's crossing on a corner, or
+hidden in a stack, counts as more than one clean crossing.
 
 - the reader invariants of ADR 0028: no route through a card, no fan of skips
   down a flank, bounded bends per route, every label on a straight run of its
