@@ -4,6 +4,7 @@ import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { LayoutEngineSchema } from "@/shared/semantic-board/index";
 import reservedCorner from "./reserved-label-corner.json";
 import reservedLane from "./reserved-label-lane.json";
+import oneCommandPath from "./one-command-path.json";
 import { covering, overlaps } from "@/runtime/semantic-renderer/tests/drawn-labels";
 import { labelsOffRuns } from "@/runtime/semantic-renderer/tests/drawn-ink";
 import { drawnTexts } from "@/runtime/semantic-renderer/tests/drawn-text";
@@ -128,4 +129,21 @@ test("reserved labels follow their shared lanes without covering routes, cards o
 	expect(labelsOffRuns(drawing)).toEqual([]);
 	expect(covering(drawing)).toEqual([]);
 	expect(overlaps(drawing, content)).toEqual([]);
+});
+
+// Reduced from the dogfood vault: a channel grows for a line that turns in it
+// anywhere across the block, so a label on a straight line far from that turn
+// stood twice as far from one card as from the other.
+test("a label on a straight line stands in the middle of the gap between its cards", async () => {
+	const content = orderedFixture(oneCommandPath);
+	const drawn = await renderArchitecture({ content, theme: "light", layout: "blocks" });
+	const labels = routeLabels(drawn.svg);
+	for (const id of ["kcqc65Ye", "EBy8Rjwh"]) {
+		const edge = content.edges.find((one) => one.id === id)!;
+		const [from, to] = [drawn.atlas.nodes[edge.from]!, drawn.atlas.nodes[edge.to]!];
+		const label = labels.get(id)!;
+		const above = label.y - (from.y + from.height);
+		const below = to.y - (label.y + label.height);
+		expect(Math.abs(above - below)).toBeLessThanOrEqual(1);
+	}
 });
