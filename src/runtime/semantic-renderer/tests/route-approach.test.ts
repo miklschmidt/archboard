@@ -143,8 +143,16 @@ test.each(LayoutEngineSchema.options)(
 		const tip = end.values;
 		const beside = corner.values.slice(-2);
 		expect(Math.hypot(tip[0]! - beside[0]!, tip[1]! - beside[1]!)).toBeGreaterThan(headReach);
-		const start = steps.at(-3)!.values.slice(-2);
-		const radius = Math.min(Math.abs(start[0]! - beside[0]!), Math.abs(start[1]! - beside[1]!));
+		// The last turn, past any hop the approach carries over a line it crosses:
+		// a turn's quarter circle is wider than a hop's.
+		const radii = steps.slice(1).map((step, index) => {
+			const from = steps[index]!.values.slice(-2);
+			const to = step.values.slice(-2);
+			return step.kind === "C"
+				? Math.min(Math.abs(to[0]! - from[0]!), Math.abs(to[1]! - from[1]!))
+				: 0;
+		});
+		const radius = radii.findLast((one) => one > 0 && one !== 7) ?? 0;
 		expect(radius, "the bend has its own room before the head").toBeGreaterThanOrEqual(7.99);
 	},
 );
