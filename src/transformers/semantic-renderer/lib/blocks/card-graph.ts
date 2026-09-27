@@ -96,10 +96,27 @@ function aboveOf(block: Block): string | undefined {
 }
 
 /**
+ * Whether an item's every line rises into it from its block's bottom: it
+ * ends them, though Graphviz ranks it as their upper end.
+ * @param block The block.
+ * @param item The item.
+ * @returns True when it is.
+ */
+function risenInto(block: Block, item: string): boolean {
+	const lines = [...block.lines.values()];
+	return lines.every(
+		({ tail, from, to }) => tail !== item || (to === item && block.ports.get(from) === "bottom"),
+	);
+}
+
+/**
  * Hold every item no line enters on a block's first rank of items, when the
  * block has ports on its bottom. Graphviz ranks those ports last and joins
  * every item no line leaves to them at no cost, so a short chain hangs from
- * the bottom and its cards stand between another chain's rows.
+ * the bottom and its cards stand between another chain's rows. A block with
+ * nothing on its top edge holds them on its first rank outright, and there
+ * an item its every line rises into from the bottom is no source: held
+ * there, its lines would climb the whole block.
  * @param block The block.
  * @param graph Its Graphviz graph, its lines already in it; the holds are added.
  * @param nodeOf The vendor node of an item.
@@ -109,10 +126,11 @@ function holdSources(block: Block, graph: VendorGraph, nodeOf: (name: string) =>
 	const entered = new Set(graph.edges.map(({ head }) => head));
 	const leaving = new Set(graph.edges.map(({ tail }) => tail));
 	const sources = block.items.filter((item) => !entered.has(item) && leaving.has(item));
-	if (sources.length === 0) return;
 	const above = aboveOf(block);
 	if (above === undefined) {
-		graph.subgraphs.push({ graphAttributes: { rank: "min" }, nodes: sources.map(nodeOf) });
+		const held = sources.filter((item) => !risenInto(block, item));
+		if (held.length > 0)
+			graph.subgraphs.push({ graphAttributes: { rank: "min" }, nodes: held.map(nodeOf) });
 		return;
 	}
 	graph.edges.push(
