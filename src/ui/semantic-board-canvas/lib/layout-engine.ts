@@ -1,9 +1,10 @@
 // Which layout engine this browser draws with (TASK-348).
 //
-// Engines sit behind one seam and are compared on the real boards: a person
-// switches between them and every pane draws again with the one chosen. The
-// choice is presentation, owned by this browser like the theme, remembered in
-// its storage and never written anywhere else (ADR 0023).
+// Engines sit behind one seam (ADR 0040): a person switches between them and
+// every pane draws again with the one chosen. The choice is presentation,
+// owned by this browser like the theme, remembered in its storage and never
+// written anywhere else (ADR 0023). A remembered engine that no longer exists
+// reads as the default.
 
 import {
 	DEFAULT_LAYOUT_ENGINE,
@@ -16,8 +17,7 @@ const LAYOUT_ENGINE_KEY = "archboard.layout-engine";
 
 /** What each engine is, as the control offers it. */
 const LAYOUT_ENGINES: readonly { readonly name: LayoutEngineName; readonly label: string }[] = [
-	{ name: "graphviz", label: "Graphviz and libavoid" },
-	{ name: "track", label: "Tracks (experimental)" },
+	{ name: "track", label: "Tracks" },
 	{ name: "blocks", label: "Blocks (experimental)" },
 ];
 

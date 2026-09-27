@@ -48,15 +48,6 @@ function coord(value: number): string {
 }
 
 /**
- * The middle of a box.
- * @param box The box.
- * @returns Its centre.
- */
-function boxCentre(box: Box): Point {
-	return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-}
-
-/**
  * The smallest box containing both of them.
  * @param a One box.
  * @param b The other.
@@ -190,7 +181,6 @@ export {
 	type Canvas,
 	roundCoord,
 	coord,
-	boxCentre,
 	covering,
 	inflate,
 	union,

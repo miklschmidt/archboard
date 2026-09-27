@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by ADR-0040
 ---
 
 # Graphviz places architecture cards; libavoid routes their relationships
@@ -42,3 +42,7 @@ meaning.
 
 The experiment and measured adoption results are recorded in
 [shared-container-rows.md](../design/shared-container-rows.md).
+
+Superseded (2026-09-27, [ADR 0040](0040-track-and-blocks-replace-the-graphviz-engine.md)):
+the Graphviz engine is removed, and Track and Blocks lay out every board.
+Graphviz still places their cards, and libavoid still routes Blocks' trunks.

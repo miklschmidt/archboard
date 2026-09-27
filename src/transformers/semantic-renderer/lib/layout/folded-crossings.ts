@@ -6,9 +6,9 @@ import {
 	LABEL_CARD_CLEARANCE,
 	LABEL_LABEL_CLEARANCE,
 	LABEL_ROUTE_CLEARANCE,
+	ROUTE_LANE,
 	ROUTE_OBSTACLE_CLEARANCE,
 } from "@/transformers/semantic-renderer/config";
-import { ROUTE_LANE } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 import type {
 	ArchitectureDrawing,
 	DrawingEdge,

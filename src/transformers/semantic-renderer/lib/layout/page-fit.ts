@@ -1,9 +1,8 @@
-// A page comes from its placement, not from what is drawn: Graphviz's root
-// bounds and margin, the cluster margins and title anchors that tightening
-// took off the frames, the reserved label slots a settled drawing used
-// elsewhere, or a block's inset around a frame at its edge. The painter only
-// ever grows a page, so that slack became uneven margins, 52 points at the
-// top against 24 elsewhere, or an 80-point band down one side. Every engine's
+// A page comes from its placement, not from what is drawn: the placement's
+// bounds and margins, or a block's inset around a frame at its edge. The
+// painter only ever grows a page, so that slack became uneven margins, 52
+// points at the top against 24 elsewhere, or an 80-point band down one side.
+// Every engine's
 // settled drawing is moved to the margin and its page cut to what it draws,
 // so every side keeps the same margin.
 import type {

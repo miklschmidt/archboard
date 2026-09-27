@@ -2,7 +2,7 @@ import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixtur
 // Architecture diagrams always read top to bottom, including wide fans and long pipelines.
 
 import { describe, expect, test } from "bun:test";
-import { type VariantContent } from "@/shared/semantic-board/index";
+import { LayoutEngineSchema, type VariantContent } from "@/shared/semantic-board/index";
 import { fitIn } from "@/shared/shell-geometry/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { labelsOffRuns, routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink";
@@ -110,20 +110,23 @@ function pipeline(length: number, framed = false): VariantContent {
 	});
 }
 
-test.each([false, true])(
-	"a long chain preserves reading order and clear routes (framed: %s)",
-	async (framed) => {
+// Where a chain folds into columns is each engine's choice; a fold only
+// continues the chain at the top of a column to the right.
+test.each(
+	LayoutEngineSchema.options.flatMap((layout) =>
+		[false, true].map((framed) => [layout, framed] as const),
+	),
+)(
+	"a long chain preserves reading order and clear routes (%s, framed: %s)",
+	async (layout, framed) => {
 		const content = pipeline(12, framed);
-		const drawing = await renderArchitecture({ content, theme: "light" });
+		const drawing = await renderArchitecture({ content, theme: "light", layout });
 		const direction = readingOf(drawing);
 		expect(direction).toBe("down");
-		let continuations = 0;
 		for (let index = 1; index < 12; index++) {
 			const before = drawing.atlas.nodes[`s${index - 1}`]!;
 			const after = drawing.atlas.nodes[`s${index}`]!;
 			if (after.y < before.y) {
-				continuations += 1;
-				expect(framed).toBe(false);
 				expect(after.x).toBeGreaterThan(before.x + before.width);
 				expect(after.y).toBe(drawing.atlas.nodes["s0"]!.y);
 			} else {
@@ -134,7 +137,6 @@ test.each([false, true])(
 				}
 			}
 		}
-		expect(continuations).toBe(framed ? 0 : 1);
 		expect(routesThroughCards(drawing, content)).toEqual([]);
 		expect(labelsOffRuns(drawing)).toEqual([]);
 	},

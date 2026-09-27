@@ -357,28 +357,6 @@ function sharedStretches(routes: readonly JoinRoute[]): Box[][] {
 }
 
 /**
- * The pairs of joins on one lane nearer together than a distance, which a
- * reader sees as one blot rather than two branches (Skill evaluation's fan of
- * six lines out of Author run, branching 9 px apart).
- * @param routes Every route's corners, its bends' radii and its line width.
- * @param apart How far apart two joins on one lane must be to read as two.
- * @returns Where each pair of crowded joins lies.
- */
-function crowdedJoins(routes: readonly JoinRoute[], apart: number): (readonly [Point, Point])[] {
-	const joins = joinsOf(routes);
-	return joins.flatMap((one, index) =>
-		joins.slice(index + 1).flatMap((other) => {
-			const [dx, dy] = [
-				Math.abs(one.point.x - other.point.x),
-				Math.abs(one.point.y - other.point.y),
-			];
-			const crowded = (dx < ONWARD && dy < apart) || (dy < ONWARD && dx < apart);
-			return crowded ? [[one.point, other.point] as const] : [];
-		}),
-	);
-}
-
-/**
  * Every place two routes join or part, one mark per place.
  *
  * Two stretches draw as one line when their strokes touch, which a shared lane
@@ -466,4 +444,4 @@ function markRadius(width: number): number {
 	return width + JUNCTION_REACH;
 }
 
-export { crowdedJoins, joinRoutes, junctionMarks, junctionsOf, markRadius, sharedStretches };
+export { joinRoutes, junctionMarks, junctionsOf, markRadius, sharedStretches };

@@ -40,7 +40,6 @@ import { cornerClearances } from "@/transformers/semantic-renderer/lib/layout/co
 import type { Curve } from "@/transformers/semantic-renderer/lib/layout/curves";
 import {
 	crossingKey,
-	crossingOf,
 	drawnCrossings,
 	joinNear,
 	pieceOf,
@@ -570,18 +569,4 @@ function bridgeCrossings(
 	return bridgeUnfolded(unfoldCrossings(settled), lines);
 }
 
-/**
- * How many times two different routes cross, before any bridge is drawn.
- * @param edges The routed edges.
- * @returns The number of proper crossings between straight runs of different routes.
- */
-function crossingCount(edges: readonly DrawingEdge[]): number {
-	const runs = straightRuns(edges);
-	return runs.reduce(
-		(total, run, index) =>
-			total + runs.slice(index + 1).filter((other) => crossingOf(run, other) !== undefined).length,
-		0,
-	);
-}
-
-export { bridgeCrossings, bridgeUnfolded, crossingCount };
+export { bridgeCrossings, bridgeUnfolded };

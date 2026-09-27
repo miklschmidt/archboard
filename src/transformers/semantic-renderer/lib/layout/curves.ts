@@ -184,71 +184,6 @@ function simplify(points: readonly Point[]): Point[] {
 }
 
 /**
- * A route drawn again with each sideways jog too short for its two fixed
- * bends straightened, as a last resort for a route that fails its checks.
- * @param curve The ordinary rounded route.
- * @returns The route through the same corners, less its short S-jogs.
- */
-function straightenedCurve(curve: Curve): Curve {
-	return curveThrough(straightenShortJogs(verticesOf(curve)));
-}
-
-/**
- * Straighten each sideways jog too short for its two fixed bends where the
- * route turns one way and back, an S: a jog under two bend radii can only be
- * drawn running backward through its own bends. The jog's inner leg moves
- * onto the other leg's column, so the line runs straight on. A route's first
- * and last legs, which meet its cards, never move.
- * @param points The simplified waypoints.
- * @param limit The longest jog straightened, two bend radii unless shorter.
- * @returns The waypoints with no such jog left, simplified again.
- */
-function straightenShortJogs(points: readonly Point[], limit = 2 * BEND_RADIUS): Point[] {
-	const route: Waypoint[] = points.map(({ x, y }) => ({ x, y }));
-	// A jog whose legs both meet cards has no leg free to move.
-	for (let index = 1; index + 2 < route.length; index += 1)
-		if (index > 1 || index + 3 < route.length) straightenJog(route, index, limit);
-	return simplify(route);
-}
-
-/** A waypoint that may move. */
-interface Waypoint {
-	x: number;
-	y: number;
-}
-
-/**
- * Straighten the jog from one waypoint to the next when it is a short S,
- * moving the leg before it, or the leg after it when the one before meets a card.
- * @param route The waypoints, moved in place.
- * @param index Where the jog starts.
- * @param limit The longest jog straightened.
- */
-function straightenJog(route: Waypoint[], index: number, limit: number): void {
-	const [before, start, end, after] = [-1, 0, 1, 2].map((step) => route[index + step]!);
-	if (!shortS([before!, start!, end!, after!], limit)) return;
-	const across = Math.abs(start!.x - end!.x) > Math.abs(start!.y - end!.y) ? "x" : "y";
-	const [moved, onto] = index > 1 ? [[before!, start!], end!] : [[end!, after!], start!];
-	for (const point of moved) point[across] = onto[across];
-}
-
-/**
- * Whether a jog between two legs is an S shorter than a limit: both legs run
- * the same way, square to the jog.
- * @param corners The leg into the jog's start, the jog's two ends, the leg out's end.
- * @param limit The longest jog that counts.
- * @returns True when the jog is that short.
- */
-function shortS(corners: readonly [Point, Point, Point, Point], limit: number): boolean {
-	const [before, start, end, after] = corners;
-	const jog = Math.hypot(end.x - start.x, end.y - start.y);
-	const into = { x: start.x - before.x, y: start.y - before.y };
-	const out = { x: after.x - end.x, y: after.y - end.y };
-	const square = Math.abs(into.x * (end.x - start.x) + into.y * (end.y - start.y)) < EPSILON;
-	return jog > EPSILON && jog < limit && square && into.x * out.x + into.y * out.y > 0;
-}
-
-/**
  * Whether a point is the one already at the end of the walk.
  * @param a The point already there, if any.
  * @param b The point being added.
@@ -585,14 +520,10 @@ export {
 	type Curve,
 	EPSILON,
 	segmentStart,
-	pointAt,
 	pointOnSegment,
 	pathOf,
 	curveBounds,
 	selfLoop,
-	simplify,
-	straightenedCurve,
-	straightenShortJogs,
 	curveThrough,
 	curveClearanceIssue,
 	labelAnchorOf,

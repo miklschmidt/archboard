@@ -1,5 +1,12 @@
 # Measured compound renderer
 
+> History. This describes the compound renderer before
+> [ADR 0033](../adr/0033-graphviz-placement-and-obstacle-routing.md) and
+> [ADR 0040](../adr/0040-track-and-blocks-replace-the-graphviz-engine.md). The
+> files it names under `lib/layout/` other than `compound-graph.ts` are gone.
+> Today Track and Blocks lay out every board, behind `lib/layout/engines.ts`
+> (`layoutTracks` and `layoutBlocks` in `lib/blocks/index.ts`).
+
 Architecture rendering has three owners: measurement, compound layout, and SVG
 painting. `renderArchitecture` and `renderSemanticView` return promises because
 ELK runs in a private Bun worker. The HTTP render route awaits the complete

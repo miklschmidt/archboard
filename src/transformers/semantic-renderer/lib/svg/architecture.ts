@@ -347,7 +347,7 @@ interface ArchitecturePainting {
 
 /**
  * Paint the final drawing and derive the interaction atlas from those same boxes.
- * @param drawing The compound layout owner's complete output.
+ * @param drawing The layout engine's complete output.
  * @param palette The selected theme.
  * @param standingOf How each subject stands against the variant it is read against.
  * @param unsettledOf Whether a subject needs reconciliation.

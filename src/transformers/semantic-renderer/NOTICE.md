@@ -19,9 +19,10 @@ What was changed, and what that change is:
 **Adapted to Archboard's contract — these are permanent.**
 
 - **Architecture layout uses Graphviz and libavoid.** Graphviz, through
-  `@viz-js/viz`, places measured cards across semantic containment clusters.
-  `libavoid-js` routes orthogonal relationships around cards and title bands.
-  Both run as WebAssembly in workers under Bun and in the browser. Final boxes,
+  `@viz-js/viz`, places measured cards across semantic containment clusters
+  for both layout engines, Track and Blocks (ADR 0040). `libavoid-js` routes
+  the trunks Blocks draws between its blocks. Both run as WebAssembly in
+  workers under Bun and in the browser. Final boxes,
   routes and labels feed the SVG painter and interaction atlas together.
   The pinned `libavoid-js` release's declarations describe its older WebIDL
   interface, while its binary uses Embind. `engine.ts` records only the ABI
