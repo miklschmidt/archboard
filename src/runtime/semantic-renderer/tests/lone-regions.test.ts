@@ -374,7 +374,8 @@ test.each(Object.keys(turnsAsWithout))(
 
 // A container alone in its region, drawn inline, was fitted to what it holds
 // by a container's inset from the region's walls, and its own walls then
-// stood that much less round what it holds.
+// stood that much less round what it holds. Drawn as a block with a port on
+// its bottom, it stood the region's inset more below what it holds.
 test.each(["track", "blocks"] as const)(
 	"the %s engine keeps a container alone in its region as far round what it holds as without the region",
 	async (layout) => {
@@ -382,7 +383,11 @@ test.each(["track", "blocks"] as const)(
 		const margins = async (board: VariantContent): Promise<number[]> => {
 			const { atlas } = await drawn(board, layout);
 			const [inner, kid] = [atlas.nodes["inner"]!, atlas.nodes["kid"]!];
-			return [kid.x - inner.x, inner.x + inner.width - kid.x - kid.width].map(Math.round);
+			return [
+				kid.x - inner.x,
+				inner.x + inner.width - kid.x - kid.width,
+				inner.y + inner.height - kid.y - kid.height,
+			].map(Math.round);
 		};
 		expect(await margins(content)).toEqual(await margins(ungrouped(content)));
 	},
