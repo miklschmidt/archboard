@@ -9,11 +9,6 @@
 // tracks need, so lanes keep one spacing and never squeeze, and every label
 // sits on its own line by construction. One pass, no search.
 import type { ElkExtendedEdge } from "@archboard/elk-rs";
-import {
-	APPROACH_STRAIGHT,
-	BEND_RADIUS,
-	CONTAINER_INSET,
-} from "@/transformers/semantic-renderer/config";
 import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
 import {
 	LANE,
@@ -24,10 +19,10 @@ import {
 import { straightenLanes } from "@/transformers/semantic-renderer/lib/track/straighten";
 import {
 	assignPorts,
-	assignTracks,
 	bundleTrunks,
 	type Net,
 } from "@/transformers/semantic-renderer/lib/track/channels";
+import { spaceBands, type Rim } from "@/transformers/semantic-renderer/lib/track/spacing";
 import { settleLabels, slideLabels } from "@/transformers/semantic-renderer/lib/track/labels";
 import { Scene, centreX } from "@/transformers/semantic-renderer/lib/track/scene";
 import { Containers } from "@/transformers/semantic-renderer/lib/track/containers";
@@ -46,19 +41,6 @@ import {
 	unstrandLanes,
 } from "@/transformers/semantic-renderer/lib/track/stranded";
 
-/** From the band above to the first track: room for the bend off a face. */
-const TRACK_TOP = 2 * BEND_RADIUS;
-/**
- * From the band above to the first track when a line on that track rises
- * into it: room for the bend and an arrowhead's straight approach.
- */
-const TRACK_TOP_RISING = BEND_RADIUS + APPROACH_STRAIGHT;
-/** From the last track to the band below: room for the bend and a straight arrow approach. */
-const TRACK_BOTTOM = APPROACH_STRAIGHT + 2 * BEND_RADIUS;
-/** The height of a channel no line turns in: room for an arrowhead's straight approach and air. */
-const EMPTY_CHANNEL = 24;
-/** Room between a container's bottom edge and the band below it. */
-const BELOW_CONTAINER = 12;
 /** Space kept around the drawing. */
 const PAGE_MARGIN = 24;
 
@@ -198,86 +180,6 @@ function settleStraights(nets: readonly Net[]): void {
 			if (next !== undefined) next.topX = net.topX;
 		} else if (net.bottom.kind === "card") net.bottomX = net.topX;
 		else net.topX = net.bottomX;
-	});
-}
-
-/**
- * How far below its band a channel's first track runs: below the containers
- * that end on the band, and far enough for an arrowhead's approach when a
- * line on it rises into the band.
- * @param closing How far below the band the containers ending there reach.
- * @param rising Whether a line on the first track turns and rises into the band.
- * @returns The distance.
- */
-function firstTrack(closing: number, rising: boolean): number {
-	return Math.max(closing + TRACK_TOP, rising ? TRACK_TOP_RISING : 0);
-}
-
-/**
- * How tall a channel is for the tracks it holds, below the containers that
- * end above it.
- * @param tracks Its track count.
- * @param closing How far below its band the containers ending there reach.
- * @param rising Whether a line on its first track turns and rises into the band above.
- * @param facing Whether a container ending above it stands over one opening below it.
- * @returns Its height.
- */
-function channelHeight(tracks: number, closing = 0, rising = false, facing = false): number {
-	return tracks === 0
-		? Math.max(EMPTY_CHANNEL, closing + (facing ? CONTAINER_INSET : BELOW_CONTAINER))
-		: firstTrack(closing, rising) + (tracks - 1) * LANE + TRACK_BOTTOM;
-}
-
-/**
- * Whether a line on a channel's first track turns there and rises into the
- * band above, so its arrowhead lands on that band's face.
- * @param crossing The channel's nets, their tracks assigned.
- * @param rising The first net of every upward line: the one that ends on its target.
- * @returns True when the first track needs an arrowhead's room above it.
- */
-function risesOnFirstTrack(crossing: readonly Net[], rising: ReadonlySet<Net>): boolean {
-	return crossing.some(
-		(net) => net.track === 0 && rising.has(net) && Math.abs(net.topX - net.bottomX) > STRAIGHT,
-	);
-}
-
-/**
- * Lay out every band and channel again, from the tracks each channel needs.
- * A channel no line crosses below a band of titles alone keeps the room a
- * container keeps around its cards: no frame ends there, so a container's
- * cards stand as far below its title as in from its sides. A channel below
- * containers that end on its band starts its tracks below their edges, and
- * keeps a container's inset between a container ending on its band and one
- * opening under it.
- * @param scene The scene, whose bands get their new tops.
- * @param nets Every net, given its track in its channel.
- * @param ends Where containers end: how far below each band those ending on
- * it reach, and the bands where one stands over another.
- * @param ends.closings The reach below each band.
- * @param ends.facing The bands where one container stands over another.
- * @param rising The first net of every upward line.
- * @param margin Where the first band starts.
- */
-function spaceBands(
-	scene: Scene,
-	nets: readonly Net[],
-	ends: { readonly closings: readonly number[]; readonly facing: ReadonlySet<number> },
-	rising: ReadonlySet<Net>,
-	margin: number,
-): void {
-	const held = new Set([...scene.cards.values(), ...scene.labels.values()].map(({ band }) => band));
-	let top = margin;
-	scene.bands.forEach((band, index) => {
-		band.newTop = top;
-		const crossing = nets.filter((net) => net.channel === index);
-		const tracks = assignTracks(crossing);
-		const closing = ends.closings[index]!;
-		const rises = risesOnFirstTrack(crossing, rising);
-		band.firstTrack = firstTrack(closing, rises);
-		const titled = crossing.length === 0 && !held.has(index);
-		const faces = ends.facing.has(index);
-		const channel = titled ? CONTAINER_INSET : channelHeight(tracks, closing, rises, faces);
-		top += band.bottom - band.top + channel;
 	});
 }
 
@@ -493,6 +395,7 @@ function partAndClose(scene: Scene, chains: readonly Chain[], routed: readonly R
  * @param lines The lines, each between two of its items.
  * @param margin How far every x moves.
  * @param top Where the first band starts.
+ * @param rim The room the block keeps at its edge rows where no line turns.
  * @returns Each line's points, from its source to its target.
  */
 function routeScene(
@@ -500,6 +403,7 @@ function routeScene(
 	lines: readonly SceneLine[],
 	margin: number,
 	top = margin,
+	rim?: Rim,
 ): Map<string, Point[]> {
 	const inner = lines.filter(({ wall }) => wall === undefined);
 	const chains = new Map(inner.map((line) => [line.id, chainOf(scene, line.placed)]));
@@ -553,6 +457,7 @@ function routeScene(
 		{ closings: containers.closings(), facing: containers.facing() },
 		rising,
 		top,
+		rim,
 	);
 	return new Map(
 		[...routed].map(([id, route]) => {
@@ -562,4 +467,4 @@ function routeScene(
 	);
 }
 
-export { EMPTY_CHANNEL, PAGE_MARGIN, TRACK_TOP, channelHeight, routeScene, trunkKind };
+export { PAGE_MARGIN, routeScene, trunkKind };

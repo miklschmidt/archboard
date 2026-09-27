@@ -6,6 +6,9 @@ import type {
 	RegionShape,
 } from "@/transformers/semantic-renderer/lib/track/containers";
 
+/** How far a region's caption sits in from its band's corner. */
+const CAPTION_INSET = 4;
+
 /** One rank of a laid-out block: where it lies, and the block's items on it. */
 interface Band {
 	readonly top: number;
@@ -114,4 +117,14 @@ function leftShortOf(lines: Iterable<readonly Point[]>, inset: number): number {
 	return Math.max(0, inset - Math.min(inset, ...xs));
 }
 
-export { SAME, corners, leftShortOf, moved, shifted, type Band, type Insets, type Laid };
+export {
+	CAPTION_INSET,
+	SAME,
+	corners,
+	leftShortOf,
+	moved,
+	shifted,
+	type Band,
+	type Insets,
+	type Laid,
+};

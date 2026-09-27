@@ -3,6 +3,7 @@
 // thread reads it.
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import {
+	CAPTION_INSET,
 	corners,
 	moved,
 	shifted,
@@ -15,9 +16,6 @@ import {
 	type BlockTree,
 	type Projection,
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
-
-/** How far a region's caption sits in from its band's corner. */
-const CAPTION_INSET = 4;
 
 /** A card or container, placed. */
 interface PlacedNode {

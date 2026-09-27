@@ -17,6 +17,7 @@ import {
 	cornerHeader,
 	letPortsSlide,
 	pinnedLeaf,
+	rimOf,
 } from "@/transformers/semantic-renderer/lib/blocks/leaves";
 import {
 	headerOf,
@@ -443,6 +444,7 @@ class CardLayout {
 				}),
 			this.insets.side,
 			this.insets.top,
+			rimOf(this.block, this.insets),
 		);
 		for (const [key, points] of besidePoints(scene, beside, this.insets.side))
 			lines.set(key, points);
