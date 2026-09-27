@@ -11,7 +11,6 @@
 // agrees or it reads no worse anywhere (`takes` in track/score.ts); settling
 // ports, holding a port order and wrapping keep their earlier weighing.
 import type { ElkNode } from "@archboard/elk-rs";
-import type { Viz } from "@viz-js/viz";
 import { fitIn } from "@/shared/shell-geometry/index";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
@@ -19,6 +18,10 @@ import { Assembly, type Placed } from "@/transformers/semantic-renderer/lib/bloc
 import { CardLayout } from "@/transformers/semantic-renderer/lib/blocks/card-layout";
 import { foldBlock, foldPlan } from "@/transformers/semantic-renderer/lib/blocks/fold";
 import { FoldLayout } from "@/transformers/semantic-renderer/lib/blocks/fold-layout";
+import {
+	answeringOnce,
+	type Graphviz,
+} from "@/transformers/semantic-renderer/lib/blocks/graphviz-once";
 import { corners, type Insets, type Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { bestWrap, weighed } from "@/transformers/semantic-renderer/lib/blocks/wraps";
@@ -65,7 +68,7 @@ function insetsOf(block: Block): Insets {
  * @param laid Every block laid out so far; the columns are added to it.
  * @returns The laid-out block.
  */
-function layCards(viz: Viz, tree: BlockTree, block: Block, laid: Map<string, Laid>): Laid {
+function layCards(viz: Graphviz, tree: BlockTree, block: Block, laid: Map<string, Laid>): Laid {
 	const insets = insetsOf(block);
 	const { whole, stacked } = stackedOrNot(viz, tree, block, laid);
 	const wrapped = bestWrap(viz, tree, block, { laid, whole, stacked, insets });
@@ -124,7 +127,7 @@ function bestScore(block: Block, laid: Laid): number {
  * change whether it stacks only when the choice then draws no more line.
  */
 function stackedOrNot(
-	viz: Viz,
+	viz: Graphviz,
 	tree: BlockTree,
 	block: Block,
 	laid: Map<string, Laid>,
@@ -210,7 +213,7 @@ function packsBlocks(tree: BlockTree, block: Block, nesting: Nesting): boolean {
  * @returns The blocks, every block laid out, and each block of blocks' packing.
  */
 function layAll(
-	viz: Viz,
+	viz: Graphviz,
 	avoid: AvoidEngine,
 	graph: ElkNode,
 	earlier: Earlier = NOTHING_EARLIER,
@@ -271,7 +274,7 @@ interface Board {
  * @returns The blocks, every block laid out.
  */
 function layOut(
-	viz: Viz,
+	viz: Graphviz,
 	avoid: AvoidEngine,
 	graph: ElkNode,
 	nesting: Nesting,
@@ -341,7 +344,7 @@ function settledOrNot(
  * @returns The blocks, and the drawing's geometry.
  */
 function layJoinedOut(
-	viz: Viz,
+	viz: Graphviz,
 	avoid: AvoidEngine,
 	graph: ElkNode,
 	nesting: Nesting,
@@ -389,9 +392,10 @@ function readsBetterPacked(packed: Drawn<Placed>, inline: Drawn<Placed>): boolea
  * clusters of the board's own layout, rather than packed as blocks.
  * @returns The hierarchy, with the drawing's geometry on its root.
  */
-function placeBlocks(viz: Viz, avoid: AvoidEngine, graph: ElkNode, inline = false): ElkNode {
-	const first = layJoinedOut(viz, avoid, graph, inline ? "inline" : "blocks");
-	const { placed } = inline && hasRegions(first.tree) ? betterOf(viz, avoid, graph, first) : first;
+function placeBlocks(viz: Graphviz, avoid: AvoidEngine, graph: ElkNode, inline = false): ElkNode {
+	const once = answeringOnce(viz);
+	const first = layJoinedOut(once, avoid, graph, inline ? "inline" : "blocks");
+	const { placed } = inline && hasRegions(first.tree) ? betterOf(once, avoid, graph, first) : first;
 	const drawn = JSON.stringify(placed);
 	return {
 		id: graph.id,
@@ -413,7 +417,7 @@ function placeBlocks(viz: Viz, avoid: AvoidEngine, graph: ElkNode, inline = fals
  * @returns The blocks and the drawing's geometry.
  */
 function betterOf(
-	viz: Viz,
+	viz: Graphviz,
 	avoid: AvoidEngine,
 	graph: ElkNode,
 	inline: Drawn<Placed>,

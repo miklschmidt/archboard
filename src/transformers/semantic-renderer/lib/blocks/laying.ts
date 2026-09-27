@@ -7,7 +7,7 @@
 // pulled one kept only where it crosses and draws no more line. Remedies to
 // the labels of lines leaving and entering containers change the graph the
 // same way, and are kept on the same terms.
-import type { Viz } from "@viz-js/viz";
+import type { Graphviz } from "@/transformers/semantic-renderer/lib/blocks/graphviz-once";
 import type { CardLayout } from "@/transformers/semantic-renderer/lib/blocks/card-layout";
 import type { Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import { anchorable } from "@/transformers/semantic-renderer/lib/blocks/anchors";
@@ -154,7 +154,7 @@ const REMEDIES: readonly Remedy[] = [
  * @param make A fresh layout of the block.
  * @returns The block laid out.
  */
-function layBoth(viz: Viz, make: () => CardLayout): Laying {
+function layBoth(viz: Graphviz, make: () => CardLayout): Laying {
 	const [remake, [tying, tied]] = REMEDIES.reduce<[() => CardLayout, Layout]>(
 		([making, laid], remedy) => remedied(viz, making, laid, remedy),
 		[make, tiedLayout(viz, make)],
@@ -179,7 +179,7 @@ function layBoth(viz: Viz, make: () => CardLayout): Laying {
  * @param make A fresh layout of the block.
  * @returns The layout and the block laid out.
  */
-function tiedLayout(viz: Viz, make: () => CardLayout): Layout {
+function tiedLayout(viz: Graphviz, make: () => CardLayout): Layout {
 	const tying = make();
 	tying.clusters.keepTies = true;
 	return [tying, tying.lay(viz)];
@@ -195,7 +195,7 @@ function tiedLayout(viz: Viz, make: () => CardLayout): Layout {
  * @returns The way to make the layout kept, and the block laid out by it.
  */
 function remedied(
-	viz: Viz,
+	viz: Graphviz,
 	make: () => CardLayout,
 	laid: Layout,
 	remedy: Remedy,

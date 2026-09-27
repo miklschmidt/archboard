@@ -3,7 +3,8 @@
 // line inside it on tracks in the channels between its ranks, growing each
 // channel to fit, so the block's size is final when this answers.
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
-import type { Edge, Subgraph, Viz } from "@viz-js/viz";
+import type { Edge, Subgraph } from "@viz-js/viz";
+import type { Graphviz } from "@/transformers/semantic-renderer/lib/blocks/graphviz-once";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import {
 	emptyGraph,
@@ -361,7 +362,7 @@ class CardLayout {
 	 * @param viz The initialized Graphviz instance.
 	 * @returns The laid-out block.
 	 */
-	lay(viz: Viz): Laid {
+	lay(viz: Graphviz): Laid {
 		const { placed, centres } = this.lined(viz);
 		const laid = this.routed(placed, 0);
 		return { ...laid, reroute: this.rerouted.bind(this, placed, laid.width, centres) };
@@ -374,7 +375,7 @@ class CardLayout {
 	 * @param viz The initialized Graphviz instance.
 	 * @returns The placed block, every vendor node's centre, and every vendor node's box.
 	 */
-	lined(viz: Viz): {
+	lined(viz: Graphviz): {
 		placed: ElkNode & { edges: ElkExtendedEdge[] };
 		centres: ReadonlyMap<string, Point>;
 		boxes: ReadonlyMap<string, Box>;
