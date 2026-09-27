@@ -100,7 +100,7 @@ function StepBody(props: StepBodyProps): JSX.Element {
 				<dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-2.5">
 					<Row field="flow" label="flow" value={flow.name} />
 					{/* Counted within the state that holds this message, which for one
-					    the proposal has stopped sending is the state it came from. The
+					    this variant does not send is the variant it is read against. The
 					    composed picture the diagram is drawn from holds both at once and
 					    is nobody's architecture, so nothing is counted against it. */}
 					<Row field="position" label="step" value={`${position} of ${flow.steps.length}`} />
@@ -234,7 +234,7 @@ interface BodyProps {
 	subject: Subject | undefined;
 	/** What to say when there is no subject: still reading, or a reason. */
 	notice: string;
-	/** How the subject stands, and what moved, when this variant came from one. */
+	/** How the subject stands, and what moved, when this variant is read against another. */
 	against: StandingProps | null;
 	/** What about this subject nobody has decided yet. */
 	open: readonly ReconciliationIssue[];
@@ -269,7 +269,7 @@ function InspectorBody(props: BodyProps): JSX.Element {
 			{against !== null && (
 				<StandingBlock
 					standing={against.standing}
-					predecessor={against.predecessor}
+					against={against.against}
 					moved={against.moved}
 				/>
 			)}
@@ -283,7 +283,7 @@ interface Explanation {
 	readonly subject: Subject | undefined;
 	/** What to say when it does not. */
 	readonly notice: string;
-	/** How it stands against the variant this one came from, when it came from one. */
+	/** How it stands against the variant this one is read against, when there is one. */
 	readonly against: StandingProps | null;
 	/** What about this subject nobody has decided yet; empty when nothing is open. */
 	readonly open: readonly ReconciliationIssue[];
@@ -292,17 +292,17 @@ interface Explanation {
 /**
  * What one selected id is, read from the state that actually holds it.
  *
- * The proposal first, and for a subject the proposal no longer holds, the
- * variant it came from. Both halves matter and for the same reason: every
+ * The variant on screen first, and for a subject it does not hold, the variant
+ * it is read against. Both halves matter and for the same reason: every
  * number a subject carries — where a message comes in its exchange, how many
  * messages that exchange has, what a container holds — is a count of one
  * architecture, and it must come from the architecture that has the subject in
  * it.
  *
  * Not, in particular, from the depiction the renderer was given. That content
- * is the proposal with what its change took away put back, which is a *picture*
- * of a change and is not what either variant says: counted against it, an added
- * step would be third of three in a flow of one, and a removed step second of
+ * is the variant with what only the other side has put back, which is a picture
+ * of a difference and is not what either variant says: counted against it, an
+ * added step would be third of three in a flow of one, and a removed step second of
  * three in an exchange that only ever had two. A removed subject is read where
  * it lived, so it is counted among the things it lived with.
  * @param board The board the variant belongs to.
@@ -316,18 +316,17 @@ function comparedSubject(
 	selection: string,
 ): Pick<Explanation, "subject" | "against"> {
 	const depiction = depictionOf(board, shown);
-	const { predecessor } = depiction;
+	const other = depiction.against;
 	const subject =
-		subjectOf(shown, selection) ??
-		(predecessor === undefined ? undefined : subjectOf(predecessor, selection));
-	if (subject === undefined || predecessor === undefined) {
+		subjectOf(shown, selection) ?? (other === undefined ? undefined : subjectOf(other, selection));
+	if (subject === undefined || other === undefined) {
 		return { subject, against: null };
 	}
 	return {
 		subject,
 		against: {
 			standing: depiction.standing(selection),
-			predecessor: predecessor.name,
+			against: other.name,
 			moved: depiction.moved(selection),
 		},
 	};

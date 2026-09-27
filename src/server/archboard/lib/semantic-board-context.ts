@@ -2,11 +2,11 @@
 //
 // Everything an agent is told about a board comes through here, and everything
 // here is meaning: which architectural state is on screen, which of its views,
-// which of its subjects somebody picked out, what that state differs from by
-// the variant its picture is read against (the current one, ADR 0023), and what
-// it is waiting on. Nothing in this file knows where
-// anything was drawn, and there is no way for a coordinate to reach an agent
-// through it (ADR 0023).
+// which of its subjects somebody picked out, how that state differs from the
+// variant its picture is read against (the current variant, or on a board with
+// none its predecessor), and what it is waiting on. Nothing in this file knows
+// where anything was drawn, and there is no way for a coordinate to reach an
+// agent through it (ADR 0023).
 //
 // The pane says what it is reading; this module decides what that means. An id
 // the pane reports is resolved against the variant rather than believed: the

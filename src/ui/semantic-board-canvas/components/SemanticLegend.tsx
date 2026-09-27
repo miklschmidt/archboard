@@ -11,7 +11,8 @@ import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearanc
  * @param props The appearance facts of the drawing.
  * @param props.appearances Facts emitted for its visible subjects.
  * @param props.comparison Whether comparison treatment is visible.
- * @param props.comparisonAvailable Whether this variant has a predecessor.
+ * @param props.comparisonAvailable Whether this variant is read against another: every variant
+ * but the current one, and on a board with no current variant every draft with a parent.
  * @param props.onComparisonChange Change the canvas treatment.
  * @returns The key, as a part of the sidebar's board tab.
  */

@@ -16,7 +16,7 @@ interface StandingProps {
 	/** Its standing. */
 	standing: ChangeKind;
 	/** What the variant it is read against is called. */
-	predecessor: string;
+	against: string;
 	/** The fields that moved; empty for anything but a change. */
 	moved: readonly FieldChange[];
 }
@@ -33,12 +33,12 @@ interface StandingProps {
  * @returns The block, or nothing.
  */
 function StandingBlock(props: StandingProps): JSX.Element | null {
-	const sentence = standingSentence(props.standing, props.predecessor);
+	const sentence = standingSentence(props.standing, props.against);
 	if (sentence === undefined) {
 		return null;
 	}
 	return (
-		<Section title={`Against ${props.predecessor}`}>
+		<Section title={`Against ${props.against}`}>
 			<p
 				className="text-body"
 				data-slot="semantic-inspector-standing"
@@ -97,7 +97,7 @@ function WaitingBlock(props: WaitingProps): JSX.Element | null {
 				{props.open.map((issue) => (
 					// The repair is part of the identity, not decoration. One subject can
 					// hold two disagreements of the same kind about no field at all — a
-					// relationship whose predecessor took both of its endpoints away
+					// relationship whose other side took both of its endpoints away
 					// reports one for each end — and a key built from the kind and the
 					// field alone is the same key twice.
 					<li key={`${issue.kind}|${issue.field ?? ""}|${issue.repair}`}>

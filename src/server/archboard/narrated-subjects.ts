@@ -49,32 +49,34 @@ function namesOf(content: VariantContent): ReadonlyMap<string, string> {
 	]);
 }
 
-/**
- * One field that moved, in words.
- * @param moved The field and what it moved between.
- * @param before What the other side's subjects are called, for a field that names one.
- * @returns What it was.
- */
-function movedOf(moved: FieldChange, before: ReadonlyMap<string, string>): string {
-	const was = moved.before;
-	if (was === undefined) {
-		return `${moved.field} added`;
-	}
-	if (moved.after === undefined) {
-		return `${moved.field} removed`;
-	}
-	if (typeof was !== "string" || was.length > MOVED_VALUE_MAX_CHARS) {
-		return `${moved.field} changed`;
-	}
-	const named = before.get(was);
-	return named === undefined ? `${moved.field} was "${was}"` : `${moved.field} was ${named}`;
-}
-
 /** What a variant is compared against, for its subjects' standing. */
 interface Against {
 	readonly comparison: VariantComparison;
+	/** What the other side is called. */
+	readonly name: string;
 	/** What the other side's subjects are called. */
 	readonly names: ReadonlyMap<string, string>;
+}
+
+/**
+ * One field that moved, in words that hold whichever way the two variants lie in time: what the
+ * other side says, named by that side. On history read against now, the other side's value is
+ * the later one, so "was" would be the wrong word.
+ * @param moved The field and what it moved between.
+ * @param against The variant it is compared against: its name, and what its subjects are called.
+ * @returns What the other side says of it.
+ */
+function movedOf(moved: FieldChange, against: Against): string {
+	const theirs = moved.before;
+	if (theirs === undefined) {
+		return `${moved.field} is not stated on ${against.name}`;
+	}
+	if (typeof theirs !== "string" || theirs.length > MOVED_VALUE_MAX_CHARS) {
+		return `${moved.field} differs on ${against.name}`;
+	}
+	const named = against.names.get(theirs);
+	const value = named ?? `"${theirs}"`;
+	return `${moved.field} is ${value} on ${against.name}`;
 }
 
 /**
@@ -91,8 +93,7 @@ function standingSpoken(id: string, against: Against | null): Omit<StepSubject, 
 	if (change === undefined) {
 		return { standing: "unchanged", moved: [] };
 	}
-	const moved =
-		change.kind === "changed" ? change.fields.map((f) => movedOf(f, against.names)) : [];
+	const moved = change.kind === "changed" ? change.fields.map((f) => movedOf(f, against)) : [];
 	return { standing: change.kind, moved };
 }
 
@@ -116,6 +117,7 @@ function narratedSubjects(
 			? null
 			: {
 					comparison: compareVariants(base.content, variant.content),
+					name: base.name,
 					names: namesOf(base.content),
 				};
 	return beat.subjects.flatMap((id) => {
