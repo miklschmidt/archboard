@@ -2226,7 +2226,15 @@ board without the region saw one.
   a port settled against the one card its line runs to spans the card
   (`settle.ts` `lineReach`), and a port moved along the face keeps a
   corner's room from the grown box and stands on the card clear of its
-  rounded corner (`jogs.ts` `onFace`). Settled over the region's inset, A
+  rounded corner (`jogs.ts` `onFace`). A port moved to close a step takes
+  the line that runs straight on through the card from it along
+  (`jogs.ts` `throughCard`): the ports of a card laid out as its region
+  stand a port's margin in from its own face, where a line planned over
+  the grown box does not reach, and moved alone each such port would have
+  notched the line through the card. Held there, the line out of Pane
+  session in Reading a board (Track) stepped 16 px aside under its region,
+  and a line on the ingress board (Track) a point and a half.
+  Settled over the region's inset, A
   spoken instruction becomes work (Blocks) stepped a line out of it and for
   that bend kept a port order that turned a container's cards round; moved
   there, a line between two such cards ended past the card's corner.
