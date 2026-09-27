@@ -7,10 +7,15 @@
 // end and round a block. So the board is laid out again with the line
 // leaving and entering every block of its chain by the edges that face each
 // other: the walls where the two blocks stand further apart across than up
-// and down, else the faces toward each other.
+// and down, else the faces toward each other. A region round one node
+// (`lone.ts`) stands its node taller, and turns no line's faces: where the
+// two blocks stand beside each other by no more than their regions round
+// one node add to their height, they stand as they would without them.
 import type { Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
+import { grownBy } from "@/transformers/semantic-renderer/lib/blocks/lone";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type {
+	Block,
 	BlockTree,
 	Face,
 	Projection,
@@ -29,7 +34,7 @@ function sidesOf(tree: BlockTree, laid: ReadonlyMap<string, Laid>): Map<string, 
 	const back = tree.backEdges();
 	for (const projection of tree.projections) {
 		const upward = back.has(projection.edge.id);
-		const facing = facingOf(projection, laid, upward);
+		const facing = facingOf(projection, laid, upward, tree);
 		if (facing === undefined) continue;
 		const [outFace, inFace]: [Face, Face] = upward ? ["top", "bottom"] : ["bottom", "top"];
 		const kind = tree.kindOf(projection.edge);
@@ -44,27 +49,71 @@ function sidesOf(tree: BlockTree, laid: ReadonlyMap<string, Laid>): Map<string, 
 /**
  * The edges a line's two outermost blocks face each other by, when its faces
  * do not: for a line down, the block it enters does not stand wholly below the
- * one it leaves; for a line up, wholly above.
+ * one it leaves, or no more above than their regions round one node add to
+ * their height; for a line up, wholly above. A block beside a column is
+ * centred on it, so a region round one node in the column could stand the
+ * block beside where it stood below: in Working with an agent (Blocks), the
+ * region round Pane session stood Voice 16 px up beside the cards over Agent,
+ * and the lines from Application composition into Voice moved to side walls,
+ * stood Pane session off to the middle and ran round Voice.
  * @param projection The line's projection.
  * @param laid Every block laid out.
  * @param upward Whether the line runs upward.
+ * @param tree The blocks, which name every node alone in its region.
  * @returns The edge it leaves by and the edge it enters by, or nothing.
  */
 function facingOf(
 	projection: Projection,
 	laid: ReadonlyMap<string, Laid>,
 	upward: boolean,
+	tree: BlockTree,
 ): [Side, Side] | undefined {
-	const { at, out, into } = projection;
-	const boxes = laid.get(at.id)?.boxes;
-	const [one, other] = [out.at(-1), into.at(-1)].map((block) =>
-		block === undefined ? undefined : boxes?.get(block.id),
+	const ends = endsOf(projection, laid);
+	if (ends === undefined) return undefined;
+	const { leaves, enters, one, other } = ends;
+	const room = grownIn(tree, leaves) + grownIn(tree, enters);
+	const stands = upward
+		? other.y + other.height <= one.y + room
+		: other.y + room >= one.y + one.height;
+	return stands ? undefined : sidesBetween(one, other);
+}
+
+/**
+ * A line's two outermost blocks, each with its box in the block that holds both.
+ * @param projection The line's projection.
+ * @param laid Every block laid out.
+ * @returns The block it leaves and the one it enters, and their boxes; nothing where one is missing.
+ */
+function endsOf(
+	projection: Projection,
+	laid: ReadonlyMap<string, Laid>,
+): { leaves: Block; enters: Block; one: Box; other: Box } | undefined {
+	const [leaves, enters] = [projection.out.at(-1), projection.into.at(-1)];
+	if (leaves === undefined || enters === undefined) return undefined;
+	const [one, other] = [leaves, enters].map((block) =>
+		laid.get(projection.at.id)?.boxes.get(block.id),
 	);
-	if (one === undefined || other === undefined) return undefined;
-	const below = other.y >= one.y + one.height;
-	const above = other.y + other.height <= one.y;
-	if (upward ? above : below) return undefined;
-	return sidesBetween(one, other);
+	return one && other && { leaves, enters, one, other };
+}
+
+/**
+ * How much taller a block stands for the regions round one node it is or
+ * holds: each adds its caption band and inset ({@link grownBy}).
+ * @param tree The blocks.
+ * @param block The block.
+ * @returns The height they add, at most.
+ */
+function grownIn(tree: BlockTree, block: Block): number {
+	const own = block.lone === undefined ? 0 : grownBy(block.lone);
+	return tree.innermostFirst(block).reduce(
+		(sum, inner) =>
+			sum +
+			inner.items.reduce((more, item) => {
+				const lone = tree.lone.get(item);
+				return more + (lone === undefined ? 0 : grownBy(lone));
+			}, 0),
+		own,
+	);
 }
 
 /**

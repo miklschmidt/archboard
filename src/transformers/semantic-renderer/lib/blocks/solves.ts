@@ -12,13 +12,10 @@ import { COMPOUND_OPTIONS } from "@/transformers/semantic-renderer/lib/layout/co
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { layJoined, type Drawn } from "@/transformers/semantic-renderer/lib/blocks/joins";
 import { lineLength } from "@/transformers/semantic-renderer/lib/blocks/laying";
-import { holdsLoneRegions } from "@/transformers/semantic-renderer/lib/blocks/lone";
 import {
 	BLOCKS_APART,
-	BLOCKS_DECIDED,
 	BLOCKS_NESTING,
 	BLOCKS_PLACED,
-	BLOCKS_WITHOUT,
 } from "@/transformers/semantic-renderer/lib/blocks/place";
 import { BlockTree } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { weighedPlaced } from "@/transformers/semantic-renderer/lib/blocks/weighing";
@@ -47,118 +44,43 @@ const PlacedSchema = z.object({
 /** A whole drawing's geometry, as a solve answers it. */
 type Placed = z.infer<typeof PlacedSchema>;
 
-/** A drawing's geometry as one solve answers it, the blocks it keeps apart, and what its layout decided, as JSON. */
-interface Solved extends Placed {
-	readonly apart: ReadonlySet<string>;
-	readonly decided?: string;
-}
-
-/** How one solve lays a board out beyond its nesting and joins (`place.ts`). */
-interface Asked {
-	/** Whether without its regions round one node. */
-	readonly without?: boolean;
-	/** What another layout decided, which this one keeps. */
-	readonly decided?: string;
-}
-
 /**
  * A board laid out one way, in one solve.
  * @param graph The measured hierarchy.
  * @param nesting How its containers and group regions are drawn.
  * @param apart The blocks whose joins keep ports of their own, by id.
- * @param asked How else it is laid out.
- * @returns The drawing's geometry, the blocks it keeps apart, and what its layout decided.
+ * @returns The drawing's geometry.
  */
 async function solved(
 	graph: ElkNode,
 	nesting: Nesting,
 	apart: ReadonlySet<string>,
-	asked: Asked = {},
-): Promise<Solved> {
-	const question = {
+): Promise<Placed> {
+	const asked = {
 		...graph,
 		layoutOptions: {
 			...graph.layoutOptions,
 			[BLOCKS_NESTING]: nesting,
 			[BLOCKS_APART]: JSON.stringify([...apart]),
-			...askedOptions(asked),
 		},
 	};
-	const answer = await rendererHost().solve(question, {
+	const answer = await rendererHost().solve(asked, {
 		...COMPOUND_OPTIONS,
 		[SOLVE_STAGE]: nesting === "blocks" ? "blocks" : "track",
 	});
-	const { [BLOCKS_PLACED]: placed, [BLOCKS_DECIDED]: decided } = answer.layoutOptions ?? {};
-	return {
-		...PlacedSchema.parse(JSON.parse(placed ?? "{}")),
-		apart,
-		...(decided === undefined ? {} : { decided }),
-	};
-}
-
-/**
- * The root options that ask a solve how else to lay a board out.
- * @param asked How else it is laid out.
- * @returns The options.
- */
-function askedOptions(asked: Asked): Record<string, string> {
-	const { without, decided } = asked;
-	return {
-		...(without === true ? { [BLOCKS_WITHOUT]: "lone" } : {}),
-		...(decided === undefined ? {} : { [BLOCKS_DECIDED]: decided }),
-	};
+	return PlacedSchema.parse(JSON.parse(answer.layoutOptions?.[BLOCKS_PLACED] ?? "{}"));
 }
 
 /**
  * A board laid out with every join of lines to one card kept whole the way
  * that reads better.
- *
- * Drawn as blocks, a board with regions round one node (`lone.ts`) is laid
- * out as its layout without them decides: which joins part, which ports
- * move to side walls, how blocks pack and which port orders hold. Such a
- * region gathers nothing and joins no line, but the room it takes moves the
- * routes round it and the blocks packed beside it, and each of those choices
- * weighed with it could turn: What the CLI can be asked parted four lines
- * into Board client for a hop more and 21% more line, and Working with an
- * agent moved four more ports to side walls and stood Pane session off to
- * the middle. Beside those layouts the board is laid out with its regions
- * and every join whole, the way nearly every such board keeps, deciding for
- * itself; where that is the way kept and it decides alike, it is the
- * drawing, and else the board is laid out once more as decided. Laid out
- * only after the choice, Command interface took 895 ms where it took 724
- * without its regions round one node.
- *
- * Drawn inline, a board is ranked in one layout and decides with its
- * regions: every drawing of both vaults decided alike either way, and laid
- * out twice, Browser application (Track) took 639 ms where it took 340.
  * @param graph The measured hierarchy.
  * @param nesting How its containers and group regions are drawn.
  * @returns The blocks, and the drawing's geometry.
  */
-async function joinedOut(graph: ElkNode, nesting: Nesting): Promise<Drawn<Placed>> {
+function joinedOut(graph: ElkNode, nesting: Nesting): Promise<Drawn<Placed>> {
 	const tree = new BlockTree(graph, new Map(), nesting, new Set());
-	if (nesting === "blocks" && holdsLoneRegions(graph))
-		return { tree, placed: await decidedWithout(graph, tree) };
 	return layJoined(tree, (apart) => solved(graph, nesting, apart));
-}
-
-/**
- * A board drawn as blocks with its regions round one node, laid out as its
- * layout without them decides ({@link joinedOut}).
- * @param graph The measured hierarchy.
- * @param tree Its blocks.
- * @returns The drawing's geometry.
- */
-async function decidedWithout(graph: ElkNode, tree: BlockTree): Promise<Placed> {
-	const joined = layJoined(tree, (apart) => solved(graph, "blocks", apart, { without: true }));
-	// Asked once every way the choice weighs is asked for, so no worker holds one behind it.
-	await Promise.resolve();
-	const whole = solved(graph, "blocks", new Set());
-	whole.catch(() => undefined);
-	const { apart, decided } = (await joined).placed;
-	const itself = apart.size === 0 ? await whole : undefined;
-	if (itself !== undefined && itself.decided === decided) return itself;
-	return solved(graph, "blocks", apart, decided === undefined ? {} : { decided });
 }
 
 /**

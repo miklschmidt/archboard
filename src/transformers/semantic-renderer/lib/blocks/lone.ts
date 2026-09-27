@@ -115,55 +115,22 @@ function aloneIn(node: ElkNode, siblings: readonly ElkNode[]): boolean {
 }
 
 /**
- * Whether some node among some nodes, or inside them, is alone in its placing group.
- * @param nodes The nodes of one parent.
- * @returns True when one is.
- */
-function holdsLone(nodes: readonly ElkNode[]): boolean {
-	return nodes.some((node) => aloneIn(node, nodes) || holdsLone(node.children ?? []));
-}
-
-/**
- * Whether a measured hierarchy draws a region round one node.
- * @param graph The measured hierarchy.
- * @returns True when some node is alone in its placing group.
- */
-function holdsLoneRegions(graph: ElkNode): boolean {
-	return holdsLone(graph.children ?? []);
-}
-
-/**
- * Some nodes of one parent, and every node inside them, each alone in its
- * placing group placed by none.
- * @param nodes The nodes.
- * @returns Them, so placed.
- */
-function plainNodes(nodes: readonly ElkNode[]): ElkNode[] {
-	return nodes.map((node) => {
-		const children = node.children === undefined ? {} : { children: plainNodes(node.children) };
-		if (!aloneIn(node, nodes)) return { ...node, ...children };
-		const { [PLACING_GROUP]: _placed, ...options } = node.layoutOptions!;
-		return { ...node, ...children, layoutOptions: options };
-	});
-}
-
-/**
- * A measured hierarchy with no region round one node: every node alone in
- * its placing group placed by none.
- * @param graph The measured hierarchy.
- * @returns It, or nothing when no node is alone in its group.
- */
-function withoutLoneRegions(graph: ElkNode): ElkNode | undefined {
-	return holdsLoneRegions(graph) ? { ...graph, children: plainNodes(graph.children!) } : undefined;
-}
-
-/**
  * The band above the node that holds the region's caption.
  * @param lone The region.
  * @returns Its height.
  */
 function bandOf(lone: Lone): number {
 	return 2 * CAPTION_INSET + lone.caption.height;
+}
+
+/**
+ * How much taller a region round one node stands than the node: its caption
+ * band above and its inset below.
+ * @param lone The region.
+ * @returns The height it adds.
+ */
+function grownBy(lone: Lone): number {
+	return bandOf(lone) + LONE_INSET;
 }
 
 /**
@@ -446,13 +413,12 @@ export {
 	frameHeader,
 	frameShape,
 	framed,
+	grownBy,
 	grownInsets,
-	holdsLoneRegions,
 	regionRound,
 	sideRoom,
 	titleRow,
 	placingGroup,
-	withoutLoneRegions,
 	type Lone,
 	type Stop,
 };

@@ -3,6 +3,7 @@
 // files it has to load into its canvas under which names (`lib/host.ts`).
 export {
 	installRendererHost,
+	rendererHost,
 	SOLVE_STAGE,
 	type RendererHost,
 	type ThemeColors,
