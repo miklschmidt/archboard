@@ -6,7 +6,8 @@
 // lane off, it still traced the frame's outline; where the passage has room
 // it keeps a whole lane. Below this frame the passage is too narrow for one.
 // A card standing further inside than the inset reaches that much further, so
-// its routing box still ends a lane beyond the wall.
+// its routing box still ends a lane beyond the wall; one a lane or more
+// inside needs no reach at all.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -66,6 +67,16 @@ test("a card inside a frame reaches a lane past a wall to clear, however far in 
 		return card.x - routingBox - (reach.get("card")?.WEST ?? 0) - frame.x;
 	});
 	expect(ends.every((end) => end <= -LANE + 0.01)).toBe(true);
+});
+
+test("a card a lane or more inside a wall reaches no further", () => {
+	const reaches = [16, 40].map((inside) => {
+		const card = { id: "card", x: 120 + inside, y: 200, width: 200, height: 80 };
+		const frame = { id: "frame", x: 100, y: 100, width: 600, height: 400, children: [card] };
+		return wallReach({ id: "root", children: [frame] }, [wallOf("frame", "WEST")]).get("card")
+			?.WEST;
+	});
+	expect(reaches.map((reach) => reach ?? 0)).toEqual([0, 0]);
 });
 
 /**

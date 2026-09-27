@@ -11,6 +11,7 @@ export {
 	curveThrough,
 	curveClearanceIssue,
 	COMPOUND_OPTIONS,
+	compoundGraph,
 	PINNED_STANDING,
 	EndpointOptions,
 	finished,
