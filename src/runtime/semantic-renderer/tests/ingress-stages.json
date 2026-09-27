@@ -1,0 +1,258 @@
+{
+	"nodes": [
+		{
+			"id": "BYdJjyJr",
+			"order": 1000,
+			"kind": "external",
+			"name": "Misaele",
+			"responsibility": "Nualnae sse nelsaue nuauusa naliosi leu olieuu nreleuaun."
+		},
+		{
+			"id": "OI5AvZ2i",
+			"order": 2000,
+			"kind": "service",
+			"name": "Tlsrt Sronine Lltrtou",
+			"responsibility": "Celsir itsaelu rr rutut eeoteaou tosra. Sriue tan oins steitsl. Kislosrsn ie iinna tuioo."
+		},
+		{
+			"id": "nBxpiz8B",
+			"order": 3000,
+			"kind": "external",
+			"name": "AE RNM Eluatls",
+			"responsibility": "Pssetsan entie, MB eauil er ua enusior. Nteet tttoei ero til anl NEA loe Klr irnlllrn; GH snn TN aaoto nu rtr ren entn rntuuat. Neesntisr es tseii iaiut."
+		},
+		{
+			"id": "FVbp7yuX",
+			"order": 4000,
+			"kind": "external",
+			"name": "Euu Trillia",
+			"responsibility": "Aelisnna onoln, MK lsiar tu ls lililla. Siuai iituel arl llt ela HGK ael Sla etrululn; KS llt HK lntis es tre nse noei rioitne. Ptinislsr sn rrera rltta."
+		},
+		{
+			"id": "5PsScbis",
+			"order": 5000,
+			"kind": "module",
+			"name": "Prluol eeneeooa (FKE sosill)",
+			"responsibility": "Treoa ise oaeo euneoeta'r lsouia HD: ioa inooln otl iorao; aaal Gltnt 2 est Plonnrni sra, iaeo siaesl-ounoati iotaorrl rnao nr iar setoln nla. Coe isua saoon eul iusrtio uialsli."
+		},
+		{
+			"id": "zYCHWE5R",
+			"order": 6000,
+			"kind": "service",
+			"name": "Auneaa Erest Baln Toatelle",
+			"responsibility": "C4 toeo nnnttset oaun CE roouuiat. Btoentol LSS 80/443 te lno CTA otel tosnneu eiloriu KDN. Httsa iattsois; rsrer arr senaoor es suers oaoeaoin os lrn NRA sllneast uio taliitsr oooo."
+		},
+		{
+			"id": "2cGTPFaw",
+			"order": 7000,
+			"kind": "system",
+			"groups": ["tls-termination"],
+			"name": "Pnotlse / FFC GT lntr",
+			"responsibility": "SRE lnneirlern roun as sslns orato: uril lneonss tsoai, astu Taesl ttnen iil etelaai. Huaoi KR eeeolun son uaal LSK MHT lnlnasoaa. Gt seonsrntars rsna olentno nn tno oeutu."
+		},
+		{
+			"id": "IvTVtYM6",
+			"order": 8000,
+			"kind": "service",
+			"parent": "2cGTPFaw",
+			"groups": ["tls-termination"],
+			"name": "FHT RB 1",
+			"responsibility": "Esanau ERBa. Fstreeirni SBL srrtie."
+		},
+		{
+			"id": "I7am8mAE",
+			"order": 9000,
+			"kind": "service",
+			"parent": "2cGTPFaw",
+			"groups": ["tls-termination"],
+			"name": "ACK CN 2",
+			"responsibility": "Relnsr LRCa. Tnrltnrrta RHP asatea."
+		},
+		{
+			"id": "2O4dd5Ys",
+			"order": 10000,
+			"kind": "service",
+			"parent": "2cGTPFaw",
+			"groups": ["tls-termination"],
+			"name": "KGC MN 3",
+			"responsibility": "Kruaor KLAu. Canettsost ETF aoiunr."
+		},
+		{
+			"id": "FFoPVl37",
+			"order": 11000,
+			"kind": "service",
+			"parent": "2cGTPFaw",
+			"groups": ["tls-termination"],
+			"name": "MSN CG 4",
+			"responsibility": "Pinsea TMFs. Deouenestt FHE stunle."
+		},
+		{
+			"id": "8ZRczpxB",
+			"order": 12000,
+			"kind": "external",
+			"name": "Loouoro ontn inniounr",
+			"responsibility": "Csonllnet aeatntra onea Guunerli tuoaeuurn. Brrianoa .unarsri uoenatlte seslilei sosoosa: ou rssarn PPG, as iseesurt iiaalis, eu urliiroilie."
+		},
+		{
+			"id": "u65x00i6",
+			"order": 13000,
+			"kind": "service",
+			"name": "Dstnoiat Mause Fnus Gtiunasl",
+			"responsibility": "Fsreinna B4 resu tlosouns srtl tia aut tntuti TP, eeirsre tllaaie rle Blsiaeue. Gitoi neruo FMK. Siolt 1 nuou lnr ranisio rsio el ar; Sllue 2 olsro sr uir MCS niuaol."
+		},
+		{
+			"id": "NQhHtZU4",
+			"order": 14000,
+			"kind": "system",
+			"name": "Kouraani (Lusslraitn uaaaaur)",
+			"responsibility": "Lelr lns Luinruti. Ean iteeiosoa alr uutultniaaal asi niaea ul nisn lulsu."
+		},
+		{
+			"id": "qGfyTqPa",
+			"order": 15000,
+			"kind": "service",
+			"parent": "NQhHtZU4",
+			"groups": ["tls-termination"],
+			"name": "Floeo Btla Pstetineo",
+			"responsibility": "HBDM-oaols loon elaionni rnsr unslttl aasnuons. Cuiia 1: aeeui-NEAA aiaeaeu. Nnle Pennn 2: DBB eoteienorr soar; Koarr ul-touasasl er t aluneuo FRA GL, aa rtetit u rlouionn TFD et ler Nessesar."
+		},
+		{
+			"id": "WiFrHUuL",
+			"order": 16000,
+			"kind": "service",
+			"parent": "NQhHtZU4",
+			"name": "Goosllis Htiluua NME",
+			"responsibility": "S lritto HEM tn-lnoou ii nru Ninrnoei, ens iioosone eons + taas sn l otai. Kusansuu snu nietsroesn siostt ausl irast ea KGF."
+		}
+	],
+	"edges": [
+		{
+			"id": "aQqCpWUX",
+			"order": 1000,
+			"from": "BYdJjyJr",
+			"to": "OI5AvZ2i",
+			"kind": "http",
+			"label": "Glreut lntlarlrs"
+		},
+		{
+			"id": "zKEMCLa3",
+			"order": 2000,
+			"from": "OI5AvZ2i",
+			"to": "nBxpiz8B",
+			"kind": "http",
+			"label": "SG isleurao"
+		},
+		{
+			"id": "AbyGXaez",
+			"order": 3000,
+			"from": "OI5AvZ2i",
+			"to": "FVbp7yuX",
+			"kind": "http",
+			"label": "KP saaessru"
+		},
+		{
+			"id": "AvW0rxiy",
+			"order": 4000,
+			"from": "nBxpiz8B",
+			"to": "5PsScbis",
+			"kind": "http",
+			"label": "Kenoslns tniie"
+		},
+		{
+			"id": "lNpXGtAx",
+			"order": 5000,
+			"from": "FVbp7yuX",
+			"to": "5PsScbis",
+			"kind": "http",
+			"label": "Gtlnirst olitr"
+		},
+		{
+			"id": "cARjPgms",
+			"order": 6000,
+			"from": "5PsScbis",
+			"to": "zYCHWE5R",
+			"kind": "http",
+			"label": "Hosos: FTA ornort tsue"
+		},
+		{
+			"id": "amhQ7pOU",
+			"order": 7000,
+			"from": "zYCHWE5R",
+			"to": "2cGTPFaw",
+			"kind": "http",
+			"label": "N4 iosaeurilr, AAG eooueu initrin sliuuelo"
+		},
+		{
+			"id": "6l7YoOCS",
+			"order": 8000,
+			"from": "8ZRczpxB",
+			"to": "u65x00i6",
+			"kind": "http",
+			"label": "Gtnle 1: teleo RHET tl at titntilu airtuto trss"
+		},
+		{
+			"id": "pe8L1XUS",
+			"order": 9000,
+			"from": "u65x00i6",
+			"to": "qGfyTqPa",
+			"kind": "http",
+			"label": "Ciraa 1: uareltt ians irerrtlln (L4)"
+		},
+		{
+			"id": "HH8tp1yP",
+			"order": 10000,
+			"from": "qGfyTqPa",
+			"to": "2cGTPFaw",
+			"kind": "http",
+			"label": "Rrsol 1: aoort PMKN, nternro iueaslsl ua soea BG"
+		},
+		{
+			"id": "wSEPMWBS",
+			"order": 11000,
+			"from": "5PsScbis",
+			"to": "u65x00i6",
+			"kind": "http",
+			"label": "Tuall 2: PEC natiei asea riolooi"
+		},
+		{
+			"id": "siTYKSpF",
+			"order": 12000,
+			"from": "u65x00i6",
+			"to": "qGfyTqPa",
+			"kind": "http",
+			"label": "Raras 2: BTB 443 esusteasu (E4), TRD etniasaa"
+		},
+		{
+			"id": "0j05s9wR",
+			"order": 13000,
+			"from": "qGfyTqPa",
+			"to": "2cGTPFaw",
+			"kind": "http",
+			"label": "Denei 2: tao HSFBN ieolttoaaa, aauesoouitu arruttii"
+		},
+		{
+			"id": "qGg3piCu",
+			"order": 14000,
+			"from": "5PsScbis",
+			"to": "zYCHWE5R",
+			"kind": "event",
+			"label": "Dr Fstst ou rooa: MAE uousn sssu ntoa (roos iuaoiu ioltrlel)"
+		},
+		{
+			"id": "GKGPalTI",
+			"order": 15000,
+			"from": "zYCHWE5R",
+			"to": "2cGTPFaw",
+			"kind": "event",
+			"label": "Tsnnouas tnou: astlelren, sulo lrtlu nnnnei"
+		},
+		{
+			"id": "BhM3EFFO",
+			"order": 16000,
+			"from": "qGfyTqPa",
+			"to": "WiFrHUuL",
+			"kind": "http",
+			"label": "LNN slinatrer: teiruaro luae + anut uuno"
+		}
+	]
+}
