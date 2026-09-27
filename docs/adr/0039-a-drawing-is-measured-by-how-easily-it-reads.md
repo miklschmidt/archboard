@@ -4,6 +4,10 @@ status: accepted
 
 # A drawing is measured by how easily it reads; fit is a guideline
 
+Superseded in part by [ADR 0040](0040-track-and-blocks-replace-the-graphviz-engine.md):
+its clauses on what the Graphviz engine counts, its route settlement
+(`even-pins.ts`) and its column fold describe code that no longer exists.
+
 Supersedes the section "Fit in the reference pane is the measure" of
 [ADR 0028](0028-the-renderer-reads-a-board-in-a-direction-and-is-measured-by-fit.md),
 and the clause of

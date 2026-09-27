@@ -2350,3 +2350,15 @@ unstacked (`reading-first.test.ts`). That step reads worse than the straight
 line of the drawing without the region: the line passes left of the region
 a region's clearance off and enters Codex child right of its caption's
 words a lane off, and no column is clear of both.
+
+## 45. The Graphviz engine is removed (2026-09-27)
+
+[ADR 0040](../adr/0040-track-and-blocks-replace-the-graphviz-engine.md) removes
+the `graphviz` layout engine. Sections 31 to 43 describe its placement, column
+folds, routing, label reservations, settlements and finishing passes; that code
+is deleted, and those sections are history. Track and Blocks are the engines,
+behind `lib/layout/engines.ts`, and Track is the default. Graphviz still places
+the cards for both, and libavoid still routes Blocks' trunks.
+
+Every Track and Blocks drawing of the dogfood vault and of the work vault is
+byte-identical before and after the removal.

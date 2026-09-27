@@ -28,8 +28,8 @@ import third from "../../../../docs/design/wide-board-layout-fixtures/flask-map-
 import systemMap from "../../../../docs/design/wide-board-layout-fixtures/system-map.content.json";
 
 // Fit, route length, bends and shared corridors remain measured by the corpus
-// script and recorded in the adoption report. They do not impose the retired
-// ELK routing style on native Graphviz/libavoid placement (TASK-278).
+// script and recorded in the adoption report. They do not impose one engine's
+// routing style on another (TASK-278).
 const FIXTURES = [
 	{ name: "flask-map-1", content: first },
 	{ name: "flask-map-3", content: third },
