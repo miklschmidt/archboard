@@ -253,6 +253,12 @@ interface Earlier {
 	readonly orders?: ReadonlyMap<string, readonly string[]>;
 }
 
+/** What a layout decided, which a layout of the board with its regions round one node keeps. */
+interface Decided extends Earlier {
+	/** Whether its ports were settled. */
+	readonly settled: boolean;
+}
+
 /** What a first layout keeps: nothing. */
 const NOTHING_EARLIER: Earlier = { exits: new Map(), packings: new Map() };
 
@@ -278,7 +284,7 @@ interface Board {
  * @param graph The measured hierarchy.
  * @param nesting How containers and group regions are drawn.
  * @param apart The blocks whose joins keep ports of their own, by id.
- * @returns The blocks, every block laid out.
+ * @returns The blocks, every block laid out, and what the layout decided.
  */
 function layOut(
 	viz: Viz,
@@ -286,7 +292,7 @@ function layOut(
 	graph: ElkNode,
 	nesting: Nesting,
 	apart: ReadonlySet<string>,
-): { tree: BlockTree; laid: Map<string, Laid> } {
+): { tree: BlockTree; laid: Map<string, Laid>; decided: Decided } {
 	const first = layAll(viz, avoid, graph, undefined, nesting, apart);
 	const exits = sidesOf(first.tree, first.laid);
 	const kept = { exits, packings: first.packings };
@@ -294,11 +300,38 @@ function layOut(
 	const orders = apart.size > 0 ? new Map() : heldOrders({ ...last, insetsOf, avoid });
 	const held =
 		orders.size === 0 ? [] : [layAll(viz, avoid, graph, { ...kept, orders }, nesting, apart)];
-	return [last, ...held]
-		.map((laying) => settledOrNot(laying, avoid))
+	const [chosen, index] = [last, ...held]
+		.map((laying, at) => [settledOrNot(laying, avoid), at] as const)
 		.reduce((one, other) =>
-			other.crossings < one.crossings && other.bends <= one.bends ? other : one,
+			other[0].crossings < one[0].crossings && other[0].bends <= one[0].bends ? other : one,
 		);
+	const decided = { ...kept, ...(index === 0 ? {} : { orders }), settled: chosen.settled };
+	return { tree: chosen.tree, laid: chosen.laid, decided };
+}
+
+/**
+ * Lay a measured hierarchy out as another layout decided it would be: its
+ * exits, packings and held orders kept, and its ports settled only where
+ * that layout settled them.
+ * @param viz The initialized Graphviz instance.
+ * @param avoid The initialized libavoid module.
+ * @param graph The measured hierarchy.
+ * @param nesting How containers and group regions are drawn.
+ * @param apart The blocks whose joins keep ports of their own, by id.
+ * @param decided What the other layout decided.
+ * @returns The blocks, every block laid out.
+ */
+function layOutAs(
+	viz: Viz,
+	avoid: AvoidEngine,
+	graph: ElkNode,
+	nesting: Nesting,
+	apart: ReadonlySet<string>,
+	decided: Decided,
+): { tree: BlockTree; laid: Map<string, Laid> } {
+	const laying = layAll(viz, avoid, graph, decided, nesting, apart);
+	if (decided.settled) settlePorts({ ...laying, insetsOf, avoid });
+	return laying;
 }
 
 /**
@@ -314,12 +347,18 @@ function layOut(
  * data (Cloud Infrastructure, Blocks) one, each settling a parted join.
  * @param laying The layout; its blocks are replaced.
  * @param avoid The initialized libavoid module.
- * @returns The blocks, every block laid out, and how often the drawing's lines cross and turn.
+ * @returns The blocks, every block laid out, how often the drawing's lines cross and turn, and whether its ports were settled.
  */
 function settledOrNot(
 	laying: Board,
 	avoid: AvoidEngine,
-): { tree: BlockTree; laid: Map<string, Laid>; crossings: number; bends: number } {
+): {
+	tree: BlockTree;
+	laid: Map<string, Laid>;
+	crossings: number;
+	bends: number;
+	settled: boolean;
+} {
 	const unsettled = new Map(laying.laid);
 	settlePorts({ ...laying, insetsOf, avoid });
 	const [was, is] = [unsettled, laying.laid].map((laid) => {
@@ -331,23 +370,29 @@ function settledOrNot(
 			),
 		);
 	});
-	if (was! > is!) for (const [id, laid] of unsettled) laying.laid.set(id, laid);
+	const kept = was! <= is!;
+	if (!kept) for (const [id, laid] of unsettled) laying.laid.set(id, laid);
 	const lines = new Assembly(laying.tree, laying.laid).placed().edges.map(({ points }) => points);
 	return {
 		tree: laying.tree,
 		laid: laying.laid,
 		crossings: crossingsOf(lines),
 		bends: lines.reduce((sum, points) => sum + corners(points).length - 2, 0),
+		settled: kept,
 	};
 }
 
 /**
  * Lay a measured hierarchy out with every join of lines to one card kept
- * whole the way that reads better (`joins.ts`). Which joins part is chosen
- * on the board without its regions round one node (`lone.ts`): such a
- * region gathers nothing and joins no line, but the room it takes moves the
- * routes round it, and What the CLI can be asked (Blocks), weighed with its
- * three, parted four lines into Board client for a hop more and 21% more line.
+ * whole the way that reads better (`joins.ts`). A board with regions round
+ * one node (`lone.ts`) is laid out as its layout without them decides:
+ * which joins part, which ports move to side walls, how blocks pack, which
+ * port orders hold and whether ports settle. Such a region gathers nothing
+ * and joins no line, but the room it takes moves the routes round it, and
+ * each of those choices weighed with it could turn: What the CLI can be
+ * asked (Blocks) parted four lines into Board client for a hop more and 21%
+ * more line, and Working with an agent (Blocks) moved four more ports to
+ * side walls and stood Pane session off to the middle.
  * @param viz The initialized Graphviz instance.
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
@@ -362,7 +407,9 @@ function layJoinedOut(
 ): Drawn<Placed> {
 	const plain = withoutLoneRegions(graph);
 	const { best, apart } = layJoined((kept) => drawnOut(viz, avoid, plain ?? graph, nesting, kept));
-	return plain === undefined ? best : drawnOut(viz, avoid, graph, nesting, apart);
+	if (plain === undefined) return best;
+	const { tree, laid } = layOutAs(viz, avoid, graph, nesting, apart, best.decided);
+	return { tree, placed: Assembly.unstepped(new Assembly(tree, laid).placed()) };
 }
 
 /**
@@ -372,7 +419,7 @@ function layJoinedOut(
  * @param graph The measured hierarchy.
  * @param nesting How containers and group regions are drawn.
  * @param apart The blocks whose joins keep ports of their own, by id.
- * @returns The blocks, and the drawing's geometry.
+ * @returns The blocks, the drawing's geometry, and what the layout decided.
  */
 function drawnOut(
 	viz: Viz,
@@ -380,9 +427,9 @@ function drawnOut(
 	graph: ElkNode,
 	nesting: Nesting,
 	apart: ReadonlySet<string>,
-): Drawn<Placed> {
-	const { tree, laid } = layOut(viz, avoid, graph, nesting, apart);
-	return { tree, placed: Assembly.unstepped(new Assembly(tree, laid).placed()) };
+): Drawn<Placed> & { decided: Decided } {
+	const { tree, laid, decided } = layOut(viz, avoid, graph, nesting, apart);
+	return { tree, placed: Assembly.unstepped(new Assembly(tree, laid).placed()), decided };
 }
 
 /**
