@@ -4,7 +4,7 @@ import type { ElkNode, LayoutOptions } from "@archboard/elk-rs";
 import {
 	chooseReading,
 	type ColumnReading,
-	type SettledReading as SettledWay,
+	type SettledColumnReading,
 } from "@/transformers/semantic-renderer/lib/layout/column-readings";
 import type { ChangeKind, VariantContent } from "@/shared/semantic-board/index";
 import type {
@@ -141,7 +141,7 @@ function columnReading(problem: Problem): ColumnReading<SettlementWay> {
 						finishedWith(reading, { labelClearance: true }),
 					)
 				: settleReading(asking(reading, way)).then(finishedReading)
-			).then(({ reading: kept, drawing }): SettledWay<SettlementWay> => ({
+			).then(({ reading: kept, drawing }): SettledColumnReading<SettlementWay> => ({
 				drawing,
 				way: wayOf(kept.route),
 			})),
