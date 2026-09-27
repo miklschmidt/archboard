@@ -4,6 +4,7 @@ import { boxOf, type Face } from "@/transformers/semantic-renderer/lib/layout/av
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import { verticesOf } from "@/transformers/semantic-renderer/lib/layout/curves";
+import type { Requested } from "@/transformers/semantic-renderer/lib/layout/route-requests";
 import { ROUTE_NUDGE_DISTANCE } from "@/transformers/semantic-renderer/config";
 import { PINNED_STANDING } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import { PIN_REACH } from "@/transformers/semantic-renderer/lib/svg/standing";
@@ -144,14 +145,15 @@ function projection(
  * path, and, when asked, the near corner of a face a route hooks past ({@link cornerPin}).
  * @param node Ordinary endpoint card.
  * @param edge Complete native relationship.
- * @param corners Whether to offer corner pins.
+ * @param asked Where the routes ask for corner pins: on every card, or on some.
  * @returns Candidate attachment corridors for the existing collision policy to validate.
  */
 export function projectedCardPins(
 	node: ElkNode,
 	edge: ElkExtendedEdge,
-	corners = false,
+	asked: Pick<Requested, "cornerPins" | "cornerCards">,
 ): PinProjection[] {
+	const corners = asked.cornerPins || asked.cornerCards.includes(node.id);
 	const section = edge.sections?.[0];
 	if (!section) return [];
 	const points = [section.startPoint, ...(section.bendPoints ?? []), section.endPoint];

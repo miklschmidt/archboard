@@ -14,6 +14,8 @@ const RouteRequestSchema = z.object({
 	clearWalls: z.array(z.string()).readonly().default([]),
 	/** A route that hooks past a card's corner is offered the face it passed (pin-feedback.ts). */
 	cornerPins: z.boolean().default(false),
+	/** The cards on which a route that hooks past a corner is offered the face it passed, where cornerPins is not asked. */
+	cornerCards: z.array(z.string()).readonly().default([]),
 	/** A straight channel may take any lane of a shared span (straight-candidates.ts). */
 	laneChannels: z.boolean().default(false),
 	/** Reserved labels move onto the channel their cards share (label-centring.ts). */

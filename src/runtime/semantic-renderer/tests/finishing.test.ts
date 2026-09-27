@@ -8,7 +8,8 @@
 // coordinator), two lines whose corners interlock a few pixels apart
 // (Platform Public API's "Authentication and usage"), or a fan whose branches
 // crowd into one blot (Skill evaluation's six lines out of Author run).
-// What this catches: an ordinary L taken for a hook, two lines from one card
+// What this catches: an ordinary L taken for a hook, hooks left uncured
+// where curing them all at once is refused, two lines from one card
 // on one stroke taken for a stack, a pass trading a defect for another of its kind, a pass curing defects by crowding a label or by
 // joining two unrelated lines at or near a corner, and a fault in a pass's
 // routing being taken for a refusal.
@@ -282,6 +283,36 @@ test("a pass that saves a crossing may give a line more bends, but no more in al
 	const detour = sketch(cards, [entering(0), down(2500, 1), across]);
 	expect(await finishing(settled, bent)).toBe(bent);
 	expect(await finishing(settled, detour)).toBe(settled);
+});
+
+/**
+ * Two hooked lines, each cured where its card is asked to be; the second's
+ * cure moves another line across the line across the page.
+ * @param cured The cards whose hooks are cured.
+ * @returns The drawing.
+ */
+function hooksCured(cured: readonly string[]): ArchitectureDrawing {
+	const second = cured.includes("target500");
+	return sketch(cards, [
+		cured.includes("target0") ? entering(0) : hooked(0),
+		second ? entering(500) : hooked(500),
+		down(second ? 700 : 2500),
+		across,
+	]);
+}
+
+test("hooks a pass may not cure together are cured card by card, each where it cures more", async () => {
+	// Cured at once, a label found no run: the routing is refused.
+	const done = await finished(
+		{ reading: [] as readonly string[], drawing: hooksCured([]) },
+		(_, request) =>
+			Promise.resolve(
+				request.cornerCards === undefined
+					? undefined
+					: { reading: request.cornerCards, drawing: hooksCured(request.cornerCards) },
+			),
+	);
+	expect(done.reading).toEqual(["target0"]);
 });
 
 /** What a finishing pass asks of its routes. */

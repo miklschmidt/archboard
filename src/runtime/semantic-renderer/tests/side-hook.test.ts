@@ -75,33 +75,37 @@ function hooksInto(box: Box, route: readonly DrawnPoint[]): boolean {
 test("a line passing its target's top corner enters the top instead of hooking into the side", async () => {
 	await AvoidLib.load();
 	const target = { id: "target", x: 20, y: 232, width: 340, height: 88 };
-	const graph: ElkNode = {
-		id: "root",
-		width: 1200,
-		height: 400,
-		layoutOptions: requestOptions({ cornerPins: true }),
-		children: [
-			{ id: "source", x: 700, y: 20, width: 340, height: 88 },
-			target,
-			{ id: "neighbour", x: 402, y: 232, width: 340, height: 88 },
-		],
-		edges: [
-			{
-				id: "call",
-				sources: ["source"],
-				targets: ["target"],
-				layoutOptions: { "archboard.relationship.kind": "call" },
-			},
-		],
-	};
-	const section = routeGraph(AvoidLib.getInstance() as AvoidEngine, graph).edges![0]!.sections![0]!;
-	expect(section.endPoint.y).toBeCloseTo(target.y, 1);
-	expect(section.bendPoints).toHaveLength(1);
-	const fromCorner = Math.min(
-		section.endPoint.x - target.x,
-		target.x + target.width - section.endPoint.x,
-	);
-	expect(fromCorner).toBeGreaterThanOrEqual(FACE_INSET);
+	// Offered on every card, or on the hooked card alone.
+	for (const request of [{ cornerPins: true }, { cornerCards: ["target"] }]) {
+		const graph: ElkNode = {
+			id: "root",
+			width: 1200,
+			height: 400,
+			layoutOptions: requestOptions(request),
+			children: [
+				{ id: "source", x: 700, y: 20, width: 340, height: 88 },
+				target,
+				{ id: "neighbour", x: 402, y: 232, width: 340, height: 88 },
+			],
+			edges: [
+				{
+					id: "call",
+					sources: ["source"],
+					targets: ["target"],
+					layoutOptions: { "archboard.relationship.kind": "call" },
+				},
+			],
+		};
+		const section = routeGraph(AvoidLib.getInstance() as AvoidEngine, graph).edges![0]!
+			.sections![0]!;
+		expect(section.endPoint.y).toBeCloseTo(target.y, 1);
+		expect(section.bendPoints).toHaveLength(1);
+		const fromCorner = Math.min(
+			section.endPoint.x - target.x,
+			target.x + target.width - section.endPoint.x,
+		);
+		expect(fromCorner).toBeGreaterThanOrEqual(FACE_INSET);
+	}
 });
 
 /**

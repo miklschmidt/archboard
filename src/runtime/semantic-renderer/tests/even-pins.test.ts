@@ -15,7 +15,9 @@
 // blot (Skill evaluation's six lines out of Author run, branching 9 px apart);
 // hooks cured do not pay for a crossing brought either. A stack of unrelated
 // lines counts as the crossing it may hide, so a settlement may draw a
-// crossing to part one (Board rasterizer). Evening the charge
+// crossing to part one (Board rasterizer). Nor does a defect saved pay for
+// more than two bends ("One browser, two uses" wound through its frame).
+// Evening the charge
 // counts the inset a side pin stands inside its card's routing box, so every
 // pin of a card costs the same in all.
 
@@ -131,6 +133,31 @@ test("crossings saved buy only so much more page", async () => {
 	const alike = sketch({}, crossing(60), { width: 1000, height: 1050 });
 	expect(await kept(plain, taller)).toBe("plain");
 	expect(await kept(plain, alike)).toBe("even");
+});
+
+/**
+ * A long line along the page's foot, stepping down a few pixels at a time.
+ * @param steps How many steps it takes, each two bends.
+ * @returns The line.
+ */
+function stepping(steps: number): Line {
+	const corners = Array.from({ length: steps }, (_, step) => [
+		[1000 * (step + 1), 2000 + 4 * step],
+		[1000 * (step + 1), 2004 + 4 * step],
+	]).flat() as [number, number][];
+	return {
+		id: "foot",
+		from: "g",
+		to: "h",
+		points: at([0, 2000], ...corners, [8000, 2000 + 4 * steps]),
+	};
+}
+
+test("crossings saved buy only two more bends each", async () => {
+	// Two crossings saved: four more bends are paid for, six are not.
+	const plain = sketch({}, [...crossing(0), stepping(0)]);
+	expect(await kept(plain, sketch({}, [...crossing(60), stepping(2)]))).toBe("even");
+	expect(await kept(plain, sketch({}, [...crossing(60), stepping(3)]))).toBe("plain");
 });
 
 test("a line leaves a card in the reading direction rather than save a bend by its side", async () => {

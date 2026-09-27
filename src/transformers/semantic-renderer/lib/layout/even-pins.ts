@@ -33,7 +33,10 @@
 // cleared drawing clears, label-clearance.ts). A drawing that saves defects by
 // growing its page or its lines by more than each saved defect is worth is not
 // tidier (Command dispatch took a page a third taller with a third more line
-// to save two crossings).
+// to save two crossings), nor one that turns its lines more than two bends
+// for each (Board rasterizer's "One browser, two uses", its hooks cured card
+// by card, saved a crossing and a crowded label by thirteen more bends and
+// wound its lines through the frame).
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { eitherRouting } from "@/transformers/semantic-renderer/lib/layout/checked-routes";
@@ -50,6 +53,9 @@ import { crossingsOf } from "@/transformers/semantic-renderer/lib/track/score";
 
 /** The share a drawing may grow its page or its lines by for every defect it saves. */
 const CROSSING_WORTH = 0.05;
+
+/** How many more bends a drawing's lines may take together for every defect it saves. */
+const BENDS_WORTH = 2;
 
 /**
  * Whether a proportional pin position lies on one of its shape's edges.
@@ -165,6 +171,15 @@ function sideEnds(drawing: ArchitectureDrawing): number {
 }
 
 /**
+ * How many times a drawing's lines turn together.
+ * @param drawing The drawing.
+ * @returns The bends.
+ */
+function bendCount(drawing: ArchitectureDrawing): number {
+	return drawing.edges.reduce((sum, { curve }) => sum + verticesOf(curve).length - 2, 0);
+}
+
+/**
  * How much bigger one drawing is than another, page and line alike.
  * @param one A drawing.
  * @param other Another.
@@ -181,9 +196,9 @@ function growth(one: ArchitectureDrawing, other: ArchitectureDrawing): number {
 /**
  * Whether one drawing is tidier than another: it has no more of any defect
  * ({@link defectsIn}), ranks strictly better or cures others that are not
- * ranked, and grows the page and
- * its lines by no more than every defect it saves buys
- * ({@link CROSSING_WORTH}). Two crossings saved do not pay for a page a
+ * ranked, and grows the page and its lines, and the bends its lines take, by
+ * no more than every defect it saves buys ({@link CROSSING_WORTH},
+ * {@link BENDS_WORTH}). Two crossings saved do not pay for a page a
  * third taller with a third more line (Command dispatch).
  * @param one The challenger.
  * @param other The drawing kept so far, which wins a tie.
@@ -196,6 +211,7 @@ function tidierThan(one: ArchitectureDrawing, other: ArchitectureDrawing, cured 
 	const [ranked, against] = [untidiness(one), untidiness(other)];
 	if (!ranksBetter(ranked, against) && cured <= 0) return false;
 	const saved = Math.max(0, against[0]! - ranked[0]!) + cured;
+	if (bendCount(one) - bendCount(other) > saved * BENDS_WORTH) return false;
 	return growth(one, other) <= saved * CROSSING_WORTH;
 }
 
