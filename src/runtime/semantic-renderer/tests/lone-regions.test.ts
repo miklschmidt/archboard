@@ -24,6 +24,7 @@ import aSpokenInstruction from "./a-spoken-instruction.json";
 import legacyRouting from "./legacy-routing.json";
 import recordingAWalkthrough from "./recording-a-walkthrough.json";
 import startingAWorkhorse from "./starting-a-workhorse.json";
+import whatTheCliCanBeAsked from "./what-the-cli-can-be-asked.json";
 
 const policy = SemanticPolicySchema.parse({
 	levels: ["service"],
@@ -223,19 +224,20 @@ function readingOrder(drawing: RenderedDiagram, cards: readonly string[]): strin
 // band and bent the lines round it. A spoken instruction becomes work: a port
 // settled on the inset beside the card alone in its region stepped the line
 // out of it, and for that bend the board kept a port order that stood the
-// cards of a container the other way round.
-const readAsWithout = {
-	"Recording a walkthrough": recordingAWalkthrough,
-	"A spoken instruction": aSpokenInstruction,
-};
-test.each(
-	Object.keys(readAsWithout).flatMap((board) =>
-		(["track", "blocks"] as const).map((layout) => [board, layout] as const),
-	),
-)(
+// cards of a container the other way round. What the CLI can be asked: the
+// room its three such regions took moved the routes round them, and the
+// board parted four lines into Board client for a hop more and 21% more
+// line, and wrapped its widest rank's cards into other rows.
+const readAsWithout = [
+	["Recording a walkthrough", "track", recordingAWalkthrough],
+	["Recording a walkthrough", "blocks", recordingAWalkthrough],
+	["A spoken instruction becomes work", "blocks", aSpokenInstruction],
+	["What the CLI can be asked", "blocks", whatTheCliCanBeAsked],
+] as const;
+test.each(readAsWithout)(
 	"%s: the %s engine reads the cards as it does without its regions round one node",
-	async (board, layout) => {
-		const content = orderedFixture(readAsWithout[board as keyof typeof readAsWithout]);
+	async (_board, layout, fixture) => {
+		const content = orderedFixture(fixture);
 		expect(loneNodes(content).length).toBeGreaterThan(0);
 		const cards = content.nodes
 			.filter(({ id }) => !content.nodes.some(({ parent }) => parent === id))

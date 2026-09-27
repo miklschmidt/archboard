@@ -252,11 +252,11 @@ function drawsBetter(one: Drawn<Page>, other: Drawn<Page>): boolean {
  * of those, each block's joins turned the other way in turn, kept where the
  * drawing reads better.
  * @param lay Lay the drawing out with some blocks' joins apart, by block id.
- * @returns The drawing laid out best.
+ * @returns The drawing laid out best, and the blocks whose joins it keeps apart.
  */
 function layJoined<Placed extends Page>(
 	lay: (apart: ReadonlySet<string>) => Drawn<Placed>,
-): Drawn<Placed> {
+): { best: Drawn<Placed>; apart: ReadonlySet<string> } {
 	let best = lay(new Set());
 	const blocks = [...best.tree.joining];
 	let apart = new Set<string>();
@@ -269,7 +269,7 @@ function layJoined<Placed extends Page>(
 		const tried = lay(trial);
 		if (drawsBetter(tried, best)) [best, apart] = [tried, trial];
 	}
-	return best;
+	return { best, apart };
 }
 
 export { joinWays, kindOf, layJoined, type Drawn };
