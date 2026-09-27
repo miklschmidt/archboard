@@ -411,9 +411,7 @@ describe("leaving and arriving", () => {
 		const before = picture([A, B], [AB]);
 		const after = picture([{ ...A, box: { x: 300, y: 10, width: 100, height: 60 } }, B], [AB]);
 		surface.innerHTML = before.svg;
-		surface
-			.querySelector(`g[data-semantic-id="n1"]`)
-			?.classList.add("is-selected", "is-group-member");
+		surface.querySelector(`g[data-semantic-id="n1"]`)?.classList.add("is-selected", "is-lit");
 		/**
 		 * The viewer's marks on one subject's group.
 		 * @param id The subject.
@@ -425,10 +423,10 @@ describe("leaving and arriving", () => {
 		const transition = transitionPicture(surface, before, after);
 		// A picture seen for a frame without them would show what they light or
 		// veil switch off and fade back in.
-		expect(marksOn("n1")).toEqual(["is-selected", "is-group-member"]);
+		expect(marksOn("n1")).toEqual(["is-selected", "is-lit"]);
 		transition.seek(0.5);
 		transition.finish();
-		expect(marksOn("n1")).toEqual(["is-selected", "is-group-member"]);
+		expect(marksOn("n1")).toEqual(["is-selected", "is-lit"]);
 		expect(marksOn("n2")).toEqual([]);
 	});
 });

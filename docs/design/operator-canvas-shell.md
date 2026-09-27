@@ -84,7 +84,8 @@ semantic pane now has one sidebar on the left of its picture, the width of the
 old inspector (`SIDEBAR_WIDTH`, 280 px), with two tabs:
 
 - **Board**: how the board on screen is read — its views, the walkthroughs it
-  offers, group inspection, and, a level down, the states of that board — and
+  offers, its groups (each listed with its colour; choosing one selects every
+  member), and, a level down, the states of that board — and
   the legend for what is drawn. Choosing a walkthrough presents it (see below). The pane's own board offers no choice of state:
   the navigator lists every state of every board, and one choice is made in one
   place. Views live here rather than in a switcher on the picture, because this

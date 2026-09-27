@@ -107,17 +107,22 @@ function beatFocus(beat: WalkthroughBeat | null, source: FocusSource | null): Be
 /**
  * Which subjects the picture should mark as attended.
  *
- * What the reader picked out and what the beat they are reading is about, which
- * are one mark. What the board has not decided is deliberately not here: it is
+ * What the reader picked out, one subject or every member of a group, and what
+ * the beat they are reading is about, which are one mark. What the board has not decided is deliberately not here: it is
  * drawn by the renderer, in the subject's own corner, so a subject that is both
  * attended and unsettled says both instead of one state quietly replacing the
  * other — which is what happened while a single map held one mark per subject.
  * @param selection The selected id, or null for none.
  * @param focus What the current beat asks for.
+ * @param members The drawn members of the selected group; none when no group is.
  * @returns The subjects to ring.
  */
-function subjectMarks(selection: string | null, focus: BeatFocus): ReadonlySet<string> {
-	const attended = new Set<string>(focus.drawn);
+function subjectMarks(
+	selection: string | null,
+	focus: BeatFocus,
+	members: readonly string[] = [],
+): ReadonlySet<string> {
+	const attended = new Set<string>([...focus.drawn, ...members]);
 	if (selection !== null) {
 		attended.add(selection);
 	}

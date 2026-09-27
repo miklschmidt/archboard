@@ -129,7 +129,7 @@ interface NodeBodyProps {
 	 * @param binding Where the code is.
 	 */
 	onOpenCode?: (binding: CodeBinding) => void;
-	/** How to name and inspect the groups the node belongs to. */
+	/** How to name the groups the node belongs to, and select one. */
 	groups: GroupControls;
 }
 
@@ -200,7 +200,7 @@ function EdgeBody(props: EdgeBodyProps): JSX.Element {
  * @param props What a node body needs beyond the subject.
  * @param props.onOpen Open the board one level down, given its board and variant.
  * @param props.onOpenCode Open the code a node is bound to, when the shell can.
- * @param props.groups How to name and inspect groups.
+ * @param props.groups How to name groups and select one.
  * @returns The body.
  */
 function bodyFor(
@@ -244,7 +244,7 @@ interface BodyProps {
 	 * @param variant The variant to open, by id.
 	 */
 	onOpen: (board: string, variant: string) => void;
-	/** How to name and inspect the groups a node belongs to. */
+	/** How to name the groups a node belongs to, and select one. */
 	groups: GroupControls;
 }
 
@@ -411,7 +411,7 @@ interface SemanticInspectorProps {
 	 * @param variant The variant to open, by id.
 	 */
 	onOpen: (board: string, variant: string) => void;
-	/** How to name and inspect the groups a node belongs to. */
+	/** How to name the groups a node belongs to, and select one. */
 	groups: GroupControls;
 }
 

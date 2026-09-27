@@ -26,7 +26,7 @@ import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearanc
 /** What the stage hands the sidebar. */
 interface StageSidebarView extends Omit<
 	SemanticBoardPanelProps,
-	"answer" | "onChooseView" | "onChooseVariant"
+	"answer" | "onChooseView" | "onChooseVariant" | "selectedGroup"
 > {
 	/** The sidebar's tab and collapse state. */
 	readonly sidebar: Sidebar;
@@ -55,7 +55,7 @@ interface StageSidebarView extends Omit<
 	readonly onOpenDown: (board: string, variant: string) => void;
 	/** Open the code a node is bound to, when the shell can. */
 	readonly onOpenCode?: ((binding: CodeBinding) => void) | undefined;
-	/** How the inspector names memberships and inspects one. */
+	/** How the inspector names memberships and selects one. */
 	readonly groupControls: GroupControls;
 }
 
@@ -113,7 +113,7 @@ function SemanticStageSidebar(props: {
 					onChooseWalkthrough={view.onChooseWalkthrough}
 					onNarrate={view.onNarrate}
 					groups={view.groups}
-					groupFocus={view.groupFocus}
+					selectedGroup={view.groupControls.selected}
 					onChooseGroup={view.onChooseGroup}
 					appearances={appearances}
 					comparison={view.comparison}

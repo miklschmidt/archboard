@@ -1,29 +1,18 @@
-// What one group looks like from inside a pane: who is offered, what is under
-// inspection, which of its members the picture on screen actually draws, and
-// which drawn subjects are lit, kept readable, or left to recede.
+// Which groups a pane offers, and what choosing one selects: every member of
+// it, across whatever contains each one.
 //
-// Everything semantic here comes from the one pure inspection the CLI runs
-// (`inspectGroup` in `@/shared/semantic-board`), over the whole variant. What
-// this adds is the picture: a member the current view does not draw is still a
-// member and is reported as hidden, an ancestor the picture draws around a
-// member is context and never a member, and no membership is ever inferred
-// from containment (ADR 0023).
+// Membership is read from the board (`isMemberOf` in `@/shared/semantic-board`),
+// never inferred from containment or from the regions the picture draws (ADR
+// 0023): a member the view hides is still a member, and simply is not drawn to
+// be seen selected.
 
-import {
-	groupsUsed,
-	inspectGroup,
-	type GroupInspection,
-	type SemanticNode,
-	type SemanticVariant,
-} from "@/shared/semantic-board/index";
+import { groupsUsed, isMemberOf, type SemanticVariant } from "@/shared/semantic-board/index";
 import type { SemanticPolicy } from "@/shared/semantic-policy/index";
-import type { SemanticAtlas } from "@/ui/semantic-board-canvas/api/semantic-boards";
-import { subjectBox } from "@/ui/semantic-board-canvas/lib/subjects";
 
-/** What the vault calls each group, by id. */
+/** What the vault calls each group, and its colour, by id. */
 type GroupNames = SemanticPolicy["groups"];
 
-/** One group a pane offers for inspection. */
+/** One group a pane offers. */
 interface GroupChoice {
 	/** The id boards carry. */
 	readonly id: string;
@@ -31,6 +20,16 @@ interface GroupChoice {
 	readonly label: string;
 	/** Whether the vault configuration defines it. */
 	readonly configured: boolean;
+	/** Its colour's name, when the vault defines it. */
+	readonly color: string | undefined;
+}
+
+/** A chosen group, and its members. */
+interface GroupSelection {
+	/** The group's id. */
+	readonly group: string;
+	/** The ids of its members. */
+	readonly members: readonly string[];
 }
 
 /**
@@ -44,11 +43,11 @@ function groupLabel(id: string, names: GroupNames): string {
 }
 
 /**
- * Every group the variant on screen uses, named for choosing between.
+ * Every group the variant on screen uses, with its name and colour.
  *
- * Unresolved ids are offered too: the board says them, and a reader has to be
- * able to ask what they are, which is exactly how a removed definition is
- * found and repaired.
+ * An id the vault no longer defines is offered too: the board says it, and a
+ * reader has to be able to find what carries it, which is how a removed
+ * definition is found and repaired.
  * @param variant The variant on screen, or null while there is none.
  * @param names What the vault calls each group.
  * @returns The choices, in canonical id order.
@@ -57,137 +56,35 @@ function groupChoices(variant: SemanticVariant | null, names: GroupNames): Group
 	if (variant === null) {
 		return [];
 	}
-	return groupsUsed(variant.content).map((id) => ({
-		id,
-		label: groupLabel(id, names),
-		configured: Object.hasOwn(names, id),
-	}));
-}
-
-/** Which drawn subjects a group inspection lights, keeps readable, or leaves as context. */
-interface GroupEmphasis {
-	/** Members the picture draws, and the wiring between them. */
-	readonly members: ReadonlySet<string>;
-	/** Immediate neighbours and the connections that cross the boundary. */
-	readonly boundary: ReadonlySet<string>;
-	/** Containers around members that the picture draws, which are not members. */
-	readonly context: ReadonlySet<string>;
-}
-
-/** One group under inspection, read against the picture on screen. */
-interface GroupFocus {
-	/** The group's id. */
-	readonly group: string;
-	/** What to call it. */
-	readonly label: string;
-	/** Whether the vault configuration still defines it. */
-	readonly configured: boolean;
-	/** What the group is, on the whole variant. */
-	readonly inspection: GroupInspection;
-	/** Members the picture on screen draws. */
-	readonly drawn: readonly SemanticNode[];
-	/** Members the picture on screen does not draw: hidden by the view, or inside a collapsed container. */
-	readonly hidden: readonly SemanticNode[];
-	/** What to light, keep readable, and treat as context. */
-	readonly emphasis: GroupEmphasis;
+	return groupsUsed(variant.content).map((id) => {
+		const configured = Object.hasOwn(names, id);
+		return {
+			id,
+			label: groupLabel(id, names),
+			configured,
+			color: configured ? names[id]?.color : undefined,
+		};
+	});
 }
 
 /**
- * The containers above a node that the picture draws, outermost first.
- * @param node The node.
- * @param byId Every node of the variant, by id.
- * @param drawn Whether the picture draws a subject.
- * @returns The ids of the drawn ancestors.
- */
-function drawnAncestors(
-	node: SemanticNode,
-	byId: ReadonlyMap<string, SemanticNode>,
-	drawn: (id: string) => boolean,
-): string[] {
-	const found: string[] = [];
-	const seen = new Set<string>([node.id]);
-	let at = node.parent === undefined ? undefined : byId.get(node.parent);
-	while (at !== undefined && !seen.has(at.id)) {
-		seen.add(at.id);
-		if (drawn(at.id)) {
-			found.push(at.id);
-		}
-		at = at.parent === undefined ? undefined : byId.get(at.parent);
-	}
-	return found;
-}
-
-/**
- * Which drawn subjects the inspection lights, keeps readable, or treats as
- * context.
- * @param inspection What the group is.
- * @param nodes Every node of the variant.
- * @param drawn Whether the picture draws a subject.
- * @returns The three sets, disjoint: a member is never also context.
- */
-function emphasisOf(
-	inspection: GroupInspection,
-	nodes: readonly SemanticNode[],
-	drawn: (id: string) => boolean,
-): GroupEmphasis {
-	const byId = new Map(nodes.map((node) => [node.id, node]));
-	const members = new Set(
-		[
-			...inspection.members.map((member) => member.id),
-			...inspection.internalEdges.map((edge) => edge.id),
-		].filter(drawn),
-	);
-	const boundary = new Set(
-		inspection.boundaryEdges
-			.flatMap((crossing) => [crossing.edge.id, crossing.neighbor])
-			.filter(drawn),
-	);
-	const context = new Set(
-		inspection.members
-			.flatMap((member) => drawnAncestors(member, byId, drawn))
-			.filter((ancestor) => !members.has(ancestor) && !boundary.has(ancestor)),
-	);
-	return { members, boundary, context };
-}
-
-/**
- * One group, inspected on the variant on screen and read against its picture.
+ * What choosing a group selects.
  * @param variant The variant on screen.
  * @param group The group's id.
- * @param names What the vault calls each group.
- * @param atlas Where the picture put every subject, or null while there is no picture.
- * @returns The focus.
+ * @returns The group and its members.
  */
-function groupFocus(
-	variant: SemanticVariant,
-	group: string,
-	names: GroupNames,
-	atlas: SemanticAtlas | null,
-): GroupFocus {
-	const inspection = inspectGroup(variant.content, group);
-	/**
-	 * Whether the picture on screen draws one subject.
-	 * @param id The subject's id.
-	 * @returns True when the atlas places it.
-	 */
-	const drawn = (id: string): boolean => atlas !== null && subjectBox(atlas, id) !== null;
-	return {
-		group,
-		label: groupLabel(group, names),
-		configured: Object.hasOwn(names, group),
-		inspection,
-		drawn: inspection.members.filter((member) => drawn(member.id)),
-		hidden: inspection.members.filter((member) => !drawn(member.id)),
-		emphasis: emphasisOf(inspection, variant.content.nodes, drawn),
-	};
+function groupSelection(variant: SemanticVariant, group: string): GroupSelection {
+	const members = variant.content.nodes
+		.filter((node) => isMemberOf(node, group))
+		.map((node) => node.id);
+	return { group, members };
 }
 
 export {
 	type GroupChoice,
-	type GroupEmphasis,
-	type GroupFocus,
 	type GroupNames,
+	type GroupSelection,
 	groupChoices,
-	groupFocus,
 	groupLabel,
+	groupSelection,
 };

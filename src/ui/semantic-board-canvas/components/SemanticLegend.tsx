@@ -1,10 +1,10 @@
 import { useId, useMemo, type JSX, type ReactNode } from "react";
 
-import { PaletteColorSchema } from "@/shared/semantic-policy/index";
 import { STANDING_COLORS } from "@/shared/theme/index";
 import { lineInk } from "@/transformers/semantic-renderer/index";
 import { Checkbox } from "@/ui/components/checkbox";
 import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
+import { paletteInk } from "@/ui/semantic-board-canvas/lib/palette";
 
 /**
  * A browser-only key to the channels in the current picture.
@@ -108,17 +108,6 @@ function LegendSection(props: {
 }
 
 /**
- * Resolve a curated color name, retaining a neutral fallback.
- * @param color The renderer's color name.
- * @param fallback Token for an uncolored type or relationship.
- * @returns A CSS color.
- */
-function ink(color: string, fallback = "--muted-foreground"): string {
-	const parsed = PaletteColorSchema.safeParse(color);
-	return parsed.success ? `var(--semantic-${parsed.data})` : `var(${fallback})`;
-}
-
-/**
  * Keep each configured kind and its applied sample, even when display names repeat.
  * @param appearances Visible appearance facts.
  * @returns Unique types in drawing order.
@@ -155,7 +144,7 @@ function RelationshipSample(props: { readonly appearance: AppliedAppearance }): 
 	// Drawn in the picture's own expression for it: a coloured line at its line
 	// strength over the page, the neutral line as it is.
 	const style = useMemo(
-		() => ({ color: lineInk(ink(appearance.lineColor, "--diagram-edge")) }),
+		() => ({ color: lineInk(paletteInk(appearance.lineColor, "--diagram-edge")) }),
 		[appearance.lineColor],
 	);
 	const dash =
@@ -228,8 +217,8 @@ function TypeSample(props: { readonly appearance: AppliedAppearance }): JSX.Elem
 	const markup = useMemo(() => ({ __html: appearance.iconSvg }), [appearance.iconSvg]);
 	const style = useMemo(
 		() => ({
-			borderColor: ink(appearance.typeColor),
-			backgroundColor: `color-mix(in srgb, ${ink(appearance.typeColor)} 12%, transparent)`,
+			borderColor: paletteInk(appearance.typeColor),
+			backgroundColor: `color-mix(in srgb, ${paletteInk(appearance.typeColor)} 12%, transparent)`,
 		}),
 		[appearance.typeColor],
 	);
