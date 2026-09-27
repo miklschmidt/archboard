@@ -8,8 +8,9 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 
-import type { SemanticVariant } from "@/shared/semantic-board/index";
-import { subjectTip, tipTargetAt } from "@/ui/semantic-board-canvas/lib/subject-tips";
+import { SemanticVariantSchema } from "@/shared/semantic-board/index";
+import { withFixtureOrders } from "@/ui/semantic-board-canvas/tests/fixture-orders";
+import { subjectTip, tipTargetAt } from "@/ui/semantic-board-canvas/tips";
 
 beforeAll(() => {
 	GlobalRegistrator.register();
@@ -20,36 +21,38 @@ afterAll(async () => {
 });
 
 /** A variant with a card that opens a board, a container, and a labelled relationship. */
-const VARIANT = {
-	id: "v1",
-	name: "as it is",
-	lifecycle: "current",
-	content: {
-		nodes: [
-			{
-				id: "n1",
-				name: "API",
-				kind: "service",
-				responsibility: "Answers requests",
-				description: "Holds no state between requests.",
-				drillDown: { board: "api", variant: { kind: "current" } },
-			},
-			{ id: "n2", name: "Store", kind: "service", responsibility: "Keeps boards" },
-			{ id: "c1", name: "Server", kind: "system", description: "One process per vault." },
-		],
-		edges: [
-			{
-				id: "e1",
-				from: "n1",
-				to: "n2",
-				kind: "call",
-				label: "reads",
-				description: "Once per request.",
-			},
-		],
-		flows: [],
-	},
-} as unknown as SemanticVariant;
+const VARIANT = SemanticVariantSchema.parse(
+	withFixtureOrders({
+		id: "v1",
+		name: "as it is",
+		lifecycle: "current",
+		content: {
+			nodes: [
+				{
+					id: "n1",
+					name: "API",
+					kind: "service",
+					responsibility: "Answers requests",
+					description: "Holds no state between requests.",
+					drillDown: { board: "api", variant: { kind: "current" } },
+				},
+				{ id: "n2", name: "Store", kind: "service", responsibility: "Keeps boards" },
+				{ id: "c1", name: "Server", kind: "system", description: "One process per vault." },
+			],
+			edges: [
+				{
+					id: "e1",
+					from: "n1",
+					to: "n2",
+					kind: "call",
+					label: "reads",
+					description: "Once per request.",
+				},
+			],
+			flows: [],
+		},
+	}),
+);
 
 /**
  * A picture holding a card, a container's frame and header, and a relationship
@@ -68,10 +71,17 @@ function drawn(): SVGSVGElement {
 		`</svg>`;
 	const rule = document.querySelector("#rule");
 	if (rule !== null) {
-		// The rule under the header, 40 units down the screen.
-		rule.getBoundingClientRect = () => new DOMRect(0, 40, 200, 0);
+		rule.getBoundingClientRect = ruleBox;
 	}
 	return document.querySelector("svg")!;
+}
+
+/**
+ * Where the rule under the container's header is, in a DOM that does no layout.
+ * @returns Its box: level, 40 units down the screen.
+ */
+function ruleBox(): DOMRect {
+	return new DOMRect(0, 40, 200, 0);
 }
 
 /**
@@ -85,19 +95,21 @@ function at(picture: Element, id: string): Element {
 }
 
 test("a card's tip adds what the card does not draw at this distance, and what a double-click opens", () => {
-	const card = tipTargetAt(at(drawn(), "card"), 0);
-	expect(card?.part).toBe("card");
-	const near = subjectTip(VARIANT, card!, false);
-	expect(near?.lead).toBeUndefined();
-	expect(near?.body).toBe("Holds no state between requests.");
-	expect(near?.hint).toContain("api");
-	const far = subjectTip(VARIANT, card!, true);
-	expect(far?.lead).toBe("Answers requests");
-	expect(far?.body).toBe("Holds no state between requests.");
-	// Drawn near, a card with nothing more to say has no tip.
-	const plain = tipTargetAt(at(drawn(), "plain"), 0);
-	expect(subjectTip(VARIANT, plain!, false)).toBeNull();
-	expect(subjectTip(VARIANT, plain!, true)?.lead).toBe("Keeps boards");
+	const card = tipTargetAt(at(drawn(), "card"), 0)!;
+	expect(card.part).toBe("card");
+	const near = subjectTip(VARIANT, card, false)!;
+	expect(near.lead).toBeUndefined();
+	expect(near.body).toBe("Holds no state between requests.");
+	expect(near.hint).toContain("api");
+	const far = subjectTip(VARIANT, card, true)!;
+	expect(far.lead).toBe("Answers requests");
+	expect(far.body).toBe("Holds no state between requests.");
+});
+
+test("a card with nothing more to say has a tip only from far away", () => {
+	const plain = tipTargetAt(at(drawn(), "plain"), 0)!;
+	expect(subjectTip(VARIANT, plain, false)).toBeNull();
+	expect(subjectTip(VARIANT, plain, true)!.lead).toBe("Keeps boards");
 });
 
 test("a label's tip names its words and the kind of line the picture draws them on", () => {
@@ -114,9 +126,9 @@ test("a label's tip names its words and the kind of line the picture draws them 
 
 test("a container answers the pointer on its header band, not across its frame", () => {
 	const picture = drawn();
-	const header = at(picture, "title").parentElement;
-	expect(tipTargetAt(at(picture, "title"), 0)?.anchor).toBe(header);
-	expect(tipTargetAt(at(picture, "frame"), 20)?.anchor).toBe(header);
+	const header = picture.querySelector('[data-semantic-part="header"]');
+	expect(tipTargetAt(at(picture, "title"), 0)?.anchor).toBe(header!);
+	expect(tipTargetAt(at(picture, "frame"), 20)?.anchor).toBe(header!);
 	expect(tipTargetAt(at(picture, "frame"), 60)).toBeNull();
 	expect(subjectTip(VARIANT, tipTargetAt(at(picture, "title"), 0)!, false)?.body).toBe(
 		"One process per vault.",
