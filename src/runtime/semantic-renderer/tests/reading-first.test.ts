@@ -80,10 +80,12 @@ async function linesOf(fixture: unknown, layout: "track" | "blocks", levels = po
 
 // Taken from a board of this repository: its containers laid as Graphviz
 // ranks them stood on a page 30 px shorter, and 'a typed message' turned
-// three times round them; stacked, it turns once.
+// three times round them (twelve corner points as drawn); stacked, it turns
+// twice, the second time into Codex child beside its caption, where the
+// region round Workhorse queue alone holds it a region's clearance off.
 test("a board stacks its containers where its lines then turn less, on whatever page", async () => {
 	const lines = await linesOf(oneCommand, "track");
-	expect(turnsOf(lines.get("Qh7VZ9MQ")!)).toBeLessThanOrEqual(4);
+	expect(turnsOf(lines.get("Qh7VZ9MQ")!)).toBeLessThanOrEqual(8);
 });
 
 // Taken from a board of this repository: stacked, its containers stood on a

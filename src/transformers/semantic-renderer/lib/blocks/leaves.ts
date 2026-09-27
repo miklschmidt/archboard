@@ -13,6 +13,7 @@ import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { extentOf } from "@/transformers/semantic-renderer/lib/track/labels";
 import type { Item, Scene } from "@/transformers/semantic-renderer/lib/track/scene";
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
+import { LONE_INSET } from "@/transformers/semantic-renderer/lib/blocks/lone";
 import type { Block, BlockTree } from "@/transformers/semantic-renderer/lib/blocks/tree";
 
 /** The side of a port's square. */
@@ -65,6 +66,37 @@ function cornerHeader(leaves: readonly ElkNode[], id: string): void {
 function letPortsSlide(scene: Scene, block: Block, nesting: Nesting): void {
 	if (block.kind === "root" || nesting === "blocks") return;
 	for (const [item, stretch] of slidesOf(scene, block)) scene.slides.set(item, stretch);
+}
+
+/**
+ * Mark the items of a block's scene that stand for group regions: a region
+ * packed whole, and a card laid out as the region it is alone in, whose own
+ * faces stand in from its box (`lone.ts`). A lane keeps a region's clearance
+ * off each, as a region's wall has no inset of its own; but under Blocks,
+ * off a packed region only: a block of cards is as wide as its Graphviz
+ * ranks, and kept off a card's region there, the lanes beside it pushed the
+ * next one along its container's wall (Recording a walkthrough).
+ * @param scene The block's scene, whose region items are set.
+ * @param block The block.
+ * @param tree The blocks.
+ */
+function markRegions(scene: Scene, block: Block, tree: BlockTree): void {
+	for (const item of block.items) {
+		if (tree.lone.has(item)) scene.cards.get(item)!.inset = LONE_INSET;
+		if (keepsRegionClearance(tree, item, scene.inline))
+			scene.regionBlocks.add(scene.cards.get(item)!);
+	}
+}
+
+/**
+ * Whether a lane keeps a region's clearance off an item of a block.
+ * @param tree The blocks.
+ * @param item The item.
+ * @param inline Whether the board is drawn by the Track engine.
+ * @returns True for a region packed whole, and under Track a card laid out as its region.
+ */
+function keepsRegionClearance(tree: BlockTree, item: string, inline: boolean): boolean {
+	return (inline && tree.lone.has(item)) || tree.blocks.get(item)?.kind === "region";
 }
 
 /**
@@ -122,4 +154,4 @@ function rimOf(block: Block, insets: Insets): Rim | undefined {
 	return [...block.ports.values()].includes("bottom") ? { head, foot: insets.side } : { head };
 }
 
-export { PORT, cornerHeader, letPortsSlide, pinnedLeaf, rimOf };
+export { PORT, cornerHeader, letPortsSlide, markRegions, pinnedLeaf, rimOf };

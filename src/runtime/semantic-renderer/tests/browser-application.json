@@ -141,7 +141,8 @@
 			"name": "Walkthrough recording",
 			"kind": "module",
 			"responsibility": "A page recording one walkthrough: it captures its own tab, mixes the voice into the file, and moves the pane a step at a time as the voice paces it",
-			"parent": "yAFyqal3"
+			"parent": "yAFyqal3",
+			"groups": ["walkthrough"]
 		}
 	],
 	"edges": [

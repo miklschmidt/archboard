@@ -6,7 +6,11 @@
 import type { ElkExtendedEdge } from "@archboard/elk-rs";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
-import type { Item, Scene } from "@/transformers/semantic-renderer/lib/track/scene";
+import {
+	TRACK_BELOW,
+	type Item,
+	type Scene,
+} from "@/transformers/semantic-renderer/lib/track/scene";
 
 /** Room a group region keeps below its lowest member. */
 const REGION_BOTTOM = 14;
@@ -55,7 +59,9 @@ class Containers {
 	) {
 		for (const [id, { members, node }] of scene.frames) {
 			const walls = [node.x!, node.x! + node.width!] as const;
-			this.frames.set(id, this.container(CONTAINER_INSET, scene.titles.get(id)!, members, walls));
+			const below = Number(node.layoutOptions?.[TRACK_BELOW] ?? 0);
+			const inset = CONTAINER_INSET + below;
+			this.frames.set(id, this.container(inset, scene.titles.get(id)!, members, walls));
 		}
 		this.regions = scene.regions.map(({ caption, members, box }) =>
 			this.container(REGION_BOTTOM, caption, this.regionInside(members), [

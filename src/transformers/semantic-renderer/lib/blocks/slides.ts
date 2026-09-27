@@ -3,7 +3,11 @@
 // lines then drop straight rather than stepping across the gap.
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { SAME, moved } from "@/transformers/semantic-renderer/lib/blocks/laid";
-import type { Block, BlockTree } from "@/transformers/semantic-renderer/lib/blocks/tree";
+import {
+	headerOf,
+	type Block,
+	type BlockTree,
+} from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 
 /** How far apart two ends may be and still be one straight run. */
@@ -54,6 +58,24 @@ function faced(
 }
 
 /**
+ * Whether a line end is a pin on a container the line ends on: its port
+ * leads nowhere inside but to the container's own header, and settles
+ * anywhere along its face the line reaches straight, so the line asks no
+ * block to slide.
+ * @param packed The packed block of blocks.
+ * @param end The line end.
+ * @returns True when it is.
+ */
+function enters(packed: Packed, end: string): boolean {
+	const pin = packed.tree.pins.get(end);
+	if (pin === undefined) return false;
+	const inside = [...pin.block.lines.values()].filter(
+		({ from, to }) => from === pin.port || to === pin.port,
+	);
+	return inside.every(({ from, to }) => (from === pin.port ? to : from) === headerOf(pin.block));
+}
+
+/**
  * How far each line between a packed block and another, their pins facing
  * each other across the way the packing is read, steps sideways from it.
  * @param packed The packed block of blocks.
@@ -62,7 +84,9 @@ function faced(
  * @returns Each step, or nothing when a line faces the other way.
  */
 function stepsOf(packed: Packed, id: string, across: boolean): number[] | undefined {
-	const pairs = [...packed.block.lines.values()].flatMap((line) => faced(packed, id, line) ?? []);
+	const pairs = [...packed.block.lines.values()]
+		.filter(({ tail, head }) => !enters(packed, tail) && !enters(packed, head))
+		.flatMap((line) => faced(packed, id, line) ?? []);
 	if (pairs.some(({ upright }) => upright !== across)) return undefined;
 	return pairs.map(({ mine, theirs }) => (across ? theirs.x - mine.x : theirs.y - mine.y));
 }

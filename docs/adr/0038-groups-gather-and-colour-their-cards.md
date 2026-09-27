@@ -78,10 +78,15 @@ different containers (or no container) all need their groups rendered. So if
 there are 3 containers that all have elements that are part of the same group,
 that group should render 3 boundaries." The placing rule above is the amended
 one: a card goes with its first configured group, and a single member gets its
-region and its group's colour. A region round one card gathers nothing to
-pack, so the layout draws it round the card where the card's own ranks stand
-it, never as a block of its own
-([layout rules, section 44](../design/layout-rules.md#44-a-region-round-one-card-2026-09-27)).
+region and its group's colour. The first rule fell through: a card in several
+groups went with the first one a sibling shared, even when an earlier one was
+configured. The amended rule has no fall-through, so such a card now goes with
+its first configured group even when only a later one is shared, and draws a
+region of its own there. A region round one card or container gathers nothing
+to pack, so the layout lays it out as that node with a larger box, the region's
+outline and caption inside that box, and carries each line on from the
+region's wall to the card
+([layout rules, section 44](../design/layout-rules.md#44-a-region-round-one-node-2026-09-27)).
 
 ## Considered and rejected
 

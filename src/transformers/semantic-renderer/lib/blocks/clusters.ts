@@ -19,7 +19,7 @@ import {
 	enteredFrame,
 	type Link,
 } from "@/transformers/semantic-renderer/lib/blocks/anchors";
-import { NODE_GAP, titleOf } from "@/transformers/semantic-renderer/lib/blocks/card-graph";
+import { NODE_GAP } from "@/transformers/semantic-renderer/lib/blocks/card-graph";
 import {
 	alignColumns,
 	box,
@@ -27,7 +27,7 @@ import {
 	type Join,
 	type Output,
 } from "@/transformers/semantic-renderer/lib/track/graphviz";
-import { TRACK_TITLE } from "@/transformers/semantic-renderer/lib/track/scene";
+import { LONE_INSET, titleRow } from "@/transformers/semantic-renderer/lib/blocks/lone";
 
 /** Room a group region keeps around its members. */
 const REGION_INSET = 14;
@@ -45,6 +45,15 @@ type Nested = Subgraph & Required<Pick<Subgraph, "nodes" | "subgraphs">>;
 /** Something nodes can be put in: the block's graph or one of its clusters. */
 interface Holder {
 	readonly nodes: VendorNode[];
+}
+
+/**
+ * The vendor node heading a cluster: a frame's title row or a region's caption.
+ * @param cluster The cluster's id.
+ * @returns The node's name.
+ */
+function titleOf(cluster: string): string {
+	return `title:${cluster}`;
 }
 
 /**
@@ -131,7 +140,9 @@ class Clusters {
 	) {
 		for (const [index, cluster] of [...block.clusters.values()].entries()) {
 			const name = `cluster_${index}`;
-			const inset = cluster.kind === "frame" ? CONTAINER_INSET : REGION_INSET;
+			const inset =
+				(cluster.kind === "frame" ? CONTAINER_INSET : REGION_INSET) +
+				(cluster.lone === undefined ? 0 : LONE_INSET);
 			const title = box(titleOf(cluster.id), cluster.header.width, cluster.header.height);
 			const made: Nested = {
 				name,
@@ -200,45 +211,23 @@ class Clusters {
 	 * the innermost cluster around both ends. A group region is no boundary a
 	 * line must go round, so a label never moves into one. Where labels are
 	 * anchored, it is held below a labelled line into the same card from
-	 * inside the container instead (anchors.ts); outside, it is held above the
-	 * caption of every group region the line enters.
+	 * inside the container instead (anchors.ts).
 	 * @param tail The line's upper end.
 	 * @param head Its lower end.
 	 * @param label The label's node.
 	 * @param links Every line Graphviz ranks.
-	 * @returns The edges holding the label below its cluster's title or above the captions.
+	 * @returns The edge holding the label below its cluster's title, if it needs one.
 	 */
 	holdLabel(tail: string, head: string, label: VendorNode, links: readonly Link[]): Edge[] {
 		const entered = enteredFrame(this, tail, head);
 		if (entered === undefined) {
 			this.common(tail, head).nodes.push(label);
-			return this.enteredRegions(tail, head).map((region) => ({
-				tail: label.name,
-				head: titleOf(region),
-				attributes: { style: "invis", weight: 0, minlen: 1 },
-			}));
+			return [];
 		}
 		this.graphs.get(entered)!.nodes.push(label);
 		const attributes = { style: "invis", weight: TITLE_WEIGHT };
 		const upper = this.anchorsLabels ? anchorOf(this, tail, head, entered, links) : undefined;
 		return [{ tail: upper ?? titleOf(entered), head: label.name, attributes }];
-	}
-
-	/**
-	 * The regions round one card that a line enters from above: its label,
-	 * outside them, is held above their captions, so it stands over the region
-	 * rather than beside its caption, where it would read as part of it. A
-	 * region round several cards is ranked as its cards are.
-	 * @param tail The line's upper end.
-	 * @param head Its lower end.
-	 * @returns The regions' ids.
-	 */
-	enteredRegions(tail: string, head: string): string[] {
-		const theirs = new Set(this.around(tail));
-		const members = [...this.block.clusterOf.values()];
-		return this.around(head).filter(
-			(id) => !theirs.has(id) && members.filter((around) => around === id).length === 1,
-		);
 	}
 
 	/**
@@ -387,8 +376,10 @@ class Clusters {
 		if (!this.block.items.includes(name) && !name.startsWith("label:")) return undefined;
 		const around = this.holding(name);
 		if (around === undefined) return { left: 0, right: width };
+		const cluster = this.block.clusters.get(around)!;
 		const inset =
-			this.block.clusters.get(around)!.kind === "frame" ? CONTAINER_INSET : REGION_INSET;
+			(cluster.kind === "frame" ? CONTAINER_INSET : REGION_INSET) +
+			(cluster.lone === undefined ? 0 : LONE_INSET);
 		const bounds = boxes.get(around)!;
 		return { left: bounds.x + inset, right: bounds.x + bounds.width - inset };
 	}
@@ -511,13 +502,15 @@ class Clusters {
 		for (const cluster of this.block.clusters.values()) {
 			if (cluster.kind !== "frame") continue;
 			const bounds = boxes.get(cluster.id)!;
-			const title = centres.get(titleOf(cluster.id))!;
-			const row = [bounds.x, title.y - cluster.header.height / 2, bounds.width];
-			const words = cluster.header.width - ARCHITECTURE_HEADER_PADDING;
+			const head = {
+				centre: centres.get(titleOf(cluster.id))!.y,
+				height: cluster.header.height,
+				words: cluster.header.width - ARCHITECTURE_HEADER_PADDING,
+			};
 			frames.set(cluster.id, {
 				id: cluster.id,
 				...bounds,
-				layoutOptions: { [TRACK_TITLE]: [...row, cluster.header.height, words].join(",") },
+				layoutOptions: titleRow(bounds, head, cluster.lone),
 				children: [],
 			});
 		}

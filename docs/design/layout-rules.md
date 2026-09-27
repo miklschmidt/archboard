@@ -2199,61 +2199,74 @@ The measures against `ed9c7d8d` are section 42's; no count moves. Crossings
 drawn with no hop, a line cut beneath another: dogfood 56 → 40 (solid lines
 44 → 29), work 12 → 10 (solid 9 → 7).
 
-## 44. A region round one card (2026-09-27)
+## 44. A region round one node (2026-09-27)
 
 The user asked that a group spread over several containers draw its region
 in each of them (ADR 0038, amended 2026-09-27). A card is now placed with
 its first configured group whether or not a sibling shares it, so a
 container or the board level holding one member draws a region round that
-one card, and 18 dogfood drawings per engine and 5 of an ingress board's
-change. Four things the Track and Blocks engines did with such a region read
-worse, and each is now owned in `lone-regions.test.ts`:
+one card or container: 18 dogfood drawings per engine and 5 of an ingress
+board's change.
 
-- **A region round one card is never packed** (`blocks/inline.ts`
-  `placing`, `addPacked`). Packed as a block of its own, it held the labels
-  of the lines into and out of its card, twice the card's height, and the
-  block's packing stood it off the column its lines run down (One command's
-  path, both engines; One turn, Blocks, stood it beside the drawing with its
-  lines run round). It is drawn inline instead, a cluster round its card
-  where the card's own ranks stand it: under Track as every region drawn
-  inline is, and under Blocks as a cluster of the block of cards that holds
-  the card. A region round one container stays a block round its frame.
-- **A title is ranked below its block's top ports** (`card-graph.ts`
-  `holdTitles`). Graphviz ranked a region's caption with the ports of the
-  block of cards it stood in, and the router slid a line out of the region
-  under the caption's words, painted at the region's corner (One browser,
-  two uses, Blocks).
-- **A label of a line into a region round one card stands above it**
-  (`clusters.ts` `holdLabel`, `enteredRegions`). Graphviz ranked the label
-  with the region's caption, and it stood in the caption's row beside the
-  words, where it reads as part of the caption (What the CLI can be asked,
-  Blocks: Vault checks and Walkthroughs; Starting a workhorse, Track:
-  Voice). Holding every entered region's caption below the label, for regions
-  round several cards too, cleared every such label in both vaults but
-  redrew 45 drawings, most with no region round one card, so it is held to
-  regions round one card.
-- **A label of a line into a block that packs blocks stays by its source**
-  (`inline.ts` `labelHolder`). A container that is its group's only member at
-  the board level stands in its region's block alone, a block that draws only
-  trunks, and the labels of the lines into the container were given to it and
-  lost (the ingress board's pool of hosts, two labels in each stage).
-- The regression fixtures reduced from dogfood boards keep the drawings they
-  were captured from: a membership their node held alone among its siblings
-  drew nothing before and is taken out, so each guards what it guarded.
+A region round one node gathers nothing, and laid out as a cluster or a
+block of its own it reordered the board's ranks, stood tall sparse bands and
+ran lines round them: at `b1f888ca` Recording a walkthrough (Track) bent
+22 times where it bent 12, Live server state (Blocks) hopped 9 times where
+it hopped 2, and three lines of Starting a workhorse (Blocks) ran through
+Thread tools. **Such a region is laid out as its node with a larger box**
+(`blocks/lone.ts`): the region's inset round the sides and below, and its
+caption band above, so placement and routing see one obstacle where the
+board without the region saw one.
 
-Over the 39 drawings that change, crossings drawn with a hop are 256 as at
-`40461250`, against 299 with the regions drawn before these fixes; bends 3079
-→ 3184 (3356 before the fixes) and line 518k → 544k px, the regions' captions
-standing on ranks of their own.
+- **A card** takes the grown box as its size in every block (`cardAs`).
+  Once drawn, the card stands inside it and the region is drawn round it
+  (`assembly.ts` `loneRegions`), and a line that stops on the region's wall
+  is carried straight on to the card's face (`carriedLine`). The card's
+  ports stand on its own face, not the region's (`channels.ts` `faceOf`).
+  Under Track a lane keeps a region's clearance off the grown box, as off a
+  region packed whole; under Blocks it keeps a card's, since a block of
+  cards is as wide as its Graphviz ranks and the lanes beside a region's
+  clearance pushed the next one along its container's wall (Recording a
+  walkthrough, `a line parted from another keeps off its container's
+wall`).
+- **A container** drawn as a block of its own keeps the region's inset more
+  on its sides and below, and its header holds the caption band
+  (`place.ts` `insetsOf`, `tree.ts` `add`). Drawn inline, its cluster keeps
+  that inset more round it, and its title row as the track scene reads it
+  holds the band, so the scene draws the region as the container; the
+  container's box is taken back inside it once drawn (`card-layout.ts`
+  `read`). As a region cluster round the frame, the pool of hosts on the
+  ingress board stood right of the chain over it and its caption took a
+  band of its own, 120 px tall.
+- **The caption** stands in the band's top-left corner as every region's
+  does, unless a line into the node crosses the band there; then as far
+  left as its words stand a lane's room clear of every line, or less where
+  the lines leave less (`captionIn`), over the lines as they run once their
+  steps are taken out.
+- **A line into a container itself asks no packed block to slide**
+  (`slides.ts` `enters`). Its port on the container settles anywhere along
+  the face the line reaches straight, so sliding the chain above onto it
+  only stood the chain off the container's middle. Blocks chose the slid
+  packing for the ingress board's pool only by 0.4 of a jog that settling
+  takes out, where a rounding error had hidden it before.
+- **A label into a block that packs blocks stays by its source**
+  (`inline.ts` `labelHolder`): a region packing two containers draws only
+  trunks, and the label of a line into one of them was lost.
 
-A label in the caption row of a region round several cards is older and
-stays: Archboard server whole and Durable write boundary (Track, `writes`) and
-Skill evaluation whole (Track, `grading`) had one at `40461250`, and Archboard
-server whole and Browser application whole (Track, `panes`) now have one.
+Against `40461250`, over the 46 drawings that change: no line runs through
+a card, no caption's words under a line, and hops are as they were but for
+Working with an agent (Blocks, 1 → 3), A spoken instruction becomes work
+(Blocks, 4 → 5, bends 19 → 24), What the CLI can be asked and Voice
+coordinator whole (Blocks, one more each); Recording a walkthrough (Blocks)
+loses its one. Bends are as they were but for those and Reading a board and
+the ingress board whole (Track, two more each). The Blocks drawings that
+move are ones where the grown box changes how Graphviz orders a block of
+cards; every other drawing reads as it did with its regions added, each
+taller by the bands.
 
-Left open: under Track, One browser, two uses runs `which Chromium` down
-through Headless browser's title words. Its lanes stand outside the frame
-until `fitSides` widens the frame to hold the line's label, and the title
-moves with the wall; `clearHeadings` has already run. The guard (`a line
-crossing a container's heading passes beside its words`) holds on the
-fixture as it was captured.
+The regression fixtures reduced from dogfood boards hold the memberships
+the boards hold. One guard is loosened: stacked, One command's `a typed
+message` now steps twice, the second time into Codex child beside its
+caption where the region round Workhorse queue holds it a region's
+clearance off, and the guard still refuses the three turns of the drawing
+unstacked (`reading-first.test.ts`).

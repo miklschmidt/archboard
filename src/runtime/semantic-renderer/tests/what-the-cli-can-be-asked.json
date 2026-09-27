@@ -59,7 +59,8 @@
 			"order": 12000,
 			"name": "Vault check",
 			"kind": "module",
-			"responsibility": "check and semantic config: the vault's vocabulary and everything wrong with its boards"
+			"responsibility": "check and semantic config: the vault's vocabulary and everything wrong with its boards",
+			"groups": ["checks"]
 		},
 		{
 			"id": "qBnro8cs",
@@ -74,7 +75,8 @@
 			"order": 14000,
 			"name": "Panes",
 			"kind": "module",
-			"responsibility": "browser: the live session, its panes, and pointing one at a board"
+			"responsibility": "browser: the live session, its panes, and pointing one at a board",
+			"groups": ["panes"]
 		},
 		{
 			"id": "iIJ5MRhi",
@@ -113,7 +115,8 @@
 			"name": "Record",
 			"kind": "module",
 			"responsibility": "record: one walkthrough, narrated by the Codex voice, to a video file",
-			"description": "Reads the board through the Archboard server and hands the walkthrough to the recorder. With --discard it deletes a board made only to be recorded once the file is written, and keeps one somebody changed meanwhile."
+			"description": "Reads the board through the Archboard server and hands the walkthrough to the recorder. With --discard it deletes a board made only to be recorded once the file is written, and keeps one somebody changed meanwhile.",
+			"groups": ["walkthrough"]
 		},
 		{
 			"id": "jAKtfzMA",

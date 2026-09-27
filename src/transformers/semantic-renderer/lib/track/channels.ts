@@ -255,6 +255,17 @@ function portReach(face: Box): [number, number] {
 }
 
 /**
+ * The stretch of a card's box its own face spans: all of it, but for a card
+ * laid out as the region round it, whose face stands in from the box.
+ * @param item The card.
+ * @returns The face's box.
+ */
+function faceOf(item: Item): Box {
+	const inset = item.inset ?? 0;
+	return { ...item.box, x: item.box.x + inset, width: item.box.width - 2 * inset };
+}
+
+/**
  * Spread the ports on one face, each as close to its other end as spacing allows.
  * @param face The face's box.
  * @param wanted Each port's preferred x, in the order the ports must keep.
@@ -406,10 +417,8 @@ function placePorts(item: Item, requests: readonly PortRequest[]): void {
 		(one, other) => one.wanted - other.wanted || one.order - other.order,
 	);
 	const wanted = ordered.map((request) => request.wanted);
-	const ports = spreadPorts(
-		item.box,
-		ordered[0]?.side === "bottom" ? fanned(item.box, wanted) : wanted,
-	);
+	const face = faceOf(item);
+	const ports = spreadPorts(face, ordered[0]?.side === "bottom" ? fanned(face, wanted) : wanted);
 	ordered.forEach(({ nets, side }, index) => {
 		for (const net of nets) {
 			if (side === "top") net.topX = ports[index]!;

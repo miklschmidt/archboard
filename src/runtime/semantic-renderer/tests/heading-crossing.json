@@ -59,7 +59,8 @@
 			"name": "orangeorang pepperpe",
 			"kind": "module",
 			"order": 15000,
-			"responsibility": "quartz riv summits t alphaalph bravo, carbo del eagl fa 1920g1080, har islan jun kett lant meado need oran pepp quartzq riv summits"
+			"responsibility": "quartz riv summits t alphaalph bravo, carbo del eagl fa 1920g1080, har islan jun kett lant meado need oran pepp quartzq riv summits",
+			"groups": ["walkthrough"]
 		}
 	],
 	"edges": [

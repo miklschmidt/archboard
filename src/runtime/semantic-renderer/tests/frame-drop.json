@@ -59,7 +59,8 @@
 			"order": 15000,
 			"name": "Alphacarbon gardenti",
 			"kind": "module",
-			"responsibility": "Meadow eag islandl t lanternpe delta, delta pep oran pe 1920p1080, jun carbo eag delt kett islan pepp falc quar alphaga qua lantern"
+			"responsibility": "Meadow eag islandl t lanternpe delta, delta pep oran pe 1920p1080, jun carbo eag delt kett islan pepp falc quar alphaga qua lantern",
+			"groups": ["walkthrough"]
 		}
 	],
 	"edges": [

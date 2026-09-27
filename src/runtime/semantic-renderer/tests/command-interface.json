@@ -85,7 +85,8 @@
 			"order": 12000,
 			"name": "Vault check",
 			"kind": "module",
-			"responsibility": "check and semantic config: the vault's vocabulary and everything wrong with its boards"
+			"responsibility": "check and semantic config: the vault's vocabulary and everything wrong with its boards",
+			"groups": ["checks"]
 		},
 		{
 			"id": "qBnro8cs",
@@ -100,7 +101,8 @@
 			"order": 14000,
 			"name": "Panes",
 			"kind": "module",
-			"responsibility": "browser: the live session, its panes, and pointing one at a board"
+			"responsibility": "browser: the live session, its panes, and pointing one at a board",
+			"groups": ["panes"]
 		},
 		{
 			"id": "I6RAbOlG",
