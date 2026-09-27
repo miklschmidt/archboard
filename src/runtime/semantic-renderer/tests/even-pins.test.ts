@@ -13,7 +13,9 @@
 // saved does not pay for two ports beside a card's corner (IIS Ingress
 // Migration's "US steering"), nor for a fan whose branches crowd into one
 // blot (Skill evaluation's six lines out of Author run, branching 9 px apart);
-// hooks cured do not pay for a crossing brought either. Evening the charge
+// hooks cured do not pay for a crossing brought either. A stack of unrelated
+// lines counts as the crossing it may hide, so a settlement may draw a
+// crossing to part one (Board rasterizer). Evening the charge
 // counts the inset a side pin stands inside its card's routing box, so every
 // pin of a card costs the same in all.
 
@@ -85,6 +87,29 @@ test("two unrelated lines on one stroke count against a settlement as a crossing
 		{ id: "other", from: "c", to: "d", points: stacked },
 	]);
 	expect(await kept(plain, even)).toBe("plain");
+});
+
+test("a stack of unrelated lines counts as the crossing it may hide, so parting it may draw one", async () => {
+	const cards = {
+		source: { x: 0, y: 300, width: 100, height: 50 },
+		target: { x: 200, y: 500, width: 200, height: 60 },
+	};
+	const shared = at([0, 50], [100, 50], [100, 150], [200, 150]);
+	const stacked = at([300, 60], [100, 60], [100, 140], [0, 140]);
+	const parted = at([300, 60], [150, 60], [150, 140], [0, 140]);
+	const hooked = at([50, 350], [50, 400], [180, 400], [180, 530], [200, 530]);
+	const entering = at([50, 350], [50, 400], [220, 400], [220, 500]);
+	const plain = sketch(cards, [
+		{ id: "one", from: "a", to: "b", points: shared },
+		{ id: "other", from: "c", to: "d", points: stacked },
+		{ id: "line", from: "source", to: "target", points: hooked },
+	]);
+	const even = sketch(cards, [
+		{ id: "one", from: "a", to: "b", points: shared },
+		{ id: "other", from: "c", to: "d", points: parted },
+		{ id: "line", from: "source", to: "target", points: entering },
+	]);
+	expect(await kept(plain, even)).toBe("even");
 });
 
 /**
