@@ -3,7 +3,9 @@
 // column a third of the page high, and the grid kept to the frame's left wall
 // when the title made the frame wider than the grid. A block of blocks packs
 // rows in the order its lines run, and a small block late in that order once
-// took a row of its own below a wide one while a short row above had room.
+// took a row of its own below a wide one while a short row above had room,
+// and a block alone on its row stood centred under a wide one, not under the
+// block its line comes from.
 import { expect, test } from "bun:test";
 import { instance } from "@viz-js/viz";
 import { AvoidLib } from "libavoid-js";
@@ -74,4 +76,46 @@ test("a small block late in the order fills the room a short row leaves", async 
 	const box = (id: string) => frames.find((one) => one.id === id)!.box;
 	expect(box("c").y).toBe(box("a").y);
 	expect(box("c").y + box("c").height).toBeLessThan(box("b").y);
+});
+
+test("a block alone on its row stands under the block its line comes from", async () => {
+	await AvoidLib.load();
+	const solve = createLayoutEngine(await instance(), AvoidLib.getInstance());
+	const placed = solve(
+		{
+			id: "root",
+			children: [
+				{
+					id: "frame",
+					width: 400,
+					height: 60,
+					layoutOptions: { "archboard.header.size": "60" },
+					children: [
+						{ id: "a", width: 340, height: 100 },
+						{ id: "b", width: 600, height: 100 },
+					],
+				},
+				{ id: "c", width: 340, height: 100 },
+			],
+			edges: [
+				{
+					id: "ac",
+					sources: ["a"],
+					targets: ["c"],
+					layoutOptions: { "archboard.relationship.kind": "call" },
+				},
+			],
+		},
+		{ [SOLVE_STAGE]: "blocks" },
+	);
+	const { cards, edges } = JSON.parse(placed.layoutOptions!["archboard.blocks.placed"]!) as {
+		cards: { id: string; box: { x: number; width: number } }[];
+		edges: { id: string; points: { x: number; y: number }[] }[];
+	};
+	const centre = (id: string) => {
+		const { box } = cards.find((one) => one.id === id)!;
+		return box.x + box.width / 2;
+	};
+	expect(centre("c")).toBeCloseTo(centre("a"), 5);
+	expect(edges.find((one) => one.id === "ac")!.points).toHaveLength(2);
 });

@@ -30,6 +30,7 @@ import {
 	type Packing,
 } from "@/transformers/semantic-renderer/lib/blocks/packings";
 import { openStretch, type Span } from "@/transformers/semantic-renderer/lib/blocks/open-edge";
+import { slideToTrunks } from "@/transformers/semantic-renderer/lib/blocks/slides";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { spreadPorts } from "@/transformers/semantic-renderer/lib/track/channels";
 import {
@@ -392,13 +393,59 @@ class PackLayout {
 	 */
 	lay(avoid: AvoidEngine, kept?: Packing): Laid & { packing: Packing } {
 		if (kept !== undefined) return this.roomy(avoid, kept);
-		const tried = this.packings().map((packing) => {
-			const layout = new PackLayout(this.block, this.laid, this.tree, this.insets);
-			return { layout, laid: layout.layOut(avoid, packing) };
-		});
+		const tried = this.packings()
+			.flatMap((packing) =>
+				this.slid(packing) ? [packing, { ...packing, aligned: true }] : [packing],
+			)
+			.map((packing) => {
+				const layout = new PackLayout(this.block, this.laid, this.tree, this.insets);
+				return { layout, laid: layout.layOut(avoid, packing) };
+			});
 		const scores = tried.map(({ laid }) => packedScore(laid));
+		console.error(
+			"PK",
+			this.block.id,
+			this.block.items
+				.map((id) => {
+					const b = this.laid.get(id)!;
+					return `${Math.round(b.width)}x${Math.round(b.height)}`;
+				})
+				.join(" "),
+			JSON.stringify(
+				tried.map(({ laid }, i) => [
+					JSON.stringify(laid.packing.groups) + (laid.packing.across ? "r" : "c"),
+					+scores[i]!.toFixed(4),
+					Math.round(laid.width),
+					Math.round(laid.height),
+				]),
+			),
+		);
 		const { layout, laid } = tried[scores.indexOf(Math.max(...scores))]!;
 		return layout.widened(avoid, laid);
+	}
+
+	/**
+	 * Where the packed items stand, packed one way.
+	 * @param packing The packing.
+	 * @returns Their extent.
+	 */
+	extentOf(packing: Packing): Box {
+		const { width, height } = this.sizeOf(packing);
+		const [x, y] = [this.insets.side + this.margin, this.insets.top + this.headRoom()];
+		return { x, y, width, height };
+	}
+
+	/**
+	 * Whether some block of a packing would slide in line with the blocks its
+	 * lines reach: only then is the packing laid out that way as well.
+	 * @param packing The packing.
+	 * @returns True when one would.
+	 */
+	slid(packing: Packing): boolean {
+		const probe = new PackLayout(this.block, this.laid, this.tree, this.insets);
+		probe.place(packing);
+		probe.alignPins();
+		return slideToTrunks(probe, packing.across, probe.extentOf(packing));
 	}
 
 	/**
@@ -439,6 +486,7 @@ class PackLayout {
 	layOut(avoid: AvoidEngine, packing: Packing): Laid & { packing: Packing } {
 		this.place(packing);
 		this.alignPins();
+		if (packing.aligned === true) slideToTrunks(this, packing.across, this.extentOf(packing));
 		const size = this.sizeOf(packing);
 		const { side, top } = this.insets;
 		const width = Math.max(
