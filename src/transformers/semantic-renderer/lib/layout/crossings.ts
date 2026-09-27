@@ -508,24 +508,26 @@ function upperOf(state: Settling, crossing: DrawnCrossing): readonly [boolean, b
 	return [false, index !== -1 && one![index]! > other![index]!];
 }
 
+/** Each line's route with its hops, and the ink each crossing clears beneath it. */
+interface Bridged {
+	readonly edges: readonly DrawingEdge[];
+	readonly bridges: readonly Bridge[];
+}
+
 /**
  * Raises one line over each crossing where a hop fits, and cuts one line
- * beneath the other wherever none does. No placement moves, and painters and
- * interaction geometry share the resulting curves. A crossing folded into two
- * corners first moves onto straight runs, taking a label on a moved lane
- * along. Contacts at rounded corners are cut, the corner staying whole.
- * @param settled The drawing after routing, rounding and label placement.
+ * beneath the other wherever none does, on routes whose folded crossings have
+ * already moved onto straight runs. No placement moves, and painters and
+ * interaction geometry share the resulting curves. Contacts at rounded
+ * corners are cut, the corner staying whole.
+ * @param drawing The drawing after routing, rounding, label placement and unfolding.
  * @param lines How each line is drawn, by relationship id, as measurement settled it.
  * @returns Updated edges and the local ink each crossing clears beneath it.
  */
-function bridgeCrossings(
-	settled: ArchitectureDrawing,
+function bridgeUnfolded(
+	drawing: ArchitectureDrawing,
 	lines: ReadonlyMap<string, LineLook>,
-): {
-	readonly edges: readonly DrawingEdge[];
-	readonly bridges: readonly Bridge[];
-} {
-	const drawing = unfoldCrossings(settled);
+): Bridged {
 	const { edges } = drawing;
 	const runs = straightRuns(edges);
 	const crossings = drawnCrossings(edges, runs);
@@ -554,6 +556,21 @@ function bridgeCrossings(
 }
 
 /**
+ * Settles a drawing's crossings: a crossing folded into two corners first
+ * moves onto straight runs, taking a label on a moved lane along, and then
+ * each crossing is hopped or cut (`bridgeUnfolded`).
+ * @param settled The drawing after routing, rounding and label placement.
+ * @param lines How each line is drawn, by relationship id, as measurement settled it.
+ * @returns Updated edges and the local ink each crossing clears beneath it.
+ */
+function bridgeCrossings(
+	settled: ArchitectureDrawing,
+	lines: ReadonlyMap<string, LineLook>,
+): Bridged {
+	return bridgeUnfolded(unfoldCrossings(settled), lines);
+}
+
+/**
  * How many times two different routes cross, before any bridge is drawn.
  * @param edges The routed edges.
  * @returns The number of proper crossings between straight runs of different routes.
@@ -567,4 +584,4 @@ function crossingCount(edges: readonly DrawingEdge[]): number {
 	);
 }
 
-export { bridgeCrossings, crossingCount };
+export { bridgeCrossings, bridgeUnfolded, crossingCount };

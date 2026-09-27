@@ -50,6 +50,11 @@ import {
 	SELF_LOOP_REACH,
 } from "@/transformers/semantic-renderer/lib/sequence-design";
 import { atlasBoxes } from "@/transformers/semantic-renderer/lib/atlas";
+import { shownFlows } from "@/transformers/semantic-renderer/lib/shown";
+import {
+	columnSubjects,
+	stepSubjects,
+} from "@/transformers/semantic-renderer/lib/svg/flow-subjects";
 import { farSizeFor } from "@/transformers/semantic-renderer/lib/measurement";
 import { canvasFor, coord, union, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
@@ -66,7 +71,6 @@ import {
 	endsFor,
 	labelBox,
 	selfStart,
-	stepBox,
 	travelOf,
 } from "@/transformers/semantic-renderer/lib/layout/messages";
 import { halo, paintCard, paintHeader } from "@/transformers/semantic-renderer/lib/svg/cards";
@@ -411,7 +415,9 @@ function paintFrame(
  * @param standingOf How each subject stands against the variant this one came from.
  * @param crossing The drawing's shared clock, which this flow takes its turns on.
  * @param unsettledOf Whether the board says a subject is still undecided.
- * @param appearances Type channels for the depicted participant cards.
+ * @param cards How the participant cards are drawn.
+ * @param cards.appearances Type channels for the depicted participant cards.
+ * @param cards.farSize The size their names are set at from far away.
  * @returns Everything it draws, and the words that go above every flow's runs.
  */
 function paintFlow(
@@ -420,12 +426,9 @@ function paintFlow(
 	standingOf: StandingOf,
 	crossing: Crossing,
 	unsettledOf: UnsettledOf,
-	appearances: ReadonlyMap<string, NodeAppearance>,
+	{ appearances, farSize }: { appearances: ReadonlyMap<string, NodeAppearance>; farSize: number },
 ): { readonly body: string; readonly words: string } {
 	const activeAt = activationLookup(layout.columns);
-	const farSize = farSizeFor(
-		layout.columns.map(({ card }) => ({ name: card.node.name, box: card.box })),
-	);
 	const body = lines([
 		paintFrame(layout, palette, standingOf(layout.flow.id), unsettledOf(layout.flow.id)),
 		wrap(
@@ -489,45 +492,6 @@ interface DataFlowPainting {
 	readonly atlas: DiagramAtlas;
 }
 
-/** One subject of a drawing, and the box it took. */
-interface DrawnSubject {
-	/** Its semantic id. */
-	readonly id: string;
-	/** Where it was drawn. */
-	readonly box: Box;
-}
-
-/**
- * Every participant column of one flow, as a box.
- *
- * A participant is its card *and* the column of time under it: a pane sent to a
- * participant is being sent to everything that participant does, not to the
- * label at the top of it.
- * @param layout The flow.
- * @returns Each participant's box.
- */
-function columnSubjects(layout: FlowLayout): DrawnSubject[] {
-	return layout.columns.map((column) => ({
-		id: column.card.node.id,
-		box: {
-			x: column.card.box.x,
-			y: column.card.box.y,
-			width: column.card.box.width,
-			height: layout.lifelineBottom - column.card.box.y,
-		},
-	}));
-}
-
-/**
- * Every message of one flow, as a box.
- * @param layout The flow.
- * @returns Each message's row.
- */
-function stepSubjects(layout: FlowLayout): DrawnSubject[] {
-	const activeAt = activationLookup(layout.columns);
-	return layout.steps.map((placed) => ({ id: placed.step.id, box: stepBox(placed, activeAt) }));
-}
-
 /**
  * One variant's flows, painted as a stack of message sequences.
  * @param flows The flows, in document order.
@@ -536,6 +500,11 @@ function stepSubjects(layout: FlowLayout): DrawnSubject[] {
  * @param standingOf How each subject stands against the variant this one came from.
  * @param unsettledOf Whether the board says a subject is still undecided.
  * @param policy Current vault policy.
+ * @param page What the page holds beyond what is drawn: the flows, participants and
+ * messages laid out but left out, and the marks the comparison would draw, so what is
+ * drawn stands where it stands with them.
+ * @param page.held The flows as the variant's own reading holds them, when only those are drawn.
+ * @param page.standingOf How each subject stands, for the marks the page holds.
  * @returns The page, its body and its atlas.
  */
 function paintDataFlow(
@@ -545,8 +514,10 @@ function paintDataFlow(
 	standingOf: StandingOf,
 	unsettledOf: UnsettledOf,
 	policy: SemanticPolicy,
+	page: { held: readonly SemanticFlow[] | undefined; standingOf: StandingOf },
 ): DataFlowPainting {
-	const layout = layoutDataFlow(flows, nodes);
+	const laid = layoutDataFlow(flows, nodes);
+	const layout = shownFlows(laid, page.held);
 	// Sequence columns are cards; containment is not depicted in this grammar.
 	const appearances = nodeAppearances(
 		nodes.map(({ parent: _parent, ...node }) => node),
@@ -559,18 +530,28 @@ function paintDataFlow(
 		turns: layout.turns,
 		cycle: Math.min(layout.turns * FLOW_STEP_TRAVEL_MS, FLOW_CYCLE_CAP_MS) / 1000,
 	};
-	const painted = layout.flows.map((laid) =>
-		paintFlow(laid, palette, standingOf, crossing, unsettledOf, appearances),
+	const painted = layout.flows.map((one) =>
+		paintFlow(one, palette, standingOf, crossing, unsettledOf, {
+			appearances,
+			// Set for every card the flow lays out, drawn or not, so leaving some out moves no name.
+			farSize: farSizeFor(
+				laid.flows
+					.find(({ flow }) => flow.id === one.flow.id)!
+					.columns.map(({ card }) => ({ name: card.node.name, box: card.box })),
+			),
+		}),
 	);
 	const columns = layout.flows.flatMap(columnSubjects);
 	const steps = layout.flows.flatMap(stepSubjects);
-	const frames = layout.flows.map((laid) => ({ id: laid.flow.id, box: laid.frame }));
+	const frames = layout.flows.map((one) => ({ id: one.flow.id, box: one.frame }));
 
 	// A frame holds everything its flow draws, labels included, so the frames and
 	// the marks on their corners are the page; one that reaches left of the
 	// margin shifts the page to keep it.
-	const marked = frames.map(({ id, box }) => markedBox(box, standingOf(id), unsettledOf(id)));
-	const canvas = canvasFor(layout, union(marked), DIAGRAM_MARGIN);
+	const marked = laid.flows.map(({ flow, frame }) =>
+		markedBox(frame, page.standingOf(flow.id), unsettledOf(flow.id)),
+	);
+	const canvas = canvasFor(laid, union(marked), DIAGRAM_MARGIN);
 
 	return {
 		width: canvas.width,
