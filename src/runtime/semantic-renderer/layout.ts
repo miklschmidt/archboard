@@ -4,6 +4,7 @@ export {
 	alignLabelRows,
 	bridgeCrossings,
 	centredPins,
+	centreHandicap,
 	chooseReading,
 	clearerDrawing,
 	curveThrough,
