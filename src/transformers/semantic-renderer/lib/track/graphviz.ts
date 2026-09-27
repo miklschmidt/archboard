@@ -497,9 +497,8 @@ function fans(at: Box, fan: readonly Box[]): boolean {
  * @param boxes Every item Graphviz placed; the moved ones are replaced.
  * @param joins Every line between two items, upper end first.
  * @param room What a moved item must keep to.
- * @returns The lowered cards that stepped out of a line's way.
  */
-function alignColumns(boxes: Map<string, Box>, joins: readonly Join[], room: Room): string[] {
+function alignColumns(boxes: Map<string, Box>, joins: readonly Join[], room: Room): void {
 	const columns = new Columns(boxes, joins, room);
 	closeSlots(columns, room.holds);
 	for (const join of columns.stacked()) {
@@ -509,7 +508,7 @@ function alignColumns(boxes: Map<string, Box>, joins: readonly Join[], room: Roo
 	for (const name of boxes.keys()) columns.centre(name);
 	// Widening one card can line its edges up with a third's.
 	while (columns.stacked().some((join) => columns.even(join)));
-	return clearWrap(columns, room.wrap);
+	clearWrap(columns, room.wrap);
 }
 
 export {

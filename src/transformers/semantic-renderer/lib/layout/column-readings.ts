@@ -3,12 +3,13 @@
 // label reserved, side by side, and the count is chosen on those pages: in
 // increasing order, starting from the settled unfolded page, a count replaces
 // the page kept so far when it fits the reference pane materially better,
-// fewer columns winning ties. Only the chosen count is settled, and it is kept
-// when its settled drawing still fits materially better than the unfolded one;
-// a count the router refuses keeps the unfolded reading (TASK-342). The
-// settled fold must also score higher on the one score every engine chooses
-// layouts on, its fit less a share for every crossing: a fold that fits the
-// pane better but crosses far more reads worse.
+// fewer columns winning ties. Only the chosen count is settled; a count the
+// router refuses keeps the unfolded reading (TASK-342). The settled fold is
+// kept as ADR 0039's guard takes it (`takes` in track/score.ts): weighed as
+// before the ADR, it fits materially better and scores higher; read, it fits
+// materially better and reads no worse in the ADR's order (`readingOrder`),
+// where Graphviz counts crossings seen, then hooks and touching lines. The
+// bends and line of its lines between columns are the price of any fold.
 //
 // A page's size is fixed by placement, and a settled reading's page is its
 // placement with the labels it reserved, so a placement ranks a count for one
@@ -22,7 +23,14 @@ import { WRAP_MIN_FIT_GAIN } from "@/transformers/semantic-renderer/config";
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import { refusedRouting } from "@/transformers/semantic-renderer/lib/layout/checked-routes";
 import { foldColumnCounts } from "@/transformers/semantic-renderer/lib/layout/fold-columns";
-import { crossingsOf, scoreOf } from "@/transformers/semantic-renderer/lib/track/score";
+import { drawingWeighed } from "@/transformers/semantic-renderer/lib/layout/even-pins";
+import {
+	crossingsOf,
+	readingOrder,
+	scoreOf,
+	takes,
+	type Weighed,
+} from "@/transformers/semantic-renderer/lib/track/score";
 
 /** The size of a page. */
 type Page = Pick<ArchitectureDrawing, "width" | "height">;
@@ -62,27 +70,27 @@ async function chooseReading(
 }
 
 /**
- * Whether a settled fold reads better than the unfolded drawing: it fits the
- * pane materially better, and scores higher on its fit less a share for every
- * crossing.
+ * Whether a settled fold is kept over the unfolded drawing, as ADR 0039's
+ * guard takes it ({@link takes}): weighed as before the ADR, it fits the
+ * pane materially better and scores higher; read, it fits materially better
+ * and reads no worse.
  * @param candidate The fold.
  * @param baseline The unfolded drawing.
  * @returns True when the fold is kept.
  */
 function readsBetter(candidate: ArchitectureDrawing, baseline: ArchitectureDrawing): boolean {
-	return better(candidate, baseline) && scoreOf(weighed(candidate)) > scoreOf(weighed(baseline));
+	const [one, other] = [drawingWeighed(candidate), drawingWeighed(baseline)];
+	const earlier =
+		better(candidate, baseline) && scoreOf(scored(candidate)) > scoreOf(scored(baseline));
+	return takes(one, other, earlier, better(candidate, baseline) && readingOrder(one, other) <= 0);
 }
 
 /**
- * What a settled drawing is scored on: its page and its crossings.
+ * What a settled drawing was scored on before ADR 0039: its page and its crossings.
  * @param drawing The drawing.
  * @returns Its size and crossing count.
  */
-function weighed(drawing: ArchitectureDrawing): {
-	width: number;
-	height: number;
-	crossings: number;
-} {
+function scored(drawing: ArchitectureDrawing): Weighed {
 	const lines = drawing.edges.map(({ curve }) => [
 		curve.from,
 		...curve.segments.map(({ to }) => to),

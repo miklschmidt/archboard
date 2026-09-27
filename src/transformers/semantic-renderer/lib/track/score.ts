@@ -1,8 +1,14 @@
 // How readable a routed layout is, and the ways to wrap a wide rank (TASK-349).
-// Every choice an engine makes between layouts of one board (unwrapped or
-// wrapped, whole or folded) is made on one score: the layout's fit to the
-// reference pane, less a share for every crossing and for every line that
-// runs from one column to another.
+// Two layouts of one board are compared on how easily each reads, their
+// measures in the order of ADR 0039 (`readingOrder`), and their fit to the
+// reference pane only breaks a tie between layouts that read alike. Every
+// chooser ADR 0039 changed also weighs its two layouts as it did before, and
+// takes the pick of its reading measures only where the two agree or that
+// pick is no worse on any measure (`takes`). The stack chooser's and the
+// Graphviz fold's earlier weighings, and the choices made before the drawing
+// a reader sees exists, weigh a layout's fit less a share for each crossing
+// (`scoreOf`); the joins' and the packing's earlier weighings are in
+// blocks/joins.ts and blocks/place.ts.
 import { fitIn } from "@/shared/shell-geometry/index";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 
@@ -30,13 +36,25 @@ interface Crossing {
 	readonly upright: Run;
 }
 
-/** What a score weighs: the page, its crossings, and its lines between columns. */
+/**
+ * What a layout is weighed on: its page, its crossings and its lines between
+ * columns, and what else a reader sees in it where an engine counts it. A
+ * score ({@link scoreOf}) weighs only the page, the crossings and the lines
+ * between columns.
+ */
 interface Weighed {
 	readonly width: number;
 	readonly height: number;
 	readonly crossings: number;
 	readonly bus?: number;
+	/** Its line ends hooking into a card's side, its pairs of lines that touch and its crowded joins. */
+	readonly hooks?: number;
+	readonly bends?: number;
+	readonly length?: number;
 }
+
+/** How near two layouts' route lengths are for a reader to take them as alike: a twentieth. */
+const NEAR_LENGTH = 0.05;
 
 /**
  * Whether a value lies strictly between two others, clear of both.
@@ -122,8 +140,127 @@ function lapsOf(lines: Iterable<readonly Point[]>, boxes: readonly Box[]): numbe
 }
 
 /**
- * How readable a layout is: its fit to the reference pane, less a share for
- * every crossing and every line between columns.
+ * A layout's reading measures, in the order of ADR 0039.
+ * @param layout What is weighed.
+ * @returns Its crossings, hooks, bends and route length.
+ */
+function measuresOf(layout: Weighed): [number, number, number, number] {
+	const { crossings, hooks = 0, bends = 0, length = 0 } = layout;
+	return [crossings, hooks, bends, length];
+}
+
+/**
+ * How one layout reads against another, on the measures of ADR 0039 in its
+ * order, each nothing where an engine does not count it: its crossings; its
+ * hooks and touching lines; its bends; its route length, alike within
+ * {@link NEAR_LENGTH}. A layout better on an earlier measure reads better
+ * whatever the later ones say.
+ * @param one A layout.
+ * @param other Another.
+ * @returns Below zero when the first reads better, above when the other
+ * does, zero when they read alike.
+ */
+function readingOrder(one: Weighed, other: Weighed): number {
+	const [mine, theirs] = [measuresOf(one), measuresOf(other)];
+	const at = mine.findIndex((value, index) => value !== theirs[index]);
+	if (at !== -1 && at < 3) return mine[at]! - theirs[at]!;
+	const [length, longest] = [mine[3], theirs[3]];
+	return Math.abs(length - longest) > NEAR_LENGTH * Math.min(length, longest)
+		? length - longest
+		: 0;
+}
+
+/**
+ * Whether one layout reads better than another ({@link readingOrder}); or,
+ * reading alike, fits the reference pane better; or fits it as well on a
+ * smaller page, since a layout that fits the pane whole fits it at full
+ * scale however much room it leaves.
+ * @param one A layout.
+ * @param other Another.
+ * @returns True when the first reads better.
+ */
+function readsBetter(one: Weighed, other: Weighed): boolean {
+	const order = readingOrder(one, other);
+	return order === 0 ? fitsBetter(one, other) : order < 0;
+}
+
+/**
+ * Whether one layout reads no worse than another on any measure of ADR 0039
+ * ({@link readingOrder}), its route length within {@link NEAR_LENGTH}.
+ * @param one A layout.
+ * @param other Another.
+ * @returns True when it is nowhere worse.
+ */
+function noWorse(one: Weighed, other: Weighed): boolean {
+	const [[crossings, hooks, bends, length], theirs] = [measuresOf(one), measuresOf(other)];
+	return (
+		crossings <= theirs[0] &&
+		hooks <= theirs[1] &&
+		bends <= theirs[2] &&
+		length <= theirs[3] * (1 + NEAR_LENGTH)
+	);
+}
+
+/**
+ * Whether a chooser ADR 0039 changed takes the first of two layouts, the
+ * guard every such chooser keeps: its reading pick where its earlier
+ * weighing, from before the ADR, agrees; or where that pick reads no worse
+ * than the earlier one on any measure ({@link noWorse}); else the earlier
+ * pick. Two layouts often trade one measure for another, and the reading
+ * pick then reads worse somewhere than the one taken before: What the CLI
+ * can be asked (Blocks) parted two lines into Board client for two hops
+ * fewer, and drew 14% more line; Archboard server whole (Track) packed its
+ * groups for 13 hops fewer, at 23 bends more; One command from a pane
+ * (Blocks) held a port order for two crossings fewer and ran three unrelated
+ * lines side by side along its bottom.
+ * @param one A layout.
+ * @param other Another.
+ * @param earlier Whether the earlier weighing takes the first.
+ * @param reads Whether the reading measures take it: by default, whether it
+ * reads better ({@link readsBetter}).
+ * @returns True when the first is taken.
+ */
+function takes(
+	one: Weighed,
+	other: Weighed,
+	earlier: boolean,
+	reads = readsBetter(one, other),
+): boolean {
+	if (reads === earlier) return reads;
+	return reads ? noWorse(one, other) : !noWorse(other, one);
+}
+
+/**
+ * Whether one layout fits the reference pane better than another, or as
+ * well on a smaller page.
+ * @param one A layout.
+ * @param other Another.
+ * @returns True when the first fits better.
+ */
+function fitsBetter(one: Weighed, other: Weighed): boolean {
+	const [fit, best] = [fitIn(one), fitIn(other)];
+	if (Math.abs(fit - best) > 1e-9) return fit > best;
+	return one.width * one.height < other.width * other.height;
+}
+
+/**
+ * A layout's fit to the reference pane, less a share for every crossing
+ * ({@link CROSSING_COST}) and a greater one for every line between columns
+ * ({@link BUS_COST}). It is the earlier weighing, from before ADR 0039, of
+ * the stack chooser and the Graphviz fold, which their guard keeps
+ * ({@link takes}). It alone weighs the layouts chosen before the drawing a
+ * reader sees exists, whose fit stands for how that drawing will read: a
+ * wrap of a block inside the board, laid out before its parent packs it,
+ * and a packing of blocks, weighed on its trunks before its blocks' lines
+ * are joined through their ports. Ranked on their own crossings first, those
+ * choices crossed Archboard server whole 69 -> 109 times and Board
+ * persistence whole 9 -> 12 (Blocks). A fold of a block of cards is weighed
+ * on it too: its crossings are estimated as the block's unfolded, so it
+ * trades no crossing, only its lines between columns for the fit it gains.
+ * Weighed as costing eight crossings each against any fit, a line between
+ * columns kept every chain unfolded; ignored, one-line folds bent straight
+ * drawings that already fit (Cloud Infrastructure's Regional entry, 0 -> 8
+ * bends).
  * @param layout What is weighed.
  * @returns The score.
  */
@@ -132,14 +269,13 @@ function scoreOf(layout: Weighed): number {
 }
 
 /**
- * Whether one layout reads better than another: it scores higher, or scores
- * the same on a smaller page, since a layout that fits the pane whole scores
- * its full fit however much room it leaves.
+ * Whether one layout scores higher than another ({@link scoreOf}), or as
+ * high on a smaller page.
  * @param one A layout.
  * @param other Another.
- * @returns True when the first reads better.
+ * @returns True when the first scores better.
  */
-function readsBetter(one: Weighed, other: Weighed): boolean {
+function scoresBetter(one: Weighed, other: Weighed): boolean {
 	const [mine, theirs] = [scoreOf(one), scoreOf(other)];
 	if (Math.abs(mine - theirs) > 1e-9) return mine > theirs;
 	return one.width * one.height < other.width * other.height;
@@ -241,9 +377,12 @@ export {
 	crossingPlaces,
 	crossingsOf,
 	lapsOf,
+	readingOrder,
 	readsBetter,
 	scoreOf,
+	scoresBetter,
 	sinks,
+	takes,
 	wrapPlans,
 	type Crossing,
 	type Run,

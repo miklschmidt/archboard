@@ -11,6 +11,7 @@ import {
 	chooseReading,
 	RouteCheckFailed,
 	type ArchitectureDrawing,
+	type Point,
 } from "@/runtime/semantic-renderer/layout";
 
 /** Cards in the unfolded reading, one to a row, each row calling the next. */
@@ -88,6 +89,67 @@ function readingsFrom(
 	return { readingOf, asked };
 }
 
+/**
+ * A route through some corners, each turned on a short curve as a drawn route is.
+ * @param points Its ends and corners.
+ * @returns The route.
+ */
+function rounded(points: readonly Point[]): ArchitectureDrawing["edges"][number]["curve"] {
+	const segments = points.slice(1, -1).flatMap((corner, index) => {
+		const toward = (end: Point) => ({
+			x: corner.x + Math.sign(end.x - corner.x) * 4,
+			y: corner.y + Math.sign(end.y - corner.y) * 4,
+		});
+		return [
+			{ kind: "line" as const, to: toward(points[index]!) },
+			{ kind: "cubic" as const, first: corner, second: corner, to: toward(points[index + 2]!) },
+		];
+	});
+	return { from: points[0]!, segments: [...segments, { kind: "line", to: points.at(-1)! }] };
+}
+
+/**
+ * The unfolded reading with its first line hooked: out of Card 0's side, down
+ * past its bottom, and across into Card 1.
+ * @returns The settled drawing.
+ */
+function hooked(): ArchitectureDrawing {
+	const plain = unfolded();
+	const hook = [
+		{ x: 240, y: 70 },
+		{ x: 250, y: 70 },
+		{ x: 250, y: 200 },
+		{ x: 140, y: 200 },
+		{ x: 140, y: plain.cards[1]!.box.y },
+	];
+	const [first, ...rest] = plain.edges;
+	return { ...plain, edges: [{ ...first!, curve: rounded(hook) }, ...rest] };
+}
+
+/**
+ * A fold that fits the pane at nine tenths, drawn as the given straight lines.
+ * @param lines Each line's ends.
+ * @returns The settled drawing.
+ */
+function foldDrawing(lines: readonly { from: Point; to: Point }[]): ArchitectureDrawing {
+	return {
+		...unfolded(),
+		...pageAt(0.9),
+		edges: lines.map(({ from, to }, index) => ({
+			edge: {
+				id: `x${index}`,
+				order: index,
+				from: "c0",
+				to: "c1",
+				kind: "call",
+				emphasis: "normal",
+			},
+			curve: { from, segments: [{ kind: "line" as const, to }] },
+			path: "",
+		})),
+	};
+}
+
 describe("a board taller than the pane", () => {
 	test("settles only the column count whose placement fits materially better", async () => {
 		const baseline = unfolded();
@@ -124,30 +186,36 @@ describe("a board taller than the pane", () => {
 		await expect(chooseReading(readingOf)).rejects.toThrow(TypeError);
 	});
 
+	// The unfolded reading hooks one line into a card's side, where the fold
+	// hooks none, so the fold reads worse only on its crossings and better on
+	// its hooks: the reading measures and the fit alone would take it, and
+	// its score, with a share of its fit for each crossing, keeps the
+	// unfolded reading.
 	test("keeps the unfolded reading when the fold fits better but crosses far more", async () => {
-		const baseline = unfolded();
+		const baseline = hooked();
 		// A grid of five level and five upright lines: twenty-five crossings.
-		const lines = [0, 1, 2, 3, 4].flatMap((index) => [
-			{ from: { x: 0, y: 100 + index * 40 }, to: { x: 400, y: 100 + index * 40 } },
-			{ from: { x: 100 + index * 40, y: 0 }, to: { x: 100 + index * 40, y: 400 } },
-		]);
-		const folded: ArchitectureDrawing = {
-			...unfolded(),
-			...pageAt(0.9),
-			edges: lines.map(({ from, to }, index) => ({
-				edge: {
-					id: `x${index}`,
-					order: index,
-					from: "c0",
-					to: "c1",
-					kind: "call",
-					emphasis: "normal",
-				},
-				curve: { from, segments: [{ kind: "line" as const, to }] },
-				path: "",
-			})),
-		};
+		const folded = foldDrawing(
+			[0, 1, 2, 3, 4].flatMap((index) => [
+				{ from: { x: 0, y: 100 + index * 40 }, to: { x: 400, y: 100 + index * 40 } },
+				{ from: { x: 100 + index * 40, y: 0 }, to: { x: 100 + index * 40, y: 400 } },
+			]),
+		);
 		const { readingOf } = readingsFrom(baseline, { 3: 0.9 }, () => folded);
 		expect(await chooseReading(readingOf)).toBe(baseline);
+	});
+
+	// Command interface, One command's path (Graphviz): unfolded, it crosses one
+	// line fewer than folded but hooks lines into cards' sides. Read first, the
+	// unfolded drawing wins on its crossings; weighed as before ADR 0039, the
+	// fold scores higher; and the unfolded drawing reads worse on its hooks, so
+	// the guard keeps the earlier pick.
+	test("keeps the fold where the unfolded reading crosses a line fewer but hooks one more", async () => {
+		const baseline = hooked();
+		const folded = foldDrawing([
+			{ from: { x: 0, y: 200 }, to: { x: 400, y: 200 } },
+			{ from: { x: 200, y: 0 }, to: { x: 200, y: 400 } },
+		]);
+		const { readingOf } = readingsFrom(baseline, { 3: 0.9 }, () => folded);
+		expect(await chooseReading(readingOf)).toBe(folded);
 	});
 });

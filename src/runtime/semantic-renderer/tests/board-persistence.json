@@ -1,0 +1,457 @@
+{
+	"nodes": [
+		{
+			"id": "4P7YZdnj",
+			"order": 1000,
+			"name": "Archboard server",
+			"kind": "service",
+			"responsibility": "The only caller: every read and every write of a board comes through it"
+		},
+		{
+			"id": "hoh4xPWb",
+			"order": 2000,
+			"name": "Address and locate",
+			"kind": "function",
+			"responsibility": "Maps names to safe vault paths"
+		},
+		{
+			"id": "NM28UA5U",
+			"order": 3000,
+			"name": "List boards",
+			"kind": "function",
+			"responsibility": "Discovers semantic board files"
+		},
+		{
+			"id": "tcwsrSQv",
+			"order": 4000,
+			"name": "Read and validate",
+			"kind": "function",
+			"responsibility": "Reads a coherent aggregate from disk, by its name or a name it used to have"
+		},
+		{
+			"id": "i2CrY6Xj",
+			"order": 5000,
+			"name": "Lifecycle transitions",
+			"kind": "function",
+			"responsibility": "Defines board lifecycle changes",
+			"groups": ["writes"]
+		},
+		{
+			"id": "xoapCJNG",
+			"order": 6000,
+			"name": "Edit semantic content",
+			"kind": "function",
+			"responsibility": "Resolves names into stable subjects",
+			"groups": ["writes"]
+		},
+		{
+			"id": "8CAH6rSD",
+			"order": 7000,
+			"name": "Propagate descendant edits",
+			"kind": "function",
+			"responsibility": "Carries parent changes into drafts",
+			"groups": ["writes"]
+		},
+		{
+			"id": "DJXluInA",
+			"order": 8000,
+			"name": "Settle disagreements",
+			"kind": "function",
+			"responsibility": "Answers the disagreements a proposal holds and carries the answer down",
+			"groups": ["writes"]
+		},
+		{
+			"id": "1gdbsn6M",
+			"order": 9000,
+			"name": "Write under lease",
+			"kind": "function",
+			"responsibility": "Commits one durable version",
+			"groups": ["writes"]
+		},
+		{
+			"id": "qTv7HuBw",
+			"order": 10000,
+			"name": "Atomic file replacement",
+			"kind": "function",
+			"responsibility": "Fsyncs every change to a board file: a replacement, a move and an unlink",
+			"groups": ["writes"]
+		},
+		{
+			"id": "IKUAjnNG",
+			"order": 11000,
+			"name": "Vault diagnostics",
+			"kind": "function",
+			"responsibility": "Everything wrong with the vault's boards, as warnings a repair can answer",
+			"groups": ["checks"]
+		},
+		{
+			"id": "wBw5FntC",
+			"order": 12000,
+			"name": "Drill-down checks",
+			"kind": "function",
+			"responsibility": "What a board can say about a link to another one, checked across the whole vault",
+			"groups": ["checks"]
+		},
+		{
+			"id": "CxaaWj4x",
+			"order": 13000,
+			"name": "Replaced relationships",
+			"kind": "function",
+			"responsibility": "Warns when a write may have lost a relationship's identity: re-added under a new id, or stated twice",
+			"groups": ["checks"]
+		},
+		{
+			"id": "803TfwDf",
+			"order": 14000,
+			"name": "Adopt",
+			"kind": "function",
+			"responsibility": "Makes a settled draft current, or gives a board nobody had built its first current variant; refuses a draft derived from an architecture a later adoption superseded unless forced",
+			"groups": ["writes"]
+		},
+		{
+			"id": "eCpnhcUh",
+			"order": 15000,
+			"name": "Shelve",
+			"kind": "function",
+			"responsibility": "Lets a proposal go without deleting it, so every link that names it still opens it",
+			"groups": ["writes"]
+		},
+		{
+			"id": "GWg2Fads",
+			"order": 16000,
+			"name": "Rename",
+			"kind": "function",
+			"responsibility": "A pure transition that moves one name, the board's or a variant's, and keeps the old one as a former name",
+			"groups": ["writes"]
+		},
+		{
+			"id": "lkf45vPe",
+			"order": 17000,
+			"name": "Former names",
+			"kind": "function",
+			"responsibility": "Which board a name answers to: the board that carries it, else the one that used to"
+		},
+		{
+			"id": "uZ8BMtTA",
+			"order": 18000,
+			"name": "Place the file",
+			"kind": "function",
+			"responsibility": "Writes the board's file where its name puts it, moving it there first when a rename changed that name",
+			"groups": ["writes"]
+		},
+		{
+			"id": "QPkSSQP8",
+			"order": 19000,
+			"name": "Discard",
+			"kind": "function",
+			"responsibility": "Removes a whole board under the lease and version check a write takes, and gives back the claim it ran under",
+			"groups": ["writes"]
+		},
+		{
+			"id": "UFO3ulXp",
+			"order": 20000,
+			"name": "Board lease",
+			"kind": "function",
+			"responsibility": "One writer at a time per board: a lease file beside the board, an agent's claim on it, and who holds it",
+			"groups": ["writes"]
+		},
+		{
+			"id": "jCCx4b3f",
+			"order": 21000,
+			"name": "Binding checks",
+			"kind": "function",
+			"responsibility": "A node on the current variant whose binding names a file the repository no longer has",
+			"groups": ["checks"]
+		}
+	],
+	"edges": [
+		{
+			"id": "hx5UtSvH",
+			"order": 1000,
+			"from": "4P7YZdnj",
+			"to": "hoh4xPWb",
+			"kind": "call",
+			"label": "address board",
+			"emphasis": "normal"
+		},
+		{
+			"id": "lcZxhHuv",
+			"order": 2000,
+			"from": "4P7YZdnj",
+			"to": "NM28UA5U",
+			"kind": "call",
+			"label": "catalogue boards",
+			"emphasis": "normal"
+		},
+		{
+			"id": "k1IwXpzd",
+			"order": 3000,
+			"from": "4P7YZdnj",
+			"to": "tcwsrSQv",
+			"kind": "call",
+			"label": "read current bytes",
+			"emphasis": "normal"
+		},
+		{
+			"id": "i6pk24Ov",
+			"order": 4000,
+			"from": "4P7YZdnj",
+			"to": "i2CrY6Xj",
+			"kind": "call",
+			"label": "state requested change",
+			"emphasis": "normal"
+		},
+		{
+			"id": "kOdz3Hxq",
+			"order": 5000,
+			"from": "i2CrY6Xj",
+			"to": "xoapCJNG",
+			"kind": "call",
+			"label": "apply content edit",
+			"emphasis": "normal"
+		},
+		{
+			"id": "JRnj6xbQ",
+			"order": 6000,
+			"from": "i2CrY6Xj",
+			"to": "8CAH6rSD",
+			"kind": "call",
+			"label": "reconcile descendants",
+			"emphasis": "normal"
+		},
+		{
+			"id": "3yXrbLgg",
+			"order": 7000,
+			"from": "i2CrY6Xj",
+			"to": "DJXluInA",
+			"kind": "call",
+			"label": "settle disagreements",
+			"emphasis": "normal"
+		},
+		{
+			"id": "smLdyKlp",
+			"order": 8000,
+			"from": "4P7YZdnj",
+			"to": "1gdbsn6M",
+			"kind": "call",
+			"label": "submit transition",
+			"emphasis": "hero"
+		},
+		{
+			"id": "E4f3pKJb",
+			"order": 9000,
+			"from": "1gdbsn6M",
+			"to": "hoh4xPWb",
+			"kind": "call",
+			"label": "resolve target",
+			"emphasis": "normal"
+		},
+		{
+			"id": "9O4o9jcE",
+			"order": 10000,
+			"from": "1gdbsn6M",
+			"to": "tcwsrSQv",
+			"kind": "call",
+			"label": "read under lease",
+			"emphasis": "normal"
+		},
+		{
+			"id": "VWo4vJh0",
+			"order": 11000,
+			"from": "1gdbsn6M",
+			"to": "i2CrY6Xj",
+			"kind": "call",
+			"label": "apply transition",
+			"emphasis": "normal"
+		},
+		{
+			"id": "EqTEFYDa",
+			"order": 12000,
+			"from": "uZ8BMtTA",
+			"to": "qTv7HuBw",
+			"kind": "data",
+			"label": "commit serialized board",
+			"emphasis": "hero"
+		},
+		{
+			"id": "6HYXV63O",
+			"order": 13000,
+			"from": "4P7YZdnj",
+			"to": "IKUAjnNG",
+			"kind": "call",
+			"label": "check the vault",
+			"emphasis": "normal"
+		},
+		{
+			"id": "DPHKb9jc",
+			"order": 14000,
+			"from": "IKUAjnNG",
+			"to": "wBw5FntC",
+			"kind": "call",
+			"label": "the links out of every board",
+			"emphasis": "normal"
+		},
+		{
+			"id": "gkXKmHDc",
+			"order": 15000,
+			"from": "xoapCJNG",
+			"to": "CxaaWj4x",
+			"kind": "call",
+			"label": "which restatements lost their identity",
+			"emphasis": "normal"
+		},
+		{
+			"id": "a85kagAw",
+			"order": 16000,
+			"from": "1gdbsn6M",
+			"to": "uZ8BMtTA",
+			"kind": "call",
+			"label": "write it where its name puts it",
+			"emphasis": "hero"
+		},
+		{
+			"id": "rs3a5Xhm",
+			"order": 17000,
+			"from": "1gdbsn6M",
+			"to": "UFO3ulXp",
+			"kind": "call",
+			"label": "hold the board for the pass",
+			"emphasis": "normal"
+		},
+		{
+			"id": "EKOObsIQ",
+			"order": 18000,
+			"from": "1gdbsn6M",
+			"to": "lkf45vPe",
+			"kind": "call",
+			"label": "the board the name answers to",
+			"emphasis": "normal"
+		},
+		{
+			"id": "CfW74kWK",
+			"order": 19000,
+			"from": "tcwsrSQv",
+			"to": "lkf45vPe",
+			"kind": "call",
+			"label": "a former name opens the board",
+			"emphasis": "normal"
+		},
+		{
+			"id": "Wv77mINZ",
+			"order": 20000,
+			"from": "tcwsrSQv",
+			"to": "UFO3ulXp",
+			"kind": "call",
+			"label": "migrate only if the lease is free",
+			"emphasis": "muted"
+		},
+		{
+			"id": "C0t1t0gb",
+			"order": 21000,
+			"from": "tcwsrSQv",
+			"to": "qTv7HuBw",
+			"kind": "data",
+			"label": "a migrated document",
+			"emphasis": "muted"
+		},
+		{
+			"id": "Vo0aT7uz",
+			"order": 22000,
+			"from": "lkf45vPe",
+			"to": "NM28UA5U",
+			"kind": "call",
+			"label": "look through every board",
+			"emphasis": "muted"
+		},
+		{
+			"id": "8Let5OXd",
+			"order": 23000,
+			"from": "uZ8BMtTA",
+			"to": "UFO3ulXp",
+			"kind": "call",
+			"label": "take the new name's lease",
+			"emphasis": "normal"
+		},
+		{
+			"id": "V478HCgq",
+			"order": 24000,
+			"from": "uZ8BMtTA",
+			"to": "lkf45vPe",
+			"kind": "call",
+			"label": "does another board answer to it",
+			"emphasis": "normal"
+		},
+		{
+			"id": "dWqqFFkC",
+			"order": 25000,
+			"from": "i2CrY6Xj",
+			"to": "803TfwDf",
+			"kind": "call",
+			"label": "adopt a draft",
+			"emphasis": "normal"
+		},
+		{
+			"id": "HyyLvPct",
+			"order": 26000,
+			"from": "i2CrY6Xj",
+			"to": "eCpnhcUh",
+			"kind": "call",
+			"label": "shelve a proposal",
+			"emphasis": "normal"
+		},
+		{
+			"id": "wyTy54Ob",
+			"order": 27000,
+			"from": "4P7YZdnj",
+			"to": "GWg2Fads",
+			"kind": "call",
+			"label": "rename transition",
+			"emphasis": "normal"
+		},
+		{
+			"id": "s73zYKpi",
+			"order": 28000,
+			"from": "4P7YZdnj",
+			"to": "QPkSSQP8",
+			"kind": "call",
+			"label": "discard a whole board",
+			"emphasis": "normal"
+		},
+		{
+			"id": "8TcPZofq",
+			"order": 29000,
+			"from": "QPkSSQP8",
+			"to": "1gdbsn6M",
+			"kind": "call",
+			"label": "the same lease and version check",
+			"emphasis": "normal"
+		},
+		{
+			"id": "WhfWPohX",
+			"order": 30000,
+			"from": "QPkSSQP8",
+			"to": "qTv7HuBw",
+			"kind": "call",
+			"label": "unlink and sync the directory",
+			"emphasis": "normal"
+		},
+		{
+			"id": "zaZzD0Ti",
+			"order": 31000,
+			"from": "QPkSSQP8",
+			"to": "UFO3ulXp",
+			"kind": "call",
+			"label": "give back its claim",
+			"emphasis": "muted"
+		},
+		{
+			"id": "p7rwBQ3M",
+			"order": 32000,
+			"from": "IKUAjnNG",
+			"to": "jCCx4b3f",
+			"kind": "call",
+			"label": "every current binding's file",
+			"emphasis": "normal"
+		}
+	]
+}

@@ -11,27 +11,22 @@
 import type { ElkExtendedEdge } from "@archboard/elk-rs";
 import type { BlockTree, Projection } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { lineLength } from "@/transformers/semantic-renderer/lib/blocks/laying";
+import { weighedPlaced, type Page } from "@/transformers/semantic-renderer/lib/blocks/weighing";
 import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
-import { crossingsOf } from "@/transformers/semantic-renderer/lib/track/score";
+import { crossingsOf, takes } from "@/transformers/semantic-renderer/lib/track/score";
 import { fitIn } from "@/shared/shell-geometry/index";
 
 /**
- * How much line costs as much as one crossing: a crossing the reader has to
- * look twice at is worth a long run of line, and less than this lets a trunk
- * kept whole lose to lines that each hop what it hopped once.
+ * How much line costs as much as one crossing in the joins' earlier weighing
+ * ({@link costsLess}): a crossing the reader has to look twice at is worth a
+ * long run of line, and less than this lets a trunk kept whole lose to lines
+ * that each hop what it hopped once.
  */
 const LINE_PER_CROSSING = 1000;
 
-/** How near two costs are for the page to decide between them: a twentieth. */
+/** How near two costs are for the page to decide between them, in that weighing: a twentieth. */
 const NEAR = 0.05;
-
-/** A drawing's page and every relationship's points, as drawn. */
-interface Page {
-	readonly width: number;
-	readonly height: number;
-	readonly edges: readonly { readonly id: string; readonly points: readonly Point[] }[];
-}
 
 /** A drawing laid out one way: its blocks, and the drawing as placed. */
 interface Drawn<Placed extends Page> {
@@ -119,17 +114,6 @@ function runsOf(points: readonly Point[]): (readonly [Point, Point])[] {
 }
 
 /**
- * Whether a value lies strictly between two others, clear of both.
- * @param value The value.
- * @param one One end.
- * @param other The other end.
- * @returns True when it is inside.
- */
-function clear(value: number, one: number, other: number): boolean {
-	return value > Math.min(one, other) + 1 && value < Math.max(one, other) - 1;
-}
-
-/**
  * How long two routes run on one line, within a point.
  * @param one A route.
  * @param other Another.
@@ -176,6 +160,17 @@ function partedOf(drawn: Drawn<Page>): number {
 }
 
 /**
+ * Whether a value lies strictly between two others, clear of both.
+ * @param value The value.
+ * @param one One end.
+ * @param other The other end.
+ * @returns True when it is inside.
+ */
+function clear(value: number, one: number, other: number): boolean {
+	return value > Math.min(one, other) + 1 && value < Math.max(one, other) - 1;
+}
+
+/**
  * How many times one line crosses another, each pair of lines counted at
  * each place: a trunk of several lines crosses a line once for each of them,
  * as a join kept before its labels draws its trunk far across the drawing.
@@ -205,12 +200,29 @@ function pairCrossings(lines: readonly (readonly Point[])[]): number {
 }
 
 /**
- * What a drawing's lines cost: each crossing as the reader sees it, half as
- * much again for each line through it past the first, since a trunk drawn
- * far across the drawing crosses for every line it carries, and its line at
- * a crossing's worth for every run as long as a trunk pays to avoid one.
+ * Whether one drawing's lines cost less than another's, as the joins
+ * weighed a drawing before ADR 0039: each crossing half as much again for
+ * each line through it past the first, and its line at a crossing's worth
+ * for every {@link LINE_PER_CROSSING}; costing about as much, the page that
+ * fits the reference pane better. It weighs the drawing with the steps its
+ * lines need not take taken out, as the reading measures do; before ADR
+ * 0039 it weighed the drawing with them.
+ * @param one A drawing.
+ * @param other Another.
+ * @returns True when the first costs less.
+ */
+function costsLess(one: Page, other: Page): boolean {
+	const [cost, least] = [costOf(one), costOf(other)];
+	const [fit, best] = [fitIn(one), fitIn(other)];
+	if (Math.abs(cost - least) > NEAR * Math.min(cost, least) || Math.abs(fit - best) < 1e-9)
+		return cost < least - 1e-9;
+	return fit > best;
+}
+
+/**
+ * What a drawing's lines cost in the joins' earlier weighing ({@link costsLess}).
  * @param placed The drawing.
- * @returns The cost.
+ * @returns The cost, in crossings.
  */
 function costOf(placed: Page): number {
 	const points = placed.edges.map((line) => line.points);
@@ -220,9 +232,9 @@ function costOf(placed: Page): number {
 
 /**
  * Whether one drawing reads better than another: it parts fewer joined
- * lines; or, as few, its lines cost much less; or, costing about as much,
- * its page fits the reference pane better, since two layouts that cost
- * the same can stand the board in very different shapes.
+ * lines; or, as few, it reads better in the order of ADR 0039 and no worse
+ * anywhere than the drawing whose lines cost less ({@link costsLess}), or
+ * else its lines cost less ({@link takes}).
  * @param one A drawing.
  * @param other Another.
  * @returns True when the first reads better.
@@ -230,11 +242,8 @@ function costOf(placed: Page): number {
 function drawsBetter(one: Drawn<Page>, other: Drawn<Page>): boolean {
 	const [parted, fewest] = [partedOf(one), partedOf(other)];
 	if (parted !== fewest) return parted < fewest;
-	const [cost, least] = [costOf(one.placed), costOf(other.placed)];
-	const [fit, best] = [fitIn(one.placed), fitIn(other.placed)];
-	if (Math.abs(cost - least) > NEAR * Math.min(cost, least) || Math.abs(fit - best) < 1e-9)
-		return cost < least - 1e-9;
-	return fit > best;
+	const [mine, theirs] = [one, other].map(({ placed }) => weighedPlaced(placed));
+	return takes(mine!, theirs!, costsLess(one.placed, other.placed));
 }
 
 /**
@@ -263,4 +272,4 @@ function layJoined<Placed extends Page>(
 	return best;
 }
 
-export { NEAR, joinWays, kindOf, layJoined, type Drawn };
+export { joinWays, kindOf, layJoined, type Drawn };

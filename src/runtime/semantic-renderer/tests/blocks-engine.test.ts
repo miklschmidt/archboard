@@ -12,12 +12,13 @@ import {
 	bodyShift,
 	corridorPoints,
 	routeCrosses,
+	routesCross,
 	routeEnds,
 	routePoints,
 	sharedStretches,
+	turnsOf,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
-import { scorecardOf } from "@/runtime/semantic-renderer/tests/drawn-scorecard";
 import agentWorkbench from "./agent-workbench.json";
 import archboardServer from "./archboard-server.json";
 import browserApplication from "./browser-application.json";
@@ -407,22 +408,34 @@ test("lines that join on the way to a card stay joined, without running along a 
 
 // Taken from a board of this repository: in its channels a line wanted a
 // track above most of the lines it shares the channel with and was given one
-// above lines it then crossed, where another order crosses fewer.
-test("the lines of one channel take the track order that crosses least", async () => {
+// above lines it then crossed, where another order crosses fewer: 'agent
+// bar, conversation, Talk' crossed 'the listing, read again on pane news'.
+// And with its block's ports settled where the drawing read better in the
+// order of ADR 0039, rather than where it scores better, 'the pane socket:
+// registration and news' ran round Voice to a wall of Browser client and
+// crossed 'one per socket generation' and 'the step to show'.
+test("the lines of one channel take the track order that crosses least, its ports settled on their score", async () => {
 	const content = orderedFixture(browserApplication);
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "blocks", policy });
-	const crossings = scorecardOf(drawing, content).find(({ name }) => name === "crossings")!;
-	expect(crossings.value).toBeLessThanOrEqual(38);
+	const routes = corridorPoints(drawing.svg);
+	expect(routesCross(routes.get("WchncnH1")!, routes.get("ep2NF6Z5")!)).toBe(false);
+	for (const id of ["rcSUaP1b", "Gxh1Pbx3"])
+		expect(routesCross(routes.get("PuILGsjg")!, routes.get(id)!), id).toBe(false);
 });
 
-// Taken from a board of this repository: laid with its groups packed as
-// blocks of their own it crossed fewer lines and drew a little less line,
-// but on a portrait page that fits the pane worse, its lines run round the
-// blocks. Packing is for a page the board's own ranks spread out.
-test("a board's groups are packed only where that fits the pane no worse", async () => {
+// Taken from a board of this repository: with its groups packed as blocks of
+// their own it crossed fewer lines, but 'one batch under the board's lease'
+// turned four times round the blocks and crossed five lines, three of them by
+// a corner. A board's groups stay inline where packing reads worse somewhere.
+test("a board's groups stay inline where packing them reads worse somewhere", async () => {
 	const content = orderedFixture(archboardServer);
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
-	expect(drawing.width).toBeGreaterThan(drawing.height);
+	const routes = [...corridorPoints(drawing.svg)];
+	const batch = routes.find(([id]) => id === "iG4T44Pd")![1];
+	expect(turnsOf(batch)).toBe(0);
+	expect(routes.filter(([id, points]) => id !== "iG4T44Pd" && routesCross(batch, points))).toEqual(
+		[],
+	);
 });
 
 // Taken from the IIS migration board: a line into a container itself ends on a

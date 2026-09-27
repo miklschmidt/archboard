@@ -1,0 +1,266 @@
+{
+	"nodes": [
+		{
+			"id": "2naazvac",
+			"order": 1000,
+			"name": "HTTP application",
+			"kind": "module",
+			"responsibility": "Composes the middleware and mounts every route on the one application",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/server/archboard/lib/application.ts"
+			}
+		},
+		{
+			"id": "K6P74fM7",
+			"order": 3000,
+			"name": "Mutation admission",
+			"kind": "module",
+			"responsibility": "Admits changes while the server runs and counts each until it settles, so a stop drains every accepted write or refuses with SERVER_BUSY",
+			"groups": ["writes"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/server/archboard/lib/mutation-admission.ts"
+			}
+		},
+		{
+			"id": "wYcdVszt",
+			"order": 5000,
+			"name": "Semantic board store",
+			"kind": "module",
+			"responsibility": "The one place a board is read or written",
+			"groups": ["writes"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/semantic-board-store"
+			},
+			"drillDown": {
+				"board": "Board persistence",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "yiSc1qWU",
+			"order": 7000,
+			"name": "Pane registry",
+			"kind": "module",
+			"responsibility": "The sockets, what each pane is showing, and the news broadcast to every one of them",
+			"groups": ["panes"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/server/archboard/lib/pane-registry.ts"
+			}
+		},
+		{
+			"id": "mTtiV3hX",
+			"order": 11000,
+			"name": "Agent CLI",
+			"kind": "service",
+			"responsibility": "Sends every board operation over HTTP and never writes a vault file itself",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/bin.ts"
+			},
+			"drillDown": {
+				"board": "Command interface",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "Eh7icS73",
+			"order": 12000,
+			"name": "Browser",
+			"kind": "service",
+			"responsibility": "Reads boards, says what each pane is showing, and writes nothing",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/ui/application/index.tsx"
+			},
+			"drillDown": {
+				"board": "Browser application",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "8B8O9ZiT",
+			"order": 13000,
+			"name": "Board write routes",
+			"kind": "route",
+			"responsibility": "The one write boundary: every route that changes a board goes through here",
+			"description": "ADR 0023: the file is the board and nothing holds a copy of it. A write states the version it read, takes the board's lease, and is committed before it is answered.",
+			"groups": ["writes"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/server/archboard/lib/semantic-board-writes.ts"
+			}
+		},
+		{
+			"id": "8imgDQSw",
+			"order": 20000,
+			"name": "Board lease",
+			"kind": "module",
+			"responsibility": "One writer at a time per board: the lease file in the vault, an agent's claim, and news when the holder changes",
+			"description": "ADR 0016. The lease lives beside the board, so every server on the vault sees the same exclusion.",
+			"groups": ["writes"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/engine/board-lock.ts"
+			}
+		},
+		{
+			"id": "EAiFrCYk",
+			"order": 21000,
+			"name": "Board announcements",
+			"kind": "module",
+			"responsibility": "Tells every pane on a board who holds it and what they said they were doing",
+			"description": "ADR 0022: a claim is visible wherever the board is shown. Board content is never in the news; a pane reads the board again.",
+			"groups": ["panes"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/server/archboard/lib/board-announcements.ts"
+			}
+		}
+	],
+	"edges": [
+		{
+			"id": "W2BXIpq7",
+			"order": 2000,
+			"from": "2naazvac",
+			"to": "K6P74fM7",
+			"kind": "dependency",
+			"label": "admits writes",
+			"emphasis": "muted"
+		},
+		{
+			"id": "BiJamQt9",
+			"order": 14000,
+			"from": "mTtiV3hX",
+			"to": "8B8O9ZiT",
+			"kind": "http",
+			"label": "one stated batch",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "VO9ngl7m",
+			"order": 18000,
+			"from": "yiSc1qWU",
+			"to": "Eh7icS73",
+			"kind": "event",
+			"label": "board and agent news",
+			"emphasis": "hero"
+		},
+		{
+			"id": "iG4T44Pd",
+			"order": 21000,
+			"from": "8B8O9ZiT",
+			"to": "wYcdVszt",
+			"kind": "call",
+			"label": "one batch under the board's lease",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "9wogU6N3",
+			"order": 22000,
+			"from": "8B8O9ZiT",
+			"to": "yiSc1qWU",
+			"kind": "event",
+			"label": "announce the accepted write",
+			"emphasis": "hero"
+		},
+		{
+			"id": "HfrzUYSB",
+			"order": 39000,
+			"from": "wYcdVszt",
+			"to": "8imgDQSw",
+			"kind": "call",
+			"label": "hold the board for each write",
+			"emphasis": "normal"
+		},
+		{
+			"id": "Ac9VTagz",
+			"order": 40000,
+			"from": "8imgDQSw",
+			"to": "EAiFrCYk",
+			"kind": "event",
+			"label": "the holder changed",
+			"emphasis": "normal"
+		},
+		{
+			"id": "AjWTGwUA",
+			"order": 41000,
+			"from": "EAiFrCYk",
+			"to": "yiSc1qWU",
+			"kind": "call",
+			"label": "tell the panes on the board",
+			"emphasis": "normal"
+		},
+		{
+			"id": "83xq2SSC",
+			"order": 42000,
+			"from": "8B8O9ZiT",
+			"to": "EAiFrCYk",
+			"kind": "call",
+			"label": "what the writer said it was doing",
+			"emphasis": "normal"
+		}
+	],
+	"flows": [],
+	"walkthroughs": [
+		{
+			"id": "rKhJWXwz",
+			"name": "How the backend serves a board",
+			"beats": [
+				{
+					"id": "V6wttd3K",
+					"heading": "One application, one admission",
+					"body": "Every request enters the same composed application, and every change is admitted and counted until it settles, so a stop drains what it has accepted rather than lose it, or refuses with SERVER_BUSY and goes on serving.",
+					"subjects": ["2naazvac", "K6P74fM7"]
+				},
+				{
+					"id": "SCewKCv2",
+					"heading": "Meaning is read once and drawn here",
+					"body": "A read answers with the board family or with a drawing made on the server. The browser is a viewer: it holds board content only as a read-only cache of what this said.",
+					"subjects": ["Y70KOm9C", "wYcdVszt", "xP18j2Co"]
+				},
+				{
+					"id": "YWeWWUoZ",
+					"heading": "One write boundary, one lease",
+					"body": "Every change goes through one boundary: the writer states the version it read, the board's lease admits one writer at a time, and the file is committed before the write is answered.",
+					"subjects": ["8B8O9ZiT", "iG4T44Pd", "wYcdVszt", "8imgDQSw", "Ck9cBsJC"]
+				},
+				{
+					"id": "uKlyn7Bt",
+					"heading": "A claim is visible wherever the board is",
+					"body": "When the holder of a board's lease changes, every pane showing the board is told who has it and what they said they were doing, and a person's one control is taking the claim back.",
+					"subjects": ["8imgDQSw", "EAiFrCYk", "yiSc1qWU", "Ck9cBsJC"]
+				},
+				{
+					"id": "5qNrPkqO",
+					"heading": "A rename carries what the server keyed by the name",
+					"body": "A rename is a write like any other, and then the panes on the board, the claim on it and what the agent said it was doing move to the new name. The old name stays a former name, so anything still using it reaches the board.",
+					"subjects": ["JPg03tjh", "wYcdVszt", "yiSc1qWU", "8imgDQSw"]
+				},
+				{
+					"id": "HRtMJ3Oc",
+					"heading": "The file stays the truth while panes stay live",
+					"body": "A pane is told a new version exists and reads again; a change nobody here made is noticed on disk and announced the same way. The agent reads the same announcements as a feed with a cursor. Nothing about a board lives in a pane.",
+					"subjects": ["ZuLyutvj", "yiSc1qWU", "VO9ngl7m", "jpk7aRzD", "9G6CmNgt"]
+				}
+			]
+		}
+	]
+}
