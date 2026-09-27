@@ -24,9 +24,10 @@
 // in all (Browser application's "Recording a walkthrough" parted a stack and
 // cured three hooks for one line's extra bend). A route that takes a detour
 // is not worth what it cures. A line the pin pass sends off a pin may take
-// more bends: "submit transition" into Board persistence's Write under lease
-// turns once more to drop onto its top face instead of landing 6 px from the
-// pin. The pin pass clears one card at a time, each kept where it cures more:
+// one bend more, and no more: "submit transition" into Board persistence's
+// Write under lease turns once more to drop onto its top face instead of
+// landing 6 px from the pin. The pin pass clears one card at a time, each
+// kept where it cures more, asking again for every card kept before it:
 // cleared together, Board persistence's three cards drew two more crossings
 // for one of them.
 import type {
@@ -122,7 +123,9 @@ function frameWall(id: string, frame: Box, face: WallFace): Wall {
 }
 
 /**
- * Whether a run lies along a wall: parallel, nearer than a wall clearance, for more than a lane.
+ * Whether a run lies along a wall: parallel, nearer than a wall clearance, for
+ * more than a lane. The lane is what makes a run read as following the wall
+ * rather than touching it, part of the defect, not a rule of its own.
  * @param run A line's run.
  * @param wall A frame wall.
  * @returns True when the two would read as one edge.
@@ -200,7 +203,9 @@ function wrongFaces(drawing: ArchitectureDrawing): string[] {
 
 /**
  * Whether two cards stand one above the other and share a span wide enough
- * for a line to keep its nudging distance from both cards' corners.
+ * for a line to keep its nudging distance from both cards' corners. Only
+ * then is a side exit between them a defect: the span is part of what the
+ * defect is, not a rule of its own.
  * @param one A card.
  * @param other The other card.
  * @returns True when a straight vertical line could join them.
@@ -223,11 +228,11 @@ function bendsOf(drawing: ArchitectureDrawing): ReadonlyMap<string, number> {
 /**
  * Whether a finishing routing is no worse than the settled drawing: no more
  * crossings, unrelated lines on one stroke counted (even-pins.ts), and no
- * line with more bends apart from the lines the pass sends another way, or,
- * where it saves a crossing, no more bends in all.
+ * line with more bends, a line the pass sends off a pin one more at most,
+ * or, where it saves a crossing, no more bends in all.
  * @param clear The finishing routing.
  * @param settled The settled drawing.
- * @param excused The lines the pass sends another way.
+ * @param excused The lines the pass sends off a pin.
  * @returns True when it may replace the settled drawing.
  */
 function noWorse(
@@ -239,7 +244,7 @@ function noWorse(
 	if (crossings > 0) return false;
 	if (crossings < 0) return totalBends(clear) <= totalBends(settled);
 	return [...bendsOf(clear)].every(
-		([id, bends]) => excused.has(id) || bends <= (before.get(id) ?? Infinity),
+		([id, bends]) => bends <= (before.get(id) ?? Infinity) + (excused.has(id) ? 1 : 0),
 	);
 }
 
@@ -308,7 +313,7 @@ interface FinishingPass {
 	readonly defects: (drawing: ArchitectureDrawing, pinned: Pinned) => readonly string[];
 	/** What its routes are asked, given what it found. */
 	readonly ask: (found: readonly string[]) => RouteRequest;
-	/** Set on a pass that cures one card at a time, whose lines may take more bends. */
+	/** Set on a pass that cures one card at a time, whose lines may take a bend more. */
 	readonly byCard?: true;
 }
 
