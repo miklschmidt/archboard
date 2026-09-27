@@ -228,14 +228,14 @@ test("two lines whose end runs meet on one stroke are not a trunk that costs a s
 	expect(await kept(plain, even)).toBe("even");
 });
 
-test("hooks cured do not pay for a crossing brought", async () => {
-	const cards = {
-		source: { x: 0, y: 0, width: 100, height: 50 },
-		target: { x: 200, y: 200, width: 200, height: 60 },
-		source2: { x: 500, y: 0, width: 100, height: 50 },
-		target2: { x: 700, y: 200, width: 200, height: 60 },
-	};
-	const lines = (shift: number, hooked: boolean): Line => ({
+/**
+ * A line from a source card to the target card below and right of it, shifted along the page.
+ * @param shift How far right the pair stands: 0 or 500.
+ * @param hooked Whether it hooks into the target's side rather than entering its top.
+ * @returns The line.
+ */
+function intoTarget(shift: number, hooked: boolean): Line {
+	return {
 		id: `line${shift}`,
 		from: shift === 0 ? "source" : "source2",
 		to: shift === 0 ? "target" : "target2",
@@ -243,9 +243,26 @@ test("hooks cured do not pay for a crossing brought", async () => {
 			? at([50, 50], [50, 100], [180, 100], [180, 230], [200, 230])
 			: at([50, 50], [50, 100], [260, 100], [260, 200])
 		).map(({ x, y }) => ({ x: x + shift, y })),
-	});
-	const plain = sketch(cards, [lines(0, true), lines(500, true), ...long(false).slice(0, 2)]);
-	const even = sketch(cards, [lines(0, false), lines(500, false), ...long(true).slice(0, 2)]);
+	};
+}
+
+test("hooks cured do not pay for a crossing brought", async () => {
+	const cards = {
+		source: { x: 0, y: 0, width: 100, height: 50 },
+		target: { x: 200, y: 200, width: 200, height: 60 },
+		source2: { x: 500, y: 0, width: 100, height: 50 },
+		target2: { x: 700, y: 200, width: 200, height: 60 },
+	};
+	const plain = sketch(cards, [
+		intoTarget(0, true),
+		intoTarget(500, true),
+		...long(false).slice(0, 2),
+	]);
+	const even = sketch(cards, [
+		intoTarget(0, false),
+		intoTarget(500, false),
+		...long(true).slice(0, 2),
+	]);
 	expect(await kept(plain, even)).toBe("plain");
 });
 
@@ -259,13 +276,13 @@ test("every pin of a card costs the same once libavoid charges its distance from
 		{ x: 1, y: 0.7 },
 		{ x: 0.4, y: 0 },
 		{ x: 0.6, y: 1 },
-	].map((at) => {
+	].map((place) => {
 		const pin = {
-			x: at.x * box.width + inward(at.x),
-			y: at.y * box.height + inward(at.y),
+			x: place.x * box.width + inward(place.x),
+			y: place.y * box.height + inward(place.y),
 		};
 		const charge = Math.abs(pin.x - box.width / 2) + Math.abs(pin.y - box.height / 2);
-		return centreHandicap(box, at, inset) + charge;
+		return centreHandicap(box, place, inset) + charge;
 	});
 	for (const total of totals) expect(total).toBeCloseTo(totals[0]!, 6);
 });
