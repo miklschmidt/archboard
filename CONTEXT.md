@@ -368,14 +368,15 @@ _Avoid_: viewport, screen, window, canvas size, page
 
 **Fit**:
 How large a drawing shows whole in the reference pane: the scale that fits it,
-capped at one. One measure on the scorecard, never the only one.
+capped at one. A guideline: it breaks ties between drawings that read equally
+well, and never outweighs how easily a drawing reads.
 _Avoid_: density, aspect ratio, zoom (that is the camera's)
 
 **Scorecard**:
-Every measure a reader pays for in one drawing, such as fit, page area, card
-share, route length, bends and crossings. One drawing is
-better than another when it is better on more of these than it is worse; no
-single measure decides.
+Every measure a reader pays for in one drawing. The reading measures decide:
+crossings, stacked and double-tracked lines, hooks, crowded ports and labels,
+bends and route length. Fit, page area and card share break ties between
+drawings that read equally well.
 _Avoid_: score, cost, quality metric
 
 ### Working

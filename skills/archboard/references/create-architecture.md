@@ -18,7 +18,7 @@ it connects to. Keep real parents and relationships intact when judging a
 picture; changing them to force placement changes the architecture. Stable
 subject identities also guide sibling ordering between variants; positions and rows
 are still chosen fresh in a top-to-bottom reading. Long paths may wrap into
-side-by-side downward columns when the completed picture fits the pane better,
+side-by-side downward columns when the completed picture fits the pane better and reads no worse,
 keeping containers and small branches together. The renderer chooses the column
 count; authors do not encode layout in the board.
 Relationships may share card ports when their kind, comparison standing and

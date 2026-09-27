@@ -55,6 +55,11 @@ direction rule above: every variant now chooses its own fresh layout.
 
 ## Fit in the reference pane is the measure
 
+[ADR 0039](0039-a-drawing-is-measured-by-how-easily-it-reads.md) supersedes
+this section: a drawing is measured first by how easily it reads, and fit is a
+guideline that breaks ties. The following paragraphs record the earlier
+decision.
+
 A layout change is measured by how the drawing fits the reference pane,
 together with the reader invariants: no route through a card, no fan of skips
 down a flank, bounded bends per route, and every label on a straight run of
