@@ -15,7 +15,7 @@ interface TextRun {
 	readonly role: "title" | "note" | "label";
 }
 
-/** Text and minimum dimensions supplied to the compound layout owner. */
+/** Text and minimum dimensions supplied to the layout engine. */
 interface MeasuredNode {
 	readonly node: SemanticNode;
 	readonly width: number;

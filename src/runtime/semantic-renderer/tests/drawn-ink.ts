@@ -242,8 +242,8 @@ function labelsOffRuns(drawing: RenderedDiagram): string[] {
 /**
  * How far each label sits from the nearer end of the line it names, which is
  * how far a reader tracing that line from either card goes before meeting its
- * words. Measured from the badge's centre, the point the renderer itself
- * places by (`lib/layout/label-runs.ts`).
+ * words. Measured from the badge's centre, the point the engines place a
+ * label by.
  * @param drawing The rendered board.
  * @returns The farthest and the middle distance, in page units.
  */

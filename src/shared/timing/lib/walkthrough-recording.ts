@@ -12,7 +12,7 @@
  * record: the pane registered and showing the board, the board drawn and at
  * rest, and the agent at a phase from which voice can start.
  *
- * A cold page fetches the bundle, lays the board out in its worker (elk and
+ * A cold page fetches the bundle, lays the board out in its worker (Graphviz and
  * libavoid in WebAssembly) and reads the workbench snapshot; a large board
  * takes a few seconds. It pulls against an agent that waits this long to be
  * told the server cannot record.

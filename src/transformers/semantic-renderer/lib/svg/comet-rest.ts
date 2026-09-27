@@ -15,7 +15,7 @@
 // to rest touching a junction dot, beside a place 20 px clear of it.
 import type { PaintedDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import { inflate, type Box, type Point } from "@/transformers/semantic-renderer/lib/geometry";
-import { ROUTE_LANE } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
+import { ROUTE_LANE } from "@/transformers/semantic-renderer/config";
 import {
 	curveBounds,
 	pointOnSegment,
