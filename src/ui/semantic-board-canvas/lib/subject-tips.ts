@@ -161,7 +161,7 @@ function labelTip(variant: SemanticVariant, target: TipTarget): SubjectTip | nul
 		.find((candidate) => candidate.id === target.id);
 	return step === undefined
 		? null
-		: { ...UNSAID, title: step.label, kind: `${step.kind} message`, appearance };
+		: { ...UNSAID, title: step.label, kind: messageKind(step.kind), appearance };
 }
 
 /**
@@ -173,6 +173,15 @@ function labelTip(variant: SemanticVariant, target: TipTarget): SubjectTip | nul
 function edgeTip(edge: SemanticEdge, appearance: AppliedAppearance | undefined): SubjectTip {
 	const kind = appearance?.typeName ?? edge.kind;
 	return { ...UNSAID, title: edge.label ?? kind, kind, appearance, body: edge.description };
+}
+
+/**
+ * What kind of message a step is, named as the other kinds are.
+ * @param kind The step's kind.
+ * @returns The name, such as "Sync message".
+ */
+function messageKind(kind: string): string {
+	return `${kind.charAt(0).toUpperCase()}${kind.slice(1)} message`;
 }
 
 /** The lines a label's tip leaves out unless it has them. */

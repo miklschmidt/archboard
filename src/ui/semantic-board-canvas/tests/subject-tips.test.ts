@@ -63,12 +63,12 @@ const VARIANT = SemanticVariantSchema.parse(
 function drawn(): SVGSVGElement {
 	document.body.innerHTML =
 		`<svg xmlns="http://www.w3.org/2000/svg">` +
-		`<g data-semantic-kind="region" data-semantic-id="c1"><rect id="frame"></rect><line id="rule"></line></g>` +
+		`<g data-semantic-kind="region" data-semantic-id="c1" data-type-name="System"><rect id="frame"></rect><line id="rule"></line></g>` +
 		`<g data-semantic-kind="node" data-semantic-id="n1"><rect id="card"></rect></g>` +
 		`<g data-semantic-kind="node" data-semantic-id="n2"><rect id="plain"></rect></g>` +
 		`<g data-semantic-kind="edge" data-semantic-id="e1" data-type-name="Calls"><path id="wire"></path></g>` +
 		`<g data-semantic-kind="edge" data-semantic-id="e1" data-semantic-part="label"><rect id="pill"></rect></g>` +
-		`<g data-semantic-kind="region" data-semantic-id="c1" data-semantic-part="header"><text id="title"></text></g>` +
+		`<g data-semantic-kind="region" data-semantic-id="c1" data-semantic-part="header"><g data-type-icon=""><svg id="icon"></svg></g><text id="title"></text></g>` +
 		`<g data-semantic-kind="node" data-semantic-id="n1" data-semantic-part="lifeline"><rect id="bar"></rect></g>` +
 		`</svg>`;
 	const rule = document.querySelector("#rule");
@@ -127,13 +127,15 @@ test("a label's tip names its words and the kind of line the picture draws them 
 
 test("a container answers the pointer on its header band, not across its frame", () => {
 	const picture = drawn();
-	const header = picture.querySelector('[data-semantic-part="header"]');
-	expect(tipTargetAt(at(picture, "title"), 0)?.anchor).toBe(header!);
-	expect(tipTargetAt(at(picture, "frame"), 20)?.anchor).toBe(header!);
+	const band = picture.querySelector('[data-semantic-part="header"]');
+	expect(tipTargetAt(at(picture, "title"), 0)?.anchor).toBe(band!);
+	expect(tipTargetAt(at(picture, "frame"), 20)?.anchor).toBe(band!);
 	expect(tipTargetAt(at(picture, "frame"), 60)).toBeNull();
-	expect(subjectTip(VARIANT, tipTargetAt(at(picture, "title"), 0)!, false)?.body).toBe(
-		"One process per vault.",
-	);
+	const header = subjectTip(VARIANT, tipTargetAt(at(picture, "title"), 0)!, false)!;
+	expect(header.body).toBe("One process per vault.");
+	// The frame carries the container's type; its header draws the kind's icon.
+	expect(header.appearance?.typeName).toBe("System");
+	expect(header.appearance?.iconSvg).toContain('id="icon"');
 });
 
 test("a double-click opens a card or a container by its header, and a lifeline has no tip", () => {
