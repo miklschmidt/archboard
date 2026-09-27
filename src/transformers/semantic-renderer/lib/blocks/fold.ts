@@ -13,8 +13,8 @@ import type {
 import { channelHeight } from "@/transformers/semantic-renderer/lib/track/spacing";
 import {
 	crossingsOf,
-	readsBetter,
 	scoreOf,
+	scoresBetter,
 	type Weighed,
 } from "@/transformers/semantic-renderer/lib/track/score";
 
@@ -80,27 +80,27 @@ function foldedSize(
 
 /**
  * The columns a block of cards would better fold into, if any: the cut of
- * its ranks into runs that reads best, when that beats the block unfolded by
- * a clear margin. Only the board and containers fold.
+ * its ranks into runs that scores best, when that beats the block unfolded
+ * by a clear margin. Only the board and containers fold.
  * @param block The block.
  * @param laid The block laid out unfolded.
  * @param insets Its insets.
- * @param score How readable the block is unfolded.
- * @returns Its items, column by column, and how readable the fold is
- * estimated to be; nothing when it stays whole.
+ * @param unfolded What the block is weighed on unfolded.
+ * @returns Its items, column by column, and what the fold is estimated to
+ * be weighed on; nothing when it stays whole.
  */
 function foldPlan(
 	block: Block,
 	laid: Laid,
 	insets: Insets,
-	score: number,
-): { items: string[][]; score: number } | undefined {
+	unfolded: Weighed,
+): { items: string[][]; weighed: Weighed } | undefined {
 	const bands = laid.bands.filter(({ items }) => items.length > 0);
 	const folds = (block.kind === "root" || block.kind === "frame") && bands.length >= 3;
-	const best = folds ? bestRuns(block, laid, bands, { insets, score }) : undefined;
+	const best = folds ? bestRuns(block, laid, bands, { insets, weighed: unfolded }) : undefined;
 	return best === undefined
 		? undefined
-		: { items: best.runs.map((run) => run.flatMap(({ items }) => items)), score: best.score };
+		: { items: best.runs.map((run) => run.flatMap(({ items }) => items)), weighed: best.weighed };
 }
 
 /**
@@ -164,23 +164,25 @@ function splits(cuts: readonly number[], spans: readonly [number, number][]): bo
 }
 
 /**
- * The runs of bands that read best folded, when they beat the bands unfolded
- * by a clear margin: each run is estimated at its size with the block's
- * crossings, less a share for every line between columns.
+ * The runs of bands that score best folded ({@link scoreOf}), when they beat
+ * the bands unfolded by a clear margin. Each run is estimated at its size
+ * with the block's own crossings, so a fold never trades a crossing for fit;
+ * what it trades is its lines between columns, the price of any fold, each
+ * weighed against the fit the fold gains.
  * @param block The block.
  * @param laid The block unfolded.
  * @param bands Its bands that hold items.
- * @param unfolded Its insets, and how readable it is unfolded.
+ * @param unfolded Its insets, and what it is weighed on unfolded.
  * @param unfolded.insets Its insets.
- * @param unfolded.score How readable it is unfolded.
- * @returns The runs and their estimated score, or nothing.
+ * @param unfolded.weighed What it is weighed on unfolded.
+ * @returns The runs and what they are estimated to be weighed on, or nothing.
  */
 function bestRuns(
 	block: Block,
 	laid: Laid,
 	bands: readonly Band[],
-	unfolded: { insets: Insets; score: number },
-): { runs: Band[][]; score: number } | undefined {
+	unfolded: { insets: Insets; weighed: Weighed },
+): { runs: Band[][]; weighed: Weighed } | undefined {
 	const crossings = crossingsOf(laid.lines.values());
 	const spans = clusterSpans(block, bands);
 	const folds = cutsOf(bands.length)
@@ -192,11 +194,11 @@ function bestRuns(
 			return { weighed: { ...size, crossings, bus: busLines(block, runs) }, runs };
 		});
 	const best = folds.reduce<{ weighed: Weighed; runs: Band[][] } | undefined>(
-		(one, other) => (one === undefined || readsBetter(other.weighed, one.weighed) ? other : one),
+		(one, other) => (one === undefined || scoresBetter(other.weighed, one.weighed) ? other : one),
 		undefined,
 	);
-	return best !== undefined && scoreOf(best.weighed) > unfolded.score * WORTH_FOLDING
-		? { runs: best.runs, score: scoreOf(best.weighed) }
+	return best !== undefined && scoreOf(best.weighed) > scoreOf(unfolded.weighed) * WORTH_FOLDING
+		? best
 		: undefined;
 }
 

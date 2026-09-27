@@ -23,7 +23,7 @@ import { fitIn } from "@/shared/shell-geometry/index";
  */
 const LINE_PER_CROSSING = 1000;
 
-/** How near two costs are for the page to decide between them: a twentieth. */
+/** How near the line two drawings that cross alike draw is for the page to decide between them: a twentieth. */
 const NEAR = 0.05;
 
 /** A drawing's page and every relationship's points, as drawn. */
@@ -207,22 +207,23 @@ function pairCrossings(lines: readonly (readonly Point[])[]): number {
 /**
  * What a drawing's lines cost: each crossing as the reader sees it, half as
  * much again for each line through it past the first, since a trunk drawn
- * far across the drawing crosses for every line it carries, and its line at
+ * far across the drawing crosses for every line it carries; and its line at
  * a crossing's worth for every run as long as a trunk pays to avoid one.
  * @param placed The drawing.
- * @returns The cost.
+ * @returns The crossings' cost and the line's.
  */
-function costOf(placed: Page): number {
+function costOf(placed: Page): { crossings: number; line: number } {
 	const points = placed.edges.map((line) => line.points);
 	const seen = crossingsOf(points);
-	return seen + (pairCrossings(points) - seen) / 2 + lineLength(points) / LINE_PER_CROSSING;
+	const crossings = seen + (pairCrossings(points) - seen) / 2;
+	return { crossings, line: lineLength(points) / LINE_PER_CROSSING };
 }
 
 /**
  * Whether one drawing reads better than another: it parts fewer joined
- * lines; or, as few, its lines cost much less; or, costing about as much,
- * its page fits the reference pane better, since two layouts that cost
- * the same can stand the board in very different shapes.
+ * lines; or, as few, its lines cost less; or, crossing alike and drawing
+ * about as much line, its page fits the reference pane better, since two
+ * layouts that read alike can stand the board in very different shapes.
  * @param one A drawing.
  * @param other Another.
  * @returns True when the first reads better.
@@ -230,10 +231,13 @@ function costOf(placed: Page): number {
 function drawsBetter(one: Drawn<Page>, other: Drawn<Page>): boolean {
 	const [parted, fewest] = [partedOf(one), partedOf(other)];
 	if (parted !== fewest) return parted < fewest;
-	const [cost, least] = [costOf(one.placed), costOf(other.placed)];
+	const [mine, theirs] = [costOf(one.placed), costOf(other.placed)];
+	const [cost, least] = [mine.crossings + mine.line, theirs.crossings + theirs.line];
 	const [fit, best] = [fitIn(one.placed), fitIn(other.placed)];
-	if (Math.abs(cost - least) > NEAR * Math.min(cost, least) || Math.abs(fit - best) < 1e-9)
-		return cost < least - 1e-9;
+	const alike =
+		Math.abs(mine.crossings - theirs.crossings) < 1e-9 &&
+		Math.abs(mine.line - theirs.line) <= NEAR * Math.min(mine.line, theirs.line);
+	if (!alike || Math.abs(fit - best) < 1e-9) return cost < least - 1e-9;
 	return fit > best;
 }
 
@@ -263,4 +267,4 @@ function layJoined<Placed extends Page>(
 	return best;
 }
 
-export { NEAR, joinWays, kindOf, layJoined, type Drawn };
+export { joinWays, kindOf, layJoined, type Drawn };

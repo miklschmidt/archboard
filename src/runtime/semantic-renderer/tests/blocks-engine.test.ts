@@ -12,6 +12,7 @@ import {
 	bodyShift,
 	corridorPoints,
 	routeCrosses,
+	routesCross,
 	routeEnds,
 	routePoints,
 	sharedStretches,
@@ -415,14 +416,18 @@ test("the lines of one channel take the track order that crosses least", async (
 	expect(crossings.value).toBeLessThanOrEqual(38);
 });
 
-// Taken from a board of this repository: laid with its groups packed as
-// blocks of their own it crossed fewer lines and drew a little less line,
-// but on a portrait page that fits the pane worse, its lines run round the
-// blocks. Packing is for a page the board's own ranks spread out.
-test("a board's groups are packed only where that fits the pane no worse", async () => {
+// Taken from a board of this repository: drawn inline, 'admits writes' from
+// HTTP application ran through the Board writes band across ten other
+// lines; with its groups packed as blocks of their own the board crosses
+// less, on a portrait page that fits the pane worse. A board's groups are
+// packed where that reads better and draws no more line, on whatever page.
+test("a board's groups are packed where that reads better, on whatever page", async () => {
 	const content = orderedFixture(archboardServer);
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
-	expect(drawing.width).toBeGreaterThan(drawing.height);
+	const routes = [...corridorPoints(drawing.svg)];
+	const admits = routes.find(([id]) => id === "W2BXIpq7")![1];
+	const crossed = routes.filter(([id, points]) => id !== "W2BXIpq7" && routesCross(admits, points));
+	expect(crossed.length).toBeLessThanOrEqual(1);
 });
 
 // Taken from the IIS migration board: a line into a container itself ends on a

@@ -12,7 +12,7 @@ import {
 	type Side,
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
-import { crossingsOf, scoreOf } from "@/transformers/semantic-renderer/lib/track/score";
+import { crossingsOf, type Weighed } from "@/transformers/semantic-renderer/lib/track/score";
 
 /** How far a trunk keeps from a block it passes. */
 const TRUNK_CLEARANCE = 16;
@@ -94,28 +94,34 @@ function detourOf(points: readonly Point[]): number {
 }
 
 /**
- * How readable a layout is, on the score every layout choice is made by,
- * with the room its lines spend running round what they pass counted as
- * crossings at the trunk router's own rate.
+ * What a layout is weighed on, as every layout choice weighs it, with the
+ * room its lines spend running round what they pass counted as crossings at
+ * the trunk router's own rate.
  * @param page The layout's size.
  * @param page.width Its width.
  * @param page.height Its height.
  * @param lines Every line's points.
- * @returns The score.
+ * @returns Its page and crossings.
  */
-function routedScore(page: { width: number; height: number }, lines: readonly Point[][]): number {
+function routedWeighed(
+	page: { width: number; height: number },
+	lines: readonly Point[][],
+): Weighed {
 	const detour = lines.reduce((sum, points) => sum + detourOf(points), 0);
-	const crossings = crossingsOf(lines) + detour / TRUNK_CROSSING;
-	return scoreOf({ width: page.width, height: page.height, crossings });
+	return {
+		width: page.width,
+		height: page.height,
+		crossings: crossingsOf(lines) + detour / TRUNK_CROSSING,
+	};
 }
 
 /**
- * How readable a block of blocks reads laid out, its trunks' detours counted.
+ * What a block of blocks is weighed on laid out, its trunks' detours counted.
  * @param laid The block laid out.
- * @returns The score.
+ * @returns Its page and crossings.
  */
-function packedScore(laid: Laid): number {
-	return routedScore(laid, [...laid.lines.values()]);
+function packedWeighed(laid: Laid): Weighed {
+	return routedWeighed(laid, [...laid.lines.values()]);
 }
 
 /**
@@ -372,4 +378,4 @@ class TrunkRouter {
 	}
 }
 
-export { TRUNK_CLEARANCE, TrunkRouter, packedScore, roomNeeded, routedScore };
+export { TRUNK_CLEARANCE, TrunkRouter, packedWeighed, roomNeeded, routedWeighed };

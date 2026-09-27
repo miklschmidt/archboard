@@ -1,0 +1,239 @@
+{
+	"nodes": [
+		{
+			"id": "nmyK8UOO",
+			"order": 1000,
+			"name": "View dispatcher",
+			"kind": "module",
+			"responsibility": "Measures, settles and paints one drawing, in that order"
+		},
+		{
+			"id": "kHpIix5b",
+			"order": 2000,
+			"name": "Measured text",
+			"kind": "function",
+			"responsibility": "Wraps every card, note and label and measures what the SVG will paint"
+		},
+		{
+			"id": "BKjOFlgb",
+			"order": 3000,
+			"name": "Compound layout",
+			"kind": "function",
+			"responsibility": "Settles cards, frames, routes and labels as one drawing, and keeps a column fold only when it fits the pane better"
+		},
+		{
+			"id": "H0xU45vp",
+			"order": 4000,
+			"name": "Architecture painter",
+			"kind": "function",
+			"responsibility": "Paints the settled drawing and decides no geometry of its own"
+		},
+		{
+			"id": "RvOyWmEb",
+			"order": 5000,
+			"name": "Pretext",
+			"kind": "external",
+			"responsibility": "Breaks a prepared string into lines at a given width"
+		},
+		{
+			"id": "dYxhsEhY",
+			"order": 6000,
+			"name": "Host canvas",
+			"kind": "external",
+			"responsibility": "The canvas of whatever draws the picture, with the diagram faces loaded"
+		},
+		{
+			"id": "ZRFUJrjD",
+			"order": 7000,
+			"name": "Compound graph",
+			"kind": "function",
+			"responsibility": "States containment, measured sizes, authored order, relationship kinds and comparison standing as one graph"
+		},
+		{
+			"id": "JwgvpLYJ",
+			"order": 8000,
+			"name": "Layout engine",
+			"kind": "function",
+			"responsibility": "Places, folds and routes one graph inside a layout worker"
+		},
+		{
+			"id": "sJEdCSmX",
+			"order": 9000,
+			"name": "Column folds",
+			"kind": "function",
+			"responsibility": "Names the column counts a settled drawing could fold into, and folds a placement into that many columns"
+		},
+		{
+			"id": "1hNZb5CR",
+			"order": 12000,
+			"name": "Label reservations",
+			"kind": "function",
+			"responsibility": "Reserves layout space for a label no run of its route can hold, and releases reservations a label no longer uses"
+		},
+		{
+			"id": "QhftMIRP",
+			"order": 8250,
+			"name": "Graphviz placement",
+			"kind": "function",
+			"responsibility": "Places cards and frames with Graphviz's ranking across clusters, keeping containment"
+		},
+		{
+			"id": "afquGGyY",
+			"order": 8500,
+			"name": "Obstacle routing",
+			"kind": "function",
+			"responsibility": "Routes every relationship orthogonally around cards and unrelated frames, through shared ports per relationship kind"
+		},
+		{
+			"id": "KdNM1Q56",
+			"order": 10000,
+			"name": "Graphviz",
+			"kind": "external",
+			"responsibility": "Ranks a clustered graph and places its nodes"
+		},
+		{
+			"id": "LCcblgyC",
+			"order": 11000,
+			"name": "libavoid",
+			"kind": "external",
+			"responsibility": "Routes orthogonal connectors around obstacle shapes"
+		}
+	],
+	"edges": [
+		{
+			"id": "TPRWw9F4",
+			"order": 1000,
+			"from": "nmyK8UOO",
+			"to": "kHpIix5b",
+			"kind": "call",
+			"label": "measure every word",
+			"emphasis": "hero"
+		},
+		{
+			"id": "19pjtjrv",
+			"order": 2000,
+			"from": "kHpIix5b",
+			"to": "RvOyWmEb",
+			"kind": "call",
+			"label": "prepare and wrap",
+			"emphasis": "normal"
+		},
+		{
+			"id": "aESGqkun",
+			"order": 3000,
+			"from": "RvOyWmEb",
+			"to": "dYxhsEhY",
+			"kind": "dependency",
+			"label": "measures its segments there",
+			"emphasis": "normal"
+		},
+		{
+			"id": "notKnIIz",
+			"order": 4000,
+			"from": "nmyK8UOO",
+			"to": "BKjOFlgb",
+			"kind": "call",
+			"label": "content and measured sizes",
+			"emphasis": "hero"
+		},
+		{
+			"id": "TSsnxsV9",
+			"order": 5000,
+			"from": "kHpIix5b",
+			"to": "dYxhsEhY",
+			"kind": "call",
+			"label": "the width of a painted line",
+			"emphasis": "normal"
+		},
+		{
+			"id": "eNHrvq6Y",
+			"order": 6000,
+			"from": "BKjOFlgb",
+			"to": "sJEdCSmX",
+			"kind": "call",
+			"label": "column counts that could fit better",
+			"emphasis": "normal"
+		},
+		{
+			"id": "lbUaPzWc",
+			"order": 8000,
+			"from": "BKjOFlgb",
+			"to": "ZRFUJrjD",
+			"kind": "call",
+			"label": "state the graph",
+			"emphasis": "normal"
+		},
+		{
+			"id": "wCXK6KYw",
+			"order": 9000,
+			"from": "BKjOFlgb",
+			"to": "JwgvpLYJ",
+			"kind": "call",
+			"label": "solve, through the host",
+			"emphasis": "hero"
+		},
+		{
+			"id": "hJ4xGthq",
+			"order": 10000,
+			"from": "BKjOFlgb",
+			"to": "1hNZb5CR",
+			"kind": "call",
+			"label": "reserve space for labels no run holds",
+			"emphasis": "normal"
+		},
+		{
+			"id": "oYEzQ4k5",
+			"order": 13000,
+			"from": "nmyK8UOO",
+			"to": "H0xU45vp",
+			"kind": "render",
+			"label": "paint the settled drawing",
+			"emphasis": "hero"
+		},
+		{
+			"id": "T4hTbGVM",
+			"order": 14000,
+			"from": "JwgvpLYJ",
+			"to": "QhftMIRP",
+			"kind": "call",
+			"label": "place cards and frames",
+			"emphasis": "hero"
+		},
+		{
+			"id": "S5js7d30",
+			"order": 15000,
+			"from": "JwgvpLYJ",
+			"to": "sJEdCSmX",
+			"kind": "call",
+			"label": "fold into the chosen columns",
+			"emphasis": "normal"
+		},
+		{
+			"id": "Qvp9SqT5",
+			"order": 16000,
+			"from": "JwgvpLYJ",
+			"to": "afquGGyY",
+			"kind": "call",
+			"label": "route every relationship",
+			"emphasis": "hero"
+		},
+		{
+			"id": "Md6tqK1p",
+			"order": 17000,
+			"from": "QhftMIRP",
+			"to": "KdNM1Q56",
+			"kind": "call",
+			"label": "rank and place the clusters",
+			"emphasis": "normal"
+		},
+		{
+			"id": "PYJsIDYm",
+			"order": 18000,
+			"from": "afquGGyY",
+			"to": "LCcblgyC",
+			"kind": "call",
+			"label": "orthogonal routes around obstacles",
+			"emphasis": "normal"
+		}
+	]
+}
