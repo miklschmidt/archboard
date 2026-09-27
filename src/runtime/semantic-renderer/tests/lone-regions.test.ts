@@ -12,7 +12,7 @@ import { expect, test } from "bun:test";
 import type { RenderedDiagram } from "@/runtime/semantic-renderer/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
-import type { VariantContent } from "@/shared/semantic-board/index";
+import { placingGroups, type VariantContent } from "@/shared/semantic-board/index";
 import { routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink";
 import {
 	bodyShift,
@@ -87,13 +87,16 @@ function drawn(content: VariantContent, layout: Engine): Promise<RenderedDiagram
  * @returns Their ids.
  */
 function loneNodes(content: VariantContent): string[] {
+	const placing = placingGroups(content.nodes, policy);
 	return content.nodes
-		.filter(({ groups }) => groups?.[0] !== undefined)
+		.filter(({ id }) => placing.has(id))
 		.filter(
 			(node) =>
 				!content.nodes.some(
 					(other) =>
-						other !== node && other.parent === node.parent && other.groups?.[0] === node.groups![0],
+						other !== node &&
+						other.parent === node.parent &&
+						placing.get(other.id) === placing.get(node.id),
 				),
 		)
 		.map(({ id }) => id);
