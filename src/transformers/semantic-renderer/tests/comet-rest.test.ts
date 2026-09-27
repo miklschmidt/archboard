@@ -5,11 +5,12 @@
 // label), so where its line has room the streak rests a lane from the label,
 // a label standing beside the line as well as one across it; and a streak on
 // a crossing's hop or on a stretch two lines share reads as either line's
-// traffic, so it keeps a lane from those too, and where it has no lane's
-// room it keeps off them before it keeps its tail from under a label.
+// traffic, so it keeps a lane from those too, whichever line carries the
+// hop, and where it has no lane's room it keeps off them before it keeps its
+// tail from under a label.
 
 import { expect, test } from "bun:test";
-import { restingPlace } from "@/transformers/semantic-renderer/layout";
+import { meetingPlaces, restingPlace } from "@/transformers/semantic-renderer/layout";
 
 /** The pitch of neighbouring parallel lines. */
 const ROUTE_LANE = 16;
@@ -133,4 +134,28 @@ test("a resting streak with no lane's room keeps the most room it can", () => {
 	];
 	const rest = restingPlace(ride, 70, { glow: GLOW, body: 0 }, { labels: [], met: dots });
 	expect(Math.min(...dots.map((dot) => gapTo(rest, 0, dot)))).toBeGreaterThanOrEqual(15.5);
+});
+
+test("a resting streak keeps a lane from a hop another line makes over its own", () => {
+	const body = 20;
+	// A line across the line down, hopping it half way down.
+	const across = {
+		from: { x: -100, y: 150 },
+		segments: [{ kind: "line" as const, to: { x: 100, y: 150 } }],
+	};
+	const hop = {
+		from: { x: -6, y: 150 },
+		segments: [{ kind: "line" as const, to: { x: 6, y: 150 } }],
+	};
+	const met = meetingPlaces({
+		edges: [
+			{ edge: { id: "down" }, curve: RIDE },
+			{ edge: { id: "across" }, curve: across },
+		],
+		bridged: { bridges: [{ edgeId: "across", under: ["down"], curve: hop }] },
+	}).get("down")!;
+	const rest = restingPlace(RIDE, 300, { glow: GLOW, body }, { labels: [], met });
+	expect(gapTo(rest, body, { x: -6, y: 150, width: 12, height: 0 })).toBeGreaterThanOrEqual(
+		GLOW + ROUTE_LANE - 0.5,
+	);
 });
