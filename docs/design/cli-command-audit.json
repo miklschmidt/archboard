@@ -1634,13 +1634,13 @@
 			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/semantic-compare.ts",
 			"stdout": "json object",
-			"result": "one variant against its direct predecessor: every part, relationship, sequence, step, walkthrough and beat either of them has, its standing, and the fields that moved",
+			"result": "one variant against the variant it is read against (the current variant, or on a board with none its direct predecessor; --against names another): every part, relationship, sequence, step, walkthrough and beat either of them has, its standing, and the fields that moved",
 			"diagnostics": "counts and one line per relationship that moved on stderr; usage/refusal on stderr",
 			"exits": [0, 1, 2, 3],
 			"prerequisites": ["server"],
 			"relationships": ["GET /api/semantic-boards/board"],
-			"semantics": "derived from the whole variant before any view narrows it, by the same pure comparison the canvas and the renderer overlay run; relationships and steps carry the endpoints they now have, named as well as identified, and a root architecture is refused",
-			"ordering": "read the board, resolve the variant, resolve its predecessor, compare, then print",
+			"semantics": "derived from the whole variant before any view narrows it, by the same pure comparison the canvas and the renderer overlay run; relationships and steps carry the endpoints they now have, named as well as identified; with no --against, the current variant and a first draft on a board with no current variant are refused",
+			"ordering": "read the board, resolve the variant, resolve the variant it is read against, compare, then print",
 			"nextFields": ["edges[].standing", "edges[].toName", "nodes[].fields[].field"],
 			"workflow": "necessary composition",
 			"effects": ["read"],
@@ -1650,7 +1650,7 @@
 					"exit": 3
 				},
 				{
-					"code": "NO_PREDECESSOR",
+					"code": "NOTHING_TO_COMPARE",
 					"exit": 2
 				}
 			],

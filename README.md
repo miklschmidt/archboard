@@ -30,9 +30,11 @@ Archboard does these things:
   one or a proposal.
 - It draws each board in the browser. It also renders a board to an SVG or a
   PNG file, and the same board always gives the same picture.
-- It compares a proposal with the variant that the proposal was branched from.
-  The picture marks the parts and relationships that the proposal adds,
-  changes or removes.
+- It compares every variant with the current one: a proposal, and also an
+  older, historical variant. The picture marks the parts and relationships
+  that the variant adds, changes or removes compared with the current one. A
+  board that nobody has built yet has no current variant, so there a proposal
+  is compared with the variant that it was branched from.
 - It binds a node to a path in a repository, so you can open the code that the
   node stands for. A node is one part of the system on a board.
 - It narrates a walkthrough with the Codex voice while you step through it, and
