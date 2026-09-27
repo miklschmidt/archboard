@@ -9,10 +9,8 @@
 // that would bend a line that ran straight on the moved station's other side
 // is not made.
 //
-// In a block of cards the Blocks engine lays out, a step of any width at a
-// label that turns its line back against its last step is closed the same
-// way: the line ran out one way to its label and back the other to reach its
-// card.
+// Drawn as blocks, a step at a label of any width that turns its line back
+// against its last step is closed the same way.
 //
 // A card a line enters on top and another leaves at the bottom a few points
 // over is such a step too: the two read as one line through the card with a
@@ -93,21 +91,6 @@ function turnsBack(route: readonly Net[], index: number): boolean {
 	const before = route.slice(0, index).findLast((one) => step(one) > STRAIGHT);
 	if (before === undefined || step(net) <= STRAIGHT) return false;
 	return Math.sign(net.bottomX - net.topX) !== Math.sign(before.bottomX - before.topX);
-}
-
-/**
- * Whether a step back at a label is closed ({@link turnsBack}): in a block of
- * cards the Blocks engine lays out, not drawn inline, where a label below a
- * container stands there for the band spacing that keeps it off the
- * container's wall, and moved onto the column beside the wall it stood the
- * card below out past the wall (`track-placement.test.ts`).
- * @param scene The scene.
- * @param route The line's nets, top to bottom.
- * @param index The net's place in it.
- * @returns True when it is.
- */
-function backAt(scene: Scene, route: readonly Net[], index: number): boolean {
-	return !scene.inline && turnsBack(route, index);
 }
 
 /**
@@ -413,9 +396,9 @@ function close(
  * round it from where a stretch ends on it: each line that leaves its other
  * face at the same x, and the straight stretch beyond. Moving the stretch's
  * end alone would step the two through the card, so they move with it: in
- * Reading a board (Track),
- * the line out of Pane session kept a step of 16 px under its region, since
- * its port could not move without notching the line into Pane session.
+ * Reading a board (Track), the line out of Pane session kept a step of 16 px
+ * under its region, since its port could not move without notching the line
+ * into Pane session.
  * @param routes Every line's nets, top to bottom.
  * @param last The stretch's last station, with the net arriving at it.
  * @param last.station The station.
@@ -537,9 +520,12 @@ function closeCardStep(
 
 /**
  * Close every step too short for its two bends that a move can close, and,
- * in the first pass only, every step back at a label ({@link turnsBack}):
- * most such steps run round something and no move closes them, and tried in
- * every pass they made Archboard server whole (Track) 5% slower to lay out.
+ * in the first pass of a block the Blocks engine lays out, every step back
+ * at a label ({@link turnsBack}): drawn inline, the band spacing stands a
+ * label below a container, and moved beside its wall the label stood the
+ * card below out past it (`track-placement.test.ts`); and most such steps
+ * run round something, which tried in every pass cost Archboard server
+ * whole (Track) 5% more time.
  * @param scene The scene, its ports placed.
  * @param chains Every relationship's chain.
  * @param routes Every line's nets, top to bottom.
@@ -556,7 +542,8 @@ function closeJogs(
 	for (let pass = 0; pass < PASSES; pass += 1) {
 		const closed = routes.flatMap((route) =>
 			route.map((net, index) =>
-				(kinked(net) || (pass === 0 && backAt(scene, route, index))) && net.wall === undefined
+				(kinked(net) || (pass === 0 && !scene.inline && turnsBack(route, index))) &&
+				net.wall === undefined
 					? close(scene, chains, { routes, nets }, { route, index }, kept)
 					: false,
 			),
