@@ -98,4 +98,23 @@ function hops(bridge: { readonly curve: DrawingEdge["curve"] }): boolean {
 	return bridge.curve.segments.length > 1;
 }
 
-export { across, bridged, down, drawing, hops };
+/**
+ * How far a hop reaches from where it leaves its line, each way across it:
+ * a hop over a line across bulges up (negative) or down (positive), one over
+ * a line down left (negative) or right (positive).
+ * @param bridge A hop.
+ * @param bridge.curve Its curve.
+ * @returns Its reach to either side of its line.
+ */
+function bulgeOf(bridge: { readonly curve: DrawingEdge["curve"] }): {
+	readonly least: number;
+	readonly most: number;
+} {
+	const { from, segments } = bridge.curve;
+	// A hop ends where it began along its line: level with it on a line across.
+	const axis = segments.at(-1)!.to.y === from.y ? "y" : "x";
+	const offsets = segments.map((segment) => segment.to[axis] - from[axis]);
+	return { least: Math.min(0, ...offsets), most: Math.max(0, ...offsets) };
+}
+
+export { across, bridged, bulgeOf, down, drawing, hops };

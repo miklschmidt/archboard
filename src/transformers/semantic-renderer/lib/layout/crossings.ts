@@ -20,15 +20,17 @@
 // bend's room past its feet, except in those last two steps, where less will
 // do over a solid line: a crossing with no arc reads as none.
 //
+// A crossing no plan settles still hops where a hop fits: the line that would
+// stay whole rises over it alone, else the other line, even a dashed one over
+// a solid one and even out of step with its cluster. A crossing with no arc
+// reads as no crossing, least of all a dashed line's gap among its own.
+//
 // Only where no hop stands is a line cut: the line that joins there stays
-// whole, else the weightier, the solid, the straighter, the later-painted. A
+// whole, else a dashed one over a solid one, whose gap would be lost among
+// its own; else the weightier, the solid, the straighter, the later-painted. A
 // trunk is one drawn line (`drawn-lines.ts`): a line crosses it once, and it
 // hops as its drawer does.
-import {
-	BEND_RADIUS,
-	BRIDGE_CLEARANCE,
-	BRIDGE_RADIUS,
-} from "@/transformers/semantic-renderer/lib/design";
+import { BEND_RADIUS, BRIDGE_RADIUS } from "@/transformers/semantic-renderer/lib/design";
 import type {
 	ArchitectureDrawing,
 	DrawingEdge,
@@ -37,7 +39,6 @@ import type {
 import { cornerClearances } from "@/transformers/semantic-renderer/lib/layout/corner-crossings";
 import type { Curve } from "@/transformers/semantic-renderer/lib/layout/curves";
 import {
-	along,
 	crossingKey,
 	crossingOf,
 	drawnCrossings,
@@ -50,6 +51,12 @@ import {
 	type Line,
 	type Run,
 } from "@/transformers/semantic-renderer/lib/layout/drawn-lines";
+import {
+	atOn,
+	clustersOf,
+	sidesOf,
+	type Cluster,
+} from "@/transformers/semantic-renderer/lib/layout/crossing-clusters";
 import { unfoldCrossings } from "@/transformers/semantic-renderer/lib/layout/folded-crossings";
 import {
 	crestAlong,
@@ -57,8 +64,10 @@ import {
 	HOP_MARGIN,
 	keepoutsOf,
 	lookOf,
+	nearOwnHead,
 	passesBeneath,
 	replaceRuns,
+	type Bulge,
 	type Hop,
 	type HopScene,
 } from "@/transformers/semantic-renderer/lib/layout/hop-geometry";
@@ -78,19 +87,8 @@ const STRAIGHTER = 0.5;
 /** How near a join a cut must be to keep the joining line whole: within a hop's radius. */
 const JOIN_REACH = BRIDGE_RADIUS;
 
-/** How close two crossings along one line are for hops on it to touch: one cluster. */
-const CLUSTER_REACH = (BRIDGE_RADIUS + BRIDGE_CLEARANCE) * 2;
-
 /** How much each emphasis weighs when choosing the line that rises. */
 const WEIGHT = { hero: 2, normal: 1, muted: 0 } as const;
-
-/** Crossings along one run close enough that hops on it would touch. */
-interface Cluster {
-	readonly run: Run;
-	/** Which of each crossing's lines the run draws: the line across, or the line down. */
-	readonly side: 0 | 1;
-	readonly crossings: readonly DrawnCrossing[];
-}
 
 /** One run rising over some crossings of one of its clusters, under one hop or crest. */
 interface Rise {
@@ -120,71 +118,6 @@ interface Settling extends HopScene {
 	/** Pairs of pieces whose contact is marked. */
 	readonly crossed: Set<string>;
 	readonly settled: Set<DrawnCrossing>;
-}
-
-/**
- * A crossing's line along a cluster, and the other.
- * @param cluster The cluster.
- * @param crossing A crossing of it.
- * @returns The cluster's line there and the line crossing it.
- */
-function sidesOf(cluster: Cluster, crossing: DrawnCrossing): readonly [Line, Line] {
-	return [crossing.lines[cluster.side], crossing.lines[1 - cluster.side]!];
-}
-
-/**
- * Where a crossing lies along a run.
- * @param run The run.
- * @param crossing A crossing on it.
- * @returns The distance from the run's start.
- */
-function atOn(run: Run, crossing: DrawnCrossing): number {
-	return along(run, crossing.point[run.axis]);
-}
-
-/**
- * Crossings along one run, in order, split where hops on it would not touch.
- * @param run The run.
- * @param crossings Its crossings.
- * @returns The groups.
- */
-function groupsAlong(run: Run, crossings: readonly DrawnCrossing[]): DrawnCrossing[][] {
-	const groups: DrawnCrossing[][] = [];
-	let previous: number | undefined;
-	for (const crossing of crossings.toSorted((a, b) => atOn(run, a) - atOn(run, b))) {
-		const at = atOn(run, crossing);
-		if (previous === undefined || at - previous > CLUSTER_REACH) groups.push([]);
-		groups.at(-1)!.push(crossing);
-		previous = at;
-	}
-	return groups;
-}
-
-/**
- * The clusters along every run, and each crossing's cluster along each of
- * its lines.
- * @param crossings Every crossing.
- * @returns The clusters, and each crossing's two, the one across first.
- */
-function clustersOf(
-	crossings: readonly DrawnCrossing[],
-): readonly [Cluster[], Map<DrawnCrossing, [Cluster, Cluster]>] {
-	const clusters = ([0, 1] as const).flatMap((side) => {
-		const runs = [...new Set(crossings.map((crossing) => crossing.lines[side].drawer))];
-		return runs.flatMap((run) => {
-			const on = crossings.filter((crossing) => crossing.lines[side].drawer === run);
-			return groupsAlong(run, on).map((group) => ({ run, side, crossings: group }));
-		});
-	});
-	const of = new Map<DrawnCrossing, [Cluster, Cluster]>();
-	for (const cluster of clusters) {
-		for (const crossing of cluster.crossings) {
-			const both = of.get(crossing) ?? [cluster, cluster];
-			both[cluster.side] = cluster;
-			of.set(crossing, both);
-		}
-	}
-	return [clusters, of];
 }
 
 /**
@@ -235,7 +168,9 @@ function crestOf(
 	const curve = crestAlong(state.runs, run, places, room);
 	if (curve === undefined) return undefined;
 	const beneath = rise.crossings.map((crossing) => sidesOf(rise.cluster, crossing)[1].drawer);
-	return crowded(state, run, beneath, curve, pending) ? undefined : curve;
+	return crowded(state, run, beneath, curve, pending) || nearOwnHead(state, run, curve)
+		? undefined
+		: curve;
 }
 
 /**
@@ -388,9 +323,6 @@ function planOf(
 		leadOver(state, upper, lower),
 	);
 	if (leads.some((lead) => lead === undefined)) return [];
-	// A dashed line cut beneath a solid one still reads as crossed; it is not
-	// worth a hop beside a bend.
-	if (room === LEAST_ROOM && leads.every((lead) => lead![1] > 0)) return [];
 	const weight = Math.min(...leads.map((lead) => lead![0]));
 	const roomy = Math.min(ROOM_CAP, ...rises.map((rise) => roomOf(state.runs, rise)));
 	const painted = Math.max(-1, ...rises.map((rise) => rise.cluster.run.edgeIndex));
@@ -482,14 +414,64 @@ function byKey(a: Plan, b: Plan): number {
 }
 
 /**
+ * Hop a crossing no plan settled: the line that would stay whole where it is
+ * cut rises over it alone first, then the other line, with the least room;
+ * bulging the usual way first, then, where only the other side is clear of a
+ * bend, the other way. A crossing where a line joins or parts is left to be
+ * cut clear of the join.
+ * @param state What is settled so far, extended in place.
+ * @param crossing The crossing.
+ * @returns True when a hop stands.
+ */
+function hopAlone(state: Settling, crossing: DrawnCrossing): boolean {
+	const [joined, firstStays] = upperOf(state, crossing);
+	if (joined) return false;
+	const [first, second] = state.clusters.get(crossing)!;
+	const order = firstStays ? [first, second] : [second, first];
+	return ([1, -1] as const).some((bulge) =>
+		order.some((cluster) => riseAlone(state, cluster, crossing, bulge)),
+	);
+}
+
+/**
+ * Stand one line's hop over a single crossing, where the line has the least
+ * room a hop needs, the line beneath runs straight under it, and nothing
+ * crowds it.
+ * @param state What is settled so far, extended in place.
+ * @param cluster The rising line's cluster.
+ * @param crossing The crossing.
+ * @param bulge Which way the hop bulges.
+ * @returns True when it stands.
+ */
+function riseAlone(
+	state: Settling,
+	cluster: Cluster,
+	crossing: DrawnCrossing,
+	bulge: Bulge,
+): boolean {
+	const { run } = cluster;
+	const beneath = sidesOf(cluster, crossing)[1].drawer;
+	if (!passesBeneath(state.runs, beneath, crossing.point, bulge)) return false;
+	const curve = crestAlong(state.runs, run, [atOn(run, crossing)], LEAST_ROOM, bulge);
+	if (curve === undefined || crowded(state, run, [beneath], curve, [])) return false;
+	if (nearOwnHead(state, run, curve)) return false;
+	stand(state, { cluster, crossings: [crossing] }, curve);
+	return true;
+}
+
+/**
  * Cut one line beneath the other where no hop stands, clear of the join's
- * mark when there is one.
+ * mark when there is one, and never a dashed line beneath a solid one.
  * @param state What is settled so far, extended in place.
  * @param crossing The crossing.
  */
 function cut(state: Settling, crossing: DrawnCrossing): void {
 	const { edges } = state.drawing;
-	const [joined, oneAbove] = upperOf(state, crossing);
+	const [joined, above] = upperOf(state, crossing);
+	// A dashed or dotted line's gap is lost among its own, so where one crosses
+	// a solid line with no hop, the solid line is cut and the dashed stays whole.
+	const [oneSolid, otherSolid] = crossing.lines.map((line) => standingOf(state, line)[1]);
+	const oneAbove = joined || oneSolid === otherSolid ? above : oneSolid! < otherSolid!;
 	const [one, other] = crossing.lines;
 	const [upper, lower] = oneAbove ? [one, other] : [other, one];
 	state.settled.add(crossing);
@@ -562,7 +544,9 @@ function bridgeCrossings(
 	};
 	const plans = clusters.flatMap((cluster) => plansOf(state, cluster)).toSorted(byKey);
 	for (const plan of plans) attempt(state, plan);
-	for (const crossing of crossings.filter((one) => !state.settled.has(one))) cut(state, crossing);
+	for (const crossing of crossings) {
+		if (!state.settled.has(crossing) && !hopAlone(state, crossing)) cut(state, crossing);
+	}
 	return {
 		edges: edges.map((edge, index) => replaceRuns(edge, state.replacements[index]!)),
 		bridges: [...state.bridges, ...cornerClearances(edges, runs, state.crossed)],

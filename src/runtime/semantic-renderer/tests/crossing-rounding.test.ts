@@ -7,57 +7,51 @@ import {
 	type ArchitectureDrawing,
 	type DrawingEdge,
 } from "@/runtime/semantic-renderer/layout";
-import { bridged, drawing } from "./fixed-routes";
-
-/**
- * Whether a curve is one straight piece along x or y.
- * @param curve A crossing's cut.
- * @returns True when it is.
- */
-function straightPiece(curve: DrawingEdge["curve"]): boolean {
-	const [segment] = curve.segments;
-	return (
-		curve.segments.length === 1 &&
-		segment?.kind === "line" &&
-		(segment.to.x === curve.from.x || segment.to.y === curve.from.y)
-	);
-}
+import { bridged, bulgeOf, drawing, hops } from "./fixed-routes";
 
 // Cloud Infrastructure, Common-WebLib and every engine's hop-on-bend: a hop
-// over a turn, or beside its own, fuses with the turn into a knot.
-test("a crossing is cut beneath the straight line where the other turns under the crest and has no room to rise", () => {
-	for (const routes of [
-		// The other route turns four units past the crossing, toward the crest.
+// over a turn, or beside its own, fuses with the turn into a knot; and a cut
+// in its place read as no crossing at all (the user, 2026-09-27).
+test("where the other line turns just past a crossing, the straight line hops it bulging away from the turn", () => {
+	for (const [routes, away] of [
+		// The other route turns four units past the crossing, to the right.
 		[
 			[
-				{ x: 0, y: -60 },
-				{ x: 0, y: 100 },
+				[
+					{ x: 0, y: -60 },
+					{ x: 0, y: 100 },
+				],
+				[
+					{ x: -120, y: 0 },
+					{ x: 12, y: 0 },
+					{ x: 12, y: 80 },
+				],
 			],
-			[
-				{ x: -120, y: 0 },
-				{ x: 12, y: 0 },
-				{ x: 12, y: 80 },
-			],
+			"left",
 		],
-		// ... or eight units past it.
+		// ... or eight units past it, above.
 		[
 			[
-				{ x: 0, y: 50 },
-				{ x: 100, y: 50 },
+				[
+					{ x: 0, y: 50 },
+					{ x: 100, y: 50 },
+				],
+				[
+					{ x: 50, y: 100 },
+					{ x: 50, y: 34 },
+					{ x: 100, y: 34 },
+				],
 			],
-			[
-				{ x: 50, y: 100 },
-				{ x: 50, y: 34 },
-				{ x: 100, y: 34 },
-			],
+			"down",
 		],
-	]) {
-		const before = drawing(routes);
-		const result = bridged(before);
-		expect(result.edges).toEqual(before.edges);
+	] as [Parameters<typeof drawing>[0], "left" | "down"][]) {
+		const result = bridged(drawing(routes));
 		expect(result.bridges).toHaveLength(1);
-		expect(result.bridges[0]).toMatchObject({ edgeId: "0", under: ["1"] });
-		expect(straightPiece(result.bridges[0]!.curve)).toBe(true);
+		const [bridge] = result.bridges;
+		expect(bridge).toMatchObject({ edgeId: "0", under: ["1"] });
+		expect(hops(bridge!)).toBe(true);
+		const { least, most } = bulgeOf(bridge!);
+		expect(away === "left" ? most : Math.abs(least), `bulges ${away}`).toBe(0);
 	}
 });
 

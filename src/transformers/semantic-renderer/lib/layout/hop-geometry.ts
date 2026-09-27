@@ -59,6 +59,12 @@ const BOX_CLEARANCE = BRIDGE_CLEARANCE * 2;
  */
 const CROSSWISE_CLEARANCE = BRIDGE_RADIUS;
 
+/**
+ * Which way a hop bulges: up from a line across and right of a line down, or,
+ * for a lone hop only the other side has room for, the other way.
+ */
+type Bulge = 1 | -1;
+
 /** A hop that stands, and the axis of the run it stands on. */
 interface Hop {
 	readonly curve: Curve;
@@ -82,32 +88,35 @@ interface HopScene {
 }
 
 /**
- * Two quarter circles with a shared crest for a cluster of crossings, always
- * above a line across and right of a line down.
+ * Two quarter circles with a shared crest for a cluster of crossings, above a
+ * line across and right of a line down unless it bulges the other way.
  * @param run The upper run.
  * @param first Distance to where the crest starts.
  * @param last Distance to where it ends.
+ * @param bulge Which way it bulges.
  * @returns Only the displaced piece of the route.
  */
-function hump(run: Run, first: number, last: number): Curve {
-	const radius = BRIDGE_RADIUS;
+function hump(run: Run, first: number, last: number, bulge: Bulge): Curve {
+	const radius = BRIDGE_RADIUS * bulge;
 	const tangent = (4 * (Math.sqrt(2) - 1) * radius) / 3;
+	const along = Math.abs(tangent);
+	const reach = BRIDGE_RADIUS;
 	const segments: Segment[] = [
 		{
 			kind: "cubic",
-			first: onRun(run, first - radius, tangent),
-			second: onRun(run, first - tangent, radius),
+			first: onRun(run, first - reach, tangent),
+			second: onRun(run, first - along, radius),
 			to: onRun(run, first, radius),
 		},
 	];
 	if (last > first) segments.push({ kind: "line", to: onRun(run, last, radius) });
 	segments.push({
 		kind: "cubic",
-		first: onRun(run, last + tangent, radius),
-		second: onRun(run, last + radius, tangent),
-		to: onRun(run, last + radius),
+		first: onRun(run, last + along, radius),
+		second: onRun(run, last + reach, tangent),
+		to: onRun(run, last + reach),
 	});
-	return { from: onRun(run, first - radius), segments };
+	return { from: onRun(run, first - reach), segments };
 }
 
 /**
@@ -116,6 +125,7 @@ function hump(run: Run, first: number, last: number): Curve {
  * @param run The rising run.
  * @param places Where along it the crossings it hops lie.
  * @param room The straight line it keeps past each foot.
+ * @param bulge Which way it bulges.
  * @returns The crest.
  */
 function crestAlong(
@@ -123,6 +133,7 @@ function crestAlong(
 	run: Run,
 	places: readonly number[],
 	room: number,
+	bulge: Bulge = 1,
 ): Curve | undefined {
 	// A crest over several lines runs on past the outer ones, so each passes
 	// under its flat and none meets it where it turns.
@@ -133,7 +144,7 @@ function crestAlong(
 		(at, end) => onRun(run, at + (end === 0 ? -1 : 1) * (BRIDGE_RADIUS + room))[run.axis],
 	);
 	const straight = straightThrough(runs, run, Math.min(low!, high!), Math.max(low!, high!));
-	return straight ? hump(run, first, last) : undefined;
+	return straight ? hump(run, first, last, bulge) : undefined;
 }
 
 /**
@@ -143,15 +154,16 @@ function crestAlong(
  * @param runs Every run.
  * @param run The run drawing the line beneath.
  * @param point The crossing.
+ * @param bulge Which way the hop bulges.
  * @returns True when a hop may pass over it there.
  */
-function passesBeneath(runs: readonly Run[], run: Run, point: Point): boolean {
+function passesBeneath(runs: readonly Run[], run: Run, point: Point, bulge: Bulge = 1): boolean {
 	const at = point[run.axis];
 	// A hop bulges up from a line across, toward lower y along a line down,
 	// and right of a line down, toward higher x along a line across.
-	return run.axis === "y"
-		? straightThrough(runs, run, at - HOP_REACH, at + FAR_REACH)
-		: straightThrough(runs, run, at - FAR_REACH, at + HOP_REACH);
+	const [back, ahead] =
+		(run.axis === "y") === (bulge === 1) ? [HOP_REACH, FAR_REACH] : [FAR_REACH, HOP_REACH];
+	return straightThrough(runs, run, at - back, at + ahead);
 }
 
 /**
@@ -275,6 +287,22 @@ function crowded(
 }
 
 /**
+ * Whether a crest comes near the arrowhead of its own line: a hop stood so
+ * close to the head it leads into reads as a knot at the card.
+ * @param scene What the hop keeps clear of.
+ * @param run The run the crest stands on.
+ * @param curve The crest.
+ * @returns True when it does.
+ */
+function nearOwnHead(scene: HopScene, run: Run, curve: Curve): boolean {
+	const own = new Set(lineRuns(scene.runs, run).map((mine) => mine.edgeIndex));
+	const clear = inflate(curveBounds(curve), BOX_CLEARANCE);
+	return scene.keepouts.some(
+		({ box, edgeIndex }) => edgeIndex !== undefined && own.has(edgeIndex) && overlaps(clear, box),
+	);
+}
+
+/**
  * Whether a new crest comes nearer a standing hop than their lines allow.
  * @param hop The standing hop.
  * @param curve The new crest.
@@ -325,8 +353,10 @@ export {
 	HOP_MARGIN,
 	keepoutsOf,
 	lookOf,
+	nearOwnHead,
 	passesBeneath,
 	replaceRuns,
+	type Bulge,
 	type Hop,
 	type HopScene,
 };
