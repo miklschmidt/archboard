@@ -2275,7 +2275,7 @@ wall`).
   layout, and every drawing of both vaults decided alike with its regions
   round one node and without: laid out twice, Browser application (Track)
   drew in 639 ms where it drew in 340.
-- **No region of a group inside that group's region** (`measurement.ts`
+- **No region of a group inside that group's region** (`semantic-board`
   `gatheringGroups`). A container placed with a group stands in its region,
   and so does every member of the group inside it; the members are gathered
   into no second region of the group and keep its colour. The ingress board
