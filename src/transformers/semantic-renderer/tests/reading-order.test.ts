@@ -14,7 +14,6 @@ const clean: Weighed = {
 	width: REFERENCE_PANE.width,
 	height: REFERENCE_PANE.height,
 	crossings: 4,
-	tracks: 0,
 	hooks: 0,
 	bends: 20,
 	length: 10_000,
@@ -33,8 +32,7 @@ test("each reading measure decides before every later one and before fit", () =>
 	// A layout worse by one on a measure, against one alike up to it and
 	// worse on every later measure and on fit.
 	const ranks: readonly [Partial<Weighed>, Partial<Weighed>][] = [
-		[{ crossings: 5 }, { tracks: 3, hooks: 3, bends: 40, length: 20_000 }],
-		[{ tracks: 1 }, { hooks: 3, bends: 40, length: 20_000 }],
+		[{ crossings: 5 }, { hooks: 3, bends: 40, length: 20_000 }],
 		[{ hooks: 1 }, { bends: 40, length: 20_000 }],
 		[{ bends: 21 }, { length: 20_000 }],
 		[{ length: 11_000 }, {}],

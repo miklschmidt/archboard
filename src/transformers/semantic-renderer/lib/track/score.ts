@@ -4,20 +4,22 @@
 // reference pane only breaks a tie between layouts that read alike. Every
 // chooser ADR 0039 changed also weighs its two layouts as it did before, and
 // takes the pick of its reading measures only where the two agree or that
-// pick is no worse on any measure (`takes`). The earlier weighings, and the
-// choices made before the drawing a reader sees exists, weigh a layout's fit
-// less a share for each crossing (`scoreOf`).
+// pick is no worse on any measure (`takes`). The stack chooser's and the
+// Graphviz fold's earlier weighings, and the choices made before the drawing
+// a reader sees exists, weigh a layout's fit less a share for each crossing
+// (`scoreOf`); the joins' and the packing's earlier weighings are in
+// blocks/joins.ts and blocks/place.ts.
 import { fitIn } from "@/shared/shell-geometry/index";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 
+/** What one crossing costs a layout, as the share of its fit it keeps. */
+const CROSSING_COST = 0.97;
 /**
- * What one line from a column to a later one costs, in crossings: as much as
- * eight, since the eye follows it from the foot of one column round to the
- * head of the next.
+ * What one line from a column to a later one costs, as the share of fit it
+ * keeps: as much as eight crossings, since the eye follows it from the foot of
+ * one column round to the head of the next.
  */
-const BUS_COST = 8;
-/** The share of its fit a layout keeps for each crossing it costs ({@link scoreOf}). */
-const CROSSING_SHARE = 0.97;
+const BUS_COST = CROSSING_COST ** 8;
 
 /** A straight run of one line, with whether each of its ends is a bend of that line. */
 interface Run {
@@ -45,12 +47,7 @@ interface Weighed {
 	readonly height: number;
 	readonly crossings: number;
 	readonly bus?: number;
-	/**
-	 * The lanes' worth of line unrelated lines draw on one stroke or side by
-	 * side nearer than a lane.
-	 */
-	readonly tracks?: number;
-	/** Its line ends hooking into a card's side, and its pairs of lines that touch. */
+	/** Its line ends hooking into a card's side, its pairs of lines that touch and its crowded joins. */
 	readonly hooks?: number;
 	readonly bends?: number;
 	readonly length?: number;
@@ -143,70 +140,31 @@ function lapsOf(lines: Iterable<readonly Point[]>, boxes: readonly Box[]): numbe
 }
 
 /**
- * What a layout costs its reader: its crossings, and each line between
- * columns at {@link BUS_COST}.
+ * A layout's reading measures, in the order of ADR 0039.
  * @param layout What is weighed.
- * @returns The cost, in crossings.
+ * @returns Its crossings, hooks, bends and route length.
  */
-function costOf(layout: Weighed): number {
-	return layout.crossings + BUS_COST * (layout.bus ?? 0);
-}
-
-/**
- * A layout's reading measures, in the order of ADR 0039, each nothing where
- * it is not counted: its crossings; the line unrelated lines draw on one
- * stroke or side by side; its hooks and touching lines; its bends; and its
- * route length.
- * @param layout What is weighed.
- * @returns The measures.
- */
-function measuresOf(layout: Weighed): [number, number, number, number, number] {
-	const { tracks = 0, hooks = 0, bends = 0, length = 0 } = layout;
-	return [costOf(layout), tracks, hooks, bends, length];
-}
-
-/**
- * The first of some measures two layouts differ on, compared.
- * @param mine One layout's measures.
- * @param theirs Another's.
- * @returns Below zero when the first is less there, above when more, zero when they agree.
- */
-function firstDifference(mine: readonly number[], theirs: readonly number[]): number {
-	const at = mine.findIndex((value, index) => Math.abs(value - theirs[index]!) > 1e-9);
-	return at === -1 ? 0 : mine[at]! - theirs[at]!;
-}
-
-/**
- * How one layout's defects compare with another's, in the order of ADR
- * 0039: its crossings; then, as many, the line unrelated lines draw on one
- * stroke or side by side; then, as much, its hooks and touching lines. The
- * first of them the two differ on decides, whatever the later ones say.
- * @param one A layout.
- * @param other Another.
- * @returns Below zero when the first has fewer, above when more, zero when alike.
- */
-function defectOrder(one: Weighed, other: Weighed): number {
-	const [[crossings, ...mine], [against, ...theirs]] = [measuresOf(one), measuresOf(other)];
-	if (crossings !== against) return crossings - against;
-	return firstDifference(mine.slice(0, 2), theirs.slice(0, 2));
+function measuresOf(layout: Weighed): [number, number, number, number] {
+	const { crossings, hooks = 0, bends = 0, length = 0 } = layout;
+	return [crossings, hooks, bends, length];
 }
 
 /**
  * How one layout reads against another, on the measures of ADR 0039 in its
- * order: its defects ({@link defectOrder}); then its bends; then its route
- * length, alike within {@link NEAR_LENGTH}. A layout better on an earlier
- * measure reads better whatever the later ones say.
+ * order, each nothing where an engine does not count it: its crossings; its
+ * hooks and touching lines; its bends; its route length, alike within
+ * {@link NEAR_LENGTH}. A layout better on an earlier measure reads better
+ * whatever the later ones say.
  * @param one A layout.
  * @param other Another.
  * @returns Below zero when the first reads better, above when the other
  * does, zero when they read alike.
  */
 function readingOrder(one: Weighed, other: Weighed): number {
-	const defects = defectOrder(one, other);
-	if (defects !== 0) return defects;
 	const [mine, theirs] = [measuresOf(one), measuresOf(other)];
-	if (mine[3] !== theirs[3]) return mine[3] - theirs[3];
-	const [length, longest] = [mine[4], theirs[4]];
+	const at = mine.findIndex((value, index) => value !== theirs[index]);
+	if (at !== -1 && at < 3) return mine[at]! - theirs[at]!;
+	const [length, longest] = [mine[3], theirs[3]];
 	return Math.abs(length - longest) > NEAR_LENGTH * Math.min(length, longest)
 		? length - longest
 		: 0;
@@ -227,21 +185,19 @@ function readsBetter(one: Weighed, other: Weighed): boolean {
 }
 
 /**
- * Whether one layout reads no worse than another on any measure of ADR 0039:
- * its crossings; the line unrelated lines draw on one stroke or side by
- * side; its hooks and touching lines; its bends; and its route length,
- * within {@link NEAR_LENGTH}.
+ * Whether one layout reads no worse than another on any measure of ADR 0039
+ * ({@link readingOrder}), its route length within {@link NEAR_LENGTH}.
  * @param one A layout.
  * @param other Another.
  * @returns True when it is nowhere worse.
  */
 function noWorse(one: Weighed, other: Weighed): boolean {
-	const [[crossings, ...mine], [against, ...theirs]] = [measuresOf(one), measuresOf(other)];
-	const [length, longest] = [mine.pop()!, theirs.pop()!];
+	const [[crossings, hooks, bends, length], theirs] = [measuresOf(one), measuresOf(other)];
 	return (
-		crossings <= against &&
-		mine.every((value, index) => value <= theirs[index]!) &&
-		length <= longest * (1 + NEAR_LENGTH)
+		crossings <= theirs[0] &&
+		hooks <= theirs[1] &&
+		bends <= theirs[2] &&
+		length <= theirs[3] * (1 + NEAR_LENGTH)
 	);
 }
 
@@ -288,27 +244,28 @@ function fitsBetter(one: Weighed, other: Weighed): boolean {
 }
 
 /**
- * A layout's fit to the reference pane, less a share for every crossing it
- * costs its reader ({@link CROSSING_SHARE}): how every chooser weighed its
- * layouts before ADR 0039, and so the earlier weighing its guard keeps
+ * A layout's fit to the reference pane, less a share for every crossing
+ * ({@link CROSSING_COST}) and a greater one for every line between columns
+ * ({@link BUS_COST}). It is the earlier weighing, from before ADR 0039, of
+ * the stack chooser and the Graphviz fold, which their guard keeps
  * ({@link takes}). It alone weighs the layouts chosen before the drawing a
  * reader sees exists, whose fit stands for how that drawing will read: a
  * wrap of a block inside the board, laid out before its parent packs it,
  * and a packing of blocks, weighed on its trunks before its blocks' lines
- * are joined through their ports. Ranked on
- * their own crossings first, those choices crossed Archboard server whole
- * 69 -> 109 times and Board persistence whole 9 -> 12 (Blocks). A fold of a
- * block of cards is weighed on it too: its crossings are estimated as the
- * block's unfolded, so it trades no crossing, only its lines between columns
- * for the fit it gains. Weighed as costing eight crossings each against any
- * fit, a line between columns kept every chain unfolded; ignored, one-line
- * folds bent straight drawings that already fit (Cloud Infrastructure's
- * Regional entry, 0 -> 8 bends).
+ * are joined through their ports. Ranked on their own crossings first, those
+ * choices crossed Archboard server whole 69 -> 109 times and Board
+ * persistence whole 9 -> 12 (Blocks). A fold of a block of cards is weighed
+ * on it too: its crossings are estimated as the block's unfolded, so it
+ * trades no crossing, only its lines between columns for the fit it gains.
+ * Weighed as costing eight crossings each against any fit, a line between
+ * columns kept every chain unfolded; ignored, one-line folds bent straight
+ * drawings that already fit (Cloud Infrastructure's Regional entry, 0 -> 8
+ * bends).
  * @param layout What is weighed.
  * @returns The score.
  */
 function scoreOf(layout: Weighed): number {
-	return fitIn(layout) * CROSSING_SHARE ** costOf(layout);
+	return fitIn(layout) * CROSSING_COST ** layout.crossings * BUS_COST ** (layout.bus ?? 0);
 }
 
 /**
@@ -417,12 +374,10 @@ function sinks(
 
 export {
 	anchored,
-	costOf,
 	crossingPlaces,
 	crossingsOf,
-	defectOrder,
 	lapsOf,
-	noWorse,
+	readingOrder,
 	readsBetter,
 	scoreOf,
 	scoresBetter,

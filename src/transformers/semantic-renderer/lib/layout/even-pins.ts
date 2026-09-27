@@ -226,22 +226,20 @@ function tidierThan(one: ArchitectureDrawing, other: ArchitectureDrawing, cured 
 }
 
 /**
- * What a settled drawing is weighed on, as every engine weighs a layout on
- * how it reads (`readingOrder` in track/score.ts): its defects
- * ({@link defectsIn}), its bends and its line length, and its page.
+ * What a settled drawing is weighed on where a chooser weighs it on how it
+ * reads (`readingOrder` in track/score.ts): its crossings seen
+ * ({@link crossingsSeen}); its hooks into a card's side, its pairs of lines
+ * that touch and its crowded joins; and its page.
  * @param drawing The drawing.
  * @returns What it is weighed on.
  */
 function drawingWeighed(drawing: ArchitectureDrawing): Weighed {
-	const [seen, touches, stacked, hooks, tracked] = defectsIn(drawing);
+	const [seen, touches, , hooks] = defectsIn(drawing);
 	return {
 		width: drawing.width,
 		height: drawing.height,
 		crossings: seen!,
-		tracks: stacked! + tracked!,
 		hooks: hooks! + touches!,
-		bends: bendCount(drawing),
-		length: lineLength(drawing),
 	};
 }
 

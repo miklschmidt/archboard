@@ -11,6 +11,7 @@ import {
 	chooseReading,
 	RouteCheckFailed,
 	type ArchitectureDrawing,
+	type Point,
 } from "@/runtime/semantic-renderer/layout";
 
 /** Cards in the unfolded reading, one to a row, each row calling the next. */
@@ -88,6 +89,25 @@ function readingsFrom(
 	return { readingOf, asked };
 }
 
+/**
+ * A route through some corners, each turned on a short curve as a drawn route is.
+ * @param points Its ends and corners.
+ * @returns The route.
+ */
+function rounded(points: readonly Point[]): ArchitectureDrawing["edges"][number]["curve"] {
+	const segments = points.slice(1, -1).flatMap((corner, index) => {
+		const toward = (end: Point) => ({
+			x: corner.x + Math.sign(end.x - corner.x) * 4,
+			y: corner.y + Math.sign(end.y - corner.y) * 4,
+		});
+		return [
+			{ kind: "line" as const, to: toward(points[index]!) },
+			{ kind: "cubic" as const, first: corner, second: corner, to: toward(points[index + 2]!) },
+		];
+	});
+	return { from: points[0]!, segments: [...segments, { kind: "line", to: points.at(-1)! }] };
+}
+
 describe("a board taller than the pane", () => {
 	test("settles only the column count whose placement fits materially better", async () => {
 		const baseline = unfolded();
@@ -124,8 +144,26 @@ describe("a board taller than the pane", () => {
 		await expect(chooseReading(readingOf)).rejects.toThrow(TypeError);
 	});
 
+	// The unfolded reading hooks one line into a card's side, where the fold
+	// hooks none, so the fold reads worse only on its crossings and better on
+	// its hooks: the reading measures and the fit alone would take it, and
+	// its score, with a share of its fit for each crossing, keeps the
+	// unfolded reading.
 	test("keeps the unfolded reading when the fold fits better but crosses far more", async () => {
-		const baseline = unfolded();
+		const plain = unfolded();
+		// Out of Card 0's side, down past its bottom, and across into Card 1.
+		const hook = [
+			{ x: 240, y: 70 },
+			{ x: 250, y: 70 },
+			{ x: 250, y: 200 },
+			{ x: 140, y: 200 },
+			{ x: 140, y: plain.cards[1]!.box.y },
+		];
+		const [first, ...rest] = plain.edges;
+		const baseline: ArchitectureDrawing = {
+			...plain,
+			edges: [{ ...first!, curve: rounded(hook) }, ...rest],
+		};
 		// A grid of five level and five upright lines: twenty-five crossings.
 		const lines = [0, 1, 2, 3, 4].flatMap((index) => [
 			{ from: { x: 0, y: 100 + index * 40 }, to: { x: 400, y: 100 + index * 40 } },
