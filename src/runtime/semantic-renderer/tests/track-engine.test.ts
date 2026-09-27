@@ -322,7 +322,7 @@ test("cards on one rank stand on one top, and the lines into them end there", as
 // at full scale. Taking the smaller page stepped the fan down three rows as
 // a staircase, where the wrap into two rows reads worse than the fan in one
 // row with its group packed, and that is kept.
-test("of two wraps that both fit the pane, the one into fewer rows is kept", async () => {
+test("a fan never steps down three rows where two would do", async () => {
 	const content = orderedFixture(variantReconciliation);
 	const policy = SemanticPolicySchema.parse({
 		levels: ["service"],

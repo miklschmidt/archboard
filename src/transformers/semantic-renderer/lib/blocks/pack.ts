@@ -380,9 +380,9 @@ class PackLayout {
 
 	/**
 	 * Lay the block of blocks out: packed the way an earlier layout chose, or
-	 * each promising way, keeping the one that reads best once its trunks
-	 * are routed. An estimate of the packed size cannot tell a compact packing
-	 * from one whose trunks run round the page.
+	 * each promising way, keeping the one that scores best once its trunks
+	 * are routed ({@link scoresBetter}). An estimate of the packed size
+	 * cannot tell a compact packing from one whose trunks run round the page.
 	 * @param avoid The initialized libavoid module.
 	 * @param kept The packing an earlier layout chose, to keep.
 	 * @returns The laid-out block, and the packing it used.
