@@ -369,11 +369,11 @@ class LabelPlacement {
 		const obstacles = this.obstacles(edge.edge.id);
 		for (const [index, piece] of this.pieces.entries()) {
 			if (piece.edgeId !== edge.edge.id) continue;
-			const ownPiece = obstacles.pieces.indexOf(this.grownPieces[index]!);
+			// The obstacles' pieces are this placement's grown pieces, in the same order.
 			for (const candidate of candidatesOf(
 				piece,
 				size,
-				{ ...obstacles, ownPiece },
+				{ ...obstacles, ownPiece: index },
 				ends,
 				this.nodeAir,
 				this.eligible !== undefined,
