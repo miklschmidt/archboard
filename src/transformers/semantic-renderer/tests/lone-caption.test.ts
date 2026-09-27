@@ -40,6 +40,5 @@ test("a caption stands in its band's corner where no line crosses it", () => {
 test("a caption stands between lines at both ends of its band", () => {
 	const lines = [dropping(130), dropping(440)];
 	const caption = captionIn(region, lone, lines);
-	for (const [points] of lines.map((line) => [line]))
-		expect(strikes(caption, points![0]!.x)).toBe(false);
+	for (const [top] of lines) expect(strikes(caption, top!.x)).toBe(false);
 });
