@@ -13,7 +13,6 @@ import {
 	captionIn,
 	cardIn,
 	carriedLine,
-	regionRound,
 	type Lone,
 	type Stop,
 } from "@/transformers/semantic-renderer/lib/blocks/lone";
@@ -107,7 +106,7 @@ class Assembly {
 	readonly origins = new Map<string, Point>();
 	readonly depths = new Map<string, number>();
 	/** Every card or container alone in its region, laid out as its region's box. */
-	readonly lone: ReadonlyMap<string, { lone: Lone; block: Block; region: Box }>;
+	readonly lone: ReadonlyMap<string, { lone: Lone; block: Block; stop: Stop }>;
 
 	/**
 	 * Place every block from the root down.
@@ -187,13 +186,13 @@ class Assembly {
 	 * @returns The regions.
 	 */
 	loneRegions(lines: readonly (readonly Point[])[]): PlacedRegion[] {
-		return [...this.lone].map(([id, { lone, block, region }]) => {
+		return [...this.lone].map(([id, { lone, block, stop }]) => {
 			const parent = clusterFrame(block, id) ?? blockFrame(block);
 			return {
 				group: lone.group,
 				...(parent === undefined ? {} : { parent }),
-				box: region,
-				caption: captionIn(region, lone, lines),
+				box: stop.region,
+				caption: captionIn(stop.region, lone, lines),
 				depth: this.depths.get(block.id)! + framesAround(block, id),
 			};
 		});
@@ -203,41 +202,49 @@ class Assembly {
 	 * Every card or container alone in its region, laid out as the region's
 	 * box: a card as an item of its block, a container as a block of its own
 	 * or as a cluster of the block that draws it inline.
-	 * @returns Each one's region, the block around it, and the region's box, by id.
+	 * @returns Each one's region, the block around it, and its region's box and its own, by id.
 	 */
-	loneLaid(): Map<string, { lone: Lone; block: Block; region: Box }> {
-		const found = new Map<string, { lone: Lone; block: Block; region: Box }>();
+	loneLaid(): Map<string, { lone: Lone; block: Block; stop: Stop }> {
+		const found = new Map<string, { lone: Lone; block: Block; stop: Stop }>();
 		for (const [id, lone] of this.tree.lone) {
 			const frame = this.tree.blocks.get(id);
 			const block = frame?.parent ?? this.tree.holder.get(id)!;
-			const region = frame === undefined ? this.laidIn(block, id, lone) : this.boxOf(frame);
-			found.set(id, { lone, block, region });
+			const stop =
+				frame === undefined
+					? this.laidIn(block, id, lone)
+					: { region: this.boxOf(frame), card: this.frameBox(frame) };
+			found.set(id, { lone, block, stop });
 		}
 		return found;
 	}
 
 	/**
-	 * The box a block laid a card or container alone in its region out as:
-	 * a card's own box as an item, or round a container it draws inline.
+	 * The box a block laid a card or container alone in its region out as,
+	 * and the node's own: a card's as an item, or round a container it draws
+	 * inline.
 	 * @param block The block.
 	 * @param id The card or container.
 	 * @param lone Its region.
-	 * @returns The box.
+	 * @returns The boxes.
 	 */
-	laidIn(block: Block, id: string, lone: Lone): Box {
+	laidIn(block: Block, id: string, lone: Lone): Stop {
 		const inline = this.laid.get(block.id)!.frames?.find((frame) => frame.id === id);
-		if (inline === undefined) return this.inside(block, id);
-		return regionRound(moved(inline.box, this.origins.get(block.id)!), lone);
+		if (inline === undefined) {
+			const region = this.inside(block, id);
+			return { region, card: cardIn(region, lone) };
+		}
+		const origin = this.origins.get(block.id)!;
+		return { region: moved(inline.region!, origin), card: moved(inline.box, origin) };
 	}
 
 	/**
-	 * Where a line stops at a card alone in its region: that region's box and the card's.
+	 * Where a line stops at a card or container alone in its region: that
+	 * region's box and the node's.
 	 * @param end The line's end.
-	 * @returns The boxes, when the end is such a card.
+	 * @returns The boxes, when the end is such a node.
 	 */
 	loneEnd(end: string | undefined): Stop | undefined {
-		const laid = end === undefined ? undefined : this.lone.get(end);
-		return laid && { region: laid.region, card: cardIn(laid.region, laid.lone) };
+		return end === undefined ? undefined : this.lone.get(end)?.stop;
 	}
 
 	/**

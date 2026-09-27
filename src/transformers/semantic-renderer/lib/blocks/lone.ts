@@ -2,9 +2,10 @@
 // 2026-09-27). Such a region gathers nothing, so the blocks lay it out as the
 // node itself, with a box grown by the region's inset and caption band:
 // placement and routing see one obstacle where the board without the region
-// saw one. Once drawn, the node is put back inside that box and the region
-// drawn round it; a line that stopped on the region's wall is carried on to
-// the card's face.
+// saw one. A caption wider than the node widens the region, not the node,
+// which stands in its middle. Once drawn, the node is put back inside that
+// box and the region drawn round it; a line that stopped on the region's wall
+// is carried on to the card's face.
 import type { ElkNode } from "@archboard/elk-rs";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { z } from "zod";
@@ -15,7 +16,11 @@ import {
 import { cardOf, type Card } from "@/transformers/semantic-renderer/lib/blocks/card";
 import { CAPTION_INSET, type Insets } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import type { FrameShape } from "@/transformers/semantic-renderer/lib/track/containers";
-import { TRACK_BELOW, TRACK_TITLE } from "@/transformers/semantic-renderer/lib/track/scene";
+import {
+	TRACK_BELOW,
+	TRACK_TITLE,
+	TRACK_WIDE,
+} from "@/transformers/semantic-renderer/lib/track/scene";
 
 /** The room a region round one node keeps round it on the sides and below. */
 const LONE_INSET = 14;
@@ -37,12 +42,20 @@ interface Size {
 	readonly height: number;
 }
 
-/** A node alone in its group's region: the group, its caption's size, and a card's own width. */
+/**
+ * A node alone in its group's region: the group, its caption's size, and
+ * how the region stands round the node when its caption widens it.
+ */
 interface Lone {
 	readonly group: string;
 	readonly caption: Size;
 	/** A card's width: a caption wider than the card widens the region round it, not the card. */
 	readonly width?: number;
+	/**
+	 * How far a container a block lays out stands in from each side of its
+	 * region, once laid out narrower than its caption ({@link widened}).
+	 */
+	readonly room?: number;
 }
 
 /** Where a line stops at a node alone in its region: that region's box and the node's. */
@@ -124,6 +137,29 @@ function bandOf(lone: Lone): number {
 }
 
 /**
+ * How wide a region's caption needs it: the caption and its inset on each side.
+ * @param lone The region.
+ * @returns The width.
+ */
+function captionWidth(lone: Lone): number {
+	return lone.caption.width + 2 * CAPTION_INSET;
+}
+
+/**
+ * A container a block lays out alone in its region, laid out once as that
+ * region, when its caption needs the region wider: the region then keeps
+ * the container as wide as it was laid out and stands it in the middle, as
+ * it does a card.
+ * @param lone The region, before the container is laid out.
+ * @param width The width the region took round it.
+ * @returns The region, with the room it keeps round the container; nothing when the caption fits.
+ */
+function widened(lone: Lone, width: number): Lone | undefined {
+	const short = captionWidth(lone) - width;
+	return short > 0 ? { ...lone, room: LONE_INSET + short / 2 } : undefined;
+}
+
+/**
  * How much taller a region round one node stands than the node: its caption
  * band above and its inset below.
  * @param lone The region.
@@ -168,14 +204,15 @@ function cardAs(node: ElkNode, lone: Lone | undefined): Card {
 	if (lone === undefined) return card;
 	return {
 		...card,
-		width: Math.max(card.width + 2 * LONE_INSET, lone.caption.width + 2 * CAPTION_INSET),
+		width: Math.max(card.width + 2 * LONE_INSET, captionWidth(lone)),
 		height: card.height + bandOf(lone) + LONE_INSET,
 	};
 }
 
 /**
- * The card's or container's own box inside the box its region took: a card
- * no wider than itself, in the middle of a region its caption widens.
+ * The card's or container's own box inside the box its region took: a card,
+ * or a container a block lays out, no wider than itself in the middle of a
+ * region its caption widens.
  * @param region The region's box.
  * @param lone The region.
  * @returns The card's or container's box.
@@ -192,21 +229,33 @@ function cardIn(region: Box, lone: Lone): Box {
 
 /**
  * How far in from each side of the box its region took a card or container
- * stands: the region's inset, or more round a card its caption widens the
+ * stands: the region's inset, or more round a node its caption widens the
  * region past.
  * @param width The box's width.
  * @param lone The region.
  * @returns The room.
  */
 function sideRoom(width: number, lone: Lone): number {
-	return lone.width === undefined ? LONE_INSET : Math.max(LONE_INSET, (width - lone.width) / 2);
+	if (lone.width === undefined) return roomOf(lone);
+	return Math.max(LONE_INSET, (width - lone.width) / 2);
+}
+
+/**
+ * How far in from each side of its region a container stands: the region's
+ * inset, or the room a block keeps round it in a region its caption widens.
+ * @param lone The region.
+ * @returns The room.
+ */
+function roomOf(lone: Lone): number {
+	return lone.room ?? LONE_INSET;
 }
 
 /**
  * The title row a container drawn inline gives the track scene, and the room
  * it keeps below what it holds. Alone in its region, the scene reads it as
- * the region: its title row holds the caption band above the title, and it
- * keeps the region's inset more below.
+ * the region: its title row holds the caption band above the title, it
+ * keeps the region's inset more below, and it stands as wide as the caption
+ * needs.
  * @param bounds The container's cluster's box.
  * @param head Its header: the height its title's centre stands at, its height, and how far its title's words reach in.
  * @param head.centre The height of its centre.
@@ -224,14 +273,16 @@ function titleRow(
 	const row = [bounds.x, centre - height / 2, bounds.width, height, words];
 	return {
 		[TRACK_TITLE]: row.join(","),
-		...(lone === undefined ? {} : { [TRACK_BELOW]: String(LONE_INSET) }),
+		...(lone === undefined
+			? {}
+			: { [TRACK_BELOW]: String(LONE_INSET), [TRACK_WIDE]: String(captionWidth(lone)) }),
 	};
 }
 
 /**
  * A container drawn inline, laid out as the region it is alone in: its own
- * box inside the box the scene drew.
- * @param shape The container's shape as the scene drew it.
+ * box inside the box the scene fitted round what it holds.
+ * @param shape The container's shape as the scene fitted it.
  * @param lone Its region, if it is alone in one.
  * @returns Its shape.
  */
@@ -240,31 +291,31 @@ function frameShape(shape: FrameShape, lone: Lone | undefined): FrameShape {
 }
 
 /**
- * The box of the region round a card or container alone in it.
- * @param box The node's own box.
- * @param lone The region.
- * @returns The region's box.
+ * How wide a block drawing a container inline lays its title row out: as
+ * wide as its title, or alone in its region, as wide as keeps room for the
+ * region's caption beside what it holds.
+ * @param frame The container: its title row, and its region if it is alone in one.
+ * @param frame.header Its title row.
+ * @param frame.lone Its region, if it is alone in one.
+ * @param inset The room it keeps round what it holds, as laid out.
+ * @returns The width.
  */
-function regionRound(box: Box, lone: Lone): Box {
-	return {
-		x: box.x - LONE_INSET,
-		y: box.y - bandOf(lone),
-		width: box.width + 2 * LONE_INSET,
-		height: box.height + bandOf(lone) + LONE_INSET,
-	};
+function titleWidth(frame: { header: Size; lone?: Lone }, inset: number): number {
+	const { header, lone } = frame;
+	return lone === undefined ? header.width : Math.max(header.width, captionWidth(lone) - 2 * inset);
 }
 
 /**
  * The room a container alone in its region keeps around what it holds: the
- * region's inset more on its sides and below. The caption band stands in its
- * header.
+ * region's room round the container more on its sides, and its inset more
+ * below. The caption band stands in its header.
  * @param insets The room it keeps alone in no region.
  * @param lone Its region, if it is alone in one.
  * @returns Its insets.
  */
 function grownInsets(insets: Insets, lone: Lone | undefined): Insets {
 	if (lone === undefined) return insets;
-	return { ...insets, side: insets.side + LONE_INSET, bottom: insets.bottom + LONE_INSET };
+	return { ...insets, side: insets.side + roomOf(lone), bottom: insets.bottom + LONE_INSET };
 }
 
 /**
@@ -412,10 +463,12 @@ export {
 	framed,
 	grownBy,
 	grownInsets,
-	regionRound,
+	roomOf,
 	sideRoom,
 	titleRow,
+	titleWidth,
 	placingGroup,
+	widened,
 	type Lone,
 	type Stop,
 };

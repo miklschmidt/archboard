@@ -2261,16 +2261,32 @@ wall`).
   does, unless a line into the node crosses the band there; then as far
   left as its words stand a lane's room clear of every line, or less where
   the lines leave less (`captionIn`).
+- **A caption wider than its node widens the region, not the node**, which
+  stands in its middle. A card's grown box is as wide as its caption needs
+  (`cardAs`). A container drawn as a block of its own is laid out, and
+  where its caption needs the region wider, laid out again with the room
+  it lacks added to its sides (`place.ts` `layAll`, `lone.ts` `widened`).
+  Drawn inline, its title row stands in its cluster as wide as the caption
+  needs beside the insets (`titleWidth`), so Graphviz keeps the room, and
+  once its walls are fitted to what it holds, and to the lines that end on
+  it, the region widens round it inside that room (`sides.ts` `fitSide`).
+  A container stood as wide as it was laid out, and a long group name ran
+  past the region's walls: a 460 px caption over a region 345 px wide
+  (Blocks) and 328 px (Track). No drawing of either vault changes; their
+  group names are short.
 - **The board decides in the layout it is drawn in**, with its regions
   round one node, under both engines. Decided on the board without them
   and laid out once more with them (`solves.ts`, `6e6dc768` to `2ac99f76`),
   a drawing took one layout more than the board without its regions, and
   its first render 26% to 56% longer: Command interface whole (Blocks) 775
-  → 1134 ms. The room such a region takes could turn two of the choices,
-  and those two keep it from turning them:
+  → 1134 ms. The room such a region takes could turn two of the choices.
+  Measured on both vaults, it turns neither. Two heuristics hold that
+  outcome; neither guarantees it for another board:
   - **Which ports move to side walls** (`blocks/sides.ts` `facingOf`):
     two blocks stand above one another where they stand apart by no less
-    than their regions round one node add to their height. A block beside
+    than their regions round one node add to their height (`grownIn`), a
+    tolerance counted from the regions, not a comparison with the board
+    laid out without them. A block beside
     a column is centred on it, and in Working with an agent (Blocks) the
     region round Pane session stood Voice 16 px up beside the cards over
     Agent: the lines from Application composition into Voice moved to side
@@ -2283,7 +2299,8 @@ wall`).
     writes apart for one crossing fewer and drew 18% more line, and Working
     with an agent (Blocks) kept its joins into Agent apart to fit the pane
     better, at a crossing more and 6% more line. No other drawing of either
-    vault turns.
+    vault turns; the guard weighs line length, not the region, so a
+    region can still turn a join whose ways draw as much line.
 - **No region of a group inside that group's region** (`semantic-board`
   `gatheringGroups`). A container placed with a group stands in its region,
   and so does every member of the group inside it; the members are gathered

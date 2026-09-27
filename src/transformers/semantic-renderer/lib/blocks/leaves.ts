@@ -13,7 +13,7 @@ import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { extentOf } from "@/transformers/semantic-renderer/lib/track/labels";
 import type { Item, Scene } from "@/transformers/semantic-renderer/lib/track/scene";
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
-import { LONE_INSET, sideRoom } from "@/transformers/semantic-renderer/lib/blocks/lone";
+import { roomOf, sideRoom } from "@/transformers/semantic-renderer/lib/blocks/lone";
 import type { Block, BlockTree } from "@/transformers/semantic-renderer/lib/blocks/tree";
 
 /** The side of a port's square. */
@@ -153,7 +153,7 @@ function slidesOf(scene: Scene, block: Block): [Item, readonly [number, number]]
 function rimOf(block: Block, insets: Insets): Rim | undefined {
 	if (block.header === undefined) return undefined;
 	const head = CONTAINER_INSET + (block.kind === "region" ? CAPTION_INSET : 0);
-	const foot = insets.side - (block.lone === undefined ? 0 : LONE_INSET);
+	const foot = insets.side - (block.lone === undefined ? 0 : roomOf(block.lone));
 	return [...block.ports.values()].includes("bottom") ? { head, foot } : { head };
 }
 

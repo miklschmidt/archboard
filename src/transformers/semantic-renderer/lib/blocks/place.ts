@@ -27,7 +27,7 @@ import {
 	type Graphviz,
 } from "@/transformers/semantic-renderer/lib/blocks/graphviz-once";
 import { corners, type Insets, type Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
-import { grownInsets } from "@/transformers/semantic-renderer/lib/blocks/lone";
+import { grownInsets, widened } from "@/transformers/semantic-renderer/lib/blocks/lone";
 import { NestingSchema, type Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { bestWrap, weighed } from "@/transformers/semantic-renderer/lib/blocks/wraps";
 import {
@@ -216,7 +216,35 @@ function packsBlocks(tree: BlockTree, block: Block, nesting: Nesting): boolean {
 }
 
 /**
- * Lay every block out, innermost first.
+ * Lay one block out: packed with its child blocks as the pieces, or as cards.
+ * @param viz The initialized Graphviz instance.
+ * @param avoid The initialized libavoid module.
+ * @param board The blocks, every block laid out so far and each block of blocks' packing; the block's are set.
+ * @param block The block.
+ * @param earlier What an earlier layout decided, kept.
+ * @returns The laid-out block.
+ */
+function layBlock(
+	viz: Graphviz,
+	avoid: AvoidEngine,
+	board: Board,
+	block: Block,
+	earlier: Earlier,
+): Laid {
+	const { tree, laid, packings } = board;
+	if (!packsBlocks(tree, block, tree.nesting)) return layCards(viz, tree, block, laid);
+	const packed = new PackLayout(block, laid, tree, insetsOf(block)).lay(
+		avoid,
+		earlier.packings.get(block.id),
+	);
+	packings.set(block.id, packed.packing);
+	return packed;
+}
+
+/**
+ * Lay every block out, innermost first. A container alone in its region
+ * whose caption needs the region wider is laid out again, standing in the
+ * middle of the wider region (`lone.ts`).
  * @param viz The initialized Graphviz instance.
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
@@ -234,19 +262,20 @@ function layAll(
 	apart: ReadonlySet<string>,
 ): Board {
 	const tree = new BlockTree(graph, earlier.exits, nesting, apart, earlier.orders);
-	const laid = new Map<string, Laid>();
-	const packings = new Map<string, Packing>();
+	const board = { tree, laid: new Map<string, Laid>(), packings: new Map<string, Packing>() };
 	for (const block of tree.innermostFirst()) {
-		if (packsBlocks(tree, block, nesting)) {
-			const packed = new PackLayout(block, laid, tree, insetsOf(block)).lay(
-				avoid,
-				earlier.packings.get(block.id),
-			);
-			packings.set(block.id, packed.packing);
-			laid.set(block.id, packed);
-		} else laid.set(block.id, layCards(viz, tree, block, laid));
+		const once = layBlock(viz, avoid, board, block, earlier);
+		const wider = block.lone && widened(block.lone, once.width);
+		if (wider !== undefined) {
+			block.lone = wider;
+			tree.lone.set(block.id, wider);
+		}
+		board.laid.set(
+			block.id,
+			wider === undefined ? once : layBlock(viz, avoid, board, block, earlier),
+		);
 	}
-	return { tree, laid, packings };
+	return board;
 }
 
 /** What an earlier layout decided, which a layout again keeps. */
