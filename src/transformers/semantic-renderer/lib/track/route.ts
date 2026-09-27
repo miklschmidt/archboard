@@ -39,6 +39,7 @@ import {
 	straightenThroughLabels,
 } from "@/transformers/semantic-renderer/lib/track/columns";
 import {
+	portsOntoLanes,
 	pullToPorts,
 	straightenIntoContainers,
 	closeLaneSteps,
@@ -478,6 +479,7 @@ function pullOntoPorts(
  */
 function partAndClose(scene: Scene, chains: readonly Chain[], routed: readonly Routed[]): void {
 	const routes = routed.map((route) => route.nets);
+	portsOntoLanes(scene, routes.flat());
 	partCollinear(scene, chains, routes);
 	// Closing a jog never stands two lines parted just now back on one column.
 	closeJogs(scene, chains, routes, collinearPairs);

@@ -19,6 +19,8 @@ import {
 	type LaneRun,
 	type Station,
 } from "@/transformers/semantic-renderer/lib/track/chains";
+import type { Net } from "@/transformers/semantic-renderer/lib/track/channels";
+import { slidePort } from "@/transformers/semantic-renderer/lib/track/labels";
 import { centreX, type Scene } from "@/transformers/semantic-renderer/lib/track/scene";
 
 /**
@@ -242,4 +244,33 @@ function straighten(scene: Scene, run: LaneRun, occupancy: Occupancy): boolean {
 	for (const lane of lanes) occupancy.take(lane);
 	return moved;
 }
-export { closeLaneSteps, pullToPorts, straightenIntoContainers, unstrandLanes };
+/**
+ * Slide each of a block's own ports onto the column of the lane its line
+ * runs on beside it, where the port may stand there: the lane stood aside
+ * for a card or label inside the block, and a port left where the block's
+ * parent settled it steps the line back out to it just inside the wall.
+ * The parent's line follows the port when the parent is routed again.
+ * @param scene The scene, its ports placed.
+ * @param nets Every net.
+ */
+function portsOntoLanes(scene: Scene, nets: readonly Net[]): void {
+	for (const net of nets)
+		for (const end of ["top", "bottom"] as const) portOntoLane(scene, nets, net, end);
+}
+
+/**
+ * Slide one end of a net, where it is a block's own port, onto the column
+ * of the lane at its other end.
+ * @param scene The scene.
+ * @param nets Every net.
+ * @param net The net.
+ * @param end Which end is the port.
+ */
+function portOntoLane(scene: Scene, nets: readonly Net[], net: Net, end: "top" | "bottom"): void {
+	const far = net[end === "top" ? "bottom" : "top"];
+	const item = net[end].item;
+	if (item !== undefined && scene.slides.has(item) && far.kind === "lane")
+		slidePort(scene, nets, net, end, far.x);
+}
+
+export { portsOntoLanes, closeLaneSteps, pullToPorts, straightenIntoContainers, unstrandLanes };
