@@ -37,6 +37,7 @@ import {
 } from "@/ui/semantic-board-canvas/hooks/use-picture-transition";
 import { usePresentationArrival } from "@/ui/semantic-board-canvas/hooks/use-presentation-arrival";
 import { useSubjectTip } from "@/ui/semantic-board-canvas/hooks/use-subject-tip";
+import { useViewerMarks } from "@/ui/semantic-board-canvas/hooks/use-viewer-marks";
 import {
 	FAR_SCALE,
 	PAN_STEP,
@@ -48,7 +49,7 @@ import {
 	stayPicture,
 	type Departure,
 } from "@/ui/semantic-board-canvas/lib/picture-departure";
-import { NO_FOCUS, subjectMarks, type BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
+import { NO_FOCUS, type BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
 import {
 	capturePointer,
 	hasTravelled,
@@ -56,13 +57,8 @@ import {
 	type Drag,
 } from "@/ui/semantic-board-canvas/lib/pointer-gesture";
 import { openableAt } from "@/ui/semantic-board-canvas/lib/subject-tips";
-import {
-	markGroupFocus,
-	markSubjects,
-	subjectAt,
-	surfaceMarks,
-	type GroupMarks,
-} from "@/ui/semantic-board-canvas/lib/subjects";
+import type { GroupSelection } from "@/ui/semantic-board-canvas/lib/groups";
+import { subjectAt, surfaceMarks } from "@/ui/semantic-board-canvas/lib/subjects";
 
 /** Which way each arrow key moves the diagram under the viewport. */
 const PAN_KEYS: Readonly<Record<string, readonly [number, number]>> = {
@@ -213,10 +209,10 @@ interface SemanticDiagramProps {
 	 * walkthrough is open beside it.
 	 */
 	focus?: BeatFocus | undefined;
-	/** The group under inspection, or null for none. */
-	groupId: string | null;
-	/** What that inspection lights, keeps readable and treats as context, or null. */
-	groupMarks: GroupMarks | null;
+	/** The selected group and its members, each marked as attended; null for none. */
+	group: GroupSelection | null;
+	/** What a presented step's veil leaves standing; null for no veil. */
+	veil: ReadonlySet<string> | null;
 	/**
 	 * The picture is on its way out: the reader went to another board, and
 	 * this one is kept only to be seen leaving while that one is drawn.
@@ -340,32 +336,11 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	// After the picture is staged, so a picture that just replaced a leaving one
 	// is never mistaken for it.
 	const departure = useLeaving(picture, props.departure, reducedMotion);
-	// Attention only. What the board says nobody has decided is drawn into the
-	// picture by the renderer, from the same reconciliation the sentences above
-	// it are written from, so it is legible on a pane with nothing selected and
-	// no walkthrough open — and a subject that is both attended and unsettled
-	// says both, which it could not while one map held one mark per subject.
-	const marked = useMemo(() => subjectMarks(selection, focus), [selection, focus]);
-	// Before paint, both: a picture put up fresh — a flight landing, most of all —
-	// must never be seen for a frame without its marks, or what they light and
-	// veil is seen to switch off and fade back in.
-	useLayoutEffect(() => {
-		if (picture !== null) {
-			markSubjects(picture.root, marked);
-		}
-	}, [picture, marked]);
-	// A group under inspection is its own set of marks, independent of
-	// attention: a member the person also picked out says both.
-	const { groupMarks } = props;
-	useLayoutEffect(() => {
-		if (picture !== null) {
-			markGroupFocus(picture.surface, groupMarks);
-		}
-	}, [picture, groupMarks]);
+	useViewerMarks(picture, { selection, focus, group: props.group, veil: props.veil });
 	// Seen from far away, each card's name is drawn larger in place of what it
 	// says it does, which nobody reads at that size.
 	const far = view.scale < FAR_SCALE;
-	const marks = surfaceMarks({ focused: groupMarks !== null, far });
+	const marks = surfaceMarks({ veiled: props.veil !== null, far });
 	const tip = useSubjectTip({ drawing, camera: cameraTransform(view) });
 	const { dismiss: dismissTip, onHover } = tip;
 	const reading = drawnReading(props.reading, drawing);
@@ -506,7 +481,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 			data-board={drawing.board}
 			data-variant={drawing.variant.name}
 			data-version={drawing.version}
-			data-group={props.groupId}
+			data-group={props.group?.group}
 			{...presentationMarks(props.presenting).stage}
 			className={STAGE_CLASS}
 		>

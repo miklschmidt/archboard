@@ -3,7 +3,7 @@
 //
 // Every part of it answers the same question — how is this board being read —
 // so they sit together: the ways of reading it, the explanations it gives of
-// itself, the group under inspection and, a level down, which state of that
+// itself, the groups it gathers its parts into and, a level down, which state of that
 // board is shown. Each part decides for itself whether it has anything to offer.
 //
 // The pane's own board offers no choice of state here. The navigator lists every
@@ -16,7 +16,7 @@ import type { JSX, ReactNode } from "react";
 
 import type { SemanticRender } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { SemanticEngineBar } from "@/ui/semantic-board-canvas/components/SemanticEngineBar";
-import { SemanticGroupBar } from "@/ui/semantic-board-canvas/components/SemanticGroupBar";
+import { SemanticGroupList } from "@/ui/semantic-board-canvas/components/SemanticGroupList";
 import { SemanticLegend } from "@/ui/semantic-board-canvas/components/SemanticLegend";
 import { SemanticVariantBar } from "@/ui/semantic-board-canvas/components/SemanticVariantBar";
 import { SemanticViewBar } from "@/ui/semantic-board-canvas/components/SemanticViewBar";
@@ -24,7 +24,7 @@ import { SemanticWalkthroughBar } from "@/ui/semantic-board-canvas/components/Se
 import type { WalkthroughReading } from "@/ui/semantic-board-canvas/hooks/use-walkthrough";
 import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
-import type { GroupChoice, GroupFocus } from "@/ui/semantic-board-canvas/lib/groups";
+import type { GroupChoice } from "@/ui/semantic-board-canvas/lib/groups";
 
 /** Inputs for the board tab. */
 interface SemanticBoardPanelProps {
@@ -54,11 +54,11 @@ interface SemanticBoardPanelProps {
 	onNarrate?: ((walkthrough: string) => void) | undefined;
 	/** Every group the variant on screen uses. */
 	groups: readonly GroupChoice[];
-	/** The group under inspection, or null for none. */
-	groupFocus: GroupFocus | null;
+	/** The selected group's id, or null for none. */
+	selectedGroup: string | null;
 	/**
-	 * The person chose a group to inspect, or let go of it.
-	 * @param group The group's id, or null to stop.
+	 * The person selected a group's members, or let them go.
+	 * @param group The group's id, or null to let go.
 	 */
 	onChooseGroup: (group: string | null) => void;
 	/** What the picture on screen draws each kind with, for the key. */
@@ -149,20 +149,20 @@ function walkthroughList(props: SemanticBoardPanelProps): ReactNode {
 }
 
 /**
- * The control that inspects a group, offered whenever there is a picture to
- * inspect it on. A variant with no memberships is told so by the control
- * itself, which is the empty state a reader can find.
+ * The groups, offered whenever there is a picture to select their members on.
+ * A variant with no memberships is told so by the list itself, which is the
+ * empty state a reader can find.
  * @param props What the tab is assembled from.
- * @returns The control, or null before anything has been drawn.
+ * @returns The list, or null before anything has been drawn.
  */
-function groupControl(props: SemanticBoardPanelProps): ReactNode {
+function groupList(props: SemanticBoardPanelProps): ReactNode {
 	if (props.answer === undefined || props.reading === null) {
 		return null;
 	}
 	return (
-		<SemanticGroupBar
+		<SemanticGroupList
 			choices={props.groups}
-			focus={props.groupFocus}
+			selected={props.selectedGroup}
 			onChoose={props.onChooseGroup}
 		/>
 	);
@@ -191,7 +191,7 @@ function SemanticBoardPanel(props: SemanticBoardPanelProps): JSX.Element {
 				{walkthroughList(props)}
 			</Part>
 			<Part title="Groups" slot="semantic-board-panel-groups">
-				{groupControl(props)}
+				{groupList(props)}
 			</Part>
 			<Part title="Layout engine" slot="semantic-board-panel-engine">
 				<SemanticEngineBar />

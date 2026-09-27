@@ -182,10 +182,10 @@ function marked(): string[] {
  * @returns Their ids, or none while nothing recedes.
  */
 function unveiled(): string[] {
-	if (!surface().classList.contains("is-group-focus")) {
+	if (!surface().classList.contains("is-veiled")) {
 		return [];
 	}
-	return [...surface().querySelectorAll("[data-semantic-id].is-group-member")].map(
+	return [...surface().querySelectorAll("[data-semantic-id].is-lit")].map(
 		(group) => group.getAttribute("data-semantic-id") ?? "",
 	);
 }

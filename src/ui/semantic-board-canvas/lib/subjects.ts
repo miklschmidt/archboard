@@ -149,40 +149,26 @@ function raise(group: Element, raised: boolean): void {
 	}
 }
 
-/** The class the surface carries while one group is under inspection. */
-const GROUP_FOCUS_CLASS = "is-group-focus";
+/** The class the surface carries while a presented step veils what it is not about. */
+const VEILED_CLASS = "is-veiled";
 
-/** The classes the embedded stylesheet reads a group inspection through. */
-const GROUP_CLASSES = {
-	members: "is-group-member",
-	boundary: "is-group-boundary",
-	context: "is-group-context",
-} as const;
-
-/** Which subjects a group inspection lights, keeps readable, or treats as context. */
-interface GroupMarks {
-	readonly members: ReadonlySet<string>;
-	readonly boundary: ReadonlySet<string>;
-	readonly context: ReadonlySet<string>;
-}
+/** The class a subject the veil leaves standing carries. */
+const LIT_CLASS = "is-lit";
 
 /**
- * Draw one group's inspection on the picture, or take it off.
+ * Draw a presented step's veil on the picture, or take it off.
  *
- * Its own classes rather than the attention ring, so a subject can be attended
- * and a member at once and say both. The surface carries the class that lets
- * everything else recede ({@link surfaceMarks}), so a picture with no group
- * under inspection is drawn exactly as it was: the stylesheet's group rules
- * all hang under it.
+ * Its own class rather than the attention ring: which subjects a step is about
+ * is what the veil leaves standing, and the ring is drawn from attention alone.
+ * The surface carries the class that lets everything else recede
+ * ({@link surfaceMarks}), so a picture with no step presented is drawn exactly
+ * as it was: the veil's rules all hang under it.
  * @param surface The element the picture was put into.
- * @param marks What to light, keep readable, and treat as context; null for none.
+ * @param lit The subjects the step is about; null for no veil.
  */
-function markGroupFocus(surface: Element, marks: GroupMarks | null): void {
+function markVeil(surface: Element, lit: ReadonlySet<string> | null): void {
 	for (const group of surface.querySelectorAll(MARKED)) {
-		const id = markedId(group) ?? "";
-		for (const role of ["members", "boundary", "context"] as const) {
-			group.classList.toggle(GROUP_CLASSES[role], marks?.[role].has(id) ?? false);
-		}
+		group.classList.toggle(LIT_CLASS, lit?.has(markedId(group) ?? "") ?? false);
 	}
 }
 
@@ -191,22 +177,22 @@ const FAR_VIEW_CLASS = "is-far";
 
 /**
  * The classes the surface itself carries for the picture's stylesheet: that a
- * group is under inspection, and that the picture is seen from far away,
+ * presented step veils the picture, and that it is seen from far away,
  * where each card draws its name larger in place of its responsibility. They
  * are part of the surface's rendered class, never toggled on it afterwards: a
  * render that writes the surface's class (a pan starting, say) would wipe a
  * class put there by hand.
  * @param state What the surface says.
- * @param state.focused Whether a group is under inspection.
+ * @param state.veiled Whether a presented step veils the picture.
  * @param state.far Whether the picture is seen from far away.
  * @returns The classes, each with a leading space, or nothing.
  */
-function surfaceMarks({ focused, far }: { focused: boolean; far: boolean }): string {
-	return `${focused ? ` ${GROUP_FOCUS_CLASS}` : ""}${far ? ` ${FAR_VIEW_CLASS}` : ""}`;
+function surfaceMarks({ veiled, far }: { veiled: boolean; far: boolean }): string {
+	return `${veiled ? ` ${VEILED_CLASS}` : ""}${far ? ` ${FAR_VIEW_CLASS}` : ""}`;
 }
 
 /** Every class the viewer puts on a subject's group; none of them is the renderer's. */
-const VIEWER_MARKS: readonly string[] = [SELECTED_CLASS, ...Object.values(GROUP_CLASSES)];
+const VIEWER_MARKS: readonly string[] = [SELECTED_CLASS, LIT_CLASS];
 
 /**
  * The viewer's marks on a surface, by subject.
@@ -228,7 +214,7 @@ function marksOn(surface: Element): Map<string, string[]> {
 /**
  * Put a picture back on a surface without it ever being seen unmarked.
  *
- * The marks the viewer draws — attention, a group, a presented step's veil —
+ * The marks the viewer draws — attention and a presented step's veil —
  * are put on the markup after it is staged, and a flight that lands stages the
  * picture again from its string. Between the two a frame could be painted with
  * none of them, and whatever they light or veil would be seen to switch off and
@@ -251,16 +237,13 @@ function keepingMarks(surface: Element, stage: () => void): void {
 }
 
 export {
-	GROUP_CLASSES,
-	GROUP_FOCUS_CLASS,
 	SELECTED_CLASS,
 	SUBJECT_ATTRIBUTE,
 	isSubject,
 	keepingMarks,
-	markGroupFocus,
 	markSubjects,
+	markVeil,
 	subjectAt,
 	subjectBox,
 	surfaceMarks,
-	type GroupMarks,
 };

@@ -1,4 +1,4 @@
-// Which group one pane is inspecting, if any, and what that inspection is.
+// Which group one pane has selected, if any, and which parts that selects.
 //
 // Session state, in the same class as the camera, the selection and the place
 // in a walkthrough: choosing a group is reading, not editing. Nothing is
@@ -8,26 +8,23 @@
 // The choice is kept beside the board and the variant it was made on, and
 // discarded on navigation: a pane pointed at another board, or at another
 // state of this one, is a pane whose group means nothing any more — the ids
-// belong to one variant of one board. Returning starts a fresh reading instead
-// of resurrecting the old choice. A change of view keeps it,
-// because a view narrows the picture and not the group.
+// belong to one variant of one board. Returning starts afresh instead of
+// resurrecting the old choice. A change of view keeps it, because a view
+// narrows the picture and not the group.
 //
-// What the inspection *is* — members, hidden members, what to light — is
-// derived here too, from the board document, the vault policy and the picture
-// on screen, so that a board change, a configuration change or a new picture
-// each refresh it through the queries they already invalidate.
+// What the choice selects is derived here too, from the board document, so
+// that a board change refreshes it through the query it already invalidates.
 
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 
 import type { SemanticVariant } from "@/shared/semantic-board/index";
-import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import {
 	groupChoices,
-	groupFocus,
+	groupSelection,
 	type GroupChoice,
-	type GroupFocus,
 	type GroupNames,
+	type GroupSelection,
 } from "@/ui/semantic-board-canvas/lib/groups";
 import { vaultCheckQuery } from "@/ui/semantic-board-canvas/lib/queries";
 
@@ -41,29 +38,19 @@ interface GroupPlace {
 	readonly group: string;
 }
 
-/** What the pane is inspecting, what it could, and how to change that. */
-interface GroupInspectionState {
+/** Which group the pane has selected, which it could, and how to change that. */
+interface GroupSelectionState {
 	/** What the vault calls each group. */
 	readonly names: GroupNames;
 	/** Every group the variant on screen uses. */
 	readonly choices: readonly GroupChoice[];
-	/** The group under inspection, read against the picture, or null for none. */
-	readonly focus: GroupFocus | null;
+	/** The group selected and its members, or null for none. */
+	readonly selected: GroupSelection | null;
 	/**
-	 * Inspect one group, or stop.
+	 * Select one group, or let go.
 	 * @param group The group's id, or null to clear.
 	 */
 	readonly choose: (group: string | null) => void;
-}
-
-/** What the inspection is derived from. */
-interface GroupSource {
-	/** The board on screen. */
-	readonly board: string;
-	/** The variant on screen, whole, or null while it has not arrived. */
-	readonly variant: SemanticVariant | null;
-	/** The picture on screen, or null while there is not one. */
-	readonly drawn: SemanticDrawing | null;
 }
 
 /** No vault policy has arrived, so no group has a name yet. */
@@ -92,7 +79,7 @@ function chosenHere(
  * @param place The remembered choice.
  * @param board The board now shown.
  * @param variant The resolved variant, or null while the document loads.
- * @returns Whether to forget the old inspection permanently.
+ * @returns Whether to forget the old choice for good.
  */
 function leftPlace(place: GroupPlace | null, board: string, variant: string | null): boolean {
 	return (
@@ -101,32 +88,13 @@ function leftPlace(place: GroupPlace | null, board: string, variant: string | nu
 }
 
 /**
- * The group under inspection, read against the picture on screen.
- * @param source What the pane is showing.
- * @param group The chosen group, or null.
- * @param names What the vault calls each group.
- * @returns The focus, or null when nothing is under inspection.
+ * Which group this pane has selected on the board and variant it is showing,
+ * and what that selects.
+ * @param board The board on screen.
+ * @param variant The variant on screen, whole, or null while it has not arrived.
+ * @returns The names, the choices, the selection and the one way to change it.
  */
-function focusOf(source: GroupSource, group: string | null, names: GroupNames): GroupFocus | null {
-	if (group === null || source.variant === null) {
-		return null;
-	}
-	return groupFocus(
-		source.variant,
-		group,
-		names,
-		source.drawn === null ? null : source.drawn.atlas,
-	);
-}
-
-/**
- * Which group this pane is inspecting on the board and variant it is showing,
- * and everything that inspection is.
- * @param source The board, the variant and the picture on screen.
- * @returns The names, the choices, the inspection and the one way to change it.
- */
-function useGroupInspection(source: GroupSource): GroupInspectionState {
-	const { board, variant } = source;
+function useGroupSelection(board: string, variant: SemanticVariant | null): GroupSelectionState {
 	const shown = variant === null ? null : variant.id;
 	const policy = useQuery(vaultCheckQuery());
 	const names = policy.data === undefined ? NO_GROUP_NAMES : policy.data.policy.groups;
@@ -142,8 +110,11 @@ function useGroupInspection(source: GroupSource): GroupInspectionState {
 		[board, shown],
 	);
 	const choices = useMemo(() => groupChoices(variant, names), [variant, names]);
-	const focus = useMemo(() => focusOf(source, group, names), [source, group, names]);
-	return useMemo(() => ({ names, choices, focus, choose }), [names, choices, focus, choose]);
+	const selected = useMemo(
+		() => (group === null || variant === null ? null : groupSelection(variant, group)),
+		[variant, group],
+	);
+	return useMemo(() => ({ names, choices, selected, choose }), [names, choices, selected, choose]);
 }
 
-export { useGroupInspection, type GroupInspectionState, type GroupSource };
+export { useGroupSelection, type GroupSelectionState };
