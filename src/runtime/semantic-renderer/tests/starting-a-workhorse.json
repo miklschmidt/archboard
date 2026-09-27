@@ -56,8 +56,7 @@
 			"order": 13000,
 			"name": "Tell coordinator",
 			"kind": "module",
-			"responsibility": "The archboard_coordinator tool a workhorse is started with: tell the coordinator one thing while it works",
-			"groups": ["voice"]
+			"responsibility": "The archboard_coordinator tool a workhorse is started with: tell the coordinator one thing while it works"
 		}
 	],
 	"edges": [

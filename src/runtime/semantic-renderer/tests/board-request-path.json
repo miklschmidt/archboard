@@ -14,7 +14,6 @@
 			"name": "Semantic board store",
 			"kind": "module",
 			"responsibility": "The one place a board is read or written",
-			"groups": ["writes"],
 			"drillDown": {
 				"board": "Board persistence",
 				"variant": {

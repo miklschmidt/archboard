@@ -59,7 +59,6 @@
 			"responsibility": "Keeps each pane in server contact",
 			"description": "Owns the pane's socket and its generations, registration and pane reports, board news, taking back a claim, opening code, and the workbench transport each socket generation carries.",
 			"parent": "yAFyqal3",
-			"groups": ["panes"],
 			"binding": {
 				"repo": "github.com/miklschmidt/archboard",
 				"path": "src/ui/pane-session"

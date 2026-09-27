@@ -57,8 +57,7 @@
 			"order": 12000,
 			"name": "Vault check",
 			"kind": "module",
-			"responsibility": "check and semantic config: the vault's vocabulary and everything wrong with its boards",
-			"groups": ["checks"]
+			"responsibility": "check and semantic config: the vault's vocabulary and everything wrong with its boards"
 		},
 		{
 			"id": "qBnro8cs",
@@ -73,8 +72,7 @@
 			"order": 14000,
 			"name": "Panes",
 			"kind": "module",
-			"responsibility": "browser: the live session, its panes, and pointing one at a board",
-			"groups": ["panes"]
+			"responsibility": "browser: the live session, its panes, and pointing one at a board"
 		},
 		{
 			"id": "iIJ5MRhi",
@@ -111,8 +109,7 @@
 			"order": 21000,
 			"name": "Record",
 			"kind": "module",
-			"responsibility": "record: one walkthrough, narrated by the Codex voice, to a video file",
-			"groups": ["walkthrough"]
+			"responsibility": "record: one walkthrough, narrated by the Codex voice, to a video file"
 		},
 		{
 			"id": "jAKtfzMA",
