@@ -15,7 +15,6 @@ import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { roundBridges, type DrawnPoint } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { headsOn, trafficLayers } from "@/runtime/semantic-renderer/tests/drawn-traffic";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
-import branchingCloud from "./branching-cloud.json";
 import commandGroups from "./command-groups.json";
 import commandInterface from "./command-interface.json";
 import readingABoard from "./reading-a-board.json";
@@ -91,23 +90,21 @@ test("a resting streak keeps a lane past where its line parts from one out of th
 	expect(head - parted).toBeGreaterThanOrEqual(glow + ROUTE_LANE);
 });
 
-test("a resting streak lies over no hop on its line, whichever line carries the hop", async () => {
-	for (const [fixture, id] of [
-		[branchingCloud, "xCH4TAWg"],
-		[commandGroups, "ytXRvhS3"],
-	] as const) {
-		const { reaches, head, ride, paths } = await resting(fixture, id);
-		// A hop's middle lies on the line it passes over, its ends on the line that carries it.
-		const hops = paths
-			.flatMap((d) => roundBridges(d))
-			.flatMap(({ start, end }) => {
-				const middle = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
-				return along(ride, middle) ?? along(ride, start) ?? [];
-			});
-		expect(hops.length).toBeGreaterThan(0);
-		for (const hop of hops)
-			for (const reach of reaches) expect(hop < head - reach || hop > head).toBe(true);
-	}
+// The line that passed under Cloud Infrastructure's hop no longer crosses
+// there since its fold was refused (ADR 0039); what is left is the line
+// that carries one.
+test("a resting streak lies over no hop its line carries", async () => {
+	const { reaches, head, ride, paths } = await resting(commandGroups, "ytXRvhS3");
+	// A hop's middle lies on the line it passes over, its ends on the line that carries it.
+	const hops = paths
+		.flatMap((d) => roundBridges(d))
+		.flatMap(({ start, end }) => {
+			const middle = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
+			return along(ride, middle) ?? along(ride, start) ?? [];
+		});
+	expect(hops.length).toBeGreaterThan(0);
+	for (const hop of hops)
+		for (const reach of reaches) expect(hop < head - reach || hop > head).toBe(true);
 });
 
 /**
