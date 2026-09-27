@@ -34,7 +34,8 @@ drawings equal on every earlier one.
   own route;
 - crossings, and crossings on a line's corner;
 - stacks of unrelated lines drawn on one stroke, and double tracks (unrelated
-  lines running a lane or less apart for a long stretch);
+  lines running closer than a lane apart for a long stretch; lines exactly a
+  lane apart stand at the routers' channel pitch and are not a double track);
 - side hooks, ports crowding a card's corner or a badge, lines hugging a frame
   wall;
 - labels crowded by other lines, and streaks resting on a label, a hop or a
@@ -57,23 +58,29 @@ section says how the engines do this.
 ### How the engines choose
 
 - **The comparison** (`readingOrder` in `lib/track/score.ts`). Two layouts
-  are compared on five numbers, in this order: crossings; the length of
-  unrelated lines drawn on one stroke or side by side closer than a lane;
-  hooks into a card's side and lines that touch; bends; route length. The
-  first number on which they differ decides. Two route lengths within a
-  twentieth of each other count as equal. When all five are equal, the layout
-  that fits the reference pane better wins, and then the smaller page.
-- **What each engine counts.** Graphviz counts all five on its settled
-  drawing, and counts a crossing on a line's corner as one crossing more.
-  Track and Blocks count crossings, bends and route length on their lines as
-  drawn, and a line that laps round a block of cards counts as one crossing
-  more. They do not count the other two: counting them changed no drawing in
-  either vault.
+  are compared on four numbers, in this order: crossings; hooks; bends; route
+  length. The first number on which they differ decides. Two route lengths
+  within a twentieth of each other count as equal. When all four are equal,
+  the layout that fits the reference pane better wins, and then the smaller
+  page. An engine that does not count a number leaves it equal.
+- **What each engine counts.** Graphviz counts, on its settled drawing,
+  crossings and hooks. Its crossings are every place two lines cross, one
+  more for each of those within a lane of a line's bend, and one for each
+  pair of unrelated lines drawn on one stroke (`crossingsSeen`). Its hooks
+  are line ends that hook into a card's side, pairs of lines that touch, and
+  joins crowded into one blot. Track and Blocks count crossings, bends and
+  route length on their lines as drawn. Where they choose whether a block's
+  containers stack, a line that laps round the block past every card it
+  holds counts as one crossing more: stacked, One write lands (Track) turned
+  its lines less but sent 'announce the accepted write' down the page's
+  right edge. No engine counts double tracks, and Track and Blocks count no
+  hooks, and Graphviz no bends or route length: counting them changed no
+  drawing in either vault.
 - **The guard** (`takes`). Every chooser this decision changed makes two
   picks: the pick it made before this decision (its earlier weighing), and a
   reading pick. When the two picks agree, that is the choice. When they
   differ, the reading pick is taken only if it is no worse than the earlier
-  pick on every one of the five numbers, route length within a twentieth.
+  pick on every number the engine counts, route length within a twentieth.
   Otherwise the earlier pick stays. Two drawings often trade one number for
   another, and the guard stops a crossing saved from buying more bends, more
   line or a hook.
@@ -82,27 +89,31 @@ section says how the engines do this.
   block's joins are kept whole: the way that parts fewer joins, and between
   ways that part as many, the comparison. Graphviz's column fold: the fold
   must fit the reference pane at least a twentieth better than the unfolded
-  drawing and have no more defects. Defects are compared in order: crossings
-  first; only when the crossings are equal, the length of stacked and
-  double-tracked line; only when that is equal too, hooks and touching lines.
-  So a fold with a crossing fewer and two hooks more passes this test, and
-  the guard then keeps the earlier pick unless the fold is no worse on every
-  number. A drawing that fits a twentieth better shows at about the same
-  scale, which pays for none of a fold's price.
+  drawing and read no worse on the comparison. Its earlier weighing is that
+  fit gain and a higher score, fit less a share for each crossing. A fold
+  with a crossing fewer and two hooks more passes both, so it was taken
+  before this decision and still is. A drawing that fits a twentieth better
+  shows at about the same scale, which pays for none of a fold's price.
 - **Choosers left on their earlier weighing.** Settling a block's ports:
   held to the guard, it drew Public ownership (Blocks) with four more
-  crossings and IIS data with one more. The held
-  port order and the board's wrap: on every board of both vaults the guard
-  kept their earlier pick, so their earlier rule is kept. A block of blocks'
-  packing, the wrap of a block inside the board and the fold of a block of
-  cards are chosen before the drawing exists, on their fit less a share for
-  each crossing, their fit standing for how the finished drawing will read.
+  crossings and IIS data with one more. The held port order and the board's
+  wrap: on every board of both vaults the guard kept their earlier pick, so
+  their earlier rule is kept. The wrap of a block inside the board and the
+  fold of a block of cards are chosen before the drawing exists, on their fit
+  less a share for each crossing, their fit standing for how the finished
+  drawing will read. A block of blocks' packing is chosen that way too, and
+  is the one change outside the guard: where two packings score alike, the
+  smaller page is taken rather than the first packing tried. In Reading a
+  board (Blocks) the first packing tried stepped 'one stage per pane' down
+  three bends, a lane beside the dashed 'a board's new version' for 180 px;
+  on the smaller page it turns once and hops the dashed line.
 
 ## Consequences
 
 - The choosers change as the section above says: Track's and Blocks'
-  stacking, joins and packing (`lib/blocks/place.ts`, `joins.ts`), and
-  Graphviz's column fold (`lib/layout/column-readings.ts`). Each is judged by
+  stacking, joins and packing (`lib/blocks/place.ts`, `joins.ts`), a block
+  of blocks' ties (`pack.ts`), and Graphviz's column fold
+  (`lib/layout/column-readings.ts`). Each is judged by
   the pictures it gives.
 - A drawing that improved on the comparison alone but traded one number for
   another goes back to the drawing it had before this decision, fit included.
