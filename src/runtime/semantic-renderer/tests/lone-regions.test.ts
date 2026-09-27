@@ -2,8 +2,9 @@
 // board level, as round several (ADR 0038, amended 2026-09-27). What this
 // catches: a region round one card packed as a block of its own, holding the
 // labels of the lines into its card and standing it off its rank; a region's
-// caption painted over a line leaving its card; and a label lost from a line
-// into a container that such a region gathers.
+// caption painted over a line leaving its card; a label standing in such a
+// region's caption row; and a label lost from a line into a container that
+// such a region gathers.
 
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
@@ -16,6 +17,7 @@ import {
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import oneBrowserTwoUses from "./one-browser-two-uses.json";
 import oneCommandPath from "./one-command-path.json";
+import whatTheCliCanBeAsked from "./what-the-cli-can-be-asked.json";
 
 const policy = SemanticPolicySchema.parse({
 	levels: ["service"],
@@ -36,6 +38,8 @@ const policy = SemanticPolicySchema.parse({
 		drawing: { name: "Drawing", color: "violet" },
 		walkthrough: { name: "Walkthroughs", color: "cyan" },
 		state: { name: "Server state", color: "teal" },
+		panes: { name: "Live panes", color: "teal" },
+		checks: { name: "Vault checks", color: "pink" },
 	},
 });
 
@@ -43,19 +47,19 @@ const policy = SemanticPolicySchema.parse({
 type Box = { x: number; y: number; width: number; height: number };
 
 /**
- * A fixture with one more node in a group.
+ * A fixture with some more nodes in a group each.
  * @param fixture The fixture.
  * @param fixture.nodes Its nodes.
- * @param id The node.
- * @param group The group it joins.
+ * @param joining The group each joining node joins, by node id.
  * @returns The fixture's content.
  */
-function joined(fixture: { nodes: readonly object[] }, id: string, group: string) {
+function joined(fixture: { nodes: readonly object[] }, joining: Readonly<Record<string, string>>) {
 	return orderedFixture({
 		...fixture,
-		nodes: fixture.nodes.map((node) =>
-			(node as { id: string }).id === id ? { ...node, groups: [group] } : node,
-		),
+		nodes: fixture.nodes.map((node) => {
+			const group = joining[(node as { id: string }).id];
+			return group === undefined ? node : { ...node, groups: [group] };
+		}),
 	});
 }
 
@@ -123,7 +127,7 @@ function shared(one: Box, other: Box): number {
 test.each(["track", "blocks"] as const)(
 	"the %s engine draws a region round one card that holds none of its lines' labels",
 	async (layout) => {
-		const content = joined(oneCommandPath, "cWbvcIYa", "writes");
+		const content = joined(oneCommandPath, { cWbvcIYa: "writes" });
 		const drawn = await renderArchitecture({ content, theme: "light", policy, layout });
 		const { box } = regionsOf(drawn.svg, "writes")[0]!;
 		for (const [id, label] of routeLabels(drawn.svg))
@@ -131,12 +135,30 @@ test.each(["track", "blocks"] as const)(
 	},
 );
 
+// Reduced from a dogfood view: the label of a line into a card a region
+// round it holds was ranked with the region's caption, and stood in the
+// caption's row beside its words, where it reads as part of the caption.
+test("a line's label into a region round one card stands outside the region", async () => {
+	const content = joined(whatTheCliCanBeAsked, {
+		yQCdykGt: "checks",
+		vn4RDLH9: "panes",
+		"4oWqpsOB": "walkthrough",
+	});
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const regions = ["checks", "panes", "walkthrough"].flatMap((group) =>
+		regionsOf(drawn.svg, group),
+	);
+	expect(regions.length).toBe(3);
+	for (const [id, label] of routeLabels(drawn.svg))
+		for (const { box } of regions) expect(shared(label, box), `${id} inside a region`).toBe(0);
+});
+
 // Reduced from a dogfood view: a region round one card, drawn inline in a
 // block whose top ports the lines out of it leave by, was headed on the ports'
 // rank; its caption, painted at the region's corner, stood over the port a
 // line out of the card slid to.
 test("a line out of a region round one card passes beside its caption", async () => {
-	const content = joined(oneBrowserTwoUses, "ZAj4RMzN", "walkthrough");
+	const content = joined(oneBrowserTwoUses, { ZAj4RMzN: "walkthrough" });
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	const { caption } = regionsOf(drawn.svg, "walkthrough")[0]!;
 	for (const [id, points] of routePoints(drawn.svg))

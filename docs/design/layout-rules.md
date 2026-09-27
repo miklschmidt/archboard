@@ -2223,6 +2223,15 @@ worse, and each is now owned in `lone-regions.test.ts`:
   block of cards it stood in, and the router slid a line out of the region
   under the caption's words, painted at the region's corner (One browser,
   two uses, Blocks).
+- **A label of a line into a region round one card stands above it**
+  (`clusters.ts` `holdLabel`, `enteredRegions`). Graphviz ranked the label
+  with the region's caption, and it stood in the caption's row beside the
+  words, where it reads as part of the caption (What the CLI can be asked,
+  Blocks: Vault checks and Walkthroughs; Starting a workhorse, Track:
+  Voice). Holding every entered region's caption below the label, for regions
+  round several cards too, cleared every such label in both vaults but
+  redrew 45 drawings, most with no region round one card, so it is held to
+  regions round one card.
 - **A label of a line into a block that packs blocks stays by its source**
   (`inline.ts` `labelHolder`). A container that is its group's only member at
   the board level stands in its region's block alone, a block that draws only
@@ -2231,6 +2240,16 @@ worse, and each is now owned in `lone-regions.test.ts`:
 - The regression fixtures reduced from dogfood boards keep the drawings they
   were captured from: a membership their node held alone among its siblings
   drew nothing before and is taken out, so each guards what it guarded.
+
+Over the 39 drawings that change, crossings drawn with a hop are 256 as at
+`40461250`, against 299 with the regions drawn before these fixes; bends 3079
+→ 3184 (3356 before the fixes) and line 518k → 544k px, the regions' captions
+standing on ranks of their own.
+
+A label in the caption row of a region round several cards is older and
+stays: Archboard server whole and Durable write boundary (Track, `writes`) and
+Skill evaluation whole (Track, `grading`) had one at `40461250`, and Archboard
+server whole and Browser application whole (Track, `panes`) now have one.
 
 Left open: under Track, One browser, two uses runs `which Chromium` down
 through Headless browser's title words. Its lanes stand outside the frame
