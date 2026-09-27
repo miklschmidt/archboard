@@ -13,9 +13,10 @@
 // screen on. Its steps are handed over as "On screen now", and leaving is never told: the page
 // ends a recording by stopping the session.
 //
-// A step is handed over with what it highlights on screen, named in words, and on a variant
-// branched from another, how each of those stands against it (TASK-309): the picture marks what
-// was added and changed, and the voice can only explain what it is told.
+// A step is handed over with what it highlights on screen, named in words, and on a variant read
+// against another — the board's current one, or on a board with none the one it came from — how
+// each of those stands against it (TASK-309): the picture marks what was added and changed, and
+// the voice can only explain what it is told.
 
 import type { ChangeKind } from "@/shared/semantic-board/index";
 
@@ -52,7 +53,7 @@ function presentationName(name: string): string {
 
 /** What every presenting voice is told about the subjects a step hands over. */
 const STEP_SUBJECTS_RULE =
-	'A step may end with "It highlights", listing what the screen highlights for that step and, when the architecture is a proposal, whether each was added or changed against the one it was branched from and what moved. Use it to say what the step is about and what changed, in your own words; never read the list out, say "highlighted", or name a change the list does not give.';
+	'A step may end with "It highlights", listing what the screen highlights for that step and, when the architecture on screen is not the current one, whether each was added or changed against the current architecture (on a board with none, against the one it was branched from) and what moved. Use it to say what the step is about and what changed, in your own words; never read the list out, say "highlighted", or name a change the list does not give.';
 
 /**
  * What the voice model is told when it is started to narrate a walkthrough the user steps.
@@ -101,7 +102,7 @@ function voicePresentationPrompt(presentation: RealtimePresentation): string {
 interface StepSubject {
 	/** What it is called: a part or a sequence by name, a relationship or a step by its ends and label. */
 	readonly name: string;
-	/** How it stands against the variant this one was branched from, or null when there is none. */
+	/** How it stands against the variant this one is read against, or null when there is none. */
 	readonly standing: ChangeKind | null;
 	/** For a changed subject, what moved, in words; otherwise empty. */
 	readonly moved: readonly string[];

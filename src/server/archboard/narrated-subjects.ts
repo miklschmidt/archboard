@@ -1,15 +1,16 @@
 // What a narrated step highlights, as the voice is told it (TASK-309).
 //
 // A beat names its subjects by id; the voice hears them by name: a part or a sequence by its
-// name, a relationship or a step by its two ends and its label. On a variant branched from
-// another, each also says how it stands against that one, as the picture marks it, and a changed
-// one says what moved, so the voice can explain the change the viewer is looking at.
+// name, a relationship or a step by its two ends and its label. On a variant read against another
+// — the board's current one, or on a board with none the one it came from — each also says how it
+// stands against that one, as the picture marks it, and a changed one says what moved, so the
+// voice can explain the difference the viewer is looking at.
 
 import type { StepSubject } from "@/runtime/codex-realtime";
 import {
 	changeOf,
+	comparedWith,
 	compareVariants,
-	predecessorOf,
 	type FieldChange,
 	type SemanticBoard,
 	type SemanticVariant,
@@ -51,7 +52,7 @@ function namesOf(content: VariantContent): ReadonlyMap<string, string> {
 /**
  * One field that moved, in words.
  * @param moved The field and what it moved between.
- * @param before What the predecessor's subjects are called, for a field that names one.
+ * @param before What the other side's subjects are called, for a field that names one.
  * @returns What it was.
  */
 function movedOf(moved: FieldChange, before: ReadonlyMap<string, string>): string {
@@ -69,17 +70,17 @@ function movedOf(moved: FieldChange, before: ReadonlyMap<string, string>): strin
 	return named === undefined ? `${moved.field} was "${was}"` : `${moved.field} was ${named}`;
 }
 
-/** What a variant branched from another is compared against, for its subjects' standing. */
+/** What a variant is compared against, for its subjects' standing. */
 interface Against {
 	readonly comparison: VariantComparison;
-	/** What the predecessor's subjects are called. */
+	/** What the other side's subjects are called. */
 	readonly names: ReadonlyMap<string, string>;
 }
 
 /**
  * How one subject stands, as the voice is told it.
  * @param id The subject.
- * @param against What the variant is compared against, or null when it was branched from nothing.
+ * @param against What the variant is compared against, or null when there is nothing to read it against.
  * @returns Its standing and, when it changed, what moved.
  */
 function standingSpoken(id: string, against: Against | null): Omit<StepSubject, "name"> {
@@ -101,7 +102,7 @@ function standingSpoken(id: string, against: Against | null): Omit<StepSubject, 
  * @param variant The variant the walkthrough belongs to.
  * @param beat The step.
  * @returns Each subject the step names, in its order, with how it stands against the variant this
- * one was branched from when there is one.
+ * one is read against when there is one.
  */
 function narratedSubjects(
 	board: SemanticBoard,
@@ -109,13 +110,13 @@ function narratedSubjects(
 	beat: WalkthroughBeat,
 ): StepSubject[] {
 	const names = namesOf(variant.content);
-	const parent = predecessorOf(board, variant);
+	const base = comparedWith(board, variant);
 	const against =
-		parent === undefined
+		base === undefined
 			? null
 			: {
-					comparison: compareVariants(parent.content, variant.content),
-					names: namesOf(parent.content),
+					comparison: compareVariants(base.content, variant.content),
+					names: namesOf(base.content),
 				};
 	return beat.subjects.flatMap((id) => {
 		const name = names.get(id);

@@ -3,7 +3,7 @@
 // The Archboard server's render route and a browser drawing from the board it has
 // read both answer that question, and they have to answer it identically: the
 // same variant chosen for a name, the same view, the same changes read against
-// the same predecessor, the same subjects marked unsettled. So the answer is
+// the same variant, the same subjects marked unsettled. So the answer is
 // assembled once, here, from the board alone. The caller supplies the board and
 // the vault policy it read, and the renderer host it installed; what the answer
 // is travels on nothing else (ADR 0023).
@@ -140,7 +140,7 @@ async function drawnReply(
 	},
 ): Promise<SemanticRenderReply> {
 	const reading = readingOf(view);
-	// The comparison restores what a change took away from the predecessor;
+	// The comparison restores what the variant lacks of the one it is read against;
 	// a clean reading below draws only the variant's own content.
 	const proposal = drawingOf(board, variant, reading.scope);
 	// A subject nobody has decided yet is drawn with a warning on it, so a reader
@@ -153,8 +153,8 @@ async function drawnReply(
 		variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
 		view: view === undefined ? null : offered(view),
 		views: board.views.map(offered),
-		// Null for a variant with no predecessor, which is not an empty set of
-		// changes: one has nothing to have changed, the other changed nothing.
+		// Null for a variant with nothing to read it against, which is not an empty
+		// set of changes: one has nothing to differ from, the other differs in nothing.
 		changes: proposal.changes,
 		waiting,
 	};

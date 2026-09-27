@@ -59,7 +59,7 @@ interface Palette {
 	readonly standingAdded: string;
 	/** The same subject, saying something different. */
 	readonly standingChanged: string;
-	/** A subject the predecessor had that this proposal does not. */
+	/** A subject the variant it is read against has and this one does not. */
 	readonly standingRemoved: string;
 }
 

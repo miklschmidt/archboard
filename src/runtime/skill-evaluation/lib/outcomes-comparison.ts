@@ -1,10 +1,13 @@
-// The comparison of a proposal against its direct predecessor, as a check
+// The comparison of a proposal against the variant its picture is drawn
+// against and `semantic compare` reads it against by default — the board's
+// current one, or on a board with none its direct predecessor — as a check
 // reads it: over every kind of subject together, and over the nodes alone.
 // A scenario that replaces a node also replaces the relationships that touched
 // it, so "two nodes removed" and "four subjects removed" describe the same
 // proposal, and a check may state either.
 
 import {
+	comparedWith,
 	compareVariants,
 	type SemanticBoard,
 	type SemanticVariant,
@@ -40,21 +43,23 @@ function countChanges(changes: ReadonlyMap<string, { readonly kind: string }>): 
 }
 
 /**
- * The comparison of a variant against its direct predecessor: over every kind
+ * The comparison of a variant against the one it is read against: over every kind
  * of subject together, and over the nodes alone. A scenario that replaces a
  * node also replaces the relationships that touched it, so "two nodes
  * removed" and "four subjects removed" describe the same proposal.
  * @param board The board.
  * @param variant The variant.
- * @returns The counts, or undefined without a predecessor.
+ * @returns The counts, or undefined when there is nothing to read it against.
  */
 function standingCounts(
 	board: SemanticBoard,
 	variant: SemanticVariant,
-): { readonly all: ChangeCounts; readonly nodes: ChangeCounts } | undefined {
-	const parent = board.variants.find((candidate) => candidate.id === variant.parent);
-	if (parent === undefined) return undefined;
-	const comparison = compareVariants(parent.content, variant.content);
+):
+	| { readonly against: string; readonly all: ChangeCounts; readonly nodes: ChangeCounts }
+	| undefined {
+	const against = comparedWith(board, variant);
+	if (against === undefined) return undefined;
+	const comparison = compareVariants(against.content, variant.content);
 	const nodes = countChanges(comparison.nodes);
 	const rest = [
 		comparison.edges,
@@ -64,6 +69,7 @@ function standingCounts(
 		comparison.beats,
 	].map(countChanges);
 	return {
+		against: against.name,
 		nodes,
 		all: {
 			removed: nodes.removed + rest.reduce((sum, counts) => sum + counts.removed, 0),
@@ -73,8 +79,8 @@ function standingCounts(
 }
 
 /**
- * Whether a proposal reads as the stated removals and additions against its
- * predecessor: `removed`/`addedAtLeast` count every kind of subject,
+ * Whether a proposal reads as the stated removals and additions against the
+ * variant it is read against: `removed`/`addedAtLeast` count every kind of subject,
  * `removedNodes`/`addedNodesAtLeast` the nodes alone.
  * @param check The board, variant and counts.
  * @param reading The reading.
@@ -85,11 +91,11 @@ const comparisonStanding: Check = (check, reading) => {
 	if (isFinding(at)) return at;
 	const counts = standingCounts(at.board, at.variant);
 	if (counts === undefined)
-		return finding(false, `"${check.variant}" has no predecessor to compare against`);
+		return finding(false, `"${check.variant}" has nothing to be read against`);
 	return finding(
 		countsHold(counts.all, check.removed, check.addedAtLeast) &&
 			countsHold(counts.nodes, check.removedNodes, check.addedNodesAtLeast),
-		`${counts.nodes.removed} nodes removed, ${counts.nodes.added} added (${counts.all.removed} subjects removed, ${counts.all.added} added) against the predecessor`,
+		`${counts.nodes.removed} nodes removed, ${counts.nodes.added} added (${counts.all.removed} subjects removed, ${counts.all.added} added) against "${counts.against}"`,
 	);
 };
 

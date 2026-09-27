@@ -16,7 +16,7 @@ test("the comparison control carries the picture in and out without changing the
 	const compared = drawing(1);
 	const variant = { id: "draft", name: "Proposal", lifecycle: "draft" };
 	const changes = {
-		predecessor: { id: "current", name: "Current", lifecycle: "current" },
+		against: { id: "current", name: "Current", lifecycle: "current" },
 		standing: { ghost: "removed", n1: "changed" },
 	};
 	const decorated = { ...compared, variant, changes };

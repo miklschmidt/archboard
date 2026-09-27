@@ -32,6 +32,14 @@ const UNNAMED_VARIANT =
 	"nobody has built";
 
 /**
+ * What a drawing command's help says about the picture it draws: which other
+ * variant is in it, and that the receipt names that one.
+ */
+const DRAWN_AGAINST =
+	"Every variant but the current one is drawn as the comparison with the current one, or on a " +
+	"board with none with the variant it came from, and the receipt names it";
+
+/**
  * The variant a command named, or the one the board's name opens.
  * @param board The board as read.
  * @param asked The variant id or name typed, if any.
@@ -49,16 +57,16 @@ function askedVariant(board: SemanticBoard, asked: string | undefined): Semantic
 /**
  * The variant a picture was drawn against, for the receipt that answers a draw.
  *
- * A variant with a predecessor is drawn as the comparison with it, and neither
+ * A variant read against another is drawn as the comparison with it, and neither
  * the SVG nor the PNG says so. Both drawing commands therefore carry the other
  * side on their receipt, and they read it the same way here so the two answers
  * cannot drift apart.
  * @param drawn What the render answered.
- * @param drawn.changes What it changed about the variant it came from, or null.
- * @returns The predecessor, or null when this variant came from nothing.
+ * @param drawn.changes How it differs from the variant it is read against, or null.
+ * @returns That variant, or null when there is nothing to read it against.
  */
 function drawnAgainst(drawn: { readonly changes: RenderedChanges | null }): RenderedVariant | null {
-	return drawn.changes === null ? null : drawn.changes.predecessor;
+	return drawn.changes === null ? null : drawn.changes.against;
 }
 
 /**
@@ -396,6 +404,7 @@ export {
 	askedVariant,
 	SemanticBoardReadSchema,
 	drawnAgainst,
+	DRAWN_AGAINST,
 	SemanticBoardResultSchema,
 	describedWrite,
 	writeResult,

@@ -299,7 +299,7 @@ interface ArchitecturePainting {
  * Paint the final drawing and derive the interaction atlas from those same boxes.
  * @param drawing The compound layout owner's complete output.
  * @param palette The selected theme.
- * @param standingOf How each subject changed against its predecessor.
+ * @param standingOf How each subject stands against the variant it is read against.
  * @param unsettledOf Whether a subject needs reconciliation.
  * @param policy Current vault policy.
  * @param derived Ids of the lines that are flow steps drawn on the board, not authored relationships.

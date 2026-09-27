@@ -1,13 +1,15 @@
-// Asking a board what a proposal changed: what it added, what it took away,
-// what it left standing with something moved, and what it left alone.
+// Asking a board how a variant differs: what it adds, what it lacks, what it
+// holds with something moved, and what it leaves alone.
 //
 // Nothing here is authored and nothing here is stored. A proposal states an
 // architecture; that it added a queue and pointed two calls at it is read
-// against the variant it came from, every time, out of the identities the two
-// share (ADR 0023). `compareVariants` is the one implementation of that reading
-// and already runs in the canvas and in the renderer's overlay; this command is
-// the same reading in an answer, so an agent that cannot see a picture can
-// still say where the proposal leaves each relationship.
+// against another variant, every time, out of the identities the two share
+// (ADR 0023): by default the one its picture is drawn against, so the answer
+// and the picture agree; `--against` names another, which is how a superseded
+// proposal is read against its parent (ADR 0037). `compareVariants` is the one
+// implementation of that reading; this command is the same reading in an
+// answer, so an agent that cannot see a picture can still say where the
+// proposal leaves each relationship.
 //
 // It needs no browser and no second route: the server holds the aggregate, the
 // comparison is pure, and it is done here — the way `semantic inspect` runs the
@@ -15,6 +17,7 @@
 
 import { z } from "zod";
 import {
+	comparedWith,
 	compareVariants,
 	findVariant,
 	RenderedVariantSchema,
@@ -41,7 +44,7 @@ import { askedVariant, SelectorSchema, UNNAMED_VARIANT } from "@/cli/commands/li
 /** One field that moved, and what it moved between. */
 const MovedFieldSchema = z.object({
 	field: z.string(),
-	/** What the predecessor said; absent when it said nothing. */
+	/** What the variant it is read against said; absent when it said nothing. */
 	before: z.unknown(),
 	/** What this variant says; absent when it says nothing. */
 	after: z.unknown(),
@@ -49,7 +52,8 @@ const MovedFieldSchema = z.object({
 
 /**
  * What every compared subject carries: its identity, how it stands against the
- * predecessor, and the fields that moved — empty for anything but a change.
+ * variant it is read against, and the fields that moved — empty for anything
+ * but a change.
  *
  * `standing` rather than `kind`, because a node and a relationship each already
  * have a `kind` of their own and an answer with two of them would be a riddle.
@@ -73,7 +77,7 @@ const ComparedNodeSchema = z.object({
  *
  * The ends are named as well as identified, because "where it now lands" is the
  * thing a proposal is reported in and an id is not something anybody recognises.
- * A name is read off this variant first and the predecessor second, so a
+ * A name is read off this variant first and the other side second, so a
  * relationship the proposal removed still says which parts it used to join.
  */
 const ComparedEdgeSchema = z.object({
@@ -121,7 +125,7 @@ const ComparedBeatSchema = z.object({
 });
 
 /**
- * What one variant changed about the one it came from, as the answer carries it.
+ * How one variant differs from the one it is read against, as the answer carries it.
  *
  * Every subject either of them has is here, unchanged ones included: a reader
  * asking what a proposal did needs to be able to say what it left alone, and an
@@ -134,7 +138,7 @@ const VariantComparisonResultSchema = z.object({
 	version: z.int(),
 	/** The variant compared. */
 	variant: RenderedVariantSchema,
-	/** The variant it came from, which it is compared against. */
+	/** The variant it is read against. */
 	against: RenderedVariantSchema,
 	nodes: z.array(ComparedNodeSchema),
 	edges: z.array(ComparedEdgeSchema),
@@ -147,12 +151,13 @@ const VariantComparisonResultSchema = z.object({
 type VariantComparisonResult = z.infer<typeof VariantComparisonResultSchema>;
 type ComparedEdge = z.infer<typeof ComparedEdgeSchema>;
 
-const noPredecessorRefusal = {
-	code: "NO_PREDECESSOR",
+const nothingToCompareRefusal = {
+	code: "NOTHING_TO_COMPARE",
 	exit: 2,
 	stream: "stderr" as const,
 	description:
-		"The variant is a root architecture: it came from nothing, so there is no comparison to read.",
+		"No --against was named and the variant has nothing to be read against: it is the current " +
+		"variant, which every other variant is read against, or a first draft on a board with none.",
 };
 
 /**
@@ -185,7 +190,7 @@ function compared<Entity, Carried>(
  * What each part is called, over both states, so an endpoint the proposal
  * removed still has a name.
  * @param variant This variant's content.
- * @param against The predecessor's content.
+ * @param against The content of the variant it is read against.
  * @returns The names, by node id, this variant's winning.
  */
 function namesOf(variant: VariantContent, against: VariantContent): Map<string, string> {
@@ -320,7 +325,7 @@ function comparedBeat(change: SubjectChange<PlacedBeat>): z.infer<typeof Compare
  * @param board.name Its name.
  * @param board.version The version this was read at.
  * @param variant The variant compared.
- * @param against The variant it came from.
+ * @param against The variant it is read against.
  * @param warnings What reading the vault warned about.
  * @returns The comparison.
  */
@@ -432,50 +437,79 @@ function described(result: VariantComparisonResult): string[] {
 }
 
 /**
- * The variant this one came from.
+ * The variant one is read against: the one named, or the one its picture is
+ * drawn against.
  *
- * A root architecture came from nothing, and there is no honest comparison to
- * answer with: what it "added" would be every part it has. So it is refused,
- * naming the variants of this board that do have a predecessor, since one of
- * them is what the reader meant.
+ * With nothing named, the current variant and a first draft on a board with no
+ * current one have nothing to be read against, and an answer that invented one
+ * would call every part either "added" or the whole board unchanged. So it is
+ * refused, naming the variants that can be read against something, since one
+ * of them is what the reader meant.
  * @param board The board as read.
  * @param variant The variant asked about.
- * @returns Its predecessor.
- * @throws {CliUsageError} When it has none.
+ * @param named The variant `--against` named, if any.
+ * @returns The variant to read it against.
+ * @throws {CliUsageError} When the named one is not on the board, or nothing was named and
+ * there is nothing to read it against.
  */
-function predecessorOf(board: SemanticBoard, variant: SemanticVariant): SemanticVariant {
-	const parent = variant.parent === undefined ? undefined : findVariant(board, variant.parent);
-	if (parent !== undefined) {
-		return parent;
+function readAgainst(
+	board: SemanticBoard,
+	variant: SemanticVariant,
+	named: string | undefined,
+): SemanticVariant {
+	const found = named === undefined ? comparedWith(board, variant) : findVariant(board, named);
+	if (found !== undefined) {
+		return found;
 	}
-	const derived = board.variants
-		.filter((one) => one.parent !== undefined)
-		.map((one) => `"${one.name}"`)
-		.join(", ");
+	if (named !== undefined) {
+		throw new CliUsageError(
+			`"${board.name}" has no variant "${named}" to read against. Its variants: ${quoted(board.variants)}.`,
+		);
+	}
+	const comparable = board.variants.filter((one) => comparedWith(board, one) !== undefined);
 	throw new CliUsageError(
-		`"${variant.name}" is a root architecture of "${board.name}": it came from nothing, so there ` +
-			"is no comparison to read. Compare a proposal derived from it with `semantic branch` " +
-			`instead. Derived variants on this board: ${derived || "none yet"}.`,
+		`"${variant.name}" has nothing to be read against on "${board.name}": ` +
+			(variant.lifecycle === "current"
+				? "it is the current variant, and every other variant is read against it. "
+				: "the board has no current variant and this draft came from nothing. ") +
+			`Name another variant with --variant, or what to read this one against with --against. ` +
+			`Variants that have a comparison: ${quoted(comparable) || "none yet"}.`,
 	);
 }
 
-const CompareInputSchema = z.object({ name: z.string(), variant: SelectorSchema.optional() });
+/**
+ * Variants as a reader would type them.
+ * @param variants The variants.
+ * @returns Their names, quoted and comma-separated.
+ */
+function quoted(variants: readonly SemanticVariant[]): string {
+	return variants.map((one) => `"${one.name}"`).join(", ");
+}
+
+const CompareInputSchema = z.object({
+	name: z.string(),
+	variant: SelectorSchema.optional(),
+	against: SelectorSchema.optional(),
+});
 
 const semanticCompareContract = defineCommand({
 	path: ["semantic", "compare"],
 	shared: ["url"],
-	summary: "Read what one variant changed about the one it came from",
+	summary: "Read how one variant differs from the current one",
 	description:
-		"Reports one variant against its direct predecessor: every part, relationship, sequence, " +
+		"Reports one variant against the variant its picture is drawn against — the board's current " +
+		"variant, or on a board with none the one it came from — or against the variant --against " +
+		"names: every part, relationship, sequence, " +
 		"step, walkthrough and beat either of them has, how it stands — added, removed, changed or " +
 		"unchanged — and, for anything changed, which fields moved and what they moved between. " +
 		"Relationships and steps carry the endpoints they now have, named as well as identified, so " +
 		"a connection whose end moved onto a replacing part reads as one relationship that moved " +
 		"rather than as a deletion beside an addition. Read over the whole variant before any view " +
-		"narrows it. A root architecture came from nothing and is refused.",
+		"narrows it. With no --against, the current variant and a first draft on a board with no " +
+		"current one have nothing to be read against and are refused.",
 	examples: [
 		'archboard semantic compare payments --variant "Queued ingest"',
-		"archboard semantic compare payments",
+		'archboard semantic compare payments --variant "Queued ingest" --against "As built in May"',
 	],
 	parameters: [
 		{
@@ -493,6 +527,16 @@ const semanticCompareContract = defineCommand({
 			placeholder: "variant",
 			description: `Which variant to compare, by id or name; ${UNNAMED_VARIANT}`,
 		},
+		{
+			kind: "option",
+			key: "against",
+			spellings: ["--against"],
+			value: "required",
+			placeholder: "variant",
+			description:
+				"What to read it against, by id or name; when absent, the current variant, or on a " +
+				"board with none the variant it came from",
+		},
 	],
 	input: { ingress: CompareInputSchema },
 	result: VariantComparisonResultSchema,
@@ -502,7 +546,7 @@ const semanticCompareContract = defineCommand({
 				id: "json",
 				when: {},
 				mode: "json",
-				description: "What the variant changed about its predecessor",
+				description: "How the variant differs from the one it is read against",
 				presentation: ["diagnostics", "result"],
 			},
 		],
@@ -514,7 +558,7 @@ const semanticCompareContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: [serverRefusal, noPredecessorRefusal],
+	refusals: [serverRefusal, nothingToCompareRefusal],
 	relationships: [
 		{
 			method: "GET",
@@ -524,7 +568,7 @@ const semanticCompareContract = defineCommand({
 		},
 	],
 	/**
-	 * Compare the variant with its predecessor.
+	 * Compare the variant with the one it is read against.
 	 * @param input What the command was given.
 	 * @param context The command context.
 	 * @returns The comparison.
@@ -533,7 +577,7 @@ const semanticCompareContract = defineCommand({
 		await context.require("server", "semantic compare");
 		const answer = await readSemanticBoardAnswerOnServer(input.name);
 		const variant = askedVariant(answer.board, input.variant);
-		const against = predecessorOf(answer.board, variant);
+		const against = readAgainst(answer.board, variant, input.against);
 		const result = comparisonAnswer(answer.board, variant, against, answer.warnings);
 		return {
 			result,
@@ -550,4 +594,5 @@ export {
 	VariantComparisonResultSchema,
 	type VariantComparisonResult,
 	comparisonAnswer,
+	readAgainst,
 };

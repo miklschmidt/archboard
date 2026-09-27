@@ -100,7 +100,7 @@ const LIFECYCLES = VariantLifecycleSchema.options;
 const GRAMMARS = DiagramGrammarSchema.options;
 
 /**
- * How one subject differs from the same subject in the predecessor.
+ * How one subject differs from the same subject in the variant it is read against.
  *
  * The one vocabulary with no Zod owner to read: `ChangeKind` is a bare union in
  * the board contract's comparison. Listed here under a compile-time completeness
@@ -265,12 +265,12 @@ function normalizeDifference(value: unknown, field: string): BoundedValue<Semant
 }
 
 /**
- * Validates what this variant differs from its predecessor by.
+ * Validates what this variant differs from the variant it is read against by.
  *
  * The counts are kept whole even when the named subjects are trimmed: an agent
  * told "three changed" and shown one of them knows to read the rest, and one
  * shown a short list with no count would believe it had seen everything.
- * @param differences - The differences input, or null for a variant with no predecessor.
+ * @param differences - The differences input, or null for a variant with nothing to read it against.
  * @returns The frozen differences, or null.
  */
 function normalizeDifferences(

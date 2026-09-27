@@ -20,7 +20,12 @@ import {
 } from "@/runtime/semantic-rasterizer/receipt";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { PendingArtifactSchema } from "@/cli/command-contract/schemas";
-import { SelectorSchema, UNNAMED_VARIANT, drawnAgainst } from "@/cli/commands/lib/semantic-input";
+import {
+	DRAWN_AGAINST,
+	SelectorSchema,
+	UNNAMED_VARIANT,
+	drawnAgainst,
+} from "@/cli/commands/lib/semantic-input";
 import { serverRefusal } from "@/cli/command-contract/common";
 
 const THEMES = DiagramThemeSchema.options;
@@ -143,7 +148,7 @@ const semanticRasterizeContract = defineCommand({
 			spellings: ["--variant"],
 			value: "required",
 			placeholder: "variant",
-			description: `Which variant to draw, by id or name; ${UNNAMED_VARIANT}. A variant with a predecessor is drawn as the comparison with it, and the receipt names that predecessor`,
+			description: `Which variant to draw, by id or name; ${UNNAMED_VARIANT}. ${DRAWN_AGAINST}`,
 		},
 		{
 			kind: "option",

@@ -1,5 +1,6 @@
-// What the inspector says about where a subject stands: how a proposal
-// changed it against the state it came from, and what nobody has decided yet.
+// What the inspector says about where a subject stands: how the variant on
+// screen differs on it from the variant it is read against — the current one,
+// or on a board with none the one it came from — and what nobody has decided yet.
 //
 // Split out of the panel so the panel stays about what the board says a
 // subject is, and this stays about how it is standing. Both read the same
@@ -10,23 +11,23 @@ import type { JSX } from "react";
 import type { ChangeKind, FieldChange, ReconciliationIssue } from "@/shared/semantic-board/index";
 import { Row, Section } from "@/ui/semantic-board-canvas/components/SemanticInspectorParts";
 
-/** How the selected subject stands against the variant this one came from. */
+/** How the selected subject stands against the variant this one is read against. */
 interface StandingProps {
 	/** Its standing. */
 	standing: ChangeKind;
-	/** What the variant it came from is called. */
+	/** What the variant it is read against is called. */
 	predecessor: string;
 	/** The fields that moved; empty for anything but a change. */
 	moved: readonly FieldChange[];
 }
 
 /**
- * What the change did to the selected subject, and what moved.
+ * How the selected subject differs, and what moved.
  *
  * The picture already says which is which without words. This answers what the
  * picture cannot: a card drawn as changed does not say *what* changed, and a
  * standing without a before and an after is a badge rather than information.
- * Nothing at all for a subject that stands unchanged — most of a proposal does,
+ * Nothing at all for a subject that stands unchanged — most of a variant does,
  * and saying so on every panel would bury the few that moved.
  * @param props The standing, what it is compared against, and what moved.
  * @returns The block, or nothing.
@@ -37,7 +38,7 @@ function StandingBlock(props: StandingProps): JSX.Element | null {
 		return null;
 	}
 	return (
-		<Section title="Against this proposal's source">
+		<Section title={`Against ${props.predecessor}`}>
 			<p
 				className="text-body"
 				data-slot="semantic-inspector-standing"
@@ -151,21 +152,23 @@ function valueText(value: unknown): string {
  *
  * The picture says which is which in shape, lightness and texture; this says it
  * in words, and names the state being compared against so that "changed" is
- * never changed-from-nowhere. Nothing is said about a subject that stands
- * unchanged: most of a proposal does, and a line on every card saying so would
- * bury the handful that did move.
+ * never changed-from-nowhere. The words hold whichever way the two variants lie
+ * in time: a historical variant is read against the current one as much as a
+ * proposal is. Nothing is said about a subject that stands unchanged: most of a
+ * variant does, and a line on every card saying so would bury the handful that
+ * did move.
  * @param standing How the subject stands.
- * @param predecessor What the variant it came from is called.
+ * @param against What the variant it is read against is called.
  * @returns The sentence, or undefined when there is nothing to say.
  */
-function standingSentence(standing: ChangeKind, predecessor: string): string | undefined {
+function standingSentence(standing: ChangeKind, against: string): string | undefined {
 	if (standing === "added") {
-		return `New in this proposal. It was not on ${predecessor}.`;
+		return `On this variant and not on ${against}.`;
 	}
 	if (standing === "removed") {
-		return `Not on this proposal. It is shown from ${predecessor} to say what the change takes away.`;
+		return `Not on this variant. It is shown from ${against} to say what differs.`;
 	}
-	return standing === "changed" ? `Changed since ${predecessor}.` : undefined;
+	return standing === "changed" ? `Different on ${against}.` : undefined;
 }
 
 export { StandingBlock, WaitingBlock, standingSentence, valueText, type StandingProps };

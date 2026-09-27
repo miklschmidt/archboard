@@ -195,7 +195,7 @@ test("Everything fits the whole proposal and current state instead of zooming to
 			height: 600,
 			variant: { id: PROPOSED.id, name: PROPOSED.name, lifecycle: PROPOSED.lifecycle },
 			changes: {
-				predecessor: { id: AS_IT_IS.id, name: AS_IT_IS.name, lifecycle: AS_IT_IS.lifecycle },
+				against: { id: AS_IT_IS.id, name: AS_IT_IS.name, lifecycle: AS_IT_IS.lifecycle },
 				standing: { n1: "changed", e1: "unchanged" },
 			},
 		},
