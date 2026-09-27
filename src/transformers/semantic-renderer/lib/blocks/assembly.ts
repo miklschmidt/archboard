@@ -10,7 +10,6 @@ import {
 	type Laid,
 } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import {
-	bandOf,
 	captionIn,
 	cardIn,
 	carriedLine,
@@ -40,8 +39,6 @@ interface PlacedRegion {
 	readonly box: Box;
 	readonly caption: Box;
 	readonly depth: number;
-	/** For a region round one card or container, that region (`lone.ts`). */
-	readonly lone?: Lone;
 }
 
 /** A relationship's route and label, placed. */
@@ -197,7 +194,6 @@ class Assembly {
 				...(parent === undefined ? {} : { parent }),
 				box: region,
 				caption: captionIn(region, lone, lines),
-				lone,
 				depth: this.depths.get(block.id)! + framesAround(block, id),
 			};
 		});
@@ -385,10 +381,7 @@ class Assembly {
 		const framed = [...this.tree.blocks.values()]
 			.filter((block) => block.kind === "frame")
 			.map((block) => {
-				const header = this.inside(block, headerOf(block));
-				const band = block.lone === undefined ? 0 : bandOf(block.lone);
-				const title = { ...header, y: header.y + band, height: header.height - band };
-				return { title, frame: this.frameBox(block) };
+				return { title: this.inside(block, headerOf(block)), frame: this.frameBox(block) };
 			});
 		return [...framed, ...inline].map(({ title, frame }) => ({
 			box: title,

@@ -205,9 +205,8 @@ function sideRoom(width: number, lone: Lone): number {
 /**
  * The title row a container drawn inline gives the track scene, and the room
  * it keeps below what it holds. Alone in its region, the scene reads it as
- * the region: its title row holds the caption band above the title, reaching
- * as far in as the caption's words or the title's, whichever is further, and
- * it keeps the region's inset more below.
+ * the region: its title row holds the caption band above the title, and it
+ * keeps the region's inset more below.
  * @param bounds The container's cluster's box.
  * @param head Its header: the height its title's centre stands at, its height, and how far its title's words reach in.
  * @param head.centre The height of its centre.
@@ -222,9 +221,7 @@ function titleRow(
 	lone: Lone | undefined,
 ): Record<string, string> {
 	const { centre, height, words } = head;
-	const reach =
-		lone === undefined ? words : Math.max(words + LONE_INSET, lone.caption.width + CAPTION_INSET);
-	const row = [bounds.x, centre - height / 2, bounds.width, height, reach];
+	const row = [bounds.x, centre - height / 2, bounds.width, height, words];
 	return {
 		[TRACK_TITLE]: row.join(","),
 		...(lone === undefined ? {} : { [TRACK_BELOW]: String(LONE_INSET) }),
