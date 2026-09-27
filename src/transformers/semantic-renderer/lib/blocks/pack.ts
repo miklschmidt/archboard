@@ -23,6 +23,7 @@ import {
 	type Side,
 	type Size,
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
+import { PORT } from "@/transformers/semantic-renderer/lib/blocks/leaves";
 import { openStretch, type Span } from "@/transformers/semantic-renderer/lib/blocks/open-edge";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { spreadPorts } from "@/transformers/semantic-renderer/lib/track/channels";
@@ -37,8 +38,6 @@ import {
 const PACK_GAP = 72;
 /** Room between a block's header or top ports and the blocks under it. */
 const HEAD_GAP = 48;
-/** The side of a port's square. */
-const PORT = 1;
 /** How far apart two ends may be and still be one straight run. */
 const STRAIGHT = 0.5;
 /** The pairs of edges two pins stand on when they face each other, over and under or side by side. */
@@ -413,8 +412,8 @@ class PackLayout {
 	}
 
 	/**
-	 * Place the block's own ports on its side walls: each level with the
-	 * middle of the blocks its lines reach, within the block.
+	 * Place the block's own ports on its side walls, within the block: each level
+	 * with the pins its lines reach on that wall of their blocks, else their middle.
 	 * @param width The block's width.
 	 * @param span Where the packed items start and end.
 	 * @param span.top Where they start.
@@ -427,9 +426,10 @@ class PackLayout {
 			const reached = lines
 				.flatMap((line) => (line.to === port ? [line.from] : line.from === port ? [line.to] : []))
 				.flatMap((end) => {
-					const pin = this.tree.pins.get(end);
-					const owner = pin === undefined ? undefined : this.boxes.get(pin.block.id);
-					return owner === undefined ? [] : [owner.y + owner.height / 2];
+					const owner = this.boxes.get(this.tree.pins.get(end)?.block.id ?? "");
+					if (owner === undefined) return [];
+					const at = this.pinAt(end);
+					return [at.side === side ? at.y : owner.y + owner.height / 2];
 				});
 			const middle = reached.reduce((sum, y) => sum + y, 0) / Math.max(1, reached.length);
 			const y = Math.min(span.bottom, Math.max(span.top, middle));
