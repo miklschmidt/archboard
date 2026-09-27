@@ -1,0 +1,124 @@
+// What the tip over a part of the picture says, and which parts have one.
+//
+// What these catch: a tip that repeats what the card already draws, one that
+// leaves out what the far view hides, a label's tip that loses the kind of
+// line it names, and a container whose whole frame, rather than its header,
+// answers the pointer.
+
+import { GlobalRegistrator } from "@happy-dom/global-registrator";
+import { afterAll, beforeAll, expect, test } from "bun:test";
+
+import type { SemanticVariant } from "@/shared/semantic-board/index";
+import { subjectTip, tipTargetAt } from "@/ui/semantic-board-canvas/lib/subject-tips";
+
+beforeAll(() => {
+	GlobalRegistrator.register();
+});
+
+afterAll(async () => {
+	await GlobalRegistrator.unregister();
+});
+
+/** A variant with a card that opens a board, a container, and a labelled relationship. */
+const VARIANT = {
+	id: "v1",
+	name: "as it is",
+	lifecycle: "current",
+	content: {
+		nodes: [
+			{
+				id: "n1",
+				name: "API",
+				kind: "service",
+				responsibility: "Answers requests",
+				description: "Holds no state between requests.",
+				drillDown: { board: "api", variant: { kind: "current" } },
+			},
+			{ id: "n2", name: "Store", kind: "service", responsibility: "Keeps boards" },
+			{ id: "c1", name: "Server", kind: "system", description: "One process per vault." },
+		],
+		edges: [
+			{
+				id: "e1",
+				from: "n1",
+				to: "n2",
+				kind: "call",
+				label: "reads",
+				description: "Once per request.",
+			},
+		],
+		flows: [],
+	},
+} as unknown as SemanticVariant;
+
+/**
+ * A picture holding a card, a container's frame and header, and a relationship
+ * drawn as a line and a label, as the renderer marks them.
+ * @returns The picture's root.
+ */
+function drawn(): SVGSVGElement {
+	document.body.innerHTML =
+		`<svg xmlns="http://www.w3.org/2000/svg">` +
+		`<g data-semantic-kind="region" data-semantic-id="c1"><rect id="frame"></rect><line id="rule"></line></g>` +
+		`<g data-semantic-kind="node" data-semantic-id="n1"><rect id="card"></rect></g>` +
+		`<g data-semantic-kind="node" data-semantic-id="n2"><rect id="plain"></rect></g>` +
+		`<g data-semantic-kind="edge" data-semantic-id="e1" data-type-name="Calls"><path id="wire"></path></g>` +
+		`<g data-semantic-kind="edge" data-semantic-id="e1" data-semantic-part="label"><rect id="pill"></rect></g>` +
+		`<g data-semantic-kind="region" data-semantic-id="c1" data-semantic-part="header"><text id="title"></text></g>` +
+		`</svg>`;
+	const rule = document.querySelector("#rule");
+	if (rule !== null) {
+		// The rule under the header, 40 units down the screen.
+		rule.getBoundingClientRect = () => new DOMRect(0, 40, 200, 0);
+	}
+	return document.querySelector("svg")!;
+}
+
+/**
+ * The element of the picture with this id.
+ * @param picture The picture.
+ * @param id Its id.
+ * @returns The element.
+ */
+function at(picture: Element, id: string): Element {
+	return picture.querySelector(`#${id}`)!;
+}
+
+test("a card's tip adds what the card does not draw at this distance, and what a double-click opens", () => {
+	const card = tipTargetAt(at(drawn(), "card"), 0);
+	expect(card?.part).toBe("card");
+	const near = subjectTip(VARIANT, card!, false);
+	expect(near?.lead).toBeUndefined();
+	expect(near?.body).toBe("Holds no state between requests.");
+	expect(near?.hint).toContain("api");
+	const far = subjectTip(VARIANT, card!, true);
+	expect(far?.lead).toBe("Answers requests");
+	expect(far?.body).toBe("Holds no state between requests.");
+	// Drawn near, a card with nothing more to say has no tip.
+	const plain = tipTargetAt(at(drawn(), "plain"), 0);
+	expect(subjectTip(VARIANT, plain!, false)).toBeNull();
+	expect(subjectTip(VARIANT, plain!, true)?.lead).toBe("Keeps boards");
+});
+
+test("a label's tip names its words and the kind of line the picture draws them on", () => {
+	const picture = drawn();
+	expect(tipTargetAt(at(picture, "wire"), 0)).toBeNull();
+	const label = tipTargetAt(at(picture, "pill"), 0);
+	expect(subjectTip(VARIANT, label!, false)).toEqual({
+		lead: "reads",
+		body: "Once per request.",
+		kind: "Calls",
+		hint: undefined,
+	});
+});
+
+test("a container answers the pointer on its header band, not across its frame", () => {
+	const picture = drawn();
+	const header = at(picture, "title").parentElement;
+	expect(tipTargetAt(at(picture, "title"), 0)?.anchor).toBe(header);
+	expect(tipTargetAt(at(picture, "frame"), 20)?.anchor).toBe(header);
+	expect(tipTargetAt(at(picture, "frame"), 60)).toBeNull();
+	expect(subjectTip(VARIANT, tipTargetAt(at(picture, "title"), 0)!, false)?.body).toBe(
+		"One process per vault.",
+	);
+});

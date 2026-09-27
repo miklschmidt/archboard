@@ -15,6 +15,15 @@ function semanticInk(color: PaletteColor | undefined): string | undefined {
 	return color === undefined ? undefined : token(`--semantic-${color}`);
 }
 
+/** How much of its colour a card's body carries over the page. */
+const CARD_TINT = 0.07;
+
+/**
+ * How much of its colour a container's frame carries over the page: half a
+ * card's, so the cards inside, tinted by their own groups, read over it.
+ */
+const FRAME_TINT = 0.035;
+
 /**
  * The body's restrained tint and border, without touching comparison or type.
  * @param appearance Resolved channels.
@@ -22,7 +31,8 @@ function semanticInk(color: PaletteColor | undefined): string | undefined {
  */
 function bodyAttributes(appearance: NodeAppearance): Attributes {
 	const ink = semanticInk(appearance.bodyColor);
-	return ink === undefined ? {} : { stroke: ink, fill: ink, "fill-opacity": 0.07 };
+	const tint = appearance.container ? FRAME_TINT : CARD_TINT;
+	return ink === undefined ? {} : { stroke: ink, fill: ink, "fill-opacity": tint };
 }
 
 /**
@@ -35,7 +45,6 @@ function appearanceAttributes(appearance: NodeAppearance): Attributes {
 		"data-depiction": appearance.container ? "container" : "card",
 		"data-body-color": appearance.bodyColor ?? "neutral",
 		"data-group": appearance.group,
-		"data-group-name": appearance.groupName,
 		"data-type-color": appearance.typeColor ?? "neutral",
 		"data-type-name": appearance.typeName,
 		"data-type-kind": appearance.typeKind,

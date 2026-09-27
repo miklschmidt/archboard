@@ -20,8 +20,6 @@ import {
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
-import { SemanticAppearance } from "@/ui/semantic-board-canvas/components/SemanticAppearance";
-import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 import { SemanticDrillDown } from "@/ui/semantic-board-canvas/components/SemanticDrillDown";
 import type { CodeBinding } from "@/shared/code-target";
 import {
@@ -397,8 +395,6 @@ function openOn(shown: SemanticVariant, selection: string): readonly Reconciliat
 
 /** Inputs for the inspector. */
 interface SemanticInspectorProps {
-	/** Appearance of the selected subject in the exact picture on screen. */
-	appearance?: AppliedAppearance | undefined;
 	/**
 	 * Open the code a node is bound to, when the shell around the pane can.
 	 * @param binding Where the code is.
@@ -455,11 +451,6 @@ function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 				onOpen={props.onOpen}
 				groups={props.groups}
 				{...(props.onOpenCode === undefined ? {} : { onOpenCode: props.onOpenCode })}
-			/>
-			<SemanticAppearance
-				subject={subject}
-				appearance={props.appearance}
-				standing={explained.against?.standing}
 			/>
 		</section>
 	);

@@ -214,6 +214,13 @@ function standingsFrom(stated: StatedStandings | undefined): StandingOf {
 const TRAFFIC_ATTRIBUTE = "data-traffic";
 
 /**
+ * The attribute on the one group of a subject drawn in two that holds its
+ * words: a container's header, a relationship's or a message's label. A viewer
+ * says more about a subject where its words are.
+ */
+const PART_ATTRIBUTE = "data-semantic-part";
+
+/**
  * The attributes every drawn subject's group carries: what it is, which subject
  * it is, how it stands, and the ghosting that half of a removal is.
  *
@@ -491,6 +498,7 @@ export {
 	type SubjectKind,
 	type UnsettledOf,
 	BADGE_SIZE,
+	PART_ATTRIBUTE,
 	PIN_REACH,
 	TRAFFIC_ATTRIBUTE,
 	markedBox,

@@ -177,7 +177,26 @@ const PICTURE_EXIT_MS = 280;
  */
 const PRESENTATION_STEP_MS = 900;
 
+/**
+ * How long a picture takes to cross-fade between its cards drawn near (name
+ * and responsibility) and seen from far away (name alone, larger), when the
+ * camera crosses the far-view scale. Pulls against the zoom it follows: shorter
+ * than about a tenth of a second and the swap still reads as a jump; longer
+ * than about a quarter and a wheel's zoom has moved on before the words settle.
+ */
+const FAR_VIEW_FADE_MS = 180;
+
+/**
+ * How long the pointer rests on a card, a container's header or a label before
+ * the picture says more about it; once one tip is open, the next opens at once.
+ * Pulls against the pointer crossing the board: shorter and tips flash over
+ * everything it passes on its way; longer and resting on a card to read it
+ * feels ignored.
+ */
+const SUBJECT_TIP_DELAY_MS = 450;
+
 export {
+	FAR_VIEW_FADE_MS,
 	FLOW_CYCLE_CAP_MS,
 	FLOW_PULSE_RAMP,
 	FLOW_STEP_TRAVEL_MS,
@@ -187,6 +206,7 @@ export {
 	PICTURE_TRANSITION_MS,
 	PICTURE_TRANSITION_PHASES,
 	PRESENTATION_STEP_MS,
+	SUBJECT_TIP_DELAY_MS,
 	TRAFFIC_GAP_LIMITS_MS,
 	TRAFFIC_STILL_MS,
 	TRAFFIC_STREAK_MS,

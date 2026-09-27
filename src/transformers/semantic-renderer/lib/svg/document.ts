@@ -31,6 +31,7 @@ import {
 	NEAR_CLASS,
 } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { TRAFFIC_ATTRIBUTE } from "@/transformers/semantic-renderer/lib/svg/standing";
+import { FAR_VIEW_FADE_MS } from "@/shared/timing/timing";
 import { PULSE_CLASS } from "@/transformers/semantic-renderer/lib/svg/pulse";
 import {
 	HEAD_REF_X,
@@ -146,8 +147,7 @@ function stylesheet(palette: Palette, fonts: FontSource): string {
 			// Seen from far away, a card is its name: a viewer puts the far class
 			// on the picture when a card's own name would be too small to read,
 			// and each card shows its name and chip grown to fill it instead.
-			`.${FAR_VIEW_CLASS} .${FAR_CLASS}{display:inline}`,
-			`.${FAR_VIEW_CLASS} .${NEAR_CLASS}{display:none}`,
+			...farViewRules(),
 			// Group emphasis is a viewer's reading, toggled on the picture the way
 			// selection is: the surface says one group is under inspection, its
 			// members and the wiring between them stand as drawn, its immediate
@@ -167,6 +167,25 @@ function stylesheet(palette: Palette, fonts: FontSource): string {
 			`@media(prefers-reduced-motion:reduce){.${PULSE_CLASS}{display:none}}`,
 		].join(""),
 	);
+}
+
+/**
+ * How a picture swaps its cards' near and far layers: a cross-fade, each layer
+ * hidden once it has faded out so it is not painted at all. A reader asking
+ * for less motion gets the swap at once.
+ * @returns The rules.
+ */
+function farViewRules(): string[] {
+	const fade = `opacity ${FAR_VIEW_FADE_MS}ms ease`;
+	const shown = `opacity:1;visibility:visible;transition:${fade},visibility 0s`;
+	const hidden = `opacity:0;visibility:hidden;transition:${fade},visibility 0s linear ${FAR_VIEW_FADE_MS}ms`;
+	return [
+		`.${FAR_CLASS}{display:inline;${hidden}}`,
+		`.${NEAR_CLASS}{${shown}}`,
+		`.${FAR_VIEW_CLASS} .${FAR_CLASS}{${shown}}`,
+		`.${FAR_VIEW_CLASS} .${NEAR_CLASS}{${hidden}}`,
+		`@media(prefers-reduced-motion:reduce){.${FAR_CLASS},.${NEAR_CLASS}{transition:none}}`,
+	];
 }
 
 /** What a rendered document is made of. */
@@ -243,7 +262,6 @@ function svgDocument(input: DocumentInput): string {
 			(reading === undefined ? "" : ` data-reading-direction="${reading}"`) +
 			(theme === undefined ? "" : ` style="${escapeXml(standingAlone(theme, painted))}"`) +
 			">",
-		wrap("title", {}, escapeXml(title)),
 		description === undefined ? "" : wrap("desc", {}, escapeXml(description)),
 		painted,
 		"</svg>",

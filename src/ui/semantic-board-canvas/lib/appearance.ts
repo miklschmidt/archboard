@@ -8,14 +8,10 @@ interface AppliedAppearance {
 	readonly typeKind: string;
 	readonly iconSvg: string;
 	readonly depiction: string;
-	readonly bodyColor: string;
-	/** The name of the group whose colour the body takes, or empty when none does. */
-	readonly group: string;
 	readonly typeColor: string;
 	readonly lineColor: string;
 	readonly dash: string;
 	readonly arrowhead: string;
-	readonly emphasis: string;
 }
 
 /**
@@ -35,13 +31,10 @@ function pictureAppearances(svg: string): ReadonlyMap<string, AppliedAppearance>
 			typeName: attribute(group, "data-type-name", ""),
 			typeKind: attribute(group, "data-type-kind", ""),
 			depiction: attribute(group, "data-depiction", ""),
-			bodyColor: attribute(group, "data-body-color", "neutral"),
-			group: attribute(group, "data-group-name", ""),
 			typeColor: attribute(group, "data-type-color", "neutral"),
 			lineColor: attribute(group, "data-line-color", "neutral"),
 			dash: attribute(group, "data-line-dash", "solid"),
 			arrowhead: attribute(group, "data-arrowhead", "filled"),
-			emphasis: attribute(group, "data-emphasis", "normal"),
 		});
 	}
 	return appearances;

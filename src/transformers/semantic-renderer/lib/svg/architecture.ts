@@ -37,6 +37,7 @@ import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primi
 import { junctionMarks } from "@/transformers/semantic-renderer/lib/svg/junctions";
 import { travellingPulses } from "@/transformers/semantic-renderer/lib/svg/pulse";
 import {
+	PART_ATTRIBUTE,
 	markedBox,
 	standingOutline,
 	standingSwipe,
@@ -279,7 +280,11 @@ function paintEdgeWords(
 				]);
 	return pill === "" && badge === ""
 		? ""
-		: wrap("g", subjectGroup(lineKind(step), edge.id, standing), lines([pill, badge]));
+		: wrap(
+				"g",
+				{ ...subjectGroup(lineKind(step), edge.id, standing), [PART_ATTRIBUTE]: "label" },
+				lines([pill, badge]),
+			);
 }
 
 /** A painted drawing and the subject geometry a viewer interacts with. */

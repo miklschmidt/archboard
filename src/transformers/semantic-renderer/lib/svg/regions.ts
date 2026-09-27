@@ -16,8 +16,8 @@ import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-run
 
 /** How much of the group's colour the outline carries over the page. */
 const EDGE_TINT = 0.7;
-/** How wide the outline is drawn: twice a card's border, so a region reads as a zone, not a card. */
-const EDGE_WIDTH = 2;
+/** How wide the outline is drawn: three times a card's border, so a region reads as a zone, not a card. */
+const EDGE_WIDTH = 3;
 /** How far the caption's words lean from the group's colour toward the text colour. */
 const CAPTION_DEPTH = 0.35;
 

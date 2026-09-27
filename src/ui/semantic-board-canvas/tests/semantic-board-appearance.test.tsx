@@ -24,7 +24,7 @@ function styledDrawing(color: string): Record<string, unknown> {
 		...drawn,
 		svg: String(drawn["svg"]).replace(
 			'data-semantic-kind="node" data-semantic-id="n1"',
-			`data-semantic-kind="node" data-semantic-id="n1" data-depiction="card" data-type-name="API" data-type-color="violet" data-body-color="${color}" data-group="core" data-group-name="Core"`,
+			`data-semantic-kind="node" data-semantic-id="n1" data-depiction="card" data-type-name="API" data-type-color="violet" data-body-color="${color}" data-group="core"`,
 		),
 	};
 }
@@ -57,16 +57,12 @@ const BOARD = {
 	],
 };
 
-test("legend and inspection explain the picture and survive a policy-only restyle", async () => {
+test("the legend explains the picture and survives a policy-only restyle", async () => {
 	server.reply = { status: 200, body: styledDrawing("green") };
 	server.documents["pipeline"] = BOARD;
 	mountStage("n1");
 	await settle();
 	await settle();
-	// Something is selected, so the sidebar opens on it.
-	// The body's colour and the group it comes from, both read off the picture.
-	expect(part("semantic-inspector-appearance").textContent).toMatch(/green.*Core/u);
-	expect(part("semantic-inspector-appearance").textContent).toContain("violet type chip");
 	openSidebarTab("board");
 	expect(part("semantic-legend").textContent).toContain("API");
 	act(() => {
@@ -90,8 +86,6 @@ test("legend and inspection explain the picture and survive a policy-only restyl
 	});
 	expect(part("semantic-legend").textContent).toContain("Comparison and attention");
 	expect(part("semantic-legend").textContent).not.toContain("Containment");
-	openSidebarTab("selection");
-	expect(part("semantic-inspector-appearance").textContent).toMatch(/blue.*Core/u);
 });
 
 test("traffic changes are explained without animation numbers", async () => {

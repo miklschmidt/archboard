@@ -14,12 +14,13 @@ import {
 	appearanceAttributes,
 	typeChip,
 } from "@/transformers/semantic-renderer/lib/svg/appearance";
-import { halo } from "@/transformers/semantic-renderer/lib/svg/cards";
+import { cardInk, deck, halo } from "@/transformers/semantic-renderer/lib/svg/cards";
 import { nearLayer, paintFarTitle } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { stylesFor } from "@/transformers/semantic-renderer/lib/svg/styles";
 import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
 import {
+	PART_ATTRIBUTE,
 	standingOutline,
 	standingPin,
 	subjectGroup,
@@ -78,6 +79,9 @@ function paintMeasuredCard(
 			...appearanceAttributes(appearance),
 		},
 		lines([
+			measured.node.drillDown === undefined
+				? ""
+				: deck(box, CARD_RADIUS, cardInk(styles, appearance)),
 			halo(box, CARD_RADIUS, styles),
 			tag("rect", {
 				x: coord(box.x),
@@ -176,6 +180,7 @@ function paintMeasuredHeader(
 		{
 			...subjectGroup("region", placed.measured.node.id, standing),
 			...appearanceAttributes(appearance),
+			[PART_ATTRIBUTE]: "header",
 		},
 		lines([
 			nearLayer(
