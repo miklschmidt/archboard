@@ -5,7 +5,6 @@
 // problem: the blocks are packed in rows or columns in the order their lines
 // run, whichever fits the reference pane best, and libavoid routes the trunks
 // around them.
-import { fitIn } from "@/shared/shell-geometry/index";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
@@ -143,7 +142,7 @@ class PackLayout {
 			(group, across) => extentOf(this.sizesOf(group), across, this.gap).long,
 			(packing) => {
 				const { width, height } = this.sizeOf(packing);
-				return fitIn({ width: width + 2 * this.insets.side, height: height + around });
+				return { width: width + 2 * this.insets.side, height: height + around };
 			},
 		);
 	}

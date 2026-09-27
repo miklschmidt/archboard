@@ -1,6 +1,7 @@
 // The ways a block of blocks may be packed: its items cut, in the order
 // their lines run, into rows or columns, and each of those with a later item
 // moved up into an earlier row or column that has room for it.
+import { fitIn } from "@/shared/shell-geometry/index";
 import type { Size } from "@/transformers/semantic-renderer/lib/blocks/tree";
 
 /** The most blocks whose every packing is tried. */
@@ -68,6 +69,12 @@ function extentOf(
 	};
 }
 
+/**
+ * The share of the smallest cut's packed area a packing with an item moved up
+ * must fit in to be laid out: moving the item must fill real room, not only
+ * reshape the page.
+ */
+const FILLS = 0.9;
 /** The most packings with an item moved up that are laid out and weighed besides the cuts. */
 const MOST_BACKFILLED = 4;
 
@@ -124,6 +131,15 @@ function backfilled(packing: Packing, lengthOf: (group: readonly number[]) => nu
 }
 
 /**
+ * A page's area.
+ * @param page The page.
+ * @returns Its area.
+ */
+function areaOf(page: Size): number {
+	return page.width * page.height;
+}
+
+/**
  * What a packing's groups hold, whatever their order.
  * @param packing The packing.
  * @returns A key two packings share when their groups hold the same items.
@@ -135,19 +151,20 @@ function membersOf(packing: Packing): string {
 
 /**
  * The packings worth laying out: every cut whose estimated fit comes near
- * the best cut's, and the few best packings with an item moved up that do too.
+ * the best cut's, and the few best packings with an item moved up that do
+ * too and pack clearly smaller than every such cut.
  * @param order The items, in the order their lines run.
  * @param lengthOf How long a group is, read one way.
- * @param fitOf How well a packing's estimated size fits the reference pane.
+ * @param pageOf The estimated size of a block packed one way.
  * @returns The packings.
  */
 function packingsOf(
 	order: readonly number[],
 	lengthOf: (group: readonly number[], across: boolean) => number,
-	fitOf: (packing: Packing) => number,
+	pageOf: (packing: Packing) => Size,
 ): Packing[] {
 	const cuts = cutPackings(order);
-	const fits = cuts.map(fitOf);
+	const fits = cuts.map((packing) => fitIn(pageOf(packing)));
 	const least = Math.max(...fits) * WORTH_LAYING;
 	// A packing that only reorders a cut's groups fills no room the cut leaves.
 	const cut = new Set(cuts.map(membersOf));
@@ -158,12 +175,14 @@ function packingsOf(
 			.map((packing) => [JSON.stringify(packing), packing] as const),
 	);
 	const filled = [...moved.values()]
-		.map((packing) => ({ packing, fit: fitOf(packing) }))
+		.map((packing) => ({ packing, fit: fitIn(pageOf(packing)) }))
 		.filter(({ fit }) => fit >= least)
 		.toSorted((one, other) => other.fit - one.fit)
 		.slice(0, MOST_BACKFILLED)
 		.map(({ packing }) => packing);
-	return [...cuts.filter((_, index) => fits[index]! >= least), ...filled];
+	const laid = cuts.filter((_, index) => fits[index]! >= least);
+	const room = Math.min(...laid.map((packing) => areaOf(pageOf(packing)))) * FILLS;
+	return [...laid, ...filled.filter((packing) => areaOf(pageOf(packing)) <= room)];
 }
 
 export { extentOf, packingsOf, type Packing };
