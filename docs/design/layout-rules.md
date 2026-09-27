@@ -2198,3 +2198,15 @@ of them and crossed it 4 px from its bend, a crossing drawn with no hop.
 The measures against `ed9c7d8d` are section 42's; no count moves. Crossings
 drawn with no hop, a line cut beneath another: dogfood 56 → 40 (solid lines
 44 → 29), work 12 → 10 (solid 9 → 7).
+
+## 44. The Graphviz engine is removed (2026-09-27)
+
+[ADR 0040](../adr/0040-track-and-blocks-replace-the-graphviz-engine.md) removes
+the `graphviz` layout engine. Sections 31 to 43 describe its placement, column
+folds, routing, label reservations, settlements and finishing passes; that code
+is deleted, and those sections are history. Track and Blocks are the engines,
+behind `lib/layout/engines.ts`, and Track is the default. Graphviz still places
+the cards for both, and libavoid still routes Blocks' trunks.
+
+Every Track and Blocks drawing of the dogfood vault and of the work vault is
+byte-identical before and after the removal.

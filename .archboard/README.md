@@ -79,11 +79,12 @@ Variants form an ancestry tree and describe the evolution of the same diagram.
 Views belong to the board and remain available across every variant.
 
 `Renderer layout` keeps `Initial` as a historical variant: the renderer as it
-placed cards on a grid before the readable layout landed. Its current variant is
-the layout the code now settles, so opening the board draws the two against each
-other. **Render sequence**, **Sizing a card** and **Layout sequence** are its
-three readings; see
-[the implementation contract](../docs/design/measured-compound-renderer.md).
+placed cards on a grid before the readable layout landed. Its current variant
+still draws the Graphviz engine's pipeline, which
+[ADR 0040](../docs/adr/0040-track-and-blocks-replace-the-graphviz-engine.md)
+removed; until it is redrawn, `src/transformers/semantic-renderer/lib/layout/engines.ts`
+names the two engines, Track and Blocks. **Render sequence**, **Sizing a card**
+and **Layout sequence** are its three readings.
 
 A historical variant is a record, not a board to maintain. `Initial`'s bindings
 name files that moved out of `src/runtime/semantic-renderer/lib` in September,
