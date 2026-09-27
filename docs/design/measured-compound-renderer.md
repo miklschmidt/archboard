@@ -14,9 +14,9 @@ for the pinned upstream patch.
 
 Every board is solved reading down the page. A tall board is also folded into
 side-by-side columns (`lib/layout/column-readings.ts`), and the fold is kept
-only where it has fewer defects than the unfolded drawing, or as few and fits
-the reference pane materially better (ADR 0039: fit breaks ties, it never buys
-a defect).
+only where it has no more defects than the unfolded drawing and fits the
+reference pane materially better, by a twentieth (ADR 0039: fit breaks ties,
+it never buys a defect, and a defect fewer never buys a fold on its own).
 The document carries `data-reading-direction`. The conventions below are
 stated in that frame.
 

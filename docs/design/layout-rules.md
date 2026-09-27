@@ -366,33 +366,52 @@ How each engine's choices weigh fit since ADR 0039:
 - **One comparison** (`track/score.ts` `readingOrder`). Two layouts are
   compared on their measures in the ADR's order, and a later measure decides
   only between layouts alike on every earlier one: crossings, each on a
-  line's corner and each stack of two unrelated lines on one stroke one more
-  (alike within a quarter of a crossing, so a sliver of detour counted in
-  crossings' worth decides nothing); the lanes' worth of line unrelated lines
-  draw on one stroke or side by side nearer than a lane; hooks into a card's
-  side and lines that touch; bends; route length (alike within a twentieth);
-  then fit, then the smaller page. The Graphviz settlement's detectors weigh
-  the settled drawing (`even-pins.ts` `drawingWeighed`); the track and blocks
-  engines weigh their lines as drawn (`layout/reading-measures.ts`,
-  `blocks/weighing.ts`), where lines on one trunk by design are no stack and
-  lines out of one end fork there, so they do not touch.
-- **Choices between whole layouts** rank on it (`readsBetter`): whether a
-  block's containers stack (each way weighed at its best, wrapped or folded as
-  it would be taken), whether a layout's settled ports are kept (its lines'
-  detours counted as crossings at the trunk router's rate), whether a board
-  drawn inline packs its group regions, and which way a block's joins are
-  kept whole (a crossing half as much again for each more line a trunk
-  carries through it). Ranked on crossings and fit alone, Agent workbench's
-  The two threads (Blocks) kept its joins whole the way that crosses three
-  lines, where the other crosses one and turns less.
+  line's corner and each stack of two unrelated lines on one stroke one more;
+  the lanes' worth of line unrelated lines draw on one stroke or side by side
+  nearer than a lane; hooks into a card's side and lines that touch; bends;
+  route length (alike within a twentieth); then fit, then the smaller page.
+  The Graphviz settlement's detectors weigh the settled drawing (`even-pins.ts`
+  `drawingWeighed`); the track and blocks engines weigh their lines as drawn
+  (`layout/reading-measures.ts`, `blocks/weighing.ts`), where lines on one
+  trunk by design are no stack and lines out of one end fork there, so they
+  do not touch.
+- **Whether a block's containers stack** ranks on it (`readsBetter`), each
+  way weighed as it would be taken, wrapped where a wrap is taken: weighed
+  whole, Board persistence (Track) took the way that crosses four lines more.
+- **Joins and packing hold to their earlier pick** (`takes`). Which way a
+  block's joins are kept whole, and whether a board drawn inline packs its
+  group regions, are also weighed as before ADR 0039: the joins on their
+  crossings and their line at a crossing's worth for 1000 px, fit deciding
+  between near costs; the packing where it scores higher, draws no more line
+  and fits no worse. The reading order's pick is taken where the two agree,
+  or where it reads no worse than the earlier pick on any measure; else the
+  earlier pick stands. Two whole drawings often trade one measure for
+  another, and on the reading order alone What the CLI can be asked (Blocks)
+  parted two lines into Board client for two hops fewer, at 14% more line
+  and a jog that ran one line into the other's arrow at the card's corner;
+  Voice coordinator's Workhorse news (Blocks) sent two lines 500 px down and
+  back up for one crossing fewer; Archboard server whole (Track) packed its
+  groups for 13 hops fewer, at 23 more bends, three crossings on a corner and
+  a stack.
+- **Settling a layout's ports keeps its score** (fit less a share for each
+  crossing, its lines' detours counted as crossings at the trunk router's
+  rate), weighed on the lines as the blocks route them, before their steps
+  are taken out. On the reading order, Browser application (Blocks) settled
+  its ports so a line ran 480 px on Browser client's bottom wall; held to the
+  score wherever it read worse somewhere, IIS data (Cloud Infrastructure,
+  Blocks) settled a parted join that then took a crossing its trunk had not.
 - **Wraps and folds** exist to fit the page, and the bends and line they add
   are their price: the board's wrap and Graphviz's column fold are taken
-  where they have fewer defects (the comparison up to hooks and touches), or
-  as few and fit clearly better (`worthTaking`), and the board's wraps are
-  ranked the same way (`fitsBetter`). Ranked on their bends too, no chain of
-  cards folded. Graphviz's column count is still
-  chosen on placements by fit. Archboard server whole (Graphviz) folds again:
-  it crosses fewer lines folded.
+  where they have no more defects (the comparison up to hooks and touches)
+  and fit materially better (`worthTaking`): Graphviz's fold by a twentieth
+  (`WRAP_MIN_FIT_GAIN`), the board's wrap by a tenth, or by a twentieth where
+  it has a defect fewer. A drawing fitting a twentieth better shows at about
+  the same scale, which pays for none of that price: taken for one hook fewer
+  and a hundredth more fit, Live server state (Graphviz) folded into two
+  columns fed from below, with 37% more line. The board's wraps are ranked on
+  their defects, then fit (`fitsBetter`). Ranked on their bends too, no chain
+  of cards folded. Graphviz's column count is still chosen on placements by
+  fit.
 - **Kept on fit** (`scoreOf`, fit less a share for each crossing): a block of
   blocks' packing (`pack.ts`) and the wrap of a block inside the board
   (`wraps.ts`) are chosen before the drawing a reader sees exists, on the

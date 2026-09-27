@@ -5,10 +5,14 @@
 // (`card-layout.ts`), its widest rank wrapped into rows (`wraps.ts`) or its
 // ranks folded into columns (`fold.ts`) where that is worth taking. Last,
 // every block is put where its parent placed it and each relationship's
-// lines are joined end to end (`assembly.ts`). Every choice between two
-// layouts of a board is made on how each reads, as drawn (`weighing.ts`).
+// lines are joined end to end (`assembly.ts`). A choice between two layouts
+// of a board is made on how each reads, as drawn (`weighing.ts`); the joins
+// and the packing of a board's groups keep their earlier weighing's pick
+// wherever the other reads worse on some measure, and settling ports keeps
+// its score.
 import type { ElkNode } from "@archboard/elk-rs";
 import type { Viz } from "@viz-js/viz";
+import { fitIn } from "@/shared/shell-geometry/index";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import { Assembly, type Placed } from "@/transformers/semantic-renderer/lib/blocks/assembly";
@@ -36,6 +40,8 @@ import { PAGE_MARGIN } from "@/transformers/semantic-renderer/lib/track/route";
 import {
 	crossingsOf,
 	readsBetter,
+	scoreOf,
+	takes,
 	type Weighed,
 } from "@/transformers/semantic-renderer/lib/track/score";
 
@@ -97,9 +103,8 @@ function layCards(viz: Viz, tree: BlockTree, block: Block, laid: Map<string, Lai
 }
 
 /**
- * How well a block laid out whole can read at its best: wrapped, folded or
- * as it stands, as {@link layCards} would take it. A fold is weighed as the
- * block unfolded on the fold's page, with its lines between columns.
+ * How well a block laid out whole can read at its best: wrapped, or as it
+ * stands.
  * @param tree The blocks.
  * @param block The block.
  * @param laid The block laid out whole.
@@ -107,11 +112,7 @@ function layCards(viz: Viz, tree: BlockTree, block: Block, laid: Map<string, Lai
  * @returns What its best is weighed on.
  */
 function bestOf(tree: BlockTree, block: Block, laid: Laid, wrapped: Laid | undefined): Weighed {
-	if (wrapped !== undefined) return weighedLaid(tree, block, wrapped);
-	const whole = weighedLaid(tree, block, laid);
-	const fold = foldPlan(block, laid, insetsOf(block), weighed(laid))?.weighed;
-	if (fold === undefined) return whole;
-	return { ...whole, width: fold.width, height: fold.height, bus: fold.bus ?? 0 };
+	return weighedLaid(tree, block, wrapped ?? laid);
 }
 
 /**
@@ -270,10 +271,16 @@ function layOut(
 }
 
 /**
- * A layout with its ports settled, unless the drawing reads better unsettled
- * ({@link readsBetter}), as drawn: the line its routes run round what they
- * pass counts as crossings at the trunk router's rate, so a detour that
- * differs by less than a quarter of a crossing is no difference.
+ * A layout with its ports settled, unless the drawing scores better
+ * unsettled ({@link scoreOf}) on its lines as the blocks route them, before
+ * the steps they need not take are taken out, the line its routes run round
+ * what they pass counted as crossings at the trunk router's rate. Weighed
+ * in the order of ADR 0039, on the lines as drawn, the settled layout of
+ * Browser application (Blocks) ran "the pane socket" 480 px along Browser
+ * client's bottom wall, where a reader cannot tell the line from the frame;
+ * held to the score wherever it read worse on some measure ({@link takes}),
+ * IIS data (Cloud Infrastructure, Blocks) settled a parted join that then
+ * took a crossing its trunk had not.
  * @param laying The layout; its blocks are replaced.
  * @param avoid The initialized libavoid module.
  * @returns The blocks, every block laid out, and how often the drawing's lines cross.
@@ -284,18 +291,32 @@ function settledOrNot(
 ): { tree: BlockTree; laid: Map<string, Laid>; crossings: number } {
 	const unsettled = new Map(laying.laid);
 	settlePorts({ ...laying, insetsOf, avoid });
-	const [was, is] = [unsettled, laying.laid].map((laid) => {
-		const placed = Assembly.unstepped(new Assembly(laying.tree, laid).placed());
-		const detour = placed.edges.reduce((sum, { points }) => sum + detourOf(points), 0);
-		const drawn = weighedPlaced(laying.tree, placed);
-		return { ...drawn, crossings: drawn.crossings + detour / TRUNK_CROSSING };
-	});
-	if (readsBetter(was!, is!)) for (const [id, laid] of unsettled) laying.laid.set(id, laid);
+	const [was, is] = [unsettled, laying.laid].map((laid) =>
+		scoreOf(routedWeighed(new Assembly(laying.tree, laid).placed())),
+	);
+	if (was! > is!) for (const [id, laid] of unsettled) laying.laid.set(id, laid);
 	const { edges } = new Assembly(laying.tree, laying.laid).placed();
 	return {
 		tree: laying.tree,
 		laid: laying.laid,
 		crossings: crossingsOf(edges.map(({ points }) => points)),
+	};
+}
+
+/**
+ * What a drawing as placed is weighed on in its score: its page, and its
+ * crossings with the line its routes run round what they pass counted at
+ * the trunk router's rate.
+ * @param placed The drawing.
+ * @returns Its page and crossings.
+ */
+function routedWeighed(placed: Placed): Weighed {
+	const lines = placed.edges.map(({ points }) => points);
+	const detour = lines.reduce((sum, points) => sum + detourOf(points), 0);
+	return {
+		width: placed.width,
+		height: placed.height,
+		crossings: crossingsOf(lines) + detour / TRUNK_CROSSING,
 	};
 }
 
@@ -322,16 +343,26 @@ function layJoinedOut(
 
 /**
  * Whether a board laid with its groups packed reads better than laid inline
- * ({@link readsBetter}).
+ * in the order of ADR 0039, and no worse anywhere than the drawing taken
+ * before it ({@link takes}): packed, where it scores higher, draws no more
+ * line, and fits the pane no worse. Blocks standing side by side can trade
+ * a line's straight run for one round both blocks, which the score alone
+ * does not see; and packing is for a page the board's own ranks spread out,
+ * so a packing that fits worse only buys its crossings with lines run round
+ * the blocks.
  * @param packed The drawing with groups packed.
  * @param inline The drawing with groups inline.
  * @returns True when the packed one reads better.
  */
 function readsBetterPacked(packed: Drawn<Placed>, inline: Drawn<Placed>): boolean {
-	return readsBetter(
-		weighedPlaced(packed.tree, packed.placed),
-		weighedPlaced(inline.tree, inline.placed),
-	);
+	const [one, other] = [packed.placed, inline.placed];
+	const [packs, inlines] = [one, other].map(({ edges }) => edges.map(({ points }) => points));
+	const earlier =
+		scoreOf({ ...one, crossings: crossingsOf(packs!) }) >
+			scoreOf({ ...other, crossings: crossingsOf(inlines!) }) &&
+		lineLength(packs!) <= lineLength(inlines!) &&
+		fitIn(one) >= fitIn(other);
+	return takes(weighedPlaced(packed.tree, one), weighedPlaced(inline.tree, other), earlier);
 }
 
 /**

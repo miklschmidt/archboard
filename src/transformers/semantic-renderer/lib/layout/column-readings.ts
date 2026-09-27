@@ -5,10 +5,11 @@
 // the page kept so far when it fits the reference pane materially better,
 // fewer columns winning ties. Only the chosen count is settled; a count the
 // router refuses keeps the unfolded reading (TASK-342). The settled fold is
-// kept where it has fewer of the defects every engine compares in ADR 0039's
-// order, or as few and fits materially better (`worthTaking` in
-// track/score.ts): the bends and line of its lines between columns are the
-// price of any fold, and fit never buys a crossing.
+// kept where it has no more of the defects every engine compares in ADR
+// 0039's order and fits materially better, by WRAP_MIN_FIT_GAIN
+// (`worthTaking` in track/score.ts): the bends and line of its lines between
+// columns are the price of any fold, fit never buys a crossing, and a
+// defect fewer never buys a fold that shows the drawing at the same scale.
 //
 // A page's size is fixed by placement, and a settled reading's page is its
 // placement with the labels it reserved, so a placement ranks a count for one
@@ -63,8 +64,8 @@ async function chooseReading(
 }
 
 /**
- * Whether a settled fold is kept over the unfolded drawing: it has fewer
- * defects, or as few and fits the pane materially better ({@link worthTaking}).
+ * Whether a settled fold is kept over the unfolded drawing: it has no more
+ * defects and fits the pane materially better ({@link worthTaking}).
  * @param candidate The fold.
  * @param baseline The unfolded drawing.
  * @returns True when the fold is kept.

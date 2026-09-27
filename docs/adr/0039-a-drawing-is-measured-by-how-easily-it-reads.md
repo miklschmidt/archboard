@@ -49,9 +49,15 @@ fit as a regression on its own. A drawing that shows at 0.4 is still drawn and
 navigable, and panning it costs a reader less than a line they cannot follow.
 
 The reference pane stays the yardstick fit is measured against, and fit stays
-on the scorecard as the tie-breaker. Folding a tall board into columns stays,
-and a fold is kept only where the folded drawing reads no worse than the
-unfolded one.
+on the scorecard as the tie-breaker. Folding a tall board into columns, and
+wrapping a wide board's rank into rows, stay. They exist to fit the page, and
+the bends and route length they add are their price, so a fold or a wrap is
+weighed on every other measure and on fit: it is kept only where it has no
+more crossings, stacks, double tracks, hooks or touching lines than the
+drawing it replaces, and fits the reference pane materially better. For
+Graphviz's column fold that is a twentieth; for a board's wrap, a tenth, or a
+twentieth where it also cures a defect. A drawing that fits a twentieth better
+shows at about the same scale, which pays for none of the fold's price.
 
 ## Consequences
 
@@ -59,5 +65,16 @@ unfolded one.
   score (`lib/track/score.ts`), Blocks' placement, packing and joins
   (`lib/blocks/place.ts`, `pack.ts`, `joins.ts`), and Graphviz's column fold
   (`lib/layout/fold-columns.ts`). Each is judged by the pictures it gives.
+- By those pictures, two whole drawings often trade one measure for another,
+  and the ordered comparison alone then takes a drawing that reads worse
+  somewhere than the one taken before. So the block engine's joins and its
+  packing of a board's groups also weigh their two drawings as they did
+  before, and take the ordered comparison's pick only where the two agree or
+  where it reads no worse on any measure; otherwise the earlier pick stands,
+  fit included. Settling a block's ports keeps its earlier score (fit less a
+  share per crossing) outright: on the ordered comparison it ran a line along
+  a frame's wall, and held to the earlier pick it led the joins to a crossing.
+  These are the exceptions to the rule that a chooser never trades a crossing
+  for fit, kept because no drawing may read worse than it did.
 - Picture reviews list a change of fit as information and judge the drawing by
   how it reads.

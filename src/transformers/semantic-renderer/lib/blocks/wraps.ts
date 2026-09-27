@@ -150,7 +150,8 @@ function wrapOf(laying: Laying, lowered?: ReadonlyMap<string, number>): Wrapped 
 
 /**
  * Whether a block's best wrap is taken over the block whole. The board's is
- * taken where it reads better, or alike and fits the page clearly better
+ * taken where it has no more defects and fits the page clearly better, by
+ * {@link WORTH_WRAPPING}, or by a twentieth with a defect fewer
  * ({@link worthTaking}). A block inside the board is laid out before its
  * parent packs it, so how its wrap will read is not known yet: its wrap is
  * taken where it scores clearly better ({@link scoreOf}), its fit standing

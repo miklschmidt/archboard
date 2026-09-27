@@ -10,10 +10,23 @@
 // a whole.
 import type { ElkExtendedEdge } from "@archboard/elk-rs";
 import type { BlockTree, Projection } from "@/transformers/semantic-renderer/lib/blocks/tree";
+import { lineLength } from "@/transformers/semantic-renderer/lib/blocks/laying";
 import { weighedPlaced, type Page } from "@/transformers/semantic-renderer/lib/blocks/weighing";
 import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
-import { readsBetter, type Weighed } from "@/transformers/semantic-renderer/lib/track/score";
+import { crossingsOf, takes } from "@/transformers/semantic-renderer/lib/track/score";
+import { fitIn } from "@/shared/shell-geometry/index";
+
+/**
+ * How much line costs as much as one crossing in the joins' earlier weighing
+ * ({@link costsLess}): a crossing the reader has to look twice at is worth a
+ * long run of line, and less than this lets a trunk kept whole lose to lines
+ * that each hop what it hopped once.
+ */
+const LINE_PER_CROSSING = 1000;
+
+/** How near two costs are for the page to decide between them, in that weighing: a twentieth. */
+const NEAR = 0.05;
 
 /** A drawing laid out one way: its blocks, and the drawing as placed. */
 interface Drawn<Placed extends Page> {
@@ -187,21 +200,39 @@ function pairCrossings(lines: readonly (readonly Point[])[]): number {
 }
 
 /**
- * What a drawing is weighed on: its lines as drawn, each crossing half as
- * much again for each line through it past the first, since a trunk drawn
- * far across the drawing crosses for every line it carries.
- * @param drawn The drawing.
- * @returns What it is weighed on.
+ * Whether one drawing's lines cost less than another's, as the joins
+ * weighed a drawing before ADR 0039: each crossing half as much again for
+ * each line through it past the first, and its line at a crossing's worth
+ * for every {@link LINE_PER_CROSSING}; costing about as much, the page that
+ * fits the reference pane better.
+ * @param one A drawing.
+ * @param other Another.
+ * @returns True when the first costs less.
  */
-function weighedJoins(drawn: Drawn<Page>): Weighed {
-	const weighed = weighedPlaced(drawn.tree, drawn.placed);
-	const pairs = pairCrossings(drawn.placed.edges.map(({ points }) => points));
-	return { ...weighed, crossings: weighed.crossings + (pairs - weighed.crossings) / 2 };
+function costsLess(one: Page, other: Page): boolean {
+	const [cost, least] = [costOf(one), costOf(other)];
+	const [fit, best] = [fitIn(one), fitIn(other)];
+	if (Math.abs(cost - least) > NEAR * Math.min(cost, least) || Math.abs(fit - best) < 1e-9)
+		return cost < least - 1e-9;
+	return fit > best;
+}
+
+/**
+ * What a drawing's lines cost in the joins' earlier weighing ({@link costsLess}).
+ * @param placed The drawing.
+ * @returns The cost, in crossings.
+ */
+function costOf(placed: Page): number {
+	const points = placed.edges.map((line) => line.points);
+	const seen = crossingsOf(points);
+	return seen + (pairCrossings(points) - seen) / 2 + lineLength(points) / LINE_PER_CROSSING;
 }
 
 /**
  * Whether one drawing reads better than another: it parts fewer joined
- * lines; or, as few, it reads better ({@link readsBetter}).
+ * lines; or, as few, it reads better in the order of ADR 0039 and no worse
+ * anywhere than the drawing whose lines cost less ({@link costsLess}), or
+ * else its lines cost less ({@link takes}).
  * @param one A drawing.
  * @param other Another.
  * @returns True when the first reads better.
@@ -209,7 +240,8 @@ function weighedJoins(drawn: Drawn<Page>): Weighed {
 function drawsBetter(one: Drawn<Page>, other: Drawn<Page>): boolean {
 	const [parted, fewest] = [partedOf(one), partedOf(other)];
 	if (parted !== fewest) return parted < fewest;
-	return readsBetter(weighedJoins(one), weighedJoins(other));
+	const [mine, theirs] = [one, other].map(({ tree, placed }) => weighedPlaced(tree, placed));
+	return takes(mine!, theirs!, costsLess(one.placed, other.placed));
 }
 
 /**
