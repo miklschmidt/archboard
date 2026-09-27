@@ -20,6 +20,7 @@ export {
 } from "@/transformers/semantic-renderer/lib/layout/label-runs";
 export { publishRoutes } from "@/transformers/semantic-renderer/lib/layout/avoid-routes";
 export { routeGraph } from "@/transformers/semantic-renderer/lib/layout/route-graph";
+export { centreLabels } from "@/transformers/semantic-renderer/lib/layout/label-centring";
 export {
 	centreHandicap,
 	tidierSettlement,

@@ -5,6 +5,7 @@ export {
 	bridgeCrossings,
 	centredPins,
 	centreHandicap,
+	centreLabels,
 	chooseReading,
 	clearerDrawing,
 	curveThrough,
