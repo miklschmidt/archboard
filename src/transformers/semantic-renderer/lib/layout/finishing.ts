@@ -20,15 +20,17 @@
 // counted too, and has fewer defects
 // together. Refusing only fresh defects of the pass's own kind let Voice
 // coordinator's hook pass cure hooks by crowding a label. It must also have
-// no more crossings, counting two unrelated lines on one stroke as one, and
-// give no line more bends unless it saves a crossing and takes no more bends
-// in all (Browser application's "Recording a walkthrough" parted a stack and
-// cured three hooks for one line's extra bend). A route that takes a detour
+// no more crossings, counting two unrelated lines on one stroke as one and
+// a crossing within a lane of a bend as two, and give no line more bends
+// unless it saves a crossing and takes no more bends in all (Browser
+// application's "Recording a walkthrough" parted a stack and cured three
+// hooks for one line's extra bend). A route that takes a detour
 // is not worth what it cures. A line the pin pass sends off a pin may take
 // one bend more for each pin it leaves, and no more: "submit transition"
 // into Board persistence's Write under lease turns once more to drop onto
-// its top face instead of landing 6 px from the pin. The pin pass clears one card at a time, each
-// kept where it cures more, asking again for every card kept before it:
+// its top face instead of landing 6 px from the pin. The pin pass clears one
+// card at a time, each kept where it cures more, asking again for every card
+// kept before it but excusing only the lines of the card it tries:
 // cleared together, Board persistence's three cards drew two more crossings
 // for one of them. Where curing every hook at once is not kept, the hook pass
 // too cures card by card, offering the face a hook passed on that card alone:
@@ -235,10 +237,11 @@ function bendsOf(drawing: ArchitectureDrawing): ReadonlyMap<string, number> {
 
 /**
  * Whether a finishing routing is no worse than the settled drawing: no more
- * crossings, unrelated lines on one stroke counted (even-pins.ts), and no
- * line with more bends, a line the pass sends off a pin one more at most
- * than the drawing it would replace (so one more for each pin it leaves, as
- * the pin pass clears one card at a time),
+ * crossings, unrelated lines on one stroke counted and crossings within a
+ * lane of a bend counted twice (even-pins.ts), and no line with more bends,
+ * a line the pass sends off a pin one more at most than the drawing it would
+ * replace (so one more for each pin it leaves, as the pin pass clears one
+ * card at a time and excuses only that card's lines),
  * or, where it saves a crossing, no more bends in all.
  * @param clear The finishing routing.
  * @param settled The settled drawing.
@@ -521,9 +524,9 @@ async function byCard<Reading>(
 	const { kept } = await cards.reduce(
 		async (earlier, card) => {
 			const { kept: before, asked } = await earlier;
-			const asking = [...asked, ...found.filter((key) => cardOf(key) === card)];
-			const next = await tried(before, pass, ask, asking, reroute, pinned);
-			return next === before ? { kept: before, asked } : { kept: next, asked: asking };
+			const own = found.filter((key) => cardOf(key) === card);
+			const next = await tried(before, pass, ask, [...asked, ...own], reroute, pinned, own);
+			return next === before ? { kept: before, asked } : { kept: next, asked: [...asked, ...own] };
 		},
 		Promise.resolve({ kept: settled, asked: [] as readonly string[] }),
 	);
@@ -541,6 +544,7 @@ async function byCard<Reading>(
  * @param found What it is asked to cure.
  * @param reroute Routes a reading's placement asking for more.
  * @param pinned The cards that wear a standing pin.
+ * @param excusing What of it a pass that excuses a bend excuses: the card tried alone, when tried card by card.
  * @returns The drawing kept and its reading.
  */
 async function tried<Reading>(
@@ -550,12 +554,15 @@ async function tried<Reading>(
 	found: readonly string[],
 	reroute: Reroute<Reading>,
 	pinned: Pinned,
+	excusing: readonly string[] = found,
 ): Promise<Finish<Reading>> {
 	const finish = await reroute(settled.reading, ask(found)).catch((error: unknown) => {
 		if (refusedRouting(error)) return undefined;
 		throw error;
 	});
-	const excused = new Set(pass.excused === undefined ? [] : found.map((key) => key.split(":")[0]!));
+	const excused = new Set(
+		pass.excused === undefined ? [] : excusing.map((key) => key.split(":")[0]!),
+	);
 	return finish !== undefined &&
 		cures(finish.drawing, settled.drawing, pinned) &&
 		noWorse(finish.drawing, settled.drawing, excused)
