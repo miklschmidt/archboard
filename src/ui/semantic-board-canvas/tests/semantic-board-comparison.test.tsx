@@ -112,7 +112,7 @@ function proposalDrawn(): Record<string, unknown> {
 		...drawing(1),
 		variant: { id: "v2", name: "queue first", lifecycle: "draft" },
 		changes: {
-			predecessor: { id: "v1", name: "as it is", lifecycle: "current" },
+			against: { id: "v1", name: "as it is", lifecycle: "current" },
 			standing: { queue: "added", s3: "added", io: "changed", legacy: "removed", s2: "removed" },
 		},
 	};
@@ -177,7 +177,6 @@ test("a subject the change takes away can still be asked about", async () => {
 	expect(standing()).toBe("removed");
 	// And it says what that means, naming the state it is being read against, so
 	// "removed" is never removed-from-nowhere.
-	expect(slot("semantic-inspector-standing")?.textContent).toContain("Not on this proposal");
 	expect(slot("semantic-inspector-standing")?.textContent).toContain("as it is");
 	expect(slot("semantic-inspector-ancestry")).toBeNull();
 });
@@ -204,7 +203,7 @@ test("a subject the proposal adds says so, and has nothing to show as moved", as
 
 	expect(inspector()).toContain("Edit Queue");
 	expect(standing()).toBe("added");
-	expect(slot("semantic-inspector-standing")?.textContent).toContain("New in this proposal");
+	expect(slot("semantic-inspector-standing")?.textContent).toContain("as it is");
 	// Added is not changed: there is no earlier value for any of its fields.
 	expect(slot("semantic-inspector-moved")).toBeNull();
 });

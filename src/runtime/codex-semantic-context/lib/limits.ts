@@ -3,7 +3,7 @@ const SEMANTIC_CONTEXT_LIMITS = Object.freeze({
 	selectionEntries: 128,
 	subjectIdBytes: 64,
 	subjectNameBytes: 160,
-	/** How many differences against the predecessor a brief names one by one. */
+	/** How many differences against the variant read against a brief names one by one. */
 	differenceEntries: 64,
 	/** How many unsettled disagreements a brief carries. */
 	issueEntries: 32,

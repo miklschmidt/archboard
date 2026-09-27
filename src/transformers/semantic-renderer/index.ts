@@ -113,13 +113,14 @@ interface DiagramRenderRequest {
 	 */
 	readonly fonts?: FontSource;
 	/**
-	 * How each subject of this picture stands against the variant it came from.
+	 * How each subject of this picture stands against the variant it is read against.
 	 *
-	 * The caller derives it by reading this variant against its predecessor on
-	 * every render. It keeps differently standing relationships on distinct
-	 * channels, even when their marks are hidden. Absent means this is not a
-	 * proposal; an id the map does not mention stands unchanged. Nothing about
-	 * it is persisted anywhere (ADR 0023).
+	 * The caller derives it by reading this variant against the board's current
+	 * variant (or, on a board with none, its predecessor) on every render. It
+	 * keeps differently standing relationships on distinct channels, even when
+	 * their marks are hidden. Absent means there is nothing to read it against;
+	 * an id the map does not mention stands unchanged. Nothing about it is
+	 * persisted anywhere (ADR 0023).
 	 */
 	readonly standing?: StatedStandings | undefined;
 	/** Hide standing marks while retaining standing-aware relationship routing; shown by default. */

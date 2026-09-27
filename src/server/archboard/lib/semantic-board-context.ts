@@ -2,8 +2,9 @@
 //
 // Everything an agent is told about a board comes through here, and everything
 // here is meaning: which architectural state is on screen, which of its views,
-// which of its subjects somebody picked out, what that state differs from its
-// predecessor by, and what it is waiting on. Nothing in this file knows where
+// which of its subjects somebody picked out, what that state differs from by
+// the variant its picture is read against (the current one, ADR 0023), and what
+// it is waiting on. Nothing in this file knows where
 // anything was drawn, and there is no way for a coordinate to reach an agent
 // through it (ADR 0023).
 //
@@ -14,10 +15,10 @@
 // agent could act on it.
 
 import {
+	comparedWith,
 	compareVariants,
 	currentVariant,
 	findVariant,
-	resolveVariant,
 	findView,
 	scopedContent,
 	subjectsOf,
@@ -333,20 +334,20 @@ function readingView(
 }
 
 /**
- * Every subject that differs from the predecessor, with the counts whole.
+ * Every subject that differs from the variant it is read against, with the counts whole.
  *
  * The counts are of the comparison and not of the list: a brief that had to
  * drop half the subjects still says how many there were, because an agent shown
  * a short list with no count would believe it had seen everything.
- * @param comparison The comparison against the predecessor.
+ * @param comparison The comparison against the variant it is read against.
  * @param subjects Every subject of this variant, by id, for a name.
- * @param predecessor Every subject of the predecessor, for naming what went.
+ * @param against Every subject of the variant it is read against, for naming what went.
  * @returns The differences.
  */
 function differencesOf(
 	comparison: VariantComparison,
 	subjects: ReadonlyMap<string, NamedSubject>,
-	predecessor: ReadonlyMap<string, NamedSubject>,
+	against: ReadonlyMap<string, NamedSubject>,
 ): SemanticArchitectureInput["differences"] {
 	const changed: SemanticDifferenceInput[] = [];
 	const counts = { added: 0, removed: 0, changed: 0 };
@@ -364,7 +365,7 @@ function differencesOf(
 				continue;
 			}
 			counts[change.kind] += 1;
-			changed.push(differenceOf(id, change.kind, subjects.get(id) ?? predecessor.get(id)));
+			changed.push(differenceOf(id, change.kind, subjects.get(id) ?? against.get(id)));
 		}
 	}
 	return { ...counts, subjects: changed };
@@ -460,57 +461,45 @@ function scopedFor(
 }
 
 /**
- * What this variant differs from the one it came from by, or nothing when it
- * came from nothing.
+ * What this variant differs from the variant it is read against by, or nothing
+ * when there is nothing to read it against.
  * @param variant The variant being read.
- * @param predecessor The variant it was derived from, when it has one.
+ * @param against The variant it is read against, when there is one.
  * @param subjects Every subject of this variant, by id.
  * @returns The differences, or null.
  */
 function differencesAgainst(
 	variant: SemanticVariant,
-	predecessor: SemanticVariant | undefined,
+	against: SemanticVariant | undefined,
 	subjects: ReadonlyMap<string, NamedSubject>,
 ): SemanticArchitectureInput["differences"] {
-	if (predecessor === undefined) {
+	if (against === undefined) {
 		return null;
 	}
 	return differencesOf(
-		compareVariants(predecessor.content, variant.content),
+		compareVariants(against.content, variant.content),
 		subjects,
-		namedSubjects(predecessor.content),
+		namedSubjects(against.content),
 	);
 }
 
 /**
- * The variant one variant was derived from, when it was derived from anything.
- * @param board The board.
+ * Which architectural state is being read, and what its differences are
+ * measured against: what its picture is drawn against, so an agent and the
+ * person looking at the pane are talking about the same marks.
  * @param variant The variant being read.
- * @returns Its predecessor, or nothing.
- */
-function predecessorOf(
-	board: SemanticBoard,
-	variant: SemanticVariant,
-): SemanticVariant | undefined {
-	return variant.parent === undefined ? undefined : resolveVariant(board, variant.parent);
-}
-
-/**
- * Which architectural state is being read, and what its changes are measured
- * against.
- * @param variant The variant being read.
- * @param predecessor The variant it was derived from, when it has one.
+ * @param against The variant it is read against, when there is one.
  * @returns The identity.
  */
 function identityOf(
 	variant: SemanticVariant,
-	predecessor: SemanticVariant | undefined,
+	against: SemanticVariant | undefined,
 ): SemanticArchitectureInput["variant"] {
 	return {
 		id: variant.id,
 		name: variant.name,
 		lifecycle: variant.lifecycle,
-		against: predecessor?.id ?? null,
+		against: against?.id ?? null,
 	};
 }
 
@@ -574,14 +563,14 @@ function semanticBoardContext(
 	// not a fact about another, and a context that borrowed one would have an
 	// agent talking about something nobody had picked out.
 	const picked = resolvedSelection(about.report, subjects);
-	const predecessor = predecessorOf(board, variant);
+	const against = comparedWith(board, variant);
 	const shown = scopedFor(board, variant.content, view);
 	return {
 		architecture: {
-			variant: identityOf(variant, predecessor),
+			variant: identityOf(variant, against),
 			view,
 			selection: { count: picked.selection.length, subjects: picked.selection },
-			differences: differencesAgainst(variant, predecessor, subjects),
+			differences: differencesAgainst(variant, against, subjects),
 			reconciliation: waitingOn(variant),
 		},
 		description:

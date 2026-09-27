@@ -1,11 +1,12 @@
-// How a proposal's subjects are drawn against the variant they came from.
+// How a variant's subjects are drawn against the variant it is read against.
 //
 // Nothing here is authored and nothing here is stored. A caller hands one render
 // a plain map of subject id to standing, derived that instant by reading the
-// proposal against its predecessor, and this file is the whole of what that map
+// variant against the board's current one (or, on a board with none, the one it
+// came from), and this file is the whole of what that map
 // does to the picture (ADR 0023: the board owns meaning, the renderer owns
 // presentation). Hand in no map and every function here returns nothing, which
-// is what keeps a board that is not a proposal drawn exactly as it was.
+// is what keeps a variant with nothing to read it against drawn exactly as it is.
 //
 // ## The vocabulary
 //

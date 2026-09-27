@@ -1,18 +1,30 @@
-// What a proposal changed, worked out for the picture being drawn.
+// What a variant differs from now by, worked out for the picture being drawn.
 //
-// Nothing on a board says a node is new. A proposal states its architecture and
-// what it changed is read against the variant it came from, every time, out of
-// the identities the two share (ADR 0023). That reading happens on the way to a
-// picture, so no tombstone is ever written and a variant with no predecessor
-// simply carries nothing. It is shared because whatever draws — the server's
-// render route, the CLI, or a browser drawing from the board it has read
-// (TASK-247) — has to give the renderer the same content for the same variant.
+// Nothing on a board says a node is new. A variant states its architecture and
+// how it differs is read against another variant, every time, out of the
+// identities the two share (ADR 0023). Which other variant is the one rule
+// here, decided by the user on 2026-09-27: the current variant is now, and
+// every other variant — history behind it, proposals ahead of it, shelved ones
+// beside it — is read against it, so its marks say how it differs from what
+// exists. The current variant is the reference and carries nothing. A board
+// with no current variant has no now to read against, so each of its drafts is
+// read against the one it came from, and its root draft carries nothing.
+// Reconciliation and adoption never read this: they follow the parent.
+//
+// That reading happens on the way to a picture, so no tombstone is ever
+// written. It is shared because whatever draws — the server's render route,
+// the CLI, or a browser drawing from the board it has read (TASK-247) — has to
+// give the renderer the same content for the same variant.
 //
 // Restore the comparison before applying the shared view scope. A selected
-// subject can exist only in the predecessor; narrowing the proposal first
-// loses that selection and makes a whole removed flow disappear.
+// subject can exist only on the other side; narrowing the variant first loses
+// that selection and makes a whole removed flow disappear.
 
-import type { SemanticBoard, SemanticVariant } from "@/shared/semantic-board/lib/aggregate";
+import {
+	currentVariant,
+	type SemanticBoard,
+	type SemanticVariant,
+} from "@/shared/semantic-board/lib/aggregate";
 import {
 	compareVariants,
 	withRemoved,
@@ -23,44 +35,48 @@ import type { VariantContent } from "@/shared/semantic-board/lib/content";
 import { scopedContent } from "@/shared/semantic-board/lib/scope";
 import type { ViewScope } from "@/shared/semantic-board/lib/views";
 
-/** What the answer says about a proposal, or nothing for a variant with no predecessor. */
+/** What the answer says about a variant read against another, or nothing for the reference. */
 interface DrawnChanges {
-	readonly predecessor: { id: string; name: string; lifecycle: SemanticVariant["lifecycle"] };
+	/** The variant it is read against. */
+	readonly against: { id: string; name: string; lifecycle: SemanticVariant["lifecycle"] };
 	readonly standing: Record<string, ChangeKind>;
 }
 
 /** The picture to draw, and what it says about the proposal it is of. */
 interface DrawnProposal {
-	/** The content to draw: what the proposal says, plus what it took away. */
+	/** The content to draw: what the variant says, plus what it lacks of the other side. */
 	readonly content: VariantContent;
-	/** What it changed, or null when this variant came from nothing. */
+	/** How it differs, or null when there is nothing to read it against. */
 	readonly changes: DrawnChanges | null;
 }
 
 /**
- * The variant this one was derived from, when it was derived from one on this
- * board.
+ * The variant another is read against: the board's current variant, or, on a
+ * board with none, the one it came from.
  * @param board The board.
- * @param variant The variant being drawn.
- * @returns The predecessor, or undefined when there is none.
+ * @param variant The variant being read.
+ * @returns The variant to read it against, or undefined for the current
+ * variant itself and for a draft that came from nothing on a board with no
+ * current variant.
  */
-function predecessorOf(
-	board: SemanticBoard,
-	variant: SemanticVariant,
-): SemanticVariant | undefined {
+function comparedWith(board: SemanticBoard, variant: SemanticVariant): SemanticVariant | undefined {
+	const current = currentVariant(board);
+	if (current !== undefined) {
+		return current.id === variant.id ? undefined : current;
+	}
 	return variant.parent === undefined
 		? undefined
 		: board.variants.find((one) => one.id === variant.parent);
 }
 
 /**
- * The picture to draw for one variant, and what it changed.
+ * The picture to draw for one variant, and how it differs.
  *
- * A proposal's picture is not simply the proposal. What a change took away is
- * half of what a reader came to see, so it is put back here — never on the
- * board, which keeps saying what the architecture would be. The renderer is
- * told how each subject stands and draws a restored one as absent rather than
- * as part of the proposal.
+ * A variant's picture is not simply the variant. What the other side has and
+ * this one lacks is half of what a reader came to see, so it is put back here
+ * — never on the board, which keeps saying what the architecture is or would
+ * be. The renderer is told how each subject stands and draws a restored one as
+ * absent rather than as part of the variant.
  * @param board The board.
  * @param variant The variant being drawn.
  * @param scope The shared view selection, applied to both sides of the change.
@@ -71,14 +87,14 @@ function drawingOf(
 	variant: SemanticVariant,
 	scope: ViewScope = { kind: "all" },
 ): DrawnProposal {
-	const parent = predecessorOf(board, variant);
-	if (parent === undefined) {
+	const base = comparedWith(board, variant);
+	if (base === undefined) {
 		return { content: scopedContent(variant.content, scope), changes: null };
 	}
 	// Compared whole, before any view narrowed it: a view that hides a node is a
 	// narrower reading of the variant, never a variant that lost one.
-	const comparison = compareVariants(parent.content, variant.content);
-	const content = scopedContent(withRemoved(parent.content, variant.content, comparison), scope);
+	const comparison = compareVariants(base.content, variant.content);
+	const content = scopedContent(withRemoved(base.content, variant.content, comparison), scope);
 	return {
 		content,
 		// Read off the picture rather than off the comparison, so what the answer
@@ -86,14 +102,14 @@ function drawingOf(
 		// above is in the content and reads as removed here, and a removal the
 		// picture had no context for is in neither.
 		changes: {
-			predecessor: { id: parent.id, name: parent.name, lifecycle: parent.lifecycle },
+			against: { id: base.id, name: base.name, lifecycle: base.lifecycle },
 			standing: standingOfDrawn(comparison, content),
 		},
 	};
 }
 
 /**
- * How every subject the picture shows stands against the predecessor.
+ * How every subject the picture shows stands against the other side.
  * @param comparison What the variant changed.
  * @param drawn The content being drawn.
  * @returns The standing of each drawn subject, by id.
@@ -134,4 +150,4 @@ function against(
 	return standing;
 }
 
-export { drawingOf, predecessorOf, type DrawnChanges, type DrawnProposal };
+export { drawingOf, comparedWith, type DrawnChanges, type DrawnProposal };

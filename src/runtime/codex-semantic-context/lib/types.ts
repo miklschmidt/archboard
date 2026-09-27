@@ -147,7 +147,11 @@ interface SemanticVariantInput {
 	readonly id: string;
 	readonly name: string;
 	readonly lifecycle: VariantLifecycle;
-	/** The variant this one was derived from, which its changes are measured against. */
+	/**
+	 * The variant its differences are measured against: the board's current
+	 * variant, or on a board with none the one it came from; null for the
+	 * current variant and for a first draft on a board with none.
+	 */
 	readonly against: string | null;
 }
 
@@ -158,7 +162,7 @@ interface SemanticViewInput {
 	readonly grammar: DiagramGrammar;
 }
 
-/** One subject that differs from the predecessor, and how. */
+/** One subject that differs from the variant it is read against, and how. */
 interface SemanticDifferenceInput {
 	readonly change: ChangeKind;
 	readonly kind: SemanticSubjectKind;
@@ -166,7 +170,7 @@ interface SemanticDifferenceInput {
 	readonly name: string | null;
 }
 
-/** What this variant differs from its predecessor by, counted and then named. */
+/** What this variant differs from the variant it is read against by, counted and then named. */
 interface SemanticDifferencesInput {
 	readonly added: number;
 	readonly removed: number;

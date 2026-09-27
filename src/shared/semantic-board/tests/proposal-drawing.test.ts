@@ -77,7 +77,7 @@ describe("the picture drawn for a proposal", () => {
 
 	test("puts back what the change took away, and says how each subject stands", () => {
 		const drawing = drawingOf(board, proposal);
-		expect(drawing.changes?.predecessor.id).toBe("v1");
+		expect(drawing.changes?.against.id).toBe("v1");
 		// The removed module is drawn again, as context for what the change did.
 		expect(drawing.content.nodes.map((node) => node.id).toSorted()).toEqual([
 			"gw",

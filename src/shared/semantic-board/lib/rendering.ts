@@ -93,26 +93,27 @@ const OfferedViewSchema = z.object({
 });
 type OfferedView = z.infer<typeof OfferedViewSchema>;
 
-/** How one subject of a proposal stands against the variant it came from. */
+/** How one subject of a variant stands against the variant it is read against. */
 const SubjectStandingSchema = z.enum(["added", "removed", "changed", "unchanged"]);
 
 /**
- * What a proposal changed, as the answer carries it: its predecessor, and how
- * every subject of the comparison picture stands against that predecessor. A
- * clean canvas reading keeps this report even though it leaves the comparison
- * marks and removed subjects out of its SVG.
+ * How a variant differs, as the answer carries it: the variant it is read
+ * against, and how every subject of the comparison picture stands against that
+ * one. A clean canvas reading keeps this report even though it leaves the
+ * comparison marks and removed subjects out of its SVG.
  *
  * Derived on every render rather than stored. Nothing on a board says "this node
- * is new": a proposal states its architecture, and what it changed is read
- * against the variant it came from, every time, out of the identities the two
- * share (ADR 0023). A variant with no predecessor carries none of this, because
- * there is nothing for it to have changed.
+ * is new": a variant states its architecture, and how it differs is read
+ * against the board's current variant — or, on a board with none, the variant
+ * it came from — every time, out of the identities the two share (ADR 0023).
+ * The current variant, and a first draft on a board with none, carry none of
+ * this, because there is nothing to read them against.
  *
  * By subject id rather than nested by kind, because that is how the comparison
  * atlas, selection, and inspector already work.
  */
 const RenderedChangesSchema = z.object({
-	predecessor: RenderedVariantSchema,
+	against: RenderedVariantSchema,
 	standing: z.record(z.string(), SubjectStandingSchema),
 });
 type RenderedChanges = z.infer<typeof RenderedChangesSchema>;

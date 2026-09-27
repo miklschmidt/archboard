@@ -12,6 +12,7 @@
 // anything about a semantic board (ADR 0023).
 
 import {
+	comparedWith,
 	compareVariants,
 	parseSemanticBoard,
 	resolveVariant,
@@ -172,13 +173,13 @@ function subjectOf(variant: SemanticVariant, id: string): Subject | undefined {
 	return flowSubjectOf(variant.content.flows, byId, id);
 }
 
-// What a proposal changed, in the panel as in the picture.
+// How a variant differs, in the panel as in the picture.
 //
-// The server draws a proposal from its own content *plus what its change took
-// away*, so a removed node is really in the picture and really selectable. The
-// panel therefore has to answer for a subject the proposal itself no longer
-// holds, and it does that by reading the predecessor — which is in the same
-// document — rather than by reading the composed picture.
+// A variant is drawn from its own content *plus what it lacks of the variant it
+// is read against*, so a removed node is really in the picture and really
+// selectable. The panel therefore has to answer for a subject the variant itself
+// does not hold, and it does that by reading the other side — which is in the
+// same document — rather than by reading the composed picture.
 //
 // That distinction is the whole of this file's care. `withRemoved` composes one
 // content out of two states so that a *drawing* can show both at once, and no
@@ -190,24 +191,28 @@ function subjectOf(variant: SemanticVariant, id: string): Subject | undefined {
 // Two things make that the same answer as the server's rather than a second
 // opinion:
 //
-//   The baseline is the same. `src/shared/semantic-board/lib/drawing.ts`
-//   takes the predecessor to be `variant.parent` looked up in this board, and
-//   reports no changes at all exactly when there is no parent. That field is in
-//   the document, so this reads it rather than being told it.
+//   The baseline is the same. `comparedWith` in
+//   `src/shared/semantic-board/lib/drawing.ts` is the one rule for it — the
+//   board's current variant, or on a board with none the variant it came from —
+//   and the picture and this panel both ask it, so neither can read a variant
+//   against a different one.
 //
 //   The comparison is the same. `compareVariants` is the one implementation of
 //   what counts as a change (ADR 0023), shared by the server, the CLI and this;
 //   a second one here would drift the first time a field was added.
 //
 // Nothing is fetched for it. Every variant of a board lives in the one document
-// the panel already has, so the predecessor is a lookup rather than a read.
+// the panel already has, so the other side is a lookup rather than a read.
 
-/** What a proposal changed, as the panel needs to explain it. */
+/** How a variant differs, as the panel needs to explain it. */
 interface Depiction {
-	/** The variant it came from, or undefined when it came from nothing. */
+	/**
+	 * The variant it is read against, or undefined when there is none: it is
+	 * the current variant, or a first draft on a board with no current one.
+	 */
 	readonly predecessor: SemanticVariant | undefined;
 	/**
-	 * How one subject stands against that predecessor.
+	 * How one subject stands against that variant.
 	 * @param id The semantic id.
 	 * @returns Its standing; unchanged for anything the comparison never saw.
 	 */
@@ -236,25 +241,22 @@ function movedOn(comparison: VariantComparison, id: string): readonly FieldChang
 }
 
 /**
- * What the picture of one variant is of, and what its change did to each
- * subject of it.
+ * What the picture of one variant is of, and how each subject of it stands
+ * against the variant it is read against.
  * @param board The board the variant belongs to.
  * @param variant The variant being shown.
  * @returns The depiction.
  */
 function depictionOf(board: SemanticBoard, variant: SemanticVariant): Depiction {
-	const parent =
-		variant.parent === undefined
-			? undefined
-			: board.variants.find((one) => one.id === variant.parent);
+	const against = comparedWith(board, variant);
 	// Compared whole, before any view narrowed it, exactly as the server compares
 	// it: a view that hides a node is a narrower reading of the variant, never a
 	// variant that lost one.
 	const comparison =
-		parent === undefined ? undefined : compareVariants(parent.content, variant.content);
+		against === undefined ? undefined : compareVariants(against.content, variant.content);
 
 	/**
-	 * How one subject stands against the predecessor.
+	 * How one subject stands against the variant it is read against.
 	 * @param id The semantic id.
 	 * @returns Its standing.
 	 */
@@ -271,7 +273,7 @@ function depictionOf(board: SemanticBoard, variant: SemanticVariant): Depiction 
 		return comparison === undefined ? [] : movedOn(comparison, id);
 	}
 
-	return { predecessor: parent, standing, moved };
+	return { predecessor: against, standing, moved };
 }
 
 type BoardReading =

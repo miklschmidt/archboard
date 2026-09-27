@@ -53,7 +53,7 @@ function paintFarHeader(
  * Paint one measured card with its kind glyph and semantic change treatment.
  * @param placed Final card geometry and prepared text.
  * @param palette The selected theme.
- * @param standing Its change relative to the predecessor.
+ * @param standing How it stands against the variant it is read against.
  * @param unsettled Whether its architecture needs reconciliation.
  * @param appearance Resolved containment and type channels.
  * @param farSize Its name's size from far away: one for every card of the

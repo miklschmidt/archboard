@@ -1,6 +1,17 @@
 import { describe, expect, test } from "bun:test";
-import { comparisonAnswer, VariantComparisonResultSchema } from "@/cli/commands/semantic-compare";
-import type { SemanticVariant, VariantContent } from "@/shared/semantic-board/index";
+import { CliUsageError } from "@/cli/command-contract/contract";
+import {
+	comparisonAnswer,
+	readAgainst,
+	VariantComparisonResultSchema,
+} from "@/cli/commands/semantic-compare";
+import {
+	SEMANTIC_BOARD_SCHEMA_VERSION,
+	SemanticBoardSchema,
+	type SemanticBoard,
+	type SemanticVariant,
+	type VariantContent,
+} from "@/shared/semantic-board/index";
 
 // What an agent is answered when it asks what a proposal changed. The reading
 // itself belongs to `compareVariants` and is owned in the shared module; what
@@ -221,5 +232,58 @@ describe("the comparison an agent reads", () => {
 		const again = comparisonAnswer({ name: "Board lease", version: 4 }, PROPOSAL, BASELINE, []);
 		expect(again).toEqual(ANSWER);
 		expect(ANSWER.edges.map((edge) => edge.id)).toEqual(["e1", "e2", "e3"]);
+	});
+});
+
+describe("which variant the comparison reads against", () => {
+	/**
+	 * The lease board with its lock files, its lease table and a second proposal
+	 * written on the lock files.
+	 * @param lifecycles Where each of the three stands.
+	 * @param current The one designated current, or none on a board nobody has built.
+	 * @returns The board.
+	 */
+	function lease(
+		lifecycles: readonly [string, string, string],
+		current: string | undefined,
+	): SemanticBoard {
+		const [first, second, third] = lifecycles;
+		return SemanticBoardSchema.parse({
+			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+			kind: "semantic-board",
+			id: "bd",
+			name: "Board lease",
+			level: "system",
+			version: 4,
+			createdAt: "2026-09-27T00:00:00.000Z",
+			updatedAt: "2026-09-27T00:00:00.000Z",
+			...(current === undefined ? {} : { current }),
+			variants: [
+				{ ...BASELINE, lifecycle: first },
+				{ ...PROPOSAL, lifecycle: second },
+				{ ...variant("v3", "Watched locks", BEFORE, "v1"), lifecycle: third },
+			],
+		});
+	}
+	const adopted = lease(["historical", "current", "draft"], "v2");
+	const [historical, current, onHistory] = adopted.variants;
+
+	test("history and a proposal on history read against the current variant", () => {
+		expect(readAgainst(adopted, historical!, undefined).id).toBe("v2");
+		expect(readAgainst(adopted, onHistory!, undefined).id).toBe("v2");
+	});
+
+	test("the current variant has nothing to be read against unless one is named", () => {
+		expect(() => readAgainst(adopted, current!, undefined)).toThrow(CliUsageError);
+		expect(readAgainst(adopted, current!, "Lock files").id).toBe("v1");
+		// Naming the parent is how a superseded proposal is read for its own change.
+		expect(readAgainst(adopted, onHistory!, "v1").id).toBe("v1");
+		expect(() => readAgainst(adopted, onHistory!, "nowhere")).toThrow(CliUsageError);
+	});
+
+	test("on a board nobody has built a draft reads against the one it came from", () => {
+		const unbuilt = lease(["draft", "draft", "draft"], undefined);
+		expect(readAgainst(unbuilt, unbuilt.variants[1]!, undefined).id).toBe("v1");
+		expect(() => readAgainst(unbuilt, unbuilt.variants[0]!, undefined)).toThrow(CliUsageError);
 	});
 });
