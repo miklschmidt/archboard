@@ -9,6 +9,7 @@ import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import boardRasterizer from "./board-rasterizer.json";
+import legacyRouting from "./legacy-routing.json";
 import voiceCoordinator from "./voice-coordinator.json";
 import workingWithAnAgent from "./working-with-an-agent.json";
 
@@ -63,4 +64,15 @@ test("a block moves up beside an earlier one only to fill real room", async () =
 	const { atlas } = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	const [pane, voice] = [atlas.nodes["xsn0RvSi"]!, atlas.nodes["0SRnYXnC"]!];
 	expect(voice.y).toBeGreaterThan(pane.y + pane.height);
+});
+
+// Reduced from a board of a work vault, letters replaced: a chain of cards
+// above a wide pool its last line enters. Slid onto that line, the chain
+// stood off the pool's middle; centred, it reads straight down into it.
+test("a block slid in line with its lines is kept only where it reads better than centred", async () => {
+	const content = orderedFixture(legacyRouting);
+	const { atlas } = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const [balancer, pool] = [atlas.nodes["zYCHWE5R"]!, atlas.nodes["2cGTPFaw"]!];
+	const offset = balancer.x + balancer.width / 2 - (pool.x + pool.width / 2);
+	expect(Math.abs(offset)).toBeLessThanOrEqual(1);
 });

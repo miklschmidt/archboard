@@ -137,14 +137,10 @@ class PackLayout {
 	 */
 	packings(): Packing[] {
 		const around = this.headRoom() + this.insets.top + this.insets.bottom;
-		return packingsOf(
-			this.sequence(),
-			(group, across) => extentOf(this.sizesOf(group), across, this.gap).long,
-			(packing) => {
-				const { width, height } = this.sizeOf(packing);
-				return { width: width + 2 * this.insets.side, height: height + around };
-			},
-		);
+		return packingsOf(this.sequence(), (packing) => {
+			const { width, height } = this.sizeOf(packing);
+			return { width: width + 2 * this.insets.side, height: height + around };
+		});
 	}
 
 	/**
