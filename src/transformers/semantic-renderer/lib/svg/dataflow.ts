@@ -514,10 +514,7 @@ function paintDataFlow(
 	standingOf: StandingOf,
 	unsettledOf: UnsettledOf,
 	policy: SemanticPolicy,
-	page: { held: readonly SemanticFlow[] | undefined; standingOf: StandingOf } = {
-		held: undefined,
-		standingOf,
-	},
+	page: { held: readonly SemanticFlow[] | undefined; standingOf: StandingOf },
 ): DataFlowPainting {
 	const laid = layoutDataFlow(flows, nodes);
 	const layout = shownFlows(laid, page.held);

@@ -56,20 +56,41 @@ function lineOf(step: FlowStep, order: number): SemanticEdge {
 /**
  * One line for each pair of participants a drawable message runs between. A
  * pair's line is the first message over it that the variant holds, or the
- * first message over it when the variant holds none.
+ * first message over it when the variant holds none. Whether a message the
+ * variant holds is drawable is asked of the variant's own reading: a
+ * participant is not a container there only because the comparison restored
+ * a child the variant removed.
  * @param content The content laid out.
- * @param held The ids of the messages the variant itself holds.
+ * @param held The variant's own reading of the view.
  * @returns The lines, in the order their pairs first appear.
  */
-function stepLinesOf(content: VariantContent, held: ReadonlySet<string>): SemanticEdge[] {
+function stepLinesOf(content: VariantContent, held: VariantContent): SemanticEdge[] {
+	const own = new Set(held.flows.flatMap(({ steps }) => steps.map(({ id }) => id)));
 	const riders = new Map<string, SemanticEdge>();
 	for (const [index, step] of content.flows.flatMap((flow) => flow.steps).entries()) {
 		const pair = `${step.from}>${step.to}`;
-		const riding = riders.get(pair);
-		const replaces = riding === undefined || (!held.has(riding.id) && held.has(step.id));
-		if (drawable(step, content) && replaces) riders.set(pair, lineOf(step, (index + 1) * 1000));
+		const reading = own.has(step.id) ? held : content;
+		if (drawable(step, reading) && takesPair(riders.get(pair), step, own)) {
+			riders.set(pair, lineOf(step, (index + 1) * 1000));
+		}
 	}
 	return [...riders.values()];
+}
+
+/**
+ * Whether a message becomes its pair's line: the pair has none yet, or its
+ * line is a message the variant does not hold and this one it does.
+ * @param riding The pair's line so far, if any.
+ * @param step The message.
+ * @param own The ids of the messages the variant holds.
+ * @returns True when the message takes the pair.
+ */
+function takesPair(
+	riding: SemanticEdge | undefined,
+	step: FlowStep,
+	own: ReadonlySet<string>,
+): boolean {
+	return riding === undefined || (!own.has(riding.id) && own.has(step.id));
 }
 
 /**
@@ -86,18 +107,15 @@ function stepLinesOf(content: VariantContent, held: ReadonlySet<string>): Semant
  * message it holds whenever one rides the pair. Neither choice depends on
  * whether the comparison is shown, so both pictures lay out the same lines.
  * @param content The content laid out.
- * @param held The variant's own reading of the view; the content itself when absent.
+ * @param held The variant's own reading of the view.
  * @returns The drawable content and the derived ids.
  */
-function withStepLines(content: VariantContent, held: VariantContent = content): StepLines {
+function withStepLines(content: VariantContent, held: VariantContent): StepLines {
 	// A board that has relationships is drawn from them: a flow there restates
 	// the wiring as messages and answers, and drawing those again doubles every
 	// line. Only a board with no relationships of its own reads its exchange this way.
 	if (held.edges.length > 0) return { content, derived: new Set() };
-	const lines = stepLinesOf(
-		content,
-		new Set(held.flows.flatMap(({ steps }) => steps.map(({ id }) => id))),
-	);
+	const lines = stepLinesOf(content, held);
 	const derived = new Set(lines.map((line) => line.id));
 	return derived.size === 0
 		? { content, derived }
