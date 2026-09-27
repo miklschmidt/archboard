@@ -33,10 +33,10 @@ interface Box {
 }
 
 /**
- * How far a streak resting on the line down keeps from a box, its body included.
- * @param rest Where its head rests.
+ * How far a streak resting on a straight line keeps from a box, its body included.
+ * @param rest Where its head rests, as a distance along the line.
  * @param body How far behind its head its body reaches.
- * @param box The box.
+ * @param box The box in the line's own frame: `y` along the line, `x` beside it.
  * @returns The least distance from any point of the streak to the box.
  */
 function gapTo(rest: number, body: number, box: Box): number {
@@ -136,9 +136,9 @@ test("a resting streak with no lane's room keeps the most room it can", () => {
 	expect(Math.min(...dots.map((dot) => gapTo(rest, 0, dot)))).toBeGreaterThanOrEqual(15.5);
 });
 
-test("a resting streak keeps a lane from a hop another line makes over its own", () => {
+test("a resting streak keeps a lane from a hop, whichever line carries it", () => {
 	const body = 20;
-	// A line across the line down, hopping it half way down.
+	// A line across the line down, hopping it half way down and half way across.
 	const across = {
 		from: { x: -100, y: 150 },
 		segments: [{ kind: "line" as const, to: { x: 100, y: 150 } }],
@@ -153,9 +153,19 @@ test("a resting streak keeps a lane from a hop another line makes over its own",
 			{ edge: { id: "across" }, curve: across },
 		],
 		bridged: { bridges: [{ edgeId: "across", under: ["down"], curve: hop }] },
-	}).get("down")!;
-	const rest = restingPlace(RIDE, 300, { glow: GLOW, body }, { labels: [], met });
-	expect(gapTo(rest, body, { x: -6, y: 150, width: 12, height: 0 })).toBeGreaterThanOrEqual(
-		GLOW + ROUTE_LANE - 0.5,
-	);
+	});
+	// Each line with the hop as it sees it: along the line downward, beside it sideways.
+	const lines = [
+		{ id: "down", ride: RIDE, length: 300, seen: { x: -6, y: 150, width: 12, height: 0 } },
+		{ id: "across", ride: across, length: 200, seen: { x: 0, y: 94, width: 0, height: 12 } },
+	];
+	for (const { id, ride, length, seen } of lines) {
+		const rest = restingPlace(
+			ride,
+			length,
+			{ glow: GLOW, body },
+			{ labels: [], met: met.get(id)! },
+		);
+		expect(gapTo(rest, body, seen)).toBeGreaterThanOrEqual(GLOW + ROUTE_LANE - 0.5);
+	}
 });
