@@ -20,7 +20,7 @@ const RouteRequestSchema = z.object({
 	centredLabels: z.boolean().default(false),
 	/** Reserved labels keep the clearance of a label on its own run from other lines (routing-clearance.ts). */
 	labelClearance: z.boolean().default(false),
-	/** Seeds and pins keep a lane from the standing pin a card wears (pin-feedback.ts). */
+	/** The cards whose seeds keep a lane from the standing pin they wear; aligned pins always do (pin-feedback.ts). */
 	clearPins: z.array(z.string()).readonly().default([]),
 	/** A port alone on a face near its corner moves to the face's middle (lone-pins.ts). */
 	centredPorts: z.boolean().default(false),
