@@ -179,7 +179,7 @@ function lookOf(lines: ReadonlyMap<string, LineLook>, id: string): LineLook {
 
 /**
  * The box an arrowhead is drawn in: its route's last stretch of approach, and
- * as far to either side.
+ * half as far to either side of it.
  * @param edge The route.
  * @param look How it is drawn.
  * @returns The box, when the route ends in a head on a straight piece.
@@ -195,13 +195,30 @@ function arrowheadBox(edge: DrawingEdge, look: LineLook): Box | undefined {
 		x: last.to.x + (from.x - last.to.x) * share,
 		y: last.to.y + (from.y - last.to.y) * share,
 	};
+	// The head is as wide as the approach is long, and reaches no further
+	// along its line than the approach: a hop across the line a little past it
+	// stands clear of it.
+	return widened(back, last.to, APPROACH_STRAIGHT / 2);
+}
+
+/**
+ * The box between two points on one straight line, widened to either side of
+ * the line only.
+ * @param from One point.
+ * @param to The other, level with it or straight above or below it.
+ * @param side How far to either side.
+ * @returns The box.
+ */
+function widened(from: Point, to: Point, side: number): Box {
 	const box = {
-		x: Math.min(back.x, last.to.x),
-		y: Math.min(back.y, last.to.y),
-		width: Math.abs(back.x - last.to.x),
-		height: Math.abs(back.y - last.to.y),
+		x: Math.min(from.x, to.x),
+		y: Math.min(from.y, to.y),
+		width: Math.abs(from.x - to.x),
+		height: Math.abs(from.y - to.y),
 	};
-	return inflate(box, APPROACH_STRAIGHT / 2);
+	return from.x === to.x
+		? { ...box, x: box.x - side, width: box.width + side * 2 }
+		: { ...box, y: box.y - side, height: box.height + side * 2 };
 }
 
 /**

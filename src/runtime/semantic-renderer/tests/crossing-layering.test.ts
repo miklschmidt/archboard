@@ -84,11 +84,15 @@ test("a hop keeps a card's or a label's clearance from it, bulging away where it
 });
 
 // Archboard server (graphviz): an arc stood fifteen points from the tip of the
-// arrowhead of the line it crossed.
-test("a hop keeps clear of another line's arrowhead", () => {
-	const result = bridged(drawing([down(50, 0, 200), across(100, 150, 35)]));
-	expect(result.bridges).toHaveLength(1);
-	expect(hops(result.bridges[0]!)).toBe(false);
+// arrowhead of the line it crossed; and a crossing past the head, but still on
+// its approach, was refused a hop and cut (the user, 2026-09-27).
+test("a hop keeps clear of another line's arrowhead, and stands across its approach past the head", () => {
+	const near = bridged(drawing([down(50, 0, 200), across(100, 150, 35)]));
+	expect(near.bridges).toHaveLength(1);
+	expect(hops(near.bridges[0]!)).toBe(false);
+	const past = bridged(drawing([down(50, 0, 200), across(100, 150, 28)]));
+	expect(past.bridges).toHaveLength(1);
+	expect(hops(past.bridges[0]!)).toBe(true);
 });
 
 // A dashed line cut beneath a solid one shows no gap among its own, and read
