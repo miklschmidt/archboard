@@ -15,8 +15,9 @@
 // with the same reservations, is routed once more with the pass's options,
 // and that drawing is kept when it cures more: it brings no defect of any
 // kind the settled drawing did not have, a label another line crowds, two
-// lines that touch or run as a double track, crowded joins and the length
-// unrelated lines share a stroke over counted too, and has fewer defects
+// lines that touch or run as a double track, crowded joins, the length
+// unrelated lines share a stroke over and crossings within a lane of a bend
+// counted too, and has fewer defects
 // together. Refusing only fresh defects of the pass's own kind let Voice
 // coordinator's hook pass cure hooks by crowding a label. It must also have
 // no more crossings, counting two unrelated lines on one stroke as one, and
@@ -24,15 +25,18 @@
 // in all (Browser application's "Recording a walkthrough" parted a stack and
 // cured three hooks for one line's extra bend). A route that takes a detour
 // is not worth what it cures. A line the pin pass sends off a pin may take
-// one bend more, and no more: "submit transition" into Board persistence's
-// Write under lease turns once more to drop onto its top face instead of
-// landing 6 px from the pin. The pin pass clears one card at a time, each
+// one bend more for each pin it leaves, and no more: "submit transition"
+// into Board persistence's Write under lease turns once more to drop onto
+// its top face instead of landing 6 px from the pin. The pin pass clears one card at a time, each
 // kept where it cures more, asking again for every card kept before it:
 // cleared together, Board persistence's three cards drew two more crossings
 // for one of them. Where curing every hook at once is not kept, the hook pass
 // too cures card by card, offering the face a hook passed on that card alone:
 // cured together, Board persistence's seven hooks left two labels no run to
-// sit on, and card by card five of them enter the face they passed.
+// sit on, and card by card five of them enter the face they passed. So does
+// the side-exit pass, moving one card's lines' labels alone onto their
+// channel: Board rasterizer's "spawn, read the port, stop the group" drops
+// straight into Chromium executable's top.
 import type {
 	ArchitectureDrawing,
 	DrawingEdge,
@@ -41,6 +45,7 @@ import { ROUTE_NUDGE_DISTANCE } from "@/transformers/semantic-renderer/config";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { verticesOf } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { refusedRouting } from "@/transformers/semantic-renderer/lib/layout/checked-routes";
+import { corneredCrossings } from "@/transformers/semantic-renderer/lib/layout/cornered-crossings";
 import { crossingsSeen } from "@/transformers/semantic-renderer/lib/layout/even-pins";
 import { crowdedLabels } from "@/transformers/semantic-renderer/lib/layout/label-clearance";
 import { bunchedPorts } from "@/transformers/semantic-renderer/lib/layout/lone-pins";
@@ -231,7 +236,9 @@ function bendsOf(drawing: ArchitectureDrawing): ReadonlyMap<string, number> {
 /**
  * Whether a finishing routing is no worse than the settled drawing: no more
  * crossings, unrelated lines on one stroke counted (even-pins.ts), and no
- * line with more bends, a line the pass sends off a pin one more at most,
+ * line with more bends, a line the pass sends off a pin one more at most
+ * than the drawing it would replace (so one more for each pin it leaves, as
+ * the pin pass clears one card at a time),
  * or, where it saves a crossing, no more bends in all.
  * @param clear The finishing routing.
  * @param settled The settled drawing.
@@ -255,9 +262,10 @@ function noWorse(
  * Every defect of a drawing that a finishing pass cures, and every label
  * another line crowds, every pair of lines that touch and every pair of
  * unrelated lines that run as a double track, each keyed by its kind.
- * Crowded joins and every lane's worth of line two unrelated lines share a
- * stroke over are counted rather than named, since which lines they carry
- * and where they lie shift with every route beside them. Keyed by their pair
+ * Crowded joins, every lane's worth of line two unrelated lines share a
+ * stroke over and crossings within a lane of a bend are counted rather than
+ * named, since which lines they carry and where they lie shift with every
+ * route beside them. Keyed by their pair
  * of lines alone, two stacks of the same two lines were one defect, and a
  * pass that parted one of them cured nothing. No pass may bring any of them
  * ({@link cures}).
@@ -275,6 +283,7 @@ function defectsOf(drawing: ArchitectureDrawing, pinned: Pinned): ReadonlySet<st
 		...trackKeys(drawing).map((key) => `track:${key}`),
 		...Array.from({ length: crowdedJoinCount(drawing) }, (_, index) => `join:${index}`),
 		...Array.from({ length: stackedLanes(drawing) }, (_, index) => `stacked:${index}`),
+		...Array.from({ length: corneredCrossings(drawing) }, (_, index) => `cornered:${index}`),
 	]);
 }
 
@@ -314,7 +323,7 @@ interface FinishingPass {
 	readonly found: (drawing: ArchitectureDrawing, pinned: Pinned) => readonly string[];
 	/** The defects of its kind a drawing has, one key for each. */
 	readonly defects: (drawing: ArchitectureDrawing, pinned: Pinned) => readonly string[];
-	/** What its routes are asked to cure all it found at once; left out on a pass that cures card by card. */
+	/** What its routes are asked to cure all it found at once; left out on a pass that cures only card by card. */
 	readonly ask?: (found: readonly string[]) => RouteRequest;
 	/** What its routes are asked to cure what it found on some cards, where curing all at once is not kept. */
 	readonly askByCard?: (found: readonly string[]) => RouteRequest;
@@ -349,6 +358,16 @@ function clearing(clearWalls: readonly string[]): RouteRequest {
  */
 function droppingStraight(): RouteRequest {
 	return { laneChannels: true, centredLabels: true };
+}
+
+/**
+ * Routes asked for the reserved labels of some side exits' lines alone on
+ * their cards' channel.
+ * @param exits The side exits, as line:card.
+ * @returns The request.
+ */
+function droppingStraightAt(exits: readonly string[]): RouteRequest {
+	return { centredLines: [...new Set(exits.map((key) => key.split(":")[0]!))] };
 }
 
 /**
@@ -414,6 +433,7 @@ const FINISHING_PASSES: readonly FinishingPass[] = [
 		found: wrongFaces,
 		defects: wrongFaces,
 		ask: droppingStraight,
+		askByCard: droppingStraightAt,
 	},
 	{
 		kind: "hook",

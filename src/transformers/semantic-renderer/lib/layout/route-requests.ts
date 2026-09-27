@@ -20,6 +20,8 @@ const RouteRequestSchema = z.object({
 	laneChannels: z.boolean().default(false),
 	/** Reserved labels move onto the channel their cards share (label-centring.ts). */
 	centredLabels: z.boolean().default(false),
+	/** The lines whose reserved labels alone move so, where centredLabels is not asked. */
+	centredLines: z.array(z.string()).readonly().default([]),
 	/** Reserved labels keep the clearance of a label on its own run from other lines (routing-clearance.ts). */
 	labelClearance: z.boolean().default(false),
 	/** The cards whose seeds keep a lane from the standing pin they wear; aligned pins always do (pin-feedback.ts). */

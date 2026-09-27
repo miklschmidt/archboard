@@ -17,9 +17,12 @@
 // 2156 and drew 24 crossings instead of 15. Each reading is therefore settled
 // and finished both ways (compound.ts) and the tidier drawing is kept. It may
 // have no more of any defect a reader sees: crossings, each stack of two
-// unrelated lines counted as the crossing it may hide; lines that touch, and a
-// fan's branches crowded into one blot; the length unrelated lines share a
-// stroke over; and hooks into a card's side. Counted on drawn crossings alone,
+// unrelated lines counted as the crossing it may hide and each crossing within
+// a lane of a bend twice; lines that touch, and a fan's branches crowded into
+// one blot; the length unrelated lines share a stroke over; hooks into a
+// card's side; and the length unrelated lines run side by side nearer than a
+// lane (Board persistence's evened settlement ran its teal line 11 px from two
+// others for 377 px). Counted on drawn crossings alone,
 // Board rasterizer kept two stacks 704 px long, a reader unable to tell which
 // line went where, for the one crossing parting them drew. Evened pins that saved crossings
 // kept a 450 px trunk of two unrelated lines in Command interface, and
@@ -41,6 +44,7 @@ import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/d
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { eitherRouting } from "@/transformers/semantic-renderer/lib/layout/checked-routes";
 import { verticesOf } from "@/transformers/semantic-renderer/lib/layout/curves";
+import { corneredCrossings } from "@/transformers/semantic-renderer/lib/layout/cornered-crossings";
 import { cornerPorts } from "@/transformers/semantic-renderer/lib/layout/lone-pins";
 import { sideHooks } from "@/transformers/semantic-renderer/lib/layout/pin-feedback";
 import {
@@ -48,6 +52,7 @@ import {
 	stackedLanes,
 	stackKeys,
 	touchKeys,
+	trackedLanes,
 } from "@/transformers/semantic-renderer/lib/layout/stacked-runs";
 import { crossingsOf } from "@/transformers/semantic-renderer/lib/track/score";
 
@@ -96,15 +101,18 @@ function lengthOf(points: readonly Point[]): number {
 }
 
 /**
- * The crossings a reader sees in a drawing, and the places two unrelated
- * lines share one stroke, where a reader cannot tell which goes where and
- * which may hide a crossing (stacked-runs.ts).
+ * The crossings a reader sees in a drawing, each on a corner counted twice
+ * (cornered-crossings.ts), and the places two unrelated lines share one
+ * stroke, where a reader cannot tell which goes where and which may hide a
+ * crossing (stacked-runs.ts).
  * @param drawing The drawing.
  * @returns Their number.
  */
 function crossingsSeen(drawing: ArchitectureDrawing): number {
 	return (
-		crossingsOf(drawing.edges.map(({ curve }) => verticesOf(curve))) + stackKeys(drawing).length
+		crossingsOf(drawing.edges.map(({ curve }) => verticesOf(curve))) +
+		corneredCrossings(drawing) +
+		stackKeys(drawing).length
 	);
 }
 
@@ -122,12 +130,13 @@ function lineLength(drawing: ArchitectureDrawing): number {
  * crossings seen ({@link crossingsSeen}); pairs of lines that touch, where a
  * corner of one reads as a junction on the other, together with pairs of
  * joins crowded into one blot;
- * the lanes' worth of line unrelated lines draw on one stroke; and line ends
- * hooking into a card's side. Ranked on crossings seen alone, evened pins kept
- * Command interface's 450 px trunk of two unrelated lines for the crossings it
- * saved.
+ * the lanes' worth of line unrelated lines draw on one stroke; line ends
+ * hooking into a card's side; and the lanes' worth of line unrelated lines run
+ * side by side nearer than a lane. Ranked on crossings seen alone, evened pins
+ * kept Command interface's 450 px trunk of two unrelated lines for the
+ * crossings it saved.
  * @param drawing A settled drawing.
- * @returns Its crossings seen, touching lines and crowded joins, stacked lanes, and hooks.
+ * @returns Its crossings seen, touching lines and crowded joins, stacked lanes, hooks, and lanes side by side.
  */
 function defectsIn(drawing: ArchitectureDrawing): readonly number[] {
 	return [
@@ -135,6 +144,7 @@ function defectsIn(drawing: ArchitectureDrawing): readonly number[] {
 		touchKeys(drawing).length + crowdedJoinCount(drawing),
 		stackedLanes(drawing),
 		sideHooks(drawing).length,
+		trackedLanes(drawing),
 	];
 }
 

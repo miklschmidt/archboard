@@ -100,7 +100,9 @@ function nextFeedback(
  * @returns The hierarchy with finite orthogonal relationship routes.
  */
 export function routeGraph(avoid: AvoidEngine, graph: ElkNode): ElkNode {
-	if (requestOf(graph).centredLabels) centreLabels(graph);
+	const { centredLabels, centredLines } = requestOf(graph);
+	if (centredLabels) centreLabels(graph);
+	else if (centredLines.length > 0) centreLabels(graph, new Set(centredLines));
 	const routed = refinedRoutes(avoid, graph);
 	joinSqueezedTrunks(routed.edges ?? []);
 	return routed;

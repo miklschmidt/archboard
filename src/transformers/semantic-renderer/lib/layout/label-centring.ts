@@ -217,15 +217,26 @@ function fits(page: Page, row: readonly Reserved[], xs: readonly number[]): bool
 }
 
 /**
+ * Whether a row is asked to move.
+ * @param row The row.
+ * @param lines The lines whose rows move; every row when left out.
+ * @returns True when it holds a label of one of them, or every row moves.
+ */
+function asked(row: readonly Reserved[], lines: ReadonlySet<string> | undefined): boolean {
+	return lines === undefined || row.some(({ edge }) => lines.has(edge.id));
+}
+
+/**
  * Move each row of a placed graph's reserved labels onto the channels their
  * cards share, where the whole row fits.
  * @param graph The placed graph, changed in place.
+ * @param lines The lines whose rows move; every row when left out.
  */
-export function centreLabels(graph: ElkNode): void {
+export function centreLabels(graph: ElkNode, lines?: ReadonlySet<string>): void {
 	const page = pageOf(graph);
 	const rows = new Map<string, Reserved[]>();
 	for (const label of page.labels) rows.set(label.row, [...(rows.get(label.row) ?? []), label]);
-	for (const row of rows.values()) {
+	for (const row of [...rows.values()].filter((each) => asked(each, lines))) {
 		row.sort((one, other) => one.box.x - other.box.x);
 		const xs = slid(page, row);
 		if (fits(page, row, xs)) row.forEach(({ label }, index) => (label.x = xs[index]!));

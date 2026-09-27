@@ -54,14 +54,19 @@ const FACE_INSET = 20;
  * A reserved label beside the span two stacked cards share, routed with labels centred.
  * @param upper The upper card.
  * @param lower The lower card.
+ * @param request What the routes are asked for: every label centred unless told otherwise.
  * @returns The routed relationship.
  */
-function centred(upper: ElkNode, lower: ElkNode): ElkExtendedEdge {
+function centred(
+	upper: ElkNode,
+	lower: ElkNode,
+	request: Parameters<typeof requestOptions>[0] = { centredLabels: true },
+): ElkExtendedEdge {
 	const graph: ElkNode = {
 		id: "root",
 		width: 800,
 		height: 380,
-		layoutOptions: requestOptions({ centredLabels: true }),
+		layoutOptions: requestOptions(request),
 		children: [upper, lower, { id: "beside", x: lower.x! + 400, y: 272, width: 340, height: 88 }],
 		edges: [
 			{
@@ -86,6 +91,16 @@ test("a label reserved beside the span its cards share moves onto it when asked,
 	expect(centre).toBeGreaterThan(upper.x);
 	expect(centre).toBeLessThan(lower.x + lower.width);
 	expect(edge.sections![0]!.bendPoints ?? []).toHaveLength(0);
+});
+
+test("a label moves onto the span when its own line is asked for, and not for another line", async () => {
+	// The side-exit pass cures one card's lines at a time (finishing.ts).
+	await AvoidLib.load();
+	const upper = { id: "upper", x: 200, y: 20, width: 340, height: 88 };
+	const lower = { id: "lower", x: 20, y: 272, width: 340, height: 88 };
+	const own = centred(upper, lower, { centredLines: ["today"] }).labels![0]!;
+	expect(own.x! + own.width! / 2).toBeGreaterThan(upper.x);
+	expect(centred(upper, lower, { centredLines: ["another"] }).labels![0]!.x).toBe(110);
 });
 
 test("a label moved onto a shared span keeps its line off the cards' corners", async () => {
@@ -148,34 +163,43 @@ test("labels moved onto one span in one row keep a label's clearance apart", () 
 });
 
 test("a label stays where sliding it onto the span would take it out of its frame's inset", () => {
-	// The frame holds both cards; slid onto the span, the wide label would end inside its inset.
-	const frame: ElkNode = {
-		id: "frame",
-		x: 100,
-		y: 0,
-		width: 500,
-		height: 380,
-		children: [
-			{ id: "upper", x: 200, y: 20, width: 340, height: 88 },
-			{ id: "lower", x: 120, y: 272, width: 340, height: 88 },
-		],
-	};
-	const label = { x: 300, y: 174, width: 300, height: 32 };
-	const graph: ElkNode = {
-		id: "root",
-		width: 800,
-		height: 380,
-		children: [frame],
-		edges: [
-			{
-				id: "line",
-				sources: ["upper"],
-				targets: ["lower"],
-				labels: [{ ...label }],
-				layoutOptions: { "archboard.relationship.kind": "call", "archboard.route-label": "true" },
-			},
-		],
-	};
-	centreLabels(graph);
-	expect(graph.edges![0]!.labels![0]!.x).toBe(label.x);
+	// The frame holds both cards; slid onto the span, the wide label would end
+	// inside its inset, on the right with the upper card to the right, on the
+	// left with the upper card to the left.
+	const cases = [
+		{ upper: 200, lower: 120, at: 300 },
+		{ upper: 160, lower: 240, at: 100 },
+	];
+	for (const { upper, lower, at } of cases) {
+		const label = { x: at, y: 174, width: 300, height: 32 };
+		const graph: ElkNode = {
+			id: "root",
+			width: 800,
+			height: 380,
+			children: [
+				{
+					id: "frame",
+					x: 100,
+					y: 0,
+					width: 500,
+					height: 380,
+					children: [
+						{ id: "upper", x: upper, y: 20, width: 340, height: 88 },
+						{ id: "lower", x: lower, y: 272, width: 340, height: 88 },
+					],
+				},
+			],
+			edges: [
+				{
+					id: "line",
+					sources: ["upper"],
+					targets: ["lower"],
+					labels: [{ ...label }],
+					layoutOptions: { "archboard.relationship.kind": "call", "archboard.route-label": "true" },
+				},
+			],
+		};
+		centreLabels(graph);
+		expect(graph.edges![0]!.labels![0]!.x).toBe(label.x);
+	}
 });

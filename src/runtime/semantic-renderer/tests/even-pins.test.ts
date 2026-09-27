@@ -17,6 +17,9 @@
 // lines counts as the crossing it may hide, so a settlement may draw a
 // crossing to part one (Board rasterizer). Nor does a defect saved pay for
 // more than two bends ("One browser, two uses" wound through its frame).
+// A crossing within a lane of a bend counts twice, so no settlement cures a
+// hook by knotting two lines at a corner (Agent workbench's Thread link),
+// nor by running two unrelated lines nearer than a lane (Board persistence).
 // Evening the charge
 // counts the inset a side pin stands inside its card's routing box, so every
 // pin of a card costs the same in all.
@@ -98,7 +101,7 @@ test("a stack of unrelated lines counts as the crossing it may hide, so parting 
 	};
 	const shared = at([0, 50], [100, 50], [100, 150], [200, 150]);
 	const stacked = at([300, 60], [100, 60], [100, 140], [0, 140]);
-	const parted = at([300, 60], [150, 60], [150, 140], [0, 140]);
+	const parted = at([300, 60], [150, 60], [150, 100], [0, 100]);
 	const hooked = at([50, 350], [50, 400], [180, 400], [180, 530], [200, 530]);
 	const entering = at([50, 350], [50, 400], [220, 400], [220, 500]);
 	const plain = sketch(cards, [
@@ -314,6 +317,77 @@ test("hooks cured do not pay for a crossing brought", async () => {
 		intoTarget(0, false),
 		intoTarget(500, false),
 		...long(true).slice(0, 2),
+	]);
+	expect(await kept(plain, even)).toBe("plain");
+});
+
+/**
+ * A line across the page and a line down it that crosses it and turns a
+ * given distance below the crossing.
+ * @param turn How far below the crossing the line down turns.
+ * @returns The two lines.
+ */
+function turningPast(turn: number): Line[] {
+	return [
+		{ id: "across", from: "a", to: "b", points: at([400, 100], [700, 100]) },
+		{ id: "down", from: "c", to: "d", points: at([500, 0], [500, 100 + turn], [600, 100 + turn]) },
+	];
+}
+
+test("a crossing within a lane of a bend is not kept for the hook it cures", async () => {
+	// Agent workbench's hook into Thread link, cured by crossing two lines
+	// just before their bends; a crossing a lane from a bend is an ordinary one.
+	const cards = {
+		source: { x: 0, y: 0, width: 100, height: 50 },
+		target: { x: 200, y: 200, width: 200, height: 60 },
+	};
+	const hooked = at([50, 50], [50, 100], [180, 100], [180, 230], [200, 230]);
+	const entering = at([50, 50], [50, 100], [220, 100], [220, 200]);
+	const plain = sketch(cards, [
+		{ id: "line", from: "source", to: "target", points: hooked },
+		...turningPast(16),
+	]);
+	const even = sketch(cards, [
+		{ id: "line", from: "source", to: "target", points: entering },
+		...turningPast(10),
+	]);
+	expect(await kept(plain, even)).toBe("plain");
+});
+
+/**
+ * Two unrelated lines that run side by side across the page for 260 px.
+ * @param apart How far apart they run.
+ * @returns The lines.
+ */
+function beside(apart: number): Line[] {
+	return [
+		{ id: "upper", from: "a", to: "b", points: at([500, 0], [500, 100], [800, 100], [800, 300]) },
+		{
+			id: "lower",
+			from: "c",
+			to: "d",
+			points: at([460, 0], [460, 100 + apart], [760, 100 + apart], [760, 300]),
+		},
+	];
+}
+
+test("two unrelated lines side by side nearer than a lane are not kept for the hook it cures", async () => {
+	// Board persistence's evened settlement ran its teal "a migrated document"
+	// 11 px from two unrelated lines for 377 px; a lane apart is the pitch
+	// lines keep where they have room.
+	const cards = {
+		source: { x: 0, y: 0, width: 100, height: 50 },
+		target: { x: 200, y: 200, width: 200, height: 60 },
+	};
+	const hooked = at([50, 50], [50, 100], [180, 100], [180, 230], [200, 230]);
+	const entering = at([50, 50], [50, 100], [220, 100], [220, 200]);
+	const plain = sketch(cards, [
+		{ id: "line", from: "source", to: "target", points: hooked },
+		...beside(16),
+	]);
+	const even = sketch(cards, [
+		{ id: "line", from: "source", to: "target", points: entering },
+		...beside(11),
 	]);
 	expect(await kept(plain, even)).toBe("plain");
 });
