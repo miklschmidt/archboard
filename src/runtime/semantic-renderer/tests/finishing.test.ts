@@ -367,6 +367,46 @@ test("side exits a pass may not cure together are cured for one card's lines at 
 	expect(done.reading).toEqual(["exit"]);
 });
 
+/**
+ * Two lines into the tops of two pinned cards, each beside its card's pin
+ * until the routes clear that card; clearing the second card winds the first
+ * line once more.
+ * @param cleared The cards the routes clear.
+ * @returns The drawing.
+ */
+function clearing(cleared: readonly string[]): ArchitectureDrawing {
+	const pinnedCards = {
+		a: { x: 0, y: 0, width: 200, height: 60 },
+		c: { x: 600, y: 0, width: 200, height: 60 },
+	};
+	const intoA = !cleared.includes("a")
+		? at([-100, -50], [10, -50], [10, 0])
+		: cleared.includes("c")
+			? at([-100, -100], [40, -100], [40, -30], [100, -30], [100, 0])
+			: at([-100, -100], [-100, -50], [100, -50], [100, 0]);
+	const intoC = cleared.includes("c")
+		? at([500, -50], [700, -50], [700, 0])
+		: at([500, -50], [610, -50], [610, 0]);
+	return sketch(pinnedCards, [
+		{ id: "intoA", from: "s", to: "a", points: intoA },
+		{ id: "intoC", from: "t", to: "c", points: intoC },
+	]);
+}
+
+test("a line sent off a pin takes one bend more for that pin, not again for the next card cleared", async () => {
+	const done = await finished(
+		{ reading: [] as readonly string[], drawing: clearing([]) },
+		(_, request) =>
+			Promise.resolve(
+				request.clearPins === undefined
+					? undefined
+					: { reading: request.clearPins, drawing: clearing(request.clearPins) },
+			),
+		new Set(["a", "c"]),
+	);
+	expect(done.reading).toEqual(["a"]);
+});
+
 /** What a finishing pass asks of its routes. */
 type RouteRequest = Parameters<Parameters<typeof finished>[1]>[1];
 
