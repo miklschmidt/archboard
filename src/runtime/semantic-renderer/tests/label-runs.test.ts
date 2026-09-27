@@ -16,12 +16,15 @@ import {
 	routeLabels,
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
-import { COMPOUND_OPTIONS } from "@/runtime/semantic-renderer/layout";
+import {
+	LABEL_CARD_CLEARANCE,
+	LABEL_LABEL_CLEARANCE,
+} from "@/transformers/semantic-renderer/config";
 
 /** The room a badge keeps from a card and from the ends of its run. */
-const AIR = Number(COMPOUND_OPTIONS["elk.spacing.labelNode"]);
+const AIR = LABEL_CARD_CLEARANCE;
 /** The room a badge keeps from another badge. */
-const LABEL_AIR = Number(COMPOUND_OPTIONS["elk.spacing.labelLabel"]);
+const LABEL_AIR = LABEL_LABEL_CLEARANCE;
 
 test.each(
 	LayoutEngineSchema.options.flatMap((layout) =>

@@ -9,18 +9,10 @@ export const DIAGRAM_MARGIN = 20;
 export const PLANNED_FRAME_MARGIN = 16;
 /** Distance from the page edge to a planned board's dashed frame. */
 export const PLANNED_FRAME_INSET = 8;
-/** Native placement coordinate margin, before final drawing bounds are measured. */
-export const PLACEMENT_MARGIN = 24;
 /** Equal space below a container title and at its sides/bottom. */
 export const CONTAINER_INSET = 20;
-/** Preferred horizontal gap; routed cards also require room for bends and arrow approaches. */
-export const CARD_GAP = 24;
 /** Preferred rank gap, subject to routing clearance. Reserved labels add their measured height. */
 export const RANK_GAP = 32;
-/** Space between downward columns, including continuation routes and labels. */
-export const COLUMN_GAP = 192;
-/** Minimum relative fit improvement before adding another downward column. */
-export const WRAP_MIN_FIT_GAIN = 0.05;
 
 /** Label-to-card whitespace. */
 export const LABEL_CARD_CLEARANCE = 16;
@@ -29,16 +21,15 @@ export const LABEL_LABEL_CLEARANCE = 24;
 /** Whitespace between a label and an unrelated route. */
 export const LABEL_ROUTE_CLEARANCE = 12;
 
-/** Native router buffer around obstacles. Increasing this can close tight passages. */
+/** Whitespace a line's ink keeps from a card it passes. */
 export const ROUTE_OBSTACLE_CLEARANCE = 8;
-/** Native separation preference for neighboring route segments. */
-export const ROUTE_NUDGE_DISTANCE = 12;
-/** Native cost of adding a segment; larger values favor fewer bends. */
-export const ROUTE_SEGMENT_PENALTY = 20;
+/**
+ * The pitch of neighbouring parallel lines: one lane, the width a reader needs
+ * to follow each line and the hops of one line need to clear the other.
+ */
+export const ROUTE_LANE = 16;
 /** Fixed radius of ordinary edge bends. Routing must provide enough room; this never shrinks. */
 export const BEND_RADIUS = 8;
-/** Open passage between opposing routing footprints; touching footprints block native routing. */
-export const ROUTE_OPEN_CORRIDOR = 2;
 /** Required straight run after the final bend, for every arrow (largest marker reaches 9.735px). */
 export const APPROACH_STRAIGHT = 12;
 /** Crossing bridge size and clearance from surrounding ink. */

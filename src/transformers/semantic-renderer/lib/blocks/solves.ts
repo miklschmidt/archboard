@@ -8,7 +8,6 @@ import type { ElkNode } from "@archboard/elk-rs";
 import { z } from "zod";
 import { fitIn } from "@/shared/shell-geometry/index";
 import { SOLVE_STAGE, rendererHost } from "@/transformers/semantic-renderer/lib/host";
-import { COMPOUND_OPTIONS } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { layJoined, type Drawn } from "@/transformers/semantic-renderer/lib/blocks/joins";
 import { lineLength } from "@/transformers/semantic-renderer/lib/blocks/laying";
@@ -65,7 +64,6 @@ async function solved(
 		},
 	};
 	const answer = await rendererHost().solve(asked, {
-		...COMPOUND_OPTIONS,
 		[SOLVE_STAGE]: nesting === "blocks" ? "blocks" : "track",
 	});
 	return PlacedSchema.parse(JSON.parse(answer.layoutOptions?.[BLOCKS_PLACED] ?? "{}"));
