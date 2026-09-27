@@ -143,7 +143,9 @@ function slidesOf(scene: Scene, block: Block): [Item, readonly [number, number]]
 /**
  * The room a block of cards keeps where no line turns under its header, and
  * over its bottom ports when they stand on its edge: its inset, as below a
- * region's caption, which stands a little into its band.
+ * region's caption, which stands a little into its band. Alone in a region,
+ * it keeps the inset it keeps in none: the region's own inset below stands
+ * outside its edge.
  * @param block The block.
  * @param insets Its insets.
  * @returns The room, or nothing when the block draws no edge.
@@ -151,7 +153,8 @@ function slidesOf(scene: Scene, block: Block): [Item, readonly [number, number]]
 function rimOf(block: Block, insets: Insets): Rim | undefined {
 	if (block.header === undefined) return undefined;
 	const head = CONTAINER_INSET + (block.kind === "region" ? CAPTION_INSET : 0);
-	return [...block.ports.values()].includes("bottom") ? { head, foot: insets.side } : { head };
+	const foot = insets.side - (block.lone === undefined ? 0 : LONE_INSET);
+	return [...block.ports.values()].includes("bottom") ? { head, foot } : { head };
 }
 
 export { PORT, cornerHeader, letPortsSlide, markRegions, pinnedLeaf, rimOf };
