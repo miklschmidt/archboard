@@ -357,6 +357,10 @@ fifth, so it stays.
 
 ## 13. Fit in the reference pane is the measure (2026-09-16, TASK-245.02)
 
+Superseded on 2026-09-27 by ADR 0039: a drawing is measured first by how easily
+it reads, and fit only breaks ties. The reference pane below stays the
+yardstick for fit.
+
 Page area was the layout suite's number, and area does not track what a
 reader gets: a 997 by 1468 column and a 3952 by 460 ribbon are the same
 area and fit the pane at 0.65 against 0.32. ADR 0028 makes fit the measure.

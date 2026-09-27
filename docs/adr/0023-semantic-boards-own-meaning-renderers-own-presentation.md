@@ -185,6 +185,8 @@ measured by fit in the reference pane together with reader invariants, which
 replaces the clauses that fitting one viewport is not a success criterion and
 that no density policy is wanted. It also records that the list of what agents
 may not author is exactly the list above.
+[ADR 0039](0039-a-drawing-is-measured-by-how-easily-it-reads.md) in turn makes
+fit a guideline: a drawing is measured first by how easily it reads.
 
 ## Where a picture is drawn (TASK-247, 2026-09-17)
 
