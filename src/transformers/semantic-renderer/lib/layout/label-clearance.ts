@@ -10,11 +10,15 @@
 // cards (routing-clearance.ts). Routed so everywhere, the same labels pushed
 // lines into longer ways round in some boards: Platform Phone API went from 9
 // to 12 crossings and Board rasterizer's "One browser, two uses" took 20 more
-// bends. So each reading is settled and finished both ways and keeps the
-// clearance only where it gives labels their clearance: no more labels
-// another line crowds, and a drawing no untidier than the ordinary one where
-// it crowds fewer, or tidier where it crowds as many, judged as plain and
-// evened pins are (even-pins.ts). Kept wherever it merely cost nothing, it
+// bends. So each reading is settled and finished both ways, and the cleared
+// drawing is weighed against the ordinary one as plain and evened pins are
+// (even-pins.ts), each label it clears counted as a defect saved and each it
+// crowds as one brought: it is kept when it has no more of any defect the
+// veto counts, clears more labels than it crowds or ranks tidier, and grows
+// the page and its lines by no more than the defects it saves in all buy. So
+// a cleared drawing that crowds one more label is kept where it saves more
+// crossings than that, and one that clears labels is kept even where it
+// ranks a little untidier. Kept wherever it merely cost nothing, it
 // moved lines round boards it cured nothing in, and put three labels a
 // clearance from lines that were far from them (Codex workhorse, Browser
 // application's "Recording a walkthrough"). A cleared settlement can reserve
@@ -78,7 +82,8 @@ export function crowdedLabels(drawing: ArchitectureDrawing): string[] {
 /**
  * Whether the cleared drawing is kept: a drawing tidier than the ordinary
  * one, each label it clears counted as a defect saved and each it crowds as
- * one brought (even-pins.ts). A cleared drawing that clears no label is
+ * one brought, which may outweigh crossings saved or a worse rank
+ * (even-pins.ts). A cleared drawing that clears no label is
  * another settlement of the same reading, kept where it is tidier: What the
  * CLI can be asked drew 4 crossings so where the ordinary drawing drew 10.
  * @param cleared The drawing with reserved labels' full clearance.
