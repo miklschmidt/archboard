@@ -3,6 +3,7 @@
 // spacing, corner rounding, crossing bridges and the marks where routes join.
 export { bridgeCrossings } from "@/transformers/semantic-renderer/lib/layout/crossings";
 export { junctionsOf } from "@/transformers/semantic-renderer/lib/svg/junctions";
+export { restingPlace } from "@/transformers/semantic-renderer/lib/svg/comet-rest";
 export {
 	curveThrough,
 	curveClearanceIssue,
@@ -10,6 +11,7 @@ export {
 } from "@/transformers/semantic-renderer/lib/layout/curves";
 export {
 	COMPOUND_OPTIONS,
+	compoundGraph,
 	PINNED_STANDING,
 } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 export { improveProjection } from "@/transformers/semantic-renderer/lib/layout/label-projections";
@@ -19,7 +21,11 @@ export {
 } from "@/transformers/semantic-renderer/lib/layout/label-runs";
 export { publishRoutes } from "@/transformers/semantic-renderer/lib/layout/avoid-routes";
 export { routeGraph } from "@/transformers/semantic-renderer/lib/layout/route-graph";
-export { tidierSettlement } from "@/transformers/semantic-renderer/lib/layout/even-pins";
+export { centreLabels } from "@/transformers/semantic-renderer/lib/layout/label-centring";
+export {
+	centreHandicap,
+	tidierSettlement,
+} from "@/transformers/semantic-renderer/lib/layout/even-pins";
 export { finished } from "@/transformers/semantic-renderer/lib/layout/finishing";
 export { RouteCheckFailed } from "@/transformers/semantic-renderer/lib/layout/checked-routes";
 export { clearerDrawing } from "@/transformers/semantic-renderer/lib/layout/label-clearance";

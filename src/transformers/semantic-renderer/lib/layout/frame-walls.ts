@@ -104,7 +104,7 @@ function gapInFront(own: Box, other: Box): number | undefined {
  */
 function faceReach(card: Box, frame: Box, face: WallFace, others: readonly Box[]): number {
 	const clear = turned(card, face).x - turned(frame, face).x - CARD_ROUTE_CLEARANCE;
-	if (clear >= ROUTE_LANE || clear <= -WALL_CLEARANCE) return 0;
+	if (clear >= ROUTE_LANE) return 0;
 	const own = turned(inflate(card, CARD_ROUTE_CLEARANCE), face);
 	const passage = Math.min(
 		...others.flatMap((other) => {

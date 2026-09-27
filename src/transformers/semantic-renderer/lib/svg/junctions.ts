@@ -15,7 +15,7 @@
 // are marked by one bar along the lane rather than by dots that overlap.
 
 import type { DrawingEdge } from "@/transformers/semantic-renderer/lib/drawing";
-import { coord, type Point } from "@/transformers/semantic-renderer/lib/geometry";
+import { coord, type Box, type Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { verticesOf, type Curve } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 
@@ -330,6 +330,33 @@ function joinsOf(routes: readonly JoinRoute[]): Junction[] {
 }
 
 /**
+ * The stretches each route shares with another as one drawn line, where a
+ * reader cannot tell the two routes' traffic apart.
+ * @param routes Every route's corners, its bends' radii and its line width.
+ * @returns For each route, by its place among them, the boxes of the lines it shares.
+ */
+function sharedStretches(routes: readonly JoinRoute[]): Box[][] {
+	const stretches = routes.flatMap(stretchesOf);
+	const shared: Box[][] = routes.map(() => []);
+	for (const [index, one] of stretches.entries()) {
+		for (const other of stretches.slice(index + 1)) {
+			const found = sharedEnds(one, other);
+			if (found === null) continue;
+			const [from, to] = found.ends.map(({ end }) => end);
+			const box = {
+				x: Math.min(from!.x, to!.x),
+				y: Math.min(from!.y, to!.y),
+				width: Math.abs(to!.x - from!.x),
+				height: Math.abs(to!.y - from!.y),
+			};
+			shared[one.route]!.push(box);
+			shared[other.route]!.push(box);
+		}
+	}
+	return shared;
+}
+
+/**
  * The pairs of joins on one lane nearer together than a distance, which a
  * reader sees as one blot rather than two branches (Skill evaluation's fan of
  * six lines out of Author run, branching 9 px apart).
@@ -439,4 +466,4 @@ function markRadius(width: number): number {
 	return width + JUNCTION_REACH;
 }
 
-export { crowdedJoins, joinRoutes, junctionMarks, junctionsOf, markRadius };
+export { crowdedJoins, joinRoutes, junctionMarks, junctionsOf, markRadius, sharedStretches };

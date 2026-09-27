@@ -28,7 +28,7 @@ function visitNodes(scene: RoutingScene, graph: ElkNode): void {
  * @param avoid Initialized native router.
  * @param graph Complete globally placed geometry.
  * @param endpoints Available shared faces.
- * @param feedback Optional feedback candidates, marked when this is the last solve.
+ * @param feedback Optional feedback candidates; held channels mark the last solve.
  * @returns New useful physical alternatives after the scene has settled.
  */
 function settle(
@@ -89,7 +89,7 @@ function nextFeedback(
 		const pins = scene.refinePorts(edges);
 		return pins === undefined ? undefined : { pins };
 	}
-	return feedback.last === undefined ? scene.centrePorts(edges) : undefined;
+	return feedback.held === undefined ? scene.centrePorts(edges) : undefined;
 }
 
 /**
@@ -100,7 +100,9 @@ function nextFeedback(
  * @returns The hierarchy with finite orthogonal relationship routes.
  */
 export function routeGraph(avoid: AvoidEngine, graph: ElkNode): ElkNode {
-	if (requestOf(graph).centredLabels) centreLabels(graph);
+	const { centredLabels, centredLines } = requestOf(graph);
+	if (centredLabels) centreLabels(graph);
+	else if (centredLines.length > 0) centreLabels(graph, new Set(centredLines));
 	const routed = refinedRoutes(avoid, graph);
 	joinSqueezedTrunks(routed.edges ?? []);
 	return routed;
@@ -109,7 +111,7 @@ export function routeGraph(avoid: AvoidEngine, graph: ElkNode): ElkNode {
 /**
  * Route once, then offer one optional native refinement informed by the
  * settled paths, and, when that leaves a lone port to centre, one last solve
- * with it centred (lone-pins.ts). Failed optional routes
+ * with the centred channels held to their faces (lone-pins.ts). Failed optional routes
  * retain the last complete routing; unrelated failures still propagate.
  * @param avoid Initialized native router.
  * @param graph Complete globally placed semantic geometry.
@@ -121,6 +123,7 @@ function refinedRoutes(avoid: AvoidEngine, graph: ElkNode): ElkNode {
 	let routed = graph;
 	let feedback = settle(avoid, graph, endpoints);
 	while (feedback !== undefined) {
+		if (feedback.held !== undefined) endpoints.hold(feedback.pins, feedback.held);
 		const candidate = structuredClone(routed);
 		try {
 			feedback = settle(avoid, candidate, endpoints, feedback);

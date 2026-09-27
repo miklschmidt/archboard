@@ -7,7 +7,11 @@
 
 import { describe, expect, test } from "bun:test";
 import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
-import { chooseReading, type ArchitectureDrawing } from "@/runtime/semantic-renderer/layout";
+import {
+	chooseReading,
+	RouteCheckFailed,
+	type ArchitectureDrawing,
+} from "@/runtime/semantic-renderer/layout";
 
 /** Cards in the unfolded reading, one to a row, each row calling the next. */
 const ROWS = 8;
@@ -103,7 +107,7 @@ describe("a board taller than the pane", () => {
 		[
 			"refused",
 			() => {
-				throw new Error("a route cannot clear a card");
+				throw new RouteCheckFailed("a route cannot clear a card");
 			},
 		],
 		["settled no better than the unfolded reading", () => ({ ...unfolded(), ...pageAt(0.51) })],
@@ -111,6 +115,13 @@ describe("a board taller than the pane", () => {
 		const baseline = unfolded();
 		const { readingOf } = readingsFrom(baseline, { 3: 0.9 }, settle);
 		expect(await chooseReading(readingOf)).toBe(baseline);
+	});
+
+	test("throws a fault in settling the chosen count", async () => {
+		const { readingOf } = readingsFrom(unfolded(), { 3: 0.9 }, () => {
+			throw new TypeError("a pass read past a line's end");
+		});
+		await expect(chooseReading(readingOf)).rejects.toThrow(TypeError);
 	});
 
 	test("keeps the unfolded reading when the fold fits better but crosses far more", async () => {

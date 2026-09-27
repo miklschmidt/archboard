@@ -8,13 +8,7 @@ import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 import type { DiagramAtlas } from "@/shared/semantic-board/index";
 import type { DrawingEdge, PaintedDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import { DIAGRAM_MARGIN, PILL_RADIUS } from "@/transformers/semantic-renderer/lib/design";
-import {
-	canvasFor,
-	coord,
-	inflate,
-	union,
-	type Box,
-} from "@/transformers/semantic-renderer/lib/geometry";
+import { canvasFor, coord, inflate, union } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { atlasBoxes } from "@/transformers/semantic-renderer/lib/atlas";
 import { farSizeFor } from "@/transformers/semantic-renderer/lib/measurement";
@@ -36,6 +30,7 @@ import { shifted } from "@/transformers/semantic-renderer/lib/svg/document";
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { junctionMarks } from "@/transformers/semantic-renderer/lib/svg/junctions";
 import { travellingPulses } from "@/transformers/semantic-renderer/lib/svg/pulse";
+import { meetingPlaces, type Around } from "@/transformers/semantic-renderer/lib/svg/comet-rest";
 import {
 	PART_ATTRIBUTE,
 	markedBox,
@@ -207,14 +202,14 @@ function paintEdgeLine(
  * @param look.policy Current vault policy.
  * @param look.step Whether this line is a flow step drawn on the board.
  * @param standing Its architectural change.
- * @param labels Every relationship's label, drawn over the shots.
+ * @param around Every relationship's label, drawn over the shots, and where other lines meet this one.
  * @returns The traffic's group, or nothing for a line without traffic.
  */
 function paintEdgeTraffic(
 	routed: DrawingEdge,
 	look: { palette: Palette; policy: SemanticPolicy; step: boolean },
 	standing: SubjectStanding | undefined,
-	labels: readonly Box[],
+	around: Around,
 ): string {
 	const { edge } = routed;
 	if (standing === "removed" || edge.traffic === undefined) return "";
@@ -234,7 +229,7 @@ function paintEdgeTraffic(
 			lineWidth: width,
 			page: palette,
 			traffic: edge.traffic,
-			labels,
+			around,
 		}),
 	);
 }
@@ -337,6 +332,7 @@ function paintArchitecture(
 		label === undefined ? [] : [{ id: edge.id, box: label.box }],
 	);
 	const labels = labelled.map(({ box }) => box);
+	const met = meetingPlaces(drawing);
 	const framed = containers.map(({ measured, box }) => ({ id: measured.node.id, box }));
 	const regioned = (drawing.regions ?? []).map(({ box }) => box);
 	const cardBoxes = cards.map(({ measured, box }) => ({ id: measured.node.id, box }));
@@ -402,7 +398,7 @@ function paintArchitecture(
 				edge,
 				{ palette, policy, step: derived.has(edge.edge.id) },
 				standingOf(edge.edge.id),
-				labels,
+				{ labels, met: met.get(edge.edge.id) ?? [] },
 			),
 		),
 		...orderedCards.map((card) =>

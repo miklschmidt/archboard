@@ -125,9 +125,9 @@ function channelCoordinates(
 
 /**
  * The rest of a shared span, tried only when every centred channel is
- * blocked: each lane from the preferred coordinate outwards, then the span's
- * two ends. Two cards with the same span and a third card over its middle
- * got no straight channel although a lane beside the third card was clear,
+ * blocked: each lane from the preferred coordinate outwards. Two cards with
+ * the same span and a third card over its middle got no straight channel
+ * although a lane beside the third card was clear,
  * so the line hooked out of one card's side and into the other's (Agent
  * workbench's "Board changes reach the workhorse").
  * @param from The preferred coordinate inside the span.
@@ -139,5 +139,5 @@ function laneSteps(from: number, low: number, high: number): number[] {
 	const steps: number[] = [];
 	for (let offset = ROUTE_LANE; from - offset >= low || from + offset <= high; offset += ROUTE_LANE)
 		steps.push(...[from - offset, from + offset].filter((x) => x >= low && x <= high));
-	return [...steps, low, high];
+	return steps;
 }
