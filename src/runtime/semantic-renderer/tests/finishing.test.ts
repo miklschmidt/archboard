@@ -9,8 +9,8 @@
 // (Platform Public API's "Authentication and usage"), or a fan whose branches
 // crowd into one blot (Skill evaluation's six lines out of Author run).
 // What this catches: an ordinary L taken for a hook, hooks left uncured
-// where curing them all at once is refused, two lines from one card
-// on one stroke taken for a stack, a pass trading a defect for another of its kind, a pass curing defects by crowding a label or by
+// where curing them all at once is refused, two lines leaving one card at
+// one place on one stroke taken for a stack, a pass trading a defect for another of its kind, a pass curing defects by crowding a label or by
 // joining two unrelated lines at or near a corner or crossing one within a
 // lane of a bend, and a fault in a pass's
 // routing being taken for a refusal.
@@ -217,7 +217,8 @@ test("a pass that parts one of two stacks of the same two lines is kept", async 
 });
 
 /**
- * A second line out of the hub, crossing the trunk or joining it on one stroke.
+ * A second line out of the hub where the trunk leaves it, running down with
+ * the trunk and across below it or with it on one stroke.
  * @param y Where it runs across: 100 on the trunk's stroke.
  * @returns The line.
  */
@@ -226,12 +227,13 @@ function branch(y: number): Line {
 		id: "branch",
 		from: "hub",
 		to: "u",
-		points: at([1550, 0], [1550, y], [1750, y], [1750, 300]),
+		points: at([1500, 0], [1500, y], [1750, y], [1750, 300]),
 	};
 }
 
 test("a pass may run two lines from one card on one stroke", async () => {
-	// Lines that share a card read as one trunk that branches, not as a stack.
+	// Lines that leave a card at one place read as one trunk that branches,
+	// not as a stack.
 	const trunk = {
 		id: "trunk",
 		from: "hub",
