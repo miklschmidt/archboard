@@ -14,6 +14,8 @@ interface Packing {
 	/** Room between two packed blocks, and left of them, when trunks need more than the least. */
 	readonly gap?: number;
 	readonly margin?: number;
+	/** Whether each block slides in line with the blocks its lines reach, where it may. */
+	readonly aligned?: boolean;
 }
 
 /**
