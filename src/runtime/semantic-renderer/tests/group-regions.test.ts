@@ -178,6 +178,37 @@ test.each(["track", "blocks"] as const)(
 	},
 );
 
+// The rule of 2026-09-27 (ADR 0038): a container a group places stands in
+// that group's region, and so does every member of the group inside it. A
+// second region of the group round those members, as the ingress board drew
+// round the hosts of a pool its group placed, says nothing the outer one does
+// not; the members keep the group's colour.
+test.each(["track", "blocks"] as const)(
+	"the %s engine draws no region of a group inside that group's region",
+	async (layout) => {
+		const pooled = orderedFixture({
+			nodes: [
+				{ id: "gate", name: "Gateway", kind: "service" },
+				{ id: "pool", name: "Host pool", kind: "service", groups: ["state"] },
+				{ id: "one", name: "First host", kind: "module", parent: "pool", groups: ["state"] },
+				{ id: "two", name: "Second host", kind: "module", parent: "pool", groups: ["state"] },
+				{ id: "spare", name: "Spare host", kind: "module", parent: "pool" },
+			],
+			edges: [
+				{ id: "e1", from: "gate", to: "one", kind: "call" },
+				{ id: "e2", from: "gate", to: "two", kind: "call" },
+				{ id: "e3", from: "gate", to: "spare", kind: "call" },
+			],
+		});
+		const drawn = await renderArchitecture({ content: pooled, theme: "light", policy, layout });
+		const regions = regionBoxes(drawn.svg, "state");
+		expect(regions.length).toBe(1);
+		expect(within(drawn.atlas.nodes["pool"]!, regions[0]!)).toBeTrue();
+		for (const id of ["one", "two"])
+			expect(groupOf(drawn.svg, "node", id)!.markup).toContain('data-body-color="teal"');
+	},
+);
+
 // Reduced from a dogfood view, names replaced: each region's one card no line
 // inside it holds is entered from cards several ranks down, and the region's
 // caption floated above them over an empty band.

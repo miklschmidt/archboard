@@ -2264,6 +2264,12 @@ wall`).
   an agent (Blocks) moved four more ports to side walls and stood Pane
   session off to the middle. Settled as the board without its regions
   settled them, Command interface (Track) stepped four lines twice more each.
+- **No region of a group inside that group's region** (`measurement.ts`
+  `gatheringGroups`). A container placed with a group stands in its region,
+  and so does every member of the group inside it; the members are gathered
+  into no second region of the group and keep its colour. The ingress board
+  drew one group's region round a pool and again round the pool's four
+  hosts.
 - **A label into a block that packs blocks stays by its source**
   (`inline.ts` `labelHolder`): a region packing two containers draws only
   trunks, and the label of a line into one of them was lost.

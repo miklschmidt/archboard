@@ -213,8 +213,9 @@ These rules apply:
   placed with the first group, in the order `groups` lists them in
   `config.yaml`, that it belongs to; the order of the node's own array does not
   matter. That group draws a region of its color round the node and the other
-  nodes it places in the same container, one region in each container, and a
-  card's body takes that color. To examine one group, run
+  nodes it places in the same container, one region in each container but none
+  inside a container the group already places, and a card's body takes that
+  color. To examine one group, run
   `archboard semantic inspect <board> --group <key>`.
 
 An icon is the React export name of a [Remix Icon](https://remixicon.com/), for
