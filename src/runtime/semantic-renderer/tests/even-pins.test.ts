@@ -15,7 +15,9 @@
 // blot (Skill evaluation's six lines out of Author run, branching 9 px apart);
 // hooks cured do not pay for a crossing brought either. A stack of unrelated
 // lines counts as the crossing it may hide, so a settlement may draw a
-// crossing to part one (Board rasterizer). Nor does a defect saved pay for
+// crossing to part one (Board rasterizer); so do two lines of one card that
+// leave it apart and meet on one stroke (Board persistence's Former names).
+// Nor does a defect saved pay for
 // more than two bends ("One browser, two uses" wound through its frame).
 // A crossing within a lane of a bend counts twice, so no settlement cures a
 // hook by knotting two lines at a corner (Agent workbench's Thread link),
@@ -92,6 +94,32 @@ test("two unrelated lines on one stroke count against a settlement as a crossing
 		{ id: "other", from: "c", to: "d", points: stacked },
 	]);
 	expect(await kept(plain, even)).toBe("plain");
+});
+
+test("two lines of one card that leave it apart and meet on one stroke count as a stack", async () => {
+	// Board persistence's "take the new name's lease" left Place the file
+	// apart from "does another board answer to it" and rode 2.2 px beside it
+	// into the trunk to Former names: parting them is worth a crossing.
+	const one = {
+		id: "one",
+		from: "a",
+		to: "b",
+		points: at([0, 50], [100, 50], [100, 150], [0, 150]),
+	};
+	const plain = sketch({}, [
+		one,
+		{
+			id: "other",
+			from: "a",
+			to: "d",
+			points: at([300, 60], [102.2, 60], [102.2, 140], [300, 140]),
+		},
+	]);
+	const even = sketch({}, [
+		one,
+		{ id: "other", from: "a", to: "d", points: at([300, 100], [50, 100]) },
+	]);
+	expect(await kept(plain, even)).toBe("even");
 });
 
 test("a stack of unrelated lines counts as the crossing it may hide, so parting it may draw one", async () => {
