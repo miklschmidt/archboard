@@ -20,6 +20,7 @@ import type { ElkNode } from "@archboard/elk-rs";
 import { fitIn } from "@/shared/shell-geometry/index";
 import { WRAP_MIN_FIT_GAIN } from "@/transformers/semantic-renderer/config";
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
+import { refusedRouting } from "@/transformers/semantic-renderer/lib/layout/checked-routes";
 import { foldColumnCounts } from "@/transformers/semantic-renderer/lib/layout/fold-columns";
 import { crossingsOf, scoreOf } from "@/transformers/semantic-renderer/lib/track/score";
 
@@ -52,7 +53,11 @@ async function chooseReading(
 		if (better(page, kept.page)) kept = { page, reading };
 	}
 	if (kept.reading === undefined) return baseline;
-	const candidate = await kept.reading.settle().catch(() => undefined);
+	// A count the router refuses keeps the unfolded reading; a fault is thrown.
+	const candidate = await kept.reading.settle().catch((error: unknown) => {
+		if (refusedRouting(error)) return undefined;
+		throw error;
+	});
 	return candidate !== undefined && readsBetter(candidate, baseline) ? candidate : baseline;
 }
 
