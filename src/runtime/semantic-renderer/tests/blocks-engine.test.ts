@@ -26,6 +26,7 @@ import oneCommand from "./one-command.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
 import owningTheChild from "./owning-the-child.json";
 import recordingAWalkthrough from "./recording-a-walkthrough.json";
+import requestPath from "./request-path.json";
 import tightWallPort from "./tight-wall-port.json";
 import twoChains from "./two-chains.json";
 import workingWithAnAgent from "./working-with-an-agent.json";
@@ -432,4 +433,17 @@ test("a line into a container itself leaves its card on the card's own column", 
 	const card = drawn.atlas.nodes["lb"]!;
 	const route = routePoints(drawn.svg).get("e1")!;
 	for (const { x } of route) expect(x).toBeCloseTo(card.x + card.width / 2, 0);
+});
+
+// Reduced from a board of a work vault, names replaced: a line from a card
+// beside a container into a card standing high in it ran round the
+// container's inner block and entered its card from below, arrow up, since
+// the relationship back out of the container made it run upward, and only
+// blocks standing side by side took ports on their facing walls.
+test("a line into a container enters the card from the side its source stands on", async () => {
+	const content = orderedFixture(requestPath);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const card = drawn.atlas.nodes["42C5lYne"]!;
+	const end = routeEnds(drawn.svg).get("f3lzoqzb")!;
+	expect(end.y).toBeLessThan(card.y + card.height / 2);
 });
