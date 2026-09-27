@@ -1,9 +1,9 @@
 // The block engine's hierarchy. The board, every container and every group
-// region is a block, laid out on its own; a block's items are the cards and
-// the blocks directly inside it, so a block is as compact as what it holds
-// and its parent places it as one box. A block of blocks gathers the cards it
-// holds outside every block into a cluster, so each block holds cards alone
-// or blocks alone.
+// region round more than one card is a block, laid out on its own; a block's
+// items are the cards and blocks directly inside it, so a block is as compact
+// as what it holds and its parent places it as one box. A block of blocks
+// gathers the cards it holds outside every block into a cluster, so each
+// block holds cards alone or blocks alone.
 //
 // A relationship is drawn in the lowest block that holds both its ends, and
 // crosses the edge of every block below that through a port: out of the
@@ -17,12 +17,16 @@
 // it names, unless that would part lines joined on the way to it (`joins.ts`).
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import { z } from "zod";
-import {
-	GROUP_CAPTIONS,
-	PLACING_GROUP,
-} from "@/transformers/semantic-renderer/lib/layout/compound-graph";
+import { GROUP_CAPTIONS } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
-import { addInline, holds, type Cluster } from "@/transformers/semantic-renderer/lib/blocks/inline";
+import {
+	addInline,
+	addPacked,
+	holds,
+	labelHolder,
+	moveLoose,
+	type Cluster,
+} from "@/transformers/semantic-renderer/lib/blocks/inline";
 import type { Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { exitKey } from "@/transformers/semantic-renderer/lib/blocks/sides";
 import { cardOf, type Card } from "@/transformers/semantic-renderer/lib/blocks/card";
@@ -248,11 +252,9 @@ class BlockTree {
 	 */
 	fill(block: Block, nodes: readonly ElkNode[]): void {
 		const ordered = nodes.toSorted((one, other) => semanticOrder(one) - semanticOrder(other));
-		for (const node of ordered) {
-			const group = node.layoutOptions?.[PLACING_GROUP];
-			if (this.nesting !== "blocks") addInline(this, block, node, undefined);
-			else this.add(group === undefined ? block : this.region(block, group), node);
-		}
+		for (const node of ordered)
+			if (this.nesting !== "blocks") addInline(this, block, node, undefined, ordered);
+			else addPacked(this, block, node, ordered);
 	}
 
 	/**
@@ -292,7 +294,7 @@ class BlockTree {
 		const cluster = this.block(`cluster:${block.id}`, "cluster", block, {});
 		block.items.push(...inner.slice(before.length));
 		cluster.items.push(...loose);
-		for (const card of loose) this.holder.set(card, cluster);
+		moveLoose(this, block, cluster, loose);
 	}
 
 	/**
@@ -414,9 +416,9 @@ class BlockTree {
 	 * @param before Whether it carries its label before a join with others to its card.
 	 */
 	draw(projection: Projection, back: ReadonlySet<string>, before: boolean): void {
-		const { edge, at, out, into } = projection;
+		const { edge, at } = projection;
 		const upward = back.has(edge.id);
-		const labelAt = before ? (out[0] ?? at) : (into[0] ?? out[0] ?? at);
+		const labelAt = labelHolder(this, projection, before);
 		const leaving = this.leave(projection, upward, labelAt);
 		const entering = this.enter(projection, upward, labelAt);
 		const ranked = upward
