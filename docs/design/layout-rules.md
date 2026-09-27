@@ -2198,3 +2198,43 @@ of them and crossed it 4 px from its bend, a crossing drawn with no hop.
 The measures against `ed9c7d8d` are section 42's; no count moves. Crossings
 drawn with no hop, a line cut beneath another: dogfood 56 → 40 (solid lines
 44 → 29), work 12 → 10 (solid 9 → 7).
+
+## 44. A region round one card (2026-09-27)
+
+The user asked that a group spread over several containers draw its region
+in each of them (ADR 0038, amended 2026-09-27). A card is now placed with
+its first configured group whether or not a sibling shares it, so a
+container or the board level holding one member draws a region round that
+one card, and 18 dogfood drawings per engine and 5 of an ingress board's
+change. Four things the Track and Blocks engines did with such a region read
+worse, and each is now owned in `lone-regions.test.ts`:
+
+- **A region round one card is never packed** (`blocks/inline.ts`
+  `placing`, `addPacked`). Packed as a block of its own, it held the labels
+  of the lines into and out of its card, twice the card's height, and the
+  block's packing stood it off the column its lines run down (One command's
+  path, both engines; One turn, Blocks, stood it beside the drawing with its
+  lines run round). It is drawn inline instead, a cluster round its card
+  where the card's own ranks stand it: under Track as every region drawn
+  inline is, and under Blocks as a cluster of the block of cards that holds
+  the card. A region round one container stays a block round its frame.
+- **A title is ranked below its block's top ports** (`card-graph.ts`
+  `holdTitles`). Graphviz ranked a region's caption with the ports of the
+  block of cards it stood in, and the router slid a line out of the region
+  under the caption's words, painted at the region's corner (One browser,
+  two uses, Blocks).
+- **A label of a line into a block that packs blocks stays by its source**
+  (`inline.ts` `labelHolder`). A container that is its group's only member at
+  the board level stands in its region's block alone, a block that draws only
+  trunks, and the labels of the lines into the container were given to it and
+  lost (the ingress board's pool of hosts, two labels in each stage).
+- The regression fixtures reduced from dogfood boards keep the drawings they
+  were captured from: a membership their node held alone among its siblings
+  drew nothing before and is taken out, so each guards what it guarded.
+
+Left open: under Track, One browser, two uses runs `which Chromium` down
+through Headless browser's title words. Its lanes stand outside the frame
+until `fitSides` widens the frame to hold the line's label, and the title
+moves with the wall; `clearHeadings` has already run. The guard (`a line
+crossing a container's heading passes beside its words`) holds on the
+fixture as it was captured.

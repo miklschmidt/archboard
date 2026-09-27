@@ -19,7 +19,7 @@ import {
 	enteredFrame,
 	type Link,
 } from "@/transformers/semantic-renderer/lib/blocks/anchors";
-import { NODE_GAP } from "@/transformers/semantic-renderer/lib/blocks/card-graph";
+import { NODE_GAP, titleOf } from "@/transformers/semantic-renderer/lib/blocks/card-graph";
 import {
 	alignColumns,
 	box,
@@ -45,15 +45,6 @@ type Nested = Subgraph & Required<Pick<Subgraph, "nodes" | "subgraphs">>;
 /** Something nodes can be put in: the block's graph or one of its clusters. */
 interface Holder {
 	readonly nodes: VendorNode[];
-}
-
-/**
- * The vendor node heading a cluster: a frame's title row or a region's caption.
- * @param cluster The cluster's id.
- * @returns The node's name.
- */
-function titleOf(cluster: string): string {
-	return `title:${cluster}`;
 }
 
 /**
