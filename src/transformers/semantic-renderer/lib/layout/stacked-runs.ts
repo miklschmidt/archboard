@@ -27,8 +27,13 @@ import {
 	ROUTE_LANE,
 } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
 
-/** How close two parallel runs are drawn as one stroke. */
-const ONE_STROKE = 2;
+/**
+ * How close two parallel runs are drawn as one stroke: nearer than two
+ * ordinary lines' widths (1.4 px), so less than a line's width of air parts
+ * their ink. Board persistence's "take the new name's lease" ran 2.2 px
+ * beside the trunk into Former names.
+ */
+const ONE_STROKE = 2.5;
 
 /**
  * How near a corner of one line to another's stroke, or two parallel runs,
@@ -94,13 +99,35 @@ function runsOf(line: Line): Run[] {
 }
 
 /**
- * Whether two lines share an end, so a shared lane can be their trunk.
+ * Whether two lines share an end, so a shared lane can be their trunk: they
+ * meet one card at one place, within half a lane. Two lines of one card that
+ * leave or enter it apart and meet on one stroke further on read as one line
+ * joining another, as unrelated lines do: Board persistence's "take the new
+ * name's lease" left Place the file apart from "does another board answer to
+ * it" and rode the trunk into Former names, and Read and validate's two lines
+ * left its side apart and shared one stroke for 34 px.
  * @param one A line.
  * @param other Another.
  * @returns True when they have an end in common.
  */
 function related(one: Line, other: Line): boolean {
-	return other.ends.some((id) => one.ends.includes(id));
+	return tipsOf(one).some(([card, tip]) =>
+		tipsOf(other).some(
+			([theirs, point]) => theirs === card && Math.hypot(tip.x - point.x, tip.y - point.y) <= NEAR,
+		),
+	);
+}
+
+/**
+ * A line's two ends: each end's card and the point where the line meets it.
+ * @param line The line.
+ * @returns Its source end, then its target end.
+ */
+function tipsOf(line: Line): (readonly [string, Point])[] {
+	return [
+		[line.ends[0], line.points[0]!],
+		[line.ends[1], line.points.at(-1)!],
+	];
 }
 
 /**
