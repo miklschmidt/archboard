@@ -200,23 +200,45 @@ class Clusters {
 	 * the innermost cluster around both ends. A group region is no boundary a
 	 * line must go round, so a label never moves into one. Where labels are
 	 * anchored, it is held below a labelled line into the same card from
-	 * inside the container instead (anchors.ts).
+	 * inside the container instead (anchors.ts); outside, it is held above the
+	 * caption of every group region the line enters.
 	 * @param tail The line's upper end.
 	 * @param head Its lower end.
 	 * @param label The label's node.
 	 * @param links Every line Graphviz ranks.
-	 * @returns The edge holding the label below its cluster's title, if it needs one.
+	 * @returns The edges holding the label below its cluster's title or above the captions.
 	 */
 	holdLabel(tail: string, head: string, label: VendorNode, links: readonly Link[]): Edge[] {
 		const entered = enteredFrame(this, tail, head);
 		if (entered === undefined) {
 			this.common(tail, head).nodes.push(label);
-			return [];
+			return this.enteredRegions(tail, head).map((region) => ({
+				tail: label.name,
+				head: titleOf(region),
+				attributes: { style: "invis", weight: 0, minlen: 1 },
+			}));
 		}
 		this.graphs.get(entered)!.nodes.push(label);
 		const attributes = { style: "invis", weight: TITLE_WEIGHT };
 		const upper = this.anchorsLabels ? anchorOf(this, tail, head, entered, links) : undefined;
 		return [{ tail: upper ?? titleOf(entered), head: label.name, attributes }];
+	}
+
+	/**
+	 * The regions round one card that a line enters from above: its label,
+	 * outside them, is held above their captions, so it stands over the region
+	 * rather than beside its caption, where it would read as part of it. A
+	 * region round several cards is ranked as its cards are.
+	 * @param tail The line's upper end.
+	 * @param head Its lower end.
+	 * @returns The regions' ids.
+	 */
+	enteredRegions(tail: string, head: string): string[] {
+		const theirs = new Set(this.around(tail));
+		const members = [...this.block.clusterOf.values()];
+		return this.around(head).filter(
+			(id) => !theirs.has(id) && members.filter((around) => around === id).length === 1,
+		);
 	}
 
 	/**
