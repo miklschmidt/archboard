@@ -2305,21 +2305,26 @@ wall`).
   (`inline.ts` `labelHolder`): a region packing two containers draws only
   trunks, and the label of a line into one of them was lost.
 
-Against `40461250`, over the 46 drawings that change: no line runs through
-a card or ends beside one (158 such ends over both vaults and engines), and
-no caption's words under a line. Hops are as they were but for Voice
-coordinator whole (Blocks, 11 → 12). Bends are as they were but for Reading
-a board (Track, 16 → 18), Command interface whole and Voice coordinator
-whole (Blocks, two more each) and the ingress board whole (Track, 10 → 12),
-and fewer on What the CLI can be asked (Blocks 78 → 74, Track 102 → 98),
-Command interface whole and Browser application whole (Track) and One
-command from a pane (Blocks). Every other drawing reads as it did with its
-regions added, each taller by the bands. The slowest drawing, What the CLI
-can be asked, lays out in under 400 ms under either engine.
+Against `67d2f7f8` (visual-polish), over the 48 Track and Blocks drawings
+of both vaults that change: hops and bends are as they were or fewer, but
+for Working with an agent (Blocks, a hop more where 'start voice' crosses
+'controllers over the focused pane's'), Voice coordinator whole (Blocks,
+11 → 12 hops and 45 → 47 bends: the region round Workhorse operations
+widens it, and 'thread/start with the coordinator body' leaves Coordinator
+thread through the gap beside Authored instructions, which steps
+'its developer instructions, by digest' 32 px) and Recording a walkthrough
+(Blocks, a hop fewer for two bends). Fewer on One command from a pane
+(Blocks), One write lands and Codex workhorse whole (Track), Browser
+application whole and What the CLI can be asked (both engines) and
+Command interface whole (Track). Every other drawing reads as it did with
+its regions added, each taller by the bands.
 
 The regression fixtures reduced from dogfood boards hold the memberships
 the boards hold. One guard is loosened: stacked, One command's `a typed
 message` now steps twice, the second time into Codex child beside its
 caption where the region round Workhorse queue holds it a region's
 clearance off, and the guard still refuses the three turns of the drawing
-unstacked (`reading-first.test.ts`).
+unstacked (`reading-first.test.ts`). That step reads worse than the straight
+line of the drawing without the region: the line passes left of the region
+a region's clearance off and enters Codex child right of its caption's
+words a lane off, and no column is clear of both.
