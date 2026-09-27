@@ -27,6 +27,7 @@ import {
 import type { Net } from "@/transformers/semantic-renderer/lib/track/channels";
 import { nudgeLabel, slidePort } from "@/transformers/semantic-renderer/lib/track/labels";
 import { centreX, cardFace, type Scene } from "@/transformers/semantic-renderer/lib/track/scene";
+import { CARD_RADIUS } from "@/transformers/semantic-renderer/lib/design";
 
 /** Under this, two stations stand in one column. */
 const STRAIGHT = 0.5;
@@ -107,15 +108,23 @@ function trunkAt(net: Net, end: End): boolean {
 }
 
 /**
- * Whether an x stands on a card's face, clear of its corners.
+ * Whether an x stands on a card's face, clear of its corners: a corner's
+ * room in from its box, and on the card itself clear of its rounded corner,
+ * for a card laid out as the region round it (`cardFace`).
  * @param station The card.
  * @param x The x.
  * @returns True when a port may stand there.
  */
 function onFace(station: Station, x: number): boolean {
-	const { x: left, width } = cardFace(station.item!);
+	const { x: left, width } = station.item!.box;
 	const room = Math.min(CORNER_ROOM, width / 2);
-	return x >= left + room && x <= left + width - room;
+	const face = cardFace(station.item!);
+	return (
+		x >= left + room &&
+		x <= left + width - room &&
+		x >= face.x + CARD_RADIUS &&
+		x <= face.x + face.width - CARD_RADIUS
+	);
 }
 
 /**
