@@ -1,0 +1,212 @@
+{
+	"nodes": [
+		{
+			"id": "2vHAg1Ei",
+			"name": "Realtime voice",
+			"kind": "module",
+			"responsibility": "The realtime leg of that thread: the offer, the answer, the channel rule, a narrated walkthrough's steps, and the transcript",
+			"order": 3000
+		},
+		{
+			"id": "B0SAnbtM",
+			"name": "Coordinator callbacks",
+			"kind": "module",
+			"responsibility": "What the voice side is told while voice is live: workhorse news for the coordinator, pane news for the voice model",
+			"order": 6000
+		},
+		{
+			"id": "qZsXIuQG",
+			"name": "Semantic context",
+			"kind": "module",
+			"responsibility": "What the board says right now and what the user changed on it: the brief a voice start records, and the reports that become pane news",
+			"order": 9000
+		},
+		{
+			"id": "LHBPlItu",
+			"name": "Codex transport",
+			"kind": "module",
+			"responsibility": "Where a tool call or notification from the child arrives, routed to the owner registered for it",
+			"groups": ["child"],
+			"order": 11000
+		},
+		{
+			"id": "4A6j6Xk3",
+			"name": "Codex session",
+			"kind": "module",
+			"responsibility": "The reviewed methods the coordinator and its realtime leg are started on",
+			"groups": ["child"],
+			"order": 12000
+		},
+		{
+			"id": "5uPyMgoI",
+			"name": "Callback queue",
+			"kind": "function",
+			"responsibility": "Takes news, operation events and pane reports in order, drops the session's own writes, and delivers one at a time",
+			"parent": "B0SAnbtM",
+			"order": 14000
+		},
+		{
+			"id": "hxZxt8Wy",
+			"name": "Workhorse news",
+			"kind": "function",
+			"responsibility": "A turn on the linked workhorse that ended or began waiting on the user, whoever started it, as one plain sentence",
+			"parent": "B0SAnbtM",
+			"order": 15000
+		},
+		{
+			"id": "AahDTiw9",
+			"name": "Tell coordinator",
+			"kind": "function",
+			"responsibility": "Answers the workhorse's tell_coordinator call: its message becomes news, or it is told nobody is listening",
+			"parent": "B0SAnbtM",
+			"order": 16000
+		},
+		{
+			"id": "eyQ2AZaA",
+			"name": "Callback delivery",
+			"kind": "function",
+			"responsibility": "Gives each callback one path: news to a coordinator turn, the user's own pane changes to the voice model, the rest recorded only",
+			"parent": "B0SAnbtM",
+			"order": 17000
+		},
+		{
+			"id": "AjPVQ0BZ",
+			"name": "Outcome report",
+			"kind": "module",
+			"responsibility": "Gives the coordinator one piece of news as one turn/start, joining its running turn or starting one, and nothing while a recording holds the voice",
+			"order": 18000
+		}
+	],
+	"edges": [
+		{
+			"id": "eRYh0zYO",
+			"from": "2vHAg1Ei",
+			"to": "4A6j6Xk3",
+			"kind": "call",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			},
+			"label": "start the realtime leg",
+			"order": 4000
+		},
+		{
+			"id": "jKgud5yQ",
+			"from": "2vHAg1Ei",
+			"to": "qZsXIuQG",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "the brief this start records",
+			"order": 5000
+		},
+		{
+			"id": "1joDYyhX",
+			"from": "eyQ2AZaA",
+			"to": "4A6j6Xk3",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "pane news: realtime/appendText",
+			"order": 13000
+		},
+		{
+			"id": "yjIBH8F4",
+			"from": "LHBPlItu",
+			"to": "5uPyMgoI",
+			"kind": "event",
+			"emphasis": "normal",
+			"label": "workhorse notifications, tell_coordinator calls",
+			"order": 15000
+		},
+		{
+			"id": "F1500O9D",
+			"from": "5uPyMgoI",
+			"to": "hxZxt8Wy",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "is this notification news?",
+			"order": 16000
+		},
+		{
+			"id": "z89BWp39",
+			"from": "5uPyMgoI",
+			"to": "AahDTiw9",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "answer a tell_coordinator call",
+			"order": 17000
+		},
+		{
+			"id": "kK1YexMf",
+			"from": "AahDTiw9",
+			"to": "hxZxt8Wy",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "the news this message is",
+			"order": 18000
+		},
+		{
+			"id": "35DJDouE",
+			"from": "AahDTiw9",
+			"to": "5uPyMgoI",
+			"kind": "call",
+			"emphasis": "normal",
+			"label": "queue it, wait for its delivery",
+			"order": 19000
+		},
+		{
+			"id": "5EeoHuyh",
+			"from": "AahDTiw9",
+			"to": "LHBPlItu",
+			"kind": "call",
+			"emphasis": "muted",
+			"label": "answer the workhorse",
+			"order": 20000
+		},
+		{
+			"id": "LJ71MbJ0",
+			"from": "5uPyMgoI",
+			"to": "eyQ2AZaA",
+			"kind": "call",
+			"emphasis": "hero",
+			"label": "one at a time, in order",
+			"order": 21000
+		},
+		{
+			"id": "VdOucvLo",
+			"from": "eyQ2AZaA",
+			"to": "AjPVQ0BZ",
+			"kind": "call",
+			"emphasis": "hero",
+			"label": "report the news",
+			"order": 22000
+		},
+		{
+			"id": "kdzh3hrY",
+			"from": "AjPVQ0BZ",
+			"to": "4A6j6Xk3",
+			"kind": "call",
+			"emphasis": "hero",
+			"label": "turn/start on the coordinator thread",
+			"order": 23000
+		},
+		{
+			"id": "tMugyhPT",
+			"from": "AjPVQ0BZ",
+			"to": "2vHAg1Ei",
+			"kind": "call",
+			"emphasis": "muted",
+			"label": "is a recording holding the voice?",
+			"order": 24000
+		},
+		{
+			"id": "wyliCZzQ",
+			"from": "qZsXIuQG",
+			"to": "5uPyMgoI",
+			"kind": "event",
+			"emphasis": "normal",
+			"label": "the user's changes, focus and selection",
+			"order": 25000
+		}
+	]
+}
