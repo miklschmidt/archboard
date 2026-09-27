@@ -239,6 +239,7 @@ function keepingMarks(surface: Element, stage: () => void): void {
 export {
 	SELECTED_CLASS,
 	SUBJECT_ATTRIBUTE,
+	TRAFFIC_ATTRIBUTE,
 	isSubject,
 	keepingMarks,
 	markSubjects,

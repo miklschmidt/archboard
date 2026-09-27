@@ -47,7 +47,7 @@ const edgeInks = (
 			`  band: opaque(getComputedStyle(band).stroke),` +
 			`  head: opaque(getComputedStyle(head).fill === "none"` +
 			`   ? getComputedStyle(head).stroke : getComputedStyle(head).fill),` +
-			`  streams: [...group.querySelectorAll(".ab-pulse")].map((comet) => [...new Set(` +
+			`  streams: [...document.querySelectorAll("${surface} [data-traffic='${id}'] .ab-pulse")].map((comet) => [...new Set(` +
 			`   [...comet.querySelectorAll("path:not([data-pulse-part='moat'])")].map((path) => opaque(getComputedStyle(path).stroke)))].join("|")),` +
 			` }; })()`,
 	);
