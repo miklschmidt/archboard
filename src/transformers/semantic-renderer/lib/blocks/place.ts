@@ -560,15 +560,16 @@ function readsBetterPacked(packed: Placed, inline: Placed): boolean {
  * @returns The hierarchy, with the drawing's geometry on its root.
  */
 function placeBlocks(viz: Viz, avoid: AvoidEngine, graph: ElkNode, inline = false): ElkNode {
-	const { tree, placed: drawn } = layJoinedOut(viz, avoid, graph, inline ? "inline" : "blocks");
-	const placed = inline && hasRegions(tree) ? betterOf(viz, avoid, graph, drawn) : drawn;
+	const { tree, placed: first } = layJoinedOut(viz, avoid, graph, inline ? "inline" : "blocks");
+	const placed = inline && hasRegions(tree) ? betterOf(viz, avoid, graph, first) : first;
+	const drawn = JSON.stringify(Assembly.unstepped(placed));
 	return {
 		id: graph.id,
 		x: 0,
 		y: 0,
 		width: placed.width,
 		height: placed.height,
-		layoutOptions: { ...graph.layoutOptions, [BLOCKS_PLACED]: JSON.stringify(placed) },
+		layoutOptions: { ...graph.layoutOptions, [BLOCKS_PLACED]: drawn },
 	};
 }
 

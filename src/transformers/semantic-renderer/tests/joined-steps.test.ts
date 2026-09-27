@@ -1,0 +1,94 @@
+// Steps a joined line need not take, taken out (steps.ts). What this catches:
+// a line joined from pieces routed in different blocks that steps sideways
+// and on, or doubles back, where one turn would do; and a slide that takes a
+// step out by moving a trunk, the line's run through its label, or a stretch
+// into a card, a title band, a wall it did not cross, onto another line's
+// axis, beside it, across it where it did not cross or where that line
+// turns, or into a jog too short for its bends.
+import { expect, test } from "bun:test";
+import { unstepped, type Point } from "@/transformers/semantic-renderer/layout";
+
+/** Right, down, right, back up and right again: a line that doubles back. */
+const DOUBLING: Point[] = [
+	{ x: 0, y: 50 },
+	{ x: 100, y: 50 },
+	{ x: 100, y: 150 },
+	{ x: 200, y: 150 },
+	{ x: 200, y: 100 },
+	{ x: 300, y: 100 },
+];
+/** It unstepped onto its first row. */
+const ON_FIRST = [
+	{ x: 0, y: 50 },
+	{ x: 200, y: 50 },
+	{ x: 200, y: 100 },
+	{ x: 300, y: 100 },
+];
+/** It unstepped onto its last row. */
+const ON_LAST = [
+	{ x: 0, y: 50 },
+	{ x: 100, y: 50 },
+	{ x: 100, y: 100 },
+	{ x: 300, y: 100 },
+];
+const NOTHING = { boxes: [], walls: [], bands: [] };
+
+/**
+ * A line as a list of points.
+ * @param points Its corners, as x, y pairs.
+ * @returns The points.
+ */
+function line(...points: [number, number][]): Point[] {
+	return points.map(([x, y]) => ({ x, y }));
+}
+
+test("a staircase between blocks climbs with one turn each way", () => {
+	const stairs = line([100, 0], [100, 100], [300, 100], [300, 200], [500, 200], [500, 300]);
+	const [drawn] = unstepped([{ points: stairs }], NOTHING);
+	expect(drawn).toHaveLength(4);
+	expect([drawn![0], drawn!.at(-1)]).toEqual([stairs[0], stairs.at(-1)]);
+});
+
+test("a line that doubles back at a wall runs on without the loop", () => {
+	expect(unstepped([{ points: DOUBLING }], NOTHING)[0]).toEqual(ON_FIRST);
+});
+
+test.each([
+	["a card where either slide would run", { boxes: [{ x: 120, y: 40, width: 60, height: 70 }] }],
+	["a wall either slide would cross", { walls: [{ x: 110, y: 0, width: 80, height: 120 }] }],
+])("a step stays where %s", (_, around) => {
+	expect(unstepped([{ points: DOUBLING }], { ...NOTHING, ...around })[0]).toEqual(DOUBLING);
+});
+
+test("a step stays where either slide crosses a line it did not", () => {
+	const across = { points: line([150, 0], [150, 130]) };
+	expect(unstepped([{ points: DOUBLING }, across], NOTHING)[0]).toEqual(DOUBLING);
+});
+
+test("a step stays where either slide leaves a run too short for its two bends", () => {
+	const shallow = line([0, 50], [100, 50], [100, 150], [200, 150], [200, 60], [300, 60]);
+	expect(unstepped([{ points: shallow }], NOTHING)[0]).toEqual(shallow);
+});
+
+test("a step stays where it is the line's run through its label", () => {
+	const label = { x: 130, y: 140, width: 40, height: 20 };
+	expect(unstepped([{ points: DOUBLING, label }], NOTHING)[0]).toEqual(DOUBLING);
+});
+
+test("a step another line shares is a trunk and stays", () => {
+	const trunk = { points: line([100, 150], [200, 150]) };
+	expect(unstepped([{ points: DOUBLING }, trunk], NOTHING)[0]).toEqual(DOUBLING);
+});
+
+test("a slide runs level no nearer a container's title band than a lane", () => {
+	const bands = [{ x: 0, y: 0, width: 300, height: 80 }];
+	expect(unstepped([{ points: DOUBLING }], { ...NOTHING, bands })[0]).toEqual(ON_LAST);
+});
+
+test.each([
+	["beside another line nearer than a lane", line([120, 60], [180, 60])],
+	["onto another line's axis end to end with it", line([230, 50], [400, 50])],
+	["across another line beside where it turns", line([150, 40], [150, 170])],
+])("a slide keeps off a new stretch %s", (_, other) => {
+	expect(unstepped([{ points: DOUBLING }, { points: other }], NOTHING)[0]).toEqual(ON_LAST);
+});
