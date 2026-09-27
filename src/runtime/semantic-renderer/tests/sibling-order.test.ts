@@ -1,9 +1,5 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
-import { instance } from "@viz-js/viz";
-import { AvoidLib } from "libavoid-js";
-import { createLayoutEngine } from "@/transformers/semantic-renderer/engine";
-import input from "@/runtime/semantic-renderer/tests/sibling-order-graph.json";
 import { renderArchitecture, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
 
 const MEMBERS = ["vm1", "vm2", "vm3", "vm4"];
@@ -72,22 +68,4 @@ test("unchanged sibling identities keep their horizontal order when a proposal c
 	}
 	// The ordering is stable, while the proposal still receives fresh placement.
 	expect(after.atlas.nodes["gateway"]).not.toEqual(before.atlas.nodes["gateway"]);
-});
-
-// Captured measured placement from a real proposal: reserving one VM's database
-// label made native title ordering reverse VM 1 and 2 despite their shared row.
-test("reserved labels follow the order of equal sibling slots in a compound proposal", async () => {
-	await AvoidLib.load();
-	const solve = createLayoutEngine(await instance(), AvoidLib.getInstance());
-	const result = solve(input.graph, input.options);
-	const pool = result.children!.find((node) => node.id === "j6TdeSth")!;
-	const row = pool.children!.toSorted((one, other) => one.x! - other.x!);
-	expect(row.map((node) => node.id)).toEqual(["6cWbMS1Q", "TqDUcCHV", "WMA3YdsD", "yPJ2pkH0"]);
-	expect(new Set(row.map((node) => node.y)).size).toBe(1);
-	const labels = row.flatMap(
-		(node) => result.edges!.find((edge) => edge.sources[0] === node.id)!.labels ?? [],
-	);
-	expect(labels.length).toBeGreaterThan(1);
-	const labelPositions = labels.map((label) => label.x!);
-	expect(labelPositions).toEqual(labelPositions.toSorted((one, other) => one - other));
 });

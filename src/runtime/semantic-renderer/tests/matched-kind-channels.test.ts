@@ -1,16 +1,10 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { expect, test } from "bun:test";
-import type { ElkNode } from "@archboard/elk-rs";
-import { instance } from "@viz-js/viz";
-import { AvoidLib } from "libavoid-js";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { LayoutEngineSchema } from "@/shared/semantic-board/index";
-import { createLayoutEngine } from "@/transformers/semantic-renderer/engine";
 import { overdrawnRun } from "@/runtime/semantic-renderer/tests/drawn-ink";
 import { routeLabels, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import publicApi from "../../../../docs/design/wide-board-layout-fixtures/public-api-independent.content.json";
-
-const loaded = AvoidLib.load();
 
 /** The gateway lanes that reproduce the live comparison's shared channels. */
 const CHANNEL_EDGE_IDS = [
@@ -38,61 +32,6 @@ const channelContent = (() => {
 })();
 
 const OUTGOING_CHANNELS = ["kJaF9nLs", "HOKDAQTU"] as const;
-
-test("different kinds reach a shared destination through distinct straight channels", async () => {
-	const viz = await instance();
-	const placed = Object.assign(viz, {
-		renderJSON: () => ({
-			bb: "0,0,600,320",
-			objects: [
-				{ name: "left", pos: "170,240" },
-				{ name: "right", pos: "430,240" },
-				{ name: "destination", pos: "320,40" },
-			],
-		}),
-	});
-	await loaded;
-	const solve = createLayoutEngine(placed, AvoidLib.getInstance());
-	const graph: ElkNode = {
-		id: "root",
-		children: ["left", "right", "destination"].map((id) => ({ id, width: 260, height: 72 })),
-		edges: [
-			{
-				id: "left-call",
-				sources: ["left"],
-				targets: ["destination"],
-				layoutOptions: { "archboard.relationship.kind": "call" },
-			},
-			{
-				id: "right-data",
-				sources: ["right"],
-				targets: ["destination"],
-				layoutOptions: { "archboard.relationship.kind": "data" },
-			},
-		],
-	};
-	for (const edges of [graph.edges!, graph.edges!.toReversed()]) {
-		const result = solve({ ...graph, edges }, {});
-		const routes = new Map(result.edges!.map((edge) => [edge.id, edge.sections![0]!]));
-		for (const id of ["left-call", "right-data"]) {
-			const route = routes.get(id)!;
-			expect(route.startPoint.x).toBe(route.endPoint.x);
-			expect(route.bendPoints ?? []).toHaveLength(0);
-		}
-		const left = routes.get("left-call")!;
-		const right = routes.get("right-data")!;
-		const centers = new Map(result.children!.map((node) => [node.id, node.x! + node.width! / 2]));
-		expect(left.startPoint.x).toBeCloseTo(
-			(centers.get("left")! + centers.get("destination")!) / 2,
-			6,
-		);
-		expect(right.startPoint.x).toBeCloseTo(
-			(centers.get("right")! + centers.get("destination")!) / 2,
-			6,
-		);
-		expect(right.startPoint.x - left.startPoint.x).toBeGreaterThanOrEqual(12);
-	}
-});
 
 /** The engine that draws the two outgoing routes on one shared trunk here. */
 const SHARING = "track";

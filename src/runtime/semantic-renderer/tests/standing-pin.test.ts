@@ -20,7 +20,6 @@
 import { expect, test } from "bun:test";
 import type { ElkNode } from "@archboard/elk-rs";
 import { AvoidLib } from "libavoid-js";
-import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
 	compoundGraph,
 	finished,
@@ -28,13 +27,9 @@ import {
 	requestOptions,
 	routeGraph,
 } from "@/runtime/semantic-renderer/layout";
-import { cornersOf, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { at, sketch, type Line } from "@/runtime/semantic-renderer/tests/sketched-drawings";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
-import type { StatedStandings } from "@/transformers/semantic-renderer/index";
-import pinnedSide from "./pinned-side.json";
-import proposal from "./renderer-layout-proposal.json";
 
 /** How far in from a card's top-left corner its standing pin is centred. */
 const PIN_INSET = 3;
@@ -120,35 +115,6 @@ test("a straight channel is not offered beside a standing pin", async () => {
 		graphOf([{ id: "source", x: 0, y: 70, width: 240, height: 60 }, beside], {}),
 	);
 	expect(fromPinnedCorner(beside, across)).toBeGreaterThanOrEqual(PIN_CLEARANCE);
-});
-
-test("no line of a proposal ends beside the standing pin a card wears", async () => {
-	// In the second, "settles" is seeded on Card 2's left face beside its pin
-	// until the pin pass asks for its seeds clear of it.
-	for (const { standing, ...board } of [proposal, pinnedSide]) {
-		const drawing = await renderArchitecture({
-			content: orderedFixture(board),
-			standing: standing as StatedStandings,
-			theme: "light",
-			layout: "graphviz",
-		});
-		const routes = routePoints(drawing.svg);
-		const stated: Readonly<Record<string, string>> = standing;
-		const beside = board.edges.flatMap(({ id, from, to }) => {
-			const points = cornersOf(routes.get(id)!);
-			const ends = [
-				[from, points[0]!],
-				[to, points.at(-1)!],
-			] as const;
-			return ends.flatMap(([card, end]) => {
-				const box = drawing.atlas.nodes[card];
-				if (box === undefined || stated[card] === undefined) return [];
-				const fromPin = Math.hypot(end.x - box.x - PIN_INSET, end.y - box.y - PIN_INSET);
-				return fromPin < PIN_CLEARANCE - PIN_INSET ? [id] : [];
-			});
-		});
-		expect(beside).toEqual([]);
-	}
 });
 
 test("a card the routes are asked to clear has its seeds a lane from its standing pin's rim", async () => {

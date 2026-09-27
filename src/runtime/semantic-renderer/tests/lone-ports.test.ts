@@ -20,10 +20,8 @@ import { LayoutEngineSchema } from "@/shared/semantic-board/index";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { LABEL_ROUTE_CLEARANCE } from "@/transformers/semantic-renderer/config";
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
-import { instance } from "@viz-js/viz";
 import { AvoidLib } from "libavoid-js";
-import { createLayoutEngine, type AvoidEngine } from "@/transformers/semantic-renderer/engine";
-import { SOLVE_STAGE } from "@/transformers/semantic-renderer/host";
+import { type AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { centredPins, relationshipChannel, routeGraph } from "@/runtime/semantic-renderer/layout";
 import {
@@ -273,20 +271,6 @@ test("a lone port stays where another line runs beside the strip, off its slot, 
 	expect(centredPort({ cards: [far], edges: [beside] })).toBeLessThan(0.5);
 	expect(centredPort({ at: 12 / 340 })).toBeLessThan(0.5);
 	expect(centredPort({ straight: true })).toBeLessThan(0.5);
-});
-
-test("a port centred on its face keeps that face in the last solve", async () => {
-	// A placed view of the work vault, text taken out: the line into the lower
-	// card's west face is alone there, beside its top corner, and is centred.
-	// Offered the whole card again, the router took the top face's seed and
-	// joined another line's trunk, where a third line crossed under the join.
-	await AvoidLib.load();
-	const solve = createLayoutEngine(await instance(), AvoidLib.getInstance());
-	const routed = solve(structuredClone(heldPort) as ElkNode, { [SOLVE_STAGE]: "route" });
-	const card = routed.children!.find(({ id }) => id === "Tgn9tpSj")!;
-	const end = routed.edges!.find(({ id }) => id === "YkYEwnYD")!.sections![0]!.endPoint;
-	expect(end.x).toBeCloseTo(card.x!, 1);
-	expect(end.y).toBeCloseTo(card.y! + card.height! / 2, 1);
 });
 
 /**

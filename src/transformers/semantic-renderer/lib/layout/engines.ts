@@ -6,7 +6,6 @@ import type {
 	MeasuredArchitecture,
 	PaintedDrawing,
 } from "@/transformers/semantic-renderer/lib/drawing";
-import { layoutCompound } from "@/transformers/semantic-renderer/lib/layout/compound";
 import { layoutBlocks, layoutTracks } from "@/transformers/semantic-renderer/lib/blocks/index";
 
 /** One way of laying an architecture out. */
@@ -17,7 +16,6 @@ type LayoutEngine = (
 ) => Promise<PaintedDrawing>;
 
 const ENGINES: Readonly<Record<LayoutEngineName, LayoutEngine>> = {
-	graphviz: layoutCompound,
 	track: layoutTracks,
 	blocks: layoutBlocks,
 };
