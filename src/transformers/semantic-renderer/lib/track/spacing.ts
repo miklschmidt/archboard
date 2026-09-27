@@ -8,7 +8,7 @@ import {
 } from "@/transformers/semantic-renderer/config";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { assignTracks, type Net } from "@/transformers/semantic-renderer/lib/track/channels";
-import type { Scene } from "@/transformers/semantic-renderer/lib/track/scene";
+import type { Item, Scene } from "@/transformers/semantic-renderer/lib/track/scene";
 
 /** How far apart two ends may be and still be drawn as one straight drop. */
 const STRAIGHT = 0.5;
@@ -143,6 +143,77 @@ function spaceBands(
 		const channel =
 			rimmed ?? (titled ? CONTAINER_INSET : channelHeight(tracks, closing, rises, faces));
 		top += band.bottom - band.top + channel;
+	});
+	centreLabelBands(scene, nets, ends.closings);
+}
+
+/**
+ * Whether a net leaves a label room: it runs clear of the label's lane-wide
+ * reach, or it is the label's own straight line.
+ * @param net The net.
+ * @param item The label.
+ * @returns True when it does.
+ */
+function leavesRoom(net: Net, item: Item): boolean {
+	const [low, high] = [item.box.x - LANE, item.box.x + item.box.width + LANE];
+	if (Math.max(net.topX, net.bottomX) <= low || Math.min(net.topX, net.bottomX) >= high)
+		return true;
+	const own = net.top.item === item || net.bottom.item === item;
+	return own && net.wall === undefined && Math.abs(net.topX - net.bottomX) <= STRAIGHT;
+}
+
+/**
+ * Whether a row of labels may move into a channel: every net in it leaves
+ * each of them room.
+ * @param labels The row.
+ * @param nets Every net.
+ * @param channel The channel.
+ * @returns True when it may.
+ */
+function clearFor(labels: readonly Item[], nets: readonly Net[], channel: number): boolean {
+	const crossing = nets.filter((net) => net.channel === channel);
+	return labels.every((item) => crossing.every((net) => leavesRoom(net, item)));
+}
+
+/**
+ * The labels a band holds alone, between two bands, or nothing when it holds
+ * a card, a title or a caption too, or stands at an end.
+ * @param scene The scene.
+ * @param index The band.
+ * @returns Its labels, or nothing.
+ */
+function labelRow(scene: Scene, index: number): Item[] | undefined {
+	if (index === 0 || index === scene.bands.length - 1) return undefined;
+	const others = [...scene.cards.values(), ...scene.titles.values()];
+	const captions = scene.regions.map(({ caption }) => caption);
+	if ([...others, ...captions].some(({ band }) => band === index)) return undefined;
+	const labels = [...scene.labels.values()].filter((item) => item.band === index);
+	return labels.length > 0 ? labels : undefined;
+}
+
+/**
+ * Stand each band that holds labels alone in the middle of the room between
+ * the bands either side of it, as far as the channel it moves into is clear
+ * of it: a channel grows for a track that turns in it anywhere across the
+ * block, and would otherwise push a label far from it off its gap's middle.
+ * The row moves together, so it stays a row.
+ * @param scene The spaced scene; its label boxes move.
+ * @param nets Every net, on its track.
+ * @param closings How far below each band the containers ending there reach.
+ */
+function centreLabelBands(scene: Scene, nets: readonly Net[], closings: readonly number[]): void {
+	scene.bands.forEach((band, index) => {
+		const labels = labelRow(scene, index);
+		if (labels === undefined) return;
+		const [upper, lower] = [scene.bands[index - 1]!, scene.bands[index + 1]!];
+		const above = band.newTop - (upper.newTop + upper.bottom - upper.top);
+		const below = lower.newTop - (band.newTop + band.bottom - band.top);
+		const up = clearFor(labels, nets, index - 1)
+			? above - channelHeight(0, closings[index - 1])
+			: 0;
+		const down = clearFor(labels, nets, index) ? below - EMPTY_CHANNEL : 0;
+		const shift = Math.min(down, Math.max(-up, (below - above) / 2));
+		for (const item of labels) item.box = { ...item.box, y: item.box.y + shift };
 	});
 }
 
