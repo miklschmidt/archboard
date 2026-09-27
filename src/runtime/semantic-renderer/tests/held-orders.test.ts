@@ -1,16 +1,22 @@
 // Ports a block of cards holds in the order its parent settles them in
 // (orders.ts). What this catches: two lines that cross inside a block because
 // settling swapped their ports after Graphviz had ordered the block's cards
-// and labels for the old order, and a held order that lets the board choose
-// to part lines joined on their way to a card and run one round a block.
+// and labels for the old order, a held order that lets the board choose to
+// part lines joined on their way to a card and run one round a block, and a
+// held order kept for the lines it uncrosses at the cost of turns elsewhere.
 
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { corridorPoints, routesCross } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import {
+	corridorPoints,
+	routesCross,
+	turnsOf,
+} from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import boardRequestPath from "./board-request-path.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
+import oneCommand from "./one-command.json";
 
 /** The vocabulary of the dogfood vault the fixtures are taken from. */
 const policy = SemanticPolicySchema.parse({
@@ -58,4 +64,15 @@ test("a held order does not part lines joined on their way to a card", async () 
 	const content = orderedFixture(boardRequestPath);
 	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	expect(corridorPoints(drawing.svg).get("3verBPcG")!.length).toBeLessThan(16);
+});
+
+// Taken from a board of this repository: held in order, Codex session's
+// block ranked again and crossed two lines fewer, but 'queue, edit, reorder
+// or start a message' from Browser gateway turned twice on its way down
+// to Workhorse queue. A held order is kept only where the board's lines turn
+// no more often.
+test("a held order is kept only where the board's lines turn no more often", async () => {
+	const content = orderedFixture(oneCommand);
+	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	expect(turnsOf(corridorPoints(drawing.svg).get("EZEiVlsE")!)).toBe(0);
 });

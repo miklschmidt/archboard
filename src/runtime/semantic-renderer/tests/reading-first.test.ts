@@ -1,10 +1,10 @@
-// Choices between two whole layouts of a board rank them on how they read
-// before how they fit the reference pane (ADR 0039), and the joins and the
-// packing of a board's groups hold to the pick of their earlier weighing
-// wherever that ranking's pick reads worse on some measure. What this
-// catches: a choice going back to a score that lets a better fit buy a
-// crossing or a bend, and a guarded choice taking a drawing that reads worse
-// somewhere for crossings it saves, read off the named lines each moves.
+// Every chooser ADR 0039 changed takes the layout that reads better only
+// where its earlier weighing agrees or that layout reads no worse anywhere,
+// and the choosers left on their earlier weighing keep it. What this
+// catches, read off the named lines each choice moves: a chooser going back
+// to its earlier weighing alone and losing a drawing that reads better
+// everywhere; a chooser taking a drawing that reads worse somewhere for
+// crossings it saves; and a clause of an earlier weighing dropped.
 
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
@@ -16,10 +16,15 @@ import {
 	sharedStretches,
 	turnsOf,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import boardChangesReachTheWorkhorse from "./board-changes-reach-the-workhorse.json";
 import boardPersistence from "./board-persistence.json";
+import browserApplication from "./browser-application.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
 import oneCommand from "./one-command.json";
+import readingABoard from "./reading-a-board-joins.json";
+import theTwoThreads from "./the-two-threads.json";
 import whatTheCliCanBeAsked from "./what-the-cli-can-be-asked.json";
+import workhorseNews from "./workhorse-news.json";
 
 /** The vocabulary of the fixtures, in the dogfood vault's order. */
 const policy = SemanticPolicySchema.parse({
@@ -81,12 +86,13 @@ test("a board stacks its containers where its lines then turn less, on whatever 
 	expect(turnsOf(lines.get("Qh7VZ9MQ")!)).toBeLessThanOrEqual(4);
 });
 
-// Taken from a board of this repository, with its vault's levels: whether its
-// containers stack is weighed on each way as it would be taken, wrapped
-// where a wrap is taken. Weighed whole, it took the other way, where 'take
+// Taken from a board of this repository, with its vault's levels: on how
+// its blocks read alone, its containers took the other way, which drew the
+// board on a page half again as wide with twice the crossings, where 'take
 // the new name's lease' turned round a block and crossed 'a migrated
-// document', and the board crossed four lines more.
-test("a board stacks its containers or not on each way at its best, wrapped or whole", async () => {
+// document'. Stacking keeps its earlier pick where the other reads worse
+// somewhere.
+test("a board stacks its containers or not as before where the other way reads worse somewhere", async () => {
 	const lines = await linesOf(boardPersistence, "track", ["system", "service", "module"]);
 	expect(turnsOf(lines.get("8Let5OXd")!)).toBe(0);
 	expect(routesCross(lines.get("8Let5OXd")!, lines.get("C0t1t0gb")!)).toBe(false);
@@ -109,4 +115,57 @@ test("a join is kept whole as before where the other way reads worse somewhere",
 	const lines = await linesOf(whatTheCliCanBeAsked, "blocks");
 	const shared = sharedStretches(lines.get("W0x3eks9")!, lines.get("I2CofSP0")!);
 	expect(Math.max(0, ...shared)).toBeGreaterThan(100);
+});
+
+// Taken from a board of this repository: its joins weighed on their
+// crossings alone, each crossing once however many lines a trunk carries,
+// 'start the realtime leg' and 'turn/start on the coordinator thread' ran
+// together on one long stroke into Codex session, 500 px down and back up,
+// and both crossed 'the user's changes, focus and selection'. A crossing
+// costs half as much again for each line through it past the first.
+test("a join is kept whole the way whose trunks cross fewer lines they carry", async () => {
+	const lines = await linesOf(workhorseNews, "blocks");
+	for (const id of ["eRYh0zYO", "kdzh3hrY"])
+		expect(routesCross(lines.get(id)!, lines.get("wyliCZzQ")!), id).toBe(false);
+});
+
+// Taken from a board of this repository: with its groups packed, it scored
+// higher on a page that fit the pane better, but drew more line, and
+// 'thread/queue/add, update, reorder, delete, start' turned twice more
+// and crossed 'delegate, steer, inspect, queue' and 'workhorse notifications,
+// tell_coordinator calls'. A board packs its groups only on no more line.
+test("a board keeps its groups inline where packing them draws more line", async () => {
+	const lines = await linesOf(theTwoThreads, "track");
+	for (const id of ["mhknqBOz", "NztvEtjX"])
+		expect(routesCross(lines.get("b9HU99hH")!, lines.get(id)!), id).toBe(false);
+});
+
+// Taken from a board of this repository: settling its ports where the
+// drawing then read better in the order of ADR 0039, rather than where it
+// scores better, 'the pane socket: registration and news' ran round Voice to
+// a wall of Browser client and crossed 'one per socket generation' and 'the
+// step to show'. Settling ports keeps its score.
+test("a block settles its ports where the drawing scores better", async () => {
+	const lines = await linesOf(browserApplication, "blocks");
+	for (const id of ["rcSUaP1b", "Gxh1Pbx3"])
+		expect(routesCross(lines.get("PuILGsjg")!, lines.get(id)!), id).toBe(false);
+});
+
+// Taken from a board of this repository: weighed as before ADR 0039, its
+// joins were kept whole the way where 'the pane socket: registration and
+// news' turned four times and 'one stage per pane' three. The other way
+// turns them twice and once and reads no worse anywhere, so it is taken.
+test("a join is kept whole the way that reads better where it reads no worse anywhere", async () => {
+	const lines = await linesOf(readingABoard, "blocks");
+	expect(turnsOf(lines.get("PuILGsjg")!)).toBeLessThanOrEqual(4);
+	expect(turnsOf(lines.get("VbLQ6rfX")!)).toBeLessThanOrEqual(2);
+});
+
+// Taken from a board of this repository: weighed as before ADR 0039, its
+// groups were laid the way where 'thread/inject_items into the workhorse'
+// turned four times. The other way turns it twice and reads no worse
+// anywhere, so it is taken.
+test("a board's groups are laid the way that reads better where it reads no worse anywhere", async () => {
+	const lines = await linesOf(boardChangesReachTheWorkhorse, "track");
+	expect(turnsOf(lines.get("8g1SNngD")!)).toBeLessThanOrEqual(4);
 });
