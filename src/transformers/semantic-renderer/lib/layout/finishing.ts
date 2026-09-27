@@ -29,7 +29,10 @@
 // landing 6 px from the pin. The pin pass clears one card at a time, each
 // kept where it cures more, asking again for every card kept before it:
 // cleared together, Board persistence's three cards drew two more crossings
-// for one of them.
+// for one of them. Where curing every hook at once is not kept, the hook pass
+// too cures card by card, offering the face a hook passed on that card alone:
+// cured together, Board persistence's seven hooks left two labels no run to
+// sit on, and card by card five of them enter the face they passed.
 import type {
 	ArchitectureDrawing,
 	DrawingEdge,
@@ -311,11 +314,16 @@ interface FinishingPass {
 	readonly found: (drawing: ArchitectureDrawing, pinned: Pinned) => readonly string[];
 	/** The defects of its kind a drawing has, one key for each. */
 	readonly defects: (drawing: ArchitectureDrawing, pinned: Pinned) => readonly string[];
-	/** What its routes are asked, given what it found. */
-	readonly ask: (found: readonly string[]) => RouteRequest;
-	/** Set on a pass that cures one card at a time, whose lines may take a bend more. */
-	readonly byCard?: true;
+	/** What its routes are asked to cure all it found at once; left out on a pass that cures card by card. */
+	readonly ask?: (found: readonly string[]) => RouteRequest;
+	/** What its routes are asked to cure what it found on some cards, where curing all at once is not kept. */
+	readonly askByCard?: (found: readonly string[]) => RouteRequest;
+	/** Set on a pass whose lines may take a bend more to be cured. */
+	readonly excused?: true;
 }
+
+/** What a pass asks of its routes, given what it found. */
+type Ask = (found: readonly string[]) => RouteRequest;
 
 /**
  * The lines of a drawing along the wall of a frame they leave.
@@ -349,6 +357,15 @@ function droppingStraight(): RouteRequest {
  */
 function enteringCorners(): RouteRequest {
 	return { cornerPins: true };
+}
+
+/**
+ * Routes offered the face a hook passes on the cards of some hooks.
+ * @param hooks The hooks, as line:card.
+ * @returns The request.
+ */
+function enteringCardCorners(hooks: readonly string[]): RouteRequest {
+	return { cornerCards: [...new Set(hooks.map(cardOf))] };
 }
 
 /**
@@ -403,9 +420,16 @@ const FINISHING_PASSES: readonly FinishingPass[] = [
 		found: sideHooks,
 		defects: sideHooks,
 		ask: enteringCorners,
+		askByCard: enteringCardCorners,
 	},
 	{ kind: "stack", found: stackedEnds, defects: stackKeys, ask: refusing },
-	{ kind: "pin", found: pinnedEnds, defects: pinnedEnds, ask: clearingPins, byCard: true },
+	{
+		kind: "pin",
+		found: pinnedEnds,
+		defects: pinnedEnds,
+		askByCard: clearingPins,
+		excused: true,
+	},
 	{
 		kind: "port",
 		found: bunchedPorts,
@@ -430,8 +454,8 @@ type Reroute<Reading> = (
  * One finishing pass: the settled drawing, or, when it has what the pass
  * cures, its placement routed once more with the pass's options, if that
  * cures more ({@link cures}), keeps every label and is no worse
- * ({@link noWorse}). A pass that cures by card tries each card in turn,
- * asking again for every card kept so far.
+ * ({@link noWorse}). Where curing all at once is not asked or not kept, a
+ * pass that can cures card by card.
  * @param settled The settled drawing and its reading.
  * @param pass The pass.
  * @param reroute Routes a reading's placement asking for more.
@@ -446,13 +470,39 @@ async function finishedBy<Reading>(
 ): Promise<Finish<Reading>> {
 	const found = [...new Set(pass.found(settled.drawing, pinned))];
 	if (found.length === 0) return settled;
-	if (pass.byCard === undefined) return tried(settled, pass, found, reroute, pinned);
+	const whole =
+		pass.ask === undefined ? settled : await tried(settled, pass, pass.ask, found, reroute, pinned);
+	if (whole !== settled || pass.askByCard === undefined) return whole;
+	return byCard(settled, pass, pass.askByCard, found, reroute, pinned);
+}
+
+/**
+ * A pass tried one card at a time, asking again for every card kept so far:
+ * Board persistence's three standing pins, cleared together, drew two more
+ * crossings for one of them, and its seven hooks, cured together, left two
+ * labels no run to sit on.
+ * @param settled The settled drawing and its reading.
+ * @param pass The pass.
+ * @param ask What its routes are asked for the cards tried.
+ * @param found What it found.
+ * @param reroute Routes a reading's placement asking for more.
+ * @param pinned The cards that wear a standing pin.
+ * @returns The drawing kept and its reading.
+ */
+async function byCard<Reading>(
+	settled: Finish<Reading>,
+	pass: FinishingPass,
+	ask: Ask,
+	found: readonly string[],
+	reroute: Reroute<Reading>,
+	pinned: Pinned,
+): Promise<Finish<Reading>> {
 	const cards = [...new Set(found.map(cardOf))];
 	const { kept } = await cards.reduce(
 		async (earlier, card) => {
 			const { kept: before, asked } = await earlier;
 			const asking = [...asked, ...found.filter((key) => cardOf(key) === card)];
-			const next = await tried(before, pass, asking, reroute, pinned);
+			const next = await tried(before, pass, ask, asking, reroute, pinned);
 			return next === before ? { kept: before, asked } : { kept: next, asked: asking };
 		},
 		Promise.resolve({ kept: settled, asked: [] as readonly string[] }),
@@ -467,6 +517,7 @@ async function finishedBy<Reading>(
  * fault is thrown.
  * @param settled The settled drawing and its reading.
  * @param pass The pass.
+ * @param ask What its routes are asked.
  * @param found What it is asked to cure.
  * @param reroute Routes a reading's placement asking for more.
  * @param pinned The cards that wear a standing pin.
@@ -475,15 +526,16 @@ async function finishedBy<Reading>(
 async function tried<Reading>(
 	settled: Finish<Reading>,
 	pass: FinishingPass,
+	ask: Ask,
 	found: readonly string[],
 	reroute: Reroute<Reading>,
 	pinned: Pinned,
 ): Promise<Finish<Reading>> {
-	const finish = await reroute(settled.reading, pass.ask(found)).catch((error: unknown) => {
+	const finish = await reroute(settled.reading, ask(found)).catch((error: unknown) => {
 		if (refusedRouting(error)) return undefined;
 		throw error;
 	});
-	const excused = new Set(pass.byCard === undefined ? [] : found.map((key) => key.split(":")[0]!));
+	const excused = new Set(pass.excused === undefined ? [] : found.map((key) => key.split(":")[0]!));
 	return finish !== undefined &&
 		cures(finish.drawing, settled.drawing, pinned) &&
 		noWorse(finish.drawing, settled.drawing, excused)
