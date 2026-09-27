@@ -7,9 +7,9 @@
 // chooser and the finishing passes count each one as a crossing more
 // (even-pins.ts, crossingsSeen), so none of them trades into one.
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
-import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { verticesOf } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { ROUTE_LANE } from "@/transformers/semantic-renderer/lib/layout/routing-clearance";
+import { crossingPlaces, type Run } from "@/transformers/semantic-renderer/lib/track/score";
 
 /**
  * How near a bend's corner a crossing lies on it: nearer than a lane. A line
@@ -17,41 +17,6 @@ import { ROUTE_LANE } from "@/transformers/semantic-renderer/lib/layout/routing-
  * parallel lines; nearer, the hop runs into the bend's arc.
  */
 const BEND_REACH = ROUTE_LANE - 0.5;
-
-/** One straight run of a line, with whether each of its ends is a bend of that line. */
-interface Run {
-	readonly line: number;
-	readonly from: Point;
-	readonly to: Point;
-	readonly bends: readonly [boolean, boolean];
-}
-
-/**
- * Every straight run of every line.
- * @param lines Each line's vertices.
- * @returns Their runs.
- */
-function runsOf(lines: readonly (readonly Point[])[]): Run[] {
-	return lines.flatMap((points, line) =>
-		points.slice(1).map((to, index) => ({
-			line,
-			from: points[index]!,
-			to,
-			bends: [index > 0, index + 2 < points.length] as const,
-		})),
-	);
-}
-
-/**
- * Whether a value lies strictly between two others, clear of both, as a crossing does (track/score.ts).
- * @param value The value.
- * @param one One end.
- * @param other The other end.
- * @returns True when it is inside.
- */
-function inside(value: number, one: number, other: number): boolean {
-	return value > Math.min(one, other) + 1 && value < Math.max(one, other) - 1;
-}
 
 /**
  * Whether a place on a run lies within a lane of a bend at either of its ends.
@@ -68,25 +33,16 @@ function nearBend(run: Run, at: number, axis: "x" | "y"): boolean {
 }
 
 /**
- * The places a drawing's lines cross within a lane of a bend of either line.
- * A trunk's lines crossing one line at one place count once, as a crossing does.
+ * The places a drawing's lines cross ({@link crossingPlaces}) within a lane
+ * of a bend of either line. A trunk's lines crossing one line at one place
+ * count once, as a crossing does.
  * @param drawing The drawing.
  * @returns Their number.
  */
 export function corneredCrossings(drawing: ArchitectureDrawing): number {
-	const runs = runsOf(drawing.edges.map(({ curve }) => verticesOf(curve)));
-	const level = runs.filter(({ from, to }) => Math.abs(from.y - to.y) < 0.5);
-	const upright = runs.filter(({ from, to }) => Math.abs(from.x - to.x) < 0.5);
-	const places = level.flatMap((one) =>
-		upright
-			.filter(
-				(other) =>
-					other.line !== one.line &&
-					inside(other.from.x, one.from.x, one.to.x) &&
-					inside(one.from.y, other.from.y, other.to.y) &&
-					(nearBend(one, other.from.x, "x") || nearBend(other, one.from.y, "y")),
-			)
-			.map((other) => `${Math.round(other.from.x)},${Math.round(one.from.y)}`),
+	const places = crossingPlaces(drawing.edges.map(({ curve }) => verticesOf(curve))).filter(
+		({ level, upright }) =>
+			nearBend(level, upright.from.x, "x") || nearBend(upright, level.from.y, "y"),
 	);
-	return new Set(places).size;
+	return new Set(places.map(({ key }) => key)).size;
 }
