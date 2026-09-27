@@ -25,6 +25,7 @@ import {
 	type Updater,
 } from "@/ui/semantic-board-canvas/lib/picture-motion";
 import { cloneElement, type SubjectGroup } from "@/ui/semantic-board-canvas/lib/picture-pairing";
+import { SUBJECT_ATTRIBUTE, TRAFFIC_ATTRIBUTE } from "@/ui/semantic-board-canvas/lib/subjects";
 
 /** How much of an arrival is spent fading in before the rest is drawing on. */
 const ARRIVE_FADE_SHARE = 0.25;
@@ -57,13 +58,17 @@ function linePaths(group: Element): LinePaths {
 /**
  * Park what would draw wrongly while a line is in flight: the crossing mask,
  * which cuts gaps where the route used to cross others, and the traffic
- * pulses, which ride a path of their own. Both come back with the finished
- * picture.
+ * pulses, which ride the new route in a layer of their own over every line.
+ * Both come back with the finished picture.
  * @param group The line's group.
  */
 function parkLineDressing(group: Element): void {
 	group.removeAttribute("mask");
-	for (const pulse of group.querySelectorAll<SVGElement>(".ab-pulse")) {
+	const id = group.getAttribute(SUBJECT_ATTRIBUTE);
+	const traffic = group
+		.closest("svg")
+		?.querySelectorAll<SVGElement>(`[${TRAFFIC_ATTRIBUTE}="${id}"] .ab-pulse`);
+	for (const pulse of traffic ?? []) {
 		pulse.style.opacity = "0";
 	}
 }

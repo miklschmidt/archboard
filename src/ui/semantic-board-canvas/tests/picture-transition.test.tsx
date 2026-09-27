@@ -170,6 +170,7 @@ describe("carrying a line", () => {
 			id: "e1",
 			d: "M110,40 L150,40 C160,40 160,50 160,60 L160,100",
 			masked: true,
+			traffic: true,
 		};
 		const before = picture([A, B], [AB]);
 		const after = picture([A, B], [rerouted]);
@@ -178,8 +179,12 @@ describe("carrying a line", () => {
 		const group = surface.querySelector(`g[data-semantic-id="e1"]`)!;
 		const stroke = group.querySelectorAll("path")[1]!;
 		expect(stroke.getAttribute("d")).toBe(AB.d);
-		// The crossing mask is parked while the route is somewhere between.
+		// The crossing mask and the traffic riding the new route are parked
+		// while the route is somewhere between.
 		expect(group.hasAttribute("mask")).toBe(false);
+		expect(surface.querySelector<SVGElement>(`g[data-traffic="e1"] .ab-pulse`)?.style.opacity).toBe(
+			"0",
+		);
 		transition.seek(0.5);
 		expect(stroke.getAttribute("d")).not.toBe(AB.d);
 		expect(stroke.getAttribute("d")).not.toBe(rerouted.d);
