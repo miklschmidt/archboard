@@ -253,12 +253,6 @@ interface Earlier {
 	readonly orders?: ReadonlyMap<string, readonly string[]>;
 }
 
-/** What a layout decided, which a layout of the board with its regions round one node keeps. */
-interface Decided extends Earlier {
-	/** Whether its ports were settled. */
-	readonly settled: boolean;
-}
-
 /** What a first layout keeps: nothing. */
 const NOTHING_EARLIER: Earlier = { exits: new Map(), packings: new Map() };
 
@@ -292,7 +286,7 @@ function layOut(
 	graph: ElkNode,
 	nesting: Nesting,
 	apart: ReadonlySet<string>,
-): { tree: BlockTree; laid: Map<string, Laid>; decided: Decided } {
+): { tree: BlockTree; laid: Map<string, Laid>; decided: Earlier } {
 	const first = layAll(viz, avoid, graph, undefined, nesting, apart);
 	const exits = sidesOf(first.tree, first.laid);
 	const kept = { exits, packings: first.packings };
@@ -305,14 +299,16 @@ function layOut(
 		.reduce((one, other) =>
 			other[0].crossings < one[0].crossings && other[0].bends <= one[0].bends ? other : one,
 		);
-	const decided = { ...kept, ...(index === 0 ? {} : { orders }), settled: chosen.settled };
+	const decided = { ...kept, ...(index === 0 ? {} : { orders }) };
 	return { tree: chosen.tree, laid: chosen.laid, decided };
 }
 
 /**
  * Lay a measured hierarchy out as another layout decided it would be: its
- * exits, packings and held orders kept, and its ports settled only where
- * that layout settled them.
+ * exits, packings and held orders kept. Whether its ports settle is weighed
+ * again: settled as the board without its regions round one node settled,
+ * the four 'board operation' lines of Command interface (Track) stepped
+ * twice more each.
  * @param viz The initialized Graphviz instance.
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
@@ -327,11 +323,9 @@ function layOutAs(
 	graph: ElkNode,
 	nesting: Nesting,
 	apart: ReadonlySet<string>,
-	decided: Decided,
+	decided: Earlier,
 ): { tree: BlockTree; laid: Map<string, Laid> } {
-	const laying = layAll(viz, avoid, graph, decided, nesting, apart);
-	if (decided.settled) settlePorts({ ...laying, insetsOf, avoid });
-	return laying;
+	return settledOrNot(layAll(viz, avoid, graph, decided, nesting, apart), avoid);
 }
 
 /**
@@ -347,18 +341,12 @@ function layOutAs(
  * data (Cloud Infrastructure, Blocks) one, each settling a parted join.
  * @param laying The layout; its blocks are replaced.
  * @param avoid The initialized libavoid module.
- * @returns The blocks, every block laid out, how often the drawing's lines cross and turn, and whether its ports were settled.
+ * @returns The blocks, every block laid out, and how often the drawing's lines cross and turn.
  */
 function settledOrNot(
 	laying: Board,
 	avoid: AvoidEngine,
-): {
-	tree: BlockTree;
-	laid: Map<string, Laid>;
-	crossings: number;
-	bends: number;
-	settled: boolean;
-} {
+): { tree: BlockTree; laid: Map<string, Laid>; crossings: number; bends: number } {
 	const unsettled = new Map(laying.laid);
 	settlePorts({ ...laying, insetsOf, avoid });
 	const [was, is] = [unsettled, laying.laid].map((laid) => {
@@ -370,15 +358,13 @@ function settledOrNot(
 			),
 		);
 	});
-	const kept = was! <= is!;
-	if (!kept) for (const [id, laid] of unsettled) laying.laid.set(id, laid);
+	if (was! > is!) for (const [id, laid] of unsettled) laying.laid.set(id, laid);
 	const lines = new Assembly(laying.tree, laying.laid).placed().edges.map(({ points }) => points);
 	return {
 		tree: laying.tree,
 		laid: laying.laid,
 		crossings: crossingsOf(lines),
 		bends: lines.reduce((sum, points) => sum + corners(points).length - 2, 0),
-		settled: kept,
 	};
 }
 
@@ -386,8 +372,8 @@ function settledOrNot(
  * Lay a measured hierarchy out with every join of lines to one card kept
  * whole the way that reads better (`joins.ts`). A board with regions round
  * one node (`lone.ts`) is laid out as its layout without them decides:
- * which joins part, which ports move to side walls, how blocks pack, which
- * port orders hold and whether ports settle. Such a region gathers nothing
+ * which joins part, which ports move to side walls, how blocks pack and
+ * which port orders hold. Such a region gathers nothing
  * and joins no line, but the room it takes moves the routes round it, and
  * each of those choices weighed with it could turn: What the CLI can be
  * asked (Blocks) parted four lines into Board client for a hop more and 21%
@@ -427,7 +413,7 @@ function drawnOut(
 	graph: ElkNode,
 	nesting: Nesting,
 	apart: ReadonlySet<string>,
-): Drawn<Placed> & { decided: Decided } {
+): Drawn<Placed> & { decided: Earlier } {
 	const { tree, laid, decided } = layOut(viz, avoid, graph, nesting, apart);
 	return { tree, placed: Assembly.unstepped(new Assembly(tree, laid).placed()), decided };
 }
