@@ -25,6 +25,7 @@ import aSpokenInstruction from "./a-spoken-instruction.json";
 import boardRequestPath from "./board-request-path.json";
 import commandInterface from "./command-interface.json";
 import legacyRouting from "./legacy-routing.json";
+import liveServerState from "./live-server-state.json";
 import recordingAWalkthrough from "./recording-a-walkthrough.json";
 import startingAWorkhorse from "./starting-a-workhorse.json";
 import whatTheCliCanBeAsked from "./what-the-cli-can-be-asked.json";
@@ -169,20 +170,35 @@ function near(one: number, other: number): boolean {
 }
 
 /**
- * Whether a point stands on a box's outline.
+ * Whether a point stands on a card's face, clear of its rounded corners.
  * @param point The point.
  * @param point.x Its x.
  * @param point.y Its y.
- * @param box The box.
+ * @param box The card's box.
+ * @param corner The radius of its corners.
  * @returns True when it does.
  */
-function onOutline({ x, y }: { x: number; y: number }, box: Box): boolean {
-	const across = x > box.x - 2 && x < box.x + box.width + 2;
-	const down = y > box.y - 2 && y < box.y + box.height + 2;
+function onFace({ x, y }: { x: number; y: number }, box: Box, corner: number): boolean {
+	const across = x > box.x + corner + 0.5 && x < box.x + box.width - corner - 0.5;
+	const down = y > box.y + corner + 0.5 && y < box.y + box.height - corner - 0.5;
 	return (
 		(across && (near(y, box.y) || near(y, box.y + box.height))) ||
 		(down && (near(x, box.x) || near(x, box.x + box.width)))
 	);
+}
+
+/**
+ * The radius of a card's corners, as drawn.
+ * @param svg The document.
+ * @param card The card.
+ * @returns The radius.
+ */
+function cornerOf(svg: string, card: string): number {
+	const deck = new RegExp(
+		`<g data-semantic-kind="node" data-semantic-id="${card}"[^>]*>\\s*(?:<rect class="ab-halo"[^>]*>\\s*)?<rect(?! class="ab-halo")[^>]* rx="([^"]+)"`,
+		"u",
+	).exec(svg);
+	return Number(deck![1]);
 }
 
 /**
@@ -260,8 +276,8 @@ test.each(readAsWithout)(
 
 /**
  * The line ends at a card or container alone in its region that stop short
- * of it: off a card's outline, or outside a container, whose lines may meet
- * its title row.
+ * of it: off a card's face or in its rounded corner, or outside a container,
+ * whose lines may meet its title row.
  * @param content The board.
  * @param drawing Its drawing.
  * @returns Each such end, by its line's id.
@@ -272,7 +288,7 @@ function endsOffNode(content: VariantContent, drawing: RenderedDiagram): string[
 	const routes = routePoints(drawing.svg);
 	const meets = (node: string, at: { x: number; y: number }): boolean => {
 		const box = drawing.atlas.nodes[node]!;
-		return containers.has(node) ? within(at, box) : onOutline(at, box);
+		return containers.has(node) ? within(at, box) : onFace(at, box, cornerOf(drawing.svg, node));
 	};
 	return content.edges.flatMap((edge) => {
 		const points = routes.get(edge.id)!;
@@ -317,9 +333,13 @@ const loneContainer = {
 // A line may reach the wall of a region round one node anywhere along it,
 // the region's inset beside the node included: into a container drawn
 // inline alone in its region, and between cards alone in theirs in two
-// containers packed apart, it stopped in that inset, beside its node.
+// containers packed apart, it stopped in that inset, beside its node. Live
+// server state, reduced from a dogfood view: a port settled against the one
+// card alone in its region its line runs to, over the region's box, ended
+// the line into Codex workbench in the card's rounded corner.
 const besideTheNode = {
 	"a container alone in its region inside another": loneContainer,
+	"Live server state": liveServerState,
 	"cards alone in their regions in two containers": {
 		nodes: [
 			{ id: "left", name: "Left", kind: "system" },
