@@ -410,11 +410,17 @@ test("lines that join on the way to a card stay joined, without running along a 
 // track above most of the lines it shares the channel with and was given one
 // above lines it then crossed, where another order crosses fewer: 'agent
 // bar, conversation, Talk' crossed 'the listing, read again on pane news'.
-test("the lines of one channel take the track order that crosses least", async () => {
+// And with its block's ports settled where the drawing read better in the
+// order of ADR 0039, rather than where it scores better, 'the pane socket:
+// registration and news' ran round Voice to a wall of Browser client and
+// crossed 'one per socket generation' and 'the step to show'.
+test("the lines of one channel take the track order that crosses least, its ports settled on their score", async () => {
 	const content = orderedFixture(browserApplication);
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "blocks", policy });
 	const routes = corridorPoints(drawing.svg);
 	expect(routesCross(routes.get("WchncnH1")!, routes.get("ep2NF6Z5")!)).toBe(false);
+	for (const id of ["rcSUaP1b", "Gxh1Pbx3"])
+		expect(routesCross(routes.get("PuILGsjg")!, routes.get(id)!), id).toBe(false);
 });
 
 // Taken from a board of this repository: with its groups packed as blocks of

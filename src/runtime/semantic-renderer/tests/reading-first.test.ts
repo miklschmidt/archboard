@@ -18,9 +18,9 @@ import {
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import boardChangesReachTheWorkhorse from "./board-changes-reach-the-workhorse.json";
 import boardPersistence from "./board-persistence.json";
-import browserApplication from "./browser-application.json";
 import durableWriteBoundary from "./durable-write-boundary.json";
 import oneCommand from "./one-command.json";
+import oneWriteLands from "./one-write-lands.json";
 import readingABoard from "./reading-a-board-joins.json";
 import theTwoThreads from "./the-two-threads.json";
 import whatTheCliCanBeAsked from "./what-the-cli-can-be-asked.json";
@@ -86,6 +86,19 @@ test("a board stacks its containers where its lines then turn less, on whatever 
 	expect(turnsOf(lines.get("Qh7VZ9MQ")!)).toBeLessThanOrEqual(4);
 });
 
+// Taken from a board of this repository: stacked, its containers stood on a
+// page with four bends fewer and no more line, but 'announce the accepted
+// write' ran down the page's right edge past every card, a lane beside 'what
+// the writer said it was doing'. A line lapping round a block past every
+// card counts as a crossing, so the containers stand as Graphviz ranks them.
+test("a board keeps its containers as ranked where stacking them sends a line round the page", async () => {
+	const content = orderedFixture(oneWriteLands);
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
+	const right = Math.max(...Object.values(drawing.atlas.nodes).map(({ x, width }) => x + width));
+	const announce = corridorPoints(drawing.svg).get("9wogU6N3")!;
+	expect(Math.max(...announce.map(({ x }) => x))).toBeLessThan(right);
+});
+
 // Taken from a board of this repository, with its vault's levels: on how
 // its blocks read alone, its containers took the other way, which drew the
 // board on a page half again as wide with twice the crossings, where 'take
@@ -140,21 +153,13 @@ test("a board keeps its groups inline where packing them draws more line", async
 		expect(routesCross(lines.get("b9HU99hH")!, lines.get(id)!), id).toBe(false);
 });
 
-// Taken from a board of this repository: settling its ports where the
-// drawing then read better in the order of ADR 0039, rather than where it
-// scores better, 'the pane socket: registration and news' ran round Voice to
-// a wall of Browser client and crossed 'one per socket generation' and 'the
-// step to show'. Settling ports keeps its score.
-test("a block settles its ports where the drawing scores better", async () => {
-	const lines = await linesOf(browserApplication, "blocks");
-	for (const id of ["rcSUaP1b", "Gxh1Pbx3"])
-		expect(routesCross(lines.get("PuILGsjg")!, lines.get(id)!), id).toBe(false);
-});
-
 // Taken from a board of this repository: weighed as before ADR 0039, its
 // joins were kept whole the way where 'the pane socket: registration and
 // news' turned four times and 'one stage per pane' three. The other way
 // turns them twice and once and reads no worse anywhere, so it is taken.
+// Its blocks pack two ways that score alike, and the first tried stepped
+// 'one stage per pane' down beside 'a board's new version': a tie goes to
+// the smaller page.
 test("a join is kept whole the way that reads better where it reads no worse anywhere", async () => {
 	const lines = await linesOf(readingABoard, "blocks");
 	expect(turnsOf(lines.get("PuILGsjg")!)).toBeLessThanOrEqual(4);
