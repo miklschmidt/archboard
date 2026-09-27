@@ -13,6 +13,8 @@ import {
 	findView,
 	addressedVariant,
 	nothingBuilt,
+	scopedContent,
+	type DrawnProposal,
 	type DiagramGrammar,
 	type DiagramTheme,
 	type LayoutEngineName,
@@ -27,6 +29,7 @@ import {
 } from "@/shared/semantic-board/index";
 import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 import { SemanticRenderError, renderSemanticView } from "@/transformers/semantic-renderer/index";
+import { unshownOf } from "@/transformers/semantic-renderer/lib/shown";
 
 /** What a render of one board asks for. */
 interface BoardRenderChoices {
@@ -90,6 +93,27 @@ function toldStanding(variant: SemanticVariant): ToldStanding | null {
 }
 
 /**
+ * What a picture leaves undrawn. With its comparison, nothing. Without it,
+ * whatever the variant's own reading of the view does not hold, so the
+ * picture shows the variant alone in the places the comparison gives it.
+ * @param proposal The compared drawing.
+ * @param variant The variant itself.
+ * @param scope The view being read.
+ * @param comparison Whether the comparison is shown.
+ * @returns The ids to leave undrawn, as the render request takes them.
+ */
+function unshownFor(
+	proposal: DrawnProposal,
+	variant: SemanticVariant,
+	scope: ViewScope,
+	comparison: boolean,
+): { readonly unshown?: ReadonlySet<string> } {
+	return comparison
+		? {}
+		: { unshown: unshownOf(proposal.content, scopedContent(variant.content, scope)) };
+}
+
+/**
  * Draw one variant of a board, or say that there is nothing on it yet.
  *
  * An empty board is not an error: it is a board somebody has just made and has
@@ -120,7 +144,8 @@ async function drawnReply(
 	const reading = readingOf(view);
 	// The comparison restores what the variant lacks of the one it is read against.
 	// A picture without the comparison is laid out from the same content and
-	// leaves what stands removed undrawn, so the toggle moves nothing.
+	// leaves undrawn what the variant's own reading of the view does not hold,
+	// so the toggle moves nothing.
 	const proposal = drawingOf(board, variant, reading.scope);
 	// A subject nobody has decided yet is drawn with a warning on it, so a reader
 	// looking at the picture rather than the panel still knows not to trust it.
@@ -143,6 +168,7 @@ async function drawnReply(
 			content: proposal.content,
 			...(proposal.changes === null ? {} : { standing: proposal.changes.standing }),
 			paintStanding: how.comparison,
+			...unshownFor(proposal, variant, reading.scope, how.comparison),
 			grammar: reading.grammar,
 			theme: how.theme,
 			fonts: how.fonts,
