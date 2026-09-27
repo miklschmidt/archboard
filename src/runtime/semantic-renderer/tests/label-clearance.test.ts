@@ -8,7 +8,8 @@
 // brought, so it is not kept for a shorter line bought by crowding a label.
 // What this catches: the cleared drawing chosen where it cures nothing and
 // is no tidier, on a page grown past what it cures, where it crowds a label
-// for a tidier rank, and a fault in the ordinary drawing hidden behind it.
+// for a tidier rank, a fault in the ordinary drawing hidden behind it, and
+// both routings refused answered with nothing rather than the refusal.
 
 import { expect, test } from "bun:test";
 import { clearerDrawing, type ArchitectureDrawing } from "@/runtime/semantic-renderer/layout";
@@ -101,10 +102,13 @@ test("a cleared drawing that crowds a label is not kept for a shorter line", asy
 	expect(await clearerDrawing(Promise.resolve(ordinary), Promise.resolve(crowding))).toBe(ordinary);
 });
 
-test("a cleared drawing the router refuses leaves the ordinary one, and a fault is thrown", async () => {
+test("a cleared drawing the router refuses leaves the ordinary one, both refused throw the refusal, and a fault is thrown", async () => {
 	const ordinary = passing(148);
-	const refused = Promise.reject(new Error("NativeRouteUnavailable: no route clear of obstacles"));
-	expect(await clearerDrawing(ordinary, refused)).toBe(await ordinary);
+	const refused = new Error("NativeRouteUnavailable: no route clear of obstacles");
+	expect(await clearerDrawing(ordinary, Promise.reject(refused))).toBe(await ordinary);
 	const fault = new Error("a fault in the ordinary drawing");
 	await expect(clearerDrawing(Promise.reject(fault), passing(160))).rejects.toBe(fault);
+	const first = new Error("NativeRouteUnavailable: the ordinary routing has no route");
+	const both = clearerDrawing(Promise.reject(first), Promise.reject(refused));
+	await expect(both).rejects.toBe(first);
 });
