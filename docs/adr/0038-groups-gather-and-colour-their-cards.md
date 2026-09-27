@@ -85,10 +85,9 @@ its first configured group even when only a later one is shared, and draws a
 region of its own there. A region round one card or container gathers nothing
 to pack, so the layout lays it out as that node with a larger box, the region's
 outline and caption inside that box, and carries each line on from the
-region's wall to the card's own face. Drawn as blocks, the board is laid out as it
-is decided without such regions, so a region round one node adds its room and
-turns no other choice of the layout; drawn inline, where the cards rank in one
-layout, it decided alike on every board
+region's wall to the card's own face. The board is laid out once, with such
+regions, and a region round one node adds its room without turning which ports
+move to side walls or which joins part
 ([layout rules, section 44](../design/layout-rules.md#44-a-region-round-one-node-2026-09-27)).
 
 A group's region is not drawn inside a region of the same group. A container

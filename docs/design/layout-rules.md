@@ -2253,28 +2253,29 @@ wall`).
   does, unless a line into the node crosses the band there; then as far
   left as its words stand a lane's room clear of every line, or less where
   the lines leave less (`captionIn`).
-- **Drawn as blocks, the board is laid out as it is decided without them**
-  (`solves.ts` `decidedWithout`): which joins part, which ports move to
-  side walls, how blocks pack and which port orders hold are chosen on the
-  board with no region round one node, and the board is drawn with its
-  regions keeping them; only whether ports settle is weighed again. The
-  room such a region takes moves the routes round it and the blocks packed
-  beside it, and each choice weighed on them could turn: What the CLI can
-  be asked (Blocks) parted four lines into Board client for a hop more and
-  21% more line, and Working with an agent (Blocks) moved four more ports to
-  side walls and stood Pane session off to the middle. Settled as the board
-  without its regions settled them, Command interface (Track) stepped four
-  lines twice more each. The board with its regions and every join whole,
-  the way 20 of 23 such drawings of both vaults keep, is laid out beside the choice,
-  deciding for itself; where the choice keeps that way and it decides
-  alike, as 18 of those 20 do, it is the drawing, and else the board is laid
-  out once more as decided. Laid out only after the choice, Command
-  interface (Blocks) drew in 895 ms where it drew in 724 without its
-  regions round one node.
-- **Drawn inline, the board decides with them.** Its cards rank in one
-  layout, and every drawing of both vaults decided alike with its regions
-  round one node and without: laid out twice, Browser application (Track)
-  drew in 639 ms where it drew in 340.
+- **The board decides in the layout it is drawn in**, with its regions
+  round one node, under both engines. Decided on the board without them
+  and laid out once more with them (`solves.ts`, `6e6dc768` to `2ac99f76`),
+  a drawing took one layout more than the board without its regions, and
+  its first render 26% to 56% longer: Command interface whole (Blocks) 775
+  → 1134 ms. The room such a region takes could turn two of the choices,
+  and those two keep it from turning them:
+  - **Which ports move to side walls** (`blocks/sides.ts` `facingOf`):
+    two blocks stand above one another where they stand apart by no less
+    than their regions round one node add to their height. A block beside
+    a column is centred on it, and in Working with an agent (Blocks) the
+    region round Pane session stood Voice 16 px up beside the cards over
+    Agent: the lines from Application composition into Voice moved to side
+    walls, Pane session stood off to the middle and the lines ran round
+    Voice. Every other move in both vaults stands its blocks at least
+    135 px beside each other.
+  - **Which joins part** (`joins.ts` `drawsBetter`): a join kept another way
+    is kept only where it draws no more line, as a packing is. With its
+    regions, What the CLI can be asked (Blocks) kept the lines into Board
+    writes apart for one crossing fewer and drew 18% more line, and Working
+    with an agent (Blocks) kept its joins into Agent apart to fit the pane
+    better, at a crossing more and 6% more line. No other drawing of either
+    vault turns.
 - **No region of a group inside that group's region** (`semantic-board`
   `gatheringGroups`). A container placed with a group stands in its region,
   and so does every member of the group inside it; the members are gathered

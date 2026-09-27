@@ -27,7 +27,7 @@ import {
 	type Graphviz,
 } from "@/transformers/semantic-renderer/lib/blocks/graphviz-once";
 import { corners, type Insets, type Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
-import { grownInsets, withoutLoneRegions } from "@/transformers/semantic-renderer/lib/blocks/lone";
+import { grownInsets } from "@/transformers/semantic-renderer/lib/blocks/lone";
 import { NestingSchema, type Nesting } from "@/transformers/semantic-renderer/lib/blocks/inline";
 import { bestWrap, weighed } from "@/transformers/semantic-renderer/lib/blocks/wraps";
 import {
@@ -284,7 +284,7 @@ interface Board {
  * @param graph The measured hierarchy.
  * @param nesting How containers and group regions are drawn.
  * @param apart The blocks whose joins keep ports of their own, by id.
- * @returns The blocks, every block laid out, and what the layout decided.
+ * @returns The blocks, every block laid out.
  */
 function layOut(
 	viz: Graphviz,
@@ -292,7 +292,7 @@ function layOut(
 	graph: ElkNode,
 	nesting: Nesting,
 	apart: ReadonlySet<string>,
-): { tree: BlockTree; laid: Map<string, Laid>; decided: Earlier } {
+): { tree: BlockTree; laid: Map<string, Laid> } {
 	const first = layAll(viz, avoid, graph, undefined, nesting, apart);
 	const exits = sidesOf(first.tree, first.laid);
 	const kept = { exits, packings: first.packings };
@@ -300,38 +300,11 @@ function layOut(
 	const orders = apart.size > 0 ? new Map() : heldOrders({ ...last, insetsOf, avoid });
 	const held =
 		orders.size === 0 ? [] : [layAll(viz, avoid, graph, { ...kept, orders }, nesting, apart)];
-	const [chosen, index] = [last, ...held]
-		.map((laying, at) => [settledOrNot(laying, avoid), at] as const)
+	return [last, ...held]
+		.map((laying) => settledOrNot(laying, avoid))
 		.reduce((one, other) =>
-			other[0].crossings < one[0].crossings && other[0].bends <= one[0].bends ? other : one,
+			other.crossings < one.crossings && other.bends <= one.bends ? other : one,
 		);
-	const decided = { ...kept, ...(index === 0 ? {} : { orders }) };
-	return { tree: chosen.tree, laid: chosen.laid, decided };
-}
-
-/**
- * Lay a measured hierarchy out as another layout decided it would be: its
- * exits, packings and held orders kept. Whether its ports settle is weighed
- * again: settled as the board without its regions round one node settled,
- * the four 'board operation' lines of Command interface (Track) stepped
- * twice more each.
- * @param viz The initialized Graphviz instance.
- * @param avoid The initialized libavoid module.
- * @param graph The measured hierarchy.
- * @param nesting How containers and group regions are drawn.
- * @param apart The blocks whose joins keep ports of their own, by id.
- * @param decided What the other layout decided.
- * @returns The blocks, every block laid out.
- */
-function layOutAs(
-	viz: Graphviz,
-	avoid: AvoidEngine,
-	graph: ElkNode,
-	nesting: Nesting,
-	apart: ReadonlySet<string>,
-	decided: Earlier,
-): { tree: BlockTree; laid: Map<string, Laid> } {
-	return settledOrNot(layAll(viz, avoid, graph, decided, nesting, apart), avoid);
 }
 
 /**
@@ -378,23 +351,13 @@ function settledOrNot(
 const BLOCKS_NESTING = "archboard.blocks.nesting";
 /** The root option naming the blocks whose joins a solve keeps apart, as a JSON list of ids (`joins.ts`). */
 const BLOCKS_APART = "archboard.blocks.apart";
-/**
- * The root option carrying what a solve decided (`layOut`), as JSON: on an
- * answer, what the layout it laid decided; on a question, what the layout it
- * asks for keeps (`layOutAs`).
- */
-const BLOCKS_DECIDED = "archboard.blocks.decided";
-/** The root option asking a solve to lay the board out without its regions round one node (`lone.ts`). */
-const BLOCKS_WITHOUT = "archboard.blocks.without";
 
 /**
  * Lay a measured hierarchy out as blocks one way and route every
  * relationship: its containers and group regions drawn as its root options
- * name, else packed as blocks, or inline when asked; the joins of the blocks
- * they name kept apart; and, as they ask, without its regions round one
- * node, or as another layout decided it. Which way reads best is chosen
- * where the renderer runs (`solves.ts`). The answer carries what the layout
- * decided, when it decided.
+ * name, else packed as blocks, or inline when asked; and the joins of the
+ * blocks they name kept apart. Which way reads best is chosen where the
+ * renderer runs (`solves.ts`).
  * @param viz The initialized Graphviz instance.
  * @param avoid The initialized libavoid module.
  * @param graph The measured hierarchy.
@@ -404,13 +367,9 @@ const BLOCKS_WITHOUT = "archboard.blocks.without";
  */
 function placeBlocks(viz: Graphviz, avoid: AvoidEngine, graph: ElkNode, inline = false): ElkNode {
 	const options = graph.layoutOptions ?? {};
-	const way = {
-		viz: answeringOnce(viz),
-		avoid,
-		nesting: NestingSchema.parse(options[BLOCKS_NESTING] ?? (inline ? "inline" : "blocks")),
-		apart: new Set(ApartSchema.parse(JSON.parse(options[BLOCKS_APART] ?? "[]"))),
-	};
-	const { tree, laid, decided } = laidAsAsked(way, graph, options);
+	const nesting = NestingSchema.parse(options[BLOCKS_NESTING] ?? (inline ? "inline" : "blocks"));
+	const apart = new Set(ApartSchema.parse(JSON.parse(options[BLOCKS_APART] ?? "[]")));
+	const { tree, laid } = layOut(answeringOnce(viz), avoid, graph, nesting, apart);
 	const placed = Assembly.unstepped(new Assembly(tree, laid).placed());
 	return {
 		id: graph.id,
@@ -418,93 +377,11 @@ function placeBlocks(viz: Graphviz, avoid: AvoidEngine, graph: ElkNode, inline =
 		y: 0,
 		width: placed.width,
 		height: placed.height,
-		layoutOptions: {
-			...options,
-			[BLOCKS_PLACED]: JSON.stringify(placed),
-			...decidedOptions(decided),
-		},
+		layoutOptions: { ...graph.layoutOptions, [BLOCKS_PLACED]: JSON.stringify(placed) },
 	};
-}
-
-/**
- * A board laid out as its root options ask: as another layout decided it,
- * or else deciding for itself, without its regions round one node where
- * asked.
- * @param way How it is laid out.
- * @param graph The measured hierarchy.
- * @param options Its root options.
- * @returns The blocks, every block laid out, and what the layout decided when it decided.
- */
-function laidAsAsked(
-	way: Way,
-	graph: ElkNode,
-	options: Record<string, string>,
-): { tree: BlockTree; laid: Map<string, Laid>; decided?: Earlier } {
-	const { viz, avoid, nesting, apart } = way;
-	const asked = options[BLOCKS_DECIDED];
-	if (asked !== undefined) return layOutAs(viz, avoid, graph, nesting, apart, earlierOf(asked));
-	const plain = options[BLOCKS_WITHOUT] === undefined ? undefined : withoutLoneRegions(graph);
-	return layOut(viz, avoid, plain ?? graph, nesting, apart);
-}
-
-/** How a solve lays a board out: Graphviz, libavoid, how it nests, and which joins part. */
-interface Way {
-	readonly viz: Graphviz;
-	readonly avoid: AvoidEngine;
-	readonly nesting: Nesting;
-	readonly apart: ReadonlySet<string>;
 }
 
 /** The blocks a solve keeps apart. */
 const ApartSchema = z.array(z.string());
 
-/** What a layout decided, as a solve carries it. */
-const DecidedSchema = z.object({
-	exits: z.array(z.tuple([z.string(), z.enum(["top", "bottom", "left", "right"])])),
-	packings: z.array(
-		z.tuple([
-			z.string(),
-			z.object({
-				across: z.boolean(),
-				groups: z.array(z.array(z.number())),
-				gap: z.number().exactOptional(),
-				margin: z.number().exactOptional(),
-				aligned: z.boolean().exactOptional(),
-			}),
-		]),
-	),
-	orders: z.array(z.tuple([z.string(), z.array(z.string())])).optional(),
-});
-
-/**
- * The answer's option that carries what its layout decided.
- * @param decided What it decided, if it decided.
- * @returns The option, as JSON; none when it laid out as another layout decided.
- */
-function decidedOptions(decided: Earlier | undefined): Record<string, string> {
-	if (decided === undefined) return {};
-	const { exits, packings, orders } = decided;
-	return {
-		[BLOCKS_DECIDED]: JSON.stringify({
-			exits: [...exits],
-			packings: [...packings],
-			...(orders === undefined ? {} : { orders: [...orders] }),
-		}),
-	};
-}
-
-/**
- * What a layout decided, read back from a solve.
- * @param json What it decided, as JSON.
- * @returns It.
- */
-function earlierOf(json: string): Earlier {
-	const { exits, packings, orders } = DecidedSchema.parse(JSON.parse(json));
-	return {
-		exits: new Map(exits),
-		packings: new Map(packings),
-		...(orders === undefined ? {} : { orders: new Map(orders) }),
-	};
-}
-
-export { BLOCKS_APART, BLOCKS_DECIDED, BLOCKS_NESTING, BLOCKS_PLACED, BLOCKS_WITHOUT, placeBlocks };
+export { BLOCKS_APART, BLOCKS_NESTING, BLOCKS_PLACED, placeBlocks };
