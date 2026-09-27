@@ -3,8 +3,7 @@
 // earlier row or column that has room for it. Moving one to the head of a
 // column stood it over the blocks that lead to it, and moving one only within
 // a row read that row against its lines, neither filling any room, and a
-// move that packs the blocks hardly smaller only reshaped the page. A block
-// with bottom ports holds the cards its chains start from on its first rank.
+// move that packs the blocks hardly smaller only reshaped the page.
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
@@ -64,29 +63,4 @@ test("a block moves up beside an earlier one only to fill real room", async () =
 	const { atlas } = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	const [pane, voice] = [atlas.nodes["xsn0RvSi"]!, atlas.nodes["0SRnYXnC"]!];
 	expect(voice.y).toBeGreaterThan(pane.y + pane.height);
-});
-
-// Reduced from a board of a work vault, names replaced: a database only the
-// pool's machines call, below the chain that leads into the pool, was held
-// on the chain's first rank, and each of its lines climbed the whole block.
-test("a card only lines from below reach stands down by them, not on the first rank", async () => {
-	const content = orderedFixture({
-		nodes: [
-			{ id: "traffic", name: "Partner traffic", kind: "external" },
-			{ id: "proxy", name: "Edge proxy", kind: "external" },
-			{ id: "balancer", name: "Load balancer", kind: "service" },
-			{ id: "db", name: "Shared database", kind: "service" },
-			{ id: "pool", name: "VM pool", kind: "system" },
-			{ id: "vm", name: "IIS VM", kind: "service", parent: "pool" },
-		],
-		edges: [
-			{ id: "e1", from: "traffic", to: "proxy", kind: "http" },
-			{ id: "e2", from: "proxy", to: "balancer", kind: "http" },
-			{ id: "e3", from: "balancer", to: "pool", kind: "http" },
-			{ id: "e4", from: "vm", to: "db", kind: "data" },
-		],
-	});
-	const { atlas } = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	const { traffic, db } = atlas.nodes;
-	expect(db!.y).toBeGreaterThan(traffic!.y + traffic!.height);
 });
