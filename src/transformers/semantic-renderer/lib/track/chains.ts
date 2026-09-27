@@ -427,19 +427,49 @@ function freeWithout(scene: Scene, runs: readonly LaneRun[], left: LaneRun): Occ
 
 /**
  * Move the run of lanes a lane belongs to onto a column, when that column is
- * free on every band the run passes.
+ * free on every band the run passes, or only the piece of it the lane stands
+ * in ({@link piecesOf}), which leaves the run's other pieces and their steps
+ * where they are.
  * @param scene The scene.
  * @param chains Every relationship's chain.
  * @param lane The lane.
  * @param x The column.
- * @returns Whether the run moved.
+ * @param piece Whether only the lane's piece moves.
+ * @returns Whether it moved.
  */
-function moveRun(scene: Scene, chains: readonly Chain[], lane: Station, x: number): boolean {
+function moveRun(
+	scene: Scene,
+	chains: readonly Chain[],
+	lane: Station,
+	x: number,
+	piece = false,
+): boolean {
 	const runs = laneRuns(chains);
 	const run = runs.find(({ lanes }) => lanes.includes(lane));
-	if (run === undefined || !freeWithout(scene, runs, run).fits(run, x)) return false;
-	for (const each of run.lanes) each.x = x;
+	if (run === undefined) return false;
+	const moving = piece ? piecesOf(run).find(({ lanes }) => lanes.includes(lane))! : run;
+	if (!freeWithout(scene, runs, run).fits(moving, x)) return false;
+	for (const each of moving.lanes) each.x = x;
 	return true;
+}
+
+/**
+ * A run's lanes in pieces, each the lanes that stand on one column, with the
+ * stations either side of it.
+ * @param run The run.
+ * @returns The pieces, top to bottom.
+ */
+function piecesOf(run: LaneRun): LaneRun[] {
+	const pieces: LaneRun[] = [];
+	let start = 0;
+	run.lanes.forEach((lane, index) => {
+		const next = run.lanes[index + 1];
+		if (next !== undefined && next.x === lane.x) return;
+		const before = run.lanes[start - 1] ?? run.before;
+		pieces.push({ lanes: run.lanes.slice(start, index + 1), before, after: next ?? run.after });
+		start = index + 1;
+	});
+	return pieces;
 }
 
 /**
@@ -545,6 +575,7 @@ export {
 	meetsAt,
 	meets,
 	moveRun,
+	piecesOf,
 	nearest,
 	reachOf,
 	runOf,

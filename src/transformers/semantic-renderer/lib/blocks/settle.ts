@@ -33,7 +33,7 @@ import {
 	type Span,
 } from "@/transformers/semantic-renderer/lib/blocks/open-edge";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
-import { spreadPorts } from "@/transformers/semantic-renderer/lib/track/channels";
+import { portReach } from "@/transformers/semantic-renderer/lib/track/channels";
 
 /** What settling reads and writes: every block laid out, and how each block of blocks is packed. */
 interface Settling {
@@ -289,8 +289,7 @@ class Settle {
 		}
 		const card = tree.cards.has(other) ? inner.boxes.get(other) : undefined;
 		if (card === undefined) return undefined;
-		const [low, high] = spreadPorts(card, [-Infinity, Infinity]);
-		return [low!, high!];
+		return portReach(card);
 	}
 
 	/**
@@ -349,10 +348,8 @@ class Settle {
 
 	/**
 	 * Where one end of a line settling a pin may stand: in a block of cards
-	 * drawn inline, an end facing a pin stands where the block routed the line
-	 * first turning from that pin, so the pin moves onto the line, and the pin
-	 * only where the line can reach it straight ({@link Settle.clearOf}); else
-	 * its span ({@link Settle.spanIn}).
+	 * drawn inline, the pin only where the line can reach it straight
+	 * ({@link Settle.clearOf}); else its span ({@link Settle.spanIn}).
 	 * @param block The block of blocks.
 	 * @param line The end, the line's other end and the line's key.
 	 * @param line.end The end.
@@ -368,9 +365,9 @@ class Settle {
 	): Span {
 		const { end, other, key } = line;
 		const { pins } = this.settling.tree;
-		const inline = this.cardsInline(block) && pins.has(end) !== pins.has(other);
-		if (inline && pins.has(end)) return this.clearOf(block, end, key, this.spanIn(block, end, own));
-		return (inline ? this.turnsOf(block, other, [key]) : undefined) ?? this.spanIn(block, end, own);
+		const span = this.spanIn(block, end, own);
+		const inline = this.cardsInline(block) && pins.has(end) && !pins.has(other);
+		return inline ? this.clearOf(block, end, key, span) : span;
 	}
 
 	/**
@@ -416,6 +413,35 @@ class Settle {
 	}
 
 	/**
+	 * Whether where a trunk's end stands now means anything: all but a pin on
+	 * a port no line inside its block runs through, the port a relationship
+	 * to the container itself makes, which stands wherever its block put it.
+	 * @param end The end.
+	 * @returns True when it does.
+	 */
+	holds(end: string): boolean {
+		const pin = this.settling.tree.pins.get(end);
+		if (pin === undefined) return true;
+		return [...pin.block.lines.values()].some(
+			({ from, to }) => from === pin.port || to === pin.port,
+		);
+	}
+
+	/**
+	 * Where a trunk stands now: between its ends that hold where they stand
+	 * ({@link Settle.holds}), or between both when neither does.
+	 * @param block The block of blocks.
+	 * @param ends The trunk's ends.
+	 * @param own Where the block's own ports were settled.
+	 * @returns The x.
+	 */
+	standing(block: Block, ends: readonly string[], own: ReadonlyMap<string, number>): number {
+		const held = ends.filter((end) => this.holds(end));
+		const standing = held.length > 0 ? held : ends;
+		return standing.reduce((sum, end) => sum + this.nowIn(block, end, own), 0) / standing.length;
+	}
+
+	/**
 	 * Where every port of the blocks inside a block of blocks is settled: for
 	 * each trunk between two ends, where they face each other, and on each
 	 * edge a lane apart in the order they want.
@@ -429,7 +455,7 @@ class Settle {
 		for (const line of block.lines.values()) {
 			const ends = [line.tail, line.head];
 			if (!this.settles(block, ends)) continue;
-			const now = (this.nowIn(block, ends[0]!, own) + this.nowIn(block, ends[1]!, own)) / 2;
+			const now = this.standing(block, ends, own);
 			const [one, other] = ends.map((end, index) =>
 				this.endIn(block, { end, other: ends[1 - index]!, key: line.key }, own),
 			);
@@ -542,6 +568,25 @@ class Settle {
 }
 
 /**
+ * Where settling stands every movable inner block's ports, walked as it walks, routing nothing.
+ * @param settling The blocks, laid out; nothing is changed.
+ * @returns Each inner block's settled ports, by block.
+ */
+function settledPorts(settling: Settling): Map<string, Map<string, number>> {
+	const settle = new Settle(settling);
+	const out = new Map<string, Map<string, number>>();
+	const walk: [Block, ReadonlyMap<string, number>][] = [[settling.tree.root, new Map()]];
+	for (const [block, own] of walk) {
+		if (!settling.packings.has(block.id)) continue;
+		for (const [item, ports] of settle.settleIn(block, own)) {
+			out.set(item, ports);
+			walk.push([settling.tree.blocks.get(item)!, ports]);
+		}
+	}
+	return out;
+}
+
+/**
  * Settle every port on a block's top and bottom where both ends of its
  * trunk are known, and route every block again with its ports there.
  * @param settling The blocks, laid out; their layouts are replaced.
@@ -550,4 +595,4 @@ function settlePorts(settling: Settling): void {
 	new Settle(settling).block(settling.tree.root, new Map());
 }
 
-export { settlePorts };
+export { settlePorts, settledPorts, type Settling };

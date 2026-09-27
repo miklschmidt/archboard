@@ -3,20 +3,19 @@
 // thread reads it.
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import {
+	CAPTION_INSET,
 	corners,
 	moved,
 	shifted,
 	type Laid,
 } from "@/transformers/semantic-renderer/lib/blocks/laid";
+import { unstepped } from "@/transformers/semantic-renderer/lib/blocks/steps";
 import {
 	headerOf,
 	type Block,
 	type BlockTree,
 	type Projection,
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
-
-/** How far a region's caption sits in from its band's corner. */
-const CAPTION_INSET = 4;
 
 /** A card or container, placed. */
 interface PlacedNode {
@@ -49,6 +48,13 @@ interface Placed {
 	readonly frames: readonly PlacedNode[];
 	readonly regions: readonly PlacedRegion[];
 	readonly edges: readonly PlacedEdge[];
+	readonly titles: readonly Title[];
+}
+
+/** A container's title row, and the band across the container's top it stands in. */
+interface Title {
+	readonly box: Box;
+	readonly band: Box;
 }
 
 /**
@@ -240,6 +246,56 @@ class Assembly {
 			frames: this.frames(),
 			regions: this.regions(),
 			edges: this.tree.projections.map((projection) => this.joined(projection)),
+			titles: this.titles(),
+		};
+	}
+
+	/**
+	 * Every container's title row and the band across its top it stands in, in the drawing.
+	 * @returns Each title's box and its band's.
+	 */
+	titles(): Title[] {
+		const inline = [...this.tree.blocks.values()].flatMap((block) => {
+			const { frames, boxes } = this.laid.get(block.id)!;
+			return (frames ?? [])
+				.filter(({ id }) => boxes.has(`title:${id}`))
+				.map(({ id, box }) => ({
+					title: this.inside(block, `title:${id}`),
+					frame: moved(box, this.origins.get(block.id)!),
+				}));
+		});
+		const framed = [...this.tree.blocks.values()]
+			.filter((block) => block.kind === "frame")
+			.map((block) => ({ title: this.inside(block, headerOf(block)), frame: this.boxOf(block) }));
+		return [...framed, ...inline].map(({ title, frame }) => ({
+			box: title,
+			band: { ...frame, height: title.y + title.height - frame.y },
+		}));
+	}
+
+	/**
+	 * The drawing with the steps its joined lines need not take taken out (`steps.ts`).
+	 * @param placed The drawing's geometry.
+	 * @returns It, its lines unstepped.
+	 */
+	static unstepped(placed: Placed): Placed {
+		const boxes = [
+			...placed.cards.map(({ box }) => box),
+			...placed.regions.map(({ caption }) => caption),
+			...placed.titles.map(({ box }) => box),
+		];
+		const walls = [...placed.frames, ...placed.regions].map(({ box }) => box);
+		const bands = [
+			...placed.titles.map(({ band }) => band),
+			...placed.regions.map(({ box, caption }) => ({
+				...box,
+				height: caption.y + caption.height - box.y,
+			})),
+		];
+		const routes = unstepped(placed.edges, { boxes, walls, bands });
+		return {
+			...placed,
+			edges: placed.edges.map((edge, index) => ({ ...edge, points: routes[index]! })),
 		};
 	}
 }

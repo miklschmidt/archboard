@@ -5,7 +5,7 @@
 // Graphviz stacks the rows and keeps the columns straight.
 import type { Edge } from "@viz-js/viz";
 import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
-import { EMPTY_CHANNEL } from "@/transformers/semantic-renderer/lib/track/route";
+import { EMPTY_CHANNEL } from "@/transformers/semantic-renderer/lib/track/spacing";
 
 /** The fewest loose cards set out as a grid rather than left on one rank. */
 const MIN_GRID = 4;

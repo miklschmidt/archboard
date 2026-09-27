@@ -3,7 +3,10 @@
 // lower track and goes on down draws one line with a kink, however their
 // tracks are ordered. One end of the pair moves a lane aside, or onto its own
 // line's column, by the moves that close jogs (jogs.ts), when that parts more
-// such pairs than it makes and crosses nothing. Two lines that end at one
+// such pairs than it makes and crosses nothing. A pair no such move parts
+// is tried again moving only the piece of a run of lanes on the stretch, so a
+// line whose run steps elsewhere, as round a label, parts where it meets the
+// other without that step having to move too. Two lines that end at one
 // point, as at a block's one-point port, are drawn joined there and are never
 // parted.
 import { LANE, type Chain } from "@/transformers/semantic-renderer/lib/track/chains";
@@ -129,6 +132,7 @@ function stretchesBeyond(
  * @param entering Where the entering net is.
  * @param entering.route Its line.
  * @param entering.index Its place in it.
+ * @param piece Whether a run of lanes moves only the piece of it on the stretch.
  * @returns Whether they parted.
  */
 function part(
@@ -137,6 +141,7 @@ function part(
 	routes: readonly (readonly Net[])[],
 	leaving: Place,
 	entering: Place,
+	piece: boolean,
 ): boolean {
 	const nets = routes.flat();
 	const [up, down] = [leaving.route[leaving.index]!, entering.route[entering.index]!];
@@ -171,13 +176,16 @@ function part(
 				x,
 				// A lane aside opens a 16 px step on purpose: only a notch is new.
 				notched,
+				piece,
 				() => collinearPairs(nets) < count && swapped(nets) <= crossing,
 			),
 	);
 }
 
 /**
- * Part every pair of lines that read as one where a move can.
+ * Part every pair of lines that read as one where a move can: moving whole
+ * runs of lanes first, then, for the pairs still reading as one, only the
+ * pieces of runs a stretch stands on.
  * @param scene The scene, its ports and labels placed.
  * @param chains Every relationship's chain.
  * @param routes Every line's nets, top to bottom.
@@ -188,14 +196,15 @@ function partCollinear(
 	routes: readonly (readonly Net[])[],
 ): void {
 	const places = routes.flatMap((route) => route.map((net, index) => ({ net, route, index })));
-	for (let pass = 0; pass < PASSES; pass += 1) {
-		const parted = places.flatMap((leaving) =>
-			places
-				.filter((entering) => collinear(leaving.net, entering.net))
-				.map((entering) => part(scene, chains, routes, leaving, entering)),
-		);
-		if (!parted.some(Boolean)) return;
-	}
+	for (const piece of [false, true])
+		for (let pass = 0; pass < PASSES; pass += 1) {
+			const parted = places.flatMap((leaving) =>
+				places
+					.filter((entering) => collinear(leaving.net, entering.net))
+					.map((entering) => part(scene, chains, routes, leaving, entering, piece)),
+			);
+			if (!parted.some(Boolean)) break;
+		}
 }
 
 export { collinearPairs, partCollinear };

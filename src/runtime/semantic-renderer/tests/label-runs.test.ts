@@ -4,10 +4,14 @@ import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { LayoutEngineSchema } from "@/shared/semantic-board/index";
 import reservedCorner from "./reserved-label-corner.json";
 import reservedLane from "./reserved-label-lane.json";
+import archboardServer from "./archboard-server.json";
+import oneCommandPath from "./one-command-path.json";
 import { covering, overlaps } from "@/runtime/semantic-renderer/tests/drawn-labels";
 import { labelsOffRuns } from "@/runtime/semantic-renderer/tests/drawn-ink";
 import { drawnTexts } from "@/runtime/semantic-renderer/tests/drawn-text";
 import {
+	corridorPoints,
+	distanceToRoute,
 	routeCrosses,
 	routeLabels,
 	routePoints,
@@ -128,4 +132,33 @@ test("reserved labels follow their shared lanes without covering routes, cards o
 	expect(labelsOffRuns(drawing)).toEqual([]);
 	expect(covering(drawing)).toEqual([]);
 	expect(overlaps(drawing, content)).toEqual([]);
+});
+
+// Reduced from the dogfood vault: a channel grows for a line that turns in it
+// anywhere across the block, so a label on a straight line far from that turn
+// stood twice as far from one card as from the other.
+test("a label on a straight line stands in the middle of the gap between its cards", async () => {
+	const content = orderedFixture(oneCommandPath);
+	const drawn = await renderArchitecture({ content, theme: "light", layout: "blocks" });
+	const labels = routeLabels(drawn.svg);
+	for (const id of ["kcqc65Ye", "EBy8Rjwh"]) {
+		const edge = content.edges.find((one) => one.id === id)!;
+		const [from, to] = [drawn.atlas.nodes[edge.from]!, drawn.atlas.nodes[edge.to]!];
+		const label = labels.get(id)!;
+		const above = label.y - (from.y + from.height);
+		const below = to.y - (label.y + label.height);
+		expect(Math.abs(above - below)).toBeLessThanOrEqual(1);
+	}
+});
+
+// Taken from a board of this repository: moved to the middle of its gap, the
+// row holding 'one socket per page' ran into a channel where another line
+// turns beside the row, and the label sat half a lane from that line.
+test("a row of labels moves toward its gap's middle only as far as the lines turning there leave it a lane", async () => {
+	const content = orderedFixture(archboardServer);
+	const drawn = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const label = routeLabels(drawn.svg).get("ENymHNDK")!;
+	const others = [...corridorPoints(drawn.svg)].filter(([id]) => id !== "ENymHNDK");
+	const nearest = Math.min(...others.map(([, points]) => distanceToRoute(label, points)));
+	expect(nearest).toBeGreaterThanOrEqual(16);
 });

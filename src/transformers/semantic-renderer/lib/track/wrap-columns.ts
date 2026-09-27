@@ -245,7 +245,7 @@ function shiftsAside(columns: Columns, join: Join, card: string): number[] {
 
 /**
  * Step one lowered card out of a line's way, by the least that opens a
- * column, where it crowds nothing and keeps its own straight lines straight.
+ * column, where it crowds nothing.
  * The lines Graphviz drew past it are not asked: they are routed again.
  * @param columns The placed items.
  * @param join The line.
@@ -254,14 +254,11 @@ function shiftsAside(columns: Columns, join: Join, card: string): number[] {
  */
 function stepAside(columns: Columns, join: Join, card: string): boolean {
 	const was = columns.boxes.get(card)!;
-	const own = linesOf(columns, card).filter(
-		(line) => columns.stacked().includes(line) && straight(columns, line),
-	);
 	return shiftsAside(columns, join, card).some((shift) => {
 		const at = { ...was, x: was.x + shift };
 		if (!columns.roomy(card, at)) return false;
 		columns.boxes.set(card, at);
-		if (straight(columns, join) && own.every((line) => straight(columns, line))) return true;
+		if (straight(columns, join)) return true;
 		columns.boxes.set(card, was);
 		return false;
 	});

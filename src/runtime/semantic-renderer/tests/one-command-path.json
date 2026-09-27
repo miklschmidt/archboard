@@ -1,0 +1,206 @@
+{
+	"nodes": [
+		{
+			"id": "vAQwlVuz",
+			"order": 1000,
+			"name": "Bootstrap",
+			"kind": "module",
+			"responsibility": "Takes the server address out of argv into the environment before any module that reads it loads"
+		},
+		{
+			"id": "iIVu1bGE",
+			"order": 2000,
+			"name": "Command catalogue",
+			"kind": "module",
+			"responsibility": "The one table of commands: what exists, what it takes and who owns it"
+		},
+		{
+			"id": "PQcK5dF2",
+			"order": 3000,
+			"name": "Command routing",
+			"kind": "module",
+			"responsibility": "Addresses one command, captures the global flags and bounds the run",
+			"drillDown": {
+				"board": "Command dispatch",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "E2MAq7W7",
+			"order": 4000,
+			"name": "Contract execution",
+			"kind": "module",
+			"responsibility": "Parses and validates a command's input, runs its handler with the prerequisites it asks for, and presents the answer",
+			"description": "runner.ts is the seam callers import; the steps live here."
+		},
+		{
+			"id": "cWbvcIYa",
+			"order": 5000,
+			"name": "Semantic authoring",
+			"kind": "module",
+			"responsibility": "The board list, new, edit, branch and show: the commands that state a board and read it back",
+			"groups": ["writes"]
+		},
+		{
+			"id": "OfRn3av3",
+			"order": 6000,
+			"name": "Board client",
+			"kind": "module",
+			"responsibility": "The board routes: reads, writes, renders and the vault check, and the refusals they come back with"
+		},
+		{
+			"id": "MUs4pwRq",
+			"order": 8000,
+			"name": "Archboard server",
+			"kind": "service",
+			"responsibility": "Owns every board and answers every command that reads or writes one",
+			"drillDown": {
+				"board": "Archboard server",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "peyArgPx",
+			"order": 16000,
+			"name": "Entry point",
+			"kind": "module",
+			"responsibility": "Takes --url out of argv before any configuration loads, refuses a retired server variable, then runs the table"
+		},
+		{
+			"id": "iIJ5MRhi",
+			"order": 17000,
+			"name": "Server client",
+			"kind": "module",
+			"responsibility": "Health, claims and panes, and the one request path every call to the Archboard server takes",
+			"description": "The typed surface for everything but board content. Its transport checks the server's identity and shapes its errors; the board, doing line, expected version and writing session the invocation stated ride on every request from here."
+		}
+	],
+	"edges": [
+		{
+			"id": "SWg7BPZu",
+			"order": 1000,
+			"from": "peyArgPx",
+			"to": "iIVu1bGE",
+			"kind": "call",
+			"label": "argv, and what bootstrap took",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "WUygSWX0",
+			"order": 2000,
+			"from": "iIVu1bGE",
+			"to": "PQcK5dF2",
+			"kind": "call",
+			"label": "argv",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "jKqNz2j3",
+			"order": 3000,
+			"from": "PQcK5dF2",
+			"to": "E2MAq7W7",
+			"kind": "call",
+			"label": "the selected contract",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "kcqc65Ye",
+			"order": 4000,
+			"from": "E2MAq7W7",
+			"to": "cWbvcIYa",
+			"kind": "call",
+			"label": "validated input",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "ytXRvhS3",
+			"order": 5000,
+			"from": "cWbvcIYa",
+			"to": "OfRn3av3",
+			"kind": "call",
+			"label": "board operation",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "pB6BrbXY",
+			"order": 6000,
+			"from": "iIJ5MRhi",
+			"to": "MUs4pwRq",
+			"kind": "http",
+			"label": "JSON",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "VN95JmCC",
+			"order": 22000,
+			"from": "peyArgPx",
+			"to": "vAQwlVuz",
+			"kind": "call",
+			"label": "take --url",
+			"emphasis": "normal",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "EBy8Rjwh",
+			"order": 23000,
+			"from": "OfRn3av3",
+			"to": "iIJ5MRhi",
+			"kind": "call",
+			"label": "requestJson",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "REIYPxdO",
+			"order": 24000,
+			"from": "PQcK5dF2",
+			"to": "iIJ5MRhi",
+			"kind": "call",
+			"label": "the stated board, doing and version",
+			"emphasis": "muted"
+		},
+		{
+			"id": "lkwXJ78e",
+			"order": 25000,
+			"from": "E2MAq7W7",
+			"to": "MUs4pwRq",
+			"kind": "call",
+			"label": "start it when nothing answers",
+			"emphasis": "muted"
+		}
+	]
+}

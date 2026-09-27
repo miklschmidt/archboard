@@ -389,6 +389,71 @@ function cornersOf(points: readonly DrawnPoint[]): DrawnPoint[] {
 	return [points[0]!, ...turns, points.at(-1)!];
 }
 
+/**
+ * How many times a route turns: its points off the straight line through
+ * their neighbours.
+ * @param points The route's corridor.
+ * @returns Its turns.
+ */
+function turnsOf(points: readonly DrawnPoint[]): number {
+	return points.slice(1, -1).filter((point, index) => {
+		const [before, after] = [points[index]!, points[index + 2]!];
+		const straight =
+			(before.x === point.x && point.x === after.x) ||
+			(before.y === point.y && point.y === after.y);
+		return !straight;
+	}).length;
+}
+
+/**
+ * A route's runs, each from one point to the next.
+ * @param points The route.
+ * @returns Its runs.
+ */
+function runsBetween(points: readonly DrawnPoint[]): (readonly [DrawnPoint, DrawnPoint])[] {
+	return points.slice(1).map((to, index) => [points[index]!, to] as const);
+}
+
+/**
+ * Whether a value lies strictly between two others, half a unit in.
+ * @param value The value.
+ * @param one One bound.
+ * @param other The other.
+ * @returns True when it does.
+ */
+function strictlyBetween(value: number, one: number, other: number): boolean {
+	return value > Math.min(one, other) + 0.5 && value < Math.max(one, other) - 0.5;
+}
+
+/**
+ * Whether two drawn routes cross at a right angle, strictly inside both runs.
+ * @param one A route's corridor.
+ * @param other Another's.
+ * @returns True when they do.
+ */
+function routesCross(one: readonly DrawnPoint[], other: readonly DrawnPoint[]): boolean {
+	return runsBetween(one).some(([from, to]) =>
+		runsBetween(other).some(([start, end]) => {
+			const [level, upright] =
+				from.y === to.y
+					? [
+							[from, to],
+							[start, end],
+						]
+					: [
+							[start, end],
+							[from, to],
+						];
+			return (
+				level[0]!.y === level[1]!.y &&
+				upright[0]!.x === upright[1]!.x &&
+				strictlyBetween(upright[0]!.x, level[0]!.x, level[1]!.x) &&
+				strictlyBetween(level[0]!.y, upright[0]!.y, upright[1]!.y)
+			);
+		}),
+	);
+}
+
 export {
 	type DrawnPoint,
 	cornersOf,
@@ -402,5 +467,7 @@ export {
 	routeEnds,
 	routeLabels,
 	routePoints,
+	routesCross,
 	sharedStretches,
+	turnsOf,
 };
