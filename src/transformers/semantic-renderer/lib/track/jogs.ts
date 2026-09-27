@@ -9,6 +9,10 @@
 // that would bend a line that ran straight on the moved station's other side
 // is not made.
 //
+// A step of any width that turns a line back against its last step is closed
+// the same way: the line ran out one way to its label and back the other to
+// reach its card.
+//
 // A card a line enters on top and another leaves at the bottom a few points
 // over is such a step too: the two read as one line through the card with a
 // notch in it, and one end moves onto the other's column.
@@ -73,6 +77,20 @@ const KINK = 2 * LANE;
  */
 function kinked(net: Net): boolean {
 	return step(net) > STRAIGHT && step(net) <= KINK + STRAIGHT;
+}
+
+/**
+ * Whether a net steps back against the line's last step before it: the line
+ * runs out one way and back the other.
+ * @param route The line's nets, top to bottom.
+ * @param index The net's place in it.
+ * @returns True when it does.
+ */
+function turnsBack(route: readonly Net[], index: number): boolean {
+	const net = route[index]!;
+	const before = route.slice(0, index).findLast((one) => step(one) > STRAIGHT);
+	if (before === undefined || step(net) <= STRAIGHT) return false;
+	return Math.sign(net.bottomX - net.topX) !== Math.sign(before.bottomX - before.topX);
 }
 
 /**
@@ -509,7 +527,7 @@ function closeJogs(
 	for (let pass = 0; pass < PASSES; pass += 1) {
 		const closed = routes.flatMap((route) =>
 			route.map((net, index) =>
-				kinked(net) && net.wall === undefined
+				(kinked(net) || turnsBack(route, index)) && net.wall === undefined
 					? close(scene, chains, routes, { route, index }, kept)
 					: false,
 			),
