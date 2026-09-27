@@ -11,6 +11,7 @@ export {
 } from "@/transformers/semantic-renderer/lib/layout/curves";
 export {
 	COMPOUND_OPTIONS,
+	compoundGraph,
 	PINNED_STANDING,
 } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 export { improveProjection } from "@/transformers/semantic-renderer/lib/layout/label-projections";

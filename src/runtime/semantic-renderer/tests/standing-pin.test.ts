@@ -19,6 +19,7 @@ import type { ElkNode } from "@archboard/elk-rs";
 import { AvoidLib } from "libavoid-js";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
+	compoundGraph,
 	finished,
 	PINNED_STANDING,
 	requestOptions,
@@ -205,4 +206,28 @@ test("a pin pass clears each card it can, and a line may turn once more to leave
 		new Set(["a", "b"]),
 	);
 	expect(done.reading).toEqual(["a"]);
+});
+
+test("a card wears a standing pin only when the proposal marks it", () => {
+	const standings = { kept: "unchanged", added: "added" } as const;
+	const ids = ["kept", "added", "plain"];
+	const content = orderedFixture({
+		nodes: ids.map((id) => ({ id, name: id, kind: "module" })),
+		edges: [],
+	});
+	const measured = {
+		nodes: new Map(
+			content.nodes.map((node) => [
+				node.id,
+				{ node, width: 200, height: 60, headerHeight: 0, runs: [] },
+			]),
+		),
+		labels: new Map(),
+		lines: new Map(),
+	};
+	const graph = compoundGraph(content, measured, standings);
+	const wearing = graph.children!.filter(
+		({ layoutOptions }) => layoutOptions?.[PINNED_STANDING] === "true",
+	);
+	expect(wearing.map(({ id }) => id)).toEqual(["added"]);
 });
