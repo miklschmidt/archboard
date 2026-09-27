@@ -15,19 +15,22 @@
 // reserved rows kept its crossings down, so it stayed 2734 wide instead of
 // 2156 and drew 24 crossings instead of 15. Each reading is therefore settled
 // and finished both ways (compound.ts) and the tidier drawing is kept. It may
-// have no more of any defect a reader sees: crossings, unrelated lines that
-// read as one, the length they share a stroke over, and hooks into a card's
-// side. Evened pins that saved crossings kept a 450 px trunk of two unrelated
-// lines in Command interface, and finishing only the settlement chosen left
-// the other no chance to cure its trunks (What the CLI can be asked). Among
-// drawings with no more of any, the one with fewer defects together, ports
-// beside a card's corner counted too, is kept; then fewer line ends across
-// the reading direction, so a fan into the cards below a card is not traded
-// for side exits with a bend fewer (Skill evaluation's "Grading"); then fewer
-// bends, then less line. A drawing that saves defects by growing its page or
-// its lines by more than each saved defect is worth is not tidier (Command
-// dispatch took a page a third taller with a third more line to save two
-// crossings).
+// have no more of any defect a reader sees: crossings; unrelated lines that
+// read as one, on one stroke, side by side or touching, and a fan's branches
+// crowded into one blot; the length unrelated lines share a stroke over; and
+// hooks into a card's side. Evened pins that saved crossings kept a 450 px
+// trunk of two unrelated lines in Command interface, and finishing only the
+// settlement chosen left the other no chance to cure its trunks (What the
+// CLI can be asked). Among drawings with no more of any, the one with fewer
+// crossings, hooks and ports beside a card's corner together is kept; then
+// fewer line ends across the reading direction, so a fan into the cards below
+// a card is not traded for side exits with a bend fewer (Skill evaluation's
+// "Grading"); then fewer bends, then less line. A challenger that ranks no
+// better is kept only for defects the rank does not count that it cures (the
+// labels a cleared drawing clears, label-clearance.ts). A drawing that saves
+// defects by growing its page or its lines by more than each saved defect is
+// worth is not tidier (Command dispatch took a page a third taller with a
+// third more line to save two crossings).
 import type { ArchitectureDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { eitherRouting } from "@/transformers/semantic-renderer/lib/layout/checked-routes";
@@ -117,14 +120,14 @@ function lineLength(drawing: ArchitectureDrawing): number {
 
 /**
  * What a drawing may have no more of than the drawing it would replace: drawn
- * crossings, pairs of lines a reader takes for one (unrelated lines on one
- * stroke or side by side within half a lane, and lines that touch), the
- * lanes' worth of line
- * drawn on one stroke, and line ends hooking into a card's side. Ranked on
+ * crossings; pairs of lines a reader takes for one (unrelated lines on one
+ * stroke or side by side within half a lane, and lines that touch) together
+ * with pairs of joins crowded into one blot; the lanes' worth of line drawn
+ * on one stroke; and line ends hooking into a card's side. Ranked on
  * crossings seen alone, evened pins kept Command interface's 450 px trunk of
  * two unrelated lines for the crossings it saved.
  * @param drawing A settled drawing.
- * @returns Its crossings, junctions, stacked lanes and hooks.
+ * @returns Its crossings, lines read as one and crowded joins, stacked lanes, and hooks.
  */
 function defectsIn(drawing: ArchitectureDrawing): readonly number[] {
 	return [
