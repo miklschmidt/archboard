@@ -44,6 +44,8 @@ import { gridEdges, wrapEdges } from "@/transformers/semantic-renderer/lib/track
 import { anchored, lapsOf } from "@/transformers/semantic-renderer/lib/track/score";
 import { keptSteps, type Aligned } from "@/transformers/semantic-renderer/lib/blocks/stepped";
 import {
+	besidePoints,
+	besideWalls,
 	entersBy,
 	innerPoints,
 	wallLines,
@@ -401,24 +403,30 @@ class CardLayout {
 			if (this.tree.blocks.get(item)?.kind === "region")
 				scene.regionBlocks.add(scene.cards.get(item)!);
 		letPortsSlide(scene, this.block, this.tree.nesting);
+		const beside = besideWalls(this.block, this.tree, scene);
+		const straight = new Set(beside.map(({ key }) => key));
 		const lines = routeScene(
 			scene,
-			placed.edges.map((edge) => {
-				const line = this.block.lines.get(edge.id)!;
-				const wall = wallOf(this.block, line);
-				const enters = entersBy(this.block, line);
-				return {
-					id: edge.id,
-					order: Number(edge.layoutOptions?.["archboard.order"] ?? 0),
-					kind: trunkKind(edge),
-					placed: edge,
-					...(wall === undefined ? {} : { wall }),
-					...(enters === undefined ? {} : { enters }),
-				};
-			}),
+			placed.edges
+				.filter((edge) => !straight.has(edge.id))
+				.map((edge) => {
+					const line = this.block.lines.get(edge.id)!;
+					const wall = wallOf(this.block, line);
+					const enters = entersBy(this.block, line);
+					return {
+						id: edge.id,
+						order: Number(edge.layoutOptions?.["archboard.order"] ?? 0),
+						kind: trunkKind(edge),
+						placed: edge,
+						...(wall === undefined ? {} : { wall }),
+						...(enters === undefined ? {} : { enters }),
+					};
+				}),
 			this.insets.side,
 			this.insets.top,
 		);
+		for (const [key, points] of besidePoints(scene, beside, this.insets.side))
+			lines.set(key, points);
 		return this.read(scene, lines, new Map(placed.edges.map((edge) => [edge.id, edge])), held);
 	}
 
