@@ -1,0 +1,221 @@
+{
+	"nodes": [
+		{
+			"id": "7TAwfrZF",
+			"order": 1000,
+			"name": "Agent workbench",
+			"kind": "service",
+			"responsibility": "Everything archboard owns around one private Codex child, inside the Archboard server",
+			"description": "Not a deployment of its own: this lives in the Archboard server process. The Codex app-server is its child.",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/server/archboard/codex-workbench-application.ts"
+			},
+			"drillDown": {
+				"board": "Archboard server",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "FxzIjbIO",
+			"order": 5000,
+			"name": "Codex transport",
+			"kind": "module",
+			"responsibility": "One newline-framed JSON object at a time each way, correlated to its request, and each tool call routed to the owner registered for its namespace",
+			"description": "The versioned wire contract it decodes against lives beside it in codex-protocol. A dynamic tool call reaches the owner registered for its namespace and manifest digest: the thread tools, the coordinator tools, or tell_coordinator.",
+			"parent": "7TAwfrZF",
+			"groups": ["child"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/codex-transport/index.ts"
+			}
+		},
+		{
+			"id": "jylkTBp7",
+			"order": 6000,
+			"name": "Codex session",
+			"kind": "module",
+			"responsibility": "One initialized session and the reviewed methods it will send",
+			"parent": "7TAwfrZF",
+			"groups": ["child"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/codex-session/index.ts"
+			},
+			"drillDown": {
+				"board": "Codex session",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "byMaoUe0",
+			"order": 7000,
+			"name": "Thread link",
+			"kind": "module",
+			"responsibility": "Which thread the Archboard server is bound to, made by the first message or Talk: the candidates, the binding, and the refusal when two disagree",
+			"parent": "7TAwfrZF",
+			"groups": ["workhorse"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/codex-thread-link/index.ts"
+			}
+		},
+		{
+			"id": "giL6EI28",
+			"order": 10000,
+			"name": "Codex app-server",
+			"kind": "external",
+			"responsibility": "The Codex binary, run as one private child over stdio in the Archboard-only Codex home",
+			"description": "Spawned as `app-server --stdio --strict-config`. Its threads are the workhorse and the coordinator, and every thread runs in its auto-review mode; nothing here describes its internals."
+		},
+		{
+			"id": "RkhHgrhb",
+			"order": 18000,
+			"name": "Board-change delivery",
+			"kind": "module",
+			"responsibility": "Tells the linked workhorse what a user changed on a board: one quiet developer message, settled once",
+			"description": "Before each delivery it checks the child, epoch, thread link and cursor again; the outcome is delivered, not delivered with a reason, or unknown, and it is never retried.",
+			"parent": "7TAwfrZF",
+			"groups": ["workhorse"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/codex-thread-context/index.ts"
+			}
+		},
+		{
+			"id": "42Ws0Eeo",
+			"order": 19000,
+			"name": "Semantic context",
+			"kind": "module",
+			"responsibility": "Turns a user's gestures and settled board changes into briefs and events for whoever subscribes",
+			"parent": "7TAwfrZF",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "src/runtime/codex-semantic-context/index.ts"
+			}
+		}
+	],
+	"edges": [
+		{
+			"id": "FZnS78FX",
+			"order": 3000,
+			"from": "jylkTBp7",
+			"to": "FxzIjbIO",
+			"kind": "rpc",
+			"label": "one JSON-RPC request per method",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "3vlSu8a3",
+			"order": 4000,
+			"from": "FxzIjbIO",
+			"to": "giL6EI28",
+			"kind": "rpc",
+			"label": "JSON-RPC over stdio",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "SRifquBt",
+			"order": 5000,
+			"from": "byMaoUe0",
+			"to": "jylkTBp7",
+			"kind": "data",
+			"label": "thread/list and thread/read: the candidates",
+			"emphasis": "normal"
+		},
+		{
+			"id": "7LxiPZOi",
+			"order": 26000,
+			"from": "42Ws0Eeo",
+			"to": "RkhHgrhb",
+			"kind": "event",
+			"label": "a settled board change",
+			"emphasis": "normal"
+		},
+		{
+			"id": "8g1SNngD",
+			"order": 27000,
+			"from": "RkhHgrhb",
+			"to": "jylkTBp7",
+			"kind": "rpc",
+			"label": "thread/inject_items into the workhorse",
+			"emphasis": "normal"
+		},
+		{
+			"id": "jbxp553Z",
+			"order": 28000,
+			"from": "RkhHgrhb",
+			"to": "byMaoUe0",
+			"kind": "call",
+			"label": "check the link again",
+			"emphasis": "muted"
+		}
+	],
+	"flows": [],
+	"walkthroughs": [
+		{
+			"id": "D8zxt3Va",
+			"name": "One bound workbench generation",
+			"beats": [
+				{
+					"id": "aDZPR2CP",
+					"heading": "A private child, composed once",
+					"body": "The workbench proves the executable and prepares an Archboard-only Codex home that every Archboard server on the machine shares, so one sign-in serves them all; it fills in the auto-review defaults its config.toml lacks and keeps what Codex or a person set. The owner lock and epoch ledger are the server's own. Then it starts the child and builds one generation's parts in the order they depend on each other.",
+					"subjects": ["skyIeErO", "9diqPrFw", "giL6EI28"]
+				},
+				{
+					"id": "GMR5L8XU",
+					"heading": "Only reviewed methods reach the wire",
+					"body": "The session publishes the methods that have been reviewed against the pinned contract, and the transport carries one framed object at a time each way. A reply that does not decode is a refusal, not a guess.",
+					"subjects": ["jylkTBp7", "FZnS78FX", "FxzIjbIO", "3vlSu8a3"]
+				},
+				{
+					"id": "Li1gMmz5",
+					"heading": "The server holds the link; a pane holds the lease",
+					"body": "The Archboard server's thread link names one workhorse, whichever pane speaks. The pane holding the lease sends its typed message straight to that thread as a turn or a steer, and edits the thread's queue. The coordinator's work goes through the four operations instead, each staged in the epoch ledger so a child that dies mid-flight leaves a stated outcome rather than a guess.",
+					"subjects": [
+						"byMaoUe0",
+						"u2LFaG7R",
+						"Qh7VZ9MQ",
+						"EZEiVlsE",
+						"tlC2W839",
+						"rOBpux5i",
+						"Uz2qReYK"
+					]
+				},
+				{
+					"id": "LdbANjtD",
+					"heading": "Voice is a separate thread, not a second mouth",
+					"body": "The coordinator is its own thread with its own model and settings, and the voice model's subconscious: it reads the boards, follows the workhorse and decides what the voice model says, and it runs only while voice is live. It does bounded work itself and routes anything sustained to the workhorse through the four operations.",
+					"subjects": ["Fg9dkGj3", "ZQxB1ZaK", "mhknqBOz"]
+				},
+				{
+					"id": "QvoF0oQJ",
+					"heading": "The coordinator hears the workhorse at once",
+					"body": "While voice is live, a workhorse turn that ends or begins waiting on the user, and anything the workhorse says through tell_coordinator, reaches the coordinator as one sentence in a turn/start: Codex adds it to the coordinator's running turn or starts one. With no voice session, or while a recording holds the voice, nothing is sent.",
+					"subjects": ["08zJvPJq", "NztvEtjX", "biUWQZMB", "Fg9dkGj3"],
+					"view": "aeBxrmvQ"
+				},
+				{
+					"id": "TcEEIcyY",
+					"heading": "Board changes reach the workhorse quietly",
+					"body": "A settled change a user made is injected into the linked workhorse's history as one developer message, after the child, epoch, link and cursor are checked again, and starts no turn. It settles once as delivered, not delivered or unknown, and is never retried or sent anywhere else.",
+					"subjects": ["42Ws0Eeo", "7LxiPZOi", "RkhHgrhb", "8g1SNngD", "jbxp553Z"],
+					"view": "tliaNnOp"
+				}
+			]
+		}
+	]
+}
