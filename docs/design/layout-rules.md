@@ -2083,3 +2083,49 @@ of a bend):
 | ------- | --------- | ------------------ | ------- | -------- | ------------ | -------- | ------------- | ------------------- | ----------- |
 | dogfood | 212 → 191 | 22 (2318) → 2 (30) | 12 → 3  | 144 → 33 | 54 → 32      | 5 → 0    | 9 → 4         | 7 → 6               | 43 → 22     |
 | work    | 35 → 33   | 2 (76) → 0         | 3 → 0   | 29 → 8   | 20 → 12      | 0 → 0    | 1 → 1         | 0 → 0               | 2 → 1       |
+
+## 43. Lines that meet from apart, one definition of a crossing (2026-09-27)
+
+Round 7's reviews left Board persistence whole with a knot at Former names
+and two lines on one stroke out of Read and validate, and two halves of the
+corner rule no test owned.
+
+- **Two lines of one card that meet on one stroke from apart are a stack**
+  (`stacked-runs.ts` `related`, `ONE_STROKE`). Lines are related, so a
+  stroke they share can be their trunk, only where they meet one card at one
+  place, within half a lane; runs nearer than 2.5 px, under two ordinary
+  lines' widths, are one stroke. Board persistence's `take the new name's
+lease` rode 2.2 px beside the trunk into Former names from a different pin
+  of Place the file, and Read and validate's two lines left its side 30 px
+  apart and shared 34 px of stroke; both were uncounted and are now a stack
+  every chooser sees. No drawing changes: every cure the passes find brings
+  another defect. Refusing the trunk its side face draws the knot away, but
+  runs `the board the name answers to` 6 px beside `reconcile descendants`
+  for 84 px; refusing the grey line its side parts Read and validate's two
+  lines, but leaves the grey 12 px from the card's corner. The side-exit pass,
+  moving every label onto its channel, cures both but crosses Place the
+  file's teal 8 px before its bend and moves labels across the drawing;
+  moving Former names' labels alone, it parts Read and validate's lines but
+  keeps the knot and sends `reconcile descendants` round into Propagate
+  descendant edits' side.
+- **One definition of a crossing** (`track/score.ts` `crossingPlaces`):
+  every crossing with the two runs it joins; `crossingsOf` counts their
+  places and `cornered-crossings.ts` keeps those within a lane of a bend,
+  whichever line turns, before or after the crossing, each half owned.
+- **A resting streak with as much room keeps more from where other lines
+  meet its own** (`comet-rest.ts` `better`): once its tail reaches a label
+  it keeps no room, and it rested with its glow 1 px from a hop where 10 px
+  were to be had. Command interface's `requestJson` streak comes 5.5 px up
+  off the bend into the junction dot, to just below its label; `board
+operation` and three work streaks move 0.5 px.
+- **The pin pass excuses only the card it tries** (`finishing.ts` `byCard`):
+  a line cleared on one card could take a bend more on every later card
+  kept. No drawing changes.
+
+Platform Phone API whole keeps round 7's two lines into Database provider's
+side: round 6's top entry dropped `create selected context` 4 px beside one
+of them and crossed it 4 px from its bend, a crossing drawn with no hop.
+
+The measures against `ed9c7d8d` are section 42's; no count moves. Crossings
+drawn with no hop, a line cut beneath another: dogfood 56 → 40 (solid lines
+44 → 29), work 12 → 10 (solid 9 → 7).
