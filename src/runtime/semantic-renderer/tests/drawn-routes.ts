@@ -368,6 +368,22 @@ function boxesOverlap(one: DiagramBox, other: DiagramBox): boolean {
 	);
 }
 
+/**
+ * How many times a route turns: its points off the straight line through
+ * their neighbours.
+ * @param points The route's corridor.
+ * @returns Its turns.
+ */
+function turnsOf(points: readonly DrawnPoint[]): number {
+	return points.slice(1, -1).filter((point, index) => {
+		const [before, after] = [points[index]!, points[index + 2]!];
+		const straight =
+			(before.x === point.x && point.x === after.x) ||
+			(before.y === point.y && point.y === after.y);
+		return !straight;
+	}).length;
+}
+
 export {
 	type DrawnPoint,
 	bodyShift,
@@ -381,4 +397,5 @@ export {
 	routeLabels,
 	routePoints,
 	sharedStretches,
+	turnsOf,
 };

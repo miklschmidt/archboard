@@ -7,7 +7,7 @@
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { corridorPoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import { corridorPoints, turnsOf } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { scorecardOf } from "@/runtime/semantic-renderer/tests/drawn-scorecard";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import boardRequestPath from "./board-request-path.json";
@@ -58,31 +58,15 @@ test("a held order does not part lines joined on their way to a card", async () 
 	expect(corridorPoints(drawing.svg).get("3verBPcG")!.length).toBeLessThan(16);
 });
 
-/**
- * How many times a drawing's lines turn.
- * @param svg The drawing.
- * @returns The turns.
- */
-function turns(svg: string): number {
-	return [...corridorPoints(svg).values()].reduce(
-		(sum, points) =>
-			sum +
-			points.slice(1, -1).filter((point, index) => {
-				const [before, after] = [points[index]!, points[index + 2]!];
-				return !(
-					(before.x === point.x && point.x === after.x) ||
-					(before.y === point.y && point.y === after.y)
-				);
-			}).length,
-		0,
-	);
-}
-
 // Taken from a board of this repository: held in order, Codex session's
 // block ranked again and scored better, crossing two lines fewer, but ran
 // 'a typed message' from Browser gateway the long way round Codex child.
 test("a held order is kept only where the board's lines turn no more often", async () => {
 	const content = orderedFixture(oneCommand);
 	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	expect(turns(drawing.svg)).toBeLessThanOrEqual(36);
+	const turns = [...corridorPoints(drawing.svg).values()].reduce(
+		(sum, points) => sum + turnsOf(points),
+		0,
+	);
+	expect(turns).toBeLessThanOrEqual(36);
 });

@@ -7,7 +7,12 @@
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { corridorPoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import {
+	corridorPoints,
+	routeCrosses,
+	routePoints,
+	turnsOf,
+} from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import ingressStages from "./ingress-stages.json";
 import requestPath from "./request-path.json";
@@ -28,21 +33,6 @@ const policy = SemanticPolicySchema.parse({
 		event: { name: "Event", color: "fuchsia", dash: "dashed", arrowhead: "open" },
 	},
 });
-
-/**
- * How many times a route turns.
- * @param points The route's corridor.
- * @returns Its corners.
- */
-function turns(points: readonly { x: number; y: number }[]): number {
-	return points.slice(1, -1).filter((point, index) => {
-		const [before, after] = [points[index]!, points[index + 2]!];
-		const straight =
-			(before.x === point.x && point.x === after.x) ||
-			(before.y === point.y && point.y === after.y);
-		return !straight;
-	}).length;
-}
 
 // Reduced from a board of a work vault, names replaced: a line out of a
 // container by its wall left its card by the bottom and ran along the
@@ -65,8 +55,23 @@ test("two lines out of one side of a card keep to the tracks", async () => {
 	const content = orderedFixture(ingressStages);
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	const corners = [...corridorPoints(drawn.svg).values()].reduce(
-		(sum, points) => sum + turns(points),
+		(sum, points) => sum + turnsOf(points),
 		0,
 	);
 	expect(corners).toBeLessThan(50);
+});
+
+// Reduced from a board of a work vault, names replaced: the line into the
+// region's load balancer is joined from pieces routed in two blocks, and
+// where they met it ran down past the region's wall and back up to its card.
+// Once the drawing is joined, the loop is taken out (blocks/steps.ts), clear
+// of every card.
+test("a joined line runs on into its container without the loop its pieces made", async () => {
+	const content = orderedFixture(requestPath);
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	// Three rounded corners, two turning points each; the loop made seven.
+	expect(turnsOf(corridorPoints(drawn.svg).get("f3lzoqzb")!)).toBeLessThanOrEqual(6);
+	const route = routePoints(drawn.svg).get("f3lzoqzb")!;
+	const passed = ["8P3HctR4", "ZsN5eHIV", "RsdfAtQ8", "JnkTz8V4", "WLY9p0FT"];
+	for (const id of passed) expect(routeCrosses(route, drawn.atlas.nodes[id]!)).toBeFalse();
 });
