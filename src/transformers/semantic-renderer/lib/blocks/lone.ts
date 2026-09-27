@@ -124,6 +124,15 @@ function holdsLone(nodes: readonly ElkNode[]): boolean {
 }
 
 /**
+ * Whether a measured hierarchy draws a region round one node.
+ * @param graph The measured hierarchy.
+ * @returns True when some node is alone in its placing group.
+ */
+function holdsLoneRegions(graph: ElkNode): boolean {
+	return holdsLone(graph.children ?? []);
+}
+
+/**
  * Some nodes of one parent, and every node inside them, each alone in its
  * placing group placed by none.
  * @param nodes The nodes.
@@ -145,8 +154,7 @@ function plainNodes(nodes: readonly ElkNode[]): ElkNode[] {
  * @returns It, or nothing when no node is alone in its group.
  */
 function withoutLoneRegions(graph: ElkNode): ElkNode | undefined {
-	const nodes = graph.children ?? [];
-	return holdsLone(nodes) ? { ...graph, children: plainNodes(nodes) } : undefined;
+	return holdsLoneRegions(graph) ? { ...graph, children: plainNodes(graph.children!) } : undefined;
 }
 
 /**
@@ -439,6 +447,7 @@ export {
 	frameShape,
 	framed,
 	grownInsets,
+	holdsLoneRegions,
 	regionRound,
 	sideRoom,
 	titleRow,
