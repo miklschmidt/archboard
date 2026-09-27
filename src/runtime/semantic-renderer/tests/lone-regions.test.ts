@@ -465,3 +465,32 @@ test("a labelled line into a container its group's region packs keeps its label"
 	const drawing = await drawn(content, "blocks");
 	expect([...routeLabels(drawing.svg).keys()]).toEqual(["in"]);
 });
+
+// A caption wider than the card it is alone with widens the region, and the
+// card stood stretched across it. Its lines still end on it.
+test.each(["track", "blocks"] as const)(
+	"the %s engine keeps a card alone in its region as wide as without it under a wider caption",
+	async (layout) => {
+		const wide = SemanticPolicySchema.parse({
+			...policy,
+			groups: {
+				state: { name: "A group whose caption runs far wider than its card", color: "teal" },
+			},
+		});
+		const content = orderedFixture({
+			nodes: [
+				{ id: "one", name: "One", kind: "module", groups: ["state"] },
+				{ id: "two", name: "Two", kind: "module" },
+			],
+			edges: [{ id: "on", from: "one", to: "two", kind: "call" }],
+		});
+		const widthOf = async (board: VariantContent): Promise<number> =>
+			(await renderArchitecture({ content: board, theme: "light", policy: wide, layout })).atlas
+				.nodes["one"]!.width;
+		const drawing = await renderArchitecture({ content, theme: "light", policy: wide, layout });
+		const [region] = regionsOf(drawing.svg, "state");
+		expect(region!.box.width).toBeGreaterThan((await widthOf(ungrouped(content))) + 28);
+		expect(await widthOf(content)).toBe(await widthOf(ungrouped(content)));
+		expect(endsOffNode(content, drawing)).toEqual([]);
+	},
+);
