@@ -1,0 +1,155 @@
+{
+	"nodes": [
+		{
+			"id": "BYdJjyJr",
+			"order": 1000,
+			"name": "Roleete",
+			"kind": "external",
+			"responsibility": "Rnoteeo nea rorarrt tonttlr rnoolee tne rriolr nretenaee."
+		},
+		{
+			"id": "OI5AvZ2i",
+			"order": 2000,
+			"name": "Nlroe Tonttlr Aneneeo",
+			"kind": "service",
+			"responsibility": "Eteeoe roleete tr tnelo oeelreno eetoo. Tneoe noe aneo oeelree. Retrrrnea io eaeoo etnee."
+		},
+		{
+			"id": "nBxpiz8B",
+			"order": 3000,
+			"name": "RE NRL Entelno",
+			"kind": "external",
+			"responsibility": "Oeelreno eetoo, RE enrle ne ne eenaroe. Eaeoo oeelre nne lte rle NRL nea Nrr entelnoe; RE nea ER rnooo io tno tne aret tonttlr. Retrrrnea io eaeoo etnee."
+		},
+		{
+			"id": "FVbp7yuX",
+			"order": 4000,
+			"name": "Nrr Entelno",
+			"kind": "external",
+			"responsibility": "Oeelreno eetoo, ER enrle ne ne eenaroe. Eaeoo oeelre nne lte rle NRL nea Nrr entelnoe; RE nea ER rnooo io tno tne aret tonttlr. Retrrrnea io eaeoo etnee."
+		},
+		{
+			"id": "5PsScbis",
+			"order": 5000,
+			"name": "Rriolr nretenae (AEE oerroa)",
+			"kind": "module",
+			"responsibility": "Enaee ree orna inonereo'e rriolr LR: tne oeenro ree trano; tora Etnee 2 tne Ronttroa ree, lltn nenotn-rnertea tnloraeo inrt tr tne oeenro ree. Tne reoo tnlee tne rrtraeo rnneeee."
+		},
+		{
+			"id": "zYCHWE5R",
+			"order": 6000,
+			"name": "Oeenro Nlroe Orna Inonereo",
+			"kind": "service",
+			"responsibility": "O4 orna inonereo lltn LR nttlelto. Trolnoae TRR 80/443 tr tne LLE rrro lltnrrt rreelee TOE. Eeaeo araltlea; ntteo tne rrtraeo lt etnoe nttnrnea ne tne AEE tnloraeo nea orooinrt rntn."
+		},
+		{
+			"id": "2cGTPFaw",
+			"order": 7000,
+			"name": "Llearle / LLE AA rrro",
+			"kind": "system",
+			"responsibility": "TOE teoalentee neoe le eaeoo etnee: tora roleete trano, tora Eearo ntteo tne rrtraeo. Eaeoo AA rnoolee tne troo LLE NRL rrottrolr. Er nrrolrntlre rrae rnneeee le neo etnee.",
+			"groups": ["walkthrough"]
+		},
+		{
+			"id": "IvTVtYM6",
+			"order": 8000,
+			"name": "LLE AA 1",
+			"kind": "service",
+			"responsibility": "Oeenro NRLe. Teoalentee TOE lteeot.",
+			"parent": "2cGTPFaw",
+			"groups": ["walkthrough"]
+		},
+		{
+			"id": "I7am8mAE",
+			"order": 9000,
+			"name": "LLE AA 2",
+			"kind": "service",
+			"responsibility": "Oeenro NRLe. Teoalentee TOE lteeot.",
+			"parent": "2cGTPFaw",
+			"groups": ["walkthrough"]
+		},
+		{
+			"id": "2O4dd5Ys",
+			"order": 10000,
+			"name": "LLE AA 3",
+			"kind": "service",
+			"responsibility": "Oeenro NRLe. Teoalentee TOE lteeot.",
+			"parent": "2cGTPFaw",
+			"groups": ["walkthrough"]
+		},
+		{
+			"id": "FFoPVl37",
+			"order": 11000,
+			"name": "LLE AA 4",
+			"kind": "service",
+			"responsibility": "Oeenro NRLe. Teoalentee TOE lteeot.",
+			"parent": "2cGTPFaw",
+			"groups": ["walkthrough"]
+		}
+	],
+	"edges": [
+		{
+			"id": "aQqCpWUX",
+			"order": 1000,
+			"from": "BYdJjyJr",
+			"to": "OI5AvZ2i",
+			"kind": "http",
+			"label": "Rriolr nretenaee",
+			"emphasis": "muted"
+		},
+		{
+			"id": "zKEMCLa3",
+			"order": 2000,
+			"from": "OI5AvZ2i",
+			"to": "nBxpiz8B",
+			"kind": "http",
+			"label": "RE eteeolee",
+			"emphasis": "muted"
+		},
+		{
+			"id": "AbyGXaez",
+			"order": 3000,
+			"from": "OI5AvZ2i",
+			"to": "FVbp7yuX",
+			"kind": "http",
+			"label": "ER eteeolee",
+			"emphasis": "muted"
+		},
+		{
+			"id": "AvW0rxiy",
+			"order": 4000,
+			"from": "nBxpiz8B",
+			"to": "5PsScbis",
+			"kind": "http",
+			"label": "Oeelreno eetoo",
+			"emphasis": "muted"
+		},
+		{
+			"id": "lNpXGtAx",
+			"order": 5000,
+			"from": "FVbp7yuX",
+			"to": "5PsScbis",
+			"kind": "http",
+			"label": "Oeelreno eetoo",
+			"emphasis": "muted"
+		},
+		{
+			"id": "cARjPgms",
+			"order": 6000,
+			"from": "5PsScbis",
+			"to": "zYCHWE5R",
+			"kind": "http",
+			"label": "Trano: AEE rrlete neoe",
+			"emphasis": "normal"
+		},
+		{
+			"id": "amhQ7pOU",
+			"order": 7000,
+			"from": "zYCHWE5R",
+			"to": "2cGTPFaw",
+			"kind": "http",
+			"label": "O4 trolnoalee, TOE rneeee tnorren rerreeea",
+			"emphasis": "normal"
+		}
+	]
+}

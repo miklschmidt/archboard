@@ -75,7 +75,11 @@ function extentOf(
  * reshape the page.
  */
 const FILLS = 0.9;
-/** The most packings with an item moved up that are laid out and weighed besides the cuts. */
+/**
+ * The most packings with an item moved up that are laid out and weighed
+ * besides the cuts: a bound on time, since each is laid out and routed whole.
+ * No drawing of either vault lays out more than it allows.
+ */
 const MOST_BACKFILLED = 4;
 
 /**
@@ -97,16 +101,14 @@ function cutPackings(order: readonly number[]): Packing[] {
 
 /**
  * A packing with one item moved from its group into an earlier one, at its
- * start or its end, where that makes the earlier group no longer than the
- * longest: a small block late in the order then fills the room a short row
- * or column leaves, instead of widening the page on a row of its own.
+ * start or its end: a small block late in the order then fills the room a
+ * short row or column leaves, instead of widening the page on a row of its
+ * own. Which of them fill real room is left to their area (`FILLS`).
  * @param packing The packing.
- * @param lengthOf How long a group is, along the way it is read.
  * @returns The packings with an item moved up.
  */
-function backfilled(packing: Packing, lengthOf: (group: readonly number[]) => number): Packing[] {
+function backfilled(packing: Packing): Packing[] {
 	const { across, groups } = packing;
-	const longest = Math.max(...groups.map(lengthOf));
 	return groups.slice(1).flatMap((group, before) =>
 		group.flatMap((item) =>
 			groups.slice(0, before + 1).flatMap((earlier, into) =>
@@ -117,14 +119,12 @@ function backfilled(packing: Packing, lengthOf: (group: readonly number[]) => nu
 							[...earlier, item],
 						]
 					: [[...earlier, item]]
-				)
-					.filter((filled) => lengthOf(filled) <= longest)
-					.map((filled) => ({
-						across,
-						groups: groups
-							.map((one, at) => (at === into ? filled : one.filter((other) => other !== item)))
-							.filter((one) => one.length > 0),
-					})),
+				).map((filled) => ({
+					across,
+					groups: groups
+						.map((one, at) => (at === into ? filled : one.filter((other) => other !== item)))
+						.filter((one) => one.length > 0),
+				})),
 			),
 		),
 	);
@@ -140,39 +140,19 @@ function areaOf(page: Size): number {
 }
 
 /**
- * What a packing's groups hold, whatever their order.
- * @param packing The packing.
- * @returns A key two packings share when their groups hold the same items.
- */
-function membersOf(packing: Packing): string {
-	const groups = packing.groups.map((group) => group.toSorted((one, other) => one - other));
-	return JSON.stringify({ across: packing.across, groups });
-}
-
-/**
  * The packings worth laying out: every cut whose estimated fit comes near
  * the best cut's, and the few best packings with an item moved up that do
  * too and pack clearly smaller than every such cut.
  * @param order The items, in the order their lines run.
- * @param lengthOf How long a group is, read one way.
  * @param pageOf The estimated size of a block packed one way.
  * @returns The packings.
  */
-function packingsOf(
-	order: readonly number[],
-	lengthOf: (group: readonly number[], across: boolean) => number,
-	pageOf: (packing: Packing) => Size,
-): Packing[] {
+function packingsOf(order: readonly number[], pageOf: (packing: Packing) => Size): Packing[] {
 	const cuts = cutPackings(order);
 	const fits = cuts.map((packing) => fitIn(pageOf(packing)));
 	const least = Math.max(...fits) * WORTH_LAYING;
-	// A packing that only reorders a cut's groups fills no room the cut leaves.
-	const cut = new Set(cuts.map(membersOf));
 	const moved = new Map(
-		cuts
-			.flatMap((packing) => backfilled(packing, (group) => lengthOf(group, packing.across)))
-			.filter((packing) => !cut.has(membersOf(packing)))
-			.map((packing) => [JSON.stringify(packing), packing] as const),
+		cuts.flatMap(backfilled).map((packing) => [JSON.stringify(packing), packing] as const),
 	);
 	const filled = [...moved.values()]
 		.map((packing) => ({ packing, fit: fitIn(pageOf(packing)) }))
