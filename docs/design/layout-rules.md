@@ -2290,6 +2290,14 @@ wall`).
   into no second region of the group and keep its colour. The ingress board
   drew one group's region round a pool and again round the pool's four
   hosts.
+- **A line runs out and not back** (`jogs.ts` `turnsBack`): a step that
+  turns a line back against its last step is closed as a kink is, by
+  moving its label or port onto the other end's column, whatever its width.
+  The region round Panes in Command interface (Blocks) held 'the stated
+  board, doing and version' a lane off its left wall, and the line ran
+  right to its label and back 40 px to pass the region. Over both vaults
+  it straightens seven drawings, four of them drawn as they were before
+  any region round one node, and adds no bend or hop to any.
 - **A label into a block that packs blocks stays by its source**
   (`inline.ts` `labelHolder`): a region packing two containers draws only
   trunks, and the label of a line into one of them was lost.
