@@ -37,7 +37,7 @@ type DiagramTheme = z.infer<typeof DiagramThemeSchema>;
 const LayoutEngineSchema = z.enum(["graphviz", "track", "blocks"]);
 type LayoutEngineName = z.infer<typeof LayoutEngineSchema>;
 /** The engine a render uses when it names none. */
-const DEFAULT_LAYOUT_ENGINE: LayoutEngineName = "graphviz";
+const DEFAULT_LAYOUT_ENGINE: LayoutEngineName = "track";
 
 /**
  * Where a drawn document's faces come from.
