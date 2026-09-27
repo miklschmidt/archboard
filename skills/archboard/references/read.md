@@ -20,12 +20,15 @@ through the CLI, report it in the board's own terms, and change nothing.
    the inspection's member list.
 3. For what one variant changed,
    `archboard semantic compare <board> [--variant <id|name>]` reads it against
-   the variant it came from: every part, relationship, sequence, step,
+   the current variant (on a board nobody has built, the variant it came from),
+   as its picture is drawn: every part, relationship, sequence, step,
    walkthrough and beat either state has, each `added`, `removed`, `changed` or
    `unchanged`, with the fields that moved for a change and the endpoints a
-   relationship or step now lands on. A root architecture came from nothing and
-   is refused. Report a relationship whose end moved as one relationship that
-   moved, not as a removal beside an addition.
+   relationship or step now lands on. The current variant, and a first draft
+   on a board nobody has built, have nothing to be read against and are
+   refused unless `--against <id|name>` names a variant. Report a
+   relationship whose end moved as one relationship that moved, not as a
+   removal beside an addition.
 4. Answer from what the CLI printed, naming subjects as the board names them:
    members with their containers, internal relationships, boundary
    relationships as incoming or outgoing, neighbours, and anything the

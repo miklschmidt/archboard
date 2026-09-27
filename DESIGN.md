@@ -158,7 +158,8 @@ the step has arrived it hands the step to the voice model through
 `realtimeAppendSpeech`, serialized behind the start, so the voice begins on
 step 1 without being spoken to and without a coordinator turn. A step is handed
 over as its heading, its body and what it highlights, named in words and, on a
-variant branched from another, with how each stands against it and what moved
+variant read against another (the board's current one, or on a board with none
+the one it came from), with how each stands against it and what moved
 (TASK-309), so the voice can explain the change the picture marks. Every step
 the user moves to by hand after that is handed over the same way, in the same
 words, and leaving is handed over as a line the voice model acknowledges before

@@ -21,7 +21,12 @@ writes.
 
 ## What a comparison counts
 
-A proposal is read against its direct predecessor, subject by subject, by id:
+The current variant is now, and every other variant — a proposal, history, a
+shelved one — is read against it, subject by subject, by id, so it says how that
+variant differs from what exists. The current variant is read against nothing. A
+board nobody has built has no now: there a draft is read against the one it came
+from, and its first draft against nothing. `semantic compare --against <variant>`
+reads it against any other variant you name. What is compared:
 
 - **Nodes**: name, kind, responsibility, description, parent, groups, binding,
   drill-down. A renamed group changes nothing (the name is in `config.yaml`).
@@ -34,8 +39,9 @@ A proposal is read against its direct predecessor, subject by subject, by id:
   and position.
 - **Views** belong to the board and are never a variant change.
 
-Kept ids read as continuing (unchanged or changed); ids only on the predecessor
-as removed; ids only on the proposal as added.
+Kept ids read as continuing (unchanged or changed); ids only on the variant read
+against as removed; ids only on the variant being read as added. On history
+read against now, a part the current variant added is therefore `removed`.
 
 ### Edge identity
 
@@ -54,19 +60,20 @@ A flow rewritten without ids compares as a deletion beside an addition.
 
 ## Comparing before you report
 
-**A variant with a predecessor is drawn as the comparison with it**, whatever
-you asked for: added, removed and changed subjects are marked, removed ones stay
-on the page, and the receipt names the other side under `comparedWith`. Only a
-variant that came from nothing draws plain, so parts added to a derived variant
-(a proposal, or a current variant adopted from something) arrive already marked
-as added, and its picture is read against its predecessor, not on its own.
+**Every variant but the current one is drawn as the comparison with the current
+one** (on a board nobody has built, with the draft it came from), whatever you
+asked for: added, removed and changed subjects are marked, removed ones stay on
+the page, and the receipt names the other side under `comparedWith`. The current
+variant draws plain, and so does the first draft of a board nobody has built, so
+parts added to a proposal arrive already marked as added, and its picture is
+read against the current variant, not on its own.
 
 Each variant is laid out fresh. Compare subjects by identity and Standing;
 a card moving or a container shrinking does not itself mean the architecture
 changed. The viewer animates continuing identities between their new positions.
 
-Read the saved family, draw predecessor and proposal through the same board view
-(`semantic rasterize <board> --view <view> --out /tmp/current.png`, then again
+Read the saved family, draw the current variant and the proposal through the
+same board view (`semantic rasterize <board> --view <view> --out /tmp/current.png`, then again
 with `--variant <draft>` to `/tmp/proposal.png`), and open both. Check the ids
 and the pictures: the added, removed, changed and untouched subjects match the
 change you meant; a removed flow, call or participant is drawn as removed in the
@@ -148,7 +155,9 @@ A draft built on a variant that a later adoption made historical is refused as
 the other. Adopting it would drop what the first adoption brought, because a
 historical variant passes nothing on. The refusal names the superseded variant
 and the variant adopted over it. Branch a new proposal from the current variant,
-state the change on it again from `semantic compare` of the old one, and shelve
+state the change on it again from what the old one itself changed —
+`semantic compare <board> --variant <old> --against <its parent>`, since read
+against the current variant it would also undo the other adoption — and shelve
 the old one with that reason. Add `--force` only when dropping the other change
 is intended; the adoption record then says `forced: true`.
 

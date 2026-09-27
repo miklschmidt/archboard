@@ -230,9 +230,11 @@ _Avoid_: zoom in, expand, descend, navigate, open
 
 **Variant**:
 One named state in a board's evolution, standing in exactly one lifecycle:
-current, draft, historical or shelved. Each successor has one predecessor and
-shows changes relative to it through the board's shared views; a predecessor may
-have several competing successors.
+current, draft, historical or shelved. Each successor has one predecessor, and a
+predecessor may have several competing successors. Every variant but the current
+one shows how it differs from the current variant through the board's shared
+views; on a board with no current variant, a draft shows its changes relative to
+its predecessor.
 _Avoid_: version (that is which edit the board's note is),
 revision, branch, mode, state
 
@@ -322,14 +324,18 @@ _Avoid_: external edit, foreign write, third-party change
 
 **Comparison**:
 The differences between two board variants, identified by the stable identities
-of their architectural content. A proposal's views show its comparison with the
-variant it was branched from as derived change marks, rather than authored
-content.
+of their architectural content. The current variant is now and is the reference:
+a historical, draft or shelved variant's views show its comparison with the
+current variant as derived change marks, rather than authored content, and the
+current variant shows none. A board with no current variant has no now, so each
+of its drafts is compared with the variant it was branched from. Reconciliation
+and adoption follow the predecessor, never this reading.
 _Avoid_: variant, diff
 
 **Comparison status**:
 The derived added, changed, removed or unchanged standing of a subject against
-the variant its own variant was branched from.
+the variant its own variant is compared with: added is only on this variant,
+removed is only on the other.
 _Avoid_: authored flag, selection, current designation
 
 **Note**:

@@ -90,7 +90,8 @@ impossible; it is reported as a waiver whatever its axis.
   really addresses the whole module.
 - **Identity**: a restated node or relationship keeps its id. A rename that
   produced a new id, or a removal beside an addition where the source shows a
-  continuing relationship, is incorrect. Compare a proposal against its direct predecessor:
+  continuing relationship, is incorrect. Compare a proposal against the current
+  variant (on a board nobody has built, its direct predecessor):
   added, removed, changed and unchanged subjects, with continuing edges kept
   and replaced edges new. A continuing relationship keeps its id even when
   its endpoint, kind or several authored properties change. Explicit removal

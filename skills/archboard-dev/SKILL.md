@@ -55,9 +55,10 @@ When the task closes, before you mark any acceptance criterion:
 4. **If adoption is refused as `PARENT_SUPERSEDED`,** another task adopted a
    proposal after you branched, and adopting yours would drop its change.
    Branch a new proposal from the current variant, restate this task's change
-   on it from the old comparison, shelve the old proposal with that reason,
-   and adopt the new one. Use `--force` only when dropping the other task's
-   change is intended.
+   on it from the old proposal's own change, read with
+   `semantic compare "<board>" --variant TASK-123 --against <its parent>`,
+   shelve the old proposal with that reason, and adopt the new one. Use
+   `--force` only when dropping the other task's change is intended.
 5. **Run `./bin/dogfood check`.** Done: it reports no diagnostics. Commit the
    vault files with the closing.
 
