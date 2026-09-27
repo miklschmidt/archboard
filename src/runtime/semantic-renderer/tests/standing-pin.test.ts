@@ -11,8 +11,10 @@
 // hooks), so a finishing pass asks for seeds clear of the pin card by card.
 // What this catches: a corner pin or an aligned pin offered beside a standing
 // pin, a proposal's cards laid out without knowing which wear one, a seed
-// left beside the pin of a card the routes were asked to clear, and a pin
-// pass refused for one card's cost or for the bend a line takes to leave the pin.
+// left beside the pin of a card the routes were asked to clear, a pin pass
+// refused for one card's cost or for the bend a line takes to leave the pin,
+// a card's clearance dropped when the next card is tried, and a line sent
+// off a pin by a detour of two bends or more.
 
 import { expect, test } from "bun:test";
 import type { ElkNode } from "@archboard/elk-rs";
@@ -166,12 +168,16 @@ test("a card the routes are asked to clear has its seeds a lane from its standin
 	expect(fromPinnedCorner(target, end)).toBeGreaterThanOrEqual(PIN_CLEARANCE - 0.01);
 });
 
-/** Two cards that wear standing pins, the cards their lines come from, and one card pair's line. */
+/** Cards that wear standing pins, the cards their lines come from, and one card pair's line. */
 const cards = {
 	a: { x: 200, y: 200, width: 200, height: 60 },
 	b: { x: 700, y: 200, width: 200, height: 60 },
+	c: { x: 1200, y: 200, width: 200, height: 60 },
+	d: { x: 200, y: 600, width: 200, height: 60 },
 	fromA: { x: 0, y: 0, width: 100, height: 50 },
 	fromB: { x: 500, y: 0, width: 100, height: 50 },
+	fromC: { x: 1000, y: 0, width: 100, height: 50 },
+	fromD: { x: 0, y: 400, width: 100, height: 50 },
 	left: { x: 560, y: 110, width: 40, height: 40 },
 	right: { x: 900, y: 110, width: 60, height: 40 },
 };
@@ -184,37 +190,52 @@ const across: Line = {
 	points: at([600, 130], [900, 130]),
 };
 
-test("a pin pass clears each card it can, and a line may turn once more to leave the pin", async () => {
-	const lines = (cleared: readonly string[]): Line[] => [
-		{
-			id: "intoA",
-			from: "fromA",
-			to: "a",
-			points: cleared.includes("a")
-				? at([50, 50], [50, 100], [250, 100], [250, 200])
-				: at([50, 50], [50, 210], [200, 210]),
-		},
-		{
-			id: "intoB",
-			from: "fromB",
-			to: "b",
-			points: cleared.includes("b")
-				? at([550, 50], [550, 90], [750, 90], [750, 200])
-				: at([550, 50], [550, 210], [700, 210]),
-		},
+/**
+ * One line into each pinned card, beside its pin unless the card is cleared:
+ * a and d on the left face, b on the left face, c on the top face.
+ * @param cleared The cards whose routes keep clear of their pins.
+ * @returns The lines.
+ */
+function pinnedLines(cleared: readonly string[]): Line[] {
+	const into = (card: string, beside: Line["points"], clear: Line["points"]): Line => ({
+		id: `into${card.toUpperCase()}`,
+		from: `from${card.toUpperCase()}`,
+		to: card,
+		points: cleared.includes(card) ? clear : beside,
+	});
+	return [
+		// Once more bent to drop onto the top.
+		into("a", at([50, 50], [50, 210], [200, 210]), at([50, 50], [50, 100], [250, 100], [250, 200])),
+		// Its drop onto the top crosses the line across.
+		into(
+			"b",
+			at([550, 50], [550, 210], [700, 210]),
+			at([550, 50], [550, 90], [750, 90], [750, 200]),
+		),
+		// Onto the top face beside the pin, or further along it.
+		into("c", at([1100, 25], [1210, 25], [1210, 200]), at([1100, 25], [1300, 25], [1300, 200])),
+		// Twice more bent to reach the left face below the pin.
+		into(
+			"d",
+			at([50, 450], [50, 610], [200, 610]),
+			at([50, 450], [50, 500], [120, 500], [120, 640], [200, 640]),
+		),
 		across,
 	];
+}
+
+test("a pin pass clears each card it can, and a line may turn once more, not twice, to leave the pin", async () => {
 	const done = await finished(
-		{ reading: [] as readonly string[], drawing: sketch(cards, lines([])) },
+		{ reading: [] as readonly string[], drawing: sketch(cards, pinnedLines([])) },
 		(_, { clearPins }) =>
 			Promise.resolve(
 				clearPins === undefined
 					? undefined
-					: { reading: clearPins, drawing: sketch(cards, lines(clearPins)) },
+					: { reading: clearPins, drawing: sketch(cards, pinnedLines(clearPins)) },
 			),
-		new Set(["a", "b"]),
+		new Set(["a", "b", "c", "d"]),
 	);
-	expect(done.reading).toEqual(["a"]);
+	expect(done.reading).toEqual(["a", "c"]);
 });
 
 test("a card wears a standing pin only when the proposal marks it", () => {
