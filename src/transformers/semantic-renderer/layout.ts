@@ -41,12 +41,7 @@ export {
 export { chooseReading } from "@/transformers/semantic-renderer/lib/layout/column-readings";
 export { placeRun, type Slider } from "@/transformers/semantic-renderer/lib/track/label-runs";
 export { unstepped } from "@/transformers/semantic-renderer/lib/blocks/steps";
-export {
-	readsBetter,
-	takes,
-	worthTaking,
-	type Weighed,
-} from "@/transformers/semantic-renderer/lib/track/score";
+export { readsBetter, takes, type Weighed } from "@/transformers/semantic-renderer/lib/track/score";
 export {
 	settleLabels,
 	type LabelAttempt,
