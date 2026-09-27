@@ -7,8 +7,10 @@
 // other. The pool starts a worker only when a solve finds every running one
 // busy and none of them still starting, up to one fewer than the cores the
 // place reports, so a small board starts one and a wide one spreads its
-// candidates out without compiling the engine a dozen times at once. The engine
-// is deterministic: which worker answers a solve never changes the drawing.
+// candidates out without compiling the engine a dozen times at once. Each
+// solve starts from the engine's memory as it was loaded (`loadLayoutEngine`),
+// so neither which worker answers a solve nor what that worker solved before
+// changes the drawing.
 //
 // An engine that aborts stays aborted: every later solve on that worker fails
 // the same way. A worker whose engine aborted or failed to start, or that

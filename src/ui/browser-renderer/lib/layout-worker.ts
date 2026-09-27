@@ -1,7 +1,7 @@
 import { instance } from "@viz-js/viz";
 import { AvoidLib } from "libavoid-js";
 import type { RendererHost } from "@/transformers/semantic-renderer/host";
-import { createLayoutEngine } from "@/transformers/semantic-renderer/engine";
+import { loadLayoutEngine } from "@/transformers/semantic-renderer/engine";
 import { engineAborted } from "@/transformers/semantic-renderer/engine-pool";
 
 type Solve = RendererHost["solve"];
@@ -13,16 +13,17 @@ type Request =
 			readonly layoutOptions: Parameters<Solve>[1];
 	  };
 
-let ready: Promise<ReturnType<typeof createLayoutEngine>> | undefined;
+let ready: ReturnType<typeof loadLayoutEngine> | undefined;
 let queue: Promise<void> = Promise.resolve();
 let initFailure = false;
 
 self.addEventListener("message", (event: MessageEvent<Request>) => {
 	const request = event.data;
 	if ("cmd" in request) {
-		ready = Promise.all([instance(), AvoidLib.load(request.wasmUrl)]).then(([viz]) =>
-			createLayoutEngine(viz, AvoidLib.getInstance()),
-		);
+		ready = loadLayoutEngine(async () => {
+			const [viz] = await Promise.all([instance(), AvoidLib.load(request.wasmUrl)]);
+			return [viz, AvoidLib.getInstance()];
+		});
 		void ready.catch(() => {
 			initFailure = true;
 		});

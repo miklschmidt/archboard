@@ -1,7 +1,7 @@
 import { instance } from "@viz-js/viz";
 import { AvoidLib } from "libavoid-js";
 import type { RendererHost } from "@/transformers/semantic-renderer/host";
-import { createLayoutEngine } from "@/transformers/semantic-renderer/engine";
+import { loadLayoutEngine } from "@/transformers/semantic-renderer/engine";
 import { engineAborted } from "@/transformers/semantic-renderer/engine-pool";
 
 type Solve = RendererHost["solve"];
@@ -12,10 +12,12 @@ interface Request {
 }
 
 // An initialization promise is shared by every request in this worker. The
-// engine's WASM state stays private to the worker; requests run serially.
-const ready = Promise.all([instance(), AvoidLib.load()]).then(([viz]) =>
-	createLayoutEngine(viz, AvoidLib.getInstance()),
-);
+// engine's WASM state stays private to the worker; requests run serially, each
+// from the engine's memory as loaded.
+const ready = loadLayoutEngine(async () => {
+	const [viz] = await Promise.all([instance(), AvoidLib.load()]);
+	return [viz, AvoidLib.getInstance()];
+});
 let initFailure = false;
 void ready.catch(() => {
 	initFailure = true;
