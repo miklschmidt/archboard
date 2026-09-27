@@ -62,6 +62,23 @@ describe("carrying a card", () => {
 		expect(surface.querySelector(`g[data-semantic-id="n2"] [${TRANSITION_ATTRIBUTE}]`)).toBeNull();
 	});
 
+	test("a frame's rule under its heading stays level while the frame grows", () => {
+		const surface = surfaceElement();
+		const frame: Card = { ...A, rule: 40 };
+		const grown: Card = { ...frame, box: { ...A.box, width: A.box.width + 80, height: 220 } };
+		const before = picture([frame, B], [AB]);
+		surface.innerHTML = before.svg;
+		const transition = transitionPicture(surface, before, picture([grown, B], [AB]));
+		const rule = surface.querySelector('g[data-semantic-id="n1"] line');
+		for (const at of [0, 0.3, 0.6, 1]) {
+			transition.seek(at);
+			const body = bodyOf(surface, "n1");
+			expect(Number(rule?.getAttribute("y1"))).toBe(body.y + 40);
+			expect(Number(rule?.getAttribute("y2"))).toBe(body.y + 40);
+			expect(Number(rule?.getAttribute("x2"))).toBe(body.x + body.width);
+		}
+	});
+
 	test("only the content that changed swaps: what leaves drops away first, then what arrives settles in from above", () => {
 		const surface = surfaceElement();
 		// The card stays put, so every translate below is the swap's own motion.

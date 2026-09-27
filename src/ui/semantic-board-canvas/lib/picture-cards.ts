@@ -77,9 +77,55 @@ function rectPart(rect: Element, box: SemanticBox): FramePart | null {
 	};
 }
 
+/** Where one coordinate of a frame line is, given where its card's box is along that axis. */
+type EdgeAnchor = (start: number, size: number) => number;
+
 /**
- * A frame line as offsets from the card's box: each end relative to the
- * nearest edges, so a lifeline stretches with the frame it runs down.
+ * Where one axis of a frame line's two ends keep to as the card's box moves
+ * and resizes. Ends at one place — a rule across the card's width sits at one
+ * height, a lifeline down it at one place across — keep to the box's start
+ * together, as the content drawn beside them does, so the line never tilts.
+ * Ends at two places keep each to its own nearer edge, so a rule spans the
+ * width and a lifeline the height of the box it is drawn in.
+ * @param first The first end's coordinate.
+ * @param second The second end's coordinate.
+ * @param start Where the box starts along this axis.
+ * @param size How long the box is along it.
+ * @returns How to place each end.
+ */
+function axisAnchors(
+	first: number,
+	second: number,
+	start: number,
+	size: number,
+): readonly [EdgeAnchor, EdgeAnchor] {
+	if (first === second) {
+		const offset = first - start;
+		const together: EdgeAnchor = (at) => at + offset;
+		return [together, together];
+	}
+	return [nearerEdge(first, start, size), nearerEdge(second, start, size)];
+}
+
+/**
+ * Keep a coordinate its distance from whichever edge of the box it is nearer.
+ * @param value The coordinate.
+ * @param start Where the box starts along this axis.
+ * @param size How long the box is along it.
+ * @returns How to place it.
+ */
+function nearerEdge(value: number, start: number, size: number): EdgeAnchor {
+	const fromStart = value - start;
+	const fromEnd = value - (start + size);
+	return Math.abs(fromStart) <= Math.abs(fromEnd)
+		? (at) => at + fromStart
+		: (at, length) => at + length + fromEnd;
+}
+
+/**
+ * A frame line as offsets from the card's box: a frame's rule under its
+ * heading stays level at the heading's height, and a lifeline stretches with
+ * the frame it runs down.
  * @param line The line.
  * @param box The card's box.
  * @returns How to draw it at a box, or null when it has no ends of its own.
@@ -89,17 +135,13 @@ function linePart(line: Element, box: SemanticBox): FramePart | null {
 	if (ends === null) {
 		return null;
 	}
-	const right = box.x + box.width;
-	const bottom = box.y + box.height;
-	const dx1 = ends.x1 - box.x;
-	const dy1 = ends.y1 - box.y;
-	const dx2 = ends.x2 - right;
-	const dy2 = ends.y2 - bottom;
+	const [x1, x2] = axisAnchors(ends.x1, ends.x2, box.x, box.width);
+	const [y1, y2] = axisAnchors(ends.y1, ends.y2, box.y, box.height);
 	return (at: SemanticBox): void => {
-		line.setAttribute("x1", String(at.x + dx1));
-		line.setAttribute("y1", String(at.y + dy1));
-		line.setAttribute("x2", String(at.x + at.width + dx2));
-		line.setAttribute("y2", String(at.y + at.height + dy2));
+		line.setAttribute("x1", String(x1(at.x, at.width)));
+		line.setAttribute("y1", String(y1(at.y, at.height)));
+		line.setAttribute("x2", String(x2(at.x, at.width)));
+		line.setAttribute("y2", String(y2(at.y, at.height)));
 	};
 }
 

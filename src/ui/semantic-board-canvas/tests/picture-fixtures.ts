@@ -24,6 +24,8 @@ interface Card {
 	readonly ghost?: boolean;
 	/** Whether the card is the label drawn for a connection rather than a node. */
 	readonly label?: boolean;
+	/** How far below its top a container's frame rules off its header, when it is one. */
+	readonly rule?: number;
 }
 
 /** One line to draw. */
@@ -50,6 +52,9 @@ function cardMarkup(card: Card): string {
 		`<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="6" fill="#222"${outline}/>` +
 		`<rect x="${x + 16}" y="${y + 16}" width="24" height="24" rx="5" fill="#888"/>` +
 		`<text x="${x + 52}" y="${y + 30}" font-size="14">${card.title}</text>` +
+		(card.rule === undefined
+			? ""
+			: `<line x1="${x}" y1="${y + card.rule}" x2="${x + width}" y2="${y + card.rule}" stroke="#555"/>`) +
 		(card.pinned === true
 			? `<g transform="translate(${x + 3},${y + 3})"><circle r="9.2" fill="#f0b429"/></g>`
 			: "") +
