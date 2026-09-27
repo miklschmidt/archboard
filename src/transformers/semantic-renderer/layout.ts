@@ -2,6 +2,7 @@
 // board: the column count a board is folded into, label reservations,
 // spacing, corner rounding, crossing bridges and the marks where routes join.
 export { bridgeCrossings } from "@/transformers/semantic-renderer/lib/layout/crossings";
+export { shownDrawing } from "@/transformers/semantic-renderer/lib/shown";
 export { junctionsOf } from "@/transformers/semantic-renderer/lib/svg/junctions";
 export { meetingPlaces, restingPlace } from "@/transformers/semantic-renderer/lib/svg/comet-rest";
 export {
