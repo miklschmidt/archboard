@@ -86,7 +86,7 @@ function regionBox(
 	return { x: x! + shift.x, y: y! + shift.y, width: width!, height: height! };
 }
 
-test("a container of blocks keeps no more room under its title than a container of cards", async () => {
+test("a container of blocks keeps as much room under its title as a container of cards", async () => {
 	const content = orderedFixture({
 		nodes: [
 			{ id: "grouped", name: "Board server", kind: "service" },
@@ -105,7 +105,21 @@ test("a container of blocks keeps no more room under its title than a container 
 	const { nodes } = drawn.atlas;
 	const packed = regionBox(drawn.svg, "state").y - nodes["grouped"]!.y;
 	const carded = nodes["queue"]!.y - nodes["plain"]!.y;
-	expect(packed).toBeLessThanOrEqual(carded);
+	expect(carded).toBe(packed);
+});
+
+test("a container a line leaves by its bottom keeps its inset under its lowest card", async () => {
+	const content = orderedFixture({
+		nodes: [
+			{ id: "child", name: "Codex child", kind: "service" },
+			{ id: "wire", name: "Codex transport", kind: "module", parent: "child" },
+			{ id: "server", name: "Archboard server", kind: "service" },
+		],
+		edges: [{ id: "e1", from: "wire", to: "server", kind: "call" }],
+	});
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const { child, wire } = drawn.atlas.nodes;
+	expect(child!.y + child!.height - (wire!.y + wire!.height)).toBe(wire!.x - child!.x);
 });
 
 test("a container's cards stand under its title, not beside it", async () => {

@@ -10,7 +10,7 @@ import type {
 	Line,
 	Piece,
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
-import { channelHeight } from "@/transformers/semantic-renderer/lib/track/route";
+import { channelHeight } from "@/transformers/semantic-renderer/lib/track/spacing";
 import {
 	crossingsOf,
 	readsBetter,
