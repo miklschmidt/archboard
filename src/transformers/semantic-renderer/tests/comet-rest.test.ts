@@ -107,6 +107,19 @@ test("a resting streak with no lane's room lets its tail run under its label rat
 	expect(shared.y - rest).toBeGreaterThanOrEqual(10);
 });
 
+test("a resting streak whose tail runs under its label still keeps off a hop", () => {
+	// Every head clear of the label drags its tail under it, so each keeps
+	// no room from the label; the one furthest from the hop rests first.
+	const ride = {
+		from: { x: 0, y: 0 },
+		segments: [{ kind: "line" as const, to: { x: 0, y: 90 } }],
+	};
+	const label = { x: -40, y: 0, width: 80, height: 30 };
+	const hop = { x: -6, y: 49, width: 12, height: 6 };
+	const rest = restingPlace(ride, 90, { glow: GLOW, body: 30 }, { labels: [label], met: [hop] });
+	expect(hop.y - rest - GLOW).toBeGreaterThanOrEqual(10);
+});
+
 test("a resting streak with no lane's room keeps the most room it can", () => {
 	// Two junction dots 32 px apart on a line down 70 px: half way stands
 	// 10 px from the upper one, the middle between them 13 px from each.
