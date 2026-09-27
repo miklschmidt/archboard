@@ -7,22 +7,22 @@
 // staircase where one turn would do. Once the drawing is joined, each such
 // step is taken out by sliding the run between its two turns onto the
 // column, or row, of the run before or after it, so the two runs either side
-// become one. A slide is kept only where the line's new stretch stays clear
-// of every card, title and label, keeps a lane from every other line and
-// half a lane from every wall, crosses no more lines and no wall it did not
-// cross, and still runs through the line's own label. A run other lines
-// share, a trunk, moves only with all of them and only where none runs much
-// longer for it; a line's first or last run never leaves the card face it
-// meets.
+// become one. A slide is kept only where the line's new stretch keeps the
+// router's clearance from every card and title, half a lane from every
+// label, a lane from every other line and a lane and a half from every wall,
+// crosses no more lines and no wall it did not cross, and still runs through
+// the line's own label. A run other lines share, a trunk, moves only with all
+// of them and only where none runs much longer for it; a line's first or
+// last run never leaves the card face it meets.
 import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
-import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
+import { inflate, type Box, type Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { corners } from "@/transformers/semantic-renderer/lib/blocks/laid";
+import { TRUNK_CLEARANCE } from "@/transformers/semantic-renderer/lib/blocks/trunks";
 import { LANE, REGION_CLEARANCE } from "@/transformers/semantic-renderer/lib/track/chains";
 import {
 	SAME,
 	crosses,
 	fresh,
-	grown,
 	lengthOf,
 	onOne,
 	runsOf,
@@ -35,8 +35,8 @@ import {
 	type Span,
 } from "@/transformers/semantic-renderer/lib/blocks/spans";
 
-/** How far a line's new stretch keeps from a card, a title or a label. */
-const CLEARANCE = LANE / 2;
+/** How far a line's new stretch keeps from another line's label. */
+const LABEL_CLEARANCE = LANE / 2;
 /** The shortest run between two turns, whose two bends need room. */
 const SHORTEST = 2 * BEND_RADIUS;
 /** How far apart two lines on one axis still read as one. */
@@ -44,10 +44,16 @@ const HANDOFF = 4 * LANE;
 /**
  * How much longer a slide may make a line it moves: a trunk's lines follow
  * its slide, and a turn or two more to run with the trunk reads better than a
- * step, but a way round a far channel does not.
+ * step, but a way round a far channel does not. Measured on the dogfood
+ * boards: the slides that read well add up to 308 px (Board persistence
+ * whole, Archboard server whole), the ways round at least 703 px (Codex
+ * workhorse whole).
  */
 const CARRIED = 24 * LANE;
-/** How many times every line is looked at again, after the others moved. */
+/**
+ * How many times every line is looked at again, after the others moved: a
+ * bound on time, since a slide can free another line's slide on and on.
+ */
 const PASSES = 3;
 
 /** A line as the steps read it: its points and its label's box. */
@@ -297,21 +303,18 @@ function keepsClear(next: readonly Point[], old: readonly Point[], weighing: Wei
 
 /**
  * Whether what a slide adds to a line and takes from it stays clear: nothing
- * it takes is a trunk or the run through its label, and nothing it adds runs
- * through a box, a title band or its label, or crowds another line.
+ * it takes is the run through its label, and nothing it adds runs through a
+ * box, a title band or its label, or crowds another line. A trunk it takes
+ * moves with every line on it (`trunkOf`).
  * @param added The stretches the slide adds.
  * @param gone The stretches it takes away.
  * @param weighing What the line is weighed against.
  * @returns True when they do.
  */
 function movesClear(added: readonly Span[], gone: readonly Span[], weighing: Weighing): boolean {
-	const { others, label } = weighing;
+	const { label } = weighing;
 	const labelled = [...added, ...gone].some((span) => label !== undefined && through(span, label));
-	return (
-		!labelled &&
-		!gone.some((span) => others.some((other) => onOne(span, other))) &&
-		!added.some((span) => blocked(span, weighing))
-	);
+	return !labelled && !added.some((span) => blocked(span, weighing));
 }
 
 /**
@@ -378,7 +381,6 @@ function fits(moved: Moved, routes: readonly (readonly Point[])[], weigh: Weighe
 	return [...moved].every(([line, next]) => {
 		const old = routes[line]!;
 		return (
-			next.length <= old.length &&
 			reach(next) <= reach(old) + CARRIED &&
 			keepsEnds(next, old) &&
 			roomy(next, old) &&
@@ -433,11 +435,11 @@ function weighingOf(
 	around: Surroundings,
 ): Weigher {
 	const runs = routes.map((route) => runsOf(route).map(spanOf));
-	const boxes = [...around.boxes].map((box) => grown(box, CLEARANCE));
+	const boxes = around.boxes.map((box) => inflate(box, TRUNK_CLEARANCE));
 	const labels = lines.map(({ label }) =>
-		label === undefined ? undefined : grown(label, CLEARANCE),
+		label === undefined ? undefined : inflate(label, LABEL_CLEARANCE),
 	);
-	const bands = around.bands.map((band) => grown(band, LANE));
+	const bands = around.bands.map((band) => inflate(band, LANE));
 	return (moved, line) => ({
 		others: runs.flatMap((spans, at) => (moved.has(at) ? [] : spans)),
 		boxes: [

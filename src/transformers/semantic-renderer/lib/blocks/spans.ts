@@ -112,16 +112,6 @@ function through(span: Span, box: Box): boolean {
 }
 
 /**
- * A box grown on every side.
- * @param box The box.
- * @param by How far.
- * @returns The grown box.
- */
-function grown(box: Box, by: number): Box {
-	return { x: box.x - by, y: box.y - by, width: box.width + 2 * by, height: box.height + 2 * by };
-}
-
-/**
  * Whether a value lies along a span, clear of its ends.
  * @param value The value.
  * @param span The span.
@@ -194,7 +184,6 @@ export {
 	SAME,
 	crosses,
 	fresh,
-	grown,
 	lengthOf,
 	onOne,
 	runsOf,
