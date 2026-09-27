@@ -408,3 +408,28 @@ test("a board's groups are packed only where that fits the pane no worse", async
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
 	expect(drawing.width).toBeGreaterThan(drawing.height);
 });
+
+// Taken from the IIS migration board: a line into a container itself ends on a
+// port no line inside the container runs through, which stood wherever the
+// container's block put it, and settling the trunk pulled the line off the
+// middle of the card it leaves toward that meaningless place.
+test("a line into a container itself leaves its card on the card's own column", async () => {
+	const content = orderedFixture({
+		nodes: [
+			{ id: "lb", name: "Legacy load balancer", kind: "service" },
+			{ id: "pool", name: "Windows VM pool", kind: "system" },
+			...["vm1", "vm2", "vm3", "vm4"].map((id) => ({
+				id,
+				name: `IIS ${id}`,
+				kind: "service",
+				parent: "pool",
+				groups: ["state"],
+			})),
+		],
+		edges: [{ id: "e1", from: "lb", to: "pool", kind: "call", label: "L4 forwarding" }],
+	});
+	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const card = drawn.atlas.nodes["lb"]!;
+	const route = routePoints(drawn.svg).get("e1")!;
+	for (const { x } of route) expect(x).toBeCloseTo(card.x + card.width / 2, 0);
+});

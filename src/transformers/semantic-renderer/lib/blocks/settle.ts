@@ -415,6 +415,35 @@ class Settle {
 	}
 
 	/**
+	 * Whether where a trunk's end stands now means anything: all but a pin on
+	 * a port no line inside its block runs through, the port a relationship
+	 * to the container itself makes, which stands wherever its block put it.
+	 * @param end The end.
+	 * @returns True when it does.
+	 */
+	holds(end: string): boolean {
+		const pin = this.settling.tree.pins.get(end);
+		if (pin === undefined) return true;
+		return [...pin.block.lines.values()].some(
+			({ from, to }) => from === pin.port || to === pin.port,
+		);
+	}
+
+	/**
+	 * Where a trunk stands now: between its ends that hold where they stand
+	 * ({@link Settle.holds}), or between both when neither does.
+	 * @param block The block of blocks.
+	 * @param ends The trunk's ends.
+	 * @param own Where the block's own ports were settled.
+	 * @returns The x.
+	 */
+	standing(block: Block, ends: readonly string[], own: ReadonlyMap<string, number>): number {
+		const held = ends.filter((end) => this.holds(end));
+		const standing = held.length > 0 ? held : ends;
+		return standing.reduce((sum, end) => sum + this.nowIn(block, end, own), 0) / standing.length;
+	}
+
+	/**
 	 * Where every port of the blocks inside a block of blocks is settled: for
 	 * each trunk between two ends, where they face each other, and on each
 	 * edge a lane apart in the order they want.
@@ -428,7 +457,7 @@ class Settle {
 		for (const line of block.lines.values()) {
 			const ends = [line.tail, line.head];
 			if (!this.settles(block, ends)) continue;
-			const now = (this.nowIn(block, ends[0]!, own) + this.nowIn(block, ends[1]!, own)) / 2;
+			const now = this.standing(block, ends, own);
 			const [one, other] = ends.map((end, index) =>
 				this.endIn(block, { end, other: ends[1 - index]!, key: line.key }, own),
 			);
