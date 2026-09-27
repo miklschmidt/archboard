@@ -58,7 +58,39 @@ function bestWrap(
 	block: Block,
 	laying: { laid: Map<string, Laid>; whole: Laid; stacked: boolean; insets: Insets },
 ): Laid | undefined {
-	const { laid, stacked, insets } = laying;
+	const worth = block.kind === "root" ? WORTH_WRAPPING : WORTH_WRAPPING_INSIDE;
+	const needed = scoreOf(weighed(laying.whole)) * worth;
+	// No layout scores above one, a page that fits at full scale and crosses
+	// nothing: a block that needs a wrap to score more keeps whole unweighed.
+	return needed < 1 ? wrapScoring(viz, tree, block, { ...laying, needed }) : undefined;
+}
+
+/**
+ * The block's best wrap or grid, when it scores more than the block needs.
+ * @param viz The initialized Graphviz instance.
+ * @param tree The blocks.
+ * @param block The block.
+ * @param laying Every block laid out so far, this one whole, whether it stacks, its insets, and the score a wrap must beat.
+ * @param laying.laid Every block laid out so far.
+ * @param laying.whole This block laid out whole.
+ * @param laying.stacked Whether its containers stack.
+ * @param laying.insets Its insets.
+ * @param laying.needed The score a wrap must beat.
+ * @returns The best wrap, or nothing when the block stays whole.
+ */
+function wrapScoring(
+	viz: Graphviz,
+	tree: BlockTree,
+	block: Block,
+	laying: {
+		laid: Map<string, Laid>;
+		whole: Laid;
+		stacked: boolean;
+		insets: Insets;
+		needed: number;
+	},
+): Laid | undefined {
+	const { laid, stacked, insets, needed } = laying;
 	const gridded = new CardLayout(block, laid, tree, insets).looseCards().some(grids)
 		? [
 				wrapOf(
@@ -85,14 +117,12 @@ function bestWrap(
 			.map((make) => wrapOf(layBoth(viz, make), lowered))
 			.filter(({ laid: { boxes } }) => !sinks(lowered, boxes, around)),
 	);
-	const worth = block.kind === "root" ? WORTH_WRAPPING : WORTH_WRAPPING_INSIDE;
 	// A wrap is chosen with its titles tied; only the chosen one is laid again with them pulled down.
 	const best = [...gridded, ...wraps].reduce<Wrapped | undefined>(
 		(one, other) => (one === undefined || wrapsBetter(other, one) ? other : one),
 		undefined,
 	);
-	if (best === undefined || scoreOf(weighed(best.laid)) <= scoreOf(weighed(laying.whole)) * worth)
-		return undefined;
+	if (best === undefined || scoreOf(weighed(best.laid)) <= needed) return undefined;
 	const kept = settled({ tied: best.laid, untied: best.untied });
 	const sunk = sinks(best.lowered, kept.boxes, around);
 	return sunk ? best.laid : kept;
