@@ -5,12 +5,11 @@
 // the page kept so far when it fits the reference pane materially better,
 // fewer columns winning ties. Only the chosen count is settled; a count the
 // router refuses keeps the unfolded reading (TASK-342). The settled fold is
-// weighed as before ADR 0039, where it fits materially better and scores
-// higher, and on its reading pick, where it fits materially better and has
-// no more defects in the ADR's order (`defectOrder` in track/score.ts); where
-// the two disagree, the reading pick is taken only if it is no worse on any
-// measure (`takes`). The bends and line of its lines between columns are the
-// price of any fold.
+// kept as ADR 0039's guard takes it (`takes` in track/score.ts): weighed as
+// before the ADR, it fits materially better and scores higher; read, it fits
+// materially better and reads no worse in the ADR's order (`readingOrder`),
+// where Graphviz counts crossings seen, then hooks and touching lines. The
+// bends and line of its lines between columns are the price of any fold.
 //
 // A page's size is fixed by placement, and a settled reading's page is its
 // placement with the labels it reserved, so a placement ranks a count for one
@@ -27,7 +26,7 @@ import { foldColumnCounts } from "@/transformers/semantic-renderer/lib/layout/fo
 import { drawingWeighed } from "@/transformers/semantic-renderer/lib/layout/even-pins";
 import {
 	crossingsOf,
-	defectOrder,
+	readingOrder,
 	scoreOf,
 	takes,
 	type Weighed,
@@ -74,7 +73,7 @@ async function chooseReading(
  * Whether a settled fold is kept over the unfolded drawing, as ADR 0039's
  * guard takes it ({@link takes}): weighed as before the ADR, it fits the
  * pane materially better and scores higher; read, it fits materially better
- * with no more defects.
+ * and reads no worse.
  * @param candidate The fold.
  * @param baseline The unfolded drawing.
  * @returns True when the fold is kept.
@@ -83,7 +82,7 @@ function readsBetter(candidate: ArchitectureDrawing, baseline: ArchitectureDrawi
 	const [one, other] = [drawingWeighed(candidate), drawingWeighed(baseline)];
 	const earlier =
 		better(candidate, baseline) && scoreOf(scored(candidate)) > scoreOf(scored(baseline));
-	return takes(one, other, earlier, better(candidate, baseline) && defectOrder(one, other) <= 0);
+	return takes(one, other, earlier, better(candidate, baseline) && readingOrder(one, other) <= 0);
 }
 
 /**
