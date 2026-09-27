@@ -60,8 +60,9 @@ nothing states where its code will live, so it stays unbound.
    calls from `holdBoard` and `releaseHold` are the same two relationships, now
    landing on the table", not "two relationships went and two arrived": an
    endpoint that moved is the change the comparison exists to show, so name it.
-   The command reads a variant against the one it came from; a root
-   architecture came from nothing and is refused.
+   The command reads a variant against the current one, as its picture is
+   drawn, or on a board nobody has built against the one it came from; the
+   current variant itself, and a first draft on such a board, are refused.
    When the proposal adds or changes a board view, read [sequences, views and
    walkthroughs](references/sequences-views-walkthroughs.md) for the two
    meanings of a selection scope before writing it.
@@ -71,6 +72,7 @@ nothing states where its code will live, so it stays unbound.
    The proposal becomes current, the previous current becomes historical, and
    nothing is renamed.
 
-Read [variants](references/variants.md) for what the comparison counts, for a
-proposal that holds disagreements after its predecessor moved
+Read [variants](references/variants.md) for what the comparison counts and
+what it is read against, for a proposal that holds disagreements after its
+predecessor moved
 (`semantic resolve`), and for adoption rules.

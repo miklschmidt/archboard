@@ -150,8 +150,9 @@ updated through their usual recipe, never through this one.
    Helpers, configuration, types and tests stay out unless the change is about
    them. Done when it reads as `main` does.
 3. **Branch the pull request from it** and make the change in one edit to the
-   branch. The pane draws a draft's comparison with what it was branched from,
-   so what was added, changed and removed is marked on screen. Done when every
+   branch. The pane draws a draft's comparison with the current variant, which
+   is what it was branched from, so what was added, changed and removed is
+   marked on screen. Done when every
    change the diff makes to the architecture is on the branch.
 4. **Write the walkthrough on the branch for a reviewer**, three to six beats
    [written for the voice](#walkthroughs):

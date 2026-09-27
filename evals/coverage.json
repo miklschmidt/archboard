@@ -495,11 +495,18 @@
 					"owner": "tests/system/semantic-boards/variant-targeting.test.ts, adopted only when forced"
 				},
 				{
-					"path": "comparison against direct predecessor: added/removed/changed/unchanged, continuing versus replacement edges, sequence subjects",
+					"path": "comparison against the current variant (on a board nobody has built, the direct predecessor): added/removed/changed/unchanged, continuing versus replacement edges, sequence subjects",
 					"expectedUse": "a proposal reads as its real delta",
 					"scenarios": ["S02", "S12"],
 					"evidence": "harness-check",
 					"owner": "comparison-standing; grader compare.reading; src/shared/semantic-board/tests compare"
+				},
+				{
+					"path": "current variant as the reference: history and proposals drawn against it, current drawn plain, compare --against names another side",
+					"expectedUse": "report a proposal against now; read a superseded proposal's own change with --against its parent before restating it",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/shared/semantic-board/tests/read-against-current.test.ts; src/cli/commands/tests/comparison-answer.test.ts"
 				},
 				{
 					"path": "fresh architecture layout independent of variant ancestry",

@@ -89,10 +89,10 @@ recipe names.
     coming ([Writes](#essentials), [Claims](#essentials)).
 14. **Read the answer against those checks and look at the picture it draws**
     ([Verification](#essentials)).
-15. **Compare a proposal against the variant it came from**
-    ([variants](references/variants.md)). The first draft of a board nobody
-    has built came from nothing, so there is nothing to compare it against:
-    say so instead.
+15. **Compare a proposal against the current variant**
+    ([variants](references/variants.md)); on a board nobody has built, against
+    the draft it came from. The current variant, and the first draft of a board
+    nobody has built, have nothing to compare against: say so instead.
 16. **Run `archboard check`** after a vocabulary edit or an answer that
     carried `warnings` ([Vocabulary](#essentials)).
 17. **Repeat steps 4 to 16** for each further write the board still needs — a
@@ -130,7 +130,8 @@ recipe names.
 - **Reads.** `archboard semantic show <board>` prints the whole family: every
   variant with its `lifecycle`, `parent`, `content` and the board `version`.
   `archboard semantic` lists the boards. `archboard semantic compare <board>
-[--variant <id|name>]` reads one variant against the variant it came from
+[--variant <id|name>] [--against <id|name>]` reads one variant against the
+  current one, or on a board nobody has built the one it came from
   ([answer from a saved board](references/read.md) says what it reports).
 - **Writes.** `semantic new` needs `--doing "<present-tense line>"`. Every
   later write (`edit`, `branch`, `resolve`, `adopt`, `rename`) also needs

@@ -4,6 +4,20 @@ status: accepted
 
 # Semantic boards own meaning; renderers own presentation
 
+Amended by the user's decision of 2026-09-27: what a variant is drawn against is
+the board's current variant, not its predecessor. "Diff should be on 'historical'
+and not 'current', when a board has historical boards. Current is now, backwards
+(historical) / forwards (proposals/drafts) is always diffed against 'current',
+not the other way around." The current variant is the reference and shows no
+comparison; a historical, draft or shelved variant is drawn, inspected, narrated
+and compared as how it differs from the current one, so its added subjects are
+the ones only it has and its removed subjects the ones only current has. A board
+with no current variant has no now, so there each draft is still read against
+the one it came from. The ancestry is unchanged: reconciliation, inheritance and
+adoption (ADR 0037) still follow the parent, and `semantic compare --against`
+reads a variant against any other, which is how a superseded proposal is read
+for its own change. The comparison bullet below says so; everything else stands.
+
 Human drawing edits have primarily repaired agent layout and organization mistakes.
 Agents repeatedly produce diagrams with weak visual and typographic hierarchy.
 The replacement board model will express architectural meaning and presentation
@@ -43,8 +57,10 @@ design.
   views show added, removed, and changed content using derived labels and visual
   treatment; agents do not author those change flags. A proposal's change labels
   are part of its ordinary rendering rather than a separately requested comparison
-  mode. Variants form a tree, with one predecessor per variant: B derived from A
-  shows its changes relative to A, and A may have competing children B and C.
+  mode. Variants form a tree, with one predecessor per variant, and A may have
+  competing children B and C. Every variant but the current one shows how it
+  differs from the current variant; on a board with no current variant, B derived
+  from A shows its changes relative to A (amended 2026-09-27, above).
   A child's baseline follows its evolving parent, rather than staying pinned to
   the parent's branching-time content. Automatic inheritance applies only to
   draft proposals: adoption preserves ancestry but stops automatic inheritance
@@ -82,7 +98,8 @@ design.
   deferred until a real need arises. Any coherent draft, including a competing branch,
   may be explicitly adopted without reparenting. Unresolved reconciliation refuses
   adoption. The actual ancestry and the adoption transition are recorded separately.
-  Removed content comes from the comparison baseline for the derived depiction; it is not
+  Removed content comes from the comparison baseline — the current variant, or on
+  a board with none the predecessor — for the derived depiction; it is not
   reinserted into the proposal's authored content. The existing comparison
   implementation must be assessed against the new semantic schema rather than
   assumed reusable unchanged. Badge the entity whose semantic properties changed;

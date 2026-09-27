@@ -11,8 +11,10 @@ On 2026-09-19 the user chose compact, readable layouts over frozen positions
 including its own reading direction and flank rule. Ancestor drawings, sizes,
 positions and routes are not layout inputs.
 
-Comparison meaning is unchanged: the direct predecessor determines each
-subject's Standing, and removed subjects remain visible in the comparison.
+Comparison meaning is unchanged by layout: the variant a picture is read
+against determines each subject's Standing — since 2026-09-27 the board's
+current variant, or on a board with none the direct predecessor (ADR 0023 as
+amended) — and removed subjects remain visible in the comparison.
 Stable subject identities and the viewer's transitions carry continuity between
 pictures. Cards may move, containers may shrink, and a proposal may read in a
 different direction. Large rearrangements can make the brief transition busier;
