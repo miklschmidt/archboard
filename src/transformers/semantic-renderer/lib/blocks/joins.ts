@@ -247,27 +247,75 @@ function drawsBetter(one: Drawn<Page>, other: Drawn<Page>): boolean {
 }
 
 /**
+ * A way to lay a drawing out that lays it with each set of blocks apart
+ * once, however often it is asked. A layout asked for ahead and never
+ * awaited is dropped, a failure included: laid out one by one, it would
+ * never have been asked for.
+ * @param lay Lay the drawing out with some blocks' joins apart, by block id.
+ * @returns The way to ask for a layout.
+ */
+function layingOnce<Placed>(
+	lay: (apart: ReadonlySet<string>) => Promise<Placed>,
+): (apart: ReadonlySet<string>) => Promise<Placed> {
+	const asked = new Map<string, Promise<Placed>>();
+	return (apart) => {
+		const key = JSON.stringify([...apart].toSorted());
+		let laying = asked.get(key);
+		if (laying === undefined) {
+			laying = lay(apart);
+			asked.set(key, laying);
+			laying.catch(() => undefined);
+		}
+		return laying;
+	};
+}
+
+/**
  * Lay a drawing out with every join kept whole the way that reads better:
  * every join before its labels; then every join apart; then, from the better
  * of those, each block's joins turned the other way in turn, kept where the
- * drawing reads better.
+ * drawing reads better. Every layout the turns would weigh were none of them
+ * kept is asked for at once, so they are laid out side by side; a turn kept
+ * changes the ones after it, which are asked for then. They are weighed in
+ * turn all the same, so the drawing is the one laying them out one by one
+ * gives.
+ * @param tree The blocks, which name the blocks joins move labels to.
  * @param lay Lay the drawing out with some blocks' joins apart, by block id.
  * @returns The drawing laid out best.
  */
-function layJoined<Placed extends Page>(
-	lay: (apart: ReadonlySet<string>) => Drawn<Placed>,
-): Drawn<Placed> {
-	let best = lay(new Set());
-	const blocks = [...best.tree.joining];
-	let apart = new Set<string>();
-	const trials = [
+async function layJoined<Placed extends Page>(
+	tree: BlockTree,
+	lay: (apart: ReadonlySet<string>) => Promise<Placed>,
+): Promise<Drawn<Placed>> {
+	const ask = layingOnce(lay);
+	const blocks = [...tree.joining];
+	const turns = [
 		...(blocks.length > 1 ? [(): Set<string> => new Set(blocks)] : []),
-		...blocks.map((block) => (): Set<string> => toggled(apart, block)),
+		...blocks.map(
+			(block) =>
+				(apart: ReadonlySet<string>): Set<string> =>
+					toggled(apart, block),
+		),
 	];
-	for (const next of trials) {
-		const trial = next();
-		const tried = lay(trial);
-		if (drawsBetter(tried, best)) [best, apart] = [tried, trial];
+	/**
+	 * Ask for every layout from one turn on, as the turns would weigh it were none of them kept.
+	 * @param from The first turn.
+	 * @param apart The blocks apart in the drawing kept so far.
+	 */
+	const ahead = (from: number, apart: ReadonlySet<string>): void => {
+		for (const turn of turns.slice(from)) void ask(turn(apart));
+	};
+	const first = ask(new Set());
+	ahead(0, new Set());
+	let best: Drawn<Placed> = { tree, placed: await first };
+	let apart: ReadonlySet<string> = new Set();
+	for (const [index, turn] of turns.entries()) {
+		const trial = turn(apart);
+		// oxlint-disable-next-line no-await-in-loop -- each turn is weighed against the best before it
+		const tried = { tree, placed: await ask(trial) };
+		if (!drawsBetter(tried, best)) continue;
+		[best, apart] = [tried, trial];
+		ahead(index + 1, apart);
 	}
 	return best;
 }

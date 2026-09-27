@@ -10,7 +10,8 @@
 // cards (routing-clearance.ts). Routed so everywhere, the same labels pushed
 // lines into longer ways round in some boards: Platform Phone API went from 9
 // to 12 crossings and Board rasterizer's "One browser, two uses" took 20 more
-// bends. So each reading is settled and finished both ways, and the cleared
+// bends. So each reading is settled and finished both ways (a fold only the
+// way its unfolded reading was kept, column-readings.ts), and the cleared
 // drawing is weighed against the ordinary one as plain and evened pins are
 // (even-pins.ts), each label it clears counted as a defect saved and each it
 // crowds as one brought: it is kept when it has no more of any defect the
@@ -99,18 +100,18 @@ function clearer(cleared: ArchitectureDrawing, ordinary: ArchitectureDrawing): b
 }
 
 /**
- * The drawing routed with reserved labels' full clearance where it gives
- * labels clearance and costs nothing else ({@link clearer}). A drawing the
+ * The settlement routed with reserved labels' full clearance where it gives
+ * labels clearance and costs nothing else ({@link clearer}). A settlement the
  * router refuses leaves the other; a fault in either is thrown.
- * @param ordinary The finished drawing with the router's buffer round reserved labels.
- * @param cleared The finished drawing with their full clearance.
- * @returns The drawing kept.
+ * @param ordinary The finished settlement with the router's buffer round reserved labels.
+ * @param cleared The finished settlement with their full clearance.
+ * @returns The settlement kept.
  */
-export async function clearerDrawing(
-	ordinary: Promise<ArchitectureDrawing>,
-	cleared: Promise<ArchitectureDrawing>,
-): Promise<ArchitectureDrawing> {
+export async function clearerSettlement<Settled extends { readonly drawing: ArchitectureDrawing }>(
+	ordinary: Promise<Settled>,
+	cleared: Promise<Settled>,
+): Promise<Settled> {
 	const [one, other] = await eitherRouting(ordinary, cleared);
 	if (one === undefined || other === undefined) return (one ?? other)!;
-	return clearer(other, one) ? other : one;
+	return clearer(other.drawing, one.drawing) ? other : one;
 }

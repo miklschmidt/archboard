@@ -32,7 +32,9 @@ type ThemeColors = Readonly<Record<DiagramTheme, Readonly<Record<string, string>
 interface RendererHost {
 	/**
 	 * Solve one graph with the layout engine: placed and routed, or one of the
-	 * two when the options name a {@link SOLVE_STAGE}.
+	 * two when the options name a {@link SOLVE_STAGE}. The engine solves a copy
+	 * of the graph (a worker receives one), so the caller's graph is never
+	 * changed and may share its parts with other graphs.
 	 * @param graph The complete measured graph.
 	 * @param layoutOptions The options for this solve.
 	 * @returns Its solved geometry.

@@ -15,7 +15,8 @@
 // for a whole drawing: with evened pins no release of Browser application's
 // reserved rows kept its crossings down, so it stayed 2734 wide instead of
 // 2156 and drew 24 crossings instead of 15. Each reading is therefore settled
-// and finished both ways (compound.ts) and the tidier drawing is kept. It may
+// and finished both ways (compound.ts; a fold only the way its unfolded
+// reading was kept, column-readings.ts) and the tidier drawing is kept. It may
 // have no more of any defect a reader sees: crossings, each stack of two
 // unrelated lines counted as the crossing it may hide and each crossing within
 // a lane of a bend twice; lines that touch, and a fan's branches crowded into
@@ -55,6 +56,7 @@ import {
 	trackedLanes,
 } from "@/transformers/semantic-renderer/lib/layout/stacked-runs";
 import { crossingsOf, type Weighed } from "@/transformers/semantic-renderer/lib/track/score";
+import { measuredOnce } from "@/transformers/semantic-renderer/lib/layout/measured-once";
 
 /** The share a drawing may grow its page or its lines by for every defect it saves. */
 const CROSSING_WORTH = 0.05;
@@ -108,13 +110,16 @@ function lengthOf(points: readonly Point[]): number {
  * @param drawing The drawing.
  * @returns Their number.
  */
-function crossingsSeen(drawing: ArchitectureDrawing): number {
+function countCrossingsSeen(drawing: ArchitectureDrawing): number {
 	return (
 		crossingsOf(drawing.edges.map(({ curve }) => verticesOf(curve))) +
 		corneredCrossings(drawing) +
 		stackKeys(drawing).length
 	);
 }
+
+/** {@link countCrossingsSeen}, taken once for each drawing (measured-once.ts). */
+const crossingsSeen = measuredOnce(countCrossingsSeen);
 
 /**
  * How long a drawing's lines are together.
@@ -138,7 +143,7 @@ function lineLength(drawing: ArchitectureDrawing): number {
  * @param drawing A settled drawing.
  * @returns Its crossings seen, touching lines and crowded joins, stacked lanes, hooks, and lanes side by side.
  */
-function defectsIn(drawing: ArchitectureDrawing): readonly number[] {
+function countDefects(drawing: ArchitectureDrawing): readonly number[] {
 	return [
 		crossingsSeen(drawing),
 		touchKeys(drawing).length + crowdedJoinCount(drawing),
@@ -147,6 +152,9 @@ function defectsIn(drawing: ArchitectureDrawing): readonly number[] {
 		trackedLanes(drawing),
 	];
 }
+
+/** {@link countDefects}, taken once for each drawing (measured-once.ts). */
+const defectsIn = measuredOnce(countDefects);
 
 /**
  * What a drawing is ranked on, most important first.

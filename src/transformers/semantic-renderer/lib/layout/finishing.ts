@@ -50,6 +50,7 @@ import { refusedRouting } from "@/transformers/semantic-renderer/lib/layout/chec
 import { corneredCrossings } from "@/transformers/semantic-renderer/lib/layout/cornered-crossings";
 import { crossingsSeen } from "@/transformers/semantic-renderer/lib/layout/even-pins";
 import { crowdedLabels } from "@/transformers/semantic-renderer/lib/layout/label-clearance";
+import { measuredOnceIn } from "@/transformers/semantic-renderer/lib/layout/measured-once";
 import { bunchedPorts } from "@/transformers/semantic-renderer/lib/layout/lone-pins";
 import { pinnedEnds, sideHooks } from "@/transformers/semantic-renderer/lib/layout/pin-feedback";
 import type { RouteRequest } from "@/transformers/semantic-renderer/lib/layout/route-requests";
@@ -276,7 +277,7 @@ function noWorse(
  * @param pinned The cards that wear a standing pin.
  * @returns The defects.
  */
-function defectsOf(drawing: ArchitectureDrawing, pinned: Pinned): ReadonlySet<string> {
+function countDefects(drawing: ArchitectureDrawing, pinned: Pinned): ReadonlySet<string> {
 	return new Set([
 		...FINISHING_PASSES.flatMap(({ kind, defects }) =>
 			defects(drawing, pinned).map((key) => `${kind}:${key}`),
@@ -289,6 +290,9 @@ function defectsOf(drawing: ArchitectureDrawing, pinned: Pinned): ReadonlySet<st
 		...Array.from({ length: corneredCrossings(drawing) }, (_, index) => `cornered:${index}`),
 	]);
 }
+
+/** {@link countDefects}, taken once for each drawing and set of pinned cards (measured-once.ts). */
+const defectsOf = measuredOnceIn(countDefects);
 
 /**
  * Whether a finishing routing cures more than the settled drawing: it brings

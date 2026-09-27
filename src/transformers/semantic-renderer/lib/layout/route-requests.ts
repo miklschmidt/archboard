@@ -38,6 +38,18 @@ type RouteRequest = z.input<typeof RouteRequestSchema>;
 /** A complete route request. */
 type Requested = z.output<typeof RouteRequestSchema>;
 
+/** The way a reading is settled: with evened pins or not, and reserved labels given their full clearance or not (compound.ts). */
+type SettlementWay = Pick<Requested, "evenPins" | "labelClearance">;
+
+/**
+ * The way a reading whose routes are asked for this was settled.
+ * @param request What its routes are asked for.
+ * @returns The way.
+ */
+function wayOf(request: RouteRequest = {}): SettlementWay {
+	return { evenPins: request.evenPins === true, labelClearance: request.labelClearance === true };
+}
+
 /**
  * The graph options that carry a route request.
  * @param request What is asked.
@@ -56,4 +68,4 @@ function requestOf(graph: ElkNode): Requested {
 	return RouteRequestSchema.parse(JSON.parse(graph.layoutOptions?.[ROUTE_REQUEST] ?? "{}"));
 }
 
-export { requestOf, requestOptions, type Requested, type RouteRequest };
+export { requestOf, requestOptions, wayOf, type Requested, type RouteRequest, type SettlementWay };
