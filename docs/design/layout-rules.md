@@ -2290,22 +2290,24 @@ wall`).
   into no second region of the group and keep its colour. The ingress board
   drew one group's region round a pool and again round the pool's four
   hosts.
-- **A line runs out and not back** (`jogs.ts` `turnsBack`): a step to or
-  from a label that turns its line back against its last step is closed as
-  a kink is, by moving the label or port onto the other end's column,
-  whatever its width.
-  The region round Panes in Command interface (Blocks) held 'the stated
-  board, doing and version' a lane off its left wall, and the line ran
-  right to its label and back 40 px to pass the region. Over both vaults
-  it straightens five drawings, two of them drawn as they were before any
-  region round one node, and adds no bend or hop to any. Tried on every
-  step back, not only those at a label, it made Board persistence (Blocks)
-  5% slower to lay out for 32 px less line.
+- **A line runs out and not back** (`jogs.ts` `turnsBack`): in a block of
+  cards the Blocks engine lays out, a step to or from a label that turns its
+  line back against its last step is closed as a kink is, by moving the
+  label or port onto the other end's column, whatever its width. The region
+  round Panes in Command interface (Blocks) held 'the stated board, doing
+  and version' a lane off its left wall, and the line ran right to its label
+  and back 40 px to pass the region. It straightens that drawing and Browser
+  application whole (Blocks) and adds no bend or hop to any. Drawn inline, a
+  label below a container stands there for the band spacing that keeps it
+  off the container's wall, and moved beside the wall it stood the card
+  below out past it (`track-placement.test.ts`). Tried in every pass and at
+  every step back, it made Archboard server whole (Track) 5% and Board
+  persistence (Blocks) 5% slower to lay out, so it is tried once, at labels.
 - **A label into a block that packs blocks stays by its source**
   (`inline.ts` `labelHolder`): a region packing two containers draws only
   trunks, and the label of a line into one of them was lost.
 
-Against `67d2f7f8` (visual-polish), over the 48 Track and Blocks drawings
+Against `67d2f7f8` (visual-polish), over the 46 Track and Blocks drawings
 of both vaults that change: hops and bends are as they were or fewer, but
 for Working with an agent (Blocks, a hop more where 'start voice' crosses
 'controllers over the focused pane's'), Voice coordinator whole (Blocks,
@@ -2314,9 +2316,8 @@ widens it, and 'thread/start with the coordinator body' leaves Coordinator
 thread through the gap beside Authored instructions, which steps
 'its developer instructions, by digest' 32 px) and Recording a walkthrough
 (Blocks, a hop fewer for two bends). Fewer on One command from a pane
-(Blocks), One write lands and Codex workhorse whole (Track), Browser
-application whole and What the CLI can be asked (both engines) and
-Command interface whole (Track). Every other drawing reads as it did with
+(Blocks), Browser application whole and What the CLI can be asked (both
+engines) and Command interface whole (Track). Every other drawing reads as it did with
 its regions added, each taller by the bands.
 
 The regression fixtures reduced from dogfood boards hold the memberships
