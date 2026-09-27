@@ -148,6 +148,9 @@ const STROKE: Band = [-1, ONE_STROKE];
 /** Two runs side by side, a double track. */
 const TRACK: Band = [ONE_STROKE, NEAR];
 
+/** Two runs side by side nearer than a lane, the pitch a reader needs to follow each line. */
+const BESIDE: Band = [ONE_STROKE, ROUTE_LANE - 0.5];
+
 /**
  * Every pair of runs of unrelated lines that lie a band apart for a lane or
  * more, apart from two held end runs.
@@ -201,8 +204,27 @@ export function stackKeys(drawing: ArchitectureDrawing): string[] {
  * @returns The length its stacks share, in lanes.
  */
 export function stackedLanes(drawing: ArchitectureDrawing): number {
-	const length = stacksOf(linesOf(drawing)).reduce((sum, { from, to }) => sum + to - from, 0);
-	return Math.round(length / ROUTE_LANE);
+	return lanesOf(stacksOf(linesOf(drawing)));
+}
+
+/**
+ * How many lanes' worth of line a drawing runs beside an unrelated line
+ * nearer than a lane, all such runs together, so a longer double track is
+ * more of a defect and a shorter one less.
+ * @param drawing The drawing.
+ * @returns The length its double tracks share, in lanes.
+ */
+export function trackedLanes(drawing: ArchitectureDrawing): number {
+	return lanesOf(stacksOf(linesOf(drawing), BESIDE));
+}
+
+/**
+ * How many lanes long some stacks are together.
+ * @param stacks The stacks.
+ * @returns Their shared length, in lanes.
+ */
+function lanesOf(stacks: readonly Stack[]): number {
+	return Math.round(stacks.reduce((sum, { from, to }) => sum + to - from, 0) / ROUTE_LANE);
 }
 
 /**
