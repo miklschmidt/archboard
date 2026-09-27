@@ -2,7 +2,8 @@
 // lines run, and tries each packing with a late small block moved up into an
 // earlier row or column that has room for it. Moving one to the head of a
 // column stood it over the blocks that lead to it, and moving one only within
-// a row read that row against its lines, neither filling any room. A block
+// a row read that row against its lines, neither filling any room, and a
+// move that packs the blocks hardly smaller only reshaped the page. A block
 // with bottom ports holds the cards its chains start from on its first rank.
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
@@ -10,6 +11,7 @@ import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import boardRasterizer from "./board-rasterizer.json";
 import voiceCoordinator from "./voice-coordinator.json";
+import workingWithAnAgent from "./working-with-an-agent.json";
 
 /** The vocabulary of the fixtures, in the dogfood vault's order. */
 const policy = SemanticPolicySchema.parse({
@@ -55,6 +57,13 @@ test("a row of blocks reads in the order their lines run", async () => {
 	const content = orderedFixture(voiceCoordinator);
 	const { atlas } = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	expect(atlas.nodes["LHBPlItu"]!.x).toBeLessThan(atlas.nodes["5uPyMgoI"]!.x);
+});
+
+test("a block moves up beside an earlier one only to fill real room", async () => {
+	const content = orderedFixture(workingWithAnAgent);
+	const { atlas } = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const [pane, voice] = [atlas.nodes["xsn0RvSi"]!, atlas.nodes["0SRnYXnC"]!];
+	expect(voice.y).toBeGreaterThan(pane.y + pane.height);
 });
 
 // Reduced from a board of a work vault, names replaced: a database only the
