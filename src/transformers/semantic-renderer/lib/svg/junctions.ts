@@ -417,7 +417,7 @@ function bendsOf(curve: Curve): number[] {
  * @returns The routes' corners, bends and widths.
  */
 function joinRoutes(
-	routes: readonly DrawingEdge[],
+	routes: readonly Pick<DrawingEdge, "curve">[],
 	widthOf: (index: number) => number,
 ): JoinRoute[] {
 	return routes.map(({ curve }, index) => ({
