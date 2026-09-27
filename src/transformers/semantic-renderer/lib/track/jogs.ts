@@ -393,10 +393,11 @@ function close(
 }
 
 /**
- * The lines that run straight on through a card from where a stretch ends
- * on it: each line that leaves its other face at the same x, and the
- * straight stretch beyond. Moving the stretch's end alone would step the
- * two through the card, so they move with it: in Reading a board (Track),
+ * The lines that run straight on through a card laid out as the region
+ * round it from where a stretch ends on it: each line that leaves its other
+ * face at the same x, and the straight stretch beyond. Moving the stretch's
+ * end alone would step the two through the card, so they move with it: in
+ * Reading a board (Track),
  * the line out of Pane session kept a step of 16 px under its region, since
  * its port could not move without notching the line into Pane session.
  * @param routes Every line's nets, top to bottom.
@@ -404,13 +405,13 @@ function close(
  * @param last.station The station.
  * @param last.net The net.
  * @param last.end Which end of the net it stands at.
- * @returns The stations to move with it; none when it ends on no card.
+ * @returns The stations to move with it; none when it ends on no such card.
  */
 function throughCard(
 	routes: readonly (readonly Net[])[],
 	{ station, net, end }: { station: Station; net: Net; end: End },
 ): { station: Station; net: Net; end: End }[] {
-	if (station.kind !== "card") return [];
+	if (station.kind !== "card" || station.item!.inset === undefined) return [];
 	const beyond = end === "top" ? "bottom" : "top";
 	const x = xAt(net, end);
 	return routes.flatMap((route) =>
@@ -519,7 +520,10 @@ function closeCardStep(
 }
 
 /**
- * Close every step too short for its two bends that a move can close.
+ * Close every step too short for its two bends that a move can close, and,
+ * in the first pass only, every step back at a label ({@link turnsBack}):
+ * most such steps run round something and no move closes them, and tried in
+ * every pass they made Archboard server whole (Track) 5% slower to lay out.
  * @param scene The scene, its ports placed.
  * @param chains Every relationship's chain.
  * @param routes Every line's nets, top to bottom.
@@ -536,7 +540,7 @@ function closeJogs(
 	for (let pass = 0; pass < PASSES; pass += 1) {
 		const closed = routes.flatMap((route) =>
 			route.map((net, index) =>
-				(kinked(net) || turnsBack(route, index)) && net.wall === undefined
+				(kinked(net) || (pass === 0 && turnsBack(route, index))) && net.wall === undefined
 					? close(scene, chains, { routes, nets }, { route, index }, kept)
 					: false,
 			),
