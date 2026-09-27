@@ -24,6 +24,11 @@ import {
 	type Size,
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import { PORT } from "@/transformers/semantic-renderer/lib/blocks/leaves";
+import {
+	extentOf,
+	packingsOf,
+	type Packing,
+} from "@/transformers/semantic-renderer/lib/blocks/packings";
 import { openStretch, type Span } from "@/transformers/semantic-renderer/lib/blocks/open-edge";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { spreadPorts } from "@/transformers/semantic-renderer/lib/track/channels";
@@ -45,69 +50,6 @@ const FACING = {
 	upright: new Set(["bottom>top", "top>bottom"]),
 	level: new Set(["right>left", "left>right"]),
 };
-/** The most blocks whose every packing is tried. */
-const EVERY_PACKING = 9;
-/** How nearly a packing's estimated fit must reach the best one's to be laid out and weighed. */
-const WORTH_LAYING = 0.8;
-/** How a block's items are packed: in rows read left to right, or in columns read down. */
-interface Packing {
-	readonly across: boolean;
-	readonly groups: readonly (readonly number[])[];
-	/** Room between two packed blocks, and left of them, when trunks need more than the least. */
-	readonly gap?: number;
-	readonly margin?: number;
-}
-
-/**
- * Every way to cut a sequence into consecutive groups.
- * @param count How many items are left.
- * @param sizes The group sizes chosen so far.
- * @returns Each cut as its group sizes.
- */
-function everyCut(count: number, sizes: readonly number[] = []): number[][] {
-	if (count === 0) return [[...sizes]];
-	return Array.from({ length: count }, (_, index) =>
-		everyCut(count - index - 1, [...sizes, index + 1]),
-	).flat();
-}
-
-/**
- * The cuts of a sequence worth trying: every one for a few items, else one
- * to four even groups.
- * @param count How many items.
- * @returns Each cut as its group sizes.
- */
-function cutsOf(count: number): number[][] {
-	if (count <= EVERY_PACKING) return everyCut(count);
-	return [1, 2, 3, 4].map((groups) =>
-		Array.from(
-			{ length: groups },
-			(_, group) =>
-				Math.floor(((group + 1) * count) / groups) - Math.floor((group * count) / groups),
-		),
-	);
-}
-
-/**
- * How long and how thick one group is: along the way it is read, and across it.
- * @param sizes Its items' sizes.
- * @param across Whether it is a row.
- * @param gap The room between two items.
- * @returns Its length and thickness.
- */
-function extentOf(
-	sizes: readonly Size[],
-	across: boolean,
-	gap: number,
-): { long: number; thick: number } {
-	const along = sizes.map(({ width, height }) => (across ? width : height));
-	const breadth = sizes.map(({ width, height }) => (across ? height : width));
-	return {
-		long: along.reduce((sum, value) => sum + value, 0) + (sizes.length - 1) * gap,
-		thick: Math.max(...breadth),
-	};
-}
-
 /** A block of blocks laid out: packed, and its trunks routed. */
 class PackLayout {
 	readonly boxes = new Map<string, Box>();
@@ -194,23 +136,15 @@ class PackLayout {
 	 * @returns The packings.
 	 */
 	packings(): Packing[] {
-		const order = this.sequence();
-		const candidates = [true, false].flatMap((across) =>
-			cutsOf(order.length).map((sizes) => ({
-				across,
-				groups: sizes.map((size, index) => {
-					const start = sizes.slice(0, index).reduce((sum, value) => sum + value, 0);
-					return order.slice(start, start + size);
-				}),
-			})),
+		const around = this.headRoom() + this.insets.top + this.insets.bottom;
+		return packingsOf(
+			this.sequence(),
+			(group, across) => extentOf(this.sizesOf(group), across, this.gap).long,
+			(packing) => {
+				const { width, height } = this.sizeOf(packing);
+				return fitIn({ width: width + 2 * this.insets.side, height: height + around });
+			},
 		);
-		const fits = candidates.map((packing) => {
-			const { width, height } = this.sizeOf(packing);
-			const around = this.headRoom() + this.insets.top + this.insets.bottom;
-			return fitIn({ width: width + 2 * this.insets.side, height: height + around });
-		});
-		const best = Math.max(...fits);
-		return candidates.filter((_, index) => fits[index]! >= best * WORTH_LAYING);
 	}
 
 	/**
