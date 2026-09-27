@@ -4,10 +4,11 @@
 // a slide that takes a step out by moving part of a trunk, by carrying a
 // trunk's line the long way round, by moving a line's end run or its run
 // through its label, or by running a new stretch into a card or past it
-// nearer than the router keeps lines, a title band, a wall it did not cross, along a wall, onto another line's
-// axis, beside it, across it where it did not cross or where that line turns,
-// or into a jog too short for its bends; and a step left in place because
-// a line that slides away later stood in its way.
+// nearer than the router keeps lines, a title band, a wall it did not cross,
+// along a wall, onto another line's axis, beside it, across it where it did
+// not cross or where that line turns, or into a jog too short for its bends;
+// and a step left in place because a line that slides away later stood in
+// its way.
 import { expect, test } from "bun:test";
 import { unstepped, type Point } from "@/transformers/semantic-renderer/layout";
 
