@@ -393,10 +393,11 @@ function spreadOver(asked: number[], ports: readonly number[], start: number, en
 }
 
 /**
- * Give the ports on one face of a card. On a top face the lines that meet it
- * from beyond one end fan out along it ({@link fanned}); on a bottom face they
- * stay a lane apart, as fanning them there sent a line leaving a card out
- * along its container's wall.
+ * Give the ports on one face of a card. On a top face, where the nets end
+ * with their bottom (`side` names the nets' end), the lines that meet it
+ * from beyond one end fan out along it ({@link fanned}); on a bottom face
+ * they stay a lane apart, as fanning them there sent a line leaving a card
+ * out along its container's wall.
  * @param item The card.
  * @param requests Its requests on that face.
  */
