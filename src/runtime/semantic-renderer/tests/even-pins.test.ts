@@ -350,36 +350,45 @@ test("hooks cured do not pay for a crossing brought", async () => {
 });
 
 /**
- * A line across the page and a line down it that crosses it and turns a
- * given distance below the crossing.
- * @param turn How far below the crossing the line down turns.
- * @returns The two lines.
+ * Two lines that cross, one of them turning a given distance from the
+ * crossing: the line down after it, the line across after it, or the line
+ * down just before it.
+ * @param turn How far from the crossing the line turns.
+ * @returns Each way of turning, as its two lines.
  */
-function turningPast(turn: number): Line[] {
+function turningNear(turn: number): Line[][] {
+	const across = { id: "across", from: "a", to: "b", points: at([400, 100], [700, 100]) };
+	const down = { id: "down", from: "c", to: "d", points: at([500, 0], [500, 110]) };
 	return [
-		{ id: "across", from: "a", to: "b", points: at([400, 100], [700, 100]) },
-		{ id: "down", from: "c", to: "d", points: at([500, 0], [500, 100 + turn], [600, 100 + turn]) },
+		[across, { ...down, points: at([500, 0], [500, 100 + turn], [600, 100 + turn]) }],
+		[{ ...across, points: at([400, 100], [500 + turn, 100], [500 + turn, 300]) }, down],
+		[across, { ...down, points: at([490, 100 - turn], [500, 100 - turn], [500, 300]) }],
 	];
 }
 
 test("a crossing within a lane of a bend is not kept for the hook it cures", async () => {
 	// Agent workbench's hook into Thread link, cured by crossing two lines
-	// just before their bends; a crossing a lane from a bend is an ordinary one.
+	// just before their bends; a crossing a lane from a bend is an ordinary
+	// one, whichever line turns and on whichever side of the crossing.
 	const cards = {
 		source: { x: 0, y: 0, width: 100, height: 50 },
 		target: { x: 200, y: 200, width: 200, height: 60 },
 	};
 	const hooked = at([50, 50], [50, 100], [180, 100], [180, 230], [200, 230]);
 	const entering = at([50, 50], [50, 100], [220, 100], [220, 200]);
-	const plain = sketch(cards, [
-		{ id: "line", from: "source", to: "target", points: hooked },
-		...turningPast(16),
-	]);
-	const even = sketch(cards, [
-		{ id: "line", from: "source", to: "target", points: entering },
-		...turningPast(10),
-	]);
-	expect(await kept(plain, even)).toBe("plain");
+	const [far, near] = [turningNear(16), turningNear(10)];
+	const chosen = await Promise.all(
+		far.map((lines, index) =>
+			kept(
+				sketch(cards, [{ id: "line", from: "source", to: "target", points: hooked }, ...lines]),
+				sketch(cards, [
+					{ id: "line", from: "source", to: "target", points: entering },
+					...near[index]!,
+				]),
+			),
+		),
+	);
+	expect(chosen).toEqual(["plain", "plain", "plain"]);
 });
 
 /**

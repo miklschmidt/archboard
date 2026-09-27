@@ -15,11 +15,19 @@ const CROSSING_COST = 0.97;
  */
 const BUS_COST = CROSSING_COST ** 8;
 
-/** A straight run of one line. */
+/** A straight run of one line, with whether each of its ends is a bend of that line. */
 interface Run {
 	readonly line: number;
 	readonly from: Point;
 	readonly to: Point;
+	readonly bends: readonly [boolean, boolean];
+}
+
+/** A place two lines cross: a level run of one through an upright run of the other, and its key. */
+interface Crossing {
+	readonly key: string;
+	readonly level: Run;
+	readonly upright: Run;
 }
 
 /** What a score weighs: the page, its crossings, and its lines between columns. */
@@ -42,20 +50,25 @@ function inside(value: number, one: number, other: number): boolean {
 }
 
 /**
- * How many places two different lines cross: a level run of one through an
- * upright run of another. Lines on one trunk run together and do not cross
- * each other, and where a trunk crosses a line its lines cross it at one
- * place, drawn as one hop.
+ * Where two different lines cross: a level run of one through an upright run
+ * of another, each with its place's key. Lines on one trunk run together and
+ * do not cross each other, and where a trunk crosses a line its lines cross
+ * it at one place, so every crossing at one place has one key.
  * @param lines Every line's points.
- * @returns The crossings.
+ * @returns Each crossing of two runs.
  */
-function crossingsOf(lines: Iterable<readonly Point[]>): number {
+function crossingPlaces(lines: Iterable<readonly Point[]>): Crossing[] {
 	const runs: Run[] = [...lines].flatMap((points, line) =>
-		points.slice(1).map((to, index) => ({ line, from: points[index]!, to })),
+		points.slice(1).map((to, index) => ({
+			line,
+			from: points[index]!,
+			to,
+			bends: [index > 0, index + 2 < points.length] as const,
+		})),
 	);
 	const level = runs.filter(({ from, to }) => Math.abs(from.y - to.y) < 0.5);
 	const upright = runs.filter(({ from, to }) => Math.abs(from.x - to.x) < 0.5);
-	const places = level.flatMap((one) =>
+	return level.flatMap((one) =>
 		upright
 			.filter(
 				(other) =>
@@ -63,9 +76,21 @@ function crossingsOf(lines: Iterable<readonly Point[]>): number {
 					inside(other.from.x, one.from.x, one.to.x) &&
 					inside(one.from.y, other.from.y, other.to.y),
 			)
-			.map((other) => `${Math.round(other.from.x)},${Math.round(one.from.y)}`),
+			.map((other) => ({
+				key: `${Math.round(other.from.x)},${Math.round(one.from.y)}`,
+				level: one,
+				upright: other,
+			})),
 	);
-	return new Set(places).size;
+}
+
+/**
+ * How many places two different lines cross, drawn as one hop each ({@link crossingPlaces}).
+ * @param lines Every line's points.
+ * @returns The crossings.
+ */
+function crossingsOf(lines: Iterable<readonly Point[]>): number {
+	return new Set(crossingPlaces(lines).map(({ key }) => key)).size;
 }
 
 /** How long an upright run beyond everything a block holds must be to lap round it. */
@@ -211,4 +236,16 @@ function sinks(
 	});
 }
 
-export { anchored, crossingsOf, lapsOf, readsBetter, scoreOf, sinks, wrapPlans, type Weighed };
+export {
+	anchored,
+	crossingPlaces,
+	crossingsOf,
+	lapsOf,
+	readsBetter,
+	scoreOf,
+	sinks,
+	wrapPlans,
+	type Crossing,
+	type Run,
+	type Weighed,
+};
