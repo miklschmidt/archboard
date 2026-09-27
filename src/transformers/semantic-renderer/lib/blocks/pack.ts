@@ -401,24 +401,6 @@ class PackLayout {
 				return { layout, laid: layout.layOut(avoid, packing) };
 			});
 		const scores = tried.map(({ laid }) => packedScore(laid));
-		console.error(
-			"PK",
-			this.block.id,
-			this.block.items
-				.map((id) => {
-					const b = this.laid.get(id)!;
-					return `${Math.round(b.width)}x${Math.round(b.height)}`;
-				})
-				.join(" "),
-			JSON.stringify(
-				tried.map(({ laid }, i) => [
-					JSON.stringify(laid.packing.groups) + (laid.packing.across ? "r" : "c"),
-					+scores[i]!.toFixed(4),
-					Math.round(laid.width),
-					Math.round(laid.height),
-				]),
-			),
-		);
 		const { layout, laid } = tried[scores.indexOf(Math.max(...scores))]!;
 		return layout.widened(avoid, laid);
 	}
