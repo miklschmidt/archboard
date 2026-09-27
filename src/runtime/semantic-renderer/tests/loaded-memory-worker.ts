@@ -22,7 +22,8 @@ self.addEventListener("message", async (event: MessageEvent<Host>): Promise<void
 	const { instantiate } = WebAssembly;
 	WebAssembly.instantiate = (async (...args: Parameters<typeof instantiate>) => {
 		const answered = await instantiate(...args);
-		const exports = "instance" in answered ? answered.instance.exports : answered.exports;
+		const made: unknown = "instance" in answered ? answered.instance : answered;
+		const exports = made instanceof WebAssembly.Instance ? made.exports : {};
 		for (const value of Object.values(exports)) {
 			if (value instanceof WebAssembly.Memory) memories.push(value);
 		}
