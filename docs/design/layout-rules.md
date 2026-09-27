@@ -370,17 +370,19 @@ How each engine's choices weigh fit since ADR 0039:
   An engine that does not count a number leaves it equal. Graphviz weighs its
   settled drawing (`even-pins.ts` `drawingWeighed`) on its crossings seen
   (`crossingsSeen`: each place two lines cross, one more for each within a
-  lane of a line's bend, and one for each pair of unrelated lines on one
-  stroke) and its hooks (side hooks, lines that touch, crowded joins). The
+  lane of a line's bend, and one for each stretch of at least a lane on which
+  two unrelated lines share one stroke) and its hooks (side hooks, lines that touch, crowded joins). The
   track and blocks engines weigh their lines as drawn on crossings, bends and
   route length (`blocks/weighing.ts`); where a block of cards chooses whether
   to stack, a line lapping round it past every card it holds counts as a
   crossing more, the label on it not hiding the lap (One write lands, Track,
   sent 'announce the accepted write' down the page's right edge stacked). No
-  engine weighs double tracks (unrelated lines closer than a lane; lines
-  exactly a lane apart stand at the routers' channel pitch and are not
-  one), nor Track and Blocks hooks, nor Graphviz bends or length: weighing
-  them changed no drawing in either vault.
+  chooser ADR 0039 changed weighs double tracks (unrelated lines closer than
+  a lane; lines exactly a lane apart stand at the routers' channel pitch and
+  are not one), nor do Track and Blocks weigh hooks, nor Graphviz bends or
+  length: weighing them changed no drawing in either vault. Graphviz's route
+  settlement (`even-pins.ts` `defectsIn`), which the ADR did not change, does
+  refuse double tracks and lines on one stroke among its defects.
 - **The guard** (`takes`), on every chooser ADR 0039 changed. The chooser
   weighs its two layouts as it did before the ADR and on its reading pick.
   The reading pick is taken where the two agree, or where it is no worse than
@@ -421,7 +423,7 @@ How each engine's choices weigh fit since ADR 0039:
   (`pack.ts`) is chosen on its score too, and is the one change outside the
   guard: two packings that score alike go to the smaller page, where the
   first tried stepped Reading a board's 'one stage per pane' (Blocks) down
-  three bends a lane beside 'a board's new version'. Which packings are laid
+  three bends alongside 'a board's new version'. Which packings are laid
   out at all is still bounded by their estimated fit (`packings.ts`).
 
 Page area was the layout suite's number, and area does not track what a

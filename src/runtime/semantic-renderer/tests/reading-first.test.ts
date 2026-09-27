@@ -88,7 +88,7 @@ test("a board stacks its containers where its lines then turn less, on whatever 
 
 // Taken from a board of this repository: stacked, its containers stood on a
 // page with four bends fewer and no more line, but 'announce the accepted
-// write' ran down the page's right edge past every card, a lane beside 'what
+// write' ran down the page's right edge past every card, alongside 'what
 // the writer said it was doing'. A line lapping round a block past every
 // card counts as a crossing, so the containers stand as Graphviz ranks them.
 test("a board keeps its containers as ranked where stacking them sends a line round the page", async () => {
