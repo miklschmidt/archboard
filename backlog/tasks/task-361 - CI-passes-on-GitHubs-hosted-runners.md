@@ -1,11 +1,11 @@
 ---
 id: TASK-361
 title: CI passes on GitHub's hosted runners
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-28 17:48'
-updated_date: '2026-09-28 18:26'
+updated_date: '2026-09-28 18:39'
 labels:
   - ci
 dependencies: []
@@ -24,8 +24,8 @@ CI has failed on every push to main since 2026-09-20 (gh run list --repo miklsch
 <!-- AC:BEGIN -->
 - [x] #1 The failures of the recent failed CI runs are classified as timeout or real, with the evidence for each
 - [x] #2 Test timeouts that fail only because of runner speed are raised, about three times their current value, where the repository sets them (bunfig, per-test and lane timeouts, CI step timeouts), without hiding a real failure
-- [ ] #3 Real failures, including the macOS process observation test, are fixed or tracked with their cause
-- [ ] #4 A push of the change turns CI green on both jobs, or the remaining failure is named with its cause
+- [x] #3 Real failures, including the macOS process observation test, are fixed or tracked with their cause
+- [x] #4 A push of the change turns CI green on both jobs, or the remaining failure is named with its cause
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -52,4 +52,12 @@ Also found: tests/system/cli/install-targets.test.ts 'a manual whose links resol
 Local lanes, one at a time under an 8 GB memory cap: lint 0, fmt:check 0, type-check 0, test:modules 0 (3702 pass; again 3702 pass under a 2-CPU quota, slowest case 5.0 s), test:system with the CI env 1 (179 pass, 1 skip, 1 fail: the install-targets link above), test:repository 0 (8 pass), test:serial-browser with the CI exclusion 0, the macOS job's command on Linux 0 (69 pass). AC3 and AC4 need the pushed run: the macOS fix can only be proved on the macOS job.
 
 Run 36463179530 (main a9269293): Linux job green in 7m10s with every lane. macOS failed two tests. (1) 'retains group ownership after a leader exits and kills its TERM-resistant descendant': 'Could not send KILL to the Codex process group' in 56 ms. The descendant fixture printed its pid before installing its SIGTERM handler; a TERM 5 ms after spawn killed it in 18 of 20 tries here. My driveManual change (a real 10 ms per driven poll) widened the gap between TERM and KILL, so the descendant was dying when KILL went out, and on macOS a signal to a group whose only member is exiting fails (EPERM, inferred: the error text drops the errno). The fixture now reports its pid only after the descendant says its handler is installed; it survived an immediate TERM 20 of 20 times. The driveManual change stays: it is not what the test is about, and the assertion is unchanged. Product note, not changed: process-group.ts re-proves ownership after ESRCH but not after EPERM, so a member exiting under the KILL on macOS still fails cleanup; worth a look if it recurs. (2) the source-control abort case at 1114 ms: TASK-362, fixed by a 3000 ms cleanup window.
+
+Verified on GitHub: run 36465290617 (main 7b0e0feb) passed both jobs, and the macOS job passed again on attempts 2 and 3. The macOS observation test now watches a process group it owns (05c9ccd3); the TERM-resistant fixture signals ready before its leader exits (a207d276); the git cleanup overrun is fixed under TASK-362 (92b8a992). The first green run on main since at least 2026-09-20.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+CI is green on both hosted jobs. Tests get three times their patience through one factor (TEST_PATIENCE_FACTOR, Bun's default test timeout 5 s to 15 s, short per-test timeouts tripled), never a product duration. The macOS observation test watches a group it owns, and the TERM-resistant fixture is ready before TERM. Verified by run 36465290617 green on both jobs and the macOS job green on three attempts.
+<!-- SECTION:FINAL_SUMMARY:END -->
