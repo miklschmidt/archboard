@@ -2,6 +2,8 @@ import type { ChildProcessByStdio } from "node:child_process";
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 
+import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "../../../shared/timing/timing.js";
+
 type FakeChild = ChildProcessByStdio<PassThrough, PassThrough, PassThrough>;
 type TestTimer = ReturnType<typeof setTimeout>;
 type GroupStatus = "owned" | "quiescent" | "reused" | "unproven";
@@ -155,7 +157,9 @@ async function driveManual<T>(
 		}
 		clock.runNext();
 		if (options.yieldToProcessEvents) {
-			await new Promise<void>((resolve) => setImmediate(resolve));
+			// A real process needs real time to act on a signal: every driven poll
+			// gives it the product's own poll interval, not one event-loop turn.
+			await Bun.sleep(PROCESS_GROUP_OBSERVATION_POLL_MS);
 		}
 	}
 	return promise;
