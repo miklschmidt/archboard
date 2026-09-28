@@ -72,6 +72,11 @@ interface DrawingRegion {
 	readonly group: string;
 	/** The container the region sits in; absent on the board itself. */
 	readonly parent?: string | undefined;
+	/**
+	 * The cards and containers the board places in this group inside that
+	 * container, which a viewer lights the region for.
+	 */
+	readonly members: readonly string[];
 	readonly box: Box;
 	/** Where its caption sits, and its words. */
 	readonly caption: { readonly box: Box; readonly measured: MeasuredLabel };
