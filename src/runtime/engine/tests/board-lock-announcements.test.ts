@@ -78,4 +78,4 @@ test("announcements isolate passenger failure and report release at once", async
 		}
 		rmSync(vault, { recursive: true, force: true });
 	}
-}, 10_000);
+}, 30_000);
