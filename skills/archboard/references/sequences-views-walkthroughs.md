@@ -80,9 +80,11 @@ a `body`, optional `subjects` and an optional `view`.
 - `subjects` are nodes, relationships, flows or steps. Name a node or flow by
   its name or id; name a relationship or step, which has no name, by id. A new
   subject of any of those kinds can use its same-write handle. They are
-  highlighted while the beat is read and compare as a set. A beat that
-  explains an ordering names both of its sides: the step that must come first
-  and what relies on it having happened.
+  highlighted while the beat is read and compare as a set. A relationship or
+  step comes with the parts at its two ends, highlighted and kept in view with
+  it, so name a part on its own only when the beat is about that part. A beat
+  that explains an ordering names both of its sides: the step that must come
+  first and what relies on it having happened.
 - An opening beat may name no subjects: it is about the whole picture.
 - `view` switches what the reader looks at for this beat ("now follow one
   request"); a beat without one is told through what is already shown.

@@ -585,7 +585,7 @@
 				},
 				{
 					"feature": "walkthrough.beat-subjects",
-					"requirement": "one beat that explains the ordering by itself: its subjects include the push step (by same-write handle or id), a step on the dispatch side the push enables, and the part they run on",
+					"requirement": "one beat that explains the ordering by itself: its subjects include the push step (by same-write handle or id) and a step on the dispatch side the push enables",
 					"skill": [
 						"references/create-sequence.md#create-a-sequence-diagram",
 						"references/sequences-views-walkthroughs.md#walkthroughs"
@@ -615,7 +615,7 @@
 					"check": "walkthrough-beat-references",
 					"board": "Flask request pipeline",
 					"minBeats": 1,
-					"beatSubjectKinds": { "step": 2, "node": 1 }
+					"beatSubjectKinds": { "step": 2 }
 				},
 				{
 					"check": "render-ok",
