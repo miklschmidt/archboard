@@ -31,6 +31,10 @@
 
 Plan the next step before anyone writes code. Ask for a change and see it drawn against today's architecture, weigh competing options side by side, and adopt the one that ships: the architecture it replaces becomes history, kept with the reason it changed. Any board can be explained out loud by the Codex voice while you step through it, or filmed by one command into a narrated video for a design review or a pull request.
 
+**Hear Archboard explain itself.** Its own system board, narrated by the Codex voice in 80 seconds. Turn the sound on.
+
+https://github.com/user-attachments/assets/5b112fa6-fb60-4b9c-9019-23ab9157bd5b
+
 ## What you can do with it
 
 <table>
@@ -94,28 +98,13 @@ archboard semantic record "Web shop" --variant "Queued fulfilment" --theme dark 
 gh pr comment 128 --attach pr-128.mp4 --body "A narrated walkthrough of this change."   # gh 2.99 or newer
 ```
 
-<table>
-<tr>
-<td width="50%" valign="top">
+<img src="docs/readme/pr-walkthrough.webp" width="100%" alt="A narrated pull-request walkthrough: the proposal board with the step 'Shoppers should not wait for stock and email' and the voice's subtitles">
 
-<a href="docs/readme/pr-walkthrough.mp4?raw=true"><img src="docs/readme/pr-walkthrough.webp" alt="A narrated pull-request walkthrough: the proposal board with the step 'Shoppers should not wait for stock and email' and the voice's subtitles"></a>
+**A pull request, explained to its reviewers:** why the change exists, what it changed, and where to look closely. The loop above is silent; the player below carries the voice, so turn the sound on.
 
-**A pull request, explained to its reviewers.** Why the change exists, what it changed, and where to look closely.<br>
-<sub>⬇ <a href="docs/readme/pr-walkthrough.mp4?raw=true">Download with sound</a> · MP4, 1 min 22 s, 2.4 MB</sub>
+https://github.com/user-attachments/assets/7c1ae961-3f3a-4fa1-a686-fdca6901c0db
 
-</td>
-<td width="50%" valign="top">
-
-<a href="docs/readme/archboard-tour.mp4?raw=true"><img src="docs/readme/tour.webp" alt="Archboard's own system board narrated step by step, with the caption 'Agents author, people read'"></a>
-
-**Archboard, explained by Archboard.** Its own system board in five steps.<br>
-<sub>⬇ <a href="docs/readme/archboard-tour.mp4?raw=true">Download with sound</a> · MP4, 1 min 20 s, 2.2 MB</sub>
-
-</td>
-</tr>
-</table>
-
-<p align="center"><sub>The previews are silent. The MP4s carry the Codex voice. Each video is exactly what <code>archboard semantic record</code> wrote, re-encoded to 720p.</sub></p>
+<p align="center"><sub>Each video is what <code>archboard semantic record</code> wrote, re-encoded to 720p.</sub></p>
 
 - **Pull-request videos.** Your agent maps the code before the change, branches a proposal for the pull request, and writes three to six steps for its reviewers. The talk runs one to three minutes, small enough to attach to the pull request.
 - **Paced by the voice.** Each time the voice finishes a step, the recording moves on. There is no timeline to edit and no silent slide.
@@ -142,9 +131,11 @@ Add a sequence diagram of what happens when a shopper places an order, from the 
 
 Give the tour once, and every new hire can play it back. A newcomer's walkthrough starts with two parts and adds one piece at a time until the whole path is on screen, stops at the place where things go wrong, and ends on the one sentence worth remembering.
 
-<a href="docs/readme/newcomer.mp4?raw=true"><img src="docs/readme/newcomer.webp" width="100%" alt="A narrated newcomer walkthrough of the Inventory service board: the camera moves from the Reserve route to the Stock DB while the voice explains how items are set aside."></a>
+<img src="docs/readme/newcomer.webp" width="100%" alt="A narrated newcomer walkthrough of the Inventory service board: the camera moves from the Reserve route to the Stock DB while the voice explains how items are set aside.">
 
-<p align="center"><sub>"How stock is reserved", six steps on the example Inventory service board. ⬇ <a href="docs/readme/newcomer.mp4?raw=true">Download with sound</a> · MP4, 1 min 49 s, 2.6 MB</sub></p>
+<p align="center"><sub>"How stock is reserved", six steps on the example Inventory service board. The player below has the voice.</sub></p>
+
+https://github.com/user-attachments/assets/73a9dbc0-9cc5-44a2-9d56-c0e6ffc76f02
 
 ```text
 I'm new here. Walk me through what happens to stock when a shopper presses Pay.
