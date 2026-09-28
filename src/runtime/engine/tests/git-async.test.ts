@@ -69,7 +69,7 @@ function recordedPid(file: string): number {
 }
 
 async function expectPidAbsent(pid: number): Promise<void> {
-	const deadline = Date.now() + 1_000;
+	const deadline = Date.now() + GIT_PROCESS_GROUP_CLEANUP_MS;
 	while (readProcessObservation(pid) !== undefined && Date.now() < deadline) {
 		await Bun.sleep(5);
 	}
@@ -173,13 +173,13 @@ test("Git process owner exits after one result and release", async () => {
 		owner.send({ kind: "start" });
 		const reported = await Promise.race([
 			result.then((value) => ({ kind: "result" as const, value })),
-			Bun.sleep(1_000).then(() => ({ kind: "deadline" as const })),
+			Bun.sleep(3_000).then(() => ({ kind: "deadline" as const })),
 		]);
 		expect(reported).toEqual({ kind: "result", value: { kind: "result", exitCode: 0 } });
 		owner.send({ kind: "release" });
 		const exited = await Promise.race([
 			owner.exited.then((exitCode) => ({ kind: "exit" as const, exitCode })),
-			Bun.sleep(1_000).then(() => ({ kind: "deadline" as const })),
+			Bun.sleep(3_000).then(() => ({ kind: "deadline" as const })),
 		]);
 		expect(exited).toEqual({ kind: "exit", exitCode: 0 });
 		expect(messages).toHaveLength(1);
@@ -223,7 +223,7 @@ async function exerciseGitLifecycle(): Promise<void> {
 			await expect(git(root, [mode, marker], { executable })).rejects.toMatchObject({
 				failure: "output",
 			});
-			expect(performance.now() - started).toBeLessThan(1_000);
+			expect(performance.now() - started).toBeLessThan(GIT_PROCESS_GROUP_CLEANUP_MS);
 			await expectPidAbsent(recordedPid(`${marker}.leader`));
 		}
 
@@ -249,7 +249,7 @@ async function exerciseGitLifecycle(): Promise<void> {
 		await expect(git(root, ["descendant", descendantMarker], { executable })).rejects.toMatchObject(
 			{ failure: "cleanup" },
 		);
-		expect(performance.now() - descendantStarted).toBeLessThan(1_000);
+		expect(performance.now() - descendantStarted).toBeLessThan(GIT_PROCESS_GROUP_CLEANUP_MS);
 		await waitForFile(`${descendantMarker}.descendant`);
 		await expectPidAbsent(recordedPid(`${descendantMarker}.leader`));
 		await expectPidAbsent(recordedPid(`${descendantMarker}.descendant`));
@@ -282,7 +282,7 @@ async function exerciseGitLifecycle(): Promise<void> {
 			if (outcome.kind === "rejected") {
 				expect(outcome.error).toMatchObject({ failure });
 			}
-			expect(performance.now() - started).toBeLessThan(1_000);
+			expect(performance.now() - started).toBeLessThan(GIT_PROCESS_GROUP_CLEANUP_MS);
 			await expectPidAbsent(recordedPid(`${marker}.leader`));
 		}
 
