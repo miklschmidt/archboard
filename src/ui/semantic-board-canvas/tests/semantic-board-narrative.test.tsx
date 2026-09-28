@@ -13,6 +13,7 @@ import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
 import { PRESENTATION_STEP_MS } from "@/shared/timing/timing";
+import type { SemanticBox } from "@/ui/semantic-board-canvas/index";
 import {
 	chooseVariantInShell,
 	drawing,
@@ -336,6 +337,109 @@ test("a step about something this reading does not draw says so", async () => {
 	goTo(3);
 	await settle();
 	expect(part("semantic-beat-missing").textContent).toBe("This reading does not draw Write Lease.");
+	expect(marked()).toEqual([]);
+	expectCamera(cameraNow(), WHOLE_ABOVE_CAPTION);
+});
+
+/**
+ * A picture that draws exactly these subjects, where the atlas says.
+ * @param nodes The cards or participants, by id.
+ * @param edges The lines or messages, by id.
+ * @returns The render answer.
+ */
+function pictureOf(
+	nodes: Record<string, SemanticBox>,
+	edges: Record<string, SemanticBox>,
+): Record<string, unknown> {
+	const groups = [
+		...Object.keys(nodes).map((id) => `<g data-semantic-kind="node" data-semantic-id="${id}"></g>`),
+		...Object.keys(edges).map((id) => `<g data-semantic-kind="edge" data-semantic-id="${id}"></g>`),
+	];
+	return {
+		...drawing(1),
+		svg: `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300">${groups.join("")}</svg>`,
+		atlas: { nodes, edges, regions: {} },
+	};
+}
+
+/**
+ * A walkthrough of two steps about one subject: alone, then with both ends.
+ * @param subject The line or message.
+ * @param ends The parts it joins.
+ * @returns The walkthrough.
+ */
+function aboutOne(subject: string, ends: readonly string[]): Record<string, unknown> {
+	return {
+		id: "w1",
+		name: "One exchange",
+		beats: [
+			{ id: "b1", heading: "The call", body: "What it asks.", subjects: [subject] },
+			{ id: "b2", heading: "Both sides", body: "Who asks whom.", subjects: [...ends, subject] },
+		],
+	};
+}
+
+/** A line between two cards, and a message between two participants, each with both ends drawn. */
+const JOINED = [
+	{
+		about: "a relationship",
+		content: { ...CONTENT, walkthroughs: [aboutOne("e1", ["n1", "n2"])] },
+		picture: pictureOf(
+			{ n1: { x: 0, y: 0, width: 80, height: 40 }, n2: { x: 240, y: 0, width: 80, height: 40 } },
+			{ e1: { x: 80, y: 19, width: 160, height: 2 } },
+		),
+		lit: ["n1", "n2", "e1"],
+	},
+	{
+		about: "a message",
+		content: {
+			nodes: [
+				{ id: "p1", name: "Checkout", kind: "service" },
+				{ id: "p2", name: "Inventory", kind: "service" },
+			],
+			edges: [],
+			flows: [
+				{
+					id: "f1",
+					name: "Reserve",
+					participants: ["p1", "p2"],
+					steps: [{ id: "s1", from: "p1", to: "p2", label: "reserve the items", kind: "sync" }],
+				},
+			],
+			walkthroughs: [aboutOne("s1", ["p1", "p2"])],
+		},
+		picture: pictureOf(
+			{ p1: { x: 0, y: 0, width: 80, height: 260 }, p2: { x: 240, y: 0, width: 80, height: 260 } },
+			{ s1: { x: 40, y: 120, width: 240, height: 24 } },
+		),
+		lit: ["p1", "p2", "s1"],
+	},
+];
+
+for (const { about, content, picture, lit } of JOINED) {
+	test(`a step about ${about} lights and frames the parts at both of its ends`, async () => {
+		server.documents["pipeline"] = boardOf(content);
+		server.reply = { status: 200, body: picture };
+		mountStage(null, { reducedMotion: true });
+		await presenting();
+		expect([marked(), unveiled()]).toEqual([lit, lit]);
+		const alone = cameraNow();
+		// Framed exactly as the step that names both ends as well.
+		goTo(1);
+		await settle();
+		expect([marked(), unveiled()]).toEqual([lit, lit]);
+		expectCamera(alone, cameraNow());
+	});
+}
+
+test("a relationship this reading does not draw brings none of its ends with it", async () => {
+	serving({ ...CONTENT, walkthroughs: [aboutOne("e1", ["n1", "n2"])] });
+	server.reply = {
+		status: 200,
+		body: pictureOf({ n1: { x: 0, y: 0, width: 80, height: 40 } }, {}),
+	};
+	mountStage(null, { reducedMotion: true });
+	await presenting();
 	expect(marked()).toEqual([]);
 	expectCamera(cameraNow(), WHOLE_ABOVE_CAPTION);
 });
