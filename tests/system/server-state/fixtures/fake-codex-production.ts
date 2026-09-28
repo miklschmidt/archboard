@@ -234,6 +234,15 @@ const handle = (frame: WireFrame): void => {
 		return;
 	}
 	const params = frame.params ?? {};
+	if (
+		frame.method === "account/read" &&
+		(JSON.parse(readFileSync(controlPath, "utf8")) as { accountReadFails?: boolean })
+			.accountReadFails === true
+	) {
+		record({ kind: "fixture_rejection", method: frame.method });
+		send({ id: frame.id, error: { code: -32603, message: "workspace routing discovery failed" } });
+		return;
+	}
 	switch (frame.method) {
 		case "initialize": {
 			const control = JSON.parse(readFileSync(controlPath, "utf8")) as {
