@@ -1,214 +1,332 @@
-![archboard: an architecture drawn as a room-scale hologram](docs/assets/archboard-banner-enterprise-dark.png)
+<div align="center">
 
-# archboard
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/banner-dark.webp">
+  <img alt="archboard: an architecture hologram with its earlier states behind it and a proposed part in front" src="docs/readme/banner-light.webp" width="100%">
+</picture>
 
-Archboard is a private internal tool for architecture diagrams that agents
-write. A coding agent reads the code and states what the system is: its parts,
-the parts that contain other parts, how the parts relate, and the order of the
-messages between them. Archboard draws the diagram, and you read it in a
-browser.
+<h3>Your coding agent draws the architecture.<br>You read it, compare it, replay its history and hear it explained.</h3>
 
-A board is one named diagram of one part of a system, or of one question about
-it. A board is an architecture diagram, a sequence diagram, or both. You cannot
-move a box on a board, by design. The renderer owns every position, color and
-line. For this reason, one improvement to the renderer improves every board at
-once.
+<p>
+  <a href="#quick-start"><img alt="Works with Claude Code and Codex" src="https://img.shields.io/badge/agents-Claude%20Code%20%C2%B7%20Codex-559cdb?style=flat-square"></a>
+  <a href="#quick-start"><img alt="Runs on Bun" src="https://img.shields.io/badge/runs%20on-Bun%201.4%2B-a087e5?style=flat-square"></a>
+  <a href="LICENSE"><img alt="Licence: BUSL-1.1" src="https://img.shields.io/badge/licence-BUSL--1.1-8ce99a?style=flat-square"></a>
+</p>
+
+<p>
+  <a href="#quick-start"><b>Quick start</b></a> ·
+  <a href="#what-you-can-do-with-it"><b>Use cases</b></a> ·
+  <a href="#how-it-works"><b>How it works</b></a> ·
+  <a href="#archboard-next-to-the-usual-diagram-tools"><b>Compared</b></a> ·
+  <a href="#prompts-to-try"><b>Prompts to try</b></a>
+</p>
+
+</div>
+
+<img src="docs/readme/hero.webp" width="100%" alt="On the left, a coding agent claims the Web shop board, branches a proposal, edits it and compares it with today. On the right, the browser pane shows the claim and then redraws the board as the proposal: new parts in green, a moved call in amber, the removed timeout guard as a red ghost.">
+
+<p align="center"><sub>Filmed live against a real Archboard server. Every command on the left ran as shown, and the pane on the right is the real browser, redrawing on every write. Nothing here was dragged into place.</sub></p>
+
+Architecture diagrams go stale because somebody has to maintain them by hand. **Archboard gives the drawing to a renderer and the meaning to your agent.** Claude Code or Codex reads your code and tells Archboard, through a small CLI, what the system _is_: its parts, what contains what, how they talk, and the order of the messages. Archboard draws every pixel. There is no box to drag, so nothing can drift out of place, and your agent keeps the meaning true.
+
+Every proposal is a **variant** you can put beside today's architecture. Every adopted change becomes **history** you can read a year later, with the reason it happened. Any board can carry a **walkthrough** that the Codex voice explains while you step through it, or that one command turns into a narrated video for a pull request.
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+**Agents write. You read.**<br>
+<sub>Boards are JSON files in a vault you can keep in git. Agents change them through a CLI that checks the version on every write. The browser never edits a board: it draws.</sub>
+
+</td>
+<td width="33%" valign="top">
+
+**Change is built in**<br>
+<sub>Proposals, competing options, adoption with a recorded reason, and shelving instead of deleting. Variants are compared part by part, by identity.</sub>
+
+</td>
+<td width="33%" valign="top">
+
+**Boards that talk**<br>
+<sub>Step through a walkthrough while the Codex voice explains it, ask the board a question, or record the whole talk to an MP4.</sub>
+
+</td>
+</tr>
+</table>
+
+## What you can do with it
+
+<table>
+<tr>
+<td width="33%" align="center"><a href="#plan-the-next-architecture-with-your-agent"><img src="docs/readme/idx-plan.webp" alt="Two competing proposals side by side"></a><br><b><a href="#plan-the-next-architecture-with-your-agent">Plan with your agent</a></b></td>
+<td width="33%" align="center"><a href="#keep-a-record-that-remembers-why"><img src="docs/readme/idx-history.webp" alt="Three generations of one board on a timeline"></a><br><b><a href="#keep-a-record-that-remembers-why">Keep a record that remembers why</a></b></td>
+<td width="33%" align="center"><a href="#narrated-walkthroughs-explainers-and-pull-request-videos"><img src="docs/readme/idx-voice.webp" alt="A narrated walkthrough with its caption and subtitles"></a><br><b><a href="#narrated-walkthroughs-explainers-and-pull-request-videos">Narrated walkthroughs</a></b></td>
+</tr>
+<tr>
+<td align="center"><a href="#sequence-diagrams-that-explain-the-code"><img src="docs/readme/idx-sequence.webp" alt="A sequence diagram of placing an order"></a><br><b><a href="#sequence-diagrams-that-explain-the-code">Sequence diagrams</a></b></td>
+<td align="center"><a href="#onboard-a-newcomer-one-step-at-a-time"><img src="docs/readme/idx-newcomer.webp" alt="A newcomer's walkthrough stepping along a path"></a><br><b><a href="#onboard-a-newcomer-one-step-at-a-time">Onboard a newcomer</a></b></td>
+<td align="center"><a href="#zoom-from-the-system-down-to-a-module"><img src="docs/readme/idx-drill.webp" alt="A hover tip offering to open a part's own board"></a><br><b><a href="#zoom-from-the-system-down-to-a-module">Zoom through levels</a></b></td>
+</tr>
+<tr>
+<td align="center"><a href="#ask-your-architecture"><img src="docs/readme/idx-ask.webp" alt="The agent answering a question about a selected part"></a><br><b><a href="#ask-your-architecture">Ask your architecture</a></b></td>
+<td align="center"><a href="#agents-work-in-plain-sight"><img src="docs/readme/idx-safety.webp" alt="A pane that shows an agent's claim on the board"></a><br><b><a href="#agents-work-in-plain-sight">Agents in plain sight</a></b></td>
+<td align="center"><a href="#pictures-for-docs-adrs-and-pull-requests"><img src="docs/readme/idx-docs.webp" alt="A rendered proposal diagram"></a><br><b><a href="#pictures-for-docs-adrs-and-pull-requests">Pictures for your docs</a></b></td>
+</tr>
+</table>
+
+---
+
+## Plan the next architecture with your agent
+
+Ask for a change and you get a **proposal**: a draft variant of the same board, drawn as its difference from what exists. New parts arrive green, changed ones amber, and removed ones stay on the page as red ghosts. A call that moves keeps its identity, so it reads as one change, not as a deletion beside an addition.
+
+<img src="docs/readme/plan.webp" width="100%" alt="A board nobody has built yet, marked not built, opened in two panes. The left pane turns into the Nightly batch proposal and the right pane into the Live events proposal, each marked against the starting point they share.">
+
+<p align="center"><sub>Two competing proposals for a recommendations service that does not exist yet, one per pane. The header says <code>not built</code>: nothing here pretends to exist before somebody adopts it.</sub></p>
+
+- **Competing options, side by side.** Branch two drafts from one starting point and open them in two panes. `archboard semantic compare` lists every part and relationship that differs.
+- **Honest about what exists.** A board for something nobody has built says so. Drawing a part does not make it exist. Adopting its variant does.
+- **Proposals keep up.** Change the architecture under a draft and the draft follows. A real conflict is held for the agent to settle, never won silently.
 
 ```text
-agent reads code  ->  states the architecture  ->  the renderer draws it
-      ^                                                       |
-      +------------------ you read it back ------------------+
+Checkout waits on stock, the card and the receipt email. Propose taking fulfilment
+off the request path, compare it with today, and show me both side by side.
 ```
 
-## What it does
+## Keep a record that remembers why
 
-Archboard does these things:
+When a proposal ships, the agent **adopts** it. The old current architecture becomes a frozen **historical** variant, and the adoption keeps its reason: the part somebody looks for a year later. A proposal nobody will build is **shelved** with its reason. Nothing is deleted.
 
-- It keeps each board as one `<name>.semantic.json` file in a vault. The vault
-  is the directory that holds the boards. The file holds every variant of the
-  board. A variant is one version of the architecture, for example the current
-  one or a proposal.
-- It draws each board in the browser. It also renders a board to an SVG or a
-  PNG file, and the same board always gives the same picture.
-- It compares every variant with the current one: a proposal, and also an
-  older, historical variant. The picture marks the parts and relationships
-  that the variant adds, changes or removes compared with the current one. A
-  board that nobody has built yet has no current variant, so there a proposal
-  is compared with the variant that it was branched from.
-- It binds a node to a path in a repository, so you can open the code that the
-  node stands for. A node is one part of the system on a board.
-- It narrates a walkthrough with the Codex voice while you step through it, and
-  it shows subtitles. A walkthrough is an ordered explanation of a variant.
-- It records a walkthrough to a narrated video, for example for the reviewers
-  of a pull request.
+<img src="docs/readme/history.webp" width="100%" alt="Archboard's own Renderer layout board walked through its three states on a timeline: Initial with five parts, Readable layout with fourteen, and the current ADR 0040 with fifteen, each labelled with when it was adopted and why.">
 
-The CLI is the interface for agents. A connected browser shows each change as
-soon as the server writes it. The browser writes nothing to a board. In the
-browser, a person can select parts, which the agent and the voice can read. A
-person can also take back the claim of an agent on a board.
+<p align="center"><sub>Real history from Archboard's own vault: its renderer board through three generations, each adopted with its reason.</sub></p>
 
-## Project status
+- **History cannot drift.** A historical variant refuses edits: _what was true then does not change._
+- **Read any state against any other.** `archboard semantic compare "Web shop" --variant Monolith --against "Synchronous checkout"` says, part by part, what changed between them.
+- **Names change, links hold.** A renamed board keeps answering to its former names.
 
-Archboard is a private internal tool, and its development continues. Its
-interfaces change often. It is not on npm, and the `private` flag in
-`package.json` prevents an accidental publication. The code is available under
-the [Business Source License 1.1](LICENSE).
+> [!TIP]
+> Archboard keeps its own architecture this way: 15 boards in [`.archboard/vault`](.archboard/vault). Every task changes them through a proposal, and the proposal is adopted when the task closes.
+
+## Narrated walkthroughs: explainers and pull-request videos
+
+A **walkthrough** is a short tour of a board that your agent writes: a few steps, each with a heading, a point, and the parts it is about. Press **Narrate** and the Codex voice explains each step as it reaches your screen, while the camera glides to the parts that matter and the rest fades back. Or let one command film the whole talk:
+
+```bash
+archboard semantic record "Web shop" --variant "Queued fulfilment" --theme dark --out pr-128.mp4
+gh pr comment 128 --attach pr-128.mp4 --body "A narrated walkthrough of this change."   # gh 2.99 or newer
+```
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+<a href="docs/readme/pr-walkthrough.mp4?raw=true"><img src="docs/readme/pr-walkthrough.webp" alt="A narrated pull-request walkthrough: the proposal board with the step 'Shoppers should not wait for stock and email' and the voice's subtitles"></a>
+
+**A pull request, explained to its reviewers.** Why the change exists, what it changed, and where to look closely.<br>
+<sub>▶ <a href="docs/readme/pr-walkthrough.mp4?raw=true">Watch with sound</a> · MP4, 1 min 22 s</sub>
+
+</td>
+<td width="50%" valign="top">
+
+<a href="docs/readme/archboard-tour.mp4?raw=true"><img src="docs/readme/tour.webp" alt="Archboard's own system board narrated step by step, with the caption 'Agents author, people read'"></a>
+
+**Archboard, explained by Archboard.** Its own system board in five steps.<br>
+<sub>▶ <a href="docs/readme/archboard-tour.mp4?raw=true">Watch with sound</a> · MP4, 1 min 20 s</sub>
+
+</td>
+</tr>
+</table>
+
+<p align="center"><sub>The previews are silent. The MP4s carry the Codex voice. Each video is exactly what <code>archboard semantic record</code> wrote, re-encoded to 720p.</sub></p>
+
+- **Pull-request videos.** The skill draws the architecture before the change, branches the pull request from it, and writes three to six steps for the reviewers. The talk runs one to three minutes, small enough to attach to a pull request.
+- **Explainers on demand.** "Explain the checkout to the new hire" becomes a walkthrough anyone can narrate in the browser, whenever they want it.
+- **Paced by the voice.** Each time the voice finishes a step, the recording moves on. There is no timeline to edit and no silent slide.
+
+## Sequence diagrams that explain the code
+
+A **flow** is an ordered exchange between parts already on the board: who calls whom, what comes back, calls a part makes on itself, retry counts, and the branches worth a note. It lives on the same board as the architecture, so "what are the parts" and "what happens, in order" are two views of one thing.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/sequence-dark.svg">
+  <img alt="Sequence diagram 'Place an order': the storefront posts an order, Place order loads the basket, starts a 10 second clock, reserves the items, charges the card, writes the paid order and sends the receipt up to three times, then confirms." src="docs/readme/sequence-light.svg" width="100%">
+</picture>
+
+<p align="center"><sub>An SVG drawn by <code>archboard semantic render "Web shop" --view "Place an order"</code>. The pulse that travels down the exchange is part of the file.</sub></p>
+
+- **Evidence first.** The skill has the agent back every step with a line of source, then read the source a second time for self-calls and fixed counts.
+- **Sequences compare too.** A proposal that changes an exchange shows which messages were added, removed or changed.
+
+## Onboard a newcomer, one step at a time
+
+Nobody takes in a whole diagram at once. A newcomer's walkthrough starts with two parts and grows the picture step by step until the whole path is on screen. It includes the place where things go wrong and ends on the one sentence worth remembering.
+
+<a href="docs/readme/newcomer.mp4?raw=true"><img src="docs/readme/newcomer.webp" width="100%" alt="A narrated newcomer walkthrough of the Inventory service board: the camera moves from the Reserve route to the Stock DB while the voice explains how items are set aside."></a>
+
+<p align="center"><sub>"How stock is reserved", six steps on the example Inventory service board. ▶ <a href="docs/readme/newcomer.mp4?raw=true">Watch with sound</a> · MP4, 1 min 49 s</sub></p>
+
+```text
+I'm new here. Walk me through what happens to stock when a shopper presses Pay.
+```
+
+## Zoom from the system down to a module
+
+Boards link to boards. Hover a part that has its own board and a tip offers to open it. Double-click and the view dives in, with a breadcrumb back to where you came from. A part can also carry a **code binding**, a repository and a path, so **Open code** takes you to the file in VS Code, Cursor, Zed or on GitHub.
+
+<img src="docs/readme/drill-down.webp" width="100%" alt="The Web shop board: the pointer rests on Inventory service, a tip says double-click to open it, and the view dives into the Inventory service board with the breadcrumb Web shop › Inventory service.">
+
+## Ask your architecture
+
+Select a part and ask. The Codex agent in the agent bar reads the board and your selection, and answers from the architecture, not from the pixels. Press **Talk** to ask out loud instead: the voice hands your question to a Codex agent that reads the boards, then says the answer back.
+
+<img src="docs/readme/ask.webp" width="100%" alt="The Timeout guard is selected. The question 'Why does this part exist, and what would break without it?' is typed into the agent bar, and the conversation panel fills with an answer drawn from the board.">
+
+<p align="center"><sub>A real answer from a Codex agent, typed in the agent bar. The wait for the answer is sped up.</sub></p>
+
+## Agents work in plain sight
+
+Every write says what it is doing, in one line. An agent that **claims** a board shows up on every pane that has it open, with who, why and since when, and one button takes the board back. Every write names the version it read. If the board moved since then, the write is refused, so two agents never overwrite each other.
+
+<img src="docs/readme/take-back.webp" width="100%" alt="An agent claims the Web shop board and the pane shows the claim. The pointer presses Take back control, the banner goes, and the agent's next write is refused with exit code 5.">
+
+<p align="center"><sub>You take the board back, and the agent's next write is refused. Nothing is half written: every accepted write is on disk before the agent hears back.</sub></p>
+
+## Pictures for docs, ADRs and pull requests
+
+```bash
+archboard semantic render "Web shop" --variant "Queued fulfilment" --theme dark --out proposal.svg
+archboard semantic rasterize "Web shop" --scale 2 --out web-shop.png
+```
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/proposal-dark.svg">
+    <img alt="The Queued fulfilment proposal of the Web shop board, drawn against the current architecture." src="docs/readme/proposal-light.svg" width="72%">
+  </picture>
+</p>
+
+<p align="center"><sub>The same board always gives the same bytes. The SVG embeds its fonts and keeps the traffic animation: the streaks on the hot path move.</sub></p>
+
+---
+
+## How it works
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/architecture-dark.svg">
+  <img alt="Archboard's own system board: the agent CLI and headless Chromium talk to the Archboard server, which keeps the board vault, serves the browser, resolves code bindings and runs a private Codex app-server." src="docs/readme/architecture-light.svg" width="100%">
+</picture>
+
+<p align="center"><sub>Archboard's own system board from <a href=".archboard/vault"><code>.archboard/vault</code></a>, drawn by <code>archboard semantic render Archboard</code>.</sub></p>
+
+1. **Your agent reads the code and writes meaning** with `archboard semantic …`: parts, containment, relationships, flows, views and walkthroughs, one JSON payload per change. The `archboard` skill teaches it how, and makes it back every claim with a line of source.
+2. **The Archboard server checks the write and stores it.** One `.semantic.json` file per board holds every variant. One writer at a time, a version check on every write, and the change is on disk before the agent hears back.
+3. **The renderer draws it** in your browser, as SVG or PNG, or as a narrated video. Every open pane redraws the moment a write lands. Because no board stores a position, an improvement to the renderer redraws every board at once, history included.
+
+## Archboard next to the usual diagram tools
+
+|                                         |            Archboard             |    Mermaid · D2    | Excalidraw · draw.io |  Structurizr · LikeC4   |
+| --------------------------------------- | :------------------------------: | :----------------: | :------------------: | :---------------------: |
+| Who places the boxes                    |       the renderer, always       |  a layout engine   |         you          | a layout engine, or you |
+| Written by                              | your coding agent, through a CLI |    you, in text    |     you, by hand     |      you, in a DSL      |
+| Proposals drawn against today           |         ✅ part by part          |         —          |          —           |            —            |
+| History with the reason for each change |                ✅                |      git log       |       git log        |         git log         |
+| Narrated walkthroughs and video         |                ✅                |         —          |          —           |            —            |
+| Sequence views over the same parts      |                ✅                | a separate diagram |          —           |    ✅ dynamic views     |
+| Parts bound to code                     |        ✅ opens the file         |         —          |          —           |          links          |
+| Several agents writing safely           |   ✅ claims and version checks   |         —          |          —           |            —            |
+
+<sub>What each tool does out of the box, as of September 2026.</sub>
 
 ## Quick start
 
-You need these things:
+You need Bun 1.4 or newer, Git, and Chromium or Google Chrome. The agent bar, the voice, narration and recordings also need a Codex sign-in, which you do from the agent bar with ChatGPT or an API key.
 
-- Bun 1.4 or newer, and Git.
-- Chromium or Google Chrome, for PNG files and videos.
-- A Codex sign-in on the Archboard server, for the voice and for videos. You sign in from
-  the agent bar in the browser.
+**See it in a minute** with the example vault from this README:
 
 ```bash
-git clone https://github.com/miklschmidt/archboard.git
-cd archboard
-bun install
-bun run build
-
-export ARCHBOARD_VAULT=/path/to/a/vault
-./bin/archboard start
+git clone https://github.com/miklschmidt/archboard.git && cd archboard
+bun install && bun run build
+ARCHBOARD_VAULT="$PWD/examples/web-shop" ./bin/archboard start
 ```
 
-Archboard has no default vault, by design. The server does not start until
-`ARCHBOARD_VAULT` points to a directory. That directory becomes the vault. Its
-`.archboard/config.yaml` file holds the kinds of node and relationship that the
-boards can use.
+Then open <http://127.0.0.1:3000/?paneA=Web%20shop>. The history, the proposals, the drill-down and the walkthroughs are all there.
 
-If the server is not running, every command that talks to it starts it. If you
-do not want this, set `ARCHBOARD_NO_AUTOSTART=1`.
-
-Open <http://127.0.0.1:3000>. Then create a first board and read it back:
+**Use it on your own code.** Put the CLI on your `PATH` and install the skill into the repository you want mapped:
 
 ```bash
-./bin/archboard semantic new payments --doing "describing payment processing" <<'JSON'
-{
-  "level": "system",
-  "nodes": [
-    { "name": "Gateway", "kind": "service", "responsibility": "Routes incoming requests" },
-    { "name": "Orders", "kind": "service", "responsibility": "Accepts and tracks orders" }
-  ],
-  "edges": [{ "from": "Gateway", "to": "Orders", "kind": "http", "label": "place order" }]
-}
-JSON
-
-./bin/archboard semantic show payments
-./bin/archboard semantic render payments --out payments.svg
+ln -s "$PWD/bin/archboard" ~/.local/bin/archboard
+cd ~/code/your-project
+archboard install-skill --agent claude-code     # omit --agent for Codex
 ```
 
-Two rules make each write visible and safe:
+The installer copies the `archboard` skill and writes the vault path and the command into the repository's `CLAUDE.md` or `AGENTS.md`. Then ask your agent:
 
-1. Every write says what it does in a short `--doing` line, in the present
-   tense. Each pane that shows the board shows this line.
-2. Every change to an existing board states, with `--expect-version`, the
-   version that the agent read. If the board changed after that version, the
-   server refuses the change, and the agent must read the board again.
-
-Run `./bin/archboard --help` to see all the commands. Run
-`./bin/archboard help <command>` to see the arguments and options of one command.
-
-## Common tasks
-
-These commands do the most frequent work. Each command that changes a board
-also needs `--expect-version` and `--doing`.
-
-```bash
-# List the boards in the vault, and change one.
-archboard semantic
-archboard semantic edit payments --input change.json
-# Propose a change, see what it changes, and make it the current architecture.
-archboard semantic branch payments --as "Queued ingest"
-archboard semantic compare payments --variant "Queued ingest"
-archboard semantic adopt payments --variant "Queued ingest" --reason "<why>"
-# Draw a PNG file, record a walkthrough, and show a board in a browser pane.
-archboard semantic rasterize payments --out payments.png
-archboard semantic record payments --out talk.mp4
-archboard browser show payments --pane right
+```text
+Map this repository's architecture onto a board named "Overview", bind every part to its code,
+and add a short walkthrough for a new team member.
 ```
 
-If `ffmpeg` is on `PATH`, the sound of a recorded MP4 plays in every browser,
-Safari included.
+See [INSTALL.md](INSTALL.md) for shared vaults, code bindings and the configuration.
 
-## Use it from another repository
+## Prompts to try
 
-You install archboard once on each machine. It is not a dependency of the
-codebase that you diagram. Put `bin/archboard` on your `PATH`. Then run the
-installer from the repository that you want an agent to understand:
+| Ask your agent                                                               | What you get                                          |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------- |
+| _"Draw how a request travels from the API to the database."_                 | an architecture board, every part bound to its code   |
+| _"Add a sequence diagram of what happens when a user signs up."_             | a flow and a data-flow view on the same board         |
+| _"Propose splitting billing out of the monolith and compare it with today."_ | a proposal drawn against the current variant          |
+| _"Give me two options for search, side by side."_                            | two competing drafts from one starting point          |
+| _"We shipped the queue. Adopt the proposal."_                                | the old architecture becomes history, with the reason |
+| _"Record a walkthrough of PR 128 for the reviewers and attach it."_          | a narrated MP4 on the pull request                    |
+| _"Explain the checkout to a new hire, one step at a time."_                  | a newcomer's walkthrough you can narrate              |
 
-```bash
-mkdir -p ~/.local/bin
-ln -s /path/to/archboard/bin/archboard ~/.local/bin/archboard
+## FAQ
 
-cd /path/to/your-project
-archboard install-skill
-```
+<details><summary><b>Can I move a box?</b></summary>
+<br>
 
-The installer copies the archboard skill into a skills directory
-(`~/.agents/skills` by default). The skill is the set of instructions that
-teaches an agent to use archboard. The installer then writes the vault path and
-the command for this machine into the `CLAUDE.md` or `AGENTS.md` file of the
-repository. See [INSTALL.md](INSTALL.md) for the options, shared vaults and
-repository bindings.
+No, and that is the point. Nobody repairs a layout by hand, so an improvement to the renderer improves every board at once, history included. If a picture says something wrong, fix the meaning. If the meaning is right and the picture is not, that is a renderer bug.
+</details>
 
-After the installation, ask the agent to map the current architecture onto a
-named board. A typical comparison branches that board into a proposal and shows
-the two variants side by side:
+<details><summary><b>Which agents does it work with?</b></summary>
+<br>
 
-```bash
-archboard semantic branch payments --as "Queued ingest" --expect-version 1 \
-  --doing "proposing a queue"
-archboard browser open
-archboard browser show "payments@Queued ingest" --pane right
-```
+Any agent that can run a CLI can write boards. `archboard install-skill` sets up Claude Code and Codex. The agent bar in the browser, the voice, narration and recordings run on Codex, which Archboard runs as its own private app-server with its own sign-in.
+</details>
 
-## How archboard keeps boards safe
+<details><summary><b>Where do boards live?</b></summary>
+<br>
 
-The file is the board. Archboard does not keep a second copy of a board in
-memory. The server writes each accepted change to the file of the board
-atomically, and then answers. Atomically means completely or not at all.
+In a vault: a directory of `.semantic.json` files, one per board, holding every variant, view and walkthrough of it. Keep the vault in your repository and review board changes in the same pull request as the code.
+</details>
 
-Only one agent writes to a board at a time. For substantial work, an agent
-claims the board with `archboard claim --board <board> --reason "<why>"`, and
-it runs `archboard release --board <board>` at the end. While an agent holds a
-claim, each pane that shows the board says who holds it, why, and since when.
-The pane also shows a control that takes the claim back. If a person takes the
-claim back, the next write of the agent fails one time, and the agent stops.
+<details><summary><b>Does the diagram stay in sync with the code?</b></summary>
+<br>
 
-The code binding of a node is part of its meaning, and it travels with the
-board as a repository name and a path. It is not a `file://` URL that works on
-one machine only. To open the code from a board, run `archboard repo add` in
-each checkout of the repository on this machine.
+Your agent keeps it in sync. Parts carry code bindings, and `archboard check` reports a binding whose file is gone, but nothing rewrites a board behind your back.
+</details>
 
-## Codex and the voice
+<details><summary><b>Is the traffic animation real traffic?</b></summary>
+<br>
 
-The Archboard server runs its own private Codex app-server session, with its own Codex
-state and sign-in. The server links to one workhorse, the Codex thread that
-does the long work, and all panes share that link. The first message or the
-first press of Talk makes the link. The voice talks through a separate
-coordinator thread, so the conversation and the long work do not share a
-history. The
-[bound app-server design](DESIGN.md#2-mid-conversation-context--the-bound-app-server-session)
-gives the full contract.
+No. The agent marks which relationships carry the hot path, and the renderer animates them. It illustrates how a request flows. It is not a measurement.
+</details>
 
-## Security
+<details><summary><b>Is it safe to run?</b></summary>
+<br>
 
-Keep the Archboard server on loopback, which only this machine can connect to. The server
-has no authentication, so any process that can connect to its port can use it.
-By default, the server binds to `127.0.0.1`. To connect from another machine,
-use an SSH tunnel. Do not expose the server directly to a network.
+The Archboard server binds to `127.0.0.1` and has no authentication, so keep it on loopback. To use it from another machine, use an SSH tunnel.
+</details>
 
-## Documentation
+<details><summary><b>Is it stable?</b></summary>
+<br>
 
-These files give more detail:
+Archboard is young and moves fast. Its interfaces change often, and it is not published to npm: run it from a clone. It targets desktop browsers on Linux and macOS.
+</details>
 
-- [INSTALL.md](INSTALL.md): install archboard for use across repositories.
-- [TESTING.md](TESTING.md): run the complete Codex, voice and canvas loop.
-- [DESIGN.md](DESIGN.md): the product design, constraints and roadmap.
-- [CONTEXT.md](CONTEXT.md): the domain language of the CLI and the
-  documentation.
-- [docs/adr/](docs/adr/): architectural decisions and their consequences.
-- [AGENTS.md](AGENTS.md): the instructions for agents that work on this
-  repository.
+## Learn more
+
+[INSTALL.md](INSTALL.md) · [TESTING.md](TESTING.md) · [DESIGN.md](DESIGN.md) · [CONTEXT.md](CONTEXT.md) · [Architecture decisions](docs/adr/) · [The agent skill](skills/archboard/SKILL.md) · [AGENTS.md](AGENTS.md)
+
+<sub>Every diagram in this README was drawn by Archboard, and every clip was filmed from a running Archboard server. The SVGs' embedded fonts are subset to keep the page light, and the banner art was generated with Codex. Licensed under the Business Source License 1.1.</sub>
