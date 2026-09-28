@@ -437,7 +437,12 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		drawn,
 		viewToRead(narrative.beat, level.view),
 	);
-	const focus = useSettledFocus(narrative.beat, drawn, viewToRead(narrative.beat, level.view));
+	const focus = useSettledFocus(
+		narrative.beat,
+		drawn,
+		viewToRead(narrative.beat, level.view),
+		reading,
+	);
 	const camera = useAutoFit(drawn, focus, {
 		presenting: narrative.open !== null,
 		reducedMotion: props.reducedMotion,

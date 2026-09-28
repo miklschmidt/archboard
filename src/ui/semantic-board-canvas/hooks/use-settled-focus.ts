@@ -12,6 +12,7 @@ import { useMemo, useState } from "react";
 
 import type { WalkthroughBeat } from "@/shared/semantic-board/index";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
+import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 import { beatFocus, type BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
 
 /**
@@ -29,14 +30,17 @@ function readingArrived(drawn: SemanticDrawing | null, view: string | undefined)
  * @param beat The step on screen, or null.
  * @param drawn The picture on screen, or null.
  * @param view The view the pane has asked the server for, or undefined for the whole variant.
+ * @param reading The variant the step belongs to, or null when it cannot be read.
  * @returns The focus.
  */
 function useSettledFocus(
 	beat: WalkthroughBeat | null,
 	drawn: SemanticDrawing | null,
 	view: string | undefined,
+	reading: VariantReading | null,
 ): BeatFocus {
-	const fresh = useMemo(() => beatFocus(beat, drawn), [beat, drawn]);
+	const variant = reading?.variant ?? null;
+	const fresh = useMemo(() => beatFocus(beat, drawn, variant), [beat, drawn, variant]);
 	const arrived = readingArrived(drawn, view);
 	const [settled, setSettled] = useState(fresh);
 	// Held during render, as React asks for a value derived from the last one.
