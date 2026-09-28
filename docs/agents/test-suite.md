@@ -55,10 +55,17 @@ bun test path/to/owner.test.ts --test-name-pattern "part of the test name"
 ```
 
 The repository-policy-owned preload at
-`tests/system/repository-policy/support/test-preload.ts` measures each Bun case with
-a monotonic clock. An unapproved case gets 20,000 ms of actual elapsed time. A larger
-timeout argument only tells Bun how long it may wait; it does not fail a case that
-finishes inside the wall-clock budget.
+`tests/system/repository-policy/support/test-preload.ts` gives every Bun case
+without its own timeout `TEST_CASE_TIMEOUT_MS` (15,000 ms) and measures each case
+with a monotonic clock. An unapproved case gets `TEST_WALL_CLOCK_BUDGET_MS`
+(60,000 ms) of actual elapsed time. A larger timeout argument only tells Bun how
+long it may wait; it does not fail a case that finishes inside the wall-clock budget.
+
+Both are three times their base through `TEST_PATIENCE_FACTOR` in
+`tests/system/support/timing.ts`, because GitHub's hosted runners vary widely in
+speed. The factor multiplies how long a test waits for something that should
+happen. It never multiplies a poll cadence, a window in which nothing may happen,
+or a product duration.
 
 Keep a real-time exception inside its exact test callback. Its first statement calls
 `declareTestWallClockBudget` with the exact test name, a concrete reason, a `TEST_*`

@@ -193,4 +193,4 @@ test("a recording opens no step, hands the page's own first step to the voice, a
 	} finally {
 		await resources.disposeAsync();
 	}
-}, 15000);
+}, 45_000);
