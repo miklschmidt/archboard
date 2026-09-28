@@ -171,7 +171,7 @@ export {
 	TokenUsageBreakdownSchema,
 	VerbositySchema,
 	WebSearchModeSchema,
-	WindowsSandboxSetupModeSchema,
+	WindowsSandboxImplementationSchema,
 } from "@/runtime/codex-protocol/lib/config-schemas";
 
 export {

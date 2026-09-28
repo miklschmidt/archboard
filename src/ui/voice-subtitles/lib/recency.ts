@@ -1,7 +1,8 @@
 // Whether there is something to subtitle right now.
 //
-// Measured against Codex 0.155.1 in a full-duplex session: the voice model's transcript arrives a
-// word at a time, each word within some tens of milliseconds of its place on the audio clock. So
+// Measured against Codex 0.155.1 in a full-duplex session (the code that emits these transcript
+// notifications is unchanged in 0.158.0): the voice model's transcript arrives a word at a time,
+// each word within some tens of milliseconds of its place on the audio clock. So
 // a word is shown the moment it arrives, and nothing here paces or holds text back; an earlier
 // cut that did fell further behind the voice with every sentence. What is left to decide is when
 // a subtitle goes: once no word has arrived for `SUBTITLE_LINGER_MS`, longer than the voice ever

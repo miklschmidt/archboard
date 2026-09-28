@@ -120,7 +120,7 @@ const emitOwnershipBatch = (phase: string): void => {
 const releaseHeldAccountRead = (): void => {
 	for (const frame of heldAccountReads.splice(0)) {
 		record({ kind: "held_client_rpc", state: "released", method: "account/read", id: String(frame.id) });
-		respond(frame as never, { account: { type: "chatgpt", email: null, planType: "pro" }, requiresOpenaiAuth: true });
+		respond(frame as never, { account: { type: "chatgpt", email: null, planType: "pro" }, requiresOpenaiAuth: true, workspaceRouting: null });
 	}
 };
 

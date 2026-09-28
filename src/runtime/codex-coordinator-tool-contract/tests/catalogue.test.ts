@@ -160,7 +160,7 @@ describe("dynamic tool schemas and queue protocol", () => {
 		});
 	});
 
-	test("mirrors the exact 0.155.1 queue parameter fields", () => {
+	test("mirrors the exact 0.158.0 queue parameter fields", () => {
 		const textInput = { type: "text" as const, text: "queue prompt", text_elements: [] };
 		expect(
 			ThreadQueueAddParamsSchema.parse({
@@ -207,7 +207,7 @@ describe("dynamic tool schemas and queue protocol", () => {
 		]);
 		expect(CODEX_QUEUE_PROTOCOL).toEqual({
 			protocol: "codex-app-server",
-			version: "0.155.1",
+			version: "0.158.0",
 			operations: [...QUEUE_OPERATION_SNAPSHOT],
 		});
 	});

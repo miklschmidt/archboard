@@ -39,6 +39,7 @@ async function readyFixture(): Promise<SessionFixture> {
 	fixture.transport.enqueueResponse("account/read", {
 		account: { type: "chatgpt", email: null, planType: "pro" },
 		requiresOpenaiAuth: true,
+		workspaceRouting: null,
 	});
 	await fixture.session.accountRead();
 	return fixture;
@@ -122,6 +123,7 @@ function threadStartResponse(thread: RawThread): ResponsePayloads["thread/start"
 		activePermissionProfile: null,
 		reasoningEffort: "medium",
 		multiAgentMode: "explicitRequestOnly",
+		disabledPluginIds: [],
 	};
 }
 
@@ -267,7 +269,9 @@ describe("Codex session response identities", () => {
 			expect(turns.backwardsCursor).toBe("turn-back");
 
 			fixture.transport.enqueueResponse("thread/items/list", {
-				data: [{ turnId: "turn-rich", item: richAgentItem }],
+				data: [
+					{ turnId: "turn-rich", item: richAgentItem, startedAtMs: null, completedAtMs: null },
+				],
 				nextCursor: "item-next",
 				backwardsCursor: "item-back",
 			} satisfies ResponsePayloads["thread/items/list"]);

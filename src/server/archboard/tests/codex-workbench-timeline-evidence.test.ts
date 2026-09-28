@@ -42,7 +42,7 @@ function browserProjectionInput(
 		readiness: { kind: "readiness", state: "thread_capable" },
 		account: {
 			kind: "codex_account_response",
-			response: { account: null, requiresOpenaiAuth: true },
+			response: { account: null, requiresOpenaiAuth: true, workspaceRouting: null },
 		},
 		login: { kind: "login", state: "idle" },
 		threadLink: executableLink(authorities, timeline.threadId),

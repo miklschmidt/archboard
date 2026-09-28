@@ -7,7 +7,7 @@
 // coordinator knows whether the work came from a voice request, so it is given the outcome: what
 // it replies under [FINAL] the voice model says, and what it replies under [COMMENTARY] stays
 // quiet. The outcome goes out the moment it arrives (TASK-321): Codex's turn/start adds it to the
-// coordinator's running turn when there is one and starts a turn otherwise (Codex 0.155.1,
+// coordinator's running turn when there is one and starts a turn otherwise (Codex 0.158.0,
 // `start_or_steer`), so nothing waits for the coordinator to be idle and nothing lands in its
 // history without a turn to act on it. Which outcomes are given is the callback module's.
 //

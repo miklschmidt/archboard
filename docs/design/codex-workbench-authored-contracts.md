@@ -2,7 +2,7 @@
 
 **Reviewed input:** 2026-08-30
 
-**Protocol:** Codex app-server 0.155.1 with experimental APIs
+**Protocol:** Codex app-server 0.158.0 with experimental APIs
 
 **Owner:** TASK-143.01.17
 
@@ -153,7 +153,7 @@ The coordinator uses exactly one of these two otherwise-identical profiles:
 ```
 
 `project_doc_max_bytes: 0` keeps the checkout's `AGENTS.md` out of the
-coordinator (verified on Codex 0.155.1: `thread/start` answers
+coordinator (verified on Codex 0.158.0: `thread/start` answers
 `instructionSources: []` with it and the file's path without). That file is
 written for an agent doing work in the repository and tells every request to
 begin with project procedure; the coordinator's whole brief is what Archboard

@@ -11,7 +11,10 @@ import type {
 import {
 	ApprovalsReviewerSchema,
 	ConversationTextRoleSchema,
+	CyberAccessProgramSchema,
 	ImageDetailSchema,
+	inputImageReference,
+	userImageReference,
 	PersonalitySchema,
 	ReasoningEffortSchema,
 	ReasoningSummarySchema,
@@ -100,11 +103,14 @@ const ClientUserInputSchema = z.discriminatedUnion("type", [
 		text: z.string(),
 		text_elements: z.array(ClientTextElementSchema),
 	}),
-	z.strictObject({
-		type: z.literal("image"),
-		detail: ImageDetailSchema.optional(),
-		url: z.string(),
-	}),
+	z
+		.strictObject({
+			type: z.literal("image"),
+			detail: ImageDetailSchema.optional(),
+			url: z.string().optional(),
+			fileId: z.string().optional(),
+		})
+		.transform(userImageReference),
 	z.strictObject({
 		type: z.literal("localImage"),
 		detail: ImageDetailSchema.optional(),
@@ -120,11 +126,14 @@ const ClientFunctionCallOutputBodySchema = z.union([
 	z.array(
 		z.discriminatedUnion("type", [
 			z.strictObject({ type: z.literal("input_text"), text: z.string() }),
-			z.strictObject({
-				type: z.literal("input_image"),
-				image_url: z.string(),
-				detail: ImageDetailSchema.optional(),
-			}),
+			z
+				.strictObject({
+					type: z.literal("input_image"),
+					image_url: z.string().optional(),
+					file_id: z.string().optional(),
+					detail: ImageDetailSchema.optional(),
+				})
+				.transform(inputImageReference),
 			z.strictObject({ type: z.literal("input_audio"), audio_url: z.string() }),
 			z.strictObject({
 				type: z.literal("encrypted_content"),
@@ -331,7 +340,7 @@ const TurnStartParamsSchema = z.strictObject({
 	outputSchema: JsonValueSchema.nullable().optional(),
 	collaborationMode: CollaborationModeSchema.nullable().optional(),
 	multiAgentMode: ClientMultiAgentModeSchema.nullable().optional(),
-	cyberAccessProgram: z.enum(["standard", "daybreakBlue", "daybreakRed"]).nullable().optional(),
+	cyberAccessProgram: CyberAccessProgramSchema.nullable().optional(),
 });
 const TurnSteerParamsSchema = z.strictObject({
 	threadId: z.string(),

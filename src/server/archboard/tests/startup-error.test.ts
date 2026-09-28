@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { CodexProcessError } from "../../../runtime/codex-process/index.js";
+import { CODEX_PROTOCOL_VERSION } from "../../../runtime/codex-protocol/index.js";
 import { serverStartupFailureMessage } from "../index.js";
 
 test("classifies process-group ownership refusal without install recovery", () => {
@@ -25,6 +26,6 @@ test("retains install recovery for a true child spawn failure", () => {
 	});
 
 	const message = serverStartupFailureMessage(failure);
-	expect(message).toContain("Run bun install to restore @openai/codex 0.155.1");
+	expect(message).toContain(`@openai/codex ${CODEX_PROTOCOL_VERSION}`);
 	expect(message).toContain("Could not spawn the exact Codex app-server child");
 });

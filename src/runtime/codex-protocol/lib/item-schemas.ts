@@ -184,6 +184,10 @@ const ThreadItemSchema = z.discriminatedUnion("type", [
 		arguments: JsonValueSchema,
 		appContext: McpToolCallAppContextSchema.nullable(),
 		mcpAppResourceUri: z.string().optional(),
+		mcpAppUi: looseObject({
+			resourceUri: z.string(),
+			preferredModelDisplayMode: z.enum(["inline", "fullscreen"]),
+		}).nullable(),
 		pluginId: z.string().nullable(),
 		readOnlyHint: z.boolean().nullable(),
 		result: McpToolCallResultSchema.nullable(),
@@ -260,6 +264,8 @@ const ThreadItemSchema = z.discriminatedUnion("type", [
 const ThreadItemEntrySchema = looseObject({
 	turnId: z.string(),
 	item: ThreadItemSchema,
+	startedAtMs: FiniteNumberSchema.nullable(),
+	completedAtMs: FiniteNumberSchema.nullable(),
 });
 
 const QueuedSubmissionSchema = looseObject({

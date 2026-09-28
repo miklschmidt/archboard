@@ -129,6 +129,7 @@ const serverNotificationFixtures: Record<ServerNotificationMethod, unknown> = {
 				},
 			},
 			multiAgentMode: "explicitRequestOnly",
+			disabledPluginIds: [],
 			personality: null,
 		},
 	},

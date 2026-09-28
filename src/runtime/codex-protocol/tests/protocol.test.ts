@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
 	CLIENT_NOTIFICATION_METHODS,
 	CODEX_PROTOCOL_VERSION,
+	FunctionCallOutputContentItemSchema,
 	ProtocolDecodeError,
 	RESPONSE_METHODS,
 	SERVER_NOTIFICATION_METHODS,
@@ -14,11 +15,33 @@ import {
 	decodeResponseEnvelope,
 	decodeServerNotification,
 	decodeServerRequest,
+	UserInputSchema,
 } from "../index.js";
 import { clientNotificationFixtures, responseFixtures, serverRequestFixtures } from "./fixtures.js";
 import { notificationFixture, serverNotificationFixtures } from "./notification-fixtures.js";
 import { assertChallengeFailure, changedPaths, pathKey } from "./union-challenge-audit.js";
 import { SERVER_NOTIFICATION_UNION_CHALLENGES } from "./union-challenges.js";
+describe("image references", () => {
+	test("an image names exactly one of an inline URL and an uploaded file", () => {
+		expect(UserInputSchema.parse({ type: "image", url: "https://x.test/a.png" })).toEqual({
+			type: "image",
+			url: "https://x.test/a.png",
+		});
+		expect(UserInputSchema.parse({ type: "image", fileId: "file-1" })).toEqual({
+			type: "image",
+			fileId: "file-1",
+		});
+		expect(
+			FunctionCallOutputContentItemSchema.parse({ type: "input_image", file_id: "file-1" }),
+		).toEqual({ type: "input_image", file_id: "file-1" });
+		expect(UserInputSchema.safeParse({ type: "image" }).success).toBe(false);
+		expect(UserInputSchema.safeParse({ type: "image", url: "u", fileId: "f" }).success).toBe(false);
+		expect(FunctionCallOutputContentItemSchema.safeParse({ type: "input_image" }).success).toBe(
+			false,
+		);
+	});
+});
+
 describe("public response boundary", () => {
 	for (const method of RESPONSE_METHODS) {
 		test(`decodes ${method}`, () => {
@@ -157,6 +180,7 @@ describe("closed-union challenges", () => {
 				status: "completed",
 				arguments: { nested: ["future", { value: true }] },
 				appContext: null,
+				mcpAppUi: null,
 				pluginId: null,
 				readOnlyHint: null,
 				result: {

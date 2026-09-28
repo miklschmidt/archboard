@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import {
 	FunctionCallOutputBodySchema,
-	ImageDetailSchema,
+	InputImageSchema,
 	MessagePhaseSchema,
 	ReasoningEffortSchema,
 } from "@/runtime/codex-protocol/lib/core-schemas";
@@ -18,11 +18,7 @@ const InternalChatMessageMetadataPassthroughSchema = looseObject({
 
 const ContentItemSchema = z.discriminatedUnion("type", [
 	looseObject({ type: z.literal("input_text"), text: z.string() }),
-	looseObject({
-		type: z.literal("input_image"),
-		image_url: z.string(),
-		detail: ImageDetailSchema.optional(),
-	}),
+	InputImageSchema,
 	looseObject({ type: z.literal("input_audio"), audio_url: z.string() }),
 	looseObject({ type: z.literal("output_text"), text: z.string() }),
 ]);

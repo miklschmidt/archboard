@@ -155,6 +155,8 @@ const McpServerElicitationRequestParamsSchema = z.discriminatedUnion("mode", [
 	z.strictObject({
 		...McpElicitationBaseShape,
 		mode: z.literal("openai/userVerification"),
+		/** MCP metadata is an intentionally open JSON extension point. */
+		_meta: JsonValueSchema.nullable(),
 		title: z.string(),
 		description: z.string(),
 		challenge: z.string(),
