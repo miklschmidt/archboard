@@ -16,6 +16,7 @@ const PlanTypeSchema = z.enum([
 	"plus",
 	"pro",
 	"prolite",
+	"promax",
 	"team",
 	"self_serve_business_prolite",
 	"self_serve_business_usage_based",
@@ -29,6 +30,8 @@ const PlanTypeSchema = z.enum([
 	"edu_pro",
 	"unknown",
 ]);
+
+const CyberAccessProgramSchema = z.enum(["standard", "daybreakBlue", "daybreakRed"]);
 
 const AuthModeSchema = z.enum([
 	"apikey",
@@ -152,6 +155,7 @@ const CodexErrorInfoSchema = z.union([
 		"sessionBudgetExceeded",
 		"usageLimitExceeded",
 		"rateLimitExceeded",
+		"flexUnavailable",
 		"serverOverloaded",
 		"cyberPolicy",
 		"misalignmentPolicyViolation",
@@ -268,13 +272,59 @@ const TextElementSchema = looseObject({
 });
 
 const ImageDetailSchema = z.enum(["auto", "low", "high", "original"]);
+// Since Codex 0.158.0 an image is named inline or by an uploaded file (`ImageReference`).
+// A discriminated union holds one member per `type`, so an image is one object taking both
+// references as optional, and these transforms keep exactly one of them.
+const ONE_IMAGE_REFERENCE = "an image names exactly one of an inline URL and an uploaded file";
+
+/**
+ * Keeps the one reference a user-input image names.
+ * @param image - The image with its optional `url` and `fileId`.
+ * @param context - Where a missing or doubled reference is reported.
+ * @returns The image narrowed to the reference it carries.
+ */
+function userImageReference<
+	Image extends { readonly url?: string | undefined; readonly fileId?: string | undefined },
+>(image: Image, context: z.RefinementCtx) {
+	if (image.url !== undefined && image.fileId === undefined) return { ...image, url: image.url };
+	if (image.fileId !== undefined && image.url === undefined) {
+		return { ...image, fileId: image.fileId };
+	}
+	context.addIssue({ code: "custom", path: ["url"], message: ONE_IMAGE_REFERENCE });
+	return z.NEVER;
+}
+
+/**
+ * Keeps the one reference a Responses `input_image` names.
+ * @param image - The image with its optional `image_url` and `file_id`.
+ * @param context - Where a missing or doubled reference is reported.
+ * @returns The image narrowed to the reference it carries.
+ */
+function inputImageReference<
+	Image extends { readonly image_url?: string | undefined; readonly file_id?: string | undefined },
+>(image: Image, context: z.RefinementCtx) {
+	if (image.image_url !== undefined && image.file_id === undefined) {
+		return { ...image, image_url: image.image_url };
+	}
+	if (image.file_id !== undefined && image.image_url === undefined) {
+		return { ...image, file_id: image.file_id };
+	}
+	context.addIssue({ code: "custom", path: ["image_url"], message: ONE_IMAGE_REFERENCE });
+	return z.NEVER;
+}
+
 const UserInputSchema = z.discriminatedUnion("type", [
 	looseObject({
 		type: z.literal("text"),
 		text: z.string(),
 		text_elements: z.array(TextElementSchema),
 	}),
-	looseObject({ type: z.literal("image"), detail: ImageDetailSchema.optional(), url: z.string() }),
+	looseObject({
+		type: z.literal("image"),
+		detail: ImageDetailSchema.optional(),
+		url: z.string().optional(),
+		fileId: z.string().optional(),
+	}).transform(userImageReference),
 	looseObject({
 		type: z.literal("localImage"),
 		detail: ImageDetailSchema.optional(),
@@ -286,13 +336,16 @@ const UserInputSchema = z.discriminatedUnion("type", [
 	looseObject({ type: z.literal("mention"), name: z.string(), path: z.string() }),
 ]);
 
+const InputImageSchema = looseObject({
+	type: z.literal("input_image"),
+	image_url: z.string().optional(),
+	file_id: z.string().optional(),
+	detail: ImageDetailSchema.optional(),
+}).transform(inputImageReference);
+
 const FunctionCallOutputContentItemSchema = z.discriminatedUnion("type", [
 	looseObject({ type: z.literal("input_text"), text: z.string() }),
-	looseObject({
-		type: z.literal("input_image"),
-		image_url: z.string(),
-		detail: ImageDetailSchema.optional(),
-	}),
+	InputImageSchema,
 	looseObject({ type: z.literal("input_audio"), audio_url: z.string() }),
 	looseObject({ type: z.literal("encrypted_content"), encrypted_content: z.string() }),
 ]);
@@ -313,6 +366,7 @@ const AccountSchema = z.discriminatedUnion("type", [
 
 export {
 	PlanTypeSchema,
+	CyberAccessProgramSchema,
 	AuthModeSchema,
 	ReasoningEffortSchema,
 	ReasoningSummarySchema,
@@ -352,7 +406,10 @@ export {
 	ByteRangeSchema,
 	TextElementSchema,
 	ImageDetailSchema,
+	userImageReference,
+	inputImageReference,
 	UserInputSchema,
+	InputImageSchema,
 	FunctionCallOutputContentItemSchema,
 	FunctionCallOutputBodySchema,
 	AccountSchema,

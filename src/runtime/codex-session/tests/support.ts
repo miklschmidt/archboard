@@ -1,3 +1,4 @@
+import { CODEX_PROTOCOL_VERSION } from "../../codex-protocol/index.js";
 import { mkdtempSync, mkdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -254,6 +255,7 @@ export const modelFixture = {
 	additionalSpeedTiers: [],
 	serviceTiers: [],
 	defaultServiceTier: null,
+	availableAccessPrograms: null,
 	isDefault: true,
 } satisfies ResponsePayloads["model/list"]["data"][number];
 
@@ -261,6 +263,9 @@ export const requirementsFixture = (
 	sqliteHome: string | null,
 ): ResponsePayloads["configRequirements/read"] => ({
 	requirements: {
+		modelProvider: null,
+		modelProviders: null,
+		allowedLoginMethods: null,
 		cliAuthCredentialsStore: null,
 		chatgptBaseUrl: null,
 		additionalDeveloperInstructions: null,
@@ -290,7 +295,6 @@ export const requirementsFixture = (
 		checkForUpdateOnStartup: null,
 		allowLoginShell: null,
 		feedback: null,
-		windowsSandboxPrivateDesktop: null,
 		application: null,
 	},
 });
@@ -332,7 +336,7 @@ export const threadFixture = {
 	status: { type: "idle" },
 	path: null,
 	cwd: "/tmp/archboard",
-	cliVersion: "0.155.1",
+	cliVersion: CODEX_PROTOCOL_VERSION,
 	source: "appServer",
 	canAcceptDirectInput: true,
 	threadSource: "archboard",
@@ -396,7 +400,7 @@ export function createSessionFixture(
 	const identity = createIdentityAuthority();
 	const transport = new FakeTransport(identity);
 	transport.enqueueResponse("initialize", {
-		userAgent: "Codex Desktop/0.155.1",
+		userAgent: `Codex Desktop/${CODEX_PROTOCOL_VERSION}`,
 		codexHome: options.initializeCodexHome ?? storage.codexHome,
 		platformFamily: "unix",
 		platformOs: "linux",

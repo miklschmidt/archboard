@@ -10,7 +10,7 @@ import {
 	TurnErrorSchema,
 	TurnStatusSchema,
 } from "@/runtime/codex-protocol/lib/core-schemas";
-import { ThreadItemSchema } from "@/runtime/codex-protocol/lib/item-schemas";
+import { ThreadItemEntrySchema, ThreadItemSchema } from "@/runtime/codex-protocol/lib/item-schemas";
 import { FiniteNumberSchema, looseObject } from "@/runtime/codex-protocol/lib/scalars";
 
 const TurnItemsViewSchema = z.enum(["notLoaded", "summary", "full"]);
@@ -112,7 +112,7 @@ const ThreadRealtimeTimelineStateSchema = looseObject({
 });
 
 const ThreadItemPageSchema = looseObject({
-	data: z.array(looseObject({ turnId: z.string(), item: ThreadItemSchema })),
+	data: z.array(ThreadItemEntrySchema),
 	nextCursor: z.string().nullable(),
 	backwardsCursor: z.string().nullable(),
 });

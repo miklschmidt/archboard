@@ -4,7 +4,7 @@
 // voice model each step as speech once the pane shows it: the first when Narrate opens it, and
 // every step the user moves to after that. Leaving is told the same way. No coordinator turn is
 // involved and nothing asks for a next step: in a full-duplex (V3) session a handoff carries the
-// latest user-side item replayed, never words the voice model chose (Codex 0.155.1,
+// latest user-side item replayed, never words the voice model chose (Codex 0.158.0,
 // `delegation.created`), which is too little for the voice model to steer a talk through.
 //
 // A recording (TASK-304) is a narration nobody listens to live and nobody steps by hand: the
@@ -140,7 +140,7 @@ function subjectSpeech(subject: StepSubject): string {
  * or the user leaves it.
  *
  * In a full-duplex session appended text is quiet context whatever role it carries, and nothing
- * asks for a response (Codex 0.155.1, `conversation_item_create_message`). What the voice model
+ * asks for a response (Codex 0.158.0, `conversation_item_create_message`). What the voice model
  * says is what arrives as speakable text, the way a coordinator's answer does, so both are
  * speech: a step to explain now, and leaving to acknowledge. A recording's step is on a screen
  * nobody is watching live, and is named so.

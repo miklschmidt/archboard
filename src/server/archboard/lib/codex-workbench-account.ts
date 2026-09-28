@@ -92,6 +92,10 @@ function sessionLoginParams(login: BrowserLogin): SessionLoginParams {
 	}
 }
 
+/** What a pane is told when Codex answered an account read with an error. */
+export const ACCOUNT_READ_FAILED_REASON =
+	"The Codex account could not be read. Refresh the account to try again.";
+
 /** What one generation's account owner is closed over. */
 interface ServerAccountOwnerInput {
 	readonly components: Omit<CodexWorkbenchComponents, "gateway">;
@@ -206,7 +210,7 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 			state.account = {
 				kind: "account",
 				state: "failed",
-				reason: "The Codex account could not be read. Refresh the account to try again.",
+				reason: ACCOUNT_READ_FAILED_REASON,
 			};
 			publish();
 		}

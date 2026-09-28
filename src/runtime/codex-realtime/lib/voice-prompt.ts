@@ -2,8 +2,8 @@
 // coordinator behind it.
 //
 // Two facts about a full-duplex (V3) session shape the working rules, both read against Codex
-// 0.155.1 and both visible in every recorded session. The voice model does not write its handoff:
-// a delegation's text is the latest user-side item of the conversation replayed, which is usually
+// 0.158.0 and both visible in every session recorded on 0.155.1. The voice model does not write
+// its handoff: a delegation's text is the latest user-side item of the conversation replayed, which is usually
 // what the user last said, in whatever language and however garbled, but can be something the
 // server put to the voice model as the user (once a fragment of a JSON append, and in earlier
 // narrations an opening request), plus the running transcript, which includes what the voice

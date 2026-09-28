@@ -14,6 +14,7 @@ import { processFacts } from "./support/codex-workbench-process-fixture.js";
 const accountResponse = {
 	account: { type: "chatgpt", email: "fixture@example.test", planType: "plus" },
 	requiresOpenaiAuth: true,
+	workspaceRouting: null,
 } as const;
 
 function harness(overrides: HarnessOverrides = {}) {
@@ -217,7 +218,13 @@ test("API key login reads account truth even without a pending login ID", async 
 
 test("failed completion retains its reason after an authoritative signed-out account read", async () => {
 	const value = harness({
-		session: { accountRead: async () => ({ account: null, requiresOpenaiAuth: true }) },
+		session: {
+			accountRead: async () => ({
+				account: null,
+				requiresOpenaiAuth: true,
+				workspaceRouting: null,
+			}),
+		},
 	});
 	try {
 		await value.login();

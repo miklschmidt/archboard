@@ -1,8 +1,8 @@
 # Codex workbench authored contracts
 
-**Reviewed input:** 2026-08-30
+**Reviewed input:** 2026-09-28
 
-**Protocol:** Codex app-server 0.155.1 with experimental APIs
+**Protocol:** Codex app-server 0.158.0 with experimental APIs
 
 **Owner:** TASK-143.01.17
 
@@ -153,7 +153,7 @@ The coordinator uses exactly one of these two otherwise-identical profiles:
 ```
 
 `project_doc_max_bytes: 0` keeps the checkout's `AGENTS.md` out of the
-coordinator (verified on Codex 0.155.1: `thread/start` answers
+coordinator (verified on Codex 0.158.0: `thread/start` answers
 `instructionSources: []` with it and the file's path without). That file is
 written for an agent doing work in the repository and tells every request to
 begin with project procedure; the coordinator's whole brief is what Archboard
@@ -164,7 +164,7 @@ profile omits `serviceTier`; it does not send `null` or another tier. Both
 profiles intentionally omit `modelProvider`, `approvalPolicy`,
 `approvalsReviewer`, `sandbox`, `permissions`, `baseInstructions`,
 `personality`, `multiAgentMode`, `projectId`, `environments`,
-`selectedCapabilityRoots`, and `mockExperimentalField`. Omission preserves the
+`selectedCapabilityRoots`, `daybreakEnabled`, and `mockExperimentalField`. Omission preserves the
 dedicated child's reviewed config/default environment and therefore normal
 shell, web, repository, and approval capabilities. The workhorse explicitly
 uses `model: "gpt-6-astra"` and `config: { model_reasoning_effort: "medium" }`.
@@ -217,7 +217,7 @@ It omits `toolOutput`, `responsesapiClientMetadata`, `environments`, `cwd`,
 `runtimeWorkspaceRoots`, `approvalPolicy`, `approvalsReviewer`,
 `sandboxPolicy`, `permissions`, `model`, `serviceTier`, `serviceTierForTurn`,
 `effort`, `summary`, `personality`, `outputSchema`, `collaborationMode`,
-`multiAgentMode`, and `cyberAccessProgram`. Text is a `UserInput`; it is not a
+`multiAgentMode`, `cyberAccessProgram`, and `disabledPluginIds`. Text is a `UserInput`; it is not a
 developer-role Responses API item.
 
 Every steer uses this complete `TurnSteerParams` shape:

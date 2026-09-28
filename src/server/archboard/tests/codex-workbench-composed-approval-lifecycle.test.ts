@@ -75,6 +75,7 @@ test("composed child exit publishes one settled approval before closing presente
 				response: {
 					account: { type: "chatgpt", email: "fixture@example.test", planType: "plus" },
 					requiresOpenaiAuth: true,
+					workspaceRouting: null,
 				},
 			},
 			login: { kind: "login", state: "idle" },

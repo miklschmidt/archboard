@@ -196,6 +196,7 @@ test("the live server socket crosses the real gateway and approval broker exactl
 					response: {
 						account: { type: "chatgpt", email: "fixture@example.test", planType: "plus" },
 						requiresOpenaiAuth: true,
+						workspaceRouting: null,
 					},
 				},
 				login: { kind: "login", state: "idle" },

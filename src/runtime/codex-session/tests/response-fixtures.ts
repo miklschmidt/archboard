@@ -1,3 +1,4 @@
+import { CODEX_PROTOCOL_VERSION } from "../../codex-protocol/index.js";
 import type { ResponseMethod } from "../../codex-protocol/index.js";
 import {
 	configFixture,
@@ -13,7 +14,7 @@ import {
 export function responseFor(method: ResponseMethod, fixture: SessionFixture): unknown {
 	if (method === "initialize") {
 		return {
-			userAgent: "Codex Desktop/0.155.1",
+			userAgent: `Codex Desktop/${CODEX_PROTOCOL_VERSION}`,
 			codexHome: fixture.storage.codexHome,
 			platformFamily: "unix",
 			platformOs: "linux",
@@ -29,6 +30,7 @@ export function responseFor(method: ResponseMethod, fixture: SessionFixture): un
 		return {
 			account: { type: "chatgpt", email: null, planType: "pro" },
 			requiresOpenaiAuth: true,
+			workspaceRouting: null,
 		};
 	}
 	if (method === "account/login/start") {
@@ -55,6 +57,7 @@ export function responseFor(method: ResponseMethod, fixture: SessionFixture): un
 			activePermissionProfile: null,
 			reasoningEffort: "medium",
 			multiAgentMode: "explicitRequestOnly",
+			disabledPluginIds: [],
 		};
 	}
 	if (method === "thread/read") {
@@ -89,7 +92,7 @@ export function responseFor(method: ResponseMethod, fixture: SessionFixture): un
 	}
 	if (method === "thread/items/list") {
 		return {
-			data: [{ turnId: "turn-1", item: threadItemFixture }],
+			data: [{ turnId: "turn-1", item: threadItemFixture, startedAtMs: null, completedAtMs: null }],
 			nextCursor: "item-next",
 			backwardsCursor: "item-back",
 		};
