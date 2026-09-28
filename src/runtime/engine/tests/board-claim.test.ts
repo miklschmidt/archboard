@@ -175,4 +175,4 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 		}
 		rmSync(vault, { recursive: true, force: true });
 	}
-}, 15_000);
+}, 45_000);

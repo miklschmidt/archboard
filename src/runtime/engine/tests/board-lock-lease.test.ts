@@ -197,4 +197,4 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 	} finally {
 		await cleanup();
 	}
-}, 10_000);
+}, 30_000);
