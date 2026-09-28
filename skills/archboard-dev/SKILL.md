@@ -117,6 +117,60 @@ sweep, in the same change:
 - A tracked document holds no fact about one machine (what is a symlink there,
   which directories exist). Such a fact is false on the next machine.
 
+## Moving Codex to a new version
+
+Archboard runs the exact `@openai/codex` that `package.json` pins, and every
+Codex fact in the code was read in that version's source. A bump is done when
+nothing states a version that was not re-read:
+
+1. **Pick the version and its source.** `bun info @openai/codex version` names
+   npm's latest. In a clone of `github.com/openai/codex`, `git fetch --tags`
+   and check out `rust-v<version>`. Done: the clone sits at the tag.
+2. **Diff what Archboard uses** between the old and new tags:
+   `codex-rs/app-server-protocol/src/protocol` (wire shapes, and each new
+   field's serde attributes: a generated `T | null` is sent as `null` unless
+   serde skips it), the `app-server` request processors for the methods in
+   `src/runtime/codex-protocol/lib/methods.ts`, realtime
+   (`core/src/realtime_conversation*`, `realtime_history.rs`,
+   `session/world_state.rs`, `codex-api/src/endpoint/realtime_websocket`) and
+   the model list (`models-manager`: `gpt-6-luna` must still be listed with
+   `high` effort). Done: every change is named as adopted, ignored or a
+   behaviour change.
+3. **Bump the pin in three places:** `package.json`, `expectedCodexVersion` in
+   `scripts/generate-codex-app-server-contract.ts` and `CODEX_PROTOCOL_VERSION`
+   in `src/runtime/codex-protocol/lib/version.ts`. `bun install` updates
+   `bun.lock` and generates the new contract beside the old one under
+   `src/shared/codex-app-server-contract/generated/versions/`, so
+   `diff -r` of the two version directories is the wire change.
+   Done: `bun run ensure:codex-contract` passes.
+4. **Adapt the schemas to `bun run type-check`.** Each handwritten Zod schema
+   in `src/runtime/codex-protocol/lib` is proved against the generated type
+   in both directions: `__codexGeneratedWireMustExtendSchemaInput` means the
+   schema refuses something the new wire sends,
+   `__schemaOutputMustExtendCodexGeneratedWire` means it lacks a field the
+   wire now requires. Change the schema, never the check. Then add each new
+   required field to the fixtures, including the fake Codex servers under
+   `tests/system/server-state/fixtures` and `tests/system/process-contracts`,
+   whose payloads only the system lane decodes. Done: type-check and the
+   `src/runtime/codex-*` tests pass.
+5. **Re-read every version-bound claim.**
+   `git grep -n "<old version>" -- ':!bun.lock' ':!backlog'` finds them. A
+   fixture's version string moves to the new one. A claim about Codex
+   behaviour moves only after its cited source is re-read at the new tag, and
+   is corrected where it no longer holds; a measurement names the version it
+   was measured on. Version text in code derives from
+   `CODEX_PROTOCOL_VERSION`. Done: the grep finds only history.
+6. **Run `bun run check`**; its lanes chain with `&&`, so when it stops
+   early, run each later lane (`test:system`, `test:repository`,
+   `test:serial-browser`) on its own. Then **smoke a signed-in server**: start one on a free port against a scratch copy of
+   `examples/web-shop`, with the default state directory so it uses the
+   machine's Archboard Codex sign-in. A server whose workbench is not ready
+   exits with "The production Codex workbench did not become ready"; one that
+   signed in and found its model records the coordinator's `thread/start` as
+   delivered in `archboard/codex-workbench/canvases/<port>/epoch/epoch-manifest.json`
+   under the state directory. Done: `status` reported it running, the manifest
+   holds that record, and the server was stopped.
+
 ## The tracked skills
 
 `skills/` is the single source. `.claude/skills/` and `.agents/skills/` reach
