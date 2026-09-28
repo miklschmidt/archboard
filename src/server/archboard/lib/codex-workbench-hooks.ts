@@ -1,9 +1,11 @@
 import type { CodexApprovalBroker } from "@/runtime/codex-approvals";
+import { CodexTransportRemoteError } from "@/runtime/codex-transport/errors";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationHooks,
 	CodexWorkbenchGenerationInput,
 } from "@/server/archboard/lib/codex-workbench";
+import { ACCOUNT_READ_FAILED_REASON } from "@/server/archboard/lib/codex-workbench-account";
 import { publishProjection } from "@/server/archboard/lib/codex-workbench-bindings";
 import {
 	retire,
@@ -75,9 +77,30 @@ async function ensureCoordinator(
 }
 
 /**
+ * Read the account, or null when Codex answered the read with an error. Since
+ * Codex 0.158.0 a ChatGPT account read asks the backend for its workspace
+ * routing, so a network failure is an answer the session survives; a read
+ * Codex never answered is still a startup failure.
+ * @param session The session.
+ * @returns The account, or null when Codex could not read it.
+ */
+async function readAccountOrNull(
+	session: Parameters<CodexWorkbenchGenerationHooks["initializeSession"]>[0],
+) {
+	try {
+		return await session.accountRead();
+	} catch (error) {
+		if (error instanceof CodexTransportRemoteError) return null;
+		throw error;
+	}
+}
+
+/**
  * Initialize this generation's session: take its epoch, read the account, and
  * publish how far it got. Every step re-checks that this activation is still
- * the owner's, so a superseded generation publishes nothing.
+ * the owner's, so a superseded generation publishes nothing. An account Codex
+ * could not read leaves the session ready and signed-in work unavailable until
+ * the account is refreshed.
  * @param context What the generation provides.
  * @param session The session.
  * @param components The graph it belongs to.
@@ -93,8 +116,19 @@ async function initializeSession(
 		await startEpochAndSession(context, session, components);
 	}
 	input.assertActivationCurrent();
-	const account = await session.accountRead();
+	const account = await readAccountOrNull(session);
 	input.assertActivationCurrent();
+	if (account === null) {
+		input.markSessionReady(false);
+		input.assertActivationCurrent();
+		owners.browserState.account = {
+			kind: "account",
+			state: "failed",
+			reason: ACCOUNT_READ_FAILED_REASON,
+		};
+		publishProjection(owners);
+		return;
+	}
 	const signedIn = account.account !== null;
 	if (signedIn) {
 		await ensureCoordinator(context, components);

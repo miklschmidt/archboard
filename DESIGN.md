@@ -70,6 +70,14 @@ the Archboard servers on the machine, and each server's own epoch manifest outsi
 storage makes every thread its current child does not own inspect-only: an operational boundary against cold resume of persisted dynamic
 tools, not protection against a process pointed at those paths on purpose.
 
+Reading the account needs the network since Codex 0.158.0: `account/read` for
+a ChatGPT sign-in asks the backend for the workspace's routing (15 s, cached
+per child), answers a failure with a JSON-RPC internal error, and may follow
+`initialize` with an unrequested `account/updated`. An account Codex answered
+it could not read leaves the server running and the pane told to refresh the
+account; signed-in work waits for a refresh that reads it. A read Codex never
+answers still fails startup.
+
 The change feed settles a user's gesture, discards visual noise and renders
 a compact semantic delta. Immediately before delivery Archboard revalidates the
 child, epoch, thread link, loaded membership, controllability, thread status,
