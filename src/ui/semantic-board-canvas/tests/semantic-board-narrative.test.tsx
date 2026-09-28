@@ -26,6 +26,16 @@ import {
 	viewport,
 } from "@/ui/semantic-board-canvas/tests/stage-harness";
 import { cameraNow } from "@/ui/semantic-board-canvas/tests/camera-probes";
+import {
+	current,
+	goTo,
+	litRegions,
+	marked,
+	offers,
+	presenting,
+	press,
+	unveiled,
+} from "@/ui/semantic-board-canvas/tests/presentation-probes";
 
 /** The view the variant offers, which one step is told through. */
 const VIEW = { id: "vw1", name: "The writer alone", grammar: "architecture" } as const;
@@ -114,81 +124,6 @@ function withVariants(variants: readonly Record<string, unknown>[]): Record<stri
 function serving(content: Record<string, unknown> = CONTENT): void {
 	server.documents["pipeline"] = boardOf(content);
 	server.reply = { status: 200, body: { ...drawing(1), views: [VIEW] } };
-}
-
-/**
- * Every walkthrough button on screen, in order.
- * @returns The buttons.
- */
-function offers(): HTMLElement[] {
-	return [...document.querySelectorAll<HTMLElement>("[data-slot='semantic-walkthrough-choice']")];
-}
-
-/**
- * The heading of the step on screen.
- * @returns It, or null while nothing is presented.
- */
-function current(): string | null {
-	return document.querySelector("[data-slot='semantic-presentation-heading']")?.textContent ?? null;
-}
-
-/**
- * Press a key the way a person does, wherever focus happens to be.
- * @param key The key.
- */
-function press(key: string): void {
-	act(() => {
-		fireEvent.keyDown(document.body, { key });
-	});
-}
-
-/**
- * Go to a step through its mark among the steps.
- * @param index The step.
- */
-function goTo(index: number): void {
-	act(() => {
-		fireEvent.click(
-			document.querySelector<HTMLElement>(
-				`[data-slot='semantic-presentation-dot'][data-step='${index}']`,
-			)!,
-		);
-	});
-}
-
-/**
- * Present the first walkthrough the variant offers.
- * @returns Settles once the presentation is up.
- */
-async function presenting(): Promise<void> {
-	await settle();
-	act(() => {
-		fireEvent.click(offers()[0]!);
-	});
-	await settle();
-}
-
-/**
- * The subjects the picture rings.
- * @returns Their ids.
- */
-function marked(): string[] {
-	return [...surface().querySelectorAll("[data-semantic-id].is-selected")].map(
-		(group) => group.getAttribute("data-semantic-id") ?? "",
-	);
-}
-
-/**
- * The subjects the veil leaves standing.
- * @returns Their ids, or none while nothing recedes.
- */
-function unveiled(): string[] {
-	if (!surface().classList.contains("is-veiled")) {
-		return [];
-	}
-	return [...surface().querySelectorAll("[data-semantic-id].is-lit")].map(
-		(group) => group.getAttribute("data-semantic-id") ?? "",
-	);
 }
 
 // The harness measures every element at 800×600, the caption included, so the
@@ -345,15 +280,20 @@ test("a step about something this reading does not draw says so", async () => {
  * A picture that draws exactly these subjects, where the atlas says.
  * @param nodes The cards or participants, by id.
  * @param edges The lines or messages, by id.
+ * @param regions The group regions, each with the members it lists.
  * @returns The render answer.
  */
 function pictureOf(
 	nodes: Record<string, SemanticBox>,
 	edges: Record<string, SemanticBox>,
+	regions: Record<string, readonly string[]> = {},
 ): Record<string, unknown> {
 	const groups = [
 		...Object.keys(nodes).map((id) => `<g data-semantic-kind="node" data-semantic-id="${id}"></g>`),
 		...Object.keys(edges).map((id) => `<g data-semantic-kind="edge" data-semantic-id="${id}"></g>`),
+		...Object.entries(regions).map(
+			([group, members]) => `<g data-group="${group}" data-members="${members.join(" ")}"></g>`,
+		),
 	];
 	return {
 		...drawing(1),
@@ -387,8 +327,10 @@ const JOINED = [
 		picture: pictureOf(
 			{ n1: { x: 0, y: 0, width: 80, height: 40 }, n2: { x: 240, y: 0, width: 80, height: 40 } },
 			{ e1: { x: 80, y: 19, width: 160, height: 2 } },
+			{ holding: ["n1", "n9"], elsewhere: ["n9"] },
 		),
 		lit: ["n1", "n2", "e1"],
+		regions: ["holding"],
 	},
 	{
 		about: "a message",
@@ -413,16 +355,19 @@ const JOINED = [
 			{ s1: { x: 40, y: 120, width: 240, height: 24 } },
 		),
 		lit: ["p1", "p2", "s1"],
+		regions: [],
 	},
 ];
 
-for (const { about, content, picture, lit } of JOINED) {
+for (const { about, content, picture, lit, regions } of JOINED) {
 	test(`a step about ${about} lights and frames the parts at both of its ends`, async () => {
 		server.documents["pipeline"] = boardOf(content);
 		server.reply = { status: 200, body: picture };
 		mountStage(null, { reducedMotion: true });
 		await presenting();
 		expect([marked(), unveiled()]).toEqual([lit, lit]);
+		// A group's region stands only while a member it holds does.
+		expect(litRegions()).toEqual(regions);
 		const alone = cameraNow();
 		// Framed exactly as the step that names both ends as well.
 		goTo(1);

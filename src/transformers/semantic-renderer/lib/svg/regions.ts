@@ -14,6 +14,12 @@ import { farLayer, nearLayer } from "@/transformers/semantic-renderer/lib/svg/fa
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
 
+/**
+ * The attribute a region carries its members in, space-separated: a viewer
+ * lights the region while one of them is lit.
+ */
+const MEMBERS_ATTRIBUTE = "data-members";
+
 /** How much of the group's colour the outline carries over the page. */
 const EDGE_TINT = 0.7;
 /** How wide the outline is drawn: three times a card's border, so a region reads as a zone, not a card. */
@@ -50,6 +56,7 @@ function paintRegion(
 		{
 			"data-semantic-kind": "group-region",
 			"data-group": region.group,
+			[MEMBERS_ATTRIBUTE]: region.members.join(" "),
 			"pointer-events": "none",
 		},
 		lines([
@@ -103,4 +110,4 @@ function farCaption(
 	return farLayer(paintTextRuns([grown], caption.box, words.palette, words.fill));
 }
 
-export { paintRegion };
+export { MEMBERS_ATTRIBUTE, paintRegion };

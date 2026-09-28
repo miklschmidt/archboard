@@ -120,6 +120,9 @@ test.each(["track", "blocks"] as const)(
 			["state", ["store", "lease"], "Server state"],
 		] as const) {
 			const band = regionBox(drawn.svg, group);
+			// It names what it holds, which a viewer lights it with.
+			const named = new RegExp(`data-group="${group}" data-members="([^"]*)"`, "u").exec(drawn.svg);
+			expect(named?.[1]?.split(" ")).toEqual([...members]);
 			const inside = (id: string): boolean => within(drawn.atlas.nodes[id]!, band);
 			for (const id of members) expect(inside(id), `${id} inside ${group}`).toBeTrue();
 			for (const id of ["cli", "feed"]) expect(inside(id), `${id} outside ${group}`).toBeFalse();

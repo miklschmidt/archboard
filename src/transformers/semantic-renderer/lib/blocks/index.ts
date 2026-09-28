@@ -7,7 +7,7 @@
 // routed where the layout engines run, and the one that reads best is chosen
 // here (`solves.ts`); here the geometry becomes the drawing.
 import type { ElkNode } from "@archboard/elk-rs";
-import type { ChangeKind, VariantContent } from "@/shared/semantic-board/index";
+import { isMemberOf, type ChangeKind, type VariantContent } from "@/shared/semantic-board/index";
 import type {
 	ArchitectureDrawing,
 	DrawingEdge,
@@ -66,9 +66,12 @@ function drawingOf(
 		});
 	const regions = placed.regions.flatMap(({ group, parent, box, caption, depth }) => {
 		const words = measured.groups?.captions.get(group);
+		const members = content.nodes
+			.filter((node) => node.parent === parent && isMemberOf(node, group))
+			.map(({ id }) => id);
 		return words === undefined
 			? []
-			: [{ group, parent, box, caption: { box: caption, measured: words }, depth }];
+			: [{ group, parent, members, box, caption: { box: caption, measured: words }, depth }];
 	});
 	return {
 		direction: "down",

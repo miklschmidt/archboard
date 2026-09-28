@@ -30,6 +30,7 @@ import {
 	FAR_VIEW_CLASS,
 	NEAR_CLASS,
 } from "@/transformers/semantic-renderer/lib/svg/far-view";
+import { MEMBERS_ATTRIBUTE } from "@/transformers/semantic-renderer/lib/svg/regions";
 import { TRAFFIC_ATTRIBUTE } from "@/transformers/semantic-renderer/lib/svg/standing";
 import { FAR_VIEW_FADE_MS } from "@/shared/timing/timing";
 import { PULSE_CLASS } from "@/transformers/semantic-renderer/lib/svg/pulse";
@@ -150,8 +151,9 @@ function stylesheet(palette: Palette, fonts: FontSource): string {
 			...farViewRules(),
 			// A presented step's veil is a viewer's reading, toggled on the picture
 			// the way selection is: the surface says a step is presented, the
-			// subjects it is about stand as drawn, and everything else recedes.
-			`.is-veiled [data-semantic-id],.is-veiled [${TRAFFIC_ATTRIBUTE}]{opacity:.28}`,
+			// subjects it is about stand as drawn, and everything else recedes. A
+			// group's region is lit with the members it lists, and recedes without.
+			`.is-veiled [data-semantic-id],.is-veiled [${TRAFFIC_ATTRIBUTE}],.is-veiled [${MEMBERS_ATTRIBUTE}]{opacity:.28}`,
 			".is-veiled .is-lit,.is-veiled .is-lit [data-semantic-id]{opacity:1}",
 			// A reader who has asked their system for less motion gets a still
 			// picture even when nobody asked this renderer for one. CSS cannot stop
