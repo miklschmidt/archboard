@@ -34,6 +34,7 @@ async function readyFixture(): Promise<SessionFixture> {
 	fixture.transport.enqueueResponse("account/read", {
 		account: { type: "chatgpt", email: null, planType: "pro" },
 		requiresOpenaiAuth: true,
+		workspaceRouting: null,
 	});
 	await fixture.session.accountRead();
 	return fixture;
@@ -125,6 +126,7 @@ describe("typed Codex session", () => {
 		fixture.transport.enqueueResponse("account/read", {
 			account: { type: "chatgpt", email: null, planType: "pro" },
 			requiresOpenaiAuth: true,
+			workspaceRouting: null,
 		});
 		await fixture.session.accountRead();
 		expect(fixture.lifecycle.accountReady()).toBe(1);

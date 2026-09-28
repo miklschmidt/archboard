@@ -96,6 +96,7 @@ function projectionInput(
 			response: {
 				account: { type: "chatgpt", email: "queue@example.test", planType: "plus" },
 				requiresOpenaiAuth: true,
+				workspaceRouting: null,
 			},
 		},
 		login: { kind: "login", state: "idle" },

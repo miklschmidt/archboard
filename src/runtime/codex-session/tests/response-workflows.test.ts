@@ -1,3 +1,4 @@
+import { CODEX_PROTOCOL_VERSION } from "../../codex-protocol/index.js";
 import { describe, expect, test } from "bun:test";
 
 import type { ResponseMethod, ResponsePayloads } from "../../codex-protocol/index.js";
@@ -24,6 +25,7 @@ function threadStartResponse(
 		activePermissionProfile: null,
 		reasoningEffort: "medium",
 		multiAgentMode: "explicitRequestOnly",
+		disabledPluginIds: [],
 	};
 }
 
@@ -55,7 +57,7 @@ async function initializeTransportSession(fixture: TransportSessionFixture): Pro
 		fixture,
 		"initialize",
 		{
-			userAgent: "Codex Desktop/0.155.1",
+			userAgent: `Codex Desktop/${CODEX_PROTOCOL_VERSION}`,
 			codexHome: fixture.storage.codexHome,
 			platformFamily: "unix",
 			platformOs: "linux",
@@ -144,6 +146,7 @@ describe("Codex session response workflows", () => {
 			await roundTrip(fixture, "account/read", () => fixture.session.accountRead(), {
 				account: { type: "chatgpt", email: null, planType: "pro" },
 				requiresOpenaiAuth: true,
+				workspaceRouting: null,
 			});
 			const started = await roundTrip(
 				fixture,

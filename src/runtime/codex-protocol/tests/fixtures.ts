@@ -1,3 +1,4 @@
+import { CODEX_PROTOCOL_VERSION } from "../index.js";
 import type { ClientNotificationMethod, ResponseMethod, ServerRequestMethod } from "../index.js";
 
 const threadItemFixture = {
@@ -37,7 +38,7 @@ const threadFixture = {
 	status: { type: "idle" },
 	path: null,
 	cwd: "/tmp/archboard",
-	cliVersion: "0.155.1",
+	cliVersion: CODEX_PROTOCOL_VERSION,
 	source: "appServer",
 	canAcceptDirectInput: true,
 	threadSource: "archboard",
@@ -100,6 +101,7 @@ const modelFixture = {
 	additionalSpeedTiers: [],
 	serviceTiers: [],
 	defaultServiceTier: null,
+	availableAccessPrograms: null,
 	isDefault: true,
 };
 
@@ -123,11 +125,12 @@ const threadStartResponseFixture = {
 	activePermissionProfile: null,
 	reasoningEffort: "medium",
 	multiAgentMode: "explicitRequestOnly",
+	disabledPluginIds: [],
 };
 
 const responseFixtures: Record<ResponseMethod, unknown> = {
 	initialize: {
-		userAgent: "Codex Desktop/0.155.1",
+		userAgent: `Codex Desktop/${CODEX_PROTOCOL_VERSION}`,
 		codexHome: "/tmp/codex",
 		platformFamily: "unix",
 		platformOs: "linux",
@@ -137,6 +140,7 @@ const responseFixtures: Record<ResponseMethod, unknown> = {
 	"account/read": {
 		account: { type: "chatgpt", email: null, planType: "pro" },
 		requiresOpenaiAuth: true,
+		workspaceRouting: null,
 	},
 	"account/login/start": {
 		type: "chatgpt",
@@ -153,7 +157,7 @@ const responseFixtures: Record<ResponseMethod, unknown> = {
 	"thread/read": { thread: threadFixture },
 	"thread/turns/list": { data: [turnFixture], nextCursor: null, backwardsCursor: null },
 	"thread/items/list": {
-		data: [{ turnId: "turn-1", item: threadItemFixture }],
+		data: [{ turnId: "turn-1", item: threadItemFixture, startedAtMs: null, completedAtMs: null }],
 		nextCursor: null,
 		backwardsCursor: null,
 	},

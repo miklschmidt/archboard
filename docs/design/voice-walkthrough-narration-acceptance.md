@@ -51,7 +51,7 @@ Observe, in order:
 
 Every step and leaving reach the voice model as speakable text, the path a
 coordinator's answer takes, because in a full-duplex session appended text is
-only quiet context (Codex 0.155.1). If (a), (d) or (h) does not make it speak,
+only quiet context (Codex 0.158.0). If (a), (d) or (h) does not make it speak,
 note what it did instead.
 
 ## 3. Stop

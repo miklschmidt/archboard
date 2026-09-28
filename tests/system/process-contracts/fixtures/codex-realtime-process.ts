@@ -1,3 +1,7 @@
+import {
+	CODEX_PROTOCOL_BINARY_VERSION,
+	CODEX_PROTOCOL_VERSION,
+} from "../../../../src/runtime/codex-protocol/index.ts";
 import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { EventEmitter } from "node:events";
 import { tmpdir } from "node:os";
@@ -30,7 +34,6 @@ import {
 import type { RealtimeSemanticEvent } from "../../../../src/shared/codex-realtime-contract/index.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../../..");
-const CODEX_VERSION = "codex-cli 0.155.1";
 const DEFAULTS = {
 	startEvents: [
 		{ method: "thread/realtime/sdp", params: { threadId: "$THREAD", sdp: "answer-sdp" } },
@@ -114,11 +117,11 @@ const response=(frame,result)=>{record({kind:"response",method:frame.method,resu
 const notification=(method,params)=>{record({kind:"notification",method,params});send({method,params});};
 const configResponse=()=>({config:{model:null,review_model:null,model_context_window:null,model_auto_compact_token_limit:null,model_auto_compact_token_limit_scope:null,model_provider:null,approval_policy:null,approvals_reviewer:null,sandbox_mode:null,sandbox_workspace_write:null,forced_chatgpt_workspace_id:null,forced_login_method:null,web_search:null,tools:null,instructions:null,developer_instructions:null,compact_prompt:null,model_reasoning_effort:null,model_reasoning_summary:null,model_verbosity:null,service_tier:null,analytics:null,apps:null,browser_use:null,computer_use:null,desktop:null,sqlite_home:process.env.CODEX_SQLITE_HOME},origins:{sqlite_home:{name:{type:"user",file:process.env.CODEX_HOME+"/config.toml",profile:null},version:"fixture"}},layers:null});
 function handle(frame){record({kind:"frame",frame});
-if(frame.method==="initialize"){response(frame,{userAgent:"Codex Desktop/0.155.1",codexHome:process.env.CODEX_HOME,platformFamily:"unix",platformOs:"linux"});return;}
+if(frame.method==="initialize"){response(frame,{userAgent:"Codex Desktop/${CODEX_PROTOCOL_VERSION}",codexHome:process.env.CODEX_HOME,platformFamily:"unix",platformOs:"linux"});return;}
 if(frame.method==="initialized")return;
 if(frame.method==="configRequirements/read"){response(frame,{requirements:null});return;}
 if(frame.method==="config/read"){response(frame,configResponse());return;}
-if(frame.method==="account/read"){response(frame,{account:{type:"chatgpt",email:null,planType:"pro"},requiresOpenaiAuth:true});return;}
+if(frame.method==="account/read"){response(frame,{account:{type:"chatgpt",email:null,planType:"pro"},requiresOpenaiAuth:true,workspaceRouting:null});return;}
 const current=control();record({kind:"request",method:frame.method,params:frame.params});
 if(frame.method==="thread/realtime/start"){realtimeSessionId=frame.params.realtimeSessionId;response(frame,{});const emitEvents=values=>{let delay=0;for(const event of values){delay+=event.delayMs??0;setTimeout(()=>notification(event.method,replace(event.params,realtimeSessionId,frame.params.threadId)),delay);}};const emitStart=()=>{const latest=control();emitEvents(latest.startEvents??${JSON.stringify(DEFAULTS.startEvents)});emitEvents(latest.afterStartEvents??[]);};if(current.startDelayMs)setTimeout(emitStart,current.startDelayMs);else emitStart();return;}
 if(frame.method==="thread/timeline/list"){const pages=current.pages??[];const page=pages[pageIndex++]??{data:[],nextCursor:null,activeRealtimeSessionAtPageStart:null};response(frame,replace(page,realtimeSessionId,frame.params.threadId));return;}
@@ -206,7 +209,7 @@ async function createHarness(
 			root,
 			logPath,
 			controlPath,
-			options.version ?? CODEX_VERSION,
+			options.version ?? CODEX_PROTOCOL_BINARY_VERSION,
 		),
 		checkoutRoot: repoRoot,
 		storage: { rootDirectory: join(root, "storage") },

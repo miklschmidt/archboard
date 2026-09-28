@@ -4,6 +4,7 @@ import {
 	AskForApprovalSchema,
 	ApprovalsReviewerSchema,
 	ActivePermissionProfileSchema,
+	CyberAccessProgramSchema,
 	MultiAgentModeSchema,
 	PersonalitySchema,
 	PlanTypeSchema,
@@ -25,7 +26,8 @@ const ForcedLoginMethodSchema = z.enum(["chatgpt", "api"]);
 const WebSearchModeSchema = z.enum(["disabled", "cached", "indexed", "live"]);
 const VerbositySchema = z.enum(["low", "medium", "high"]);
 const CliAuthCredentialsStoreModeSchema = z.enum(["file", "keyring", "auto", "ephemeral"]);
-const WindowsSandboxSetupModeSchema = z.enum(["elevated", "unelevated"]);
+const WindowsSandboxImplementationSchema = z.enum(["elevated", "unelevated", "mxc"]);
+const ToolExposureSurfaceSchema = z.enum(["code_mode", "deferred", "direct"]);
 const AllowDenyRequirementSchema = z.enum(["allow", "deny"]);
 
 const ConfigLayerSourceSchema = z.discriminatedUnion("type", [
@@ -50,7 +52,7 @@ const ConfigLayerSchema = looseObject({
 	name: ConfigLayerSourceSchema,
 	version: z.string(),
 	config: JsonValueSchema,
-	// Codex 0.155.1 omits this nullable generated field when the layer is enabled.
+	// Codex 0.158.0 omits this nullable generated field when the layer is enabled.
 	disabledReason: z
 		.string()
 		.nullable()
@@ -123,6 +125,7 @@ const AppConfigEntrySchema = looseObject({
 	tools: AppToolsConfigSchema.nullable(),
 	/** Link ids are generated map keys for per-account approval settings. */
 	links: z.record(z.string(), AppLinkConfigSchema).nullable(),
+	omit_tools_from: z.array(ToolExposureSurfaceSchema).nullable(),
 });
 /** App ids are an intentionally open map; each value has a closed config shape. */
 const AppsConfigSchema = z
@@ -320,13 +323,17 @@ const ApplicationRequirementsSchema = looseObject({
 });
 
 const ConfigRequirementsSchema = looseObject({
+	modelProvider: z.string().nullable(),
+	/** Provider ids are generated map keys; each definition is config.toml JSON. */
+	modelProviders: JsonRecordSchema.nullable(),
+	allowedLoginMethods: z.array(ForcedLoginMethodSchema).nullable(),
 	cliAuthCredentialsStore: CliAuthCredentialsStoreModeSchema.nullable(),
 	chatgptBaseUrl: z.string().nullable(),
 	additionalDeveloperInstructions: z.string().nullable(),
 	allowedApprovalPolicies: z.array(AskForApprovalSchema).nullable(),
 	allowedApprovalsReviewers: z.array(ApprovalsReviewerSchema).nullable(),
 	allowedSandboxModes: z.array(SandboxModeSchema).nullable(),
-	allowedWindowsSandboxImplementations: z.array(WindowsSandboxSetupModeSchema).nullable(),
+	allowedWindowsSandboxImplementations: z.array(WindowsSandboxImplementationSchema).nullable(),
 	/** Permission profile ids are generated map keys supplied by managed requirements. */
 	allowedPermissionProfiles: z.record(z.string(), z.boolean()).nullable(),
 	defaultPermissions: z.string().nullable(),
@@ -351,7 +358,6 @@ const ConfigRequirementsSchema = looseObject({
 	checkForUpdateOnStartup: z.boolean().nullable(),
 	allowLoginShell: z.boolean().nullable(),
 	feedback: FeedbackRequirementsSchema.nullable(),
-	windowsSandboxPrivateDesktop: z.boolean().nullable(),
 	application: ApplicationRequirementsSchema.nullable(),
 });
 
@@ -390,6 +396,7 @@ const ModelSchema = looseObject({
 	additionalSpeedTiers: z.array(z.string()),
 	serviceTiers: z.array(ModelServiceTierSchema),
 	defaultServiceTier: z.string().nullable(),
+	availableAccessPrograms: looseObject({ cyber: z.array(CyberAccessProgramSchema) }).nullable(),
 	isDefault: z.boolean(),
 });
 
@@ -402,6 +409,7 @@ const CollaborationModeSchema = looseObject({
 	}),
 });
 const ThreadSettingsSchema = looseObject({
+	disabledPluginIds: z.array(z.string()),
 	cwd: z.string(),
 	approvalPolicy: AskForApprovalSchema,
 	approvalsReviewer: ApprovalsReviewerSchema,
@@ -473,7 +481,7 @@ export {
 	WebSearchModeSchema,
 	VerbositySchema,
 	CliAuthCredentialsStoreModeSchema,
-	WindowsSandboxSetupModeSchema,
+	WindowsSandboxImplementationSchema,
 	AllowDenyRequirementSchema,
 	ConfigLayerSourceSchema,
 	ConfigLayerMetadataSchema,

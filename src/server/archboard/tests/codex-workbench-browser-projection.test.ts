@@ -67,6 +67,7 @@ const signedInAccount = {
 	response: {
 		account: { type: "chatgpt", email: "readiness@example.test", planType: "plus" },
 		requiresOpenaiAuth: true,
+		workspaceRouting: null,
 	},
 } as const satisfies ServerReadinessInput["account"];
 
@@ -167,7 +168,7 @@ test("owned-process, session, account, and coordinator facts produce every readi
 		readiness({
 			account: {
 				kind: "codex_account_response",
-				response: { account: null, requiresOpenaiAuth: true },
+				response: { account: null, requiresOpenaiAuth: true, workspaceRouting: null },
 			},
 		}),
 	).toEqual({ kind: "readiness", state: "signed_out" });

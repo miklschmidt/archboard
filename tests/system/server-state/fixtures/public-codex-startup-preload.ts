@@ -1,3 +1,4 @@
+import { CODEX_PROTOCOL_BINARY_VERSION } from "@/runtime/codex-protocol";
 import { mock } from "bun:test";
 import { resolve } from "node:path";
 
@@ -15,8 +16,7 @@ if (executable !== undefined) {
 							throw new actual.CodexExecutableError({
 								code: "verification_timeout",
 								executablePath: executable,
-								message:
-									"Codex codex-cli 0.155.1 did not answer the bounded --version proof. Run bun install to restore the exact package-local runtime, then retry.",
+								message: `Codex ${CODEX_PROTOCOL_BINARY_VERSION} did not answer the bounded --version proof. Run bun install to restore the exact package-local runtime, then retry.`,
 							});
 						}
 					: actual.verifyCodexExecutable,

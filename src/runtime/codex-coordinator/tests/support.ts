@@ -1,3 +1,4 @@
+import { CODEX_PROTOCOL_VERSION } from "../../codex-protocol/index.js";
 import {
 	emptyManifest,
 	type ActiveEpoch,
@@ -53,6 +54,7 @@ function coordinatorModel(overrides: Partial<CoordinatorModel> = {}): Coordinato
 		additionalSpeedTiers: [],
 		serviceTiers: [{ id: "priority", name: "Priority", description: "fixture" }],
 		defaultServiceTier: "priority",
+		availableAccessPrograms: null,
 		isDefault: true,
 		...overrides,
 	};
@@ -82,7 +84,7 @@ function startResponse(
 		status: { type: "idle" },
 		path: null,
 		cwd: CHECKOUT_ROOT,
-		cliVersion: "0.155.1",
+		cliVersion: CODEX_PROTOCOL_VERSION,
 		source: "vscode",
 		canAcceptDirectInput: true,
 		threadSource: "archboard",
@@ -111,6 +113,7 @@ function startResponse(
 		activePermissionProfile: { id: "archboard-default", extends: null },
 		reasoningEffort: COORDINATOR_EFFORT,
 		multiAgentMode: "explicitRequestOnly",
+		disabledPluginIds: [],
 	};
 }
 
@@ -138,6 +141,7 @@ function settings(
 			},
 		},
 		multiAgentMode: "explicitRequestOnly",
+		disabledPluginIds: [],
 		personality: null,
 		...overrides,
 	};

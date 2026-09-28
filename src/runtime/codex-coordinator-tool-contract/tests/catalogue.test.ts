@@ -1,3 +1,4 @@
+import { CODEX_PROTOCOL_VERSION } from "../../codex-protocol/index.js";
 import { describe, expect, test } from "bun:test";
 
 import {
@@ -160,7 +161,7 @@ describe("dynamic tool schemas and queue protocol", () => {
 		});
 	});
 
-	test("mirrors the exact 0.155.1 queue parameter fields", () => {
+	test("mirrors the pinned Codex queue parameter fields", () => {
 		const textInput = { type: "text" as const, text: "queue prompt", text_elements: [] };
 		expect(
 			ThreadQueueAddParamsSchema.parse({
@@ -207,7 +208,7 @@ describe("dynamic tool schemas and queue protocol", () => {
 		]);
 		expect(CODEX_QUEUE_PROTOCOL).toEqual({
 			protocol: "codex-app-server",
-			version: "0.155.1",
+			version: CODEX_PROTOCOL_VERSION,
 			operations: [...QUEUE_OPERATION_SNAPSHOT],
 		});
 	});

@@ -58,6 +58,7 @@ function threadItemBranch(type: string): JsonRecord | undefined {
 				status: "completed",
 				arguments: {},
 				appContext: null,
+				mcpAppUi: null,
 				pluginId: null,
 				readOnlyHint: null,
 				result: null,

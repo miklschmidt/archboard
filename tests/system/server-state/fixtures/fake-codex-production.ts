@@ -45,7 +45,7 @@ const request = (id: string, method: string, params: unknown): void => {
 
 if (process.argv[2] === "--version") {
 	record({ kind: "version_probe", args: process.argv.slice(2) });
-	process.stdout.write("codex-cli 0.155.1\n");
+	process.stdout.write("codex-cli 0.158.0\n");
 	process.exit(0);
 }
 if (
@@ -125,7 +125,7 @@ const buildThread = (
 		status: { type: "idle" },
 		path: null,
 		cwd: String(params["cwd"]),
-		cliVersion: "0.155.1",
+		cliVersion: "0.158.0",
 		source: "vscode",
 		canAcceptDirectInput: true,
 		threadSource: "archboard",
@@ -167,6 +167,7 @@ const threadStartResponse = (params: Record<string, unknown>, thread: FixtureThr
 	activePermissionProfile: null,
 	reasoningEffort: params["model"] === "gpt-6-luna" ? "high" : null,
 	multiAgentMode: "explicitRequestOnly",
+	disabledPluginIds: [],
 });
 
 const coordinatorSettings = (params: Record<string, unknown>) => ({
@@ -189,6 +190,7 @@ const coordinatorSettings = (params: Record<string, unknown>) => ({
 		},
 	},
 	multiAgentMode: "explicitRequestOnly",
+	disabledPluginIds: [],
 	personality: null,
 });
 
@@ -232,6 +234,15 @@ const handle = (frame: WireFrame): void => {
 		return;
 	}
 	const params = frame.params ?? {};
+	if (
+		frame.method === "account/read" &&
+		(JSON.parse(readFileSync(controlPath, "utf8")) as { accountReadFails?: boolean })
+			.accountReadFails === true
+	) {
+		record({ kind: "fixture_rejection", method: frame.method });
+		send({ id: frame.id, error: { code: -32603, message: "workspace routing discovery failed" } });
+		return;
+	}
 	switch (frame.method) {
 		case "initialize": {
 			const control = JSON.parse(readFileSync(controlPath, "utf8")) as {
@@ -242,7 +253,7 @@ const handle = (frame: WireFrame): void => {
 				return;
 			}
 			respond(frame as never, {
-				userAgent: "Codex Desktop/0.155.1",
+				userAgent: "Codex Desktop/0.158.0",
 				codexHome: process.env["CODEX_HOME"],
 				platformFamily: "unix",
 				platformOs: "linux",
@@ -261,6 +272,7 @@ const handle = (frame: WireFrame): void => {
 			respond(frame as never, {
 				account: signedIn ? { type: "chatgpt", email: null, planType: "pro" } : null,
 				requiresOpenaiAuth: true,
+				workspaceRouting: null,
 			});
 			return;
 		case "account/login/start":
@@ -338,6 +350,8 @@ const handle = (frame: WireFrame): void => {
 					((turn["items"] as Record<string, unknown>[] | undefined) ?? []).map((item) => ({
 						turnId: turn["id"],
 						item,
+						startedAtMs: null,
+						completedAtMs: null,
 					})),
 				),
 				nextCursor: null,

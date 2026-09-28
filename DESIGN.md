@@ -8,13 +8,16 @@ for the chrome is the [operator canvas shell reference](docs/design/operator-can
 
 **The GPT-Live voice model never sees tool calls or tool results** (verified:
 `codex-rs/core/src/session/turn.rs`, `realtime_text_for_event`). Only agent
-prose and approval prompts reach it, under a 1,000-token budget. In the V3
+prose and approval prompts reach it, under a 1,000-token budget; since Codex
+0.158.0 a session started with `backendReasoningStatus` also relays reasoning
+summaries as quiet status, and Archboard never sets it. In the V3
 sessions Archboard starts they arrive as the result of the voice model's own
 handoff, on a speakable or a commentary channel; the `[USER] ` and `[BACKEND] `
 text prefixes belong to the V2 protocol and are never added (rechecked against
-Codex 0.155.1, `realtime_conversation.rs`). The realtime session is one long-lived thread on the Codex `Session`,
-feature-gated off by default, and delegation crosses as one opaque text
-envelope capped at 4 KiB; a second delegation mid-turn steers the running turn.
+Codex 0.158.0, `realtime_conversation.rs`). The realtime session is one long-lived
+thread on the Codex `Session` (the `realtime_conversation` feature flag gates only
+the TUI's voice), and delegation crosses as one opaque text envelope whose fields
+are capped at 4 KiB each; a second delegation mid-turn steers the running turn.
 
 So no amount of read quality reaches the voice model directly. The Codex thread
 reads the board and re-narrates it in prose. Every read path therefore targets
@@ -67,6 +70,14 @@ the Archboard servers on the machine, and each server's own epoch manifest outsi
 storage makes every thread its current child does not own inspect-only: an operational boundary against cold resume of persisted dynamic
 tools, not protection against a process pointed at those paths on purpose.
 
+Reading the account needs the network since Codex 0.158.0: `account/read` for
+a ChatGPT sign-in asks the backend for the workspace's routing (15 s, cached
+per child), answers a failure with a JSON-RPC internal error, and may follow
+`initialize` with an unrequested `account/updated`. An account Codex answered
+it could not read leaves the server running and the pane told to refresh the
+account; signed-in work waits for a refresh that reads it. A read Codex never
+answers still fails startup.
+
 The change feed settles a user's gesture, discards visual noise and renders
 a compact semantic delta. Immediately before delivery Archboard revalidates the
 child, epoch, thread link, loaded membership, controllability, thread status,
@@ -79,7 +90,7 @@ event settles once as `delivered`, `not_delivered` with a reason, or
 mutation, falls back to turn or steer, or selects another thread.
 
 What the voice model says is decided by channel, not by role. Read against Codex
-0.155.1: a V3 session is full duplex, `thread/realtime/appendText` is a quiet
+0.158.0: a V3 session is full duplex, `thread/realtime/appendText` is a quiet
 `session.context.append` whatever role it carries, and nothing answers it. A
 coordinator message is spoken when it goes out on the speakable channel, and in
 the `bemTags` handoff mode these sessions run in that is chosen by the message's
