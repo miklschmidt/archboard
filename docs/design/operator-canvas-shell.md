@@ -105,8 +105,9 @@ A presented walkthrough (TASK-250) is the picture and a caption laid over its
 bottom edge, with the sidebar stepped aside: the step's heading in the
 `presentation` type role, its words under it, where it is in the walkthrough, the
 steps, and previous and next. The camera keeps the step's subjects clear of the
-caption, glides between steps, and what a step is not about recedes. Escape
-leaves.
+caption, the parts at both ends of each relationship or step it names among
+them, glides between steps, and what a step is not about recedes, a group's
+region included unless it holds something the step lights. Escape leaves.
 
 ![The pane sidebar, board tab and selection tab](assets/semantic-pane-sidebar.png)
 

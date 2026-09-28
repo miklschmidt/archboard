@@ -52,9 +52,9 @@ comparison, a view and a group inspection read.
    give that step an `as` handle in the same write and put the handle in the
    beat's `subjects`. An ordering has two sides, so the beat names both: the
    earlier step by its handle, and what relies on it having happened (a later
-   step, or the part that acts on its result), with the parts they run on. Set
-   the beat's `view` to the data-flow view so the reader looks at the exchange
-   while reading it.
+   step, or the part that acts on its result); the parts a step runs on come
+   with it. Set the beat's `view` to the data-flow view so the reader looks at
+   the exchange while reading it.
 
 2. Create a standalone sequence in one write; against an existing board, send
    the same payload with `semantic edit` and the version you read. The evidence,
@@ -103,7 +103,7 @@ archboard semantic new "Skill install" --doing "explaining how install-skill wri
     "beats": [{
       "heading": "One agent document, never two",
       "body": "The block is written into whichever of CLAUDE.md and AGENTS.md already exists, so the search has to finish first: writing before it would create the second document the search exists to avoid.",
-      "subjects": ["find", "write", "Setup block"],
+      "subjects": ["find", "write"],
       "view": "Setup exchange"
     }]
   }]
