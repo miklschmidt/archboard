@@ -1,3 +1,4 @@
+import { CODEX_PROTOCOL_VERSION } from "../../codex-protocol/index.js";
 import type { ResponseMethod } from "../../codex-protocol/index.js";
 import {
 	configFixture,
@@ -13,7 +14,7 @@ import {
 export function responseFor(method: ResponseMethod, fixture: SessionFixture): unknown {
 	if (method === "initialize") {
 		return {
-			userAgent: "Codex Desktop/0.158.0",
+			userAgent: `Codex Desktop/${CODEX_PROTOCOL_VERSION}`,
 			codexHome: fixture.storage.codexHome,
 			platformFamily: "unix",
 			platformOs: "linux",

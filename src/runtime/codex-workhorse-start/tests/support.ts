@@ -1,3 +1,4 @@
+import { CODEX_PROTOCOL_VERSION } from "../../codex-protocol/index.js";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
@@ -208,7 +209,7 @@ function threadFixture(threadId: ThreadId): SessionThread {
 		status: { type: "idle" },
 		path: null,
 		cwd: CHECKOUT_ROOT,
-		cliVersion: "0.158.0",
+		cliVersion: CODEX_PROTOCOL_VERSION,
 		source: "vscode",
 		canAcceptDirectInput: true,
 		threadSource: "archboard",

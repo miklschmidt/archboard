@@ -1,3 +1,4 @@
+import { CODEX_PROTOCOL_VERSION } from "../index.js";
 import type { ClientNotificationMethod, ResponseMethod, ServerRequestMethod } from "../index.js";
 
 const threadItemFixture = {
@@ -37,7 +38,7 @@ const threadFixture = {
 	status: { type: "idle" },
 	path: null,
 	cwd: "/tmp/archboard",
-	cliVersion: "0.158.0",
+	cliVersion: CODEX_PROTOCOL_VERSION,
 	source: "appServer",
 	canAcceptDirectInput: true,
 	threadSource: "archboard",
@@ -129,7 +130,7 @@ const threadStartResponseFixture = {
 
 const responseFixtures: Record<ResponseMethod, unknown> = {
 	initialize: {
-		userAgent: "Codex Desktop/0.158.0",
+		userAgent: `Codex Desktop/${CODEX_PROTOCOL_VERSION}`,
 		codexHome: "/tmp/codex",
 		platformFamily: "unix",
 		platformOs: "linux",

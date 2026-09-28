@@ -1,3 +1,4 @@
+import { CODEX_PROTOCOL_VERSION } from "../../codex-protocol/index.js";
 import { mkdtempSync, mkdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -335,7 +336,7 @@ export const threadFixture = {
 	status: { type: "idle" },
 	path: null,
 	cwd: "/tmp/archboard",
-	cliVersion: "0.158.0",
+	cliVersion: CODEX_PROTOCOL_VERSION,
 	source: "appServer",
 	canAcceptDirectInput: true,
 	threadSource: "archboard",
@@ -399,7 +400,7 @@ export function createSessionFixture(
 	const identity = createIdentityAuthority();
 	const transport = new FakeTransport(identity);
 	transport.enqueueResponse("initialize", {
-		userAgent: "Codex Desktop/0.158.0",
+		userAgent: `Codex Desktop/${CODEX_PROTOCOL_VERSION}`,
 		codexHome: options.initializeCodexHome ?? storage.codexHome,
 		platformFamily: "unix",
 		platformOs: "linux",

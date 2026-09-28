@@ -33,8 +33,10 @@ const SERVER_REQUEST_METHODS = CODEX_SERVER_REQUEST_METHODS;
 
 /**
  * The server notifications Archboard decodes, each checked against the generated Codex union.
- * The union also holds the gateway OAuth and model-provider auth-recovery notifications, which
- * only a gateway or custom model provider sends; Archboard configures neither.
+ * The union also holds `account/gatewayOAuth/changed`, `modelProvider/authRecoveryStarted`,
+ * `modelProvider/authRecoveryCompleted` and `thread/attachment/updated`, which Codex sends only
+ * for gateways, thread attachments, or Bedrock AWS-profile auth, none of which Archboard sets up
+ * or calls.
  */
 const SERVER_NOTIFICATION_METHODS = [
 	"error",
