@@ -13,14 +13,27 @@ function linuxStat(state: string, parentPid = "11", pgid = "29"): string {
 }
 
 describe("process observation", () => {
-	test("reads the current process through the native platform boundary", () => {
+	test("reads a process, the census and an owned group through the native platform boundary", async () => {
 		const current = readProcessObservation(process.pid);
 		expect(current).toMatchObject({ pid: process.pid, state: "live" });
 		expect(current?.startTime).toMatch(/^(?:darwin|linux):/);
 		expect(listProcessObservations().some((record) => record.pid === process.pid)).toBeTrue();
-		expect(
-			listProcessGroupObservations(current!.pgid).some((record) => record.pid === process.pid),
-		).toBeTrue();
+		// The product observes only groups it started, never the one it was
+		// started in: on GitHub's macOS runner that group holds a process libproc
+		// will not describe (TASK-361).
+		const leader = Bun.spawn(
+			[process.execPath, "-e", "process.stdout.write('ready'); setInterval(() => {}, 1000);"],
+			{ detached: true, stdin: "ignore", stdout: "pipe", stderr: "ignore" },
+		);
+		try {
+			await leader.stdout.getReader().read();
+			expect(listProcessGroupObservations(leader.pid)).toEqual([
+				expect.objectContaining({ pid: leader.pid, pgid: leader.pid, state: "live" }),
+			]);
+		} finally {
+			leader.kill("SIGKILL");
+			await leader.exited;
+		}
 	});
 
 	test("decodes Linux birth, group, parent, and liveness semantics", () => {

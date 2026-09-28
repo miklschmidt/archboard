@@ -20,6 +20,13 @@ import {
 } from "./support.js";
 import { driveManual, fakeLifecycle, manualScheduler } from "./lifecycle-support.js";
 
+/**
+ * Polls a SIGKILLed group may take to leave the kernel's process listing. The
+ * kill lands asynchronously, and a hosted macOS runner needed three (TASK-361).
+ * More would mean cleanup waits on something after the kill.
+ */
+const KILLED_GROUP_EXIT_POLLS = 3;
+
 function processState(pid: number): string | undefined {
 	return readProcessObservation(pid)?.state;
 }
@@ -322,7 +329,7 @@ describe("Codex process lifecycle", () => {
 			expect(stopped.lastExit?.classification).toBe("early_exit");
 			expect(clock.now()).toBeGreaterThanOrEqual(CODEX_TERM_GRACE_MS);
 			expect(clock.now()).toBeLessThanOrEqual(
-				CODEX_TERM_GRACE_MS + PROCESS_GROUP_OBSERVATION_POLL_MS,
+				CODEX_TERM_GRACE_MS + KILLED_GROUP_EXIT_POLLS * PROCESS_GROUP_OBSERVATION_POLL_MS,
 			);
 			expect([undefined, "zombie"]).toContain(processState(descendantPid));
 		} finally {
@@ -409,7 +416,7 @@ describe("Codex process lifecycle", () => {
 		expect(fs.existsSync(root)).toBe(false);
 		expect(clock.now()).toBeGreaterThanOrEqual(CODEX_TERM_GRACE_MS);
 		expect(clock.now()).toBeLessThanOrEqual(
-			CODEX_TERM_GRACE_MS + PROCESS_GROUP_OBSERVATION_POLL_MS,
+			CODEX_TERM_GRACE_MS + KILLED_GROUP_EXIT_POLLS * PROCESS_GROUP_OBSERVATION_POLL_MS,
 		);
 	});
 
