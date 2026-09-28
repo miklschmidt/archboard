@@ -1,3 +1,4 @@
+import { CODEX_PROTOCOL_VERSION } from "../../codex-protocol/index.js";
 import { chmodSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, test } from "bun:test";
@@ -39,7 +40,7 @@ describe("Codex session storage proof", () => {
 	test("refuses a redirected initialize home and colliding prepared roots", async () => {
 		const redirected = createSessionFixture();
 		redirected.transport.prependResponse("initialize", {
-			userAgent: "Codex Desktop/0.158.0",
+			userAgent: `Codex Desktop/${CODEX_PROTOCOL_VERSION}`,
 			codexHome: redirected.storage.sqliteHome,
 			platformFamily: "unix",
 			platformOs: "linux",

@@ -1,3 +1,4 @@
+import { CODEX_PROTOCOL_VERSION } from "../../codex-protocol/index.js";
 import type { EpochExecutionProof, EpochOperationRecord } from "../../codex-epoch/index.js";
 import type { ArchboardContext } from "../../codex-instructions/index.js";
 import type {
@@ -65,7 +66,7 @@ export function thread(
 		status: { type: "idle" },
 		path: null,
 		cwd: CHECKOUT_ROOT,
-		cliVersion: "0.158.0",
+		cliVersion: CODEX_PROTOCOL_VERSION,
 		source: "appServer",
 		canAcceptDirectInput: true,
 		threadSource: "archboard",

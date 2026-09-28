@@ -1,11 +1,11 @@
 ---
 id: TASK-360
 title: Move Codex to 0.158.0 and regenerate its app-server types
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-28 17:35'
-updated_date: '2026-09-28 18:04'
+updated_date: '2026-09-28 18:36'
 labels:
   - codex
 dependencies: []
@@ -26,7 +26,7 @@ Archboard pins @openai/codex 0.155.1 (package.json) and generates its app-server
 - [x] #2 Everything that uses the generated Codex types type-checks against 0.158.0, with any protocol change adapted in code rather than cast away
 - [x] #3 Every statement naming the Codex version it was checked against is re-read against the 0.158.0 source and either confirmed with the new version or corrected
 - [x] #4 The local Codex source clone is checked out at the 0.158.0 tag
-- [ ] #5 bun run check passes, and a signed-in Archboard server starts with its workbench ready
+- [x] #5 bun run check passes, and a signed-in Archboard server starts with its workbench ready
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -38,6 +38,8 @@ No board is affected: a dependency bump with no architectural change (no part, r
 3. Bump the generator's expected version and CODEX_PROTOCOL_VERSION; adapt code that uses the generated types to protocol changes (no casts, no weakened rules); keep gpt-6-luna model/list selection working.
 4. Re-read every statement naming 0.155.1 against the 0.158.0 source; restate it for 0.158.0 when it holds, correct it when not; update test fixtures to 0.158.0.
 5. Run each gate lane under a memory cap; live smoke a signed-in server on port 3420 with a scratch web-shop vault.
+
+6. Review follow-up: a failed account/read no longer stops startup; name the undecoded notifications; record omitted params; derive fixture versions from the protocol constants.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -52,4 +54,14 @@ Claims re-read against the 0.158.0 source: all hold except DESIGN.md's 'feature-
 Added 'Moving Codex to a new version' to skills/archboard-dev/SKILL.md (user request, relayed by the coordinator).
 
 Gate (each under a memory cap): lint 0; fmt:check 0; type-check 0; test:modules 3703 pass 0 fail; test:system 180 pass 1 fail; test:repository 8 pass; test:serial-browser all files pass. The one system failure is tests/system/cli/install-targets.test.ts 'a manual whose links resolve': it calls existsSync on INSTALL.md's link TESTING.md#5-a-first-session, a link a6c71c6f added on main; this change touches neither file. AC #5 stays unchecked until that is fixed (TASK-361 tracks CI). Live smoke: a server from this worktree on 127.0.0.1:3420 with a scratch copy of examples/web-shop and the default state directory started, status reported it running, its package-local child was codex-cli 0.158.0, and its epoch manifest committed epoch/start and the coordinator thread/start (reached only after a signed-in account/read and a model/list that offered gpt-6-luna); it was then stopped.
+
+Review follow-up: at 0.158.0 account/read for a ChatGPT sign-in runs a workspace-routing check and any failure is a -32603 answer, which initializeSession threw into abandonStartup, stopping the server. initializeSession now treats a JSON-RPC error answer (CodexTransportRemoteError) as an account it could not read: the session is marked ready with the account not ready, the pane gets the existing 'could not be read, refresh' state, and a refresh reads it; a read Codex never answers still fails startup. Proved by tests/system/server-state/codex-account-read-failure.test.ts (red with the catch disabled: owned server died, exit 1). DESIGN.md's bound app-server section records that account/read now needs the network and can fail. A model list without gpt-6-luna still stops startup (hooks' ensureCoordinator throws when the coordinator is not ready); not small, filed as TASK-363. methods.ts names the four undecoded notifications; the authored contracts doc lists daybreakEnabled and disabledPluginIds as omitted; TypeScript fixtures take the version from CODEX_PROTOCOL_VERSION / CODEX_PROTOCOL_BINARY_VERSION.
+
+Final gate after merging origin/main (a9269293), each lane capped and alone: lint 0, fmt:check 0, type-check 0, build:frontend 0, test:modules 3703 pass 0 fail, test:system 182 pass 0 fail (after moving the fake's account error ahead of the switch, which a process-contract fixture patches by text), test:repository 8 pass, test:serial-browser 15 files, 0 failures. Smoke: server on 127.0.0.1:3420 with a scratch web-shop vault and the default state directory started, status reported it running, its child ran the package-local 0.158.0, and the epoch manifest committed epoch/start and the coordinator thread/start as delivered; stopped.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Pinned @openai/codex 0.158.0 (package.json, bun.lock, the generator and CODEX_PROTOCOL_VERSION) and adapted the handwritten protocol schemas to the regenerated contract without casts: image references by URL or uploaded file, account/read workspaceRouting, disabledPluginIds, availableAccessPrograms, item timestamps, mcpAppUi, the new config requirements, _meta on user verification, promax and flexUnavailable. Because account/read now calls the backend and can fail, a failed read leaves the server running with the account marked for refresh instead of stopping startup (the model-list case is TASK-363). Every statement that named 0.155.1 was re-read against the 0.158.0 source and restated or corrected (DESIGN.md's feature-gate and 4 KiB cap claims were wrong), version text in code and TypeScript fixtures derives from the protocol constants, and the archboard-dev skill now has the upgrade procedure. Verified by the full gate lane by lane (all green) and a signed-in smoke server whose coordinator started.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -1,6 +1,6 @@
 # Codex workbench authored contracts
 
-**Reviewed input:** 2026-08-30
+**Reviewed input:** 2026-09-28
 
 **Protocol:** Codex app-server 0.158.0 with experimental APIs
 
@@ -164,7 +164,7 @@ profile omits `serviceTier`; it does not send `null` or another tier. Both
 profiles intentionally omit `modelProvider`, `approvalPolicy`,
 `approvalsReviewer`, `sandbox`, `permissions`, `baseInstructions`,
 `personality`, `multiAgentMode`, `projectId`, `environments`,
-`selectedCapabilityRoots`, and `mockExperimentalField`. Omission preserves the
+`selectedCapabilityRoots`, `daybreakEnabled`, and `mockExperimentalField`. Omission preserves the
 dedicated child's reviewed config/default environment and therefore normal
 shell, web, repository, and approval capabilities. The workhorse explicitly
 uses `model: "gpt-6-astra"` and `config: { model_reasoning_effort: "medium" }`.
@@ -217,7 +217,7 @@ It omits `toolOutput`, `responsesapiClientMetadata`, `environments`, `cwd`,
 `runtimeWorkspaceRoots`, `approvalPolicy`, `approvalsReviewer`,
 `sandboxPolicy`, `permissions`, `model`, `serviceTier`, `serviceTierForTurn`,
 `effort`, `summary`, `personality`, `outputSchema`, `collaborationMode`,
-`multiAgentMode`, and `cyberAccessProgram`. Text is a `UserInput`; it is not a
+`multiAgentMode`, `cyberAccessProgram`, and `disabledPluginIds`. Text is a `UserInput`; it is not a
 developer-role Responses API item.
 
 Every steer uses this complete `TurnSteerParams` shape:

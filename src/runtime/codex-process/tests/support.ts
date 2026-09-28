@@ -1,3 +1,4 @@
+import { CODEX_PROTOCOL_BINARY_VERSION } from "../../codex-protocol/index.js";
 import fs from "node:fs";
 import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -15,7 +16,11 @@ function removeRoot(root: string): void {
 	fs.rmSync(root, { recursive: true, force: true });
 }
 
-function fixture(root: string, body: string, version = "codex-cli 0.158.0"): string {
+function fixture(
+	root: string,
+	body: string,
+	version: string = CODEX_PROTOCOL_BINARY_VERSION,
+): string {
 	const executable = path.join(root, "codex-fixture");
 	writeFileSync(
 		executable,

@@ -1,3 +1,4 @@
+import { CODEX_PROTOCOL_VERSION } from "../../codex-protocol/index.js";
 import {
 	emptyManifest,
 	type ActiveEpoch,
@@ -83,7 +84,7 @@ function startResponse(
 		status: { type: "idle" },
 		path: null,
 		cwd: CHECKOUT_ROOT,
-		cliVersion: "0.158.0",
+		cliVersion: CODEX_PROTOCOL_VERSION,
 		source: "vscode",
 		canAcceptDirectInput: true,
 		threadSource: "archboard",

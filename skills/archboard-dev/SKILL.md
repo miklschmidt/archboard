@@ -141,7 +141,9 @@ nothing states a version that was not re-read:
    in `src/runtime/codex-protocol/lib/version.ts`. `bun install` updates
    `bun.lock` and generates the new contract beside the old one under
    `src/shared/codex-app-server-contract/generated/versions/`, so
-   `diff -r` of the two version directories is the wire change.
+   `diff -r` of the two version directories is the wire change; a fresh
+   worktree runs `bun install` at the old pin first, so the old contract
+   exists to diff.
    Done: `bun run ensure:codex-contract` passes.
 4. **Adapt the schemas to `bun run type-check`.** Each handwritten Zod schema
    in `src/runtime/codex-protocol/lib` is proved against the generated type
@@ -154,21 +156,21 @@ nothing states a version that was not re-read:
    whose payloads only the system lane decodes. Done: type-check and the
    `src/runtime/codex-*` tests pass.
 5. **Re-read every version-bound claim.**
-   `git grep -n "<old version>" -- ':!bun.lock' ':!backlog'` finds them. A
-   fixture's version string moves to the new one. A claim about Codex
-   behaviour moves only after its cited source is re-read at the new tag, and
-   is corrected where it no longer holds; a measurement names the version it
-   was measured on. Version text in code derives from
-   `CODEX_PROTOCOL_VERSION`. Done: the grep finds only history.
-6. **Run `bun run check`**; its lanes chain with `&&`, so when it stops
-   early, run each later lane (`test:system`, `test:repository`,
-   `test:serial-browser`) on its own. Then **smoke a signed-in server**: start one on a free port against a scratch copy of
+   `git grep -n "<old version>" -- ':!bun.lock' ':!backlog'` finds them. Code
+   and TypeScript fixtures take the version from `CODEX_PROTOCOL_VERSION` or
+   `CODEX_PROTOCOL_BINARY_VERSION`; the standalone fake Codex executables
+   write it literally and move to the new one. A claim about Codex behaviour
+   moves only after its cited source is re-read at the new tag, and is
+   corrected where it no longer holds; a measurement names the version it was
+   measured on. Done: the grep finds only history.
+6. **Run the gate** as `.claude/rules/agent-work.md` describes, then **smoke a
+   signed-in server**: start one on a free port against a scratch copy of
    `examples/web-shop`, with the default state directory so it uses the
    machine's Archboard Codex sign-in. A server whose workbench is not ready
    exits with "The production Codex workbench did not become ready"; one that
    signed in and found its model records the coordinator's `thread/start` as
-   delivered in `archboard/codex-workbench/canvases/<port>/epoch/epoch-manifest.json`
-   under the state directory. Done: `status` reported it running, the manifest
+   delivered in `codex-workbench/canvases/<port>/epoch/epoch-manifest.json`
+   in the state directory. Done: `status` reported it running, the manifest
    holds that record, and the server was stopped.
 
 ## The tracked skills
