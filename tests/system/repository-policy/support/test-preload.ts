@@ -1,7 +1,8 @@
-import { afterAll, beforeEach, onTestFinished } from "bun:test";
+import { afterAll, beforeEach, onTestFinished, setDefaultTimeout } from "bun:test";
 import { realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 
+import { TEST_CASE_TIMEOUT_MS } from "../../support/timing.ts";
 import {
 	clearTestWallClockDeclaration,
 	createTestWallClockReporter,
@@ -14,6 +15,8 @@ import {
 if (process.platform === "darwin") {
 	process.env["TMPDIR"] = realpathSync(tmpdir());
 }
+
+setDefaultTimeout(TEST_CASE_TIMEOUT_MS);
 
 const monotonicNowMs = Bun.nanoseconds.bind(Bun);
 const reporter = createTestWallClockReporter(() => monotonicNowMs() / 1_000_000);

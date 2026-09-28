@@ -59,7 +59,7 @@ See a change before anyone builds it. Ask your agent for one and you get a **pro
 
 <img src="docs/readme/plan.webp" width="100%" alt="A board nobody has built yet, marked not built, opened in two panes. The left pane turns into the Nightly batch proposal and the right pane into the Live events proposal, each marked against the starting point they share.">
 
-<p align="center"><sub>Two competing proposals for a recommendations service that does not exist yet, one per pane. The header says <code>not built</code>: nothing here pretends to exist before somebody adopts it.</sub></p>
+<p align="center"><sub>Two competing proposals for a recommendations service that does not exist yet, one per pane. The header names the proposal in the focused pane and says <code>not built</code>: nothing here pretends to exist before somebody adopts it.</sub></p>
 
 - **Competing options, side by side.** Branch two drafts from one starting point and open them in two panes. `archboard semantic compare` lists every part and relationship that differs.
 - **Honest about what exists.** A board for a system nobody has built yet is marked `not built`, and stays that way until your agent adopts a proposal after it ships.
@@ -168,7 +168,7 @@ Select a part and ask. The Codex agent in the agent bar reads the board and your
 
 Let agents work on the map without wondering what they touched. An agent that **claims** a board shows up on every pane that has it open (who, why, and since when), with one button to take the board back. Every write says in one line what it is doing, and every change to an existing board names the version it read. If the board moved since then, the write is refused, so two agents never overwrite each other.
 
-<img src="docs/readme/take-back.webp" width="100%" alt="An agent claims the Web shop board and the pane shows the claim. The claim is taken back from the pane, the banner goes, and the agent's next write is refused with exit code 5.">
+<img src="docs/readme/take-back.webp" width="100%" alt="An agent claims the Web shop board and the pane shows the claim. The pointer presses Take back control, the banner goes, and the agent's next write is refused with exit code 5.">
 
 <p align="center"><sub>You take the board back, and the agent's next write is refused. Nothing is half written: every accepted write is on disk before the agent hears back.</sub></p>
 

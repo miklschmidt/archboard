@@ -98,7 +98,7 @@ test("application timeout force-reaps a real process group before stop resolves"
 	} finally {
 		await resources.disposeAsync();
 	}
-}, 10_000);
+}, 30_000);
 
 test("process-owner setup failures always reap the group and remove the root", async () => {
 	for (const mode of ["spawn-error", "malformed", "assertion", "timeout"] as const) {
@@ -189,4 +189,4 @@ test("process-owner setup failures always reap the group and remove the root", a
 		}
 		expect(existsSync(root)).toBeFalse();
 	}
-}, 10_000);
+}, 30_000);

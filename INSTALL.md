@@ -174,7 +174,7 @@ archboard semantic config # the vocabulary in use, and the configuration file
 ```
 
 Then create a test board with `archboard semantic new`, and read it with
-`archboard semantic show`. The [first session in TESTING.md](TESTING.md#5-a-first-session) has an example.
+`archboard semantic show`. The first session in [TESTING.md](TESTING.md) has an example.
 
 ## The vault configuration
 

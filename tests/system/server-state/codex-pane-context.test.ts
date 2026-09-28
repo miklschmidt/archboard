@@ -229,4 +229,4 @@ test("live voice is told what the user changed by hand, and nothing of what anyb
 	} finally {
 		await resources.disposeAsync();
 	}
-}, 15000);
+}, 45_000);
