@@ -254,6 +254,7 @@ export const modelFixture = {
 	additionalSpeedTiers: [],
 	serviceTiers: [],
 	defaultServiceTier: null,
+	availableAccessPrograms: null,
 	isDefault: true,
 } satisfies ResponsePayloads["model/list"]["data"][number];
 
@@ -261,6 +262,9 @@ export const requirementsFixture = (
 	sqliteHome: string | null,
 ): ResponsePayloads["configRequirements/read"] => ({
 	requirements: {
+		modelProvider: null,
+		modelProviders: null,
+		allowedLoginMethods: null,
 		cliAuthCredentialsStore: null,
 		chatgptBaseUrl: null,
 		additionalDeveloperInstructions: null,
@@ -290,7 +294,6 @@ export const requirementsFixture = (
 		checkForUpdateOnStartup: null,
 		allowLoginShell: null,
 		feedback: null,
-		windowsSandboxPrivateDesktop: null,
 		application: null,
 	},
 });
@@ -332,7 +335,7 @@ export const threadFixture = {
 	status: { type: "idle" },
 	path: null,
 	cwd: "/tmp/archboard",
-	cliVersion: "0.155.1",
+	cliVersion: "0.158.0",
 	source: "appServer",
 	canAcceptDirectInput: true,
 	threadSource: "archboard",
@@ -396,7 +399,7 @@ export function createSessionFixture(
 	const identity = createIdentityAuthority();
 	const transport = new FakeTransport(identity);
 	transport.enqueueResponse("initialize", {
-		userAgent: "Codex Desktop/0.155.1",
+		userAgent: "Codex Desktop/0.158.0",
 		codexHome: options.initializeCodexHome ?? storage.codexHome,
 		platformFamily: "unix",
 		platformOs: "linux",

@@ -74,6 +74,7 @@ const readyAccount = (): BrowserOwnerProjection["account"] => ({
 	response: {
 		account: { type: "chatgpt", email: "gateway@example.test", planType: "plus" },
 		requiresOpenaiAuth: true,
+		workspaceRouting: null,
 	},
 });
 

@@ -24,6 +24,7 @@ function threadStartResponse(
 		activePermissionProfile: null,
 		reasoningEffort: "medium",
 		multiAgentMode: "explicitRequestOnly",
+		disabledPluginIds: [],
 	};
 }
 
@@ -55,7 +56,7 @@ async function initializeTransportSession(fixture: TransportSessionFixture): Pro
 		fixture,
 		"initialize",
 		{
-			userAgent: "Codex Desktop/0.155.1",
+			userAgent: "Codex Desktop/0.158.0",
 			codexHome: fixture.storage.codexHome,
 			platformFamily: "unix",
 			platformOs: "linux",
@@ -144,6 +145,7 @@ describe("Codex session response workflows", () => {
 			await roundTrip(fixture, "account/read", () => fixture.session.accountRead(), {
 				account: { type: "chatgpt", email: null, planType: "pro" },
 				requiresOpenaiAuth: true,
+				workspaceRouting: null,
 			});
 			const started = await roundTrip(
 				fixture,

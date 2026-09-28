@@ -39,8 +39,7 @@ export type ProtocolDirection =
 	| "server-request"
 	| "json-rpc-error";
 
-export const PROTOCOL_RECOVERY_ACTION =
-	"confirm the child runs Codex 0.155.1, review the incompatible payload, and reconnect the session";
+export const PROTOCOL_RECOVERY_ACTION = `confirm the child runs Codex ${CODEX_PROTOCOL_VERSION}, review the incompatible payload, and reconnect the session`;
 
 export interface ProtocolDecodeErrorInit {
 	readonly method: string;
@@ -125,7 +124,7 @@ function unknownMethodError(method: string, direction: ProtocolDirection): Proto
 	return new ProtocolDecodeError({
 		method,
 		direction,
-		recoveryAction: `${PROTOCOL_RECOVERY_ACTION}; do not handle this unknown method until Codex 0.155.1 is reviewed`,
+		recoveryAction: `${PROTOCOL_RECOVERY_ACTION}; do not handle this unknown method until Codex ${CODEX_PROTOCOL_VERSION} is reviewed`,
 	});
 }
 
@@ -194,8 +193,7 @@ function assertSupportedUserAgent(userAgent: string): void {
 			method: "initialize",
 			direction: "response",
 			issues: [{ path: ["userAgent"], message: `expected Codex ${CODEX_PROTOCOL_VERSION}` }],
-			recoveryAction:
-				"stop the child, run the recorded Codex 0.155.1 binary, and reconnect after reviewing the incompatible payload",
+			recoveryAction: `stop the child, run the recorded Codex ${CODEX_PROTOCOL_VERSION} binary, and reconnect after reviewing the incompatible payload`,
 		});
 	}
 }

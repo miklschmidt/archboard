@@ -51,9 +51,16 @@ const ConfigRequirementsReadResponseSchema = looseObject({
 	requirements: ConfigRequirementsSchema.nullable(),
 });
 
+const WorkspaceRoutingSchema = looseObject({
+	chatgptAccountId: z.string(),
+	backendOrigin: z.string(),
+	accountRoutingOverride: z.enum(["NO_CONSTRAINT", "us", "us_cr"]),
+});
+
 const AccountReadResponseSchema = looseObject({
 	account: AccountSchema.nullable(),
 	requiresOpenaiAuth: z.boolean(),
+	workspaceRouting: WorkspaceRoutingSchema.nullable(),
 });
 
 const LoginAccountResponseSchema = z.discriminatedUnion("type", [
@@ -92,6 +99,7 @@ const ThreadStartResponseShape = {
 	activePermissionProfile: ActivePermissionProfileSchema.nullable(),
 	reasoningEffort: ReasoningEffortSchema.nullable(),
 	multiAgentMode: MultiAgentModeSchema,
+	disabledPluginIds: z.array(z.string()),
 };
 
 const ThreadStartResponseSchema = looseObject(ThreadStartResponseShape);

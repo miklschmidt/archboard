@@ -229,6 +229,7 @@ function projectionInput(
 			response: {
 				account: { type: "chatgpt", email: "private@example.test", planType: "plus" },
 				requiresOpenaiAuth: true,
+				workspaceRouting: null,
 			},
 		},
 		login: { kind: "login", state: "idle" },

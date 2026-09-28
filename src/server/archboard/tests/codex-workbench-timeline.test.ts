@@ -90,6 +90,7 @@ test("timeline owner loads typed pages and projects every arm with its evidence"
 			status: "failed",
 			arguments: { board: "payments" },
 			appContext: null,
+			mcpAppUi: null,
 			pluginId: null,
 			readOnlyHint: null,
 			result: null,

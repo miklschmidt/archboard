@@ -1,5 +1,5 @@
 // A transcript segment as Codex really sends it: started with no text, its words following as
-// deltas (0.155.1, `realtime_history.rs`). What is guarded is that the transcript never holds a
+// deltas (0.158.0, `realtime_history.rs`). What is guarded is that the transcript never holds a
 // record with nothing in it, which the browser contract cannot carry, and that the words show up
 // as they arrive.
 

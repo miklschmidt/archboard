@@ -44,6 +44,7 @@ const modelFixture = {
 	additionalSpeedTiers: [],
 	serviceTiers: [],
 	defaultServiceTier: null,
+	availableAccessPrograms: null,
 	isDefault: true,
 };
 

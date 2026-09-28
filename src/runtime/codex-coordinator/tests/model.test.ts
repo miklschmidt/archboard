@@ -51,6 +51,7 @@ function model(overrides: Partial<CoordinatorModel> = {}): CoordinatorModel {
 		additionalSpeedTiers: [],
 		serviceTiers: [],
 		defaultServiceTier: null,
+		availableAccessPrograms: null,
 		isDefault: true,
 		...overrides,
 	};

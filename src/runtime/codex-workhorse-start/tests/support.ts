@@ -208,7 +208,7 @@ function threadFixture(threadId: ThreadId): SessionThread {
 		status: { type: "idle" },
 		path: null,
 		cwd: CHECKOUT_ROOT,
-		cliVersion: "0.155.1",
+		cliVersion: "0.158.0",
 		source: "vscode",
 		canAcceptDirectInput: true,
 		threadSource: "archboard",
@@ -245,6 +245,7 @@ function startResponse(
 		activePermissionProfile: { id: "archboard-default", extends: null },
 		reasoningEffort: null,
 		multiAgentMode: "explicitRequestOnly",
+		disabledPluginIds: [],
 		...overrides,
 	};
 }

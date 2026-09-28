@@ -18,7 +18,7 @@ import {
  *
  * The session runs in Codex's `bemTags` handoff mode, where a message's first characters choose
  * its channel: `[FINAL]` is appended to the voice session as speakable, which the voice model
- * reacts to, and `[COMMENTARY]` as quiet context, which it never reacts to (Codex 0.155.1,
+ * reacts to, and `[COMMENTARY]` as quiet context, which it never reacts to (Codex 0.158.0,
  * `realtime_conversation/bem.rs`, `v3_output_writer`). A message with no header is buffered until
  * it is complete and then treated as final, so an untagged preamble is read out as if it were the
  * answer, and the answer itself cannot stream. Telling the coordinator the rule is what makes the
@@ -81,7 +81,7 @@ function voicePrompt(presentation: RealtimePresentation | null): string {
  * developer items, no JSON and no Codex startup context: `includeStartupContext` would make
  * Codex prepend a `<startup_context>` of recent threads and a workspace scan to the prompt, and
  * `realtimeStartInstructions` is rendered into the coordinator thread's world state on every
- * turn (Codex 0.155.1, `session/world_state.rs`), so it must not repeat the coordinator's
+ * turn (Codex 0.158.0, `session/world_state.rs`), so it must not repeat the coordinator's
  * developer instructions either. The board catalogue reaches the coordinator as a developer
  * item on its own thread; board context reaches it through its tools and the semantic callbacks.
  *

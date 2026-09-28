@@ -235,14 +235,13 @@ if (storageMode === "symlink" && redirectedSqliteHome !== undefined && process.e
 }
 
 const managedRequirementKeys = [
-	"cliAuthCredentialsStore", "chatgptBaseUrl", "additionalDeveloperInstructions",
+	"modelProvider", "modelProviders", "allowedLoginMethods", "cliAuthCredentialsStore", "chatgptBaseUrl", "additionalDeveloperInstructions",
 	"allowedApprovalPolicies", "allowedApprovalsReviewers", "allowedSandboxModes",
 	"allowedWindowsSandboxImplementations", "allowedPermissionProfiles", "defaultPermissions",
 	"allowedWebSearchModes", "allowManagedHooksOnly", "allowBrowserAndComputerUse", "allowAppshots",
 	"allowRemoteControl", "computerUse", "browserUse", "inAppBrowser", "featureRequirements", "hooks",
 	"enforceResidency", "network", "autoReview", "models", "logDir", "modelCatalogJson",
-	"checkForUpdateOnStartup", "allowLoginShell", "feedback", "windowsSandboxPrivateDesktop",
-	"application",
+	"checkForUpdateOnStartup", "allowLoginShell", "feedback", "application",
 ] as const;
 const managedRequirements = (sqliteHome: string) => ({
 	...Object.fromEntries(managedRequirementKeys.map((key) => [key, null])),
