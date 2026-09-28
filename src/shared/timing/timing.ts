@@ -333,10 +333,13 @@ const GIT_COMMAND_TIMEOUT_MS = 5000;
 
 /**
  * Grace after Git termination for the detached group, leader and both output
- * pipes to disappear. It matches the mutation-drain window so failed cleanup
- * is diagnosed promptly rather than hiding behind the command timeout.
+ * pipes to disappear. A killed group normally leaves within milliseconds, but
+ * on GitHub's macOS runner one outlived a one-second window twice in ten runs
+ * and an output or abort failure was reported as a cleanup failure (TASK-362).
+ * Three seconds absorbs a slow machine and stays below GIT_COMMAND_TIMEOUT_MS,
+ * so failed cleanup is still diagnosed before the command timeout would be.
  */
-const GIT_PROCESS_GROUP_CLEANUP_MS = SERVER_MUTATION_DRAIN_TIMEOUT_MS;
+const GIT_PROCESS_GROUP_CLEANUP_MS = 3000;
 
 /** Observation cadence while proving a killed process group is absent. */
 const PROCESS_GROUP_OBSERVATION_POLL_MS = 10;

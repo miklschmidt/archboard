@@ -27,6 +27,14 @@ import { driveManual, fakeLifecycle, manualScheduler } from "./lifecycle-support
  */
 const KILLED_GROUP_EXIT_POLLS = 3;
 
+/**
+ * A leader that exits 17 once its descendant ignores TERM. The descendant says
+ * so only after its handler is installed: a TERM that arrived first killed it
+ * in 18 of 20 tries, and on macOS a group member dying under the KILL made the
+ * signal itself fail (TASK-361).
+ */
+const LEADER_WITH_TERM_RESISTANT_DESCENDANT = `const { spawn } = require("node:child_process"); const descendant = spawn(process.execPath, ["-e", "process.on(\\"SIGTERM\\", () => {}); process.stdout.write(\\"ready\\"); setInterval(() => {}, 1000);"], { stdio: ["ignore", "pipe", "ignore"] }); descendant.stdout.once("data", () => { process.stdout.write(String(descendant.pid)); process.exit(17); });`;
+
 function processState(pid: number): string | undefined {
 	return readProcessObservation(pid)?.state;
 }
@@ -290,10 +298,7 @@ describe("Codex process lifecycle", () => {
 		let owner: ReturnType<typeof createCodexProcess> | undefined;
 		let descendantPid: number | undefined;
 		try {
-			const executable = fixture(
-				root,
-				`const { spawn } = require("node:child_process"); const descendant = spawn(process.execPath, ["-e", "process.on(\\"SIGTERM\\", () => {}); setInterval(() => {}, 1000);"], { stdio: "ignore" }); process.stdout.write(String(descendant.pid)); process.exit(17);`,
-			);
+			const executable = fixture(root, LEADER_WITH_TERM_RESISTANT_DESCENDANT);
 			owner = createCodexProcess({
 				...options(root, executable),
 				dependencies: {
@@ -362,10 +367,7 @@ describe("Codex process lifecycle", () => {
 		let descendantPid: number | undefined;
 		let failure: unknown;
 		try {
-			const executable = fixture(
-				root,
-				`const { spawn } = require("node:child_process"); const descendant = spawn(process.execPath, ["-e", "process.on(\\"SIGTERM\\", () => {}); setInterval(() => {}, 1000);"], { stdio: "ignore" }); process.stdout.write(String(descendant.pid)); process.exit(17);`,
-			);
+			const executable = fixture(root, LEADER_WITH_TERM_RESISTANT_DESCENDANT);
 			owner = createCodexProcess({
 				...options(root, executable),
 				dependencies: {
