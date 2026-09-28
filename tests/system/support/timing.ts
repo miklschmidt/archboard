@@ -12,27 +12,6 @@ import {
 } from "../../../src/shared/timing/timing.ts";
 
 /**
- * Bound for a fake Git child to publish its startup marker in the module owner.
- * The owner also runs inside the serialized system watchdog, so observing the
- * fixture must allow the real command its complete deadline.
- */
-const TEST_GIT_FIXTURE_START_MS = GIT_COMMAND_TIMEOUT_MS;
-
-/**
- * Bun case bound for the composed Git module lifecycle owner. It leaves one
- * command deadline for fixture readiness and one for its remaining lifecycle
- * cases while the outer process-contract watchdog remains the final bound.
- */
-const TEST_GIT_LIFECYCLE_CASE_TIMEOUT_MS = 2 * GIT_COMMAND_TIMEOUT_MS;
-
-/**
- * Poll cadence for the delayed-checkout fixture's explicit release files.
- * The files, not elapsed time, gate each Git probe; a short cadence keeps the
- * four-stage concurrency owner well inside Bun's ordinary case bound.
- */
-const TEST_DELAYED_CHECKOUT_RELEASE_POLL_MS = 25;
-
-/**
  * External bound for the exact Git lifecycle plus opener regression sequence.
  * It is four ordinary Git command bounds: enough for the serial owners while
  * still diagnosing a retained child or pipe well inside the repository lane.
@@ -46,34 +25,21 @@ const TEST_GIT_OPENER_WATCHDOG_MS = 4 * GIT_COMMAND_TIMEOUT_MS;
 const TEST_GIT_OPENER_CASE_TIMEOUT_MS =
 	TEST_GIT_OPENER_WATCHDOG_MS + 2 * GIT_PROCESS_GROUP_CLEANUP_MS;
 
+/**
+ * How much slower than a development machine the machine running a test may
+ * be. GitHub's hosted runners vary widely from one run to the next: a Chromium
+ * cold start that takes under two seconds here took past five there (TASK-361).
+ * It multiplies a test's patience, how long it waits for something that should
+ * happen, and never a poll cadence, a window in which nothing may happen, or a
+ * product duration.
+ */
+const TEST_PATIENCE_FACTOR = 3;
+
+/** Bun's own 5 s per-case default times the patience factor; the preload installs it for every case without its own bound. */
+const TEST_CASE_TIMEOUT_MS = TEST_PATIENCE_FACTOR * 5000;
+
 /** Actual elapsed ceiling for a test with no reviewed source-local real-time declaration. */
-const TEST_WALL_CLOCK_BUDGET_MS = 20_000;
-
-/** One controlled Bun child runs three millisecond fixtures and must settle well below the repository budget. */
-const TEST_WALL_CLOCK_PRELOAD_LIFECYCLE_TIMEOUT_MS = 5000;
-
-/** Bun lifecycle failure thresholds, not hang ceilings or SLAs, clear hosted sweep 5.274s and totality 5,003.69ms at roughly 3x. */
-const TEST_BOARD_INSPECTION_SWEEP_CASE_TIMEOUT_MS = 15_000;
-
-const TEST_BOARD_INSPECTION_TOTALITY_CASE_TIMEOUT_MS = 15_000;
-
-/** One packaged inspection stays below the required 20-second per-child diagnostic ceiling. */
-const TEST_BOARD_INSPECTION_PACKAGE_COMMAND_TIMEOUT_MS = 18_000;
-
-/** TERM, KILL, and leader/pipe settlement phases together stay below the 5-second cleanup cap. */
-const TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_CLEANUP_MS = 1000;
-
-/** Observation cadence while proving a packaged inspection's detached group is absent. */
-const TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_POLL_MS = 10;
-
-/** The local HTTP sentinel must publish its ephemeral port before a package inspection starts. */
-const TEST_BOARD_INSPECTION_SENTINEL_STARTUP_TIMEOUT_MS = 5000;
-
-/** Lets the process-group fixture publish descendant readiness before its forced failure. */
-const TEST_BOARD_INSPECTION_PACKAGE_FAILURE_TIMEOUT_MS = 1000;
-
-/** Bounds both retained parent-SIGTERM owners while they join cleanup before replaying the signal. */
-const TEST_BOARD_INSPECTION_PACKAGE_LIFECYCLE_CASE_TIMEOUT_MS = 15_000;
+const TEST_WALL_CLOCK_BUDGET_MS = TEST_PATIENCE_FACTOR * 20_000;
 
 /** Server identity startup stays below TEST_SERVER_CHILD_EXIT_TIMEOUT_MS with bounded shutdown room. */
 const TEST_SERVER_STARTUP_TIMEOUT_MS = 15_000;
@@ -180,38 +146,11 @@ const TEST_PANE_MESSAGE_TIMEOUT_MS = 2000;
  */
 const TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS = 3 * LOCK_WATCH_MS;
 
-/** Four LOCK_WATCH_MS sweeps cover a timestamp boundary and board_note delivery. */
-const TEST_NOTE_WATCH_MESSAGE_TIMEOUT_MS = 4 * LOCK_WATCH_MS;
-
-/**
- * LOCK_POLL_MS observes a delivered note-watch frame without polling faster
- * than the lock-file machinery that carries the notification.
- */
-const TEST_NOTE_WATCH_MESSAGE_POLL_MS = LOCK_POLL_MS;
-
-/** One LOCK_WATCH_MS bounds the board_note clearing frame after reload. */
-const TEST_NOTE_WATCH_CLEAR_TIMEOUT_MS = LOCK_WATCH_MS;
-
 /** Ordinary browser commands stay at 30s; the 10k-element initial render gets three windows, finite and not an SLA. */
 const TEST_BROWSER_COMMAND_TIMEOUT_MS = BROWSER_EXPORT_TIMEOUT_MS;
 
-/** Four real pointer moves add roughly 20 seconds of Chromium ACK latency on macOS. */
-const TEST_HUMAN_UNDO_CASE_TIMEOUT_MS =
-	process.platform === "darwin"
-		? 2 * TEST_BROWSER_COMMAND_TIMEOUT_MS
-		: TEST_BROWSER_COMMAND_TIMEOUT_MS;
-
-/** The 10,000-element real-browser performance owner measured 55.9-76.84s; eight command windows preserve its existing finite case bound. */
-const TEST_HUMAN_EDIT_PERFORMANCE_CASE_TIMEOUT_MS = 8 * TEST_BROWSER_COMMAND_TIMEOUT_MS;
-
-/** Forty-two real interleaved browser/server cycles were measured at about 40s; four command windows retain the existing finite Bun case bound. */
-const TEST_LIVE_SESSION_CONVERGENCE_CASE_TIMEOUT_MS = 4 * TEST_BROWSER_COMMAND_TIMEOUT_MS;
-
 /** Matches the existing loopback and lock polling cadence without busy-waiting. */
 const TEST_BROWSER_POLL_MS = LOCK_POLL_MS;
-
-/** Extends the negative pane window past one debounce without reaching its settle cap. */
-const TEST_PANE_DEBOUNCE_MARGIN_MS = 2 * TEST_BROWSER_POLL_MS;
 
 /** Polls fake-opener lifecycle evidence within its 2s operation bound. */
 const TEST_OPENER_LIFECYCLE = { pollMs: 20, timeoutMs: 2000 } as const;
@@ -219,47 +158,14 @@ const TEST_OPENER_LIFECYCLE = { pollMs: 20, timeoutMs: 2000 } as const;
 /** Aggregate Bun case, not an operation cap/SLA: 20s avoids the hosted 5s cancellation path while keeping a finite bound. */
 const TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS = 20_000;
 
-/** Aggregate Bun case, not an operation cap/SLA: 20s clears hosted 5,034ms and stressed 14,815.78ms. */
-const TEST_CODE_TARGET_PRESENTATION_CASE_TIMEOUT_MS = 20_000;
-
-/** Two real renderer acquisitions plus cleanup measured below 7s; 9.5s retains a narrow stressed-host margin. */
-const TEST_BOARD_RENDERER_OWNER_TIMEOUT_MS = 9500;
-
-/** The injected startup exit settles in under 300ms; 3s leaves room for process and pipe cleanup. */
-const TEST_BOARD_RENDERER_STARTUP_FAILURE_TIMEOUT_MS = 3000;
-
-/** The static fixture performs six loopback reads and starts no Chromium process. */
-const TEST_BOARD_RENDERER_FIXTURE_TIMEOUT_MS = 1000;
-
-/** Cold PNG/SVG workflows measured 11.49–13.09s under a half-CPU quota (TASK-162), within the normal wall-clock ceiling. */
-const TEST_SERVER_RENDERING_CASE_TIMEOUT_MS = TEST_WALL_CLOCK_BUDGET_MS;
-
-/** A healthy pre-render human hold is immediate; 400ms fails the focused owner before a product lease can expire. */
-const TEST_SERVER_RENDERING_HOLD_TIMEOUT_MS = 400;
-
-/** Missing Chromium is a preflight refusal and should never approach the product startup bound. */
-const TEST_SERVER_RENDERING_FAILURE_CASE_TIMEOUT_MS = 2000;
-
 export {
-	TEST_HUMAN_UNDO_CASE_TIMEOUT_MS,
 	TEST_RECORDING_CASE_MS,
 	TEST_RECORDING_CLI_MS,
 	TEST_VAULT_CLI_TIMEOUT_MS,
-	TEST_GIT_FIXTURE_START_MS,
-	TEST_GIT_LIFECYCLE_CASE_TIMEOUT_MS,
-	TEST_DELAYED_CHECKOUT_RELEASE_POLL_MS,
 	TEST_GIT_OPENER_WATCHDOG_MS,
 	TEST_GIT_OPENER_CASE_TIMEOUT_MS,
+	TEST_CASE_TIMEOUT_MS,
 	TEST_WALL_CLOCK_BUDGET_MS,
-	TEST_WALL_CLOCK_PRELOAD_LIFECYCLE_TIMEOUT_MS,
-	TEST_BOARD_INSPECTION_SWEEP_CASE_TIMEOUT_MS,
-	TEST_BOARD_INSPECTION_TOTALITY_CASE_TIMEOUT_MS,
-	TEST_BOARD_INSPECTION_PACKAGE_COMMAND_TIMEOUT_MS,
-	TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_CLEANUP_MS,
-	TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_POLL_MS,
-	TEST_BOARD_INSPECTION_SENTINEL_STARTUP_TIMEOUT_MS,
-	TEST_BOARD_INSPECTION_PACKAGE_FAILURE_TIMEOUT_MS,
-	TEST_BOARD_INSPECTION_PACKAGE_LIFECYCLE_CASE_TIMEOUT_MS,
 	TEST_SERVER_STARTUP_TIMEOUT_MS,
 	TEST_SERVER_HEALTH_REQUEST_TIMEOUT_MS,
 	TEST_SERVER_HEALTH_POLL_MS,
@@ -271,21 +177,8 @@ export {
 	TEST_PANE_MESSAGE_POLL_MS,
 	TEST_PANE_MESSAGE_TIMEOUT_MS,
 	TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS,
-	TEST_NOTE_WATCH_MESSAGE_TIMEOUT_MS,
-	TEST_NOTE_WATCH_MESSAGE_POLL_MS,
-	TEST_NOTE_WATCH_CLEAR_TIMEOUT_MS,
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
-	TEST_HUMAN_EDIT_PERFORMANCE_CASE_TIMEOUT_MS,
-	TEST_LIVE_SESSION_CONVERGENCE_CASE_TIMEOUT_MS,
 	TEST_BROWSER_POLL_MS,
-	TEST_PANE_DEBOUNCE_MARGIN_MS,
 	TEST_OPENER_LIFECYCLE,
 	TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS,
-	TEST_CODE_TARGET_PRESENTATION_CASE_TIMEOUT_MS,
-	TEST_BOARD_RENDERER_OWNER_TIMEOUT_MS,
-	TEST_BOARD_RENDERER_STARTUP_FAILURE_TIMEOUT_MS,
-	TEST_BOARD_RENDERER_FIXTURE_TIMEOUT_MS,
-	TEST_SERVER_RENDERING_CASE_TIMEOUT_MS,
-	TEST_SERVER_RENDERING_HOLD_TIMEOUT_MS,
-	TEST_SERVER_RENDERING_FAILURE_CASE_TIMEOUT_MS,
 };
