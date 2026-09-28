@@ -4,15 +4,15 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 13,
+	"version": 15,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-09-28T22:56:30.292Z",
+	"updatedAt": "2026-09-28T23:19:08.448Z",
 	"views": [],
 	"variants": [
 		{
 			"id": "mbDAkbS0",
 			"name": "Current architecture",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"summary": "Module level: reading, selection, camera, and navigation. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
@@ -635,9 +635,9 @@
 		{
 			"id": "hmI4YrBL",
 			"name": "TASK-364",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "mbDAkbS0",
-			"summary": "A walkthrough step about a relationship or a sequence step lights and frames the cards at both ends",
+			"summary": "Module level: reading, selection, camera, and navigation. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
@@ -1266,5 +1266,13 @@
 			}
 		}
 	],
-	"current": "mbDAkbS0"
+	"current": "hmI4YrBL",
+	"adoptions": [
+		{
+			"variant": "hmI4YrBL",
+			"from": "mbDAkbS0",
+			"at": "2026-09-28T23:19:08.448Z",
+			"reason": "A walkthrough step reads the ends of each relationship or step it names from the board, so the ends are lit and framed with it (TASK-364)"
+		}
+	]
 }
