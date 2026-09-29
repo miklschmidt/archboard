@@ -123,6 +123,9 @@ const ThreadTimelineListResponseSchema = ThreadRealtimeTimelineStateSchema;
 const CurrentTimeReadResponseSchema = looseObject({ currentTimeAt: FiniteNumberSchema });
 
 const EmptyResponseSchema = z.strictObject({});
+const ThreadUnsubscribeResponseSchema = looseObject({
+	status: z.enum(["notLoaded", "notSubscribed", "unsubscribed"]),
+});
 
 /** Every response schema used by the public session port. */
 const RESPONSE_SCHEMAS = codexIngressSchemas<Pick<CodexResponseByMethod, ResponseMethod>>()({
@@ -142,6 +145,7 @@ const RESPONSE_SCHEMAS = codexIngressSchemas<Pick<CodexResponseByMethod, Respons
 	"thread/turns/list": ThreadTurnPageSchema,
 	"thread/items/list": ThreadItemPageSchema,
 	"thread/delete": EmptyResponseSchema,
+	"thread/unsubscribe": ThreadUnsubscribeResponseSchema,
 	"thread/settings/update": EmptyResponseSchema,
 	"turn/start": TurnStartSchema,
 	"turn/steer": TurnSteerResponseSchema,

@@ -35,6 +35,7 @@ export type {
 	CoordinatorModel,
 	CoordinatorPermissionProfile,
 	CoordinatorPersistedState,
+	CoordinatorRetirement,
 	CoordinatorReviewHashes,
 	CoordinatorSandboxPolicy,
 	CoordinatorSessionPort,

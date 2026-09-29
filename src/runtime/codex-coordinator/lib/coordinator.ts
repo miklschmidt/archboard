@@ -17,9 +17,11 @@ import {
 	selectCoordinatorModel,
 	type CoordinatorModelSelection,
 } from "@/runtime/codex-coordinator/lib/model";
+import { createCoordinatorRetirement } from "@/runtime/codex-coordinator/lib/retire";
 import { reviewedCoordinatorHashes } from "@/runtime/codex-coordinator/lib/review";
 import { assertCurrentEpoch, decideCandidate } from "@/runtime/codex-coordinator/lib/reuse";
 import { createCoordinatorStarter } from "@/runtime/codex-coordinator/lib/start";
+import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
 import {
 	coordinatorError,
 	emptySnapshot,
@@ -98,6 +100,7 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 			}
 		},
 	});
+	const retirement = createCoordinatorRetirement(options);
 
 	/**
 	 * Run one coordinator step behind every step enqueued before it.
@@ -129,7 +132,7 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 	 * one is then left exactly as it was.
 	 */
 	const replace = (input: CoordinatorReplaceInput): Promise<CoordinatorSnapshot> =>
-		serialized(() => replaceOne(input.operationId));
+		serialized(() => replaceOne(input));
 
 	/**
 	 * Run one ensure: choose the model, prove the reviewed artifacts and the epoch, then decide
@@ -177,11 +180,15 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 	 * published and retained until the fresh one is started, confirmed and committed. Only then are
 	 * both swapped, in one step. A start that ends anywhere else leaves the current coordinator as it
 	 * was: its thread was never reused, so a thread the start may have left behind is never driven.
-	 * @param operationId - The server operation identity the fresh start runs under.
+	 * A swap retires the thread it replaced: it is unsubscribed once nothing runs on it, so Codex
+	 * unloads it, and the caller is told how that went without waiting for it.
+	 * @param input - The server operation identity the fresh start runs under, and who is told
+	 * what became of the retired thread.
 	 * @returns The fresh coordinator's ready snapshot.
 	 * @throws {CodexCoordinatorError} When the fresh coordinator did not become ready.
 	 */
-	async function replaceOne(operationId: string): Promise<CoordinatorSnapshot> {
+	async function replaceOne(input: CoordinatorReplaceInput): Promise<CoordinatorSnapshot> {
+		const { operationId } = input;
 		if (operationId.length === 0) {
 			throw new CodexCoordinatorError(
 				"invalid_input",
@@ -208,8 +215,12 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 					`A fresh coordinator did not become ready: ${started.reason ?? started.state}`,
 				);
 			}
+			const retired = current;
 			current = started;
 			retainedPersistence = stage.persistence;
+			if (retired.state === "ready" && retired.threadId !== null) {
+				void retirement.retire(retired.threadId, input.onRetired);
+			}
 			return current;
 		} finally {
 			staged = null;
@@ -323,6 +334,13 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 		 * @returns The retained state, or null when there is none.
 		 */
 		persisted: () => retainedPersistence,
-		onNotification: starter.onNotification,
+		/**
+		 * Take one session notification for the start handshake and the retired threads.
+		 * @param event - The transport notification.
+		 */
+		onNotification: (event: TransportServerNotification) => {
+			starter.onNotification(event);
+			retirement.onNotification(event);
+		},
 	});
 }

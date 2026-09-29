@@ -17,6 +17,7 @@ const THREAD_METHODS = [
 	"threadTurnsListPage",
 	"threadItemsListPage",
 	"threadDelete",
+	"threadUnsubscribe",
 	"threadSettingsUpdate",
 	"turnStart",
 	"turnSteer",

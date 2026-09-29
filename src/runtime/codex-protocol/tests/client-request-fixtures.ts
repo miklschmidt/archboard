@@ -149,6 +149,7 @@ const COMPLETE_CLIENT_REQUEST_FIXTURES = {
 		sortDirection: "asc",
 	},
 	"thread/delete": { threadId: "thread-1" },
+	"thread/unsubscribe": { threadId: "thread-1" },
 	"thread/settings/update": {
 		threadId: "thread-1",
 		cwd: "/repo",

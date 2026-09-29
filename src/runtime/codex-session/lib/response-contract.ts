@@ -413,6 +413,7 @@ const SESSION_PROTOCOL_METHODS = defineSessionProtocolMethods({
 		responseIdentities: "item-page",
 	},
 	"thread/delete": { requestIdentities: ["threadId"], responseIdentities: "none" },
+	"thread/unsubscribe": { requestIdentities: ["threadId"], responseIdentities: "none" },
 	"thread/settings/update": { requestIdentities: ["threadId"], responseIdentities: "none" },
 	"turn/start": { requestIdentities: ["threadId"], responseIdentities: "turn" },
 	"turn/steer": {

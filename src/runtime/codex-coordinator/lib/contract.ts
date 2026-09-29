@@ -37,7 +37,7 @@ type CoordinatorThreadSettings = CoordinatorSettingsNotification["params"]["thre
 
 type CoordinatorSessionPort = Pick<
 	CodexSession,
-	"modelList" | "threadStart" | "threadSettingsUpdate"
+	"modelList" | "threadStart" | "threadSettingsUpdate" | "threadRead" | "threadUnsubscribe"
 >;
 type CoordinatorThreadLinkPort = Pick<CodexThreadLinkPort, "classify">;
 type CoordinatorEpochPort = Pick<
@@ -149,9 +149,25 @@ interface CodexCoordinatorOptions {
 	readonly persisted?: CoordinatorPersistedState | null;
 }
 
+/**
+ * What became of the thread a replacement retired: Codex's answer to its unsubscribe, or why the
+ * thread could not be read or unsubscribed. The thread keeps its rollout either way.
+ */
+type CoordinatorRetirement =
+	| {
+			readonly threadId: ThreadId;
+			readonly outcome: SessionResponse<"thread/unsubscribe">["status"];
+	  }
+	| { readonly threadId: ThreadId; readonly outcome: "failed"; readonly message: string };
+
 interface CoordinatorReplaceInput {
 	/** The fresh server-issued operation id the replacement start runs under. */
 	readonly operationId: string;
+	/**
+	 * Told once what became of the retired thread, after its voice session closed and no turn runs
+	 * on it. Never told when the replacement failed, because nothing was retired.
+	 */
+	readonly onRetired: (retirement: CoordinatorRetirement) => void;
 }
 
 interface CodexCoordinator {
@@ -227,6 +243,7 @@ export {
 	type CoordinatorSnapshot,
 	type CoordinatorEnsureInput,
 	type CoordinatorReplaceInput,
+	type CoordinatorRetirement,
 	type CodexCoordinatorOptions,
 	type CodexCoordinator,
 	type CoordinatorThreadLinkClassification,

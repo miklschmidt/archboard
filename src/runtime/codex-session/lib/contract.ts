@@ -40,6 +40,7 @@ export const SESSION_METHODS = Object.freeze([
 	"threadTurnsListPage",
 	"threadItemsListPage",
 	"threadDelete",
+	"threadUnsubscribe",
 	"threadSettingsUpdate",
 	"turnStart",
 	"turnSteer",
@@ -231,6 +232,9 @@ export interface CodexSession {
 	readonly threadDelete: (
 		params: SessionParams<"thread/delete">,
 	) => Promise<SessionResponsePayloads["thread/delete"]>;
+	readonly threadUnsubscribe: (
+		params: SessionParams<"thread/unsubscribe">,
+	) => Promise<SessionResponsePayloads["thread/unsubscribe"]>;
 	readonly threadSettingsUpdate: (
 		params: SessionParams<"thread/settings/update">,
 	) => Promise<SessionResponsePayloads["thread/settings/update"]>;

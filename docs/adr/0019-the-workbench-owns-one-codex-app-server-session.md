@@ -33,6 +33,12 @@ operation that the old coordinator started runs to its end, and the new
 coordinator hears what the workhorse did as workhorse news. The sentences below
 say so. Everything else stands.
 
+Amended by TASK-374 (2026-09-29): the old coordinator does not stay loaded in
+the child. Once its voice session has closed and no turn runs on it, Archboard
+unsubscribes from it with `thread/unsubscribe`. Codex then unloads the thread
+and keeps its rollout. The unsubscribe waits for the turn, because Codex sends
+that turn's tool calls and approvals only to subscribers.
+
 ## Issue
 
 The workbench must show and control the same agent state that the person is

@@ -8,7 +8,9 @@
 //
 // A coordinator carries one voice session (TASK-301). A start that finds the coordinator already
 // carried one has it replaced first, so a turn the last session left running, and whatever that
-// turn answers, stay on a thread no later session speaks from.
+// turn answers, stay on a thread no later session speaks from. Once nothing runs on that thread,
+// the coordinator unsubscribes from it so Codex unloads it (TASK-374), and the trace says how
+// that went.
 
 import {
 	CodexWorkbenchGatewayError,
@@ -20,6 +22,7 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 } from "@/shared/codex-realtime-contract";
+import type { CoordinatorRetirement } from "@/runtime/codex-coordinator";
 import type { RealtimePresentation } from "@/runtime/codex-realtime";
 import type { CodexWorkbenchComponents } from "@/server/archboard/lib/codex-workbench";
 import { traceMessage, voiceStartTrace } from "@/server/archboard/lib/voice-start-trace";
@@ -56,6 +59,19 @@ type CoordinatorSnapshot = ReturnType<RealtimeComponents["coordinator"]["snapsho
 
 /** The workhorse as it describes itself. */
 type WorkhorseSnapshot = ReturnType<RealtimeComponents["workhorse"]["snapshot"]>;
+
+/**
+ * Keep what became of a replaced coordinator's thread in the voice start trace, where a failed
+ * unsubscribe can be read afterwards.
+ * @param retirement The retired thread and Codex's answer, or why it failed.
+ */
+function noteRetirement(retirement: CoordinatorRetirement): void {
+	voiceStartTrace.note("coordinator_retired", {
+		threadId: retirement.threadId,
+		outcome: retirement.outcome,
+		message: retirement.outcome === "failed" ? retirement.message : null,
+	});
+}
 
 /**
  * Whether a realtime session belongs to the exact browser socket this command
@@ -302,6 +318,7 @@ export function createServerRealtimeActions(
 		try {
 			await components.coordinator.replace({
 				operationId: components.identity.operation.issuer.mintOperationId(),
+				onRetired: noteRetirement,
 			});
 		} catch (error) {
 			const refusal = new Error(
