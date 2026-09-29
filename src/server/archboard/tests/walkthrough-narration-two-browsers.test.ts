@@ -1,9 +1,9 @@
-// A voice session is about the pane in the browser it was started from, and no other.
+// A voice session is about the exact pane it was started from, by client id, and no other.
 //
-// The failure this guards: two browsers on one server each present a pane "A" (Chrome and the
-// ChatGPT desktop app, 2026-09-22), the other browser's registration is first in the registry,
-// and Narrate looks for the chosen walkthrough on the board that browser is showing, refuses,
-// and the user reads "Realtime negotiation was unavailable or failed" (TASK-294).
+// The failure this guards: two browser tabs on one server each present a pane "A" (Chrome and the
+// ChatGPT desktop app, 2026-09-22), the other tab's registration is first in the registry,
+// and Narrate looks for the chosen walkthrough on the board that tab is showing, refuses,
+// and the user reads "Realtime negotiation was unavailable or failed" (TASK-294, TASK-373).
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -136,24 +136,25 @@ function report(
 	};
 }
 
-test("narration is about the browser that pressed Narrate, not the first pane with its id", () => {
-	// The other browser registered first, so a lookup by "A" lands on it.
+test("narration is about the tab that pressed Narrate, not the first pane with its id", () => {
+	// The other tab registered first, so a lookup by "A" lands on it.
 	browserPane("client-app", OTHER);
 	browserPane("client-chrome", NARRATED);
 
-	expect(() => server.narrationFor("A", "client-app", walkthroughId, false)).toThrow();
-	expect(server.narrationFor("A", "client-chrome", walkthroughId, false)).toEqual({
+	expect(() => server.narrationFor("client-app", walkthroughId, false)).toThrow();
+	expect(server.narrationFor("client-chrome", walkthroughId, false)).toEqual({
 		walkthrough: walkthroughId,
 		name: "How a request lands",
 		recording: false,
 	});
 });
 
-test("a hand on the other browser's pane of the same id is not this narration's news", () => {
-	server.bindVoicePane("A", "client-chrome");
-	server.narrationFor("A", "client-chrome", walkthroughId, false);
+test("a hand on the other tab's pane of the same id is not this narration's news", () => {
+	server.narrationFor("client-chrome", walkthroughId, false);
 	const heard: string[] = [];
-	const stop = server.subscribeNarrationChanges((change) => heard.push(change.kind));
+	const stop = server.subscribeNarrationChanges((change, clientId) =>
+		heard.push(`${clientId}:${change.kind}`),
+	);
 	const stepped: SemanticPanePresentation = {
 		walkthrough: walkthroughId,
 		beat: 0,
@@ -165,6 +166,6 @@ test("a hand on the other browser's pane of the same id is not this narration's 
 	server.panePresentations.note(report("client-app", OTHER, null));
 	expect(heard).toEqual([]);
 	server.panePresentations.note(report("client-chrome", NARRATED, stepped));
-	expect(heard).toEqual(["stepped"]);
+	expect(heard).toEqual(["client-chrome:stepped"]);
 	stop();
 });

@@ -247,6 +247,7 @@ function createLeaseOwner(owners: LeaseOwners): LeaseOwner {
 			const record = manager.claim(
 				browserId,
 				paneId,
+				state.tabSessionId,
 				state.instance,
 				connections.readBinding(paneId),
 			);

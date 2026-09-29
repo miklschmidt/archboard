@@ -5,13 +5,16 @@
 // step the pane says it is on, the first included, reaches the voice model the same way, and so
 // does leaving. Nothing here chooses a step: the pane is where the talk is.
 //
+// A pane is named by its client id here, never by the shell's "A": every browser tab presents a
+// pane "A" of its own (on 2026-09-22 the ChatGPT desktop app held one for a day beside Chrome's),
+// and a narration is about the exact pane its voice session was started from (TASK-294, TASK-373).
+//
 // A recording (TASK-304) is started the same way, but its page opens step 1 itself and moves on
 // by itself, so the server opens nothing: every step the recording pane reports, the first
 // included, reaches the voice model as a step chosen by hand does.
 
 import type { RealtimePresentation, RealtimePresentationChange } from "@/runtime/codex-realtime";
 import { parseBoardKey, statedVariant } from "@/runtime/engine/board";
-import { addressablePanes, type PaneRegistration } from "@/runtime/engine/panes";
 import { readSemanticBoard } from "@/runtime/semantic-board-store";
 import {
 	addressedVariant,
@@ -26,42 +29,6 @@ import {
 import { narratedSubjects } from "@/server/archboard/narrated-subjects";
 import { paneBoardOf, panes } from "@/server/archboard/lib/pane-registry";
 import { semanticPaneContextFor } from "@/server/archboard/lib/semantic-pane-context";
-
-// Which browser's pane each voice session is about, by the pane id the shell and the
-// coordinator name it by.
-//
-// A pane id is not exact. A second browser on the same server presents a pane "A" of its own
-// (on 2026-09-22 the ChatGPT desktop app held one for a day beside Chrome's), and whichever
-// registered first would answer for both: Narrate looked for the walkthrough on the other
-// browser's board and refused. A voice session is started from one browser, whose client id the
-// start carries, and everything said in it is about that browser's pane.
-const voicePanes = new Map<string, string>();
-
-/**
- * A voice session started from one browser's pane; its narration is about that pane.
- * @param paneId The pane, as the shell and the coordinator name it.
- * @param clientId The client id of the pane in the browser the session was started from.
- */
-function bindVoicePane(paneId: string, clientId: string): void {
-	voicePanes.set(paneId, clientId);
-}
-
-/**
- * The live pane a pane id means: the bound browser's while it is on screen, otherwise the only
- * addressable pane with that id. Two browsers presenting that id, with neither bound, is nobody's
- * pane; a recording page, which binds its own at its start, is never found by the id alone.
- * @param paneId The pane, as the shell and the coordinator name it.
- * @returns The registration, or undefined.
- */
-function registrationFor(paneId: string): PaneRegistration | undefined {
-	const bound = voicePanes.get(paneId);
-	const boundPane = bound === undefined ? undefined : panes.get(bound);
-	if (boundPane !== undefined) {
-		return boundPane;
-	}
-	const named = addressablePanes([...panes.values()]).filter((one) => one.paneId === paneId);
-	return named.length === 1 ? named[0] : undefined;
-}
 
 /**
  * What one live pane is showing: what the pane itself last said is on screen,
@@ -119,26 +86,27 @@ function walkthroughOnPane(clientId: string, walkthroughId: string): ShownWalkth
 		: { board: read.board, variant: opened.variant, walkthrough };
 }
 
-/** The walkthrough each voice-linked pane is narrating, by pane id. */
+/** The walkthrough each voice-linked pane is narrating, by the pane's client id. */
 const narrated = new Map<string, string>();
 
+/** What the voice model is to be told of one narrated pane, and which pane, by client id. */
+type NarrationListener = (change: RealtimePresentationChange, clientId: string) => void;
+
 /** Who hears what the voice model is to be told: the voice session's delivery. */
-const listeners = new Set<(change: RealtimePresentationChange) => void>();
+const listeners = new Set<NarrationListener>();
 
 /**
  * The walkthrough a voice session is being started to present, written for the start.
  *
  * Read from the board the pane is showing, never taken from the browser: the
  * browser names a walkthrough and the server says what it says.
- * @param paneId The pane voice is starting for, as the shell names it.
- * @param clientId The client id of that pane in the browser the start came from.
+ * @param clientId The client id of the pane the start came from.
  * @param walkthroughId The walkthrough the user chose.
  * @param recording Whether the talk is recorded rather than listened to live.
  * @returns The walkthrough, what to call it and whether it is recorded.
  * @throws {Error} When the pane is not showing a board that states that walkthrough.
  */
 function narrationFor(
-	paneId: string,
 	clientId: string,
 	walkthroughId: string,
 	recording: boolean,
@@ -147,16 +115,16 @@ function narrationFor(
 	if (walkthrough === undefined) {
 		throw new Error("The pane is not showing a board that states that walkthrough.");
 	}
-	narrated.set(paneId, walkthrough.id);
+	narrated.set(clientId, walkthrough.id);
 	return { walkthrough: walkthrough.id, name: walkthrough.name, recording };
 }
 
 /**
- * A voice session that narrates nothing is starting for this pane.
- * @param paneId The pane, as the shell names it.
+ * The voice session that narrated this pane has been replaced: nothing it shows is news now.
+ * @param clientId The pane's client id.
  */
-function forgetNarration(paneId: string): void {
-	narrated.delete(paneId);
+function forgetNarration(clientId: string): void {
+	narrated.delete(clientId);
 }
 
 /**
@@ -185,31 +153,21 @@ function narrationChangeOf(change: UserPresentationChange): RealtimePresentation
 }
 
 /**
- * Whether a pane's news is a narration's: a user reading a walkthrough on their own, with nobody
- * narrating, is nobody's news, and neither is another browser's pane of the same id.
- * @param change Where the pane says its presentation is.
- * @returns True when the voice session should hear it.
- */
-function narratedHere(change: UserPresentationChange): boolean {
-	const bound = voicePanes.get(change.paneId) ?? change.clientId;
-	return narrated.has(change.paneId) && bound === change.clientId;
-}
-
-/**
- * Tell the voice session where a narrated pane's presentation now is. Leaving ends the
- * narration.
+ * Tell the voice session where a narrated pane's presentation now is. A user reading a
+ * walkthrough on their own, with nobody narrating, is nobody's news, and neither is another
+ * tab's pane of the same id. Leaving ends the narration.
  * @param change Where the pane says its presentation is.
  */
 function tell(change: UserPresentationChange): void {
-	const told = narratedHere(change) ? narrationChangeOf(change) : null;
+	const told = narrated.has(change.clientId) ? narrationChangeOf(change) : null;
 	if (told === null) {
 		return;
 	}
 	if (told.kind === "left") {
-		narrated.delete(change.paneId);
+		narrated.delete(change.clientId);
 	}
 	for (const listener of listeners) {
-		listener(told);
+		listener(told, change.clientId);
 	}
 }
 
@@ -221,36 +179,30 @@ panePresentations.onUserChange(tell);
  * The step then reaches the voice model the way every step the user moves to does. A step that
  * never arrives, because the pane closed or the user moved first, is not told: where the user
  * moved is.
- * @param paneId The narrated pane, as the shell names it.
+ * @param clientId The narrated pane's client id.
  */
-async function openNarration(paneId: string): Promise<void> {
-	const walkthrough = narrated.get(paneId);
-	const pane = registrationFor(paneId);
+async function openNarration(clientId: string): Promise<void> {
+	const walkthrough = narrated.get(clientId);
+	const pane = panes.get(clientId);
 	if (walkthrough === undefined || pane === undefined) {
 		return;
 	}
-	const outcome = await panePresentations.present({
-		clientId: pane.clientId,
-		walkthrough,
-		beat: 0,
-	});
+	const outcome = await panePresentations.present({ clientId, walkthrough, beat: 0 });
 	if (outcome.kind === "arrived") {
-		tell({ paneId, clientId: pane.clientId, presentation: outcome.presentation });
+		tell({ paneId: pane.paneId, clientId, presentation: outcome.presentation });
 	}
 }
 
 /**
- * Hear what the voice model is to be told of a narrated walkthrough.
+ * Hear what the voice model is to be told of a narrated walkthrough, and of which pane.
  * @param listener What to tell.
  * @returns Stops listening.
  */
-function subscribeNarrationChanges(
-	listener: (change: RealtimePresentationChange) => void,
-): () => void {
+function subscribeNarrationChanges(listener: NarrationListener): () => void {
 	listeners.add(listener);
 	return () => {
 		listeners.delete(listener);
 	};
 }
 
-export { bindVoicePane, forgetNarration, narrationFor, openNarration, subscribeNarrationChanges };
+export { forgetNarration, narrationFor, openNarration, subscribeNarrationChanges };

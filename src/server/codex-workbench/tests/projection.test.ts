@@ -410,8 +410,9 @@ test("the production gateway strips permission cwd, paths, and unreviewed vendor
 			snapshot: { ...view.snapshot, threadId: harness.threadId },
 		};
 		harness.setOrdinaryApproval(linkedView);
-		const [approval] = harness.gateway.connect(harness.browserId, harness.paneId).snapshot()
-			.snapshot.approvals;
+		const [approval] = harness.gateway
+			.connect(harness.browserId, harness.paneId, harness.tabSessionId)
+			.snapshot().snapshot.approvals;
 		expect(approval).toMatchObject({
 			approvalKind: "permissions",
 			requestedScope: { network: true, fileAccess: ["deny", "read", "write"] },

@@ -33,7 +33,7 @@ function harness(): GatewayHarness {
 describe("Codex workbench browser command owners", () => {
 	test("refuses an unsupported action through the production dispatch boundary", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const result = await connection.command({ paneId: value.paneId, command: "thread/delete" });
 		expect(result).toMatchObject({ code: "unsupported_command", outcome: "not_delivered" });
 		expect(value.calls).toEqual([]);
@@ -41,7 +41,7 @@ describe("Codex workbench browser command owners", () => {
 
 	test("routes every thread, queue, text, and realtime command through its owner", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const factories: readonly CommandFactory[] = [
 			(lease) => threadLinkCommand(value, lease),
 			(lease) => startCommand(value, lease),
@@ -77,7 +77,7 @@ describe("Codex workbench browser command owners", () => {
 
 	test("keeps thread operations disabled in every pre-thread capability state", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		for (const state of [
 			"login_capable",
 			"signed_out",
@@ -95,7 +95,7 @@ describe("Codex workbench browser command owners", () => {
 
 	test("returns the negotiated SDP answer for browser-local remote media attachment", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const command = realtimeCommand(value, connection.claimLease(), "realtimeStart");
 		const realtimeAnswer = {
 			sessionId: parseRealtimeSessionId(String(command.commandId)),
@@ -110,7 +110,7 @@ describe("Codex workbench browser command owners", () => {
 
 	test("returns the accepted start turn even when the snapshot has no active turn", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		value.setActionResult({ outcome: "delivered", turnId: value.turnId });
 		const result = await connection.command(startCommand(value, connection.claimLease()));
 		expect(result).toMatchObject({ outcome: "delivered", turnId: value.turnId });
@@ -119,7 +119,7 @@ describe("Codex workbench browser command owners", () => {
 
 	test("reports realtime negotiation unavailability as an explicit command refusal", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		value.setActionError(new Error("Browser realtime media is unavailable."));
 		const result = await connection.command(
 			realtimeCommand(value, connection.claimLease(), "realtimeStart"),
@@ -129,7 +129,7 @@ describe("Codex workbench browser command owners", () => {
 
 	test("requires the exact executable link for text, queue, and realtime commands", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		value.setLink({
 			kind: "thread_link",
 			state: "inspect_only",

@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
+import { parseTabSessionId } from "../../codex-workbench/index.js";
 import { ArchboardContextSchema } from "../../../runtime/codex-instructions/index.js";
 import { createServerCanonicalTextActions } from "../codex-workbench-adapters.js";
 
@@ -79,6 +80,7 @@ test("browser start and steer emit canonical authored bodies from lease-bound co
 		browserId: "browser-1",
 		connection: Object.freeze({}),
 		paneId: "pane-exact",
+		tabSessionId: parseTabSessionId("tab-one")!,
 		commandId: authorities.identity.issuer.mintBrowserCommandId(),
 		childId: authorities.identity.validator.childId,
 		epoch: authorities.identity.validator.epoch,
@@ -185,6 +187,7 @@ test("browser start requires the exact authoritative idle thread without hydrati
 		browserId: "browser-1",
 		connection: Object.freeze({}),
 		paneId: "pane-busy",
+		tabSessionId: parseTabSessionId("tab-one")!,
 		commandId,
 		childId: authorities.identity.validator.childId,
 		epoch: authorities.identity.validator.epoch,
@@ -288,6 +291,7 @@ test("browser steering preserves the server's atomic expected-turn refusal witho
 		browserId: "browser-1",
 		connection: Object.freeze({}),
 		paneId: "pane-1",
+		tabSessionId: parseTabSessionId("tab-one")!,
 		commandId,
 		childId: authorities.identity.validator.childId,
 		epoch: authorities.identity.validator.epoch,

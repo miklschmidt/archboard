@@ -123,7 +123,7 @@ test("fits timeline history after every competing snapshot field is present", as
 		value.makeDynamicApproval(authorities.identity.issuer.mintBrowserCommandId()),
 	]);
 
-	const connection = value.gateway.connect(value.browserId, value.paneId);
+	const connection = value.open();
 	const lease = connection.claimLease();
 	const snapshot = (await connection.command(startCommand(value, lease))).snapshot;
 	const bytes = wireBytes(snapshot);
@@ -150,7 +150,9 @@ test("removes the final paginated timeline turn when that alone crosses the byte
 	const authorities = createIdentityAuthorities();
 	const decoder = authorities.identity.decoder;
 	const value = createGatewayHarness(authorities);
-	const base = value.gateway.connect(value.browserId, value.paneId).snapshot().snapshot;
+	const base = value.gateway
+		.connect(value.browserId, value.paneId, value.tabSessionId)
+		.snapshot().snapshot;
 	const threadId = value.threadId;
 	const turnId = decoder.adoptTurnId("near-bound-turn");
 	const firstQueueId = decoder.adoptQueuedSubmissionId("near-bound-queue-one");
@@ -218,7 +220,9 @@ test("gives up the oldest turns and keeps the running one when history crosses t
 	const authorities = createIdentityAuthorities();
 	const decoder = authorities.identity.decoder;
 	const value = createGatewayHarness(authorities);
-	const base = value.gateway.connect(value.browserId, value.paneId).snapshot().snapshot;
+	const base = value.gateway
+		.connect(value.browserId, value.paneId, value.tabSessionId)
+		.snapshot().snapshot;
 	const turn = (raw: string, status: "completed" | "inProgress") => ({
 		turnId: decoder.adoptTurnId(raw),
 		status,
@@ -264,7 +268,9 @@ test("gives up the oldest turns and keeps the running one when history crosses t
 test("fits voice delivery history in fixed producer records without altering retained bodies", () => {
 	const authorities = createIdentityAuthorities();
 	const value = createGatewayHarness(authorities);
-	const base = value.gateway.connect(value.browserId, value.paneId).snapshot().snapshot;
+	const base = value.gateway
+		.connect(value.browserId, value.paneId, value.tabSessionId)
+		.snapshot().snapshot;
 	const sessionId = parseRealtimeSessionId("budget-voice-context");
 	const bodies = Array.from(
 		{ length: 3 },

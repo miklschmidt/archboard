@@ -5,6 +5,7 @@ import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-ap
 import type { ThreadLinkSnapshot } from "../../../runtime/codex-thread-link/index.js";
 import {
 	createCodexWorkbenchGateway,
+	parseTabSessionId,
 	type BrowserActionResult,
 	type BrowserGatewayMessage,
 	type BrowserOwnerProjection,
@@ -134,7 +135,7 @@ test("composed child exit publishes one settled approval before closing presente
 		hooks: fixture.hooks,
 	});
 	try {
-		const connection = gateway.connect("browser-child-exit", paneId);
+		const connection = gateway.connect("browser-child-exit", paneId, parseTabSessionId("tab-one")!);
 		const requestId = identity.identity.decoder.adoptJsonRpcRequestId("request-child-exit");
 		const pending = approvals.receive({
 			child: identity.identity.validator.childId,

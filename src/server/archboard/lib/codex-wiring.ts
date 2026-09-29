@@ -1,7 +1,7 @@
 import { logger } from "@/runtime/engine/logger";
 import { semanticChangeFeed } from "@/server/archboard/lib/semantic-change-feed";
 
-import { panesAddressableFirst, panesInOrder } from "@/runtime/engine/panes";
+import { panesInOrder } from "@/runtime/engine/panes";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import type {
 	SemanticUserChange,
@@ -33,6 +33,7 @@ import {
 	currentSocketsByClient,
 	panes,
 } from "@/server/archboard/lib/pane-registry";
+import { tabSessionOf } from "@/server/archboard/lib/tab-sessions";
 
 /** The browser-facing hooks the installed Codex workbench gateway provides, null while none is installed. */
 interface CodexWiring {
@@ -138,6 +139,12 @@ function installBrowserGateway(gateway: CodexWorkbenchComponents["gateway"]): ()
 		 * @returns The pane id, or null while it has no registration.
 		 */
 		paneForBrowser: (browserId) => panes.get(browserId)?.paneId ?? null,
+		/**
+		 * The tab session a browser id's socket named.
+		 * @param browserId The browser's client id.
+		 * @returns The tab session, or null while it named none.
+		 */
+		tabSessionForBrowser: tabSessionOf,
 	});
 	/** Take the hooks down. */
 	const remove = (): void => {
@@ -180,17 +187,19 @@ function orderedPanes(): PaneRegistration[] {
 }
 
 /**
- * The pane a leased operation names, which must be on screen: somebody's pane of that id before a
- * recording page's.
- * @param paneId The pane id.
+ * The pane an operation's context is read through. A browser command names the exact pane that
+ * sent it, by client id, which must still be on screen: a pane id repeats in every browser tab.
+ * Work nobody's command started names none, and presents through an open pane.
+ * @param authority The pane the operation names, and the exact pane that sent it, if any.
  * @returns The pane.
  */
-function operationPane(paneId: string): PaneRegistration {
-	const pane = panesAddressableFirst([...panes.values()]).find(
-		(candidate) => candidate.paneId === paneId,
-	);
+function operationPane(authority: OperationAuthority): PaneRegistration {
+	if (authority.clientId === null) {
+		return presentingPane(authority.paneId, orderedPanes());
+	}
+	const pane = panes.get(authority.clientId);
 	if (pane === undefined) {
-		throw new Error(`The Codex context pane is not open: ${paneId}.`);
+		throw new Error(`The Codex context pane is not open: ${authority.paneId}.`);
 	}
 	return pane;
 }
@@ -233,6 +242,21 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 	 */
 	const currentSemanticPane = (): PaneRegistration => presentingPane(boundPaneId(), orderedPanes());
 
+	/**
+	 * The exact pane a settled change can report presentation from: the bound pane, while one
+	 * with the bound id is open, and none once it is not.
+	 * @param paneId The bound pane's id.
+	 * @returns The pane's client id, or null.
+	 */
+	const boundClientId = (paneId: string): string | null => {
+		const open = orderedPanes();
+		if (open.length === 0) {
+			return null;
+		}
+		const pane = presentingPane(paneId, open);
+		return pane.paneId === paneId ? pane.clientId : null;
+	};
+
 	return {
 		checkoutRoot,
 		/**
@@ -254,7 +278,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 				 */
 				read: () => {
 					const pane = currentSemanticPane();
-					return semanticInputFor(active, shownBoard(pane), null, pane.paneId);
+					return semanticInputFor(active, shownBoard(pane), null, pane);
 				},
 			},
 			/**
@@ -273,7 +297,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 					active,
 					event.board,
 					{ feedId: semanticChangeFeed.feedId, sequence: event.cursor },
-					paneId,
+					{ paneId, clientId: boundClientId(paneId) },
 				);
 			},
 		},
@@ -283,12 +307,6 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 		 * @returns The pane ids.
 		 */
 		paneIds: () => orderedPanes().map((pane) => pane.paneId),
-		/**
-		 * The open pane server-started work presents through.
-		 * @param preferredPaneId The pane the work names.
-		 * @returns The pane id.
-		 */
-		presentingPaneId: (preferredPaneId) => presentingPane(preferredPaneId, orderedPanes()).paneId,
 		/**
 		 * The canonical context of a settled event for one pane.
 		 * @param event The settled event.
@@ -315,14 +333,14 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 			if (active === null) {
 				throw new Error("The Codex workbench context is not ready.");
 			}
-			const pane = operationPane(authority.paneId);
+			const pane = operationPane(authority);
 			if (!bindingMatchesAuthority(active.threadLink.read(authority.paneId), authority)) {
 				throw new Error("The lease-bound Codex pane context changed before capture.");
 			}
-			const exactInput = semanticInputFor(active, shownBoard(pane), null, authority.paneId);
+			const exactInput = semanticInputFor(active, shownBoard(pane), null, pane);
 			return canonicalContextFromBrief(
 				active.semanticPublisher.freshBriefFor(exactInput),
-				authority.paneId,
+				pane.paneId,
 				{ ...operation, outcome: null },
 			);
 		},
@@ -368,7 +386,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 				const pane = panes.get(clientId);
 				if (pane === undefined || components.semanticDelivery.snapshot().binding === null) return;
 				try {
-					const read = semanticInputFor(components, shownBoard(pane), null, pane.paneId);
+					const read = semanticInputFor(components, shownBoard(pane), null, pane);
 					const input = { ...read, pane: { ...read.pane, userChanged } };
 					if (kind === "selection") components.semanticPublisher.publishPaneSelection(input);
 					else components.semanticPublisher.publishPaneFocus(input);

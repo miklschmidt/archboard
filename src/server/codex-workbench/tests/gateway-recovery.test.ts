@@ -28,8 +28,8 @@ function deferred(): { readonly promise: Promise<void>; readonly resolve: () => 
 describe("Codex workbench browser recovery and delivery", () => {
 	test("deduplicates an in-flight command and classifies a late result as unknown", async () => {
 		const value = harness();
-		const first = value.gateway.connect(value.browserId, value.paneId);
-		const second = value.gateway.connect("browser-two", "pane-two");
+		const first = value.open();
+		const second = value.gateway.connect("browser-two", "pane-two", value.tabSessionId);
 		const lease = first.claimLease();
 		let settle: ((result: undefined) => void) | undefined;
 		value.setActionResult(undefined);
@@ -61,7 +61,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 	test("preserves a lost-response settlement without retrying the owner", async () => {
 		const value = harness();
 		value.setActionResult({ outcome: "outcome_unknown" });
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const command = startCommand(value, connection.claimLease());
 		const result = await connection.command(command);
 		expect(result).toMatchObject({ code: "outcome_unknown", outcome: "outcome_unknown" });
@@ -74,8 +74,8 @@ describe("Codex workbench browser recovery and delivery", () => {
 
 	test("does not replay a cached command across browser ownership", async () => {
 		const value = harness();
-		const first = value.gateway.connect(value.browserId, value.paneId);
-		const second = value.gateway.connect("browser-two", value.paneId);
+		const first = value.open();
+		const second = value.gateway.connect("browser-two", value.paneId, value.tabSessionId);
 		const lease = first.claimLease();
 		const command = startCommand(value, lease);
 		const delivered = await first.command(command);
@@ -89,9 +89,9 @@ describe("Codex workbench browser recovery and delivery", () => {
 		const value = harness();
 		const firstSocket = Object.freeze({ socket: 1 });
 		const replacementSocket = Object.freeze({ socket: 2 });
-		const stale = value.gateway.connect(value.browserId, value.paneId, firstSocket);
+		const stale = value.open(firstSocket);
 		stale.claimLease();
-		const current = value.gateway.connect(value.browserId, value.paneId, replacementSocket);
+		const current = value.open(replacementSocket);
 		const currentLease = current.claimLease();
 
 		await stale.close();
@@ -106,9 +106,9 @@ describe("Codex workbench browser recovery and delivery", () => {
 	test("reconnecting the exact live socket instance preserves its lease", () => {
 		const value = harness();
 		const socket = Object.freeze({ socket: "stable" });
-		const first = value.gateway.connect(value.browserId, value.paneId, socket);
+		const first = value.open(socket);
 		const lease = first.claimLease();
-		const reconnected = value.gateway.connect(value.browserId, value.paneId, socket);
+		const reconnected = value.open(socket);
 
 		expect(reconnected.instance).toBe(socket);
 		expect(reconnected.renewLease()).toMatchObject({ commandId: lease.commandId, state: "active" });
@@ -116,7 +116,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 
 	test("replays a settled command while retained and refuses a fingerprint conflict", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const command = startCommand(value, connection.claimLease());
 		const first = await connection.command(command);
 		const replay = await connection.command(command);
@@ -128,7 +128,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 
 	test("rejects a dynamic response whose captured link is not current", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const lease = connection.claimLease();
 		const otherThread = value.model.ThreadIdSchema.parse(
 			value.authorities.identity.decoder.adoptThreadId("other-thread"),
@@ -145,13 +145,13 @@ describe("Codex workbench browser recovery and delivery", () => {
 
 	test("makes child exit terminal and recovers through a new gateway authority", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const lease = connection.claimLease();
 		const staleCommand = startCommand(value, lease);
 		await value.gateway.childExit(value.childId, value.epoch);
 		expect(value.disconnects).toEqual(["ordinary", "dynamic"]);
 		expect(value.disconnectReasons).toEqual(["child_disconnected", "child_disconnected"]);
-		expectGatewayError(() => value.gateway.connect(value.browserId, value.paneId), "disposed");
+		expectGatewayError(() => value.open(), "disposed");
 		expectGatewayError(() => connection.snapshot(), "disposed");
 		expectGatewayError(() => connection.claimLease(), "disposed");
 		expectGatewayError(() => connection.renewLease(), "disposed");
@@ -161,7 +161,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 		const replacement = harness();
 		expect(replacement.childId).not.toBe(value.childId);
 		expect(replacement.epoch).not.toBe(value.epoch);
-		const recovered = replacement.gateway.connect(replacement.browserId, replacement.paneId);
+		const recovered = replacement.open();
 		const replacementLease = recovered.claimLease();
 		expect(replacementLease.childId).toBe(replacement.childId);
 		expect(replacementLease.epoch).toBe(replacement.epoch);
@@ -174,7 +174,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 
 	test("child exit wins an ordering race with a late in-flight command", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const lease = connection.claimLease();
 		let settle: ((result: undefined) => void) | undefined;
 		value.setActionGate(
@@ -186,10 +186,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 		await Promise.resolve();
 		await value.gateway.childExit(value.childId, value.epoch);
 		const replacement = harness();
-		const replacementConnection = replacement.gateway.connect(
-			replacement.browserId,
-			replacement.paneId,
-		);
+		const replacementConnection = replacement.open();
 		const replacementLease = replacementConnection.claimLease();
 		settle?.(undefined);
 		expect(await pending).toMatchObject({ code: "outcome_unknown", outcome: "outcome_unknown" });
@@ -201,18 +198,18 @@ describe("Codex workbench browser recovery and delivery", () => {
 
 	test("releases a browser lease on close and allows another browser to recover", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		connection.claimLease();
 		await connection.close();
 		expect(value.disconnectReasons).toEqual(["browser_disconnected", "browser_disconnected"]);
-		const recovered = value.gateway.connect("browser-two", "pane-two");
+		const recovered = value.gateway.connect("browser-two", "pane-two", value.tabSessionId);
 		expect(recovered.claimLease().state).toBe("active");
 	});
 
 	test("only the final live presenter cancels a pane-bound approval", async () => {
 		const value = harness();
-		const first = value.gateway.connect(value.browserId, value.paneId);
-		const second = value.gateway.connect("browser-two", value.paneId);
+		const first = value.open();
+		const second = value.gateway.connect("browser-two", value.paneId, value.tabSessionId);
 		first.claimLease();
 		const approval = value.makeOrdinaryApproval();
 		value.setOrdinaryApproval(approval);
@@ -229,14 +226,14 @@ describe("Codex workbench browser recovery and delivery", () => {
 		await second.close();
 
 		expect(value.disconnects.filter((owner) => owner === "ordinary")).toEqual(["ordinary"]);
-		const recovered = value.gateway.connect("browser-three", value.paneId);
+		const recovered = value.gateway.connect("browser-three", value.paneId, value.tabSessionId);
 		expect(recovered.snapshot().snapshot.approvals).toEqual([]);
 	});
 
 	test("a presenter on another pane of the same link keeps approvals presented", async () => {
 		const value = harness();
-		const first = value.gateway.connect(value.browserId, value.paneId);
-		const second = value.gateway.connect("browser-two", "pane-two");
+		const first = value.open();
+		const second = value.gateway.connect("browser-two", "pane-two", value.tabSessionId);
 		first.claimLease();
 		const approval = value.makeOrdinaryApproval();
 		value.setOrdinaryApproval(approval);
@@ -260,7 +257,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 
 	test("uses the fresh pane link for approval teardown after a leased presenter relinks", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		connection.claimLease();
 		const currentThread = value.model.ThreadIdSchema.parse(
 			value.authorities.identity.decoder.adoptThreadId("relinked-thread"),
@@ -279,13 +276,17 @@ describe("Codex workbench browser recovery and delivery", () => {
 		await connection.close();
 
 		expect(value.durableState().semanticBound).toBeTrue();
-		const recovered = value.gateway.connect("browser-after-relink", value.paneId);
+		const recovered = value.gateway.connect(
+			"browser-after-relink",
+			value.paneId,
+			value.tabSessionId,
+		);
 		expect(recovered.snapshot().snapshot.approvals).toEqual([]);
 	});
 
 	test("waits for both close settlements after revoking browser authority", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const lease = connection.claimLease();
 		const ordinary = deferred();
 		const dynamic = deferred();
@@ -313,7 +314,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 
 	test("waits for both child-exit settlements after terminalizing the gateway", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const lease = connection.claimLease();
 		const ordinary = deferred();
 		const dynamic = deferred();
@@ -340,7 +341,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 
 	test("waits for both shutdown settlements after closing authority", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const lease = connection.claimLease();
 		const ordinary = deferred();
 		const dynamic = deferred();
@@ -352,7 +353,10 @@ describe("Codex workbench browser recovery and delivery", () => {
 			return undefined;
 		});
 		expect(disposed).toBeFalse();
-		expectGatewayError(() => value.gateway.connect("browser-two", "pane-two"), "disposed");
+		expectGatewayError(
+			() => value.gateway.connect("browser-two", "pane-two", value.tabSessionId),
+			"disposed",
+		);
 		expectGatewayError(() => connection.claimLease(), "disposed");
 		await expectRejected(() => connection.command(startCommand(value, lease)), "disposed");
 		ordinary.resolve();
@@ -366,7 +370,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 
 	test("swallows one settlement failure only after the other owner settles", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		connection.claimLease();
 		const dynamic = deferred();
 		value.setOrdinaryDisconnectError(new Error("ordinary settlement failed"));
@@ -386,8 +390,8 @@ describe("Codex workbench browser recovery and delivery", () => {
 
 	test("lease transfer and release do not run durable disconnect settlement", async () => {
 		const value = harness();
-		const first = value.gateway.connect(value.browserId, value.paneId);
-		const second = value.gateway.connect("browser-two", "pane-two");
+		const first = value.open();
+		const second = value.gateway.connect("browser-two", "pane-two", value.tabSessionId);
 		first.claimLease();
 		const ordinary = deferred();
 		const dynamic = deferred();
@@ -416,7 +420,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 
 	test("lease expiry does not run durable disconnect settlement", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const lease = connection.claimLease();
 		const ordinary = deferred();
 		const dynamic = deferred();
@@ -450,7 +454,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 			},
 		});
 		openHarnesses.push(value);
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const lease = connection.claimLease();
 		const ordinary = deferred();
 		const dynamic = deferred();

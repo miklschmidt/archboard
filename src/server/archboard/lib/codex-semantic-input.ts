@@ -1,6 +1,6 @@
 import { boardLockState } from "@/runtime/engine/board-lock";
 import { recentDoing } from "@/runtime/engine/board-doing";
-import { panesAddressableFirst, type PaneRegistration } from "@/runtime/engine/panes";
+import type { PaneRegistration } from "@/runtime/engine/panes";
 import { ArchboardContextSchema, type ArchboardContext } from "@/runtime/codex-instructions";
 import type {
 	SemanticArchitectureInput,
@@ -259,8 +259,19 @@ function mixedBoards(key: string | null, name: string): string {
 	);
 }
 
+/** Which pane a context is for: the id it is filed under, and the exact pane on screen, if any. */
+interface ContextPane {
+	/** The pane id the context names, as the shell and the coordinator name it. */
+	readonly paneId: string;
+	/**
+	 * The client id of the one pane on screen that speaks for it, or null when none does. A pane
+	 * id repeats in every browser tab, so presentation is only ever read from this exact pane.
+	 */
+	readonly clientId: string | null;
+}
+
 /**
- * The pane a context can report presentation from: the bound one, when it is
+ * The pane a context can report presentation from: the exact one named, when it is
  * showing the board that changed.
  *
  * Null is a real answer and the important one. A session hears about every
@@ -270,29 +281,21 @@ function mixedBoards(key: string | null, name: string): string {
  * borrowing somebody else's. What a person selected in one architecture is not
  * a fact about another.
  * @param contextBoard The board key.
- * @param exactPaneId The pane id.
- * @returns The pane, or null when none is showing this board.
+ * @param clientId The exact pane's client id, or null when no pane speaks for the context.
+ * @returns The pane, or null when it is not showing this board.
  */
-function contextPane(contextBoard: string, exactPaneId: string): PaneRegistration | null {
+function contextPane(contextBoard: string, clientId: string | null): PaneRegistration | null {
+	const pane = clientId === null ? undefined : panes.get(clientId);
+	if (pane === undefined) {
+		return null;
+	}
+	// A pane may be holding no board at all: a fresh vault has none, and there is
+	// no aggregate of nothing — the address grammar refuses an empty board name.
+	const showing = boardForPane(pane);
 	// Aggregates, not spellings: a pane showing a proposal carries the variant in
 	// its board key, and comparing the whole string would say that pane is on a
 	// different board and leave an agent with no context at all.
-	const wanted = aggregateKey(contextBoard);
-	// Somebody's pane of that id before a recording page's, which presents the same id.
-	const pane = panesAddressableFirst([...panes.values()]).find((candidate) => {
-		// A pane may be holding no board at all: a fresh vault has none, and a pane
-		// that could not register until one existed could never be shown the first
-		// board somebody makes.
-		//
-		// The guard is not tidiness. There is no aggregate of nothing — the address
-		// grammar refuses an empty board name — so without it the predicate THROWS
-		// rather than failing to match, which aborts the whole scan. One pane
-		// between boards would take context away from every other pane on the
-		// server for as long as it sat there.
-		const showing = boardForPane(candidate);
-		return candidate.paneId === exactPaneId && showing !== null && aggregateKey(showing) === wanted;
-	});
-	return pane ?? null;
+	return showing !== null && aggregateKey(showing) === aggregateKey(contextBoard) ? pane : null;
 }
 
 type ThreadLinkOf = ReturnType<CodexWorkbenchComponents["threadLink"]["read"]>["link"];
@@ -444,17 +447,18 @@ function claimOf(contextBoard: string): Required<Pick<SemanticContextInput, "cla
  * @param active The active components, or null while none are installed.
  * @param contextBoard The board key.
  * @param cursor The change-feed cursor the context is at, or null for a fresh read.
- * @param exactPaneId The pane.
+ * @param forPane The pane the context is for, and the exact pane on screen that speaks for it.
  * @returns The input the semantic publisher builds a brief from.
  */
 function semanticInputFor(
 	active: CodexWorkbenchComponents | null,
 	contextBoard: string,
 	cursor: SemanticContextInput["cursor"],
-	exactPaneId: string,
+	forPane: ContextPane,
 ): SemanticContextInput {
+	const exactPaneId = forPane.paneId;
 	// The pane that can speak for what is on screen, or nothing when none can.
-	const pane = contextPane(contextBoard, exactPaneId);
+	const pane = contextPane(contextBoard, forPane.clientId);
 	// One parse, here. A pane showing a proposal reports `payments@<variant>`,
 	// and that address is what the context is filed under — but a board is one
 	// document holding every variant, so what is READ is the aggregate, and
@@ -487,4 +491,4 @@ function semanticInputFor(
 	};
 }
 
-export { canonicalContextFromBrief, semanticInputFor };
+export { canonicalContextFromBrief, semanticInputFor, type ContextPane };

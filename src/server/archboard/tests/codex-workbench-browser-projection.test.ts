@@ -40,7 +40,11 @@ test("the real gateway delivers the pending ChatGPT authorization URL to the bro
 		threadLink: { read: () => harness.context.binding },
 	});
 	try {
-		const connection = gateway.connect(harness.context.browserId, harness.context.paneId);
+		const connection = gateway.connect(
+			harness.context.browserId,
+			harness.context.paneId,
+			harness.context.tabSessionId,
+		);
 		const lease = connection.claimLease();
 		const result = await connection.command({
 			kind: "browser_command",

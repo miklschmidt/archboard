@@ -25,6 +25,7 @@ import {
 	fitBrowserSnapshotBounded,
 	projectCodexBrowserState,
 } from "@/server/codex-workbench/lib/projection";
+import type { TabSessionId } from "@/server/codex-workbench/lib/tab-session";
 import {
 	connectionKey,
 	emit,
@@ -37,6 +38,7 @@ import {
 interface ConnectionState {
 	readonly browserId: BrowserConnectionId;
 	readonly paneId: string;
+	readonly tabSessionId: TabSessionId;
 	readonly instance: BrowserConnectionInstance;
 	readonly listeners: Set<(message: BrowserGatewayMessage) => void>;
 	readonly publishedTerminals: Set<JsonRpcRequestId>;
@@ -170,6 +172,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 				projection = options.projection.read({
 					browserId: state.browserId,
 					paneId: state.paneId,
+					tabSessionId: state.tabSessionId,
 					connection: state.instance,
 					binding,
 					lease,
@@ -444,6 +447,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 		return {
 			browserId: state.browserId,
 			paneId: state.paneId,
+			tabSessionId: state.tabSessionId,
 			connection: state.instance,
 			binding: connections.readBinding(state.paneId),
 			lease: owners.leaseForSnapshot(state),
@@ -468,6 +472,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 				browserId: state.browserId,
 				connection: state.instance,
 				paneId: state.paneId,
+				tabSessionId: state.tabSessionId,
 				childId: link.childId,
 				epoch: link.epoch,
 				link,

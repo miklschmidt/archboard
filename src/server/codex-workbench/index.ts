@@ -16,6 +16,7 @@ export {
 } from "@/server/codex-workbench/lib/lease";
 export { CodexWorkbenchGatewayError } from "@/server/codex-workbench/lib/contract";
 export { redactSecrets } from "@/server/codex-workbench/lib/secret-keys";
+export { parseTabSessionId, type TabSessionId } from "@/server/codex-workbench/lib/tab-session";
 
 export type {
 	BrowserAccount,

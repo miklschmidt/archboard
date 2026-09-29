@@ -48,7 +48,7 @@ function oversizedTimeline(
 describe("Codex workbench sequenced browser delivery", () => {
 	test("an unobservable owner change publishes nothing and holds the sequence", () => {
 		const value = createGatewayHarness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const messages: BrowserGatewayMessage[] = [];
 		connection.subscribe((message) => void messages.push(message));
 		const first = connection.snapshot();
@@ -65,7 +65,7 @@ describe("Codex workbench sequenced browser delivery", () => {
 
 	test("each observable change publishes one delta of only its changed fields", () => {
 		const value = createGatewayHarness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const messages: BrowserGatewayMessage[] = [];
 		connection.subscribe((message) => void messages.push(message));
 		connection.snapshot();
@@ -97,7 +97,7 @@ describe("Codex workbench sequenced browser delivery", () => {
 		const value = createGatewayHarness(authorities, undefined, undefined, {
 			project: (owner) => ({ ...owner, timeline }),
 		});
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const messages: BrowserGatewayMessage[] = [];
 		connection.subscribe((message) => void messages.push(message));
 		expect(connection.snapshot().sequence).toBe(0);

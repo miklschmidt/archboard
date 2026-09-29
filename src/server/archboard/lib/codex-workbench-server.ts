@@ -30,20 +30,20 @@ export interface CodexWorkbenchServer {
 	readonly onCodexProcessGroupOwned: (identity: CodexProcessGroupIdentity) => void;
 	readonly semanticPublisher: SemanticContextPublisherOptions;
 	readonly paneIds: () => readonly string[];
-	/**
-	 * The open pane work nobody's command started presents through: the named
-	 * pane while it is open, else the focused one, else the first in reading
-	 * order. Throws only when no pane is open.
-	 */
-	readonly presentingPaneId: (preferredPaneId: string | null) => string;
 	readonly contextForEvent: (
 		event: SettledSemanticChangeEvent,
 		paneId: string,
 		operation?: PendingOperation,
 	) => ArchboardContext;
+	/**
+	 * The context an operation runs under. A browser command names the exact pane that sent it by
+	 * `clientId`; work nobody's command started names null, and presents through the open pane
+	 * `paneId` names while it is open, else the focused one, else the first in reading order.
+	 */
 	readonly contextForOperation: (
 		authority: {
 			readonly paneId: string;
+			readonly clientId: string | null;
 			readonly childId: LogicalToolCallCorrelation["child"];
 			readonly epoch: LogicalToolCallCorrelation["epoch"];
 			readonly threadId: LogicalToolCallCorrelation["threadId"];

@@ -14,7 +14,10 @@ import type {
 	BrowserOwnerProjection,
 	BrowserWorkbenchActions,
 } from "../../../src/server/codex-workbench/index.js";
-import { createCodexWorkbenchGateway } from "../../../src/server/codex-workbench/index.js";
+import {
+	createCodexWorkbenchGateway,
+	parseTabSessionId,
+} from "../../../src/server/codex-workbench/index.js";
 import { createServerRealtimeActions } from "../../../src/server/archboard/codex-workbench-adapters.js";
 import { createServerCodexBrowserSocketOwner } from "../../../src/server/archboard/codex-workbench-browser.js";
 
@@ -254,6 +257,7 @@ test("the live server socket crosses the real gateway and approval broker exactl
 		const activeOwner = createServerCodexBrowserSocketOwner({
 			gateway: activeGateway,
 			paneForBrowser: () => "pane-public",
+			tabSessionForBrowser: () => parseTabSessionId("tab-public"),
 		});
 		owner = activeOwner;
 		const activeServer = createServer();

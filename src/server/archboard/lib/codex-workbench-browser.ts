@@ -7,6 +7,7 @@ import type {
 	BrowserSnapshot,
 	BrowserWorkbenchConnection,
 	CodexWorkbenchGateway,
+	TabSessionId,
 } from "@/server/codex-workbench";
 import type { BrowserGatewayAction } from "@/shared/codex-browser-gateway";
 
@@ -92,6 +93,8 @@ interface ServerCodexBrowserSocketOwnerOptions {
 	readonly gateway: CodexWorkbenchGateway;
 	/** Resolve the pane from server-owned socket registration, never request bytes. */
 	readonly paneForBrowser: (browserId: string) => string | null;
+	/** The tab session the browser's socket named when it connected, never request bytes. */
+	readonly tabSessionForBrowser: (browserId: string) => TabSessionId | null;
 }
 
 interface ServerCodexBrowserSocketOwner {
@@ -191,6 +194,19 @@ function createServerCodexBrowserSocketOwner(
 	let disposed = false;
 
 	/**
+	 * The tab a browser's socket named when it connected.
+	 * @param browserId The browser.
+	 * @returns Its tab session.
+	 */
+	const tabSessionOf = (browserId: string): TabSessionId => {
+		const tabSessionId = options.tabSessionForBrowser(browserId);
+		if (tabSessionId === null) {
+			throw new Error("The browser has not named its tab session.");
+		}
+		return tabSessionId;
+	};
+
+	/**
 	 * The gateway connection one socket is served by, replaced when the browser
 	 * has moved to another pane.
 	 * @param instance The socket.
@@ -214,14 +230,19 @@ function createServerCodexBrowserSocketOwner(
 		}
 		subscriptions.get(instance)?.();
 		subscriptions.delete(instance);
-		const connection = options.gateway.connect(browserId, paneId, instance);
+		const connection = options.gateway.connect(
+			browserId,
+			paneId,
+			tabSessionOf(browserId),
+			instance,
+		);
 		connections.set(instance, connection);
 		return connection;
 	};
 
 	/**
 	 * Take ownership of one accepted socket, deferring a browser that has not
-	 * registered its pane yet.
+	 * registered its pane yet or named no tab session.
 	 * @param instance The socket.
 	 * @param browserId The browser.
 	 */
@@ -229,7 +250,10 @@ function createServerCodexBrowserSocketOwner(
 		if (disposed) {
 			throw new Error("The Codex browser socket owner is stopped.");
 		}
-		if (options.paneForBrowser(browserId) === null) {
+		if (
+			options.paneForBrowser(browserId) === null ||
+			options.tabSessionForBrowser(browserId) === null
+		) {
 			return;
 		}
 		connectionFor(instance, browserId);

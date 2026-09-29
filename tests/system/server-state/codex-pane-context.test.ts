@@ -230,3 +230,86 @@ test("live voice is told what the user changed by hand, and nothing of what anyb
 		await resources.disposeAsync();
 	}
 }, 45_000);
+
+// Every browser tab presents a pane "A" of its own, so a command's context is read from the exact
+// pane that sent it, by client id (TASK-373). A lookup by "A" took the first tab's pane, and a turn
+// typed in one tab carried the board another tab was showing.
+test("a command's context is its own pane's while another tab also shows pane A", async () => {
+	const resources = new AsyncDisposableStack();
+	try {
+		const fixture = prepareProductionFixture(resources, executableSource);
+		const server = await startOwnedServer({
+			serverPath,
+			vault: fixture.vault,
+			env: {
+				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
+				ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
+				ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
+				XDG_STATE_HOME: join(fixture.root, "state"),
+			},
+		});
+		resources.defer(() => server.dispose());
+		const request = createRequester(server);
+		for (const [board, node] of [
+			["scratch", "Gateway"],
+			["payments", "Ledger"],
+		] as const) {
+			const created = await request("/api/semantic-boards/create", {
+				method: "POST",
+				doing: `starting ${board}`,
+				body: { board, create: { level: "system", nodes: [{ name: node, kind: "service" }] } },
+			});
+			expect(created.status).toBe(200);
+		}
+		// The other tab's pane A registers first and shows another board.
+		const other = await openApplicationSocket(server.base, "other-tab-a", {
+			tabSession: "other-tab",
+		});
+		resources.defer(() => other.close());
+		const registerOther = await request("/api/panes", {
+			method: "POST",
+			doing: false,
+			body: { ...pane("other-tab-a", "A", true, true), board: "payments" },
+		});
+		expect(registerOther.status).toBe(200);
+		const own = await openApplicationSocket(server.base, "own-tab-a", { tabSession: "own-tab" });
+		resources.defer(() => own.close());
+		const registerOwn = await request("/api/panes", {
+			method: "POST",
+			doing: false,
+			body: pane("own-tab-a", "A", true, true),
+		});
+		expect(registerOwn.status).toBe(200);
+		expect(await own.request("connect")).toMatchObject({ ok: true });
+		const command = async (name: string, extra: Record<string, unknown> = {}) =>
+			own.request("command", {
+				command: {
+					kind: "browser_command",
+					command: name,
+					...leaseTarget(await own.request("claimLease")),
+					...extra,
+				},
+			});
+		expect(await command("threadLinkCreate")).toMatchObject({
+			ok: true,
+			value: { outcome: "delivered" },
+		});
+		const link = snapshots(await own.request("snapshot"))["threadLink"] as Record<string, unknown>;
+		expect(
+			await command("start", { threadId: link["threadId"], prompt: "What does this board say?" }),
+		).toMatchObject({ ok: true, value: { outcome: "delivered" } });
+		const turn = records(fixture.logPath).find(
+			(entry) => entry.kind === "frame" && entry.method === "turn/start",
+		);
+		const additional = turn?.params?.["additionalContext"] as
+			| { readonly archboard?: { readonly value?: unknown } }
+			| undefined;
+		const context = JSON.parse(String(additional?.archboard?.value)) as {
+			readonly paneId: string;
+			readonly board: { readonly name: string };
+		};
+		expect(context).toMatchObject({ paneId: "A", board: { name: "scratch" } });
+	} finally {
+		await resources.disposeAsync();
+	}
+}, 45_000);
