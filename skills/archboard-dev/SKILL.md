@@ -153,7 +153,7 @@ only at this point: nothing states a version that nobody re-read.
    `src/runtime/codex-protocol/lib/methods.ts`. Diff realtime
    (`core/src/realtime_conversation*`, `realtime_history.rs`,
    `session/world_state.rs`, `codex-api/src/endpoint/realtime_websocket`). Diff the model
-   list (`models-manager`): `gpt-6-luna` must still be listed with `high` effort.
+   list (`models-manager`): `gpt-6-sol` must still be listed with `low` effort.
    Done: every change is named as adopted, ignored or a behaviour change.
 3. Bump the pin in three places:
    `package.json`, `expectedCodexVersion` in

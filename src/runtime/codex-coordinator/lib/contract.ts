@@ -4,6 +4,7 @@ import type {
 	EpochSnapshot,
 	EpochTransaction,
 } from "@/runtime/codex-epoch";
+import type { COORDINATOR_IDENTITY } from "@/runtime/codex-coordinator-tool-contract";
 import type { CodexSession, SessionParams, SessionResponse } from "@/runtime/codex-session";
 import type {
 	CodexThreadLinkPort,
@@ -54,8 +55,8 @@ interface CoordinatorIdentityPort {
 }
 
 interface CoordinatorConfiguredSettings {
-	readonly model: "gpt-6-luna";
-	readonly effort: "high";
+	readonly model: typeof COORDINATOR_IDENTITY.model;
+	readonly effort: typeof COORDINATOR_IDENTITY.effort;
 	readonly serviceTier: "priority" | null;
 }
 

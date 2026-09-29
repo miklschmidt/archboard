@@ -5,7 +5,7 @@ import {
 	dynamicItem,
 	explainStep,
 	startRealtime,
-	modelFixture,
+	modelFixtures,
 	promptItem,
 	unixSeconds,
 	unsetThreadFields,
@@ -165,7 +165,9 @@ const threadStartResponse = (params: Record<string, unknown>, thread: FixtureThr
 	approvalsReviewer: "user",
 	sandbox: { type: "dangerFullAccess" },
 	activePermissionProfile: null,
-	reasoningEffort: params["model"] === "gpt-6-luna" ? "high" : null,
+	// A thread starts at its model's default effort; a settings update moves it.
+	reasoningEffort:
+		modelFixtures.find(({ model }) => model === params["model"])?.defaultReasoningEffort ?? null,
 	multiAgentMode: "explicitRequestOnly",
 	disabledPluginIds: [],
 });
@@ -288,7 +290,7 @@ const handle = (frame: WireFrame): void => {
 			respond(frame as never, { status: "canceled" });
 			return;
 		case "model/list":
-			respond(frame as never, { data: [modelFixture], nextCursor: null });
+			respond(frame as never, { data: modelFixtures, nextCursor: null });
 			return;
 		case "thread/start": {
 			const thread = createThread(params);

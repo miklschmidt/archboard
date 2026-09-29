@@ -2,6 +2,7 @@ import type { ThreadId } from "@/shared/codex-workbench-identity";
 import {
 	ARCHBOARD_VOICE_NAMESPACE,
 	ARCHBOARD_WORKHORSE_NAMESPACE,
+	COORDINATOR_IDENTITY,
 	COORDINATOR_THREAD_CONFIG,
 } from "@/runtime/codex-coordinator-tool-contract";
 import { COORDINATOR_DEVELOPER_INSTRUCTIONS } from "@/runtime/codex-instructions";
@@ -14,8 +15,8 @@ import {
 	type CoordinatorThreadStartParams,
 } from "@/runtime/codex-coordinator/lib/contract";
 
-const COORDINATOR_MODEL = "gpt-6-luna" as const;
-const COORDINATOR_EFFORT = "high" as const;
+const COORDINATOR_MODEL = COORDINATOR_IDENTITY.model;
+const COORDINATOR_EFFORT = COORDINATOR_IDENTITY.effort;
 const COORDINATOR_MODEL_PAGE_LIMIT = 100 as const;
 
 interface CoordinatorModelSelection {
