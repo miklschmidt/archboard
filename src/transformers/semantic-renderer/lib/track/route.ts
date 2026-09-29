@@ -164,23 +164,60 @@ function netsOf(line: SceneLine, chain: Chain): Net[] {
 const STRAIGHT = 0.5;
 
 /**
+ * Whether a net's ends stand apart by a sliver: straight to within half a
+ * unit, but not exactly.
+ * @param net The net.
+ * @returns True when they do.
+ */
+function sliver(net: Net): boolean {
+	return Math.abs(net.topX - net.bottomX) <= STRAIGHT && net.topX !== net.bottomX;
+}
+
+/**
  * Make every drop that is straight to within half a unit exactly straight, so
  * no line takes a sliver of a step the curve would round into a corner. The
  * end that gives way is a lane, which carries the move into the net beside
- * it, or else a card's port; a label box never moves.
+ * it, or else a card's port; a label box never moves. Below a label the lower
+ * end gives way; above one the upper end does, and a lane there carries the
+ * move up through every sliver above it: moving only the net's end would let
+ * the next step that follows the lanes put the sliver back at the label's
+ * edge, where no straight run would carry the label.
  * @param nets One relationship's nets, top to bottom.
  */
 function settleStraights(nets: readonly Net[]): void {
 	nets.forEach((net, index) => {
-		if (Math.abs(net.topX - net.bottomX) > STRAIGHT || net.topX === net.bottomX) return;
+		if (!sliver(net)) return;
+		if (net.bottom.kind === "label") {
+			settleAbove(nets, index);
+			return;
+		}
 		if (net.bottom.kind === "lane") {
 			net.bottom.x = net.topX;
-			net.bottomX = net.topX;
 			const next = nets[index + 1];
 			if (next !== undefined) next.topX = net.topX;
-		} else if (net.bottom.kind === "card") net.bottomX = net.topX;
-		else net.topX = net.bottomX;
+		}
+		net.bottomX = net.topX;
 	});
+}
+
+/**
+ * Stand a net's upper end over its lower one, and each sliver above it over
+ * the one below, for as far as lanes carry the move up.
+ * @param nets One relationship's nets, top to bottom.
+ * @param index The net whose lower end stays.
+ */
+function settleAbove(nets: readonly Net[], index: number): void {
+	const x = nets[index]!.bottomX;
+	for (let at = index; at >= 0; at -= 1) {
+		const net = nets[at]!;
+		if (at < index && !sliver(net)) return;
+		net.topX = x;
+		if (net.top.kind !== "lane") return;
+		net.top.x = x;
+		const previous = nets[at - 1];
+		if (previous === undefined) return;
+		previous.bottomX = x;
+	}
 }
 
 /**
