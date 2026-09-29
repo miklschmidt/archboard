@@ -4,9 +4,9 @@
 	"id": "SMjRfwN3",
 	"name": "Board rasterizer",
 	"level": "module",
-	"version": 7,
+	"version": 10,
 	"createdAt": "2026-09-17T21:02:37.619Z",
-	"updatedAt": "2026-09-25T01:27:32.521Z",
+	"updatedAt": "2026-09-29T20:30:32.095Z",
 	"views": [
 		{
 			"id": "WXfBg0nd",
@@ -345,6 +345,953 @@
 						"kind": "ui",
 						"responsibility": "The server's own page on one board: shows the pane alone, paces each step by the voice, and records its tab into one file",
 						"description": "The tab capture is picture only. The voice plays through a muted audio element, so nobody hears a recording, and its stream is mixed into the file through one Web Audio destination whose track is there from the first frame. The browser writes the container itself: MP4 with H.264, or WebM with VP9.",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/walkthrough-recording/index.ts"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "RPqD1PrA",
+						"order": 1000,
+						"from": "jChkQdeE",
+						"to": "KyQxypRC",
+						"kind": "call",
+						"label": "one SVG, a scale and a region",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "7gIxznvp",
+						"order": 2000,
+						"from": "KyQxypRC",
+						"to": "7N0JLb2b",
+						"kind": "call",
+						"label": "refuse what is past the limits first",
+						"emphasis": "normal"
+					},
+					{
+						"id": "IiA7nIxT",
+						"order": 3000,
+						"from": "KyQxypRC",
+						"to": "8c0zvhQW",
+						"kind": "call",
+						"label": "capture, one job at a time",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "tJ3SgMcL",
+						"order": 4000,
+						"from": "8c0zvhQW",
+						"to": "6uHnaygd",
+						"kind": "call",
+						"label": "launch, open a page, stop",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "wI4kxS9L",
+						"order": 5000,
+						"from": "ShT7QadJ",
+						"to": "R9St060W",
+						"kind": "call",
+						"label": "spawn in its own group and temp root",
+						"emphasis": "normal"
+					},
+					{
+						"id": "aYI0EhkT",
+						"order": 6000,
+						"from": "8c0zvhQW",
+						"to": "AVCQVNqI",
+						"kind": "call",
+						"label": "one socket to the page",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "JgtXFRyO",
+						"order": 7000,
+						"from": "AVCQVNqI",
+						"to": "R9St060W",
+						"kind": "rpc",
+						"label": "CDP over a WebSocket",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "TBd33jdx",
+						"order": 8000,
+						"from": "8c0zvhQW",
+						"to": "FXGZhgKo",
+						"kind": "call",
+						"label": "prove the page before shooting",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "6dBMtPdX",
+						"order": 9000,
+						"from": "8c0zvhQW",
+						"to": "7N0JLb2b",
+						"kind": "call",
+						"label": "the clip region",
+						"emphasis": "normal"
+					},
+					{
+						"id": "68lKuaPg",
+						"order": 10000,
+						"from": "FXGZhgKo",
+						"to": "ctgF3OPk",
+						"kind": "call",
+						"label": "the size of the answered bitmap",
+						"emphasis": "normal"
+					},
+					{
+						"id": "2nhl0tv0",
+						"order": 11000,
+						"from": "jChkQdeE",
+						"to": "EqEyDg2D",
+						"kind": "data",
+						"label": "what the picture is of",
+						"emphasis": "muted"
+					},
+					{
+						"id": "De1J26nB",
+						"order": 12000,
+						"from": "6uHnaygd",
+						"to": "ShT7QadJ",
+						"kind": "call",
+						"label": "spawn, read the port, stop the group",
+						"emphasis": "normal"
+					},
+					{
+						"id": "ZP5lfDZ6",
+						"order": 13000,
+						"from": "6uHnaygd",
+						"to": "AVCQVNqI",
+						"kind": "call",
+						"label": "connect the browser and each page",
+						"emphasis": "normal"
+					},
+					{
+						"id": "FDMYhJSq",
+						"order": 14000,
+						"from": "KyQxypRC",
+						"to": "ShT7QadJ",
+						"kind": "call",
+						"label": "which Chromium",
+						"emphasis": "muted"
+					},
+					{
+						"id": "DIvMjVOy",
+						"order": 15000,
+						"from": "jChkQdeE",
+						"to": "2UcHnREN",
+						"kind": "http",
+						"label": "the SVG, faces embedded",
+						"emphasis": "normal"
+					},
+					{
+						"id": "P1XYQl8l",
+						"order": 16000,
+						"from": "QSI6gCrL",
+						"to": "2UcHnREN",
+						"kind": "http",
+						"label": "read the board; discard it when asked",
+						"emphasis": "normal"
+					},
+					{
+						"id": "H7LOWDrR",
+						"order": 17000,
+						"from": "QSI6gCrL",
+						"to": "ZAj4RMzN",
+						"kind": "call",
+						"label": "this walkthrough to this file",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "a0oemoX5",
+						"order": 18000,
+						"from": "ZAj4RMzN",
+						"to": "ShT7QadJ",
+						"kind": "call",
+						"label": "which Chromium",
+						"emphasis": "muted"
+					},
+					{
+						"id": "BN01aJai",
+						"order": 19000,
+						"from": "ZAj4RMzN",
+						"to": "6uHnaygd",
+						"kind": "call",
+						"label": "launch, a 1920x1080 window, stop",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "2fcZLCiQ",
+						"order": 20000,
+						"from": "ZAj4RMzN",
+						"to": "AVCQVNqI",
+						"kind": "call",
+						"label": "evaluate in the page, stream its Blob",
+						"emphasis": "normal"
+					},
+					{
+						"id": "m9ReACWz",
+						"order": 21000,
+						"from": "ZAj4RMzN",
+						"to": "hlLOugjc",
+						"kind": "call",
+						"label": "drive the open page",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "IOU51tal",
+						"order": 22000,
+						"from": "hlLOugjc",
+						"to": "T1TYskKQ",
+						"kind": "rpc",
+						"label": "state, start, file",
+						"description": "Through the one global the page publishes, evaluated over the recorder's DevTools connection.",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "QXiKBTpj",
+						"order": 23000,
+						"from": "ZAj4RMzN",
+						"to": "gN7rfqFF",
+						"kind": "call",
+						"label": "make it play everywhere",
+						"emphasis": "normal"
+					},
+					{
+						"id": "evDPJiNi",
+						"order": 24000,
+						"from": "gN7rfqFF",
+						"to": "PhFc1AJ9",
+						"kind": "call",
+						"label": "sound to AAC, picture copied",
+						"emphasis": "normal"
+					},
+					{
+						"id": "yWqRrF8i",
+						"order": 25000,
+						"from": "R9St060W",
+						"to": "2UcHnREN",
+						"kind": "http",
+						"label": "load the page on the board",
+						"emphasis": "normal"
+					},
+					{
+						"id": "4SigiIMB",
+						"order": 26000,
+						"from": "T1TYskKQ",
+						"to": "2UcHnREN",
+						"kind": "event",
+						"label": "voice as a recording; each step shown",
+						"description": "The page asks the server's agent for voice narrating this walkthrough as a recording, and reports each step it shows, which the server tells the voice model as it does a step chosen by hand.",
+						"emphasis": "normal"
+					}
+				],
+				"flows": [
+					{
+						"id": "ZGaUX7x0",
+						"name": "One rasterize",
+						"participants": [
+							"jChkQdeE",
+							"KyQxypRC",
+							"8c0zvhQW",
+							"R9St060W"
+						],
+						"steps": [
+							{
+								"id": "DfVy9P12",
+								"from": "jChkQdeE",
+								"to": "KyQxypRC",
+								"label": "This SVG, this scale, this region",
+								"kind": "sync"
+							},
+							{
+								"id": "38uP8Myk",
+								"from": "KyQxypRC",
+								"to": "KyQxypRC",
+								"label": "Refuse a size past the limits",
+								"kind": "self",
+								"note": "nothing is spawned for a job that cannot be answered"
+							},
+							{
+								"id": "nIMGMqnl",
+								"from": "KyQxypRC",
+								"to": "8c0zvhQW",
+								"label": "Capture it",
+								"kind": "sync"
+							},
+							{
+								"id": "Vh19z88j",
+								"from": "8c0zvhQW",
+								"to": "R9St060W",
+								"label": "Spawn in a new process group and temp root",
+								"kind": "sync",
+								"note": "only for the first job; later jobs reuse the running browser"
+							},
+							{
+								"id": "GN7NbENt",
+								"from": "8c0zvhQW",
+								"to": "R9St060W",
+								"label": "Open the page at the file written beside it",
+								"kind": "sync"
+							},
+							{
+								"id": "Ijvy2tjF",
+								"from": "8c0zvhQW",
+								"to": "R9St060W",
+								"label": "Ask what the page is ready with",
+								"kind": "sync"
+							},
+							{
+								"id": "VK16rtXy",
+								"from": "R9St060W",
+								"to": "8c0zvhQW",
+								"label": "Faces loaded, animation paused, SVG size",
+								"kind": "return"
+							},
+							{
+								"id": "0hiQvSA4",
+								"from": "8c0zvhQW",
+								"to": "R9St060W",
+								"label": "Set the device scale and shoot the clip",
+								"kind": "sync"
+							},
+							{
+								"id": "4asCBipI",
+								"from": "R9St060W",
+								"to": "8c0zvhQW",
+								"label": "One PNG",
+								"kind": "return"
+							},
+							{
+								"id": "B9U0ZmCh",
+								"from": "8c0zvhQW",
+								"to": "8c0zvhQW",
+								"label": "Refuse a bitmap that is not the size asked for",
+								"kind": "self",
+								"note": "a wrong size is never cropped to fit"
+							},
+							{
+								"id": "3LHcRvKF",
+								"from": "8c0zvhQW",
+								"to": "KyQxypRC",
+								"label": "The bitmap and its size",
+								"kind": "return"
+							},
+							{
+								"id": "Q8fC0YBj",
+								"from": "KyQxypRC",
+								"to": "jChkQdeE",
+								"label": "The bitmap and its size",
+								"kind": "return"
+							},
+							{
+								"id": "5ICULe6f",
+								"from": "jChkQdeE",
+								"to": "KyQxypRC",
+								"label": "Stop",
+								"kind": "sync"
+							},
+							{
+								"id": "3kHGshbF",
+								"from": "KyQxypRC",
+								"to": "R9St060W",
+								"label": "Close the socket, reap the group, remove the temp root",
+								"kind": "sync"
+							},
+							{
+								"id": "cCredcav",
+								"from": "KyQxypRC",
+								"to": "jChkQdeE",
+								"label": "What the teardown proved",
+								"kind": "return",
+								"note": "an unclean teardown is reported beside the receipt"
+							}
+						]
+					},
+					{
+						"id": "TH7uB42x",
+						"name": "One recording",
+						"participants": [
+							"QSI6gCrL",
+							"ZAj4RMzN",
+							"hlLOugjc",
+							"R9St060W",
+							"T1TYskKQ",
+							"2UcHnREN"
+						],
+						"steps": [
+							{
+								"id": "bGCYsKuk",
+								"from": "QSI6gCrL",
+								"to": "2UcHnREN",
+								"label": "Read the board and its walkthroughs",
+								"kind": "sync"
+							},
+							{
+								"id": "77i1HOp4",
+								"from": "2UcHnREN",
+								"to": "QSI6gCrL",
+								"label": "The board",
+								"kind": "return"
+							},
+							{
+								"id": "9ZssQyB2",
+								"from": "QSI6gCrL",
+								"to": "ZAj4RMzN",
+								"label": "Record this walkthrough to this file",
+								"kind": "sync"
+							},
+							{
+								"id": "aaNO85dt",
+								"from": "ZAj4RMzN",
+								"to": "R9St060W",
+								"label": "Launch: tab capture accepted, autoplay, a silent microphone",
+								"kind": "sync"
+							},
+							{
+								"id": "lc9sChrS",
+								"from": "ZAj4RMzN",
+								"to": "R9St060W",
+								"label": "Open a 1920x1080 window at the board's recording address",
+								"kind": "sync"
+							},
+							{
+								"id": "olXRfP0V",
+								"from": "R9St060W",
+								"to": "2UcHnREN",
+								"label": "Load the page, the board in its one pane",
+								"kind": "sync"
+							},
+							{
+								"id": "7dKzUY9a",
+								"from": "ZAj4RMzN",
+								"to": "hlLOugjc",
+								"label": "Drive the open page",
+								"kind": "sync"
+							},
+							{
+								"id": "vLEcPhIy",
+								"from": "hlLOugjc",
+								"to": "T1TYskKQ",
+								"label": "Read its state until it is ready",
+								"kind": "sync",
+								"note": "polled; refused if it is not ready in time: the board not drawn, Codex not signed in, or a frontend built without recording"
+							},
+							{
+								"id": "CrOTae1W",
+								"from": "hlLOugjc",
+								"to": "T1TYskKQ",
+								"label": "Start, from a user gesture",
+								"kind": "sync"
+							},
+							{
+								"id": "lFGKuhiL",
+								"from": "T1TYskKQ",
+								"to": "T1TYskKQ",
+								"label": "Capture its own tab, picture only",
+								"kind": "self"
+							},
+							{
+								"id": "i1PyLHYD",
+								"from": "T1TYskKQ",
+								"to": "2UcHnREN",
+								"label": "Voice for this walkthrough, as a recording",
+								"kind": "async"
+							},
+							{
+								"id": "EJuifKi7",
+								"from": "T1TYskKQ",
+								"to": "T1TYskKQ",
+								"label": "Mix the voice into the file through Web Audio",
+								"kind": "self",
+								"note": "the voice's audio element is muted, so nobody hears a recording"
+							},
+							{
+								"id": "hA29uHKp",
+								"from": "T1TYskKQ",
+								"to": "T1TYskKQ",
+								"label": "Show each step once the voice has finished the one before",
+								"kind": "self",
+								"note": "one pass per beat of the walkthrough; each step shown is reported to the server, which tells the voice"
+							},
+							{
+								"id": "vIgo3eWV",
+								"from": "hlLOugjc",
+								"to": "T1TYskKQ",
+								"label": "Read its state until the file is finished",
+								"kind": "sync",
+								"note": "each new step is said as progress; a page that says nothing new for too long fails the recording"
+							},
+							{
+								"id": "8oXSsqrV",
+								"from": "hlLOugjc",
+								"to": "T1TYskKQ",
+								"label": "Hand over the file",
+								"kind": "sync"
+							},
+							{
+								"id": "D8Y5aeUU",
+								"from": "T1TYskKQ",
+								"to": "hlLOugjc",
+								"label": "The file, streamed out as a Blob",
+								"kind": "return"
+							},
+							{
+								"id": "fNVhnHyp",
+								"from": "hlLOugjc",
+								"to": "ZAj4RMzN",
+								"label": "The finished state and its size",
+								"kind": "return"
+							},
+							{
+								"id": "OCeWrlJj",
+								"from": "ZAj4RMzN",
+								"to": "R9St060W",
+								"label": "Stop: close, reap the group, remove the temp root",
+								"kind": "sync"
+							},
+							{
+								"id": "4SS4R8TA",
+								"from": "ZAj4RMzN",
+								"to": "ZAj4RMzN",
+								"label": "Opus sound to AAC when ffmpeg is at hand",
+								"kind": "self",
+								"note": "only an MP4 whose sound is Opus; the H.264 picture is copied as it is"
+							},
+							{
+								"id": "dX9Y4nNO",
+								"from": "ZAj4RMzN",
+								"to": "ZAj4RMzN",
+								"label": "Move the file into place",
+								"kind": "self",
+								"note": "only once the browser has stopped, in the same turn as the last look at the interrupt"
+							},
+							{
+								"id": "2POlj9nK",
+								"from": "ZAj4RMzN",
+								"to": "QSI6gCrL",
+								"label": "The recording",
+								"kind": "return"
+							},
+							{
+								"id": "JfezRBz8",
+								"from": "QSI6gCrL",
+								"to": "2UcHnREN",
+								"label": "Discard the board",
+								"kind": "sync",
+								"note": "only with --discard, and only at the version that was recorded"
+							}
+						]
+					}
+				],
+				"walkthroughs": [
+					{
+						"id": "ZIq30sQv",
+						"name": "Why a picture is refused rather than approximated",
+						"beats": [
+							{
+								"id": "wwX4OD4Q",
+								"heading": "A browser only while there is work",
+								"body": "No Chromium is started until a job arrives, and it is stopped with the rasterizer. The process lives in its own group with its own temp root so the whole of it can be reaped, whatever it spawned.",
+								"subjects": [
+									"KyQxypRC",
+									"8c0zvhQW",
+									"6uHnaygd"
+								]
+							},
+							{
+								"id": "BnjBLsWM",
+								"heading": "The page says it is ready, in so many words",
+								"body": "Before anything is photographed the page is asked whether the diagram faces are loaded, the animation is paused at its first frame, and the SVG is the size the job named. A picture taken before that would differ run to run.",
+								"subjects": [
+									"FXGZhgKo"
+								]
+							},
+							{
+								"id": "cA04qJSt",
+								"heading": "The wrong size is a refusal, not a crop",
+								"body": "The answered bitmap is measured from its own header against the size the bounds asked for. Cropping or scaling it here would hand back a picture that quietly is not what was asked for.",
+								"subjects": [
+									"FXGZhgKo",
+									"ctgF3OPk",
+									"7N0JLb2b"
+								]
+							}
+						]
+					},
+					{
+						"id": "m5t3GI9p",
+						"name": "How a walkthrough becomes a video",
+						"beats": [
+							{
+								"id": "RpA8ERKl",
+								"heading": "The page paces the talk",
+								"body": "Where a walkthrough stands is the browser's, and only the page hears when the voice has finished a step, so the page moves itself on. The recorder outside only starts it and follows what it says.",
+								"subjects": [
+									"T1TYskKQ",
+									"hlLOugjc",
+									"hA29uHKp",
+									"vIgo3eWV"
+								],
+								"view": "tj0eNDOG"
+							},
+							{
+								"id": "ULRbPIvC",
+								"heading": "Nobody hears a recording",
+								"body": "The tab is captured as a picture only, and the voice plays through a muted element. Its stream is mixed into the file through Web Audio instead, on a track that is there from the first frame, because the file cannot take a track that arrives after it started.",
+								"subjects": [
+									"lFGKuhiL",
+									"i1PyLHYD",
+									"EJuifKi7",
+									"T1TYskKQ"
+								],
+								"view": "tj0eNDOG"
+							},
+							{
+								"id": "IMY5jsga",
+								"heading": "A whole file, or nothing",
+								"body": "The file moves into place only once the browser has stopped and the sound is converted. An interrupt anywhere before that stops the browser at once and leaves nothing where the file goes.",
+								"subjects": [
+									"OCeWrlJj",
+									"4SS4R8TA",
+									"dX9Y4nNO",
+									"ZAj4RMzN"
+								],
+								"view": "tj0eNDOG"
+							},
+							{
+								"id": "20M5pQwd",
+								"heading": "One browser module, two uses",
+								"body": "Pictures and recordings start Chromium through the same module, each in its own process group and temporary root, and each stop proves the group and the root are gone.",
+								"subjects": [
+									"IzgAi2R1",
+									"8c0zvhQW",
+									"ZAj4RMzN",
+									"6uHnaygd"
+								],
+								"view": "vAJmBRF7"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "Bnct21gp",
+			"name": "TASK-378",
+			"lifecycle": "draft",
+			"parent": "YlFypVun",
+			"summary": "A narrated recording plays back without dropped frames",
+			"content": {
+				"nodes": [
+					{
+						"id": "jChkQdeE",
+						"order": 1000,
+						"name": "Rasterize command",
+						"kind": "service",
+						"responsibility": "Asks the Archboard server for the SVG, then photographs it here and writes the receipt",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/semantic-rasterize.ts"
+						},
+						"drillDown": {
+							"board": "Command interface",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "KyQxypRC",
+						"order": 2000,
+						"name": "Rasterizer",
+						"kind": "module",
+						"responsibility": "Admits one job at a time, starts a browser only when there is work, and retires one that failed a capture",
+						"description": "Nothing is started until a job arrives, and the session is stopped with the rasterizer, so no browser outlives the command that needed it. A Chromium that failed one capture is closed rather than trusted with the next.",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-rasterizer/index.ts"
+						}
+					},
+					{
+						"id": "7N0JLb2b",
+						"order": 3000,
+						"name": "Bounds and limits",
+						"kind": "function",
+						"responsibility": "The region, the bitmap size, and the refusal when either is past what may be drawn",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-rasterizer/lib/bounds.ts"
+						}
+					},
+					{
+						"id": "8c0zvhQW",
+						"order": 4000,
+						"name": "Raster session",
+						"kind": "function",
+						"responsibility": "Draws one SVG at a time in the page it opened: writes the file, loads it, proves the page ready, sets the scale and shoots",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-rasterizer/lib/session.ts"
+						}
+					},
+					{
+						"id": "6uHnaygd",
+						"order": 5000,
+						"name": "Chromium launch",
+						"kind": "function",
+						"responsibility": "Starts one Chromium, connects to it, opens pages and exact-size windows, and stops it with proof the group and root are gone",
+						"parent": "IzgAi2R1",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/headless-chromium/lib/launch.ts"
+						}
+					},
+					{
+						"id": "AVCQVNqI",
+						"order": 6000,
+						"name": "DevTools connection",
+						"kind": "function",
+						"responsibility": "One socket to a target: its calls and events, the page's last complaints, and a Blob streamed into a file",
+						"parent": "IzgAi2R1",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/headless-chromium/lib/devtools.ts"
+						}
+					},
+					{
+						"id": "FXGZhgKo",
+						"order": 7000,
+						"name": "Page readiness",
+						"kind": "function",
+						"responsibility": "What the page must say before it is photographed, and what the answer must be",
+						"description": "The faces are loaded, the animation is paused at its first frame, and the SVG is the size the job asked for. A bitmap of the wrong size is refused, never cropped.",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-rasterizer/lib/page.ts"
+						}
+					},
+					{
+						"id": "ctgF3OPk",
+						"order": 8000,
+						"name": "PNG header",
+						"kind": "function",
+						"responsibility": "The two numbers from the IHDR of the answered image",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-rasterizer/lib/png.ts"
+						}
+					},
+					{
+						"id": "EqEyDg2D",
+						"order": 9000,
+						"name": "Receipt",
+						"kind": "function",
+						"responsibility": "What was drawn, at what scale, and from which SVG",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-rasterizer/receipt.ts"
+						}
+					},
+					{
+						"id": "R9St060W",
+						"order": 10000,
+						"name": "Chromium",
+						"kind": "external",
+						"responsibility": "The browser that paints the SVG, runs the recording page and answers over DevTools",
+						"description": "Found on this machine, or named by ARCHBOARD_RENDERER_CHROMIUM. Archboard neither ships nor manages it beyond its own child process group."
+					},
+					{
+						"id": "IzgAi2R1",
+						"order": 11000,
+						"name": "Headless browser",
+						"kind": "module",
+						"responsibility": "The one place archboard starts a browser of its own: private, reachable only over loopback DevTools, and proved gone",
+						"description": "ADR 0020. The rasterizer and the walkthrough recorder both start their Chromium here, each in its own process group and temporary root; what the pages show is the caller's business.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/headless-chromium/index.ts"
+						}
+					},
+					{
+						"id": "ShT7QadJ",
+						"order": 12000,
+						"name": "Chromium executable",
+						"kind": "function",
+						"responsibility": "Which Chromium to run, spawning it in its own group and temp root, and making that whole group go away",
+						"parent": "IzgAi2R1",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/headless-chromium/lib/process.ts"
+						}
+					},
+					{
+						"id": "2UcHnREN",
+						"order": 13000,
+						"name": "Archboard server",
+						"kind": "service",
+						"responsibility": "Draws the SVG, serves the recording page and starts the voice that narrates it",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard"
+						},
+						"drillDown": {
+							"board": "Archboard server",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "QSI6gCrL",
+						"order": 14000,
+						"name": "Record command",
+						"kind": "service",
+						"responsibility": "Picks the walkthrough, has it recorded to the file named, and discards the board afterwards when asked",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/semantic-record.ts"
+						},
+						"drillDown": {
+							"board": "Command interface",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "ZAj4RMzN",
+						"order": 15000,
+						"name": "Walkthrough recorder",
+						"kind": "module",
+						"responsibility": "Starts the browser a recording needs, opens the page at 1920x1080, and moves the file into place only once that browser has stopped",
+						"description": "The browser is started with tab capture accepted without a prompt, audio allowed to play, and a fake microphone playing a second of silence, because voice will not start without a microphone and would hear Chromium's default tone as somebody speaking. An interrupt stops the browser at once, so every call waiting on it fails and nothing is written.",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/walkthrough-recorder/index.ts"
+						}
+					},
+					{
+						"id": "hlLOugjc",
+						"order": 16000,
+						"name": "Page driver",
+						"kind": "function",
+						"responsibility": "Waits until the page is ready, starts it from a user gesture, follows each step and streams the finished file out",
+						"description": "Everything the page says crosses as the shared recording state and is parsed as such, so a page from another build is refused rather than guessed at.",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/walkthrough-recorder/lib/drive.ts"
+						}
+					},
+					{
+						"id": "gN7rfqFF",
+						"order": 17000,
+						"name": "Sound conversion",
+						"kind": "function",
+						"responsibility": "Rewrites an MP4's Opus sound as AAC with ffmpeg, the picture copied, so the file plays with sound in Safari",
+						"description": "Chrome on Linux has no AAC encoder, so the page writes MP4 sound as Opus. Without an ffmpeg the file is kept as recorded and the command says what that means.",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/walkthrough-recorder/lib/playable.ts"
+						}
+					},
+					{
+						"id": "PhFc1AJ9",
+						"order": 18000,
+						"name": "ffmpeg",
+						"kind": "external",
+						"responsibility": "Converts the sound and moves the index to the front, so playback starts before the file has arrived",
+						"description": "On PATH, or named by ARCHBOARD_FFMPEG.",
+						"groups": [
+							"walkthrough"
+						]
+					},
+					{
+						"id": "T1TYskKQ",
+						"order": 19000,
+						"name": "Recording page",
+						"kind": "ui",
+						"responsibility": "The server's own page on one board: shows the pane alone, paces each step by the voice, and records its tab into one file",
+						"description": "The tab capture is picture only, at Chromium's own 30 frames a second: a rate asked for would also cap the track, which drops frames. Behind the pane a layer nobody sees repaints the whole frame every frame, because Chromium's capture otherwise takes an animation that just stopped for one still running and holds the picture for a quarter of a second. The voice plays through a muted audio element, so nobody hears a recording, and its stream is mixed into the file through one Web Audio destination whose track is there from the first frame. The browser writes the container itself: MP4 with H.264, or WebM with VP9.",
 						"groups": [
 							"walkthrough"
 						],
