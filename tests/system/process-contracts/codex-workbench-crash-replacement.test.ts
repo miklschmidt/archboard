@@ -41,8 +41,8 @@ function replacementCensusSource(resources: Readonly<Pick<AsyncDisposableStack, 
 				`import { appendFileSync, readFileSync } from "node:fs";\nimport { listProcessObservations } from ${JSON.stringify(processObservationModule)};`,
 			)
 			.replace(
-				'record({ kind: "app_server_spawn", pid: process.pid, args: process.argv.slice(2) });',
-				String.raw`record({ kind: "app_server_spawn", pid: process.pid, args: process.argv.slice(2) });
+				'record({ kind: "app_server_spawn", pid: process.pid, args: process.argv.slice(2), archboard });',
+				String.raw`record({ kind: "app_server_spawn", pid: process.pid, args: process.argv.slice(2), archboard });
 const startupControl = JSON.parse(readFileSync(controlPath, "utf8")) as { priorGroup?: unknown };
 if (Number.isSafeInteger(startupControl.priorGroup)) {
 	const priorGroup = Number(startupControl.priorGroup);

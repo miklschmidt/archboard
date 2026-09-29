@@ -210,7 +210,7 @@ describe.serial("composed Codex process lifecycle", () => {
 		}
 	}, 30_000);
 
-	test("isolates two live production homes and child processes", async () => {
+	test("isolates two live production homes and child processes, each naming its own server", async () => {
 		const resources = new AsyncDisposableStack();
 		try {
 			const staging = join(
@@ -229,12 +229,20 @@ describe.serial("composed Codex process lifecycle", () => {
 			for (const server of servers) {
 				resources.defer(() => server.dispose());
 			}
-			const childPids = fixtures.map(
-				(fixture) =>
-					records(fixture.logPath).find((entry) => entry.kind === "app_server_spawn")?.pid,
+			const spawns = fixtures.map((fixture) =>
+				records(fixture.logPath).find((entry) => entry.kind === "app_server_spawn"),
 			);
+			const childPids = spawns.map((spawn) => spawn?.pid);
 			expect(childPids.every((pid) => typeof pid === "number")).toBeTrue();
 			expect(new Set(childPids).size).toBe(2);
+			// A thread's CLI reads these, so each child must name the server that started it.
+			for (const [index, spawn] of spawns.entries()) {
+				expect(spawn?.archboard).toEqual({
+					ARCHBOARD_URL: servers[index]!.base,
+					ARCHBOARD_VAULT: fixtures[index]!.vault,
+					ARCHBOARD_NO_AUTOSTART: "1",
+				});
+			}
 			const homes = fixtures.map((fixture) => join(codexWorkbenchRoot(fixture.root), "codex-home"));
 			expect(new Set(homes).size).toBe(2);
 			for (const [index, server] of servers.entries()) {

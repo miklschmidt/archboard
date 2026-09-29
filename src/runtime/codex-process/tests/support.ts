@@ -36,6 +36,7 @@ function processOptions(root: string, executablePath: string): CodexProcessTestO
 		executablePath,
 		checkoutRoot: process.cwd(),
 		storage: { rootDirectory: path.join(root, "storage") },
+		archboardServer: { url: "http://127.0.0.1:3404", vault: path.join(root, "vault") },
 		ambientEnvironment: {
 			HOME: "/poisoned/home",
 			PATH: process.env["PATH"] ?? "",

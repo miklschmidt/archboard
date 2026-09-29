@@ -25,6 +25,8 @@ function fileSystem(): CodexStorageFileSystem {
 }
 
 describe("Codex child environment", () => {
+	const archboardServer = { url: "http://127.0.0.1:3404", vault: "/tmp/web-shop" };
+
 	test("copies only the authored keys in order and overwrites both roots", () => {
 		const ambient: Record<string, string> = Object.fromEntries(
 			CODEX_RETAINED_ENVIRONMENT_KEYS.map((key) => [key, `value:${key}`]),
@@ -37,17 +39,23 @@ describe("Codex child environment", () => {
 			OPENAI_API_KEY: "poisoned-secret",
 			AWS_PROFILE: "poisoned-aws",
 			ELECTRON_RUN_AS_NODE: "poisoned-electron",
+			ARCHBOARD_URL: "http://127.0.0.1:3000",
+			ARCHBOARD_VAULT: "/poisoned/vault",
 		});
 
 		const child = buildCodexChildEnvironment({
 			ambient,
 			codexHome: "/tmp/dedicated home",
 			sqliteHome: "/tmp/dedicated sqlite",
+			archboardServer,
 		});
 		expect(Object.keys(child)).toEqual([
 			...CODEX_RETAINED_ENVIRONMENT_KEYS,
 			"CODEX_HOME",
 			"CODEX_SQLITE_HOME",
+			"ARCHBOARD_URL",
+			"ARCHBOARD_VAULT",
+			"ARCHBOARD_NO_AUTOSTART",
 		]);
 		expect(child["CODEX_HOME"]).toBe("/tmp/dedicated home");
 		expect(child["CODEX_SQLITE_HOME"]).toBe("/tmp/dedicated sqlite");
@@ -55,13 +63,22 @@ describe("Codex child environment", () => {
 		expect(child["OPENAI_API_KEY"]).toBeUndefined();
 		expect(child["CODEX_HOME"]).not.toBe("poisoned-home");
 		expect(child["PATH"]).toBe("value:PATH");
+		expect(child["ARCHBOARD_URL"]).toBe(archboardServer.url);
 
 		const optional = buildCodexChildEnvironment({
 			ambient: { HOME: "home", PATH: undefined },
 			codexHome: "/tmp/home",
 			sqliteHome: "/tmp/sqlite",
+			archboardServer,
 		});
-		expect(Object.keys(optional)).toEqual(["HOME", "CODEX_HOME", "CODEX_SQLITE_HOME"]);
+		expect(Object.keys(optional)).toEqual([
+			"HOME",
+			"CODEX_HOME",
+			"CODEX_SQLITE_HOME",
+			"ARCHBOARD_URL",
+			"ARCHBOARD_VAULT",
+			"ARCHBOARD_NO_AUTOSTART",
+		]);
 	});
 
 	test("rejects a NUL in a retained value without falling through", () => {
@@ -70,6 +87,7 @@ describe("Codex child environment", () => {
 				ambient: { HOME: "safe", PATH: "bad\0value" },
 				codexHome: "/tmp/home",
 				sqliteHome: "/tmp/sqlite",
+				archboardServer,
 			}),
 		).toThrow(/PATH.*NUL/);
 	});

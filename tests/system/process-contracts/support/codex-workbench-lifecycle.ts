@@ -19,6 +19,8 @@ export interface FixtureRecord {
 	readonly method?: string;
 	readonly pid?: number;
 	readonly scenario?: string;
+	/** The Archboard server the child's environment names, by variable. */
+	readonly archboard?: Readonly<Record<string, string | null>>;
 	readonly params?: Record<string, unknown>;
 	readonly frame?: {
 		readonly id?: unknown;

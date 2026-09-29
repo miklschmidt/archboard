@@ -49,7 +49,15 @@ describe("Codex process owner", () => {
 			expect(started.ready).toBe(true);
 			expect(started.argv).toEqual([executable, ...CODEX_APP_SERVER_ARGUMENTS]);
 			expect(observed["argv"]).toEqual([...CODEX_APP_SERVER_ARGUMENTS]);
-			expect(observed["keys"]).toEqual(["HOME", "PATH", "CODEX_HOME", "CODEX_SQLITE_HOME"]);
+			expect(observed["keys"]).toEqual([
+				"HOME",
+				"PATH",
+				"CODEX_HOME",
+				"CODEX_SQLITE_HOME",
+				"ARCHBOARD_URL",
+				"ARCHBOARD_VAULT",
+				"ARCHBOARD_NO_AUTOSTART",
+			]);
 			expect(observed["home"]).toBe(path.join(root, "storage", "codex-home"));
 			expect(observed["pwd"]).toBeUndefined();
 			expect(observed["secret"]).toBeUndefined();

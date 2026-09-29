@@ -7,7 +7,10 @@ import type {
 import type { Readable, Writable } from "node:stream";
 
 import type { BoundedCodexDiagnostics } from "@/runtime/codex-process/lib/diagnostics";
-import type { CodexAmbientEnvironment } from "@/runtime/codex-process/lib/environment";
+import type {
+	CodexAmbientEnvironment,
+	CodexArchboardServer,
+} from "@/runtime/codex-process/lib/environment";
 import type { VerifiedCodexExecutable } from "@/runtime/codex-process/lib/executable";
 import type {
 	CodexProcessGroupIdentity,
@@ -141,6 +144,8 @@ interface CodexProcessOptions {
 	readonly executablePath: string;
 	readonly checkoutRoot: string;
 	readonly storage: CodexProcessStorageInput;
+	/** The Archboard server the child's threads reach when they run `archboard`. */
+	readonly archboardServer: CodexArchboardServer;
 	/** Publish each exact group identity to an outer cleanup owner before readiness. */
 	readonly onGroupOwned?: (identity: CodexProcessGroupIdentity) => void;
 	/** Secrets supplied by a caller are redacted before process diagnostics are retained. */

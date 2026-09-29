@@ -93,6 +93,16 @@ GIT_SSL_CAINFO, NODE_EXTRA_CA_CERTS, SSH_AUTH_SOCK
 
 The host then writes canonical absolute `CODEX_HOME` and `CODEX_SQLITE_HOME`
 values over that object. Those two values are never copied from ambient input.
+
+The host also writes the server's own address over that object (TASK-379). A
+thread runs `archboard` like any agent, and that CLI finds its server in its
+environment. `ARCHBOARD_URL` is the URL the server listens at, and
+`ARCHBOARD_VAULT` is the server's vault as an absolute path. So a thread's CLI
+talks to the server that started the child, not to the default port.
+`ARCHBOARD_NO_AUTOSTART` is `1`. The child stops with its server, so a CLI that
+finds no server there must not start a second one over the same vault. These
+three values are never copied from ambient input either.
+
 Every other variable is absent, including all other `CODEX_*`, `OPENAI_*`,
 `AWS_*`, credential/token, listener/auth, daemon, Desktop, Electron, MCP, and
 app-tools variables. Spawn also supplies the canonical checkout through the
