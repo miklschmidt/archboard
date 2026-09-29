@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-22 21:26'
-updated_date: '2026-09-29 02:58'
+updated_date: '2026-09-29 03:16'
 labels:
   - voice
   - codex
@@ -62,3 +62,16 @@ Steps:
 6. Docs: ADR 0019 amendment (one coordinator per voice session), CONTEXT.md Voice coordinator entry, coordinator.ts, contract.ts and tell-coordinator.ts comments.
 7. Verify: module, system and browser lanes, the gate; two walkthrough recordings in a row on one scratch Archboard server with real Codex (AC #5), counting the coordinator rollouts (AC #4).
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented as planned.
+- Coordinator: replace() stages the start's snapshots and persistence (publish() routes to the stage while a replacement runs) and swaps both only once the fresh coordinator is ready; any other end throws transaction_failed and leaves the current one. reuse.ts consults uncertain coordinator_start records only when nothing is retained.
+- Voice start: codex-workbench-realtime-actions.ts remembers the coordinator thread the last session started on and replaces it before tracedPending; a failed replacement refuses the start ("Voice could not start a fresh coordinator: ...") and the next start tries again.
+- AC #2 owners: codex-workhorse-operations follows an accepted operation's workhorse turn to its terminal event after a replacement (sameWorkhorse at the notification, queued-submission and unknown-queue correlation sites; the call fence in validation.ts keeps the coordinator). Its callbacks settle not_delivered/stale_coordinator in codex-coordinator-callbacks, and the new coordinator hears the turn's end as workhorse news. A coordinator turn left running on the old thread finishes there; its tool calls are refused by call-provenance once the new coordinator is current.
+- Workhorse news keys a wait by coordinator and wire thread.
+- Browser: VoiceSessionBinding no longer carries the coordinator; a coordinator change is not a replacement of the session.
+- The production fake Codex treats the newest coordinator-model thread as the coordinator (it had pinned thread-1), and the live voice browser test proves narration after a talk runs on a fresh coordinator and each End stops its own session's coordinator.
+- Not done, outside the criteria: coordinator threads are still listed as thread-link candidates (one more per replaced coordinator), and retired coordinator threads stay loaded in the Codex child until it restarts; the reviewed protocol has no unload request.
+<!-- SECTION:NOTES:END -->

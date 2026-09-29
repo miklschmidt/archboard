@@ -124,6 +124,7 @@ const promptItem = (id: string, input: unknown) => ({
 
 export {
 	configFixture,
+	coordinatorModelFixture,
 	dynamicItem,
 	modelFixture,
 	modelFixtures,

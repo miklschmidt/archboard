@@ -398,8 +398,8 @@ _Avoid_: binding (that means node-to-code here), attachment, selected thread,
 active task, task link
 
 **Voice coordinator**:
-The persistent fast Codex thread linked to the server's workhorse. Realtime voice
-attaches to it. It handles conversation and bounded direct work, and it gives
+The fast Codex thread linked to the server's workhorse, a new one for each voice
+session. Realtime voice attaches to it. It handles conversation and bounded direct work, and it gives
 sustained work to the workhorse. With the voice model it is one assistant: the
 voice model speaks, and the coordinator is its subconscious, which reads the
 boards, follows the workhorse and decides what the voice model says. With no

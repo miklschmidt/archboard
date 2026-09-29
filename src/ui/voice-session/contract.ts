@@ -106,14 +106,15 @@ interface VoiceSessionControls {
 /**
  * The immutable identity one voice session is bound to, as plain strings. A
  * session keeps the binding it was started with; a snapshot that disagrees with
- * it is a replacement, not a retarget.
+ * it is a replacement, not a retarget. The coordinator is not part of it: a voice
+ * start replaces a coordinator that already carried a session (TASK-301), and the
+ * server refuses every voice command the current coordinator does not hold.
  */
 interface VoiceSessionBinding {
 	readonly paneId: string;
 	readonly childId: string;
 	readonly epoch: string;
 	readonly workhorseThreadId: string;
-	readonly coordinatorThreadId: string | null;
 }
 
 /** The render-ready view of one voice session. */

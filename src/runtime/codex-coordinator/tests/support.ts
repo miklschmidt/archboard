@@ -331,14 +331,17 @@ class FakeSession implements CoordinatorSessionPort {
 	readonly modelRequests: Array<SessionParams<"model/list"> | undefined> = [];
 	readonly startParams: Array<SessionParams<"thread/start">> = [];
 	readonly updateParams: Array<SessionParams<"thread/settings/update">> = [];
-	readonly started: CoordinatorStartResponse;
-	readonly threadSettings: CoordinatorThreadSettings;
+	started: CoordinatorStartResponse;
+	threadSettings: CoordinatorThreadSettings;
 	notify: ((event: TransportServerNotification) => void) | undefined;
+	/** Called as each thread/start arrives, before it answers. */
+	onStart: (() => void) | undefined;
+	private readonly serviceTier: "priority" | null;
 
 	constructor(
 		private readonly authority: IdentityAuthority,
 		private readonly modelValue: CoordinatorModel,
-		private readonly startError: CodexSessionMutationError | null,
+		public startError: CodexSessionMutationError | null,
 		private readonly updateError: CodexSessionMutationError | null,
 		private readonly staleNotificationAuthority: IdentityAuthority | null,
 		private readonly shouldEmitSettingsNotification: boolean,
@@ -346,11 +349,20 @@ class FakeSession implements CoordinatorSessionPort {
 		threadRawId: string,
 		settingsOverrides: Partial<CoordinatorThreadSettings>,
 	) {
-		const serviceTier = modelValue.serviceTiers.some((tier) => tier.id === "priority")
+		this.serviceTier = modelValue.serviceTiers.some((tier) => tier.id === "priority")
 			? "priority"
 			: null;
-		this.started = startResponse(authority, threadRawId, serviceTier);
+		this.started = startResponse(authority, threadRawId, this.serviceTier);
 		this.threadSettings = settings(this.started, settingsOverrides);
+	}
+
+	/**
+	 * Answer the next thread/start with another thread.
+	 * @param threadRawId The next thread's raw id.
+	 */
+	nextThread(threadRawId: string): void {
+		this.started = startResponse(this.authority, threadRawId, this.serviceTier);
+		this.threadSettings = settings(this.started, {});
 	}
 
 	private deferredSettingsUpdateRelease: (() => void) | null = null;
@@ -364,6 +376,7 @@ class FakeSession implements CoordinatorSessionPort {
 		params: SessionParams<"thread/start">,
 	): Promise<SessionResponse<"thread/start">> {
 		this.startParams.push(params);
+		this.onStart?.();
 		if (this.startError !== null) {
 			throw this.startError;
 		}

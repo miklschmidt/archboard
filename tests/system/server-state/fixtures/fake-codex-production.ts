@@ -5,6 +5,7 @@ import {
 	dynamicItem,
 	explainStep,
 	startRealtime,
+	coordinatorModelFixture,
 	modelFixtures,
 	promptItem,
 	unixSeconds,
@@ -74,6 +75,8 @@ type FixtureThread = Record<string, unknown> & {
 const threads = new Map<string, FixtureThread>();
 let threadSequence = readFileSync(logPath, "utf8").split('"thread/start","result"').length - 1;
 let turnSequence = 0;
+// The newest thread started on the coordinator's model: a voice start replaces a coordinator that
+// already carried a session (TASK-301), and realtime runs on the one started last.
 let coordinatorThreadId: string | null = null;
 let workhorseThreadId: string | null = null;
 let reverseRequestsSent = false;
@@ -137,9 +140,9 @@ const createThread = (params: Record<string, unknown>): FixtureThread => {
 	const id = `thread-${++threadSequence}`;
 	const thread = buildThread(id, params, threadSequence);
 	threads.set(id, thread);
-	if (threadSequence === 1) {
+	if (params["model"] === coordinatorModelFixture.model) {
 		coordinatorThreadId = id;
-	} else if (threadSequence === 2) {
+	} else if (workhorseThreadId === null) {
 		workhorseThreadId = id;
 	}
 	return thread;

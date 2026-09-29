@@ -83,8 +83,7 @@ function sameBindingFields(left: VoiceSessionBinding, right: VoiceSessionBinding
 		left.paneId === right.paneId &&
 		left.childId === right.childId &&
 		left.epoch === right.epoch &&
-		left.workhorseThreadId === right.workhorseThreadId &&
-		left.coordinatorThreadId === right.coordinatorThreadId
+		left.workhorseThreadId === right.workhorseThreadId
 	);
 }
 

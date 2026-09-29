@@ -164,6 +164,25 @@ describe("workhorse news", () => {
 		close(h);
 	});
 
+	test("a wait that lasts into a new voice session is news to its fresh coordinator", async () => {
+		const h = harness(true);
+		h.callbacks.onNotification(statusChanged(h, ["waitingOnApproval"]));
+		await h.callbacks.flush();
+		const coordinator = h.state.coordinator;
+		if (coordinator === null) {
+			throw new Error("harness has no coordinator");
+		}
+		h.state.coordinator = {
+			...coordinator,
+			threadId: h.ids.authorities.identity.decoder.adoptThreadId("coordinator-2"),
+			operationId: "coordinator-operation-2",
+		};
+		h.callbacks.onNotification(statusChanged(h, ["waitingOnApproval"]));
+		await h.callbacks.flush();
+		expect(h.reports.map((report) => report.situation)).toEqual(["waiting", "waiting"]);
+		close(h);
+	});
+
 	test("another thread, a prior epoch and a session with no voice tell the coordinator nothing", async () => {
 		const live = harness(true);
 		live.callbacks.onNotification(turnCompleted(live, "completed", "another-thread"));

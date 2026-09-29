@@ -149,8 +149,15 @@ interface CodexCoordinatorOptions {
 	readonly persisted?: CoordinatorPersistedState | null;
 }
 
+interface CoordinatorReplaceInput {
+	/** The fresh server-issued operation id the replacement start runs under. */
+	readonly operationId: string;
+}
+
 interface CodexCoordinator {
 	readonly ensure: (input?: CoordinatorEnsureInput) => Promise<CoordinatorSnapshot>;
+	/** Start a fresh coordinator in place of the current one, which stays until it is ready. */
+	readonly replace: (input: CoordinatorReplaceInput) => Promise<CoordinatorSnapshot>;
 	readonly snapshot: () => CoordinatorSnapshot;
 	readonly persisted: () => CoordinatorPersistedState | null;
 	readonly onNotification: (event: TransportServerNotification) => void;
@@ -219,6 +226,7 @@ export {
 	COORDINATOR_CAPABILITY_POLICY,
 	type CoordinatorSnapshot,
 	type CoordinatorEnsureInput,
+	type CoordinatorReplaceInput,
 	type CodexCoordinatorOptions,
 	type CodexCoordinator,
 	type CoordinatorThreadLinkClassification,

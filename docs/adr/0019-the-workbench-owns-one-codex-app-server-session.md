@@ -22,6 +22,17 @@ inspect-only; signing out in one canvas signs out every canvas; and a canvas
 that is already running shows a sign-in or sign-out made in another only after
 its child restarts.
 
+Amended by TASK-301 (2026-09-29): a coordinator carries at most one voice
+session. A voice start that finds the coordinator already carried one starts a
+new coordinator thread first. The old coordinator stays current until the new
+one is ready, and it is never driven again after that. A turn that the last
+session left running, and whatever that turn answers, stay on the old thread,
+which no later session speaks from. A second talk on one child therefore
+inherits no handoff, transcript or instruction from the first. A workhorse
+operation that the old coordinator started runs to its end, and the new
+coordinator hears what the workhorse did as workhorse news. The sentences below
+say so. Everything else stands.
+
 ## Issue
 
 The workbench must show and control the same agent state that the person is
@@ -71,7 +82,8 @@ effect. Waiting across agents is rejected when it would introduce a direct or
 transitive cycle. Archboard does not add an internal MCP process for these
 operations.
 
-Each valid thread link may also own one persistent coordinator. The coordinator
+Each valid thread link may also own one coordinator at a time, and a
+coordinator carries at most one voice session. The coordinator
 is a normal capable Codex thread with ordinary investigation tools, sandbox,
 and approvals. It may answer quick questions and perform one explicit bounded
 board action, while sustained or multi-step implementation defaults to the
