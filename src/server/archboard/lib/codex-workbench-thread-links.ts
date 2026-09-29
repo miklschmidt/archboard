@@ -134,14 +134,14 @@ function clearServerThreadContextForLease(
 
 /**
  * The link a browser command is only allowed to act on: the exact one the pane
- * says it is looking at.
- * @param context The pane and the link it named.
+ * says it is looking at, which is its tab session's link.
+ * @param context The pane, its tab session and the link it named.
  * @returns The expected link.
  */
 function expectedBrowserLink(context: BrowserActionContext) {
 	return {
 		revision: context.linkRevision,
-		paneId: context.paneId,
+		paneId: context.tabSessionId,
 		childId: context.link.childId,
 		epoch: context.link.epoch,
 		threadId: context.link.threadId,
@@ -149,21 +149,21 @@ function expectedBrowserLink(context: BrowserActionContext) {
 }
 
 /**
- * Refuse a command whose pane no longer sees the link it named: another pane
- * changed the server's one link while this command waited its turn.
+ * Refuse a command whose pane no longer sees the link it named: another pane of
+ * its tab changed the session's link while this command waited its turn.
  * @param threadLink What reads the link.
- * @param context The pane and the link it named.
+ * @param context The pane, its tab session and the link it named.
  */
 function assertBrowserLinkStands(
 	threadLink: Pick<CodexThreadLinkPort, "read">,
 	context: BrowserActionContext,
 ): void {
-	const { cas } = threadLink.read(context.paneId);
+	const { cas } = threadLink.read(context.tabSessionId);
 	const expected = expectedBrowserLink(context);
 	const fields = ["revision", "childId", "epoch", "threadId"] as const;
 	if (fields.some((field) => cas[field] !== expected[field])) {
 		throw new Error(
-			"The Archboard server's thread link changed while this command waited; read it again.",
+			"This browser tab's thread link changed while this command waited; read it again.",
 		);
 	}
 }
@@ -192,14 +192,15 @@ type CoordinatorSnapshot = ReturnType<ServerThreadLinkActionOptions["coordinator
 function ignoreRetirement(): void {}
 
 /**
- * Give a new conversation a ready coordinator before its workhorse starts. The
- * first conversation starts one. A conversation that replaces another replaces
- * the coordinator that carried the old one, which Codex unloads once nothing
- * runs on it (TASK-374). A ready coordinator no conversation has carried yet,
- * because the create that started it failed at its workhorse, is kept.
+ * Give a new conversation a ready coordinator before its workhorse starts. A
+ * tab session's first conversation starts one. When the session already holds
+ * a link, the new conversation replaces the coordinator that carried the old
+ * one, which Codex unloads once nothing runs on it (TASK-374). A ready
+ * coordinator no conversation has carried yet, because the create that started
+ * it failed at its workhorse, is kept.
  * The session claims the ready coordinator's thread.
  * @param options The coordinator, the operation ids its starts run under, and the claim.
- * @param replacing Whether the pane's link names a conversation this create replaces.
+ * @param replacing Whether the session already holds a link this create replaces.
  * @throws {Error} With the coordinator's reason when it did not become ready.
  */
 async function coordinatorForConversation(
@@ -236,10 +237,10 @@ function createServerThreadLinkActions(
 	>();
 	let linkChanges: Promise<unknown> = Promise.resolve();
 	/**
-	 * Run one link change after every earlier one has settled. The server has one
-	 * link whichever pane asks, so a create that lost a race must be refused
-	 * before thread/start: past it, the loser's failed compare-and-swap would
-	 * leave the workhorse failed under the link the winner made.
+	 * Run one link change after every earlier one has settled. A tab session has
+	 * one link whichever of its panes asks, so a create that lost a race must be
+	 * refused before thread/start: past it, the loser's failed compare-and-swap
+	 * would leave the workhorse failed under the link the winner made.
 	 * @param change The change.
 	 * @returns What the change answered.
 	 */
@@ -250,7 +251,7 @@ function createServerThreadLinkActions(
 	};
 	return Object.freeze({
 		/**
-		 * Start a new conversation and make it the server's link: its coordinator
+		 * Start a new conversation and make it the tab session's link: its coordinator
 		 * first, then its workhorse thread, then board-change delivery to it. A
 		 * coordinator that cannot start refuses the create with its reason and
 		 * starts no workhorse; the next message or Talk tries again.
@@ -263,7 +264,7 @@ function createServerThreadLinkActions(
 				assertBrowserLinkStands(options.threadLink, context);
 				await coordinatorForConversation(options, context.link.threadId !== null);
 				const started = await options.workhorse.start({
-					paneId: context.paneId,
+					paneId: context.tabSessionId,
 					expected: expectedBrowserLink(context),
 				});
 				if (started.threadId !== null) {

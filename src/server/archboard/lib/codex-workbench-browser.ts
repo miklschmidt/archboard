@@ -95,6 +95,8 @@ interface ServerCodexBrowserSocketOwnerOptions {
 	readonly paneForBrowser: (browserId: string) => string | null;
 	/** The tab session the browser's socket named when it connected, never request bytes. */
 	readonly tabSessionForBrowser: (browserId: string) => TabSessionId | null;
+	/** Open the conversation of a tab whose pane connects, once; a later pane finds it open. */
+	readonly openTabSession: (tabSessionId: TabSessionId) => void;
 }
 
 interface ServerCodexBrowserSocketOwner {
@@ -230,12 +232,9 @@ function createServerCodexBrowserSocketOwner(
 		}
 		subscriptions.get(instance)?.();
 		subscriptions.delete(instance);
-		const connection = options.gateway.connect(
-			browserId,
-			paneId,
-			tabSessionOf(browserId),
-			instance,
-		);
+		const tabSessionId = tabSessionOf(browserId);
+		options.openTabSession(tabSessionId);
+		const connection = options.gateway.connect(browserId, paneId, tabSessionId, instance);
 		connections.set(instance, connection);
 		return connection;
 	};

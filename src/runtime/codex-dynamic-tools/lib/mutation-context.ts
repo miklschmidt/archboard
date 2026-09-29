@@ -350,8 +350,10 @@ function validateFreshContext(input: ValidateContextInput): ArchboardContext {
 }
 
 /**
- * Whether fresh context names the executing caller: the pane it was issued for, the child and
- * epoch it belongs to, and the thread and turn that are running right now.
+ * Whether fresh context names the executing caller: read under an authority issued for it, in
+ * the child and epoch it belongs to, for the thread and turn that are running right now. The
+ * authority's `paneId` keys the caller's thread link, which a browser tab holds for all of its
+ * panes (TASK-373), so the pane the context presents through is not compared with it.
  * @param canonical The canonical context.
  * @param authority The pane-link authority it was read under.
  * @param caller The caller's authority.
@@ -362,7 +364,7 @@ function namesCaller(
 	authority: DynamicContextAuthority,
 	caller: DynamicCallerAuthority,
 ): boolean {
-	if (canonical.paneId !== authority.paneId || !authorityNamesCaller(authority, caller)) {
+	if (!authorityNamesCaller(authority, caller)) {
 		return false;
 	}
 	return (

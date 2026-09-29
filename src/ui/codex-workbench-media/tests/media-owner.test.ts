@@ -169,20 +169,6 @@ test("the media owner delegates leases, commands, readiness, and snapshots to on
 	}
 });
 
-test("a start refused because voice is live on the server fails with the gateway's reason", async () => {
-	const browser = new FakeMediaBrowser();
-	const transport = new FakeTransport();
-	transport.startRefusal = { code: "voice_live", message: "the gateway's reason" };
-	const owner = browserOwner(browser);
-	try {
-		await owner.attach(transport);
-		const started = await owner.start();
-		expect(started.state).toMatchObject({ message: "the gateway's reason" });
-	} finally {
-		await owner.dispose();
-	}
-});
-
 test("replacing or disposing media never disposes an externally-owned transport", async () => {
 	const { owner, counts } = stubbedOwner();
 	const first = new FakeTransport();

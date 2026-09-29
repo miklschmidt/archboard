@@ -9,13 +9,13 @@ import {
 } from "../../../../shared/codex-workbench-identity/index.js";
 import {
 	createCodexWorkbenchSessions,
-	SHARED_TAB_SESSION_ID,
 	type CodexWorkbenchComponentFactories,
 	type CodexWorkbenchComponents,
 	type CodexWorkbenchGenerationHooks,
 	type CodexWorkbenchSessionComponents,
 	type CodexWorkbenchTabSession,
 } from "../../codex-workbench-generation.js";
+import { parseTabSessionId } from "../../../codex-workbench/index.js";
 
 import { createSessionComponentsFixture } from "./codex-workbench-session-fixture.js";
 
@@ -36,11 +36,11 @@ export type NotificationListener = Parameters<
 export interface CodexWorkbenchGenerationFixture {
 	readonly identityLedger: ReturnType<typeof createIdentityLedger>;
 	readonly components: CodexWorkbenchComponents;
-	/** The owners of the one tab session every tab shares. */
+	/** The owners of the one tab session the fixture opens, as a connecting pane would. */
 	readonly sessionComponents: CodexWorkbenchSessionComponents;
 	/** That session, open from the start. */
 	readonly tabSession: CodexWorkbenchTabSession;
-	/** A thread the shared session claimed, as Codex spells it. */
+	/** A thread that session claimed, as Codex spells it. */
 	readonly claimedThread: string;
 	readonly factories: CodexWorkbenchComponentFactories;
 	readonly hooks: CodexWorkbenchGenerationHooks;
@@ -271,7 +271,7 @@ export function createCodexWorkbenchGenerationFixture(
 			};
 		},
 	});
-	const tabSession = sessions.open(SHARED_TAB_SESSION_ID);
+	const tabSession = sessions.open(parseTabSessionId("tab-one")!);
 	const claimedThread = "fixture-claimed-thread";
 	sessions.claimThread(tabSession, identity.identity.decoder.adoptThreadId(claimedThread));
 	const components: CodexWorkbenchComponents = {

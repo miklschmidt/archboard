@@ -5,9 +5,9 @@
 // 1 and moves on by itself; the page's own move to step 1, reported with no request behind it,
 // reaches the voice model as speech the way a step chosen by hand does; the voice projection
 // says the live session is a recording; the recording page's pane hears its own steps by client
-// id and is neither listed nor shown a board by a show that names no pane; and a second
-// recording asked for while voice is live is refused with a reason the browser receives, without
-// stopping the session that is talking.
+// id and is neither listed nor shown a board by a show that names no pane; and the recording is a
+// tab session of its own (TASK-373), so another tab talks at the same time, each on its own
+// coordinator, and neither stops the other.
 
 import { expect, test } from "bun:test";
 import { join } from "node:path";
@@ -35,7 +35,7 @@ const CLIENT = "record-client";
 const PANE = "record-pane";
 const BOARD = "tour";
 
-test("a recording opens no step, hands the page's own first step to the voice, and is refused over live voice without stopping it", async () => {
+test("a recording opens no step, hands the page's own first step to the voice, and talks at once with another tab, each on its own coordinator", async () => {
 	const resources = new AsyncDisposableStack();
 	try {
 		const fixture = prepareProductionFixture(resources, executableSource);
@@ -51,7 +51,9 @@ test("a recording opens no step, hands the page's own first step to the voice, a
 		});
 		resources.defer(() => server.dispose());
 		const request = createRequester(server);
-		const socket = await openApplicationSocket(server.base, CLIENT);
+		const socket = await openApplicationSocket(server.base, CLIENT, {
+			tabSession: "recording-tab",
+		});
 		resources.defer(() => socket.close());
 		const paneMessages: string[] = [];
 		socket.socket.on("message", (raw) => {
@@ -167,22 +169,62 @@ test("a recording opens no step, hands the page's own first step to the voice, a
 		});
 		expect(spoken()[0]).toContain("The front door");
 
-		// A second recording while this one is live is refused, says why, and stops nothing.
-		const refused = await startRecording();
-		expect(refused).toMatchObject({
-			ok: true,
-			value: { outcome: "not_delivered", code: "voice_live" },
+		// Somebody talks in another tab while the recording runs: that tab starts its own
+		// conversation, and its voice runs on its own coordinator beside the recording's.
+		const talker = await openApplicationSocket(server.base, "talking-client", {
+			tabSession: "talking-tab",
 		});
-		const message = (refused.value as { message?: unknown } | undefined)?.message;
-		expect(typeof message === "string" && message.length > 0).toBe(true);
-		expect(frames("thread/realtime/start")).toHaveLength(1);
+		resources.defer(() => talker.close());
+		expect(
+			(
+				await request("/api/panes", {
+					method: "POST",
+					doing: false,
+					body: pane("talking-client", "A", true, true),
+				})
+			).status,
+		).toBe(200);
+		expect(await talker.request("connect")).toMatchObject({ ok: true });
+		const talk = async (name: string, extra: Record<string, unknown> = {}) =>
+			talker.request("command", {
+				command: {
+					kind: "browser_command",
+					command: name,
+					...leaseTarget(await talker.request("claimLease")),
+					...extra,
+				},
+			});
+		expect(await talk("threadLinkCreate")).toMatchObject({
+			ok: true,
+			value: { outcome: "delivered" },
+		});
+		const talking = snapshots(await talker.request("snapshot"))["threadLink"] as Record<
+			string,
+			unknown
+		>;
+		expect(await talker.request("mediaReady", { ready: true })).toMatchObject({ ok: true });
+		expect(
+			await talk("realtimeStart", { threadId: talking["threadId"], sdp: "v=0" }),
+		).toMatchObject({ ok: true, value: { outcome: "delivered" } });
+		const voiced = frames("thread/realtime/start").map((entry) => entry.params?.["threadId"]);
+		expect(voiced).toHaveLength(2);
+		expect(voiced[0]).not.toBe(voiced[1]);
 		expect(frames("thread/realtime/stop")).toHaveLength(0);
+		expect((await voice())["recording"]).toBe(true);
+		const talkingVoice = snapshots(await talker.request("snapshot"))["voice"] as Record<
+			string,
+			unknown
+		>;
+		expect(talkingVoice["recording"]).toBe(false);
 		expect(paneMessages).not.toContain("pane_present");
 
 		// Nobody can point at the recording page's pane: it is not listed, and a show that names no
 		// pane finds no browser rather than moving the recording.
-		const listed = await request<{ paneCount: number }>("/api/panes");
-		expect(listed.body.paneCount).toBe(0);
+		await talker.close();
+		await waitFor(async () => {
+			const listed = await request<{ paneCount: number }>("/api/panes");
+			return listed.body.paneCount === 0;
+		}, "the talking tab's pane to leave, leaving only the recording's unlisted pane");
 		const shown = await request("/api/panes/show", {
 			method: "POST",
 			doing: false,

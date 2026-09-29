@@ -240,6 +240,7 @@ interface FixtureRecord {
 	readonly method?: string;
 	readonly pid?: number;
 	readonly params?: Record<string, unknown>;
+	readonly result?: unknown;
 	readonly frame?: { readonly id?: unknown; readonly result?: unknown; readonly error?: unknown };
 }
 

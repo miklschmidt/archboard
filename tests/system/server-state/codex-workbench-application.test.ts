@@ -261,6 +261,7 @@ test("the live server socket crosses the real gateway and approval broker exactl
 			gateway: activeGateway,
 			paneForBrowser: () => "pane-public",
 			tabSessionForBrowser: () => parseTabSessionId("tab-public"),
+			openTabSession: () => undefined,
 		});
 		owner = activeOwner;
 		const activeServer = createServer();

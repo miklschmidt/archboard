@@ -346,6 +346,7 @@ function buildProductionTabSession(
 					workhorse: components.workhorse,
 				},
 				scope.claimThread,
+				scope.state.voiceTrace,
 			),
 		},
 	};

@@ -230,7 +230,7 @@ export function createGatewayHarness(
 				if (candidate === requestId) ordinaryApproval = null;
 			},
 			unpresentedTerminals: () =>
-				ordinaryApproval?.terminalDelivery === "after_publish" ? [requestId] : [],
+				ordinaryApproval?.terminalDelivery === "after_publish" ? [{ requestId, tabSessionId }] : [],
 			acknowledgePublished: (candidates) => {
 				publishedAcknowledgements.push(...candidates);
 				if (
@@ -436,7 +436,7 @@ export function createGatewayHarness(
 		setDynamicDisconnectError: (error) => {
 			dynamicDisconnectError = error;
 		},
-		binding: () => bindingFor(paneId, revision, link),
+		binding: () => bindingFor(tabSessionId, revision, link),
 		makeOrdinaryApproval,
 		makeDynamicApproval,
 	};

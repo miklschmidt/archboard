@@ -17,12 +17,14 @@ import type { CodexEpochStore, EpochOperationRecord } from "@/runtime/codex-epoc
 import type { CodexThreadLinkPort, ThreadLinkClassification } from "@/runtime/codex-thread-link";
 import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
 import type { ArchboardContext } from "@/runtime/codex-instructions";
+import type { TabSessionId } from "@/server/codex-workbench";
 
 export interface ServerDynamicAuthorityOptions {
 	readonly identity: IdentityAuthorities;
 	readonly epoch: Pick<CodexEpochStore, "snapshot">;
 	readonly threadLink: Pick<CodexThreadLinkPort, "classify" | "read">;
-	readonly paneIds: () => readonly string[];
+	/** The tab session that started a thread, or null when none did. */
+	readonly sessionForThread: (threadId: ThreadId) => TabSessionId | null;
 	readonly contextFor: (input: {
 		readonly caller: DynamicCallerAuthority;
 		readonly authority: DynamicContextAuthority;
@@ -38,7 +40,11 @@ export interface ServerDynamicAuthorityOptions {
 export interface ServerDynamicAuthorityAdapters {
 	readonly thread: DynamicThreadAuthorityPort;
 	readonly context: DynamicContextPort;
-	readonly paneForThread: (threadId: ThreadId) => string | null;
+	/**
+	 * The tab session whose link can run turns on a thread: the link key a dynamic caller's
+	 * context is read under.
+	 */
+	readonly paneForThread: (threadId: ThreadId) => TabSessionId | null;
 	readonly dispose: () => void;
 }
 
@@ -169,8 +175,8 @@ function callIsExecuting(
 /**
  * Exact caller/target and pane-context authority over live link and epoch
  * evidence.
- * @param options The identities, the epoch store, the link port, which panes
- * exist, and how one pane's context is read.
+ * @param options The identities, the epoch store, the link port, which tab
+ * session started a thread, and how one session's context is read.
  * @returns The adapters.
  */
 export function createServerDynamicAuthorityAdapters(
@@ -196,18 +202,18 @@ export function createServerDynamicAuthorityAdapters(
 		return issued;
 	};
 	/**
-	 * The pane whose context one thread's agent may read: the first open pane,
-	 * in reading order, whose link can run turns on that thread. Every pane of a
-	 * server shows the one link, so this is the first pane while it is linked.
+	 * The link key one thread's agent reads context under: the tab session that
+	 * started the thread, while its link can run turns on that thread.
 	 * @param threadId The thread.
-	 * @returns The pane, or null when no pane is linked to it.
+	 * @returns The tab session, or null when no session's link names the thread.
 	 */
-	const paneForThread = (threadId: ThreadId): string | null => {
-		for (const paneId of options.paneIds()) {
-			const binding = options.threadLink.read(paneId);
-			if (binding.link.state === "executable" && binding.link.threadId === threadId) return paneId;
-		}
-		return null;
+	const paneForThread = (threadId: ThreadId): TabSessionId | null => {
+		const tabSessionId = options.sessionForThread(threadId);
+		if (tabSessionId === null) return null;
+		const binding = options.threadLink.read(tabSessionId);
+		return binding.link.state === "executable" && binding.link.threadId === threadId
+			? tabSessionId
+			: null;
 	};
 	/**
 	 * Everything an authority over one thread is decided from, read fresh from

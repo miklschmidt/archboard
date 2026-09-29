@@ -18,10 +18,7 @@ import {
 	type ServerBrowserBindingState,
 	type ServerTimelineOwner,
 } from "../codex-workbench-adapters.js";
-import {
-	createCodexWorkbenchSessions,
-	SHARED_TAB_SESSION_ID,
-} from "../codex-workbench-generation.js";
+import { createCodexWorkbenchSessions } from "../codex-workbench-generation.js";
 import { createCodexWorkbenchGenerationFixture } from "./support/codex-workbench-generation-fixture.js";
 import { runningProcessFacts } from "./support/codex-workbench-process-fixture.js";
 
@@ -122,7 +119,8 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 			actions: fixture.tabSession.actions,
 		}),
 	});
-	sessions.open(SHARED_TAB_SESSION_ID);
+	const tabSessionId = parseTabSessionId("tab-one")!;
+	sessions.open(tabSessionId);
 	const state = {
 		account: {
 			kind: "codex_account_response",
@@ -138,12 +136,15 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 		identity: authorities,
 		now: () => 1,
 		bindingForCaller: () => ({
-			commandId: authorities.identity.issuer.mintBrowserCommandId(),
-			paneId: "pane-timeline",
-			capturedLink: {
-				threadId,
-				childId: authorities.identity.validator.childId,
-				epoch: authorities.identity.validator.epoch,
+			tabSessionId,
+			binding: {
+				commandId: authorities.identity.issuer.mintBrowserCommandId(),
+				paneId: "pane-timeline",
+				capturedLink: {
+					threadId,
+					childId: authorities.identity.validator.childId,
+					epoch: authorities.identity.validator.epoch,
+				},
 			},
 		}),
 	});
@@ -164,7 +165,7 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 	const context = {
 		browserId: "browser-timeline",
 		paneId: "pane-timeline",
-		tabSessionId: parseTabSessionId("tab-one")!,
+		tabSessionId,
 		binding: {
 			paneId: "pane-timeline",
 			revision: 7,

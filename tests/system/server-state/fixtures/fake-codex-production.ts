@@ -75,12 +75,13 @@ type FixtureThread = Record<string, unknown> & {
 const threads = new Map<string, FixtureThread>();
 let threadSequence = readFileSync(logPath, "utf8").split('"thread/start","result"').length - 1;
 let turnSequence = 0;
-// The newest thread started on the coordinator's model: a voice start replaces a coordinator that
-// already carried a session (TASK-301), and realtime runs on the one started last.
-let coordinatorThreadId: string | null = null;
+// Every thread started on the coordinator's model. As in Codex, any number of them may run, one
+// per browser tab, and each carries at most one realtime conversation at a time.
+const coordinatorThreads = new Set<string>();
+const realtimeSessions = new Map<string, string>();
+// The first workhorse thread: its turn waits on the approvals this fixture raises, once.
 let workhorseThreadId: string | null = null;
 let reverseRequestsSent = false;
-let realtimeSessionId: string | null = null;
 let speechSequence = 0;
 /**
  * Whether the fixture is a recording's voice, which speaks only about steps it is handed.
@@ -141,7 +142,7 @@ const createThread = (params: Record<string, unknown>): FixtureThread => {
 	const thread = buildThread(id, params, threadSequence);
 	threads.set(id, thread);
 	if (params["model"] === coordinatorModelFixture.model) {
-		coordinatorThreadId = id;
+		coordinatorThreads.add(id);
 	} else if (workhorseThreadId === null) {
 		workhorseThreadId = id;
 	}
@@ -387,28 +388,38 @@ const handle = (frame: WireFrame): void => {
 			respond(frame as never, {});
 			return;
 		case "thread/realtime/start": {
-			if (coordinatorThreadId === null || params["threadId"] !== coordinatorThreadId) {
-				reject(frame as never, "Realtime start must target the retained coordinator thread.");
+			const threadId = String(params["threadId"]);
+			if (!coordinatorThreads.has(threadId)) {
+				reject(frame as never, "Realtime start must target a coordinator thread.");
 				return;
 			}
-			realtimeSessionId = String(params["realtimeSessionId"]);
+			if (realtimeSessions.has(threadId)) {
+				reject(frame as never, "The thread already carries a realtime conversation.");
+				return;
+			}
+			realtimeSessions.set(threadId, String(params["realtimeSessionId"]));
 			respond(frame as never, {});
 			setTimeout(() => startRealtime(notify, params, narrating()), 10);
 			return;
 		}
-		case "thread/realtime/appendSpeech":
+		case "thread/realtime/appendSpeech": {
 			respond(frame as never, {});
+			const realtimeSessionId = realtimeSessions.get(String(params["threadId"])) ?? null;
 			if (narrating()) explainStep(notify, params, realtimeSessionId, ++speechSequence);
 			return;
-		case "thread/realtime/stop":
-			if (coordinatorThreadId === null || params["threadId"] !== coordinatorThreadId) {
-				reject(frame as never, "Realtime stop must target the retained coordinator thread.");
+		}
+		case "thread/realtime/stop": {
+			const threadId = String(params["threadId"]);
+			const realtimeSessionId = realtimeSessions.get(threadId);
+			if (realtimeSessionId === undefined) {
+				reject(frame as never, "Realtime stop must target a thread carrying a realtime session.");
 				return;
 			}
-			record({ kind: "realtime_stop", realtimeSessionId, threadId: params["threadId"] });
+			record({ kind: "realtime_stop", realtimeSessionId, threadId });
 			respond(frame as never, {});
-			realtimeSessionId = null;
+			realtimeSessions.delete(threadId);
 			return;
+		}
 		case "thread/delete":
 			threads.delete(String(params["threadId"]));
 			respond(frame as never, {});

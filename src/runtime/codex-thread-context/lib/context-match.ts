@@ -5,22 +5,20 @@ import { canonicalSemanticCursorToken } from "@/runtime/codex-thread-context/lib
 import { sameStringValues } from "@/runtime/codex-thread-context/lib/link-equality";
 
 /**
- * Whether the context addresses this pane and the event's board at the
- * event's version and cursor.
+ * Whether the context addresses the event's own pane and board at the event's
+ * version and cursor.
  * @param context - The canonical context the adapter built.
  * @param event - The settled semantic change, already known to carry a cursor and version.
  * @param cursor - The canonical cursor token for the event.
- * @param paneId - The pane this delivery port serves.
  * @returns True when the pane and board fields agree.
  */
 function boardMatches(
 	context: ArchboardContext,
 	event: SettledSemanticChangeEvent,
 	cursor: string,
-	paneId: string,
 ): boolean {
 	return (
-		context.paneId === paneId &&
+		context.paneId === event.pane.paneId &&
 		context.board.name === event.board.name &&
 		context.board.key === event.board.key &&
 		context.board.version === event.version &&
@@ -181,27 +179,25 @@ function claimMatches(context: ArchboardContext, event: SettledSemanticChangeEve
 }
 
 /**
- * Proves that the adapter-built context is exactly the event, the pane and the
+ * Proves that the adapter-built context is exactly the event, its pane and the
  * target, and nothing else: the delivery must never inject identity or proof
  * the adapter invented.
  * @param event - The settled semantic change.
  * @param context - The canonical context the adapter built for it.
  * @param target - The exact delivery target.
- * @param paneId - The pane this delivery port serves.
  * @returns True when every context field is accounted for by the event.
  */
 function contextMatchesEvent(
 	event: SettledSemanticChangeEvent,
 	context: ArchboardContext,
 	target: DeliveryTarget,
-	paneId: string,
 ): boolean {
 	if (event.cursor === null || event.version === null) {
 		return false;
 	}
 	const cursor = canonicalSemanticCursorToken(event.cursor);
 	const addressed =
-		boardMatches(context, event, cursor, paneId) &&
+		boardMatches(context, event, cursor) &&
 		identityMatches(context, event, target) &&
 		threadsMatch(context, event, target);
 	return addressed && capturedStateMatches(context, event);

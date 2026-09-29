@@ -222,7 +222,7 @@ function buildPayload(
 ): Step<ThreadInjectItemsParams> {
 	try {
 		const context = options.contextForEvent(event);
-		if (!contextMatchesEvent(event, context, options.target, options.paneId)) {
+		if (!contextMatchesEvent(event, context, options.target)) {
 			return stepFailure("invalid_context");
 		}
 		return stepValue(createThreadInjectItemsParams({ threadId: options.target.threadId, context }));

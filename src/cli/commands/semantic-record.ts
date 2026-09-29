@@ -63,7 +63,7 @@ const recordingRefusedRefusal = {
 	exit: 4,
 	stream: "stderr" as const,
 	description:
-		"The Archboard server could not start the recording, or it failed before showing a step: Codex not signed in, voice unavailable or already live, the board not drawn, or a frontend built without recording. Nothing was written.",
+		"The Archboard server could not start the recording, or it failed before showing a step: Codex not signed in, voice unavailable, the board not drawn, or a frontend built without recording. Nothing was written.",
 };
 const recordingFailedRefusal = {
 	code: "RECORDING_FAILED",
@@ -228,9 +228,10 @@ const semanticRecordContract = defineCommand({
 		"with no shell around the pane, and records it to an MP4 or WebM file (by the --out " +
 		"extension) together with the Codex voice explaining each step. Each step moves on once " +
 		"the voice has finished explaining it, and the recording ends after the last. It runs on " +
-		"the Archboard server the CLI talks to, which must have Codex signed in and must not have voice " +
-		"live. --discard deletes the board once the recording is written, for a board made only " +
-		"to be recorded; a failed recording keeps it, and so does a board changed while it was " +
+		"the Archboard server the CLI talks to, which must have Codex signed in. A recording is a " +
+		"conversation of its own, so voice live in a browser tab does not stop it. --discard " +
+		"deletes the board once the recording is written, for a board made only to be recorded; " +
+		"a failed recording keeps it, and so does a board changed while it was " +
 		"recorded, which the receipt says. Needs a Chromium or Google Chrome executable " +
 		"on PATH or named by ARCHBOARD_RENDERER_CHROMIUM.",
 	examples: [

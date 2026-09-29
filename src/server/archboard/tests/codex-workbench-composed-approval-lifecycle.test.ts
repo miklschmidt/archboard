@@ -24,6 +24,7 @@ test("composed child exit publishes one settled approval before closing presente
 	const fixture = createCodexWorkbenchGenerationFixture(events);
 	const identity = fixture.components.identity;
 	const paneId = "pane-child-exit";
+	const tabSessionId = parseTabSessionId("tab-one")!;
 	const threadId = identity.identity.decoder.adoptThreadId("thread-child-exit");
 	const responses: unknown[] = [];
 	const projectionListeners = new Set<() => void>();
@@ -33,7 +34,7 @@ test("composed child exit publishes one settled approval before closing presente
 		transport: {
 			respond: async (_request, _owner, response) => void responses.push(response),
 		},
-		getCurrentBinding: () => ({ link: `pane:${paneId}` }),
+		getCurrentBinding: () => ({ link: `tab:${tabSessionId}` }),
 		onChange: () => {
 			for (const listener of projectionListeners) {
 				listener();
@@ -113,12 +114,12 @@ test("composed child exit publishes one settled approval before closing presente
 		projection,
 		threadLink: {
 			read: () => ({
-				paneId,
+				paneId: tabSessionId,
 				revision: 1,
 				link,
 				cas: {
 					revision: 1,
-					paneId,
+					paneId: tabSessionId,
 					childId: link.childId,
 					epoch: link.epoch,
 					threadId: link.threadId,
@@ -135,7 +136,7 @@ test("composed child exit publishes one settled approval before closing presente
 		hooks: fixture.hooks,
 	});
 	try {
-		const connection = gateway.connect("browser-child-exit", paneId, parseTabSessionId("tab-one")!);
+		const connection = gateway.connect("browser-child-exit", paneId, tabSessionId);
 		const requestId = identity.identity.decoder.adoptJsonRpcRequestId("request-child-exit");
 		const pending = approvals.receive({
 			child: identity.identity.validator.childId,

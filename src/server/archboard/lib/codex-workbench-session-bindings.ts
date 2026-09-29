@@ -12,7 +12,6 @@ import {
 	requireCreated,
 } from "@/server/archboard/lib/codex-workbench-generation-owners";
 import { createOutcomeReportPort } from "@/server/archboard/lib/codex-workbench-outcome-report";
-import { voiceStartTrace } from "@/server/archboard/lib/voice-start-trace";
 import {
 	readyCoordinatorThread,
 	readyThreadPair,
@@ -23,9 +22,17 @@ import type {
 	CodexWorkbenchTabSessionState,
 } from "@/server/archboard/lib/codex-workbench-sessions";
 import type { CodexWorkbenchServer } from "@/server/archboard/lib/codex-workbench-server";
+import type { SemanticContextPublisherOptions } from "@/runtime/codex-semantic-context";
+import type { TabSessionId } from "@/server/codex-workbench";
+
+/** A session's binding context with its semantic publisher's options, made once. */
+interface ScopedBindingContext extends SessionBindingContext {
+	readonly publisher: SemanticContextPublisherOptions;
+}
 
 /** What building one tab session's bindings needs from around it. */
 interface SessionBindingContext {
+	readonly tabSessionId: TabSessionId;
 	readonly server: CodexWorkbenchServer;
 	readonly shared: CodexWorkbenchSharedComponents;
 	readonly state: CodexWorkbenchTabSessionState;
@@ -34,25 +41,27 @@ interface SessionBindingContext {
 }
 
 /**
- * The child epoch and thread a workhorse operation is proven to be running
- * against, refused when any of them is unnamed.
+ * The tab session, child epoch and thread a workhorse operation is proven to be
+ * running against, refused when any of them is unnamed.
  *
  * No browser command started it, so it names no exact pane: it presents
- * through the pane that created the link while that pane is open, and through
- * another once it closes, since the conversation belongs to the server.
+ * through a pane of the session that started it.
+ * @param tabSessionId The session, whose link the workhorse runs on.
  * @param workhorse The workhorse snapshot.
  * @returns The target.
  */
 function provenWorkhorseTarget(
+	tabSessionId: TabSessionId,
 	workhorse: ReturnType<CodexWorkbenchSessionComponents["workhorse"]["snapshot"]>,
 ): Parameters<CodexWorkbenchServer["contextForOperation"]>[0] {
-	const { paneId, childId, epoch, threadId } = workhorse;
-	const target = { paneId, childId, epoch, threadId };
-	if (workhorse.state !== "ready" || !allNamed(target)) {
+	const { childId, epoch, threadId } = workhorse;
+	const target = { childId, epoch, threadId };
+	if (workhorse.state !== "ready" || workhorse.paneId !== tabSessionId || !allNamed(target)) {
 		throw new Error("A workhorse operation has no exact proven pane target.");
 	}
 	return {
 		...target,
+		tabSessionId,
 		clientId: null,
 		...(workhorse.binding ? { linkRevision: workhorse.binding.revision } : {}),
 	};
@@ -64,9 +73,9 @@ function provenWorkhorseTarget(
  * @returns Those bindings.
  */
 function placeBindings(
-	context: SessionBindingContext,
+	context: ScopedBindingContext,
 ): Pick<CodexWorkbenchSessionBindings, "workhorse" | "semanticPublisher" | "coordinator"> {
-	const { server } = context;
+	const { server, publisher } = context;
 	return {
 		/**
 		 * The checkout a workhorse turn runs in.
@@ -74,10 +83,11 @@ function placeBindings(
 		 */
 		workhorse: () => ({ checkoutRoot: server.checkoutRoot }),
 		/**
-		 * Where semantic context is published from, which is the server itself.
+		 * Where this session's semantic context is published from: the server's change feed, read
+		 * for this session's own panes and link.
 		 * @returns The publisher options.
 		 */
-		semanticPublisher: () => server.semanticPublisher,
+		semanticPublisher: () => publisher,
 		/**
 		 * The checkout the coordinator runs in. It inherits nothing: every child
 		 * epoch starts its coordinators afresh (ADR 0019).
@@ -95,12 +105,12 @@ function placeBindings(
  * @returns Those bindings.
  */
 function currentBindingReaders(
-	context: SessionBindingContext,
+	context: ScopedBindingContext,
 ): Pick<
 	CodexWorkbenchSessionBindings,
 	"realtime" | "queue" | "operations" | "spokenApproval" | "coordinatorTools" | "coordinatorCall"
 > {
-	const { server, shared, state } = context;
+	const { server, shared, state, tabSessionId, publisher } = context;
 	return {
 		/**
 		 * What the voice session is bound to, and how it reads a fresh brief.
@@ -109,8 +119,8 @@ function currentBindingReaders(
 		 */
 		realtime: (created) => ({
 			boardCatalogue: { read: readBoardCatalogue, subscribe: watchBoardCatalogue },
-			presentationChanges: { subscribe: server.narrationChanges },
-			trace: voiceStartTrace.note,
+			presentationChanges: { subscribe: server.narrationChangesFor(tabSessionId) },
+			trace: state.voiceTrace.note,
 			/**
 			 * The semantic brief one voice session opens with, read fresh and
 			 * stated against that session rather than whatever is current.
@@ -118,7 +128,7 @@ function currentBindingReaders(
 			 * @returns The brief.
 			 */
 			freshSemanticBrief: (wireSessionId) => {
-				const freshInput = server.semanticPublisher.fresh.read();
+				const freshInput = publisher.fresh.read();
 				return requireCreated(created, "semanticPublisher").freshBriefFor({
 					...freshInput,
 					coordinator: {
@@ -191,7 +201,7 @@ function currentBindingReaders(
 			 */
 			contextFor: (operation) => {
 				const workhorse = requireCreated(created, "workhorse").snapshot();
-				const target = provenWorkhorseTarget(workhorse);
+				const target = provenWorkhorseTarget(tabSessionId, workhorse);
 				return server.contextForOperation(target, {
 					id: operation.operationId,
 					kind: operation.kind,
@@ -281,9 +291,9 @@ function currentBindingReaders(
  * @returns Those bindings.
  */
 function deliveryBindings(
-	context: SessionBindingContext,
+	context: ScopedBindingContext,
 ): Pick<CodexWorkbenchSessionBindings, "semanticDelivery" | "callbacks"> {
-	const { server, shared } = context;
+	const { server, shared, tabSessionId, publisher } = context;
 	const { identity, epoch, session } = shared;
 	/**
 	 * The child epoch this generation runs under.
@@ -300,7 +310,7 @@ function deliveryBindings(
 		 * @returns The delivery binding.
 		 */
 		semanticDelivery: (created) => ({
-			feedId: server.semanticPublisher.feedId,
+			feedId: publisher.feedId,
 			/**
 			 * The coordinator paired with this delivery's workhorse.
 			 * @returns Its thread, or null when none is ready.
@@ -315,12 +325,12 @@ function deliveryBindings(
 			currentExecution: currentChild,
 			hooks: {
 				/**
-				 * The canonical context one settled change is delivered as.
+				 * The canonical context one settled change is delivered as, filed under the pane of
+				 * this session it presents: the binding's key names the session, not a pane.
 				 * @param event The settled change.
-				 * @param binding The pane it is delivered to.
 				 * @returns The context.
 				 */
-				contextForEvent: (event, binding) => server.contextForEvent(event, binding.paneId),
+				contextForEvent: (event) => server.contextForEvent(event),
 			},
 			/**
 			 * Close the epoch store, which retires the epoch itself.
@@ -380,13 +390,13 @@ function deliveryBindings(
 						identity.operation.issuer.mintOperationId(),
 					),
 				/**
-				 * The canonical context of an outcome report, through an open pane.
+				 * The canonical context of an outcome report, through an open pane of the tab.
 				 * @param operationId The minted operation identity.
 				 * @returns The context.
 				 */
 				contextFor: (operationId) =>
 					server.contextForOperation(
-						provenWorkhorseTarget(requireCreated(created, "workhorse").snapshot()),
+						provenWorkhorseTarget(tabSessionId, requireCreated(created, "workhorse").snapshot()),
 						{ id: operationId, kind: "workhorse_outcome_report", rpc: "turn/start" },
 					),
 				/**
@@ -410,10 +420,14 @@ function deliveryBindings(
  * @returns The bindings.
  */
 function createSessionBindings(context: SessionBindingContext): CodexWorkbenchSessionBindings {
+	const scoped = {
+		...context,
+		publisher: context.server.semanticPublisherFor(context.tabSessionId),
+	};
 	return {
-		...placeBindings(context),
-		...currentBindingReaders(context),
-		...deliveryBindings(context),
+		...placeBindings(scoped),
+		...currentBindingReaders(scoped),
+		...deliveryBindings(scoped),
 	};
 }
 

@@ -17,6 +17,7 @@ import {
 	type ServerDynamicLifecycleOwner,
 } from "@/server/archboard/lib/codex-workbench-operation-lifecycle";
 import type { CodexWorkbenchServer } from "@/server/archboard/lib/codex-workbench-server";
+import { parseTabSessionId } from "@/server/codex-workbench";
 import {
 	closedTransport,
 	requireCreated,
@@ -60,17 +61,26 @@ function createAuthority(
 		identity: created.identity,
 		epoch: created.epoch,
 		threadLink: created.threadLink,
-		paneIds: context.server.paneIds,
+		/**
+		 * The tab session that started a thread.
+		 * @param threadId The thread.
+		 * @returns The session's id, or null when none did.
+		 */
+		sessionForThread: (threadId) => created.sessions?.forThread(threadId)?.id ?? null,
 		/**
 		 * The canonical context one dynamic effect runs under, captured against
-		 * the caller's own pane and thread rather than whatever is current.
+		 * the caller's own tab session and thread rather than whatever is current.
 		 * @param authorityContext The caller's authority and the operation it is running.
 		 * @returns The context.
 		 */
 		contextFor: (authorityContext) => {
+			const tabSessionId = parseTabSessionId(authorityContext.authority.paneId);
+			if (tabSessionId === null) {
+				throw new Error("The dynamic caller's context authority names no tab session.");
+			}
 			const captured = context.server.contextForOperation(
 				{
-					paneId: authorityContext.authority.paneId,
+					tabSessionId,
 					clientId: null,
 					childId: authorityContext.authority.childId,
 					epoch: authorityContext.authority.epoch,
@@ -110,21 +120,25 @@ function createApproval(
 		 */
 		now: () => Date.now(),
 		/**
-		 * The browser command one dynamic caller's approval is asked under, bound
-		 * to the pane that caller's thread is linked to.
+		 * The tab session one dynamic caller's approval belongs to, and the
+		 * browser command it is asked under until that session's pane holding the
+		 * lease reads it and takes it over.
 		 * @param threadId The calling thread.
-		 * @returns The command and the link it captured.
+		 * @returns The session, and the command and link it captured.
 		 */
 		bindingForCaller: (threadId) => {
-			const paneId = owners.authority?.paneForThread(threadId) ?? null;
-			if (paneId === null) throw new Error("The dynamic caller has no live pane binding.");
+			const tabSessionId = owners.authority?.paneForThread(threadId) ?? null;
+			if (tabSessionId === null) throw new Error("The dynamic caller has no live tab session.");
 			return {
-				commandId: identity.identity.issuer.mintBrowserCommandId(),
-				paneId,
-				capturedLink: {
-					threadId,
-					childId: identity.identity.validator.childId,
-					epoch: identity.identity.validator.epoch,
+				tabSessionId,
+				binding: {
+					commandId: identity.identity.issuer.mintBrowserCommandId(),
+					paneId: tabSessionId,
+					capturedLink: {
+						threadId,
+						childId: identity.identity.validator.childId,
+						epoch: identity.identity.validator.epoch,
+					},
 				},
 			};
 		},

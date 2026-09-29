@@ -16,6 +16,7 @@ import {
 	type BrowserPresenterContext,
 	type BrowserProjectionPort,
 	type BrowserPublishedPayload,
+	type BrowserUnpresentedTerminal,
 	type CodexWorkbenchGatewayOptions,
 } from "@/server/codex-workbench/lib/contract";
 import type { BrowserOwnerProjection } from "@/server/codex-workbench/lib/projection-contract";
@@ -70,7 +71,7 @@ interface BrowserConnections {
 	/** Whether the gateway has been disposed; a disposed gateway serves nothing. */
 	disposed: boolean;
 	readonly readBinding: (
-		paneId: string,
+		tabSessionId: TabSessionId,
 	) => ReturnType<CodexWorkbenchGatewayOptions["threadLink"]["read"]>;
 	readonly stateFor: (
 		browserId: string,
@@ -111,16 +112,17 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 		disposed: false,
 
 		/**
-		 * The pane binding the thread-link owner reports, refusing one that does
-		 * not describe the pane that was asked about.
-		 * @param paneId The pane.
+		 * The thread link of one tab session, which every pane of that tab shows,
+		 * refusing one that does not describe the session that was asked about.
+		 * The link port keys a link by the tab session (its `paneId`).
+		 * @param tabSessionId The tab session.
 		 * @returns Its binding.
 		 */
-		readBinding: (paneId) => {
+		readBinding: (tabSessionId) => {
 			try {
-				const binding = options.threadLink.read(paneId);
+				const binding = options.threadLink.read(tabSessionId);
 				if (
-					binding.paneId !== paneId ||
+					binding.paneId !== tabSessionId ||
 					!Number.isSafeInteger(binding.revision) ||
 					binding.revision < 0
 				)
@@ -165,7 +167,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 		 * @returns The snapshot.
 		 */
 		snapshotFor: (state) => {
-			const binding = connections.readBinding(state.paneId);
+			const binding = connections.readBinding(state.tabSessionId);
 			const lease = owners.leaseForSnapshot(state);
 			let projection: BrowserOwnerProjection;
 			try {
@@ -291,12 +293,12 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 
 		/**
 		 * Let the approval owner stop presenting every terminal approval that has
-		 * reached every open browser.
+		 * reached every open browser of its tab session.
 		 */
 		acknowledgeReadyTerminals: () => {
 			const candidates = options.actions.ordinaryApprovals.unpresentedTerminals();
-			forgetStaleTerminals(candidates);
-			const requestIds = terminalsEveryBrowserHasSeen(candidates);
+			forgetStaleTerminals(candidates.map(({ requestId }) => requestId));
+			const requestIds = terminalsEverySessionBrowserHasSeen(candidates);
 			if (requestIds.length === 0) return;
 			options.actions.ordinaryApprovals.acknowledgePublished(requestIds);
 			for (const state of states.values())
@@ -420,22 +422,25 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 	}
 
 	/**
-	 * The terminals every open connection has been shown, which are the ones
-	 * the approval owner may stop presenting. With nothing connected there is
-	 * nobody left to show them to.
-	 * @param candidates The terminals still being presented.
+	 * The terminals every open connection of their own tab session has been
+	 * shown, which are the ones the approval owner may stop presenting. A
+	 * terminal is shown only to its tab session, so a connection of another
+	 * tab never holds it back; with no connection of its tab session open there
+	 * is nobody left to show it to.
+	 * @param candidates The terminals still being presented, with their tab session.
 	 * @returns The terminals that may be acknowledged.
 	 */
-	function terminalsEveryBrowserHasSeen(
-		candidates: readonly JsonRpcRequestId[],
+	function terminalsEverySessionBrowserHasSeen(
+		candidates: readonly BrowserUnpresentedTerminal[],
 	): readonly JsonRpcRequestId[] {
-		if (states.size === 0) {
-			return candidates;
-		}
 		const open = Array.from(states.values());
-		return candidates.filter((requestId) =>
-			open.every((state) => !state.closed && state.publishedTerminals.has(requestId)),
-		);
+		return candidates
+			.filter(({ requestId, tabSessionId }) =>
+				open
+					.filter((state) => state.tabSessionId === tabSessionId)
+					.every((state) => !state.closed && state.publishedTerminals.has(requestId)),
+			)
+			.map(({ requestId }) => requestId);
 	}
 
 	/**
@@ -449,7 +454,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 			paneId: state.paneId,
 			tabSessionId: state.tabSessionId,
 			connection: state.instance,
-			binding: connections.readBinding(state.paneId),
+			binding: connections.readBinding(state.tabSessionId),
 			lease: owners.leaseForSnapshot(state),
 			mediaReady: state.mediaReady,
 		};
@@ -463,7 +468,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 	 */
 	function presenterContextFor(state: ConnectionState): BrowserPresenterContext | null {
 		try {
-			const binding = connections.readBinding(state.paneId);
+			const binding = connections.readBinding(state.tabSessionId);
 			const link = binding.link;
 			if (link.state !== "executable") {
 				return null;
@@ -505,7 +510,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 				return false;
 			}
 			try {
-				const binding = connections.readBinding(candidate.paneId);
+				const binding = connections.readBinding(candidate.tabSessionId);
 				return (
 					binding.revision === presenterContext.linkRevision &&
 					sameWireValue(binding.link, presenterContext.link)

@@ -20,13 +20,13 @@ import type { SessionParams } from "../../../runtime/codex-session/index.js";
 import {
 	createBrowserLeaseLedger,
 	createCodexWorkbenchGateway,
+	parseTabSessionId,
 } from "../../codex-workbench/index.js";
 import { createServerCodexWorkbenchInstallation } from "../codex-workbench-production.js";
-import {
-	SHARED_TAB_SESSION_ID,
-	type CodexWorkbenchComponents,
-	type CodexWorkbenchSessionComponents,
-	type CodexWorkbenchSharedComponents,
+import type {
+	CodexWorkbenchComponents,
+	CodexWorkbenchSessionComponents,
+	CodexWorkbenchSharedComponents,
 } from "../codex-workbench-generation.js";
 import type { CodexWorkbenchGenerationInput } from "../codex-workbench-owner.js";
 import { createCodexWorkbenchGenerationFixture } from "./support/codex-workbench-generation-fixture.js";
@@ -132,8 +132,8 @@ describe("production Codex generation ownership", () => {
 			now: () => 1_800_000_000_000,
 		};
 		const owned = installation({
-			semanticPublisher: semanticPublisherOptions,
-			narrationChanges: () => () => undefined,
+			semanticPublisherFor: () => semanticPublisherOptions,
+			narrationChangesFor: () => () => () => undefined,
 		});
 		const publisher = createSemanticContextPublisher(semanticPublisherOptions);
 		const starts: SessionParams<"thread/realtime/start">[] = [];
@@ -155,13 +155,15 @@ describe("production Codex generation ownership", () => {
 			const production = owned.value
 				.bindings(generationInput(1))
 				.tabSession(
-					SHARED_TAB_SESSION_ID,
+					parseTabSessionId("tab-one")!,
 					{ identity: authorities } as unknown as CodexWorkbenchSharedComponents,
 					{
 						queue: { kind: "codex_queue", submissions: null },
 						queueThreadId: null,
 						currentCoordinatorCall: null,
 						threads: new Set(),
+						voiceTrace: { begin: () => undefined, note: () => undefined },
+						presentingPaneId: null,
 					},
 				)
 				.realtime(components);

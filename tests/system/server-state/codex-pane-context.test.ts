@@ -32,7 +32,7 @@ const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.t
 // names; everything else reaches nobody (TASK-293, ADR 0034). Appending every report was a
 // feedback loop: a presented walkthrough step changes the reading, which fed the voice model a
 // machine envelope as it began each step, and it answered.
-test("live voice is told what the user changed by hand, and nothing of what anybody else did", async () => {
+test("live voice is told what the user changed by hand in its own tab, and nothing of what anybody else did", async () => {
 	const resources = new AsyncDisposableStack();
 	try {
 		const fixture = prepareProductionFixture(resources, executableSource);
@@ -138,6 +138,44 @@ test("live voice is told what the user changed by hand, and nothing of what anyb
 		expect(appended()[0]).toContain("scratch");
 		expect(appended()[0]).not.toContain(ids[0]!);
 		expect(appended()[0]).not.toContain("{");
+		// A pick by hand in another browser tab is that tab's conversation's news, never this
+		// voice's (TASK-373): every tab has a publisher of its own.
+		const otherTab = await openApplicationSocket(server.base, "other-tab-client", {
+			tabSession: "other-tab",
+		});
+		resources.defer(() => otherTab.close());
+		expect(
+			(
+				await request("/api/panes", {
+					method: "POST",
+					doing: false,
+					body: pane("other-tab-client", "voice-pane", false, false),
+				})
+			).status,
+		).toBe(200);
+		expect(
+			(
+				await request(SEMANTIC_PANE_CONTEXT_ROUTE, {
+					method: "POST",
+					doing: false,
+					body: {
+						paneId: "voice-pane",
+						clientId: "other-tab-client",
+						board: { name: "scratch", key: "scratch" },
+						variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
+						view: null,
+						selection: ids.map((id) => ({ id })),
+						version: read.body.board.version,
+						byUser: ["selection"],
+						at: new Date().toISOString(),
+						sequence: 0,
+					},
+				})
+			).status,
+		).toBe(200);
+		await sleep(PANE_TELEMETRY_SETTLE_MS);
+		expect(appended()).toHaveLength(1);
+		await otherTab.close();
 		// A pane that has said what it is reading is read out by the variant's
 		// lasting name rather than its id: "scratch (Initial)" is something an
 		// agent can say to somebody, and an id twice over is not.

@@ -302,16 +302,15 @@ function eventFormReason(event: SettledSemanticChangeEvent, feedId: string): Rea
 }
 
 /**
- * Checks that the event describes this pane, is still fresh, and carries an
- * executable thread link.
+ * Checks that the event is still fresh and carries an executable thread link.
+ *
+ * Which pane it presents is not this port's to check: the port is keyed by the
+ * link it delivers for, and the event comes from that conversation's own
+ * publisher, presented through whichever of its panes was open.
  * @param event - The settled semantic change.
- * @param paneId - The pane this delivery port serves.
  * @returns The refusal reason, or null when the event's context is usable.
  */
-function eventContextReason(event: SettledSemanticChangeEvent, paneId: string): Reason | null {
-	if (event.pane.paneId !== paneId) {
-		return "invalid_event";
-	}
+function eventContextReason(event: SettledSemanticChangeEvent): Reason | null {
 	if (event.staleness.state !== "current" || event.freshness.state !== "fresh") {
 		return "stale_event";
 	}
@@ -388,7 +387,7 @@ function eventReason(
 	const admissible =
 		eventFormReason(event, options.feedId) ??
 		ownSessionReason(event, options.sessionAuthors?.() ?? []) ??
-		eventContextReason(event, options.paneId);
+		eventContextReason(event);
 	return admissible ?? targetReason(event, options.target, lastSequence);
 }
 

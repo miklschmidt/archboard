@@ -72,6 +72,7 @@ describe("server Codex publication boundary", () => {
 			gateway,
 			paneForBrowser: () => "pane-publication",
 			tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
+			openTabSession: () => undefined,
 		});
 		const messages: unknown[] = [];
 		try {
@@ -134,6 +135,7 @@ describe("server Codex publication boundary", () => {
 			gateway,
 			paneForBrowser: () => connection.paneId,
 			tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
+			openTabSession: () => undefined,
 		});
 		const messages: unknown[] = [];
 		const transport = {
@@ -224,6 +226,7 @@ describe("server Codex publication boundary", () => {
 			gateway,
 			paneForBrowser: () => paneId,
 			tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
+			openTabSession: () => undefined,
 		});
 		const eventSendFailure = new Error("event write callback failed");
 		const transport = createServerCodexBrowserSocketSend({
@@ -319,6 +322,7 @@ describe("server Codex publication boundary", () => {
 			gateway,
 			paneForBrowser: () => paneId,
 			tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
+			openTabSession: () => undefined,
 		});
 		const eventFailures = [firstEventFailure, laterEventFailure];
 		let eventSend = 0;

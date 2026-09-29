@@ -7,6 +7,7 @@ import type {
 	DynamicApprovalOwnerBinding,
 	DynamicApprovalOwnerRequest,
 	DynamicApprovalOwnerView,
+	TabSessionId,
 } from "@/server/codex-workbench";
 import type {
 	BrowserCommandId,
@@ -22,6 +23,8 @@ import type { TransportServerNotification } from "@/runtime/codex-transport";
 
 interface PendingDynamicApproval {
 	readonly request: DynamicApprovalOwnerRequest;
+	/** The tab session whose thread asked, which alone is shown the approval and may answer it. */
+	readonly tabSessionId: TabSessionId;
 	binding: DynamicApprovalOwnerBinding;
 	readonly decision: Promise<DynamicToolApprovalDecision>;
 	readonly resolve: (decision: DynamicToolApprovalDecision) => void;
@@ -32,9 +35,14 @@ interface PendingDynamicApproval {
 interface ServerDynamicApprovalOwner {
 	readonly port: DynamicToolApprovalPort;
 	readonly browser: BrowserDynamicApprovalActions;
-	readonly pending: () => readonly DynamicApprovalOwnerView[];
-	/** Rebind every pending presentation to the pane holding the current lease. */
-	readonly bindLease: (paneId: string, commandId: BrowserCommandId) => void;
+	/** Every approval awaiting an answer from one tab session. */
+	readonly pending: (tabSessionId: TabSessionId) => readonly DynamicApprovalOwnerView[];
+	/** Rebind a tab session's pending presentations to its pane holding the current lease. */
+	readonly bindLease: (
+		tabSessionId: TabSessionId,
+		paneId: string,
+		commandId: BrowserCommandId,
+	) => void;
 	readonly subscribe: (listener: () => void) => () => void;
 	readonly onNotification: (event: TransportServerNotification) => void;
 	readonly settleAll: (cause: "server_shutdown" | "child_disconnected") => void;
@@ -49,7 +57,14 @@ interface ServerDynamicApprovalOwner {
 interface ServerDynamicApprovalOwnerOptions {
 	readonly identity: IdentityAuthorities;
 	readonly now: () => number;
-	readonly bindingForCaller: (threadId: ThreadId) => DynamicApprovalOwnerBinding;
+	/**
+	 * The tab session a dynamic caller's thread belongs to, and the browser command its approval
+	 * is first presented under.
+	 */
+	readonly bindingForCaller: (threadId: ThreadId) => {
+		readonly tabSessionId: TabSessionId;
+		readonly binding: DynamicApprovalOwnerBinding;
+	};
 }
 
 /** One notification as the child sent it. */
@@ -304,9 +319,11 @@ function createServerDynamicApprovalOwner(
 		const decision = new Promise<DynamicToolApprovalDecision>((next) => {
 			resolve = next;
 		});
+		const caller = options.bindingForCaller(ownedRequest.identity.threadId);
 		const entry: PendingDynamicApproval = {
 			request: ownedRequest,
-			binding: immutableBinding(options.bindingForCaller(ownedRequest.identity.threadId)),
+			tabSessionId: caller.tabSessionId,
+			binding: immutableBinding(caller.binding),
 			decision,
 			resolve,
 			settled: false,
@@ -362,18 +379,19 @@ function createServerDynamicApprovalOwner(
 	});
 	const browser: BrowserDynamicApprovalActions = Object.freeze({
 		/**
-		 * Settle one approval with the user's answer, refused unless the answer
-		 * was given under the binding the approval is still presented under.
+		 * Settle one approval with the user's answer, refused unless it came from
+		 * the tab session whose thread asked, under the binding the approval is
+		 * still presented under.
 		 * @param command The answer.
-		 * @param _context The pane, which the binding check already covers.
+		 * @param context The pane and its tab session.
 		 * @returns The browser outcome.
 		 */
 		resolve: async (
 			command: BrowserDynamicApprovalResponse,
-			_context: BrowserActionContext,
+			context: BrowserActionContext,
 		): Promise<BrowserActionResult> => {
 			const entry = pending.get(keyFor(command));
-			if (entry === undefined) {
+			if (entry === undefined || entry.tabSessionId !== context.tabSessionId) {
 				throw new Error("The dynamic approval is no longer pending.");
 			}
 			if (bindingIsStale(command, entry.binding)) {
@@ -392,7 +410,10 @@ function createServerDynamicApprovalOwner(
 		 */
 		onBrowserDisconnect: (context: BrowserActionContext, _reason: BrowserDisconnectReason) => {
 			for (const entry of pending.values()) {
-				if (entry.binding.paneId === context.paneId) {
+				if (
+					entry.tabSessionId === context.tabSessionId &&
+					entry.binding.paneId === context.paneId
+				) {
 					terminal(entry, "disconnected", "browser_disconnected");
 				}
 			}
@@ -411,27 +432,32 @@ function createServerDynamicApprovalOwner(
 		port,
 		browser,
 		/**
-		 * Every approval awaiting an answer, as a pane is shown it.
+		 * Every approval awaiting an answer from one tab session, as its panes are shown it.
+		 * @param tabSessionId The tab session.
 		 * @returns The views.
 		 */
-		pending: () =>
+		pending: (tabSessionId: TabSessionId) =>
 			Object.freeze(
-				[...pending.values()].map((entry) =>
-					Object.freeze({ request: entry.request, binding: entry.binding }),
-				),
+				[...pending.values()]
+					.filter((entry) => entry.tabSessionId === tabSessionId)
+					.map((entry) => Object.freeze({ request: entry.request, binding: entry.binding })),
 			),
 		/**
-		 * Re-point every presented approval at the pane holding the lease, so the
-		 * pane that holds it can answer: the server has one conversation, and an
-		 * approval belongs to it rather than to whichever pane it was first shown
-		 * in. The captured link is unchanged, so an answer is still refused once
-		 * the link moves.
-		 * @param paneId The pane holding the lease.
+		 * Re-point a tab session's presented approvals at its pane holding the
+		 * lease, so the pane that holds it can answer: an approval belongs to the
+		 * tab's conversation rather than to whichever of its panes it was first
+		 * shown in. The captured link is unchanged, so an answer is still refused
+		 * once the link moves.
+		 * @param tabSessionId The tab session.
+		 * @param paneId Its pane holding the lease.
 		 * @param commandId Its current lease.
 		 */
-		bindLease: (paneId: string, commandId: BrowserCommandId) => {
+		bindLease: (tabSessionId: TabSessionId, paneId: string, commandId: BrowserCommandId) => {
 			for (const entry of pending.values()) {
-				if (entry.binding.paneId === paneId && entry.binding.commandId === commandId) {
+				if (
+					entry.tabSessionId !== tabSessionId ||
+					(entry.binding.paneId === paneId && entry.binding.commandId === commandId)
+				) {
 					continue;
 				}
 				entry.binding = immutableBinding({ ...entry.binding, paneId, commandId });

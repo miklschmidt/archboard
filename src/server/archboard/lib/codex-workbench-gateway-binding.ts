@@ -72,7 +72,7 @@ function createGatewayBinding(
 				}
 				return server.contextForOperation(
 					{
-						paneId: commandContext.paneId,
+						tabSessionId: commandContext.tabSessionId,
 						clientId: commandContext.browserId,
 						childId: commandContext.childId,
 						epoch: commandContext.epoch,

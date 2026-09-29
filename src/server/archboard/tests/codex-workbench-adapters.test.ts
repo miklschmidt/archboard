@@ -20,7 +20,7 @@ test("server-started work presents through the bound pane while it is open, anot
 		{ paneId: "pane-bound", focused: false },
 	];
 	expect(presentingPane("pane-bound", panes)).toBe(panes[2]!);
-	// The conversation belongs to the server: closing the pane that made it
+	// The conversation belongs to the tab: closing the pane that made it
 	// moves presentation to the pane the person is in, not to a refusal.
 	expect(presentingPane("pane-gone", panes)).toBe(panes[1]!);
 	expect(presentingPane(null, panes)).toBe(panes[1]!);
@@ -208,7 +208,7 @@ test("a stale browser disconnect token cannot clear a newer controller binding",
 	expect(clears).toBe(1);
 });
 
-test("two panes creating at once leave one workhorse: the later create is refused before thread/start", async () => {
+test("two panes of a tab creating at once leave one workhorse: the later create is refused before thread/start", async () => {
 	const authorities = createIdentityAuthorities();
 	const { childId, epoch } = authorities.identity.validator;
 	const threadId = authorities.identity.decoder.adoptThreadId("thread-winner");
@@ -308,9 +308,9 @@ test("two panes creating at once leave one workhorse: the later create is refuse
 	expect(await first).toEqual({ outcome: "delivered" });
 	expect(second).rejects.toThrow();
 	await second.catch(() => undefined);
-	// One thread/start: the losing create never reached the workhorse, so the
-	// workhorse snapshot stays the winner's ready one.
-	expect(starts).toEqual(["A"]);
+	// One thread/start, under the tab session's link: the losing create never
+	// reached the workhorse, so the workhorse snapshot stays the winner's ready one.
+	expect(starts).toEqual(["tab-one"]);
 	expect(binding).toMatchObject({ target: { threadId } });
 });
 

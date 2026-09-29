@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
 import type { ApprovalOwnerView } from "../../../runtime/codex-approvals/index.js";
+import { parseTabSessionId } from "../index.js";
 import { createGatewayHarness, type GatewayHarness } from "./support.js";
 
 const openHarnesses: GatewayHarness[] = [];
@@ -77,6 +78,27 @@ describe("Codex workbench terminal publication", () => {
 
 		expect(JSON.stringify(messages)).toContain(String(approval.request.requestId));
 		expect(connection.snapshot().snapshot.approvals).toEqual([]);
+	});
+
+	test("a terminal retires once every connection of its own tab session has shown it", () => {
+		const value = harness();
+		const own = value.open();
+		// Another browser tab is never shown this tab's approvals, so it cannot hold them back.
+		const otherTab = value.gateway.connect(
+			"browser-other-tab",
+			value.paneId,
+			parseTabSessionId("tab-other")!,
+		);
+		const approval = value.makeOrdinaryApproval();
+		value.setOrdinaryApproval(approval);
+		own.snapshot();
+		otherTab.snapshot();
+		own.subscribe((message) => own.confirmPublished(message));
+		otherTab.subscribe(() => undefined);
+
+		value.setOrdinaryApproval(spontaneousTerminal(approval));
+
+		expect(value.publishedAcknowledgements).toEqual([approval.request.requestId]);
 	});
 
 	test("gateway shutdown applies the zero-live terminal retirement rule", async () => {

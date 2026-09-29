@@ -9,6 +9,10 @@ import { CODEX_SERVER_REQUEST_METHODS } from "../../../shared/codex-app-server-c
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import { CODEX_APPROVAL_EXPIRY_MS } from "../../../shared/timing/timing.js";
 import { createServerDynamicApprovalOwner } from "../codex-workbench-adapters.js";
+import { parseTabSessionId } from "../../codex-workbench/index.js";
+
+/** The tab session every dynamic caller here belongs to. */
+const TAB_SESSION = parseTabSessionId("tab-one")!;
 import { composeCodexWorkbenchGeneration } from "../codex-workbench-generation.js";
 import {
 	CODEX_WORKBENCH_COMPONENT_ORDER,
@@ -48,7 +52,7 @@ test("the production generation creates every owner once before readiness and sh
 	expect(Object.fromEntries(fixture.calls)).toEqual(
 		Object.fromEntries(CODEX_WORKBENCH_COMPONENT_ORDER.map((name) => [name, 1])),
 	);
-	// Every tab shares the one tab session the generation opens.
+	// The generation opens no tab session itself; this one is the fixture's, as a pane's would be.
 	expect(events.filter((event) => event === "create:tabSession")).toHaveLength(1);
 	expect(events.indexOf("identity:install")).toBeLessThan(events.indexOf("ready"));
 	expect(events.indexOf("router:install")).toBeLessThan(events.indexOf("ready"));
@@ -153,17 +157,20 @@ test("dynamic approval expiry settles once at the exact production deadline", as
 			identity,
 			now: () => now,
 			bindingForCaller: () => ({
-				commandId: identity.identity.issuer.mintBrowserCommandId(),
-				paneId: "pane-expiry",
-				capturedLink: {
-					threadId,
-					childId: identity.identity.validator.childId,
-					epoch: identity.identity.validator.epoch,
+				tabSessionId: TAB_SESSION,
+				binding: {
+					commandId: identity.identity.issuer.mintBrowserCommandId(),
+					paneId: "pane-expiry",
+					capturedLink: {
+						threadId,
+						childId: identity.identity.validator.childId,
+						epoch: identity.identity.validator.epoch,
+					},
 				},
 			}),
 		});
 		owner.port.presentImmutableRequest(request);
-		const projected = owner.pending()[0];
+		const projected = owner.pending(TAB_SESSION)[0];
 		if (projected === undefined) {
 			throw new Error("The approval was not projected.");
 		}
@@ -191,7 +198,7 @@ test("dynamic approval expiry settles once at the exact production deadline", as
 		});
 		jest.advanceTimersByTime(CODEX_APPROVAL_EXPIRY_MS - 1);
 		await Promise.resolve();
-		expect({ pending: owner.pending().length, settlements }).toEqual({
+		expect({ pending: owner.pending(TAB_SESSION).length, settlements }).toEqual({
 			pending: 1,
 			settlements: 0,
 		});

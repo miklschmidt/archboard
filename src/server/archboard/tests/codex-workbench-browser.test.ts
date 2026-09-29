@@ -63,6 +63,7 @@ test("socket acceptance transfers gateway ownership before the retired socket cl
 		gateway,
 		paneForBrowser: () => "pane-reconnect",
 		tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
+		openTabSession: () => undefined,
 	});
 	const first = Object.freeze({ socket: "first" });
 	const replacement = Object.freeze({ socket: "replacement" });
@@ -125,6 +126,7 @@ test("normal browser close and teardown share one delayed close owner", async ()
 		gateway,
 		paneForBrowser: () => "pane-delayed",
 		tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
+		openTabSession: () => undefined,
 	});
 	owner.accept(instance, "browser-delayed");
 	const normalClose = owner.close(instance, "browser-delayed");
@@ -179,6 +181,7 @@ test("teardown drains every normal close and preserves a delayed close failure",
 		gateway,
 		paneForBrowser: (browserId) => `pane-${browserId}`,
 		tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
+		openTabSession: () => undefined,
 	});
 	owner.accept(failedInstance, "failed");
 	owner.accept(healthyInstance, "healthy");
@@ -272,6 +275,7 @@ test("the public socket owner routes the complete gateway workflow through serve
 		gateway,
 		paneForBrowser: (browserId) => (browserId === "browser-1" ? "pane-authoritative" : null),
 		tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
+		openTabSession: () => undefined,
 	});
 	const send = { send: async (message: unknown) => void messages.push(message) };
 	for (const [requestId, action, extra] of [
@@ -305,6 +309,7 @@ test("the public socket owner routes the complete gateway workflow through serve
 		gateway,
 		paneForBrowser: () => "pane-authoritative",
 		tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
+		openTabSession: () => undefined,
 	});
 	await replacementOwner.close(instance, "browser-1");
 
@@ -379,6 +384,7 @@ test("the socket owner refuses missing pane authority and disposal only removes 
 		gateway,
 		paneForBrowser: () => null,
 		tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
+		openTabSession: () => undefined,
 	});
 	const messages: unknown[] = [];
 	await owner.handle(
@@ -435,6 +441,7 @@ test("the public request crosses a real WebSocket transport and returns the gate
 		gateway,
 		paneForBrowser: () => "pane-live",
 		tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
+		openTabSession: () => undefined,
 	});
 	const server = createServer();
 	const sockets = new WebSocketServer({ server });

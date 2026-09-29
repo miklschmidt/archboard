@@ -51,12 +51,13 @@ interface StagedCoordinator {
 }
 
 /**
- * Build the module that keeps the workbench's one current coordinator thread. Each `ensure`
+ * Build the module that keeps one conversation's current coordinator thread. Each `ensure`
  * either proves the coordinator it already has is still the reviewed one and reuses it, leaves a
  * thread it cannot prove as inspect-only, or starts a fresh one. Each `replace` starts a fresh
  * one in place of the current one, which a voice start asks for once the current coordinator has
  * carried a voice session (TASK-301). Calls are serialised, so two of them can never start two
- * coordinators at once.
+ * coordinators at once. Other conversations keep coordinators of their own in the same epoch
+ * (TASK-373), so only the starts this module made are its evidence.
  * @param options - The session, epoch store, identity authority and durable state.
  * @returns The coordinator module.
  */
@@ -65,6 +66,8 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 		throw new CodexCoordinatorError("invalid_input", "The coordinator requires a checkout root.");
 	}
 	let retainedPersistence = options.persisted ? freezePersistence(options.persisted) : null;
+	// The coordinator starts this module made: another conversation's are not its evidence.
+	const startedOperations = new Set<string>();
 	let current: CoordinatorSnapshot = emptySnapshot("unbound", null);
 	// While a replacement runs, what it reaches is staged here and the current coordinator stays.
 	let staged: StagedCoordinator | null = null;
@@ -147,7 +150,14 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 		const configured = configuredSettings(selection);
 		const epochSnapshot = currentEpochSnapshot(configured);
 		const candidate = input.persisted === undefined ? retainedPersistence : input.persisted;
-		const decision = await decideCandidate(candidate, configured, reviewed, epochSnapshot, options);
+		const decision = await decideCandidate(
+			candidate,
+			configured,
+			reviewed,
+			epochSnapshot,
+			options,
+			(operationId) => startedOperations.has(operationId),
+		);
 		if (decision.kind === "reuse") {
 			retainedPersistence = decision.persistence;
 			current = readySnapshot(decision.persistence);
@@ -172,6 +182,7 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 				`${decision.reason} A fresh server operation id is required before replacement.`,
 			);
 		}
+		startedOperations.add(operationId);
 		return starter.start(operationId, selection, configured, reviewed, epochSnapshot);
 	}
 
@@ -202,6 +213,7 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 			const reviewed = reviewedHashes();
 			const configured = configuredSettings(selection);
 			const epochSnapshot = currentEpochSnapshot(configured);
+			startedOperations.add(operationId);
 			const started = await starter.start(
 				operationId,
 				selection,
