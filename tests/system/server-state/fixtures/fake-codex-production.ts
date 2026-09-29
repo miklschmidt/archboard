@@ -423,6 +423,9 @@ const handle = (frame: WireFrame): void => {
 			threads.delete(String(params["threadId"]));
 			respond(frame as never, {});
 			return;
+		case "thread/unsubscribe":
+			respond(frame as never, { status: "unsubscribed" });
+			return;
 		default:
 			respond(frame as never, {});
 	}

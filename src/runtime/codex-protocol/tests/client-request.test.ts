@@ -48,7 +48,7 @@ describe("Codex generated client request params", () => {
 	});
 
 	test("owns every supported outbound method in one exact registry", () => {
-		expect(CLIENT_REQUEST_METHODS).toHaveLength(32);
+		expect(CLIENT_REQUEST_METHODS).toHaveLength(33);
 		expect(Object.keys(CLIENT_REQUEST_PARAM_SCHEMAS)).toEqual([...CLIENT_REQUEST_METHODS]);
 		expect([...CLIENT_REQUEST_METHODS]).toEqual(
 			RESPONSE_METHODS.filter((method) => method !== "currentTime/read"),

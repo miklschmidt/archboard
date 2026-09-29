@@ -254,7 +254,10 @@ describe("coordinator replacement for a new voice session", () => {
 		const published: CoordinatorSnapshot[] = [];
 		fixtureValue.session.onStart = () => published.push(fixtureValue.coordinator.snapshot());
 
-		const fresh = await fixtureValue.coordinator.replace({ operationId: "voice-replacement" });
+		const fresh = await fixtureValue.coordinator.replace({
+			operationId: "voice-replacement",
+			onRetired: () => undefined,
+		});
 
 		expect(published).toHaveLength(1);
 		expect(published[0]).toBe(first);
@@ -280,7 +283,10 @@ describe("coordinator replacement for a new voice session", () => {
 		);
 
 		await expect(
-			fixtureValue.coordinator.replace({ operationId: "uncertain-replacement" }),
+			fixtureValue.coordinator.replace({
+				operationId: "uncertain-replacement",
+				onRetired: () => undefined,
+			}),
 		).rejects.toMatchObject({ code: "transaction_failed" });
 		expect(fixtureValue.coordinator.snapshot()).toBe(first);
 		expect(fixtureValue.coordinator.persisted()).toEqual(kept);
@@ -288,5 +294,6 @@ describe("coordinator replacement for a new voice session", () => {
 		const reused = await fixtureValue.coordinator.ensure();
 		expect(reused.state).toBe("ready");
 		expect(reused.threadId).toBe(first.threadId);
+		expect(fixtureValue.session.unsubscribeParams).toHaveLength(0);
 	});
 });

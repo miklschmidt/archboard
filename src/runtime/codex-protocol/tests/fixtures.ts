@@ -162,6 +162,7 @@ const responseFixtures: Record<ResponseMethod, unknown> = {
 		backwardsCursor: null,
 	},
 	"thread/delete": {},
+	"thread/unsubscribe": { status: "unsubscribed" },
 	"thread/settings/update": {},
 	"turn/start": { turn: turnFixture },
 	"turn/steer": { turnId: "turn-1" },

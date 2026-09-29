@@ -301,6 +301,7 @@ const ThreadItemsListParamsSchema = z.strictObject({
 	sortDirection: SortDirectionSchema.nullable().optional(),
 });
 const ThreadDeleteParamsSchema = z.strictObject({ threadId: z.string() });
+const ThreadUnsubscribeParamsSchema = z.strictObject({ threadId: z.string() });
 const ThreadSettingsUpdateParamsSchema = z.strictObject({
 	threadId: z.string(),
 	cwd: z.string().nullable().optional(),
@@ -443,6 +444,7 @@ const CLIENT_REQUEST_PARAM_SCHEMAS = codexIngressSchemas<
 	"thread/turns/list": ThreadTurnsListParamsSchema,
 	"thread/items/list": ThreadItemsListParamsSchema,
 	"thread/delete": ThreadDeleteParamsSchema,
+	"thread/unsubscribe": ThreadUnsubscribeParamsSchema,
 	"thread/settings/update": ThreadSettingsUpdateParamsSchema,
 	"turn/start": TurnStartParamsSchema,
 	"turn/steer": TurnSteerParamsSchema,

@@ -21,6 +21,7 @@ const AUTHORED_SESSION_METHODS = [
 	"threadTurnsListPage",
 	"threadItemsListPage",
 	"threadDelete",
+	"threadUnsubscribe",
 	"threadSettingsUpdate",
 	"turnStart",
 	"turnSteer",
@@ -87,6 +88,7 @@ const OPERATION_CASES = {
 		limit: 1,
 	}),
 	threadDelete: request("thread/delete", { threadId: "thread-1" }, true),
+	threadUnsubscribe: request("thread/unsubscribe", { threadId: "thread-1" }, true),
 	threadSettingsUpdate: request("thread/settings/update", { threadId: "thread-1" }, true),
 	turnStart: request(
 		"turn/start",

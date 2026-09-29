@@ -48,6 +48,7 @@ import type {
 	ThreadTimelineListResponse,
 	ThreadTurnsListResponse,
 	ThreadStatus,
+	ThreadUnsubscribeResponse,
 	TokenUsageBreakdown,
 	TurnInterruptResponse,
 	TurnPlanStepStatus,
@@ -160,6 +161,7 @@ const CODEX_CLIENT_REQUEST_METHODS = [
 	"thread/turns/list",
 	"thread/items/list",
 	"thread/delete",
+	"thread/unsubscribe",
 	"thread/settings/update",
 	"turn/start",
 	"turn/steer",
@@ -323,6 +325,7 @@ interface CodexResponseByMethod {
 	readonly "thread/turns/list": CodexJsonWire<ThreadTurnsListResponse>;
 	readonly "thread/items/list": CodexJsonWire<ThreadItemsListResponse>;
 	readonly "thread/delete": CodexJsonWire<ThreadDeleteResponse>;
+	readonly "thread/unsubscribe": CodexJsonWire<ThreadUnsubscribeResponse>;
 	readonly "thread/settings/update": CodexJsonWire<ThreadSettingsUpdateResponse>;
 	readonly "turn/start": CodexJsonWire<TurnStartResponse>;
 	readonly "turn/steer": CodexJsonWire<TurnSteerResponse>;

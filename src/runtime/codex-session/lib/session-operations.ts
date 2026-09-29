@@ -242,6 +242,13 @@ function createSessionOperations(ports: SessionOperationPorts): SessionOperation
 		threadDelete: (params: SessionParams<"thread/delete">) =>
 			mutate("thread/delete", params, "thread-capable"),
 		/**
+		 * Stop receiving a thread's events, so Codex unloads it once nothing runs on it.
+		 * @param params - The thread/unsubscribe parameters.
+		 * @returns Whether the thread was unsubscribed, not subscribed, or not loaded.
+		 */
+		threadUnsubscribe: (params: SessionParams<"thread/unsubscribe">) =>
+			mutate("thread/unsubscribe", params, "thread-capable"),
+		/**
 		 * Update a thread's settings.
 		 * @param params - The thread/settings/update parameters.
 		 * @returns The updated settings.

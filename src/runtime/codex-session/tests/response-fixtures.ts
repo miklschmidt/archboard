@@ -81,6 +81,9 @@ export function responseFor(method: ResponseMethod, fixture: SessionFixture): un
 	if (method === "thread/queue/delete") {
 		return { deleted: true };
 	}
+	if (method === "thread/unsubscribe") {
+		return { status: "unsubscribed" };
+	}
 	if (method === "thread/list") {
 		return { data: [threadFixture], nextCursor: "thread-next", backwardsCursor: "thread-back" };
 	}
