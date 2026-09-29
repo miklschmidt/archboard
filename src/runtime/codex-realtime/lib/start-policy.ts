@@ -127,6 +127,6 @@ export function createRealtimeStartParams(input: {
 		realtimeSessionId: input.realtimeSessionId,
 		transport: { type: "webrtc", sdp: input.sdp },
 		version: "v3",
-		voice: "arbor",
+		voice: "cove",
 	};
 }
