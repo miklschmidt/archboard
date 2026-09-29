@@ -110,9 +110,10 @@ bottom edge, with the sidebar stepped aside: the step's heading in the
 steps, and previous and next. The camera keeps the subjects of the step clear
 of the caption. The subjects include the parts at both ends of each relationship
 or step that the step names. If the step names messages of a flow, the camera
-shows their rows from the top of the picture. It shows the flow's whole width
-when that fits nearly as large, so that no column is cut through its words.
-The camera glides between steps. What a step is not about recedes. A group's
+shows their rows, and the one row before them, from the top of the picture.
+The row before them stays because it usually says why they happen. The camera
+shows the flow's whole width when that fits nearly as large, so that no column
+is cut through its words. The camera glides between steps. What a step is not about recedes. A group's
 region also recedes, unless it holds something that the step lights. Escape
 leaves.
 
