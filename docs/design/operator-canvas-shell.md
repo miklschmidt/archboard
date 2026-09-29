@@ -109,9 +109,18 @@ bottom edge, with the sidebar stepped aside: the step's heading in the
 `presentation` type role, its words under it, where it is in the walkthrough, the
 steps, and previous and next. The camera keeps the subjects of the step clear
 of the caption. The subjects include the parts at both ends of each relationship
-or step that the step names. The camera glides between steps. What a step is not
-about recedes. A group's region also recedes, unless it holds something that the
-step lights. Escape leaves.
+or step that the step names. If the step names messages of a flow, the camera
+shows their rows, and the one row before them, from the top of the picture.
+The row before them stays because it usually says why they happen. The camera
+shows the flow's whole width when that fits nearly as large, so that no column
+is cut through its words. The camera glides between steps. What a step is not about recedes. A group's
+region also recedes, unless it holds something that the step lights. Escape
+leaves.
+
+A flow's participant cards stay in view above the rows on screen, as a table
+keeps its column names in view. The cards slide down their lifelines to the
+top of the picture while a step glides and while a reader pans, and they hide
+the rows that they pass over. They never go below the flow's last row.
 
 ![The pane sidebar, board tab and selection tab](assets/semantic-pane-sidebar.png)
 

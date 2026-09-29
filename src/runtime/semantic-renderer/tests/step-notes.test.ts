@@ -113,14 +113,14 @@ test("a crossing step explanation stays clear of the receiver's activation bar",
 	const words = groups.find(
 		(group) =>
 			group.startsWith('<g data-semantic-kind="step" data-semantic-id="call"') &&
-			[...group.matchAll(/<rect\b[^>]*\/>/gu)].length === 2,
+			group.includes('data-semantic-part="label"'),
 	);
 	const receiver = groups.find(
 		(group) =>
 			group.startsWith('<g data-semantic-kind="node" data-semantic-id="server"') &&
 			group.includes('rx="3"'),
 	);
-	const note = paintedBox([...words!.matchAll(/<rect\b[^>]*\/>/gu)][1]![0]);
+	const note = paintedBox([...words!.matchAll(/<rect\b[^>]*\/>/gu)].at(-1)![0]);
 	const bar = paintedBox(/<rect\b[^>]*rx="3"[^>]*\/>/u.exec(receiver!)![0]);
 	const nextLabel = labelPlates(rendered.svg, "step").get("reply")!;
 
