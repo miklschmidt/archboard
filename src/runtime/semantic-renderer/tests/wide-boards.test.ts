@@ -8,7 +8,11 @@ import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from "node:
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { LayoutEngineSchema, type VariantContent } from "@/shared/semantic-board/index";
+import {
+	DEFAULT_LAYOUT_ENGINE,
+	LayoutEngineSchema,
+	type VariantContent,
+} from "@/shared/semantic-board/index";
 import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 import { renderArchitecture, type RenderedDiagram } from "@/runtime/semantic-renderer/index";
 import {
@@ -272,6 +276,15 @@ function slants(drawing: RenderedDiagram): string[] {
 
 const { policy, boards } = vaultBoards();
 
+/**
+ * How long a board's first layout on the default engine may take here: the
+ * 1 s render budget, three times over. The gate shares the machine with its
+ * other lanes and whatever else runs, so a bound at the budget would fail on
+ * load rather than on the renderer; this one fails on a layout grown several
+ * times slower. The budget itself is measured on a quiet machine (TASK-377).
+ */
+const LOADED_LAYOUT_BOUND_MS = 3 * 1000;
+
 // Bun waits the suite's 20 s wall-clock budget rather than its own shorter
 // default, so the budget is what a slow layout fails (docs/agents/test-suite.md).
 // The vault's boards are drawn with the vault's policy, so its groups gather.
@@ -287,12 +300,17 @@ for (const board of cases) {
 	for (const layout of LayoutEngineSchema.options) {
 		test(`${board.name} (${layout}): complete architecture, clear cards, labels on their own routes`, async () => {
 			const content = orderedFixture(board.content);
+			// Each case draws content nothing drew before, so this is a first layout.
+			const began = performance.now();
 			const drawing = await renderArchitecture({
 				content,
 				theme: "light",
 				layout,
 				...(board.policy === undefined ? {} : { policy: board.policy }),
 			});
+			const took = performance.now() - began;
+			if (layout === DEFAULT_LAYOUT_ENGINE)
+				expect(took, "first layout, ms").toBeLessThan(LOADED_LAYOUT_BOUND_MS);
 			expectIntact(drawing, content);
 			expect(slants(drawing), "routes on a slant").toEqual([]);
 			expect(labelsAcrossWalls(drawing), "labels across a container's edge").toEqual([]);
