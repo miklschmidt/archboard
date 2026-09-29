@@ -4,9 +4,9 @@
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 21,
+	"version": 22,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-09-29T16:13:03.349Z",
+	"updatedAt": "2026-09-29T16:24:40.469Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
@@ -1767,7 +1767,7 @@
 		{
 			"id": "6UJCRC4z",
 			"name": "TASK-374",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "kEXoBE8D",
 			"summary": "Module level: how a voice talk reaches the coordinator, the board tools and the workhorse. Follow linked subjects for related levels.",
 			"content": {
@@ -2330,7 +2330,7 @@
 		{
 			"id": "qXxLJqDw",
 			"name": "TASK-373",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "6UJCRC4z",
 			"summary": "Module level: how a voice talk reaches the coordinator, the board tools and the workhorse. Follow linked subjects for related levels.",
 			"content": {
@@ -2967,7 +2967,7 @@
 			}
 		}
 	],
-	"current": "6UJCRC4z",
+	"current": "qXxLJqDw",
 	"adoptions": [
 		{
 			"variant": "H3TW6CJC",
@@ -2986,6 +2986,12 @@
 			"from": "kEXoBE8D",
 			"at": "2026-09-29T13:06:29.775Z",
 			"reason": "A replaced coordinator thread is unsubscribed once its voice session closed and no turn runs on it, so Codex unloads it"
+		},
+		{
+			"variant": "qXxLJqDw",
+			"from": "6UJCRC4z",
+			"at": "2026-09-29T16:24:40.469Z",
+			"reason": "TASK-373: each browser tab is a tab session with its own link, workhorse, coordinator, voice, delivery, queue, lease and approvals; the thread selector is gone"
 		}
 	]
 }

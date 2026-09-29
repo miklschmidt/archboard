@@ -3,11 +3,11 @@ id: TASK-373
 title: >-
   Each browser session has its own workhorse thread, and the thread selector is
   gone
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 12:31'
-updated_date: '2026-09-29 16:20'
+updated_date: '2026-09-29 16:28'
 labels:
   - codex
   - voice
@@ -37,16 +37,16 @@ Found in research: the server looks panes up by the layout ids A and B, which re
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A browser tab's first message or voice start creates a workhorse thread for that tab, and every later message and voice session from the tab runs on it
-- [ ] #2 A reload of the tab keeps its thread, and a new tab or window starts a new one
-- [ ] #3 Two tabs on one Archboard server hold two separate conversations
-- [ ] #4 ADR 0019, CONTEXT.md, the operator shell design and the affected boards describe a workhorse per browser session
-- [ ] #5 Two tabs on one Archboard server can each talk by voice at the same time, each on its own coordinator and workhorse
-- [ ] #6 A session that no tab has held for the grace period ends: its pending approvals are cancelled, board news to its workhorse stops, and its threads are unsubscribed
-- [ ] #7 A reload within the grace keeps the tab's conversation, voice aside, and its pending approvals
-- [ ] #8 "New conversation" starts a new workhorse for the tab, and the next message runs on it
-- [ ] #9 A recording is not refused because voice is live in another tab
-- [ ] #10 No thread selector or candidate list remains, and the attach, relink and refresh commands and the code that served only them are deleted
+- [x] #1 A browser tab's first message or voice start creates a workhorse thread for that tab, and every later message and voice session from the tab runs on it
+- [x] #2 A reload of the tab keeps its thread, and a new tab or window starts a new one
+- [x] #3 Two tabs on one Archboard server hold two separate conversations
+- [x] #4 ADR 0019, CONTEXT.md, the operator shell design and the affected boards describe a workhorse per browser session
+- [x] #5 Two tabs on one Archboard server can each talk by voice at the same time, each on its own coordinator and workhorse
+- [x] #6 A session that no tab has held for the grace period ends: its pending approvals are cancelled, board news to its workhorse stops, and its threads are unsubscribed
+- [x] #7 A reload within the grace keeps the tab's conversation, voice aside, and its pending approvals
+- [x] #8 "New conversation" starts a new workhorse for the tab, and the next message runs on it
+- [x] #9 A recording is not refused because voice is live in another tab
+- [x] #10 No thread selector or candidate list remains, and the attach, relink and refresh commands and the code that served only them are deleted
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -85,4 +85,18 @@ S5b: every conversation is keyed by its tab session. The sessions store opens a 
 S6: session lifetime. TAB_SESSION_GRACE_MS (60 s) in timing.ts. Presence is the clientId -> tab map in tab-sessions.ts plus a grace timer per tab with no pane left (noted at admitSocket, forgotten with the pane's owning socket, so a reload's forget-then-note keeps the session); endTabSessionsOnceGone subscribes per generation from installLifecycleSignals and runs gateway.endSession (lease owner and ledger entry dropped) then sessions.end. sessions.end (codex-workbench-session-end.ts): live -> ending at once (a returning tab gets a fresh record; forThread answers live sessions only, so an ending session's new approvals are cancelled on receipt), clear the link, settle approvals (ordinary cancelTabSessionApprovals 'browser tab session ended', dynamic endSession as disconnected/browser_disconnected), stop voice, dispose spoken approval, delivery, callbacks, publisher, shut the queue, unsubscribe every claimed thread once idle, then dispose realtime and coordinator tools and drop the threads. TASK-374's retire.ts moved to runtime codex-thread-unload (createCodexThreadUnload), used by the coordinator and by the store. New conversation retires the old workhorse thread (scope.retireThread) and releases the replaced coordinator's thread once the coordinator unloaded it (releaseThread from onRetired, also for voice's fresh coordinator). A disconnect no longer settles approvals: hasOtherPresenter, presenter contexts, the ordinary/dynamic/thread-link onBrowserDisconnect hooks and controllerTokens are deleted. Departures: presence lives in tab-sessions.ts keyed by client id rather than a socket-keyed tab-session-presence.ts; the link is cleared first rather than at step 5; no new session_ended cause. Tests: tab-session-presence, codex-workbench-session-end, ordinary 'the tab session's end settles its approvals; a disconnect does not', dynamic endSession, gateway lease end, gateway 'rejects a dynamic decision after the tab session ends', gateway-recovery reconnect keeps approvals, adapters New conversation gives up old threads; codex-workbench-disconnect.test.ts deleted.
 
 S7: every description made true to the tab sessions as built. Docs: ADR 0019 gains a TASK-373 amendment (it replaces TASK-302's single link) and its Decision, coordinator, delivery and Consequences sentences now describe tab sessions, with a rejected alternative for the canvas-wide link; ADR 0026 (Fix with Codex runs on the tab's workhorse) and ADR 0035 (a recording is its own tab session, so voice elsewhere neither refuses nor ends it) got dated amendment lines. CONTEXT.md gains Tab session; Thread link, Workhorse, Voice coordinator, Outside change and Workhorse news rewritten. AGENTS.md (the tab session id in sessionStorage is presentation-side identity; the Codex bullet), INSTALL.md, TESTING.md, operator-canvas-shell, voice, narration and recording acceptance docs, authored contracts (recording start, workhorseLink key, dynamic approvals settle at the tab session's end) and the consumer skill's recording reference updated. Code wording: inject migration hint, link_changed and lease_transferred refusal text, the recording page's voice-stopped failure text, relink wording in comments and test names now says New conversation, the lifecycle fixture prompt. Removal sweep: resolveThreadOwnershipProvenance, THREAD_OWNERSHIP_CONTRACTS, EPOCH_THREAD_ATTACH_OPERATION, EpochThreadOwnership(Provenance) and thread-ownership.test.ts deleted (unused since S1); no threadLinkAttach/Relink/Refresh, threadCandidates, voice_live, account_ready, SHARED_TAB_SESSION or server-link left outside backlog and history. Kept as true: the authored developer instructions' 'supplied Archboard thread link' (one per tab), the authored contract JSON cause names, semantic-renderer test board copies. Boards (04ca2c5c): Agent workbench, Voice coordinator and Archboard proposals corrected, Archboard server@TASK-373 branched (Tab session presence in tab-sessions.ts); Codex workhorse and Browser application proposals verified unchanged. The narrated Archboard beat is beat 4 'Agent work has a lifetime of its own'. Not adopted; README video not re-recorded.
+
+Closing validation, 2026-09-29:
+- Gate: bun run check green after S7 (3883 tests, 0 failures; lint, fmt, both type-checks, modules, system, repository, serial browser).
+- Real Codex, one scratch Archboard server (port 3451, fresh canvas state), two walkthrough recordings started 2 s apart, each its own headless tab and so its own tab session: "Why voice is its own thread" narrated all 6 steps and "Read this board" all 5. The epoch ledger holds two coordinator_start and two create_thread records, one pair per tab session. The two coordinators' voice sessions overlapped (16:21:45-16:24:02 and 16:21:46-16:23:28 UTC), each opening with step 1 of its own walkthrough, so two tabs talked at once and a recording was not refused because voice was live in another tab.
+- Grace end: the pages closed at 16:23:30 and 16:24:04 UTC. Codex shut down (unloaded) both of each session's threads, coordinator and workhorse, at 16:25:29 and 16:26:02 UTC: the 60 s tab-session grace, then Codex's 60 s unload delay after thread/unsubscribe.
+- Board proposals adopted: Agent workbench, Voice coordinator, Archboard, Archboard server, Codex workhorse, Browser application; dogfood check reports no diagnostics.
+- Criteria owners: #1, #4, #9 tests/system/server-state/codex-server-conversation.test.ts (panes of one tab share a conversation, another tab holds its own, a reload keeps it, New conversation starts a new workhorse and the next message runs on it) and codex-workbench-adapters.test.ts; #2 src/ui/pane-session/tests/pane-connection.test.ts and the conversation system test; #3 S1 deletion and the S7 removal sweep (no threadLinkAttach/Relink/Refresh, threadCandidates or candidate discovery left outside history); #5 ADR 0019 TASK-373 amendment and body, CONTEXT.md Tab session, operator-canvas-shell.md, the adopted boards; #6 and #10 the real-Codex run above and walkthrough-recording-start.test.ts; #7 codex-workbench-session-end.test.ts, tab-session-presence.test.ts, the real-Codex unloads above; #8 tab-session-presence.test.ts, gateway-recovery.test.ts and the codex-workbench-lifecycle process test.
+- Follow-ups noted, not done: the authored developer instructions still say "the supplied Archboard thread link" (one per tab now; a prompt change needs its own review); the thread-link port keeps one cleared entry per ended tab (no forget); subtitled-transcript.ts's recording check can no longer be false; the README explainer video narrates the changed Archboard walkthrough and is re-recorded with the other README media.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Each browser tab is a tab session: it keeps its id in sessionStorage and sends it on every pane socket, and it has its own thread link, workhorse, coordinator (started with its first message or Talk), voice session, board-change delivery, queue, command lease and approvals. Two tabs can talk at once, and a recording is no longer refused while voice is live elsewhere. A session ends 60 s after its last pane socket closes: its approvals are settled, its news stops, its link clears and its threads are unsubscribed once idle. A reload within the grace keeps the conversation and its approvals. The thread selector machinery (candidates, attach, relink, refresh) is deleted end to end, and cross-tab pane lookups are exact. Built in stages S1-S7 behind a new tab-session store that routes Codex notifications and requests by thread. Verified with the full gate and a real-Codex run of two concurrent recordings on one server, whose four threads Codex unloaded after the grace.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 18,
+	"version": 19,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-09-29T16:12:37.075Z",
+	"updatedAt": "2026-09-29T16:24:40.292Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -115,7 +115,7 @@
 		{
 			"id": "d74jhTtj",
 			"name": "Current architecture",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"summary": "Service level: Codex integration inside the Archboard server. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
@@ -782,7 +782,7 @@
 		{
 			"id": "kUF7buv6",
 			"name": "TASK-373",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "d74jhTtj",
 			"summary": "Service level: Codex integration inside the Archboard server. Follow linked subjects for related levels.",
 			"content": {
@@ -1725,5 +1725,13 @@
 			}
 		}
 	],
-	"current": "d74jhTtj"
+	"current": "kUF7buv6",
+	"adoptions": [
+		{
+			"variant": "kUF7buv6",
+			"from": "d74jhTtj",
+			"at": "2026-09-29T16:24:40.292Z",
+			"reason": "TASK-373: each browser tab is a tab session with its own link, workhorse, coordinator, voice, delivery, queue, lease and approvals; the thread selector is gone"
+		}
+	]
 }
