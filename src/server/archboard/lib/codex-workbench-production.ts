@@ -6,8 +6,9 @@ import {
 	verifyCodexExecutable,
 } from "@/runtime/codex-process/executable";
 import { createCodexWaitGraph } from "@/runtime/codex-wait-graph";
+import { requireVaultRoot } from "@/runtime/engine/board";
 import { stateDir } from "@/runtime/engine/state-dir";
-import { PORT } from "@/server/archboard/lib/listener-address";
+import { PORT, serverUrl } from "@/server/archboard/lib/listener-address";
 import type { InstallProductionCodexWorkbenchOptions } from "@/server/archboard/lib/codex-workbench";
 import { createProductionBindings } from "@/server/archboard/lib/codex-workbench-bindings";
 import { createGenerationOwnerStore } from "@/server/archboard/lib/codex-workbench-generation-owners";
@@ -67,6 +68,7 @@ export function createServerCodexWorkbenchInstallation(
 			executablePath,
 			checkoutRoot: server.checkoutRoot,
 			storage: { rootDirectory: storage.root, ownerDirectory: storage.ownerDirectory },
+			archboardServer: { url: serverUrl(), vault: requireVaultRoot() },
 			onGroupOwned: server.onCodexProcessGroupOwned,
 		},
 		/**

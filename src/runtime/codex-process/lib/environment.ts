@@ -41,6 +41,17 @@ const CODEX_RETAINED_ENVIRONMENT_KEYS: readonly string[] = Object.freeze([
 type CodexAmbientEnvironment = Readonly<Record<string, string | undefined>>;
 type CodexChildEnvironment = Readonly<Record<string, string>>;
 
+/**
+ * The Archboard server that owns the child. A thread runs `archboard` like any agent does, and
+ * that CLI finds its server and vault in its environment, so the child must name its own.
+ */
+interface CodexArchboardServer {
+	/** The URL the server listens at. */
+	readonly url: string;
+	/** The server's vault, absolute. */
+	readonly vault: string;
+}
+
 interface CodexChildEnvironmentInput {
 	/** The reviewed ambient environment; the current process environment when absent. */
 	readonly ambient?: CodexAmbientEnvironment;
@@ -48,6 +59,8 @@ interface CodexChildEnvironmentInput {
 	readonly codexHome: string;
 	/** The canonical private CODEX_SQLITE_HOME root. */
 	readonly sqliteHome: string;
+	/** The server that started the child. */
+	readonly archboardServer: CodexArchboardServer;
 }
 
 class CodexEnvironmentError extends Error {
@@ -109,15 +122,21 @@ function retainedValue(ambient: CodexAmbientEnvironment, key: string): string | 
 }
 
 /**
- * Build the child environment from the reviewed allowlist. The two Codex
- * roots are assigned last so ambient values can never win by insertion order
- * or precedence.
- * @param input - Canonical private Codex roots and an optional reviewed ambient environment.
+ * Build the child environment from the reviewed allowlist. The Codex roots and
+ * the server's address are assigned last so ambient values can never win by
+ * insertion order or precedence.
+ *
+ * Auto-start is off in the child. It lives only as long as its server, so a thread's CLI that
+ * finds no server has outlived it, and starting one would put a second server nobody asked for
+ * over the same vault. An explicit `archboard start` still overrides it.
+ * @param input - Canonical private Codex roots, the owning server and an optional reviewed ambient
+ * environment.
  * @returns The frozen allowlisted environment for the owned app-server child.
  */
 function buildCodexChildEnvironment(input: CodexChildEnvironmentInput): CodexChildEnvironment {
 	const codexHome = requirePath(input.codexHome, "CODEX_HOME");
 	const sqliteHome = requirePath(input.sqliteHome, "CODEX_SQLITE_HOME");
+	const vault = requirePath(input.archboardServer.vault, "ARCHBOARD_VAULT");
 	const ambient = input.ambient ?? process.env;
 	const child: Record<string, string> = {};
 
@@ -128,8 +147,16 @@ function buildCodexChildEnvironment(input: CodexChildEnvironmentInput): CodexChi
 
 	child["CODEX_HOME"] = codexHome;
 	child["CODEX_SQLITE_HOME"] = sqliteHome;
+	child["ARCHBOARD_URL"] = input.archboardServer.url;
+	child["ARCHBOARD_VAULT"] = vault;
+	child["ARCHBOARD_NO_AUTOSTART"] = "1";
 	return Object.freeze(child);
 }
 
 export { CODEX_RETAINED_ENVIRONMENT_KEYS, CodexEnvironmentError, buildCodexChildEnvironment };
-export type { CodexAmbientEnvironment, CodexChildEnvironment, CodexChildEnvironmentInput };
+export type {
+	CodexAmbientEnvironment,
+	CodexArchboardServer,
+	CodexChildEnvironment,
+	CodexChildEnvironmentInput,
+};

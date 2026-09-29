@@ -155,7 +155,8 @@ for a loopback address, that is, an address that only this machine can reach.
 The old variable `EXPRESS_SERVER_URL` is refused with a message.
 
 Several Archboard servers can run on one machine at the same time, each on its own port.
-They share one Codex sign-in. If you sign out in one server, you sign out of all
+The Codex agents of a server run `archboard` against that server and its vault, and they
+never start another server. They share one Codex sign-in. If you sign out in one server, you sign out of all
 of them. A server that is already running shows a sign-in or a sign-out from
 another server only after you restart it.
 

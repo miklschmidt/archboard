@@ -54,6 +54,13 @@ runs on it, so Codex unloads them. The thread selector, its list of candidate
 threads and the attach, relink and refresh commands are gone. The sentences
 below say so. Everything else stands.
 
+Amended by TASK-379 (2026-09-29): the child's environment names the server that
+started it. `ARCHBOARD_URL` and `ARCHBOARD_VAULT` are that server's URL and
+vault, and `ARCHBOARD_NO_AUTOSTART` is `1`. So a thread that runs `archboard`
+talks to its own server and never starts another. This is an address, not a
+route for board context. Board changes still reach a thread only through the
+change feed. Everything else stands.
+
 ## Issue
 
 The workbench must show and control the same agent state that the person is
