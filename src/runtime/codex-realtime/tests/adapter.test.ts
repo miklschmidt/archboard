@@ -59,7 +59,7 @@ describe("Codex realtime adapter", () => {
 			realtimeSessionId: start.realtimeSessionId,
 			transport: { type: "webrtc", sdp: "offer-sdp" },
 			version: "v3",
-			voice: "arbor",
+			voice: "cove",
 		});
 		expect(h.adapter.generation()?.semanticBrief).toBe(semanticBrief());
 		notify(h, "thread/realtime/sdp", {
