@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 15,
+	"version": 17,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-09-25T01:27:43.143Z",
+	"updatedAt": "2026-09-29T13:20:33.414Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -59,7 +59,9 @@
 					"9diqPrFw",
 					"giL6EI28",
 					"Uz2qReYK",
-					"byMaoUe0"
+					"byMaoUe0",
+					"iay14AUl",
+					"hCKEBd5f"
 				],
 				"edges": [],
 				"flows": []
@@ -69,7 +71,7 @@
 			"id": "tliaNnOp",
 			"name": "Board changes reach the workhorse",
 			"grammar": "architecture",
-			"summary": "What a user changed on a board, told to the linked workhorse without starting a turn.",
+			"summary": "What a user changed on a board, told to each linked workhorse without starting a turn.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
@@ -79,6 +81,30 @@
 					"jylkTBp7",
 					"FxzIjbIO",
 					"giL6EI28"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "3t0DNOAT",
+			"name": "One tab session",
+			"grammar": "architecture",
+			"summary": "What one browser tab owns, how its threads' news and tool calls find it, and when it ends.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"tzyaOHwF",
+					"u2LFaG7R",
+					"iay14AUl",
+					"hCKEBd5f",
+					"byMaoUe0",
+					"Fg9dkGj3",
+					"08zJvPJq",
+					"QGVPyMwG",
+					"DNQTPTxE",
+					"FxzIjbIO",
+					"jylkTBp7"
 				],
 				"edges": [],
 				"flows": []
@@ -747,6 +773,803 @@
 									"jbxp553Z"
 								],
 								"view": "tliaNnOp"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "kUF7buv6",
+			"name": "TASK-373",
+			"lifecycle": "draft",
+			"parent": "d74jhTtj",
+			"summary": "Service level: Codex integration inside the Archboard server. Follow linked subjects for related levels.",
+			"content": {
+				"nodes": [
+					{
+						"id": "7TAwfrZF",
+						"order": 1000,
+						"name": "Agent workbench",
+						"kind": "service",
+						"responsibility": "Everything archboard owns around one private Codex child, inside the Archboard server",
+						"description": "Not a deployment of its own: this lives in the Archboard server process. The Codex app-server is its child.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/codex-workbench-application.ts"
+						},
+						"drillDown": {
+							"board": "Archboard server",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "skyIeErO",
+						"order": 2000,
+						"name": "Generation composition",
+						"kind": "module",
+						"responsibility": "Starts the private child, then builds each generation's object graph over a transport and identity ledger that outlive it",
+						"description": "installProductionCodexWorkbench hands the owner lifecycle createCodexProcess and a generation factory. The factories (codex-workbench-factories.ts) build the components in the order they depend on each other, the gateway last. codex-workbench-session-factories.ts builds one tab session's owners when the tab sessions open it. A child's exit drops every tab session, and nothing is resumed.",
+						"parent": "7TAwfrZF",
+						"groups": [
+							"child"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/codex-workbench.ts"
+						}
+					},
+					{
+						"id": "u2LFaG7R",
+						"order": 3000,
+						"name": "Browser gateway",
+						"kind": "module",
+						"responsibility": "The one door a browser has into the workbench: snapshots out, admitted commands in, one lease per tab session",
+						"parent": "7TAwfrZF",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/codex-workbench/index.ts"
+						}
+					},
+					{
+						"id": "9diqPrFw",
+						"order": 4000,
+						"name": "Codex process",
+						"kind": "module",
+						"responsibility": "Owns the child: proves the executable, prepares the Codex home every Archboard server on the machine shares, spawns the child and reaps its group",
+						"description": "One Archboard-only CODEX_HOME and SQLite home under the state directory serve every server on the machine, so one sign-in serves them all; each server keeps its own owner lock and epoch ledger under its port. Its config.toml gets the auto-review defaults it lacks (approvals_reviewer auto_review, workspace-write sandbox with network access) and keeps whatever Codex or a person set; a config naming another SQLite home, or not TOML, is refused.",
+						"parent": "7TAwfrZF",
+						"groups": [
+							"child"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-process/index.ts"
+						}
+					},
+					{
+						"id": "FxzIjbIO",
+						"order": 5000,
+						"name": "Codex transport",
+						"kind": "module",
+						"responsibility": "One newline-framed JSON object at a time each way, correlated to its request, and each tool call routed to the owner registered for its namespace",
+						"description": "The versioned wire contract it decodes against lives beside it in codex-protocol. A dynamic tool call reaches the owner registered for its namespace and manifest digest: the thread tools, the coordinator tools, or tell_coordinator.",
+						"parent": "7TAwfrZF",
+						"groups": [
+							"child"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-transport/index.ts"
+						}
+					},
+					{
+						"id": "jylkTBp7",
+						"order": 6000,
+						"name": "Codex session",
+						"kind": "module",
+						"responsibility": "One initialized session and the reviewed methods it will send",
+						"parent": "7TAwfrZF",
+						"groups": [
+							"child"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/index.ts"
+						},
+						"drillDown": {
+							"board": "Codex session",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "byMaoUe0",
+						"order": 7000,
+						"name": "Thread link",
+						"kind": "module",
+						"responsibility": "Which workhorse each tab session is bound to, made by the tab's first message or Talk: the binding, and the refusal when two disagree",
+						"parent": "7TAwfrZF",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-thread-link/index.ts"
+						}
+					},
+					{
+						"id": "2ffhMTdn",
+						"order": 8000,
+						"name": "Workhorse queue",
+						"kind": "module",
+						"responsibility": "Codex's queue of messages waiting for the workhorse: list, add, edit, reorder, delete, or start one now",
+						"parent": "7TAwfrZF",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-workhorse-queue/index.ts"
+						}
+					},
+					{
+						"id": "Fg9dkGj3",
+						"order": 9000,
+						"name": "Voice coordinator",
+						"kind": "module",
+						"responsibility": "The separate fast thread each tab session's voice attaches to, started with the tab's first message or Talk: the voice model's subconscious, which routes sustained work to the workhorse",
+						"parent": "7TAwfrZF",
+						"groups": [
+							"voice"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-coordinator/index.ts"
+						},
+						"drillDown": {
+							"board": "Voice coordinator",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "giL6EI28",
+						"order": 10000,
+						"name": "Codex app-server",
+						"kind": "external",
+						"responsibility": "The Codex binary, run as one private child over stdio in the Archboard-only Codex home",
+						"description": "Spawned as `app-server --stdio --strict-config`. Its threads are each tab session's workhorse and coordinator, and every thread runs in its auto-review mode. Nothing here describes its internals."
+					},
+					{
+						"id": "tzyaOHwF",
+						"order": 11000,
+						"name": "Browser pane",
+						"kind": "service",
+						"responsibility": "The pane a user works in: it names its tab session, holds the tab's lease, sends commands and draws the published state",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/workbench/index.tsx"
+						},
+						"drillDown": {
+							"board": "Browser application",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "Uz2qReYK",
+						"order": 12000,
+						"name": "Epoch ledger",
+						"kind": "module",
+						"responsibility": "Which child generation owns which thread, on disk, with staged operations that commit or roll back",
+						"parent": "7TAwfrZF",
+						"groups": [
+							"child"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-epoch/index.ts"
+						}
+					},
+					{
+						"id": "tlC2W839",
+						"order": 13000,
+						"name": "Workhorse operations",
+						"kind": "module",
+						"responsibility": "The four things the coordinator may ask of a workhorse, one at a time: delegate, steer, inspect, manage its queue",
+						"parent": "7TAwfrZF",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-workhorse-operations/index.ts"
+						},
+						"drillDown": {
+							"board": "Codex workhorse",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "ZQxB1ZaK",
+						"order": 14000,
+						"name": "Realtime voice",
+						"kind": "module",
+						"responsibility": "Starts the realtime leg on the coordinator's thread, hands a narrated walkthrough's steps to the voice model, and carries its transcript back",
+						"description": "Archboard never speaks to a voice endpoint itself: the child brokers it, and the media travels browser to provider over the peer connection the tab made.",
+						"parent": "7TAwfrZF",
+						"groups": [
+							"voice"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-realtime/index.ts"
+						}
+					},
+					{
+						"id": "QGVPyMwG",
+						"order": 15000,
+						"name": "Approvals",
+						"kind": "module",
+						"responsibility": "Every approval the child raises: staged, published to the tab session whose thread asked, answered exactly once, settled",
+						"description": "An approval from a thread that no live tab session owns is cancelled when it arrives. A reload within the grace keeps a tab session's pending approvals, and the end of the session cancels them.",
+						"parent": "7TAwfrZF",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-approvals/index.ts"
+						}
+					},
+					{
+						"id": "DNQTPTxE",
+						"order": 16000,
+						"name": "Thread tool calls",
+						"kind": "module",
+						"responsibility": "The archboard_app tools a thread calls on the server's other threads: list, read, create, fork, message, wait",
+						"description": "A creation, fork or message runs only once the user approves it in a pane of the calling thread's tab session, under the generation that may act.",
+						"parent": "7TAwfrZF",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-dynamic-tools/index.ts"
+						}
+					},
+					{
+						"id": "08zJvPJq",
+						"order": 17000,
+						"name": "Coordinator callbacks",
+						"kind": "module",
+						"responsibility": "While voice is live, workhorse news for the coordinator and pane news for the voice model, each once and in order",
+						"parent": "7TAwfrZF",
+						"groups": [
+							"voice"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-coordinator-callbacks/index.ts"
+						},
+						"drillDown": {
+							"board": "Voice coordinator",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "RkhHgrhb",
+						"order": 18000,
+						"name": "Board-change delivery",
+						"kind": "module",
+						"responsibility": "Tells each tab session's workhorse what a user changed on a board: one quiet developer message, settled once",
+						"description": "Before each delivery it checks the child, epoch, thread link and cursor again; the outcome is delivered, not delivered with a reason, or unknown, and it is never retried.",
+						"parent": "7TAwfrZF",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-thread-context/index.ts"
+						}
+					},
+					{
+						"id": "42Ws0Eeo",
+						"order": 19000,
+						"name": "Semantic context",
+						"kind": "module",
+						"responsibility": "One per tab session: turns its panes' gestures and every settled board change into briefs and events for that session",
+						"parent": "7TAwfrZF",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-semantic-context/index.ts"
+						}
+					},
+					{
+						"id": "iay14AUl",
+						"order": 20000,
+						"name": "Tab sessions",
+						"kind": "module",
+						"responsibility": "What each browser tab owns: its workhorse, coordinator, voice, delivery, queue and approvals, found by the thread a notification or tool call names",
+						"description": "One record per tab session, opened when a pane socket of the tab connects and built by codex-workbench-session-factories.ts. A notification goes to the session that owns its thread, or to every session when no session owns the thread yet. A tool call from a thread that no session owns is refused, so a running turn never waits on nobody. When a session ends, its voice stops, its approvals are cancelled, board news to its workhorse stops, and its threads are unsubscribed once no turn runs on them.",
+						"parent": "7TAwfrZF",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/codex-workbench-sessions.ts"
+						}
+					},
+					{
+						"id": "hCKEBd5f",
+						"order": 21000,
+						"name": "Tab session presence",
+						"kind": "module",
+						"responsibility": "Ends a tab session once no pane socket has held it for 60 seconds, so a reload keeps the conversation",
+						"description": "It lives as long as the server process, not as long as one child. A socket of the tab that comes back within the grace cancels the end.",
+						"parent": "7TAwfrZF",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/tab-session-presence.ts"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "hwJPR59O",
+						"order": 1000,
+						"from": "skyIeErO",
+						"to": "9diqPrFw",
+						"kind": "call",
+						"label": "start a generation",
+						"emphasis": "normal"
+					},
+					{
+						"id": "9GaG5ItC",
+						"order": 2000,
+						"from": "9diqPrFw",
+						"to": "giL6EI28",
+						"kind": "call",
+						"label": "spawn the child",
+						"emphasis": "normal"
+					},
+					{
+						"id": "FZnS78FX",
+						"order": 3000,
+						"from": "jylkTBp7",
+						"to": "FxzIjbIO",
+						"kind": "rpc",
+						"label": "one JSON-RPC request per method",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "3vlSu8a3",
+						"order": 4000,
+						"from": "FxzIjbIO",
+						"to": "giL6EI28",
+						"kind": "rpc",
+						"label": "JSON-RPC over stdio",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "b9HU99hH",
+						"order": 6000,
+						"from": "2ffhMTdn",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "thread/queue/add, update, reorder, delete, start",
+						"emphasis": "normal"
+					},
+					{
+						"id": "XAd3chIR",
+						"order": 7000,
+						"from": "Fg9dkGj3",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "thread/start and settings for the coordinator",
+						"emphasis": "normal"
+					},
+					{
+						"id": "3C7aLx0q",
+						"order": 8000,
+						"from": "u2LFaG7R",
+						"to": "byMaoUe0",
+						"kind": "call",
+						"label": "this tab session's link",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Qh7VZ9MQ",
+						"order": 9000,
+						"from": "u2LFaG7R",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "a typed message: turn/start or turn/steer",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "Lo6Q7GDB",
+						"order": 10000,
+						"from": "tzyaOHwF",
+						"to": "u2LFaG7R",
+						"kind": "event",
+						"label": "lease, commands, snapshots",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "nw9nYSMn",
+						"order": 11000,
+						"from": "skyIeErO",
+						"to": "u2LFaG7R",
+						"kind": "call",
+						"label": "bind the gateway to this generation",
+						"emphasis": "muted"
+					},
+					{
+						"id": "2wlebJ2T",
+						"order": 12000,
+						"from": "u2LFaG7R",
+						"to": "tzyaOHwF",
+						"kind": "event",
+						"label": "one snapshot, then deltas",
+						"emphasis": "normal"
+					},
+					{
+						"id": "uK6QAuru",
+						"order": 13000,
+						"from": "tlC2W839",
+						"to": "2ffhMTdn",
+						"kind": "call",
+						"label": "queue a delegation behind the running turn",
+						"emphasis": "normal"
+					},
+					{
+						"id": "NeJ30W7X",
+						"order": 14000,
+						"from": "tlC2W839",
+						"to": "byMaoUe0",
+						"kind": "call",
+						"label": "its tab session's workhorse",
+						"emphasis": "normal"
+					},
+					{
+						"id": "2ed6AqSF",
+						"order": 15000,
+						"from": "tlC2W839",
+						"to": "Uz2qReYK",
+						"kind": "call",
+						"label": "stage, commit or roll back",
+						"emphasis": "normal"
+					},
+					{
+						"id": "mhknqBOz",
+						"order": 16000,
+						"from": "Fg9dkGj3",
+						"to": "tlC2W839",
+						"kind": "call",
+						"label": "delegate, steer, inspect, queue",
+						"emphasis": "hero"
+					},
+					{
+						"id": "TFjDY5zE",
+						"order": 17000,
+						"from": "ZQxB1ZaK",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "thread/realtime/start, append, stop",
+						"emphasis": "normal"
+					},
+					{
+						"id": "YOaSBuBr",
+						"order": 18000,
+						"from": "QGVPyMwG",
+						"to": "u2LFaG7R",
+						"kind": "event",
+						"label": "an approval, to the panes of its tab session",
+						"emphasis": "normal"
+					},
+					{
+						"id": "aoHKAkWD",
+						"order": 19000,
+						"from": "FxzIjbIO",
+						"to": "DNQTPTxE",
+						"kind": "event",
+						"label": "a tool call from a thread",
+						"emphasis": "normal"
+					},
+					{
+						"id": "mxl6bmYW",
+						"order": 20000,
+						"from": "DNQTPTxE",
+						"to": "Uz2qReYK",
+						"kind": "call",
+						"label": "the generation that may act",
+						"emphasis": "normal"
+					},
+					{
+						"id": "EZEiVlsE",
+						"order": 21000,
+						"from": "u2LFaG7R",
+						"to": "2ffhMTdn",
+						"kind": "call",
+						"label": "queue, edit, reorder or start a message",
+						"emphasis": "normal"
+					},
+					{
+						"id": "rOBpux5i",
+						"order": 22000,
+						"from": "tlC2W839",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "turn/start when idle, turn/steer",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "NztvEtjX",
+						"order": 23000,
+						"from": "iay14AUl",
+						"to": "08zJvPJq",
+						"kind": "event",
+						"label": "workhorse notifications, tell_coordinator calls",
+						"emphasis": "normal"
+					},
+					{
+						"id": "biUWQZMB",
+						"order": 24000,
+						"from": "08zJvPJq",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "news as a coordinator turn/start; pane news appended",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Tqxin6z5",
+						"order": 25000,
+						"from": "42Ws0Eeo",
+						"to": "08zJvPJq",
+						"kind": "event",
+						"label": "the user's changes, focus and selection",
+						"emphasis": "normal"
+					},
+					{
+						"id": "7LxiPZOi",
+						"order": 26000,
+						"from": "42Ws0Eeo",
+						"to": "RkhHgrhb",
+						"kind": "event",
+						"label": "a settled board change",
+						"emphasis": "normal"
+					},
+					{
+						"id": "8g1SNngD",
+						"order": 27000,
+						"from": "RkhHgrhb",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "thread/inject_items into the workhorse",
+						"emphasis": "normal"
+					},
+					{
+						"id": "jbxp553Z",
+						"order": 28000,
+						"from": "RkhHgrhb",
+						"to": "byMaoUe0",
+						"kind": "call",
+						"label": "check its tab session's link again",
+						"emphasis": "muted"
+					},
+					{
+						"id": "xPCxyO70",
+						"order": 29000,
+						"from": "FxzIjbIO",
+						"to": "iay14AUl",
+						"kind": "event",
+						"label": "notifications and tool calls, routed by thread",
+						"emphasis": "normal"
+					},
+					{
+						"id": "9kvKfu7U",
+						"order": 30000,
+						"from": "iay14AUl",
+						"to": "Fg9dkGj3",
+						"kind": "event",
+						"label": "its coordinator's notifications and tool calls",
+						"emphasis": "normal"
+					},
+					{
+						"id": "89ivSTaM",
+						"order": 31000,
+						"from": "u2LFaG7R",
+						"to": "iay14AUl",
+						"kind": "call",
+						"label": "the tab session of this connection",
+						"emphasis": "normal"
+					},
+					{
+						"id": "IxtTYfQ6",
+						"order": 32000,
+						"from": "DNQTPTxE",
+						"to": "iay14AUl",
+						"kind": "call",
+						"label": "the calling thread's tab session",
+						"emphasis": "normal"
+					},
+					{
+						"id": "egDoJ9fH",
+						"order": 33000,
+						"from": "tzyaOHwF",
+						"to": "hCKEBd5f",
+						"kind": "event",
+						"label": "each socket holds its tab session",
+						"emphasis": "normal"
+					},
+					{
+						"id": "f4o4iE3G",
+						"order": 34000,
+						"from": "hCKEBd5f",
+						"to": "iay14AUl",
+						"kind": "event",
+						"label": "end a session no socket held for 60 s",
+						"emphasis": "normal"
+					},
+					{
+						"id": "jcfXg6TV",
+						"order": 35000,
+						"from": "iay14AUl",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "thread/unsubscribe an ended session's threads once idle",
+						"emphasis": "muted"
+					},
+					{
+						"id": "ELaAYJKS",
+						"order": 36000,
+						"from": "iay14AUl",
+						"to": "QGVPyMwG",
+						"kind": "call",
+						"label": "cancel an ended session's approvals",
+						"emphasis": "muted"
+					},
+					{
+						"id": "PqSkt9px",
+						"order": 37000,
+						"from": "skyIeErO",
+						"to": "iay14AUl",
+						"kind": "call",
+						"label": "one store per child, dropped when it exits",
+						"emphasis": "muted"
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "D8zxt3Va",
+						"name": "One bound workbench generation",
+						"beats": [
+							{
+								"id": "aDZPR2CP",
+								"heading": "A private child, composed once",
+								"body": "The workbench proves the executable and prepares an Archboard-only Codex home that every Archboard server on the machine shares, so one sign-in serves them all; it fills in the auto-review defaults its config.toml lacks and keeps what Codex or a person set. The owner lock and epoch ledger are the server's own. Then it starts the child and builds one generation's parts in the order they depend on each other.",
+								"subjects": [
+									"skyIeErO",
+									"9diqPrFw",
+									"giL6EI28"
+								]
+							},
+							{
+								"id": "GMR5L8XU",
+								"heading": "Only reviewed methods reach the wire",
+								"body": "The session publishes the methods that have been reviewed against the pinned contract, and the transport carries one framed object at a time each way. A reply that does not decode is a refusal, not a guess.",
+								"subjects": [
+									"jylkTBp7",
+									"FZnS78FX",
+									"FxzIjbIO",
+									"3vlSu8a3"
+								]
+							},
+							{
+								"id": "Li1gMmz5",
+								"heading": "Each tab holds its own link and lease",
+								"body": "Each browser tab is a tab session with its own thread link, made by the tab's first message or Talk. The link names that tab's workhorse. The pane that holds the tab's lease sends its typed message straight to that thread as a turn or a steer, and edits the thread's queue. The coordinator's work goes through the four operations instead, each staged in the epoch ledger so a child that dies mid-flight leaves a stated outcome rather than a guess.",
+								"subjects": [
+									"byMaoUe0",
+									"iay14AUl",
+									"u2LFaG7R",
+									"Qh7VZ9MQ",
+									"EZEiVlsE",
+									"tlC2W839",
+									"rOBpux5i",
+									"Uz2qReYK"
+								]
+							},
+							{
+								"id": "LdbANjtD",
+								"heading": "Voice is a separate thread, not a second mouth",
+								"body": "Each tab session has its own coordinator, a thread with its own model and settings, started with the tab's first message or Talk. It is the voice model's subconscious: it reads the boards, follows the workhorse and decides what the voice model says, and it runs only while voice is live. It does bounded work itself and routes anything sustained to the workhorse through the four operations. Two tabs can talk at the same time, each to its own coordinator.",
+								"subjects": [
+									"Fg9dkGj3",
+									"ZQxB1ZaK",
+									"mhknqBOz"
+								]
+							},
+							{
+								"id": "QvoF0oQJ",
+								"heading": "The coordinator hears the workhorse at once",
+								"body": "While voice is live, a workhorse turn that ends or begins waiting on the user, and anything the workhorse says through tell_coordinator, reaches the coordinator as one sentence in a turn/start: Codex adds it to the coordinator's running turn or starts one. With no voice session, or while a recording holds the voice, nothing is sent.",
+								"subjects": [
+									"08zJvPJq",
+									"NztvEtjX",
+									"biUWQZMB",
+									"Fg9dkGj3"
+								],
+								"view": "aeBxrmvQ"
+							},
+							{
+								"id": "TcEEIcyY",
+								"heading": "Board changes reach each workhorse quietly",
+								"body": "A settled change a user made goes into the history of each live tab session's workhorse as one developer message, after the child, epoch, that session's link and cursor are checked again. It starts no turn. Each delivery settles once as delivered, not delivered or unknown, and is never retried.",
+								"subjects": [
+									"42Ws0Eeo",
+									"7LxiPZOi",
+									"RkhHgrhb",
+									"8g1SNngD",
+									"jbxp553Z"
+								],
+								"view": "tliaNnOp"
+							},
+							{
+								"id": "0vBNZRtE",
+								"heading": "Each thread belongs to one tab session",
+								"body": "The tab sessions know which session owns each thread. A notification or tool call from a thread goes to that session alone, so one tab's news and approvals never reach another tab. A notification for a thread that no session owns yet goes to every session. A tool call from such a thread is refused, so a running turn never waits on nobody.",
+								"subjects": [
+									"iay14AUl",
+									"xPCxyO70",
+									"NztvEtjX",
+									"9kvKfu7U",
+									"IxtTYfQ6"
+								],
+								"view": "3t0DNOAT"
+							},
+							{
+								"id": "3o9fzuNL",
+								"heading": "A tab session ends 60 seconds after its last socket closes",
+								"body": "Every pane socket holds its tab's session. When no socket has held it for 60 seconds, the session ends: voice stops, its pending approvals are cancelled, board news to its workhorse stops, and its threads are unsubscribed once no turn runs on them, so Codex unloads them. A reload within that time keeps the conversation and its approvals. When the child exits, every session is dropped, and a tab's next message starts a new workhorse.",
+								"subjects": [
+									"hCKEBd5f",
+									"egDoJ9fH",
+									"f4o4iE3G",
+									"ELaAYJKS",
+									"jcfXg6TV"
+								],
+								"view": "3t0DNOAT"
 							}
 						]
 					}
