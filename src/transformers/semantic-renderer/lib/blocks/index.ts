@@ -21,6 +21,44 @@ import { curveThrough, pathOf, selfLoop } from "@/transformers/semantic-renderer
 import { placedBlocks, type Placed } from "@/transformers/semantic-renderer/lib/blocks/solves";
 
 /**
+ * What a group's region in one container holds, for a viewer to light it with: the cards and
+ * containers the group gathers there, and every card inside one of those that is in the group
+ * too. A card in several groups is drawn only with the first of them (ADR 0038), so a later
+ * group's region does not hold it.
+ * @param content The content drawn.
+ * @param gathered The group each node is gathered into a region with, by node id.
+ * @param group The region's group.
+ * @param parent The container the region sits in; absent on the board itself.
+ * @returns The ids, in the board's order.
+ */
+function regionMembers(
+	content: VariantContent,
+	gathered: ReadonlyMap<string, string> | undefined,
+	group: string,
+	parent: string | undefined,
+): string[] {
+	const parents = new Map(content.nodes.map((node) => [node.id, node.parent]));
+	const held = new Set(
+		content.nodes
+			.filter((node) => node.parent === parent && gathered?.get(node.id) === group)
+			.map(({ id }) => id),
+	);
+	/**
+	 * Whether a node is one the region holds, or sits inside one.
+	 * @param id The node.
+	 * @returns True when it does.
+	 */
+	const inside = (id: string): boolean => {
+		for (let at: string | undefined = id; at !== undefined; at = parents.get(at))
+			if (held.has(at)) return true;
+		return false;
+	};
+	return content.nodes
+		.filter((node) => held.has(node.id) || (isMemberOf(node, group) && inside(node.id)))
+		.map(({ id }) => id);
+}
+
+/**
  * The drawing the block engine's geometry describes.
  * @param content The architecture.
  * @param measured Its measured cards, labels and captions.
@@ -66,9 +104,7 @@ function drawingOf(
 		});
 	const regions = placed.regions.flatMap(({ group, parent, box, caption, depth }) => {
 		const words = measured.groups?.captions.get(group);
-		const members = content.nodes
-			.filter((node) => node.parent === parent && isMemberOf(node, group))
-			.map(({ id }) => id);
+		const members = regionMembers(content, measured.groups?.placing, group, parent);
 		return words === undefined
 			? []
 			: [{ group, parent, members, box, caption: { box: caption, measured: words }, depth }];
