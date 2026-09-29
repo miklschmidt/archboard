@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 17,
+	"version": 19,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-09-29T18:38:14.114Z",
+	"updatedAt": "2026-09-29T18:48:04.451Z",
 	"views": [],
 	"variants": [
 		{
@@ -347,7 +347,7 @@
 		{
 			"id": "RSCDIXvS",
 			"name": "TASK-373",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "J5Sigjhi",
 			"summary": "System level: the processes that run, and what they keep. Drill into each application for its internal modules.",
 			"content": {
@@ -683,9 +683,9 @@
 		{
 			"id": "xtb59Onf",
 			"name": "TASK-379",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "RSCDIXvS",
-			"summary": "A workhorse's CLI talks to the Archboard server that started it",
+			"summary": "System level: the processes that run, and what they keep. Drill into each application for its internal modules.",
 			"content": {
 				"nodes": [
 					{
@@ -1017,13 +1017,19 @@
 			}
 		}
 	],
-	"current": "RSCDIXvS",
+	"current": "xtb59Onf",
 	"adoptions": [
 		{
 			"variant": "RSCDIXvS",
 			"from": "J5Sigjhi",
 			"at": "2026-09-29T16:24:40.639Z",
 			"reason": "TASK-373: each browser tab is a tab session with its own link, workhorse, coordinator, voice, delivery, queue, lease and approvals; the thread selector is gone"
+		},
+		{
+			"variant": "xtb59Onf",
+			"from": "RSCDIXvS",
+			"at": "2026-09-29T18:48:04.451Z",
+			"reason": "TASK-379: the Codex child's environment names this server's URL and vault, with auto-start off, so a thread's CLI reaches the server that started it"
 		}
 	]
 }
