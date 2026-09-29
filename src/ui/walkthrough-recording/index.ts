@@ -8,6 +8,7 @@ import { WalkthroughRecorder } from "@/ui/walkthrough-recording/lib/recorder";
 
 export { RecordingStage } from "@/ui/walkthrough-recording/components/RecordingStage";
 export { pace, type PaceObservation, type PaceState } from "@/ui/walkthrough-recording/lib/pacing";
+export { tabCaptureOptions } from "@/ui/walkthrough-recording/lib/tab-capture";
 export { useWalkthroughRecording } from "@/ui/walkthrough-recording/hooks/use-walkthrough-recording";
 export type { RecordedStep, WalkthroughRecorder } from "@/ui/walkthrough-recording/lib/recorder";
 

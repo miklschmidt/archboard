@@ -10,6 +10,19 @@ another tab no longer refuses a recording start, and a Talk in another tab no
 longer ends a recording. This replaces the last two sentences of "It records on
 the canvas the CLI talks to" below. Everything else stands.
 
+Amended by TASK-378 (2026-09-29): the capture keeps a steady rate. Chromium's
+tab capture (`media::VideoCaptureOracle`) locks onto a screen region that
+animates steadily and then samples only frames that repaint that region; once
+the animation stops it ignores every other change for 250 ms. Each camera glide
+or cross-fade that ended while subtitles or traffic still moved held the picture
+for up to 284 ms, 4 to 10 times in a 100 s recording. The recording stage
+therefore lays a layer behind its opaque background that repaints the whole
+frame on every frame, so the lock is always on the whole frame and never ends.
+And the capture names no frame rate: Chromium captures a tab at 30 frames a
+second by default, and a rate asked for also caps the track, which then dropped
+a frame a few times a recording. "The page records itself" below stands
+otherwise.
+
 Agents in consumer repositories want to hand a user a video that explains an
 architecture, such as the change a pull request makes, narrated the way a
 walkthrough is narrated on the canvas, without the user sitting through it live

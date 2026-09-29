@@ -34,6 +34,13 @@ with sound in Chromium, Firefox, mpv and VLC.
 | d   | After each explanation there is a short pause, then the next step glides in. No step starts while the voice is still speaking. |
 | e   | The voice never asks a question, invites questions, or says it is waiting.                                                     |
 | f   | After the last step the voice closes in one sentence, and the video ends a moment later on the last step.                      |
+| g   | The picture never freezes while something moves: no hitch as a glide ends, while subtitles or traffic go on (TASK-378).        |
+
+To measure g, list the video's frame times with
+`ffprobe -v error -select_streams v:0 -show_entries frame=pts_time -of csv=p=0 <file>`.
+Frames are 33 ms apart, whether or not anything moves. The one exception is a
+glide that changes views: headless Chromium draws some of its frames too slowly
+for that, and holds a frame for 50 to 75 ms (TASK-378).
 
 ## 3. Discard a board made for the video
 
