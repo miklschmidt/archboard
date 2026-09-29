@@ -26,9 +26,6 @@ const MEDIA_TYPES: Readonly<Record<RecordingContainer, readonly string[]>> = {
 	webm: ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"],
 };
 
-/** Frames per second the tab is captured at: smooth camera glides, at a cost a CPU can pay. */
-const FRAME_RATE = 30;
-
 /**
  * Bits per second of picture, at most: a 1080p diagram of thin lines, small text and faint veils
  * stays free of blocking. The picture is still most of the time, so a file is far below this.
@@ -85,23 +82,34 @@ function mediaTypeFor(container: RecordingContainer): string {
 }
 
 /**
+ * What this tab is captured with: exactly the page's own size, since without a size the browser
+ * picks one of its own (1920x1024 for a 1920x1080 tab on Chromium 153), and no frame rate
+ * (TASK-378). Chromium captures a tab at 30 frames a second unless asked otherwise, and a rate
+ * asked for also caps the track: it drops a frame whenever the frames before it ran slightly
+ * ahead of that rate, which left a picture held for two frames a few times a recording.
+ * @param width The page's width, in CSS pixels.
+ * @param height The page's height, in CSS pixels.
+ * @param scale Device pixels per CSS pixel.
+ * @returns The options.
+ */
+function tabCaptureOptions(width: number, height: number, scale: number): TabCaptureOptions {
+	return {
+		video: {
+			width: { ideal: Math.round(width * scale) },
+			height: { ideal: Math.round(height * scale) },
+		},
+		audio: false,
+		preferCurrentTab: true,
+	};
+}
+
+/**
  * This tab's picture, from the browser's screen capture.
  * @returns The video track.
  * @throws {Error} When the browser captured something other than this tab, or nothing.
  */
 async function tabVideo(): Promise<MediaStreamTrack> {
-	// Without a size the browser picks one of its own (1920x1024 for a 1920x1080 tab on Chromium
-	// 153), so the frame is asked for at exactly the page's own size.
-	const scale = window.devicePixelRatio;
-	const options: TabCaptureOptions = {
-		video: {
-			frameRate: FRAME_RATE,
-			width: { ideal: Math.round(window.innerWidth * scale) },
-			height: { ideal: Math.round(window.innerHeight * scale) },
-		},
-		audio: false,
-		preferCurrentTab: true,
-	};
+	const options = tabCaptureOptions(window.innerWidth, window.innerHeight, window.devicePixelRatio);
 	const stream = await navigator.mediaDevices.getDisplayMedia(options);
 	const [track] = stream.getVideoTracks();
 	if (track === undefined) {
@@ -228,4 +236,4 @@ async function captureTab(container: RecordingContainer): Promise<TabCapture> {
 	return { mimeType, hear, begin, finish, discard };
 }
 
-export { captureTab, type CapturedFile, type TabCapture };
+export { captureTab, tabCaptureOptions, type CapturedFile, type TabCapture };
