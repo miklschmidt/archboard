@@ -28,7 +28,7 @@ Plan the next step before anyone writes code. Ask for a change and see it drawn 
 
 **Hear Archboard explain itself**. Its own system board, narrated by the Codex voice in under two minutes. Turn the sound on.
 
-https://github.com/user-attachments/assets/3e7090c1-0b57-410e-9bfd-0e315d8fb03e
+https://github.com/user-attachments/assets/f33b8aa2-3293-47fb-99e1-0460a9ee8534
 
 ## What you can do with it
 
