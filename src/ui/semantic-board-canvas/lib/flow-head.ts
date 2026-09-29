@@ -3,13 +3,13 @@
 // A participant is its card and the whole column of time under it, so a step
 // that lit a flow's messages and the participants at their ends framed the
 // flow from its head to its foot, and on a tall flow the rows came out too
-// small to read. So a step about some of a flow's rows frames those rows from
-// the top of the room ({@link flowFocus}), and the flow's head stays in view
-// above whatever rows the camera shows ({@link headDrop}): it slides down its
-// lifelines to stand at the top of the room, never further down than its last
-// row, the way a table keeps its column names in view as it scrolls. The
-// picture draws the frame's own ground behind a moved head, so the rows it
-// passes over are hidden under it.
+// small to read. So a step about some of a flow's rows frames those rows, and
+// the one before them, from the top of the room ({@link flowFocus}), and the
+// flow's head stays in view above whatever rows the camera shows
+// ({@link headDrop}): it slides down its lifelines to stand at the top of the
+// room, never further down than its last row, the way a table keeps its column
+// names in view as it scrolls. The picture draws the frame's own ground behind
+// a moved head, so the rows it passes over are hidden under it.
 //
 // Every number comes from the atlas the server returned with the picture: the
 // flow's frame, its columns and its rows. Nothing here reads the picture.
@@ -27,10 +27,8 @@ interface FlowRows {
 	readonly frame: Rect;
 	/** The top of its head of cards. */
 	readonly headTop: number;
-	/** The top of its first row. */
-	readonly firstRow: number;
-	/** The top of its last row. */
-	readonly lastRow: number;
+	/** The top of each of its rows, from the first down. */
+	readonly rowTops: readonly number[];
 }
 
 /** Where to look during a step about some of a flow's rows. */
@@ -57,23 +55,6 @@ function within(inner: Rect, outer: Rect): boolean {
 }
 
 /**
- * The smallest and largest of a list of numbers, folded rather than spread: a
- * flow may hold any number of rows.
- * @param values The numbers.
- * @returns Both, or undefined for none.
- */
-function extent(values: readonly number[]): { least: number; most: number } | undefined {
-	let found: { least: number; most: number } | undefined;
-	for (const value of values) {
-		found = {
-			least: Math.min(found?.least ?? value, value),
-			most: Math.max(found?.most ?? value, value),
-		};
-	}
-	return found;
-}
-
-/**
  * Where one flow's head and rows are.
  * @param atlas Where the picture drew each subject.
  * @param flow The flow.
@@ -84,20 +65,19 @@ function flowRows(atlas: SemanticAtlas, flow: string): FlowRows | null {
 	if (frame === undefined) {
 		return null;
 	}
-	const head = extent(
-		Object.values(atlas.nodes)
+	/**
+	 * The tops of the boxes the frame holds, from the highest down.
+	 * @param boxes The boxes.
+	 * @returns Their tops.
+	 */
+	const tops = (boxes: Record<string, Rect>): number[] =>
+		Object.values(boxes)
 			.filter((box) => within(box, frame))
-			.map((box) => box.y),
-	);
-	const rows = extent(
-		Object.values(atlas.edges)
-			.filter((box) => within(box, frame))
-			.map((box) => box.y),
-	);
-	if (head === undefined || rows === undefined) {
-		return null;
-	}
-	return { flow, frame, headTop: head.least, firstRow: rows.least, lastRow: rows.most };
+			.map((box) => box.y)
+			.toSorted((one, other) => one - other);
+	const [headTop] = tops(atlas.nodes);
+	const rowTops = tops(atlas.edges);
+	return headTop === undefined || rowTops.length === 0 ? null : { flow, frame, headTop, rowTops };
 }
 
 /**
@@ -109,15 +89,39 @@ function flowRows(atlas: SemanticAtlas, flow: string): FlowRows | null {
  */
 function headDrop(rows: FlowRows, camera: Camera): number {
 	const top = (FIT_MARGIN - camera.y) / camera.scale;
-	return Math.min(Math.max(0, top - rows.headTop), rows.lastRow - rows.firstRow);
+	const reach = rows.rowTops.at(-1)! - rows.rowTops[0]!;
+	return Math.min(Math.max(0, top - rows.headTop), reach);
+}
+
+/**
+ * The flow whose frame holds a box, as the picture drew it.
+ * @param variant The variant being read, or null when none can be.
+ * @param atlas Where the picture drew each subject.
+ * @param box The box.
+ * @returns The flow's head and rows, or undefined when no one flow holds the box.
+ */
+function flowHolding(
+	variant: SemanticVariant | null,
+	atlas: SemanticAtlas,
+	box: Rect,
+): FlowRows | undefined {
+	for (const { id } of variant?.content.flows ?? []) {
+		const rows = flowRows(atlas, id);
+		if (rows !== null && within(box, rows.frame)) {
+			return rows;
+		}
+	}
+	return undefined;
 }
 
 /**
  * Where to look during a step that lights some of a flow's messages: their
- * rows, with the head above them where {@link headDrop} will put it, as far
- * above the first of them as the drawing sets it above its own first row. The
- * rows before them are not shown, however short the flow: a step is about its
- * rows, and every row above them is room they could have been read in.
+ * rows and the one row before them, with the head above where
+ * {@link headDrop} will put it, as far above that row as the drawing sets it
+ * above its own first row. The rows further up are not shown, however short
+ * the flow: a step is about its rows, and every row above them is room they
+ * could have been read in. The one before them stays, faded, because it is
+ * usually why they happen: the call a reply answers, the step a check follows.
  * @param variant The variant being read, or null when none can be.
  * @param atlas Where the picture drew each subject.
  * @param lit The subjects the step lights: the ones it names and their ends.
@@ -129,13 +133,12 @@ function flowFocus(
 	lit: readonly string[],
 ): FlowFocus | null {
 	const rows = unionRect(lit.flatMap((id) => atlas.edges[id] ?? []));
-	const flow = (variant?.content.flows ?? [])
-		.map(({ id }) => flowRows(atlas, id))
-		.find((one) => one !== null && rows !== null && within(rows, one.frame));
-	if (rows === null || flow === null || flow === undefined) {
+	const flow = rows === null ? undefined : flowHolding(variant, atlas, rows);
+	if (rows === null || flow === undefined) {
 		return null;
 	}
-	const top = flow.headTop + (rows.y - flow.firstRow);
+	const lead = flow.rowTops.findLast((one) => one < rows.y) ?? rows.y;
+	const top = flow.headTop + (lead - flow.rowTops[0]!);
 	const bottom = rows.y + rows.height;
 	const columns = lit
 		.flatMap((id) => atlas.nodes[id] ?? [])

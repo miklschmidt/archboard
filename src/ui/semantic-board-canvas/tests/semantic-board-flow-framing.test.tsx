@@ -31,7 +31,7 @@ interface Rows {
 /** A short flow: one message under the head. */
 const SHORT: Rows = { steps: { s1: { x: 50, y: 120, width: 100, height: 24 } }, column: 260 };
 
-/** A short flow: the step's message second of three. */
+/** A short flow: the step's message last of three. */
 const SHORT_OF_THREE: Rows = {
 	steps: {
 		s1: { x: 50, y: 120, width: 100, height: 24 },
@@ -41,10 +41,11 @@ const SHORT_OF_THREE: Rows = {
 	column: 300,
 };
 
-/** A tall flow: the step's message far down, between a first and a last one. */
+/** A tall flow: the step's message far down, the row just before it, and a first and a last one. */
 const TALL: Rows = {
 	steps: {
 		s1: { x: 50, y: 120, width: 100, height: 24 },
+		s4: { x: 150, y: 840, width: 100, height: 24 },
 		s2: { x: 250, y: 900, width: 100, height: 24 },
 		s3: { x: 50, y: 1400, width: 300, height: 24 },
 	},
@@ -70,6 +71,7 @@ function board(message: string): Record<string, unknown> {
 					{ id: "s1", from: "p1", to: "p2", label: "reserve the items", kind: "sync" },
 					{ id: "s2", from: "p3", to: "p4", label: "charge the card", kind: "sync" },
 					{ id: "s3", from: "p1", to: "p4", label: "send the receipt", kind: "async" },
+					{ id: "s4", from: "p2", to: "p3", label: "hold the stock", kind: "sync" },
 				],
 			},
 		],
@@ -170,9 +172,10 @@ test("a step about part of a flow far wider than the pane frames its own subject
 	expect(message.scale).toBeGreaterThan(cameraNow().scale);
 });
 
-test("a step about a later message of a short flow brings it up under the flow's head too", async () => {
-	// The whole flow would fit, but the rows before the message are room it could be read in.
-	await presentingFlow(400, SHORT_OF_THREE, "s2");
+test("a step about the last message of a short flow brings it up under the flow's head too", async () => {
+	// The whole flow would fit, but the rows above the one before the message are
+	// room it could be read in.
+	await presentingFlow(400, SHORT_OF_THREE, "s3");
 	const camera = cameraNow();
 	const drop = 180 - 120;
 	expect(head().style.transform).toBe(`translate(0px, ${drop}px)`);
@@ -182,9 +185,10 @@ test("a step about a later message of a short flow brings it up under the flow's
 test("a step about a message far down a tall flow reads it from the top of the room, under the flow's head", async () => {
 	await presentingFlow(400, TALL, "s2");
 	const camera = cameraNow();
-	// The head moves down as far as the message is below the flow's first one,
-	// and stands at the top of the room, over the message at the size it reads.
-	const drop = 900 - 120;
+	// The head moves down as far as the row before the message is below the
+	// flow's first one, and stands at the top of the room, over that row and the
+	// message at the size they read.
+	const drop = 840 - 120;
 	expect(head().style.transform).toBe(`translate(0px, ${drop}px)`);
 	expect(head().classList.contains("is-stuck")).toBe(true);
 	expect(camera.y + (30 + drop) * camera.scale).toBeCloseTo(FIT_MARGIN, 3);
