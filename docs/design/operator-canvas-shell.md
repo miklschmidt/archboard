@@ -12,10 +12,10 @@ contract and must survive the visual migration.
 
 ## Who this improves
 
-The reference is for a person and an agent working on the same architecture
-board for a sustained session. The shell should make the current board, pane,
-selection, code binding, and agent claim easy to inspect without competing with
-the canvas.
+The reference serves a person and an agent who work on one architecture
+board for a long session. The goal of the shell is to make the current board,
+pane, selection, code binding and agent claim easy to inspect. The shell is not
+to compete with the canvas while it does that.
 
 Archboard’s shell is desktop-only. Do not plan, implement, or gate phone/narrow
 responsive layouts unless the user explicitly reverses this decision.
@@ -33,24 +33,24 @@ responsive layouts unless the user explicitly reverses this decision.
   introduce gradients, glow, or rounded dashboard cards.
 - Pair a neutral sans serif with monospaced secondary text for identifiers,
   paths, versions, and timing.
-- Use a board navigator on the left (see [The navigator](#the-navigator)), one
-  sidebar beside each pane's picture for the board and the selection (see
-  [The pane sidebar](#the-pane-sidebar)), and one agent bar below the panes with
-  the conversation beside them only when asked (see [The agent](#the-agent)).
-  Each region must earn the space it takes.
+- Use a board navigator on the left (see [The navigator](#the-navigator)).
+  Put one sidebar beside the picture of each pane for the board and the
+  selection (see [The pane sidebar](#the-pane-sidebar)). Put one agent bar below
+  the panes (see [The agent](#the-agent)). Show the conversation beside the
+  panes only on request. Each region must earn the space it takes.
 
 ## Product mapping
 
 The current product already has light and dark themes, board and variant
-navigation, pane identity, live claim state, agent activity, and a way for the
-person to take back control. Adoption should move these contracts into the new
-composition rather than replace them.
+navigation, and pane identity. It also has live claim state, agent activity, and
+a way for the person to take back control. The aim of adoption is to move these
+contracts into the new composition, not to replace them.
 
 The reference introduces three product additions worth building:
 
 - A shell inspector for the selected element and its persisted code binding.
-- A bottom agent surface that presents real agent state and `doing` data —
-  shipped as the agent bar (TASK-302).
+- A bottom agent surface that presents real agent state and `doing` data. This
+  surface shipped as the agent bar (TASK-302).
 - A non-persistent focus mode for the architecture path connected to the
   selected element.
 - A lazy navigator preview that depicts the real current board scene without
@@ -68,7 +68,7 @@ state:
 - The proposed dependency diff is out of scope. Agent edits stay visible on the
   live board rather than accumulating behind a preview.
 - `Send`, `Stop` and a prompt input shipped once Archboard owned its Codex
-  session (ADR 0019); they drive the agent, never the board. A person's one
+  session (ADR 0019). They drive the agent, never the board. A person's one
   control over a board is still `Take back control`.
 - Illustrative or synthetic board miniatures are out of scope. A navigator
   preview must depict real current board content and remain supplemental to
@@ -79,35 +79,39 @@ state:
 ## The pane sidebar
 
 Revised 2026-09-17 (TASK-249). The generated reference above places selection
-details in a column on the right of the canvas; that column is superseded. A
-semantic pane now has one sidebar on the left of its picture, the width of the
-old inspector (`SIDEBAR_WIDTH`, 280 px), with two tabs:
+details in a column on the right of the canvas. The pane sidebar supersedes
+that column. A semantic pane now has one sidebar on the left of its picture. The
+sidebar has the width of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two
+tabs:
 
-- **Board**: how the board on screen is read — its views, the walkthroughs it
-  offers, its groups (each listed with its colour; choosing one selects every
-  member), and, a level down, the states of that board — and
-  the legend for what is drawn. Choosing a walkthrough presents it (see below). The pane's own board offers no choice of state:
-  the navigator lists every state of every board, and one choice is made in one
-  place. Views live here rather than in a switcher on the picture, because this
-  is the one home for "how is this board being read" and a switcher over the
-  picture would cover what it switches.
+- **Board**: how the board on screen is read. The tab lists the views of the
+  board, the walkthroughs it offers, and its groups. Each group shows its
+  colour, and choosing a group selects every member. A level down, the tab lists
+  the states of that board. The tab also holds the legend for what is drawn.
+  Choosing a walkthrough presents it (see below). The pane's own board offers no
+  choice of state: the navigator lists every state of every board, so the person
+  makes one choice in one place. Views live here and not in a switcher on the
+  picture. Views live here and not in a switcher on the picture. This tab is the
+  one home for "how is this board being read". Also, a switcher over the picture
+  can cover what it switches.
 - **Selection**: the inspector for whatever is picked out, with the control that
   lets go of the selection in the tab row.
 
-Picking something out opens the selection tab; letting go gives back the tab
+Picking something out opens the selection tab. Letting go gives back the tab
 that was open before. The sidebar keeps its width whichever tab is open, so a
 pick never changes the size of the pane or moves the picture. Collapsing it to
 its tab icons gives the width to the picture, which refits to it until the
-person has panned or zoomed. A pane presented fullscreen shows the picture
+person pans or zooms. A pane presented fullscreen shows the picture
 without its sidebar. There is no strip above the picture.
 
 A presented walkthrough (TASK-250) is the picture and a caption laid over its
 bottom edge, with the sidebar stepped aside: the step's heading in the
 `presentation` type role, its words under it, where it is in the walkthrough, the
-steps, and previous and next. The camera keeps the step's subjects clear of the
-caption, the parts at both ends of each relationship or step it names among
-them, glides between steps, and what a step is not about recedes, a group's
-region included unless it holds something the step lights. Escape leaves.
+steps, and previous and next. The camera keeps the subjects of the step clear
+of the caption. The subjects include the parts at both ends of each relationship
+or step that the step names. The camera glides between steps. What a step is not
+about recedes. A group's region also recedes, unless it holds something that the
+step lights. Escape leaves.
 
 ![The pane sidebar, board tab and selection tab](assets/semantic-pane-sidebar.png)
 
@@ -120,28 +124,33 @@ tab in the dark theme on the right.
 Revised 2026-09-23 (TASK-302). The board strip became a navigator that stays
 navigable at a few hundred boards without anybody filing them by hand:
 
-![The navigator: a drilled vault, a filter, and a board's states](assets/operator-shell-navigator.png)
+![The navigator: a drilled vault, a filter, and a board's
+states](assets/operator-shell-navigator.png)
 
-Rendered captures at 1920×1080, not mockups: the dogfood vault's drill
-hierarchy (light), a filter finding boards and states by name (light), and the
-work vault in the dark theme with the board on screen showing its states.
+The image holds rendered captures at 1920×1080, not mockups. They show the
+drill hierarchy of the dogfood vault (light) and a filter that finds boards and
+states by name (light). The third capture shows the work vault in the dark
+theme. In that capture, the board on screen shows its states.
 
 - **Where a board sits is decided by what the boards say**, never by activity,
-  focus or recency: `/` folders in a name first, then the board it drills up
-  from (a container's up link, else the closest coarser board that drills down
-  to it; a container link that runs down the levels counts as a down link),
-  then name order that reads numbers as numbers. A vault with no drill links is
-  one alphabetical list; the order never moves under the pointer.
-- **One row per board**: its name in full (a long name wraps rather than
-  truncates), its other states as a count, its level in the technical face, and
-  the pane letters while two panes are open. A board's states open under it on
-  request; the board on screen always shows its own, drafts nested under what
-  they derive from. A board nothing is built of says so on its row.
+  focus or recency. `/` folders in a name come first. Then comes the board
+  that it drills up from (a container's up link, else the closest coarser board
+  that drills down to it). A container link that runs down the levels counts as
+  a down link. Then comes name order that reads numbers as numbers. A vault with
+  no drill links is one alphabetical list. The order never moves under the
+  pointer.
+- **One row per board**: the row shows the full name of the board, and a long
+  name wraps rather than truncates. The row also shows the other states as a
+  count, the level in the technical face, and the pane letters while two panes
+  are open. A board's states open under it on request. The board on screen
+  always shows its own states, with drafts nested under what they derive from. A
+  board nothing is built of says so on its row.
 - **Finding is the filter**: Ctrl K, `/`, or typing in the tree. It keeps tree
   order, dims the boards a match sits under, marks the matched letters, and
   counts what it found. Enter opens, Alt opens beside, Escape clears.
-- **The tree is one tab stop** with the arrow keys of a tree; the row on screen
-  is revealed when a pane moves to it unless the person is in the navigator.
+- **The tree is one tab stop** with the arrow keys of a tree. If the person is
+  not in the navigator and a pane moves to a board, the navigator reveals the
+  row of that board.
 - **Working now** at the navigator's foot lists the boards agents are writing
   or claiming, in the order they started, with what each said it is doing.
 
@@ -149,32 +158,37 @@ work vault in the dark theme with the board on screen showing its states.
 
 Revised 2026-09-23 (TASK-302). The collapsible workbench, its tabs, its session
 column and the Agent settings dialog are gone. The agent is one bar under the
-panes and, only when the person asks, one conversation beside them:
+panes. When the person asks, and only then, it is also one conversation beside
+them:
 
-![The agent bar and the conversation, finished and working](assets/operator-shell-agent.png)
+![The agent bar and the conversation, finished and
+working](assets/operator-shell-agent.png)
 
 Rendered captures at 1920×1080: a finished turn in the light theme, a turn at
 work in the dark theme.
 
 - **The agent bar** is the collapsed geometry ADR 0028 measures against: forty
-  pixels and a rule, whatever the agent is doing. Its line says what the agent
-  is doing in one phrase — the plan's current step, else the latest step — for
-  how long, how far through its plan, what is queued, and whether it has gone
-  quiet, with the one control that state needs: Stop, Review, or signing in.
+  pixels and a rule, whatever the agent is doing. Its line says in one phrase what
+  the agent is doing: the current step of the plan, else the latest step. The
+  line also says for how long, how far the agent is through its plan, what is
+  queued, and whether the agent is now quiet. It offers the one control that
+  state needs: Stop, Review, or signing in.
   Talk sits beside it. The composer sits at its right, under where the
   conversation opens, and says which board the agent will read.
-- **Nothing to set up.** The first message or press of Talk signs in if needed,
-  starts Codex and creates the conversation; a message waiting on any of that
-  is shown with what it waits on. There is one conversation per canvas, and the
+- **Nothing to set up.** The first message or press of Talk signs the person
+  in, as needed. It also starts Codex and creates the conversation. A message
+  that waits on
+  any of that shows what it waits on. There is one conversation per canvas, and the
   focused pane's board is what a message is about.
 - **The conversation** is 440 pixels beside the panes, which refit to the room
-  left. Each turn shows the person's prompt, the plan's progress, the work as
-  rows that open to their evidence (a command's output and exit code, the files
-  a change touched with lines added and removed, a tool's arguments), the
-  agent's answer, and how the turn ended. A step that fails opens itself and a
+  left. Each turn shows the person's prompt, the progress of the plan, the
+  work, the agent's answer, and how the turn ended. The work is rows that open
+  to their evidence: a command's output and exit code, the files a change
+  touched with lines added and removed, or a tool's arguments. A step that fails
+  opens itself and a
   finished run of work folds to one line. What was said aloud stays at the
-  foot as voice lines; decisions the agent waits on sit last, where the person
-  is reading. Sending opens it; approvals and voice never do.
+  foot as voice lines. Decisions that the agent waits on sit last, where the
+  person is reading. Sending opens it. Approvals and voice never do.
 - Session details (account, model, context used, thread, the voice
   coordinator) are one menu away, not on screen.
 
@@ -183,34 +197,35 @@ work in the dark theme.
 The generated reference PNG has no authoritative embedded font metadata. The
 font choice is therefore a reproducible visual match, not a claim that the
 reference's original font was identified. The audit compared tightly cropped
-raster geometry at several antialiasing thresholds, then checked the selected
-faces in the real shell at the supported 1920×1080 desktop viewport.
+raster geometry at several antialiasing thresholds. Then it checked the
+selected faces in the real shell at the supported 1920×1080 desktop viewport.
 
 The exact reference rectangles below use `(x, y, width, height)` in the tracked
 1672×941 PNG:
 
-- light wordmark `(13, 13, 99, 28)`; dark wordmark `(849, 13, 99, 28)`
+- light wordmark `(13, 13, 99, 28)` and dark wordmark `(849, 13, 99, 28)`
 - human header text `(140, 7, 548, 40)`
 - navigator labels `(10, 90, 104, 168)`
 - inspector secondary text `(660, 101, 167, 108)`
 - workbench text `(220, 700, 346, 126)`
 
-The same-size wordmark comparison produced normalized intersection-over-union
-scores of Inter 600 `.813`, Inter Tight 600 `.801`, Geist 600 `.806`, Manrope
+The wordmark comparison at the same size produced normalized
+intersection-over-union (IoU) scores. The scores were Inter 600 `.813`, Inter
+Tight 600 `.801`, Geist 600 `.806`, Manrope
 700 `.847`, and Onest 700 `.844`. Manrope's small numerical lead came with the
-sharper terminals visible in `a`, `r`, and `d`; Onest retained the reference's
+sharper terminals visible in `a`, `r`, and `d`. Onest retained the reference's
 softer counters. The final Onest Medium pass at an 18.5px equivalent and
-`-0.375px` tracking measured 85×13 pixels. Across thresholds 128/160/180 its
-mean IoU was `.785` and mean absolute ink delta was `5.06%`; at threshold 160
-the values were `.808` and `-1.1%`. Current Inter 800 was 28.7% too dense in
+`-0.375px` tracking measured 85×13 pixels. Across thresholds 128/160/180, its
+mean IoU was `.785` and its mean absolute ink delta was `5.06%`. At threshold
+160, the values were `.808` and `-1.1%`. Current Inter 800 was 28.7% too dense in
 the original pass. The derived candidate grids, threshold overlays, and live
 shell crops remain ephemeral audit evidence rather than tracked product assets.
 
 The final generated path, consumed through the real CSS mask in headless
 Chromium at 1440×900, retained an 84×13 hard-pixel box. Against the reference
 crop, thresholds 128/160/180 produced ink deltas of `+5.2%`, `+2.6%`, and
-`-3.9%`, with best-shift IoU `.747`, `.755`, and `.751`; every best shift was
-`(0, 0)`. This is the implementation check, separate from the earlier browser
+`-3.9%`. The best-shift IoU values were `.747`, `.755`, and `.751`. Every best
+shift was `(0, 0)`. This is the implementation check, separate from the earlier browser
 text-rendering audit.
 
 The resulting application contract is:
@@ -221,16 +236,17 @@ The resulting application contract is:
 - **DM Mono 1.000** only for technical tokens: 400 for values and timestamps,
   and 500 for compact technical emphasis such as the level badge. Repository
   names, paths, branches, commits, element IDs, and activity times are
-  technical; state phrases, counts, navigator labels, inspector labels, and
+  technical. State phrases, counts, navigator labels, inspector labels, and
   workbench prose are not.
 - `font-synthesis: none` and bundled, uniquely named families prevent a
   machine-local face from silently substituting or synthesizing an unsupported
   weight. The inspector's completed TASK-140.06 grid and spacing remain its
-  layout contract; this typography pass does not reopen that geometry.
+  layout contract. This typography pass does not reopen that geometry.
 
-The runtime Onest file is the variable TTF from Google Fonts commit
-[`d0754ee`](https://github.com/google/fonts/blob/d0754ee7cddf8ba879f1f8884e3ca2b5e1b100f8/ofl/onest/Onest%5Bwght%5D.ttf),
-which carries the audited 1.000 outlines and supplies exact 400/500/600/700
+Google Fonts commit
+[`d0754ee`](https://github.com/google/fonts/blob/d0754ee7cddf8ba879f1f8884e3ca2b5e1b100f8/ofl/onest/Onest%5Bwght%5D.ttf)
+is the source of the runtime Onest file, a variable TTF. This file carries the
+audited 1.000 outlines and supplies exact 400/500/600/700
 instances. The official [Onest 1.000 static
 release](https://github.com/simpals/onest/releases/tag/1.000) omits SemiBold,
 so the variable file is required for the 600 role. DM Mono Regular and Medium
@@ -246,16 +262,17 @@ Onest 1.000 static Medium TTF with pair kerning and
 the source SHA, uses `opentype.js` 1.3.4, translates the optical outline bounds
 to zero, and emits the byte-stable 85.7815×13.209 view box. The static source is
 deliberate: that version of `opentype.js` reads a variable font's `fvar` table
-but does not apply its `gvar` deltas when generating paths. The SVG contains
-only safe metadata and the `currentColor` path—no text, image, script, event,
+but does not apply its `gvar` deltas to the paths that it generates. The SVG contains
+only safe metadata and the `currentColor` path. It contains no text, image, script, event,
 external reference, or runtime font dependency. The shell consumes it as a CSS
 mask and gives the mark the accessible name `archboard`.
 
 ## Verification standard
 
-Adoption is complete only when rendered browser checks cover both themes at the
-supported desktop viewport, existing shell behavior remains reachable, and the
-canvas receives the largest share of the available workspace. Any new
+Adoption needs three things before it is complete. Rendered browser checks must
+cover both themes at the supported desktop viewport. Existing shell behavior
+must remain reachable. The canvas must receive the largest share of the
+available workspace. Any new
 selection, focus, or preview presentation must not write to the board note.
 
 ## Provenance
@@ -267,19 +284,21 @@ selection, focus, or preview presentation must not write to the board note.
 <details>
 <summary>Generation brief</summary>
 
-> Design direction 3 for "archboard", a live architecture canvas
-> collaboratively edited by a human and an AI agent. Show two complete desktop
-> application screenshots side by side in one 16:9 image: the same bold
-> operator-focused interface in high-contrast light mode on the left and dark
-> mode on the right.
->
-> Use a slim project strip, compact board and lock state in the top bar, a
-> central architecture canvas, a narrow inspector, and a collapsible agent
-> workbench along the bottom. The interface should use a confident Swiss grid,
-> neutral grotesk type with monospaced secondary text, strong alignment, cobalt
-> and acid-lime accents, crisp borders, and almost no shadow. Keep the canvas
-> primary. Avoid gradients, cyberpunk styling, generic chat bubbles, oversized
-> rounded cards, decorative 3D graphics, people, perspective, and device
-> hardware.
+```text
+Design direction 3 for "archboard", a live architecture canvas
+collaboratively edited by a human and an AI agent. Show two complete desktop
+application screenshots side by side in one 16:9 image: the same bold
+operator-focused interface in high-contrast light mode on the left and dark
+mode on the right.
+
+Use a slim project strip, compact board and lock state in the top bar, a
+central architecture canvas, a narrow inspector, and a collapsible agent
+workbench along the bottom. The interface should use a confident Swiss grid,
+neutral grotesk type with monospaced secondary text, strong alignment, cobalt
+and acid-lime accents, crisp borders, and almost no shadow. Keep the canvas
+primary. Avoid gradients, cyberpunk styling, generic chat bubbles, oversized
+rounded cards, decorative 3D graphics, people, perspective, and device
+hardware.
+```
 
 </details>

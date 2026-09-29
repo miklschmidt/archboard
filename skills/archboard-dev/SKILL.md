@@ -1,13 +1,19 @@
 ---
 name: archboard-dev
-description: Working on archboard's own source. It holds the board proposal of a task from planning to closing, the sweep after a removal or rename, where the tracked skills live, how to maintain the consumer skill, and facts the code does not show. Use it to plan or close a task, change this repo or its skills, remove or rename what a reader sees, or test a server change.
+description: Working on archboard's own source. It holds the board proposal of a
+task from planning to closing, and the sweep after a removal or rename. It also
+holds where the tracked skills live, how to maintain the consumer skill, and
+facts that the code does not show. Use it to plan or close a task, or to change
+this repo or its skills. Also use it to remove or rename what a reader sees, or
+to test a server change.
 ---
 
 # Working on archboard
 
-Always-on rules are in `AGENTS.md`; procedures for running and verifying the
-Archboard server are in `TESTING.md`. This skill holds only what neither the code nor
-those documents will tell you.
+Always-on rules are in `AGENTS.md`. The procedures to run the Archboard server
+and make sure
+that it works are in `TESTING.md`. This skill holds only what neither the code nor those
+documents will tell you.
 
 ## A task's board proposal
 
@@ -19,84 +25,97 @@ that was already wrong about code the task does not change.
 
 While you plan, before `backlog task edit --plan`:
 
-1. **Name the affected boards.** If the task adds, removes, renames or rewires
-   anything a board draws, or adds something the board's question needs, the
-   board is affected. `.archboard/README.md` gives the scope of each board.
+1. Name the affected boards.
+   If the task adds, removes, renames or rewires anything that a board draws, the board is
+   affected. If the task adds something that the board's question needs, the board is also
+   affected. `.archboard/README.md` gives the scope of each board.
    Done: the plan names every affected board, or it says that no board is
    affected (a test or a wording fix).
-2. **Branch one proposal per affected board, named by the task id:**
+2. Branch one proposal per affected board, named by the task id:
    `./bin/dogfood semantic branch "<board>" --as TASK-123 --summary "<task title>" --expect-version <n> --doing "..."`.
    If code needs a board of its own, `semantic new` makes it as a draft that
    nobody has built. The proposal on the board above it gains the part that
    drills down to it.
-3. **Draw the planned architecture on each proposal** with the
+3. Draw the planned architecture on each proposal with the
    [propose and compare](../archboard/references/propose-compare.md) recipe of
    the consumer skill. A planned part binds to the path that the plan gives
    it. A planned relationship states the mechanism that the plan intends.
    Done: `semantic compare` reports exactly the changes that the plan makes.
-4. **Name each proposal in the plan** as `<board>@TASK-123`. Commit the vault
+4. Name each proposal in the plan as `<board>@TASK-123`. Commit the vault
    files with the plan.
 
 When the task closes, before you mark any acceptance criterion:
 
-1. **Inspect each proposal against the code as built.** Apply the evidence
-   rules of the consumer skill to every part and relationship that the
-   comparison reports as added or changed: a source line for each
-   relationship, and a binding to the file that owns each part. Every place
-   where the build left the plan is a deviation.
-2. **Correct the proposal to what was built**, not to what was planned. In
-   the same edit, give it the `summary` the board should carry once it is
-   current: the board's scope, not the task title and not a date. Done:
-   every entry that `semantic compare` reports has a source line behind it.
-3. **Adopt it:**
+1. Inspect each proposal against the code as built.
+   Apply the evidence rules of the consumer skill to every part and relationship that the
+   comparison reports as added or changed. Each relationship needs a source line, and each
+   part needs a binding to the file that owns it. Every place where the build
+   left the plan
+   is a deviation.
+2. Correct the proposal to what was built, not to what was planned.
+   In the same edit, give it the `summary` that the board will carry as the
+   current variant:
+   the board's scope, not the task title and not a date.
+   Done: every entry that `semantic compare` reports has a source line behind it.
+3. Adopt it:
    `./bin/dogfood semantic adopt "<board>" --variant TASK-123 --reason "<what the task changed>" --expect-version <n> --doing "..."`.
    If the proposal holds a disagreement, adoption is refused until
    `semantic resolve` settles it ([variants](../archboard/references/variants.md)).
-4. **If adoption is refused as `PARENT_SUPERSEDED`,** another task adopted a
-   proposal after you branched, and adopting yours would drop its change.
-   Branch a new proposal from the current variant, restate this task's change
-   on it from the old proposal's own change, read with
-   `semantic compare "<board>" --variant TASK-123 --against <its parent>`,
-   shelve the old proposal with that reason, and adopt the new one. Use
-   `--force` only when dropping the other task's change is intended.
-5. **Run `./bin/dogfood check`.** Done: it reports no diagnostics. Commit the
-   vault files with the closing.
+4. If adoption is refused as `PARENT_SUPERSEDED`, another task adopted a
+   proposal after you branched. If you adopt your proposal anyway, the adoption
+   drops the change of that task.
+   Branch a new proposal from the current variant.
+   On it, restate the change of this task from the change of the old proposal.
+   Read that change with
+   `semantic compare "<board>" --variant TASK-123 --against <its parent>`.
+   Shelve the old proposal with that reason, and adopt the new one.
+   Use `--force` only to drop the change of the other task on purpose.
+5. Run `./bin/dogfood check`.
+   Done: it reports no diagnostics. Commit the vault files with the closing.
 
 If a task closes without its change, shelve its proposals with the reason.
 
 ## Removing or renaming something
 
 Every description of archboard outlives the code it describes unless the change
-that removes the code removes the description too. The drawing workflow went on
-2026-09-12, and weeks later the glossary still defined Element and Stencil,
-every write command's help listed a refusal no route could send, INSTALL.md
-named a directory that did not exist, the environment still used the fork's
-names, and the block `install-skill` writes into other repositories told agents
-that `status` prints the vault (TASK-310). So a change that removes, renames or
-redefines anything a person or an agent can see (a command, option, environment
-variable, route, answer field, refusal, concept, file or directory) ends with a
-sweep, in the same change:
+that removes the code removes the description too. The drawing workflow went away on
+2026-09-12. Weeks later, the glossary still defined Element and Stencil. The help of every
+write command listed a refusal that no route was able to send. INSTALL.md named
+a directory
+that did not exist, and the environment still used the names of the fork. The block that
+`install-skill` writes into other repositories told agents that `status` prints the vault
+(TASK-310).
 
-1. **Find every place that states it.** `git grep -n -i` each spelling of the
-   old name and read every hit: the root documents (`README.md`, `INSTALL.md`,
-   `TESTING.md`, `AGENTS.md`), `CONTEXT.md` entries and their
-   `_Avoid_` lines, both skills, help text, refusal descriptions and the
-   exit-code help under `src/cli`, the setup block in
-   `src/cli/commands/lib/repo-setup-block.ts`, code comments and test names.
-   Done when every hit is still true or is history: Backlog tasks, ADR bodies
+So a change that removes, renames or redefines anything that people or agents can see must
+end with a sweep in the same change. Such a thing is a command, option,
+environment variable, route, answer field, refusal, concept, file or directory. The sweep
+has these steps:
+
+1. Find every place that states it.
+   Run `git grep -n -i` on each spelling of the old name, and read every hit. Look in the
+   root documents (`README.md`, `INSTALL.md`, `TESTING.md`, `AGENTS.md`). Look in the
+   `CONTEXT.md` entries and their `_Avoid_` lines, and in both skills. Look in the help
+   text, the refusal descriptions and the exit-code help under `src/cli`. Look
+   in the setup
+   block in `src/cli/commands/lib/repo-setup-block.ts`, in code comments and in
+   test names.
+   Done: every hit is still true or is history. Backlog tasks, ADR bodies
    and `docs/design/skill-evals/baseline` stay as written.
-2. **Delete what only served it.** When the server stops sending something,
-   remove the client code that handled it, the refusal the contracts declare
-   for it and its exit-code line. An export that nothing imports is dead:
-   `git grep -w <symbol>` finds it only in its own file. Done when nothing
-   handles, declares or exports what can no longer happen.
-3. **Retire the decision.** An ADR whose subject is gone gets
-   `status: superseded` and a closing line naming the task. Done when the ADRs
-   that cite it still point at something true.
-4. **Say which copies stay stale.** `bun run generate:skill-artifacts` carries
-   INSTALL.md and the schemas into the skill. The skill in `~/.agents/skills`
-   or `~/.claude/skills` and the block in each repository change only when
-   `archboard install-skill` runs there again, so the report says to run it.
+2. Delete what only served it.
+   If the server stops sending something, remove the client code that handled it. Also
+   remove the refusal that the contracts declare for it, and its exit-code line. An export
+   that nothing imports is dead: `git grep -w <symbol>` finds it only in its own file.
+   Done: nothing handles, declares or exports what can no longer happen.
+3. Retire the decision.
+   An ADR whose subject is gone gets `status: superseded` and a closing line
+   that names the
+   task.
+   Done: the ADRs that cite it still point at something true.
+4. Say which copies stay stale.
+   `bun run generate:skill-artifacts` carries INSTALL.md and the schemas into the skill.
+   The skill in `~/.agents/skills` or `~/.claude/skills` changes only after
+   `archboard install-skill` runs there again. The same is true for the block in each
+   repository. So the report must tell the reader to run that command.
 
 ## Stating a fact where it cannot drift
 
@@ -111,8 +130,8 @@ sweep, in the same change:
   finding every path that reads the object and making each honour it: a
   binding's `branch` and `commit` were accepted and stored while the local
   opener ignored them (TASK-311).
-- A claim in a document is checked against the code or the command it names,
-  never against another document. A rewrite starts from an audit that pairs
+- Compare a claim in a document with the code or the command that it names, never with
+  another document. A rewrite starts from an audit that pairs
   each claim with its evidence, a `file:line` or a command's output.
 - A tracked document holds no fact about one machine (what is a symlink there,
   which directories exist). Such a fact is false on the next machine.
@@ -120,271 +139,296 @@ sweep, in the same change:
 ## Moving Codex to a new version
 
 Archboard runs the exact `@openai/codex` that `package.json` pins, and every
-Codex fact in the code was read in that version's source. A bump is done when
-nothing states a version that was not re-read:
+Codex fact in the code was read in that version's source. A bump is complete
+only at this point: nothing states a version that nobody re-read.
 
-1. **Pick the version and its source.** `bun info @openai/codex version` names
-   npm's latest. In a clone of `github.com/openai/codex`, `git fetch --tags`
-   and check out `rust-v<version>`. Done: the clone sits at the tag.
-2. **Diff what Archboard uses** between the old and new tags:
-   `codex-rs/app-server-protocol/src/protocol` (wire shapes, and each new
-   field's serde attributes: a generated `T | null` is sent as `null` unless
-   serde skips it), the `app-server` request processors for the methods in
-   `src/runtime/codex-protocol/lib/methods.ts`, realtime
+1. Pick the version and its source.
+   `bun info @openai/codex version` names npm's latest. In a clone of
+   `github.com/openai/codex`, run `git fetch --tags` and check out `rust-v<version>`.
+   Done: the clone sits at the tag.
+2. Diff what Archboard uses between the old and new tags.
+   Diff `codex-rs/app-server-protocol/src/protocol` for the wire shapes and for the serde
+   attributes of each new field. A generated `T | null` is sent as `null` unless serde
+   skips it. Diff the `app-server` request processors for the methods in
+   `src/runtime/codex-protocol/lib/methods.ts`. Diff realtime
    (`core/src/realtime_conversation*`, `realtime_history.rs`,
-   `session/world_state.rs`, `codex-api/src/endpoint/realtime_websocket`) and
-   the model list (`models-manager`: `gpt-6-luna` must still be listed with
-   `high` effort). Done: every change is named as adopted, ignored or a
-   behaviour change.
-3. **Bump the pin in three places:** `package.json`, `expectedCodexVersion` in
+   `session/world_state.rs`, `codex-api/src/endpoint/realtime_websocket`). Diff the model
+   list (`models-manager`): `gpt-6-luna` must still be listed with `high` effort.
+   Done: every change is named as adopted, ignored or a behaviour change.
+3. Bump the pin in three places:
+   `package.json`, `expectedCodexVersion` in
    `scripts/generate-codex-app-server-contract.ts` and `CODEX_PROTOCOL_VERSION`
    in `src/runtime/codex-protocol/lib/version.ts`. `bun install` updates
    `bun.lock` and generates the new contract beside the old one under
-   `src/shared/codex-app-server-contract/generated/versions/`, so
-   `diff -r` of the two version directories is the wire change; a fresh
+   `src/shared/codex-app-server-contract/generated/versions/`. So
+   `diff -r` of the two version directories is the wire change. A fresh
    worktree runs `bun install` at the old pin first, so the old contract
    exists to diff.
    Done: `bun run ensure:codex-contract` passes.
-4. **Adapt the schemas to `bun run type-check`.** Each handwritten Zod schema
-   in `src/runtime/codex-protocol/lib` is proved against the generated type
-   in both directions: `__codexGeneratedWireMustExtendSchemaInput` means the
-   schema refuses something the new wire sends,
-   `__schemaOutputMustExtendCodexGeneratedWire` means it lacks a field the
+4. Adapt the schemas to `bun run type-check`.
+   Each handwritten Zod schema in `src/runtime/codex-protocol/lib` is proved against the
+   generated type in both directions. `__codexGeneratedWireMustExtendSchemaInput` means
+   that the schema refuses something that the new wire sends.
+   `__schemaOutputMustExtendCodexGeneratedWire` means that the schema lacks a
+   field that the
    wire now requires. Change the schema, never the check. Then add each new
-   required field to the fixtures, including the fake Codex servers under
+   required field to the fixtures. These include the fake Codex servers under
    `tests/system/server-state/fixtures` and `tests/system/process-contracts`,
-   whose payloads only the system lane decodes. Done: type-check and the
-   `src/runtime/codex-*` tests pass.
-5. **Re-read every version-bound claim.**
+   whose payloads only the system lane decodes.
+   Done: type-check and the `src/runtime/codex-*` tests pass.
+5. Re-read every version-bound claim.
    `git grep -n "<old version>" -- ':!bun.lock' ':!backlog'` finds them. Code
    and TypeScript fixtures take the version from `CODEX_PROTOCOL_VERSION` or
-   `CODEX_PROTOCOL_BINARY_VERSION`; the standalone fake Codex executables
+   `CODEX_PROTOCOL_BINARY_VERSION`. The standalone fake Codex executables
    write it literally and move to the new one. A claim about Codex behaviour
-   moves only after its cited source is re-read at the new tag, and is
-   corrected where it no longer holds; a measurement names the version it was
-   measured on. Done: the grep finds only history.
-6. **Run the gate** as `.claude/rules/agent-work.md` describes, then **smoke a
-   signed-in server**: start one on a free port against a scratch copy of
-   `examples/web-shop`, with the default state directory so it uses the
-   machine's Archboard Codex sign-in. A server whose workbench is not ready
-   exits with "The production Codex workbench did not become ready"; one that
-   signed in and found its model records the coordinator's `thread/start` as
-   delivered in `codex-workbench/canvases/<port>/epoch/epoch-manifest.json`
-   in the state directory. Done: `status` reported it running, the manifest
-   holds that record, and the server was stopped.
+   moves only after somebody re-reads its cited source at the new tag. Correct the claim
+   where it no longer holds. A measurement names the version that it was measured on.
+   Done: the grep finds only history.
+6. Run the gate as `.claude/rules/agent-work.md` describes. Then smoke a signed-in server.
+   Start one on a free port against a scratch copy of `examples/web-shop`. Use the default
+   state directory, so that the server uses the Archboard Codex sign-in of the machine.
+   If the workbench of a server is not ready, the server exits with "The production Codex
+   workbench did not become ready". A server that signed in and found its model records
+   the `thread/start` of the coordinator as delivered. It records it in
+   `codex-workbench/canvases/<port>/epoch/epoch-manifest.json`
+   in the state directory.
+   Done: `status` reported it running, the manifest holds that record, and the server was
+   stopped.
 
 ## The tracked skills
 
 `skills/` is the single source. `.claude/skills/` and `.agents/skills/` reach
-this repository's skills through tracked symlinks, so an edit is live at once;
-the third-party skills beside them are installed by `skills experimental_install`
-from `skills-lock.json` and stay untracked. Other repositories use the copy
-`archboard install-skill` put in `~/.agents/skills/archboard`; run it again to
-refresh that copy. Keep the `archboard` skill free of machine-specific paths; it
+this repository's skills through tracked symlinks, so an edit is live at once.
+`skills experimental_install` installs the third-party skills beside them from
+`skills-lock.json`, and these skills stay untracked. Other repositories use the copy that
+`archboard install-skill` put in `~/.agents/skills/archboard`. To refresh that copy, run
+that command again. Keep the `archboard` skill free of machine-specific paths, because it
 runs outside this repo.
 
 The consumer skill also ships derived files under
-`skills/archboard/references/generated/` (ignored): JSON Schemas for the
+`skills/archboard/references/generated/` (ignored). These are JSON Schemas for the
 persisted board document, the vault configuration and the `semantic new` and
-`semantic edit` payloads, rendered from the Zod authorities with
-`z.toJSONSchema`, plus an installation-local copy of `INSTALL.md`. One owner,
-`src/runtime/skill-distribution`, writes them; `bun install`, the installer's
-staging step and `bun run generate:skill-artifacts` all call it. After changing a
-schema or `INSTALL.md`, run `bun run generate:skill-artifacts`. Never hand-edit
-a generated file or add a second schema definition; change the Zod schema and
-regenerate. The generated INSTALL copy belongs to the machine-local install: it
-records when its source checkout has working-tree changes and its escaped
-absolute links depend on the active checkout that also supplies the CLI.
+`semantic edit` payloads. They are rendered from the Zod authorities with
+`z.toJSONSchema`. The derived files also include an installation-local copy of
+`INSTALL.md`. One owner, `src/runtime/skill-distribution`, writes them. `bun install`, the
+staging step of the installer and `bun run generate:skill-artifacts` all call it.
+
+After you change a schema or `INSTALL.md`, run `bun run generate:skill-artifacts`. Never
+hand-edit a generated file or add a second schema definition. Change the Zod schema and
+regenerate. The generated INSTALL copy belongs to the machine-local install. It records
+whether its source checkout has working-tree changes. Its escaped absolute links depend on
+the active checkout that also supplies the CLI.
 
 ## Maintaining the consumer skill
 
 `skills/archboard` is what an agent in another repository reads to use
-archboard; it is measured, not eyeballed, and it goes stale the moment the
-product moves. **Trigger:** any change to a CLI contract (a command, option,
-ordering, default, exit code or answer shape), a diagram grammar or renderer
-promise, semantic identity or comparison rules, vault vocabulary or grouping,
-schema generation or distribution, installation, or verification behaviour.
-When it fires, in the same change:
+archboard. It is measured, not eyeballed, and it goes stale the moment the
+product moves. A change to a CLI contract is a trigger: a command, option, ordering,
+default, exit code or answer shape. A change to a diagram grammar or a renderer promise is
+also a trigger. Changes to
+semantic identity or comparison rules, vault vocabulary or grouping, schema generation or
+distribution, installation, or verification behaviour are triggers too. If the trigger
+fires, do these steps in the same change:
 
-1. Update the recipe, reference, example and schema link the change touches
+1. Update the recipe, reference, example and schema link that the change touches
    (`skills/archboard/SKILL.md` and `references/`). A recipe that the CLI
-   would now refuse is a defect, not a token saving.
-2. Update the evaluation inputs under `evals/` at the repository root: the
-   scenario whose `expectedFeatures` or `outcomes` the change alters, its
+   now refuses is a defect, not a token saving.
+2. Update the evaluation inputs under `evals/` at the repository root.
+   These are the scenario whose `expectedFeatures` or `outcomes` the change alters, its
    fixture, and the row of `coverage.json` that maps the feature. A new
    user-facing feature or a new branch of a closed enum needs a scenario, an
-   expected use and an evidence owner; mechanical validation and generated
+   expected use and an evidence owner. Mechanical validation and generated
    metadata get a runtime owner (a fast test), never a forced authored
-   decoration. The inputs live outside every skill package on purpose: an
-   author reads whatever the installed skill carries, and the batch of
-   2026-09-14 showed authors reading the scenario, the fixture and the rubric
-   they were being measured against (TASK-212); a fast test refuses an
+   decoration. The inputs live outside every skill package on purpose. An
+   author reads whatever the installed skill carries. The batch of
+   2026-09-14 showed authors that read the scenario, the fixture and the rubric
+   that measured them (TASK-212). A fast test refuses an
    `evals/` directory inside the consumer skill, the frozen baseline or a
    prepared copy.
-3. `bun run generate:skill-artifacts`, then `bun test src/runtime/skill-evaluation
-tests/system/cli/install-targets.test.ts` and `bun run check`.
+3. Run `bun run generate:skill-artifacts`, then
+   `bun test src/runtime/skill-evaluation tests/system/cli/install-targets.test.ts` and
+   `bun run check`.
 
-The success contract the skill is held to: the fewest total author tokens per
+The success contract of the skill is the fewest total author tokens per
 successfully completed workflow, not the shortest document. The five common
-paths (architecture from code, sequence through the data-flow grammar, edit one
-batch, propose and compare, answer from a saved board) run on SKILL.md plus its own recipe under
-`references/` (`create-architecture`, `create-sequence`, `edit`,
-`propose-compare`, `read`), the one targeted reference a common path needs; the
-harness records per run whether the recipe the scenario names was read; source investigation, the required reads, the writes and the
-verification are necessary work, and help, listing, config and check calls the
-context already answers are not. The frontmatter description is the trigger;
-conditional material sits behind a pointer that says when to read it; every
-link, including the generated schemas and the INSTALL.md copy, works in the
-installed package. Every guardrail in
+paths are architecture from code, sequence through the data-flow grammar, edit one
+batch, propose and compare, and answer from a saved board. Each path runs on SKILL.md plus
+its own recipe under `references/` (`create-architecture`, `create-sequence`, `edit`,
+`propose-compare`, `read`). That recipe is the one targeted reference that a common path
+needs. For each run, the evaluation command records whether the author read the recipe
+that the scenario names. Source investigation, the required reads, the writes and the
+verification are necessary work. Help, listing, configuration and check calls that the
+context already answers are not.
+
+The frontmatter description is the trigger. Conditional material is behind a
+pointer, and the pointer says in which case to read it. Every link works in the
+installed package, and this includes the
+generated schemas and the INSTALL.md copy. Every guardrail in
 `docs/design/skill-evals/preservation-assessment.md` keeps a home and an
 evidence owner.
 
 ### Portable rules, grounded examples
 
-The consumer skill is read by agents working in codebases archboard has never
-seen, in any language, so it speaks in two registers and keeps them apart:
+Agents read the consumer skill in codebases that archboard never saw, in any language. So
+the skill speaks in two registers and keeps them apart:
 
-- **Portable rules.** Everything shared (`SKILL.md`, the catalogue, reference
-  prose, refusal tables, the check steps of a recipe) uses computer-science
-  vocabulary, and draws it from every paradigm a reader might be working in, so
-  a rule reads as true for an object-oriented service, a functional pipeline
-  and a UI component tree alike:
+- Portable rules.
+  Everything shared (`SKILL.md`, the catalogue, reference prose, refusal tables, the check
+  steps of a recipe) uses computer-science vocabulary. It draws this vocabulary from every
+  programming style that a reader can work in. A rule then reads as true for an
+  object-oriented service, a functional pipeline and a UI component tree alike:
   - structure: module, function, class and method, component, closure, package
   - flow of control: caller and callee, handler, hook, callback, composition,
     recursion, entry point
   - data and effects: props and state, value passed or returned, side effect,
-    config file, cache
+    configuration file, cache
   - asynchrony: event and subscription, promise and await, stream, message,
     queue, retry limit, cleanup
 
-  A rule illustrated in one paradigm's terms (a class and its methods) names
-  another paradigm's equivalent beside it (a module and its functions, a
+  Sometimes a rule uses the terms of one programming style (a class and its methods). Then
+  the rule names the equivalent of another style beside it (a module and its functions, a
   component and its children).
 
-- **Grounded examples.** Each recipe carries one worked example about
-  archboard's own source: the payload and the evidence paragraph beside it.
-  Archboard's names (a lease, a board store, a vault, a semantic write) stay
-  inside that example; a rule that needs them points at the example ("the
-  self step above") instead of repeating them.
+- Grounded examples.
+  Each recipe carries one worked example about archboard's own source: the payload and the
+  evidence paragraph beside it. Archboard's names (a lease, a board store, a vault, a
+  semantic write) stay inside that example. A rule that needs them points at the example
+  ("the self step above") instead of repeating them.
 
-Before adding a sentence to shared guidance, read it as an agent in an
-unfamiliar codebase would. When it only holds with archboard's names, it is
-example material and goes in a recipe's worked example. When it only holds
+Before you add a sentence to shared guidance, read it as an agent in an
+unfamiliar codebase. If it only holds with archboard's names, it is
+example material and goes in the worked example of a recipe. If it only holds
 for one evaluation scenario, it is a fix for that scenario and stays out of
-the skill. A batch analysis names failing runs; the skill change is the
-portable pattern behind them, stated in portable terms and shown in an
-archboard example. One scenario may be what reveals the pattern: a rule is
-judged by whether it holds in any codebase, not by how many scenarios exposed
-it.
+the skill.
 
-The evaluated codebase appears nowhere in either package: `bun run eval:skill
-check` refuses its names and every board, view, variant, group and quoted
-symbol a scenario grades, and every batch before 2026-09-17 is void because
-the recipes were that codebase's answers (`evals/README.md`).
+A batch analysis names failing runs. The skill change is the portable pattern behind them,
+stated in portable terms and shown in an archboard example. One scenario can be what
+reveals the pattern. A rule is judged by whether it holds in any codebase, not by how many
+scenarios exposed it.
+
+The evaluated codebase appears nowhere in either package. `bun run eval:skill check`
+refuses its names and every board, view, variant, group and quoted symbol that a scenario
+grades. Every batch before 2026-09-17 is void, because the recipes were the
+answers of that
+codebase (`evals/README.md`).
 
 ### Evaluating a change
 
-`evals/README.md` is the manual; `bun run eval:skill` is the command;
-`evals/rubric.md` is what the grader reads. The harness runs real
-Codex authors (gpt-6-luna, high reasoning) on pinned Flask checkouts, three
-repetitions per scenario per skill version in parallel with isolated state, an
-installed baseline (`docs/design/skill-evals/baseline/archboard`) against an
-installed candidate (the live `skills/archboard`), the same CLI, prompts,
-fixtures and pins for both; then ONE grader session grades every run of the
-batch itself, reusing what it read of Flask, blinded to the arm, with per-run
-feature verdicts, scores and evidence, and told in these words: "Do not use
-subagents. Inspect the source and grade every run yourself in this session."
-The grader is chosen when grading runs, never when the authors run:
-`--grader codex` (gpt-6-astra, high reasoning, read-only sandbox, pictures
-attached) or `--grader claude` (claude-opus-5, high effort, Read/Grep/Glob
-only, none of the operator's settings, pictures opened from the workspace and
-the stream showing which). Both read the same prompt; `evals/graders.json`
-pins each runner outside the batch digest, so one batch can be graded by both
-and the report says where they agree. Reports separate discovery from
-operations from code investigation, author usage from grader usage (counted
-per runner: Codex's last cumulative reading, Claude's sum of calls), primary
-workflows from the broad case, and list every failure. A person starts every
-run; `bun run check` never does.
+`evals/README.md` is the manual. `bun run eval:skill` is the command.
+`evals/rubric.md` is what the grader reads. The evaluation command runs real Codex authors
+(gpt-6-luna, high reasoning) on pinned Flask checkouts. It runs three repetitions per
+scenario per skill version in parallel with isolated state. It runs an installed baseline
+(`docs/design/skill-evals/baseline/archboard`) against an installed candidate (the live
+`skills/archboard`). Both arms get the same CLI, prompts, fixtures and pins.
 
-Read the comparison honestly. A skill-only change is comparable when
-`pins.json` and the fixtures are untouched. A product change that makes an
-old recipe unexecutable is a changed contract: the baseline arm then fails
-early and cheaply, and that is not a token saving; say so in the report, repin
-both arms on the new CLI, and capture a new baseline before claiming an
-improvement. Semantic compliance needs every expected feature to pass (traffic,
+Then one grader session grades every run of the batch itself, and it reuses what
+it read of
+Flask. The grader is blinded to the arm, and it gives per-run feature verdicts, scores and
+evidence. Its prompt tells it in these words: "Do not use subagents. Inspect the source
+and grade every run yourself in this session."
+
+Choose the grader at grading time, not at author run time.
+`--grader codex` is gpt-6-astra with high reasoning in a read-only sandbox, with the
+pictures attached. `--grader claude` is claude-opus-5 with high effort and Read/Grep/Glob
+only. It gets none of the configuration of the operator. It opens the pictures from the
+workspace, and the stream shows which pictures it opened. Both read the same prompt.
+`evals/graders.json` pins each runner outside the batch digest, so both graders can grade
+one batch, and the report says where they agree.
+
+Reports separate discovery, operations and code investigation. They separate author usage
+from grader usage, counted per runner: the last cumulative reading of Codex, and
+the sum of
+calls of Claude. They separate the primary workflows from the broad case, and they list
+every failure. A person starts every run. `bun run check` never does.
+
+Read the comparison honestly. If `pins.json` and the fixtures are untouched, a skill-only
+change is comparable. A product change that makes an old recipe unexecutable is a changed
+contract. The baseline arm then fails early and cheaply, and that is not a token saving.
+Say so in the report.
+
+In that case, repin both arms on the new CLI. Capture a new baseline before you claim an
+improvement.
+
+Semantic compliance needs every expected feature to pass (traffic,
 containment, configured kinds, TASK-207 grouping and the rest of the
-checklist); a missing or incorrect required feature fails the run whatever the
-picture looks like, and the report surfaces every waived feature. Percentage
+checklist). A missing or incorrect required feature fails the run, whatever the
+picture looks like. The report shows every waived feature. Percentage
 targets come from a measured baseline, never from a plan.
 
-Two facts about the evidence that the first batch had to teach:
+Three facts about the evidence that the first batch had to teach:
 
-- **A board patched with Codex's editing tool is a `file_change` item, not a
-  command.** The harness keeps every file change of the stream, fails the
-  write guardrail on a board file under the vault, and shows the grader the
-  list; a final board that is right proves nothing about how it got there. A
-  command that reads a board file (`sed -n`, `jq`, `python -m json.tool`
-  with its output discarded) is a read, and `semantic edit --help` is not a
-  write attempt. Commands that reach for `evals/`, the harness source or
-  another run's directory are recorded as exposure; a contaminated run is
-  listed apart and blocks the token comparison without being called a board
-  failure.
+- A board patched with Codex's editing tool is a `file_change` item, not a command.
+  The evaluation command keeps every file change of the stream. It fails the write
+  guardrail on a board file under the vault, and it shows the grader the list. A final
+  board that is right proves nothing about how it got there. A command that reads a board
+  file (`sed -n`, `jq`, `python -m json.tool` with its output discarded) is a read.
+  `semantic edit --help` is not a write attempt. Commands that reach for `evals/`, the
+  source of the evaluation command or the directory of another run are recorded as
+  exposure. A contaminated run is listed apart. It blocks the token comparison, but it is
+  not called a board failure.
 
-- **The harness takes the pictures; the author never supplies one.** Every
-  scenario declares `captures`: the boards, views and variants its request
-  names, both sides of a comparison, the data-flow view of a sequence. After
-  the author ran, and after a failed run where the server is still up, the
-  harness draws each through `archboard semantic rasterize` at native scale,
-  records provenance (version, variant, view, size, SVG digest), cuts a large
-  one into native-scale tiles, and lists a capture it could not take as
-  failed with the reason; a declared view the author never made is a failed
-  capture, never a default picture. The harness attaches every capture and
-  its required native-detail tiles to the grading call, records successful
-  delivery against the image and verdict hashes, and requires observations
-  for each capture. Missing images, incomplete tiles, stale evidence or
-  missing observations make visual evaluation incomplete and prevent token
-  efficiency claims. Rasterizing needs a
-  Chromium-family executable (`ARCHBOARD_RENDERER_CHROMIUM` names one).
+- The evaluation command takes the pictures. The author never supplies one.
+  Every scenario declares `captures`: the boards, views and variants that its request
+  names, both sides of a comparison, and the data-flow view of a sequence. After
+  the author
+  ran, the evaluation command draws each capture through `archboard semantic rasterize` at
+  native scale. It also does this after a failed run in which the server is still up. It
+  records provenance (version, variant, view, size, SVG digest), and it cuts a large
+  capture into native-scale tiles. It lists a capture that it was not able to take as
+  failed, with the reason. A declared view that the author never made is a failed capture,
+  never a default picture.
 
-- **Codex's `turn.completed` usage is the thread's cumulative total.** A
-  resumed grading call reports everything the session has cost so far, so a
-  session costs its last reading and each call's share is the growth since the
-  previous one; summing the calls counted the first call fifteen times over in
-  the 2026-09-14 batch. `evals/pins.json` pins this, and
+  The evaluation command attaches every capture and its required native-detail
+  tiles to the
+  grading call. It records successful delivery against the image and verdict
+  hashes, and it
+  requires observations for each capture. Missing images, incomplete tiles, stale evidence
+  or missing observations make visual evaluation incomplete, and they prevent token
+  efficiency claims. Rasterizing needs a Chromium-family executable
+  (`ARCHBOARD_RENDERER_CHROMIUM` names one).
+
+- Codex's `turn.completed` usage is the thread's cumulative total.
+  A resumed grading call reports the total cost of the session up to that call. So a
+  session costs its last reading, and the share of each call is the growth since the
+  previous call. In the 2026-09-14 batch, the sum of the calls counted the first call
+  fifteen times over. `evals/pins.json` pins this, and
   `docs/design/skill-evals/2026-09-14-batch-corrections.md` records what it
   changed.
 
 ## Facts that will mislead you
 
-- **A pane key carries a variant; a board name never does.** `payments@<variant>`
-  is an address, and `readSemanticBoard` on one THROWS, because a board is one
-  document holding the whole family. Split it first (`parseBoardKey`, or
-  `aggregateOf` on the server). Everything a board has — the file, the lease,
-  the claim, what an agent said it was doing — is keyed by the board; only what
-  is drawn depends on the variant. This is the same bug three times over if you
-  get it wrong once.
-- **A pane's board may be null.** A fresh vault holds no board, and a pane that
-  could not register until one existed could never be shown the first board
+- A pane key carries a variant, but a board name never does.
+  `payments@<variant>` is an address, and `readSemanticBoard` on one throws, because a
+  board is one document that holds the whole family. Split it first (`parseBoardKey`, or
+  `aggregateOf` on the server). The board is the key for everything that a board has: the
+  file, the lease, the claim, and what an agent said it was doing. Only what is drawn
+  depends on the variant. If you get this wrong once, you get the same bug three
+  times over.
+- The board of a pane can be null. A fresh vault holds no board. A pane
+  registers before it has a board, or nobody can show it the first board that
   somebody makes.
 - A refused write is the design (ADR 0006 as it now stands): a stale version is
   reported and nothing is written. Do not "fix" a refusal by reading the board
-  again and retrying — that makes the check pass by construction and hides the
-  change it was meant to notice.
-- Test with two boards when checking pane switching, never two panes on one
-  board: a switch reaches one pane's socket, and a regression looks like the
-  other pane being replaced.
-- The browser holds board content only as a read-only cache: a query the pane
-  reads again on the board's own announcement, and pictures stamped with the
-  board version, policy fingerprint and renderer build that are checked before
-  they are shown. Never a copy the browser edits or answers from unchecked
-  (ADR 0023).
-- **Read `bun run type-check` by its exit status.** tsc colours `error` and
-  `TS2345` as separate sequences, so `grep 'error TS'` matches nothing and a
-  failing check looks clean. Lint's type-aware rules are not the compiler
+  again and retrying. That makes the check pass by construction, and it hides the change
+  that the check was meant to notice.
+- To test pane switching, use two boards, never two panes on one board. A switch reaches
+  the socket of one pane, and a regression then looks like the other pane being replaced.
+- The browser holds board content only as a read-only cache. One part is a query that the
+  pane reads again on the announcement of the board. The other part is pictures stamped
+  with the board version, policy fingerprint and renderer build. Before the
+  browser shows a
+  picture, it makes sure that these stamps are current. The browser never holds
+  a copy that
+  it edits or that it answers from without that test (ADR 0023).
+- Read `bun run type-check` by its exit status.
+  tsc colours `error` and `TS2345` as separate sequences, so `grep 'error TS'` matches
+  nothing and a failing check looks clean. Lint's type-aware rules are not the compiler
   either: a refactor that passes `bun run lint` can still fail type-check.
-- **Text width is measured by the canvas of whatever draws the picture**, with
-  the diagram fonts loaded: under Bun an `@napi-rs/canvas` canvas the renderer
-  host installs as `OffscreenCanvas`, in a browser its own. Never add a font
-  measurer; pictures may differ between browsers, because each matches what
-  that browser paints. `tests/system/browser/measured-text.test.ts` holds the
-  Bun canvas to what Chrome draws; the two agree to under one percent.
+- Text width is measured by the canvas of whatever draws the picture, with the diagram
+  fonts loaded. Under Bun, this is an `@napi-rs/canvas` canvas that the renderer host
+  installs as `OffscreenCanvas`. In a browser, it is the canvas of that browser.
+  Never add a
+  font measurer. Pictures can differ between browsers, because each matches what that
+  browser paints. `tests/system/browser/measured-text.test.ts` holds the Bun
+  canvas to what
+  Chrome draws. The two agree to under one percent.

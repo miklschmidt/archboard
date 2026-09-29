@@ -1,20 +1,20 @@
 # Frontend code structure
 
-Apply these rules when changing browser UI. They adapt Platform.Frontend's
-structure and React ownership patterns to Archboard. [boundaries.md](boundaries.md)
-remains authoritative for module interfaces, imports, and test ownership.
-The benefit is a predictable place to find a workflow and change it without
-pulling its state into the application root.
+If you change browser UI, apply these rules. They adapt the structure and React
+ownership patterns of Platform.Frontend to Archboard. [boundaries.md](boundaries.md)
+remains the authority for module interfaces, imports and test ownership.
+These rules give a predictable place to find a workflow. You can then change
+that workflow and keep its state out of the application root.
 
 ## Placement
 
-Keep `src/ui/<module>` flat and name each module for the behavior it owns.
-Feature-specific UI, state, and commands belong to that module. A visual section
-with its own workflow is a feature owner, not merely a shared component.
-Reusable domain behavior belongs in a named peer module; generic UI belongs in
-the existing shared UI modules. Application and shell composition connect those
-owners through their public interfaces. Shared primitives and reusable domain
-modules must not depend on application or shell composition.
+Keep `src/ui/<module>` flat and name each module for the behavior that it owns.
+Feature-specific UI, state and commands belong to that module. A visual section
+with its own workflow is a feature owner, not only a shared component.
+Reusable domain behavior belongs in a named peer module, and generic UI belongs
+in the existing shared UI modules. Application and shell composition connect
+those owners through their public interfaces. Shared primitives and reusable
+domain modules must not depend on application or shell composition.
 
 Use concern folders inside a module as needed:
 
@@ -28,135 +28,153 @@ Use concern folders inside a module as needed:
 | `types/`      | Type definitions                                 |
 | `tests/`      | Module contract tests and their private support  |
 
-All these subfolders remain private. Expose only the entrypoints callers need
-at the module root; an intentionally public hook, component, or API may live
-there. Keep small private concerns in a single scoped file in the appropriate
-folder. Create folders when there is code to place in them, and avoid redundant
-nesting within a concern. Hooks and state helpers belong to their own concerns,
-even when only one component consumes them. Colocate a private type with its
-owner when a separate type file would only add navigation.
+All these subfolders remain private. At the module root, expose only the
+entrypoints that callers need. An intentionally public hook, component or API
+can live there.
 
-Keep the existing public-entrypoint model, including focused `index.ts`
+Keep a small private concern in a single scoped file in the applicable folder.
+If there is no code to place in a folder, do not create the folder. Do not nest folders
+without need within a concern. If only one component consumes a hook or a state
+helper, it still belongs to its own concern. If a separate type
+file only adds navigation, keep a private type with its owner.
+
+Keep the existing model of public entrypoints, with focused `index.ts`
 interfaces. Re-export hubs that expose unrelated implementation are not module
-interfaces. Extract shared behavior to an appropriate owner when another module
-needs it; never reach into a neighbor's private concern folders. Use the existing
-test owners rather than colocating tests in `components/` or `hooks/`.
+interfaces. If another module needs shared behavior, extract that behavior to an
+applicable owner. Never reach into the private concern folders of a neighbor.
+Use the existing test owners. Do not colocate tests in `components/` or `hooks/`.
 
 ## Files and components
 
 - Name component files in PascalCase, hooks in kebab-case with a `use-` prefix,
-  and non-React files in scoped kebab-case. Public `index.ts[x]` entrypoints keep
-  their conventional name; use `api.ts` for a small public API. Non-hooks do not
-  use the `use-` prefix. Use dots only for existing tooling conventions and test
-  suffixes, not to encode concerns in implementation filenames.
-- Prefer one primary component per file. Composite parts may share the root
-  component's file. Place the exported component first, then subcomponents,
-  helpers, static content, and types where declaration dependencies permit.
+  and non-React files in scoped kebab-case. Public `index.ts[x]` entrypoints
+  keep their conventional name. For a small public API, use `api.ts`. Non-hooks
+  do not use the `use-` prefix. Use dots only for existing tooling conventions
+  and test suffixes, not to encode concerns in implementation filenames.
+- Prefer one primary component per file. Composite parts can share the file of
+  the root component. Where declaration dependencies permit, put the exported
+  component first. Then put subcomponents, helpers, static content and types.
 - Split by responsibility. Repeated UI clusters, deep branching, large
-  conditional JSX, or handlers mixing validation, transport, and presentation
+  conditional JSX, or handlers that mix validation, transport and presentation
   signal a missing boundary. More than 100 JSX lines or 10 exports prompts a
   simplification check, not a mechanical split. Export count alone does not
-  require switching a file into a folder; existing lint limits still apply.
+  require you to change a file into a folder. Existing lint limits still apply.
 - Prefer early returns and focused branch helpers. Use lookup maps for actual
-  mappings, not to disguise control flow. Name callbacks and keep them stable
-  when passed to consumers that depend on their identity.
-- Use named React imports, including types. New React 19 components receive
-  `ref` as a prop when needed instead of introducing `forwardRef` wrappers.
-  Use named imports elsewhere too, except when a third-party API requires a
-  namespace import.
+  mappings, not to hide control flow. Name callbacks. If you pass a callback to
+  a consumer that depends on its identity, keep the callback stable.
+- Use named React imports, also for types. If a new React 19 component needs
+  `ref`, it receives `ref` as a prop. Do not add `forwardRef` wrappers for it.
+  Use named imports elsewhere too. If a third-party API requires a namespace
+  import, use a namespace import.
 
 ## State and effects
 
-Keep fetched data subscriptions, local state, derived values, and callbacks
-with the consuming component or its focused hook. Lift ownership only when a
-parent needs the value or siblings share one truth. Extract hooks by
+Keep fetched data subscriptions, local state, derived values and callbacks with
+the consuming component or its focused hook. Lift ownership only for a value
+that a parent needs or that siblings share as one truth. Extract hooks by
 responsibility, not by adjacent lines. Avoid controller parents, wide hooks,
-and prop bags whose only job is relaying values to their real consumer.
+and prop bags whose only job is to relay values to their real consumer.
 
-Each writable value is a source of truth. Derive values from existing state;
-change internal state at event boundaries rather than using effects to copy
-it elsewhere. Reserve effects for external-system synchronization, with cleanup
-and ownership appropriate to that system. Keep existing external-store
-subscriptions and domain controllers where they own lifecycle or ordering.
-Moving code into a hook does not justify moving its state up the tree.
+Each writable value is a source of truth. Derive values from existing state.
+Change internal state at event boundaries, not through effects that copy it
+elsewhere. Use effects only to synchronize with external systems, with cleanup
+and ownership that fit that system. Keep existing external-store subscriptions
+and domain controllers where they own lifecycle or ordering. A move of code
+into a hook does not justify a move of its state up the tree.
 
 ## Router and server data
 
 TanStack Router (TASK-166) and TanStack Query (TASK-167) are approved migration
-targets. Apply these contracts as those tasks introduce the dependencies; do not
-add imports or a second state path ahead of that work.
+targets. As those tasks introduce the dependencies, apply these contracts. Do
+not add imports or a second state path before that work.
 
 - Use code-based TanStack Router routes within the existing module boundaries.
-  Route composition stays thin and consumes domain-owned interfaces. The first
-  navigation contract is a URL that restores an open board or comparison and
-  its active pane, with Back/Forward following deliberate board navigation.
-  The URL represents browser display intent; the board file remains board
-  authority. Selection, pending edits, and live voice remain session state.
+  Route composition stays thin and consumes interfaces that domains own. The
+  first navigation contract has two parts. A URL restores an open board or
+  comparison and its active pane, and Back/Forward follows deliberate board
+  navigation. The URL
+  represents browser display intent, and the board file remains the board
+  authority. Selection, pending edits and live voice remain session state.
 - `src/ui/board-routing` delivers that contract (TASK-166) and owns it. The
-  workspace lives in search parameters on the one route at `/` — `paneA`,
-  `paneB` and `pane` — because the Archboard server serves the page at `/` alone,
-  so a path scheme would answer 404 on every direct load. Each parameter
-  carries the board key exactly as the pane reports it. The address follows the
-  note: a person's open runs the shell's command, the pane reports its new
-  board, and only then is the address written, so a refused open changes no
-  address. The address leads on the first load and on a history navigation
-  only, and there it issues that same open command. A move the person asked for
-  pushes a history entry and everything else replaces one, decided by the
-  gesture rather than by the socket. A pane holds no work of its own (the
-  browser writes nothing, ADR 0023), so nothing guards a board leaving a pane
-  and a restore moves or closes panes without asking first. There is no route
-  loader: restoring addresses the server by board key and reads nothing, so
-  routing shares no cache.
-- Use TanStack Query for request/response resources where it replaces manual
-  loading, error, cache, and refresh state. Start with board listings and server
-  previews. Each resource has one cache owner, with query keys/options and API
-  adapters owned by its domain module; route loaders coordinate that same cache.
-  Keep subscriptions at the consuming UI. Use Suspense where a bounded loading
-  fallback helps; an unrelated fetch must not unmount a live canvas or voice owner.
+  workspace lives in search parameters on the one route at `/`: `paneA`, `paneB`
+  and `pane`. It uses search parameters because the Archboard server serves the
+  page only at `/`. With a path scheme, every direct load gets a 404 answer.
+  Each parameter carries the
+  board key exactly as the pane reports it.
+
+  The address follows the note, which is the persisted content of the board.
+  When a person opens a board, the open runs the command of the shell. Then the
+  pane reports its new board. Only after that report does the page write the
+  address. Thus a refused open changes no address.
+
+  The address leads only on the first load and on a history navigation. There,
+  it issues that same open command. A move that the person asked for pushes a
+  history entry. Every other move replaces one. The gesture decides this, not
+  the socket.
+
+  A pane holds no work of its own, because the browser writes nothing (ADR
+  0023). Thus nothing guards a board that leaves a pane. A restore moves or
+  closes panes without a question first. There is no route loader. A restore
+  addresses the server by board key and reads nothing. Thus routing shares no
+  cache.
+
+- Where TanStack Query replaces manual loading, error, cache and refresh state,
+  use it for request/response resources. Start with board listings and server
+  previews. Each resource has one cache owner, and its domain module owns its
+  query keys/options and API adapters. Route loaders coordinate that same cache.
+
+  Keep subscriptions at the consuming UI. Where a bounded loading fallback
+  helps, use Suspense. An unrelated fetch must not unmount a live canvas or
+  voice owner.
+
 - Query owns server snapshots, not mounted canvas scenes. Mounted previews come
   from the pane. Edit acknowledgements, socket ordering, claims, workbench
-  streams, and voice retain their domain owners. Resolve the existing listing's
-  mix of persisted boards and live pane inventory explicitly during migration.
-- Define freshness, event invalidation, reconnect, cancellation, and retry
-  behavior for each migrated resource. Query defaults are not the product
-  contract. Keep the last usable data visible where appropriate and provide
-  explicit recovery. Board writes retain version checks and existing command
-  semantics; do not add automatic write retries or parallel optimistic models.
+  streams and voice keep their domain owners. During migration, resolve
+  explicitly the mix of persisted boards and live pane inventory in the existing
+  listing.
+- For each migrated resource, define freshness, event invalidation, reconnect,
+  cancellation and retry behavior. Query defaults are not the product contract.
+  Where it is appropriate, keep the last usable data visible. Provide explicit
+  recovery. Board writes keep version checks and existing command semantics. Do
+  not add automatic write retries or parallel optimistic models.
 
-The remaining stack stays as it is: use the existing shadcn/Base UI primitives,
-Remix icons, Tailwind theme tokens, and Bun validation. Other Platform libraries,
-font utilities, logging APIs, and referenced skills are not implied dependencies.
-Propose an additional dependency only for a concrete unmet workflow and obtain
-approval before installing it.
+The remaining stack stays as it is. Use the existing shadcn/Base UI primitives,
+Remix icons, Tailwind theme tokens and Bun validation. Other Platform libraries,
+font utilities, logging APIs and referenced skills are not implied dependencies.
+Propose an additional dependency only for a concrete unmet workflow. Get
+approval before you install it.
 
 ## Adoption and validation
 
-These are the rules for new frontend code. Existing departures are dedicated
-cleanup work, not precedent or a reason to mix unrelated moves into feature work.
-TASK-165 covers concern placement, naming, component/state ownership, and matching
-lint enforcement; routing and Query are separate delivery scopes.
-Existing generated/vendor conventions retain only their documented exceptions.
-Backend and CLI structure is outside this adoption.
+These are the rules for new frontend code. Existing departures from them are
+dedicated cleanup work, not precedent or a reason to mix unrelated moves into
+feature work. TASK-165 covers concern placement, naming, component/state
+ownership and matching lint enforcement. Routing and Query are separate delivery
+scopes. Existing generated/vendor conventions keep only their documented
+exceptions. Backend and CLI structure is outside this adoption.
 
-`archboard/ui-concern-placement` enforces the mechanically checkable half of
-these rules over authored `src/ui` source: the concern folder names above,
-PascalCase component files, `use-` prefixed kebab-case hook files, scoped
-kebab-case everywhere else, and React markup and hook exports only in
-`components/`, `hooks/` or an intentionally public module-root entrypoint.
+`archboard/ui-concern-placement` enforces the half of these rules that a machine
+can check, over authored `src/ui` source. It checks the concern folder names
+above and PascalCase component files. It checks `use-` prefixed kebab-case hook
+files and scoped kebab-case everywhere else. It also permits React markup and
+hook exports only in `components/`, `hooks/` or an intentionally public
+entrypoint at the module root.
+
 `archboard/named-react-imports` enforces the named-import rule above over the
-same source, tests included: nothing authored reaches React through its
+same source, tests included. Nothing authored reaches React through its
 namespace, in a value or a type position. The documented generated/vendor files
-keep the exemption they already have in `.oxlintrc.jsonc`.
+keep the exemption that they already have in `.oxlintrc.jsonc`.
 
 Keep tests under the owners in [boundaries.md](boundaries.md), with names that
-truthfully identify the contract tested. Follow [test-suite.md](test-suite.md)
-for runtime validation and the repository test policy for choosing the cheapest
-credible owner. Fix React warnings in touched workflows. Use types and lint for
-structure rather than tests of file contents. Preserve existing lint/type rules
-while aligning enforcement with these conventions.
+truthfully identify the contract that they test. For runtime validation, follow
+[test-suite.md](test-suite.md). To choose the cheapest credible owner, follow
+the repository test policy. Fix React warnings in touched workflows. For
+structure, use types and lint, not tests of file contents. Keep existing
+lint/type rules while you align enforcement with these conventions.
 
-Before completing a change, reconsider the resulting ownership and remove any
-abstraction, mirror state, or file split that makes the workflow harder to follow.
+Before you complete a change, examine the resulting ownership again. Remove any
+abstraction, mirror state or file split that makes the workflow harder to
+follow.
 
 ## Theme colors
 
@@ -182,11 +200,11 @@ name needs its token here and its name in `PaletteColorSchema` in
 A picture in the page paints with the tokens themselves, so a theme switch
 redraws nothing. A standalone SVG or PNG from `semantic render` or
 `semantic rasterize` is drawn in one theme. Its root sets `color-scheme` and
-every token it uses, converted to sRGB by Lightning CSS.
+every token that it uses. Lightning CSS converts those tokens to sRGB.
 
-After you edit `theme.css`, run `bun run build` and restart the Archboard
-server, because the server reads the file once, at start.
+After you edit `theme.css`, run `bun run build`. Then restart the Archboard
+server, because the server reads the file only once, at start.
 `tests/system/browser/measured-text.test.ts` compares the colors of the built
 page with those of a standalone picture in both themes. It compares only the
-tokens in `tests/system/browser/support/theme-parity.ts`, so add a new token
-there.
+tokens in `tests/system/browser/support/theme-parity.ts`. When you add a new
+token, add it there too.
