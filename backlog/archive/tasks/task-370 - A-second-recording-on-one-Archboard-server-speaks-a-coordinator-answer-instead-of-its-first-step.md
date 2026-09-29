@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-09-29 02:22'
+updated_date: '2026-09-29 02:37'
 labels: []
 dependencies: []
 priority: medium
@@ -24,3 +25,11 @@ Re-recording the README videos on 2026-09-29 (Codex 0.158.0, voice prompt at 632
 - [ ] #1 Two recordings in a row on one Archboard server each narrate every step of their own walkthrough, starting with step 1, and speak nothing from the earlier session
 - [ ] #2 The task records what reached the voice model before step 1 in the second recording, and a test reproduces it
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Likely cause: TASK-301. The coordinator thread is created per server run and reused by every voice session in that run, so the second recording inherited the first one's handoffs. TASK-301 gives every voice start a fresh coordinator thread; re-check this task after it lands.
+
+Folded into TASK-301 on 2026-09-29: its evidence is in TASK-301's description, and its acceptance criteria are TASK-301 #5 and #6. Archived, not done.
+<!-- SECTION:NOTES:END -->
