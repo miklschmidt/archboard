@@ -267,6 +267,12 @@ No, and that is the point. If a picture says something wrong, fix the meaning an
 Any agent that can run a CLI can write boards. `archboard install-skill` sets up Claude Code and Codex. The agent bar in the browser, the voice, narration and recordings run on Codex, which Archboard runs as its own private app-server with its own sign-in.
 </details>
 
+<details><summary><b>Why is a narration silent with my Bluetooth headset?</b></summary>
+<br>
+
+A narration speaks as soon as the voice starts. If your microphone is on a Bluetooth headset, starting the voice also switches the headset to the mode that carries a microphone. The narration can then be silent. It can also stop with the error "The microphone was removed". Talking to the voice is not affected, because the voice waits until you speak. If a narration is silent, select a wired microphone as your default input.
+</details>
+
 <details><summary><b>Where do boards live?</b></summary>
 <br>
 
