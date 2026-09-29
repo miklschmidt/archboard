@@ -77,7 +77,8 @@ Codex. The installer does these things:
    If not, it offers `<repo>/.archboard/vault`. If it runs in a terminal, it
    asks you. If an agent runs it, it takes the offer.
 3. If the vault directory does not exist, it creates it, with a
-   `.archboard/config.yaml` file that holds the default vocabulary.
+   `.archboard/config.yaml` file that holds the default vocabulary. The
+   archboard skill explains that file to the agents that write boards.
 4. If the repository has a `CLAUDE.md` file, it writes a block into it.
    Otherwise, it writes the block into `AGENTS.md`. The block gives the location of the
    skill and the vault of the repository. It also gives the command that runs
@@ -175,68 +176,6 @@ archboard semantic config # the vocabulary in use, and the configuration file
 
 Then create a test board with `archboard semantic new`, and read it with
 `archboard semantic show`. The first session in [TESTING.md](TESTING.md) has an example.
-
-## The vault configuration
-
-The file `<vault>/.archboard/config.yaml` defines the vocabulary of the boards
-and how the kinds look. Keep it under version control with the boards. For
-example:
-
-```yaml
-levels: [system, service, module]
-nodeKinds:
-  system: { name: System, icon: RiApps2Line, color: sky }
-  service: { name: Service, icon: RiServerLine, color: blue }
-  module: { name: Module, icon: RiBox3Line, color: teal }
-  kubernetes: { name: Kubernetes, icon: RiShip2Line, color: green }
-relationshipKinds:
-  http: { name: HTTP, color: cyan, dash: solid, arrowhead: filled }
-  event: { name: Event, color: amber, dash: dashed, arrowhead: open }
-groups:
-  billing: { name: Billing, color: orange }
-```
-
-These rules apply:
-
-- `levels` lists the levels from the coarsest to the finest. Every board states
-  one level.
-- Give each level a node kind with the same name. A node that stands for a
-  board at another level uses that level as its kind.
-- A node kind needs a `name` and an `icon`. A relationship kind needs a `name`,
-  a `dash` (`solid`, `dashed` or `dotted`) and an `arrowhead` (`filled`, `open`
-  or `none`).
-- A kind's `color` is optional. The colors are red, orange, amber, yellow,
-  lime, green, emerald, teal, cyan, sky, blue, indigo, violet, purple, fuchsia,
-  pink and rose. Without a color, the kind is neutral.
-- `groups` is optional. Each group needs a `name` and a `color` from the same
-  colors. A node lists group keys in its `groups` array. A card or container is
-  placed with the first of its groups in the order that `config.yaml` lists
-  them. The order of the node's own array does not matter. That group draws a
-  region of its color round the node and the other nodes that it places in the
-  same container. It draws one region in each container, but none inside a
-  container that it already places. A card's body takes the color of that group.
-  To examine one group, run
-  `archboard semantic inspect <board> --group <key>`.
-
-An icon is the React export name of a [Remix Icon](https://remixicon.com/), for
-example `RiServerLine` for the catalog name `server-line`. The
-[export names of the installed version](https://unpkg.com/@remixicon/react@4.9.0/index.d.ts)
-are in one text file that an agent can search.
-
-`archboard semantic config --schema` prints a JSON Schema for editors. The
-installed skill carries the same schema. `archboard check` examines the
-configuration and every board in the vault. If it finds a problem, it exits with
-status 1.
-
-If `config.yaml` is missing or not valid, archboard uses the bundled defaults
-and warns. A valid configuration refuses new references to kinds that it does
-not define. A board that uses a kind which was removed from the configuration
-stays readable, with a warning.
-
-When the configuration changes, every pane draws the boards again, and the
-boards do not change. A container gives its color to the bodies of the nodes
-inside it, and a nearer colored container wins. The icon chip of each node shows
-its own kind.
 
 ## Code bindings
 
