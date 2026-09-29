@@ -217,8 +217,11 @@ function createProductionCodexWorkbenchFactories(
 				dynamicTools: requireComponent(created, "dynamicTools"),
 			};
 			return createCodexWorkbenchSessions({
+				...bindings.sessions(created),
 				identity: shared.identity.identity,
 				transport: shared.transport,
+				session: shared.session,
+				threadLink: shared.threadLink,
 				/**
 				 * Build one tab session over this generation's shared components.
 				 * @param scope The session's id, state and thread claim.

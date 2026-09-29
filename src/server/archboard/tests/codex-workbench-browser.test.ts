@@ -269,6 +269,7 @@ test("the public socket owner routes the complete gateway workflow through serve
 		closeConnection: async (browserId, paneId, closingInstance) =>
 			void calls.push(`close:${browserId}:${paneId}:${String(closingInstance === instance)}`),
 		childExit: async () => undefined,
+		endSession: () => undefined,
 		dispose: async () => undefined,
 	};
 	const owner = createServerCodexBrowserSocketOwner({
@@ -378,6 +379,7 @@ test("the socket owner refuses missing pane authority and disposal only removes 
 		},
 		closeConnection: async (browserId: string) => void calls.push(browserId),
 		childExit: async () => undefined,
+		endSession: () => undefined,
 		dispose: async () => undefined,
 	};
 	const owner = createServerCodexBrowserSocketOwner({
@@ -435,6 +437,7 @@ test("the public request crosses a real WebSocket transport and returns the gate
 		subscribe: (_browserId, _paneId, listener) => connection.subscribe(listener),
 		closeConnection: async () => undefined,
 		childExit: async () => undefined,
+		endSession: () => undefined,
 		dispose: async () => undefined,
 	};
 	const owner = createServerCodexBrowserSocketOwner({

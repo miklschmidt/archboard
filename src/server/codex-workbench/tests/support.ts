@@ -13,6 +13,7 @@ import type {
 	BrowserActionResult,
 	BrowserProjectionPort,
 	BrowserDisconnectReason,
+	BrowserLeaseLedger,
 	BrowserLifecyclePort,
 	CodexWorkbenchGateway,
 	BrowserConnectionInstance,
@@ -58,15 +59,12 @@ export interface GatewayHarness {
 	readonly threadId: ThreadId;
 	readonly turnId: TurnId;
 	readonly calls: string[];
-	readonly disconnects: string[];
+	/** Why each browser that went told voice it had gone, in order. */
 	readonly disconnectReasons: BrowserDisconnectReason[];
+	/** How many of those voice settlements finished. */
 	readonly disconnectSettled: string[];
-	readonly durableDisconnects: string[];
 	readonly publishedAcknowledgements: string[];
-	readonly durableState: () => {
-		readonly semanticBound: boolean;
-		readonly realtimeActive: boolean;
-	};
+	readonly realtimeActive: () => boolean;
 	readonly advance: (milliseconds: number) => void;
 	readonly setReadiness: (state: BrowserReadiness["state"]) => void;
 	readonly setLink: (link: ThreadLinkSnapshot) => void;
@@ -76,10 +74,12 @@ export interface GatewayHarness {
 	readonly setActionError: (error: unknown) => void;
 	readonly setActionResult: (result: BrowserActionResult | undefined) => void;
 	readonly setActionGate: (gate: Promise<BrowserActionResult> | null) => void;
-	readonly setOrdinaryDisconnectGate: (gate: Promise<void> | null) => void;
-	readonly setDynamicDisconnectGate: (gate: Promise<void> | null) => void;
-	readonly setOrdinaryDisconnectError: (error: unknown) => void;
-	readonly setDynamicDisconnectError: (error: unknown) => void;
+	/** Hold voice's disconnect settlement until the gate resolves. */
+	readonly setDisconnectGate: (gate: Promise<void> | null) => void;
+	/** Fail voice's disconnect settlement. */
+	readonly setDisconnectError: (error: unknown) => void;
+	/** End the tab session, as the server does after its grace: its approvals settle, its lease goes. */
+	readonly endSession: () => void;
 	readonly binding: () => ThreadLinkBindingSnapshot;
 	readonly makeOrdinaryApproval: (targetThreadId?: ThreadId) => ApprovalOwnerView;
 	readonly makeDynamicApproval: (
@@ -91,6 +91,8 @@ export interface GatewayHarness {
 export interface GatewayHarnessOptions {
 	readonly snapshotMaxBytes?: number;
 	readonly project?: (projection: BrowserOwnerProjection) => BrowserOwnerProjection;
+	/** The lease ledger the server keeps across generations. */
+	readonly leaseLedger?: BrowserLeaseLedger;
 }
 
 export function createGatewayHarness(
@@ -129,17 +131,12 @@ export function createGatewayHarness(
 	let actionError: unknown = null;
 	let actionResult: BrowserActionResult | undefined;
 	let actionGate: Promise<BrowserActionResult> | null = null;
-	let ordinaryDisconnectGate: Promise<void> | null = null;
-	let dynamicDisconnectGate: Promise<void> | null = null;
-	let ordinaryDisconnectError: unknown = null;
-	let dynamicDisconnectError: unknown = null;
+	let disconnectGate: Promise<void> | null = null;
+	let disconnectError: unknown = null;
 	const calls: string[] = [];
-	const disconnects: string[] = [];
 	const disconnectReasons: BrowserDisconnectReason[] = [];
 	const disconnectSettled: string[] = [];
-	const durableDisconnects: string[] = [];
 	const publishedAcknowledgements: string[] = [];
-	let semanticBound = true;
 	let realtimeActive = false;
 	const projectionListeners = new Set<() => void>();
 
@@ -153,14 +150,10 @@ export function createGatewayHarness(
 		(name: string) =>
 		async (..._args: readonly unknown[]): Promise<BrowserActionResult> =>
 			run(name);
-	const settleDisconnect = async (
-		name: string,
-		gate: Promise<void> | null,
-		error: unknown,
-	): Promise<void> => {
-		if (gate !== null) await gate;
-		if (error !== null) throw error;
-		disconnectSettled.push(name);
+	const settleDisconnect = async (): Promise<void> => {
+		if (disconnectGate !== null) await disconnectGate;
+		if (disconnectError !== null) throw disconnectError;
+		disconnectSettled.push("realtime");
 	};
 	const actions: BrowserWorkbenchActions = {
 		account: {
@@ -171,10 +164,6 @@ export function createGatewayHarness(
 		},
 		threadLinks: {
 			create: action("threadLink.create"),
-			onBrowserDisconnect: (context, reason) => {
-				durableDisconnects.push(`semantic:${reason}`);
-				if (context.linkRevision === revision) semanticBound = false;
-			},
 		},
 		text: {
 			start: action("text.start"),
@@ -201,8 +190,9 @@ export function createGatewayHarness(
 				return result;
 			},
 			onBrowserDisconnect: (_context, reason) => {
-				durableDisconnects.push(`realtime:${reason}`);
+				disconnectReasons.push(reason);
 				realtimeActive = false;
+				return settleDisconnect();
 			},
 		},
 		ordinaryApprovals: {
@@ -239,25 +229,12 @@ export function createGatewayHarness(
 				)
 					ordinaryApproval = null;
 			},
-			onBrowserDisconnect: (context, reason) => {
-				disconnects.push("ordinary");
-				disconnectReasons.push(reason);
-				if (context.linkRevision === revision && ordinaryApproval?.snapshot.state === "pending")
-					ordinaryApproval = null;
-				return settleDisconnect("ordinary", ordinaryDisconnectGate, ordinaryDisconnectError);
-			},
 		},
 		dynamicApprovals: {
 			resolve: async (..._args) => {
 				const result = await run("dynamic.resolve");
 				dynamicApprovals = [];
 				return result;
-			},
-			onBrowserDisconnect: (_context, reason) => {
-				disconnects.push("dynamic");
-				disconnectReasons.push(reason);
-				dynamicApprovals = [];
-				return settleDisconnect("dynamic", dynamicDisconnectGate, dynamicDisconnectError);
 			},
 		},
 	};
@@ -309,6 +286,7 @@ export function createGatewayHarness(
 		...(options.snapshotMaxBytes === undefined
 			? {}
 			: { snapshotMaxBytes: options.snapshotMaxBytes }),
+		...(options.leaseLedger === undefined ? {} : { leaseLedger: options.leaseLedger }),
 		now: () => clock,
 	});
 
@@ -395,12 +373,10 @@ export function createGatewayHarness(
 		threadId,
 		turnId,
 		calls,
-		disconnects,
 		disconnectReasons,
 		disconnectSettled,
-		durableDisconnects,
 		publishedAcknowledgements,
-		durableState: () => ({ semanticBound, realtimeActive }),
+		realtimeActive: () => realtimeActive,
 		advance: (milliseconds) => {
 			clock += milliseconds;
 		},
@@ -424,17 +400,17 @@ export function createGatewayHarness(
 		setActionGate: (gate) => {
 			actionGate = gate;
 		},
-		setOrdinaryDisconnectGate: (gate) => {
-			ordinaryDisconnectGate = gate;
+		setDisconnectGate: (gate) => {
+			disconnectGate = gate;
 		},
-		setDynamicDisconnectGate: (gate) => {
-			dynamicDisconnectGate = gate;
+		setDisconnectError: (error) => {
+			disconnectError = error;
 		},
-		setOrdinaryDisconnectError: (error) => {
-			ordinaryDisconnectError = error;
-		},
-		setDynamicDisconnectError: (error) => {
-			dynamicDisconnectError = error;
+		endSession: () => {
+			ordinaryApproval = null;
+			dynamicApprovals = [];
+			gateway.endSession(tabSessionId);
+			emitProjectionChange();
 		},
 		binding: () => bindingFor(tabSessionId, revision, link),
 		makeOrdinaryApproval,

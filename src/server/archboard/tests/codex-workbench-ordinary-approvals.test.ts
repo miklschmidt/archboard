@@ -1,13 +1,20 @@
 import { expect, test } from "bun:test";
 
 import { createCodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
-import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
+import {
+	createIdentityAuthorities,
+	createIdentityAuthority,
+} from "../../../shared/codex-workbench-identity/index.js";
 import {
 	parseTabSessionId,
 	type BrowserActionContext,
 	type BrowserApprovalCommand,
 } from "../../codex-workbench/index.js";
-import { createServerOrdinaryApprovalActions } from "../codex-workbench-adapters.js";
+import {
+	cancelTabSessionApprovals,
+	createServerOrdinaryApprovalActions,
+} from "../codex-workbench-adapters.js";
+import { askApproval, createApprovalGateway } from "./support/codex-workbench-approval-gateway.js";
 
 for (const outcome of ["delivered", "not_delivered", "outcome_unknown"] as const) {
 	test(`ordinary approval actions preserve the broker ${outcome} outcome`, async () => {
@@ -75,76 +82,32 @@ for (const outcome of ["delivered", "not_delivered", "outcome_unknown"] as const
 	});
 }
 
-test("the last presenter's disconnect, from any pane of the tab session, settles and acknowledges its ordinary approvals", async () => {
-	const paneId = "pane-ordinary";
-	const identity = createIdentityAuthority();
-	const responses: unknown[] = [];
-	const broker = createCodexApprovalBroker({
-		identity,
-		transport: {
-			respond: async (_request, _owner, response) => void responses.push(response),
-		},
-		// The approval names the tab session whose thread asked; the browser leaving
-		// is one pane of that tab.
-		getCurrentBinding: () => ({ link: "tab:tab-one" }),
-	});
+test("the tab session's end settles its approvals; a disconnect does not", async () => {
+	const identity = createIdentityAuthorities();
+	const tabSessionId = parseTabSessionId("tab-one")!;
+	const threadId = identity.identity.decoder.adoptThreadId("thread-ending");
+	const { approvals, gateway, responses } = createApprovalGateway(identity, tabSessionId, threadId);
 	try {
-		const requestId = identity.decoder.adoptJsonRpcRequestId("request-disconnect-owner");
-		const pending = broker.receive({
-			child: identity.validator.childId,
-			epoch: identity.validator.epoch,
-			requestId,
-			correlation: identity.decoder.createWireRequestCorrelation({ requestId }),
-			method: "item/commandExecution/requestApproval",
-			owner: "codex-approvals",
-			params: {
-				threadId: "thread-disconnect-owner",
-				turnId: "turn-disconnect-owner",
-				itemId: "item-disconnect-owner",
-				kind: "command",
-				startedAtMs: 10,
-				approvalId: "approval-disconnect-owner",
-				environmentId: null,
-				reason: "Disconnect test",
-				networkApprovalContext: null,
-				command: "echo disconnect",
-				cwd: "/workspace",
-				commandActions: null,
-				additionalPermissions: null,
-				proposedExecpolicyAmendment: null,
-				proposedNetworkPolicyAmendments: null,
-				availableDecisions: ["accept", "decline"],
-			},
-		});
-		const actions = createServerOrdinaryApprovalActions(broker);
-		const context: BrowserActionContext = {
-			browserId: "browser-ordinary",
-			connection: Object.freeze({ socket: "ordinary" }),
-			paneId,
-			tabSessionId: parseTabSessionId("tab-one")!,
-			commandId: identity.issuer.mintBrowserCommandId(),
-			childId: pending.child,
-			epoch: pending.epoch,
-			linkRevision: 1,
-			link: {
-				kind: "thread_link",
-				state: "executable",
-				childId: pending.child,
-				epoch: pending.epoch,
-				threadId: pending.threadId,
-				source: "appServer",
-				status: "idle",
-				loaded: true,
-				canAcceptDirectInput: true,
-				reason: null,
-			},
-		};
+		const pending = askApproval(approvals, identity, threadId, "ending");
+		const first = gateway.connect("browser-one", "A", tabSessionId);
+		first.claimLease();
+		expect(first.snapshot().snapshot.approvals).toHaveLength(1);
 
-		await actions.onBrowserDisconnect?.(context, "browser_disconnected");
+		// The tab's last pane goes; a reload within the grace brings it back.
+		await first.close();
+		expect(responses).toEqual([]);
+		const reloaded = gateway.connect("browser-one", "A", tabSessionId);
+		expect(reloaded.snapshot().snapshot.approvals).toEqual([
+			expect.objectContaining({ requestId: pending.requestId }),
+		]);
+		await reloaded.close();
 
-		expect(responses).toHaveLength(1);
-		expect(broker.inspect()).toEqual([]);
+		// Nobody came back within the grace: the session's end answers Codex and retires it.
+		await cancelTabSessionApprovals(approvals, tabSessionId);
+		expect(responses).toEqual([{ result: { decision: "cancel" } }]);
+		expect(approvals.inspect()).toEqual([]);
 	} finally {
-		broker.dispose();
+		await gateway.dispose();
+		approvals.dispose();
 	}
 });

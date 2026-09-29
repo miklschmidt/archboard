@@ -1,9 +1,9 @@
-// Which browser tab an ordinary approval belongs to (TASK-373).
+// Which browser tab an approval belongs to (TASK-373).
 //
 // An approval is shown to, and answered by, the tab session whose thread asked: its workhorse or
 // its coordinator. What is guarded: the production binding links an approval to that session, and
 // an approval asked on a thread no tab session holds is cancelled at once, because nobody can be
-// shown it and a running turn must never wait on nobody.
+// shown it and a running turn must never wait on nobody. A session that ends settles its own.
 
 import { expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -11,8 +11,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { createCodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
+import {
+	createDynamicAuthorityTokenIssuer,
+	type DynamicToolApprovalRequest,
+} from "../../../runtime/codex-dynamic-tools/index.js";
+import { ARCHBOARD_APP_MANIFEST_SHA256 } from "../../../runtime/codex-thread-tools/index.js";
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
 import { parseTabSessionId } from "../../codex-workbench/index.js";
+import { createServerDynamicApprovalOwner } from "../codex-workbench-adapters.js";
 import { createServerCodexWorkbenchInstallation } from "../codex-workbench-production.js";
 import type { CodexWorkbenchGenerationInput } from "../codex-workbench-owner.js";
 
@@ -108,5 +114,78 @@ test("an approval is linked to the tab session whose thread asked, and one no ta
 	} finally {
 		broker.dispose();
 		cleanup();
+	}
+});
+
+test("a tab session's end settles its coordination approvals as unanswered and leaves another tab's", async () => {
+	const authorities = createIdentityAuthorities();
+	const { identity } = authorities;
+	const tabs = { "thread-one": "tab-one", "thread-two": "tab-two" } as Record<string, string>;
+	const owner = createServerDynamicApprovalOwner({
+		identity: authorities,
+		now: () => 10,
+		bindingForCaller: (threadId) => {
+			const tabSessionId = parseTabSessionId(
+				tabs[identity.decoder.serializeCodexIdentity(threadId)]!,
+			)!;
+			return {
+				tabSessionId,
+				binding: {
+					commandId: identity.issuer.mintBrowserCommandId(),
+					paneId: "A",
+					capturedLink: {
+						threadId,
+						childId: identity.validator.childId,
+						epoch: identity.validator.epoch,
+					},
+				},
+			};
+		},
+	});
+	const ask = (thread: string) => {
+		const token = createDynamicAuthorityTokenIssuer();
+		const operationId = String(authorities.operation.issuer.mintOperationId());
+		const request: DynamicToolApprovalRequest = {
+			identity: {
+				child: identity.validator.childId,
+				epoch: identity.validator.epoch,
+				threadId: identity.decoder.adoptThreadId(thread),
+				turnId: identity.decoder.adoptTurnId(`turn-${thread}`),
+				callId: identity.decoder.adoptDynamicToolCallId(`call-${thread}`),
+				namespace: "archboard_app",
+				tool: "create_thread",
+				manifestHash: ARCHBOARD_APP_MANIFEST_SHA256,
+				operationId,
+			},
+			effect: {
+				tool: "create_thread",
+				arguments: { prompt: thread },
+				callerAuthority: token.issue(),
+				targetAuthority: null,
+				contextAuthority: token.issue(),
+				effectiveBoundary: null,
+				mutationOperationId: operationId,
+				initialTurnOperationId: String(authorities.operation.issuer.mintOperationId()),
+				visualSummary: `Create thread: ${thread}`,
+			},
+			effectHash: `sha256:${"1".repeat(64)}`,
+			createdAtMs: 1,
+			expiresAtMs: 90_001,
+		};
+		owner.port.presentImmutableRequest(request);
+		return owner.port.awaitOneExactVisualDecision(request);
+	};
+	try {
+		const ended = ask("thread-one");
+		ask("thread-two");
+
+		owner.endSession(parseTabSessionId("tab-one")!);
+
+		// Nobody answered: the caller must ask again rather than take the silence for a refusal.
+		expect(await ended).toMatchObject({ outcome: "disconnected", cause: "browser_disconnected" });
+		expect(owner.pending(parseTabSessionId("tab-one")!)).toEqual([]);
+		expect(owner.pending(parseTabSessionId("tab-two")!)).toHaveLength(1);
+	} finally {
+		owner.dispose();
 	}
 });

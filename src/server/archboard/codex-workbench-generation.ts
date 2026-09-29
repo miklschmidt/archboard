@@ -21,6 +21,7 @@ export type {
 	CodexWorkbenchSessions,
 	CodexWorkbenchTabSession,
 	CodexWorkbenchTabSessionActions,
+	CodexWorkbenchTabSessionScope,
 	CodexWorkbenchTabSessionState,
 } from "@/server/archboard/lib/codex-workbench-sessions";
 export type { CodexWorkbenchSharedComponents } from "@/server/archboard/lib/codex-workbench-generation-lifecycle";

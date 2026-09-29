@@ -112,6 +112,8 @@ interface SessionLeases {
 	readonly isActive: (commandId: BrowserCommandId) => boolean;
 	/** Every tab session's lease owner. */
 	readonly all: () => readonly LeaseOwner[];
+	/** End a tab session's lease and forget it, owner and retained ledger alike. */
+	readonly end: (tabSessionId: TabSessionId) => void;
 }
 
 /**
@@ -156,6 +158,16 @@ function createSessionLeases(owners: LeaseOwners): SessionLeases {
 		 * @returns The owners.
 		 */
 		all: () => [...bySession.values()],
+		/**
+		 * End a tab session's lease and forget everything kept about it, so a session that ended
+		 * leaves nothing behind; a tab that comes back under the same id starts afresh.
+		 * @param tabSessionId The tab session.
+		 */
+		end: (tabSessionId) => {
+			bySession.get(tabSessionId)?.end();
+			bySession.delete(tabSessionId);
+			ledger?.sessions.delete(tabSessionId);
+		},
 	};
 }
 

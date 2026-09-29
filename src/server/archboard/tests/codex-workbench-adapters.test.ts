@@ -79,6 +79,15 @@ test("the production operation adapter shares authority and terminalizes exactly
 });
 
 /**
+ * Refuse a call the test does not expect.
+ * @param name What was called.
+ * @returns Never.
+ */
+function unused(name: string): never {
+	throw new Error(`${name} was not expected.`);
+}
+
+/**
  * A coordinator that is ready and answers every start ready, recording which
  * start the create asked for.
  * @param starts Where each start is recorded.
@@ -154,6 +163,8 @@ test("create replaces controller authority with the exact returned CAS proof", a
 	};
 	const actions = createServerThreadLinkActions({
 		claimThread: () => undefined,
+		retireThread: async () => unused("retireThread"),
+		releaseThread: () => undefined,
 		coordinator: readyCoordinator(),
 		identity: authorities,
 		workhorse: {
@@ -252,6 +263,8 @@ test("two panes of a tab creating at once leave one workhorse: the later create 
 	let binding: unknown = null;
 	const actions = createServerThreadLinkActions({
 		claimThread: () => undefined,
+		retireThread: async () => unused("retireThread"),
+		releaseThread: () => undefined,
 		coordinator: readyCoordinator(),
 		identity: authorities,
 		workhorse: {
@@ -348,6 +361,8 @@ test("a create whose coordinator cannot start is refused with its reason and sta
 	const workhorseStarts: unknown[] = [];
 	const actions = createServerThreadLinkActions({
 		claimThread: () => undefined,
+		retireThread: async () => unused("retireThread"),
+		releaseThread: () => undefined,
 		coordinator: {
 			snapshot: () => failed,
 			ensure: async () => failed,
@@ -378,6 +393,8 @@ test("a new conversation replaces the coordinator that carried the old one befor
 	const starts: string[] = [];
 	const actions = createServerThreadLinkActions({
 		claimThread: () => undefined,
+		retireThread: async () => unused("retireThread"),
+		releaseThread: () => undefined,
 		coordinator: readyCoordinator(starts),
 		identity: authorities,
 		workhorse: {
@@ -395,4 +412,59 @@ test("a new conversation replaces the coordinator that carried the old one befor
 		.create({ command: "threadLinkCreate" } as never, createContext(authorities, threadId))
 		.catch(() => undefined);
 	expect(starts).toEqual(["replace", "workhorse"]);
+});
+
+test("a new conversation gives up the threads the old one ran on once the new workhorse is linked", async () => {
+	const authorities = createIdentityAuthorities();
+	const { childId, epoch } = authorities.identity.validator;
+	const adopt = (raw: string) => authorities.identity.decoder.adoptThreadId(raw);
+	const [left, fresh, oldCoordinator] = [
+		adopt("thread-left"),
+		adopt("thread-fresh"),
+		adopt("coord"),
+	];
+	const cas = { revision: 1, paneId: "tab-one", childId, epoch, threadId: fresh };
+	const link = { ...cas, state: "executable", kind: "thread_link", source: "appServer" };
+	const retired: ThreadId[] = [];
+	const released: ThreadId[] = [];
+	const ready = { state: "ready", reason: null } as const;
+	const actions = createServerThreadLinkActions({
+		claimThread: () => undefined,
+		retireThread: async (threadId) => {
+			retired.push(threadId);
+			return { threadId, outcome: "unsubscribed" };
+		},
+		releaseThread: (threadId) => void released.push(threadId),
+		coordinator: {
+			snapshot: () => ready,
+			// The coordinator the old conversation carried is unloaded once it is quiet.
+			replace: async ({ onRetired }: { onRetired: (retirement: unknown) => void }) => {
+				onRetired({ threadId: oldCoordinator, outcome: "unsubscribed" });
+				return ready;
+			},
+		} as never,
+		identity: authorities,
+		workhorse: {
+			start: async () => ({
+				...cas,
+				state: "ready",
+				operationId: authorities.operation.issuer.mintOperationId(),
+				binding: { paneId: "tab-one", revision: 1, link, cas },
+			}),
+		} as never,
+		threadLink: { read: () => ({ cas: { revision: 0, childId, epoch, threadId: left } }) } as never,
+		semanticDelivery: {
+			snapshot: () => ({ token: { revision: 0 }, binding: null }),
+			compareAndSwap: () => ({ token: { revision: 1 } }),
+		} as never,
+	});
+
+	expect(
+		await actions.create(
+			{ command: "threadLinkCreate" } as never,
+			createContext(authorities, left),
+		),
+	).toEqual({ outcome: "delivered" });
+	expect(retired).toEqual([left]);
+	expect(released).toEqual([oldCoordinator]);
 });

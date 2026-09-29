@@ -29,7 +29,7 @@ describe("Codex workbench durable browser lifecycle", () => {
 		expect(() => current.snapshot()).toThrow("closed");
 	});
 
-	test("release and reacquire preserve semantic and realtime state until exact close", async () => {
+	test("release and reacquire preserve realtime state until exact close", async () => {
 		const value = createGatewayHarness();
 		openHarnesses.push(value);
 		const connection = value.open();
@@ -38,8 +38,8 @@ describe("Codex workbench durable browser lifecycle", () => {
 			(await connection.command(realtimeCommand(value, startLease, "realtimeStart"))).outcome,
 		).toBe("delivered");
 		connection.releaseLease();
-		expect(value.durableDisconnects).toEqual([]);
-		expect(value.durableState()).toEqual({ semanticBound: true, realtimeActive: true });
+		expect(value.disconnectReasons).toEqual([]);
+		expect(value.realtimeActive()).toBeTrue();
 
 		const appendLease = connection.claimLease();
 		expect(
@@ -49,12 +49,9 @@ describe("Codex workbench durable browser lifecycle", () => {
 				)
 			).outcome,
 		).toBe("delivered");
-		expect(value.durableDisconnects).toEqual([]);
+		expect(value.disconnectReasons).toEqual([]);
 		await connection.close();
-		expect(value.durableDisconnects).toEqual([
-			"semantic:browser_disconnected",
-			"realtime:browser_disconnected",
-		]);
-		expect(value.durableState()).toEqual({ semanticBound: false, realtimeActive: false });
+		expect(value.disconnectReasons).toEqual(["browser_disconnected"]);
+		expect(value.realtimeActive()).toBeFalse();
 	});
 });

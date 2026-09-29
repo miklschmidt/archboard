@@ -1,7 +1,6 @@
 import type {
 	BrowserActionContext,
 	BrowserActionResult,
-	BrowserDisconnectReason,
 	BrowserDynamicApprovalActions,
 	BrowserDynamicApprovalResponse,
 	DynamicApprovalOwnerBinding,
@@ -45,6 +44,8 @@ interface ServerDynamicApprovalOwner {
 	) => void;
 	readonly subscribe: (listener: () => void) => () => void;
 	readonly onNotification: (event: TransportServerNotification) => void;
+	/** Settle every approval of a tab session that ended, because nobody is left to answer it. */
+	readonly endSession: (tabSessionId: TabSessionId) => void;
 	readonly settleAll: (cause: "server_shutdown" | "child_disconnected") => void;
 	/**
 	 * Release the generation's presentation and its at-most-once decision ledger.
@@ -402,23 +403,6 @@ function createServerDynamicApprovalOwner(
 			return { outcome: "delivered" };
 		},
 		/**
-		 * Settle every approval presented to a pane whose browser has gone, so
-		 * nothing is left waiting on somebody who cannot answer.
-		 * @param context The pane.
-		 * @param _reason Why the browser stopped listening, which does not change
-		 * how these approvals end.
-		 */
-		onBrowserDisconnect: (context: BrowserActionContext, _reason: BrowserDisconnectReason) => {
-			for (const entry of pending.values()) {
-				if (
-					entry.tabSessionId === context.tabSessionId &&
-					entry.binding.paneId === context.paneId
-				) {
-					terminal(entry, "disconnected", "browser_disconnected");
-				}
-			}
-		},
-		/**
 		 * Say when what a pane would be shown has changed.
 		 * @param listener What to call.
 		 * @returns How to stop listening.
@@ -484,6 +468,20 @@ function createServerDynamicApprovalOwner(
 				);
 				if (cause !== null) {
 					terminal(entry, "cancelled", cause);
+				}
+			}
+		},
+		/**
+		 * Settle every approval a tab session was shown, because the session ended:
+		 * no pane of the tab came back within its grace. It ends the way an approval
+		 * whose browser went ends, so the caller asks again rather than taking the
+		 * silence for a refusal.
+		 * @param tabSessionId The tab session that ended.
+		 */
+		endSession: (tabSessionId: TabSessionId) => {
+			for (const entry of pending.values()) {
+				if (entry.tabSessionId === tabSessionId) {
+					terminal(entry, "disconnected", "browser_disconnected");
 				}
 			}
 		},

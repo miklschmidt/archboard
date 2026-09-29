@@ -34,6 +34,7 @@ import type { CodexWorkbenchSharedComponents } from "@/server/archboard/lib/code
 import type {
 	CodexWorkbenchSessionComponents,
 	CodexWorkbenchTabSessionState,
+	CreateCodexWorkbenchSessionsOptions,
 } from "@/server/archboard/lib/codex-workbench-sessions";
 
 /** One component of the graph, by the name the graph knows it under. */
@@ -146,6 +147,8 @@ interface ProductionCodexWorkbenchBindings {
 			| "lifecycle"
 		>
 	>;
+	/** How the generation's tab sessions settle what an ended session was asked. */
+	readonly sessions: ComponentBuilder<Pick<CreateCodexWorkbenchSessionsOptions, "endApprovals">>;
 	/** What each component of one tab session is configured with. */
 	readonly tabSession: (
 		id: TabSessionId,

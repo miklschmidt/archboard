@@ -133,6 +133,9 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 	const sessions = createCodexWorkbenchSessions({
 		identity: authorities.identity,
 		transport: fixture.transport,
+		session: fixture.session,
+		threadLink: fixture.threadLink,
+		endApprovals: async () => undefined,
 		build: () => ({ components: sessionComponents, actions: generation.tabSession.actions }),
 	});
 	const session = sessions.open(parseTabSessionId("tab-one")!);

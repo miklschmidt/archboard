@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { parseDynamicToolCallResponse } from "../../../src/runtime/codex-thread-tools/index.ts";
 import {
 	openApplicationSocket,
 	prepareProductionFixture,
@@ -315,28 +314,7 @@ describe.serial("composed Codex process lifecycle", () => {
 					: undefined;
 			}, "browser disconnect approvals");
 			await socket.close();
-			for (const id of ["disconnect-ordinary", "disconnect-dynamic"]) {
-				await waitFor(
-					() => (reverseResponses(fixture.logPath, id).length === 1 ? true : undefined),
-					`${id} settlement on browser disconnect`,
-				);
-			}
-			expect(reverseResponses(fixture.logPath, "disconnect-ordinary")[0]?.frame).toEqual({
-				id: "disconnect-ordinary",
-				result: { decision: "cancel" },
-			});
-			const disconnectedDynamic = parseDynamicToolCallResponse(
-				"create_thread",
-				reverseResponses(fixture.logPath, "disconnect-dynamic")[0]?.frame?.result,
-			).envelope;
-			if (disconnectedDynamic.tag !== "approval_required") {
-				throw new Error("The disconnected dynamic approval did not terminalize safely.");
-			}
-			expect(disconnectedDynamic).toEqual({
-				tag: "approval_required",
-				operationId: disconnectedDynamic.operationId,
-				summary: "Create thread: This authority must end with the browser.",
-			});
+			// A reload within the grace: the tab's conversation, its approvals included, is kept.
 			socket = await openApplicationSocket(server.base, "lifecycle-client");
 			expect(
 				(
@@ -348,6 +326,12 @@ describe.serial("composed Codex process lifecycle", () => {
 				).status,
 			).toBe(200);
 			expect(await socket.request("connect")).toMatchObject({ ok: true });
+			const kept = snapshot(await socket.request("snapshot"));
+			expect(kept["approvals"] as unknown[]).toHaveLength(1);
+			expect(kept["dynamicApprovals"] as unknown[]).toHaveLength(1);
+			for (const id of ["disconnect-ordinary", "disconnect-dynamic"]) {
+				expect(reverseResponses(fixture.logPath, id), id).toHaveLength(0);
+			}
 			expect(reverseResponses(fixture.logPath, "general-decline")).toHaveLength(1);
 
 			await server.dispose("SIGTERM");

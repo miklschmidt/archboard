@@ -10,6 +10,13 @@
 // notification for a thread nobody claimed yet goes to every session, because a coordinator start
 // waits for its own thread's settings before it knows the thread. A request from a thread nobody
 // holds is refused by its owner's own answer, so a running turn never waits on nobody.
+//
+// A session ends when its tab has gone for good (no pane of it came back within the grace): its
+// approvals are cancelled, its voice, board news and queue stop, its link is cleared, and each of
+// its threads is unsubscribed once nothing runs on it, so Codex unloads it. Until then its
+// coordinator's tools and its operations stay, so a turn still running is answered. A tab that
+// comes back under the same id meanwhile gets a fresh session. A child exit or a server shutdown
+// drops every session without unsubscribing anything, because the child is gone.
 
 import type { CoordinatorCallbacks } from "@/runtime/codex-coordinator-callbacks";
 import { answerUnownedTellCoordinator } from "@/runtime/codex-coordinator-callbacks";
@@ -20,9 +27,11 @@ import {
 } from "@/runtime/codex-coordinator-tools";
 import type { CodexCoordinator } from "@/runtime/codex-coordinator";
 import type { CodexRealtimeAdapter } from "@/runtime/codex-realtime";
+import type { CodexSession } from "@/runtime/codex-session";
 import type { SemanticContextPublisher } from "@/runtime/codex-semantic-context";
 import type { CodexSpokenApprovalGate } from "@/runtime/codex-spoken-approval";
 import type { CodexThreadContextController } from "@/runtime/codex-thread-context";
+import { createCodexThreadUnload, type ThreadUnload } from "@/runtime/codex-thread-unload";
 import type { CodexTransport, TransportServerNotification } from "@/runtime/codex-transport";
 import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
 import type { CodexWorkhorseOperations } from "@/runtime/codex-workhorse-operations";
@@ -42,7 +51,12 @@ import {
 	type CodexQueueProjectionInput,
 	type TabSessionId,
 } from "@/server/codex-workbench";
-import { appendFailure } from "@/server/archboard/lib/codex-workbench-failures";
+import {
+	endTabSession,
+	settleEach,
+	stopVoice,
+	type TabSessionEnding,
+} from "@/server/archboard/lib/codex-workbench-session-end";
 import {
 	sessionVoiceStartTrace,
 	type SessionVoiceStartTrace,
@@ -85,6 +99,8 @@ interface CodexWorkbenchTabSessionState {
 	 * filed under while none of the tab's panes is open; null before any was.
 	 */
 	presentingPaneId: string | null;
+	/** Live while its tab may still use it; ending once the tab has gone, until its threads unload. */
+	phase: "live" | "ending";
 }
 
 /** One conversation of the generation. */
@@ -101,6 +117,13 @@ interface CodexWorkbenchTabSessionScope {
 	readonly state: CodexWorkbenchTabSessionState;
 	/** Record that this conversation started a thread, so what Codex says about it finds it. */
 	readonly claimThread: (threadId: ThreadId) => void;
+	/**
+	 * Give up a thread this conversation no longer runs on: it is unsubscribed once nothing runs
+	 * on it, so Codex unloads it, and only then stops being this conversation's.
+	 */
+	readonly retireThread: (threadId: ThreadId) => Promise<ThreadUnload>;
+	/** Stop owning a thread something else already unloaded, such as a replaced coordinator's. */
+	readonly releaseThread: (threadId: ThreadId) => void;
 }
 
 /** A tab session's owners and actions, as its builder made them. */
@@ -110,22 +133,28 @@ interface BuiltTabSession {
 }
 
 interface CreateCodexWorkbenchSessionsOptions {
-	/** Writes a thread identity as Codex spells it, which is what Codex names threads by. */
-	readonly identity: Pick<IdentityAuthority, "decoder">;
+	/** Names threads as Codex spells them, and says which child and epoch are current. */
+	readonly identity: Pick<IdentityAuthority, "decoder" | "validator">;
 	/** Where a refused request is answered. */
 	readonly transport: Pick<CodexTransport, "respond">;
+	/** What reads a thread's status and unsubscribes it once it is idle. */
+	readonly session: Pick<CodexSession, "threadRead" | "threadUnsubscribe">;
+	/** Where a session's link is cleared when the session ends. */
+	readonly threadLink: TabSessionEnding["threadLink"];
+	/** Settle every approval an ended session was still to answer. */
+	readonly endApprovals: TabSessionEnding["endApprovals"];
 	/** Build one session's owners and actions. */
 	readonly build: (scope: CodexWorkbenchTabSessionScope) => BuiltTabSession;
 }
 
 interface CodexWorkbenchSessions {
-	/** The live session with this id, built the first time it is asked for. */
+	/** The live session with this id, built the first time it is asked for or after it ended. */
 	readonly open: (id: TabSessionId) => CodexWorkbenchTabSession;
 	/** The live session with this id, refused when there is none. */
 	readonly require: (id: TabSessionId) => CodexWorkbenchTabSession;
 	/** Every live session, in the order they opened. */
 	readonly list: () => readonly CodexWorkbenchTabSession[];
-	/** The session that started this thread, or null when none did. */
+	/** The live session that started this thread, or null when none did or it is ending. */
 	readonly forThread: (threadId: ThreadId) => CodexWorkbenchTabSession | null;
 	readonly claimThread: (session: CodexWorkbenchTabSession, threadId: ThreadId) => void;
 	/** Hand one notification to the session its thread belongs to, or to every session. */
@@ -134,13 +163,19 @@ interface CodexWorkbenchSessions {
 	readonly routeCoordinatorTool: (request: DynamicServerRequest) => void;
 	/** Hand a workhorse's tell_coordinator call to the calling thread's session, or refuse it. */
 	readonly routeCallback: (request: DynamicServerRequest) => void;
+	/**
+	 * End the live session with this id, because its tab has gone for good. Resolves once every
+	 * thread it started was unloaded and the session was dropped; a session that is not live is
+	 * left alone.
+	 */
+	readonly end: (id: TabSessionId) => Promise<void>;
 	/** Settle what every session carried for a child that exited. */
 	readonly childExit: (child: ChildId, epoch: ChildEpoch) => Promise<void>;
 	/** Stop what every session runs: voice, board news, the queue. */
 	readonly stop: () => Promise<void>;
 	/** Dispose every session's remaining owners and forget every session. */
 	readonly dispose: () => Promise<void>;
-	/** Hear when a session opens. */
+	/** Hear when a session opens or ends. */
 	readonly onChange: (listener: () => void) => () => void;
 }
 
@@ -156,6 +191,7 @@ function freshState(): CodexWorkbenchTabSessionState {
 		threads: new Set(),
 		voiceTrace: sessionVoiceStartTrace(),
 		presentingPaneId: null,
+		phase: "live",
 	};
 }
 
@@ -173,41 +209,6 @@ function notificationThread(event: TransportServerNotification): string | null {
 }
 
 /**
- * Run every step, each whatever the others did, and report every failure together.
- * @param steps The steps, in order.
- * @param message What a failure was part of.
- */
-async function settleEach(steps: readonly (() => unknown)[], message: string): Promise<void> {
-	let failure: Error | null = null;
-	for (const step of steps) {
-		try {
-			// oxlint-disable-next-line no-await-in-loop -- each step settles fully before the next, in the order the owners depend on
-			await step();
-		} catch (error) {
-			failure = appendFailure(failure, error, message);
-		}
-	}
-	if (failure !== null) {
-		throw failure;
-	}
-}
-
-/**
- * Stop a session's voice, if it is carrying any.
- * @param realtime The session's realtime adapter.
- */
-async function stopVoice(realtime: CodexRealtimeAdapter): Promise<void> {
-	const generation = realtime.generation();
-	if (generation === null) {
-		return;
-	}
-	await realtime.stop({
-		sessionId: generation.browserSessionId,
-		correlationId: generation.browserCorrelationId,
-	});
-}
-
-/**
  * Hand one notification to one session's owners, in the order they depend on each other.
  * @param session The session.
  * @param event The notification.
@@ -217,6 +218,10 @@ function deliver(session: CodexWorkbenchTabSession, event: TransportServerNotifi
 	coordinator.onNotification(event);
 	operations.onNotification(event);
 	realtime.onNotification(event);
+	if (session.state.phase === "ending") {
+		// Its spoken approval and callbacks are gone; its turns still settle their operations.
+		return;
+	}
 	spokenApproval.onNotification(event);
 	// After the operations owner, which settles the coordinator's own delegations first.
 	callbacks.onNotification(event);
@@ -231,14 +236,21 @@ function createCodexWorkbenchSessions(
 	options: CreateCodexWorkbenchSessionsOptions,
 ): CodexWorkbenchSessions {
 	const live = new Map<TabSessionId, CodexWorkbenchTabSession>();
+	const ending = new Set<CodexWorkbenchTabSession>();
 	const byThread = new Map<string, CodexWorkbenchTabSession>();
 	const listeners = new Set<() => void>();
+	const unloads = createCodexThreadUnload(options);
 	let disposed = false;
 
 	/** Tell every listener the sessions changed. */
 	const publish = (): void => {
 		for (const listener of listeners) listener();
 	};
+	/**
+	 * Every session Codex may still speak to: the live ones, then those ending.
+	 * @returns The sessions.
+	 */
+	const every = (): CodexWorkbenchTabSession[] => [...live.values(), ...ending];
 	/**
 	 * Record that a session started a thread.
 	 * @param session The session.
@@ -249,12 +261,52 @@ function createCodexWorkbenchSessions(
 		byThread.set(options.identity.decoder.serializeCodexIdentity(threadId), session);
 	};
 	/**
-	 * The session a thread belongs to, by the spelling Codex uses.
+	 * Stop a session owning a thread, which Codex has unloaded or was told to.
+	 * @param session The session.
+	 * @param threadId The thread.
+	 */
+	const releaseThread = (session: CodexWorkbenchTabSession, threadId: ThreadId): void => {
+		session.state.threads.delete(threadId);
+		const wireThreadId = options.identity.decoder.serializeCodexIdentity(threadId);
+		if (byThread.get(wireThreadId) === session) {
+			byThread.delete(wireThreadId);
+		}
+	};
+	/**
+	 * Unload a session's thread once nothing runs on it, then stop the session owning it.
+	 * @param session The session.
+	 * @param threadId The thread.
+	 * @returns What became of it.
+	 */
+	const retireThread = async (
+		session: CodexWorkbenchTabSession,
+		threadId: ThreadId,
+	): Promise<ThreadUnload> => {
+		const unload = await unloads.unload(threadId);
+		releaseThread(session, threadId);
+		return unload;
+	};
+	/**
+	 * The session a thread belongs to, live or ending, by the spelling Codex uses.
 	 * @param wireThreadId The thread as Codex names it, or null.
 	 * @returns The session, or null.
 	 */
 	const owning = (wireThreadId: string | null): CodexWorkbenchTabSession | null =>
 		wireThreadId === null ? null : (byThread.get(wireThreadId) ?? null);
+	/**
+	 * The live session with this id.
+	 * @param id The session.
+	 * @param action What it was to do, for the refusal.
+	 * @returns The session.
+	 * @throws {Error} When the session is not live.
+	 */
+	const requireLive = (id: TabSessionId, action: string): CodexWorkbenchTabSession => {
+		const session = live.get(id);
+		if (session === undefined) {
+			throw new Error(`The tab session ${id} is not live, so it can ${action}.`);
+		}
+		return session;
+	};
 	/**
 	 * Build a session.
 	 * @param id Its id.
@@ -262,27 +314,52 @@ function createCodexWorkbenchSessions(
 	 */
 	const build = (id: TabSessionId): CodexWorkbenchTabSession => {
 		const state = freshState();
+		let session: CodexWorkbenchTabSession | null = null;
+		/**
+		 * This record, once it is built: a session that ended keeps its id for the tab that
+		 * comes back, so the record rather than the id is what a thread belongs to.
+		 * @returns The session.
+		 */
+		const self = (): CodexWorkbenchTabSession => {
+			if (session === null) {
+				throw new Error(`The tab session ${id} is still being built.`);
+			}
+			return session;
+		};
 		const built = options.build({
 			id,
 			state,
 			/**
-			 * Claim a thread for this session once it is live.
+			 * Claim a thread for this session while it is live.
 			 * @param threadId The thread.
 			 */
 			claimThread: (threadId) => {
-				const session = live.get(id);
-				if (session === undefined) {
-					throw new Error(`The tab session ${id} is not live, so it can start no thread.`);
+				if (requireLive(id, "start no thread") !== self()) {
+					throw new Error(`The tab session ${id} ended, so it can start no thread.`);
 				}
-				claimThread(session, threadId);
+				claimThread(self(), threadId);
+			},
+			/**
+			 * Unload a thread this session no longer runs on, then stop owning it.
+			 * @param threadId The thread.
+			 * @returns What became of it.
+			 */
+			retireThread: (threadId) => retireThread(self(), threadId),
+			/**
+			 * Stop owning a thread something else unloaded.
+			 * @param threadId The thread.
+			 */
+			releaseThread: (threadId) => {
+				releaseThread(self(), threadId);
 			},
 		});
-		return Object.freeze({ id, components: built.components, actions: built.actions, state });
+		session = Object.freeze({ id, components: built.components, actions: built.actions, state });
+		return session;
 	};
-
 	return Object.freeze({
 		/**
-		 * The live session with this id, built the first time it is asked for.
+		 * The live session with this id, built the first time it is asked for, and built afresh
+		 * for a tab that comes back after its session ended.
 		 * @param id The session.
 		 * @returns The session.
 		 */
@@ -318,26 +395,30 @@ function createCodexWorkbenchSessions(
 		 */
 		list: () => [...live.values()],
 		/**
-		 * The session that started a thread.
+		 * The live session that started a thread.
 		 * @param threadId The thread.
-		 * @returns The session, or null when none did.
+		 * @returns The session, or null when none did or the one that did is ending.
 		 */
-		forThread: (threadId) => owning(options.identity.decoder.serializeCodexIdentity(threadId)),
+		forThread: (threadId) => {
+			const session = owning(options.identity.decoder.serializeCodexIdentity(threadId));
+			return session?.state.phase === "live" ? session : null;
+		},
 		claimThread,
 		/**
-		 * Hand one notification to the session its thread belongs to, or to every
-		 * session when no session started that thread or it names none.
+		 * Hand one notification to the thread unloads, then to the session its thread belongs
+		 * to, or to every session when no session started that thread or it names none.
 		 * @param event The notification.
 		 */
 		onNotification: (event) => {
+			unloads.onNotification(event);
 			const owner = owning(notificationThread(event));
-			for (const session of owner === null ? [...live.values()] : [owner]) {
+			for (const session of owner === null ? every() : [owner]) {
 				deliver(session, event);
 			}
 		},
 		/**
-		 * Hand a coordinator tool call to the session that started the calling
-		 * thread, and refuse it through the coordinator tools' own answer otherwise.
+		 * Hand a coordinator tool call to the session that started the calling thread, ending
+		 * or not, and refuse it through the coordinator tools' own answer otherwise.
 		 * @param request The call.
 		 */
 		routeCoordinatorTool: (request) => {
@@ -357,17 +438,46 @@ function createCodexWorkbenchSessions(
 				.catch(() => undefined);
 		},
 		/**
-		 * Hand a workhorse's tell_coordinator call to the session that started the
-		 * calling thread, and answer it through the callbacks' own answer otherwise.
+		 * Hand a workhorse's tell_coordinator call to the live session that started the calling
+		 * thread, and answer it through the callbacks' own answer otherwise: an ending session's
+		 * coordinator hears nothing more.
 		 * @param request The call.
 		 */
 		routeCallback: (request) => {
 			const owner = owning(request.params.threadId);
-			if (owner !== null) {
+			if (owner?.state.phase === "live") {
 				owner.components.callbacks.onServerRequest(request);
 				return;
 			}
 			void answerUnownedTellCoordinator(options.transport, request).catch(() => undefined);
+		},
+		/**
+		 * End the live session with this id: it stops being live at once, so a tab that comes
+		 * back under the id gets a fresh session, and it is dropped once its threads unloaded.
+		 * @param id The session.
+		 * @returns Resolves once the session was dropped.
+		 */
+		end: (id) => {
+			const session = live.get(id);
+			if (session === undefined) {
+				return Promise.resolve();
+			}
+			live.delete(id);
+			session.state.phase = "ending";
+			ending.add(session);
+			publish();
+			return endTabSession(session, {
+				threadLink: options.threadLink,
+				endApprovals: options.endApprovals,
+				unload: unloads.unload,
+				/**
+				 * Stop the ending session owning a thread.
+				 * @param threadId The thread.
+				 */
+				release: (threadId) => {
+					releaseThread(session, threadId);
+				},
+			}).finally(() => ending.delete(session));
 		},
 		/**
 		 * Settle what every session carried for a child that exited: its board
@@ -378,7 +488,7 @@ function createCodexWorkbenchSessions(
 		 */
 		childExit: (child, epoch) =>
 			settleEach(
-				[...live.values()].flatMap(({ components }) => [
+				every().flatMap(({ components }) => [
 					() => components.semanticDelivery.childExit(child, epoch),
 					() => components.spokenApproval.onChildExit({ child, epoch }),
 					() => components.coordinatorTools.onChildExit({ child, epoch }),
@@ -392,7 +502,7 @@ function createCodexWorkbenchSessions(
 		 */
 		stop: () =>
 			settleEach(
-				[...live.values()].flatMap(({ components }) => [
+				every().flatMap(({ components }) => [
 					() => stopVoice(components.realtime),
 					() => components.realtime.dispose(),
 					() => components.semanticPublisher.dispose(),
@@ -402,12 +512,14 @@ function createCodexWorkbenchSessions(
 			),
 		/**
 		 * Dispose every session's callbacks, spoken approval gate, semantic delivery
-		 * and coordinator tools, and forget every session.
+		 * and coordinator tools, and forget every session, ending ones included: the
+		 * child is gone, so nothing is left to unload.
 		 */
 		dispose: async () => {
 			disposed = true;
-			const sessions = [...live.values()];
+			const sessions = every();
 			live.clear();
+			ending.clear();
 			byThread.clear();
 			try {
 				await settleEach(
@@ -424,7 +536,7 @@ function createCodexWorkbenchSessions(
 			}
 		},
 		/**
-		 * Hear when a session opens.
+		 * Hear when a session opens or ends.
 		 * @param listener What to tell.
 		 * @returns How to stop listening.
 		 */

@@ -83,7 +83,7 @@ function clearQueue(session: CodexWorkbenchTabSession): void {
 }
 
 /**
- * Hear when any tab session's voice transcript changed, including sessions that open later.
+ * Hear when any live tab session's voice transcript changed, including sessions that open later.
  * @param sessions The tab sessions.
  * @param listener Told once for every burst of transcript events.
  * @returns How to stop listening.
@@ -92,12 +92,19 @@ function watchSessionTranscripts(
 	sessions: ServerBrowserGatewayInput["sessions"],
 	listener: () => void,
 ): () => void {
-	const watched = new Map<TabSessionId, () => void>();
-	/** Watch every live session not watched yet. */
+	const watched = new Map<CodexWorkbenchTabSession, () => void>();
+	/** Watch every live session not watched yet, and stop watching every session that ended. */
 	const watchOpen = (): void => {
-		for (const session of sessions.list()) {
-			if (!watched.has(session.id)) {
-				watched.set(session.id, watchTranscriptChanges(session.components.realtime, listener));
+		const open = sessions.list();
+		for (const [session, stop] of watched) {
+			if (!open.includes(session)) {
+				stop();
+				watched.delete(session);
+			}
+		}
+		for (const session of open) {
+			if (!watched.has(session)) {
+				watched.set(session, watchTranscriptChanges(session.components.realtime, listener));
 			}
 		}
 	};
@@ -319,14 +326,6 @@ function createServerBrowserGatewayOptions(
 				await refreshLinkedQueue(session);
 				return result;
 			},
-			/**
-			 * Tell the pane's session a browser that took its link has gone.
-			 * @param context The pane and its connection.
-			 * @param reason Why it went.
-			 * @returns Whatever the session's link owner does about it.
-			 */
-			onBrowserDisconnect: (context, reason) =>
-				sessionOf(context).actions.threadLinks.onBrowserDisconnect?.(context, reason),
 		},
 		text: createServerCanonicalTextActions({
 			identity: components.identity,

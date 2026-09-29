@@ -180,31 +180,32 @@ interface ServerThreadLinkActionOptions {
 	readonly semanticDelivery: CodexWorkbenchSessionComponents["semanticDelivery"];
 	/** Record that the session started a thread, so what Codex says about it finds the session. */
 	readonly claimThread: CodexWorkbenchTabSessionScope["claimThread"];
+	/** Give up the workhorse thread a new conversation left: unloaded once nothing runs on it. */
+	readonly retireThread: CodexWorkbenchTabSessionScope["retireThread"];
+	/** Stop owning the coordinator thread a new conversation replaced, once it was unloaded. */
+	readonly releaseThread: CodexWorkbenchTabSessionScope["releaseThread"];
 }
 
 /** The coordinator as it describes itself. */
 type CoordinatorSnapshot = ReturnType<ServerThreadLinkActionOptions["coordinator"]["snapshot"]>;
 
 /**
- * Take no action on how a replaced coordinator's unload went: the retired thread
- * keeps its rollout either way, and nothing a create answers depends on it.
- */
-function ignoreRetirement(): void {}
-
-/**
  * Give a new conversation a ready coordinator before its workhorse starts. A
  * tab session's first conversation starts one. When the session already holds
  * a link, the new conversation replaces the coordinator that carried the old
- * one, which Codex unloads once nothing runs on it (TASK-374). A ready
- * coordinator no conversation has carried yet, because the create that started
- * it failed at its workhorse, is kept.
- * The session claims the ready coordinator's thread.
- * @param options The coordinator, the operation ids its starts run under, and the claim.
+ * one, which Codex unloads once nothing runs on it (TASK-374); the session stops
+ * owning that thread once it was unloaded. A ready coordinator no conversation
+ * has carried yet, because the create that started it failed at its workhorse,
+ * is kept. The session claims the ready coordinator's thread.
+ * @param options The coordinator, the operation ids its starts run under, and the claims.
  * @param replacing Whether the session already holds a link this create replaces.
  * @throws {Error} With the coordinator's reason when it did not become ready.
  */
 async function coordinatorForConversation(
-	options: Pick<ServerThreadLinkActionOptions, "coordinator" | "identity" | "claimThread">,
+	options: Pick<
+		ServerThreadLinkActionOptions,
+		"coordinator" | "identity" | "claimThread" | "releaseThread"
+	>,
 	replacing: boolean,
 ): Promise<void> {
 	const operationId = options.identity.operation.issuer.mintOperationId();
@@ -212,7 +213,14 @@ async function coordinatorForConversation(
 		replacing && options.coordinator.snapshot().state === "ready"
 			? await options.coordinator.replace({
 					operationId,
-					onRetired: ignoreRetirement,
+					/**
+					 * Stop the session owning the replaced coordinator's thread once it unloaded.
+					 * @param retirement What became of the thread.
+					 * @param retirement.threadId The thread.
+					 */
+					onRetired: ({ threadId }) => {
+						options.releaseThread(threadId);
+					},
 				})
 			: await options.coordinator.ensure({ operationId });
 	if (coordinator.state !== "ready") {
@@ -231,10 +239,6 @@ async function coordinatorForConversation(
 function createServerThreadLinkActions(
 	options: ServerThreadLinkActionOptions,
 ): BrowserThreadLinkActions {
-	const controllerTokens = new Map<
-		BrowserActionContext["connection"],
-		CodexThreadContextBindingToken
-	>();
 	let linkChanges: Promise<unknown> = Promise.resolve();
 	/**
 	 * Run one link change after every earlier one has settled. A tab session has
@@ -254,7 +258,8 @@ function createServerThreadLinkActions(
 		 * Start a new conversation and make it the tab session's link: its coordinator
 		 * first, then its workhorse thread, then board-change delivery to it. A
 		 * coordinator that cannot start refuses the create with its reason and
-		 * starts no workhorse; the next message or Talk tries again.
+		 * starts no workhorse; the next message or Talk tries again. The workhorse
+		 * thread a new conversation leaves is unloaded once nothing runs on it.
 		 * @param _command The creation, which names nothing to choose.
 		 * @param context The pane and its child epoch.
 		 * @returns The browser outcome.
@@ -262,7 +267,8 @@ function createServerThreadLinkActions(
 		create: (_command, context) =>
 			serializeLinkChange(async () => {
 				assertBrowserLinkStands(options.threadLink, context);
-				await coordinatorForConversation(options, context.link.threadId !== null);
+				const left = context.link.threadId;
+				await coordinatorForConversation(options, left !== null);
 				const started = await options.workhorse.start({
 					paneId: context.tabSessionId,
 					expected: expectedBrowserLink(context),
@@ -277,37 +283,12 @@ function createServerThreadLinkActions(
 				if (ready === null) {
 					throw new Error("The created workhorse did not return exact target authority.");
 				}
-				const token = replaceThreadContextBinding(
-					options.semanticDelivery,
-					ready.target,
-					started.binding,
-				);
-				controllerTokens.set(context.connection, token);
+				replaceThreadContextBinding(options.semanticDelivery, ready.target, started.binding);
+				if (left !== null && left !== ready.target.threadId) {
+					void options.retireThread(left);
+				}
 				return { outcome: "delivered" as const };
 			}),
-		/**
-		 * Forget which binding this browser connection took, and leave the binding
-		 * itself alone.
-		 *
-		 * A browser going away is a person closing a window. The agent session on
-		 * the other side of it is still running, still writing boards, and still
-		 * needs to hear when somebody changes one underneath it — so the recipient
-		 * cannot be a thing a disconnect destroys. This used to clear the
-		 * thread-context binding, which meant closing a tab silenced the session
-		 * bound to it until somebody opened another one and started a new conversation.
-		 *
-		 * What still ends a binding is the session itself ending — the child exits,
-		 * the epoch is retired, the workbench shuts down — or a new conversation
-		 * replacing it with another. Both of those are facts about the agent rather than about
-		 * the screen.
-		 *
-		 * The connection's token is forgotten either way, so a later lease on the
-		 * same connection cannot clear a binding it never took.
-		 * @param context The pane and its connection.
-		 */
-		onBrowserDisconnect: (context) => {
-			controllerTokens.delete(context.connection);
-		},
 	} satisfies BrowserThreadLinkActions);
 }
 

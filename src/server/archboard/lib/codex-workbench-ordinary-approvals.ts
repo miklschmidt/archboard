@@ -51,21 +51,37 @@ function visibleApprovalViews(
 }
 
 /**
- * How one browser disconnect is worded to the agent, so the cancellation the
- * agent sees names why its approval went unanswered.
- * @param reason Why the browser stopped listening.
- * @returns The wording.
+ * Cancel every approval a tab session was still to answer, because the session ended: no pane of
+ * the tab came back within its grace, so nobody is left to answer them. Each is retired at once,
+ * since no browser of the session will show its terminal either.
+ * @param approvals The broker.
+ * @param tabSessionId The tab session that ended.
  */
-function disconnectWording(
-	reason: Parameters<NonNullable<BrowserOrdinaryApprovalActions["onBrowserDisconnect"]>>[1],
-): string {
-	if (reason === "gateway_shutdown") {
-		return "Archboard server shutdown";
-	}
-	if (reason === "child_disconnected") {
-		return "child disconnected";
-	}
-	return "browser disconnected";
+async function cancelTabSessionApprovals(
+	approvals: CodexApprovalBroker,
+	tabSessionId: TabSessionId,
+): Promise<void> {
+	const link = tabSessionLink(tabSessionId);
+	const open = approvals
+		.inspect()
+		.filter(
+			(snapshot) =>
+				snapshot.binding.link === link &&
+				(snapshot.state === "staged" || snapshot.state === "pending"),
+		);
+	await Promise.all(
+		open.map(async (snapshot) => {
+			try {
+				await approvals.cancel(snapshot.requestId, "browser tab session ended");
+			} catch {
+				// Something else settled it first; the broker reports its own write failures.
+				return;
+			}
+			if (approvals.get(snapshot.requestId) !== undefined) {
+				approvals.acknowledge(snapshot.requestId);
+			}
+		}),
+	);
 }
 
 /**
@@ -142,43 +158,12 @@ function createServerOrdinaryApprovalActions(
 				}
 			}
 		},
-		/**
-		 * Cancel the approvals on the link the last presenting browser was on, so
-		 * nothing is left waiting on a browser that has gone. The gateway calls
-		 * this only once no other open pane presents that link, and an approval
-		 * belongs to the link rather than to the pane that happened to create it.
-		 * @param context The pane, its child epoch, and the link it was on.
-		 * @param reason Why the browser stopped listening.
-		 */
-		onBrowserDisconnect: async (context, reason) => {
-			if (context.link.state !== "executable") {
-				return;
-			}
-			const authoredReason = disconnectWording(reason);
-			const pending = approvals
-				.inspect()
-				.filter(
-					(snapshot) =>
-						snapshot.state === "pending" &&
-						snapshot.child === context.childId &&
-						snapshot.epoch === context.epoch &&
-						snapshot.threadId === context.link.threadId &&
-						snapshot.binding.link === tabSessionLink(context.tabSessionId),
-				);
-			await Promise.all(
-				pending.map(async (snapshot) => {
-					await approvals.cancel(snapshot.requestId, authoredReason);
-					if (approvals.get(snapshot.requestId) !== undefined) {
-						approvals.acknowledge(snapshot.requestId);
-					}
-				}),
-			);
-		},
 	};
 	return Object.freeze(actions);
 }
 
 export {
+	cancelTabSessionApprovals,
 	createServerOrdinaryApprovalActions,
 	tabSessionLink,
 	tabSessionOfLink,

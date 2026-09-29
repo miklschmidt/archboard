@@ -6,7 +6,10 @@ import type {
 	CodexWorkbenchGenerationInput,
 	ProductionCodexWorkbenchBindings,
 } from "@/server/archboard/lib/codex-workbench";
-import { tabSessionLink } from "@/server/archboard/lib/codex-workbench-ordinary-approvals";
+import {
+	cancelTabSessionApprovals,
+	tabSessionLink,
+} from "@/server/archboard/lib/codex-workbench-ordinary-approvals";
 import { createServerDynamicOperationIdAdapter } from "@/server/archboard/lib/codex-workbench-operation-lifecycle";
 import type { GenerationOwners } from "@/server/archboard/lib/codex-workbench-generation-owners";
 import {
@@ -102,8 +105,9 @@ function storageBindings(
 }
 
 /**
- * The tab session an approval on one thread belongs to: the one that started
- * the thread, whether its workhorse or its coordinator asked.
+ * The tab session an approval on one thread belongs to: the live one that
+ * started the thread, whether its workhorse or its coordinator asked. A session
+ * that is ending holds nothing an approval could be shown on.
  * @param sessions The generation's tab sessions, once they are built.
  * @param threadId The thread the approval was asked on.
  * @returns The link, or none when no tab session holds the thread.
@@ -117,7 +121,7 @@ function approvalLink(
 }
 
 /**
- * Cancel an approval nobody can be shown, because no tab session holds the
+ * Cancel an approval nobody can be shown, because no live tab session holds the
  * thread that asked: a running turn must never wait on nobody. Once cancelled
  * it is retired, since no browser will show its terminal either.
  * @param approvals The broker, once it is built.
@@ -156,7 +160,7 @@ function cancelUnheld(
  */
 function approvalBindings(
 	context: BindingContext,
-): Pick<ProductionCodexWorkbenchBindings, "approvals" | "dynamicAdapters"> {
+): Pick<ProductionCodexWorkbenchBindings, "approvals" | "dynamicAdapters" | "sessions"> {
 	const { server, owners } = context;
 	const dynamicContext: DynamicOwnerContext = {
 		server,
@@ -186,6 +190,25 @@ function approvalBindings(
 			onChange: (snapshot) => {
 				cancelUnheld(created.approvals, snapshot);
 				publishProjection(owners);
+			},
+		}),
+		/**
+		 * How an ended tab session's approvals are settled: its coordination
+		 * approvals and its ordinary ones alike, since nobody is left to answer.
+		 * @param created What the graph has built so far.
+		 * @returns The sessions binding.
+		 */
+		sessions: (created) => ({
+			/**
+			 * Settle every approval an ended tab session was still to answer.
+			 * @param id The tab session.
+			 * @returns Resolves once they are settled.
+			 */
+			endApprovals: async (id) => {
+				owners.approval?.endSession(id);
+				if (created.approvals !== undefined) {
+					await cancelTabSessionApprovals(created.approvals, id);
+				}
 			},
 		}),
 		dynamicAdapters: {

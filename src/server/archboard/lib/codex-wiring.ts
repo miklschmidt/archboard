@@ -39,7 +39,7 @@ import {
 	currentSocketsByClient,
 	panes,
 } from "@/server/archboard/lib/pane-registry";
-import { tabSessionOf } from "@/server/archboard/lib/tab-sessions";
+import { endTabSessionsOnceGone, tabSessionOf } from "@/server/archboard/lib/tab-sessions";
 
 /** The browser-facing hooks the installed Codex workbench gateway provides, null while none is installed. */
 interface CodexWiring {
@@ -77,7 +77,6 @@ const codexWiring: CodexWiring = {
 	},
 };
 
-/** Forget the installed gateway's hooks. */
 /**
  * The board a pane is showing, for a context that has to name one.
  *
@@ -469,7 +468,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 			installedIdentity = identity;
 		},
 		/**
-		 * Make a component graph the active one, and return the remover.
+		 * Make a graph the active one, end its tab sessions once gone, and return the remover.
 		 * @param components The graph.
 		 * @returns Deactivates that graph, if it is still the active one.
 		 */
@@ -504,7 +503,9 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 					logger.error(`Cannot publish ${kind} context for pane ${pane.paneId}:`, error);
 				}
 			};
+			const stopEnding = endTabSessionsOnceGone(components);
 			return () => {
+				stopEnding();
 				if (active === components) {
 					active = null;
 					codexWiring.codex.publishPaneContext = null;

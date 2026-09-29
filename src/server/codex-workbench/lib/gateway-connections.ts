@@ -13,7 +13,6 @@ import {
 	type BrowserDisconnectReason,
 	type BrowserGatewayMessage,
 	type BrowserGatewaySnapshotMessage,
-	type BrowserPresenterContext,
 	type BrowserProjectionPort,
 	type BrowserPublishedPayload,
 	type BrowserUnpresentedTerminal,
@@ -32,7 +31,6 @@ import {
 	emit,
 	isOversizedDelta,
 	publishedTerminalIds,
-	sameWireValue,
 } from "@/server/codex-workbench/lib/browser-command";
 
 /** One browser's connection to one pane, and everything this process holds about it. */
@@ -334,11 +332,10 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 		},
 
 		/**
-		 * Tell every owner that one browser connection has gone, once.
-		 *
-		 * Approval teardown is best effort: both owners get a chance to settle,
-		 * and the gateway's lifecycle methods resolve only after every settlement
-		 * promise has finished.
+		 * Tell every owner that one browser connection has gone, once. What the connection's tab
+		 * session holds stays, its approvals included: the tab may come back within its grace,
+		 * and only the session's end settles them. Its voice stops, because the socket that
+		 * carried its media is gone.
 		 * @param state The connection.
 		 * @param reason Why it went.
 		 * @returns Resolves once every owner has settled.
@@ -356,30 +353,11 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 				// Projection retirement is best effort; the gateway still settles every
 				// existing disconnect owner and closes the exact connection.
 			}
-			const presenterContext = presenterContextFor(state);
-			// Approvals stay presented while any other open connection still shows
-			// the same link: somebody is still there to answer them.
-			const presented = hasOtherPresenter(state, presenterContext);
-			const settlement = Promise.allSettled([
-				// Ordinary approvals capture the still-current exact pane binding before
-				// thread-link teardown clears that controller token.
-				presented
-					? Promise.resolve()
-					: invokeDisconnect(
-							options.actions.ordinaryApprovals.onBrowserDisconnect,
-							presenterContext,
-							reason,
-						),
-				invokeDisconnect(options.actions.threadLinks.onBrowserDisconnect, state.binding, reason),
-				invokeDisconnect(options.actions.realtime.onBrowserDisconnect, state.binding, reason),
-				presented
-					? Promise.resolve()
-					: invokeDisconnect(
-							options.actions.dynamicApprovals.onBrowserDisconnect,
-							state.binding,
-							reason,
-						),
-			]).then(() => undefined);
+			const settlement = invokeDisconnect(
+				options.actions.realtime.onBrowserDisconnect,
+				state.binding,
+				reason,
+			);
 			connections.trackSettlement(settlement);
 			return settlement;
 		},
@@ -460,67 +438,6 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 		};
 	}
 
-	/**
-	 * The approval-presenting authority a departing connection held, when its
-	 * pane still has an executable link naming a child.
-	 * @param state The departing connection.
-	 * @returns The presenter context, or null when the pane owns no cleanup.
-	 */
-	function presenterContextFor(state: ConnectionState): BrowserPresenterContext | null {
-		try {
-			const binding = connections.readBinding(state.tabSessionId);
-			const link = binding.link;
-			if (link.state !== "executable") {
-				return null;
-			}
-			return {
-				browserId: state.browserId,
-				connection: state.instance,
-				paneId: state.paneId,
-				tabSessionId: state.tabSessionId,
-				childId: link.childId,
-				epoch: link.epoch,
-				link,
-				linkRevision: binding.revision,
-			};
-		} catch {
-			// A pane binding that is already gone owns no approval cleanup.
-			return null;
-		}
-	}
-
-	/**
-	 * Whether another open connection, on any pane, still presents the link the
-	 * departing one held, in which case its approvals stay presented: the link
-	 * is what an approval belongs to, and any pane showing it can answer.
-	 * @param state The departing connection.
-	 * @param presenterContext The authority it held, when it held one.
-	 * @returns True when somebody else still presents that link.
-	 */
-	function hasOtherPresenter(
-		state: ConnectionState,
-		presenterContext: BrowserPresenterContext | null,
-	): boolean {
-		// A disposing gateway retires every connection, so nobody stays to present.
-		if (presenterContext === null || connections.disposed) {
-			return false;
-		}
-		return Array.from(states.values()).some((candidate) => {
-			if (candidate === state || candidate.closed) {
-				return false;
-			}
-			try {
-				const binding = connections.readBinding(candidate.tabSessionId);
-				return (
-					binding.revision === presenterContext.linkRevision &&
-					sameWireValue(binding.link, presenterContext.link)
-				);
-			} catch {
-				return false;
-			}
-		});
-	}
-
 	return connections;
 }
 
@@ -532,11 +449,11 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
  * @param reason Why the connection went.
  * @returns Resolves once the hook has settled.
  */
-function invokeDisconnect<Context extends BrowserActionContext | BrowserPresenterContext>(
+function invokeDisconnect(
 	callback:
-		| ((context: Context, reason: BrowserDisconnectReason) => Promise<void> | void)
+		| ((context: BrowserActionContext, reason: BrowserDisconnectReason) => Promise<void> | void)
 		| undefined,
-	context: Context | null,
+	context: BrowserActionContext | null,
 	reason: BrowserDisconnectReason,
 ): Promise<void> {
 	if (callback === undefined || context === null) return Promise.resolve();

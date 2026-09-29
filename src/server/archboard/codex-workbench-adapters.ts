@@ -3,6 +3,7 @@ export {
 	createServerOrdinaryApprovalActions,
 } from "@/server/archboard/lib/codex-workbench-browser-gateway";
 export type { ServerBrowserBindingState } from "@/server/archboard/lib/codex-workbench-browser-gateway";
+export { cancelTabSessionApprovals } from "@/server/archboard/lib/codex-workbench-ordinary-approvals";
 export { projectServerBrowserReadiness } from "@/server/archboard/lib/codex-workbench-readiness";
 export type {
 	ServerReadinessInput,
