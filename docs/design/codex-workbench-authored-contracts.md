@@ -132,7 +132,7 @@ The coordinator uses exactly one of these two otherwise-identical profiles:
 
 ```json
 {
-	"model": "gpt-6-luna",
+	"model": "gpt-6-sol",
 	"allowProviderModelFallback": false,
 	"serviceTier": "priority",
 	"cwd": "<canonical-checkout-root>",
@@ -159,7 +159,7 @@ written for an agent doing work in the repository and tells every request to
 begin with project procedure; the coordinator's whole brief is what Archboard
 gives it. The workhorse profile leaves the default, so it still reads the file.
 
-When `model/list` does not advertise priority for `gpt-6-luna`, the fallback
+When `model/list` does not advertise priority for `gpt-6-sol`, the fallback
 profile omits `serviceTier`; it does not send `null` or another tier. Both
 profiles intentionally omit `modelProvider`, `approvalPolicy`,
 `approvalsReviewer`, `sandbox`, `permissions`, `baseInstructions`,
@@ -175,12 +175,12 @@ After coordinator start, Archboard sends exactly one of:
 
 <!-- prettier-ignore -->
 ```json
-{"threadId":"<coordinator-thread-id>","model":"gpt-6-luna","serviceTier":"priority","effort":"high"}
+{"threadId":"<coordinator-thread-id>","model":"gpt-6-sol","serviceTier":"priority","effort":"low"}
 ```
 
 <!-- prettier-ignore -->
 ```json
-{"threadId":"<coordinator-thread-id>","model":"gpt-6-luna","effort":"high"}
+{"threadId":"<coordinator-thread-id>","model":"gpt-6-sol","effort":"low"}
 ```
 
 The empty response is not confirmation. Reuse requires a matching

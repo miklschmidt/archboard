@@ -114,10 +114,10 @@ describe.serial("actual production Codex composition", () => {
 			expect(typeof threadLink["threadId"]).toBe("string");
 			expect(linked["coordinator"]).toMatchObject({
 				state: "ready",
-				configuredModel: "gpt-6-luna",
-				configuredEffort: "high",
-				model: "gpt-6-luna",
-				effort: "high",
+				configuredModel: "gpt-6-sol",
+				configuredEffort: "low",
+				model: "gpt-6-sol",
+				effort: "low",
 				serviceTier: null,
 			});
 			expect(typeof (linked["coordinator"] as Record<string, unknown>)["threadId"]).toBe("string");

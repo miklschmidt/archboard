@@ -48,6 +48,23 @@ const modelFixture = {
 	isDefault: true,
 };
 
+/** The model the coordinator runs on, listed with the effort it asks for. */
+const coordinatorModelFixture = {
+	...modelFixture,
+	id: "gpt-6-sol",
+	model: "gpt-6-sol",
+	displayName: "Sol",
+	supportedReasoningEfforts: [
+		{ reasoningEffort: "low", description: "fixture" },
+		{ reasoningEffort: "medium", description: "fixture" },
+	],
+	defaultReasoningEffort: "medium",
+	isDefault: false,
+};
+
+/** Every model the fixture lists, the default first. */
+const modelFixtures = [modelFixture, coordinatorModelFixture];
+
 /** Thread fields this fixture never gives a value. */
 const unsetThreadFields = {
 	agentNickname: null,
@@ -109,6 +126,7 @@ export {
 	configFixture,
 	dynamicItem,
 	modelFixture,
+	modelFixtures,
 	promptItem,
 	unixSeconds,
 	unsetThreadFields,
