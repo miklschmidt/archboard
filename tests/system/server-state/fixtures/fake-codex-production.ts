@@ -148,14 +148,6 @@ const createThread = (params: Record<string, unknown>): FixtureThread => {
 	return thread;
 };
 
-/** One persisted thread this workbench did not create. It exists before any thread/start,
- * so attaching it has to record ownership first — the path a workbench-created thread never takes. */
-const FOREIGN_FIXTURE_THREAD_ID = "thread-foreign";
-threads.set(
-	FOREIGN_FIXTURE_THREAD_ID,
-	buildThread(FOREIGN_FIXTURE_THREAD_ID, { cwd: process.cwd() }, 0),
-);
-
 const threadStartResponse = (params: Record<string, unknown>, thread: FixtureThread) => ({
 	thread,
 	model: typeof params["model"] === "string" ? params["model"] : "gpt-6-luna",
@@ -312,9 +304,7 @@ const handle = (frame: WireFrame): void => {
 		case "thread/list":
 			respond(frame as never, {
 				// Newly started empty threads are loaded/readable before they enter persisted history.
-				data: [...threads.values()].filter(
-					(thread) => thread.id === FOREIGN_FIXTURE_THREAD_ID || thread.turns.length > 0,
-				),
+				data: [...threads.values()].filter((thread) => thread.turns.length > 0),
 				nextCursor: null,
 				backwardsCursor: null,
 			});

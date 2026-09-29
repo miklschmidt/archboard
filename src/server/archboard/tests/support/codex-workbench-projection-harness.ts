@@ -151,7 +151,6 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 		budget: createServerBrowserProjectionBudget(),
 		leaseLedger: { active: null, retired: new Map() },
 		process: () => facts,
-		checkoutRoot: "/repo",
 		...(overrides.now === undefined ? {} : { now: overrides.now }),
 		contextForOperation: () => archboardContext,
 		onChange: () => () => undefined,

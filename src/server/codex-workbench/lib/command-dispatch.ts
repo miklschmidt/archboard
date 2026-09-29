@@ -48,27 +48,6 @@ function createBrowserActionDispatch(options: CodexWorkbenchGatewayOptions): Bro
 		 */
 		threadLinkCreate: (command, context) => threadLinks.create(command, context),
 		/**
-		 * Re-read the pane's thread link.
-		 * @param command The command.
-		 * @param context The lease's authority.
-		 * @returns What became of it.
-		 */
-		threadLinkRefresh: (command, context) => threadLinks.refresh(command, context),
-		/**
-		 * Bind the pane to an existing thread.
-		 * @param command The command.
-		 * @param context The lease's authority.
-		 * @returns What became of it.
-		 */
-		threadLinkAttach: (command, context) => threadLinks.attach(command, context),
-		/**
-		 * Move the pane's binding to another thread.
-		 * @param command The command.
-		 * @param context The lease's authority.
-		 * @returns What became of it.
-		 */
-		threadLinkRelink: (command, context) => threadLinks.relink(command, context),
-		/**
 		 * Start a turn.
 		 * @param command The command.
 		 * @param context The lease's authority.

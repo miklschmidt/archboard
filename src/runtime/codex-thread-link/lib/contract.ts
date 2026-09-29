@@ -118,25 +118,6 @@ interface ThreadLinkClassification {
 	readonly proof: EpochExecutionProof | null;
 }
 
-type ThreadLinkCandidateSource = ThreadLinkAllowedSource | "custom" | "subAgent" | "unknown";
-
-/** The complete browser-safe projection for one server-retained candidate. */
-interface ThreadLinkCandidate {
-	readonly selectionId: string;
-	readonly threadId: ThreadId;
-	readonly state: Exclude<ThreadLinkState, "unbound">;
-	readonly reason: ThreadLinkReason | null;
-	readonly source: ThreadLinkCandidateSource;
-	readonly status: ThreadLinkStatus;
-	readonly loaded: boolean;
-	readonly canAcceptDirectInput: boolean | null;
-}
-
-/** One authoritative inventory. No member comes from a partial page or another generation. */
-interface ThreadLinkCandidateDiscovery {
-	readonly candidates: readonly ThreadLinkCandidate[];
-}
-
 type ThreadLinkClassificationErrorCode =
 	| "invalid_input"
 	| "invalid_result"
@@ -216,14 +197,6 @@ interface CodexThreadLinkClassifier {
 }
 
 interface CodexThreadLinkPort extends CodexThreadLinkClassifier, ThreadLinkBindingStore {
-	/** Exhaust and classify the candidates browser consumers may offer for explicit binding. */
-	readonly discoverCandidates: () => Promise<ThreadLinkCandidateDiscovery>;
-	/** Resolve one opaque candidate once, then adopt it through fresh classification and pane CAS. */
-	readonly bindCandidate: (
-		paneId: string,
-		expected: ThreadLinkCasToken | null,
-		selectionId: string,
-	) => Promise<ThreadLinkBindingSnapshot>;
 	/** Classify twice through the live authorities, then adopt the fresh result by CAS. */
 	readonly classifyAndBind: (
 		paneId: string,
@@ -254,9 +227,6 @@ export {
 	type UnboundThreadLink,
 	type ThreadLinkSnapshot,
 	type ThreadLinkClassification,
-	type ThreadLinkCandidateSource,
-	type ThreadLinkCandidate,
-	type ThreadLinkCandidateDiscovery,
 	type ThreadLinkClassificationErrorCode,
 	CodexThreadLinkError,
 	CodexThreadLinkConflictError,

@@ -1,5 +1,5 @@
-// The thread-scoped DTOs: the pane's link to a thread, the candidates it may
-// bind, the timeline it shows, and the queue of pending submissions.
+// The thread-scoped DTOs: the pane's link to a thread, the timeline it shows,
+// and the queue of pending submissions.
 
 import { z } from "zod";
 
@@ -11,7 +11,6 @@ import {
 	CodexTurnStatusSchema,
 } from "@/shared/codex-app-server-contract/index";
 import {
-	BROWSER_THREAD_CANDIDATE_LIMIT,
 	BROWSER_TIMELINE_LIMITS as LIMITS,
 	refineCurrentTarget,
 } from "@/shared/codex-browser-model/lib/browser-vocabulary";
@@ -19,10 +18,10 @@ import { boundedText, optionalNullableText } from "@/shared/codex-browser-model/
 import type { IdentityContext, IdentitySchemas } from "@/shared/codex-browser-model/lib/scalars";
 
 /**
- * Builds the thread link, thread candidate, timeline and queue schemas.
+ * Builds the thread link, timeline and queue schemas.
  * @param identity - The session's identity schemas.
  * @param context - The validator that knows the current child and epoch.
- * @returns The schemas, including the candidate record schema on its own.
+ * @returns The schemas.
  */
 function createBrowserThreadSchemas(identity: IdentitySchemas, context: IdentityContext) {
 	const {
@@ -93,73 +92,6 @@ function createBrowserThreadSchemas(identity: IdentitySchemas, context: Identity
 				currentTarget(value, refinementContext);
 			}
 		});
-
-	/**
-	 * One server-discovered thread the pane may bind, projected exactly as the
-	 * thread-link classifier published it. The browser re-derives none of it:
-	 * `state` and `reason` are the classifier's own verdict, and `selectionId`
-	 * is the one-shot handle that names which retained candidate a bind consumes.
-	 */
-	const BrowserThreadCandidateSchema = z
-		.object({
-			kind: z.literal("thread_candidate"),
-			selectionId: boundedText(128),
-			threadId: ThreadIdSchema,
-			state: z.enum(["executable", "inspect_only"]),
-			reason: NullableReasonSchema,
-			sourcePresentation: BrowserThreadLinkSourcePresentationSchema,
-			status: ThreadLinkStatusSchema,
-			loaded: z.boolean(),
-			canAcceptDirectInput: z.boolean().nullable(),
-		})
-		.strict();
-	/**
-	 * The candidate list is bounded rather than fitted. It is the only variable
-	 * snapshot field beside the timeline, and the timeline is the one the
-	 * snapshot fitter trims, so this list must never be able to crowd it out.
-	 */
-	const BrowserThreadCandidatesSchema = z.discriminatedUnion("state", [
-		z
-			.object({
-				kind: z.literal("thread_candidates"),
-				state: z.literal("unknown"),
-				records: z.array(BrowserThreadCandidateSchema).length(0),
-				truncated: z.literal(false),
-				reason: z.null(),
-			})
-			.strict(),
-		z
-			.object({
-				kind: z.literal("thread_candidates"),
-				state: z.literal("listed"),
-				records: z.array(BrowserThreadCandidateSchema).max(BROWSER_THREAD_CANDIDATE_LIMIT),
-				truncated: z.boolean(),
-				reason: z.null(),
-			})
-			.strict()
-			.superRefine((value, refinementContext) => {
-				const seen = new Set<string>();
-				for (const record of value.records) {
-					if (seen.has(record.selectionId)) {
-						refinementContext.addIssue({
-							code: "custom",
-							path: ["records"],
-							message: "a thread candidate selection appears more than once",
-						});
-					}
-					seen.add(record.selectionId);
-				}
-			}),
-		z
-			.object({
-				kind: z.literal("thread_candidates"),
-				state: z.literal("unavailable"),
-				records: z.array(BrowserThreadCandidateSchema).length(0),
-				truncated: z.literal(false),
-				reason: boundedText(512),
-			})
-			.strict(),
-	]);
 
 	/** A duration or a point in time, in milliseconds, when Codex reported one. */
 	const MillisecondsSchema = z.number().nonnegative().nullable();
@@ -335,8 +267,6 @@ function createBrowserThreadSchemas(identity: IdentitySchemas, context: Identity
 	return {
 		BrowserThreadLinkSourcePresentationSchema,
 		BrowserThreadLinkSchema,
-		BrowserThreadCandidateSchema,
-		BrowserThreadCandidatesSchema,
 		BrowserTimelineSchema,
 		BrowserQueueSchema,
 	};

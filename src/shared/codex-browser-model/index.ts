@@ -48,7 +48,6 @@ export {
 } from "@/shared/codex-browser-model/lib/spoken-approval";
 export {
 	BROWSER_PERMISSION_FILE_ACCESS,
-	BROWSER_THREAD_CANDIDATE_LIMIT,
 	BROWSER_TIMELINE_LIMITS,
 	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,
 	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,
@@ -82,8 +81,6 @@ export type {
 	BrowserSettings,
 	BrowserSnapshot,
 	BrowserTextCommand,
-	BrowserThreadCandidate,
-	BrowserThreadCandidates,
 	BrowserThreadLink,
 	BrowserThreadLinkSourcePresentation,
 	BrowserTimeline,

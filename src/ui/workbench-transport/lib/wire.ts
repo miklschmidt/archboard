@@ -268,7 +268,6 @@ const DELTA_PARSERS: DeltaParsers = {
 	account: parserFor(browserModel.BrowserAccountSchema),
 	login: parserFor(browserModel.BrowserLoginSchema),
 	threadLink: parserFor(browserModel.BrowserThreadLinkSchema),
-	threadCandidates: parserFor(browserModel.BrowserThreadCandidatesSchema),
 	timeline: parserFor(browserModel.BrowserTimelineSchema.nullable()),
 	queue: parserFor(browserModel.BrowserQueueSchema),
 	settings: parserFor(z.array(browserModel.BrowserSettingsSchema)),

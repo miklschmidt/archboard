@@ -18,8 +18,6 @@ declare const publicBinding: ReturnType<typeof createCodexThreadLinkBinding>;
 function observationOnlyConstruction(): void {
 	const downstreamOptions = { session, epoch } satisfies CodexThreadLinkOptions;
 	createCodexThreadLink(downstreamOptions);
-	void createCodexThreadLink(downstreamOptions).discoverCandidates();
-	void createCodexThreadLink(downstreamOptions).bindCandidate("pane-a", null, "selection");
 
 	const observationOnlyOptions = {
 		session,

@@ -52,10 +52,7 @@ function serverLink(): { readonly link: CodexThreadLinkPort; readonly keys: stri
 	const port: CodexThreadLinkPort = {
 		...store,
 		classify: () => Promise.reject(new Error("not used")),
-		discoverCandidates: () => Promise.reject(new Error("not used")),
 		classifyAndBind: bind,
-		bindCandidate: (paneId, expected, selectionId) =>
-			bind(paneId, expected, { threadId: authority.decoder.adoptThreadId(selectionId) } as never),
 	};
 	return { link: createServerThreadLink(port), keys };
 }
@@ -71,7 +68,9 @@ describe("one thread link per server", () => {
 		expect(seenFromB).toMatchObject({ paneId: "B", revision: 1, cas: { paneId: "B" } });
 		expect(seenFromB.link).toEqual(bound.link);
 		expect(link.snapshot("C").revision).toBe(1);
-		await link.bindCandidate("B", seenFromB.cas, "thread-b");
+		await link.classifyAndBind("B", seenFromB.cas, {
+			threadId: authority.decoder.adoptThreadId("thread-b"),
+		} as never);
 		// Both binds reached one entry, whichever pane asked.
 		expect(new Set(keys).size).toBe(1);
 		expect(link.read("A").link.threadId).toBe(authority.decoder.adoptThreadId("thread-b"));

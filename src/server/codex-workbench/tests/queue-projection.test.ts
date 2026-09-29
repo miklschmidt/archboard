@@ -101,7 +101,6 @@ function projectionInput(
 		},
 		login: { kind: "login", state: "idle" },
 		threadLink: link(status),
-		threadCandidates: { kind: "codex_thread_candidates", state: "unknown" },
 		timeline: null,
 		queue,
 		settings: [],

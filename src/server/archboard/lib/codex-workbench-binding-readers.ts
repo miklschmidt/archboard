@@ -4,8 +4,8 @@
 // and because every one of them has the same shape: a component may not be
 // ready, and a caller that remembered the answer would be holding an identity
 // the generation has since replaced. A coordinator is created, restarted and
-// retired inside one workhorse's life, and a relink gives the workhorse a new
-// thread — so the pair that counts as one session has to be asked for, never
+// retired inside one workhorse's life, and a new conversation gives the
+// workhorse a new thread — so the pair that counts as one session has to be asked for, never
 // sampled.
 
 import type { CoordinatorCallbackLinkCorrelation } from "@/runtime/codex-coordinator-callbacks";
@@ -66,13 +66,12 @@ function readyThreadPair(created: Readonly<Partial<CodexWorkbenchComponents>>): 
  * thread, child epoch and operation it is running.
  *
  * Both the thread and the link evidence come from the thread-context binding
- * when a pane has bound one. The workhorse snapshot keeps naming the thread
- * that started this child, and the two part company the moment a pane is
- * relinked to a thread that already existed — so correlating against the
- * starter made the coordinator reject its own session's writes as somebody
+ * when a pane has bound one. The workhorse snapshot names the thread that
+ * started this child, and the moment the two part company, correlating against
+ * the starter makes the coordinator reject its own session's writes as somebody
  * else's and everybody else's as a stale link, which is both halves of the rule
  * failing at once. The child epoch and the operation stay the snapshot's: a
- * relink does not move the capability this generation runs under.
+ * new link does not move the capability this generation runs under.
  * @param created What the graph has built so far.
  * @param assertCurrent Proves the child epoch and operation are this generation's.
  * @returns The link, or null while the workhorse is not ready and bound.
@@ -113,7 +112,7 @@ function boundWorkhorse(created: Readonly<Partial<CodexWorkbenchComponents>>) {
  * operation that bound it, and the epoch authority checks them together: asked
  * to prove thread B against the operation that bound thread A, it answers
  * mismatched_thread and nothing is delivered at all. So when a pane has bound a
- * thread, every part of the target is that binding's — the relink recorded its
+ * thread, every part of the target is that binding's — the link recorded its
  * own operation for it — and when nothing is bound the whole target is the
  * workhorse's own.
  * @param bound The thread-context binding, or null when nothing is bound.

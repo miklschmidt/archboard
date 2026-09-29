@@ -205,9 +205,6 @@ function expectReadinessMatrix(
 	expect(capabilities.canReleaseLease).toBe(true);
 	expect(capabilities.supportsCommand("accountLogout")).toBe(accountReady);
 	expect(capabilities.supportsCommand("threadLinkCreate")).toBe(threadCapable);
-	// Discovering the list is how a pane with no link finds one, so it needs
-	// thread capability and nothing more.
-	expect(capabilities.supportsCommand("threadLinkRefresh")).toBe(threadCapable);
 	expect(capabilities.supportsCommand("start")).toBe(threadCapable);
 	expect(capabilities.supportsCommand("queueAdd")).toBe(threadCapable);
 	expect(capabilities.supportsCommand("approvalRespond")).toBe(false);
@@ -229,9 +226,6 @@ function expectNonExecutableMatrix(transport: BrowserWorkbenchTransport): void {
 	expect(capabilities.supportsCommand("approvalRespond")).toBe(false);
 	expect(capabilities.supportsCommand("dynamicApprovalRespond")).toBe(false);
 	expect(capabilities.supportsCommand("threadLinkCreate")).toBe(true);
-	expect(capabilities.supportsCommand("threadLinkRefresh")).toBe(true);
-	expect(capabilities.supportsCommand("threadLinkAttach")).toBe(true);
-	expect(capabilities.supportsCommand("threadLinkRelink")).toBe(true);
 	expect(capabilities.canRenewLease).toBe(true);
 	expect(capabilities.canReleaseLease).toBe(true);
 }

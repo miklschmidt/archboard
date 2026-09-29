@@ -4,8 +4,9 @@
 // of it is still running, still writing boards, and still needs to hear when
 // somebody changes one underneath it. This used to clear the thread-context
 // binding, which is the recipient itself — so closing a tab silenced the
-// session bound to it until somebody opened another window and relinked, and no
-// amount of loosening the checks further down could have helped.
+// session bound to it until somebody opened another window and started a new
+// conversation, and no amount of loosening the checks further down could have
+// helped.
 //
 // This is the real production action object, built by the factory the server
 // composes, with a controller that records what is asked of it.
@@ -43,10 +44,6 @@ function actionsWith(controller: unknown) {
 		semanticDelivery: controller,
 		workhorse: undefined,
 		threadLink: undefined,
-		epoch: undefined,
-		identity: undefined,
-		candidates: undefined,
-		checkoutRoot: "/checkout",
 	} as never);
 }
 

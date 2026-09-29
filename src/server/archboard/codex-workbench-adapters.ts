@@ -41,12 +41,11 @@ export { presentingPane } from "@/server/archboard/lib/codex-workbench-semantic-
 export { createServerThreadLink } from "@/server/archboard/lib/codex-workbench-server-link";
 // What one coordinator callback correlates the workhorse against. Exported for
 // the owner that holds it to the bound thread rather than to whichever thread
-// started this child: the two part company on a relink, and the coordinator
-// then rejects its own session's writes and everybody else's alike.
+// started this child: when the two part company, the coordinator would reject
+// its own session's writes and everybody else's alike.
 export { workhorseLink } from "@/server/archboard/lib/codex-workbench-binding-readers";
 export {
 	bindThreadContextToReadyWorkhorse,
 	clearServerThreadContextForLease,
-	createServerThreadCandidateInventory,
 	createServerThreadLinkActions,
 } from "@/server/archboard/lib/codex-workbench-thread-links";

@@ -24,11 +24,7 @@ import {
 	type DynamicProjectionModel,
 } from "@/server/codex-workbench/lib/dynamic-approval-projection";
 import { projectSpokenApproval } from "@/server/codex-workbench/lib/spoken-approval-projection";
-import {
-	projectThreadCandidates,
-	projectThreadLink,
-	projectTimeline,
-} from "@/server/codex-workbench/lib/thread-projection";
+import { projectThreadLink, projectTimeline } from "@/server/codex-workbench/lib/thread-projection";
 import { deepFreeze } from "@/server/codex-workbench/lib/snapshot-bounds";
 import { containsSecretKey } from "@/server/codex-workbench/lib/secret-keys";
 
@@ -343,7 +339,6 @@ export function projectCodexBrowserState(
 			account: projectAccount(input.account),
 			login: input.login,
 			threadLink: projectThreadLink(input.threadLink),
-			threadCandidates: projectThreadCandidates(input.threadCandidates),
 			timeline: projectTimeline(input.timeline),
 			queue: projectQueue(input.queue, input.threadLink, input.approvals),
 			settings: input.settings.map(projectSettings),

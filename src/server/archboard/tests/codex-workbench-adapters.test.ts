@@ -74,7 +74,7 @@ test("the production operation adapter shares authority and terminalizes exactly
 	).toThrow("different terminal disposition");
 });
 
-test("create, attach, and relink replace controller authority with the exact returned CAS proof", async () => {
+test("create replaces controller authority with the exact returned CAS proof", async () => {
 	const authorities = createIdentityAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("thread-exact");
 	const operationId = authorities.operation.issuer.mintOperationId();
@@ -127,60 +127,14 @@ test("create, attach, and relink replace controller authority with the exact ret
 			return current;
 		},
 	};
-	let nextBinding = link(2);
-	const classifiedTargets: unknown[] = [];
 	const actions = createServerThreadLinkActions({
-		candidates: {
-			read: () => ({ kind: "codex_thread_candidates", state: "unknown" }),
-			refresh: async () =>
-				({ candidates: [{ selectionId: "selection-fresh", threadId }] }) as never,
-			threadIdFor: (selectionId: string) =>
-				selectionId === "selection-published" ? threadId : null,
-			// The epoch stub below never moves, so the published list stays current.
-			generation: () => "1:hash",
-			invalidate: () => undefined,
-		},
 		workhorse: {
 			start: async () => workhorseSnapshot(link(1)),
-			snapshot: () => workhorseSnapshot(nextBinding),
 		} as never,
 		threadLink: {
 			read: () => link(1),
-			classify: async () => ({}) as never,
-			bindCandidate: async (_paneId: string, _expected: unknown, selectionId: string) => {
-				classifiedTargets.push(selectionId);
-				return nextBinding;
-			},
 		} as never,
 		semanticDelivery: semanticDelivery as never,
-		epoch: {
-			snapshot: () =>
-				({
-					cas: { revision: 1, bytesHash: "hash" },
-					manifest: {
-						activeEpoch: {
-							childId: authorities.identity.validator.childId,
-							epoch: authorities.identity.validator.epoch,
-							operationId,
-						},
-						records: [
-							{
-								status: "committed",
-								correlation: {
-									childId: authorities.identity.validator.childId,
-									epoch: authorities.identity.validator.epoch,
-									operationId,
-								},
-								operation: { id: operationId, kind: "create_thread", rpc: "thread/start" },
-								provenance: { threadId },
-							},
-						],
-					},
-				}) as never,
-			assertCurrent: () => ({}) as never,
-		} as never,
-		identity: authorities,
-		checkoutRoot: "/workspace/archboard",
 	});
 	const context = {
 		browserId: "browser-1",
@@ -193,25 +147,8 @@ test("create, attach, and relink replace controller authority with the exact ret
 		link: link(1).link,
 	} as const;
 	await actions.create({ command: "threadLinkCreate" } as never, context);
-	await actions.attach(
-		{ command: "threadLinkAttach", selectionId: "selection-published", threadId } as never,
-		context,
-	);
-	nextBinding = link(3);
-	await actions.relink(
-		{ command: "threadLinkRelink", selectionId: "selection-published", threadId } as never,
-		context,
-	);
 
-	expect(replacements).toHaveLength(3);
-	expect(replacements).toEqual([
-		expect.objectContaining({ paneId: "pane-1", link: link(1) }),
-		expect.objectContaining({ paneId: "pane-1", link: link(2) }),
-		expect.objectContaining({ paneId: "pane-1", link: link(3) }),
-	]);
-	// The thread already had an ownership record, so both binds consumed the
-	// person's own retained selection rather than a re-resolved one.
-	expect(classifiedTargets).toEqual(["selection-published", "selection-published"]);
+	expect(replacements).toEqual([expect.objectContaining({ paneId: "pane-1", link: link(1) })]);
 });
 
 test("a stale browser disconnect token cannot clear a newer controller binding", () => {
@@ -285,7 +222,6 @@ test("two panes creating at once leave one workhorse: the later create is refuse
 	const starts: string[] = [];
 	let binding: unknown = null;
 	const actions = createServerThreadLinkActions({
-		candidates: {} as never,
 		workhorse: {
 			start: async ({ paneId }: { readonly paneId: string }) => {
 				starts.push(paneId);
@@ -320,9 +256,6 @@ test("two panes creating at once leave one workhorse: the later create is refuse
 				return { token: { revision: 1 }, binding };
 			},
 		} as never,
-		epoch: {} as never,
-		identity: authorities,
-		checkoutRoot: "/workspace/archboard",
 	});
 	const contextFor = (paneId: string) =>
 		({

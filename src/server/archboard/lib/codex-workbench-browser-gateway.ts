@@ -17,10 +17,7 @@ import type {
 	ServerBrowserProjectionBudget,
 	ServerTimelineOwner,
 } from "@/server/archboard/lib/codex-workbench-timeline";
-import {
-	createServerThreadCandidateInventory,
-	createServerThreadLinkActions,
-} from "@/server/archboard/lib/codex-workbench-thread-links";
+import { createServerThreadLinkActions } from "@/server/archboard/lib/codex-workbench-thread-links";
 import { createServerCanonicalTextActions } from "@/server/archboard/lib/codex-workbench-text-actions";
 import { createServerBrowserAccountOwner } from "@/server/archboard/lib/codex-workbench-account";
 import { createServerRealtimeActions } from "@/server/archboard/lib/codex-workbench-realtime-actions";
@@ -59,7 +56,6 @@ interface ServerBrowserGatewayInput {
 	) => () => void;
 	/** The live owned-process facts behind every child-lifecycle readiness arm. */
 	readonly process: () => ServerReadinessProcessFacts;
-	readonly checkoutRoot: string;
 	/** Injectable clock for the authoritative re-read floor. */
 	readonly now?: () => number;
 	readonly contextForOperation: (
@@ -178,15 +174,10 @@ function createServerBrowserGatewayOptions(
 		inFlightReread = { threadId, read };
 		return read;
 	};
-	const candidates = createServerThreadCandidateInventory(components.threadLink, components.epoch);
 	const threadLinks = createServerThreadLinkActions({
-		candidates,
 		workhorse: components.workhorse,
 		threadLink: components.threadLink,
 		semanticDelivery: components.semanticDelivery,
-		epoch: components.epoch,
-		identity: components.identity,
-		checkoutRoot: input.checkoutRoot,
 	});
 	const account = createServerBrowserAccountOwner({
 		components,
@@ -213,13 +204,6 @@ function createServerBrowserGatewayOptions(
 		},
 		threadLinks: {
 			/**
-			 * Re-read the threads this pane could link to.
-			 * @param command The refresh.
-			 * @param context The pane.
-			 * @returns What the link owner answered.
-			 */
-			refresh: (command, context) => threadLinks.refresh(command, context),
-			/**
 			 * Start a new workhorse thread and link this pane to it.
 			 * @param command The creation.
 			 * @param context The pane.
@@ -227,28 +211,6 @@ function createServerBrowserGatewayOptions(
 			 */
 			create: async (command, context) => {
 				const result = await threadLinks.create(command, context);
-				await refreshLinkedQueue();
-				return result;
-			},
-			/**
-			 * Link this pane to a thread that already exists.
-			 * @param command The attachment.
-			 * @param context The pane.
-			 * @returns What the link owner answered.
-			 */
-			attach: async (command, context) => {
-				const result = await threadLinks.attach(command, context);
-				await refreshLinkedQueue();
-				return result;
-			},
-			/**
-			 * Move this pane's link to another thread.
-			 * @param command The relink.
-			 * @param context The pane.
-			 * @returns What the link owner answered.
-			 */
-			relink: async (command, context) => {
-				const result = await threadLinks.relink(command, context);
 				await refreshLinkedQueue();
 				return result;
 			},
@@ -364,7 +326,6 @@ function createServerBrowserGatewayOptions(
 					components,
 					dynamicApprovals,
 					state,
-					candidates,
 					timeline: input.timeline,
 					process: input.process,
 				},

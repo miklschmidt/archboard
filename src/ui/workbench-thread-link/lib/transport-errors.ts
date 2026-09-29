@@ -87,4 +87,4 @@ function uncertain(error: unknown): boolean {
 	return UNCERTAIN_CODES.has(facts.code) || facts.outcome === "outcome_unknown";
 }
 
-export { errorMessage, transportErrorFacts, uncertain };
+export { errorMessage, uncertain };

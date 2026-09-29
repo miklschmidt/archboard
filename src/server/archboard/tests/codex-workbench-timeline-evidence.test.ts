@@ -46,7 +46,6 @@ function browserProjectionInput(
 		},
 		login: { kind: "login", state: "idle" },
 		threadLink: executableLink(authorities, timeline.threadId),
-		threadCandidates: { kind: "codex_thread_candidates", state: "unknown" },
 		timeline,
 		queue: { kind: "codex_queue", submissions: [] },
 		settings: [],

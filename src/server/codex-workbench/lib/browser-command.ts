@@ -243,12 +243,7 @@ function isAccountCommand(command: OwnedBrowserCommand): boolean {
  * @returns True for a link mutation.
  */
 function isThreadLinkCommand(command: OwnedBrowserCommand): boolean {
-	return (
-		command.command === "threadLinkCreate" ||
-		command.command === "threadLinkRefresh" ||
-		command.command === "threadLinkAttach" ||
-		command.command === "threadLinkRelink"
-	);
+	return command.command === "threadLinkCreate";
 }
 
 /**

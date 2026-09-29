@@ -1,10 +1,8 @@
 import type {
-	BrowserSnapshot,
 	BrowserThreadLink,
 	BrowserThreadLinkSourcePresentation,
 	BrowserTimeline,
 } from "@/shared/codex-browser-model";
-import { BROWSER_THREAD_CANDIDATE_LIMIT } from "@/shared/codex-browser-model";
 import type {
 	BrowserProjectionInput,
 	CodexTimelineItemProjectionInput,
@@ -35,13 +33,7 @@ type TimelineTextItemInput = Extract<
 			| "context_compaction";
 	}
 >;
-type ThreadCandidateInput = Extract<
-	BrowserProjectionInput["threadCandidates"],
-	{ readonly state: "listed" }
->["candidates"][number];
-type ThreadLinkSourceInput =
-	| Exclude<BrowserProjectionInput["threadLink"]["source"], null>
-	| ThreadCandidateInput["source"];
+type ThreadLinkSourceInput = Exclude<BrowserProjectionInput["threadLink"]["source"], null>;
 type NamedThreadLinkSource = Extract<ThreadLinkSourceInput, string>;
 
 const TIMELINE_APPROVAL_STATUS_BY_STATE = {
@@ -55,8 +47,6 @@ const SOURCE_PRESENTATION_BY_NAMED_SOURCE = {
 	vscode: "standard",
 	exec: "standard",
 	appServer: "standard",
-	custom: "custom",
-	subAgent: "subagent",
 	unknown: "unknown",
 } as const satisfies Record<NamedThreadLinkSource, BrowserThreadLinkSourcePresentation>;
 
@@ -253,9 +243,7 @@ export function projectTimeline(input: BrowserProjectionInput["timeline"]): Brow
 }
 
 /**
- * One source presentation mapper for both shapes the classifier emits: the
- * nested session source a bound link carries, and the flattened source a
- * discovered candidate carries.
+ * Present the session source a bound link carries.
  * @param source The thread source as the classifier recorded it.
  * @returns The browser presentation of the source.
  */
@@ -266,52 +254,6 @@ function projectThreadLinkSource(
 	if ("custom" in source) return "custom";
 	if ("subAgent" in source) return "subagent";
 	return "unknown";
-}
-
-/**
- * Map the server inventory into the browser vocabulary and bound it. Nothing here
- * reclassifies a record or joins the two Codex lists a second time: TASK-143.01.09
- * owns that, and this projection carries its verdict through unchanged.
- * @param input The server's candidate inventory.
- * @returns The browser candidate list.
- */
-export function projectThreadCandidates(
-	input: BrowserProjectionInput["threadCandidates"],
-): BrowserSnapshot["threadCandidates"] {
-	if (input.state === "unknown")
-		return {
-			kind: "thread_candidates",
-			state: "unknown",
-			records: [],
-			truncated: false,
-			reason: null,
-		};
-	if (input.state === "unavailable")
-		return {
-			kind: "thread_candidates",
-			state: "unavailable",
-			records: [],
-			truncated: false,
-			reason: input.reason,
-		};
-	const records = input.candidates.slice(0, BROWSER_THREAD_CANDIDATE_LIMIT).map((candidate) => ({
-		kind: "thread_candidate" as const,
-		selectionId: candidate.selectionId,
-		threadId: candidate.threadId,
-		state: candidate.state,
-		reason: candidate.reason,
-		sourcePresentation: projectThreadLinkSource(candidate.source),
-		status: candidate.status,
-		loaded: candidate.loaded,
-		canAcceptDirectInput: candidate.canAcceptDirectInput,
-	}));
-	return {
-		kind: "thread_candidates",
-		state: "listed",
-		records,
-		truncated: records.length < input.candidates.length,
-		reason: null,
-	};
 }
 
 /**

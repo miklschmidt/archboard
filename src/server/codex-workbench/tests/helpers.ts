@@ -66,17 +66,10 @@ function startCommand(
 function threadLinkCommand(
 	harnessValue: GatewayHarness,
 	lease: ReturnType<GatewayHarness["gateway"]["claimLease"]>,
-	command: "threadLinkCreate" | "threadLinkRefresh" | "threadLinkAttach" | "threadLinkRelink",
 ): BrowserCommand {
-	const target = commandTarget(lease);
-	if (command === "threadLinkCreate" || command === "threadLinkRefresh") {
-		return harnessValue.model.BrowserCommandSchema.parse({ ...target, command });
-	}
 	return harnessValue.model.BrowserCommandSchema.parse({
-		...target,
-		command,
-		selectionId: "selection-a",
-		threadId: harnessValue.threadId,
+		...commandTarget(lease),
+		command: "threadLinkCreate",
 	});
 }
 

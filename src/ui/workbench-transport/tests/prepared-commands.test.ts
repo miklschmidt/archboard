@@ -302,11 +302,11 @@ test("serializes fresh authority and refuses a queued action after the first cha
 		h.holdCommand();
 		const create = h.transport.executeCommand({ command: "threadLinkCreate" });
 		await h.commandSent;
-		const refresh = rejection(h.transport.executeCommand({ command: "threadLinkRefresh" }));
+		const second = rejection(h.transport.executeCommand({ command: "threadLinkCreate" }));
 		expect(h.socket.actions("claimLease")).toHaveLength(1);
 		h.releaseCommand();
 		await create;
-		expect(await refresh).toMatchObject({ code: "link_changed", outcome: "not_delivered" });
+		expect(await second).toMatchObject({ code: "link_changed", outcome: "not_delivered" });
 		expect(h.socket.actions("command")).toHaveLength(1);
 	} finally {
 		await h.transport.dispose();

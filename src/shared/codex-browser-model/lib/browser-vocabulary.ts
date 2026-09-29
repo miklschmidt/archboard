@@ -11,15 +11,6 @@ import type { ChildEpoch, ChildId } from "@/shared/codex-workbench-identity/inde
 const TimestampSchema = z.number().int().nonnegative();
 const DeliveryOutcomeSchema = z.enum(["delivered", "not_delivered", "outcome_unknown"]);
 /**
- * The most joined thread candidates one snapshot publishes. The list is bounded
- * here rather than trimmed by the snapshot fitter, which owns timeline and
- * voice-context history. The bound is chosen so a complete inventory still
- * fits beside a rich snapshot at the smallest budget a gateway may run with,
- * leaving those histories to trim; a longer list is published
- * truncated rather than crowding history out.
- */
-const BROWSER_THREAD_CANDIDATE_LIMIT = 40;
-/**
  * What one timeline value may carry, in UTF-8 bytes or entries. The server
  * projection bounds each value to these before the schema checks them, so a
  * long command output or a sprawling patch is cut, never refused.
@@ -95,7 +86,6 @@ function refineCurrentTarget(
 export {
 	TimestampSchema,
 	DeliveryOutcomeSchema,
-	BROWSER_THREAD_CANDIDATE_LIMIT,
 	BROWSER_TIMELINE_LIMITS,
 	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,
 	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,

@@ -103,7 +103,6 @@ function createBrowserCommandSchemas(
 		.strict();
 
 	const BrowserCommandBase = { kind: z.literal("browser_command"), ...TargetSchema };
-	const BrowserThreadIdCommand = { threadId: ThreadIdSchema };
 	const CommandArms = [
 		z
 			.object({
@@ -121,26 +120,6 @@ function createBrowserCommandSchemas(
 			.strict(),
 		z.object({ ...BrowserCommandBase, command: z.literal("accountLogout") }).strict(),
 		z.object({ ...BrowserCommandBase, command: z.literal("threadLinkCreate") }).strict(),
-		z.object({ ...BrowserCommandBase, command: z.literal("threadLinkRefresh") }).strict(),
-		// A bind names the one-shot selection it consumes as well as the thread it
-		// believes that selection is, so a list the server has since replaced is
-		// refused instead of silently binding whatever now sits at that thread id.
-		z
-			.object({
-				...BrowserCommandBase,
-				command: z.literal("threadLinkAttach"),
-				selectionId: boundedText(128),
-				...BrowserThreadIdCommand,
-			})
-			.strict(),
-		z
-			.object({
-				...BrowserCommandBase,
-				command: z.literal("threadLinkRelink"),
-				selectionId: boundedText(128),
-				...BrowserThreadIdCommand,
-			})
-			.strict(),
 		z
 			.object({
 				...BrowserCommandBase,

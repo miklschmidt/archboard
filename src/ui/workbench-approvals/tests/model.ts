@@ -129,13 +129,6 @@ function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnapshot {
 		account: { kind: "account", state: "ready", accountType: "chatgpt" },
 		login: { kind: "login", state: "idle" },
 		threadLink: executableLink(),
-		threadCandidates: {
-			kind: "thread_candidates",
-			state: "unknown",
-			records: [],
-			truncated: false,
-			reason: null,
-		},
 		timeline: { kind: "timeline", threadId: THREAD, turns: [], nextCursor: null, usage: null },
 		queue: { kind: "queue", status: "empty", entries: [] },
 		settings: [],

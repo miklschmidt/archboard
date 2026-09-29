@@ -194,7 +194,6 @@ interface SnapshotOptions {
 	readonly dynamicApprovals?: readonly unknown[];
 	readonly queue?: WireRecord;
 	readonly voiceState?: string;
-	readonly threadCandidates?: WireRecord;
 }
 
 const UNBOUND_LINK: WireRecord = {
@@ -207,14 +206,6 @@ const UNBOUND_LINK: WireRecord = {
 	status: "notLoaded",
 	loaded: false,
 	canAcceptDirectInput: false,
-	reason: null,
-};
-
-const UNKNOWN_CANDIDATES: WireRecord = {
-	kind: "thread_candidates",
-	state: "unknown",
-	records: [],
-	truncated: false,
 	reason: null,
 };
 
@@ -280,7 +271,6 @@ const SNAPSHOT_DEFAULTS = {
 	approvals: [] as readonly unknown[],
 	dynamicApprovals: [] as readonly unknown[],
 	voiceState: "unavailable",
-	threadCandidates: UNKNOWN_CANDIDATES,
 	queue: queue(),
 };
 
@@ -299,7 +289,6 @@ function snapshot(options: SnapshotOptions = {}): SnapshotFixture {
 		account: { kind: "account", state: "ready", accountType: "chatgpt" },
 		login: { kind: "login", state: "idle" },
 		threadLink: threadLinkFor(linkState, threadId),
-		threadCandidates: filled.threadCandidates,
 		timeline:
 			linkState === "unbound"
 				? null

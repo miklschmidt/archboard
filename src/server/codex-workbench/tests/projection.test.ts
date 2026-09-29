@@ -245,7 +245,6 @@ function projectionInput(
 			canAcceptDirectInput: true,
 			reason: null,
 		},
-		threadCandidates: { kind: "codex_thread_candidates", state: "unknown" },
 		timeline: null,
 		queue: { kind: "codex_queue", submissions: [] },
 		settings: [],
@@ -371,7 +370,6 @@ test("thread-link projection discloses closed provenance without vendor source d
 					canAcceptDirectInput: false,
 					reason: source.reason,
 				},
-				threadCandidates: { kind: "codex_thread_candidates", state: "unknown" },
 			});
 			expect(result.tag).toBe("projected");
 			if (result.tag !== "projected") {

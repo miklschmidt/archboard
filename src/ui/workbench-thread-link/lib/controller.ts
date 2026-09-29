@@ -3,33 +3,18 @@
 // point cannot move where the command lands. A superseded action never
 // overwrites the action that replaced it.
 
-import type { BrowserThreadLink } from "@/shared/codex-browser-model";
-import type { LoginId, ThreadId } from "@/shared/codex-workbench-identity";
+import type { LoginId } from "@/shared/codex-workbench-identity";
 import type {
 	ThreadLinkActionCompletion,
+	ThreadLinkActionName,
 	ThreadLinkActionSnapshot,
 	ThreadLinkActionTarget,
 	ThreadLinkController,
 	ThreadLinkControllerOptions,
-	ThreadLinkControllerRecoveryIntent,
-	ThreadLinkInventory,
 	ThreadLinkPaneCapture,
-	ThreadLinkRecoveryTarget,
-	ThreadLinkRow,
 } from "@/ui/workbench-thread-link/contracts";
-import { projectThreadLinkSelection } from "@/ui/workbench-thread-link/lib/candidates";
-import { threadLinkRecovery } from "@/ui/workbench-thread-link/lib/recovery";
-import {
-	classify,
-	recoveryFor,
-	words,
-	type CommandAction,
-} from "@/ui/workbench-thread-link/lib/settlement";
-import {
-	errorMessage,
-	transportErrorFacts,
-	uncertain,
-} from "@/ui/workbench-thread-link/lib/transport-errors";
+import { classify, words } from "@/ui/workbench-thread-link/lib/settlement";
+import { errorMessage, uncertain } from "@/ui/workbench-thread-link/lib/transport-errors";
 import type {
 	ThreadLinkCommandDraft,
 	ThreadLinkLoginParams,
@@ -38,41 +23,15 @@ import type {
 
 type Settled = Exclude<ThreadLinkActionSnapshot, { readonly state: "idle" | "pending" }>;
 
-const UNKNOWN_CANDIDATES: ThreadLinkInventory = Object.freeze({
-	kind: "thread_candidates",
-	state: "unknown",
-	records: [],
-	truncated: false,
-	reason: null,
-});
-
-const UNBOUND_LINK: BrowserThreadLink = Object.freeze({
-	kind: "thread_link",
-	state: "unbound",
-	childId: null,
-	epoch: null,
-	threadId: null,
-	sourcePresentation: null,
-	status: "notLoaded",
-	loaded: false,
-	canAcceptDirectInput: false,
-	reason: null,
-});
-
-const NO_UNLINK_COMMAND =
-	"The browser contract publishes no thread-link unbind command, so this pane keeps its link. Choose another conversation to relink, or start a new agent.";
-
 /**
  * The target of an action, captured once.
  * @param pane The pane.
  * @param captured The captured intent.
- * @param threadId The thread the action names, or null.
  * @returns The target.
  */
 function captureTarget(
 	pane: ThreadLinkPaneCapture,
 	captured: WorkbenchCommandIntent,
-	threadId: ThreadId | null,
 ): ThreadLinkActionTarget {
 	return Object.freeze({
 		paneId: pane.paneId,
@@ -80,7 +39,6 @@ function captureTarget(
 		epoch: captured.authority?.epoch ?? null,
 		// The action has not acquired its own command identity yet.
 		commandId: null,
-		threadId,
 		capturedLinkState: captured.capturedThreadLink.state,
 		capturedLinkThreadId: captured.capturedThreadLink.threadId,
 	});
@@ -89,16 +47,14 @@ function captureTarget(
 /**
  * A target for an action the workbench refused to hand a target to.
  * @param paneId The pane.
- * @param threadId The thread the action names, or null.
  * @returns The target.
  */
-function bareTarget(paneId: string, threadId: ThreadId | null): ThreadLinkActionTarget {
+function bareTarget(paneId: string): ThreadLinkActionTarget {
 	return Object.freeze({
 		paneId,
 		childId: null,
 		epoch: null,
 		commandId: null,
-		threadId,
 		capturedLinkState: null,
 		capturedLinkThreadId: null,
 	});
@@ -110,7 +66,7 @@ function bareTarget(paneId: string, threadId: ThreadId | null): ThreadLinkAction
  * @param paneId The pane.
  * @returns The words.
  */
-function pendingWords(action: CommandAction, paneId: string): string {
+function pendingWords(action: ThreadLinkActionName, paneId: string): string {
 	return action === "login" ? "Starting sign-in…" : `${words(action)} started for pane ${paneId}.`;
 }
 
@@ -145,10 +101,7 @@ function createThreadLinkController(options: ThreadLinkControllerOptions): Threa
 	 * @param next The settled snapshot.
 	 * @returns Whether the settlement was published.
 	 */
-	function settle(
-		operationRevision: number,
-		next: Settled | Extract<ThreadLinkActionSnapshot, { readonly state: "idle" }>,
-	): ThreadLinkActionCompletion {
+	function settle(operationRevision: number, next: Settled): ThreadLinkActionCompletion {
 		if (operationRevision !== revision) {
 			return Object.freeze({ state: "ignored", revision: operationRevision });
 		}
@@ -176,7 +129,7 @@ function createThreadLinkController(options: ThreadLinkControllerOptions): Threa
 	 */
 	async function dispatch(
 		pane: ThreadLinkPaneCapture,
-		action: CommandAction,
+		action: ThreadLinkActionName,
 		draft: ThreadLinkCommandDraft,
 		target: ThreadLinkActionTarget,
 		captured: WorkbenchCommandIntent,
@@ -188,7 +141,6 @@ function createThreadLinkController(options: ThreadLinkControllerOptions): Threa
 				action,
 				target,
 				announcement: `The workbench is not ready for ${draft.command}. It arrived before this pane reached the state that command needs.`,
-				recovery: recoveryFor(pane, "not_ready"),
 			};
 		}
 		const result = await pane.transport.executeCommand(draft, captured);
@@ -200,21 +152,18 @@ function createThreadLinkController(options: ThreadLinkControllerOptions): Threa
 			action,
 			target: settledTarget,
 			announcement: settlement.announcement,
-			recovery: settlement.state === "succeeded" ? null : recoveryFor(pane, result.code),
 		};
 	}
 
 	/**
 	 * The settled snapshot of a thrown command.
-	 * @param pane The pane.
 	 * @param action The action.
 	 * @param target The target, as far as it was captured.
 	 * @param error The thrown value.
 	 * @returns The settled snapshot.
 	 */
 	function thrown(
-		pane: ThreadLinkPaneCapture,
-		action: CommandAction,
+		action: ThreadLinkActionName,
 		target: ThreadLinkActionTarget,
 		error: unknown,
 	): Settled {
@@ -227,7 +176,6 @@ function createThreadLinkController(options: ThreadLinkControllerOptions): Threa
 			announcement: unknown
 				? `${errorMessage(error)} The outcome is unknown; inspect the current link and do not retry blind.`
 				: errorMessage(error),
-			recovery: recoveryFor(pane, transportErrorFacts(error)?.code ?? null),
 		};
 	}
 
@@ -235,21 +183,19 @@ function createThreadLinkController(options: ThreadLinkControllerOptions): Threa
 	 * Run one command against the pane captured now.
 	 * @param action The action.
 	 * @param draft The draft.
-	 * @param threadId The thread the action names, or null.
 	 * @returns Whether the settlement was published.
 	 */
 	async function run(
-		action: CommandAction,
+		action: ThreadLinkActionName,
 		draft: ThreadLinkCommandDraft,
-		threadId: ThreadId | null,
 	): Promise<ThreadLinkActionCompletion> {
 		const pane = options.capturePane();
 		const operationRevision = nextRevision();
-		let target = bareTarget(pane.paneId, threadId);
+		let target = bareTarget(pane.paneId);
 		try {
 			// Captured once, here. Nothing downstream reads the pane again.
 			const captured = pane.transport.captureCommandIntent();
-			target = captureTarget(pane, captured, threadId);
+			target = captureTarget(pane, captured);
 			publish({
 				state: "pending",
 				revision: operationRevision,
@@ -261,201 +207,10 @@ function createThreadLinkController(options: ThreadLinkControllerOptions): Threa
 			return settle(operationRevision, { ...settled, revision: operationRevision });
 		} catch (error) {
 			return settle(operationRevision, {
-				...thrown(pane, action, target, error),
+				...thrown(action, target, error),
 				revision: operationRevision,
 			});
 		}
-	}
-
-	/**
-	 * Refuse one action before the wire.
-	 * @param action The action.
-	 * @param threadId The thread it named, or null.
-	 * @param announcement Why.
-	 * @returns Whether the refusal was published.
-	 */
-	function refuse(
-		action: "attach" | "relink" | "unlink",
-		threadId: ThreadId | null,
-		announcement: string,
-	): Promise<ThreadLinkActionCompletion> {
-		const pane = options.capturePane();
-		const operationRevision = nextRevision();
-		return Promise.resolve(
-			settle(operationRevision, {
-				state: "failed",
-				revision: operationRevision,
-				action,
-				target: bareTarget(pane.paneId, threadId),
-				announcement,
-				recovery: threadLinkRecovery(
-					"refresh_inventory",
-					pane.transport.capabilities(),
-					pane.serverRecoveryIntents,
-				),
-			}),
-		);
-	}
-
-	/**
-	 * Bind one row. The one-shot selection the server published names the exact
-	 * row; the thread id travels with it so a list the server has replaced is
-	 * refused rather than binding whatever now sits at that thread.
-	 * @param row The row.
-	 * @returns Whether the settlement was published.
-	 */
-	function bind(row: ThreadLinkRow): Promise<ThreadLinkActionCompletion> {
-		const action = row.intent === "relink" ? "relink" : "attach";
-		if (row.command === null || !row.enabled) {
-			return refuse(
-				action,
-				row.threadId,
-				row.blockedReason ?? "This row discloses no runnable thread-link command.",
-			);
-		}
-		return run(
-			action,
-			{ command: row.command, selectionId: row.selectionId, threadId: row.threadId },
-			row.threadId,
-		);
-	}
-
-	/**
-	 * Bind the row the server listed under one selection id, as the pane sees
-	 * its inventory now.
-	 * @param selectionId The one-shot selection.
-	 * @returns Whether the settlement was published.
-	 */
-	function bindSelection(selectionId: string): Promise<ThreadLinkActionCompletion> {
-		const pane = options.capturePane();
-		const snapshot = pane.transport.state().snapshot;
-		const selection = projectThreadLinkSelection({
-			inventory: snapshot?.threadCandidates ?? UNKNOWN_CANDIDATES,
-			currentLink: snapshot?.threadLink ?? UNBOUND_LINK,
-			capabilities: pane.transport.capabilities(),
-		});
-		const row = selection.rows.find((candidate) => candidate.selectionId === selectionId);
-		if (row === undefined) {
-			return refuse(
-				"attach",
-				null,
-				"That conversation is no longer in the Archboard server's list.",
-			);
-		}
-		return bind(row);
-	}
-
-	/**
-	 * Run one server-owned recovery against the captured pane and intent.
-	 * @param pane The pane.
-	 * @param target The recovery target.
-	 * @returns Null when it ran, else the failed snapshot.
-	 */
-	async function serverRecovery(
-		pane: ThreadLinkPaneCapture,
-		target: ThreadLinkRecoveryTarget,
-	): Promise<Settled | null> {
-		const authority = options.captureServerRecovery?.(target) ?? null;
-		const owned =
-			authority !== null &&
-			authority.paneId === target.paneId &&
-			authority.intent === target.intent;
-		if (!owned) {
-			return {
-				state: "failed",
-				revision,
-				action: "recover",
-				target,
-				announcement: `This pane has no ${target.intent.replaceAll("_", " ")} owner, so that recovery must be done where Codex runs.`,
-				recovery: threadLinkRecovery(
-					target.intent,
-					pane.transport.capabilities(),
-					pane.serverRecoveryIntents,
-				),
-			};
-		}
-		await authority.recover();
-		return null;
-	}
-
-	/**
-	 * Perform one recovery the controller owns.
-	 * @param pane The pane.
-	 * @param target The recovery target.
-	 * @returns Null when it ran, else the failed snapshot.
-	 */
-	async function performRecovery(
-		pane: ThreadLinkPaneCapture,
-		target: ThreadLinkRecoveryTarget,
-	): Promise<Settled | null> {
-		if (target.intent === "refresh_snapshot") {
-			await pane.transport.refresh();
-			return null;
-		}
-		if (target.intent === "read_account") {
-			await pane.transport.accountRead();
-			return null;
-		}
-		return serverRecovery(pane, target);
-	}
-
-	/**
-	 * Run one recovery.
-	 * @param intent The intent.
-	 * @returns Whether the settlement was published.
-	 */
-	async function recover(
-		intent: ThreadLinkControllerRecoveryIntent,
-	): Promise<ThreadLinkActionCompletion> {
-		const pane = options.capturePane();
-		const operationRevision = nextRevision();
-		const target: ThreadLinkRecoveryTarget = Object.freeze({ paneId: pane.paneId, intent });
-		const spoken = intent.replaceAll("_", " ");
-		publish({
-			state: "pending",
-			revision: operationRevision,
-			action: "recover",
-			target,
-			announcement: `${spoken} started for pane ${target.paneId}.`,
-		});
-		try {
-			const failed = await performRecovery(pane, target);
-			const settled = failed ?? recovered(target, spoken);
-			return settle(operationRevision, { ...settled, revision: operationRevision });
-		} catch (error) {
-			return settle(operationRevision, {
-				state: uncertain(error) ? "inspect_only" : "failed",
-				revision: operationRevision,
-				action: "recover",
-				target,
-				announcement: errorMessage(error),
-				recovery: recoveryFor(pane, transportErrorFacts(error)?.code ?? null),
-			});
-		}
-	}
-
-	/**
-	 * The snapshot of a recovery that ran: a refresh returns to idle, the rest
-	 * announce completion.
-	 * @param target The recovery target.
-	 * @param spoken The intent in words.
-	 * @returns The snapshot.
-	 */
-	function recovered(
-		target: ThreadLinkRecoveryTarget,
-		spoken: string,
-	): Settled | Extract<ThreadLinkActionSnapshot, { readonly state: "idle" }> {
-		if (target.intent === "refresh_snapshot") {
-			return { state: "idle", revision };
-		}
-		return {
-			state: "succeeded",
-			revision,
-			action: "recover",
-			target,
-			announcement: `${spoken} completed for pane ${target.paneId}.`,
-			recovery: null,
-		};
 	}
 
 	return Object.freeze({
@@ -479,38 +234,25 @@ function createThreadLinkController(options: ThreadLinkControllerOptions): Threa
 		 * Create a fresh workhorse.
 		 * @returns Whether the settlement was published.
 		 */
-		create: () => run("create", { command: "threadLinkCreate" }, null),
-		bind,
-		bindSelection,
-		/**
-		 * Ask to drop the explicit link.
-		 * @returns Whether the refusal was published.
-		 */
-		unlink: () => refuse("unlink", null, NO_UNLINK_COMMAND),
-		/**
-		 * Ask the server to rediscover its inventory.
-		 * @returns Whether the settlement was published.
-		 */
-		refreshInventory: () => run("refresh_inventory", { command: "threadLinkRefresh" }, null),
+		create: () => run("create", { command: "threadLinkCreate" }),
 		/**
 		 * Start one sign-in.
 		 * @param login The vendor login value.
 		 * @returns Whether the settlement was published.
 		 */
-		login: (login: ThreadLinkLoginParams) => run("login", { command: "accountLogin", login }, null),
+		login: (login: ThreadLinkLoginParams) => run("login", { command: "accountLogin", login }),
 		/**
 		 * Cancel one pending sign-in.
 		 * @param loginId The sign-in.
 		 * @returns Whether the settlement was published.
 		 */
 		cancelLogin: (loginId: LoginId) =>
-			run("cancel_login", { command: "accountLoginCancel", loginId }, null),
+			run("cancel_login", { command: "accountLoginCancel", loginId }),
 		/**
 		 * Sign out.
 		 * @returns Whether the settlement was published.
 		 */
-		logout: () => run("logout", { command: "accountLogout" }, null),
-		recover,
+		logout: () => run("logout", { command: "accountLogout" }),
 	});
 }
 

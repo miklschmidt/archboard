@@ -1,14 +1,13 @@
 // What the thread link needs from a workbench transport, and nothing more.
 //
 // `@/ui/workbench-transport` implements this port (TASK-150.07). The thread
-// link never owns or starts a transport: it reads one authoritative state,
-// captures the target an action is offered against, and sends the seven
+// link never owns or starts a transport: it captures the target an action is
+// offered against, and sends the four
 // account and thread-link commands the gateway publishes. Every shape here is
 // the transport's own contract spelled structurally, so the real transport
 // satisfies it without an adapter.
 
 import type {
-	BrowserGatewayAccountReadResult,
 	BrowserGatewayCommandResult,
 	BrowserGatewayErrorCode,
 } from "@/shared/codex-browser-gateway";
@@ -16,8 +15,6 @@ import type { CodexLoginAccountParams } from "@/shared/codex-app-server-contract
 import type {
 	BrowserCommand,
 	BrowserCommandLease,
-	BrowserReadiness,
-	BrowserSnapshot,
 	BrowserThreadLink,
 	DeliveryOutcome,
 } from "@/shared/codex-browser-model";
@@ -34,12 +31,9 @@ type ThreadLinkLoginParams = Extract<
 	{ readonly type: SupportedLoginVariant }
 >;
 
-/** The seven commands this module can issue. */
+/** The four commands this module can issue. */
 type ThreadLinkCommandName =
 	| "threadLinkCreate"
-	| "threadLinkRefresh"
-	| "threadLinkAttach"
-	| "threadLinkRelink"
 	| "accountLogin"
 	| "accountLoginCancel"
 	| "accountLogout";
@@ -58,9 +52,6 @@ type AccountLoginDraft = Omit<Draft<"accountLogin">, "login"> & {
 /** The drafts this module sends. */
 type ThreadLinkCommandDraft =
 	| Draft<"threadLinkCreate">
-	| Draft<"threadLinkRefresh">
-	| Draft<"threadLinkAttach">
-	| Draft<"threadLinkRelink">
 	| AccountLoginDraft
 	| Draft<"accountLoginCancel">
 	| Draft<"accountLogout">;
@@ -83,9 +74,6 @@ interface WorkbenchCommandIntent {
 /** The transport's answer to one command. */
 type WorkbenchCommandResult = BrowserGatewayCommandResult;
 
-/** The transport's answer to an account read. */
-type WorkbenchAccountReadResult = BrowserGatewayAccountReadResult;
-
 /** Every error code a transport can carry, gateway and transport-local. */
 type WorkbenchTransportErrorCode =
 	| BrowserGatewayErrorCode
@@ -102,69 +90,13 @@ interface WorkbenchTransportErrorFacts {
 	readonly message: string;
 }
 
-/** The one state a transport publishes, as its stream, connection or readiness owner reports it. */
-type WorkbenchTransportState =
-	| {
-			readonly kind: "connection";
-			readonly state: "stopped";
-			readonly connection: "stopped";
-			readonly snapshot: null;
-			readonly sequence: null;
-			readonly reason: string;
-	  }
-	| {
-			readonly kind: "connection";
-			readonly state: "reconnecting";
-			readonly connection: "reconnecting";
-			readonly snapshot: BrowserSnapshot | null;
-			readonly sequence: number | null;
-			readonly reason: string;
-	  }
-	| {
-			readonly kind: "connection";
-			readonly state: "backoff";
-			readonly connection: "reconnecting";
-			readonly snapshot: BrowserSnapshot | null;
-			readonly sequence: number | null;
-			readonly retryAtMs: number;
-			readonly reason: string;
-	  }
-	| {
-			readonly kind: "stream";
-			readonly state: "stale_snapshot";
-			readonly connection: "connected";
-			readonly snapshot: BrowserSnapshot | null;
-			readonly sequence: number | null;
-			readonly expectedSequence: number;
-			readonly receivedSequence: number;
-			readonly reason: string;
-	  }
-	| {
-			readonly kind: "connection";
-			readonly state: "incompatible_contract";
-			readonly connection: "stopped";
-			readonly snapshot: null;
-			readonly sequence: null;
-			readonly reason: string;
-	  }
-	| {
-			readonly kind: "readiness";
-			readonly state: BrowserReadiness["state"];
-			readonly connection: "connected";
-			readonly snapshot: BrowserSnapshot;
-			readonly sequence: number;
-	  };
-
 /** The capability facts the thread link reads; the transport publishes more. */
 interface WorkbenchTransportCapabilities {
-	readonly connected: boolean;
-	readonly canReadAccount: boolean;
 	readonly supportsCommand: (command: WorkbenchCommandName) => boolean;
 }
 
 /** The transport surface the thread link uses. */
 interface ThreadLinkTransportPort {
-	readonly state: () => WorkbenchTransportState;
 	readonly capabilities: () => WorkbenchTransportCapabilities;
 	readonly captureCommandIntent: () => WorkbenchCommandIntent;
 	/** Human actions acquire fresh authority once, revalidate the intent, then dispatch once. */
@@ -172,10 +104,6 @@ interface ThreadLinkTransportPort {
 		draft: ThreadLinkCommandDraft,
 		intent?: WorkbenchCommandIntent,
 	) => Promise<WorkbenchCommandResult>;
-	/** Re-reads the authoritative snapshot for the link this pane is on. */
-	readonly refresh: () => Promise<unknown>;
-	/** Re-reads the Codex account. */
-	readonly accountRead: () => Promise<WorkbenchAccountReadResult>;
 }
 
 export type {
@@ -183,7 +111,6 @@ export type {
 	ThreadLinkCommandName,
 	ThreadLinkLoginParams,
 	ThreadLinkTransportPort,
-	WorkbenchAccountReadResult,
 	WorkbenchCommandIntent,
 	WorkbenchCommandName,
 	WorkbenchCommandResult,
@@ -191,5 +118,4 @@ export type {
 	WorkbenchTransportCapabilities,
 	WorkbenchTransportErrorCode,
 	WorkbenchTransportErrorFacts,
-	WorkbenchTransportState,
 };

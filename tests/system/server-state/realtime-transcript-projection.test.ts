@@ -263,7 +263,6 @@ function projectionInput(input: {
 			canAcceptDirectInput: true,
 			reason: null,
 		},
-		threadCandidates: { kind: "codex_thread_candidates", state: "unknown" },
 		timeline: null,
 		queue: { kind: "codex_queue", submissions: [] },
 		settings: [],

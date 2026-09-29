@@ -154,8 +154,6 @@ export function createCodexWorkbenchGenerationFixture(
 	} satisfies ControlledCodexSession;
 	const threadLink = {
 		classify: async () => unavailable("threadLink.classify"),
-		discoverCandidates: async () => unavailable("threadLink.discoverCandidates"),
-		bindCandidate: async () => unavailable("threadLink.bindCandidate"),
 		classifyAndBind: async () => unavailable("threadLink.classifyAndBind"),
 		snapshot: () => unavailable("threadLink.snapshot"),
 		read: () => unavailable("threadLink.read"),
