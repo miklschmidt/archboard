@@ -202,14 +202,14 @@ function focusTarget(
 ): FitTarget {
 	const flow = flowFocus(variant, source.atlas, drawn);
 	if (flow !== null) {
-		return { kind: "focus", rect: flow.rect, contexts: flow.contexts, anchor: "top" };
+		return { kind: "focus", rect: flow.rect, context: flow.context, anchor: "top" };
 	}
 	const rect = unionRect(drawn.flatMap((id) => subjectBox(source.atlas, id) ?? []));
 	if (rect === null) {
 		return { kind: "whole", content: { width: source.width, height: source.height } };
 	}
 	const context = flowAround(variant, source.atlas, rect);
-	return { kind: "focus", rect, contexts: context === undefined ? [] : [context] };
+	return context === undefined ? { kind: "focus", rect } : { kind: "focus", rect, context };
 }
 
 /**

@@ -37,12 +37,8 @@ interface FlowRows {
 interface FlowFocus {
 	/** The head, moved over the rows, and the rows, across the columns the step lights. */
 	readonly rect: Rect;
-	/**
-	 * More of the flow, the most first: the whole flow from its top down to the
-	 * rows, then the moved head and the rows across the whole flow. The camera
-	 * shows the first that reads nearly as large.
-	 */
-	readonly contexts: readonly Rect[];
+	/** The same across the whole flow, which the camera shows when it reads nearly as large. */
+	readonly context: Rect;
 }
 
 /**
@@ -120,8 +116,8 @@ function headDrop(rows: FlowRows, camera: Camera): number {
  * Where to look during a step that lights some of a flow's messages: their
  * rows, with the head above them where {@link headDrop} will put it, as far
  * above the first of them as the drawing sets it above its own first row. The
- * whole flow down to the rows comes first when it reads nearly as large: a
- * short flow is read from its top, with nothing moved.
+ * rows before them are not shown, however short the flow: a step is about its
+ * rows, and every row above them is room they could have been read in.
  * @param variant The variant being read, or null when none can be.
  * @param atlas Where the picture drew each subject.
  * @param lit The subjects the step lights: the ones it names and their ends.
@@ -145,13 +141,9 @@ function flowFocus(
 		.flatMap((id) => atlas.nodes[id] ?? [])
 		.filter((box) => within(box, flow.frame));
 	const across = unionRect([rows, ...columns])!;
-	const { frame } = flow;
 	return {
 		rect: { x: across.x, width: across.width, y: top, height: bottom - top },
-		contexts: [
-			{ x: frame.x, width: frame.width, y: frame.y, height: bottom - frame.y },
-			{ x: frame.x, width: frame.width, y: top, height: bottom - top },
-		],
+		context: { x: flow.frame.x, width: flow.frame.width, y: top, height: bottom - top },
 	};
 }
 

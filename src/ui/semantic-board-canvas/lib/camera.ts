@@ -33,14 +33,14 @@ type FitTarget =
 	/** The whole diagram, centred: what a pane shows when nothing is singled out. */
 	| { readonly kind: "whole"; readonly content: Size }
 	/**
-	 * One region of it, centred: what a narrative beat's subjects occupy. Each
-	 * context holds more around the region, the most first, and the first one
-	 * that still reads nearly as large is shown in its place ({@link CONTEXT_SHARE}).
+	 * One region of it, centred: what a narrative beat's subjects occupy. The
+	 * context holds more around the region, and is shown in its place when it
+	 * still reads nearly as large ({@link CONTEXT_SHARE}).
 	 */
 	| {
 			readonly kind: "focus";
 			readonly rect: Rect;
-			readonly contexts?: readonly Rect[];
+			readonly context?: Rect;
 			/**
 			 * Where the region stands in the viewport: centred, or at its top with
 			 * whatever the room holds beyond it below, as a flow's rows are read.
@@ -217,8 +217,8 @@ function unionRect(rects: readonly Rect[]): Rect | null {
  * The whole diagram and one region of it are the same arithmetic with two
  * ceilings: a whole picture may be magnified as far as the camera goes, and a
  * region stops at `FOCUS_MAX_SCALE` so that pointing at one card does not
- * become a wall of card. A region's first context that fits nearly as large
- * is shown in its place.
+ * become a wall of card. A region's context is shown in its place when it
+ * reads nearly as large.
  * @param viewport How big the pane's window on the diagram is.
  * @param target What is being shown: the whole diagram, or a region of it.
  * @returns The fitted camera, or null when there is nothing to fit.
@@ -228,27 +228,16 @@ function cameraFor(viewport: Size, target: FitTarget): Camera | null {
 		return fitCamera(viewport, target.content);
 	}
 	const focus = fitRect(viewport, target.rect, FOCUS_MAX_SCALE, target.anchor);
-	return focus === null ? null : (readableContext(viewport, target, focus) ?? focus);
-}
-
-/**
- * The first of a region's contexts that reads nearly as large as the region
- * itself, or as the drawing was set, whichever is smaller.
- * @param viewport How big the pane's window on the diagram is.
- * @param target The region and its contexts.
- * @param focus The camera that shows the region alone.
- * @returns The camera that shows that context, or undefined when none reads so large.
- */
-function readableContext(
-	viewport: Size,
-	target: Extract<FitTarget, { kind: "focus" }>,
-	focus: Camera,
-): Camera | undefined {
+	const context =
+		target.context === undefined
+			? null
+			: fitRect(viewport, target.context, FOCUS_MAX_SCALE, target.anchor);
 	// 1 is the size the drawing was set at.
-	const enough = Math.min(focus.scale, 1) * CONTEXT_SHARE;
-	return (target.contexts ?? [])
-		.map((context) => fitRect(viewport, context, FOCUS_MAX_SCALE, target.anchor))
-		.find((fitted): fitted is Camera => fitted !== null && fitted.scale >= enough);
+	return focus !== null &&
+		context !== null &&
+		context.scale >= Math.min(focus.scale, 1) * CONTEXT_SHARE
+		? context
+		: focus;
 }
 
 /**

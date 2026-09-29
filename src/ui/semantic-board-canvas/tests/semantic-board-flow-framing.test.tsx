@@ -170,12 +170,13 @@ test("a step about part of a flow far wider than the pane frames its own subject
 	expect(message.scale).toBeGreaterThan(cameraNow().scale);
 });
 
-test("a step about a later message of a short flow reads the flow from its top, with nothing moved", async () => {
+test("a step about a later message of a short flow brings it up under the flow's head too", async () => {
+	// The whole flow would fit, but the rows before the message are room it could be read in.
 	await presentingFlow(400, SHORT_OF_THREE, "s2");
 	const camera = cameraNow();
-	expect(head().style.transform).toBe("");
-	// The flow's top, and so its first message, stands at the top of the room.
-	expect(camera.y).toBeCloseTo(FIT_MARGIN, 3);
+	const drop = 180 - 120;
+	expect(head().style.transform).toBe(`translate(0px, ${drop}px)`);
+	expect(camera.y + (30 + drop) * camera.scale).toBeCloseTo(FIT_MARGIN, 3);
 });
 
 test("a step about a message far down a tall flow reads it from the top of the room, under the flow's head", async () => {
