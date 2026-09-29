@@ -32,7 +32,8 @@ interface FocusSource {
 interface BeatFocus {
 	/**
 	 * The beat's subjects this picture draws, in the order the beat names them,
-	 * each relationship or step followed by the parts at its ends.
+	 * each relationship or step followed by the parts at its ends, and then
+	 * the relationships between the cards the beat names.
 	 */
 	readonly drawn: readonly string[];
 	/** The beat's subjects this picture does not draw. */
@@ -88,13 +89,36 @@ function endsOf(variant: SemanticVariant | null, id: string): string[] {
 }
 
 /**
+ * The relationships between the cards a beat names, which it is about too.
+ *
+ * A beat about several cards is about how they connect, and a picture that lit
+ * the cards alone left every line between them under the veil. Only the cards
+ * the beat names count: the ends a named relationship brings are there to be
+ * read with that line, not to light the other lines between them.
+ * @param variant The variant being read, or null when none can be.
+ * @param named The subjects the beat names that the picture draws.
+ * @returns The ids of the relationships that join two cards the beat names.
+ */
+function linesBetween(variant: SemanticVariant | null, named: readonly string[]): string[] {
+	if (variant === null) {
+		return [];
+	}
+	const cards = new Set(
+		variant.content.nodes.map(({ id }) => id).filter((id) => named.includes(id)),
+	);
+	return variant.content.edges
+		.filter((edge) => edge.from !== edge.to && cards.has(edge.from) && cards.has(edge.to))
+		.map(({ id }) => id);
+}
+
+/**
  * What the current beat asks of the picture on screen.
  *
  * Three cases, and the third is the one that has to be visible rather than
  * quiet. A beat that names no subject is about the whole architecture and asks
  * for the whole of it. A beat whose subjects this picture draws asks for the
  * region they occupy, with the parts at the ends of every relationship or step
- * it names. A beat whose subjects this picture does not draw — a narrative told
+ * it names and the relationships between the cards it names. A beat whose subjects this picture does not draw — a narrative told
  * across views, read through a view that narrows what is drawn — asks for the
  * whole picture again and hands back the names it could not find, so the rail
  * can say plainly that this reading does not show them. Silently focusing
@@ -126,7 +150,11 @@ function beatFocus(
 	const isDrawn = (id: string): boolean => subjectBox(source.atlas, id) !== null;
 	const undrawn = beat.subjects.filter((id) => !isDrawn(id));
 	const named = beat.subjects.filter(isDrawn);
-	const drawn = [...new Set(named.flatMap((id) => [id, ...endsOf(variant, id)]))].filter(isDrawn);
+	const about = [
+		...named.flatMap((id) => [id, ...endsOf(variant, id)]),
+		...linesBetween(variant, named),
+	];
+	const drawn = [...new Set(about)].filter(isDrawn);
 	const boxes: Rect[] = drawn
 		.map((id) => subjectBox(source.atlas, id))
 		.filter((box) => box !== null);

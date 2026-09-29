@@ -377,6 +377,50 @@ for (const { about, content, picture, lit, regions } of JOINED) {
 	});
 }
 
+/** Two cards joined by a call and its reply, and a walkthrough about them. */
+const ANSWERED = {
+	...CONTENT,
+	edges: [...CONTENT.edges, { id: "e2", from: "n2", to: "n1", kind: "call" }],
+	walkthroughs: [
+		{
+			id: "w1",
+			name: "One exchange",
+			beats: [
+				{ id: "b1", heading: "Both modules", body: "They talk both ways.", subjects: ["n1", "n2"] },
+				{
+					id: "b2",
+					heading: "All of it",
+					body: "Named in full.",
+					subjects: ["n1", "n2", "e1", "e2"],
+				},
+				{ id: "b3", heading: "The call", body: "One way.", subjects: ["e1"] },
+			],
+		},
+	],
+};
+
+test("a step about several cards lights and frames the lines between them, and only those", async () => {
+	server.documents["pipeline"] = boardOf(ANSWERED);
+	server.reply = {
+		status: 200,
+		body: pictureOf(
+			{ n1: { x: 0, y: 0, width: 80, height: 40 }, n2: { x: 240, y: 0, width: 80, height: 40 } },
+			{ e1: { x: 80, y: 9, width: 160, height: 2 }, e2: { x: 80, y: 29, width: 160, height: 2 } },
+		),
+	};
+	mountStage(null, { reducedMotion: true });
+	await presenting();
+	expect(marked()).toEqual(["n1", "n2", "e1", "e2"]);
+	const cards = cameraNow();
+	goTo(1);
+	await settle();
+	expectCamera(cards, cameraNow());
+	// The ends a line brings are read with that line: they light no other line between them.
+	goTo(2);
+	await settle();
+	expect(marked()).toEqual(["n1", "n2", "e1"]);
+});
+
 test("a relationship this reading does not draw brings none of its ends with it", async () => {
 	serving({ ...CONTENT, walkthroughs: [aboutOne("e1", ["n1", "n2"])] });
 	server.reply = {
