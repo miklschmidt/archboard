@@ -228,6 +228,13 @@ const TRAFFIC_ATTRIBUTE = "data-traffic";
 const MEMBERS_ATTRIBUTE = "data-members";
 
 /**
+ * The attribute on the group that holds one flow's row of participant cards,
+ * naming the flow. A viewer slides the row down its lifelines to keep it in
+ * view over rows further down.
+ */
+const HEAD_ATTRIBUTE = "data-flow-head";
+
+/**
  * The attribute on a group that draws one part of a subject drawn in two: a
  * container's header, a relationship's or a message's label, a participant's
  * lifeline. A viewer says more about a subject where its words are.
@@ -531,6 +538,7 @@ export {
 	type UnsettledOf,
 	BADGE_SIZE,
 	PIN_INSET,
+	HEAD_ATTRIBUTE,
 	PART_ATTRIBUTE,
 	MEMBERS_ATTRIBUTE,
 	TRAFFIC_ATTRIBUTE,

@@ -341,6 +341,10 @@ describe("renderDataFlow", () => {
 		expect(rendered.svg).toContain('data-semantic-kind="node" data-semantic-id="io"');
 		expect(rendered.svg).toContain('data-semantic-kind="step" data-semantic-id="s5"');
 		expect(rendered.svg).toContain('data-semantic-kind="flow" data-semantic-id="claim"');
+		// The flow's head of cards, which a viewer moves, over a ground the picture hides.
+		expect(rendered.svg).toContain(
+			'<g data-flow-head="claim"><g class="ab-head-shade" visibility="hidden">',
+		);
 		expect(rendered.svg).toContain(".is-selected");
 		expect(rendered.svg).not.toContain("<script");
 	});

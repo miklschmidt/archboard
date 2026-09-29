@@ -31,6 +31,8 @@ import type {
 } from "@/shared/semantic-board/index";
 import { BAND_RADIUS, DIAGRAM_MARGIN } from "@/transformers/semantic-renderer/lib/design";
 import {
+	HEAD_REACH,
+	HEAD_SHADE_CLASS,
 	STEP_HEAD,
 	STEP_WEIGHT,
 	arrowStandoff,
@@ -73,6 +75,8 @@ import {
 	type Attributes,
 } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
+	HEAD_ATTRIBUTE,
+	MEMBERS_ATTRIBUTE,
 	markedBox,
 	standingPin,
 	subjectGroup,
@@ -278,6 +282,54 @@ function paintFrame(
 }
 
 /**
+ * The frame's own ground behind a flow's head of cards, and a strip of it
+ * above them, shown only while a viewer has moved the head down to keep it in
+ * view over rows further down.
+ *
+ * A moved head stands over the columns of time and the rows it passes, and a
+ * card a presented step veils is seen through: without this, what it stands
+ * over would show through it and run on above it. So the page's ground is laid
+ * first and the frame's band over it, standing with the frame (it lists the
+ * flow as its member): a frame a step veils is seen through to the page, and so
+ * is this. Hidden in the picture (`visibility`), and shown under a head the
+ * viewer marks as moved (`is-stuck`).
+ * @param layout The flow.
+ * @param standing How the flow stands, which ghosts the band as it ghosts the frame.
+ * @param palette The theme's colours.
+ * @returns The shade.
+ */
+function headShade(
+	layout: FlowLayout,
+	standing: SubjectStanding | undefined,
+	palette: Palette,
+): string {
+	const card = layout.columns[0]?.card.box;
+	if (card === undefined) {
+		return "";
+	}
+	// Inside the frame's rule, which stays the frame's to draw.
+	const shape = {
+		x: coord(layout.frame.x + 1),
+		y: coord(card.y - HEAD_REACH),
+		width: coord(layout.frame.width - 2),
+		height: coord(card.height + HEAD_REACH),
+	};
+	const { opacity } = subjectGroup("flow", layout.flow.id, standing);
+	return wrap(
+		"g",
+		{ class: HEAD_SHADE_CLASS, visibility: "hidden" },
+		lines([
+			tag("rect", { ...shape, fill: palette.background }),
+			wrap(
+				"g",
+				{ [MEMBERS_ATTRIBUTE]: layout.flow.id, opacity },
+				tag("rect", { ...shape, fill: palette.band }),
+			),
+		]),
+	);
+}
+
+/**
  * One flow, painted.
  * @param layout The flow.
  * @param palette The theme's colours.
@@ -319,9 +371,10 @@ function paintFlow(
 		),
 		wrap(
 			"g",
-			{},
-			lines(
-				layout.columns.map((column) =>
+			{ [HEAD_ATTRIBUTE]: layout.flow.id },
+			lines([
+				headShade(layout, flowStanding, palette),
+				...layout.columns.map((column) =>
 					paintCard(
 						column.card,
 						palette,
@@ -331,7 +384,7 @@ function paintFlow(
 						farSize,
 					),
 				),
-			),
+			]),
 		),
 		wrap(
 			"g",

@@ -35,6 +35,16 @@ const FLOW_BOTTOM_PADDING = 20;
 /** The air between one flow's frame and the next. */
 const FLOW_GAP = 32;
 
+/**
+ * How far above a flow's head of cards the frame's ground reaches while a
+ * viewer has moved the head down to keep it in view: past the camera's margin
+ * above the head at any readable magnification, so no lifeline or bar runs on
+ * above it.
+ */
+const HEAD_REACH = 64;
+/** The class of the ground under a moved head, which the picture shows only then. */
+const HEAD_SHADE_CLASS = "ab-head-shade";
+
 /** Dash pattern for the vertical participant lifelines. */
 const LIFELINE_DASH = "3 5";
 
@@ -133,6 +143,8 @@ export {
 	SELF_MESSAGE_PITCH,
 	FLOW_BOTTOM_PADDING,
 	FLOW_GAP,
+	HEAD_REACH,
+	HEAD_SHADE_CLASS,
 	ACTIVATION_HALF_WIDTH,
 	ACTIVATION_RADIUS,
 	BAR_OVERHANG,

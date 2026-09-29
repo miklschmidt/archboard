@@ -36,6 +36,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/svg/standing";
 import { FAR_VIEW_FADE_MS } from "@/shared/timing/timing";
 import { PULSE_CLASS } from "@/transformers/semantic-renderer/lib/svg/pulse";
+import { HEAD_SHADE_CLASS } from "@/transformers/semantic-renderer/lib/sequence-design";
 import {
 	HEAD_REF_X,
 	HEAD_SIZE,
@@ -156,6 +157,9 @@ function stylesheet(palette: Palette, fonts: FontSource): string {
 			// A viewer draws a selected line over the rest, so it is drawn whole: the
 			// cuts where it ran under another line would be gaps in it now.
 			".is-selected[mask]{mask:none}",
+			// A flow's head a viewer has moved down to keep in view stands on the
+			// frame's ground, which the picture draws hidden behind it.
+			`.is-stuck>.${HEAD_SHADE_CLASS}{visibility:visible}`,
 			// Seen from far away, a card is its name: a viewer puts the far class
 			// on the picture when a card's own name would be too small to read,
 			// and each card shows its name and chip grown to fill it instead.
