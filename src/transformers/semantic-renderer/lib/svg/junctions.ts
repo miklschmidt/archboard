@@ -18,6 +18,7 @@ import type { DrawingEdge } from "@/transformers/semantic-renderer/lib/drawing";
 import { coord, type Box, type Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { verticesOf, type Curve } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
+import { MEMBERS_ATTRIBUTE } from "@/transformers/semantic-renderer/lib/svg/standing";
 
 /** How far a junction mark reaches past the line it sits on, so it reads as a dot and not a kink. */
 const JUNCTION_REACH = 1.6;
@@ -50,6 +51,8 @@ interface Junction {
 	readonly until?: Point;
 	readonly route: number;
 	readonly width: number;
+	/** Every route that joins or parts here, by its place among the routes. */
+	readonly routes: readonly number[];
 }
 
 /** One route, as the joins are found from it. */
@@ -242,7 +245,12 @@ function joinsBetween(
 	const heavier = one.width >= other.width ? one : other;
 	return shared.ends
 		.filter(({ end }) => partAt(byRoute[one.route]!, byRoute[other.route]!, end, shared.near))
-		.map(({ parts }) => ({ point: parts, route: heavier.route, width: heavier.width }));
+		.map(({ parts }) => ({
+			point: parts,
+			route: heavier.route,
+			width: heavier.width,
+			routes: [one.route, other.route],
+		}));
 }
 
 /**
@@ -253,7 +261,9 @@ function joinsBetween(
 function keep(found: Map<string, Junction>, junction: Junction): void {
 	const key = `${Math.round(junction.point.x / 2)},${Math.round(junction.point.y / 2)}`;
 	const held = found.get(key);
-	if (held === undefined || held.width < junction.width) found.set(key, junction);
+	const routes = [...new Set([...(held?.routes ?? []), ...junction.routes])];
+	const kept = held === undefined || held.width < junction.width ? junction : held;
+	found.set(key, { ...kept, routes });
 }
 
 /**
@@ -296,7 +306,8 @@ function markOf(cluster: readonly Junction[]): Junction {
 	const heaviest = cluster.reduce((best, one) => (one.width > best.width ? one : best));
 	if (cluster.length === 1) return heaviest;
 	const ordered = cluster.toSorted((a, b) => a.point.x - b.point.x || a.point.y - b.point.y);
-	return { ...heaviest, point: ordered[0]!.point, until: ordered.at(-1)!.point };
+	const routes = [...new Set(cluster.flatMap((one) => one.routes))];
+	return { ...heaviest, point: ordered[0]!.point, until: ordered.at(-1)!.point, routes };
 }
 
 /**
@@ -419,17 +430,26 @@ function junctionMarks(
 	const junctions = junctionsOf(joinRoutes(routes, (index) => lines[index]!.width));
 
 	if (junctions.length === 0) return "";
-	const marks = junctions.map(({ point, until, route, width }) => {
+	const marks = junctions.map(({ point, until, route, width, routes: joined }) => {
 		const ink = lines[route]!.ink;
 		const radius = markRadius(width);
+		// What a viewer lights the mark with: the relationships that meet at it.
+		const members = { [MEMBERS_ATTRIBUTE]: joined.map((at) => routes[at]!.edge.id).join(" ") };
 		return until === undefined
-			? tag("circle", { cx: coord(point.x), cy: coord(point.y), r: coord(radius), fill: ink })
+			? tag("circle", {
+					cx: coord(point.x),
+					cy: coord(point.y),
+					r: coord(radius),
+					fill: ink,
+					...members,
+				})
 			: tag("path", {
 					d: `M${coord(point.x)},${coord(point.y)} L${coord(until.x)},${coord(until.y)}`,
 					fill: "none",
 					stroke: ink,
 					"stroke-width": coord(radius * 2),
 					"stroke-linecap": "round",
+					...members,
 				});
 	});
 	return wrap("g", { class: "ab-junctions", "pointer-events": "none" }, marks.join(""));

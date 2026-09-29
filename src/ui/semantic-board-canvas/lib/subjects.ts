@@ -20,8 +20,9 @@ const SUBJECT_ATTRIBUTE = "data-semantic-id";
 const TRAFFIC_ATTRIBUTE = "data-traffic";
 
 /**
- * The attribute a group's region lists its members in, space-separated. A
- * region is no subject of its own: the veil lights it with its members.
+ * The attribute a mark lists its members in, space-separated: a group's region
+ * lists its cards, and a junction mark the relationships that meet at it.
+ * Neither is a subject of its own: the veil lights each with its members.
  */
 const MEMBERS_ATTRIBUTE = "data-members";
 
@@ -169,8 +170,8 @@ const LIT_CLASS = "is-lit";
  * The surface carries the class that lets everything else recede
  * ({@link surfaceMarks}), so a picture with no step presented is drawn exactly
  * as it was: the veil's rules all hang under it.
- * A group's region stands with its members: lit while one of them is, and
- * receding with everything else while none is.
+ * A group's region and a junction mark stand with their members: lit while
+ * one of them is, and receding with everything else while none is.
  * @param surface The element the picture was put into.
  * @param lit The subjects the step is about; null for no veil.
  */
@@ -179,18 +180,18 @@ function markVeil(surface: Element, lit: ReadonlySet<string> | null): void {
 	for (const group of surface.querySelectorAll(MARKED)) {
 		group.classList.toggle(LIT_CLASS, standing.has(markedId(group) ?? ""));
 	}
-	lightRegions(surface, standing);
+	lightByMembers(surface, standing);
 }
 
 /**
- * Light each group's region that holds a subject the veil leaves standing.
+ * Light each mark that lists a subject the veil leaves standing.
  * @param surface The element the picture was put into.
  * @param standing The subjects the veil leaves standing.
  */
-function lightRegions(surface: Element, standing: ReadonlySet<string>): void {
-	for (const region of surface.querySelectorAll(`[${MEMBERS_ATTRIBUTE}]`)) {
-		const members = region.getAttribute(MEMBERS_ATTRIBUTE)?.split(" ") ?? [];
-		region.classList.toggle(
+function lightByMembers(surface: Element, standing: ReadonlySet<string>): void {
+	for (const mark of surface.querySelectorAll(`[${MEMBERS_ATTRIBUTE}]`)) {
+		const members = mark.getAttribute(MEMBERS_ATTRIBUTE)?.split(" ") ?? [];
+		mark.classList.toggle(
 			LIT_CLASS,
 			members.some((id) => standing.has(id)),
 		);

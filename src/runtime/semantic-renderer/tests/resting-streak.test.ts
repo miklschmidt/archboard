@@ -117,3 +117,25 @@ test.each(LayoutEngineSchema.options)(
 	},
 	30_000,
 );
+
+// A presented step veils what it is not about, and a junction mark has no id of
+// its own: it lists the relationships that meet at it, so the viewer can light
+// it with them and let it recede with the rest.
+test.each(LayoutEngineSchema.options)(
+	"every junction mark lists the relationships that meet at it (%s)",
+	async (layout) => {
+		const content = orderedFixture(commandInterface);
+		const { svg } = await renderArchitecture({ content, theme: "light", layout });
+		const marks = /<g class="ab-junctions"[^>]*>(.*?)<\/g>/su.exec(svg)![1]!;
+		const listed = [...marks.matchAll(/data-members="([^"]*)"/gu)].map(([, ids]) =>
+			ids!.split(" "),
+		);
+		const relationships = new Set(content.edges.map(({ id }) => id));
+		expect(listed.length).toBe([...marks.matchAll(/<(?:circle|path)\b/gu)].length);
+		for (const ids of listed) {
+			expect(ids.length).toBeGreaterThanOrEqual(2);
+			for (const id of ids) expect(relationships.has(id)).toBeTrue();
+		}
+	},
+	30_000,
+);

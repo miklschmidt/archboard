@@ -12,13 +12,8 @@ import { semanticInk } from "@/transformers/semantic-renderer/lib/svg/appearance
 import { mixed } from "@/transformers/semantic-renderer/lib/svg/colour";
 import { farLayer, nearLayer } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
+import { MEMBERS_ATTRIBUTE } from "@/transformers/semantic-renderer/lib/svg/standing";
 import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
-
-/**
- * The attribute a region carries its members in, space-separated: a viewer
- * lights the region while one of them is lit.
- */
-const MEMBERS_ATTRIBUTE = "data-members";
 
 /** How much of the group's colour the outline carries over the page. */
 const EDGE_TINT = 0.7;
@@ -110,4 +105,4 @@ function farCaption(
 	return farLayer(paintTextRuns([grown], caption.box, words.palette, words.fill));
 }
 
-export { MEMBERS_ATTRIBUTE, paintRegion };
+export { paintRegion };
