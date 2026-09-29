@@ -5,9 +5,11 @@ in this repository: deep modules, seams, information hiding and locality. Each
 proposal is a parent task in Backlog, and each has small subtasks. This note holds
 the facts, the measurements and the open decisions that the tasks share.
 
-- Proposal 1: check the board against the code and the infrastructure.
-- Proposal 2: derive the interface of each container from the board.
-- Proposal 3: read the Git history of a board through its bindings.
+- Proposal 1 (TASK-367): check the board against the code and the
+  infrastructure.
+- Proposal 2 (TASK-368): derive the interface of each container from the
+  board.
+- Proposal 3 (TASK-369): read the Git history of a board through its bindings.
 
 A visual summary of the three proposals is at
 <https://claude.ai/artifact/6bvGCNdthJh2CoHvPaCjNS> (private to the owner).
