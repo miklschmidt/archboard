@@ -63,13 +63,13 @@ never reads them.
 Not every link in code or infrastructure is a relationship at run time. Each
 finding names the kind of evidence that it rests on.
 
-| Kind | What it proves | Examples |
-| --- | --- | --- |
-| Call | The source makes the call or triggers the work | a call site, a queue that triggers a function, a topic subscription, a route to a service |
-| Configured path | Configuration connects the two parts | an environment value set to another service's address, a service selector, a network rule |
-| Permission | Access is allowed, not that it happens | an IAM grant, a network policy that allows traffic |
-| Import | Code depends on other code | an import, an include, a `using` with a reference |
-| Build dependency | One part is built from another | a Nix input, a project reference, a package target dependency |
+| Kind             | What it proves                                 | Examples                                                                                  |
+| ---------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Call             | The source makes the call or triggers the work | a call site, a queue that triggers a function, a topic subscription, a route to a service |
+| Configured path  | Configuration connects the two parts           | an environment value set to another service's address, a service selector, a network rule |
+| Permission       | Access is allowed, not that it happens         | an IAM grant, a network policy that allows traffic                                        |
+| Import           | Code depends on other code                     | an import, an include, a `using` with a reference                                         |
+| Build dependency | One part is built from another                 | a Nix input, a project reference, a package target dependency                             |
 
 How the relationship kinds of a vault map to these evidence kinds is an open
 decision. Vault vocabulary is consumer-defined (ADR 0024), so the mapping can
@@ -93,14 +93,14 @@ grammar has no such file, the cost to build one must be known.
 
 ### Languages
 
-| Language | Dependencies in the source | Declared interface | Language server |
-| --- | --- | --- | --- |
-| TypeScript | `import` and `export` | module root files and `package.json` `exports` | typescript-language-server |
-| Python | `import` and `from ... import` | `__all__`, names that start with `_`, `__init__.py` | pyright or basedpyright |
-| C# and .NET | `using` plus type references, `ProjectReference` | `public`, `internal`, `InternalsVisibleTo` | csharp-ls or the Roslyn language server |
-| Swift | module `import`, type references, `Package.swift` targets | `open`, `public`, `package`, `internal`, `fileprivate`, `private` | sourcekit-lsp |
-| Objective-C | `#import`, `@import`, message sends | public headers, class extensions in `.m` | clangd |
-| C and C++ | `#include` through `compile_commands.json` | public headers, `static`, anonymous namespaces | clangd |
+| Language    | Dependencies in the source                                | Declared interface                                                | Language server                         |
+| ----------- | --------------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------- |
+| TypeScript  | `import` and `export`                                     | module root files and `package.json` `exports`                    | typescript-language-server              |
+| Python      | `import` and `from ... import`                            | `__all__`, names that start with `_`, `__init__.py`               | pyright or basedpyright                 |
+| C# and .NET | `using` plus type references, `ProjectReference`          | `public`, `internal`, `InternalsVisibleTo`                        | csharp-ls or the Roslyn language server |
+| Swift       | module `import`, type references, `Package.swift` targets | `open`, `public`, `package`, `internal`, `fileprivate`, `private` | sourcekit-lsp                           |
+| Objective-C | `#import`, `@import`, message sends                       | public headers, class extensions in `.m`                          | clangd                                  |
+| C and C++   | `#include` through `compile_commands.json`                | public headers, `static`, anonymous namespaces                    | clangd                                  |
 
 In C# and Swift, the files of one project or module see each other without an
 import. There, file dependencies come from references to names that another
@@ -108,12 +108,12 @@ file defines.
 
 ### Infrastructure and Nix
 
-| Source | What the check reads | Evidence |
-| --- | --- | --- |
-| Terraform and OpenTofu | `.tf` and `.tofu` files, statically: resources, data sources, modules, variables, outputs and the references in expressions | provider rules decide call, configured path, permission or provisioning |
-| Kubernetes | manifest YAML, and Helm or Kustomize output given as files | service selectors, Ingress and Gateway routes, network policies, environment values that name a service |
-| docker-compose | compose files and their override files | `depends_on`, links, networks, environment values that name a service, shared volumes |
-| Nix | `flake.lock` (JSON), `flake.nix` outputs, derivation inputs | build dependency |
+| Source                 | What the check reads                                                                                                        | Evidence                                                                                                |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Terraform and OpenTofu | `.tf` and `.tofu` files, statically: resources, data sources, modules, variables, outputs and the references in expressions | provider rules decide call, configured path, permission or provisioning                                 |
+| Kubernetes             | manifest YAML, and Helm or Kustomize output given as files                                                                  | service selectors, Ingress and Gateway routes, network policies, environment values that name a service |
+| docker-compose         | compose files and their override files                                                                                      | `depends_on`, links, networks, environment values that name a service, shared volumes                   |
+| Nix                    | `flake.lock` (JSON), `flake.nix` outputs, derivation inputs                                                                 | build dependency                                                                                        |
 
 A part binds to a resource address as it binds to a code symbol. Examples are
 `module.checkout.aws_lambda_function.api`, `Deployment/checkout` and
@@ -165,8 +165,7 @@ readings:
 - Locality: hotspots, and change coupling between parts that no relationship
   joins.
 
-The readings are derived on request. They are never stored in a board (ADR
-0015) and never drawn as traffic (ADR 0027). Call the co-change measure change
+The readings are derived on request. They are never stored in a board (ADR 0015) and never drawn as traffic (ADR 0027). Call the co-change measure change
 coupling. "Temporal coupling" means three different things in the three books.
 
 ## Prior art
@@ -183,9 +182,9 @@ coupling. "Temporal coupling" means three different things in the three books.
   <https://github.com/cycloidio/inframap>
 - code-maat computes change coupling from `git log`.
   <https://github.com/adamtornhill/code-maat>
-- Sources for the principles: Ousterhout, *A Philosophy of Software Design*.
-  Thomas and Hunt, *The Pragmatic Programmer*. Feathers, *Working Effectively
-  with Legacy Code*, chapter 4. Parnas, "On the Criteria To Be Used in
+- Sources for the principles: Ousterhout, _A Philosophy of Software Design_.
+  Thomas and Hunt, _The Pragmatic Programmer_. Feathers, _Working Effectively
+  with Legacy Code_, chapter 4. Parnas, "On the Criteria To Be Used in
   Decomposing Systems into Modules".
 
 The survey found three gaps. No tool stores an anchor for each relationship of
