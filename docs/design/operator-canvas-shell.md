@@ -109,7 +109,9 @@ bottom edge, with the sidebar stepped aside: the step's heading in the
 `presentation` type role, its words under it, where it is in the walkthrough, the
 steps, and previous and next. The camera keeps the subjects of the step clear
 of the caption. The subjects include the parts at both ends of each relationship
-or step that the step names. The camera glides between steps. What a step is not
+or step that the step names. If the subjects are part of a flow and the whole
+flow fits nearly as large, the camera shows the whole flow, so that no column is
+cut through its words. The camera glides between steps. What a step is not
 about recedes. A group's region also recedes, unless it holds something that the
 step lights. Escape leaves.
 
