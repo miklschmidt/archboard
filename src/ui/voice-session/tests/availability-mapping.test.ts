@@ -59,12 +59,12 @@ const GATES: readonly [string, VoiceSessionProjectionInput, string][] = [
 		"Archboard is installing realtime microphone and audio support in this browser.",
 	],
 	[
-		"account readiness",
+		"signed out",
 		input({
 			transportState: connectedState(
-				snapshot({ readiness: { kind: "readiness", state: "account_ready" } }),
+				snapshot({ readiness: { kind: "readiness", state: "signed_out" } }),
 			),
-			capabilities: capabilities({ readiness: "account_ready" }),
+			capabilities: capabilities({ readiness: "signed_out" }),
 		}),
 		"The Codex workbench is not ready for thread work yet.",
 	],

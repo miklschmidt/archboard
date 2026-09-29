@@ -1,5 +1,4 @@
 import type { CodexProcessChild } from "@/runtime/codex-process";
-import type { CoordinatorPersistedState } from "@/runtime/codex-coordinator";
 import type { IdentityAuthorities } from "@/shared/codex-workbench-identity";
 import { CodexWorkbenchCompositionError } from "@/server/archboard/lib/codex-workbench-error";
 import { appendFailure, failureMessage } from "@/server/archboard/lib/codex-workbench-failures";
@@ -55,7 +54,6 @@ function adoptedSession(
  * @param child The Codex child it runs against.
  * @param readiness Where it records what its session reached.
  * @param initialIdentity The identity acquired with the child, when there is one.
- * @param adoptedCoordinator The coordinator state it inherits, when there is one.
  * @returns The generation's input.
  */
 function generationInput(
@@ -67,7 +65,6 @@ function generationInput(
 	child: CodexProcessChild,
 	readiness: CandidateReadiness,
 	initialIdentity: IdentityAuthorities | null = null,
-	adoptedCoordinator: CoordinatorPersistedState | null = null,
 ): CodexWorkbenchGenerationInput {
 	const kernel =
 		runtime.identityLedger === null || runtime.transport === null
@@ -80,7 +77,6 @@ function generationInput(
 		kernel,
 		initialIdentity,
 		adoptedSession: adoptedSession(runtime),
-		adoptedCoordinator,
 		/** Refuse a retired activation that tries to change production readiness. */
 		assertActivationCurrent: () => {
 			assertTransaction(

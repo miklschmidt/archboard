@@ -66,6 +66,32 @@ function createSettlement(result: WorkbenchCommandResult): Settlement {
 }
 
 /**
+ * What a refusal says: a create whose coordinator could not start says why the
+ * coordinator could not, which the server publishes with the refusal; anything
+ * else says the refusal's own words.
+ * @param action The action.
+ * @param result The transport's result.
+ * @param target The action's target.
+ * @returns The announcement.
+ */
+function refusalWords(
+	action: ThreadLinkActionName,
+	result: WorkbenchCommandResult,
+	target: ThreadLinkActionTarget,
+): string {
+	const coordinator = result.snapshot.coordinator;
+	const coordinatorReason =
+		action === "create" && result.code === "command_failed" && coordinator.state === "failed"
+			? coordinator.reason
+			: null;
+	return (
+		coordinatorReason ??
+		result.message ??
+		`The workbench refused ${words(action)} for pane ${target.paneId}.`
+	);
+}
+
+/**
  * How a delivered command settled, by action.
  * @param action The action.
  * @param result The transport's result.
@@ -109,11 +135,7 @@ function classify(
 		};
 	}
 	if (result.outcome === "not_delivered" || result.code !== null) {
-		return {
-			state: "failed",
-			announcement:
-				result.message ?? `The workbench refused ${words(action)} for pane ${target.paneId}.`,
-		};
+		return { state: "failed", announcement: refusalWords(action, result, target) };
 	}
 	return deliveredSettlement(action, result, target);
 }

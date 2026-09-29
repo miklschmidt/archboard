@@ -219,7 +219,7 @@ async function setControlledOutputSilent(browser: BrowserOperator, silent: boole
 
 export { setControlledOutputSilent };
 
-/** The coordinator thread the fixture creates first; voice runs on it. */
+/** The coordinator thread the fixture creates first, at Talk; voice runs on it. */
 const RAW_COORDINATOR_THREAD_ID = "thread-1";
 
 /** One line of the fixture's log. */
@@ -235,8 +235,11 @@ interface FixtureRecord {
 interface TalkWire {
 	readonly threadStarts: number;
 	readonly realtimeStarts: number;
-	/** The thread Talk created: the workhorse. */
+	/** The workhorse thread Talk created after the coordinator. */
 	readonly workhorse: string | null;
+	/** The coordinator's thread/start. */
+	readonly coordinatorAt: number;
+	/** The workhorse's thread/start. */
 	readonly createdAt: number;
 	/** The conversation reading the created thread's turns: it is the server's linked thread. */
 	readonly readAt: number;
@@ -255,16 +258,20 @@ const isFrame = (record: FixtureRecord, method: string): boolean =>
  * @returns The step positions.
  */
 function talkWire(talked: readonly FixtureRecord[], board: string): TalkWire {
-	const created = talked.find(
-		(record) => record.kind === "response" && record.method === "thread/start",
+	const started = talked
+		.filter((record) => record.kind === "response" && record.method === "thread/start")
+		.map((record) => (record.result?.["thread"] as { id?: string } | undefined)?.id ?? null);
+	const workhorse = started.find((id) => id !== RAW_COORDINATOR_THREAD_ID) ?? null;
+	const starts = talked.flatMap((record, index) =>
+		isFrame(record, "thread/start") ? [index] : [],
 	);
-	const workhorse = (created?.result?.["thread"] as { id?: string } | undefined)?.id ?? null;
 	const named = JSON.stringify(JSON.stringify(board)).slice(1, -1);
 	return {
-		threadStarts: talked.filter((record) => isFrame(record, "thread/start")).length,
+		threadStarts: starts.length,
 		realtimeStarts: talked.filter((record) => isFrame(record, "thread/realtime/start")).length,
 		workhorse,
-		createdAt: talked.findIndex((record) => isFrame(record, "thread/start")),
+		coordinatorAt: starts[0] ?? -1,
+		createdAt: starts[1] ?? -1,
 		readAt: talked.findIndex(
 			(record) =>
 				isFrame(record, "thread/turns/list") &&

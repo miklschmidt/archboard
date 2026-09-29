@@ -318,9 +318,7 @@ export function createGatewayHarness(
 	const setReadiness = (state: BrowserReadiness["state"]): void => {
 		readiness = readinessFor(state, loginId);
 		account =
-			state === "account_ready" || state === "thread_capable"
-				? readyAccount()
-				: { kind: "account", state: "signed_out" };
+			state === "thread_capable" ? readyAccount() : { kind: "account", state: "signed_out" };
 		emitProjectionChange();
 	};
 	const setLink = (next: ThreadLinkSnapshot): void => {

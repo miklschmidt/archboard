@@ -21,7 +21,6 @@ const ACCOUNT_READINESS: ReadonlySet<BrowserSnapshot["readiness"]["state"]> = ne
 	"login_capable",
 	"signed_out",
 	"login_pending",
-	"account_ready",
 	"thread_capable",
 ]);
 

@@ -159,8 +159,8 @@ test(
 		expect(desktop.voiceOverlapsStage).toBe(false);
 		expect((await workbenchControlOperability(browser, BAR_VOICE)).operable).toBe(true);
 		const beforeTalk = records().length;
-		// Only the coordinator exists: no workhorse, no voice session.
-		expect(frames(0, "thread/start")).toHaveLength(1);
+		// Nothing is started: Talk starts the coordinator, the workhorse and voice.
+		expect(frames(0, "thread/start")).toEqual([]);
 		expect(frames(0, "thread/realtime/start")).toEqual([]);
 
 		// One gesture: Talk creates and links the conversation, then starts voice over the media.
@@ -176,19 +176,21 @@ test(
 		);
 		expect(speaking.wavePresentation).toBe("animated");
 		expect(speaking.controls).toContain("Mute");
-		// The wire, in order: the workhorse is created, the conversation reads it as the
-		// server's linked thread, voice starts on the coordinator, and the coordinator is
-		// given the board catalogue this voice session speaks about.
+		// The wire, in order: the coordinator and then the workhorse are created, the
+		// conversation reads the workhorse as the server's linked thread, voice starts on the
+		// coordinator, and the coordinator is given the board catalogue this voice session
+		// speaks about.
 		const wire = await pollUntil(
 			() => talkWire(records().slice(beforeTalk), "workbench"),
 			(value) => value.catalogueAt >= 0,
 			"the coordinator to be given the board catalogue voice speaks about",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
-		expect(wire.threadStarts).toBe(1);
+		expect(wire.threadStarts).toBe(2);
 		expect(wire.realtimeStarts).toBe(1);
-		expect(wire.workhorse).not.toBe(RAW_COORDINATOR_THREAD_ID);
-		expect(wire.createdAt).toBeGreaterThanOrEqual(0);
+		expect(wire.workhorse).not.toBeNull();
+		expect(wire.coordinatorAt).toBeGreaterThanOrEqual(0);
+		expect(wire.createdAt).toBeGreaterThan(wire.coordinatorAt);
 		expect(wire.readAt).toBeGreaterThan(wire.createdAt);
 		expect(wire.voiceAt).toBeGreaterThan(wire.readAt);
 		expect(wire.catalogueAt).toBeGreaterThan(wire.voiceAt);

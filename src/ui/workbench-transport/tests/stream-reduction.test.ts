@@ -245,26 +245,26 @@ test("lost command responses become outcome-unknown and are never replayed after
 });
 
 /**
- * Answer subscribe, account read and the reconciliation snapshot for an
- * account-ready workbench.
+ * Answer subscribe, account read and the reconciliation snapshot for
+ * a signed-out workbench.
  * @param request The request.
  * @param activeSocket The socket.
  */
-function answerAccountReady(request: FakeSocketRequest, activeSocket: FakeSocket): void {
-	const accountReady = snapshot({ state: "account_ready" });
+function answerSignedOut(request: FakeSocketRequest, activeSocket: FakeSocket): void {
+	const signedOut = snapshot({ state: "signed_out" });
 	if (request["action"] === "subscribe") {
-		activeSocket.reply(request, snapshotMessage(1, accountReady));
+		activeSocket.reply(request, snapshotMessage(1, signedOut));
 	} else if (request["action"] === "accountRead") {
-		activeSocket.reply(request, accountResult(accountReady));
+		activeSocket.reply(request, accountResult(signedOut));
 	} else if (request["action"] === "snapshot") {
-		activeSocket.reply(request, snapshotMessage(2, accountReady));
+		activeSocket.reply(request, snapshotMessage(2, signedOut));
 	}
 }
 
 test("account results reconcile through a versioned snapshot and socket close exposes backoff", async () => {
 	const transport = tracker.track(createBrowserWorkbenchTransport());
 	const socket = new FakeSocket();
-	socket.onRequest = answerAccountReady;
+	socket.onRequest = answerSignedOut;
 	await transport.attach(socket);
 	const result = await transport.accountRead();
 	expect(result.kind).toBe("account_read");
@@ -325,11 +325,11 @@ test("malformed and relationally contradictory messages become incompatible", as
 test("gateway failure responses are surfaced without treating them as transport loss", async () => {
 	const transport = tracker.track(createBrowserWorkbenchTransport());
 	const socket = new FakeSocket();
-	await attachWithSnapshot(transport, socket, snapshot({ state: "account_ready" }));
+	await attachWithSnapshot(transport, socket, snapshot({ state: "signed_out" }));
 	socket.onRequest = refuseAction("accountRead", "account unavailable");
 	expect(await rejection(transport.accountRead())).toMatchObject({
 		code: "gateway_error",
 		outcome: "not_delivered",
 	});
-	expect(transport.state()).toMatchObject({ kind: "readiness", state: "account_ready" });
+	expect(transport.state()).toMatchObject({ kind: "readiness", state: "signed_out" });
 });

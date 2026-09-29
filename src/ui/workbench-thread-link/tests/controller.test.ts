@@ -241,6 +241,23 @@ describe("thread-link action controller", () => {
 		expect(announcementOf(settled)).toBe("The workbench is not thread-capable.");
 	});
 
+	test("a create refused because its coordinator could not start publishes the coordinator's reason", async () => {
+		const transport = new FakeTransport();
+		const reason = "Coordinator model selection failed.";
+		const base = snapshot();
+		transport.nextResult = transport.result({
+			outcome: "not_delivered",
+			code: "command_failed",
+			message: "The command was not delivered.",
+			snapshot: { ...base, coordinator: { ...base.coordinator, state: "failed", reason } },
+		});
+		const controller = controllerFor(transport);
+		await controller.create();
+		const settled = controller.snapshot();
+		expect(settled.state).toBe("failed");
+		expect(announcementOf(settled)).toBe(reason);
+	});
+
 	test("subscribers see the pending announcement before the settlement", async () => {
 		const transport = new FakeTransport();
 		transport.nextResult = transport.result({

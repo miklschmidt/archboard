@@ -48,7 +48,6 @@ function createBrowserSessionSchemas(identity: IdentitySchemas) {
 				loginId: LoginIdSchema,
 			})
 			.strict(),
-		z.object({ kind: z.literal("readiness"), state: z.literal("account_ready") }).strict(),
 		z.object({ kind: z.literal("readiness"), state: z.literal("thread_capable") }).strict(),
 		z
 			.object({

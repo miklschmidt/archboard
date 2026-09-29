@@ -49,7 +49,7 @@ describe("Codex workbench terminal publication", () => {
 		});
 
 		value.setOrdinaryApproval(spontaneousTerminal(approval));
-		value.setReadiness("account_ready");
+		value.setReadiness("login_capable");
 
 		expect(messages).toHaveLength(2);
 		expect(JSON.stringify(messages[1])).not.toContain(String(approval.request.requestId));

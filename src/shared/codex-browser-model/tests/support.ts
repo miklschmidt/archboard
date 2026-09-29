@@ -35,7 +35,7 @@ const realtimeSessionId = model.RealtimeSessionIdSchema.parse(
 );
 
 const target = { commandId, paneId: "pane-fixture", childId, epoch };
-const readiness = { kind: "readiness" as const, state: "account_ready" as const };
+const readiness = { kind: "readiness" as const, state: "thread_capable" as const };
 const account = {
 	kind: "account" as const,
 	state: "ready" as const,

@@ -159,17 +159,18 @@ const STAGES = {
 			authUrl: null,
 		},
 	}),
-	starting: snapshot({ readiness: { kind: "readiness", state: "account_ready" } }),
+	/** Codex runs and the account is being read again. */
+	starting: snapshot({
+		readiness: { kind: "readiness", state: "initialized" },
+		account: { kind: "account", state: "unknown", reason: "Refreshing the Codex account." },
+	}),
 	/**
-	 * Signed in, with a coordinator Codex could not start.
+	 * Signed in, with the coordinator an earlier create could not start.
 	 * @param reason The coordinator's reason.
 	 * @returns The snapshot.
 	 */
 	coordinatorFailed: (reason: string): BrowserSnapshot =>
-		snapshot({
-			readiness: { kind: "readiness", state: "account_ready" },
-			coordinator: { ...snapshot().coordinator, state: "failed", reason },
-		}),
+		snapshot({ coordinator: { ...snapshot().coordinator, state: "failed", reason } }),
 	/** The server waits a known time before it starts Codex again. */
 	restarting: snapshot({
 		readiness: {

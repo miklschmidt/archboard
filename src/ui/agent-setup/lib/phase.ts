@@ -13,15 +13,18 @@ type AgentPhase =
 	/** Codex cannot run here until something outside the browser changes. */
 	| { readonly kind: "unavailable"; readonly reason: string }
 	/**
-	 * Codex is starting: the account or the voice coordinator is not ready yet,
-	 * or the server waits before its next start of the app server.
+	 * Codex is starting: the account is not known yet, or the server waits
+	 * before its next start of the app server.
 	 */
 	| { readonly kind: "starting" }
 	/** Nobody is signed in to Archboard's own Codex. */
 	| { readonly kind: "signed_out"; readonly failure: string | null }
 	/** A sign-in is waiting for the person to finish it on the provider's page. */
 	| { readonly kind: "signing_in"; readonly loginId: LoginId; readonly authUrl: string | null }
-	/** The agent can take work; `linked` says whether a conversation exists yet. */
+	/**
+	 * The agent can take work; `linked` says whether a conversation exists yet.
+	 * Creating one starts its coordinator and its workhorse.
+	 */
 	| { readonly kind: "ready"; readonly linked: boolean };
 
 /**
@@ -30,9 +33,6 @@ type AgentPhase =
  * starts the app server again, so work waits through it.
  */
 const UNAVAILABLE = new Set(["stopped", "incompatible_contract", "storage_mismatch"]);
-
-/** Why the agent cannot start when a failed coordinator gave no reason. */
-const COORDINATOR_FAILED = "Codex could not start the agent's coordinator.";
 
 /**
  * Why Codex cannot run, from a readiness that says it cannot.
@@ -98,18 +98,14 @@ function snapshotPhase(snapshot: BrowserSnapshot): AgentPhase {
 }
 
 /**
- * The phase of a running Codex: ready for thread work, stopped by a
- * coordinator it could not start, or whatever the account decides.
+ * The phase of a running Codex: ready for thread work once signed in, or
+ * whatever the account decides.
  * @param snapshot The snapshot.
  * @returns The phase.
  */
 function runningPhase(snapshot: BrowserSnapshot): AgentPhase {
-	const { readiness, coordinator } = snapshot;
-	if (readiness.state === "thread_capable") {
+	if (snapshot.readiness.state === "thread_capable") {
 		return { kind: "ready", linked: snapshot.threadLink.state === "executable" };
-	}
-	if (readiness.state === "account_ready" && coordinator.state === "failed") {
-		return { kind: "unavailable", reason: coordinator.reason ?? COORDINATOR_FAILED };
 	}
 	return accountPhase(snapshot);
 }

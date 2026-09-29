@@ -110,11 +110,13 @@ test("authorization URLs are HTTPS and malformed input is a closed refusal", () 
 	);
 });
 
-test("matching completion refreshes the account while coordinator failure stays separate", async () => {
+test("a matching completion refreshes the account to thread-capable and starts no coordinator", async () => {
+	const coordinatorStarts: string[] = [];
 	const value = harness({
 		coordinator: {
 			ensure: async () => {
-				throw new Error("coordinator failed");
+				coordinatorStarts.push("ensure");
+				throw new Error("The sign-in must not start a coordinator.");
 			},
 		},
 	});
@@ -128,8 +130,9 @@ test("matching completion refreshes the account while coordinator failure stays 
 		expect(value.connection.snapshot().snapshot).toMatchObject({
 			login: { state: "completed", loginId: value.loginId },
 			account: { state: "ready" },
-			readiness: { state: "account_ready" },
+			readiness: { state: "thread_capable" },
 		});
+		expect(coordinatorStarts).toEqual([]);
 	} finally {
 		await value.gateway.dispose();
 	}

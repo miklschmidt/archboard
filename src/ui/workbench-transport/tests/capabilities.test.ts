@@ -31,7 +31,6 @@ const ALL_READINESS_STATES = [
 	"login_capable",
 	"signed_out",
 	"login_pending",
-	"account_ready",
 	"thread_capable",
 	"reconnecting",
 	"incompatible_contract",
@@ -40,7 +39,6 @@ const ACCOUNT_READY_STATES: ReadonlySet<string> = new Set([
 	"login_capable",
 	"signed_out",
 	"login_pending",
-	"account_ready",
 	"thread_capable",
 ]);
 

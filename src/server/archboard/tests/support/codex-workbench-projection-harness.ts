@@ -65,7 +65,6 @@ interface ProjectionHarness {
 	readonly loginId: ReturnType<IdentityAuthorities["identity"]["decoder"]["adoptLoginId"]>;
 	readonly threadId: ReturnType<typeof executableLink>["threadId"];
 	setFacts: (value: ReturnType<typeof processFacts>) => void;
-	setCoordinatorReady: (value: boolean) => void;
 	readonly authorities: IdentityAuthorities;
 	/** The operation authority the production adapter itself resolves against. */
 	readonly operations: IdentityAuthorities["operation"];
@@ -97,7 +96,6 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 	const accountListeners = new Set<(event: TransportServerNotification) => void>();
 	const harnessLoginId = authorities.identity.decoder.adoptLoginId("login-readiness");
 	const harnessCommandId = authorities.identity.issuer.mintBrowserCommandId();
-	let coordinatorReady = false;
 	let facts = processFacts({ state: "starting", ready: false });
 	const voiceContext = overrides.voiceContext?.(authorities);
 	const components = {
@@ -112,14 +110,7 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 			accountLoginCancel: async () => ({ status: "canceled" as const }),
 			...overrides.session,
 		},
-		coordinator: {
-			...fixture.coordinator,
-			snapshot: () => ({
-				...fixture.coordinator.snapshot(),
-				state: coordinatorReady ? ("ready" as const) : ("starting" as const),
-			}),
-			...overrides.coordinator,
-		},
+		coordinator: { ...fixture.coordinator, ...overrides.coordinator },
 		workhorse: { ...fixture.workhorse, ...overrides.workhorse },
 		queue: { ...fixture.queue, ...overrides.queue },
 		spokenApproval: { ...fixture.spokenApproval, ...overrides.spokenApproval },
@@ -198,7 +189,6 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 		},
 		loginId: harnessLoginId,
 		setFacts: (value) => void (facts = value),
-		setCoordinatorReady: (value) => void (coordinatorReady = value),
 		authorities,
 		operations: components.identity.operation,
 		notifyAccount: (event) => {

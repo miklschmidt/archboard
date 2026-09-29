@@ -65,12 +65,13 @@ describe("Codex workbench sequenced browser delivery", () => {
 
 	test("each observable change publishes one delta of only its changed fields", () => {
 		const value = createGatewayHarness();
+		value.setReadiness("login_capable");
 		const connection = value.open();
 		const messages: BrowserGatewayMessage[] = [];
 		connection.subscribe((message) => void messages.push(message));
 		connection.snapshot();
 
-		value.setReadiness("account_ready");
+		value.setReadiness("signed_out");
 		value.setReadiness("thread_capable");
 
 		expect(messages).toHaveLength(2);
@@ -79,7 +80,7 @@ describe("Codex workbench sequenced browser delivery", () => {
 		expect(first).toMatchObject({
 			kind: "delta",
 			sequence: 1,
-			delta: { readiness: { kind: "readiness", state: "account_ready" } },
+			delta: { readiness: { kind: "readiness", state: "signed_out" } },
 		});
 		expect(Object.keys(first.kind === "delta" ? first.delta : {})).toEqual(["readiness"]);
 		expect(second).toMatchObject({

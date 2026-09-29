@@ -188,12 +188,13 @@ only at this point: nothing states a version that nobody re-read.
    Start one on a free port against a scratch copy of `examples/web-shop`. Use the default
    state directory, so that the server uses the Archboard Codex sign-in of the machine.
    If the workbench of a server is not ready, the server exits with "The production Codex
-   workbench did not become ready". A server that signed in and found its model records
-   the `thread/start` of the coordinator as delivered. It records it in
+   workbench did not become ready". Open the server in a browser and send one message.
+   The first message starts the coordinator and then the workhorse. A server that found
+   its model records the `thread/start` of the coordinator as delivered. It records it in
    `codex-workbench/canvases/<port>/epoch/epoch-manifest.json`
    in the state directory.
-   Done: `status` reported it running, the manifest holds that record, and the server was
-   stopped.
+   Done: `status` reported it running, the message was answered, the manifest holds that
+   record, and the server was stopped.
 
 ## The tracked skills
 

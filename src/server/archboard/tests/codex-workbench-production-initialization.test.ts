@@ -329,21 +329,16 @@ describe("production Codex generation ownership", () => {
 });
 
 describe("production Codex activation guards", () => {
-	for (const stage of ["initialize", "account", "coordinator"] as const) {
+	for (const stage of ["initialize", "account"] as const) {
 		test(`a retired ${stage} continuation cannot publish readiness`, async () => {
 			const owned = installation();
 			const events: string[] = [];
 			const initializeGate = deferred();
 			const accountGate = deferred();
-			const coordinatorGate = deferred();
 			let initializeEntered!: () => void;
 			const initializeStarted = new Promise<void>((resolve) => void (initializeEntered = resolve));
 			let accountEntered!: () => void;
 			const accountStarted = new Promise<void>((resolve) => void (accountEntered = resolve));
-			let coordinatorEntered!: () => void;
-			const coordinatorStarted = new Promise<void>(
-				(resolve) => void (coordinatorEntered = resolve),
-			);
 			let active = true;
 			const identity = createIdentityAuthorities(createIdentityLedger());
 			const input = {
@@ -385,16 +380,6 @@ describe("production Codex activation guards", () => {
 					snapshot: () => ({ manifest: { activeEpoch: null } }),
 					startEpoch: () => void events.push("epoch:start"),
 				},
-				coordinator: {
-					ensure: async () => {
-						events.push("coordinator:ensure");
-						coordinatorEntered();
-						if (stage === "coordinator") {
-							await coordinatorGate.promise;
-						}
-						return { state: "ready" };
-					},
-				},
 			} as unknown as CodexWorkbenchComponents;
 			try {
 				const activation = owned.value.hooks(input).initializeSession(session as never, components);
@@ -404,13 +389,9 @@ describe("production Codex activation guards", () => {
 				if (stage === "account") {
 					await accountStarted;
 				}
-				if (stage === "coordinator") {
-					await coordinatorStarted;
-				}
 				active = false;
 				initializeGate.resolve();
 				accountGate.resolve();
-				coordinatorGate.resolve();
 				expect(
 					await activation.then(
 						() => null,
@@ -423,12 +404,51 @@ describe("production Codex activation guards", () => {
 					expect(events).not.toContain("child:app-ready");
 					expect(events).not.toContain("session:account-read");
 				}
-				if (stage === "account") {
-					expect(events).not.toContain("coordinator:ensure");
-				}
 			} finally {
 				rmSync(owned.root, { recursive: true, force: true });
 			}
 		});
 	}
+
+	test("a signed-in session is ready without starting a coordinator", async () => {
+		const owned = installation();
+		const events: string[] = [];
+		const input = {
+			generation: 1,
+			child: {
+				lifecycle: {
+					markAppServerReady: () => void events.push("child:app-ready"),
+					markAccountReady: () => void events.push("child:account-ready"),
+				},
+			},
+			adoptedSession: null,
+			assertActivationCurrent: () => undefined,
+			markSessionReady: (accountReady: boolean) =>
+				void events.push(`session:ready:${String(accountReady)}`),
+		} as unknown as CodexWorkbenchGenerationInput;
+		const session = {
+			initialize: async () => undefined,
+			accountRead: async () => ({ account: { type: "chatgpt" } }),
+		};
+		const components = {
+			identity: createIdentityAuthorities(createIdentityLedger()),
+			epoch: {
+				snapshot: () => ({ manifest: { activeEpoch: null } }),
+				startEpoch: () => undefined,
+			},
+			coordinator: {
+				ensure: async () => {
+					events.push("coordinator:ensure");
+					return { state: "ready" };
+				},
+			},
+		} as unknown as CodexWorkbenchComponents;
+		try {
+			await owned.value.hooks(input).initializeSession(session as never, components);
+			// The conversation's first message or Talk starts the coordinator.
+			expect(events).toEqual(["child:app-ready", "session:ready:true", "child:account-ready"]);
+		} finally {
+			rmSync(owned.root, { recursive: true, force: true });
+		}
+	});
 });

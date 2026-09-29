@@ -78,12 +78,7 @@ describe("Codex workbench browser command owners", () => {
 	test("keeps thread operations disabled in every pre-thread capability state", async () => {
 		const value = harness();
 		const connection = value.open();
-		for (const state of [
-			"login_capable",
-			"signed_out",
-			"login_pending",
-			"account_ready",
-		] as const) {
+		for (const state of ["login_capable", "signed_out", "login_pending"] as const) {
 			value.setReadiness(state);
 			const result = await connection.command(startCommand(value, connection.claimLease()));
 			expect(result).toMatchObject({
