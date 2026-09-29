@@ -2,32 +2,18 @@ import { createCodexApprovalBroker } from "@/runtime/codex-approvals";
 import {
 	ARCHBOARD_COORDINATOR_MANIFEST_SHA256,
 	ARCHBOARD_COORDINATOR_NAMESPACE,
-	createCodexCoordinatorCallbacks,
 	TELL_COORDINATOR_OWNER,
 } from "@/runtime/codex-coordinator-callbacks";
-import {
-	COORDINATOR_DYNAMIC_DISPATCHERS,
-	createCodexCoordinatorTools,
-	type CoordinatorToolDispatcher,
-} from "@/runtime/codex-coordinator-tools";
-import { createCodexCoordinator } from "@/runtime/codex-coordinator";
+import { COORDINATOR_DYNAMIC_DISPATCHERS } from "@/runtime/codex-coordinator-tools";
 import { createCodexDynamicTools } from "@/runtime/codex-dynamic-tools";
 import { createCodexEpochStore } from "@/runtime/codex-epoch";
 import { createCodexSession } from "@/runtime/codex-session";
-import { createCodexRealtimeAdapter } from "@/runtime/codex-realtime";
-import { createSemanticContextPublisher } from "@/runtime/codex-semantic-context";
-import { createCodexSpokenApprovalGate } from "@/runtime/codex-spoken-approval";
-import { createCodexThreadContextController } from "@/runtime/codex-thread-context";
 import { createCodexThreadLink } from "@/runtime/codex-thread-link";
 import {
 	ARCHBOARD_APP_MANIFEST_SHA256,
 	ARCHBOARD_APP_NAMESPACE,
 } from "@/runtime/codex-thread-tools";
 import { createCodexTransport, type CodexTransport } from "@/runtime/codex-transport";
-import type { TransportServerRequest } from "@/runtime/codex-transport/server-requests";
-import { createCodexWorkhorseOperations } from "@/runtime/codex-workhorse-operations";
-import { createCodexWorkhorseQueue } from "@/runtime/codex-workhorse-queue";
-import { createCodexWorkhorseStart } from "@/runtime/codex-workhorse-start";
 import {
 	createIdentityAuthorities,
 	createIdentityLedger,
@@ -37,6 +23,11 @@ import {
 import { createCodexWorkbenchGateway } from "@/server/codex-workbench";
 import { createServerThreadLink } from "@/server/archboard/lib/codex-workbench-server-link";
 import { CodexWorkbenchCompositionError } from "@/server/archboard/lib/codex-workbench-error";
+import { buildProductionTabSession } from "@/server/archboard/lib/codex-workbench-session-factories";
+import {
+	createCodexWorkbenchSessions,
+	SHARED_TAB_SESSION_ID,
+} from "@/server/archboard/lib/codex-workbench-sessions";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationInput,
@@ -47,18 +38,6 @@ import type {
 	ComponentName,
 	ProductionCodexWorkbenchBindings,
 } from "@/server/archboard/lib/codex-workbench-contract";
-
-/**
- * Whether one server request is a coordinator tool call, which is the only
- * request this dispatcher answers.
- * @param request The request.
- * @returns True when the coordinator tools own it.
- */
-function isCoordinatorToolRequest(
-	request: TransportServerRequest,
-): request is Parameters<CoordinatorToolDispatcher["dispatch"]>[0] {
-	return request.method === "item/tool/call" && request.owner === "codex-coordinator-tools";
-}
 
 /**
  * Register every dynamic dispatcher this workbench serves, so the transport
@@ -196,38 +175,6 @@ function createProductionCodexWorkbenchFactories(
 				}),
 			),
 		/**
-		 * What starts a workhorse thread on demand.
-		 * @param created What the graph has built so far.
-		 * @returns The starter.
-		 */
-		workhorse: (created) =>
-			createCodexWorkhorseStart({
-				...bindings.workhorse(created),
-				session: requireComponent(created, "session"),
-				threadLink: requireComponent(created, "threadLink"),
-				epoch: requireComponent(created, "epoch"),
-				identity: requireComponent(created, "identity").identity,
-				operation: requireComponent(created, "identity").operation,
-			}),
-		/**
-		 * What publishes the board's semantic context for a thread to read.
-		 * @param created What the graph has built so far.
-		 * @returns The publisher.
-		 */
-		semanticPublisher: (created) =>
-			createSemanticContextPublisher(bindings.semanticPublisher(created)),
-		/**
-		 * The voice side of the session, which the coordinator speaks through.
-		 * @param created What the graph has built so far.
-		 * @returns The realtime adapter.
-		 */
-		realtime: (created) =>
-			createCodexRealtimeAdapter({
-				...bindings.realtime(created),
-				session: requireComponent(created, "session"),
-				identity: requireComponent(created, "identity").identity,
-			}),
-		/**
 		 * What holds an approval request until somebody answers it.
 		 * @param created What the graph has built so far.
 		 * @returns The broker.
@@ -259,129 +206,34 @@ function createProductionCodexWorkbenchFactories(
 				lifecycle: bindings.dynamicAdapters.lifecycle(created),
 			}),
 		/**
-		 * What delivers the published context into a thread.
+		 * The tab sessions of this generation, with the one every tab shares
+		 * opened at once (TASK-373 S5b gives each tab its own).
 		 * @param created What the graph has built so far.
-		 * @returns The controller.
+		 * @returns The sessions.
 		 */
-		semanticDelivery: (created) =>
-			createCodexThreadContextController({
-				...bindings.semanticDelivery(created),
-				session: requireComponent(created, "session"),
-				threadLink: requireComponent(created, "threadLink"),
-				identity: requireComponent(created, "identity").identity,
+		sessions: (created) => {
+			const shared = {
+				identity: requireComponent(created, "identity"),
 				epoch: requireComponent(created, "epoch"),
-			}),
-		/**
-		 * The coordinator, the voice half of a pane's thread link.
-		 * @param created What the graph has built so far.
-		 * @returns The coordinator.
-		 */
-		coordinator: (created) =>
-			createCodexCoordinator({
-				...bindings.coordinator(created),
-				session: requireComponent(created, "session"),
-				threadLink: requireComponent(created, "threadLink"),
-				epoch: requireComponent(created, "epoch"),
-				identity: requireComponent(created, "identity").identity,
-			}),
-		/**
-		 * The queue that runs one workhorse turn at a time, keyed by operation.
-		 * @param created What the graph has built so far.
-		 * @returns The queue.
-		 */
-		queue: (created) => {
-			const operation = requireComponent(created, "identity").operation;
-			return createCodexWorkhorseQueue({
-				...bindings.queue(created),
-				session: requireComponent(created, "session"),
-				identity: requireComponent(created, "identity").identity,
-				operationIds: {
-					assertCurrent: operation.validator.assertCurrentOperationId,
-					serialize: operation.decoder.serializeOperationId,
-				},
-			});
-		},
-		/**
-		 * The operations a pane can ask the workhorse to run.
-		 * @param created What the graph has built so far.
-		 * @returns The operations.
-		 */
-		operations: (created) =>
-			createCodexWorkhorseOperations({
-				...bindings.operations(created),
-				session: requireComponent(created, "session"),
-				threadLink: requireComponent(created, "threadLink"),
-				queue: requireComponent(created, "queue"),
-				epoch: requireComponent(created, "epoch"),
-				identity: requireComponent(created, "identity").identity,
-				operation: requireComponent(created, "identity").operation,
-			}),
-		/**
-		 * The gate that lets an approval be answered out loud.
-		 * @param created What the graph has built so far.
-		 * @returns The gate.
-		 */
-		spokenApproval: (created) =>
-			createCodexSpokenApprovalGate({
-				...bindings.spokenApproval(created),
-				approvalBroker: requireComponent(created, "approvals"),
-				coordinator: requireComponent(created, "coordinator"),
-				realtime: requireComponent(created, "realtime"),
-				session: requireComponent(created, "session"),
-				identity: requireComponent(created, "identity").identity,
-			}),
-		/**
-		 * The tools the coordinator calls, wrapped so every call runs through
-		 * the call owner the bindings named.
-		 * @param created What the graph has built so far.
-		 * @returns The dispatcher.
-		 */
-		coordinatorTools: (created) => {
-			const dispatcher = createCodexCoordinatorTools({
-				...bindings.coordinatorTools(created),
-				identity: requireComponent(created, "identity").identity,
-				operation: requireComponent(created, "identity").operation,
-				operations: requireComponent(created, "operations"),
-				spokenApproval: requireComponent(created, "spokenApproval"),
 				transport: requireComponent(created, "transport"),
-			});
-			/**
-			 * Run one coordinator tool call through the call owner, so the owner
-			 * sees the call whichever way it arrived.
-			 * @param request The call.
-			 * @returns What the tool answered.
-			 */
-			const dispatch: CoordinatorToolDispatcher["dispatch"] = (request) =>
-				bindings.coordinatorCall.run(request, () => dispatcher.dispatch(request));
-			return Object.freeze({
-				...dispatcher,
-				dispatch,
+				session: requireComponent(created, "session"),
+				threadLink: requireComponent(created, "threadLink"),
+				approvals: requireComponent(created, "approvals"),
+				dynamicTools: requireComponent(created, "dynamicTools"),
+			};
+			const sessions = createCodexWorkbenchSessions({
+				identity: shared.identity.identity,
+				transport: shared.transport,
 				/**
-				 * Answer a coordinator tool call the child pushed at us, and ignore
-				 * every other server request.
-				 * @param request The server request.
+				 * Build one tab session over this generation's shared components.
+				 * @param scope The session's id, state and thread claim.
+				 * @returns Its owners and actions.
 				 */
-				onServerRequest: (request: TransportServerRequest) => {
-					if (!isCoordinatorToolRequest(request)) {
-						return;
-					}
-					void dispatch(request).catch(() => undefined);
-				},
+				build: (scope) => buildProductionTabSession(bindings.tabSession, shared, scope),
 			});
+			sessions.open(SHARED_TAB_SESSION_ID);
+			return sessions;
 		},
-		/**
-		 * The callbacks the coordinator hands the child for turn outcomes.
-		 * @param created What the graph has built so far.
-		 * @returns The callbacks.
-		 */
-		callbacks: (created) =>
-			createCodexCoordinatorCallbacks({
-				...bindings.callbacks(created),
-				operations: requireComponent(created, "operations"),
-				identity: requireComponent(created, "identity").identity,
-				threadLink: requireComponent(created, "threadLink"),
-				transport: requireComponent(created, "transport"),
-			}),
 		/**
 		 * The gateway the browser talks to, built last because it is given every
 		 * component before it.
@@ -395,18 +247,9 @@ function createProductionCodexWorkbenchFactories(
 				transport: requireComponent(created, "transport"),
 				session: requireComponent(created, "session"),
 				threadLink: requireComponent(created, "threadLink"),
-				workhorse: requireComponent(created, "workhorse"),
-				semanticPublisher: requireComponent(created, "semanticPublisher"),
-				realtime: requireComponent(created, "realtime"),
 				approvals: requireComponent(created, "approvals"),
 				dynamicTools: requireComponent(created, "dynamicTools"),
-				semanticDelivery: requireComponent(created, "semanticDelivery"),
-				coordinator: requireComponent(created, "coordinator"),
-				queue: requireComponent(created, "queue"),
-				operations: requireComponent(created, "operations"),
-				spokenApproval: requireComponent(created, "spokenApproval"),
-				coordinatorTools: requireComponent(created, "coordinatorTools"),
-				callbacks: requireComponent(created, "callbacks"),
+				sessions: requireComponent(created, "sessions"),
 			};
 			return createCodexWorkbenchGateway({
 				...bindings.gateway(dependencies),

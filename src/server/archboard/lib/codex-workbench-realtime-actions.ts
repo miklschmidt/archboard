@@ -25,6 +25,10 @@ import {
 import type { CoordinatorRetirement } from "@/runtime/codex-coordinator";
 import type { RealtimePresentation } from "@/runtime/codex-realtime";
 import type { CodexWorkbenchComponents } from "@/server/archboard/lib/codex-workbench";
+import type {
+	CodexWorkbenchSessionComponents,
+	CodexWorkbenchTabSessionScope,
+} from "@/server/archboard/lib/codex-workbench-sessions";
 import { traceMessage, voiceStartTrace } from "@/server/archboard/lib/voice-start-trace";
 import {
 	forgetNarration,
@@ -32,10 +36,8 @@ import {
 	openNarration,
 } from "@/server/archboard/lib/walkthrough-narration";
 
-type RealtimeComponents = Pick<
-	CodexWorkbenchComponents,
-	"coordinator" | "identity" | "realtime" | "workhorse"
->;
+type RealtimeComponents = Pick<CodexWorkbenchComponents, "identity"> &
+	Pick<CodexWorkbenchSessionComponents, "coordinator" | "realtime" | "workhorse">;
 
 /** A browser's request to start voice. */
 type RealtimeStartCommand = Parameters<BrowserRealtimeActions["start"]>[0];
@@ -224,10 +226,13 @@ function openFirstStep(presentation: RealtimePresentation | null, clientId: stri
  * Own one continuous server realtime session for one exact browser socket
  * binding.
  * @param components The coordinator, the realtime adapter, and the workhorse.
+ * @param claimThread Records that the session started a thread: the fresh coordinator a start
+ * replaces the voiced one with.
  * @returns The actions.
  */
 export function createServerRealtimeActions(
 	components: RealtimeComponents,
+	claimThread: CodexWorkbenchTabSessionScope["claimThread"],
 ): BrowserRealtimeActions {
 	let activeRealtime: ActiveRealtime | null = null;
 	// The coordinator thread the last session started on, which no later session may start on.
@@ -321,9 +326,11 @@ export function createServerRealtimeActions(
 			voiceStartTrace.note("refused", { message: traceMessage(refusal) });
 			throw refusal;
 		}
-		voiceStartTrace.note("coordinator_replaced", {
-			coordinatorState: components.coordinator.snapshot().state,
-		});
+		const fresh = components.coordinator.snapshot();
+		if (fresh.threadId !== null) {
+			claimThread(fresh.threadId);
+		}
+		voiceStartTrace.note("coordinator_replaced", { coordinatorState: fresh.state });
 	};
 	/**
 	 * The realtime session one command may act on, refused when the handle no

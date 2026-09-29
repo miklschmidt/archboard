@@ -18,6 +18,10 @@ import {
 	type ServerBrowserBindingState,
 	type ServerTimelineOwner,
 } from "../codex-workbench-adapters.js";
+import {
+	createCodexWorkbenchSessions,
+	SHARED_TAB_SESSION_ID,
+} from "../codex-workbench-generation.js";
 import { createCodexWorkbenchGenerationFixture } from "./support/codex-workbench-generation-fixture.js";
 import { runningProcessFacts } from "./support/codex-workbench-process-fixture.js";
 
@@ -102,14 +106,23 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 		},
 		dispose: () => undefined,
 	};
-	const fixture = createCodexWorkbenchGenerationFixture([]).components;
-	const components = {
-		...fixture,
-		coordinator: {
-			...fixture.coordinator,
-			snapshot: () => ({ ...fixture.coordinator.snapshot(), state: "ready" as const }),
-		},
-	};
+	const fixture = createCodexWorkbenchGenerationFixture([]);
+	const coordinator = fixture.sessionComponents.coordinator;
+	const sessions = createCodexWorkbenchSessions({
+		identity: authorities.identity,
+		transport: fixture.components.transport,
+		build: () => ({
+			components: {
+				...fixture.sessionComponents,
+				coordinator: {
+					...coordinator,
+					snapshot: () => ({ ...coordinator.snapshot(), state: "ready" as const }),
+				},
+			},
+			actions: fixture.tabSession.actions,
+		}),
+	});
+	sessions.open(SHARED_TAB_SESSION_ID);
 	const state = {
 		account: {
 			kind: "codex_account_response",
@@ -120,8 +133,6 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 			},
 		},
 		login: { kind: "login", state: "idle" },
-		queue: { kind: "codex_queue", submissions: null },
-		queueThreadId: null,
 	} satisfies ServerBrowserBindingState;
 	const dynamicApprovals = createServerDynamicApprovalOwner({
 		identity: authorities,
@@ -138,7 +149,8 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 	});
 	const budget = createServerBrowserProjectionBudget();
 	const options = createServerBrowserGatewayOptions({
-		components,
+		components: fixture.components,
+		sessions,
 		dynamicApprovals,
 		state,
 		timeline,

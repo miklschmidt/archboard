@@ -83,38 +83,21 @@ function constructComponents(
 	cleanups.push(() => session[CODEX_SESSION_CONTROL].dispose());
 	const threadLink = factories.threadLink(created);
 	created.threadLink = threadLink;
-	const workhorse = factories.workhorse(created);
-	created.workhorse = workhorse;
-	const semanticPublisher = factories.semanticPublisher(created);
-	created.semanticPublisher = semanticPublisher;
-	cleanups.push(() => semanticPublisher.dispose());
-	const realtime = factories.realtime(created);
-	created.realtime = realtime;
-	cleanups.push(() => realtime.dispose());
 	const approvals = factories.approvals(created);
 	created.approvals = approvals;
 	cleanups.push(() => approvals.dispose());
 	const dynamicTools = factories.dynamicTools(created);
 	created.dynamicTools = dynamicTools;
 	cleanups.push(() => dynamicTools.dispose());
-	const semanticDelivery = factories.semanticDelivery(created);
-	created.semanticDelivery = semanticDelivery;
-	cleanups.push(() => semanticDelivery.dispose());
-	const coordinator = factories.coordinator(created);
-	created.coordinator = coordinator;
-	const queue = factories.queue(created);
-	created.queue = queue;
-	const operations = factories.operations(created);
-	created.operations = operations;
-	const spokenApproval = factories.spokenApproval(created);
-	created.spokenApproval = spokenApproval;
-	cleanups.push(() => spokenApproval.dispose());
-	const coordinatorTools = factories.coordinatorTools(created);
-	created.coordinatorTools = coordinatorTools;
-	cleanups.push(() => coordinatorTools.dispose());
-	const callbacks = factories.callbacks(created);
-	created.callbacks = callbacks;
-	cleanups.push(() => callbacks.dispose());
+	const sessions = factories.sessions(created);
+	created.sessions = sessions;
+	cleanups.push(async () => {
+		try {
+			await sessions.stop();
+		} finally {
+			await sessions.dispose();
+		}
+	});
 	const gateway = factories.gateway(created);
 	created.gateway = gateway;
 	cleanups.push(() => gateway.dispose());
@@ -124,18 +107,9 @@ function constructComponents(
 		transport,
 		session,
 		threadLink,
-		workhorse,
-		semanticPublisher,
-		realtime,
 		approvals,
 		dynamicTools,
-		semanticDelivery,
-		coordinator,
-		queue,
-		operations,
-		spokenApproval,
-		coordinatorTools,
-		callbacks,
+		sessions,
 		gateway,
 	} satisfies CodexWorkbenchComponents);
 }

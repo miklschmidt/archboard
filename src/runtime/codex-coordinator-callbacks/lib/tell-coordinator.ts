@@ -140,9 +140,27 @@ function createTellCoordinator(
 	};
 }
 
+/**
+ * Answer a tell_coordinator call that no conversation's callbacks own: the calling thread is not a
+ * workhorse any coordinator works with, so nothing is sent, and the call is answered rather than
+ * left waiting.
+ * @param transport - Where the answer goes.
+ * @param request - The call.
+ * @returns Resolves once the answer is written.
+ */
+function answerUnownedTellCoordinator(
+	transport: Pick<CodexTransport, "respond">,
+	request: DynamicServerRequest,
+): Promise<void> {
+	return transport.respond(request, TELL_COORDINATOR_OWNER, {
+		result: { contentItems: [{ type: "inputText", text: ANSWERS.otherThread }], success: true },
+	});
+}
+
 export {
 	ARCHBOARD_COORDINATOR_MANIFEST_SHA256,
 	ARCHBOARD_COORDINATOR_NAMESPACE,
 	TELL_COORDINATOR_OWNER,
+	answerUnownedTellCoordinator,
 	createTellCoordinator,
 };

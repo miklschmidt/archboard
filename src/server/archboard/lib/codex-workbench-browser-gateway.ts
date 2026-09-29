@@ -2,25 +2,30 @@ import type {
 	BrowserActionContext,
 	BrowserActionResult,
 	BrowserProjectionPort,
+	BrowserRealtimeActions,
 	BrowserWorkbenchActions,
 	BrowserLeaseLedger,
 	CodexWorkbenchGatewayOptions,
+	TabSessionId,
 } from "@/server/codex-workbench";
 import type { TransportServerNotification } from "@/runtime/codex-transport";
 import type { SessionQueuedSubmission } from "@/runtime/codex-session";
 import type { OperationId, ThreadId } from "@/shared/codex-workbench-identity";
 import { CODEX_QUEUE_REREAD_FLOOR_MS } from "@/shared/timing/timing";
 import type { ArchboardContext } from "@/runtime/codex-instructions";
-import type { CodexWorkbenchComponents } from "@/server/archboard/lib/codex-workbench";
+import type { CodexWorkbenchSharedComponents } from "@/server/archboard/lib/codex-workbench-generation-lifecycle";
+import {
+	SHARED_TAB_SESSION_ID,
+	type CodexWorkbenchSessions,
+	type CodexWorkbenchTabSession,
+} from "@/server/archboard/lib/codex-workbench-sessions";
 import type { ServerDynamicApprovalOwner } from "@/server/archboard/lib/codex-workbench-approvals";
 import type {
 	ServerBrowserProjectionBudget,
 	ServerTimelineOwner,
 } from "@/server/archboard/lib/codex-workbench-timeline";
-import { createServerThreadLinkActions } from "@/server/archboard/lib/codex-workbench-thread-links";
 import { createServerCanonicalTextActions } from "@/server/archboard/lib/codex-workbench-text-actions";
 import { createServerBrowserAccountOwner } from "@/server/archboard/lib/codex-workbench-account";
-import { createServerRealtimeActions } from "@/server/archboard/lib/codex-workbench-realtime-actions";
 import { watchTranscriptChanges } from "@/server/archboard/lib/transcript-changes";
 import type { ServerReadinessProcessFacts } from "@/server/archboard/lib/codex-workbench-readiness";
 import { createServerOrdinaryApprovalActions } from "@/server/archboard/lib/codex-workbench-ordinary-approvals";
@@ -44,7 +49,8 @@ async function runMutation(operation: () => Promise<unknown>): Promise<BrowserAc
 
 /** Everything the browser half of one generation's gateway is closed over. */
 interface ServerBrowserGatewayInput {
-	readonly components: Omit<CodexWorkbenchComponents, "gateway">;
+	readonly components: CodexWorkbenchSharedComponents;
+	readonly sessions: Pick<CodexWorkbenchSessions, "require" | "list" | "onChange">;
 	readonly dynamicApprovals: ServerDynamicApprovalOwner;
 	readonly state: ServerBrowserBindingState;
 	readonly leaseLedger: BrowserLeaseLedger;
@@ -69,6 +75,43 @@ interface ServerBrowserGatewayInput {
 }
 
 /**
+ * Forget a session's cached queue, so no pane is shown another link's submissions.
+ * @param session The session.
+ */
+function clearQueue(session: CodexWorkbenchTabSession): void {
+	session.state.queue = UNAVAILABLE_QUEUE;
+	session.state.queueThreadId = null;
+}
+
+/**
+ * Hear when any tab session's voice transcript changed, including sessions that open later.
+ * @param sessions The tab sessions.
+ * @param listener Told once for every burst of transcript events.
+ * @returns How to stop listening.
+ */
+function watchSessionTranscripts(
+	sessions: ServerBrowserGatewayInput["sessions"],
+	listener: () => void,
+): () => void {
+	const watched = new Map<TabSessionId, () => void>();
+	/** Watch every live session not watched yet. */
+	const watchOpen = (): void => {
+		for (const session of sessions.list()) {
+			if (!watched.has(session.id)) {
+				watched.set(session.id, watchTranscriptChanges(session.components.realtime, listener));
+			}
+		}
+	};
+	watchOpen();
+	const unsubscribe = sessions.onChange(watchOpen);
+	return () => {
+		unsubscribe();
+		for (const stop of watched.values()) stop();
+		watched.clear();
+	};
+}
+
+/**
  * Closed browser projection/actions over the already-created runtime owners.
  * @param input The runtime owners, the cached facts they fill in, the pane-side
  * owners, and the clock the re-read floor is measured on.
@@ -79,21 +122,27 @@ function createServerBrowserGatewayOptions(
 ): Omit<CodexWorkbenchGatewayOptions, "identity" | "threadLink"> {
 	const { components, dynamicApprovals, state } = input;
 	/**
-	 * Record one authoritative listing as the queue this pane's link is on.
+	 * The tab session a pane's command or snapshot belongs to. Every tab shares
+	 * one session until each tab holds its own conversation (TASK-373 S5b).
+	 * @param _context The pane and the tab session it names.
+	 * @param _context.tabSessionId The tab session.
+	 * @returns The session.
+	 */
+	const sessionOf = (_context: { readonly tabSessionId: TabSessionId }): CodexWorkbenchTabSession =>
+		input.sessions.require(SHARED_TAB_SESSION_ID);
+	/**
+	 * Record one authoritative listing as the queue a session's link is on.
+	 * @param session The session.
 	 * @param result What the queue port answered.
 	 * @returns That same result, so a caller can go on using it.
 	 */
 	const updateQueue = <Result extends { readonly queue: readonly SessionQueuedSubmission[] }>(
+		session: CodexWorkbenchTabSession,
 		result: Result,
 	): Result => {
-		state.queue = queueOwnerView(result.queue, components.identity.operation);
-		state.queueThreadId = components.workhorse.snapshot().threadId;
+		session.state.queue = queueOwnerView(result.queue, components.identity.operation);
+		session.state.queueThreadId = session.components.workhorse.snapshot().threadId;
 		return result;
-	};
-	/** Forget the cached queue, so no pane is shown another link's submissions. */
-	const clearQueue = (): void => {
-		state.queue = UNAVAILABLE_QUEUE;
-		state.queueThreadId = null;
 	};
 	/**
 	 * A fresh operation identity for one browser-initiated mutation.
@@ -101,18 +150,19 @@ function createServerBrowserGatewayOptions(
 	 */
 	const issueOperation = (): OperationId => components.identity.operation.issuer.mintOperationId();
 	/**
-	 * Read the queue for the link this pane has just moved to.
+	 * Read the queue for the link a session has just moved to.
 	 *
 	 * A thread link change re-targets every queue: the cached submissions belong
 	 * to the previous thread and must not be presented for the new one.
+	 * @param session The session.
 	 */
-	const refreshLinkedQueue = async (): Promise<void> => {
-		clearQueue();
-		if (components.workhorse.snapshot().state !== "ready") {
+	const refreshLinkedQueue = async (session: CodexWorkbenchTabSession): Promise<void> => {
+		clearQueue(session);
+		if (session.components.workhorse.snapshot().state !== "ready") {
 			return;
 		}
 		try {
-			updateQueue(await components.queue.list());
+			updateQueue(session, await session.components.queue.list());
 		} catch {
 			// The queue stays unavailable until an owner read succeeds; the browser
 			// presents that as its own state rather than another thread's entries.
@@ -125,18 +175,19 @@ function createServerBrowserGatewayOptions(
 	 * submissions are exactly what a lost mutation or a workhorse-side drain left
 	 * behind. Unlike a link change, the cache is not cleared first: a failed
 	 * re-read must not present a healthy queue as somebody else's.
+	 * @param session The session.
 	 */
-	const rereadLinkedQueue = async (): Promise<void> => {
-		if (components.workhorse.snapshot().state !== "ready") {
-			clearQueue();
+	const rereadLinkedQueue = async (session: CodexWorkbenchTabSession): Promise<void> => {
+		if (session.components.workhorse.snapshot().state !== "ready") {
+			clearQueue(session);
 			return;
 		}
 		try {
-			updateQueue(await components.queue.list());
+			updateQueue(session, await session.components.queue.list());
 		} catch {
 			// The read failed, so nothing about the cache is proven: the browser is
 			// told the queue is unavailable rather than shown an unverified list.
-			clearQueue();
+			clearQueue(session);
 		}
 	};
 	const now = input.now ?? Date.now;
@@ -152,10 +203,14 @@ function createServerBrowserGatewayOptions(
 	 * the read that just finished — so a looping client cannot amplify app-server
 	 * traffic. The floor is keyed to the link, so navigating to another workhorse
 	 * always reads rather than reusing the previous link's timing.
+	 * @param session The session whose queue is read.
 	 * @param threadId The link's thread.
 	 * @returns The read this request is served by.
 	 */
-	const coalescedReread = (threadId: ThreadId): Promise<void> => {
+	const coalescedReread = (
+		session: CodexWorkbenchTabSession,
+		threadId: ThreadId,
+	): Promise<void> => {
 		if (inFlightReread?.threadId === threadId) {
 			return inFlightReread.read;
 		}
@@ -165,7 +220,7 @@ function createServerBrowserGatewayOptions(
 		) {
 			return Promise.resolve();
 		}
-		const read = rereadLinkedQueue().finally(() => {
+		const read = rereadLinkedQueue(session).finally(() => {
 			lastRereadAtMs = { threadId, atMs: now() };
 			if (inFlightReread?.threadId === threadId) {
 				inFlightReread = null;
@@ -174,19 +229,66 @@ function createServerBrowserGatewayOptions(
 		inFlightReread = { threadId, read };
 		return read;
 	};
-	const threadLinks = createServerThreadLinkActions({
-		coordinator: components.coordinator,
-		identity: components.identity,
-		workhorse: components.workhorse,
-		threadLink: components.threadLink,
-		semanticDelivery: components.semanticDelivery,
-	});
 	const account = createServerBrowserAccountOwner({
 		components,
 		state,
-		clearQueue,
+		/** Sign-out drops every session's queue with the account it belonged to. */
+		clearQueue: () => {
+			for (const session of input.sessions.list()) clearQueue(session);
+		},
 		onNotification: input.onAccountNotification,
 	});
+	/**
+	 * Run one queue mutation for the pane's session and cache the listing it answers.
+	 * @param context The pane.
+	 * @param mutate The mutation, given the session's queue and a fresh operation.
+	 * @returns The browser outcome.
+	 */
+	const mutateQueue = (
+		context: BrowserActionContext,
+		mutate: (
+			queue: CodexWorkbenchTabSession["components"]["queue"],
+			operationId: OperationId,
+		) => Promise<{ readonly queue: readonly SessionQueuedSubmission[] }>,
+	): Promise<BrowserActionResult> => {
+		const session = sessionOf(context);
+		return runMutation(
+			async () =>
+				void updateQueue(session, await mutate(session.components.queue, issueOperation())),
+		);
+	};
+	const realtime: BrowserRealtimeActions = {
+		/**
+		 * Start voice in the pane's session.
+		 * @param command The offer.
+		 * @param context The pane.
+		 * @returns What the session's voice answered.
+		 */
+		start: (command, context) => sessionOf(context).actions.realtime.start(command, context),
+		/**
+		 * Say something into the pane's session's voice.
+		 * @param command The handle and the text.
+		 * @param context The pane.
+		 * @returns What the session's voice answered.
+		 */
+		appendText: (command, context) =>
+			sessionOf(context).actions.realtime.appendText(command, context),
+		/**
+		 * Stop the pane's session's voice.
+		 * @param command The handle.
+		 * @param context The pane.
+		 * @returns What the session's voice answered.
+		 */
+		stop: (command, context) => sessionOf(context).actions.realtime.stop(command, context),
+		/**
+		 * Stop the voice a browser that has gone was speaking through.
+		 * @param context The pane and its connection.
+		 * @param reason Why it went.
+		 * @returns When that voice has stopped.
+		 */
+		onBrowserDisconnect: (context, reason) =>
+			sessionOf(context).actions.realtime.onBrowserDisconnect?.(context, reason),
+	};
 	const actions: BrowserWorkbenchActions = {
 		account: {
 			...account.actions,
@@ -198,8 +300,9 @@ function createServerBrowserGatewayOptions(
 			 */
 			read: async (context) => {
 				const result = await account.actions.read(context);
-				if (components.workhorse.snapshot().state === "ready") {
-					updateQueue(await components.queue.list());
+				const session = sessionOf(context);
+				if (session.components.workhorse.snapshot().state === "ready") {
+					updateQueue(session, await session.components.queue.list());
 				}
 				return result;
 			},
@@ -213,13 +316,19 @@ function createServerBrowserGatewayOptions(
 			 * @returns What the link owner answered.
 			 */
 			create: async (command, context) => {
-				const result = await threadLinks.create(command, context);
-				await refreshLinkedQueue();
+				const session = sessionOf(context);
+				const result = await session.actions.threadLinks.create(command, context);
+				await refreshLinkedQueue(session);
 				return result;
 			},
-			...(threadLinks.onBrowserDisconnect === undefined
-				? {}
-				: { onBrowserDisconnect: threadLinks.onBrowserDisconnect }),
+			/**
+			 * Tell the pane's session a browser that took its link has gone.
+			 * @param context The pane and its connection.
+			 * @param reason Why it went.
+			 * @returns Whatever the session's link owner does about it.
+			 */
+			onBrowserDisconnect: (context, reason) =>
+				sessionOf(context).actions.threadLinks.onBrowserDisconnect?.(context, reason),
 		},
 		text: createServerCanonicalTextActions({
 			identity: components.identity,
@@ -230,78 +339,59 @@ function createServerBrowserGatewayOptions(
 			/**
 			 * Queue one prompt behind whatever the workhorse is doing.
 			 * @param command The prompt.
+			 * @param context The pane.
 			 * @returns The browser outcome.
 			 */
-			add: (command) =>
-				runMutation(
-					async () =>
-						void updateQueue(
-							await components.queue.add({ operationId: issueOperation(), prompt: command.prompt }),
-						),
+			add: (command, context) =>
+				mutateQueue(context, (queue, operationId) =>
+					queue.add({ operationId, prompt: command.prompt }),
 				),
 			/**
 			 * Rewrite one queued prompt.
 			 * @param command Which submission, and its new prompt.
+			 * @param context The pane.
 			 * @returns The browser outcome.
 			 */
-			update: (command) =>
-				runMutation(
-					async () =>
-						void updateQueue(
-							await components.queue.update({
-								operationId: issueOperation(),
-								submissionId: command.submissionId,
-								prompt: command.prompt,
-							}),
-						),
+			update: (command, context) =>
+				mutateQueue(context, (queue, operationId) =>
+					queue.update({
+						operationId,
+						submissionId: command.submissionId,
+						prompt: command.prompt,
+					}),
 				),
 			/**
 			 * Drop one queued prompt.
 			 * @param command Which submission.
+			 * @param context The pane.
 			 * @returns The browser outcome.
 			 */
-			delete: (command) =>
-				runMutation(
-					async () =>
-						void updateQueue(
-							await components.queue.delete({
-								operationId: issueOperation(),
-								submissionId: command.submissionId,
-							}),
-						),
+			delete: (command, context) =>
+				mutateQueue(context, (queue, operationId) =>
+					queue.delete({ operationId, submissionId: command.submissionId }),
 				),
 			/**
 			 * Put the queue in the order the person dragged it into.
 			 * @param command The order.
+			 * @param context The pane.
 			 * @returns The browser outcome.
 			 */
-			reorder: (command) =>
-				runMutation(
-					async () =>
-						void updateQueue(
-							await components.queue.reorder({
-								operationId: issueOperation(),
-								orderedSubmissionIds: command.orderedSubmissionIds,
-							}),
-						),
+			reorder: (command, context) =>
+				mutateQueue(context, (queue, operationId) =>
+					queue.reorder({ operationId, orderedSubmissionIds: command.orderedSubmissionIds }),
 				),
 			/**
 			 * Run one queued prompt now rather than in turn.
 			 * @param command Which submission.
+			 * @param context The pane.
 			 * @returns The browser outcome.
 			 */
-			start: (command) =>
-				runMutation(
-					async () =>
-						void updateQueue(
-							await components.queue.start({
-								operationId: issueOperation(),
-								submissionId: command.submissionId,
-							}),
-						),
+			start: (command, context) =>
+				mutateQueue(context, (queue, operationId) =>
+					queue.start({ operationId, submissionId: command.submissionId }),
 				),
 		},
-		realtime: createServerRealtimeActions(components),
+		realtime,
 		ordinaryApprovals: createServerOrdinaryApprovalActions(components.approvals),
 		dynamicApprovals: dynamicApprovals.browser,
 	};
@@ -316,7 +406,7 @@ function createServerBrowserGatewayOptions(
 			if (link.state !== "executable") {
 				return;
 			}
-			await coalescedReread(link.threadId);
+			await coalescedReread(sessionOf(context), link.threadId);
 		},
 		/**
 		 * One complete snapshot of the workbench as this pane is shown it.
@@ -326,7 +416,8 @@ function createServerBrowserGatewayOptions(
 		read: (context) =>
 			readBrowserOwnerProjection(
 				{
-					components,
+					approvals: components.approvals,
+					session: sessionOf(context),
 					dynamicApprovals,
 					state,
 					timeline: input.timeline,
@@ -342,7 +433,7 @@ function createServerBrowserGatewayOptions(
 		onChange: (listener) => {
 			const unsubscribe = input.onChange(listener);
 			const unsubscribeAccount = account.subscribe(listener);
-			const unsubscribeTranscript = watchTranscriptChanges(components.realtime, listener);
+			const unsubscribeTranscript = watchSessionTranscripts(input.sessions, listener);
 			return () => {
 				unsubscribeTranscript();
 				unsubscribeAccount();

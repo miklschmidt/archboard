@@ -48,6 +48,8 @@ test("the production generation creates every owner once before readiness and sh
 	expect(Object.fromEntries(fixture.calls)).toEqual(
 		Object.fromEntries(CODEX_WORKBENCH_COMPONENT_ORDER.map((name) => [name, 1])),
 	);
+	// Every tab shares the one tab session the generation opens.
+	expect(events.filter((event) => event === "create:tabSession")).toHaveLength(1);
 	expect(events.indexOf("identity:install")).toBeLessThan(events.indexOf("ready"));
 	expect(events.indexOf("router:install")).toBeLessThan(events.indexOf("ready"));
 	expect(events.indexOf("approval-projection:install")).toBeLessThan(events.indexOf("ready"));
@@ -64,7 +66,8 @@ test("the production generation creates every owner once before readiness and sh
 	const routed: string[] = [];
 	for (const [method, owners] of Object.entries(ROUTED_OWNERS)) {
 		for (const owner of owners) {
-			route({ method, owner } as never);
+			// A coordinator tool call reaches the tab session that started the calling thread.
+			route({ method, owner, params: { threadId: fixture.claimedThread } } as never);
 			routed.push(`${EVENT_PREFIX[owner]}:${method}`);
 		}
 	}
@@ -89,15 +92,23 @@ test("the production generation creates every owner once before readiness and sh
 	}
 	await stopping;
 	generation.finishStop();
-	expect(events.indexOf("browser:remove")).toBeLessThan(events.indexOf("gateway:dispose"));
-	expect(events.indexOf("gateway:dispose")).toBeLessThan(events.indexOf("realtime:stop"));
-	expect(events.indexOf("realtime:stop")).toBeLessThan(events.indexOf("queue:stop"));
-	expect(events).toContain("dynamic:cancel:server_shutdown");
-	expect(events).toContain("ordinary:settle:server_shutdown");
-	expect(events.filter((event) => event === "transport:shutdown")).toHaveLength(1);
-	expect(events.indexOf("ordinary:settle:server_shutdown")).toBeLessThan(
-		events.indexOf("transport:shutdown"),
-	);
+	const shutdownOrder = [
+		"browser:remove",
+		"gateway:dispose",
+		"realtime:dispose",
+		"publisher:dispose",
+		"queue:stop",
+		"dynamic:cancel:server_shutdown",
+		"ordinary:settle:server_shutdown",
+		"session:dispose",
+		"callbacks:dispose",
+		"spoken:dispose",
+		"semantic:dispose",
+		"coordinator-tools:dispose",
+		"dynamic:dispose",
+		"transport:shutdown",
+	];
+	expect(events.filter((event) => shutdownOrder.includes(event))).toEqual(shutdownOrder);
 	expect(events.filter((event) => event === "approval-projection:remove")).toHaveLength(1);
 	expect(events.filter((event) => event === "epoch:close")).toHaveLength(1);
 });

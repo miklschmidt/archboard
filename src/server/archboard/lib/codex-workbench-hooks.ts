@@ -183,15 +183,6 @@ function releaseGenerationOwners(owners: GenerationOwners): void {
 function createProductionHooks(context: HookContext): CodexWorkbenchGenerationHooks {
 	const { server, owners } = context;
 	return {
-		threadContext: {
-			/**
-			 * The canonical context one settled change is delivered as.
-			 * @param event The settled change.
-			 * @param binding The pane it is delivered to.
-			 * @returns The context.
-			 */
-			contextForEvent: (event, binding) => server.contextForEvent(event, binding.paneId),
-		},
 		/**
 		 * Hand one server notification to every owner in this generation that
 		 * reads them.
@@ -227,8 +218,6 @@ function createProductionHooks(context: HookContext): CodexWorkbenchGenerationHo
 		 */
 		initializeSession: (session, components) => initializeSession(context, session, components),
 		stopBrowser: server.stopBrowser,
-		stopRealtime: server.stopRealtime,
-		stopQueue: server.stopQueue,
 		/**
 		 * Retire the dynamic wait and quarantine owner on child exit, which
 		 * ordinary settlement never reaches.

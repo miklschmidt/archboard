@@ -37,25 +37,10 @@ function shutdownSteps(
 		 */
 		() => hooks.stopBrowser(components.gateway, reason),
 		/**
-		 * Stop the voice session.
-		 * @returns Resolves once it has stopped.
+		 * Stop what every tab session runs: its voice, its board news, its queue.
+		 * @returns Resolves once they have stopped.
 		 */
-		() => hooks.stopRealtime(components.realtime),
-		/**
-		 * Dispose the realtime adapter.
-		 * @returns Resolves once it has.
-		 */
-		() => components.realtime.dispose(),
-		/**
-		 * Dispose the semantic publisher.
-		 * @returns Resolves once it has.
-		 */
-		() => components.semanticPublisher.dispose(),
-		/**
-		 * Shut the workhorse queue down.
-		 * @returns Resolves once it has.
-		 */
-		() => hooks.stopQueue(components.queue),
+		() => components.sessions.stop(),
 		/**
 		 * Cancel every coordination approval and dynamic wait.
 		 * @returns Resolves once they are cancelled.
@@ -72,25 +57,11 @@ function shutdownSteps(
 		 */
 		() => components.session[CODEX_SESSION_CONTROL].dispose(),
 		/**
-		 * Dispose the coordinator callbacks.
+		 * Dispose every tab session's callbacks, spoken approval gate, semantic
+		 * delivery and coordinator tools.
 		 * @returns Resolves once they have.
 		 */
-		() => components.callbacks.dispose(),
-		/**
-		 * Dispose the spoken approval gate.
-		 * @returns Resolves once it has.
-		 */
-		() => components.spokenApproval.dispose(),
-		/**
-		 * Dispose the semantic delivery controller.
-		 * @returns Resolves once it has.
-		 */
-		() => components.semanticDelivery.dispose(),
-		/**
-		 * Dispose the coordinator tool dispatcher.
-		 * @returns Resolves once it has.
-		 */
-		() => components.coordinatorTools.dispose(),
+		() => components.sessions.dispose(),
 		/**
 		 * Dispose the dynamic tools.
 		 * @returns Resolves once they have.

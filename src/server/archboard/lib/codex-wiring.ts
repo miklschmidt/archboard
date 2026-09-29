@@ -11,7 +11,11 @@ import {
 	serverStartupOwnershipRecord,
 	writeServerStartupProtocolRecord,
 } from "@/shared/server-startup-terminal";
-import type { CodexWorkbenchComponents } from "@/server/archboard/codex-workbench-generation";
+import {
+	SHARED_TAB_SESSION_ID,
+	type CodexWorkbenchComponents,
+	type CodexWorkbenchTabSession,
+} from "@/server/archboard/codex-workbench-generation";
 import {
 	createServerCodexBrowserSocketOwner,
 	type BrowserConnectionInstance,
@@ -22,6 +26,7 @@ import { presentingPane } from "@/server/archboard/lib/codex-workbench-semantic-
 import {
 	canonicalContextFromBrief,
 	semanticInputFor,
+	type SemanticInputOwners,
 } from "@/server/archboard/lib/codex-semantic-input";
 import { waitForTargetsWith } from "@/server/archboard/lib/codex-target-wait";
 import { checkoutRoot } from "@/server/archboard/lib/module-paths";
@@ -205,6 +210,30 @@ function operationPane(authority: OperationAuthority): PaneRegistration {
 }
 
 /**
+ * The conversation the server's own reads are about: the one tab session every
+ * tab shares (TASK-373 S5b gives each tab its own).
+ * @param components The generation.
+ * @returns The session.
+ */
+function sharedSession(components: CodexWorkbenchComponents): CodexWorkbenchTabSession {
+	return components.sessions.require(SHARED_TAB_SESSION_ID);
+}
+
+/**
+ * What a pane's semantic input is read from in one generation: its thread link,
+ * and the shared conversation's workhorse, coordinator and voice.
+ * @param components The generation, or null while none is installed.
+ * @returns The owners, or null.
+ */
+function semanticOwners(components: CodexWorkbenchComponents | null): SemanticInputOwners | null {
+	if (components === null) {
+		return null;
+	}
+	const { workhorse, coordinator, realtime } = sharedSession(components).components;
+	return { threadLink: components.threadLink, workhorse, coordinator, realtime };
+}
+
+/**
  * The server the Codex workbench installation runs against: how it reads the
  * server (panes, boards, selection, locks) and how it wires itself into the
  * server's sockets.
@@ -224,7 +253,10 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 	 * @throws {Error} When no delivery is bound, which is not a pane's fault.
 	 */
 	const boundPaneId = (): string => {
-		const bound = active?.semanticDelivery.snapshot().binding?.paneId ?? null;
+		const bound =
+			active === null
+				? null
+				: (sharedSession(active).components.semanticDelivery.snapshot().binding?.paneId ?? null);
 		if (bound === null) {
 			throw new Error("The Codex semantic publisher has no current thread-context binding.");
 		}
@@ -278,7 +310,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 				 */
 				read: () => {
 					const pane = currentSemanticPane();
-					return semanticInputFor(active, shownBoard(pane), null, pane);
+					return semanticInputFor(semanticOwners(active), shownBoard(pane), null, pane);
 				},
 			},
 			/**
@@ -294,7 +326,7 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 				// presentation to report, which the context says by carrying none.
 				const paneId = boundPaneId();
 				return semanticInputFor(
-					active,
+					semanticOwners(active),
 					event.board,
 					{ feedId: semanticChangeFeed.feedId, sequence: event.cursor },
 					{ paneId, clientId: boundClientId(paneId) },
@@ -337,9 +369,9 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 			if (!bindingMatchesAuthority(active.threadLink.read(authority.paneId), authority)) {
 				throw new Error("The lease-bound Codex pane context changed before capture.");
 			}
-			const exactInput = semanticInputFor(active, shownBoard(pane), null, pane);
+			const exactInput = semanticInputFor(semanticOwners(active), shownBoard(pane), null, pane);
 			return canonicalContextFromBrief(
-				active.semanticPublisher.freshBriefFor(exactInput),
+				sharedSession(active).components.semanticPublisher.freshBriefFor(exactInput),
 				pane.paneId,
 				{ ...operation, outcome: null },
 			);
@@ -384,12 +416,14 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 			 */
 			codexWiring.codex.publishPaneContext = (clientId, kind, userChanged) => {
 				const pane = panes.get(clientId);
-				if (pane === undefined || components.semanticDelivery.snapshot().binding === null) return;
+				if (pane === undefined) return;
+				const { semanticDelivery, semanticPublisher } = sharedSession(components).components;
+				if (semanticDelivery.snapshot().binding === null) return;
 				try {
-					const read = semanticInputFor(components, shownBoard(pane), null, pane);
+					const read = semanticInputFor(semanticOwners(components), shownBoard(pane), null, pane);
 					const input = { ...read, pane: { ...read.pane, userChanged } };
-					if (kind === "selection") components.semanticPublisher.publishPaneSelection(input);
-					else components.semanticPublisher.publishPaneFocus(input);
+					if (kind === "selection") semanticPublisher.publishPaneSelection(input);
+					else semanticPublisher.publishPaneFocus(input);
 				} catch (error) {
 					logger.error(`Cannot publish ${kind} context for pane ${pane.paneId}:`, error);
 				}
@@ -408,27 +442,6 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 		 * @returns Whatever disposal returns; the hook contract passes it through.
 		 */
 		stopBrowser: (gateway) => gateway.dispose(),
-		/**
-		 * Stop the realtime generation, if one is running.
-		 * @param realtime The realtime owner.
-		 */
-		stopRealtime: async (realtime) => {
-			const generation = realtime.generation();
-			if (generation === null) {
-				return;
-			}
-			await realtime.stop({
-				sessionId: generation.browserSessionId,
-				correlationId: generation.browserCorrelationId,
-			});
-		},
-		/**
-		 * Shut the workhorse queue down.
-		 * @param queue The queue.
-		 */
-		stopQueue: async (queue) => {
-			await queue.shutdown();
-		},
 		/**
 		 * Log a fault the workbench cannot recover from.
 		 * @param error The fault.

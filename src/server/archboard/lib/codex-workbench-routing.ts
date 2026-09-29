@@ -1,18 +1,16 @@
 import type { CodexApprovalBroker } from "@/runtime/codex-approvals";
-import type { CoordinatorCallbacks } from "@/runtime/codex-coordinator-callbacks";
-import type { CoordinatorToolDispatcher } from "@/runtime/codex-coordinator-tools";
 import type { CodexDynamicTools } from "@/runtime/codex-dynamic-tools";
 import type { CodexSession } from "@/runtime/codex-session";
 import type {
 	DynamicServerRequest,
 	TransportServerRequest,
 } from "@/runtime/codex-transport/server-requests";
+import type { CodexWorkbenchSessions } from "@/server/archboard/lib/codex-workbench-sessions";
 
 interface CodexWorkbenchRequestOwners {
 	readonly approvals: Pick<CodexApprovalBroker, "receive">;
 	readonly dynamicTools: Pick<CodexDynamicTools, "dispatch">;
-	readonly coordinatorTools: Pick<CoordinatorToolDispatcher, "onServerRequest">;
-	readonly callbacks: Pick<CoordinatorCallbacks, "onServerRequest">;
+	readonly sessions: Pick<CodexWorkbenchSessions, "routeCoordinatorTool" | "routeCallback">;
 	readonly session: Pick<
 		CodexSession,
 		"respondCurrentTime" | "respondUnsupportedTokenRefresh" | "respondUnsupportedAttestation"
@@ -51,7 +49,9 @@ function unroutedOwner(owner: never): never {
 }
 
 /**
- * Route one dynamic tool call to the owner that answers it.
+ * Route one dynamic tool call to the owner that answers it: the app's own
+ * tools to the generation, and the coordinator's tools and the workhorse's
+ * tell_coordinator to the tab session that started the calling thread.
  * @param request The call.
  * @param owners The response owners.
  * @returns Nothing; the owner it hands the call to answers it.
@@ -65,10 +65,10 @@ function routeDynamicRequest(
 			void owners.dynamicTools.dispatch(request);
 			return;
 		case "codex-coordinator-tools":
-			owners.coordinatorTools.onServerRequest(request);
+			owners.sessions.routeCoordinatorTool(request);
 			return;
 		case "codex-coordinator-callbacks":
-			owners.callbacks.onServerRequest(request);
+			owners.sessions.routeCallback(request);
 			return;
 		default:
 			return unroutedOwner(request.owner);

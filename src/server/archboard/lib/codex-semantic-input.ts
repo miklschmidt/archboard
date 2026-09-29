@@ -11,7 +11,10 @@ import { readSemanticBoard } from "@/runtime/semantic-board-store";
 import { canonicalSemanticCursorToken } from "@/runtime/codex-thread-context";
 import type { SemanticBoard } from "@/shared/semantic-board/index";
 import type { SemanticPaneContext } from "@/shared/semantic-pane-context/index";
-import type { CodexWorkbenchComponents } from "@/server/archboard/codex-workbench-generation";
+import type {
+	CodexWorkbenchComponents,
+	CodexWorkbenchSessionComponents,
+} from "@/server/archboard/codex-workbench-generation";
 import { checkoutRoot } from "@/server/archboard/lib/module-paths";
 import { boardForPane, panes } from "@/server/archboard/lib/pane-registry";
 import {
@@ -21,7 +24,7 @@ import {
 } from "@/server/archboard/lib/semantic-board-context";
 import { semanticPaneContextFor } from "@/server/archboard/lib/semantic-pane-context";
 
-type FreshBrief = ReturnType<CodexWorkbenchComponents["semanticPublisher"]["freshBrief"]>;
+type FreshBrief = ReturnType<CodexWorkbenchSessionComponents["semanticPublisher"]["freshBrief"]>;
 
 /**
  * The variant a context names: the brief's, without the predecessor it is
@@ -300,15 +303,21 @@ function contextPane(contextBoard: string, clientId: string | null): PaneRegistr
 
 type ThreadLinkOf = ReturnType<CodexWorkbenchComponents["threadLink"]["read"]>["link"];
 type ExecutableLink = Extract<ThreadLinkOf, { state: "executable" }>;
-type WorkhorseSnapshot = ReturnType<CodexWorkbenchComponents["workhorse"]["snapshot"]>;
-type CoordinatorSnapshot = ReturnType<CodexWorkbenchComponents["coordinator"]["snapshot"]>;
+type WorkhorseSnapshot = ReturnType<CodexWorkbenchSessionComponents["workhorse"]["snapshot"]>;
+type CoordinatorSnapshot = ReturnType<CodexWorkbenchSessionComponents["coordinator"]["snapshot"]>;
+/**
+ * What a pane's identities are read from: the generation's thread link, and the
+ * workhorse, coordinator and voice of the conversation the pane belongs to.
+ */
+type SemanticInputOwners = Pick<CodexWorkbenchComponents, "threadLink"> &
+	Pick<CodexWorkbenchSessionComponents, "workhorse" | "coordinator" | "realtime">;
 type LinkedIdentities = Required<
 	Pick<SemanticContextInput, "child" | "threadLink" | "workhorse" | "coordinator">
 >;
 
 /** The pieces of the active graph a pane's identities are read from. */
 interface GraphView {
-	active: CodexWorkbenchComponents | null;
+	active: SemanticInputOwners | null;
 	link: ThreadLinkOf | null;
 	executable: ExecutableLink | null;
 	workhorse: WorkhorseSnapshot | null;
@@ -321,7 +330,7 @@ interface GraphView {
  * @param paneId The pane.
  * @returns The view.
  */
-function graphView(active: CodexWorkbenchComponents | null, paneId: string): GraphView {
+function graphView(active: SemanticInputOwners | null, paneId: string): GraphView {
 	if (active === null) {
 		return { active, link: null, executable: null, workhorse: null, coordinator: null };
 	}
@@ -408,10 +417,7 @@ function coordinatorIdentity(view: GraphView): LinkedIdentities["coordinator"] {
  * @param paneId The pane.
  * @returns The identities.
  */
-function linkedIdentities(
-	active: CodexWorkbenchComponents | null,
-	paneId: string,
-): LinkedIdentities {
+function linkedIdentities(active: SemanticInputOwners | null, paneId: string): LinkedIdentities {
 	const view = graphView(active, paneId);
 	const linked = boundWorkhorseThread(view);
 	return {
@@ -451,7 +457,7 @@ function claimOf(contextBoard: string): Required<Pick<SemanticContextInput, "cla
  * @returns The input the semantic publisher builds a brief from.
  */
 function semanticInputFor(
-	active: CodexWorkbenchComponents | null,
+	active: SemanticInputOwners | null,
 	contextBoard: string,
 	cursor: SemanticContextInput["cursor"],
 	forPane: ContextPane,
@@ -491,4 +497,5 @@ function semanticInputFor(
 	};
 }
 
+export type { SemanticInputOwners };
 export { canonicalContextFromBrief, semanticInputFor, type ContextPane };

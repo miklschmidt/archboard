@@ -13,7 +13,7 @@ import type { BindingContext } from "@/server/archboard/lib/codex-workbench-bind
 import { publishProjection } from "@/server/archboard/lib/codex-workbench-bindings";
 
 /**
- * How this generation serves browsers: one gateway over the component graph,
+ * How this generation serves browsers: one gateway over the component graph and its tab sessions,
  * the timeline it publishes, and the owned process as its change source.
  *
  * Child lifecycle transitions change readiness without any browser command, so
@@ -46,6 +46,7 @@ function createGatewayBinding(
 		});
 		const options = createServerBrowserGatewayOptions({
 			components: created,
+			sessions: requireCreated(created, "sessions"),
 			dynamicApprovals: dynamic,
 			timeline: owners.timeline,
 			budget,
