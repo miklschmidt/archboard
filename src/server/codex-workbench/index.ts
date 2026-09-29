@@ -61,6 +61,7 @@ export type {
 	BrowserLeaseBinding,
 	BrowserLeaseLedger,
 	BrowserLeaseRecord,
+	BrowserSessionLeaseLedger,
 	BrowserLifecyclePort,
 	BrowserOrdinaryApprovalActions,
 	BrowserProjectionContext,

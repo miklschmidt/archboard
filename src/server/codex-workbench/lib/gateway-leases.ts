@@ -2,14 +2,17 @@ import type { BrowserCommandLease, BrowserSnapshot } from "@/shared/codex-browse
 import type { BrowserCommandId, IdentityAuthorities } from "@/shared/codex-workbench-identity";
 import {
 	createBrowserLeaseManager,
+	sessionLeaseLedger,
 	type BrowserLeaseManager,
 } from "@/server/codex-workbench/lib/lease";
 import {
 	CodexWorkbenchGatewayError,
 	type BrowserConnectionInstance,
 	type BrowserLeaseRecord,
+	type BrowserSessionLeaseLedger,
 	type CodexWorkbenchGatewayOptions,
 } from "@/server/codex-workbench/lib/contract";
+import type { TabSessionId } from "@/server/codex-workbench/lib/tab-session";
 import { currentLeaseOrThrow, sameWireValue } from "@/server/codex-workbench/lib/browser-command";
 import type {
 	BrowserConnections,
@@ -30,7 +33,7 @@ interface LeaseOwners {
 	readonly ensureAccountReadiness: (snapshot: BrowserSnapshot) => void;
 }
 
-/** The one command lease at a time, and everything that ends it. */
+/** One tab session's command lease, and everything that ends it. */
 interface LeaseOwner {
 	readonly manager: BrowserLeaseManager;
 	/** Why a command id stopped being the lease's, when the gateway remembers. */
@@ -65,6 +68,8 @@ interface LeaseOwner {
 		state: ConnectionState,
 		reason: CodexWorkbenchGatewayError["code"],
 	) => void;
+	/** Release the lease for good, because the gateway is closing. */
+	readonly end: () => void;
 }
 
 /**
@@ -99,13 +104,69 @@ function ensureRenewable(
 		});
 }
 
+/** Every tab session's lease: one each, so a claim in one tab never ends another tab's. */
+interface SessionLeases {
+	/** The lease owner of one tab session, made the first time the session is asked about. */
+	readonly of: (tabSessionId: TabSessionId) => LeaseOwner;
+	/** Whether a command id is any tab session's active lease. */
+	readonly isActive: (commandId: BrowserCommandId) => boolean;
+	/** Every tab session's lease owner. */
+	readonly all: () => readonly LeaseOwner[];
+}
+
 /**
- * Own the app-global command lease: who holds it, when it ends, and why a
+ * Own one lease per tab session (TASK-373). A session the retained ledger already holds gets its
+ * owner at once, so a lease that outlived its generation still expires on time.
+ * @param owners What the gateway around it provides.
+ * @returns The session leases.
+ */
+function createSessionLeases(owners: LeaseOwners): SessionLeases {
+	const bySession = new Map<TabSessionId, LeaseOwner>();
+	const ledger = owners.options.leaseLedger;
+	/**
+	 * The lease owner of one tab session.
+	 * @param tabSessionId The tab session.
+	 * @returns Its owner.
+	 */
+	const of = (tabSessionId: TabSessionId): LeaseOwner => {
+		let owner = bySession.get(tabSessionId);
+		if (owner === undefined) {
+			owner = createLeaseOwner(
+				owners,
+				ledger === undefined ? undefined : sessionLeaseLedger(ledger, tabSessionId),
+			);
+			bySession.set(tabSessionId, owner);
+		}
+		return owner;
+	};
+	for (const tabSessionId of ledger?.sessions.keys() ?? []) of(tabSessionId);
+	return {
+		of,
+		/**
+		 * Whether a command id is any tab session's active lease.
+		 * @param commandId The command.
+		 * @returns True while some session's lease is that command.
+		 */
+		isActive: (commandId) =>
+			[...bySession.values()].some(
+				(owner) => owner.manager.current()?.lease.commandId === commandId,
+			),
+		/**
+		 * Every tab session's lease owner.
+		 * @returns The owners.
+		 */
+		all: () => [...bySession.values()],
+	};
+}
+
+/**
+ * Own one tab session's command lease: who holds it, when it ends, and why a
  * command under an ended lease is refused.
  * @param owners What the gateway around it provides.
+ * @param ledger The session's retained ledger, when the gateway keeps one.
  * @returns The lease owner.
  */
-function createLeaseOwner(owners: LeaseOwners): LeaseOwner {
+function createLeaseOwner(owners: LeaseOwners, ledger?: BrowserSessionLeaseLedger): LeaseOwner {
 	const { connections, now } = owners;
 	const reasons = new Map<BrowserCommandId, CodexWorkbenchGatewayError["code"]>();
 
@@ -134,7 +195,7 @@ function createLeaseOwner(owners: LeaseOwners): LeaseOwner {
 	const manager = createBrowserLeaseManager({
 		identity: owners.identity,
 		now,
-		...(owners.options.leaseLedger === undefined ? {} : { ledger: owners.options.leaseLedger }),
+		...(ledger === undefined ? {} : { ledger }),
 		/**
 		 * A lease the manager finished on its own has expired.
 		 * @param record The lease.
@@ -224,7 +285,8 @@ function createLeaseOwner(owners: LeaseOwners): LeaseOwner {
 		ensureLeaseBinding,
 
 		/**
-		 * Take the command lease for one browser pane, releasing whoever held it.
+		 * Take the command lease for one browser pane, releasing whoever in its tab
+		 * session held it.
 		 * @param browserId The browser.
 		 * @param paneId The pane.
 		 * @param instance The socket the caller believes it is.
@@ -320,8 +382,18 @@ function createLeaseOwner(owners: LeaseOwners): LeaseOwner {
 			);
 			if (released !== null) rememberReason(released, reason);
 		},
+
+		/** Release the lease for good, because the gateway is closing. */
+		end: () => {
+			const current = manager.current();
+			if (current !== null) {
+				const released = manager.invalidate(current.lease.childId, current.lease.epoch, "released");
+				if (released !== null) rememberReason(released, "lease_released");
+			}
+			manager.dispose();
+		},
 	};
 }
 
-export { createLeaseOwner };
-export type { LeaseOwner };
+export { createSessionLeases };
+export type { LeaseOwner, SessionLeases };

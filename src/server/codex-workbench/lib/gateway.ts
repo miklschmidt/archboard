@@ -27,7 +27,10 @@ import {
 	createCommandExecutor,
 	type CommandExecutor,
 } from "@/server/codex-workbench/lib/gateway-execution";
-import { createLeaseOwner, type LeaseOwner } from "@/server/codex-workbench/lib/gateway-leases";
+import {
+	createSessionLeases,
+	type SessionLeases,
+} from "@/server/codex-workbench/lib/gateway-leases";
 import {
 	BROWSER_SNAPSHOT_MAX_BYTES,
 	assertBrowserSnapshotBudget,
@@ -95,7 +98,7 @@ function subscribeToSources(
 }
 
 /**
- * The browser gateway: one command lease at a time, one snapshot per browser
+ * The browser gateway: one command lease per tab session, one snapshot per browser
  * connection, and the teardown that retires both.
  * @param options The workbench owners, identity and projection this gateway serves.
  * @returns The gateway.
@@ -108,7 +111,7 @@ export function createCodexWorkbenchGateway(
 	const now = options.now ?? Date.now;
 	const snapshotMaxBytes = options.snapshotMaxBytes ?? BROWSER_SNAPSHOT_MAX_BYTES;
 	assertBrowserSnapshotBudget(snapshotMaxBytes);
-	let leases: LeaseOwner;
+	let leases: SessionLeases;
 	let executor: CommandExecutor;
 
 	const connections: BrowserConnections = createBrowserConnections({
@@ -121,7 +124,7 @@ export function createCodexWorkbenchGateway(
 		 * @param state The connection.
 		 * @returns The lease, or null.
 		 */
-		leaseForSnapshot: (state) => leases.leaseForSnapshot(state),
+		leaseForSnapshot: (state) => leases.of(state.tabSessionId).leaseForSnapshot(state),
 		/**
 		 * Forget the in-flight commands a retired connection owned.
 		 * @param instance The socket that went.
@@ -131,7 +134,7 @@ export function createCodexWorkbenchGateway(
 		},
 	});
 
-	leases = createLeaseOwner({
+	leases = createSessionLeases({
 		options,
 		identity,
 		now,
@@ -228,7 +231,7 @@ export function createCodexWorkbenchGateway(
 	const retireForReplacement = (open: ConnectionState): void => {
 		open.closed = true;
 		open.listeners.clear();
-		leases.releaseForSocket(open, "lease_transferred");
+		leases.of(open.tabSessionId).releaseForSocket(open, "lease_transferred");
 	};
 
 	/**
@@ -237,7 +240,7 @@ export function createCodexWorkbenchGateway(
 	 * @param state The arriving connection.
 	 */
 	const retainLeaseFor = (state: ConnectionState): void => {
-		const retained = leases.manager.current();
+		const retained = leases.of(state.tabSessionId).manager.current();
 		if (
 			retained?.binding.browserId !== state.browserId ||
 			retained.binding.paneId !== state.paneId ||
@@ -282,16 +285,7 @@ export function createCodexWorkbenchGateway(
 		if (connections.disposed) return;
 		announceVoiceUnavailable(reason);
 		connections.disposed = true;
-		const current = leases.manager.current();
-		if (current !== null) {
-			const released = leases.manager.invalidate(
-				current.lease.childId,
-				current.lease.epoch,
-				"released",
-			);
-			if (released !== null) leases.rememberReason(released, "lease_released");
-		}
-		leases.manager.dispose();
+		for (const owner of leases.all()) owner.end();
 		for (const unsubscribe of sourceUnsubscribers.splice(0)) unsubscribe();
 		for (const state of connections.states.values()) {
 			void connections.notifyDisconnect(state, reason);
@@ -317,7 +311,7 @@ export function createCodexWorkbenchGateway(
 		const key = connectionKey(state.browserId, state.paneId);
 		if (connections.states.get(key) === state) connections.states.delete(key);
 		connections.acknowledgeReadyTerminals();
-		leases.releaseForSocket(state, "lease_released");
+		leases.of(state.tabSessionId).releaseForSocket(state, "lease_released");
 		void connections.notifyDisconnect(state, "browser_disconnected");
 		await connections.drainSettlements();
 	};
@@ -426,23 +420,28 @@ export function createCodexWorkbenchGateway(
 			 * Take the command lease.
 			 * @returns The lease.
 			 */
-			claimLease: () => leases.claim(state.browserId, state.paneId, state.instance),
+			claimLease: () =>
+				leases.of(state.tabSessionId).claim(state.browserId, state.paneId, state.instance),
 			/**
 			 * Keep this connection's lease alive.
 			 * @returns The renewed lease.
 			 */
 			renewLease: () => {
 				connections.stateFor(state.browserId, state.paneId, state.instance);
-				leases.expireIfDue();
+				const owner = leases.of(state.tabSessionId);
+				owner.expireIfDue();
 				if (state.lease === null)
 					throw new CodexWorkbenchGatewayError("lease_required", "No command lease is active.");
-				return leases.renew(state.browserId, state.lease, state.instance);
+				return owner.renew(state.browserId, state.lease, state.instance);
 			},
 			/**
 			 * Give this connection's lease back.
 			 * @returns The released lease, or null.
 			 */
-			releaseLease: () => leases.release(state.browserId, state.paneId, undefined, state.instance),
+			releaseLease: () =>
+				leases
+					.of(state.tabSessionId)
+					.release(state.browserId, state.paneId, undefined, state.instance),
 			/**
 			 * Record whether this connection can play media.
 			 * @param ready Whether it can.
@@ -475,6 +474,15 @@ export function createCodexWorkbenchGateway(
 			close: () => closeConnection(state),
 		});
 
+	/**
+	 * The lease owner of the tab session one open browser pane belongs to.
+	 * @param browserId The browser.
+	 * @param paneId The pane.
+	 * @returns Its tab session's lease owner.
+	 */
+	const leasesOf = (browserId: string, paneId: string) =>
+		leases.of(connections.stateFor(browserId, paneId).tabSessionId);
+
 	const sourceUnsubscribers = subscribeToSources(options, connections.publishAll, childExit);
 
 	return Object.freeze({
@@ -487,9 +495,36 @@ export function createCodexWorkbenchGateway(
 		 */
 		snapshot: (browserId: string, paneId: string) =>
 			connections.updateSnapshot(connections.stateFor(browserId, paneId)),
-		claimLease: leases.claim,
-		renewLease: leases.renew,
-		releaseLease: leases.release,
+		/**
+		 * Take the command lease for one browser pane, releasing whoever in its tab session held it.
+		 * @param browserId The browser.
+		 * @param paneId The pane.
+		 * @returns The lease.
+		 */
+		claimLease: (browserId: BrowserConnectionId, paneId: string) =>
+			leasesOf(browserId, paneId).claim(browserId, paneId),
+		/**
+		 * Keep a browser pane's lease alive.
+		 * @param browserId The browser.
+		 * @param lease What it says it holds.
+		 * @returns The renewed lease.
+		 */
+		renewLease: (
+			browserId: BrowserConnectionId,
+			lease: Parameters<CodexWorkbenchGateway["renewLease"]>[1],
+		) => leasesOf(browserId, lease.paneId).renew(browserId, lease),
+		/**
+		 * Give a browser pane's lease back.
+		 * @param browserId The browser.
+		 * @param paneId The pane.
+		 * @param commandId The lease, when the caller names one.
+		 * @returns The released lease, or null.
+		 */
+		releaseLease: (
+			browserId: BrowserConnectionId,
+			paneId: string,
+			commandId?: Parameters<CodexWorkbenchGateway["releaseLease"]>[2],
+		) => leasesOf(browserId, paneId).release(browserId, paneId, commandId),
 		/**
 		 * Re-read the account for one browser pane.
 		 * @param browserId The browser.

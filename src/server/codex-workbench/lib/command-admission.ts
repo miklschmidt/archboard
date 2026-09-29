@@ -19,14 +19,14 @@ import {
 	type OwnedBrowserCommand,
 } from "@/server/codex-workbench/lib/browser-command";
 import type { ConnectionState } from "@/server/codex-workbench/lib/gateway-connections";
-import type { LeaseOwner } from "@/server/codex-workbench/lib/gateway-leases";
+import type { SessionLeases } from "@/server/codex-workbench/lib/gateway-leases";
 
 /** What the admission checks need from the gateway around them. */
 interface CommandAdmissionOwners {
 	readonly options: CodexWorkbenchGatewayOptions;
 	readonly model: ReturnType<typeof createCodexBrowserModel>;
 	readonly now: () => number;
-	readonly leases: LeaseOwner;
+	readonly leases: SessionLeases;
 	readonly snapshotFor: (state: ConnectionState) => BrowserSnapshot;
 }
 
@@ -282,14 +282,16 @@ function createCommandAdmission(
 		// A lease that has run out is ended before the command is checked, so a
 		// command arriving after the deadline is refused as expired rather than
 		// admitted under a lease nothing has retired yet.
-		owners.leases.expireIfDue();
+		// Only the lease of the tab session the command came from can admit it.
+		const leases = owners.leases.of(state.tabSessionId);
+		leases.expireIfDue();
 		const record = currentLeaseOrThrow(
-			owners.leases.manager,
+			leases.manager,
 			command.commandId,
-			owners.leases.reasonFor(command.commandId),
+			leases.reasonFor(command.commandId),
 		);
 		ensureLeaseOwnership(state, command, record);
-		owners.leases.ensureLeaseBinding(state, record);
+		leases.ensureLeaseBinding(state, record);
 		const snapshot = owners.snapshotFor(state);
 		ensureCommandReadiness(command, snapshot);
 		ensureLoginCancelTarget(command, snapshot);

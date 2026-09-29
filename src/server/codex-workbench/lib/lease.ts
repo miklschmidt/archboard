@@ -12,6 +12,7 @@ import type {
 	BrowserConnectionInstance,
 	BrowserLeaseLedger,
 	BrowserLeaseRecord,
+	BrowserSessionLeaseLedger,
 } from "@/server/codex-workbench/lib/contract";
 import type { TabSessionId } from "@/server/codex-workbench/lib/tab-session";
 
@@ -64,11 +65,29 @@ interface BrowserLeaseManager {
 }
 
 /**
- * An empty process-lifetime ledger for a lease manager to own.
- * @returns A ledger with no active lease and no retired records.
+ * An empty process-lifetime ledger: no tab session has held a lease yet.
+ * @returns The ledger.
  */
 function createBrowserLeaseLedger(): BrowserLeaseLedger {
-	return { active: null, retired: new Map() };
+	return { sessions: new Map() };
+}
+
+/**
+ * One tab session's part of the ledger, made empty the first time the session claims.
+ * @param ledger The process-lifetime ledger.
+ * @param tabSessionId The tab session.
+ * @returns Its ledger.
+ */
+function sessionLeaseLedger(
+	ledger: BrowserLeaseLedger,
+	tabSessionId: TabSessionId,
+): BrowserSessionLeaseLedger {
+	let session = ledger.sessions.get(tabSessionId);
+	if (session === undefined) {
+		session = { active: null, retired: new Map() };
+		ledger.sessions.set(tabSessionId, session);
+	}
+	return session;
 }
 
 /**
@@ -135,7 +154,7 @@ function boundTo(
 }
 
 /**
- * The single app-global command lease: who holds it, when it expires, and the
+ * One tab session's command lease: who holds it, when it expires, and the
  * bounded history of leases that ended, so a late command can learn why.
  * @param options The identity authorities, clock, optional retained ledger and change hooks.
  * @param options.identity Mints command ids and names the current child generation.
@@ -148,11 +167,11 @@ function boundTo(
 function createBrowserLeaseManager(options: {
 	readonly identity: IdentityAuthorities;
 	readonly now: () => number;
-	readonly ledger?: BrowserLeaseLedger;
+	readonly ledger?: BrowserSessionLeaseLedger;
 	readonly onChange?: () => void;
 	readonly onFinish?: (record: BrowserLeaseRecord) => void;
 }): BrowserLeaseManager {
-	const ledger = options.ledger ?? createBrowserLeaseLedger();
+	const ledger = options.ledger ?? { active: null, retired: new Map() };
 	let active: BrowserLeaseRecord | null = ledger.active;
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let disposed = false;
@@ -461,4 +480,9 @@ function createBrowserLeaseManager(options: {
 	});
 }
 
-export { type BrowserLeaseManager, createBrowserLeaseLedger, createBrowserLeaseManager };
+export {
+	type BrowserLeaseManager,
+	createBrowserLeaseLedger,
+	createBrowserLeaseManager,
+	sessionLeaseLedger,
+};

@@ -45,10 +45,18 @@ export interface BrowserLeaseRecord {
 	readonly capturedLink: ThreadLinkBindingSnapshot;
 }
 
-/** Process-lifetime lease authority retained while a source generation is replaced. */
-export interface BrowserLeaseLedger {
+/** One tab session's lease: the active record and the bounded history of ended ones. */
+export interface BrowserSessionLeaseLedger {
 	active: BrowserLeaseRecord | null;
 	readonly retired: Map<BrowserCommandId, BrowserLeaseRecord>;
+}
+
+/**
+ * Process-lifetime lease authority retained while a source generation is replaced: one lease
+ * per browser tab session, so two tabs never take the lease from each other (TASK-373).
+ */
+export interface BrowserLeaseLedger {
+	readonly sessions: Map<TabSessionId, BrowserSessionLeaseLedger>;
 }
 
 export type BrowserApprovalCommand = Omit<
