@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 12:31'
-updated_date: '2026-09-29 13:10'
+updated_date: '2026-09-29 13:27'
 labels:
   - codex
   - voice
@@ -66,3 +66,9 @@ S5b key everything by tab session: link, publisher, approvals, per-session realt
 S6 session lifetime: presence, grace, sessions.end, approvals by session, New conversation retires old threads.
 S7 docs (ADR 0019 amendment, CONTEXT.md Tab session, AGENTS.md, design docs, CLI help), the removal sweep, board proposals corrected and adopted, the README explainer video re-recorded.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+S1 (a5d7d19d): thread selector deleted end to end — threadLinkRefresh/Attach/Relink, snapshot threadCandidates and BrowserThreadCandidate(s), BROWSER_THREAD_CANDIDATE_LIMIT, runtime discoverCandidates/bindCandidate/candidate-discovery.ts, server candidate inventory and attach/adopt, UI candidates.ts/recovery.ts and controller bind/bindSelection/unlink/refreshInventory/recover. Beyond the spec: the UI controller's recovery field (snapshot.recovery, captureServerRecovery, serverRecoveryIntents) went with recovery.ts because nothing read it; the thread-link transport port lost state/refresh/accountRead; the gateway options lost checkoutRoot (only attach used it); the production fake no longer seeds a foreign persisted thread. Gate green.
+<!-- SECTION:NOTES:END -->
