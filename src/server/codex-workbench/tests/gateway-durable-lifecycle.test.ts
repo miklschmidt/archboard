@@ -17,8 +17,10 @@ describe("Codex workbench durable browser lifecycle", () => {
 		openHarnesses.push(value);
 		const staleInstance = Object.freeze({ socket: "stale" });
 		const currentInstance = Object.freeze({ socket: "current" });
-		value.gateway.connect(value.browserId, value.paneId, staleInstance).claimLease();
-		const current = value.gateway.connect(value.browserId, value.paneId, currentInstance);
+		value.gateway
+			.connect(value.browserId, value.paneId, value.tabSessionId, staleInstance)
+			.claimLease();
+		const current = value.open(currentInstance);
 		const lease = current.claimLease();
 
 		await value.gateway.closeConnection(value.browserId, value.paneId, staleInstance);
@@ -30,7 +32,7 @@ describe("Codex workbench durable browser lifecycle", () => {
 	test("release and reacquire preserve semantic and realtime state until exact close", async () => {
 		const value = createGatewayHarness();
 		openHarnesses.push(value);
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const startLease = connection.claimLease();
 		expect(
 			(await connection.command(realtimeCommand(value, startLease, "realtimeStart"))).outcome,

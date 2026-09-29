@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 12:31'
-updated_date: '2026-09-29 13:27'
+updated_date: '2026-09-29 13:49'
 labels:
   - codex
   - voice
@@ -71,4 +71,6 @@ S7 docs (ADR 0019 amendment, CONTEXT.md Tab session, AGENTS.md, design docs, CLI
 
 <!-- SECTION:NOTES:BEGIN -->
 S1 (a5d7d19d): thread selector deleted end to end — threadLinkRefresh/Attach/Relink, snapshot threadCandidates and BrowserThreadCandidate(s), BROWSER_THREAD_CANDIDATE_LIMIT, runtime discoverCandidates/bindCandidate/candidate-discovery.ts, server candidate inventory and attach/adopt, UI candidates.ts/recovery.ts and controller bind/bindSelection/unlink/refreshInventory/recover. Beyond the spec: the UI controller's recovery field (snapshot.recovery, captureServerRecovery, serverRecoveryIntents) went with recovery.ts because nothing read it; the thread-link transport port lost state/refresh/accountRead; the gateway options lost checkoutRoot (only attach used it); the production fake no longer seeds a foreign persisted thread. Gate green.
+
+S2: tab session identity and exact pane lookups (one link still). The tab mints archboard.tabSession in sessionStorage (src/ui/pane-session/lib/tab-session.ts) and every pane socket sends ?tabSession=; the server parses it (TabSessionId, parseTabSessionId in @/server/codex-workbench), refuses Codex requests without one, and passes it to gateway.connect; connections, projection, lease binding and presenter contexts carry tabSessionId. Browser commands read context from the exact sending pane (clientId); server-started work presents through presentingPane (clientId null); contextPane and walkthrough narration are keyed by clientId. Beyond the spec: the tab-session map lives in its own src/server/archboard/lib/tab-sessions.ts (pane-registry.ts would pass its 600-line limit), panesOfTabSession is not added yet (nothing uses it before S5b), the server port presentingPaneId is gone (contextForOperation takes clientId: string | null instead), and bindVoicePane/voicePanes are deleted.
 <!-- SECTION:NOTES:END -->

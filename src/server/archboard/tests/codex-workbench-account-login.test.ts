@@ -29,7 +29,11 @@ function harness(overrides: HarnessOverrides = {}) {
 		identity: value.authorities,
 		threadLink: { read: () => value.context.binding },
 	});
-	const connection = gateway.connect(value.context.browserId, value.context.paneId);
+	const connection = gateway.connect(
+		value.context.browserId,
+		value.context.paneId,
+		value.context.tabSessionId,
+	);
 	const command = (fields: Record<string, unknown>) => {
 		const lease = connection.claimLease();
 		return connection.command({

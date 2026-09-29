@@ -6,6 +6,7 @@ import type { WebSocketMessage } from "@/runtime/engine/types";
 import { parseBoardKey } from "@/runtime/engine/board";
 import { createServerCodexBrowserSocketSend } from "@/server/archboard/codex-workbench-browser";
 import type { BrowserConnectionInstance } from "@/server/archboard/codex-workbench-browser";
+import { parseTabSessionId, type TabSessionId } from "@/server/codex-workbench";
 import { agentActivity, tellPaneAboutLock } from "@/server/archboard/lib/board-announcements";
 import { server } from "@/server/archboard/lib/server-app";
 import { codexWiring } from "@/server/archboard/lib/codex-wiring";
@@ -22,6 +23,7 @@ import {
 	panes,
 	syncLockWatch,
 } from "@/server/archboard/lib/pane-registry";
+import { forgetTabSession, noteTabSession } from "@/server/archboard/lib/tab-sessions";
 import { isRecord } from "@/server/archboard/lib/request-board";
 
 /**
@@ -31,6 +33,7 @@ import { isRecord } from "@/server/archboard/lib/request-board";
  */
 function retirePaneOwner(closingId: string): void {
 	currentSocketsByClient.delete(closingId);
+	forgetTabSession(closingId);
 	panes.delete(closingId);
 	notePaneClosed(closingId);
 }
@@ -182,14 +185,10 @@ function codexRequestOf(raw: RawData): Record<string, unknown> | null {
  * Route the socket's Codex workbench requests to the installed workbench,
  * refusing them while there is no workbench or no authoritative identity.
  * @param ws The socket.
- * @param clientId The pane's client id, or null for an anonymous socket.
- * @param codexSocketInstance The socket's Codex connection instance.
+ * @param socket What it is registered as: its pane, its tab and its Codex connection instance.
  */
-function listenForCodexRequests(
-	ws: WebSocket,
-	clientId: string | null,
-	codexSocketInstance: BrowserConnectionInstance,
-): void {
+function listenForCodexRequests(ws: WebSocket, socket: RegisteredSocket): void {
+	const { clientId, tabSessionId, codexInstance: codexSocketInstance } = socket;
 	const codexTransport = createServerCodexBrowserSocketSend(ws);
 	/**
 	 * Send one response, logging a transport failure rather than throwing into `ws`.
@@ -212,6 +211,10 @@ function listenForCodexRequests(
 					"The Codex workbench requires an authoritative browser connection identity.",
 				),
 			);
+			return;
+		}
+		if (tabSessionId === null) {
+			send(codexRefusal(message, "The Codex workbench requires the browser tab session identity."));
 			return;
 		}
 		const handle = codexWiring.codex.handleBrowserMessage;
@@ -252,6 +255,8 @@ function announceToNewPane(
 interface RegisteredSocket {
 	/** The pane it presents, or null for a socket that named none. */
 	clientId: string | null;
+	/** The browser tab it belongs to, or null for a socket that named none or a malformed one. */
+	tabSessionId: TabSessionId | null;
 	/** The token this acceptance is stamped with, so a predecessor cannot take authority back. */
 	acceptanceToken: object | null;
 	/** Its Codex browser connection instance. */
@@ -261,13 +266,15 @@ interface RegisteredSocket {
 /**
  * Register one accepted socket and attach the listeners that retire it.
  * @param ws The socket.
- * @param req The upgrade request, whose `?clientId=` names the pane.
+ * @param req The upgrade request, whose `?clientId=` names the pane and `?tabSession=` its tab.
  * @returns What the socket is registered as.
  */
 function registerSocket(ws: WebSocket, req: IncomingMessage): RegisteredSocket {
 	const codexInstance = Object.freeze({});
 	codexSocketInstances.set(ws, codexInstance);
-	const clientId = new URL(req.url ?? "/", "http://localhost").searchParams.get("clientId");
+	const query = new URL(req.url ?? "/", "http://localhost").searchParams;
+	const clientId = query.get("clientId");
+	const tabSessionId = parseTabSessionId(query.get("tabSession"));
 	const acceptanceToken = clientId === null ? null : Object.freeze({});
 	if (clientId !== null && acceptanceToken !== null) {
 		clientIds.set(ws, clientId);
@@ -278,7 +285,7 @@ function registerSocket(ws: WebSocket, req: IncomingMessage): RegisteredSocket {
 		logger.error("WebSocket error:", error);
 		clients.delete(ws);
 	});
-	return { clientId, acceptanceToken, codexInstance };
+	return { clientId, tabSessionId, acceptanceToken, codexInstance };
 }
 
 /**
@@ -301,6 +308,7 @@ function admitSocket(ws: WebSocket, socket: RegisteredSocket, startingKey: strin
 	if (!takePaneAuthority(ws, clientId, acceptanceToken, startingKey)) {
 		return false;
 	}
+	noteTabSession(clientId, socket.tabSessionId);
 	clients.add(ws);
 	try {
 		codexWiring.codex.acceptBrowser?.(socket.codexInstance, clientId);
@@ -316,7 +324,7 @@ function admitSocket(ws: WebSocket, socket: RegisteredSocket, startingKey: strin
  * route its Codex requests. Creating and closing the server itself belongs to
  * startWebSocketServer and closeWebSocketServer; this owns one socket only.
  * @param ws The accepted socket.
- * @param req The upgrade request, whose `?clientId=` names the pane.
+ * @param req The upgrade request, whose `?clientId=` names the pane and `?tabSession=` its tab.
  */
 async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): Promise<void> {
 	const socket = registerSocket(ws, req);
@@ -336,7 +344,7 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 		`New WebSocket connection established${socket.clientId === null ? "" : ` (client ${socket.clientId})`}`,
 	);
 	announceToNewPane(ws, socket.clientId, startingKey);
-	listenForCodexRequests(ws, socket.clientId, socket.codexInstance);
+	listenForCodexRequests(ws, socket);
 }
 
 let wss: WebSocketServer | null = null;

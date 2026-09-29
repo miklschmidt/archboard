@@ -71,6 +71,7 @@ function createAuthority(
 			const captured = context.server.contextForOperation(
 				{
 					paneId: authorityContext.authority.paneId,
+					clientId: null,
 					childId: authorityContext.authority.childId,
 					epoch: authorityContext.authority.epoch,
 					threadId: authorityContext.authority.threadId,

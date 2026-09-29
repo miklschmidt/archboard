@@ -27,7 +27,6 @@ import type { RealtimePresentation } from "@/runtime/codex-realtime";
 import type { CodexWorkbenchComponents } from "@/server/archboard/lib/codex-workbench";
 import { traceMessage, voiceStartTrace } from "@/server/archboard/lib/voice-start-trace";
 import {
-	bindVoicePane,
 	forgetNarration,
 	narrationFor,
 	openNarration,
@@ -174,10 +173,9 @@ function workhorseReadyFor(workhorse: WorkhorseSnapshot, threadId: ThreadId): bo
 }
 
 /**
- * What one start narrates, with the session bound to the pane in the browser it came from: the
- * browser id is that pane's client id, exact where the shell's "A" is not (TASK-294). A start
- * that presents a walkthrough is told what it says by the server, from the board that pane is
- * showing (TASK-251).
+ * What one start narrates, about the pane it came from: the browser id is that pane's client id,
+ * exact where the shell's "A" is not (TASK-294). A start that presents a walkthrough is told what
+ * it says by the server, from the board that pane is showing (TASK-251).
  * @param pending The session being started.
  * @param presentation The walkthrough the start presents and whether it is recorded, or undefined.
  * @returns The walkthrough to present, or null for an ordinary session.
@@ -186,17 +184,10 @@ function narrationOfStart(
 	pending: ActiveRealtime,
 	presentation: RealtimeStartCommand["presentation"],
 ): RealtimePresentation | null {
-	bindVoicePane(pending.paneId, pending.browserId);
 	if (presentation === undefined) {
-		forgetNarration(pending.paneId);
 		return null;
 	}
-	return narrationFor(
-		pending.paneId,
-		pending.browserId,
-		presentation.walkthrough,
-		presentation.recording === true,
-	);
+	return narrationFor(pending.browserId, presentation.walkthrough, presentation.recording === true);
 }
 
 /**
@@ -218,13 +209,13 @@ function recordingRefusal(): CodexWorkbenchGatewayError {
  * Open a narration's first step in its pane. A recording's page opens its own, so a recording
  * is asked for nothing.
  * @param presentation The walkthrough the session presents, or null.
- * @param paneId The pane it presents in.
+ * @param clientId The client id of the pane it presents in.
  */
-function openFirstStep(presentation: RealtimePresentation | null, paneId: string): void {
+function openFirstStep(presentation: RealtimePresentation | null, clientId: string): void {
 	if (presentation === null || presentation.recording) {
 		return;
 	}
-	openNarration(paneId).catch((error: unknown) => {
+	openNarration(clientId).catch((error: unknown) => {
 		voiceStartTrace.note("narration_failed", { message: traceMessage(error) });
 	});
 }
@@ -241,6 +232,8 @@ export function createServerRealtimeActions(
 	let activeRealtime: ActiveRealtime | null = null;
 	// The coordinator thread the last session started on, which no later session may start on.
 	let voicedCoordinator: ThreadId | null = null;
+	// The pane the last session started from, whose narration a later session replaces.
+	let voicedPane: string | null = null;
 	let realtimeQueue = Promise.resolve();
 	// The start trace keeps every state the session moves through and every diagnostic it raises.
 	components.realtime.onSemanticEvent((event) => {
@@ -445,6 +438,10 @@ export function createServerRealtimeActions(
 				const pending = tracedPending(command.commandId, context);
 				activeRealtime = pending;
 				voicedCoordinator = pending.coordinatorThreadId;
+				if (voicedPane !== null) {
+					forgetNarration(voicedPane);
+				}
+				voicedPane = pending.browserId;
 				try {
 					const presentation = narrationOfStart(pending, command.presentation);
 					// Creating the offer subscribes the session to this pane's narration before it
@@ -459,7 +456,7 @@ export function createServerRealtimeActions(
 						},
 						presentation,
 					);
-					openFirstStep(presentation, pending.paneId);
+					openFirstStep(presentation, pending.browserId);
 					const realtimeAnswer = await answering;
 					requireActive(pending.handle, context);
 					voiceStartTrace.note("answered", {

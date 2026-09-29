@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
-import type { BrowserActionContext } from "../../codex-workbench/index.js";
+import { parseTabSessionId, type BrowserActionContext } from "../../codex-workbench/index.js";
 import { createServerRealtimeActions } from "../codex-workbench-adapters.js";
 
 function fixture() {
@@ -50,6 +50,7 @@ function fixture() {
 		browserId: "browser-1",
 		connection,
 		paneId: "pane-1",
+		tabSessionId: parseTabSessionId("tab-one")!,
 		commandId: identity.identity.issuer.mintBrowserCommandId(),
 		childId: identity.identity.validator.childId,
 		epoch: identity.identity.validator.epoch,
@@ -297,6 +298,7 @@ test("another pane of the server can stop voice on the same link but cannot spea
 		browserId: "browser-2",
 		paneId: "pane-2",
 		connection: Object.freeze({ socket: "two" }),
+		tabSessionId: parseTabSessionId("tab-one")!,
 		commandId: value.identity.identity.issuer.mintBrowserCommandId(),
 	};
 	const base = (context: BrowserActionContext) =>

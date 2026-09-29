@@ -12,6 +12,7 @@ import {
 	type CodexWorkbenchGateway,
 	type CodexWorkbenchGatewayOptions,
 } from "@/server/codex-workbench/lib/contract";
+import type { TabSessionId } from "@/server/codex-workbench/lib/tab-session";
 import {
 	assertOpaqueName,
 	connectionKey,
@@ -36,17 +37,20 @@ import {
  * A connection as it begins: no snapshot, no lease, and nothing published.
  * @param browserId The browser.
  * @param paneId The pane.
+ * @param tabSessionId The tab the browser's pane belongs to.
  * @param instance Its socket.
  * @returns The connection state.
  */
 function freshConnectionState(
 	browserId: BrowserConnectionId,
 	paneId: string,
+	tabSessionId: TabSessionId,
 	instance: BrowserConnectionInstance,
 ): ConnectionState {
 	return {
 		browserId,
 		paneId,
+		tabSessionId,
 		instance,
 		listeners: new Set(),
 		publishedTerminals: new Set(),
@@ -167,12 +171,14 @@ export function createCodexWorkbenchGateway(
 	 * the one it finds, and that one's lease goes with it.
 	 * @param browserId The browser.
 	 * @param paneId The pane.
+	 * @param tabSessionId The tab the browser's pane belongs to.
 	 * @param providedInstance The socket, when the caller owns one.
 	 * @returns The connection.
 	 */
 	const connect = (
 		browserId: string,
 		paneId: string,
+		tabSessionId: TabSessionId,
 		providedInstance?: BrowserConnectionInstance,
 	): BrowserWorkbenchConnection => {
 		requireConnectable(browserId, paneId);
@@ -185,7 +191,7 @@ export function createCodexWorkbenchGateway(
 		if (open !== null) {
 			retireForReplacement(open);
 		}
-		const state = freshConnectionState(browserId, paneId, instance);
+		const state = freshConnectionState(browserId, paneId, tabSessionId, instance);
 		retainLeaseFor(state);
 		connections.states.set(key, state);
 		if (open !== null) void connections.notifyDisconnect(open, "browser_disconnected");
@@ -235,6 +241,7 @@ export function createCodexWorkbenchGateway(
 		if (
 			retained?.binding.browserId !== state.browserId ||
 			retained.binding.paneId !== state.paneId ||
+			retained.binding.tabSessionId !== state.tabSessionId ||
 			retained.binding.connection !== state.instance
 		) {
 			return;
@@ -390,6 +397,7 @@ export function createCodexWorkbenchGateway(
 		Object.freeze({
 			browserId: state.browserId,
 			paneId: state.paneId,
+			tabSessionId: state.tabSessionId,
 			instance: state.instance,
 			/**
 			 * What this connection should be showing now.

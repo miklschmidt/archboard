@@ -106,6 +106,8 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 	const endpoint = new URL(options.base);
 	endpoint.protocol = "ws:";
 	endpoint.searchParams.set("clientId", options.clientId);
+	// Every pane a system owner opens belongs to one browser tab, as a split shell's two do.
+	endpoint.searchParams.set("tabSession", "system-tab");
 	const socket = new WebSocket(endpoint);
 	const events: Event[] = [];
 	let resolveInitial!: (event: Event) => void;

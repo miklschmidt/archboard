@@ -9,7 +9,7 @@ test("gateway invokes projection retirement once for the exact closed connection
 	});
 	const connection = {};
 	try {
-		value.gateway.connect(value.browserId, value.paneId, connection);
+		value.open(connection);
 		await value.gateway.closeConnection(value.browserId, value.paneId, connection);
 		await value.gateway.closeConnection(value.browserId, value.paneId, connection);
 		expect(retired).toEqual([

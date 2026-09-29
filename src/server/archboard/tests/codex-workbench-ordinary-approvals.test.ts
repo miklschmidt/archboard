@@ -2,7 +2,11 @@ import { expect, test } from "bun:test";
 
 import { createCodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
 import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
-import type { BrowserActionContext, BrowserApprovalCommand } from "../../codex-workbench/index.js";
+import {
+	parseTabSessionId,
+	type BrowserActionContext,
+	type BrowserApprovalCommand,
+} from "../../codex-workbench/index.js";
 import { createServerOrdinaryApprovalActions } from "../codex-workbench-adapters.js";
 
 for (const outcome of ["delivered", "not_delivered", "outcome_unknown"] as const) {
@@ -117,6 +121,7 @@ test("the last presenter's disconnect, from any pane of the link, settles and ac
 			browserId: "browser-ordinary",
 			connection: Object.freeze({ socket: "ordinary" }),
 			paneId,
+			tabSessionId: parseTabSessionId("tab-one")!,
 			commandId: identity.issuer.mintBrowserCommandId(),
 			childId: pending.child,
 			epoch: pending.epoch,

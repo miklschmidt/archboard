@@ -25,6 +25,7 @@ import {
 	forgetDisplay,
 	rejectPendingLayouts,
 } from "@/server/archboard/lib/pane-registry";
+import { forgetTabSessions } from "@/server/archboard/lib/tab-sessions";
 import { messageOf } from "@/server/archboard/lib/request-board";
 
 /**
@@ -115,6 +116,7 @@ export async function closeBrowserOwners(): Promise<void> {
 	}
 	rejectPendingLayouts();
 	forgetDisplay();
+	forgetTabSessions();
 	failures.throwIfAny();
 }
 

@@ -32,6 +32,7 @@ import type {
 	BrowserSnapshotDelta,
 } from "@/shared/codex-browser-gateway";
 import type { BrowserOwnerProjection } from "@/server/codex-workbench/lib/projection-contract";
+import type { TabSessionId } from "@/server/codex-workbench/lib/tab-session";
 
 export type BrowserConnectionId = string;
 /** Exact process-local WebSocket ownership. Reusable browser ids never substitute for it. */
@@ -107,6 +108,8 @@ export interface BrowserLeaseBinding {
 	readonly browserId: BrowserConnectionId;
 	readonly connection: BrowserConnectionInstance;
 	readonly paneId: string;
+	/** The tab the socket belongs to, which every pane of that tab shares. */
+	readonly tabSessionId: TabSessionId;
 	readonly commandId: BrowserCommandId;
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
@@ -117,6 +120,7 @@ export interface BrowserLeaseBinding {
 export interface BrowserProjectionContext {
 	readonly browserId: BrowserConnectionId;
 	readonly paneId: string;
+	readonly tabSessionId: TabSessionId;
 	/** Exact process-local socket identity; never serialized to the browser. */
 	readonly connection: BrowserConnectionInstance;
 	readonly binding: ThreadLinkBindingSnapshot;
@@ -368,6 +372,7 @@ export type BrowserPublishedPayload = BrowserGatewayMessage | BrowserSnapshot;
 export interface BrowserWorkbenchConnection {
 	readonly browserId: BrowserConnectionId;
 	readonly paneId: string;
+	readonly tabSessionId: TabSessionId;
 	readonly instance: BrowserConnectionInstance;
 	readonly snapshot: () => BrowserGatewaySnapshotMessage;
 	/** Re-read cached owner state, so the next `snapshot()` is a genuine read. */
@@ -388,6 +393,7 @@ export interface CodexWorkbenchGateway {
 	readonly connect: (
 		browserId: BrowserConnectionId,
 		paneId: string,
+		tabSessionId: TabSessionId,
 		instance?: BrowserConnectionInstance,
 	) => BrowserWorkbenchConnection;
 	readonly snapshot: (

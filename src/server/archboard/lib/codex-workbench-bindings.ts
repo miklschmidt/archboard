@@ -138,16 +138,15 @@ function storageBindings(
 
 /**
  * The child epoch and thread a workhorse operation is proven to be running
- * against, presented through an open pane, refused when any of them is open.
+ * against, refused when any of them is unnamed.
  *
- * The pane that created the link is preferred, but the conversation belongs to
- * the server: once that pane closes, the work presents through another.
- * @param server What picks the presenting pane.
+ * No browser command started it, so it names no exact pane: it presents
+ * through the pane that created the link while that pane is open, and through
+ * another once it closes, since the conversation belongs to the server.
  * @param workhorse The workhorse snapshot.
  * @returns The target.
  */
 function provenWorkhorseTarget(
-	server: Pick<CodexWorkbenchServer, "presentingPaneId">,
 	workhorse: ReturnType<CodexWorkbenchComponents["workhorse"]["snapshot"]>,
 ): Parameters<CodexWorkbenchServer["contextForOperation"]>[0] {
 	const { paneId, childId, epoch, threadId } = workhorse;
@@ -157,7 +156,7 @@ function provenWorkhorseTarget(
 	}
 	return {
 		...target,
-		paneId: server.presentingPaneId(target.paneId),
+		clientId: null,
 		...(workhorse.binding ? { linkRevision: workhorse.binding.revision } : {}),
 	};
 }
@@ -266,7 +265,7 @@ function currentBindingReaders(
 			 */
 			contextFor: (operation) => {
 				const workhorse = requireCreated(created, "workhorse").snapshot();
-				const target = provenWorkhorseTarget(server, workhorse);
+				const target = provenWorkhorseTarget(workhorse);
 				return server.contextForOperation(target, {
 					id: operation.operationId,
 					kind: operation.kind,
@@ -500,7 +499,7 @@ function deliveryBindings(
 				 */
 				contextFor: (operationId) =>
 					server.contextForOperation(
-						provenWorkhorseTarget(server, requireCreated(created, "workhorse").snapshot()),
+						provenWorkhorseTarget(requireCreated(created, "workhorse").snapshot()),
 						{ id: operationId, kind: "workhorse_outcome_report", rpc: "turn/start" },
 					),
 				/**

@@ -74,8 +74,9 @@ describe("Codex workbench browser gateway readiness", () => {
 				canAcceptDirectInput: false,
 				reason: source.reason,
 			});
-			const projected = value.gateway.connect(value.browserId, value.paneId).snapshot()
-				.snapshot.threadLink;
+			const projected = value.gateway
+				.connect(value.browserId, value.paneId, value.tabSessionId)
+				.snapshot().snapshot.threadLink;
 			expect(projected.sourcePresentation).toBe(source.presentation);
 			expect(Object.keys(projected).toSorted()).toEqual([
 				"canAcceptDirectInput",
@@ -103,7 +104,7 @@ describe("Codex workbench browser gateway readiness", () => {
 
 	test("publishes every readiness state and keeps commands disabled before login capability", () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		for (const state of [
 			"stopped",
 			"backoff",
@@ -123,7 +124,7 @@ describe("Codex workbench browser gateway readiness", () => {
 
 	test("allows account reads and account commands before account readiness", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		for (const state of [
 			"login_capable",
 			"signed_out",
@@ -152,7 +153,7 @@ describe("Codex workbench browser gateway readiness", () => {
 
 	test("routes account logout while the account is only login-capable", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		value.setReadiness("signed_out");
 		const result = await connection.command(
 			accountCommand(value, connection.claimLease(), "accountLogout"),
@@ -163,7 +164,7 @@ describe("Codex workbench browser gateway readiness", () => {
 
 	test("normalizes account login through the protocol owner before dispatch", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const lease = connection.claimLease();
 		const result = await connection.command({
 			...commandTarget(lease),
@@ -176,11 +177,11 @@ describe("Codex workbench browser gateway readiness", () => {
 
 	test("advertises voice only for the exact socket that owns ready browser media", () => {
 		const value = harness();
-		const first = value.gateway.connect(value.browserId, value.paneId);
+		const first = value.open();
 		expect(first.snapshot().snapshot.voice).toMatchObject({ state: "unavailable" });
 		expect(first.setMediaReady(true).snapshot.voice).toMatchObject({ state: "ready" });
 
-		const replacement = value.gateway.connect(value.browserId, value.paneId);
+		const replacement = value.open();
 		expect(replacement.snapshot().snapshot.voice).toMatchObject({ state: "unavailable" });
 		expect(() => first.setMediaReady(true)).toThrow("replaced");
 		expect(replacement.setMediaReady(true).snapshot.voice).toMatchObject({ state: "ready" });
@@ -190,8 +191,8 @@ describe("Codex workbench browser gateway readiness", () => {
 describe("Codex workbench browser command leases", () => {
 	test("has one app-global lease and refuses a transferred command without retargeting", async () => {
 		const value = harness();
-		const first = value.gateway.connect(value.browserId, value.paneId);
-		const second = value.gateway.connect("browser-two", "pane-two");
+		const first = value.open();
+		const second = value.gateway.connect("browser-two", "pane-two", value.tabSessionId);
 		const firstLease = first.claimLease();
 		const secondLease = second.claimLease();
 		expect(secondLease.commandId).not.toBe(firstLease.commandId);
@@ -204,7 +205,7 @@ describe("Codex workbench browser command leases", () => {
 
 	test("expires once, makes expiry visible, and allows recovery with a new lease", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const lease = connection.claimLease();
 		value.advance(150_001);
 		const result = await connection.command(startCommand(value, lease));
@@ -222,7 +223,7 @@ describe("Codex workbench browser command leases", () => {
 
 	test("renews the app-global lease and keeps its exact binding", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const lease = connection.claimLease();
 		value.advance(1_000);
 		const renewed = connection.renewLease();
@@ -236,7 +237,7 @@ describe("Codex workbench browser command leases", () => {
 
 	test("does not deliver a command after the captured link changes", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const lease = connection.claimLease();
 		value.setLink({
 			kind: "thread_link",
@@ -259,7 +260,7 @@ describe("Codex workbench browser command leases", () => {
 describe("Codex workbench browser command routing", () => {
 	test("requires composed thread capability and an exact executable link", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		value.setReadiness("account_ready");
 		let lease = connection.claimLease();
 		let result = await connection.command(startCommand(value, lease));
@@ -286,7 +287,7 @@ describe("Codex workbench browser command routing", () => {
 
 	test("rejects a thread target that differs from the current link", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const other = value.model.ThreadIdSchema.parse(
 			value.authorities.identity.decoder.adoptThreadId("other-thread"),
 		);
@@ -297,7 +298,7 @@ describe("Codex workbench browser command routing", () => {
 
 	test("routes ordinary approvals only while their exact linked request is pending", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const lease = connection.claimLease();
 		const approval = value.makeOrdinaryApproval();
 		value.setOrdinaryApproval(approval);
@@ -339,7 +340,7 @@ describe("Codex workbench browser command routing", () => {
 
 	test("normalizes approval responses through the approval owner before dispatch", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const approval = value.makeOrdinaryApproval();
 		value.setOrdinaryApproval(approval);
 		const result = await connection.command({
@@ -359,7 +360,7 @@ describe("Codex workbench browser command routing", () => {
 	] as const) {
 		test(`publishes a spontaneous ${terminal.name} terminal exactly once`, () => {
 			const value = harness();
-			const connection = value.gateway.connect(value.browserId, value.paneId);
+			const connection = value.open();
 			const approval = value.makeOrdinaryApproval();
 			value.setOrdinaryApproval(approval);
 			connection.snapshot();
@@ -382,14 +383,14 @@ describe("Codex workbench browser command routing", () => {
 		const approval = value.makeOrdinaryApproval();
 		value.setOrdinaryApproval(spontaneousTerminal(approval));
 
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		expect(connection.snapshot().snapshot.approvals).toEqual([]);
 	});
 
 	test("returns an initial spontaneous terminal once before acknowledging it", () => {
 		const value = harness();
 		const approval = value.makeOrdinaryApproval();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		value.setOrdinaryApproval(spontaneousTerminal(approval));
 
 		const published = connection.snapshot();
@@ -405,8 +406,8 @@ describe("Codex workbench browser command routing", () => {
 
 	test("keeps a spontaneous terminal until both live connections publish it", () => {
 		const value = harness();
-		const first = value.gateway.connect(value.browserId, value.paneId);
-		const second = value.gateway.connect("browser-two", value.paneId);
+		const first = value.open();
+		const second = value.gateway.connect("browser-two", value.paneId, value.tabSessionId);
 		const approval = value.makeOrdinaryApproval();
 		first.snapshot();
 		second.snapshot();
@@ -429,7 +430,7 @@ describe("Codex workbench browser command routing", () => {
 
 	test("keeps a spontaneous terminal after a publication send fails", () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const approval = value.makeOrdinaryApproval();
 		connection.snapshot();
 		const unsubscribe = connection.subscribe(() => {
@@ -449,7 +450,7 @@ describe("Codex workbench browser command routing", () => {
 
 	test("preserves dynamic identity and effect hash through pending-aware response validation", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const lease = connection.claimLease();
 		const approval = value.makeDynamicApproval(lease.commandId);
 		value.setDynamicApprovals([approval]);
@@ -461,13 +462,13 @@ describe("Codex workbench browser command routing", () => {
 
 	test("rejects a dynamic decision after disconnect and never resumes it", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const lease = connection.claimLease();
 		const approval = value.makeDynamicApproval(lease.commandId);
 		value.setDynamicApprovals([approval]);
 		const response = dynamicResponse(value, approval);
 		await connection.close();
-		const recovered = value.gateway.connect(value.browserId, value.paneId);
+		const recovered = value.open();
 		const newLease = recovered.claimLease();
 		const late = await recovered.command({
 			...response,
@@ -480,7 +481,7 @@ describe("Codex workbench browser command routing", () => {
 
 	test("refuses an expired dynamic approval before invoking its owner", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const lease = connection.claimLease();
 		const approval = value.makeDynamicApproval(lease.commandId);
 		value.setDynamicApprovals([approval]);

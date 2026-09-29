@@ -13,6 +13,7 @@ import type {
 	BrowserLeaseLedger,
 	BrowserLeaseRecord,
 } from "@/server/codex-workbench/lib/contract";
+import type { TabSessionId } from "@/server/codex-workbench/lib/tab-session";
 
 const RETIRED_LEASE_LIMIT = 64;
 
@@ -37,6 +38,7 @@ interface BrowserLeaseManager {
 	readonly claim: (
 		browserId: BrowserConnectionId,
 		paneId: string,
+		tabSessionId: TabSessionId,
 		connection: BrowserConnectionInstance,
 		binding: ThreadLinkBindingSnapshot,
 	) => BrowserLeaseRecord;
@@ -268,6 +270,7 @@ function createBrowserLeaseManager(options: {
 	 * Take the lease for a browser pane, ending whatever lease was active.
 	 * @param browserId The claiming browser.
 	 * @param paneId The claiming pane.
+	 * @param tabSessionId The tab the claiming pane belongs to.
 	 * @param connection The exact socket claiming.
 	 * @param capturedLink The pane's thread-link binding at claim time.
 	 * @returns The new active record.
@@ -275,6 +278,7 @@ function createBrowserLeaseManager(options: {
 	const claim = (
 		browserId: BrowserConnectionId,
 		paneId: string,
+		tabSessionId: TabSessionId,
 		connection: BrowserConnectionInstance,
 		capturedLink: ThreadLinkBindingSnapshot,
 	): BrowserLeaseRecord => {
@@ -306,6 +310,7 @@ function createBrowserLeaseManager(options: {
 				browserId,
 				connection,
 				paneId,
+				tabSessionId,
 				commandId,
 				childId,
 				epoch,

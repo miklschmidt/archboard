@@ -6,9 +6,10 @@ import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
 } from "../../../shared/codex-workbench-identity/index.js";
-import type {
-	BrowserProjectionContext,
-	CodexTimelineProjectionInput,
+import {
+	parseTabSessionId,
+	type BrowserProjectionContext,
+	type CodexTimelineProjectionInput,
 } from "../../codex-workbench/index.js";
 import {
 	createServerBrowserProjectionBudget,
@@ -151,6 +152,7 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 	const context = {
 		browserId: "browser-timeline",
 		paneId: "pane-timeline",
+		tabSessionId: parseTabSessionId("tab-one")!,
 		binding: {
 			paneId: "pane-timeline",
 			revision: 7,

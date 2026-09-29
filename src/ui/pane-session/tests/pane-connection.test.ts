@@ -13,10 +13,15 @@ class ControlledSocket extends EventTarget {
 	static readonly OPEN = 1;
 	static readonly created: ControlledSocket[] = [];
 	readyState = ControlledSocket.CONNECTING;
+	readonly url: string;
 
-	/** Capture the socket created by the production connector. */
-	constructor() {
+	/**
+	 * Capture the socket created by the production connector.
+	 * @param url Where the connector dialled.
+	 */
+	constructor(url: string) {
 		super();
+		this.url = url;
 		ControlledSocket.created.push(this);
 	}
 
@@ -124,6 +129,91 @@ test("a reconnect becomes connected only after its unchanged pane is registered 
 	} finally {
 		core.dispose();
 		fetchMock.mockRestore();
+		Object.defineProperty(globalThis, "WebSocket", socketDescriptor);
+	}
+});
+
+/**
+ * Open one pane's socket, the way the shell does for each pane of a tab, and read the tab
+ * session it named to the server.
+ * @param paneId The pane.
+ * @returns The tab session its socket carried.
+ */
+function dialledTabSession(paneId: string): string | null {
+	const core = createPaneCore({
+		paneId,
+		clientId: `${paneId}-${ControlledSocket.created.length}`,
+		/**
+		 * Read the fixture state.
+		 * @returns The pane's facets.
+		 */
+		options: () => ({
+			paneId,
+			theme: "dark",
+			primary: paneId === "A",
+			focused: false,
+			/** Nothing here reads the pane's status. */
+			onStatus: (): void => {},
+		}),
+		/**
+		 * Read the fixture state.
+		 * @returns No element.
+		 */
+		paneElement: () => null,
+		workbenchSockets: null,
+		/** The socket is never opened here. */
+		setConnected: (): void => {},
+		/** This fixture has no displayed board. */
+		setBoard: (): void => {},
+		/** This fixture makes no board navigation. */
+		setOpened: (): void => {},
+		/** No board claim is involved. */
+		setHeldBy: (): void => {},
+		/** No agent activity is involved. */
+		setDoing: (): void => {},
+	});
+	core.connect();
+	const url = new URL(ControlledSocket.created.at(-1)!.url);
+	core.dispose();
+	return url.searchParams.get("tabSession");
+}
+
+test("both panes' sockets carry one tab session, kept across a reload and new in a fresh tab", () => {
+	const socketDescriptor = Object.getOwnPropertyDescriptor(globalThis, "WebSocket")!;
+	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });
+	try {
+		window.sessionStorage.clear();
+		const left = dialledTabSession("A");
+		expect(left).toBeTruthy();
+		expect(dialledTabSession("B")).toBe(left);
+
+		// A reload runs the page again over the same tab's storage.
+		expect(dialledTabSession("A")).toBe(left);
+
+		// A new tab or window starts with storage of its own.
+		window.sessionStorage.clear();
+		const fresh = dialledTabSession("A");
+		expect(fresh).toBeTruthy();
+		expect(fresh).not.toBe(left);
+		expect(dialledTabSession("B")).toBe(fresh);
+	} finally {
+		window.sessionStorage.clear();
+		Object.defineProperty(globalThis, "WebSocket", socketDescriptor);
+	}
+});
+
+test("a tab whose storage refuses still names one session from both panes", () => {
+	const socketDescriptor = Object.getOwnPropertyDescriptor(globalThis, "WebSocket")!;
+	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });
+	const refuse = spyOn(window.sessionStorage, "getItem").mockImplementation(() => {
+		throw new Error("storage is blocked");
+	});
+	try {
+		const left = dialledTabSession("A");
+		expect(left).toBeTruthy();
+		expect(dialledTabSession("B")).toBe(left);
+	} finally {
+		refuse.mockRestore();
 		Object.defineProperty(globalThis, "WebSocket", socketDescriptor);
 	}
 });

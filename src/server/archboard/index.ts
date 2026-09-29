@@ -36,7 +36,6 @@ export {
 	type PresentOutcome,
 } from "@/server/archboard/lib/pane-presentation";
 export {
-	bindVoicePane,
 	narrationFor,
 	subscribeNarrationChanges,
 } from "@/server/archboard/lib/walkthrough-narration";

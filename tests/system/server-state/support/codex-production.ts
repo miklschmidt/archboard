@@ -120,11 +120,14 @@ async function openApplicationSocket(
 	options: {
 		readonly onSocket?: (socket: WebSocket) => void;
 		readonly timeoutMs?: number;
+		/** The browser tab the pane belongs to; every pane opened without one shares one tab. */
+		readonly tabSession?: string;
 	} = {},
 ): Promise<ApplicationSocket> {
 	const endpoint = new URL(base);
 	endpoint.protocol = "ws:";
 	endpoint.searchParams.set("clientId", clientId);
+	endpoint.searchParams.set("tabSession", options.tabSession ?? "system-tab");
 	const socket = new WebSocket(endpoint);
 	const pending = new Map<
 		string,

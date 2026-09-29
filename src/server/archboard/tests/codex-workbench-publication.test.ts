@@ -1,12 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import { WebSocket } from "ws";
 
-import type {
-	BrowserGatewayMessage,
-	BrowserGatewaySnapshotMessage,
-	BrowserSnapshot,
-	BrowserWorkbenchConnection,
-	CodexWorkbenchGateway,
+import {
+	parseTabSessionId,
+	type BrowserGatewayMessage,
+	type BrowserGatewaySnapshotMessage,
+	type BrowserSnapshot,
+	type BrowserWorkbenchConnection,
+	type CodexWorkbenchGateway,
 } from "../../codex-workbench/index.js";
 import {
 	createServerCodexBrowserSocketOwner,
@@ -59,6 +60,7 @@ describe("server Codex publication boundary", () => {
 		const connection = {
 			browserId: "browser-publication",
 			paneId: "pane-publication",
+			tabSessionId: parseTabSessionId("tab-one")!,
 			instance,
 			snapshot: () => ({ kind: "snapshot", sequence: 0, snapshot: { approvals: [] } }) as never,
 			confirmPublished: () => {
@@ -69,6 +71,7 @@ describe("server Codex publication boundary", () => {
 		const owner = createServerCodexBrowserSocketOwner({
 			gateway,
 			paneForBrowser: () => "pane-publication",
+			tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
 		});
 		const messages: unknown[] = [];
 		try {
@@ -111,6 +114,7 @@ describe("server Codex publication boundary", () => {
 		const connection = {
 			browserId: "browser-media-event",
 			paneId: "pane-media-event",
+			tabSessionId: parseTabSessionId("tab-one")!,
 			instance,
 			snapshot: () => ({ kind: "snapshot", sequence: 0, snapshot: { approvals: [] } }) as never,
 			confirmPublished: (payload: unknown) => void published.push(payload),
@@ -129,6 +133,7 @@ describe("server Codex publication boundary", () => {
 		const owner = createServerCodexBrowserSocketOwner({
 			gateway,
 			paneForBrowser: () => connection.paneId,
+			tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
 		});
 		const messages: unknown[] = [];
 		const transport = {
@@ -215,7 +220,11 @@ describe("server Codex publication boundary", () => {
 			},
 		} as unknown as BrowserWorkbenchConnection;
 		const gateway = { connect: () => connection } as unknown as CodexWorkbenchGateway;
-		const owner = createServerCodexBrowserSocketOwner({ gateway, paneForBrowser: () => paneId });
+		const owner = createServerCodexBrowserSocketOwner({
+			gateway,
+			paneForBrowser: () => paneId,
+			tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
+		});
 		const eventSendFailure = new Error("event write callback failed");
 		const transport = createServerCodexBrowserSocketSend({
 			readyState: WebSocket.OPEN,
@@ -306,7 +315,11 @@ describe("server Codex publication boundary", () => {
 			},
 		} as unknown as BrowserWorkbenchConnection;
 		const gateway = { connect: () => connection } as unknown as CodexWorkbenchGateway;
-		const owner = createServerCodexBrowserSocketOwner({ gateway, paneForBrowser: () => paneId });
+		const owner = createServerCodexBrowserSocketOwner({
+			gateway,
+			paneForBrowser: () => paneId,
+			tabSessionForBrowser: () => parseTabSessionId("tab-one")!,
+		});
 		const eventFailures = [firstEventFailure, laterEventFailure];
 		let eventSend = 0;
 		const transport = {

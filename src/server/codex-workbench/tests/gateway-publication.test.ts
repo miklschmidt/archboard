@@ -35,7 +35,7 @@ function spontaneousTerminal(approval: ApprovalOwnerView): ApprovalOwnerView {
 describe("Codex workbench terminal publication", () => {
 	test("an unrelated successful delta cannot credit a previously failed terminal payload", () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const approval = value.makeOrdinaryApproval();
 		value.setOrdinaryApproval(approval);
 		connection.snapshot();
@@ -63,7 +63,7 @@ describe("Codex workbench terminal publication", () => {
 
 	test("a successful media event retires its terminal without result confirmation", () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const approval = spontaneousTerminal(value.makeOrdinaryApproval());
 		connection.snapshot();
 		const messages: unknown[] = [];
@@ -81,7 +81,7 @@ describe("Codex workbench terminal publication", () => {
 
 	test("gateway shutdown applies the zero-live terminal retirement rule", async () => {
 		const value = harness();
-		const connection = value.gateway.connect(value.browserId, value.paneId);
+		const connection = value.open();
 		const approval = value.makeOrdinaryApproval();
 		value.setOrdinaryApproval(approval);
 		connection.snapshot();

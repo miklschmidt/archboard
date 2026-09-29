@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
+import { parseTabSessionId } from "../../codex-workbench/index.js";
 import { createDynamicAuthorityTokenIssuer } from "../../../runtime/codex-dynamic-tools/index.js";
 import {
 	clearServerThreadContextForLease,
@@ -140,6 +141,7 @@ test("create replaces controller authority with the exact returned CAS proof", a
 		browserId: "browser-1",
 		connection: Object.freeze({}),
 		paneId: "pane-1",
+		tabSessionId: parseTabSessionId("tab-one")!,
 		commandId: authorities.identity.issuer.mintBrowserCommandId(),
 		childId: authorities.identity.validator.childId,
 		epoch: authorities.identity.validator.epoch,
@@ -262,6 +264,7 @@ test("two panes creating at once leave one workhorse: the later create is refuse
 			browserId: `browser-${paneId}`,
 			connection: Object.freeze({}),
 			paneId,
+			tabSessionId: parseTabSessionId("tab-one")!,
 			commandId: authorities.identity.issuer.mintBrowserCommandId(),
 			childId,
 			epoch,

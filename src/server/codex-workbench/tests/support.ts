@@ -15,8 +15,11 @@ import type {
 	BrowserDisconnectReason,
 	BrowserLifecyclePort,
 	CodexWorkbenchGateway,
+	BrowserConnectionInstance,
+	BrowserWorkbenchConnection,
+	TabSessionId,
 } from "../index.js";
-import { createCodexWorkbenchGateway } from "../index.js";
+import { createCodexWorkbenchGateway, parseTabSessionId } from "../index.js";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -45,8 +48,11 @@ export interface GatewayHarness {
 	readonly authorities: IdentityAuthorities;
 	readonly model: ReturnType<typeof createCodexBrowserModel>;
 	readonly gateway: CodexWorkbenchGateway;
+	/** Connect the harness's own browser pane, in its own tab session. */
+	readonly open: (instance?: BrowserConnectionInstance) => BrowserWorkbenchConnection;
 	readonly browserId: string;
 	readonly paneId: string;
+	readonly tabSessionId: TabSessionId;
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly threadId: ThreadId;
@@ -112,6 +118,7 @@ export function createGatewayHarness(
 	);
 	const browserId = "browser-one";
 	const paneId = "pane-one";
+	const tabSessionId = parseTabSessionId("tab-one")!;
 	let clock = CLOCK_START;
 	let readiness: BrowserReadiness = readinessFor("thread_capable", loginId);
 	let account: BrowserOwnerProjection["account"] = readyAccount();
@@ -381,8 +388,10 @@ export function createGatewayHarness(
 		authorities,
 		model,
 		gateway,
+		open: (instance) => gateway.connect(browserId, paneId, tabSessionId, instance),
 		browserId,
 		paneId,
+		tabSessionId,
 		childId,
 		epoch,
 		threadId,

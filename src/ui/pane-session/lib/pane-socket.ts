@@ -7,6 +7,7 @@ import {
 	createPaneRegistrationLatch,
 	type PaneRegistrationLatch,
 } from "@/ui/pane-session/workbench-socket";
+import { tabSessionId } from "@/ui/pane-session/lib/tab-session";
 import type { WebSocketMessage } from "@/ui/types";
 
 /** A socket generation: the socket and its registration latch. */
@@ -44,13 +45,14 @@ interface PaneSocketConnector {
 }
 
 /**
- * The socket URL for this pane.
+ * The socket URL for this pane: its own identity, and the tab session every pane of the tab shares.
  * @param clientId The pane's identity to the server.
  * @returns The URL.
  */
 function socketUrl(clientId: string): string {
 	const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-	return `${protocol}//${window.location.host}/?clientId=${encodeURIComponent(clientId)}`;
+	const query = new URLSearchParams({ clientId, tabSession: tabSessionId() });
+	return `${protocol}//${window.location.host}/?${query.toString()}`;
 }
 
 /**

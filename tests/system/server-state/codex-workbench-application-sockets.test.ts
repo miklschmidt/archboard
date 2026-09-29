@@ -39,6 +39,7 @@ async function openApplicationSocket(base: string, clientId: string): Promise<Ap
 	const endpoint = new URL(base);
 	endpoint.protocol = "ws:";
 	endpoint.searchParams.set("clientId", clientId);
+	endpoint.searchParams.set("tabSession", "system-tab");
 	const socket = new WebSocket(endpoint);
 	const pending = new Map<string, (value: WorkbenchResult) => void>();
 	const initial = deferred<void>();
@@ -232,7 +233,7 @@ describe.serial("production server Codex WebSocket ownership", () => {
 			});
 			expect(await original.request("connect")).toMatchObject({ ok: true });
 			replacement = new WebSocket(
-				`${server.base.replace(/^http/u, "ws")}?clientId=${encodeURIComponent(clientId)}`,
+				`${server.base.replace(/^http/u, "ws")}?clientId=${encodeURIComponent(clientId)}&tabSession=system-tab`,
 			);
 			replacement.on("error", () => undefined);
 			const replacementClosed = new Promise<void>((resolveClosed) =>

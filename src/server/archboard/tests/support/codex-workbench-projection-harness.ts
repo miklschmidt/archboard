@@ -2,9 +2,10 @@ import type { IdentityAuthorities } from "../../../../shared/codex-workbench-ide
 import type { ThreadLinkSnapshot } from "../../../../runtime/codex-thread-link/index.js";
 import type { ArchboardContext } from "../../../../runtime/codex-instructions/index.js";
 import type { TransportServerNotification } from "../../../../runtime/codex-transport/index.js";
-import type {
-	BrowserActionContext,
-	BrowserProjectionContext,
+import {
+	parseTabSessionId,
+	type BrowserActionContext,
+	type BrowserProjectionContext,
 } from "../../../codex-workbench/index.js";
 import {
 	createServerBrowserGatewayOptions,
@@ -168,6 +169,7 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 			browserId: "browser-projection",
 			paneId: "pane-readiness",
 			connection: {},
+			tabSessionId: parseTabSessionId("tab-one")!,
 			binding: {
 				paneId: "pane-readiness",
 				revision: 1,
@@ -187,6 +189,7 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 			browserId: "browser-projection",
 			connection: {},
 			paneId: "pane-readiness",
+			tabSessionId: parseTabSessionId("tab-one")!,
 			commandId: harnessCommandId,
 			childId: authorities.identity.validator.childId,
 			epoch: authorities.identity.validator.epoch,
