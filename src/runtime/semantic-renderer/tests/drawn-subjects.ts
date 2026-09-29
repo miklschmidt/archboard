@@ -69,6 +69,34 @@ function subjectGroups(svg: string): DrawnGroup[] {
 }
 
 /**
+ * The mark a compared sequence draws on one message's row: the group that
+ * lists that message as its only member.
+ * @param svg The drawn document.
+ * @param id The message's semantic id.
+ * @returns The mark, as a group the colour helpers read, or undefined when its row is unmarked.
+ */
+function rowMarkOf(svg: string, id: string): DrawnGroup | undefined {
+	const open: { readonly at: number; readonly tag: string }[] = [];
+	for (const match of svg.matchAll(GROUP_TOKEN)) {
+		if (match[0] !== "</g>") {
+			open.push({ at: match.index, tag: match[0] });
+			continue;
+		}
+		const started = open.pop();
+		if (started !== undefined && attributesOf(started.tag)["data-members"] === id) {
+			return {
+				kind: "row",
+				id,
+				standing: undefined,
+				opacity: undefined,
+				markup: svg.slice(started.at, match.index + match[0].length),
+			};
+		}
+	}
+	return undefined;
+}
+
+/**
  * One named subject's group.
  * @param svg The drawn document.
  * @param kind What sort of subject.
@@ -159,6 +187,7 @@ export {
 	type DrawnStroke,
 	subjectGroups,
 	groupOf,
+	rowMarkOf,
 	withoutColour,
 	withoutMark,
 	markShape,

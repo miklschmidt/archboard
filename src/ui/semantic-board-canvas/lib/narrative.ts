@@ -112,13 +112,40 @@ function linesBetween(variant: SemanticVariant | null, named: readonly string[])
 }
 
 /**
+ * The frame of the flow a focus lies in, which the camera shows in its place
+ * when that costs little: a flow is read in order, a row at a time, and a fit
+ * to some of its columns cut the others through their words.
+ * @param variant The variant being read, or null when none can be.
+ * @param atlas Where the picture drew each subject.
+ * @param rect The focus.
+ * @returns The frame, or undefined when the focus is not inside one flow.
+ */
+function flowAround(
+	variant: SemanticVariant | null,
+	atlas: FocusSource["atlas"],
+	rect: Rect,
+): Rect | undefined {
+	return (variant?.content.flows ?? [])
+		.map(({ id }) => atlas.regions[id])
+		.find(
+			(frame) =>
+				frame !== undefined &&
+				frame.x <= rect.x &&
+				frame.y <= rect.y &&
+				rect.x + rect.width <= frame.x + frame.width &&
+				rect.y + rect.height <= frame.y + frame.height,
+		);
+}
+
+/**
  * What the current beat asks of the picture on screen.
  *
  * Three cases, and the third is the one that has to be visible rather than
  * quiet. A beat that names no subject is about the whole architecture and asks
  * for the whole of it. A beat whose subjects this picture draws asks for the
  * region they occupy, with the parts at the ends of every relationship or step
- * it names and the relationships between the cards it names. A beat whose subjects this picture does not draw — a narrative told
+ * it names and the relationships between the cards it names, and the frame of
+ * the flow they lie in as its context. A beat whose subjects this picture does not draw — a narrative told
  * across views, read through a view that narrows what is drawn — asks for the
  * whole picture again and hands back the names it could not find, so the rail
  * can say plainly that this reading does not show them. Silently focusing
@@ -159,7 +186,9 @@ function beatFocus(
 		.map((id) => subjectBox(source.atlas, id))
 		.filter((box) => box !== null);
 	const rect = unionRect(boxes);
-	const target: FitTarget = rect === null ? whole : { kind: "focus", rect };
+	const context = rect === null ? undefined : flowAround(variant, source.atlas, rect);
+	const target: FitTarget =
+		rect === null ? whole : { kind: "focus", rect, ...(context === undefined ? {} : { context }) };
 	return { drawn, undrawn, target, key: `${beat.id}:${targetKey(target)}` };
 }
 

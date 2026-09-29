@@ -39,6 +39,7 @@ import { PULSE_CLASS } from "@/transformers/semantic-renderer/lib/svg/pulse";
 import {
 	HEAD_REF_X,
 	HEAD_SIZE,
+	LIT_HEAD,
 	WEIGHTS,
 	lineColour,
 	type Head,
@@ -62,13 +63,17 @@ const MARKED: readonly SubjectStanding[] = ["added", "changed", "removed"];
  * where a filled head covers its own line end.
  * @param head Which form.
  * @param weight How loudly the line it ends speaks.
- * @param palette The theme's colours.
- * @param standing The standing whose ink to draw it in, when it is for a marked line.
+ * @param ink The ink to draw it in, and what its id says about that ink.
+ * @param ink.colour The colour.
+ * @param ink.suffix The end of its id: nothing for the plain ink.
  * @returns The marker element.
  */
-function marker(head: Head, weight: Weight, palette: Palette, standing?: SubjectStanding): string {
+function marker(
+	head: Head,
+	weight: Weight,
+	{ colour, suffix }: { readonly colour: string; readonly suffix: string },
+): string {
 	const size = HEAD_SIZE[weight];
-	const colour = lineColour(palette, standing);
 	const shape =
 		head === "filled"
 			? tag("path", { d: "M0,0 L10,5 L0,10 z", fill: colour })
@@ -83,7 +88,7 @@ function marker(head: Head, weight: Weight, palette: Palette, standing?: Subject
 	return wrap(
 		"marker",
 		{
-			id: `ah-${head}-${weight}${standing === undefined ? "" : `-${standing}`}`,
+			id: `ah-${head}-${weight}${suffix}`,
 			viewBox: "0 0 10 10",
 			refX: HEAD_REF_X[head],
 			refY: 5,
@@ -97,19 +102,23 @@ function marker(head: Head, weight: Weight, palette: Palette, standing?: Subject
 
 /**
  * Every arrowhead the document can reach for: one per form and weight in the
- * ink of the line's own weight, and one more per standing that has an ink.
+ * ink of the line's own weight, one more per standing that has an ink, and one
+ * in the selection's ink for a lit message's trace.
  * @param palette The theme's colours.
  * @returns The marker elements.
  */
 function markers(palette: Palette): string {
 	const heads: readonly Head[] = ["filled", "open"];
+	const inks = [
+		{ colour: lineColour(palette, undefined), suffix: "" },
+		...MARKED.map((standing) => ({
+			colour: lineColour(palette, standing),
+			suffix: `-${standing}`,
+		})),
+		{ colour: palette.selection, suffix: LIT_HEAD },
+	];
 	return heads
-		.flatMap((head) =>
-			WEIGHTS.flatMap((weight) => [
-				marker(head, weight, palette),
-				...MARKED.map((standing) => marker(head, weight, palette, standing)),
-			]),
-		)
+		.flatMap((head) => WEIGHTS.flatMap((weight) => inks.map((ink) => marker(head, weight, ink))))
 		.join("");
 }
 

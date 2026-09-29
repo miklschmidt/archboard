@@ -11,7 +11,7 @@ import {
 	ACTIVATION_RADIUS,
 	LIFELINE_DASH,
 } from "@/transformers/semantic-renderer/lib/sequence-design";
-import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
+import { coord } from "@/transformers/semantic-renderer/lib/geometry";
 import type {
 	FlowLayout,
 	PlacedColumn,
@@ -23,14 +23,15 @@ import {
 	wrap,
 	type Attributes,
 } from "@/transformers/semantic-renderer/lib/svg/primitives";
+import { stylesFor } from "@/transformers/semantic-renderer/lib/svg/styles";
 import {
 	PART_ATTRIBUTE,
-	standingOutline,
 	subjectGroup,
 	type SubjectStanding,
 } from "@/transformers/semantic-renderer/lib/svg/standing";
-import { stylesFor } from "@/transformers/semantic-renderer/lib/svg/styles";
-import { halo } from "@/transformers/semantic-renderer/lib/svg/cards";
+
+/** How heavy a lit lifeline is traced. */
+const LIT_LIFELINE_WIDTH = 1.5;
 
 /**
  * A lifeline is the passage of time under a participant, not a connection it
@@ -56,22 +57,6 @@ function sequenceStyles(palette: Palette): {
 }
 
 /**
- * The strip of page one participant's column of time occupies: its lifeline and
- * every bar on it.
- * @param column The column.
- * @param layout The flow it belongs to.
- * @returns The strip.
- */
-function columnStrip(column: PlacedColumn, layout: FlowLayout): Box {
-	return {
-		x: column.centreX - ACTIVATION_HALF_WIDTH,
-		y: column.lifelineTop,
-		width: ACTIVATION_HALF_WIDTH * 2,
-		height: layout.lifelineBottom - column.lifelineTop,
-	};
-}
-
-/**
  * One participant's column of time: the lifeline under its card, and the bars
  * marking where it is busy.
  *
@@ -79,6 +64,11 @@ function columnStrip(column: PlacedColumn, layout: FlowLayout): Box {
  * participant lights the whole height of the page it is involved in rather than
  * only the card at the top of it. The two groups are siblings rather than nested,
  * because a subject inside another subject is a click a viewer cannot resolve.
+ *
+ * Selected, the lifeline and its bars are traced in the selection's ink, rather
+ * than ringed as one strip: a page with a few participants lit was a row of
+ * tall capsules. A standing is the card's to say, and a removal ghosts the
+ * column with it; the lifeline keeps its own ink either way.
  * @param column The column.
  * @param layout The flow it belongs to.
  * @param palette The theme's colours.
@@ -91,40 +81,39 @@ function paintColumn(
 	palette: Palette,
 	standing: SubjectStanding | undefined,
 ): string {
-	const styles = stylesFor(palette);
 	const own = sequenceStyles(palette);
-	// The lifeline takes the standing's ink but keeps its own dash, which is this
-	// grammar's signature for the passage of time rather than a kind of anything.
-	// It is what makes a participant's standing read all the way down the page
-	// instead of only at the card on top of it.
-	const ink = standingOutline(standing, palette)["stroke"];
+	const { halo } = stylesFor(palette);
+	const lifeline = {
+		x1: coord(column.centreX),
+		y1: coord(column.lifelineTop),
+		x2: coord(column.centreX),
+		y2: coord(layout.lifelineBottom),
+	};
+	// A bar reaches its corner radius past the call that starts it and the reply
+	// that ends it, so both meet its straight side, not a rounded corner.
+	const bars = column.activations.map((bar) => ({
+		x: coord(column.centreX - ACTIVATION_HALF_WIDTH),
+		y: coord(bar.top - ACTIVATION_RADIUS),
+		width: ACTIVATION_HALF_WIDTH * 2,
+		height: coord(bar.bottom - bar.top + ACTIVATION_RADIUS * 2),
+		rx: ACTIVATION_RADIUS,
+	}));
 	return wrap(
 		"g",
 		{ ...subjectGroup("node", column.card.node.id, standing), [PART_ATTRIBUTE]: "lifeline" },
 		lines([
-			halo(columnStrip(column, layout), ACTIVATION_RADIUS, styles),
+			tag("line", { ...lifeline, ...own.lifeline }),
 			tag("line", {
-				x1: coord(column.centreX),
-				y1: coord(column.lifelineTop),
-				x2: coord(column.centreX),
-				y2: coord(layout.lifelineBottom),
+				class: "ab-halo",
+				...lifeline,
 				...own.lifeline,
-				stroke: ink ?? own.lifeline["stroke"],
+				...halo,
+				"stroke-width": LIT_LIFELINE_WIDTH,
 			}),
-			// A bar reaches its corner radius past the call that starts it and the
-			// reply that ends it, so both meet its straight side, not a rounded corner.
-			...column.activations.map((bar) =>
-				tag("rect", {
-					x: coord(column.centreX - ACTIVATION_HALF_WIDTH),
-					y: coord(bar.top - ACTIVATION_RADIUS),
-					width: ACTIVATION_HALF_WIDTH * 2,
-					height: coord(bar.bottom - bar.top + ACTIVATION_RADIUS * 2),
-					rx: ACTIVATION_RADIUS,
-					...own.activation,
-				}),
-			),
+			...bars.map((bar) => tag("rect", { ...bar, ...own.activation })),
+			...bars.map((bar) => tag("rect", { class: "ab-halo", ...bar, ...halo })),
 		]),
 	);
 }
 
-export { columnStrip, paintColumn, sequenceStyles };
+export { paintColumn };

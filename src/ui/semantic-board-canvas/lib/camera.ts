@@ -32,8 +32,12 @@ interface Rect extends Size {
 type FitTarget =
 	/** The whole diagram, centred: what a pane shows when nothing is singled out. */
 	| { readonly kind: "whole"; readonly content: Size }
-	/** One region of it, centred: what a narrative beat's subjects occupy. */
-	| { readonly kind: "focus"; readonly rect: Rect };
+	/**
+	 * One region of it, centred: what a narrative beat's subjects occupy. The
+	 * context holds the region, and is shown instead of it when that costs
+	 * little magnification ({@link CONTEXT_SHARE}).
+	 */
+	| { readonly kind: "focus"; readonly rect: Rect; readonly context?: Rect };
 
 /**
  * How far in and out a diagram can be taken.
@@ -61,6 +65,16 @@ const PAN_STEP = 64;
  * is the whole point of pointing at part of an architecture.
  */
 const FOCUS_MAX_SCALE = 1.5;
+
+/**
+ * How much of a focus's magnification its context may cost and still be shown
+ * in its place.
+ *
+ * A flow's subjects are whole columns and rows, so a fit to a beat about some
+ * of them cut the columns either side through their words. The whole flow
+ * shows those words, and the order they come in, for a little of the size.
+ */
+const CONTEXT_SHARE = 0.8;
 
 /**
  * Below this magnification the picture is seen from far away: a card's
@@ -187,15 +201,22 @@ function unionRect(rects: readonly Rect[]): Rect | null {
  * The whole diagram and one region of it are the same arithmetic with two
  * ceilings: a whole picture may be magnified as far as the camera goes, and a
  * region stops at `FOCUS_MAX_SCALE` so that pointing at one card does not
- * become a wall of card.
+ * become a wall of card. A region's context is shown in its place when it
+ * fits nearly as large.
  * @param viewport How big the pane's window on the diagram is.
  * @param target What is being shown: the whole diagram, or a region of it.
  * @returns The fitted camera, or null when there is nothing to fit.
  */
 function cameraFor(viewport: Size, target: FitTarget): Camera | null {
-	return target.kind === "whole"
-		? fitCamera(viewport, target.content)
-		: fitRect(viewport, target.rect, FOCUS_MAX_SCALE);
+	if (target.kind === "whole") {
+		return fitCamera(viewport, target.content);
+	}
+	const focus = fitRect(viewport, target.rect, FOCUS_MAX_SCALE);
+	const context =
+		target.context === undefined ? null : fitRect(viewport, target.context, FOCUS_MAX_SCALE);
+	return focus !== null && context !== null && context.scale >= focus.scale * CONTEXT_SHARE
+		? context
+		: focus;
 }
 
 /**

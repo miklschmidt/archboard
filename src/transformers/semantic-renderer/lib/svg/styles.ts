@@ -175,6 +175,19 @@ function markerFor(weight: Weight, head: Head, standing?: SubjectStanding): stri
 	return `url(#ah-${head}-${weight}${marked})`;
 }
 
+/** The suffix of the arrowhead drawn in the selection's ink, for a lit line. */
+const LIT_HEAD = "-lit";
+
+/**
+ * The marker reference for the arrowhead a lit line ends in.
+ * @param weight How loudly the line speaks.
+ * @param head Which form.
+ * @returns The `marker-end` value.
+ */
+function litMarkerFor(weight: Weight, head: Head): string {
+	return `url(#ah-${head}-${weight}${LIT_HEAD})`;
+}
+
 /**
  * How thick one edge's line is drawn.
  * @param edge The relationship.
@@ -266,6 +279,8 @@ export {
 	relationshipInk,
 	weightOf,
 	markerFor,
+	litMarkerFor,
+	LIT_HEAD,
 	strokeWidthOf,
 	edgeAttributes,
 	stylesFor,
