@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 21,
+	"version": 23,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-09-29T18:38:06.473Z",
+	"updatedAt": "2026-09-29T18:48:04.296Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -782,7 +782,7 @@
 		{
 			"id": "kUF7buv6",
 			"name": "TASK-373",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "d74jhTtj",
 			"summary": "Service level: Codex integration inside the Archboard server. Follow linked subjects for related levels.",
 			"content": {
@@ -1727,9 +1727,9 @@
 		{
 			"id": "7OTVElk6",
 			"name": "TASK-379",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "kUF7buv6",
-			"summary": "A workhorse's CLI talks to the Archboard server that started it",
+			"summary": "Service level: Codex integration inside the Archboard server. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
@@ -2670,13 +2670,19 @@
 			}
 		}
 	],
-	"current": "kUF7buv6",
+	"current": "7OTVElk6",
 	"adoptions": [
 		{
 			"variant": "kUF7buv6",
 			"from": "d74jhTtj",
 			"at": "2026-09-29T16:24:40.292Z",
 			"reason": "TASK-373: each browser tab is a tab session with its own link, workhorse, coordinator, voice, delivery, queue, lease and approvals; the thread selector is gone"
+		},
+		{
+			"variant": "7OTVElk6",
+			"from": "kUF7buv6",
+			"at": "2026-09-29T18:48:04.296Z",
+			"reason": "TASK-379: the Codex child's environment names this server's URL and vault, with auto-start off, so a thread's CLI reaches the server that started it"
 		}
 	]
 }
