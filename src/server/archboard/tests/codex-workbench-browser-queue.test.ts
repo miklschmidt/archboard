@@ -74,7 +74,7 @@ test("a snapshot refresh re-reads the authoritative queue and replaces a stale c
 	});
 	// The cache the browser would otherwise be shown: a submission the workhorse
 	// has already drained, left behind by the pane's last command.
-	harness.state.queue = {
+	harness.session.state.queue = {
 		kind: "codex_queue",
 		submissions: [
 			{
@@ -84,7 +84,7 @@ test("a snapshot refresh re-reads the authoritative queue and replaces a stale c
 			},
 		],
 	};
-	harness.state.queueThreadId = harness.threadId;
+	harness.session.state.queueThreadId = harness.threadId;
 
 	expect(harness.options.projection.refresh).toBeTypeOf("function");
 	await harness.options.projection.refresh?.(harness.context);
@@ -121,7 +121,7 @@ test("a failed re-read presents the queue as unavailable rather than an unproven
 			},
 		},
 	});
-	harness.state.queue = {
+	harness.session.state.queue = {
 		kind: "codex_queue",
 		submissions: [
 			{
@@ -131,7 +131,7 @@ test("a failed re-read presents the queue as unavailable rather than an unproven
 			},
 		],
 	};
-	harness.state.queueThreadId = harness.threadId;
+	harness.session.state.queueThreadId = harness.threadId;
 
 	await harness.options.projection.refresh?.(harness.context);
 
@@ -186,7 +186,7 @@ test("a submission's coordinator operation is recovered from its client user mes
 	// does before it becomes a submission's client user message identity.
 	expect(harness.operations.decoder.serializeOperationId(minted)).toBe(minted);
 	ours = minted;
-	harness.state.queueThreadId = harness.threadId;
+	harness.session.state.queueThreadId = harness.threadId;
 
 	await harness.options.projection.refresh?.(harness.context);
 
@@ -221,7 +221,7 @@ test("concurrent snapshot re-reads share one read, and a looping client is floor
 			},
 		},
 	});
-	harness.state.queueThreadId = harness.threadId;
+	harness.session.state.queueThreadId = harness.threadId;
 
 	// Three requests arrive while the first paginated read is still open.
 	const concurrent = [

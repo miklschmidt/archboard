@@ -467,7 +467,13 @@ function createCommandExecutor(owners: CommandExecutorOwners): CommandExecutor {
 			const state = connections.stateFor(browserId, paneId, instance);
 			try {
 				ensureAccountReadiness(connections.snapshotFor(state));
-				const outcome = actionOutcome(await options.actions.account.read({ browserId, paneId }));
+				const outcome = actionOutcome(
+					await options.actions.account.read({
+						browserId,
+						paneId,
+						tabSessionId: state.tabSessionId,
+					}),
+				);
 				const code = codeForOutcome(outcome);
 				return Object.freeze({
 					kind: "account_read",

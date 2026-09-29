@@ -15,3 +15,15 @@ export type {
 	ProductionCodexWorkbenchBindings,
 	CodexWorkbenchStopReason,
 } from "@/server/archboard/lib/codex-workbench";
+export {
+	createCodexWorkbenchSessions,
+	SHARED_TAB_SESSION_ID,
+} from "@/server/archboard/lib/codex-workbench-sessions";
+export type {
+	CodexWorkbenchSessionComponents,
+	CodexWorkbenchSessions,
+	CodexWorkbenchTabSession,
+	CodexWorkbenchTabSessionActions,
+	CodexWorkbenchTabSessionState,
+} from "@/server/archboard/lib/codex-workbench-sessions";
+export type { CodexWorkbenchSharedComponents } from "@/server/archboard/lib/codex-workbench-generation-lifecycle";

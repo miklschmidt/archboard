@@ -22,7 +22,12 @@ import {
 	createCodexWorkbenchGateway,
 } from "../../codex-workbench/index.js";
 import { createServerCodexWorkbenchInstallation } from "../codex-workbench-production.js";
-import type { CodexWorkbenchComponents } from "../codex-workbench-generation.js";
+import {
+	SHARED_TAB_SESSION_ID,
+	type CodexWorkbenchComponents,
+	type CodexWorkbenchSessionComponents,
+	type CodexWorkbenchSharedComponents,
+} from "../codex-workbench-generation.js";
 import type { CodexWorkbenchGenerationInput } from "../codex-workbench-owner.js";
 import { createCodexWorkbenchGenerationFixture } from "./support/codex-workbench-generation-fixture.js";
 import { identities, waitOwnerFor } from "./support/codex-workbench-terminal-fixture.js";
@@ -134,7 +139,6 @@ describe("production Codex generation ownership", () => {
 		const starts: SessionParams<"thread/realtime/start">[] = [];
 		try {
 			const components = {
-				identity: authorities,
 				semanticPublisher: publisher,
 				workhorse: {
 					snapshot: () => ({
@@ -147,8 +151,20 @@ describe("production Codex generation ownership", () => {
 				coordinator: {
 					snapshot: () => ({ state: "ready", threadId: coordinatorThreadId }),
 				},
-			} as unknown as CodexWorkbenchComponents;
-			const production = owned.value.bindings(generationInput(1)).realtime(components);
+			} as unknown as CodexWorkbenchSessionComponents;
+			const production = owned.value
+				.bindings(generationInput(1))
+				.tabSession(
+					SHARED_TAB_SESSION_ID,
+					{ identity: authorities } as unknown as CodexWorkbenchSharedComponents,
+					{
+						queue: { kind: "codex_queue", submissions: null },
+						queueThreadId: null,
+						currentCoordinatorCall: null,
+						threads: new Set(),
+					},
+				)
+				.realtime(components);
 			const adapter = createCodexRealtimeAdapter({
 				...production,
 				boardCatalogue: {

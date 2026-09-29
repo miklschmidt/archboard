@@ -129,26 +129,29 @@ test("the live server socket crosses the real gateway and approval broker exactl
 			reason: null,
 		} as const;
 		const realtimeCalls: Array<{ readonly name: string; readonly input: unknown }> = [];
-		const realtime = createServerRealtimeActions({
-			coordinator: {
-				snapshot: () => ({
-					state: "ready",
-					threadId: coordinatorThreadId,
-					childId,
-					epoch,
-				}),
-			},
-			workhorse: { snapshot: () => ({ state: "ready", threadId }) },
-			realtime: {
-				createOffer: async (input: { sessionId: string; correlationId: string; sdp: string }) => {
-					realtimeCalls.push({ name: "start", input });
-					return { ...input, sdp: "v=0\r\na=public-answer" };
+		const realtime = createServerRealtimeActions(
+			{
+				coordinator: {
+					snapshot: () => ({
+						state: "ready",
+						threadId: coordinatorThreadId,
+						childId,
+						epoch,
+					}),
 				},
-				appendText: async (input: unknown) => void realtimeCalls.push({ name: "append", input }),
-				stop: async (input: unknown) => void realtimeCalls.push({ name: "stop", input }),
-				onSemanticEvent: () => () => undefined,
-			},
-		} as never);
+				workhorse: { snapshot: () => ({ state: "ready", threadId }) },
+				realtime: {
+					createOffer: async (input: { sessionId: string; correlationId: string; sdp: string }) => {
+						realtimeCalls.push({ name: "start", input });
+						return { ...input, sdp: "v=0\r\na=public-answer" };
+					},
+					appendText: async (input: unknown) => void realtimeCalls.push({ name: "append", input }),
+					stop: async (input: unknown) => void realtimeCalls.push({ name: "stop", input }),
+					onSemanticEvent: () => () => undefined,
+				},
+			} as never,
+			() => undefined,
+		);
 		const actions: BrowserWorkbenchActions = {
 			account: {
 				read: delivered,

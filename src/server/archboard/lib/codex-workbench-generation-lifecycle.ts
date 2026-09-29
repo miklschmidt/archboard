@@ -1,31 +1,21 @@
 import type { CodexApprovalBroker } from "@/runtime/codex-approvals";
-import type { CoordinatorCallbacks } from "@/runtime/codex-coordinator-callbacks";
-import type { CoordinatorToolDispatcher } from "@/runtime/codex-coordinator-tools";
-import type { CodexCoordinator } from "@/runtime/codex-coordinator";
 import type { CodexDynamicTools } from "@/runtime/codex-dynamic-tools";
 import type { CodexEpochStore } from "@/runtime/codex-epoch";
-import type { CodexRealtimeAdapter } from "@/runtime/codex-realtime";
-import type { SemanticContextPublisher } from "@/runtime/codex-semantic-context";
 import {
 	CODEX_SESSION_CONTROL,
 	type CodexSession,
 	type ControlledCodexSession,
 } from "@/runtime/codex-session";
-import type { CodexSpokenApprovalGate } from "@/runtime/codex-spoken-approval";
-import type { CodexThreadContextController } from "@/runtime/codex-thread-context";
 import type { CodexThreadLinkPort } from "@/runtime/codex-thread-link";
 import type { CodexTransport } from "@/runtime/codex-transport";
-import type { CodexWorkhorseOperations } from "@/runtime/codex-workhorse-operations";
-import type { CodexWorkhorseQueue } from "@/runtime/codex-workhorse-queue";
-import type { CodexWorkhorseStart } from "@/runtime/codex-workhorse-start";
 import type {
 	ChildEpoch,
 	ChildId,
 	IdentityAuthorities,
 	IdentityLedger,
-	OperationId,
 } from "@/shared/codex-workbench-identity";
 import type { CodexWorkbenchGateway } from "@/server/codex-workbench";
+import type { CodexWorkbenchSessions } from "@/server/archboard/lib/codex-workbench-sessions";
 import { CodexWorkbenchCompositionError } from "@/server/archboard/lib/codex-workbench-error";
 import { appendFailure } from "@/server/archboard/lib/codex-workbench-failures";
 import { CODEX_GENERATION_REGISTRATION_KEYS } from "@/server/archboard/lib/codex-workbench-generation-contract";
@@ -57,29 +47,26 @@ interface CodexWorkbenchSnapshot {
 	readonly failure: string | null;
 }
 
+/**
+ * What one Codex child generation owns: what describes the child, what every conversation on it
+ * shares, and its tab sessions, which own each conversation's workhorse, coordinator and voice.
+ */
 interface CodexWorkbenchComponents {
 	readonly identity: IdentityAuthorities;
 	readonly epoch: CodexEpochStore;
 	readonly transport: CodexTransport;
 	readonly session: ControlledCodexSession;
 	readonly threadLink: CodexThreadLinkPort;
-	readonly workhorse: CodexWorkhorseStart;
-	readonly semanticPublisher: SemanticContextPublisher;
-	readonly realtime: CodexRealtimeAdapter;
 	readonly approvals: CodexApprovalBroker;
 	readonly dynamicTools: CodexDynamicTools;
-	readonly coordinatorTools: CoordinatorToolDispatcher;
-	readonly semanticDelivery: CodexThreadContextController;
-	readonly coordinator: CodexCoordinator;
-	readonly queue: CodexWorkhorseQueue<OperationId>;
-	readonly operations: CodexWorkhorseOperations;
-	readonly callbacks: CoordinatorCallbacks;
-	readonly spokenApproval: CodexSpokenApprovalGate;
+	readonly sessions: CodexWorkbenchSessions;
 	readonly gateway: CodexWorkbenchGateway;
 }
 
+/** What every tab session of a generation is built over. */
+type CodexWorkbenchSharedComponents = Omit<CodexWorkbenchComponents, "sessions" | "gateway">;
+
 interface CodexWorkbenchGenerationHooks {
-	readonly threadContext: Parameters<CodexThreadContextController["replaceHooks"]>[0];
 	readonly onNotification: Parameters<CodexTransport["onServerNotification"]>[0];
 	readonly installIdentityDecoders: (identity: IdentityAuthorities) => void;
 	readonly installLifecycleSignals: (components: CodexWorkbenchComponents) => () => void;
@@ -93,8 +80,6 @@ interface CodexWorkbenchGenerationHooks {
 		gateway: CodexWorkbenchGateway,
 		reason: CodexWorkbenchStopReason,
 	) => Promise<void>;
-	readonly stopRealtime: (realtime: CodexRealtimeAdapter) => Promise<void>;
-	readonly stopQueue: (queue: CodexWorkhorseQueue<OperationId>) => Promise<void> | void;
 	/**
 	 * Retire the generation's dynamic wait and quarantine owner on child exit.
 	 * Ordinary settlement never reaches it, so an in-flight wait would otherwise
@@ -231,8 +216,7 @@ async function settleChildExit(
 	child: Parameters<CodexWorkbenchGateway["childExit"]>[0],
 	epoch: Parameters<CodexWorkbenchGateway["childExit"]>[1],
 ): Promise<void> {
-	const { approvals, coordinatorTools, gateway, semanticDelivery, spokenApproval } =
-		state.components;
+	const { approvals, gateway, sessions } = state.components;
 	let failure: Error | null = null;
 	const owners: (() => Promise<unknown> | void)[] = [
 		/**
@@ -241,20 +225,11 @@ async function settleChildExit(
 		 */
 		() => approvals.childExit({ child, epoch }),
 		/**
-		 * The semantic delivery controller drops what it was carrying for it.
-		 * @returns Resolves once it has.
+		 * Every tab session drops the board news it was carrying, settles what its spoken approval
+		 * was waiting on, and settles its coordinator's tool calls.
+		 * @returns Resolves once they have.
 		 */
-		() => semanticDelivery.childExit(child, epoch),
-		/**
-		 * The spoken approval gate settles what it was waiting on.
-		 * @returns Resolves once it has.
-		 */
-		() => spokenApproval.onChildExit({ child, epoch }),
-		/**
-		 * The coordinator tool dispatcher settles its own calls.
-		 * @returns Resolves once it has.
-		 */
-		() => coordinatorTools.onChildExit({ child, epoch }),
+		() => sessions.childExit(child, epoch),
 		/**
 		 * The dynamic wait and quarantine owner is retired, because ordinary
 		 * settlement never reaches it.
@@ -281,7 +256,7 @@ async function settleChildExit(
 }
 
 /**
- * Register this generation with the transport, the thread context, the
+ * Register this generation with the transport, the
  * lifecycle signals, the browser gateway and the approval projection, in that
  * order, releasing whatever was registered when one of them fails.
  * @param state The generation.
@@ -301,8 +276,6 @@ function installRegistrations(
 		stage = "transportNotification";
 		registrations.transportNotification =
 			state.components.transport.onServerNotification(onNotification);
-		stage = "threadContext";
-		state.components.semanticDelivery.replaceHooks(state.hooks.threadContext);
 		stage = "identityDecoders";
 		state.hooks.installIdentityDecoders(state.components.identity);
 		stage = "lifecycleSignals";
@@ -334,8 +307,7 @@ function createCodexWorkbenchGenerationLifecycle(
 	const owners = Object.freeze({
 		approvals: components.approvals,
 		dynamicTools: components.dynamicTools,
-		coordinatorTools: components.coordinatorTools,
-		callbacks: components.callbacks,
+		sessions: components.sessions,
 		session: components.session,
 	});
 	const router = createCodexWorkbenchRequestRouter(owners);
@@ -355,8 +327,9 @@ function createCodexWorkbenchGenerationLifecycle(
 	};
 
 	/**
-	 * Hand one server notification to every owner in this generation, and to
-	 * none once the generation is retired or stopped.
+	 * Hand one server notification to the generation's owners and then to the
+	 * tab session its thread belongs to, and to none once the generation is
+	 * retired or stopped.
 	 * @param event The notification.
 	 */
 	const onNotification: Parameters<CodexTransport["onServerNotification"]>[0] = (event) => {
@@ -365,12 +338,7 @@ function createCodexWorkbenchGenerationLifecycle(
 		}
 		state.hooks.onNotification(event);
 		components.session[CODEX_SESSION_CONTROL].onNotification(event);
-		components.coordinator.onNotification(event);
-		components.operations.onNotification(event);
-		components.realtime.onNotification(event);
-		components.spokenApproval.onNotification(event);
-		// After the operations owner, which settles the coordinator's own delegations first.
-		components.callbacks.onNotification(event);
+		components.sessions.onNotification(event);
 	};
 	const activeRouter: CodexWorkbenchRequestRouter = {
 		/**
@@ -543,6 +511,7 @@ export type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGeneration,
 	CodexWorkbenchGenerationHooks,
+	CodexWorkbenchSharedComponents,
 	CodexWorkbenchSnapshot,
 	CodexWorkbenchState,
 	CodexWorkbenchStopReason,

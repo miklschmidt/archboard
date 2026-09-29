@@ -63,8 +63,6 @@ export interface CodexWorkbenchServer {
 	readonly installBrowserGateway: (gateway: CodexWorkbenchComponents["gateway"]) => () => void;
 	readonly browserLeaseLedger: BrowserLeaseLedger;
 	readonly stopBrowser: CodexWorkbenchGenerationHooks["stopBrowser"];
-	readonly stopRealtime: (realtime: CodexWorkbenchComponents["realtime"]) => Promise<void>;
-	readonly stopQueue: (queue: CodexWorkbenchComponents["queue"]) => Promise<void> | void;
 	readonly onFatal: (error: unknown) => void;
 }
 

@@ -196,6 +196,7 @@ export interface BrowserAccountActions {
 	readonly read: (input: {
 		readonly browserId: BrowserConnectionId;
 		readonly paneId: string;
+		readonly tabSessionId: TabSessionId;
 	}) => Promise<BrowserActionResult>;
 	readonly login: (
 		command: BrowserAccountLoginCommand,

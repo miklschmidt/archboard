@@ -1,11 +1,11 @@
 import type { CodexRealtimeGeneration } from "@/runtime/codex-realtime";
 import type { TransportServerNotification } from "@/runtime/codex-transport";
-import type { LogicalToolCallCorrelation } from "@/shared/codex-workbench-identity";
 import type { WorkhorseOperationBinding } from "@/runtime/codex-workhorse-operations";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationInput,
 } from "@/server/archboard/lib/codex-workbench";
+import type { CodexWorkbenchSessionComponents } from "@/server/archboard/lib/codex-workbench-sessions";
 import type { ServerBrowserBindingState } from "@/server/archboard/lib/codex-workbench-browser-gateway";
 import type { ServerDynamicApprovalOwner } from "@/server/archboard/lib/codex-workbench-approvals";
 import type { ServerDynamicAuthorityAdapters } from "@/server/archboard/lib/codex-workbench-authority";
@@ -17,7 +17,6 @@ interface GenerationOwners {
 	approval: ServerDynamicApprovalOwner | null;
 	authority: ServerDynamicAuthorityAdapters | null;
 	lifecycle: ServerDynamicLifecycleOwner | null;
-	currentCoordinatorCall: LogicalToolCallCorrelation | null;
 	browserState: ServerBrowserBindingState;
 	approvalProjectionInstalled: boolean;
 	projectionListeners: Set<() => void>;
@@ -33,17 +32,18 @@ interface GenerationOwnerStore {
 }
 
 /**
- * One component the production wiring cannot proceed without.
+ * One component the production wiring cannot proceed without, from a
+ * generation's or a tab session's components built so far.
  * @param created What the graph has built so far.
  * @param name The component.
  * @returns The component.
  */
-function requireCreated<Name extends keyof CodexWorkbenchComponents>(
-	created: Readonly<Partial<CodexWorkbenchComponents>>,
+function requireCreated<Created extends object, Name extends keyof Created & string>(
+	created: Created,
 	name: Name,
-): CodexWorkbenchComponents[Name] {
+): NonNullable<Created[Name]> {
 	const component = created[name];
-	if (component === undefined)
+	if (component === undefined || component === null)
 		throw new Error(`The production Codex ${name} dependency is not ready.`);
 	return component;
 }
@@ -63,8 +63,8 @@ function allNamed<Fields extends Record<string, unknown>>(
 
 /** One snapshot the operation binding is read from. */
 type BindingSnapshot =
-	| ReturnType<CodexWorkbenchComponents["workhorse"]["snapshot"]>
-	| ReturnType<CodexWorkbenchComponents["coordinator"]["snapshot"]>;
+	| ReturnType<CodexWorkbenchSessionComponents["workhorse"]["snapshot"]>
+	| ReturnType<CodexWorkbenchSessionComponents["coordinator"]["snapshot"]>;
 
 /**
  * Whether a snapshot is ready and names every part of its own identity, which
@@ -100,11 +100,13 @@ function sharesReadyEpoch(workhorse: BindingSnapshot, coordinator: BindingSnapsh
  *
  * The non-null reads below are the ones `namesReadyThread` has just proved;
  * TypeScript cannot carry that narrowing across the call.
- * @param created What the graph has built so far.
+ * @param created What the tab session has built so far.
+ * @param epoch What proves the workhorse's thread belongs to this child epoch.
  * @returns The binding, or null when they do not share one.
  */
 function currentOperationBinding(
-	created: Readonly<Partial<CodexWorkbenchComponents>>,
+	created: Readonly<Partial<CodexWorkbenchSessionComponents>>,
+	epoch: Pick<CodexWorkbenchComponents["epoch"], "assertCurrent">,
 ): WorkhorseOperationBinding | null {
 	const workhorse = created.workhorse?.snapshot();
 	const coordinator = created.coordinator?.snapshot();
@@ -128,7 +130,7 @@ function currentOperationBinding(
 			childId: workhorse.childId!,
 			epoch: workhorse.epoch!,
 			operationId: workhorse.operationId!,
-			provenance: requireCreated(created, "epoch").assertCurrent({
+			provenance: epoch.assertCurrent({
 				childId: workhorse.childId!,
 				epoch: workhorse.epoch!,
 				operationId: workhorse.operationId!,
@@ -165,11 +167,11 @@ interface RealtimeGenerationCorrelation {
 /**
  * The realtime generation now running, in the shape every callback owner
  * correlates against.
- * @param created What the graph has built so far.
+ * @param created What the tab session has built so far.
  * @returns The generation, or null when no voice session is running.
  */
 function currentRealtimeGeneration(
-	created: Readonly<Partial<CodexWorkbenchComponents>>,
+	created: Readonly<Partial<CodexWorkbenchSessionComponents>>,
 ): RealtimeGenerationCorrelation | null {
 	const generation = created.realtime?.generation();
 	if (generation === null || generation === undefined) {
@@ -197,7 +199,6 @@ function retire(owners: GenerationOwners): void {
 	owners.authority = null;
 	owners.lifecycle = null;
 	owners.timeline = null;
-	owners.currentCoordinatorCall = null;
 	owners.dynamicProjectionUnsubscribe = null;
 	owners.projectionListeners.clear();
 	owners.accountListeners.clear();
@@ -213,7 +214,6 @@ function freshOwners(): GenerationOwners {
 		approval: null,
 		authority: null,
 		lifecycle: null,
-		currentCoordinatorCall: null,
 		approvalProjectionInstalled: false,
 		projectionListeners: new Set(),
 		accountListeners: new Set(),
@@ -223,8 +223,6 @@ function freshOwners(): GenerationOwners {
 		browserState: {
 			account: { kind: "account", state: "unknown", reason: "Account state has not been read." },
 			login: { kind: "login", state: "idle" },
-			queue: { kind: "codex_queue", submissions: null },
-			queueThreadId: null,
 		},
 	};
 }

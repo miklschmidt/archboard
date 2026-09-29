@@ -7,6 +7,10 @@ import type {
 	CodexThreadContextController,
 } from "@/runtime/codex-thread-context";
 import type { CodexWorkbenchComponents } from "@/server/archboard/lib/codex-workbench";
+import type {
+	CodexWorkbenchSessionComponents,
+	CodexWorkbenchTabSessionScope,
+} from "@/server/archboard/lib/codex-workbench-sessions";
 
 /** The workhorse as it describes its own thread. */
 type WorkhorseSnapshot = ReturnType<CodexWorkhorseStart["snapshot"]>;
@@ -164,16 +168,18 @@ function assertBrowserLinkStands(
 	}
 }
 
-/** The owners one generation's thread-link actions are closed over. */
+/** The owners one tab session's thread-link actions are closed over. */
 interface ServerThreadLinkActionOptions {
 	readonly coordinator: Pick<
-		CodexWorkbenchComponents["coordinator"],
+		CodexWorkbenchSessionComponents["coordinator"],
 		"ensure" | "replace" | "snapshot"
 	>;
 	readonly identity: Pick<CodexWorkbenchComponents["identity"], "operation">;
-	readonly workhorse: CodexWorkbenchComponents["workhorse"];
+	readonly workhorse: CodexWorkbenchSessionComponents["workhorse"];
 	readonly threadLink: CodexWorkbenchComponents["threadLink"];
-	readonly semanticDelivery: CodexWorkbenchComponents["semanticDelivery"];
+	readonly semanticDelivery: CodexWorkbenchSessionComponents["semanticDelivery"];
+	/** Record that the session started a thread, so what Codex says about it finds the session. */
+	readonly claimThread: CodexWorkbenchTabSessionScope["claimThread"];
 }
 
 /** The coordinator as it describes itself. */
@@ -191,12 +197,13 @@ function ignoreRetirement(): void {}
  * the coordinator that carried the old one, which Codex unloads once nothing
  * runs on it (TASK-374). A ready coordinator no conversation has carried yet,
  * because the create that started it failed at its workhorse, is kept.
- * @param options The coordinator and the operation ids its starts run under.
+ * The session claims the ready coordinator's thread.
+ * @param options The coordinator, the operation ids its starts run under, and the claim.
  * @param replacing Whether the pane's link names a conversation this create replaces.
  * @throws {Error} With the coordinator's reason when it did not become ready.
  */
 async function coordinatorForConversation(
-	options: Pick<ServerThreadLinkActionOptions, "coordinator" | "identity">,
+	options: Pick<ServerThreadLinkActionOptions, "coordinator" | "identity" | "claimThread">,
 	replacing: boolean,
 ): Promise<void> {
 	const operationId = options.identity.operation.issuer.mintOperationId();
@@ -210,10 +217,13 @@ async function coordinatorForConversation(
 	if (coordinator.state !== "ready") {
 		throw new Error(coordinator.reason ?? `The agent's coordinator is ${coordinator.state}.`);
 	}
+	if (coordinator.threadId !== null) {
+		options.claimThread(coordinator.threadId);
+	}
 }
 
 /**
- * Bind the browser's thread-link commands to one generation's owners.
+ * Bind the browser's thread-link commands to one tab session's owners.
  * @param options The owners.
  * @returns The actions.
  */
@@ -256,6 +266,9 @@ function createServerThreadLinkActions(
 					paneId: context.paneId,
 					expected: expectedBrowserLink(context),
 				});
+				if (started.threadId !== null) {
+					options.claimThread(started.threadId);
+				}
 				if (started.binding === null) {
 					throw new Error("The created workhorse did not return its adopted pane link.");
 				}

@@ -19,6 +19,7 @@ export {
 	ARCHBOARD_COORDINATOR_MANIFEST_SHA256,
 	ARCHBOARD_COORDINATOR_NAMESPACE,
 	TELL_COORDINATOR_OWNER,
+	answerUnownedTellCoordinator,
 } from "@/runtime/codex-coordinator-callbacks/lib/tell-coordinator";
 export {
 	createCoordinatorCallbackRealtimePort,

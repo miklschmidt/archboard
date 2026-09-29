@@ -1,5 +1,5 @@
 import type { SessionQueuedSubmission } from "@/runtime/codex-session";
-import type { OperationAuthority, OperationId, ThreadId } from "@/shared/codex-workbench-identity";
+import type { OperationAuthority, OperationId } from "@/shared/codex-workbench-identity";
 import type {
 	BrowserAccountProjectionInput,
 	BrowserOwnerProjection,
@@ -7,16 +7,14 @@ import type {
 } from "@/server/codex-workbench";
 
 /**
- * The account, login, and queue facts this adapter learns from its own command
- * results. Readiness is never stored: it is derived from the live owned
- * process, session, account, and coordinator facts on every projection read.
+ * The account and login facts this adapter learns from its own command
+ * results, which every tab session shares. Readiness is never stored: it is
+ * derived from the live owned process, session and account facts on every
+ * projection read. Each tab session keeps its own queue listing.
  */
 interface ServerBrowserBindingState {
 	account: BrowserAccountProjectionInput;
 	login: BrowserOwnerProjection["login"];
-	queue: CodexQueueProjectionInput;
-	/** The workhorse thread the cached submissions were read for. */
-	queueThreadId: ThreadId | null;
 }
 
 /** What a pane is shown when no queue read of its own link has succeeded. */

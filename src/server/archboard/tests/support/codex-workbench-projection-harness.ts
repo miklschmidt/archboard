@@ -8,6 +8,12 @@ import {
 	type BrowserProjectionContext,
 } from "../../../codex-workbench/index.js";
 import {
+	createCodexWorkbenchSessions,
+	SHARED_TAB_SESSION_ID,
+	type CodexWorkbenchSessionComponents,
+	type CodexWorkbenchTabSession,
+} from "../../codex-workbench-generation.js";
+import {
 	createServerBrowserGatewayOptions,
 	createServerBrowserProjectionBudget,
 	createServerDynamicApprovalOwner,
@@ -60,6 +66,8 @@ function executableLink(authorities: IdentityAuthorities): ThreadLinkSnapshot {
 interface ProjectionHarness {
 	readonly options: ReturnType<typeof createServerBrowserGatewayOptions>;
 	readonly state: ServerBrowserBindingState;
+	/** The one tab session the adapter reads, whose queue listing a test can set. */
+	readonly session: CodexWorkbenchTabSession;
 	readonly context: BrowserProjectionContext;
 	readonly actionContext: BrowserActionContext;
 	readonly loginId: ReturnType<IdentityAuthorities["identity"]["decoder"]["adoptLoginId"]>;
@@ -72,26 +80,29 @@ interface ProjectionHarness {
 }
 
 type FixtureComponents = ReturnType<typeof createCodexWorkbenchGenerationFixture>["components"];
+type FixtureSessionComponents = CodexWorkbenchSessionComponents;
 
 interface HarnessOverrides {
 	readonly session?: Partial<FixtureComponents["session"]>;
-	readonly coordinator?: Partial<FixtureComponents["coordinator"]>;
+	readonly coordinator?: Partial<FixtureSessionComponents["coordinator"]>;
 	/** The clock the authoritative re-read floor reads. */
 	readonly now?: () => number;
 	/** A live workhorse and queue, for the paths that read authoritative state. */
-	readonly workhorse?: Partial<FixtureComponents["workhorse"]>;
-	readonly queue?: Partial<FixtureComponents["queue"]>;
-	readonly spokenApproval?: Partial<FixtureComponents["spokenApproval"]>;
+	readonly workhorse?: Partial<FixtureSessionComponents["workhorse"]>;
+	readonly queue?: Partial<FixtureSessionComponents["queue"]>;
+	readonly spokenApproval?: Partial<FixtureSessionComponents["spokenApproval"]>;
 	/** Exact realtime and callback evidence supplied to the browser projection. */
 	readonly voiceContext?: (authorities: IdentityAuthorities) => {
-		readonly realtime: Partial<FixtureComponents["realtime"]>;
-		readonly callbacks: Partial<FixtureComponents["callbacks"]>;
+		readonly realtime: Partial<FixtureSessionComponents["realtime"]>;
+		readonly callbacks: Partial<FixtureSessionComponents["callbacks"]>;
 	};
 }
 
 /** One production adapter over the generation fixture, with its live sources injectable. */
 function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness {
-	const fixture = createCodexWorkbenchGenerationFixture([]).components;
+	const generation = createCodexWorkbenchGenerationFixture([]);
+	const fixture = generation.components;
+	const fixtureSession = generation.sessionComponents;
 	const authorities = fixture.identity;
 	const accountListeners = new Set<(event: TransportServerNotification) => void>();
 	const harnessLoginId = authorities.identity.decoder.adoptLoginId("login-readiness");
@@ -110,18 +121,25 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 			accountLoginCancel: async () => ({ status: "canceled" as const }),
 			...overrides.session,
 		},
-		coordinator: { ...fixture.coordinator, ...overrides.coordinator },
-		workhorse: { ...fixture.workhorse, ...overrides.workhorse },
-		queue: { ...fixture.queue, ...overrides.queue },
-		spokenApproval: { ...fixture.spokenApproval, ...overrides.spokenApproval },
-		realtime: { ...fixture.realtime, ...voiceContext?.realtime },
-		callbacks: { ...fixture.callbacks, ...voiceContext?.callbacks },
 	};
+	const sessionComponents: CodexWorkbenchSessionComponents = {
+		...fixtureSession,
+		coordinator: { ...fixtureSession.coordinator, ...overrides.coordinator },
+		workhorse: { ...fixtureSession.workhorse, ...overrides.workhorse },
+		queue: { ...fixtureSession.queue, ...overrides.queue },
+		spokenApproval: { ...fixtureSession.spokenApproval, ...overrides.spokenApproval },
+		realtime: { ...fixtureSession.realtime, ...voiceContext?.realtime },
+		callbacks: { ...fixtureSession.callbacks, ...voiceContext?.callbacks },
+	};
+	const sessions = createCodexWorkbenchSessions({
+		identity: authorities.identity,
+		transport: fixture.transport,
+		build: () => ({ components: sessionComponents, actions: generation.tabSession.actions }),
+	});
+	const session = sessions.open(SHARED_TAB_SESSION_ID);
 	const state: ServerBrowserBindingState = {
 		account: { kind: "account", state: "unknown", reason: "not read" },
 		login: { kind: "login", state: "idle" },
-		queue: { kind: "codex_queue", submissions: null },
-		queueThreadId: null,
 	};
 	const timeline: ServerTimelineOwner = {
 		read: () => null,
@@ -131,6 +149,7 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 	};
 	const options = createServerBrowserGatewayOptions({
 		components,
+		sessions,
 		dynamicApprovals: createServerDynamicApprovalOwner({
 			identity: authorities,
 			now: () => 1,
@@ -155,6 +174,7 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 	return {
 		options,
 		state,
+		session,
 		threadId: link.threadId,
 		context: {
 			browserId: "browser-projection",

@@ -4,6 +4,11 @@ import type {
 	CodexWorkbenchGatewayOptions,
 } from "@/server/codex-workbench";
 import type { CodexWorkbenchComponents } from "@/server/archboard/lib/codex-workbench";
+import type {
+	CodexWorkbenchSessionComponents,
+	CodexWorkbenchTabSession,
+	CodexWorkbenchTabSessionState,
+} from "@/server/archboard/lib/codex-workbench-sessions";
 import type { ServerDynamicApprovalOwner } from "@/server/archboard/lib/codex-workbench-approvals";
 import type { ServerTimelineOwner } from "@/server/archboard/lib/codex-workbench-timeline";
 import { projectServerVoiceContext } from "@/server/archboard/lib/codex-workbench-voice-context";
@@ -17,8 +22,8 @@ import {
 	type ServerBrowserBindingState,
 } from "@/server/archboard/lib/codex-workbench-browser-state";
 
-/** The runtime owners one projection read is taken from. */
-type ProjectionComponents = Omit<CodexWorkbenchComponents, "gateway">;
+/** The tab session owners one projection read is taken from. */
+type ProjectionComponents = CodexWorkbenchSessionComponents;
 
 /** What the gateway hands a projection read: the pane, its binding, its lease. */
 type ProjectionContext = Parameters<CodexWorkbenchGatewayOptions["projection"]["read"]>[0];
@@ -31,9 +36,10 @@ type SemanticBinding = NonNullable<
 	ReturnType<ProjectionComponents["semanticDelivery"]["snapshot"]>["binding"]
 >;
 
-/** Everything a projection read needs beyond the components themselves. */
+/** Everything a projection read needs: the pane's tab session and what the generation shares. */
 interface ServerOwnerProjectionInput {
-	readonly components: ProjectionComponents;
+	readonly approvals: CodexWorkbenchComponents["approvals"];
+	readonly session: Pick<CodexWorkbenchTabSession, "components" | "state">;
 	readonly dynamicApprovals: ServerDynamicApprovalOwner;
 	readonly state: ServerBrowserBindingState;
 	readonly timeline: ServerTimelineOwner;
@@ -194,12 +200,12 @@ function coordinatorSettings(
  *
  * Cached submissions belong to one workhorse thread; a pane looking at another
  * link is told the queue is unavailable, never shown the wrong one.
- * @param state The cached account and queue facts.
+ * @param state The session's cached queue facts.
  * @param context The pane being read.
  * @returns The queue, or the unavailable queue.
  */
 function presentedQueue(
-	state: ServerBrowserBindingState,
+	state: Pick<CodexWorkbenchTabSessionState, "queue" | "queueThreadId">,
 	context: ProjectionContext,
 ): CodexQueueProjectionInput {
 	if (state.queueThreadId === null || state.queueThreadId !== context.binding.link.threadId) {
@@ -219,7 +225,8 @@ function readBrowserOwnerProjection(
 	input: ServerOwnerProjectionInput,
 	context: ProjectionContext,
 ): BrowserOwnerProjection {
-	const { components, dynamicApprovals, state } = input;
+	const { dynamicApprovals, state } = input;
+	const { components } = input.session;
 	if (context.lease?.state === "active") {
 		dynamicApprovals.bindLease(context.paneId, context.lease.commandId);
 	}
@@ -242,9 +249,9 @@ function readBrowserOwnerProjection(
 			readiness.state === "thread_capable",
 			context.connection,
 		),
-		queue: presentedQueue(state, context),
+		queue: presentedQueue(input.session.state, context),
 		settings: [...workhorseSettings(workhorse), ...coordinatorSettings(coordinator)],
-		approvals: visibleApprovalViews(components.approvals),
+		approvals: visibleApprovalViews(input.approvals),
 		dynamicApprovals: dynamicApprovals.pending(),
 		semantic: semanticPanel(presentedSemantic(components, context), components.semanticPublisher),
 		coordinator: {

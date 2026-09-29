@@ -153,6 +153,7 @@ test("create replaces controller authority with the exact returned CAS proof", a
 		},
 	};
 	const actions = createServerThreadLinkActions({
+		claimThread: () => undefined,
 		coordinator: readyCoordinator(),
 		identity: authorities,
 		workhorse: {
@@ -250,6 +251,7 @@ test("two panes creating at once leave one workhorse: the later create is refuse
 	const starts: string[] = [];
 	let binding: unknown = null;
 	const actions = createServerThreadLinkActions({
+		claimThread: () => undefined,
 		coordinator: readyCoordinator(),
 		identity: authorities,
 		workhorse: {
@@ -345,6 +347,7 @@ test("a create whose coordinator cannot start is refused with its reason and sta
 	const failed = { state: "failed", reason } as const;
 	const workhorseStarts: unknown[] = [];
 	const actions = createServerThreadLinkActions({
+		claimThread: () => undefined,
 		coordinator: {
 			snapshot: () => failed,
 			ensure: async () => failed,
@@ -374,6 +377,7 @@ test("a new conversation replaces the coordinator that carried the old one befor
 	const threadId = authorities.identity.decoder.adoptThreadId("thread-old");
 	const starts: string[] = [];
 	const actions = createServerThreadLinkActions({
+		claimThread: () => undefined,
 		coordinator: readyCoordinator(starts),
 		identity: authorities,
 		workhorse: {
