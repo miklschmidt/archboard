@@ -4,9 +4,9 @@
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
 	"level": "service",
-	"version": 17,
+	"version": 18,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-09-29T13:20:33.414Z",
+	"updatedAt": "2026-09-29T16:12:37.075Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -1097,8 +1097,8 @@
 						"order": 20000,
 						"name": "Tab sessions",
 						"kind": "module",
-						"responsibility": "What each browser tab owns: its workhorse, coordinator, voice, delivery, queue and approvals, found by the thread a notification or tool call names",
-						"description": "One record per tab session, opened when a pane socket of the tab connects and built by codex-workbench-session-factories.ts. A notification goes to the session that owns its thread, or to every session when no session owns the thread yet. A tool call from a thread that no session owns is refused, so a running turn never waits on nobody. When a session ends, its voice stops, its approvals are cancelled, board news to its workhorse stops, and its threads are unsubscribed once no turn runs on them.",
+						"responsibility": "What each browser tab owns: its workhorse, coordinator, voice, board news and queue, found by the thread a notification or tool call names",
+						"description": "One record per tab session, opened when a pane socket of the tab connects and built by codex-workbench-session-factories.ts. A notification goes to the session that owns its thread, or to every session when no session owns the thread yet. A tool call from a thread that no session owns is refused, so a running turn never waits on nobody. When a session ends, its link is cleared, its approvals are cancelled, its voice and board news stop, and its threads are unsubscribed once no turn runs on them.",
 						"parent": "7TAwfrZF",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -1110,15 +1110,59 @@
 						"order": 21000,
 						"name": "Tab session presence",
 						"kind": "module",
-						"responsibility": "Ends a tab session once no pane socket has held it for 60 seconds, so a reload keeps the conversation",
-						"description": "It lives as long as the server process, not as long as one child. A socket of the tab that comes back within the grace cancels the end.",
+						"responsibility": "Knows which browser tab each pane on screen belongs to, and ends a tab session when no pane of it comes back within 60 seconds",
+						"description": "It lives as long as the server process, not as long as one child. A pane of the tab that comes back within the grace cancels the end, so a reload keeps the conversation.",
 						"parent": "7TAwfrZF",
 						"groups": [
 							"panes"
 						],
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/server/archboard/lib/tab-session-presence.ts"
+							"path": "src/server/archboard/lib/tab-sessions.ts"
+						}
+					},
+					{
+						"id": "JHbKEH3A",
+						"order": 22000,
+						"name": "Conversation start",
+						"kind": "module",
+						"responsibility": "Starts a tab's conversation on its first message or Talk: the coordinator first, then the workhorse, then board news to it",
+						"description": "A coordinator that cannot start refuses the message or Talk with its reason, and no workhorse starts. A start while the tab already holds a link, which New conversation causes, replaces the coordinator and gives up the old workhorse, which Codex unloads once no turn runs on it.",
+						"parent": "7TAwfrZF",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/codex-workbench-thread-links.ts"
+						}
+					},
+					{
+						"id": "6Jjha6LN",
+						"order": 23000,
+						"name": "Workhorse start",
+						"kind": "module",
+						"responsibility": "Opens the thread a tab session's link will name, with its instructions and both tool manifests, under a staged epoch operation",
+						"parent": "7TAwfrZF",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-workhorse-start/index.ts"
+						}
+					},
+					{
+						"id": "YxDrzJtI",
+						"order": 24000,
+						"name": "Thread unload",
+						"kind": "module",
+						"responsibility": "Unsubscribes a thread once no turn and no voice session runs on it, so Codex unloads it",
+						"description": "It reads the thread's status first, then follows the child's notifications until the thread is idle and its voice session has closed. The thread keeps its history on disk either way.",
+						"parent": "7TAwfrZF",
+						"groups": [
+							"child"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-thread-unload/lib/unload.ts"
 						}
 					}
 				],
@@ -1428,7 +1472,7 @@
 						"from": "tzyaOHwF",
 						"to": "hCKEBd5f",
 						"kind": "event",
-						"label": "each socket holds its tab session",
+						"label": "each socket names its tab, and its close forgets it",
 						"emphasis": "normal"
 					},
 					{
@@ -1436,17 +1480,17 @@
 						"order": 34000,
 						"from": "hCKEBd5f",
 						"to": "iay14AUl",
-						"kind": "event",
-						"label": "end a session no socket held for 60 s",
+						"kind": "call",
+						"label": "end a tab no pane came back to in 60 s",
 						"emphasis": "normal"
 					},
 					{
 						"id": "jcfXg6TV",
 						"order": 35000,
-						"from": "iay14AUl",
+						"from": "YxDrzJtI",
 						"to": "jylkTBp7",
 						"kind": "rpc",
-						"label": "thread/unsubscribe an ended session's threads once idle",
+						"label": "thread/read, then thread/unsubscribe once idle",
 						"emphasis": "muted"
 					},
 					{
@@ -1466,6 +1510,105 @@
 						"kind": "call",
 						"label": "one store per child, dropped when it exits",
 						"emphasis": "muted"
+					},
+					{
+						"id": "02ywpfgL",
+						"order": 38000,
+						"from": "hCKEBd5f",
+						"to": "u2LFaG7R",
+						"kind": "call",
+						"label": "forget the ended tab's lease",
+						"emphasis": "muted"
+					},
+					{
+						"id": "AoYD3SWj",
+						"order": 39000,
+						"from": "iay14AUl",
+						"to": "YxDrzJtI",
+						"kind": "call",
+						"label": "unload an ended tab's threads",
+						"emphasis": "muted"
+					},
+					{
+						"id": "uQcYd3Nh",
+						"order": 40000,
+						"from": "Fg9dkGj3",
+						"to": "YxDrzJtI",
+						"kind": "call",
+						"label": "unload a replaced coordinator",
+						"emphasis": "muted"
+					},
+					{
+						"id": "YrKMY0LM",
+						"order": 41000,
+						"from": "QGVPyMwG",
+						"to": "iay14AUl",
+						"kind": "call",
+						"label": "the live tab session that holds the asking thread",
+						"emphasis": "normal"
+					},
+					{
+						"id": "b9yFBXHz",
+						"order": 42000,
+						"from": "u2LFaG7R",
+						"to": "JHbKEH3A",
+						"kind": "call",
+						"label": "create, on the tab's first message or Talk",
+						"emphasis": "normal"
+					},
+					{
+						"id": "NxCpSlMJ",
+						"order": 43000,
+						"from": "JHbKEH3A",
+						"to": "Fg9dkGj3",
+						"kind": "call",
+						"label": "start or replace the coordinator first",
+						"emphasis": "normal"
+					},
+					{
+						"id": "nRRQSBu7",
+						"order": 44000,
+						"from": "JHbKEH3A",
+						"to": "6Jjha6LN",
+						"kind": "call",
+						"label": "then start the tab's workhorse",
+						"emphasis": "normal"
+					},
+					{
+						"id": "ukZDYnKd",
+						"order": 45000,
+						"from": "JHbKEH3A",
+						"to": "RkhHgrhb",
+						"kind": "call",
+						"label": "move board news to the new workhorse",
+						"emphasis": "normal"
+					},
+					{
+						"id": "ZGfdJlmG",
+						"order": 46000,
+						"from": "JHbKEH3A",
+						"to": "iay14AUl",
+						"kind": "call",
+						"label": "claim its threads, retire the old workhorse",
+						"emphasis": "muted"
+					},
+					{
+						"id": "GoJ2PW76",
+						"order": 47000,
+						"from": "6Jjha6LN",
+						"to": "byMaoUe0",
+						"kind": "call",
+						"label": "bind the tab session's link",
+						"emphasis": "normal"
+					},
+					{
+						"id": "MZtuHuMT",
+						"order": 48000,
+						"from": "6Jjha6LN",
+						"to": "jylkTBp7",
+						"kind": "rpc",
+						"label": "thread/start for the workhorse",
+						"emphasis": "normal"
 					}
 				],
 				"flows": [],
@@ -1498,10 +1641,15 @@
 							{
 								"id": "Li1gMmz5",
 								"heading": "Each tab holds its own link and lease",
-								"body": "Each browser tab is a tab session with its own thread link, made by the tab's first message or Talk. The link names that tab's workhorse. The pane that holds the tab's lease sends its typed message straight to that thread as a turn or a steer, and edits the thread's queue. The coordinator's work goes through the four operations instead, each staged in the epoch ledger so a child that dies mid-flight leaves a stated outcome rather than a guess.",
+								"body": "Each browser tab is a tab session with its own thread link and its own lease. The tab's first message or Talk starts its conversation: the coordinator first, then the workhorse, which the link then names. The pane that holds the tab's lease sends its typed message straight to that workhorse as a turn or a steer, and edits the thread's queue. The coordinator's work goes through the four operations instead, each staged in the epoch ledger so a child that dies mid-flight leaves a stated outcome rather than a guess.",
 								"subjects": [
 									"byMaoUe0",
 									"iay14AUl",
+									"JHbKEH3A",
+									"b9yFBXHz",
+									"NxCpSlMJ",
+									"nRRQSBu7",
+									"GoJ2PW76",
 									"u2LFaG7R",
 									"Qh7VZ9MQ",
 									"EZEiVlsE",
@@ -1529,8 +1677,7 @@
 									"NztvEtjX",
 									"biUWQZMB",
 									"Fg9dkGj3"
-								],
-								"view": "aeBxrmvQ"
+								]
 							},
 							{
 								"id": "TcEEIcyY",
@@ -1542,34 +1689,35 @@
 									"RkhHgrhb",
 									"8g1SNngD",
 									"jbxp553Z"
-								],
-								"view": "tliaNnOp"
+								]
 							},
 							{
 								"id": "0vBNZRtE",
 								"heading": "Each thread belongs to one tab session",
-								"body": "The tab sessions know which session owns each thread. A notification or tool call from a thread goes to that session alone, so one tab's news and approvals never reach another tab. A notification for a thread that no session owns yet goes to every session. A tool call from such a thread is refused, so a running turn never waits on nobody.",
+								"body": "The tab sessions know which session owns each thread. A notification or tool call from a thread goes to that session alone, and an approval goes to the panes of that session, so one tab's news and approvals never reach another tab. A notification for a thread that no session owns yet goes to every session. A tool call from such a thread is refused, so a running turn never waits on nobody.",
 								"subjects": [
 									"iay14AUl",
 									"xPCxyO70",
 									"NztvEtjX",
 									"9kvKfu7U",
-									"IxtTYfQ6"
-								],
-								"view": "3t0DNOAT"
+									"IxtTYfQ6",
+									"YrKMY0LM"
+								]
 							},
 							{
 								"id": "3o9fzuNL",
-								"heading": "A tab session ends 60 seconds after its last socket closes",
-								"body": "Every pane socket holds its tab's session. When no socket has held it for 60 seconds, the session ends: voice stops, its pending approvals are cancelled, board news to its workhorse stops, and its threads are unsubscribed once no turn runs on them, so Codex unloads them. A reload within that time keeps the conversation and its approvals. When the child exits, every session is dropped, and a tab's next message starts a new workhorse.",
+								"heading": "A tab session ends 60 seconds after its last pane closes",
+								"body": "Every pane names its tab when its socket opens. When no pane of the tab comes back for 60 seconds, the session ends: its lease and link go, its pending approvals are cancelled, voice and board news stop, and each of its threads is unsubscribed once no turn runs on it, so Codex unloads it. A reload within that time keeps the conversation and its approvals. When the child exits, every session is dropped, and a tab's next message starts a new workhorse.",
 								"subjects": [
 									"hCKEBd5f",
 									"egDoJ9fH",
 									"f4o4iE3G",
+									"02ywpfgL",
 									"ELaAYJKS",
+									"YxDrzJtI",
+									"AoYD3SWj",
 									"jcfXg6TV"
-								],
-								"view": "3t0DNOAT"
+								]
 							}
 						]
 					}

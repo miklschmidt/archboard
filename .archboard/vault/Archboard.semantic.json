@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 13,
+	"version": 14,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-09-29T13:22:33.900Z",
+	"updatedAt": "2026-09-29T16:13:15.703Z",
 	"views": [],
 	"variants": [
 		{
@@ -658,7 +658,7 @@
 							{
 								"id": "FlAhpGUe",
 								"heading": "Agent work has a lifetime of its own",
-								"body": "The Archboard server owns a private Codex child in its own process group. Sign-in, config and threads live in one Codex home that every Archboard server on this machine shares. Each browser tab has its own conversation: a workhorse that does the work, and a coordinator that voice talks to. A reload keeps the conversation. A minute after a tab closes, its conversation ends and Codex unloads its threads. When the child exits, each tab starts a new conversation with its next message. The threads author boards through the CLI, like any agent.",
+								"body": "The Archboard server owns a private Codex child in its own process group. Sign-in, config and threads live in one Codex home that every Archboard server on this machine shares. Each browser tab has its own conversation: a workhorse that does the work, and a coordinator that voice talks to. A reload keeps the conversation. A minute after a tab closes, its conversation ends, and Codex unloads its threads once no work runs on them. When the child exits, each tab starts a new conversation with its next message. The threads author boards through the CLI, like any agent.",
 								"subjects": [
 									"xr1MHYE7",
 									"2OeapIzk",
