@@ -27,6 +27,10 @@ function recordingOwners(label: string, events: string[]): CodexWorkbenchSession
 	} as unknown as CodexWorkbenchSessionComponents;
 }
 
+function never(): never {
+	throw new Error("Routing never reads, unsubscribes or clears anything.");
+}
+
 function tabSession(value: string): TabSessionId {
 	const id = parseTabSessionId(value);
 	if (id === null) throw new Error(`${value} is not a tab session id.`);
@@ -46,6 +50,9 @@ function twoSessions() {
 		transport: {
 			respond: async (_request, owner, response) => void responses.push({ owner, response }),
 		},
+		session: { threadRead: async () => never(), threadUnsubscribe: async () => never() },
+		threadLink: { read: () => never(), clear: () => never() },
+		endApprovals: async () => undefined,
 		build: ({ id }) => ({
 			components: recordingOwners(labels.get(id) ?? "?", events),
 			actions: {} as never,

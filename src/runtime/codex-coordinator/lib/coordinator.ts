@@ -17,7 +17,7 @@ import {
 	selectCoordinatorModel,
 	type CoordinatorModelSelection,
 } from "@/runtime/codex-coordinator/lib/model";
-import { createCoordinatorRetirement } from "@/runtime/codex-coordinator/lib/retire";
+import { createCodexThreadUnload } from "@/runtime/codex-thread-unload";
 import { reviewedCoordinatorHashes } from "@/runtime/codex-coordinator/lib/review";
 import { assertCurrentEpoch, decideCandidate } from "@/runtime/codex-coordinator/lib/reuse";
 import { createCoordinatorStarter } from "@/runtime/codex-coordinator/lib/start";
@@ -103,7 +103,7 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 			}
 		},
 	});
-	const retirement = createCoordinatorRetirement(options);
+	const retirement = createCodexThreadUnload(options);
 
 	/**
 	 * Run one coordinator step behind every step enqueued before it.
@@ -231,7 +231,7 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 			current = started;
 			retainedPersistence = stage.persistence;
 			if (retired.state === "ready" && retired.threadId !== null) {
-				void retirement.retire(retired.threadId, input.onRetired);
+				void retirement.unload(retired.threadId).then(input.onRetired);
 			}
 			return current;
 		} finally {

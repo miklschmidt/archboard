@@ -108,6 +108,9 @@ test("server gateway binds exact connection reads and retires it at disconnect",
 	const sessions = createCodexWorkbenchSessions({
 		identity: authorities.identity,
 		transport: fixture.components.transport,
+		session: fixture.components.session,
+		threadLink: fixture.components.threadLink,
+		endApprovals: async () => undefined,
 		build: () => ({
 			components: {
 				...fixture.sessionComponents,

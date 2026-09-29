@@ -63,14 +63,17 @@ type WorkhorseSnapshot = ReturnType<RealtimeComponents["workhorse"]["snapshot"]>
 
 /**
  * Keep what became of a replaced coordinator's thread in the voice start trace, where a failed
- * unsubscribe can be read afterwards.
+ * unsubscribe can be read afterwards, and stop the tab session owning the thread.
  * @param trace The tab session's voice start trace.
+ * @param releaseThread Stops the tab session owning the unloaded thread.
  * @returns What notes one retirement.
  */
 function noteRetirement(
 	trace: SessionVoiceStartTrace,
+	releaseThread: CodexWorkbenchTabSessionScope["releaseThread"],
 ): (retirement: CoordinatorRetirement) => void {
 	return (retirement) => {
+		releaseThread(retirement.threadId);
 		trace.note("coordinator_retired", {
 			threadId: retirement.threadId,
 			outcome: retirement.outcome,
@@ -221,14 +224,14 @@ function openFirstStep(
  * Own one continuous realtime session for one tab session, spoken through one
  * exact browser socket binding.
  * @param components The tab session's coordinator, realtime adapter and workhorse.
- * @param claimThread Records that the session started a thread: the fresh coordinator a start
- * replaces the voiced one with.
+ * @param threads Records that the session started a thread, the fresh coordinator a start
+ * replaces the voiced one with, and that it no longer owns the one replaced once that unloaded.
  * @param trace Where this tab session's voice starts are kept; each start begins its own attempt.
  * @returns The actions.
  */
 export function createServerRealtimeActions(
 	components: RealtimeComponents,
-	claimThread: CodexWorkbenchTabSessionScope["claimThread"],
+	threads: Pick<CodexWorkbenchTabSessionScope, "claimThread" | "releaseThread">,
 	trace: SessionVoiceStartTrace = sessionVoiceStartTrace(),
 ): BrowserRealtimeActions {
 	let activeRealtime: ActiveRealtime | null = null;
@@ -297,7 +300,7 @@ export function createServerRealtimeActions(
 		try {
 			await components.coordinator.replace({
 				operationId: components.identity.operation.issuer.mintOperationId(),
-				onRetired: noteRetirement(trace),
+				onRetired: noteRetirement(trace, threads.releaseThread),
 			});
 		} catch (error) {
 			const refusal = new Error(
@@ -309,7 +312,7 @@ export function createServerRealtimeActions(
 		}
 		const fresh = components.coordinator.snapshot();
 		if (fresh.threadId !== null) {
-			claimThread(fresh.threadId);
+			threads.claimThread(fresh.threadId);
 		}
 		trace.note("coordinator_replaced", { coordinatorState: fresh.state });
 	};

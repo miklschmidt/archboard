@@ -251,11 +251,15 @@ export function createCodexWorkbenchGenerationFixture(
 		subscribe: () => () => undefined,
 		closeConnection: async () => undefined,
 		childExit: async () => undefined,
+		endSession: () => undefined,
 		dispose: async () => void events.push("gateway:dispose"),
 	} satisfies CodexWorkbenchComponents["gateway"];
 	const sessions = createCodexWorkbenchSessions({
 		identity: identity.identity,
 		transport,
+		session,
+		threadLink,
+		endApprovals: async () => undefined,
 		build: () => {
 			events.push("create:tabSession");
 			return {

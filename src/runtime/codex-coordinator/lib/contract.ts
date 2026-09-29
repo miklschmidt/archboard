@@ -12,6 +12,7 @@ import type {
 	ThreadLinkTarget,
 } from "@/runtime/codex-thread-link";
 import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
+import type { ThreadUnload } from "@/runtime/codex-thread-unload";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -149,16 +150,8 @@ interface CodexCoordinatorOptions {
 	readonly persisted?: CoordinatorPersistedState | null;
 }
 
-/**
- * What became of the thread a replacement retired: Codex's answer to its unsubscribe, or why the
- * thread could not be read or unsubscribed. The thread keeps its rollout either way.
- */
-type CoordinatorRetirement =
-	| {
-			readonly threadId: ThreadId;
-			readonly outcome: SessionResponse<"thread/unsubscribe">["status"];
-	  }
-	| { readonly threadId: ThreadId; readonly outcome: "failed"; readonly message: string };
+/** What became of the thread a replacement retired, once it was unsubscribed or could not be. */
+type CoordinatorRetirement = ThreadUnload;
 
 interface CoordinatorReplaceInput {
 	/** The fresh server-issued operation id the replacement start runs under. */

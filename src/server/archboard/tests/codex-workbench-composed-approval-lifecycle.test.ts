@@ -1,23 +1,9 @@
 import { expect, test } from "bun:test";
 
-import { createCodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "../../../runtime/codex-spoken-approval/index.js";
-import type { ThreadLinkSnapshot } from "../../../runtime/codex-thread-link/index.js";
-import {
-	createCodexWorkbenchGateway,
-	parseTabSessionId,
-	type BrowserActionResult,
-	type BrowserGatewayMessage,
-	type BrowserOwnerProjection,
-	type BrowserWorkbenchActions,
-} from "../../codex-workbench/index.js";
-import { createServerOrdinaryApprovalActions } from "../codex-workbench-adapters.js";
+import { parseTabSessionId, type BrowserGatewayMessage } from "../../codex-workbench/index.js";
 import { composeCodexWorkbenchGeneration } from "../codex-workbench-generation.js";
+import { askApproval, createApprovalGateway } from "./support/codex-workbench-approval-gateway.js";
 import { createCodexWorkbenchGenerationFixture } from "./support/codex-workbench-generation-fixture.js";
-
-async function delivered(): Promise<BrowserActionResult> {
-	return { outcome: "delivered" };
-}
 
 test("composed child exit publishes one settled approval before closing presenters", async () => {
 	const events: string[] = [];
@@ -26,108 +12,7 @@ test("composed child exit publishes one settled approval before closing presente
 	const paneId = "pane-child-exit";
 	const tabSessionId = parseTabSessionId("tab-one")!;
 	const threadId = identity.identity.decoder.adoptThreadId("thread-child-exit");
-	const responses: unknown[] = [];
-	const projectionListeners = new Set<() => void>();
-	const approvals = createCodexApprovalBroker({
-		identity: identity.identity,
-		listenerOwnership: "composition",
-		transport: {
-			respond: async (_request, _owner, response) => void responses.push(response),
-		},
-		getCurrentBinding: () => ({ link: `tab:${tabSessionId}` }),
-		onChange: () => {
-			for (const listener of projectionListeners) {
-				listener();
-			}
-		},
-	});
-	const link: ThreadLinkSnapshot = {
-		kind: "thread_link",
-		state: "executable",
-		childId: identity.identity.validator.childId,
-		epoch: identity.identity.validator.epoch,
-		threadId,
-		source: "appServer",
-		status: "idle",
-		loaded: true,
-		canAcceptDirectInput: true,
-		reason: null,
-	};
-	const actions: BrowserWorkbenchActions = {
-		account: { read: delivered, login: delivered, loginCancel: delivered, logout: delivered },
-		threadLinks: { create: delivered },
-		text: { start: delivered, steer: delivered, interrupt: delivered },
-		queue: {
-			add: delivered,
-			update: delivered,
-			delete: delivered,
-			reorder: delivered,
-			start: delivered,
-		},
-		realtime: { start: delivered, appendText: delivered, stop: delivered },
-		ordinaryApprovals: createServerOrdinaryApprovalActions(approvals),
-		dynamicApprovals: { resolve: delivered },
-	};
-	const projection = {
-		read: ({ mediaReady }: { readonly mediaReady: boolean }): BrowserOwnerProjection => ({
-			readiness: { kind: "readiness", state: "thread_capable" },
-			account: {
-				kind: "codex_account_response",
-				response: {
-					account: { type: "chatgpt", email: "fixture@example.test", planType: "plus" },
-					requiresOpenaiAuth: true,
-					workspaceRouting: null,
-				},
-			},
-			login: { kind: "login", state: "idle" },
-			timeline: null,
-			queue: { kind: "codex_queue", submissions: [] },
-			settings: [],
-			approvals: approvals.inspectViews(),
-			dynamicApprovals: [],
-			semantic: { kind: "codex_semantic", outcome: null, freshness: null },
-			coordinator: {
-				kind: "codex_coordinator",
-				state: "ready",
-				threadId,
-				configured: { model: "gpt-6-sol", effort: "xhigh" },
-				effective: { model: "gpt-6-sol", effort: "xhigh", serviceTier: "priority" },
-				reason: null,
-			},
-			voice: {
-				kind: "codex_voice",
-				recording: false,
-				mediaReady,
-				generation: null,
-				coordinatorState: "ready",
-				transcript: [],
-			},
-			spokenApproval: EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
-		}),
-		onChange: (listener: () => void) => {
-			projectionListeners.add(listener);
-			return () => projectionListeners.delete(listener);
-		},
-	};
-	const gateway = createCodexWorkbenchGateway({
-		identity,
-		projection,
-		threadLink: {
-			read: () => ({
-				paneId: tabSessionId,
-				revision: 1,
-				link,
-				cas: {
-					revision: 1,
-					paneId: tabSessionId,
-					childId: link.childId,
-					epoch: link.epoch,
-					threadId: link.threadId,
-				},
-			}),
-		},
-		actions,
-	});
+	const { approvals, gateway, responses } = createApprovalGateway(identity, tabSessionId, threadId);
 	fixture.replaceApprovals(approvals);
 	fixture.replaceGateway(gateway);
 	const generation = await composeCodexWorkbenchGeneration({
@@ -137,33 +22,7 @@ test("composed child exit publishes one settled approval before closing presente
 	});
 	try {
 		const connection = gateway.connect("browser-child-exit", paneId, tabSessionId);
-		const requestId = identity.identity.decoder.adoptJsonRpcRequestId("request-child-exit");
-		const pending = approvals.receive({
-			child: identity.identity.validator.childId,
-			epoch: identity.identity.validator.epoch,
-			requestId,
-			correlation: identity.identity.decoder.createWireRequestCorrelation({ requestId }),
-			method: "item/commandExecution/requestApproval",
-			owner: "codex-approvals",
-			params: {
-				threadId,
-				turnId: "turn-child-exit",
-				itemId: "item-child-exit",
-				kind: "command",
-				startedAtMs: 10,
-				approvalId: "approval-child-exit",
-				environmentId: null,
-				reason: "Child exit test",
-				networkApprovalContext: null,
-				command: "echo child-exit",
-				cwd: "/workspace",
-				commandActions: null,
-				additionalPermissions: null,
-				proposedExecpolicyAmendment: null,
-				proposedNetworkPolicyAmendments: null,
-				availableDecisions: ["accept", "decline"],
-			},
-		});
+		const pending = askApproval(approvals, identity, threadId, "child-exit");
 		connection.snapshot();
 		connection.claimLease();
 		const messages: BrowserGatewayMessage[] = [];

@@ -150,7 +150,7 @@ test("the live server socket crosses the real gateway and approval broker exactl
 					onSemanticEvent: () => () => undefined,
 				},
 			} as never,
-			() => undefined,
+			{ claimThread: () => undefined, releaseThread: () => undefined },
 		);
 		const actions: BrowserWorkbenchActions = {
 			account: {

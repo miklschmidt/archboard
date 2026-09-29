@@ -149,8 +149,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 		const lease = connection.claimLease();
 		const staleCommand = startCommand(value, lease);
 		await value.gateway.childExit(value.childId, value.epoch);
-		expect(value.disconnects).toEqual(["ordinary", "dynamic"]);
-		expect(value.disconnectReasons).toEqual(["child_disconnected", "child_disconnected"]);
+		expect(value.disconnectReasons).toEqual(["child_disconnected"]);
 		expectGatewayError(() => value.open(), "disposed");
 		expectGatewayError(() => connection.snapshot(), "disposed");
 		expectGatewayError(() => connection.claimLease(), "disposed");
@@ -201,152 +200,88 @@ describe("Codex workbench browser recovery and delivery", () => {
 		const connection = value.open();
 		connection.claimLease();
 		await connection.close();
-		expect(value.disconnectReasons).toEqual(["browser_disconnected", "browser_disconnected"]);
+		expect(value.disconnectReasons).toEqual(["browser_disconnected"]);
 		const recovered = value.gateway.connect("browser-two", "pane-two", value.tabSessionId);
 		expect(recovered.claimLease().state).toBe("active");
 	});
 
-	test("only the final live presenter cancels a pane-bound approval", async () => {
+	test("a closed connection leaves its tab session's approvals for the tab to answer when it comes back", async () => {
 		const value = harness();
 		const first = value.open();
-		const second = value.gateway.connect("browser-two", value.paneId, value.tabSessionId);
-		first.claimLease();
-		const approval = value.makeOrdinaryApproval();
-		value.setOrdinaryApproval(approval);
+		const lease = first.claimLease();
+		const ordinary = value.makeOrdinaryApproval();
+		const dynamic = value.makeDynamicApproval(lease.commandId);
+		value.setOrdinaryApproval(ordinary);
+		value.setDynamicApprovals([dynamic]);
 		first.snapshot();
-		second.snapshot();
 
 		await first.close();
 
-		expect(value.disconnects.filter((owner) => owner === "ordinary")).toEqual([]);
-		expect(second.snapshot().snapshot.approvals).toEqual([
-			expect.objectContaining({ requestId: approval.request.requestId }),
+		// A reload within the grace: the tab comes back on a new socket of the same session.
+		const recovered = value.gateway.connect("browser-reloaded", value.paneId, value.tabSessionId);
+		recovered.claimLease();
+		const { snapshot } = recovered.snapshot();
+		expect(snapshot.approvals).toEqual([
+			expect.objectContaining({ requestId: ordinary.request.requestId }),
 		]);
-
-		await second.close();
-
-		expect(value.disconnects.filter((owner) => owner === "ordinary")).toEqual(["ordinary"]);
-		const recovered = value.gateway.connect("browser-three", value.paneId, value.tabSessionId);
-		expect(recovered.snapshot().snapshot.approvals).toEqual([]);
+		expect(snapshot.dynamicApprovals).toHaveLength(1);
 	});
 
-	test("a presenter on another pane of the same link keeps approvals presented", async () => {
-		const value = harness();
-		const first = value.open();
-		const second = value.gateway.connect("browser-two", "pane-two", value.tabSessionId);
-		first.claimLease();
-		const approval = value.makeOrdinaryApproval();
-		value.setOrdinaryApproval(approval);
-		first.snapshot();
-		second.snapshot();
-		const approvalTeardowns = () =>
-			value.disconnects.filter((owner) => owner === "ordinary" || owner === "dynamic");
-
-		await first.close();
-
-		expect(approvalTeardowns()).toEqual([]);
-		expect(second.snapshot().snapshot.approvals).toEqual([
-			expect.objectContaining({ requestId: approval.request.requestId }),
-		]);
-
-		second.claimLease();
-		await second.close();
-
-		expect(approvalTeardowns().toSorted()).toEqual(["dynamic", "ordinary"]);
-	});
-
-	test("uses the fresh pane link for approval teardown after a leased presenter relinks", async () => {
-		const value = harness();
-		const connection = value.open();
-		connection.claimLease();
-		const currentThread = value.model.ThreadIdSchema.parse(
-			value.authorities.identity.decoder.adoptThreadId("relinked-thread"),
-		);
-		const currentLink = value.binding().link;
-		if (currentLink.state !== "executable") {
-			throw new Error("the fixture link must be executable");
-		}
-		value.setLink({ ...currentLink, threadId: currentThread });
-		const approval = value.makeOrdinaryApproval(currentThread);
-		value.setOrdinaryApproval(approval);
-		expect(connection.snapshot().snapshot.approvals).toEqual([
-			expect.objectContaining({ requestId: approval.request.requestId }),
-		]);
-
-		await connection.close();
-
-		expect(value.durableState().semanticBound).toBeTrue();
-		const recovered = value.gateway.connect(
-			"browser-after-relink",
-			value.paneId,
-			value.tabSessionId,
-		);
-		expect(recovered.snapshot().snapshot.approvals).toEqual([]);
-	});
-
-	test("waits for both close settlements after revoking browser authority", async () => {
+	test("waits for the voice settlement after revoking browser authority", async () => {
 		const value = harness();
 		const connection = value.open();
 		const lease = connection.claimLease();
-		const ordinary = deferred();
-		const dynamic = deferred();
-		value.setOrdinaryDisconnectGate(ordinary.promise);
-		value.setDynamicDisconnectGate(dynamic.promise);
+		const voice = deferred();
+		value.setDisconnectGate(voice.promise);
 		let closed = false;
 		const closing = connection.close().then(() => {
 			closed = true;
 			return undefined;
 		});
 		expect(closed).toBeFalse();
-		expect(value.disconnects).toEqual(["ordinary", "dynamic"]);
+		expect(value.disconnectReasons).toEqual(["browser_disconnected"]);
 		expect(value.disconnectSettled).toEqual([]);
 		expectGatewayError(() => connection.claimLease(), "invalid_input");
 		expectGatewayError(() => connection.renewLease(), "invalid_input");
 		await expectRejected(() => connection.command(startCommand(value, lease)), "invalid_input");
-		ordinary.resolve();
 		await Promise.resolve();
 		expect(closed).toBeFalse();
-		dynamic.resolve();
+		voice.resolve();
 		await closing;
 		expect(closed).toBeTrue();
-		expect(value.disconnectSettled).toEqual(["ordinary", "dynamic"]);
+		expect(value.disconnectSettled).toEqual(["realtime"]);
 	});
 
-	test("waits for both child-exit settlements after terminalizing the gateway", async () => {
+	test("waits for the voice settlement after terminalizing the gateway on child exit", async () => {
 		const value = harness();
 		const connection = value.open();
 		const lease = connection.claimLease();
-		const ordinary = deferred();
-		const dynamic = deferred();
-		value.setOrdinaryDisconnectGate(ordinary.promise);
-		value.setDynamicDisconnectGate(dynamic.promise);
+		const voice = deferred();
+		value.setDisconnectGate(voice.promise);
 		let exited = false;
 		const exiting = value.gateway.childExit(value.childId, value.epoch).then(() => {
 			exited = true;
 			return undefined;
 		});
 		expect(exited).toBeFalse();
-		expect(value.disconnects).toEqual(["ordinary", "dynamic"]);
+		expect(value.disconnectReasons).toEqual(["child_disconnected"]);
 		expectGatewayError(() => connection.claimLease(), "disposed");
 		expectGatewayError(() => connection.renewLease(), "disposed");
 		await expectRejected(() => connection.command(startCommand(value, lease)), "disposed");
-		ordinary.resolve();
 		await Promise.resolve();
 		expect(exited).toBeFalse();
-		dynamic.resolve();
+		voice.resolve();
 		await exiting;
 		expect(exited).toBeTrue();
-		expect(value.disconnectSettled).toEqual(["ordinary", "dynamic"]);
+		expect(value.disconnectSettled).toEqual(["realtime"]);
 	});
 
-	test("waits for both shutdown settlements after closing authority", async () => {
+	test("waits for the voice settlement after closing authority on shutdown", async () => {
 		const value = harness();
 		const connection = value.open();
 		const lease = connection.claimLease();
-		const ordinary = deferred();
-		const dynamic = deferred();
-		value.setOrdinaryDisconnectGate(ordinary.promise);
-		value.setDynamicDisconnectGate(dynamic.promise);
+		const voice = deferred();
+		value.setDisconnectGate(voice.promise);
 		let disposed = false;
 		const disposing = value.gateway.dispose().then(() => {
 			disposed = true;
@@ -359,33 +294,23 @@ describe("Codex workbench browser recovery and delivery", () => {
 		);
 		expectGatewayError(() => connection.claimLease(), "disposed");
 		await expectRejected(() => connection.command(startCommand(value, lease)), "disposed");
-		ordinary.resolve();
 		await Promise.resolve();
 		expect(disposed).toBeFalse();
-		dynamic.resolve();
+		voice.resolve();
 		await disposing;
 		expect(disposed).toBeTrue();
-		expect(value.disconnectSettled).toEqual(["ordinary", "dynamic"]);
+		expect(value.disconnectSettled).toEqual(["realtime"]);
 	});
 
-	test("swallows one settlement failure only after the other owner settles", async () => {
+	test("a failed voice settlement still closes the connection", async () => {
 		const value = harness();
 		const connection = value.open();
 		connection.claimLease();
-		const dynamic = deferred();
-		value.setOrdinaryDisconnectError(new Error("ordinary settlement failed"));
-		value.setDynamicDisconnectGate(dynamic.promise);
-		let closed = false;
-		const closing = connection.close().then(() => {
-			closed = true;
-			return undefined;
-		});
-		expect(closed).toBeFalse();
-		expect(value.disconnects).toEqual(["ordinary", "dynamic"]);
-		dynamic.resolve();
-		await closing;
-		expect(closed).toBeTrue();
-		expect(value.disconnectSettled).toEqual(["dynamic"]);
+		value.setDisconnectError(new Error("voice settlement failed"));
+		await connection.close();
+		expect(value.disconnectReasons).toEqual(["browser_disconnected"]);
+		expect(value.disconnectSettled).toEqual([]);
+		expect(() => connection.snapshot()).toThrow("closed");
 	});
 
 	test("lease transfer and release do not run durable disconnect settlement", async () => {
@@ -393,39 +318,30 @@ describe("Codex workbench browser recovery and delivery", () => {
 		const first = value.open();
 		const second = value.gateway.connect("browser-two", "pane-two", value.tabSessionId);
 		first.claimLease();
-		const ordinary = deferred();
-		const dynamic = deferred();
-		value.setOrdinaryDisconnectGate(ordinary.promise);
-		value.setDynamicDisconnectGate(dynamic.promise);
+		const voice = deferred();
+		value.setDisconnectGate(voice.promise);
 		second.claimLease();
 		second.releaseLease();
+		expect(value.disconnectReasons).toEqual([]);
 		let disposed = false;
 		const disposing = value.gateway.dispose().then(() => {
 			disposed = true;
 			return undefined;
 		});
 		expect(disposed).toBeFalse();
-		expect(value.disconnectReasons).toEqual([
-			"gateway_shutdown",
-			"gateway_shutdown",
-			"gateway_shutdown",
-			"gateway_shutdown",
-		]);
-		ordinary.resolve();
-		dynamic.resolve();
+		expect(value.disconnectReasons).toEqual(["gateway_shutdown", "gateway_shutdown"]);
+		voice.resolve();
 		await disposing;
 		expect(disposed).toBeTrue();
-		expect(value.disconnectSettled).toHaveLength(4);
+		expect(value.disconnectSettled).toHaveLength(2);
 	});
 
 	test("lease expiry does not run durable disconnect settlement", async () => {
 		const value = harness();
 		const connection = value.open();
 		const lease = connection.claimLease();
-		const ordinary = deferred();
-		const dynamic = deferred();
-		value.setOrdinaryDisconnectGate(ordinary.promise);
-		value.setDynamicDisconnectGate(dynamic.promise);
+		const voice = deferred();
+		value.setDisconnectGate(voice.promise);
 		value.advance(150_001);
 		const expired = await connection.command(startCommand(value, lease));
 		expect(expired).toMatchObject({ code: "lease_expired", outcome: "not_delivered" });
@@ -436,11 +352,10 @@ describe("Codex workbench browser recovery and delivery", () => {
 			return undefined;
 		});
 		expect(disposed).toBeFalse();
-		ordinary.resolve();
-		dynamic.resolve();
+		voice.resolve();
 		await disposing;
 		expect(disposed).toBeTrue();
-		expect(value.disconnectSettled).toEqual(["ordinary", "dynamic"]);
+		expect(value.disconnectSettled).toEqual(["realtime"]);
 	});
 
 	test("exposes an awaitable child-exit lifecycle listener", async () => {
@@ -456,14 +371,12 @@ describe("Codex workbench browser recovery and delivery", () => {
 		openHarnesses.push(value);
 		const connection = value.open();
 		const lease = connection.claimLease();
-		const ordinary = deferred();
-		const dynamic = deferred();
-		value.setOrdinaryDisconnectGate(ordinary.promise);
-		value.setDynamicDisconnectGate(dynamic.promise);
+		const voice = deferred();
+		value.setDisconnectGate(voice.promise);
 		expect(listener).toBeDefined();
 		const staleEpoch = value.authorities.identity.issuer.mintChildEpoch();
 		await listener!(value.childId, staleEpoch);
-		expect(value.disconnects).toEqual([]);
+		expect(value.disconnectReasons).toEqual([]);
 		const exit = listener!(value.childId, value.epoch);
 		expectGatewayError(() => connection.claimLease(), "disposed");
 		let settled = false;
@@ -473,8 +386,7 @@ describe("Codex workbench browser recovery and delivery", () => {
 		});
 		expect(settled).toBeFalse();
 		await expectRejected(() => connection.command(startCommand(value, lease)), "disposed");
-		ordinary.resolve();
-		dynamic.resolve();
+		voice.resolve();
 		await observed;
 		expect(settled).toBeTrue();
 	});

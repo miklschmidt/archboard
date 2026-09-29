@@ -386,7 +386,7 @@ describe("Codex workbench browser command routing", () => {
 		expect(value.calls).toContain("dynamic.resolve");
 	});
 
-	test("rejects a dynamic decision after disconnect and never resumes it", async () => {
+	test("rejects a dynamic decision after the tab session ends and never resumes it", async () => {
 		const value = harness();
 		const connection = value.open();
 		const lease = connection.claimLease();
@@ -394,6 +394,7 @@ describe("Codex workbench browser command routing", () => {
 		value.setDynamicApprovals([approval]);
 		const response = dynamicResponse(value, approval);
 		await connection.close();
+		value.endSession();
 		const recovered = value.open();
 		const newLease = recovered.claimLease();
 		const late = await recovered.command({

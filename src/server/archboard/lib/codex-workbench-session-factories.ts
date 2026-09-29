@@ -337,6 +337,8 @@ function buildProductionTabSession(
 				threadLink: shared.threadLink,
 				semanticDelivery: components.semanticDelivery,
 				claimThread: scope.claimThread,
+				retireThread: scope.retireThread,
+				releaseThread: scope.releaseThread,
 			}),
 			realtime: createServerRealtimeActions(
 				{
@@ -345,7 +347,7 @@ function buildProductionTabSession(
 					realtime: components.realtime,
 					workhorse: components.workhorse,
 				},
-				scope.claimThread,
+				scope,
 				scope.state.voiceTrace,
 			),
 		},

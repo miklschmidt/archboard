@@ -82,6 +82,9 @@ function fixture() {
 }
 
 type Fixture = ReturnType<typeof fixture>;
+
+/** A tab session's thread claims, which these tests do not look at. */
+const noThreads = { claimThread: () => undefined, releaseThread: () => undefined };
 type Actions = ReturnType<typeof createServerRealtimeActions>;
 
 /**
@@ -142,7 +145,7 @@ async function onSession(
 
 test("a voice start after a finished session runs on a fresh coordinator", async () => {
 	const value = fixture();
-	const actions = createServerRealtimeActions(value.components as never, () => undefined);
+	const actions = createServerRealtimeActions(value.components as never, noThreads);
 	const first = await startVoice(actions, value);
 	expect(value.replacements).toHaveLength(0);
 	await onSession(actions, value, first, "stop");
@@ -157,7 +160,7 @@ test("a voice start after a finished session runs on a fresh coordinator", async
 
 test("a start whose fresh coordinator does not come up is refused, and the next start tries again", async () => {
 	const value = fixture();
-	const actions = createServerRealtimeActions(value.components as never, () => undefined);
+	const actions = createServerRealtimeActions(value.components as never, noThreads);
 	await onSession(actions, value, await startVoice(actions, value), "stop");
 	const voiced = value.components.coordinator.snapshot().threadId;
 	value.failReplace(new Error("thread/start was not delivered"));
@@ -174,7 +177,7 @@ test("a start whose fresh coordinator does not come up is refused, and the next 
 
 test("one stable realtime handle spans start, append, and stop", async () => {
 	const value = fixture();
-	const actions = createServerRealtimeActions(value.components as never, () => undefined);
+	const actions = createServerRealtimeActions(value.components as never, noThreads);
 	const startId = value.identity.identity.issuer.mintBrowserCommandId();
 	const started = await actions.start(
 		{
@@ -234,7 +237,7 @@ test("one stable realtime handle spans start, append, and stop", async () => {
 
 test("stale handles and replacement sockets cannot append to the active realtime session", async () => {
 	const value = fixture();
-	const actions = createServerRealtimeActions(value.components as never, () => undefined);
+	const actions = createServerRealtimeActions(value.components as never, noThreads);
 	const startId = value.identity.identity.issuer.mintBrowserCommandId();
 	await actions.start(
 		{
@@ -278,7 +281,7 @@ test("stale handles and replacement sockets cannot append to the active realtime
 
 test("another pane of the session can stop voice on the same link but cannot speak into it", async () => {
 	const value = fixture();
-	const actions = createServerRealtimeActions(value.components as never, () => undefined);
+	const actions = createServerRealtimeActions(value.components as never, noThreads);
 	const startId = value.identity.identity.issuer.mintBrowserCommandId();
 	await actions.start(
 		{

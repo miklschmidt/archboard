@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 
 import { startCommand } from "./helpers.js";
 import { createGatewayHarness, type GatewayHarness } from "./support.js";
-import { parseTabSessionId } from "../index.js";
+import { createBrowserLeaseLedger, parseTabSessionId } from "../index.js";
 
 // One command lease per browser tab session (TASK-373): the panes of one tab hand it to each
 // other, and another tab's claim, renewal or expiry never touches it.
@@ -37,7 +37,6 @@ describe("Codex workbench browser command leases", () => {
 		// The other pane of the same tab takes the lease; the other tab keeps its own.
 		const siblingLease = sibling.claimLease();
 		expect(siblingLease.commandId).not.toBe(firstLease.commandId);
-		expect(value.disconnects).toEqual([]);
 		expect(value.disconnectReasons).toEqual([]);
 		const transferred = await first.command(startCommand(value, firstLease));
 		expect(transferred).toMatchObject({ code: "lease_transferred", outcome: "not_delivered" });
@@ -62,7 +61,6 @@ describe("Codex workbench browser command leases", () => {
 			operationId: lease.commandId,
 			outcome: "not_delivered",
 		});
-		expect(value.disconnects).toEqual([]);
 		expect(value.disconnectReasons).toEqual([]);
 		const recovered = connection.claimLease();
 		expect(recovered.commandId).not.toBe(lease.commandId);
@@ -103,4 +101,23 @@ describe("Codex workbench browser command leases", () => {
 		expect(result).toMatchObject({ code: "link_changed", outcome: "not_delivered" });
 		expect(value.calls).not.toContain("text.start");
 	});
+});
+
+test("a tab session's end forgets its lease and leaves another tab's", async () => {
+	const leaseLedger = createBrowserLeaseLedger();
+	const value = createGatewayHarness(undefined, undefined, undefined, { leaseLedger });
+	openHarnesses.push(value);
+	const connection = value.open();
+	connection.claimLease();
+	const otherTab = value.gateway.connect("browser-other", value.paneId, OTHER_TAB);
+	const otherLease = otherTab.claimLease();
+	await connection.close();
+
+	value.endSession();
+
+	// Nothing of the ended session is kept for the rest of the server's life.
+	expect([...leaseLedger.sessions.keys()]).toEqual([OTHER_TAB]);
+	expect((await otherTab.command(startCommand(value, otherLease))).outcome).toBe("delivered");
+	// A tab that comes back under the same id starts on a fresh lease.
+	expect(value.open().claimLease().state).toBe("active");
 });

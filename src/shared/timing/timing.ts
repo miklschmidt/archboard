@@ -385,6 +385,14 @@ const CODEX_BROWSER_COMMAND_LEASE_MS = 150_000;
 /** Visual-approval expiry classification. Pulls against the browser-command lease. */
 const CODEX_APPROVAL_EXPIRY_MS = 90_000;
 
+/**
+ * How long a browser tab's conversation outlives its last pane socket (TASK-373). Pulls against a
+ * reload plus SOCKET_RECONNECT_MS redials, which it must outlast or a reload loses the
+ * conversation, and CODEX_APPROVAL_EXPIRY_MS, which it must stay under so a closed tab's approvals
+ * end as "tab session ended" rather than expiring unanswered.
+ */
+const TAB_SESSION_GRACE_MS = 60_000;
+
 /** Spoken-approval gate expiry classification. Pulls against visual approval expiry. */
 const CODEX_SPOKEN_GATE_EXPIRY_MS = 60_000;
 
@@ -515,6 +523,7 @@ export {
 	CODEX_REQUEST_SETTLEMENT_MS,
 	CODEX_BROWSER_COMMAND_LEASE_MS,
 	CODEX_APPROVAL_EXPIRY_MS,
+	TAB_SESSION_GRACE_MS,
 	CODEX_SPOKEN_GATE_EXPIRY_MS,
 	CODEX_SEMANTIC_FRESHNESS_MS,
 	CODEX_REALTIME_START_MS,

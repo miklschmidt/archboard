@@ -554,6 +554,13 @@ export function createCodexWorkbenchGateway(
 		subscribe,
 		closeConnection: closeConnectionInstance,
 		childExit,
+		/**
+		 * Forget a tab session that ended: its lease owner and its retained lease ledger.
+		 * @param tabSessionId The tab session.
+		 */
+		endSession: (tabSessionId: TabSessionId) => {
+			leases.end(tabSessionId);
+		},
 		dispose,
 	});
 }

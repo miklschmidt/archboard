@@ -171,8 +171,6 @@ export interface BrowserProjectionPort {
 
 export interface BrowserActionContext extends BrowserLeaseBinding {}
 
-export type BrowserPresenterContext = Omit<BrowserLeaseBinding, "commandId">;
-
 export type BrowserDisconnectReason =
 	| "browser_disconnected"
 	| "child_disconnected"
@@ -217,10 +215,6 @@ export interface BrowserThreadLinkActions {
 		command: BrowserThreadLinkCreateCommand,
 		context: BrowserActionContext,
 	) => Promise<BrowserActionResult>;
-	readonly onBrowserDisconnect?: (
-		context: BrowserActionContext,
-		reason: BrowserDisconnectReason,
-	) => Promise<void> | void;
 }
 
 export interface BrowserTextActions {
@@ -303,10 +297,6 @@ export interface BrowserOrdinaryApprovalActions {
 	 * published snapshot.
 	 */
 	readonly acknowledgePublished: (requestIds: readonly JsonRpcRequestId[]) => void;
-	readonly onBrowserDisconnect?: (
-		context: BrowserPresenterContext,
-		reason: BrowserDisconnectReason,
-	) => Promise<void> | void;
 	readonly onChange?: (listener: () => void) => BrowserUnsubscribe;
 }
 
@@ -315,10 +305,6 @@ export interface BrowserDynamicApprovalActions {
 		command: BrowserDynamicApprovalResponse,
 		context: BrowserActionContext,
 	) => Promise<BrowserActionResult>;
-	readonly onBrowserDisconnect?: (
-		context: BrowserActionContext,
-		reason: BrowserDisconnectReason,
-	) => Promise<void> | void;
 	readonly onChange?: (listener: () => void) => BrowserUnsubscribe;
 }
 
@@ -450,6 +436,8 @@ export interface CodexWorkbenchGateway {
 		instance: BrowserConnectionInstance,
 	) => Promise<void>;
 	readonly childExit: (childId: ChildId, epoch: ChildEpoch) => Promise<void>;
+	/** Forget a tab session that ended: its lease and everything kept about it. */
+	readonly endSession: (tabSessionId: TabSessionId) => void;
 	readonly dispose: () => Promise<void>;
 }
 
