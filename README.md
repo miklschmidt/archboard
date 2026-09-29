@@ -305,6 +305,6 @@ Archboard is young and moves fast. Its interfaces change often, and it is not pu
 
 ## Learn more
 
-[INSTALL.md](INSTALL.md) · [TESTING.md](TESTING.md) · [DESIGN.md](DESIGN.md) · [CONTEXT.md](CONTEXT.md) · [Architecture decisions](docs/adr/) · [The agent skill](skills/archboard/SKILL.md) · [AGENTS.md](AGENTS.md)
+[INSTALL.md](INSTALL.md) · [TESTING.md](TESTING.md) · [CONTEXT.md](CONTEXT.md) · [Architecture decisions](docs/adr/) · [The agent skill](skills/archboard/SKILL.md) · [AGENTS.md](AGENTS.md)
 
 <sub>Every diagram in this README was drawn by Archboard, and every clip was filmed from a running Archboard server. The SVGs' embedded fonts are subset to keep the page light. The banner art was generated with Codex; its full-size sources and a GitHub social preview are in <a href="docs/assets"><code>docs/assets</code></a>. Licensed under the Business Source License 1.1.</sub>

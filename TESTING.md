@@ -88,7 +88,7 @@ payments@<variant>` puts a proposal beside what it proposes to change.
 ## 6. Verify Codex semantic delivery
 
 The module owners cover the
-[bound app-server contract](DESIGN.md#2-mid-conversation-context--the-bound-app-server-session);
+[Codex app-server session](docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md);
 the composition owner starts the application with its owned child, links a
 workhorse and proves the real `src/server.ts` wires the change feed, the pane
 context and the workbench together:
