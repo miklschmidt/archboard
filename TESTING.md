@@ -1,158 +1,193 @@
-# Running archboard end to end
+# Running and verifying Archboard
 
-From a fresh checkout to Codex driving a board. `archboard --help` and each
-command's help are the reference for flags; this file holds what they cannot
-tell you.
+This file is for a developer or an agent who works in this checkout. It shows
+how to run a server of your own, write and read a board, see it in a browser,
+and test a change. [INSTALL.md](INSTALL.md) covers installation on a machine.
+[docs/agents/test-suite.md](docs/agents/test-suite.md) covers the test lanes.
+`./bin/archboard --help` and the `--help` of each command describe the flags.
 
-## 1. Install
+## 1. Prepare the checkout
 
 ```bash
-bun install                     # retry if it fails extracting a tarball
-bun run build                   # the frontend, the only thing that is built
-skills experimental_install     # third-party skills, pinned in skills-lock.json
+bun install      # if it fails while it extracts a tarball, run it again
+bun run build    # builds the browser bundle into dist/frontend
 ```
 
-bun runs the server and the CLI from `src/` (ADR 0014). Edit only `skills/`;
-do not commit the derived skill copies or any PNG, SVG or rendered diagram made
-as proof.
+`bun install` installs the Codex version that `package.json` pins. The server
+runs only that Codex, never one on your `PATH`. The install also generates the
+Codex app-server contract and the generated references of the skill. Bun runs
+the CLI and the server from `src/`, so nothing else is built (ADR 0014).
 
-## 2. Pick a vault
+A new worktree needs its own `bun install` and `bun run build`. A
+`node_modules` that links to another checkout fails the contract check.
 
-A board is one `.semantic.json` document in a vault, holding every variant of
-that architecture. There is no default vault: set `ARCHBOARD_VAULT` before
-`./bin/archboard start`, because the server does the vault I/O and refuses to start
-without one (ADR 0015). The browser at <http://127.0.0.1:3000> is where a user
-reads a board; authoring needs no browser at all.
+## 2. Run a server of your own
 
-## 3. Make the CLI available to Codex
+Your everyday Archboard server probably runs on `http://127.0.0.1:3000`, the
+default address, with your own vault. Every command talks to the server at
+`ARCHBOARD_URL`. If nothing answers there, the command starts a server. Give a
+test session its own port and a copy of the example vault:
 
 ```bash
-ln -s /path/to/archboard/bin/archboard ~/.local/bin/archboard
-cd /path/to/project && archboard install-skill --vault /path/to/vault
+export ARCHBOARD_URL=http://127.0.0.1:3414
+export ARCHBOARD_VAULT=$(mktemp -d)/vault
+cp -r examples/web-shop "$ARCHBOARD_VAULT"
+./bin/archboard start
+./bin/archboard status
 ```
 
-Commands that talk to the server auto-start it; they start no other transport.
+`examples/web-shop` holds three boards with proposals, views, walkthroughs and
+groups. Its `config.yaml` defines the kinds that the examples below use. `start`
+prints the URL and the process id of the server. `status` says whether the
+server runs, how many boards it sees and how many browser pages are open.
 
-## 4. The Archboard-owned Codex session
+A server keeps the vault that it started with. It also keeps the source that it
+read at start:
 
-Starting the Archboard server starts one package-local Codex app-server child over
-stdio. Archboard owns a `CODEX_HOME`, `CODEX_SQLITE_HOME`, a `config.toml`
-that it gives the SQLite root and default permissions (it adds what is missing
-and keeps what Codex or you set), and sign-in below `$XDG_STATE_HOME/archboard/codex-workbench` (or
-`~/.local/state/archboard/codex-workbench`), which every Archboard server on the machine
-shares; each server keeps its owner lock and epoch manifest under
-`codex-workbench/canvases/<port>`. Never edit user-global
-Codex configuration for this integration. An Archboard server has one conversation, one
-workhorse that every pane shares, and nobody sets it up: the first message in
-the agent bar, or the first press of Talk, signs in if needed, starts Codex and
-links the workhorse. Voice attaches to a separate persistent coordinator for
-that link, never to the workhorse itself.
+- After you edit a file under `src/`, run
+  `./bin/archboard stop && ./bin/archboard start`. Until you do, `status`
+  reports the changed file under `stale`.
+- After you edit frontend code, run `bun run build` and reload the page.
+- `bun run dev` serves a frontend that reloads itself, but it always talks to
+  the server on port 3000.
 
-## 5. A first session
+All servers on a machine share one Codex sign-in. If you sign out in a test
+server, you sign out every server. On Linux, you can keep a test server away
+from your sign-in: set `XDG_STATE_HOME` to an empty directory before `start`.
+The test server then starts with no sign-in, and it keeps its log in that
+directory.
 
-You state what the architecture IS; the renderer owns every coordinate, colour
-and connector route. Every write says what it is doing, and every edit says
-which version it was written against:
+`./bin/dogfood` runs the CLI against the boards of this repository, in
+`.archboard/vault`. Read them as you like. Change them only through the
+proposal of a task, as the `archboard-dev` skill describes.
+
+## 3. Write and read a board
+
+Every write says what it does with `--doing`. A write to a board that already
+exists also gives the version that you read, with `--expect-version`. If the
+board changed after you read it, the write is refused with exit code 5.
 
 ```bash
-echo '{"level":"system","nodes":[{"name":"API Gateway","kind":"service"},
-               {"name":"Orders","kind":"service"}],
-      "edges":[{"from":"API Gateway","to":"Orders","kind":"http"}]}' |
+echo '{"level": "system",
+  "nodes": [{"name": "API Gateway", "kind": "service"},
+            {"name": "Orders", "kind": "service"}],
+  "edges": [{"from": "API Gateway", "to": "Orders", "kind": "http",
+             "label": "place an order"}]}' |
   ./bin/archboard semantic new payments --doing "drawing the payment path"
 
 ./bin/archboard semantic show payments
-echo '{"nodes":[{"name":"Orders Queue","kind":"queue"}]}' |
-  ./bin/archboard semantic edit payments --expect-version 1 --doing "adding the queue"
 
-./bin/archboard semantic branch payments --as "Queued ingest" --expect-version 2 \
-  --doing "proposing a queue"
-./bin/archboard semantic render payments --out payments.svg
-./bin/archboard semantic rasterize payments --out payments.png
+./bin/archboard semantic branch payments --as "Queued ingest" \
+  --summary "Orders arrive through a queue" \
+  --expect-version 1 --doing "proposing a queue"
+
+echo '{"nodes": [{"name": "Order queue", "kind": "queue"}],
+  "edges": [{"from": "API Gateway", "to": "Order queue", "kind": "queue",
+             "label": "enqueue the order"},
+            {"from": "Order queue", "to": "Orders", "kind": "queue",
+             "label": "deliver"}]}' |
+  ./bin/archboard semantic edit payments --variant "Queued ingest" \
+  --expect-version 2 --doing "routing orders through a queue"
+
+./bin/archboard semantic compare payments --variant "Queued ingest"
 ./bin/archboard check
 ```
 
-`semantic rasterize` needs a Chromium or Google Chrome executable on `PATH`,
-or one named by `ARCHBOARD_RENDERER_CHROMIUM`; it starts its own headless
-browser and stops it before answering. The PNG is the SVG at native scale, so
-the two receipts state the same width and height.
+Each command prints its answer as JSON on stdout and one sentence on stderr.
+The three writes take the board to versions 1, 2 and 3. `compare` reports the
+queue and its two relationships as added. If the configuration and every board
+in the vault are valid, `check` exits 0.
 
-The board is at `$ARCHBOARD_VAULT/payments.semantic.json`: one document holding
-the current architecture and every proposal derived from it. A proposal is a
-variant of the same board, so what it changed is derived on the way out rather
-than written down twice.
+The board is the file `payments.semantic.json` in the vault. It holds the
+current variant and every proposal. Write it only through the CLI.
 
-Only `browser` commands touch a live session (`panes`, `open`, `close`,
-`show`); each names its pane and none writes a board. `browser show
-payments@<variant>` puts a proposal beside what it proposes to change.
-
-## 6. Verify Codex semantic delivery
-
-The module owners cover the
-[Codex app-server session](docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md);
-the composition owner starts the application with its owned child, links a
-workhorse and proves the real `src/server.ts` wires the change feed, the pane
-context and the workbench together:
+## 4. Draw it
 
 ```bash
-bun test src/runtime/codex-semantic-context/tests src/runtime/codex-thread-context/tests
-bun test tests/system/server-state/codex-workbench-production.test.ts
+out=$(mktemp -d)
+./bin/archboard semantic render payments --out "$out/payments.svg"
+./bin/archboard semantic render payments --variant "Queued ingest" \
+  --out "$out/proposal.svg"
+./bin/archboard semantic rasterize payments --out "$out/payments.png"
 ```
 
-Before accepting a release that changes the workbench or realtime path, run
-the [clean-process real-voice smoke](docs/design/codex-workbench-voice-acceptance.md):
-deterministic gates first, then a user proves microphone, speaker, sign-in,
-reconnect, callback and spoken approval.
+Write pictures outside the checkout, because git does not ignore them there.
+`render` needs no browser. It draws the current variant, or a proposal marked
+against the current variant. `rasterize` needs Chromium or Google Chrome, as
+[INSTALL.md](INSTALL.md#rendering-to-a-bitmap) describes. At the default scale,
+the `width` and `height` in the answer of `rasterize` are the ones in the answer
+of `render`.
 
-A recording (`archboard semantic record`) runs end to end against the fake
-Codex in `tests/system/server-state/walkthrough-recording.test.ts`: a real headless
-Chromium, the real page, and a fake that speaks a transcript for every step it
-is handed. What only a real voice can show, that it explains each step and falls
-silent so the talk moves on, is the
-[recording acceptance](docs/design/walkthrough-recording-acceptance.md).
+## 5. See it in a browser
 
-The complete local gate is `bun run check`; `docs/agents/test-suite.md`
-explains the lanes and the browser prerequisites.
-
-## 7. Evaluate the archboard skill (human-run, on demand)
-
-`evals/` holds the canonical inputs of a model evaluation:
-real Codex authors on pinned Flask checkouts, one blinded grader run by Codex
-or by Claude Code (chosen when grading runs; the same batch can be graded by
-both and the report says how they agree), deterministic checks and a
-comparison report. It is never part of `bun run check`; every run calls a
-model, so a user starts it:
+Open `$ARCHBOARD_URL/?paneA=payments` in a browser. The `browser` commands need
+that page. Without it, `browser show` exits with code 4 and tells you which URL
+to open.
 
 ```bash
-bun run eval:skill check                  # validate the inputs, no model
-bun run eval:skill run                    # both arms, every scenario, pinned repetitions
-bun run eval:skill grade .skill-evals/<batch> --grader claude   # or --grader codex
-bun run eval:skill report .skill-evals/<batch>   # again, without grading; grade writes one too
-bun run eval:skill pin                    # rewrite the version pins from PATH, no model
+./bin/archboard browser panes
+./bin/archboard browser show "payments@Queued ingest"
+./bin/archboard browser open
+./bin/archboard browser show payments --pane left
+./bin/archboard browser show "payments@Queued ingest" --pane right
 ```
 
-[`evals/README.md`](evals/README.md) says
-what one run is, how the grader is blinded, and how a baseline is reproduced.
-Every run captures the diagrams its scenario declares through `semantic
-rasterize`, so the machine that runs a batch needs a Chromium-family
-executable as well (see [INSTALL.md](INSTALL.md#rendering-to-a-bitmap)).
-The fast owners for the harness's deterministic parts live in
-`src/runtime/skill-evaluation/tests`.
+`browser panes` reports the board, the variant and the version of each pane.
+`payments@Queued ingest` names the proposal. A pane shows it with what it adds,
+changes and removes marked against the current variant. `browser open` splits
+the page into two panes, and `--pane left` and `--pane right` then put the
+current variant beside the proposal. None of these commands writes a board.
 
-## Shared shell and SVG colors
+## 6. Talk to Codex
 
-Edit `src/shared/theme/theme.css` for light/dark shadcn colors and the
-added/changed/removed comparison colors, plus the `--semantic-*` palette used by
-node types, groups and relationships. `--diagram-edge` controls neutral arrows independently
-of secondary text. All color definitions use OKLCH. `app.css` imports those tokens. The SVG
-renderer paints with the tokens themselves (`var(--…)`, and `color-mix()`/`light-dark()`
-of them), so a picture in the page takes the page's theme and a theme switch redraws
-nothing. A standalone SVG or PNG is drawn for one theme and carries that theme's value of
-every token it names on its root, resolved from the same declarations through Lightning
-CSS as sRGB colors with their opacity. The shared file contains literal color custom
-properties in `:root` and `:root[data-theme="dark"]`; keep layout values in
-`app.css`. Unsupported cascade rules and unresolved colors are refused.
+The server starts its own Codex app-server, as
+[ADR 0019](docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md)
+records. If Codex has no sign-in, the first message in the agent bar or the
+first press of Talk asks you to sign in. It then starts the conversation. Voice
+needs a microphone and speakers. If your microphone is on a Bluetooth headset,
+a narration can be silent. The [README FAQ](README.md#faq) explains why.
 
-`archboard semantic render --theme light|dark` still needs no browser or frontend
-build. Restart the Archboard server after editing the shared theme; rebuild the frontend
-when serving its production bundle. The existing measured-text browser owner
-also compares the built shell colors with standalone export colors in both themes.
+## 7. Test a change
+
+`bun run check` is the complete gate. [docs/agents/test-suite.md](docs/agents/test-suite.md)
+describes its lanes, what each lane needs, and which test owns which behavior.
+Three facts decide whether the gate can run to its end:
+
+- The lanes run one after the other and stop at the first failure. If the gate
+  stops early, run `bun run test:system`, `bun run test:repository` and
+  `bun run test:serial-browser` yourself. Only then call a failure the only one.
+- The browser lane needs `agent-browser` on `PATH`. Without it, the lane exits
+  with code 2.
+- A new worktree needs `bun install` and `bun run build` first.
+
+Some checks need a person, because they need a real voice, a microphone and
+speakers:
+
+- [The voice acceptance](docs/design/codex-workbench-voice-acceptance.md), for
+  a change to the Codex workbench or its voice path.
+- [The recording acceptance](docs/design/walkthrough-recording-acceptance.md),
+  for a change to `semantic record`. Its automated test,
+  `tests/system/server-state/walkthrough-recording.test.ts`, runs a real
+  headless Chromium against a fake Codex.
+
+## 8. When something fails
+
+- The exit codes mean: 0 success, 1 an error, 2 wrong usage, 3 no answer from
+  the server, 4 no browser page, and 5 a refused board write. `check` exits 1
+  while the vault still has diagnostics.
+- The answer of a command is JSON on stdout. The reason for a failure is on
+  stderr.
+- The server log is `archboard.log` in the state directory.
+  [INSTALL.md](INSTALL.md#machine-state-and-logs) gives the directory for each
+  system.
+- The Codex state of each server is in `codex-workbench/canvases/<port>` in the
+  state directory. If the Codex of a server cannot start, the server stops with
+  "The production Codex workbench did not become ready".
+
+## Evaluations of the archboard skill
+
+[evals/README.md](evals/README.md) describes the model evaluation of the
+archboard skill. Only a person starts `bun run eval:skill run` and
+`bun run eval:skill grade`, because they call models and a batch takes about
+13 GB. An agent never starts them. `bun run eval:skill check` examines the
+inputs without a model.
