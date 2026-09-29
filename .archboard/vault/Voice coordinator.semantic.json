@@ -4,9 +4,9 @@
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 10,
+	"version": 12,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-09-29T02:44:17.244Z",
+	"updatedAt": "2026-09-29T02:59:16.351Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
@@ -668,6 +668,569 @@
 						"kind": "module",
 						"responsibility": "The separate fast thread voice attaches to, the voice model's subconscious: its model, its settings, and how it is started",
 						"description": "Started once the account is signed in, on gpt-6-sol at low effort with project_doc_max_bytes 0 and the archboard_workhorse and archboard_voice tools. It runs turns only for a live voice session: a handoff, workhorse news, a spoken approval.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-coordinator/index.ts"
+						}
+					},
+					{
+						"id": "2vHAg1Ei",
+						"order": 3000,
+						"name": "Realtime voice",
+						"kind": "module",
+						"responsibility": "The realtime leg of that thread: the offer, the answer, the channel rule, a narrated walkthrough's steps, and the transcript",
+						"description": "Archboard never reaches a voice provider itself. The child brokers the session; the media travels between the tab and the provider over the peer connection the tab made. The start tells the coordinator the [FINAL] and [COMMENTARY] channel rule, or for a recording to write only commentary; the board catalogue is kept on the coordinator's thread for the session's life.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-realtime/index.ts"
+						}
+					},
+					{
+						"id": "5sWG4uuq",
+						"order": 4000,
+						"name": "Coordinator tools",
+						"kind": "module",
+						"responsibility": "Runs the tool calls the coordinator makes, once each, against a replay ledger",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-coordinator-tools/index.ts"
+						}
+					},
+					{
+						"id": "ZDMIGM5P",
+						"order": 5000,
+						"name": "Tool contract",
+						"kind": "module",
+						"responsibility": "The frozen tool manifests and their digests: what the coordinator is allowed to ask for",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-coordinator-tool-contract/index.ts"
+						}
+					},
+					{
+						"id": "B0SAnbtM",
+						"order": 6000,
+						"name": "Coordinator callbacks",
+						"kind": "module",
+						"responsibility": "What the voice side is told while voice is live: workhorse news for the coordinator, pane news for the voice model",
+						"description": "Nothing is sent with no voice session. Every callback settles once as delivered, not delivered with a reason, or outcome unknown.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-coordinator-callbacks/index.ts"
+						}
+					},
+					{
+						"id": "fEiupnAD",
+						"order": 7000,
+						"name": "Spoken approval",
+						"kind": "module",
+						"responsibility": "The gate that lets an approval be answered out loud, and the reasons it falls back to the pane",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-spoken-approval/index.ts"
+						}
+					},
+					{
+						"id": "C3wBXyPG",
+						"order": 8000,
+						"name": "Approvals",
+						"kind": "module",
+						"responsibility": "Every approval the child raises, answered exactly once whichever way the answer came",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-approvals/index.ts"
+						}
+					},
+					{
+						"id": "qZsXIuQG",
+						"order": 9000,
+						"name": "Semantic context",
+						"kind": "module",
+						"responsibility": "What the board says right now and what the user changed on it: the brief a voice start records, and the reports that become pane news",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-semantic-context/index.ts"
+						}
+					},
+					{
+						"id": "YVc05dVh",
+						"order": 10000,
+						"name": "Authored instructions",
+						"kind": "module",
+						"responsibility": "The coordinator's own developer instructions, which neither contain nor refer to the workhorse's, pinned by digest",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-instructions/index.ts"
+						}
+					},
+					{
+						"id": "LHBPlItu",
+						"order": 11000,
+						"name": "Codex transport",
+						"kind": "module",
+						"responsibility": "Where a tool call or notification from the child arrives, routed to the owner registered for it",
+						"groups": [
+							"child"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-transport/index.ts"
+						}
+					},
+					{
+						"id": "4A6j6Xk3",
+						"order": 12000,
+						"name": "Codex session",
+						"kind": "module",
+						"responsibility": "The reviewed methods the coordinator and its realtime leg are started on",
+						"groups": [
+							"child"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/index.ts"
+						},
+						"drillDown": {
+							"board": "Codex session",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "LIpURyJE",
+						"order": 13000,
+						"name": "Workhorse operations",
+						"kind": "module",
+						"responsibility": "Where anything sustained goes: the four operations the coordinator may ask of the workhorse, one at a time",
+						"groups": [
+							"workhorse"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-workhorse-operations/index.ts"
+						},
+						"drillDown": {
+							"board": "Codex workhorse",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "5uPyMgoI",
+						"order": 14000,
+						"name": "Callback queue",
+						"kind": "function",
+						"responsibility": "Takes news, operation events and pane reports in order, drops the session's own writes, and delivers one at a time",
+						"parent": "B0SAnbtM",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-coordinator-callbacks/lib/callbacks.ts"
+						}
+					},
+					{
+						"id": "hxZxt8Wy",
+						"order": 15000,
+						"name": "Workhorse news",
+						"kind": "function",
+						"responsibility": "A turn on the linked workhorse that ended or began waiting on the user, whoever started it, as one plain sentence",
+						"description": "Read from the workhorse thread's own turn/completed and thread/status/changed notifications: completed, failed, stopped or waiting, and a message from tell_coordinator. The sentence carries no identities; the coordinator reads the rest through inspect_workhorse.",
+						"parent": "B0SAnbtM",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-coordinator-callbacks/lib/workhorse-news.ts"
+						}
+					},
+					{
+						"id": "AahDTiw9",
+						"order": 16000,
+						"name": "Tell coordinator",
+						"kind": "function",
+						"responsibility": "Answers the workhorse's tell_coordinator call: its message becomes news, or it is told nobody is listening",
+						"parent": "B0SAnbtM",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-coordinator-callbacks/lib/tell-coordinator.ts"
+						}
+					},
+					{
+						"id": "eyQ2AZaA",
+						"order": 17000,
+						"name": "Callback delivery",
+						"kind": "function",
+						"responsibility": "Gives each callback one path: news to a coordinator turn, the user's own pane changes to the voice model, the rest recorded only",
+						"parent": "B0SAnbtM",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-coordinator-callbacks/lib/deliver.ts"
+						}
+					},
+					{
+						"id": "AjPVQ0BZ",
+						"order": 18000,
+						"name": "Outcome report",
+						"kind": "module",
+						"responsibility": "Gives the coordinator one piece of news as one turn/start, joining its running turn or starting one, and nothing while a recording holds the voice",
+						"description": "The prompt says what happened and what to do with it: say it under [FINAL] if the user is waiting on it, keep it to a [COMMENTARY] line otherwise, and start no new work because of it.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/codex-workbench-outcome-report.ts"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "uWKB5oF9",
+						"order": 1000,
+						"from": "NUoTEPga",
+						"to": "4A6j6Xk3",
+						"kind": "call",
+						"label": "thread/start with the coordinator body",
+						"emphasis": "hero"
+					},
+					{
+						"id": "QEitA6l5",
+						"order": 2000,
+						"from": "NUoTEPga",
+						"to": "YVc05dVh",
+						"kind": "dependency",
+						"label": "its developer instructions, by digest",
+						"emphasis": "muted"
+					},
+					{
+						"id": "ntLLD7Df",
+						"order": 3000,
+						"from": "0eYa0szs",
+						"to": "2vHAg1Ei",
+						"kind": "event",
+						"label": "the offer this tab made",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "eRYh0zYO",
+						"order": 4000,
+						"from": "2vHAg1Ei",
+						"to": "4A6j6Xk3",
+						"kind": "call",
+						"label": "start the realtime leg",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "jKgud5yQ",
+						"order": 5000,
+						"from": "2vHAg1Ei",
+						"to": "qZsXIuQG",
+						"kind": "call",
+						"label": "the brief this start records",
+						"emphasis": "normal"
+					},
+					{
+						"id": "oyurpL2B",
+						"order": 6000,
+						"from": "2vHAg1Ei",
+						"to": "0eYa0szs",
+						"kind": "event",
+						"label": "the answer, then the transcript",
+						"emphasis": "hero"
+					},
+					{
+						"id": "NfthRpE6",
+						"order": 7000,
+						"from": "LHBPlItu",
+						"to": "5sWG4uuq",
+						"kind": "event",
+						"label": "a tool call from the coordinator",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "FRlXCCgx",
+						"order": 8000,
+						"from": "5sWG4uuq",
+						"to": "ZDMIGM5P",
+						"kind": "call",
+						"label": "validate against the frozen manifest",
+						"emphasis": "normal"
+					},
+					{
+						"id": "gxWbt0Mt",
+						"order": 9000,
+						"from": "5sWG4uuq",
+						"to": "LIpURyJE",
+						"kind": "call",
+						"label": "route the sustained work",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "jWYpMYjr",
+						"order": 10000,
+						"from": "5sWG4uuq",
+						"to": "fEiupnAD",
+						"kind": "call",
+						"label": "resolve the approval answered aloud",
+						"emphasis": "normal"
+					},
+					{
+						"id": "0yGbIQl9",
+						"order": 11000,
+						"from": "fEiupnAD",
+						"to": "C3wBXyPG",
+						"kind": "call",
+						"label": "answer the one it was armed for",
+						"emphasis": "normal"
+					},
+					{
+						"id": "5QnOXTuc",
+						"order": 12000,
+						"from": "LIpURyJE",
+						"to": "5uPyMgoI",
+						"kind": "event",
+						"label": "operation events; only an unknown outcome is told",
+						"emphasis": "muted"
+					},
+					{
+						"id": "1joDYyhX",
+						"order": 13000,
+						"from": "eyQ2AZaA",
+						"to": "4A6j6Xk3",
+						"kind": "call",
+						"label": "pane news: realtime/appendText",
+						"emphasis": "normal"
+					},
+					{
+						"id": "AkgtBxFY",
+						"order": 14000,
+						"from": "2vHAg1Ei",
+						"to": "fEiupnAD",
+						"kind": "event",
+						"label": "a final user reply arms the gate",
+						"emphasis": "normal"
+					},
+					{
+						"id": "yjIBH8F4",
+						"order": 15000,
+						"from": "LHBPlItu",
+						"to": "5uPyMgoI",
+						"kind": "event",
+						"label": "workhorse notifications, tell_coordinator calls",
+						"emphasis": "normal"
+					},
+					{
+						"id": "F1500O9D",
+						"order": 16000,
+						"from": "5uPyMgoI",
+						"to": "hxZxt8Wy",
+						"kind": "call",
+						"label": "is this notification news?",
+						"emphasis": "normal"
+					},
+					{
+						"id": "z89BWp39",
+						"order": 17000,
+						"from": "5uPyMgoI",
+						"to": "AahDTiw9",
+						"kind": "call",
+						"label": "answer a tell_coordinator call",
+						"emphasis": "normal"
+					},
+					{
+						"id": "kK1YexMf",
+						"order": 18000,
+						"from": "AahDTiw9",
+						"to": "hxZxt8Wy",
+						"kind": "call",
+						"label": "the news this message is",
+						"emphasis": "normal"
+					},
+					{
+						"id": "35DJDouE",
+						"order": 19000,
+						"from": "AahDTiw9",
+						"to": "5uPyMgoI",
+						"kind": "call",
+						"label": "queue it, wait for its delivery",
+						"emphasis": "normal"
+					},
+					{
+						"id": "5EeoHuyh",
+						"order": 20000,
+						"from": "AahDTiw9",
+						"to": "LHBPlItu",
+						"kind": "call",
+						"label": "answer the workhorse",
+						"emphasis": "muted"
+					},
+					{
+						"id": "LJ71MbJ0",
+						"order": 21000,
+						"from": "5uPyMgoI",
+						"to": "eyQ2AZaA",
+						"kind": "call",
+						"label": "one at a time, in order",
+						"emphasis": "hero"
+					},
+					{
+						"id": "VdOucvLo",
+						"order": 22000,
+						"from": "eyQ2AZaA",
+						"to": "AjPVQ0BZ",
+						"kind": "call",
+						"label": "report the news",
+						"emphasis": "hero"
+					},
+					{
+						"id": "kdzh3hrY",
+						"order": 23000,
+						"from": "AjPVQ0BZ",
+						"to": "4A6j6Xk3",
+						"kind": "call",
+						"label": "turn/start on the coordinator thread",
+						"emphasis": "hero"
+					},
+					{
+						"id": "tMugyhPT",
+						"order": 24000,
+						"from": "AjPVQ0BZ",
+						"to": "2vHAg1Ei",
+						"kind": "call",
+						"label": "is a recording holding the voice?",
+						"emphasis": "muted"
+					},
+					{
+						"id": "wyliCZzQ",
+						"order": 25000,
+						"from": "qZsXIuQG",
+						"to": "5uPyMgoI",
+						"kind": "event",
+						"label": "the user's changes, focus and selection",
+						"emphasis": "normal"
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "v76VMLF8",
+						"name": "Why voice is its own thread",
+						"beats": [
+							{
+								"id": "15w2iD6r",
+								"heading": "Two threads, two jobs",
+								"body": "The coordinator is a separate thread with its own model and settings, and the voice model's subconscious: it reads the boards, follows the workhorse and decides what the voice model says. It answers, investigates a little, and hands anything sustained to the workhorse, which goes on working while it talks.",
+								"subjects": [
+									"NUoTEPga",
+									"5sWG4uuq",
+									"LIpURyJE"
+								]
+							},
+							{
+								"id": "gGMXy6yW",
+								"heading": "The tools are frozen, and checked",
+								"body": "What the coordinator may ask for is a manifest pinned by digest, and every call is validated against it before it runs. A call that has already run is not run again.",
+								"subjects": [
+									"ZDMIGM5P",
+									"5sWG4uuq"
+								]
+							},
+							{
+								"id": "wogLneoR",
+								"heading": "Archboard brokers, it does not speak",
+								"body": "The tab makes the peer connection and carries the audio. Archboard passes the offer to the child and the answer back, and never holds a voice endpoint of its own.",
+								"subjects": [
+									"0eYa0szs",
+									"2vHAg1Ei",
+									"4A6j6Xk3"
+								]
+							},
+							{
+								"id": "05IbJcd0",
+								"heading": "The workhorse's news arrives at once",
+								"body": "A workhorse turn that ends or begins waiting on the user, whoever started it, and anything the workhorse says through tell_coordinator become one sentence of workhorse news. It goes out as one turn/start, which Codex adds to the coordinator's running turn or starts a turn with, so nothing waits for the coordinator to be idle and nothing enters its history without a turn that acts on it. What it answers under [FINAL] is spoken; a [COMMENTARY] line stays quiet.",
+								"subjects": [
+									"hxZxt8Wy",
+									"AahDTiw9",
+									"LJ71MbJ0",
+									"VdOucvLo",
+									"AjPVQ0BZ",
+									"kdzh3hrY"
+								],
+								"view": "RbD5P0sE"
+							},
+							{
+								"id": "9Q8uVxC0",
+								"heading": "Nobody is told without a listener",
+								"body": "With no voice session the coordinator never runs, so no news is sent and tell_coordinator answers that nobody is listening. While a recording holds the voice the outcome report sends nothing, because whatever the coordinator answered would be spoken into the video. Pane news goes to the voice model alone, and only for what the user changed by hand.",
+								"subjects": [
+									"AahDTiw9",
+									"AjPVQ0BZ",
+									"tMugyhPT",
+									"1joDYyhX",
+									"wyliCZzQ"
+								],
+								"view": "RbD5P0sE"
+							},
+							{
+								"id": "DyoMzztk",
+								"heading": "An approval is answered once",
+								"body": "A final spoken reply arms a gate on one approval. Whether it is then answered out loud or in the pane, it settles exactly once, and an unproven answer falls back to the narrowest outcome.",
+								"subjects": [
+									"AkgtBxFY",
+									"fEiupnAD",
+									"C3wBXyPG"
+								]
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "kEXoBE8D",
+			"name": "TASK-301",
+			"lifecycle": "draft",
+			"parent": "H3TW6CJC",
+			"summary": "Every voice start gets a fresh coordinator thread and voice session",
+			"content": {
+				"nodes": [
+					{
+						"id": "0eYa0szs",
+						"order": 1000,
+						"name": "Browser pane",
+						"kind": "service",
+						"responsibility": "Where a user speaks: the tab makes the peer connection and carries the audio itself",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/voice-session/index.ts"
+						},
+						"drillDown": {
+							"board": "Browser application",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "NUoTEPga",
+						"order": 2000,
+						"name": "Coordinator thread",
+						"kind": "module",
+						"responsibility": "The separate fast thread voice attaches to, the voice model's subconscious: its model, its settings, and how it is started",
+						"description": "Started once the account is signed in, on gpt-6-sol at low effort with project_doc_max_bytes 0 and the archboard_workhorse and archboard_voice tools. It carries at most one voice session: a voice start that finds it already carried one starts a fresh thread first, and swaps it in only once it is ready, so the old thread is never driven again. It runs turns only for a live voice session: a handoff, workhorse news, a spoken approval.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-coordinator/index.ts"

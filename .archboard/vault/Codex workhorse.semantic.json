@@ -4,9 +4,9 @@
 	"id": "SJ2JMVyz",
 	"name": "Codex workhorse",
 	"level": "module",
-	"version": 6,
+	"version": 8,
 	"createdAt": "2026-09-17T21:06:43.257Z",
-	"updatedAt": "2026-09-25T01:27:44.217Z",
+	"updatedAt": "2026-09-29T02:59:16.538Z",
 	"views": [
 		{
 			"id": "TX1Vzuu7",
@@ -94,6 +94,428 @@
 						"kind": "module",
 						"responsibility": "The four things the coordinator may ask of a workhorse, one at a time: delegate, steer, inspect, manage its queue",
 						"description": "The coordinator's one door in. Its operations run one after another, so two coordinator effects never interleave on one thread, and each mutation is staged, settled and reported under an epoch operation. A delegation starts a turn on an idle workhorse and joins the queue of an active one Archboard created.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-workhorse-operations/index.ts"
+						}
+					},
+					{
+						"id": "fDdhxdXp",
+						"order": 4000,
+						"name": "Workhorse start",
+						"kind": "module",
+						"responsibility": "Opens the one thread the server's link will name, with its instructions and both tool manifests, under a staged epoch operation",
+						"description": "thread/start on gpt-6-astra at medium effort in the checkout, with the workhorse developer instructions and the archboard_app and archboard_coordinator tool namespaces; the manifest digest it records covers both.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-workhorse-start/index.ts"
+						}
+					},
+					{
+						"id": "5SYKj5bN",
+						"order": 5000,
+						"name": "Workhorse queue",
+						"kind": "module",
+						"responsibility": "Codex's queue of messages waiting for the workhorse: list, add, edit, reorder, delete, or start one now",
+						"description": "Each change is checked against the queue it expected before and after the remote effect. Codex itself runs one turn at a time and takes the next queued message when a turn ends.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-workhorse-queue/index.ts"
+						}
+					},
+					{
+						"id": "p05yEm5U",
+						"order": 6000,
+						"name": "Thread link",
+						"kind": "module",
+						"responsibility": "Which thread the Archboard server is bound to, whichever pane asks, and the refusal when a second binding disagrees",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-thread-link/index.ts"
+						}
+					},
+					{
+						"id": "Fxm7RW2x",
+						"order": 7000,
+						"name": "Thread tools",
+						"kind": "module",
+						"responsibility": "The archboard_app manifest a workhorse is started with, pinned by its digest",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-thread-tools/index.ts"
+						}
+					},
+					{
+						"id": "L4s2Ndtt",
+						"order": 8000,
+						"name": "Authored instructions",
+						"kind": "module",
+						"responsibility": "The developer instructions a thread starts with, and the digest that proves them unchanged",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-instructions/index.ts"
+						}
+					},
+					{
+						"id": "6T3oOpxS",
+						"order": 9000,
+						"name": "Epoch ledger",
+						"kind": "module",
+						"responsibility": "Which child generation owns which thread, on disk, with operations that commit, roll back or say the outcome is unknown",
+						"groups": [
+							"child"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-epoch/index.ts"
+						}
+					},
+					{
+						"id": "ZGoXFusm",
+						"order": 10000,
+						"name": "Thread tool calls",
+						"kind": "module",
+						"responsibility": "Runs the archboard_app calls a thread makes on the server's other threads: list, read, create, fork, message, and the waits",
+						"description": "A creation, fork or message runs only once the user approves it, under the generation that may act; a wait registers its edges first.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-dynamic-tools/index.ts"
+						}
+					},
+					{
+						"id": "abHx4peq",
+						"order": 11000,
+						"name": "Wait graph",
+						"kind": "module",
+						"responsibility": "The wait edges every waiting tool registers, so a wait cannot close a cycle",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-wait-graph/index.ts"
+						}
+					},
+					{
+						"id": "4slFgCMu",
+						"order": 12000,
+						"name": "Codex session",
+						"kind": "module",
+						"responsibility": "The reviewed methods a turn is actually sent on",
+						"groups": [
+							"child"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/index.ts"
+						},
+						"drillDown": {
+							"board": "Codex session",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "WaIHZ8sZ",
+						"order": 13000,
+						"name": "Tell coordinator",
+						"kind": "module",
+						"responsibility": "The archboard_coordinator tool a workhorse is started with: tell the coordinator one thing while it works",
+						"description": "Its manifest is pinned by digest like archboard_app's. A call becomes workhorse news for the coordinator while voice is live; with no voice session nothing is sent and the workhorse is told nobody is listening.",
+						"groups": [
+							"voice"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-coordinator-callbacks/lib/tell-coordinator.ts"
+						},
+						"drillDown": {
+							"board": "Voice coordinator",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "gPWhZQeZ",
+						"order": 1000,
+						"from": "tIEJl3KY",
+						"to": "4slFgCMu",
+						"kind": "rpc",
+						"label": "a typed message: turn/start or turn/steer",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "e1viO4QT",
+						"order": 2000,
+						"from": "npbOHMgi",
+						"to": "glxfDGYq",
+						"kind": "call",
+						"label": "delegate, steer, inspect, queue",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "l3RkMYAH",
+						"order": 3000,
+						"from": "glxfDGYq",
+						"to": "5SYKj5bN",
+						"kind": "call",
+						"label": "queue a delegation behind the running turn",
+						"emphasis": "normal"
+					},
+					{
+						"id": "KGiq6epE",
+						"order": 4000,
+						"from": "glxfDGYq",
+						"to": "p05yEm5U",
+						"kind": "call",
+						"label": "which thread this is for",
+						"emphasis": "normal"
+					},
+					{
+						"id": "yR5sjMnY",
+						"order": 5000,
+						"from": "glxfDGYq",
+						"to": "6T3oOpxS",
+						"kind": "call",
+						"label": "stage and settle the operation",
+						"emphasis": "normal"
+					},
+					{
+						"id": "zgS5gisx",
+						"order": 6000,
+						"from": "5SYKj5bN",
+						"to": "4slFgCMu",
+						"kind": "rpc",
+						"label": "thread/queue/add, update, reorder, delete, start",
+						"emphasis": "normal"
+					},
+					{
+						"id": "5B5ZeO2k",
+						"order": 7000,
+						"from": "fDdhxdXp",
+						"to": "p05yEm5U",
+						"kind": "call",
+						"label": "classify and bind the server's thread",
+						"emphasis": "normal"
+					},
+					{
+						"id": "uiPv1wnk",
+						"order": 8000,
+						"from": "fDdhxdXp",
+						"to": "6T3oOpxS",
+						"kind": "call",
+						"label": "stage, commit or roll back the start",
+						"emphasis": "normal"
+					},
+					{
+						"id": "W87z7uEB",
+						"order": 9000,
+						"from": "fDdhxdXp",
+						"to": "4slFgCMu",
+						"kind": "rpc",
+						"label": "thread/start with the authored body",
+						"emphasis": "normal"
+					},
+					{
+						"id": "zIWijDn9",
+						"order": 10000,
+						"from": "fDdhxdXp",
+						"to": "Fxm7RW2x",
+						"kind": "dependency",
+						"label": "archboard_app, by digest",
+						"emphasis": "muted"
+					},
+					{
+						"id": "jAdLjEha",
+						"order": 11000,
+						"from": "fDdhxdXp",
+						"to": "L4s2Ndtt",
+						"kind": "dependency",
+						"label": "the instructions, by digest",
+						"emphasis": "muted"
+					},
+					{
+						"id": "CHkvrU1f",
+						"order": 12000,
+						"from": "ZGoXFusm",
+						"to": "abHx4peq",
+						"kind": "call",
+						"label": "register and release a wait edge",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Uflv9hM7",
+						"order": 13000,
+						"from": "ZGoXFusm",
+						"to": "6T3oOpxS",
+						"kind": "call",
+						"label": "the generation that may act",
+						"emphasis": "normal"
+					},
+					{
+						"id": "FWJMAVKj",
+						"order": 14000,
+						"from": "tIEJl3KY",
+						"to": "5SYKj5bN",
+						"kind": "call",
+						"label": "queue, edit, reorder or start a message",
+						"emphasis": "normal"
+					},
+					{
+						"id": "NALNPztL",
+						"order": 15000,
+						"from": "tIEJl3KY",
+						"to": "fDdhxdXp",
+						"kind": "call",
+						"label": "start a workhorse for the server",
+						"emphasis": "normal"
+					},
+					{
+						"id": "8xJt3Mud",
+						"order": 16000,
+						"from": "glxfDGYq",
+						"to": "4slFgCMu",
+						"kind": "rpc",
+						"label": "turn/start when idle, turn/steer",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						}
+					},
+					{
+						"id": "uLGJACZb",
+						"order": 17000,
+						"from": "fDdhxdXp",
+						"to": "WaIHZ8sZ",
+						"kind": "dependency",
+						"label": "archboard_coordinator, by digest",
+						"emphasis": "muted"
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "sdzhtbxw",
+						"name": "Why the coordinator has one door",
+						"beats": [
+							{
+								"id": "KVnICaNb",
+								"heading": "Two callers, two ways in",
+								"body": "A pane's typed message goes straight to the linked thread as turn/start or turn/steer with the board's context, and its queue edits straight to the queue. Everything the coordinator asks goes through the four operations instead, one after another, so two of its effects never interleave and each is settled and reported in one place.",
+								"subjects": [
+									"tIEJl3KY",
+									"gPWhZQeZ",
+									"FWJMAVKj",
+									"npbOHMgi",
+									"e1viO4QT",
+									"glxfDGYq",
+									"8xJt3Mud"
+								]
+							},
+							{
+								"id": "ef76Ne2e",
+								"heading": "One turn at a time",
+								"body": "Codex runs one turn at a time on a thread and keeps what arrives meanwhile in the thread's own queue. A delegation to a busy workhorse joins that queue rather than starting a second turn, which would interleave two sets of edits to the same repository.",
+								"subjects": [
+									"l3RkMYAH",
+									"5SYKj5bN",
+									"zgS5gisx",
+									"4slFgCMu"
+								]
+							},
+							{
+								"id": "w44iEbUk",
+								"heading": "A start is a staged operation",
+								"body": "Opening a thread is staged in the epoch ledger before it is sent and committed after. A child that dies mid-flight leaves an operation whose outcome is stated as unknown rather than a binding nobody can account for.",
+								"subjects": [
+									"fDdhxdXp",
+									"6T3oOpxS",
+									"p05yEm5U"
+								]
+							},
+							{
+								"id": "MfqdQNuH",
+								"heading": "The workhorse can reach the coordinator",
+								"body": "A workhorse starts with two reviewed tool manifests: archboard_app for the server's other threads and archboard_coordinator's tell_coordinator. The digest recorded for the start covers both, so changing what either tool tells the workhorse is a new manifest to review, not a silent edit.",
+								"subjects": [
+									"fDdhxdXp",
+									"zIWijDn9",
+									"Fxm7RW2x",
+									"uLGJACZb",
+									"WaIHZ8sZ"
+								]
+							},
+							{
+								"id": "AK907u1m",
+								"heading": "A wait cannot close a cycle",
+								"body": "Every waiting tool registers its edge, so a thread waiting on something that is waiting on it is refused instead of hanging until a timeout nobody set.",
+								"subjects": [
+									"ZGoXFusm",
+									"abHx4peq"
+								]
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "7MQ3CPWJ",
+			"name": "TASK-301",
+			"lifecycle": "draft",
+			"parent": "y9kWSCEn",
+			"summary": "Every voice start gets a fresh coordinator thread and voice session",
+			"content": {
+				"nodes": [
+					{
+						"id": "tIEJl3KY",
+						"order": 1000,
+						"name": "Browser gateway",
+						"kind": "module",
+						"responsibility": "Where a pane's command arrives, already admitted and leased, and is carried out by the server's actions",
+						"description": "The gateway dispatches each browser command to one action: a typed message to the text actions (src/server/archboard/lib/codex-workbench-text-actions.ts), a queue edit to the queue, a new workhorse to the thread-link actions (codex-workbench-thread-links.ts). None of them passes through the workhorse operations.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/codex-workbench/index.ts"
+						}
+					},
+					{
+						"id": "npbOHMgi",
+						"order": 2000,
+						"name": "Coordinator tools",
+						"kind": "module",
+						"responsibility": "The coordinator's tool calls: each becomes one of the four workhorse operations",
+						"groups": [
+							"voice"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-coordinator-tools/index.ts"
+						},
+						"drillDown": {
+							"board": "Voice coordinator",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "glxfDGYq",
+						"order": 3000,
+						"name": "Workhorse operations",
+						"kind": "module",
+						"responsibility": "The four things the coordinator may ask of a workhorse, one at a time: delegate, steer, inspect, manage its queue",
+						"description": "The coordinator's one door in. Its operations run one after another, so two coordinator effects never interleave on one thread, and each mutation is staged, settled and reported under an epoch operation. A delegation starts a turn on an idle workhorse and joins the queue of an active one Archboard created. An operation follows its workhorse turn to the end even after a voice start replaces the coordinator that asked for it; only the current coordinator may start one.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-workhorse-operations/index.ts"
