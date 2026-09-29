@@ -35,7 +35,7 @@ import type {
 	BrowserConnections,
 	ConnectionState,
 } from "@/server/codex-workbench/lib/gateway-connections";
-import type { LeaseOwner } from "@/server/codex-workbench/lib/gateway-leases";
+import type { SessionLeases } from "@/server/codex-workbench/lib/gateway-leases";
 
 /** A command whose result is replayable, so a retried id answers what it answered. */
 interface CachedCommand {
@@ -54,7 +54,7 @@ interface CommandExecutorOwners {
 	readonly model: ReturnType<typeof createCodexBrowserModel>;
 	readonly now: () => number;
 	readonly connections: BrowserConnections;
-	readonly leases: LeaseOwner;
+	readonly leases: SessionLeases;
 	/** Whether the gateway has been disposed, which stops the settled cache growing. */
 	readonly isDisposed: () => boolean;
 }
@@ -163,18 +163,18 @@ function realtimeExtras(result: Exclude<BrowserActionResult, void>): Record<stri
 }
 
 /**
- * The oldest settled command that may be evicted, which is any but the one
- * the lease is currently for.
+ * The oldest settled command that may be evicted, which is any but one a tab
+ * session's lease is currently for.
  * @param settled The settled cache, in insertion order.
- * @param activeCommandId The lease's own command, when there is a lease.
- * @returns The command to evict, or undefined when only the lease's is left.
+ * @param isActive Whether a command is some tab session's active lease.
+ * @returns The command to evict, or undefined when only active leases' are left.
  */
 function oldestEvictable(
 	settled: ReadonlyMap<BrowserCommandId, CachedCommand>,
-	activeCommandId: BrowserCommandId | undefined,
+	isActive: (commandId: BrowserCommandId) => boolean,
 ): BrowserCommandId | undefined {
 	for (const candidate of settled.keys()) {
-		if (candidate !== activeCommandId) {
+		if (!isActive(candidate)) {
 			return candidate;
 		}
 	}
@@ -244,7 +244,7 @@ function createCommandExecutor(owners: CommandExecutorOwners): CommandExecutor {
 			return true;
 		}
 		try {
-			leases.ensureLeaseBinding(state, record);
+			leases.of(state.tabSessionId).ensureLeaseBinding(state, record);
 			return true;
 		} catch (error) {
 			if (error instanceof CodexWorkbenchGatewayError && error.code === "link_changed") {
@@ -268,7 +268,7 @@ function createCommandExecutor(owners: CommandExecutorOwners): CommandExecutor {
 		actionResult: BrowserActionResult,
 	): BrowserGatewayCommandResult => {
 		const outcome =
-			leases.manager.current()?.lease.commandId === command.commandId
+			leases.of(state.tabSessionId).manager.current()?.lease.commandId === command.commandId
 				? actionOutcome(actionResult)
 				: "outcome_unknown";
 		const code = codeForOutcome(outcome);
@@ -313,18 +313,18 @@ function createCommandExecutor(owners: CommandExecutorOwners): CommandExecutor {
 			}
 			return delivered(state, command, actionResult);
 		} catch (error) {
-			if (actionStarted && leases.manager.current()?.lease.commandId !== command.commandId)
+			if (actionStarted && !leases.isActive(command.commandId))
 				return refusal(state, command.commandId, "outcome_unknown", "outcome_unknown");
 			return refusal(state, command.commandId, errorCode(error), errorOutcome(error));
 		}
 	};
 
-	// A lease is app-global, so retiring its owner removes its only possible
-	// in-flight entry. Settled entries remain replayable until bounded eviction;
-	// an evicted id is necessarily non-current and must pass lease authority.
+	// A tab session holds one lease, so retiring its owner removes that session's
+	// only possible in-flight entry. Settled entries remain replayable until bounded
+	// eviction; an evicted id is necessarily non-current and must pass lease authority.
 	/**
-	 * Keep a settled command replayable, evicting the oldest that is not the
-	 * lease's own once the cache is full.
+	 * Keep a settled command replayable, evicting the oldest that is no tab
+	 * session's lease once the cache is full.
 	 * @param commandId The command.
 	 * @param entry What it answered.
 	 */
@@ -332,9 +332,8 @@ function createCommandExecutor(owners: CommandExecutorOwners): CommandExecutor {
 		if (owners.isDisposed()) return;
 		settledCommands.delete(commandId);
 		settledCommands.set(commandId, entry);
-		const activeCommandId = leases.manager.current()?.lease.commandId;
 		while (settledCommands.size > BROWSER_SETTLED_COMMAND_LIMIT) {
-			const evicted = oldestEvictable(settledCommands, activeCommandId);
+			const evicted = oldestEvictable(settledCommands, leases.isActive);
 			if (evicted === undefined) break;
 			settledCommands.delete(evicted);
 		}
@@ -375,7 +374,7 @@ function createCommandExecutor(owners: CommandExecutorOwners): CommandExecutor {
 	 * @param entry Its cache entry.
 	 */
 	const trackInFlight = (commandId: BrowserCommandId, entry: CachedCommand): void => {
-		if (leases.manager.current()?.lease.commandId !== commandId) {
+		if (!leases.isActive(commandId)) {
 			return;
 		}
 		inFlightCommands.set(commandId, entry);

@@ -150,7 +150,7 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 		state,
 		timeline,
 		budget: createServerBrowserProjectionBudget(),
-		leaseLedger: { active: null, retired: new Map() },
+		leaseLedger: { sessions: new Map() },
 		process: () => facts,
 		...(overrides.now === undefined ? {} : { now: overrides.now }),
 		contextForOperation: () => archboardContext,

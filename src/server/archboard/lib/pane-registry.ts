@@ -533,8 +533,7 @@ function forgetDisplay(): void {
 	codexSocketInstances.clear();
 	panes.clear();
 	paneBoards.clear();
-	browserLeaseLedger.active = null;
-	browserLeaseLedger.retired.clear();
+	browserLeaseLedger.sessions.clear();
 }
 
 export {
