@@ -6,6 +6,7 @@ import {
 	type CoordinatorEpochSnapshot,
 	type CoordinatorEnsureInput,
 	type CoordinatorPersistedState,
+	type CoordinatorReplaceInput,
 	type CoordinatorReviewHashes,
 	type CoordinatorSnapshot,
 } from "@/runtime/codex-coordinator/lib/contract";
@@ -29,10 +30,31 @@ import {
 } from "@/runtime/codex-coordinator/lib/state";
 
 /**
- * Build the module that keeps exactly one coordinator thread for the workbench. Each `ensure`
+ * The settings the coordinator is asked for with the chosen model.
+ * @param selection - The chosen model and service tier.
+ * @returns The configured settings.
+ */
+function configuredSettings(selection: CoordinatorModelSelection): CoordinatorConfiguredSettings {
+	return Object.freeze({
+		model: COORDINATOR_MODEL,
+		effort: COORDINATOR_EFFORT,
+		serviceTier: selection.configuredServiceTier,
+	});
+}
+
+/** What a replacement has reached, kept apart from the published coordinator until it is ready. */
+interface StagedCoordinator {
+	snapshot: CoordinatorSnapshot;
+	persistence: CoordinatorPersistedState | null;
+}
+
+/**
+ * Build the module that keeps the workbench's one current coordinator thread. Each `ensure`
  * either proves the coordinator it already has is still the reviewed one and reuses it, leaves a
- * thread it cannot prove as inspect-only, or starts a fresh one. Calls are serialised, so two
- * ensures can never start two coordinators.
+ * thread it cannot prove as inspect-only, or starts a fresh one. Each `replace` starts a fresh
+ * one in place of the current one, which a voice start asks for once the current coordinator has
+ * carried a voice session (TASK-301). Calls are serialised, so two of them can never start two
+ * coordinators at once.
  * @param options - The session, epoch store, identity authority and durable state.
  * @returns The coordinator module.
  */
@@ -42,42 +64,72 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 	}
 	let retainedPersistence = options.persisted ? freezePersistence(options.persisted) : null;
 	let current: CoordinatorSnapshot = emptySnapshot("unbound", null);
+	// While a replacement runs, what it reaches is staged here and the current coordinator stays.
+	let staged: StagedCoordinator | null = null;
 	let ensureTail: Promise<void> = Promise.resolve();
-	const starter = createCoordinatorStarter(options, {
-		/**
-		 * Record the snapshot the starter has reached.
-		 * @param snapshot - The new snapshot.
-		 */
-		setSnapshot: (snapshot) => {
+	/**
+	 * Record the snapshot a start or a refusal has reached: staged while a replacement runs,
+	 * published otherwise.
+	 * @param snapshot - The new snapshot.
+	 */
+	const publish = (snapshot: CoordinatorSnapshot): void => {
+		if (staged === null) {
 			current = snapshot;
-		},
+		} else {
+			staged.snapshot = snapshot;
+		}
+	};
+	const starter = createCoordinatorStarter(options, {
+		setSnapshot: publish,
 		/**
-		 * The snapshot as it stands now.
-		 * @returns The current snapshot.
+		 * The snapshot as it stands now, staged or published.
+		 * @returns The snapshot.
 		 */
-		snapshot: () => current,
+		snapshot: () => staged?.snapshot ?? current,
 		/**
 		 * Retain the durable state a started coordinator can be reclaimed from.
 		 * @param persistence - The durable state, or null when there is none to keep.
 		 */
 		setPersistence: (persistence) => {
-			retainedPersistence = persistence;
+			if (staged === null) {
+				retainedPersistence = persistence;
+			} else {
+				staged.persistence = persistence;
+			}
 		},
 	});
 
 	/**
-	 * Ensure the workbench has a coordinator, behind every ensure enqueued before it.
-	 * @param input - The durable candidate and the server operation identity, when supplied.
-	 * @returns The snapshot the ensure settled as.
+	 * Run one coordinator step behind every step enqueued before it.
+	 * @param step - The step.
+	 * @returns The snapshot the step settled as.
 	 */
-	const ensure = (input: CoordinatorEnsureInput = {}): Promise<CoordinatorSnapshot> => {
-		const run = ensureTail.then(() => ensureOne(input));
+	const serialized = (step: () => Promise<CoordinatorSnapshot>): Promise<CoordinatorSnapshot> => {
+		const run = ensureTail.then(step);
 		ensureTail = run.then(
 			() => undefined,
 			() => undefined,
 		);
 		return run;
 	};
+
+	/**
+	 * Ensure the workbench has a coordinator, behind every step enqueued before it.
+	 * @param input - The durable candidate and the server operation identity, when supplied.
+	 * @returns The snapshot the ensure settled as.
+	 */
+	const ensure = (input: CoordinatorEnsureInput = {}): Promise<CoordinatorSnapshot> =>
+		serialized(() => ensureOne(input));
+
+	/**
+	 * Start a fresh coordinator in place of the current one, behind every step enqueued before it.
+	 * @param input - The server operation identity the fresh start runs under.
+	 * @returns The fresh coordinator's ready snapshot.
+	 * @throws {CodexCoordinatorError} When the fresh coordinator did not become ready; the current
+	 * one is then left exactly as it was.
+	 */
+	const replace = (input: CoordinatorReplaceInput): Promise<CoordinatorSnapshot> =>
+		serialized(() => replaceOne(input.operationId));
 
 	/**
 	 * Run one ensure: choose the model, prove the reviewed artifacts and the epoch, then decide
@@ -89,11 +141,7 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 		current = emptySnapshot("unbound", null);
 		const selection = await selectModel();
 		const reviewed = reviewedHashes();
-		const configured: CoordinatorConfiguredSettings = Object.freeze({
-			model: COORDINATOR_MODEL,
-			effort: COORDINATOR_EFFORT,
-			serviceTier: selection.configuredServiceTier,
-		});
+		const configured = configuredSettings(selection);
 		const epochSnapshot = currentEpochSnapshot(configured);
 		const candidate = input.persisted === undefined ? retainedPersistence : input.persisted;
 		const decision = await decideCandidate(candidate, configured, reviewed, epochSnapshot, options);
@@ -125,6 +173,50 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 	}
 
 	/**
+	 * Start a fresh coordinator with everything it reaches staged, so the current coordinator stays
+	 * published and retained until the fresh one is started, confirmed and committed. Only then are
+	 * both swapped, in one step. A start that ends anywhere else leaves the current coordinator as it
+	 * was: its thread was never reused, so a thread the start may have left behind is never driven.
+	 * @param operationId - The server operation identity the fresh start runs under.
+	 * @returns The fresh coordinator's ready snapshot.
+	 * @throws {CodexCoordinatorError} When the fresh coordinator did not become ready.
+	 */
+	async function replaceOne(operationId: string): Promise<CoordinatorSnapshot> {
+		if (operationId.length === 0) {
+			throw new CodexCoordinatorError(
+				"invalid_input",
+				"A fresh server operation id is required before replacement.",
+			);
+		}
+		const stage: StagedCoordinator = { snapshot: current, persistence: retainedPersistence };
+		staged = stage;
+		try {
+			const selection = await selectModel();
+			const reviewed = reviewedHashes();
+			const configured = configuredSettings(selection);
+			const epochSnapshot = currentEpochSnapshot(configured);
+			const started = await starter.start(
+				operationId,
+				selection,
+				configured,
+				reviewed,
+				epochSnapshot,
+			);
+			if (started.state !== "ready") {
+				throw new CodexCoordinatorError(
+					"transaction_failed",
+					`A fresh coordinator did not become ready: ${started.reason ?? started.state}`,
+				);
+			}
+			current = started;
+			retainedPersistence = stage.persistence;
+			return current;
+		} finally {
+			staged = null;
+		}
+	}
+
+	/**
 	 * Choose the coordinator's model from what the account may use. A coordinator that cannot be
 	 * given its reviewed model is not started at all.
 	 * @returns The model selection.
@@ -139,7 +231,7 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 				"model_list_failed",
 				"Coordinator model selection failed.",
 			);
-			current = failedSnapshot(failure.message, null);
+			publish(failedSnapshot(failure.message, null));
 			throw failure;
 		}
 	}
@@ -159,7 +251,7 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 				"invalid_input",
 				"Reviewed coordinator inputs are not intact.",
 			);
-			current = failedSnapshot(failure.message, null);
+			publish(failedSnapshot(failure.message, null));
 			throw failure;
 		}
 	}
@@ -184,7 +276,7 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 				"epoch_unavailable",
 				"The coordinator cannot establish a current Codex epoch.",
 			);
-			current = failedSnapshot(failure.message, configured);
+			publish(failedSnapshot(failure.message, configured));
 			throw failure;
 		}
 	}
@@ -220,6 +312,7 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 
 	return Object.freeze({
 		ensure,
+		replace,
 		/**
 		 * The coordinator's current snapshot.
 		 * @returns The snapshot.

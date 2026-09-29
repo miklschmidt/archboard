@@ -3,29 +3,10 @@
 // Every field is read from the published snapshot; nothing here calls the
 // transport's lease surface, so a projection stays a read.
 
-import type { BrowserSnapshot } from "@/shared/codex-browser-model";
 import type { VoiceSessionBinding, VoiceTransportPort } from "@/ui/voice-session/contract";
 
 /** What the current snapshot says this pane is bound to, when it can say. */
 type ObservedBinding = VoiceSessionBinding | null | "gone";
-
-/**
- * A nullable identity as a plain string.
- * @param value The identity.
- * @returns The string, or null.
- */
-function text(value: string | null | undefined): string | null {
-	return value ?? null;
-}
-
-/**
- * The coordinator thread the server published, as a plain string.
- * @param snapshot The snapshot.
- * @returns The thread id, or null.
- */
-function coordinatorThreadId(snapshot: BrowserSnapshot | null): string | null {
-	return text(snapshot?.coordinator.threadId ?? null);
-}
 
 /**
  * What the transport currently says this pane is bound to. `null` means the
@@ -52,7 +33,6 @@ function observeBinding(transport: VoiceTransportPort, paneId: string): Observed
 		childId: String(link.childId),
 		epoch: String(link.epoch),
 		workhorseThreadId: String(link.threadId),
-		coordinatorThreadId: coordinatorThreadId(snapshot),
 	};
 }
 
@@ -72,8 +52,7 @@ function identityMoved(bound: VoiceSessionBinding, observed: VoiceSessionBinding
 }
 
 /**
- * Whether an observed binding replaces the bound one. A coordinator the server
- * has not published yet is not a replacement; a different published one is.
+ * Whether an observed binding replaces the bound one.
  * @param bound The binding the session started with.
  * @param observed What the transport says now.
  * @returns True when the session was replaced under its binding.
@@ -85,21 +64,7 @@ function bindingReplaced(bound: VoiceSessionBinding, observed: ObservedBinding):
 	if (observed === "gone") {
 		return true;
 	}
-	return identityMoved(bound, observed) || coordinatorMoved(bound, observed);
-}
-
-/**
- * Whether a published coordinator differs from the bound one.
- * @param bound The binding the session started with.
- * @param observed What the transport says now.
- * @returns True when both name a coordinator and they differ.
- */
-function coordinatorMoved(bound: VoiceSessionBinding, observed: VoiceSessionBinding): boolean {
-	return (
-		observed.coordinatorThreadId !== null &&
-		bound.coordinatorThreadId !== null &&
-		observed.coordinatorThreadId !== bound.coordinatorThreadId
-	);
+	return identityMoved(bound, observed);
 }
 
 /**
@@ -119,7 +84,6 @@ function captureBinding(transport: VoiceTransportPort, paneId: string): VoiceSes
 		childId: String(link.childId),
 		epoch: String(link.epoch),
 		workhorseThreadId: String(link.threadId),
-		coordinatorThreadId: coordinatorThreadId(snapshot),
 	});
 }
 

@@ -5,7 +5,7 @@
 // something that stops it, so it is given tell_coordinator. What it says is workhorse news like
 // any other: queued in order with the rest and given to the coordinator at once while voice is
 // live. With no voice session nobody is listening, and the workhorse is told so, since the
-// coordinator is never started without voice.
+// coordinator runs no turn without voice.
 
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";

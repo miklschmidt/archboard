@@ -218,6 +218,22 @@ function sameBinding(left: WorkhorseOperationBinding, right: WorkhorseOperationB
 }
 
 /**
+ * Compare two bindings by their epoch and workhorse alone. An accepted operation belongs to its
+ * workhorse turn, and it follows that turn to the end even after a voice start replaces the
+ * coordinator that asked for it (TASK-301); what it reports then reaches no coordinator.
+ * @param left - One binding.
+ * @param right - The other binding.
+ * @returns Whether both bindings name the same workhorse under the same epoch.
+ */
+function sameWorkhorse(left: WorkhorseOperationBinding, right: WorkhorseOperationBinding): boolean {
+	return (
+		left.childId === right.childId &&
+		left.epoch === right.epoch &&
+		sameTarget(left.workhorse, right.workhorse)
+	);
+}
+
+/**
  * Copy a target so later changes by the composition root cannot alter a captured operation.
  * @param target - The live target.
  * @returns A frozen copy.
@@ -413,6 +429,7 @@ export {
 	sameCall,
 	sameTarget,
 	sameBinding,
+	sameWorkhorse,
 	snapshotTarget,
 	snapshotBinding,
 	snapshotCall,

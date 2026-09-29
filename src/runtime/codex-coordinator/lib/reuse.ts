@@ -326,12 +326,10 @@ async function decideCandidate(
 		currentEpoch.childId,
 		currentEpoch.epoch,
 	);
-	const uncertain = uncertainTransactionDecision(currentRecords);
-	if (uncertain !== null) {
-		return uncertain;
-	}
+	// An uncertain start only matters when nothing is retained: a replacement that did not settle
+	// leaves the proven coordinator it would have replaced retained, and that one is still reused.
 	if (candidate === null) {
-		return noCandidateDecision(currentRecords);
+		return uncertainTransactionDecision(currentRecords) ?? noCandidateDecision(currentRecords);
 	}
 	if (
 		candidate.childId !== options.identity.validator.childId ||

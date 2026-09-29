@@ -283,6 +283,7 @@ export function createCodexWorkbenchGenerationFixture(
 	} satisfies CodexWorkbenchComponents["semanticDelivery"];
 	const coordinator = {
 		ensure: async () => unavailable("coordinator.ensure"),
+		replace: async () => unavailable("coordinator.replace"),
 		snapshot: () => ({
 			state: "unbound",
 			threadId: null,

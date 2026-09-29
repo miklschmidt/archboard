@@ -401,7 +401,9 @@ test(
 
 		// Narrate: the server opens the first step in the pane and, once the pane says it arrived,
 		// hands it to the voice model as speech. The user then steps by hand, and leaves; each is
-		// handed over the same way, and no coordinator turn is started for any of it.
+		// handed over the same way, and no coordinator turn is started for any of it. Narrating is a
+		// new voice session, and the talk before it carried the first coordinator, so it runs on a
+		// fresh one (TASK-301).
 		const narrationFrom = records().length;
 		const speeches = () =>
 			frames(narrationFrom, "thread/realtime/appendSpeech").map(({ params }) =>
@@ -442,7 +444,9 @@ test(
 		expect((await presentedStep(browser)).index).toBeNull();
 		const [narrationStart] = frames(narrationFrom, "thread/realtime/start");
 		expect(narrationStart?.params?.["initialItems"]).toEqual([]);
-		expect(frames(narrationFrom, "thread/start")).toEqual([]);
+		expect(frames(narrationFrom, "thread/start")).toHaveLength(1);
+		const narrationCoordinator = narrationStart?.params?.["threadId"];
+		expect(narrationCoordinator).not.toBe(RAW_COORDINATOR_THREAD_ID);
 		expect(frames(narrationFrom, "turn/start")).toEqual([]);
 		await browser.run(["click", endButton(BAR_VOICE)]);
 		await pollUntil(
@@ -451,7 +455,7 @@ test(
 			"the narration to end",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
-		// Each End stops the coordinator's realtime session.
+		// Each End stops its session's realtime on the coordinator that session ran on.
 		expect(
 			await pollUntil(
 				() => records().filter(({ kind }) => kind === "realtime_stop"),
@@ -461,7 +465,7 @@ test(
 			),
 		).toEqual([
 			expect.objectContaining({ threadId: RAW_COORDINATOR_THREAD_ID }),
-			expect.objectContaining({ threadId: RAW_COORDINATOR_THREAD_ID }),
+			expect.objectContaining({ threadId: narrationCoordinator }),
 		]);
 
 		const all = records();

@@ -38,7 +38,7 @@ function replaceCoordinator(transport: TransportFake): void {
 }
 
 describe("voice session binding", () => {
-	test("binds one session to the pane, child epoch, link, and coordinator it started on", async () => {
+	test("binds one session to the pane, child epoch and link it started on", async () => {
 		const { session } = harness();
 		expect(session.view().binding).toBeNull();
 
@@ -105,16 +105,22 @@ describe("voice session binding", () => {
 		expect(session.view().failure).toBeNull();
 	});
 
-	test.each(["child", "workhorse", "coordinator"] as const)(
+	test("keeps the session when a voice start replaces the coordinator", async () => {
+		const { session, transport } = harness();
+		await session.start();
+
+		replaceCoordinator(transport);
+
+		expect(session.view().status).toBe("listening");
+		expect(session.view().failure).toBeNull();
+	});
+
+	test.each(["child", "workhorse"] as const)(
 		"goes terminal when the %s is replaced",
 		async (change) => {
 			const { session, transport } = harness();
 			await session.start();
-			if (change === "coordinator") {
-				replaceCoordinator(transport);
-			} else {
-				transport.set(connectedState(relinked(change)));
-			}
+			transport.set(connectedState(relinked(change)));
 
 			const view = session.view();
 			expect(view.status).toBe("failed");

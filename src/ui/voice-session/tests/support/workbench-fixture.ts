@@ -211,7 +211,6 @@ const DEFAULT_BINDING = Object.freeze({
 	childId: PRIMARY.childId,
 	epoch: PRIMARY.epoch,
 	workhorseThreadId: String(threadId("workhorse-a")),
-	coordinatorThreadId: String(threadId("coordinator-a")),
 });
 
 export { DEFAULT_BINDING, UNBOUND_LINK, coordinator, relinked, snapshot, threadId, voice };

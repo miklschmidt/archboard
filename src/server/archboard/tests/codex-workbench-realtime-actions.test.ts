@@ -7,8 +7,11 @@ import { createServerRealtimeActions } from "../codex-workbench-adapters.js";
 function fixture() {
 	const identity = createIdentityAuthorities();
 	const threadId = identity.identity.decoder.adoptThreadId("realtime-workhorse");
-	const coordinatorThreadId = identity.identity.decoder.adoptThreadId("realtime-coordinator");
+	let coordinatorThreadId = identity.identity.decoder.adoptThreadId("realtime-coordinator");
 	const calls: Array<{ readonly name: string; readonly value: unknown }> = [];
+	// Each replacement the coordinator was asked for, and the failure the next one meets.
+	const replacements: string[] = [];
+	let replaceFailure: Error | null = null;
 	const realtime = {
 		createOffer: async (value: { sessionId: string; correlationId: string; sdp: string }) => {
 			calls.push({ name: "start", value });
@@ -20,6 +23,7 @@ function fixture() {
 	};
 	const components = {
 		realtime,
+		identity,
 		coordinator: {
 			snapshot: () => ({
 				state: "ready",
@@ -27,6 +31,15 @@ function fixture() {
 				childId: identity.identity.validator.childId,
 				epoch: identity.identity.validator.epoch,
 			}),
+			replace: async ({ operationId }: { operationId: string }) => {
+				replacements.push(operationId);
+				if (replaceFailure !== null) {
+					throw replaceFailure;
+				}
+				coordinatorThreadId = identity.identity.decoder.adoptThreadId(
+					`realtime-coordinator-${replacements.length}`,
+				);
+			},
 		},
 		workhorse: {
 			snapshot: () => ({ state: "ready", threadId }),
@@ -54,8 +67,109 @@ function fixture() {
 			reason: null,
 		},
 	};
-	return { calls, components, context, identity, threadId };
+	return {
+		calls,
+		components,
+		context,
+		identity,
+		threadId,
+		replacements,
+		failReplace: (error: Error | null) => {
+			replaceFailure = error;
+		},
+	};
 }
+
+type Fixture = ReturnType<typeof fixture>;
+type Actions = ReturnType<typeof createServerRealtimeActions>;
+
+/**
+ * Start voice on the fixture's pane.
+ * @param actions The realtime actions.
+ * @param value The fixture.
+ * @returns The handle the pane holds the session by.
+ */
+async function startVoice(actions: Actions, value: Fixture) {
+	const commandId = value.identity.identity.issuer.mintBrowserCommandId();
+	await actions.start(
+		{
+			kind: "browser_command",
+			command: "realtimeStart",
+			commandId,
+			paneId: value.context.paneId,
+			childId: value.context.childId,
+			epoch: value.context.epoch,
+			threadId: value.threadId,
+			sdp: "v=0\r\na=offer",
+		},
+		value.context,
+	);
+	return commandId;
+}
+
+/**
+ * Act on a running session from the fixture's pane.
+ * @param actions The realtime actions.
+ * @param value The fixture.
+ * @param handle The session's handle.
+ * @param command Stop it, or say something into it.
+ */
+async function onSession(
+	actions: Actions,
+	value: Fixture,
+	handle: Awaited<ReturnType<typeof startVoice>>,
+	command: "stop" | "append",
+): Promise<void> {
+	const common = {
+		kind: "browser_command",
+		commandId: value.identity.identity.issuer.mintBrowserCommandId(),
+		paneId: value.context.paneId,
+		childId: value.context.childId,
+		epoch: value.context.epoch,
+		threadId: value.threadId,
+		realtimeSessionHandle: handle,
+	} as const;
+	if (command === "stop") {
+		await actions.stop({ ...common, command: "realtimeStop" }, value.context);
+	} else {
+		await actions.appendText(
+			{ ...common, command: "realtimeAppendText", text: "still here" },
+			value.context,
+		);
+	}
+}
+
+test("a voice start after a finished session runs on a fresh coordinator", async () => {
+	const value = fixture();
+	const actions = createServerRealtimeActions(value.components as never);
+	const first = await startVoice(actions, value);
+	expect(value.replacements).toHaveLength(0);
+	await onSession(actions, value, first, "stop");
+
+	const second = await startVoice(actions, value);
+
+	expect(value.replacements).toHaveLength(1);
+	// The session belongs to the fresh coordinator, so the pane can speak into it.
+	await onSession(actions, value, second, "append");
+	expect(value.calls.map((call) => call.name)).toEqual(["start", "stop", "start", "append"]);
+});
+
+test("a start whose fresh coordinator does not come up is refused, and the next start tries again", async () => {
+	const value = fixture();
+	const actions = createServerRealtimeActions(value.components as never);
+	await onSession(actions, value, await startVoice(actions, value), "stop");
+	const voiced = value.components.coordinator.snapshot().threadId;
+	value.failReplace(new Error("thread/start was not delivered"));
+
+	await expect(startVoice(actions, value)).rejects.toThrow("fresh coordinator");
+
+	expect(value.components.coordinator.snapshot().threadId).toBe(voiced);
+	expect(value.calls.map((call) => call.name)).toEqual(["start", "stop"]);
+	value.failReplace(null);
+	await startVoice(actions, value);
+	expect(value.replacements).toHaveLength(2);
+	expect(value.calls.map((call) => call.name)).toEqual(["start", "stop", "start"]);
+});
 
 test("one stable realtime handle spans start, append, and stop", async () => {
 	const value = fixture();

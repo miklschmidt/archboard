@@ -11,7 +11,7 @@ import {
 } from "@/runtime/codex-workhorse-operations/lib/event-publishing";
 import {
 	operationRpc,
-	sameBinding,
+	sameWorkhorse,
 	threadIdWire,
 	type OperationState,
 	type StageInput,
@@ -286,7 +286,7 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 					(candidate) =>
 						candidate.queuedSubmissionId === state.queuedSubmissionId &&
 						candidate.workhorseThreadId === state.workhorseThreadId &&
-						sameBinding(candidate.binding, state.binding),
+						sameWorkhorse(candidate.binding, state.binding),
 				);
 
 	/**
@@ -365,7 +365,7 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 			return;
 		}
 		for (const state of operations.values()) {
-			if (!isUnconfirmedQueuedAdd(state) || !sameBinding(current, state.binding)) {
+			if (!isUnconfirmedQueuedAdd(state) || !sameWorkhorse(current, state.binding)) {
 				continue;
 			}
 			const match = uniqueQueueMatch(queue, state.clientUserMessageId);

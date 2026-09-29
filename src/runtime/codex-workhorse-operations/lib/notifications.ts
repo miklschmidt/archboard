@@ -5,7 +5,7 @@ import {
 	turnIdFromRaw,
 	turnIdWire,
 	userMessageClientIds,
-	sameBinding,
+	sameWorkhorse,
 	type OperationState,
 	type RawNotification,
 	type TurnNotification,
@@ -266,7 +266,7 @@ function statesForNotification(
 	return [...runtime.operations.values()].filter(
 		(state) =>
 			threadId === threadIdWire(runtime.options, state.workhorseThreadId) &&
-			sameBinding(currentBinding, state.binding) &&
+			sameWorkhorse(currentBinding, state.binding) &&
 			!state.terminalEmitted,
 	);
 }

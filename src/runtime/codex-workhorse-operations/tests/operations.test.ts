@@ -388,4 +388,48 @@ describe("codex workhorse operation authority and correlation", () => {
 			fixtureValue.cleanup();
 		}
 	});
+
+	test("follows an accepted delegate to its end after the coordinator is replaced", async () => {
+		const fixtureValue = fixture();
+		try {
+			const events: string[] = [];
+			fixtureValue.operations.subscribe((event) => events.push(event.type));
+			fixtureValue.session.nextStartTurn = turn(
+				fixtureValue.identity,
+				"delegate-turn",
+				"inProgress",
+			);
+			const result = await fixtureValue.operations.delegate({
+				call: fixtureValue.setCall("delegate_to_workhorse"),
+				input: "do the work",
+				transcriptDelta: "the user added context",
+			});
+			// A voice start replaced the coordinator that asked; the workhorse turn runs on.
+			fixtureValue.replaceBinding({
+				...fixtureValue.binding,
+				coordinator: {
+					...fixtureValue.binding.coordinator,
+					threadId: fixtureValue.identity.decoder.adoptThreadId("coordinator-2"),
+					operationId: "coordinator-link-2",
+				},
+			});
+			fixtureValue.operations.onNotification(
+				notification(fixtureValue, {
+					method: "turn/completed",
+					params: {
+						threadId: "workhorse",
+						turn: rawTurn(
+							fixtureValue.identity,
+							"delegate-turn",
+							"completed",
+							result.clientUserMessageId,
+						),
+					},
+				}),
+			);
+			expect(events).toEqual(["accepted", "started", "completed"]);
+		} finally {
+			fixtureValue.cleanup();
+		}
+	});
 });

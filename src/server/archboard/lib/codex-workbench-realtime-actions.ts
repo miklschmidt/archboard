@@ -5,6 +5,10 @@
 // so it is refused while any session is live, with the reason the page reports. A recording
 // start also opens no step: the recording page opens step 1 itself and moves on by itself, and
 // each step it reports reaches the voice model the way a step chosen by hand does.
+//
+// A coordinator carries one voice session (TASK-301). A start that finds the coordinator already
+// carried one has it replaced first, so a turn the last session left running, and whatever that
+// turn answers, stay on a thread no later session speaks from.
 
 import {
 	CodexWorkbenchGatewayError,
@@ -26,7 +30,10 @@ import {
 	openNarration,
 } from "@/server/archboard/lib/walkthrough-narration";
 
-type RealtimeComponents = Pick<CodexWorkbenchComponents, "coordinator" | "realtime" | "workhorse">;
+type RealtimeComponents = Pick<
+	CodexWorkbenchComponents,
+	"coordinator" | "identity" | "realtime" | "workhorse"
+>;
 
 /** A browser's request to start voice. */
 type RealtimeStartCommand = Parameters<BrowserRealtimeActions["start"]>[0];
@@ -216,6 +223,8 @@ export function createServerRealtimeActions(
 	components: RealtimeComponents,
 ): BrowserRealtimeActions {
 	let activeRealtime: ActiveRealtime | null = null;
+	// The coordinator thread the last session started on, which no later session may start on.
+	let voicedCoordinator: ThreadId | null = null;
 	let realtimeQueue = Promise.resolve();
 	// The start trace keeps every state the session moves through and every diagnostic it raises.
 	components.realtime.onSemanticEvent((event) => {
@@ -279,6 +288,32 @@ export function createServerRealtimeActions(
 			throw recordingRefusal();
 		}
 		await stopActive();
+	};
+	/**
+	 * Give a start a coordinator that has carried no voice session: the current one when it has
+	 * not, and a fresh one in its place when it has. A replacement that does not become ready
+	 * leaves the current coordinator to the visual workbench and refuses the start.
+	 */
+	const freshCoordinator = async (): Promise<void> => {
+		const coordinator = components.coordinator.snapshot();
+		if (coordinator.threadId === null || coordinator.threadId !== voicedCoordinator) {
+			return;
+		}
+		try {
+			await components.coordinator.replace({
+				operationId: components.identity.operation.issuer.mintOperationId(),
+			});
+		} catch (error) {
+			const refusal = new Error(
+				`Voice could not start a fresh coordinator: ${traceMessage(error)}`,
+				{ cause: error },
+			);
+			voiceStartTrace.note("refused", { message: traceMessage(refusal) });
+			throw refusal;
+		}
+		voiceStartTrace.note("coordinator_replaced", {
+			coordinatorState: components.coordinator.snapshot().state,
+		});
 	};
 	/**
 	 * The realtime session one command may act on, refused when the handle no
@@ -389,8 +424,10 @@ export function createServerRealtimeActions(
 					replacesSession: activeRealtime !== null,
 				});
 				await makeRoom(recording);
+				await freshCoordinator();
 				const pending = tracedPending(command.commandId, context);
 				activeRealtime = pending;
+				voicedCoordinator = pending.coordinatorThreadId;
 				try {
 					const presentation = narrationOfStart(pending, command.presentation);
 					// Creating the offer subscribes the session to this pane's narration before it

@@ -112,7 +112,8 @@ function endingOf(status: string): WorkhorseNewsSource["type"] | null {
  * @returns A function that answers each notification with news, or null.
  */
 function createWorkhorseNewsObserver(context: WorkhorseNewsContext): WorkhorseNewsObserver {
-	// The wire thread that is waiting on the user now, so a wait is news once and a new link starts clean.
+	// The coordinator and wire thread a wait on the user was news to, so a wait is news once to each
+	// coordinator: a new link starts clean, and so does the fresh coordinator of a new voice session.
 	let waitingOn: string | null = null;
 	let sequence = 0;
 	/**
@@ -156,8 +157,9 @@ function createWorkhorseNewsObserver(context: WorkhorseNewsContext): WorkhorseNe
 	const waitNews = (scope: NewsScope, status: ThreadStatus): WorkhorseNewsSource | null => {
 		const nowWaiting =
 			status.type === "active" && status.activeFlags.some((flag) => WAITING_FLAGS.has(flag));
-		const began = nowWaiting && waitingOn !== scope.wire;
-		waitingOn = nowWaiting ? scope.wire : null;
+		const wait = `${String(scope.coordinatorThreadId)} ${scope.wire}`;
+		const began = nowWaiting && waitingOn !== wait;
+		waitingOn = nowWaiting ? wait : null;
 		return began ? news(scope, "waiting", null, null) : null;
 	};
 	/**

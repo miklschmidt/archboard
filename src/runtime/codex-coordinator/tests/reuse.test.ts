@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { CodexSessionMutationError } from "../../codex-session/index.js";
 import type { EpochOperationRecord } from "../../codex-epoch/index.js";
 import type {
 	CoordinatorPersistedState,
@@ -242,5 +243,50 @@ describe("coordinator candidate reuse and replacement", () => {
 		expect(replaced.state).toBe("ready");
 		expect(fixtureValue.link.calls).toHaveLength(0);
 		expect(fixtureValue.session.startParams).toHaveLength(2);
+	});
+});
+
+describe("coordinator replacement for a new voice session", () => {
+	test("keeps the current coordinator published until the fresh one is ready, then swaps both", async () => {
+		const fixtureValue = fixture();
+		const first = await ready(fixtureValue);
+		fixtureValue.session.nextThread("coordinator-thread-2");
+		const published: CoordinatorSnapshot[] = [];
+		fixtureValue.session.onStart = () => published.push(fixtureValue.coordinator.snapshot());
+
+		const fresh = await fixtureValue.coordinator.replace({ operationId: "voice-replacement" });
+
+		expect(published).toHaveLength(1);
+		expect(published[0]).toBe(first);
+		expect(fresh.state).toBe("ready");
+		expect(fresh.threadId).not.toBe(first.threadId);
+		expect(fixtureValue.coordinator.snapshot()).toBe(fresh);
+		expect(fixtureValue.coordinator.persisted()).toEqual(persistence(fresh));
+		expect(fixtureValue.epoch.records.map((record) => record.status)).toEqual([
+			"committed",
+			"committed",
+		]);
+	});
+
+	test("leaves the current coordinator when the fresh one is uncertain, and still reuses it", async () => {
+		const fixtureValue = fixture();
+		const first = await ready(fixtureValue);
+		const kept = persistence(first);
+		fixtureValue.session.nextThread("coordinator-thread-2");
+		fixtureValue.session.startError = new CodexSessionMutationError(
+			"thread/start",
+			"outcome_unknown",
+			"fixture settlement timeout",
+		);
+
+		await expect(
+			fixtureValue.coordinator.replace({ operationId: "uncertain-replacement" }),
+		).rejects.toMatchObject({ code: "transaction_failed" });
+		expect(fixtureValue.coordinator.snapshot()).toBe(first);
+		expect(fixtureValue.coordinator.persisted()).toEqual(kept);
+		fixtureValue.link.outcome = executableClassification(fixtureValue, kept);
+		const reused = await fixtureValue.coordinator.ensure();
+		expect(reused.state).toBe("ready");
+		expect(reused.threadId).toBe(first.threadId);
 	});
 });
