@@ -225,6 +225,8 @@ class Occupancy {
 	readonly held: [number, number][][];
 	/** The stretch each wall keeps a lane off, on each band, by the wall. */
 	readonly walls: Map<string, [number, number]>[];
+	/** What {@link along} answered, by band and the bands the line passes, until a lane is taken. */
+	private readonly alongs = new Map<string, readonly (readonly [number, number])[]>();
 
 	/**
 	 * Start with every item's box, widened by a lane either side.
@@ -273,11 +275,16 @@ class Occupancy {
 	 * @param bands Every band the line's lanes pass.
 	 * @returns The stretches a lane keeps out of.
 	 */
-	along(band: number, bands: readonly number[]): (readonly [number, number])[] {
-		const walls = [...this.walls[band]!].map(([key, [low, high]]) =>
+	along(band: number, bands: readonly number[]): readonly (readonly [number, number])[] {
+		// A search asks the same band of the same run for every column it
+		// tries, and the answer changes only when a lane is taken.
+		const key = `${band}|${bands.join(",")}`;
+		const known = this.alongs.get(key);
+		if (known !== undefined) return known;
+		const walls = [...this.walls[band]!].map(([wall, [low, high]]) =>
 			bands.reduce<readonly [number, number]>(
 				(narrowest, other) => {
-					const stretch = this.walls[other]!.get(key);
+					const stretch = this.walls[other]!.get(wall);
 					return stretch === undefined
 						? narrowest
 						: [Math.max(narrowest[0], stretch[0]), Math.min(narrowest[1], stretch[1])];
@@ -285,7 +292,9 @@ class Occupancy {
 				[low, high],
 			),
 		);
-		return [...this.held[band]!, ...walls];
+		const held = [...this.held[band]!, ...walls];
+		this.alongs.set(key, held);
+		return held;
 	}
 
 	/**
@@ -331,6 +340,7 @@ class Occupancy {
 		const span = [lane.x - LANE, lane.x + LANE] as [number, number];
 		this.taken[lane.band]!.push(span);
 		this.held[lane.band]!.push(span);
+		this.alongs.clear();
 	}
 }
 
