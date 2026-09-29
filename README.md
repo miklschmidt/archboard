@@ -26,9 +26,9 @@
 
 Plan the next step before anyone writes code. Ask for a change and see it drawn against today's architecture, weigh competing options side by side, and adopt the one that ships: the architecture it replaces becomes history, kept with the reason it changed. The Codex voice can explain any board out loud while you step through it. One command can film it into a narrated video for a design review or a pull request.
 
-**Hear Archboard explain itself**. Its own system board, narrated by the Codex voice in 80 seconds. Turn the sound on.
+**Hear Archboard explain itself**. Its own system board, narrated by the Codex voice in under two minutes. Turn the sound on.
 
-https://github.com/user-attachments/assets/5b112fa6-fb60-4b9c-9019-23ab9157bd5b
+https://github.com/user-attachments/assets/3e7090c1-0b57-410e-9bfd-0e315d8fb03e
 
 ## What you can do with it
 
@@ -97,9 +97,9 @@ gh pr comment 128 --attach pr-128.mp4 --body "A narrated walkthrough of this cha
 
 **A pull request, explained to its reviewers**: why the change exists, what it changed, and where to look closely. The loop above is silent. The player below carries the voice, so turn the sound on.
 
-https://github.com/user-attachments/assets/7c1ae961-3f3a-4fa1-a686-fdca6901c0db
+https://github.com/user-attachments/assets/337e88d7-2e5c-4fa2-a93d-31854225811b
 
-<p align="center"><sub>Each video is what <code>archboard semantic record</code> wrote, re-encoded to 720p.</sub></p>
+<p align="center"><sub>Each video is what <code>archboard semantic record</code> wrote.</sub></p>
 
 - **Pull-request videos**. Your agent maps the code before the change, branches a proposal for the pull request, and writes three to six steps for its reviewers. The talk runs one to three minutes, small enough to attach to the pull request.
 - **Paced by the voice**. Each time the voice finishes a step, the recording moves on. There is no timeline to edit and no silent slide.
@@ -130,7 +130,7 @@ Give the tour once, and every new hire can play it back. A newcomer's walkthroug
 
 <p align="center"><sub>"How stock is reserved", six steps on the example Inventory service board. The player below has the voice.</sub></p>
 
-https://github.com/user-attachments/assets/73a9dbc0-9cc5-44a2-9d56-c0e6ffc76f02
+https://github.com/user-attachments/assets/8b615ed2-e0e6-48a2-96a8-59802a28c86a
 
 ```text
 I'm new here. Walk me through what happens to stock when a shopper presses Pay.
