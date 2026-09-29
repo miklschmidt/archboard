@@ -212,6 +212,35 @@ test.each(["track", "blocks"] as const)(
 	},
 );
 
+// What a region lists is what a viewer lights it for, so it is what the region holds: a card
+// in two groups is drawn with the first one `config.yaml` lists and nowhere else, and a card in
+// the group inside a container the region holds is inside the region too.
+test.each(["track", "blocks"] as const)(
+	"the %s engine lists in each region the cards drawn in it that are in its group",
+	async (layout) => {
+		const mixed = orderedFixture({
+			nodes: [
+				{ id: "read", name: "Read route", kind: "module", groups: ["routes"] },
+				{ id: "both", name: "Session route", kind: "module", groups: ["routes", "state"] },
+				{ id: "pool", name: "Store pool", kind: "service", groups: ["state"] },
+				{ id: "one", name: "First store", kind: "module", parent: "pool", groups: ["state"] },
+				{ id: "spare", name: "Spare store", kind: "module", parent: "pool" },
+			],
+			edges: [
+				{ id: "e1", from: "read", to: "one", kind: "call" },
+				{ id: "e2", from: "both", to: "spare", kind: "call" },
+			],
+		});
+		const drawn = await renderArchitecture({ content: mixed, theme: "light", policy, layout });
+		const listed = (group: string): string[] =>
+			new RegExp(`data-group="${group}" data-members="([^"]*)"`, "u")
+				.exec(drawn.svg)![1]!
+				.split(" ");
+		expect(listed("routes")).toEqual(["read"]);
+		expect(listed("state")).toEqual(["both", "pool", "one"]);
+	},
+);
+
 // Reduced from a dogfood view, names replaced: each region's one card no line
 // inside it holds is entered from cards several ranks down, and the region's
 // caption floated above them over an empty band.

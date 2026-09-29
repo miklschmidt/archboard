@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-28 22:55'
-updated_date: '2026-09-28 23:19'
+updated_date: '2026-09-29 00:10'
 labels: []
 dependencies: []
 priority: high
@@ -50,6 +50,8 @@ Board: Board viewer@TASK-364 adds one relationship, Drive walkthrough focus -> R
 Endpoint rule built: beatFocus reads each named relationship or step through subjectOf and lights and frames its drawn ends; the hook takes the reading, so SemanticBoardStage keeps its complexity. Viewer module: 166 pass (--isolate); lint, fmt and type-check clean.
 
 Verification: narrative stage tests (relationship and message cases each light and frame both ends exactly as a beat naming them; an undrawn relationship lights nothing; a region stands only with a lit member); group-regions renderer test (each region lists the cards its group places in its container, Track and Blocks); skill-evaluation and install-targets tests (239 pass); bun run check exit 0 (3901 tests, 0 fail). Browser: the web-shop PR walkthrough presented in headless Chromium on a scratch server (port 3411, own state dir). Step 2 lit Place order, Payment provider and Orders DB with both relationships, the Payments region round Payment provider at opacity 1 and the other regions at 0.28; step 4 (data-flow view) lit all five participants of its three messages; step 5 kept Fulfilment lit through Order events, an end of "publish order paid". Board viewer@TASK-364 adopted as version 15; ./bin/dogfood check: 0 diagnostics. Not changed on purpose: a container frame is its own subject and still recedes while a card inside it is lit; the voice already names a relationship by its ends, so narration is unchanged.
+
+Follow-up 2026-09-29: region members counted every group a card belongs to, but a card is drawn only with the first group config.yaml lists (ADR 0038), so a later group's region in the same container lit for a card it does not hold, and a group member inside a container the region holds was missed. drawingOf now lists what the region holds, from the renderer's own gathering groups (measured.groups.placing): the cards and containers gathered there and every card in the group inside one of them. group-regions.test.ts owns it on both engines.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
