@@ -4,9 +4,9 @@
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 16,
+	"version": 18,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-09-29T12:50:07.003Z",
+	"updatedAt": "2026-09-29T13:06:29.775Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
@@ -1202,7 +1202,7 @@
 		{
 			"id": "kEXoBE8D",
 			"name": "TASK-301",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "H3TW6CJC",
 			"summary": "Module level: how a voice talk reaches the coordinator, the board tools and the workhorse. Follow linked subjects for related levels.",
 			"content": {
@@ -1765,9 +1765,9 @@
 		{
 			"id": "6UJCRC4z",
 			"name": "TASK-374",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "kEXoBE8D",
-			"summary": "A retired coordinator thread is unloaded from the Codex child",
+			"summary": "Module level: how a voice talk reaches the coordinator, the board tools and the workhorse. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
@@ -2326,7 +2326,7 @@
 			}
 		}
 	],
-	"current": "kEXoBE8D",
+	"current": "6UJCRC4z",
 	"adoptions": [
 		{
 			"variant": "H3TW6CJC",
@@ -2339,6 +2339,12 @@
 			"from": "H3TW6CJC",
 			"at": "2026-09-29T03:26:11.885Z",
 			"reason": "TASK-301: a coordinator carries at most one voice session; a voice start replaces one that already carried a session"
+		},
+		{
+			"variant": "6UJCRC4z",
+			"from": "kEXoBE8D",
+			"at": "2026-09-29T13:06:29.775Z",
+			"reason": "A replaced coordinator thread is unsubscribed once its voice session closed and no turn runs on it, so Codex unloads it"
 		}
 	]
 }
