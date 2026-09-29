@@ -4,9 +4,9 @@
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 12,
+	"version": 14,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-09-29T02:59:16.351Z",
+	"updatedAt": "2026-09-29T03:26:11.885Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
@@ -639,7 +639,7 @@
 		{
 			"id": "H3TW6CJC",
 			"name": "TASK-371",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "7653a9yr",
 			"summary": "Module level: how a voice talk reaches the coordinator, the board tools and the workhorse. Follow linked subjects for related levels.",
 			"content": {
@@ -1202,9 +1202,9 @@
 		{
 			"id": "kEXoBE8D",
 			"name": "TASK-301",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "H3TW6CJC",
-			"summary": "Every voice start gets a fresh coordinator thread and voice session",
+			"summary": "Module level: how a voice talk reaches the coordinator, the board tools and the workhorse. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
@@ -1763,13 +1763,19 @@
 			}
 		}
 	],
-	"current": "H3TW6CJC",
+	"current": "kEXoBE8D",
 	"adoptions": [
 		{
 			"variant": "H3TW6CJC",
 			"from": "7653a9yr",
 			"at": "2026-09-29T02:44:17.244Z",
 			"reason": "TASK-371: the coordinator runs on gpt-6-sol at low reasoning effort"
+		},
+		{
+			"variant": "kEXoBE8D",
+			"from": "H3TW6CJC",
+			"at": "2026-09-29T03:26:11.885Z",
+			"reason": "TASK-301: a coordinator carries at most one voice session; a voice start replaces one that already carried a session"
 		}
 	]
 }

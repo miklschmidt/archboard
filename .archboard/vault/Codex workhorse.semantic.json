@@ -4,9 +4,9 @@
 	"id": "SJ2JMVyz",
 	"name": "Codex workhorse",
 	"level": "module",
-	"version": 8,
+	"version": 10,
 	"createdAt": "2026-09-17T21:06:43.257Z",
-	"updatedAt": "2026-09-29T02:59:16.538Z",
+	"updatedAt": "2026-09-29T03:26:12.050Z",
 	"views": [
 		{
 			"id": "TX1Vzuu7",
@@ -52,7 +52,7 @@
 		{
 			"id": "y9kWSCEn",
 			"name": "Initial",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"content": {
 				"nodes": [
 					{
@@ -472,9 +472,9 @@
 		{
 			"id": "7MQ3CPWJ",
 			"name": "TASK-301",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "y9kWSCEn",
-			"summary": "Every voice start gets a fresh coordinator thread and voice session",
+			"summary": "Module level: the workhorse thread, its queue, and the coordinator's door. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
@@ -892,5 +892,13 @@
 			}
 		}
 	],
-	"current": "y9kWSCEn"
+	"current": "7MQ3CPWJ",
+	"adoptions": [
+		{
+			"variant": "7MQ3CPWJ",
+			"from": "y9kWSCEn",
+			"at": "2026-09-29T03:26:12.050Z",
+			"reason": "TASK-301: an operation follows its workhorse turn after the coordinator that asked for it is replaced"
+		}
+	]
 }

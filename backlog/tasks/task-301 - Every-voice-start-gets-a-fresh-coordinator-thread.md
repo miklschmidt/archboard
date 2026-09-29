@@ -1,11 +1,11 @@
 ---
 id: TASK-301
 title: Every voice start gets a fresh coordinator thread and voice session
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-22 21:26'
-updated_date: '2026-09-29 03:16'
+updated_date: '2026-09-29 03:26'
 labels:
   - voice
   - codex
@@ -31,13 +31,13 @@ Each voice start already opens a new Codex realtime session. Server state of a s
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Starting voice creates a new coordinator thread, and the previous session's coordinator thread is never resumed by a later voice start
-- [ ] #2 A coordinator turn or workhorse operation still running when voice stops is not lost: it is finished, cancelled or reported by an owner that is named in the task notes
-- [ ] #3 The pane's thread link and anything the browser shows about the coordinator follow the new thread
-- [ ] #4 Covered by a coordinator lifecycle owner, and verified with two consecutive voice starts in one canvas run producing two coordinator rollouts
-- [ ] #5 Two recordings in a row on one Archboard server each narrate every step of their own walkthrough from step 1, and speak nothing from the earlier session
-- [ ] #6 A coordinator answer that arrives after voice stops is never spoken in a later voice session, and a test reproduces the TASK-370 case
-- [ ] #7 Nothing a stopped voice session held reaches the next one: its transcript and narration start empty, and a workhorse wait that still lasts is news to the new coordinator
+- [x] #1 Starting voice creates a new coordinator thread, and the previous session's coordinator thread is never resumed by a later voice start
+- [x] #2 A coordinator turn or workhorse operation still running when voice stops is not lost: it is finished, cancelled or reported by an owner that is named in the task notes
+- [x] #3 The pane's thread link and anything the browser shows about the coordinator follow the new thread
+- [x] #4 Covered by a coordinator lifecycle owner, and verified with two consecutive voice starts in one canvas run producing two coordinator rollouts
+- [x] #5 Two recordings in a row on one Archboard server each narrate every step of their own walkthrough from step 1, and speak nothing from the earlier session
+- [x] #6 A coordinator answer that arrives after voice stops is never spoken in a later voice session, and a test reproduces the TASK-370 case
+- [x] #7 Nothing a stopped voice session held reaches the next one: its transcript and narration start empty, and a workhorse wait that still lasts is news to the new coordinator
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -74,4 +74,15 @@ Implemented as planned.
 - Browser: VoiceSessionBinding no longer carries the coordinator; a coordinator change is not a replacement of the session.
 - The production fake Codex treats the newest coordinator-model thread as the coordinator (it had pinned thread-1), and the live voice browser test proves narration after a talk runs on a fresh coordinator and each End stops its own session's coordinator.
 - Not done, outside the criteria: coordinator threads are still listed as thread-link candidates (one more per replaced coordinator), and retired coordinator threads stay loaded in the Codex child until it restarts; the reviewed protocol has no unload request.
+
+Validation 2026-09-29:
+- Gate lanes: lint, fmt:check, type-check, 3717 module tests, 182 system tests (walkthrough-recording failed once under load on Chromium's page size and passed twice alone), repository, and 18 serial browser tests, including codex-live-voice, which now proves narration after a talk runs on a fresh coordinator and each End stops its own session's coordinator.
+- Real Codex, one scratch Archboard server (port 3441, fresh canvas state): two recordings in a row, "Why voice is its own thread" then "Read this board". The epoch ledger holds two committed coordinator_start records, with rollouts 01a0eb2d-a303-7120-b7c0-d508d6b7387e and 01a0eb30-1e67-7091-b50f-65479711b4ea. The first narrated its 6 steps on the sign-in coordinator; after it ended, Codex ran a transcript_tail_flush turn on that thread, which answered at 03:23:14 UTC. The second started at 03:23:15 on the fresh coordinator, and its first words are step 1 of its own walkthrough; it narrated all 5 steps. The late answer stayed on the old thread. This is the TASK-370 mechanism, observed, and now isolated.
+- The first voice start after sign-in runs on the sign-in coordinator, which has carried no session; every later start runs on a new one.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A coordinator carries at most one voice session. A voice start that finds the coordinator already carried one replaces it first; the replacement stages its start and swaps the coordinator only once the fresh thread is ready, and a replacement that does not come up refuses the start and keeps the old coordinator. Workhorse operations follow their turn to the end after a replacement, a workhorse wait is news once per coordinator, and the browser's voice session is no longer bound to the coordinator. ADR 0019, CONTEXT.md and the Voice coordinator and Codex workhorse boards say so. Verified with new tests in the coordinator, operations, callbacks, server realtime actions and voice-session modules, the live voice browser test, the full gate lanes, and two real recordings in a row on one server: two coordinator rollouts, and the second recording narrated from its own step 1 while the first session's late answer stayed on the old thread.
+<!-- SECTION:FINAL_SUMMARY:END -->
