@@ -78,8 +78,8 @@ Codex. The installer does these things:
    asks you. If an agent runs it, it takes the offer.
 3. If the vault directory does not exist, it creates it, with a
    `.archboard/config.yaml` file that holds the default vocabulary.
-4. It writes a block into the `CLAUDE.md` file of the repository, or into
-   `AGENTS.md` when there is no `CLAUDE.md`. The block gives the location of the
+4. If the repository has a `CLAUDE.md` file, it writes a block into it.
+   Otherwise, it writes the block into `AGENTS.md`. The block gives the location of the
    skill and the vault of the repository. It also gives the command that runs
    the CLI on this machine, and the Archboard server URL.
 
@@ -210,12 +210,12 @@ These rules apply:
   pink and rose. Without a color, the kind is neutral.
 - `groups` is optional. Each group needs a `name` and a `color` from the same
   colors. A node lists group keys in its `groups` array. A card or container is
-  placed with the first group, in the order `groups` lists them in
-  `config.yaml`, that it belongs to; the order of the node's own array does not
-  matter. That group draws a region of its color round the node and the other
-  nodes it places in the same container, one region in each container but none
-  inside a container the group already places, and a card's body takes that
-  color. To examine one group, run
+  placed with the first of its groups in the order that `config.yaml` lists
+  them. The order of the node's own array does not matter. That group draws a
+  region of its color round the node and the other nodes that it places in the
+  same container. It draws one region in each container, but none inside a
+  container that it already places. A card's body takes the color of that group.
+  To examine one group, run
   `archboard semantic inspect <board> --group <key>`.
 
 An icon is the React export name of a [Remix Icon](https://remixicon.com/), for
@@ -265,7 +265,8 @@ list is in `repos.json` in the state directory, or in the file that
 `ARCHBOARD_REPOS` names.
 
 If a checkout is registered, the browser opens the file with the opener in the
-browser configuration (`xdg-open` on Linux and `open` on macOS by default). If
+browser configuration. By default, that is `xdg-open` on Linux and `open` on
+macOS. If
 there is no checkout of a GitHub repository, the browser opens the file on
 GitHub. It uses the commit, then the branch, then the default branch.
 
@@ -299,8 +300,8 @@ The PNG has these properties:
 ## Recording a walkthrough
 
 `archboard semantic record <board> --out <file.mp4>` presents one walkthrough
-in the same kind of private Chromium, with the Codex voice of the server, and
-writes an MP4 or a WebM file. It is how an agent gives the reviewers of a pull
+in the same kind of private Chromium. The Codex voice of the server narrates it,
+and the command writes an MP4 or a WebM file. It is how an agent gives the reviewers of a pull
 request a narrated video of the change. `--discard --doing "<why>"` deletes the
 board after the file is written, for a board made only for the video.
 
@@ -313,7 +314,7 @@ A recording needs these things:
 
 On Linux the browser records the sound of an MP4 as Opus, which Safari does not
 play. If `ffmpeg` is on `PATH`, or `ARCHBOARD_FFMPEG` names it, the recorder
-converts the sound to AAC, so the file plays with sound in every browser.
+converts the sound to AAC. The file then plays with sound in every browser.
 Without it, the recorder keeps the file and tells you. To attach the file to a
 pull request, use `gh pr comment --attach`, which needs gh 2.99 or newer.
 
