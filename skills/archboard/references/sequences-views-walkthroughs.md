@@ -82,6 +82,8 @@ a `body`, optional `subjects` and an optional `view`.
   highlighted while the beat is read and compare as a set. A relationship or
   step comes with the parts at its two ends, highlighted and kept in view with
   it. So name a part on its own only for a beat about that part. A beat that
+  names several parts also highlights the relationships between them. So name a
+  relationship only for a beat about that relationship. A beat that
   explains an ordering names both of its sides: the step that must come first
   and what relies on it having happened.
 - An opening beat can have no subjects: it is about the whole picture.
