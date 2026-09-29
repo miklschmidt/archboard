@@ -157,3 +157,36 @@ while aligning enforcement with these conventions.
 
 Before completing a change, reconsider the resulting ownership and remove any
 abstraction, mirror state, or file split that makes the workflow harder to follow.
+
+## Theme colors
+
+`src/shared/theme/theme.css` holds the light and dark colors of the shell and
+of the diagrams. It has the shadcn colors and the comparison colors
+(`--standing-added`, `--standing-changed`, `--standing-removed`). It also has
+the palette `--semantic-<name>`, whose names the kinds and groups of a vault
+use.
+`--diagram-edge` paints relationships that have no palette color, and the
+borders of cards and labels. It is separate from `--muted-foreground`.
+`src/ui/theme/app.css` imports the file and holds every value that is not a
+color.
+
+The file holds only custom properties that each hold one literal color, in two
+blocks: `:root` for light and `:root[data-theme="dark"]` for dark. A token that
+the dark block does not set keeps its light value. Write colors in OKLCH. The
+renderer refuses other selectors and rules, `!important` and values that are
+not colors. It also refuses a token that a picture uses but the file does not
+set. A new palette
+name needs its token here and its name in `PaletteColorSchema` in
+`src/shared/semantic-policy/index.ts`.
+
+A picture in the page paints with the tokens themselves, so a theme switch
+redraws nothing. A standalone SVG or PNG from `semantic render` or
+`semantic rasterize` is drawn in one theme. Its root sets `color-scheme` and
+every token it uses, converted to sRGB by Lightning CSS.
+
+After you edit `theme.css`, run `bun run build` and restart the Archboard
+server, because the server reads the file once, at start.
+`tests/system/browser/measured-text.test.ts` compares the colors of the built
+page with those of a standalone picture in both themes. It compares only the
+tokens in `tests/system/browser/support/theme-parity.ts`, so add a new token
+there.
