@@ -1,10 +1,11 @@
 ---
 id: TASK-301
 title: Every voice start gets a fresh coordinator thread and voice session
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-09-22 21:26'
-updated_date: '2026-09-29 02:37'
+updated_date: '2026-09-29 02:58'
 labels:
   - voice
   - codex
@@ -36,5 +37,28 @@ Each voice start already opens a new Codex realtime session. Server state of a s
 - [ ] #4 Covered by a coordinator lifecycle owner, and verified with two consecutive voice starts in one canvas run producing two coordinator rollouts
 - [ ] #5 Two recordings in a row on one Archboard server each narrate every step of their own walkthrough from step 1, and speak nothing from the earlier session
 - [ ] #6 A coordinator answer that arrives after voice stops is never spoken in a later voice session, and a test reproduces the TASK-370 case
-- [ ] #7 Nothing a stopped voice session held on the server (transcript, narration position, workhorse waits) reaches the next voice session
+- [ ] #7 Nothing a stopped voice session held reaches the next one: its transcript and narration start empty, and a workhorse wait that still lasts is news to the new coordinator
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Boards: Voice coordinator@TASK-301 (the Coordinator thread part says a voice start replaces a coordinator that already carried a voice session) and Codex workhorse@TASK-301 (Workhorse operations follow their workhorse turn after the coordinator is replaced). No part or relationship moves.
+
+Decisions, from the binding map of 2026-09-29:
+- A coordinator thread carries at most one voice session. A voice start replaces the coordinator only when the current one already carried a voice session, so the first start after sign-in keeps its latency.
+- The replacement keeps the old coordinator published and retained until the new thread is started, confirmed and committed, then swaps both in one step. The pane never leaves thread_capable, and the queue and approvals keep working.
+- A failed replacement keeps the old coordinator for the visual workbench and refuses the voice start with the coordinator's reason; the next start tries again. An uncertain record left by a failed replacement no longer stops ensure from reusing the retained, proven coordinator.
+- A coordinator turn still running at stop, including the transcript-tail turn, finishes on its own thread. Its tool calls are refused once the new coordinator is current, and it has no realtime session to speak into.
+- Workhorse operations keep following their workhorse turn after a replacement, so they reach a terminal event. Their callbacks settle as not delivered (stale_coordinator), and the new coordinator hears what the workhorse did through workhorse news. AC #2 owners: codex-workhorse-operations and codex-coordinator-callbacks.
+- A workhorse wait is news once per coordinator, so a wait that lasts into a new talk is news to its coordinator.
+
+Steps:
+1. src/runtime/codex-coordinator: a replace entry point, serialized with ensure, that stages its snapshots and persistence and publishes them only when the new coordinator is ready; failures throw CodexCoordinatorError and leave the old coordinator. reuse.ts consults uncertain records only when nothing is retained. Tests in lifecycle.test.ts and reuse.test.ts.
+2. src/server/archboard/lib/codex-workbench-realtime-actions.ts: remember the coordinator thread the last session ran on; after makeRoom, replace the coordinator when it is that thread, with an operation id from the identity issuer, before tracedPending. Test in codex-workbench-realtime-actions.test.ts: two starts give two coordinator threads, the second realtime start names the new one, a failed replacement refuses the start and keeps the old coordinator.
+3. src/runtime/codex-workhorse-operations: notifications.ts, events.ts (queued-submission correlation and unknown-queue reconciliation) compare child, epoch and workhorse target; call validation keeps the coordinator fence. Test: an operation accepted before a replacement reaches its terminal event.
+4. src/runtime/codex-coordinator-callbacks/lib/workhorse-news.ts: waitingOn is keyed by coordinator and workhorse thread. Test in its news tests.
+5. src/ui/voice-session/lib/binding.ts: a moved coordinator no longer replaces the session; the server fences the coordinator. Test in the voice-session binding tests.
+6. Docs: ADR 0019 amendment (one coordinator per voice session), CONTEXT.md Voice coordinator entry, coordinator.ts, contract.ts and tell-coordinator.ts comments.
+7. Verify: module, system and browser lanes, the gate; two walkthrough recordings in a row on one scratch Archboard server with real Codex (AC #5), counting the coordinator rollouts (AC #4).
+<!-- SECTION:PLAN:END -->
