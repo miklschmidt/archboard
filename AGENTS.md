@@ -7,7 +7,6 @@ cannot be improved for every board at once (ADR 0023).
 
 Where things are written down:
 
-- Design, roadmap, the bound Codex app-server contract: `DESIGN.md`
 - Running and verifying it end to end: `TESTING.md`; installing it elsewhere: `INSTALL.md`
 - Domain language: `CONTEXT.md`; module layout and import rules: `docs/agents/boundaries.md`
 - Changing frontend code: read `docs/agents/frontend.md` for placement, React ownership,
@@ -79,9 +78,8 @@ The loud rules teach themselves (a call naming no board, an agent write without
 - **Codex runs as one private package-local app-server session over stdio**
   with an archboard-only `CODEX_HOME` every Archboard server on the machine shares; the
   server's thread link names one workhorse and voice belongs to its separate
-  coordinator. The
-  [bound app-server design](DESIGN.md#2-mid-conversation-context--the-bound-app-server-session)
-  is the delivery and outcome contract.
+  coordinator. [ADR 0019](docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md)
+  records that design.
 - The shell is desktop-only at 1920×1080; do not add phone or narrow layouts.
 
 ## Test policy

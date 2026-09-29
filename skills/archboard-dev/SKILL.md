@@ -79,7 +79,7 @@ sweep, in the same change:
 
 1. **Find every place that states it.** `git grep -n -i` each spelling of the
    old name and read every hit: the root documents (`README.md`, `INSTALL.md`,
-   `TESTING.md`, `DESIGN.md`, `AGENTS.md`), `CONTEXT.md` entries and their
+   `TESTING.md`, `AGENTS.md`), `CONTEXT.md` entries and their
    `_Avoid_` lines, both skills, help text, refusal descriptions and the
    exit-code help under `src/cli`, the setup block in
    `src/cli/commands/lib/repo-setup-block.ts`, code comments and test names.

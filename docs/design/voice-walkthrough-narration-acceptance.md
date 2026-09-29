@@ -6,8 +6,8 @@ handed, without being spoken to, and then waits for the user. It assumes the
 [real-voice smoke](codex-workbench-voice-acceptance.md) already passes on this
 machine: sign-in, microphone and speaker.
 
-The flow being proven is in
-[DESIGN.md](../../DESIGN.md#2-mid-conversation-context--the-bound-app-server-session).
+The Codex session it runs on is recorded in
+[ADR 0019](../adr/0019-the-workbench-owns-one-codex-app-server-session.md).
 In short: the user steps the presentation by hand and the voice explains the
 step on screen. Narrate starts voice knowing only the walkthrough's name; the
 host opens step 1 in the pane and, once the pane says it arrived, hands it to

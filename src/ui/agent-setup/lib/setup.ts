@@ -5,7 +5,7 @@
 // create the conversation — an explicit workhorse create (ADR 0019), never an
 // adoption — and only then deliver it. Each held message is visible where it
 // waits and says what it waits on; a failure stays on the message with the
-// reason, and nothing is retried behind the person's back (DESIGN §2).
+// reason, and nothing is retried behind the person's back.
 
 import type { BrowserVoicePresentation } from "@/shared/codex-browser-model";
 import type { LoginId } from "@/shared/codex-workbench-identity";
