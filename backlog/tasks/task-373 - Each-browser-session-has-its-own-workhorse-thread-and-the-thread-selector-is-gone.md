@@ -3,10 +3,11 @@ id: TASK-373
 title: >-
   Each browser session has its own workhorse thread, and the thread selector is
   gone
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-09-29 12:31'
-updated_date: '2026-09-29 12:52'
+updated_date: '2026-09-29 13:10'
 labels:
   - codex
   - voice
@@ -47,3 +48,21 @@ Found in research: the server looks panes up by the layout ids A and B, which re
 - [ ] #9 A recording is not refused because voice is live in another tab
 - [ ] #10 No thread selector or candidate list remains, and the attach, relink and refresh commands and the code that served only them are deleted
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Boards: Agent workbench@TASK-373, Codex workhorse@TASK-373, Voice coordinator@TASK-373, Browser application@TASK-373, Archboard@TASK-373 (a tab session owns its link, workhorse, delivery, queue, lease, approvals, coordinator and voice; the thread selector, candidates, attach, relink and refresh are gone).
+
+Design (architect, 2026-09-29): a tab mints a tab session id, keeps it in sessionStorage (archboard.tabSession) and sends it on every pane socket (?tabSession=). Per Codex child: identity, epoch, transport, protocol session, the thread-link port keyed by TabSessionId, the approval broker, archboard_app dynamic tools, account and timeline owners, the gateway, and a new sessions store (Map<TabSessionId, tab session>, byThread index). Per tab session: workhorse start, coordinator, realtime adapter, semantic publisher, semantic delivery, queue, operations, spoken approval, coordinator tools, callbacks, realtime actions, lease. Notifications route by thread to the owning session and fan out when the thread is not indexed; server requests route by the calling thread; an unowned request is refused. The coordinator starts with the tab's first message or Talk, not at sign-in; signed in means thread_capable. A session ends only when no socket has held it for TAB_SESSION_GRACE_MS (60 s, shorter than the 90 s approval expiry): voice stops, its approvals are cancelled, delivery and news stop, the link clears, and its threads are unsubscribed once idle (TASK-374). A child restart unbinds every session; nothing is resumed. Layout pane-id lookups become exact client-id or tab-session lookups (fixes the cross-tab bug, walkthrough narration included).
+
+Stages, each committed with the gate green:
+S1 delete the thread selector end to end (candidates, attach, relink, refresh, threadCandidates).
+S2 tab session identity and exact pane lookups (still one link).
+S3 one command lease per tab session.
+S4 the coordinator starts with the conversation; drop account_ready and the sign-in ensure and adoptedCoordinator.
+S5a the session store with one shared record, no behaviour change.
+S5b key everything by tab session: link, publisher, approvals, per-session realtime actions; delete the voice_live recording refusal.
+S6 session lifetime: presence, grace, sessions.end, approvals by session, New conversation retires old threads.
+S7 docs (ADR 0019 amendment, CONTEXT.md Tab session, AGENTS.md, design docs, CLI help), the removal sweep, board proposals corrected and adopted, the README explainer video re-recorded.
+<!-- SECTION:PLAN:END -->
