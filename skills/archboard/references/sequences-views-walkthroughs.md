@@ -124,8 +124,9 @@ speak about a change that no beat names.
 
 - If the variant states several walkthroughs, `--walkthrough <name>` picks one.
   `--variant` and `--theme dark` choose what is drawn.
-- It needs the Archboard server's Codex signed in and voice not live on that
-  server. A refusal says which. It takes about as long as the talk and prints
+- It needs the Archboard server's Codex signed in, and a refusal says so. Voice
+  in a browser can stay live, because the recording runs in a browser of its
+  own. It takes about as long as the talk and prints
   each beat as it is reached.
 - For a board made only for the video, create it with `semantic new`, look at
   it with `semantic rasterize`, then record with

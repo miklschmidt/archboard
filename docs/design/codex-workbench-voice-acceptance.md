@@ -160,8 +160,9 @@ point its pane at the acceptance board.
 ./bin/archboard browser show "$accept_board" --pane primary
 ```
 
-There is nothing to set up first. The first message starts the conversation:
-it signs in if needed, starts Codex, creates the workhorse and links it
+There is nothing to set up first. The first message starts the conversation of
+the browser tab. If Archboard is signed out, it signs in. It starts Codex and the
+voice coordinator of the tab, then creates the workhorse and links it to the tab
 (ADR 0019). In the browser:
 
 1. Confirm the header names `$accept_board`.

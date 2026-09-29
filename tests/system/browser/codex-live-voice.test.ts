@@ -177,7 +177,7 @@ test(
 		expect(speaking.wavePresentation).toBe("animated");
 		expect(speaking.controls).toContain("Mute");
 		// The wire, in order: the coordinator and then the workhorse are created, the
-		// conversation reads the workhorse as the server's linked thread, voice starts on the
+		// conversation reads the workhorse as the tab's linked thread, voice starts on the
 		// coordinator, and the coordinator is given the board catalogue this voice session
 		// speaks about.
 		const wire = await pollUntil(

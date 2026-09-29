@@ -111,7 +111,7 @@ function agentSetupPorts(focus: AgentFocus, pinVoice: PinVoice): AgentSetupPorts
 	return {
 		transport: focus,
 		/**
-		 * Create the server's conversation.
+		 * Create this tab's conversation.
 		 * @returns How it settled.
 		 */
 		createConversation: async () => {

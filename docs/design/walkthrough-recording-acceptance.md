@@ -8,8 +8,8 @@ moves on, and ends with the last step. The mechanism is in
 
 ## 1. Record this checkout's own board
 
-Stop voice in any browser on the canvas first: a recording refuses to start
-while voice is live.
+Voice can stay live in another browser tab. The recording page is a tab of its
+own, with its own conversation and voice session (TASK-373).
 
 ```bash
 bun run build:frontend

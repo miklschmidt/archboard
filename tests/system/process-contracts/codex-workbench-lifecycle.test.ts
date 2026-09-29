@@ -312,7 +312,7 @@ describe.serial("composed Codex process lifecycle", () => {
 					(value["dynamicApprovals"] as unknown[]).length === 1
 					? value
 					: undefined;
-			}, "browser disconnect approvals");
+			}, "approvals before the reload");
 			await socket.close();
 			// A reload within the grace: the tab's conversation, its approvals included, is kept.
 			socket = await openApplicationSocket(server.base, "lifecycle-client");

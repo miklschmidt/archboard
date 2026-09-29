@@ -4,6 +4,11 @@ status: accepted
 
 # Vault diagnostics drive CLI and agent repair
 
+Amended by TASK-373 (2026-09-29): **Fix with Codex** sends its request as a
+message of the browser tab, so it runs on the workhorse of that tab. If the tab
+has no workhorse yet, the message creates one, as every first message does. No step links
+an existing thread any more. Everything else stands.
+
 Vault vocabulary and presentation configuration is version-controlled YAML with a
 validated schema and CLI because it is shared product input, not private renderer
 state. Missing or invalid configuration uses the bundled renderer defaults and

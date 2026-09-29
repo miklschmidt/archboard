@@ -39,6 +39,21 @@ unsubscribes from it with `thread/unsubscribe`. Codex then unloads the thread
 and keeps its rollout. The unsubscribe waits for the turn, because Codex sends
 that turn's tool calls and approvals only to subscribers.
 
+Amended by TASK-373 (2026-09-29): each browser tab is a tab session, and this
+replaces the single link of TASK-302. A tab session is one tab's conversation.
+The tab keeps the session's id in sessionStorage, so a reload keeps the
+conversation and a new tab or window starts a new one. Each tab session has its
+own thread link, workhorse, coordinator, voice session, board-change delivery,
+queue, command lease and approvals. So two tabs can talk at the same time. The
+coordinator starts with the tab's first message or Talk, not at sign-in. A
+session ends 60 seconds after the last socket of its panes closes. A reload
+within that time keeps the conversation and its approvals, but it stops voice.
+At the end, Archboard settles the session's approvals, stops its board-change
+delivery and clears its link. It unsubscribes each of its threads once no turn
+runs on it, so Codex unloads them. The thread selector, its list of candidate
+threads and the attach, relink and refresh commands are gone. The sentences
+below say so. Everything else stands.
+
 ## Issue
 
 The workbench must show and control the same agent state that the person is
@@ -61,15 +76,18 @@ another Codex client, or an ambient daemon. A
 browser may temporarily own presentation of interactive requests, but it never
 becomes the process owner or a second app-server client.
 
-A canvas talks to Codex only through its **thread link**, which binds the
-canvas to one workhorse controlled by the current child. The link is made by
-the first thing the person asks — a message or Talk — and never by a separate
-step; every pane shows and speaks for the same conversation, the focused pane's
-board being the context a message carries. Replacing the child
-invalidates every execution proof: earlier threads may remain inspectable, but
-Archboard does not resume them or deliver input, tools, queued work, or board
-context to them. Dedicated state prevents accidental discovery; it is not a
-security boundary against a malicious process running as the same user.
+A browser tab talks to Codex only through the **thread link** of its **tab
+session**. A tab session is the conversation of one tab, and the tab keeps its
+id in sessionStorage. The link binds the session to one workhorse that the
+current child controls. The first thing the person asks in the tab makes the
+link: a message or Talk. No separate step makes it. Both panes of a tab show and
+speak for the same conversation. A message carries the board of the focused
+pane as its context. Every other tab holds a conversation of its own.
+Replacing the child invalidates every execution proof and unbinds every
+tab session. Earlier threads can remain inspectable, but Archboard does not
+resume them or deliver input, tools, queued work, or board context to them.
+Dedicated state prevents accidental discovery. It is not a security boundary
+against a malicious process that runs as the same user.
 
 The epoch manifest that records which child owns which thread exists to work
 around a Codex behaviour: resuming an older thread loses the dynamic tools it
@@ -80,17 +98,17 @@ ledger is one file replaced atomically by a rename, with no lock file, second
 copy, or other durability machinery; a manifest that cannot be read is treated
 as "no prior epochs", which leaves every earlier thread inspect-only.
 
-Archboard-created workhorses receive a small typed coordination catalogue on
-the owned connection. Attached threads remain usable without pretending that
-they have tools they were not started with. Mutating coordination is bound to
-the caller, target state, current ownership, and a fresh person-approved
+Archboard creates every workhorse that it drives, and each one receives a
+small typed coordination catalogue on the owned connection. Mutating
+coordination is bound to the caller, target state, current ownership, and a fresh person-approved
 effect. Waiting across agents is rejected when it would introduce a direct or
 transitive cycle. Archboard does not add an internal MCP process for these
 operations.
 
-Each valid thread link may also own one coordinator at a time, and a
-coordinator carries at most one voice session. The coordinator
-is a normal capable Codex thread with ordinary investigation tools, sandbox,
+Each tab session owns one coordinator at a time. The coordinator starts with
+the first message or Talk of the session, and it carries at most one voice
+session. So two tabs can talk at once, each on its own coordinator. The
+coordinator is a normal capable Codex thread with ordinary investigation tools, sandbox,
 and approvals. It may answer quick questions and perform one explicit bounded
 board action, while sustained or multi-step implementation defaults to the
 workhorse. Coordinator and workhorse histories stay separate and cross-link
@@ -100,8 +118,8 @@ Live voice attaches to the coordinator, never directly to the workhorse. The
 coordinator does not block waiting for workhorse completion; authoritative
 events return as ordered, non-reentrant callbacks. Queueing is allowed only
 where Archboard can prove the workhorse will retain the required context. A
-busy attached workhorse may receive a related correction, but unrelated work is
-refused until it is idle.
+busy workhorse can take a related correction, but Archboard refuses unrelated
+work until the workhorse is idle.
 
 Spoken approval is state-gated. The person hears the exact stored effect, and a
 later ordinary coordinator turn may resolve only that pending one-time choice.
@@ -112,10 +130,12 @@ visual-only. Coordinator model judgment is therefore part of the security
 boundary and the interface must say so.
 
 The existing semantic change feed remains the sole source of compact board
-context. Human or mixed-origin changes go only to the workhorse named by the
-thread link and, while voice is active, its linked coordinator. Agent-only
-changes are not narrated back to their author. There is no environment route,
-recent-thread heuristic, or second board snapshot.
+context. Each tab session receives the feed on its own. A change goes to the
+workhorse that the link of each tab session names. While the voice of a session
+is live, the change also goes to its coordinator. Archboard never sends an agent
+change back to the tab session whose threads made it. So a change that the
+workhorse of one tab made is news to every other tab. There is no environment
+route, recent-thread heuristic, or second board snapshot.
 
 ## Rejected alternatives
 
@@ -129,15 +149,21 @@ recent-thread heuristic, or second board snapshot.
   two selectors that can disagree with the visible thread link.
 - Using the workhorse as the voice participant mixes low-latency conversation
   with sustained implementation and makes intervention policy opaque.
+- One thread link for the whole canvas (TASK-302) put every tab into one
+  conversation. A Talk in one tab then stopped the voice of another, and a
+  recording was refused while anybody talked.
 
 ## Consequences
 
 Archboard must maintain its own Codex sign-in, process status and reconnect
 story, and must carry a message or a Talk through each of them without asking
-the person to set anything up. A child restart is intentionally conservative:
-prior work remains inspectable but not executable, and the next message or
-Talk creates a new current link. Workhorse and coordinator state remain
-visibly separate.
+the person to set anything up. A child restart is intentionally conservative.
+Prior work remains inspectable but not executable, and the next message or
+Talk in a tab creates a new link for that tab. Workhorse and coordinator state
+remain visibly separate. Each tab costs a workhorse thread and a coordinator
+thread, and a recording is a tab of its own. A tab session that ends settles
+what it was asked and gives up its threads, so a closed tab holds nothing in
+the child.
 
 ADR-0005's semantic-push intent survives, but its routing and process-ownership
 decision is superseded by the explicit thread link and owned session here.

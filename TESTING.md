@@ -143,7 +143,8 @@ current variant beside the proposal. None of these commands writes a board.
 The server starts its own Codex app-server, as
 [ADR 0019](docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md)
 records. If Codex has no sign-in, the first message in the agent bar or the
-first press of Talk asks you to sign in. It then starts the conversation. Voice
+first press of Talk asks you to sign in. It then starts the conversation. Each
+browser tab holds a conversation of its own, and a reload keeps it. Voice
 needs a microphone and speakers. If your microphone is on a Bluetooth headset,
 a narration can be silent. The [README FAQ](README.md#faq) explains why.
 

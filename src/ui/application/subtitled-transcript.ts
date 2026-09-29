@@ -2,8 +2,8 @@
 //
 // The transcript is server truth the transport publishes, a word at a time as the voice speaks.
 // Subtitles show it only while a session carries audio. A recording's words are subtitled only on
-// the page that records it: the server shares one voice session between its browsers, and over
-// any other pane's picture they would be about a board nobody there is looking at.
+// the page that records it. That page is a tab session of its own (TASK-373), so no other page is
+// shown its voice.
 
 import type { BrowserSnapshot } from "@/shared/codex-browser-model";
 import type { SubtitleSource } from "@/ui/voice-subtitles";

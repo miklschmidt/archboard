@@ -8,7 +8,7 @@ import {
 	mediaSnapshot,
 } from "@/ui/voice-session/tests/support/fakes";
 import { harness, listening } from "@/ui/voice-session/tests/support/harness";
-import { relinked } from "@/ui/voice-session/tests/support/workbench-fixture";
+import { repointed } from "@/ui/voice-session/tests/support/workbench-fixture";
 
 /**
  * Never resolves a start.
@@ -45,7 +45,7 @@ describe("voice session ordering and disposal", () => {
 	test("a late resolution cannot revive a session close() retired", async () => {
 		const { session, realtime, transport } = harness();
 		await session.start();
-		transport.set(connectedState(relinked("workhorse")));
+		transport.set(connectedState(repointed("workhorse")));
 		await session.close();
 
 		realtime.set(mediaSnapshot({ phase: "listening", reason: "negotiation_succeeded" }));

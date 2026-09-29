@@ -1,14 +1,11 @@
 import { createHash } from "node:crypto";
 
-import type { ThreadId } from "@/shared/codex-workbench-identity";
 import { assertNoDuplicateKeys } from "@/runtime/codex-epoch/lib/manifest-json";
 import {
 	CODEX_EPOCH_MANIFEST_SCHEMA,
-	THREAD_OWNERSHIP_CONTRACTS,
 	type EpochManifest,
 	type EpochManifestPayload,
 	type EpochOperationRecord,
-	type EpochThreadOwnershipProvenance,
 } from "@/runtime/codex-epoch/lib/manifest-contract";
 import {
 	asArray,
@@ -22,50 +19,6 @@ import {
 	validateIntegrity,
 	validateRecord,
 } from "@/runtime/codex-epoch/lib/manifest-validation";
-
-/**
- * Whether a record is a settled operation that names this thread, which is the only kind of
- * record that can establish ownership of it.
- * @param record - The record, or undefined for a hole in the array.
- * @param threadId - The thread being resolved.
- * @returns True when the record is worth matching against the ownership table.
- */
-function namesSettledThread(
-	record: EpochOperationRecord | undefined,
-	threadId: ThreadId,
-): record is EpochOperationRecord {
-	if (record === undefined || record.provenance.threadId !== threadId) {
-		return false;
-	}
-	return record.status === "committed" || record.status === "inspect_only";
-}
-
-/**
- * Resolve only a canonical operation that establishes ownership of this thread, taking the
- * most recent one so a later attachment supersedes an earlier record.
- * @param manifest - The durable manifest.
- * @param threadId - The thread to resolve.
- * @returns How the thread is owned and by which record, or null when nothing owns it.
- */
-function resolveThreadOwnershipProvenance(
-	manifest: EpochManifest,
-	threadId: ThreadId,
-): EpochThreadOwnershipProvenance | null {
-	for (let index = manifest.records.length - 1; index >= 0; index -= 1) {
-		const record = manifest.records[index];
-		if (!namesSettledThread(record, threadId)) {
-			continue;
-		}
-		const contract = THREAD_OWNERSHIP_CONTRACTS.find(
-			(candidate) =>
-				candidate.kind === record.operation.kind && candidate.rpc === record.operation.rpc,
-		);
-		if (contract !== undefined) {
-			return Object.freeze({ ownership: contract.ownership, record });
-		}
-	}
-	return null;
-}
 
 /**
  * The manifest a store starts from before any epoch exists.
@@ -238,7 +191,6 @@ function validateManifest(value: unknown): EpochManifest {
 
 export {
 	CODEX_EPOCH_MANIFEST_SCHEMA,
-	EPOCH_THREAD_ATTACH_OPERATION,
 	operationRequiresThreadProvenance,
 	type ActiveEpoch,
 	type EpochManifest,
@@ -249,12 +201,9 @@ export {
 	type EpochOperationRecord,
 	type EpochOperationStatus,
 	type EpochProvenance,
-	type EpochThreadOwnership,
-	type EpochThreadOwnershipProvenance,
 } from "@/runtime/codex-epoch/lib/manifest-contract";
 
 export {
-	resolveThreadOwnershipProvenance,
 	emptyManifest,
 	buildManifest,
 	encodeManifest,

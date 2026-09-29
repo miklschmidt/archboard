@@ -50,7 +50,9 @@ rules that will not stop you:
   It holds board content only as a read-only cache of what the server said.
   When the server announces a new version, the browser reads that content again
   (ADR 0023). It owns only presentation: the camera, the active view, the
-  walkthrough position and what somebody picked out. A user's one control over a
+  walkthrough position and what somebody picked out. It also keeps its tab
+  session id in sessionStorage. That id tells the server which tab a pane
+  belongs to, and it is not board content. A user's one control over a
   board is taking back
   somebody else's claim.
 - **One writer at a time per board** (ADR 0016), a lease file taken by one
@@ -83,9 +85,9 @@ rules that will not stop you:
   it persists on the node as `binding: { repo, path }` and is what "open the
   code" resolves.
 - **Codex runs as one private package-local app-server session over stdio**
-  with an archboard-only `CODEX_HOME` every Archboard server on the machine shares. The
-  server's thread link names one workhorse, and voice belongs to its separate
-  coordinator. [ADR
+  with an archboard-only `CODEX_HOME` every Archboard server on the machine shares.
+  Each browser tab is a tab session with its own thread link, workhorse and
+  coordinator, and voice belongs to that coordinator. [ADR
   0019](docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md)
   records that design.
 - The shell is desktop-only at 1920×1080. Do not add phone or narrow layouts.

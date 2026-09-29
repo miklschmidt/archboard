@@ -84,7 +84,7 @@ interface HarnessOptions {
 }
 
 interface Harness {
-	/** Replace the threads this port's session writes as, as a restart or relink does. */
+	/** Replace the threads this port's session writes as, as a restart or New conversation does. */
 	readonly becomeSession: (threads: readonly string[]) => void;
 	readonly authority: IdentityAuthority;
 	readonly target: CodexThreadContextTarget;
@@ -323,7 +323,7 @@ function createHarness(options: HarnessOptions = {}): Harness {
 	};
 	// The threads this port's session writes as, mutable because the live
 	// article is: a coordinator is created and restarted inside one workhorse's
-	// life, and a relink gives the port a different thread to be.
+	// life, and New conversation gives the port a different thread to be.
 	let sessionAuthors: readonly string[] = options.sessionAuthors ?? [threadId];
 	const controller = options.controller
 		? createCodexThreadContextController({
@@ -416,7 +416,7 @@ function createHarness(options: HarnessOptions = {}): Harness {
 	return {
 		/**
 		 * Replace the threads this port's session writes as, as a restart or a
-		 * relink does.
+		 * new conversation does.
 		 * @param threads The session's threads now.
 		 */
 		becomeSession: (threads: readonly string[]): void => {

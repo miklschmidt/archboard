@@ -78,11 +78,11 @@ describe("a session hears everything except its own writes", () => {
 		expect(harness.received).toHaveLength(1);
 	});
 
-	test("a relinked session is a new author, so the old identity is not its own", async () => {
+	test("a new conversation is a new author, so the old identity is not its own", async () => {
 		// A thread that goes on being the same thread is the same session, which is
-		// why the identity is not minted per turn. A relink is a different thread,
+		// why the identity is not minted per turn. A new conversation is a different thread,
 		// and a change the previous one wrote is now somebody else's news.
-		const harness = createHarness({ sessionAuthors: ["workhorse-after-relink"] });
+		const harness = createHarness({ sessionAuthors: ["workhorse-after-new-conversation"] });
 
 		const before = await harness.delivery.deliver(
 			harness.events({ origin: "agent", by: "workhorse" }),
@@ -95,7 +95,7 @@ describe("a session hears everything except its own writes", () => {
 
 describe("the session a port is listening for can change under it", () => {
 	test("a thread this session no longer is becomes somebody else's news", async () => {
-		// A relink puts a different thread on the same pane, and a coordinator is
+		// New conversation puts a different thread on the same tab session, and a coordinator is
 		// restarted inside one workhorse's life. Either way the port's own identity
 		// moves, so what used to be its own writes become news — which is only true
 		// if the identity is asked for as each change arrives rather than sampled
@@ -107,13 +107,13 @@ describe("the session a port is listening for can change under it", () => {
 		);
 		expect(before).toMatchObject({ outcome: "not_delivered", reason: "own_change" });
 
-		harness.becomeSession(["workhorse-after-relink"]);
+		harness.becomeSession(["workhorse-after-new-conversation"]);
 
 		const old = await harness.delivery.deliver(
 			harness.events({ sequence: 2, origin: "agent", by: "workhorse" }),
 		);
 		const now = await harness.delivery.deliver(
-			harness.events({ sequence: 3, origin: "agent", by: "workhorse-after-relink" }),
+			harness.events({ sequence: 3, origin: "agent", by: "workhorse-after-new-conversation" }),
 		);
 
 		expect(old).toMatchObject({ outcome: "delivered", attempted: true });

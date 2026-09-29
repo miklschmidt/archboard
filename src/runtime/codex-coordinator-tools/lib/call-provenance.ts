@@ -71,7 +71,7 @@ function assertAttachedToCoordinator(
 	) {
 		fail(
 			"unknown_provenance",
-			"The Archboard server's workhorse binding is not attached to this coordinator.",
+			"The workhorse binding of this conversation is not attached to this coordinator.",
 		);
 	}
 }

@@ -318,8 +318,9 @@ _Avoid_: callback, telemetry, event, selection report
 
 **Outside change**:
 A board change made by an agent that is neither the workhorse nor the voice
-coordinator. The voice model and the coordinator are both told, because neither
-asked for it and what they know of the board has stopped being true.
+coordinator of this tab session. The workhorse of another tab is such an agent.
+The voice model and the coordinator are both told. Neither asked for the
+change, and what they know of the board is no longer true.
 _Avoid_: external edit, foreign write, third-party change
 
 **Comparison**:
@@ -381,25 +382,42 @@ _Avoid_: score, cost, quality metric
 
 ### Working
 
+**Tab session**:
+The conversation of one browser tab with Codex. The tab keeps the session id in
+sessionStorage, and both of its panes name that id to the server. So a reload
+keeps the conversation, and a new tab or window starts a new one. A tab that the
+browser duplicates shares the session of the original. Each tab session has its
+own thread link, workhorse, voice coordinator and voice session. It also has
+its own queue, command lease and approvals. So two tabs can talk at the same
+time. A session ends 60
+seconds after the last pane of its tab closes. A reload within that time keeps
+the conversation and its approvals. When a session ends, Archboard cancels its
+approvals and stops the board news to its workhorse. It unsubscribes each of
+its threads once no turn runs on it, and Codex then unloads the thread.
+_Avoid_: browser session (that names the realtime handle), session alone, canvas
+
 **Workhorse**:
-The primary Codex thread linked to the Archboard server for sustained code, repository,
-and multi-step work. It may continue working while a voice coordinator answers and
+The primary Codex thread of a tab session, for sustained code, repository and
+multi-step work. It can go on working while the voice coordinator answers and
 investigates separately.
 _Avoid_: main agent, coding thread, backend agent, worker (that is also an agent
 role)
 
 **Thread link**:
-The runtime association between the Archboard server and one controllable Codex
-workhorse on Archboard's owned app-server child, made by the first message or
-Talk; whichever pane is focused speaks through it. It never lives in the board
-or follows another client's active thread, and child exit invalidates it, so
-the next message or Talk makes a new one.
+The runtime association between one tab session and one controllable Codex
+workhorse on Archboard's owned app-server child. The first message or Talk of
+the tab makes it, and the focused pane of the tab speaks through it. New
+conversation links a new workhorse in its place. The link never lives in the
+board or follows the active thread of another client. Child exit and the end of
+the tab session clear it, so the next message or Talk makes a new one.
 _Avoid_: binding (that means node-to-code here), attachment, selected thread,
 active task, task link
 
 **Voice coordinator**:
-The fast Codex thread linked to the server's workhorse, a new one for each voice
-session. Realtime voice attaches to it. It handles conversation and bounded direct work, and it gives
+The fast Codex thread beside the workhorse of a tab session. It starts with the
+first message or Talk of the tab. A coordinator carries at most one voice
+session, so a later voice start replaces it with a fresh one. Realtime voice
+attaches to it. It handles conversation and bounded direct work, and it gives
 sustained work to the workhorse. With the voice model it is one assistant: the
 voice model speaks, and the coordinator is its subconscious, which reads the
 boards, follows the workhorse and decides what the voice model says. With no
@@ -432,7 +450,8 @@ interruption.
 _Avoid_: interrupt, inject, cancel
 
 **Workhorse news**:
-What the voice coordinator is told about the workhorse while voice is live: a
+What the voice coordinator is told about the workhorse of its tab session while
+voice is live: a
 turn that ended or waits on the user, and a message the workhorse sent it. The
 coordinator gets it as it happens, in the turn it is running or in a new one.
 It decides what the voice model says and what it only knows.

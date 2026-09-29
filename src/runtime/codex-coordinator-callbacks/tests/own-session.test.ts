@@ -77,14 +77,14 @@ test("the filter reads the live pair, not the pair there was when it started", a
 	expect(restarted).toMatchObject({ outcome: "not_delivered", reason: "own_change" });
 });
 
-test("after a relink the coordinator hears the new thread's news and not its writes", async () => {
+test("after New conversation the coordinator hears the new thread's news and not its writes", async () => {
 	// The correlation follows the bound thread — the production provider reads it
 	// from the thread-context binding — so this sets the harness's live link to
-	// the relinked thread and asks the real callbacks what they do with it.
+	// the new workhorse thread and asks the real callbacks what they do with it.
 	const h = harness(true);
-	const relinked = "workhorse-after-relink";
+	const newWorkhorse = "workhorse-after-new-conversation";
 	// Everything the delivery authority asks about the link, moved to the
-	// relinked thread: the correlation the production reader now derives from the
+	// newWorkhorse thread: the correlation the production reader now derives from the
 	// thread-context binding, the link evidence it captured, and what the
 	// classifier says the pane is on. In production all three read live state;
 	// the fixture holds them, so the test moves them together.
@@ -94,24 +94,24 @@ test("after a relink the coordinator hears the new thread's news and not its wri
 			: {
 					binding: {
 						...h.state.link.binding,
-						link: { ...h.state.link.binding.link, threadId: relinked as never },
+						link: { ...h.state.link.binding.link, threadId: newWorkhorse as never },
 					},
-					target: { ...h.state.link.target, threadId: relinked as never },
+					target: { ...h.state.link.target, threadId: newWorkhorse as never },
 				};
 
 	h.state.classification = {
 		...h.state.classification,
-		link: { ...h.state.classification.link, threadId: relinked as never },
+		link: { ...h.state.classification.link, threadId: newWorkhorse as never },
 	};
 
 	const own = await h.callbacks.enqueue({
 		...h.semantic.change,
-		workhorse: { ...h.semantic.change.workhorse, threadId: relinked as never },
-		change: { ...h.semantic.change.change, by: relinked },
+		workhorse: { ...h.semantic.change.workhorse, threadId: newWorkhorse as never },
+		change: { ...h.semantic.change.change, by: newWorkhorse },
 	});
 	const external = await h.callbacks.enqueue({
 		...h.semantic.change,
-		workhorse: { ...h.semantic.change.workhorse, threadId: relinked as never },
+		workhorse: { ...h.semantic.change.workhorse, threadId: newWorkhorse as never },
 		change: {
 			...h.semantic.change.change,
 			by: "somebody-else",

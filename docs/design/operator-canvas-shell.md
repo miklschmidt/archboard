@@ -156,7 +156,7 @@ theme. In that capture, the board on screen shows its states.
 
 ## The agent
 
-Revised 2026-09-23 (TASK-302). The collapsible workbench, its tabs, its session
+Revised 2026-09-23 (TASK-302) and 2026-09-29 (TASK-373). The collapsible workbench, its tabs, its session
 column and the Agent settings dialog are gone. The agent is one bar under the
 panes. When the person asks, and only then, it is also one conversation beside
 them:
@@ -176,10 +176,12 @@ work in the dark theme.
   Talk sits beside it. The composer sits at its right, under where the
   conversation opens, and says which board the agent will read.
 - **Nothing to set up.** The first message or press of Talk signs the person
-  in, as needed. It also starts Codex and creates the conversation. A message
-  that waits on
-  any of that shows what it waits on. There is one conversation per canvas, and the
-  focused pane's board is what a message is about.
+  in, as needed. It also starts Codex and creates the conversation of the tab:
+  its voice coordinator first, then its workhorse. A message that waits on
+  any of that shows what it waits on. Each browser tab holds its own
+  conversation, and the board of the focused pane is what a message is about.
+  A reload keeps the conversation, and a new tab or window starts a new one.
+  New conversation in the agent menu starts a new one in the same tab.
 - **The conversation** is 440 pixels beside the panes, which refit to the room
   left. Each turn shows the person's prompt, the progress of the plan, the
   work, the agent's answer, and how the turn ended. The work is rows that open

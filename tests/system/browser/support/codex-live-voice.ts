@@ -241,7 +241,7 @@ interface TalkWire {
 	readonly coordinatorAt: number;
 	/** The workhorse's thread/start. */
 	readonly createdAt: number;
-	/** The conversation reading the created thread's turns: it is the server's linked thread. */
+	/** The conversation reading the created thread's turns: it is the tab's linked thread. */
 	readonly readAt: number;
 	readonly voiceAt: number;
 	/** The board catalogue, naming the given board, injected into the coordinator. */

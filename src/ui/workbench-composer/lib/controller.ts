@@ -307,7 +307,7 @@ function createWorkbenchComposerController(
 		text: string | null,
 	): Promise<Settlement> {
 		let settled = await sendPlan(plan);
-		// A relink while the command was in flight makes a delivered or unknown
+		// A new conversation while the command was in flight makes a delivered or unknown
 		// answer unreadable here. It does not make a definitive refusal unknown:
 		// the server said nothing was delivered, and the text is safe to send again.
 		if (settled.outcome !== "not_delivered" && lateFor(threadId)) {
