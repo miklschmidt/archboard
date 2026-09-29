@@ -28,7 +28,7 @@ Plan the next step before anyone writes code. Ask for a change and see it drawn 
 
 **Hear Archboard explain itself**. Its own system board, narrated by the Codex voice in under two minutes. Turn the sound on.
 
-https://github.com/user-attachments/assets/f33b8aa2-3293-47fb-99e1-0460a9ee8534
+https://github.com/user-attachments/assets/b8901fe6-46c1-4b76-8eb8-961ff5ee1c2c
 
 ## What you can do with it
 
@@ -97,7 +97,7 @@ gh pr comment 128 --attach pr-128.mp4 --body "A narrated walkthrough of this cha
 
 **A pull request, explained to its reviewers**: why the change exists, what it changed, and where to look closely. The loop above is silent. The player below carries the voice, so turn the sound on.
 
-https://github.com/user-attachments/assets/337e88d7-2e5c-4fa2-a93d-31854225811b
+https://github.com/user-attachments/assets/231ad960-359a-4aff-b710-1520444482ce
 
 <p align="center"><sub>Each video is what <code>archboard semantic record</code> wrote.</sub></p>
 
@@ -130,7 +130,7 @@ Give the tour once, and every new hire can play it back. A newcomer's walkthroug
 
 <p align="center"><sub>"How stock is reserved", six steps on the example Inventory service board. The player below has the voice.</sub></p>
 
-https://github.com/user-attachments/assets/8b615ed2-e0e6-48a2-96a8-59802a28c86a
+https://github.com/user-attachments/assets/182de8a8-0154-42a5-b7dc-6804ffd595ca
 
 ```text
 I'm new here. Walk me through what happens to stock when a shopper presses Pay.
