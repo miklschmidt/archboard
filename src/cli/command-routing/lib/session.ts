@@ -104,7 +104,7 @@ function reportUnknownCommand(name: string): void {
 	}
 	const migration =
 		name === "inject"
-			? " Board changes now reach the linked Codex workbench; inspect or test the connection there."
+			? " Board changes now reach the Codex workhorse of each browser tab. Ask it in the agent bar."
 			: "";
 	process.stderr.write(
 		`Unknown command "${name}".${migration} Run \`archboard help\` for the list.\n`,

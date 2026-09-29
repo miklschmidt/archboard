@@ -214,8 +214,8 @@ function eventShapeReason(event: SettledSemanticChangeEvent): Reason | null {
  * each other.
  *
  * A thread that goes on being the same thread is the same session, so a write
- * landing after the turn that made it is still its own; a relink or a new
- * session is a new thread and so a new author. Neither the identity the board
+ * landing after the turn that made it is still its own; a new conversation or a
+ * new session is a new thread and so a new author. Neither the identity the board
  * was held under nor the board itself is compared: a claim is one value shared
  * by a whole campaign, and what a pane displays has nothing to do with what a
  * session needs to know.

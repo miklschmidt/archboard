@@ -13,7 +13,7 @@ import {
 	DEFAULT_BINDING,
 	UNBOUND_LINK,
 	coordinator,
-	relinked,
+	repointed,
 	snapshot,
 	threadId,
 } from "@/ui/voice-session/tests/support/workbench-fixture";
@@ -68,14 +68,14 @@ describe("voice session binding", () => {
 		await session.start();
 		const bound = session.view().binding;
 
-		transport.set(staleState(relinked("child")));
+		transport.set(staleState(repointed("child")));
 
 		expect(session.view().status).toBe("listening");
 		expect(session.view().failure).toBeNull();
 		expect(session.view().binding).toEqual(bound);
 
 		// The same identities on a current readiness projection are a replacement.
-		transport.set(connectedState(relinked("child")));
+		transport.set(connectedState(repointed("child")));
 		expect(session.view().failure?.code).toBe("replaced");
 	});
 
@@ -120,7 +120,7 @@ describe("voice session binding", () => {
 		async (change) => {
 			const { session, transport } = harness();
 			await session.start();
-			transport.set(connectedState(relinked(change)));
+			transport.set(connectedState(repointed(change)));
 
 			const view = session.view();
 			expect(view.status).toBe("failed");
@@ -133,7 +133,7 @@ describe("voice session binding", () => {
 	test("only close() clears a replacement, and it starts no second session by itself", async () => {
 		const { session, realtime, transport } = harness();
 		await session.start();
-		transport.set(connectedState(relinked("workhorse")));
+		transport.set(connectedState(repointed("workhorse")));
 
 		expect(await session.start()).toBe(session.view());
 		expect(await session.restart()).toBe(session.view());

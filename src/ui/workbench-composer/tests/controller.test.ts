@@ -347,7 +347,7 @@ describe("refusals, disconnects, and late results", () => {
 		});
 	});
 
-	test("a delivered result that lands after the pane relinked is not applied here", async () => {
+	test("a delivered result that lands after a new conversation started is not applied here", async () => {
 		const transport = fakeComposerTransport();
 		movingBeforeAnswer(
 			transport,
@@ -412,7 +412,7 @@ describe("refusals, disconnects, and late results", () => {
 });
 
 describe("remediations from the fixed-range review", () => {
-	test("a definitive not_delivered is not relabelled unknown by a relink in flight", async () => {
+	test("a definitive not_delivered is not relabelled unknown by a new conversation in flight", async () => {
 		const transport = fakeComposerTransport();
 		movingBeforeAnswer(
 			transport,

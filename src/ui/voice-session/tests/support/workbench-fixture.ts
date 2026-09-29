@@ -192,7 +192,7 @@ function snapshot(overrides: SnapshotOverrides = {}): BrowserSnapshot {
  * @param change Which identity moved.
  * @returns The snapshot.
  */
-function relinked(change: "child" | "workhorse"): BrowserSnapshot {
+function repointed(change: "child" | "workhorse"): BrowserSnapshot {
 	if (change === "child") {
 		return snapshotIn(world(), {});
 	}
@@ -206,4 +206,4 @@ const DEFAULT_BINDING = Object.freeze({
 	workhorseThreadId: String(threadId("workhorse-a")),
 });
 
-export { DEFAULT_BINDING, UNBOUND_LINK, coordinator, relinked, snapshot, threadId, voice };
+export { DEFAULT_BINDING, UNBOUND_LINK, coordinator, repointed, snapshot, threadId, voice };

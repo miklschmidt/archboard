@@ -48,7 +48,7 @@ interface AgentSetupPorts {
 		readonly state: () => BrowserWorkbenchState;
 		readonly subscribe: (listener: () => void) => () => void;
 	};
-	/** Create a new conversation for this server. */
+	/** Create a new conversation for this tab. */
 	readonly createConversation: () => Promise<SetupStepResult>;
 	/**
 	 * Start a sign-in.
@@ -134,7 +134,7 @@ interface AgentSetup {
 	readonly signIn: (login: ThreadLinkLoginParams, tab?: AuthTab) => void;
 	/** Cancel the pending sign-in. */
 	readonly cancelSignIn: () => void;
-	/** Start a new conversation for this server. */
+	/** Start a new conversation for this tab. */
 	readonly newConversation: () => void;
 	/**
 	 * Send a message that failed again.
@@ -524,7 +524,7 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 		return message?.text ?? null;
 	}
 
-	/** Start a new conversation for this server, replacing the current one. */
+	/** Start a new conversation for this tab, replacing the current one. */
 	function newConversation(): void {
 		failure = null;
 		created = false;

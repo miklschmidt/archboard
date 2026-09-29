@@ -381,7 +381,7 @@ export function createCodexThreadContextController(
 			// The threads whose board writes are this session's own: the workhorse
 			// this binding names, and the coordinator paired with it when there is
 			// one. A thread is the session — it goes on being the same thread across
-			// turns, and a relink makes a new one — so this is the identity a write
+			// turns, and New conversation makes a new one — so this is the identity a write
 			// states and the only thing a change is skipped for. Asked per event,
 			// because a coordinator comes and goes inside one workhorse's life.
 			/**

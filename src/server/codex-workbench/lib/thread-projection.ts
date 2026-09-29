@@ -258,7 +258,7 @@ function projectThreadLinkSource(
 
 /**
  * Project the pane's thread link for the browser, presenting its source.
- * @param input The server's thread-link snapshot for the pane.
+ * @param input The thread-link snapshot of the pane's tab session.
  * @returns The browser thread link.
  */
 export function projectThreadLink(input: BrowserProjectionInput["threadLink"]): BrowserThreadLink {

@@ -224,7 +224,7 @@ export function assertExecutionThread(
 /**
  * Refuse a thread another record has already claimed in a way this one cannot override: a
  * tombstoned thread stays tombstoned, and a thread owned by a replaced child or a prior epoch
- * cannot be confirmed or relinked now.
+ * cannot be confirmed or linked again now.
  * @param candidate - The other record naming the same thread.
  * @param record - The record being settled.
  */
@@ -233,7 +233,7 @@ function assertThreadNotClaimed(
 	record: EpochOperationRecord,
 ): void {
 	if (candidate.status === "inspect_only") {
-		throw epochError("inspect_only", "a tombstoned thread cannot be confirmed or relinked");
+		throw epochError("inspect_only", "a tombstoned thread cannot be confirmed or linked again");
 	}
 	if (candidate.correlation.childId !== record.correlation.childId) {
 		throw epochError("stale_child", "thread provenance belongs to a replaced child");

@@ -247,8 +247,8 @@ board after the file is written, for a board made only for the video.
 A recording needs these things:
 
 - The Chromium that rasterizing needs.
-- An Archboard server where Codex is signed in, and where the voice is not live in any
-  browser.
+- An Archboard server where Codex is signed in. Voice can be live in a browser
+  tab meanwhile, because the recording runs in a tab of its own.
 - A frontend built from the same checkout, with `bun run build`.
 
 On Linux the browser records the sound of an MP4 as Opus, which Safari does not

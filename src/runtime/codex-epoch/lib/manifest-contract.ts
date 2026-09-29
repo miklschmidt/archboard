@@ -75,33 +75,6 @@ interface EpochOperationRecord {
 	readonly updatedAtMs: number;
 }
 
-type EpochThreadOwnership = "created" | "attached";
-
-interface EpochThreadOwnershipProvenance {
-	readonly ownership: EpochThreadOwnership;
-	readonly record: EpochOperationRecord;
-}
-
-/**
- * The one operation that establishes attached ownership of a thread this epoch
- * did not create. Whoever stages that record uses this descriptor, so a staged
- * operation and the table below cannot drift into a record nothing resolves.
- */
-const EPOCH_THREAD_ATTACH_OPERATION = {
-	kind: "thread_link",
-	rpc: "thread/read",
-} as const;
-
-const THREAD_OWNERSHIP_CONTRACTS = [
-	{ ownership: "created", kind: "create_thread", rpc: "thread/start" },
-	{ ownership: "created", kind: "fork_thread", rpc: "thread/fork" },
-	{ ownership: "attached", ...EPOCH_THREAD_ATTACH_OPERATION },
-] as const satisfies readonly {
-	readonly ownership: EpochThreadOwnership;
-	readonly kind: string;
-	readonly rpc: string;
-}[];
-
 interface ActiveEpoch {
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
@@ -136,9 +109,7 @@ export {
 	CODEX_EPOCH_MANIFEST_SCHEMA,
 	EPOCH_OPERATION_OUTCOMES,
 	EPOCH_OPERATION_STATUSES,
-	EPOCH_THREAD_ATTACH_OPERATION,
 	STATUS_OUTCOME,
-	THREAD_OWNERSHIP_CONTRACTS,
 	THREAD_PROVENANCE_KINDS,
 	operationRequiresThreadProvenance,
 	type ActiveEpoch,
@@ -150,6 +121,4 @@ export {
 	type EpochOperationRecord,
 	type EpochOperationStatus,
 	type EpochProvenance,
-	type EpochThreadOwnership,
-	type EpochThreadOwnershipProvenance,
 };

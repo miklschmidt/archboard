@@ -323,9 +323,9 @@ let disconnectBatchSent = false;
 const emitDisconnectBatch = (): void => {
 	if (disconnectBatchSent || workhorseThreadId === null) return;
 	disconnectBatchSent = true;
-	registerDynamicCall("disconnect-dynamic", "create_thread", { prompt: "This authority must end with the browser." });
+	registerDynamicCall("disconnect-dynamic", "create_thread", { prompt: "This authority outlives a reload of its tab." });
 	request("disconnect-ordinary", "item/fileChange/requestApproval", { threadId: workhorseThreadId, turnId: "turn-1", itemId: "disconnect-file", startedAtMs: Date.now(), reason: "disconnect ordinary", grantRoot: process.cwd() });
-	request("disconnect-dynamic", "item/tool/call", { threadId: workhorseThreadId, turnId: "turn-1", callId: "disconnect-dynamic", namespace: "archboard_app", tool: "create_thread", arguments: { prompt: "This authority must end with the browser." } });
+	request("disconnect-dynamic", "item/tool/call", { threadId: workhorseThreadId, turnId: "turn-1", callId: "disconnect-dynamic", namespace: "archboard_app", tool: "create_thread", arguments: { prompt: "This authority outlives a reload of its tab." } });
 };
 
 let forkSent = false;

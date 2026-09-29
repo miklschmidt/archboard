@@ -729,7 +729,7 @@ The common correlation object contains `childId`, `clientUserMessageId`,
 `coordinatorCall`, `coordinatorThreadId`, `coordinatorTurnId`, `epoch`,
 `operationId`, `queuedSubmissionId`, `realtimeGeneration`, `realtimeSessionId`,
 `turnId`, `workhorseLink`, and `workhorseThreadId`. `workhorseLink` retains the
-captured pane and binding revision, accepted link fields, exact classifier
+link key (the tab session id) and binding revision, accepted link fields, exact classifier
 target, and complete durable provenance record plus manifest revision.
 `realtimeGeneration`, when present, retains the child, epoch, coordinator
 thread, wire session, browser session, and browser correlation identities.
@@ -831,8 +831,9 @@ rule that a recording holds the voice, so the coordinator writes only
 injected, not reported through a coordinator turn. `delegationAckFiller` is
 `false`. And the host opens no step: the recording page moves to each step itself, and each report
 it makes with no request behind it is handed over as speech, the way a step
-chosen by hand is. It is refused with `voice_live` while a realtime session the
-adapter still holds is live on the canvas, and never stops it.
+chosen by hand is. The recording page is a tab session of its own (TASK-373). So
+voice that is live in another tab never refuses a recording start, and the
+start never stops that voice.
 
 WebSocket transport, `appendAudio`, and `outputAudio` are outside this product
 contract.
@@ -1743,11 +1744,14 @@ An active self-fork remains allowed at its captured executing-turn boundary;
 only a non-self fork or send target that became active returns `busy`.
 
 `approval_required` is the final dynamic tool result for cancellation, caller
-turn interruption, host shutdown, or browser disconnect while approval is
-pending. Before returning it, the dispatcher settles and removes the request
-and its visual authority. A new tool call starts over with new call identity,
-operation IDs, effect snapshot, hash, and decision. A late browser command is
-rejected at the browser boundary and cannot produce another tool response.
+turn interruption, host shutdown, or the end of the tab session that holds the
+approval while approval is pending. Before returning it, the dispatcher settles
+and removes the request and its visual authority. A new tool call starts over
+with new call identity, operation IDs, effect snapshot, hash, and decision. A
+late browser command is rejected at the browser boundary and cannot produce
+another tool response. If no pane of a tab comes back within the grace, its tab
+session ends (TASK-373), and its approvals settle as `browser_disconnected`. A
+disconnect alone settles nothing.
 
 The transport's pending reverse record owns each accepted wire from routing
 until one response or exact teardown. The dynamic dispatcher keeps only an

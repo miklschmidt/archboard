@@ -19,8 +19,6 @@ export {
 	decodeManifest,
 	emptyManifest,
 	encodeManifest,
-	EPOCH_THREAD_ATTACH_OPERATION,
-	resolveThreadOwnershipProvenance,
 } from "@/runtime/codex-epoch/lib/manifest";
 export type {
 	ActiveEpoch,
@@ -32,6 +30,4 @@ export type {
 	EpochOperationRecord,
 	EpochOperationStatus,
 	EpochProvenance,
-	EpochThreadOwnership,
-	EpochThreadOwnershipProvenance,
 } from "@/runtime/codex-epoch/lib/manifest";

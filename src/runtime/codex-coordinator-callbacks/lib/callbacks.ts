@@ -111,7 +111,7 @@ function subscribeSources(
  * The session is the pair: the workhorse this coordinator drives and the
  * coordinator itself. Both identities are read at the moment the change
  * arrives, because a coordinator is created, restarted and retired inside one
- * workhorse's life and a relink replaces the workhorse under it — a value
+ * workhorse's life and New conversation replaces the workhorse under it — a value
  * sampled once would stop recognising the pair it was meant to.
  *
  * A change nobody attributed is not anybody's own: it is delivered, which is

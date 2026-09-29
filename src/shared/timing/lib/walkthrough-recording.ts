@@ -21,10 +21,10 @@ const RECORDING_PAGE_READY_MS = 30_000;
 
 /**
  * How long voice may take to go live once a recording starts: creating the
- * server's conversation when it has none, the coordinator and the workhorse
- * becoming ready, and the realtime negotiation (`CODEX_REALTIME_START_MS`,
- * 15 s, inside it). Creating a conversation is the slow part and is paid
- * once per server.
+ * recording tab's conversation, the coordinator and the workhorse becoming
+ * ready, and the realtime negotiation (`CODEX_REALTIME_START_MS`, 15 s, inside
+ * it). Creating a conversation is the slow part, and every recording pays it:
+ * the recording page is a tab session of its own (TASK-373).
  */
 const RECORDING_VOICE_START_MS = 60_000;
 

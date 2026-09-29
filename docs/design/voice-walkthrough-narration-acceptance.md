@@ -28,8 +28,8 @@ bun run build:frontend
 ```
 
 Open <http://127.0.0.1:3000/?paneA=Archboard>. Do not start voice with Talk.
-Narrate starts it. If nothing signed in to Codex and linked the workhorse yet,
-Narrate does that first.
+Narrate starts it. If the tab holds no conversation yet, Narrate first signs
+in to Codex as needed and starts the conversation of the tab.
 
 ## 2. Narrate
 

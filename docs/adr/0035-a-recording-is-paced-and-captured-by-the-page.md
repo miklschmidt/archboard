@@ -4,6 +4,12 @@ status: accepted
 
 # A recording is paced by the voice and captured by the page that plays it
 
+Amended by TASK-373 (2026-09-29): the recording page is a browser tab of its
+own, so it has its own tab session, coordinator and voice session. Voice in
+another tab no longer refuses a recording start, and a Talk in another tab no
+longer ends a recording. This replaces the last two sentences of "It records on
+the canvas the CLI talks to" below. Everything else stands.
+
 Agents in consumer repositories want to hand a user a video that explains an
 architecture, such as the change a pull request makes, narrated the way a
 walkthrough is narrated on the canvas, without the user sitting through it live

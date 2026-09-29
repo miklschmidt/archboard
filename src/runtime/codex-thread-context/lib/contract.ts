@@ -95,8 +95,8 @@ interface CodexThreadContextDeliveryOptions {
 	 * Used for one thing — skipping the news this session wrote itself — and it
 	 * is a thread rather than a surface or a turn. A thread that goes on being
 	 * the same thread is the same session, so a write that lands after the turn
-	 * that made it is still its own; a relink or a new session is a new thread
-	 * and a new author, which is the renewal the rule asks for.
+	 * that made it is still its own; a new conversation or a new session is a new
+	 * thread and a new author, which is the renewal the rule asks for.
 	 *
 	 * Both threads, because the pair is one session as far as a person talking
 	 * to it is concerned: neither is told about the other's writes. Empty for a
@@ -105,7 +105,7 @@ interface CodexThreadContextDeliveryOptions {
 	 * Asked at the moment of delivery rather than when the port was built. A
 	 * coordinator is created, restarted and retired inside one workhorse's life,
 	 * so a value sampled once would miss the pair it was meant to recognise —
-	 * and a relink makes a new workhorse thread under the same port.
+	 * and New conversation makes a new workhorse thread under the same port.
 	 */
 	readonly sessionAuthors?: () => readonly string[];
 	/** The feed identity is fixed for this delivery port; old feeds are stale. */
