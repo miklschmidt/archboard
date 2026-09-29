@@ -95,7 +95,7 @@ test("real process proves the exact realtime envelope, gates, transcript, and on
 				realtimeSessionId: start!["realtimeSessionId"],
 				transport: { type: "webrtc", sdp: "offer-sdp" },
 				version: "v3",
-				voice: "arbor",
+				voice: "cove",
 			});
 			// Only what a voice session adds for the coordinator: both bemTags channel headers, and
 			// neither its developer instructions again nor this start's data.
