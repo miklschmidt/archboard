@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 17,
+	"version": 19,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-09-29T00:19:12.834Z",
+	"updatedAt": "2026-09-29T00:36:17.909Z",
 	"views": [],
 	"variants": [
 		{
@@ -635,7 +635,7 @@
 		{
 			"id": "hmI4YrBL",
 			"name": "TASK-364",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "mbDAkbS0",
 			"summary": "Module level: reading, selection, camera, and navigation. Follow linked subjects for related levels.",
 			"content": {
@@ -1268,9 +1268,9 @@
 		{
 			"id": "qXLOZ2WR",
 			"name": "TASK-365",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "hmI4YrBL",
-			"summary": "A walkthrough step that names several cards also lights the lines between them",
+			"summary": "Module level: reading, selection, camera, and navigation. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
@@ -1899,13 +1899,19 @@
 			}
 		}
 	],
-	"current": "hmI4YrBL",
+	"current": "qXLOZ2WR",
 	"adoptions": [
 		{
 			"variant": "hmI4YrBL",
 			"from": "mbDAkbS0",
 			"at": "2026-09-28T23:19:08.448Z",
 			"reason": "A walkthrough step reads the ends of each relationship or step it names from the board, so the ends are lit and framed with it (TASK-364)"
+		},
+		{
+			"variant": "qXLOZ2WR",
+			"from": "hmI4YrBL",
+			"at": "2026-09-29T00:36:17.909Z",
+			"reason": "A walkthrough step also reads the lines between the cards it names from the board, so they are lit and framed with them (TASK-365)"
 		}
 	]
 }

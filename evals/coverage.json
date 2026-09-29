@@ -333,7 +333,7 @@
 					"expectedUse": "each allowed class",
 					"scenarios": ["S05", "S13"],
 					"evidence": "harness-check",
-					"owner": "walkthrough-beat-references subjectKinds [step]; fixture S13 references nodes; runtime tests for edge and flow subjects; src/ui/semantic-board-canvas/tests narrative (a relationship or step brings the parts at its ends)"
+					"owner": "walkthrough-beat-references subjectKinds [step]; fixture S13 references nodes; runtime tests for edge and flow subjects; src/ui/semantic-board-canvas/tests narrative (a relationship or step brings the parts at its ends, and several named cards bring the relationships between them)"
 				},
 				{
 					"path": "introductory beat with no subjects",
