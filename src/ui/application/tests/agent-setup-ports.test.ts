@@ -145,9 +145,15 @@ test("a thread-link step reports its own settlement, never another action's", ()
 		state: "succeeded",
 		revision: 2,
 		action: "create",
-		target: { paneId: "pane-a", intent: "retry_login" },
+		target: {
+			paneId: "pane-a",
+			childId: null,
+			epoch: null,
+			commandId: null,
+			capturedLinkState: null,
+			capturedLinkThreadId: null,
+		},
 		announcement: "Created.",
-		recovery: null,
 	};
 	const failed: ThreadLinkActionSnapshot = {
 		...succeeded,

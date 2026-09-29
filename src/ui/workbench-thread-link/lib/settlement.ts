@@ -1,69 +1,26 @@
-// How one thread-link command settles. A link command that did not settle
-// into a confirmed executable link for the exact thread it named is
-// inspect-only, and an unknown outcome stays unknown: neither is retried.
+// How one thread-link command settles. A create that did not settle into a
+// confirmed executable link is inspect-only, and an unknown outcome stays
+// unknown: neither is retried.
 
 import type {
 	ThreadLinkActionName,
 	ThreadLinkActionTarget,
-	ThreadLinkPaneCapture,
-	ThreadLinkRecovery,
 } from "@/ui/workbench-thread-link/contracts";
-import { threadLinkRecovery } from "@/ui/workbench-thread-link/lib/recovery";
-import type {
-	WorkbenchCommandResult,
-	WorkbenchTransportErrorCode,
-} from "@/ui/workbench-thread-link/transport-port";
+import type { WorkbenchCommandResult } from "@/ui/workbench-thread-link/transport-port";
 
-/** The commands that go to the wire. */
-type CommandAction = Exclude<ThreadLinkActionName, "recover" | "unlink">;
-
-/** How a command settled, before its recovery is attached. */
+/** How a command settled. */
 interface Settlement {
 	readonly state: "succeeded" | "inspect_only" | "failed";
 	readonly announcement: string;
 }
-
-const RETARGET_CODES: ReadonlySet<WorkbenchTransportErrorCode> = new Set([
-	"link_changed",
-	"link_required",
-	"lease_expired",
-	"lease_released",
-	"lease_transferred",
-	"lease_required",
-]);
-
-const LINK_ACTIONS: ReadonlySet<CommandAction> = new Set(["create", "attach", "relink"]);
 
 /**
  * An action name in words.
  * @param action The action.
  * @returns The words.
  */
-function words(action: CommandAction): string {
+function words(action: ThreadLinkActionName): string {
 	return action.replaceAll("_", " ");
-}
-
-/**
- * The recovery for a settled or failed command.
- * @param pane The pane the command ran against.
- * @param code The transport's code, or null.
- * @returns The recovery.
- */
-function recoveryFor(
-	pane: ThreadLinkPaneCapture,
-	code: WorkbenchTransportErrorCode | null,
-): ThreadLinkRecovery {
-	const capabilities = pane.transport.capabilities();
-	if (code !== null && RETARGET_CODES.has(code)) {
-		return threadLinkRecovery("refresh_inventory", capabilities, pane.serverRecoveryIntents);
-	}
-	if (code === "socket_unavailable" || code === "child_disconnected") {
-		return threadLinkRecovery("start_workbench", capabilities, pane.serverRecoveryIntents);
-	}
-	if (code === "incompatible_contract") {
-		return threadLinkRecovery("choose_binary", capabilities, pane.serverRecoveryIntents);
-	}
-	return threadLinkRecovery("refresh_snapshot", capabilities, pane.serverRecoveryIntents);
 }
 
 /**
@@ -93,29 +50,16 @@ function loginSettlement(result: WorkbenchCommandResult): Settlement {
 }
 
 /**
- * How a link command settled: only a confirmed executable link to the exact
- * thread it named is a success.
- * @param action The action.
+ * How a create settled: only a confirmed executable link is a success.
  * @param result The transport's result.
- * @param target The action's target.
  * @returns The settlement.
  */
-function linkSettlement(
-	action: CommandAction,
-	result: WorkbenchCommandResult,
-	target: ThreadLinkActionTarget,
-): Settlement {
+function createSettlement(result: WorkbenchCommandResult): Settlement {
 	const link = result.snapshot.threadLink;
 	if (link.state !== "executable") {
 		return {
 			state: "inspect_only",
-			announcement: `The ${action} completed without a confirmed executable link, so this pane stays inspect-only. ${link.reason ?? "The Archboard server named no reason."}`,
-		};
-	}
-	if (target.threadId !== null && link.threadId !== target.threadId) {
-		return {
-			state: "inspect_only",
-			announcement: `The ${action} settled on thread ${link.threadId}, which is not the thread it named. Inspect the current link before acting again.`,
+			announcement: `The create completed without a confirmed executable link, so this pane stays inspect-only. ${link.reason ?? "The Archboard server named no reason."}`,
 		};
 	}
 	return { state: "succeeded", announcement: "Agent connected." };
@@ -129,15 +73,15 @@ function linkSettlement(
  * @returns The settlement.
  */
 function deliveredSettlement(
-	action: CommandAction,
+	action: ThreadLinkActionName,
 	result: WorkbenchCommandResult,
 	target: ThreadLinkActionTarget,
 ): Settlement {
 	if (action === "login") {
 		return loginSettlement(result);
 	}
-	if (LINK_ACTIONS.has(action)) {
-		return linkSettlement(action, result, target);
+	if (action === "create") {
+		return createSettlement(result);
 	}
 	return {
 		state: "succeeded",
@@ -153,7 +97,7 @@ function deliveredSettlement(
  * @returns The settlement.
  */
 function classify(
-	action: CommandAction,
+	action: ThreadLinkActionName,
 	result: WorkbenchCommandResult,
 	target: ThreadLinkActionTarget,
 ): Settlement {
@@ -174,4 +118,4 @@ function classify(
 	return deliveredSettlement(action, result, target);
 }
 
-export { classify, recoveryFor, words, type CommandAction, type Settlement };
+export { classify, words, type Settlement };

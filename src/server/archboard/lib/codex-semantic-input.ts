@@ -365,13 +365,12 @@ function childIdentity(view: GraphView): LinkedIdentities["child"] {
 /**
  * The thread this pane's context is about: the one its executable link names.
  *
- * The link is the source of truth for what a pane is bound to, and a relink
- * moves it. The graph's workhorse snapshot answers a different question — which
- * thread started the child this generation runs — and the two part company the
- * moment a pane is relinked to a thread that already existed: the child's owner
- * stays as it was, the link moves, and a context that reported the owner named a
- * thread this delivery is not for. Every event then failed to prove its target
- * and was refused as unattributable, for as long as the relink stood.
+ * The link is the source of truth for what a pane is bound to, and a new
+ * conversation moves it. The graph's workhorse snapshot answers a different
+ * question — which thread started the child this generation runs — and the
+ * moment the two part company, a context that reported the owner names a thread
+ * this delivery is not for. Every event then fails to prove its target and is
+ * refused as unattributable.
  *
  * The child and the epoch are reported separately, from the graph, and the
  * delivery's own capability check is what proves them. This is identity, not

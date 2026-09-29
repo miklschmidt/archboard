@@ -163,13 +163,6 @@ function snapshotIn(target: FixtureWorld, overrides: SnapshotOverrides): Browser
 		account: { kind: "account", state: "ready", accountType: "chatgpt" },
 		login: { kind: "login", state: "idle" },
 		threadLink: overrides.threadLink ?? executableLink(target, "workhorse-a"),
-		threadCandidates: {
-			kind: "thread_candidates",
-			state: "unknown",
-			records: [],
-			truncated: false,
-			reason: null,
-		},
 		timeline: null,
 		queue: { kind: "queue", status: "empty", entries: [] },
 		settings: [],

@@ -51,7 +51,6 @@ function createGatewayBinding(
 			budget,
 			state: owners.browserState,
 			leaseLedger: server.browserLeaseLedger,
-			checkoutRoot: server.checkoutRoot,
 			/**
 			 * What the owned Codex process reports, which browser readiness is
 			 * partly derived from.

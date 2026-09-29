@@ -224,13 +224,6 @@ function snapshot(seed: SnapshotSeed = {}): BrowserSnapshot {
 		account: { kind: "account", state: "ready", accountType: "chatgpt" },
 		login: { kind: "login", state: "idle" },
 		threadLink: executableLink(),
-		threadCandidates: {
-			kind: "thread_candidates",
-			state: "unknown",
-			records: [],
-			truncated: false,
-			reason: null,
-		},
 		timeline: timeline(),
 		queue: queue("empty"),
 		settings: [],

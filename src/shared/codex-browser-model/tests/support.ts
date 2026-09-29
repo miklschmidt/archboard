@@ -207,13 +207,6 @@ export function createFixtureIds(): {
 		account,
 		login,
 		threadLink,
-		threadCandidates: {
-			kind: "thread_candidates",
-			state: "unknown",
-			records: [],
-			truncated: false,
-			reason: null,
-		},
 		timeline,
 		queue,
 		settings: [settings],

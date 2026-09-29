@@ -12,7 +12,6 @@ const SNAPSHOT_KEYS: readonly BrowserSnapshotKey[] = [
 	"account",
 	"login",
 	"threadLink",
-	"threadCandidates",
 	"timeline",
 	"queue",
 	"settings",

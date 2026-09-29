@@ -1,11 +1,11 @@
-// Which target a coordinator callback is correlated against, after a relink.
+// Which target a coordinator callback is correlated against, when the bound
+// thread is not the one that started this child.
 //
-// A pane relinked from thread A to an existing thread B moves the thread-context
-// binding and leaves the workhorse snapshot naming A — it is still the thread
-// that started this child. Every settled event then names B, and a coordinator
-// correlating against A rejected both halves of the rule at once: B's own
-// writes were not recognised as its own, and everybody else's failed the link
-// match as a stale link.
+// A thread-context binding on thread B while the workhorse snapshot names A —
+// the thread that started this child — is the case this owner holds. Every
+// settled event then names B, and a coordinator correlating against A rejects
+// both halves of the rule at once: B's own writes are not recognised as its
+// own, and everybody else's fail the link match as a stale link.
 //
 // The subtler half is that a target cannot be assembled from both. A thread and
 // the operation that bound it are proved together by the epoch authority, so
@@ -58,7 +58,7 @@ function epochAuthority() {
 
 /**
  * A graph whose workhorse started the child on one thread, and whose delivery is
- * bound to another — what a relink to an existing thread leaves behind.
+ * bound to another.
  * @param bound The thread the pane is bound to now, or null for no binding.
  * @returns The `created` components stand-in.
  */

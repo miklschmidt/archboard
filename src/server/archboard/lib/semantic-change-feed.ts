@@ -67,7 +67,7 @@ type SettledAnnouncement = {
 	 * with it — one identity that outlives a turn, because a write that lands
 	 * after the turn that made it is still that session's own — and it is
 	 * renewed when the session itself is: a new thread, a new child epoch, a
-	 * relink. What it is for is one thing only: a session skipping the news it
+	 * new conversation. What it is for is one thing only: a session skipping the news it
 	 * wrote itself. Everything else about who wrote what is custody's business.
 	 *
 	 * Null is the ordinary case for a person's terminal and for anything outside

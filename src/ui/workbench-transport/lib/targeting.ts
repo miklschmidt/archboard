@@ -24,15 +24,10 @@ const ACCOUNT_COMMANDS: ReadonlySet<BrowserCommandName> = new Set([
 	"accountLogout",
 ]);
 /**
- * Every command that chooses or discovers a pane's link. None needs an
- * executable link, because choosing one is exactly what a pane without one does.
+ * Every command that makes a pane's link. None needs an executable link,
+ * because making one is exactly what a pane without one does.
  */
-const THREAD_LINK_COMMANDS: ReadonlySet<BrowserCommandName> = new Set([
-	"threadLinkCreate",
-	"threadLinkRefresh",
-	"threadLinkAttach",
-	"threadLinkRelink",
-]);
+const THREAD_LINK_COMMANDS: ReadonlySet<BrowserCommandName> = new Set(["threadLinkCreate"]);
 /** These callers already hold authority bound to a request or realtime session. */
 const EXACT_AUTHORITY_COMMANDS: ReadonlySet<BrowserCommandName> = new Set([
 	"dynamicApprovalRespond",

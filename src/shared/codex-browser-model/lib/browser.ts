@@ -12,7 +12,6 @@ import { createBrowserSessionSchemas } from "@/shared/codex-browser-model/lib/br
 import { createBrowserThreadSchemas } from "@/shared/codex-browser-model/lib/browser-thread";
 import {
 	BROWSER_PERMISSION_FILE_ACCESS,
-	BROWSER_THREAD_CANDIDATE_LIMIT,
 	BROWSER_TIMELINE_LIMITS,
 	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,
 	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,
@@ -137,7 +136,6 @@ function createBrowserSchemas(identity: IdentitySchemas, context: IdentityContex
 			account: session.BrowserAccountSchema,
 			login: session.BrowserLoginSchema,
 			threadLink: thread.BrowserThreadLinkSchema,
-			threadCandidates: thread.BrowserThreadCandidatesSchema,
 			timeline: thread.BrowserTimelineSchema.nullable(),
 			queue: thread.BrowserQueueSchema,
 			settings: z.array(session.BrowserSettingsSchema),
@@ -167,7 +165,6 @@ function createBrowserSchemas(identity: IdentitySchemas, context: IdentityContex
 		session.BrowserAccountSchema,
 		session.BrowserLoginSchema,
 		thread.BrowserThreadLinkSchema,
-		thread.BrowserThreadCandidatesSchema,
 		thread.BrowserTimelineSchema,
 		thread.BrowserQueueSchema,
 		session.BrowserSettingsSchema,
@@ -184,8 +181,6 @@ function createBrowserSchemas(identity: IdentitySchemas, context: IdentityContex
 
 	return {
 		BrowserReadinessSchema: session.BrowserReadinessSchema,
-		BrowserThreadCandidateSchema: thread.BrowserThreadCandidateSchema,
-		BrowserThreadCandidatesSchema: thread.BrowserThreadCandidatesSchema,
 		BrowserAccountSchema: session.BrowserAccountSchema,
 		BrowserLoginSchema: session.BrowserLoginSchema,
 		BrowserThreadLinkSourcePresentationSchema: thread.BrowserThreadLinkSourcePresentationSchema,
@@ -217,8 +212,6 @@ type BrowserThreadLinkSourcePresentation = z.infer<
 	BrowserSchemas["BrowserThreadLinkSourcePresentationSchema"]
 >;
 type BrowserThreadLink = z.infer<BrowserSchemas["BrowserThreadLinkSchema"]>;
-type BrowserThreadCandidate = z.infer<BrowserSchemas["BrowserThreadCandidateSchema"]>;
-type BrowserThreadCandidates = z.infer<BrowserSchemas["BrowserThreadCandidatesSchema"]>;
 type BrowserTimeline = z.infer<BrowserSchemas["BrowserTimelineSchema"]>;
 type BrowserQueue = z.infer<BrowserSchemas["BrowserQueueSchema"]>;
 type BrowserSettings = z.infer<BrowserSchemas["BrowserSettingsSchema"]>;
@@ -245,7 +238,6 @@ type DeliveryOutcome = z.infer<typeof DeliveryOutcomeSchema>;
 
 export {
 	DeliveryOutcomeSchema,
-	BROWSER_THREAD_CANDIDATE_LIMIT,
 	BROWSER_TIMELINE_LIMITS,
 	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,
 	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,
@@ -260,8 +252,6 @@ export {
 	type BrowserLogin,
 	type BrowserThreadLinkSourcePresentation,
 	type BrowserThreadLink,
-	type BrowserThreadCandidate,
-	type BrowserThreadCandidates,
 	type BrowserTimeline,
 	type BrowserQueue,
 	type BrowserSettings,

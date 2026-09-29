@@ -10,7 +10,6 @@ function exhaustiveBrowserDto(dto: BrowserDto): string {
 		case "account":
 		case "login":
 		case "thread_link":
-		case "thread_candidates":
 		case "timeline":
 		case "queue":
 		case "settings":
@@ -81,7 +80,6 @@ type _BrowserDtoIsClosed = Assert<
 		| "account"
 		| "login"
 		| "thread_link"
-		| "thread_candidates"
 		| "timeline"
 		| "queue"
 		| "settings"

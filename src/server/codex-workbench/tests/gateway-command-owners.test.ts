@@ -43,10 +43,7 @@ describe("Codex workbench browser command owners", () => {
 		const value = harness();
 		const connection = value.gateway.connect(value.browserId, value.paneId);
 		const factories: readonly CommandFactory[] = [
-			(lease) => threadLinkCommand(value, lease, "threadLinkCreate"),
-			(lease) => threadLinkCommand(value, lease, "threadLinkRefresh"),
-			(lease) => threadLinkCommand(value, lease, "threadLinkAttach"),
-			(lease) => threadLinkCommand(value, lease, "threadLinkRelink"),
+			(lease) => threadLinkCommand(value, lease),
 			(lease) => startCommand(value, lease),
 			(lease) => steerCommand(value, lease),
 			(lease) => interruptCommand(value, lease),
@@ -64,9 +61,6 @@ describe("Codex workbench browser command owners", () => {
 		}
 		expect(value.calls).toEqual([
 			"threadLink.create",
-			"threadLink.refresh",
-			"threadLink.attach",
-			"threadLink.relink",
 			"text.start",
 			"text.steer",
 			"text.interrupt",

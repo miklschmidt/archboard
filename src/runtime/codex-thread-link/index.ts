@@ -1,9 +1,5 @@
 import { createCodexThreadLinkBindingController } from "@/runtime/codex-thread-link/lib/binding";
-import {
-	createCodexThreadLinkClassifier,
-	discoverCodexThreadLinkCandidates,
-} from "@/runtime/codex-thread-link/lib/classifier";
-import { CodexThreadLinkConflictError } from "@/runtime/codex-thread-link/lib/contract";
+import { createCodexThreadLinkClassifier } from "@/runtime/codex-thread-link/lib/classifier";
 import type {
 	CodexThreadLinkClassifierOptions,
 	CodexThreadLinkPort,
@@ -41,9 +37,6 @@ export type {
 	ThreadLinkBindingSnapshot,
 	ThreadLinkCasToken,
 	ThreadLinkClassification,
-	ThreadLinkCandidate,
-	ThreadLinkCandidateDiscovery,
-	ThreadLinkCandidateSource,
 	ThreadLinkClassificationErrorCode,
 	ThreadLinkCompareAndSwapInput,
 	ThreadLinkCurrentEpoch,
@@ -67,8 +60,6 @@ export interface CodexThreadLinkOptions extends Omit<CodexThreadLinkClassifierOp
 	readonly epoch: ThreadLinkEpochAuthority;
 }
 
-type CandidateTargets = Awaited<ReturnType<typeof discoverCodexThreadLinkCandidates>>["targets"];
-
 /**
  * Combines deterministic classification with a proof-checked pane binding boundary, so a pane
  * only ever adopts a link that was classified against the live authorities a moment earlier.
@@ -78,8 +69,6 @@ type CandidateTargets = Awaited<ReturnType<typeof discoverCodexThreadLinkCandida
 export function createCodexThreadLink(options: CodexThreadLinkOptions): CodexThreadLinkPort {
 	const classifier = createCodexThreadLinkClassifier(options);
 	const binding = createCodexThreadLinkBindingController(options);
-	let discoveryGeneration = 0;
-	let candidateTargets: CandidateTargets = new Map();
 
 	/**
 	 * Classifies twice through the live authorities, then adopts the second result by CAS.
@@ -99,57 +88,8 @@ export function createCodexThreadLink(options: CodexThreadLinkOptions): CodexThr
 		const fresh = await classifier.classify(target);
 		return binding.commitClassified(paneId, expected, fresh);
 	};
-	/**
-	 * Publishes a candidate listing and retains its targets, discarding a listing that a newer
-	 * discovery has already replaced.
-	 * @returns The candidates a browser may offer for explicit binding.
-	 */
-	const discoverCandidates: CodexThreadLinkPort["discoverCandidates"] = async () => {
-		const generation = ++discoveryGeneration;
-		candidateTargets = new Map();
-		const inventory = await discoverCodexThreadLinkCandidates(options);
-		if (generation !== discoveryGeneration) {
-			throw new CodexThreadLinkConflictError(
-				"A newer thread-candidate discovery replaced this result; refresh the candidate list.",
-			);
-		}
-		candidateTargets = new Map(inventory.targets);
-		return inventory.result;
-	};
-	/**
-	 * Resolves one opaque candidate exactly once, then adopts it through fresh classification.
-	 * @param paneId The pane.
-	 * @param expected The pane's CAS token, or null for a first binding.
-	 * @param selectionId The candidate the browser chose.
-	 * @returns The new binding snapshot.
-	 */
-	const bindCandidate: CodexThreadLinkPort["bindCandidate"] = async (
-		paneId,
-		expected,
-		selectionId,
-	) => {
-		const retained = candidateTargets.get(selectionId);
-		if (typeof selectionId !== "string" || selectionId.length === 0 || retained === undefined) {
-			throw new CodexThreadLinkConflictError(
-				"The thread-candidate selection is unknown, stale, or already used; refresh the candidate list.",
-			);
-		}
-		candidateTargets.delete(selectionId);
-		const current = options.epoch.snapshot().cas;
-		if (
-			current.revision !== retained.epochRevision ||
-			current.bytesHash !== retained.epochBytesHash
-		) {
-			throw new CodexThreadLinkConflictError(
-				"The thread-candidate selection is unknown, stale, or already used; refresh the candidate list.",
-			);
-		}
-		return classifyAndBind(paneId, expected, retained.target);
-	};
 	return Object.freeze({
 		classify: classifier.classify,
-		discoverCandidates,
-		bindCandidate,
 		snapshot: binding.snapshot,
 		read: binding.read,
 		compareAndSwap: binding.compareAndSwap,

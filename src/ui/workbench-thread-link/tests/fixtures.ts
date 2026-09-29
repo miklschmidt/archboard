@@ -14,24 +14,17 @@ import { createIdentityAuthorities } from "@/shared/codex-workbench-identity";
 import type { ThreadId } from "@/shared/codex-workbench-identity";
 import {
 	THREAD_LINK_MODULE_COMMANDS,
-	type ThreadLinkInventory,
-	type ThreadLinkServerRecovery,
-	type ThreadLinkInventoryRecord,
 	type ThreadLinkPaneCapture,
-	type ThreadLinkRecoveryIntent,
-	type ThreadLinkRecoveryTarget,
 } from "@/ui/workbench-thread-link/contracts";
 import type {
 	ThreadLinkCommandDraft,
 	ThreadLinkTransportPort,
-	WorkbenchAccountReadResult,
 	WorkbenchCommandIntent,
 	WorkbenchCommandName,
 	WorkbenchCommandResult,
 	WorkbenchCommandTarget,
 	WorkbenchTransportCapabilities,
 	WorkbenchTransportErrorCode,
-	WorkbenchTransportState,
 } from "@/ui/workbench-thread-link/transport-port";
 
 const authorities = createIdentityAuthorities();
@@ -101,33 +94,6 @@ function inspectOnlyLink(reason: string, threadId: ThreadId = threadA): BrowserT
 	};
 }
 
-const unknownCandidates: ThreadLinkInventory = {
-	kind: "thread_candidates",
-	state: "unknown",
-	records: [],
-	truncated: false,
-	reason: null,
-};
-
-/**
- * One listed inventory arm, exactly as the workbench snapshot publishes it.
- * @param records The records.
- * @param truncated Whether the server published only the first page.
- * @returns The inventory.
- */
-function listed(
-	records: readonly ThreadLinkInventoryRecord[],
-	truncated = false,
-): ThreadLinkInventory {
-	return {
-		kind: "thread_candidates",
-		state: "listed",
-		records: [...records],
-		truncated,
-		reason: null,
-	};
-}
-
 /**
  * One published snapshot, unbound by default.
  * @param overrides Fields that differ.
@@ -141,7 +107,6 @@ function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnapshot {
 		account: { kind: "account", state: "ready", accountType: "chatgpt" },
 		login: { kind: "login", state: "idle" },
 		threadLink: unboundLink,
-		threadCandidates: unknownCandidates,
 		timeline: null,
 		queue: { kind: "queue", status: "empty", entries: [] },
 		settings: [],
@@ -175,25 +140,22 @@ function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnapshot {
 	};
 }
 
+/** What the double reads of the pane it stands in for: the snapshot it last published. */
+interface FakeTransportState {
+	readonly snapshot: BrowserSnapshot | null;
+}
+
 /**
- * A connected transport state carrying the snapshot's own readiness.
+ * A connected transport state carrying one snapshot.
  * @param value The snapshot.
  * @returns The state.
  */
-function connected(value: BrowserSnapshot = snapshot()): WorkbenchTransportState {
-	return {
-		kind: "readiness",
-		state: value.readiness.state,
-		connection: "connected",
-		snapshot: value,
-		sequence: 1,
-	};
+function connected(value: BrowserSnapshot = snapshot()): FakeTransportState {
+	return { snapshot: value };
 }
 
 /** What the capabilities fixture may override. */
 interface CapabilitiesSeed {
-	readonly connected?: boolean;
-	readonly canReadAccount?: boolean;
 	/** The commands the transport accepts; every module command by default. */
 	readonly supported?: readonly WorkbenchCommandName[];
 }
@@ -206,8 +168,6 @@ interface CapabilitiesSeed {
 function capabilities(seed: CapabilitiesSeed = {}): WorkbenchTransportCapabilities {
 	const supported = new Set<WorkbenchCommandName>(seed.supported ?? THREAD_LINK_MODULE_COMMANDS);
 	return Object.freeze({
-		connected: seed.connected ?? true,
-		canReadAccount: seed.canReadAccount ?? true,
 		/**
 		 * Whether the server accepts a command.
 		 * @param command The command.
@@ -215,26 +175,6 @@ function capabilities(seed: CapabilitiesSeed = {}): WorkbenchTransportCapabiliti
 		 */
 		supportsCommand: (command: WorkbenchCommandName) => supported.has(command),
 	});
-}
-
-/**
- * One candidate record.
- * @param overrides Fields that differ from an executable, loaded, idle record.
- * @returns The record.
- */
-function record(overrides: Partial<ThreadLinkInventoryRecord> = {}): ThreadLinkInventoryRecord {
-	return {
-		kind: "thread_candidate",
-		selectionId: "selection-a",
-		threadId: threadA,
-		state: "executable",
-		reason: null,
-		sourcePresentation: "standard",
-		status: "idle",
-		loaded: true,
-		canAcceptDirectInput: true,
-		...overrides,
-	};
 }
 
 /** One recorded command. */
@@ -269,8 +209,6 @@ class FakeTransportError extends Error {
 /** A transport double that enforces the captured target the way the real one does. */
 class FakeTransport implements ThreadLinkTransportPort {
 	readonly commands: RecordedCommand[] = [];
-	refreshes = 0;
-	accountReads = 0;
 	leased = true;
 	epoch = epochA;
 	readonly paneId = "pane-a";
@@ -280,39 +218,22 @@ class FakeTransport implements ThreadLinkTransportPort {
 	beforeCommand: (() => void) | null = null;
 	/** Held until the test resolves it, so two commands can overlap. */
 	gate: Promise<void> | null = null;
-	private current: WorkbenchTransportState;
-	private caps: WorkbenchTransportCapabilities;
-	private readonly listeners = new Set<() => void>();
+	private readonly current: FakeTransportState;
+	private readonly caps: WorkbenchTransportCapabilities;
 
 	/**
 	 * One double.
 	 * @param state The initial state.
 	 * @param caps The initial capabilities.
 	 */
-	constructor(state: WorkbenchTransportState = connected(), caps = capabilities()) {
+	constructor(state: FakeTransportState = connected(), caps = capabilities()) {
 		this.current = state;
 		this.caps = caps;
 		// The real transport is a closure object, so callers may pass its members
 		// around unbound. Bind here so the double behaves the same way.
-		this.state = this.state.bind(this);
 		this.capabilities = this.capabilities.bind(this);
 		this.captureCommandIntent = this.captureCommandIntent.bind(this);
 		this.executeCommand = this.executeCommand.bind(this);
-		this.refresh = this.refresh.bind(this);
-		this.accountRead = this.accountRead.bind(this);
-	}
-
-	/**
-	 * Publish a new authoritative state the way the transport would.
-	 * @param state The state.
-	 * @param caps New capabilities, when they change.
-	 */
-	publish(state: WorkbenchTransportState, caps: WorkbenchTransportCapabilities = this.caps): void {
-		this.current = state;
-		this.caps = caps;
-		for (const listener of this.listeners) {
-			listener();
-		}
 	}
 
 	/**
@@ -434,105 +355,24 @@ class FakeTransport implements ThreadLinkTransportPort {
 	capabilities(): WorkbenchTransportCapabilities {
 		return this.caps;
 	}
-
-	/**
-	 * The current state.
-	 * @returns The state.
-	 */
-	state(): WorkbenchTransportState {
-		return this.current;
-	}
-
-	/**
-	 * The current snapshot.
-	 * @returns The snapshot, or null.
-	 */
-	snapshot(): BrowserSnapshot | null {
-		return this.current.snapshot;
-	}
-
-	/**
-	 * Follow the double.
-	 * @param listener Notified on publish.
-	 * @returns Release the subscription.
-	 */
-	subscribe(listener: () => void): () => void {
-		this.listeners.add(listener);
-		return () => {
-			this.listeners.delete(listener);
-		};
-	}
-
-	/**
-	 * Re-read the snapshot.
-	 * @returns A snapshot message.
-	 */
-	async refresh(): Promise<unknown> {
-		this.refreshes += 1;
-		return { kind: "snapshot", sequence: 1, snapshot: this.current.snapshot ?? snapshot() };
-	}
-
-	/**
-	 * Re-read the account.
-	 * @returns A delivered read.
-	 */
-	async accountRead(): Promise<WorkbenchAccountReadResult> {
-		this.accountReads += 1;
-		return {
-			kind: "account_read",
-			outcome: "delivered",
-			code: null,
-			message: null,
-			snapshot: this.current.snapshot ?? snapshot(),
-		};
-	}
 }
 
 /**
  * The pane one action is captured against.
  * @param transport The double.
- * @param serverRecoveryIntents The server intents this pane has an owner for.
  * @returns The capture.
  */
-function pane(
-	transport: FakeTransport,
-	serverRecoveryIntents: readonly ThreadLinkRecoveryIntent[] = [],
-): ThreadLinkPaneCapture {
-	return { paneId: transport.paneId, transport, serverRecoveryIntents };
+function pane(transport: FakeTransport): ThreadLinkPaneCapture {
+	return { paneId: transport.paneId, transport };
 }
 
 /**
  * A pane capture over one double, read once per action.
  * @param transport The double.
- * @param serverRecoveryIntents The server intents this pane has an owner for.
  * @returns The capture function.
  */
-function capturing(
-	transport: FakeTransport,
-	serverRecoveryIntents: readonly ThreadLinkRecoveryIntent[] = [],
-): () => ThreadLinkPaneCapture {
-	return () => pane(transport, serverRecoveryIntents);
-}
-
-/**
- * A server recovery owner for one pane.
- * @param paneId The pane the owner answers for.
- * @param recover What the owner runs.
- * @returns The capture function.
- */
-function serverOwner(
-	paneId: string,
-	recover: (target: ThreadLinkRecoveryTarget) => Promise<void>,
-): (target: ThreadLinkRecoveryTarget) => ThreadLinkServerRecovery {
-	return (target) => ({
-		paneId,
-		intent: target.intent,
-		/**
-		 * Run the owner's recovery for this target.
-		 * @returns When it completes.
-		 */
-		recover: () => recover(target),
-	});
+function capturing(transport: FakeTransport): () => ThreadLinkPaneCapture {
+	return () => pane(transport);
 }
 
 export {
@@ -540,7 +380,6 @@ export {
 	FakeTransportError,
 	capabilities,
 	capturing,
-	serverOwner,
 	childA,
 	commandA,
 	connected,
@@ -548,16 +387,13 @@ export {
 	epochB,
 	executableLink,
 	inspectOnlyLink,
-	listed,
 	loginA,
 	loginB,
 	pane,
-	record,
 	snapshot,
 	threadA,
 	threadB,
 	threadC,
 	unboundLink,
-	unknownCandidates,
 	type RecordedCommand,
 };

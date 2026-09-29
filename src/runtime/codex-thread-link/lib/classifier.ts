@@ -8,13 +8,10 @@ import {
 	type CodexThreadLinkClassifier,
 	type CodexThreadLinkClassifierOptions,
 	type ThreadLinkClassification,
-	type ThreadLinkCandidateDiscovery,
 	type ThreadLinkCurrentEpoch,
 	type ThreadLinkEpochAuthority,
 	type ThreadLinkTarget,
 } from "@/runtime/codex-thread-link/lib/contract";
-import { discoverCodexThreadLinkCandidates as discoverCandidateInventory } from "@/runtime/codex-thread-link/lib/candidate-discovery";
-import type { ThreadLinkCandidateInventory } from "@/runtime/codex-thread-link/lib/candidate-discovery";
 import { durableEvidence } from "@/runtime/codex-thread-link/lib/durable-evidence";
 import {
 	classifyReason,
@@ -324,7 +321,7 @@ function classifyFromExhausted(
 	loaded: readonly ThreadId[],
 	started: ThreadLinkCurrentEpoch | null,
 	ended: ThreadLinkCurrentEpoch | null,
-	ownedRoot: SessionThread | null = null,
+	ownedRoot: SessionThread | null,
 ): ThreadLinkClassification {
 	validateTarget(target);
 	const evidence = durableEvidence(options, target);
@@ -391,17 +388,6 @@ function createCodexThreadLinkClassifier(
 }
 
 /**
- * Publishes one complete candidate listing owned by a single durable epoch generation.
- * @param options The classifier options, whose epoch authority owns the generation.
- * @returns The listing with the private targets its selection ids resolve to.
- */
-async function discoverCodexThreadLinkCandidates(
-	options: CodexThreadLinkClassifierOptions & { readonly epoch: ThreadLinkEpochAuthority },
-): Promise<ThreadLinkCandidateInventory> {
-	return discoverCandidateInventory(options, classifyFromExhausted);
-}
-
-/**
  * Classifies one target through a one-shot classifier.
  * @param options The session and the epoch source or store.
  * @param target The target.
@@ -420,7 +406,5 @@ export {
 	isThreadLinkStatus,
 	isExecutableThreadLinkStatus,
 	createCodexThreadLinkClassifier,
-	discoverCodexThreadLinkCandidates,
 	classifyCodexThreadLink,
 };
-export type { ThreadLinkCandidateDiscovery };

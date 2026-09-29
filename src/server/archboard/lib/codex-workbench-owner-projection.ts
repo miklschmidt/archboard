@@ -36,7 +36,6 @@ interface ServerOwnerProjectionInput {
 	readonly components: ProjectionComponents;
 	readonly dynamicApprovals: ServerDynamicApprovalOwner;
 	readonly state: ServerBrowserBindingState;
-	readonly candidates: { readonly read: () => BrowserOwnerProjection["threadCandidates"] };
 	readonly timeline: ServerTimelineOwner;
 	/** The live owned-process facts behind every child-lifecycle readiness arm. */
 	readonly process: () => ServerReadinessProcessFacts;
@@ -237,7 +236,6 @@ function readBrowserOwnerProjection(
 		readiness,
 		account: state.account,
 		login: state.login,
-		threadCandidates: input.candidates.read(),
 		timeline: input.timeline.read(
 			context.paneId,
 			context.binding.revision,

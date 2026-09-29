@@ -34,7 +34,7 @@ import type {
 	SessionThreadItem,
 	SessionTurn,
 } from "@/runtime/codex-session";
-import type { ThreadLinkCandidate, ThreadLinkSnapshot } from "@/runtime/codex-thread-link";
+import type { ThreadLinkSnapshot } from "@/runtime/codex-thread-link";
 import type { RealtimeTranscriptRecord } from "@/shared/codex-realtime-contract";
 import type { SpokenApprovalSnapshot } from "@/runtime/codex-spoken-approval";
 
@@ -252,24 +252,6 @@ interface CodexTimelineProjectionInput extends Readonly<Record<string, unknown>>
 	readonly usage: CodexTimelineUsageInput | null;
 }
 
-/**
- * The server's own candidate inventory, handed over exactly as the thread-link
- * classifier published it. The gateway maps it to the browser vocabulary and
- * bounds it; it never reclassifies a record or joins the lists a second time.
- */
-type CodexThreadCandidatesProjectionInput =
-	| { readonly kind: "codex_thread_candidates"; readonly state: "unknown" }
-	| {
-			readonly kind: "codex_thread_candidates";
-			readonly state: "listed";
-			readonly candidates: readonly ThreadLinkCandidate[];
-	  }
-	| {
-			readonly kind: "codex_thread_candidates";
-			readonly state: "unavailable";
-			readonly reason: string;
-	  };
-
 interface CodexSemanticProjectionInput {
 	readonly kind: "codex_semantic";
 	readonly outcome: {
@@ -335,7 +317,6 @@ interface BrowserProjectionInput {
 	readonly account: BrowserAccountProjectionInput;
 	readonly login: BrowserLogin;
 	readonly threadLink: ThreadLinkSnapshot;
-	readonly threadCandidates: CodexThreadCandidatesProjectionInput;
 	readonly timeline: CodexTimelineProjectionInput | null;
 	readonly queue: CodexQueueProjectionInput;
 	readonly settings: readonly CodexSettingsProjectionInput[];
@@ -372,7 +353,6 @@ export {
 	type CodexTimelineUsageInput,
 	type CodexTimelineFileChangeEntry,
 	type CodexTimelineProjectionInput,
-	type CodexThreadCandidatesProjectionInput,
 	type CodexSemanticProjectionInput,
 	type CodexCoordinatorProjectionInput,
 	type CodexVoiceProjectionInput,

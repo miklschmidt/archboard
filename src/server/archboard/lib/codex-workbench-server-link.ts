@@ -57,7 +57,7 @@ function toServerLink(expected: ThreadLinkCasToken | null): ThreadLinkCasToken |
 /**
  * One thread link per server, whichever pane asks (TASK-302.06).
  *
- * Every pane reads, creates, relinks and clears the same entry, so a command
+ * Every pane reads, creates and clears the same entry, so a command
  * sent over any pane's transport targets the one conversation, and a change
  * made from one pane is the change every other pane sees. Each snapshot is
  * labelled with the pane that asked for it: `binding.paneId` means "the pane
@@ -81,7 +81,6 @@ function createServerThreadLink(port: CodexThreadLinkPort): CodexThreadLinkPort 
 	};
 	return Object.freeze({
 		classify: port.classify,
-		discoverCandidates: port.discoverCandidates,
 		snapshot: read,
 		read,
 		/**
@@ -121,20 +120,6 @@ function createServerThreadLink(port: CodexThreadLinkPort): CodexThreadLinkPort 
 			requirePaneId(paneId);
 			return forPane(
 				await port.classifyAndBind(SERVER_LINK_KEY, toServerLink(expected), target),
-				paneId,
-			);
-		},
-		/**
-		 * Adopt one discovered candidate as the server's thread link.
-		 * @param paneId The pane that asked.
-		 * @param expected Its expectation.
-		 * @param selectionId The candidate.
-		 * @returns The new snapshot, labelled for that pane.
-		 */
-		bindCandidate: async (paneId, expected, selectionId) => {
-			requirePaneId(paneId);
-			return forPane(
-				await port.bindCandidate(SERVER_LINK_KEY, toServerLink(expected), selectionId),
 				paneId,
 			);
 		},
