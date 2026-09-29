@@ -9,6 +9,10 @@ import type { TransportServerNotification } from "../../../runtime/codex-transpo
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "../../../runtime/codex-thread-tools/index.js";
 import { createCodexWaitGraph } from "../../../runtime/codex-wait-graph/index.js";
 import { createServerDynamicApprovalOwner } from "../codex-workbench-adapters.js";
+import { parseTabSessionId } from "../../codex-workbench/index.js";
+
+/** The tab session every dynamic caller here belongs to. */
+const TAB_SESSION = parseTabSessionId("tab-one")!;
 import { identities, waitOwnerFor, waitProbe } from "./support/codex-workbench-terminal-fixture.js";
 
 function terminalItem(threadId: string, turnId: string, callId: string) {
@@ -107,12 +111,15 @@ describe("Codex terminal notification correlation", () => {
 			identity: h.identity,
 			now: () => 10,
 			bindingForCaller: () => ({
-				commandId: h.identity.identity.issuer.mintBrowserCommandId(),
-				paneId: "pane-current",
-				capturedLink: {
-					threadId: h.thread,
-					childId: h.identity.identity.validator.childId,
-					epoch: h.identity.identity.validator.epoch,
+				tabSessionId: TAB_SESSION,
+				binding: {
+					commandId: h.identity.identity.issuer.mintBrowserCommandId(),
+					paneId: "pane-current",
+					capturedLink: {
+						threadId: h.thread,
+						childId: h.identity.identity.validator.childId,
+						epoch: h.identity.identity.validator.epoch,
+					},
 				},
 			}),
 		});
@@ -160,7 +167,7 @@ describe("Codex terminal notification correlation", () => {
 		for (const mismatch of mismatches) {
 			owner.onNotification(mismatch);
 			await Promise.resolve();
-			expect(owner.pending()).toHaveLength(1);
+			expect(owner.pending(TAB_SESSION)).toHaveLength(1);
 			expect(settlements).toBe(0);
 		}
 
@@ -171,11 +178,11 @@ describe("Codex terminal notification correlation", () => {
 		);
 		owner.onNotification(exact);
 		await Promise.resolve();
-		expect(owner.pending()).toHaveLength(0);
+		expect(owner.pending(TAB_SESSION)).toHaveLength(0);
 		expect({ settlements, cause }).toEqual({ settlements: 1, cause: "call_cancelled" });
 		owner.onNotification(exact);
 		await Promise.resolve();
-		expect({ settlements, pending: owner.pending() }).toEqual({
+		expect({ settlements, pending: owner.pending(TAB_SESSION) }).toEqual({
 			settlements: 1,
 			pending: [],
 		});
@@ -301,12 +308,15 @@ describe("Codex terminal notification correlation", () => {
 			identity: h.identity,
 			now: () => 10,
 			bindingForCaller: () => ({
-				commandId: h.identity.identity.issuer.mintBrowserCommandId(),
-				paneId: "pane-current",
-				capturedLink: {
-					threadId: h.thread,
-					childId: h.identity.identity.validator.childId,
-					epoch: h.identity.identity.validator.epoch,
+				tabSessionId: TAB_SESSION,
+				binding: {
+					commandId: h.identity.identity.issuer.mintBrowserCommandId(),
+					paneId: "pane-current",
+					capturedLink: {
+						threadId: h.thread,
+						childId: h.identity.identity.validator.childId,
+						epoch: h.identity.identity.validator.epoch,
+					},
 				},
 			}),
 		});
@@ -327,7 +337,7 @@ describe("Codex terminal notification correlation", () => {
 				event(h.identity.identity.validator.childId, h.identity.identity.validator.epoch, mismatch),
 			);
 			await Promise.resolve();
-			expect({ settlements, pending: owner.pending().length }).toEqual({
+			expect({ settlements, pending: owner.pending(TAB_SESSION).length }).toEqual({
 				settlements: 0,
 				pending: 1,
 			});
@@ -340,14 +350,14 @@ describe("Codex terminal notification correlation", () => {
 		);
 		owner.onNotification(exact);
 		await Promise.resolve();
-		expect({ settlements, cause, pending: owner.pending() }).toEqual({
+		expect({ settlements, cause, pending: owner.pending(TAB_SESSION) }).toEqual({
 			settlements: 1,
 			cause: "caller_turn_interrupted",
 			pending: [],
 		});
 		owner.onNotification(exact);
 		await Promise.resolve();
-		expect({ settlements, cause, pending: owner.pending() }).toEqual({
+		expect({ settlements, cause, pending: owner.pending(TAB_SESSION) }).toEqual({
 			settlements: 1,
 			cause: "caller_turn_interrupted",
 			pending: [],

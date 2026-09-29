@@ -238,7 +238,7 @@ function createLeaseOwner(owners: LeaseOwners, ledger?: BrowserSessionLeaseLedge
 	 * @param record The lease it holds.
 	 */
 	const ensureLeaseBinding = (state: ConnectionState, record: BrowserLeaseRecord): void => {
-		const binding = connections.readBinding(state.paneId);
+		const binding = connections.readBinding(state.tabSessionId);
 		if (
 			binding.revision === record.binding.linkRevision &&
 			sameWireValue(binding.link, record.binding.link)
@@ -311,7 +311,7 @@ function createLeaseOwner(owners: LeaseOwners, ledger?: BrowserSessionLeaseLedge
 				paneId,
 				state.tabSessionId,
 				state.instance,
-				connections.readBinding(paneId),
+				connections.readBinding(state.tabSessionId),
 			);
 			state.lease = record.lease;
 			state.binding = record.binding;

@@ -36,7 +36,10 @@ type SemanticBinding = NonNullable<
 	ReturnType<ProjectionComponents["semanticDelivery"]["snapshot"]>["binding"]
 >;
 
-/** Everything a projection read needs: the pane's tab session and what the generation shares. */
+/**
+ * Everything a projection read needs: the pane's tab session, whose conversation, voice and
+ * approvals it is shown, and what the generation shares.
+ */
 interface ServerOwnerProjectionInput {
 	readonly approvals: CodexWorkbenchComponents["approvals"];
 	readonly session: Pick<CodexWorkbenchTabSession, "components" | "state">;
@@ -50,7 +53,7 @@ interface ServerOwnerProjectionInput {
 /**
  * Whether the controller's current binding is the link this pane shows: the
  * same link revision and the same target. Which pane created it does not
- * matter, since every pane of a server shows the one link.
+ * matter, since every pane of a tab shows its session's one link.
  * @param binding The controller's binding.
  * @param context The pane being read.
  * @returns True when they are the same binding.
@@ -228,7 +231,7 @@ function readBrowserOwnerProjection(
 	const { dynamicApprovals, state } = input;
 	const { components } = input.session;
 	if (context.lease?.state === "active") {
-		dynamicApprovals.bindLease(context.paneId, context.lease.commandId);
+		dynamicApprovals.bindLease(context.tabSessionId, context.paneId, context.lease.commandId);
 	}
 	const coordinator = components.coordinator.snapshot();
 	const workhorse = components.workhorse.snapshot();
@@ -251,8 +254,8 @@ function readBrowserOwnerProjection(
 		),
 		queue: presentedQueue(input.session.state, context),
 		settings: [...workhorseSettings(workhorse), ...coordinatorSettings(coordinator)],
-		approvals: visibleApprovalViews(input.approvals),
-		dynamicApprovals: dynamicApprovals.pending(),
+		approvals: visibleApprovalViews(input.approvals, context.tabSessionId),
+		dynamicApprovals: dynamicApprovals.pending(context.tabSessionId),
 		semantic: semanticPanel(presentedSemantic(components, context), components.semanticPublisher),
 		coordinator: {
 			kind: "codex_coordinator",

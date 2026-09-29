@@ -6,7 +6,7 @@ import type {
 	SettledSemanticChangeEvent,
 } from "@/runtime/codex-semantic-context";
 import type { LogicalToolCallCorrelation } from "@/shared/codex-workbench-identity";
-import type { BrowserLeaseLedger } from "@/server/codex-workbench";
+import type { BrowserLeaseLedger, TabSessionId } from "@/server/codex-workbench";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationHooks,
@@ -28,21 +28,25 @@ type PendingOperation = Omit<
 export interface CodexWorkbenchServer {
 	readonly checkoutRoot: string;
 	readonly onCodexProcessGroupOwned: (identity: CodexProcessGroupIdentity) => void;
-	readonly semanticPublisher: SemanticContextPublisherOptions;
-	readonly paneIds: () => readonly string[];
+	/**
+	 * Where one tab session's semantic context is published from: the one change feed, read for
+	 * that session's own panes and link.
+	 */
+	readonly semanticPublisherFor: (tabSessionId: TabSessionId) => SemanticContextPublisherOptions;
+	/** The canonical context of a settled change, filed under the pane the change presents. */
 	readonly contextForEvent: (
 		event: SettledSemanticChangeEvent,
-		paneId: string,
 		operation?: PendingOperation,
 	) => ArchboardContext;
 	/**
-	 * The context an operation runs under. A browser command names the exact pane that sent it by
-	 * `clientId`; work nobody's command started names null, and presents through the open pane
-	 * `paneId` names while it is open, else the focused one, else the first in reading order.
+	 * The context an operation of one tab session runs under, refused once that session's link has
+	 * moved. A browser command names the exact pane that sent it by `clientId`; work nobody's
+	 * command started names null, and presents through a pane of the session: the one it presented
+	 * through last while that is open, else the focused one, else the first in reading order.
 	 */
 	readonly contextForOperation: (
 		authority: {
-			readonly paneId: string;
+			readonly tabSessionId: TabSessionId;
 			readonly clientId: string | null;
 			readonly childId: LogicalToolCallCorrelation["child"];
 			readonly epoch: LogicalToolCallCorrelation["epoch"];
@@ -51,16 +55,21 @@ export interface CodexWorkbenchServer {
 		},
 		operation: PendingOperation,
 	) => ArchboardContext;
-	/** What a person does by hand to a walkthrough that is being narrated (TASK-251). */
-	readonly narrationChanges: NonNullable<
-		CodexRealtimeAdapterOptions["presentationChanges"]
-	>["subscribe"];
+	/**
+	 * What a person does by hand to a walkthrough one tab session's voice is narrating (TASK-251):
+	 * only that session's own panes are its news.
+	 */
+	readonly narrationChangesFor: (
+		tabSessionId: TabSessionId,
+	) => NonNullable<CodexRealtimeAdapterOptions["presentationChanges"]>["subscribe"];
 	readonly waitForTargets: Parameters<
 		typeof createServerDynamicLifecycleOwner
 	>[0]["waitForTargets"];
 	readonly installIdentityDecoders: (identity: CodexWorkbenchComponents["identity"]) => void;
 	readonly installLifecycleSignals: (components: CodexWorkbenchComponents) => () => void;
-	readonly installBrowserGateway: (gateway: CodexWorkbenchComponents["gateway"]) => () => void;
+	readonly installBrowserGateway: (
+		components: Pick<CodexWorkbenchComponents, "gateway" | "sessions">,
+	) => () => void;
 	readonly browserLeaseLedger: BrowserLeaseLedger;
 	readonly stopBrowser: CodexWorkbenchGenerationHooks["stopBrowser"];
 	readonly onFatal: (error: unknown) => void;

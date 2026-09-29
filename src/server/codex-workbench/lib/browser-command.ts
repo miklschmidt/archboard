@@ -157,8 +157,6 @@ const REFUSAL_MESSAGES: Partial<Record<CodexWorkbenchGatewayError["code"], strin
 	approval_not_pending: "That approval is no longer pending.",
 	dynamic_approval_not_pending: "That coordination approval is no longer pending.",
 	unsupported_command: "The browser command is not supported by this gateway.",
-	voice_live:
-		"Voice is live on this Archboard server, and a recording needs the voice to itself. Stop voice, then record again.",
 };
 
 /**

@@ -29,19 +29,18 @@ interface VoiceStartAttempt {
 const KEPT_ATTEMPTS = 8;
 const KEPT_ENTRIES = 200;
 
+/** Says what happened during one attempt. */
+type VoiceStartNote = (stage: string, detail?: VoiceStartTraceEntry["detail"]) => void;
+
 /** The trace over one server's voice starts. */
 interface VoiceStartTrace {
 	/**
-	 * A new attempt begins; later entries belong to it.
+	 * A new attempt begins. Each browser tab starts its own voice, so two attempts may run at once:
+	 * whatever happens during this one is noted through the handle, never into another tab's.
 	 * @param paneId The pane voice is starting for.
+	 * @returns How to note what happens during this attempt.
 	 */
-	readonly begin: (paneId: string) => void;
-	/**
-	 * Something happened during the current attempt.
-	 * @param stage What happened, as a short stable word.
-	 * @param detail Identities, sizes, states and messages; never content.
-	 */
-	readonly note: (stage: string, detail?: VoiceStartTraceEntry["detail"]) => void;
+	readonly begin: (paneId: string) => VoiceStartNote;
 	/**
 	 * Every kept attempt, oldest first.
 	 * @returns The attempts.
@@ -56,28 +55,25 @@ interface VoiceStartTrace {
  */
 function createVoiceStartTrace(now: () => number = Date.now): VoiceStartTrace {
 	let kept: VoiceStartAttempt[] = [];
-	let began = now();
 
 	/**
 	 * A new attempt begins.
 	 * @param paneId The pane voice is starting for.
+	 * @returns How to note what happens during it, kept only while the attempt is.
 	 */
-	function begin(paneId: string): void {
-		began = now();
-		const attempt = { startedAt: new Date(began).toISOString(), paneId, entries: [] };
+	function begin(paneId: string): VoiceStartNote {
+		const began = now();
+		const attempt: VoiceStartAttempt = {
+			startedAt: new Date(began).toISOString(),
+			paneId,
+			entries: [],
+		};
 		kept = [...kept, attempt].slice(-KEPT_ATTEMPTS);
-	}
-
-	/**
-	 * Something happened during the current attempt; before any attempt it is dropped.
-	 * @param stage What happened.
-	 * @param detail What is known about it.
-	 */
-	function note(stage: string, detail: VoiceStartTraceEntry["detail"] = {}): void {
-		const current = kept.at(-1);
-		if (current !== undefined && current.entries.length < KEPT_ENTRIES) {
-			current.entries.push({ atMs: now() - began, stage, detail });
-		}
+		return (stage, detail = {}) => {
+			if (attempt.entries.length < KEPT_ENTRIES) {
+				attempt.entries.push({ atMs: now() - began, stage, detail });
+			}
+		};
 	}
 
 	/**
@@ -88,11 +84,51 @@ function createVoiceStartTrace(now: () => number = Date.now): VoiceStartTrace {
 		return kept;
 	}
 
-	return { begin, note, attempts };
+	return { begin, attempts };
 }
 
 /** This server's trace. */
 const voiceStartTrace = createVoiceStartTrace();
+
+/**
+ * One conversation's view of the trace: the attempt its latest voice start began, which what its
+ * voice does later is noted into. Before its first start, nothing is kept.
+ */
+interface SessionVoiceStartTrace {
+	/**
+	 * This conversation begins a voice start.
+	 * @param paneId The pane voice is starting for.
+	 */
+	readonly begin: (paneId: string) => void;
+	/** Note into this conversation's latest attempt. */
+	readonly note: VoiceStartNote;
+}
+
+/**
+ * One conversation's view of a trace.
+ * @param trace The trace, this server's by default.
+ * @returns The view.
+ */
+function sessionVoiceStartTrace(trace: VoiceStartTrace = voiceStartTrace): SessionVoiceStartTrace {
+	let current: VoiceStartNote | null = null;
+	return {
+		/**
+		 * This conversation begins a voice start.
+		 * @param paneId The pane voice is starting for.
+		 */
+		begin: (paneId) => {
+			current = trace.begin(paneId);
+		},
+		/**
+		 * Note into this conversation's latest attempt; before any it is dropped.
+		 * @param stage What happened.
+		 * @param detail What is known about it.
+		 */
+		note: (stage, detail) => {
+			current?.(stage, detail);
+		},
+	};
+}
 
 /** Where the trace is read. */
 const VOICE_START_TRACE_ROUTE = "/api/voice/start-trace";
@@ -127,8 +163,10 @@ export {
 	VOICE_START_TRACE_ROUTE,
 	createVoiceStartTrace,
 	mountVoiceStartTraceRoute,
+	sessionVoiceStartTrace,
 	traceMessage,
-	voiceStartTrace,
+	type SessionVoiceStartTrace,
 	type VoiceStartAttempt,
+	type VoiceStartNote,
 	type VoiceStartTrace,
 };

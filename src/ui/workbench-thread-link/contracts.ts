@@ -1,4 +1,4 @@
-// The thread link's typed inputs and outputs: the server's one link to its
+// The thread link's typed inputs and outputs: the browser tab's one link to its
 // workhorse, and how one action settles.
 
 import type { BrowserThreadLink } from "@/shared/codex-browser-model";

@@ -15,6 +15,7 @@ import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchSessionComponents,
 } from "@/server/archboard/codex-workbench-generation";
+import type { TabSessionId } from "@/server/codex-workbench";
 import { checkoutRoot } from "@/server/archboard/lib/module-paths";
 import { boardForPane, panes } from "@/server/archboard/lib/pane-registry";
 import {
@@ -306,11 +307,13 @@ type ExecutableLink = Extract<ThreadLinkOf, { state: "executable" }>;
 type WorkhorseSnapshot = ReturnType<CodexWorkbenchSessionComponents["workhorse"]["snapshot"]>;
 type CoordinatorSnapshot = ReturnType<CodexWorkbenchSessionComponents["coordinator"]["snapshot"]>;
 /**
- * What a pane's identities are read from: the generation's thread link, and the
- * workhorse, coordinator and voice of the conversation the pane belongs to.
+ * What a pane's identities are read from: the thread link of the tab session the pane belongs
+ * to, and that conversation's workhorse, coordinator and voice.
  */
 type SemanticInputOwners = Pick<CodexWorkbenchComponents, "threadLink"> &
-	Pick<CodexWorkbenchSessionComponents, "workhorse" | "coordinator" | "realtime">;
+	Pick<CodexWorkbenchSessionComponents, "workhorse" | "coordinator" | "realtime"> & {
+		readonly tabSessionId: TabSessionId;
+	};
 type LinkedIdentities = Required<
 	Pick<SemanticContextInput, "child" | "threadLink" | "workhorse" | "coordinator">
 >;
@@ -325,16 +328,15 @@ interface GraphView {
 }
 
 /**
- * Read the pane's link and the graph's snapshots once.
- * @param active The active components, or null while none are installed.
- * @param paneId The pane.
+ * Read the tab session's link and its conversation's snapshots once.
+ * @param active The session's owners, or null while none are installed.
  * @returns The view.
  */
-function graphView(active: SemanticInputOwners | null, paneId: string): GraphView {
+function graphView(active: SemanticInputOwners | null): GraphView {
 	if (active === null) {
 		return { active, link: null, executable: null, workhorse: null, coordinator: null };
 	}
-	const link = active.threadLink.read(paneId).link;
+	const link = active.threadLink.read(active.tabSessionId).link;
 	return {
 		active,
 		link,
@@ -375,20 +377,15 @@ function childIdentity(view: GraphView): LinkedIdentities["child"] {
 }
 
 /**
- * The thread this pane's context is about: the one its executable link names.
- *
- * The link is the source of truth for what a pane is bound to, and a new
- * conversation moves it. The graph's workhorse snapshot answers a different
- * question — which thread started the child this generation runs — and the
- * moment the two part company, a context that reported the owner names a thread
- * this delivery is not for. Every event then fails to prove its target and is
- * refused as unattributable.
+ * The thread this pane's context is about: the one its tab session's executable
+ * link names, which is the thread that session's workhorse started. Read from
+ * the link, whose state the context reports anyway.
  *
  * The child and the epoch are reported separately, from the graph, and the
  * delivery's own capability check is what proves them. This is identity, not
  * capability.
  * @param view The graph view.
- * @returns The thread, or null when the pane has no executable link.
+ * @returns The thread, or null when the session has no executable link.
  */
 function boundWorkhorseThread(view: GraphView): WorkhorseSnapshot["threadId"] | null {
 	return view.executable === null ? null : view.executable.threadId;
@@ -412,13 +409,12 @@ function coordinatorIdentity(view: GraphView): LinkedIdentities["coordinator"] {
 
 /**
  * The child, thread link, workhorse and coordinator identities a pane's
- * semantic context names, taken from the active workbench graph.
- * @param active The active components, or null while none are installed.
- * @param paneId The pane.
+ * semantic context names, taken from its tab session.
+ * @param active The session's owners, or null while none are installed.
  * @returns The identities.
  */
-function linkedIdentities(active: SemanticInputOwners | null, paneId: string): LinkedIdentities {
-	const view = graphView(active, paneId);
+function linkedIdentities(active: SemanticInputOwners | null): LinkedIdentities {
+	const view = graphView(active);
 	const linked = boundWorkhorseThread(view);
 	return {
 		child: childIdentity(view),
@@ -476,7 +472,7 @@ function semanticInputFor(
 	);
 	return {
 		repository: checkoutRoot,
-		...linkedIdentities(active, exactPaneId),
+		...linkedIdentities(active),
 		board: {
 			key: contextBoard,
 			name: read.name,

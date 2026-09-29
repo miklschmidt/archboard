@@ -49,8 +49,6 @@ class FakeTransport implements BrowserWorkbenchTransport {
 	/** Resolved once the first executeCommand prepared its draft. */
 	readonly preparation: Promise<void>;
 	preparedGate: Promise<void> | null = null;
-	/** How the gateway refuses a realtime start, or null to answer it. */
-	startRefusal: Pick<BrowserWorkbenchCommandResult, "code" | "message"> | null = null;
 	disposeCount = 0;
 	#resolvePreparation: () => void = noop;
 	#listeners = new Set<() => void>();
@@ -201,9 +199,6 @@ class FakeTransport implements BrowserWorkbenchTransport {
 		};
 		if (draft.command !== "realtimeStart") {
 			return Promise.resolve(value);
-		}
-		if (this.startRefusal !== null) {
-			return Promise.resolve({ ...value, outcome: "not_delivered", ...this.startRefusal });
 		}
 		const handle = String(commandId);
 		return Promise.resolve({

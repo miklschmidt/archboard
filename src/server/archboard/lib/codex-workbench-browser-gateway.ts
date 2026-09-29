@@ -14,10 +14,9 @@ import type { OperationId, ThreadId } from "@/shared/codex-workbench-identity";
 import { CODEX_QUEUE_REREAD_FLOOR_MS } from "@/shared/timing/timing";
 import type { ArchboardContext } from "@/runtime/codex-instructions";
 import type { CodexWorkbenchSharedComponents } from "@/server/archboard/lib/codex-workbench-generation-lifecycle";
-import {
-	SHARED_TAB_SESSION_ID,
-	type CodexWorkbenchSessions,
-	type CodexWorkbenchTabSession,
+import type {
+	CodexWorkbenchSessions,
+	CodexWorkbenchTabSession,
 } from "@/server/archboard/lib/codex-workbench-sessions";
 import type { ServerDynamicApprovalOwner } from "@/server/archboard/lib/codex-workbench-approvals";
 import type {
@@ -122,14 +121,13 @@ function createServerBrowserGatewayOptions(
 ): Omit<CodexWorkbenchGatewayOptions, "identity" | "threadLink"> {
 	const { components, dynamicApprovals, state } = input;
 	/**
-	 * The tab session a pane's command or snapshot belongs to. Every tab shares
-	 * one session until each tab holds its own conversation (TASK-373 S5b).
-	 * @param _context The pane and the tab session it names.
-	 * @param _context.tabSessionId The tab session.
+	 * The tab session a pane's command or snapshot belongs to: its own tab's conversation.
+	 * @param context The pane and the tab session it names.
+	 * @param context.tabSessionId The tab session.
 	 * @returns The session.
 	 */
-	const sessionOf = (_context: { readonly tabSessionId: TabSessionId }): CodexWorkbenchTabSession =>
-		input.sessions.require(SHARED_TAB_SESSION_ID);
+	const sessionOf = (context: { readonly tabSessionId: TabSessionId }): CodexWorkbenchTabSession =>
+		input.sessions.require(context.tabSessionId);
 	/**
 	 * Record one authoritative listing as the queue a session's link is on.
 	 * @param session The session.

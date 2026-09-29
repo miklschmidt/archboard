@@ -308,6 +308,7 @@ async function classifyCandidate(
  * @param reviewed - The reviewed instruction and manifest hashes.
  * @param epochSnapshot - The current durable epoch.
  * @param options - The coordinator options.
+ * @param ownStart - Whether a coordinator start was this coordinator's own.
  * @returns The decision.
  */
 async function decideCandidate(
@@ -316,6 +317,7 @@ async function decideCandidate(
 	reviewed: CoordinatorReviewHashes,
 	epochSnapshot: CoordinatorEpochSnapshot,
 	options: CodexCoordinatorOptions,
+	ownStart: (operationId: string) => boolean,
 ): Promise<CandidateDecision> {
 	const currentEpoch = epochSnapshot.manifest.activeEpoch;
 	if (currentEpoch === null) {
@@ -328,8 +330,11 @@ async function decideCandidate(
 	);
 	// An uncertain start only matters when nothing is retained: a replacement that did not settle
 	// leaves the proven coordinator it would have replaced retained, and that one is still reused.
+	// Only this coordinator's own starts count: another conversation's coordinator in the same
+	// epoch is neither a thread it could leave behind nor one it could reuse.
 	if (candidate === null) {
-		return uncertainTransactionDecision(currentRecords) ?? noCandidateDecision(currentRecords);
+		const ownRecords = currentRecords.filter((record) => ownStart(record.correlation.operationId));
+		return uncertainTransactionDecision(ownRecords) ?? noCandidateDecision(ownRecords);
 	}
 	if (
 		candidate.childId !== options.identity.validator.childId ||

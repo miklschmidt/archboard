@@ -21,13 +21,9 @@ import {
 	type IdentityLedger,
 } from "@/shared/codex-workbench-identity";
 import { createCodexWorkbenchGateway } from "@/server/codex-workbench";
-import { createServerThreadLink } from "@/server/archboard/lib/codex-workbench-server-link";
 import { CodexWorkbenchCompositionError } from "@/server/archboard/lib/codex-workbench-error";
 import { buildProductionTabSession } from "@/server/archboard/lib/codex-workbench-session-factories";
-import {
-	createCodexWorkbenchSessions,
-	SHARED_TAB_SESSION_ID,
-} from "@/server/archboard/lib/codex-workbench-sessions";
+import { createCodexWorkbenchSessions } from "@/server/archboard/lib/codex-workbench-sessions";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationInput,
@@ -161,19 +157,18 @@ function createProductionCodexWorkbenchFactories(
 				...(adoptedSession === null ? {} : { adoptedReadiness: adoptedSession }),
 			}),
 		/**
-		 * The link binding the server to the one workhorse thread every pane
-		 * speaks to, whichever pane asks.
+		 * The thread links, one per browser tab session: each names the workhorse
+		 * thread that tab's conversation runs on. The port keys a link by its
+		 * `paneId`, which holds the tab session's id.
 		 * @param created What the graph has built so far.
-		 * @returns The link.
+		 * @returns The link port.
 		 */
 		threadLink: (created) =>
-			createServerThreadLink(
-				createCodexThreadLink({
-					...bindings.threadLink(created),
-					session: requireComponent(created, "session"),
-					epoch: requireComponent(created, "epoch"),
-				}),
-			),
+			createCodexThreadLink({
+				...bindings.threadLink(created),
+				session: requireComponent(created, "session"),
+				epoch: requireComponent(created, "epoch"),
+			}),
 		/**
 		 * What holds an approval request until somebody answers it.
 		 * @param created What the graph has built so far.
@@ -206,8 +201,8 @@ function createProductionCodexWorkbenchFactories(
 				lifecycle: bindings.dynamicAdapters.lifecycle(created),
 			}),
 		/**
-		 * The tab sessions of this generation, with the one every tab shares
-		 * opened at once (TASK-373 S5b gives each tab its own).
+		 * The tab sessions of this generation, each opened when a browser tab's
+		 * pane first connects to it.
 		 * @param created What the graph has built so far.
 		 * @returns The sessions.
 		 */
@@ -221,7 +216,7 @@ function createProductionCodexWorkbenchFactories(
 				approvals: requireComponent(created, "approvals"),
 				dynamicTools: requireComponent(created, "dynamicTools"),
 			};
-			const sessions = createCodexWorkbenchSessions({
+			return createCodexWorkbenchSessions({
 				identity: shared.identity.identity,
 				transport: shared.transport,
 				/**
@@ -231,8 +226,6 @@ function createProductionCodexWorkbenchFactories(
 				 */
 				build: (scope) => buildProductionTabSession(bindings.tabSession, shared, scope),
 			});
-			sessions.open(SHARED_TAB_SESSION_ID);
-			return sessions;
 		},
 		/**
 		 * The gateway the browser talks to, built last because it is given every

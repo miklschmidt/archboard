@@ -2,41 +2,40 @@
 //
 // It exists so that "realtime negotiation was unavailable or failed" can be read afterwards as a
 // sequence of stages with the refusing message in it. What is guarded: entries belong to the
-// attempt they happened in and carry when they happened; what happens before any attempt is
-// dropped rather than misfiled; and the record stays bounded however often voice is started.
+// attempt they happened in and carry when they happened, even while another tab's attempt runs
+// beside it (TASK-373); and the record stays bounded however often voice is started.
 
 import { expect, test } from "bun:test";
 import { createVoiceStartTrace } from "@/server/archboard/index";
 
-test("keeps each attempt's stages in order with when they happened, and drops what no attempt owns", () => {
+test("keeps each attempt's stages in order with when they happened, while another attempt runs beside it", () => {
 	let now = 1_000;
 	const trace = createVoiceStartTrace(() => now);
-	trace.note("diagnostic", { message: "before anybody started voice" });
-	trace.begin("pane-a");
+	const first = trace.begin("pane-a");
+	now = 1_100;
+	const second = trace.begin("pane-b");
 	now = 1_250;
-	trace.note("preconditions", { coordinatorReady: false, coordinatorState: "starting" });
+	first("preconditions", { coordinatorReady: false, coordinatorState: "starting" });
 	now = 1_300;
-	trace.note("refused", { message: "Realtime is unavailable for this exact linked thread." });
-	trace.begin("pane-a");
-	now = 1_900;
-	trace.note("start_sent", { promptBytes: 5_138 });
-	const [first, second] = trace.attempts();
-	expect(first?.entries.map((entry) => [entry.atMs, entry.stage])).toEqual([
+	second("start_sent", { promptBytes: 5_138 });
+	first("refused", { message: "Realtime is unavailable for this exact linked thread." });
+	const [one, two] = trace.attempts();
+	expect(one?.entries.map((entry) => [entry.atMs, entry.stage])).toEqual([
 		[250, "preconditions"],
 		[300, "refused"],
 	]);
-	expect(first?.entries[1]?.detail["message"]).toContain("unavailable");
-	expect(second?.entries).toEqual([
-		{ atMs: 600, stage: "start_sent", detail: { promptBytes: 5_138 } },
+	expect(one?.entries[1]?.detail["message"]).toContain("unavailable");
+	expect(two?.entries).toEqual([
+		{ atMs: 200, stage: "start_sent", detail: { promptBytes: 5_138 } },
 	]);
 });
 
 test("stays bounded however often voice is started and however much one start says", () => {
 	const trace = createVoiceStartTrace(() => 0);
 	for (let attempt = 0; attempt < 50; attempt += 1) {
-		trace.begin(`pane-${attempt}`);
+		const note = trace.begin(`pane-${attempt}`);
 		for (let entry = 0; entry < 1_000; entry += 1) {
-			trace.note("state", { phase: "connecting" });
+			note("state", { phase: "connecting" });
 		}
 	}
 	const kept = trace.attempts();

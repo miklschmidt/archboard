@@ -280,6 +280,12 @@ export interface BrowserRealtimeActions {
 	) => Promise<void> | void;
 }
 
+/** A settled approval no browser has been shown yet, and the tab session it is shown to. */
+export interface BrowserUnpresentedTerminal {
+	readonly requestId: JsonRpcRequestId;
+	readonly tabSessionId: TabSessionId | null;
+}
+
 export interface BrowserOrdinaryApprovalActions {
 	readonly pending: (requestId: JsonRpcRequestId) => ApprovalOwnerView | null;
 	readonly resolve: (
@@ -287,9 +293,15 @@ export interface BrowserOrdinaryApprovalActions {
 		context: BrowserActionContext,
 	) => Promise<BrowserActionResult>;
 	readonly acknowledge: (requestId: JsonRpcRequestId) => void;
-	/** Spontaneous terminals that have no live browser connection to present them. */
-	readonly unpresentedTerminals: () => readonly JsonRpcRequestId[];
-	/** Retires spontaneous terminals only after every live browser received the published snapshot. */
+	/**
+	 * Spontaneous terminals no browser has been shown yet, each with the tab session it is
+	 * presented to, or null when no tab session holds its thread.
+	 */
+	readonly unpresentedTerminals: () => readonly BrowserUnpresentedTerminal[];
+	/**
+	 * Retires spontaneous terminals only after every live browser of their tab session received the
+	 * published snapshot.
+	 */
 	readonly acknowledgePublished: (requestIds: readonly JsonRpcRequestId[]) => void;
 	readonly onBrowserDisconnect?: (
 		context: BrowserPresenterContext,

@@ -9,7 +9,6 @@ import {
 } from "../../../codex-workbench/index.js";
 import {
 	createCodexWorkbenchSessions,
-	SHARED_TAB_SESSION_ID,
 	type CodexWorkbenchSessionComponents,
 	type CodexWorkbenchTabSession,
 } from "../../codex-workbench-generation.js";
@@ -136,7 +135,7 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 		transport: fixture.transport,
 		build: () => ({ components: sessionComponents, actions: generation.tabSession.actions }),
 	});
-	const session = sessions.open(SHARED_TAB_SESSION_ID);
+	const session = sessions.open(parseTabSessionId("tab-one")!);
 	const state: ServerBrowserBindingState = {
 		account: { kind: "account", state: "unknown", reason: "not read" },
 		login: { kind: "login", state: "idle" },
@@ -181,13 +180,14 @@ function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness 
 			paneId: "pane-readiness",
 			connection: {},
 			tabSessionId: parseTabSessionId("tab-one")!,
+			// A link is keyed by its tab session, which every pane of the tab shows.
 			binding: {
-				paneId: "pane-readiness",
+				paneId: "tab-one",
 				revision: 1,
 				link,
 				cas: {
 					revision: 1,
-					paneId: "pane-readiness",
+					paneId: "tab-one",
 					childId: link.childId,
 					epoch: link.epoch,
 					threadId: link.threadId,

@@ -37,13 +37,16 @@ import type {
 	ThreadId,
 } from "@/shared/codex-workbench-identity";
 import {
-	parseTabSessionId,
 	type BrowserRealtimeActions,
 	type BrowserThreadLinkActions,
 	type CodexQueueProjectionInput,
 	type TabSessionId,
 } from "@/server/codex-workbench";
 import { appendFailure } from "@/server/archboard/lib/codex-workbench-failures";
+import {
+	sessionVoiceStartTrace,
+	type SessionVoiceStartTrace,
+} from "@/server/archboard/lib/voice-start-trace";
 
 /** The runtime owners one conversation runs on. */
 interface CodexWorkbenchSessionComponents {
@@ -75,6 +78,13 @@ interface CodexWorkbenchTabSessionState {
 	currentCoordinatorCall: LogicalToolCallCorrelation | null;
 	/** Every thread this conversation started, current and replaced. */
 	readonly threads: Set<ThreadId>;
+	/** The attempt this conversation's latest voice start began, which its voice notes into. */
+	readonly voiceTrace: SessionVoiceStartTrace;
+	/**
+	 * The pane id work nobody's command started presented through last, which its context is
+	 * filed under while none of the tab's panes is open; null before any was.
+	 */
+	presentingPaneId: string | null;
 }
 
 /** One conversation of the generation. */
@@ -135,24 +145,6 @@ interface CodexWorkbenchSessions {
 }
 
 /**
- * The id of the one session every tab shares until each tab holds its own conversation (TASK-373
- * S5b keys the sessions by the tab's own id).
- */
-const SHARED_TAB_SESSION_ID: TabSessionId = sharedTabSessionId();
-
-/**
- * The shared session's id, which the server's own spelling must pass as a tab session id.
- * @returns The id.
- */
-function sharedTabSessionId(): TabSessionId {
-	const id = parseTabSessionId("server");
-	if (id === null) {
-		throw new TypeError("The shared tab session id is not a tab session id.");
-	}
-	return id;
-}
-
-/**
  * A session's state before anything was read into it.
  * @returns The state.
  */
@@ -162,6 +154,8 @@ function freshState(): CodexWorkbenchTabSessionState {
 		queueThreadId: null,
 		currentCoordinatorCall: null,
 		threads: new Set(),
+		voiceTrace: sessionVoiceStartTrace(),
+		presentingPaneId: null,
 	};
 }
 
@@ -443,7 +437,7 @@ function createCodexWorkbenchSessions(
 	} satisfies CodexWorkbenchSessions);
 }
 
-export { createCodexWorkbenchSessions, SHARED_TAB_SESSION_ID };
+export { createCodexWorkbenchSessions };
 export type {
 	BuiltTabSession,
 	CodexWorkbenchSessionComponents,

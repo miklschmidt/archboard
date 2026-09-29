@@ -153,11 +153,13 @@ describe("recording pace", () => {
 	test("a voice that fails, or stops mid-talk, fails the recording with a reason", () => {
 		const refused = tick(
 			{ kind: "starting", since: 0 },
-			seen(5, { voice: { kind: "failed", reason: "Voice is live on this Archboard server." } }),
+			seen(5, {
+				voice: { kind: "failed", reason: "Realtime negotiation was unavailable or failed." },
+			}),
 		);
 		expect(refused.action).toEqual({
 			kind: "fail",
-			reason: "Voice is live on this Archboard server.",
+			reason: "Realtime negotiation was unavailable or failed.",
 		});
 		const dropped = tick({ kind: "lead", since: 0 }, seen(5, { voice: { kind: "other" } }));
 		expect(dropped.action.kind).toBe("fail");

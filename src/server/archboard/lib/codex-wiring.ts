@@ -11,11 +11,11 @@ import {
 	serverStartupOwnershipRecord,
 	writeServerStartupProtocolRecord,
 } from "@/shared/server-startup-terminal";
-import {
-	SHARED_TAB_SESSION_ID,
-	type CodexWorkbenchComponents,
-	type CodexWorkbenchTabSession,
+import type {
+	CodexWorkbenchComponents,
+	CodexWorkbenchTabSession,
 } from "@/server/archboard/codex-workbench-generation";
+import type { TabSessionId } from "@/server/codex-workbench";
 import {
 	createServerCodexBrowserSocketOwner,
 	type BrowserConnectionInstance,
@@ -26,6 +26,7 @@ import { presentingPane } from "@/server/archboard/lib/codex-workbench-semantic-
 import {
 	canonicalContextFromBrief,
 	semanticInputFor,
+	type ContextPane,
 	type SemanticInputOwners,
 } from "@/server/archboard/lib/codex-semantic-input";
 import { waitForTargetsWith } from "@/server/archboard/lib/codex-target-wait";
@@ -131,13 +132,16 @@ function bindingMatchesAuthority(
 
 /**
  * Install the workbench gateway's browser hooks over every socket currently
- * presenting a pane, and return the remover.
- * @param gateway The gateway.
+ * presenting a pane, and return the remover. A tab's conversation opens as its
+ * first pane connects.
+ * @param components The gateway, and the tab sessions it serves.
  * @returns Removes the hooks and disposes the socket owner.
  */
-function installBrowserGateway(gateway: CodexWorkbenchComponents["gateway"]): () => void {
+function installBrowserGateway(
+	components: Pick<CodexWorkbenchComponents, "gateway" | "sessions">,
+): () => void {
 	const socketOwner = createServerCodexBrowserSocketOwner({
-		gateway,
+		gateway: components.gateway,
 		/**
 		 * The pane a browser id presents.
 		 * @param browserId The browser's client id.
@@ -150,6 +154,13 @@ function installBrowserGateway(gateway: CodexWorkbenchComponents["gateway"]): ()
 		 * @returns The tab session, or null while it named none.
 		 */
 		tabSessionForBrowser: tabSessionOf,
+		/**
+		 * Open a connecting tab's conversation, or find it open.
+		 * @param tabSessionId The tab session.
+		 */
+		openTabSession: (tabSessionId) => {
+			components.sessions.open(tabSessionId);
+		},
 	});
 	/** Take the hooks down. */
 	const remove = (): void => {
@@ -184,53 +195,105 @@ function installBrowserGateway(gateway: CodexWorkbenchComponents["gateway"]): ()
 }
 
 /**
- * Every pane on screen, in reading order.
+ * The panes of one browser tab on screen, in reading order.
+ * @param tabSessionId The tab's session.
  * @returns The panes.
  */
-function orderedPanes(): PaneRegistration[] {
-	return panesInOrder(Array.from(panes.values())).map(({ pane }) => pane);
+function panesOfTabSession(tabSessionId: TabSessionId): PaneRegistration[] {
+	return panesInOrder(Array.from(panes.values()))
+		.map(({ pane }) => pane)
+		.filter((pane) => tabSessionOf(pane.clientId) === tabSessionId);
 }
 
 /**
- * The pane an operation's context is read through. A browser command names the exact pane that
- * sent it, by client id, which must still be on screen: a pane id repeats in every browser tab.
- * Work nobody's command started names none, and presents through an open pane.
- * @param authority The pane the operation names, and the exact pane that sent it, if any.
- * @returns The pane.
+ * The pane of a tab session that work nobody's command started presents through: the one it
+ * presented through last while that is open, else the focused one, else the first. The session
+ * remembers it, so its context is still filed under that pane while none of its panes is open.
+ * @param session The tab session.
+ * @returns The pane, or null while none of the session's panes is open.
  */
-function operationPane(authority: OperationAuthority): PaneRegistration {
-	if (authority.clientId === null) {
-		return presentingPane(authority.paneId, orderedPanes());
+function presentingPaneOf(session: CodexWorkbenchTabSession): PaneRegistration | null {
+	const open = panesOfTabSession(session.id);
+	if (open.length === 0) {
+		return null;
 	}
-	const pane = panes.get(authority.clientId);
-	if (pane === undefined) {
-		throw new Error(`The Codex context pane is not open: ${authority.paneId}.`);
+	const pane = presentingPane(session.state.presentingPaneId, open);
+	session.state.presentingPaneId = pane.paneId;
+	return pane;
+}
+
+/**
+ * The open pane a tab session's fresh read presents through.
+ * @param session The tab session.
+ * @returns The pane.
+ * @throws {Error} When none of the session's panes is open.
+ */
+function openPaneOf(session: CodexWorkbenchTabSession): PaneRegistration {
+	const pane = presentingPaneOf(session);
+	if (pane === null) {
+		throw new Error("No canvas pane of this browser tab is open to present its conversation.");
 	}
 	return pane;
 }
 
 /**
- * The conversation the server's own reads are about: the one tab session every
- * tab shares (TASK-373 S5b gives each tab its own).
- * @param components The generation.
- * @returns The session.
+ * The pane an operation's context is read through. A browser command names the exact pane that
+ * sent it, by client id, which must still be on screen: a pane id repeats in every browser tab.
+ * Work nobody's command started names none, and presents through an open pane of its session.
+ * @param session The tab session the operation belongs to.
+ * @param clientId The exact pane that sent it, or null.
+ * @returns The pane.
  */
-function sharedSession(components: CodexWorkbenchComponents): CodexWorkbenchTabSession {
-	return components.sessions.require(SHARED_TAB_SESSION_ID);
+function operationPane(
+	session: CodexWorkbenchTabSession,
+	clientId: string | null,
+): PaneRegistration {
+	if (clientId === null) {
+		return openPaneOf(session);
+	}
+	const pane = panes.get(clientId);
+	if (pane === undefined) {
+		throw new Error(`The Codex context pane is not open: ${clientId}.`);
+	}
+	return pane;
 }
 
 /**
- * What a pane's semantic input is read from in one generation: its thread link,
- * and the shared conversation's workhorse, coordinator and voice.
- * @param components The generation, or null while none is installed.
- * @returns The owners, or null.
+ * The conversation a pane's news is for: its own tab's, once that has board-change delivery bound.
+ * @param components The generation.
+ * @param clientId The pane's client id.
+ * @returns The tab session, or null while the pane's tab has no bound conversation.
  */
-function semanticOwners(components: CodexWorkbenchComponents | null): SemanticInputOwners | null {
-	if (components === null) {
-		return null;
-	}
-	const { workhorse, coordinator, realtime } = sharedSession(components).components;
-	return { threadLink: components.threadLink, workhorse, coordinator, realtime };
+function boundSessionOf(
+	components: CodexWorkbenchComponents,
+	clientId: string,
+): CodexWorkbenchTabSession | null {
+	const tabSessionId = tabSessionOf(clientId);
+	const session = components.sessions.list().find(({ id }) => id === tabSessionId);
+	return session !== undefined && session.components.semanticDelivery.snapshot().binding !== null
+		? session
+		: null;
+}
+
+/**
+ * What a tab session's semantic input is read from: its thread link, and its conversation's
+ * workhorse, coordinator and voice.
+ * @param components The generation.
+ * @param session The tab session.
+ * @returns The owners.
+ */
+function semanticOwners(
+	components: CodexWorkbenchComponents,
+	session: CodexWorkbenchTabSession,
+): SemanticInputOwners {
+	const { workhorse, coordinator, realtime } = session.components;
+	return {
+		tabSessionId: session.id,
+		threadLink: components.threadLink,
+		workhorse,
+		coordinator,
+		realtime,
+	};
 }
 
 /**
@@ -244,49 +307,44 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 	let installedIdentity: CodexWorkbenchComponents["identity"] | null = null;
 
 	/**
-	 * The pane the semantic delivery is bound to, by id alone.
-	 *
-	 * Identity rather than presentation: the binding names it, and whether that
-	 * pane is still on screen is a different question from whose session this
-	 * delivery belongs to.
-	 * @returns The pane id.
-	 * @throws {Error} When no delivery is bound, which is not a pane's fault.
+	 * The live generation and one of its tab sessions.
+	 * @param tabSessionId The tab session.
+	 * @returns Both.
+	 * @throws {Error} While no generation is installed, or the session is not live in it.
 	 */
-	const boundPaneId = (): string => {
-		const bound =
-			active === null
-				? null
-				: (sharedSession(active).components.semanticDelivery.snapshot().binding?.paneId ?? null);
-		if (bound === null) {
-			throw new Error("The Codex semantic publisher has no current thread-context binding.");
+	const liveSession = (
+		tabSessionId: TabSessionId,
+	): {
+		readonly components: CodexWorkbenchComponents;
+		readonly session: CodexWorkbenchTabSession;
+	} => {
+		if (active === null) {
+			throw new Error("The Codex workbench context is not ready.");
 		}
-		return bound;
+		return { components: active, session: active.sessions.require(tabSessionId) };
 	};
 
 	/**
-	 * The pane a fresh read presents through: the one the delivery is bound to
-	 * while it is open, and another open pane once it is not, since the
-	 * conversation belongs to the server rather than to the pane that made it.
-	 *
-	 * For the reads that need a pane to speak for what is on screen. A settled
-	 * change does not need one — `boundPaneId` answers that.
+	 * The pane a settled change is filed under for one session: its presenting pane while one is
+	 * open, else the pane it presented through last, which has no presentation to report. A
+	 * session hears every board update except its own writes, so a closed pane or a pane looking
+	 * at another board cannot be the thing that stops the news.
+	 * @param session The tab session.
 	 * @returns The pane.
+	 * @throws {Error} When the session has no delivery bound, or never had a pane on screen.
 	 */
-	const currentSemanticPane = (): PaneRegistration => presentingPane(boundPaneId(), orderedPanes());
-
-	/**
-	 * The exact pane a settled change can report presentation from: the bound pane, while one
-	 * with the bound id is open, and none once it is not.
-	 * @param paneId The bound pane's id.
-	 * @returns The pane's client id, or null.
-	 */
-	const boundClientId = (paneId: string): string | null => {
-		const open = orderedPanes();
-		if (open.length === 0) {
-			return null;
+	const changePane = (session: CodexWorkbenchTabSession): ContextPane => {
+		if (session.components.semanticDelivery.snapshot().binding === null) {
+			throw new Error("The Codex semantic publisher has no current thread-context binding.");
 		}
-		const pane = presentingPane(paneId, open);
-		return pane.paneId === paneId ? pane.clientId : null;
+		const open = presentingPaneOf(session);
+		if (open !== null) {
+			return { paneId: open.paneId, clientId: open.clientId };
+		}
+		if (session.state.presentingPaneId === null) {
+			throw new Error("No pane of this browser tab was ever open to file its context under.");
+		}
+		return { paneId: session.state.presentingPaneId, clientId: null };
 	};
 
 	return {
@@ -300,78 +358,92 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 				serverStartupOwnershipRecord({ serverPid: process.pid, codexGroup }),
 			);
 		},
-		semanticPublisher: {
+		/**
+		 * Where one tab session's semantic context is published from.
+		 * @param tabSessionId The tab session.
+		 * @returns The publisher options.
+		 */
+		semanticPublisherFor: (tabSessionId) => ({
 			feed: semanticChangeFeed,
 			feedId: semanticChangeFeed.feedId,
 			fresh: {
 				/**
-				 * A fresh semantic input for the bound pane's board.
+				 * A fresh semantic input for the board of the pane the session presents through.
 				 * @returns The input.
 				 */
 				read: () => {
-					const pane = currentSemanticPane();
-					return semanticInputFor(semanticOwners(active), shownBoard(pane), null, pane);
+					const { components, session } = liveSession(tabSessionId);
+					const pane = openPaneOf(session);
+					return semanticInputFor(
+						semanticOwners(components, session),
+						shownBoard(pane),
+						null,
+						pane,
+					);
 				},
 			},
 			/**
-			 * The semantic input for a settled change on the bound pane's board.
+			 * The semantic input for a settled change, as the session is shown it.
 			 * @param event The settled change.
 			 * @returns The input, at the change's cursor.
 			 */
 			contextForChange: (event: SettledChangeSourceEvent) => {
-				// The pane the delivery is bound to, whether or not it is open and
-				// whatever it is showing. A session hears every board update except
-				// its own writes, so a closed pane or a pane looking at another board
-				// cannot be the thing that stops the news — it only means there is no
-				// presentation to report, which the context says by carrying none.
-				const paneId = boundPaneId();
+				const { components, session } = liveSession(tabSessionId);
 				return semanticInputFor(
-					semanticOwners(active),
+					semanticOwners(components, session),
 					event.board,
 					{ feedId: semanticChangeFeed.feedId, sequence: event.cursor },
-					{ paneId, clientId: boundClientId(paneId) },
+					changePane(session),
 				);
 			},
-		},
-		narrationChanges: subscribeNarrationChanges,
+		}),
 		/**
-		 * Every pane on screen, in reading order.
-		 * @returns The pane ids.
+		 * What a person does by hand to a walkthrough one tab session's voice narrates: only a pane
+		 * of that tab is its news.
+		 * @param tabSessionId The tab session.
+		 * @returns The subscription.
 		 */
-		paneIds: () => orderedPanes().map((pane) => pane.paneId),
+		narrationChangesFor: (tabSessionId) => (listener) =>
+			subscribeNarrationChanges((change, clientId) => {
+				if (tabSessionOf(clientId) === tabSessionId) {
+					listener(change);
+				}
+			}),
 		/**
-		 * The canonical context of a settled event for one pane.
+		 * The canonical context of a settled event, filed under the pane it presents.
 		 * @param event The settled event.
-		 * @param paneId The pane.
 		 * @param operation The operation in flight, if any.
 		 * @returns The context.
 		 */
-		contextForEvent: (event, paneId, operation) =>
+		contextForEvent: (event, operation) =>
 			canonicalContextFromBrief(
 				event,
-				paneId,
+				event.pane.paneId,
 				operation === undefined
 					? { id: null, kind: null, rpc: null, outcome: null }
 					: { ...operation, outcome: null },
 			),
 		/**
-		 * The canonical context of an operation leased under one pane's authority,
-		 * refusing when the pane's thread link has changed since the lease.
+		 * The canonical context of an operation leased under one tab session's link,
+		 * refusing when that link has changed since the lease.
 		 * @param authority The leased authority.
 		 * @param operation The operation.
 		 * @returns The context.
 		 */
 		contextForOperation: (authority, operation) => {
-			if (active === null) {
-				throw new Error("The Codex workbench context is not ready.");
-			}
-			const pane = operationPane(authority);
-			if (!bindingMatchesAuthority(active.threadLink.read(authority.paneId), authority)) {
+			const { components, session } = liveSession(authority.tabSessionId);
+			const pane = operationPane(session, authority.clientId);
+			if (!bindingMatchesAuthority(components.threadLink.read(session.id), authority)) {
 				throw new Error("The lease-bound Codex pane context changed before capture.");
 			}
-			const exactInput = semanticInputFor(semanticOwners(active), shownBoard(pane), null, pane);
+			const exactInput = semanticInputFor(
+				semanticOwners(components, session),
+				shownBoard(pane),
+				null,
+				pane,
+			);
 			return canonicalContextFromBrief(
-				sharedSession(active).components.semanticPublisher.freshBriefFor(exactInput),
+				session.components.semanticPublisher.freshBriefFor(exactInput),
 				pane.paneId,
 				{ ...operation, outcome: null },
 			);
@@ -407,20 +479,24 @@ function createCodexWorkbenchServer(): CodexWorkbenchServer {
 			}
 			active = components;
 			/**
-			 * Publish fresh context when any pane changes focus or selection, once
-			 * the server has a conversation to tell: it is one conversation
-			 * whichever pane the person is reading.
+			 * Publish fresh context when a pane changes focus or selection, to its own tab's
+			 * conversation once that has one to tell: another tab's hand is not its news.
 			 * @param clientId The pane reporting a change.
 			 * @param kind The semantic change to publish.
 			 * @param userChanged What of it the user changed by hand; empty when nothing was.
 			 */
 			codexWiring.codex.publishPaneContext = (clientId, kind, userChanged) => {
 				const pane = panes.get(clientId);
-				if (pane === undefined) return;
-				const { semanticDelivery, semanticPublisher } = sharedSession(components).components;
-				if (semanticDelivery.snapshot().binding === null) return;
+				const session = boundSessionOf(components, clientId);
+				if (pane === undefined || session === null) return;
+				const { semanticPublisher } = session.components;
 				try {
-					const read = semanticInputFor(semanticOwners(components), shownBoard(pane), null, pane);
+					const read = semanticInputFor(
+						semanticOwners(components, session),
+						shownBoard(pane),
+						null,
+						pane,
+					);
 					const input = { ...read, pane: { ...read.pane, userChanged } };
 					if (kind === "selection") semanticPublisher.publishPaneSelection(input);
 					else semanticPublisher.publishPaneFocus(input);

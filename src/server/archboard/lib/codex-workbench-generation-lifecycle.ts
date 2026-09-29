@@ -71,7 +71,10 @@ interface CodexWorkbenchGenerationHooks {
 	readonly installIdentityDecoders: (identity: IdentityAuthorities) => void;
 	readonly installLifecycleSignals: (components: CodexWorkbenchComponents) => () => void;
 	readonly installApprovalProjection: (components: CodexWorkbenchComponents) => () => void;
-	readonly installBrowserGateway: (gateway: CodexWorkbenchGateway) => () => void;
+	/** Serve the tabs' sockets through the gateway, opening each tab's session as it connects. */
+	readonly installBrowserGateway: (
+		components: Pick<CodexWorkbenchComponents, "gateway" | "sessions">,
+	) => () => void;
 	readonly initializeSession: (
 		session: CodexSession,
 		components: CodexWorkbenchComponents,
@@ -281,7 +284,7 @@ function installRegistrations(
 		stage = "lifecycleSignals";
 		registrations.lifecycleSignals = state.hooks.installLifecycleSignals(state.components);
 		stage = "browserGateway";
-		registrations.browserGateway = state.hooks.installBrowserGateway(state.components.gateway);
+		registrations.browserGateway = state.hooks.installBrowserGateway(state.components);
 		stage = "approvalProjection";
 		registrations.approvalProjection = state.hooks.installApprovalProjection(state.components);
 		return registrations;

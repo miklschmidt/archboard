@@ -75,6 +75,7 @@ export type {
 	BrowserTextActions,
 	BrowserThreadLinkActions,
 	BrowserThreadLinkCreateCommand,
+	BrowserUnpresentedTerminal,
 	BrowserUnsubscribe,
 	BrowserWorkbenchActions,
 	BrowserWorkbenchConnection,

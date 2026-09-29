@@ -1,20 +1,52 @@
 import type { ApprovalOwnerView, CodexApprovalBroker } from "@/runtime/codex-approvals";
-import type { BrowserOrdinaryApprovalActions } from "@/server/codex-workbench";
+import {
+	parseTabSessionId,
+	type BrowserOrdinaryApprovalActions,
+	type TabSessionId,
+} from "@/server/codex-workbench";
+
+/** How an approval's link names the tab session it is shown to. */
+const TAB_SESSION_LINK_PREFIX = "tab:";
 
 /**
- * The approvals a pane may be shown: the ones still awaiting an answer, and
- * the ones whose terminal has not yet been delivered.
+ * The link of an approval shown to one tab session.
+ * @param tabSessionId The tab session.
+ * @returns The link.
+ */
+function tabSessionLink(tabSessionId: TabSessionId): string {
+	return `${TAB_SESSION_LINK_PREFIX}${tabSessionId}`;
+}
+
+/**
+ * The tab session an approval's link names.
+ * @param link The link, or null when the approval has none.
+ * @returns The tab session, or null when the link names none.
+ */
+function tabSessionOfLink(link: string | null): TabSessionId | null {
+	return link?.startsWith(TAB_SESSION_LINK_PREFIX) === true
+		? parseTabSessionId(link.slice(TAB_SESSION_LINK_PREFIX.length))
+		: null;
+}
+
+/**
+ * The approvals one tab session may be shown: those of the threads it started that are still
+ * awaiting an answer, and those whose terminal has not yet been delivered.
  * @param approvals The broker.
+ * @param tabSessionId The tab session.
  * @returns The views, in the broker's own order.
  */
-function visibleApprovalViews(approvals: CodexApprovalBroker): readonly ApprovalOwnerView[] {
+function visibleApprovalViews(
+	approvals: CodexApprovalBroker,
+	tabSessionId: TabSessionId,
+): readonly ApprovalOwnerView[] {
 	return approvals
 		.inspectViews()
 		.filter(
 			(view) =>
-				view.snapshot.state === "staged" ||
-				view.snapshot.state === "pending" ||
-				view.terminalDelivery !== null,
+				view.snapshot.binding.link === tabSessionLink(tabSessionId) &&
+				(view.snapshot.state === "staged" ||
+					view.snapshot.state === "pending" ||
+					view.terminalDelivery !== null),
 		);
 }
 
@@ -81,14 +113,18 @@ function createServerOrdinaryApprovalActions(
 		 */
 		acknowledge: (requestId) => approvals.acknowledge(requestId),
 		/**
-		 * Every settled approval whose terminal the pane has not shown yet.
-		 * @returns Their request ids.
+		 * Every settled approval whose terminal no pane has shown yet, and the tab session it is
+		 * shown to.
+		 * @returns Their request ids and tab sessions.
 		 */
 		unpresentedTerminals: () =>
 			approvals
 				.inspectViews()
 				.filter((view) => view.terminalDelivery === "after_publish")
-				.map((view) => view.request.requestId),
+				.map((view) => ({
+					requestId: view.request.requestId,
+					tabSessionId: tabSessionOfLink(view.snapshot.binding.link),
+				})),
 		/**
 		 * Retire the approvals a pane has now shown, ignoring any another pane
 		 * or lifecycle boundary already retired.
@@ -127,7 +163,7 @@ function createServerOrdinaryApprovalActions(
 						snapshot.child === context.childId &&
 						snapshot.epoch === context.epoch &&
 						snapshot.threadId === context.link.threadId &&
-						snapshot.binding.link !== null,
+						snapshot.binding.link === tabSessionLink(context.tabSessionId),
 				);
 			await Promise.all(
 				pending.map(async (snapshot) => {
@@ -142,4 +178,9 @@ function createServerOrdinaryApprovalActions(
 	return Object.freeze(actions);
 }
 
-export { createServerOrdinaryApprovalActions, visibleApprovalViews };
+export {
+	createServerOrdinaryApprovalActions,
+	tabSessionLink,
+	tabSessionOfLink,
+	visibleApprovalViews,
+};

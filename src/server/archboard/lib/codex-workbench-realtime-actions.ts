@@ -1,10 +1,10 @@
-// The Archboard server's one voice session: started, spoken into and stopped by the browser that holds it.
+// One browser tab's voice session: started, spoken into and stopped by the tab that holds it.
 //
-// A start replaces whatever session was running, except a recording's (TASK-304): a recording is
-// started from a headless page nobody is watching, and must never stop somebody who is talking,
-// so it is refused while any session is live, with the reason the page reports. A recording
-// start also opens no step: the recording page opens step 1 itself and moves on by itself, and
-// each step it reports reaches the voice model the way a step chosen by hand does.
+// Each tab session has its own coordinator and its own voice (TASK-373), so two tabs talk at once
+// and a recording, whose headless page is a tab session of its own (TASK-304), never stops
+// somebody who is talking in another tab. A start replaces whatever session its own tab was
+// running. A recording start opens no step: the recording page opens step 1 itself and moves on
+// by itself, and each step it reports reaches the voice model the way a step chosen by hand does.
 //
 // A coordinator carries one voice session (TASK-301). A start that finds the coordinator already
 // carried one has it replaced first, so a turn the last session left running, and whatever that
@@ -12,11 +12,7 @@
 // the coordinator unsubscribes from it so Codex unloads it (TASK-374), and the trace says how
 // that went.
 
-import {
-	CodexWorkbenchGatewayError,
-	type BrowserActionContext,
-	type BrowserRealtimeActions,
-} from "@/server/codex-workbench";
+import type { BrowserActionContext, BrowserRealtimeActions } from "@/server/codex-workbench";
 import type { ChildEpoch, ChildId, ThreadId } from "@/shared/codex-workbench-identity";
 import {
 	parseRealtimeCorrelationId,
@@ -29,7 +25,11 @@ import type {
 	CodexWorkbenchSessionComponents,
 	CodexWorkbenchTabSessionScope,
 } from "@/server/archboard/lib/codex-workbench-sessions";
-import { traceMessage, voiceStartTrace } from "@/server/archboard/lib/voice-start-trace";
+import {
+	sessionVoiceStartTrace,
+	traceMessage,
+	type SessionVoiceStartTrace,
+} from "@/server/archboard/lib/voice-start-trace";
 import {
 	forgetNarration,
 	narrationFor,
@@ -64,14 +64,19 @@ type WorkhorseSnapshot = ReturnType<RealtimeComponents["workhorse"]["snapshot"]>
 /**
  * Keep what became of a replaced coordinator's thread in the voice start trace, where a failed
  * unsubscribe can be read afterwards.
- * @param retirement The retired thread and Codex's answer, or why it failed.
+ * @param trace The tab session's voice start trace.
+ * @returns What notes one retirement.
  */
-function noteRetirement(retirement: CoordinatorRetirement): void {
-	voiceStartTrace.note("coordinator_retired", {
-		threadId: retirement.threadId,
-		outcome: retirement.outcome,
-		message: retirement.outcome === "failed" ? retirement.message : null,
-	});
+function noteRetirement(
+	trace: SessionVoiceStartTrace,
+): (retirement: CoordinatorRetirement) => void {
+	return (retirement) => {
+		trace.note("coordinator_retired", {
+			threadId: retirement.threadId,
+			outcome: retirement.outcome,
+			message: retirement.outcome === "failed" ? retirement.message : null,
+		});
+	};
 }
 
 /**
@@ -193,46 +198,38 @@ function narrationOfStart(
 }
 
 /**
- * The refusal of a recording while voice is live on the server, kept in the start trace: a
- * recording needs the voice to itself, and taking it would stop somebody who is talking.
- * @returns The refusal to throw.
- */
-function recordingRefusal(): CodexWorkbenchGatewayError {
-	// The browser is told the gateway's own sentence for this code; this one is for the trace.
-	const refusal = new CodexWorkbenchGatewayError(
-		"voice_live",
-		"A recording was refused because voice is live on the Archboard server.",
-	);
-	voiceStartTrace.note("refused", { message: traceMessage(refusal) });
-	return refusal;
-}
-
-/**
  * Open a narration's first step in its pane. A recording's page opens its own, so a recording
  * is asked for nothing.
  * @param presentation The walkthrough the session presents, or null.
  * @param clientId The client id of the pane it presents in.
+ * @param trace Where a failure to open it is kept.
  */
-function openFirstStep(presentation: RealtimePresentation | null, clientId: string): void {
+function openFirstStep(
+	presentation: RealtimePresentation | null,
+	clientId: string,
+	trace: SessionVoiceStartTrace,
+): void {
 	if (presentation === null || presentation.recording) {
 		return;
 	}
 	openNarration(clientId).catch((error: unknown) => {
-		voiceStartTrace.note("narration_failed", { message: traceMessage(error) });
+		trace.note("narration_failed", { message: traceMessage(error) });
 	});
 }
 
 /**
- * Own one continuous server realtime session for one exact browser socket
- * binding.
- * @param components The coordinator, the realtime adapter, and the workhorse.
+ * Own one continuous realtime session for one tab session, spoken through one
+ * exact browser socket binding.
+ * @param components The tab session's coordinator, realtime adapter and workhorse.
  * @param claimThread Records that the session started a thread: the fresh coordinator a start
  * replaces the voiced one with.
+ * @param trace Where this tab session's voice starts are kept; each start begins its own attempt.
  * @returns The actions.
  */
 export function createServerRealtimeActions(
 	components: RealtimeComponents,
 	claimThread: CodexWorkbenchTabSessionScope["claimThread"],
+	trace: SessionVoiceStartTrace = sessionVoiceStartTrace(),
 ): BrowserRealtimeActions {
 	let activeRealtime: ActiveRealtime | null = null;
 	// The coordinator thread the last session started on, which no later session may start on.
@@ -243,12 +240,12 @@ export function createServerRealtimeActions(
 	// The start trace keeps every state the session moves through and every diagnostic it raises.
 	components.realtime.onSemanticEvent((event) => {
 		if (event.kind === "diagnostic") {
-			voiceStartTrace.note("diagnostic", { code: event.code, message: event.message });
+			trace.note("diagnostic", { code: event.code, message: event.message });
 		}
 		if (event.kind !== "state") {
 			return;
 		}
-		voiceStartTrace.note("state", { phase: event.state.phase, reason: event.state.reason });
+		trace.note("state", { phase: event.state.phase, reason: event.state.reason });
 	});
 	/**
 	 * Run one realtime operation after the last one has settled: a session is a
@@ -286,23 +283,7 @@ export function createServerRealtimeActions(
 			}
 		}
 	};
-	/**
-	 * Make room for a new session: stop the one running, or refuse a recording while one is.
-	 *
-	 * Live means the adapter still holds the session. One Codex ended by itself leaves the server's
-	 * record of it behind until something stops it, and refusing a recording over that would say
-	 * voice is live when nobody is talking.
-	 * @param recording Whether the new session is a recording.
-	 */
-	const makeRoom = async (recording: boolean): Promise<void> => {
-		if (activeRealtime === null) {
-			return;
-		}
-		if (recording && components.realtime.generation() !== null) {
-			throw recordingRefusal();
-		}
-		await stopActive();
-	};
+
 	/**
 	 * Give a start a coordinator that has carried no voice session: the current one when it has
 	 * not, and a fresh one in its place when it has. A replacement that does not become ready
@@ -316,21 +297,21 @@ export function createServerRealtimeActions(
 		try {
 			await components.coordinator.replace({
 				operationId: components.identity.operation.issuer.mintOperationId(),
-				onRetired: noteRetirement,
+				onRetired: noteRetirement(trace),
 			});
 		} catch (error) {
 			const refusal = new Error(
 				`Voice could not start a fresh coordinator: ${traceMessage(error)}`,
 				{ cause: error },
 			);
-			voiceStartTrace.note("refused", { message: traceMessage(refusal) });
+			trace.note("refused", { message: traceMessage(refusal) });
 			throw refusal;
 		}
 		const fresh = components.coordinator.snapshot();
 		if (fresh.threadId !== null) {
 			claimThread(fresh.threadId);
 		}
-		voiceStartTrace.note("coordinator_replaced", { coordinatorState: fresh.state });
+		trace.note("coordinator_replaced", { coordinatorState: fresh.state });
 	};
 	/**
 	 * The realtime session one command may act on, refused when the handle no
@@ -338,7 +319,7 @@ export function createServerRealtimeActions(
 	 * @param handle The handle the command named.
 	 * @param context The pane and the link it named.
 	 * @param socketBound Whether the command must come from the session's own
-	 * socket; only stopping may come from any pane of the server.
+	 * socket; only stopping may come from any pane of the tab.
 	 * @returns The session.
 	 */
 	const requireActive = (
@@ -373,7 +354,7 @@ export function createServerRealtimeActions(
 		const coordinatorThreadId = coordinator.threadId;
 		const workhorse = components.workhorse.snapshot();
 		// Which of the conditions a refusal turned on is the first thing anybody asks.
-		voiceStartTrace.note("preconditions", {
+		trace.note("preconditions", {
 			linkedThread: threadId !== null,
 			coordinatorState: coordinator.state,
 			coordinatorReason: coordinator.reason,
@@ -417,30 +398,28 @@ export function createServerRealtimeActions(
 		try {
 			return pendingRealtime(commandId, context);
 		} catch (error) {
-			voiceStartTrace.note("refused", { message: traceMessage(error) });
+			trace.note("refused", { message: traceMessage(error) });
 			throw error;
 		}
 	};
 
 	const actions: BrowserRealtimeActions = {
 		/**
-		 * Start voice for one pane, replacing whatever session was running; a recording is
-		 * refused instead while one is.
+		 * Start voice for one pane, replacing whatever session its tab was running.
 		 * @param command The offer.
 		 * @param context The pane and the link it named.
 		 * @returns The answer, and the handle the pane holds the session by.
 		 */
 		start: (command, context) =>
 			serialize(async () => {
-				const recording = command.presentation?.recording === true;
-				voiceStartTrace.begin(context.paneId);
-				voiceStartTrace.note("requested", {
+				trace.begin(context.paneId);
+				trace.note("requested", {
 					narration: command.presentation !== undefined,
-					recording,
+					recording: command.presentation?.recording === true,
 					offerSdpBytes: Buffer.byteLength(command.sdp),
 					replacesSession: activeRealtime !== null,
 				});
-				await makeRoom(recording);
+				await stopActive();
 				await freshCoordinator();
 				const pending = tracedPending(command.commandId, context);
 				activeRealtime = pending;
@@ -463,10 +442,10 @@ export function createServerRealtimeActions(
 						},
 						presentation,
 					);
-					openFirstStep(presentation, pending.browserId);
+					openFirstStep(presentation, pending.browserId, trace);
 					const realtimeAnswer = await answering;
 					requireActive(pending.handle, context);
-					voiceStartTrace.note("answered", {
+					trace.note("answered", {
 						answerSdpBytes: Buffer.byteLength(realtimeAnswer.sdp),
 					});
 					return {
@@ -475,7 +454,7 @@ export function createServerRealtimeActions(
 						realtimeSessionHandle: pending.handle,
 					};
 				} catch (error) {
-					voiceStartTrace.note("failed", { message: traceMessage(error) });
+					trace.note("failed", { message: traceMessage(error) });
 					if (activeRealtime === pending) {
 						activeRealtime = null;
 					}
@@ -499,8 +478,8 @@ export function createServerRealtimeActions(
 				return { outcome: "delivered" as const };
 			}),
 		/**
-		 * Stop the session, from whichever pane holds the lease: the server has
-		 * one conversation, and ending its voice needs no media of its own.
+		 * Stop the session, from whichever pane of the tab holds the lease: the tab
+		 * has one conversation, and ending its voice needs no media of its own.
 		 * @param command The handle.
 		 * @param context The pane and the link it named.
 		 * @returns The browser outcome.

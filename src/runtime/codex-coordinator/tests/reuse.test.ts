@@ -8,7 +8,8 @@ import type {
 	CoordinatorThreadLinkClassification,
 } from "../index.js";
 import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
-import { fixture, type Fixture } from "./support.js";
+import { createCodexCoordinator } from "../index.js";
+import { CHECKOUT_ROOT, fixture, type Fixture } from "./support.js";
 
 function persistence(snapshot: CoordinatorSnapshot): CoordinatorPersistedState {
 	if (snapshot.persistence === null) {
@@ -145,6 +146,30 @@ describe("coordinator candidate reuse and replacement", () => {
 		expect(inspected.reason).toContain("persisted coordinator settings snapshot");
 		expect(fixtureValue.session.startParams).toHaveLength(1);
 		expect(fixtureValue.link.calls).toHaveLength(0);
+	});
+
+	test("a conversation's first coordinator starts beside another conversation's committed one in the same epoch", async () => {
+		const fixtureValue = fixture();
+		await ready(fixtureValue);
+		// Another browser tab's conversation, on the same child epoch and Codex session (TASK-373).
+		const other = createCodexCoordinator({
+			session: fixtureValue.session,
+			threadLink: fixtureValue.link,
+			epoch: fixtureValue.epoch,
+			identity: fixtureValue.authority,
+			checkoutRoot: CHECKOUT_ROOT,
+		});
+		const first = fixtureValue.coordinator;
+		fixtureValue.session.notify = (event) => {
+			first.onNotification(event);
+			other.onNotification(event);
+		};
+
+		const started = await other.ensure({ operationId: "another-conversation" });
+
+		expect(started.state).toBe("ready");
+		expect(fixtureValue.session.startParams).toHaveLength(2);
+		expect(first.snapshot().state).toBe("ready");
 	});
 
 	test("replaces an inspect-only not-loaded candidate through a new staged transaction", async () => {

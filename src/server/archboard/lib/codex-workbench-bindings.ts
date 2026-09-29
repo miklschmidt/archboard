@@ -1,9 +1,12 @@
 import type { createCodexWaitGraph } from "@/runtime/codex-wait-graph";
+import type { ApprovalSnapshot } from "@/runtime/codex-approvals";
 import type { ThreadId } from "@/shared/codex-workbench-identity";
 import type {
+	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationInput,
 	ProductionCodexWorkbenchBindings,
 } from "@/server/archboard/lib/codex-workbench";
+import { tabSessionLink } from "@/server/archboard/lib/codex-workbench-ordinary-approvals";
 import { createServerDynamicOperationIdAdapter } from "@/server/archboard/lib/codex-workbench-operation-lifecycle";
 import type { GenerationOwners } from "@/server/archboard/lib/codex-workbench-generation-owners";
 import {
@@ -99,21 +102,51 @@ function storageBindings(
 }
 
 /**
- * The pane an approval on one thread belongs to: the pane the semantic delivery
- * of the thread's tab session is bound to, when that binding names the thread.
+ * The tab session an approval on one thread belongs to: the one that started
+ * the thread, whether its workhorse or its coordinator asked.
  * @param sessions The generation's tab sessions, once they are built.
  * @param threadId The thread the approval was asked on.
- * @returns The link, or none.
+ * @returns The link, or none when no tab session holds the thread.
  */
 function approvalLink(
 	sessions: CodexWorkbenchSessions | undefined,
 	threadId: ThreadId,
 ): { readonly link: string | null } {
-	const binding =
-		sessions?.forThread(threadId)?.components.semanticDelivery.snapshot().binding ?? null;
-	return binding?.target.threadId === threadId
-		? { link: `pane:${binding.paneId}` }
-		: { link: null };
+	const session = sessions?.forThread(threadId) ?? null;
+	return { link: session === null ? null : tabSessionLink(session.id) };
+}
+
+/**
+ * Cancel an approval nobody can be shown, because no tab session holds the
+ * thread that asked: a running turn must never wait on nobody. Once cancelled
+ * it is retired, since no browser will show its terminal either.
+ * @param approvals The broker, once it is built.
+ * @param snapshot The approval as the broker just published it.
+ */
+function cancelUnheld(
+	approvals: CodexWorkbenchComponents["approvals"] | undefined,
+	snapshot: ApprovalSnapshot,
+): void {
+	if (
+		approvals === undefined ||
+		snapshot.binding.link !== null ||
+		(snapshot.state !== "staged" && snapshot.state !== "pending")
+	) {
+		return;
+	}
+	// After the broker has finished publishing the approval it is taking in.
+	queueMicrotask(() => {
+		void approvals
+			.cancel(snapshot.requestId, "No browser tab holds the thread that asked.")
+			.then(() => {
+				if (approvals.get(snapshot.requestId) !== undefined) {
+					approvals.acknowledge(snapshot.requestId);
+				}
+				return undefined;
+			})
+			// Something else settled it first; the broker reports its own write failures.
+			.catch(() => undefined);
+	});
 }
 
 /**
@@ -140,15 +173,18 @@ function approvalBindings(
 		approvals: (created) => ({
 			onError: server.onFatal,
 			/**
-			 * The pane one approval belongs to, which is the pane the semantic
-			 * delivery of the thread's tab session is bound to when that binding
-			 * names the same thread.
+			 * The tab session one approval belongs to: the one that started the
+			 * thread that asked.
 			 * @param request The approval request.
 			 * @returns The link, or none.
 			 */
 			getCurrentBinding: (request) => approvalLink(created.sessions, request.threadId),
-			/** Publish what an approval changed. */
-			onChange: () => {
+			/**
+			 * Cancel an approval no tab session holds, and publish what an approval changed.
+			 * @param snapshot The approval as it now stands.
+			 */
+			onChange: (snapshot) => {
+				cancelUnheld(created.approvals, snapshot);
 				publishProjection(owners);
 			},
 		}),
@@ -203,13 +239,14 @@ function createProductionBindings(context: BindingContext): ProductionCodexWorkb
 		...approvalBindings(context),
 		/**
 		 * What each owner of one tab session is configured with.
-		 * @param _id The session, which nothing it is configured with depends on yet.
+		 * @param id The session.
 		 * @param shared The generation's components it runs over.
 		 * @param state What the session remembers.
 		 * @returns The session's bindings.
 		 */
-		tabSession: (_id, shared, state) =>
+		tabSession: (id, shared, state) =>
 			createSessionBindings({
+				tabSessionId: id,
 				server: context.server,
 				shared,
 				state,
