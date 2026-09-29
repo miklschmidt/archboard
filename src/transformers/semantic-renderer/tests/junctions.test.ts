@@ -31,6 +31,7 @@ test("a route joining another's lane is marked where it joins, and only there", 
 	expect(joins).toHaveLength(1);
 	expect(joins[0]!.point.x).toBeCloseTo(0.6, 1);
 	expect(joins[0]!.point.y).toBeCloseTo(200, 1);
+	expect(joins[0]!.routes.toSorted((a, b) => a - b)).toEqual([0, 1]);
 });
 
 // Platform Phone API: a merge dot drawn at the corner a route's bend cut, eight
@@ -55,6 +56,8 @@ test("joins a few units apart along one lane are marked once, from the first to 
 	expect(joins).toHaveLength(1);
 	expect(joins[0]!.point).toEqual({ x: 0, y: 200 });
 	expect(joins[0]!.until).toEqual({ x: 0, y: 206 });
+	// One mark for the three joins stands for every route that meets along it.
+	expect(joins[0]!.routes.toSorted((a, b) => a - b)).toEqual([0, 1, 2]);
 });
 
 test("routes that only arrive at one point, or run apart, are not marked", () => {

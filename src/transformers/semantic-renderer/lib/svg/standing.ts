@@ -213,6 +213,14 @@ function standingsFrom(stated: StatedStandings | undefined): StandingOf {
 const TRAFFIC_ATTRIBUTE = "data-traffic";
 
 /**
+ * The attribute on a mark that stands with the subjects it lists,
+ * space-separated: a group's region lists its cards, and a junction mark the
+ * relationships that join or part at it. A viewer lights the mark while one of
+ * them is lit.
+ */
+const MEMBERS_ATTRIBUTE = "data-members";
+
+/**
  * The attribute on a group that draws one part of a subject drawn in two: a
  * container's header, a relationship's or a message's label, a participant's
  * lifeline. A viewer says more about a subject where its words are.
@@ -498,6 +506,7 @@ export {
 	type UnsettledOf,
 	BADGE_SIZE,
 	PART_ATTRIBUTE,
+	MEMBERS_ATTRIBUTE,
 	TRAFFIC_ATTRIBUTE,
 	markedBox,
 	standingInk,
