@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 15,
+	"version": 16,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-09-29T13:22:16.234Z",
+	"updatedAt": "2026-09-29T16:24:41.157Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -74,7 +74,7 @@
 		{
 			"id": "IVTpHq7O",
 			"name": "Current architecture",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"summary": "Service level: browser application modules. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
@@ -719,7 +719,7 @@
 		{
 			"id": "NdfNpTda",
 			"name": "TASK-373",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "IVTpHq7O",
 			"summary": "Service level: browser application modules. Follow linked subjects for related levels.",
 			"content": {
@@ -1390,5 +1390,13 @@
 			}
 		}
 	],
-	"current": "IVTpHq7O"
+	"current": "NdfNpTda",
+	"adoptions": [
+		{
+			"variant": "NdfNpTda",
+			"from": "IVTpHq7O",
+			"at": "2026-09-29T16:24:41.157Z",
+			"reason": "TASK-373: each browser tab is a tab session with its own link, workhorse, coordinator, voice, delivery, queue, lease and approvals; the thread selector is gone"
+		}
+	]
 }

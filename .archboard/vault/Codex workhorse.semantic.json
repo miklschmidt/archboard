@@ -4,9 +4,9 @@
 	"id": "SJ2JMVyz",
 	"name": "Codex workhorse",
 	"level": "module",
-	"version": 12,
+	"version": 13,
 	"createdAt": "2026-09-17T21:06:43.257Z",
-	"updatedAt": "2026-09-29T13:21:01.604Z",
+	"updatedAt": "2026-09-29T16:24:40.980Z",
 	"views": [
 		{
 			"id": "TX1Vzuu7",
@@ -472,7 +472,7 @@
 		{
 			"id": "7MQ3CPWJ",
 			"name": "TASK-301",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "y9kWSCEn",
 			"summary": "Module level: the workhorse thread, its queue, and the coordinator's door. Follow linked subjects for related levels.",
 			"content": {
@@ -894,7 +894,7 @@
 		{
 			"id": "jmrOQsI1",
 			"name": "TASK-373",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "7MQ3CPWJ",
 			"summary": "Module level: the workhorse thread, its queue, and the coordinator's door. Follow linked subjects for related levels.",
 			"content": {
@@ -1314,13 +1314,19 @@
 			}
 		}
 	],
-	"current": "7MQ3CPWJ",
+	"current": "jmrOQsI1",
 	"adoptions": [
 		{
 			"variant": "7MQ3CPWJ",
 			"from": "y9kWSCEn",
 			"at": "2026-09-29T03:26:12.050Z",
 			"reason": "TASK-301: an operation follows its workhorse turn after the coordinator that asked for it is replaced"
+		},
+		{
+			"variant": "jmrOQsI1",
+			"from": "7MQ3CPWJ",
+			"at": "2026-09-29T16:24:40.980Z",
+			"reason": "TASK-373: each browser tab is a tab session with its own link, workhorse, coordinator, voice, delivery, queue, lease and approvals; the thread selector is gone"
 		}
 	]
 }

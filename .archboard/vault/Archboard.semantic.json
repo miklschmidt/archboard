@@ -4,15 +4,15 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 14,
+	"version": 15,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-09-29T16:13:15.703Z",
+	"updatedAt": "2026-09-29T16:24:40.639Z",
 	"views": [],
 	"variants": [
 		{
 			"id": "J5Sigjhi",
 			"name": "Current architecture",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"summary": "System level: the processes that run, and what they keep. Drill into each application for its internal modules.",
 			"content": {
 				"nodes": [
@@ -347,7 +347,7 @@
 		{
 			"id": "RSCDIXvS",
 			"name": "TASK-373",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "J5Sigjhi",
 			"summary": "System level: the processes that run, and what they keep. Drill into each application for its internal modules.",
 			"content": {
@@ -681,5 +681,13 @@
 			}
 		}
 	],
-	"current": "J5Sigjhi"
+	"current": "RSCDIXvS",
+	"adoptions": [
+		{
+			"variant": "RSCDIXvS",
+			"from": "J5Sigjhi",
+			"at": "2026-09-29T16:24:40.639Z",
+			"reason": "TASK-373: each browser tab is a tab session with its own link, workhorse, coordinator, voice, delivery, queue, lease and approvals; the thread selector is gone"
+		}
+	]
 }

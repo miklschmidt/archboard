@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 18,
+	"version": 19,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-09-29T16:13:52.561Z",
+	"updatedAt": "2026-09-29T16:24:40.806Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -79,7 +79,7 @@
 		{
 			"id": "GC6SAtGL",
 			"name": "Current architecture",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"summary": "Service level: Archboard server modules and the one write boundary. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
@@ -1420,7 +1420,7 @@
 		{
 			"id": "82cs8TFY",
 			"name": "TASK-373",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "GC6SAtGL",
 			"summary": "Service level: Archboard server modules and the one write boundary. Follow linked subjects for related levels.",
 			"content": {
@@ -2334,7 +2334,15 @@
 			}
 		}
 	],
-	"current": "GC6SAtGL",
+	"current": "82cs8TFY",
+	"adoptions": [
+		{
+			"variant": "82cs8TFY",
+			"from": "GC6SAtGL",
+			"at": "2026-09-29T16:24:40.806Z",
+			"reason": "TASK-373: each browser tab is a tab session with its own link, workhorse, coordinator, voice, delivery, queue, lease and approvals; the thread selector is gone"
+		}
+	],
 	"shelvings": [
 		{
 			"variant": "nkFJIEAH",
