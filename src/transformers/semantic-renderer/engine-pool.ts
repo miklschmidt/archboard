@@ -1,20 +1,23 @@
 // The layout engine's workers, in the browser and under Bun alike: a few
-// workers, each running the Graphviz/libavoid engine pair and answering one
-// solve at a time.
+// workers, each running the Graphviz/libavoid engine pair and solving one
+// graph at a time.
 //
 // A render settles several candidate drawings, and a worker answers its
-// messages in order, so one worker would queue every candidate behind every
-// other. The pool starts a worker only when a solve finds every running one
-// busy and none of them still starting, up to one fewer than the cores the
-// place reports, so a small board starts one and a wide one spreads its
-// candidates out without compiling the engine a dozen times at once. Each
-// solve starts from the engine's memory as it was loaded (`loadLayoutEngine`),
-// so neither which worker answers a solve nor what that worker solved before
-// changes the drawing.
+// messages in order, so one worker would hold every candidate behind every
+// other. A solve waits in the pool until a worker is free and goes to the
+// first that is: how long the solve a busy worker holds takes is known only
+// when it answers, and a candidate sent behind a long one waited for it while
+// another worker stood idle (TASK-377). The pool starts a worker only when a
+// solve finds every running one busy and none of them still starting, up to
+// one fewer than the cores the place reports, so a small board starts one and
+// a wide one spreads its candidates out without compiling the engine a dozen
+// times at once. Each solve starts from the engine's memory as it was loaded
+// (`loadLayoutEngine`), so neither which worker answers a solve nor what that
+// worker solved before changes the drawing.
 //
 // An engine that aborts stays aborted: every later solve on that worker fails
 // the same way. A worker whose engine aborted or failed to start, or that
-// stopped, is replaced, and each solve it held is sent once more to another
+// stopped, is replaced, and the solve it held waits once more for another
 // worker; a solve that fails a second time is refused with the engine's words.
 //
 // The workers accept `{ id, graph, layoutOptions }` and answer with
@@ -57,12 +60,12 @@ interface Pending {
 	readonly retried: boolean;
 }
 
-/** One worker, and the solves it has been sent and not yet answered. */
+/** One worker, and the solve it was sent and has not answered yet. */
 interface PooledEngine {
 	readonly worker: EngineWorker;
 	/** Whether it has answered anything yet, which is when its engine is compiled. */
 	answered: boolean;
-	readonly waiting: Map<number, Pending>;
+	solving?: { readonly id: number; readonly pending: Pending } | undefined;
 }
 
 /**
@@ -126,11 +129,13 @@ function settle(pending: Pending, answer: EngineAnswer): void {
  */
 function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Solve {
 	const engines: PooledEngine[] = [];
+	/** Solves no worker is free for yet, in the order they were asked. */
+	const queued: Pending[] = [];
 	let nextId = 0;
 
 	/**
-	 * Evict a failed worker: each solve it held goes once more to another
-	 * worker, and a solve already sent twice is refused.
+	 * Evict a failed worker: the solve it held waits once more for another
+	 * worker, or is refused when it was already sent twice.
 	 * @param engine The failed worker.
 	 * @param failure Why it failed.
 	 */
@@ -138,20 +143,21 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 		const index = engines.indexOf(engine);
 		if (index < 0) return;
 		engines.splice(index, 1);
-		const held = [...engine.waiting.values()];
-		engine.waiting.clear();
+		const held = engine.solving?.pending;
+		engine.solving = undefined;
 		engine.worker.terminate?.();
-		for (const pending of held) retryOrRefuse(pending, failure);
+		if (held !== undefined) retryOrRefuse(held, failure);
+		dispatch();
 	}
 
 	/**
-	 * Send a solve whose worker failed once more, or refuse one already sent twice.
+	 * Queue a solve whose worker failed once more, or refuse one already sent twice.
 	 * @param pending The solve.
 	 * @param failure Why its worker failed.
 	 */
 	function retryOrRefuse(pending: Pending, failure: Error): void {
 		if (pending.retried) pending.reject(failure);
-		else send({ ...pending, retried: true });
+		else queued.push({ ...pending, retried: true });
 	}
 
 	/**
@@ -160,17 +166,17 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 	 * @param answer What it answered.
 	 */
 	function hear(engine: PooledEngine, answer: EngineAnswer): void {
-		const pending = engine.waiting.get(answer.id);
-		if (pending === undefined) return;
-		engine.waiting.delete(answer.id);
+		const solving = engine.solving;
+		if (solving?.id !== answer.id) return;
 		engine.answered = true;
-		if (engine.waiting.size === 0) engine.worker.unref?.();
-		if (answer.fatal !== true) settle(pending, answer);
-		else {
-			const failure = engineError(answer.error ?? "The layout worker stopped answering.");
-			discard(engine, failure);
-			retryOrRefuse(pending, failure);
+		if (answer.fatal === true) {
+			discard(engine, engineError(answer.error ?? "The layout worker stopped answering."));
+			return;
 		}
+		engine.solving = undefined;
+		engine.worker.unref?.();
+		settle(solving.pending, answer);
+		dispatch();
 	}
 
 	/**
@@ -178,7 +184,7 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 	 * @returns The pooled worker.
 	 */
 	function start(): PooledEngine {
-		const engine: PooledEngine = { worker: startWorker(), answered: false, waiting: new Map() };
+		const engine: PooledEngine = { worker: startWorker(), answered: false };
 		engine.worker.addEventListener("message", (event) => {
 			if (isAnswer(event)) hear(engine, event.data);
 		});
@@ -191,42 +197,53 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 	}
 
 	/**
-	 * The idle worker, a new one while the ceiling allows and none is still
-	 * starting, or the least busy.
-	 * @returns The worker to send a solve to.
+	 * The idle worker, or a new one while the ceiling allows and none is still
+	 * starting.
+	 * @returns The worker to send a solve to, or nothing while every one is busy.
 	 */
-	function engineForSolve(): PooledEngine {
-		const idle = engines.find((engine) => engine.waiting.size === 0);
+	function freeEngine(): PooledEngine | undefined {
+		const idle = engines.find((engine) => engine.solving === undefined);
 		if (idle !== undefined) return idle;
 		// One worker starting at a time: a worker that has not answered is still
 		// compiling the engine, and starting another beside it only compiles it again.
 		if (engines.length < ceiling && engines.every((engine) => engine.answered)) return start();
-		return engines.toSorted((one, other) => one.waiting.size - other.waiting.size)[0]!;
+		return undefined;
+	}
+
+	/** Send the queued solves, in the order they were asked, to each worker free for one. */
+	function dispatch(): void {
+		while (queued.length > 0) {
+			const engine = freeEngine();
+			if (engine === undefined) return;
+			send(engine, queued.shift()!);
+		}
 	}
 
 	/**
 	 * Send one solve to a worker.
+	 * @param engine The worker.
 	 * @param pending The solve.
 	 */
-	function send(pending: Pending): void {
-		const engine = engineForSolve();
+	function send(engine: PooledEngine, pending: Pending): void {
 		const id = nextId;
 		nextId += 1;
-		engine.waiting.set(id, pending);
+		engine.solving = { id, pending };
 		engine.worker.ref?.();
 		try {
 			const { graph, layoutOptions } = pending;
 			// oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker's postMessage has no target origin; the rule is about window.postMessage
 			engine.worker.postMessage({ id, graph, layoutOptions });
 		} catch (error) {
-			engine.waiting.delete(id);
+			engine.solving = undefined;
+			engine.worker.unref?.();
 			pending.reject(error instanceof Error ? error : new Error(String(error)));
 		}
 	}
 
 	return (graph, layoutOptions) =>
 		new Promise<SolveGraph>((resolve, reject) => {
-			send({ graph, layoutOptions, resolve, reject, retried: false });
+			queued.push({ graph, layoutOptions, resolve, reject, retried: false });
+			dispatch();
 		});
 }
 

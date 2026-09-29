@@ -59,37 +59,51 @@ function heldPool(ceiling: number) {
 	return { solve, workers };
 }
 
-test("a pool grows one worker at a time, past workers that have started, up to its ceiling", async () => {
+/**
+ * The graphs a worker was sent, in order.
+ * @param worker The worker.
+ * @returns Their ids.
+ */
+function sentTo(worker: HeldWorker): string[] {
+	return worker.sent.map(({ graph }) => graph.id);
+}
+
+test("a solve waits for the first worker free, and the pool grows one worker at a time up to its ceiling", async () => {
 	const { solve, workers } = heldPool(2);
 	const first = solve({ id: "a" }, {});
 	const second = solve({ id: "b" }, {});
 	// The first worker has not answered, so it is still starting: the second
-	// solve waits behind it rather than compiling the engine again beside it.
+	// solve waits rather than compiling the engine again beside it.
 	expect(workers).toHaveLength(1);
+	expect(sentTo(workers[0]!)).toEqual(["a"]);
 	workers[0]!.answer(0, { data: { id: "a!" } });
 	expect(await first).toEqual({ id: "a!" });
+	expect(sentTo(workers[0]!)).toEqual(["a", "b"]);
 
 	// It has started and is busy, so the next solve starts a second worker; the
-	// ceiling keeps the one after that waiting on the least busy.
+	// ceiling keeps the ones after that waiting in the pool.
 	const third = solve({ id: "c" }, {});
-	workers[1]!.answer(0, { data: { id: "c!" } });
-	expect(await third).toEqual({ id: "c!" });
 	const fourth = solve({ id: "d" }, {});
 	const fifth = solve({ id: "e" }, {});
 	expect(workers).toHaveLength(2);
+	expect(sentTo(workers[1]!)).toEqual(["c"]);
 
+	// A waiting solve goes to whichever worker frees up first, never behind a
+	// worker still busy with a long solve.
+	workers[1]!.answer(0, { data: { id: "c!" } });
+	expect(sentTo(workers[1]!)).toEqual(["c", "d"]);
+	expect(sentTo(workers[0]!)).toEqual(["a", "b"]);
+	workers[1]!.answer(1, { data: { id: "d!" } });
+	expect(sentTo(workers[1]!)).toEqual(["c", "d", "e"]);
+	workers[1]!.answer(2, { data: { id: "e!" } });
 	workers[0]!.answer(1, { data: { id: "b!" } });
-	for (const [index, message] of workers[1]!.sent.entries()) {
-		if (index > 0) workers[1]!.answer(index, { data: { id: `${message.graph.id}!` } });
-	}
-	for (const [index, message] of workers[0]!.sent.entries()) {
-		if (index > 1) workers[0]!.answer(index, { data: { id: `${message.graph.id}!` } });
-	}
-	expect(await Promise.all([second, fourth, fifth])).toEqual([
+	expect(await Promise.all([second, third, fourth, fifth])).toEqual([
 		{ id: "b!" },
+		{ id: "c!" },
 		{ id: "d!" },
 		{ id: "e!" },
 	]);
+	expect(workers).toHaveLength(2);
 });
 
 test("an engine refusal rejects the solve with an error that keeps the engine's words", async () => {
@@ -114,14 +128,15 @@ test("a worker that stops is replaced, and the solve it held is answered by the 
 	expect(await first).toEqual({ id: "a!" });
 });
 
-test("an engine that aborted is replaced, and every solve it held is sent once more", async () => {
+test("an engine that aborted is replaced, and the solve it held is sent once more", async () => {
 	const { solve, workers } = heldPool(1);
 	const first = solve({ id: "a" }, {});
 	const second = solve({ id: "b" }, {});
 	workers[0]!.answer(0, { error: "program has already aborted!", fatal: true });
 	expect(workers[0]!.terminated).toBe(true);
-	expect(workers[1]!.sent.map(({ graph }) => graph.id)).toEqual(["b", "a"]);
+	expect(sentTo(workers[1]!)).toEqual(["b"]);
 	workers[1]!.answer(0, { data: { id: "b!" } });
+	expect(sentTo(workers[1]!)).toEqual(["b", "a"]);
 	workers[1]!.answer(1, { data: { id: "a!" } });
 	expect(await Promise.all([first, second])).toEqual([{ id: "a!" }, { id: "b!" }]);
 });
