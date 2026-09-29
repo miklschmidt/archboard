@@ -126,13 +126,11 @@ function storageBindings(
 		 */
 		dynamicTools: () => ({ waitGraph: context.waitGraph, checkoutRoot: server.checkoutRoot }),
 		/**
-		 * The checkout the coordinator runs in, and whatever state it inherits.
+		 * The checkout the coordinator runs in. It inherits nothing: every child
+		 * epoch starts its coordinators afresh (ADR 0019).
 		 * @returns The coordinator binding.
 		 */
-		coordinator: () => ({
-			checkoutRoot: server.checkoutRoot,
-			persisted: input.adoptedCoordinator,
-		}),
+		coordinator: () => ({ checkoutRoot: server.checkoutRoot }),
 	};
 }
 

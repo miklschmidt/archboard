@@ -175,6 +175,8 @@ function createServerBrowserGatewayOptions(
 		return read;
 	};
 	const threadLinks = createServerThreadLinkActions({
+		coordinator: components.coordinator,
+		identity: components.identity,
 		workhorse: components.workhorse,
 		threadLink: components.threadLink,
 		semanticDelivery: components.semanticDelivery,
@@ -204,7 +206,8 @@ function createServerBrowserGatewayOptions(
 		},
 		threadLinks: {
 			/**
-			 * Start a new workhorse thread and link this pane to it.
+			 * Start a new conversation, its coordinator and workhorse, and link this
+			 * pane to it.
 			 * @param command The creation.
 			 * @param context The pane.
 			 * @returns What the link owner answered.

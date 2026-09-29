@@ -125,13 +125,8 @@ describe("Codex workbench browser gateway readiness", () => {
 	test("allows account reads and account commands before account readiness", async () => {
 		const value = harness();
 		const connection = value.open();
-		for (const state of [
-			"login_capable",
-			"signed_out",
-			"login_pending",
-			"account_ready",
-			"thread_capable",
-		] as const) {
+		const states = ["login_capable", "signed_out", "login_pending", "thread_capable"] as const;
+		for (const state of states) {
 			value.setReadiness(state);
 			const read = await connection.accountRead();
 			expect(read.outcome).toBe("delivered");
@@ -146,8 +141,8 @@ describe("Codex workbench browser gateway readiness", () => {
 			expect(result.outcome).toBe("delivered");
 			connection.releaseLease();
 		}
-		expect(value.calls.filter((call) => call === "account.read")).toHaveLength(5);
-		expect(value.calls.filter((call) => call === "account.login")).toHaveLength(4);
+		expect(value.calls.filter((call) => call === "account.read")).toHaveLength(states.length);
+		expect(value.calls.filter((call) => call === "account.login")).toHaveLength(states.length - 1);
 		expect(value.calls.filter((call) => call === "account.loginCancel")).toHaveLength(1);
 	});
 
@@ -192,7 +187,7 @@ describe("Codex workbench browser command routing", () => {
 	test("requires composed thread capability and an exact executable link", async () => {
 		const value = harness();
 		const connection = value.open();
-		value.setReadiness("account_ready");
+		value.setReadiness("login_capable");
 		let lease = connection.claimLease();
 		let result = await connection.command(startCommand(value, lease));
 		expect(result).toMatchObject({ code: "thread_capability_required", outcome: "not_delivered" });

@@ -26,7 +26,6 @@ const ACCOUNT_READINESS = new Set([
 	"login_capable",
 	"signed_out",
 	"login_pending",
-	"account_ready",
 	"thread_capable",
 ]);
 

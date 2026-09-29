@@ -85,7 +85,6 @@ function readiness(overrides: Partial<ServerReadinessInput>): BrowserReadiness {
 		process: processFacts(),
 		account: { kind: "account", state: "unknown", reason: "not read" },
 		login: { kind: "login", state: "idle" },
-		coordinatorReady: false,
 		...overrides,
 	});
 	// Every produced arm must satisfy the closed browser contract, not just the
@@ -94,7 +93,7 @@ function readiness(overrides: Partial<ServerReadinessInput>): BrowserReadiness {
 	return value;
 }
 
-test("owned-process, session, account, and coordinator facts produce every readiness arm", () => {
+test("owned-process, session and account facts produce every readiness arm", () => {
 	expect(readiness({ process: processFacts({ state: "stopped" }) })).toEqual({
 		kind: "readiness",
 		state: "stopped",
@@ -186,14 +185,11 @@ test("owned-process, session, account, and coordinator facts produce every readi
 				authUrl: "https://example.test/login",
 			},
 			account: signedInAccount,
-			coordinatorReady: true,
 		}),
 	).toEqual({ kind: "readiness", state: "login_pending", loginId });
+	// Signed in is thread-capable: the conversation's first message or Talk
+	// starts the coordinator.
 	expect(readiness({ account: signedInAccount })).toEqual({
-		kind: "readiness",
-		state: "account_ready",
-	});
-	expect(readiness({ account: signedInAccount, coordinatorReady: true })).toEqual({
 		kind: "readiness",
 		state: "thread_capable",
 	});
@@ -240,8 +236,7 @@ test("the production browser projection derives readiness from its live owners",
 	expect(stateNow()).toBe("login_pending");
 	state.login = { kind: "login", state: "completed", loginId };
 	state.account = signedInAccount;
-	expect(stateNow()).toBe("account_ready");
-	harness.setCoordinatorReady(true);
+	// No coordinator has started: the first create starts it.
 	expect(stateNow()).toBe("thread_capable");
 });
 

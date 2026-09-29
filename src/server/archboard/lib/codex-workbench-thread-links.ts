@@ -166,9 +166,50 @@ function assertBrowserLinkStands(
 
 /** The owners one generation's thread-link actions are closed over. */
 interface ServerThreadLinkActionOptions {
+	readonly coordinator: Pick<
+		CodexWorkbenchComponents["coordinator"],
+		"ensure" | "replace" | "snapshot"
+	>;
+	readonly identity: Pick<CodexWorkbenchComponents["identity"], "operation">;
 	readonly workhorse: CodexWorkbenchComponents["workhorse"];
 	readonly threadLink: CodexWorkbenchComponents["threadLink"];
 	readonly semanticDelivery: CodexWorkbenchComponents["semanticDelivery"];
+}
+
+/** The coordinator as it describes itself. */
+type CoordinatorSnapshot = ReturnType<ServerThreadLinkActionOptions["coordinator"]["snapshot"]>;
+
+/**
+ * Take no action on how a replaced coordinator's unload went: the retired thread
+ * keeps its rollout either way, and nothing a create answers depends on it.
+ */
+function ignoreRetirement(): void {}
+
+/**
+ * Give a new conversation a ready coordinator before its workhorse starts. The
+ * first conversation starts one. A conversation that replaces another replaces
+ * the coordinator that carried the old one, which Codex unloads once nothing
+ * runs on it (TASK-374). A ready coordinator no conversation has carried yet,
+ * because the create that started it failed at its workhorse, is kept.
+ * @param options The coordinator and the operation ids its starts run under.
+ * @param replacing Whether the pane's link names a conversation this create replaces.
+ * @throws {Error} With the coordinator's reason when it did not become ready.
+ */
+async function coordinatorForConversation(
+	options: Pick<ServerThreadLinkActionOptions, "coordinator" | "identity">,
+	replacing: boolean,
+): Promise<void> {
+	const operationId = options.identity.operation.issuer.mintOperationId();
+	const coordinator: CoordinatorSnapshot =
+		replacing && options.coordinator.snapshot().state === "ready"
+			? await options.coordinator.replace({
+					operationId,
+					onRetired: ignoreRetirement,
+				})
+			: await options.coordinator.ensure({ operationId });
+	if (coordinator.state !== "ready") {
+		throw new Error(coordinator.reason ?? `The agent's coordinator is ${coordinator.state}.`);
+	}
 }
 
 /**
@@ -199,7 +240,10 @@ function createServerThreadLinkActions(
 	};
 	return Object.freeze({
 		/**
-		 * Start a new workhorse thread and make it the server's link.
+		 * Start a new conversation and make it the server's link: its coordinator
+		 * first, then its workhorse thread, then board-change delivery to it. A
+		 * coordinator that cannot start refuses the create with its reason and
+		 * starts no workhorse; the next message or Talk tries again.
 		 * @param _command The creation, which names nothing to choose.
 		 * @param context The pane and its child epoch.
 		 * @returns The browser outcome.
@@ -207,6 +251,7 @@ function createServerThreadLinkActions(
 		create: (_command, context) =>
 			serializeLinkChange(async () => {
 				assertBrowserLinkStands(options.threadLink, context);
+				await coordinatorForConversation(options, context.link.threadId !== null);
 				const started = await options.workhorse.start({
 					paneId: context.paneId,
 					expected: expectedBrowserLink(context),

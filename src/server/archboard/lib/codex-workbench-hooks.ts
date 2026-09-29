@@ -57,26 +57,6 @@ async function startEpochAndSession(
 }
 
 /**
- * Bring up the coordinator a signed-in account can run turns through.
- * @param context What the generation provides.
- * @param components The graph it belongs to.
- */
-async function ensureCoordinator(
-	context: HookContext,
-	components: CodexWorkbenchComponents,
-): Promise<void> {
-	const { input } = context;
-	input.assertActivationCurrent();
-	const coordinator = await components.coordinator.ensure({
-		operationId: components.identity.operation.issuer.mintOperationId(),
-	});
-	input.assertActivationCurrent();
-	if (coordinator.state !== "ready") {
-		throw new Error(coordinator.reason ?? "The production Codex coordinator did not become ready.");
-	}
-}
-
-/**
  * Read the account, or null when Codex answered the read with an error. Since
  * Codex 0.158.0 a ChatGPT account read asks the backend for its workspace
  * routing, so a network failure is an answer the session survives; a read
@@ -129,11 +109,9 @@ async function initializeSession(
 		publishProjection(owners);
 		return;
 	}
+	// Signed in is thread-capable: the conversation's first message or Talk
+	// starts the coordinator, not the sign-in.
 	const signedIn = account.account !== null;
-	if (signedIn) {
-		await ensureCoordinator(context, components);
-	}
-	input.assertActivationCurrent();
 	input.markSessionReady(signedIn);
 	input.assertActivationCurrent();
 	owners.browserState.account = { kind: "codex_account_response", response: account };

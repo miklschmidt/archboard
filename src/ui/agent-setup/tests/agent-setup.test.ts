@@ -326,13 +326,20 @@ test("a sign-in Codex gives up on fails what waited with its reason, and the nex
 	expect(again.log).toEqual(["https://auth.example.test/login"]);
 });
 
-test("a coordinator Codex could not start fails held work with its reason", () => {
+test("signed in with a coordinator an earlier create could not start, the next message creates again and fails with the refusal's reason", async () => {
 	const transport = movableTransport(STAGES.coordinatorFailed("The coordinator model is unknown."));
-	const { ports, calls } = portsOver(transport);
+	const { ports, calls } = portsOver(transport, {
+		/**
+		 * Refuse the create the way a coordinator that cannot start does.
+		 * @returns How it settles.
+		 */
+		create: () => Promise.resolve({ ok: false, reason: "The coordinator model is unknown." }),
+	});
 	const setup = createAgentSetup(ports);
 	setup.connect();
 	setup.send("Anything");
-	expect(calls).toEqual([]);
+	await settle();
+	expect(calls).toEqual(["create"]);
 	expect(heldStates(setup)).toEqual([["Anything", "failed", "The coordinator model is unknown."]]);
 });
 

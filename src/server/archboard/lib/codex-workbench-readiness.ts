@@ -15,8 +15,6 @@ export interface ServerReadinessInput {
 	readonly process: ServerReadinessProcessFacts;
 	readonly account: BrowserAccountProjectionInput;
 	readonly login: BrowserLogin;
-	/** Composed thread capability: the coordinator reached its ready lifecycle state. */
-	readonly coordinatorReady: boolean;
 }
 
 /**
@@ -72,22 +70,11 @@ function boundedPrefix(collapsed: string): string {
 }
 
 /**
- * The readiness a signed-in account reaches: thread-capable once the
- * coordinator is ready, and account-ready until then.
- * @param coordinatorReady Whether the coordinator reached its ready state.
- * @returns The readiness.
- */
-function signedInReadiness(coordinatorReady: boolean): BrowserReadiness {
-	return coordinatorReady
-		? { kind: "readiness", state: "thread_capable" }
-		: { kind: "readiness", state: "account_ready" };
-}
-
-/**
  * The readiness the account arm reports while the Codex process is running:
  * a sign-in in progress, what the account response said, or what the account
- * adapter last observed.
- * @param input The live process, account, login and coordinator facts.
+ * adapter last observed. A signed-in account is thread-capable: the
+ * conversation's first message or Talk starts its coordinator.
+ * @param input The live process, account and login facts.
  * @returns The readiness.
  */
 function accountReadiness(input: ServerReadinessInput): BrowserReadiness {
@@ -97,7 +84,7 @@ function accountReadiness(input: ServerReadinessInput): BrowserReadiness {
 	if (account.kind === "codex_account_response") {
 		return account.response.account === null
 			? { kind: "readiness", state: "signed_out" }
-			: signedInReadiness(input.coordinatorReady);
+			: { kind: "readiness", state: "thread_capable" };
 	}
 	return observedAccountReadiness(account);
 }
@@ -138,10 +125,10 @@ function observedAccountReadiness(
 }
 
 /**
- * Project one browser readiness arm from the live owned-process, session,
- * account, and coordinator facts. The gateway keeps no readiness of its own,
+ * Project one browser readiness arm from the live owned-process, session and
+ * account facts. The gateway keeps no readiness of its own,
  * and nothing here writes Codex state.
- * @param input The live process, account, login and coordinator facts.
+ * @param input The live process, account and login facts.
  * @returns The readiness arm.
  */
 export function projectServerBrowserReadiness(input: ServerReadinessInput): BrowserReadiness {
@@ -192,7 +179,7 @@ function refusedInstallationReadiness(
 
 /**
  * The readiness each process state reports.
- * @param input The live process, account, login and coordinator facts.
+ * @param input The live process, account and login facts.
  * @param process What the process reports.
  * @param failure What it last failed with, when it has.
  * @returns The readiness.
@@ -214,7 +201,7 @@ function processStateReadiness(
 /**
  * The readiness a running Codex process reports: its account arm once the
  * session is initialized, and reconnecting until then.
- * @param input The live process, account, login and coordinator facts.
+ * @param input The live process, account and login facts.
  * @param process What the process reports.
  * @returns The readiness.
  */

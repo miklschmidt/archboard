@@ -230,7 +230,6 @@ function readBrowserOwnerProjection(
 		process: input.process(),
 		account: state.account,
 		login: state.login,
-		coordinatorReady: coordinator.state === "ready",
 	});
 	return {
 		readiness,

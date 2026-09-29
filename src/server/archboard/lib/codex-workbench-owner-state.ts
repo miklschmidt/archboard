@@ -4,7 +4,6 @@ import {
 	type CodexProcessChild,
 	type CodexProcessSnapshot,
 } from "@/runtime/codex-process";
-import type { CoordinatorPersistedState } from "@/runtime/codex-coordinator";
 import type { CodexTransport } from "@/runtime/codex-transport";
 import type { IdentityAuthorities, IdentityLedger } from "@/shared/codex-workbench-identity";
 import type { CodexWorkbenchGateway } from "@/server/codex-workbench";
@@ -36,7 +35,6 @@ interface CodexWorkbenchGenerationInput {
 	readonly kernel: CodexWorkbenchStableKernel | null;
 	readonly initialIdentity: IdentityAuthorities | null;
 	readonly adoptedSession: "login-capable" | "thread-capable" | null;
-	readonly adoptedCoordinator: CoordinatorPersistedState | null;
 	readonly assertActivationCurrent: () => void;
 	readonly markSessionReady: (accountReady: boolean) => void;
 	/**

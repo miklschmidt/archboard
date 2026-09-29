@@ -90,6 +90,19 @@ describe.serial("actual production Codex composition", () => {
 			const initialLease = await current.request("claimLease");
 			expect(initialLease).toMatchObject({ ok: true });
 			expect(await current.request("releaseLease")).toMatchObject({ ok: true });
+			/**
+			 * The model of every thread the server has started, in order.
+			 * @returns The models.
+			 */
+			const startedModels = () =>
+				records(logPath)
+					.filter((entry) => entry.kind === "frame" && entry.method === "thread/start")
+					.map((entry) => entry.params?.["model"]);
+			// Signed in and thread-capable, and no thread started: the conversation's
+			// first create starts the coordinator.
+			const signedIn = snapshots(await current.request("snapshot"));
+			expect(signedIn["readiness"]).toMatchObject({ state: "thread_capable" });
+			expect(startedModels()).toEqual([]);
 			const createLease = await current.request("claimLease");
 			const created = await current.request("command", {
 				command: {
@@ -99,6 +112,9 @@ describe.serial("actual production Codex composition", () => {
 				},
 			});
 			expect(created).toMatchObject({ ok: true, value: { outcome: "delivered" } });
+			// The coordinator's thread starts before the workhorse's.
+			expect(startedModels()[0]).toBe("gpt-6-sol");
+			expect(startedModels()).toHaveLength(2);
 
 			const linked = snapshots(await current.request("snapshot"));
 			const threadLink = linked["threadLink"] as Record<string, unknown>;

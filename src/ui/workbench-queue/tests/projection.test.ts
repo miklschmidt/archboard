@@ -306,7 +306,6 @@ describe("workbench queue states", () => {
 			["login_capable", "unavailable"],
 			["signed_out", "unavailable"],
 			["login_pending", "unavailable"],
-			["account_ready", "unavailable"],
 			["thread_capable", "queued"],
 		] as const;
 

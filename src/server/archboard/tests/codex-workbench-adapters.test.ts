@@ -1,6 +1,9 @@
 import { expect, test } from "bun:test";
 
-import { createIdentityAuthorities } from "../../../shared/codex-workbench-identity/index.js";
+import {
+	createIdentityAuthorities,
+	type ThreadId,
+} from "../../../shared/codex-workbench-identity/index.js";
 import { parseTabSessionId } from "../../codex-workbench/index.js";
 import { createDynamicAuthorityTokenIssuer } from "../../../runtime/codex-dynamic-tools/index.js";
 import {
@@ -75,6 +78,27 @@ test("the production operation adapter shares authority and terminalizes exactly
 	).toThrow("different terminal disposition");
 });
 
+/**
+ * A coordinator that is ready and answers every start ready, recording which
+ * start the create asked for.
+ * @param starts Where each start is recorded.
+ * @returns The coordinator double.
+ */
+function readyCoordinator(starts: string[] = []) {
+	const ready = { state: "ready", reason: null } as const;
+	return {
+		snapshot: () => ready,
+		ensure: async () => {
+			starts.push("ensure");
+			return ready;
+		},
+		replace: async () => {
+			starts.push("replace");
+			return ready;
+		},
+	} as never;
+}
+
 test("create replaces controller authority with the exact returned CAS proof", async () => {
 	const authorities = createIdentityAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("thread-exact");
@@ -129,6 +153,8 @@ test("create replaces controller authority with the exact returned CAS proof", a
 		},
 	};
 	const actions = createServerThreadLinkActions({
+		coordinator: readyCoordinator(),
+		identity: authorities,
 		workhorse: {
 			start: async () => workhorseSnapshot(link(1)),
 		} as never,
@@ -224,6 +250,8 @@ test("two panes creating at once leave one workhorse: the later create is refuse
 	const starts: string[] = [];
 	let binding: unknown = null;
 	const actions = createServerThreadLinkActions({
+		coordinator: readyCoordinator(),
+		identity: authorities,
 		workhorse: {
 			start: async ({ paneId }: { readonly paneId: string }) => {
 				starts.push(paneId);
@@ -282,4 +310,85 @@ test("two panes creating at once leave one workhorse: the later create is refuse
 	// workhorse snapshot stays the winner's ready one.
 	expect(starts).toEqual(["A"]);
 	expect(binding).toMatchObject({ target: { threadId } });
+});
+
+/**
+ * One pane's create context, on an unbound link or on the conversation it holds.
+ * @param authorities The identity authorities.
+ * @param threadId The conversation the pane holds, or null.
+ * @returns The context.
+ */
+function createContext(
+	authorities: ReturnType<typeof createIdentityAuthorities>,
+	threadId: ThreadId | null,
+) {
+	const { childId, epoch } = authorities.identity.validator;
+	return {
+		browserId: "browser-A",
+		connection: Object.freeze({}),
+		paneId: "A",
+		tabSessionId: parseTabSessionId("tab-one")!,
+		commandId: authorities.identity.issuer.mintBrowserCommandId(),
+		childId,
+		epoch,
+		linkRevision: 0,
+		link:
+			threadId === null
+				? { threadId: null, childId: null, epoch: null }
+				: { threadId, childId, epoch },
+	} as never;
+}
+
+test("a create whose coordinator cannot start is refused with its reason and starts no workhorse", async () => {
+	const authorities = createIdentityAuthorities();
+	const reason = "Coordinator model selection failed.";
+	const failed = { state: "failed", reason } as const;
+	const workhorseStarts: unknown[] = [];
+	const actions = createServerThreadLinkActions({
+		coordinator: {
+			snapshot: () => failed,
+			ensure: async () => failed,
+			replace: async () => failed,
+		} as never,
+		identity: authorities,
+		workhorse: {
+			start: async (input: unknown) => {
+				workhorseStarts.push(input);
+				throw new Error("The workhorse must not start.");
+			},
+		} as never,
+		threadLink: {
+			read: () => ({ cas: { revision: 0, childId: null, epoch: null, threadId: null } }),
+		} as never,
+		semanticDelivery: undefined as never,
+	});
+	await expect(
+		actions.create({ command: "threadLinkCreate" } as never, createContext(authorities, null)),
+	).rejects.toThrow(reason);
+	expect(workhorseStarts).toEqual([]);
+});
+
+test("a new conversation replaces the coordinator that carried the old one before its workhorse starts", async () => {
+	const authorities = createIdentityAuthorities();
+	const { childId, epoch } = authorities.identity.validator;
+	const threadId = authorities.identity.decoder.adoptThreadId("thread-old");
+	const starts: string[] = [];
+	const actions = createServerThreadLinkActions({
+		coordinator: readyCoordinator(starts),
+		identity: authorities,
+		workhorse: {
+			start: async () => {
+				starts.push("workhorse");
+				throw new Error("Stop after the workhorse start.");
+			},
+		} as never,
+		threadLink: {
+			read: () => ({ cas: { revision: 0, childId, epoch, threadId } }),
+		} as never,
+		semanticDelivery: undefined as never,
+	});
+	await actions
+		.create({ command: "threadLinkCreate" } as never, createContext(authorities, threadId))
+		.catch(() => undefined);
+	expect(starts).toEqual(["replace", "workhorse"]);
 });

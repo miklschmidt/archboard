@@ -98,7 +98,7 @@ export const ACCOUNT_READ_FAILED_REASON =
 
 /** What one generation's account owner is closed over. */
 interface ServerAccountOwnerInput {
-	readonly components: Omit<CodexWorkbenchComponents, "gateway">;
+	readonly components: Pick<CodexWorkbenchComponents, "identity" | "session">;
 	readonly state: ServerBrowserBindingState;
 	readonly clearQueue: () => void;
 	readonly onNotification: (listener: (event: TransportServerNotification) => void) => () => void;
@@ -156,20 +156,6 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 		state.login = { kind: "login", state: "completed", loginId: pending.loginId };
 	};
 	/**
-	 * Start the coordinator, ignoring a failure: account authentication remains
-	 * true even when coordinator startup fails, and the coordinator publishes
-	 * its own failure state and recovery reason.
-	 */
-	const ensureCoordinator = async (): Promise<void> => {
-		try {
-			await components.coordinator.ensure({
-				operationId: identity.operation.issuer.mintOperationId(),
-			});
-		} catch {
-			// The coordinator publishes its own failure state and recovery reason.
-		}
-	};
-	/**
 	 * Read the account and publish it, along with anything that read settles.
 	 * @param current Whether this read is still the one that counts.
 	 * @param pending The sign-in as it stood when the read began.
@@ -184,9 +170,6 @@ export function createServerBrowserAccountOwner(input: ServerAccountOwnerInput) 
 		state.account = { kind: "codex_account_response", response };
 		completePendingLogin(response, pending);
 		publish();
-		if (response.account === null) return;
-		await ensureCoordinator();
-		if (current()) publish();
 	};
 
 	/**

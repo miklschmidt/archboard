@@ -2,8 +2,8 @@
 // pressed, while the agent is not ready is held here and carried through
 // whatever is missing, in order: sign in to Archboard's own Codex (the
 // provider page opens from the person's gesture), wait for Codex to start,
-// create the conversation — an explicit workhorse create (ADR 0019), never an
-// adoption — and only then deliver it. Each held message is visible where it
+// create the conversation — an explicit create that starts its coordinator and
+// then its workhorse (ADR 0019), never an adoption — and only then deliver it. Each held message is visible where it
 // waits and says what it waits on; a failure stays on the message with the
 // reason, and nothing is retried behind the person's back.
 
