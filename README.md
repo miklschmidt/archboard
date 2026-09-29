@@ -205,6 +205,30 @@ archboard semantic rasterize "Web shop" --scale 2 --out web-shop.png
 
 <sub>What each tool does out of the box, as of September 2026.</sub>
 
+## Archboard next to PR Lens and Archify
+
+[PR Lens](https://github.com/coldteadotai/pr-lens) and [Archify](https://github.com/tt-a1i/archify) are the closest tools to Archboard. Both let a coding agent draw architecture, and each covers part of what Archboard does. Archboard keeps one model of each system and changes it over time. PR Lens draws one pull request at a time from its diff, and Archify draws one diagram for each request.
+
+|                                         |              Archboard               |                   PR Lens                   |                  Archify                  |
+| --------------------------------------- | :----------------------------------: | :-----------------------------------------: | :---------------------------------------: |
+| Who places the boxes                    |         the renderer, always         |   the renderer, in lanes the model names    |  your agent, on a grid or by coordinates  |
+| Written by                              |   your coding agent, through a CLI   | a model that reads the diff, or your agent  |            your agent, as JSON            |
+| Kept between changes                    | ✅ one file per board, every variant |           rebuilt from each diff            |         a new folder per request          |
+| History with the reason for each change |                  ✅                  |                     no                      |                    no                     |
+| Proposals drawn against today           |           ✅ part by part            |        one diff, marked by the model        |         ✅ two snapshots compared         |
+| Narrated walkthroughs and video         |                  ✅                  | walkthroughs on its hosted canvas, no voice |      a video of the motion, no voice      |
+| Sequence views over the same parts      |                  ✅                  |              ✅ data-flow lens              |            a separate diagram             |
+| Parts bound to code                     |          ✅ opens the file           |           links with line ranges            |         links pinned to a commit          |
+| Several agents writing safely           |     ✅ claims and version checks     |       a revision check on canvas push       |                    no                     |
+| Pull-request comments                   |      a narrated MP4 you attach       |     ✅ posted and updated on every push     |                    no                     |
+| Diagram kinds                           |        architecture, sequence        |           architecture, data flow           | ✅ five, with workflow and state machines |
+
+<sub>What each tool does out of the box, as of September 2026: PR Lens v0.9.0 and Archify v3.0.1.</sub>
+
+Each of them also does things that Archboard does not. PR Lens posts its diagrams to pull requests on GitHub, GitLab and Bitbucket from a GitHub App or from CI. It also shares them as hosted canvas links. Archify writes one HTML file that stays interactive without a server, and it converts pasted Mermaid.
+
+Archboard's SVG renderer began as a fork of the PR Lens renderer (MIT, Coldtea AI). The sequence diagrams and the kind glyphs still come from it. The architecture layout and the text measurement are Archboard's own. [`NOTICE.md`](src/transformers/semantic-renderer/NOTICE.md) lists what remains from the fork and what changed.
+
 ## Quick start
 
 You need Linux or macOS, Bun 1.4 or newer, and Git. Chromium or Google Chrome draws PNGs and records videos. The agent bar, the voice, narration and recordings also need a Codex sign-in. You sign in from the agent bar with ChatGPT or an API key.
