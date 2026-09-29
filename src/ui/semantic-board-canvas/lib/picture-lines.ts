@@ -1,9 +1,10 @@
 // Carrying a connection's line from its old route to its new one, and drawing
 // a new line on.
 //
-// A line is drawn as a few paths with different jobs: the stroke, the halo
-// under it that lights when it is selected, and — in a proposal — a swipe of
-// the standing's colour under both. They are paired by job, not by position,
+// A line is drawn as a few paths with different jobs: the stroke, the halos
+// that light when it is selected (a message has a glow under its stroke and a
+// trace over it), and — in a proposal — a swipe of the standing's colour under
+// all of them. They are paired by job, not by position,
 // because a proposal's line has a swipe in front of the others and a plain
 // line has none, and pairing by position would carry the old halo into the new
 // swipe and leave the new stroke with nothing to come from. Every path is
@@ -30,26 +31,28 @@ import { SUBJECT_ATTRIBUTE, TRAFFIC_ATTRIBUTE } from "@/ui/semantic-board-canvas
 /** How much of an arrival is spent fading in before the rest is drawing on. */
 const ARRIVE_FADE_SHARE = 0.25;
 
-/** What one path of a line is for. */
-type PathJob = "halo" | "stroke" | "swipe";
+/** What one inked path of a line is for. */
+type PathJob = "stroke" | "swipe";
 
-/** The paths of one line, by job. */
-type LinePaths = Partial<Record<PathJob, SVGPathElement>>;
+/** The paths of one line: its halos in drawn order, and its inked paths by job. */
+type LinePaths = Partial<Record<PathJob, SVGPathElement>> & {
+	readonly halos: readonly SVGPathElement[];
+};
 
 /**
- * Sort a line's paths by job: the halo carries its class, the stroke is drawn
- * last, and whatever is drawn before both is the swipe.
+ * Sort a line's paths by job: a halo carries its class, the stroke is the last
+ * inked path, and an inked path drawn before it is the swipe.
  * @param group The line's group.
  * @returns Its paths, by job.
  */
 function linePaths(group: Element): LinePaths {
 	const paths = drawnPaths(group);
-	const halo = paths.find((path) => path.classList.contains("ab-halo"));
+	const halos = paths.filter((path) => path.classList.contains("ab-halo"));
 	const inked = paths.filter((path) => !path.classList.contains("ab-halo"));
 	const stroke = inked.at(-1);
 	const swipe = inked.length > 1 ? inked[0] : undefined;
 	return {
-		...(halo === undefined ? {} : { halo }),
+		halos,
 		...(stroke === undefined ? {} : { stroke }),
 		...(swipe === undefined ? {} : { swipe }),
 	};
@@ -224,18 +227,19 @@ function routeOf(path: SVGPathElement | undefined): string {
 }
 
 /**
- * The steps for the halo, which only ever morphs: its opacity is the
- * selection's to set.
+ * The steps for the halos, which only ever morph: their opacity is the
+ * selection's to set. Each morphs from the old line's halo in the same place,
+ * or from the old stroke's route when that line had fewer.
  * @param old The old line's paths.
  * @param next The new line's paths.
  * @param routes The stroke's routes.
  * @returns The steps.
  */
 function haloSteps(old: LinePaths, next: LinePaths, routes: Routes): Updater[] {
-	if (next.halo === undefined) {
-		return [];
-	}
-	return morphSteps(next.halo, old.halo === undefined ? routes.old : routeOf(old.halo));
+	return next.halos.flatMap((halo, index) => {
+		const previous = old.halos[index];
+		return morphSteps(halo, previous === undefined ? routes.old : routeOf(previous));
+	});
 }
 
 /**

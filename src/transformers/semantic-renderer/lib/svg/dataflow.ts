@@ -3,8 +3,10 @@ import {
 	type NodeAppearance,
 } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import type { SemanticPolicy } from "@/shared/semantic-policy/index";
-// Painting a message sequence: the frame, then the columns of time, then the
-// cards at their heads, then the messages crossing between them.
+// Painting a message sequence: the frame, then the marks on the rows a
+// comparison says moved (`flow-rows.ts`), then the columns of time, then the
+// cards at their heads, then the messages crossing between them, and last the
+// words of every message (`flow-words.ts`).
 //
 // Forked from PR Lens's `svg/dataflow.ts`, the pulses and their shared cycle
 // included: an exchange that does not move reads as a ladder rather than as
@@ -16,13 +18,10 @@ import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 // The dots do not compete with the walkthrough: a beat moves the camera and
 // marks its subjects, and neither is a thing a dot does.
 //
-// The layer order is upstream's and is load-bearing. A lifeline passes behind a
-// card; a message passes over a lifeline; and a label plate, opaque precisely so
-// that it can be read wherever it lands, passes over everything a message drew.
-// Within one message the plate is part of the message's own group rather than a
-// layer above all of them, which is safe here in a way it is not in the
-// architecture grammar: messages are horizontal runs at fixed pitch, so a plate
-// sitting in the air above one run can never reach the run above it.
+// The layer order is load-bearing. A row's mark passes behind everything on
+// the row; a lifeline passes behind a card; a message passes over a lifeline;
+// and a label plate, opaque precisely so that it can be read wherever it lands,
+// passes over everything every message drew.
 
 import type {
 	DiagramAtlas,
@@ -30,18 +29,10 @@ import type {
 	SemanticFlow,
 	SemanticNode,
 } from "@/shared/semantic-board/index";
+import { BAND_RADIUS, DIAGRAM_MARGIN } from "@/transformers/semantic-renderer/lib/design";
 import {
-	BAND_RADIUS,
-	DIAGRAM_MARGIN,
-	PILL_HEIGHT,
-	PILL_RADIUS,
-} from "@/transformers/semantic-renderer/lib/design";
-import {
-	MESSAGE_LINE_STEP,
-	STEP_NOTE_PADDING_X,
-	STEP_NOTE_PADDING_Y,
-} from "@/transformers/semantic-renderer/lib/sequence-design";
-import {
+	HEAD_REACH,
+	HEAD_SHADE_CLASS,
 	STEP_HEAD,
 	STEP_WEIGHT,
 	arrowStandoff,
@@ -56,7 +47,7 @@ import {
 	stepSubjects,
 } from "@/transformers/semantic-renderer/lib/svg/flow-subjects";
 import { farSizeFor } from "@/transformers/semantic-renderer/lib/measurement";
-import { canvasFor, coord, union, type Box } from "@/transformers/semantic-renderer/lib/geometry";
+import { canvasFor, coord, union } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { FLOW_CYCLE_CAP_MS, FLOW_STEP_TRAVEL_MS } from "@/shared/timing/timing";
 import { timedCrossings, type Crossing } from "@/transformers/semantic-renderer/lib/svg/flow-clock";
@@ -67,47 +58,50 @@ import {
 	type FlowLayout,
 	type PlacedStep,
 } from "@/transformers/semantic-renderer/lib/layout/dataflow";
-import {
-	endsFor,
-	labelBox,
-	selfStart,
-	travelOf,
-} from "@/transformers/semantic-renderer/lib/layout/messages";
+import { endsFor, selfStart, travelOf } from "@/transformers/semantic-renderer/lib/layout/messages";
 import { halo, paintCard, paintHeader } from "@/transformers/semantic-renderer/lib/svg/cards";
 import { paintColumn } from "@/transformers/semantic-renderer/lib/svg/flow-columns";
+import {
+	markedWithin,
+	paintRowMarks,
+	type Stands,
+} from "@/transformers/semantic-renderer/lib/svg/flow-rows";
+import { paintStepWords } from "@/transformers/semantic-renderer/lib/svg/flow-words";
 import { shifted } from "@/transformers/semantic-renderer/lib/svg/document";
 import {
 	lines,
 	tag,
-	textNode,
 	wrap,
 	type Attributes,
 } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
+	HEAD_ATTRIBUTE,
+	MEMBERS_ATTRIBUTE,
 	markedBox,
-	standingOutline,
 	standingPin,
-	standingSwipe,
 	subjectGroup,
-	PART_ATTRIBUTE,
 	warningBadge,
-	warningOnLine,
 	type StandingOf,
 	type SubjectStanding,
 	type UnsettledOf,
 } from "@/transformers/semantic-renderer/lib/svg/standing";
 import {
+	litMarkerFor,
 	markerFor,
 	stylesFor,
 	lineColour,
 	STROKE_WIDTH,
-	type SvgStyles,
 } from "@/transformers/semantic-renderer/lib/svg/styles";
 
-/** How much wider than its line a message's selection halo is. */
+/** How much wider than its line a message's selection glow is. */
 const STEP_HALO_EXTRA = 5;
-/** Where a plate's text baseline sits inside it. */
-const PILL_BASELINE = 0.68;
+/**
+ * How strong that glow is: a tint the line and its head still read through,
+ * where a solid band hid both under a bar of selection ink.
+ */
+const STEP_HALO_OPACITY = 0.3;
+/** How much heavier than its line a lit message's trace is. */
+const LIT_TRACE_EXTRA = 0.5;
 
 /**
  * What sort of message each kind is, said in dashes.
@@ -147,91 +141,6 @@ function stepAttributes(
 }
 
 /**
- * One message's label, on its opaque plate, a line at a time, each centred.
- * @param words What the message is, wrapped.
- * @param box Where the plate goes.
- * @param styles The palette's attribute bundles.
- * @param outline What this step's standing does to the plate's rule, if anything.
- * @returns The plate and its words.
- */
-function paintLabel(
-	words: readonly { readonly text: string }[],
-	box: Box,
-	styles: SvgStyles,
-	outline: Readonly<Attributes>,
-): string {
-	return (
-		tag("rect", {
-			x: coord(box.x),
-			y: coord(box.y),
-			width: coord(box.width),
-			height: coord(box.height),
-			rx: PILL_RADIUS,
-			...styles.pill,
-			...outline,
-		}) +
-		words
-			.map(({ text }, index) =>
-				textNode(
-					{
-						x: coord(box.x + box.width / 2),
-						y: coord(box.y + PILL_HEIGHT * PILL_BASELINE + index * MESSAGE_LINE_STEP),
-						"text-anchor": "middle",
-						...styles.pillText,
-					},
-					text,
-				),
-			)
-			.join("")
-	);
-}
-
-/**
- * A plain rounded plate, filled and unruled.
- * @param box Where it goes.
- * @param fill Its ground.
- * @returns The plate.
- */
-function plainPlate(box: Box, fill: string): string {
-	return tag("rect", {
-		x: coord(box.x),
-		y: coord(box.y),
-		width: coord(box.width),
-		height: coord(box.height),
-		rx: PILL_RADIUS,
-		fill,
-	});
-}
-
-/**
- * A step's note under its message: complete lines on a plate of the frame's
- * ground, so a lifeline it crosses passes behind the words.
- * @param placed The message.
- * @param styles The painter's bundles.
- * @returns The note, or nothing when the step has none.
- */
-function paintNote(placed: PlacedStep, styles: SvgStyles): string {
-	const note = placed.note;
-	if (note === undefined) {
-		return "";
-	}
-	return lines([
-		plainPlate(note.box, styles.band.fill),
-		...note.lines.map((run) =>
-			textNode(
-				{
-					"xml:space": "preserve",
-					x: coord(note.box.x + STEP_NOTE_PADDING_X + run.x),
-					y: coord(note.box.y + STEP_NOTE_PADDING_Y + run.y),
-					...styles.note,
-				},
-				run.text,
-			),
-		),
-	]);
-}
-
-/**
  * The path a self-message takes: out to the right, down, and back.
  * @param placed The message.
  * @param activated Whether its column is busy at that height.
@@ -264,16 +173,18 @@ function stepPath(placed: PlacedStep, activeAt: ActiveAt): string {
 }
 
 /**
- * One message: a halo a viewer can light up, the line itself, and the words the
- * line carries.
+ * One message: a glow a viewer can light up, the line itself, and the dots
+ * that ride it.
  *
- * The label is part of the message rather than a separate thing that happens to
- * sit near it. It goes inside the same group, so a click on the words selects
- * the step and `.is-selected` lights the line and its label together.
+ * Its words are drawn on the layer above every run ({@link paintStepWords}), in
+ * a group that says it is the same message, so `.is-selected` lights the line
+ * and its label together.
  * @param placed The message.
  * @param activeAt Whether a column is busy at a given height.
  * @param palette The theme's colours.
- * @param standing How this step stands against the variant it came from, when the caller said.
+ * @param stands How this step stands against the variant it came from, when the caller said.
+ * @param stands.standing Its own standing, which its group states and a removal ghosts.
+ * @param stands.mark The standing its ink is drawn for ({@link markedWithin}).
  * @param crossing The drawing's shared clock.
  * @returns The group holding its run.
  */
@@ -281,7 +192,7 @@ function paintStep(
 	placed: PlacedStep,
 	activeAt: ActiveAt,
 	palette: Palette,
-	standing: SubjectStanding | undefined,
+	{ standing, mark }: Stands,
 	crossing: Crossing,
 ): string {
 	const styles = stylesFor(palette);
@@ -290,19 +201,30 @@ function paintStep(
 		"g",
 		subjectGroup("step", placed.step.id, standing),
 		lines([
-			standingSwipe(path, STROKE_WIDTH[STEP_WEIGHT], standing, palette),
 			tag("path", {
 				class: "ab-halo",
 				d: path,
 				"stroke-width": STROKE_WIDTH[STEP_WEIGHT] + STEP_HALO_EXTRA,
+				"stroke-opacity": STEP_HALO_OPACITY,
 				"stroke-linecap": "round",
 				"stroke-linejoin": "round",
 				...styles.halo,
 			}),
 			tag("path", {
 				d: path,
-				"marker-end": markerFor(STEP_WEIGHT, STEP_HEAD[placed.step.kind], standing),
-				...stepAttributes(placed.step.kind, palette, standing),
+				"marker-end": markerFor(STEP_WEIGHT, STEP_HEAD[placed.step.kind], mark),
+				...stepAttributes(placed.step.kind, palette, mark),
+			}),
+			// The line again in the selection's ink, head and dash included, lit
+			// with the glow: a lit message is drawn in that ink, where a grey line
+			// on a glow read as a line under a smear.
+			tag("path", {
+				class: "ab-halo",
+				d: path,
+				"marker-end": litMarkerFor(STEP_WEIGHT, STEP_HEAD[placed.step.kind]),
+				...stepAttributes(placed.step.kind, palette, undefined),
+				...styles.halo,
+				"stroke-width": STROKE_WIDTH[STEP_WEIGHT] + LIT_TRACE_EXTRA,
 			}),
 			// The dots over the line and under the words, which is the order a
 			// reader needs: a dot crossing an opaque plate put a hole in the middle
@@ -310,59 +232,7 @@ function paintStep(
 			// drawn for context and must not read as live traffic.
 			standing === "removed"
 				? ""
-				: timedCrossings(placed, path, palette, { ...crossing, standing }),
-		]),
-	);
-}
-
-/**
- * What one message says, on the layer above every run.
- *
- * The plate and the warning badge, in a group that says it is the message, for
- * the same reason the architecture grammar splits a relationship in two: the
- * words of one message have to sit above the dots of ALL of them. Upstream, and
- * this fork until now, argued that a stack of horizontal runs at a fixed pitch
- * could never reach each other's plates — and mostly it cannot, but "mostly"
- * is a thing that has to be re-derived every time somebody adds a self-message
- * loop or a taller plate, and the rule it was standing in for is the simple one:
- * the words are on top.
- * @param placed The message.
- * @param activeAt Whether a column is busy at a given height.
- * @param palette The theme's colours.
- * @param standing How this step stands against the variant it came from, when the caller said.
- * @param unsettled Whether the board says nobody has decided this message yet.
- * @returns The message's words, or nothing when it has none to say.
- */
-function paintStepWords(
-	placed: PlacedStep,
-	activeAt: ActiveAt,
-	palette: Palette,
-	standing: SubjectStanding | undefined,
-	unsettled: boolean,
-): string {
-	const plate = labelBox(placed, activeAt);
-	const styles = stylesFor(palette);
-	const words = lines([
-		paintLabel(placed.words.lines, plate, styles, standingOutline(standing, palette)),
-		paintNote(placed, styles),
-		// On the leading edge of the plate, clear of its words.
-		warningOnLine({ x: plate.x, y: plate.y + plate.height / 2 }, unsettled, palette),
-	]);
-	const { opacity, ...step } = subjectGroup("step", placed.step.id, standing);
-	const identity = { ...step, [PART_ATTRIBUTE]: "label" };
-	if (opacity === undefined) {
-		return wrap("g", identity, words);
-	}
-	// Ghosted words stay on plates as solid as a live message's, so a lifeline
-	// behind them is hidden rather than read through them: the plates are laid
-	// at full strength first, and only the words on them are ghosted.
-	return wrap(
-		"g",
-		identity,
-		lines([
-			plainPlate(plate, styles.pill.fill),
-			placed.note === undefined ? "" : plainPlate(placed.note.box, styles.band.fill),
-			wrap("g", { opacity }, words),
+				: timedCrossings(placed, path, palette, { ...crossing, standing: mark }),
 		]),
 	);
 }
@@ -374,6 +244,10 @@ function paintStepWords(
  * architecture one, and the frame is what makes it a subject at all: it is what
  * a reader clicks to mean "this exchange", and it is what keeps several flows on
  * one page from reading as one very long sequence.
+ *
+ * Its standing is the pin on its corner, and its rule stays the frame's own.
+ * The frame is the page of its flow, and a page ruled in a standing's ink said
+ * the flow's name or cast changed as loudly as every message inside it.
  * @param layout The flow.
  * @param palette The theme's colours.
  * @param standing How this flow stands against the variant it came from, when the caller said.
@@ -399,11 +273,58 @@ function paintFrame(
 				height: coord(layout.frame.height),
 				rx: BAND_RADIUS,
 				...styles.band,
-				...standingOutline(standing, palette),
 			}),
 			paintHeader(layout.header, layout.flow.name, layout.flow.summary, styles),
 			standingPin(layout.frame, standing, palette),
 			warningBadge(layout.frame, unsettled, palette),
+		]),
+	);
+}
+
+/**
+ * The frame's own ground behind a flow's head of cards, and a strip of it
+ * above them, shown only while a viewer has moved the head down to keep it in
+ * view over rows further down.
+ *
+ * A moved head stands over the columns of time and the rows it passes, and a
+ * card a presented step veils is seen through: without this, what it stands
+ * over would show through it and run on above it. So the page's ground is laid
+ * first and the frame's band over it, standing with the frame (it lists the
+ * flow as its member): a frame a step veils is seen through to the page, and so
+ * is this. Hidden in the picture (`visibility`), and shown under a head the
+ * viewer marks as moved (`is-stuck`).
+ * @param layout The flow.
+ * @param standing How the flow stands, which ghosts the band as it ghosts the frame.
+ * @param palette The theme's colours.
+ * @returns The shade.
+ */
+function headShade(
+	layout: FlowLayout,
+	standing: SubjectStanding | undefined,
+	palette: Palette,
+): string {
+	const card = layout.columns[0]?.card.box;
+	if (card === undefined) {
+		return "";
+	}
+	// Inside the frame's rule, which stays the frame's to draw.
+	const shape = {
+		x: coord(layout.frame.x + 1),
+		y: coord(card.y - HEAD_REACH),
+		width: coord(layout.frame.width - 2),
+		height: coord(card.height + HEAD_REACH),
+	};
+	const { opacity } = subjectGroup("flow", layout.flow.id, standing);
+	return wrap(
+		"g",
+		{ class: HEAD_SHADE_CLASS, visibility: "hidden" },
+		lines([
+			tag("rect", { ...shape, fill: palette.background }),
+			wrap(
+				"g",
+				{ [MEMBERS_ATTRIBUTE]: layout.flow.id, opacity },
+				tag("rect", { ...shape, fill: palette.band }),
+			),
 		]),
 	);
 }
@@ -429,8 +350,16 @@ function paintFlow(
 	{ appearances, farSize }: { appearances: ReadonlyMap<string, NodeAppearance>; farSize: number },
 ): { readonly body: string; readonly words: string } {
 	const activeAt = activationLookup(layout.columns);
+	const flowStanding = standingOf(layout.flow.id);
+	/**
+	 * The standing one of this flow's messages is marked for.
+	 * @param id The message.
+	 * @returns Its standing, unless its whole flow was added or removed.
+	 */
+	const markOf: StandingOf = (id) => markedWithin(flowStanding, standingOf(id));
 	const body = lines([
-		paintFrame(layout, palette, standingOf(layout.flow.id), unsettledOf(layout.flow.id)),
+		paintFrame(layout, palette, flowStanding, unsettledOf(layout.flow.id)),
+		paintRowMarks(layout, palette, markOf),
 		wrap(
 			"g",
 			{},
@@ -442,9 +371,10 @@ function paintFlow(
 		),
 		wrap(
 			"g",
-			{},
-			lines(
-				layout.columns.map((column) =>
+			{ [HEAD_ATTRIBUTE]: layout.flow.id },
+			lines([
+				headShade(layout, flowStanding, palette),
+				...layout.columns.map((column) =>
 					paintCard(
 						column.card,
 						palette,
@@ -454,14 +384,20 @@ function paintFlow(
 						farSize,
 					),
 				),
-			),
+			]),
 		),
 		wrap(
 			"g",
 			{},
 			lines(
 				layout.steps.map((placed) =>
-					paintStep(placed, activeAt, palette, standingOf(placed.step.id), crossing),
+					paintStep(
+						placed,
+						activeAt,
+						palette,
+						{ standing: standingOf(placed.step.id), mark: markOf(placed.step.id) },
+						crossing,
+					),
 				),
 			),
 		),
@@ -472,7 +408,7 @@ function paintFlow(
 				placed,
 				activeAt,
 				palette,
-				standingOf(placed.step.id),
+				{ standing: standingOf(placed.step.id), mark: markOf(placed.step.id) },
 				unsettledOf(placed.step.id),
 			),
 		),

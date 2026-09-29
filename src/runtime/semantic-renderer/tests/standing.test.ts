@@ -7,7 +7,6 @@ import {
 } from "@/shared/semantic-board/index";
 import {
 	renderArchitecture,
-	renderDataFlow,
 	type RenderedDiagram,
 	type StatedStandings,
 } from "@/runtime/semantic-renderer/index";
@@ -20,6 +19,12 @@ import {
 	withoutMark,
 	type DrawnGroup,
 } from "@/runtime/semantic-renderer/tests/drawn-subjects";
+import {
+	SEQUENCE_STANDING,
+	STANDINGS,
+	drawnSequence,
+	subject,
+} from "@/runtime/semantic-renderer/tests/sequence-fixture";
 import { colourIn, paintedIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
 import { arrangementOf } from "@/runtime/semantic-renderer/tests/drawn-atlas";
 
@@ -65,43 +70,6 @@ const STANDING: StatedStandings = {
 	edge: "removed",
 };
 
-const SEQUENCE: VariantContent = orderedFixture({
-	nodes: [
-		{ id: "web", name: "Operator Console", kind: "ui" },
-		{ id: "gw", name: "API Gateway", kind: "route" },
-		{ id: "io", name: "board-io", kind: "module" },
-		{ id: "legacy", name: "Legacy Bridge", kind: "module" },
-	],
-	edges: [],
-	flows: [
-		{
-			id: "f1",
-			name: "Agent edit",
-			summary: "One write, start to finish",
-			participants: ["web", "gw", "io", "legacy"],
-			steps: [
-				{ id: "s1", from: "web", to: "gw", label: "edit", kind: "sync" },
-				{ id: "s2", from: "gw", to: "io", label: "claim", kind: "sync" },
-				{ id: "s3", from: "gw", to: "legacy", label: "mirror", kind: "async" },
-				{ id: "s4", from: "io", to: "gw", label: "version", kind: "return" },
-			],
-		},
-	],
-});
-
-/** The same four cases again, over the sequence grammar's own subjects. */
-const SEQUENCE_STANDING: StatedStandings = {
-	s2: "added",
-	s4: "changed",
-	s3: "removed",
-	legacy: "removed",
-	io: "added",
-	f1: "changed",
-};
-
-/** Every way a subject can stand. */
-const STANDINGS = ["added", "removed", "changed", "unchanged"] as const;
-
 /**
  * One node, drawn with nothing else on the board standing for anything.
  * @param standing How that node stands.
@@ -137,39 +105,6 @@ function selectionInk(svg: string, theme: "light" | "dark"): string {
  */
 function drawn(standing?: StatedStandings, layout?: LayoutEngineName): Promise<RenderedDiagram> {
 	return renderArchitecture({ content: PROPOSAL, standing, layout });
-}
-
-/**
- * Draw the sequence, with or without a statement of how it stands.
- * @param standing What the caller says, when it says anything.
- * @returns The rendered sequence.
- */
-function drawnSequence(standing?: StatedStandings): RenderedDiagram {
-	return renderDataFlow({ content: SEQUENCE, standing });
-}
-
-/**
- * One subject's group, insisting it was drawn at all.
- * @param rendered The rendered picture.
- * @param kind What sort of subject.
- * @param id Its semantic id.
- * @returns The group.
- */
-function subject(rendered: RenderedDiagram, kind: string, id: string): DrawnGroup {
-	const group = groupOf(rendered.svg, kind, id);
-	expect(group, `${kind} ${id} was not drawn`).toBeDefined();
-	return group!;
-}
-
-/**
- * Where one drawn element's box is, as written on it.
- * @param tag The element's start tag.
- * @returns Its box, as one comparable string.
- */
-function boxOf(tag: string): string {
-	return ["x", "y", "width", "height"]
-		.map((name) => new RegExp(`\\s${name}="([^"]*)"`).exec(tag)?.[1])
-		.join();
 }
 
 describe("a picture nobody stated a standing for", () => {
@@ -350,116 +285,4 @@ describe("a stated standing on an architecture", () => {
 			expect(inks[0]).not.toBe(inks[1]);
 		},
 	);
-});
-
-describe("a stated standing on a sequence", () => {
-	test("marks steps, participants and the flow that holds them", () => {
-		const rendered = drawnSequence(SEQUENCE_STANDING);
-
-		expect(subject(rendered, "step", "s2").standing).toBe("added");
-		expect(subject(rendered, "step", "s4").standing).toBe("changed");
-		expect(subject(rendered, "step", "s3").standing).toBe("removed");
-		expect(subject(rendered, "node", "io").standing).toBe("added");
-		expect(subject(rendered, "node", "legacy").standing).toBe("removed");
-		expect(subject(rendered, "flow", "f1").standing).toBe("changed");
-		expect(subject(rendered, "step", "s1").standing).toBe("unchanged");
-
-		for (const group of subjectGroups(rendered.svg)) {
-			expect(STANDINGS.some((one) => one === group.standing)).toBe(true);
-		}
-	});
-
-	test("draws a removed step as absent from the exchange", () => {
-		const rendered = drawnSequence(SEQUENCE_STANDING);
-		const gone = subject(rendered, "step", "s3");
-		const kept = subject(rendered, "step", "s1");
-
-		expect(gone.opacity).toBeGreaterThan(0);
-		expect(gone.opacity).toBeLessThan(1);
-		expect(kept.opacity).toBeUndefined();
-		expect(withoutColour(gone)).not.toBe(withoutColour(kept));
-
-		// The same swipe the architecture grammar uses, under the same kind of line.
-		expect(strokesOf(gone).length).toBe(
-			strokesOf(subject(drawnSequence(), "step", "s3")).length + 1,
-		);
-	});
-
-	test("draws a removed participant as absent down the whole column, not only at its card", () => {
-		const rendered = drawnSequence(SEQUENCE_STANDING);
-		// A participant is drawn twice: the card at the head of the column, and the
-		// column of time under it. Both are the same subject, so both say so.
-		const both = subjectGroups(rendered.svg).filter(
-			(group) => group.kind === "node" && group.id === "legacy",
-		);
-		expect(both).toHaveLength(2);
-		for (const group of both) {
-			expect(group.standing).toBe("removed");
-			expect(group.opacity).toBeGreaterThan(0);
-			expect(group.opacity).toBeLessThan(1);
-		}
-
-		// And the column reads differently from a participant that stayed, with the
-		// colour spent.
-		const lifelines = (standing: StatedStandings): string =>
-			withoutColour(
-				subjectGroups(drawnSequence(standing).svg).find(
-					(group) =>
-						group.kind === "node" && group.id === "legacy" && group.markup.includes("<line"),
-				)!,
-			);
-		expect(lifelines(SEQUENCE_STANDING)).not.toBe(lifelines({ legacy: "unchanged" }));
-	});
-
-	test("keeps a removed step's words on solid plates, so a lifeline behind them stays hidden", () => {
-		// The removed message's label sits across a lifeline, and a note under it
-		// does too. Its words are ghosted like the rest of it, but a plate drawn at
-		// the same strength lets the lifeline cut through the words.
-		const flow = SEQUENCE.flows[0]!;
-		const [s1, s2, s3, s4] = flow.steps;
-		const noted: VariantContent = {
-			...SEQUENCE,
-			flows: [{ ...flow, steps: [s1!, s2!, { ...s3!, note: "until the bridge is gone" }, s4!] }],
-		};
-		const words = subjectGroups(renderDataFlow({ content: noted, standing: SEQUENCE_STANDING }).svg)
-			.filter((group) => group.kind === "step" && group.id === "s3")
-			.find((group) => group.markup.includes("<text"))!;
-		// Every element of the group, with the opacity it is finally drawn at.
-		const drawnAt: { tag: string; opacity: number }[] = [];
-		const strengths = [1];
-		for (const [token] of words.markup.matchAll(/<g\b[^>]*>|<\/g>|<(?:rect|text)\b[^>]*>/g)) {
-			const own = Number(/\sopacity="([\d.]+)"/.exec(token)?.[1] ?? 1);
-			if (token === "</g>") {
-				strengths.pop();
-			} else if (token.startsWith("<g")) {
-				strengths.push(strengths.at(-1)! * own);
-			} else {
-				drawnAt.push({ tag: token, opacity: strengths.at(-1)! * own });
-			}
-		}
-		const ghosted = drawnAt.filter((one) => one.opacity < 1);
-		// The words are ghosted, label and note alike.
-		expect(ghosted.filter((one) => one.tag.startsWith("<text")).length).toBeGreaterThanOrEqual(2);
-		const plates = ghosted.filter((one) => one.tag.startsWith("<rect"));
-		expect(plates).toHaveLength(2);
-		for (const plate of plates) {
-			const under = drawnAt.slice(0, drawnAt.indexOf(plate));
-			expect(
-				under.some(
-					(one) =>
-						one.opacity === 1 && one.tag.startsWith("<rect") && boxOf(one.tag) === boxOf(plate.tag),
-				),
-			).toBe(true);
-		}
-	});
-
-	test("tells its four standings apart without relying on colour", () => {
-		// A message has no outline to take over and no corner to pin, so the whole
-		// of its standing is the swipe under it — which therefore has to carry all
-		// four on its own, in texture and lightness rather than in hue.
-		const steps = STANDINGS.map((one) =>
-			withoutColour(subject(drawnSequence({ s3: one }), "step", "s3")),
-		);
-		expect(new Set(steps).size).toBe(4);
-	});
 });

@@ -32,8 +32,21 @@ interface Rect extends Size {
 type FitTarget =
 	/** The whole diagram, centred: what a pane shows when nothing is singled out. */
 	| { readonly kind: "whole"; readonly content: Size }
-	/** One region of it, centred: what a narrative beat's subjects occupy. */
-	| { readonly kind: "focus"; readonly rect: Rect };
+	/**
+	 * One region of it, centred: what a narrative beat's subjects occupy. The
+	 * context holds more around the region, and is shown in its place when it
+	 * still reads nearly as large ({@link CONTEXT_SHARE}).
+	 */
+	| {
+			readonly kind: "focus";
+			readonly rect: Rect;
+			readonly context?: Rect;
+			/**
+			 * Where the region stands in the viewport: centred, or at its top with
+			 * whatever the room holds beyond it below, as a flow's rows are read.
+			 */
+			readonly anchor?: "top";
+	  };
 
 /**
  * How far in and out a diagram can be taken.
@@ -61,6 +74,19 @@ const PAN_STEP = 64;
  * is the whole point of pointing at part of an architecture.
  */
 const FOCUS_MAX_SCALE = 1.5;
+
+/**
+ * How much of a focus's magnification a context may cost and still be shown
+ * in its place, counted against the focus's own or the drawing's natural size,
+ * whichever is smaller: magnifying past the size the drawing was set at helps
+ * nobody read it, so a context that reads at nearly that size is worth more
+ * than a closer look.
+ *
+ * A flow's subjects are whole columns and rows, so a fit to a beat about some
+ * of them cut the columns either side through their words. More of the flow
+ * shows those words, and the order they come in, for a little of the size.
+ */
+const CONTEXT_SHARE = 0.9;
 
 /**
  * Below this magnification the picture is seen from far away: a card's
@@ -127,9 +153,10 @@ function zoomCameraAbout(camera: Camera, factor: number, anchorX: number, anchor
  * @param viewport How big the pane's window on the diagram is.
  * @param rect The region to show, in the diagram's own units.
  * @param ceiling How far in this fit may magnify.
+ * @param anchor Where the region stands: centred, or at the top of the room.
  * @returns The fitted camera, or null when there is nothing to fit.
  */
-function fitRect(viewport: Size, rect: Rect, ceiling: number): Camera | null {
+function fitRect(viewport: Size, rect: Rect, ceiling: number, anchor?: "top"): Camera | null {
 	const room = { width: viewport.width - FIT_MARGIN * 2, height: viewport.height - FIT_MARGIN * 2 };
 	if (room.width <= 0 || room.height <= 0 || rect.width <= 0 || rect.height <= 0) {
 		return null;
@@ -140,7 +167,10 @@ function fitRect(viewport: Size, rect: Rect, ceiling: number): Camera | null {
 	return {
 		scale,
 		x: viewport.width / 2 - (rect.x + rect.width / 2) * scale,
-		y: viewport.height / 2 - (rect.y + rect.height / 2) * scale,
+		y:
+			anchor === "top"
+				? FIT_MARGIN - rect.y * scale
+				: viewport.height / 2 - (rect.y + rect.height / 2) * scale,
 	};
 }
 
@@ -187,15 +217,27 @@ function unionRect(rects: readonly Rect[]): Rect | null {
  * The whole diagram and one region of it are the same arithmetic with two
  * ceilings: a whole picture may be magnified as far as the camera goes, and a
  * region stops at `FOCUS_MAX_SCALE` so that pointing at one card does not
- * become a wall of card.
+ * become a wall of card. A region's context is shown in its place when it
+ * reads nearly as large.
  * @param viewport How big the pane's window on the diagram is.
  * @param target What is being shown: the whole diagram, or a region of it.
  * @returns The fitted camera, or null when there is nothing to fit.
  */
 function cameraFor(viewport: Size, target: FitTarget): Camera | null {
-	return target.kind === "whole"
-		? fitCamera(viewport, target.content)
-		: fitRect(viewport, target.rect, FOCUS_MAX_SCALE);
+	if (target.kind === "whole") {
+		return fitCamera(viewport, target.content);
+	}
+	const focus = fitRect(viewport, target.rect, FOCUS_MAX_SCALE, target.anchor);
+	const context =
+		target.context === undefined
+			? null
+			: fitRect(viewport, target.context, FOCUS_MAX_SCALE, target.anchor);
+	// 1 is the size the drawing was set at.
+	return focus !== null &&
+		context !== null &&
+		context.scale >= Math.min(focus.scale, 1) * CONTEXT_SHARE
+		? context
+		: focus;
 }
 
 /**
@@ -205,6 +247,26 @@ function cameraFor(viewport: Size, target: FitTarget): Camera | null {
  */
 function cameraTransform(camera: Camera): string {
 	return `translate(${camera.x}px, ${camera.y}px) scale(${camera.scale})`;
+}
+
+/** One number as a transform writes it, a JavaScript number's own spelling included. */
+const NUMBER = String.raw`(-?\d*\.?\d+(?:e[-+]?\d+)?)`;
+
+/** The transform {@link cameraTransform} writes, read back. */
+const CAMERA_TRANSFORM = new RegExp(
+	String.raw`^translate\(${NUMBER}px, ${NUMBER}px\) scale\(${NUMBER}\)$`,
+	"u",
+);
+
+/**
+ * The camera a surface is drawn with, read back off its transform: whatever
+ * moved it last, a glide's frame or a settled camera.
+ * @param transform The surface's transform, as {@link cameraTransform} wrote it.
+ * @returns The camera, or null for a transform it did not write.
+ */
+function cameraOf(transform: string): Camera | null {
+	const said = CAMERA_TRANSFORM.exec(transform);
+	return said === null ? null : { x: Number(said[1]), y: Number(said[2]), scale: Number(said[3]) };
 }
 
 export {
@@ -217,6 +279,7 @@ export {
 	PAN_STEP,
 	ZOOM_STEP,
 	cameraFor,
+	cameraOf,
 	cameraTransform,
 	clampScale,
 	fitCamera,

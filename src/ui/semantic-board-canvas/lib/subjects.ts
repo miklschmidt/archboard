@@ -270,6 +270,7 @@ export {
 	keepingMarks,
 	markSubjects,
 	markVeil,
+	raise,
 	subjectAt,
 	subjectBox,
 	surfaceMarks,

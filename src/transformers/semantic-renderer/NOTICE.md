@@ -94,8 +94,10 @@ What was changed, and what that change is:
   shape says which standing it is, ghosting for the one that is not on the
   proposal, and a texture on the subject's own outline — or, for a line, on a
   swipe laid under it, because a line's dash and weight already mean something
-  here and upstream's did not. Colour is the fourth thing said and never the
-  first, and the three hues are the only saturated ink in the palette.
+  here and upstream's did not. A message of a sequence is marked on its row
+  instead: a tinted band behind it and the pin in the frame's margin. Colour is
+  the fourth thing said and never the first, and the three hues are the only
+  saturated ink in the palette.
 
 **Deferred to a later ticket — in scope, not yet taken.**
 

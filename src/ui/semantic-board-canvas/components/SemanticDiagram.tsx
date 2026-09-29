@@ -38,6 +38,7 @@ import {
 import { usePresentationArrival } from "@/ui/semantic-board-canvas/hooks/use-presentation-arrival";
 import { useSubjectTip } from "@/ui/semantic-board-canvas/hooks/use-subject-tip";
 import { useViewerMarks } from "@/ui/semantic-board-canvas/hooks/use-viewer-marks";
+import { useStickyHeads } from "@/ui/semantic-board-canvas/hooks/use-sticky-heads";
 import {
 	FAR_SCALE,
 	PAN_STEP,
@@ -337,6 +338,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	// is never mistaken for it.
 	const departure = useLeaving(picture, props.departure, reducedMotion);
 	useViewerMarks(picture, { selection, focus, group: props.group, veil: props.veil });
+	useStickyHeads(picture, drawing.atlas);
 	// Seen from far away, each card's name is drawn larger in place of what it
 	// says it does, which nobody reads at that size.
 	const far = view.scale < FAR_SCALE;

@@ -17,6 +17,7 @@ import type { SemanticAtlas } from "@/ui/semantic-board-canvas/api/semantic-boar
 import { subjectOf } from "@/ui/semantic-board-canvas/lib/board-document";
 import { unionRect, type FitTarget, type Rect } from "@/ui/semantic-board-canvas/lib/camera";
 import { subjectBox } from "@/ui/semantic-board-canvas/lib/subjects";
+import { flowFocus } from "@/ui/semantic-board-canvas/lib/flow-head";
 
 /** What a beat's subjects can be found in: the picture on screen. */
 interface FocusSource {
@@ -112,18 +113,47 @@ function linesBetween(variant: SemanticVariant | null, named: readonly string[])
 }
 
 /**
+ * The frame of the flow a focus lies in, which the camera shows in its place
+ * when that costs little: a flow is read in order, a row at a time, and a fit
+ * to some of its columns cut the others through their words.
+ * @param variant The variant being read, or null when none can be.
+ * @param atlas Where the picture drew each subject.
+ * @param rect The focus.
+ * @returns The frame, or undefined when the focus is not inside one flow.
+ */
+function flowAround(
+	variant: SemanticVariant | null,
+	atlas: FocusSource["atlas"],
+	rect: Rect,
+): Rect | undefined {
+	return (variant?.content.flows ?? [])
+		.map(({ id }) => atlas.regions[id])
+		.find(
+			(frame) =>
+				frame !== undefined &&
+				frame.x <= rect.x &&
+				frame.y <= rect.y &&
+				rect.x + rect.width <= frame.x + frame.width &&
+				rect.y + rect.height <= frame.y + frame.height,
+		);
+}
+
+/**
  * What the current beat asks of the picture on screen.
  *
  * Three cases, and the third is the one that has to be visible rather than
  * quiet. A beat that names no subject is about the whole architecture and asks
  * for the whole of it. A beat whose subjects this picture draws asks for the
  * region they occupy, with the parts at the ends of every relationship or step
- * it names and the relationships between the cards it names. A beat whose subjects this picture does not draw — a narrative told
- * across views, read through a view that narrows what is drawn — asks for the
- * whole picture again and hands back the names it could not find, so the rail
- * can say plainly that this reading does not show them. Silently focusing
- * nothing would leave a reader looking at an unrelated part of the diagram
- * believing it was the subject.
+ * it names and the relationships between the cards it names, and the frame of
+ * the flow they lie in as its context. A beat about some of a flow's messages
+ * asks for their rows from the top of the room, under the flow's head of cards
+ * ({@link flowFocus}). A beat whose subjects this picture does not draw — a
+ * narrative told across views, read through a view that narrows what is drawn
+ * — asks for the whole picture again and hands back the names it could not
+ * find, so the rail can say plainly that this reading does not show them.
+ * Silently focusing nothing would leave a reader looking at an unrelated part
+ * of the diagram believing it was the subject.
  * @param beat The beat being read, or null when no walkthrough is open.
  * @param source The picture on screen, or null when there is not one yet.
  * @param variant The variant the beat belongs to, which says what each
@@ -138,10 +168,6 @@ function beatFocus(
 	if (beat === null || source === null) {
 		return NO_FOCUS;
 	}
-	const whole: FitTarget = {
-		kind: "whole",
-		content: { width: source.width, height: source.height },
-	};
 	/**
 	 * Whether this picture draws a subject.
 	 * @param id The subject.
@@ -155,12 +181,35 @@ function beatFocus(
 		...linesBetween(variant, named),
 	];
 	const drawn = [...new Set(about)].filter(isDrawn);
-	const boxes: Rect[] = drawn
-		.map((id) => subjectBox(source.atlas, id))
-		.filter((box) => box !== null);
-	const rect = unionRect(boxes);
-	const target: FitTarget = rect === null ? whole : { kind: "focus", rect };
+	const target = focusTarget(source, variant, drawn);
 	return { drawn, undrawn, target, key: `${beat.id}:${targetKey(target)}` };
+}
+
+/**
+ * Where the camera goes for the subjects a beat lights: the rows of a flow's
+ * messages from the top of the room ({@link flowFocus}); otherwise the region
+ * the subjects occupy, with the frame of the flow they lie in as its context;
+ * and the whole picture when the picture draws none of them.
+ * @param source The picture on screen.
+ * @param variant The variant being read, or null when none can be.
+ * @param drawn The subjects the beat lights that the picture draws.
+ * @returns The fit.
+ */
+function focusTarget(
+	source: FocusSource,
+	variant: SemanticVariant | null,
+	drawn: readonly string[],
+): FitTarget {
+	const flow = flowFocus(variant, source.atlas, drawn);
+	if (flow !== null) {
+		return { kind: "focus", rect: flow.rect, context: flow.context, anchor: "top" };
+	}
+	const rect = unionRect(drawn.flatMap((id) => subjectBox(source.atlas, id) ?? []));
+	if (rect === null) {
+		return { kind: "whole", content: { width: source.width, height: source.height } };
+	}
+	const context = flowAround(variant, source.atlas, rect);
+	return context === undefined ? { kind: "focus", rect } : { kind: "focus", rect, context };
 }
 
 /**

@@ -32,6 +32,13 @@
 //   swipe laid under the line instead, so neither of the two meanings the line
 //   already carries is overwritten.
 //
+// A message of a sequence is the exception, because a sequence is read a row at
+// a time, the way a diff is. Its standing is marked on its row (`flow-rows.ts`):
+// a faint band of the standing's ink behind the row and the pin in the frame's
+// margin, with the line in that ink and a removal ghosted. A swipe under the
+// line and a dashed rule round the label said the same fact twice more, and a
+// page of them read as a column of dashed boxes.
+//
 // Only then colour, and colour never alone: green added, amber changed, red
 // removed, from the palette. Take all three hues away and the picture still
 // reads — pin shape, ghosting and outline texture are each sufficient.
@@ -221,6 +228,13 @@ const TRAFFIC_ATTRIBUTE = "data-traffic";
 const MEMBERS_ATTRIBUTE = "data-members";
 
 /**
+ * The attribute on the group that holds one flow's row of participant cards,
+ * naming the flow. A viewer slides the row down its lifelines to keep it in
+ * view over rows further down.
+ */
+const HEAD_ATTRIBUTE = "data-flow-head";
+
+/**
  * The attribute on a group that draws one part of a subject drawn in two: a
  * container's header, a relationship's or a message's label, a participant's
  * lifeline. A viewer says more about a subject where its words are.
@@ -303,13 +317,31 @@ function drawsPin(standing: SubjectStanding | undefined): standing is SubjectSta
  * @returns The pin, or nothing to draw.
  */
 function standingPin(box: Box, standing: SubjectStanding | undefined, palette: Palette): string {
+	return standingPinAt(box.x + PIN_INSET, box.y + PIN_INSET, standing, palette);
+}
+
+/**
+ * The pin, centred on a point: a corner's, or the margin beside a row of a
+ * sequence, which has no corner of its own.
+ * @param x Where its centre goes.
+ * @param y The same.
+ * @param standing How the subject stands, or undefined when this is not a proposal.
+ * @param palette The theme's colours.
+ * @returns The pin, or nothing to draw.
+ */
+function standingPinAt(
+	x: number,
+	y: number,
+	standing: SubjectStanding | undefined,
+	palette: Palette,
+): string {
 	const ink = drawsPin(standing) ? standingInk(standing, palette) : undefined;
 	if (standing === undefined || ink === undefined) {
 		return "";
 	}
 	return wrap(
 		"g",
-		{ transform: `translate(${coord(box.x + PIN_INSET)},${coord(box.y + PIN_INSET)})` },
+		{ transform: `translate(${coord(x)},${coord(y)})` },
 		tag("circle", { r: PIN_RADIUS, fill: ink }) +
 			tag("path", {
 				d: PIN_GLYPH[standing],
@@ -505,6 +537,8 @@ export {
 	type SubjectKind,
 	type UnsettledOf,
 	BADGE_SIZE,
+	PIN_INSET,
+	HEAD_ATTRIBUTE,
 	PART_ATTRIBUTE,
 	MEMBERS_ATTRIBUTE,
 	TRAFFIC_ATTRIBUTE,
@@ -514,6 +548,7 @@ export {
 	subjectGroup,
 	standingOutline,
 	standingPin,
+	standingPinAt,
 	standingSwipe,
 	unsettledFrom,
 	warningBadge,
