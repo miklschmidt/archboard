@@ -226,15 +226,15 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		// Body type: a row label that is neither selected nor the board being read.
 		const rowLabel = [...(nav?.querySelectorAll('[role="treeitem"][aria-selected="false"]') ?? [])]
 			.find(node => readRow === null || !node.matches(readRow))?.querySelector('[data-board-key]');
-		// The kicker role: a section label in the pane's sidebar.
-		const kicker = pane?.querySelector('[data-slot] > h2');
+		// A section heading in the pane's sidebar.
+		const sectionHeading = pane?.querySelector('[data-slot] > h2');
 		if (!shell || !header || !wordmark || !control || !board || !variant || !level || !present ||
-			!nav || !filter || !stages || !bar || !status || !pane || !selectedBoard || !rowLabel || !kicker) {
+			!nav || !filter || !stages || !bar || !status || !pane || !selectedBoard || !rowLabel || !sectionHeading) {
 			throw new Error('shell matrix probe is incomplete: ' + JSON.stringify({
 				shell: !!shell, header: !!header, wordmark: !!wordmark, control: !!control, board: !!board,
 				variant: !!variant, level: !!level, present: !!present, nav: !!nav, filter: !!filter,
 				stages: !!stages, bar: !!bar, status: !!status, pane: !!pane, selectedBoard: !!selectedBoard,
-				rowLabel: !!rowLabel, kicker: !!kicker }));
+				rowLabel: !!rowLabel, sectionHeading: !!sectionHeading }));
 		}
 		const round = value => Math.round(value * 1000) / 1000;
 		const rect = node => {
@@ -345,7 +345,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 					.filter(name => name.includes('/assets/diagram-fonts/')),
 				humanLabels: humanLabels.map(node => { const value = getComputedStyle(node); return {
 					family: value.fontFamily.toLowerCase(), transform: value.textTransform, weight: parseFloat(value.fontWeight) }; }),
-				sectionKicker: { ...metrics(kicker), transform: getComputedStyle(kicker).textTransform },
+				sectionHeading: { ...metrics(sectionHeading), transform: getComputedStyle(sectionHeading).textTransform },
 				titleType: metrics(board), bodyType: metrics(rowLabel), stateType: metrics(variant),
 				technicalType: metrics(level), controlType: metrics(control),
 				actionTargets: actionTargets.map(({ width, height }) => ({ width, height })),

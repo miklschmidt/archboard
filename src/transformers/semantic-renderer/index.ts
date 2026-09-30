@@ -61,6 +61,7 @@ import {
 	type PaintedPage,
 } from "@/transformers/semantic-renderer/lib/svg/planned-frame";
 import {
+	standingPinAt,
 	standingsFrom,
 	unsettledFrom,
 	type StatedStandings,
@@ -509,6 +510,16 @@ function lineInk(ink: string): string {
 	return drawnInk(ink, PALETTE);
 }
 
+/**
+ * The pin a subject of one standing wears on its corner, as a page draws it:
+ * for a key that has to show the mark the picture shows (TASK-383).
+ * @param standing How the subject stands.
+ * @returns The pin, centred on the origin in a twenty-unit square; empty for unchanged.
+ */
+function standingMark(standing: SubjectStanding): string {
+	return standingPinAt(0, 0, standing, PALETTE);
+}
+
 export {
 	type ReadingDirection,
 	type SubjectStanding,
@@ -522,6 +533,7 @@ export {
 	renderDataFlow,
 	renderSemanticView,
 	lineInk,
+	standingMark,
 	PALETTE,
 	type Palette,
 };

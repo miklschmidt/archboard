@@ -12,10 +12,10 @@
 // anything about a semantic board (ADR 0023).
 
 import {
+	addressedVariant,
 	comparedWith,
 	compareVariants,
 	parseSemanticBoard,
-	resolveVariant,
 	standingOf,
 	type ChangeKind,
 	type FieldChange,
@@ -25,6 +25,7 @@ import {
 	type SemanticFlow,
 	type SemanticNode,
 	type SemanticVariant,
+	type SemanticView,
 	type SemanticWalkthrough,
 	type VariantComparison,
 	type VariantLifecycle,
@@ -305,6 +306,8 @@ interface OfferedVariant {
 interface VariantReading {
 	/** Every variant of the board, in the order the board states them. */
 	readonly variants: readonly OfferedVariant[];
+	/** Every view of the board, with what each answers, in the order the board states them. */
+	readonly views: readonly SemanticView[];
 	/** The one this pane is showing, or null when the board has no such variant. */
 	readonly showing: OfferedVariant | null;
 	/** That variant whole, or null when the board has no such variant. */
@@ -407,10 +410,15 @@ function idItself(id: string): string {
 /**
  * What one variant says beyond its picture.
  * @param variants Every variant of the board it belongs to.
+ * @param views Every view of that board.
  * @param variant The variant the pane is showing.
  * @returns Its explanations, and how to name what they are about.
  */
-function readingOf(variants: readonly OfferedVariant[], variant: SemanticVariant): VariantReading {
+function readingOf(
+	variants: readonly OfferedVariant[],
+	views: readonly SemanticView[],
+	variant: SemanticVariant,
+): VariantReading {
 	/**
 	 * What one of this variant's subjects is called.
 	 * @param id The semantic id.
@@ -429,6 +437,7 @@ function readingOf(variants: readonly OfferedVariant[], variant: SemanticVariant
 	}
 	return {
 		variants,
+		views,
 		showing: offeredVariant(variant),
 		variant,
 		walkthroughs: variant.content.walkthroughs,
@@ -448,10 +457,13 @@ function readingOf(variants: readonly OfferedVariant[], variant: SemanticVariant
  * The variant is resolved the way the render route resolves it — the same
  * function over the same document — rather than taken from the picture. A
  * narrative that depended on the picture would go out whenever a render failed,
- * which is precisely when somebody wants to read what the board says.
+ * which is precisely when somebody wants to read what the board says. That
+ * includes a board nobody has built, whose bare name opens the draft no other
+ * draft came before: asking which variant is current would find none there,
+ * and the tab would say nothing about the draft on screen.
  * @param document Whatever the board route answered with.
- * @param asked The variant id or name the pane is showing; the current one
- *   when it names none.
+ * @param asked The variant id or name the pane is showing; the one the board's
+ *   bare name opens when it names none.
  * @returns The reading, or null when the board or that variant cannot be read.
  */
 function readVariant(document: unknown, asked: string | undefined): VariantReading | null {
@@ -460,11 +472,14 @@ function readVariant(document: unknown, asked: string | undefined): VariantReadi
 		return null;
 	}
 	const variants = reading.board.variants.map(offeredVariant);
-	const variant = resolveVariant(reading.board, asked);
+	const { views } = reading.board;
+	const opened = addressedVariant(reading.board, asked);
 	// The board reads even when the variant asked for is not one of its own: the
 	// picker is how somebody recovers from an address naming a variant that has
 	// been renamed, so the choice has to be on screen for them to make it.
-	return variant === undefined ? { variants, ...NOTHING_SHOWN } : readingOf(variants, variant);
+	return opened.ok
+		? readingOf(variants, views, opened.variant)
+		: { variants, views, ...NOTHING_SHOWN };
 }
 
 /** What a selected subject is, for whoever reports it rather than draws it. */
@@ -482,7 +497,7 @@ function nothingHeld(): SelectedSubject | undefined {
 }
 
 /** A reading of a board whose asked-for variant is not one of its own. */
-const NOTHING_SHOWN: Omit<VariantReading, "variants"> = Object.freeze({
+const NOTHING_SHOWN: Omit<VariantReading, "variants" | "views"> = Object.freeze({
 	showing: null,
 	variant: null,
 	walkthroughs: [],

@@ -75,7 +75,8 @@ test("the comparison control carries the picture in and out without changing the
 		await settle();
 		expect(renderCalls().at(-1)).toContain("comparison=off");
 		expect(surface().hasAttribute("data-picture-motion")).toBe(true);
-		expect(part("semantic-legend").textContent).not.toContain("Added");
+		// The key to marks the picture no longer draws goes with them.
+		expect(document.querySelector("[data-slot='semantic-change-key']")).toBeNull();
 		expect(part("semantic-board-stage").getAttribute("data-variant")).toBe("Proposal");
 		land();
 		expect(surface().hasAttribute("data-picture-motion")).toBe(false);
@@ -90,7 +91,7 @@ test("the comparison control carries the picture in and out without changing the
 		await settle();
 		expect(renderCalls()).toHaveLength(callsAfterOff);
 		expect(surface().hasAttribute("data-picture-motion")).toBe(true);
-		expect(part("semantic-legend").textContent).toContain("Added");
+		expect(part("semantic-change-key")).not.toBeNull();
 		land();
 		expect(surface().hasAttribute("data-picture-motion")).toBe(false);
 		expect(surface().innerHTML.includes("stray")).toBe(true);

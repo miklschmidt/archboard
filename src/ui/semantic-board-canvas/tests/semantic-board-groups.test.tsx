@@ -333,14 +333,14 @@ test("a membership in the inspector selects the same group, with its colour", as
 	expect(listed()).toBe("fulfillment");
 });
 
-test("a variant with no memberships says so in the list's own place", async () => {
+test("a variant with no memberships offers no groups, as a board without views offers no views", async () => {
 	server.documents["pipeline"] = boardOf(NODES.map(({ groups: _groups, ...node }) => node));
 	server.reply = { status: 200, body: picture() };
 	server.vault = vaultWith(GROUPS);
 	mountStage();
 	await settled();
 	expect(choices()).toEqual([]);
-	expect(slot("semantic-group-empty")).not.toBeNull();
+	expect(slot("semantic-board-panel-groups")).toBeNull();
 });
 
 test("an id the configuration no longer defines is still listed, by its id, without a colour", async () => {

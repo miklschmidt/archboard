@@ -1,5 +1,6 @@
-// The inspector's own small vocabulary: a heading, a definition row, a section,
-// a title block, and a description.
+// The inspector's own small vocabulary: a definition row, a section, a title
+// block, and a description. Its headings are the sidebar's
+// (`SemanticSidebarParts`), so both tabs of one sidebar read alike.
 //
 // These carry no knowledge of what a semantic board is. They are the shapes the
 // panel is built out of, kept together so that a section looks the same
@@ -14,22 +15,8 @@ import { Button } from "@/ui/components/button";
 import type { CodeBinding } from "@/shared/code-target";
 import { Badge } from "@/ui/components/badge";
 import { SemanticGroupChip } from "@/ui/semantic-board-canvas/components/SemanticGroupChip";
+import { SidebarHeading } from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
 import { groupLabel, type GroupNames } from "@/ui/semantic-board-canvas/lib/groups";
-
-/** Inputs for a section heading. */
-interface SectionLabelProps {
-	/** The heading. */
-	children: string;
-}
-
-/**
- * A section heading in the kicker role: small, uppercase, muted.
- * @param props The heading text.
- * @returns The heading.
- */
-function SectionLabel(props: SectionLabelProps): JSX.Element {
-	return <h3 className="text-kicker text-muted-foreground uppercase">{props.children}</h3>;
-}
 
 /** Inputs for one definition row. */
 interface RowProps {
@@ -71,14 +58,15 @@ interface SectionProps {
 }
 
 /**
- * One section of the inspector, under a one-pixel rule.
+ * One section of the inspector, under a one-pixel rule, headed the way every
+ * section of the sidebar is.
  * @param props The heading and the body.
  * @returns The section.
  */
 function Section(props: SectionProps): JSX.Element {
 	return (
-		<div className="border-border flex flex-col gap-3 border-t px-4 py-4">
-			<SectionLabel>{props.title}</SectionLabel>
+		<div className="border-border flex flex-col gap-2 border-t px-4 py-4">
+			<SidebarHeading level={3}>{props.title}</SidebarHeading>
 			{props.children}
 		</div>
 	);
@@ -346,7 +334,6 @@ export {
 	OpenCode,
 	Row,
 	Section,
-	SectionLabel,
 	TitleBlock,
 	type GroupControls,
 };
