@@ -1,11 +1,11 @@
 ---
 id: TASK-380
 title: A recording is narrated in its walkthrough's language on every run
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 23:28'
-updated_date: '2026-09-30 00:46'
+updated_date: '2026-09-30 01:56'
 labels:
   - voice
 dependencies: []
@@ -22,9 +22,9 @@ TASK-352 moved the rule to speak the user's language out of the prompt a recordi
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Ten recordings in a row of English walkthroughs are all narrated in English
-- [ ] #2 The voice persona the user tunes keeps its wording, or any change to it is agreed with the user first
-- [ ] #3 archboard semantic record takes an optional --language, English when it is not given, and the narration is in the language given
+- [x] #1 Ten recordings in a row of English walkthroughs are all narrated in English
+- [x] #2 The voice persona the user tunes keeps its wording, or any change to it is agreed with the user first
+- [x] #3 archboard semantic record takes an optional --language, English when it is not given, and the narration is in the language given
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -50,4 +50,12 @@ Tests, each shown failing without the change: src/runtime/codex-realtime/tests/p
 Gate: bun run check exit 0 under systemd-run MemoryMax=16G (modules 3699 pass, system 183 pass, repository 8 pass, every serial browser owner pass).
 Board rasterizer@TASK-380 adopted at version 14, dogfood check clean. The proposal was adopted now because the code landed on main; only real-voice verification remains.
 Remaining: AC #1 and AC #3 need real-voice recordings: ten English walkthroughs in a row with no --language, all narrated in English, and one with --language da narrated in Danish. Per the user's change of plan on 2026-09-30 these recordings run after the headless Chromium GPU rendering fix (TASK-378 follow-up). None were run.
+
+Real verification, 2026-09-30, after the TASK-378 GPU fix: eleven recordings one at a time on fresh scratch servers (ports 3521-3531), frontend rebuilt from main. Ten with no --language, across six walkthroughs (Archboard "Read this board" twice, Web shop "Why checkout stops waiting" twice, Inventory service "How stock is reserved" three times, Voice coordinator "Why voice is its own thread", Web shop "How an order is placed today", Board rasterizer "How a walkthrough becomes a video"): all ten narrated in English, with no non-ASCII letters in any transcript. One with --language da (Inventory service): narrated in Danish ("Her ser vi, hvordan Checkout API holder igen med kortet, indtil varerne faktisk er reserveret."). Longest frame gap per recording 37 to 50 ms. VOICE_PERSONA is unchanged.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A recording is narrated in one named language: archboard semantic record takes --language with a BCP 47 tag (default en), refuses a tag that names no language before it starts, and the recording prompt names the language twice, including for steps written in another language. The persona the user tunes is unchanged. Verified with ten English recordings in a row across six walkthroughs and one Danish recording, after the TASK-378 GPU fix, plus the prompt, CLI and end-to-end tests.
+<!-- SECTION:FINAL_SUMMARY:END -->
