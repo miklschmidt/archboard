@@ -38,9 +38,11 @@ with sound in Chromium, Firefox, mpv and VLC.
 
 To measure g, list the video's frame times with
 `ffprobe -v error -select_streams v:0 -show_entries frame=pts_time -of csv=p=0 <file>`.
-Frames are 33 ms apart, whether or not anything moves. The one exception is a
-glide that changes views: headless Chromium draws some of its frames too slowly
-for that, and holds a frame for 50 to 75 ms (TASK-378).
+Frames are 33 ms apart, whether or not anything moves, and no frame is held
+longer than 50 ms. This holds on a machine with a usable GPU, where the
+recording's Chromium composites on the GPU (TASK-378). Without one, Chromium
+composites in software. It then holds some frames of a glide that changes views
+for 50 to 75 ms.
 
 ## 3. Record in another language
 

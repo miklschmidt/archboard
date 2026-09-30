@@ -217,6 +217,14 @@
 	animation: recording-frame-pacer 1s linear infinite alternate;
 }
 
+/* What a recording draws once before it captures anything (TASK-378,
+   `rehearsal.ts`): the subtitle box, so the GPU has compiled the shaders of
+   its blurred scrim before the first words, rather than holding the picture
+   while it compiles them. */
+[data-recording-rehearsal] [data-slot="voice-subtitles"] {
+	visibility: visible;
+}
+
 /* The faint 8px dot grid an empty preview shows instead of a sentence. */
 @utility dot-grid {
 	background-image: radial-gradient(
