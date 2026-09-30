@@ -23,7 +23,7 @@ TASK-352 moved the rule to speak the user's language out of the prompt a recordi
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 Ten recordings in a row of English walkthroughs are all narrated in English
-- [x] #2 The voice persona the user tunes keeps its wording, or any change to it is agreed with the user first
+- [ ] #2 The voice persona the user tunes keeps its wording, or any change to it is agreed with the user first
 - [ ] #3 archboard semantic record takes an optional --language, English when it is not given, and the narration is in the language given
 <!-- AC:END -->
 
