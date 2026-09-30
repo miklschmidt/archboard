@@ -328,6 +328,26 @@ function navigatorRows(inputs: NavigatorRowInputs): NavigatorRow[] {
 }
 
 /**
+ * Whether what is under a row is listed, or undefined for a row that does not
+ * open: a variant, or a board with nothing to list.
+ * @param row The row.
+ * @returns True while open, false while closed, undefined for a row that does not open.
+ */
+function rowOpen(row: NavigatorRow): boolean | undefined {
+	if (row.kind === "variant") return undefined;
+	return row.kind === "board" && !row.expandable ? undefined : row.expanded;
+}
+
+/**
+ * Whether a row is the tree's one selected row.
+ * @param row The row.
+ * @returns True for the active pane's row.
+ */
+function rowSelected(row: NavigatorRow): boolean {
+	return (row.kind === "board" || row.kind === "variant") && row.selected;
+}
+
+/**
  * How many boards the filter found — by their own names, or by a variant of
  * theirs — and how many there are.
  * @param rows The rows drawn.
@@ -347,4 +367,4 @@ function filterCount(
 	return { found: found.size, total };
 }
 
-export { filterCount, navigatorRows };
+export { filterCount, navigatorRows, rowOpen, rowSelected };

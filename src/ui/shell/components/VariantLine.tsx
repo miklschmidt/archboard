@@ -65,19 +65,8 @@ function VariantLine(props: RowHandlers & { readonly row: VariantRow }): JSX.Ele
 	const { lifecycle } = row.variant;
 	const muted = recedes(lifecycle) ? "text-muted-foreground" : "";
 	return (
-		<TreeRow
-			{...props}
-			label={variantRowName(row)}
-			selected={row.selected}
-			expanded={undefined}
-			toggles={false}
-		>
-			<TreeRowDisclosure
-				id={row.id}
-				name={row.variant.name}
-				expanded={undefined}
-				onExpand={props.onExpand}
-			/>
+		<TreeRow {...props} label={variantRowName(row)}>
+			<TreeRowDisclosure row={row} name={row.variant.name} onExpand={props.onExpand} />
 			<TreeRowMarker
 				icon={LIFECYCLE_ICONS[lifecycle]}
 				tone={lifecycle === "current" ? "text-foreground" : "text-muted-foreground"}

@@ -7,6 +7,7 @@
 // Earlier row, Enter opens or closes it. Pure: the component carries the
 // answer out.
 
+import { rowOpen } from "@/ui/shell/lib/navigator-rows";
 import type { NavigatorRow } from "@/ui/shell/types/navigator-rows";
 
 /** What one key asks the tree to do. */
@@ -14,26 +15,6 @@ type OutlineKeyAction =
 	| { readonly kind: "focus"; readonly id: string }
 	| { readonly kind: "expand"; readonly id: string; readonly open: boolean }
 	| { readonly kind: "open"; readonly row: NavigatorRow; readonly beside: boolean };
-
-/**
- * Whether a row opens and closes: a folder, an Earlier row, or a board with
- * something to list under it.
- * @param row The row.
- * @returns True when it has a disclosure.
- */
-function expandable(row: NavigatorRow): boolean {
-	if (row.kind === "variant") return false;
-	return row.kind !== "board" || row.expandable;
-}
-
-/**
- * Whether what is under a row is listed.
- * @param row The row.
- * @returns True when open.
- */
-function isExpanded(row: NavigatorRow): boolean {
-	return row.kind !== "variant" && row.expanded;
-}
 
 /**
  * The row an up, down, Home or End key moves to.
@@ -60,7 +41,7 @@ function verticalTarget(rows: readonly NavigatorRow[], index: number, key: strin
  * @returns True when the row opens and closes by key.
  */
 function togglesByKey(row: NavigatorRow, event: OutlineKeyEvent): boolean {
-	return !event.filtering && expandable(row);
+	return !event.filtering && rowOpen(row) !== undefined;
 }
 
 /**
@@ -77,7 +58,7 @@ function rightAction(
 ): OutlineKeyAction | null {
 	const row = rows[index];
 	if (row === undefined) return null;
-	if (togglesByKey(row, event) && !isExpanded(row))
+	if (togglesByKey(row, event) && rowOpen(row) === false)
 		return { kind: "expand", id: row.id, open: true };
 	const next = rows[index + 1];
 	return next?.parentId === row.id ? { kind: "focus", id: next.id } : null;
@@ -97,7 +78,7 @@ function leftAction(
 ): OutlineKeyAction | null {
 	const row = rows[index];
 	if (row === undefined) return null;
-	if (togglesByKey(row, event) && isExpanded(row))
+	if (togglesByKey(row, event) && rowOpen(row) === true)
 		return { kind: "expand", id: row.id, open: false };
 	return row.parentId === null ? null : { kind: "focus", id: row.parentId };
 }

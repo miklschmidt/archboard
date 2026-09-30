@@ -25,19 +25,8 @@ import type { EarlierRow, FolderRow } from "@/ui/shell/types/navigator-rows";
 function FolderLine(props: RowHandlers & { readonly row: FolderRow }): JSX.Element {
 	const { row } = props;
 	return (
-		<TreeRow
-			{...props}
-			label={`${row.name}, folder, ${row.count} boards`}
-			selected={false}
-			expanded={row.expanded}
-			toggles
-		>
-			<TreeRowDisclosure
-				id={row.id}
-				name={row.name}
-				expanded={row.expanded}
-				onExpand={props.onExpand}
-			/>
+		<TreeRow {...props} label={`${row.name}, folder, ${row.count} boards`}>
+			<TreeRowDisclosure row={row} name={row.name} onExpand={props.onExpand} />
 			<TreeRowMarker icon={row.expanded ? RiFolderOpenLine : RiFolder3Line}>
 				{row.innerActivity && (
 					<ActivityLamp
@@ -66,19 +55,8 @@ function FolderLine(props: RowHandlers & { readonly row: FolderRow }): JSX.Eleme
 function EarlierLine(props: RowHandlers & { readonly row: EarlierRow }): JSX.Element {
 	const { row } = props;
 	return (
-		<TreeRow
-			{...props}
-			label={`Earlier variants of ${row.board.name}, ${row.count}`}
-			selected={false}
-			expanded={row.expanded}
-			toggles
-		>
-			<TreeRowDisclosure
-				id={row.id}
-				name="earlier variants"
-				expanded={row.expanded}
-				onExpand={props.onExpand}
-			/>
+		<TreeRow {...props} label={`Earlier variants of ${row.board.name}, ${row.count}`}>
+			<TreeRowDisclosure row={row} name="earlier variants" onExpand={props.onExpand} />
 			<TreeRowMarker icon={RiHistoryLine} />
 			<TreeRowName text="Earlier" match={null} className="text-body text-muted-foreground" />
 			<TreeRowFacts>{row.count}</TreeRowFacts>
