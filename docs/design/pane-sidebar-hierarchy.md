@@ -212,16 +212,18 @@ draws one.
    the foot, under the last rule.
 
 The weight follows the rank. The most important and most frequent query gets
-the most distinct object [7]. So the summary is the only text in the
-foreground at body size with no heading above it. The choices are the only
-text in the control role. Headings, secondary lines and the legend's labels
-are quieter.
+the most distinct object [7]. So the summary is the first text of the tab and
+its only paragraph in the foreground. The choices are the only text in the
+control role, 13 px and medium. Headings and secondary lines are muted. The
+legend's labels are body text beside their samples, at the foot.
 
 ### What is disclosed
 
 Nothing is collapsed by default, and no section can collapse on its own. The
-sections are short (at most six rows on any board), and a reader of a first
-board needs most of them [15]. Collapsing the whole sidebar to its tab icons
+lists of choices are short (at most six rows on any board), and a reader of a
+first board needs most of the tab [15]. The legend is longer, but C4 asks that
+the key always be there [11], and the legend already keys only what is
+drawn. Collapsing the whole sidebar to its tab icons
 stays the one way to hide it all, the legend included, which keeps the legend
 visible by default and hideable (ADR 0025).
 
