@@ -2,7 +2,8 @@
 // stand-in for the replay page that fails one frame, with a fake ffmpeg. The real page's success
 // path is walkthrough-replay.test.ts; what is guarded here is what a failed render leaves: it is
 // RENDER_FAILED, names the kept talk to render again, asks for no frame after the one that failed,
-// and writes no file and no partial file.
+// and writes no file and no partial file, whether one page draws the talk or one of several fails
+// and stops the others (TASK-382).
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
@@ -122,9 +123,10 @@ afterAll(async () => {
 /**
  * Render the talk to a file in the temporary directory.
  * @param name The file's name.
+ * @param pages How many pages draw it at once.
  * @returns What it took, and how the render came out.
  */
-async function render(name: string) {
+async function render(name: string, pages: number) {
 	const directory = writeTalk({
 		talk,
 		voice: new Int16Array(SAMPLES),
@@ -144,6 +146,7 @@ async function render(name: string) {
 		signal: new AbortController().signal,
 		say: (line) => lines.push(line),
 		ffmpeg: { argv: [ffmpeg.executablePath], via: "ARCHBOARD_FFMPEG" },
+		pages,
 	}).then(
 		(made) => ({ made }),
 		(error: unknown) => ({ error }),
@@ -151,20 +154,37 @@ async function render(name: string) {
 	return { outcome, out, directory, lines };
 }
 
-test("a page that cannot draw a frame fails the render as RENDER_FAILED, naming the kept talk, and writes nothing", async () => {
-	failAt = 3;
+/**
+ * Render with a frame that cannot be drawn, and prove the render failed as a whole: RENDER_FAILED
+ * naming the kept talk, no file and no partial file, and no frame asked for after the failing one.
+ * @param name The file's name.
+ * @param pages How many pages draw it at once.
+ * @param failing The frame no page can draw.
+ */
+async function failsAt(name: string, pages: number, failing: number): Promise<void> {
+	failAt = failing;
 	try {
-		const { outcome, out, directory } = await render("failing");
+		const { outcome, out, directory } = await render(name, pages);
 		if (!("error" in outcome)) throw new Error("It did not fail.");
 		expect((outcome.error as { code?: unknown }).code).toBe("RENDER_FAILED");
 		expect((outcome.error as Error).message).toContain(directory);
 		expect(existsSync(out)).toBe(false);
-		expect(readdirSync(root).filter((name) => name.endsWith(".partial"))).toEqual([]);
+		expect(readdirSync(root).filter((file) => file.endsWith(".partial"))).toEqual([]);
 		// The talk is kept.
 		expect(existsSync(join(directory, "talk.json"))).toBe(true);
-		// Frames 0 to 3 were asked for, and no frame after the one that failed.
-		expect(asked).toEqual([0, 1, 2, 3]);
+		expect(Math.max(...asked)).toBe(failing);
 	} finally {
 		failAt = null;
 	}
+}
+
+test("a page that cannot draw a frame fails the render as RENDER_FAILED, naming the kept talk, and writes nothing", async () => {
+	await failsAt("failing", 1, 3);
+	// One page asks for frames 0 to 3, in order, and none after the one that failed.
+	expect(asked).toEqual([0, 1, 2, 3]);
+});
+
+test("a page that fails stops the others, and the render fails as a whole", async () => {
+	// Frame 40 is in the second page's first second; every page draws it on the way to its own.
+	await failsAt("failing-on-two-pages", 2, 40);
 });

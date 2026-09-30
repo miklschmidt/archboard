@@ -18,6 +18,7 @@ interface FrameSink {
 /** A page waiting for room to draw a frame. */
 interface Waiting {
 	readonly frame: number;
+	/** Let the page go on, and stop listening for its abort. */
 	readonly resolve: () => void;
 }
 
@@ -59,16 +60,21 @@ class FrameOrder {
 		signal.throwIfAborted();
 		if (frame < this.#next + this.#ahead) return;
 		await new Promise<void>((resolve, reject) => {
-			const waiting = { frame, resolve };
-			this.#waiting.add(waiting);
-			signal.addEventListener(
-				"abort",
-				() => {
-					this.#waiting.delete(waiting);
-					reject(signal.reason);
+			/** Give up waiting: the render is stopping. */
+			const aborted = (): void => {
+				this.#waiting.delete(waiting);
+				reject(signal.reason);
+			};
+			const waiting: Waiting = {
+				frame,
+				/** Go on, and stop listening for an abort that no longer concerns this wait. */
+				resolve: () => {
+					signal.removeEventListener("abort", aborted);
+					resolve();
 				},
-				{ once: true },
-			);
+			};
+			this.#waiting.add(waiting);
+			signal.addEventListener("abort", aborted, { once: true });
 		});
 	}
 
