@@ -3,17 +3,20 @@
 // page. Only the voice is fake: it answers the browser's WebRTC offer with an answer nobody
 // connects to, and speaks one line about every step it is handed.
 //
-// What is guarded: the command writes a video file that went through every step of the
-// walkthrough, each handed to the voice in order and left only once the voice had finished it;
-// the voice is started in the language --language named (TASK-380); the receipt says what was
-// recorded; --discard removes the board once the file is written; and the recording is
-// encoded by the ffmpeg ARCHBOARD_FFMPEG names, proven before the talk starts (TASK-381), which is
-// a fake here.
+// What is guarded: the command keeps a talk that went through every step of the walkthrough,
+// each handed to the voice in order and left only once the voice had finished it, with the
+// voice's words stamped on it and the voice itself as long as the talk; the voice is started in
+// the language --language named (TASK-380); the picture is rendered from the talk frame by frame
+// and encoded by the ffmpeg ARCHBOARD_FFMPEG names, proven before the talk starts, which is a fake
+// here (TASK-381); the receipt says what was recorded; and --discard removes the board once the
+// file is written. Rendering a kept talk again is walkthrough-replay.test.ts's.
 
 import { expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+
+import { readTalk } from "@/runtime/walkthrough-recorder";
 
 import { declareTestWallClockBudget } from "../repository-policy/support/test-wall-clock.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
@@ -22,7 +25,7 @@ import {
 	prepareProductionFixture,
 	productionRecords as records,
 } from "./support/codex-production.ts";
-import { ffmpegCalls, prepareFakeFfmpeg } from "./support/fake-ffmpeg.ts";
+import { ffmpegCalls, frameManifest, prepareFakeFfmpeg } from "./support/fake-ffmpeg.ts";
 import { createRequester } from "./support/http.ts";
 
 const serverPath = join(import.meta.dir, "fixtures/codex-production-server.ts");
@@ -42,10 +45,10 @@ test(
 		declareTestWallClockBudget({
 			test: RECORDED,
 			reason:
-				"A recording is as long as its talk: the overview lead, two steps each glided to, spoken and paused after, and the tail, all on the wall clock the page paces by",
+				"A recording is as long as its talk: the overview lead, two steps each glided to, spoken and paused after, and the tail, all on the wall clock the page paces by; then the talk's picture is rendered frame by frame",
 			outerBoundMs: TEST_RECORDING_CASE_MS,
-			task: "TASK-304",
-			evidence: "10.2 s on 2026-09-23, of which about 8 s is the recorded talk itself",
+			task: "TASK-381",
+			evidence: "30.0 s on 2026-09-30: the talk is about 8 s and rendering its frames about 20 s",
 		});
 		const resources = new AsyncDisposableStack();
 		try {
@@ -102,21 +105,14 @@ test(
 			expect(created.status).toBe(200);
 
 			const out = join(fixture.root, "tour.mp4");
-			const recorded = spawnSync(
-				join(repoRoot, "bin/archboard"),
-				[
-					"semantic",
-					"record",
-					BOARD,
-					"--out",
-					out,
-					"--language",
-					"da",
-					"--discard",
-					"--doing",
-					"recording the tour",
-				],
-				{
+			const kept = join(fixture.root, "tour-talk");
+			/**
+			 * Run the CLI against the server, with the fake ffmpeg.
+			 * @param args Its arguments.
+			 * @returns How it ended.
+			 */
+			const cli = (args: readonly string[]) =>
+				spawnSync(join(repoRoot, "bin/archboard"), args, {
 					cwd: repoRoot,
 					encoding: "utf8",
 					timeout: TEST_RECORDING_CLI_MS,
@@ -129,8 +125,21 @@ test(
 						ARCHBOARD_NO_AUTOSTART: "1",
 						ARCHBOARD_FFMPEG: ffmpeg.executablePath,
 					},
-				},
-			);
+				});
+			const recorded = cli([
+				"semantic",
+				"record",
+				BOARD,
+				"--out",
+				out,
+				"--talk",
+				kept,
+				"--language",
+				"da",
+				"--discard",
+				"--doing",
+				"recording the tour",
+			]);
 			expect({ status: recorded.status, stderr: recorded.stderr }).toMatchObject({ status: 0 });
 			const receipt = JSON.parse(recorded.stdout) as {
 				steps: number;
@@ -138,19 +147,34 @@ test(
 				mimeType: string;
 				file: string;
 				discarded: boolean;
+				frames: number;
+				talk: string;
 			};
-			expect(receipt).toMatchObject({ steps: 2, file: out, discarded: true });
+			expect(receipt).toMatchObject({ steps: 2, file: out, discarded: true, talk: kept });
 			expect(receipt.mimeType.startsWith("video/mp4")).toBe(true);
 
-			// An MP4 whose size is what the receipt says.
-			const video = readFileSync(out);
-			expect(video.byteLength).toBe(receipt.bytes);
-			expect(video.subarray(4, 8).toString("latin1")).toBe("ftyp");
+			// The talk went through both steps in order, with the voice's words on it, and ended
+			// last; reading it proves its voice is as long as the talk.
+			const talk = readTalk(kept);
+			const shown = talk.events.flatMap((event) => (event.kind === "step" ? [event.beat] : []));
+			expect(shown).toEqual([0, 1]);
+			expect(
+				talk.events.some(
+					(event) => event.kind === "said" && event.final && event.text.includes(HEADINGS[0]!),
+				),
+			).toBe(true);
+			expect(talk.events[0]).toEqual({ kind: "drawn", at: 0, version: talk.board.version });
+			expect(talk.events.at(-1)?.kind).toBe("end");
 
-			// The named ffmpeg was asked what it can encode, then converted the recorded sound.
-			const calls = ffmpegCalls(ffmpeg.logPath);
-			expect(calls[0]).toContain("-encoders");
-			expect(calls.slice(1).some((call) => call.includes("aac"))).toBe(true);
+			// The picture was rendered from the talk, one 1920x1080 frame per 1/30 s, by the named
+			// ffmpeg, which was asked what it can encode before anything started.
+			expect(readFileSync(out).byteLength).toBe(receipt.bytes);
+			const video = frameManifest(out);
+			expect(video.frames).toHaveLength(receipt.frames);
+			expect(receipt.frames).toBe(Math.ceil(talk.audio.samples / 1600));
+			expect([video.width, video.height]).toEqual([1920, 1080]);
+			expect(video.argv).toContain(join(kept, "voice.wav"));
+			expect(ffmpegCalls(ffmpeg.logPath)[0]).toContain("-encoders");
 
 			// The voice was started in the language the command named, whatever language the steps
 			// are written in.

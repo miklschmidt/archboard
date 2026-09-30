@@ -1,26 +1,30 @@
 // Recording one walkthrough of a board to a video file, narrated by the Codex
-// voice (TASK-304).
+// voice (TASK-304), in two passes (TASK-381).
 //
 // The recorder first proves it has an ffmpeg that can encode the file (ARCHBOARD_FFMPEG, else
 // PATH, else nixpkgs' through Nix), so a machine that cannot refuses before any voice
-// session or browser starts (TASK-381).
+// session or browser starts.
 //
-// The recording is made by the Archboard server's own page, opened on the board in a
-// private headless Chromium the recorder owns: the page shows the one pane,
-// paces the talk by the voice and captures its own tab. The recorder starts
-// the browser the way the page needs it (a window exactly the reference size,
-// tab capture accepted without a prompt, audio allowed to play, a silent
-// microphone granted), drives the page through the shared recording contract,
-// streams the finished file out and tears the browser down, whatever happened.
-// An interrupt tears it down at once, so every call still waiting on it fails
-// and nothing is written. It runs against the server the CLI talks to, because
-// that server owns the Codex sign-in the voice needs.
+// Pass one is the talk. The Archboard server's own page, opened on the board in a private
+// headless Chromium the recorder owns, shows the one pane and paces the talk by the voice. It
+// keeps the voice and what happened while the voice spoke. The recorder starts the browser the
+// way the page needs it (a window exactly the reference size, audio allowed to play, a silent
+// microphone granted), drives the page through the shared recording contract, takes the talk
+// out and tears the browser down, whatever happened. It runs against the server the CLI talks
+// to, because that server owns the Codex sign-in the voice needs. The talk is kept with the
+// board and vault check it was drawn from.
+//
+// Pass two renders the picture from the kept talk frame by frame (`lib/render.ts`), with no
+// voice at all. A render that fails keeps the talk, so it can be rendered again with
+// `archboard semantic replay`. An interrupt tears either browser down at once, so every call
+// still waiting on it fails and no file is written.
 
-import { mkdtempSync, renameSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
-import type { DiagramTheme } from "@/shared/semantic-board/index";
+import type { DiagramTheme, SemanticBoard } from "@/shared/semantic-board/index";
+import type { VaultCheck } from "@/shared/semantic-policy/index";
 import { SHELL_VIEWPORT } from "@/shared/shell-geometry";
 import { RECORDING_CALL_MS } from "@/shared/timing/timing";
 import {
@@ -30,13 +34,20 @@ import {
 	type RecordingState,
 } from "@/shared/walkthrough-recording";
 import {
+	TALK_FORMAT,
+	TALK_SAMPLE_RATE,
+	TALK_VERSION,
+	TALK_VOICE_FILE,
+	TalkSchema,
+	type Talk,
+	type TalkLog,
+} from "@/shared/walkthrough-recording/talk";
+import {
 	isJsonRecord,
-	type DevTools,
 	type HeadlessChromium,
 	type HeadlessWindow,
 } from "@/runtime/headless-chromium";
 
-import type { FfmpegCommand } from "@/runtime/video-encoder";
 import {
 	WalkthroughRecordingError,
 	type WalkthroughRecordingErrorCode,
@@ -48,24 +59,35 @@ import {
 	messageOf,
 	type RecordingPageHandle,
 } from "@/runtime/walkthrough-recorder/lib/drive";
-import { playableEverywhere } from "@/runtime/walkthrough-recorder/lib/playable";
+import { renderTalk } from "@/runtime/walkthrough-recorder/lib/render";
 import { writeSilence } from "@/runtime/walkthrough-recorder/lib/silence";
+import {
+	voiceSamples,
+	writeTalk,
+	type TalkPlace,
+} from "@/runtime/walkthrough-recorder/lib/talk-files";
 
 /** What to record, and where. */
 interface WalkthroughRecordingRequest {
 	/** The server the page is served by. */
 	readonly serverUrl: string;
-	/** The board, as a pane addresses it: its name, or name@variant. */
-	readonly boardKey: string;
-	/** The walkthrough, by id. */
-	readonly walkthrough: string;
+	/** The board as it was read before the talk, which the talk keeps and is drawn from. */
+	readonly board: SemanticBoard;
+	/** The vault check the board is drawn under, which the talk keeps. */
+	readonly policy: VaultCheck;
+	/** The variant asked for, by id, or null for the one that is current. */
+	readonly variant: string | null;
+	/** The walkthrough. */
+	readonly walkthrough: { readonly id: string; readonly name: string };
 	/** The language the voice narrates it in, as a BCP 47 tag. */
 	readonly language: string;
 	readonly container: RecordingContainer;
-	/** Which palette the page draws in. */
+	/** Which palette the picture is rendered in. */
 	readonly theme: DiagramTheme;
 	/** The file to write, absolute. */
 	readonly out: string;
+	/** Where the talk is kept, already proven free. */
+	readonly talk: TalkPlace;
 	readonly signal: AbortSignal;
 	/**
 	 * Told each new phase and step of the talk.
@@ -73,7 +95,7 @@ interface WalkthroughRecordingRequest {
 	 */
 	readonly onProgress: (state: RecordingState) => void;
 	/**
-	 * Told what the recorder is doing before the talk starts, in a sentence.
+	 * Told what the recorder is doing outside the talk, in a sentence.
 	 * @param line The sentence.
 	 */
 	readonly say: (line: string) => void;
@@ -89,10 +111,12 @@ interface RecordedWalkthrough {
 	readonly durationMs: number;
 	/** How many steps the talk went through. */
 	readonly steps: number;
-	/** What stopping the recording's browser could not prove gone; empty when it was clean. */
+	/** How many frames the video has. */
+	readonly frames: number;
+	/** Where the talk is kept. */
+	readonly talk: string;
+	/** What stopping either browser could not prove gone; empty when both were clean. */
 	readonly leftBehind: readonly string[];
-	/** What the caller should be told about how the file plays; empty when it plays everywhere. */
-	readonly notes: readonly string[];
 }
 
 /**
@@ -102,8 +126,9 @@ interface RecordedWalkthrough {
  */
 function pageUrl(request: WalkthroughRecordingRequest): string {
 	const url = new URL("/", request.serverUrl);
-	url.searchParams.set("paneA", request.boardKey);
-	url.searchParams.set(RECORDING_SEARCH_PARAM, request.walkthrough);
+	const { board, variant } = request;
+	url.searchParams.set("paneA", variant === null ? board.name : `${board.name}@${variant}`);
+	url.searchParams.set(RECORDING_SEARCH_PARAM, request.walkthrough.id);
 	url.searchParams.set(RECORDING_LANGUAGE_SEARCH_PARAM, request.language);
 	return url.toString();
 }
@@ -115,16 +140,8 @@ function pageUrl(request: WalkthroughRecordingRequest): string {
  */
 function recordingFlags(microphone: string): readonly string[] {
 	return [
-		// Composite on the GPU when Chromium finds a usable one: headless Chromium composites in
-		// software otherwise, too slowly for a glide under a cross-fade to keep 30 frames a
-		// second. Without a usable GPU Chromium falls back to software compositing by itself.
-		"--enable-gpu",
-		// Rasterize in software as before: GPU rasterization held the capture 67 to 106 ms
-		// whenever a step drew new content.
-		"--disable-gpu-rasterization",
-		// A screen larger than the window, or the tab capture is held to the headless default.
+		// A screen larger than the window, or the window is held to the headless default.
 		"--screen-info={2560x1600}",
-		"--auto-accept-this-tab-capture",
 		"--autoplay-policy=no-user-gesture-required",
 		"--use-fake-device-for-media-stream",
 		`--use-file-for-fake-audio-capture=${microphone}`,
@@ -135,26 +152,11 @@ function recordingFlags(microphone: string): readonly string[] {
 }
 
 /**
- * Whether a page's viewport is the reference size.
- * @param page The page.
- * @returns True when it is.
- */
-async function atReferenceSize(page: DevTools): Promise<boolean> {
-	const size = await page.evaluate("[window.innerWidth, window.innerHeight]", {
-		timeoutMs: RECORDING_CALL_MS,
-	});
-	return (
-		Array.isArray(size) && size[0] === SHELL_VIEWPORT.width && size[1] === SHELL_VIEWPORT.height
-	);
-}
-
-/**
  * One page as the page driver speaks to it.
- * @param chromium The browser the page is in.
  * @param window The page's window.
  * @returns The handle.
  */
-function pageHandle(chromium: HeadlessChromium, window: HeadlessWindow): RecordingPageHandle {
+function pageHandle(window: HeadlessWindow): RecordingPageHandle {
 	const { page } = window;
 	return {
 		/**
@@ -184,17 +186,9 @@ function pageHandle(chromium: HeadlessChromium, window: HeadlessWindow): Recordi
 			});
 			const objectId = isJsonRecord(remote) ? remote["objectId"] : undefined;
 			if (typeof objectId !== "string") {
-				throw new RecordingPageError("The canvas page finished without a file to hand over.", true);
+				throw new RecordingPageError("The canvas page finished without a talk to hand over.", true);
 			}
 			return (await page.readBlobTo(objectId, path, readTimeoutMs)).bytes;
-		},
-		/**
-		 * Size the window again whenever the browser took room from the page.
-		 * @returns When the page is the reference size.
-		 */
-		keepSize: async () => {
-			if (await atReferenceSize(page)) return;
-			await chromium.fitWindow(window, SHELL_VIEWPORT, RECORDING_CALL_MS);
 		},
 	};
 }
@@ -239,73 +233,25 @@ async function openRecordingPage(
 }
 
 /**
- * Record while the browser is up, into a file beside where it goes. Moving it into place is
- * the caller's, once the browser is stopped.
+ * Record the talk while the browser is up, its voice into a file.
  * @param chromium The browser.
  * @param request What to record.
- * @param partial Where to write it.
- * @returns The finished recording.
+ * @param voice Where the voice goes.
+ * @returns The page's last state and the talk's log.
  * @throws {RecordingPageError} When it did not happen.
  */
-async function recordIn(
+async function talkIn(
 	chromium: HeadlessChromium,
 	request: WalkthroughRecordingRequest,
-	partial: string,
-): Promise<Omit<RecordedWalkthrough, "leftBehind" | "notes">> {
+	voice: string,
+): Promise<{ readonly state: RecordingState; readonly log: TalkLog }> {
 	request.signal.throwIfAborted();
 	const window = await openRecordingPage(chromium, request);
-	const { state, bytes } = await drive(pageHandle(chromium, window), {
-		container: request.container,
-		path: partial,
+	return drive(pageHandle(window), {
+		voice,
 		signal: request.signal,
 		onProgress: request.onProgress,
 	});
-	return {
-		file: request.out,
-		bytes,
-		mimeType: state.mimeType ?? "",
-		durationMs: Math.round(state.durationMs ?? 0),
-		steps: state.of ?? 0,
-	};
-}
-
-/**
- * The recorded file made to play with sound everywhere it can, or what stopped the recording.
- * @param outcome What recording in the browser came to.
- * @param partial Where the file was written.
- * @param ffmpeg The command line that runs ffmpeg.
- * @param signal Cancels making it playable.
- * @returns The finished recording, before it moves into place.
- * @throws {unknown} What stopped the recording.
- */
-async function playableRecording(
-	outcome:
-		| { readonly made: Omit<RecordedWalkthrough, "leftBehind" | "notes"> }
-		| { readonly error: unknown },
-	partial: string,
-	ffmpeg: FfmpegCommand,
-	signal: AbortSignal,
-): Promise<Omit<RecordedWalkthrough, "leftBehind">> {
-	if ("error" in outcome) throw outcome.error;
-	const played = await playableEverywhere(partial, outcome.made.mimeType, {
-		ffmpeg: ffmpeg.argv,
-		signal,
-	});
-	return { ...outcome.made, mimeType: played.mimeType, bytes: played.bytes, notes: played.notes };
-}
-
-/**
- * Move a whole recording to where it goes, synchronously.
- * @param partial Where it was written.
- * @param out Where it goes.
- * @throws {RecordingPageError} When it could not be moved; the talk was recorded.
- */
-function moveIntoPlace(partial: string, out: string): void {
-	try {
-		renameSync(partial, out);
-	} catch (error) {
-		throw new RecordingPageError(messageOf(error), true);
-	}
 }
 
 /**
@@ -328,57 +274,126 @@ function failure(error: unknown, leftBehind: readonly string[]): unknown {
 }
 
 /**
- * Record in a started browser and stop it, whatever happened: at once when the recording is
- * cancelled, so every call still waiting on it fails rather than running on. The file moves
- * into place only once the browser is stopped, in the same synchronous turn as the last look
- * at the signal, so an interrupt that lands anywhere leaves nothing where it goes.
+ * Record the talk in a started browser and stop it, whatever happened: at once when the
+ * recording is cancelled, so every call still waiting on it fails rather than running on.
  * @param chromium The browser.
  * @param request What to record.
- * @param ffmpeg The command line that runs ffmpeg.
- * @returns The finished recording.
+ * @param voice Where the voice goes.
+ * @returns The talk's log, how many steps it went through, and what the browser left behind.
  * @throws {WalkthroughRecordingError} When it did not happen; the signal's reason when cancelled.
  */
-async function recordedWith(
+async function talkedWith(
 	chromium: HeadlessChromium,
 	request: WalkthroughRecordingRequest,
-	ffmpeg: FfmpegCommand,
-): Promise<RecordedWalkthrough> {
+	voice: string,
+): Promise<{
+	readonly log: TalkLog;
+	readonly steps: number;
+	readonly leftBehind: readonly string[];
+}> {
 	/** Stop the browser the moment the recording is cancelled. */
 	const cancel = (): void => {
 		void chromium.stop();
 	};
-	const partial = join(dirname(request.out), `.${Date.now()}.recording.partial`);
-	try {
-		request.signal.addEventListener("abort", cancel, { once: true });
-		const outcome = await recordIn(chromium, request, partial).then(
-			(made) => ({ made }),
-			(error: unknown) => ({ error }),
-		);
-		request.signal.removeEventListener("abort", cancel);
-		const cleanup = await chromium.stop();
-		const leftBehind = cleanup.clean ? [] : cleanup.errors;
-		try {
-			const made = await playableRecording(outcome, partial, ffmpeg, request.signal);
-			// Nothing from here awaits, so no interrupt lands between this look and the file moving in.
-			request.signal.throwIfAborted();
-			moveIntoPlace(partial, request.out);
-			return { ...made, leftBehind };
-		} catch (error) {
-			throw failure(error, leftBehind);
-		}
-	} finally {
-		rmSync(partial, { force: true });
-	}
+	request.signal.addEventListener("abort", cancel, { once: true });
+	const outcome = await talkIn(chromium, request, voice).then(
+		(made) => ({ made }),
+		(error: unknown) => ({ error }),
+	);
+	request.signal.removeEventListener("abort", cancel);
+	const cleanup = await chromium.stop();
+	const leftBehind = cleanup.clean ? [] : cleanup.errors;
+	request.signal.throwIfAborted();
+	if ("error" in outcome) throw failure(outcome.error, leftBehind);
+	return { log: outcome.made.log, steps: outcome.made.state.of ?? 0, leftBehind };
 }
 
 /**
- * Record one walkthrough to a video file.
+ * The talk a recording page kept, with the board and vault check it was drawn from.
+ * @param request What was recorded.
+ * @param log What the page kept.
+ * @param steps How many steps the talk went through.
+ * @returns The talk.
+ * @throws {WalkthroughRecordingError} When it cannot be rendered: most often a board that changed
+ *   while it was recorded, which no one picture is of.
+ */
+function talkOf(request: WalkthroughRecordingRequest, log: TalkLog, steps: number): Talk {
+	const { board } = request;
+	const parsed = TalkSchema.safeParse({
+		format: TALK_FORMAT,
+		version: TALK_VERSION,
+		recordedAt: new Date().toISOString(),
+		language: request.language,
+		theme: request.theme,
+		board: {
+			name: board.name,
+			variant: request.variant,
+			version: board.version,
+			walkthrough: request.walkthrough,
+			steps,
+		},
+		audio: {
+			file: TALK_VOICE_FILE,
+			sampleRate: TALK_SAMPLE_RATE,
+			channels: 1,
+			samples: log.samples,
+			baseLatencyMs: log.baseLatencyMs,
+		},
+		events: log.events,
+		document: board,
+		policy: request.policy,
+	});
+	if (parsed.success) return parsed.data;
+	const redrawn = log.events.some(
+		(event) => event.kind === "drawn" && event.version !== board.version,
+	);
+	throw new WalkthroughRecordingError(
+		"RECORDING_FAILED",
+		redrawn
+			? `${board.name} changed while it was recorded, so no one picture of it goes with the talk. Record again once nothing is writing it.`
+			: `The talk the page kept cannot be rendered: ${parsed.error.message} Record again.`,
+	);
+}
+
+/**
+ * Record the talk and keep it.
+ * @param request What to record.
+ * @param scratch A directory the caller removes.
+ * @returns The kept talk, where it is kept, and what the browser left behind.
+ * @throws {WalkthroughRecordingError} When the talk did not happen.
+ */
+async function keptTalk(
+	request: WalkthroughRecordingRequest,
+	scratch: string,
+): Promise<{
+	readonly talk: Talk;
+	readonly directory: string;
+	readonly leftBehind: readonly string[];
+}> {
+	const microphone = join(scratch, "silence.wav");
+	writeSilence(microphone);
+	const chromium = await startBrowser({
+		chromiumPath: request.chromiumPath,
+		flags: recordingFlags(microphone),
+		tempRootPrefix: "archboard-recording-",
+		signal: request.signal,
+	});
+	const voice = join(scratch, TALK_VOICE_FILE);
+	const talked = await talkedWith(chromium, request, voice);
+	const talk = talkOf(request, talked.log, talked.steps);
+	const directory = writeTalk({ talk, voice: voiceSamples(voice), place: request.talk });
+	request.say(`Kept the talk in ${directory}.`);
+	return { talk, directory, leftBehind: talked.leftBehind };
+}
+
+/**
+ * Record one walkthrough to a video file: the talk, kept, then its picture rendered frame by frame.
  * @param request What to record, and where.
  * @returns The finished recording.
  * @throws {EncoderUnavailableError} With code ENCODER_UNAVAILABLE when no ffmpeg can encode it;
  *   nothing was started then.
- * @throws {WalkthroughRecordingError} When it did not happen; nothing is written then. A cancelled
- *   recording throws the signal's reason, and writes nothing either.
+ * @throws {WalkthroughRecordingError} When it did not happen; no file is written then, and a
+ *   render that failed keeps the talk. A cancelled recording throws the signal's reason.
  */
 async function recordWalkthrough(
 	request: WalkthroughRecordingRequest,
@@ -386,21 +401,34 @@ async function recordWalkthrough(
 	const ffmpeg = await resolveEncoder(request.container, request.say, request.signal);
 	const scratch = mkdtempSync(join(tmpdir(), "archboard-recording-"));
 	try {
-		const microphone = join(scratch, "silence.wav");
-		writeSilence(microphone);
-		const chromium = await startBrowser({
-			chromiumPath: request.chromiumPath,
-			flags: recordingFlags(microphone),
-			tempRootPrefix: "archboard-recording-",
+		const kept = await keptTalk(request, scratch);
+		const rendered = await renderTalk({
+			serverUrl: request.serverUrl,
+			talk: kept.talk,
+			directory: kept.directory,
+			container: request.container,
+			theme: request.theme,
+			out: request.out,
 			signal: request.signal,
+			say: request.say,
+			ffmpeg,
+			...(request.chromiumPath === undefined ? {} : { chromiumPath: request.chromiumPath }),
 		});
-		return await recordedWith(chromium, request, ffmpeg);
+		return {
+			file: rendered.file,
+			bytes: rendered.bytes,
+			mimeType: rendered.mimeType,
+			durationMs: rendered.durationMs,
+			steps: kept.talk.board.steps,
+			frames: rendered.frames,
+			talk: kept.directory,
+			leftBehind: [...kept.leftBehind, ...rendered.leftBehind],
+		};
 	} finally {
 		rmSync(scratch, { recursive: true, force: true });
 	}
 }
 
-export { playableEverywhere } from "@/runtime/walkthrough-recorder/lib/playable";
 export {
 	TalkFileError,
 	askedTalkPlace,

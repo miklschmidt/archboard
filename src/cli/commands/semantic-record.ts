@@ -1,9 +1,9 @@
 // Recording one walkthrough of a semantic board to a video file, narrated by
 // the Codex voice (TASK-304): the pane presents the walkthrough step by step
 // at the reference size with no shell around it, the voice explains each step
-// and the page moves on once it has finished, and the file is the page's own
-// capture of its tab with the voice in it. With --discard, a board made only
-// to be recorded is deleted once its recording is written.
+// and the page moves on once it has finished. The page keeps the talk, and the
+// picture is rendered from the talk frame by frame (TASK-381). With --discard,
+// a board made only to be recorded is deleted once its recording is written.
 
 import { z } from "zod";
 
@@ -20,13 +20,27 @@ import {
 import { currentWriteDoing } from "@/runtime/engine/server-client";
 import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import {
+	checkSemanticVaultOnServer,
 	discardSemanticBoardOnServer,
 	readSemanticBoardOnServer,
 } from "@/runtime/semantic-board-client/index";
-import { recordWalkthrough } from "@/runtime/walkthrough-recorder";
+import {
+	TalkFileError,
+	askedTalkPlace,
+	recordWalkthrough,
+	requireFreshPlace,
+	stateTalkPlace,
+	type TalkPlace,
+} from "@/runtime/walkthrough-recorder";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { doingRefusal, serverRefusal } from "@/cli/command-contract/common";
-import { containerOf, requireWritableDirectory } from "@/cli/commands/lib/recording-output";
+import {
+	containerOf,
+	encoderUnavailableRefusal,
+	recorderUnavailableRefusal,
+	renderFailedRefusal,
+	requireWritableDirectory,
+} from "@/cli/commands/lib/recording-output";
 import { SelectorSchema, UNNAMED_VARIANT, askedVariant } from "@/cli/commands/lib/semantic-input";
 
 const THEMES = DiagramThemeSchema.options;
@@ -38,6 +52,7 @@ const RecordInputSchema = z.object({
 	theme: DiagramThemeSchema.default("light"),
 	language: RecordingLanguageSchema.default(DEFAULT_RECORDING_LANGUAGE),
 	out: z.string(),
+	talk: z.string().optional(),
 	discard: z.boolean().optional(),
 });
 
@@ -51,24 +66,12 @@ const RecordReceiptSchema = z.object({
 	bytes: z.int(),
 	mimeType: z.string(),
 	durationMs: z.int(),
+	frames: z.int(),
 	theme: DiagramThemeSchema,
+	talk: z.string(),
 	discarded: z.boolean(),
 });
 
-const recorderUnavailableRefusal = {
-	code: "RECORDER_UNAVAILABLE",
-	exit: 4,
-	stream: "stderr" as const,
-	description:
-		"No Chromium or Google Chrome executable was found, or the one named could not start.",
-};
-const encoderUnavailableRefusal = {
-	code: "ENCODER_UNAVAILABLE",
-	exit: 4,
-	stream: "stderr" as const,
-	description:
-		"No ffmpeg with the encoders the file needs (libx264 and aac for MP4, libvpx-vp9 and libopus for WebM) is on PATH or named by ARCHBOARD_FFMPEG, and Nix is not there to run nixpkgs#ffmpeg-headless, or running it failed. Checked before a browser starts, so nothing was recorded.",
-};
 const recordingRefusedRefusal = {
 	code: "RECORDING_REFUSED",
 	exit: 4,
@@ -81,8 +84,26 @@ const recordingFailedRefusal = {
 	exit: 1,
 	stream: "stderr" as const,
 	description:
-		"The recording showed a step and did not finish, for example the voice said nothing about the next one. Nothing was written and the board was kept.",
+		"The talk showed a step and did not finish, for example the voice said nothing about the next one, or the board changed while it was recorded. Nothing was written and the board was kept.",
 };
+
+/**
+ * Where the talk is kept: the directory asked for, or a new one in the state directory.
+ * @param asked The --talk the command was given, resolved, if any.
+ * @param board The board recorded, which names a talk kept in the state directory.
+ * @returns The place, proven free.
+ * @throws {CliUsageError} When the directory asked for exists or cannot be made.
+ */
+function talkPlaceOf(asked: string | undefined, board: string): TalkPlace {
+	const place = asked === undefined ? stateTalkPlace(board, new Date()) : askedTalkPlace(asked);
+	try {
+		requireFreshPlace(place);
+	} catch (error) {
+		if (error instanceof TalkFileError) throw new CliUsageError(error.message);
+		throw error;
+	}
+	return place;
+}
 
 /**
  * How a variant's walkthroughs are named in a refusal.
@@ -202,12 +223,15 @@ const semanticRecordContract = defineCommand({
 	summary: "Record a board's walkthrough to a video file, narrated by the voice",
 	description:
 		"Presents one walkthrough of a semantic board in a private headless Chromium at 1920x1080, " +
-		"with no shell around the pane, and records it to an MP4 or WebM file (by the --out " +
-		"extension) together with the Codex voice explaining each step. Each step moves on once " +
-		"the voice has finished explaining it, and the recording ends after the last. It runs on " +
-		"the Archboard server the CLI talks to, which must have Codex signed in. A recording is a " +
-		"conversation of its own, so voice live in a browser tab does not stop it. The voice " +
-		"speaks only the --language it is given, whatever language the steps are written in. " +
+		"with no shell around the pane, while the Codex voice explains each step. Each step moves " +
+		"on once the voice has finished explaining it, and the talk ends after the last. The talk " +
+		"is kept, with the board as it was drawn, in the state directory's recordings (the newest " +
+		"ten) or in --talk. Its picture is then rendered frame by frame at 30 frames a second, with " +
+		"the voice, to an MP4 or WebM file (by the --out extension); a render that fails keeps the " +
+		"talk for semantic replay. It runs on the Archboard server the CLI talks to, which must " +
+		"have Codex signed in. A recording is a conversation of its own, so voice live in a browser " +
+		"tab does not stop it. The voice speaks only the --language it is given, whatever language " +
+		"the steps are written in. " +
 		"--discard " +
 		"deletes the board once the recording is written, for a board made only to be recorded; " +
 		"a failed recording keeps it, and so does a board changed while it was " +
@@ -273,6 +297,15 @@ const semanticRecordContract = defineCommand({
 		},
 		{
 			kind: "option",
+			key: "talk",
+			spellings: ["--talk"],
+			value: "required",
+			placeholder: "dir",
+			description:
+				"Where to keep the talk, a directory that does not exist yet; a new one in the state directory's recordings when absent",
+		},
+		{
+			kind: "option",
 			key: "discard",
 			spellings: ["--discard"],
 			value: "none",
@@ -308,6 +341,7 @@ const semanticRecordContract = defineCommand({
 		encoderUnavailableRefusal,
 		recordingRefusedRefusal,
 		recordingFailedRefusal,
+		renderFailedRefusal,
 	],
 	relationships: [
 		{
@@ -315,6 +349,12 @@ const semanticRecordContract = defineCommand({
 			path: "/api/semantic-boards/board",
 			cardinality: "one",
 			description: "Read the board and its walkthroughs",
+		},
+		{
+			method: "GET",
+			path: "/api/vault/check",
+			cardinality: "one",
+			description: "Read the vault check the board is drawn under, which the talk keeps",
 		},
 		{
 			method: "POST",
@@ -339,14 +379,21 @@ const semanticRecordContract = defineCommand({
 		const board = await readSemanticBoardOnServer(input.name);
 		const variant = askedVariant(board, input.variant);
 		const walkthrough = chosenWalkthrough(variant.content.walkthroughs, input.walkthrough);
+		const talk = talkPlaceOf(
+			input.talk === undefined ? undefined : context.resolvePath(input.talk),
+			board.name,
+		);
 		const made = await recordWalkthrough({
 			serverUrl: ARCHBOARD_URL,
-			boardKey: input.variant === undefined ? board.name : `${board.name}@${variant.id}`,
-			walkthrough: walkthrough.id,
+			board,
+			policy: await checkSemanticVaultOnServer(),
+			variant: input.variant === undefined ? null : variant.id,
+			walkthrough: { id: walkthrough.id, name: walkthrough.name },
 			language: input.language,
 			container,
 			theme: input.theme,
 			out: file,
+			talk,
 			signal: context.signal,
 			say: context.diagnostic,
 			/**
@@ -363,7 +410,6 @@ const semanticRecordContract = defineCommand({
 				`The recording's browser could not be proved gone: ${made.leftBehind.join("; ")}`,
 			);
 		}
-		for (const note of made.notes) context.diagnostic(note);
 		context.signal.throwIfAborted();
 		const discarded = discard && (await discardRecorded(board, made.file, context.diagnostic));
 		return {
@@ -377,7 +423,9 @@ const semanticRecordContract = defineCommand({
 				bytes: made.bytes,
 				mimeType: made.mimeType,
 				durationMs: made.durationMs,
+				frames: made.frames,
 				theme: input.theme,
+				talk: made.talk,
 				discarded,
 			},
 		};

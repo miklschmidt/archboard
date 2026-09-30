@@ -17,7 +17,7 @@ import { z } from "zod";
 
 import { DiagramThemeSchema, parseSemanticBoard } from "@/shared/semantic-board/index";
 import { VaultCheckSchema } from "@/shared/semantic-policy/index";
-import { RecordingLanguageSchema } from "@/shared/walkthrough-recording";
+import { RecordingLanguageSchema } from "@/shared/walkthrough-recording/lib/language";
 
 /** What a talk's file says it is. */
 const TALK_FORMAT = "archboard-talk";

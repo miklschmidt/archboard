@@ -48,11 +48,6 @@ interface PaceObservation {
 	readonly voice: VoiceStanding;
 	/** Whether the voice is audible right now, by its measured output. */
 	readonly audible: boolean;
-	/**
-	 * Whether the page is the size it is captured at. Capturing a tab makes the browser draw a
-	 * bar above it, which takes room until the recorder gives it back; nothing is written before.
-	 */
-	readonly framed: boolean;
 	readonly transcript: readonly SpokenLine[];
 	readonly place: PanePlace | null;
 }
@@ -61,7 +56,7 @@ interface PaceObservation {
 type PaceState =
 	/** Voice was asked for and has not gone live yet. */
 	| { readonly kind: "starting"; readonly since: number }
-	/** Capturing, showing the whole board before the first step. */
+	/** The talk has begun, showing the whole board before the first step. */
 	| { readonly kind: "lead"; readonly since: number }
 	/** On one step, waiting for the voice to explain it and fall quiet. */
 	| {
@@ -78,7 +73,7 @@ type PaceState =
 			/** Since when the step has counted as explained, or null while it does not. */
 			readonly quietSince: number | null;
 	  }
-	/** The last step is explained; its picture stays a moment before capture stops. */
+	/** The last step is explained; its picture stays a moment before the talk ends. */
 	| { readonly kind: "tail"; readonly since: number }
 	| { readonly kind: "done" }
 	| { readonly kind: "failed"; readonly reason: string };
@@ -86,11 +81,11 @@ type PaceState =
 /** What the page does after one tick. */
 type PaceAction =
 	| { readonly kind: "none" }
-	/** Voice is live: begin writing the file. */
-	| { readonly kind: "capture" }
+	/** Voice is live: the talk begins. */
+	| { readonly kind: "begin" }
 	/** Move the pane to a step, counted from zero. */
 	| { readonly kind: "show"; readonly beat: number }
-	/** The talk is over: finish the file. */
+	/** The talk is over: keep it. */
 	| { readonly kind: "finish" }
 	/** Stop and keep nothing, for the reason given. */
 	| { readonly kind: "fail"; readonly reason: string };
@@ -127,7 +122,7 @@ function showing(beat: number, observed: PaceObservation): PaceTurn {
 }
 
 /**
- * The voice has not gone live yet, or the page is not yet the size it is captured at.
+ * The voice has not gone live yet.
  * @param state The starting state.
  * @param observed What the page sees now.
  * @returns The next state and action.
@@ -136,16 +131,14 @@ function paceStart(
 	state: Extract<PaceState, { kind: "starting" }>,
 	observed: PaceObservation,
 ): PaceTurn {
-	if (observed.voice.kind === "live" && observed.framed) {
-		return { state: { kind: "lead", since: observed.now }, action: { kind: "capture" } };
+	if (observed.voice.kind === "live") {
+		return { state: { kind: "lead", since: observed.now }, action: { kind: "begin" } };
 	}
 	if (observed.now - state.since <= RECORDING_VOICE_START_MS) {
 		return { state, action: NOTHING };
 	}
 	return failed(
-		observed.voice.kind === "live"
-			? "The page did not get back to the size it was captured at after the browser's sharing bar took room. Record again; if it keeps happening, the browser may draw a bar the recorder cannot give back."
-			: `Voice did not go live within ${RECORDING_VOICE_START_MS / 1000} seconds. Check that voice starts on this Archboard server, then record again.`,
+		`Voice did not go live within ${RECORDING_VOICE_START_MS / 1000} seconds. Check that voice starts on this Archboard server, then record again.`,
 	);
 }
 
@@ -284,7 +277,7 @@ function held(
 }
 
 /**
- * A tick while voice is live and capture is running.
+ * A tick while voice is live and the talk is being kept.
  * @param state Where the talk is.
  * @param observed What the page sees now.
  * @returns The next state and action.

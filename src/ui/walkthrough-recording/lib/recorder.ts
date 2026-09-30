@@ -3,20 +3,16 @@
 // The page was opened on one board to record one of its walkthroughs. Until
 // it is started it only says whether it could be: the pane showing that board,
 // drawn, and an agent that can start voice. Started from a user gesture, it
-// captures its tab, asks for voice as a recording, and from then on one tick
-// asks the pacing what to do and does it: begin writing once the voice is
-// live, move the pane to each step, finish the file after the last, or stop
-// and keep nothing. The recorder outside the page reads the state and takes
-// the file; this owns nothing else.
+// listens (`talk-capture.ts`), asks for voice as a recording, and from then on
+// one tick asks the pacing what to do and does it: begin the talk once the
+// voice is live, move the pane to each step, end the talk after the last, or
+// stop and keep nothing. What the voice says and what the pane draws are
+// stamped as they happen. The recorder outside the page reads the state and
+// takes the talk; this owns nothing else (TASK-381).
 
 import { RECORDING_PACE_TICK_MS } from "@/shared/timing/timing";
-import {
-	RecordingStartSchema,
-	type RecordingPage,
-	type RecordingPhase,
-	type RecordingStart,
-	type RecordingState,
-} from "@/shared/walkthrough-recording";
+import type { RecordingPage, RecordingPhase, RecordingState } from "@/shared/walkthrough-recording";
+import { TALK_SAMPLE_RATE, type TalkLog } from "@/shared/walkthrough-recording/talk";
 import type { BrowserAudioElementPort } from "@/ui/codex-workbench-media";
 import {
 	sameBoardName,
@@ -30,17 +26,13 @@ import {
 	type PaceState,
 	type PanePlace,
 } from "@/ui/walkthrough-recording/lib/pacing";
-import {
-	captureTab,
-	type CapturedFile,
-	type TabCapture,
-} from "@/ui/walkthrough-recording/lib/tab-capture";
-import { rehearse } from "@/ui/walkthrough-recording/lib/rehearsal";
+import { TalkCapture } from "@/ui/walkthrough-recording/lib/talk-capture";
 import { recordingAudioElements } from "@/ui/walkthrough-recording/lib/voice-audio";
 import {
 	agentReadiness,
 	readVoice,
 	type RecordingSources,
+	type RecordingTransport,
 } from "@/ui/walkthrough-recording/lib/voice-sources";
 
 /** What the page was opened to record. */
@@ -129,14 +121,14 @@ class WalkthroughRecorder {
 	#sources: RecordingSources | null = null;
 	#reading: SemanticPaneReading | null = null;
 	#voice: MediaStream | null = null;
-	#capture: TabCapture | null = null;
+	#capture: TalkCapture | null = null;
 	#talk: PaceState | null = null;
-	#file: CapturedFile | null = null;
+	#kept: { readonly voice: Blob; readonly log: TalkLog } | null = null;
 	#failure: string | null = null;
 	#step: RecordedStep | null = null;
 	#timer: ReturnType<typeof setInterval> | null = null;
-	/** The page's size when the tab was captured, which the file is written at. */
-	#frame: { readonly width: number; readonly height: number } | null = null;
+	/** The transport whose transcript the talk follows, and how to stop following it. */
+	#following: { readonly transport: object; readonly stop: () => void } | null = null;
 
 	/**
 	 * A recorder for one page, idle until started.
@@ -147,7 +139,8 @@ class WalkthroughRecorder {
 		this.page = Object.freeze({
 			state: this.state.bind(this),
 			start: this.start.bind(this),
-			file: this.file.bind(this),
+			voice: this.voice.bind(this),
+			talk: this.talk.bind(this),
 		});
 		this.audioElements = recordingAudioElements(this.#hear.bind(this));
 	}
@@ -158,6 +151,7 @@ class WalkthroughRecorder {
 	 */
 	bind(sources: RecordingSources): void {
 		this.#sources = sources;
+		this.#follow(sources.voice?.transport ?? null);
 	}
 
 	/**
@@ -166,6 +160,10 @@ class WalkthroughRecorder {
 	 */
 	readonly reading = (reading: SemanticPaneReading): void => {
 		this.#reading = reading;
+		const { board } = this.#request;
+		if (board !== null && reading.drawn !== null && sameBoardName(reading.board, board)) {
+			this.#capture?.drawn(reading.drawn.version);
+		}
 	};
 
 	/**
@@ -194,34 +192,30 @@ class WalkthroughRecorder {
 		const presented = this.#reading === null ? null : this.#reading.presentation;
 		const of = presented === null ? null : presented.of;
 		const readiness = this.#readiness();
-		const file = this.#file;
+		const kept = this.#kept;
 		return {
 			phase: readiness.phase,
 			walkthrough: this.#request.walkthrough,
 			step: stepOf(this.#talk, of),
 			of,
 			failure: readiness.failure,
-			mimeType: file === null ? null : file.mimeType,
-			durationMs: file === null ? null : file.durationMs,
+			durationMs: kept === null ? null : (kept.log.samples * 1000) / TALK_SAMPLE_RATE,
 		};
 	}
 
 	/**
-	 * Start recording: draw what the talk draws later once, capture the tab, then ask for voice.
-	 * Called from a user gesture.
-	 * @param options The container to write.
-	 * @returns When capture has begun.
-	 * @throws {Error} When the page is not ready, or the tab could not be captured.
+	 * Start recording: listen, then ask for voice. Called from a user gesture.
+	 * @returns When the page listens.
+	 * @throws {Error} When the page is not ready, or its audio could not start.
 	 */
-	async start(options: RecordingStart): Promise<void> {
-		const { container } = RecordingStartSchema.parse(options);
+	async start(): Promise<void> {
 		const sources = this.#startable();
-		this.#frame = { width: window.innerWidth, height: window.innerHeight };
-		await rehearse();
 		try {
-			this.#capture = await captureTab(container);
+			this.#capture = await TalkCapture.open();
+			// The board is drawn already, and the talk begins on that picture.
+			if (this.#reading !== null) this.reading(this.#reading);
 		} catch (error) {
-			this.#failure = `The tab could not be captured: ${words(error)}`;
+			this.#failure = `The page could not listen to the voice: ${words(error)}`;
 			throw new Error(this.#failure, { cause: error });
 		}
 		this.#hearAll();
@@ -232,17 +226,27 @@ class WalkthroughRecorder {
 	}
 
 	/**
-	 * The finished recording.
-	 * @returns The file, or null before the state says it is finished.
+	 * The finished talk's voice.
+	 * @returns A 16-bit mono WAV file, or null before the state says the talk is finished.
 	 */
-	file(): Blob | null {
-		return this.#file === null ? null : this.#file.blob;
+	voice(): Blob | null {
+		return this.#kept === null ? null : this.#kept.voice;
+	}
+
+	/**
+	 * The finished talk's log.
+	 * @returns The log, or null before the state says the talk is finished.
+	 */
+	talk(): TalkLog | null {
+		return this.#kept === null ? null : this.#kept.log;
 	}
 
 	/** Stop everything: the page is going. */
 	dispose(): void {
 		this.#halt();
-		if (this.#file === null && this.#failure === null) this.#capture?.discard();
+		this.#following?.stop();
+		this.#following = null;
+		this.#capture?.close();
 	}
 
 	/**
@@ -251,7 +255,7 @@ class WalkthroughRecorder {
 	 */
 	#readiness(): Readiness {
 		if (this.#failure !== null) return { phase: "failed", failure: this.#failure };
-		if (this.#file !== null) return { phase: "finished", failure: null };
+		if (this.#kept !== null) return { phase: "finished", failure: null };
 		if (this.#talk !== null) return { phase: "recording", failure: null };
 		return this.#couldStart();
 	}
@@ -285,7 +289,7 @@ class WalkthroughRecorder {
 	}
 
 	/**
-	 * The voice began playing: it goes into the file.
+	 * The voice began playing: it goes into the talk.
 	 * @param stream The voice.
 	 */
 	#hear(stream: MediaStream): void {
@@ -293,7 +297,7 @@ class WalkthroughRecorder {
 		this.#hearAll();
 	}
 
-	/** Mix the voice into the capture, once both exist. */
+	/** Mix the voice into the talk, once both exist. */
 	#hearAll(): void {
 		if (this.#voice !== null) this.#capture?.hear(this.#voice);
 	}
@@ -306,7 +310,6 @@ class WalkthroughRecorder {
 		const turn = pace(talk, {
 			now: performance.now(),
 			...readVoice(sources),
-			framed: this.#framed(),
 			place: placeIn(this.#reading, this.#request.walkthrough),
 		});
 		this.#talk = turn.state;
@@ -314,12 +317,20 @@ class WalkthroughRecorder {
 	}
 
 	/**
-	 * Whether the page is the size its tab was captured at.
-	 * @returns True when it is.
+	 * Follow what the voice says on a transport, stamping each change into the talk as it arrives.
+	 * @param transport The pane's transport, or null while it has none.
 	 */
-	#framed(): boolean {
-		const frame = this.#frame;
-		return frame?.width === window.innerWidth && frame.height === window.innerHeight;
+	#follow(transport: RecordingTransport | null): void {
+		if (this.#following?.transport === transport) return;
+		this.#following?.stop();
+		this.#following = null;
+		if (transport === null) return;
+		/** Stamp what the voice says now. */
+		const heard = (): void => {
+			this.#capture?.said(transport.state().snapshot?.voice.transcript ?? []);
+		};
+		this.#following = { transport, stop: transport.subscribe(heard) };
+		heard();
 	}
 
 	/**
@@ -328,7 +339,7 @@ class WalkthroughRecorder {
 	 */
 	#act(action: PaceAction): void {
 		switch (action.kind) {
-			case "capture":
+			case "begin":
 				this.#capture?.begin();
 				break;
 			case "show":
@@ -349,22 +360,23 @@ class WalkthroughRecorder {
 	 */
 	#show(beat: number): void {
 		this.#step = recordedStep(this.#request.walkthrough, beat);
+		this.#capture?.step(beat);
 		for (const listener of this.#listeners) listener();
 	}
 
 	/**
-	 * The talk is over: finish the file, then let voice go.
-	 * @returns When the file is finished, or the recording failed.
+	 * The talk is over: keep it, then let voice go.
+	 * @returns When the talk is kept, or the recording failed.
 	 */
 	async #finish(): Promise<void> {
 		this.#halt();
 		const capture = this.#capture;
 		if (capture === null) return;
 		try {
-			this.#file = await capture.finish();
+			this.#kept = await capture.finish();
 			this.#stopVoice();
 		} catch (error) {
-			this.#fail(`The recording could not be finished: ${words(error)}`);
+			this.#fail(`The talk could not be kept: ${words(error)}`);
 		}
 	}
 
@@ -375,7 +387,7 @@ class WalkthroughRecorder {
 	#fail(reason: string): void {
 		this.#halt();
 		this.#failure ??= reason;
-		this.#capture?.discard();
+		this.#capture?.close();
 		this.#stopVoice();
 	}
 

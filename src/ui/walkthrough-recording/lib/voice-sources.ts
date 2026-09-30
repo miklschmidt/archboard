@@ -10,13 +10,16 @@ import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 
 import type { SpokenLine, VoiceStanding } from "@/ui/walkthrough-recording/lib/pacing";
 
+/** The recorded pane's transport, as far as a recording reads the voice's transcript from it. */
+type RecordingTransport = Pick<BrowserWorkbenchTransport, "state" | "subscribe">;
+
 /** The server's agent and the voice running for the recorded pane. */
 interface RecordingSources {
 	readonly setup: Pick<AgentSetup, "snapshot" | "talk">;
 	/** The voice session and its pane's transport, or null while the pane has no transport. */
 	readonly voice: {
 		readonly session: Pick<VoiceSession, "view" | "level" | "stop">;
-		readonly transport: Pick<BrowserWorkbenchTransport, "state">;
+		readonly transport: RecordingTransport;
 	} | null;
 }
 
@@ -122,4 +125,10 @@ function readVoice(sources: RecordingSources): VoiceReading {
 	};
 }
 
-export { agentReadiness, readVoice, type AgentReadiness, type RecordingSources };
+export {
+	agentReadiness,
+	readVoice,
+	type AgentReadiness,
+	type RecordingSources,
+	type RecordingTransport,
+};
