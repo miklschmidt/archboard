@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 11,
+	"version": 13,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-09-30T03:18:07.286Z",
+	"updatedAt": "2026-09-30T04:39:39.809Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -67,7 +67,7 @@
 		{
 			"id": "BtJAsm3o",
 			"name": "Current architecture",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"summary": "Service level: modules in the short-lived CLI application, not separate deployed services.",
 			"content": {
 				"nodes": [
@@ -855,9 +855,9 @@
 		{
 			"id": "hvQymc9q",
 			"name": "TASK-381",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "BtJAsm3o",
-			"summary": "A recording renders its picture frame by frame against the talk it recorded",
+			"summary": "Service level: modules in the short-lived CLI application, not separate deployed services.",
 			"content": {
 				"nodes": [
 					{
@@ -1134,7 +1134,7 @@
 						"name": "Record",
 						"kind": "module",
 						"responsibility": "record: one walkthrough, narrated by the Codex voice, to a video file",
-						"description": "Reads the board and the vault policy through the Archboard server and hands the walkthrough to the recorder, which keeps the talk it records. With --discard it deletes a board made only to be recorded once the file is written, and keeps one somebody changed meanwhile.",
+						"description": "Reads the board and the vault policy through the Archboard server and hands the walkthrough to the recorder, which keeps the talk it records in the state directory, or where --talk says. With --discard it deletes a board made only to be recorded once the file is written, and keeps one somebody changed meanwhile. Its --out checks and its refusals of the browser and ffmpeg are the ones replay uses (lib/recording-output.ts).",
 						"groups": [
 							"walkthrough"
 						],
@@ -1149,6 +1149,7 @@
 						"name": "Walkthrough recorder",
 						"kind": "module",
 						"responsibility": "Records a walkthrough's talk on the Archboard server's own page, then draws it frame by frame in a second private headless browser and encodes the file through ffmpeg",
+						"description": "It proves an ffmpeg first: the one ARCHBOARD_FFMPEG names, else one on PATH, else nixpkgs#ffmpeg-headless run through Nix, and refuses before any browser starts without one. The talk is kept before its picture is drawn, so a render that fails can be rendered again with replay.",
 						"groups": [
 							"walkthrough"
 						],
@@ -1202,7 +1203,7 @@
 						"name": "Replay",
 						"kind": "module",
 						"responsibility": "replay: a kept talk rendered to a video file again, in either theme, with no voice",
-						"description": "Needs the Archboard server only for the page it draws in. The board need not exist, and no Codex is involved. A talk that cannot be read is refused before a browser starts.",
+						"description": "Needs the Archboard server only for the page it draws in. The board need not exist, and no Codex is involved. A talk that cannot be read is refused as a usage error before a browser starts. Its --out checks and its refusals of the browser and ffmpeg are the ones record uses (lib/recording-output.ts).",
 						"groups": [
 							"walkthrough"
 						],
@@ -1575,7 +1576,7 @@
 						"from": "4oWqpsOB",
 						"to": "XAJYaUnv",
 						"kind": "call",
-						"label": "record the walkthrough",
+						"label": "keep the talk here; record the walkthrough",
 						"emphasis": "normal"
 					},
 					{
@@ -1611,7 +1612,7 @@
 						"from": "zK5HmiPd",
 						"to": "XAJYaUnv",
 						"kind": "call",
-						"label": "render the kept talk again",
+						"label": "read the kept talk and render it again",
 						"emphasis": "normal"
 					}
 				],
@@ -1677,5 +1678,13 @@
 			}
 		}
 	],
-	"current": "BtJAsm3o"
+	"current": "hvQymc9q",
+	"adoptions": [
+		{
+			"variant": "hvQymc9q",
+			"from": "BtJAsm3o",
+			"at": "2026-09-30T04:39:39.809Z",
+			"reason": "TASK-381: record keeps the talk it records and has its picture drawn frame by frame through ffmpeg; the new replay command renders a kept talk again. Both share their --out checks and refusals."
+		}
+	]
 }

@@ -19,8 +19,8 @@ You need these things:
 - A desktop browser, to read the boards. The browser layout is for desktop
   screens only.
 - Chromium or Google Chrome, only to draw PNG files and to record videos.
-- `ffmpeg` with libx264, or Nix, only to record videos. The recorder runs
-  `nixpkgs#ffmpeg-headless` through Nix when there is no `ffmpeg`.
+- `ffmpeg` with libx264 and aac, or Nix, only to record videos. If there is no
+  `ffmpeg`, the recorder runs `nixpkgs#ffmpeg-headless` through Nix.
 
 ## 1. Install archboard on the machine
 
@@ -239,31 +239,51 @@ The PNG has these properties:
 
 ## Recording a walkthrough
 
-`archboard semantic record <board> --out <file.mp4>` presents one walkthrough
-in the same kind of private Chromium. The Codex voice of the server narrates it,
-and the command writes an MP4 or a WebM file. It is how an agent gives the reviewers of a pull
-request a narrated video of the change. The voice speaks English, or the
-language that `--language` names as a BCP 47 tag (`da`, `fr`, `pt-BR`),
-whatever language the steps are written in. `--discard --doing "<why>"` deletes
-the board after the file is written, for a board made only for the video.
+`archboard semantic record <board> --out <file.mp4>` presents one walkthrough,
+and the Codex voice of the server narrates it. The command writes an MP4 or a
+WebM file. It is how an agent gives the reviewers of a pull request a narrated
+video of the change. The voice speaks English, whatever language the steps
+are written in. `--language` names another language as a BCP 47 tag, such as
+`da`, `fr` or `pt-BR`. `--discard --doing "<why>"` deletes the board after the
+file is written, for a board made only for the video.
+
+The command makes a recording in two passes:
+
+1. The talk. A private Chromium shows the walkthrough while the voice explains
+   it. When the voice falls silent, it moves to the next step. It keeps the
+   voice and the moment of each step and subtitle line. This pass takes as long
+   as the talk.
+2. The picture. A second private Chromium draws the video from the talk, one
+   frame every 1/30 s, and `ffmpeg` encodes the frames with the voice. No voice
+   runs in this pass. It takes a while: on 2026-09-30, a talk of 85 s took
+   211 s to render, about 2.5 times the talk.
+
+The command keeps the talk, a directory with `talk.json` and `voice.wav`, and
+the receipt's `talk` names it. By default the talk goes to `recordings/` in the
+state directory, which keeps the newest 10 talks. `--talk <dir>` keeps it in a
+directory that does not exist yet, and nothing removes it there.
+`archboard semantic replay <talk> --out <file.mp4>` renders a kept talk again,
+with no voice session. Use `--theme dark` for the other palette, or render
+again after you update archboard. The board need not exist. If a render fails,
+the command refuses with `RENDER_FAILED`, keeps the talk and names the
+`semantic replay` command that renders it again.
 
 A recording needs these things:
 
 - The Chromium that rasterizing needs.
-- An `ffmpeg` with the encoders libx264 and aac (libvpx-vp9 and libopus for a
-  WebM file). The recorder uses the one that `ARCHBOARD_FFMPEG` names, else the
-  one on `PATH`, else it runs `nixpkgs#ffmpeg-headless` through Nix, which
-  fetches it on the first recording. If there is none of these, or the one named
-  cannot encode, the command refuses with `ENCODER_UNAVAILABLE` before it starts
-  a browser.
+- An `ffmpeg` with the encoders libx264 and aac, or libvpx-vp9 and libopus for
+  a WebM file. The recorder first uses the one that `ARCHBOARD_FFMPEG` names,
+  then the one on `PATH`. Without either, it runs `nixpkgs#ffmpeg-headless`
+  through Nix, which fetches it on the first recording. If there is none of
+  these, or the one named cannot encode, the command refuses with
+  `ENCODER_UNAVAILABLE` before it starts a browser.
 - An Archboard server where Codex is signed in. Voice can be live in a browser
-  tab meanwhile, because the recording runs in a tab of its own.
+  tab meanwhile, because the recording runs in a tab of its own. A replay needs
+  the server but no Codex sign-in.
 - A frontend built from the same checkout, with `bun run build`.
 
-On Linux the browser records the sound of an MP4 as Opus, which Safari does not
-play. The recorder converts the sound to AAC with that `ffmpeg`, so the file
-plays with sound in every browser. To attach the file to a
-pull request, use `gh pr comment --attach`, which needs gh 2.99 or newer.
+To attach the file to a pull request, use `gh pr comment --attach`, which needs
+gh 2.99 or newer.
 
 ## Update and remove
 
@@ -278,7 +298,8 @@ There is no uninstall command. To remove archboard, delete these things:
 - The block between the markers in each repository.
 - The `archboard` link on your `PATH`.
 - The state directory. It holds the Codex sign-in, `repos.json`, the opener
-  configuration, the server process files and the log.
+  configuration, the server process files, the log and the kept talks of
+  recordings.
 
 If you do not want to keep the boards, delete the vault too.
 

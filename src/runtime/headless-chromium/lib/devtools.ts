@@ -18,7 +18,7 @@ type DevToolsListener = (params: JsonRecord) => void;
 
 /** How one expression is evaluated on the page. */
 interface EvaluateOptions {
-	/** Evaluate as if the user had just acted, which a capture prompt requires. */
+	/** Evaluate as if the user had just acted, which starting a page's audio requires. */
 	readonly userGesture?: boolean;
 	/** Wait for a promise to settle and answer what it settled to. Default true. */
 	readonly awaitPromise?: boolean;

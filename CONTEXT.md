@@ -294,11 +294,23 @@ _Avoid_: playback, autoplay, slideshow
 
 **Recording**:
 One walkthrough presented from its first step to its last with nobody at the
-controls, captured to a video file with the voice explaining it. The page moves
-to the next step once the voice has finished the one on screen, and captures
-its own tab. A board made only to be recorded can be discarded once its
-recording is written (`--discard`); nothing else deletes a board.
+controls, written to a video file with the voice explaining it. The page moves
+to the next step once the voice finishes the one on screen, and keeps a talk.
+The video's picture is then rendered from the talk, frame by frame. A board made
+only to be recorded can be discarded once its recording is written
+(`--discard`). Nothing else deletes a board.
 _Avoid_: playback, autoplay, screencast, export
+
+**Talk**:
+What a recording keeps of its live pass. It holds the voice's sound, and the
+events of the talk, counted in samples of that sound: each step shown, each
+change to what the voice said and each board version drawn. It also holds the
+board and the vault policy that the picture is drawn from. So it renders again
+without the board, without Codex and without a new voice session. It is a
+directory of `talk.json` and `voice.wav`. The Talk control, which starts voice,
+is another thing.
+_Avoid_: take, capture, session, transcript (the conversation's record), video
+(that is the recording)
 
 **Subtitle**:
 What the voice model is saying, laid over the picture of the pane voice runs

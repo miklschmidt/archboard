@@ -34,6 +34,8 @@ let root: string;
 let server: OwnedServer;
 let talkDirectory: string;
 let ffmpeg: string;
+/** The variant the talk was recorded on, the board's current one. */
+let recordedVariant: string;
 
 /**
  * A two-step talk of the board as the server served it: a word at the first step, then the
@@ -47,6 +49,7 @@ function talkOf(document: unknown, policy: unknown): Talk {
 	if (!parsed.ok) throw new Error(parsed.problem);
 	const { board } = parsed;
 	const variant = board.variants.find((entry) => entry.id === board.current)!;
+	recordedVariant = variant.id;
 	const walkthrough = variant.content.walkthroughs![0]!;
 	return TalkSchema.parse({
 		format: "archboard-talk",
@@ -183,6 +186,7 @@ test(
 		expect(first.receipt).toMatchObject({
 			success: true,
 			board: BOARD,
+			variant: recordedVariant,
 			steps: 2,
 			frames: FRAMES,
 			durationMs: 2000,

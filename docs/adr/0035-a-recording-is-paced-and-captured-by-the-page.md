@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by ADR-0041
 ---
 
 # A recording is paced by the voice and captured by the page that plays it
@@ -145,3 +145,7 @@ A discard that is refused leaves the recording answered: the file is written,
 and the receipt says the board was not discarded and why. There is no command
 that deletes a board otherwise: a board is discarded because it was made to be
 recorded, not tidied away.
+
+Superseded (TASK-381, 2026-09-30): a recording is made in two passes, the live
+talk and then its picture rendered frame by frame, as
+[ADR 0041](0041-a-recording-is-a-talk-rendered-frame-by-frame.md) records.

@@ -408,7 +408,8 @@ are what a branch of one needs on top of it.
   drill-down, traffic, emphasis, removals and handles, refusals.
 - [sequences, views and walkthroughs](references/sequences-views-walkthroughs.md):
   view scopes and grammars, message kinds, repeat/note, walkthrough beats and
-  their identity, and recording a walkthrough to a narrated video.
+  their identity, recording a walkthrough to a narrated video, and rendering a
+  recording's kept talk again.
 - [variants](references/variants.md): what a comparison counts, edge identity,
   flow/step identity, reconciliation and `resolve`, adoption, claims.
 - [schemas](references/schemas.md): the exact JSON Schemas of the payloads, the

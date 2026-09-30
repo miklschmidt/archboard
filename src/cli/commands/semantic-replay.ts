@@ -4,7 +4,7 @@
 
 import { z } from "zod";
 
-import { DiagramThemeSchema } from "@/shared/semantic-board/index";
+import { DiagramThemeSchema, parseSemanticBoard } from "@/shared/semantic-board/index";
 import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import { TalkFileError, readTalk, renderTalk } from "@/runtime/walkthrough-recorder";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
@@ -39,6 +39,17 @@ const ReplayReceiptSchema = z.object({
 	frames: z.int(),
 	theme: DiagramThemeSchema,
 });
+
+/**
+ * The variant that was current on the board a talk kept, which a talk of the current variant
+ * was recorded on, so the receipt names it by id as `semantic record` does.
+ * @param document The board the talk kept, which reading the talk proved readable.
+ * @returns The variant's id, or null for a board with no current variant.
+ */
+function currentVariantOf(document: unknown): string | null {
+	const parsed = parseSemanticBoard(document);
+	return parsed.ok ? (parsed.board.current ?? null) : null;
+}
 
 /**
  * Read a talk, refusing one that cannot be rendered as a usage error.
@@ -164,7 +175,7 @@ const semanticReplayContract = defineCommand({
 				success: true as const,
 				talk: directory,
 				board: talk.board.name,
-				variant: talk.board.variant,
+				variant: talk.board.variant ?? currentVariantOf(talk.document),
 				walkthrough: talk.board.walkthrough,
 				steps: talk.board.steps,
 				file: made.file,
