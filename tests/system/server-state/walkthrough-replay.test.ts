@@ -3,10 +3,10 @@
 // each frame's hash. The talk is of a board the server made, served and then discarded, so the
 // render can only have drawn it from the talk. No Codex and no voice are involved.
 //
-// What is guarded: one talk renders to the same frames every time; the picture moves when a
-// step is shown and is still once the step has arrived; every frame is 1920x1080, one per 1/30 s
-// of the talk; the other theme is another picture from the first frame; and the receipt says
-// what was rendered.
+// What is guarded: one talk renders to the same frames every time, drawn on one page or split
+// across two, which hand their frames on in order; the picture moves when a step is shown and is
+// still once the step has arrived; every frame is 1920x1080, one per 1/30 s of the talk; the
+// other theme is another picture from the first frame; and the receipt says what was rendered.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
@@ -14,7 +14,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { askedTalkPlace, writeTalk } from "@/runtime/walkthrough-recorder";
+import { askedTalkPlace, readTalk, renderTalk, writeTalk } from "@/runtime/walkthrough-recorder";
 import { parseSemanticBoard } from "@/shared/semantic-board/index";
 import { TalkSchema, type Talk } from "@/shared/walkthrough-recording/talk";
 
@@ -177,11 +177,32 @@ function replay(
 	};
 }
 
+/**
+ * Render the talk on two pages at once, each taking its own seconds' frames (TASK-382).
+ * @returns The hash of each frame, in order.
+ */
+async function replayOnTwoPages(): Promise<readonly string[]> {
+	const out = join(root, "two-pages.mp4");
+	await renderTalk({
+		serverUrl: server.base,
+		talk: readTalk(talkDirectory),
+		directory: talkDirectory,
+		container: "mp4",
+		theme: "light",
+		out,
+		signal: new AbortController().signal,
+		say: () => undefined,
+		ffmpeg: { argv: [ffmpeg], via: "ARCHBOARD_FFMPEG" },
+		pages: 2,
+	});
+	return frameManifest(out).frames;
+}
+
 test(
-	"a kept talk renders to the same frames every time, moving at its steps, and again in the other theme",
-	() => {
+	"a kept talk renders to the same frames every time, on one page or two, moving at its steps, and again in the other theme",
+	async () => {
 		const first = replay("first");
-		const again = replay("again");
+		const again = await replayOnTwoPages();
 		const dark = replay("dark", "dark");
 		expect(first.receipt).toMatchObject({
 			success: true,
@@ -193,7 +214,7 @@ test(
 			theme: "light",
 		});
 		expect(first.frames).toHaveLength(FRAMES);
-		expect(again.frames).toEqual(first.frames);
+		expect(again).toEqual(first.frames);
 		// The second step moves the picture on from where the first left it...
 		const { frames } = first;
 		expect(frames[STEP_TWO_FRAME + 3]).not.toBe(frames[STEP_TWO_FRAME - 1]);

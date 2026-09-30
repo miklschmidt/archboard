@@ -7,10 +7,17 @@
 // one ffmpeg, which encodes the frames with the talk's voice. The file is written beside where it
 // goes and renamed into place only once ffmpeg has finished it.
 //
+// A screenshot costs several times what drawing a frame does, so a long talk is drawn by several
+// pages at once, each in a browser of its own (TASK-382). Every page draws every frame, since a
+// frame depends on the ones before it, but each takes the screenshots of its own seconds only,
+// and the frames reach ffmpeg in order (`frame-order.ts`). A frame is the same whichever page
+// drew it.
+//
 // There is no capture, microphone or autoplay here, and no GPU: the browser rasterizes and
 // composites in software, so a frame is the same on every machine.
 
 import { renameSync, rmSync } from "node:fs";
+import { availableParallelism } from "node:os";
 import { dirname, join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
@@ -38,6 +45,7 @@ import {
 } from "@/runtime/headless-chromium";
 import { openVideoEncoder, type FfmpegCommand, type VideoEncoder } from "@/runtime/video-encoder";
 import { WalkthroughRecordingError } from "@/runtime/walkthrough-recorder/lib/errors";
+import { FrameOrder } from "@/runtime/walkthrough-recorder/lib/frame-order";
 import { resolveEncoder, startBrowser } from "@/runtime/walkthrough-recorder/lib/tools";
 
 /** What to render, and where. */
@@ -63,6 +71,8 @@ interface RenderTalkRequest {
 	readonly chromiumPath?: string;
 	/** An ffmpeg already proven able to encode the container; found and proven here when absent. */
 	readonly ffmpeg?: FfmpegCommand;
+	/** How many pages draw it at once; as many as this machine and the talk's length warrant when absent. */
+	readonly pages?: number;
 }
 
 /** A finished render. */
@@ -81,6 +91,27 @@ interface RenderedTalk {
 /** Say how far the render is every this many frames: once a second of video. */
 const PROGRESS_EVERY_FRAMES = TALK_FRAME_RATE;
 
+/** The frames each page screenshots in turn: one second of video. */
+const CHUNK_FRAMES = TALK_FRAME_RATE;
+
+/**
+ * How many chunks per page a frame may be put ahead of the encoder. Every page's chunk in hand
+ * fits in one round, so two rounds never hold a page back that the encoder is waiting for.
+ */
+const AHEAD_ROUNDS = 2;
+
+/**
+ * The most pages that draw one talk. Measured on 2026-09-30 at 1920x1080: one page takes 38 ms a
+ * frame, and six pages at once take 53 ms each, 9 ms a frame together.
+ */
+const MOST_PAGES = 6;
+
+/** The threads of this machine one page keeps busy: its renderer, its compositor and raster. */
+const THREADS_PER_PAGE = 4;
+
+/** A page earns its start (a browser, the page and the talk loaded) only past this many frames. */
+const FRAMES_PER_PAGE = 300;
+
 const PAGE = `window[${JSON.stringify(REPLAY_PAGE_GLOBAL)}]`;
 
 /**
@@ -94,6 +125,10 @@ const PAGE = `window[${JSON.stringify(REPLAY_PAGE_GLOBAL)}]`;
 function renderFlags(): readonly string[] {
 	return [
 		"--disable-gpu",
+		// A screenshot otherwise waits for the display's next frames: 79 ms a frame with the limit,
+		// 36 ms without it, measured on 2026-09-30.
+		"--disable-frame-rate-limit",
+		"--disable-gpu-vsync",
 		// A partial raster reuses a tile's old content, so a frame's pixels would depend on how many
 		// real frames Chromium drew while the page waited; two renders of a talk then differ.
 		"--disable-partial-raster",
@@ -210,36 +245,183 @@ async function loadTalk(
 }
 
 /**
- * Draw every frame of the talk in order, and hand each to the encoder.
- * @param window The window.
- * @param encoder Takes the frames.
- * @param request What to render.
+ * How many pages draw a talk: as many as the machine keeps busy, and no more than its length
+ * repays.
  * @param frames How many frames the talk has.
+ * @returns The pages.
  */
-async function drawFrames(
-	window: HeadlessWindow,
-	encoder: VideoEncoder,
-	request: RenderTalkRequest,
-	frames: number,
-): Promise<void> {
+function pagesFor(frames: number): number {
+	const machine = Math.floor(availableParallelism() / THREADS_PER_PAGE);
+	return Math.max(1, Math.min(MOST_PAGES, machine, Math.ceil(frames / FRAMES_PER_PAGE)));
+}
+
+/** One page of a render, and what it shares with the others. */
+interface PageShare {
+	/** Which page it is, counted from nought. */
+	readonly page: number;
+	/** How many pages draw the talk. */
+	readonly pages: number;
+	/** How many frames the talk has. */
+	readonly frames: number;
+	/** Where the frames go, in order. */
+	readonly order: FrameOrder;
+	/** Stops every page. */
+	readonly signal: AbortSignal;
+	/**
+	 * Told each frame this page handed on.
+	 * @param handed How many frames have reached the encoder.
+	 */
+	readonly handed: (handed: number) => void;
+}
+
+/**
+ * Screenshot the frame the page holds.
+ * @param window The window.
+ * @param index The frame.
+ * @returns The frame, as a JPEG.
+ * @throws {Error} When Chromium returns no picture.
+ */
+async function screenshot(window: HeadlessWindow, index: number): Promise<Uint8Array> {
+	const shot = await window.page.call(
+		"Page.captureScreenshot",
+		{ format: "jpeg", quality: 92, optimizeForSpeed: true, fromSurface: true },
+		RECORDING_CALL_MS,
+	);
+	const data = shot["data"];
+	if (typeof data !== "string") throw new Error(`Chromium returned no picture of frame ${index}.`);
+	return Buffer.from(data, "base64");
+}
+
+/**
+ * Draw every frame of the talk in order, and hand on the ones in this page's seconds.
+ * @param window The window.
+ * @param share Which page this is, and what it shares with the others.
+ */
+async function drawFrames(window: HeadlessWindow, share: PageShare): Promise<void> {
+	const { page, pages, frames, order, signal } = share;
 	for (let index = 0; index < frames; index++) {
-		request.signal.throwIfAborted();
+		signal.throwIfAborted();
+		const mine = Math.floor(index / CHUNK_FRAMES) % pages === page;
+		// oxlint-disable-next-line no-await-in-loop -- a page runs only so far ahead of the encoder
+		if (mine) await order.room(index, signal);
 		// oxlint-disable-next-line no-await-in-loop -- frame n is drawn on the page's clock only after frame n-1
 		await window.page.evaluate(`${PAGE}.frame(${index})`, { timeoutMs: RECORDING_FRAME_CALL_MS });
+		if (!mine) continue;
 		// oxlint-disable-next-line no-await-in-loop -- the page holds still only until the next frame is asked for
-		const shot = await window.page.call(
-			"Page.captureScreenshot",
-			{ format: "jpeg", quality: 92, optimizeForSpeed: true, fromSurface: true },
-			RECORDING_CALL_MS,
-		);
-		const data = shot["data"];
-		if (typeof data !== "string")
-			throw new Error(`Chromium returned no picture of frame ${index}.`);
+		const jpeg = await screenshot(window, index);
 		// oxlint-disable-next-line no-await-in-loop -- a slow encoder slows the render instead of filling memory
-		await encoder.writeFrame(Buffer.from(data, "base64"));
-		if ((index + 1) % PROGRESS_EVERY_FRAMES === 0 || index + 1 === frames) {
-			request.say(`Rendering frame ${index + 1} of ${frames}.`);
-		}
+		await order.put(index, jpeg);
+		share.handed(order.handed());
+	}
+}
+
+/**
+ * Draw the talk on one page in its own browser.
+ * @param chromium The page's browser.
+ * @param request What to render.
+ * @param share Which page this is, and what it shares with the others.
+ */
+async function renderPage(
+	chromium: HeadlessChromium,
+	request: RenderTalkRequest,
+	share: PageShare,
+): Promise<void> {
+	const window = await openReplayPage(chromium, request);
+	await pageReady(window, share.signal);
+	await loadTalk(window, request, share.frames);
+	await drawFrames(window, share);
+}
+
+/**
+ * Start the pages' browsers, all or none.
+ * @param request What to render.
+ * @param pages How many.
+ * @returns The browsers.
+ * @throws {WalkthroughRecordingError} With code RECORDER_UNAVAILABLE when one would not start.
+ */
+async function startBrowsers(
+	request: RenderTalkRequest,
+	pages: number,
+): Promise<readonly HeadlessChromium[]> {
+	const started = await Promise.allSettled(
+		Array.from({ length: pages }, async () =>
+			startBrowser({
+				chromiumPath: request.chromiumPath,
+				flags: renderFlags(),
+				tempRootPrefix: "archboard-render-",
+				signal: request.signal,
+			}),
+		),
+	);
+	const browsers = started.flatMap((one) => (one.status === "fulfilled" ? [one.value] : []));
+	const refused = started.find((one) => one.status === "rejected");
+	if (refused === undefined) return browsers;
+	await Promise.all(browsers.map(async (chromium) => chromium.stop()));
+	throw refused.reason;
+}
+
+/**
+ * Stop every browser, and say what none of them could prove gone.
+ * @param browsers The browsers.
+ * @returns What was left behind.
+ */
+async function stopAll(browsers: readonly HeadlessChromium[]): Promise<readonly string[]> {
+	const cleanups = await Promise.all(browsers.map(async (chromium) => chromium.stop()));
+	return cleanups.flatMap((cleanup) => (cleanup.clean ? [] : cleanup.errors));
+}
+
+/**
+ * Draw every frame on the pages, and hand them to the encoder in order. The first page that fails
+ * stops the others.
+ * @param browsers One browser per page.
+ * @param request What to render.
+ * @param encoder Takes the frames.
+ * @param frames How many frames the talk has.
+ * @throws {unknown} What stopped the first page that failed.
+ */
+async function drawOnPages(
+	browsers: readonly HeadlessChromium[],
+	request: RenderTalkRequest,
+	encoder: VideoEncoder,
+	frames: number,
+): Promise<void> {
+	const pages = browsers.length;
+	const stop = new AbortController();
+	/** Stop every page when the render is cancelled. */
+	const cancel = (): void => {
+		stop.abort(request.signal.reason);
+	};
+	request.signal.addEventListener("abort", cancel, { once: true });
+	const order = new FrameOrder(encoder, AHEAD_ROUNDS * pages * CHUNK_FRAMES);
+	let said = 0;
+	/**
+	 * Say how far the render is, once a second of video.
+	 * @param count How many frames have reached the encoder.
+	 */
+	const handed = (count: number): void => {
+		if (count - said < PROGRESS_EVERY_FRAMES && count !== frames) return;
+		said = count;
+		request.say(`Rendered ${count} of ${frames} frames.`);
+	};
+	try {
+		const drawn = await Promise.allSettled(
+			browsers.map(async (chromium, page) =>
+				renderPage(chromium, request, {
+					page,
+					pages,
+					frames,
+					order,
+					signal: stop.signal,
+					handed,
+				}).catch((error: unknown) => {
+					stop.abort(error);
+					throw error;
+				}),
+			),
+		);
+		if (drawn.some((one) => one.status === "rejected")) throw stop.signal.reason;
+	} finally {
+		request.signal.removeEventListener("abort", cancel);
 	}
 }
 
@@ -278,17 +460,12 @@ function renderFailed(
 async function renderTalk(request: RenderTalkRequest): Promise<RenderedTalk> {
 	const { signal } = request;
 	const ffmpeg = request.ffmpeg ?? (await resolveEncoder(request.container, request.say, signal));
-	const chromium = await startBrowser({
-		chromiumPath: request.chromiumPath,
-		flags: renderFlags(),
-		tempRootPrefix: "archboard-render-",
-		signal,
-	});
 	const frames = framesOf(request.talk);
+	const browsers = await startBrowsers(request, request.pages ?? pagesFor(frames));
 	const partial = join(dirname(request.out), `.${Date.now()}.recording.partial`);
-	/** Stop the browser the moment the render is cancelled. */
+	/** Stop the browsers the moment the render is cancelled, so no call waits on them. */
 	const cancel = (): void => {
-		void chromium.stop();
+		void stopAll(browsers);
 	};
 	signal.addEventListener("abort", cancel, { once: true });
 	let encoder: VideoEncoder | null = null;
@@ -301,12 +478,9 @@ async function renderTalk(request: RenderTalkRequest): Promise<RenderedTalk> {
 			out: partial,
 			signal,
 		});
-		const window = await openReplayPage(chromium, request);
-		await pageReady(window, signal);
-		await loadTalk(window, request, frames);
-		await drawFrames(window, encoder, request, frames);
-		// The picture is drawn: free the browser before ffmpeg finishes the file.
-		const cleanup = await chromium.stop();
+		await drawOnPages(browsers, request, encoder, frames);
+		// The picture is drawn: free the browsers before ffmpeg finishes the file.
+		const leftBehind = await stopAll(browsers);
 		const made = await encoder.finish();
 		// Nothing from here awaits, so no interrupt lands between this look and the file moving in.
 		signal.throwIfAborted();
@@ -317,18 +491,17 @@ async function renderTalk(request: RenderTalkRequest): Promise<RenderedTalk> {
 			mimeType: made.mimeType,
 			frames,
 			durationMs: Math.round((frames * 1000) / TALK_FRAME_RATE),
-			leftBehind: cleanup.clean ? [] : cleanup.errors,
+			leftBehind,
 		};
 	} catch (error) {
 		encoder?.abort();
 		signal.throwIfAborted();
-		const cleanup = await chromium.stop();
-		throw renderFailed(error, request, cleanup.clean ? [] : cleanup.errors);
+		throw renderFailed(error, request, await stopAll(browsers));
 	} finally {
 		signal.removeEventListener("abort", cancel);
-		await chromium.stop();
+		await stopAll(browsers);
 		rmSync(partial, { force: true });
 	}
 }
 
-export { renderFlags, renderTalk, type RenderTalkRequest, type RenderedTalk };
+export { pagesFor, renderFlags, renderTalk, type RenderTalkRequest, type RenderedTalk };
