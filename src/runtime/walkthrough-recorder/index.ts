@@ -22,11 +22,7 @@ import { dirname, join } from "node:path";
 
 import type { DiagramTheme } from "@/shared/semantic-board/index";
 import { SHELL_VIEWPORT } from "@/shared/shell-geometry";
-import {
-	RECORDING_BROWSER_START_MS,
-	RECORDING_BROWSER_STOP_MS,
-	RECORDING_CALL_MS,
-} from "@/shared/timing/timing";
+import { RECORDING_CALL_MS } from "@/shared/timing/timing";
 import {
 	RECORDING_LANGUAGE_SEARCH_PARAM,
 	RECORDING_SEARCH_PARAM,
@@ -34,16 +30,18 @@ import {
 	type RecordingState,
 } from "@/shared/walkthrough-recording";
 import {
-	HeadlessChromiumError,
-	discoveredChromiumPath,
 	isJsonRecord,
-	launchHeadlessChromium,
 	type DevTools,
 	type HeadlessChromium,
 	type HeadlessWindow,
 } from "@/runtime/headless-chromium";
 
-import { findFfmpeg, probeFfmpeg, type FfmpegCommand } from "@/runtime/video-encoder";
+import type { FfmpegCommand } from "@/runtime/video-encoder";
+import {
+	WalkthroughRecordingError,
+	type WalkthroughRecordingErrorCode,
+} from "@/runtime/walkthrough-recorder/lib/errors";
+import { resolveEncoder, startBrowser } from "@/runtime/walkthrough-recorder/lib/tools";
 import {
 	RecordingPageError,
 	drive,
@@ -52,32 +50,6 @@ import {
 } from "@/runtime/walkthrough-recorder/lib/drive";
 import { playableEverywhere } from "@/runtime/walkthrough-recorder/lib/playable";
 import { writeSilence } from "@/runtime/walkthrough-recorder/lib/silence";
-
-/** Why a recording did not happen. */
-type WalkthroughRecordingErrorCode =
-	/** No Chromium-family browser was found, or it would not start. */
-	| "RECORDER_UNAVAILABLE"
-	/** The page could not start recording, or failed before it showed a step: nothing was recorded. */
-	| "RECORDING_REFUSED"
-	/** The recording showed a step and did not finish. */
-	| "RECORDING_FAILED";
-
-/** A recording that did not happen, with the stable half of why. */
-class WalkthroughRecordingError extends Error {
-	readonly code: WalkthroughRecordingErrorCode;
-
-	/**
-	 * Fail a recording.
-	 * @param code Which failure.
-	 * @param message What happened and what to do.
-	 * @param cause What failed underneath.
-	 */
-	constructor(code: WalkthroughRecordingErrorCode, message: string, cause?: unknown) {
-		super(message, cause === undefined ? undefined : { cause });
-		this.name = "WalkthroughRecordingError";
-		this.code = code;
-	}
-}
 
 /** What to record, and where. */
 interface WalkthroughRecordingRequest {
@@ -267,47 +239,6 @@ async function openRecordingPage(
 }
 
 /**
- * The ffmpeg the recording is encoded with, proven before anything starts.
- * @param request What to record.
- * @returns Its command line.
- * @throws {EncoderUnavailableError} With code ENCODER_UNAVAILABLE when there is none that can.
- */
-async function resolveEncoder(request: WalkthroughRecordingRequest): Promise<FfmpegCommand> {
-	const command = findFfmpeg({ env: process.env, which: Bun.which });
-	// The first run through Nix fetches ffmpeg, which takes minutes and is silent.
-	if (command.via === "nix") request.say("Fetching ffmpeg through nix.");
-	await probeFfmpeg(command, request.container, request.signal);
-	return command;
-}
-
-/**
- * Start the recording's browser.
- * @param request What to record.
- * @param microphone The silent file the fake microphone plays.
- * @returns The browser.
- * @throws {WalkthroughRecordingError} When there is no browser, or it would not start.
- */
-async function startBrowser(
-	request: WalkthroughRecordingRequest,
-	microphone: string,
-): Promise<HeadlessChromium> {
-	const chromiumPath = request.chromiumPath ?? discoveredChromiumPath();
-	try {
-		return await launchHeadlessChromium({
-			chromiumPath,
-			extraArgs: recordingFlags(microphone),
-			startupTimeoutMs: RECORDING_BROWSER_START_MS,
-			cleanupTimeoutMs: RECORDING_BROWSER_STOP_MS,
-			tempRootPrefix: "archboard-recording-",
-			signal: request.signal,
-		});
-	} catch (error) {
-		if (!(error instanceof HeadlessChromiumError)) throw error;
-		throw new WalkthroughRecordingError("RECORDER_UNAVAILABLE", error.message, error);
-	}
-}
-
-/**
  * Record while the browser is up, into a file beside where it goes. Moving it into place is
  * the caller's, once the browser is stopped.
  * @param chromium The browser.
@@ -452,18 +383,39 @@ async function recordedWith(
 async function recordWalkthrough(
 	request: WalkthroughRecordingRequest,
 ): Promise<RecordedWalkthrough> {
-	const ffmpeg = await resolveEncoder(request);
+	const ffmpeg = await resolveEncoder(request.container, request.say, request.signal);
 	const scratch = mkdtempSync(join(tmpdir(), "archboard-recording-"));
 	try {
 		const microphone = join(scratch, "silence.wav");
 		writeSilence(microphone);
-		return await recordedWith(await startBrowser(request, microphone), request, ffmpeg);
+		const chromium = await startBrowser({
+			chromiumPath: request.chromiumPath,
+			flags: recordingFlags(microphone),
+			tempRootPrefix: "archboard-recording-",
+			signal: request.signal,
+		});
+		return await recordedWith(chromium, request, ffmpeg);
 	} finally {
 		rmSync(scratch, { recursive: true, force: true });
 	}
 }
 
 export { playableEverywhere } from "@/runtime/walkthrough-recorder/lib/playable";
+export {
+	TalkFileError,
+	askedTalkPlace,
+	readTalk,
+	requireFreshPlace,
+	stateTalkPlace,
+	writeTalk,
+	type TalkPlace,
+} from "@/runtime/walkthrough-recorder/lib/talk-files";
+export {
+	renderFlags,
+	renderTalk,
+	type RenderedTalk,
+	type RenderTalkRequest,
+} from "@/runtime/walkthrough-recorder/lib/render";
 export {
 	WalkthroughRecordingError,
 	drive,

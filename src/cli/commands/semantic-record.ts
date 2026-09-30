@@ -5,8 +5,6 @@
 // capture of its tab with the voice in it. With --discard, a board made only
 // to be recorded is deleted once its recording is written.
 
-import { accessSync, constants, statSync } from "node:fs";
-import { dirname, extname } from "node:path";
 import { z } from "zod";
 
 import {
@@ -16,7 +14,6 @@ import {
 } from "@/shared/semantic-board/index";
 import {
 	DEFAULT_RECORDING_LANGUAGE,
-	RecordingContainerSchema,
 	RecordingLanguageSchema,
 	type RecordingState,
 } from "@/shared/walkthrough-recording";
@@ -29,6 +26,7 @@ import {
 import { recordWalkthrough } from "@/runtime/walkthrough-recorder";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { doingRefusal, serverRefusal } from "@/cli/command-contract/common";
+import { containerOf, requireWritableDirectory } from "@/cli/commands/lib/recording-output";
 import { SelectorSchema, UNNAMED_VARIANT, askedVariant } from "@/cli/commands/lib/semantic-input";
 
 const THEMES = DiagramThemeSchema.options;
@@ -85,20 +83,6 @@ const recordingFailedRefusal = {
 	description:
 		"The recording showed a step and did not finish, for example the voice said nothing about the next one. Nothing was written and the board was kept.",
 };
-
-/**
- * The container a file name asks for.
- * @param out The file name.
- * @returns The container.
- * @throws {CliUsageError} When the name ends in neither .mp4 nor .webm.
- */
-function containerOf(out: string): z.infer<typeof RecordingContainerSchema> {
-	const parsed = RecordingContainerSchema.safeParse(extname(out).slice(1).toLowerCase());
-	if (!parsed.success) {
-		throw new CliUsageError(`--out ${out} must name a .mp4 or .webm file.`);
-	}
-	return parsed.data;
-}
 
 /**
  * How a variant's walkthroughs are named in a refusal.
@@ -172,26 +156,6 @@ function requireDoingForDiscard(discard: boolean): void {
 		throw Object.assign(
 			new Error('--discard deletes the board, which is a board write: say why with --doing "…".'),
 			{ code: "DOING_REQUIRED" },
-		);
-	}
-}
-
-/**
- * Refuse an --out whose directory is missing or cannot be written before anything starts: the
- * file is first written there only after the whole talk.
- * @param out The --out the command was given.
- * @param file Where it resolves to.
- * @throws {CliUsageError} When its directory is not one this process can write in.
- */
-function requireWritableDirectory(out: string, file: string): void {
-	const directory = dirname(file);
-	try {
-		if (!statSync(directory).isDirectory()) throw new Error(`${directory} is not a directory`);
-		accessSync(directory, constants.W_OK);
-	} catch (error) {
-		const why = error instanceof Error ? error.message : String(error);
-		throw new CliUsageError(
-			`--out ${out} must be in a directory that exists and can be written (${why}). Create it, or name another.`,
 		);
 	}
 }
