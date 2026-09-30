@@ -1,6 +1,10 @@
 // Recording one walkthrough of a board to a video file, narrated by the Codex
 // voice (TASK-304).
 //
+// The recorder first proves it has an ffmpeg that can encode the file (ARCHBOARD_FFMPEG, else
+// PATH, else nixpkgs' through Nix), so a machine that cannot refuses before any voice
+// session or browser starts (TASK-381).
+//
 // The recording is made by the Archboard server's own page, opened on the board in a
 // private headless Chromium the recorder owns: the page shows the one pane,
 // paces the talk by the voice and captures its own tab. The recorder starts
@@ -39,13 +43,14 @@ import {
 	type HeadlessWindow,
 } from "@/runtime/headless-chromium";
 
+import { findFfmpeg, probeFfmpeg, type FfmpegCommand } from "@/runtime/video-encoder";
 import {
 	RecordingPageError,
 	drive,
 	messageOf,
 	type RecordingPageHandle,
 } from "@/runtime/walkthrough-recorder/lib/drive";
-import { discoveredFfmpeg, playableEverywhere } from "@/runtime/walkthrough-recorder/lib/playable";
+import { playableEverywhere } from "@/runtime/walkthrough-recorder/lib/playable";
 import { writeSilence } from "@/runtime/walkthrough-recorder/lib/silence";
 
 /** Why a recording did not happen. */
@@ -95,6 +100,11 @@ interface WalkthroughRecordingRequest {
 	 * @param state The page's state.
 	 */
 	readonly onProgress: (state: RecordingState) => void;
+	/**
+	 * Told what the recorder is doing before the talk starts, in a sentence.
+	 * @param line The sentence.
+	 */
+	readonly say: (line: string) => void;
 	/** The browser to record in; the one the environment names or this machine has otherwise. */
 	readonly chromiumPath?: string;
 }
@@ -109,7 +119,7 @@ interface RecordedWalkthrough {
 	readonly steps: number;
 	/** What stopping the recording's browser could not prove gone; empty when it was clean. */
 	readonly leftBehind: readonly string[];
-	/** What the caller should be told about how the file plays; empty when nothing. */
+	/** What the caller should be told about how the file plays; empty when it plays everywhere. */
 	readonly notes: readonly string[];
 }
 
@@ -257,6 +267,20 @@ async function openRecordingPage(
 }
 
 /**
+ * The ffmpeg the recording is encoded with, proven before anything starts.
+ * @param request What to record.
+ * @returns Its command line.
+ * @throws {EncoderUnavailableError} With code ENCODER_UNAVAILABLE when there is none that can.
+ */
+async function resolveEncoder(request: WalkthroughRecordingRequest): Promise<FfmpegCommand> {
+	const command = findFfmpeg({ env: process.env, which: Bun.which });
+	// The first run through Nix fetches ffmpeg, which takes minutes and is silent.
+	if (command.via === "nix") request.say("Fetching ffmpeg through nix.");
+	await probeFfmpeg(command, request.container, request.signal);
+	return command;
+}
+
+/**
  * Start the recording's browser.
  * @param request What to record.
  * @param microphone The silent file the fake microphone plays.
@@ -318,6 +342,7 @@ async function recordIn(
  * The recorded file made to play with sound everywhere it can, or what stopped the recording.
  * @param outcome What recording in the browser came to.
  * @param partial Where the file was written.
+ * @param ffmpeg The command line that runs ffmpeg.
  * @param signal Cancels making it playable.
  * @returns The finished recording, before it moves into place.
  * @throws {unknown} What stopped the recording.
@@ -327,11 +352,12 @@ async function playableRecording(
 		| { readonly made: Omit<RecordedWalkthrough, "leftBehind" | "notes"> }
 		| { readonly error: unknown },
 	partial: string,
+	ffmpeg: FfmpegCommand,
 	signal: AbortSignal,
 ): Promise<Omit<RecordedWalkthrough, "leftBehind">> {
 	if ("error" in outcome) throw outcome.error;
 	const played = await playableEverywhere(partial, outcome.made.mimeType, {
-		ffmpeg: discoveredFfmpeg(),
+		ffmpeg: ffmpeg.argv,
 		signal,
 	});
 	return { ...outcome.made, mimeType: played.mimeType, bytes: played.bytes, notes: played.notes };
@@ -377,12 +403,14 @@ function failure(error: unknown, leftBehind: readonly string[]): unknown {
  * at the signal, so an interrupt that lands anywhere leaves nothing where it goes.
  * @param chromium The browser.
  * @param request What to record.
+ * @param ffmpeg The command line that runs ffmpeg.
  * @returns The finished recording.
  * @throws {WalkthroughRecordingError} When it did not happen; the signal's reason when cancelled.
  */
 async function recordedWith(
 	chromium: HeadlessChromium,
 	request: WalkthroughRecordingRequest,
+	ffmpeg: FfmpegCommand,
 ): Promise<RecordedWalkthrough> {
 	/** Stop the browser the moment the recording is cancelled. */
 	const cancel = (): void => {
@@ -399,7 +427,7 @@ async function recordedWith(
 		const cleanup = await chromium.stop();
 		const leftBehind = cleanup.clean ? [] : cleanup.errors;
 		try {
-			const made = await playableRecording(outcome, partial, request.signal);
+			const made = await playableRecording(outcome, partial, ffmpeg, request.signal);
 			// Nothing from here awaits, so no interrupt lands between this look and the file moving in.
 			request.signal.throwIfAborted();
 			moveIntoPlace(partial, request.out);
@@ -416,17 +444,20 @@ async function recordedWith(
  * Record one walkthrough to a video file.
  * @param request What to record, and where.
  * @returns The finished recording.
+ * @throws {EncoderUnavailableError} With code ENCODER_UNAVAILABLE when no ffmpeg can encode it;
+ *   nothing was started then.
  * @throws {WalkthroughRecordingError} When it did not happen; nothing is written then. A cancelled
  *   recording throws the signal's reason, and writes nothing either.
  */
 async function recordWalkthrough(
 	request: WalkthroughRecordingRequest,
 ): Promise<RecordedWalkthrough> {
+	const ffmpeg = await resolveEncoder(request);
 	const scratch = mkdtempSync(join(tmpdir(), "archboard-recording-"));
 	try {
 		const microphone = join(scratch, "silence.wav");
 		writeSilence(microphone);
-		return await recordedWith(await startBrowser(request, microphone), request);
+		return await recordedWith(await startBrowser(request, microphone), request, ffmpeg);
 	} finally {
 		rmSync(scratch, { recursive: true, force: true });
 	}

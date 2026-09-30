@@ -4,11 +4,11 @@
 // browser the reviewer has. The page writes MP4 sound as Opus on Linux, where
 // MediaRecorder has no AAC encoder (Chrome encodes AAC only through the
 // operating system), and Safari does not play Opus in an MP4: a reviewer on a
-// Mac would get the picture in silence. So when an ffmpeg is at hand the sound
-// is converted to AAC, the picture copied as it is, and the index moved to the
-// front so a browser can start playing before the whole file has arrived.
-// Without one the file is kept as recorded, and the recorder says what that
-// means and how to change it.
+// Mac would get the picture in silence. So the sound is converted to AAC by the
+// ffmpeg the recorder resolved and probed before it started (TASK-381), the
+// picture copied as it is, and the index moved to the front so a browser can
+// start playing before the whole file has arrived. If the conversion fails the
+// file is kept as recorded, and the recorder says what that means.
 
 import { renameSync, rmSync, statSync } from "node:fs";
 
@@ -23,16 +23,6 @@ interface Playable {
 	readonly bytes: number;
 	/** What the caller should be told about how the file plays; empty when nothing. */
 	readonly notes: readonly string[];
-}
-
-/**
- * The ffmpeg to convert with: the one ARCHBOARD_FFMPEG names, else the one on PATH.
- * @returns The executable, or null when there is none.
- */
-function discoveredFfmpeg(): string | null {
-	const named = process.env["ARCHBOARD_FFMPEG"];
-	if (named !== undefined && named !== "") return named;
-	return Bun.which("ffmpeg");
 }
 
 /**
@@ -67,14 +57,14 @@ function started(
  * @returns Null when it worked, or what ffmpeg said when it did not.
  */
 async function convertSound(
-	ffmpeg: string,
+	ffmpeg: readonly string[],
 	from: string,
 	to: string,
 	signal: AbortSignal,
 ): Promise<string | null> {
 	const child = started(
 		[
-			ffmpeg,
+			...ffmpeg,
 			"-v",
 			"error",
 			"-nostdin",
@@ -106,36 +96,31 @@ async function convertSound(
 
 /**
  * Make a recorded file play with sound everywhere it can: an MP4 whose sound is Opus has it
- * converted to AAC when an ffmpeg is at hand. The file is replaced in place.
+ * converted to AAC. The file is replaced in place.
  * @param path The recorded file.
  * @param mimeType What the page recorded it as.
- * @param options Which ffmpeg to use, if any, and what cancels it.
- * @param options.ffmpeg The executable, or null when there is none.
+ * @param options Which ffmpeg to use, and what cancels it.
+ * @param options.ffmpeg The command line that runs it.
  * @param options.signal Cancels the conversion.
  * @returns The file's media type and size, and what the caller should be told.
  */
 async function playableEverywhere(
 	path: string,
 	mimeType: string,
-	options: { readonly ffmpeg: string | null; readonly signal: AbortSignal },
+	options: { readonly ffmpeg: readonly string[]; readonly signal: AbortSignal },
 ): Promise<Playable> {
 	const recorded: Playable = { mimeType, bytes: statSync(path).size, notes: [] };
 	if (!mimeType.startsWith("video/mp4") || !mimeType.includes("opus")) return recorded;
-	const silentInSafari =
-		"Its sound is Opus, which Safari does not play in an MP4, so a reviewer on a Mac would hear nothing.";
-	if (options.ffmpeg === null) {
-		return {
-			...recorded,
-			notes: [
-				`${silentInSafari} Put ffmpeg on PATH, or name it with ARCHBOARD_FFMPEG, and record again to have the sound converted to AAC.`,
-			],
-		};
-	}
 	const converted = `${path}.aac`;
 	try {
 		const failed = await convertSound(options.ffmpeg, path, converted, options.signal);
 		if (failed !== null) {
-			return { ...recorded, notes: [`${silentInSafari} ffmpeg could not convert it: ${failed}`] };
+			return {
+				...recorded,
+				notes: [
+					`Its sound is Opus, which Safari does not play in an MP4, so a reviewer on a Mac would hear nothing. ffmpeg could not convert it: ${failed}`,
+				],
+			};
 		}
 		renameSync(converted, path);
 		return { mimeType: AAC_MP4, bytes: statSync(path).size, notes: [] };
@@ -144,4 +129,4 @@ async function playableEverywhere(
 	}
 }
 
-export { discoveredFfmpeg, playableEverywhere, type Playable };
+export { playableEverywhere, type Playable };

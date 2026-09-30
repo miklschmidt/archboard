@@ -137,7 +137,23 @@ const RECORDING_BROWSER_STOP_MS = 5000;
  */
 const RECORDING_SOUND_CONVERT_MS = 120_000;
 
+/**
+ * How long asking an ffmpeg on disk which encoders it has may take, before the recorder starts a
+ * browser (TASK-381). It pulls against a binary that is already there: it answers in well under
+ * a second, so ten seconds is an ffmpeg that has stuck, on a disk that is not answering.
+ */
+const RECORDING_ENCODER_PROBE_MS = 10_000;
+
+/**
+ * How long the first ffmpeg run through nix may take, fetching the package (TASK-381). It pulls
+ * against a download of ffmpeg-headless and what it needs from the binary cache, which is
+ * minutes on a slow link and seconds once it is in the store. Past this, nix is offline or stuck.
+ */
+const RECORDING_NIX_FETCH_MS = 300_000;
+
 export {
+	RECORDING_ENCODER_PROBE_MS,
+	RECORDING_NIX_FETCH_MS,
 	RECORDING_SOUND_CONVERT_MS,
 	RECORDING_CAPTURE_BAR_MS,
 	RECORDING_BROWSER_START_MS,

@@ -19,8 +19,8 @@ You need these things:
 - A desktop browser, to read the boards. The browser layout is for desktop
   screens only.
 - Chromium or Google Chrome, only to draw PNG files and to record videos.
-- `ffmpeg`, only to give recorded MP4 files sound that Safari plays. It is
-  optional.
+- `ffmpeg` with libx264, or Nix, only to record videos. The recorder runs
+  `nixpkgs#ffmpeg-headless` through Nix when there is no `ffmpeg`.
 
 ## 1. Install archboard on the machine
 
@@ -250,14 +250,19 @@ the board after the file is written, for a board made only for the video.
 A recording needs these things:
 
 - The Chromium that rasterizing needs.
+- An `ffmpeg` with the encoders libx264 and aac (libvpx-vp9 and libopus for a
+  WebM file). The recorder uses the one that `ARCHBOARD_FFMPEG` names, else the
+  one on `PATH`, else it runs `nixpkgs#ffmpeg-headless` through Nix, which
+  fetches it on the first recording. If there is none of these, or the one named
+  cannot encode, the command refuses with `ENCODER_UNAVAILABLE` before it starts
+  a browser.
 - An Archboard server where Codex is signed in. Voice can be live in a browser
   tab meanwhile, because the recording runs in a tab of its own.
 - A frontend built from the same checkout, with `bun run build`.
 
 On Linux the browser records the sound of an MP4 as Opus, which Safari does not
-play. If `ffmpeg` is on `PATH`, or `ARCHBOARD_FFMPEG` names it, the recorder
-converts the sound to AAC. The file then plays with sound in every browser.
-Without it, the recorder keeps the file and tells you. To attach the file to a
+play. The recorder converts the sound to AAC with that `ffmpeg`, so the file
+plays with sound in every browser. To attach the file to a
 pull request, use `gh pr comment --attach`, which needs gh 2.99 or newer.
 
 ## Update and remove
