@@ -18,7 +18,7 @@ import { NavigatorFilter } from "@/ui/shell/components/NavigatorFilter";
 import { WorkingNow, type WorkingEntry } from "@/ui/shell/components/WorkingNow";
 import { useFindShortcut } from "@/ui/shell/hooks/use-find-shortcut";
 import { useNavigatorExpansion } from "@/ui/shell/hooks/use-navigator-expansion";
-import { filterCount, navigatorRows } from "@/ui/shell/lib/navigator-rows";
+import { filterCount, navigatorRows, rowSelected } from "@/ui/shell/lib/navigator-rows";
 import { boardRowId } from "@/ui/shell/lib/row-ids";
 import { paneLetter } from "@/ui/shell/lib/pane-letters";
 import { foldQuery } from "@/ui/shell/lib/text-match";
@@ -89,9 +89,7 @@ function rowKey(row: NavigatorRow): string | null {
  * @returns The row's id, or null.
  */
 function homeRowId(rows: readonly NavigatorRow[], panes: readonly PaneMark[]): string | null {
-	const selected = rows.find(
-		(row) => (row.kind === "board" || row.kind === "variant") && row.selected,
-	);
+	const selected = rows.find(rowSelected);
 	if (selected !== undefined) return selected.id;
 	const board = panes.find((pane) => pane.active)?.board ?? null;
 	return board === null ? null : boardRowId(board);

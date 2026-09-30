@@ -17,6 +17,7 @@ import {
 	type ReactNode,
 } from "react";
 
+import { rowOpen, rowSelected } from "@/ui/shell/lib/navigator-rows";
 import type { NavigatorRow } from "@/ui/shell/types/navigator-rows";
 import { disclosureX, FACTS_INSET, guideX, ROW_GUTTER } from "@/ui/shell/lib/tree-grid";
 import type { TextRange } from "@/ui/shell/lib/text-match";
@@ -40,22 +41,20 @@ interface TreeRowProps extends RowHandlers {
 	readonly row: NavigatorRow;
 	/** Everything the row shows, for assistive technology. */
 	readonly label: string;
-	readonly selected: boolean;
-	/** Whether what is under it is listed, or undefined for a row nothing is listed under. */
-	readonly expanded: boolean | undefined;
-	/** A click opens or closes the row rather than opening what it names. */
-	readonly toggles: boolean;
 	readonly children: ReactNode;
 }
 
 /**
  * The tree item: its place among its siblings, focus, the click, its indent
- * and the guides of the rows it sits under.
- * @param props The row, its words, its state and its parts.
+ * and the guides of the rows it sits under. A click opens or closes a row
+ * that only gathers others, and opens what any other row names.
+ * @param props The row, its words and its parts.
  * @returns The tree item.
  */
 function TreeRow(props: TreeRowProps): JSX.Element {
-	const { row, onFocusRow, onOpen, onExpand, toggles, expanded } = props;
+	const { row, onFocusRow, onOpen, onExpand } = props;
+	const expanded = rowOpen(row);
+	const selected = rowSelected(row);
 	const handleFocus = useCallback(() => onFocusRow(row.id), [onFocusRow, row.id]);
 	const style = useMemo(
 		(): CSSProperties => ({
@@ -66,10 +65,10 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 	);
 	const handleClick = useCallback(
 		(event: MouseEvent<HTMLDivElement>) => {
-			if (toggles) onExpand(row.id, expanded !== true);
+			if (row.kind === "folder" || row.kind === "earlier") onExpand(row.id, !row.expanded);
 			else onOpen(row, event.altKey);
 		},
-		[row, toggles, expanded, onOpen, onExpand],
+		[row, onOpen, onExpand],
 	);
 	return (
 		<div
@@ -78,7 +77,7 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 			aria-posinset={row.position}
 			aria-setsize={row.siblings}
 			aria-expanded={expanded}
-			aria-selected={props.selected}
+			aria-selected={selected}
 			aria-label={props.label}
 			tabIndex={props.focusable ? 0 : -1}
 			data-row-id={row.id}
@@ -87,10 +86,10 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 			onClick={handleClick}
 			onKeyDown={props.onRowKeyDown}
 			style={style}
-			className={`group/row focus-visible:ring-ring relative flex min-h-7 w-full min-w-0 cursor-default flex-wrap items-start rounded-[3px] py-[5px] outline-none select-none focus-visible:ring-1 focus-visible:ring-inset ${props.selected ? "bg-sidebar-accent" : "hover:bg-sidebar-accent"}`}
+			className={`group/row focus-visible:ring-ring relative flex min-h-7 w-full min-w-0 cursor-default flex-wrap items-start rounded-[3px] py-[5px] outline-none select-none focus-visible:ring-1 focus-visible:ring-inset ${selected ? "bg-sidebar-accent" : "hover:bg-sidebar-accent"}`}
 		>
 			<RowGuides depth={row.depth} />
-			{props.selected && (
+			{selected && (
 				<span
 					aria-hidden="true"
 					className="bg-primary absolute inset-y-1 left-0 w-0.5 rounded-full"
@@ -142,20 +141,20 @@ function Guide(props: { readonly level: number }): JSX.Element {
 
 /**
  * The disclosure column: a chevron for a row that opens, else the space one takes.
- * @param props The row's id and name, whether it opens, and the handler.
- * @param props.id The row.
+ * @param props The row, its name and the handler.
+ * @param props.row The row.
  * @param props.name The row's name, for the control's label.
- * @param props.expanded Whether it is open, or undefined for a row that does not open.
  * @param props.onExpand Open or close it.
  * @returns The column.
  */
 function TreeRowDisclosure(props: {
-	readonly id: string;
+	readonly row: NavigatorRow;
 	readonly name: string;
-	readonly expanded: boolean | undefined;
 	readonly onExpand: (id: string, open: boolean) => void;
 }): JSX.Element {
-	const { id, expanded, onExpand } = props;
+	const { row, onExpand } = props;
+	const { id } = row;
+	const expanded = rowOpen(row);
 	const handleClick = useCallback(
 		(event: MouseEvent<HTMLButtonElement>) => {
 			event.stopPropagation();

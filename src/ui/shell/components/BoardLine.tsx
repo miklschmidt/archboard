@@ -100,21 +100,9 @@ function BoardLamp(props: { readonly row: BoardRow }): JSX.Element | null {
  */
 function BoardLine(props: RowHandlers & { readonly row: BoardRow }): JSX.Element {
 	const { row } = props;
-	const expanded = row.expandable ? row.expanded : undefined;
 	return (
-		<TreeRow
-			{...props}
-			label={boardRowName(row)}
-			selected={row.selected}
-			expanded={expanded}
-			toggles={false}
-		>
-			<TreeRowDisclosure
-				id={row.id}
-				name={row.label}
-				expanded={expanded}
-				onExpand={props.onExpand}
-			/>
+		<TreeRow {...props} label={boardRowName(row)}>
+			<TreeRowDisclosure row={row} name={row.label} onExpand={props.onExpand} />
 			<TreeRowMarker icon={RiFlowChart} title={row.board.level}>
 				<BoardLamp row={row} />
 			</TreeRowMarker>
