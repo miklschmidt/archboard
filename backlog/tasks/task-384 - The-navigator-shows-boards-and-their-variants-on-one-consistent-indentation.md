@@ -1,9 +1,11 @@
 ---
 id: TASK-384
 title: The navigator shows boards and their variants on one consistent indentation
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-09-30 18:51'
+updated_date: '2026-09-30 19:29'
 labels:
   - ui
 dependencies: []
@@ -27,3 +29,21 @@ User direction 2026-09-30: the navigation side menu (the navigator, TASK-302) is
 - [ ] #5 Rendered captures of the navigator before and after, in both themes at 1920×1080, on the dogfood vault and on a vault with folders and nested drafts, replace the navigator image in docs/design/assets and the navigator section describes the new representation
 - [ ] #6 bun run check passes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Study first (docs/design/navigator-structure.md): the structures a vault holds and how the placement rules turn them into a tree; the navigation tasks and how often each happens; captures of today's tree in both themes on the dogfood vault and on a scratch vault with every structure (folders two and three deep, drill chains, current plus drafts, draft on draft, historical and shelved variants, competing successors, a board with no current variant, long names, 260 boards); every indentation defect measured per row kind and depth, with its cause in the code; how established trees represent nesting (VS Code, WAI-ARIA APG, Primer, Apple HIG, Fluent/Carbon, sidebars) with citations; the resulting representation. Link it in the notes.
+2. Redesign in src/ui/shell only (navigator-rows, outline-keys, the row components, filter, Working now, expansion hook): one tree grid (fixed step, disclosure, marker, name and facts columns at every depth for folders, boards, variants and nested drafts), variants set apart from boards, one selected row, each pane letter on the most specific visible row, the tray of every board a pane shows open. Split OutlineRow (500 lines) into a composite row and one small file per row kind.
+3. Tests: update navigator-tree.test.tsx to the new rows and add the structural contract that every row at one depth shares one indent; keep the keyboard, filter and Working now owners.
+4. Docs: rewrite 'The navigator' in docs/design/operator-canvas-shell.md (variant, not state) and replace docs/design/assets/operator-shell-navigator.png with rendered after captures; keep before/after captures under the job scratch directory.
+5. bun run check, lane by lane when it stops early.
+No dogfood board is affected: Browser application draws the Shell and the Board catalog, and neither is added, removed or rewired.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Study: docs/design/navigator-structure.md (with assets/navigator-structure-before.png). It measures 13 defects of the old tree on the dogfood vault and a 260-board scratch vault, both themes at 1920x1080, and names the cause of each in the code at 17aa518e: variants placed from the board's name column instead of their depth (0 px step), nested drafts stepping 12 px against 14 px for boards, variants and child boards interleaved on two grids, adoption chains nesting the current variant five levels deep, folder names 22 px right of board names, a marker column that meant something different per kind, floating facts, two rows styled as selected (cobalt on the dark tone at 2.75:1), mixed row heights, a fixed 30 px error indent, pane B's variant hidden, four text edges in one column, and two disclosures per board. Research on VS Code, WAI-ARIA APG, Primer, Carbon, Fluent, Apple HIG, Notion, Figma and NN/g is cited in the study.
+Decisions: one 16 px step with four columns (disclosure, marker, name, facts) placed by depth alone; every row has a marker (folder, board, lifecycle, history); variants one depth in, before child boards, live first, a draft nested only under the draft it came from, historical and shelved behind one Earlier row; a board lists its variants while it has a proposal or a pane shows it; one disclosure per board; the way to every pane's reading is open; each pane letter on exactly one row; one selected row with the foreground name; the per-row level word is gone (hover, aria-label and the header keep it). No dogfood board is affected.
+<!-- SECTION:NOTES:END -->
