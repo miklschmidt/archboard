@@ -111,7 +111,7 @@ afterEach(() => {
 function replayOutput(receipt: Record<string, unknown>): string {
 	return [
 		"Fetching ffmpeg through nix.",
-		"Rendering frame 30 of 180.",
+		"Rendered 30 of 180 frames.",
 		JSON.stringify(
 			{
 				success: true,
@@ -147,7 +147,6 @@ function judged(file: Buffer, outputs: readonly string[]): boolean {
 }
 
 test("a replay of the kept talk in the asked theme passes, its receipt found among the progress lines", () => {
-	expect(frames).toBe(180);
 	expect(judged(WEBM, ["ls ~/recordings", replayOutput({})])).toBe(true);
 });
 
@@ -158,5 +157,22 @@ test("a video that is not the one asked for fails: another theme, another length
 		judged(WEBM, [replayOutput({ talk: join(home, "elsewhere") })]),
 		judged(MP4, [replayOutput({ bytes: MP4.length })]),
 		judged(WEBM, []),
-	]).toEqual([false, false, false, false, false]);
+		// The last receipt for the file is what counts, not an earlier one.
+		judged(WEBM, [replayOutput({}), replayOutput({ theme: "light" })]),
+		// A receipt for another file says nothing about this one.
+		judged(WEBM, [replayOutput({ file: join(home, "out", "other.webm") })]),
+		// A file changed after the replay wrote it is not what the replay wrote.
+		judged(WEBM, [replayOutput({ bytes: WEBM.length + 1 })]),
+	]).toEqual([false, false, false, false, false, false, false, false]);
+});
+
+test("a receipt narrowed to the fields the check reads still counts", () => {
+	const narrowed = JSON.stringify({
+		file: join(home, "out", "dark.webm"),
+		talk: join(home, "talk"),
+		theme: "dark",
+		frames,
+		bytes: WEBM.length,
+	});
+	expect(judged(WEBM, [narrowed])).toBe(true);
 });

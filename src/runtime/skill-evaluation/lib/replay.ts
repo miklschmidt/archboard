@@ -43,9 +43,11 @@ interface VideoRequest {
 	readonly talk: string;
 }
 
-/** The part of a replay's receipt the check reads; the command's own result says more. */
+/**
+ * The part of a replay's receipt the check reads; the command's own result says more. Only these
+ * fields are asked for, so an author who narrows the receipt to them, with jq say, still counts.
+ */
 const ReceiptSchema = z.object({
-	success: z.literal(true),
 	talk: z.string(),
 	file: z.string(),
 	bytes: z.int(),

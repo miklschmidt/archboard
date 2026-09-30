@@ -115,7 +115,9 @@ on 2026-09-30 under Codex 0.155.0's workspace-write sandbox with the author
 configuration and a run's environment: the talk S15's fixture lays rendered
 there to WebM in 23 s through Nix, and the check passed on what the command
 printed. The harness never renders a video; its check reads what the author
-left.
+left. The receipt has to reach a command's output with at least its `file`,
+`talk`, `theme`, `frames` and `bytes`: a receipt narrowed to those counts, and
+one cut off by `tail` does not.
 
 Runs of one batch execute in parallel with bounded concurrency; nothing is
 shared between them but the read-only Flask cache.

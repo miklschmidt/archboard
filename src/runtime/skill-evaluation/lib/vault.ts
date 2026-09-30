@@ -438,7 +438,8 @@ async function layStep(cli: CliContext, step: RawFixtureStep, repo: string | nul
  */
 async function layTalk(cli: CliContext, talk: TalkFixture, home: string): Promise<void> {
 	const board = await readBoard(cli, talk.board);
-	const policy = VaultCheckSchema.parse(await archboardOk(cli, ["check"]));
+	// `check` exits 1 on a warning; `semantic record` keeps the warnings in the talk's policy too.
+	const policy = VaultCheckSchema.parse((await archboard(cli, ["check"])).json);
 	writeTalk({
 		...talkOfFixture(talk, board, policy),
 		place: askedTalkPlace(inHome(home, talk.directory)),
