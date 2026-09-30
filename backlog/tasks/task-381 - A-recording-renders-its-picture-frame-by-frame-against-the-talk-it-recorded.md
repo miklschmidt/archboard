@@ -1,9 +1,11 @@
 ---
 id: TASK-381
 title: A recording renders its picture frame by frame against the talk it recorded
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-09-30 02:38'
+updated_date: '2026-09-30 03:24'
 labels:
   - voice
   - renderer
@@ -31,3 +33,25 @@ Research: /home/msc/.claude/jobs/87eee52a/tmp/two-pass-brief.md (a working file 
 - [ ] #4 The recorder finds ffmpeg, runs it through nix when it is missing, and refuses with an error naming both when neither is there
 - [ ] #5 ADR 0035, the recording docs and the affected boards describe the two passes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Two passes (ADR 0041, drafted as proposed; it supersedes ADR 0035 at close).
+
+Pass 1 (live) keeps the pacing on the voice and captures no picture. The page records a talk: the voice as 48 kHz mono PCM through an AudioWorklet tap, and an event log stamped in samples of that same audio clock (step, said, drawn, end). The CLI writes the talk atomically as talk.json + voice.wav with the board document and vault check it was drawn from, to stateDir()/recordings/<stamp>-<board>/ (newest 10 kept) or to --talk <dir>. A drawn version other than the board's fails pass 1 with "record again".
+
+Pass 2 (offline, no Codex) opens the Archboard server's page as /?replay=1 in software-rendered headless Chromium. The replay page mounts the same recording stage, board stage and subtitles, reads the board and policy from the talk (board-reads port), and drives every moving picture from a stepped frame clock. For each frame n at t = n/30 s it applies the events due, advances the clock, waits until the picture at that step and version is drawn and quiet, runs the frame, syncs every animation and SVG clock, and waits one real paint. Anything that moves outside the clock fails the render. The CLI captures each frame with Page.captureScreenshot (JPEG q92) and pipes it into ffmpeg (libx264 CRF 18 medium + AAC for MP4, VP9 + Opus for WebM), audio padded to exactly N*1600 samples, so picture and voice align by construction.
+
+ffmpeg: ARCHBOARD_FFMPEG, then PATH, then nix run nixpkgs#ffmpeg-headless (machine registry), else ENCODER_UNAVAILABLE naming both. New command: archboard semantic replay <talk> --out <file> [--theme]. --scale 2 and parallel rendering are deferred (parallel only if a measured render exceeds about 2x the talk).
+
+Stages, each gate-green and committed:
+1. ffmpeg resolver and probe, required before any browser starts. Done (02ff5080).
+2. Frame clock (src/ui/frame-clock) and the viewer seams, lint keeps the viewer off the browser's timers. Done (9b8ded9f).
+3. Talk contract (src/shared/walkthrough-recording/talk.ts), board-reads port, talk playback (src/ui/walkthrough-replay).
+4. Replay page, openVideoEncoder, lib/render.ts renderTalk, semantic replay command; system owner renders a fixture talk twice to identical frame hashes, with a board the server does not have.
+5. Pass 1 records the talk (talk-capture, worklet tap), record runs both passes; tab capture, rehearsal, playable and the frame pacer are deleted.
+6. Docs (ADR 0041 accepted, 0035 superseded, INSTALL, TESTING, acceptance doc, consumer skill), real recordings, boards adopted.
+
+Board proposals: Board rasterizer@TASK-381, Command interface@TASK-381, Browser application@TASK-381, Board viewer@TASK-381, Archboard@TASK-381.
+<!-- SECTION:PLAN:END -->
