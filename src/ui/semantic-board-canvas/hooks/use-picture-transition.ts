@@ -16,6 +16,7 @@
 import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
 
 import { PICTURE_ENTRY_MS, PICTURE_TRANSITION_MS } from "@/shared/timing/timing";
+import { frameClock } from "@/ui/frame-clock";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { ghostPicture, type Departure } from "@/ui/semantic-board-canvas/lib/picture-departure";
 import { enterPicture } from "@/ui/semantic-board-canvas/lib/picture-entrance";
@@ -82,14 +83,6 @@ interface PictureStore {
 }
 
 /**
- * Whether this browser can animate at all: the frame clock the flight runs on.
- * @returns True when frames can be asked for.
- */
-function canAnimate(): boolean {
-	return typeof requestAnimationFrame === "function" && typeof performance === "object";
-}
-
-/**
  * Whether the next picture is the last one carried on, rather than another.
  * @param last The picture on the surface.
  * @param next The picture that arrived.
@@ -118,7 +111,7 @@ function carriedFrom(
 	drawing: SemanticDrawing,
 	motion: Pick<PictureMotion, "reducedMotion" | "presenting">,
 ): SemanticDrawing | null {
-	if (last?.surface !== surface || motion.reducedMotion || !canAnimate()) {
+	if (last?.surface !== surface || motion.reducedMotion || !frameClock().animates) {
 		return null;
 	}
 	return carriedOn(last.drawing, drawing, motion.presenting === true) ? last.drawing : null;
@@ -141,7 +134,7 @@ function entersAfresh(
 	drawing: SemanticDrawing,
 	reducedMotion: boolean,
 ): boolean {
-	if (reducedMotion || !canAnimate()) {
+	if (reducedMotion || !frameClock().animates) {
 		return false;
 	}
 	return last?.surface !== surface || !continuousPictures(last.drawing, drawing);
@@ -155,7 +148,8 @@ function entersAfresh(
  * @returns The flight, with the way to stop it.
  */
 function fly(transition: PictureTransition, duration: number, onLanded: () => void): Flight {
-	const started = performance.now();
+	const clock = frameClock();
+	const started = clock.now();
 	let frame = 0;
 	/**
 	 * Draw one frame, and ask for the next until the last.
@@ -165,16 +159,16 @@ function fly(transition: PictureTransition, duration: number, onLanded: () => vo
 		const progress = (now - started) / duration;
 		if (progress < 1) {
 			transition.seek(progress);
-			frame = requestAnimationFrame(tick);
+			frame = clock.requestFrame(tick);
 			return;
 		}
 		transition.finish();
 		onLanded();
 	}
-	frame = requestAnimationFrame(tick);
+	frame = clock.requestFrame(tick);
 	/** Stop asking for frames. */
 	function stop(): void {
-		cancelAnimationFrame(frame);
+		clock.cancelFrame(frame);
 	}
 	return { transition, stop };
 }

@@ -1,8 +1,9 @@
 // The subtitles as a user sees them.
 //
 // What is guarded: a word is on screen as soon as it arrives and earlier speech is not replayed;
-// the subtitle goes after a real silence; the words are the voice model's and never the user's;
-// and turning subtitles off takes them away at once and stays off for the next visit.
+// the subtitle goes after the linger of silence, not before; the words are the voice model's and
+// never the user's; and turning subtitles off takes them away at once and stays off for the next
+// visit.
 //
 // The box is measured for where it breaks its lines. This DOM lays nothing out and has no canvas,
 // so the box is given a width by a stylesheet, and pretext measures with a stand-in canvas on
@@ -16,6 +17,8 @@ import { useSyncExternalStore, type JSX } from "react";
 
 import { SUBTITLE_LINGER_MS } from "@/shared/timing/timing";
 import { TooltipProvider } from "@/ui/components/tooltip";
+import { driveFramesFrom } from "@/ui/frame-clock";
+import { createSteppedClock } from "@/ui/frame-clock/replay";
 import {
 	SubtitlesToggle,
 	VoiceSubtitles,
@@ -65,18 +68,6 @@ afterAll(async () => {
 afterEach(() => {
 	cleanup();
 });
-
-/**
- * Let real time pass.
- * @param ms How long.
- */
-async function pass(ms: number): Promise<void> {
-	await act(async () => {
-		await new Promise<void>((resolve) => {
-			setTimeout(resolve, ms);
-		});
-	});
-}
 
 /**
  * A transcript in which the voice model has said some words after the user spoke.
@@ -142,12 +133,24 @@ test("the subtitle begins again where its box would wrap to a third line", () =>
 	expect(onScreen()).toBe("family");
 });
 
-test("the subtitle goes once the voice has been silent for the linger", async () => {
-	const view = render(<VoiceSubtitles transcript={transcriptOf("")} enabled reducedMotion />);
-	view.rerender(<VoiceSubtitles transcript={transcriptOf("Done.")} enabled reducedMotion />);
-	expect(onScreen()).toBe("Done.");
-	await pass(SUBTITLE_LINGER_MS + 200);
-	expect(onScreen()).toBeNull();
+test("the subtitle goes once the voice has been silent for the linger", () => {
+	const clock = createSteppedClock(0);
+	const restore = driveFramesFrom(clock);
+	try {
+		const view = render(<VoiceSubtitles transcript={transcriptOf("")} enabled reducedMotion />);
+		view.rerender(<VoiceSubtitles transcript={transcriptOf("Done.")} enabled reducedMotion />);
+		expect(onScreen()).toBe("Done.");
+		act(() => {
+			clock.advanceTo(SUBTITLE_LINGER_MS - 1);
+		});
+		expect(onScreen()).toBe("Done.");
+		act(() => {
+			clock.advanceTo(SUBTITLE_LINGER_MS);
+		});
+		expect(onScreen()).toBeNull();
+	} finally {
+		restore();
+	}
 });
 
 test("what the user said is never subtitled", () => {

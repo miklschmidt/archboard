@@ -181,6 +181,124 @@
 	// when a component is added or removed; never widen it to a wildcard.
 	"overrides": [
 		{
+			// What a board's pane draws over time runs on the frame clock, so a
+			// recording can render it frame by frame against a clock it steps
+			// (TASK-381). Nothing here reads the browser's clocks directly.
+			"files": [
+				"src/ui/semantic-board-canvas/*.ts",
+				"src/ui/semantic-board-canvas/api/**",
+				"src/ui/semantic-board-canvas/components/**",
+				"src/ui/semantic-board-canvas/hooks/**",
+				"src/ui/semantic-board-canvas/lib/**",
+				"src/ui/voice-subtitles/*.ts",
+				"src/ui/voice-subtitles/components/**",
+				"src/ui/voice-subtitles/hooks/**",
+				"src/ui/voice-subtitles/lib/**",
+			],
+			"rules": {
+				"no-restricted-globals": [
+					"error",
+					{
+						"name": "requestAnimationFrame",
+						"message": "Ask frameClock() from @/ui/frame-clock, so a recording can render this frame by frame (TASK-381).",
+					},
+					{
+						"name": "cancelAnimationFrame",
+						"message": "Ask frameClock() from @/ui/frame-clock, so a recording can render this frame by frame (TASK-381).",
+					},
+					{
+						"name": "setTimeout",
+						"message": "Ask frameClock() from @/ui/frame-clock, so a recording can render this frame by frame (TASK-381).",
+					},
+					{
+						"name": "clearTimeout",
+						"message": "Ask frameClock() from @/ui/frame-clock, so a recording can render this frame by frame (TASK-381).",
+					},
+					{
+						"name": "setInterval",
+						"message": "Ask frameClock() from @/ui/frame-clock, so a recording can render this frame by frame (TASK-381).",
+					},
+					{
+						"name": "clearInterval",
+						"message": "Ask frameClock() from @/ui/frame-clock, so a recording can render this frame by frame (TASK-381).",
+					},
+				],
+				"no-restricted-properties": [
+					"error",
+					{
+						"object": "window",
+						"property": "requestAnimationFrame",
+						"message": "Ask frameClock() from @/ui/frame-clock, so a recording can render this frame by frame (TASK-381).",
+					},
+					{
+						"object": "window",
+						"property": "cancelAnimationFrame",
+						"message": "Ask frameClock() from @/ui/frame-clock, so a recording can render this frame by frame (TASK-381).",
+					},
+					{
+						"object": "window",
+						"property": "setTimeout",
+						"message": "Ask frameClock() from @/ui/frame-clock, so a recording can render this frame by frame (TASK-381).",
+					},
+					{
+						"object": "window",
+						"property": "clearTimeout",
+						"message": "Ask frameClock() from @/ui/frame-clock, so a recording can render this frame by frame (TASK-381).",
+					},
+					{
+						"object": "window",
+						"property": "setInterval",
+						"message": "Ask frameClock() from @/ui/frame-clock, so a recording can render this frame by frame (TASK-381).",
+					},
+					{
+						"object": "window",
+						"property": "clearInterval",
+						"message": "Ask frameClock() from @/ui/frame-clock, so a recording can render this frame by frame (TASK-381).",
+					},
+					{
+						"object": "globalThis",
+						"property": "requestAnimationFrame",
+						"message": "Ask frameClock() from @/ui/frame-clock, so a recording can render this frame by frame (TASK-381).",
+					},
+					{
+						"object": "globalThis",
+						"property": "cancelAnimationFrame",
+						"message": "Ask frameClock() from @/ui/frame-clock, so a recording can render this frame by frame (TASK-381).",
+					},
+					{
+						"object": "globalThis",
+						"property": "setTimeout",
+						"message": "Ask frameClock() from @/ui/frame-clock, so a recording can render this frame by frame (TASK-381).",
+					},
+					{
+						"object": "globalThis",
+						"property": "clearTimeout",
+						"message": "Ask frameClock() from @/ui/frame-clock, so a recording can render this frame by frame (TASK-381).",
+					},
+					{
+						"object": "globalThis",
+						"property": "setInterval",
+						"message": "Ask frameClock() from @/ui/frame-clock, so a recording can render this frame by frame (TASK-381).",
+					},
+					{
+						"object": "globalThis",
+						"property": "clearInterval",
+						"message": "Ask frameClock() from @/ui/frame-clock, so a recording can render this frame by frame (TASK-381).",
+					},
+					{
+						"object": "performance",
+						"property": "now",
+						"message": "Ask frameClock() from @/ui/frame-clock, so a recording can render this frame by frame (TASK-381).",
+					},
+					{
+						"object": "Date",
+						"property": "now",
+						"message": "Ask frameClock() from @/ui/frame-clock, so a recording can render this frame by frame (TASK-381).",
+					},
+				],
+			},
+		},
+		{
 			// Vite reads its configuration from the default export; there is no named form.
 			"files": ["vite.config.ts"],
 			"rules": {

@@ -11,6 +11,7 @@
 
 import { useCallback, useMemo, useRef } from "react";
 
+import { frameClock } from "@/ui/frame-clock";
 import { cameraTransform, type Camera, type Size } from "@/ui/semantic-board-canvas/lib/camera";
 import { glidePath } from "@/ui/semantic-board-canvas/lib/camera-glide";
 import { easeInOut } from "@/ui/semantic-board-canvas/lib/picture-motion";
@@ -56,14 +57,6 @@ interface CameraGlide {
 }
 
 /**
- * Whether this browser can drive a glide at all.
- * @returns True when frames can be asked for.
- */
-function canGlide(): boolean {
-	return typeof requestAnimationFrame === "function" && typeof performance === "object";
-}
-
-/**
  * The frame loop behind a camera's glides.
  * @returns How to start and stop one.
  */
@@ -75,7 +68,7 @@ function useCameraGlide(): CameraGlide {
 		if (current === null) {
 			return null;
 		}
-		cancelAnimationFrame(current.frame);
+		frameClock().cancelFrame(current.frame);
 		current.surface.removeAttribute(CAMERA_MOTION_ATTRIBUTE);
 		current.surface.style.transition = "";
 		flying.current = null;
@@ -85,7 +78,8 @@ function useCameraGlide(): CameraGlide {
 	const start = useCallback<CameraGlide["start"]>(
 		(from, to, move) => {
 			stop();
-			if (!canGlide() || move.duration <= 0) {
+			const clock = frameClock();
+			if (!clock.animates || move.duration <= 0) {
 				move.land(to);
 				return;
 			}
@@ -94,7 +88,7 @@ function useCameraGlide(): CameraGlide {
 			surface.setAttribute(CAMERA_MOTION_ATTRIBUTE, "");
 			// The surface's own short ease is for a keyed move; a glide draws every frame itself.
 			surface.style.transition = "none";
-			const began = performance.now();
+			const began = clock.now();
 			const glide: Flying = { frame: 0, at: from, surface };
 			flying.current = glide;
 			/**
@@ -106,13 +100,13 @@ function useCameraGlide(): CameraGlide {
 				glide.at = path(easeInOut(progress));
 				surface.style.transform = cameraTransform(glide.at);
 				if (progress < 1) {
-					glide.frame = requestAnimationFrame(tick);
+					glide.frame = clock.requestFrame(tick);
 					return;
 				}
 				stop();
 				move.land(to);
 			}
-			glide.frame = requestAnimationFrame(tick);
+			glide.frame = clock.requestFrame(tick);
 		},
 		[stop],
 	);

@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 
 import { SUBJECT_TIP_DELAY_MS } from "@/shared/timing/timing";
+import { frameClock } from "@/ui/frame-clock";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { tipTargetAt, type TipTarget } from "@/ui/semantic-board-canvas/lib/subject-tips";
 
@@ -63,7 +64,7 @@ function useSubjectTip(scene: TipScene): SubjectTipControls {
 
 	const forget = useCallback((): void => {
 		if (waiting.current !== null) {
-			window.clearTimeout(waiting.current.timer);
+			frameClock().cancelAfter(waiting.current.timer);
 			waiting.current = null;
 		}
 	}, []);
@@ -96,10 +97,10 @@ function useSubjectTip(scene: TipScene): SubjectTipControls {
 			forget();
 			waiting.current = {
 				target,
-				timer: window.setTimeout(() => {
+				timer: frameClock().after(SUBJECT_TIP_DELAY_MS, () => {
 					waiting.current = null;
 					setOpen({ target, drawing, camera });
-				}, SUBJECT_TIP_DELAY_MS),
+				}),
 			};
 		},
 		[shown, drawing, camera, dismiss, forget],
