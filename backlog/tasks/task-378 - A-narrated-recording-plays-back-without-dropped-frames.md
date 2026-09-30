@@ -1,11 +1,11 @@
 ---
 id: TASK-378
 title: A narrated recording plays back without dropped frames
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 18:33'
-updated_date: '2026-09-30 01:27'
+updated_date: '2026-09-30 01:33'
 labels:
   - voice
 dependencies: []
@@ -22,8 +22,8 @@ Recordings made 2026-09-29 one at a time on a quiet machine with archboard seman
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A recording of a README walkthrough on a quiet machine holds no frame longer than 50 ms while anything on screen moves
-- [ ] #2 The cause is named in the task notes, with the measurement that shows it
+- [x] #1 A recording of a README walkthrough on a quiet machine holds no frame longer than 50 ms while anything on screen moves
+- [x] #2 The cause is named in the task notes, with the measurement that shows it
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -67,4 +67,12 @@ Residual found with GPU compositing: one hold of 58 ms (100 ms under tracing) wh
 Final recordings (product code, no wrapper): Web shop /tmp/t378/gpu/final-ws.mp4: 0 gaps > 40 ms, max 36 ms. Inventory /tmp/t378/gpu/final-inv.mp4: 1 gap > 40 (43 ms, moving), max 43. Archboard /tmp/t378/gpu/final-ab.mp4: 0 gaps > 40, max 39 ms. First frames show no subtitle box.
 Fallback: with the GPU hidden (__EGL_VENDOR_LIBRARY_DIRS, VK_ICD_FILENAMES, VK_DRIVER_FILES, LIBGL_DRIVERS_PATH pointed at nothing), Chromium with the recording flags reports gpu_compositing disabled_software (gl=none) and the Web shop recording still succeeds (/tmp/t378/gpu/nogpu-ws.mp4; its gpu-process absent from nvidia-smi): max 57 ms, the software glide as before.
 Rasterizer unchanged: RASTER_FLAGS keep --disable-gpu, so PNGs and the measured-text contract are untouched.
+
+Validation: bun run check exit 0 under a 16G memory scope (3909 pass, 0 fail); tests/system/server-state/walkthrough-recording.test.ts passes alone. AC #1: final-ws max 36 ms, final-inv max 43 ms, final-ab max 39 ms, no frame over 50 ms moving or at rest. AC #2: causes named above (capture oracle lock, frameRate cap, software compositor, first-draw shader compile) with their traces. Board: Board rasterizer@TASK-378-gpu adopted at version 18; ./bin/dogfood check reports no diagnostics.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Recordings keep a steady 30 fps. The recording stage repaints its whole frame on every frame, and the capture names no frame rate (7ce64ae6). The recorder starts Chromium with --enable-gpu and --disable-gpu-rasterization, so it composites on the GPU when it has one and falls back to software when it does not. The page draws the subtitle box before it captures, so the shaders compile before the first words (fc625ab4). Verified with one recording of each README walkthrough: max frame gap 36, 43 and 39 ms. A recording with the GPU hidden still worked in software. bun run check passed. The flag decision is owned by src/runtime/walkthrough-recorder/tests/browser-flags.test.ts.
+<!-- SECTION:FINAL_SUMMARY:END -->

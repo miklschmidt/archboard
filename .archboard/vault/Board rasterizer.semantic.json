@@ -4,9 +4,9 @@
 	"id": "SMjRfwN3",
 	"name": "Board rasterizer",
 	"level": "module",
-	"version": 17,
+	"version": 18,
 	"createdAt": "2026-09-17T21:02:37.619Z",
-	"updatedAt": "2026-09-30T01:27:25.476Z",
+	"updatedAt": "2026-09-30T01:33:34.140Z",
 	"views": [
 		{
 			"id": "WXfBg0nd",
@@ -1972,7 +1972,7 @@
 		{
 			"id": "PfFN8kCs",
 			"name": "TASK-380",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "YlFypVun",
 			"summary": "Pictures and recordings of a board, through a headless browser",
 			"content": {
@@ -2916,7 +2916,7 @@
 		{
 			"id": "mOPXMlfC",
 			"name": "TASK-378-gpu",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "PfFN8kCs",
 			"summary": "Pictures and recordings of a board, through a headless browser",
 			"content": {
@@ -3858,13 +3858,19 @@
 			}
 		}
 	],
-	"current": "PfFN8kCs",
+	"current": "mOPXMlfC",
 	"adoptions": [
 		{
 			"variant": "PfFN8kCs",
 			"from": "YlFypVun",
 			"at": "2026-09-30T00:45:47.893Z",
 			"reason": "A recording carries the language it is narrated in from the record command through the page to the voice start (TASK-380)"
+		},
+		{
+			"variant": "mOPXMlfC",
+			"from": "PfFN8kCs",
+			"at": "2026-09-30T01:33:34.140Z",
+			"reason": "A recording composites on the GPU when the machine has one, rasterizes in software, draws the subtitle box once before capture, and keeps a steady 30 fps capture (TASK-378)"
 		}
 	],
 	"shelvings": [
