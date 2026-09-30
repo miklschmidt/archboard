@@ -128,12 +128,14 @@ function SidebarChoice(props: SidebarChoiceProps): JSX.Element {
 	return (
 		<Button
 			type="button"
-			variant={pressed ? "secondary" : "ghost"}
+			variant="ghost"
 			size="sm"
 			aria-pressed={pressed}
 			// The button's 1 px border and 7 px of padding put the words on the text
-			// column, 8 px in from the list's edge; 28 px high on one line.
-			className="h-auto min-h-7 w-full min-w-0 items-start justify-start gap-2 px-[7px] py-[4px] text-left whitespace-normal"
+			// column, 8 px in from the list's edge; 28 px high on one line. The fill
+			// is the sidebar's accent, the one the navigator marks its rows with, so
+			// "on screen" looks the same in every column of the shell.
+			className="hover:bg-sidebar-accent dark:hover:bg-sidebar-accent aria-pressed:bg-sidebar-accent h-auto min-h-7 w-full min-w-0 items-start justify-start gap-2 px-[7px] py-[4px] text-left whitespace-normal"
 			{...rest}
 		/>
 	);
