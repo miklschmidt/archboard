@@ -23,6 +23,22 @@ second by default, and a rate asked for also caps the track, which then dropped
 a frame a few times a recording. "The page records itself" below stands
 otherwise.
 
+Amended again by TASK-378 (2026-09-30): when the machine has a usable GPU,
+the recording's browser composites on it. Headless Chromium composites in
+software unless it is started with `--enable-gpu`. During the glide under the
+veil's cross-fade, the software compositor was busy 520 of every 550 ms. The
+capture then got a frame only every 40 to 75 ms. So the recorder starts
+Chromium with `--enable-gpu` and `--disable-gpu-rasterization`. The GPU
+composites, and rasterization stays in software. GPU rasterization held the
+capture for 67 to 106 ms each time a step drew new content. A machine without a
+usable GPU needs no flag of its own. Chromium then composites in software, and
+the recording works as before. The GPU compiles the shaders of an effect the
+first time it draws that effect. For the blurred scrim of the subtitle box,
+this took 60 to 85 ms and held the first words. So the page draws the subtitle
+box for two frames before it captures its tab. The file never shows that box.
+The rasterizer keeps `--disable-gpu`. Its pictures are still frames, and a PNG
+must not depend on the GPU of the machine.
+
 Agents in consumer repositories want to hand a user a video that explains an
 architecture, such as the change a pull request makes, narrated the way a
 walkthrough is narrated on the canvas, without the user sitting through it live

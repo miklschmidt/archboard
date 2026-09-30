@@ -133,6 +133,13 @@ function pageUrl(request: WalkthroughRecordingRequest): string {
  */
 function recordingFlags(microphone: string): readonly string[] {
 	return [
+		// Composite on the GPU when Chromium finds a usable one: headless Chromium composites in
+		// software otherwise, too slowly for a glide under a cross-fade to keep 30 frames a
+		// second. Without a usable GPU Chromium falls back to software compositing by itself.
+		"--enable-gpu",
+		// Rasterize in software as before: GPU rasterization held the capture 67 to 106 ms
+		// whenever a step drew new content.
+		"--disable-gpu-rasterization",
 		// A screen larger than the window, or the tab capture is held to the headless default.
 		"--screen-info={2560x1600}",
 		"--auto-accept-this-tab-capture",
@@ -430,6 +437,7 @@ export {
 	WalkthroughRecordingError,
 	drive,
 	recordWalkthrough,
+	recordingFlags,
 	type RecordedWalkthrough,
 	type RecordingPageHandle,
 	type WalkthroughRecordingErrorCode,

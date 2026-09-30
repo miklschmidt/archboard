@@ -35,6 +35,7 @@ import {
 	type CapturedFile,
 	type TabCapture,
 } from "@/ui/walkthrough-recording/lib/tab-capture";
+import { rehearse } from "@/ui/walkthrough-recording/lib/rehearsal";
 import { recordingAudioElements } from "@/ui/walkthrough-recording/lib/voice-audio";
 import {
 	agentReadiness,
@@ -196,7 +197,8 @@ class WalkthroughRecorder {
 	}
 
 	/**
-	 * Start recording: capture the tab, then ask for voice. Called from a user gesture.
+	 * Start recording: draw what the talk draws later once, capture the tab, then ask for voice.
+	 * Called from a user gesture.
 	 * @param options The container to write.
 	 * @returns When capture has begun.
 	 * @throws {Error} When the page is not ready, or the tab could not be captured.
@@ -205,6 +207,7 @@ class WalkthroughRecorder {
 		const { container } = RecordingStartSchema.parse(options);
 		const sources = this.#startable();
 		this.#frame = { width: window.innerWidth, height: window.innerHeight };
+		await rehearse();
 		try {
 			this.#capture = await captureTab(container);
 		} catch (error) {
