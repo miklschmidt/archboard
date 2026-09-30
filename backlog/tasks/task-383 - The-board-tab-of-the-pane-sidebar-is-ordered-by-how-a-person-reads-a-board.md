@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-30 18:51'
-updated_date: '2026-09-30 19:17'
+updated_date: '2026-09-30 19:40'
 labels:
   - ui
 dependencies: []
@@ -45,4 +45,13 @@ No board proposal: the task changes the look of existing sidebar parts and adds 
 
 <!-- SECTION:NOTES:BEGIN -->
 Study: docs/design/pane-sidebar-hierarchy.md. Main findings: the variant summary is written on 17 of 18 boards and shown nowhere; 34 of 42 views carry a summary nobody sees; the comparison key is the last thing in the tab (below the fold on a draft) although a proposal's reader needs it first; the tab has eight text columns and six equal-weight sections with uppercase kicker headings (eyebrows). Order derived: what it is and changes, how to read it (walkthroughs, views, groups), legend, engine.
+
+Built (commits 10ffd64f, c24cfb0c, 647e0d97):
+- Board tab in four regions under rules: (1) drilled board's variants, the variant summary (no heading), Changes for a compared variant (the picture's pin per standing with counts, then the marks control; rows go while marks are off; 'Nothing differs.' when nothing does); (2) Walkthroughs (present mark, full name, step count on a second line, Narrate), Views (summary of the view on screen under it), Groups; (3) Legend of what the picture draws, samples for a heavier line and a streak instead of prose; (4) Layout engine row at the foot.
+- Shared parts in SemanticSidebarParts.tsx (region, section, heading, choice list and row). Both tabs: text and tab labels at 16 px, headings 12 px semibold muted sentence case (no uppercase kickers), choices 28 px with the sidebar accent fill the navigator uses, long names wrap. Text lines: 16, 40 and 52 px.
+- Removed: Selected sample, Legend eyebrow, 'No groups on this state.' (groups absent like views and walkthroughs), dead STANDING_COLORS.
+- Found and fixed: the variant reading used resolveVariant, so a board with no current variant showed nothing of its draft in the tab; it now uses addressedVariant like the render route.
+- Renderer exports standingMark so the change key draws the picture's pin.
+- Tests: new semantic-board-tab owner (summary, view summary placement, unbuilt board, change counts); copy-pinning assertions replaced by structure; shell-layout browser owner now holds the sidebar heading role (600, 12 px, no transform).
+- Follow-ups outside this scope: data-flow messages carry no kind, so the legend keys no message line there; the presented walkthrough's caption still uses an uppercase kicker.
 <!-- SECTION:NOTES:END -->
