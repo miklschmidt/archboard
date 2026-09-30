@@ -8,11 +8,10 @@ import { queryOptions } from "@tanstack/react-query";
 import { DEFAULT_LAYOUT_ENGINE } from "@/shared/semantic-board/index";
 import { VAULT_CHECK_POLL_MS } from "@/shared/timing/timing";
 import {
-	fetchSemanticBoardDocument,
 	fetchSemanticBoards,
-	fetchVaultCheck,
 	type SemanticRenderRequest,
 } from "@/ui/semantic-board-canvas/api/semantic-boards";
+import { boardReads } from "@/ui/semantic-board-canvas/lib/board-reads";
 import { pictureSource } from "@/ui/semantic-board-canvas/lib/picture-source";
 
 /** The one root every semantic resource hangs under, so a sweep can find it. */
@@ -169,11 +168,11 @@ function semanticBoardDocumentQuery(board: string) {
 	return queryOptions({
 		queryKey: semanticBoardKeys.document(board),
 		/**
-		 * Read the board.
+		 * Read the board, from the server or wherever the page reads boards from.
 		 * @param context The query context, carrying this read's cancellation.
 		 * @returns The document, as the server holds it.
 		 */
-		queryFn: (context) => fetchSemanticBoardDocument(board, context.signal),
+		queryFn: (context) => boardReads().document(board, context.signal),
 		staleTime: Number.POSITIVE_INFINITY,
 		refetchOnWindowFocus: false,
 		refetchOnReconnect: "always" as const,
@@ -198,7 +197,7 @@ function vaultCheckQuery() {
 		 * @param context The query context, carrying this read's cancellation.
 		 * @returns The checked policy and diagnostics.
 		 */
-		queryFn: (context) => fetchVaultCheck(context.signal),
+		queryFn: (context) => boardReads().vaultCheck(context.signal),
 		staleTime: VAULT_CHECK_POLL_MS,
 		refetchInterval: VAULT_CHECK_POLL_MS,
 		refetchOnWindowFocus: true,

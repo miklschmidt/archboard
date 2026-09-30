@@ -56,6 +56,16 @@ interface RecordingRequest {
 /** A step the page moves its pane to: its own choice, answering no request. */
 type RecordedStep = NonNullable<SemanticBoardStageProps["driven"]>;
 
+/**
+ * The step a recording moves its pane to, as the live recording and its rendering both ask for it.
+ * @param walkthrough The walkthrough, by id.
+ * @param beat The step, counted from nought.
+ * @returns The step.
+ */
+function recordedStep(walkthrough: string, beat: number): RecordedStep {
+	return { request: `record:${beat}`, walkthrough, beat, answers: false };
+}
+
 /** Whether a page that has not started could start, or why not. */
 interface Readiness {
 	readonly phase: RecordingPhase;
@@ -338,8 +348,7 @@ class WalkthroughRecorder {
 	 * @param beat The step, counted from zero.
 	 */
 	#show(beat: number): void {
-		const { walkthrough } = this.#request;
-		this.#step = { request: `record:${beat}`, walkthrough, beat, answers: false };
+		this.#step = recordedStep(this.#request.walkthrough, beat);
 		for (const listener of this.#listeners) listener();
 	}
 
@@ -382,4 +391,4 @@ class WalkthroughRecorder {
 	}
 }
 
-export { WalkthroughRecorder, type RecordedStep, type RecordingRequest };
+export { WalkthroughRecorder, recordedStep, type RecordedStep, type RecordingRequest };

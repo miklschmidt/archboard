@@ -61,3 +61,4 @@ export {
 	takePicturesFrom,
 	type PictureSource,
 } from "@/ui/semantic-board-canvas/lib/picture-source";
+export { readBoardsFrom, type BoardReads } from "@/ui/semantic-board-canvas/lib/board-reads";

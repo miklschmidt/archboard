@@ -10,7 +10,11 @@ export { RecordingStage } from "@/ui/walkthrough-recording/components/RecordingS
 export { pace, type PaceObservation, type PaceState } from "@/ui/walkthrough-recording/lib/pacing";
 export { tabCaptureOptions } from "@/ui/walkthrough-recording/lib/tab-capture";
 export { useWalkthroughRecording } from "@/ui/walkthrough-recording/hooks/use-walkthrough-recording";
-export type { RecordedStep, WalkthroughRecorder } from "@/ui/walkthrough-recording/lib/recorder";
+export {
+	recordedStep,
+	type RecordedStep,
+	type WalkthroughRecorder,
+} from "@/ui/walkthrough-recording/lib/recorder";
 
 /**
  * The recorder a page's address asks for.
