@@ -1,35 +1,38 @@
-// What a key does in the navigator's tree, decided from the rows alone: the
-// arrows walk the visible rows; right opens a row's boards, then its states,
-// then steps in; left closes its states, then its boards, then steps out —
-// and while a filter is on, which opens everything it reaches, right and left
-// only walk. Enter opens a board where the person is reading and Alt+Enter
-// opens it beside. Pure: the component carries the answer out.
+// What a key does in the navigator's tree, decided from the rows alone, as
+// the WAI-ARIA tree pattern has it: the arrows walk the visible rows; right
+// opens a closed row, then steps into it; left closes an open row, then steps
+// out to the row it sits under. While a filter is on, which opens everything
+// it reaches, right and left only walk. Enter opens a board or a variant where
+// the person is reading and Alt+Enter opens it beside; on a folder or an
+// Earlier row, Enter opens or closes it. Pure: the component carries the
+// answer out.
 
-import type { NavigatorRow } from "@/ui/shell/lib/navigator-rows";
+import type { NavigatorRow } from "@/ui/shell/types/navigator-rows";
 
 /** What one key asks the tree to do. */
 type OutlineKeyAction =
 	| { readonly kind: "focus"; readonly id: string }
 	| { readonly kind: "expand"; readonly id: string; readonly open: boolean }
-	| { readonly kind: "states"; readonly id: string; readonly open: boolean }
 	| { readonly kind: "open"; readonly row: NavigatorRow; readonly beside: boolean };
 
 /**
- * Whether a row opens and closes: a folder, or a board with boards under it.
+ * Whether a row opens and closes: a folder, an Earlier row, or a board with
+ * something to list under it.
  * @param row The row.
  * @returns True when it has a disclosure.
  */
 function expandable(row: NavigatorRow): boolean {
-	return row.kind === "folder" || (row.kind === "board" && row.hasChildren);
+	if (row.kind === "variant") return false;
+	return row.kind !== "board" || row.expandable;
 }
 
 /**
- * Whether a row's children are listed.
+ * Whether what is under a row is listed.
  * @param row The row.
  * @returns True when open.
  */
 function isExpanded(row: NavigatorRow): boolean {
-	return row.kind !== "state" && row.expanded;
+	return row.kind !== "variant" && row.expanded;
 }
 
 /**
@@ -51,20 +54,17 @@ function verticalTarget(rows: readonly NavigatorRow[], index: number, key: strin
 }
 
 /**
- * What opening a row by key does: its boards first, then its states.
+ * Whether a key may open or close a row: never while a filter is on.
  * @param row The row.
- * @returns The action, or null when nothing under it is closed.
+ * @param event The key and whether a filter is on.
+ * @returns True when the row opens and closes by key.
  */
-function openingAction(row: NavigatorRow): OutlineKeyAction | null {
-	if (expandable(row) && !isExpanded(row)) return { kind: "expand", id: row.id, open: true };
-	if (row.kind === "board" && row.otherStates > 0 && !row.statesOpen) {
-		return { kind: "states", id: row.id, open: true };
-	}
-	return null;
+function togglesByKey(row: NavigatorRow, event: OutlineKeyEvent): boolean {
+	return !event.filtering && expandable(row);
 }
 
 /**
- * What right does: open what is closed under a row, or step into it.
+ * What right does: open a closed row, or step into an open one.
  * @param rows The rows.
  * @param index The focused row's index.
  * @param event The key and whether a filter is on.
@@ -77,25 +77,14 @@ function rightAction(
 ): OutlineKeyAction | null {
 	const row = rows[index];
 	if (row === undefined) return null;
-	const opening = event.filtering ? null : openingAction(row);
-	if (opening !== null) return opening;
+	if (togglesByKey(row, event) && !isExpanded(row))
+		return { kind: "expand", id: row.id, open: true };
 	const next = rows[index + 1];
 	return next?.parentId === row.id ? { kind: "focus", id: next.id } : null;
 }
 
 /**
- * What closing a row by key does: its states first, then its boards.
- * @param row The row.
- * @returns The action, or null when nothing under it is open.
- */
-function closingAction(row: NavigatorRow): OutlineKeyAction | null {
-	if (row.kind === "board" && row.statesOpen) return { kind: "states", id: row.id, open: false };
-	if (expandable(row) && isExpanded(row)) return { kind: "expand", id: row.id, open: false };
-	return null;
-}
-
-/**
- * What left does: close what is open under a row, or step out to the row it sits under.
+ * What left does: close an open row, or step out to the row it sits under.
  * @param rows The rows.
  * @param index The focused row's index.
  * @param event The key and whether a filter is on.
@@ -108,13 +97,14 @@ function leftAction(
 ): OutlineKeyAction | null {
 	const row = rows[index];
 	if (row === undefined) return null;
-	const closing = event.filtering ? null : closingAction(row);
-	if (closing !== null) return closing;
+	if (togglesByKey(row, event) && isExpanded(row))
+		return { kind: "expand", id: row.id, open: false };
 	return row.parentId === null ? null : { kind: "focus", id: row.parentId };
 }
 
 /**
- * What Enter or Space does: a folder opens or closes, anything else opens.
+ * What Enter or Space does: a folder or an Earlier row opens or closes, a
+ * board or a variant opens.
  * @param rows The rows.
  * @param index The focused row's index.
  * @param event The key and whether Alt was held: open in the other pane.
@@ -127,7 +117,9 @@ function enterAction(
 ): OutlineKeyAction | null {
 	const row = rows[index];
 	if (row === undefined) return null;
-	if (row.kind === "folder") return { kind: "expand", id: row.id, open: !row.expanded };
+	if (row.kind === "folder" || row.kind === "earlier") {
+		return { kind: "expand", id: row.id, open: !row.expanded };
+	}
 	return { kind: "open", row, beside: event.altKey };
 }
 
@@ -171,4 +163,4 @@ function outlineKey(
 	return HORIZONTAL[event.key]?.(rows, index, event) ?? null;
 }
 
-export { expandable, outlineKey, type OutlineKeyAction, type OutlineKeyEvent };
+export { outlineKey, type OutlineKeyAction, type OutlineKeyEvent };

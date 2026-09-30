@@ -1,12 +1,18 @@
 // The navigator's filter: one field at the top of the column, level with the
 // pane bar, that narrows the tree in place as a person types. While it holds
 // text it says how many boards it found; Enter opens the first, Alt+Enter
-// opens it beside, the down arrow walks into the tree, Escape clears.
+// opens it beside, the down arrow walks into the tree, Escape clears. Its icon
+// sits in the tree's marker column and its text starts where the names of the
+// top rows start.
 
 import { RiCloseLine, RiSearchLine } from "@remixicon/react";
 import { useCallback, type ChangeEvent, type JSX, type KeyboardEvent, type RefObject } from "react";
 
 import { usesCommandKey } from "@/ui/components/command-key";
+import { FACTS_INSET, markerX } from "@/ui/shell/lib/tree-grid";
+
+/** The field's icon in the marker column of the top rows, its facts on the tree's right edge. */
+const FILTER_STYLE = { paddingLeft: markerX(0), paddingRight: FACTS_INSET } as const;
 
 /** Inputs for the filter. */
 interface NavigatorFilterProps {
@@ -81,8 +87,13 @@ function NavigatorFilter(props: NavigatorFilterProps): JSX.Element {
 	);
 	const filtering = query.trim() !== "";
 	return (
-		<div className="border-border flex h-9 shrink-0 items-center gap-2 border-b pr-2 pl-4">
-			<RiSearchLine className="text-muted-foreground size-3.5 shrink-0" aria-hidden="true" />
+		<div
+			style={FILTER_STYLE}
+			className="border-border flex h-9 shrink-0 items-center gap-1.5 border-b"
+		>
+			<span className="flex w-4 shrink-0 justify-center">
+				<RiSearchLine className="text-muted-foreground size-3.5" aria-hidden="true" />
+			</span>
 			<input
 				ref={input}
 				type="search"

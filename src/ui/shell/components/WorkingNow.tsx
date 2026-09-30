@@ -3,15 +3,36 @@
 // what it last said it was doing and how long ago. Gathered at the foot of the
 // navigator so the tree above never grows or reorders because of activity.
 // Entries keep the order they arrived in; the block is absent when nothing is
-// live.
+// live. Its lamps sit in the tree's marker column and its words start where
+// the names of the top rows start.
 
 import { useCallback, useState, type JSX, type MouseEvent } from "react";
 
 import { SHELL_AGE_TICK_MS } from "@/shared/timing/timing";
+import { ActivityLamp } from "@/ui/shell/components/ActivityLamp";
 import { PaneChips } from "@/ui/shell/components/PaneChips";
 import { useClock } from "@/ui/components/use-clock";
 import { shortAge } from "@/ui/components/age";
+import { FACTS_INSET, markerX, NAME_GAP, nameX, ROW_GUTTER } from "@/ui/shell/lib/tree-grid";
 import type { AgentActivityEntry } from "@/ui/types";
+
+/** The heading starts where the names do. */
+const HEADING_STYLE = { paddingLeft: nameX(0) } as const;
+
+/** The list keeps the tree's gutter. */
+const LIST_STYLE = { paddingInline: ROW_GUTTER } as const;
+
+/** An entry's lamp in the marker column and its facts on the tree's right edge. */
+const ENTRY_STYLE = {
+	paddingLeft: markerX(0) - ROW_GUTTER,
+	paddingRight: FACTS_INSET - ROW_GUTTER,
+} as const;
+
+/** The name keeps the tree's gap from the marker column. */
+const NAME_GAP_STYLE = { marginLeft: NAME_GAP } as const;
+
+/** The doing line starts where the name does. */
+const DOING_STYLE = { paddingLeft: nameX(0) - markerX(0) } as const;
 
 /** One entry as the block draws it. */
 interface WorkingEntry {
@@ -60,11 +81,14 @@ function WorkingNow(props: WorkingNowProps): JSX.Element | null {
 			data-slot="working-now"
 			className="border-border flex max-h-[45%] shrink-0 flex-col border-t"
 		>
-			<h2 className="text-body text-muted-foreground flex h-8 shrink-0 items-center gap-1.5 px-4 font-medium">
+			<h2
+				style={HEADING_STYLE}
+				className="text-body text-muted-foreground flex h-8 shrink-0 items-center gap-1.5 font-medium"
+			>
 				Working now
 				<span className="font-mono">{ordered.length}</span>
 			</h2>
-			<ul className="flex min-h-0 flex-col overflow-y-auto px-2 pb-2">
+			<ul style={LIST_STYLE} className="flex min-h-0 flex-col overflow-y-auto pb-2">
 				{ordered.map((entry) => (
 					<WorkingItem key={entry.activity.board} entry={entry} now={now} onOpen={props.onOpen} />
 				))}
@@ -114,39 +138,27 @@ function WorkingItem(props: WorkingItemProps): JSX.Element {
 			<button
 				type="button"
 				onClick={handleClick}
-				className="hover:bg-sidebar-accent flex w-full min-w-0 flex-col gap-0.5 rounded-[3px] px-2 py-1.5 text-left"
+				style={ENTRY_STYLE}
+				className="hover:bg-sidebar-accent flex w-full min-w-0 flex-col gap-0.5 rounded-[3px] py-1.5 text-left"
 			>
-				<span className="flex w-full min-w-0 items-center gap-2">
-					<WorkLamp claimed={claim !== null} />
-					<span className="text-control min-w-0 flex-1 truncate font-medium">{entry.name}</span>
-					<PaneChips letters={entry.onScreen} />
-					<Age at={at} now={now} />
+				<span className="flex w-full min-w-0 items-center">
+					<span className="flex w-4 shrink-0 justify-center">
+						<ActivityLamp state={claim === null ? "wrote" : "claimed"} />
+					</span>
+					<span style={NAME_GAP_STYLE} className="text-control min-w-0 flex-1 truncate font-medium">
+						{entry.name}
+					</span>
+					<span className="ml-2 flex shrink-0 items-center gap-1.5">
+						<PaneChips letters={entry.onScreen} />
+						<Age at={at} now={now} />
+					</span>
 				</span>
-				<span className="text-body text-muted-foreground truncate pl-3.5">
+				<span style={DOING_STYLE} className="text-body text-muted-foreground truncate">
 					<span className="sr-only">{claim === null ? "Just wrote: " : "Claimed: "}</span>
 					{said}
 				</span>
 			</button>
 		</li>
-	);
-}
-
-/**
- * The entry's lamp: lit for a claim, a ring for a write without one.
- * @param props Whether the agent claims the board.
- * @param props.claimed Whether it does.
- * @returns The lamp.
- */
-function WorkLamp(props: { readonly claimed: boolean }): JSX.Element {
-	return (
-		<span
-			aria-hidden="true"
-			className={
-				props.claimed
-					? "bg-status size-1.5 shrink-0 rounded-full motion-safe:animate-pulse"
-					: "ring-status size-1.5 shrink-0 rounded-full ring-[1.5px]"
-			}
-		/>
 	);
 }
 

@@ -1,8 +1,8 @@
 // The left navigator: a filter, the vault's boards as an outline (folders,
 // then the boards each board drills down to, then names), and where agents
-// are working. Each board is one row; its states are listed under it while it
-// is the board being read or the person opens them. The path to the board
-// being read is always open, and nothing an agent does reorders the tree.
+// are working. Each board is one row; its variants are listed under it while
+// a pane shows it or the person opens a board that has a proposal. The way to
+// what every pane shows is open, and nothing an agent does reorders the tree.
 //
 // Nothing here makes a board. A person reads an architecture an agent wrote
 // (ADR 0023), so the navigator is a way of choosing which one to look at.
@@ -18,15 +18,13 @@ import { NavigatorFilter } from "@/ui/shell/components/NavigatorFilter";
 import { WorkingNow, type WorkingEntry } from "@/ui/shell/components/WorkingNow";
 import { useFindShortcut } from "@/ui/shell/hooks/use-find-shortcut";
 import { useNavigatorExpansion } from "@/ui/shell/hooks/use-navigator-expansion";
-import {
-	filterCount,
-	navigatorRows,
-	type NavigatorRow,
-	type PaneMark,
-} from "@/ui/shell/lib/navigator-rows";
+import { filterCount, navigatorRows } from "@/ui/shell/lib/navigator-rows";
+import { boardRowId } from "@/ui/shell/lib/row-ids";
 import { paneLetter } from "@/ui/shell/lib/pane-letters";
 import { foldQuery } from "@/ui/shell/lib/text-match";
+import { nameX } from "@/ui/shell/lib/tree-grid";
 import type { ShellActions, ShellView } from "@/ui/shell/types/contracts";
+import type { NavigatorRow, PaneMark } from "@/ui/shell/types/navigator-rows";
 import type { CatalogBoard } from "@/ui/types";
 
 /** Inputs for the navigator. */
@@ -37,10 +35,11 @@ interface NavigatorProps {
 	actions: ShellActions;
 }
 
-const NO_CHOICES: ReadonlyMap<string, boolean> = new Map();
+/** Messages line up with the names at the top of the tree. */
+const MESSAGE_STYLE = { paddingLeft: nameX(0) } as const;
 
 /**
- * Every pane as the rows mark it: its letter, its board and its state.
+ * Every pane as the rows mark it: its letter, its board, its variant and whether it is active.
  * @param view The shell view.
  * @returns The marks, in reading order.
  */
@@ -49,6 +48,7 @@ function paneMarks(view: ShellView): PaneMark[] {
 		letter: paneLetter(index),
 		board: boardAddressOf(pane.status.boardKey)?.board ?? null,
 		key: listedBoardKey(view.boards, pane.status.boardKey),
+		active: pane.status.paneId === view.activePaneId,
 	}));
 }
 
@@ -72,39 +72,29 @@ function workingEntries(view: ShellView, panes: readonly PaneMark[]): WorkingEnt
 }
 
 /**
- * The key a row opens: a board by its bare name, a state by its own key.
+ * The key a row opens: a board by its bare name, a variant by its own key.
  * @param row The row.
- * @returns The key, or null for a folder.
+ * @returns The key, or null for a row that only gathers others.
  */
 function rowKey(row: NavigatorRow): string | null {
 	if (row.kind === "board") return row.board.key;
-	return row.kind === "state" ? row.variant.key : null;
+	return row.kind === "variant" ? row.variant.key : null;
 }
 
 /**
- * What the active pane is reading: the board's name and the listed key of its state.
- * @param view The shell view.
- * @returns The board and key, each null before the pane shows one.
+ * The row that holds the tree's tab stop and is revealed when a pane moves:
+ * the selected row, else the active pane's board.
+ * @param rows The rows.
+ * @param panes The panes.
+ * @returns The row's id, or null.
  */
-function activeReading(view: ShellView): {
-	readonly board: string | null;
-	readonly key: string | null;
-} {
-	const boardKey =
-		view.panes.find((pane) => pane.status.paneId === view.activePaneId)?.status.boardKey ?? null;
-	return {
-		board: boardAddressOf(boardKey)?.board ?? null,
-		key: listedBoardKey(view.boards, boardKey),
-	};
-}
-
-/**
- * The row id of the board being read.
- * @param board The board's name, or null.
- * @returns The id, or null.
- */
-function boardRowId(board: string | null): string | null {
-	return board === null ? null : `board:${board.toLowerCase()}`;
+function homeRowId(rows: readonly NavigatorRow[], panes: readonly PaneMark[]): string | null {
+	const selected = rows.find(
+		(row) => (row.kind === "board" || row.kind === "variant") && row.selected,
+	);
+	if (selected !== undefined) return selected.id;
+	const board = panes.find((pane) => pane.active)?.board ?? null;
+	return board === null ? null : boardRowId(board);
 }
 
 /**
@@ -130,24 +120,19 @@ function Navigator(props: NavigatorProps): JSX.Element {
 	const column = useRef<HTMLElement>(null);
 	useFindShortcut(input);
 	const [query, setQuery] = useState("");
-	const [statesChoice, setStatesChoice] = useState<ReadonlyMap<string, boolean>>(NO_CHOICES);
-	const active = activeReading(view);
-	const expansion = useNavigatorExpansion(outline, active.board);
 	const panes = useMemo(() => paneMarks(view), [view]);
+	const expansion = useNavigatorExpansion(outline, panes);
 	const folded = foldQuery(query);
 	const rows = useMemo(
 		() =>
 			navigatorRows({
 				outline,
 				expanded: expansion.expanded,
-				statesChoice,
 				query: folded,
-				activeBoard: active.board,
-				activeKey: active.key,
 				panes,
 				activity: view.agentActivity,
 			}),
-		[outline, expansion, statesChoice, folded, active.board, active.key, panes, view.agentActivity],
+		[outline, expansion, folded, panes, view.agentActivity],
 	);
 	const open = useCallback(
 		(row: NavigatorRow, beside: boolean): void => {
@@ -160,16 +145,13 @@ function Navigator(props: NavigatorProps): JSX.Element {
 		(board: string, beside: boolean): void => openKey(actions, board, beside),
 		[actions],
 	);
-	const onStates = useCallback((id: string, listed: boolean): void => {
-		setStatesChoice((current) => new Map(current).set(id, listed));
-	}, []);
 	const onTypeAhead = useCallback((text: string): void => {
 		setQuery((current) => current + text);
 		input.current?.focus();
 	}, []);
 	const onOpenFirst = useCallback(
 		(beside: boolean): void => {
-			const first = rows.find((row) => row.kind !== "folder" && !row.dimmed);
+			const first = rows.find((row) => rowKey(row) !== null && !row.dimmed);
 			if (first !== undefined) open(first, beside);
 		},
 		[rows, open],
@@ -177,7 +159,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 	const onEnterTree = useCallback((): void => {
 		column.current?.querySelector<HTMLElement>('[role="tree"] [tabindex="0"]')?.focus();
 	}, []);
-	const homeId = boardRowId(active.board);
+	const homeId = homeRowId(rows, panes);
 	useRevealActive(
 		column,
 		homeId,
@@ -214,7 +196,6 @@ function Navigator(props: NavigatorProps): JSX.Element {
 					homeId={homeId}
 					onOpen={open}
 					onExpand={expansion.setExpanded}
-					onStates={onStates}
 					onTypeAhead={onTypeAhead}
 					filtering={folded.length > 0}
 				/>
@@ -225,11 +206,11 @@ function Navigator(props: NavigatorProps): JSX.Element {
 }
 
 /**
- * Bring the board being read into view when it changes, unless the person is
+ * Bring the row being read into view when it changes, unless the person is
  * using the navigator: a row moving under their pointer or focus would be a
  * row they did not choose.
  * @param column The navigator.
- * @param rowId The board row being read, or null.
+ * @param rowId The row being read, or null.
  * @param drawn Whether its row is drawn yet: the listing may arrive after the pane reports.
  */
 function useRevealActive(
@@ -300,7 +281,7 @@ function ListingState(props: ListingStateProps): JSX.Element | null {
 	}
 	if (props.noMatch) {
 		return (
-			<p className="text-body text-muted-foreground px-4 py-3">
+			<p style={MESSAGE_STYLE} className="text-body text-muted-foreground py-3 pr-4">
 				No board matches “{props.query.trim()}”.{" "}
 				<button type="button" onClick={clear} className="text-primary font-medium hover:underline">
 					Clear
@@ -311,7 +292,7 @@ function ListingState(props: ListingStateProps): JSX.Element | null {
 	if (!props.empty) return null;
 	if (props.loading) return <ListingSkeleton />;
 	return (
-		<p className="text-body text-muted-foreground px-4 py-3">
+		<p style={MESSAGE_STYLE} className="text-body text-muted-foreground py-3 pr-4">
 			No boards in this vault yet. An agent makes one with{" "}
 			<code className="text-foreground font-mono">archboard semantic new</code>.
 		</p>
@@ -325,7 +306,7 @@ function ListingState(props: ListingStateProps): JSX.Element | null {
  */
 function ListingSkeleton(): JSX.Element {
 	return (
-		<div aria-busy="true" className="flex flex-col gap-3 px-4 py-3">
+		<div aria-busy="true" style={MESSAGE_STYLE} className="flex flex-col gap-3 py-3 pr-4">
 			<p aria-live="polite" className="sr-only">
 				Reading the vault…
 			</p>

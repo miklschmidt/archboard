@@ -2,22 +2,34 @@
 // walk it. A printable key typed into the tree goes to the filter, so a person
 // who starts typing while a row is focused finds what they typed.
 
-import { useCallback, useRef, useState, type JSX, type KeyboardEvent } from "react";
+import {
+	useCallback,
+	useRef,
+	useState,
+	type CSSProperties,
+	type JSX,
+	type KeyboardEvent,
+} from "react";
 
-import { OutlineRow, type RowHandlers } from "@/ui/shell/components/OutlineRow";
-import type { NavigatorRow } from "@/ui/shell/lib/navigator-rows";
+import { OutlineRow } from "@/ui/shell/components/OutlineRow";
+import type { RowHandlers } from "@/ui/shell/components/TreeRow";
+import type { NavigatorRow } from "@/ui/shell/types/navigator-rows";
 import { outlineKey, type OutlineKeyAction } from "@/ui/shell/lib/outline-keys";
+import { ROW_GUTTER } from "@/ui/shell/lib/tree-grid";
 
 /** Inputs for the tree. */
 interface BoardOutlineProps extends Omit<RowHandlers, "focusable" | "onFocusRow" | "onRowKeyDown"> {
 	readonly rows: readonly NavigatorRow[];
-	/** The row that holds the tab stop until the person moves it: the board being read. */
+	/** The row that holds the tab stop until the person moves it: the selected row. */
 	readonly homeId: string | null;
 	/** A printable key typed in the tree, handed to the filter. */
 	readonly onTypeAhead: (text: string) => void;
 	/** A filter is on: the tree lists what it found, and nothing opens or closes. */
 	readonly filtering: boolean;
 }
+
+/** The tree keeps the gutter a row's tone keeps from the column's edges. */
+const TREE_STYLE: CSSProperties = { paddingInline: ROW_GUTTER };
 
 /** Keys that command rather than type: Space opens, and "/" is the find shortcut. */
 const NOT_TYPED: ReadonlySet<string> = new Set([" ", "/"]);
@@ -43,7 +55,7 @@ function typesCharacter(event: KeyboardEvent<HTMLElement>): boolean {
  * @returns The tree.
  */
 function BoardOutline(props: BoardOutlineProps): JSX.Element {
-	const { rows, homeId, onOpen, onExpand, onStates, onTypeAhead, filtering } = props;
+	const { rows, homeId, onOpen, onExpand, onTypeAhead, filtering } = props;
 	const tree = useRef<HTMLDivElement>(null);
 	const [focusedId, setFocusedId] = useState<string | null>(null);
 	const stop = [focusedId, homeId, rows[0]?.id].find(
@@ -59,10 +71,9 @@ function BoardOutline(props: BoardOutlineProps): JSX.Element {
 		(action: OutlineKeyAction): void => {
 			if (action.kind === "focus") focusRow(action.id);
 			else if (action.kind === "expand") onExpand(action.id, action.open);
-			else if (action.kind === "states") onStates(action.id, action.open);
 			else onOpen(action.row, action.beside);
 		},
-		[focusRow, onExpand, onStates, onOpen],
+		[focusRow, onExpand, onOpen],
 	);
 	const handleKeyDown = useCallback(
 		(event: KeyboardEvent<HTMLDivElement>): void => {
@@ -89,7 +100,8 @@ function BoardOutline(props: BoardOutlineProps): JSX.Element {
 			role="tree"
 			aria-label="Boards"
 			tabIndex={-1}
-			className="flex flex-col gap-px px-2 py-1.5 outline-none"
+			style={TREE_STYLE}
+			className="flex flex-col py-1 outline-none"
 		>
 			{rows.map((row) => (
 				<OutlineRow
@@ -99,7 +111,6 @@ function BoardOutline(props: BoardOutlineProps): JSX.Element {
 					onFocusRow={setFocusedId}
 					onOpen={onOpen}
 					onExpand={onExpand}
-					onStates={onStates}
 					onRowKeyDown={handleKeyDown}
 				/>
 			))}

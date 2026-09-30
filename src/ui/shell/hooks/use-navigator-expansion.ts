@@ -1,19 +1,24 @@
 // Which rows of the navigator are open: what the person chose, remembered in
-// this browser, except on the path to the board being read and the board
-// itself, which are open until the person closes part of them — and open again
-// when another board is read, so the tree always shows where the reader is.
+// this browser, except on the way to what the panes show. Every pane's board,
+// the folders and boards above it, and the Earlier row holding its variant
+// when that variant is historical or shelved, are open until the person closes
+// part of them, and open again when a pane moves, so the tree always shows
+// which board and variant each pane shows.
 
 import { useCallback, useMemo, useState } from "react";
 
 import { pathIds, type OutlineNode } from "@/ui/board-catalog";
 import { useOutlineExpansion } from "@/ui/shell/hooks/use-outline-expansion";
+import { readingRowIds } from "@/ui/shell/lib/variant-rows";
+import type { PaneMark } from "@/ui/shell/types/navigator-rows";
 import type { CatalogBoard } from "@/ui/types";
 
 const NO_IDS: ReadonlySet<string> = new Set();
 
-/** The collapses a person made on the path to the board being read, until it changes. */
+/** The collapses a person made on the way to what the panes show, until a pane moves. */
 interface PathCollapses {
-	readonly board: string | null;
+	/** What the panes showed when the collapses were made. */
+	readonly shown: string;
 	readonly ids: ReadonlySet<string>;
 }
 
@@ -34,14 +39,32 @@ interface NavigatorExpansion {
 }
 
 /**
+ * The rows on the way to what the panes show, and the board rows themselves:
+ * what a board drills down to is where a reader is most likely to go next.
+ * @param outline The outline.
+ * @param panes The panes.
+ * @returns The ids.
+ */
+function shownPathIds(
+	outline: readonly OutlineNode<CatalogBoard>[],
+	panes: readonly PaneMark[],
+): Set<string> {
+	return new Set(
+		panes.flatMap((pane) =>
+			pane.board === null ? [] : [...pathIds(outline, pane.board), ...readingRowIds(outline, pane)],
+		),
+	);
+}
+
+/**
  * The navigator's open rows.
  * @param outline The outline.
- * @param activeBoard The board being read, or null.
+ * @param panes The panes.
  * @returns The expansion.
  */
 function useNavigatorExpansion(
 	outline: readonly OutlineNode<CatalogBoard>[],
-	activeBoard: string | null,
+	panes: readonly PaneMark[],
 ): NavigatorExpansion {
 	const topBoards = useMemo(
 		() =>
@@ -54,35 +77,26 @@ function useNavigatorExpansion(
 	);
 	const openByDefault = useCallback((id: string): boolean => topBoards.has(id), [topBoards]);
 	const chosen = useOutlineExpansion(openByDefault);
-	// The board being read is open too: what it drills down to is where a
-	// reader is most likely to go next.
-	const activePath = useMemo(
-		() =>
-			new Set(
-				activeBoard === null
-					? []
-					: [...pathIds(outline, activeBoard), `board:${activeBoard.toLowerCase()}`],
-			),
-		[outline, activeBoard],
-	);
-	const [collapses, setCollapses] = useState<PathCollapses>({ board: activeBoard, ids: NO_IDS });
-	const closedOnPath = collapses.board === activeBoard ? collapses.ids : NO_IDS;
+	const shown = panes.map((pane) => pane.key ?? "").join("\n");
+	const path = useMemo(() => shownPathIds(outline, panes), [outline, panes]);
+	const [collapses, setCollapses] = useState<PathCollapses>({ shown, ids: NO_IDS });
+	const closedOnPath = collapses.shown === shown ? collapses.ids : NO_IDS;
 	const expanded = useCallback(
-		(id: string): boolean => (activePath.has(id) ? !closedOnPath.has(id) : chosen.expanded(id)),
-		[activePath, closedOnPath, chosen],
+		(id: string): boolean => (path.has(id) ? !closedOnPath.has(id) : chosen.expanded(id)),
+		[path, closedOnPath, chosen],
 	);
 	const setExpanded = useCallback(
 		(id: string, open: boolean): void => {
-			if (!activePath.has(id)) {
+			if (!path.has(id)) {
 				chosen.setExpanded(id, open);
 				return;
 			}
 			const ids = new Set(closedOnPath);
 			if (open) ids.delete(id);
 			else ids.add(id);
-			setCollapses({ board: activeBoard, ids });
+			setCollapses({ shown, ids });
 		},
-		[activePath, closedOnPath, activeBoard, chosen],
+		[path, closedOnPath, shown, chosen],
 	);
 	return useMemo(() => ({ expanded, setExpanded }), [expanded, setExpanded]);
 }
