@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-30 18:51'
-updated_date: '2026-09-30 19:29'
+updated_date: '2026-09-30 19:41'
 labels:
   - ui
 dependencies: []
@@ -46,4 +46,6 @@ No dogfood board is affected: Browser application draws the Shell and the Board 
 <!-- SECTION:NOTES:BEGIN -->
 Study: docs/design/navigator-structure.md (with assets/navigator-structure-before.png). It measures 13 defects of the old tree on the dogfood vault and a 260-board scratch vault, both themes at 1920x1080, and names the cause of each in the code at 17aa518e: variants placed from the board's name column instead of their depth (0 px step), nested drafts stepping 12 px against 14 px for boards, variants and child boards interleaved on two grids, adoption chains nesting the current variant five levels deep, folder names 22 px right of board names, a marker column that meant something different per kind, floating facts, two rows styled as selected (cobalt on the dark tone at 2.75:1), mixed row heights, a fixed 30 px error indent, pane B's variant hidden, four text edges in one column, and two disclosures per board. Research on VS Code, WAI-ARIA APG, Primer, Carbon, Fluent, Apple HIG, Notion, Figma and NN/g is cited in the study.
 Decisions: one 16 px step with four columns (disclosure, marker, name, facts) placed by depth alone; every row has a marker (folder, board, lifecycle, history); variants one depth in, before child boards, live first, a draft nested only under the draft it came from, historical and shelved behind one Earlier row; a board lists its variants while it has a proposal or a pane shows it; one disclosure per board; the way to every pane's reading is open; each pane letter on exactly one row; one selected row with the foreground name; the per-row level word is gone (hover, aria-label and the header keep it). No dogfood board is affected.
+
+Implemented on branch ui/navigator-indentation: 3a87a1e7 (study), d701e764 (redesign), 503c0745 (navigator section and image), a832991f (row disclosure and selection read from the row). The navigator's owners pass: navigator-tree.test.tsx (7, including every row at one depth sharing one indent and each pane letter on exactly one row), shell-layout and workspace-address in the browser lane. bun run check passed on a832991f: lint, fmt, type-check, modules 3734, system 189, repository 8, serial browser 15 owners. Every row kind measured after: disclosure 9/25/41/57/73, marker 24/40/56/72/88, name 46/62/78/94/110 at levels 1 to 5, facts ending at 307, in both themes. Before and after captures are in the job scratch directory (listed in the hand-back). Criteria left unchecked for review.
 <!-- SECTION:NOTES:END -->
