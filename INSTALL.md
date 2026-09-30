@@ -255,8 +255,9 @@ The command makes a recording in two passes:
    as the talk.
 2. The picture. A second private Chromium draws the video from the talk, one
    frame every 1/30 s, and `ffmpeg` encodes the frames with the voice. No voice
-   runs in this pass. It takes a while: on 2026-09-30, a talk of 85 s took
-   211 s to render, about 2.5 times the talk.
+   runs in this pass. Several Chromium pages draw it at once, as many as the
+   machine keeps busy: on 2026-09-30, a machine with 24 threads rendered a talk
+   of 85 s in 49 s.
 
 The command keeps the talk, a directory with `talk.json` and `voice.wav`, and
 the receipt's `talk` names it. By default the talk goes to `recordings/` in the

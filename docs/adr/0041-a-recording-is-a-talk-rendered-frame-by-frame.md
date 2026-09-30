@@ -191,7 +191,22 @@ Chromium 153).
 
 After each `frame(n)`, the CLI captures the frame with `Page.captureScreenshot`
 as a JPEG at quality 92 and writes it to ffmpeg. The next frame waits until
-ffmpeg has taken it. A JPEG is enough, because the picture is encoded again as
+ffmpeg has taken it. Chromium also runs with `--disable-frame-rate-limit` and
+`--disable-gpu-vsync`. Without them, a screenshot waits for the display's next
+frames: 79 ms a frame with the limit, 36 ms without it (TASK-382).
+
+A screenshot costs several times what drawing a frame costs, so a long talk
+is drawn by several pages at once, each in a Chromium of its own (TASK-382).
+Every page draws every frame, because a frame depends on the frames before it.
+Each page captures only its own seconds: page k takes seconds k, k + n,
+k + 2n and so on, for n pages. A frame that is drawn and not captured costs
+about 9 ms. `FrameOrder` in `lib/frame-order.ts` hands the frames to the one
+ffmpeg in order and holds a frame that arrives early. A page runs at most two
+rounds of seconds ahead of the encoder, which bounds what is held. The number
+of pages is a quarter of the machine's threads, at most six, and one page for
+every 300 frames of the talk. A frame is the same whichever page draws it: the
+split render of the talk below decodes to the same picture as the render on
+one page. A JPEG is enough, because the picture is encoded again as
 4:2:0 H.264. `RECORDING_FRAME_CALL_MS` bounds each call into the page. The file
 is renamed into place after ffmpeg exits with 0. A failure while it renders is
 `RENDER_FAILED` (exit 1). It writes no file and keeps the talk.
@@ -285,13 +300,12 @@ Remotion", the rule that the picture is never encoded outside the browser,
   that recording, each of the 4 steps first changed the picture on frame
   `ceil(at / 1600)`. The first words of two lines first changed the subtitles on
   frame `ceil(at / 1600)` too.
-- A recording takes longer. That whole recording took 303 s, including the
-  first fetch of ffmpeg through Nix. A render of its kept talk in the dark theme
-  took 211 s, about 83 ms a frame, or 2.5 times the talk. The draft deferred
-  parallel rendering until a render took more than about twice the talk. This
-  one did, so TASK-382 follows: a picture renders in no more time than its talk
-  took. The render is sequential for now, because a step does not begin at
-  rest. Subtitles linger across steps, and traffic runs on.
+- A render takes less time than its talk. On one page, a render of that talk
+  took 211 s, about 83 ms a frame, or 2.5 times the talk, which was more than
+  the draft's bound of about twice the talk. TASK-382 lifted the frame-rate
+  limit and split the render across pages. On a machine with 24 threads, six
+  pages rendered the same talk in 49 s, 0.57 times the talk, and the video
+  decodes to the same picture as the render on one page.
 - A recording needs ffmpeg or Nix. Without either, it is refused before it
   starts, and the refusal says how to get one. A first run through Nix without
   a network fails with the tail of Nix's error.

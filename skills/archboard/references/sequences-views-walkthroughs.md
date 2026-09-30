@@ -134,8 +134,8 @@ speak about a change that no beat names.
 - It works in two passes. First the talk: the voice explains each beat, and the
   command prints each beat as it is reached. Then the picture: the command draws
   the video from the talk frame by frame and prints its progress each second of
-  video. The picture takes about 2.5 times as long as the talk, so a talk of
-  two minutes takes about seven minutes in all.
+  video. On a machine with several cores the picture takes less time than the
+  talk, so a talk of two minutes takes about four minutes in all.
 - For a board made only for the video, create it with `semantic new`, look at
   it with `semantic rasterize`, then record with
   `--discard --doing "<why>"`, which deletes the board once the file is

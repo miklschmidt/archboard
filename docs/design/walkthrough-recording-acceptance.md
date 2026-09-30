@@ -28,8 +28,8 @@ The command prints these lines on stderr:
 1. If `PATH` has no `ffmpeg`, `Fetching ffmpeg through nix.` comes first.
 2. `Recording: voice is starting.`, then one line for each step.
 3. `Kept the talk in <dir>.`
-4. `Rendering frame <n> of <frames>.` for each second of video. Rendering
-   takes about 2.5 times the talk (TASK-382).
+4. `Rendered <n> of <frames> frames.` for each second of video. On a machine
+   with several cores, rendering takes less time than the talk (TASK-382).
 
 The receipt in `/tmp/archboard.json` gives the file, its size, its duration,
 the steps, the frames and the talk's directory.
@@ -108,7 +108,7 @@ On macOS the state directory is `~/Library/Application Support/archboard`.
 
 | #   | Observe                                                                                             |
 | --- | --------------------------------------------------------------------------------------------------- |
-| a   | The command prints `Rendering frame` lines, and no `Recording` line.                                |
+| a   | The command prints `Rendered` lines, and no `Recording` line.                                       |
 | b   | The two counts of session files are the same.                                                       |
 | c   | The receipt says `theme: "dark"` and the same `frames` and `durationMs` as the recording's receipt. |
 | d   | The video shows the same talk in the dark palette, with the same voice at the same moments.         |
