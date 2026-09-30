@@ -1,10 +1,12 @@
-// The browser entry: start drawing pictures in this page and mount the root.
+// The browser entry: start drawing pictures in this page and mount the root, or
+// the renderer of a recorded talk when the address asks for one.
 // The stylesheet is linked from index.html.
 
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { rendererBuild } from "virtual:archboard-renderer";
 
+import { replayAskedOf } from "@/shared/walkthrough-recording/talk";
 import { Application } from "@/ui/application";
 import { createBoardRoutingHost } from "@/ui/board-routing";
 import {
@@ -12,6 +14,7 @@ import {
 	createLocalPictureSource,
 	takePicturesFrom,
 } from "@/ui/semantic-board-canvas";
+import { startWalkthroughReplay } from "@/ui/walkthrough-replay";
 
 const root = document.getElementById("root");
 if (!root) {
@@ -61,12 +64,17 @@ takePicturesFrom(
 	}),
 );
 
-// The application is the one route, so the URL says which boards the panes
-// show and Back retraces the boards a person moved between.
-const Root = createBoardRoutingHost(Application);
-
-createRoot(root).render(
-	<StrictMode>
-		<Root />
-	</StrictMode>,
-);
+// A page opened to render a recorded talk shows that talk and nothing else
+// (TASK-381). Otherwise the application is the one route, so the URL says
+// which boards the panes show and Back retraces the boards a person moved
+// between.
+if (replayAskedOf(window.location.search)) {
+	startWalkthroughReplay(root);
+} else {
+	const Root = createBoardRoutingHost(Application);
+	createRoot(root).render(
+		<StrictMode>
+			<Root />
+		</StrictMode>,
+	);
+}
