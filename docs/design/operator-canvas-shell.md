@@ -78,24 +78,50 @@ state:
 
 ## The pane sidebar
 
-Revised 2026-09-17 (TASK-249). The generated reference above places selection
-details in a column on the right of the canvas. The pane sidebar supersedes
-that column. A semantic pane now has one sidebar on the left of its picture. The
-sidebar has the width of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two
-tabs:
+Revised 2026-09-17 (TASK-249) and 2026-09-30 (TASK-383). The generated
+reference above places selection details in a column on the right of the
+canvas. The pane sidebar supersedes that column. A semantic pane now has one
+sidebar on the left of its picture. The sidebar has the width of the old
+inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
 
-- **Board**: how the board on screen is read. The tab lists the views of the
-  board, the walkthroughs it offers, and its groups. Each group shows its
-  colour, and choosing a group selects every member. A level down, the tab lists
-  the states of that board. The tab also holds the legend for what is drawn.
-  Choosing a walkthrough presents it (see below). The pane's own board offers no
-  choice of state: the navigator lists every state of every board, so the person
-  makes one choice in one place. Views live here and not in a switcher on the
-  picture. Views live here and not in a switcher on the picture. This tab is the
-  one home for "how is this board being read". Also, a switcher over the picture
-  can cover what it switches.
+- **Board**: what the board on screen is, and how to read it. The tab is
+  ordered by the questions a reader asks, in the order they ask them.
+  [The study behind the order](pane-sidebar-hierarchy.md) derives it from the
+  use cases and from research on how people read diagrams. There are four
+  regions, and a rule separates one region from the next:
+  1. **What is this, and what does it change?** On a board reached by a
+     drill-down, its variants, each with its lifecycle, as the navigator lists
+     them. Then the summary of the variant on screen, with no heading: the
+     board's own statement of its scope. On a variant read against another,
+     the changes: which variant it is compared with, one row for each standing
+     that occurs with the pin the picture draws and how many subjects stand
+     so, and the control that marks the changes on the picture.
+  2. **How do I read it?** The walkthroughs, each with its number of steps and
+     Narrate beside it. Choosing one presents it (see below). Then the views,
+     with Everything first and the summary of the view on screen under its
+     name. Then the groups, each with its colour. Choosing a group selects
+     every member.
+  3. **What do the marks mean?** The legend of what the picture draws: its node
+     kinds, its relationship kinds, and what a heavier line and a streak mean.
+  4. **The layout engine**, a preference of this browser, in one row at the
+     foot.
+
+  A section with nothing to show is absent. The pane's own board offers no
+  choice of variant: the navigator lists every variant of every board, so the
+  person makes one choice in one place. Views live here and not in a switcher
+  on the picture, because a switcher over the picture can cover what it
+  switches.
+
 - **Selection**: the inspector for whatever is picked out, with the control that
   lets go of the selection in the tab row.
+
+Both tabs share one frame. Text starts 16 px from either edge of the sidebar,
+and so do the tab labels. A section heading is 12 px semibold in the muted
+colour and in sentence case. The sidebar has no small uppercase labels. A
+choice is a row at least 28 px high whose fill reaches 8 px past the text, in
+the sidebar accent that the navigator marks its rows with. A long name wraps
+rather than being cut off. The spacing steps are 4, 8 and
+16 px.
 
 Picking something out opens the selection tab. Letting go gives back the tab
 that was open before. The sidebar keeps its width whichever tab is open, so a
@@ -122,11 +148,14 @@ keeps its column names in view. The cards slide down their lifelines to the
 top of the picture while a step glides and while a reader pans, and they hide
 the rows that they pass over. They never go below the flow's last row.
 
-![The pane sidebar, board tab and selection tab](assets/semantic-pane-sidebar.png)
+![The pane sidebar: the board tab in both themes, and the selection
+tab](assets/semantic-pane-sidebar.png)
 
-The image is a rendered capture of the dogfood vault at 1920×1080, not a
-generated mockup: the board tab in the light theme on the left, the selection
-tab in the dark theme on the right.
+The image holds rendered captures of the dogfood vault at 1920×1080, not
+generated mockups, cut to the pane. From the left: the board tab on the
+current variant of `Archboard server` in the light theme, the board tab on its
+historical variant `Current architecture` in the dark theme, and the selection
+tab in the light theme.
 
 ## The navigator
 

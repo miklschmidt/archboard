@@ -257,18 +257,23 @@ Spacing uses a 4 px scale: 4, 8 and 16 px.
 
 - The text column starts 16 px from the sidebar's left edge and ends 16 px
   from its right edge. Headings, the summary, the text of every row, every
-  glyph and the engine's select start on that line. So does the text of the
+  sample and the engine's label start on that line. So does the text of the
   tab labels, which today starts at 8 px.
 - A row's hover and pressed fill reaches 8 px past the text column on either
-  side, so the text does not move when the fill appears.
+  side, so the text does not move when the fill appears. The fill is the
+  sidebar accent that the navigator marks its rows with. The secondary fill
+  it replaces differs from the light sidebar by less than 1 % in lightness, so
+  in the light theme the view on screen was hard to see.
 - A region has 16 px above and below its content. Sections in one region are
   16 px apart. A heading is 4 px above its first row.
-- A row of choices is at least 28 px high. A long name wraps rather than being
-  cut off.
-- After a glyph, a label starts 8 px later: 36 px after the 12 px glyphs of
-  the walkthroughs, groups and changes, 52 px after the 28 px samples of the
-  legend. Every row of one list has the same glyph width, so a list has one
-  label line.
+- A row of choices, and a row of the legend, is at least 28 px high. A row
+  of the change key is 24 px high. A long name wraps rather than being cut
+  off.
+- A mark before a label sits in a slot of fixed width, and the label starts
+  8 px after the slot. The 12 px marks of the walkthroughs, the groups and the
+  changes, and the change control's 16 px box, have a 16 px slot, so their
+  labels start at 40 px. The samples of the legend have a 28 px slot, so its
+  labels start at 52 px. So the tab has three text lines: 16, 40 and 52 px.
 
 ### States the tab must handle
 
@@ -283,6 +288,7 @@ Spacing uses a 4 px scale: 4, 8 and 16 px.
 | Many groups or kinds                            | The list grows. The tab scrolls under its fixed tab row.                                                                                                   |
 | A long name or summary                          | It wraps. Nothing is cut off.                                                                                                                              |
 | A data-flow view                                | The legend keys the participants' kinds. Messages carry no kind today, so the relationship rows and the two line samples are absent.                       |
+| A board nobody has built                        | The tab speaks for the draft that the board's bare name opens, as the picture does. Before TASK-383 it read no variant there and showed nothing of it.     |
 
 ## Sources
 
