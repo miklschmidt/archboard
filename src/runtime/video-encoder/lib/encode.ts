@@ -75,10 +75,13 @@ const MIME_TYPES: Readonly<Record<RecordingContainer, string>> = {
 
 /**
  * Chrome's JPEGs are full-range BT.601. The picture is converted to limited-range BT.709 here,
- * rather than only tagged, so a player that trusts the tags shows what the page drew.
+ * rather than only tagged, so a player that trusts the tags shows what the page drew. The frames
+ * are then tagged BT.709 as well: ffmpeg 9 takes the stream's primaries and transfer from its
+ * frames, which the conversion leaves unset, over the encoder's options (measured 2026-09-30).
  */
 const PICTURE_FILTER =
-	"scale=in_range=pc:out_range=tv:in_color_matrix=bt601:out_color_matrix=bt709,format=yuv420p";
+	"scale=in_range=pc:out_range=tv:in_color_matrix=bt601:out_color_matrix=bt709,format=yuv420p," +
+	"setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709:range=tv";
 
 /** The picture and sound codecs of each container. */
 const CODECS: Readonly<
