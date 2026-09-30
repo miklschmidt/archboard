@@ -1,0 +1,38 @@
+// A talk's board and policy, read the way a pane reads them from the server.
+//
+// The picture is rendered from the board the voice spoke over, whatever the
+// board says now or whether it still exists. So the pane reads the talk's
+// snapshot, and a read of any other board is a failure of the rendering rather
+// than a quiet trip to the server.
+
+import type { Talk } from "@/shared/walkthrough-recording/talk";
+import { sameBoardName, type BoardReads } from "@/ui/semantic-board-canvas";
+
+/**
+ * Board reads answered from a talk.
+ * @param talk The talk.
+ * @param foreign Told of a read of another board, which the talk cannot answer.
+ * @returns The reads.
+ */
+function talkReads(talk: Talk, foreign: (board: string) => void): BoardReads {
+	return {
+		/**
+		 * The talk's board, and no other.
+		 * @param board The board asked for.
+		 * @returns The talk's document.
+		 * @throws {Error} When another board is asked for.
+		 */
+		document: async (board) => {
+			if (sameBoardName(board, talk.board.name)) return talk.document;
+			foreign(board);
+			throw new Error(`The talk is of ${talk.board.name}; ${board} was read while rendering it.`);
+		},
+		/**
+		 * The policy the talk's board was drawn under.
+		 * @returns The vault check the talk kept.
+		 */
+		vaultCheck: async () => talk.policy,
+	};
+}
+
+export { talkReads };

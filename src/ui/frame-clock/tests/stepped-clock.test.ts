@@ -4,7 +4,7 @@
 // taken back; a frame that runs twice or with another time than the clock's; an
 // animation or a picture's traffic that is not standing where the clock says,
 // or a finished one not finished exactly once; and a frame asked of the browser
-// that runs behind the clock instead of being refused.
+// that runs behind the clock instead of on it.
 
 import { describe, expect, test } from "bun:test";
 
@@ -227,8 +227,8 @@ describe("a stepped clock", () => {
 		expect(again.time).toBe(2.5);
 	});
 
-	test("refuses a frame asked of the browser, and still waits for the browser to draw", async () => {
-		const clock = createSteppedClock(0);
+	test("runs a frame asked of the browser on the clock, and still waits for the browser to draw", async () => {
+		const clock = createSteppedClock(500);
 		const drawn: FrameRequestCallback[] = [];
 		const window = {
 			/**
@@ -237,17 +237,29 @@ describe("a stepped clock", () => {
 			 * @returns Its number.
 			 */
 			requestAnimationFrame: (callback: FrameRequestCallback): number => drawn.push(callback),
+			/**
+			 * Nothing to take back: the browser's frames are the clock's once it is installed.
+			 * @param _request The frame.
+			 * @returns Nothing.
+			 */
+			cancelAnimationFrame: (_request: number): void => undefined,
 		};
 		clock.install(window);
-		let behind = false;
-		window.requestAnimationFrame(() => {
-			behind = true;
+		const times: number[] = [];
+		window.requestAnimationFrame((time) => {
+			times.push(time);
 		});
-		expect(clock.violations()).toHaveLength(1);
+		window.cancelAnimationFrame(
+			window.requestAnimationFrame(() => {
+				times.push(-1);
+			}),
+		);
+		expect(drawn).toHaveLength(0);
+		clock.runFrame();
+		expect(times).toEqual([500]);
 		const painted = clock.paint();
 		expect(drawn).toHaveLength(1);
 		drawn[0]!(0);
 		await painted;
-		expect(behind).toBe(false);
 	});
 });

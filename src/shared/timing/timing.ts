@@ -477,6 +477,10 @@ export {
 	RECORDING_VOICE_START_MS,
 } from "@/shared/timing/lib/walkthrough-recording";
 export {
+	RECORDING_FRAME_READY_MS,
+	RECORDING_REPLAY_PREROLL_MS,
+} from "@/shared/timing/lib/walkthrough-replay";
+export {
 	ACTIVITY_LINGER_MS,
 	CLAIM_DEFAULT_MS,
 	CLAIM_LEASE_MS,

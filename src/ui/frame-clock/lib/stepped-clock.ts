@@ -6,9 +6,10 @@
 // says it is. A picture's traffic runs on each picture's own SVG clock, which
 // is paused and set too, carried from where it was last stood.
 //
-// Whatever still moves on the browser's clocks is a picture the renderer cannot
-// reproduce, so the clock records it as a violation instead of letting it pass:
-// a frame asked of the browser directly, or an animation on another timeline.
+// A frame anything on the page asks of the browser, a library's included, is
+// run by this clock instead, at this clock's time. An animation on a timeline
+// it cannot stand is a picture the renderer cannot reproduce, so the clock
+// records it as a violation instead of letting it pass.
 
 import {
 	syncAnimation,
@@ -45,7 +46,7 @@ interface AnimatedDocument {
 }
 
 /** A window, as far as the clock takes its frames away. */
-type FramedWindow = Pick<Window, "requestAnimationFrame">;
+type FramedWindow = Pick<Window, "requestAnimationFrame" | "cancelAnimationFrame">;
 
 /** A timer waiting to fall due. */
 interface Timer {
@@ -207,13 +208,14 @@ class SteppedClock implements FrameClock {
 	}
 
 	/**
-	 * Take the browser's own frames away from a window, so asking for one is a
-	 * violation rather than a frame that runs behind the clock.
+	 * Take the browser's own frames over for a window: a frame asked of the
+	 * browser there is run by this clock instead, at this clock's time.
 	 * @param window The window.
 	 */
 	install(window: FramedWindow): void {
 		this.#browserFrame = window.requestAnimationFrame.bind(window);
-		window.requestAnimationFrame = this.#refuseFrame.bind(this);
+		window.requestAnimationFrame = this.requestFrame.bind(this);
+		window.cancelAnimationFrame = this.cancelFrame.bind(this);
 	}
 
 	/**
@@ -227,17 +229,6 @@ class SteppedClock implements FrameClock {
 				resolve();
 			});
 		});
-	}
-
-	/**
-	 * Stand in for the browser's own frames: nothing is scheduled, and the ask is a violation.
-	 * @returns No request.
-	 */
-	#refuseFrame(): number {
-		this.#notice(
-			`A frame was asked of the browser, not the frame clock.\n${new Error("frame").stack}`,
-		);
-		return 0;
 	}
 
 	/**
