@@ -293,13 +293,28 @@ async function screenshot(window: HeadlessWindow, index: number): Promise<Uint8A
 }
 
 /**
- * Draw every frame of the talk in order, and hand on the ones in this page's seconds.
+ * Where a page's drawing ends: after the last frame of its last second of the talk. A page with
+ * no second of its own draws nothing.
+ * @param share Which page this is, and what it shares with the others.
+ * @returns The frame after its last.
+ */
+function endOf(share: Pick<PageShare, "page" | "pages" | "frames">): number {
+	const { page, pages, frames } = share;
+	const chunks = Math.ceil(frames / CHUNK_FRAMES);
+	const last = chunks - 1 - ((chunks - 1 - page + pages) % pages);
+	return last < 0 ? 0 : Math.min(frames, (last + 1) * CHUNK_FRAMES);
+}
+
+/**
+ * Draw the frames of the talk in order up to this page's last second, and hand on the ones in
+ * this page's seconds.
  * @param window The window.
  * @param share Which page this is, and what it shares with the others.
  */
 async function drawFrames(window: HeadlessWindow, share: PageShare): Promise<void> {
-	const { page, pages, frames, order, signal } = share;
-	for (let index = 0; index < frames; index++) {
+	const { page, pages, order, signal } = share;
+	const end = endOf(share);
+	for (let index = 0; index < end; index++) {
 		signal.throwIfAborted();
 		const mine = Math.floor(index / CHUNK_FRAMES) % pages === page;
 		// oxlint-disable-next-line no-await-in-loop -- a page runs only so far ahead of the encoder
@@ -309,7 +324,7 @@ async function drawFrames(window: HeadlessWindow, share: PageShare): Promise<voi
 		if (!mine) continue;
 		// oxlint-disable-next-line no-await-in-loop -- the page holds still only until the next frame is asked for
 		const jpeg = await screenshot(window, index);
-		// oxlint-disable-next-line no-await-in-loop -- a slow encoder slows the render instead of filling memory
+		// oxlint-disable-next-line no-await-in-loop -- the page goes on once its frame and those it freed are with ffmpeg
 		await order.put(index, jpeg);
 		share.handed(order.handed());
 	}
@@ -399,7 +414,8 @@ async function drawOnPages(
 	 * @param count How many frames have reached the encoder.
 	 */
 	const handed = (count: number): void => {
-		if (count - said < PROGRESS_EVERY_FRAMES && count !== frames) return;
+		// Two pages can both see the last frame handed on; it is said once.
+		if (count === said || (count - said < PROGRESS_EVERY_FRAMES && count !== frames)) return;
 		said = count;
 		request.say(`Rendered ${count} of ${frames} frames.`);
 	};
@@ -504,4 +520,4 @@ async function renderTalk(request: RenderTalkRequest): Promise<RenderedTalk> {
 	}
 }
 
-export { pagesFor, renderFlags, renderTalk, type RenderTalkRequest, type RenderedTalk };
+export { renderFlags, renderTalk, type RenderTalkRequest, type RenderedTalk };
