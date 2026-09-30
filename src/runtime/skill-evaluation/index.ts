@@ -150,7 +150,14 @@ export type {
 	InspectionAttempt,
 	Reading,
 	RenderAttempt,
+	VideoAttempt,
 } from "@/runtime/skill-evaluation/lib/reading";
+export {
+	inspectVideo,
+	talkOfFixture,
+	videoRequests,
+	type VideoRequest,
+} from "@/runtime/skill-evaluation/lib/replay";
 export {
 	buildBatchReport,
 	readManifests,
@@ -226,23 +233,25 @@ export {
 	type CaptureRequest,
 	type EveryViewCapture,
 	CoverageSchema,
-	FixtureSchema,
-	FixtureStepSchema,
-	RawFixtureStepSchema,
 	PinsSchema,
 	ScenarioSchema,
 	SuiteSchema,
 	loadSuite,
 	suiteProblems,
 	type Coverage,
-	type Fixture,
-	type FixtureStep,
 	type LoadedSuite,
 	type Pins,
-	type RawFixtureStep,
 	type Scenario,
 	type Suite,
 } from "@/runtime/skill-evaluation/lib/suite";
+export {
+	FixtureSchema,
+	FixtureStepSchema,
+	RawFixtureStepSchema,
+	type Fixture,
+	type FixtureStep,
+	type RawFixtureStep,
+} from "@/runtime/skill-evaluation/lib/fixture";
 export {
 	resolvePlaceholders,
 	stepCommand,

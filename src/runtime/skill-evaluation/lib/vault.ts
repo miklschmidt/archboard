@@ -1,6 +1,7 @@
 // The run's vault as the harness lays it and reads it: the configuration the
 // fixture asks for, the fixture's boards written through the CLI so every id
-// is one the product minted, and the reads the checks are made from.
+// is one the product minted, the talk a recording kept of one of them, and the
+// reads the checks are made from.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -13,20 +14,24 @@ import {
 import {
 	DEFAULT_SEMANTIC_POLICY,
 	SemanticPolicySchema,
+	VaultCheckSchema,
 	VaultDiagnosticSchema,
 	type SemanticPolicy,
 	type VaultDiagnostic,
 } from "@/shared/semantic-policy/index";
+import { askedTalkPlace, writeTalk } from "@/runtime/walkthrough-recorder";
 import { archboard, archboardOk, type CliContext } from "@/runtime/skill-evaluation/lib/archboard";
 import type { InspectionRequest, RenderRequest } from "@/runtime/skill-evaluation/lib/outcomes";
 import { sequentially } from "@/runtime/skill-evaluation/lib/process";
 import type { InspectionAttempt, RenderAttempt } from "@/runtime/skill-evaluation/lib/reading";
+import { inHome, talkOfFixture } from "@/runtime/skill-evaluation/lib/replay";
 import {
 	FixtureStepSchema,
 	type Fixture,
 	type FixtureStep,
 	type RawFixtureStep,
-} from "@/runtime/skill-evaluation/lib/suite";
+	type TalkFixture,
+} from "@/runtime/skill-evaluation/lib/fixture";
 
 const FIXTURE_DOING = "laying the evaluation fixture";
 const PLACEHOLDER = /^\$node\((.+)\)$/u;
@@ -424,22 +429,42 @@ async function layStep(cli: CliContext, step: RawFixtureStep, repo: string | nul
 }
 
 /**
+ * Keeps the talk a fixture asks for where a recording's `--talk` would have: of the board and
+ * vault check the CLI serves, as `semantic record` reads them from the server, written by the
+ * recorder's own writer.
+ * @param cli How to reach the CLI.
+ * @param talk The talk.
+ * @param home The run's home, where the talk's directory is.
+ */
+async function layTalk(cli: CliContext, talk: TalkFixture, home: string): Promise<void> {
+	const board = await readBoard(cli, talk.board);
+	const policy = VaultCheckSchema.parse(await archboardOk(cli, ["check"]));
+	writeTalk({
+		...talkOfFixture(talk, board, policy),
+		place: askedTalkPlace(inHome(home, talk.directory)),
+	});
+}
+
+/**
  * Lays one fixture: the registered checkout, then each step in order, each
- * against the version the previous one left.
+ * against the version the previous one left, then the talk it keeps.
  * @param cli How to reach the CLI.
  * @param fixture The fixture.
  * @param flask The checkout to register.
+ * @param home The run's home.
  * @returns The registered identity, or null when the fixture registers none.
  */
 async function layFixture(
 	cli: CliContext,
 	fixture: Fixture,
 	flask: string,
+	home: string,
 ): Promise<string | null> {
 	const repo = fixture.registerRepo
 		? RegisteredSchema.parse(await archboardOk(cli, ["repo", "add", flask])).repo
 		: null;
 	await sequentially(fixture.steps, (step) => layStep(cli, step, repo));
+	if (fixture.talk !== undefined) await layTalk(cli, fixture.talk, home);
 	return repo;
 }
 

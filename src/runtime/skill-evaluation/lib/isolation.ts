@@ -187,8 +187,15 @@ function fillCodexHome(
 }
 
 /**
+ * The variables that name a tool of this machine to archboard (the Chromium it draws with, the
+ * ffmpeg it encodes a video with), which a run keeps so it finds the tool as the operator does.
+ */
+const FORWARDED_TOOLS = ["ARCHBOARD_RENDERER_CHROMIUM", "ARCHBOARD_FFMPEG"] as const;
+
+/**
  * The environment every process of a run gets: the archboard variables the
- * setup block names, the private homes, and PATH with the run's bin first.
+ * setup block names, the private homes, PATH with the run's bin first, and the
+ * tools the operator named.
  * @param paths The run.
  * @param serverUrl The run's own server.
  * @returns The environment.
@@ -207,9 +214,12 @@ function runEnvironment(paths: RunPaths, serverUrl: string): Record<string, stri
 		ARCHBOARD_NO_AUTOSTART: "1",
 		LOG_FILE_PATH: paths.cliLog,
 		LOG_LEVEL: "error",
-		...(process.env["ARCHBOARD_RENDERER_CHROMIUM"] === undefined
-			? {}
-			: { ARCHBOARD_RENDERER_CHROMIUM: process.env["ARCHBOARD_RENDERER_CHROMIUM"] }),
+		...Object.fromEntries(
+			FORWARDED_TOOLS.flatMap((name) => {
+				const value = process.env[name];
+				return value === undefined ? [] : [[name, value]];
+			}),
+		),
 	};
 }
 

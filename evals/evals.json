@@ -1421,6 +1421,65 @@
 					"views": "every"
 				}
 			]
+		},
+		{
+			"id": "S15",
+			"name": "render a pull request's recording again in the dark theme",
+			"report": "primary",
+			"workflow": "record",
+			"flask": "2.2.0",
+			"fixture": "fixtures/S15.json",
+			"sources": ["src/flask/json/provider.py", "src/flask/json/__init__.py"],
+			"prompt": "Last week I recorded the walkthrough of pull request 4812, the JSON provider change, for its reviewers, and kept its talk in `~/recordings/pr-4812-talk`. One reviewer reads everything in the dark theme: make them a dark copy of that video as `~/recordings/pr-4812-dark.webm`.",
+			"expectedFeatures": [
+				{
+					"feature": "replay.kept-talk",
+					"requirement": "the video is rendered from the kept talk with `semantic replay` naming its directory; nothing is recorded again (no `semantic record`, which would need a new voice session) and no board is written or made",
+					"skill": [
+						"references/sequences-views-walkthroughs.md#rendering-a-talk-again",
+						"SKILL.md#when-to-read-more"
+					]
+				},
+				{
+					"feature": "replay.options",
+					"requirement": "that one replay asks for the dark theme and writes the asked WebM path itself, the container chosen by the file's extension; no second encoder or conversion touches the file",
+					"skill": [
+						"references/sequences-views-walkthroughs.md#rendering-a-talk-again",
+						"references/sequences-views-walkthroughs.md#recording-a-walkthrough"
+					]
+				},
+				{
+					"feature": "replay.receipt",
+					"requirement": "the answer reports what the receipt says: the file written, its theme, and frames and duration that are the recording's (the kept talk's length); it claims nothing the receipt does not",
+					"skill": ["references/sequences-views-walkthroughs.md#rendering-a-talk-again"]
+				}
+			],
+			"outcomes": [
+				{
+					"check": "video-rendered",
+					"file": "~/recordings/pr-4812-dark.webm",
+					"talk": "~/recordings/pr-4812-talk",
+					"theme": "dark"
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": [
+				"ids-stable",
+				"config-untouched",
+				"adopt-only-when-asked",
+				"doing-on-writes",
+				"no-writes"
+			],
+			"guidance": ["references/sequences-views-walkthroughs.md"],
+			"captures": [
+				{
+					"label": "pull-request",
+					"board": "pr-4812",
+					"variant": "Pull request 4812"
+				}
+			]
 		}
 	]
 }

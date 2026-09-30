@@ -231,6 +231,7 @@ const READING: Reading = {
 			detail: "inspected",
 		},
 	],
+	videos: [],
 };
 
 /**

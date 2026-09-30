@@ -9,7 +9,7 @@ import type {
 	SemanticNodeInput,
 	VariantEditInput,
 } from "@/shared/semantic-board/index";
-import type { Fixture, RawFixtureStep } from "@/runtime/skill-evaluation/lib/suite";
+import type { Fixture, RawFixtureStep } from "@/runtime/skill-evaluation/lib/fixture";
 
 /**
  * The one relationship kind that may end on a part with children.

@@ -59,8 +59,10 @@ import {
 	type ProcessResult,
 } from "@/runtime/skill-evaluation/lib/process";
 import type { Reading } from "@/runtime/skill-evaluation/lib/reading";
+import { inspectVideo, videoRequests } from "@/runtime/skill-evaluation/lib/replay";
 import { writeRunManifest } from "@/runtime/skill-evaluation/lib/run-manifest";
-import type { Fixture, Pins, Scenario } from "@/runtime/skill-evaluation/lib/suite";
+import type { Fixture } from "@/runtime/skill-evaluation/lib/fixture";
+import type { Pins, Scenario } from "@/runtime/skill-evaluation/lib/suite";
 import {
 	inspectGroup,
 	layFixture,
@@ -236,12 +238,14 @@ function statusOf(result: ProcessResult, failure: string | null): RunStatus {
  * @param world The world.
  * @param scenario The scenario.
  * @param snapshot The boards before the author.
+ * @param commands What the author ran, whose output holds any receipt a check reads.
  * @returns The reading.
  */
 async function readAfter(
 	world: RunWorld,
 	scenario: Scenario,
 	snapshot: ReadonlyMap<string, SemanticBoard>,
+	commands: readonly ClassifiedCommand[],
 ): Promise<Reading> {
 	const boards = await readVault(world.cli);
 	const renders = await sequentially(renderRequests(scenario.outcomes), (request, index) =>
@@ -265,6 +269,13 @@ async function readAfter(
 		renders,
 		inspections,
 		captures,
+		videos: videoRequests(scenario.outcomes).map((request) =>
+			inspectVideo(
+				request,
+				world.paths.home,
+				commands.map((command) => command.output),
+			),
+		),
 	};
 }
 
@@ -296,7 +307,7 @@ async function executeRun(job: RunJob): Promise<CompletedRun> {
 			world.paths,
 			job.arm === "baseline" ? job.frozenSkill : job.candidateSkill,
 		);
-		await layFixture(world.cli, job.fixture, world.paths.flask);
+		await layFixture(world.cli, job.fixture, world.paths.flask, world.paths.home);
 		const snapshot = await readVault(world.cli);
 		writeBoards(snapshot, world.paths.snapshot);
 		const configBefore = readConfigurationText(world.paths.vault);
@@ -324,7 +335,7 @@ async function executeRun(job: RunJob): Promise<CompletedRun> {
 			guidanceFilesRead(trace.commands, { skillRoot: install.skillRoot }),
 			(file) => fs.existsSync(path.join(install.skillRoot, file)),
 		);
-		const reading = await readAfter(world, job.scenario, snapshot);
+		const reading = await readAfter(world, job.scenario, snapshot, commands);
 		writeBoards(reading.boards, world.paths.boards);
 		const completed = assemble(job, id, world, install, {
 			result,

@@ -10,6 +10,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { prepareSkillArtifacts } from "@/runtime/skill-distribution/index";
 import { SemanticBoardSchema, type SemanticBoard } from "@/shared/semantic-board/index";
+import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
 import { withFixtureOrders } from "./fixture-orders.ts";
 import {
 	adoptVariantTransition,
@@ -28,6 +29,7 @@ import {
 	ScenarioSchema,
 	stepCommand,
 	suiteProblems,
+	talkOfFixture,
 	type FixtureStep,
 	type RawFixtureStep,
 } from "@/runtime/skill-evaluation/index";
@@ -288,6 +290,21 @@ describe("fixtures", () => {
 			}
 			// Every board a step named is in the vault the fixture leaves behind.
 			expect(vault.size, id).toBe(new Set(fixture.steps.map((step) => step.board)).size);
+			// A kept talk presents a walkthrough of a board the steps left, and is one the
+			// recorder's own schema reads.
+			const { talk } = fixture;
+			if (talk === undefined) continue;
+			const board = vault.get(talk.board);
+			expect(board, `${id} talk`).toBeDefined();
+			expect(() =>
+				talkOfFixture(talk, board!, {
+					policy: DEFAULT_SEMANTIC_POLICY,
+					configurationValid: true,
+					configurationFile: "config.yaml",
+					fingerprint: "f",
+					diagnostics: [],
+				}),
+			).not.toThrow();
 		}
 	});
 

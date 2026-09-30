@@ -1,7 +1,8 @@
 // The deterministic outcome checks: what a scenario says must be true of the
 // vault after the author ran, decided from the saved boards, the vault
-// configuration, the checker's report and the renders and inspections the
-// harness ran on the checks' behalf. Every verdict carries what was found.
+// configuration, the checker's report, the renders and inspections the
+// harness ran on the checks' behalf, and the videos it looked for. Every
+// verdict carries what was found.
 
 import {
 	namedSubject,
@@ -10,6 +11,7 @@ import {
 } from "@/runtime/skill-evaluation/lib/naming";
 import { boardCheck } from "@/runtime/skill-evaluation/lib/outcomes-board";
 import { familyCheck } from "@/runtime/skill-evaluation/lib/outcomes-family";
+import { videoRendered } from "@/runtime/skill-evaluation/lib/replay";
 import {
 	finding,
 	type CheckVerdict,
@@ -219,6 +221,7 @@ const VAULT_OWNERS: Partial<
 	"check-clean": checkClean,
 	"inspect-group": inspectGroup,
 	"config-has": configHas,
+	"video-rendered": videoRendered,
 };
 
 /**

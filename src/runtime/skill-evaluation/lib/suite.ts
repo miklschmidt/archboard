@@ -6,13 +6,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
+import { DiagramThemeSchema, VariantLifecycleSchema } from "@/shared/semantic-board/index";
 import {
-	BoardCreateInputSchema,
-	ResolutionInputSchema,
-	VariantLifecycleSchema,
-	VariantEditInputSchema,
-} from "@/shared/semantic-board/index";
-import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
+	FixtureSchema,
+	HomePathSchema,
+	type Fixture,
+} from "@/runtime/skill-evaluation/lib/fixture";
 import { landingProblems } from "@/runtime/skill-evaluation/lib/landings";
 import { leakageProblems } from "@/runtime/skill-evaluation/lib/leakage";
 import {
@@ -29,6 +28,7 @@ const WORKFLOWS = [
 	"propose-compare",
 	"sequence-create",
 	"read",
+	"record",
 ] as const;
 const GUARDRAILS = [
 	"ids-stable",
@@ -78,6 +78,7 @@ const CHECK_KINDS = [
 	"view-exists",
 	"walkthrough-beat-references",
 	"walkthrough-beats-retained",
+	"video-rendered",
 ] as const;
 
 /** What a walkthrough beat can point at; outcomes-family.ts reads the same list. */
@@ -168,6 +169,12 @@ const OutcomeCheckSchema = z
 		relationshipKinds: PolicyRecord.optional(),
 		nodeKinds: PolicyRecord.optional(),
 		configuredGroups: PolicyRecord.optional(),
+		/** video-rendered: the video asked for; its extension names the container. */
+		file: HomePathSchema.optional(),
+		/** video-rendered: the kept talk it is rendered from. */
+		talk: HomePathSchema.optional(),
+		/** video-rendered: the palette asked for. */
+		theme: DiagramThemeSchema.optional(),
 	})
 	.strict();
 type OutcomeCheck = z.infer<typeof OutcomeCheckSchema>;
@@ -315,76 +322,6 @@ const GradersSchema = z
 	.object({ codex: CodexGraderSchema, claude: ClaudeGraderSchema })
 	.passthrough();
 type Graders = z.infer<typeof GradersSchema>;
-
-/** A fixture input before its placeholders are resolved: the shapes are the CLI's own. */
-const CreateStepSchema = z
-	.object({
-		op: z.literal("new"),
-		board: z.string().min(1),
-		input: BoardCreateInputSchema.omit({ name: true }),
-	})
-	.strict();
-const EditStepSchema = z
-	.object({ op: z.literal("edit"), board: z.string().min(1), input: VariantEditInputSchema })
-	.strict();
-const BranchStepSchema = z
-	.object({
-		op: z.literal("branch"),
-		board: z.string().min(1),
-		as: z.string().min(1),
-		from: z.string().optional(),
-		summary: z.string().optional(),
-	})
-	.strict();
-const ResolveStepSchema = z
-	.object({
-		op: z.literal("resolve"),
-		board: z.string().min(1),
-		variant: z.string().min(1),
-		input: ResolutionInputSchema.omit({ variant: true }),
-	})
-	.strict();
-const AdoptStepSchema = z
-	.object({
-		op: z.literal("adopt"),
-		board: z.string().min(1),
-		variant: z.string().min(1),
-		reason: z.string().optional(),
-	})
-	.strict();
-const FixtureStepSchema = z.discriminatedUnion("op", [
-	CreateStepSchema,
-	EditStepSchema,
-	BranchStepSchema,
-	ResolveStepSchema,
-	AdoptStepSchema,
-]);
-type FixtureStep = z.infer<typeof FixtureStepSchema>;
-
-/**
- * A step as the fixture file holds it: the same shape, with the JSON the CLI
- * reads left loose because it may still hold placeholders ($FLASK, $node(...))
- * that only resolve against the board once the earlier steps have run.
- */
-const LooseInputSchema = z.record(z.string(), z.unknown());
-const RawFixtureStepSchema = z.discriminatedUnion("op", [
-	CreateStepSchema.extend({ input: LooseInputSchema }),
-	EditStepSchema.extend({ input: LooseInputSchema }),
-	BranchStepSchema,
-	ResolveStepSchema.extend({ input: LooseInputSchema }),
-	AdoptStepSchema,
-]);
-type RawFixtureStep = z.infer<typeof RawFixtureStepSchema>;
-
-const FixtureSchema = z
-	.object({
-		$comment: z.string().optional(),
-		registerRepo: z.boolean(),
-		policy: SemanticPolicySchema.partial().optional(),
-		steps: z.array(RawFixtureStepSchema),
-	})
-	.strict();
-type Fixture = z.infer<typeof FixtureSchema>;
 
 const CoverageEntrySchema = z
 	.object({
@@ -574,10 +511,7 @@ export {
 	type CaptureRequest,
 	type EveryViewCapture,
 	CoverageSchema,
-	FixtureSchema,
-	FixtureStepSchema,
 	OutcomeCheckSchema,
-	RawFixtureStepSchema,
 	GRADER_NAMES,
 	GradersSchema,
 	PinsSchema,
@@ -586,14 +520,11 @@ export {
 	loadSuite,
 	suiteProblems,
 	type Coverage,
-	type Fixture,
-	type FixtureStep,
 	type GraderName,
 	type Graders,
 	type LoadedSuite,
 	type OutcomeCheck,
 	type Pins,
-	type RawFixtureStep,
 	type Scenario,
 	type Suite,
 };
