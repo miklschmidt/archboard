@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 23:28'
-updated_date: '2026-09-30 00:33'
+updated_date: '2026-09-30 00:46'
 labels:
   - voice
 dependencies: []
@@ -23,7 +23,7 @@ TASK-352 moved the rule to speak the user's language out of the prompt a recordi
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 Ten recordings in a row of English walkthroughs are all narrated in English
-- [ ] #2 The voice persona the user tunes keeps its wording, or any change to it is agreed with the user first
+- [x] #2 The voice persona the user tunes keeps its wording, or any change to it is agreed with the user first
 - [ ] #3 archboard semantic record takes an optional --language, English when it is not given, and the narration is in the language given
 <!-- AC:END -->
 
@@ -43,4 +43,11 @@ TASK-352 moved the rule to speak the user's language out of the prompt a recordi
 
 <!-- SECTION:NOTES:BEGIN -->
 User decision 2026-09-30: change the recording prompt's language rule, and give archboard semantic record an optional --language flag that defaults to English. The narration is in that language whatever language the steps are written in.
+
+Built (14239e8b): recordingPrompt(name, recording) names the language (Intl.DisplayNames English name of a BCP 47 tag) at the start of the recording section ('Recorded walkthrough, narrated in <L>. Speak only <L>, from your first word to your last.') and where a step is explained ('explain it at once in <L> ... A step written in another language is still explained in <L>: put what it says into <L>.'). VOICE_PERSONA is untouched (AC #2). The live narration prompt is unchanged and names no language.
+Value format: a BCP 47 tag, one shared RecordingLanguageSchema in src/shared/walkthrough-recording (refined with Intl.DisplayNames fallback none, which throws on a malformed tag and names nothing for an unknown one), default en. Path: semantic record --language (ingress default en, help default from the contract) -> recordWalkthrough -> page address ?language= -> recordingAskedOf -> WalkthroughRecorder -> setup.talk({ recording: { language } }) -> realtimeStart presentation.recording (RecordingNarrationSchema) -> narrationFor -> RealtimePresentation.recording: RecordingNarration | null -> prompt. Only a recording carries a language because it lives inside the recording object.
+Tests, each shown failing without the change: src/runtime/codex-realtime/tests/presentation-mode.test.ts 'a recording's voice prompt names the one language it is narrated in, and a narration's names none'; src/cli/commands/tests/semantic-record-language.test.ts (refusal before the handler, pass-through, declared default); tests/system/server-state/walkthrough-recording.test.ts now records with --language da and asserts the thread/realtime/start prompt names Danish.
+Gate: bun run check exit 0 under systemd-run MemoryMax=16G (modules 3699 pass, system 183 pass, repository 8 pass, every serial browser owner pass).
+Board rasterizer@TASK-380 adopted at version 14, dogfood check clean. The proposal was adopted now because the code landed on main; only real-voice verification remains.
+Remaining: AC #1 and AC #3 need real-voice recordings: ten English walkthroughs in a row with no --language, all narrated in English, and one with --language da narrated in Danish. Per the user's change of plan on 2026-09-30 these recordings run after the headless Chromium GPU rendering fix (TASK-378 follow-up). None were run.
 <!-- SECTION:NOTES:END -->
