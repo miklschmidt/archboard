@@ -4,6 +4,7 @@ title: A recording is narrated in its walkthrough's language on every run
 status: To Do
 assignee: []
 created_date: '2026-09-29 23:28'
+updated_date: '2026-09-30 00:29'
 labels:
   - voice
 dependencies: []
@@ -22,4 +23,11 @@ TASK-352 moved the rule to speak the user's language out of the prompt a recordi
 <!-- AC:BEGIN -->
 - [ ] #1 Ten recordings in a row of English walkthroughs are all narrated in English
 - [ ] #2 The voice persona the user tunes keeps its wording, or any change to it is agreed with the user first
+- [ ] #3 archboard semantic record takes an optional --language, English when it is not given, and the narration is in the language given
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+User decision 2026-09-30: change the recording prompt's language rule, and give archboard semantic record an optional --language flag that defaults to English. The narration is in that language whatever language the steps are written in.
+<!-- SECTION:NOTES:END -->
