@@ -242,8 +242,10 @@ The PNG has these properties:
 `archboard semantic record <board> --out <file.mp4>` presents one walkthrough
 in the same kind of private Chromium. The Codex voice of the server narrates it,
 and the command writes an MP4 or a WebM file. It is how an agent gives the reviewers of a pull
-request a narrated video of the change. `--discard --doing "<why>"` deletes the
-board after the file is written, for a board made only for the video.
+request a narrated video of the change. The voice speaks English, or the
+language that `--language` names as a BCP 47 tag (`da`, `fr`, `pt-BR`),
+whatever language the steps are written in. `--discard --doing "<why>"` deletes
+the board after the file is written, for a board made only for the video.
 
 A recording needs these things:
 

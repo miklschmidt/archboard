@@ -24,6 +24,7 @@ import {
 	RECORDING_CALL_MS,
 } from "@/shared/timing/timing";
 import {
+	RECORDING_LANGUAGE_SEARCH_PARAM,
 	RECORDING_SEARCH_PARAM,
 	type RecordingContainer,
 	type RecordingState,
@@ -81,6 +82,8 @@ interface WalkthroughRecordingRequest {
 	readonly boardKey: string;
 	/** The walkthrough, by id. */
 	readonly walkthrough: string;
+	/** The language the voice narrates it in, as a BCP 47 tag. */
+	readonly language: string;
 	readonly container: RecordingContainer;
 	/** Which palette the page draws in. */
 	readonly theme: DiagramTheme;
@@ -119,6 +122,7 @@ function pageUrl(request: WalkthroughRecordingRequest): string {
 	const url = new URL("/", request.serverUrl);
 	url.searchParams.set("paneA", request.boardKey);
 	url.searchParams.set(RECORDING_SEARCH_PARAM, request.walkthrough);
+	url.searchParams.set(RECORDING_LANGUAGE_SEARCH_PARAM, request.language);
 	return url.toString();
 }
 

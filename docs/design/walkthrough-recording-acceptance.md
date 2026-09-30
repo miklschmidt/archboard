@@ -30,7 +30,7 @@ with sound in Chromium, Firefox, mpv and VLC.
 | --- | ------------------------------------------------------------------------------------------------------------------------------ |
 | a   | The video is 1920x1080 and shows only the board: no navigator, header, agent bar, sidebar or caption controls.                 |
 | b   | It opens on the whole board, then glides into step 1 while the voice begins explaining it.                                     |
-| c   | The voice explains each step in its own words, with names and no ids, and never says a step's number.                          |
+| c   | The voice explains each step in English, in its own words, with names and no ids, and never says a step's number.              |
 | d   | After each explanation there is a short pause, then the next step glides in. No step starts while the voice is still speaking. |
 | e   | The voice never asks a question, invites questions, or says it is waiting.                                                     |
 | f   | After the last step the voice closes in one sentence, and the video ends a moment later on the last step.                      |
@@ -42,7 +42,23 @@ Frames are 33 ms apart, whether or not anything moves. The one exception is a
 glide that changes views: headless Chromium draws some of its frames too slowly
 for that, and holds a frame for 50 to 75 ms (TASK-378).
 
-## 3. Discard a board made for the video
+## 3. Record in another language
+
+Record the same walkthrough again with `--language da`:
+
+```bash
+./bin/dogfood semantic record Archboard --walkthrough "Read this board" --language da --out /tmp/archboard-da.mp4
+```
+
+The voice speaks only Danish from its first word to its last, although the
+steps are written in English. A tag that names no language, such as
+`--language english`, is refused before a browser starts. The language the
+voice spoke is also in the Codex rollout of the recording: the newest
+`sessions/<y>/<m>/<d>/*.jsonl` file under the `codex-home` of the state
+directory holds each thing the voice said as a `realtime_item` of type
+`transcript_segment`, role `assistant` (TASK-380).
+
+## 4. Discard a board made for the video
 
 ```bash
 ./bin/dogfood semantic new recording-check --input <a board with one walkthrough>.json --doing "checking a recording"
@@ -54,7 +70,7 @@ Recording writes nothing to the vault. Only `--discard` removes the board it
 recorded, and only after the file is written. `git status .archboard/vault` is
 clean again once the board is discarded.
 
-## 4. Record a pull request for its reviewers
+## 5. Record a pull request for its reviewers
 
 Follow the archboard skill's
 [pull request's recording](../../skills/archboard/references/sequences-views-walkthroughs.md#a-pull-requests-recording)

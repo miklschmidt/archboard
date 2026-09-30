@@ -102,14 +102,15 @@ const listeners = new Set<NarrationListener>();
  * browser names a walkthrough and the server says what it says.
  * @param clientId The client id of the pane the start came from.
  * @param walkthroughId The walkthrough the user chose.
- * @param recording Whether the talk is recorded rather than listened to live.
- * @returns The walkthrough, what to call it and whether it is recorded.
+ * @param recording For a talk recorded rather than listened to live, the language it is narrated
+ *   in; null otherwise.
+ * @returns The walkthrough, what to call it and, for a recording, its language.
  * @throws {Error} When the pane is not showing a board that states that walkthrough.
  */
 function narrationFor(
 	clientId: string,
 	walkthroughId: string,
-	recording: boolean,
+	recording: RealtimePresentation["recording"],
 ): RealtimePresentation {
 	const walkthrough = walkthroughOnPane(clientId, walkthroughId)?.walkthrough;
 	if (walkthrough === undefined) {

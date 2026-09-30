@@ -187,7 +187,8 @@ function workhorseReadyFor(workhorse: WorkhorseSnapshot, threadId: ThreadId): bo
  * exact where the shell's "A" is not (TASK-294). A start that presents a walkthrough is told what
  * it says by the server, from the board that pane is showing (TASK-251).
  * @param pending The session being started.
- * @param presentation The walkthrough the start presents and whether it is recorded, or undefined.
+ * @param presentation The walkthrough the start presents and, for a recording, its language, or
+ *   undefined.
  * @returns The walkthrough to present, or null for an ordinary session.
  */
 function narrationOfStart(
@@ -197,7 +198,7 @@ function narrationOfStart(
 	if (presentation === undefined) {
 		return null;
 	}
-	return narrationFor(pending.browserId, presentation.walkthrough, presentation.recording === true);
+	return narrationFor(pending.browserId, presentation.walkthrough, presentation.recording ?? null);
 }
 
 /**
@@ -212,7 +213,8 @@ function openFirstStep(
 	clientId: string,
 	trace: SessionVoiceStartTrace,
 ): void {
-	if (presentation === null || presentation.recording) {
+	// Null for no narration, a language for a recording: either way nothing is opened.
+	if (presentation?.recording !== null) {
 		return;
 	}
 	openNarration(clientId).catch((error: unknown) => {
@@ -418,7 +420,7 @@ export function createServerRealtimeActions(
 				trace.begin(context.paneId);
 				trace.note("requested", {
 					narration: command.presentation !== undefined,
-					recording: command.presentation?.recording === true,
+					recording: command.presentation?.recording !== undefined,
 					offerSdpBytes: Buffer.byteLength(command.sdp),
 					replacesSession: activeRealtime !== null,
 				});

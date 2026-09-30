@@ -67,7 +67,8 @@ const REALTIME_END_INSTRUCTIONS =
  */
 function voicePrompt(presentation: RealtimePresentation | null): string {
 	if (presentation === null) return ARCHBOARD_VOICE_PROMPT;
-	const base = presentation.recording ? ARCHBOARD_RECORDING_VOICE_PROMPT : ARCHBOARD_VOICE_PROMPT;
+	const base =
+		presentation.recording === null ? ARCHBOARD_VOICE_PROMPT : ARCHBOARD_RECORDING_VOICE_PROMPT;
 	return `${base}\n\n${voicePresentationPrompt(presentation)}`;
 }
 
@@ -108,20 +109,20 @@ export function createRealtimeStartParams(input: {
 	// "one moment" filler would be the only thing it could say that nobody asked for. Its
 	// coordinator is told to say nothing, because a turn it ran anyway would be heard in the video.
 	const presentation = input.presentation ?? null;
+	const recording = presentation !== null && presentation.recording !== null;
 	return {
 		threadId: input.threadId,
 		clientManagedHandoffs: false,
-		delegationAckFiller: presentation?.recording !== true,
+		delegationAckFiller: !recording,
 		flushTranscriptTailOnSessionEnd: true,
 		codexResponsesAsItems: false,
 		codexResponseHandoffMode: "bemTags",
 		outputModality: "audio",
 		includeStartupContext: false,
 		initialItems: [],
-		realtimeStartInstructions:
-			presentation?.recording === true
-				? RECORDING_COORDINATOR_INSTRUCTIONS
-				: COORDINATOR_CHANNEL_INSTRUCTIONS,
+		realtimeStartInstructions: recording
+			? RECORDING_COORDINATOR_INSTRUCTIONS
+			: COORDINATOR_CHANNEL_INSTRUCTIONS,
 		realtimeEndInstructions: REALTIME_END_INSTRUCTIONS,
 		prompt: voicePrompt(presentation),
 		realtimeSessionId: input.realtimeSessionId,

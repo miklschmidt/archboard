@@ -44,9 +44,17 @@ function settle(): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-/** A walkthrough as a start carries it. */
-function walkthrough(recording: boolean) {
-	return { walkthrough: "w1", name: "For the board", recording };
+/**
+ * A walkthrough as a start carries it.
+ * @param language For a recording, the language it is narrated in; null for a narration.
+ * @returns The presentation.
+ */
+function walkthrough(language: string | null) {
+	return {
+		walkthrough: "w1",
+		name: "For the board",
+		recording: language === null ? null : { language },
+	};
 }
 
 test("a narration or recording start names the walkthrough to the voice model and adds nothing for a narration's coordinator; a recording replaces the narration, sends no filler and gives its coordinator its own rule", async () => {
@@ -54,8 +62,8 @@ test("a narration or recording start names the walkthrough to the voice model an
 	const recording = harness();
 	const ordinary = harness();
 	try {
-		await started(presenting, "", walkthrough(false));
-		await started(recording, "", walkthrough(true));
+		await started(presenting, "", walkthrough(null));
+		await started(recording, "", walkthrough("en"));
 		await started(ordinary);
 		const [presented] = presenting.session.starts;
 		const [recorded] = recording.session.starts;
@@ -91,13 +99,37 @@ test("a narration or recording start names the walkthrough to the voice model an
 	}
 });
 
+test("a recording's voice prompt names the one language it is narrated in, and a narration's names none", async () => {
+	const languages = { en: "English", da: "Danish", "pt-BR": "Brazilian Portuguese" };
+	const starts = new Map<string | null, string>();
+	for (const language of [null, ...Object.keys(languages)]) {
+		const h = harness();
+		try {
+			await started(h, "", walkthrough(language));
+			starts.set(language, h.session.starts[0]?.prompt ?? "");
+		} finally {
+			h.adapter.dispose();
+		}
+	}
+	const names = Object.values(languages);
+	for (const [language, name] of Object.entries(languages)) {
+		const prompt = starts.get(language) ?? "";
+		// Named more than once: where the recording is introduced and where a step is explained.
+		expect(prompt.split(name).length - 1).toBeGreaterThanOrEqual(2);
+		for (const other of names.filter((one) => one !== name)) {
+			expect(prompt).not.toContain(other);
+		}
+	}
+	for (const name of names) expect(starts.get(null)).not.toContain(name);
+});
+
 test("a start carries a walkthrough's name cut to a bound, never the whole of a runaway one", async () => {
 	const h = harness();
 	try {
 		await started(h, "", {
 			walkthrough: "w1",
 			name: "A very long name ".repeat(500),
-			recording: false,
+			recording: null,
 		});
 		const plain = harness();
 		try {
@@ -117,7 +149,7 @@ test("each step and leaving reach the voice model as speech, the first once the 
 	const source = changeSource();
 	const h = harness(undefined, source);
 	const browser = correlation();
-	const answer = h.adapter.createOffer({ ...browser, sdp: "offer-sdp" }, walkthrough(false));
+	const answer = h.adapter.createOffer({ ...browser, sdp: "offer-sdp" }, walkthrough(null));
 	try {
 		// The first step lands on screen while Codex is still starting the session.
 		source.fire({
@@ -197,7 +229,7 @@ test("a recording's steps reach the voice model in the words its prompt names, a
 	const source = changeSource();
 	const h = harness(undefined, source);
 	try {
-		await started(h, "", walkthrough(true));
+		await started(h, "", walkthrough("en"));
 		source.fire({
 			kind: "stepped",
 			step: 1,
