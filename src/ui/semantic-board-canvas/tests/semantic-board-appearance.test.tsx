@@ -84,8 +84,7 @@ test("the legend explains the picture and survives a policy-only restyle", async
 	act(() => {
 		fireEvent.click(part("semantic-sidebar-toggle"));
 	});
-	expect(part("semantic-legend").textContent).toContain("Comparison and attention");
-	expect(part("semantic-legend").textContent).not.toContain("Containment");
+	expect(part("semantic-legend").textContent).toContain("API");
 });
 
 test("traffic changes are explained without animation numbers", async () => {

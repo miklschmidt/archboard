@@ -39,7 +39,7 @@ interface StageSidebarView extends Omit<
 	readonly selection: string | null;
 	/** How deep the pane has followed drill-downs; its own board is depth zero. */
 	readonly drill: { readonly trail: readonly unknown[] };
-	/** Whether views and states can be chosen at this level. */
+	/** Whether views and variants can be chosen at this level. */
 	readonly level: {
 		readonly onView: ((view: string | null) => void) | undefined;
 		readonly onVariant: ((variant: string | null) => void) | undefined;
@@ -110,7 +110,7 @@ function SemanticStageSidebar(props: {
 					answer={view.render.data}
 					reading={view.reading}
 					onChooseView={level.onView === undefined ? undefined : view.onChooseView}
-					// The pane's own board takes its state from the navigator.
+					// The pane's own board takes its variant from the navigator.
 					onChooseVariant={view.drill.trail.length === 0 ? undefined : level.onVariant}
 					narrative={view.narrative}
 					onChooseWalkthrough={view.onChooseWalkthrough}

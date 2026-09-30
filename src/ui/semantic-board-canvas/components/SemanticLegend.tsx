@@ -1,166 +1,97 @@
-import { useId, useMemo, type JSX, type ReactNode } from "react";
+// The key to the picture on screen: what each node kind's chip and each
+// relationship kind's line mean, and what a line's weight and its streaks say.
+//
+// It keys only what the picture draws, in the order the picture draws it, with
+// the picture's own symbols: a legend that lists what is not on the page is a
+// legend a reader has to search (TASK-383, docs/design/pane-sidebar-hierarchy.md).
+// It is the one explanation of appearance (ADR 0025), visible whenever the
+// sidebar is, and it comes after the ways of reading the board because a reader
+// needs it less with every board of the same vault.
+//
+// One heading, then the lists: the chips and the lines say which list is which,
+// so neither needs a heading of its own under the legend's.
 
-import { STANDING_COLORS } from "@/shared/theme/index";
-import { Checkbox } from "@/ui/components/checkbox";
+import type { JSX, ReactNode } from "react";
+
 import {
+	EmphasisSample,
 	RelationshipSample,
+	TrafficSample,
 	TypeSample,
 } from "@/ui/semantic-board-canvas/components/SemanticTypeSamples";
-import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
+import { SidebarSection } from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
+import {
+	sampleKey,
+	type AppliedAppearance,
+	type PictureKey,
+} from "@/ui/semantic-board-canvas/lib/appearance";
+
+/** How wide every sample of the legend is, so its labels start on one line. */
+const SAMPLE_WIDTH = 28;
 
 /**
- * A browser-only key to the channels in the current picture.
- * @param props The appearance facts of the drawing.
- * @param props.appearances Facts emitted for its visible subjects.
- * @param props.comparison Whether comparison treatment is visible.
- * @param props.comparisonAvailable Whether this variant is read against another: every variant
- * but the current one, and on a board with no current variant every draft with a parent.
- * @param props.onComparisonChange Change the canvas treatment.
- * @returns The key, as a part of the sidebar's board tab.
+ * The key to the picture on screen.
+ * @param props What the picture draws.
+ * @param props.picture Its kinds and relationship kinds.
+ * @returns The legend.
  */
-function SemanticLegend(props: {
-	readonly appearances: ReadonlyMap<string, AppliedAppearance>;
-	readonly comparison: boolean;
-	readonly comparisonAvailable: boolean;
-	readonly onComparisonChange: (enabled: boolean) => void;
-}): JSX.Element {
-	const comparisonId = useId();
-	const standing = STANDING_COLORS;
-	const entries = [...props.appearances.values()];
-	const kinds = uniqueTypes(entries.filter((item) => item.depiction !== ""));
-	const relationships = uniqueTypes(entries.filter((item) => item.depiction === ""));
+function SemanticLegend(props: { readonly picture: PictureKey }): JSX.Element {
+	const { kinds, relationships } = props.picture;
 	return (
-		<section aria-label="Diagram legend" data-slot="semantic-legend" className="flex flex-col">
-			<h2 className="text-kicker text-muted-foreground px-4 pt-4 pb-1 uppercase">Legend</h2>
-			<div className="px-4 pb-4">
-				{kinds.length > 0 && (
-					<LegendSection title="Node types">
-						<ul className="space-y-2.5">
-							{kinds.map((item) => (
-								<li key={sampleKey(item)} className="text-body flex items-center gap-3">
-									<TypeSample appearance={item} />
-									{item.typeName}
-								</li>
-							))}
-						</ul>
-					</LegendSection>
-				)}
-				{relationships.length > 0 && (
-					<LegendSection title="Relationships">
-						<ul className="space-y-2.5">
-							{relationships.map((item) => (
-								<li key={sampleKey(item)} className="text-body flex items-center gap-3">
-									<RelationshipSample appearance={item} />
-									{item.typeName}
-								</li>
-							))}
-						</ul>
-						<p className="text-muted-foreground text-body mt-3 leading-relaxed">
-							Line weight shows emphasis. Streaks illustrate authored traffic.
-						</p>
-					</LegendSection>
-				)}
-				<LegendSection title="Comparison and attention">
-					{props.comparisonAvailable && (
-						<div className="text-body mb-4 flex items-center gap-2">
-							<Checkbox
-								id={comparisonId}
-								checked={props.comparison}
-								onCheckedChange={props.onComparisonChange}
-								data-slot="semantic-comparison-toggle"
-							/>
-							<label htmlFor={comparisonId}>Show comparison on canvas</label>
-						</div>
-					)}
-					<div className="text-body grid grid-cols-2 gap-x-3 gap-y-2.5">
-						{props.comparisonAvailable && props.comparison && (
-							<>
-								<StandingSample color={standing.added}>Added</StandingSample>
-								<StandingSample color={standing.changed}>Changed</StandingSample>
-								<StandingSample color={standing.removed}>Removed</StandingSample>
-							</>
-						)}
-						<StandingSample color={standing.selected} outer>
-							Selected
-						</StandingSample>
-					</div>
-				</LegendSection>
-			</div>
-		</section>
+		<SidebarSection title="Legend" slot="semantic-legend">
+			{kinds.length > 0 && (
+				<ul aria-label="Node kinds" className="flex flex-col">
+					{kinds.map((item) => (
+						<Entry key={sampleKey(item)} label={item.typeName}>
+							<TypeSample appearance={item} className="size-5 [&>svg]:size-3.5" />
+						</Entry>
+					))}
+				</ul>
+			)}
+			{relationships.length > 0 && <Lines relationships={relationships} />}
+		</SidebarSection>
 	);
 }
 
 /**
- * One section in the legend with space between independent visual channels.
- * @param props Its heading and content.
- * @param props.title The channel explained.
- * @param props.children Its key.
- * @returns The section.
+ * The relationship kinds, then the two things a line says beside its kind.
+ * @param props The relationship kinds the picture draws.
+ * @param props.relationships Those kinds.
+ * @returns The list.
  */
-function LegendSection(props: {
-	readonly title: string;
-	readonly children: ReactNode;
-}): JSX.Element {
+function Lines(props: { readonly relationships: readonly AppliedAppearance[] }): JSX.Element {
 	return (
-		<section className="border-border border-t py-4 last:pb-0">
-			<h3 className="text-body mb-3 font-semibold">{props.title}</h3>
-			{props.children}
-		</section>
+		<ul aria-label="Relationships" className="flex flex-col pt-2">
+			{props.relationships.map((item) => (
+				<Entry key={sampleKey(item)} label={item.typeName}>
+					<RelationshipSample appearance={item} width={SAMPLE_WIDTH} />
+				</Entry>
+			))}
+			<Entry label="More emphasis">
+				<EmphasisSample width={SAMPLE_WIDTH} />
+			</Entry>
+			<Entry label="Illustrated traffic">
+				<TrafficSample width={SAMPLE_WIDTH} />
+			</Entry>
+		</ul>
 	);
 }
 
 /**
- * Keep each configured kind and its applied sample, even when display names repeat.
- * @param appearances Visible appearance facts.
- * @returns Unique types in drawing order.
+ * One entry of the legend: the picture's symbol, then what it means.
+ * @param props The meaning and the symbol.
+ * @param props.label What it means.
+ * @param props.children The symbol, as the picture draws it.
+ * @returns The entry.
  */
-function uniqueTypes(appearances: readonly AppliedAppearance[]): AppliedAppearance[] {
-	return [...new Map(appearances.map((item) => [sampleKey(item), item])).values()];
-}
-
-/**
- * Identify the configured kind and the visual meaning of its sample.
- * @param item One depicted type.
- * @returns A stable key independent of the subject or containment scope.
- */
-function sampleKey(item: AppliedAppearance): string {
-	return JSON.stringify([
-		item.typeKind,
-		item.typeName,
-		item.iconSvg,
-		item.typeColor,
-		item.lineColor,
-		item.dash,
-		item.arrowhead,
-	]);
-}
-
-/**
- * Distinguish standing borders from a separate selection ring.
- * @param props Color, label and whether this is the outer selection treatment.
- * @param props.color The fixed standing color.
- * @param props.children The meaning of the sample.
- * @param props.outer Whether the color sits outside a neutral border.
- * @returns The labeled sample.
- */
-function StandingSample(props: {
-	readonly color: string;
-	readonly children: ReactNode;
-	readonly outer?: boolean;
-}): JSX.Element {
-	const style = useMemo(
-		() => ({
-			borderColor: props.outer === true ? "var(--border)" : props.color,
-			...(props.outer === true ? { outline: `2px solid ${props.color}`, outlineOffset: 2 } : {}),
-		}),
-		[props.outer, props.color],
-	);
-
+function Entry(props: { readonly label: string; readonly children: ReactNode }): JSX.Element {
 	return (
-		<span className="flex items-center gap-2">
-			<span aria-hidden="true" className="size-3 rounded-[2px] border-2" style={style} />
-			{props.children}
-		</span>
+		<li className="text-body flex min-h-7 items-center gap-2">
+			<span aria-hidden="true" className="flex w-7 shrink-0 items-center">
+				{props.children}
+			</span>
+			{props.label}
+		</li>
 	);
 }
 

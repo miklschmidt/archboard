@@ -55,8 +55,8 @@ type ThemeSnapshot = {
 	fontResources: string[];
 	diagramFontResources: string[];
 	humanLabels: Array<{ family: string; transform: string; weight: number }>;
-	/** A section label in the pane's sidebar: the kicker role, uppercase and tracked. */
-	sectionKicker: { family: string; transform: string; weight: number; size: number };
+	/** A section heading in the pane's sidebar: the body size, semibold, never uppercase. */
+	sectionHeading: { family: string; transform: string; weight: number; size: number };
 	titleType: ShellMetrics;
 	bodyType: ShellMetrics;
 	stateType: ShellMetrics;

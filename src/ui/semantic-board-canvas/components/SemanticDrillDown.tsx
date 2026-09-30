@@ -24,6 +24,7 @@ import {
 	resolveDrillDown,
 	type DrillResolution,
 } from "@/ui/semantic-board-canvas/lib/drill-target";
+import { SidebarHeading } from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
 import { useSemanticBoardChanges } from "@/ui/semantic-board-canvas/hooks/use-semantic-board-changes";
 import { semanticBoardDocumentQuery } from "@/ui/semantic-board-canvas/lib/queries";
 
@@ -164,8 +165,8 @@ function SemanticDrillDown(props: SemanticDrillDownProps): JSX.Element {
 	// link's when the board was renamed since the link was written.
 	useSemanticBoardChanges(target.board, name);
 	return (
-		<section className="flex flex-col gap-3" data-slot="semantic-drill-down">
-			<h3 className="text-kicker text-muted-foreground uppercase">One level down</h3>
+		<section className="flex flex-col gap-2" data-slot="semantic-drill-down">
+			<SidebarHeading level={3}>One level down</SidebarHeading>
 			<p className="text-technical truncate font-mono" title={name}>
 				{name}
 			</p>
