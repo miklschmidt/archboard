@@ -226,8 +226,8 @@ type BrowserCommandLease = z.infer<BrowserSchemas["BrowserCommandLeaseSchema"]>;
 type BrowserOperationOutcome = z.infer<BrowserSchemas["BrowserOperationOutcomeSchema"]>;
 type BrowserCommand = z.infer<BrowserSchemas["BrowserCommandSchema"]>;
 /**
- * The walkthrough a voice start presents (TASK-251), and whether it is a recording (TASK-304):
- * what the browser may say about a narration, and nothing more.
+ * The walkthrough a voice start presents (TASK-251), and for a recording (TASK-304) the language
+ * it is narrated in (TASK-380): what the browser may say about a narration, and nothing more.
  */
 type BrowserVoicePresentation = NonNullable<
 	Extract<BrowserCommand, { readonly command: "realtimeStart" }>["presentation"]

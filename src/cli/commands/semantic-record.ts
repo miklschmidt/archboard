@@ -14,7 +14,12 @@ import {
 	type SemanticBoard,
 	type SemanticWalkthrough,
 } from "@/shared/semantic-board/index";
-import { RecordingContainerSchema, type RecordingState } from "@/shared/walkthrough-recording";
+import {
+	DEFAULT_RECORDING_LANGUAGE,
+	RecordingContainerSchema,
+	RecordingLanguageSchema,
+	type RecordingState,
+} from "@/shared/walkthrough-recording";
 import { currentWriteDoing } from "@/runtime/engine/server-client";
 import { ARCHBOARD_URL } from "@/runtime/engine/config";
 import {
@@ -33,6 +38,7 @@ const RecordInputSchema = z.object({
 	variant: SelectorSchema.optional(),
 	walkthrough: z.string().optional(),
 	theme: DiagramThemeSchema.default("light"),
+	language: RecordingLanguageSchema.default(DEFAULT_RECORDING_LANGUAGE),
 	out: z.string(),
 	discard: z.boolean().optional(),
 });
@@ -229,7 +235,9 @@ const semanticRecordContract = defineCommand({
 		"extension) together with the Codex voice explaining each step. Each step moves on once " +
 		"the voice has finished explaining it, and the recording ends after the last. It runs on " +
 		"the Archboard server the CLI talks to, which must have Codex signed in. A recording is a " +
-		"conversation of its own, so voice live in a browser tab does not stop it. --discard " +
+		"conversation of its own, so voice live in a browser tab does not stop it. The voice " +
+		"speaks only the --language it is given, whatever language the steps are written in. " +
+		"--discard " +
 		"deletes the board once the recording is written, for a board made only to be recorded; " +
 		"a failed recording keeps it, and so does a board changed while it was " +
 		"recorded, which the receipt says. Needs a Chromium or Google Chrome executable " +
@@ -280,6 +288,16 @@ const semanticRecordContract = defineCommand({
 			choices: THEMES,
 			default: "light",
 			description: "Which palette the pane draws in",
+		},
+		{
+			kind: "option",
+			key: "language",
+			spellings: ["--language"],
+			value: "required",
+			placeholder: "tag",
+			default: DEFAULT_RECORDING_LANGUAGE,
+			description:
+				"Which language the voice narrates in, as a BCP 47 language tag such as en, da, fr or pt-BR",
 		},
 		{
 			kind: "option",
@@ -352,6 +370,7 @@ const semanticRecordContract = defineCommand({
 			serverUrl: ARCHBOARD_URL,
 			boardKey: input.variant === undefined ? board.name : `${board.name}@${variant.id}`,
 			walkthrough: walkthrough.id,
+			language: input.language,
 			container,
 			theme: input.theme,
 			out: file,

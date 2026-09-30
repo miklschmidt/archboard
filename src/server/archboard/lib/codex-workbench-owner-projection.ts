@@ -269,7 +269,7 @@ function readBrowserOwnerProjection(
 			kind: "codex_voice",
 			mediaReady: context.mediaReady,
 			generation: realtimeGeneration,
-			recording: components.realtime.presentation()?.recording === true,
+			recording: (components.realtime.presentation()?.recording ?? null) !== null,
 			coordinatorState: coordinator.state,
 			transcript: components.realtime.transcript(),
 		},

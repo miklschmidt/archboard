@@ -2,7 +2,7 @@
 // paced by the voice, captured in its own tab. The contract with the recorder
 // that drives the page is in `@/shared/walkthrough-recording`.
 
-import { recordedWalkthroughOf } from "@/shared/walkthrough-recording";
+import { recordingAskedOf } from "@/shared/walkthrough-recording";
 
 import { WalkthroughRecorder } from "@/ui/walkthrough-recording/lib/recorder";
 
@@ -19,8 +19,8 @@ export type { RecordedStep, WalkthroughRecorder } from "@/ui/walkthrough-recordi
  * @returns The recorder, or null when the page is not a recording.
  */
 function openWalkthroughRecorder(search: string, board: string | null): WalkthroughRecorder | null {
-	const walkthrough = recordedWalkthroughOf(search);
-	return walkthrough === null ? null : new WalkthroughRecorder({ board, walkthrough });
+	const asked = recordingAskedOf(search);
+	return asked === null ? null : new WalkthroughRecorder({ board, ...asked });
 }
 
 export { openWalkthroughRecorder };

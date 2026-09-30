@@ -141,16 +141,16 @@ test("narration is about the tab that pressed Narrate, not the first pane with i
 	browserPane("client-app", OTHER);
 	browserPane("client-chrome", NARRATED);
 
-	expect(() => server.narrationFor("client-app", walkthroughId, false)).toThrow();
-	expect(server.narrationFor("client-chrome", walkthroughId, false)).toEqual({
+	expect(() => server.narrationFor("client-app", walkthroughId, null)).toThrow();
+	expect(server.narrationFor("client-chrome", walkthroughId, null)).toEqual({
 		walkthrough: walkthroughId,
 		name: "How a request lands",
-		recording: false,
+		recording: null,
 	});
 });
 
 test("a hand on the other tab's pane of the same id is not this narration's news", () => {
-	server.narrationFor("client-chrome", walkthroughId, false);
+	server.narrationFor("client-chrome", walkthroughId, null);
 	const heard: string[] = [];
 	const stop = server.subscribeNarrationChanges((change, clientId) =>
 		heard.push(`${clientId}:${change.kind}`),

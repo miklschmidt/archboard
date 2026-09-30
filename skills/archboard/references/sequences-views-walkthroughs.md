@@ -124,6 +124,10 @@ speak about a change that no beat names.
 
 - If the variant states several walkthroughs, `--walkthrough <name>` picks one.
   `--variant` and `--theme dark` choose what is drawn.
+- The voice speaks English. `--language <tag>` names another language as a
+  BCP 47 tag, such as `da`, `fr` or `pt-BR`. The voice speaks only that
+  language, whatever language the beats are written in. The command refuses a
+  tag that names no language before it starts anything.
 - It needs the Archboard server's Codex signed in, and a refusal says so. Voice
   in a browser can stay live, because the recording runs in a browser of its
   own. It takes about as long as the talk and prints

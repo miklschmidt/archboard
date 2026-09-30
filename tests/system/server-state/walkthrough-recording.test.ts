@@ -5,7 +5,8 @@
 //
 // What is guarded: the command writes a video file that went through every step of the
 // walkthrough, each handed to the voice in order and left only once the voice had finished it;
-// the receipt says what was recorded; and --discard removes the board once the file is written.
+// the voice is started in the language --language named (TASK-380); the receipt says what was
+// recorded; and --discard removes the board once the file is written.
 
 import { expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
@@ -99,7 +100,18 @@ test(
 			const out = join(fixture.root, "tour.mp4");
 			const recorded = spawnSync(
 				join(repoRoot, "bin/archboard"),
-				["semantic", "record", BOARD, "--out", out, "--discard", "--doing", "recording the tour"],
+				[
+					"semantic",
+					"record",
+					BOARD,
+					"--out",
+					out,
+					"--language",
+					"da",
+					"--discard",
+					"--doing",
+					"recording the tour",
+				],
 				{
 					cwd: repoRoot,
 					encoding: "utf8",
@@ -130,9 +142,17 @@ test(
 			expect(video.byteLength).toBe(receipt.bytes);
 			expect(video.subarray(4, 8).toString("latin1")).toBe("ftyp");
 
+			// The voice was started in the language the command named, whatever language the steps
+			// are written in.
+			const frames = records(fixture.logPath);
+			const starts = frames.filter(
+				(frame) => frame.kind === "frame" && frame.method === "thread/realtime/start",
+			);
+			expect(starts).toHaveLength(1);
+			expect(String(starts[0]?.params?.["prompt"])).toContain("Danish");
+
 			// Every step reached the voice, in order, and the next only after the voice had finished
 			// the one before: its line was completed before the next step was handed over.
-			const frames = records(fixture.logPath);
 			const handed = frames.filter(
 				(frame) => frame.kind === "frame" && frame.method === "thread/realtime/appendSpeech",
 			);

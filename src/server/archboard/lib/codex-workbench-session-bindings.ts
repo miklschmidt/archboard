@@ -403,7 +403,7 @@ function deliveryBindings(
 				 * Whether a recording holds the voice, which nobody hears an outcome through.
 				 * @returns True while the live session is a recording's.
 				 */
-				recording: () => created.realtime?.presentation()?.recording === true,
+				recording: () => (created.realtime?.presentation()?.recording ?? null) !== null,
 			}),
 			/** Publish what a settled callback changed. */
 			onSettled: () => {

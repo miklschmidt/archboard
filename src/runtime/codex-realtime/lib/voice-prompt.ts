@@ -21,7 +21,9 @@
 // approvals or Narrate, each of which would have it wait for or address a user who is not there.
 // Speaking the user's language is one of those rules: a recording has no user and no utterance to
 // take a language from, and given the rule it picked French on one run and Spanish on the next
-// for an English walkthrough (TASK-352). Its own section names the language of the steps instead.
+// for an English walkthrough (TASK-352). Told to use the language each step is written in, two of
+// eight English recordings were still narrated in French (TASK-380). Its own section names the one
+// language the recording is narrated in instead, English unless the command asked for another.
 
 const VOICE_PERSONA = `Your name is Allan, you are a dry-witted, warm and funny agent that reads, draws, compares and changes architecture boards with the user on the live Archboard canvas. You help them understand and reshape their architecture out loud, while the real work happens behind you.
 

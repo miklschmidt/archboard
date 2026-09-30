@@ -13,12 +13,20 @@
 // screen on. Its steps are handed over as "On screen now", and leaving is never told: the page
 // ends a recording by stopping the session.
 //
+// A recording is narrated in one language, named outright at the start of its section and again
+// where a step is explained (TASK-380). Codex sets no language anywhere in a realtime session and
+// hands the voice model this prompt as it is (Codex 0.158.0 to 0.159.1,
+// `prepare_realtime_backend_prompt`), so the prompt is the only place a language can come from.
+// Told only to use the language each step is written in, the voice still narrated English steps in
+// French. A live narration names none: it speaks the user's language, as a conversation does.
+//
 // A step is handed over with what it highlights on screen, named in words, and on a variant read
 // against another — the board's current one, or on a board with none the one it came from — how
 // each of those stands against it (TASK-309): the picture marks what was added and changed, and
 // the voice can only explain what it is told.
 
 import type { ChangeKind } from "@/shared/semantic-board/index";
+import { languageName, type RecordingNarration } from "@/shared/walkthrough-recording";
 
 /** How much of a walkthrough's name a start carries, in characters. */
 const PRESENTATION_NAME_MAX_CHARS = 200;
@@ -36,8 +44,11 @@ interface RealtimePresentation {
 	readonly walkthrough: string;
 	/** Its name, so the voice model knows what it is presenting. */
 	readonly name: string;
-	/** Whether the talk is recorded for later, with nobody listening or at the controls. */
-	readonly recording: boolean;
+	/**
+	 * For a talk recorded for later, with nobody listening or at the controls, the language it is
+	 * narrated in. Null for a narration somebody is listening to.
+	 */
+	readonly recording: RecordingNarration | null;
 }
 
 /**
@@ -74,12 +85,14 @@ function narrationPrompt(name: string): string {
 /**
  * What the voice model is told when it is started to narrate a walkthrough for a recording.
  * @param name The walkthrough's name.
+ * @param recording The language the recording is narrated in.
  * @returns The section appended to the voice prompt.
  */
-function recordingPrompt(name: string): string {
+function recordingPrompt(name: string, recording: RecordingNarration): string {
+	const language = languageName(recording.language) ?? recording.language;
 	return [
-		`Recorded walkthrough. You are narrating the walkthrough "${presentationName(name)}" for a video people will watch later. Nobody is listening live, nobody will answer you, and nobody is at the controls: the screen moves to the next step by itself once you have finished explaining the one on it. Each step reaches you as it lands on screen, beginning "On screen now", with which step of how many it is, its heading and what it says.`,
-		"When a step reaches you, explain it at once, as a good conference speaker would: what it shows and why it matters, in your own words, with names and never ids, in the language the step is written in. Keep it to a few sentences with at most one aside. The screen shows the heading and the text, so explain them rather than read them out. Never say a step's number or the total aloud; the number is how you know the last step.",
+		`Recorded walkthrough, narrated in ${language}. Speak only ${language}, from your first word to your last. You are narrating the walkthrough "${presentationName(name)}" for a video people will watch later. Nobody is listening live, nobody will answer you, and nobody is at the controls: the screen moves to the next step by itself once you have finished explaining the one on it. Each step reaches you as it lands on screen, beginning "On screen now", with which step of how many it is, its heading and what it says.`,
+		`When a step reaches you, explain it at once in ${language}, as a good conference speaker would: what it shows and why it matters, in your own words, with names and never ids. A step written in another language is still explained in ${language}: put what it says into ${language}. Keep it to a few sentences with at most one aside. The screen shows the heading and the text, so explain them rather than read them out. Never say a step's number or the total aloud; the number is how you know the last step.`,
 		STEP_SUBJECTS_RULE,
 		"When you have explained a step, stop talking: your silence is what moves the screen on. Never ask or invite questions, never ask for the next step, never hand anything to the coordinator, and never say you are waiting. After the last step, close the walkthrough with one short sentence.",
 	].join("\n\n");
@@ -92,9 +105,9 @@ function recordingPrompt(name: string): string {
  * @returns The section appended to the voice prompt.
  */
 function voicePresentationPrompt(presentation: RealtimePresentation): string {
-	return presentation.recording
-		? recordingPrompt(presentation.name)
-		: narrationPrompt(presentation.name);
+	return presentation.recording === null
+		? narrationPrompt(presentation.name)
+		: recordingPrompt(presentation.name, presentation.recording);
 }
 
 /** One thing a step highlights on screen, as the voice model is told it. */

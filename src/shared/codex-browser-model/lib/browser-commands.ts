@@ -16,6 +16,7 @@ import {
 } from "@/shared/codex-browser-model/lib/scalars";
 import type { IdentityContext, IdentitySchemas } from "@/shared/codex-browser-model/lib/scalars";
 import type { DynamicApprovalSchemas } from "@/shared/codex-browser-model/lib/dynamic-approval";
+import { RecordingNarrationSchema } from "@/shared/walkthrough-recording";
 
 /**
  * Builds the text command, command lease, operation outcome and browser
@@ -175,10 +176,11 @@ function createBrowserCommandSchemas(
 				 * Start voice to present one walkthrough of the board this pane is showing
 				 * (TASK-251). Only the walkthrough is the browser's to name; the server reads
 				 * what it says from the board. A recording (TASK-304) is a narration nobody is
-				 * listening to live, which the page paces itself.
+				 * listening to live, which the page paces itself, and it names the language it is
+				 * narrated in (TASK-380).
 				 */
 				presentation: z
-					.object({ walkthrough: boundedText(64), recording: z.literal(true).optional() })
+					.object({ walkthrough: boundedText(64), recording: RecordingNarrationSchema.optional() })
 					.strict()
 					.optional(),
 			})

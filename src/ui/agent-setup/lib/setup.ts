@@ -100,8 +100,8 @@ interface SendOptions {
 interface TalkOptions {
 	/** Narrate this walkthrough of the board in view, rather than converse. */
 	readonly walkthrough?: string | undefined;
-	/** The narration is a recording a page paces itself (TASK-304). */
-	readonly recording?: boolean | undefined;
+	/** The narration is a recording a page paces itself (TASK-304), in this language (TASK-380). */
+	readonly recording?: BrowserVoicePresentation["recording"];
 	readonly tab?: AuthTab | undefined;
 }
 
@@ -167,13 +167,13 @@ const STEP_BY_PHASE: Readonly<Record<AgentPhase["kind"], SetupStep>> = {
 /**
  * What a Talk narrates, if anything.
  * @param options How voice was asked for.
- * @returns The walkthrough and whether it is recorded, or null for a conversation.
+ * @returns The walkthrough and, for a recording, its language, or null for a conversation.
  */
 function narrationOf(options: TalkOptions): BrowserVoicePresentation | null {
 	if (options.walkthrough === undefined) return null;
-	return options.recording === true
-		? { walkthrough: options.walkthrough, recording: true }
-		: { walkthrough: options.walkthrough };
+	return options.recording === undefined
+		? { walkthrough: options.walkthrough }
+		: { walkthrough: options.walkthrough, recording: options.recording };
 }
 
 /**

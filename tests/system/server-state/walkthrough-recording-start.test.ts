@@ -142,7 +142,7 @@ test("a recording opens no step, hands the page's own first step to the voice, a
 			command("realtimeStart", {
 				threadId: link["threadId"],
 				sdp: "v=0",
-				presentation: { walkthrough, recording: true },
+				presentation: { walkthrough, recording: { language: "en" } },
 			});
 		const frames = (method: string) =>
 			records(fixture.logPath).filter((entry) => entry.kind === "frame" && entry.method === method);

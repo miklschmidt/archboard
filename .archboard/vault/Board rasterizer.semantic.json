@@ -4,9 +4,9 @@
 	"id": "SMjRfwN3",
 	"name": "Board rasterizer",
 	"level": "module",
-	"version": 12,
+	"version": 14,
 	"createdAt": "2026-09-17T21:02:37.619Z",
-	"updatedAt": "2026-09-30T00:33:55.075Z",
+	"updatedAt": "2026-09-30T00:45:47.893Z",
 	"views": [
 		{
 			"id": "WXfBg0nd",
@@ -80,7 +80,7 @@
 		{
 			"id": "YlFypVun",
 			"name": "Initial",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"content": {
 				"nodes": [
 					{
@@ -1972,9 +1972,9 @@
 		{
 			"id": "PfFN8kCs",
 			"name": "TASK-380",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "YlFypVun",
-			"summary": "A recording is narrated in its walkthrough's language on every run",
+			"summary": "Pictures and recordings of a board, through a headless browser",
 			"content": {
 				"nodes": [
 					{
@@ -2914,5 +2914,13 @@
 			}
 		}
 	],
-	"current": "YlFypVun"
+	"current": "PfFN8kCs",
+	"adoptions": [
+		{
+			"variant": "PfFN8kCs",
+			"from": "YlFypVun",
+			"at": "2026-09-30T00:45:47.893Z",
+			"reason": "A recording carries the language it is narrated in from the record command through the page to the voice start (TASK-380)"
+		}
+	]
 }

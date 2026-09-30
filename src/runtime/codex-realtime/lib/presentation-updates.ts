@@ -27,7 +27,7 @@ export function watchPresentationChanges(
 	if (source === undefined) {
 		return () => undefined;
 	}
-	const recording = session.presentation?.recording === true;
+	const recording = (session.presentation?.recording ?? null) !== null;
 	let stopped = false;
 	let tail = Promise.resolve();
 	/**
