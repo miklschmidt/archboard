@@ -15,7 +15,7 @@ install.
 | `evals.json`       | The scenarios: prompt, Flask revision, source paths, expected-feature checklist, deterministic outcome checks, guardrails, the skill files (`guidance`) an author of it is expected to read, report group. A prompt says what a user would say (the question, the level, the names the checks anchor on, an explicit product request); the checklist names what the skill must add on its own. |
 | `pins.json`        | What a comparison holds constant: Flask commits, the authors' Codex version, model and settings, repetitions, the frozen baseline's location.                                                                                                                                                                                                                                                  |
 | `graders.json`     | What each grader runner holds constant: executable, exact version, model, effort, read posture, usage semantics. Not a batch input: chosen at grade time.                                                                                                                                                                                                                                      |
-| `fixtures/S..json` | Each scenario's starting vault: a policy patch, whether the checkout is registered, and the boards laid through the CLI so every id is product-minted.                                                                                                                                                                                                                                         |
+| `fixtures/S..json` | Each scenario's starting vault: a policy patch, whether the checkout is registered, the boards laid through the CLI so every id is product-minted, and the talk a recording kept, where a scenario renders one again.                                                                                                                                                                          |
 | `coverage.json`    | The 14-part inventory: every schema path and behavioural branch, the scenarios that exercise it, the expected use, and who owns the evidence.                                                                                                                                                                                                                                                  |
 | `rubric.md`        | What the blinded grader is told.                                                                                                                                                                                                                                                                                                                                                               |
 
@@ -70,13 +70,19 @@ grader, untouched.
    the same generated files. The install is verified independently: the skill
    files and generated schemas exist, and the setup block in the checkout's
    `AGENTS.md` names the run's vault.
-5. The fixture laid through the CLI, then a snapshot of every board.
+5. The fixture laid through the CLI, then a snapshot of every board. A fixture
+   that keeps a talk has it written after its boards, in the run's home where
+   `semantic record --talk` would have kept it: a walkthrough of a board the
+   steps laid, from the board and vault check the CLI serves, through the
+   recorder's own writer, with silence for its voice.
 6. `codex exec --json --skip-git-repo-check -C <flask> -m <author model>
 -c model_reasoning_effort="high" -c approval_policy="never" -s workspace-write
 -o last-message.md "<prompt>"`, its event stream retained as `author.jsonl`.
-7. Every board read back, renders and inspections the checks asked for, the
-   checker's report, the deterministic outcome checks and guardrails, the
-   command classification, and the blinded `bundle.json`.
+7. Every board read back, renders and inspections the checks asked for, every
+   video they asked about (the file, the container its first bytes are, and
+   the last receipt a command printed for it), the checker's report, the
+   deterministic outcome checks and guardrails, the command classification,
+   and the blinded `bundle.json`.
 8. Every capture the scenario declares, taken by the harness through
    `archboard semantic rasterize` from the final saved board at native scale
    into `captures/`: one PNG per declared board, view and variant (a
@@ -99,6 +105,17 @@ Rasterizing needs a Chromium or Google Chrome executable on `PATH`, or one
 named by `ARCHBOARD_RENDERER_CHROMIUM`, which the harness forwards into every
 run; without one every capture of the batch fails by name and no visual
 verdict can stand.
+
+A scenario that renders a video (S15) has the author run `semantic replay`
+inside its own sandbox. It needs that Chromium and an ffmpeg, which the CLI
+finds as it does anywhere: the one `ARCHBOARD_FFMPEG` names (forwarded like
+the Chromium), else the one on `PATH`, else Nix runs
+`nixpkgs#ffmpeg-headless`, keeping its cache in the run's own home. Checked
+on 2026-09-30 under Codex 0.155.0's workspace-write sandbox with the author
+configuration and a run's environment: the talk S15's fixture lays rendered
+there to WebM in 23 s through Nix, and the check passed on what the command
+printed. The harness never renders a video; its check reads what the author
+left.
 
 Runs of one batch execute in parallel with bounded concurrency; nothing is
 shared between them but the read-only Flask cache.

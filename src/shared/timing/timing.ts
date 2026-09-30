@@ -568,5 +568,11 @@ export const SKILL_EVAL_GIT_TIMEOUT_MS = 10 * 60_000;
 export const SKILL_EVAL_AUTHOR_TIMEOUT_MS = 40 * 60_000;
 /** The one grading session over a whole batch; it reads three Flask revisions and every run. */
 export const SKILL_EVAL_GRADER_TIMEOUT_MS = 4 * 60 * 60_000;
+/**
+ * How long the voice of a fixture's kept talk speaks about each step. Long enough for a subtitle
+ * to be read in the video an author renders from it; every second is 30 frames the author's
+ * replay draws in software, about 2.5 s of the run, so three steps render in under half a minute.
+ */
+export const SKILL_EVAL_TALK_STEP_MS = 3000;
 /** From SIGTERM to SIGKILL for a Codex process the harness gives up on. */
 export const SKILL_EVAL_CODEX_TERM_GRACE_MS = 10_000;

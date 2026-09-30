@@ -5,6 +5,7 @@
 
 import {
 	currentVariant,
+	type DiagramTheme,
 	type SemanticBoard,
 	type SemanticEdge,
 	type SemanticNode,
@@ -12,6 +13,7 @@ import {
 	type VariantContent,
 } from "@/shared/semantic-board/index";
 import type { SemanticPolicy, VaultDiagnostic } from "@/shared/semantic-policy/index";
+import type { RecordingContainer } from "@/shared/walkthrough-recording";
 import type { CaptureAttempt } from "@/runtime/skill-evaluation/lib/captures";
 import {
 	namedSubject,
@@ -40,6 +42,27 @@ interface InspectionAttempt {
 	readonly detail: string;
 }
 
+/** A video a check asked about, as the harness found it after the author ran. */
+interface VideoAttempt {
+	/** The video, as the check names it. */
+	readonly file: string;
+	/** The kept talk it is rendered from, as the check names it. */
+	readonly talk: string;
+	/** The file's size, or null when there is no file. */
+	readonly bytes: number | null;
+	/** The container the file's first bytes are, or null when they are neither. */
+	readonly container: RecordingContainer | null;
+	/** How many frames the talk renders to, or why it could not be read. */
+	readonly talkFrames: number | string;
+	/** The last replay receipt the author's commands printed for the file, or null for none. */
+	readonly receipt: {
+		readonly talk: string;
+		readonly theme: DiagramTheme;
+		readonly frames: number;
+		readonly bytes: number;
+	} | null;
+}
+
 /** The part of `semantic inspect` a check reads. */
 interface InspectedGroup {
 	readonly members: readonly { readonly name: string }[];
@@ -62,6 +85,8 @@ interface Reading {
 	readonly inspections: readonly InspectionAttempt[];
 	/** Every bitmap the scenario declared, taken after the author ran, failed ones included. */
 	readonly captures: readonly CaptureAttempt[];
+	/** Every video a check asked about. */
+	readonly videos: readonly VideoAttempt[];
 }
 
 /** What one check concluded. */
@@ -207,4 +232,5 @@ export {
 	type InspectionAttempt,
 	type Reading,
 	type RenderAttempt,
+	type VideoAttempt,
 };

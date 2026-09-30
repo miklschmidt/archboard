@@ -181,8 +181,9 @@ request covers it. A fenced row, like a row the source justifies only on
 inherited subjects, is the fixture's omission: leave it out of `unprompted` and
 list it under concerns as `fixture:`, the way an inherited inaccuracy is listed
 below. A run that added nothing has no subject: a read-only request, an
-adoption, a write that only removed. Its `unprompted` list is empty and its
-behaviouralCompleteness is `null`; that is the rule, not a missing result.
+adoption, a write that only removed, a video rendered again from a kept
+talk. Its `unprompted` list is empty and its behaviouralCompleteness is
+`null`; that is the rule, not a missing result.
 
 | Row            | The source justifies it when                                                                                                                                                                                                                                                                                                                                                             |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

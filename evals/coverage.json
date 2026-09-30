@@ -1,5 +1,5 @@
 {
-	"$comment": "The behavioural coverage inventory: every user-facing schema path and closed branch of the audited schemas plus TASK-207, the scenarios that exercise it, what correct use is, and who owns the evidence. author-run: a model run proves it (graded by the blinded grader against source); harness-check: the deterministic outcome checks prove it from the saved board; grader: only the grader can judge it; runtime-owner: an existing fast test owns it and no model run is asked to. An entry with no scenarios is uncovered by model runs and says so.",
+	"$comment": "The behavioural coverage inventory: every user-facing schema path and closed branch of the audited schemas plus TASK-207 and the recording commands of TASK-381, the scenarios that exercise it, what correct use is, and who owns the evidence. author-run: a model run proves it (graded by the blinded grader against source); harness-check: the deterministic outcome checks prove it from the saved board; grader: only the grader can judge it; runtime-owner: an existing fast test owns it and no model run is asked to. An entry with no scenarios is uncovered by model runs and says so.",
 	"parts": [
 		{
 			"part": 1,
@@ -362,6 +362,27 @@
 					"scenarios": ["S13"],
 					"evidence": "harness-check",
 					"owner": "walkthrough-beat-references subjectNames [Jinja environment]"
+				},
+				{
+					"path": "semantic replay <talk> --out <file> [--theme]: a kept talk rendered again with no voice session",
+					"expectedUse": "the talk a recording kept is rendered again in the palette asked for, to the file asked for, whose extension chooses MP4 or WebM; nothing is recorded again and no board is written",
+					"scenarios": ["S15"],
+					"evidence": "harness-check",
+					"owner": "video-rendered (the file is there, is the container its extension names, and the last replay receipt for it names the kept talk, the theme asked for, the talk's frame count and the file's size); grader replay.kept-talk, replay.receipt; tests/system/server-state/walkthrough-replay.test.ts owns identical frames, one per 1/30 s of the talk, and the other theme's picture"
+				},
+				{
+					"path": "semantic record <board> --out: a walkthrough narrated by the Codex voice, in two passes, keeping its talk in the state directory's recordings/ (newest ten) or in --talk <dir>",
+					"expectedUse": "record a walkthrough to a narrated video; --discard for a board made only for it; the receipt's talk names what can be rendered again",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "tests/system/server-state/walkthrough-recording.test.ts (records end to end with a fake Codex and ffmpeg); src/runtime/walkthrough-recorder/tests/talk-files.test.ts (a talk lands whole, the newest ten are kept, a named place is never pruned and is refused when it exists). No author run records: a run's Archboard server keeps its Codex home in the run's own state directory, where nobody is signed in, and a voice session is minutes of a live model; S15's fixture keeps a talk as --talk would"
+				},
+				{
+					"path": "recording refusals: an unreadable talk, no ffmpeg (ENCODER_UNAVAILABLE), a failed render (RENDER_FAILED)",
+					"expectedUse": "refused before a browser starts, or with the talk kept to render again",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "tests/system/server-state/walkthrough-recording-refusals.test.ts (a missing or malformed talk is a usage error; no ffmpeg and no nix, or a named ffmpeg that cannot run, is ENCODER_UNAVAILABLE); tests/system/server-state/walkthrough-render.test.ts (RENDER_FAILED names the kept talk and writes nothing)"
 				}
 			]
 		},
