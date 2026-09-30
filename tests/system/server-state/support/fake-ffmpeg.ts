@@ -41,4 +41,24 @@ function ffmpegCalls(logPath: string): string[][] {
 		.map((line) => JSON.parse(line) as string[]);
 }
 
-export { ffmpegCalls, prepareFakeFfmpeg };
+/** What the fake ffmpeg wrote instead of a video when it was given frames. */
+interface FrameManifest {
+	/** Its arguments. */
+	readonly argv: readonly string[];
+	/** The SHA-256 of each frame it read, in order. */
+	readonly frames: readonly string[];
+	/** The first frame's size, from its SOF marker; absent when there was no frame. */
+	readonly width?: number;
+	readonly height?: number;
+}
+
+/**
+ * What the fake ffmpeg made of the frames written to it.
+ * @param path The output file it was told to write.
+ * @returns Its manifest.
+ */
+function frameManifest(path: string): FrameManifest {
+	return JSON.parse(readFileSync(path, "utf8")) as FrameManifest;
+}
+
+export { ffmpegCalls, frameManifest, prepareFakeFfmpeg, type FrameManifest };

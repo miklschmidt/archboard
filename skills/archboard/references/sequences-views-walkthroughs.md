@@ -147,6 +147,14 @@ speak about a change that no beat names.
   browser, because the recorder converts its sound to AAC. If that conversion
   fails, the command says so and says why a Safari viewer will hear nothing.
 
+- A recording keeps its talk: a directory with the voice and what the voice
+  said at each step. `semantic replay <talk> --out file.mp4` draws the picture
+  again from it, frame by frame, with no new voice session and without the board:
+  `--theme dark` for the other palette, or after a renderer fix. It needs the
+  Archboard server, a browser and ffmpeg, as `record` does. A talk that cannot be
+  read is refused as a usage error (exit 2) before a browser starts. A render
+  that fails is `RENDER_FAILED` (exit 1), and the talk is kept.
+
 ### A pull request's recording
 
 The video is how a reviewer who has not read the code learns what the pull

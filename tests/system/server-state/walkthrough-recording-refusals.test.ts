@@ -4,7 +4,8 @@
 // starts it refuses before one does. The recorder is a script that leaves a mark when started and
 // fails, so a refusal that came only after trying to record shows in the mark, and the two
 // unavailable refusals (both exit 4) are told apart by it. ffmpeg is a fake that can encode,
-// except where the encoder is what is refused (TASK-381).
+// except where the encoder is what is refused (TASK-381). `semantic replay` is refused the same
+// way: a talk that cannot be rendered is a usage error before any browser starts.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import {
@@ -139,4 +140,34 @@ test("an --out whose directory does not exist is a usage error before anything s
 	const refused = record(["--out", join(vault, "missing", "tour.mp4")]);
 	expect(refused.status).toBe(2);
 	expect(existsSync(join(vault, "missing"))).toBe(false);
+});
+
+/**
+ * Replay a talk, with the same browser that marks that it started and can never render.
+ * @param talk The talk's directory.
+ * @returns How the command exited and what it printed.
+ */
+const replay = (talk: string) => {
+	rmSync(started, { force: true });
+	return runServerCli({
+		repoRoot,
+		vault,
+		base: server.base,
+		args: ["semantic", "replay", talk, "--out", out],
+		input: undefined,
+		env: { ARCHBOARD_RENDERER_CHROMIUM: browser, ARCHBOARD_FFMPEG: ffmpeg },
+	});
+};
+
+test("a talk that is missing or malformed is a usage error before a browser is started", () => {
+	const malformed = join(vault, "malformed-talk");
+	mkdirSync(malformed);
+	writeFileSync(join(malformed, "talk.json"), "{}");
+	for (const talk of [malformed, join(vault, "no-such-talk")]) {
+		const refused = replay(talk);
+		expect(refused.status).toBe(2);
+		expect(refused.stdout).toBe("");
+		expect(existsSync(started)).toBe(false);
+		expect(nothingWritten()).toBe(true);
+	}
 });

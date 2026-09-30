@@ -200,4 +200,11 @@ async function probeFfmpeg(
 	}
 }
 
-export { EncoderUnavailableError, findFfmpeg, probeFfmpeg, type FfmpegCommand, type FfmpegLookups };
+export {
+	EncoderUnavailableError,
+	findFfmpeg,
+	probeFfmpeg,
+	tailOf,
+	type FfmpegCommand,
+	type FfmpegLookups,
+};

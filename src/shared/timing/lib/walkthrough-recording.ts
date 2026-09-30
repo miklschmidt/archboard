@@ -151,8 +151,28 @@ const RECORDING_ENCODER_PROBE_MS = 10_000;
  */
 const RECORDING_NIX_FETCH_MS = 300_000;
 
+/**
+ * How long one call into the replay page that draws a frame may take: loading a talk, or drawing
+ * a frame of it (TASK-381). The page bounds its own wait for a frame to be ready at 30 s
+ * (`RECORDING_FRAME_READY_MS`) and rejects with what was pending; this is a margin above that,
+ * so the page's reason reaches the caller, and the call only times out on a page that has
+ * stopped answering. It pulls against a render that waits on a hung page, frame after frame.
+ */
+const RECORDING_FRAME_CALL_MS = 45_000;
+
+/**
+ * How long ffmpeg may take to finish the file once the last frame is written and its input is
+ * closed (TASK-381). Frames are encoded as they arrive, so what is left is the tail of the
+ * encoder's queue and, for a MP4, moving its index to the front of the file, which is seconds
+ * for a talk of minutes; VP9 holds more frames back than x264 does. Past this, ffmpeg has
+ * stuck. It pulls against a long talk on a slow machine, where the queue is the longest.
+ */
+const RECORDING_ENCODE_FINISH_MS = 120_000;
+
 export {
+	RECORDING_ENCODE_FINISH_MS,
 	RECORDING_ENCODER_PROBE_MS,
+	RECORDING_FRAME_CALL_MS,
 	RECORDING_NIX_FETCH_MS,
 	RECORDING_SOUND_CONVERT_MS,
 	RECORDING_CAPTURE_BAR_MS,
