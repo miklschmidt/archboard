@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-30 18:51'
-updated_date: '2026-09-30 19:40'
+updated_date: '2026-09-30 19:45'
 labels:
   - ui
 dependencies: []
@@ -54,4 +54,6 @@ Built (commits 10ffd64f, c24cfb0c, 647e0d97):
 - Renderer exports standingMark so the change key draws the picture's pin.
 - Tests: new semantic-board-tab owner (summary, view summary placement, unbuilt board, change counts); copy-pinning assertions replaced by structure; shell-layout browser owner now holds the sidebar heading role (600, 12 px, no transform).
 - Follow-ups outside this scope: data-flow messages carry no kind, so the legend keys no message line there; the presented walkthrough's caption still uses an uppercase kicker.
+
+Gate: bun run check passed on 647e0d97 (lint, fmt, both type-checks, build; modules 3735, system 189, repository 8, serial browser 18, no failures). Criteria left unchecked for the parent's review.
 <!-- SECTION:NOTES:END -->
