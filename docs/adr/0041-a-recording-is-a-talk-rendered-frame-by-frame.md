@@ -1,14 +1,14 @@
 ---
-status: proposed
+status: accepted
 ---
 
 # A recording is a talk rendered frame by frame
 
-When TASK-381 closes, this ADR supersedes
-[ADR 0035](0035-a-recording-is-paced-and-captured-by-the-page.md) in full, and
-ADR 0035 gets `status: superseded by ADR-0041`. The user decided the two passes
-on 2026-09-30, after comparing Archboard's recorder with Remotion's capture
-pipeline. The user also decided that the encoder is ffmpeg.
+This ADR supersedes
+[ADR 0035](0035-a-recording-is-paced-and-captured-by-the-page.md) in full. The
+user decided on the two passes on 2026-09-30, after comparing Archboard's
+recorder with Remotion's capture pipeline. The user also decided that the
+encoder is ffmpeg. TASK-381 built it.
 
 ## Context
 
@@ -20,366 +20,284 @@ warm-up to keep held frames under 50 ms. A machine without a usable GPU still
 held the picture for 57 to 75 ms in the glides between views. A busy machine
 held it longer.
 
-A walkthrough is paced by the voice, so the pacing needs a live pass. The
-picture does not. It needs every frame drawn at its own time.
+The voice paces a walkthrough, so the pacing needs a live pass. The picture
+does not. It needs every frame drawn at its own time.
 
 ## Decision
 
 A recording is made in two passes.
 
 1. **Pass 1 records the talk.** The live page paces the walkthrough on the
-   voice, as before. It captures no picture. It keeps the voice's sound and
-   stamps each step, subtitle line and drawn board version on one clock.
-2. **Pass 2 renders the picture.** The CLI opens a replay page in its own
+   voice, as before, and captures no picture. It keeps the voice's sound and
+   stamps each step, subtitle line and drawn board version on the clock of that
+   sound.
+2. **Pass 2 renders the picture.** The CLI opens a replay page in a second
    headless Chromium. The page draws the talk's board from the talk alone, on a
-   clock that the CLI steps 1/30 s at a time. The CLI captures each frame and
-   pipes it to ffmpeg with the voice. No Codex runs, and nothing is captured
-   from a live screen.
+   clock that it steps 1/30 s at a time. The CLI captures each frame and pipes
+   it to ffmpeg with the voice. No Codex runs, and nothing is captured from a
+   live screen.
 
-So every frame is drawn, and no frame is dropped, with or without a GPU and
-under any load. A kept talk can be rendered again, in the other theme or after
-a renderer fix, with no new voice session.
+So every frame is drawn, with or without a GPU and under any load. A kept talk
+renders again, in the other theme or after a renderer fix, with no new voice
+session.
 
-## What stands from ADR 0035
+### What stands from ADR 0035
 
-These rules carry over unchanged. They are stated here so that ADR 0035 can be
-retired.
-
-### The page decides when to move on
-
-A recording is paced by neither the user nor the model. When the voice stops
-speaking, the page moves to the next step. Two conditions end a step. First,
-every line that the voice said about the step is final in the transcript.
-Second, the voice's measured output stays below speaking level for
-`RECORDING_QUIET_MS`.
-
-- The page decides, not the server. The model can end its turn before its
-  audio stops playing, and only the page hears the audio.
-- The pane reports the step as its own, with `answering: null`. The server
-  hands it to the voice by the path that every such step takes. The server has
-  no pacing of its own.
-- A step that never arrives, a voice that says nothing about a step, a voice
-  that talks about one step for minutes and a voice that stops all fail the
-  recording loudly.
-
-A recording start differs from a narration start in four ways:
-
-- The voice model gets the voice's persona and a recording section, and none
-  of the conversation rules.
-- The coordinator writes only quiet commentary. A workhorse outcome that
-  arrives meanwhile goes into its thread and is never spoken into the video.
-- The Realtime API's delegation filler is off.
-- The server opens no step itself, because the talk's clock starts before the
-  first step.
-
-### Pass 1 runs on the Archboard server the CLI talks to
-
-The voice needs a signed-in Codex, and one app-server at a time holds a Codex
-home. So pass 1 runs on the Archboard server that the CLI already talks to, in
-a private headless Chromium that the recorder owns. The recording page's pane
-registers as a recording's pane. Some server features pick a pane for somebody
-who did not name one. The server leaves the recording's pane out of all of
-them. It still reaches that pane by its client id. The recording page always
-shows subtitles.
-
-TASK-373 amended this rule, and the amendment stands. The recording page is a
-browser tab of its own, with its own tab session, coordinator and voice
-session. Voice in another tab does not refuse a recording start, and a Talk in
-another tab does not end a recording.
-
-The voice does not start without a microphone. So the browser of pass 1 starts
-with a fake microphone, and with audio allowed to play. The recorder grants the
-microphone over DevTools. The fake device plays a second of silence. Chromium's
-default fake device plays a tone, and the voice hears that tone as somebody
-speaking.
-
-### A board made to be recorded can be discarded
-
-`--discard` deletes the board once its recording is written. A failed
-recording keeps the board. The delete goes through the store under the
-board's lease, with a stated doing. It states the version that the command
-read before it recorded. So a board that somebody changed meanwhile is kept. A
-discard that is refused leaves the recording answered, and the receipt says
-why the board was kept.
-
-### The recording speaks one language
-
-TASK-380 added this rule, and no ADR stated it until now.
-`--language` names the language a recording is narrated in, as a BCP 47
-language tag. English is the default. The command refuses a tag that names no
-language before it starts anything (`RecordingLanguageSchema` in
-`@/shared/walkthrough-recording`). The voice is told to speak only that
-language, from its first word to its last, whatever language a step is written
-in. Only a recording carries a language. A live narration speaks the user's
-language.
-
-## What is new
+- **The page moves on by itself.** Two conditions end a step. First,
+  every line that the voice said about it is final in the transcript. Second,
+  the voice's output stays below speaking level for `RECORDING_QUIET_MS`. Only
+  the page hears the audio, so the page decides, not the server. The pane
+  reports the step as its own, with `answering: null`. Four things fail the
+  recording. A step never arrives. The voice says nothing about a step. The
+  voice talks about one step for minutes. The voice stops.
+- **A recording start differs from a narration start in four ways.** The voice
+  model gets the voice's persona and a recording section, and none of the
+  conversation rules. The coordinator writes only quiet commentary. The
+  Realtime API's delegation filler is off. The server opens no step itself.
+- **Pass 1 runs on the Archboard server that the CLI talks to**, because that
+  server holds the Codex sign-in. The recording page is a tab session of its
+  own (TASK-373). Its pane registers as a recording's pane. The server leaves
+  that pane out of every feature that picks a pane for somebody who did not
+  name one. The recording page always shows subtitles. Its browser plays audio
+  without a gesture and has a fake microphone, granted over DevTools, that
+  plays silence.
+- **`--discard` deletes a board made to be recorded**, once the file is
+  written, under the board's lease and at the version that the command read. A
+  failed recording keeps the board, and so does a board that changed meanwhile.
+- **A recording speaks one language** (TASK-380). `--language` takes a BCP 47
+  tag, English by default. `RecordingLanguageSchema` refuses a tag that names no
+  language before anything starts.
 
 ### The talk
 
-A talk is a directory with two files, `talk.json` and `voice.wav`.
-`TalkSchema` in `@/shared/walkthrough-recording` is its one contract, and both
-the CLI and the replay page read it. `talk.json` holds:
+A talk is a directory of `talk.json` and `voice.wav`. `TalkSchema` in
+`src/shared/walkthrough-recording/talk.ts` is its one contract, and both the
+CLI and the replay page read it. `talk.json` holds these things:
 
-- `format: "archboard-talk"` and `version: 1`, the time it was recorded, its
-  language and its theme.
-- The board: its name, its key (`name` or `name@variant`), the variant, the
-  version, the walkthrough and its number of steps.
-- The audio: 48 kHz, one channel, the number of samples, and the audio
-  context's `baseLatencyMs`.
-- The events, each stamped `at` a sample count from the origin. A `step` event
-  names a beat. A `said` event is one change of an assistant line in the
-  subtitled transcript. A `drawn` event names a drawn version. An `end` event
-  closes the talk.
-- The board document, parsed with `parseSemanticBoard`, and the vault policy,
-  parsed with `VaultCheckSchema`. No second schema describes either.
+- The format, its version, the time of the recording, the language and the
+  theme.
+- The board: its name, variant, version, walkthrough and number of steps.
+- The audio: 48 kHz, one channel, and the number of samples.
+- The board's document, and the vault policy that it was drawn under.
+- The events.
 
-The schema refuses a talk in three cases:
+Each event is stamped `at` a count of samples from the start:
 
-- Its beats are not 0 to the last step, once each and in order.
-- Its last event is not `end`.
-- A `drawn` version is not the board's version. Then the board changed while
-  it was recorded. Pass 1 fails, and the error says to record again.
+- `step`: a step of the walkthrough was shown.
+- `said`: one of the voice's lines changed. The event holds its whole text so
+  far.
+- `drawn`: the pane drew the board at a version.
+- `end`: the talk ended.
 
-The talk is kept. Every `semantic record` writes it atomically, through a
-temporary directory and a rename, to `recordings/<UTC stamp>-<board>/` in the
-state directory. The newest 10 talks stay there. When a recording starts, the
-recorder removes the older ones. `--talk <dir>` writes the talk to that directory
-instead and never removes it. The directory must not exist, and the command
-checks this before it starts anything. The talk is written before pass 2. If
-pass 2 fails, the talk stays, and the error names the `semantic replay`
-command that renders it again.
+The schema refuses a talk that cannot be rendered:
 
-### How pass 1 records the talk
+- Its steps are not shown once each and in order.
+- Its events are not in time order.
+- Its last event is not its one `end`, at the length of its voice.
+- Its board document, or a `drawn` event, is at another version than the talk
+  states.
 
-Talk capture (`src/ui/walkthrough-recording/lib/talk-capture.ts`) replaces the
-tab capture. It makes one `AudioContext` at 48 kHz. The voice's stream goes
-through a mix bus and an AudioWorklet tap into a gain of zero. The zero gain
-keeps the tap running while nothing is heard. The voice's audio element stays muted.
-Chrome needs the element to hand a WebRTC track's sound to Web Audio.
+A `drawn` event at another version means that the board changed while it was
+recorded. Pass 1 then fails with `RECORDING_FAILED` and says to record again.
+Reading a talk also refuses a `voice.wav` whose length differs from the talk's.
 
-Every event is stamped with the audio context's own clock, in samples. A stamp
-is late by at most one audio buffer, which is about 10 to 21 ms on Linux and
-under one frame. The origin is the moment the voice goes live, where the video
-begins. At the end, the tap cuts the audio to the origin and the end, so the
-sound is exact to the sample against the stamps. The transcript's changes come
-from the transport's subscription, not from the pacing tick, so a `said`
-event keeps the timing that the subtitles saw.
+`semantic record` writes the talk whole, through a staging directory and a
+rename, before pass 2 starts. The talk goes to `recordings/<UTC stamp>-<board>/`
+in the state directory, where the newest 10 talks stay. `--talk <dir>` puts it
+in that directory instead, which must not exist and is never pruned. If pass 2
+fails, the talk stays, and the refusal names the `semantic replay` command that
+renders it.
 
-The page hands the voice over as a 16-bit mono WAV and the event log by value.
-It hands over no video.
+### Pass 1
+
+`src/ui/walkthrough-recording/lib/talk-capture.ts` makes one `AudioContext` at
+48 kHz. The voice's stream goes through a mix bus into an AudioWorklet tap, and
+from the tap into a gain of zero. So the graph pulls the tap while nobody hears
+it. The tap passes on each render quantum with the frame it began at. It passes
+on silence too. So the voice's samples and the graph's clock are one count. The
+tap is one function, sent to the worklet as source text from a Blob URL. So it
+uses nothing from its module. The voice's audio element stays muted, and a
+muted element still hands a WebRTC track's sound to Web Audio.
+
+Each event is stamped with the graph's clock, from the moment that the voice
+goes live. The `said` events follow the pane transport's transcript by
+subscription, not by the pacing tick, so each change keeps its own moment. The
+talk stamps the voice's lines of that transcript directly. The plan moved
+`subtitledTranscript` into `src/ui/voice-subtitles`. It stayed in
+`src/ui/application`, because the talk does not use it. At the end, the page
+waits up to `RECORDING_TAP_DRAIN_MS` for the last quanta and cuts the sound to
+the talk's exact length. It hands over the voice as a 16-bit mono WAV and the
+event log.
 
 ### The replay page
 
-The server serves one more page, `/?replay=1`, from the same static files. For
-that address the entry point mounts the walkthrough replay
-(`src/ui/walkthrough-replay`) in place of the application. The replay page
-mounts no workbench, no pane session and no socket, so no Codex is involved. It
-builds the same DOM as the recording page's pane: the recording stage, the
-pane stage, the board stage and the subtitles over it.
+The server serves `/?replay=1` from the same static files. For that address the
+entry point mounts `src/ui/walkthrough-replay` in place of the application, with
+no workbench, no pane session and no socket. The page mounts the recording
+stage, the board stage and the subtitles, as the recording page does. It reads
+the board and the vault policy only from the talk, through the board-reads port
+(`readBoardsFrom`). It publishes `window.archboardReplay` with `load(talk,
+options)` and `frame(n)`.
 
-The page reads the board only from the talk. The viewer's document and
-vault-check queries read through one board-reads port, and the replay installs
-the talk's snapshot there. So every refetch answers the same board, and a read
-of any other board fails the render. The page publishes
-`window.archboardReplay` with `load(talk)` and `frame(n)`.
+`load` plays the board's entrance through `RECORDING_REPLAY_PREROLL_MS` of
+frames that nobody captures, so frame 0 shows the board at rest. Frame `n` is at
+`n / 30` s, which is exactly 1600 samples of the voice. An event shows on the
+first frame at or after it. To draw frame `n`, the page does these things:
 
-### The frame clock
-
-Everything that moves on the replay page reads one clock, the frame clock in
-`src/ui/frame-clock`. A live page gets the browser's own clock:
-`performance.now`, `requestAnimationFrame`, `setTimeout` and the SVG clock. The
-replay page installs a stepped clock once, at page start. The viewer's camera
-glide and picture transitions, and the subtitles' linger, read the time and
-schedule their work through it. A lint rule over the viewer, the subtitles and
-the replay keeps new code on the clock. Lint owns this rule, not a test.
-
-Frame `n` is at `n * 1000 / 30` ms, which is exactly 1600 samples of the voice.
-To draw frame `n`, the replay page:
-
-1. Takes the events that fall on this frame, the first frame at or after each
-   event's time.
-2. Moves the clock to the frame's time, which runs each timer at its own due
-   time.
-3. Applies the events: the step, and the transcript's lines.
-4. Waits until the page is ready.
-5. Runs the frame callbacks of the glides and flights with the frame's time.
-6. Waits until the page settles again.
-7. Pauses every Web Animation, CSS transition, CSS animation and SMIL root and
-   seeks it to the frame's time. An animation that has run past its end
-   finishes once, so its `finish` listeners run.
-8. Waits for one real animation frame, so the browser paints.
+1. It moves the stepped clock to the frame's time, and each timer runs at its
+   own due time on the way.
+2. It applies the events that are due.
+3. It waits until the page is ready.
+4. It runs the frames that were asked for, and waits again.
+5. It stands every Web Animation and SVG clock at the frame's time.
+6. It waits for one real paint.
 
 Four conditions make the page ready:
 
 - The fonts are loaded.
-- No query is fetching.
-- The published picture shows the talk's board, at the talk's version and the
-  last step applied.
-- The DOM did not change for two macrotasks.
+- No query fetches.
+- The pane shows the talk's board at the talk's version and step.
+- The DOM did not change for two turns of the event loop.
 
-The clock stays still while the page waits, and the wait is bounded by
-`RECORDING_FRAME_READY_MS`. A timeout names what was still pending.
+`RECORDING_FRAME_READY_MS` bounds the wait, and the refusal names what the page
+waited for.
 
-The stepped clock guards itself, and a violation fails the render with the
-frame number:
+### The frame clock
 
-- A call to the global `requestAnimationFrame` after the clock is installed.
-- An animation on another timeline, or one that is still running after the
-  seek.
-- An SVG root whose animations are not paused.
-- A board read that the talk does not answer.
+Everything that moves on a board's pane reads one clock, `frameClock()` from
+`src/ui/frame-clock`: the camera glide, the picture's transitions, the SVG
+traffic, the subtitles' linger and the subject tip's delay. A live page gets the
+browser's clock. The replay page installs a stepped clock once, before anything
+mounts. Lint keeps `src/ui/semantic-board-canvas` and `src/ui/voice-subtitles`
+off the browser's timers.
 
-The guard cannot see a timer that changes the picture on real time. So two
-renders of one talk give byte-identical frames, and a test holds them to
-that.
+The draft refused every call to the browser's own `requestAnimationFrame` once
+the stepped clock was installed. The build runs those calls instead:
+`install()` routes `window.requestAnimationFrame` and `cancelAnimationFrame` to
+the stepped clock. When a component mounts, Base UI's transition status asks the
+browser for frames. Such a frame now runs on the stepped clock at its time.
+Two guards remain, and each fails the render with the frame's number: an
+animation on another timeline, and a read of a board other than the talk's.
 
-### Why the clock lives in the page
+### The render
+
+`renderTalk` in `src/runtime/walkthrough-recorder/lib/render.ts` starts Chromium
+in software, with `--disable-gpu` and `--disable-partial-raster`. A partial
+raster reuses a tile's old content, so a frame's pixels depended on how many
+real frames Chromium drew while the page waited. Without the flag, two renders
+of one talk differed in 2 to 22 of 240 frames by a few pixels. With it, three
+renders of three were byte-identical (2026-09-30, the web-shop example,
+Chromium 153).
+
+After each `frame(n)`, the CLI captures the frame with `Page.captureScreenshot`
+as a JPEG at quality 92 and writes it to ffmpeg. The next frame waits until
+ffmpeg has taken it. A JPEG is enough, because the picture is encoded again as
+4:2:0 H.264. `RECORDING_FRAME_CALL_MS` bounds each call into the page. The file
+is renamed into place after ffmpeg exits with 0. A failure while it renders is
+`RENDER_FAILED` (exit 1). It writes no file and keeps the talk.
 
 We rejected Chromium's virtual time and `HeadlessExperimental.beginFrame`.
+`beginFrame` needs chrome-headless-shell, and Archboard runs the full Chromium
+with `--headless=new`. Virtual time without `beginFrame` does not draw the frame
+for a given time. A clock in the page works on every Chromium build, and module
+tests hold it.
 
-- `beginFrame` needs a target made with BeginFrameControl and
-  `--run-all-compositor-stages-before-draw`. That is the rendering path of
-  chrome-headless-shell. Archboard runs the full Chromium with
-  `--headless=new`. So `beginFrame` means shipping a second browser.
-- `Emulation.setVirtualTimePolicy` is experimental. It makes timers virtual,
-  but without `beginFrame` it cannot draw the frame for a given time. It also
-  runs only inside a real browser, so no module test can hold it.
-- Remotion uses no virtual time at production scale. It seeks each frame, then
-  takes a screenshot.
-- A clock in the page works on every Chromium build, and module tests hold its
-  pure parts.
+### ffmpeg
 
-### Each frame is captured as JPEG
+The recorder finds ffmpeg in this order:
 
-The renderer captures each frame with `Page.captureScreenshot` as JPEG at
-quality 92, with `optimizeForSpeed` and `fromSurface`.
-
-- The picture is encoded again as 4:2:0 H.264, so a lossless frame buys
-  nothing.
-- Chromium encodes a 2 MP PNG several times slower than a JPEG, and a PNG
-  frame is 3 to 5 times more bytes to send over DevTools.
-- At quality 92, JPEG artifacts stay below those of x264 at CRF 18 on thin
-  lines and text.
-
-The rasterizer keeps PNG, because its PNG is the product.
-
-### ffmpeg makes the file
-
-The picture is encoded outside the browser, by ffmpeg. The recorder finds
-ffmpeg in this order:
-
-1. `ARCHBOARD_FFMPEG`. When it names a program that does not run, the recorder
-   refuses by that name. It never falls back to another ffmpeg without saying
-   so.
+1. The one that `ARCHBOARD_FFMPEG` names. The recorder never passes over it. If
+   it does not run, the refusal names it.
 2. `ffmpeg` on `PATH`.
-3. Nix. If `nix` is on `PATH`, the recorder runs
-   `nix --extra-experimental-features "nix-command flakes" run nixpkgs#ffmpeg-headless --`.
-4. Otherwise the recorder refuses with `ENCODER_UNAVAILABLE` (exit 4). The
-   error names both ways to get one: put ffmpeg on `PATH` or name it with
-   `ARCHBOARD_FFMPEG`, or install Nix.
+3. `nix --extra-experimental-features "nix-command flakes" run nixpkgs#ffmpeg-headless --`,
+   when `nix` is on `PATH`. `nixpkgs` comes from the machine's registry, which
+   the user chose.
+4. None of these: the command refuses with `ENCODER_UNAVAILABLE` (exit 4) and
+   names both ways to get one.
 
 Before any browser starts, the recorder runs `ffmpeg -encoders`. An MP4 needs
-`libx264` and `aac`, and a WebM needs `libvpx-vp9` and `libopus`. A missing
-encoder is refused by its name. The probe is bounded by
-`RECORDING_ENCODER_PROBE_MS`. The first run through Nix fetches the package.
-So `RECORDING_NIX_FETCH_MS` bounds that run, and the recorder first says that
-it is fetching ffmpeg through Nix.
+`libx264` and `aac`, and a WebM needs `libvpx-vp9` and `libopus`.
+`RECORDING_ENCODER_PROBE_MS` bounds the probe. Through Nix,
+`RECORDING_NIX_FETCH_MS` bounds it, because the first run fetches the package,
+and the recorder first says that it fetches ffmpeg.
 
-- `nix run` starts the package's own program, `ffmpeg`, in its own place. So
-  the frame pipe on standard input and every signal reach ffmpeg itself.
-- `ffmpeg-headless` has libx264, libvpx, Opus and the native AAC encoder, with
-  fewer dependencies than the full package.
-- `nixpkgs` comes from the machine's registry, not from a pinned revision. The
-  user chose this.
+One ffmpeg runs per render. The JPEG frames arrive on standard input
+(`image2pipe`), and `voice.wav` is the second input. The picture is converted
+from Chrome's full-range BT.601 to limited-range BT.709. `setparams` then tags
+the frames BT.709, because ffmpeg 9 takes the stream's primaries and transfer
+from its frames, and the conversion leaves them unset. The sound is padded to
+exactly the frames' length, so the picture and the voice line up by
+construction.
 
-One ffmpeg runs per render. The JPEG frames go in on standard input
-(`image2pipe`), and the next frame waits until the pipe has taken the last
-one. `voice.wav` is the second input. The frames are converted from full-range
-BT.601 to BT.709 limited range, not only tagged as such. The sound is padded
-to exactly the frames' length. Frame `n` is at `n / 30` s and sample `s` is at
-`s / 48000` s, so the picture and the voice line up by construction. One
-ffmpeg run muxes both, so the file's edit list covers the AAC priming.
-
-- An MP4 is H.264 (libx264, preset medium, CRF 18, profile high) with AAC at
-  160 kb/s, its index at the front.
-- A WebM is VP9 (libvpx-vp9, CRF 30) with Opus at 128 kb/s. The user chose to
-  keep both containers.
-
-The sound conversion from Opus to AAC goes away. Pass 2 encodes AAC from the
-voice's samples, so every MP4 plays with sound in every browser.
+- An MP4 is H.264 High (libx264, preset medium, CRF 18) with AAC at 160 kb/s,
+  and its index is at the front.
+- A WebM is VP9 (CRF 30) with Opus at 128 kb/s.
 
 ### The commands
 
-`archboard semantic record` runs the passes in this order:
+`archboard semantic record` does these things in order:
 
-1. It finds ffmpeg and probes its encoders.
-2. It runs pass 1.
-3. It writes the talk.
-4. It runs pass 2.
-5. After ffmpeg exits and the browser stops, it moves the file into place.
-6. It discards the board, with `--discard`.
+1. It finds ffmpeg and probes it.
+2. It runs pass 1 and writes the talk.
+3. It runs pass 2 and moves the file into place.
+4. With `--discard`, it discards the board.
 
-A failure in pass 2 keeps the board and the talk. Two refusals are new:
-`ENCODER_UNAVAILABLE` (exit 4) and `RENDER_FAILED` (exit 1, which names the
-kept talk). The receipt gains `talk` and `frames`. `--theme` is pass 2's input,
-and the talk records it.
+Its receipt gains `frames` and `talk`. It refuses with `ENCODER_UNAVAILABLE`
+and `RENDER_FAILED` as well. `--theme` is pass 2's input, and the talk keeps it.
 
 `archboard semantic replay <talk> --out <file> [--theme light|dark]` renders a
-kept talk again. It is a command of its own, because the command contract has
-no exclusions between local options. An option of `record` needs `--variant`,
-`--walkthrough`, `--language` and `--discard` excluded. The contract cannot
-state those exclusions, so only the description says them. Replay needs the Archboard server only for the page. The board need not
-exist, and no Codex or voice is involved. A talk that cannot be read, or one
-from another format version, is refused before a browser starts.
+kept talk again. It needs the Archboard server only for the page. The board need
+not exist, and no Codex or voice runs. A talk that cannot be read, or one of
+another format version, is a usage error (exit 2) before a browser starts.
+Replay is a command of its own. The command contract cannot state exclusions
+between a command's own options, and an option of `record` needs four of them:
+`--variant`, `--walkthrough`, `--language` and `--discard`.
 
-### What pass 1 no longer does
+### What went away
 
-Pass 1 captures no picture, so these go:
+Pass 1 captures no picture, so these went:
 
-- The tab capture (`getDisplayMedia` and `MediaRecorder`), the subtitle box
-  drawn before capture, and the repaint layer behind the pane.
-- `--enable-gpu`, `--disable-gpu-rasterization` and
-  `--auto-accept-this-tab-capture`. Pass 1 needs no GPU, because nobody looks
-  at its page. Pass 2 draws in software with `--disable-gpu`, like the
-  rasterizer.
-- The sound conversion and its Safari note, `RECORDING_CAPTURE_BAR_MS` and
-  `RECORDING_SOUND_CONVERT_MS`.
+- The tab capture: `getDisplayMedia`, `MediaRecorder` and
+  `--auto-accept-this-tab-capture`.
+- The rehearsal and the frame pacer, with its repaint layer.
+- The GPU flags `--enable-gpu` and `--disable-gpu-rasterization`.
+- `keepSize` and `HeadlessChromium.fitWindow`, which sized the window again
+  after the capture bar took room.
+- The Opus-to-AAC conversion and its Safari note. Every MP4 now has AAC sound.
+- `RECORDING_CAPTURE_BAR_MS` and `RECORDING_SOUND_CONVERT_MS`.
 
-This reverses ADR 0035's "The page records itself", its "Not Remotion" and its
-rule that the picture is never encoded outside the browser. It reverses "ffmpeg
-stays optional" and both TASK-378 amendments.
-
-### Rendering pages in parallel is deferred
-
-A step does not begin at rest. Subtitles linger for 2.5 s across a step, the
-SMIL traffic runs from the picture's insertion, and fades cross step
-boundaries. So each page after the first has to replay every event up to its
-range first. Parallel pages also need a frame multiplexer, a layout worker
-pool for each page, and a test that holds them equal to one page. We render on
-one page. If the measured render takes more than about twice the talk,
-parallel rendering becomes a follow-up task.
+This reverses these parts of ADR 0035: "The page records itself", "Not
+Remotion", the rule that the picture is never encoded outside the browser,
+"ffmpeg stays optional" and both TASK-378 amendments.
 
 ## Consequences
 
-- Every frame of a recording is drawn at its own time, with or without a GPU
-  and under load.
-- The voice, each step and each subtitle line meet the picture within one
-  frame.
-- A kept talk renders again without a voice session. A renderer fix reaches old
-  talks.
-- A recording takes longer. Pass 2 runs after the talk. The first estimate is
-  25 to 90 ms per frame, so a talk of 100 s renders in about 1.5 to 3.5
-  minutes. This is not measured yet. TASK-381 measures it and records the
-  number.
+- Every frame is drawn at its own time, with or without a GPU and under load. A
+  real recording on 2026-09-30 measured it: the web-shop walkthrough "How an
+  order is placed today", 4 steps in English, ffmpeg-headless 9.0.1 through Nix,
+  no GPU in pass 2. The talk of 85.3 s rendered to 2560 frames. Every frame was
+  33.333 or 33.334 ms after the one before. The picture was H.264 High, yuv420p,
+  1920x1080, in limited range. The sound was AAC LC, 48 kHz and mono, as long as
+  the picture, and matched `voice.wav` at 0 samples of lag. That first render
+  lacked the primaries and transfer tags. After the `setparams` fix, a render
+  of the same talk read BT.709 for all three.
+- The voice, the steps and the subtitles meet the picture within one frame. In
+  that recording, each of the 4 steps first changed the picture on frame
+  `ceil(at / 1600)`. The first words of two lines first changed the subtitles on
+  frame `ceil(at / 1600)` too.
+- A recording takes longer. That whole recording took 303 s, including the
+  first fetch of ffmpeg through Nix. A render of its kept talk in the dark theme
+  took 211 s, about 83 ms a frame, or 2.5 times the talk. The draft deferred
+  parallel rendering until a render took more than about twice the talk. This
+  one did, so TASK-382 follows: a picture renders in no more time than its talk
+  took. The render is sequential for now, because a step does not begin at
+  rest. Subtitles linger across steps, and traffic runs on.
 - A recording needs ffmpeg or Nix. Without either, it is refused before it
-  starts, and the error says how to get one.
-- A first run through Nix without a network fails with the tail of Nix's
-  error.
-- `talk.json` repeats each line's text in every `said` event, so a talk is a
-  few MB.
+  starts, and the refusal says how to get one. A first run through Nix without
+  a network fails with the tail of Nix's error.
+- A talk is mostly its voice, about 96 kB a second. The talk above was 8.3 MB.
+  The state directory keeps the newest 10.
 - Only the board's version is checked during pass 1. A change to the vault
   policy during pass 1 goes unnoticed.
-- The replay page and the recording page's pane must build the same DOM. The
-  replay reuses the recording stage so that they do.
-- `--theme` no longer changes what the voice sees in pass 1.
+- The replay page and the recording page must build the same DOM. The replay
+  mounts the recording's own `RecordingStage` so that they do.

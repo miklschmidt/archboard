@@ -231,7 +231,7 @@ Archboard's SVG renderer began as a fork of the PR Lens renderer (MIT, Coldtea A
 
 ## Quick start
 
-You need Linux or macOS, Bun 1.4 or newer, and Git. Chromium or Google Chrome draws PNGs and records videos. The agent bar, the voice, narration and recordings also need a Codex sign-in. You sign in from the agent bar with ChatGPT or an API key.
+You need Linux or macOS, Bun 1.4 or newer, and Git. Chromium or Google Chrome draws PNGs and the frames of a video, and `ffmpeg` (or Nix, which fetches it) encodes the video. The agent bar, the voice, narration and recordings also need a Codex sign-in. You sign in from the agent bar with ChatGPT or an API key.
 
 **See it in a minute** with the example vault from this README:
 

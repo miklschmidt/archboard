@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 21,
+	"version": 23,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-09-30T03:20:29.686Z",
+	"updatedAt": "2026-09-30T04:41:13.361Z",
 	"views": [],
 	"variants": [
 		{
@@ -683,7 +683,7 @@
 		{
 			"id": "xtb59Onf",
 			"name": "TASK-379",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "RSCDIXvS",
 			"summary": "System level: the processes that run, and what they keep. Drill into each application for its internal modules.",
 			"content": {
@@ -1019,9 +1019,9 @@
 		{
 			"id": "YdtjnO9O",
 			"name": "TASK-381",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "xtb59Onf",
-			"summary": "A recording renders its picture frame by frame against the talk it recorded",
+			"summary": "System level: the processes that run, and what they keep. Drill into each application for its internal modules.",
 			"content": {
 				"nodes": [
 					{
@@ -1030,7 +1030,7 @@
 						"name": "Agent CLI",
 						"kind": "service",
 						"responsibility": "Authors named boards: one short-lived process per command, writing no board itself",
-						"description": "Every board operation reaches the Archboard server over HTTP. Three commands draw for themselves in a headless browser here: rasterize photographs the SVG the server made; record keeps a narrated talk from the server's own page, then draws it frame by frame and encodes the video through ffmpeg, which is named by ARCHBOARD_FFMPEG, found on PATH or run through nix; replay draws a kept talk again. repo add writes this machine's list of checkouts itself.",
+						"description": "Every board operation reaches the Archboard server over HTTP. Three commands draw for themselves in a headless browser here: rasterize photographs the SVG the server made; record keeps a narrated talk from the server's own page, then draws it frame by frame and has ffmpeg encode the video; replay draws a kept talk again. repo add writes this machine's list of checkouts itself.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/bin.ts"
@@ -1147,6 +1147,26 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/codex-process/lib/storage.ts"
+						}
+					},
+					{
+						"id": "nugpFSIX",
+						"order": 10000,
+						"name": "ffmpeg",
+						"kind": "external",
+						"responsibility": "Encodes a recording's frames and voice into its video file, when a command asks",
+						"description": "Named by ARCHBOARD_FFMPEG, found on PATH, or run as nixpkgs#ffmpeg-headless through Nix. Without one, record and replay are refused before a browser starts."
+					},
+					{
+						"id": "VgzgNAGW",
+						"order": 11000,
+						"name": "Recorded talks",
+						"kind": "datastore",
+						"responsibility": "Each recording's talk: its voice, and when each step and line came, kept to render again",
+						"description": "talk.json and voice.wav, under the state directory's recordings, where the newest 10 stay, or in a directory --talk names, which is never pruned. A talk holds the board and the policy it was drawn from, so it renders again without the board.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/walkthrough-recorder/lib/talk-files.ts"
 						}
 					}
 				],
@@ -1288,6 +1308,24 @@
 						"kind": "data",
 						"label": "register a checkout",
 						"emphasis": "muted"
+					},
+					{
+						"id": "FCRYdY4h",
+						"order": 15000,
+						"from": "TBnOCNx2",
+						"to": "nugpFSIX",
+						"kind": "call",
+						"label": "encode the frames and the voice",
+						"emphasis": "normal"
+					},
+					{
+						"id": "OPwTCiKt",
+						"order": 16000,
+						"from": "TBnOCNx2",
+						"to": "VgzgNAGW",
+						"kind": "data",
+						"label": "keep a talk; read one to render again",
+						"emphasis": "normal"
 					}
 				],
 				"flows": [],
@@ -1320,11 +1358,15 @@
 							{
 								"id": "JuKj0ZMA",
 								"heading": "Pictures are taken outside the server",
-								"body": "rasterize paints the SVG the server drew in a headless browser the CLI starts. record opens the server's own page in one: the page plays the walkthrough, the Codex voice narrates it, and the CLI keeps the talk. A second browser then draws the talk frame by frame, and ffmpeg makes the video file.",
+								"body": "rasterize paints the SVG the server drew in a headless browser the CLI starts. record opens the server's own page in one: the page plays the walkthrough, the Codex voice narrates it, and the CLI keeps the talk. A second browser then draws the talk frame by frame, and ffmpeg makes the video file. replay renders a kept talk again.",
 								"subjects": [
 									"t7W7wJHv",
 									"chzSzpL4",
-									"vKDw0TwV"
+									"vKDw0TwV",
+									"nugpFSIX",
+									"VgzgNAGW",
+									"FCRYdY4h",
+									"OPwTCiKt"
 								]
 							},
 							{
@@ -1353,7 +1395,7 @@
 			}
 		}
 	],
-	"current": "xtb59Onf",
+	"current": "YdtjnO9O",
 	"adoptions": [
 		{
 			"variant": "RSCDIXvS",
@@ -1366,6 +1408,12 @@
 			"from": "RSCDIXvS",
 			"at": "2026-09-29T18:48:04.451Z",
 			"reason": "TASK-379: the Codex child's environment names this server's URL and vault, with auto-start off, so a thread's CLI reaches the server that started it"
+		},
+		{
+			"variant": "YdtjnO9O",
+			"from": "xtb59Onf",
+			"at": "2026-09-30T04:41:13.361Z",
+			"reason": "TASK-381: record keeps a narrated talk and draws it again frame by frame in a second headless browser; ffmpeg, found or run through Nix, encodes the file, and replay renders a kept talk again."
 		}
 	]
 }

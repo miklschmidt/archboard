@@ -167,9 +167,10 @@ speakers:
 - [The voice acceptance](docs/design/codex-workbench-voice-acceptance.md), for
   a change to the Codex workbench or its voice path.
 - [The recording acceptance](docs/design/walkthrough-recording-acceptance.md),
-  for a change to `semantic record`. Its automated test,
-  `tests/system/server-state/walkthrough-recording.test.ts`, runs a real
-  headless Chromium against a fake Codex.
+  for a change to `semantic record` or `semantic replay`. Its automated owners
+  run a real headless Chromium with a fake ffmpeg.
+  `tests/system/server-state/walkthrough-recording.test.ts` records against a
+  fake Codex, and `walkthrough-replay.test.ts` beside it renders a kept talk.
 
 ## 8. When something fails
 

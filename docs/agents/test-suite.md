@@ -83,15 +83,33 @@ scaled dimensions, full bounds past a display, font readiness, bounds refusals,
 cancellation and a Chromium that is provably gone. The Chromium it runs on is
 `src/runtime/headless-chromium`, whose owner proves caller flags, an exact
 window viewport, event delivery without retention, a page Blob streamed to a
-file, and provable teardown. `tests/system/server-state/walkthrough-recording.test.ts`
-owns `semantic record` end to end: the real CLI drives the built page in a
-headless Chromium against a server whose fake Codex narrates, and the owner
-checks the MP4, the order the steps reached the voice and `--discard`;
-`walkthrough-recording-refusals.test.ts` beside it owns the refusals that start
-no browser and no voice. Every owner in this paragraph but the refusals needs a
-Chromium-family executable (`ARCHBOARD_RENDERER_CHROMIUM` names one), and the
-recording owner needs `dist/frontend` as well. Real-browser owners cover
-only live `browser` commands.
+file, and provable teardown.
+
+The recording owners in `tests/system/server-state` run a fake ffmpeg that keeps
+each frame's hash. `walkthrough-recording.test.ts` owns `semantic record` end to
+end. The real CLI drives the built page in a headless Chromium against a server
+whose fake Codex narrates. The owner checks the kept talk, the frames, the order
+in which the steps reached the voice, and `--discard`.
+`walkthrough-replay.test.ts` owns `semantic replay`. It renders a talk of a
+discarded board three times through the real replay page. The frames are the
+same each time, move at a step and hold still after it, and differ in the dark
+theme. `walkthrough-render.test.ts` owns a render that fails. Against a
+stand-in page it is `RENDER_FAILED`, keeps the talk and writes no file.
+`walkthrough-recording-refusals.test.ts` owns the refusals that start no browser
+and no voice. These module owners hold the parts:
+
+- `src/runtime/video-encoder/tests`: finding and running ffmpeg.
+- `src/shared/walkthrough-recording/tests`: the talk's contract.
+- `src/ui/walkthrough-replay/tests`: the frame that shows each event.
+- `src/ui/frame-clock/tests`: the stepped clock.
+- `src/runtime/walkthrough-recorder/tests`: the talk on disk and the browsers'
+  flags.
+
+Every owner in these two paragraphs needs a Chromium-family executable
+(`ARCHBOARD_RENDERER_CHROMIUM` names one), except the refusals owner and the
+module owners in the list. The recording and replay owners need
+`dist/frontend` as well. Real-browser owners cover only live `browser`
+commands.
 
 Run browser diagnosis only through the adapter:
 

@@ -1,11 +1,11 @@
 ---
 id: TASK-381
 title: A recording renders its picture frame by frame against the talk it recorded
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-30 02:38'
-updated_date: '2026-09-30 03:24'
+updated_date: '2026-09-30 04:53'
 labels:
   - voice
   - renderer
@@ -27,11 +27,11 @@ Research: /home/msc/.claude/jobs/87eee52a/tmp/two-pass-brief.md (a working file 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A recording's video has one fully drawn frame every 1/30 s, with no frame held, on a machine with or without a usable GPU and under load
-- [ ] #2 The voice and each step and subtitle line up with the picture within one frame
-- [ ] #3 A recorded talk can be rendered again, for example in the other theme, without a new voice session
-- [ ] #4 The recorder finds ffmpeg, runs it through nix when it is missing, and refuses with an error naming both when neither is there
-- [ ] #5 ADR 0035, the recording docs and the affected boards describe the two passes
+- [x] #1 A recording's video has one fully drawn frame every 1/30 s, with no frame held, on a machine with or without a usable GPU and under load
+- [x] #2 The voice and each step and subtitle line up with the picture within one frame
+- [x] #3 A recorded talk can be rendered again, for example in the other theme, without a new voice session
+- [x] #4 The recorder finds ffmpeg, runs it through nix when it is missing, and refuses with an error naming both when neither is there
+- [x] #5 ADR 0035, the recording docs and the affected boards describe the two passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -55,3 +55,15 @@ Stages, each gate-green and committed:
 
 Board proposals: Board rasterizer@TASK-381, Command interface@TASK-381, Browser application@TASK-381, Board viewer@TASK-381, Archboard@TASK-381.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Deviations from the plan, as built: the stepped clock runs the browser's own animation frames (window.requestAnimationFrame is routed to it) instead of refusing them, because Base UI's transition status asks for frames on mount; the talk follows the pane transport's transcript by subscription and subtitledTranscript stayed in application; the tap is an AudioWorklet loaded from a Blob URL of a stringified function; renders run with --disable-partial-raster, without which two renders of one talk differed in 2 to 22 of 240 frames (three of three identical with it); frames are tagged BT.709 with setparams because ffmpeg 9 takes primaries and transfer from the frames. semantic record and replay share their refusals in src/cli/commands/lib/recording-output.ts. Real recording 2026-09-30 (web-shop, 4 steps, ffmpeg-headless 9.0.1 through nix): 2560 frames, every one 33.333 or 33.334 ms apart; H.264 High and AAC; MP4 sound on voice.wav at 0 samples; each step and first word first changes the picture on frame ceil(at/1600); a dark replay took 211 s, 2.5x the talk, filed as TASK-382.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A recording is now two passes (ADR 0041, superseding 0035). Pass 1 paces the walkthrough on the live voice as before but keeps a talk instead of capturing the tab: the voice at 48 kHz through an AudioWorklet tap, and each step, subtitle word and drawn board version stamped on that sample clock, kept with the board and vault check (newest ten in the state directory, or --talk). Pass 2 renders the picture frame by frame in software headless Chromium from the replay page (/?replay=1), whose moving pictures all run on a stepped frame clock, and pipes JPEG frames and the voice into ffmpeg (ARCHBOARD_FFMPEG, then PATH, then nix run nixpkgs#ffmpeg-headless, else ENCODER_UNAVAILABLE). New: archboard semantic replay, RENDER_FAILED, the receipt's frames and talk. Removed: tab capture, rehearsal, frame pacer, Opus-to-AAC conversion, GPU flags, fitWindow. Verified: bun run check green; walkthrough-replay.test.ts renders a talk of a discarded board to identical frames three times, moving at its steps and still between, dark differing; walkthrough-recording.test.ts records end to end with a fake Codex and ffmpeg; a real recording through nix had 2560 frames exactly 1/30 s apart, sound at 0 samples offset, steps and words on frame ceil(at/1600), and replayed in the dark theme with no voice. Boards adopted: Board rasterizer, Command interface, Browser application, Board viewer, Archboard. Follow-up: TASK-382 (render in no more time than the talk).
+<!-- SECTION:FINAL_SUMMARY:END -->

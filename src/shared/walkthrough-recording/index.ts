@@ -49,9 +49,9 @@ type RecordingNarration = z.infer<typeof RecordingNarrationSchema>;
  * - `loading`: the page is still reaching a board it can present and an agent
  *   that can speak.
  * - `ready`: it can be started.
- * - `recording`: it is capturing; the step on screen is named once the talk
- *   has reached one.
- * - `finished`: the file is complete and can be taken.
+ * - `recording`: it is keeping the talk; the step on screen is named once the
+ *   talk has reached one.
+ * - `finished`: the talk is complete and can be taken.
  * - `failed`: nothing usable was recorded; the failure says why.
  */
 const RecordingPhaseSchema = z.enum(["loading", "ready", "recording", "finished", "failed"]);

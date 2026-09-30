@@ -130,8 +130,12 @@ speak about a change that no beat names.
   tag that names no language before it starts anything.
 - It needs the Archboard server's Codex signed in, and a refusal says so. Voice
   in a browser can stay live, because the recording runs in a browser of its
-  own. It takes about as long as the talk and prints
-  each beat as it is reached.
+  own.
+- It works in two passes. First the talk: the voice explains each beat, and the
+  command prints each beat as it is reached. Then the picture: the command draws
+  the video from the talk frame by frame and prints its progress each second of
+  video. The picture takes about 2.5 times as long as the talk, so a talk of
+  two minutes takes about seven minutes in all.
 - For a board made only for the video, create it with `semantic new`, look at
   it with `semantic rasterize`, then record with
   `--discard --doing "<why>"`, which deletes the board once the file is
@@ -143,17 +147,15 @@ speak about a change that no beat names.
   runs `nixpkgs#ffmpeg-headless`, fetched on the first recording. With none of
   them, or one that cannot encode, the command refuses `ENCODER_UNAVAILABLE`
   (exit 4) before it starts a browser: put ffmpeg on PATH, name it with
-  `ARCHBOARD_FFMPEG`, or install Nix. An MP4 plays with sound in every
-  browser, because the recorder converts its sound to AAC. If that conversion
-  fails, the command says so and says why a Safari viewer will hear nothing.
-
-- A recording keeps its talk: a directory with the voice and what the voice
-  said at each step. `semantic replay <talk> --out file.mp4` draws the picture
-  again from it, frame by frame, with no new voice session and without the board:
-  `--theme dark` for the other palette, or after a renderer fix. It needs the
-  Archboard server, a browser and ffmpeg, as `record` does. A talk that cannot be
-  read is refused as a usage error (exit 2) before a browser starts. A render
-  that fails is `RENDER_FAILED` (exit 1), and the talk is kept.
+  `ARCHBOARD_FFMPEG`, or install Nix. An MP4 has AAC sound, which every browser
+  plays.
+- A recording keeps its talk: a directory with the voice, the board as it was
+  drawn, and the moment of each beat and each line the voice said. The
+  receipt's `talk` names it. By default it goes to the state directory, which
+  keeps only the newest ten. `--talk <dir>` keeps it in a new directory of your
+  choice instead. A render that fails is `RENDER_FAILED` (exit 1), writes no
+  video and keeps the talk. [Render the talk again](#rendering-a-talk-again)
+  rather than record again.
 
 ### A pull request's recording
 
@@ -185,7 +187,6 @@ updated through their usual recipe, never through this one.
      names what the pull request removed.
    - The last beat tells the reviewer where to look closely, such as a seam or
      an invariant the change relies on, and what to check there: a place to
-     look, not a verdict on the code.: a place to
      look, not a verdict on the code.
 
    A beat of a few sentences is about half a minute of speech, so the video
@@ -193,7 +194,7 @@ updated through their usual recipe, never through this one.
    changed, and why" from the beats alone.
 
 5. **Record it outside the repository and discard the board.** Done: the receipt
-   says `discarded: true` and the command said nothing about sound.
+   says `discarded: true`.
 6. **Attach it to the pull request** with gh 2.99 or later (`--attach` also
    works on `gh pr create` and `gh pr edit`). GitHub takes videos up to 10 MB
    on free plans and 100 MB on paid ones. The receipt's `bytes` is the size.
@@ -207,6 +208,26 @@ archboard semantic edit pr-128 --variant "This pull request" --expect-version 2 
 archboard semantic edit pr-128 --variant "This pull request" --expect-version 3 --doing "writing the reviewer's walkthrough" --input walkthrough.json
 archboard semantic record pr-128 --variant "This pull request" --out ~/recordings/pr-128.mp4 --discard --doing "recording pull request 128 for its reviewers"
 gh pr comment 128 --attach ~/recordings/pr-128.mp4 --body "A narrated walkthrough of this change."
+```
+
+### Rendering a talk again
+
+A kept talk renders to a new video with no new voice session, and the board
+need not exist anymore. Render it again for the other palette, after an
+archboard update that changed the picture, or after a render that failed. If
+the words or the board change, record again instead.
+
+1. **Find the talk**: the directory that the recording's receipt names as
+   `talk`. Done: it holds `talk.json` and `voice.wav`.
+2. **Render it** with `semantic replay <talk> --out <file>`, and with
+   `--theme dark` for the other palette. It needs the Archboard server, a
+   browser and ffmpeg, as `record` does, but no Codex sign-in. A talk that
+   cannot be read is a usage error (exit 2) before a browser starts. Done: the
+   receipt's `frames` and `durationMs` are the recording's.
+
+```bash
+archboard semantic record pr-128 --variant "This pull request" --talk ~/recordings/pr-128-talk --out ~/recordings/pr-128.mp4 --discard --doing "recording pull request 128 for its reviewers"
+archboard semantic replay ~/recordings/pr-128-talk --theme dark --out ~/recordings/pr-128-dark.mp4
 ```
 
 ### A newcomer's walkthrough

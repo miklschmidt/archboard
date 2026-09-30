@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 21,
+	"version": 23,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-09-30T03:19:54.841Z",
+	"updatedAt": "2026-09-30T04:40:43.565Z",
 	"views": [],
 	"variants": [
 		{
@@ -1268,7 +1268,7 @@
 		{
 			"id": "qXLOZ2WR",
 			"name": "TASK-365",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "hmI4YrBL",
 			"summary": "Module level: reading, selection, camera, and navigation. Follow linked subjects for related levels.",
 			"content": {
@@ -1901,9 +1901,9 @@
 		{
 			"id": "6V3DtKKA",
 			"name": "TASK-381",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "qXLOZ2WR",
-			"summary": "A recording renders its picture frame by frame against the talk it recorded",
+			"summary": "Module level: reading, selection, camera, and navigation. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
@@ -2234,7 +2234,7 @@
 						"name": "Board reads",
 						"kind": "function",
 						"responsibility": "Where a board's document and the vault check are read from: the server's routes, or a replay's talk",
-						"description": "Swapped once at page start with readBoardsFrom, as the picture source is. On a replay page every read answers the talk's snapshot, so a refetch returns the same board, and a read of any other board is a violation.",
+						"description": "Swapped once with readBoardsFrom, before anything is read, as the picture source is. On a replay page every read answers the talk's snapshot, so a refetch returns the same board, and a read of any other board is a violation.",
 						"parent": "pZRxBz2h",
 						"groups": [
 							"drawing"
@@ -2250,6 +2250,7 @@
 						"name": "Frame clock",
 						"kind": "module",
 						"responsibility": "The clock that motion reads: the browser's own on a live page, a stepped one on a replay",
+						"description": "A replay swaps it once, before it mounts anything (driveFramesFrom). Its stepped clock also takes over the browser's own requestAnimationFrame, so a library's frames run on it too. It stands every animation and SVG clock at the frame's time, and an animation on a timeline it cannot stand is a violation. A lint rule keeps the viewer on it rather than on the browser's timers.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/frame-clock/index.ts"
@@ -2261,6 +2262,7 @@
 						"name": "Walkthrough replay",
 						"kind": "module",
 						"responsibility": "Mounts one viewer on a recorded talk and steps it frame by frame",
+						"description": "The page a recording's picture is rendered in (drawn on Browser application and Board rasterizer). Loading a talk points the board reads at it, installs the stepped clock and mounts the viewer on the talk's board, its step driven by the talk.",
 						"groups": [
 							"walkthrough"
 						],
@@ -2684,7 +2686,9 @@
 								"subjects": [
 									"G6arm4oI",
 									"qV7dcNI5",
-									"XXTC3G6Y"
+									"XXTC3G6Y",
+									"GnoK0EuT",
+									"3iSHwOiM"
 								]
 							}
 						]
@@ -2693,7 +2697,7 @@
 			}
 		}
 	],
-	"current": "qXLOZ2WR",
+	"current": "6V3DtKKA",
 	"adoptions": [
 		{
 			"variant": "hmI4YrBL",
@@ -2706,6 +2710,12 @@
 			"from": "hmI4YrBL",
 			"at": "2026-09-29T00:36:17.909Z",
 			"reason": "A walkthrough step also reads the lines between the cards it names from the board, so they are lit and framed with them (TASK-365)"
+		},
+		{
+			"variant": "6V3DtKKA",
+			"from": "qXLOZ2WR",
+			"at": "2026-09-30T04:40:43.565Z",
+			"reason": "TASK-381: the camera glide and the picture transition read one frame clock a replay steps, and board reads come from the server or, on a replay, from the talk. The replay mounts the viewer on a recorded talk."
 		}
 	]
 }

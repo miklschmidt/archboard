@@ -29,7 +29,7 @@ const RECORDING_PAGE_READY_MS = 30_000;
 const RECORDING_VOICE_START_MS = 60_000;
 
 /**
- * How long the board is shown whole once capture has started, before the
+ * How long the board is shown whole once the talk has begun, before the
  * first step. The video opens on the overview and glides into the talk,
  * rather than beginning mid-flight.
  */
@@ -65,7 +65,7 @@ const RECORDING_STEP_MAX_MS = 180_000;
 
 /**
  * How long the last step stays on screen after the voice has finished it,
- * before capture stops, so the video ends on the picture, not on the last
+ * before the talk ends, so the video ends on the picture, not on the last
  * syllable.
  */
 const RECORDING_TAIL_MS = 1500;
@@ -115,12 +115,13 @@ const RECORDING_CALL_MS = 10_000;
 const RECORDING_STALL_MS = RECORDING_STEP_MAX_MS + RECORDING_VOICE_START_MS;
 
 /**
- * How long each call that streams the finished file out of the page may
- * take: resolving the file, then every one-megabyte read of it. The stream as
- * a whole has no bound of its own; a ten-minute recording at the capture's
- * bit rate is a few hundred reads, and a 200 MB file streamed in 1.5 s when
- * measured for TASK-304, so a read that takes seconds has stuck. It pulls
- * against a page still busy finishing the file when the first read arrives.
+ * How long each call that takes the finished talk out of the page may take:
+ * resolving the voice's WAV file and every one-megabyte read of it, and
+ * reading the log (TASK-381). The stream as a whole has no bound of its own;
+ * ten minutes of voice is about 58 MB, sixty reads, and a 200 MB file streamed
+ * in 1.5 s when measured for TASK-304, so a read that takes seconds has stuck.
+ * It pulls against a page still building the WAV file when the first read
+ * arrives.
  */
 const RECORDING_FILE_READ_MS = 30_000;
 

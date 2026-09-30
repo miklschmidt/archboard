@@ -4,9 +4,9 @@
 	"id": "SMjRfwN3",
 	"name": "Board rasterizer",
 	"level": "module",
-	"version": 20,
+	"version": 22,
 	"createdAt": "2026-09-17T21:02:37.619Z",
-	"updatedAt": "2026-09-30T03:16:50.880Z",
+	"updatedAt": "2026-09-30T04:39:10.784Z",
 	"views": [
 		{
 			"id": "WXfBg0nd",
@@ -2917,7 +2917,7 @@
 		{
 			"id": "mOPXMlfC",
 			"name": "TASK-378-gpu",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "PfFN8kCs",
 			"summary": "Pictures and recordings of a board, through a headless browser",
 			"content": {
@@ -3861,9 +3861,9 @@
 		{
 			"id": "toDrhz7Q",
 			"name": "TASK-381",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "mOPXMlfC",
-			"summary": "A recording renders its picture frame by frame against the talk it recorded",
+			"summary": "Pictures and recordings of a board, through a headless browser",
 			"content": {
 				"nodes": [
 					{
@@ -4071,7 +4071,7 @@
 						"name": "Walkthrough recorder",
 						"kind": "module",
 						"responsibility": "Runs a recording's two passes: proves ffmpeg first, records the talk in a live page, keeps it, then has it drawn frame by frame",
-						"description": "Pass 1's browser is started with audio allowed to play and a fake microphone playing a second of silence, because voice will not start without a microphone and would hear Chromium's default tone as somebody speaking. It captures nothing and needs no GPU: nobody looks at the page, whose reports are what the server hands the voice. The talk is written before pass 2 starts, so a render that fails keeps it. An interrupt stops the browser at once, so every call waiting on it fails and nothing is written.",
+						"description": "Pass 1's browser is started with audio allowed to play and a fake microphone playing a second of silence, because voice will not start without a microphone and would hear Chromium's default tone as somebody speaking. It captures nothing and needs no GPU: nobody looks at the page, whose reports are what the server hands the voice. A board drawn at another version while it was recorded fails the recording and nothing is kept, since no one picture goes with that talk. The talk is written before pass 2 starts, so a render that fails keeps it. Both passes find ffmpeg and start their browser through the same two helpers (lib/tools.ts). An interrupt stops the browser at once, so every call waiting on it fails and nothing is written.",
 						"groups": [
 							"walkthrough"
 						],
@@ -4127,7 +4127,7 @@
 						"name": "Replay command",
 						"kind": "service",
 						"responsibility": "Renders a kept talk to a video again, in either theme, with no voice and no board",
-						"description": "Needs the Archboard server only to serve the page. A talk that cannot be read, or one of another format version, is refused before a browser starts.",
+						"description": "Needs the Archboard server only to serve the page. A talk that cannot be read, or one of another format version, is refused as a usage error before a browser starts. Its --out checks and its refusals of the browser and ffmpeg are the ones record uses (recording-output.ts).",
 						"groups": [
 							"walkthrough"
 						],
@@ -4148,7 +4148,7 @@
 						"name": "Frame renderer",
 						"kind": "function",
 						"responsibility": "Draws a talk frame by frame: opens the replay page in its own Chromium, steps it to each frame's time, captures the frame and hands it to the encoder",
-						"description": "One frame is 1/30 s of talk, exactly 1600 samples of the voice, so frame n and sample 1600n are the same moment. Chromium draws in software (--disable-gpu) with its sound muted, and nothing is captured but screenshots. A frame is taken as JPEG at quality 92: the picture is encoded again as 4:2:0 H.264 anyway, and a 2 MP PNG is several times slower to encode and to send. The file moves into place only once ffmpeg has exited and the browser has stopped. A render that fails names the replay command that renders the kept talk again.",
+						"description": "One frame is 1/30 s of talk, exactly 1600 samples of the voice, so frame n and sample 1600n are the same moment. Chromium draws in software (--disable-gpu) and without partial raster, so two renders of a talk are identical, with its sound muted; nothing is captured but screenshots. Before the first frame it proves the page counts the talk's frames and its window is 1920x1080. A frame is taken as JPEG at quality 92, since the picture is encoded again as 4:2:0 anyway. Handed no ffmpeg, as semantic replay hands none, it finds and proves one first. The file moves into place only once the browser has stopped and ffmpeg has exited. A render that fails keeps the talk and names the replay command that renders it again.",
 						"groups": [
 							"walkthrough"
 						],
@@ -4162,8 +4162,8 @@
 						"order": 22000,
 						"name": "Talk files",
 						"kind": "function",
-						"responsibility": "Writes a talk as talk.json and voice.wav in one atomic rename, and reads one back through the talk's schema",
-						"description": "Every recording keeps its talk under the state directory's recordings, where the newest 10 stay. --talk keeps it in a new directory of its own that is never pruned. A talk whose drawn version is not the board's is refused: the board changed while it was recorded, so record again.",
+						"responsibility": "Says where a talk is kept, writes it as talk.json and voice.wav in one atomic rename, and reads one back through the talk's schema",
+						"description": "Every recording keeps its talk under the state directory's recordings, where the newest 10 stay. --talk keeps it in a new directory of its own that is never pruned. A place that already exists is refused before anything starts. A talk read back must parse as a talk and its voice.wav must hold as many samples as talk.json says, or it is refused before a browser starts.",
 						"groups": [
 							"walkthrough"
 						],
@@ -4178,7 +4178,7 @@
 						"name": "Talk capture",
 						"kind": "function",
 						"responsibility": "Taps the voice through an AudioWorklet and stamps each step, subtitle line and drawn version on the audio's own 48 kHz clock",
-						"description": "The origin is the moment the voice goes live, where the video begins. A stamp is late by at most one audio buffer, about 10 to 21 ms on Linux, which is under one frame. At the end the audio is cut to the origin and the end, so it is exact to the sample against the stamps. The worklet writes silence while nothing plays.",
+						"description": "The origin is the moment the voice goes live, where the video begins. A stamp is late by at most one audio buffer, about 10 to 21 ms on Linux, which is under one frame. Only the voice's own lines of the transcript are kept. At the end the audio is cut to the origin and the end, so it is exact to the sample against the stamps. The worklet writes silence while nothing plays.",
 						"groups": [
 							"walkthrough"
 						],
@@ -4193,7 +4193,7 @@
 						"name": "Replay page",
 						"kind": "ui",
 						"responsibility": "The server's page asked for with ?replay=1: draws a talk's board from the talk alone, one frame at a time on a stepped clock",
-						"description": "It mounts the recording page's stage, viewer and subtitles, and no workbench, pane session or socket, so no Codex is involved. A frame is ready once the fonts are loaded, no read is in flight, the step's picture is published and the page has been still for two macrotasks, within RECORDING_FRAME_READY_MS. A requestAnimationFrame, an animation left running or a read of another board fails the render and names the frame.",
+						"description": "It mounts the recording page's stage, viewer and subtitles, and no workbench, pane session or socket, so no Codex is involved. Loading a talk plays the board's entrance through first, uncaptured, so frame 0 shows the board at rest. A frame is ready once the fonts are loaded, no read is in flight, the step's picture is drawn and the page has not changed for two turns of its event loop, within RECORDING_FRAME_READY_MS. The stepped clock runs even the frames a library asks of the browser, and stands every animation and SVG clock at the frame's time. An animation on another timeline, or a read of another board, fails the render and names the frame.",
 						"groups": [
 							"walkthrough"
 						],
@@ -4208,7 +4208,7 @@
 						"name": "Video encoder",
 						"kind": "module",
 						"responsibility": "Finds ffmpeg, proves it has the encoders the file needs, and turns the JPEG frames and the voice into that file",
-						"description": "ARCHBOARD_FFMPEG comes first, and one named there that does not run is refused by that name, never passed over. Then ffmpeg on PATH, then nix run nixpkgs#ffmpeg-headless. With none of them, ENCODER_UNAVAILABLE names both ways to get one. MP4 needs libx264 and aac, and WebM needs libvpx-vp9 and libopus. The frames are converted from full-range BT.601 to BT.709 limited range, and the voice is padded to the last frame.",
+						"description": "ARCHBOARD_FFMPEG comes first, and one named there that does not run is refused by that name, never passed over. Then ffmpeg on PATH, then nix run nixpkgs#ffmpeg-headless. With none of them, ENCODER_UNAVAILABLE names both ways to get one. MP4 needs libx264 and aac, and WebM needs libvpx-vp9 and libopus. The frames are converted from full-range BT.601 to BT.709 limited range and tagged so, and the voice is padded to the last frame.",
 						"groups": [
 							"walkthrough"
 						],
@@ -4535,15 +4535,6 @@
 						"emphasis": "normal"
 					},
 					{
-						"id": "tLmeL4yh",
-						"order": 32000,
-						"from": "kpWAp83p",
-						"to": "peB5Bs5R",
-						"kind": "call",
-						"label": "find ffmpeg and probe it, before any browser starts",
-						"emphasis": "normal"
-					},
-					{
 						"id": "KTIZaMYj",
 						"order": 33000,
 						"from": "kpWAp83p",
@@ -4583,9 +4574,9 @@
 						"id": "8rmq24D9",
 						"order": 36000,
 						"from": "EWBbxckL",
-						"to": "R9St060W",
-						"kind": "rpc",
-						"label": "Page.captureScreenshot as JPEG, quality 92",
+						"to": "AVCQVNqI",
+						"kind": "call",
+						"label": "evaluate in the page; screenshot each frame as JPEG q92",
 						"emphasis": "normal",
 						"traffic": {
 							"speed": 40,
@@ -4598,7 +4589,7 @@
 						"from": "EWBbxckL",
 						"to": "peB5Bs5R",
 						"kind": "call",
-						"label": "each frame's JPEG; voice.wav beside them",
+						"label": "prove ffmpeg if not handed one; frames and voice.wav",
 						"emphasis": "hero",
 						"traffic": {
 							"speed": 40,
@@ -4611,7 +4602,7 @@
 						"from": "peB5Bs5R",
 						"to": "PhFc1AJ9",
 						"kind": "call",
-						"label": "spawn: frames on stdin, the voice from voice.wav",
+						"label": "list its encoders; then frames on stdin, voice.wav beside",
 						"emphasis": "normal",
 						"traffic": {
 							"speed": 40,
@@ -4634,6 +4625,24 @@
 						"to": "PhFc1AJ9",
 						"kind": "call",
 						"label": "fetch it, then run it in its own place",
+						"emphasis": "normal"
+					},
+					{
+						"id": "sXypEOAH",
+						"order": 41000,
+						"from": "EWBbxckL",
+						"to": "ShT7QadJ",
+						"kind": "call",
+						"label": "which Chromium",
+						"emphasis": "normal"
+					},
+					{
+						"id": "eJdDQjo5",
+						"order": 42000,
+						"from": "QSI6gCrL",
+						"to": "XtzfRQkG",
+						"kind": "call",
+						"label": "where the talk is kept, proven free first",
 						"emphasis": "normal"
 					}
 				],
@@ -4913,22 +4922,38 @@
 								"to": "XtzfRQkG",
 								"label": "Write the talk: talk.json and voice.wav",
 								"kind": "sync",
-								"note": "with the board and the policy it was drawn from; refused if the board changed while it was recorded"
+								"note": "with the board and the policy it was drawn from; a board drawn at another version fails the recording before this, and nothing is kept"
 							},
 							{
 								"id": "2DjRDPHc",
 								"from": "ZAj4RMzN",
 								"to": "EWBbxckL",
 								"label": "Render the talk to the file",
-								"kind": "sync"
+								"kind": "sync",
+								"note": "with the ffmpeg proven at the start; semantic replay hands none, so the renderer proves one"
 							},
 							{
 								"id": "bvtoupYp",
 								"from": "EWBbxckL",
 								"to": "R9St060W",
-								"label": "Launch in software, open a 1920x1080 window",
+								"label": "Launch in software, sound muted",
 								"kind": "sync",
-								"note": "a second browser: no GPU, sound muted, the theme set as the page's colour scheme"
+								"note": "a second browser: no GPU and no partial raster, so every render of a talk is the same"
+							},
+							{
+								"id": "5IoTHm3u",
+								"from": "EWBbxckL",
+								"to": "peB5Bs5R",
+								"label": "Start ffmpeg on the frames to come and voice.wav",
+								"kind": "sync"
+							},
+							{
+								"id": "liSMxqFX",
+								"from": "EWBbxckL",
+								"to": "R9St060W",
+								"label": "Open a 1920x1080 window at the replay address",
+								"kind": "sync",
+								"note": "the theme set as the page's colour scheme"
 							},
 							{
 								"id": "RzB2mc3t",
@@ -4944,21 +4969,15 @@
 								"to": "Kek84WN9",
 								"label": "Load the talk",
 								"kind": "sync",
-								"note": "the page reads the board and the policy only from the talk; frame 0 shows the whole board at rest"
+								"note": "the page reads the board and the policy only from the talk, and plays the board's entrance through uncaptured, so frame 0 shows it at rest"
 							},
 							{
 								"id": "PQK1hqwZ",
 								"from": "Kek84WN9",
 								"to": "EWBbxckL",
 								"label": "The number of frames",
-								"kind": "return"
-							},
-							{
-								"id": "5IoTHm3u",
-								"from": "EWBbxckL",
-								"to": "peB5Bs5R",
-								"label": "Start ffmpeg on the frames to come and voice.wav",
-								"kind": "sync"
+								"kind": "return",
+								"note": "checked against the talk's own count, with the window's size"
 							},
 							{
 								"id": "ERvoZO9r",
@@ -4966,7 +4985,7 @@
 								"to": "Kek84WN9",
 								"label": "Draw frame n",
 								"kind": "sync",
-								"note": "once per frame: the events due are applied and the clock steps to the frame's time; the answer waits until the frame is drawn and still"
+								"note": "once per frame: the clock steps to the frame's time and what happened by then is shown; the answer waits until the frame is drawn and still"
 							},
 							{
 								"id": "VFbWwbDx",
@@ -4974,7 +4993,7 @@
 								"to": "EWBbxckL",
 								"label": "Drawn at the frame's time",
 								"kind": "return",
-								"note": "anything that moved on real time fails the render, naming the frame"
+								"note": "an animation on another timeline, or a read of another board, fails the render, naming the frame"
 							},
 							{
 								"id": "dB0RVc03",
@@ -4999,6 +5018,14 @@
 								"note": "the next frame waits until the pipe has taken this one"
 							},
 							{
+								"id": "fohd1dSs",
+								"from": "EWBbxckL",
+								"to": "R9St060W",
+								"label": "Stop: close, reap the group, remove the temp root",
+								"kind": "sync",
+								"note": "the picture is drawn, so the browser goes before ffmpeg finishes"
+							},
+							{
 								"id": "23M9NHq3",
 								"from": "EWBbxckL",
 								"to": "peB5Bs5R",
@@ -5007,19 +5034,12 @@
 								"note": "ffmpeg pads the voice to the last frame and moves the index to the front"
 							},
 							{
-								"id": "fohd1dSs",
-								"from": "EWBbxckL",
-								"to": "R9St060W",
-								"label": "Stop: close, reap the group, remove the temp root",
-								"kind": "sync"
-							},
-							{
 								"id": "dX9Y4nNO",
 								"from": "EWBbxckL",
 								"to": "EWBbxckL",
 								"label": "Move the file into place",
 								"kind": "self",
-								"note": "only once ffmpeg has exited and the browser has stopped, in the same turn as the last look at the interrupt"
+								"note": "only once the browser has stopped and ffmpeg has exited, in the same turn as the last look at the interrupt"
 							},
 							{
 								"id": "eFjGEqcL",
@@ -5120,7 +5140,7 @@
 							{
 								"id": "NdjuWh7j",
 								"heading": "Every frame is drawn before it is captured",
-								"body": "The replay page reads the board only from the talk. Its glides, fades and traffic run on a clock the renderer steps 1/30 s at a time, and a frame is captured only once it is drawn and still. So no frame is held or dropped, with or without a GPU and under any load. Anything that moves on real time fails the render.",
+								"body": "The replay page reads the board only from the talk. Its glides, fades, subtitles and traffic run on a clock the renderer steps 1/30 s at a time, and even a frame a library asks of the browser runs on that clock. A frame is captured only once it is drawn and still, so no frame is held or dropped, with or without a GPU and under any load. An animation on a timeline the clock cannot stand fails the render.",
 								"subjects": [
 									"ERvoZO9r",
 									"dB0RVc03"
@@ -5140,7 +5160,7 @@
 							{
 								"id": "IMY5jsga",
 								"heading": "A whole file, or nothing",
-								"body": "The file moves into place only once ffmpeg has exited and the render's browser has stopped. An interrupt anywhere before that stops the browser at once and leaves nothing where the file goes.",
+								"body": "The file moves into place only once the render's browser has stopped and ffmpeg has exited. An interrupt anywhere before that stops the browser at once and leaves nothing where the file goes.",
 								"subjects": [
 									"fohd1dSs",
 									"dX9Y4nNO"
@@ -5176,7 +5196,7 @@
 			}
 		}
 	],
-	"current": "mOPXMlfC",
+	"current": "toDrhz7Q",
 	"adoptions": [
 		{
 			"variant": "PfFN8kCs",
@@ -5189,6 +5209,12 @@
 			"from": "PfFN8kCs",
 			"at": "2026-09-30T01:33:34.140Z",
 			"reason": "A recording composites on the GPU when the machine has one, rasterizes in software, draws the subtitle box once before capture, and keeps a steady 30 fps capture (TASK-378)"
+		},
+		{
+			"variant": "toDrhz7Q",
+			"from": "mOPXMlfC",
+			"at": "2026-09-30T04:39:10.784Z",
+			"reason": "TASK-381: a recording is made in two passes. The live page keeps only the talk, kept as talk.json and voice.wav; a frame renderer draws it again frame by frame in a software Chromium for ffmpeg, found or run through Nix. semantic replay renders a kept talk again."
 		}
 	],
 	"shelvings": [
