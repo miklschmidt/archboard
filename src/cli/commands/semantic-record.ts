@@ -64,6 +64,13 @@ const recorderUnavailableRefusal = {
 	description:
 		"No Chromium or Google Chrome executable was found, or the one named could not start.",
 };
+const encoderUnavailableRefusal = {
+	code: "ENCODER_UNAVAILABLE",
+	exit: 4,
+	stream: "stderr" as const,
+	description:
+		"No ffmpeg with the encoders the file needs (libx264 and aac for MP4, libvpx-vp9 and libopus for WebM) is on PATH or named by ARCHBOARD_FFMPEG, and Nix is not there to run nixpkgs#ffmpeg-headless, or running it failed. Checked before a browser starts, so nothing was recorded.",
+};
 const recordingRefusedRefusal = {
 	code: "RECORDING_REFUSED",
 	exit: 4,
@@ -241,7 +248,8 @@ const semanticRecordContract = defineCommand({
 		"deletes the board once the recording is written, for a board made only to be recorded; " +
 		"a failed recording keeps it, and so does a board changed while it was " +
 		"recorded, which the receipt says. Needs a Chromium or Google Chrome executable " +
-		"on PATH or named by ARCHBOARD_RENDERER_CHROMIUM.",
+		"on PATH or named by ARCHBOARD_RENDERER_CHROMIUM, and ffmpeg: the one named by " +
+		"ARCHBOARD_FFMPEG, else on PATH, else nixpkgs#ffmpeg-headless run through Nix.",
 	examples: [
 		"archboard semantic record pipeline --out pipeline.mp4",
 		'archboard semantic record pr-1234-talk --walkthrough "What changes" --out talk.mp4 --discard --doing "recording the PR talk"',
@@ -333,6 +341,7 @@ const semanticRecordContract = defineCommand({
 		serverRefusal,
 		doingRefusal,
 		recorderUnavailableRefusal,
+		encoderUnavailableRefusal,
 		recordingRefusedRefusal,
 		recordingFailedRefusal,
 	],
@@ -375,6 +384,7 @@ const semanticRecordContract = defineCommand({
 			theme: input.theme,
 			out: file,
 			signal: context.signal,
+			say: context.diagnostic,
 			/**
 			 * Say each new step of the talk as it is reached.
 			 * @param state The page's state.

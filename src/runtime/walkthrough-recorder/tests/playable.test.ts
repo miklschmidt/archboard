@@ -1,8 +1,9 @@
 // A recording that plays with sound wherever it is watched (TASK-305).
 //
 // What is guarded: an MP4 whose sound Safari cannot play is handed over as it was recorded, with
-// a note saying so and what to do, whenever the sound cannot be converted, whether there is no
-// ffmpeg or the one there is fails; and a file whose sound plays everywhere is left alone.
+// a note saying so, whenever the sound cannot be converted, whether the ffmpeg is gone or fails;
+// and a file whose sound plays everywhere is left alone. Whether there is an ffmpeg at all is
+// settled before a recording starts (TASK-381), not here.
 
 import { expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -20,9 +21,9 @@ test("an MP4 whose sound cannot be converted is handed over as recorded, with a 
 		const recorded = new Uint8Array([1, 2, 3, 4, 5]);
 		writeFileSync(file, recorded);
 		const signal = new AbortController().signal;
-		// No ffmpeg, one that is not there, and one that fails.
-		const failing = Bun.which("false") ?? join(root, "missing");
-		for (const ffmpeg of [null, join(root, "missing"), failing]) {
+		// An ffmpeg that is not there, and one that fails.
+		const failing = [Bun.which("false") ?? join(root, "missing")];
+		for (const ffmpeg of [[join(root, "missing")], failing]) {
 			const played = await playableEverywhere(file, OPUS_MP4, { ffmpeg, signal });
 			expect(played).toMatchObject({ mimeType: OPUS_MP4, bytes: recorded.length });
 			expect(played.notes).toHaveLength(1);

@@ -6,7 +6,9 @@
 // What is guarded: the command writes a video file that went through every step of the
 // walkthrough, each handed to the voice in order and left only once the voice had finished it;
 // the voice is started in the language --language named (TASK-380); the receipt says what was
-// recorded; and --discard removes the board once the file is written.
+// recorded; --discard removes the board once the file is written; and the recording is
+// encoded by the ffmpeg ARCHBOARD_FFMPEG names, proven before the talk starts (TASK-381), which is
+// a fake here.
 
 import { expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
@@ -20,6 +22,7 @@ import {
 	prepareProductionFixture,
 	productionRecords as records,
 } from "./support/codex-production.ts";
+import { ffmpegCalls, prepareFakeFfmpeg } from "./support/fake-ffmpeg.ts";
 import { createRequester } from "./support/http.ts";
 
 const serverPath = join(import.meta.dir, "fixtures/codex-production-server.ts");
@@ -59,6 +62,7 @@ test(
 				},
 			});
 			resources.defer(() => server.dispose());
+			const ffmpeg = prepareFakeFfmpeg(fixture.root);
 			const request = createRequester(server);
 			// Another board first, so a new pane's first board is not the one recorded: the
 			// recording page has to ask for its board by its own client id.
@@ -123,6 +127,7 @@ test(
 						ARCHBOARD_VAULT: fixture.vault,
 						ARCHBOARD_URL: server.base,
 						ARCHBOARD_NO_AUTOSTART: "1",
+						ARCHBOARD_FFMPEG: ffmpeg.executablePath,
 					},
 				},
 			);
@@ -141,6 +146,11 @@ test(
 			const video = readFileSync(out);
 			expect(video.byteLength).toBe(receipt.bytes);
 			expect(video.subarray(4, 8).toString("latin1")).toBe("ftyp");
+
+			// The named ffmpeg was asked what it can encode, then converted the recorded sound.
+			const calls = ffmpegCalls(ffmpeg.logPath);
+			expect(calls[0]).toContain("-encoders");
+			expect(calls.slice(1).some((call) => call.includes("aac"))).toBe(true);
 
 			// The voice was started in the language the command named, whatever language the steps
 			// are written in.

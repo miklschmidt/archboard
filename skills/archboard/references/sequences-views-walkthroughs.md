@@ -138,10 +138,14 @@ speak about a change that no beat names.
   written. A failed recording keeps the board, so record again. A board that
   changed while it was recorded is kept, and the receipt's `discarded` is
   false with the reason.
-- If `ffmpeg` is on PATH (or named by `ARCHBOARD_FFMPEG`), an MP4 plays with
-  sound in every browser: the recorder converts its sound to AAC. If the
-  recorder cannot convert the sound, the command says so and says why a
-  Safari viewer will hear nothing.
+- Recording needs ffmpeg with libx264 and aac (libvpx-vp9 and libopus for a
+  WebM): the one `ARCHBOARD_FFMPEG` names, else the one on PATH, else Nix
+  runs `nixpkgs#ffmpeg-headless`, fetched on the first recording. With none of
+  them, or one that cannot encode, the command refuses `ENCODER_UNAVAILABLE`
+  (exit 4) before it starts a browser: put ffmpeg on PATH, name it with
+  `ARCHBOARD_FFMPEG`, or install Nix. An MP4 plays with sound in every
+  browser, because the recorder converts its sound to AAC. If that conversion
+  fails, the command says so and says why a Safari viewer will hear nothing.
 
 ### A pull request's recording
 
