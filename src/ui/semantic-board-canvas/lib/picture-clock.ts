@@ -2,7 +2,10 @@
 // at nought for every new copy of the picture's markup: a picture put up again
 // from its string, a ghost cloned to fade out. Carrying the clock from the
 // picture a copy replaces keeps the comets running on instead of jumping back
-// to where they rest.
+// to where they rest. The frame clock reads and stands it, so a recording
+// rendered frame by frame carries it the same way.
+
+import { frameClock } from "@/ui/frame-clock";
 
 /**
  * Where a picture's animation clock stands.
@@ -10,7 +13,7 @@
  * @returns Its time in seconds, or nothing on a page without SVG animation.
  */
 function clockOf(root: SVGSVGElement | null): number | undefined {
-	return root !== null && "getCurrentTime" in root ? root.getCurrentTime() : undefined;
+	return root === null ? undefined : frameClock().svgTime(root);
 }
 
 /**
@@ -19,8 +22,7 @@ function clockOf(root: SVGSVGElement | null): number | undefined {
  * @param seconds Where the clock it replaces stood, if anywhere.
  */
 function setClock(root: SVGSVGElement | null, seconds: number | undefined): void {
-	if (seconds !== undefined && root !== null && "setCurrentTime" in root)
-		root.setCurrentTime(seconds);
+	if (seconds !== undefined && root !== null) frameClock().setSvgTime(root, seconds);
 }
 
 export { clockOf, setClock };

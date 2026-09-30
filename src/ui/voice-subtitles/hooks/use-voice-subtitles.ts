@@ -2,13 +2,14 @@
 //
 // The voice model's transcript arrives a word at a time on the audio clock (see `lib/recency`),
 // so the subtitle is the cue holding the latest word received, shown as it arrives. The only
-// thing the clock decides is when a subtitle that has stopped growing goes, and one timer does
-// that. Cue cutting and the recency rule are pure and live beside this; where the box breaks its
-// lines is measured by its component and handed in.
+// thing the clock decides is when a subtitle that has stopped growing goes, and one timer on the
+// frame clock does that. Cue cutting and the recency rule are pure and live beside this; where
+// the box breaks its lines is measured by its component and handed in.
 
 import { useEffect, useMemo, useState } from "react";
 
 import { SUBTITLE_LINGER_MS } from "@/shared/timing/timing";
+import { frameClock } from "@/ui/frame-clock";
 import { cuesOf, wordsOf, type LineCount, type SubtitleCue } from "@/ui/voice-subtitles/lib/cues";
 import {
 	progressMark,
@@ -71,11 +72,12 @@ function useVoiceSubtitles(
 	const [lapsed, setLapsed] = useState<string | null>(null);
 
 	useEffect(() => {
-		const timer = setTimeout(() => {
+		const clock = frameClock();
+		const timer = clock.after(SUBTITLE_LINGER_MS, () => {
 			setLapsed(mark);
-		}, SUBTITLE_LINGER_MS);
+		});
 		return (): void => {
-			clearTimeout(timer);
+			clock.cancelAfter(timer);
 		};
 	}, [mark]);
 
