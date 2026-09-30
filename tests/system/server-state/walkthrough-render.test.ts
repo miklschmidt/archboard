@@ -1,13 +1,8 @@
-// Rendering a talk frame by frame (TASK-381): `renderTalk` in a real headless Chromium against a
-// stand-in for the replay page, which only paints a colour that names the frame it was asked for,
-// with a fake ffmpeg that keeps what it was fed. The real page is the replay test's business;
-// what is guarded here is the render loop around any page that keeps the replay contract.
-//
-// What is guarded: every frame the talk has is asked for once, in order, and reaches ffmpeg as a
-// 1920x1080 JPEG that shows that frame; progress is told once a second of video and at the end;
-// ffmpeg is handed the talk's voice and the sound padded to the frames' length; the file is where
-// it was asked for only after ffmpeg finished it; and a page that cannot draw a frame fails the
-// render as RENDER_FAILED, naming the kept talk, with no file and no partial file written.
+// A render that cannot finish (TASK-381): `renderTalk` in a real headless Chromium against a
+// stand-in for the replay page that fails one frame, with a fake ffmpeg. The real page's success
+// path is walkthrough-replay.test.ts; what is guarded here is what a failed render leaves: it is
+// RENDER_FAILED, names the kept talk to render again, asks for no frame after the one that failed,
+// and writes no file and no partial file.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
@@ -15,13 +10,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
-import { TalkSchema, framesOf } from "@/shared/walkthrough-recording/talk";
+import { TalkSchema } from "@/shared/walkthrough-recording/talk";
 import { renderTalk, writeTalk, askedTalkPlace } from "@/runtime/walkthrough-recorder";
 
-import { frameManifest, prepareFakeFfmpeg } from "./support/fake-ffmpeg.ts";
+import { prepareFakeFfmpeg } from "./support/fake-ffmpeg.ts";
 
 const SAMPLES = 72_000;
-const FRAMES = 45;
 let root: string;
 let server: ReturnType<typeof Bun.serve>;
 let failAt: number | null = null;
@@ -156,27 +150,6 @@ async function render(name: string) {
 	);
 	return { outcome, out, directory, lines };
 }
-
-test("every frame is asked for once in order, and reaches ffmpeg as a 1920x1080 picture of that frame", async () => {
-	expect(framesOf(talk)).toBe(FRAMES);
-	const { outcome, out, directory, lines } = await render("whole");
-	if (!("made" in outcome)) throw outcome.error;
-	expect(asked).toEqual(Array.from({ length: FRAMES }, (_, n) => n));
-	expect(outcome.made.frames).toBe(FRAMES);
-	expect(outcome.made.durationMs).toBe(1500);
-	expect(outcome.made.mimeType).toContain("video/mp4");
-	expect(outcome.made.leftBehind).toEqual([]);
-	// The file is what ffmpeg made, moved into place, with no partial file beside it.
-	const manifest = frameManifest(out);
-	expect(manifest.frames).toHaveLength(FRAMES);
-	expect(new Set(manifest.frames).size).toBe(FRAMES);
-	expect([manifest.width, manifest.height]).toEqual([1920, 1080]);
-	expect(manifest.argv).toContain(join(directory, "voice.wav"));
-	expect(manifest.argv).toContain(`apad=whole_len=${FRAMES * 1600}`);
-	expect(readdirSync(root).filter((name) => name.endsWith(".partial"))).toEqual([]);
-	// Progress once a second of video, and at the end.
-	expect(lines).toHaveLength(2);
-});
 
 test("a page that cannot draw a frame fails the render as RENDER_FAILED, naming the kept talk, and writes nothing", async () => {
 	failAt = 3;
