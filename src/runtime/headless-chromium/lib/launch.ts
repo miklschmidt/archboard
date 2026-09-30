@@ -85,13 +85,6 @@ interface HeadlessChromium {
 	 */
 	openWindow(url: string, viewport: Viewport, timeoutMs: number): Promise<HeadlessWindow>;
 	/**
-	 * Size an open window again so its page viewport is exactly the size asked for.
-	 * @param window The window.
-	 * @param viewport The page's size.
-	 * @param timeoutMs How long sizing it may take.
-	 */
-	fitWindow(window: HeadlessWindow, viewport: Viewport, timeoutMs: number): Promise<void>;
-	/**
 	 * Stop, once: close every connection, stop the whole process group and
 	 * remove the temporary root.
 	 * @returns What the teardown proved; `clean` is false when something was left.
@@ -401,17 +394,6 @@ class ChromiumSession implements HeadlessChromium {
 			await this.browser.call("Target.closeTarget", { targetId }).catch(() => undefined);
 			throw error;
 		}
-	}
-
-	/**
-	 * Size an open window again so its page viewport is exactly the size asked for: something
-	 * the browser drew above the page, such as the bar a tab capture raises, has taken room.
-	 * @param window The window.
-	 * @param viewport The page's size.
-	 * @param timeoutMs How long sizing it may take.
-	 */
-	async fitWindow(window: HeadlessWindow, viewport: Viewport, timeoutMs: number): Promise<void> {
-		await this.size(window.targetId, window.page, viewport, Date.now() + timeoutMs);
 	}
 
 	/**

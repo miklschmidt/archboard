@@ -1,6 +1,7 @@
-// A page recording one walkthrough to a video file (TASK-304): the pane alone,
-// paced by the voice, captured in its own tab. The contract with the recorder
-// that drives the page is in `@/shared/walkthrough-recording`.
+// A page recording one walkthrough (TASK-304): the pane alone, paced by the
+// voice, keeping the talk its picture is rendered from afterwards (TASK-381).
+// The contract with the recorder that drives the page is in
+// `@/shared/walkthrough-recording`.
 
 import { recordingAskedOf } from "@/shared/walkthrough-recording";
 
@@ -8,7 +9,6 @@ import { WalkthroughRecorder } from "@/ui/walkthrough-recording/lib/recorder";
 
 export { RecordingStage } from "@/ui/walkthrough-recording/components/RecordingStage";
 export { pace, type PaceObservation, type PaceState } from "@/ui/walkthrough-recording/lib/pacing";
-export { tabCaptureOptions } from "@/ui/walkthrough-recording/lib/tab-capture";
 export { useWalkthroughRecording } from "@/ui/walkthrough-recording/hooks/use-walkthrough-recording";
 export {
 	recordedStep,

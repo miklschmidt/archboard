@@ -7,7 +7,7 @@ import { drive, type RecordingPageHandle } from "@/runtime/walkthrough-recorder/
 // An interrupt stops a recording at whatever call it lands in. A page call is
 // where the recorder spends most of its time, and an interrupt that lands in
 // one used to be lost: the recorder went on polling a page it had been told to
-// leave, and on to saving the file.
+// leave, and on to saving the voice.
 
 const LOADING: RecordingState = {
 	phase: "loading",
@@ -15,7 +15,6 @@ const LOADING: RecordingState = {
 	step: null,
 	of: null,
 	failure: null,
-	mimeType: null,
 	durationMs: null,
 };
 
@@ -34,11 +33,9 @@ test("an interrupt that lands while the page is answering ends the recording at 
 			return LOADING;
 		},
 		saveBlob: async () => 0,
-		keepSize: async () => undefined,
 	};
 	const recording = drive(page, {
-		container: "mp4",
-		path: "never-written.mp4",
+		voice: "never-written.wav",
 		signal: controller.signal,
 		onProgress: () => undefined,
 	});

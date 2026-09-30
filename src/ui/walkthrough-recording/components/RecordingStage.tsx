@@ -1,9 +1,8 @@
 // The frame of a recording (TASK-304): one pane and nothing else, filling the
-// page, which is what the tab capture takes. The pane reads it the way it
-// reads a pane presented fullscreen, so its sidebar steps aside, and the
-// caption drops controls nobody in a video can press. Behind it lies a layer
-// nobody sees that repaints the whole frame every frame, so the capture sends
-// frames at a steady rate (TASK-378, `recording-frame-pacer` in app.css).
+// page, which is the picture a recording's frames are rendered from (TASK-381).
+// The pane reads it the way it reads a pane presented fullscreen, so its
+// sidebar steps aside, and the caption drops controls nobody in a video can
+// press.
 
 import type { JSX, ReactNode } from "react";
 
@@ -27,7 +26,6 @@ function RecordingStage(props: RecordingStageProps): JSX.Element {
 			className="bg-background flex h-screen w-screen overflow-hidden"
 		>
 			{props.children}
-			<div data-slot="recording-frame-pacer" aria-hidden className="recording-frame-pacer" />
 		</main>
 	);
 }

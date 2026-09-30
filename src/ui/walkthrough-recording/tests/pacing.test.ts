@@ -29,7 +29,6 @@ function seen(now: number, overrides: Partial<PaceObservation> = {}): PaceObserv
 		now,
 		voice: LIVE,
 		audible: false,
-		framed: true,
 		transcript: [],
 		place: null,
 		...overrides,
@@ -59,10 +58,8 @@ function tick(state: PaceState, observed: PaceObservation): ReturnType<typeof pa
 describe("recording pace", () => {
 	test("a step is left only once its explanation is final and the voice has been quiet a while", () => {
 		let state: PaceState = { kind: "starting", since: 0 };
-		// Nothing is written while the page is not the size it is captured at.
-		expect(tick(state, seen(5, { framed: false })).action.kind).toBe("none");
 		let turn = tick(state, seen(10));
-		expect(turn.action.kind).toBe("capture");
+		expect(turn.action.kind).toBe("begin");
 		state = turn.state;
 		expect(tick(state, seen(10 + RECORDING_LEAD_MS - 1)).action.kind).toBe("none");
 		turn = tick(state, seen(10 + RECORDING_LEAD_MS));

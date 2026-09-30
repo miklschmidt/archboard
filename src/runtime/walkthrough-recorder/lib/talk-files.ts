@@ -227,6 +227,26 @@ function bytesOf(path: string, directory: string): Buffer {
 }
 
 /**
+ * The samples of a voice a recording page handed over.
+ * @param path Its WAV file.
+ * @returns Its samples.
+ * @throws {TalkFileError} When it is not the voice of a talk.
+ */
+function voiceSamples(path: string): Int16Array {
+	const wav = bytesOf(path, dirname(path));
+	const count = wavSamples(wav);
+	const data = chunkOf(wav, "data");
+	if (typeof count === "string" || data === null) {
+		throw new TalkFileError(`The recording page's voice ${String(count)}.`);
+	}
+	const samples = new Int16Array(count);
+	for (let index = 0; index < count; index += 1) {
+		samples[index] = wav.readInt16LE(data.body + index * 2);
+	}
+	return samples;
+}
+
+/**
  * The format version a parsed `talk.json` states.
  * @param json What was parsed.
  * @returns The version, or undefined when there is none.
@@ -361,6 +381,7 @@ export {
 	readTalk,
 	requireFreshPlace,
 	stateTalkPlace,
+	voiceSamples,
 	writeTalk,
 	type TalkPlace,
 };

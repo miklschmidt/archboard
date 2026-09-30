@@ -193,38 +193,6 @@
 	}
 }
 
-/* A recording's whole frame, repainted every frame (TASK-378). Chromium's tab
-   capture locks onto a region that animates steadily and, once that animation
-   stops, sends no frame for the next quarter second, whatever else moves. This
-   layer covers the whole page and changes on every frame, so it is always that
-   region and the capture keeps a steady rate. It lies behind the stage's
-   opaque background, so none of it is ever seen; the compositor still counts
-   it as repainted. Any duration works, since the opacity changes every frame. */
-@keyframes recording-frame-pacer {
-	from {
-		opacity: 0.5;
-	}
-	to {
-		opacity: 1;
-	}
-}
-@utility recording-frame-pacer {
-	position: fixed;
-	inset: 0;
-	z-index: -1;
-	pointer-events: none;
-	background: var(--background);
-	animation: recording-frame-pacer 1s linear infinite alternate;
-}
-
-/* What a recording draws once before it captures anything (TASK-378,
-   `rehearsal.ts`): the subtitle box, so the GPU has compiled the shaders of
-   its blurred scrim before the first words, rather than holding the picture
-   while it compiles them. */
-[data-recording-rehearsal] [data-slot="voice-subtitles"] {
-	visibility: visible;
-}
-
 /* The faint 8px dot grid an empty preview shows instead of a sentence. */
 @utility dot-grid {
 	background-image: radial-gradient(

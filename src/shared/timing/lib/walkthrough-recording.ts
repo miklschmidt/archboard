@@ -71,12 +71,12 @@ const RECORDING_STEP_MAX_MS = 180_000;
 const RECORDING_TAIL_MS = 1500;
 
 /**
- * How long a page that has just captured its tab waits for the browser to draw the bar that says
- * the tab is being shared. The bar takes room from the page (56 px on Chromium 153), and the
- * recorder gives it back before anything is written; the bar appeared 121 ms after the capture
- * began in every measurement on 2026-09-23. A browser that draws no bar costs this wait once.
+ * How long a finished talk waits for the voice's last samples to arrive from the audio thread
+ * (TASK-381). The tap passes on each render quantum as it plays, so what is outstanding at the end
+ * is a few quanta of 2.7 ms in flight between threads; a second is an audio thread that stopped,
+ * and the talk then ends in the silence it already has.
  */
-const RECORDING_CAPTURE_BAR_MS = 2000;
+const RECORDING_TAP_DRAIN_MS = 1000;
 
 /**
  * How often the page decides whether to move on. It reads the voice's output
@@ -131,13 +131,6 @@ const RECORDING_FILE_READ_MS = 30_000;
 const RECORDING_BROWSER_STOP_MS = 5000;
 
 /**
- * How long converting a finished MP4's sound to AAC may take (TASK-305). The
- * picture is copied, not encoded again, so only the sound is work: seconds for
- * a ten-minute talk. Past this, the file keeps the sound it was recorded with.
- */
-const RECORDING_SOUND_CONVERT_MS = 120_000;
-
-/**
  * How long asking an ffmpeg on disk which encoders it has may take, before the recorder starts a
  * browser (TASK-381). It pulls against a binary that is already there: it answers in well under
  * a second, so ten seconds is an ffmpeg that has stuck, on a disk that is not answering.
@@ -174,8 +167,7 @@ export {
 	RECORDING_ENCODER_PROBE_MS,
 	RECORDING_FRAME_CALL_MS,
 	RECORDING_NIX_FETCH_MS,
-	RECORDING_SOUND_CONVERT_MS,
-	RECORDING_CAPTURE_BAR_MS,
+	RECORDING_TAP_DRAIN_MS,
 	RECORDING_BROWSER_START_MS,
 	RECORDING_BROWSER_STOP_MS,
 	RECORDING_CALL_MS,

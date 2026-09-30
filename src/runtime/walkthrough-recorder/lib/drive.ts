@@ -3,9 +3,10 @@
 // The page paces the talk itself; the recorder only follows it. It reads the
 // page's state until the page can start, starts it from a user gesture,
 // reads the state again as the talk goes, saying each new step, and once the
-// page says the file is finished it streams the file out. Everything the page
-// says crosses as the shared recording state and is parsed as such, so a page
-// from another build is refused rather than guessed at.
+// page says the talk is finished it streams the voice out and reads the log
+// (TASK-381). Everything the page says crosses as the shared recording state
+// and talk log and is parsed as such, so a page from another build is refused
+// rather than guessed at.
 //
 // A cancelled recording goes no further than the call it is waiting on,
 // whatever that call is: nothing after an interrupt is started or saved.
@@ -22,9 +23,9 @@ import {
 import {
 	RECORDING_PAGE_GLOBAL,
 	RecordingStateSchema,
-	type RecordingContainer,
 	type RecordingState,
 } from "@/shared/walkthrough-recording";
+import { TalkLogSchema, type TalkLog } from "@/shared/walkthrough-recording/talk";
 
 /** One open recording page, as far as the recorder speaks to it. */
 interface RecordingPageHandle {
@@ -48,12 +49,6 @@ interface RecordingPageHandle {
 	 * @returns How many bytes were written.
 	 */
 	readonly saveBlob: (expression: string, path: string, readTimeoutMs: number) => Promise<number>;
-	/**
-	 * Keep the page the size it is recorded at: capturing a tab makes the browser draw a bar
-	 * above it that takes room from the page.
-	 * @returns When the page is that size again.
-	 */
-	readonly keepSize: () => Promise<void>;
 }
 
 /** Why a recording did not happen, and whether anything had been recorded. */
@@ -122,14 +117,13 @@ async function stateOf(page: RecordingPageHandle): Promise<RecordingState | null
 	const value = await page.evaluate(`${PAGE}?.state() ?? null`, { timeoutMs: RECORDING_CALL_MS });
 	if (value === null) return null;
 	const parsed = RecordingStateSchema.safeParse(value);
-	if (!parsed.success) {
-		throw new RecordingPageError(
-			"The canvas page does not speak this recorder's contract. Rebuild the frontend (bun run build:frontend) and restart the Archboard server.",
-			false,
-		);
-	}
+	if (!parsed.success) throw new RecordingPageError(OTHER_BUILD, false);
 	return parsed.data;
 }
+
+/** What a page from another build is told. */
+const OTHER_BUILD =
+	"The canvas page does not speak this recorder's contract. Rebuild the frontend (bun run build:frontend) and restart the Archboard server.";
 
 /**
  * Why a page did not become ready in time.
@@ -190,22 +184,14 @@ async function ready(
  * Start the page recording, from a user gesture.
  * @param page The page.
  * @param signal Cancels the start.
- * @param container The container to write.
- * @returns When capture has begun.
+ * @returns When the page listens.
  * @throws {RecordingPageError} When the page would not start: in its own words when it has some.
  */
-async function begin(
-	page: RecordingPageHandle,
-	signal: AbortSignal,
-	container: RecordingContainer,
-): Promise<void> {
+async function begin(page: RecordingPageHandle, signal: AbortSignal): Promise<void> {
 	try {
 		await heeded(
 			signal,
-			page.evaluate(`${PAGE}.start(${JSON.stringify({ container })})`, {
-				userGesture: true,
-				timeoutMs: RECORDING_CALL_MS,
-			}),
+			page.evaluate(`${PAGE}.start()`, { userGesture: true, timeoutMs: RECORDING_CALL_MS }),
 		);
 	} catch (error) {
 		signal.throwIfAborted();
@@ -265,7 +251,7 @@ function outcomeOf(state: RecordingState | null, following: Following): Recordin
 }
 
 /**
- * Follow the talk until the page has finished the file.
+ * Follow the talk until the page has kept it.
  * @param page The page.
  * @param signal Cancels the wait.
  * @param onProgress Told each new phase and step.
@@ -283,7 +269,6 @@ async function finished(
 	const done = outcomeOf(state, following);
 	if (done !== null) return done;
 	follow(state, following, onProgress);
-	await heeded(signal, page.keepSize());
 	if (performance.now() - following.changedAt > RECORDING_STALL_MS) {
 		throw new RecordingPageError(
 			"The canvas page stopped reporting progress. Record again; if it keeps happening, open the board on the canvas and check voice there.",
@@ -295,39 +280,51 @@ async function finished(
 }
 
 /**
- * Record one walkthrough through a page that is already open on it.
+ * The finished talk's log, as the page hands it over.
  * @param page The page.
- * @param options The container, where the file goes, cancellation and progress.
- * @param options.container The container to write.
- * @param options.path Where to write the file.
+ * @param signal Cancels the read.
+ * @returns The log.
+ * @throws {RecordingPageError} When the page hands over something that is not a talk log.
+ */
+async function logOf(page: RecordingPageHandle, signal: AbortSignal): Promise<TalkLog> {
+	const value = await heeded(
+		signal,
+		page.evaluate(`${PAGE}.talk()`, { timeoutMs: RECORDING_FILE_READ_MS }),
+	);
+	const parsed = TalkLogSchema.safeParse(value);
+	if (!parsed.success) throw new RecordingPageError(OTHER_BUILD, true);
+	return parsed.data;
+}
+
+/**
+ * Record one walkthrough's talk through a page that is already open on it.
+ * @param page The page.
+ * @param options Where the voice goes, cancellation and progress.
+ * @param options.voice Where to write the voice, a WAV file.
  * @param options.signal Cancels the recording.
  * @param options.onProgress Told each new phase and step.
- * @returns The finished state and how many bytes the file has.
+ * @returns The finished state and the talk's log.
  * @throws {RecordingPageError} When the recording did not happen. A cancelled recording throws
  *   the signal's reason instead, as soon as the call it was waiting on settles.
  */
 async function drive(
 	page: RecordingPageHandle,
 	options: {
-		readonly container: RecordingContainer;
-		readonly path: string;
+		readonly voice: string;
 		readonly signal: AbortSignal;
 		readonly onProgress: (state: RecordingState) => void;
 	},
-): Promise<{ readonly state: RecordingState; readonly bytes: number }> {
+): Promise<{ readonly state: RecordingState; readonly log: TalkLog }> {
 	const { signal } = options;
 	const following: Following = { said: "", changedAt: 0, shown: false };
 	try {
 		signal.throwIfAborted();
 		await ready(page, signal, performance.now() + RECORDING_PAGE_READY_MS, false);
-		await begin(page, signal, options.container);
+		await begin(page, signal);
 		following.changedAt = performance.now();
 		const state = await finished(page, signal, options.onProgress, following);
-		const bytes = await heeded(
-			signal,
-			page.saveBlob(`${PAGE}.file()`, options.path, RECORDING_FILE_READ_MS),
-		);
-		return { state, bytes };
+		await heeded(signal, page.saveBlob(`${PAGE}.voice()`, options.voice, RECORDING_FILE_READ_MS));
+		return { state, log: await logOf(page, signal) };
 	} catch (error) {
 		signal.throwIfAborted();
 		if (error instanceof RecordingPageError) throw error;
