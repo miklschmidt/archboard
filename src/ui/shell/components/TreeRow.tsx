@@ -115,7 +115,7 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 			onClick={handleClick}
 			onKeyDown={props.onRowKeyDown}
 			style={style}
-			className={`group/row focus-visible:ring-ring relative flex min-h-7 w-full min-w-0 cursor-default flex-wrap items-start rounded-[3px] py-[5px] outline-none select-none focus-visible:ring-1 focus-visible:ring-inset ${selected ? "bg-sidebar-accent" : "hover:bg-sidebar-accent"}`}
+			className={`group/row focus-visible:ring-ring relative flex min-h-7 w-full min-w-0 cursor-default flex-wrap items-start rounded-[3px] py-[5px] outline-none select-none focus-visible:ring-1 focus-visible:ring-inset ${selected ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/50"}`}
 		>
 			<RowGuides depth={row.depth} />
 			{selected && (
