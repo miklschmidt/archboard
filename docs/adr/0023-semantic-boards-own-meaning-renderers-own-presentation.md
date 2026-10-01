@@ -166,8 +166,9 @@ change the user is planning.
 
 ## Relationship to existing decisions
 
-This replaces the Excalidraw foundation in ADR 0001, the element-metadata model in
-ADR 0003, and the Obsidian-specific requirements in ADR 0004 for the new board model.
+This replaces the Excalidraw foundation archboard started on, the element-metadata
+model in ADR 0003, and the Obsidian-specific requirements in ADR 0004 for the new
+board model.
 It replaces ADR 0015's choice of Excalidraw elements as the canonical representation,
 while retaining one authoritative persisted board rather than two writable formats.
 ADR 0022's direct human drawing workflow is not required in the replacement viewer.
