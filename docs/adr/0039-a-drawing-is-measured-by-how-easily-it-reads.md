@@ -44,10 +44,10 @@ The measures, in order:
   down a flank, bounded bends per route, and every label on a straight run of
   its own route.
 - Crossings, and crossings on a line's corner.
-- Stacks of unrelated lines drawn on one stroke, and double tracks. A double
-  track is two unrelated lines that run closer than a lane apart for a long
-  stretch. Lines exactly a lane apart stand at the routers' channel pitch and
-  are not a double track.
+- Stacks of unrelated lines drawn on one stroke, and double tracks. A lane is a
+  passage where lines run. A double track is two unrelated lines that run closer
+  than a lane apart for a long stretch. Lines exactly a lane apart stand at the
+  routers' channel pitch and are not a double track.
 - Side hooks, ports crowding a card's corner or a badge, and lines hugging a
   frame wall.
 - Labels crowded by other lines, and streaks resting on a label, a hop or a

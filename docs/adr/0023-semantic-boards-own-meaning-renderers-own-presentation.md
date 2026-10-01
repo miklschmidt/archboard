@@ -268,9 +268,9 @@ The pane's semantic report gains the position of a presented walkthrough. The
 position consists of these parts:
 
 - The walkthrough
-- The beat
+- The step
 - How many there are
-- Whether the beat finished arriving
+- Whether the step finished arriving
 - Which request the position answers, or none for a position that a person chose
 
 That report is read-only telemetry, in the same class as the view and the

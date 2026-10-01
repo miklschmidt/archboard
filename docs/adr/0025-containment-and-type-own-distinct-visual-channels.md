@@ -14,7 +14,8 @@ TASK-339 amended this decision on 2026-09-24. A colored line gets its color from
 its relationship type or its comparison status. The renderer draws that line at
 three quarters of its color over the page, and its arrowhead gets the same
 treatment. The renderer mixes the color and does not make it translucent. Two
-lines that share a lane therefore draw no darker where they overlap.
+lines that share a lane (a passage where lines run) therefore draw no darker
+where they overlap.
 
 Some parts of a line keep more color. The comets of its traffic carry the color
 at full strength (ADR 0027). The comparison band behind a changed line also

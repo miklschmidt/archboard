@@ -12,7 +12,7 @@ tracks this decision.
 A draft can outlive its proposal. Two drafts in this repository's own vault got
 there. `Archboard server` / `Readable layout` proposes nothing architectural:
 every node is shared, every relationship is byte-identical, and the draft
-retargets one drill-down and adds one beat. `Semantic renderer` /
+retargets one drill-down and adds one walkthrough step. `Semantic renderer` /
 `Readable layout` converged on its parent outright.
 
 Neither draft can be adopted. Adoption freezes the accurate current variant into
