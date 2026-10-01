@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-30 18:51'
-updated_date: '2026-09-30 19:41'
+updated_date: '2026-10-01 00:12'
 labels:
   - ui
 dependencies: []
@@ -48,4 +48,6 @@ Study: docs/design/navigator-structure.md (with assets/navigator-structure-befor
 Decisions: one 16 px step with four columns (disclosure, marker, name, facts) placed by depth alone; every row has a marker (folder, board, lifecycle, history); variants one depth in, before child boards, live first, a draft nested only under the draft it came from, historical and shelved behind one Earlier row; a board lists its variants while it has a proposal or a pane shows it; one disclosure per board; the way to every pane's reading is open; each pane letter on exactly one row; one selected row with the foreground name; the per-row level word is gone (hover, aria-label and the header keep it). No dogfood board is affected.
 
 Implemented on branch ui/navigator-indentation: 3a87a1e7 (study), d701e764 (redesign), 503c0745 (navigator section and image), a832991f (row disclosure and selection read from the row). The navigator's owners pass: navigator-tree.test.tsx (7, including every row at one depth sharing one indent and each pane letter on exactly one row), shell-layout and workspace-address in the browser lane. bun run check passed on a832991f: lint, fmt, type-check, modules 3734, system 189, repository 8, serial browser 15 owners. Every row kind measured after: disclosure 9/25/41/57/73, marker 24/40/56/72/88, name 46/62/78/94/110 at levels 1 to 5, facts ending at 307, in both themes. Before and after captures are in the job scratch directory (listed in the hand-back). Criteria left unchecked for review.
+
+Review fixes (51ccbeed, 41566d1e): S1 docs say the filter lists found variants directly under their board with no Earlier row; S2 a board name's title is name and level; S3 a selected row is never muted (also a selected receding variant); B1 the header marks the variant it names with its lifecycle; B2 new module src/ui/variant-lifecycle exports VariantMark, variantRecedes, variantOrder and ListedLifecycle for the navigator, the header and the pane sidebar; T1-T7 applied (grid widths and gaps from tree-grid, one paneCanShow guard, InsideLamp and MarkerLamp, EarlierLine in its own file, existing helpers and types reused). Verified: lint, both type-checks, fmt, module tests for shell, board-catalog and variant-lifecycle (22), and the browser owners shell-layout, workspace-address and semantic-drill-address.
 <!-- SECTION:NOTES:END -->
