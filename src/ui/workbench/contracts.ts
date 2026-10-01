@@ -52,10 +52,27 @@ interface AgentVoiceView {
 	readonly problem: string | null;
 	/** A control is on the wire. */
 	readonly busy: boolean;
-	/** The model's output level, 0..1, for the meter. */
-	readonly level: number;
-	/** The model is audible now, by its measured output: the session never learns its turn phases. */
-	readonly audible: boolean;
+	/**
+	 * The model's output level, for the meter and for whether the model is audible:
+	 * the session never learns its turn phases. A source rather than a value: it
+	 * changes on every frame while the model speaks, so only what draws it reads it.
+	 */
+	readonly level: VoiceLevel;
+}
+
+/** The model's output level, heard where it is drawn. */
+interface VoiceLevel {
+	/**
+	 * The level now.
+	 * @returns 0..1.
+	 */
+	readonly read: () => number;
+	/**
+	 * Hear it change, on every frame while the model speaks.
+	 * @param listener Called after each change.
+	 * @returns How to stop hearing it.
+	 */
+	readonly subscribe: (listener: () => void) => () => void;
 }
 
 /** The board the agent sees with the next message. */
@@ -134,6 +151,7 @@ export type {
 	AgentVoiceView,
 	ApprovalChoice,
 	DynamicApprovalVerdict,
+	VoiceLevel,
 	VoiceStage,
 	WorkbenchQueueActions,
 };

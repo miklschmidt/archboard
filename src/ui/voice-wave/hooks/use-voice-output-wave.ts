@@ -18,8 +18,11 @@ import type { VoiceWaveState, WaveValues } from "@/ui/voice-wave/wave-state";
 /** What drives the wave. There is no microphone path: `level` is model output. */
 interface VoiceOutputWaveInputs {
 	state: VoiceWaveState;
-	/** Measured model output level, 0..1. */
-	level: number;
+	/**
+	 * Reads the measured model output level, 0..1. A reader rather than a value:
+	 * the level changes on every frame, and the loop reads it on each.
+	 */
+	level: () => number;
 	reducedMotion: boolean;
 	/** False stops the loop and rests the wave, whatever the state says. */
 	active: boolean;
@@ -63,7 +66,7 @@ function useVoiceOutputWave(inputs: VoiceOutputWaveInputs): WaveValues {
 	useEffect(() => {
 		if (!animating) {
 			const current = latest.current;
-			const rest = current.active ? settledWave(current.state, current.level) : FLAT_WAVE;
+			const rest = current.active ? settledWave(current.state, current.level()) : FLAT_WAVE;
 			setValues((previous) => (sameWave(previous, rest) ? previous : rest));
 			return undefined;
 		}
@@ -80,7 +83,7 @@ function useVoiceOutputWave(inputs: VoiceOutputWaveInputs): WaveValues {
 		const tick = (nowMs: number): void => {
 			const current = latest.current;
 			clock = clockFor(clock, current.state, nowMs);
-			const targets = waveTargets(current.state, current.level);
+			const targets = waveTargets(current.state, current.level());
 			const deltaMs = nowMs - clock.lastMs;
 			clock.lastMs = nowMs;
 			setValues((previous) => {

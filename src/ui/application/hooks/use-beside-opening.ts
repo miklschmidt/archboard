@@ -45,12 +45,15 @@ function abandoned(panes: Panes, pending: PendingBeside): boolean {
 
 /**
  * Open a board beside the one being read.
- * @param panes The panes.
+ * @param panes The panes, watched for the pane an opening waits on.
+ * @param livePanes The panes as they are when the person acts, which the action reads
+ * so that it keeps one identity through every pane's news.
  * @param actions The shell's board and pane actions.
  * @returns The action.
  */
 function useBesideOpening(
 	panes: Panes,
+	livePanes: Panes,
 	actions: Pick<ShellActions, "selectBoard" | "addPane" | "selectPane">,
 ): (key: string) => void {
 	const pending = useRef<PendingBeside | null>(null);
@@ -70,7 +73,7 @@ function useBesideOpening(
 	}, [panes, actions]);
 	return useCallback(
 		(key: string): void => {
-			const { list } = panes;
+			const { list } = livePanes;
 			const other = list.panes.find((pane) => pane.paneId !== list.activePaneId);
 			if (other !== undefined) {
 				actions.selectBoard(key, other.paneId);
@@ -79,7 +82,7 @@ function useBesideOpening(
 			pending.current = { key, from: list.activePaneId, seen: false };
 			actions.addPane();
 		},
-		[panes, actions],
+		[livePanes, actions],
 	);
 }
 

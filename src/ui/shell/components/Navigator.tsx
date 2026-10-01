@@ -17,11 +17,13 @@ import { BoardOutline } from "@/ui/shell/components/BoardOutline";
 import { NavigatorFilter } from "@/ui/shell/components/NavigatorFilter";
 import { WorkingNow, type WorkingEntry } from "@/ui/shell/components/WorkingNow";
 import { useFindShortcut } from "@/ui/shell/hooks/use-find-shortcut";
+import { useKept } from "@/ui/shell/hooks/use-kept";
 import { useNavigatorExpansion } from "@/ui/shell/hooks/use-navigator-expansion";
 import { filterCount, navigatorRows, rowSelected } from "@/ui/shell/lib/navigator-rows";
 import { boardRowId } from "@/ui/shell/lib/row-ids";
 import { paneLetter } from "@/ui/shell/lib/pane-letters";
 import { foldQuery } from "@/ui/shell/lib/text-match";
+import { sameData } from "@/ui/shell/lib/same-data";
 import { nameX } from "@/ui/shell/lib/tree-grid";
 import type { ShellActions, ShellView } from "@/ui/shell/types/contracts";
 import type { NavigatorRow, PaneMark } from "@/ui/shell/types/navigator-rows";
@@ -118,7 +120,9 @@ function Navigator(props: NavigatorProps): JSX.Element {
 	const column = useRef<HTMLElement>(null);
 	useFindShortcut(input);
 	const [query, setQuery] = useState("");
-	const panes = useMemo(() => paneMarks(view), [view]);
+	// Which pane shows which board, kept while that is so: pane news that changes
+	// nothing here leaves the rows, their expansion and their handlers as they were.
+	const panes = useKept(paneMarks(view), sameData);
 	const expansion = useNavigatorExpansion(outline, listing, panes);
 	const folded = foldQuery(query);
 	const rows = useMemo(
