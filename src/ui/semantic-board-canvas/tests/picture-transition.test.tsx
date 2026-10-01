@@ -11,6 +11,7 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
 import { PICTURE_TRANSITION_PHASES } from "@/shared/timing/timing";
+import { driveFramesFrom, frameClock } from "@/ui/frame-clock";
 import {
 	TRANSITION_ATTRIBUTE,
 	continuousPictures,
@@ -458,27 +459,23 @@ describe("which pictures are continuous", () => {
 
 describe("the traffic's clock", () => {
 	test("a picture of the same board keeps its animation clock, and another board starts its own", () => {
-		// The page's SVG clock, stood in for: a replaced picture's clock starts at nought.
+		// The picture clock, stood in for: a replaced picture's clock starts at nought.
 		const clocks = new WeakMap<Element, number>();
-		const prototype = window.SVGSVGElement.prototype;
-		Object.defineProperty(prototype, "getCurrentTime", {
-			configurable: true,
+		const restore = driveFramesFrom({
+			...frameClock(),
 			/**
 			 * A picture's clock.
+			 * @param root The picture.
 			 * @returns Where it stands, in seconds.
 			 */
-			value(this: Element): number {
-				return clocks.get(this) ?? 0;
-			},
-		});
-		Object.defineProperty(prototype, "setCurrentTime", {
-			configurable: true,
+			pictureTime: (root) => clocks.get(root),
 			/**
 			 * Set a picture's clock.
+			 * @param root The picture.
 			 * @param seconds Where it stands.
 			 */
-			value(this: Element, seconds: number): void {
-				clocks.set(this, seconds);
+			setPictureTime: (root, seconds) => {
+				clocks.set(root, seconds);
 			},
 		});
 		try {
@@ -498,8 +495,7 @@ describe("the traffic's clock", () => {
 			entrance.finish();
 			expect(clocks.get(surface.querySelector("svg")!)).toBe(1.5);
 		} finally {
-			Reflect.deleteProperty(prototype, "getCurrentTime");
-			Reflect.deleteProperty(prototype, "setCurrentTime");
+			restore();
 		}
 	});
 });

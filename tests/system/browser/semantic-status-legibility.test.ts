@@ -427,7 +427,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	const stepId = await browser.eval<string>(
 		`document.querySelector("${SURFACE} [data-semantic-kind='step']").dataset.semanticId`,
 	);
-	// The exchange's timed comets: their SMIL motion and the gradient stops their tails fade through.
+	// The exchange's timed comets: their motion and the gradient stops their tails fade through.
 	expect(
 		await browser.eval<number>(`document.querySelectorAll("${SURFACE} svg stop").length`),
 	).toBeGreaterThan(0);
