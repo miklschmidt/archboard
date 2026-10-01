@@ -99,7 +99,7 @@ function SidebarChoices(props: {
 			aria-label={props.label}
 			// A fieldset is as wide as its widest line unless told otherwise, and a
 			// long name would then run out of the sidebar instead of wrapping.
-			className="-mx-2 flex min-w-0 flex-col items-stretch gap-0.5 border-0 p-0"
+			className="-mx-2 flex min-w-0 flex-col items-stretch border-0 p-0"
 		>
 			{props.children}
 		</fieldset>
@@ -117,14 +117,17 @@ type SidebarChoiceProps = Omit<
 
 /**
  * One choice of a list: a row the width of the list whose words start on the
- * text column, with its fill on while it is the one on screen. Its children
- * are its parts, in order: a `SidebarGlyph` when the list has one for every
- * row, a `SidebarLabel`, and a `SidebarMeta` when there is a quiet fact to add.
+ * text column. The one on screen takes the reading tone and a cobalt bar at
+ * its edge, as the navigator's selected row does, so "on screen" looks the same
+ * in every column of the shell. Hover takes half that tone and no bar, so a row
+ * under the pointer never looks chosen. Its children are its parts, in order:
+ * a `SidebarGlyph` when the list has one for every row, a `SidebarLabel`, and a
+ * `SidebarMeta` when there is a quiet fact to add.
  * @param props The choice, and the attributes that say which one it is.
  * @returns The row.
  */
 function SidebarChoice(props: SidebarChoiceProps): JSX.Element {
-	const { pressed, ...rest } = props;
+	const { pressed, children, ...rest } = props;
 	return (
 		<Button
 			type="button"
@@ -132,12 +135,55 @@ function SidebarChoice(props: SidebarChoiceProps): JSX.Element {
 			size="sm"
 			aria-pressed={pressed}
 			// The button's 1 px border and 7 px of padding put the words on the text
-			// column, 8 px in from the list's edge; 28 px high on one line. The fill
-			// is the sidebar's accent, the one the navigator marks its rows with, so
-			// "on screen" looks the same in every column of the shell.
-			className="hover:bg-sidebar-accent dark:hover:bg-sidebar-accent aria-pressed:bg-sidebar-accent h-auto min-h-7 w-full min-w-0 items-start justify-start gap-2 px-[7px] py-[4px] text-left whitespace-normal"
+			// column, 8 px in from the list's edge; 28 px high on one line.
+			className="hover:bg-sidebar-accent/50 dark:hover:bg-sidebar-accent/50 aria-pressed:bg-sidebar-accent aria-pressed:hover:bg-sidebar-accent relative h-auto min-h-7 w-full min-w-0 items-start justify-start gap-2 px-[7px] py-[4px] text-left whitespace-normal"
 			{...rest}
-		/>
+		>
+			{pressed && (
+				<span
+					aria-hidden="true"
+					data-slot="sidebar-choice-bar"
+					className="bg-primary absolute inset-y-1 left-0 w-0.5 rounded-full"
+				/>
+			)}
+			{children}
+		</Button>
+	);
+}
+
+/** Attributes that say which row this is, for tests and styles. */
+type RowData = Readonly<Record<`data-${string}`, string | undefined>>;
+
+/**
+ * A row that is not a control, on the same box as a choice: 28 px high on one
+ * line, its first line 18 px, its words on the text column. Its children are
+ * the parts a choice takes; its data attributes say which row it is.
+ * @param props The row.
+ * @returns The row.
+ */
+function SidebarRow(
+	props: RowData & {
+		/** The element: a list item in a list, else a block. */
+		readonly as?: "li" | "div";
+		/** Whether its words are set as a choice's are. */
+		readonly control?: boolean;
+		/** Its parts. */
+		readonly children: ReactNode;
+	},
+): JSX.Element {
+	const { as, control, children, ...data } = props;
+	const Row = as ?? "div";
+	return (
+		<Row
+			{...data}
+			className={cn(
+				"flex min-h-7 items-start gap-2 py-[5px]",
+				control === true ? "text-control" : "text-body",
+				"leading-[18px]",
+			)}
+		>
+			{children}
+		</Row>
 	);
 }
 
@@ -156,15 +202,29 @@ function SidebarLabel(props: { readonly children: ReactNode }): JSX.Element {
 }
 
 /**
- * The mark before a row's words, centred in a 16 px slot on their first line,
- * so the words of every row with a mark start on one line, whatever the mark.
- * @param props The mark.
+ * The mark before a row's words, on their first line, in a slot of fixed
+ * width so the words of every row of one list start on one line, whatever the
+ * mark: 16 px with the mark centred, or 28 px with it at the start for the
+ * legend's samples.
+ * @param props The mark, and its slot.
+ * @param props.wide Whether the slot is the legend's 28 px one.
+ * @param props.control Whether the mark is a control, which assistive technology must reach.
  * @param props.children The mark.
  * @returns The mark, in its slot.
  */
-function SidebarGlyph(props: { readonly children: ReactNode }): JSX.Element {
+function SidebarGlyph(props: {
+	readonly wide?: boolean;
+	readonly control?: boolean;
+	readonly children: ReactNode;
+}): JSX.Element {
 	return (
-		<span aria-hidden="true" className="flex h-[18px] w-4 shrink-0 items-center justify-center">
+		<span
+			aria-hidden={props.control === true ? undefined : true}
+			className={cn(
+				"flex h-[18px] shrink-0 items-center",
+				props.wide === true ? "w-7 justify-start" : "w-4 justify-center",
+			)}
+		>
 			{props.children}
 		</span>
 	);
@@ -204,5 +264,6 @@ export {
 	SidebarLabel,
 	SidebarMeta,
 	SidebarRegion,
+	SidebarRow,
 	SidebarSection,
 };

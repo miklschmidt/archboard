@@ -29,6 +29,7 @@ import {
 	SidebarChoices,
 	SidebarLabel,
 	SidebarMeta,
+	SidebarRow,
 } from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
 import type { OfferedVariant } from "@/ui/semantic-board-canvas/lib/board-document";
 
@@ -96,15 +97,15 @@ function VariantChoice(props: VariantChoiceProps): JSX.Element {
 function VariantStanding(props: { readonly variant: OfferedVariant }): JSX.Element {
 	const { variant } = props;
 	return (
-		<p
+		<SidebarRow
+			control
 			data-slot="semantic-variant-showing"
 			data-semantic-variant={variant.id}
 			data-semantic-lifecycle={variant.lifecycle}
-			className="text-control flex min-h-7 items-start gap-2 py-[5px]"
 		>
 			<SidebarLabel>{variant.name}</SidebarLabel>
 			<SidebarMeta technical>{variant.lifecycle}</SidebarMeta>
-		</p>
+		</SidebarRow>
 	);
 }
 
