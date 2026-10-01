@@ -1,29 +1,31 @@
 // Which variants a board lists under it, and in what order. They sit one
-// depth in, before the boards it drills down to: first the variant its name
-// opens, then its other live variants as the board lists them, a draft nested
-// under the draft it was derived from. The historical and shelved variants
-// wait behind one Earlier row, newest first. A board lists its variants while
-// it has more than one, and one of them is a proposal or a pane shows the
-// board. While a filter is on, a board lists only the variants it finds. Pure.
+// depth in, before the boards it drills down to, in the order every list of a
+// board's variants uses (variant-lifecycle): first the variant its name
+// opens, then its other live variants, a draft nested under the draft it was
+// derived from. The historical and shelved variants wait behind one Earlier
+// row, newest first. A board lists its variants while it has more than one,
+// and one of them is a proposal or a pane shows the board. While a filter is
+// on, a board lists the variants the filter finds directly under it, with no
+// Earlier row. Pure.
 
-import type { OutlineNode } from "@/ui/board-catalog";
-import { boardRowId, earlierRowId, sameBoard, variantRowId } from "@/ui/shell/lib/row-ids";
+import { listedBoard } from "@/ui/board-catalog";
+import { sameBoardName } from "@/ui/semantic-board-canvas";
+import { boardRowId, earlierRowId, variantRowId } from "@/ui/shell/lib/row-ids";
 import { matchIn } from "@/ui/shell/lib/text-match";
 import type {
 	EarlierRow,
 	NavigatorRow,
 	NavigatorRowInputs,
 	PaneMark,
+	RowPlace,
 	Unplaced,
 	VariantRow,
 } from "@/ui/shell/types/navigator-rows";
-import type { CatalogBoard, ListedVariant } from "@/ui/types";
+import type { BoardListing, CatalogBoard, ListedVariant } from "@/ui/types";
+import { variantOrder, variantRecedes } from "@/ui/variant-lifecycle";
 
-/** Where a board's variants go: their first depth and the board's row. */
-interface VariantPlace {
-	readonly depth: number;
-	readonly parentId: string;
-}
+/** Where a board's variants go: their first depth, under the board's row. */
+type VariantPlace = RowPlace & { readonly parentId: string };
 
 /**
  * Whether a variant is live: the architecture that exists or a proposal for it.
@@ -31,7 +33,7 @@ interface VariantPlace {
  * @returns True for a current or draft variant.
  */
 function isLive(variant: ListedVariant): boolean {
-	return variant.lifecycle === "current" || variant.lifecycle === "draft";
+	return !variantRecedes(variant.lifecycle);
 }
 
 /**
@@ -45,12 +47,12 @@ function isDraft(variant: ListedVariant): boolean {
 
 /**
  * Whether a pane shows a board.
- * @param panes The panes.
+ * @param pane The pane.
  * @param board The board.
- * @returns True when some pane shows it.
+ * @returns True when the pane shows it, in any variant.
  */
-function shownInAPane(panes: readonly PaneMark[], board: CatalogBoard): boolean {
-	return panes.some((pane) => sameBoard(pane.board, board.name));
+function paneOnBoard(pane: PaneMark, board: CatalogBoard): boolean {
+	return pane.board !== null && sameBoardName(pane.board, board.name);
 }
 
 /**
@@ -61,22 +63,10 @@ function shownInAPane(panes: readonly PaneMark[], board: CatalogBoard): boolean 
  * @returns True when its variants are listed while it is open.
  */
 function listsVariants(panes: readonly PaneMark[], board: CatalogBoard): boolean {
-	return board.variants.length > 1 && (board.variants.some(isDraft) || shownInAPane(panes, board));
-}
-
-/**
- * A board's variants in the order they are listed: the one its name opens
- * first, then the other live ones as the board lists them, then the earlier
- * ones newest first.
- * @param board The board.
- * @param variants The variants to order.
- * @returns The ordered variants.
- */
-function variantOrder(board: CatalogBoard, variants: readonly ListedVariant[]): ListedVariant[] {
-	const live = variants.filter(isLive);
-	const opened = live.filter((variant) => variant.id === board.opens);
-	const others = live.filter((variant) => variant.id !== board.opens);
-	return [...opened, ...others, ...variants.filter((variant) => !isLive(variant)).toReversed()];
+	return (
+		board.variants.length > 1 &&
+		(board.variants.some(isDraft) || panes.some((pane) => paneOnBoard(pane, board)))
+	);
 }
 
 /**
@@ -180,7 +170,7 @@ function foundVariantRows(
 	at: VariantPlace,
 ): Unplaced<NavigatorRow>[] {
 	const found = board.variants.filter((variant) => matchIn(variant.name, inputs.query) !== null);
-	return nestedVariants(board, variantOrder(board, found), at).map((row) => ({
+	return nestedVariants(board, variantOrder(found, board.opens), at).map((row) => ({
 		...row,
 		match: matchIn(row.variant.name, inputs.query),
 	}));
@@ -201,7 +191,7 @@ function variantRows(
 ): Unplaced<NavigatorRow>[] {
 	if (inputs.query.length > 0) return foundVariantRows(inputs, board, at);
 	if (!listsVariants(inputs.panes, board)) return [];
-	const ordered = variantOrder(board, board.variants);
+	const ordered = variantOrder(board.variants, board.opens);
 	const earlier = ordered.filter((variant) => !isLive(variant));
 	return [
 		...nestedVariants(board, ordered.filter(isLive), at),
@@ -210,37 +200,19 @@ function variantRows(
 }
 
 /**
- * The listed board a pane shows.
- * @param outline The outline, or a part of it.
- * @param name The board's name.
- * @returns The board, or undefined when it is not listed.
- */
-function listedBoardIn(
-	outline: readonly OutlineNode<CatalogBoard>[],
-	name: string,
-): CatalogBoard | undefined {
-	for (const node of outline) {
-		if (node.kind === "board" && sameBoard(name, node.board.name)) return node.board;
-		const found = listedBoardIn(node.children, name);
-		if (found !== undefined) return found;
-	}
-	return undefined;
-}
-
-/**
  * The rows that must be open for a pane's reading to show: its board's row,
  * and the Earlier row holding its variant when that variant is historical or
  * shelved.
- * @param outline The outline.
+ * @param listing The listing.
  * @param pane The pane.
  * @returns The ids.
  */
-function readingRowIds(outline: readonly OutlineNode<CatalogBoard>[], pane: PaneMark): string[] {
+function readingRowIds(listing: BoardListing, pane: PaneMark): string[] {
 	if (pane.board === null) return [];
-	const board = listedBoardIn(outline, pane.board);
+	const board = listedBoard(listing, pane.board);
 	const variant = board?.variants.find((one) => one.key === pane.key);
 	const earlier = board !== undefined && variant !== undefined && !isLive(variant);
 	return earlier ? [boardRowId(pane.board), earlierRowId(board)] : [boardRowId(pane.board)];
 }
 
-export { listsVariants, readingRowIds, variantRows };
+export { listsVariants, paneOnBoard, readingRowIds, variantRows };

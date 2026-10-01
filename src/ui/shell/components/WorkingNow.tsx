@@ -13,7 +13,15 @@ import { ActivityLamp } from "@/ui/shell/components/ActivityLamp";
 import { PaneChips } from "@/ui/shell/components/PaneChips";
 import { useClock } from "@/ui/components/use-clock";
 import { shortAge } from "@/ui/components/age";
-import { FACTS_INSET, markerX, NAME_GAP, nameX, ROW_GUTTER } from "@/ui/shell/lib/tree-grid";
+import {
+	FACTS_GAP,
+	FACTS_INSET,
+	MARKER_WIDTH,
+	markerX,
+	NAME_GAP,
+	nameX,
+	ROW_GUTTER,
+} from "@/ui/shell/lib/tree-grid";
 import type { AgentActivityEntry } from "@/ui/types";
 
 /** The heading starts where the names do. */
@@ -28,8 +36,14 @@ const ENTRY_STYLE = {
 	paddingRight: FACTS_INSET - ROW_GUTTER,
 } as const;
 
+/** The lamp's column, as wide as the tree's marker column. */
+const LAMP_STYLE = { width: MARKER_WIDTH } as const;
+
 /** The name keeps the tree's gap from the marker column. */
 const NAME_GAP_STYLE = { marginLeft: NAME_GAP } as const;
+
+/** The facts keep the tree's gap from the name. */
+const FACTS_STYLE = { marginLeft: FACTS_GAP } as const;
 
 /** The doing line starts where the name does. */
 const DOING_STYLE = { paddingLeft: nameX(0) - markerX(0) } as const;
@@ -142,13 +156,13 @@ function WorkingItem(props: WorkingItemProps): JSX.Element {
 				className="hover:bg-sidebar-accent flex w-full min-w-0 flex-col gap-0.5 rounded-[3px] py-1.5 text-left"
 			>
 				<span className="flex w-full min-w-0 items-center">
-					<span className="flex w-4 shrink-0 justify-center">
+					<span style={LAMP_STYLE} className="flex shrink-0 justify-center">
 						<ActivityLamp state={claim === null ? "wrote" : "claimed"} />
 					</span>
 					<span style={NAME_GAP_STYLE} className="text-control min-w-0 flex-1 truncate font-medium">
 						{entry.name}
 					</span>
-					<span className="ml-2 flex shrink-0 items-center gap-1.5">
+					<span style={FACTS_STYLE} className="flex shrink-0 items-center gap-1.5">
 						<PaneChips letters={entry.onScreen} />
 						<Age at={at} now={now} />
 					</span>

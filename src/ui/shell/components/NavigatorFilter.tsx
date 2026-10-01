@@ -9,10 +9,16 @@ import { RiCloseLine, RiSearchLine } from "@remixicon/react";
 import { useCallback, type ChangeEvent, type JSX, type KeyboardEvent, type RefObject } from "react";
 
 import { usesCommandKey } from "@/ui/components/command-key";
-import { FACTS_INSET, markerX } from "@/ui/shell/lib/tree-grid";
+import { FACTS_INSET, MARKER_WIDTH, markerX, NAME_GAP } from "@/ui/shell/lib/tree-grid";
 
-/** The field's icon in the marker column of the top rows, its facts on the tree's right edge. */
-const FILTER_STYLE = { paddingLeft: markerX(0), paddingRight: FACTS_INSET } as const;
+/**
+ * The field's icon in the marker column of the top rows, its text the grid's
+ * gap after it, and its facts on the tree's right edge.
+ */
+const FILTER_STYLE = { paddingLeft: markerX(0), paddingRight: FACTS_INSET, gap: NAME_GAP } as const;
+
+/** The icon's column, as wide as the tree's marker column. */
+const ICON_STYLE = { width: MARKER_WIDTH } as const;
 
 /** Inputs for the filter. */
 interface NavigatorFilterProps {
@@ -87,11 +93,8 @@ function NavigatorFilter(props: NavigatorFilterProps): JSX.Element {
 	);
 	const filtering = query.trim() !== "";
 	return (
-		<div
-			style={FILTER_STYLE}
-			className="border-border flex h-9 shrink-0 items-center gap-1.5 border-b"
-		>
-			<span className="flex w-4 shrink-0 justify-center">
+		<div style={FILTER_STYLE} className="border-border flex h-9 shrink-0 items-center border-b">
+			<span style={ICON_STYLE} className="flex shrink-0 justify-center">
 				<RiSearchLine className="text-muted-foreground size-3.5" aria-hidden="true" />
 			</span>
 			<input

@@ -4,28 +4,35 @@
 // disclosure column, so a row's disclosure sits under its parent's marker and
 // the guide of each open row runs through the middle of its disclosure. The
 // filter and Working now put their icon and text on the columns of depth zero.
-// Pure: every length is in pixels from the navigator's left edge.
-
-/** How far each depth moves a row right: one disclosure column. */
-const TREE_STEP = 16;
-
-/** From the navigator's left edge to the disclosure column of depth zero. */
-const TREE_INSET = 8;
+// Pure: every horizontal length the navigator lays out comes from here, in
+// pixels, and every x is measured from the navigator's left edge.
 
 /** The disclosure column: a chevron, or the space one would take. */
 const DISCLOSURE_WIDTH = 16;
 
-/** The marker column: a folder, a variant's lifecycle, or an agent at work. */
+/** How far each depth moves a row right: one disclosure column. */
+const TREE_STEP = DISCLOSURE_WIDTH;
+
+/** From the navigator's left edge to the disclosure column of depth zero. */
+const TREE_INSET = 8;
+
+/** The marker column: what kind of row it is, and an agent at work. */
 const MARKER_WIDTH = 16;
 
 /** Between the marker column and the name. */
 const NAME_GAP = 6;
+
+/** Between the name and the facts. */
+const FACTS_GAP = 8;
 
 /** The margin a row's tone keeps from the navigator's edges. */
 const ROW_GUTTER = 4;
 
 /** From the facts' right edge to the navigator's right edge. */
 const FACTS_INSET = 12;
+
+/** The smallest pointer target the shell allows; a chevron's reaches past its column. */
+const TARGET_SIZE = 24;
 
 /**
  * Where the disclosure column of a depth starts.
@@ -63,4 +70,16 @@ function guideX(depth: number): number {
 	return disclosureX(depth) + DISCLOSURE_WIDTH / 2;
 }
 
-export { FACTS_INSET, NAME_GAP, ROW_GUTTER, disclosureX, guideX, markerX, nameX };
+export {
+	DISCLOSURE_WIDTH,
+	FACTS_GAP,
+	FACTS_INSET,
+	MARKER_WIDTH,
+	NAME_GAP,
+	ROW_GUTTER,
+	TARGET_SIZE,
+	disclosureX,
+	guideX,
+	markerX,
+	nameX,
+};
