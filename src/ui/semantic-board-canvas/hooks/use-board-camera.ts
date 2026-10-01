@@ -6,8 +6,21 @@
 // changes under somebody leaves them looking exactly where they were. That is
 // also why a fit is told the diagram's size rather than remembering it: the
 // camera knows where the person is looking and nothing about what they see.
+//
+// Where the camera is lives in a store of its own rather than in React state.
+// A pan or a zoom moves it on every frame, and nothing the pane draws around
+// the picture depends on it: only what subscribes, the surface it moves, is
+// drawn again (TASK-385.02).
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+	useSyncExternalStore,
+} from "react";
 
 import { useCameraGlide } from "@/ui/semantic-board-canvas/hooks/use-camera-glide";
 import {
@@ -21,10 +34,28 @@ import {
 	type Size,
 } from "@/ui/semantic-board-canvas/lib/camera";
 
-/** How a person moves the camera, and where it is now. */
-interface BoardCamera {
+/** Where the pane is looking, and how its last move goes there. */
+interface CameraView {
 	/** Where the pane is looking. */
 	readonly camera: Camera;
+	/** Whether the last move was one that must land at once, rather than be eased. */
+	readonly instant: boolean;
+}
+
+/** How a person moves the camera, and where it is now. */
+interface BoardCamera {
+	/**
+	 * Where the pane is looking now. A handler or an effect reads it; a component
+	 * that draws with it subscribes instead, through `useCameraView`.
+	 * @returns The camera and how its last move goes.
+	 */
+	readonly view: () => CameraView;
+	/**
+	 * Hear every move of the camera.
+	 * @param listener Called after each move.
+	 * @returns How to stop hearing them.
+	 */
+	readonly subscribe: (listener: () => void) => () => void;
 	/**
 	 * How big the window on the diagram is, or null before the stage has been
 	 * laid out. A caller that wants to fit something watches this: the first
@@ -73,8 +104,6 @@ interface BoardCamera {
 	 * @param shift.y Down.
 	 */
 	readonly followPicture: (shift: { readonly x: number; readonly y: number }) => void;
-	/** Whether the last move was one that must land at once, rather than be eased. */
-	readonly instant: boolean;
 	/**
 	 * Glide to a fit or to a camera along a path that pulls back to cross a long
 	 * distance, and land there. Nobody moved the camera, so a fit stays free to
@@ -168,30 +197,67 @@ function pointIn(element: HTMLElement, event: WheelEvent): readonly [number, num
 	return [event.clientX - box.left, event.clientY - box.top];
 }
 
+/** Where a camera is, kept outside React, and who hears it move. */
+interface CameraStore {
+	readonly read: () => CameraView;
+	readonly write: (next: CameraView) => void;
+	readonly subscribe: (listener: () => void) => () => void;
+}
+
+/**
+ * A camera's store, at the identity camera.
+ * @returns The store.
+ */
+function createCameraStore(): CameraStore {
+	let view: CameraView = { camera: IDENTITY_CAMERA, instant: false };
+	const listeners = new Set<() => void>();
+	return {
+		/**
+		 * Where the camera is.
+		 * @returns The camera and how its last move goes.
+		 */
+		read: () => view,
+		/**
+		 * Move the camera, and tell whoever listens.
+		 * @param next Where it is now.
+		 */
+		write: (next) => {
+			view = next;
+			for (const listener of listeners) listener();
+		},
+		/**
+		 * Hear every move.
+		 * @param listener Called after each move.
+		 * @returns How to stop hearing them.
+		 */
+		subscribe: (listener) => {
+			listeners.add(listener);
+			return (): void => {
+				listeners.delete(listener);
+			};
+		},
+	};
+}
+
 /**
  * The camera for one diagram.
  * @returns The camera and the ways it moves.
  */
 function useBoardCamera(): BoardCamera {
-	const [camera, setCamera] = useState<Camera>(IDENTITY_CAMERA);
-	const [instant, setInstant] = useState(false);
+	const [store] = useState(createCameraStore);
+	const { read, write } = store;
 	const [viewport, setViewport] = useState<HTMLElement | null>(null);
 	const [measured, setRoom] = useState<Size | null>(null);
 	const [bottom, setBottom] = useState(0);
 	const room = useMemo(() => usable(measured, bottom), [measured, bottom]);
 	const flight = useCameraGlide();
-	// Where the camera is, for a glide to start from; read after commit.
-	const at = useRef<Camera>(camera);
-	useLayoutEffect(() => {
-		at.current = camera;
-	}, [camera]);
 	/** Stop a glide where it is drawn, so whatever moves next starts from what was seen. */
 	const settle = useCallback((): void => {
 		const stopped = flight.stop();
 		if (stopped !== null) {
-			setCamera(stopped);
+			write({ ...read(), camera: stopped });
 		}
-	}, [flight]);
+	}, [flight, read, write]);
 	// Whether the person has said where to look since the last fit. A ref rather
 	// than state: nothing is drawn from it, and it must be true for the very next
 	// gesture rather than for the next render.
@@ -225,10 +291,9 @@ function useBoardCamera(): BoardCamera {
 		(dx: number, dy: number): void => {
 			settle();
 			moved.current = true;
-			setInstant(false);
-			setCamera((current) => panCamera(current, dx, dy));
+			write({ camera: panCamera(read().camera, dx, dy), instant: false });
 		},
-		[settle],
+		[settle, read, write],
 	);
 
 	const zoomCentre = useCallback(
@@ -240,10 +305,10 @@ function useBoardCamera(): BoardCamera {
 			settle();
 			const factor = direction > 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
 			moved.current = true;
-			setInstant(false);
-			setCamera((current) => zoomCameraAbout(current, factor, size.width / 2, size.height / 2));
+			const camera = zoomCameraAbout(read().camera, factor, size.width / 2, size.height / 2);
+			write({ camera, instant: false });
 		},
-		[viewport, bottom, settle],
+		[viewport, bottom, settle, read, write],
 	);
 
 	const fit = useCallback(
@@ -256,11 +321,10 @@ function useBoardCamera(): BoardCamera {
 			flight.stop();
 			// A fit is the stage saying where to look, so it hands the camera back.
 			moved.current = false;
-			setInstant(atOnce);
-			setCamera(fitted);
+			write({ camera: fitted, instant: atOnce });
 			return true;
 		},
-		[viewport, bottom, flight],
+		[viewport, bottom, flight, write],
 	);
 
 	const glide = useCallback(
@@ -271,18 +335,24 @@ function useBoardCamera(): BoardCamera {
 			if (size === null || destination === null || surface === null) {
 				return false;
 			}
-			const from = flight.stop() ?? at.current;
+			const from = flight.stop() ?? read().camera;
 			moved.current = handledAfter;
-			setInstant(true);
+			write({ camera: from, instant: true });
 			flight.start(from, destination, {
 				duration,
 				viewport: size,
 				surface,
-				land: setCamera,
+				/**
+				 * Commit where the glide landed, once.
+				 * @param camera Where it landed.
+				 */
+				land: (camera) => {
+					write({ ...read(), camera });
+				},
 			});
 			return true;
 		},
-		[viewport, bottom, flight],
+		[viewport, bottom, flight, read, write],
 	);
 
 	const reserve = useCallback((pixels: number): void => {
@@ -309,27 +379,28 @@ function useBoardCamera(): BoardCamera {
 			const [x, y] = pointIn(element, event);
 			const factor = event.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
 			moved.current = true;
-			setInstant(false);
-			setCamera((current) => zoomCameraAbout(current, factor, x, y));
+			write({ camera: zoomCameraAbout(read().camera, factor, x, y), instant: false });
 		}
 		element.addEventListener("wheel", onWheel, { passive: false });
 		return (): void => element.removeEventListener("wheel", onWheel);
-	}, [viewport, settle]);
+	}, [viewport, settle, read, write]);
 
 	const handled = useCallback((): boolean => moved.current, []);
-	const followPicture = useCallback((shift: { readonly x: number; readonly y: number }): void => {
-		if (shift.x === 0 && shift.y === 0) return;
-		setInstant(true);
-		// Known at once, not only after the commit: a glide asked for in the same
-		// commit starts from where the camera follows to, not from where it was.
-		const current = at.current;
-		const followed = panCamera(current, shift.x * current.scale, shift.y * current.scale);
-		at.current = followed;
-		setCamera(followed);
-	}, []);
+	const followPicture = useCallback(
+		(shift: { readonly x: number; readonly y: number }): void => {
+			if (shift.x === 0 && shift.y === 0) return;
+			// Known at once: a glide asked for in the same commit starts from where
+			// the camera follows to, not from where it was.
+			const current = read().camera;
+			const followed = panCamera(current, shift.x * current.scale, shift.y * current.scale);
+			write({ camera: followed, instant: true });
+		},
+		[read, write],
+	);
 	return useMemo(
 		() => ({
-			camera,
+			view: read,
+			subscribe: store.subscribe,
 			room,
 			attachViewport: setViewport,
 			panBy,
@@ -337,12 +408,36 @@ function useBoardCamera(): BoardCamera {
 			fit,
 			handled,
 			followPicture,
-			instant,
 			glide,
 			reserve,
 		}),
-		[camera, room, panBy, zoomCentre, fit, handled, followPicture, instant, glide, reserve],
+		[store, read, room, panBy, zoomCentre, fit, handled, followPicture, glide, reserve],
 	);
 }
 
-export { useBoardCamera, type BoardCamera };
+/**
+ * Where the camera is, for a component that draws with it: drawn again on every move.
+ * @param camera The camera.
+ * @returns Where it is, and how its last move goes.
+ */
+function useCameraView(camera: BoardCamera): CameraView {
+	return useSyncExternalStore(camera.subscribe, camera.view, camera.view);
+}
+
+/**
+ * One thing about where the camera is, for a component that draws with that
+ * alone: drawn again only when it changes.
+ * @param camera The camera.
+ * @param select What to read off it; a value compared by identity.
+ * @returns What was read.
+ */
+function useCameraWith<T>(camera: BoardCamera, select: (view: CameraView) => T): T {
+	/**
+	 * What is read off the camera now.
+	 * @returns It.
+	 */
+	const read = (): T => select(camera.view());
+	return useSyncExternalStore(camera.subscribe, read, read);
+}
+
+export { useBoardCamera, useCameraView, useCameraWith, type BoardCamera, type CameraView };

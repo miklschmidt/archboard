@@ -28,7 +28,12 @@ import {
 	STAGE_CLASS,
 	StageSpinner,
 } from "@/ui/semantic-board-canvas/components/SemanticStageStates";
-import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
+import {
+	useCameraView,
+	useCameraWith,
+	type BoardCamera,
+	type CameraView,
+} from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 import { useDrillOpen } from "@/ui/semantic-board-canvas/hooks/use-drill-open";
 import {
@@ -298,6 +303,60 @@ function drawnReading(
 }
 
 /**
+ * Whether the camera is far enough away to draw each card's name in place of what it says.
+ * @param view Where the camera is.
+ * @returns True when it is.
+ */
+function seenFromFar(view: CameraView): boolean {
+	return view.camera.scale < FAR_SCALE;
+}
+
+/** What the surface the camera moves is drawn with. */
+interface CameraSurfaceProps {
+	/** The camera that moves it. */
+	readonly camera: BoardCamera;
+	/** Where the picture's element is handed to whatever writes the picture into it. */
+	readonly attach: (element: HTMLDivElement | null) => void;
+	/** How big the picture is. */
+	readonly size: Size;
+	/** Whether a drag is in progress. */
+	readonly panning: boolean;
+	/** Whether the person asked for reduced motion. */
+	readonly reducedMotion: boolean;
+	/** The classes the picture's state adds. */
+	readonly marks: string;
+}
+
+/**
+ * The element the camera moves. It is the one thing drawn again on every move
+ * of the camera (TASK-385.02).
+ * @param props The camera, the picture's size and its classes.
+ * @returns The surface, which the picture is written into rather than rendered.
+ */
+function CameraSurface(props: CameraSurfaceProps): JSX.Element {
+	const { attach, size, panning, reducedMotion, marks } = props;
+	const { camera, instant } = useCameraView(props.camera);
+	const { width, height } = size;
+	const style = useMemo<CSSProperties>(
+		() => ({
+			width,
+			height,
+			transform: cameraTransform(camera),
+			"--presentation-step-ms": `${PRESENTATION_STEP_MS}ms`,
+		}),
+		[width, height, camera],
+	);
+	return (
+		<div
+			ref={attach}
+			data-slot="semantic-board-surface"
+			style={style}
+			className={`${surfaceClass(panning, reducedMotion, instant)}${marks}`}
+		/>
+	);
+}
+
+/**
  * A drawn semantic board: pan, zoom and selection over the server's picture.
  * @param props The drawing, the selection and what to do with a pick.
  * @returns The stage.
@@ -309,7 +368,6 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		[drawing.width, drawing.height],
 	);
 	const { attachViewport } = camera;
-	const view = camera.camera;
 	const [surface, setSurface] = useState<HTMLDivElement | null>(null);
 	const [panning, setPanning] = useState(false);
 	const drag = useRef<Drag | null>(null);
@@ -340,10 +398,11 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	useViewerMarks(picture, { selection, focus, group: props.group, veil: props.veil });
 	useStickyHeads(picture, drawing.atlas);
 	// Seen from far away, each card's name is drawn larger in place of what it
-	// says it does, which nobody reads at that size.
-	const far = view.scale < FAR_SCALE;
+	// says it does, which nobody reads at that size. Read as a yes or no, so the
+	// diagram is drawn again only when it flips, not on every move of the camera.
+	const far = useCameraWith(camera, seenFromFar);
 	const marks = surfaceMarks({ veiled: props.veil !== null, far });
-	const tip = useSubjectTip({ drawing, camera: cameraTransform(view) });
+	const tip = useSubjectTip({ drawing, camera });
 	const { dismiss: dismissTip, onHover } = tip;
 	const reading = drawnReading(props.reading, drawing);
 	const openDown = useDrillOpen(reading, props.onOpenDown);
@@ -466,16 +525,6 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		[camera, content, onSelect],
 	);
 
-	const surfaceStyle = useMemo<CSSProperties>(
-		() => ({
-			width: drawing.width,
-			height: drawing.height,
-			transform: cameraTransform(view),
-			"--presentation-step-ms": `${PRESENTATION_STEP_MS}ms`,
-		}),
-		[drawing.width, drawing.height, view],
-	);
-
 	return (
 		<section
 			{...stageMarks(departure, drawing, props.stale === true)}
@@ -519,11 +568,13 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 				>
 					{/* The picture inside is the transition's to write, never React's:
 					    see `usePictureTransition`. */}
-					<div
-						ref={setSurface}
-						data-slot="semantic-board-surface"
-						style={surfaceStyle}
-						className={`${surfaceClass(panning, reducedMotion, camera.instant)}${presentationMarks(props.presenting).surface}${marks}`}
+					<CameraSurface
+						camera={camera}
+						attach={setSurface}
+						size={content}
+						panning={panning}
+						reducedMotion={reducedMotion}
+						marks={`${presentationMarks(props.presenting).surface}${marks}`}
 					/>
 				</div>
 				{/* oxlint-enable jsx-a11y/no-noninteractive-tabindex */}
