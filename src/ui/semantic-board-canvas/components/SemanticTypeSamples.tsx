@@ -9,6 +9,7 @@ import { useMemo, type JSX, type ReactNode } from "react";
 
 import {
 	lineInk,
+	lineWidth,
 	standingMark,
 	type SubjectStanding,
 } from "@/transformers/semantic-renderer/index";
@@ -18,6 +19,9 @@ import { paletteInk } from "@/ui/semantic-board-canvas/lib/palette";
 
 /** How high every line sample is drawn, and where its line runs. */
 const LINE_BOX = { height: 20, middle: 10 } as const;
+
+/** A line the way the picture draws one its author gave no emphasis. */
+const PLAIN_WIDTH = lineWidth("normal");
 
 /**
  * A line sample's frame: a box as wide as asked, coloured by `color`.
@@ -71,7 +75,7 @@ function RelationshipSample(props: {
 				d={`M1 ${LINE_BOX.middle}H${width - 6}`}
 				fill="none"
 				stroke="currentColor"
-				strokeWidth="1.5"
+				strokeWidth={PLAIN_WIDTH}
 				strokeDasharray={dash}
 			/>
 			{appearance.arrowhead !== "none" && (
@@ -79,7 +83,7 @@ function RelationshipSample(props: {
 					d={`m${width - 11} 5 7 5-7 5`}
 					fill={appearance.arrowhead === "filled" ? "currentColor" : "none"}
 					stroke="currentColor"
-					strokeWidth="1.5"
+					strokeWidth={PLAIN_WIDTH}
 				/>
 			)}
 		</LineFrame>
@@ -90,7 +94,8 @@ function RelationshipSample(props: {
 const NEUTRAL_LINE = "var(--diagram-edge)";
 
 /**
- * A heavier line than the kinds' samples: what an author's emphasis draws.
+ * A heavier line than the kinds' samples, at the width the picture draws the
+ * line its author emphasised most.
  * @param props How wide the sample is.
  * @param props.width The width.
  * @returns The sample.
@@ -102,7 +107,7 @@ function EmphasisSample(props: { readonly width: number }): JSX.Element {
 				d={`M1 ${LINE_BOX.middle}H${props.width - 1}`}
 				fill="none"
 				stroke="currentColor"
-				strokeWidth="2.6"
+				strokeWidth={lineWidth("hero")}
 			/>
 		</LineFrame>
 	);
@@ -123,7 +128,7 @@ function TrafficSample(props: { readonly width: number }): JSX.Element {
 				d={`M1 ${LINE_BOX.middle}H${props.width - 1}`}
 				fill="none"
 				stroke="currentColor"
-				strokeWidth="1.5"
+				strokeWidth={PLAIN_WIDTH}
 			/>
 			<path
 				d={`M${middle - 5} ${LINE_BOX.middle}H${middle + 5}`}
