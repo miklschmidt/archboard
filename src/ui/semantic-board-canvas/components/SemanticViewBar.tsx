@@ -109,7 +109,7 @@ function SemanticViewBar(props: SemanticViewBarProps): JSX.Element | null {
 						{on && summary !== undefined && (
 							<p
 								data-slot="semantic-view-summary"
-								className="text-body text-muted-foreground px-2 pt-1 pb-1.5"
+								className="text-body text-muted-foreground px-2 pt-1 pb-2"
 							>
 								{summary}
 							</p>

@@ -19,7 +19,12 @@ import {
 	TrafficSample,
 	TypeSample,
 } from "@/ui/semantic-board-canvas/components/SemanticTypeSamples";
-import { SidebarSection } from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
+import {
+	SidebarGlyph,
+	SidebarLabel,
+	SidebarRow,
+	SidebarSection,
+} from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
 import {
 	sampleKey,
 	type AppliedAppearance,
@@ -86,12 +91,10 @@ function Lines(props: { readonly relationships: readonly AppliedAppearance[] }):
  */
 function Entry(props: { readonly label: string; readonly children: ReactNode }): JSX.Element {
 	return (
-		<li className="text-body flex min-h-7 items-center gap-2">
-			<span aria-hidden="true" className="flex w-7 shrink-0 items-center">
-				{props.children}
-			</span>
-			{props.label}
-		</li>
+		<SidebarRow as="li">
+			<SidebarGlyph wide>{props.children}</SidebarGlyph>
+			<SidebarLabel>{props.label}</SidebarLabel>
+		</SidebarRow>
 	);
 }
 

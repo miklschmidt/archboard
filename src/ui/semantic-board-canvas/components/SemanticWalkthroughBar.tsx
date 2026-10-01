@@ -95,7 +95,7 @@ function WalkthroughRow(props: WalkthroughRowProps): JSX.Element {
 		onNarrate?.(walkthrough.id);
 	}, [onNarrate, walkthrough.id]);
 	return (
-		<div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-0.5">
+		<div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-1">
 			<SidebarChoice
 				pressed={open}
 				data-slot="semantic-walkthrough-choice"
