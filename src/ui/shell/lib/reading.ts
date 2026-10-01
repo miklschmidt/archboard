@@ -1,6 +1,7 @@
 // What the active pane is reading, as the header names it: the board by the
 // name the vault lists it under, the boards it sits under in the outline, its
-// level, and the state it shows when that is not the one its name opens. Pure.
+// level, and the variant it shows, with its lifecycle, when that is not the
+// one its name opens. Pure.
 
 import {
 	boardAncestors,
@@ -10,7 +11,13 @@ import {
 	type OutlineNode,
 } from "@/ui/board-catalog";
 import { boardAddressOf } from "@/ui/semantic-board-canvas";
-import type { BoardListing, CatalogBoard } from "@/ui/types";
+import type { BoardListing, CatalogBoard, ListedVariant } from "@/ui/types";
+
+/** A variant the header names: its name, and its lifecycle when the vault lists it. */
+interface ShownVariant {
+	readonly name: string;
+	readonly lifecycle: ListedVariant["lifecycle"] | null;
+}
 
 /** The header's reading of the active pane. */
 interface Reading {
@@ -20,8 +27,8 @@ interface Reading {
 	readonly level: string | null;
 	/** The boards above it in the outline, outermost first. */
 	readonly ancestors: readonly CatalogBoard[];
-	/** The state shown, when it is not the one the board's name opens. */
-	readonly state: string | null;
+	/** The variant shown, when it is not the one the board's name opens. */
+	readonly variant: ShownVariant | null;
 	/** Nothing the board describes is built (ADR 0031). */
 	readonly unbuilt: boolean;
 }
@@ -30,22 +37,36 @@ const NOTHING: Reading = Object.freeze({
 	name: null,
 	level: null,
 	ancestors: [],
-	state: null,
+	variant: null,
 	unbuilt: false,
 });
 
 /**
- * The state a key shows, when it is not the one the board's name opens.
+ * A variant the address names that the vault does not list: its name alone.
+ * @param key The pane's key.
+ * @returns The variant, or null for an address that names none.
+ */
+function unlistedVariant(key: string | null): ShownVariant | null {
+	const name = boardAddressOf(key)?.variant;
+	return name === undefined ? null : { name, lifecycle: null };
+}
+
+/**
+ * The variant a key shows, when it is not the one the board's name opens.
  * @param board The listed board.
  * @param listing The listing.
  * @param key The pane's key.
- * @returns The state's name, or null.
+ * @returns The variant, or null.
  */
-function shownState(board: CatalogBoard, listing: BoardListing, key: string): string | null {
+function shownVariant(
+	board: CatalogBoard,
+	listing: BoardListing,
+	key: string,
+): ShownVariant | null {
 	const listed = listedBoardKey(listing, key);
 	const variant = board.variants.find((entry) => entry.key === listed);
-	if (variant === undefined) return boardAddressOf(key)?.variant ?? null;
-	return variant.id === board.opens ? null : variant.name;
+	if (variant === undefined) return unlistedVariant(key);
+	return variant.id === board.opens ? null : { name: variant.name, lifecycle: variant.lifecycle };
 }
 
 /**
@@ -64,15 +85,15 @@ function readingOf(
 	if (address === null || key === null) return NOTHING;
 	const board = listedBoard(listing, address.board);
 	if (board === undefined) {
-		return { ...NOTHING, name: address.board, state: address.variant ?? null };
+		return { ...NOTHING, name: address.board, variant: unlistedVariant(key) };
 	}
 	return {
 		name: board.name,
 		level: board.level ?? null,
 		ancestors: boardAncestors(outline, board.name),
-		state: shownState(board, listing, key),
+		variant: shownVariant(board, listing, key),
 		unbuilt: nothingBuiltOn(listing, board.name),
 	};
 }
 
-export { readingOf, type Reading };
+export { readingOf, type Reading, type ShownVariant };

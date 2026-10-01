@@ -4,21 +4,16 @@
 // reads an architecture an agent wrote (ADR 0023). The text pieces shrink and
 // truncate so a narrower window never clips the row.
 
-import {
-	RiArrowRightSLine,
-	RiGitBranchLine,
-	RiMoonLine,
-	RiSettings3Line,
-	RiSunLine,
-} from "@remixicon/react";
+import { RiArrowRightSLine, RiMoonLine, RiSettings3Line, RiSunLine } from "@remixicon/react";
 import { useCallback, type JSX, type ReactNode } from "react";
 
 import { Separator } from "@/ui/components/separator";
-import type { Reading } from "@/ui/shell/lib/reading";
+import type { Reading, ShownVariant } from "@/ui/shell/lib/reading";
 import type { ShellActions, ThemeChoice } from "@/ui/shell/types/contracts";
 import { IconButton } from "@/ui/shell/components/IconButton";
 import { StatusDot } from "@/ui/shell/components/StatusDot";
 import type { CatalogBoard } from "@/ui/types";
+import { VariantMark } from "@/ui/variant-lifecycle";
 
 /** The settings trigger's id: the dialog it opens returns focus to it. */
 const SETTINGS_TRIGGER_ID = "shell-settings";
@@ -70,8 +65,8 @@ interface BreadcrumbProps {
 
 /**
  * Where the reader is: the boards above, the board in the header's one large
- * size with its level, and the state shown when it is not the one the board's
- * name opens.
+ * size with its level, and the variant shown, with its lifecycle mark, when it
+ * is not the one the board's name opens.
  * @param props The reading and the actions.
  * @returns The breadcrumb.
  */
@@ -88,18 +83,7 @@ function Breadcrumb(props: BreadcrumbProps): JSX.Element {
 					{reading.level}
 				</span>
 			)}
-			{reading.state !== null && (
-				<span className="text-muted-foreground ml-1.5 flex min-w-0 shrink items-center gap-1">
-					<RiGitBranchLine className="size-3.5 shrink-0" aria-hidden="true" />
-					<span className="sr-only">showing </span>
-					<span
-						data-slot="board-state"
-						className="text-control text-foreground truncate font-medium"
-					>
-						{reading.state}
-					</span>
-				</span>
-			)}
+			{reading.variant !== null && <ShownVariantName variant={reading.variant} />}
 			{reading.unbuilt && (
 				<span
 					data-slot="board-not-built"
@@ -109,6 +93,28 @@ function Breadcrumb(props: BreadcrumbProps): JSX.Element {
 				</span>
 			)}
 		</nav>
+	);
+}
+
+/**
+ * The variant the board is read in, after its name: the lifecycle's mark, the
+ * same one the navigator draws, and the variant's name.
+ * @param props The variant.
+ * @param props.variant Its name and, when the vault lists it, its lifecycle.
+ * @returns The variant's name.
+ */
+function ShownVariantName(props: { readonly variant: ShownVariant }): JSX.Element {
+	const { name, lifecycle } = props.variant;
+	return (
+		<span className="ml-1.5 flex min-w-0 shrink items-center gap-1">
+			{lifecycle !== null && <VariantMark lifecycle={lifecycle} />}
+			<span className="sr-only">
+				{lifecycle === null ? "showing " : `showing the ${lifecycle} `}
+			</span>
+			<span data-slot="board-state" className="text-control text-foreground truncate font-medium">
+				{name}
+			</span>
+		</span>
 	);
 }
 
