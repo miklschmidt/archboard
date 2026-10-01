@@ -4,10 +4,12 @@
 //
 // What these catch: a tab that drops the board's own statement of its scope, a
 // tab that says nothing about the draft on screen of a board nobody has built,
-// a view's summary shown under the wrong view, and a key to a proposal's marks
+// a view's summary shown under the wrong view, a view in which nothing differs
+// taking away the control a reader needs further on, and a key to a proposal's marks
 // that miscounts, keys a standing the proposal does not have, or lists them in
 // an order that changes from one proposal to the next.
 
+import { cleanup } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
 import {
@@ -108,4 +110,31 @@ test("a proposal's key counts each standing it has, in one order, and leaves out
 		["changed", "1"],
 		["removed", "2"],
 	]);
+});
+
+test("a view in which nothing differs keeps the control; only a whole identical variant drops it", async () => {
+	const proposal = { id: "v2", name: "proposal", lifecycle: "draft" };
+	const against = { id: "v1", name: "as built", lifecycle: "current" };
+	// The standings are of what the picture draws: the view draws only parts
+	// that the proposal leaves as they were.
+	const quiet = { against, standing: { n1: "unchanged" } };
+	server.reply = {
+		status: 200,
+		body: { ...drawing(1), variant: proposal, changes: quiet, view: VIEW, views: [VIEW] },
+	};
+	mountStage(null, { view: VIEW.id, onViewChange: ignoreChoice });
+	await settle();
+	expect(part("semantic-comparison-toggle")).not.toBeNull();
+	expect(part("semantic-change-none")).not.toBeNull();
+	expect(document.querySelector("[data-slot='semantic-change-key']")).toBeNull();
+	cleanup();
+
+	server.reply = {
+		status: 200,
+		body: { ...drawing(1), variant: proposal, changes: quiet },
+	};
+	mountStage();
+	await settle();
+	expect(part("semantic-changes")).not.toBeNull();
+	expect(document.querySelector("[data-slot='semantic-comparison-toggle']")).toBeNull();
 });
