@@ -2,7 +2,7 @@
 	"name": "archboard",
 	"version": "0.1.0",
 	"private": true,
-	"description": "Internal architecture canvas: an agent states what an architecture is, the server draws it, and a person reads, compares and presents it.",
+	"description": "Architecture planning tool for architects who work with coding agents: an agent states what an architecture is, the server draws it, and a person reads, compares and presents it.",
 	"homepage": "https://github.com/miklschmidt/archboard#readme",
 	"bugs": {
 		"url": "https://github.com/miklschmidt/archboard/issues"
