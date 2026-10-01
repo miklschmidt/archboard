@@ -54,7 +54,11 @@ import { PALETTE, type Palette } from "@/transformers/semantic-renderer/lib/them
 import { paintArchitecture } from "@/transformers/semantic-renderer/lib/svg/architecture";
 import { paintDataFlow } from "@/transformers/semantic-renderer/lib/svg/dataflow";
 import { svgDocument } from "@/transformers/semantic-renderer/lib/svg/document";
-import { drawnInk } from "@/transformers/semantic-renderer/lib/svg/styles";
+import {
+	drawnInk,
+	STROKE_WIDTH,
+	type Weight,
+} from "@/transformers/semantic-renderer/lib/svg/styles";
 import {
 	framedAsPlanned,
 	PLANNED_LABEL,
@@ -511,6 +515,16 @@ function lineInk(ink: string): string {
 }
 
 /**
+ * How wide a page draws a line of one emphasis, in diagram units: for a key
+ * that has to draw a line the way the picture does (TASK-383).
+ * @param emphasis How loudly its author asked the line to speak.
+ * @returns The stroke width.
+ */
+function lineWidth(emphasis: Weight): number {
+	return STROKE_WIDTH[emphasis];
+}
+
+/**
  * The pin a subject of one standing wears on its corner, as a page draws it:
  * for a key that has to show the mark the picture shows (TASK-383).
  * @param standing How the subject stands.
@@ -533,6 +547,7 @@ export {
 	renderDataFlow,
 	renderSemanticView,
 	lineInk,
+	lineWidth,
 	standingMark,
 	PALETTE,
 	type Palette,
