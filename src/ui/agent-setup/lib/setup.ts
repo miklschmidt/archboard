@@ -21,6 +21,7 @@ import {
 	type HeldMessage,
 } from "@/ui/agent-setup/lib/held";
 import { agentPhase, type AgentPhase } from "@/ui/agent-setup/lib/phase";
+import { sameSnapshot } from "@/ui/agent-setup/lib/snapshot";
 import {
 	signInAfter,
 	signInEnded,
@@ -238,9 +239,16 @@ function createAgentSetup(ports: AgentSetupPorts): AgentSetup {
 
 	let published = snapshotNow();
 
-	/** Publish the snapshot to every listener. */
+	/**
+	 * Publish the snapshot to every listener, when it says something new. The
+	 * transport publishes with every piece of a reply, and nearly none of them
+	 * moves the setup: telling the listeners anyway drew the application's root
+	 * again for each one (TASK-385.03).
+	 */
 	function publish(): void {
-		published = snapshotNow();
+		const next = snapshotNow();
+		if (sameSnapshot(published, next)) return;
+		published = next;
 		for (const listener of listeners) listener();
 	}
 
