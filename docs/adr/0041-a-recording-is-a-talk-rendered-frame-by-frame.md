@@ -159,7 +159,7 @@ first frame at or after it. To draw frame `n`, the page does these things:
 2. It applies the events that are due.
 3. It waits until the page is ready.
 4. It runs the frames that were asked for, and waits again.
-5. It stands every Web Animation and SVG clock at the frame's time.
+5. It stands every Web Animation at the frame's time. A picture's traffic is one of them, and it stands at its picture's own clock.
 6. It waits for one real paint.
 
 Four conditions make the page ready:
@@ -179,7 +179,7 @@ Everything that moves on a board's pane reads one clock, `frameClock()` from
 
 - The camera glide.
 - The picture's transitions.
-- The SVG traffic.
+- A picture's traffic.
 - The subtitles' linger.
 - The subject tip's delay.
 
