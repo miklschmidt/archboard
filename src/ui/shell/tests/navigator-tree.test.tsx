@@ -165,6 +165,10 @@ function mountNavigator(overrides: Partial<ShellView> = {}): Mounted {
 	act(() => root.render(createElement(Shell, { view, actions })));
 	return {
 		...asked,
+		/**
+		 * Draw the shell again with the same actions over a changed workspace.
+		 * @param changes What changed.
+		 */
 		show: (changes) => {
 			act(() => root.render(createElement(Shell, { view: { ...view, ...changes }, actions })));
 		},
