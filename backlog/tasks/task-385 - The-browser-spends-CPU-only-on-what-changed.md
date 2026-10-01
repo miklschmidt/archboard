@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-01 03:23'
-updated_date: '2026-10-01 10:39'
+updated_date: '2026-10-01 12:40'
 labels:
   - frontend
   - performance
@@ -38,5 +38,5 @@ TASK-385.04 (navigator rows) and TASK-385.05 (pane news test at the application 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-An open page no longer burns CPU on what does not change. The idle cost was SMIL traffic: the page now runs it as Web Animations on its own layer (385.01), and an idle Web shop board went from 77 % to 32 % of a core (renderer plus GPU process). React work was moved to the leaves. A camera move renders only the surface (385.02). The voice level, workbench publishes and pane status no longer render the root (385.03). Pane news renders only the navigator rows it is about (385.04). Each path is owned by a test at a module entrypoint: camera-renders, talk-control, agent-setup, navigator-tree and pane-news (385.05). Verified by bun run check, the full browser lane, the walkthrough recorder, and the README harness filmed against this branch.
+An open page no longer burns CPU on what does not change. The idle cost was SMIL traffic: the page now runs it as Web Animations on its own layer (385.01), and an idle Web shop board went from 77 % to 32 % of a core (renderer plus GPU process). React work was moved to the leaves. A camera move renders only the surface (385.02). The voice level, workbench publishes and pane status no longer render the root (385.03). Pane news renders only the navigator rows it is about (385.04). Each path is owned by a test at a module entrypoint: camera-renders, talk-control, agent-setup, navigator-tree and pane-news (385.05). Verified by bun run check, the full browser lane and the walkthrough recorder. The README media harness was not found in this repository, so it was not run.
 <!-- SECTION:FINAL_SUMMARY:END -->
