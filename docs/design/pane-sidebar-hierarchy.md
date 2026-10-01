@@ -181,9 +181,17 @@ draws one.
 
 1. **What is this, and what does it change?** Always first, never collapsed.
    - _Variants_, only on a board reached by a drill-down (task 7). One row per
-     variant: the name, and the lifecycle at the right in the technical face,
-     as the navigator shows it. A board with one variant shows that one row,
-     not as a control.
+     variant, said as the navigator and the header say it
+     (`src/ui/variant-lifecycle`): the lifecycle's mark before the name, a
+     historical or shelved name receding unless it is on screen, and the
+     navigator's order, the variant the board's name opens first, then the
+     other live ones, then the receding ones newest first. The lifecycle is in
+     the row's title and accessible name. Unlike the navigator, the list
+     gathers no Earlier row: it holds one board's variants, at most six on any
+     board, and it is the only place a drilled board's variants can be chosen,
+     so hiding some would cost a click where nothing else offers them. The
+     order and the recede already put the earlier ones last and quiet. A board
+     with one variant shows that one row, not as a control.
    - _The summary_ of the variant on screen (task 1), with no heading. It is
      the board's own statement of its scope, which C4 asks every diagram to
      make [11]. When the variant has none, nothing stands in for it.
@@ -245,12 +253,13 @@ the sub-headings: the chips and the lines say which list is which.
 | Choice rows: variants, walkthroughs, views, groups   | control, 13/18 px             | 500    | foreground                  |
 | Secondary lines: view summary, "against", step count | body, 12/16 px                | 400    | muted                       |
 | Legend labels, change counts                         | body, 12/16 px                | 400    | foreground                  |
-| Lifecycle of a variant row                           | technical, 11/14 px mono      | 400    | muted                       |
+| Name of a historical or shelved variant              | control, 13/18 px             | 500    | muted, unless on screen     |
 
-Three type sizes carry the tab, as NN/g suggests [17]: 13 px for what a reader
-chooses, 12 px for what a reader reads, and 11 px mono for the one technical
-token. The heading and the summary share a size and differ in weight and
-colour, so the summary is read and the heading is scanned [16].
+Two type sizes carry the tab, within the three NN/g suggests [17]: 13 px for
+what a reader chooses and 12 px for what a reader reads. A variant's lifecycle
+is a mark, as in the navigator, not a word. The heading and the summary share a
+size and differ in weight and colour, so the summary is read and the heading is
+scanned [16].
 
 The same heading role replaces the uppercase kicker labels of the Selection
 tab, so the two tabs of one sidebar have one heading style.
