@@ -4,54 +4,58 @@ status: accepted
 
 # Containment and type own distinct visual channels
 
-Superseded in part by [ADR 0038](0038-groups-gather-and-colour-their-cards.md):
-a card's body colour comes from the group it is placed with, and a container
-no longer establishes a colour scope for its contents. Type independence, the
-icon chip, and the relationship, comparison and selection channels stand.
+[ADR 0038](0038-groups-gather-and-colour-their-cards.md) supersedes this
+decision in part. A card's body color now comes from the group it is placed
+with. A container no longer establishes a color scope for its contents. Type
+independence, the icon chip, and the relationship, comparison and selection
+channels stand.
 
-Amended by TASK-339 (2026-09-24): a coloured line, whether its colour comes
-from its relationship type or its comparison status, is drawn at three
-quarters of that colour over the page, and its arrowhead with it. The comets of
-its traffic carry the colour at full strength (ADR 0027), and the comparison
-band behind a changed line keeps the full colour too. The colour is mixed, not
-made translucent, so two lines sharing a lane draw no darker where they
-overlap. The neutral line keeps its colour.
+TASK-339 amended this decision on 2026-09-24. A colored line gets its color from
+its relationship type or its comparison status. The renderer draws that line at
+three quarters of its color over the page, and its arrowhead gets the same
+treatment. The renderer mixes the color and does not make it translucent. Two
+lines that share a lane therefore draw no darker where they overlap.
 
-An API migrating from legacy IIS into Kubernetes should visibly change its hosting
-context while remaining recognizable as an API. Card bodies communicate containment,
-icon chips communicate node type, and comparison and selection use separate visual
-channels. These rules were accepted in TASK-203 on 2026-09-13.
+Some parts of a line keep more color. The comets of its traffic carry the color
+at full strength (ADR 0027). The comparison band behind a changed line also
+keeps the full color. The neutral line keeps its color.
 
-Card, container and icon chip are defined in [CONTEXT.md](../../CONTEXT.md#the-surface);
-emphasis and comparison status are also glossary terms; color scope was one
-until ADR 0038 removed it. The decisions
-below govern how those concepts are combined in a drawing.
+An API that migrates from legacy IIS into Kubernetes must visibly change its
+hosting context. It must remain recognizable as an API. Card bodies communicate
+containment, icon chips communicate node type, and comparison and selection use
+separate visual channels. TASK-203 accepted these rules on 2026-09-13.
+
+[CONTEXT.md](../../CONTEXT.md#the-surface) defines card, container and icon
+chip. Emphasis and comparison status are also glossary terms. Color scope was a
+glossary term until ADR 0038 removed it. The decisions below govern how a
+drawing combines those concepts.
 
 ## Type is independent of depiction
 
-A Kubernetes node keeps the same semantic type on an overview and a detailed board.
-Choose its depiction from the children present in the final rendered content,
-rather than requiring authors to change its kind to obtain a container shape.
+A Kubernetes node keeps the same semantic type on an overview and a detailed
+board. Choose its depiction from the children present in the final rendered
+content. Do not require authors to change its kind to obtain a container shape.
 
-“Present” includes removed children restored for a comparison, so their former
-parent can still render as a container. A view showing only the parent renders it
-as a card. Both containers and cards display their type's icon chip.
+"Present" includes removed children restored for a comparison, so their former
+parent can still render as a container. A view that shows only the parent
+renders it as a card. Both containers and cards display their type's icon chip.
 
 ## Mandatory containment color
 
 A rendered container with a configured type color uses that color for its border
-and restrained background tint, and establishes that color for its contents.
-This propagation is automatic: an opt-in feature would be too easy for consumers
-and authoring agents to miss. A nearer colored container wins over a distant one.
+and restrained background tint. It also establishes that color for its contents.
+This propagation is automatic. An opt-in feature will be too easy for consumers
+and authoring agents to miss. A nearer colored container wins over a distant
+one.
 
-A container without a configured color inherits the nearest enclosing color scope
-and passes it through. A leaf card uses its enclosing scope's color. A body with
-no applicable color scope is neutral. A leaf's type color does not establish a
-body color scope merely because its icon chip has that color.
+A container without a configured color inherits the nearest enclosing color
+scope and passes it through. A leaf card uses its enclosing scope's color. A
+body with no applicable color scope is neutral. A leaf's type color does not
+establish a body color scope only because its icon chip has that color.
 
-The node type independently determines the icon, icon color, icon-chip border and
-icon-chip background tint. An uncolored type has a neutral chip. Unknown configured
-references follow the explicit neutral fallback in
+The node type independently determines the icon, icon color, icon-chip border
+and icon-chip background tint. An uncolored type has a neutral chip. Unknown
+configured references follow the explicit neutral fallback in
 [ADR 0026](0026-vault-diagnostics-drive-cli-and-agent-repair.md).
 
 | Depiction inside blue Azure                | Body border and tint | Icon chip        |
@@ -61,39 +65,40 @@ references follow the explicit neutral fallback in
 | API card inside Kubernetes                 | Kubernetes green     | API type color   |
 | Uncolored container inside Kubernetes      | Kubernetes green     | Neutral          |
 
-Kubernetes can instead be inside yellow AWS without changing its own type or
-requiring a platform tag. Group memberships are not an alternative source of color
-scope; structural containment supplies the membership being communicated here.
+Kubernetes can instead be inside yellow AWS. This needs no change to its own
+type and no platform tag. Group memberships are not an alternative source of
+color scope. Structural containment supplies the membership that this decision
+communicates.
 
 ## Relationship, comparison and selection
 
 Relationship type determines optional curated color, solid/dashed/dotted line
-pattern, and filled/open/absent arrowhead shape. Author-supplied emphasis determines
-line weight only; arrowheads remain proportionate to stroke width. Emphasis no
-longer makes an edge white or adds motion. The sequence grammar's message semantics
-remain distinct from these architecture relationship types.
+pattern, and filled/open/absent arrowhead shape. Author-supplied emphasis
+determines line weight only. Arrowheads remain proportionate to stroke width.
+Emphasis no longer makes an edge white or adds motion. The sequence grammar's
+message semantics remain distinct from these architecture relationship types.
 
 Added, changed and deleted comparison status overrides the semantic border on
 nodes and the semantic line color on edges. Node background tint and type chips
 continue to explain semantic meaning. Selection adds an outer ring or edge
 highlight rather than replacing the comparison treatment.
 
-Traffic is a separate optional connection property, never inferred from emphasis.
-Its settled requirements and remaining design questions are in
-[ADR 0027](0027-explicit-traffic-controls-distance-based-animation.md).
+Traffic is a separate optional connection property. Nothing infers it from
+emphasis. [ADR 0027](0027-explicit-traffic-controls-distance-based-animation.md)
+records its settled requirements and remaining design questions.
 
 ## Explain the appearance
 
 The browser provides a visible-by-default, hideable legend that explains the
-applied appearance. The legend must have clear hierarchy and ample space rather
-than sacrificing aesthetics for compactness. Exported diagrams have no legends
+applied appearance. The legend must have clear hierarchy and ample space, and
+must not sacrifice aesthetics for compactness. Exported diagrams have no legends
 for now.
 
-Amended on 2026-09-27 by the user's decision: the inspector no longer has a
-section that explains the selected subject's colours, because a person can see
-them ("Users have eyes... usually."). The legend is the one explanation.
+The user's decision of 2026-09-27 amended this. The inspector no longer has a
+section that explains the selected subject's colors, because a user can see them
+("Users have eyes... usually."). The legend is the one explanation.
 
-Separating these channels makes a hosting migration readable without losing type,
-change or selection information. It intentionally permits a node's body appearance
-to change when a view changes it from a leaf card to an expanded container; semantic
-identity and type remain unchanged.
+Separating these channels makes a hosting migration readable without losing
+type, change or selection information. If a view changes a node from a leaf card
+to an expanded container, the separation intentionally permits its body
+appearance to change. Semantic identity and type remain unchanged.

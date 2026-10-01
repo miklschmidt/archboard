@@ -2,119 +2,123 @@
 status: accepted
 ---
 
-# A binding names a repository, and where that repository is lives in a machine-local registry
+# A binding names a repository, and a machine-local registry says where that repository is
 
-A binding is a logical address: a repository identity, a path inside it, and
-the branch and commit it was last confirmed at (CONTEXT.md). It has to be,
-because boards persist in a vault that spans repositories and is not
-co-located with any of them (ADR 0004). An absolute path in a note is wrong on
-every other machine, and often on this one a week later.
+A binding is a logical address: a repository identity, a path inside it, and the
+branch and commit at which it was last confirmed (CONTEXT.md). It must be a
+logical address because boards persist in a vault that spans repositories and is
+not co-located with any of them (ADR 0004). An absolute path in a note is wrong
+on every other machine, and often on this machine a week later.
 
 The note stores that logical address under `customData.archboard.binding`.
-Clickable code targets are presentation: archboard may add a local `file://`
-target, a GitHub URL, or another affordance to an outbound copy after resolving
-the binding against the machine-local checkout registry, but that derived
-target is stripped before the note is written. Unrelated human-authored
-Excalidraw links are not binding-derived and are preserved.
+Clickable code targets are presentation. Archboard resolves the binding against
+the machine-local checkout registry. Then it can add a local `file://` target, a
+GitHub URL, or another affordance to an outbound copy. It strips that derived
+target before it writes the note. Unrelated Excalidraw links that a human
+authored are not derived from a binding. Archboard preserves them.
 
-Until this decision, resolving a path into that address went through the
-process's working directory. `resolveBinding(request, cwd = process.cwd())`.
-An absolute path was fine; a relative one was resolved against wherever the
-process happened to be. **So the address depended on ambient state the caller
-did not set and could not see**. It is the same mistake ADR 0009 had just taken
-out of board addressing, one level down.
+Until this decision, resolving a path into that address went through the working
+directory of the process, as in `resolveBinding(request, cwd = process.cwd())`.
+An absolute path was fine. A relative path resolved against wherever the process
+happened to be. So the address depended on ambient state that the caller did not
+set and had no way to see. It is the same mistake that ADR 0009 just removed
+from board addressing, one level down.
 
-It failed in two different registers.
+The mistake failed in two different ways.
 
-On the command line it fails _quietly_. Stand in `acme/alpha`, promote a box
-meaning `acme/beta`, and `src/service.ts` binds to a real file, in a real repo,
-at a real commit. Everything about the answer looks right and the repository is
-the wrong one. The cross-repo case makes this the normal case rather than the
-unlucky one: a system board whose boxes belong to five repositories is built in
-one session, and there is no directory to stand in that is right for more than
-one of them.
+On the command line, it fails quietly. Suppose that the caller stands in
+`acme/alpha` and promotes a node that means `acme/beta`. Then `src/service.ts`
+binds to a real file, in a real repo, at a real commit. Everything about the
+answer looks right, and the repository is the wrong one. The cross-repo case
+makes this the normal case and not the unlucky one. A system board whose nodes
+belong to five repositories is built in one session. There is no directory to
+stand in that is right for more than one of them.
 
-A protocol-neutral application caller may have no working directory at all.
-A relative path there is not resolvable by intent, only by accident. That case
-proves an ambient process directory was the wrong interface even though the CLI
-has an explicit working-directory origin.
+A protocol-neutral application caller can have no working directory at all. A
+relative path there is not resolvable by intent, only by accident. That case
+proves that an ambient process directory was the wrong interface, even though
+the CLI has an explicit working-directory origin.
 
 ## The decision
 
-**A binding resolves from something the caller named.** `resolveBinding` takes
-an explicit origin and has no default, so every caller has to say what a
-relative path may be resolved against. Four ways, in order of how firmly the
-caller named the repository, and the answer always reports which one it used:
+A binding resolves from something that the caller named. `resolveBinding` takes
+an explicit origin and has no default, so every caller must say what a relative
+path can be resolved against. There are four ways, in order of how firmly the
+caller named the repository. The answer always reports which one it used.
 
-| `resolvedFrom` | The caller gave                                            | What happens                                                                                         |
-| -------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `path`         | an absolute path                                           | resolved, the identity read from git, and persisted as portable repo metadata                        |
-| `registry`     | a repo identity plus a path inside it                      | resolved through the checkout registered here, then persisted as portable repo metadata              |
-| `cwd`          | a relative path, on a surface that has a working directory | resolved, **and the answer says which directory it used and which repository that turned out to be** |
-| `declared`     | a repo nothing here can resolve                            | recorded as stated, no derived code link, and told how to register it                                |
+| `resolvedFrom` | The caller gave                                            | What happens                                                                                                   |
+| -------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `path`         | an absolute path                                           | Archboard resolves the path, reads the identity from git, and persists it as portable repo metadata.           |
+| `registry`     | a repo identity plus a path inside it                      | Archboard resolves it through the checkout registered here, then persists it as portable repo metadata.        |
+| `cwd`          | a relative path, on a surface that has a working directory | Archboard resolves it, and the answer says which directory it used and which repository that turned out to be. |
+| `declared`     | a repo nothing here can resolve                            | Archboard records it as stated, derives no code link, and tells the caller how to register it.                 |
 
-On a surface with no working directory, a bare relative path is refused, and
-the refusal names both ways out plus the repositories registered on this
-machine.
+On a surface with no working directory, archboard refuses a bare relative path.
+The refusal names both ways out and the repositories registered on this machine.
 
-**And where each repository actually is on this machine is written down.** ADR
-0004 promised that registry, "board-to-code targets resolve through a
-machine-local registry rather than living in the vault", and never built it.
-It is one JSON file in the state directory, one entry per repository identity,
-holding the checkout path, and it fills from two sides: `repo add <dir>` for
-what a person declares, and observation, because every binding that resolves
-through a real path records where that repository was found. Second promotion
-into a repo can name it from anywhere.
+The location of each repository on this machine is written down. ADR 0004
+promised that registry, "board-to-code targets resolve through a machine-local
+registry rather than living in the vault". It never built that registry.
 
-The registry is host state, so the CLI maintains it through `repo list`, `repo
-add`, and `repo forget`. The REST and domain modules consume it too. A caller
-that cannot see the filesystem cannot sensibly name directories in it, but it
-can still use a repository identity plus a repo-relative path.
+The registry is one JSON file in the state directory. It holds one entry per
+repository identity, and each entry holds the checkout path. It fills from two
+sides. `repo add <dir>` records what a person declares. Observation records the
+rest, because every binding that resolves through a real path records where that
+repository was found. A second promotion into a repo can name it from anywhere.
+
+The registry is host state, so the CLI maintains it through `repo list`,
+`repo add`, and `repo forget`. The REST and domain modules consume it too. A
+caller that cannot see the filesystem cannot sensibly name directories in it,
+but it can still use a repository identity plus a repo-relative path.
 
 ## Why not one of the easier answers
 
-**Require absolute paths everywhere.** Correct as an input resolution mode, and
-it is still the shortest path to a right answer. But it makes the common
-in-repo case wordier than it was, and it does not survive persistence: an
-absolute path is normalized into portable repository metadata before the note is
-written. A board opened on another machine still needs to turn
-`github.com/acme/payments` into a directory before it can offer a tappable local
-target. Something has to hold that map, and once it exists, naming the repo is
-the better ergonomics anyway.
+One alternative requires absolute paths everywhere. This is correct as an input
+resolution mode, and it is still the shortest path to a right answer. But it
+makes the common in-repo case wordier than it was. It also does not survive
+persistence, because an absolute path is normalized into portable repository
+metadata before the note is written.
 
-**Declare a repository per board, in the note's frontmatter.** Attractive
-because it needs no new state and rides the identity mechanism boards already
-have. It is wrong exactly where this hurts most: a system board spans five
-repositories and belongs to none of them. A per-board default would be right
-for the small boards that were never the problem and silently wrong for the big
-ones that are.
+A board opened on another machine still must turn `github.com/acme/payments`
+into a directory before it can offer a tappable local target. Something must
+hold that map. Once the map exists, naming the repo is the better ergonomics
+anyway.
 
-**Discover checkouts by scanning the filesystem.** A registry that fills itself
-from `~/src/**` would need no `repo add`. It is also the ambient working
-directory again with extra steps: two clones of one repository, or a stale
-worktree, and the answer is a guess wearing a lookup's clothes. Every entry
-traces back to something a person declared or something archboard actually
-resolved, and nothing else gets in.
+Another alternative declares a repository per board, in the note's frontmatter.
+This is attractive because it needs no new state and rides the identity
+mechanism that boards already have. It is wrong exactly where this hurts most. A
+system board spans five repositories and belongs to none of them. A per-board
+default is right for the small boards that were never the problem. It is
+silently wrong for the big boards that are.
 
-**Keep the cwd fallback silent on the CLI.** The shell's working directory is a
-real thing the caller chose and can see, so it stays. What it may
-not do is look like an answer the caller gave: the result says which directory
-it used and which repository that was, every time. Disclosure is the price of
-keeping the convenience.
+A third alternative discovers checkouts by scanning the filesystem. A registry
+that fills itself from `~/src/**` needs no `repo add`. It is also the ambient
+working directory again with extra steps. With two clones of one repository, or
+a stale worktree, the answer is a guess wearing the clothes of a lookup. Every
+entry traces back to something that a person declared or something that
+archboard actually resolved. Nothing else gets in.
+
+The last alternative keeps the cwd fallback silent on the CLI. The working
+directory of the shell is a real thing that the caller chose and can see, so it
+stays. It must not look like an answer that the caller gave. Every time, the
+result says which directory it used and which repository that was. Disclosure is
+the price of keeping the convenience.
 
 ## Consequences
+
+The decision has these consequences:
 
 - `resolveBinding` has no default origin, so a new call site cannot silently
   reintroduce the ambient directory. Adding one is a type error until it says
   where relative paths come from.
 - A promotion whose path resolved against the working directory now carries an
-  extra sentence in its summary. That is intended: it is the sentence that makes
-  a wrong binding visible at the moment it is made.
-- A relative path from a caller with no working directory is refused. Resolving
-  it against the server process would use a directory nobody chose.
+  extra sentence in its summary. That is intended. It is the sentence that makes
+  a wrong binding visible at the moment of its creation.
+- Archboard refuses a relative path from a caller with no working directory.
+  Resolving it against the server process uses a directory that nobody chose.
 - The registry is machine-local, so a vault carried to another machine derives
-  local code targets there or not at all. That is the same trade ADR 0004 made
-  when it put boards outside the repositories they describe.
+  local code targets there or not at all. That is the same trade that ADR 0004
+  made by putting boards outside the repositories that they describe.
 - The persisted schema is independent of the presentation target. Today the
-  derived target may be a local file URL; later it can be GitHub or another
-  affordance without rewriting board notes.
+  derived target can be a local file URL. Later it can be GitHub or another
+  affordance, without any rewrite of board notes.

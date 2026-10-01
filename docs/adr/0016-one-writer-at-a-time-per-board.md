@@ -1,238 +1,256 @@
 # One writer at a time, per board
 
-Superseded in part by [ADR 0022](0022-the-note-decides-and-a-persons-edit-is-optimistic.md):
-a content gesture no longer revokes a claim, a claimed board is read-only to
-people until an explicit release, and an agent is not asked to restructure in
-view of the person. The lock, the lease and the broadcast stand.
+[ADR 0022](0022-the-note-decides-and-a-persons-edit-is-optimistic.md) supersedes
+this decision in part. A content gesture no longer revokes a claim. A claimed
+board is read-only to users until an explicit release. An agent is not asked to
+restructure in view of the user. The lock, the lease and the broadcast stand.
 
 A board is a note, and two writers to one note lose each other's work. An agent
-drawing while a person rearranges is not rare on a wall display: it is the
-normal way this tool is used.
+that draws while a user rearranges is not rare on a wall display. It is the
+normal way to use this tool.
 
 ## Why ordering is not enough
 
-The obvious answer is to order the writes so none is lost. That produces a
-board nobody asked for. An agent redrawing a subsystem and a person dragging a
-box are not two edits to be interleaved, they are two people editing the same
-thing at once, and a tidy merge of them is a blend neither intended.
+The obvious answer is to order the writes so that none is lost. That produces a
+board that nobody asked for. An agent that redraws a subsystem and a user who
+drags a node are not two edits to interleave. They are two people who edit the
+same thing at once. A tidy merge of them is a blend that neither intended.
 
-Exclusion says what is actually true: one of you is editing this board.
+Exclusion says what is actually true. One of you is editing this board.
 
 ## The decision
 
-A board has a mutex. An agent takes it to write. A person takes it by touching
-the canvas. Nobody else writes while it is held.
+A board has a mutex. An agent takes it to write. A user takes it by touching the
+canvas. Nobody else writes while somebody holds it.
 
-**The lock lives beside the note, not inside whichever process happens to be
-running.** The note is the truth (ADR 0015), and more than one canvas may be
-serving one vault. A lock held in a process does not exist to any other, so it
-would not be a lock. What cannot be held in memory cannot have its guard held
-there either.
+The lock lives beside the note, not inside whichever process happens to be
+running. The note is the truth (ADR 0015). More than one canvas can serve one
+vault. A lock that a process holds does not exist to any other process, so it is
+not a lock. What memory cannot hold cannot have its guard in memory either.
 
-**It is a lease, not a flag.** A holder that dies mid-write would leave a bare
-flag set forever, and a board nobody can write until somebody finds and deletes
-a file they have never heard of. So the lock records who holds it and until
-when, and expires on its own. The first crash costs one lease, not the board.
+The lock is a lease, not a flag. A holder that dies mid-write leaves a bare flag
+set forever. The board then stays unwritable until somebody finds and deletes a
+file that they do not know about. So the lock records who holds it and until
+when. It expires on its own. The first crash costs one lease, not the board.
 
-**A person's hold is a gesture, not a session.** Holding the lock for as long
-as a board is on screen would block every agent for as long as anybody is
-looking at the wall. It is taken when they start changing something and
-released once that change has been written and the canvas has gone quiet.
+A user's hold is a gesture, not a session. Holding the lock for as long as a
+board is on screen blocks every agent for as long as anybody looks at the wall.
+When the user starts to change something, the hold starts. It ends once the
+change is written and the canvas goes quiet.
 
-Because the expected wait is therefore short, an agent **waits** rather than
-failing. When it waits longer than it is willing to, it says who holds the
-board and since when, so a voice session has something to say instead of going
-silent.
+The expected wait is therefore short, so an agent waits and does not fail. When
+it waits longer than it is willing to, it says who holds the board and since
+when. A voice session then has something to say and does not go silent.
 
-## An agent may claim a board for longer than one write
+## An agent can claim a board for longer than one write
 
 The per-write lock fits most of what an agent does. It does not fit an agent
 that knows it is about to redraw a board or restructure a subsystem. Taking and
 releasing a lock twenty times leaves nineteen gaps for somebody else to write
-into, and the board is never in one consistent state while it is being built.
+into. The board is never in one consistent state while an agent builds it.
 
-So an agent may claim a board, and say roughly how long it expects to need it.
-The skill teaches the judgement: claim when the work is substantial and you know
-that in advance, do not claim to move one box.
+So an agent can claim a board and say roughly how long it expects to need it.
+The skill teaches the judgment. If the work is substantial and you know that in
+advance, claim the board. Do not claim a board to move one node.
 
-**A long claim is not a long unattended hold.** The claim expires, and a working
-holder renews it. Stop renewing and it lapses in moments. The expiry bounds how
-long a working agent may keep a board; the renewal bounds how long a dead one
-does. A long expiry with no renewal would mean one crash costs the board for as
-long as the claim was for.
+A long claim is not a long unattended hold. The claim expires, and a working
+holder renews it. If the holder stops renewing, the claim lapses in moments. The
+expiry bounds how long a working agent can keep a board. The renewal bounds how
+long a dead agent keeps it. A long expiry with no renewal means that one crash
+costs the board for as long as the claim was for.
 
-**Which leaves who renews, and the obvious answer does not work** (TASK-080).
-An agent driving this by voice is not something that sits there between two
-commands. It exists for the length of each one, and nothing of it survives in
-between, so there is nothing to send a heartbeat and no way to tell an agent
-reading code for two minutes from one that died after the first. An agent asked
-to renew would lose the board whenever it stopped to think, which is the moment
-it is most obviously still working.
+That leaves the question of who renews, and the obvious answer does not work
+(TASK-080). An agent that drives this by voice does not sit there between two
+commands. It exists for the length of each command, and nothing of it survives
+in between. So nothing can send a heartbeat. There is also no way to tell an
+agent that reads code for two minutes from one that died after the first. An
+agent that has to renew loses the board whenever it stops to think. That is the
+moment it is most obviously still working.
 
-So the canvas renews on the agent's behalf, and a claim is bounded by the three
-things that can actually be observed: the length the agent asked for, capped,
-which is the only bound on an agent that walked away; the lease, which frees the
-board within seconds of the _canvas_ dying, that being the process a lock file
-can be orphaned by; and the person, at any moment.
+So the canvas renews on the agent's behalf. Three observable things bound a
+claim:
 
-**A person can always take it back.** The lock excludes writers from each other.
-It does not lock somebody out of their own wall, and no agent may make a
-canvas stop responding to the person standing at it. The agent is told
-it has lost the board, and it stops rather than fighting for it.
+- The length that the agent asked for, capped. This is the only bound on an
+  agent that walked away.
+- The lease, which frees the board within seconds of the _canvas_ dying. The
+  canvas is the process that can orphan a lock file.
+- The user, at any moment.
 
-**Taking it back is one deliberate content act, and not any touch at all** (TASK-080, TASK-118).
-Two things argue against the first version of this decision. A board held by
-somebody else can still be panned and zoomed, so a person watching an agent
-restructure a board is reading it, and reading it must not end it. And nothing
-the agent has already written is put back by taking the board, so a hand resting
-on a wall display would leave a board half way through a restructure with nobody
-having decided anything. The board says who has it and what they said they were
-doing, and beside that, the explicit way to take it. TASK-118 also makes a real
-content change a takeover act: dragging, resizing, typing, creating or deleting
-content revokes the claim through the same hold route. Pan, zoom, selection,
-focus and pointer contact without a content delta do not.
+A user can always take it back. The lock excludes writers from each other. It
+does not lock somebody out of their own wall. No agent is allowed to make a
+canvas stop responding to the user who stands at it. The agent is told that it
+lost the board, and it stops. It does not fight for the board.
 
-**Revoking is not undoing.** Every write an agent has already made is already
-in the note, because that is what ADR 0015 means. So a revoked claim leaves a
-board part way through whatever the agent was doing, and nothing rolls that
-back. A claim is therefore not a transaction, and an agent holding one cannot
-treat the board as private until it is finished: it has to leave the board
-sensible after each write.
+Taking a board back is one deliberate content act, and not any touch at all
+(TASK-080, TASK-118). Two things argue against the first version of this
+decision. A board that somebody else holds can still be panned and zoomed. So a
+user who watches an agent restructure a board is reading it, and reading it must
+not end it.
+
+When somebody takes the board, nothing that the agent already wrote is put back.
+A hand that rests on a wall display leaves a board half way through a
+restructure. Nobody decided anything. The board says who has it and what they
+said they were doing. Beside that, it shows the explicit way to take it.
+
+TASK-118 also makes a real content change a takeover act. A user who drags,
+resizes, types, creates or deletes content revokes the claim through the same
+hold route. Pan, zoom, selection, focus and pointer contact without a content
+delta do not.
+
+Revoking is not undoing. Every write that an agent already made is in the note,
+because that is what ADR 0015 means. So a revoked claim leaves a board part way
+through whatever the agent was doing, and nothing rolls that back. A claim is
+therefore not a transaction. An agent that holds one cannot treat the board as
+private until the agent finishes. It must leave the board sensible after each
+write.
 
 Working on a variant and swapping it in at the end was written here as a second
-option and should not have been. Exclusion is about who may write; it was never
-licence to work out of sight. A creator needs an immediate connection to what
-they are making, and on this canvas the creator is both of you — an agent that
-hides a restructure until it is finished has broken that connection for the
-person watching, and the swap discards whatever they drew meanwhile.
+option. It was an error to write it. Exclusion is about who is allowed to write.
+It was never a license to work out of sight. A creator needs an immediate
+connection to what they are making. On this canvas, the creator is both of you.
 
-Nor was there a problem needing that remedy. The claim above is what stops an
-agent being caught half-way through by an interruption nobody saw coming: the
-person is told a board is held and why, so taking it back is something they
-choose with the work in front of them. Leaving a board sensible between writes
-is owed to somebody watching it, not insurance against being surprised. The skill teaches that alongside when to claim, because an agent that
-believes it has exclusive use until it says otherwise will eventually be wrong
-in the middle of a restructure.
+An agent that hides a restructure until it is finished breaks that connection
+for the user who watches. The swap also discards whatever the user drew
+meanwhile.
 
-**What happens to the work already in flight, then** (TASK-080). The paragraph
-above is clear about the agent and says nothing about the half-drawn board it
-leaves behind. Three things could have been done about that, and this is what
-is done about each.
+Nor was there a problem that needed that remedy. The claim above stops an
+interruption that nobody saw coming from catching an agent half-way through. The
+user is told that a board is held and why. Taking it back is therefore something
+that the user chooses with the work in front of the user.
 
-A write that has started finishes. Stopping it half way is the torn note that
-every write being one whole note exists to prevent, and it would be a strange
-way to answer "somebody wants their board back" — the write takes about as long
-as the tap did.
+An agent owes it to somebody who watches the board to leave it sensible between
+writes. It is not insurance against a surprise. An agent that believes it has
+exclusive use until it says otherwise will eventually be wrong in the middle of
+a restructure. For that reason, the skill teaches this together with the choice
+to claim.
 
-Nothing already written is put back. An undo would have to be an inverse of
-whatever the agent was doing, expressed as a further write, at the moment
-somebody has taken the board in order to write it themselves. It would be a
-third writer, arriving unasked, and it would throw away work that may well be
-what the person wanted to keep. What actually gets somebody back to where they
-were is the vault's own history, which is a note in a directory and is what
-version control is for.
+What happens to the work already in flight (TASK-080)? The paragraph above is
+clear about the agent and says nothing about the half-drawn board that it leaves
+behind. There were three possible actions about that. This is what the design
+does about each.
 
-And the agent is told once. Once, because it must not be able to keep the
-board by asking again, and must not be locked out of a board it may perfectly
-well be asked to work on next. So the next thing it does — a write, or a fresh
-claim — is refused, and says that the board is part way through whatever it was
-doing and that nothing was undone. What it does after that is ordinary. Saying
-what state it left the board in is the agent's job, and the skill's to teach.
+A write that started finishes. Stopping it half way creates the torn note. The
+rule that every write is one whole note exists to prevent that torn note. It is
+also a strange way to answer "somebody wants their board back". The write takes
+about as long as the tap did.
+
+Nothing already written is put back. An undo must be an inverse of whatever the
+agent was doing. That inverse is a further write. It lands at the moment
+somebody takes the board to write it themselves. It is a third writer that
+arrives unasked. It also throws away work that is perhaps what the user wanted
+to keep. The vault's own history gets somebody back to where they were. That
+history is a note in a directory, and that is what version control is for.
+
+The agent is told once. It is told once for two reasons. It must not be able to
+keep the board by asking again. It must not be locked out of a board that
+somebody can perfectly well ask it to work on next. So the next thing it does, a
+write or a fresh claim, is refused. The refusal says that the board is part way
+through whatever the agent was doing and that nothing was undone. What the agent
+does after that is ordinary. It is the agent's job to say what state it left the
+board in, and the skill teaches that.
 
 ## The lock is a broadcast, not only a guard
 
-A canvas applies a change the instant a finger moves. Refusing that change when
-it is finally written would take the board away from somebody mid-gesture,
-which is the divergence between what is drawn and what is true that ADR 0015
-exists to end, arriving from the other direction.
+A canvas applies a change the instant a finger moves. Refusing that change at
+its final write takes the board away from somebody mid-gesture. This is the
+divergence between what is drawn and what is true that ADR 0015 exists to end,
+and it arrives from the other direction.
 
-So exclusion governs persistence, not whether a connected person's local
-canvas responds. Excalidraw applies a content change immediately, the pane
-takes the human hold single-flight, and the existing vault-backed mutex waits
-out any write that already started before persisting the human report. The
-local edit remains visible and pending throughout; nothing reloads it away
+So exclusion governs persistence. It does not govern whether the local canvas of
+a connected user responds. Excalidraw applies a content change immediately. The
+pane takes the human hold single-flight. The existing vault-backed mutex waits
+out any write that already started before it persists the human report.
+
+The local edit remains visible and pending throughout. Nothing reloads it away
 because acquisition was delayed or failed. Agent writes remain pessimistic and
 do not answer before persistence.
 
-Lock state is still broadcast so a pane can explain who has the board and why,
-and so content can deliberately revoke a claim while camera and selection do
-not. A pane that has lost contact and cannot receive that state still fails
-closed and enters view mode.
+The lock still broadcasts its state so that a pane can explain who has the board
+and why. It also broadcasts its state so that content can deliberately revoke a
+claim while camera and selection do not. A pane that lost contact and cannot
+receive that state still fails closed and enters view mode.
 
-For a write that takes a moment, showing the board as unavailable is enough.
-For a claim that may run for minutes, a person needs to know that an agent has
-the board and roughly what it is doing, or the wall has simply stopped working
-for no reason they can see.
+For a write that takes a moment, it is enough to show the board as unavailable.
+For a claim that can run for minutes, a user needs to know that an agent has the
+board and roughly what it is doing. Otherwise the wall stops working for no
+reason that the user can see.
 
-**The broadcast reaches one canvas, and exclusion reaches all of them**
-(TASK-067). Taking or releasing a board is news the canvas that did it can
-send; a second canvas serving the same vault has nothing to tell it, because
-the lock is a file and a file does not call anybody. So a pane on that second
-canvas is excluded correctly and learns about it at the write rather than
-before the touch, which is the yank this section exists to prevent, surviving
-in the one configuration nobody has yet run.
+The broadcast reaches one canvas, and exclusion reaches all of them (TASK-067).
+The canvas that takes or releases a board can send that news. A second canvas
+that serves the same vault has nothing to tell it. The reason is that the lock
+is a file, and a file does not call anybody. So a pane on that second canvas is
+excluded correctly. It learns about the exclusion at the write rather than
+before the touch. This is the yank that this section exists to prevent, and it
+survives in the one configuration that nobody runs yet.
 
-Closing it means polling the lock files of the boards on screen, roughly once
-per renewal interval. That was left undone deliberately: it is a timer per
-canvas paid at all times against a case that costs milliseconds when it does
-happen. A long claim changes that arithmetic, because the pane would be wrong
-for minutes rather than for one write, so TASK-080 is where the poll earns
-itself, and where it was built.
+Closing that gap means polling the lock files of the boards on screen, roughly
+once per renewal interval. We left that undone deliberately. The timer runs at
+all times on every canvas. The case that it covers costs milliseconds each time
+it happens. A long claim changes that arithmetic, because the pane is wrong for
+minutes rather than for one write. So TASK-080 is where the poll pays for
+itself, and where we built it.
 
-**And it is paid for by a canvas somebody is looking at, and by no other**
-(TASK-080). A pane exists while something renders it, so a canvas with no
-browser attached has nobody to be wrong and reads nothing. That is what settles
-the objection rather than the claim alone: the cost is not a timer per canvas at
-all times, it is a few file reads a second for as long as a screen is up.
+A canvas that somebody looks at pays for the poll, and no other canvas does
+(TASK-080). A pane exists while something renders it. So a canvas with no
+browser attached has nobody to be wrong and reads nothing. That settles the
+objection, rather than the claim alone. The cost is not a timer per canvas at
+all times. It is a few file reads a second for as long as a screen is up.
 
 ## The claim says why an agent has the board. Each write says what it is doing
 
-The banner a claim puts up answers "why has the wall stopped", and only a claim
-puts one up. It says nothing about the twenty writes underneath it, and most
-writes are not under a claim at all: an agent moving one box takes the board for
-twenty milliseconds, says nothing, and leaves a person watching a box move for
-no stated reason. That is the connection between a creator and what they are
-creating broken for the one of the two creators who is standing there.
+The banner that a claim puts up answers "why has the wall stopped". Only a claim
+puts one up. The banner says nothing about the twenty writes underneath it.
+
+Most writes are not under a claim at all. An agent that moves one node takes the
+board for twenty milliseconds and says nothing. A user who watches the node move
+sees no stated reason. That breaks the connection between a creator and what
+they create, for the one of the two creators who stands there.
 
 So an agent says what it is doing on every write, in one line, and the canvas
-shows it as the write lands (TASK-095). Required, because being made to write
-the sentence is the mechanism: a field an agent may leave out is a field it
-leaves out. Refused rather than defaulted, because a canvas that invented
-"an agent wrote something" would be worse than silence.
+shows it as the write lands (TASK-095). The doing is required, because the agent
+must write the sentence, and that is the mechanism. A field that an agent can
+leave out is a field that it leaves out. A write with no doing is refused rather
+than defaulted, because a canvas that invents "an agent wrote something" is
+worse than silence.
 
-**The two are one story at two scales.** The claim's reason is the campaign,
-each line is a step, and neither stands in for the other. Reading the reason
-back on every write would be an agent repeating itself; leaving a claim without
-steps would say what is being attempted and never how far it has got.
+The claim and the doing are one story at two scales. The claim's reason is the
+campaign, and each line is a step. Neither stands in for the other. Reading the
+reason back on every write is an agent repeating itself. A claim without steps
+says what is being attempted and never how far it is.
 
-**It is not board content.** It is what somebody said while changing something,
-not a fact about the board, so it never reaches the note and dies with the
-canvas — the carve-out ADR 0015 already draws for panes, sockets and what a
-person has selected. The board reports what it _became_ separately, by diffing.
-That is a different question with a different answer: a move that changes
-nothing nameable still had an intent, and a line that turns out to be wrong is
-still what was said.
+The doing is not board content. It is what somebody said while changing
+something, not a fact about the board. So it never reaches the note, and it dies
+with the canvas. ADR 0015 already draws that carve-out for panes, sockets and
+what a user selected.
 
-**A person says nothing.** Their change report is their own act, and the write
-boundary can tell one from the other because a pane names itself. Being made to
-narrate your own drawing on your own wall would be absurd.
+The board reports what it _became_ separately, by diffing. That is a different
+question with a different answer. A move that changes nothing nameable still had
+an intent. A line that turns out to be wrong is still what was said.
+
+A user says nothing. The user's change report is the user's own act. The write
+boundary can tell one from the other because a pane names itself. Making
+somebody narrate their own drawing on their own wall is absurd.
 
 ## Consequences
 
-**The two reporting deadlines have different jobs.** A non-restarting progress
-deadline periodically persists continuous work; a longer trailing idle deadline
-writes the final dirty state after the gesture settles. One report may be in
-flight and one latest delivery queued. The leading hold and its renewal span
-both. Shortening either deadline writes the vault more often; lengthening either
-extends how long an agent may wait. The values governing progress, idle,
-settling, leases and waiting therefore live together in `src/shared/timing/timing.ts`.
+The two reporting deadlines have different jobs. A non-restarting progress
+deadline periodically persists continuous work. A longer trailing idle deadline
+writes the final dirty state after the gesture settles. One report can be in
+flight and one latest delivery can be queued. The leading hold and its renewal
+span both.
 
-**The mutex is one concept with a small interface**: ask to write a board, and
-either write it or learn who holds it. Acquiring, renewing, expiring a dead
-holder, telling the panes, and waiting all sit behind that. A lock where every
-caller assembles the same steps itself is a lock whose callers drift apart.
+Shortening either deadline writes the vault more often. Lengthening either
+deadline extends how long an agent can wait. The values that govern progress,
+idle, settling, leases and waiting therefore live together in
+`src/shared/timing/timing.ts`.
 
-**Obsidian does not respect any of this.** Nor does a sync client or a text
-editor. Those are the writers ADR 0006's refusal to overwrite a note that
-changed underneath was built for, and it stays. The mutex handles our own
-concurrency; that check catches everybody else's.
+The mutex is one concept with a small interface. A caller asks to write a board,
+and then either writes it or learns who holds it. Acquiring, renewing, expiring
+a dead holder, telling the panes, and waiting all sit behind that interface. A
+lock where every caller assembles the same steps itself is a lock whose callers
+drift apart.
+
+Obsidian does not respect any of this. Neither does a sync client or a text
+editor. ADR 0006's refusal to overwrite a note that changed underneath was built
+for those writers, and the refusal stays. The mutex handles our own concurrency.
+That check catches everybody else's.
