@@ -1,11 +1,11 @@
 ---
 id: TASK-384
 title: The navigator shows boards and their variants on one consistent indentation
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-30 18:51'
-updated_date: '2026-10-01 00:12'
+updated_date: '2026-10-01 00:20'
 labels:
   - ui
 dependencies: []
@@ -22,12 +22,12 @@ User direction 2026-09-30: the navigation side menu (the navigator, TASK-302) is
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Before the redesign, a written study names the structures a vault holds (folders, drill levels, variants in their lifecycles, drafts derived from drafts) and the navigation tasks, and says what the tree must show at each depth; the task notes link it
-- [ ] #2 Every depth of the tree indents by one fixed step, and the disclosure control, marker, name and trailing facts of every row sit on the same grid at that depth, for folders, boards, variants and drafts
-- [ ] #3 A reader tells a board from its variants at a glance, and sees which board and variant each pane shows without opening anything
-- [ ] #4 The tree keyboard, the filter and Working now keep their behaviour
-- [ ] #5 Rendered captures of the navigator before and after, in both themes at 1920×1080, on the dogfood vault and on a vault with folders and nested drafts, replace the navigator image in docs/design/assets and the navigator section describes the new representation
-- [ ] #6 bun run check passes
+- [x] #1 Before the redesign, a written study names the structures a vault holds (folders, drill levels, variants in their lifecycles, drafts derived from drafts) and the navigation tasks, and says what the tree must show at each depth; the task notes link it
+- [x] #2 Every depth of the tree indents by one fixed step, and the disclosure control, marker, name and trailing facts of every row sit on the same grid at that depth, for folders, boards, variants and drafts
+- [x] #3 A reader tells a board from its variants at a glance, and sees which board and variant each pane shows without opening anything
+- [x] #4 The tree keyboard, the filter and Working now keep their behaviour
+- [x] #5 Rendered captures of the navigator before and after, in both themes at 1920×1080, on the dogfood vault and on a vault with folders and nested drafts, replace the navigator image in docs/design/assets and the navigator section describes the new representation
+- [x] #6 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -50,4 +50,12 @@ Decisions: one 16 px step with four columns (disclosure, marker, name, facts) pl
 Implemented on branch ui/navigator-indentation: 3a87a1e7 (study), d701e764 (redesign), 503c0745 (navigator section and image), a832991f (row disclosure and selection read from the row). The navigator's owners pass: navigator-tree.test.tsx (7, including every row at one depth sharing one indent and each pane letter on exactly one row), shell-layout and workspace-address in the browser lane. bun run check passed on a832991f: lint, fmt, type-check, modules 3734, system 189, repository 8, serial browser 15 owners. Every row kind measured after: disclosure 9/25/41/57/73, marker 24/40/56/72/88, name 46/62/78/94/110 at levels 1 to 5, facts ending at 307, in both themes. Before and after captures are in the job scratch directory (listed in the hand-back). Criteria left unchecked for review.
 
 Review fixes (51ccbeed, 41566d1e): S1 docs say the filter lists found variants directly under their board with no Earlier row; S2 a board name's title is name and level; S3 a selected row is never muted (also a selected receding variant); B1 the header marks the variant it names with its lifecycle; B2 new module src/ui/variant-lifecycle exports VariantMark, variantRecedes, variantOrder and ListedLifecycle for the navigator, the header and the pane sidebar; T1-T7 applied (grid widths and gaps from tree-grid, one paneCanShow guard, InsideLamp and MarkerLamp, EarlierLine in its own file, existing helpers and types reused). Verified: lint, both type-checks, fmt, module tests for shell, board-catalog and variant-lifecycle (22), and the browser owners shell-layout, workspace-address and semantic-drill-address.
+
+Review (2026-10-01): standards, spec and a boundary review with TASK-383. Standards clean with seven judgement calls, spec clean with three, boundary found the header drawing the draft icon for a historical variant and two lifecycle languages; all applied in 51ccbeed and 41566d1e. Merged into main as 93481127, then e8ba2bc2 gave a hovered row half the reading tone so it never looks chosen, matching the pane sidebar. bun run check on main at e8ba2bc2: exit 0; modules 3735, system 189, repository 8, every serial browser owner passed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The navigator draws every row on one grid placed by depth alone: a 16 px step with disclosure, marker, name and facts columns for folders, boards, variants and nested drafts. Variants sit one depth under their board with a lifecycle mark from the new shared module src/ui/variant-lifecycle (also used by the header), live ones first and historical or shelved ones behind one Earlier row; each pane letter sits on exactly one row and one row is selected. The study docs/design/navigator-structure.md measured 13 defects of the old tree and their causes before the redesign. Verified by navigator-tree.test.tsx (one indent per depth, pane letters), the browser owners shell-layout, workspace-address and semantic-drill-address, before and after captures in both themes, three reviews, and bun run check on main.
+<!-- SECTION:FINAL_SUMMARY:END -->
