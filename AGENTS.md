@@ -1,12 +1,16 @@
 # archboard — agent-authored architecture boards
 
-A private internal tool, never published: agents author the architecture of code
-and infrastructure as meaning, and the renderer draws it. There is no way to move
-a box, and that is deliberate. If somebody repairs the layout of a diagram by hand,
-a renderer improvement for every board at once cannot improve that diagram (ADR 0023).
+An architecture planning tool for software and cloud architects who work with
+coding agents, public on GitHub under the Business Source License 1.1 and run from a clone. Agents author
+the architecture of code and infrastructure as meaning, and the renderer draws
+it. There is no way to move a box, and that is deliberate. If somebody repairs
+the layout of a diagram by hand, a renderer improvement for every board at once
+cannot improve that diagram (ADR 0023).
 
 Where things are written down:
 
+- Who archboard serves, its main job, and the rules every surface keeps:
+  `PRODUCT.md`
 - Running it end to end and making sure that it works: `TESTING.md`. Installing
   it elsewhere: `INSTALL.md`
 - Domain language: `CONTEXT.md`. Module layout and import rules:
