@@ -261,16 +261,21 @@ Spacing uses a 4 px scale: 4, 8 and 16 px.
   from its right edge. Headings, the summary, the text of every row, every
   sample and the engine's label start on that line. So does the text of the
   tab labels, which today starts at 8 px.
-- A row's hover and pressed fill reaches 8 px past the text column on either
-  side, so the text does not move when the fill appears. The fill is the
-  sidebar accent that the navigator marks its rows with. The secondary fill
-  it replaces differs from the light sidebar by less than 1 % in lightness, so
-  in the light theme the view on screen was hard to see.
+- A choice's fill reaches 8 px past the text column on either side, so the
+  text does not move when the fill appears. The choice on screen takes the
+  reading tone and a cobalt bar at its edge, as the navigator's selected row
+  does. A choice under the pointer takes half the reading tone and no bar, so
+  it never looks chosen. The secondary fill this replaces differs from the
+  light sidebar by less than 1 % in lightness, so in the light theme the view
+  on screen was hard to see.
 - A region has 16 px above and below its content. Sections in one region are
   16 px apart. A heading is 4 px above its first row.
-- A row of choices, and a row of the legend, is at least 28 px high. A row
-  of the change key is 24 px high. A long name wraps rather than being cut
-  off.
+- Every row is at least 28 px high: a choice, a row of the change key, a row
+  of the legend and a variant that is said rather than offered. Its first line
+  is 18 px, set 5 px from its top, which is how 28 px holds one line; that 5 px
+  follows from the row and the line, so it is the one length off the scale.
+  Rows of one list touch, with no space between them. A long name wraps
+  rather than being cut off.
 - A mark before a label sits in a slot of fixed width, and the label starts
   8 px after the slot. The 12 px marks of the walkthroughs, the groups and the
   changes, and the change control's 16 px box, have a 16 px slot, so their
@@ -286,11 +291,23 @@ Spacing uses a 4 px scale: 4, 8 and 16 px.
 | One variant, on a board reached by drill-down   | One plain variant row, not a control.                                                                                                                      |
 | The current variant                             | No Changes section: there is nothing to read it against.                                                                                                   |
 | A proposal identical to what it is read against | The Changes section says so, with no rows and no control.                                                                                                  |
+| A view in which nothing differs                 | The Changes section says that nothing in this view differs and keeps the control: the counts are of what the picture draws, and the change is elsewhere.   |
 | Marks hidden                                    | The Changes heading, the "against" line and the control. No rows.                                                                                          |
 | Many groups or kinds                            | The list grows. The tab scrolls under its fixed tab row.                                                                                                   |
 | A long name or summary                          | It wraps. Nothing is cut off.                                                                                                                              |
 | A data-flow view                                | The legend keys the participants' kinds. Messages carry no kind today, so the relationship rows and the two line samples are absent.                       |
 | A board nobody has built                        | The tab speaks for the draft that the board's bare name opens, as the picture does. Before TASK-383 it read no variant there and showed nothing of it.     |
+
+## Before and after
+
+![The Board tab of Archboard on the dogfood vault before and after TASK-383:
+light before, light after, dark before, dark after](assets/pane-sidebar-before-after.png)
+
+The board `Archboard` of the dogfood vault, at 1920×1080, cut to the
+sidebar. From the left: before and after in the light theme, then before and
+after in the dark theme. The pane sidebar section of
+[operator-canvas-shell.md](operator-canvas-shell.md) shows the result on a
+board with views and changes.
 
 ## Sources
 

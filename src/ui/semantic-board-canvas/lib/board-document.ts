@@ -306,7 +306,14 @@ interface OfferedVariant {
 interface VariantReading {
 	/** Every variant of the board, in the order the board states them. */
 	readonly variants: readonly OfferedVariant[];
-	/** Every view of the board, with what each answers, in the order the board states them. */
+	/**
+	 * Every view of the board, with what each answers, in the order the board
+	 * states them. The board tab reads a view's summary here rather than from the
+	 * render answer: the answer's view is the same shape the `semantic render`
+	 * and `semantic rasterize` receipts print, and a sidebar line is no reason to
+	 * change what those commands answer. The document is read for the
+	 * variant's narrative anyway, so the summary costs no request.
+	 */
 	readonly views: readonly SemanticView[];
 	/** The one this pane is showing, or null when the board has no such variant. */
 	readonly showing: OfferedVariant | null;
