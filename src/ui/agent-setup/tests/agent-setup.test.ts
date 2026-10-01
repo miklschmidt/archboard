@@ -402,3 +402,19 @@ test("a message whose delivery went unanswered is dropped once the conversation 
 	transport.move(conversation(["yes", "yes"]));
 	expect(setup.snapshot().held).toEqual([]);
 });
+
+test("a reply streaming in changes nothing the setup says, so it keeps its snapshot and tells nobody", () => {
+	const transport = movableTransport(conversation(["Explain the gateway"]));
+	const { ports } = portsOver(transport);
+	const setup = createAgentSetup(ports);
+	setup.connect();
+	const before = setup.snapshot();
+	let told = 0;
+	setup.subscribe(() => {
+		told += 1;
+	});
+	transport.move(conversation(["Explain the gateway", "And the ledger"]));
+	transport.move(conversation(["Explain the gateway", "And the ledger", "And the queue"]));
+	expect(told).toBe(0);
+	expect(setup.snapshot()).toBe(before);
+});

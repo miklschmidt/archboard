@@ -10,10 +10,14 @@ import type { Workbench } from "@/ui/application/hooks/use-workbench";
 import { agentActions } from "@/ui/application/lib/agent-actions";
 import type { ApprovalDecisions } from "@/ui/application/lib/workbench-owners";
 import type { SnapshotStore } from "@/ui/application/lib/snapshot-cache";
-import type { AgentActions, AgentContext, AgentView } from "@/ui/workbench/contracts";
+import type {
+	AgentActions,
+	AgentContext,
+	AgentView,
+	AgentVoiceView,
+} from "@/ui/workbench/contracts";
 import type { DraftStore } from "@/ui/workbench";
-import { useConversation, type Conversation } from "@/ui/workbench-runtime";
-import type { ConversationTurn } from "@/ui/workbench-timeline";
+import { useConversation } from "@/ui/workbench-runtime";
 
 /** What the agent hook reads beyond the workbench. */
 interface AgentInputs {
@@ -66,52 +70,60 @@ function useStore<T>(store: SnapshotStore<T>): T {
 }
 
 /**
- * The turn running now: the newest, should Codex still hold an older one open.
- * @param conversation The conversation.
- * @returns Its id, or null.
+ * What the agent surfaces show: the conversation, the approvals on the wire and
+ * the progress clock, all of which change while the agent works. Called where
+ * they are drawn, never at the application's root, which would draw the whole
+ * shell again for every piece of a reply (TASK-385.03).
+ * @param inputs The workbench and the context.
+ * @param voice The voice, as the agent bar shows it.
+ * @returns The view.
  */
-function runningTurnOf(conversation: Conversation): ConversationTurn["turnId"] | null {
-	return conversation.turns.findLast((turn) => turn.outcome === "running")?.turnId ?? null;
-}
-
-/**
- * The agent's view and actions.
- * @param inputs The workbench, the draft, the context and the panel.
- * @returns The view and the actions.
- */
-function useAgent(inputs: AgentInputs): {
-	readonly view: AgentView;
-	readonly actions: AgentActions;
-} {
-	const { workbench, draft, context, openPanel } = inputs;
-	const { setup, owners, voice, releaseVoice } = workbench;
+function useAgentView(
+	inputs: Pick<AgentInputs, "workbench" | "context">,
+	voice: AgentVoiceView,
+): AgentView {
+	const { workbench, context } = inputs;
+	const { setup, owners } = workbench;
 	const setupSnapshot = useSyncExternalStore(setup.subscribe, setup.snapshot, setup.snapshot);
 	const stores = owners ?? NO_OWNER_STORES;
 	const conversation = useConversation(owners?.transport ?? null);
-	const voiceView = useVoiceView(voice, setupSnapshot);
 	const decisions = useStore(stores.approvalDecisions);
 	const lastProgressAtMs = useStore(stores.progress);
 	const snapshot = conversation.snapshot;
-
-	const view = useMemo<AgentView>(
+	return useMemo<AgentView>(
 		() => ({
 			setup: setupSnapshot,
 			snapshot,
 			conversation,
-			voice: voiceView,
+			voice,
 			context,
 			busyApprovals: decisions.busy,
 			approvalErrors: decisions.errors,
 			lastProgressAtMs,
 		}),
-		[setupSnapshot, snapshot, conversation, voiceView, context, decisions, lastProgressAtMs],
+		[setupSnapshot, snapshot, conversation, voice, context, decisions, lastProgressAtMs],
 	);
-	const runningTurnId = runningTurnOf(conversation);
-	const actions = useMemo(
-		() => agentActions({ setup, owners, voice, releaseVoice, draft, runningTurnId, openPanel }),
-		[setup, owners, voice, releaseVoice, draft, runningTurnId, openPanel],
-	);
-	return { view, actions };
 }
 
-export { useAgent, type AgentInputs };
+/**
+ * What a person can do from the agent surfaces, and the voice as they show it:
+ * neither changes while the agent works, so the application's root holds them.
+ * @param inputs The workbench, the draft and the panel.
+ * @returns The voice and the actions.
+ */
+function useAgent(inputs: Omit<AgentInputs, "context">): {
+	readonly voice: AgentVoiceView;
+	readonly actions: AgentActions;
+} {
+	const { workbench, draft, openPanel } = inputs;
+	const { setup, owners, voice, releaseVoice } = workbench;
+	const setupSnapshot = useSyncExternalStore(setup.subscribe, setup.snapshot, setup.snapshot);
+	const voiceView = useVoiceView(voice, setupSnapshot);
+	const actions = useMemo(
+		() => agentActions({ setup, owners, voice, releaseVoice, draft, openPanel }),
+		[setup, owners, voice, releaseVoice, draft, openPanel],
+	);
+	return { voice: voiceView, actions };
+}
+
+export { useAgent, useAgentView, type AgentInputs };

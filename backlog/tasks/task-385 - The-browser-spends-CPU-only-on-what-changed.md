@@ -5,7 +5,7 @@ status: To Do
 assignee:
   - '@claude'
 created_date: '2026-10-01 03:23'
-updated_date: '2026-10-01 04:08'
+updated_date: '2026-10-01 04:44'
 labels:
   - frontend
   - performance
@@ -23,6 +23,12 @@ An open Archboard page used about one CPU core while nobody touched it. Measured
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A pan, a zoom, a voice level frame, a workbench publish and a pane status re-render only the components that show what changed
+- [x] #1 A pan, a zoom, a voice level frame, a workbench publish and a pane status re-render only the components that show what changed
 - [ ] #2 An idle page with a board that draws traffic spends at most a third of the main-thread time and at most half of the renderer and GPU process CPU it spent before, measured with the same GPU-composited probe
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+All three subtasks are done (385.01, 385.02, 385.03). The second criterion is still open: pane news (a claim, agent activity, a pane status) renders the shell, and the navigator rebuilds every row object from the shell view, so every row renders although one changed. It happens per event, not per frame or per streamed delta. Proposed as follow-up work and not started without approval.
+<!-- SECTION:NOTES:END -->

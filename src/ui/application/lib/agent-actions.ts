@@ -8,7 +8,8 @@ import { gestureTab, openAuthTab } from "@/ui/application/agent-setup-ports";
 import type { VoiceOwner, WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
 import type { AgentActions } from "@/ui/workbench/contracts";
 import type { DraftStore } from "@/ui/workbench";
-import type { ConversationTurn } from "@/ui/workbench-timeline";
+import { projectTimelineTurns, type ConversationTurn } from "@/ui/workbench-timeline";
+import type { BrowserTimeline } from "@/shared/codex-browser-model";
 
 /** What the actions act on. */
 interface AgentActionTargets {
@@ -18,9 +19,32 @@ interface AgentActionTargets {
 	/** Voice ended: let it follow the focused pane again. */
 	readonly releaseVoice: () => void;
 	readonly draft: DraftStore;
-	/** The running turn, or null. */
-	readonly runningTurnId: ConversationTurn["turnId"] | null;
 	readonly openPanel: () => void;
+}
+
+/**
+ * The turn running in a timeline: the newest, should Codex still hold an older one open.
+ * @param timeline The timeline.
+ * @returns Its id, or null when none runs or the timeline cannot be read.
+ */
+function runningIn(timeline: BrowserTimeline): ConversationTurn["turnId"] | null {
+	try {
+		const turns = projectTimelineTurns(timeline);
+		return turns.findLast((turn) => turn.outcome === "running")?.turnId ?? null;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * The turn running now, read when somebody acts rather than handed in, so the
+ * actions are not made again on every piece of the conversation (TASK-385.03).
+ * @param owners The focused pane's owners, or null.
+ * @returns Its id, or null when none runs.
+ */
+function runningTurnNow(owners: WorkbenchOwners | null): ConversationTurn["turnId"] | null {
+	const timeline = owners?.transport.state().snapshot?.timeline ?? null;
+	return timeline === null ? null : runningIn(timeline);
 }
 
 /** Nothing to do: the pane has no owners to act on. */
@@ -72,11 +96,12 @@ function paneActions(
 	AgentActions,
 	"stop" | "signOut" | "respondToApproval" | "respondToDynamicApproval" | "queue"
 > {
-	const { owners, runningTurnId } = targets;
+	const { owners } = targets;
 	return {
 		/** Interrupt the running turn. */
 		stop: () => {
-			if (runningTurnId !== null) void owners?.composer.interrupt(runningTurnId);
+			const running = runningTurnNow(owners);
+			if (running !== null) void owners?.composer.interrupt(running);
 		},
 		/** Sign out of Archboard's Codex. */
 		signOut: () => {
