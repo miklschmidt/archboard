@@ -1,9 +1,11 @@
 ---
 id: TASK-383
 title: The board tab of the pane sidebar is ordered by how a person reads a board
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-09-30 18:51'
+updated_date: '2026-10-01 00:24'
 labels:
   - ui
 dependencies: []
@@ -26,3 +28,36 @@ User direction 2026-09-30: the board details sidebar (the Board tab of the pane 
 - [ ] #4 Rendered captures of the tab before and after, in both themes, on the dogfood vault, replace the sidebar image in docs/design/assets and the pane sidebar section describes the new hierarchy
 - [ ] #5 bun run check passes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Research first: docs/design/pane-sidebar-hierarchy.md (use cases from the product and the boards, how people read a diagram with cited sources, an inventory of the tab with before captures, and the resulting hierarchy). Commit it before any layout change.
+2. Shared sidebar parts: one heading role (body 12 px, 600, muted, sentence case), one row of choices (full name wraps, 16 px text column, fill 8 px beyond it), one region with a rule. Use them in both tabs, so the Selection tab loses its uppercase kicker labels too.
+3. Board tab in four regions: (a) variants of a drilled board, the variant's summary, the changes against the variant it is read against with the picture's pins and counts and the marks control; (b) walkthroughs (present glyph, full name, steps, narrate), views (the showing view's summary under it), groups; (c) the legend of what the picture draws: kinds, relationships, emphasis and traffic samples; (d) the layout engine as one row at the foot. Drop the Selected sample, the Legend eyebrow and the empty groups sentence.
+4. Tests: update the owners that pinned old copy or layout (legend text, empty groups) to structure; add owners for the summary, the changes key and its counts.
+5. Browser check at 1920x1080 in both themes on the dogfood vault and the web shop example; replace docs/design/assets/semantic-pane-sidebar.png and revise the pane sidebar section of operator-canvas-shell.md.
+6. bun run check, every lane.
+No board proposal: the task changes the look of existing sidebar parts and adds no module, dependency or relationship a board draws.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Study: docs/design/pane-sidebar-hierarchy.md. Main findings: the variant summary is written on 17 of 18 boards and shown nowhere; 34 of 42 views carry a summary nobody sees; the comparison key is the last thing in the tab (below the fold on a draft) although a proposal's reader needs it first; the tab has eight text columns and six equal-weight sections with uppercase kicker headings (eyebrows). Order derived: what it is and changes, how to read it (walkthroughs, views, groups), legend, engine.
+
+Built (commits 10ffd64f, c24cfb0c, 647e0d97):
+- Board tab in four regions under rules: (1) drilled board's variants, the variant summary (no heading), Changes for a compared variant (the picture's pin per standing with counts, then the marks control; rows go while marks are off; 'Nothing differs.' when nothing does); (2) Walkthroughs (present mark, full name, step count on a second line, Narrate), Views (summary of the view on screen under it), Groups; (3) Legend of what the picture draws, samples for a heavier line and a streak instead of prose; (4) Layout engine row at the foot.
+- Shared parts in SemanticSidebarParts.tsx (region, section, heading, choice list and row). Both tabs: text and tab labels at 16 px, headings 12 px semibold muted sentence case (no uppercase kickers), choices 28 px with the sidebar accent fill the navigator uses, long names wrap. Text lines: 16, 40 and 52 px.
+- Removed: Selected sample, Legend eyebrow, 'No groups on this state.' (groups absent like views and walkthroughs), dead STANDING_COLORS.
+- Found and fixed: the variant reading used resolveVariant, so a board with no current variant showed nothing of its draft in the tab; it now uses addressedVariant like the render route.
+- Renderer exports standingMark so the change key draws the picture's pin.
+- Tests: new semantic-board-tab owner (summary, view summary placement, unbuilt board, change counts); copy-pinning assertions replaced by structure; shell-layout browser owner now holds the sidebar heading role (600, 12 px, no transform).
+- Follow-ups outside this scope: data-flow messages carry no kind, so the legend keys no message line there; the presented walkthrough's caption still uses an uppercase kicker.
+
+Gate: bun run check passed on 647e0d97 (lint, fmt, both type-checks, build; modules 3735, system 189, repository 8, serial browser 18, no failures). Criteria left unchecked for the parent's review.
+
+Review phase 1 applied (57668689, eae063ac, 54f372c5, c4a116be): S1 a view in which nothing differs keeps the control (new test); S2 spacing on the 4/8/16 scale (rows touch); S3 dogfood before/after in both themes committed and referenced; S4 doc sentence; T1 legend lines at the renderer's widths via lineWidth; T2 SidebarRow for every non-control row; T3 kept VariantReading.views with the reason recorded (the render answer's view is the semantic render and rasterize receipts' shape); T4 one name, comparison; T5 SemanticChanges exported first; T6 kicker comment; B3 chosen row takes the reading tone and the cobalt bar, hover half the tone. Phase 2 (merge main, draw variants with src/ui/variant-lifecycle) is blocked: the permission classifier refused git merge main in this worktree.
+
+Review phase 2 (after the user merged main as 060c6795): 24cd23ed draws a drilled board's variants with src/ui/variant-lifecycle (VariantMark before the name, receding names muted unless on screen, variantOrder with the board's opens; lifecycle in title and accessible name; no Earlier row, reasons in the study); ead10a05 makes the shell doc one document (variants, reading tone and hover in both sections) and re-captures semantic-pane-sidebar.png. Checks: lint, both type-checks, semantic-board-canvas + shell + board-catalog + variant-lifecycle tests (197 pass), serial browser lane (18 pass).
+<!-- SECTION:NOTES:END -->

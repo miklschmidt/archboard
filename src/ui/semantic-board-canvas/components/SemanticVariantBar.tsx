@@ -1,30 +1,46 @@
-// Which state of the architecture this pane is showing.
+// Which variant of a board a level down this pane is showing.
 //
 // A board holds a family of variants: the current architecture, the drafts
-// proposed against it, and the states that used to be current. They are the
+// proposed against it, and the variants that used to be current. They are the
 // same board, and moving between them is reading — no board is written, no
 // version moves, and the other pane goes on showing whatever it was showing
-// (ADR 0023). Two panes showing two variants of one board side by side is the
-// whole point of proposing a change.
+// (ADR 0023). The navigator offers the variants of the pane's own board; a
+// board somebody followed a drill-down into is not in it, so its variants are
+// offered here instead.
 //
-// Each button says the variant's name and where it stands, because those are
-// different questions and a name alone answers neither: "Semantic boards" does
-// not say whether it is the architecture or a suggestion about it, and nothing
-// else on screen does either. The lifecycle is the second line rather than a
-// badge, so the bar stays one row high beside the views.
+// A variant is said here the way the navigator and the header say it
+// (`@/ui/variant-lifecycle`): its lifecycle's mark before its name, the
+// variants the board has moved past receding, and the same order — the one the
+// board's name opens, the other live ones, then the receding ones newest
+// first. The lifecycle is in the row's title and its accessible name, because a
+// mark alone does not say it to everyone.
+//
+// The receding variants are not gathered behind an Earlier row, as the
+// navigator gathers them. The navigator has to stay readable at hundreds of
+// boards; this list is one board's, at most six variants on any board, and it
+// is the only place a drilled board's variants can be chosen, so hiding some of
+// them would cost a click on the one surface that offers them. They come last
+// and recede, which is what the Earlier row does in the navigator.
 //
 // A board with one variant offers no choice, for the reason the view bar
 // offers none when a board has no views: a choice between one thing and
-// nothing is furniture. It still says which state is on screen, though, because
-// that is a different question from "what else could I read" — somebody who
-// followed a link into another board's "as built" has to be able to see that
-// that is what they are looking at, and a picker with one button in it is not
-// the way to tell them.
+// nothing is furniture. It still says which variant is on screen, though,
+// because that is a different question from "what else could I read" —
+// somebody who followed a link into another board's "as built" has to be able
+// to see that that is what they are looking at.
 
 import { useCallback, type JSX } from "react";
 
-import { Button } from "@/ui/components/button";
+import { cn } from "@/ui/components/class-names";
+import {
+	SidebarChoice,
+	SidebarChoices,
+	SidebarGlyph,
+	SidebarLabel,
+	SidebarRow,
+} from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
 import type { OfferedVariant } from "@/ui/semantic-board-canvas/lib/board-document";
+import { VariantMark, variantOrder, variantRecedes } from "@/ui/variant-lifecycle";
 
 /** Inputs for the variant bar. */
 interface SemanticVariantBarProps {
@@ -32,15 +48,17 @@ interface SemanticVariantBarProps {
 	variants: readonly OfferedVariant[];
 	/** The one on screen, by id, or null while that is not yet known. */
 	showing: string | null;
+	/** The one the board's name opens, by id, or null when it opens none. */
+	opens: string | null;
 	/**
-	 * The person chose a state of this architecture.
+	 * The person chose a variant of this board.
 	 * @param variant The variant's id, or null for whichever is current.
 	 */
 	onChoose: (variant: string | null) => void;
 }
 
-/** One variant's button. */
-interface VariantButtonProps {
+/** One variant's choice. */
+interface VariantChoiceProps {
 	/** The variant it offers. */
 	variant: OfferedVariant;
 	/** Whether it is the one on screen. */
@@ -53,87 +71,115 @@ interface VariantButtonProps {
 }
 
 /**
- * One state of the architecture, as a button.
- * @param props The variant, whether it is on screen, and what a choice does.
- * @returns The button.
+ * What a variant row says to somebody who cannot see its mark.
+ * @param variant The variant.
+ * @returns Its name and lifecycle.
  */
-function VariantButton(props: VariantButtonProps): JSX.Element {
+function spoken(variant: OfferedVariant): string {
+	return `${variant.name}, ${variant.lifecycle}`;
+}
+
+/**
+ * A variant's name, receding when the board has moved past it, unless it is
+ * the one on screen.
+ * @param props The variant and whether it is on screen.
+ * @param props.variant The variant.
+ * @param props.showing Whether it is on screen.
+ * @returns The name.
+ */
+function VariantName(props: {
+	readonly variant: OfferedVariant;
+	readonly showing: boolean;
+}): JSX.Element {
+	const recedes = variantRecedes(props.variant.lifecycle) && !props.showing;
+	return (
+		<SidebarLabel>
+			<span className={cn(recedes && "text-muted-foreground")}>{props.variant.name}</span>
+		</SidebarLabel>
+	);
+}
+
+/**
+ * One variant, as a choice.
+ * @param props The variant, whether it is on screen, and what a choice does.
+ * @returns The choice.
+ */
+function VariantChoice(props: VariantChoiceProps): JSX.Element {
 	const { variant, showing, onChoose } = props;
 	const choose = useCallback((): void => {
 		// The current variant is asked for as the absence of a variant, which is
 		// what an address with no variant in it already means. Naming it by id
-		// instead would pin a pane to a state that stops being current the moment
-		// somebody adopts a proposal.
+		// instead would pin a pane to a variant that stops being current the
+		// moment somebody adopts a proposal.
 		onChoose(variant.lifecycle === "current" ? null : variant.id);
 	}, [onChoose, variant.id, variant.lifecycle]);
 	return (
-		<Button
-			type="button"
-			variant={showing ? "secondary" : "ghost"}
-			size="sm"
-			aria-pressed={showing}
+		<SidebarChoice
+			pressed={showing}
+			aria-label={spoken(variant)}
+			title={spoken(variant)}
 			data-slot="semantic-variant-choice"
 			data-semantic-variant={variant.id}
 			data-semantic-lifecycle={variant.lifecycle}
-			className="h-auto flex-col items-start justify-start gap-0 py-1"
 			onClick={choose}
 		>
-			<span className="text-body">{variant.name}</span>
-			<span className="text-kicker text-muted-foreground uppercase">{variant.lifecycle}</span>
-		</Button>
+			<SidebarGlyph>
+				<VariantMark lifecycle={variant.lifecycle} />
+			</SidebarGlyph>
+			<VariantName variant={variant} showing={showing} />
+		</SidebarChoice>
 	);
 }
 
 /**
- * The one state a board has, said rather than offered.
- *
- * The same two lines a button carries, without being a control: nothing here
- * can be chosen, because there is nothing else to choose.
+ * The one variant a board has, said rather than offered: the row a choice
+ * would be, without being a control.
  * @param props The variant on screen.
  * @param props.variant That variant.
- * @returns The label.
+ * @returns The row.
  */
 function VariantStanding(props: { readonly variant: OfferedVariant }): JSX.Element {
 	const { variant } = props;
 	return (
-		<p
+		<SidebarRow
+			control
 			data-slot="semantic-variant-showing"
 			data-semantic-variant={variant.id}
 			data-semantic-lifecycle={variant.lifecycle}
-			className="flex shrink-0 flex-col items-start gap-0 px-2 py-1"
 		>
-			<span className="text-body">{variant.name}</span>
-			<span className="text-kicker text-muted-foreground uppercase">{variant.lifecycle}</span>
-		</p>
+			<SidebarGlyph>
+				<VariantMark lifecycle={variant.lifecycle} />
+			</SidebarGlyph>
+			<SidebarLabel>
+				<span title={spoken(variant)}>{variant.name}</span>
+				<span className="sr-only">, {variant.lifecycle}</span>
+			</SidebarLabel>
+		</SidebarRow>
 	);
 }
 
 /**
- * The states of this architecture, and which one is on screen.
+ * The variants of this board, and which one is on screen.
  * @param props The variants, the one showing, and what a choice does.
- * @returns The bar, the one state said plainly, or null when there is none.
+ * @returns The list, the one variant said plainly, or null when there is none.
  */
 function SemanticVariantBar(props: SemanticVariantBarProps): JSX.Element | null {
-	const { variants, showing, onChoose } = props;
+	const { variants, showing, opens, onChoose } = props;
 	if (variants.length < 2) {
 		const only = variants[0];
 		return only === undefined ? null : <VariantStanding variant={only} />;
 	}
 	return (
-		<fieldset
-			data-slot="semantic-variant-bar"
-			aria-label="States of this architecture"
-			className="flex flex-col items-stretch gap-0.5 border-0 p-0"
-		>
-			{variants.map((variant) => (
-				<VariantButton
+		<SidebarChoices slot="semantic-variant-bar" label="Variants of this board">
+			{variantOrder(variants, opens).map((variant) => (
+				<VariantChoice
 					key={variant.id}
 					variant={variant}
 					showing={showing === variant.id}
 					onChoose={onChoose}
 				/>
 			))}
-		</fieldset>
+		</SidebarChoices>
 	);
 }
 

@@ -85,4 +85,58 @@ function attribute(group: Element, name: string, fallback: string): string {
 	return group.getAttribute(name) ?? fallback;
 }
 
-export { drawnAppearance, pictureAppearances, type AppliedAppearance };
+/** What a picture's key lists: its node kinds, and its relationship kinds. */
+interface PictureKey {
+	/** Each node kind the picture draws, once per distinct sample, in drawing order. */
+	readonly kinds: readonly AppliedAppearance[];
+	/** Each relationship kind the picture draws, likewise. */
+	readonly relationships: readonly AppliedAppearance[];
+}
+
+/**
+ * What a picture's key lists: only what the picture draws, so nothing in the
+ * key is absent from the picture, and in the order the picture draws it.
+ * @param appearances The picture's appearance facts, by subject.
+ * @returns Its kinds and its relationship kinds, or null when it draws no typed subject.
+ */
+function keyOf(appearances: ReadonlyMap<string, AppliedAppearance>): PictureKey | null {
+	const entries = [...appearances.values()];
+	const kinds = distinctSamples(entries.filter((item) => item.depiction !== ""));
+	const relationships = distinctSamples(entries.filter((item) => item.depiction === ""));
+	return kinds.length + relationships.length === 0 ? null : { kinds, relationships };
+}
+
+/**
+ * Keep each configured kind and its applied sample, even when display names repeat.
+ * @param appearances Visible appearance facts.
+ * @returns Unique samples in drawing order.
+ */
+function distinctSamples(appearances: readonly AppliedAppearance[]): AppliedAppearance[] {
+	return [...new Map(appearances.map((item) => [sampleKey(item), item])).values()];
+}
+
+/**
+ * Identify the configured kind and the visual meaning of its sample.
+ * @param item One depicted type.
+ * @returns A stable key independent of the subject or containment scope.
+ */
+function sampleKey(item: AppliedAppearance): string {
+	return JSON.stringify([
+		item.typeKind,
+		item.typeName,
+		item.iconSvg,
+		item.typeColor,
+		item.lineColor,
+		item.dash,
+		item.arrowhead,
+	]);
+}
+
+export {
+	drawnAppearance,
+	keyOf,
+	pictureAppearances,
+	sampleKey,
+	type AppliedAppearance,
+	type PictureKey,
+};

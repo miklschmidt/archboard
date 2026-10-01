@@ -263,15 +263,15 @@ test(
 				),
 			).toBe(true);
 			// The type roles (TASK-150.08): board name 600, body 400, the state and
-			// controls 500, technical tokens in the mono face at 400 or 500, and the
-			// section kicker uppercase 600 at 10px.
+			// controls 500, technical tokens in the mono face at 400 or 500, and a
+			// sidebar section heading 600 at the body size, never uppercase (TASK-383).
 			expect(snapshot.titleType).toMatchObject({ weight: 600 });
-			expect(snapshot.sectionKicker).toMatchObject({
+			expect(snapshot.sectionHeading).toMatchObject({
 				weight: 600,
-				transform: "uppercase",
-				size: 10,
+				transform: "none",
+				size: 12,
 			});
-			expect(snapshot.sectionKicker.family).toContain("archboard onest");
+			expect(snapshot.sectionHeading.family).toContain("archboard onest");
 			expect(snapshot.bodyType).toMatchObject({ weight: 400 });
 			expect(snapshot.stateType).toMatchObject({ weight: 500 });
 			expect(snapshot.controlType).toMatchObject({ weight: 500 });

@@ -160,15 +160,17 @@ function SidebarHeader(props: {
 	const { sidebar } = props;
 	const clear = sidebar.tab === "selection" ? props.onClearSelection : null;
 	return (
+		// The labels' words start on the column the tab's content starts on, 16 px
+		// in, with each underline reaching 8 px past its words.
 		<div className="border-border flex h-10 shrink-0 items-center gap-1 border-b pr-2">
-			<TabsList variant="underline" className="h-full border-b-0">
+			<TabsList variant="underline" className="h-full border-b-0 pl-2">
 				{TABS.map((entry) => (
 					<TabsTrigger
 						key={entry.tab}
 						value={entry.tab}
 						data-slot="semantic-sidebar-tab"
 						data-tab={entry.tab}
-						className="text-control px-3"
+						className="text-control px-2"
 					>
 						{entry.label}
 					</TabsTrigger>

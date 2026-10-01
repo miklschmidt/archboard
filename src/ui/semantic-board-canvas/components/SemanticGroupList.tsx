@@ -1,11 +1,21 @@
 // Every group the variant on screen uses, each with its colour and its name.
 // Choosing one selects every member of it the picture draws; choosing it again
-// lets it go. A variant with no memberships says so in the list's own place.
+// lets it go.
+//
+// The row is the key to the group's colour on the picture as well as the way
+// to its members, which is why the chip is drawn the way the picture draws the
+// group. A variant with no memberships offers no list, as a board with no views
+// or no walkthroughs offers none of those (TASK-383).
 
 import { useCallback, type JSX } from "react";
 
-import { Button } from "@/ui/components/button";
 import { SemanticGroupChip } from "@/ui/semantic-board-canvas/components/SemanticGroupChip";
+import {
+	SidebarChoice,
+	SidebarChoices,
+	SidebarGlyph,
+	SidebarLabel,
+} from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
 import type { GroupChoice } from "@/ui/semantic-board-canvas/lib/groups";
 
 /** Inputs for the group list. */
@@ -21,73 +31,61 @@ interface SemanticGroupListProps {
 	readonly onChoose: (group: string | null) => void;
 }
 
-/** Inputs for one group's button. */
-interface GroupButtonProps {
+/** Inputs for one group's choice. */
+interface GroupChoiceRowProps {
 	readonly choice: GroupChoice;
 	readonly selected: boolean;
 	readonly onChoose: (group: string | null) => void;
 }
 
 /**
- * One group's button: its chip and its name.
+ * One group's choice: its chip and its name.
  * @param props The group, whether it is selected, and what choosing does.
- * @returns The button.
+ * @returns The choice.
  */
-function GroupButton(props: GroupButtonProps): JSX.Element {
+function GroupChoiceRow(props: GroupChoiceRowProps): JSX.Element {
 	const { choice, selected, onChoose } = props;
 	const choose = useCallback((): void => {
 		onChoose(selected ? null : choice.id);
 	}, [onChoose, selected, choice.id]);
 	return (
-		<Button
-			type="button"
-			variant={selected ? "secondary" : "ghost"}
-			size="sm"
-			aria-pressed={selected}
+		<SidebarChoice
+			pressed={selected}
+			title={choice.configured ? undefined : `${choice.id} is not configured in the vault`}
 			data-slot="semantic-group-choice"
 			data-group={choice.id}
 			data-configured={choice.configured}
-			title={choice.configured ? undefined : `${choice.id} is not configured in the vault`}
-			className="justify-start gap-2"
 			onClick={choose}
 		>
-			<SemanticGroupChip color={choice.color} selected={selected} />
-			<span className="truncate">{choice.label}</span>
-		</Button>
+			<SidebarGlyph>
+				<SemanticGroupChip color={choice.color} selected={selected} />
+			</SidebarGlyph>
+			<SidebarLabel>{choice.label}</SidebarLabel>
+		</SidebarChoice>
 	);
 }
 
 /**
  * The groups, each a way to select its members.
  * @param props The groups, the one selected, and what choosing does.
- * @returns The list, or what it says when the variant has no groups.
+ * @returns The list, or null when the variant has no groups.
  */
-function SemanticGroupList(props: SemanticGroupListProps): JSX.Element {
+function SemanticGroupList(props: SemanticGroupListProps): JSX.Element | null {
 	const { choices, selected, onChoose } = props;
 	if (choices.length === 0) {
-		return (
-			<p data-slot="semantic-group-empty" className="text-muted-foreground text-body px-2">
-				No groups on this state.
-			</p>
-		);
+		return null;
 	}
 	return (
-		<fieldset
-			data-slot="semantic-group-list"
-			aria-label="Select a group's parts"
-			// A fieldset is as wide as its widest name unless told otherwise,
-			// and a name that runs past the sidebar then never truncates.
-			className="flex min-w-0 flex-col items-stretch gap-0.5 border-0 p-0"
-		>
+		<SidebarChoices slot="semantic-group-list" label="Select a group's parts">
 			{choices.map((choice) => (
-				<GroupButton
+				<GroupChoiceRow
 					key={choice.id}
 					choice={choice}
 					selected={selected === choice.id}
 					onChoose={onChoose}
 				/>
 			))}
-		</fieldset>
+		</SidebarChoices>
 	);
 }
 
