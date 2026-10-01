@@ -90,9 +90,12 @@ inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
   use cases and from research on how people read diagrams. There are four
   regions, and a rule separates one region from the next:
   1. **What is this, and what does it change?** On a board reached by a
-     drill-down, its variants, each with its lifecycle, as the navigator lists
-     them. Then the summary of the variant on screen, with no heading: the
-     board's own statement of its scope. On a variant read against another,
+     drill-down, its variants, said and ordered as the navigator says and
+     orders them: the lifecycle's mark before the name, the historical and
+     shelved names receding and last. All of them are listed, with no Earlier
+     row, because this is the only place their variants are chosen. Then the
+     summary of the variant on screen, with no heading: the board's own
+     statement of its scope. On a variant read against another,
      the changes: which variant it is compared with, one row for each standing
      that occurs with the pin the picture draws and how many subjects stand
      so, and the control that marks the changes on the picture. The counts are
@@ -217,8 +220,10 @@ filter that finds variants by name (dark).
   open. While two panes are open, each pane letter sits on exactly one row:
   the variant's row where it is listed, else the board's row. One row is
   selected, the one the active pane shows. It takes the reading tone and a
-  cobalt bar, and its name keeps the foreground colour. The active pane's
-  board sets its name in semibold.
+  cobalt bar, and its name keeps the foreground colour. A row under the
+  pointer takes half the reading tone and no bar, so it never looks selected.
+  The pane sidebar marks its choices the same way. The active pane's board
+  sets its name in semibold.
 - **Finding is the filter**: Ctrl K, `/`, or typing in the tree. It keeps tree
   order, dims the boards a match sits under, marks the matched letters, and
   counts what it found. Enter opens, Alt opens beside, Escape clears.
