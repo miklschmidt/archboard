@@ -163,9 +163,10 @@ filter that finds variants by name (dark).
 - **One row per board.** The row shows the board's mark, its full name, and
   facts about the whole board: how many drafts it has, that nothing it
   describes is built, and the pane letters while none of its variants is
-  listed. A long name wraps to a second line, then ends in an ellipsis, and
-  the whole name shows on hover. The level shows on hover and is said to
-  assistive technology. The header names the level of the board being read.
+  listed. A long name wraps to a second line, then ends in an ellipsis.
+  Hovering the name shows the whole name and the board's level, and the row
+  says the level to assistive technology. The header names the level of the
+  board being read.
   A board that cannot be read says why under its name.
 - **A board's variants sit one depth in, before the boards it drills down
   to.** A mark says each variant's lifecycle: a check for current, a branch for
@@ -173,7 +174,10 @@ filter that finds variants by name (dark).
   name is smaller and lighter than a board's. The variant the board's name
   opens comes first, then the other live variants. A draft nests under the
   draft it was derived from, and under nothing else. The historical and
-  shelved variants wait behind one Earlier row, newest first. A board lists its
+  shelved variants wait behind one Earlier row, newest first. While a filter
+  is on, the variants it finds are listed directly under their board, with no
+  Earlier row. The header draws the same lifecycle mark before the variant it
+  names (`src/ui/variant-lifecycle`). A board lists its
   variants while it has more than one, and one of them is a proposal or a pane
   shows the board. A board has one disclosure. Opening it lists its variants
   and the boards it drills down to together.
