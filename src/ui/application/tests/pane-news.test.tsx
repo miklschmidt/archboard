@@ -207,7 +207,7 @@ async function paneShowingTheBoard(): Promise<FakeSocket> {
 	return socket;
 }
 
-test("a claim, an agent's doing and its activity reach the shell and draw no board stage again", async () => {
+test("a claim, an agent's doing, its activity and a pane status reach the shell and draw no board stage again", async () => {
 	const socket = await paneShowingTheBoard();
 	expect(
 		document.querySelector("[data-slot='semantic-board-stage']")?.getAttribute("data-state"),
@@ -230,6 +230,15 @@ test("a claim, an agent's doing and its activity reach the shell and draw no boa
 	act(() => socket.say({ type: "board_lock", board: "pipeline", held: false, holder: null }));
 	await settle();
 	expect(document.querySelector("[data-slot='claim-banner']")).toBeNull();
+	// The pane reports its status again, as it does with every change of its own.
+	act(() =>
+		socket.say({
+			type: "pane_board",
+			board: "pipeline",
+			identity: { board: "pipeline", variant: "current" },
+		}),
+	);
+	await settle();
 
 	expect(stageDrawing()).toBe(drawn);
 });
