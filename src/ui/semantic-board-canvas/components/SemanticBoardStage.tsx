@@ -27,6 +27,12 @@ import type {
 	SemanticRender,
 	SemanticWaiting,
 } from "@/ui/semantic-board-canvas/api/semantic-boards";
+import { BoardPage } from "@/ui/semantic-board-canvas/components/BoardPage";
+import {
+	FeaturedHeader,
+	type BoardTab,
+	type Crumb,
+} from "@/ui/semantic-board-canvas/components/FeaturedHeader";
 import { SemanticDiagram } from "@/ui/semantic-board-canvas/components/SemanticDiagram";
 import {
 	ReadingArea,
@@ -56,7 +62,9 @@ import {
 import { useReported } from "@/ui/semantic-board-canvas/hooks/use-reported-reading";
 import { useSettledFocus } from "@/ui/semantic-board-canvas/hooks/use-settled-focus";
 import { useSidebar, type Sidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
+import { useKindLook } from "@/ui/semantic-board-canvas/hooks/use-kind-look";
 import { useStageAppearances } from "@/ui/semantic-board-canvas/hooks/use-stage-appearances";
+import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
 import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 import { useSemanticBoardChanges } from "@/ui/semantic-board-canvas/hooks/use-semantic-board-changes";
 import { useLayoutEngine } from "@/ui/semantic-board-canvas/hooks/use-layout-engine";
@@ -151,6 +159,10 @@ interface SemanticBoardStageProps {
 	onNarrate?: ((walkthrough: string) => void) | undefined;
 	/** What the shell lays over the picture, such as subtitles of a voice; clear of the caption. */
 	overlay?: ReactNode;
+	/** The boards above the pane's own board in the vault's outline, outermost first. */
+	ancestors?: readonly Crumb[] | undefined;
+	/** Take the reader to the navigator, which is where every board is. */
+	onOpenBoards?: (() => void) | undefined;
 	/**
 	 * Whether the person asked for reduced motion.
 	 *
@@ -222,6 +234,16 @@ interface RenderView extends SemanticBoardStageProps {
 	readonly sidebar: Sidebar;
 	/** What the picture on screen draws each kind with, for the key and the inspector. */
 	readonly appearances: ReadonlyMap<string, AppliedAppearance>;
+	/** How the vault's kinds look, for the pages and the details panel. */
+	readonly look: KindLook;
+	/** The tab of the featured header that is open. */
+	readonly tab: BoardTab;
+	/** Open a tab. */
+	readonly onTab: (tab: BoardTab) => void;
+	/** Read one beat of a walkthrough: the diagram comes back, presenting it. */
+	readonly onReadBeat: (walkthrough: string, beat: number) => void;
+	/** Where the board on screen sits, for the featured header. */
+	readonly crumbs: readonly Crumb[];
 }
 
 /**
@@ -252,6 +274,32 @@ function variantNamer(view: RenderView): (id: string) => string {
  */
 function viewToRead(beat: WalkthroughBeat | null, asked: string | undefined): string | undefined {
 	return beat?.view ?? asked;
+}
+
+/**
+ * Where the board on screen sits: the navigator, the boards above the pane's own
+ * board, the boards the reader has followed down into, and the board itself.
+ * @param own The boards above the pane's own board, and the way to the navigator.
+ * @param drill Where the pane is looking.
+ * @param name The board's name.
+ * @returns The breadcrumb, whose last place is the board itself.
+ */
+function crumbsOf(
+	own: Pick<SemanticBoardStageProps, "ancestors" | "onOpenBoards">,
+	drill: DrillNavigation,
+	name: string,
+): readonly Crumb[] {
+	const [home, ...followed] = drill.trail;
+	const boards: Crumb[] =
+		home === undefined
+			? []
+			: [{ name: home.board, open: drill.home }, ...followed.map((stop) => ({ name: stop.board }))];
+	return [
+		{ name: "Boards", open: own.onOpenBoards },
+		...(own.ancestors ?? []),
+		...boards,
+		{ name },
+	];
 }
 
 /**
@@ -374,14 +422,70 @@ function renderedView(view: RenderView): JSX.Element {
 			{/* Read left to right: the board and whatever is selected on it, then the
 			    picture — with a presented walkthrough's caption over it, while the
 			    sidebar steps aside. */}
+			{view.narrative.open === null && <PaneFeaturedHeader view={view} />}
 			<ReadingArea presenting={view.narrative.open !== null}>
 				<SemanticStageSidebar view={view} appearances={view.appearances} />
 				<div className="relative flex min-h-0 min-w-0 flex-1">
 					{stageBody(view)}
 					{presentationOver(view)}
+					{view.tab !== "diagram" && view.narrative.open === null && <PaneBoardPage view={view} />}
 				</div>
 			</ReadingArea>
 		</>
+	);
+}
+
+/**
+ * The featured header over the picture: where the board sits, its name and
+ * scope, and the tabs.
+ * @param props What the stage knows.
+ * @param props.view What the stage knows.
+ * @returns The header.
+ */
+function PaneFeaturedHeader(props: { readonly view: RenderView }): JSX.Element {
+	const { view } = props;
+	const { reading } = view;
+	return (
+		<FeaturedHeader
+			crumbs={view.crumbs}
+			name={view.render.data?.board ?? view.drill.board}
+			summary={reading?.variant?.summary}
+			tab={view.tab}
+			onTab={view.onTab}
+			counts={{
+				variants: reading?.variants.length,
+				walkthroughs: reading?.walkthroughs.length,
+			}}
+		/>
+	);
+}
+
+/**
+ * The page of the open tab, over the picture.
+ * @param props What the stage knows.
+ * @param props.view What the stage knows.
+ * @returns The page.
+ */
+function PaneBoardPage(props: { readonly view: RenderView }): JSX.Element {
+	const { view } = props;
+	const { reading } = view;
+	return (
+		<BoardPage
+			tab={view.tab === "diagram" ? "parts" : view.tab}
+			content={reading?.variant?.content ?? null}
+			look={view.look}
+			groups={view.groupControls.names}
+			selection={view.selection}
+			onPick={view.onPick}
+			variants={{
+				variants: reading?.variants ?? [],
+				adoptions: reading?.adoptions ?? [],
+				opens: reading?.opens ?? null,
+				showing: reading?.showing?.id ?? null,
+				onChoose: view.level.onVariant,
+			}}
+			walkthroughs={{ walkthroughs: view.narrative.offered, onChoose: view.onReadBeat }}
+		/>
 	);
 }
 
@@ -537,6 +641,28 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 	const departure = useDeparture(drawn, drill.board, render);
 	const sidebar = useSidebar(props.selection);
 	const appearances = useStageAppearances(drawn, departure.leaving);
+	const look = useKindLook(appearances);
+	// Which way the pane is read: the picture, or one of the board's pages. It is
+	// kept with the board it was chosen on, so following a drill-down reads the
+	// board below as a diagram, and a walkthrough being read is always the picture.
+	const [place, setPlace] = useState<{ readonly board: string; readonly tab: BoardTab }>({
+		board: drill.board,
+		tab: "diagram",
+	});
+	const tab: BoardTab =
+		narrative.open !== null || place.board !== drill.board ? "diagram" : place.tab;
+	const onTab = useCallback(
+		(next: BoardTab): void => setPlace({ board: drill.board, tab: next }),
+		[drill.board],
+	);
+	const { goTo } = narrative;
+	const onReadBeat = useCallback(
+		(walkthrough: string, beat: number): void => {
+			choose(walkthrough);
+			goTo(beat);
+		},
+		[choose, goTo],
+	);
 	const { leave } = departure;
 	const picked = props.selection;
 	const onOpenDown = useCallback(
@@ -569,6 +695,11 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		leaving: departure.leaving,
 		sidebar,
 		appearances,
+		look,
+		tab,
+		onTab,
+		onReadBeat,
+		crumbs: crumbsOf(props, drill, render.data?.board ?? drill.board),
 		heading: departure.heading,
 		narrative,
 		presented,

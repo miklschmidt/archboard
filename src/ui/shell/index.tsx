@@ -26,7 +26,6 @@ import { Navigator } from "@/ui/shell/components/Navigator";
 import { Notices } from "@/ui/shell/components/Notices";
 import { PaneBar } from "@/ui/shell/components/PaneBar";
 import { PaneStages } from "@/ui/shell/components/PaneStages";
-import { readingOf } from "@/ui/shell/lib/reading";
 import { isPresentShortcut, presentShortcutLabel } from "@/ui/shell/lib/shortcuts";
 
 /**
@@ -46,6 +45,8 @@ interface ShellProps {
 	actions: ShellActions;
 	/** Live voice controls for the presentation bar, when the voice workbench supplies them. */
 	voiceControls?: ReactNode;
+	/** The search at the top of the shell, over every board's parts. */
+	search?: ReactNode;
 	/** The agent bar under the panes: the agent's state, Talk and the composer. */
 	agentBar?: ReactNode;
 	/** The conversation panel beside the panes, while it is open. */
@@ -74,11 +75,10 @@ function Shell(props: ShellProps): JSX.Element {
 	const active = paneById(view, view.activePaneId);
 	const { boards, levels } = view.boards;
 	const outline = useMemo(() => buildOutline(boards, levels), [boards, levels]);
-	const reading = readingOf(view.boards, outline, active?.status.boardKey ?? null);
 	return (
 		<div className="bg-background flex h-full min-w-0 flex-col" style={SHELL_STYLE}>
 			<Header
-				reading={reading}
+				search={props.search}
 				theme={view.theme}
 				connected={active?.status.connected !== false}
 				actions={actions}

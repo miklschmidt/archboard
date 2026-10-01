@@ -11,8 +11,6 @@
 import { useCallback, type JSX, type ReactNode } from "react";
 
 import { Button } from "@/ui/components/button";
-
-import type { CodeBinding } from "@/shared/code-target";
 import { Badge } from "@/ui/components/badge";
 import { SemanticGroupChip } from "@/ui/semantic-board-canvas/components/SemanticGroupChip";
 import { SidebarHeading } from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
@@ -69,101 +67,6 @@ function Section(props: SectionProps): JSX.Element {
 			<SidebarHeading level={3}>{props.title}</SidebarHeading>
 			{props.children}
 		</div>
-	);
-}
-
-/** Inputs for the binding rows. */
-interface BindingProps {
-	/** The node's primary code binding, when it has one. */
-	binding: CodeBinding | undefined;
-	/**
-	 * Open the code this node is bound to, when the shell around the pane can.
-	 *
-	 * Optional because the pane is a picture of an architecture and knows
-	 * nothing about opening an editor: whether code can be opened at all is the
-	 * shell's business, and a control that did nothing would be worse than no
-	 * control. Absent means no control is drawn.
-	 */
-	onOpenCode?: ((binding: CodeBinding) => void) | undefined;
-}
-
-/**
- * Where the selected node's code is.
- *
- * A node with no binding is not a node with an empty one. Architecture is
- * not bound to anything, which is a fact about the board and not about the
- * work: a part may be implemented and simply not bound yet, so this says what
- * is missing rather than guessing why. The repository is
- * shown on every bound node rather than only where it differs, because two
- * nodes side by side may name two different repositories and a reader has no
- * other way to tell.
- * @param props The binding, when there is one.
- * @returns The rows, or the sentence that says there are none.
- */
-function BindingBody(props: BindingProps): JSX.Element {
-	const { binding } = props;
-	if (binding === undefined) {
-		return (
-			<p className="text-muted-foreground text-body" data-slot="semantic-inspector-unbound">
-				No code binding.
-			</p>
-		);
-	}
-	return (
-		<>
-			<dl
-				className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-2.5"
-				data-slot="semantic-inspector-binding"
-			>
-				<Row label="repo" value={binding.repo} />
-				<Row label="path" value={binding.path} />
-				{binding.branch !== undefined && <Row label="branch" value={binding.branch} />}
-				{binding.commit !== undefined && <Row label="commit" value={binding.commit} />}
-				{binding.confirmedAt !== undefined && <Row label="confirmed" value={binding.confirmedAt} />}
-			</dl>
-			{props.onOpenCode !== undefined && (
-				<OpenCode binding={binding} onOpenCode={props.onOpenCode} />
-			)}
-		</>
-	);
-}
-
-/** Inputs for the control that opens a node's code. */
-interface OpenCodeProps {
-	binding: CodeBinding;
-	/**
-	 * Open this binding.
-	 * @param binding Where the code is.
-	 */
-	onOpenCode: (binding: CodeBinding) => void;
-}
-
-/**
- * The control that opens the code a node is bound to.
- * @param props The binding and what to do with it.
- * @returns The control.
- */
-function OpenCode(props: OpenCodeProps): JSX.Element {
-	const { binding, onOpenCode } = props;
-	const open = useCallback((): void => {
-		onOpenCode(binding);
-	}, [binding, onOpenCode]);
-	return (
-		<Button
-			type="button"
-			variant="secondary"
-			size="sm"
-			// A path is as long as somebody's directories, and the panel is as wide
-			// as the panel: the label says what it opens and gives way at the end,
-			// the way the path row above it does. Unbounded, it ran out of the
-			// button and out of the pane.
-			className="mt-3 flex w-full min-w-0 justify-start"
-			title={`Open ${binding.path}`}
-			data-slot="semantic-inspector-open-code"
-			onClick={open}
-		>
-			<span className="truncate">Open {binding.path}</span>
-		</Button>
 	);
 }
 
@@ -327,13 +230,4 @@ function Memberships(props: MembershipsProps): JSX.Element | null {
 	);
 }
 
-export {
-	BindingBody,
-	Described,
-	Memberships,
-	OpenCode,
-	Row,
-	Section,
-	TitleBlock,
-	type GroupControls,
-};
+export { Described, Memberships, Row, Section, TitleBlock, type GroupControls };

@@ -142,7 +142,7 @@ function ApprovalMark(props: { readonly item: ConversationDataParts["approval"] 
 	return (
 		<p
 			data-slot="approval-mark"
-			className={`text-body flex h-7 items-center gap-2 ${pending ? "text-primary font-medium" : "text-muted-foreground"}`}
+			className={`text-body flex h-7 items-center gap-2 ${pending ? "text-primary-text font-medium" : "text-muted-foreground"}`}
 		>
 			<RiHandHeartLine aria-hidden="true" className="size-3.5 shrink-0" />
 			{APPROVAL_WORDS[props.item.status]}

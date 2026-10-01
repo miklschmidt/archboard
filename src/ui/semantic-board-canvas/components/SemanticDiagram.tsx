@@ -23,6 +23,7 @@ import {
 
 import { PRESENTATION_STEP_MS } from "@/shared/timing/timing";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
+import { DrillSigns } from "@/ui/semantic-board-canvas/components/DrillSigns";
 import { SemanticSubjectTip } from "@/ui/semantic-board-canvas/components/SemanticSubjectTip";
 import {
 	STAGE_CLASS,
@@ -576,6 +577,19 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 						reducedMotion={reducedMotion}
 						marks={`${presentationMarks(props.presenting).surface}${marks}`}
 					/>
+					{/* The gold signs on the cards that open a deeper board: a layer over the
+					    picture with the surface's own transform, so it moves with the camera. */}
+					{departure === null && props.presenting == null && (
+						<DrillSigns
+							atlas={drawing.atlas}
+							reading={reading}
+							arrival={`${drawing.board}:${drawing.variant.id}:${drawing.version}`}
+							scale={view.scale}
+							style={surfaceStyle}
+							className={surfaceClass(panning, reducedMotion, camera.instant)}
+							onOpen={openDown}
+						/>
+					)}
 				</div>
 				{/* oxlint-enable jsx-a11y/no-noninteractive-tabindex */}
 				<SemanticSubjectTip target={tip.shown} reading={reading} far={far} />

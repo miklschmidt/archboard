@@ -39,6 +39,12 @@ export {
 } from "@/ui/semantic-board-canvas/lib/address";
 export { SemanticStanding } from "@/ui/semantic-board-canvas/components/SemanticStanding";
 export {
+	PartSearch,
+	type PartHit,
+	type PartSearchProps,
+	type SearchedBoard,
+} from "@/ui/semantic-board-canvas/components/PartSearch";
+export {
 	announceSemanticBoardChange,
 	onSemanticBoardChange,
 } from "@/ui/semantic-board-canvas/lib/board-changes";

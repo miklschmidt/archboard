@@ -274,7 +274,7 @@ function ListingState(props: ListingStateProps): JSX.Element | null {
 				<button
 					type="button"
 					onClick={retry}
-					className="text-primary shrink-0 font-medium hover:underline"
+					className="text-primary-text shrink-0 font-medium hover:underline"
 				>
 					Retry
 				</button>
@@ -285,7 +285,11 @@ function ListingState(props: ListingStateProps): JSX.Element | null {
 		return (
 			<p style={MESSAGE_STYLE} className="text-body text-muted-foreground py-3 pr-4">
 				No board matches “{props.query.trim()}”.{" "}
-				<button type="button" onClick={clear} className="text-primary font-medium hover:underline">
+				<button
+					type="button"
+					onClick={clear}
+					className="text-primary-text font-medium hover:underline"
+				>
 					Clear
 				</button>
 			</p>

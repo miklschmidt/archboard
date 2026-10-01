@@ -23,6 +23,7 @@ import {
 import type { Sidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
 import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 import type { GroupSelection } from "@/ui/semantic-board-canvas/lib/groups";
+import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
 
 /** What the stage hands the sidebar. */
 interface StageSidebarView extends Omit<
@@ -60,6 +61,8 @@ interface StageSidebarView extends Omit<
 	readonly onOpenCode?: ((binding: CodeBinding) => void) | undefined;
 	/** How the inspector names memberships and selects one. */
 	readonly groupControls: GroupControls;
+	/** How the vault's kinds look, for the details panel. */
+	readonly look: KindLook;
 }
 
 /**
@@ -83,6 +86,8 @@ function SelectionPanel(props: { readonly view: StageSidebarView }): JSX.Element
 			onOpen={view.onOpenDown}
 			{...(onOpenCode === undefined ? {} : { onOpenCode })}
 			groups={view.groupControls}
+			look={view.look}
+			onPick={view.onPick}
 		/>
 	);
 }

@@ -24,6 +24,8 @@ interface TalkControlProps {
 	readonly voice: AgentVoiceView;
 	readonly actions: AgentActions;
 	readonly reducedMotion: boolean;
+	/** Whether the live control draws its small wave; the voice card replaces it where there is one. */
+	readonly showWave?: boolean;
 }
 
 /** Where the element saying why voice cannot start is, for the button it describes. */
@@ -110,14 +112,16 @@ function LiveVoice(
 	const muted = voice.stage === "muted";
 	return (
 		<div data-voice-controls="live" className="flex shrink-0 items-center gap-1.5">
-			<VoiceOutputWave
-				state={props.audible ? "speaking" : WAVE_STATES[voice.stage]}
-				level={voice.level.read}
-				active
-				size="icon"
-				reducedMotion={props.reducedMotion}
-				className="w-16 overflow-hidden"
-			/>
+			{props.showWave !== false && (
+				<VoiceOutputWave
+					state={props.audible ? "speaking" : WAVE_STATES[voice.stage]}
+					level={voice.level.read}
+					active
+					size="icon"
+					reducedMotion={props.reducedMotion}
+					className="w-16 overflow-hidden"
+				/>
+			)}
 			<output aria-live="polite" className="text-control w-[76px] font-medium">
 				{props.word}
 			</output>

@@ -53,7 +53,7 @@ function VoiceLines(props: VoiceLinesProps): JSX.Element | null {
 				<button
 					type="button"
 					onClick={showAll}
-					className="text-body text-primary -mx-1 min-h-6 self-start px-1 font-medium hover:underline"
+					className="text-body text-primary-text -mx-1 min-h-6 self-start px-1 font-medium hover:underline"
 				>
 					Show {earlier} earlier
 				</button>

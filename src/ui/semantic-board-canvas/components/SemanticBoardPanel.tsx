@@ -5,8 +5,9 @@
 // docs/design/pane-sidebar-hierarchy.md), one region per question:
 //
 // 1. What is this, and what does it change? The variants of a board a level
-//    down, the variant's own summary of its scope, and for a variant read
-//    against another the key to its marks with how much each one covers.
+//    down, and for a variant read against another the key to its marks with
+//    how much each one covers. (The variant's own summary of its scope is the
+//    featured header's, above the picture.)
 // 2. How do I read it? The author's walkthroughs first, the way into a first
 //    read; then the views, the reader's own; then the groups, the concerns the
 //    reader can pick out.
@@ -106,24 +107,6 @@ function variantSection(props: SemanticBoardPanelProps): ReactNode {
 				onChoose={onChooseVariant}
 			/>
 		</SidebarSection>
-	);
-}
-
-/**
- * What the variant on screen says it is about: the board's scope, in its
- * author's words.
- * @param props What the tab is assembled from.
- * @returns The summary, or null when the variant states none.
- */
-function summary(props: SemanticBoardPanelProps): ReactNode {
-	const text = props.reading?.variant?.summary;
-	if (text === undefined) {
-		return null;
-	}
-	return (
-		<p data-slot="semantic-board-summary" className="text-body whitespace-pre-line">
-			{text}
-		</p>
 	);
 }
 
@@ -242,7 +225,6 @@ function SemanticBoardPanel(props: SemanticBoardPanelProps): JSX.Element {
 		<div data-slot="semantic-board-panel" className="flex flex-col">
 			<SidebarRegion slot="semantic-board-panel-about">
 				{variantSection(props)}
-				{summary(props)}
 				{changes(props)}
 			</SidebarRegion>
 			<SidebarRegion slot="semantic-board-panel-reading">
