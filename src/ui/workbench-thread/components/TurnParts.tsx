@@ -25,7 +25,7 @@ function PromptBlock(props: { readonly item: ConversationDataParts["prompt"] }):
 	return (
 		<div
 			data-slot="prompt"
-			className="bg-muted border-border rounded-[4px] border px-3 py-2 text-[13.5px] leading-[21px] wrap-break-word whitespace-pre-wrap"
+			className="bg-muted border-border rounded-panel border px-3 py-2 text-[13.5px] leading-[21px] wrap-break-word whitespace-pre-wrap"
 		>
 			{props.item.text}
 		</div>
@@ -83,7 +83,7 @@ function PlanProgress(props: {
 	const { plan } = props;
 	const done = plan.steps.filter((step) => step.status === "completed").length;
 	return (
-		<section data-slot="plan" className="border-border rounded-[4px] border px-3 py-2.5">
+		<section data-slot="plan" className="border-border rounded-panel border px-3 py-2.5">
 			<h3 className="text-body mb-1.5 flex items-center justify-between font-semibold">
 				Plan
 				<span className="text-technical text-muted-foreground font-mono font-normal">

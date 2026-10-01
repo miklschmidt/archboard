@@ -42,14 +42,12 @@ import {
 	useRecordedViews,
 } from "@/ui/application/hooks/use-page-recording";
 import { PaneSubtitles } from "@/ui/application/components/PaneSubtitles";
-import { PartSearchHost } from "@/ui/application/components/PartSearchHost";
 import { useAgentSurfaces, type AgentSurfaces } from "@/ui/application/hooks/use-agent-surfaces";
 import { useWorkbench, type Workbench } from "@/ui/application/hooks/use-workbench";
 import { useWorkspaceAddressing } from "@/ui/application/hooks/use-workspace-addressing";
 import { useBesideOpening } from "@/ui/application/hooks/use-beside-opening";
 import {
 	BoardCatalogProvider,
-	buildOutline,
 	listedBoard,
 	listedBoardKey,
 	useBoardCatalog,
@@ -61,7 +59,7 @@ import { boardAddressOf, boardKeyFor } from "@/ui/semantic-board-canvas";
 import type { BoardListing } from "@/ui/types";
 import { RecordingStage } from "@/ui/walkthrough-recording";
 import { TalkControl } from "@/ui/workbench";
-import { AgentBarSlot, AgentPanelSlot } from "@/ui/application/components/AgentSurfaceSlots";
+import { AgentDockSlot, AgentPanelSlot } from "@/ui/application/components/AgentSurfaceSlots";
 import type { AgentContext } from "@/ui/workbench/contracts";
 import {
 	SETTINGS_TRIGGER_ID,
@@ -165,7 +163,7 @@ function useSubtitleOverlay(
 
 /** The agent's surfaces as the shell places them. */
 interface AgentSlots {
-	readonly bar: ReactNode;
+	readonly dock: ReactNode;
 	readonly panel: ReactNode;
 	readonly voiceControls: ReactNode;
 }
@@ -180,8 +178,8 @@ interface AgentSlotSources {
 }
 
 /**
- * The agent's surfaces drawn: the bar, the panel while it is open, and the
- * Talk control a presentation carries. The bar and the panel read what changes
+ * The agent's surfaces drawn: the dock, the panel while it is open, and the
+ * Talk control a presentation carries. The dock and the panel read what changes
  * while the agent works themselves, so these elements are made again only when
  * the person acts.
  * @param sources The agent, the workbench, the context and the motion preference.
@@ -191,8 +189,8 @@ function useAgentSlots(sources: AgentSlotSources): AgentSlots {
 	const { agent, workbench, context, reducedMotion } = sources;
 	return useMemo(
 		() => ({
-			bar: (
-				<AgentBarSlot
+			dock: (
+				<AgentDockSlot
 					agent={agent}
 					workbench={workbench}
 					context={context}
@@ -406,17 +404,13 @@ function ApplicationBody(): JSX.Element {
 	const narration = useNarration(workbench.setup, agent.voice, panes.list.activePaneId);
 	const overlay = useSubtitleOverlay(workbench, reducedMotion, recorder !== null);
 	const recorded = useRecordedViews(recorder, workbench, { narration, overlay });
-	const outline = useMemo(
-		() => buildOutline(catalog.listing.boards, catalog.listing.levels),
-		[catalog.listing.boards, catalog.listing.levels],
-	);
 	const mounted = usePaneViews({
 		panes,
 		theme,
 		readings,
 		reducedMotion,
 		onVariantChange,
-		outline,
+		boards: catalog.listing.boards,
 		openBoard: actions.selectBoard,
 		...recorded,
 	});
@@ -455,24 +449,6 @@ function ApplicationBody(): JSX.Element {
 		() => <VaultDiagnostics transport={transport} ask={agent.ask} />,
 		[transport, agent.ask],
 	);
-	const search = useMemo(
-		() => (
-			<PartSearchHost
-				boards={catalog.listing.boards}
-				paneId={panes.list.activePaneId}
-				boardKey={panes.active.status.boardKey}
-				readings={readings}
-				actions={actions}
-			/>
-		),
-		[
-			catalog.listing.boards,
-			panes.list.activePaneId,
-			panes.active.status.boardKey,
-			readings,
-			actions,
-		],
-	);
 	const recordedPane = recordedPaneOf(recorded.recording, panes.list, mounted);
 	if (recordedPane !== null) {
 		return (
@@ -487,9 +463,8 @@ function ApplicationBody(): JSX.Element {
 				view={view}
 				actions={actions}
 				diagnostics={diagnostics}
-				search={search}
 				voiceControls={slots.voiceControls}
-				agentBar={slots.bar}
+				agentDock={slots.dock}
 				agentPanel={slots.panel}
 				attachStage={fullscreen.attachStage}
 			/>

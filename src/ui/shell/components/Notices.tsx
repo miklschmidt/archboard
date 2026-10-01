@@ -18,7 +18,7 @@ import type { ShellActions, ShellNotice, ShellNoticeAction } from "@/ui/shell/ty
 import { IconButton } from "@/ui/shell/components/IconButton";
 
 /** A 24px outline action with two-pixel corners. */
-const ACTION_CLASS = "rounded-[2px] font-medium";
+const ACTION_CLASS = "rounded-chip font-medium";
 
 const LINK_BUTTON_CLASS = buttonVariants({
 	variant: "outline",

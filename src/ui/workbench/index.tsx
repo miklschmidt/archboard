@@ -1,8 +1,9 @@
-// The agent surfaces: the agent bar under the panes — the agent's state, Talk
-// and the composer — and the conversation panel beside them. Both read one
-// `AgentView` and act through one `AgentActions`.
+// The agent surfaces: the agent dock at the navigator's foot — the voice
+// circle, the agent's state, its plan and the composer — and the conversation
+// beside the navigator. Both read one `AgentView` and act through one
+// `AgentActions`.
 
-export { AgentBar, type AgentBarProps } from "@/ui/workbench/components/AgentBar";
+export { AgentDock, type AgentDockProps } from "@/ui/workbench/components/AgentDock";
 export { AgentPanel, type AgentPanelProps } from "@/ui/workbench/components/AgentPanel";
 export { TalkControl, type TalkControlProps } from "@/ui/workbench/components/TalkControl";
 export { agentStatus, type AgentStatus } from "@/ui/workbench/lib/agent-status";

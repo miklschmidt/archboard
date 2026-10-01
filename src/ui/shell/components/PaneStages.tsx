@@ -1,12 +1,18 @@
-// The centre: one or two panes side by side, each under its own claim banner.
-// The same element is the fullscreen root: presenting a pane hides the others
-// rather than remounting anything, so a pane's session never restarts.
+// The centre: one or two panes side by side. Each pane draws one header row,
+// and the shell hands it what the shell owns of that row: the pane's letter
+// while there are two, the pane's own controls, and under the row the claim
+// banner while an agent claims the board. The same element is the fullscreen
+// root: presenting a pane hides the others rather than remounting anything,
+// so a pane's session never restarts.
 
-import type { JSX, ReactNode } from "react";
+import { useMemo, type JSX, type ReactNode } from "react";
 
+import { PaneChromeContext, type PaneChrome } from "@/ui/components/PaneChrome";
 import { Separator } from "@/ui/components/separator";
 import { ClaimBanner } from "@/ui/shell/components/ClaimBanner";
+import { PaneControls, PaneLetter } from "@/ui/shell/components/PaneControls";
 import type { ShellActions, ShellPane, ShellPresentation } from "@/ui/shell/types/contracts";
+import { paneLetter } from "@/ui/shell/lib/pane-letters";
 import { PresentationBar } from "@/ui/shell/components/PresentationBar";
 import { RecoveryMessage } from "@/ui/shell/components/RecoveryMessage";
 
@@ -105,6 +111,8 @@ function PaneStages(props: PaneStagesProps): JSX.Element {
 					<PaneStage
 						key={pane.status.paneId}
 						pane={pane}
+						letter={paneLetter(index)}
+						paneCount={panes.length}
 						active={pane.status.paneId === activePaneId}
 						framed={panes.length > 1 && presented === null}
 						first={index === 0 || presented !== null}
@@ -118,20 +126,25 @@ function PaneStages(props: PaneStagesProps): JSX.Element {
 }
 
 /**
- * The stage's classes: the inset cobalt ring is drawn only while two panes
- * share the centre.
+ * The stage's classes: the inset gold ring is drawn only while two panes
+ * share the centre, as a layer over the pane so the header, the picture and
+ * the sidebar, each with a ground of its own, never cover it.
  * @param framed Whether the active stage should carry the ring.
  * @returns The class list.
  */
 function stageClass(framed: boolean): string {
 	return framed
-		? "data-active:ring-primary flex min-h-0 min-w-0 flex-1 flex-col outline-none data-active:ring-1 data-active:ring-inset"
-		: "flex min-h-0 min-w-0 flex-1 flex-col outline-none";
+		? "relative flex min-h-0 min-w-0 flex-1 flex-col outline-none data-active:after:pointer-events-none data-active:after:absolute data-active:after:inset-0 data-active:after:z-30 data-active:after:ring-1 data-active:after:ring-primary-text data-active:after:ring-inset"
+		: "relative flex min-h-0 min-w-0 flex-1 flex-col outline-none";
 }
 
 /** Inputs for one pane's stage. */
 interface PaneStageProps {
 	pane: ShellPane;
+	/** The pane's letter, by its place. */
+	letter: string;
+	/** How many panes share the centre. */
+	paneCount: number;
 	active: boolean;
 	/** Draw the focus ring on the active stage: only while two panes share the centre. */
 	framed: boolean;
@@ -141,16 +154,26 @@ interface PaneStageProps {
 }
 
 /**
- * One pane under its claim banner, with the separator that divides it from the
- * pane before. The pane itself is the application's. With two panes, the
- * active one carries a one-pixel inset cobalt ring; alone, the pane bar's
- * underline already says which pane is focused.
- * @param props The pane, whether it is first, framed, hidden and the actions.
+ * One pane, with the separator that divides it from the pane before, and the
+ * shell's parts of its header. The pane itself is the application's. With two
+ * panes, the active one carries a one-pixel inset gold ring and a filled
+ * letter.
+ * @param props The pane, its letter, whether it is first, framed, hidden and the actions.
  * @returns The mounted pane.
  */
 function PaneStage(props: PaneStageProps): JSX.Element {
-	const { actions, pane } = props;
+	const { actions, pane, letter, paneCount, active } = props;
 	const { paneId } = pane.status;
+	const chrome = useMemo<PaneChrome>(
+		() => ({
+			letter: paneCount > 1 ? <PaneLetter letter={letter} active={active} /> : null,
+			controls: (
+				<PaneControls pane={pane} letter={letter} paneCount={paneCount} actions={actions} />
+			),
+			notice: <ClaimBanner pane={pane} actions={actions} />,
+		}),
+		[pane, letter, paneCount, active, actions],
+	);
 	return (
 		<>
 			{!props.first && !props.hidden && <Separator orientation="vertical" />}
@@ -163,8 +186,7 @@ function PaneStage(props: PaneStageProps): JSX.Element {
 				tabIndex={-1}
 				className={stageClass(props.framed)}
 			>
-				<ClaimBanner pane={pane} actions={actions} />
-				{pane.stage}
+				<PaneChromeContext.Provider value={chrome}>{pane.stage}</PaneChromeContext.Provider>
 			</section>
 		</>
 	);

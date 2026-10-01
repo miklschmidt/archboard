@@ -108,7 +108,7 @@ function BoardOutline(props: BoardOutlineProps): JSX.Element {
 			aria-label="Boards"
 			tabIndex={-1}
 			style={TREE_STYLE}
-			className="flex flex-col py-1 outline-none"
+			className="flex flex-col py-2 outline-none"
 		>
 			{rows.map((row) => (
 				<OutlineRow

@@ -49,7 +49,7 @@ function VariantLine(props: RowHandlers & { readonly row: VariantRow }): JSX.Ele
 				match={row.match}
 				boardKey={row.variant.key}
 				title={row.variant.name}
-				className={`text-body ${row.selected ? "font-medium" : ""} ${muted}`}
+				className={`text-control ${row.selected ? "font-medium" : "font-normal"} ${muted}`}
 			/>
 			<TreeRowFacts>
 				<PaneChips letters={row.onScreen} />

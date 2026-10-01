@@ -43,8 +43,9 @@ interface PanelTitleProps {
 }
 
 /**
- * The part: its kind's icon in a gold ring, its name in the display face, and
- * what kind it is and which groups it belongs to.
+ * The part: its kind's icon in a gold ring, the ring the picture draws round
+ * what is picked out; its name in the display face, as the pane's header sets
+ * the board's; and what kind it is and which groups it belongs to.
  * @param props The part.
  * @returns The title block.
  */
@@ -55,15 +56,12 @@ function PanelTitle(props: PanelTitleProps): JSX.Element {
 		<div className="flex items-center gap-3 px-4 py-4">
 			<span
 				aria-hidden="true"
-				className="border-primary bg-primary/10 text-primary-text flex size-11 shrink-0 items-center justify-center rounded-full border-[1.5px]"
+				className="border-primary-text bg-primary-subtle text-primary-text flex size-10 shrink-0 items-center justify-center rounded-full border-[1.5px]"
 			>
-				<KindIcon look={props.look} kind={node.kind} className="size-[22px]" />
+				<KindIcon look={props.look} kind={node.kind} className="size-5" />
 			</span>
-			<div className="flex min-w-0 flex-1 flex-col gap-0.5">
-				<h2
-					className="font-display truncate text-[22px] leading-[26px] font-medium tracking-[0.09em]"
-					title={node.name}
-				>
+			<div className="flex min-w-0 flex-1 flex-col">
+				<h2 className="title-name truncate" title={node.name}>
 					{node.name}
 				</h2>
 				<p className="text-body text-muted-foreground truncate">
@@ -169,7 +167,7 @@ function CopyRow(props: CopyRowProps): JSX.Element {
 				aria-label={copied ? `Copied ${props.label}` : `Copy ${props.label}`}
 				data-slot="semantic-inspector-copy"
 				onClick={copy}
-				className="text-muted-foreground hover:bg-sidebar-accent hover:text-foreground -my-1 flex size-6 shrink-0 items-center justify-center rounded-[3px] [&_svg]:size-3.5"
+				className="text-muted-foreground hover:bg-sidebar-accent hover:text-foreground rounded-control -my-1 flex size-6 shrink-0 items-center justify-center [&_svg]:size-3.5"
 			>
 				{copied ? <RiCheckLine /> : <RiFileCopyLine />}
 			</button>
@@ -229,8 +227,11 @@ function Links(props: LinksProps): JSX.Element | null {
 	}
 	return (
 		<div data-slot="semantic-inspector-links" className="flex flex-col">
-			<h4 className="text-body mt-1 mb-0.5 font-medium">
-				{props.title} <span className="text-muted-foreground font-normal">{links.length}</span>
+			<h4 className="text-body mt-1 mb-0.5 flex items-baseline gap-1.5 font-medium">
+				{props.title}
+				<span className="text-technical text-muted-foreground font-mono font-normal">
+					{links.length}
+				</span>
 			</h4>
 			<ul className="-mx-2">
 				{links.map(({ edge, other }) => (
@@ -240,7 +241,7 @@ function Links(props: LinksProps): JSX.Element | null {
 							disabled={other === undefined}
 							data-slot="semantic-inspector-link"
 							onClick={() => other !== undefined && props.onPick(other.id)}
-							className="hover:bg-sidebar-accent/50 flex min-h-9 w-full items-center gap-2 rounded-[3px] px-2 py-1 text-left disabled:opacity-60"
+							className="hover:bg-sidebar-accent/50 rounded-control flex min-h-9 w-full items-center gap-2 px-2 py-1 text-left disabled:opacity-60"
 						>
 							<KindIcon
 								look={look}
@@ -252,9 +253,7 @@ function Links(props: LinksProps): JSX.Element | null {
 									{other?.name ?? "Unknown part"}
 								</span>
 								{edge.label !== undefined && (
-									<span className="text-technical text-muted-foreground truncate">
-										{edge.label}
-									</span>
+									<span className="text-body text-muted-foreground truncate">{edge.label}</span>
 								)}
 							</span>
 							<RelationshipChip look={look} kind={edge.kind} />

@@ -9,10 +9,10 @@
 
 import { memo, useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 
-import { boardAncestors, type OutlineNode } from "@/ui/board-catalog";
 import type { CatalogBoard } from "@/ui/types";
 
 import type { PanePresentRequest, SemanticPanePart } from "@/shared/semantic-pane-context";
+import { PartSearchHost } from "@/ui/application/components/PartSearchHost";
 import type { PaneCallbacks } from "@/ui/application/hooks/use-panes";
 import type { PickedSubject } from "@/ui/application/hooks/use-pane-reading";
 import { readingOf } from "@/ui/application/pane-reading";
@@ -77,10 +77,10 @@ interface ApplicationPaneProps {
 	overlay?: ReactNode;
 	/** Whether the person asked for reduced motion. */
 	reducedMotion: boolean;
-	/** The vault's boards as the navigator draws them: where the pane's board sits. */
-	outline: readonly OutlineNode<CatalogBoard>[];
+	/** The vault's boards, which the pane's search for a part reads. */
+	boards: readonly CatalogBoard[];
 	/**
-	 * Show a board above this pane's own, as a breadcrumb asks.
+	 * Show a board in this pane: where a part its search found is.
 	 * @param key The board key.
 	 */
 	onOpenBoard: (key: string) => void;
@@ -237,6 +237,7 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 					onReading={showReading}
 					onUserChanged={session.userChanged}
 					driven={props.step ?? asked}
+					openedKey={openedKey}
 					{...props}
 				/>
 			)}
@@ -265,6 +266,8 @@ interface PaneDiagramProps extends ApplicationPaneProps {
 	readonly onUserChanged: (part: SemanticPanePart) => void;
 	/** A walkthrough step somebody narrating it asked for, or the page recording it chose, or null. */
 	readonly driven: SemanticBoardStageProps["driven"];
+	/** The board key the server pointed this pane at. */
+	readonly openedKey: string | null;
 }
 
 /**
@@ -281,15 +284,26 @@ interface PaneDiagramProps extends ApplicationPaneProps {
  */
 const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Element {
 	const { address, openCode, onPick, onUserChanged, onViewChange, picked, view } = props;
-	const { outline, onOpenBoard } = props;
-	// The boards above this one in the navigator's outline, each a way up.
-	const ancestors = useMemo(
-		() =>
-			boardAncestors(outline, address.board).map((board) => ({
-				name: board.name,
-				open: (): void => onOpenBoard(board.key),
-			})),
-		[outline, address.board, onOpenBoard],
+	const { boards, onOpenBoard, openedKey, focused } = props;
+	// The pick a search makes is the person's hand, as a click on the picture is.
+	const onFound = useCallback(
+		(subject: PickedSubject): void => {
+			onUserChanged("selection");
+			onPick(subject);
+		},
+		[onPick, onUserChanged],
+	);
+	const search = useMemo(
+		() => (
+			<PartSearchHost
+				boards={boards}
+				active={focused}
+				boardKey={openedKey}
+				onPick={onFound}
+				onOpenBoard={onOpenBoard}
+			/>
+		),
+		[boards, focused, openedKey, onFound, onOpenBoard],
 	);
 	// The stage calls these from a click or a key and from nothing else: a walkthrough step
 	// highlights its subjects and reads through its own view without going through either, and
@@ -329,19 +343,10 @@ const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Elem
 			onNarrate={props.onNarrate}
 			overlay={props.overlay}
 			reducedMotion={props.reducedMotion}
-			ancestors={ancestors}
-			onOpenBoards={focusNavigator}
+			search={search}
 		/>
 	);
 });
-
-/**
- * Take the reader to the navigator's filter, where every board is, by the key
- * that does it from anywhere in the shell.
- */
-function focusNavigator(): void {
-	window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }));
-}
 
 /**
  * One picked subject, as the reading reports it: the id always, and whatever

@@ -200,7 +200,7 @@ function HeldPrompt(props: {
 	const edit = useCallback(() => actions.edit(message.id), [actions, message.id]);
 	return (
 		<div data-slot="held-prompt" data-state={message.state} className="flex flex-col gap-1.5">
-			<div className="bg-muted border-border rounded-[4px] border px-3 py-2 text-[13.5px] leading-[21px] whitespace-pre-wrap opacity-80">
+			<div className="bg-muted border-border rounded-panel border px-3 py-2 text-[13.5px] leading-[21px] whitespace-pre-wrap opacity-80">
 				{message.text}
 			</div>
 			<p
@@ -260,7 +260,7 @@ function QueuedPrompt(props: {
 	return (
 		<div
 			data-slot="queued-prompt"
-			className="border-border flex flex-col gap-1 rounded-[4px] border border-dashed px-3 py-2"
+			className="border-border rounded-panel flex flex-col gap-1 border border-dashed px-3 py-2"
 		>
 			<p className="text-[13.5px] leading-[21px] whitespace-pre-wrap">{entry.prompt}</p>
 			<div className="text-body text-muted-foreground flex items-center gap-1">

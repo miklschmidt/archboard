@@ -5,7 +5,7 @@ import type { JSX } from "react";
 
 import type { Adoption, SemanticWalkthrough } from "@/shared/semantic-board/index";
 import { cn } from "@/ui/components/class-names";
-import { LifecycleChip } from "@/ui/semantic-board-canvas/components/BoardPageParts";
+import { Lifecycle } from "@/ui/semantic-board-canvas/components/BoardPageParts";
 import type { OfferedVariant } from "@/ui/semantic-board-canvas/lib/board-document";
 import { variantOrder } from "@/ui/variant-lifecycle";
 
@@ -54,22 +54,17 @@ function VariantCard(props: VariantCardProps): JSX.Element {
 				data-slot="variant-card"
 				data-variant={variant.id}
 				onClick={() => onChoose?.(variant.id)}
-				className="border-border bg-card hover:border-foreground/30 aria-pressed:border-primary aria-pressed:ring-primary/40 flex h-full w-full min-w-0 flex-col gap-2 rounded-[8px] border p-4 text-left aria-pressed:ring-1"
+				className="border-border bg-card hover:border-foreground/25 aria-pressed:border-primary-text aria-pressed:bg-primary-subtle rounded-panel flex h-full w-full min-w-0 flex-col gap-2 border p-4 text-left"
 			>
 				<span className="flex items-center justify-between gap-3">
-					<span className="font-display truncate text-[22px] leading-6 font-semibold tracking-[0.06em] uppercase">
-						{variant.name}
-					</span>
-					<LifecycleChip lifecycle={variant.lifecycle} />
+					<span className="title-name truncate">{variant.name}</span>
+					<Lifecycle lifecycle={variant.lifecycle} />
 				</span>
 				<span className="text-control text-muted-foreground">
 					{variant.summary ?? "This variant has no summary."}
 				</span>
 				{drawn && (
-					<span className="text-body text-primary-text mt-auto flex items-center gap-1.5 pt-1 font-medium">
-						<span aria-hidden="true" className="bg-primary size-1.5 rounded-full" />
-						Drawn now
-					</span>
+					<span className="text-body text-primary-text mt-auto pt-1 font-medium">On screen</span>
 				)}
 			</button>
 		</li>
@@ -127,9 +122,9 @@ interface WalkthroughsPageProps {
 	/** Every explanation the variant states. */
 	readonly walkthroughs: readonly SemanticWalkthrough[];
 	/**
-	 * The person chose a beat of a walkthrough to read.
+	 * The person chose a step of a walkthrough to read.
 	 * @param walkthrough The walkthrough's id.
-	 * @param beat Which beat, counted from zero.
+	 * @param beat Which step, counted from zero.
 	 */
 	readonly onChoose: (walkthrough: string, beat: number) => void;
 }
@@ -140,7 +135,8 @@ interface WalkthroughCardProps extends WalkthroughsPageProps {
 }
 
 /**
- * One walkthrough: its name, how many beats it has, and the beats.
+ * One walkthrough: its name, how many steps it has, and the steps, each of
+ * which presents the walkthrough from there.
  * @param props The walkthrough and how to read it.
  * @returns The card.
  */
@@ -148,13 +144,11 @@ function WalkthroughCard(props: WalkthroughCardProps): JSX.Element {
 	const { walkthrough } = props;
 	const count = walkthrough.beats.length;
 	return (
-		<li className="border-border bg-card min-w-0 rounded-[8px] border p-4">
+		<li className="border-border bg-card rounded-panel min-w-0 border p-4">
 			<div className="flex items-center justify-between gap-3">
-				<h3 className="font-display truncate text-[22px] leading-6 font-semibold tracking-[0.06em] uppercase">
-					{walkthrough.name}
-				</h3>
+				<h3 className="title-name truncate">{walkthrough.name}</h3>
 				<span className="text-body text-muted-foreground shrink-0">
-					{count} {count === 1 ? "beat" : "beats"}
+					{count} {count === 1 ? "step" : "steps"}
 				</span>
 			</div>
 			{walkthrough.summary !== undefined && (
@@ -167,9 +161,11 @@ function WalkthroughCard(props: WalkthroughCardProps): JSX.Element {
 							type="button"
 							data-slot="walkthrough-beat"
 							onClick={() => props.onChoose(walkthrough.id, index)}
-							className="text-control hover:bg-muted/60 flex w-full items-baseline gap-3 rounded-[3px] px-1 py-2 text-left"
+							className="text-control hover:bg-muted/60 rounded-control -mx-2 flex min-h-9 w-[calc(100%+16px)] items-center gap-3 px-2 py-1.5 text-left"
 						>
-							<span className="text-primary-text w-5 shrink-0 tabular-nums">{index + 1}</span>
+							<span className="text-technical text-muted-foreground w-4 shrink-0 font-mono">
+								{index + 1}
+							</span>
 							<span className="min-w-0">{beat.heading}</span>
 						</button>
 					</li>

@@ -7,8 +7,9 @@ with `iconLibrary: remixicon`, so the CLI wrote `@remixicon/react` imports.
 Class merging is the registry's own `cn` engine, configured once in
 `src/ui/components/class-names.ts` (through its official `createCn`, the
 `utils` alias in `components.json`) so the Archboard type
-roles `text-kicker`, `text-technical`, `text-body`, `text-control`,
-`text-title` and `text-board` merge as font sizes rather than colours; the
+roles (`text-kicker`, `text-technical`, `text-body`, `text-control`,
+`text-title`, `text-nav`, `text-name` and the rest) merge as font sizes
+rather than colours; the
 components import `cn` from there.
 
 Root files here are the public component entrypoints. Product behaviour never

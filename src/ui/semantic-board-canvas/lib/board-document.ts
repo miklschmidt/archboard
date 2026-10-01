@@ -326,6 +326,8 @@ interface VariantReading {
 	 * the name opens none. Lists of variants put it first.
 	 */
 	readonly opens: string | null;
+	/** The board's level, as the board states it. */
+	readonly level: string;
 	/** The one this pane is showing, or null when the board has no such variant. */
 	readonly showing: OfferedVariant | null;
 	/** That variant whole, or null when the board has no such variant. */
@@ -433,7 +435,7 @@ function idItself(id: string): string {
  * @returns Its explanations, and how to name what they are about.
  */
 function readingOf(
-	family: Pick<VariantReading, "variants" | "adoptions" | "views" | "opens">,
+	family: Pick<VariantReading, "variants" | "adoptions" | "views" | "opens" | "level">,
 	variant: SemanticVariant,
 ): VariantReading {
 	/**
@@ -493,6 +495,7 @@ function readVariant(document: unknown, asked: string | undefined): VariantReadi
 		adoptions: reading.board.adoptions ?? [],
 		views: reading.board.views,
 		opens: named.ok ? named.variant.id : null,
+		level: reading.board.level,
 	};
 	const opened = addressedVariant(reading.board, asked);
 	// The board reads even when the variant asked for is not one of its own: the
@@ -516,7 +519,7 @@ function nothingHeld(): SelectedSubject | undefined {
 }
 
 /** A reading of a board whose asked-for variant is not one of its own. */
-const NOTHING_SHOWN: Omit<VariantReading, "variants" | "adoptions" | "views" | "opens"> =
+const NOTHING_SHOWN: Omit<VariantReading, "variants" | "adoptions" | "views" | "opens" | "level"> =
 	Object.freeze({
 		showing: null,
 		variant: null,

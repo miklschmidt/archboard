@@ -19,7 +19,7 @@ import {
 	type VariantsPageProps,
 	type WalkthroughsPageProps,
 } from "@/ui/semantic-board-canvas/components/BoardHistoryPages";
-import type { BoardTab } from "@/ui/semantic-board-canvas/components/FeaturedHeader";
+import type { BoardTab } from "@/ui/semantic-board-canvas/components/PaneHeader";
 import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
 import type { GroupNames } from "@/ui/semantic-board-canvas/lib/groups";
 
@@ -37,7 +37,7 @@ function PageFrame(props: {
 			data-tab={props.tab}
 			className="bg-background absolute inset-0 z-20 overflow-x-hidden overflow-y-auto"
 		>
-			<div className="px-6 py-4">{props.children}</div>
+			<div className="p-4">{props.children}</div>
 		</section>
 	);
 }
@@ -77,7 +77,7 @@ function PartCard(props: PartCardProps): JSX.Element {
 				data-slot="part-card"
 				data-part={node.id}
 				onClick={() => props.onPick(picked ? null : node.id)}
-				className="border-border bg-card hover:border-foreground/30 aria-pressed:border-primary aria-pressed:ring-primary/40 relative flex h-full w-full min-w-0 gap-3 rounded-[6px] border p-3 text-left aria-pressed:ring-1"
+				className="border-border bg-card hover:border-foreground/25 aria-pressed:border-primary-text aria-pressed:bg-primary-subtle rounded-panel relative flex h-full w-full min-w-0 gap-3 border p-3 text-left"
 			>
 				<KindIcon
 					look={look}
@@ -92,7 +92,7 @@ function PartCard(props: PartCardProps): JSX.Element {
 					<span className="text-title truncate pr-4" title={node.name}>
 						{node.name}
 					</span>
-					<span className="text-technical text-muted-foreground">{look.nodeName(node.kind)}</span>
+					<span className="text-body text-muted-foreground">{look.nodeName(node.kind)}</span>
 					{node.responsibility !== undefined && (
 						<span className="text-body text-foreground/80 mt-1.5 line-clamp-3">
 							{node.responsibility}
@@ -159,14 +159,17 @@ function RelationshipRow(props: RelationshipRowProps): JSX.Element {
 	const lit = selection === edge.id || selection === edge.from || selection === edge.to;
 	const picked = selection === edge.id;
 	return (
-		<li className={cn("border-border border-b", lit && "bg-primary/10")}>
+		<li className={cn("border-border border-b", lit && "bg-primary-subtle")}>
 			<button
 				type="button"
 				aria-pressed={picked}
 				data-slot="relationship-row"
 				data-relationship={edge.id}
 				onClick={() => props.onPick(picked ? null : edge.id)}
-				className="text-control hover:bg-muted/60 grid min-h-11 w-full grid-cols-[minmax(0,1fr)_16px_minmax(0,1fr)_minmax(0,1.3fr)_88px] items-center gap-3 px-3 py-1.5 text-left"
+				className={cn(
+					RELATIONSHIP_GRID,
+					"text-control hover:bg-muted/60 min-h-10 w-full py-1.5 text-left",
+				)}
 			>
 				<span className="truncate">{names.get(edge.from) ?? edge.from}</span>
 				<RiArrowRightLine aria-hidden="true" className="text-muted-foreground size-4" />
@@ -192,13 +195,32 @@ function RelationshipsPage(props: RelationshipsPageProps): JSX.Element {
 		return <Nothing>This variant has no relationships yet.</Nothing>;
 	}
 	return (
-		<ul className="-mx-3">
-			{edges.map((edge) => (
-				<RelationshipRow key={edge.id} {...props} edge={edge} names={names} />
-			))}
-		</ul>
+		<div className="-mx-4">
+			<div
+				aria-hidden="true"
+				className={cn(
+					RELATIONSHIP_GRID,
+					"text-body text-muted-foreground border-border h-row border-b font-semibold",
+				)}
+			>
+				<span>From</span>
+				<span />
+				<span>To</span>
+				<span>What it carries</span>
+				<span className="text-right">Kind</span>
+			</div>
+			<ul>
+				{edges.map((edge) => (
+					<RelationshipRow key={edge.id} {...props} edge={edge} names={names} />
+				))}
+			</ul>
+		</div>
 	);
 }
+
+/** The relationships table's columns: from, the arrow, to, what it carries, and its kind. */
+const RELATIONSHIP_GRID =
+	"grid grid-cols-[minmax(0,1fr)_16px_minmax(0,1fr)_minmax(0,1.3fr)_96px] items-center gap-3 px-4";
 
 /** Inputs for the page of whichever tab is open. */
 interface BoardPageProps {

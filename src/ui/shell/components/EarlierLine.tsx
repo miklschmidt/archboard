@@ -26,7 +26,11 @@ function EarlierLine(props: RowHandlers & { readonly row: EarlierRow }): JSX.Ele
 		<TreeRow {...props} label={`Earlier variants of ${row.board.name}, ${row.count}`}>
 			<TreeRowDisclosure row={row} name="earlier variants" onExpand={props.onExpand} />
 			<TreeRowMarker icon={RiHistoryLine} />
-			<TreeRowName text="Earlier" match={null} className="text-body text-muted-foreground" />
+			<TreeRowName
+				text="Earlier"
+				match={null}
+				className="text-control text-muted-foreground font-normal"
+			/>
 			<TreeRowFacts>{row.count}</TreeRowFacts>
 		</TreeRow>
 	);

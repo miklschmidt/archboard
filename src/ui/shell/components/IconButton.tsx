@@ -66,7 +66,7 @@ function IconButton(props: IconButtonProps): JSX.Element {
 				{shortcut !== undefined && (
 					<kbd
 						data-slot="kbd"
-						className="bg-background/15 text-technical ml-1 rounded-[2px] px-1 font-mono"
+						className="bg-background/15 text-technical rounded-chip ml-1 px-1 font-mono"
 					>
 						{shortcut}
 					</kbd>

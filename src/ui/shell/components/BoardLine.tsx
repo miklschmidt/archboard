@@ -131,7 +131,7 @@ function boardTitle(board: CatalogBoard): string {
 function boardNameClass(row: BoardRow): string {
 	const weight = row.reading ? "font-semibold" : "font-medium";
 	const quiet = row.dimmed && !row.selected;
-	return `text-control ${weight} ${quiet ? "text-muted-foreground" : ""}`;
+	return `text-nav ${weight} ${quiet ? "text-muted-foreground" : ""}`;
 }
 
 /**

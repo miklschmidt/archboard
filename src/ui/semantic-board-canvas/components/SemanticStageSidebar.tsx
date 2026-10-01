@@ -5,7 +5,7 @@
 // It is beside every state of the pane, not only a drawn one. An empty view is
 // left by choosing another view, and the board tab is where the views are.
 
-import { useCallback, type JSX } from "react";
+import { useCallback, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@/shared/code-target";
 import type { SemanticRender } from "@/ui/semantic-board-canvas/api/semantic-boards";
@@ -63,6 +63,8 @@ interface StageSidebarView extends Omit<
 	readonly groupControls: GroupControls;
 	/** How the vault's kinds look, for the details panel. */
 	readonly look: KindLook;
+	/** The search over every board's parts, at the sidebar's top. */
+	readonly search?: ReactNode;
 }
 
 /**
@@ -109,7 +111,11 @@ function SemanticStageSidebar(props: {
 		onPick(null);
 	}, [onPick]);
 	return (
-		<SemanticSidebar sidebar={view.sidebar} onClearSelection={selection === null ? null : clear}>
+		<SemanticSidebar
+			sidebar={view.sidebar}
+			onClearSelection={selection === null ? null : clear}
+			search={view.search}
+		>
 			<SidebarPanel tab="board">
 				<SemanticBoardPanel
 					answer={view.render.data}

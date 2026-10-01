@@ -1,6 +1,7 @@
-// The search at the top of the shell: parts by their names, what they are for
-// and where their code is, across every board of the vault. Choosing a result
-// opens its board and picks the part out.
+// The search at the top of a pane's sidebar, level with the navigator's search
+// for a board: parts by their names, what they are for and where their code
+// is, across every board of the vault. Choosing a result shows its board in
+// this pane and picks the part out, so it is explained right under the field.
 //
 // It only reads. The boards are read as the pages read them, on the same cache,
 // and only once somebody reaches for the field, so a shell nobody searches
@@ -134,6 +135,8 @@ const SHORTCUT = "Ctrl ⇧ F";
 interface PartSearchProps {
 	/** The boards of the vault. */
 	readonly boards: readonly SearchedBoard[];
+	/** Whether the shortcut reaches this field: its pane has focus. */
+	readonly listening: boolean;
 	/**
 	 * The person chose a part.
 	 * @param hit The part and the board it is on.
@@ -147,7 +150,7 @@ interface PartSearchProps {
  * @returns The field.
  */
 function PartSearch(props: PartSearchProps): JSX.Element {
-	const { boards, onChoose } = props;
+	const { boards, onChoose, listening } = props;
 	const input = useRef<HTMLInputElement>(null);
 	const listId = useId();
 	const [query, setQuery] = useState("");
@@ -169,6 +172,9 @@ function PartSearch(props: PartSearchProps): JSX.Element {
 	const open = focused && query.trim().length > 0;
 
 	useEffect(() => {
+		if (!listening) {
+			return undefined;
+		}
 		const onKey = (event: globalThis.KeyboardEvent): void => {
 			if (document.fullscreenElement !== null || !asksForSearch(event)) {
 				return;
@@ -179,7 +185,7 @@ function PartSearch(props: PartSearchProps): JSX.Element {
 		};
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
-	}, []);
+	}, [listening]);
 
 	const choose = useCallback(
 		(hit: PartHit | undefined): void => {
@@ -214,17 +220,14 @@ function PartSearch(props: PartSearchProps): JSX.Element {
 	return (
 		<div
 			data-slot="part-search"
-			className={cn(
-				"bg-background border-input relative flex h-8 w-full max-w-[26rem] min-w-0 items-center gap-2 rounded-[4px] border px-2.5",
-				focused && "border-ring ring-ring ring-1",
-			)}
+			className="border-border h-band relative flex shrink-0 items-center gap-2 border-b pr-3 pl-4"
 		>
-			<RiSearchLine aria-hidden="true" className="text-muted-foreground size-4 shrink-0" />
+			<RiSearchLine aria-hidden="true" className="text-muted-foreground size-3.5 shrink-0" />
 			<input
 				ref={input}
 				value={query}
-				placeholder="Search parts, purposes, or code…"
-				aria-label="Search the parts of every board"
+				placeholder="Find a part"
+				aria-label="Find a part on any board"
 				aria-keyshortcuts="Control+Shift+F"
 				role="combobox"
 				aria-expanded={open}
@@ -239,11 +242,15 @@ function PartSearch(props: PartSearchProps): JSX.Element {
 				onFocus={() => setFocused(true)}
 				onBlur={() => setFocused(false)}
 				onKeyDown={onKeyDown}
-				className="text-control placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent outline-none"
+				className="text-control placeholder:text-muted-foreground h-full min-w-0 flex-1 bg-transparent font-normal outline-none"
 			/>
+			{/* The shortcut reaches the field of the pane with focus, so only that field shows it. */}
 			<kbd
 				aria-hidden="true"
-				className="text-technical text-muted-foreground bg-muted shrink-0 rounded-[2px] px-1.5 py-px font-mono"
+				className={cn(
+					"text-technical text-muted-foreground border-border rounded-control shrink-0 border px-1 font-mono leading-4",
+					(focused || !listening) && "invisible",
+				)}
 			>
 				{SHORTCUT}
 			</kbd>
@@ -252,7 +259,7 @@ function PartSearch(props: PartSearchProps): JSX.Element {
 					id={listId}
 					role="listbox"
 					aria-label="Matching parts"
-					className="bg-popover text-popover-foreground border-border absolute top-full right-0 left-0 z-50 mt-1 overflow-hidden rounded-[4px] border py-1 shadow-md"
+					className="bg-popover text-popover-foreground border-border shadow-float absolute top-full right-0 left-0 z-40 max-h-[60vh] overflow-y-auto border-b py-1"
 				>
 					{results.map((hit, at) => (
 						<li key={`${hit.board.key}-${hit.id}`} role="option" aria-selected={at === active}>
@@ -261,17 +268,23 @@ function PartSearch(props: PartSearchProps): JSX.Element {
 								data-active={at === active ? "" : undefined}
 								onMouseDown={(event) => event.preventDefault()}
 								onClick={() => choose(hit)}
-								className="data-active:bg-sidebar-accent hover:bg-sidebar-accent/60 flex w-full flex-col px-3 py-1.5 text-left"
+								className="data-active:bg-sidebar-accent hover:bg-sidebar-accent/50 relative flex w-full flex-col px-4 py-1.5 text-left"
 							>
-								<span className="text-control truncate font-medium">{hit.name}</span>
-								<span className="text-technical text-muted-foreground truncate">
+								{at === active && (
+									<span
+										aria-hidden="true"
+										className="bg-primary-text absolute inset-y-1 left-0 w-0.5 rounded-full"
+									/>
+								)}
+								<span className="text-control truncate">{hit.name}</span>
+								<span className="text-body text-muted-foreground truncate">
 									{kinds?.[hit.kind]?.name ?? hit.kind} on {hit.board.name}
 								</span>
 							</button>
 						</li>
 					))}
 					{results.length === 0 && (
-						<li className="text-body text-muted-foreground px-3 py-2">No part matches.</li>
+						<li className="text-body text-muted-foreground px-4 py-2">No part matches.</li>
 					)}
 				</ul>
 			)}

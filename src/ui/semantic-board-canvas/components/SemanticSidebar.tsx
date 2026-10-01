@@ -1,5 +1,6 @@
-// The one column beside a semantic diagram: the board, and whatever is selected
-// on it.
+// The one column on the right of a semantic diagram: the search for a part at
+// its top, level with the navigator's search for a board, then the board, and
+// whatever is selected on it.
 //
 // One column rather than a key on one side and details on the other, and at
 // one width whichever tab is open, because the pane refits its picture when it
@@ -34,6 +35,8 @@ interface SemanticSidebarProps {
 	readonly children: ReactNode;
 	/** Let go of the selection, offered on the selection tab while there is one; null otherwise. */
 	readonly onClearSelection: (() => void) | null;
+	/** The search over every board's parts, at the top: what it finds is explained below it. */
+	readonly search?: ReactNode;
 }
 
 /**
@@ -115,7 +118,7 @@ function SidebarRail(props: { readonly sidebar: Sidebar }): JSX.Element {
 		open(tab);
 	}, [open, tab]);
 	return (
-		<div className="flex flex-col items-center gap-1 py-2">
+		<div className="flex flex-col items-center gap-1 py-1.5">
 			<Button
 				type="button"
 				variant="ghost"
@@ -124,7 +127,7 @@ function SidebarRail(props: { readonly sidebar: Sidebar }): JSX.Element {
 				data-slot="semantic-sidebar-toggle"
 				onClick={expand}
 			>
-				<RiSidebarUnfoldLine />
+				<RiSidebarUnfoldLine className="-scale-x-100" />
 			</Button>
 			{TABS.map((entry) => (
 				<RailButton key={entry.tab} entry={entry} sidebar={sidebar} />
@@ -162,7 +165,7 @@ function SidebarHeader(props: {
 	return (
 		// The labels' words start on the column the tab's content starts on, 16 px
 		// in, with each underline reaching 8 px past its words.
-		<div className="border-border flex h-10 shrink-0 items-center gap-1 border-b pr-2">
+		<div className="border-border h-band flex shrink-0 items-center gap-1 border-b pr-2">
 			<TabsList variant="underline" className="h-full border-b-0 pl-2">
 				{TABS.map((entry) => (
 					<TabsTrigger
@@ -197,7 +200,7 @@ function SidebarHeader(props: {
 				data-slot="semantic-sidebar-toggle"
 				onClick={sidebar.collapse}
 			>
-				<RiSidebarFoldLine />
+				<RiSidebarFoldLine className="-scale-x-100" />
 			</Button>
 		</div>
 	);
@@ -225,16 +228,19 @@ function SemanticSidebar(props: SemanticSidebarProps): JSX.Element {
 			data-slot="semantic-sidebar"
 			data-tab={sidebar.tab}
 			data-collapsed={sidebar.collapsed}
-			className="border-border bg-sidebar flex min-h-0 shrink-0 flex-col border-r in-data-presenting:hidden in-data-walkthrough:hidden"
+			className="border-border bg-sidebar flex min-h-0 shrink-0 flex-col border-l in-data-presenting:hidden in-data-walkthrough:hidden"
 			style={sidebar.collapsed ? undefined : OPEN_STYLE}
 		>
 			{sidebar.collapsed ? (
 				<SidebarRail sidebar={sidebar} />
 			) : (
-				<Tabs value={sidebar.tab} onValueChange={choose} className="min-h-0 flex-1 gap-0">
-					<SidebarHeader sidebar={sidebar} onClearSelection={props.onClearSelection} />
-					{props.children}
-				</Tabs>
+				<>
+					{props.search}
+					<Tabs value={sidebar.tab} onValueChange={choose} className="min-h-0 flex-1 gap-0">
+						<SidebarHeader sidebar={sidebar} onClearSelection={props.onClearSelection} />
+						{props.children}
+					</Tabs>
+				</>
 			)}
 		</aside>
 	);
