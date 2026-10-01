@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-01 03:24'
-updated_date: '2026-10-01 04:44'
+updated_date: '2026-10-01 10:33'
 labels:
   - frontend
   - performance
@@ -60,6 +60,8 @@ Not done here, proposed as follow-up: pane news (claims, activity, status) still
 I revised the fourth criterion after I found the seams. The first version asked for tests on every path. The module lint keeps usePanes and usePaneViews private to tests. A browser owner runs a minified build without component names, and a claim legitimately resizes the stage through its banner. So pane news is owned by the probe measurement, and the criterion now says so.
 
 Validation: bun run check passes. That covers lint, formatting, both type checks, 3742 module tests, 189 system tests, the repository checks and the 19 browser owners, among them codex-text-workbench and codex-live-voice.
+
+Since TASK-385.05, pane news has a test at the application entrypoint (src/ui/application/tests/pane-news.test.tsx), so it is no longer measured only with the probe.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
