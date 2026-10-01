@@ -3,8 +3,8 @@
 // Time stands still until the renderer says where it is now. Timers run at the
 // times they were due, frames are run when the renderer asks, and every
 // animation the browser runs by itself is paused and set to where this clock
-// says it is. A picture's traffic runs on each picture's own SVG clock, which
-// is paused and set too, carried from where it was last stood.
+// says it is. A picture's traffic runs on each picture's own clock, which is
+// carried from where it was last stood.
 //
 // A frame anything on the page asks of the browser, a library's included, is
 // run by this clock instead, at this clock's time. An animation on a timeline
@@ -12,13 +12,13 @@
 // records it as a violation instead of letting it pass.
 
 import {
+	pictureOf,
 	syncAnimation,
-	syncPicture,
+	syncPictureAnimation,
 	type DrivenAnimation,
-	type DrivenPicture,
-	type SvgAdoption,
+	type PictureAdoption,
 } from "@/ui/frame-clock/lib/animation-sync";
-import type { FrameClock } from "@/ui/frame-clock/lib/clock";
+import { PICTURE_CLOCK, type FrameClock } from "@/ui/frame-clock/lib/clock";
 
 /** Something that moved outside the clock. */
 interface ClockViolation {
@@ -37,12 +37,6 @@ interface AnimatedDocument {
 	 * @returns Them.
 	 */
 	readonly getAnimations: () => readonly DrivenAnimation[];
-	/**
-	 * Its pictures, outermost and nested.
-	 * @param selectors The selector for pictures.
-	 * @returns Them.
-	 */
-	readonly querySelectorAll: (selectors: "svg") => Iterable<DrivenPicture>;
 }
 
 /** A window, as far as the clock takes its frames away. */
@@ -75,7 +69,7 @@ class SteppedClock implements FrameClock {
 	#requests = 0;
 	readonly #frames = new Map<number, (time: number) => void>();
 	readonly #timers = new Map<number, Timer>();
-	readonly #pictures = new WeakMap<DrivenPicture, SvgAdoption>();
+	readonly #pictures = new WeakMap<object, PictureAdoption>();
 	readonly #animations = new WeakMap<DrivenAnimation, number>();
 	readonly #finished = new WeakSet<DrivenAnimation>();
 	readonly #noticed: ClockViolation[] = [];
@@ -141,7 +135,7 @@ class SteppedClock implements FrameClock {
 	 * @param root The picture's root.
 	 * @returns Its time, in seconds.
 	 */
-	svgTime(root: DrivenPicture): number {
+	pictureTime(root: object): number {
 		const { base, at } = this.#adoptionOf(root);
 		return base + (this.#time - at) / 1000;
 	}
@@ -151,7 +145,7 @@ class SteppedClock implements FrameClock {
 	 * @param root The picture's root.
 	 * @param seconds Where.
 	 */
-	setSvgTime(root: DrivenPicture, seconds: number): void {
+	setPictureTime(root: object, seconds: number): void {
 		this.#pictures.set(root, { base: seconds, at: this.#time });
 	}
 
@@ -180,7 +174,8 @@ class SteppedClock implements FrameClock {
 	}
 
 	/**
-	 * Stand every animation and picture clock in a document where this clock says it is.
+	 * Stand every animation in a document where this clock says it is: a
+	 * picture's traffic where its picture's clock stands, any other from when it began.
 	 * @param document The document.
 	 */
 	syncAnimations(document: AnimatedDocument): void {
@@ -191,11 +186,12 @@ class SteppedClock implements FrameClock {
 			finished: this.#finished,
 		};
 		for (const animation of document.getAnimations()) {
-			const outcome = syncAnimation(animation, book);
+			const picture = animation.id === PICTURE_CLOCK ? pictureOf(animation.effect?.target) : null;
+			const outcome =
+				picture === null
+					? syncAnimation(animation, book)
+					: syncPictureAnimation(animation, this.#adoptionOf(picture), book);
 			if (outcome !== null) this.#notice(outcome);
-		}
-		for (const root of document.querySelectorAll("svg")) {
-			if (root.ownerSVGElement === null) syncPicture(root, this.#adoptionOf(root), this.#time);
 		}
 	}
 
@@ -244,7 +240,7 @@ class SteppedClock implements FrameClock {
 	 * @param root The picture's root.
 	 * @returns Its adoption.
 	 */
-	#adoptionOf(root: DrivenPicture): SvgAdoption {
+	#adoptionOf(root: object): PictureAdoption {
 		const known = this.#pictures.get(root);
 		if (known !== undefined) return known;
 		const adopted = { base: 0, at: this.#time };
