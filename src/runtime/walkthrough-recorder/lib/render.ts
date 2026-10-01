@@ -117,9 +117,10 @@ const PAGE = `window[${JSON.stringify(REPLAY_PAGE_GLOBAL)}]`;
 /**
  * What the render's browser is started with, beyond what every private browser is.
  *
- * It draws in software, on purpose: a frame then depends on nothing but the talk. The screen is
- * larger than the window, or the window is held to the headless default. The page's timers and
- * frames must not slow down because the window is not looked at.
+ * It draws in software, on purpose: a frame then depends on nothing but the talk (ADR 0041 records
+ * the GPU measurement behind that). The screen is larger than the window, or the window is held to
+ * the headless default. The page's timers and frames must not slow down because the window is not
+ * looked at.
  * @returns The extra flags.
  */
 function renderFlags(): readonly string[] {

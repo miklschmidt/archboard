@@ -206,6 +206,24 @@ of one talk differed in 2 to 22 of 240 frames by a few pixels. With it, three
 renders of three were byte-identical (2026-09-30, the web-shop example, Chromium
 153).
 
+On 2026-10-01 the user kept software rendering after a measurement against GPU
+compositing (`--enable-gpu --disable-gpu-rasterization`, the flags TASK-378 used
+for tab capture). The talk had 1800 frames and rendered on six pages, on a
+machine with an RTX 4090 that Chromium really used:
+
+- Both flag sets were equally stable. In each set, 6 of 8 renders were
+  byte-identical, and the other 2 each had one stray frame. So software renders
+  are not always byte-identical either.
+- GPU frames differ from software frames: 612 of 1800 frames, the same ones in
+  every pair. Most differ by 2 to 5 levels inside the blurred box behind the
+  subtitles. In one camera glide, text moves by 1 to 2 px.
+- The GPU is not faster within the noise: 19.4 to 19.8 ms a frame in software,
+  18.2 to 19.9 ms with the GPU.
+- With the GPU hidden, the GPU flags fall back to software and match it.
+
+So the GPU buys no measurable speed, and a render made with a GPU differs from
+one made without. Software gives every machine the same picture of a talk.
+
 After each `frame(n)`, the CLI captures the frame with `Page.captureScreenshot`
 as a JPEG at quality 92 and writes it to ffmpeg. The next frame waits until
 ffmpeg takes it. Chromium also runs with `--disable-frame-rate-limit` and
