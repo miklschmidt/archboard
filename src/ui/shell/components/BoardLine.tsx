@@ -1,13 +1,14 @@
 // A board's row: the board's mark, its name, and the facts about the board as a
 // whole: which pane shows it while none of its variants is listed, whether
 // anything it describes is built, and how many proposals it has. An agent at
-// work on the board lights a lamp on its mark. The level is said on hover and
-// to assistive technology; the header names the level of the board being read.
+// work on the board lights a lamp on its mark. Hovering the row shows the
+// board's whole name with its level, and the row's name says the level to
+// assistive technology; the header names the level of the board being read.
 
 import { RiErrorWarningLine, RiFlowChart, RiGitBranchLine } from "@remixicon/react";
-import { useMemo, type CSSProperties, type JSX } from "react";
+import type { CSSProperties, JSX } from "react";
 
-import { ActivityLamp } from "@/ui/shell/components/ActivityLamp";
+import { InsideLamp, MarkerLamp } from "@/ui/shell/components/ActivityLamp";
 import { PaneChips } from "@/ui/shell/components/PaneChips";
 import {
 	TreeRow,
@@ -19,7 +20,10 @@ import {
 } from "@/ui/shell/components/TreeRow";
 import type { BoardRow } from "@/ui/shell/types/navigator-rows";
 import { disclosureX, nameX } from "@/ui/shell/lib/tree-grid";
-import type { AgentActivityEntry } from "@/ui/types";
+import type { AgentActivityEntry, CatalogBoard } from "@/ui/types";
+
+/** A read error starts under the name, which sits the same distance into the row at every depth. */
+const ERROR_STYLE: CSSProperties = { paddingLeft: nameX(0) - disclosureX(0) };
 
 /**
  * What the lamp says of an agent's work on a board (ADR 0022).
@@ -71,26 +75,16 @@ function boardRowName(row: BoardRow): string {
  */
 function BoardLamp(props: { readonly row: BoardRow }): JSX.Element | null {
 	const { activity, innerActivity } = props.row;
-	const place = "absolute -top-px -right-0.5";
 	if (activity !== null) {
 		return (
-			<ActivityLamp
+			<MarkerLamp
 				state={activity.claim === null ? "wrote" : "claimed"}
 				title={activityWords(activity)}
 				slot="agent-activity"
-				className={place}
 			/>
 		);
 	}
-	if (!innerActivity) return null;
-	return (
-		<ActivityLamp
-			state="inside"
-			title="An agent works on a board inside"
-			slot="agent-activity-inside"
-			className={place}
-		/>
-	);
+	return innerActivity ? <InsideLamp /> : null;
 }
 
 /**
@@ -110,24 +104,34 @@ function BoardLine(props: RowHandlers & { readonly row: BoardRow }): JSX.Element
 				text={row.label}
 				match={row.match}
 				boardKey={row.board.key}
-				title={row.board.name}
+				title={boardTitle(row.board)}
 				className={boardNameClass(row)}
 			/>
 			<BoardFacts row={row} />
-			<BoardError error={row.board.error} depth={row.depth} />
+			<BoardError error={row.board.error} />
 		</TreeRow>
 	);
 }
 
 /**
+ * What hovering a board's row shows: its whole name, folders included, and its level.
+ * @param board The board.
+ * @returns The words.
+ */
+function boardTitle(board: CatalogBoard): string {
+	return board.level === undefined ? board.name : `${board.name} · ${board.level}`;
+}
+
+/**
  * A board name's type: heavier while the active pane shows the board, quieter
- * while it only places a match.
+ * while it only places a match, unless it is the selected row.
  * @param row The row.
  * @returns The classes.
  */
 function boardNameClass(row: BoardRow): string {
 	const weight = row.reading ? "font-semibold" : "font-medium";
-	return `text-control ${weight} ${row.dimmed ? "text-muted-foreground" : ""}`;
+	const quiet = row.dimmed && !row.selected;
+	return `text-control ${weight} ${quiet ? "text-muted-foreground" : ""}`;
 }
 
 /**
@@ -156,23 +160,15 @@ function BoardFacts(props: { readonly row: BoardRow }): JSX.Element {
 
 /**
  * Why a board could not be read, under its name.
- * @param props The error and the row's depth.
+ * @param props The error.
  * @param props.error What the server said, or nothing for a readable board.
- * @param props.depth The row's depth, which places the line under the name.
  * @returns The line, or nothing.
  */
-function BoardError(props: {
-	readonly error: string | undefined;
-	readonly depth: number;
-}): JSX.Element | null {
-	const style = useMemo(
-		(): CSSProperties => ({ paddingLeft: nameX(props.depth) - disclosureX(props.depth) }),
-		[props.depth],
-	);
+function BoardError(props: { readonly error: string | undefined }): JSX.Element | null {
 	if (props.error === undefined) return null;
 	return (
 		<span
-			style={style}
+			style={ERROR_STYLE}
 			className="text-destructive text-technical flex w-full min-w-0 basis-full items-start gap-1"
 		>
 			<RiErrorWarningLine className="mt-px size-3 shrink-0" aria-hidden="true" />

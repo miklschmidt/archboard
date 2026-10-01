@@ -119,7 +119,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 	useFindShortcut(input);
 	const [query, setQuery] = useState("");
 	const panes = useMemo(() => paneMarks(view), [view]);
-	const expansion = useNavigatorExpansion(outline, panes);
+	const expansion = useNavigatorExpansion(outline, listing, panes);
 	const folded = foldQuery(query);
 	const rows = useMemo(
 		() =>

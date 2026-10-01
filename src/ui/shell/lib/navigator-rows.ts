@@ -5,10 +5,9 @@
 // the keyboard the same way. A board's variants come directly under it, one
 // depth in, before the boards it drills down to (variant-rows). Pure: no React.
 
-import type { OutlineNode } from "@/ui/board-catalog";
-import { sameBoard } from "@/ui/shell/lib/row-ids";
+import type { OutlineBoardNode, OutlineFolder, OutlineNode } from "@/ui/board-catalog";
 import { matchIn, type TextRange } from "@/ui/shell/lib/text-match";
-import { listsVariants, variantRows } from "@/ui/shell/lib/variant-rows";
+import { listsVariants, paneOnBoard, variantRows } from "@/ui/shell/lib/variant-rows";
 import type {
 	BoardRow,
 	FolderRow,
@@ -22,13 +21,7 @@ import type {
 import type { AgentActivityEntry, CatalogBoard } from "@/ui/types";
 
 /** A board node of the outline. */
-type BoardNode = Extract<OutlineNode<CatalogBoard>, { kind: "board" }>;
-
-/** A folder node of the outline. */
-type FolderNode = Extract<OutlineNode<CatalogBoard>, { kind: "folder" }>;
-
-/** A row a pane can show, not yet told which panes show it. */
-type ShowableRow = Exclude<Unplaced<NavigatorRow>, Unplaced<FolderRow> | { kind: "earlier" }>;
+type BoardNode = OutlineBoardNode<CatalogBoard>;
 
 /**
  * The agent activity on one board.
@@ -161,7 +154,7 @@ function boardRow(
 		expandable,
 		expanded: open && expandable,
 		drafts: board.variants.filter((variant) => variant.lifecycle === "draft").length,
-		reading: inputs.panes.some((pane) => pane.active && sameBoard(pane.board, board.name)),
+		reading: inputs.panes.some((pane) => pane.active && paneOnBoard(pane, board)),
 		activity: activityOn(inputs, board),
 		innerActivity: !open && anyActivity(inputs, node.children),
 		unbuilt: unbuiltBoard(board),
@@ -196,7 +189,7 @@ function boardRows(
  */
 function folderRows(
 	inputs: NavigatorRowInputs,
-	node: FolderNode,
+	node: OutlineFolder<CatalogBoard>,
 	at: RowPlace,
 ): Unplaced<NavigatorRow>[] {
 	const open = isOpen(inputs, node);
@@ -236,11 +229,15 @@ function nodeRows(
 }
 
 /**
- * Whether a row can be what a pane shows: a board or a variant.
+ * Whether a row is something a pane can show, a board or a variant, rather
+ * than a row that only gathers others, a folder or an Earlier row. Every place
+ * that treats the two apart asks this.
  * @param row The row.
  * @returns True for a board or a variant row.
  */
-function showable(row: Unplaced<NavigatorRow>): row is ShowableRow {
+function paneCanShow<Row extends Pick<NavigatorRow, "kind">>(
+	row: Row,
+): row is Extract<Row, { kind: "board" | "variant" }> {
 	return row.kind === "board" || row.kind === "variant";
 }
 
@@ -252,9 +249,9 @@ function showable(row: Unplaced<NavigatorRow>): row is ShowableRow {
  * @returns The row's id, or null when neither is drawn.
  */
 function paneRowId(rows: readonly Unplaced<NavigatorRow>[], pane: PaneMark): string | null {
-	const shown = rows.filter(showable);
+	const shown = rows.filter(paneCanShow);
 	const variant = shown.find((row) => row.kind === "variant" && row.variant.key === pane.key);
-	const board = shown.find((row) => row.kind === "board" && sameBoard(pane.board, row.board.name));
+	const board = shown.find((row) => row.kind === "board" && paneOnBoard(pane, row.board));
 	return (variant ?? board)?.id ?? null;
 }
 
@@ -313,7 +310,7 @@ function placeRows(
 		const position = (seen.get(group) ?? 0) + 1;
 		seen.set(group, position);
 		const place = { position, siblings: counts.get(group) ?? position };
-		if (!showable(row)) return { ...row, ...place };
+		if (!paneCanShow(row)) return { ...row, ...place };
 		return { ...row, ...place, ...(shown.get(row.id) ?? nowhere) };
 	});
 }
@@ -344,7 +341,7 @@ function rowOpen(row: NavigatorRow): boolean | undefined {
  * @returns True for the active pane's row.
  */
 function rowSelected(row: NavigatorRow): boolean {
-	return (row.kind === "board" || row.kind === "variant") && row.selected;
+	return paneCanShow(row) && row.selected;
 }
 
 /**
@@ -367,4 +364,4 @@ function filterCount(
 	return { found: found.size, total };
 }
 
-export { filterCount, navigatorRows, rowOpen, rowSelected };
+export { filterCount, navigatorRows, paneCanShow, rowOpen, rowSelected };

@@ -11,7 +11,7 @@ import { pathIds, type OutlineNode } from "@/ui/board-catalog";
 import { useOutlineExpansion } from "@/ui/shell/hooks/use-outline-expansion";
 import { readingRowIds } from "@/ui/shell/lib/variant-rows";
 import type { PaneMark } from "@/ui/shell/types/navigator-rows";
-import type { CatalogBoard } from "@/ui/types";
+import type { BoardListing, CatalogBoard } from "@/ui/types";
 
 const NO_IDS: ReadonlySet<string> = new Set();
 
@@ -42,16 +42,18 @@ interface NavigatorExpansion {
  * The rows on the way to what the panes show, and the board rows themselves:
  * what a board drills down to is where a reader is most likely to go next.
  * @param outline The outline.
+ * @param listing The listing the outline was built from.
  * @param panes The panes.
  * @returns The ids.
  */
 function shownPathIds(
 	outline: readonly OutlineNode<CatalogBoard>[],
+	listing: BoardListing,
 	panes: readonly PaneMark[],
 ): Set<string> {
 	return new Set(
 		panes.flatMap((pane) =>
-			pane.board === null ? [] : [...pathIds(outline, pane.board), ...readingRowIds(outline, pane)],
+			pane.board === null ? [] : [...pathIds(outline, pane.board), ...readingRowIds(listing, pane)],
 		),
 	);
 }
@@ -59,11 +61,13 @@ function shownPathIds(
 /**
  * The navigator's open rows.
  * @param outline The outline.
+ * @param listing The listing the outline was built from.
  * @param panes The panes.
  * @returns The expansion.
  */
 function useNavigatorExpansion(
 	outline: readonly OutlineNode<CatalogBoard>[],
+	listing: BoardListing,
 	panes: readonly PaneMark[],
 ): NavigatorExpansion {
 	const topBoards = useMemo(
@@ -78,7 +82,7 @@ function useNavigatorExpansion(
 	const openByDefault = useCallback((id: string): boolean => topBoards.has(id), [topBoards]);
 	const chosen = useOutlineExpansion(openByDefault);
 	const shown = panes.map((pane) => pane.key ?? "").join("\n");
-	const path = useMemo(() => shownPathIds(outline, panes), [outline, panes]);
+	const path = useMemo(() => shownPathIds(outline, listing, panes), [outline, listing, panes]);
 	const [collapses, setCollapses] = useState<PathCollapses>({ shown, ids: NO_IDS });
 	const closedOnPath = collapses.shown === shown ? collapses.ids : NO_IDS;
 	const expanded = useCallback(

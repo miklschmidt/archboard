@@ -7,7 +7,7 @@
 // Earlier row, Enter opens or closes it. Pure: the component carries the
 // answer out.
 
-import { rowOpen } from "@/ui/shell/lib/navigator-rows";
+import { paneCanShow, rowOpen } from "@/ui/shell/lib/navigator-rows";
 import type { NavigatorRow } from "@/ui/shell/types/navigator-rows";
 
 /** What one key asks the tree to do. */
@@ -98,10 +98,8 @@ function enterAction(
 ): OutlineKeyAction | null {
 	const row = rows[index];
 	if (row === undefined) return null;
-	if (row.kind === "folder" || row.kind === "earlier") {
-		return { kind: "expand", id: row.id, open: !row.expanded };
-	}
-	return { kind: "open", row, beside: event.altKey };
+	if (paneCanShow(row)) return { kind: "open", row, beside: event.altKey };
+	return { kind: "expand", id: row.id, open: !row.expanded };
 }
 
 /** A key with what it is pressed with. */

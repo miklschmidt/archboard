@@ -6,7 +6,8 @@
 import type { JSX } from "react";
 
 import { BoardLine } from "@/ui/shell/components/BoardLine";
-import { EarlierLine, FolderLine } from "@/ui/shell/components/FolderLine";
+import { EarlierLine } from "@/ui/shell/components/EarlierLine";
+import { FolderLine } from "@/ui/shell/components/FolderLine";
 import type { RowHandlers } from "@/ui/shell/components/TreeRow";
 import { VariantLine } from "@/ui/shell/components/VariantLine";
 import type { NavigatorRow } from "@/ui/shell/types/navigator-rows";

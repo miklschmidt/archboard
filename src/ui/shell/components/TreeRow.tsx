@@ -17,10 +17,39 @@ import {
 	type ReactNode,
 } from "react";
 
-import { rowOpen, rowSelected } from "@/ui/shell/lib/navigator-rows";
+import { paneCanShow, rowOpen, rowSelected } from "@/ui/shell/lib/navigator-rows";
 import type { NavigatorRow } from "@/ui/shell/types/navigator-rows";
-import { disclosureX, FACTS_INSET, guideX, ROW_GUTTER } from "@/ui/shell/lib/tree-grid";
+import {
+	DISCLOSURE_WIDTH,
+	disclosureX,
+	FACTS_GAP,
+	FACTS_INSET,
+	guideX,
+	MARKER_WIDTH,
+	NAME_GAP,
+	ROW_GUTTER,
+	TARGET_SIZE,
+} from "@/ui/shell/lib/tree-grid";
 import type { TextRange } from "@/ui/shell/lib/text-match";
+
+/** The disclosure column, as wide as the grid says. */
+const DISCLOSURE_STYLE: CSSProperties = { width: DISCLOSURE_WIDTH };
+
+/** A chevron is a full pointer target that reaches past its column on both sides. */
+const CHEVRON_STYLE: CSSProperties = {
+	width: TARGET_SIZE,
+	height: TARGET_SIZE,
+	marginInline: (DISCLOSURE_WIDTH - TARGET_SIZE) / 2,
+};
+
+/** The marker column, as wide as the grid says. */
+const MARKER_STYLE: CSSProperties = { width: MARKER_WIDTH };
+
+/** The name keeps the grid's gap from the marker column. */
+const NAME_STYLE: CSSProperties = { marginLeft: NAME_GAP };
+
+/** The facts keep the grid's gap from the name. */
+const FACTS_STYLE: CSSProperties = { marginLeft: FACTS_GAP };
 
 /** What the tree gives every row. */
 interface RowHandlers {
@@ -65,8 +94,8 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 	);
 	const handleClick = useCallback(
 		(event: MouseEvent<HTMLDivElement>) => {
-			if (row.kind === "folder" || row.kind === "earlier") onExpand(row.id, !row.expanded);
-			else onOpen(row, event.altKey);
+			if (paneCanShow(row)) onOpen(row, event.altKey);
+			else onExpand(row.id, !row.expanded);
 		},
 		[row, onOpen, onExpand],
 	);
@@ -162,14 +191,17 @@ function TreeRowDisclosure(props: {
 		},
 		[id, expanded, onExpand],
 	);
-	if (expanded === undefined) return <span aria-hidden="true" className="h-[18px] w-4 shrink-0" />;
+	if (expanded === undefined) {
+		return <span aria-hidden="true" style={DISCLOSURE_STYLE} className="h-[18px] shrink-0" />;
+	}
 	return (
 		<button
 			type="button"
 			tabIndex={-1}
 			aria-label={`${expanded ? "Collapse" : "Expand"} ${props.name}`}
 			onClick={handleClick}
-			className="text-muted-foreground hover:text-foreground -mx-1 -my-[3px] flex size-6 shrink-0 items-center justify-center rounded-[2px]"
+			style={CHEVRON_STYLE}
+			className="text-muted-foreground hover:text-foreground -my-[3px] flex shrink-0 items-center justify-center rounded-[2px]"
 		>
 			<RiArrowRightSLine
 				className={`size-3.5 transition-transform motion-reduce:transition-none ${expanded ? "rotate-90" : ""}`}
@@ -181,16 +213,14 @@ function TreeRowDisclosure(props: {
 
 /**
  * The marker column: what kind of row this is, and what is drawn over it.
- * @param props The icon, its tone and title, and what is drawn over it.
- * @param props.icon The icon.
- * @param props.tone Classes for the icon's colour.
+ * @param props The icon and its title, or a mark of the row's own, and what is drawn over it.
+ * @param props.icon The icon, drawn muted; absent when the children draw the mark.
  * @param props.title What the icon says, on hover.
- * @param props.children Something drawn over the icon's corner, such as an agent at work.
+ * @param props.children A mark of the row's own, or something drawn over the icon's corner, such as an agent at work.
  * @returns The column.
  */
 function TreeRowMarker(props: {
-	readonly icon: RemixiconComponentType;
-	readonly tone?: string;
+	readonly icon?: RemixiconComponentType;
 	readonly title?: string | undefined;
 	readonly children?: ReactNode;
 }): JSX.Element {
@@ -198,9 +228,10 @@ function TreeRowMarker(props: {
 	return (
 		<span
 			title={props.title}
-			className="relative flex h-[18px] w-4 shrink-0 items-center justify-center"
+			style={MARKER_STYLE}
+			className="relative flex h-[18px] shrink-0 items-center justify-center"
 		>
-			<Icon className={`size-3.5 ${props.tone ?? "text-muted-foreground"}`} aria-hidden="true" />
+			{Icon !== undefined && <Icon className="text-muted-foreground size-3.5" aria-hidden="true" />}
 			{props.children}
 		</span>
 	);
@@ -227,7 +258,8 @@ function TreeRowName(props: {
 		<span
 			data-board-key={props.boardKey}
 			title={props.title}
-			className={`ml-1.5 line-clamp-2 min-w-0 flex-1 leading-[18px] wrap-break-word ${props.className}`}
+			style={NAME_STYLE}
+			className={`line-clamp-2 min-w-0 flex-1 leading-[18px] wrap-break-word ${props.className}`}
 		>
 			<Matched text={props.text} match={props.match} />
 		</span>
@@ -263,7 +295,10 @@ function Matched(props: { readonly text: string; readonly match: TextRange | nul
  */
 function TreeRowFacts(props: { readonly children: ReactNode }): JSX.Element {
 	return (
-		<span className="text-technical text-muted-foreground ml-2 flex h-[18px] shrink-0 items-center gap-1.5 font-mono">
+		<span
+			style={FACTS_STYLE}
+			className="text-technical text-muted-foreground flex h-[18px] shrink-0 items-center gap-1.5 font-mono"
+		>
 			{props.children}
 		</span>
 	);

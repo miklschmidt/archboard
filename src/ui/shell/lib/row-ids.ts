@@ -1,18 +1,8 @@
-// How the navigator names its rows and compares board names. A board row's
-// id is the outline's id for the board, so the path the outline reports
-// opens exactly the rows it names. Pure.
+// How the navigator names its rows. A board row's id is the outline's id for
+// the board, so the path the outline reports opens exactly the rows it names.
+// Pure.
 
 import type { CatalogBoard } from "@/ui/types";
-
-/**
- * Two board names are the same board: the server folds keys to lower case.
- * @param one A name or key.
- * @param other Another.
- * @returns True when they name the same board.
- */
-function sameBoard(one: string | null, other: string): boolean {
-	return one !== null && one.toLowerCase() === other.toLowerCase();
-}
 
 /**
  * The id of a board's row: the outline's id for it.
@@ -41,4 +31,4 @@ function earlierRowId(board: CatalogBoard): string {
 	return `earlier:${board.key}`;
 }
 
-export { boardRowId, earlierRowId, sameBoard, variantRowId };
+export { boardRowId, earlierRowId, variantRowId };
