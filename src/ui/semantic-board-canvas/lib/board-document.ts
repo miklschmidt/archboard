@@ -315,6 +315,12 @@ interface VariantReading {
 	 * variant's narrative anyway, so the summary costs no request.
 	 */
 	readonly views: readonly SemanticView[];
+	/**
+	 * The id of the variant the board's bare name opens: its current variant, or
+	 * on a board nobody has built the draft no other draft came before. Null when
+	 * the name opens none. Lists of variants put it first.
+	 */
+	readonly opens: string | null;
 	/** The one this pane is showing, or null when the board has no such variant. */
 	readonly showing: OfferedVariant | null;
 	/** That variant whole, or null when the board has no such variant. */
@@ -416,14 +422,12 @@ function idItself(id: string): string {
 
 /**
  * What one variant says beyond its picture.
- * @param variants Every variant of the board it belongs to.
- * @param views Every view of that board.
+ * @param family The board's variants and views, and which variant its name opens.
  * @param variant The variant the pane is showing.
  * @returns Its explanations, and how to name what they are about.
  */
 function readingOf(
-	variants: readonly OfferedVariant[],
-	views: readonly SemanticView[],
+	family: Pick<VariantReading, "variants" | "views" | "opens">,
 	variant: SemanticVariant,
 ): VariantReading {
 	/**
@@ -443,8 +447,7 @@ function readingOf(
 		return selectedSubject(variant, id);
 	}
 	return {
-		variants,
-		views,
+		...family,
 		showing: offeredVariant(variant),
 		variant,
 		walkthroughs: variant.content.walkthroughs,
@@ -478,15 +481,17 @@ function readVariant(document: unknown, asked: string | undefined): VariantReadi
 	if (!reading.ok) {
 		return null;
 	}
-	const variants = reading.board.variants.map(offeredVariant);
-	const { views } = reading.board;
+	const named = addressedVariant(reading.board, undefined);
+	const family = {
+		variants: reading.board.variants.map(offeredVariant),
+		views: reading.board.views,
+		opens: named.ok ? named.variant.id : null,
+	};
 	const opened = addressedVariant(reading.board, asked);
 	// The board reads even when the variant asked for is not one of its own: the
 	// picker is how somebody recovers from an address naming a variant that has
 	// been renamed, so the choice has to be on screen for them to make it.
-	return opened.ok
-		? readingOf(variants, views, opened.variant)
-		: { variants, views, ...NOTHING_SHOWN };
+	return opened.ok ? readingOf(family, opened.variant) : { ...family, ...NOTHING_SHOWN };
 }
 
 /** What a selected subject is, for whoever reports it rather than draws it. */
@@ -504,7 +509,7 @@ function nothingHeld(): SelectedSubject | undefined {
 }
 
 /** A reading of a board whose asked-for variant is not one of its own. */
-const NOTHING_SHOWN: Omit<VariantReading, "variants" | "views"> = Object.freeze({
+const NOTHING_SHOWN: Omit<VariantReading, "variants" | "views" | "opens"> = Object.freeze({
 	showing: null,
 	variant: null,
 	walkthroughs: [],
