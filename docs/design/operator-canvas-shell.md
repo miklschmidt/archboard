@@ -95,7 +95,9 @@ inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
      board's own statement of its scope. On a variant read against another,
      the changes: which variant it is compared with, one row for each standing
      that occurs with the pin the picture draws and how many subjects stand
-     so, and the control that marks the changes on the picture.
+     so, and the control that marks the changes on the picture. The counts are
+     of what the picture draws, so a view in which nothing differs says so of
+     the view and keeps the control.
   2. **How do I read it?** The walkthroughs, each with its number of steps and
      Narrate beside it. Choosing one presents it (see below). Then the views,
      with Everything first and the summary of the view on screen under its
@@ -117,11 +119,12 @@ inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
 
 Both tabs share one frame. Text starts 16 px from either edge of the sidebar,
 and so do the tab labels. A section heading is 12 px semibold in the muted
-colour and in sentence case. The sidebar has no small uppercase labels. A
-choice is a row at least 28 px high whose fill reaches 8 px past the text, in
-the sidebar accent that the navigator marks its rows with. A long name wraps
-rather than being cut off. The spacing steps are 4, 8 and
-16 px.
+colour and in sentence case. No section heading is a small uppercase label.
+Every row is at least 28 px high, and a long name wraps rather than being cut
+off. A choice's fill reaches 8 px past its text. The choice on screen takes the
+reading tone and a cobalt bar, as the navigator's selected row does. A row
+under the pointer takes half the reading tone and no bar, so it never looks
+chosen. The spacing steps are 4, 8 and 16 px.
 
 Picking something out opens the selection tab. Letting go gives back the tab
 that was open before. The sidebar keeps its width whichever tab is open, so a

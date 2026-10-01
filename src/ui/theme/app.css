@@ -44,9 +44,12 @@
 	--font-heading: var(--font-sans);
 	--tracking-wordmark: -0.02027027027em;
 	/* Type roles (TASK-150.08). Chrome uses only the first six sizes; a drawn
-	   board keeps its own. kicker: section labels. technical: identifiers, paths,
-	   versions, counts and times, always in the mono face. body: prose and row
-	   labels. control: buttons, tabs, fields. title: region and dialog titles.
+	   board keeps its own. kicker: the line over a presented walkthrough's step
+	   heading that says where the step is; no section heading uses it
+	   (TASK-383). technical: identifiers, paths, versions, counts and times,
+	   always in the mono face. body: prose and row labels, and a section
+	   heading in semibold. control: buttons, tabs, fields. title: region and
+	   dialog titles.
 	   board: the board name in the header (named so it cannot collide with
 	   the text-primary colour utility). presentation (TASK-250): a presented
 	   walkthrough's step heading, set in the picture's frame, not the chrome. */
