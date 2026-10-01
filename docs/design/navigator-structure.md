@@ -244,10 +244,10 @@ text edge.
 | Variant | Its space                                     | Its lifecycle: a check for current, a branch for a draft, a clock for historical, an archive box for shelved | 12 px, regular; muted for historical and shelved       | Pane letters                                                                    |
 | Earlier | Always                                        | A history glyph                                                                                              | "Earlier", 12 px, muted                                | How many variants it holds                                                      |
 
-Every row has a marker, so the marker column is a column. A board's level and
-a variant's lifecycle are said on hover and to assistive technology. The
-header names the level of the board being read. A board row no longer
-repeats its level. The level was the same word on most rows of a folder and
+Every row has a marker, so the marker column is a column. Hovering a board's
+name shows its whole name and its level, and hovering a variant's mark names
+its lifecycle. Both are said to assistive technology. The header names the
+level of the board being read. A board row no longer repeats its level. The level was the same word on most rows of a folder and
 took 46 px from every name.
 
 ### Variants
@@ -266,8 +266,9 @@ and their place first under the board.
   variant they are compared with. History never nests, so adoptions make no
   staircase.
 - **Historical and shelved variants wait behind one Earlier row**, newest
-  first. The row opens when a pane shows one of them, or when the filter
-  finds one.
+  first. The row opens when a pane shows one of them. While a filter is on,
+  the variants it finds are listed directly under their board, in the same
+  order, with no Earlier row.
 - **A board lists its variants while it has more than one, and one of them is
   a proposal or a pane shows the board.** A board has one disclosure, and
   opening it lists its variants and its child boards together. A board
@@ -275,6 +276,11 @@ and their place first under the board.
   Walking a drill chain then shows the drill chain.
 - **The draft count stays on the board row**, as Figma keeps a branch count on
   a file, so a reader sees which boards carry proposals without opening them.
+
+The lifecycle mark, the rule that historical and shelved variants recede,
+and the order above live in one module, `src/ui/variant-lifecycle`, so every
+place that names a variant says it the same way. The header draws the same
+mark before the variant it names.
 
 ### What the panes show
 
