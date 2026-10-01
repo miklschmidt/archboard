@@ -130,16 +130,21 @@ tab in the dark theme on the right.
 
 ## The navigator
 
-Revised 2026-09-23 (TASK-302). The board strip became a navigator that stays
-navigable at a few hundred boards without anybody filing them by hand:
+Revised 2026-09-23 (TASK-302) and 2026-09-30 (TASK-384). The board strip
+became a navigator that stays navigable at a few hundred boards without anybody
+filing them by hand. TASK-384 put every row on one grid.
+[The navigator's structure](navigator-structure.md) measures the tree before
+that change and says why it is drawn this way.
 
-![The navigator: a drilled vault, a filter, and a board's
-states](assets/operator-shell-navigator.png)
+![The navigator: a drill hierarchy with a board's variants, two panes on
+two boards, folders with nested drafts, and a
+filter](assets/operator-shell-navigator.png)
 
-The image holds rendered captures at 1920×1080, not mockups. They show the
-drill hierarchy of the dogfood vault (light) and a filter that finds boards and
-states by name (light). The third capture shows the work vault in the dark
-theme. In that capture, the board on screen shows its states.
+The image holds rendered captures at 1920×1080, not mockups. From the left:
+the dogfood vault reading `Board rasterizer` (light), the dogfood vault with
+pane A on `Archboard` and pane B on `Voice coordinator` (dark), a vault with
+folders and nested drafts in two panes with agents at work (light), and a
+filter that finds variants by name (dark).
 
 - **Where a board sits is decided by what the boards say**, never by activity,
   focus or recency. `/` folders in a name come first. Then comes the board
@@ -148,20 +153,51 @@ theme. In that capture, the board on screen shows its states.
   a down link. Then comes name order that reads numbers as numbers. A vault with
   no drill links is one alphabetical list. The order never moves under the
   pointer.
-- **One row per board**: the row shows the full name of the board, and a long
-  name wraps rather than truncates. The row also shows the other states as a
-  count, the level in the technical face, and the pane letters while two panes
-  are open. A board's states open under it on request. The board on screen
-  always shows its own states, with drafts nested under what they derive from. A
-  board nothing is built of says so on its row.
+- **One grid.** Every row is four columns placed by its depth alone: the
+  disclosure, the marker, the name and the facts. Each depth moves a row 16 px
+  to the right, one disclosure column, so a row's disclosure sits under its
+  parent's marker. A guide runs down from every open row, through the middle
+  of its disclosure. Every row is 28 px for one line of name. The filter's icon
+  and the lamps of Working now sit in the marker column of the top rows, and
+  their text starts where the names of the top rows start.
+- **One row per board.** The row shows the board's mark, its full name, and
+  facts about the whole board: how many drafts it has, that nothing it
+  describes is built, and the pane letters while none of its variants is
+  listed. A long name wraps to a second line, then ends in an ellipsis.
+  Hovering the name shows the whole name and the board's level, and the row
+  says the level to assistive technology. The header names the level of the
+  board being read.
+  A board that cannot be read says why under its name.
+- **A board's variants sit one depth in, before the boards it drills down
+  to.** A mark says each variant's lifecycle: a check for current, a branch for
+  a draft, a clock for historical and an archive box for shelved. A variant's
+  name is smaller and lighter than a board's. The variant the board's name
+  opens comes first, then the other live variants. A draft nests under the
+  draft it was derived from, and under nothing else. The historical and
+  shelved variants wait behind one Earlier row, newest first. While a filter
+  is on, the variants it finds are listed directly under their board, with no
+  Earlier row. The header draws the same lifecycle mark before the variant it
+  names (`src/ui/variant-lifecycle`). A board lists its
+  variants while it has more than one, and one of them is a proposal or a pane
+  shows the board. A board has one disclosure. Opening it lists its variants
+  and the boards it drills down to together.
+- **The tree says what each pane shows.** The way to every pane's reading is
+  open. While two panes are open, each pane letter sits on exactly one row:
+  the variant's row where it is listed, else the board's row. One row is
+  selected, the one the active pane shows. It takes the reading tone and a
+  cobalt bar, and its name keeps the foreground colour. The active pane's
+  board sets its name in semibold.
 - **Finding is the filter**: Ctrl K, `/`, or typing in the tree. It keeps tree
   order, dims the boards a match sits under, marks the matched letters, and
   counts what it found. Enter opens, Alt opens beside, Escape clears.
-- **The tree is one tab stop** with the arrow keys of a tree. If the person is
-  not in the navigator and a pane moves to a board, the navigator reveals the
-  row of that board.
+- **The tree is one tab stop** with the keys of a tree: Right opens a closed
+  row, then steps in. Left closes an open row, then steps out. If the person
+  is not in the navigator and a pane moves, the navigator reveals the row it
+  moved to.
 - **Working now** at the navigator's foot lists the boards agents are writing
-  or claiming, in the order they started, with what each said it is doing.
+  or claiming, in the order they started, with what each said it is doing. In
+  the tree, a lamp on a board's mark says an agent works on it, and a faint
+  ring on a closed row says an agent works inside it.
 
 ## The agent
 

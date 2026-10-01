@@ -20,6 +20,7 @@ function PaneChips(props: PaneChipsProps): JSX.Element | null {
 			{props.letters.map((letter) => (
 				<span
 					key={letter}
+					data-pane-letter={letter}
 					className="bg-foreground text-background inline-flex size-4 items-center justify-center rounded-[2px] font-mono text-[10px] font-medium"
 				>
 					<span className="sr-only">shown in pane </span>
