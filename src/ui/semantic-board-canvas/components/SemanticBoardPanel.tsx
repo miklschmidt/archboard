@@ -102,6 +102,7 @@ function variantSection(props: SemanticBoardPanelProps): ReactNode {
 			<SemanticVariantBar
 				variants={reading.variants}
 				showing={reading.showing?.id ?? null}
+				opens={reading.opens}
 				onChoose={onChooseVariant}
 			/>
 		</SidebarSection>

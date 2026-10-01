@@ -8,12 +8,19 @@
 // board somebody followed a drill-down into is not in it, so its variants are
 // offered here instead.
 //
-// Each row says the variant's name and where it stands, because those are
-// different questions and a name alone answers neither: "Semantic boards" does
-// not say whether it is the architecture or a suggestion about it. The
-// lifecycle sits at the end of the row in the technical face, the way the
-// navigator's variant rows carry it, so a variant looks the same wherever it
-// is listed.
+// A variant is said here the way the navigator and the header say it
+// (`@/ui/variant-lifecycle`): its lifecycle's mark before its name, the
+// variants the board has moved past receding, and the same order — the one the
+// board's name opens, the other live ones, then the receding ones newest
+// first. The lifecycle is in the row's title and its accessible name, because a
+// mark alone does not say it to everyone.
+//
+// The receding variants are not gathered behind an Earlier row, as the
+// navigator gathers them. The navigator has to stay readable at hundreds of
+// boards; this list is one board's, at most six variants on any board, and it
+// is the only place a drilled board's variants can be chosen, so hiding some of
+// them would cost a click on the one surface that offers them. They come last
+// and recede, which is what the Earlier row does in the navigator.
 //
 // A board with one variant offers no choice, for the reason the view bar
 // offers none when a board has no views: a choice between one thing and
@@ -24,14 +31,16 @@
 
 import { useCallback, type JSX } from "react";
 
+import { cn } from "@/ui/components/class-names";
 import {
 	SidebarChoice,
 	SidebarChoices,
+	SidebarGlyph,
 	SidebarLabel,
-	SidebarMeta,
 	SidebarRow,
 } from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
 import type { OfferedVariant } from "@/ui/semantic-board-canvas/lib/board-document";
+import { VariantMark, variantOrder, variantRecedes } from "@/ui/variant-lifecycle";
 
 /** Inputs for the variant bar. */
 interface SemanticVariantBarProps {
@@ -39,6 +48,8 @@ interface SemanticVariantBarProps {
 	variants: readonly OfferedVariant[];
 	/** The one on screen, by id, or null while that is not yet known. */
 	showing: string | null;
+	/** The one the board's name opens, by id, or null when it opens none. */
+	opens: string | null;
 	/**
 	 * The person chose a variant of this board.
 	 * @param variant The variant's id, or null for whichever is current.
@@ -60,6 +71,35 @@ interface VariantChoiceProps {
 }
 
 /**
+ * What a variant row says to somebody who cannot see its mark.
+ * @param variant The variant.
+ * @returns Its name and lifecycle.
+ */
+function spoken(variant: OfferedVariant): string {
+	return `${variant.name}, ${variant.lifecycle}`;
+}
+
+/**
+ * A variant's name, receding when the board has moved past it, unless it is
+ * the one on screen.
+ * @param props The variant and whether it is on screen.
+ * @param props.variant The variant.
+ * @param props.showing Whether it is on screen.
+ * @returns The name.
+ */
+function VariantName(props: {
+	readonly variant: OfferedVariant;
+	readonly showing: boolean;
+}): JSX.Element {
+	const recedes = variantRecedes(props.variant.lifecycle) && !props.showing;
+	return (
+		<SidebarLabel>
+			<span className={cn(recedes && "text-muted-foreground")}>{props.variant.name}</span>
+		</SidebarLabel>
+	);
+}
+
+/**
  * One variant, as a choice.
  * @param props The variant, whether it is on screen, and what a choice does.
  * @returns The choice.
@@ -76,13 +116,17 @@ function VariantChoice(props: VariantChoiceProps): JSX.Element {
 	return (
 		<SidebarChoice
 			pressed={showing}
+			aria-label={spoken(variant)}
+			title={spoken(variant)}
 			data-slot="semantic-variant-choice"
 			data-semantic-variant={variant.id}
 			data-semantic-lifecycle={variant.lifecycle}
 			onClick={choose}
 		>
-			<SidebarLabel>{variant.name}</SidebarLabel>
-			<SidebarMeta technical>{variant.lifecycle}</SidebarMeta>
+			<SidebarGlyph>
+				<VariantMark lifecycle={variant.lifecycle} />
+			</SidebarGlyph>
+			<VariantName variant={variant} showing={showing} />
 		</SidebarChoice>
 	);
 }
@@ -103,8 +147,13 @@ function VariantStanding(props: { readonly variant: OfferedVariant }): JSX.Eleme
 			data-semantic-variant={variant.id}
 			data-semantic-lifecycle={variant.lifecycle}
 		>
-			<SidebarLabel>{variant.name}</SidebarLabel>
-			<SidebarMeta technical>{variant.lifecycle}</SidebarMeta>
+			<SidebarGlyph>
+				<VariantMark lifecycle={variant.lifecycle} />
+			</SidebarGlyph>
+			<SidebarLabel>
+				<span title={spoken(variant)}>{variant.name}</span>
+				<span className="sr-only">, {variant.lifecycle}</span>
+			</SidebarLabel>
 		</SidebarRow>
 	);
 }
@@ -115,14 +164,14 @@ function VariantStanding(props: { readonly variant: OfferedVariant }): JSX.Eleme
  * @returns The list, the one variant said plainly, or null when there is none.
  */
 function SemanticVariantBar(props: SemanticVariantBarProps): JSX.Element | null {
-	const { variants, showing, onChoose } = props;
+	const { variants, showing, opens, onChoose } = props;
 	if (variants.length < 2) {
 		const only = variants[0];
 		return only === undefined ? null : <VariantStanding variant={only} />;
 	}
 	return (
 		<SidebarChoices slot="semantic-variant-bar" label="Variants of this board">
-			{variants.map((variant) => (
+			{variantOrder(variants, opens).map((variant) => (
 				<VariantChoice
 					key={variant.id}
 					variant={variant}
