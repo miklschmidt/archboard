@@ -132,15 +132,20 @@ function summary(props: SemanticBoardPanelProps): ReactNode {
  * @returns The section, or null when the variant is read against nothing.
  */
 function changes(props: SemanticBoardPanelProps): ReactNode {
-	const found = props.answer?.changes;
-	if (found === undefined || found === null) {
+	const { answer } = props;
+	if (answer === undefined) {
+		return null;
+	}
+	const { changes: found, view } = answer;
+	if (found === null) {
 		return null;
 	}
 	return (
 		<SemanticChanges
 			changes={found}
-			marked={props.comparison}
-			onMarkedChange={props.onComparisonChange}
+			inView={view !== null}
+			comparison={props.comparison}
+			onComparisonChange={props.onComparisonChange}
 		/>
 	);
 }

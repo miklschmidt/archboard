@@ -10,6 +10,12 @@
 // added and removed is what lets a reader count a change without error, and a
 // count says at once whether a change is one part or half the board.
 //
+// The counts are of what the picture draws. A view draws part of the variant,
+// so a view in which nothing differs says so of the view, and keeps the
+// control: the change is elsewhere, and the reader may want the marks when
+// they read on. Only a whole variant in which nothing differs has no marks to
+// show, and says so plainly.
+//
 // The control hides the marks and the removed context from the picture. While
 // they are hidden the rows go too, because they would key nothing on screen;
 // the line that says what the variant is read against stays, because that is
@@ -21,9 +27,105 @@ import { Checkbox } from "@/ui/components/checkbox";
 import type { SemanticRender } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import {
 	SidebarGlyph,
+	SidebarLabel,
+	SidebarRow,
 	SidebarSection,
 } from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
 import { StandingSample } from "@/ui/semantic-board-canvas/components/SemanticTypeSamples";
+
+/** Inputs for the changes. */
+interface SemanticChangesProps {
+	/** How the variant on screen differs from the one it is read against. */
+	readonly changes: Changes;
+	/** Whether a view narrows the picture to part of the variant. */
+	readonly inView: boolean;
+	/** Whether the picture draws the comparison: its marks and removed context. */
+	readonly comparison: boolean;
+	/**
+	 * Draw the comparison on the picture, or stop.
+	 * @param comparison Whether to draw it.
+	 */
+	readonly onComparisonChange: (comparison: boolean) => void;
+}
+
+/**
+ * The key and the count of what this variant changes, and the control that
+ * draws the comparison.
+ * @param props What changed, and whether the picture shows it.
+ * @returns The section.
+ */
+function SemanticChanges(props: SemanticChangesProps): JSX.Element {
+	const counts = countsOf(props.changes.standing);
+	const identical = counts.length === 0 && !props.inView;
+	return (
+		<SidebarSection title="Changes" slot="semantic-changes">
+			<p className="text-body text-muted-foreground">
+				Compared with <span className="text-foreground">{props.changes.against.name}</span>
+			</p>
+			{identical ? (
+				<p className="text-body text-muted-foreground">Nothing differs.</p>
+			) : (
+				<ChangeKey
+					counts={counts}
+					comparison={props.comparison}
+					onComparisonChange={props.onComparisonChange}
+				/>
+			)}
+		</SidebarSection>
+	);
+}
+
+/**
+ * The rows of the key while the comparison is drawn, or the word that this
+ * view shows none of it, then the control.
+ * @param props The counts, and whether and how the comparison is drawn.
+ * @param props.counts What changed in the picture, by standing.
+ * @param props.comparison Whether the picture draws the comparison.
+ * @param props.onComparisonChange Draw it, or stop.
+ * @returns The key and its control.
+ */
+function ChangeKey(props: {
+	readonly counts: readonly Count[];
+	readonly comparison: boolean;
+	readonly onComparisonChange: (comparison: boolean) => void;
+}): JSX.Element {
+	const id = useId();
+	return (
+		<>
+			{props.counts.length === 0 && (
+				<p data-slot="semantic-change-none" className="text-body text-muted-foreground">
+					Nothing in this view differs.
+				</p>
+			)}
+			{props.counts.length > 0 && props.comparison && (
+				<ul data-slot="semantic-change-key" className="flex flex-col">
+					{props.counts.map((one) => (
+						<SidebarRow key={one.standing} as="li" data-standing={one.standing}>
+							<SidebarGlyph>
+								<StandingSample standing={one.standing} />
+							</SidebarGlyph>
+							<SidebarLabel>{one.word}</SidebarLabel>
+							<span data-slot="semantic-change-count" className="tabular-nums">
+								{one.count}
+							</span>
+						</SidebarRow>
+					))}
+				</ul>
+			)}
+			<SidebarRow>
+				<SidebarGlyph control>
+					<Checkbox
+						id={id}
+						checked={props.comparison}
+						onCheckedChange={props.onComparisonChange}
+						data-slot="semantic-comparison-toggle"
+					/>
+				</SidebarGlyph>
+				<label htmlFor={id}>Mark the changes on the picture</label>
+			</SidebarRow>
+		</>
+	);
+}
 
 /** How a variant differs, as the render answer carries it. */
 type Changes = NonNullable<SemanticRender["changes"]>;
@@ -49,89 +151,6 @@ function countsOf(standing: Changes["standing"]): readonly Count[] {
 		...marked,
 		count: values.filter((one) => one === marked.standing).length,
 	})).filter((marked) => marked.count > 0);
-}
-
-/** Inputs for the changes. */
-interface SemanticChangesProps {
-	/** How the variant on screen differs from the one it is read against. */
-	readonly changes: Changes;
-	/** Whether the picture draws the marks. */
-	readonly marked: boolean;
-	/**
-	 * Draw the marks on the picture, or stop.
-	 * @param marked Whether to draw them.
-	 */
-	readonly onMarkedChange: (marked: boolean) => void;
-}
-
-/**
- * The key and the count of what this variant changes, and the control that
- * draws its marks.
- * @param props What changed, and whether the picture shows it.
- * @returns The section.
- */
-function SemanticChanges(props: SemanticChangesProps): JSX.Element {
-	const counts = countsOf(props.changes.standing);
-	return (
-		<SidebarSection title="Changes" slot="semantic-changes">
-			<p className="text-body text-muted-foreground">
-				Compared with <span className="text-foreground">{props.changes.against.name}</span>
-			</p>
-			{counts.length === 0 ? (
-				<p className="text-body text-muted-foreground">Nothing differs.</p>
-			) : (
-				<ChangeKey counts={counts} marked={props.marked} onMarkedChange={props.onMarkedChange} />
-			)}
-		</SidebarSection>
-	);
-}
-
-/**
- * The rows of the key while the marks are drawn, then the control.
- * @param props The counts, and whether and how the marks are drawn.
- * @param props.counts What changed, by standing.
- * @param props.marked Whether the picture draws the marks.
- * @param props.onMarkedChange Draw them, or stop.
- * @returns The key and its control.
- */
-function ChangeKey(props: {
-	readonly counts: readonly Count[];
-	readonly marked: boolean;
-	readonly onMarkedChange: (marked: boolean) => void;
-}): JSX.Element {
-	const id = useId();
-	return (
-		<>
-			{props.marked && (
-				<ul data-slot="semantic-change-key" className="flex flex-col pt-1">
-					{props.counts.map((one) => (
-						<li
-							key={one.standing}
-							data-standing={one.standing}
-							className="text-body flex min-h-6 items-center gap-2"
-						>
-							<SidebarGlyph>
-								<StandingSample standing={one.standing} />
-							</SidebarGlyph>
-							<span className="flex-1">{one.word}</span>
-							<span data-slot="semantic-change-count" className="tabular-nums">
-								{one.count}
-							</span>
-						</li>
-					))}
-				</ul>
-			)}
-			<div className="text-body flex min-h-7 items-center gap-2">
-				<Checkbox
-					id={id}
-					checked={props.marked}
-					onCheckedChange={props.onMarkedChange}
-					data-slot="semantic-comparison-toggle"
-				/>
-				<label htmlFor={id}>Mark the changes on the picture</label>
-			</div>
-		</>
-	);
 }
 
 export { SemanticChanges };
