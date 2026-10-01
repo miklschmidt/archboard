@@ -154,7 +154,7 @@ function remember(
 	reading: FitReading,
 ): void {
 	if (reading.presenting && held.current === null) {
-		held.current = { camera: camera.camera, handled: camera.handled() };
+		held.current = { camera: camera.view().camera, handled: camera.handled() };
 	}
 }
 
