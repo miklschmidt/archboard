@@ -93,7 +93,8 @@ Constraints that every surface keeps:
   Talk drive the agent and never edit a board.
 - No layout by hand. If the meaning is right and the picture is wrong, the
   renderer has a bug.
-- The shell is desktop only, at 1920×1080. It has no phone or narrow layout.
+- Archboard is a desktop app for use near full screen at 1920×1080. Screens
+  smaller than 1080p are out of scope, and it has no phone or narrow layout.
 - Codex runs the agent bar, the voice, narration and recording, through a
   private app-server with its own sign-in. Any agent that runs a CLI can author
   boards.
@@ -152,7 +153,6 @@ WCAG 2.2 AA is the required standard for every surface:
 - an accessible name and state for every mark that carries meaning, such as a
   variant's lifecycle or a board's level
 
-Open decision: WCAG 2.2 AA includes success criterion 1.4.10 Reflow, which asks
-content to reflow at a width of 320 CSS pixels. The board picture is
-two-dimensional content, which Reflow exempts. How the desktop-only shell meets
-Reflow at 400% zoom is undecided.
+The standard applies at the supported desktop size. Screens smaller than 1080p
+and extreme zoom, such as 400%, are out of scope. Thus success criterion 1.4.10
+Reflow does not apply.
