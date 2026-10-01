@@ -68,7 +68,8 @@ means "same as the board", and there is nothing to keep in step.
 
 A drill-down is an affordance on a part that is really there. A node added only
 to carry a link is a button, and a diagram has no buttons. Such a node costs a
-card, a lane and a reader's attention to say something the board does not mean.
+card, a lane (a passage where lines run) and a reader's attention to say
+something the board does not mean.
 
 A board must therefore show its actual callers. When those abstract to a
 different system, that abstraction is the node. It is a real participant with a

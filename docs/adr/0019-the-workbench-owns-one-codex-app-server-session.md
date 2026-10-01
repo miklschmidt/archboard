@@ -15,9 +15,11 @@ home, one Codex database and so one sign-in. Codex takes several processes on
 one home, and it reloads the sign-in from disk before it refreshes it.
 
 Archboard keeps two things about its own child: the owner lock and the epoch
-ledger. They belong to one canvas, under `codex-workbench/canvases/<port>`. One
-process writes the ledger, and the child of a second canvas makes the ledger of
-this canvas stale. Each canvas still owns one child. Three consequences follow:
+ledger. An epoch is one run of the child, and the epoch ledger records which
+epoch owns which thread. The lock and the ledger belong to one canvas, under
+`codex-workbench/canvases/<port>`. One process writes the ledger, and the child
+of a second canvas makes the ledger of this canvas stale. Each canvas still owns
+one child. Three consequences follow:
 
 - A canvas lists the threads of another canvas as foreign and inspect-only,
   because its own ledger does not know them.
@@ -102,21 +104,23 @@ the board of the focused pane as its context. Every other tab holds a
 conversation of its own.
 
 Replacing the child invalidates every execution proof and unbinds every tab
-session. Earlier threads can remain inspectable, but Archboard does not resume
-them or deliver input, tools, queued work, or board context to them. Dedicated
-state prevents accidental discovery. It is not a security boundary against a
-malicious process that runs as the same user.
+session. An execution proof shows that an operation was committed, was
+delivered, and belongs to the epoch that runs now. A caller must hold one before
+it acts on a thread that it created. Earlier threads can remain inspectable, but
+Archboard does not resume them or deliver input, tools, queued work, or board
+context to them. Dedicated state prevents accidental discovery. It is not a
+security boundary against a malicious process that runs as the same user.
 
-The epoch manifest records which child owns which thread. It exists to work
-around a Codex behavior. Resuming an older thread loses the dynamic tools that
-the thread started with. So Archboard must know which threads belong to a
-previous child and must refuse to resume them. The maintainer expects a fix
-upstream. If upstream fixes this, the epoch mechanism must be removed.
+The epoch ledger exists to work around a Codex behavior. Resuming an older
+thread loses the dynamic tools that the thread started with. So Archboard must
+know which threads belong to a previous child and must refuse to resume them.
+The maintainer expects a fix upstream. If upstream fixes this, the epoch
+mechanism must be removed.
 
 Until then, the ledger is one file replaced atomically by a rename. It has no
-lock file, second copy, or other durability machinery. Archboard treats a
-manifest that it cannot read as "no prior epochs". That leaves every earlier
-thread inspect-only.
+lock file, second copy, or other durability machinery. Archboard treats a ledger
+that it cannot read as "no prior epochs". That leaves every earlier thread
+inspect-only.
 
 Archboard creates every workhorse that it drives. Each workhorse receives a
 small typed coordination catalog on the owned connection. Mutating coordination

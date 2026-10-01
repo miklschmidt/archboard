@@ -84,9 +84,9 @@ settlement of routes (`even-pins.ts`), its column fold and
   Track and Blocks. Tests of the Graphviz engine's own passes were deleted with
   them.
 - Two things are lost, and the loss is accepted. One is Graphviz's arrangement
-  of groups, which the user named. The other is lines keeping a lane from the
-  standing pin that the card of a proposal wears. Only the Graphviz engine did
-  this.
+  of groups, which the user named. The other is lines keeping a lane (a passage
+  where lines run) from the standing pin that the card of a proposal wears. Only
+  the Graphviz engine did this.
 - When the tests moved, these gaps in the remaining engines showed up. Each test
   now runs on the engine that keeps the rule, and it says why:
   - Track leaves a container by its side for the container's own dependency

@@ -21,10 +21,11 @@ Relationship labels use clear runs of their routes. A label that cannot fit
 requests measured space from the layout owner.
 
 Cards expose shared ports per relationship kind on their faces. Different kinds
-use distinct physical attachment positions and native lane separation. Shared
-mixed-type runs proved ambiguous, so this readability requirement followed. The
-router owns face choice and paths. Ports are not private to each edge. Endpoint
-clearance must still accommodate the actual arrowhead and a rounded bend.
+use distinct physical attachment positions and native lane separation. A lane is
+a passage where lines run. Shared mixed-type runs proved ambiguous, so this
+readability requirement followed. The router owns face choice and paths. Ports
+are not private to each edge. Endpoint clearance must still accommodate the
+actual arrowhead and a rounded bend.
 
 Labels try natural route runs after placement space is reserved. They become
 waypoints only after that still cannot fit their words.
