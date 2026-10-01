@@ -283,10 +283,11 @@ export interface AgentAudioVisualizerWaveProps {
 	 */
 	blur?: number;
 	/**
-	 * Measured model output level (0-1). Archboard adaptation: replaces the
-	 * LiveKit `audioTrack`; there is no microphone input path.
+	 * Reads the measured model output level (0-1) on every frame. Archboard
+	 * adaptation: replaces the LiveKit `audioTrack`; there is no microphone input
+	 * path, and a reader keeps a level that changes every frame out of React.
 	 */
-	level: number;
+	level: () => number;
 	/**
 	 * Whether the session is live. False stops the animation loop.
 	 */
@@ -316,7 +317,7 @@ export interface AgentAudioVisualizerWaveProps {
  *   colorShift={0.3}
  *   lineWidth={2}
  *   blur={0.5}
- *   level={outputLevel}
+ *   level={readOutputLevel}
  *   active
  *   reducedMotion={false}
  * />

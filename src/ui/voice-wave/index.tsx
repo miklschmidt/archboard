@@ -17,8 +17,8 @@ type VoiceOutputWaveSize = "icon" | "sm" | "md";
 /** Inputs for the wave. Every value is typed state; nothing here reads audio. */
 interface VoiceOutputWaveProps {
 	state: VoiceWaveState;
-	/** Measured model output level, 0..1. */
-	level: number;
+	/** Reads the measured model output level, 0..1, on every frame the wave draws. */
+	level: () => number;
 	/** False stops the animation loop and shows the flat line. */
 	active: boolean;
 	/** Forces the static presentation; the media query is honoured either way. */

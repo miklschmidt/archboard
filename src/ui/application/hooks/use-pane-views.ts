@@ -26,7 +26,8 @@ interface PaneOverlay {
 
 /** What the mounted panes are assembled from. */
 interface PaneViewSources {
-	readonly panes: Panes;
+	/** What a pane is made from: never the records, which change with every pane's news. */
+	readonly panes: Pick<Panes, "list" | "callbacks" | "handles">;
 	readonly theme: PaneTheme;
 	/** What each pane is reading, and how that changes. */
 	readonly readings: PaneReadings;
@@ -146,8 +147,7 @@ function recordedOrNot(
  * The mounted panes, one per pane id.
  *
  * The pane list, the callbacks and the handles are what a pane is made from; the
- * records are not, so a status arriving from one pane never rebuilds the other
- * pane's element.
+ * records are not, so a status arriving from any pane rebuilds no pane's element.
  * @param sources The panes, the theme, the readings and the motion preference.
  * @returns The mounted panes by pane id.
  */
@@ -160,7 +160,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		list.panes.forEach((entry, index) => {
 			mounted[entry.paneId] = paneElement(
 				{
-					panes: { ...panes, list, callbacks, handles },
+					panes: { list, callbacks, handles },
 					theme,
 					readings,
 					reducedMotion,
@@ -175,7 +175,6 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		});
 		return mounted;
 	}, [
-		panes,
 		list,
 		callbacks,
 		handles,
