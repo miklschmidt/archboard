@@ -28,6 +28,7 @@
 		"build:frontend": "bunx vite build",
 		"dev": "bunx concurrently \"bun run server\" \"bun run dev:frontend\"",
 		"dev:frontend": "bunx vite",
+		"prototype:shell-worlds": "bunx vite --port 5190 --strictPort --open /prototype-shell-worlds/",
 		"production": "bun run build && bun run server",
 		"postinstall": "bun run generate:codex-contract && bun run generate:skill-artifacts",
 		"lint": "bun run ensure:codex-contract && bun run lint:tests && bun run lint:policy",
