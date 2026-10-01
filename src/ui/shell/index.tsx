@@ -1,7 +1,9 @@
-// The desktop frame: header, navigator, the pane centre, the agent bar under
-// it and the conversation panel beside it while open, composed from typed
-// inputs and typed actions. The centre is also the
-// fullscreen root, so presenting a pane never remounts it.
+// The desktop frame, in columns: the navigator (the brand at its top, the
+// boards, and the agent at its foot), the conversation beside it while open,
+// and the pane centre, composed from typed inputs and typed actions. There is
+// no row across the whole frame: each column's top row is its own header, and
+// the rows line up. The centre is also the fullscreen root, so presenting a
+// pane never remounts it.
 
 import { useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
 
@@ -21,10 +23,9 @@ import type {
 	TakeBackState,
 	ThemeChoice,
 } from "@/ui/shell/types/contracts";
-import { Header, SETTINGS_TRIGGER_ID } from "@/ui/shell/components/Header";
+import { BrandBar, SETTINGS_TRIGGER_ID } from "@/ui/shell/components/BrandBar";
 import { Navigator } from "@/ui/shell/components/Navigator";
 import { Notices } from "@/ui/shell/components/Notices";
-import { PaneBar } from "@/ui/shell/components/PaneBar";
 import { PaneStages } from "@/ui/shell/components/PaneStages";
 import { isPresentShortcut, presentShortcutLabel } from "@/ui/shell/lib/shortcuts";
 
@@ -45,70 +46,48 @@ interface ShellProps {
 	actions: ShellActions;
 	/** Live voice controls for the presentation bar, when the voice workbench supplies them. */
 	voiceControls?: ReactNode;
-	/** The search at the top of the shell, over every board's parts. */
-	search?: ReactNode;
-	/** The agent bar under the panes: the agent's state, Talk and the composer. */
-	agentBar?: ReactNode;
-	/** The conversation panel beside the panes, while it is open. */
+	/** The agent at the navigator's foot: its voice, what it is doing, and the composer. */
+	agentDock?: ReactNode;
+	/** The conversation beside the navigator, next to the composer that opens it, while it is open. */
 	agentPanel?: ReactNode;
 	/** The fullscreen root: the centre stage element. */
 	attachStage?: (element: HTMLDivElement | null) => void;
 }
 
 /**
- * Find a pane by id.
- * @param view The shell view.
- * @param paneId The pane wanted.
- * @returns The pane, or null when no pane has that id.
- */
-function paneById(view: ShellView, paneId: string): ShellPane | null {
-	return view.panes.find((pane) => pane.status.paneId === paneId) ?? null;
-}
-
-/**
- * The application shell: navigator and centre column under the header.
+ * The application shell: the navigator, the conversation while it is open,
+ * and the pane centre.
  * @param props The view, the actions and the slots.
  * @returns The full frame.
  */
 function Shell(props: ShellProps): JSX.Element {
 	const { view, actions } = props;
-	const active = paneById(view, view.activePaneId);
 	const { boards, levels } = view.boards;
 	const outline = useMemo(() => buildOutline(boards, levels), [boards, levels]);
+	const head = useMemo(
+		() => <BrandBar theme={view.theme} actions={actions} diagnostics={props.diagnostics} />,
+		[view.theme, actions, props.diagnostics],
+	);
 	return (
-		<div className="bg-background flex h-full min-w-0 flex-col" style={SHELL_STYLE}>
-			<Header
-				search={props.search}
-				theme={view.theme}
-				connected={active?.status.connected !== false}
+		<div className="bg-background flex h-full min-w-0" style={SHELL_STYLE}>
+			<Navigator
+				view={view}
+				outline={outline}
 				actions={actions}
-				diagnostics={props.diagnostics}
+				head={head}
+				foot={props.agentDock}
 			/>
-			<div className="flex min-h-0 min-w-0 flex-1">
-				<Navigator view={view} outline={outline} actions={actions} />
-				<div className="flex min-h-0 min-w-0 flex-1 flex-col">
-					<div className="flex min-h-0 min-w-0 flex-1">
-						<div className="flex min-h-0 min-w-0 flex-1 flex-col">
-							<Notices notices={view.notices} actions={actions} />
-							<PaneBar
-								panes={view.panes}
-								activePaneId={view.activePaneId}
-								listing={view.boards}
-								actions={actions}
-							/>
-							<PaneStages
-								panes={view.panes}
-								activePaneId={view.activePaneId}
-								presentation={view.presentation}
-								voiceControls={props.voiceControls ?? null}
-								attachStage={props.attachStage}
-								actions={actions}
-							/>
-						</div>
-						{props.agentPanel}
-					</div>
-					{props.agentBar}
-				</div>
+			{props.agentPanel}
+			<div className="flex min-h-0 min-w-0 flex-1 flex-col">
+				<Notices notices={view.notices} actions={actions} />
+				<PaneStages
+					panes={view.panes}
+					activePaneId={view.activePaneId}
+					presentation={view.presentation}
+					voiceControls={props.voiceControls ?? null}
+					attachStage={props.attachStage}
+					actions={actions}
+				/>
 			</div>
 		</div>
 	);

@@ -62,7 +62,7 @@ function Suggestion(props: {
 			<button
 				type="button"
 				onClick={handleClick}
-				className="text-control border-border hover:bg-muted w-full rounded-[3px] border px-3 py-1.5 text-left font-normal"
+				className="text-control border-border hover:bg-muted rounded-control w-full border px-3 py-1.5 text-left font-normal"
 			>
 				{text}
 			</button>

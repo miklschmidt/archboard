@@ -1,5 +1,5 @@
-// The agent's surfaces as the application holds them: the agent bar under the
-// panes, the conversation panel beside them while it is open, and the Talk
+// The agent's surfaces as the application holds them: the agent dock at the
+// navigator's foot, the conversation beside the navigator while it is open, and the Talk
 // control a presentation carries, all over one set of actions, so each fact has
 // one home and every control behaves the same way wherever it appears.
 //

@@ -1,8 +1,8 @@
-// The agent bar and the conversation panel, each reading what it shows itself.
+// The agent dock and the conversation panel, each reading what it shows itself.
 //
 // The conversation, the approvals on the wire and the progress clock change
 // with every piece of a reply. Read here, where they are drawn, a reply draws
-// the bar and the panel again and nothing around them: the shell, the
+// the dock and the panel again and nothing around them: the shell, the
 // navigator and the panes stay as they are (TASK-385.03).
 
 import type { JSX } from "react";
@@ -11,7 +11,7 @@ import { useAgentView } from "@/ui/application/hooks/use-agent";
 import { useUnread } from "@/ui/application/hooks/use-agent-panel";
 import type { AgentSurfaces } from "@/ui/application/hooks/use-agent-surfaces";
 import type { Workbench } from "@/ui/application/hooks/use-workbench";
-import { AgentBar, AgentPanel } from "@/ui/workbench";
+import { AgentDock, AgentPanel } from "@/ui/workbench";
 import type { AgentContext } from "@/ui/workbench/contracts";
 
 /** What a surface is drawn from. */
@@ -23,17 +23,17 @@ interface AgentSurfaceProps {
 }
 
 /**
- * The agent bar, and whether the agent said something while the panel was closed.
+ * The agent dock, and whether the agent said something while the panel was closed.
  * @param props The workbench, the context, the agent and the motion preference.
  * @param props.reducedMotion Whether the person asked for reduced motion.
- * @returns The bar.
+ * @returns The dock.
  */
-function AgentBarSlot(props: AgentSurfaceProps & { readonly reducedMotion: boolean }): JSX.Element {
+function AgentDockSlot(props: AgentSurfaceProps & { readonly reducedMotion: boolean }): JSX.Element {
 	const { agent } = props;
 	const view = useAgentView(props, agent.voice);
 	const unread = useUnread(view.conversation, agent.panel.open);
 	return (
-		<AgentBar
+		<AgentDock
 			view={view}
 			actions={agent.actions}
 			draft={agent.draft}
@@ -68,4 +68,4 @@ function AgentPanelSlot(props: AgentSurfaceProps): JSX.Element {
 	);
 }
 
-export { AgentBarSlot, AgentPanelSlot };
+export { AgentDockSlot, AgentPanelSlot };

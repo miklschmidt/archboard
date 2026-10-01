@@ -1,5 +1,5 @@
-// The conversation panel on the right of the panes: a title row level with
-// the pane bar, and the conversation — or, before anybody has signed in, the
+// The conversation beside the navigator, next to the composer that opens it: a
+// title row level with every column's header row, and the conversation — or, before anybody has signed in, the
 // sign-in, and on request the details of the session. It opens only when the
 // person asks: the toggle, a message sent, Review, or the status line.
 
@@ -67,9 +67,9 @@ function AgentPanel(props: AgentPanelProps): JSX.Element {
 		<aside
 			data-slot="agent-panel"
 			aria-label="Conversation"
-			className="border-border bg-background flex w-(--agent-panel-width) shrink-0 flex-col border-l"
+			className="border-border bg-background flex w-(--agent-panel-width) shrink-0 flex-col border-r"
 		>
-			<header className="border-border bg-sidebar flex h-9 shrink-0 items-center gap-1 border-b pr-1.5 pl-4">
+			<header className="border-border bg-sidebar h-chrome flex shrink-0 items-center gap-1 border-b pr-1.5 pl-4">
 				<h2 className="text-control min-w-0 flex-1 truncate font-semibold">
 					{details ? "Session" : "Conversation"}
 				</h2>
@@ -170,7 +170,7 @@ function PanelMenu(props: PanelMenuProps): JSX.Element {
 		<DropdownMenu>
 			<DropdownMenuTrigger
 				aria-label="Conversation menu"
-				className="text-muted-foreground hover:text-foreground hover:bg-sidebar-accent flex size-7 items-center justify-center rounded-[3px]"
+				className="text-muted-foreground hover:text-foreground hover:bg-sidebar-accent rounded-control flex size-7 items-center justify-center"
 			>
 				<RiMoreLine className="size-4" />
 			</DropdownMenuTrigger>

@@ -1,10 +1,12 @@
 /* Archboard's one application stylesheet: Tailwind, the shadcn Base UI theme
    from preset b3QvqlIdU (Nova, neutral, blue, lime charts, small radius,
-   Remix Icon), and the operator-canvas reference adaptations. */
+   Remix Icon), the shell's palette over the shared theme (palette.css), and
+   the shell's type, space, shape, depth and motion tokens below. */
 @import "tailwindcss";
 @import "shadcn/tailwind.css";
 @import "tw-animate-css";
 @import "../../shared/theme/theme.css";
+@import "./palette.css";
 
 /* Vite's root is `frontend/`, which is where Tailwind would otherwise look for
    class names. Every class lives under `src/ui`, one level up from here. */
@@ -38,9 +40,9 @@
 	font-display: block;
 }
 
-/* Prototype (branch prototype/shell-worlds): the two display faces of the combined picks.
-   Big Shoulders Display is the board title and the page headings in tall condensed capitals;
-   Barlow Semi Condensed Bold is the capitals of the wordmark. */
+/* The display face (prototype, branch prototype/shell-worlds): Big Shoulders
+   Display, tall condensed capitals, for names set as titles and for the
+   wordmark. Nothing else uses it. */
 @font-face {
 	font-family: "Archboard Display";
 	src: url("../shell/assets/fonts/BigShouldersDisplay-wght.ttf") format("truetype");
@@ -49,21 +51,15 @@
 	font-display: block;
 }
 
-@font-face {
-	font-family: "Archboard Wordmark";
-	src: url("../shell/assets/fonts/BarlowSemiCondensed-Bold.ttf") format("truetype");
-	font-style: normal;
-	font-weight: 700;
-	font-display: block;
-}
-
 @theme inline {
-	--font-display: "Archboard Display", "Big Shoulders Display", "Barlow Condensed", sans-serif;
-	--font-wordmark: "Archboard Wordmark", "Barlow Semi Condensed", sans-serif;
+	/* Three families. sans: every human word. mono: technical tokens only
+	   (identifiers, paths, versions, counts, times). display: a name set as the
+	   title of what a region is about (a pane's board, a picked part, a variant,
+	   a walkthrough) and the wordmark, always in tracked capitals. */
+	--font-display: "Archboard Display", "Big Shoulders Display", sans-serif;
 	--font-sans: "Archboard Onest", ui-sans-serif, system-ui, sans-serif;
 	--font-mono: "Archboard DM Mono", ui-monospace, monospace;
 	--font-heading: var(--font-sans);
-	--tracking-wordmark: -0.02027027027em;
 	/* Type roles (TASK-150.08). Chrome uses only the first six sizes; a drawn
 	   board keeps its own. kicker: the line over a presented walkthrough's step
 	   heading that says where the step is; no section heading uses it
@@ -71,9 +67,8 @@
 	   always in the mono face. body: prose and row labels, and a section
 	   heading in semibold. control: buttons, tabs, fields. title: region and
 	   dialog titles.
-	   board: the board name in the header (named so it cannot collide with
-	   the text-primary colour utility). presentation (TASK-250): a presented
-	   walkthrough's step heading, set in the picture's frame, not the chrome. */
+	   presentation (TASK-250): a presented walkthrough's step heading, set in
+	   the picture's frame, not the chrome. */
 	--text-kicker: 10px;
 	--text-kicker--line-height: 12px;
 	--text-kicker--letter-spacing: 0.08em;
@@ -88,9 +83,17 @@
 	--text-title: 14px;
 	--text-title--line-height: 20px;
 	--text-title--font-weight: 600;
-	--text-board: 16px;
-	--text-board--line-height: 22px;
-	--text-board--font-weight: 600;
+	/* nav: a board's name in the navigator, a step up from control so the tree
+	   reads at a glance; its variants stay at body. */
+	--text-nav: 14px;
+	--text-nav--line-height: 20px;
+	--text-nav--font-weight: 500;
+	/* name: the display face's one chrome size, for a name set as a title
+	   (the `title-name` utility adds the face, the capitals and the tracking). */
+	--text-name: 20px;
+	--text-name--line-height: 24px;
+	--text-name--letter-spacing: 0.07em;
+	--text-name--font-weight: 650;
 	/* presentation: a presented walkthrough's step heading, the one piece of
 	   type that is part of the picture's frame rather than of the chrome. */
 	--text-presentation: 28px;
@@ -130,6 +133,8 @@
 	--color-primary: var(--primary);
 	/* The accent as text or a line on the page: the fill gold is too pale for that on chalk. */
 	--color-primary-text: var(--primary-text);
+	/* The accent as a quiet tint behind something chosen on a page. */
+	--color-primary-subtle: var(--primary-subtle);
 	/* The ink on the gold, and the sign gradient (top to bottom). */
 	--color-sign-ink: var(--sign-ink);
 	--color-popover-foreground: var(--popover-foreground);
@@ -147,7 +152,21 @@
 	--color-warning: var(--warning);
 	--color-warning-foreground: var(--warning-foreground);
 	--color-warning-subtle: var(--warning-subtle);
-	/* Controls move in 120ms; the reference chrome is flat and quick. */
+	/* Rows. chrome: the top row of every column (the brand, a pane's header,
+	   the conversation's title). band: the row under it (the two find fields,
+	   the sidebar's tabs). row: the least a row of a list takes on one line. */
+	--spacing-chrome: 40px;
+	--spacing-band: 36px;
+	--spacing-row: 28px;
+	/* Shape. chip: a key cap or a pane letter. control: buttons, fields, rows.
+	   panel: a card on a page, a menu, a popover. */
+	--radius-chip: 2px;
+	--radius-control: 3px;
+	--radius-panel: 4px;
+	/* Depth. The chrome is flat: regions are separated by one-pixel rules.
+	   Only what floats over the picture or the chrome casts a shadow. */
+	--shadow-float: 0 6px 20px -6px oklch(0.2 0.02 70 / 0.28), 0 1px 3px oklch(0.2 0.02 70 / 0.12);
+	/* Motion. Controls move in 120ms; the chrome is flat and quick. */
 	--default-transition-duration: 120ms;
 	--radius-sm: calc(var(--radius) * 0.6);
 	--radius-md: calc(var(--radius) * 0.8);
@@ -156,17 +175,6 @@
 	--radius-2xl: calc(var(--radius) * 1.8);
 	--radius-3xl: calc(var(--radius) * 2.2);
 	--radius-4xl: calc(var(--radius) * 2.6);
-}
-
-/* The lowercase wordmark: the one generated Onest path, consumed as a mask so
-   it takes the current text colour in either theme. 85×13 px, as audited. */
-@utility wordmark {
-	display: inline-block;
-	width: 85.7815px;
-	height: 13.209px;
-	background-color: currentColor;
-	-webkit-mask: url("../shell/assets/archboard-wordmark.svg") center / contain no-repeat;
-	mask: url("../shell/assets/archboard-wordmark.svg") center / contain no-repeat;
 }
 
 /* Desktop icon buttons are 28px visual inside a 32px hit area: the
@@ -246,50 +254,22 @@
 	--radius: 0.3rem;
 }
 
-/* The accent (prototype): a warm gold replaces cobalt wherever the shell marks the chosen or
-   active thing: the selected row's bar, the focused pane's ring, the tab underline, the
-   selection on the picture, primary buttons. It is set here, in the browser's theme, and not in
-   src/shared/theme/theme.css, whose tokens the server and the CLI draw standalone pictures with.
-   `--primary` is the gold as a fill (#f0c056); `--primary-text` is the same gold as text or a
-   line, deeper on chalk so it clears 4.5:1 there. The sign gradient and its ink are the gold
-   signs on the cards and the Open board buttons.
-
-   The comparison colours stay clearly apart from it (green added, orange changed, red removed):
-   the shared amber of "changed" sits at hue 84, where this gold is, so `--standing-changed` is
-   moved to an orange at hue 48 to 52, and nothing the comparison marks is drawn in gold. The
-   live-state lime (`--status`) is untouched. */
-:root {
-	--primary: oklch(0.831 0.134 84.5);
-	--primary-foreground: oklch(0.183 0.017 70.8);
-	--primary-text: oklch(0.49 0.1 78);
-	--ring: oklch(0.62 0.13 78);
-	--sidebar-primary: oklch(0.831 0.134 84.5);
-	--sidebar-primary-foreground: oklch(0.183 0.017 70.8);
-	--sidebar-ring: oklch(0.62 0.13 78);
-	--diagram-selection: oklch(0.66 0.14 80);
-	--sign-from: oklch(0.861 0.145 86.4);
-	--sign-to: oklch(0.822 0.145 83);
-	--sign-ink: oklch(0.183 0.017 70.8);
-	--mark-hi: oklch(0.8 0.145 86);
-	--mark-lo: oklch(0.62 0.125 72);
-	--standing-changed: oklch(0.69 0.19 48);
+/* A name set as a title, in the display face: a pane's board, a picked part,
+   a variant, a walkthrough. Tracked capitals at the name size. */
+@utility title-name {
+	font-family: var(--font-display);
+	font-size: var(--text-name);
+	line-height: var(--text-name--line-height);
+	letter-spacing: var(--text-name--letter-spacing);
+	font-weight: var(--text-name--font-weight);
+	text-transform: uppercase;
 }
 
-:root[data-theme="dark"] {
-	--primary: oklch(0.831 0.134 84.5);
-	--primary-foreground: oklch(0.183 0.017 70.8);
-	--primary-text: oklch(0.86 0.125 86);
-	--ring: oklch(0.831 0.134 84.5);
-	--sidebar-primary: oklch(0.831 0.134 84.5);
-	--sidebar-primary-foreground: oklch(0.183 0.017 70.8);
-	--sidebar-ring: oklch(0.831 0.134 84.5);
-	--diagram-selection: oklch(0.831 0.134 84.5);
-	--sign-from: oklch(0.861 0.145 86.4);
-	--sign-to: oklch(0.822 0.145 83);
-	--sign-ink: oklch(0.183 0.017 70.8);
-	--mark-hi: oklch(0.89 0.105 90);
-	--mark-lo: oklch(0.73 0.13 75);
-	--standing-changed: oklch(0.77 0.17 52);
+/* The gold sign: the way deeper, on the bottom edge of a card and on the
+   control that opens a part's board. The one gradient of the shell's chrome. */
+@utility gold-sign {
+	background: linear-gradient(180deg, var(--sign-from) 0%, var(--sign-to) 100%);
+	color: var(--sign-ink);
 }
 
 @keyframes sign-arrive {
@@ -298,22 +278,26 @@
 	}
 }
 
-/* The voice card: one quiet gold ring, slowly turning, and the waveform inside it. The bars
-   stand as tall as the model's output level lets them (--level, 0 to 1) and each moves on its
-   own clock; while the voice only listens they barely move. */
+/* The voice circle. A ring, and inside it the waveform: one vertical line per
+   step across the circle, each as tall as the circle is at that place, under a
+   round mask a little inside the ring, so a line at its peak ends on the
+   circle's own curve. A line rests low and rises with the model's output level
+   (--level, 0 to 1) on a clock of its own; while the voice only listens the
+   lines barely move. --peak and --rest are a line's top and bottom, as a
+   fraction of its full height. */
 @keyframes voice-ring-turn {
 	to {
 		transform: rotate(1turn);
 	}
 }
 
-@keyframes voice-bar-move {
+@keyframes voice-line {
 	0%,
 	100% {
-		transform: scaleY(0.42);
+		transform: scaleY(var(--rest));
 	}
 	50% {
-		transform: scaleY(1);
+		transform: scaleY(var(--peak));
 	}
 }
 
@@ -329,36 +313,46 @@
 	);
 	-webkit-mask: radial-gradient(
 		farthest-side,
-		transparent calc(100% - 3px),
-		#000 calc(100% - 2.5px)
+		transparent calc(100% - 2px),
+		#000 calc(100% - 1.5px)
 	);
-	mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
-	opacity: 0.85;
+	mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
 	animation: voice-ring-turn 24s linear infinite;
 }
 
-.voice-bar {
-	height: calc(var(--envelope) * (6px + var(--level, 0.1) * 30px));
-	background: linear-gradient(180deg, var(--mark-hi), var(--primary));
-	transform-origin: 50% 50%;
-	animation: voice-bar-move 1.4s ease-in-out infinite;
+.voice-lines {
+	-webkit-mask: radial-gradient(circle closest-side, #000 calc(100% - 0.75px), transparent 100%);
+	mask: radial-gradient(circle closest-side, #000 calc(100% - 0.75px), transparent 100%);
 }
 
-[data-slot="voice-ring"][data-speaking] .voice-bar {
-	animation-duration: 0.55s;
+.voice-line {
+	--rest: 0.14;
+	--peak: calc(0.45 + var(--level, 0) * 0.6);
+	background: linear-gradient(180deg, var(--mark-hi), var(--mark-lo) 50%, var(--mark-hi));
+	transform: scaleY(var(--rest));
+	transform-origin: 50% 50%;
+	animation: voice-line 1.3s ease-in-out infinite;
+}
+
+[data-voice-state="starting"] .voice-line,
+[data-voice-state="listening"] .voice-line,
+[data-voice-state="muted"] .voice-line {
+	--peak: 0.24;
+	animation-duration: 2.4s;
+}
+
+[data-voice-state="speaking"] .voice-line {
+	animation-duration: 0.62s;
 }
 
 @media (prefers-reduced-motion: reduce) {
 	.voice-ring,
-	.voice-bar {
+	.voice-line {
 		animation: none;
 	}
-}
-
-/* The gold sign: the way down, on the bottom edge of a card and on the Open board buttons. */
-@utility gold-sign {
-	background: linear-gradient(180deg, var(--sign-from) 0%, var(--sign-to) 100%);
-	color: var(--sign-ink);
+	[data-voice-state="speaking"] .voice-line {
+		transform: scaleY(var(--peak));
+	}
 }
 
 @layer base {

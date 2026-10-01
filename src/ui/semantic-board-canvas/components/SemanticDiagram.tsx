@@ -13,6 +13,7 @@ import {
 	useMemo,
 	useRef,
 	useState,
+	type ComponentProps,
 	type CSSProperties,
 	type JSX,
 	type KeyboardEvent,
@@ -357,6 +358,33 @@ function CameraSurface(props: CameraSurfaceProps): JSX.Element {
 	);
 }
 
+/** Inputs for the drill signs' layer. */
+type DrillSignLayerProps = Omit<ComponentProps<typeof DrillSigns>, "scale" | "style" | "className"> &
+	Omit<CameraSurfaceProps, "attach" | "marks">;
+
+/**
+ * The gold signs on the cards that open a deeper board: a layer over the
+ * picture with the surface's own transform, so it moves with the camera.
+ * @param props The signs, and the camera they move with.
+ * @returns The layer.
+ */
+function DrillSignLayer(props: DrillSignLayerProps): JSX.Element {
+	const { camera: source, size, panning, reducedMotion, ...signs } = props;
+	const { camera, instant } = useCameraView(source);
+	const style = useMemo<CSSProperties>(
+		() => ({ width: size.width, height: size.height, transform: cameraTransform(camera) }),
+		[size, camera],
+	);
+	return (
+		<DrillSigns
+			{...signs}
+			scale={camera.scale}
+			style={style}
+			className={surfaceClass(panning, reducedMotion, instant)}
+		/>
+	);
+}
+
 /**
  * A drawn semantic board: pan, zoom and selection over the server's picture.
  * @param props The drawing, the selection and what to do with a pick.
@@ -580,13 +608,14 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 					{/* The gold signs on the cards that open a deeper board: a layer over the
 					    picture with the surface's own transform, so it moves with the camera. */}
 					{departure === null && props.presenting == null && (
-						<DrillSigns
+						<DrillSignLayer
+							camera={camera}
+							size={content}
+							panning={panning}
+							reducedMotion={reducedMotion}
 							atlas={drawing.atlas}
 							reading={reading}
 							arrival={`${drawing.board}:${drawing.variant.id}:${drawing.version}`}
-							scale={view.scale}
-							style={surfaceStyle}
-							className={surfaceClass(panning, reducedMotion, camera.instant)}
 							onOpen={openDown}
 						/>
 					)}

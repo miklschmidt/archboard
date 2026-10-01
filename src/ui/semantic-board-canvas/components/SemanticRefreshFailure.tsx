@@ -43,7 +43,7 @@ function SemanticRefreshFailure(props: SemanticRefreshFailureProps): JSX.Element
 			<Button
 				variant="outline"
 				size="xs"
-				className="rounded-[2px] font-medium"
+				className="rounded-chip font-medium"
 				onClick={props.onRetry}
 				disabled={props.retrying}
 			>

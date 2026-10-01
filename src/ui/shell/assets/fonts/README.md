@@ -50,16 +50,13 @@ Only weights 400 and 500 are loaded. DM Mono is reserved for technical tokens
 such as levels, revisions, paths, hashes, and timestamps; human headings and
 labels remain Onest.
 
-## Prototype additions (branch prototype/shell-worlds)
+## Prototype addition (branch prototype/shell-worlds)
 
-Two display faces, both licensed under the SIL Open Font License 1.1 (the
-license text of each family is in its upstream Google Fonts directory). They
-are the faces of the combined picks: the board title and the headings of the
-pages, and the capitals of the wordmark. Neither is a human-interface face, so
-body text still uses Onest.
+One display face, licensed under the SIL Open Font License 1.1 (the license
+text of the family is in its upstream Google Fonts directory). It is not a
+human-interface face, so every label and sentence still uses Onest.
 
 - `BigShouldersDisplay-wght.ttf`: Big Shoulders Display, variable weight, from
-  the Google Fonts release of 2026-03-13. The title of a board and the names on
-  the Variants and Walkthroughs pages, in tall condensed capitals.
-- `BarlowSemiCondensed-Bold.ttf`: Barlow Semi Condensed Bold, the same
-  release. The ARCHBOARD wordmark, in tracked capitals.
+  the Google Fonts release of 2026-03-13. A name set as the title of what a
+  region is about (a pane's board, a picked part, a variant, a walkthrough) in
+  tracked capitals, and the lowercase archboard wordmark.

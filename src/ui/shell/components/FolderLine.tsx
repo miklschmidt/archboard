@@ -32,7 +32,7 @@ function FolderLine(props: RowHandlers & { readonly row: FolderRow }): JSX.Eleme
 			<TreeRowName
 				text={row.name}
 				match={row.match}
-				className={`text-control font-medium ${row.dimmed ? "text-muted-foreground" : ""}`}
+				className={`text-nav font-medium ${row.dimmed ? "text-muted-foreground" : ""}`}
 			/>
 			<TreeRowFacts>{row.count}</TreeRowFacts>
 		</TreeRow>

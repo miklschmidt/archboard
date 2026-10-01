@@ -1,24 +1,33 @@
 // The mark and the wordmark: a gold peak with a second stroke inside it and a
-// swoosh over its shoulder, and ARCHBOARD in tracked capitals beside it. They
-// replace the lowercase wordmark; the name stays the accessible name.
+// swoosh over its shoulder, and archboard beside it in the display face, the
+// tall condensed face every board's name is set in. The wordmark keeps the
+// name's lowercase, as the CLI writes it, which is also what sets it apart
+// from a board's name, always in capitals.
 
 import type { JSX } from "react";
 
-/** The peak, in the gold gradient of the theme (`--mark-hi` to `--mark-lo`). */
+/** The gradient's two stops, from the theme. */
+const MARK_HI = { stopColor: "var(--mark-hi)" } as const;
+const MARK_LO = { stopColor: "var(--mark-lo)" } as const;
+
+/**
+ * The peak, in the gold gradient of the theme (`--mark-hi` to `--mark-lo`).
+ * @returns The mark.
+ */
 function Mark(): JSX.Element {
 	return (
 		<svg
-			width="34"
-			height="32"
+			width="22"
+			height="21"
 			viewBox="0 0 60 56"
 			aria-hidden="true"
-			className="mb-[3px] shrink-0"
+			className="shrink-0"
 			data-slot="brand-mark"
 		>
 			<defs>
 				<linearGradient id="archboard-mark" x1="0" y1="0" x2="0.3" y2="1">
-					<stop offset="0" style={{ stopColor: "var(--mark-hi)" }} />
-					<stop offset="1" style={{ stopColor: "var(--mark-lo)" }} />
+					<stop offset="0" style={MARK_HI} />
+					<stop offset="1" style={MARK_LO} />
 				</linearGradient>
 			</defs>
 			<g fill="url(#archboard-mark)">
@@ -42,13 +51,13 @@ function Mark(): JSX.Element {
  */
 function Brand(): JSX.Element {
 	return (
-		<h1 className="flex items-end gap-3" data-slot="brand">
+		<h1 className="flex items-end gap-2.5" data-slot="brand">
 			<Mark />
 			<span
 				aria-hidden="true"
-				className="font-wordmark mb-[7px] text-[21px] leading-none font-bold tracking-[0.14em]"
+				className="font-display -mb-[3px] text-[25px] leading-[22px] font-bold tracking-[0.03em]"
 			>
-				ARCHBOARD
+				archboard
 			</span>
 			<span className="sr-only">archboard</span>
 		</h1>

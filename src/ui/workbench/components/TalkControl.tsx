@@ -24,8 +24,6 @@ interface TalkControlProps {
 	readonly voice: AgentVoiceView;
 	readonly actions: AgentActions;
 	readonly reducedMotion: boolean;
-	/** Whether the live control draws its small wave; the voice card replaces it where there is one. */
-	readonly showWave?: boolean;
 }
 
 /** Where the element saying why voice cannot start is, for the button it describes. */
@@ -112,16 +110,14 @@ function LiveVoice(
 	const muted = voice.stage === "muted";
 	return (
 		<div data-voice-controls="live" className="flex shrink-0 items-center gap-1.5">
-			{props.showWave !== false && (
-				<VoiceOutputWave
-					state={props.audible ? "speaking" : WAVE_STATES[voice.stage]}
-					level={voice.level.read}
-					active
-					size="icon"
-					reducedMotion={props.reducedMotion}
-					className="w-16 overflow-hidden"
-				/>
-			)}
+			<VoiceOutputWave
+				state={props.audible ? "speaking" : WAVE_STATES[voice.stage]}
+				level={voice.level.read}
+				active
+				size="icon"
+				reducedMotion={props.reducedMotion}
+				className="w-16 overflow-hidden"
+			/>
 			<output aria-live="polite" className="text-control w-[76px] font-medium">
 				{props.word}
 			</output>
@@ -136,7 +132,7 @@ function LiveVoice(
 			<Button
 				variant="outline"
 				size="sm"
-				className="h-7 gap-1.5 rounded-[3px] px-2.5"
+				className="rounded-control h-7 gap-1.5 px-2.5"
 				onClick={actions.endVoice}
 				disabled={voice.busy}
 			>
@@ -178,7 +174,7 @@ function TalkButton(props: {
 				disabled={waiting}
 				onClick={actions.talk}
 				aria-describedby={voice.problem === null ? undefined : TALK_PROBLEM_ID}
-				className="h-7 shrink-0 gap-1.5 rounded-[3px] px-2.5"
+				className="rounded-control h-7 shrink-0 gap-1.5 px-2.5"
 			>
 				<TalkIcon stage={voice.stage} problem={voice.problem !== null} />
 				{waiting ? STAGE_WORDS[voice.stage] : "Talk"}
@@ -216,4 +212,4 @@ function TalkIcon(props: { readonly stage: VoiceStage; readonly problem: boolean
 	);
 }
 
-export { TalkControl, type TalkControlProps };
+export { TalkControl, useAudible, type TalkControlProps };

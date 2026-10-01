@@ -35,11 +35,25 @@ import type { TextRange } from "@/ui/shell/lib/text-match";
 /** The disclosure column, as wide as the grid says. */
 const DISCLOSURE_STYLE: CSSProperties = { width: DISCLOSURE_WIDTH };
 
-/** A chevron is a full pointer target that reaches past its column on both sides. */
+/** A chevron is a full pointer target that reaches past its column, and past its line, on every side. */
 const CHEVRON_STYLE: CSSProperties = {
 	width: TARGET_SIZE,
 	height: TARGET_SIZE,
 	marginInline: (DISCLOSURE_WIDTH - TARGET_SIZE) / 2,
+	marginBlock: `calc((var(--row-line) - ${TARGET_SIZE}px) / 2)`,
+};
+
+/**
+ * A board and a folder are the tree's landmarks: a taller row with a larger
+ * name. A board's variants and its Earlier row are set closer and smaller
+ * under it, so a glance tells a board from what it holds. Each row's first
+ * line is `--row-line` high, and every column of the row centres on it.
+ */
+const ROW_METRICS: Readonly<Record<NavigatorRow["kind"], CSSProperties>> = {
+	board: { "--row-line": "20px", paddingBlock: 8 },
+	folder: { "--row-line": "20px", paddingBlock: 8 },
+	variant: { "--row-line": "18px", paddingBlock: 6 },
+	earlier: { "--row-line": "18px", paddingBlock: 6 },
 };
 
 /** The marker column, as wide as the grid says. */
@@ -87,10 +101,11 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 	const handleFocus = useCallback(() => onFocusRow(row.id), [onFocusRow, row.id]);
 	const style = useMemo(
 		(): CSSProperties => ({
+			...ROW_METRICS[row.kind],
 			paddingLeft: disclosureX(row.depth) - ROW_GUTTER,
 			paddingRight: FACTS_INSET - ROW_GUTTER,
 		}),
-		[row.depth],
+		[row.depth, row.kind],
 	);
 	const handleClick = useCallback(
 		(event: MouseEvent<HTMLDivElement>) => {
@@ -115,13 +130,13 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 			onClick={handleClick}
 			onKeyDown={props.onRowKeyDown}
 			style={style}
-			className={`group/row focus-visible:ring-ring relative flex min-h-7 w-full min-w-0 cursor-default flex-wrap items-start rounded-[3px] py-[5px] outline-none select-none focus-visible:ring-1 focus-visible:ring-inset ${selected ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/50"}`}
+			className={`group/row focus-visible:ring-ring rounded-control relative flex w-full min-w-0 cursor-default flex-wrap items-start outline-none select-none focus-visible:ring-1 focus-visible:ring-inset ${selected ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/50"}`}
 		>
 			<RowGuides depth={row.depth} />
 			{selected && (
 				<span
 					aria-hidden="true"
-					className="bg-primary absolute inset-y-1 left-0 w-0.5 rounded-full"
+					className="bg-primary-text absolute inset-y-1 left-0 w-0.5 rounded-full"
 				/>
 			)}
 			{props.children}
@@ -192,7 +207,7 @@ function TreeRowDisclosure(props: {
 		[id, expanded, onExpand],
 	);
 	if (expanded === undefined) {
-		return <span aria-hidden="true" style={DISCLOSURE_STYLE} className="h-[18px] shrink-0" />;
+		return <span aria-hidden="true" style={DISCLOSURE_STYLE} className="h-(--row-line) shrink-0" />;
 	}
 	return (
 		<button
@@ -201,7 +216,7 @@ function TreeRowDisclosure(props: {
 			aria-label={`${expanded ? "Collapse" : "Expand"} ${props.name}`}
 			onClick={handleClick}
 			style={CHEVRON_STYLE}
-			className="text-muted-foreground hover:text-foreground -my-[3px] flex shrink-0 items-center justify-center rounded-[2px]"
+			className="text-muted-foreground hover:text-foreground rounded-chip flex shrink-0 items-center justify-center"
 		>
 			<RiArrowRightSLine
 				className={`size-3.5 transition-transform motion-reduce:transition-none ${expanded ? "rotate-90" : ""}`}
@@ -229,7 +244,7 @@ function TreeRowMarker(props: {
 		<span
 			title={props.title}
 			style={MARKER_STYLE}
-			className="relative flex h-[18px] shrink-0 items-center justify-center"
+			className="relative flex h-(--row-line) shrink-0 items-center justify-center"
 		>
 			{Icon !== undefined && <Icon className="text-muted-foreground size-3.5" aria-hidden="true" />}
 			{props.children}
@@ -259,7 +274,7 @@ function TreeRowName(props: {
 			data-board-key={props.boardKey}
 			title={props.title}
 			style={NAME_STYLE}
-			className={`line-clamp-2 min-w-0 flex-1 leading-[18px] wrap-break-word ${props.className}`}
+			className={`line-clamp-2 min-w-0 flex-1 leading-(--row-line) wrap-break-word ${props.className}`}
 		>
 			<Matched text={props.text} match={props.match} />
 		</span>
@@ -279,7 +294,7 @@ function Matched(props: { readonly text: string; readonly match: TextRange | nul
 	return (
 		<>
 			{text.slice(0, match.start)}
-			<mark className="bg-primary/15 text-foreground rounded-[2px]">
+			<mark className="bg-primary/15 text-foreground rounded-chip">
 				{text.slice(match.start, match.end)}
 			</mark>
 			{text.slice(match.end)}
@@ -297,7 +312,7 @@ function TreeRowFacts(props: { readonly children: ReactNode }): JSX.Element {
 	return (
 		<span
 			style={FACTS_STYLE}
-			className="text-technical text-muted-foreground flex h-[18px] shrink-0 items-center gap-1.5 font-mono"
+			className="text-technical text-muted-foreground flex h-(--row-line) shrink-0 items-center gap-1.5 font-mono"
 		>
 			{props.children}
 		</span>

@@ -1,6 +1,8 @@
-// The foot of the details panel: the ways to go deeper from a picked part. One
-// opens the board the part drills into, naming it and the level it sits at; the
-// other views the part's code through the shell's own open-code action.
+// The foot of the details panel: the ways to go deeper from a picked part. The
+// way down opens the board the part drills into, naming it and the level it
+// sits at, as a gold sign: the same sign the part's card carries on the
+// picture, so the two read as one way. The other views the part's code through
+// the shell's own open-code action.
 
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -35,8 +37,8 @@ interface GoProps {
 	readonly end: ReactNode;
 	readonly slot: string;
 	readonly onClick: () => void;
-	/** Whether it is the way down, whose icon is in gold. */
-	readonly primary?: boolean;
+	/** Whether it is the way down, which is a gold sign. */
+	readonly sign?: boolean;
 	readonly lifecycle?: string | undefined;
 }
 
@@ -53,24 +55,33 @@ function Go(props: GoProps): JSX.Element {
 			data-variant-lifecycle={props.lifecycle}
 			title={props.title}
 			onClick={props.onClick}
-			className="border-border bg-card hover:border-primary/70 flex min-h-12 w-full min-w-0 items-center gap-3 rounded-[6px] border px-3 py-1.5 text-left"
+			className={cn(
+				"rounded-control flex min-h-11 w-full min-w-0 items-center gap-3 px-3 py-1.5 text-left",
+				props.sign === true
+					? "gold-sign hover:brightness-[1.04]"
+					: "border-input hover:bg-sidebar-accent/50 border",
+			)}
 		>
-			<span
-				aria-hidden="true"
-				className={cn(
-					"flex size-5 shrink-0 [&_svg]:size-full",
-					props.primary === true && "text-primary-text",
-				)}
-			>
+			<span aria-hidden="true" className="flex size-4 shrink-0 [&_svg]:size-full">
 				{props.icon}
 			</span>
 			<span className="flex min-w-0 flex-1 flex-col">
 				<span className="text-control truncate font-semibold">{props.title}</span>
-				<span className="text-technical text-muted-foreground truncate">{props.sub}</span>
+				<span
+					className={cn(
+						"text-body truncate",
+						props.sign === true ? "text-sign-ink/75" : "text-muted-foreground",
+					)}
+				>
+					{props.sub}
+				</span>
 			</span>
 			<span
 				aria-hidden="true"
-				className="text-muted-foreground flex size-4 shrink-0 [&_svg]:size-full"
+				className={cn(
+					"flex size-4 shrink-0 [&_svg]:size-full",
+					props.sign !== true && "text-muted-foreground",
+				)}
 			>
 				{props.end}
 			</span>
@@ -149,7 +160,7 @@ function WayDown(props: WayDownProps): JSX.Element {
 			title={`Open ${board.name}`}
 			sub={standing}
 			end={<RiArrowRightLine />}
-			primary
+			sign
 			onClick={() => onOpen(board.name, variant.id)}
 		/>
 	);

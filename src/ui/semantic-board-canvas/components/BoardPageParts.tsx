@@ -1,5 +1,5 @@
 // The small marks the board's pages and the details panel share: a part kind's
-// icon, a relationship kind's chip and a variant's lifecycle chip.
+// icon, a relationship kind's chip and a variant's lifecycle.
 
 import { RiPuzzleLine } from "@remixicon/react";
 import type { CSSProperties, JSX } from "react";
@@ -7,6 +7,7 @@ import type { CSSProperties, JSX } from "react";
 import type { VariantLifecycle } from "@/shared/semantic-board/index";
 import { cn } from "@/ui/components/class-names";
 import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
+import { VariantMark } from "@/ui/variant-lifecycle";
 
 /**
  * The markup of an icon the picture drew, without the colour it drew it in: the
@@ -89,7 +90,7 @@ function RelationshipChip(props: RelationshipChipProps): JSX.Element {
 			data-slot="relationship-chip"
 			className={cn(
 				"text-body text-foreground/80 inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap",
-				props.plate === true && "bg-muted rounded-[4px] px-2 py-1",
+				props.plate === true && "bg-muted rounded-control px-2 py-1",
 			)}
 		>
 			<span aria-hidden="true" className={cn("w-3 border-t-2", DASHES[dash])} style={sample} />
@@ -98,33 +99,32 @@ function RelationshipChip(props: RelationshipChipProps): JSX.Element {
 	);
 }
 
-/** Inputs for a lifecycle chip. */
-interface LifecycleChipProps {
+/** Inputs for a lifecycle. */
+interface LifecycleProps {
 	readonly lifecycle: VariantLifecycle;
 }
 
 /**
- * Where a variant stands, as a small outlined chip: the current architecture is
- * the one in gold.
+ * Where a variant stands, as the navigator says it: the lifecycle's mark and
+ * its name in a word.
  * @param props The lifecycle.
- * @returns The chip.
+ * @returns The mark and the word.
  */
-function LifecycleChip(props: LifecycleChipProps): JSX.Element {
+function Lifecycle(props: LifecycleProps): JSX.Element {
 	const { lifecycle } = props;
 	return (
 		<span
-			data-slot="lifecycle-chip"
+			data-slot="lifecycle"
 			data-lifecycle={lifecycle}
 			className={cn(
-				"text-kicker inline-flex h-5 shrink-0 items-center rounded-full border px-2 uppercase",
-				lifecycle === "current"
-					? "border-primary/70 text-primary-text"
-					: "border-muted-foreground/50 text-muted-foreground",
+				"text-body inline-flex shrink-0 items-center gap-1.5 capitalize",
+				lifecycle === "current" ? "text-foreground font-medium" : "text-muted-foreground",
 			)}
 		>
+			<VariantMark lifecycle={lifecycle} />
 			{lifecycle}
 		</span>
 	);
 }
 
-export { KindIcon, LifecycleChip, RelationshipChip };
+export { KindIcon, Lifecycle, RelationshipChip };
