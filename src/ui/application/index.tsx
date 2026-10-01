@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } f
 
 import type { CodeTargetNotice } from "@/shared/code-target";
 import { LiveBinding } from "@/ui/application/lib/live-binding";
+import { livePanesOver } from "@/ui/application/lib/live-panes";
 import { codeTargetShellNotice, infoNotice, presentationNotice } from "@/ui/application/notices";
 import { OpenerSettings } from "@/ui/application/components/OpenerSettings";
 import { paneEvents } from "@/ui/application/lib/pane-events";
@@ -357,20 +358,25 @@ function ApplicationBody(): JSX.Element {
 	panes.bindEvents(paneEvents({ notices, catalog, readings, workbench, activity: agentActivity }));
 
 	const openSettings = useCallback((surface: SettingsSurface): void => setSettings(surface), []);
+	// The actions read the panes as they are when somebody acts, so a pane's news
+	// does not make them, and every control holding one, again.
+	const [panesNow] = useState(() => new LiveBinding<Panes>());
+	panesNow.bind(panes);
+	const [livePanes] = useState(() => livePanesOver(panesNow));
 	const composed = useMemo(
 		() =>
 			createShellActions({
 				setTheme,
 				addressing,
-				panes,
+				panes: livePanes,
 				catalog,
 				notices,
 				fullscreen,
 				openSettings,
 			}),
-		[setTheme, addressing, panes, catalog, notices, fullscreen, openSettings],
+		[setTheme, addressing, livePanes, catalog, notices, fullscreen, openSettings],
 	);
-	const openBeside = useBesideOpening(panes, composed);
+	const openBeside = useBesideOpening(panes, livePanes, composed);
 	const actions = useMemo<ShellActions>(
 		() => ({ ...composed, openBeside }),
 		[composed, openBeside],

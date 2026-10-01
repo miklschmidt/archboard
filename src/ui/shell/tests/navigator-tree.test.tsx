@@ -104,12 +104,21 @@ interface Asked {
 	readonly beside: string[];
 }
 
+/** What a mounted navigator asked for, and how to show it news. */
+interface Mounted extends Asked {
+	/**
+	 * Draw the shell again with the same actions over a changed workspace.
+	 * @param changes What changed.
+	 */
+	readonly show: (changes: Partial<ShellView>) => void;
+}
+
 /**
  * Mount the real shell over a fixed listing.
  * @param overrides Workspace state for the behaviour under test.
- * @returns What the navigator asked for.
+ * @returns What the navigator asked for, and how to show it news.
  */
-function mountNavigator(overrides: Partial<ShellView> = {}): Asked {
+function mountNavigator(overrides: Partial<ShellView> = {}): Mounted {
 	const asked: Asked = { selected: [], beside: [] };
 	const actions: ShellActions = {
 		setTheme: ignore,
@@ -154,7 +163,12 @@ function mountNavigator(overrides: Partial<ShellView> = {}): Asked {
 	document.body.append(container);
 	root = createRoot(container);
 	act(() => root.render(createElement(Shell, { view, actions })));
-	return asked;
+	return {
+		...asked,
+		show: (changes) => {
+			act(() => root.render(createElement(Shell, { view: { ...view, ...changes }, actions })));
+		},
+	};
 }
 
 /**
@@ -349,4 +363,64 @@ test("agent work is gathered in one block and never reorders or resizes the tree
 	act(() => entry?.click());
 	expect(asked.selected).toEqual(["ledger"]);
 	expect(row("board:ledger").querySelector('[data-slot="agent-activity"]')).not.toBeNull();
+});
+
+/**
+ * The props each row's element was last drawn with, by row id. React replaces
+ * them only when it draws the row again, so the same object means the row was
+ * left as it was.
+ * @returns The props, by row id.
+ */
+function drawnRows(): Map<string, unknown> {
+	return new Map(
+		[...document.querySelectorAll<HTMLElement>('[role="treeitem"]')].map((item) => {
+			const key = Object.keys(item).find((name) => name.startsWith("__reactProps$"));
+			return [item.dataset["rowId"] ?? "", key === undefined ? undefined : Reflect.get(item, key)];
+		}),
+	);
+}
+
+/**
+ * The rows drawn again between two readings.
+ * @param before The first reading.
+ * @param after The second.
+ * @returns Their ids.
+ */
+function redrawn(before: Map<string, unknown>, after: Map<string, unknown>): string[] {
+	return [...after].filter(([id, props]) => before.get(id) !== props).map(([id]) => id);
+}
+
+test("pane news draws no row again unless it is about that row's board (TASK-385.04)", () => {
+	const { show } = mountNavigator();
+	const first = drawnRows();
+	expect(first.size).toBeGreaterThan(2);
+
+	// A claim on the board the pane shows: the shell hears it, and no row says anything new.
+	const claimed = pane("A", "payments");
+	show({
+		panes: [
+			{
+				...claimed,
+				holder: {
+					id: "agent",
+					kind: "agent",
+					since: "2026-10-01T00:00:00.000Z",
+					until: "2026-10-01T00:10:00.000Z",
+					process: "1",
+					claimed: true,
+				},
+			},
+		],
+	});
+	const afterClaim = drawnRows();
+	expect(redrawn(first, afterClaim)).toEqual([]);
+
+	// An agent starts work on Audit: Audit's row says so, and no other row changes.
+	const working: AgentActivityEntry = {
+		board: "audit",
+		claim: null,
+		doing: { doing: "adding a trail", at: new Date().toISOString(), by: "agent", kind: "agent" },
+	};
+	show({ agentActivity: { audit: working } });
+	expect(redrawn(afterClaim, drawnRows())).toEqual(["board:audit"]);
 });
