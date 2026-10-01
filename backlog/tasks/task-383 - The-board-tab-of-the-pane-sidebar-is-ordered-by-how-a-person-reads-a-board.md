@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-30 18:51'
-updated_date: '2026-09-30 19:45'
+updated_date: '2026-10-01 00:13'
 labels:
   - ui
 dependencies: []
@@ -56,4 +56,6 @@ Built (commits 10ffd64f, c24cfb0c, 647e0d97):
 - Follow-ups outside this scope: data-flow messages carry no kind, so the legend keys no message line there; the presented walkthrough's caption still uses an uppercase kicker.
 
 Gate: bun run check passed on 647e0d97 (lint, fmt, both type-checks, build; modules 3735, system 189, repository 8, serial browser 18, no failures). Criteria left unchecked for the parent's review.
+
+Review phase 1 applied (57668689, eae063ac, 54f372c5, c4a116be): S1 a view in which nothing differs keeps the control (new test); S2 spacing on the 4/8/16 scale (rows touch); S3 dogfood before/after in both themes committed and referenced; S4 doc sentence; T1 legend lines at the renderer's widths via lineWidth; T2 SidebarRow for every non-control row; T3 kept VariantReading.views with the reason recorded (the render answer's view is the semantic render and rasterize receipts' shape); T4 one name, comparison; T5 SemanticChanges exported first; T6 kicker comment; B3 chosen row takes the reading tone and the cobalt bar, hover half the tone. Phase 2 (merge main, draw variants with src/ui/variant-lifecycle) is blocked: the permission classifier refused git merge main in this worktree.
 <!-- SECTION:NOTES:END -->
