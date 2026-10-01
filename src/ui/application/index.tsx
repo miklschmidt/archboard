@@ -42,12 +42,14 @@ import {
 	useRecordedViews,
 } from "@/ui/application/hooks/use-page-recording";
 import { PaneSubtitles } from "@/ui/application/components/PaneSubtitles";
+import { PartSearchHost } from "@/ui/application/components/PartSearchHost";
 import { useAgentSurfaces, type AgentSurfaces } from "@/ui/application/hooks/use-agent-surfaces";
 import { useWorkbench, type Workbench } from "@/ui/application/hooks/use-workbench";
 import { useWorkspaceAddressing } from "@/ui/application/hooks/use-workspace-addressing";
 import { useBesideOpening } from "@/ui/application/hooks/use-beside-opening";
 import {
 	BoardCatalogProvider,
+	buildOutline,
 	listedBoard,
 	listedBoardKey,
 	useBoardCatalog,
@@ -404,12 +406,18 @@ function ApplicationBody(): JSX.Element {
 	const narration = useNarration(workbench.setup, agent.voice, panes.list.activePaneId);
 	const overlay = useSubtitleOverlay(workbench, reducedMotion, recorder !== null);
 	const recorded = useRecordedViews(recorder, workbench, { narration, overlay });
+	const outline = useMemo(
+		() => buildOutline(catalog.listing.boards, catalog.listing.levels),
+		[catalog.listing.boards, catalog.listing.levels],
+	);
 	const mounted = usePaneViews({
 		panes,
 		theme,
 		readings,
 		reducedMotion,
 		onVariantChange,
+		outline,
+		openBoard: actions.selectBoard,
 		...recorded,
 	});
 	const view = useShellView({
@@ -447,6 +455,24 @@ function ApplicationBody(): JSX.Element {
 		() => <VaultDiagnostics transport={transport} ask={agent.ask} />,
 		[transport, agent.ask],
 	);
+	const search = useMemo(
+		() => (
+			<PartSearchHost
+				boards={catalog.listing.boards}
+				paneId={panes.list.activePaneId}
+				boardKey={panes.active.status.boardKey}
+				readings={readings}
+				actions={actions}
+			/>
+		),
+		[
+			catalog.listing.boards,
+			panes.list.activePaneId,
+			panes.active.status.boardKey,
+			readings,
+			actions,
+		],
+	);
 	const recordedPane = recordedPaneOf(recorded.recording, panes.list, mounted);
 	if (recordedPane !== null) {
 		return (
@@ -461,6 +487,7 @@ function ApplicationBody(): JSX.Element {
 				view={view}
 				actions={actions}
 				diagnostics={diagnostics}
+				search={search}
 				voiceControls={slots.voiceControls}
 				agentBar={slots.bar}
 				agentPanel={slots.panel}

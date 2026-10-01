@@ -9,6 +9,9 @@
 
 import { memo, useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 
+import { boardAncestors, type OutlineNode } from "@/ui/board-catalog";
+import type { CatalogBoard } from "@/ui/types";
+
 import type { PanePresentRequest, SemanticPanePart } from "@/shared/semantic-pane-context";
 import type { PaneCallbacks } from "@/ui/application/hooks/use-panes";
 import type { PickedSubject } from "@/ui/application/hooks/use-pane-reading";
@@ -74,6 +77,13 @@ interface ApplicationPaneProps {
 	overlay?: ReactNode;
 	/** Whether the person asked for reduced motion. */
 	reducedMotion: boolean;
+	/** The vault's boards as the navigator draws them: where the pane's board sits. */
+	outline: readonly OutlineNode<CatalogBoard>[];
+	/**
+	 * Show a board above this pane's own, as a breadcrumb asks.
+	 * @param key The board key.
+	 */
+	onOpenBoard: (key: string) => void;
 	/** A walkthrough step the page moves this pane to itself (a recording, TASK-304), or null. */
 	step?: SemanticBoardStageProps["driven"];
 	/** The pane is a recording page's, which the server leaves out of addressing (TASK-304). */
@@ -271,6 +281,16 @@ interface PaneDiagramProps extends ApplicationPaneProps {
  */
 const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Element {
 	const { address, openCode, onPick, onUserChanged, onViewChange, picked, view } = props;
+	const { outline, onOpenBoard } = props;
+	// The boards above this one in the navigator's outline, each a way up.
+	const ancestors = useMemo(
+		() =>
+			boardAncestors(outline, address.board).map((board) => ({
+				name: board.name,
+				open: (): void => onOpenBoard(board.key),
+			})),
+		[outline, address.board, onOpenBoard],
+	);
 	// The stage calls these from a click or a key and from nothing else: a walkthrough step
 	// highlights its subjects and reads through its own view without going through either, and
 	// a pane that moves has its pick cleared above this. So this is where the user's hand is.
@@ -309,9 +329,19 @@ const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Elem
 			onNarrate={props.onNarrate}
 			overlay={props.overlay}
 			reducedMotion={props.reducedMotion}
+			ancestors={ancestors}
+			onOpenBoards={focusNavigator}
 		/>
 	);
 });
+
+/**
+ * Take the reader to the navigator's filter, where every board is, by the key
+ * that does it from anywhere in the shell.
+ */
+function focusNavigator(): void {
+	window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }));
+}
 
 /**
  * One picked subject, as the reading reports it: the id always, and whatever

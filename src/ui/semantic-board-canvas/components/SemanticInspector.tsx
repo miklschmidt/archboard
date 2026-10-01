@@ -20,10 +20,9 @@ import {
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
-import { SemanticDrillDown } from "@/ui/semantic-board-canvas/components/SemanticDrillDown";
+import { DetailsPanel } from "@/ui/semantic-board-canvas/components/DetailsPanel";
 import type { CodeBinding } from "@/shared/code-target";
 import {
-	BindingBody,
 	Described,
 	Memberships,
 	Row,
@@ -36,7 +35,9 @@ import {
 	WaitingBlock,
 	type StandingProps,
 } from "@/ui/semantic-board-canvas/components/SemanticInspectorStanding";
+import { cn } from "@/ui/components/class-names";
 import { useSemanticBoardChanges } from "@/ui/semantic-board-canvas/hooks/use-semantic-board-changes";
+import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
 import { semanticBoardDocumentQuery } from "@/ui/semantic-board-canvas/lib/queries";
 import {
 	depictionOf,
@@ -44,7 +45,6 @@ import {
 	subjectOf,
 	type EdgeSubject,
 	type FlowSubject,
-	type NodeSubject,
 	type StepSubject,
 	type Subject,
 } from "@/ui/semantic-board-canvas/lib/board-document";
@@ -114,59 +114,6 @@ function StepBody(props: StepBodyProps): JSX.Element {
 	);
 }
 
-/** Inputs for the node body. */
-interface NodeBodyProps {
-	/** The selected node. */
-	subject: NodeSubject;
-	/**
-	 * Open the board one level down.
-	 * @param board The target board.
-	 * @param variant The variant to open, by id.
-	 */
-	onOpen: (board: string, variant: string) => void;
-	/**
-	 * Open the code a node is bound to, when the shell around the pane can.
-	 * @param binding Where the code is.
-	 */
-	onOpenCode?: (binding: CodeBinding) => void;
-	/** How to name the groups the node belongs to, and select one. */
-	groups: GroupControls;
-}
-
-/**
- * Everything the board says about one node.
- * @param props The node and how to follow its drill-down.
- * @returns The body.
- */
-function NodeBody(props: NodeBodyProps): JSX.Element {
-	const { node } = props.subject;
-	return (
-		<>
-			<TitleBlock
-				name={node.name}
-				kind={node.kind}
-				id={node.id}
-				responsibility={node.responsibility}
-			/>
-			<Memberships groups={node.groups} controls={props.groups} />
-			<Described text={node.description} />
-			<Section title="Bound repository">
-				<BindingBody
-					binding={node.binding}
-					{...(props.onOpenCode === undefined ? {} : { onOpenCode: props.onOpenCode })}
-				/>
-			</Section>
-			{node.drillDown !== undefined && (
-				<div className="border-border border-t">
-					<div className="px-4 py-4">
-						<SemanticDrillDown target={node.drillDown} onOpen={props.onOpen} />
-					</div>
-				</div>
-			)}
-		</>
-	);
-}
-
 /** Inputs for the edge body. */
 interface EdgeBodyProps {
 	/** The selected relationship, with the nodes at its ends. */
@@ -195,28 +142,12 @@ function EdgeBody(props: EdgeBodyProps): JSX.Element {
 }
 
 /**
- * Whichever of the four bodies the selected subject calls for.
+ * Whichever of the other three bodies the selected subject calls for. A part
+ * has its own panel, `DetailsPanel`.
  * @param subject What the board says the selection is.
- * @param props What a node body needs beyond the subject.
- * @param props.onOpen Open the board one level down, given its board and variant.
- * @param props.onOpenCode Open the code a node is bound to, when the shell can.
- * @param props.groups How to name groups and select one.
  * @returns The body.
  */
-function bodyFor(
-	subject: Subject,
-	props: Pick<BodyProps, "onOpen" | "onOpenCode" | "groups">,
-): JSX.Element {
-	if (subject.kind === "node") {
-		return (
-			<NodeBody
-				subject={subject}
-				onOpen={props.onOpen}
-				groups={props.groups}
-				{...(props.onOpenCode === undefined ? {} : { onOpenCode: props.onOpenCode })}
-			/>
-		);
-	}
+function bodyFor(subject: EdgeSubject | FlowSubject | StepSubject): JSX.Element {
 	if (subject.kind === "edge") {
 		return <EdgeBody subject={subject} />;
 	}
@@ -246,6 +177,15 @@ interface BodyProps {
 	onOpen: (board: string, variant: string) => void;
 	/** How to name the groups a node belongs to, and select one. */
 	groups: GroupControls;
+	/** The state that holds the subject: its relationships are read there. */
+	held: SemanticVariant | undefined;
+	/** How the vault's kinds look. */
+	look: KindLook;
+	/**
+	 * Pick another part out.
+	 * @param id The part.
+	 */
+	onPick: (id: string | null) => void;
 }
 
 /**
@@ -262,9 +202,8 @@ function InspectorBody(props: BodyProps): JSX.Element {
 	if (subject === undefined) {
 		return <p className="text-muted-foreground text-body px-4 py-4">{props.notice}</p>;
 	}
-	return (
+	const standing = (
 		<>
-			{bodyFor(subject, props)}
 			<WaitingBlock open={props.open} />
 			{against !== null && (
 				<StandingBlock
@@ -273,6 +212,31 @@ function InspectorBody(props: BodyProps): JSX.Element {
 					moved={against.moved}
 				/>
 			)}
+		</>
+	);
+	if (subject.kind === "node" && props.held !== undefined) {
+		return (
+			<DetailsPanel
+				subject={subject}
+				content={props.held.content}
+				look={props.look}
+				groupNames={props.groups.names}
+				onPick={props.onPick}
+				onOpen={props.onOpen}
+				onOpenCode={props.onOpenCode}
+			>
+				<Memberships groups={subject.node.groups} controls={props.groups} />
+				{standing}
+			</DetailsPanel>
+		);
+	}
+	if (subject.kind === "node") {
+		return <p className="text-muted-foreground text-body px-4 py-4">{props.notice}</p>;
+	}
+	return (
+		<>
+			{bodyFor(subject)}
+			{standing}
 		</>
 	);
 }
@@ -287,6 +251,8 @@ interface Explanation {
 	readonly against: StandingProps | null;
 	/** What about this subject nobody has decided yet; empty when nothing is open. */
 	readonly open: readonly ReconciliationIssue[];
+	/** The state that holds the subject, when one does. */
+	readonly held: SemanticVariant | undefined;
 }
 
 /**
@@ -314,16 +280,18 @@ function comparedSubject(
 	board: SemanticBoard,
 	shown: SemanticVariant,
 	selection: string,
-): Pick<Explanation, "subject" | "against"> {
+): Pick<Explanation, "subject" | "against" | "held"> {
 	const depiction = depictionOf(board, shown);
 	const other = depiction.against;
-	const subject =
-		subjectOf(shown, selection) ?? (other === undefined ? undefined : subjectOf(other, selection));
+	const own = subjectOf(shown, selection);
+	const subject = own ?? (other === undefined ? undefined : subjectOf(other, selection));
+	const held = own === undefined ? other : shown;
 	if (subject === undefined || other === undefined) {
-		return { subject, against: null };
+		return { subject, held, against: null };
 	}
 	return {
 		subject,
+		held,
 		against: {
 			standing: depiction.standing(selection),
 			against: other.name,
@@ -354,7 +322,7 @@ function explain(
 	selection: string,
 ): Explanation {
 	const { data: document } = read;
-	const nothing = { subject: undefined, against: null, open: [] } as const;
+	const nothing = { subject: undefined, against: null, open: [], held: undefined } as const;
 	if (read.error !== null) {
 		return { ...nothing, notice: `This board could not be read. ${read.error.message}` };
 	}
@@ -413,6 +381,13 @@ interface SemanticInspectorProps {
 	onOpen: (board: string, variant: string) => void;
 	/** How to name the groups a node belongs to, and select one. */
 	groups: GroupControls;
+	/** How the vault's kinds look. */
+	look: KindLook;
+	/**
+	 * Pick a part out: the one at the other end of a relationship.
+	 * @param id The part, or null.
+	 */
+	onPick: (id: string | null) => void;
 }
 
 /**
@@ -440,12 +415,18 @@ function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 			data-slot="semantic-inspector"
 			data-subject={subject?.kind ?? "unknown"}
 			data-standing={explained.against?.standing}
-			className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+			className={cn(
+				"flex min-h-0 flex-1 flex-col",
+				subject?.kind === "node" ? "overflow-hidden" : "overflow-y-auto",
+			)}
 		>
 			<InspectorBody
 				subject={subject}
 				against={explained.against}
 				open={explained.open}
+				held={explained.held}
+				look={props.look}
+				onPick={props.onPick}
 				notice={explained.notice}
 				onOpen={props.onOpen}
 				groups={props.groups}

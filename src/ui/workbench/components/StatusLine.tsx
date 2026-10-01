@@ -211,7 +211,7 @@ function SignInPending(props: {
 					href={props.url}
 					target="_blank"
 					rel="noreferrer"
-					className="text-control text-primary hover:bg-sidebar-accent flex h-7 items-center gap-1 rounded-[3px] px-2 font-medium"
+					className="text-control text-primary-text hover:bg-sidebar-accent flex h-7 items-center gap-1 rounded-[3px] px-2 font-medium"
 				>
 					Open the page
 					<RiExternalLinkLine aria-hidden="true" className="size-3.5" />

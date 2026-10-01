@@ -14,6 +14,7 @@
 import {
 	addressedVariant,
 	comparedWith,
+	type Adoption,
 	compareVariants,
 	parseSemanticBoard,
 	standingOf,
@@ -300,12 +301,16 @@ interface OfferedVariant {
 	readonly lifecycle: VariantLifecycle;
 	/** The variant it came from, when it came from one. */
 	readonly parent: string | undefined;
+	/** What the variant says about itself, when it says. */
+	readonly summary: string | undefined;
 }
 
 /** What one variant says about itself beyond the picture drawn of it. */
 interface VariantReading {
 	/** Every variant of the board, in the order the board states them. */
 	readonly variants: readonly OfferedVariant[];
+	/** Every time the designation of the current architecture moved, oldest first. */
+	readonly adoptions: readonly Adoption[];
 	/**
 	 * Every view of the board, with what each answers, in the order the board
 	 * states them. The board tab reads a view's summary here rather than from the
@@ -408,6 +413,7 @@ function offeredVariant(variant: SemanticVariant): OfferedVariant {
 		name: variant.name,
 		lifecycle: variant.lifecycle,
 		parent: variant.parent,
+		summary: variant.summary,
 	};
 }
 
@@ -427,7 +433,7 @@ function idItself(id: string): string {
  * @returns Its explanations, and how to name what they are about.
  */
 function readingOf(
-	family: Pick<VariantReading, "variants" | "views" | "opens">,
+	family: Pick<VariantReading, "variants" | "adoptions" | "views" | "opens">,
 	variant: SemanticVariant,
 ): VariantReading {
 	/**
@@ -484,6 +490,7 @@ function readVariant(document: unknown, asked: string | undefined): VariantReadi
 	const named = addressedVariant(reading.board, undefined);
 	const family = {
 		variants: reading.board.variants.map(offeredVariant),
+		adoptions: reading.board.adoptions ?? [],
 		views: reading.board.views,
 		opens: named.ok ? named.variant.id : null,
 	};
@@ -509,13 +516,14 @@ function nothingHeld(): SelectedSubject | undefined {
 }
 
 /** A reading of a board whose asked-for variant is not one of its own. */
-const NOTHING_SHOWN: Omit<VariantReading, "variants" | "views" | "opens"> = Object.freeze({
-	showing: null,
-	variant: null,
-	walkthroughs: [],
-	nameOf: idItself,
-	subject: nothingHeld,
-});
+const NOTHING_SHOWN: Omit<VariantReading, "variants" | "adoptions" | "views" | "opens"> =
+	Object.freeze({
+		showing: null,
+		variant: null,
+		walkthroughs: [],
+		nameOf: idItself,
+		subject: nothingHeld,
+	});
 
 /**
  * What a selected subject is, for whoever has to report it rather than draw it.
