@@ -6,8 +6,8 @@ status: accepted
 
 Upstream compiled its TypeScript and ran the output. We kept doing that after
 moving to bun, which runs TypeScript directly. Nobody decided to keep it. It
-was inherited, and ADR 0002 says inherited conventions do not get to stay
-merely because they are there.
+was inherited, and an inherited convention does not get to stay merely because
+it is there.
 
 ## Why that is a problem
 
