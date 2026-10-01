@@ -1,8 +1,15 @@
-// The explanations this variant gives of itself, offered in the sidebar beside the board’s shared views.
+// The explanations this variant gives of itself, offered in the sidebar above
+// the board's shared views.
 //
-// A walkthrough is a reading, like a view: choosing one opens a rail beside the
+// A walkthrough is a reading, like a view: choosing one presents it over the
 // diagram and changes nothing else. No board is written, no version moves, and
 // the other pane showing this board is unaffected (ADR 0023).
+//
+// It comes before the views because it is the author's way in: a first reader
+// takes the explanation, then reads on their own (TASK-383). A row therefore
+// says what it does before what it is called: the mark that it presents, the
+// whole name, and how many steps it takes, which is what a reader weighs before
+// starting one.
 //
 // A variant that states no walkthrough is offered nothing — no rail, no empty
 // list, no control that would only ever be disabled — and that is decided in one
@@ -14,11 +21,18 @@
 // already says: the button is the explanation's presence on screen, and pressing
 // it again is how anything pressed is let go.
 
-import { RiMicLine } from "@remixicon/react";
+import { RiMicLine, RiPlayFill } from "@remixicon/react";
 import { useCallback, type JSX } from "react";
 
 import type { SemanticWalkthrough } from "@/shared/semantic-board/index";
 import { Button } from "@/ui/components/button";
+import {
+	SidebarChoice,
+	SidebarChoices,
+	SidebarGlyph,
+	SidebarLabel,
+	SidebarMeta,
+} from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
 
 /** Inputs for the walkthrough bar. */
 interface SemanticWalkthroughBarProps {
@@ -39,8 +53,8 @@ interface SemanticWalkthroughBarProps {
 	onNarrate?: ((walkthrough: string) => void) | undefined;
 }
 
-/** One walkthrough's button. */
-interface WalkthroughButtonProps {
+/** One walkthrough's row. */
+interface WalkthroughRowProps {
 	/** The explanation it offers. */
 	walkthrough: SemanticWalkthrough;
 	/** Whether it is the one being read. */
@@ -55,11 +69,21 @@ interface WalkthroughButtonProps {
 }
 
 /**
- * One explanation's button.
- * @param props The walkthrough, whether it is open, and what to do when pressed.
- * @returns The button.
+ * How long an explanation is, in the words a reader weighs it by.
+ * @param walkthrough The explanation.
+ * @returns Its number of steps.
  */
-function WalkthroughButton(props: WalkthroughButtonProps): JSX.Element {
+function lengthOf(walkthrough: SemanticWalkthrough): string {
+	const steps = walkthrough.beats.length;
+	return steps === 1 ? "1 step" : `${steps} steps`;
+}
+
+/**
+ * One explanation's row: the choice that presents it, and narrating it beside.
+ * @param props The walkthrough, whether it is open, and what to do when pressed.
+ * @returns The row.
+ */
+function WalkthroughRow(props: WalkthroughRowProps): JSX.Element {
 	const { walkthrough, open, onChoose } = props;
 	const choose = useCallback((): void => {
 		onChoose(open ? null : walkthrough.id);
@@ -71,19 +95,20 @@ function WalkthroughButton(props: WalkthroughButtonProps): JSX.Element {
 		onNarrate?.(walkthrough.id);
 	}, [onNarrate, walkthrough.id]);
 	return (
-		<div className="flex items-center gap-0.5">
-			<Button
-				type="button"
-				variant={open ? "secondary" : "ghost"}
-				size="sm"
-				aria-pressed={open}
+		<div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-1">
+			<SidebarChoice
+				pressed={open}
 				data-slot="semantic-walkthrough-choice"
 				data-semantic-walkthrough={walkthrough.id}
-				className="min-w-0 flex-1 justify-start"
 				onClick={choose}
 			>
-				<span className="truncate">{walkthrough.name}</span>
-			</Button>
+				<SidebarGlyph>
+					<RiPlayFill className="text-muted-foreground size-3" />
+				</SidebarGlyph>
+				<SidebarLabel>
+					{walkthrough.name} <SidebarMeta>{lengthOf(walkthrough)}</SidebarMeta>
+				</SidebarLabel>
+			</SidebarChoice>
 			{onNarrate !== undefined && (
 				<Button
 					type="button"
@@ -109,16 +134,9 @@ function WalkthroughButton(props: WalkthroughButtonProps): JSX.Element {
 function SemanticWalkthroughBar(props: SemanticWalkthroughBarProps): JSX.Element {
 	const { walkthroughs, open, onChoose, onNarrate } = props;
 	return (
-		<fieldset
-			data-slot="semantic-walkthrough-bar"
-			aria-label="Explanations of this board"
-			// A fieldset is as wide as its longest line unless told otherwise, which pushes the
-			// narrate button out of the sidebar instead of truncating the name.
-			className="flex min-w-0 flex-col items-stretch gap-0.5 border-0 p-0"
-		>
-			<legend className="sr-only">Explanations of this board</legend>
+		<SidebarChoices slot="semantic-walkthrough-bar" label="Explanations of this board">
 			{walkthroughs.map((walkthrough) => (
-				<WalkthroughButton
+				<WalkthroughRow
 					key={walkthrough.id}
 					walkthrough={walkthrough}
 					open={open === walkthrough.id}
@@ -126,7 +144,7 @@ function SemanticWalkthroughBar(props: SemanticWalkthroughBarProps): JSX.Element
 					onNarrate={onNarrate}
 				/>
 			))}
-		</fieldset>
+		</SidebarChoices>
 	);
 }
 

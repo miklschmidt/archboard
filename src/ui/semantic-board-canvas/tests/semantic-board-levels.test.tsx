@@ -126,6 +126,28 @@ function buttons(slot: string): HTMLElement[] {
 }
 
 /**
+ * One variant's choice in the sidebar, by its id.
+ * @param id The variant's id.
+ * @returns The choice.
+ */
+function variantChoice(id: string): HTMLElement {
+	return document.querySelector<HTMLElement>(
+		`[data-slot='semantic-variant-choice'][data-semantic-variant='${id}']`,
+	)!;
+}
+
+/**
+ * Each variant choice's id and lifecycle, in the order the sidebar lists them.
+ * @returns The pairs.
+ */
+function listedVariants(): (string | undefined)[][] {
+	return buttons("semantic-variant-choice").map((one) => [
+		one.dataset["semanticVariant"],
+		one.dataset["semanticLifecycle"],
+	]);
+}
+
+/**
  * Follow the selected node's drill-down.
  * @returns Settles once the level below is on screen.
  */
@@ -160,14 +182,15 @@ test("a board a level down offers its own views and its own states", async () =>
 		"The parts",
 		"One write, in order",
 	]);
-	// And its own states, so a reader can tell whether what they followed a link
-	// into is the architecture, a proposal, or history.
-	expect(buttons("semantic-variant-choice").map((one) => one.textContent)).toEqual([
-		"as builtdraft",
-		"shippedcurrent",
+	// And its own variants, so a reader can tell whether what they followed a
+	// link into is the architecture, a proposal, or history: in the navigator's
+	// order, the one the board's name opens first.
+	expect(listedVariants()).toEqual([
+		["e2", "current"],
+		["e1", "draft"],
 	]);
 	// The link named "as built", so that is what is on screen.
-	expect(buttons("semantic-variant-choice")[0]?.getAttribute("aria-pressed")).toBe("true");
+	expect(variantChoice("e1").getAttribute("aria-pressed")).toBe("true");
 });
 
 test("double-clicking a card opens the board it drills down to", async () => {
@@ -184,7 +207,7 @@ test("double-clicking a card opens the board it drills down to", async () => {
 	const stage = document.querySelector("[data-slot='semantic-board-stage']");
 	expect(stage?.getAttribute("data-board")).toBe("engine");
 	// The variant the link names, as the inspector's way in would have opened.
-	expect(buttons("semantic-variant-choice")[0]?.getAttribute("aria-pressed")).toBe("true");
+	expect(variantChoice("e1").getAttribute("aria-pressed")).toBe("true");
 });
 
 test("a double-click whose board answers after the pane moved on opens nothing", async () => {
@@ -276,13 +299,13 @@ test("choosing at the level below asks for that reading of the board below", asy
 	// The board below's current state is asked for as the absence of a variant,
 	// the same way the pane asks for its own.
 	await act(async () => {
-		fireEvent.click(buttons("semantic-variant-choice")[1]!);
+		fireEvent.click(variantChoice("e2"));
 	});
 	await settle();
 	const afterwards = renderCalls().at(-1) ?? "";
 	expect(afterwards).toContain("board=engine");
 	expect(afterwards).toContain("view=ev2");
-	expect(buttons("semantic-variant-choice")[1]?.getAttribute("aria-pressed")).toBe("true");
+	expect(variantChoice("e2").getAttribute("aria-pressed")).toBe("true");
 	expect(buttons("semantic-view-choice")[2]?.getAttribute("aria-pressed")).toBe("true");
 });
 
@@ -383,7 +406,7 @@ test("choosing a way of reading a level does not change which state it is", asyn
 	const asked = renderCalls().at(-1) ?? "";
 	expect(asked).toContain("board=engine");
 	expect(asked).toContain("variant=e1");
-	expect(buttons("semantic-variant-choice")[0]?.getAttribute("aria-pressed")).toBe("true");
+	expect(variantChoice("e1").getAttribute("aria-pressed")).toBe("true");
 });
 
 test("choosing the current state at a level, then a view, stays on the current state", async () => {
@@ -398,7 +421,7 @@ test("choosing the current state at a level, then a view, stays on the current s
 	// The link named a draft; the person asks for what is current instead, which
 	// is asked for as the absence of a variant.
 	await act(async () => {
-		fireEvent.click(buttons("semantic-variant-choice")[1]!);
+		fireEvent.click(variantChoice("e2"));
 	});
 	await settle();
 	expect(renderCalls().at(-1)).not.toContain("variant=");
@@ -413,7 +436,7 @@ test("choosing the current state at a level, then a view, stays on the current s
 	const asked = renderCalls().at(-1) ?? "";
 	expect(asked).toContain("board=engine");
 	expect(asked).not.toContain("variant=");
-	expect(buttons("semantic-variant-choice")[1]?.getAttribute("aria-pressed")).toBe("true");
+	expect(variantChoice("e2").getAttribute("aria-pressed")).toBe("true");
 });
 
 test("a link into a proposal that was let go says so before it opens, and after", async () => {
@@ -437,9 +460,9 @@ test("a link into a proposal that was let go says so before it opens, and after"
 
 	await openDown();
 	// And on screen once it is open, where draft and current already say where
-	// they stand.
-	expect(buttons("semantic-variant-choice").map((one) => one.textContent)).toEqual([
-		"as builtshelved",
-		"shippedcurrent",
+	// they stand: the shelved variant after the live one, as the navigator lists it.
+	expect(listedVariants()).toEqual([
+		["e2", "current"],
+		["e1", "shelved"],
 	]);
 });
