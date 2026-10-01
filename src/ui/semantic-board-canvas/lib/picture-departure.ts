@@ -22,6 +22,7 @@
 
 import { PICTURE_EXIT_MS } from "@/shared/timing/timing";
 import { clockOf, setClock } from "@/ui/semantic-board-canvas/lib/picture-clock";
+import { runTraffic } from "@/ui/semantic-board-canvas/lib/picture-traffic";
 import type { SemanticBox } from "@/ui/semantic-board-canvas/api/semantic-boards";
 
 /** Where the reader went, as far as the picture leaving is concerned. */
@@ -278,9 +279,11 @@ function ghostPicture(surface: HTMLElement, heading: Departure | null, moved: Of
 	const { look } = visible;
 	const to = onwards(visible.root, look, heading);
 	made.copy.style.transformOrigin = to.origin;
-	surface.after(made.ghost);
 	// A clone is a new picture whose traffic would start again: it runs on as it was.
-	setClock(made.copy, clockOf(visible.root));
+	const clock = clockOf(visible.root);
+	runTraffic(made.copy, clock ?? 0);
+	surface.after(made.ghost);
+	setClock(made.copy, clock);
 	const fade = made.copy.animate(
 		[
 			{ opacity: look.opacity, transform: look.transform },

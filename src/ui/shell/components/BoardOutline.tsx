@@ -4,6 +4,7 @@
 
 import {
 	useCallback,
+	useLayoutEffect,
 	useRef,
 	useState,
 	type CSSProperties,
@@ -75,6 +76,12 @@ function BoardOutline(props: BoardOutlineProps): JSX.Element {
 		},
 		[focusRow, onExpand, onOpen],
 	);
+	// The rows as they are when a key is pressed: read then, so the handler every
+	// row holds keeps one identity while news changes one row (TASK-385.04).
+	const rowsNow = useRef(rows);
+	useLayoutEffect(() => {
+		rowsNow.current = rows;
+	}, [rows]);
 	const handleKeyDown = useCallback(
 		(event: KeyboardEvent<HTMLDivElement>): void => {
 			if (stop === undefined) return;
@@ -83,7 +90,7 @@ function BoardOutline(props: BoardOutlineProps): JSX.Element {
 				onTypeAhead(event.key);
 				return;
 			}
-			const action = outlineKey(rows, stop, {
+			const action = outlineKey(rowsNow.current, stop, {
 				key: event.key,
 				altKey: event.altKey,
 				filtering,
@@ -92,7 +99,7 @@ function BoardOutline(props: BoardOutlineProps): JSX.Element {
 			event.preventDefault();
 			perform(action);
 		},
-		[rows, stop, onTypeAhead, perform, filtering],
+		[stop, onTypeAhead, perform, filtering],
 	);
 	return (
 		<div

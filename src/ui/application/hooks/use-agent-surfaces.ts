@@ -1,31 +1,31 @@
-// The agent's surfaces as the application places them: the agent bar under
-// the panes, the conversation panel beside them while it is open, and the Talk
-// control a presentation carries — all over one agent view and one set of
-// actions, so each fact has one home and every control behaves the same way
-// wherever it appears.
+// The agent's surfaces as the application holds them: the agent bar under the
+// panes, the conversation panel beside them while it is open, and the Talk
+// control a presentation carries, all over one set of actions, so each fact has
+// one home and every control behaves the same way wherever it appears.
+//
+// Only what changes when the person acts is held here: the actions, the draft,
+// whether the panel is open, and the voice. What changes while the agent works
+// (the conversation, the approvals, the progress clock) is read by each surface
+// itself, so a reply draws the surfaces and not the shell around them
+// (TASK-385.03).
 
 import { useCallback, useMemo, useState } from "react";
 
 import { useAgent } from "@/ui/application/hooks/use-agent";
-import { useAgentPanel, useUnread } from "@/ui/application/hooks/use-agent-panel";
+import { useAgentPanel, type AgentPanelState } from "@/ui/application/hooks/use-agent-panel";
 import type { Workbench } from "@/ui/application/hooks/use-workbench";
-import { createDraftStore, type AgentBarProps, type AgentPanelProps } from "@/ui/workbench";
-import type { AgentActions, AgentContext, AgentView } from "@/ui/workbench/contracts";
+import { createDraftStore, type DraftStore } from "@/ui/workbench";
+import type { AgentActions, AgentVoiceView } from "@/ui/workbench/contracts";
 
-/** What the agent's surfaces are composed from. */
-interface AgentSurfaceInputs {
-	readonly workbench: Workbench;
-	readonly context: AgentContext;
-	readonly reducedMotion: boolean;
-}
-
-/** The agent's surfaces, as the inputs of each. */
+/** The agent's surfaces, as the application holds them. */
 interface AgentSurfaces {
-	readonly view: AgentView;
+	/** The voice, as the bar and a presentation's Talk control show it. */
+	readonly voice: AgentVoiceView;
 	readonly actions: AgentActions;
-	readonly bar: AgentBarProps;
-	/** The conversation panel, or null while it is closed. */
-	readonly panel: AgentPanelProps | null;
+	/** What the composer holds, which the panel's suggestions fill. */
+	readonly draft: DraftStore;
+	/** Whether the conversation panel is open, and the moves that open and close it. */
+	readonly panel: AgentPanelState;
 	/**
 	 * Send the agent a message and show the conversation.
 	 * @param text The message.
@@ -35,52 +35,18 @@ interface AgentSurfaces {
 
 /**
  * The agent's surfaces.
- * @param inputs The workbench, the context and the motion preference.
- * @returns The inputs of each surface.
+ * @param workbench The workbench.
+ * @returns The voice, the actions, the draft, the panel and a way to ask.
  */
-function useAgentSurfaces(inputs: AgentSurfaceInputs): AgentSurfaces {
-	const { workbench, context, reducedMotion } = inputs;
+function useAgentSurfaces(workbench: Workbench): AgentSurfaces {
 	const [draft] = useState(createDraftStore);
 	const panel = useAgentPanel();
-	const { view, actions } = useAgent({
-		workbench,
-		draft,
-		context,
-		openPanel: panel.openPanel,
-	});
-	const unread = useUnread(view.conversation, panel.open);
+	const { voice, actions } = useAgent({ workbench, draft, openPanel: panel.openPanel });
 	const ask = useCallback((text: string): void => actions.send(text, false), [actions]);
-	const bar = useMemo<AgentBarProps>(
-		() => ({
-			view,
-			actions,
-			draft,
-			panelOpen: panel.open,
-			unread,
-			onTogglePanel: panel.togglePanel,
-			reducedMotion,
-		}),
-		[view, actions, draft, panel.open, unread, panel.togglePanel, reducedMotion],
+	return useMemo(
+		() => ({ voice, actions, draft, panel, ask }),
+		[voice, actions, draft, panel, ask],
 	);
-	// The panel is the person's choice alone: it stays while the socket is down.
-	const transport = workbench.owners?.transport ?? null;
-	const panelProps = useMemo<AgentPanelProps | null>(
-		() =>
-			panel.open
-				? {
-						view,
-						actions,
-						transport,
-						suggest: draft.fill,
-						details: panel.details,
-						onDetails: panel.showDetails,
-						onConversation: panel.showConversation,
-						onClose: panel.closePanel,
-					}
-				: null,
-		[panel, view, actions, transport, draft],
-	);
-	return { view, actions, bar, panel: panelProps, ask };
 }
 
 export { useAgentSurfaces, type AgentSurfaces };

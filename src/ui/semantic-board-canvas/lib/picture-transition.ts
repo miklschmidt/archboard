@@ -38,6 +38,7 @@ import {
 	type SubjectGroup,
 } from "@/ui/semantic-board-canvas/lib/picture-pairing";
 import { clockOf, setClock } from "@/ui/semantic-board-canvas/lib/picture-clock";
+import { runTraffic } from "@/ui/semantic-board-canvas/lib/picture-traffic";
 import { SUBJECT_ATTRIBUTE, keepingMarks } from "@/ui/semantic-board-canvas/lib/subjects";
 
 /** A transition in progress: where it is, and how it ends. */
@@ -123,12 +124,30 @@ function continuousPictures(before: SemanticDrawing, after: SemanticDrawing): bo
  * browser. It is inserted rather than shown through an `<img>` because the
  * pane has to hit-test its groups, toggle the classes the embedded stylesheet
  * draws a selection with, and move its parts. Nothing else is ever put through
- * this property.
+ * this property. It is made away from the page and its traffic run there, so
+ * none of its SMIL ever starts in the page.
  * @param surface The element the picture is put into.
  * @param svg The picture.
  */
 function stagePicture(surface: HTMLElement, svg: string): void {
-	surface.innerHTML = svg;
+	const made = surface.ownerDocument.createElement("div");
+	made.innerHTML = svg;
+	runTraffic(made, 0);
+	surface.replaceChildren(...made.childNodes);
+}
+
+/**
+ * Borrow a group of the last picture into the next one, its traffic running on
+ * as it ran: the group comes from the last picture's markup, whose traffic has
+ * not run, and goes into a picture whose clock carried on from it.
+ * @param group The group in the last picture.
+ * @param root The next picture.
+ * @returns The borrowed copy, not yet placed.
+ */
+function borrowInto(group: SVGGElement, root: Element): SVGGElement {
+	const clone = borrow(group);
+	runTraffic(clone, root instanceof SVGSVGElement ? (clockOf(root) ?? 0) : 0);
+	return clone;
 }
 
 /**
@@ -154,7 +173,7 @@ function restagePicture(surface: HTMLElement, svg: string): void {
  * @returns The step.
  */
 function swapInPlace(before: SubjectGroup, after: SubjectGroup): Updater {
-	const clone = borrow(before.element);
+	const clone = borrowInto(before.element, after.element.ownerSVGElement ?? after.element);
 	after.element.before(clone);
 	const { fadeStart, fadeEnd } = PICTURE_TRANSITION_PHASES;
 	return (progress: number): void => {
@@ -190,7 +209,7 @@ function depthAnchor(root: Element, kind: string | null): Element | null {
  * @returns The step.
  */
 function leave(root: Element, group: SubjectGroup): Updater {
-	const clone = borrow(group.element);
+	const clone = borrowInto(group.element, root);
 	const anchor = depthAnchor(root, group.element.getAttribute("data-semantic-kind"));
 	if (anchor === null) {
 		root.append(clone);

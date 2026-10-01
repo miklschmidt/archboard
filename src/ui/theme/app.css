@@ -196,6 +196,13 @@
 	}
 }
 
+/* A picture's traffic changes on every frame. On a compositing layer of its own
+   only the traffic is painted again, not the cards and labels under it, which
+   took a third of a core on an idle board (TASK-385.01). */
+[data-slot="semantic-board-surface"] .ab-pulse {
+	will-change: transform;
+}
+
 /* The faint 8px dot grid an empty preview shows instead of a sentence. */
 @utility dot-grid {
 	background-image: radial-gradient(

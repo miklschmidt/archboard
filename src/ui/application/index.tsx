@@ -8,10 +8,11 @@ import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } f
 
 import type { CodeTargetNotice } from "@/shared/code-target";
 import { LiveBinding } from "@/ui/application/lib/live-binding";
+import { livePanesOver } from "@/ui/application/lib/live-panes";
 import { codeTargetShellNotice, infoNotice, presentationNotice } from "@/ui/application/notices";
 import { OpenerSettings } from "@/ui/application/components/OpenerSettings";
 import { paneEvents } from "@/ui/application/lib/pane-events";
-import { heldBoardKeys, recordFor } from "@/ui/application/pane-records";
+import { heldBoardKeys, recordFor, type PaneRecords } from "@/ui/application/pane-records";
 import { createShellActions } from "@/ui/application/actions";
 import {
 	addressingOver,
@@ -57,7 +58,8 @@ import { TooltipProvider } from "@/ui/components/tooltip";
 import { boardAddressOf, boardKeyFor } from "@/ui/semantic-board-canvas";
 import type { BoardListing } from "@/ui/types";
 import { RecordingStage } from "@/ui/walkthrough-recording";
-import { AgentBar, AgentPanel, TalkControl } from "@/ui/workbench";
+import { TalkControl } from "@/ui/workbench";
+import { AgentBarSlot, AgentPanelSlot } from "@/ui/application/components/AgentSurfaceSlots";
 import type { AgentContext } from "@/ui/workbench/contracts";
 import {
 	SETTINGS_TRIGGER_ID,
@@ -166,24 +168,43 @@ interface AgentSlots {
 	readonly voiceControls: ReactNode;
 }
 
+/** What the agent's surfaces are drawn from. */
+interface AgentSlotSources {
+	readonly agent: AgentSurfaces;
+	readonly workbench: Workbench;
+	/** The board the agent sees with the next message. */
+	readonly context: AgentContext;
+	readonly reducedMotion: boolean;
+}
+
 /**
  * The agent's surfaces drawn: the bar, the panel while it is open, and the
- * Talk control a presentation carries.
- * @param agent The inputs of each surface.
- * @param reducedMotion The motion preference.
+ * Talk control a presentation carries. The bar and the panel read what changes
+ * while the agent works themselves, so these elements are made again only when
+ * the person acts.
+ * @param sources The agent, the workbench, the context and the motion preference.
  * @returns The slots.
  */
-function useAgentSlots(agent: AgentSurfaces, reducedMotion: boolean): AgentSlots {
-	const { bar, panel, view, actions } = agent;
+function useAgentSlots(sources: AgentSlotSources): AgentSlots {
+	const { agent, workbench, context, reducedMotion } = sources;
 	return useMemo(
 		() => ({
-			bar: <AgentBar {...bar} />,
-			panel: panel === null ? null : <AgentPanel {...panel} />,
+			bar: (
+				<AgentBarSlot
+					agent={agent}
+					workbench={workbench}
+					context={context}
+					reducedMotion={reducedMotion}
+				/>
+			),
+			panel: agent.panel.open ? (
+				<AgentPanelSlot agent={agent} workbench={workbench} context={context} />
+			) : null,
 			voiceControls: (
-				<TalkControl voice={view.voice} actions={actions} reducedMotion={reducedMotion} />
+				<TalkControl voice={agent.voice} actions={agent.actions} reducedMotion={reducedMotion} />
 			),
 		}),
-		[bar, panel, view.voice, actions, reducedMotion],
+		[agent, workbench, context, reducedMotion],
 	);
 }
 
@@ -315,8 +336,8 @@ function ApplicationBody(): JSX.Element {
 		() => agentContextOf(catalog.listing, panes.active.status.boardKey),
 		[catalog.listing, panes.active.status.boardKey],
 	);
-	const agent = useAgentSurfaces({ workbench, context, reducedMotion });
-	const slots = useAgentSlots(agent, reducedMotion);
+	const agent = useAgentSurfaces(workbench);
+	const slots = useAgentSlots({ agent, workbench, context, reducedMotion });
 	const { raise } = notices;
 	// A refused exit stays with the presentation, where the person is; a
 	// refused entry becomes a notice in the workspace they are still in.
@@ -337,39 +358,50 @@ function ApplicationBody(): JSX.Element {
 	panes.bindEvents(paneEvents({ notices, catalog, readings, workbench, activity: agentActivity }));
 
 	const openSettings = useCallback((surface: SettingsSurface): void => setSettings(surface), []);
+	// The actions read the panes as they are when somebody acts, so a pane's news
+	// does not make them, and every control holding one, again.
+	const [panesNow] = useState(() => new LiveBinding<Panes>());
+	panesNow.bind(panes);
+	const [livePanes] = useState(() => livePanesOver(panesNow));
 	const composed = useMemo(
 		() =>
 			createShellActions({
 				setTheme,
 				addressing,
-				panes,
+				panes: livePanes,
 				catalog,
 				notices,
 				fullscreen,
 				openSettings,
 			}),
-		[setTheme, addressing, panes, catalog, notices, fullscreen, openSettings],
+		[setTheme, addressing, livePanes, catalog, notices, fullscreen, openSettings],
 	);
-	const openBeside = useBesideOpening(panes, composed);
+	const openBeside = useBesideOpening(panes, livePanes, composed);
 	const actions = useMemo<ShellActions>(
 		() => ({ ...composed, openBeside }),
 		[composed, openBeside],
 	);
 	// Which variant of its board a pane shows is part of the board key, so
-	// asking for another one is asking the shell to show a different board.
+	// asking for another one is asking the shell to show a different board. It
+	// reads the records and the actions when it is asked, so one identity serves
+	// every render: a pane's news changes both, and a pane must not be rebuilt for it.
+	const [variantSources] = useState(
+		() => new LiveBinding<{ readonly records: PaneRecords; readonly actions: ShellActions }>(),
+	);
+	variantSources.bind({ records: panes.records, actions });
 	const onVariantChange = useCallback(
 		(paneId: string, variant: string | null): void => {
-			const shown = recordFor(panes.records, paneId).status.boardKey;
-			const address = boardAddressOf(shown);
+			const { records, actions: shell } = variantSources.read();
+			const address = boardAddressOf(recordFor(records, paneId).status.boardKey);
 			if (address !== null) {
 				// This pane, not whichever has focus: the person chose a variant of
 				// the board in front of them, and focus follows the pointer.
-				actions.selectBoard(boardKeyFor(address.board, variant), paneId);
+				shell.selectBoard(boardKeyFor(address.board, variant), paneId);
 			}
 		},
-		[actions, panes.records],
+		[variantSources],
 	);
-	const narration = useNarration(workbench.setup, agent.view.voice, panes.list.activePaneId);
+	const narration = useNarration(workbench.setup, agent.voice, panes.list.activePaneId);
 	const overlay = useSubtitleOverlay(workbench, reducedMotion, recorder !== null);
 	const recorded = useRecordedViews(recorder, workbench, { narration, overlay });
 	const mounted = usePaneViews({

@@ -59,7 +59,7 @@ const edgeInks = (
  * each element's `style` (TASK-346). An expression the page cannot resolve
  * does not fail loudly: the property falls back to its initial value, a black
  * fill or stop, or no stroke at all. So every fill, stroke and gradient stop
- * the picture declares — lines, arrowheads, the comets SMIL moves and the
+ * the picture declares — lines, arrowheads, the comets its traffic moves and the
  * stops their tails fade through — is read back as the browser computed it.
  * A mask's shapes are not paint: they are black or white by design, saying
  * where a line's ink is hidden, and are left out.

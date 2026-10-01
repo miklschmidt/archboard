@@ -8,6 +8,7 @@
 
 import { describe, expect, test } from "bun:test";
 
+import { PICTURE_CLOCK } from "@/ui/frame-clock";
 import { createSteppedClock } from "@/ui/frame-clock/replay";
 
 /** A timeline the fakes run on, told apart by identity alone. */
@@ -33,12 +34,16 @@ class FakeAnimation {
 	 * An animation.
 	 * @param timeline The timeline it runs on.
 	 * @param endTime Where it ends in its own time, in milliseconds.
+	 * @param id Its id: the picture clock's for a picture's traffic.
+	 * @param target What it moves.
 	 */
 	constructor(
 		readonly timeline: FakeTimeline,
 		endTime: number,
+		readonly id = "",
+		target: FakeElement | null = null,
 	) {
-		this.effect = new FakeEffect(endTime);
+		this.effect = new FakeEffect(endTime, target);
 	}
 
 	/** Pause it. */
@@ -57,8 +62,12 @@ class FakeEffect {
 	/**
 	 * An effect.
 	 * @param endTime Where it ends, in milliseconds.
+	 * @param target What it moves.
 	 */
-	constructor(readonly endTime: number) {}
+	constructor(
+		readonly endTime: number,
+		readonly target: FakeElement | null,
+	) {}
 
 	/**
 	 * Its timing.
@@ -69,43 +78,25 @@ class FakeEffect {
 	}
 }
 
-/** A picture's root, reduced to its own animation clock. */
-class FakePicture {
-	time: number | null = null;
-	paused = false;
-
+/** An element of a picture, reduced to the picture it is drawn in. */
+class FakeElement {
 	/**
-	 * A picture, outermost or inside another.
-	 * @param ownerSVGElement The picture it is inside, or null.
+	 * An element: a picture's root when it is in no other picture.
+	 * @param ownerSVGElement The picture it is drawn in, or null for a root.
 	 */
-	constructor(readonly ownerSVGElement: FakePicture | null = null) {}
-
-	/** Pause its animations. */
-	pauseAnimations(): void {
-		this.paused = true;
-	}
-
-	/**
-	 * Stand its clock.
-	 * @param seconds Where.
-	 */
-	setCurrentTime(seconds: number): void {
-		this.time = seconds;
-	}
+	constructor(readonly ownerSVGElement: FakeElement | null = null) {}
 }
 
-/** A document holding some animations and pictures. */
+/** A document holding some animations. */
 class FakeDocument {
 	/**
 	 * A document.
 	 * @param timeline Its timeline.
 	 * @param animations Its animations.
-	 * @param pictures Its pictures.
 	 */
 	constructor(
 		readonly timeline: FakeTimeline,
 		readonly animations: readonly FakeAnimation[],
-		readonly pictures: readonly FakePicture[] = [],
 	) {}
 
 	/**
@@ -114,14 +105,6 @@ class FakeDocument {
 	 */
 	getAnimations(): readonly FakeAnimation[] {
 		return this.animations;
-	}
-
-	/**
-	 * Its pictures.
-	 * @returns Them.
-	 */
-	querySelectorAll(): readonly FakePicture[] {
-		return this.pictures;
 	}
 }
 
@@ -208,23 +191,34 @@ describe("a stepped clock", () => {
 		expect(elsewhere.currentTime).toBeNull();
 	});
 
-	test("runs each picture's traffic on from where it was stood, and leaves nested pictures to their root", () => {
+	test("runs each picture's traffic on its picture's clock, carried from where it was stood", () => {
+		const timeline = timelineOf();
 		const clock = createSteppedClock(0);
-		const first = new FakePicture();
-		const nested = new FakePicture(first);
+		const first = new FakeElement();
+		const nested = new FakeElement(new FakeElement(first));
+		const streak = new FakeAnimation(
+			timeline,
+			Number.POSITIVE_INFINITY,
+			PICTURE_CLOCK,
+			new FakeElement(first),
+		);
+		const inside = new FakeAnimation(timeline, Number.POSITIVE_INFINITY, PICTURE_CLOCK, nested);
 		clock.advanceTo(500);
-		clock.syncAnimations(new FakeDocument(timelineOf(), [], [first, nested]));
+		clock.syncAnimations(new FakeDocument(timeline, [streak, inside]));
 		clock.advanceTo(2500);
-		clock.syncAnimations(new FakeDocument(timelineOf(), [], [first, nested]));
-		expect(first.paused).toBe(true);
-		expect(first.time).toBe(2);
-		expect(nested.time).toBeNull();
-		// The same picture put up again carries the clock of the one it replaces.
-		const again = new FakePicture();
-		clock.setSvgTime(again, clock.svgTime(first));
+		clock.syncAnimations(new FakeDocument(timeline, [streak, inside]));
+		// A picture nested in another runs on the outermost one's clock.
+		expect([streak.currentTime, inside.currentTime]).toEqual([2000, 2000]);
+		// The same picture put up again carries the clock of the one it replaces,
+		// where an ordinary animation would start again from nought.
+		const again = new FakeElement();
+		const carried = new FakeAnimation(timeline, Number.POSITIVE_INFINITY, PICTURE_CLOCK, again);
+		clock.setPictureTime(again, clock.pictureTime(first));
 		clock.advanceTo(3000);
-		clock.syncAnimations(new FakeDocument(timelineOf(), [], [again]));
-		expect(again.time).toBe(2.5);
+		clock.syncAnimations(new FakeDocument(timeline, [carried]));
+		expect(carried.currentTime).toBe(2500);
+		expect(carried.pauses).toBe(1);
+		expect(clock.violations()).toEqual([]);
 	});
 
 	test("runs a frame asked of the browser on the clock, and still waits for the browser to draw", async () => {

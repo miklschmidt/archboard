@@ -40,6 +40,20 @@ function turn(id: string, outcome: ConversationTurn["outcome"]): ConversationTur
 	};
 }
 
+/** A voice that is not on: it never makes a sound. */
+const SILENT = {
+	/**
+	 * The level of a voice that is not on.
+	 * @returns Silence.
+	 */
+	read: (): number => 0,
+	/**
+	 * Nothing to hear.
+	 * @returns How to stop hearing nothing.
+	 */
+	subscribe: (): (() => void) => () => undefined,
+};
+
 /**
  * An agent view.
  * @param parts What differs from a ready, empty agent.
@@ -59,7 +73,7 @@ function view(parts: {
 		setup: { ...READY, ...parts.setup },
 		snapshot: null,
 		conversation: { snapshot: null, turns: parts.turns ?? [], failure: parts.failure ?? null },
-		voice: { stage: "idle", problem: null, busy: false, level: 0, audible: false },
+		voice: { stage: "idle", problem: null, busy: false, level: SILENT },
 		context: { board: "payments", state: null },
 		busyApprovals: [],
 		approvalErrors: {},

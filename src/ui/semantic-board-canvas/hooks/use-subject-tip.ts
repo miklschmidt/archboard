@@ -10,16 +10,18 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent } from "rea
 import { SUBJECT_TIP_DELAY_MS } from "@/shared/timing/timing";
 import { frameClock } from "@/ui/frame-clock";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
+import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import { tipTargetAt, type TipTarget } from "@/ui/semantic-board-canvas/lib/subject-tips";
 
-/** What a tip opened under: the picture, and where the camera was. */
+/** What a tip opens over: the picture, and the camera it is seen through. */
 interface TipScene {
 	readonly drawing: SemanticDrawing;
-	readonly camera: string;
+	readonly camera: Pick<BoardCamera, "subscribe">;
 }
 
-/** An open tip, and the scene it opened in. */
-interface OpenTip extends TipScene {
+/** An open tip, and the picture it opened on. */
+interface OpenTip {
+	readonly drawing: SemanticDrawing;
 	readonly target: TipTarget;
 }
 
@@ -48,17 +50,14 @@ function samePart(a: TipTarget, b: TipTarget): boolean {
 
 /**
  * The tip over the picture, opened by resting the pointer.
- * @param scene The picture on the surface and where the camera is now.
+ * @param scene The picture on the surface and the camera it is seen through.
  * @returns The open tip and its controls.
  */
 function useSubjectTip(scene: TipScene): SubjectTipControls {
 	const [open, setOpen] = useState<OpenTip | null>(null);
 	const waiting = useRef<{ readonly target: TipTarget; readonly timer: number } | null>(null);
 	const shown =
-		open !== null &&
-		open.drawing === scene.drawing &&
-		open.camera === scene.camera &&
-		open.target.anchor.isConnected
+		open !== null && open.drawing === scene.drawing && open.target.anchor.isConnected
 			? open.target
 			: null;
 
@@ -75,7 +74,11 @@ function useSubjectTip(scene: TipScene): SubjectTipControls {
 		setOpen(null);
 	}, [forget]);
 
+	// Any move of the camera puts the part somewhere else.
 	const { drawing, camera } = scene;
+	const { subscribe } = camera;
+	useEffect(() => subscribe(dismiss), [subscribe, dismiss]);
+
 	const onHover = useCallback(
 		(event: PointerEvent<HTMLElement>): void => {
 			const target = tipTargetAt(event.target, event.clientY);
@@ -87,7 +90,7 @@ function useSubjectTip(scene: TipScene): SubjectTipControls {
 				// One tip is open: the next opens at once, and the same one stays.
 				forget();
 				if (!samePart(shown, target)) {
-					setOpen({ target, drawing, camera });
+					setOpen({ target, drawing });
 				}
 				return;
 			}
@@ -99,11 +102,11 @@ function useSubjectTip(scene: TipScene): SubjectTipControls {
 				target,
 				timer: frameClock().after(SUBJECT_TIP_DELAY_MS, () => {
 					waiting.current = null;
-					setOpen({ target, drawing, camera });
+					setOpen({ target, drawing });
 				}),
 			};
 		},
-		[shown, drawing, camera, dismiss, forget],
+		[shown, drawing, dismiss, forget],
 	);
 
 	return { shown, onHover, dismiss };
