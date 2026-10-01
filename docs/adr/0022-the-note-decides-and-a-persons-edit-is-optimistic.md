@@ -7,50 +7,56 @@ status: accepted
 Supersedes, in part, [ADR 0006](0006-optimistic-concurrency-for-board-writes.md)
 and [ADR 0016](0016-one-writer-at-a-time-per-board.md). Tracked as TASK-152.
 
-Both earlier decisions grew a second rule beside the one they record: that a
-person at the canvas is never refused. ADR 0006 exempts a person from the
-version precondition; ADR 0016 lets any content gesture revoke an agent's
-claim so the wall never stops responding, and asks agents to restructure in
-view of the person. That rule was a product misunderstanding. It let a pane
-show a board the note does not hold, and it made a person's touch decide what
-an agent may do to a board the person may not even be looking at.
+Both earlier decisions grew a second rule beside the one they record. The rule
+was that a person at the canvas is never refused. ADR 0006 exempts a person from
+the version precondition. ADR 0016 lets any content gesture revoke the claim of
+an agent, so the wall never stops responding. It also asks agents to restructure
+in view of the person.
+
+That rule was a product misunderstanding. It let a pane show a board that the
+note does not hold. It also made the touch of a person decide what an agent can
+do to a board. This held whether or not the person looked at the board.
 
 ## Decision
 
-**There is one source of truth, the note on disk** (ADR 0015). Nothing a pane
+There is one source of truth, the note on disk (ADR 0015). Nothing that a pane
 shows is a second copy with its own authority.
 
-**A person's edit is an optimistic update, and nothing more.** The canvas
-applies the gesture immediately so the display feels direct, and the pane
-writes it with the version it last saw, like every other archboard writer.
-When the note has moved since, the write is refused with the same version
-conflict an agent gets, and the pane reconciles to the note: the optimistic
-change is withdrawn and the note's state is shown. A person's pane must never
-drift from the note. Refusal is not a failure of the experience; it is the
+A person's edit is an optimistic update, and nothing more. The canvas applies
+the gesture immediately, so the display feels direct. The pane writes the edit
+with the version that it last saw, like every other archboard writer.
+
+If the note moved since, the write is refused with the same version conflict
+that an agent gets. Then the pane reconciles to the note: it withdraws the
+optimistic change and shows the state of the note. A pane of a person must never
+drift from the note. Refusal is not a failure of the experience. It is the
 experience being honest, and the version check runs for everyone.
 
-**A claimed board is read-only to people while the claim stands.** When an
-agent claims a board, every pane showing it stops accepting content edits.
-Panning and zooming keep working, so a person can watch and read; the pane is
-in Excalidraw's view mode, which takes selection with it.
-A content gesture no longer revokes the claim. A person who wants the board
-back uses one explicit control that releases the claim, and the agent is told
-it lost the board, as ADR 0016 already says.
+While a claim stands, a claimed board is read-only to people. If an agent claims
+a board, every pane that shows it stops accepting content edits. Panning and
+zooming keep working, so a person can watch and read. The pane is in the view
+mode of Excalidraw, which takes selection with it.
 
-**An agent may edit any board, watched or not.** The agent's work is not
-steered toward what a person is looking at, and it is not asked to keep a
-restructure in view. What every pane owes the person instead is real-time
-visibility: which board an agent holds and what it said it is doing, including
-boards no pane has open. The `--doing` line on every agent write stays
-(ADR 0016, TASK-095); a person is still never asked to write one.
+A content gesture no longer revokes the claim. A person who wants the board back
+uses one explicit control that releases the claim. The agent learns that it lost
+the board, as ADR 0016 already says.
+
+An agent can edit any board, watched or not. Nothing steers the work of the
+agent toward what a person is looking at, and nobody asks the agent to keep a
+restructure in view. Every pane owes the person real-time visibility instead.
+The pane shows which board an agent holds and what the agent said it is doing.
+This includes boards that no pane has open. The `--doing` line on every agent
+write stays (ADR 0016, TASK-095), and nobody asks a person to write one.
 
 ## What remains from the earlier decisions
 
-- ADR 0006: the hash catches foreign writers and the version orders
-  archboard's own; the held-board outcomes after a refusal are unchanged. Only
-  the sentence "a person is never checked at all" is withdrawn.
-- ADR 0016: one writer at a time, the lease beside the note, the canvas
-  renewing a claim, the broadcast of lock state, and the agent being told once
-  when it loses the board. Withdrawn: a person's content gesture as takeover
-  (TASK-118), and the guidance that exclusion is never licence to work out of
-  sight.
+From ADR 0006, the hash still catches foreign writers and the version still
+orders the writes of archboard itself. The held-board outcomes after a refusal
+are unchanged. This decision withdraws only the sentence "a person is never
+checked at all".
+
+From ADR 0016, these rules stay: one writer at a time, the lease beside the
+note, the canvas renewing a claim, and the broadcast of lock state. An agent
+that loses the board is still told once. This decision withdraws two things. A
+person's content gesture as takeover is gone (TASK-118). The guidance that
+exclusion is never a license to work out of sight is gone too.

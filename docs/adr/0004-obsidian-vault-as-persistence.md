@@ -2,40 +2,50 @@
 status: accepted
 ---
 
-# Boards persist as files in an Obsidian vault spanning repositories
+# Boards persist as files in an Obsidian vault that spans repositories
 
-Boards are stored as `.excalidraw.md` notes in a single Obsidian vault that
-spans every repository we work on, rather than inside any one repo. Architecture
-work needs board-to-board drill-down, backlinks ("which boards reference this
-service?"), and prose alongside the diagrams — a vault gives all three for free,
-and the drill-down link is already a tappable affordance on the board itself.
+Boards are stored as `.excalidraw.md` notes in a single Obsidian vault. The
+vault spans every repository we work on. It is not inside any one repo.
+Architecture work needs board-to-board drill-down, backlinks ("which boards
+reference this service?"), and prose alongside the diagrams. A vault gives all
+three for free. The drill-down link is already a tappable affordance on the
+board itself.
 
-Verified before adopting: export is idempotent (two exports byte-identical, so a
-vault in git produces clean diffs), import then re-export is byte-lossless, and
-Obsidian block references survive the round-trip so human-authored links do not
-break.
+These properties were verified before the vault was adopted:
+
+- Export is idempotent. Two exports are byte-identical, so a vault in git
+  produces clean diffs.
+- Import then re-export is byte-lossless.
+- Obsidian block references survive the round-trip, so human-authored links do
+  not break.
 
 ## Consequences
 
-The vault is not co-located with any repo, so **code references must be logical,
-not absolute**: a repository identity plus a path, plus the branch and commit at
-which the binding was last confirmed so git history can trace a file that later
-moves. Absolute `file://` paths break on any other machine. Each repo keeps its
-own `CONTEXT.md` and ADRs where they already are; board-to-code targets resolve
-through a machine-local registry when the board is presented rather than living
-in the vault. Human-authored board and web links remain ordinary Excalidraw
-links and are preserved.
+The vault is not co-located with any repo, so code references must be logical,
+not absolute. A code reference is a repository identity plus a path. It also
+carries the branch and commit at which the binding was last confirmed. With
+them, git history can trace a file that later moves. Absolute `file://` paths
+break on any other machine.
+
+Each repo keeps its own `CONTEXT.md` and ADRs where they already are. When the
+board is presented, board-to-code targets resolve through a machine-local
+registry. They do not live in the vault. Human-authored board and web links
+remain ordinary Excalidraw links, and they are preserved.
 
 ## Status note
 
-Originally recorded as provisional pending two blockers, both now closed:
-export preserves custom frontmatter (TASK-002) and boards are addressable,
-persisted vault notes (TASK-003) — verified idempotent and byte-lossless
-across both.
-The two-writer risk is settled by ADR 0006, which chooses detection over
-prevention: archboard hashes a note when it reads it, verifies that hash before
-writing, and refuses the save when the file changed underneath (TASK-010).
-"Prose alongside the diagrams" is real rather than aspirational since TASK-017:
-a save regenerates the scene and nothing else, so markdown a human writes above
-the `# Excalidraw Data` section — or below the Drawing block — is carried across
-verbatim, and both round-trip properties above still hold with it in place.
+The ADR was originally recorded as provisional pending two blockers. Both are
+now closed. Export preserves custom frontmatter (TASK-002). Boards are
+addressable, persisted vault notes (TASK-003). Both were verified idempotent and
+byte-lossless.
+
+ADR 0006 settles the two-writer risk. It chooses detection over prevention. When
+Archboard reads a note, it hashes it. Before it writes, it makes sure that the
+hash still matches. If the file changed underneath, it refuses the save
+(TASK-010).
+
+"Prose alongside the diagrams" is real rather than aspirational since TASK-017.
+A save regenerates the scene and nothing else. Markdown that a human writes
+above the `# Excalidraw Data` section, or below the Drawing block, is carried
+across verbatim. Both round-trip properties above still hold with that markdown
+in place.

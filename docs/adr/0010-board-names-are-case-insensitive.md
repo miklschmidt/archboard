@@ -4,56 +4,59 @@ status: accepted
 
 # Board names are case-insensitive, and case-preserving
 
-A board name was a case-sensitive string mapped straight to a filename with no
-normalisation, so what a name meant depended on the filesystem under the vault.
-On Linux `board new casetest` and `board new CaseTest` made two boards and two
-notes. On macOS, where APFS is case-insensitive by default, both addressed one
-file and the second one hit a write refusal it had no way to explain. A vault is
-meant to move between machines, and that one behaved differently on each.
+A board name was a case-sensitive string. It mapped straight to a filename with
+no normalization, so what a name meant depended on the filesystem under the
+vault. On Linux, `board new casetest` and `board new CaseTest` made two boards
+and two notes. On macOS, APFS is case-insensitive by default. There both
+commands addressed one file, and the second one hit a write refusal that it had
+no way to explain. A vault is meant to move between machines, and that vault
+behaved differently on each.
 
-**A board name is normalised on the way in: trimmed, unicode-composed (NFC),
-lowercased. That is the key, and it is the same key on every platform.**
+The key of a board name is the name trimmed, unicode-composed (NFC) and
+lowercased. The key is the same on every platform.
 
-The reason is not the filesystem. **Boards get named out loud.** The whole point
-of archboard is a human at a whiteboard talking to an agent, and a human cannot
-pronounce casing. "Open payments" has to reach the board however it was written
-down, and two boards that sound identical must not be able to exist, because
-nobody could ever say which one they meant. That constraint is stronger than
-anything the filesystem imposes, and it points one way.
+The reason is not the filesystem. Boards get named out loud. The whole point of
+archboard is a human at a whiteboard talking to an agent, and a human cannot
+pronounce casing. "Open payments" must reach the board however somebody wrote
+the name down. Two boards that sound identical must not be able to exist,
+because nobody can say which one they meant. That constraint is stronger than
+any rule that the filesystem imposes, and it points one way.
 
-Unicode normalisation is the same argument one level down. macOS has
-historically written an accented filename decomposed and Linux writes it
-composed. The two spell the same word, and a human says the word.
+Unicode normalization is the same argument one level down. macOS historically
+writes an accented filename decomposed, and Linux writes it composed. The two
+spell the same word, and a human says the word.
 
 ## Case-preserving, not case-erasing
 
-Normalising the key is not lowercasing the name. `board new Payments` writes
-`Payments.excalidraw.md` and puts `board: Payments` in the frontmatter; the
-address is `payments` and always was. A note that already exists wins whatever
-casing it carries, so `payments` finds `Payments.excalidraw.md` and never
-creates a second note beside it. That is exactly how APFS and NTFS behave, and
-it means a vault looks on Linux the way its author left it on a Mac.
+Normalizing the key is not the same as lowercasing the name.
+`board new Payments` writes `Payments.excalidraw.md` and puts `board: Payments`
+in the frontmatter. The address is `payments`, and it always was. A note that
+already exists wins, whatever casing it carries. So `payments` finds
+`Payments.excalidraw.md` and never creates a second note beside it. APFS and
+NTFS behave exactly this way. So a vault looks on Linux the way its author left
+it on a Mac.
 
-The cost is a readdir per path segment when a board's file is resolved, because
-a case-sensitive filesystem will not do the matching for us. This decision
-originally refused a fast path for a name that already matches byte for byte,
-so that the answer could never depend on how the caller spelled the address.
+When a board's file is resolved, the cost is a readdir per path segment. A
+case-sensitive filesystem does not do the matching for us. This decision
+originally refused a fast path for a name that already matches byte for byte.
+The refusal made sure that the answer never depended on how the caller spelled
+the address.
 
-_Superseded in part by TASK-153._ A note that exists at the byte-equal path is
-now returned without the readdir; the walk runs only when nothing is there. The
-only vault where the two answers differ is one already holding two
-case-variants of one name, which the section below calls broken and which
-`board list` already reports as a collision, so the fast path costs nothing
-that was not already lost.
+_Superseded in part by TASK-153._ Now a note that exists at the byte-equal path
+is returned without the readdir. If nothing is there, the walk runs, and only
+then. The two answers differ only in a vault that already holds two
+case-variants of one name. The section below calls such a vault broken, and
+`board list` already reports it as a collision. So the fast path costs nothing
+that the vault had not already lost.
 
 ## Why not case-sensitive everywhere
 
-The alternative was to keep names case-sensitive and refuse a new name that
-collides case-insensitively with an existing note, so a vault stays portable
-without giving up expressiveness. It is a coherent policy and it is wrong for
-this tool. `Payments` and `payments` would remain two different boards that a
-human cannot distinguish out loud, so the refusal would arrive at the only
-moment it is useless: after the second board already had a reason to exist.
+The alternative was to keep names case-sensitive and to refuse a new name that
+collides case-insensitively with an existing note. A vault stays portable that
+way without giving up expressiveness. It is a coherent policy, and it is wrong
+for this tool. Under that policy, `Payments` and `payments` stay two different
+boards that a human cannot distinguish out loud. So the refusal arrives at the
+only useless moment: after the second board already had a reason to exist.
 Expressiveness in a name nobody can pronounce is not expressiveness.
 
 ## A vault that already holds both
@@ -61,5 +64,5 @@ Expressiveness in a name nobody can pronounce is not expressiveness.
 A vault authored on Linux before this decision can hold `payments.excalidraw.md`
 and `Payments.excalidraw.md` at once. They are now one address, so only one of
 them is reachable. archboard reports the collision from `board list` and names
-the files, and does not pick: which of two notes to keep is not a decision that
-can be made from the outside.
+the files. It does not pick, because which of two notes to keep is not a
+decision that can be made from the outside.
