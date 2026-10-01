@@ -20,7 +20,7 @@ import { PICTURE_CLOCK } from "@/ui/frame-clock";
 const SMIL = "set, animate, animateMotion";
 
 /** Where an element keeps the SMIL markup of the traffic it runs. */
-const TRAFFIC_ATTRIBUTE = "data-traffic-motion";
+const MOTION_ATTRIBUTE = "data-traffic-motion";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -229,8 +229,8 @@ function keepTraffic(markup: Element): void {
 		const target = smil.parentElement;
 		if (target === null || motionOf(smil) === null) continue;
 		target.setAttribute(
-			TRAFFIC_ATTRIBUTE,
-			(target.getAttribute(TRAFFIC_ATTRIBUTE) ?? "") + smil.outerHTML,
+			MOTION_ATTRIBUTE,
+			(target.getAttribute(MOTION_ATTRIBUTE) ?? "") + smil.outerHTML,
 		);
 		smil.remove();
 	}
@@ -243,7 +243,7 @@ function keepTraffic(markup: Element): void {
  * @returns The motions.
  */
 function keptMotions(element: Element, scratch: Element): Motion[] {
-	scratch.innerHTML = element.getAttribute(TRAFFIC_ATTRIBUTE) ?? "";
+	scratch.innerHTML = element.getAttribute(MOTION_ATTRIBUTE) ?? "";
 	return [...scratch.children].flatMap((smil) => motionOf(smil) ?? []);
 }
 
@@ -260,8 +260,8 @@ function runTraffic(markup: Element, seconds: number): void {
 	if (typeof markup.animate !== "function") return;
 	keepTraffic(markup);
 	const scratch = markup.ownerDocument.createElementNS(SVG_NS, "g");
-	const kept = markup.querySelectorAll(`[${TRAFFIC_ATTRIBUTE}]`);
-	for (const element of markup.matches(`[${TRAFFIC_ATTRIBUTE}]`) ? [markup, ...kept] : kept) {
+	const kept = markup.querySelectorAll(`[${MOTION_ATTRIBUTE}]`);
+	for (const element of markup.matches(`[${MOTION_ATTRIBUTE}]`) ? [markup, ...kept] : kept) {
 		for (const { keyframes, timing } of keptMotions(element, scratch)) {
 			const animation = element.animate(keyframes, { ...timing, id: PICTURE_CLOCK });
 			animation.currentTime = seconds * 1000;
