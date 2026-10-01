@@ -2,14 +2,17 @@
 // what the live voice is doing, why it failed, and the model's output level
 // for the meter. Read from the voice session adapter and the agent setup; a
 // voice that is merely not set up yet is not a problem, because Talk sets it up.
+//
+// The level is handed on as a source and never read here. It changes on every
+// frame while the model speaks, and the view is read at the application's root:
+// read here, it drew the whole shell again on every frame (TASK-385.03).
 
-import { useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
 import type { AgentSetupSnapshot } from "@/ui/agent-setup";
 import type { VoiceOwner } from "@/ui/application/lib/workbench-owners";
 import type { VoiceSession, VoiceSessionStatus, VoiceSessionView } from "@/ui/voice-session";
-import { VOICE_OUTPUT_SPEAKING_LEVEL } from "@/ui/voice-output-level";
-import type { AgentVoiceView, VoiceStage } from "@/ui/workbench/contracts";
+import type { AgentVoiceView, VoiceLevel, VoiceStage } from "@/ui/workbench/contracts";
 
 /** The stage each session status is at. */
 const STAGES: Readonly<Record<VoiceSessionStatus, VoiceStage>> = {
@@ -34,9 +37,6 @@ interface VoiceSource {
 	readonly subscribeLevel: VoiceSession["subscribeLevel"];
 	readonly level: VoiceSession["level"];
 }
-
-/** The stages in which the model's measured output can make it audible. */
-const LIVE_STAGES: ReadonlySet<VoiceStage> = new Set(["listening", "speaking", "muted"]);
 
 /**
  * Nothing to listen to without a voice session.
@@ -93,15 +93,14 @@ function problemOf(view: VoiceSessionView | null, setup: AgentSetupSnapshot): st
 function useVoiceView(voice: VoiceOwner | null, setup: AgentSetupSnapshot): AgentVoiceView {
 	const source: VoiceSource = voice?.session ?? NO_SESSION;
 	const view = useSyncExternalStore(source.subscribe, source.view, source.view);
-	const level = useSyncExternalStore(source.subscribeLevel, source.level, source.level);
+	const level = useMemo<VoiceLevel>(
+		() => ({ read: source.level, subscribe: source.subscribeLevel }),
+		[source],
+	);
 	const stage = stageOf(view, setup.talk);
-	return {
-		stage,
-		problem: problemOf(view, setup),
-		busy: view?.busy === true,
-		level,
-		audible: LIVE_STAGES.has(stage) && level >= VOICE_OUTPUT_SPEAKING_LEVEL,
-	};
+	const problem = problemOf(view, setup);
+	const busy = view?.busy === true;
+	return useMemo(() => ({ stage, problem, busy, level }), [stage, problem, busy, level]);
 }
 
 export { useVoiceView };

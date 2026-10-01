@@ -11,7 +11,7 @@ import { LiveBinding } from "@/ui/application/lib/live-binding";
 import { codeTargetShellNotice, infoNotice, presentationNotice } from "@/ui/application/notices";
 import { OpenerSettings } from "@/ui/application/components/OpenerSettings";
 import { paneEvents } from "@/ui/application/lib/pane-events";
-import { heldBoardKeys, recordFor } from "@/ui/application/pane-records";
+import { heldBoardKeys, recordFor, type PaneRecords } from "@/ui/application/pane-records";
 import { createShellActions } from "@/ui/application/actions";
 import {
 	addressingOver,
@@ -356,18 +356,24 @@ function ApplicationBody(): JSX.Element {
 		[composed, openBeside],
 	);
 	// Which variant of its board a pane shows is part of the board key, so
-	// asking for another one is asking the shell to show a different board.
+	// asking for another one is asking the shell to show a different board. It
+	// reads the records and the actions when it is asked, so one identity serves
+	// every render: a pane's news changes both, and a pane must not be rebuilt for it.
+	const [variantSources] = useState(
+		() => new LiveBinding<{ readonly records: PaneRecords; readonly actions: ShellActions }>(),
+	);
+	variantSources.bind({ records: panes.records, actions });
 	const onVariantChange = useCallback(
 		(paneId: string, variant: string | null): void => {
-			const shown = recordFor(panes.records, paneId).status.boardKey;
-			const address = boardAddressOf(shown);
+			const { records, actions: shell } = variantSources.read();
+			const address = boardAddressOf(recordFor(records, paneId).status.boardKey);
 			if (address !== null) {
 				// This pane, not whichever has focus: the person chose a variant of
 				// the board in front of them, and focus follows the pointer.
-				actions.selectBoard(boardKeyFor(address.board, variant), paneId);
+				shell.selectBoard(boardKeyFor(address.board, variant), paneId);
 			}
 		},
-		[actions, panes.records],
+		[variantSources],
 	);
 	const narration = useNarration(workbench.setup, agent.view.voice, panes.list.activePaneId);
 	const overlay = useSubtitleOverlay(workbench, reducedMotion, recorder !== null);

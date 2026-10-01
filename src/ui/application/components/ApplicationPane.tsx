@@ -7,7 +7,7 @@
 // whatever the server has pointed it at. Mounting them together is what makes
 // "this pane is showing that board" one fact rather than two that can drift.
 
-import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 
 import type { PanePresentRequest, SemanticPanePart } from "@/shared/semantic-pane-context";
 import type { PaneCallbacks } from "@/ui/application/hooks/use-panes";
@@ -262,11 +262,14 @@ interface PaneDiagramProps extends ApplicationPaneProps {
  *
  * Split from the pane so that the session's lifecycle and the picture's props
  * are two small things rather than one long one: nothing here touches the
- * socket, and nothing above it knows what a view or a walkthrough is.
+ * socket, and nothing above it knows what a view or a walkthrough is. It is
+ * drawn again only when what it is drawn from changes: the pane's session
+ * hears who holds the board, what an agent is doing and whether the socket is
+ * up, and none of that is anything the picture shows (TASK-385.03).
  * @param props The pane's inputs, its address and its code opener.
  * @returns The drawn board.
  */
-function PaneDiagram(props: PaneDiagramProps): JSX.Element {
+const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Element {
 	const { address, openCode, onPick, onUserChanged, onViewChange, picked, view } = props;
 	// The stage calls these from a click or a key and from nothing else: a walkthrough step
 	// highlights its subjects and reads through its own view without going through either, and
@@ -308,7 +311,7 @@ function PaneDiagram(props: PaneDiagramProps): JSX.Element {
 			reducedMotion={props.reducedMotion}
 		/>
 	);
-}
+});
 
 /**
  * One picked subject, as the reading reports it: the id always, and whatever

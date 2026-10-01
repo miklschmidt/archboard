@@ -10,9 +10,10 @@ import {
 	RiMicOffLine,
 	RiPhoneLine,
 } from "@remixicon/react";
-import type { JSX } from "react";
+import { useSyncExternalStore, type JSX } from "react";
 
 import { Button } from "@/ui/components/button";
+import { VOICE_OUTPUT_SPEAKING_LEVEL } from "@/ui/voice-output-level";
 import { SubtitlesToggle } from "@/ui/voice-subtitles";
 import { VoiceOutputWave, type VoiceWaveState } from "@/ui/voice-wave";
 import type { AgentActions, AgentVoiceView, VoiceStage } from "@/ui/workbench/contracts";
@@ -47,16 +48,38 @@ const WAVE_STATES: Readonly<Record<VoiceStage, VoiceWaveState>> = {
 	stopping: "inactive",
 };
 
+/** The stages in which the model's measured output can make it audible. */
+const LIVE_STAGES: ReadonlySet<VoiceStage> = new Set(["listening", "speaking", "muted"]);
+
+/**
+ * Whether the model is audible now, by its measured output. It is heard as a yes
+ * or no, so the control is drawn again when that flips, not on every frame the
+ * level moves.
+ * @param voice The voice.
+ * @returns True while a live voice's output is over the speaking level.
+ */
+function useAudible(voice: AgentVoiceView): boolean {
+	const { level } = voice;
+	/**
+	 * Whether the output is over the speaking level now.
+	 * @returns True when it is.
+	 */
+	const loud = (): boolean => level.read() >= VOICE_OUTPUT_SPEAKING_LEVEL;
+	const overSpeaking = useSyncExternalStore(level.subscribe, loud, loud);
+	return LIVE_STAGES.has(voice.stage) && overSpeaking;
+}
+
 /**
  * What the live voice is doing, in a word: muted says so first; otherwise the
  * model's measured output decides whether it is speaking.
  * @param voice The voice.
+ * @param audible Whether the model is audible now.
  * @returns The word, or undefined while voice is not live.
  */
-function liveWord(voice: AgentVoiceView): string | undefined {
+function liveWord(voice: AgentVoiceView, audible: boolean): string | undefined {
 	const word = LIVE_WORDS[voice.stage];
 	if (word === undefined || voice.stage === "muted") return word;
-	return voice.audible ? "Speaking" : word;
+	return audible ? "Speaking" : word;
 }
 
 /**
@@ -65,9 +88,10 @@ function liveWord(voice: AgentVoiceView): string | undefined {
  * @returns The control.
  */
 function TalkControl(props: TalkControlProps): JSX.Element {
-	const word = liveWord(props.voice);
+	const audible = useAudible(props.voice);
+	const word = liveWord(props.voice, audible);
 	if (word === undefined) return <TalkButton voice={props.voice} actions={props.actions} />;
-	return <LiveVoice {...props} word={word} />;
+	return <LiveVoice {...props} word={word} audible={audible} />;
 }
 
 /**
@@ -76,16 +100,19 @@ function TalkControl(props: TalkControlProps): JSX.Element {
  * a session stuck connecting or recovering can always be ended.
  * @param props The voice, the actions, the motion preference and the word.
  * @param props.word What the voice is doing, in a word.
+ * @param props.audible Whether the model is audible now.
  * @returns The live controls.
  */
-function LiveVoice(props: TalkControlProps & { readonly word: string }): JSX.Element {
+function LiveVoice(
+	props: TalkControlProps & { readonly word: string; readonly audible: boolean },
+): JSX.Element {
 	const { voice, actions } = props;
 	const muted = voice.stage === "muted";
 	return (
 		<div data-voice-controls="live" className="flex shrink-0 items-center gap-1.5">
 			<VoiceOutputWave
-				state={voice.audible ? "speaking" : WAVE_STATES[voice.stage]}
-				level={voice.level}
+				state={props.audible ? "speaking" : WAVE_STATES[voice.stage]}
+				level={voice.level.read}
 				active
 				size="icon"
 				reducedMotion={props.reducedMotion}
