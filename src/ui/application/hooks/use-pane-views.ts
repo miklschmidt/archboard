@@ -14,6 +14,7 @@ import {
 import type { Narration } from "@/ui/application/hooks/use-narration";
 import type { PaneReadings, PickedSubject } from "@/ui/application/hooks/use-pane-reading";
 import type { Panes } from "@/ui/application/hooks/use-panes";
+import type { OutlineNode } from "@/ui/board-catalog";
 import type { PaneTheme } from "@/ui/pane-session";
 import type { SemanticPaneReading } from "@/ui/semantic-board-canvas";
 import type { CatalogBoard } from "@/ui/types";
@@ -51,6 +52,8 @@ interface PaneViewSources {
 	readonly recording: PaneRecording | null;
 	/** The vault's boards, which a pane's search for a part reads. */
 	readonly boards: readonly CatalogBoard[];
+	/** The vault's boards as the navigator places them, for the boards above a pane's own. */
+	readonly outline: readonly OutlineNode<CatalogBoard>[];
 	/**
 	 * Show a board in one pane: where a part its search found is.
 	 * @param key The board key.
@@ -116,6 +119,7 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 		overlay: sources.overlay?.paneId === paneId ? sources.overlay.element : undefined,
 		reducedMotion: sources.reducedMotion,
 		boards: sources.boards,
+		outline: sources.outline,
 		onOpenBoard: (key: string): void => sources.openBoard(key, paneId),
 	});
 }
@@ -173,6 +177,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		overlay,
 		recording,
 		boards,
+		outline,
 		openBoard,
 	} = sources;
 	const { list, callbacks, handles } = panes;
@@ -190,6 +195,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 					overlay,
 					recording,
 					boards,
+					outline,
 					openBoard,
 				},
 				entry.paneId,
@@ -209,6 +215,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		overlay,
 		recording,
 		boards,
+		outline,
 		openBoard,
 	]);
 }

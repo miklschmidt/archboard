@@ -9,6 +9,7 @@
 
 import { memo, useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 
+import { boardAncestors, type OutlineNode } from "@/ui/board-catalog";
 import type { CatalogBoard } from "@/ui/types";
 
 import type { PanePresentRequest, SemanticPanePart } from "@/shared/semantic-pane-context";
@@ -79,6 +80,8 @@ interface ApplicationPaneProps {
 	reducedMotion: boolean;
 	/** The vault's boards, which the pane's search for a part reads. */
 	boards: readonly CatalogBoard[];
+	/** The vault's boards as the navigator places them: where a board sits, for the breadcrumb. */
+	outline: readonly OutlineNode<CatalogBoard>[];
 	/**
 	 * Show a board in this pane: where a part its search found is.
 	 * @param key The board key.
@@ -284,7 +287,17 @@ interface PaneDiagramProps extends ApplicationPaneProps {
  */
 const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Element {
 	const { address, openCode, onPick, onUserChanged, onViewChange, picked, view } = props;
-	const { boards, onOpenBoard, openedKey, focused } = props;
+	const { boards, outline, onOpenBoard, openedKey, focused } = props;
+	// Where a board sits, as the navigator places it: each board above, a way to it here.
+	const placeOf = useCallback(
+		(board: string) =>
+			boardAncestors(outline, board).map((above) => ({
+				name: above.name,
+				level: above.level,
+				open: (): void => onOpenBoard(above.key),
+			})),
+		[outline, onOpenBoard],
+	);
 	// The pick a search makes is the person's hand, as a click on the picture is.
 	const onFound = useCallback(
 		(subject: PickedSubject): void => {
@@ -344,6 +357,7 @@ const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Elem
 			overlay={props.overlay}
 			reducedMotion={props.reducedMotion}
 			search={search}
+			placeOf={placeOf}
 		/>
 	);
 });

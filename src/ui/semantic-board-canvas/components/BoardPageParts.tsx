@@ -1,13 +1,11 @@
 // The small marks the board's pages and the details panel share: a part kind's
-// icon, a relationship kind's chip and a variant's lifecycle.
+// icon and a relationship kind's chip.
 
 import { RiPuzzleLine } from "@remixicon/react";
 import type { CSSProperties, JSX } from "react";
 
-import type { VariantLifecycle } from "@/shared/semantic-board/index";
 import { cn } from "@/ui/components/class-names";
 import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
-import { VariantMark } from "@/ui/variant-lifecycle";
 
 /**
  * The markup of an icon the picture drew, without the colour it drew it in: the
@@ -99,32 +97,4 @@ function RelationshipChip(props: RelationshipChipProps): JSX.Element {
 	);
 }
 
-/** Inputs for a lifecycle. */
-interface LifecycleProps {
-	readonly lifecycle: VariantLifecycle;
-}
-
-/**
- * Where a variant stands, as the navigator says it: the lifecycle's mark and
- * its name in a word.
- * @param props The lifecycle.
- * @returns The mark and the word.
- */
-function Lifecycle(props: LifecycleProps): JSX.Element {
-	const { lifecycle } = props;
-	return (
-		<span
-			data-slot="lifecycle"
-			data-lifecycle={lifecycle}
-			className={cn(
-				"text-body inline-flex shrink-0 items-center gap-1.5 capitalize",
-				lifecycle === "current" ? "text-foreground font-medium" : "text-muted-foreground",
-			)}
-		>
-			<VariantMark lifecycle={lifecycle} />
-			{lifecycle}
-		</span>
-	);
-}
-
-export { KindIcon, Lifecycle, RelationshipChip };
+export { KindIcon, RelationshipChip };

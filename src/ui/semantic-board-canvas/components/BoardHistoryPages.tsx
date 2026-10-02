@@ -1,18 +1,23 @@
-// The variants page and the walkthroughs page: how the board has changed, and
-// how the author reads it aloud. Both are in the author's own words.
+// The variants page and the walkthroughs page: how the board has changed, as
+// one timeline with branches (the navigator's rail at the page's room), and
+// how the author reads it aloud. Both are in the board's own words.
 
-import type { JSX } from "react";
+import { useCallback, useMemo, type JSX } from "react";
 
-import type { Adoption, SemanticWalkthrough } from "@/shared/semantic-board/index";
+import type { Adoption, SemanticWalkthrough, Shelving } from "@/shared/semantic-board/index";
 import { cn } from "@/ui/components/class-names";
-import { Lifecycle } from "@/ui/semantic-board-canvas/components/BoardPageParts";
 import type { OfferedVariant } from "@/ui/semantic-board-canvas/lib/board-document";
-import { variantOrder } from "@/ui/variant-lifecycle";
-
-/** A heading over a part of a page: the sidebar's own, sentence case in the body size. */
-function PageHeading(props: { readonly children: string }): JSX.Element {
-	return <h2 className="text-body text-muted-foreground mb-2 font-semibold">{props.children}</h2>;
-}
+import {
+	variantTimeline,
+	type TimelineEntry,
+} from "@/ui/semantic-board-canvas/lib/variant-timeline";
+import {
+	TimelineLane,
+	timelineLanes,
+	VariantMark,
+	type Lane,
+	type LaneGeometry,
+} from "@/ui/variant-lifecycle";
 
 /** Inputs for the variants page. */
 interface VariantsPageProps {
@@ -20,8 +25,8 @@ interface VariantsPageProps {
 	readonly variants: readonly OfferedVariant[];
 	/** Every time the designation of the current architecture moved. */
 	readonly adoptions: readonly Adoption[];
-	/** The id of the variant the board's name opens, or null. */
-	readonly opens: string | null;
+	/** Every time a proposal was let go. */
+	readonly shelvings: readonly Shelving[];
 	/** The id of the variant on screen, or null while that is not known. */
 	readonly showing: string | null;
 	/**
@@ -31,89 +36,153 @@ interface VariantsPageProps {
 	readonly onChoose: ((variant: string) => void) | undefined;
 }
 
-/** Inputs for one variant's card. */
-interface VariantCardProps {
-	readonly variant: OfferedVariant;
-	readonly drawn: boolean;
-	readonly onChoose: ((variant: string) => void) | undefined;
-}
+/** Where the timeline's columns are: the navigator's rail, at the page's room. */
+const PAGE_LANE: LaneGeometry = { origin: 24, step: 28, middle: 26, clearance: 11 };
+
+/** The text column starts this far right of the deepest mark on its row. */
+const TEXT_AFTER_MARK = 22;
 
 /**
- * One variant: its name, where it stands and what it says about itself.
- * @param props The variant, whether it is on screen and how to choose it.
- * @returns The card.
+ * The board's variants as a timeline: the adopted line from the current
+ * variant back through its history, each at its adoption with its date and
+ * its reason; drafts branching off the variant they came from; a shelved
+ * variant ending its branch with its reason.
+ * @param props The variants, the record of the board and the one on screen.
+ * @returns The page.
  */
-function VariantCard(props: VariantCardProps): JSX.Element {
-	const { variant, drawn, onChoose } = props;
+function VariantsPage(props: VariantsPageProps): JSX.Element {
+	const timeline = useMemo(
+		() => variantTimeline(props.variants, props.adoptions, props.shelvings),
+		[props.variants, props.adoptions, props.shelvings],
+	);
+	const lanes = useMemo(
+		() => timelineLanes(timeline.entries.map((entry) => entry.depth)),
+		[timeline],
+	);
 	return (
-		<li className="min-w-0">
-			<button
-				type="button"
-				aria-pressed={drawn}
-				disabled={onChoose === undefined}
-				data-slot="variant-card"
-				data-variant={variant.id}
-				onClick={() => onChoose?.(variant.id)}
-				className="border-border bg-card hover:border-foreground/25 aria-pressed:border-primary-text aria-pressed:bg-primary-subtle rounded-panel flex h-full w-full min-w-0 flex-col gap-2 border p-4 text-left"
-			>
-				<span className="flex items-center justify-between gap-3">
-					<span className="title-name truncate">{variant.name}</span>
-					<Lifecycle lifecycle={variant.lifecycle} />
-				</span>
-				<span className="text-control text-muted-foreground">
-					{variant.summary ?? "This variant has no summary."}
-				</span>
-				{drawn && (
-					<span className="text-body text-primary-text mt-auto pt-1 font-medium">On screen</span>
-				)}
-			</button>
-		</li>
+		<section aria-label="Variants" className="flex max-w-[64rem] flex-col">
+			{!timeline.built && (
+				<p className="text-control text-muted-foreground mb-3">
+					Nothing this board describes is built yet: every variant is a proposal.
+				</p>
+			)}
+			<ol className="flex flex-col">
+				{timeline.entries.map((entry, index) => (
+					<TimelineRow
+						key={entry.variant.id}
+						entry={entry}
+						lane={lanes[index]!}
+						drawn={entry.variant.id === props.showing}
+						onChoose={props.onChoose}
+					/>
+				))}
+			</ol>
+		</section>
 	);
 }
 
 /**
- * The board's variants, and the record of when the current architecture moved.
- * @param props The variants, the adoptions and the one on screen.
- * @returns The page.
+ * What a variant's row says of it under its name: where it stands, when the
+ * record says it got there, and what it came from.
+ * @param entry The variant on the timeline.
+ * @returns The words.
  */
-function VariantsPage(props: VariantsPageProps): JSX.Element {
-	const { variants, adoptions } = props;
-	const nameOf = (id: string): string => variants.find((one) => one.id === id)?.name ?? id;
+function standingWords(entry: TimelineEntry): string {
+	const { variant, adopted, shelved } = entry;
+	const word = `${variant.lifecycle.charAt(0).toUpperCase()}${variant.lifecycle.slice(1)}`;
+	if (shelved !== undefined) return `${word} ${shelved.at.slice(0, 10)}`;
+	if (adopted !== undefined) return `${word} · adopted ${adopted.at.slice(0, 10)}`;
+	if (variant.lifecycle === "draft" && entry.from !== undefined) {
+		return `${word} · from ${entry.from}`;
+	}
+	return word;
+}
+
+/**
+ * Why the variant stands where it does, in the record's words: why it was
+ * adopted or let go; for a proposal, what it says about itself.
+ * @param entry The variant on the timeline.
+ * @returns The words, or undefined.
+ */
+function reasonOf(entry: TimelineEntry): string | undefined {
+	return entry.shelved?.reason ?? entry.adopted?.reason ?? entry.variant.summary;
+}
+
+/**
+ * One variant on the timeline: its lane and mark, its name, where it stands
+ * and why. Choosing it opens it in this pane.
+ * @param props The variant, its lane, whether it is on screen and how to open it.
+ * @param props.entry The variant on the timeline.
+ * @param props.lane Its lane.
+ * @param props.drawn Whether it is on screen.
+ * @param props.onChoose Open it, when the pane can.
+ * @returns The row.
+ */
+function TimelineRow(props: {
+	readonly entry: TimelineEntry;
+	readonly lane: Lane;
+	readonly drawn: boolean;
+	readonly onChoose: ((variant: string) => void) | undefined;
+}): JSX.Element {
+	const { entry, lane, drawn, onChoose } = props;
+	const { variant } = entry;
+	const markX = PAGE_LANE.origin + lane.depth * PAGE_LANE.step;
+	const reason = reasonOf(entry);
+	const choose = useCallback((): void => onChoose?.(variant.id), [onChoose, variant.id]);
 	return (
-		<div className="flex flex-col gap-6">
-			<ul className="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] gap-3">
-				{variantOrder(variants, props.opens).map((variant) => (
-					<VariantCard
-						key={variant.id}
-						variant={variant}
-						drawn={variant.id === props.showing}
-						onChoose={props.onChoose}
+		<li className="relative">
+			<button
+				type="button"
+				aria-pressed={drawn}
+				disabled={onChoose === undefined}
+				data-slot="variant-entry"
+				data-variant={variant.id}
+				data-lifecycle={variant.lifecycle}
+				onClick={choose}
+				className="hover:bg-sidebar-accent/50 aria-pressed:bg-sidebar-accent rounded-control relative flex w-full min-w-0 py-3 pr-4 text-left disabled:cursor-default"
+				style={{ paddingLeft: markX + TEXT_AFTER_MARK }}
+			>
+				{drawn && (
+					<span
+						aria-hidden="true"
+						className="bg-primary-text absolute inset-y-1.5 left-0 w-0.5 rounded-full"
 					/>
-				))}
-			</ul>
-			{adoptions.length > 0 && (
-				<section aria-label="Adoptions">
-					<PageHeading>Adoptions</PageHeading>
-					<ol>
-						{adoptions.toReversed().map((adoption) => (
-							<li
-								key={`${adoption.variant}-${adoption.at}`}
-								className="border-border text-control grid grid-cols-[88px_minmax(0,180px)_1fr] gap-3 border-t py-2"
-							>
-								<time
-									dateTime={adoption.at}
-									className="text-technical text-muted-foreground font-mono"
-								>
-									{adoption.at.slice(0, 10)}
-								</time>
-								<span className="truncate font-medium">{nameOf(adoption.variant)}</span>
-								<span className="text-muted-foreground">{adoption.reason ?? ""}</span>
-							</li>
-						))}
-					</ol>
-				</section>
-			)}
-		</div>
+				)}
+				<TimelineLane lane={lane} geometry={PAGE_LANE} />
+				<span
+					aria-hidden="true"
+					className="absolute flex size-4 items-center justify-center"
+					style={{ left: markX - 8, top: PAGE_LANE.middle - 8 }}
+				>
+					<VariantMark lifecycle={variant.lifecycle} />
+				</span>
+				<span className="flex min-w-0 flex-1 flex-col gap-0.5">
+					<span className="flex min-w-0 items-baseline gap-3">
+						<span className="title-name truncate">{variant.name}</span>
+						<span
+							className={cn(
+								"text-body shrink-0",
+								variant.lifecycle === "current"
+									? "text-foreground font-medium"
+									: "text-muted-foreground",
+							)}
+						>
+							{standingWords(entry)}
+						</span>
+						{drawn && (
+							<span className="text-body text-primary-text ml-auto shrink-0 font-medium">
+								On screen
+							</span>
+						)}
+					</span>
+					{reason !== undefined && (
+						<span className="text-control text-muted-foreground max-w-[72ch] font-normal">
+							{reason}
+						</span>
+					)}
+				</span>
+			</button>
+		</li>
 	);
 }
 

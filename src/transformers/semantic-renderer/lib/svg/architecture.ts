@@ -351,7 +351,9 @@ interface ArchitecturePainting {
  * @param palette The selected theme.
  * @param standingOf How each subject stands against the variant it is read against.
  * @param unsettledOf Whether a subject needs reconciliation.
- * @param policy Current vault policy.
+ * @param vocabulary The vault's policy, and the level of the board drawn.
+ * @param vocabulary.policy Current vault policy.
+ * @param vocabulary.level The board's level, which places the boards its parts open.
  * @param derived Ids of the lines that are flow steps drawn on the board, not authored relationships.
  * @param page What the page holds: the whole layout and the marks the comparison would
  * draw, so a drawing that leaves out what its comparison would show keeps everything
@@ -363,10 +365,11 @@ function paintArchitecture(
 	palette: Palette,
 	standingOf: StandingOf,
 	unsettledOf: UnsettledOf,
-	policy: SemanticPolicy,
+	vocabulary: { readonly policy: SemanticPolicy; readonly level: string | undefined },
 	derived: ReadonlySet<string>,
 	page: HeldPage,
 ): ArchitecturePainting {
+	const { policy, level } = vocabulary;
 	const { cards, containers } = drawing;
 	const { edges, bridges } = drawing.bridged;
 	const { definitions, masks } = crossingMasks(edges, [
@@ -385,6 +388,7 @@ function paintArchitecture(
 	const appearances = nodeAppearances(
 		[...page.drawing.cards, ...page.drawing.containers].map(({ measured }) => measured.node),
 		policy,
+		level,
 	);
 	const { inked, labelled } = lineBoxes(edges);
 	const labels = labelled.map(({ box }) => box);

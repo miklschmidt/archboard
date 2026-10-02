@@ -12,10 +12,13 @@ import type { RowHandlers } from "@/ui/shell/components/TreeRow";
 import { VariantLine } from "@/ui/shell/components/VariantLine";
 import { sameData } from "@/ui/shell/lib/same-data";
 import type { NavigatorRow } from "@/ui/shell/types/navigator-rows";
+import type { Lane } from "@/ui/variant-lifecycle";
 
 /** Inputs for one row. */
 interface OutlineRowProps extends RowHandlers {
 	readonly row: NavigatorRow;
+	/** The row's place on its board's timeline, for a variant or an Earlier row. */
+	readonly lane?: Lane | undefined;
 }
 
 /**

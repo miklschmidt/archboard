@@ -48,6 +48,7 @@ import { useWorkspaceAddressing } from "@/ui/application/hooks/use-workspace-add
 import { useBesideOpening } from "@/ui/application/hooks/use-beside-opening";
 import {
 	BoardCatalogProvider,
+	buildOutline,
 	listedBoard,
 	listedBoardKey,
 	useBoardCatalog,
@@ -404,6 +405,10 @@ function ApplicationBody(): JSX.Element {
 	const narration = useNarration(workbench.setup, agent.voice, panes.list.activePaneId);
 	const overlay = useSubtitleOverlay(workbench, reducedMotion, recorder !== null);
 	const recorded = useRecordedViews(recorder, workbench, { narration, overlay });
+	const outline = useMemo(
+		() => buildOutline(catalog.listing.boards, catalog.listing.levels),
+		[catalog.listing.boards, catalog.listing.levels],
+	);
 	const mounted = usePaneViews({
 		panes,
 		theme,
@@ -411,6 +416,7 @@ function ApplicationBody(): JSX.Element {
 		reducedMotion,
 		onVariantChange,
 		boards: catalog.listing.boards,
+		outline,
 		openBoard: actions.selectBoard,
 		...recorded,
 	});

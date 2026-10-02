@@ -1,6 +1,10 @@
 import { placingGroups, type SemanticEdge, type SemanticNode } from "@/shared/semantic-board/index";
 import type { LineLook } from "@/transformers/semantic-renderer/lib/drawing";
 import {
+	drillDirection,
+	type DrillDirection,
+} from "@/transformers/semantic-renderer/lib/svg/drill-mark";
+import {
 	DEFAULT_SEMANTIC_POLICY,
 	type PaletteColor,
 	type SemanticPolicy,
@@ -17,6 +21,8 @@ interface NodeAppearance {
 	readonly icon: string;
 	readonly typeName: string;
 	readonly typeKind: string;
+	/** Which way the board it opens lies, or null when it opens none. */
+	readonly drill: DrillDirection | null;
 }
 
 /**
@@ -37,19 +43,26 @@ function ownDefinition<Definition>(
  * the group it is placed with, a container's frame the colour of its own
  * kind, and every chip the colour of its type. A container colours nothing
  * inside it; that is a group's role (TASK-347, ADR 0038).
+ * A part that opens another board says which way it lies (`drill`), read from
+ * its kind against the board's own level (ADR 0029).
  * @param nodes Subjects present in the drawing.
  * @param policy The current vault policy.
+ * @param level The level of the board drawn, when the caller said.
  * @returns Appearance keyed by existing subject identity.
  */
 function nodeAppearances(
 	nodes: readonly SemanticNode[],
 	policy: SemanticPolicy = DEFAULT_SEMANTIC_POLICY,
+	level?: string,
 ): ReadonlyMap<string, NodeAppearance> {
 	const parents = new Set(nodes.map((node) => node.parent));
 	const placing = placingGroups(nodes, policy);
 	const resolved = new Map<string, NodeAppearance>();
 	for (const node of nodes) {
-		const type = typeAppearance(node.kind, policy);
+		const type = {
+			...typeAppearance(node.kind, policy),
+			drill: node.drillDown === undefined ? null : drillDirection(node.kind, level, policy.levels),
+		};
 		resolved.set(
 			node.id,
 			parents.has(node.id)

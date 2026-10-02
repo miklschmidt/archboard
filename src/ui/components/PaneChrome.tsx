@@ -15,10 +15,17 @@ interface PaneChrome {
 	readonly controls: ReactNode;
 	/** What the shell says about the pane under its header, such as a claim; null for nothing. */
 	readonly notice: ReactNode;
+	/** Whether another pane shares the centre, which leaves each picture less room. */
+	readonly shared: boolean;
 }
 
 /** A pane outside the shell, such as a recording page's: a header with nothing of the shell's. */
-const NO_CHROME: PaneChrome = Object.freeze({ letter: null, controls: null, notice: null });
+const NO_CHROME: PaneChrome = Object.freeze({
+	letter: null,
+	controls: null,
+	notice: null,
+	shared: false,
+});
 
 /** The shell's parts of the pane being drawn. */
 const PaneChromeContext = createContext<PaneChrome>(NO_CHROME);

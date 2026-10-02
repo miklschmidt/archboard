@@ -7,6 +7,7 @@ import {
 	ARCHITECTURE_LABEL_PADDING_Y,
 } from "@/transformers/semantic-renderer/config";
 import { ICON_CHIP_SIZE } from "@/transformers/semantic-renderer/lib/design";
+import { DRILL_MARK_ROOM } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
 // The words settle before placement. Pretext owns line breaking; the canvas of
 // the place drawing the picture measures the strings the SVG will paint.
 import {
@@ -137,12 +138,15 @@ function measureNoteLines(
 function measureNode(node: SemanticNode, container: boolean): MeasuredNode {
 	const padding = container ? ARCHITECTURE_HEADER_PADDING : ARCHITECTURE_CARD_PADDING;
 	const left = padding + ICON_CHIP_SIZE + ARCHITECTURE_ICON_GAP;
+	// A part that opens another board keeps its name clear of the mark in its
+	// top-right corner; the words under the name run beneath the mark.
+	const marked = node.drillDown === undefined ? 0 : DRILL_MARK_ROOM;
 	const title = prepare(node.name, TITLE);
 	const note = prepare(node.responsibility ?? "", NOTE);
-	const natural = Math.max(measureNaturalWidth(title), measureNaturalWidth(note));
+	const natural = Math.max(measureNaturalWidth(title) + marked, measureNaturalWidth(note));
 	const width = Math.min(340, Math.max(260, natural + left + padding));
 	const available = width - left - padding;
-	const titles = runsFor(title, TITLE, available, left, padding);
+	const titles = runsFor(title, TITLE, available - marked, left, padding);
 	const noteTop = padding + titles.length * TITLE.lineHeight + ARCHITECTURE_NOTE_GAP;
 	const notes = runsFor(note, NOTE, available, left, noteTop);
 	const runs = [...titles, ...notes];
@@ -154,7 +158,11 @@ function measureNode(node: SemanticNode, container: boolean): MeasuredNode {
 	// Pretext's segment sums can differ from whole-line kerning. The actual
 	// painted width wins, even when a single long identifier needs a little
 	// more space than the preferred maximum; no character is hidden or cut.
-	const paintedWidth = runs.reduce((widest, run) => Math.max(widest, run.width), 0);
+	const paintedWidth = Math.max(
+		...titles.map((run) => run.width + marked),
+		...notes.map((run) => run.width),
+		0,
+	);
 	return {
 		node,
 		width: Math.max(width, left + paintedWidth + padding),

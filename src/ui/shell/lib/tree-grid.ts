@@ -78,6 +78,7 @@ export {
 	NAME_GAP,
 	ROW_GUTTER,
 	TARGET_SIZE,
+	TREE_STEP,
 	disclosureX,
 	guideX,
 	markerX,

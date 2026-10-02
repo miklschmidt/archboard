@@ -30,6 +30,8 @@ export {
 	type SemanticBoardStageProps,
 } from "@/ui/semantic-board-canvas/components/SemanticBoardStage";
 export type { SelectedSubject } from "@/ui/semantic-board-canvas/lib/board-document";
+export { LevelMark, type LevelMarkProps } from "@/ui/semantic-board-canvas/components/LevelMark";
+export type { BoardPlace } from "@/ui/semantic-board-canvas/components/PaneHeader";
 export {
 	boardAddressOf,
 	boardKeyFor,

@@ -435,7 +435,9 @@ interface DataFlowPainting {
  * @param palette The theme's colours.
  * @param standingOf How each subject stands against the variant this one came from.
  * @param unsettledOf Whether the board says a subject is still undecided.
- * @param policy Current vault policy.
+ * @param vocabulary The vault's policy, and the level of the board drawn.
+ * @param vocabulary.policy Current vault policy.
+ * @param vocabulary.level The board's level, which places the boards its participants open.
  * @param page What the page holds beyond what is drawn: the flows, participants and
  * messages laid out but left out, and the marks the comparison would draw, so what is
  * drawn stands where it stands with them.
@@ -449,15 +451,17 @@ function paintDataFlow(
 	palette: Palette,
 	standingOf: StandingOf,
 	unsettledOf: UnsettledOf,
-	policy: SemanticPolicy,
+	vocabulary: { readonly policy: SemanticPolicy; readonly level: string | undefined },
 	page: { held: readonly SemanticFlow[] | undefined; standingOf: StandingOf },
 ): DataFlowPainting {
+	const { policy, level } = vocabulary;
 	const laid = layoutDataFlow(flows, nodes);
 	const layout = shownFlows(laid, page.held);
 	// Sequence columns are cards; containment is not depicted in this grammar.
 	const appearances = nodeAppearances(
 		nodes.map(({ parent: _parent, ...node }) => node),
 		policy,
+		level,
 	);
 	// One clock for everything drawn, so the whole page is told in order. It
 	// grows with the number of turns and then stops growing: past the cap a

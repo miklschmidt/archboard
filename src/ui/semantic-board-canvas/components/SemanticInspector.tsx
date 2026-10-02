@@ -179,6 +179,8 @@ interface BodyProps {
 	groups: GroupControls;
 	/** The state that holds the subject: its relationships are read there. */
 	held: SemanticVariant | undefined;
+	/** The level of the board drawn, which places the boards its parts open. */
+	level: string | undefined;
 	/** How the vault's kinds look. */
 	look: KindLook;
 	/**
@@ -224,6 +226,7 @@ function InspectorBody(props: BodyProps): JSX.Element {
 				onPick={props.onPick}
 				onOpen={props.onOpen}
 				onOpenCode={props.onOpenCode}
+				level={props.level}
 			>
 				<Memberships groups={subject.node.groups} controls={props.groups} />
 				{standing}
@@ -253,6 +256,8 @@ interface Explanation {
 	readonly open: readonly ReconciliationIssue[];
 	/** The state that holds the subject, when one does. */
 	readonly held: SemanticVariant | undefined;
+	/** The board's level, once it is read. */
+	readonly level?: string | undefined;
 }
 
 /**
@@ -340,6 +345,7 @@ function explain(
 	const shown = opened.variant;
 	return {
 		...comparedSubject(reading.board, shown, selection),
+		level: reading.board.level,
 		open: openOn(shown, selection),
 		notice: "This is not on the board any more. It may have gone since the picture was drawn.",
 	};
@@ -425,6 +431,7 @@ function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 				against={explained.against}
 				open={explained.open}
 				held={explained.held}
+				level={explained.level}
 				look={props.look}
 				onPick={props.onPick}
 				notice={explained.notice}

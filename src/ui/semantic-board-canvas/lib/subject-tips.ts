@@ -8,6 +8,7 @@
 // is not shown. Every tip is headed by what it is about, drawn the way the
 // picture draws it, so it reads on its own beside the part it explains.
 
+import { drillWayWords } from "@/ui/semantic-board-canvas/lib/drill-way";
 import type { SemanticEdge, SemanticNode, SemanticVariant } from "@/shared/semantic-board/index";
 import { drawnAppearance, type AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 
@@ -107,19 +108,47 @@ function openableAt(target: EventTarget | null, clientY: number): string | null 
 	return part === null || part.part === "label" ? null : part.id;
 }
 
+/** Where the board drawn sits among the vault's levels, which places the boards its parts open. */
+interface TipPlace {
+	/** The board's own level. */
+	readonly here?: string | undefined;
+	/** The vault's levels, coarsest first. */
+	readonly levels?: readonly string[] | undefined;
+}
+
+/**
+ * What a double-click on a part does, with which way the board it opens lies,
+ * as the mark on the card says it: the part's kind is that board's level (ADR 0029).
+ * @param node The part.
+ * @param place Where the board drawn sits among the vault's levels.
+ * @returns The hint, or nothing for a part that opens no board.
+ */
+function openHint(node: SemanticNode, place: TipPlace): string | undefined {
+	if (node.drillDown === undefined) return undefined;
+	const way = drillWayWords(node.kind, place.here, place.levels);
+	const open = `Double-click to open ${node.drillDown.board}`;
+	return way === null ? open : `${open}, ${way.toLowerCase()}`;
+}
+
 /**
  * What the tip over one part of the picture says.
  * @param variant The variant the picture draws.
  * @param target The part under the pointer.
  * @param far Whether the picture is seen from far away, showing names alone.
+ * @param place Where the board sits among the vault's levels, when known.
  * @returns The tip, or null when it would say nothing the picture does not.
  */
-function subjectTip(variant: SemanticVariant, target: TipTarget, far: boolean): SubjectTip | null {
+function subjectTip(
+	variant: SemanticVariant,
+	target: TipTarget,
+	far: boolean,
+	place: TipPlace = {},
+): SubjectTip | null {
 	if (target.part === "label") {
 		return labelTip(variant, target);
 	}
 	const node = variant.content.nodes.find((candidate) => candidate.id === target.id);
-	return node === undefined ? null : cardTip(node, target, far);
+	return node === undefined ? null : cardTip(node, target, far, place);
 }
 
 /**
@@ -128,13 +157,19 @@ function subjectTip(variant: SemanticVariant, target: TipTarget, far: boolean): 
  * @param node The node.
  * @param target The part under the pointer.
  * @param far Whether the picture is seen from far away.
+ * @param place Where the board sits among the vault's levels, when known.
  * @returns The tip, or null when it would say nothing the picture does not.
  */
-function cardTip(node: SemanticNode, target: TipTarget, far: boolean): SubjectTip | null {
+function cardTip(
+	node: SemanticNode,
+	target: TipTarget,
+	far: boolean,
+	place: TipPlace,
+): SubjectTip | null {
 	const said = {
 		lead: far ? node.responsibility : undefined,
 		body: node.description,
-		hint: node.drillDown === undefined ? undefined : `Double-click to open ${node.drillDown.board}`,
+		hint: openHint(node, place),
 	};
 	if (!Object.values(said).some((line) => line !== undefined && line !== "")) {
 		return null;

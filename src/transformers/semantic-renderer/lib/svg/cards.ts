@@ -49,6 +49,10 @@ import {
 	appearanceAttributes,
 	typeChip,
 } from "@/transformers/semantic-renderer/lib/svg/appearance";
+import {
+	DRILL_MARK_ROOM,
+	cornerDrillMark,
+} from "@/transformers/semantic-renderer/lib/svg/drill-mark";
 import { nearLayer, paintFarTitle } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { lines, tag, textNode, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
@@ -93,46 +97,9 @@ function halo(box: Box, radius: number, styles: SvgStyles): string {
 }
 
 /**
- * A card's border ink: its body's colour where a group colours it, else the
- * page's card border.
- * @param styles The palette's attribute bundles.
- * @param appearance Resolved channels.
- * @returns The ink.
- */
-function cardInk(styles: SvgStyles, appearance: NodeAppearance): string {
-	return String(bodyAttributes(appearance)["stroke"] ?? styles.card.stroke);
-}
-
-/** How far behind a card the edge of the next one shows, where a card opens a board of its own. */
-const DECK_OFFSET = 4;
-
-/**
- * The edge of a second card behind one that opens a board of its own: an
- * outline, so a line into the card is never hidden under it, in the card's
- * own border ink and drawn fainter.
- * @param box The card's box.
- * @param radius The card's corner radius.
- * @param stroke The card's border ink.
- * @returns The edge.
- */
-function deck(box: Box, radius: number, stroke: string): string {
-	return tag("rect", {
-		class: "ab-deck",
-		x: coord(box.x + DECK_OFFSET),
-		y: coord(box.y + DECK_OFFSET),
-		width: coord(box.width),
-		height: coord(box.height),
-		rx: radius,
-		fill: "none",
-		stroke,
-		"stroke-width": 1,
-		"stroke-opacity": 0.55,
-	});
-}
-
-/**
- * One card: its name, the responsibility under it when there is one, and the
- * glyph that says what sort of thing it is.
+ * One card: its name, the responsibility under it when there is one, the
+ * glyph that says what sort of thing it is, and, when it opens another board,
+ * the mark in its other top corner that says which way that board lies.
  * @param placed The card.
  * @param palette The theme's colours.
  * @param standing How this node stands against the variant it came from, when the caller said.
@@ -152,17 +119,17 @@ function paintCard(
 	const styles = stylesFor(palette);
 	const { node, box, titleSize, notes } = placed;
 	const textX = box.x + CARD_PADDING_X + ICON_CHIP_SIZE + ICON_CHIP_GAP;
-	const room = cardTextWidth(box.width);
+	// A card that opens another board keeps its name clear of the mark.
+	const room = cardTextWidth(box.width) - (appearance.drill === null ? 0 : DRILL_MARK_ROOM);
 	const hasNote = notes.length > 0;
+	const titleY = hasNote
+		? box.y + TITLE_BASELINE_WITH_NOTE
+		: box.y + box.height / 2 + titleSize * OPTICAL_CENTRE;
 
 	const title = textNode(
 		{
 			x: coord(textX),
-			y: coord(
-				hasNote
-					? box.y + TITLE_BASELINE_WITH_NOTE
-					: box.y + box.height / 2 + titleSize * OPTICAL_CENTRE,
-			),
+			y: coord(titleY),
 			"font-size": titleSize,
 			...styles.title,
 		},
@@ -187,7 +154,6 @@ function paintCard(
 		"g",
 		{ ...subjectGroup("node", node.id, standing), ...appearanceAttributes(appearance) },
 		lines([
-			node.drillDown === undefined ? "" : deck(box, CARD_RADIUS, cardInk(styles, appearance)),
 			halo(box, CARD_RADIUS, styles),
 			tag("rect", {
 				x: coord(box.x),
@@ -209,6 +175,15 @@ function paintCard(
 					),
 					title,
 					note,
+					appearance.drill === null
+						? ""
+						: cornerDrillMark(
+								box,
+								CARD_PADDING_X,
+								titleY - titleSize * OPTICAL_CENTRE - box.y,
+								appearance.drill,
+								palette.glyph,
+							),
 				]),
 			),
 			paintFarTitle(node.name, box, { size: farSize, align: "centre" }, { appearance, palette }),
@@ -272,4 +247,4 @@ function paintHeader(
 	]);
 }
 
-export { cardInk, deck, halo, paintCard, paintHeader };
+export { halo, paintCard, paintHeader };

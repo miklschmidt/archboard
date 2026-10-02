@@ -15,6 +15,7 @@ import {
 	addressedVariant,
 	comparedWith,
 	type Adoption,
+	type Shelving,
 	compareVariants,
 	parseSemanticBoard,
 	standingOf,
@@ -311,6 +312,8 @@ interface VariantReading {
 	readonly variants: readonly OfferedVariant[];
 	/** Every time the designation of the current architecture moved, oldest first. */
 	readonly adoptions: readonly Adoption[];
+	/** Every time a proposal was let go, oldest first. */
+	readonly shelvings: readonly Shelving[];
 	/**
 	 * Every view of the board, with what each answers, in the order the board
 	 * states them. The board tab reads a view's summary here rather than from the
@@ -435,7 +438,10 @@ function idItself(id: string): string {
  * @returns Its explanations, and how to name what they are about.
  */
 function readingOf(
-	family: Pick<VariantReading, "variants" | "adoptions" | "views" | "opens" | "level">,
+	family: Pick<
+		VariantReading,
+		"variants" | "adoptions" | "shelvings" | "views" | "opens" | "level"
+	>,
 	variant: SemanticVariant,
 ): VariantReading {
 	/**
@@ -493,6 +499,7 @@ function readVariant(document: unknown, asked: string | undefined): VariantReadi
 	const family = {
 		variants: reading.board.variants.map(offeredVariant),
 		adoptions: reading.board.adoptions ?? [],
+		shelvings: reading.board.shelvings ?? [],
 		views: reading.board.views,
 		opens: named.ok ? named.variant.id : null,
 		level: reading.board.level,
@@ -519,14 +526,16 @@ function nothingHeld(): SelectedSubject | undefined {
 }
 
 /** A reading of a board whose asked-for variant is not one of its own. */
-const NOTHING_SHOWN: Omit<VariantReading, "variants" | "adoptions" | "views" | "opens" | "level"> =
-	Object.freeze({
-		showing: null,
-		variant: null,
-		walkthroughs: [],
-		nameOf: idItself,
-		subject: nothingHeld,
-	});
+const NOTHING_SHOWN: Omit<
+	VariantReading,
+	"variants" | "adoptions" | "shelvings" | "views" | "opens" | "level"
+> = Object.freeze({
+	showing: null,
+	variant: null,
+	walkthroughs: [],
+	nameOf: idItself,
+	subject: nothingHeld,
+});
 
 /**
  * What a selected subject is, for whoever has to report it rather than draw it.

@@ -7,6 +7,7 @@ import { measureFarTitle } from "@/transformers/semantic-renderer/lib/measuremen
 import type { NodeAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { typeChip } from "@/transformers/semantic-renderer/lib/svg/appearance";
+import { DRILL_MARK_RADIUS, drillMark } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
 import { wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
 
@@ -59,6 +60,19 @@ function paintFarTitle(
 ): string {
 	const far = measureFarTitle(name, box, place);
 	const scale = far.chip.size / ICON_CHIP_SIZE;
+	// The mark of a part that opens another board grows with the chip and keeps
+	// its corner, as far in from the top and the side as it is wide over two.
+	const reach = DRILL_MARK_RADIUS * scale;
+	const mark =
+		appearance.drill === null
+			? ""
+			: drillMark(
+					box.x + box.width - reach * 1.5,
+					box.y + reach * 1.5,
+					appearance.drill,
+					palette.glyph,
+					scale,
+				);
 	return farLayer(
 		wrap(
 			"g",
@@ -66,7 +80,9 @@ function paintFarTitle(
 				transform: `translate(${coord(box.x + far.chip.x)},${coord(box.y + far.chip.y)}) scale(${coord(scale)})`,
 			},
 			typeChip(0, 0, appearance, palette),
-		) + paintTextRuns(far.runs, box, palette),
+		) +
+			paintTextRuns(far.runs, box, palette) +
+			mark,
 	);
 }
 

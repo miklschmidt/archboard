@@ -1,21 +1,27 @@
-// The foot of the details panel: the ways to go deeper from a picked part. The
-// way down opens the board the part drills into, naming it and the level it
-// sits at, as a gold sign: the same sign the part's card carries on the
-// picture, so the two read as one way. The other views the part's code through
-// the shell's own open-code action.
+// The foot of the details panel: the ways to go deeper from a picked part. One
+// opens the board the part leads to, with the mark the card wears on the
+// picture (a ring around an arrow up, down or across) and the same words the
+// card's hover tip uses for which way it lies; it is the panel's primary
+// action, in gold. The other views the part's code through the shell's own
+// open-code action.
 
 import { useQuery } from "@tanstack/react-query";
 import {
+	RiArrowDownCircleLine,
+	RiArrowRightCircleLine,
 	RiArrowRightLine,
+	RiArrowUpCircleLine,
 	RiCodeSSlashLine,
 	RiExternalLinkLine,
 	RiStackLine,
+	type RemixiconComponentType,
 } from "@remixicon/react";
 import type { JSX, ReactNode } from "react";
 
 import type { CodeBinding } from "@/shared/code-target";
 import type { DrillDown } from "@/shared/semantic-board/index";
 import { cn } from "@/ui/components/class-names";
+import { drillWay, drillWayWords, type DrillWay } from "@/ui/semantic-board-canvas/lib/drill-way";
 import { SidebarHeading } from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
 import { useSemanticBoardChanges } from "@/ui/semantic-board-canvas/hooks/use-semantic-board-changes";
 import {
@@ -37,8 +43,8 @@ interface GoProps {
 	readonly end: ReactNode;
 	readonly slot: string;
 	readonly onClick: () => void;
-	/** Whether it is the way down, which is a gold sign. */
-	readonly sign?: boolean;
+	/** Whether it is the panel's primary action, in gold. */
+	readonly primary?: boolean;
 	readonly lifecycle?: string | undefined;
 }
 
@@ -57,8 +63,8 @@ function Go(props: GoProps): JSX.Element {
 			onClick={props.onClick}
 			className={cn(
 				"rounded-control flex min-h-11 w-full min-w-0 items-center gap-3 px-3 py-1.5 text-left",
-				props.sign === true
-					? "gold-sign hover:brightness-[1.04]"
+				props.primary === true
+					? "bg-primary text-primary-foreground hover:bg-primary/90"
 					: "border-input hover:bg-sidebar-accent/50 border",
 			)}
 		>
@@ -70,7 +76,7 @@ function Go(props: GoProps): JSX.Element {
 				<span
 					className={cn(
 						"text-body truncate",
-						props.sign === true ? "text-sign-ink/75" : "text-muted-foreground",
+						props.primary === true ? "text-primary-foreground/75" : "text-muted-foreground",
 					)}
 				>
 					{props.sub}
@@ -80,7 +86,7 @@ function Go(props: GoProps): JSX.Element {
 				aria-hidden="true"
 				className={cn(
 					"flex size-4 shrink-0 [&_svg]:size-full",
-					props.sign !== true && "text-muted-foreground",
+					props.primary !== true && "text-muted-foreground",
 				)}
 			>
 				{props.end}
@@ -107,9 +113,20 @@ function refusalWords(resolution: DrillResolution, target: DrillDown): string | 
 		: null;
 }
 
+/** The mark of each way, as the card on the picture draws it. */
+const WAY_ICONS: Readonly<Record<DrillWay, RemixiconComponentType>> = {
+	up: RiArrowUpCircleLine,
+	down: RiArrowDownCircleLine,
+	across: RiArrowRightCircleLine,
+};
+
 /** Inputs for the way down. */
 interface WayDownProps {
 	readonly target: DrillDown;
+	/** The part's kind, which is the level of the board it opens (ADR 0029). */
+	readonly kind: string;
+	/** The level of the board the part is drawn on. */
+	readonly here: string | undefined;
 	/**
 	 * Open the board one level down.
 	 * @param board The target board.
@@ -126,7 +143,7 @@ interface WayDownProps {
  * @returns The way down, or the reason there is none.
  */
 function WayDown(props: WayDownProps): JSX.Element {
-	const { target, onOpen } = props;
+	const { target, onOpen, kind, here } = props;
 	const document = useQuery(semanticBoardDocumentQuery(target.board));
 	const levels = useQuery(vaultCheckQuery()).data?.policy.levels;
 	const name = drillTargetName(target, document.data);
@@ -148,19 +165,23 @@ function WayDown(props: WayDownProps): JSX.Element {
 		return <p className="text-body">{refusalWords(resolution, target)}</p>;
 	}
 	const { board, variant } = resolution;
-	const rank = levels?.indexOf(board.level) ?? -1;
-	const level = `${rank < 0 ? "" : `Level ${rank + 1} · `}${board.level.charAt(0).toUpperCase()}${board.level.slice(1)}`;
+	const way = drillWay(kind, here, levels);
+	const level = `${board.level.charAt(0).toUpperCase()}${board.level.slice(1)}`;
+	const said = [drillWayWords(kind, here, levels), level].filter((part) => part !== null);
 	// A state that is not the current architecture says so before it is opened.
-	const standing = variant.lifecycle === "current" ? level : `${level} · ${variant.name}`;
+	const standing = [...said, ...(variant.lifecycle === "current" ? [] : [variant.name])].join(
+		" · ",
+	);
+	const Icon = way === null ? RiStackLine : WAY_ICONS[way];
 	return (
 		<Go
 			slot="semantic-drill-down-open"
 			lifecycle={variant.lifecycle}
-			icon={<RiStackLine />}
+			icon={<Icon />}
 			title={`Open ${board.name}`}
 			sub={standing}
 			end={<RiArrowRightLine />}
-			sign
+			primary
 			onClick={() => onOpen(board.name, variant.id)}
 		/>
 	);
@@ -170,6 +191,10 @@ function WayDown(props: WayDownProps): JSX.Element {
 interface GoDeeperProps {
 	/** What the part drills into, when it does. */
 	readonly target: DrillDown | undefined;
+	/** The part's kind, which is the level of the board it opens (ADR 0029). */
+	readonly kind: string;
+	/** The level of the board the part is drawn on. */
+	readonly here: string | undefined;
 	/** The part's code, when it is bound to some and the shell can open it. */
 	readonly binding: CodeBinding | undefined;
 	readonly onOpen: (board: string, variant: string) => void;
@@ -194,7 +219,9 @@ function GoDeeper(props: GoDeeperProps): JSX.Element | null {
 			className="border-border bg-sidebar flex shrink-0 flex-col gap-2 border-t px-4 py-4"
 		>
 			<SidebarHeading level={3}>Go deeper</SidebarHeading>
-			{target !== undefined && <WayDown target={target} onOpen={props.onOpen} />}
+			{target !== undefined && (
+				<WayDown target={target} kind={props.kind} here={props.here} onOpen={props.onOpen} />
+			)}
 			{code !== null && (
 				<Go
 					slot="semantic-inspector-open-code"
