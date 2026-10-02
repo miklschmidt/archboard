@@ -17,14 +17,15 @@
    streaming title wall). It marks three things and nothing else:
      1. what is chosen: the row or tab on screen (a 2px bar or underline),
         the focused pane, the part picked out on the picture;
-     2. the way deeper: the sign on a card that opens another board, and the
-        control that opens a part's board;
+     2. the one primary action of a region: opening the board a picked part
+        leads to, sending a message;
      3. the voice, and the brand mark.
    --primary is the gold as a fill. --primary-text is the same gold as text or
    a thin line, deeper on chalk so it clears 4.5:1 there. --primary-subtle is
-   the gold as a quiet tint behind something chosen on a page. The gradients
-   (--sign-*, --mark-*) belong to the sign, the brand mark and the voice ring
-   alone; nothing else is drawn with a gradient.
+   the gold as a quiet tint behind something chosen on a page. The gradient
+   (--mark-hi to --mark-lo) belongs to the brand mark and the voice alone;
+   nothing else is drawn with a gradient. A card on the picture that opens
+   another board is marked in the card's own ink, never in gold.
 
    Status keeps its own colours: the acid lime of live state (--status) and the
    comparison's green, orange and red. "Changed" moves from the shared amber,
@@ -62,9 +63,6 @@
 	--sidebar-ring: oklch(0.62 0.13 78);
 	--diagram-selection: oklch(0.66 0.14 80);
 
-	--sign-from: oklch(0.865 0.145 87);
-	--sign-to: oklch(0.815 0.145 82);
-	--sign-ink: oklch(0.2 0.02 70);
 	--mark-hi: oklch(0.8 0.145 86);
 	--mark-lo: oklch(0.6 0.125 72);
 
@@ -102,9 +100,6 @@
 	--sidebar-ring: oklch(0.831 0.134 84.5);
 	--diagram-selection: oklch(0.831 0.134 84.5);
 
-	--sign-from: oklch(0.865 0.145 87);
-	--sign-to: oklch(0.815 0.145 82);
-	--sign-ink: oklch(0.2 0.02 70);
 	--mark-hi: oklch(0.89 0.105 90);
 	--mark-lo: oklch(0.72 0.13 75);
 

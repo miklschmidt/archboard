@@ -1,4 +1,5 @@
 import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { createRoot, type Root } from "react-dom/client";
@@ -162,16 +163,23 @@ function mountNavigator(overrides: Partial<ShellView> = {}): Mounted {
 	const container = document.createElement("div");
 	document.body.append(container);
 	root = createRoot(container);
-	act(() => root.render(createElement(Shell, { view, actions })));
+	// A board's mark is its level's, drawn from the vault vocabulary the shell reads through its query cache.
+	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const draw = (shown: ShellView): void => {
+		act(() =>
+			root.render(
+				createElement(QueryClientProvider, { client }, createElement(Shell, { view: shown, actions })),
+			),
+		);
+	};
+	draw(view);
 	return {
 		...asked,
 		/**
 		 * Draw the shell again with the same actions over a changed workspace.
 		 * @param changes What changed.
 		 */
-		show: (changes) => {
-			act(() => root.render(createElement(Shell, { view: { ...view, ...changes }, actions })));
-		},
+		show: (changes) => draw({ ...view, ...changes }),
 	};
 }
 
@@ -255,7 +263,7 @@ test("each board is one row under the board it drills down from, with the varian
 		"board:board:checkout@1",
 		"board:board:payments@2",
 		"variant:variant:payments@3",
-		"variant:variant:payments@queued@3",
+		"variant:variant:payments@queued@4",
 		"earlier:earlier:payments@3",
 		"board:board:ledger@3",
 	]);
@@ -321,7 +329,7 @@ test("the arrows walk the tree: right opens a row, then steps in; left closes it
 	expect(document.activeElement).toBe(row("board:payments"));
 	press("ArrowRight");
 	// Opening a board with a proposal lists its variants and the boards under it together.
-	expect(rows()).toContain("variant:variant:payments@queued@3");
+	expect(rows()).toContain("variant:variant:payments@queued@4");
 	expect(rows()).toContain("board:board:ledger@3");
 	press("ArrowRight");
 	expect(document.activeElement).toBe(row("variant:payments"));

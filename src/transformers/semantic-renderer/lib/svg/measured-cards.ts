@@ -3,7 +3,11 @@ import {
 	ARCHITECTURE_CARD_PADDING,
 	ARCHITECTURE_HEADER_PADDING,
 } from "@/transformers/semantic-renderer/config";
-import { CARD_RADIUS, BAND_RADIUS } from "@/transformers/semantic-renderer/lib/design";
+import {
+	CARD_RADIUS,
+	BAND_RADIUS,
+	ICON_CHIP_SIZE,
+} from "@/transformers/semantic-renderer/lib/design";
 import { farSizeOf } from "@/transformers/semantic-renderer/lib/measurement";
 import type { DrawingNode } from "@/transformers/semantic-renderer/lib/drawing";
 import { coord } from "@/transformers/semantic-renderer/lib/geometry";
@@ -14,7 +18,8 @@ import {
 	appearanceAttributes,
 	typeChip,
 } from "@/transformers/semantic-renderer/lib/svg/appearance";
-import { cardInk, deck, halo } from "@/transformers/semantic-renderer/lib/svg/cards";
+import { halo } from "@/transformers/semantic-renderer/lib/svg/cards";
+import { cornerDrillMark } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
 import { nearLayer, paintFarTitle } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { stylesFor } from "@/transformers/semantic-renderer/lib/svg/styles";
@@ -50,6 +55,29 @@ function paintFarHeader(
 }
 
 /**
+ * The mark of a part that opens another board, in the corner opposite its
+ * chip and level with it; nothing for a part that opens none.
+ * @param box The part's box, or its header's.
+ * @param box.x Its left edge.
+ * @param box.y Its top edge.
+ * @param box.width Its width.
+ * @param padding How far in its chip sits.
+ * @param appearance Its channels, which say whether it opens a board and which way.
+ * @param palette The selected theme.
+ * @returns The mark, or nothing.
+ */
+function drillCorner(
+	box: { readonly x: number; readonly y: number; readonly width: number },
+	padding: number,
+	appearance: NodeAppearance,
+	palette: Palette,
+): string {
+	return appearance.drill === null
+		? ""
+		: cornerDrillMark(box, padding, padding + ICON_CHIP_SIZE / 2, appearance.drill, palette.glyph);
+}
+
+/**
  * Paint one measured card with its kind glyph and semantic change treatment.
  * @param placed Final card geometry and prepared text.
  * @param palette The selected theme.
@@ -79,9 +107,6 @@ function paintMeasuredCard(
 			...appearanceAttributes(appearance),
 		},
 		lines([
-			measured.node.drillDown === undefined
-				? ""
-				: deck(box, CARD_RADIUS, cardInk(styles, appearance)),
 			halo(box, CARD_RADIUS, styles),
 			tag("rect", {
 				x: coord(box.x),
@@ -94,7 +119,9 @@ function paintMeasuredCard(
 				...standingOutline(standing, palette),
 			}),
 			nearLayer(
-				typeChip(chipX, chipY, appearance, palette) + paintTextRuns(measured.runs, box, palette),
+				typeChip(chipX, chipY, appearance, palette) +
+					paintTextRuns(measured.runs, box, palette) +
+					drillCorner(box, ARCHITECTURE_CARD_PADDING, appearance, palette),
 			),
 			paintFarTitle(
 				measured.node.name,
@@ -189,7 +216,9 @@ function paintMeasuredHeader(
 					placed.box.y + ARCHITECTURE_HEADER_PADDING,
 					appearance,
 					palette,
-				) + paintTextRuns(placed.measured.runs, placed.box, palette),
+				) +
+					paintTextRuns(placed.measured.runs, placed.box, palette) +
+					drillCorner(placed.box, ARCHITECTURE_HEADER_PADDING, appearance, palette),
 			),
 			paintFarHeader(placed, farSize, { appearance, palette }),
 			warningBadge(placed.box, unsettled, palette),

@@ -2,6 +2,7 @@
 // says what the part is, drawn as the picture draws its kind, and what the
 // picture leaves out about it.
 
+import { useQuery } from "@tanstack/react-query";
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type JSX } from "react";
 
 import { cn } from "@/ui/components/class-names";
@@ -15,6 +16,7 @@ import {
 import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 import { paletteInk } from "@/ui/semantic-board-canvas/lib/palette";
+import { vaultCheckQuery } from "@/ui/semantic-board-canvas/lib/queries";
 import {
 	subjectTip,
 	type SubjectTip,
@@ -35,7 +37,8 @@ function SemanticSubjectTip(props: {
 	readonly far: boolean;
 }): JSX.Element | null {
 	const { target } = props;
-	const tip = target === null ? null : tipOver(target, props.reading, props.far);
+	const levels = useQuery(vaultCheckQuery()).data?.policy.levels;
+	const tip = target === null ? null : tipOver(target, props.reading, props.far, levels);
 	if (target === null || tip === null) {
 		return null;
 	}
@@ -86,15 +89,19 @@ function TipLines(props: { readonly tip: SubjectTip }): JSX.Element {
  * @param target The part under the pointer.
  * @param reading What the board says about the variant the picture draws, or null.
  * @param far Whether the picture is seen from far away.
+ * @param levels The vault's levels, coarsest first, which place the board a part opens.
  * @returns The tip, or null when there is nothing to add.
  */
 function tipOver(
 	target: TipTarget,
 	reading: VariantReading | null,
 	far: boolean,
+	levels: readonly string[] | undefined,
 ): SubjectTip | null {
 	const variant = reading?.variant ?? null;
-	return variant === null ? null : subjectTip(variant, target, far);
+	return variant === null
+		? null
+		: subjectTip(variant, target, far, { here: reading?.level, levels });
 }
 
 /**

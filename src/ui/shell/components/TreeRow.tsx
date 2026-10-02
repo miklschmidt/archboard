@@ -26,11 +26,14 @@ import {
 	FACTS_INSET,
 	guideX,
 	MARKER_WIDTH,
+	markerX,
 	NAME_GAP,
 	ROW_GUTTER,
 	TARGET_SIZE,
+	TREE_STEP,
 } from "@/ui/shell/lib/tree-grid";
 import type { TextRange } from "@/ui/shell/lib/text-match";
+import { TimelineLane, type Lane, type LaneGeometry } from "@/ui/variant-lifecycle";
 
 /** The disclosure column, as wide as the grid says. */
 const DISCLOSURE_STYLE: CSSProperties = { width: DISCLOSURE_WIDTH };
@@ -84,6 +87,8 @@ interface TreeRowProps extends RowHandlers {
 	readonly row: NavigatorRow;
 	/** Everything the row shows, for assistive technology. */
 	readonly label: string;
+	/** Its place on its board's timeline, for a variant or an Earlier row. */
+	readonly lane?: Lane | undefined;
 	readonly children: ReactNode;
 }
 
@@ -133,6 +138,7 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 			className={`group/row focus-visible:ring-ring rounded-control relative flex w-full min-w-0 cursor-default flex-wrap items-start outline-none select-none focus-visible:ring-1 focus-visible:ring-inset ${selected ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/50"}`}
 		>
 			<RowGuides depth={row.depth} />
+			{props.lane !== undefined && <RowLane row={row} lane={props.lane} />}
 			{selected && (
 				<span
 					aria-hidden="true"
@@ -143,6 +149,35 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 		</div>
 	);
 }
+
+/**
+ * A variant's place on its board's timeline: the main line through the marks
+ * of the variant the board's name opens and its history, and the branches its
+ * drafts take off the variant they came from, through the marker column.
+ * @param props The row and its lane.
+ * @param props.row The row.
+ * @param props.lane Its lane.
+ * @returns The lines.
+ */
+function RowLane(props: { readonly row: NavigatorRow; readonly lane: Lane }): JSX.Element {
+	const { row, lane } = props;
+	const geometry = useMemo(
+		(): LaneGeometry => ({
+			origin: markerX(row.depth - lane.depth) + MARKER_WIDTH / 2 - ROW_GUTTER,
+			step: TREE_STEP,
+			middle: LANE_MIDDLE,
+			clearance: LANE_CLEARANCE,
+		}),
+		[row.depth, lane.depth],
+	);
+	return <TimelineLane lane={lane} geometry={geometry} />;
+}
+
+/** From a variant row's top to the middle of its mark: its padding and half its first line. */
+const LANE_MIDDLE = 6 + 18 / 2;
+
+/** How far the timeline stops short of a mark's middle: the mark's half and a little air. */
+const LANE_CLEARANCE = 9;
 
 /**
  * One guide for each row this one sits under, through the middle of that

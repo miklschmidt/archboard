@@ -306,6 +306,8 @@ interface DetailsPanelProps {
 	readonly onPick: (id: string) => void;
 	readonly onOpen: (board: string, variant: string) => void;
 	readonly onOpenCode: ((binding: CodeBinding) => void) | undefined;
+	/** The level of the board the part is drawn on, which places the board it opens. */
+	readonly level: string | undefined;
 	/** Everything under the details: what was decided about the part, and where it stands. */
 	readonly children?: ReactNode;
 }
@@ -334,6 +336,8 @@ function DetailsPanel(props: DetailsPanelProps): JSX.Element {
 			</div>
 			<GoDeeper
 				target={node.drillDown}
+				kind={node.kind}
+				here={props.level}
 				binding={node.binding}
 				onOpen={props.onOpen}
 				onOpenCode={props.onOpenCode}

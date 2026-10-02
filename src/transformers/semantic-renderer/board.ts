@@ -152,6 +152,7 @@ async function drawnReply(
 			layout: how.layout,
 			...(waiting === null ? {} : { unsettled: waiting.issues.map((issue) => issue.subject) }),
 			unbuilt: nothingBuilt(board),
+			level: board.level,
 		});
 		return { ...identity, ...picture };
 	} catch (error) {

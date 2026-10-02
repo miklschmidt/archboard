@@ -1,13 +1,15 @@
-// A board's row: the board's mark, its name, and the facts about the board as a
+// A board's row: the board's mark, which is its level's (the icon the vault's
+// vocabulary gives that level, as a card standing for such a board wears), its name, and the facts about the board as a
 // whole: which pane shows it while none of its variants is listed, whether
 // anything it describes is built, and how many proposals it has. An agent at
 // work on the board lights a lamp on its mark. Hovering the row shows the
 // board's whole name with its level, and the row's name says the level to
 // assistive technology; the header names the level of the board being read.
 
-import { RiErrorWarningLine, RiFlowChart, RiGitBranchLine } from "@remixicon/react";
+import { RiErrorWarningLine, RiGitBranchLine } from "@remixicon/react";
 import type { CSSProperties, JSX } from "react";
 
+import { LevelMark } from "@/ui/semantic-board-canvas";
 import { InsideLamp, MarkerLamp } from "@/ui/shell/components/ActivityLamp";
 import { PaneChips } from "@/ui/shell/components/PaneChips";
 import {
@@ -97,7 +99,8 @@ function BoardLine(props: RowHandlers & { readonly row: BoardRow }): JSX.Element
 	return (
 		<TreeRow {...props} label={boardRowName(row)}>
 			<TreeRowDisclosure row={row} name={row.label} onExpand={props.onExpand} />
-			<TreeRowMarker icon={RiFlowChart} title={row.board.level}>
+			<TreeRowMarker title={row.board.level}>
+				<LevelMark level={row.board.level} />
 				<BoardLamp row={row} />
 			</TreeRowMarker>
 			<TreeRowName

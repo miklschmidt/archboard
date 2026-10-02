@@ -164,6 +164,12 @@ interface DiagramRenderRequest {
 	 * variant and view of such a board is framed alike.
 	 */
 	readonly unbuilt?: boolean | undefined;
+	/**
+	 * The level of the board drawn. A part that opens another board is marked
+	 * with which way that board lies, read from the part's kind against this
+	 * level (ADR 0029); absent, the mark says only that it opens another board.
+	 */
+	readonly level?: string | undefined;
 	/** Which engine lays the architecture out; the default one when absent (TASK-348). */
 	readonly layout?: LayoutEngineName | undefined;
 }
@@ -361,7 +367,7 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		PALETTE,
 		standingsFrom(plain ? undefined : request.standing),
 		unsettledFrom(request.unsettled),
-		policy,
+		{ policy, level: request.level },
 		stepLines.derived,
 		// The page is the comparison's page whether or not its marks are drawn.
 		{ drawing, standingOf: standingsFrom(request.standing) },
@@ -467,7 +473,7 @@ function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
 		PALETTE,
 		standingsFrom(plain ? undefined : request.standing),
 		unsettledFrom(request.unsettled),
-		request.policy ?? DEFAULT_SEMANTIC_POLICY,
+		{ policy: request.policy ?? DEFAULT_SEMANTIC_POLICY, level: request.level },
 		{ held: plain ? told.flows : undefined, standingOf: standingsFrom(request.standing) },
 	);
 	const page = pageFor(painting, PALETTE, request.unbuilt);

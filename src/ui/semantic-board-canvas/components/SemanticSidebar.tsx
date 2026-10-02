@@ -1,6 +1,8 @@
 // The one column on the right of a semantic diagram: the search for a part at
 // its top, level with the navigator's search for a board, then the board, and
-// whatever is selected on it.
+// whatever is selected on it. Docked, it takes its width beside the picture;
+// resting, it is its rail, and a pick or a tab chosen on the rail lays the
+// panel over the picture's edge (use-sidebar.ts says when each holds).
 //
 // One column rather than a key on one side and details on the other, and at
 // one width whichever tab is open, because the pane refits its picture when it
@@ -17,6 +19,7 @@ import {
 	RiCloseLine,
 	RiCursorLine,
 	RiNodeTree,
+	RiPushpinLine,
 	RiSidebarFoldLine,
 	RiSidebarUnfoldLine,
 } from "@remixicon/react";
@@ -113,19 +116,16 @@ function RailButton(props: {
  */
 function SidebarRail(props: { readonly sidebar: Sidebar }): JSX.Element {
 	const { sidebar } = props;
-	const { open, tab } = sidebar;
-	const expand = useCallback((): void => {
-		open(tab);
-	}, [open, tab]);
 	return (
 		<div className="flex flex-col items-center gap-1 py-1.5">
 			<Button
 				type="button"
 				variant="ghost"
 				size="icon-sm"
-				aria-label="Expand sidebar"
+				aria-label="Pin the sidebar open"
+				title="Pin the sidebar open"
 				data-slot="semantic-sidebar-toggle"
-				onClick={expand}
+				onClick={sidebar.pin}
 			>
 				<RiSidebarUnfoldLine className="-scale-x-100" />
 			</Button>
@@ -192,11 +192,25 @@ function SidebarHeader(props: {
 					<RiCloseLine />
 				</Button>
 			)}
+			{sidebar.floating && (
+				<Button
+					type="button"
+					variant="ghost"
+					size="icon-sm"
+					aria-label="Pin the sidebar open"
+					title="Pin the sidebar open"
+					data-slot="semantic-sidebar-pin"
+					onClick={sidebar.pin}
+				>
+					<RiPushpinLine />
+				</Button>
+			)}
 			<Button
 				type="button"
 				variant="ghost"
 				size="icon-sm"
-				aria-label="Collapse sidebar"
+				aria-label={sidebar.floating ? "Put the sidebar away" : "Collapse sidebar"}
+				title={sidebar.floating ? "Put the sidebar away" : "Collapse sidebar"}
 				data-slot="semantic-sidebar-toggle"
 				onClick={sidebar.collapse}
 			>
@@ -222,28 +236,49 @@ function SemanticSidebar(props: SemanticSidebarProps): JSX.Element {
 		},
 		[open],
 	);
+	const panel = (
+		<>
+			{props.search}
+			<Tabs value={sidebar.tab} onValueChange={choose} className="min-h-0 flex-1 gap-0">
+				<SidebarHeader sidebar={sidebar} onClearSelection={props.onClearSelection} />
+				{props.children}
+			</Tabs>
+		</>
+	);
 	return (
 		<aside
 			aria-label="Board sidebar"
 			data-slot="semantic-sidebar"
 			data-tab={sidebar.tab}
 			data-collapsed={sidebar.collapsed}
-			className="border-border bg-sidebar flex min-h-0 shrink-0 flex-col border-l in-data-presenting:hidden in-data-walkthrough:hidden"
-			style={sidebar.collapsed ? undefined : OPEN_STYLE}
+			data-place={place(sidebar)}
+			className="border-border bg-sidebar relative flex min-h-0 shrink-0 flex-col border-l in-data-presenting:hidden in-data-walkthrough:hidden"
+			style={sidebar.docked ? OPEN_STYLE : undefined}
 		>
-			{sidebar.collapsed ? (
-				<SidebarRail sidebar={sidebar} />
-			) : (
-				<>
-					{props.search}
-					<Tabs value={sidebar.tab} onValueChange={choose} className="min-h-0 flex-1 gap-0">
-						<SidebarHeader sidebar={sidebar} onClearSelection={props.onClearSelection} />
-						{props.children}
-					</Tabs>
-				</>
+			{sidebar.docked ? panel : <SidebarRail sidebar={sidebar} />}
+			{sidebar.floating && (
+				// Laid over the picture's edge, the width it would take docked, so the
+				// picture keeps its size and nothing in it moves.
+				<div
+					data-slot="semantic-sidebar-float"
+					style={OPEN_STYLE}
+					className="border-border bg-sidebar shadow-float absolute inset-y-0 right-0 z-30 flex min-h-0 flex-col border-l"
+				>
+					{panel}
+				</div>
 			)}
 		</aside>
 	);
+}
+
+/**
+ * Where the sidebar is, for tests and styles.
+ * @param sidebar The sidebar.
+ * @returns Docked, floating or resting.
+ */
+function place(sidebar: Sidebar): "docked" | "floating" | "resting" {
+	if (sidebar.docked) return "docked";
+	return sidebar.floating ? "floating" : "resting";
 }
 
 export { NothingSelected, SemanticSidebar, SidebarPanel, type SemanticSidebarProps };

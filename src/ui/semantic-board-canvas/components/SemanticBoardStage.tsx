@@ -15,11 +15,11 @@ import { useAutoFit } from "@/ui/semantic-board-canvas/hooks/use-auto-fit";
 import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import { SemanticStanding } from "@/ui/semantic-board-canvas/components/SemanticStanding";
 import type { SemanticPaneReading } from "@/ui/semantic-board-canvas/lib/address";
-import { readBoard, type SelectedSubject } from "@/ui/semantic-board-canvas/lib/board-document";
+import type { SelectedSubject } from "@/ui/semantic-board-canvas/lib/board-document";
 import type { CodeBinding } from "@/shared/code-target";
 import type { SemanticPanePart } from "@/shared/semantic-pane-context";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import { useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
+import { useCallback, useMemo, useRef, useState, type JSX, type ReactNode } from "react";
 
 import type { WalkthroughBeat } from "@/shared/semantic-board/index";
 import type {
@@ -30,6 +30,7 @@ import type {
 import { BoardPage } from "@/ui/semantic-board-canvas/components/BoardPage";
 import {
 	PaneHeader,
+	type BoardPlace,
 	type BoardTab,
 	type PaneHeaderProps,
 } from "@/ui/semantic-board-canvas/components/PaneHeader";
@@ -61,6 +62,8 @@ import {
 import { useReported } from "@/ui/semantic-board-canvas/hooks/use-reported-reading";
 import { useSettledFocus } from "@/ui/semantic-board-canvas/hooks/use-settled-focus";
 import { useSidebar, type Sidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
+import { usePaneChrome } from "@/ui/components/PaneChrome";
+import { useClearOfPanel } from "@/ui/semantic-board-canvas/hooks/use-clear-of-panel";
 import { useKindLook } from "@/ui/semantic-board-canvas/hooks/use-kind-look";
 import { useStageAppearances } from "@/ui/semantic-board-canvas/hooks/use-stage-appearances";
 import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
@@ -80,10 +83,7 @@ import {
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 import type { GroupChoice, GroupSelection } from "@/ui/semantic-board-canvas/lib/groups";
 import type { BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
-import {
-	semanticBoardDocumentQuery,
-	semanticRenderQuery,
-} from "@/ui/semantic-board-canvas/lib/queries";
+import { semanticRenderQuery } from "@/ui/semantic-board-canvas/lib/queries";
 
 /** Inputs for a semantic pane. */
 interface SemanticBoardStageProps {
@@ -169,6 +169,13 @@ interface SemanticBoardStageProps {
 	/** Whether this pane has focus, which is the pane the search's shortcut reaches. */
 	focused?: boolean | undefined;
 	/**
+	 * The boards above one, outermost first, as the navigator places them, each
+	 * a way to it in this pane: the header's breadcrumb.
+	 * @param board The board on screen.
+	 * @returns The boards above it.
+	 */
+	placeOf?: ((board: string) => readonly BoardPlace[]) | undefined;
+	/**
 	 * Whether the person asked for reduced motion.
 	 *
 	 * Passed in rather than read here: the shell owns that preference through
@@ -247,6 +254,8 @@ interface RenderView extends SemanticBoardStageProps {
 	readonly onTab: (tab: BoardTab) => void;
 	/** Read one beat of a walkthrough: the diagram comes back, presenting it. */
 	readonly onReadBeat: (walkthrough: string, beat: number) => void;
+	/** Attach the picture's area, which a panel laid over its edge keeps a pick clear of. */
+	readonly attachPicture: (element: HTMLDivElement | null) => void;
 }
 
 /**
@@ -400,7 +409,7 @@ function renderedView(view: RenderView): JSX.Element {
 			    caption over it, while the sidebar steps aside — then the board and
 			    whatever is selected on it. */}
 			<ReadingArea presenting={view.narrative.open !== null}>
-				<div className="relative flex min-h-0 min-w-0 flex-1">
+				<div ref={view.attachPicture} className="relative flex min-h-0 min-w-0 flex-1">
 					{stageBody(view)}
 					{presentationOver(view)}
 					{view.tab !== "diagram" && view.narrative.open === null && <PaneBoardPage view={view} />}
@@ -434,42 +443,54 @@ function headerFacts(
 }
 
 /**
- * The pane's header: the board on screen, the way back, and the tabs.
+ * A board above the one on screen that the reader drilled down from in this
+ * pane is reached by going back along the drill, not by opening it again: the
+ * pane is still on the board it was opened on, and only the drill moved.
+ * @param place The board above, as the navigator places it.
+ * @param trail How the pane got here, from the board it was opened on.
+ * @param onBack Go back one level.
+ * @returns The place, with its way to it.
+ */
+function backAlong(
+	place: BoardPlace,
+	trail: readonly { readonly board: string }[],
+	onBack: () => void,
+): BoardPlace {
+	const at = trail.findIndex((stop) => stop.board.toLowerCase() === place.name.toLowerCase());
+	if (at < 0) return place;
+	const steps = trail.length - at;
+	return {
+		...place,
+		open: (): void => {
+			for (let step = 0; step < steps; step += 1) onBack();
+		},
+	};
+}
+
+/**
+ * The pane's header: where the board on screen sits, and the tabs.
  * @param props What the stage knows.
  * @param props.view What the stage knows.
  * @returns The header.
  */
 function StageHeader(props: { readonly view: RenderView }): JSX.Element {
 	const { view } = props;
-	const from = useBoardName(view.drill.trail.at(-1)?.board);
+	const { placeOf } = view;
 	const facts = useMemo(() => headerFacts(view.reading), [view.reading]);
+	const { drill, onBack } = view;
+	const ancestors = useMemo(
+		() => (placeOf?.(drill.board) ?? []).map((place) => backAlong(place, drill.trail, onBack)),
+		[placeOf, drill.board, drill.trail, onBack],
+	);
 	return (
 		<PaneHeader
 			{...facts}
 			name={view.render.data?.board ?? view.drill.board}
-			from={from}
-			onBack={view.onBack}
+			ancestors={ancestors}
 			tab={view.tab}
 			onTab={view.onTab}
 		/>
 	);
-}
-
-/**
- * What a board calls itself, read from its document on the cache the pane
- * already shares, so the way back names the board as the navigator does
- * rather than as the address spelt it.
- * @param board The board as the address names it, or undefined for none.
- * @returns Its own name, the address's spelling until the document arrives, or undefined.
- */
-function useBoardName(board: string | undefined): string | undefined {
-	const held = useQuery({
-		...semanticBoardDocumentQuery(board ?? ""),
-		enabled: board !== undefined,
-	});
-	if (board === undefined || held.data === undefined) return board;
-	const read = readBoard(held.data);
-	return read.ok ? read.board.name : board;
 }
 
 /**
@@ -492,7 +513,7 @@ function PaneBoardPage(props: { readonly view: RenderView }): JSX.Element {
 			variants={{
 				variants: reading?.variants ?? [],
 				adoptions: reading?.adoptions ?? [],
-				opens: reading?.opens ?? null,
+				shelvings: reading?.shelvings ?? [],
 				showing: reading?.showing?.id ?? null,
 				onChoose: view.level.onVariant,
 			}}
@@ -651,7 +672,13 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 	// Which way the reader went is said first, so the picture being left knows
 	// how to leave: into the card that was picked, or back out.
 	const departure = useDeparture(drawn, drill.board, render);
-	const sidebar = useSidebar(props.selection);
+	// Two panes rest their sidebars, so each picture has the room (use-sidebar.ts).
+	const sidebar = useSidebar(props.selection, usePaneChrome().shared);
+	const picture = useRef<HTMLDivElement | null>(null);
+	const attachPicture = useCallback((element: HTMLDivElement | null): void => {
+		picture.current = element;
+	}, []);
+	useClearOfPanel(picture, sidebar.floating, props.selection, camera.panBy);
 	const appearances = useStageAppearances(drawn, departure.leaving);
 	const look = useKindLook(appearances);
 	// Which way the pane is read: the picture, or one of the board's pages. It is
@@ -716,6 +743,7 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		tab,
 		onTab,
 		onReadBeat,
+		attachPicture,
 		heading: departure.heading,
 		narrative,
 		presented,

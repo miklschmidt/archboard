@@ -135,8 +135,6 @@
 	--color-primary-text: var(--primary-text);
 	/* The accent as a quiet tint behind something chosen on a page. */
 	--color-primary-subtle: var(--primary-subtle);
-	/* The ink on the gold, and the sign gradient (top to bottom). */
-	--color-sign-ink: var(--sign-ink);
 	--color-popover-foreground: var(--popover-foreground);
 	--color-popover: var(--popover);
 	--color-card-foreground: var(--card-foreground);
@@ -263,19 +261,6 @@
 	letter-spacing: var(--text-name--letter-spacing);
 	font-weight: var(--text-name--font-weight);
 	text-transform: uppercase;
-}
-
-/* The gold sign: the way deeper, on the bottom edge of a card and on the
-   control that opens a part's board. The one gradient of the shell's chrome. */
-@utility gold-sign {
-	background: linear-gradient(180deg, var(--sign-from) 0%, var(--sign-to) 100%);
-	color: var(--sign-ink);
-}
-
-@keyframes sign-arrive {
-	from {
-		opacity: 0;
-	}
 }
 
 /* The voice circle. A ring, and inside it the waveform: one vertical line per
