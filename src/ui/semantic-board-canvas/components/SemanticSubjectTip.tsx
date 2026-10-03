@@ -28,7 +28,7 @@ import {
  * @param props The part, the reading it is described from and how far away the picture is seen.
  * @param props.target The part whose tip is open, or null.
  * @param props.reading What the board says about the variant the picture draws, or null.
- * @param props.far Whether the picture is seen from far away, showing names alone.
+ * @param props.far Whether the picture is seen from far away, where a card says only the start of its responsibility.
  * @returns The tip, or nothing when there is nothing to add.
  */
 function SemanticSubjectTip(props: {

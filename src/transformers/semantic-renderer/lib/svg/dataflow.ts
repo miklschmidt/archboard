@@ -46,7 +46,6 @@ import {
 	columnSubjects,
 	stepSubjects,
 } from "@/transformers/semantic-renderer/lib/svg/flow-subjects";
-import { farSizeFor } from "@/transformers/semantic-renderer/lib/measurement";
 import { canvasFor, coord, union } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { FLOW_CYCLE_CAP_MS, FLOW_STEP_TRAVEL_MS } from "@/shared/timing/timing";
@@ -336,9 +335,7 @@ function headShade(
  * @param standingOf How each subject stands against the variant this one came from.
  * @param crossing The drawing's shared clock, which this flow takes its turns on.
  * @param unsettledOf Whether the board says a subject is still undecided.
- * @param cards How the participant cards are drawn.
- * @param cards.appearances Type channels for the depicted participant cards.
- * @param cards.farSize The size their names are set at from far away.
+ * @param appearances Type channels for the depicted participant cards.
  * @returns Everything it draws, and the words that go above every flow's runs.
  */
 function paintFlow(
@@ -347,7 +344,7 @@ function paintFlow(
 	standingOf: StandingOf,
 	crossing: Crossing,
 	unsettledOf: UnsettledOf,
-	{ appearances, farSize }: { appearances: ReadonlyMap<string, NodeAppearance>; farSize: number },
+	appearances: ReadonlyMap<string, NodeAppearance>,
 ): { readonly body: string; readonly words: string } {
 	const activeAt = activationLookup(layout.columns);
 	const flowStanding = standingOf(layout.flow.id);
@@ -381,7 +378,6 @@ function paintFlow(
 						standingOf(column.card.node.id),
 						unsettledOf(column.card.node.id),
 						appearances.get(column.card.node.id)!,
-						farSize,
 					),
 				),
 			]),
@@ -471,15 +467,7 @@ function paintDataFlow(
 		cycle: Math.min(layout.turns * FLOW_STEP_TRAVEL_MS, FLOW_CYCLE_CAP_MS) / 1000,
 	};
 	const painted = layout.flows.map((one) =>
-		paintFlow(one, palette, standingOf, crossing, unsettledOf, {
-			appearances,
-			// Set for every card the flow lays out, drawn or not, so leaving some out moves no name.
-			farSize: farSizeFor(
-				laid.flows
-					.find(({ flow }) => flow.id === one.flow.id)!
-					.columns.map(({ card }) => ({ name: card.node.name, box: card.box })),
-			),
-		}),
+		paintFlow(one, palette, standingOf, crossing, unsettledOf, appearances),
 	);
 	const columns = layout.flows.flatMap(columnSubjects);
 	const steps = layout.flows.flatMap(stepSubjects);

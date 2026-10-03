@@ -204,7 +204,7 @@ const FAR_VIEW_CLASS = "is-far";
 /**
  * The classes the surface itself carries for the picture's stylesheet: that a
  * presented step veils the picture, and that it is seen from far away,
- * where each card draws its name larger in place of its responsibility. They
+ * where each card draws its name and the start of its responsibility larger. They
  * are part of the surface's rendered class, never toggled on it afterwards: a
  * render that writes the surface's class (a pan starting, say) would wipe a
  * class put there by hand.
