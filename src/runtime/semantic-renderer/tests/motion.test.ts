@@ -55,7 +55,7 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 		expect(pulsesOn(rendered.svg, "plain")).toBe(0);
 	});
 
-	test("pulses fly at the authored speed on short and long lines", async () => {
+	test("pulses fly at twice the authored speed on short and long lines", async () => {
 		// A chain with a line that skips it: one line a rank long, one three.
 		const svg = await chain([
 			{ id: "ab", from: "a", to: "b", kind: "call", traffic: { speed: 80, volume: 1 } },
@@ -65,9 +65,9 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 		]);
 		const [short, long] = [trafficLayers(svg, "ab"), trafficLayers(svg, "ad")];
 		expect(lengthOf(long[0]!.d)).toBeGreaterThan(lengthOf(short[0]!.d) + 50);
-		for (const layer of [...short, ...long]) expect(speedOf(layer)).toBeCloseTo(80, 1);
+		for (const layer of [...short, ...long]) expect(speedOf(layer)).toBeCloseTo(160, 1);
 		// The authored speed still says which line runs hotter.
-		for (const layer of trafficLayers(svg, "bc")) expect(speedOf(layer)).toBeCloseTo(160, 1);
+		for (const layer of trafficLayers(svg, "bc")) expect(speedOf(layer)).toBeCloseTo(320, 1);
 	});
 
 	test("a line carries a steady train, spaced by its speed over its volume", async () => {
@@ -81,7 +81,7 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 			for (const layer of layers) {
 				// One dash and one gap, forever: no pulse comes early or late.
 				expect(layer.dash + layer.gap).toBeCloseTo(speed / volume, 1);
-				expect(layer.cycle).toBeCloseTo(1 / volume, 2);
+				expect(layer.cycle).toBeCloseTo(1 / (2 * volume), 2);
 				// The dash moves exactly one spacing a cycle, so the train has no seam.
 				expect(Math.abs(layer.values[0]! - layer.values[1]!)).toBeCloseTo(speed / volume, 1);
 			}
@@ -240,7 +240,7 @@ describe("a pulse is handed on through a card", () => {
 			{ id: "ab", from: "a", to: "b", kind: "call", traffic: SAME },
 			{ id: "bc", from: "b", to: "c", kind: "call", traffic: SAME },
 		]);
-		for (const layer of rimLayers(svg, "b")) expect(speedOf(layer)).toBeCloseTo(SAME.speed, 1);
+		for (const layer of rimLayers(svg, "b")) expect(speedOf(layer)).toBeCloseTo(SAME.speed * 2, 1);
 	});
 
 	test("a reader who asked for less motion loses the pulses on a card's edge too", async () => {

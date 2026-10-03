@@ -142,10 +142,10 @@ describe("a pulse is handed on through a card", () => {
 });
 
 describe("every line carries a pulse at every moment", () => {
-	test("pulses are as far apart as the authored speed over volume says", () => {
+	test("pulses are as far apart as the authored speed over volume says, and fly twice the speed", () => {
 		const { rhythms } = relayRhythms([lane("ab", "a", "b", { ride: 500 })], round(0));
 		expect(rhythms.get("ab")!.spacing).toBe(80);
-		expect(rhythms.get("ab")!.speed).toBe(40);
+		expect(rhythms.get("ab")!.speed).toBe(80);
 	});
 
 	test("but never further apart than the shortest line of their chain is long", () => {
