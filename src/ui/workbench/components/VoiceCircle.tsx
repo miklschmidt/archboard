@@ -156,7 +156,7 @@ function VoiceCircle(props: VoiceCircleProps): JSX.Element {
 				"group/voice relative flex shrink-0 items-center justify-center rounded-full outline-none",
 				"focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-(--sidebar)",
 				off &&
-					"border-border hover:border-primary-text bg-card shadow-raised active:shadow-pressed dark:bg-input/30 border-[1.5px] transition-colors",
+					"border-border hover:border-primary-mark bg-card shadow-raised active:shadow-pressed dark:bg-input/30 border-[1.5px] transition-colors",
 			)}
 		>
 			<CircleFace state={state} problem={voice.problem !== null} />
@@ -205,7 +205,7 @@ function OffMark(props: { readonly problem: boolean }): JSX.Element {
 	) : (
 		<RiMicLine
 			aria-hidden="true"
-			className="text-muted-foreground group-hover/voice:text-primary-text size-5 transition-colors"
+			className="text-muted-foreground group-hover/voice:text-primary-mark size-5 transition-colors"
 		/>
 	);
 }

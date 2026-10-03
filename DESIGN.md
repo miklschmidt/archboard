@@ -16,7 +16,7 @@ colors:
   gold-bottom: "oklch(0.805 0.142 81)"
   gold-rim: "oklch(0.7 0.125 76)"
   gold-ink: "oklch(0.2 0.02 70)"
-  gold-text: "oklch(0.5 0.105 76)"
+  gold-mark: "oklch(0.72 0.15 77)"
   gold-tint: "oklch(0.968 0.03 88)"
   live-lime: "oklch(0.849 0.207 128.8)"
   changed-orange: "oklch(0.69 0.19 48)"
@@ -132,7 +132,7 @@ every role and changes the values. The file palette.css holds both themes.
 - **Gold Top and Gold Bottom** (oklch(0.87 0.135 88) to oklch(0.805 0.142 81)): the subtle gradient from top to bottom of a primary action. Both themes use the same values.
 - **Gold Rim** (oklch(0.7 0.125 76), dark oklch(0.58 0.11 74)): the edge of a primary action, one pixel wide.
 - **Gold Ink** (oklch(0.2 0.02 70)): text and icons on gold. It has a contrast of at least 8.5:1 on every stop of the gradient.
-- **Gold Text** (oklch(0.5 0.105 76), dark oklch(0.86 0.125 86)): the gold as text, or as a 2px bar or underline. It marks the chosen row and the active tab.
+- **Gold Mark** (oklch(0.72 0.15 77), dark oklch(0.86 0.125 86)): the gold as a mark: a 2px bar or underline, a ring, an icon or the edge of something chosen. It marks the chosen row, the active tab and the underline of a link.
 - **Gold Tint** (oklch(0.968 0.03 88), dark oklch(0.29 0.045 80)): a quiet wash behind something chosen on a page.
 
 ### Neutral
@@ -153,6 +153,8 @@ every role and changes the values. The file palette.css holds both themes.
 ### Named Rules
 
 **The One Gold Rule.** Gold marks what is chosen, the one primary action of a region, and the voice and the brand mark. Nothing else is gold.
+
+**The Ink On Chalk Rule.** Text on chalk is never gold. A gold dark enough to clear 4.5:1 on chalk reads as brown. Text stays in the ink, and a gold mark beside or under it carries the accent. On graphite, accent text is the gold itself (oklch(0.86 0.125 86)).
 
 **The Untouched Picture Rule.** The renderer draws the picture. The shell never paints gold, shadow or decoration on a card in it.
 
@@ -251,7 +253,7 @@ tone.
 
 ### Navigation
 
-- **Style:** a tree on Chrome Chalk with rows of 28px. The chosen row is a plate in Reading Tone with `shadow-raised` and a 2px bar of Gold Text on its left. Tabs have an underline of Gold Text.
+- **Style:** a tree on Chrome Chalk with rows of 28px. The chosen row is a plate in Reading Tone with `shadow-raised` and a 2px bar of Gold Mark on its left. Tabs have an underline of Gold Mark. A link is ink with an underline of Gold Mark.
 
 ### Agent dock
 

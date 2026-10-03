@@ -218,7 +218,7 @@ function HeldPrompt(props: {
 						<button
 							type="button"
 							onClick={retry}
-							className="text-primary-text -mx-1 min-h-6 px-1 font-medium hover:underline"
+							className="text-primary-text decoration-primary-mark -mx-1 min-h-6 px-1 font-medium underline underline-offset-2 hover:decoration-2"
 						>
 							{message.state === "unknown" ? "Send again" : "Retry"}
 						</button>
