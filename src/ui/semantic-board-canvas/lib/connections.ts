@@ -136,6 +136,24 @@ function litBy(wiring: Wiring, id: string): ReadonlySet<string> | null {
 }
 
 /**
+ * What a trace lights: what the pick lights, and everything the trace reached
+ * beyond it, with the containers that hold any of them.
+ * @param wiring What the variant says.
+ * @param lit What the pick lights.
+ * @param reach The subjects the trace reached beyond that, by how many hops.
+ * @returns The ids to leave standing.
+ */
+function withReach(
+	wiring: Wiring,
+	lit: ReadonlySet<string>,
+	reach: ReadonlyMap<string, number>,
+): ReadonlySet<string> {
+	const light = new Set([...lit, ...reach.keys()]);
+	withContainers(wiring.nodes, light);
+	return light;
+}
+
+/**
  * What the picture lights for a poke, when it has anything drawn to light: a
  * part wired to nothing the picture draws has nothing to say.
  * @param wiring What the variant says, or null while that is not known.
@@ -152,4 +170,4 @@ function litInPicture(
 	return lit !== null && [...lit].some((one) => one in atlas.edges) ? lit : null;
 }
 
-export { connectionsOf, litBy, litInPicture, type Connections, type Link, type Wiring };
+export { connectionsOf, litBy, litInPicture, withReach, type Connections, type Link, type Wiring };

@@ -63,6 +63,7 @@ function CameraSurface(props: CameraSurfaceProps): JSX.Element {
 			"--presentation-step-ms": `${PRESENTATION_STEP_MS}ms`,
 			"--lighting-ms": `${EXPLORING_MS.lightingFade}ms`,
 			"--far-view-ms": `${FAR_VIEW_FADE_MS}ms`,
+			"--reach-hop-ms": `${EXPLORING_MS.reachHop}ms`,
 		}),
 		[width, height, camera],
 	);

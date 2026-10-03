@@ -34,6 +34,7 @@ import {
 	type BoardTab,
 	type PaneHeaderProps,
 } from "@/ui/semantic-board-canvas/components/PaneHeader";
+import { PeekProvider } from "@/ui/semantic-board-canvas/components/Peek";
 import { SemanticDiagram } from "@/ui/semantic-board-canvas/components/SemanticDiagram";
 import {
 	ReadingArea,
@@ -64,6 +65,7 @@ import { useSettledFocus } from "@/ui/semantic-board-canvas/hooks/use-settled-fo
 import { useSidebar, type Sidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
 import { usePaneChrome } from "@/ui/components/PaneChrome";
 import { useClearOfPanel } from "@/ui/semantic-board-canvas/hooks/use-clear-of-panel";
+import { useReveal } from "@/ui/semantic-board-canvas/hooks/use-reveal";
 import { useKindLook } from "@/ui/semantic-board-canvas/hooks/use-kind-look";
 import { useStageAppearances } from "@/ui/semantic-board-canvas/hooks/use-stage-appearances";
 import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
@@ -408,14 +410,18 @@ function renderedView(view: RenderView): JSX.Element {
 			{/* Read left to right: the picture — with a presented walkthrough's
 			    caption over it, while the sidebar steps aside — then the board and
 			    whatever is selected on it. */}
-			<ReadingArea presenting={view.narrative.open !== null}>
-				<div ref={view.attachPicture} className="relative flex min-h-0 min-w-0 flex-1">
-					{stageBody(view)}
-					{presentationOver(view)}
-					{view.tab !== "diagram" && view.narrative.open === null && <PaneBoardPage view={view} />}
-				</div>
-				<SemanticStageSidebar view={view} appearances={view.appearances} />
-			</ReadingArea>
+			<PeekProvider selection={view.selection}>
+				<ReadingArea presenting={view.narrative.open !== null}>
+					<div ref={view.attachPicture} className="relative flex min-h-0 min-w-0 flex-1">
+						{stageBody(view)}
+						{presentationOver(view)}
+						{view.tab !== "diagram" && view.narrative.open === null && (
+							<PaneBoardPage view={view} />
+						)}
+					</div>
+					<SemanticStageSidebar view={view} appearances={view.appearances} />
+				</ReadingArea>
+			</PeekProvider>
 		</>
 	);
 }
@@ -679,6 +685,14 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		picture.current = element;
 	}, []);
 	useClearOfPanel(picture, sidebar.floating, props.selection, camera.ease);
+	useReveal({
+		camera,
+		atlas: drawn?.atlas ?? null,
+		reading,
+		selection: props.selection,
+		off: narrative.open !== null || sidebar.floating,
+		reducedMotion: props.reducedMotion === true,
+	});
 	const appearances = useStageAppearances(drawn, departure.leaving);
 	const look = useKindLook(appearances);
 	// Which way the pane is read: the picture, or one of the board's pages. It is

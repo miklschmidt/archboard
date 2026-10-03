@@ -7,6 +7,7 @@
 
 export { usePictureTransition } from "@/ui/semantic-board-canvas/hooks/use-picture-transition";
 export { glidePath } from "@/ui/semantic-board-canvas/lib/camera-glide";
+export { revealCamera } from "@/ui/semantic-board-canvas/lib/reveal";
 export {
 	STILL,
 	easeMotion,

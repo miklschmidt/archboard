@@ -37,6 +37,7 @@ import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-docume
 import { useDiagramGestures } from "@/ui/semantic-board-canvas/hooks/use-diagram-gestures";
 import { useDrillOpen } from "@/ui/semantic-board-canvas/hooks/use-drill-open";
 import { useLighting } from "@/ui/semantic-board-canvas/hooks/use-lighting";
+import { usePeeked } from "@/ui/semantic-board-canvas/hooks/use-peek";
 import {
 	usePictureTransition,
 	type StagedPicture,
@@ -325,17 +326,25 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	const reading = drawnReading(props.reading, drawing);
 	// What the picture lights for a poke gives way to what a presented step or a
 	// group says the picture is about, and to the picture leaving.
+	const peeked = usePeeked();
 	const lighting = useLighting({
 		reading,
 		atlas: drawing.atlas,
 		selection,
+		peeked,
 		veil: props.veil,
 		presenting: props.presenting,
 		group: props.group,
 		departure,
 	});
-	useViewerMarks(picture, { selection, focus, group: props.group, veil: lighting.standing });
-	useSweep(picture, lighting.lit, reducedMotion);
+	useViewerMarks(picture, {
+		selection,
+		focus,
+		group: props.group,
+		veil: lighting.standing,
+		reach: lighting.reach,
+	});
+	useSweep(picture, lighting.light, lighting.reach, reducedMotion);
 	useStickyHeads(picture, drawing.atlas);
 	// Seen from far away, each card's name is drawn larger in place of what it
 	// says it does, which nobody reads at that size. Read as a yes or no, so the
