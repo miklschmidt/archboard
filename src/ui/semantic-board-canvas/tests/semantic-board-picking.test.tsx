@@ -99,13 +99,44 @@ test("a drag that begins on a card pans and picks nothing, however small its ste
 		// One pixel at a time: far enough to be a pan, never far enough between
 		// two moves to look like one.
 		for (let step = 1; step <= 20; step += 1) {
-			fireEvent.pointerMove(viewport(), { pointerId: 1, clientX: 40 + step, clientY: 40 });
+			fireEvent.pointerMove(viewport(), {
+				pointerId: 1,
+				buttons: 1,
+				clientX: 40 + step,
+				clientY: 40,
+			});
 		}
 		fireEvent.pointerUp(viewport(), { pointerId: 1, clientX: 60, clientY: 40 });
 		fireEvent.click(viewport(), { clientX: 60, clientY: 40 });
 	});
 	expect(stage.picks).toEqual([]);
 	expect(surface().style.transform).not.toBe(before);
+});
+
+test("a press whose release the viewport never saw does not follow the pointer afterwards", async () => {
+	// A resize handle beside the viewport can take the pointer at a press that
+	// began on the viewport, so the release goes to the handle. The next moves
+	// arrive with no button held, and the diagram must not pan with them.
+	server.reply = { status: 200, body: drawing(1) };
+	mountStage();
+	await settle();
+	const card = inPicture("card");
+	act(() => {
+		fireEvent.pointerDown(card, { pointerId: 1, button: 0, clientX: 40, clientY: 40 });
+		fireEvent.pointerMove(viewport(), { pointerId: 1, buttons: 1, clientX: 60, clientY: 40 });
+	});
+	const held = surface().style.transform;
+	act(() => {
+		for (let step = 1; step <= 10; step += 1) {
+			fireEvent.pointerMove(viewport(), {
+				pointerId: 1,
+				buttons: 0,
+				clientX: 60 + step * 20,
+				clientY: 40,
+			});
+		}
+	});
+	expect(surface().style.transform).toBe(held);
 });
 
 test("a gesture the browser takes away picks nothing", async () => {
