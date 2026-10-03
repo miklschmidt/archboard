@@ -3,7 +3,11 @@
 // picture (a ring around an arrow up, down or across) and the same words the
 // card's hover tip uses for which way it lies; it is the panel's primary
 // action, in gold. The other views the part's code through the shell's own
-// open-code action.
+// open-code action. It names the file it opens, which makes it the one place
+// the part's binding is shown, and it comes with the way to copy that path.
+//
+// The foot has no heading: its rows say what they do, and a part that leads
+// nowhere has no foot.
 
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -11,18 +15,19 @@ import {
 	RiArrowRightCircleLine,
 	RiArrowRightLine,
 	RiArrowUpCircleLine,
+	RiCheckLine,
 	RiCodeSSlashLine,
-	RiExternalLinkLine,
+	RiFileCopyLine,
 	RiStackLine,
 	type RemixiconComponentType,
 } from "@remixicon/react";
-import type { JSX, ReactNode } from "react";
+import { useCallback, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@/shared/code-target";
-import type { DrillDown } from "@/shared/semantic-board/index";
+import type { DrillDown, SemanticBoard, SemanticVariant } from "@/shared/semantic-board/index";
+import { Button } from "@/ui/components/button";
 import { cn } from "@/ui/components/class-names";
 import { drillWay, drillWayWords, type DrillWay } from "@/ui/semantic-board-canvas/lib/drill-way";
-import { SidebarHeading } from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
 import { useSemanticBoardChanges } from "@/ui/semantic-board-canvas/hooks/use-semantic-board-changes";
 import {
 	drillDownAsked,
@@ -37,60 +42,62 @@ import {
 
 /** Inputs for one way to go deeper. */
 interface GoProps {
-	readonly icon: ReactNode;
+	readonly icon: RemixiconComponentType;
 	readonly title: string;
-	readonly sub: string;
-	readonly end: ReactNode;
 	readonly slot: string;
 	readonly onClick: () => void;
-	/** Whether it is the panel's primary action, in gold. */
+	/** Whether it is the panel's primary action, in gold, with an arrow at its end. */
 	readonly primary?: boolean;
 	readonly lifecycle?: string | undefined;
+	/** What the pointer resting on it says, when that is more than its words. */
+	readonly tip?: string | undefined;
+	/** Its second line: what it opens, or where. */
+	readonly children?: ReactNode;
 }
 
 /**
- * One way to go deeper: a bordered row with an icon, what it does and what it opens.
+ * One way to go deeper: a bordered row with an icon, what it does and what it
+ * opens. A long name wraps rather than being cut off.
  * @param props The row.
  * @returns The button.
  */
 function Go(props: GoProps): JSX.Element {
+	const { icon: Icon, primary } = props;
 	return (
 		<button
 			type="button"
 			data-slot={props.slot}
 			data-variant-lifecycle={props.lifecycle}
-			title={props.title}
+			title={props.tip}
 			onClick={props.onClick}
 			className={cn(
 				"rounded-control flex min-h-11 w-full min-w-0 items-center gap-3 border px-3 py-1.5 text-left active:translate-y-px",
-				props.primary === true
+				primary === true
 					? "primary-finish"
 					: "border-border bg-card shadow-raised hover:bg-muted active:shadow-pressed dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
 			)}
 		>
 			<span aria-hidden="true" className="flex size-4 shrink-0 [&_svg]:size-full">
-				{props.icon}
+				<Icon />
 			</span>
 			<span className="flex min-w-0 flex-1 flex-col">
-				<span className="text-control truncate font-semibold">{props.title}</span>
-				<span
-					className={cn(
-						"text-body truncate",
-						props.primary === true ? "text-primary-foreground/75" : "text-muted-foreground",
-					)}
-				>
-					{props.sub}
-				</span>
-			</span>
-			<span
-				aria-hidden="true"
-				className={cn(
-					"flex size-4 shrink-0 [&_svg]:size-full",
-					props.primary !== true && "text-muted-foreground",
+				<span className="text-control font-semibold [overflow-wrap:anywhere]">{props.title}</span>
+				{props.children !== undefined && (
+					<span
+						className={cn(
+							"text-body [overflow-wrap:anywhere]",
+							primary === true ? "text-primary-foreground/75" : "text-muted-foreground",
+						)}
+					>
+						{props.children}
+					</span>
 				)}
-			>
-				{props.end}
 			</span>
+			{primary === true && (
+				<span aria-hidden="true" className="flex size-4 shrink-0 [&_svg]:size-full">
+					<RiArrowRightLine />
+				</span>
+			)}
 		</button>
 	);
 }
@@ -120,6 +127,93 @@ const WAY_ICONS: Readonly<Record<DrillWay, RemixiconComponentType>> = {
 	across: RiArrowRightCircleLine,
 };
 
+/** Inputs for the way down, once the board it leads to has been resolved. */
+interface OpenBoardProps {
+	/** What the part's drill-down names. */
+	readonly target: DrillDown;
+	/** The board it leads to. */
+	readonly board: SemanticBoard;
+	/** The variant of it that it opens. */
+	readonly variant: SemanticVariant;
+	/** The part's kind, which is the level of the board it opens (ADR 0029). */
+	readonly kind: string;
+	/** The level of the board the part is drawn on. */
+	readonly here: string | undefined;
+	/**
+	 * Open the board one level down.
+	 * @param board The target board.
+	 * @param variant The variant to open, by id.
+	 */
+	readonly onOpen: (board: string, variant: string) => void;
+}
+
+/** What each state that is not the current architecture is called where a person reads it. */
+const LIFECYCLE_WORDS: Readonly<Record<Exclude<SemanticVariant["lifecycle"], "current">, string>> =
+	{
+		draft: "draft proposal",
+		historical: "historical state",
+		shelved: "shelved proposal",
+	};
+
+/**
+ * The variant the way down opens, when it is not the current architecture: its
+ * name and what sort of state it is, because "the architecture", "a draft
+ * proposal" and "a frozen historical state" are three different things to be
+ * looking at.
+ * @param variant The variant it opens.
+ * @returns The words, or nothing for the current architecture.
+ */
+function stateOf(variant: SemanticVariant): readonly string[] {
+	if (variant.lifecycle === "current") {
+		return [];
+	}
+	return [`${variant.name}, ${LIFECYCLE_WORDS[variant.lifecycle]}`];
+}
+
+/**
+ * Where the way down goes, in words: which way and how far, the level of the
+ * board it opens, and the state it opens when that is not the current architecture.
+ * @param props What the way down opens.
+ * @param levels The vault's levels, coarsest first, once read.
+ * @returns The words.
+ */
+function standingOf(props: OpenBoardProps, levels: readonly string[] | undefined): string {
+	const { board, variant, kind, here } = props;
+	const level = `${board.level.charAt(0).toUpperCase()}${board.level.slice(1)}`;
+	const said = [drillWayWords(kind, here, levels), level].filter((part) => part !== null);
+	return [...said, ...stateOf(variant)].join(" · ");
+}
+
+/**
+ * The way down: opens the board the part drills into, naming it and the level
+ * it sits at.
+ * @param props What the way down opens.
+ * @returns The primary action.
+ */
+function OpenBoard(props: OpenBoardProps): JSX.Element {
+	const { target, board, variant, kind, here, onOpen } = props;
+	const levels = useQuery(vaultCheckQuery()).data?.policy.levels;
+	const way = drillWay(kind, here, levels);
+	const open = useCallback((): void => {
+		onOpen(board.name, variant.id);
+	}, [onOpen, board.name, variant.id]);
+	return (
+		<>
+			<Go
+				slot="semantic-drill-down-open"
+				lifecycle={variant.lifecycle}
+				icon={way === null ? RiStackLine : WAY_ICONS[way]}
+				title={`Open ${board.name}`}
+				primary
+				onClick={open}
+			>
+				{standingOf(props, levels)}
+			</Go>
+			<p className="sr-only">Asks for {drillDownAsked(target)}.</p>
+		</>
+	);
+}
+
 /** Inputs for the way down. */
 interface WayDownProps {
 	readonly target: DrillDown;
@@ -136,16 +230,15 @@ interface WayDownProps {
 }
 
 /**
- * The way down: opens the board the part drills into, naming it and the level it
- * sits at. A target that cannot be opened says why, in its place: it is never
- * swapped for a state the link did not ask for (ADR 0023).
+ * The way down, or the reason there is none. A target that cannot be opened
+ * says why, in its place: it is never swapped for a state the link did not ask
+ * for (ADR 0023).
  * @param props The target and how to open it.
  * @returns The way down, or the reason there is none.
  */
 function WayDown(props: WayDownProps): JSX.Element {
 	const { target, onOpen, kind, here } = props;
 	const document = useQuery(semanticBoardDocumentQuery(target.board));
-	const levels = useQuery(vaultCheckQuery()).data?.policy.levels;
 	const name = drillTargetName(target, document.data);
 	// Heard under the name the board goes by now, so a state superseded since the
 	// link was written is never opened as though it were current.
@@ -164,41 +257,172 @@ function WayDown(props: WayDownProps): JSX.Element {
 	if (resolution.kind !== "ready") {
 		return <p className="text-body">{refusalWords(resolution, target)}</p>;
 	}
-	const { board, variant } = resolution;
-	const way = drillWay(kind, here, levels);
-	const level = `${board.level.charAt(0).toUpperCase()}${board.level.slice(1)}`;
-	const said = [drillWayWords(kind, here, levels), level].filter((part) => part !== null);
-	// A state that is not the current architecture says so before it is opened.
-	const standing = [...said, ...(variant.lifecycle === "current" ? [] : [variant.name])].join(
-		" · ",
-	);
-	const Icon = way === null ? RiStackLine : WAY_ICONS[way];
 	return (
-		<Go
-			slot="semantic-drill-down-open"
-			lifecycle={variant.lifecycle}
-			icon={<Icon />}
-			title={`Open ${board.name}`}
-			sub={standing}
-			end={<RiArrowRightLine />}
-			primary
-			onClick={() => onOpen(board.name, variant.id)}
+		<OpenBoard
+			target={target}
+			board={resolution.board}
+			variant={resolution.variant}
+			kind={kind}
+			here={here}
+			onOpen={onOpen}
 		/>
 	);
 }
 
+/**
+ * A path with a place to break the line after each slash, so a long one wraps
+ * between its parts and not in the middle of a name.
+ * @param props The path.
+ * @param props.path The path.
+ * @returns The path, breakable.
+ */
+function BreakablePath(props: { readonly path: string }): JSX.Element {
+	const parts = props.path.split("/");
+	return (
+		<>
+			{parts.map((part, at) => (
+				<span key={parts.slice(0, at + 1).join("/")}>
+					{part}
+					{at < parts.length - 1 && (
+						<>
+							/<wbr />
+						</>
+					)}
+				</span>
+			))}
+		</>
+	);
+}
+
+/**
+ * Where a binding is pinned, for the pointer resting on the way to its code:
+ * the repository, and the branch and commit when it names them.
+ * @param binding The part's binding.
+ * @returns The words.
+ */
+function bindingTip(binding: CodeBinding): string {
+	const { repo, branch, commit } = binding;
+	const pinned = [branch, commit?.slice(0, 8)].filter((part) => part !== undefined).join(" @ ");
+	return pinned === "" ? repo : `${repo} · ${pinned}`;
+}
+
+/**
+ * The control that copies the bound path. It says that it did while the pointer
+ * or the focus stays on it, and goes back to its icon when either leaves.
+ * @param props The path.
+ * @param props.path The bound path.
+ * @returns The control.
+ */
+function CopyPath(props: { readonly path: string }): JSX.Element {
+	const { path } = props;
+	const [copied, setCopied] = useState(false);
+	const copy = useCallback((): void => {
+		navigator.clipboard.writeText(path).then(
+			() => setCopied(true),
+			() => undefined,
+		);
+	}, [path]);
+	const rest = useCallback((): void => {
+		setCopied(false);
+	}, []);
+	return (
+		<Button
+			type="button"
+			variant="outline"
+			size="icon"
+			aria-label={copied ? "Copied path" : "Copy path"}
+			data-slot="semantic-inspector-copy"
+			className="h-auto min-h-11 w-9 shrink-0 self-stretch"
+			onClick={copy}
+			onPointerLeave={rest}
+			onBlur={rest}
+		>
+			{copied ? <RiCheckLine /> : <RiFileCopyLine />}
+		</Button>
+	);
+}
+
+/** Inputs for the way to the code. */
+interface ViewInCodeProps {
+	/** The part's code, when it is bound to some. */
+	readonly binding: CodeBinding | undefined;
+	/** Open it, when the shell can. */
+	readonly onOpenCode: ((binding: CodeBinding) => void) | undefined;
+}
+
+/** Inputs for the way to a part's code, once there is some and a way to open it. */
+interface CodeRowProps {
+	readonly binding: CodeBinding;
+	/**
+	 * Open the code in the person's editor.
+	 * @param binding Where the code is.
+	 */
+	readonly onOpenCode: (binding: CodeBinding) => void;
+}
+
+/**
+ * The way to the code: the file the part is bound to, opened in the person's
+ * editor, and its path to copy.
+ * @param props The binding and the shell's way of opening it.
+ * @returns The row.
+ */
+function CodeRow(props: CodeRowProps): JSX.Element {
+	const { binding, onOpenCode } = props;
+	const open = useCallback((): void => {
+		onOpenCode(binding);
+	}, [binding, onOpenCode]);
+	return (
+		<div data-slot="semantic-inspector-code" className="flex gap-2">
+			<Go
+				slot="semantic-inspector-open-code"
+				icon={RiCodeSSlashLine}
+				title="View in code"
+				tip={bindingTip(binding)}
+				onClick={open}
+			>
+				<span className="text-technical font-mono">
+					<BreakablePath path={binding.path} />
+				</span>
+			</Go>
+			<CopyPath path={binding.path} />
+		</div>
+	);
+}
+
+/**
+ * The way to the code, for a part that is bound to some when the shell can
+ * open it.
+ * @param props The binding and the shell's way of opening it.
+ * @returns The row, or nothing.
+ */
+function ViewInCode(props: ViewInCodeProps): JSX.Element | null {
+	const { binding, onOpenCode } = props;
+	if (binding === undefined || onOpenCode === undefined) {
+		return null;
+	}
+	return <CodeRow binding={binding} onOpenCode={onOpenCode} />;
+}
+
 /** Inputs for the foot of the panel. */
-interface GoDeeperProps {
+interface GoDeeperProps extends ViewInCodeProps {
 	/** What the part drills into, when it does. */
 	readonly target: DrillDown | undefined;
 	/** The part's kind, which is the level of the board it opens (ADR 0029). */
 	readonly kind: string;
 	/** The level of the board the part is drawn on. */
 	readonly here: string | undefined;
-	/** The part's code, when it is bound to some and the shell can open it. */
-	readonly binding: CodeBinding | undefined;
 	readonly onOpen: (board: string, variant: string) => void;
-	readonly onOpenCode: ((binding: CodeBinding) => void) | undefined;
+}
+
+/**
+ * Whether the part leads anywhere: to a board, or to code the shell can open.
+ * @param props What the part leads to.
+ * @returns Whether it does.
+ */
+function leadsAnywhere(props: GoDeeperProps): boolean {
+	return (
+		props.target !== undefined || (props.binding !== undefined && props.onOpenCode !== undefined)
+	);
 }
 
 /**
@@ -208,9 +432,7 @@ interface GoDeeperProps {
  */
 function GoDeeper(props: GoDeeperProps): JSX.Element | null {
 	const { target, binding, onOpenCode } = props;
-	const code =
-		binding !== undefined && onOpenCode !== undefined ? { binding, open: onOpenCode } : null;
-	if (target === undefined && code === null) {
+	if (!leadsAnywhere(props)) {
 		return null;
 	}
 	return (
@@ -218,21 +440,10 @@ function GoDeeper(props: GoDeeperProps): JSX.Element | null {
 			data-slot="semantic-go-deeper"
 			className="border-border bg-raised shadow-edge-up relative flex shrink-0 flex-col gap-2 border-t px-4 py-4"
 		>
-			<SidebarHeading level={3}>Go deeper</SidebarHeading>
 			{target !== undefined && (
 				<WayDown target={target} kind={props.kind} here={props.here} onOpen={props.onOpen} />
 			)}
-			{code !== null && (
-				<Go
-					slot="semantic-inspector-open-code"
-					icon={<RiCodeSSlashLine />}
-					title="View in code"
-					sub="Open in your editor"
-					end={<RiExternalLinkLine />}
-					onClick={() => code.open(code.binding)}
-				/>
-			)}
-			{target !== undefined && <p className="sr-only">Asks for {drillDownAsked(target)}.</p>}
+			<ViewInCode binding={binding} onOpenCode={onOpenCode} />
 		</footer>
 	);
 }

@@ -8,6 +8,7 @@ import { afterAll, afterEach, beforeAll } from "bun:test";
 import { act, cleanup, render } from "@testing-library/react";
 import { createElement, useEffect, useState, type JSX, type ReactNode } from "react";
 
+import type { CodeBinding } from "@/shared/code-target";
 import { SemanticBoardStage, type SemanticPaneReading } from "@/ui/semantic-board-canvas";
 import { withFixtureOrders } from "@/ui/semantic-board-canvas/tests/fixture-orders";
 
@@ -325,6 +326,11 @@ interface MountOptions extends StagePassThrough {
 	 * @param reading The board, variant, view and selection on screen.
 	 */
 	readonly onReading?: ((reading: SemanticPaneReading) => void) | undefined;
+	/**
+	 * The person asked to open a part's code, which only a shell can do.
+	 * @param binding Where the code is.
+	 */
+	readonly onOpenCode?: ((binding: CodeBinding) => void) | undefined;
 }
 
 /** Every option the harness passes straight through to the stage. */
@@ -335,6 +341,7 @@ const READING_PROPS = [
 	"onVariantChange",
 	"reducedMotion",
 	"onReading",
+	"onOpenCode",
 	"driven",
 	"overlay",
 	"placeOf",
