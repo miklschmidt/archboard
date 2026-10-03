@@ -181,15 +181,21 @@ The search for a part sits above the tabs. Its shortcut, Ctrl or Command with
 Shift and K, shows an away sidebar in the pane that has focus and takes focus in
 the field. Ctrl or Command with Shift and F is the shell's and presents the pane.
 
-The sidebar eases in and out once, and nothing under it is painted again for it.
-A docked column takes its width over 220 ms, on the curve of the conversation's
-slide, while its panel, held at its own width, is uncovered under the edge of the
-picture. The picture refits once, after the width has settled. A floating panel
-eases in from 2 rem to the right of its place and from nothing over 160 ms, and
+The sidebar eases in and out once. A docked column takes its width over 220 ms,
+on the curve of the conversation's slide, while its panel, held at its own width,
+is uncovered under the edge of the picture. The picture's width changes on every
+frame of that ease, and the picture refits once, after the width has settled. A
+floating panel is a layer of its own, so nothing under it is painted again for it.
+It eases in from 2 rem to the right of its place and from nothing over 160 ms, and
 leaves in 110 ms. Its shadow does not change. A pinned panel is swapped in place
 and does not move. The selection tab is drawn again for each subject, so a pick
 opens at the top of it and arrives with a 120 ms fade. The durations are
-`SIDEBAR_MS` in `src/shared/timing`. The reduced-motion preference cuts.
+`SIDEBAR_MS` in `src/shared/timing`. With reduced motion the sidebar appears and
+goes at once.
+
+A presented walkthrough steps the sidebar aside. While it lasts the control in the
+header is held and says so, and neither it nor the search shortcut shows or hides
+the sidebar.
 
 A presented walkthrough (TASK-250) is the picture and a caption laid over its
 bottom edge, with the sidebar stepped aside: the step's heading in the

@@ -209,8 +209,9 @@ is a fine highlight on its top edge. The third is a soft shadow with an offset,
 tinted toward the warm neutrals: umber on chalk and a warm near-black on
 graphite. The picture is the ground, and only still shadows fall on it. Nothing
 over the picture is blurred or filtered, and nothing there loops, because every
-repaint over the picture makes it slower to drag. The one thing that moves over
-it is the floating sidebar's own layer, once, when it is shown or put away. The file palette.css holds the values for
+repaint over the picture makes it slower to drag. What moves over it moves as a
+layer of its own, once: a tip or a menu as it opens, and the floating sidebar
+when it is shown or put away. The file palette.css holds the values for
 both themes. The file app.css gives each one a `shadow-*` utility.
 
 ### Shadow Vocabulary
@@ -226,7 +227,7 @@ both themes. The file app.css gives each one a `shadow-*` utility.
 
 ### Named Rules
 
-**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops. The floating sidebar is the one thing that moves over it: its own layer eases its transform and its opacity, once, for at most 160ms.
+**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops. A tip, a menu or the floating sidebar may ease its own layer's transform and opacity, once. The floating sidebar takes at most 160ms.
 
 **The Picture Answers Rule.** The light belongs to the picture, not to the shell. When a part is picked out or the pointer rests on one, the viewer marks what stays as drawn, and the picture's own subjects recede under an opacity filter. The shell lays no layer, blur or halo over the picture to do it.
 
@@ -286,7 +287,11 @@ the end. A floating panel eases in from 2rem to the right of its place and from
 nothing over 160ms, and leaves in 110ms. A panel that is pinned is swapped in
 place and does not move. A new subject opens at the top of the selection tab and
 arrives with a 120ms fade. A row answers the pointer with a change of tone and
-nothing else. The reduced-motion preference cuts.
+nothing else. With reduced motion the sidebar appears and goes at once.
+
+A presented walkthrough steps the sidebar aside, as it does the rest of the pane's
+chrome. While it lasts the control is held and says so, and nothing, the search
+shortcut included, shows or hides the sidebar.
 
 A walkthrough's row begins with a play mark, never a bare triangle, because a
 triangle is the mark of a row that folds open. Narrate is in every walkthrough's
