@@ -678,7 +678,7 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 	const attachPicture = useCallback((element: HTMLDivElement | null): void => {
 		picture.current = element;
 	}, []);
-	useClearOfPanel(picture, sidebar.floating, props.selection, camera.panBy);
+	useClearOfPanel(picture, sidebar.floating, props.selection, camera.ease);
 	const appearances = useStageAppearances(drawn, departure.leaving);
 	const look = useKindLook(appearances);
 	// Which way the pane is read: the picture, or one of the board's pages. It is

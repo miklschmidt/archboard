@@ -2,6 +2,7 @@ import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
 import { announceSemanticBoardChange } from "@/ui/semantic-board-canvas";
+import { pressKey } from "@/ui/semantic-board-canvas/tests/camera-probes";
 import {
 	drawing,
 	mountStage,
@@ -10,7 +11,6 @@ import {
 	server,
 	settle,
 	surface,
-	viewport,
 } from "@/ui/semantic-board-canvas/tests/stage-harness";
 
 /**
@@ -65,8 +65,8 @@ test("the legend explains the picture and survives a policy-only restyle", async
 	await settle();
 	openSidebarTab("board");
 	expect(part("semantic-legend").textContent).toContain("API");
+	pressKey("ArrowLeft");
 	act(() => {
-		fireEvent.keyDown(viewport(), { key: "ArrowLeft" });
 		fireEvent.click(part("semantic-sidebar-toggle"));
 	});
 	const camera = surface().style.transform;

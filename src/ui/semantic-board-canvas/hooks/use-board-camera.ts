@@ -26,15 +26,19 @@ import { BOARD_RESIZE_SETTLE_MS } from "@/shared/timing/timing";
 import { frameClock } from "@/ui/frame-clock";
 import { useCameraGlide } from "@/ui/semantic-board-canvas/hooks/use-camera-glide";
 import {
+	useCameraMotion,
+	type CameraStage,
+} from "@/ui/semantic-board-canvas/hooks/use-camera-motion";
+import {
 	IDENTITY_CAMERA,
 	ZOOM_STEP,
 	cameraFor,
 	panCamera,
-	zoomCameraAbout,
 	type Camera,
 	type FitTarget,
 	type Size,
 } from "@/ui/semantic-board-canvas/lib/camera";
+import { wheelZoomFactor, type Pair } from "@/ui/semantic-board-canvas/lib/camera-motion";
 
 /** Where the pane is looking, and how its last move goes there. */
 interface CameraView {
@@ -68,11 +72,29 @@ interface BoardCamera {
 	/** Attach the viewport: the window the diagram is seen through. */
 	readonly attachViewport: (element: HTMLElement | null) => void;
 	/**
-	 * Move the diagram.
+	 * Move the diagram at once, as a pointer dragging it does. It stops any move
+	 * the camera was making, so the drag starts from what was seen.
 	 * @param dx How far right, in viewport pixels.
 	 * @param dy How far down, in viewport pixels.
 	 */
 	readonly panBy: (dx: number, dy: number) => void;
+	/**
+	 * Move the diagram by easing it there, as a key does. A move asked for while
+	 * another is under way adds to it.
+	 * @param dx How far right, in viewport pixels.
+	 * @param dy How far down, in viewport pixels.
+	 */
+	readonly ease: (dx: number, dy: number) => void;
+	/**
+	 * Carry on at the speed a drag was let go at, and slow to rest.
+	 * @param speed How fast, in viewport pixels per millisecond.
+	 */
+	readonly fling: (speed: Pair) => void;
+	/**
+	 * Stop a zoom, an ease or a thrown drag where it is drawn. A glide is not
+	 * stopped, and the camera does not count as the person's.
+	 */
+	readonly stop: () => void;
 	/**
 	 * Zoom about the middle of the viewport, which is where a keypress means.
 	 * @param direction 1 to come closer, -1 to pull back.
@@ -243,9 +265,10 @@ function createCameraStore(): CameraStore {
 
 /**
  * The camera for one diagram.
+ * @param reducedMotion Whether the person asked for no motion: a zoom or a move then lands at once.
  * @returns The camera and the ways it moves.
  */
-function useBoardCamera(): BoardCamera {
+function useBoardCamera(reducedMotion = false): BoardCamera {
 	const [store] = useState(createCameraStore);
 	const { read, write } = store;
 	const [viewport, setViewport] = useState<HTMLElement | null>(null);
@@ -260,6 +283,25 @@ function useBoardCamera(): BoardCamera {
 			write({ ...read(), camera: stopped });
 		}
 	}, [flight, read, write]);
+	const stage = useMemo<CameraStage>(
+		() => ({
+			/**
+			 * Where the camera is drawn.
+			 * @returns The camera.
+			 */
+			read: () => read().camera,
+			/**
+			 * Draw the camera somewhere.
+			 * @param camera Where.
+			 * @param instant Whether the surface lands there at once.
+			 */
+			draw: (camera, instant) => {
+				write({ camera, instant });
+			},
+		}),
+		[read, write],
+	);
+	const motion = useCameraMotion(stage, reducedMotion);
 	// Whether the person has said where to look since the last fit. A ref rather
 	// than state: nothing is drawn from it, and it must be true for the very next
 	// gesture rather than for the next render.
@@ -304,10 +346,20 @@ function useBoardCamera(): BoardCamera {
 	const panBy = useCallback(
 		(dx: number, dy: number): void => {
 			settle();
+			motion.halt();
 			moved.current = true;
 			write({ camera: panCamera(read().camera, dx, dy), instant: false });
 		},
-		[settle, read, write],
+		[settle, motion, read, write],
+	);
+
+	const ease = useCallback(
+		(dx: number, dy: number): void => {
+			settle();
+			moved.current = true;
+			motion.ease(dx, dy);
+		},
+		[settle, motion],
 	);
 
 	const zoomCentre = useCallback(
@@ -317,12 +369,13 @@ function useBoardCamera(): BoardCamera {
 				return;
 			}
 			settle();
-			const factor = direction > 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
 			moved.current = true;
-			const camera = zoomCameraAbout(read().camera, factor, size.width / 2, size.height / 2);
-			write({ camera, instant: false });
+			motion.zoomAt(direction > 0 ? ZOOM_STEP : 1 / ZOOM_STEP, {
+				x: size.width / 2,
+				y: size.height / 2,
+			});
 		},
-		[viewport, bottom, settle, read, write],
+		[viewport, bottom, settle, motion],
 	);
 
 	const fit = useCallback(
@@ -333,12 +386,13 @@ function useBoardCamera(): BoardCamera {
 				return false;
 			}
 			flight.stop();
+			motion.halt();
 			// A fit is the stage saying where to look, so it hands the camera back.
 			moved.current = false;
 			write({ camera: fitted, instant: atOnce });
 			return true;
 		},
-		[viewport, bottom, flight, write],
+		[viewport, bottom, flight, motion, write],
 	);
 
 	const glide = useCallback(
@@ -349,6 +403,7 @@ function useBoardCamera(): BoardCamera {
 			if (size === null || destination === null || surface === null) {
 				return false;
 			}
+			motion.halt();
 			const from = flight.stop() ?? read().camera;
 			moved.current = handledAfter;
 			write({ camera: from, instant: true });
@@ -366,7 +421,7 @@ function useBoardCamera(): BoardCamera {
 			});
 			return true;
 		},
-		[viewport, bottom, flight, read, write],
+		[viewport, bottom, flight, motion, read, write],
 	);
 
 	const reserve = useCallback((pixels: number): void => {
@@ -391,25 +446,25 @@ function useBoardCamera(): BoardCamera {
 			event.preventDefault();
 			settle();
 			const [x, y] = pointIn(element, event);
-			const factor = event.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
 			moved.current = true;
-			write({ camera: zoomCameraAbout(read().camera, factor, x, y), instant: false });
+			motion.zoomAt(wheelZoomFactor(event), { x, y });
 		}
 		element.addEventListener("wheel", onWheel, { passive: false });
 		return (): void => element.removeEventListener("wheel", onWheel);
-	}, [viewport, settle, read, write]);
+	}, [viewport, settle, motion]);
 
 	const handled = useCallback((): boolean => moved.current, []);
 	const followPicture = useCallback(
 		(shift: { readonly x: number; readonly y: number }): void => {
 			if (shift.x === 0 && shift.y === 0) return;
+			motion.halt();
 			// Known at once: a glide asked for in the same commit starts from where
 			// the camera follows to, not from where it was.
 			const current = read().camera;
 			const followed = panCamera(current, shift.x * current.scale, shift.y * current.scale);
 			write({ camera: followed, instant: true });
 		},
-		[read, write],
+		[motion, read, write],
 	);
 	return useMemo(
 		() => ({
@@ -418,6 +473,9 @@ function useBoardCamera(): BoardCamera {
 			room,
 			attachViewport: setViewport,
 			panBy,
+			ease,
+			fling: motion.fling,
+			stop: motion.halt,
 			zoomCentre,
 			fit,
 			handled,
@@ -425,7 +483,20 @@ function useBoardCamera(): BoardCamera {
 			glide,
 			reserve,
 		}),
-		[store, read, room, panBy, zoomCentre, fit, handled, followPicture, glide, reserve],
+		[
+			store,
+			read,
+			room,
+			panBy,
+			ease,
+			motion,
+			zoomCentre,
+			fit,
+			handled,
+			followPicture,
+			glide,
+			reserve,
+		],
 	);
 }
 

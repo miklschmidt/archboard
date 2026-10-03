@@ -3,10 +3,11 @@ id: TASK-386
 title: >-
   A board can be explored by hand: it moves smoothly, answers a poke and opens
   into what is inside
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-03 15:13'
+updated_date: '2026-10-03 15:40'
 labels:
   - frontend
 dependencies: []
