@@ -1,9 +1,16 @@
 // The conversation beside the navigator, and the pane centre beside it, with a
-// handle on the line between them. The conversation slides open and shut, and
-// the handle drags it wider or narrower, or shut when it is dragged below its
-// smallest. Its width is the person's, kept in this browser. Its content is
-// mounted while it is open and while it slides out, so a shut conversation is
-// not in the tab order or in the way of anything.
+// handle on the line between them. The handle drags the conversation wider or
+// narrower, or shut when it is dragged below its smallest. Its width is the
+// person's, kept in this browser.
+//
+// The conversation slides open and shut without anything being laid out again
+// as it moves. Opening, the columns are laid out at their final sizes at once
+// and the conversation's content slides in from the navigator by a transform;
+// shutting, the content slides out first and the columns are laid out once it
+// has gone. The content keeps its width throughout, so it never reflows, and
+// the pane centre beside it is laid out once, not on every frame. The content
+// is mounted while it is open and while it slides out, so a shut conversation
+// is not in the tab order or in the way of anything.
 
 import {
 	useCallback,
@@ -31,7 +38,7 @@ const MAX_WIDTH = 720;
 /** The narrowest the pane centre goes while the conversation is dragged wider. */
 const CENTRE_MIN_WIDTH = 560;
 
-/** What the stylesheet slides the panels with. */
+/** What the stylesheet slides the content with. */
 const GROUP_STYLE: CSSProperties = { "--panel-slide-ms": `${AGENT_PANEL_SLIDE_MS}ms` };
 
 /**
@@ -46,6 +53,18 @@ function storedWidth(): number {
 			: AGENT_PANEL_WIDTH;
 	} catch {
 		return AGENT_PANEL_WIDTH;
+	}
+}
+
+/**
+ * Whether the person has not asked for less motion.
+ * @returns True when the content may slide.
+ */
+function motionAllowed(): boolean {
+	try {
+		return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+	} catch {
+		return true;
 	}
 }
 
@@ -80,6 +99,33 @@ interface Slide {
 }
 
 /**
+ * The conversation's content, held at the width it will have and slid in or out
+ * by a transform. Nothing while it is shut.
+ * @param props Whether it is open, whether it is moving, and the content.
+ * @param props.open Whether the conversation is open.
+ * @param props.moving Whether it is sliding in or out.
+ * @param props.children The content.
+ * @returns The slide, or nothing.
+ */
+function ConversationSlide(props: {
+	readonly open: boolean;
+	readonly moving: boolean;
+	readonly children: ReactNode;
+}): JSX.Element | null {
+	const { open, moving } = props;
+	if (!open && !moving) return null;
+	return (
+		<div
+			data-slot="conversation-slide"
+			data-slide={moving ? (open ? "in" : "out") : undefined}
+			className="flex h-full w-full min-w-80 shrink-0"
+		>
+			{props.children}
+		</div>
+	);
+}
+
+/**
  * The conversation and the pane centre, with the handle between them.
  * @param props Whether the conversation is open, how it closes and what fills the columns.
  * @returns The columns.
@@ -98,18 +144,26 @@ function ConversationColumns(props: ConversationColumnsProps): JSX.Element {
 		if (!slide.moving) return undefined;
 		const done = setTimeout(
 			() => setSlide({ open: slide.open, moving: false }),
-			AGENT_PANEL_SLIDE_MS + 40,
+			AGENT_PANEL_SLIDE_MS + 20,
 		);
 		return () => clearTimeout(done);
 	}, [slide]);
+	// Opening is laid out at once; shutting waits for the content to have slid out.
 	useEffect(() => {
-		if (open) panel.current?.resize(width.current);
-		else panel.current?.collapse();
+		if (open) {
+			panel.current?.resize(width.current);
+			return undefined;
+		}
+		const shut = setTimeout(
+			() => panel.current?.collapse(),
+			motionAllowed() ? AGENT_PANEL_SLIDE_MS : 0,
+		);
+		return () => clearTimeout(shut);
 	}, [open, panel]);
 	const handleResize = useCallback(
 		(next: PanelSize): void => {
 			size.current = next.inPixels;
-			// A size of nothing while it slides open is where it starts from, not a drag shut.
+			// A size of nothing while it opens is where it starts from, not a drag shut.
 			if (next.inPixels === 0 && open && !slide.moving) onClose();
 		},
 		[onClose, open, slide.moving],
@@ -124,7 +178,6 @@ function ConversationColumns(props: ConversationColumnsProps): JSX.Element {
 	return (
 		<ResizablePanelGroup
 			orientation="horizontal"
-			data-sliding={slide.moving ? "" : undefined}
 			onLayoutChanged={handleSettled}
 			style={GROUP_STYLE}
 			className="min-w-0 flex-1"
@@ -142,7 +195,9 @@ function ConversationColumns(props: ConversationColumnsProps): JSX.Element {
 				inert={!open}
 				className="flex h-full justify-end overflow-hidden"
 			>
-				{(open || slide.moving) && props.conversation}
+				<ConversationSlide open={open} moving={slide.moving}>
+					{props.conversation}
+				</ConversationSlide>
 			</ResizablePanel>
 			<ResizableHandle withHandle disabled={!open} />
 			<ResizablePanel

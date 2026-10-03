@@ -52,7 +52,7 @@ function ResizableHandle({
 				"group/handle bg-border relative z-10 flex w-px shrink-0 items-center justify-center outline-hidden transition-colors",
 				"after:absolute after:inset-y-0 after:left-1/2 after:w-3 after:-translate-x-1/2",
 				"data-[separator=hover]:bg-foreground/30 data-[separator=active]:bg-primary-mark focus-visible:bg-ring",
-				"data-[separator=disabled]:pointer-events-none data-[separator=disabled]:w-0 data-[separator=disabled]:opacity-0",
+				"data-[separator=disabled]:pointer-events-none data-[separator=disabled]:bg-transparent",
 				"aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full aria-[orientation=horizontal]:after:left-0 aria-[orientation=horizontal]:after:h-3 aria-[orientation=horizontal]:after:w-full aria-[orientation=horizontal]:after:translate-x-0 aria-[orientation=horizontal]:after:-translate-y-1/2",
 				className,
 			)}
@@ -61,7 +61,7 @@ function ResizableHandle({
 			{withHandle && (
 				<span
 					aria-hidden="true"
-					className="bg-card border-border shadow-raised group-data-[separator=active]/handle:border-primary-mark group-data-[separator=hover]/handle:border-foreground/40 pointer-events-none z-10 flex h-8 w-1.5 shrink-0 rounded-full border transition-colors"
+					className="bg-card border-border shadow-raised group-data-[separator=active]/handle:border-primary-mark group-data-[separator=hover]/handle:border-foreground/40 pointer-events-none z-10 flex h-8 w-1.5 shrink-0 rounded-full border transition-[border-color,opacity] group-data-[separator=disabled]/handle:opacity-0"
 				/>
 			)}
 		</ResizablePrimitive.Separator>
