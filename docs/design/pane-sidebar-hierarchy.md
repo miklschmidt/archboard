@@ -221,7 +221,7 @@ draws one.
 3. **What do the marks mean?** The legend (task 6), under one heading. The node
    kinds the picture draws, as the picture's chips. The relationship kinds, as
    the picture's lines. Then two samples for what a line's weight and its
-   moving streaks say, where there are relationships. Only what the picture
+   moving pulses say, where there are relationships. Only what the picture
    draws is keyed, in the order the picture draws it [8, 10].
 4. **A preference of this browser.** The layout engine (task 8), one row at
    the foot, under the last rule.

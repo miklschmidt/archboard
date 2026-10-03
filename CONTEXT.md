@@ -124,18 +124,21 @@ The consumer-defined type of architectural relationship represented by an edge.
 _Avoid_: line style, arrowhead, emphasis
 
 **Traffic**:
-An optional illustration of flow along a connection, with independent animation
-volume and speed; it is neither measured real-world activity nor connection importance.
-_Avoid_: emphasis, pulse count
+An optional illustration of flow along a connection: a steady train of pulses
+that fly along its line, with independent volume and speed. It is neither
+measured real-world activity nor connection importance.
+_Avoid_: emphasis, pulse count, shot
 
 **Traffic volume**:
-The mean rate at which illustrated traffic shots are fired along a connection,
-expressed in shots per second; the moments between them vary.
-_Avoid_: dot count, traffic speed
+The rate at which pulses leave a connection's line. With the traffic speed it
+sets how far apart the pulses are (speed divided by volume, within limits). It
+is not a count of marks on the line.
+_Avoid_: dot count, shot rate, traffic speed
 
 **Traffic speed**:
-The authored pace of illustrated traffic along a connection, in diagram units per
-second. A shot flies a fixed multiple of it, so a higher speed is a faster line.
+How fast a pulse flies along a connection, literally, in diagram units per
+second (held between 8 and 600). A longer line takes a pulse longer to cross,
+and a higher speed is a faster line.
 _Avoid_: traversal duration, traffic volume
 
 **Emphasis**:
