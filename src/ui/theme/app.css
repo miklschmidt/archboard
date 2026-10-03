@@ -311,6 +311,32 @@
 	text-transform: uppercase;
 }
 
+/* A pane's header row stands on a whole-pixel grid, so its parts land on a
+   device pixel at 100%, 125%, 150% and 200%. Its content box is the row's full
+   40px (the header draws the rule under it over its bottom edge); every line
+   is 16px, every icon 16px and a crumb 32px. Text is trimmed to its cap height,
+   so it centres where the icons do, and a line that truncates keeps room for
+   its descenders. Measured at those scales: every icon on one line, and text
+   within half a device pixel of it. */
+[data-slot="pane-header"] * {
+	line-height: 16px;
+	text-box: trim-both cap alphabetic;
+}
+[data-slot="pane-header"] svg {
+	width: 16px;
+	height: 16px;
+}
+[data-slot="pane-header"] [data-slot="pane-crumb"] {
+	height: 32px;
+}
+[data-slot="pane-header"] [data-slot="pane-letter"] {
+	width: 16px;
+	height: 16px;
+}
+[data-slot="pane-header"] .truncate {
+	padding-block: 0.3em;
+}
+
 /* The voice circle. A ring, and inside it the waveform: one vertical line per
    step across the circle, each as tall as the circle is at that place, under a
    round mask a little inside the ring, so a line at its peak ends on the

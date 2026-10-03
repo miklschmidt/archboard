@@ -190,8 +190,10 @@ left, and the agent dock is at its foot. The panes are in the centre, one or
 two side by side. Each pane has a sidebar (280px) on the right. The sidebar is
 docked, or it floats over the edge of the picture. Every column starts with a
 chrome row (40px) and then a band (36px) for the find fields and the tabs of
-the sidebar. A row of a list is at least 28px high. Panels have 16px of
-padding. The shell has no narrow or phone layout.
+the sidebar. A pane's header stands on a whole-pixel grid: 16px lines and
+icons, 32px crumbs and text trimmed to its cap height, so its parts sit on one
+line at any display scale. A row of a list is at least 28px high. Panels have
+16px of padding. The shell has no narrow or phone layout.
 
 ## Elevation & Depth
 
