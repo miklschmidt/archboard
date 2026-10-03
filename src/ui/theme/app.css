@@ -287,6 +287,14 @@
 	filter: opacity(0.46);
 	transition-delay: calc(var(--reach-hop-ms, 0ms) * 3);
 }
+/* The board a flight carries inside its card is a picture of its own: what the
+   surface says about the picture under it (a part picked out, the rest receding)
+   is not said about it. */
+[data-slot="semantic-board-surface"]
+	[data-dive-inset]
+	:is([data-semantic-id], [data-traffic], [data-members]) {
+	filter: none;
+}
 @media (prefers-reduced-motion: reduce) {
 	[data-slot="semantic-board-surface"] [data-semantic-id],
 	[data-slot="semantic-board-surface"] [data-traffic],

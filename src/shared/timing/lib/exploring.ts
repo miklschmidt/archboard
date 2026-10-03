@@ -90,6 +90,27 @@ const EXPLORING_MS = Object.freeze({
 	 * leaves the reader to find where the board went.
 	 */
 	reveal: 480,
+	/**
+	 * How long the flight into a card's board, or back out of it, takes.
+	 *
+	 * Pulls against what the flight shows. The board has to grow from the size of
+	 * a card to the size of the pane, often more than ten times, and the eye needs
+	 * a few frames at each size to see that it is the same board; under about half
+	 * a second that reads as a cut with a smear, and over a second the reader waits
+	 * on a picture they already chose. A walkthrough step (`PRESENTATION_STEP_MS`)
+	 * is longer because it also carries the reader across the board.
+	 */
+	dive: 720,
+	/**
+	 * How long the page waits for the picture of a board it is about to fly into
+	 * before it opens the board the plain way. Every board's picture is drawn ahead
+	 * and kept, so the wait is normally a read from storage.
+	 *
+	 * Pulls against the click: a reader who has chosen a card is waiting, so a
+	 * picture that is not to hand within a moment is not worth a flight that
+	 * starts late.
+	 */
+	divePrefetch: 140,
 });
 
 export { EXPLORING_MS };
