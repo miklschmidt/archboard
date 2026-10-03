@@ -238,7 +238,7 @@ Nothing is collapsed by default, and no section can collapse on its own. The
 lists of choices are short (at most six rows on any board), and a reader of a
 first board needs most of the tab [15]. The legend is longer, but C4 asks that
 the key always be there [11], and the legend already keys only what is
-drawn. Collapsing the whole sidebar to its tab icons
+drawn. Hiding the whole sidebar, with the control in the pane's header,
 stays the one way to hide it all, the legend included, which keeps the legend
 visible by default and hideable (ADR 0025).
 
