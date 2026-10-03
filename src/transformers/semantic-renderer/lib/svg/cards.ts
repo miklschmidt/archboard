@@ -53,7 +53,8 @@ import {
 	DRILL_MARK_ROOM,
 	cornerDrillMark,
 } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
-import { nearLayer, paintFarTitle } from "@/transformers/semantic-renderer/lib/svg/far-view";
+import { paintFarCard } from "@/transformers/semantic-renderer/lib/svg/far-card";
+import { nearLayer } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { lines, tag, textNode, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
 	standingOutline,
@@ -105,7 +106,6 @@ function halo(box: Box, radius: number, styles: SvgStyles): string {
  * @param standing How this node stands against the variant it came from, when the caller said.
  * @param unsettled Whether the board says nobody has decided this node yet.
  * @param appearance Resolved containment and type channels.
- * @param farSize Its name's size from far away, one for every card of the picture.
  * @returns The card's group.
  */
 function paintCard(
@@ -114,7 +114,6 @@ function paintCard(
 	standing: SubjectStanding | undefined,
 	unsettled: boolean,
 	appearance: NodeAppearance,
-	farSize: number,
 ): string {
 	const styles = stylesFor(palette);
 	const { node, box, titleSize, notes } = placed;
@@ -186,7 +185,7 @@ function paintCard(
 							),
 				]),
 			),
-			paintFarTitle(node.name, box, { size: farSize, align: "centre" }, { appearance, palette }),
+			paintFarCard(node, box, { appearance, palette }),
 			standingPin(box, standing, palette),
 			// The opposite corner from the pin, inside the padding the words already
 			// stop short of, so a card can say both at once and neither mark lands on

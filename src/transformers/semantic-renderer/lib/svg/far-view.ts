@@ -1,6 +1,8 @@
-// A card seen from far away is its name: every card carries a far layer, its
-// name grown and its chip grown to match, hidden until a viewer puts the far
-// class on the picture, when the picture's stylesheet swaps it for the near one.
+// What a part draws from far away is a layer of its own: every card, container
+// header and group caption carries a far layer, hidden until a viewer puts the
+// far class on the picture, when the picture's stylesheet swaps it for the near
+// one. A card's is drawn by far-card.ts. A container's header and a group's
+// caption draw their name grown, which is what this file paints.
 import { ICON_CHIP_SIZE } from "@/transformers/semantic-renderer/lib/design";
 import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { measureFarTitle } from "@/transformers/semantic-renderer/lib/measurement";
@@ -13,7 +15,7 @@ import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-run
 
 /** The part of a card drawn when the picture is seen near: its chip, name and responsibility. */
 const NEAR_CLASS = "ab-near";
-/** The part drawn when it is seen from far away: its name and chip, grown to fill it. */
+/** The part drawn when it is seen from far away. */
 const FAR_CLASS = "ab-far";
 /** The class a viewer puts on the picture while it is seen from far away. */
 const FAR_VIEW_CLASS = "is-far";
@@ -39,7 +41,60 @@ function farLayer(markup: string): string {
 }
 
 /**
- * A card's name and chip as they are drawn from far away, hidden until a
+ * A type chip grown to a side and stood where a far layer puts it.
+ * @param box The box the place is relative to.
+ * @param chip Where the chip stands in the box, and its side.
+ * @param chip.x Its left edge.
+ * @param chip.y Its top edge.
+ * @param chip.size Its side.
+ * @param look Its colour and glyph, and the selected theme.
+ * @param look.appearance Its colour and glyph.
+ * @param look.palette The selected theme.
+ * @returns The chip.
+ */
+function farChip(
+	box: Box,
+	chip: { x: number; y: number; size: number },
+	{ appearance, palette }: { appearance: NodeAppearance; palette: Palette },
+): string {
+	const scale = chip.size / ICON_CHIP_SIZE;
+	return wrap(
+		"g",
+		{
+			transform: `translate(${coord(box.x + chip.x)},${coord(box.y + chip.y)}) scale(${coord(scale)})`,
+		},
+		typeChip(0, 0, appearance, palette),
+	);
+}
+
+/**
+ * The mark of a part that opens another board, grown, in the corner it keeps
+ * from near: as far in from the top and the side as it is wide over two.
+ * @param box The card's box, or a container's header.
+ * @param scale How much larger than near it is drawn.
+ * @param look Which way the board it opens lies, and the selected theme.
+ * @param look.appearance Whether the part opens a board and which way.
+ * @param look.palette The selected theme.
+ * @returns The mark, or nothing for a part that opens none.
+ */
+function farMark(
+	box: Box,
+	scale: number,
+	{ appearance, palette }: { appearance: NodeAppearance; palette: Palette },
+): string {
+	if (appearance.drill === null) return "";
+	const reach = DRILL_MARK_RADIUS * scale;
+	return drillMark(
+		box.x + box.width - reach * 1.5,
+		box.y + reach * 1.5,
+		appearance.drill,
+		palette.glyph,
+		scale,
+	);
+}
+
+/**
+ * A container's name and chip as they are drawn from far away, hidden until a
  * viewer says the picture is far: the name grown, the chip grown to match,
  * the responsibility left out.
  * @param name The card's name.
@@ -59,31 +114,22 @@ function paintFarTitle(
 	{ appearance, palette }: { appearance: NodeAppearance; palette: Palette },
 ): string {
 	const far = measureFarTitle(name, box, place);
-	const scale = far.chip.size / ICON_CHIP_SIZE;
-	// The mark of a part that opens another board grows with the chip and keeps
-	// its corner, as far in from the top and the side as it is wide over two.
-	const reach = DRILL_MARK_RADIUS * scale;
-	const mark =
-		appearance.drill === null
-			? ""
-			: drillMark(
-					box.x + box.width - reach * 1.5,
-					box.y + reach * 1.5,
-					appearance.drill,
-					palette.glyph,
-					scale,
-				);
+	const look = { appearance, palette };
+	// The mark of a part that opens another board grows with the chip.
 	return farLayer(
-		wrap(
-			"g",
-			{
-				transform: `translate(${coord(box.x + far.chip.x)},${coord(box.y + far.chip.y)}) scale(${coord(scale)})`,
-			},
-			typeChip(0, 0, appearance, palette),
-		) +
+		farChip(box, far.chip, look) +
 			paintTextRuns(far.runs, box, palette) +
-			mark,
+			farMark(box, far.chip.size / ICON_CHIP_SIZE, look),
 	);
 }
 
-export { FAR_CLASS, FAR_VIEW_CLASS, NEAR_CLASS, farLayer, nearLayer, paintFarTitle };
+export {
+	FAR_CLASS,
+	FAR_VIEW_CLASS,
+	NEAR_CLASS,
+	farChip,
+	farLayer,
+	farMark,
+	nearLayer,
+	paintFarTitle,
+};

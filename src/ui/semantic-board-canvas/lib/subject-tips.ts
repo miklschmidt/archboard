@@ -134,7 +134,7 @@ function openHint(node: SemanticNode, place: TipPlace): string | undefined {
  * What the tip over one part of the picture says.
  * @param variant The variant the picture draws.
  * @param target The part under the pointer.
- * @param far Whether the picture is seen from far away, showing names alone.
+ * @param far Whether the picture is seen from far away, where a card says only the start of its responsibility.
  * @param place Where the board sits among the vault's levels, when known.
  * @returns The tip, or null when it would say nothing the picture does not.
  */

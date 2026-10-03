@@ -20,6 +20,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/svg/appearance";
 import { halo } from "@/transformers/semantic-renderer/lib/svg/cards";
 import { cornerDrillMark } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
+import { paintFarCard } from "@/transformers/semantic-renderer/lib/svg/far-card";
 import { nearLayer, paintFarTitle } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { stylesFor } from "@/transformers/semantic-renderer/lib/svg/styles";
@@ -84,8 +85,6 @@ function drillCorner(
  * @param standing How it stands against the variant it is read against.
  * @param unsettled Whether its architecture needs reconciliation.
  * @param appearance Resolved containment and type channels.
- * @param farSize Its name's size from far away: one for every card of the
- * picture, which reads as one scale where each card's own largest would not.
  * @returns The card group.
  */
 function paintMeasuredCard(
@@ -94,7 +93,6 @@ function paintMeasuredCard(
 	standing: SubjectStanding | undefined,
 	unsettled: boolean,
 	appearance: NodeAppearance,
-	farSize: number,
 ): string {
 	const { measured, box } = placed;
 	const styles = stylesFor(palette);
@@ -123,12 +121,7 @@ function paintMeasuredCard(
 					paintTextRuns(measured.runs, box, palette) +
 					drillCorner(box, ARCHITECTURE_CARD_PADDING, appearance, palette),
 			),
-			paintFarTitle(
-				measured.node.name,
-				box,
-				{ size: farSize, align: "centre" },
-				{ appearance, palette },
-			),
+			paintFarCard(measured.node, box, { appearance, palette }),
 			standingPin(box, standing, palette),
 			warningBadge(box, unsettled, palette),
 		]),
