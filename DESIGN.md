@@ -262,7 +262,10 @@ tone.
 The agent dock is a tray at the foot of the navigator. It uses Tray Chalk and
 `shadow-edge-up`. It holds the raised voice circle, which shows the gold ring
 and the waveform while voice is on. It also holds the name, the status and the
-plan of the agent. Under them is the composer well with its gold Send.
+plan of the agent. Under them is the composer well with its gold Send. The
+tray is lit by what the agent is doing: a warm wash spreads from the voice
+circle while voice is on, and a quieter one in the status colour while the
+agent works. At rest it is plain.
 
 ## Do's and Don'ts
 

@@ -337,6 +337,42 @@
 	padding-block: 0.3em;
 }
 
+/* The agent dock is lit by what the agent is doing. A warm wash spreads from the
+   voice circle while voice is on, and a quieter one in the status colour while
+   the agent works. At rest the tray is plain: nothing glows for a state the
+   product is not in. Each wash has a layer of its own, so each fades out in its
+   own colour. */
+[data-slot="agent-dock"] {
+	isolation: isolate;
+}
+[data-slot="agent-dock"]::before,
+[data-slot="agent-dock"]::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	pointer-events: none;
+	opacity: 0;
+	background: radial-gradient(ellipse 250px 150px at 46px 44px, var(--wash), transparent 72%);
+	transition: opacity 360ms ease-out;
+}
+[data-slot="agent-dock"]::before {
+	--wash: color-mix(in oklch, var(--primary-mark) 17%, transparent);
+}
+[data-slot="agent-dock"]::after {
+	--wash: color-mix(in oklch, var(--status) 12%, transparent);
+}
+[data-slot="agent-dock"]:has([data-slot="voice-circle"]:not([data-voice-state="off"]))::before,
+[data-slot="agent-dock"][data-agent-tone="working"]::after {
+	opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+	[data-slot="agent-dock"]::before,
+	[data-slot="agent-dock"]::after {
+		transition: none;
+	}
+}
+
 /* The voice circle. A ring, and inside it the waveform: one vertical line per
    step across the circle, each as tall as the circle is at that place, under a
    round mask a little inside the ring, so a line at its peak ends on the
