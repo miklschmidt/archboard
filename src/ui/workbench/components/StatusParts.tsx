@@ -38,7 +38,7 @@ function Timing(props: { readonly status: AgentStatus; readonly now: number }): 
 	const { status, now } = props;
 	if (status.sinceMs !== null) {
 		return (
-			<span className="text-technical text-muted-foreground shrink-0 font-mono">
+			<span className="text-body text-muted-foreground shrink-0 font-mono">
 				{clockDuration(now - status.sinceMs)}
 			</span>
 		);
@@ -46,7 +46,7 @@ function Timing(props: { readonly status: AgentStatus; readonly now: number }): 
 	if (status.endedAtMs === null) return null;
 	const age = shortAge(new Date(status.endedAtMs).toISOString(), now);
 	return (
-		<span className="text-technical text-muted-foreground shrink-0 font-mono">
+		<span className="text-body text-muted-foreground shrink-0 font-mono">
 			{age === "now" ? "just now" : `${age} ago`}
 		</span>
 	);
