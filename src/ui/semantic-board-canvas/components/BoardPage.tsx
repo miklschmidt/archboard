@@ -77,26 +77,23 @@ function PartCard(props: PartCardProps): JSX.Element {
 				data-slot="part-card"
 				data-part={node.id}
 				onClick={() => props.onPick(picked ? null : node.id)}
-				className="border-border bg-card shadow-card hover:border-foreground/25 hover:shadow-float aria-pressed:border-primary-mark aria-pressed:bg-primary-subtle rounded-panel relative flex h-full w-full min-w-0 gap-3 border p-3 text-left"
+				className="bg-muted shadow-card hover:border-foreground/35 hover:shadow-float relative flex h-full w-full min-w-0 items-start gap-2.5 rounded-[6px] border border-(color:--diagram-edge) px-3.5 py-3 text-left outline-offset-3 aria-pressed:outline-2 aria-pressed:outline-(color:--diagram-selection)"
 			>
-				<KindIcon
-					look={look}
-					kind={node.kind}
-					className="mt-px"
-					// A kind's colour, drawn back toward the text so the icon reads as a mark and not a signal.
-					style={{
-						color: `color-mix(in oklch, ${look.nodeColor(node.kind)} 70%, var(--foreground))`,
-					}}
-				/>
+				<span
+					aria-hidden="true"
+					className="inline-flex size-6 shrink-0 items-center justify-center rounded-[5px] border border-(color:--kind)/45 bg-(color:--kind)/14 text-(color:--kind) [&>*]:size-4"
+					// A kind's colour is the chip's ink, and the wash and edge are drawn from it.
+					style={{ "--kind": look.nodeColor(node.kind) }}
+				>
+					<KindIcon look={look} kind={node.kind} />
+				</span>
 				<span className="flex min-w-0 flex-1 flex-col gap-0.5">
-					<span className="text-title truncate pr-4" title={node.name}>
+					<span className="text-nav truncate pr-4 leading-6" title={node.name}>
 						{node.name}
 					</span>
-					<span className="text-body text-muted-foreground">{look.nodeName(node.kind)}</span>
+					<span className="sr-only">{look.nodeName(node.kind)}</span>
 					{node.responsibility !== undefined && (
-						<span className="text-body text-foreground/80 mt-1.5 line-clamp-3">
-							{node.responsibility}
-						</span>
+						<span className="text-body text-foreground/80 line-clamp-3">{node.responsibility}</span>
 					)}
 				</span>
 				{node.groups !== undefined && node.groups.length > 0 && (
