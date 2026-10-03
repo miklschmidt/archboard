@@ -152,16 +152,14 @@ function AgentLine(props: {
 	const small = status.action === "stop" || status.action === "review" || status.action === "show";
 	return (
 		<div data-slot="agent-status" data-tone={status.tone} className="flex h-6 items-center gap-2">
-			<h2 className="text-title shrink-0">Codex</h2>
+			<h2 className="shrink-0 text-[13px] leading-5 font-[650]">Codex</h2>
 			<StatusLamp tone={status.tone} />
-			<span className="text-body text-muted-foreground min-w-0 truncate font-medium">
+			<span className="text-control text-muted-foreground min-w-0 truncate font-medium">
 				{status.headline}
 			</span>
 			<Timing status={status} now={props.now} />
 			{status.queued > 0 && (
-				<span className="text-technical text-muted-foreground shrink-0 font-mono">
-					+{status.queued}
-				</span>
+				<span className="text-body text-muted-foreground shrink-0 font-mono">+{status.queued}</span>
 			)}
 			<span className="flex-1" />
 			{small && <StatusAction status={status} actions={props.actions} />}
@@ -220,7 +218,7 @@ function VoiceLine(props: {
 			<output
 				aria-live="polite"
 				className={cn(
-					"text-body min-w-0 flex-1 truncate font-medium",
+					"text-control min-w-0 flex-1 truncate font-medium",
 					on ? "text-primary-text" : "text-muted-foreground",
 				)}
 			>
