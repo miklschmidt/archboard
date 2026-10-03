@@ -69,7 +69,7 @@ function AgentPanel(props: AgentPanelProps): JSX.Element {
 			aria-label="Conversation"
 			className="border-border bg-background flex w-(--agent-panel-width) shrink-0 flex-col border-r"
 		>
-			<header className="border-border bg-sidebar h-chrome flex shrink-0 items-center gap-1 border-b pr-1.5 pl-4">
+			<header className="border-border bg-sidebar h-chrome shadow-edge-down relative z-30 flex shrink-0 items-center gap-1 border-b pr-1.5 pl-4">
 				<h2 className="text-control min-w-0 flex-1 truncate font-semibold">
 					{details ? "Session" : "Conversation"}
 				</h2>
@@ -177,7 +177,7 @@ function PanelMenu(props: PanelMenuProps): JSX.Element {
 			<DropdownMenuContent
 				align="end"
 				sideOffset={6}
-				className="border-border w-52 rounded-md border shadow-none"
+				className="border-border w-52 rounded-md border"
 			>
 				<DropdownMenuItem onClick={actions.newConversation}>New conversation</DropdownMenuItem>
 				<DropdownMenuItem onClick={props.details ? props.onConversation : props.onDetails}>

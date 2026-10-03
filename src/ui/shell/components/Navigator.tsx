@@ -184,7 +184,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 	return (
 		<div
 			data-slot="navigator-column"
-			className="border-border bg-sidebar text-sidebar-foreground flex w-(--shell-navigator-width) shrink-0 flex-col border-r"
+			className="border-border bg-sidebar text-sidebar-foreground shadow-edge-side relative z-30 flex w-(--shell-navigator-width) shrink-0 flex-col border-r"
 		>
 			{props.head}
 			<nav

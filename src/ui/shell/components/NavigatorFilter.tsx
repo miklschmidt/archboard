@@ -127,7 +127,7 @@ function NavigatorFilter(props: NavigatorFilterProps): JSX.Element {
 					</button>
 				</>
 			) : (
-				<kbd className="text-technical text-muted-foreground border-border rounded-control shrink-0 border px-1 font-mono leading-4">
+				<kbd className="text-technical text-muted-foreground border-border bg-card shadow-raised dark:bg-input/30 rounded-control shrink-0 border px-1 font-mono leading-4">
 					{usesCommandKey() ? "⌘K" : "Ctrl K"}
 				</kbd>
 			)}

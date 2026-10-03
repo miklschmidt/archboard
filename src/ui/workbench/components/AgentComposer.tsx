@@ -87,7 +87,7 @@ function AgentComposer(props: AgentComposerProps): JSX.Element {
 	const empty = value.trim() === "";
 	return (
 		<div data-slot="agent-composer" className="min-w-0 flex-1">
-			<div className="border-input bg-background focus-within:border-ring/70 rounded-control flex min-h-9 items-end gap-1 border py-[5px] pr-[5px] pl-3">
+			<div className="border-input bg-background dark:bg-sidebar shadow-well focus-within:border-ring/70 rounded-control flex min-h-9 items-end gap-1 border py-[5px] pr-[5px] pl-3">
 				<textarea
 					ref={field}
 					rows={1}
@@ -103,7 +103,7 @@ function AgentComposer(props: AgentComposerProps): JSX.Element {
 					aria-label="Send"
 					disabled={empty}
 					onClick={handleSend}
-					className="bg-primary text-primary-foreground disabled:text-muted-foreground/60 rounded-control flex size-6 shrink-0 items-center justify-center disabled:bg-transparent"
+					className="primary-finish disabled:text-muted-foreground/60 rounded-control flex size-6 shrink-0 items-center justify-center border active:translate-y-px disabled:border-transparent disabled:bg-transparent disabled:bg-none disabled:shadow-none"
 				>
 					<RiArrowUpLine aria-hidden="true" className="size-3.5" />
 				</button>

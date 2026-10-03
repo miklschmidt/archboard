@@ -252,7 +252,7 @@ function SemanticSidebar(props: SemanticSidebarProps): JSX.Element {
 			data-tab={sidebar.tab}
 			data-collapsed={sidebar.collapsed}
 			data-place={place(sidebar)}
-			className="border-border bg-sidebar relative flex min-h-0 shrink-0 flex-col border-l in-data-presenting:hidden in-data-walkthrough:hidden"
+			className="border-border bg-sidebar shadow-edge-side relative z-30 flex min-h-0 shrink-0 flex-col border-l in-data-presenting:hidden in-data-walkthrough:hidden"
 			style={sidebar.docked ? OPEN_STYLE : undefined}
 		>
 			{sidebar.docked ? panel : <SidebarRail sidebar={sidebar} />}
@@ -262,7 +262,7 @@ function SemanticSidebar(props: SemanticSidebarProps): JSX.Element {
 				<div
 					data-slot="semantic-sidebar-float"
 					style={OPEN_STYLE}
-					className="border-border bg-sidebar shadow-float absolute inset-y-0 right-0 z-30 flex min-h-0 flex-col border-l"
+					className="border-border bg-sidebar absolute inset-y-0 right-0 z-30 flex min-h-0 flex-col border-l shadow-[var(--elevation-float),var(--elevation-edge-side)]"
 				>
 					{panel}
 				</div>

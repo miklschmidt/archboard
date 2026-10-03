@@ -248,7 +248,7 @@ function PartSearch(props: PartSearchProps): JSX.Element {
 			<kbd
 				aria-hidden="true"
 				className={cn(
-					"text-technical text-muted-foreground border-border rounded-control shrink-0 border px-1 font-mono leading-4",
+					"text-technical text-muted-foreground border-border bg-card shadow-raised dark:bg-input/30 rounded-control shrink-0 border px-1 font-mono leading-4",
 					(focused || !listening) && "invisible",
 				)}
 			>
