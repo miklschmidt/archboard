@@ -1,8 +1,8 @@
 // A pane's one header row, the top row of its column: where the board on
-// screen sits and the ways to read it, with the shell's parts of the row at
-// either end.
+// screen sits at the start, and at the end the ways to read it and the shell's
+// controls, a rule between them.
 //
-//   [A] ◇ Archboard › ▣ Archboard server › ◷ TASK-373   Diagram Parts … Walkthroughs 1   [⛶] [×]
+//   [A] ◇ Archboard › ▣ Archboard server › ◷ TASK-373      Diagram Parts … Walkthroughs 1 | [⛶] [×]
 //
 // The pane's letter (while two panes share the centre) and its controls are
 // the shell's (`usePaneChrome`); the rest is the board's. Where the board sits
@@ -296,9 +296,11 @@ function PaneHeader(props: PaneHeaderProps): JSX.Element {
 					{chrome.letter}
 					<Breadcrumb {...props} />
 				</div>
-				<PageTabs tab={props.tab} onTab={props.onTab} counts={props.counts} />
-				<span className="min-w-2 flex-1" />
-				{chrome.controls}
+				<div className="ml-auto flex h-full shrink-0 items-center gap-2">
+					<PageTabs tab={props.tab} onTab={props.onTab} counts={props.counts} />
+					<span aria-hidden="true" className="bg-border h-4 w-px shrink-0" />
+					{chrome.controls}
+				</div>
 			</header>
 			{chrome.notice}
 		</>
