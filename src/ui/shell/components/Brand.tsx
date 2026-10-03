@@ -55,7 +55,7 @@ function Brand(): JSX.Element {
 			<Mark />
 			<span
 				aria-hidden="true"
-				className="font-display -mb-px text-[25px] leading-[22px] font-[650] tracking-[0.07em] uppercase"
+				className="font-display -mb-px text-[18px] leading-[21px] font-medium tracking-[0.07em] uppercase"
 			>
 				archboard
 			</span>
