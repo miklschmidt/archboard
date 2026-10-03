@@ -71,7 +71,7 @@ function AgentPanel(props: AgentPanelProps): JSX.Element {
 		<aside
 			data-slot="agent-panel"
 			aria-label="Conversation"
-			className="border-border bg-background flex w-(--agent-panel-width) shrink-0 flex-col border-r"
+			className="bg-background flex h-full w-full min-w-80 shrink-0 flex-col"
 		>
 			<header className="border-border bg-sidebar h-chrome shadow-edge-down relative z-30 flex shrink-0 items-center gap-1 border-b pr-1.5 pl-4">
 				<h2 className="text-control min-w-0 flex-1 truncate font-semibold">

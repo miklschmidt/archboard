@@ -187,7 +187,10 @@ paths, versions, counts and times.
 
 The shell puts columns around the picture. The navigator (320px) is on the
 left, and the agent dock is at its foot. The panes are in the centre, one or
-two side by side. Each pane has a sidebar (280px) on the right. The sidebar is
+two side by side. The conversation opens between the navigator and the panes:
+it slides in and out, and a handle on its edge, a grip on a line that takes the
+gold while it is dragged, resizes it between 320px and 720px, or drags it shut
+below that. Each pane has a sidebar (280px) on the right. The sidebar is
 docked, or it floats over the edge of the picture. Every column starts with a
 chrome row (40px) and then a band (36px) for the find fields and the tabs of
 the sidebar. A pane's header stands on a whole-pixel grid: 16px lines and

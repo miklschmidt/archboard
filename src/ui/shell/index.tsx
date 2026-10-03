@@ -1,13 +1,14 @@
 // The desktop frame, in columns: the navigator (the brand at its top, the
 // boards, and the agent at its foot), the conversation beside it while open,
-// and the pane centre, composed from typed inputs and typed actions. There is
+// with a handle to resize it, and the pane centre, composed from typed inputs
+// and typed actions. There is
 // no row across the whole frame: each column's top row is its own header, and
 // the rows line up. The centre is also the fullscreen root, so presenting a
 // pane never remounts it.
 
 import { useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
 
-import { AGENT_PANEL_WIDTH, NAVIGATOR_WIDTH } from "@/shared/shell-geometry/index";
+import { NAVIGATOR_WIDTH } from "@/shared/shell-geometry/index";
 import { buildOutline } from "@/ui/board-catalog";
 import type {
 	LivePresentation,
@@ -24,6 +25,7 @@ import type {
 	ThemeChoice,
 } from "@/ui/shell/types/contracts";
 import { BrandBar, SETTINGS_TRIGGER_ID } from "@/ui/shell/components/BrandBar";
+import { ConversationColumns } from "@/ui/shell/components/ConversationColumns";
 import { Navigator } from "@/ui/shell/components/Navigator";
 import { Notices } from "@/ui/shell/components/Notices";
 import { PaneStages } from "@/ui/shell/components/PaneStages";
@@ -36,8 +38,10 @@ import { isPresentShortcut, presentShortcutLabel } from "@/ui/shell/lib/shortcut
  */
 const SHELL_STYLE: CSSProperties = {
 	"--shell-navigator-width": `${NAVIGATOR_WIDTH}px`,
-	"--agent-panel-width": `${AGENT_PANEL_WIDTH}px`,
 };
+
+/** A close that does nothing, for a shell with no conversation. */
+function noop(): void {}
 
 /** Inputs for the shell. */
 interface ShellProps {
@@ -46,10 +50,14 @@ interface ShellProps {
 	actions: ShellActions;
 	/** Live voice controls for the presentation bar, when the voice workbench supplies them. */
 	voiceControls?: ReactNode;
-	/** The agent at the navigator's foot: its voice, what it is doing, and the composer. */
+	/** The agent at the navigator's foot: its voice, what it is doing, and the way to the conversation. */
 	agentDock?: ReactNode;
-	/** The conversation beside the navigator, next to the composer that opens it, while it is open. */
+	/** The conversation beside the navigator, drawn while it is open and while it slides out. */
 	agentPanel?: ReactNode;
+	/** Whether the conversation is open. */
+	agentPanelOpen?: boolean;
+	/** The conversation was dragged shut. */
+	onAgentPanelClose?: () => void;
 	/** The fullscreen root: the centre stage element. */
 	attachStage?: (element: HTMLDivElement | null) => void;
 }
@@ -77,8 +85,11 @@ function Shell(props: ShellProps): JSX.Element {
 				head={head}
 				foot={props.agentDock}
 			/>
-			{props.agentPanel}
-			<div className="flex min-h-0 min-w-0 flex-1 flex-col">
+			<ConversationColumns
+				open={props.agentPanelOpen ?? false}
+				onClose={props.onAgentPanelClose ?? noop}
+				conversation={props.agentPanel}
+			>
 				<Notices notices={view.notices} actions={actions} />
 				<PaneStages
 					panes={view.panes}
@@ -88,7 +99,7 @@ function Shell(props: ShellProps): JSX.Element {
 					attachStage={props.attachStage}
 					actions={actions}
 				/>
-			</div>
+			</ConversationColumns>
 		</div>
 	);
 }
