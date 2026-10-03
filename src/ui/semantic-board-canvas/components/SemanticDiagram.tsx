@@ -9,11 +9,11 @@
 
 import {
 	useCallback,
+	useEffect,
 	useLayoutEffect,
 	useMemo,
 	useRef,
 	useState,
-	type CSSProperties,
 	type JSX,
 	type KeyboardEvent,
 	type MouseEvent,
@@ -21,15 +21,15 @@ import {
 	type ReactNode,
 } from "react";
 
-import { PRESENTATION_STEP_MS } from "@/shared/timing/timing";
+import { holdTraffic } from "@/ui/frame-clock";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
+import { CameraSurface, type Gesture } from "@/ui/semantic-board-canvas/components/CameraSurface";
 import { SemanticSubjectTip } from "@/ui/semantic-board-canvas/components/SemanticSubjectTip";
 import {
 	STAGE_CLASS,
 	StageSpinner,
 } from "@/ui/semantic-board-canvas/components/SemanticStageStates";
 import {
-	useCameraView,
 	useCameraWith,
 	type BoardCamera,
 	type CameraView,
@@ -44,12 +44,7 @@ import { usePresentationArrival } from "@/ui/semantic-board-canvas/hooks/use-pre
 import { useSubjectTip } from "@/ui/semantic-board-canvas/hooks/use-subject-tip";
 import { useViewerMarks } from "@/ui/semantic-board-canvas/hooks/use-viewer-marks";
 import { useStickyHeads } from "@/ui/semantic-board-canvas/hooks/use-sticky-heads";
-import {
-	FAR_SCALE,
-	PAN_STEP,
-	cameraTransform,
-	type Size,
-} from "@/ui/semantic-board-canvas/lib/camera";
+import { FAR_SCALE, PAN_STEP, type Size } from "@/ui/semantic-board-canvas/lib/camera";
 import {
 	leavePicture,
 	stayPicture,
@@ -100,22 +95,6 @@ function moveCameraByKey(key: string, camera: BoardCamera, content: Size): boole
 		return true;
 	}
 	return false;
-}
-
-/**
- * The surface's classes: a transition for a keyed move or a fit, and none
- * while a drag is in progress, since a pan is meant to track the pointer, nor
- * for a move that follows the picture, which must land in the frame the picture does.
- * @param panning Whether a drag is in progress.
- * @param reducedMotion Whether the person asked for reduced motion.
- * @param following Whether the camera last moved to follow the picture.
- * @returns The class list.
- */
-function surfaceClass(panning: boolean, reducedMotion: boolean, following = false): string {
-	const base = "absolute top-0 left-0 origin-top-left select-none";
-	return panning || reducedMotion || following
-		? base
-		: `${base} transition-transform duration-100 ease-out motion-reduce:transition-none`;
 }
 
 /**
@@ -311,51 +290,6 @@ function seenFromFar(view: CameraView): boolean {
 	return view.camera.scale < FAR_SCALE;
 }
 
-/** What the surface the camera moves is drawn with. */
-interface CameraSurfaceProps {
-	/** The camera that moves it. */
-	readonly camera: BoardCamera;
-	/** Where the picture's element is handed to whatever writes the picture into it. */
-	readonly attach: (element: HTMLDivElement | null) => void;
-	/** How big the picture is. */
-	readonly size: Size;
-	/** Whether a drag is in progress. */
-	readonly panning: boolean;
-	/** Whether the person asked for reduced motion. */
-	readonly reducedMotion: boolean;
-	/** The classes the picture's state adds. */
-	readonly marks: string;
-}
-
-/**
- * The element the camera moves. It is the one thing drawn again on every move
- * of the camera (TASK-385.02).
- * @param props The camera, the picture's size and its classes.
- * @returns The surface, which the picture is written into rather than rendered.
- */
-function CameraSurface(props: CameraSurfaceProps): JSX.Element {
-	const { attach, size, panning, reducedMotion, marks } = props;
-	const { camera, instant } = useCameraView(props.camera);
-	const { width, height } = size;
-	const style = useMemo<CSSProperties>(
-		() => ({
-			width,
-			height,
-			transform: cameraTransform(camera),
-			"--presentation-step-ms": `${PRESENTATION_STEP_MS}ms`,
-		}),
-		[width, height, camera],
-	);
-	return (
-		<div
-			ref={attach}
-			data-slot="semantic-board-surface"
-			style={style}
-			className={`${surfaceClass(panning, reducedMotion, instant)}${marks}`}
-		/>
-	);
-}
-
 /**
  * A drawn semantic board: pan, zoom and selection over the server's picture.
  * @param props The drawing, the selection and what to do with a pick.
@@ -369,7 +303,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	);
 	const { attachViewport } = camera;
 	const [surface, setSurface] = useState<HTMLDivElement | null>(null);
-	const [panning, setPanning] = useState(false);
+	const [gesture, setGesture] = useState<Gesture>("idle");
 	const drag = useRef<Drag | null>(null);
 	const dragged = useRef(false);
 	// What the last press landed on, carried from pointerup to the click that
@@ -406,6 +340,13 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	const { dismiss: dismissTip, onHover } = tip;
 	const reading = drawnReading(props.reading, drawing);
 	const openDown = useDrillOpen(reading, props.onOpenDown);
+	// A drag draws a frame for every move, and moving traffic paints its lines
+	// again in each of them, more of them the closer the camera is. The traffic
+	// stands still until the drag ends.
+	useEffect(() => {
+		if (gesture !== "dragging" || surface === null) return undefined;
+		return holdTraffic(surface);
+	}, [gesture, surface]);
 
 	const onPointerDown = useCallback(
 		(event: PointerEvent<HTMLElement>): void => {
@@ -426,7 +367,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 				captured: false,
 			};
 			dragged.current = false;
-			setPanning(true);
+			setGesture("pressed");
 			dismissTip();
 		},
 		[drawing.atlas, dismissTip],
@@ -443,6 +384,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 				return;
 			}
 			const panned = dragged.current || hasTravelled(started, event.clientX, event.clientY);
+			if (panned && !dragged.current) setGesture("dragging");
 			dragged.current = panned;
 			drag.current = {
 				...started,
@@ -462,7 +404,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		}
 		pressed.current = { subject: started.pressed };
 		drag.current = null;
-		setPanning(false);
+		setGesture("idle");
 		if (started.captured) {
 			capturePointer(event.currentTarget, event.pointerId, false);
 		}
@@ -477,7 +419,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		drag.current = null;
 		dragged.current = false;
 		pressed.current = null;
-		setPanning(false);
+		setGesture("idle");
 	}, []);
 
 	// A drag that ends on a card is not a pick: the person was moving the
@@ -563,7 +505,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 					onClick={onClick}
 					onDoubleClick={onDoubleClick}
 					className={`relative flex min-h-0 min-w-0 flex-1 overflow-hidden outline-none ${
-						panning ? "cursor-grabbing" : "cursor-grab"
+						gesture === "idle" ? "cursor-grab" : "cursor-grabbing"
 					}`}
 				>
 					{/* The picture inside is the transition's to write, never React's:
@@ -572,7 +514,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 						camera={camera}
 						attach={setSurface}
 						size={content}
-						panning={panning}
+						gesture={gesture}
 						reducedMotion={reducedMotion}
 						marks={`${presentationMarks(props.presenting).surface}${marks}`}
 					/>
@@ -585,4 +527,4 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	);
 }
 
-export { SemanticDiagram, moveCameraByKey, surfaceClass, type SemanticDiagramProps };
+export { SemanticDiagram, moveCameraByKey, type SemanticDiagramProps };
