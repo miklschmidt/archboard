@@ -78,8 +78,8 @@ state:
 
 ## The pane sidebar
 
-Revised 2026-09-17 (TASK-249), 2026-09-30 (TASK-383) and 2026-10-03
-(TASK-388). The generated reference above places selection details in a column
+Revised 2026-09-17 (TASK-249), 2026-09-30 (TASK-383), 2026-10-03
+(TASK-388) and 2026-10-04 (TASK-390). The generated reference above places selection details in a column
 on the right of the canvas. The pane sidebar supersedes that column. A semantic
 pane now has one sidebar on the right of its picture. The sidebar has the width
 of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
@@ -97,8 +97,12 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
      that marks the changes on the picture. The counts are of what the picture
      draws, so a view in which nothing differs says so of the view and keeps
      the control.
-  2. **How do I read it?** The walkthroughs, each with its number of steps and
-     Narrate beside it. Choosing one presents it (see below). Then the views,
+  2. **How do I read it?** The walkthroughs, each with a play mark, its number
+     of steps and Narrate beside it. Choosing one presents it (see below).
+     Narrate is in the rows of every pane, whichever pane is active and
+     whatever voice is doing, so a row never changes size. While a narration
+     cannot start it is dimmed and says why. Pressing it in a pane that is not
+     active makes that pane active and narrates its walkthrough. Then the views,
      with Everything first and the summary of the view on screen under its
      name. Then the groups, each with its colour. Choosing a group selects
      every member.
@@ -154,11 +158,38 @@ under the pointer takes half the reading tone, so it never looks
 chosen. The spacing steps are 4, 8 and 16 px.
 
 Picking something out opens the selection tab. Letting go gives back the tab
-that was open before. The sidebar keeps its width whichever tab is open, so a
-pick never changes the size of the pane or moves the picture. Collapsing it to
-its tab icons gives the width to the picture, which refits to it until the
-person pans or zooms. A pane presented fullscreen shows the picture
-without its sidebar. There is no strip above the picture.
+that was open before. The sidebar is one panel of one width whichever tab is
+open, so a pick never changes the size of the pane or moves the picture.
+
+Where the sidebar is depends on how many panes there are and on what the person
+asked for. One control, at the end of the pane's header, shows and hides it, in
+every state of the pane. It is filled while the sidebar is shown, and its tooltip
+says what it will do. Beside a lone pane the sidebar is docked: it takes its
+width from the picture, which refits to the room that is left until the person
+pans or zooms. With two panes it is away, so that each picture keeps its room,
+until somebody asks for it. The control then lays its panel over the edge of the
+picture, and a pin at the end of the tab row docks it. A pick lays an away
+sidebar over the picture in the same way, and letting go puts it away again, so
+neither refits the picture under the pointer that made it. A float the person
+asked for stays until they put it away, or press Escape inside it, which gives
+the keyboard back to the control. Hiding a docked sidebar and showing it again
+docks it again. A sidebar that is away is nowhere: it leaves no strip, no row of
+icons and no empty column. A pane presented fullscreen shows the picture without
+its sidebar. There is no strip above the picture.
+
+The search for a part sits above the tabs. Its shortcut, Ctrl or Command with
+Shift and K, shows an away sidebar in the pane that has focus and takes focus in
+the field. Ctrl or Command with Shift and F is the shell's and presents the pane.
+
+The sidebar eases in and out once, and nothing under it is painted again for it.
+A docked column takes its width over 220 ms, on the curve of the conversation's
+slide, while its panel, held at its own width, is uncovered under the edge of the
+picture. The picture refits once, after the width has settled. A floating panel
+eases in from 2 rem to the right of its place and from nothing over 160 ms, and
+leaves in 110 ms. Its shadow does not change. A pinned panel is swapped in place
+and does not move. The selection tab is drawn again for each subject, so a pick
+opens at the top of it and arrives with a 120 ms fade. The durations are
+`SIDEBAR_MS` in `src/shared/timing`. The reduced-motion preference cuts.
 
 A presented walkthrough (TASK-250) is the picture and a caption laid over its
 bottom edge, with the sidebar stepped aside: the step's heading in the
@@ -182,8 +213,9 @@ the rows that they pass over. They never go below the flow's last row.
 tab](assets/semantic-pane-sidebar.png)
 
 The image holds rendered captures of the dogfood vault at 1920×1080, not
-generated mockups, cut to the right 640 px: the tabs of the pane's header, the
-sidebar and the edge of the picture. From the left: the board tab on the
+generated mockups, cut to the right 640 px: the tabs of the pane's header with
+the control that shows and hides the sidebar, filled because the sidebar is
+shown, then the sidebar and the edge of the picture. From the left: the board tab on the
 current variant of `Archboard server` in the light theme, the board tab on its
 historical variant `Current architecture` in the dark theme, where it is read
 against the current variant, and the selection tab on `Board routes` in the

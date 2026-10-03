@@ -190,10 +190,13 @@ left, and the agent dock is at its foot. The panes are in the centre, one or
 two side by side. The conversation opens between the navigator and the panes:
 it slides in and out, and a handle on its edge, a grip on a line that takes the
 gold while it is dragged, resizes it between 320px and 720px, or drags it shut
-below that. Each pane has a sidebar (280px) on the right. The sidebar is
-docked, or it floats over the edge of the picture. Every column starts with a
-chrome row (40px) and then a band (36px) for the find fields and the tabs of
-the sidebar. A pane's header stands on a whole-pixel grid: 16px lines and
+below that. Each pane has a sidebar (280px) on the right, shown and hidden by
+one control at the end of the pane's header. Beside a lone pane the sidebar is
+docked and takes its width from the picture. With two panes it is away until
+somebody asks for it, and its panel then floats over the edge of the picture
+until it is pinned. A sidebar that is away is nowhere: it leaves no strip, no
+icons and no empty column behind. Every column starts with a chrome row (40px)
+and then a band (36px) for the find fields and the tabs of the sidebar. A pane's header stands on a whole-pixel grid: 16px lines and
 icons, 32px crumbs and text trimmed to its cap height, so its parts sit on one
 line at any display scale. A row of a list is at least 28px high. Panels have
 16px of padding. The shell has no narrow or phone layout.
@@ -205,8 +208,9 @@ Each plane shows its height in three ways. The first is a tone step. The second
 is a fine highlight on its top edge. The third is a soft shadow with an offset,
 tinted toward the warm neutrals: umber on chalk and a warm near-black on
 graphite. The picture is the ground, and only still shadows fall on it. Nothing
-over the picture is blurred, filtered or animated, because every repaint over
-the picture makes it slower to drag. The file palette.css holds the values for
+over the picture is blurred or filtered, and nothing there loops, because every
+repaint over the picture makes it slower to drag. The one thing that moves over
+it is the floating sidebar's own layer, once, when it is shown or put away. The file palette.css holds the values for
 both themes. The file app.css gives each one a `shadow-*` utility.
 
 ### Shadow Vocabulary
@@ -222,7 +226,7 @@ both themes. The file app.css gives each one a `shadow-*` utility.
 
 ### Named Rules
 
-**The Still Shadow Rule.** A shadow over the picture is a static box-shadow. Nothing over the picture viewport uses backdrop-filter, filter, blur or animation.
+**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops. The floating sidebar is the one thing that moves over it: its own layer eases its transform and its opacity, once, for at most 160ms.
 
 **The Picture Answers Rule.** The light belongs to the picture, not to the shell. When a part is picked out or the pointer rests on one, the viewer marks what stays as drawn, and the picture's own subjects recede under an opacity filter. The shell lays no layer, blur or halo over the picture to do it.
 
@@ -263,6 +267,32 @@ tone.
 ### Navigation
 
 - **Style:** a tree on Chrome Chalk with rows of 28px. Rails and elbows draw its levels, and the line from the root to the chosen row is lit in Gold Mark. The chosen row is a plate in Reading Tone with `shadow-raised`. Tabs have an underline of Gold Mark. A link is ink with an underline of Gold Mark.
+
+### Pane sidebar
+
+The sidebar is one panel, 280px wide and held at the pane's edge, on Chrome Chalk
+with a rule down its inner edge. It has two tabs and one control, in the pane's
+header, that shows and hides it. The control is filled while the sidebar is shown,
+its tooltip says what it will do, and it is there in every state of the pane.
+Showing the sidebar puts it back where the person had it. A floating panel has a
+pin at the end of its tab row, which docks it, and Escape inside it puts it away
+and gives the keyboard back to the control. The search for a part sits above the
+tabs, and its shortcut shows an away sidebar and takes focus in the field.
+
+The sidebar eases in and out, as the conversation does. A docked column takes its
+width over 220ms while the panel, held at its own width, is uncovered under the
+edge of the picture, so nothing in it reflows. The picture is fitted again once, at
+the end. A floating panel eases in from 2rem to the right of its place and from
+nothing over 160ms, and leaves in 110ms. A panel that is pinned is swapped in
+place and does not move. A new subject opens at the top of the selection tab and
+arrives with a 120ms fade. A row answers the pointer with a change of tone and
+nothing else. The reduced-motion preference cuts.
+
+A walkthrough's row begins with a play mark, never a bare triangle, because a
+triangle is the mark of a row that folds open. Narrate is in every walkthrough's
+row in every pane, whichever pane is active and whatever voice is doing, so the
+row never changes size. While a narration cannot start the control is dimmed and
+its tooltip says why.
 
 ### Agent dock
 
@@ -323,7 +353,8 @@ takes the room from the conversation.
 
 ### Don't:
 
-- **Do not** put backdrop-filter, filter, blur or animation over the picture viewport.
+- **Do not** put backdrop-filter, filter, blur or a looping animation over the picture viewport.
+- **Do not** take a control out of a row when it cannot be used. Dim it and say why in its tooltip, so the row does not move.
 - **Do not** paint gold or decoration onto a card in the picture.
 - **Do not** use a grey-black blur or a halo without an offset as a shadow.
 - **Do not** add a phone or narrow layout.
