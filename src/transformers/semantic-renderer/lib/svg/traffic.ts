@@ -27,8 +27,6 @@ interface TrafficLine {
 	readonly headReach: number;
 	/** The relationship's colour at full strength; its line is drawn weaker. */
 	readonly ink: string;
-	/** The colour its line is drawn in, which the tail of a pulse fades back into. */
-	readonly lineColour: string;
 	readonly lineWidth: number;
 }
 
@@ -85,7 +83,7 @@ function paintTraffic(
 		},
 	);
 	const painted = new Map(
-		lines.map(({ routed, ink, lineColour, lineWidth }) => {
+		lines.map(({ routed, ink, lineWidth }) => {
 			const { id } = routed.edge;
 			const ride = rides.get(id);
 			const rhythm = rhythms.get(id);
@@ -97,7 +95,7 @@ function paintTraffic(
 					ride === undefined || rhythm === undefined
 						? ""
 						: steadyPulses({
-								look: pulseLook(ink, { lineColour, lineWidth }, palette),
+								look: pulseLook(ink, lineWidth, palette),
 								ride,
 								rhythm,
 							}),
@@ -109,9 +107,8 @@ function paintTraffic(
 	for (const crossing of crossings) {
 		const { ink } = byId.get(crossing.onto)!;
 		const pulses = steadyPulses({
-			// Round a card's edge, a pulse fades into the edge rather than into a line.
-			look: pulseLook(ink, { lineColour: palette.cardBorder, lineWidth: CARD_EDGE_WIDTH }, palette),
-			ride: { path: crossing.path, length: crossing.length },
+			look: pulseLook(ink, CARD_EDGE_WIDTH, palette),
+			ride: { curve: crossing.curve, length: crossing.length },
 			rhythm: crossing.rhythm,
 		});
 		rims.set(crossing.card, (rims.get(crossing.card) ?? "") + pulses);

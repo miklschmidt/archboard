@@ -2,41 +2,39 @@
 // turn, at one speed, and waits until the one before it has arrived.
 import { describe, expect, test } from "bun:test";
 import { DEFAULT_TRAFFIC_SPEED } from "@/shared/semantic-board/index";
-
-/** How fast a pulse flies on a message: twice the pace of a relationship's default traffic. */
-const FLOWN = DEFAULT_TRAFFIC_SPEED * 2;
 import { FLOW_CYCLE_CAP_MS } from "@/shared/timing/timing";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
-import { messagePulses } from "@/runtime/semantic-renderer/tests/drawn-traffic";
+import { messageBeams, slidingSpeedOf } from "@/runtime/semantic-renderer/tests/drawn-traffic";
 import {
 	MOTION,
 	SAMPLE,
 	TWO_FLOWS,
 	drawn,
-	headLayer,
 	pulsesOn,
 	variant,
 } from "@/runtime/semantic-renderer/tests/pulse-fixtures";
 
+/** How fast a pulse flies on a message: twice the pace of a relationship's default traffic. */
+const FLOWN = DEFAULT_TRAFFIC_SPEED * 2;
+
 /**
- * Every pulse of a picture in the order its message is drawn: when its head
- * leaves the start of its line, how fast it flies and how long its line is.
+ * Every pulse of a picture in the order its message is told: when its bar begins
+ * to slide, how fast it flies, how long its line is and how long the cycle is.
  * @param svg The markup.
  * @param ids The messages, in the order they are told.
  * @returns One entry for each pulse.
  */
 function turns(svg: string, ids: readonly string[]) {
 	return ids.flatMap((id) =>
-		messagePulses(svg, id).map((layers) => {
-			const head = headLayer(layers);
-			const [, from = 0, to = 1] = head.times;
-			const travel = Math.abs(head.values[1]! - head.values[2]!);
+		messageBeams(svg, id).map(({ pieces }) => {
+			const [piece] = pieces;
+			const [from, to] = [piece!.points[1]!, piece!.points.at(-2)!];
 			return {
-				start: from * head.cycle,
-				speed: travel / ((to - from) * head.cycle),
-				// The head is at the line's end when the dash has moved the line's length.
-				length: -head.values[2]!,
-				cycle: head.cycle,
+				// The bar begins to slide a moment before the head leaves the line's start.
+				begins: (piece!.times[1] ?? 0) * piece!.cycle,
+				speed: slidingSpeedOf(piece!),
+				length: Math.hypot(to.x - from.x, to.y - from.y),
+				cycle: piece!.cycle,
 			};
 		}),
 	);
@@ -58,7 +56,7 @@ describe("an exchange is told on one clock", () => {
 		const told = turns(svg, ["asks", "again", "answers"]);
 		expect(told).toHaveLength(4);
 		expect(new Set(told.map(({ cycle }) => cycle)).size).toBe(1);
-		const starts = told.map(({ start }) => start);
+		const starts = told.map((turn) => turn.begins);
 		expect(starts).toEqual(starts.toSorted((a, b) => a - b));
 		expect(new Set(starts).size).toBe(4);
 		expect(starts.at(-1)!).toBeLessThan(told[0]!.cycle);
@@ -74,10 +72,14 @@ describe("an exchange is told on one clock", () => {
 	test("a message waits until the one before it has arrived, and then goes", async () => {
 		const svg = await drawn("data-flow");
 		const told = turns(svg, ["asks", "again", "answers"]);
-		for (let turn = 1; turn < told.length; turn += 1) {
+		for (let turn = 2; turn < told.length; turn += 1) {
 			const before = told[turn - 1]!;
-			expect(told[turn]!.start).toBeCloseTo(before.start + before.length / before.speed, 2);
+			// The turns are counted from where each bar begins to slide, which is the same
+			// moment ahead of each head: the gap between two is the line the first crosses.
+			expect((told[turn]!.begins - before.begins) * before.speed).toBeCloseTo(before.length, 0);
 		}
+		// The first has no turn before it to measure from; its bar starts within a few units of a line ahead.
+		expect(told[1]!.begins * told[0]!.speed).toBeCloseTo(told[0]!.length, -1);
 	});
 
 	test("a page of exchanges shares one clock, and they take their turns in order", async () => {
@@ -95,7 +97,7 @@ describe("an exchange is told on one clock", () => {
 		expect(told).toHaveLength(5);
 		expect(new Set(told.map(({ cycle }) => cycle)).size).toBe(1);
 		// Counted straight through: the second flow's first message goes third, not first.
-		const starts = told.map(({ start }) => start);
+		const starts = told.map((turn) => turn.begins);
 		expect(starts).toEqual(starts.toSorted((a, b) => a - b));
 		expect(new Set(starts).size).toBe(5);
 	});

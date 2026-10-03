@@ -351,14 +351,12 @@ function paintArchitecture(
 			if (edge.traffic === undefined || standingOf(edge.id) === "removed") return [];
 			const width = strokeWidthOf(edge);
 			const appearance = lineAppearance(edge.kind, policy, derived.has(edge.id));
-			const attributes = edgeAttributes(edge, palette, standingOf(edge.id), policy, appearance);
 			return [
 				{
 					routed,
 					traffic: edge.traffic,
 					headReach: arrowheadReach(appearance.arrowhead, width),
 					ink: relationshipInk(edge, palette, standingOf(edge.id), policy, appearance),
-					lineColour: String(attributes["stroke"]),
 					lineWidth: width,
 				},
 			];

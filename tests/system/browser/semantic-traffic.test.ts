@@ -2,7 +2,7 @@
 // runs it as Web Animations instead, because SMIL kept an idle board at about one core.
 //
 // What this catches: SMIL left running in the page; a form the renderer writes that the page
-// translates wrongly, so a pulse is somewhere else, or at another opacity, than SMIL
+// translates wrongly, so a bar of light is somewhere else than SMIL
 // would have put it at the same moment; and a picture put up again for a new version whose
 // traffic jumps back to the start instead of running on.
 
@@ -51,7 +51,7 @@ interface Comparison {
  */
 const COMPARE = `(() => {
 	const live = document.querySelector('${SEMANTIC_SURFACE} svg');
-	const running = live.querySelectorAll('set, animate, animateMotion').length;
+	const running = live.querySelectorAll('animateTransform').length;
 	const reference = live.cloneNode(true);
 	for (const kept of reference.querySelectorAll('[data-traffic-motion]')) {
 		kept.insertAdjacentHTML('beforeend', kept.getAttribute('data-traffic-motion'));
@@ -64,19 +64,15 @@ const COMPARE = `(() => {
 	reference.pauseAnimations();
 	const targets = [...live.querySelectorAll('[data-traffic-motion]')];
 	const references = [...reference.querySelectorAll('*')].filter((element) =>
-		[...element.children].some((child) => ['set', 'animate', 'animateMotion'].includes(child.localName)));
+		[...element.children].some((child) => child.localName === 'animateTransform'));
 	const traffic = document.getAnimations().filter((animation) =>
 		animation.id === 'picture-clock' && live.contains(animation.effect.target));
 	for (const animation of traffic) animation.pause();
 	const scale = live.getBoundingClientRect().width / live.width.baseVal.value;
 	const look = (element, root, k) => {
-		const style = getComputedStyle(element);
 		const box = element.getBoundingClientRect();
 		const page = root.getBoundingClientRect();
 		return {
-			dashoffset: parseFloat(style.strokeDashoffset) || 0,
-			dasharray: style.strokeDasharray,
-			opacity: parseFloat(style.opacity),
 			x: (box.x + box.width / 2 - page.x) / k,
 			y: (box.y + box.height / 2 - page.y) / k,
 		};
@@ -88,11 +84,7 @@ const COMPARE = `(() => {
 		targets.forEach((target, index) => {
 			const page = look(target, live, scale);
 			const smil = look(references[index], reference, 1);
-			const apart =
-				Math.abs(page.dashoffset - smil.dashoffset) > 0.5 ||
-				page.dasharray !== smil.dasharray ||
-				Math.abs(page.opacity - smil.opacity) > 0.02 ||
-				Math.hypot(page.x - smil.x, page.y - smil.y) > 1;
+			const apart = Math.hypot(page.x - smil.x, page.y - smil.y) > 1;
 			if (apart) mismatches.push({ seconds, index, page, smil });
 		});
 	}

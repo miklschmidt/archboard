@@ -14,17 +14,13 @@ import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { lines } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
 	PULSE_LENGTH,
-	crossingPulse,
+	turnPulse,
 	pulseLook,
 	type Ride,
 } from "@/transformers/semantic-renderer/lib/svg/pulse";
 import type { SubjectStanding } from "@/transformers/semantic-renderer/lib/svg/standing";
 import { PULSE_PACE } from "@/transformers/semantic-renderer/lib/svg/traffic-relay";
-import {
-	fullLineColour,
-	lineColour,
-	STROKE_WIDTH,
-} from "@/transformers/semantic-renderer/lib/svg/styles";
+import { fullLineColour, STROKE_WIDTH } from "@/transformers/semantic-renderer/lib/svg/styles";
 import { STEP_WEIGHT } from "@/transformers/semantic-renderer/lib/sequence-design";
 
 /**
@@ -93,12 +89,12 @@ function timedCrossings(
 	const { cycle, speed, starts } = crossing;
 	const look = pulseLook(
 		fullLineColour(palette, crossing.standing),
-		{ lineColour: lineColour(palette, crossing.standing), lineWidth: STROKE_WIDTH[STEP_WEIGHT] },
+		STROKE_WIDTH[STEP_WEIGHT],
 		palette,
 	);
 	return lines(
 		Array.from({ length: turn.count }, (_, index) =>
-			crossingPulse({ look, ride, speed, cycle, start: starts[turn.start + index] ?? 0 }),
+			turnPulse({ look, ride, speed, cycle, start: starts[turn.start + index] ?? 0 }),
 		),
 	);
 }

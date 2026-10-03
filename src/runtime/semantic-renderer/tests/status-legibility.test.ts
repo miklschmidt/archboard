@@ -176,8 +176,9 @@ function headInk(svg: string, id: string): string {
 }
 
 /**
- * The inks the traffic marks on one relationship are drawn in: every part of
- * every pulse, read from its traffic layer, which is painted apart from its line.
+ * The inks the traffic marks on one relationship are drawn in: every stop of the
+ * gradient of every pulse, read from its traffic layer, which is painted apart
+ * from its line.
  * @param svg The drawn document.
  * @param id The relationship.
  * @returns The colours, one per inked part.
@@ -187,12 +188,9 @@ function dotInks(svg: string, id: string): string[] {
 	const traffic = [`data-semantic-id="${id}"`, `data-traffic="${id}"`]
 		.map((named) => (svg.split(named)[1] ?? "").split(/data-(?:semantic-id|traffic)=/u)[0]!)
 		.join("");
-	return [...traffic.matchAll(/<g class="ab-pulse"[^>]*>([\s\S]*?)<\/g>/gu)].flatMap((pulse) =>
-		[
-			...pulse[1]!.matchAll(
-				/<(?:circle|path)[^>]*?(?:fill|stroke)="(#[0-9a-f]{6})(?:[0-9a-f]{2})?"/gu,
-			),
-		].map((found) => found[1]!),
+	// A pulse is painted with a gradient: its colours are its stops'.
+	return [...traffic.matchAll(/<stop [^>]*?stop-color="(#[0-9a-f]{6})(?:[0-9a-f]{2})?"/gu)].map(
+		(found) => found[1]!,
 	);
 }
 

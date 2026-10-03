@@ -6,12 +6,15 @@
 // a few of them, which is as far from the drawn arc as a hairline.
 import { CARD_RADIUS } from "@/transformers/semantic-renderer/lib/design";
 import { coord, type Box, type Point } from "@/transformers/semantic-renderer/lib/geometry";
+import type { Curve } from "@/transformers/semantic-renderer/lib/layout/curves";
 
 /** How many straight pieces walk a quarter turn of a corner. */
-const CORNER_PIECES = 6;
+const CORNER_PIECES = 3;
 
 /** The way from one place on a card's edge to another. */
 interface Rim {
+	/** The way, as a route. */
+	readonly curve: Curve;
 	/** The way, as path data. */
 	readonly path: string;
 	/** How long it is. */
@@ -139,6 +142,7 @@ function rimRoute(box: Box, from: Point, to: Point): Rim {
 		.map(({ point }) => point);
 	const way = [pointAlong(ring, start), ...between, pointAlong(ring, start + direction * length)];
 	return {
+		curve: { from: way[0]!, segments: way.slice(1).map((point) => ({ kind: "line", to: point })) },
 		path: way
 			.map(({ x, y }, index) => `${index === 0 ? "M" : "L"}${coord(x)},${coord(y)}`)
 			.join(" "),

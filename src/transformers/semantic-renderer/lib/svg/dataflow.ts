@@ -53,7 +53,8 @@ import {
 	timedCrossings,
 	type Crossing,
 } from "@/transformers/semantic-renderer/lib/svg/flow-clock";
-import { standoffOf, type Ride } from "@/transformers/semantic-renderer/lib/svg/pulse";
+import { routeLength, standoffOf, type Ride } from "@/transformers/semantic-renderer/lib/svg/pulse";
+import { curveThrough } from "@/transformers/semantic-renderer/lib/layout/curves";
 import {
 	activationLookup,
 	layoutDataFlow,
@@ -148,17 +149,16 @@ function stepAttributes(
  * The path a self-message takes: out to the right, down, and back.
  * @param placed The message.
  * @param activated Whether its column is busy at that height.
- * @param cut How much of the way back to leave undrawn, for the part of it that stops short.
  * @returns The path's `d`.
  */
-function selfPath(placed: PlacedStep, activated: boolean, cut = 0): string {
+function selfPath(placed: PlacedStep, activated: boolean): string {
 	const start = selfStart(placed, activated);
 	return (
 		`M${coord(start)},${coord(placed.y)} h${coord(SELF_LOOP_REACH)} ` +
 		`a${SELF_LOOP_CORNER},${SELF_LOOP_CORNER} 0 0 1 ${SELF_LOOP_CORNER},${SELF_LOOP_CORNER} ` +
 		`v${coord(SELF_LOOP_DROP)} ` +
 		`a${SELF_LOOP_CORNER},${SELF_LOOP_CORNER} 0 0 1 -${SELF_LOOP_CORNER},${SELF_LOOP_CORNER} ` +
-		`h-${coord(SELF_LOOP_REACH - arrowStandoff("self") - cut)}`
+		`h-${coord(SELF_LOOP_REACH - arrowStandoff("self"))}`
 	);
 }
 
@@ -189,19 +189,28 @@ function stepRide(placed: PlacedStep, activeAt: ActiveAt): Ride | undefined {
 	const cut = standoffOf(headBase(STEP_HEAD[kind], STEP_WEIGHT));
 	const direction = travelOf(kind, placed.fromX, placed.toX);
 	if (direction === 0) {
-		const back = SELF_LOOP_REACH - arrowStandoff(kind) - cut;
-		if (back <= 0) return undefined;
-		const bends = Math.PI * SELF_LOOP_CORNER;
-		return {
-			path: selfPath(placed, activeAt(placed.step.from, placed.y), cut),
-			length: SELF_LOOP_REACH + SELF_LOOP_DROP + bends + back,
-		};
+		if (SELF_LOOP_REACH - arrowStandoff(kind) - cut <= 0) return undefined;
+		// Out to the right, down and back, as `selfPath` draws it, with its turns
+		// rounded as it rounds them and its end cut short.
+		const x = selfStart(placed, activeAt(placed.step.from, placed.y));
+		const right = x + SELF_LOOP_REACH + SELF_LOOP_CORNER;
+		const low = placed.y + SELF_LOOP_DROP + 2 * SELF_LOOP_CORNER;
+		const curve = curveThrough([
+			{ x, y: placed.y },
+			{ x: right, y: placed.y },
+			{ x: right, y: low },
+			{ x: x + arrowStandoff(kind) + cut, y: low },
+		]);
+		return { curve, length: routeLength(curve) };
 	}
 	const { start, end } = endsFor(placed, activeAt, direction);
 	const length = (end - start) * direction - cut;
 	if (length <= 0) return undefined;
 	return {
-		path: `M${coord(start)},${coord(placed.y)} L${coord(start + direction * length)},${coord(placed.y)}`,
+		curve: {
+			from: { x: start, y: placed.y },
+			segments: [{ kind: "line", to: { x: start + direction * length, y: placed.y } }],
+		},
 		length,
 	};
 }

@@ -13,12 +13,22 @@ and a volume of 1, supplied values are positive and finite, omission is the one
 off state, a traffic change is one property for identity, and reduced motion
 hides every pulse.
 
-A pulse is a laser bolt. It has a bright head about 16 units long, in the
-relationship's colour with some of the page's text colour mixed in. A hot core
-sits in the head, nearer the text colour. The front is cut flat. Behind the head
-is a tail of up to 40 units that fades into the colour of the line. A pulse is
-thin: as thick as its line plus 0.6 units. It has no ring of the page's
-background, no glow and no round blob. It follows a bend as its line does.
+A pulse is a beam of light, and it is a real gradient. It has a short, hot head
+about 12 units long, in the relationship's colour with some of the page's text
+colour mixed in, and a front that fades out over 3 units. Behind the head is a
+tail of up to 56 units that fades smoothly away to nothing: faint at its far end
+and gathering toward the head. Across the line the light falls off in a soft
+glow, so the beam has no edge. On a dark page the glow is light. On a light page
+it is weak, because a glow there can only darken, and the beam reads as a crisp
+gradient streak. A pulse is as thick as its line plus 0.6 units at its core. It
+follows every bend of its line.
+
+The renderer paints the gradient onto a bar that slides along each straight run
+and each bend of the route. A mask in the shape of that piece of the route lets
+the light through. The sliding is one transform for each piece, which a browser
+runs off its main thread. A train of pulses is one repeating gradient, so a line
+costs one animation for each piece of its route, however many pulses it carries.
+The earlier strokes, dash patterns, rings, blobs and flat-cut bars are gone.
 
 A line with traffic carries a steady train of pulses. They are evenly spaced by
 the authored speed divided by the volume, and each flies at twice the authored

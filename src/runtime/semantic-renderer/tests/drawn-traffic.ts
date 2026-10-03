@@ -1,21 +1,11 @@
-// A pulse as the drawn markup states it, read back from the SVG: every layer of
-// it, the route it rides and how its dash moves.
+// A pulse as the drawn markup states it, read back from the SVG: the gradient it
+// is painted with, the masks that shape it to its route, and how its bars slide.
 
-/** One layer of a pulse, as drawn. */
-interface PulseLayer {
-	/** The route it rides, as path data. */
-	readonly d: string;
-	/** How thick it is. */
-	readonly width: number;
-	/** How long its dash is: how far back from the head it reaches. */
-	readonly dash: number;
-	/** The gap after the dash. */
-	readonly gap: number;
-	/** The dash offset at time zero, as the attribute says. */
-	readonly offset: number;
-	/** The offsets the dash moves through, in order. */
+/** One piece of a route's beam: how its bar slides and the path of its mask. */
+interface Piece {
+	/** The offsets the bar slides through, along its frame. */
 	readonly values: readonly number[];
-	/** When each of those is reached, as a share of the cycle: only a crossing's pulse says. */
+	/** When each of those is reached, as a share of the cycle: only a message's pulse says. */
 	readonly times: readonly number[];
 	/** How long one cycle takes, in seconds. */
 	readonly cycle: number;
@@ -23,6 +13,18 @@ interface PulseLayer {
 	readonly cycleWritten: string;
 	/** When its animation begins, in seconds. */
 	readonly begin: number;
+	/** The points the piece's mask runs through. */
+	readonly points: readonly { readonly x: number; readonly y: number }[];
+}
+
+/** One pulse, as drawn: every piece of its route. */
+interface Beam {
+	/** The pieces, in route order. */
+	readonly pieces: readonly Piece[];
+	/** How far apart the pulses of a train are, when it is a train: the length of its gradient. */
+	readonly period: number | undefined;
+	/** How many layers of glow its masks stack. */
+	readonly layers: number;
 }
 
 /**
@@ -41,7 +43,7 @@ function attribute(markup: string, name: string): string | undefined {
  * @param separator What the numbers are separated by.
  * @returns The numbers.
  */
-function numbers(value: string | undefined, separator = /[\s,]+/u): number[] {
+function numbers(value: string | undefined, separator = /[\s,;]+/u): number[] {
 	return (value ?? "").trim().split(separator).map(Number);
 }
 
@@ -55,38 +57,60 @@ function seconds(value: string | undefined): number {
 }
 
 /**
- * Every layer of every pulse in a piece of markup, in drawing order.
- * @param markup The markup.
- * @returns The layers.
+ * The points a path of straight pieces and bends passes through, ends only.
+ * @param d The path data.
+ * @returns The points, the end of every piece.
  */
-function pulseLayers(markup: string): PulseLayer[] {
-	return [...markup.matchAll(/<path ([^>]*)>([\s\S]*?)<\/path>/gu)].flatMap(
-		([, tag = "", body = ""]) => {
-			const animate = /<animate ([^>]*)>/u.exec(body)?.[1];
-			if (animate === undefined) return [];
-			const [dash = 0, gap = 0] = numbers(attribute(tag, "stroke-dasharray"));
-			const from = attribute(animate, "from");
-			const values =
-				from === undefined
-					? numbers(attribute(animate, "values"), /;/u)
-					: [Number(from), Number(attribute(animate, "to"))];
-			const cycleWritten = attribute(animate, "dur") ?? "";
-			return [
-				{
-					d: attribute(tag, "d") ?? "",
-					width: Number(attribute(tag, "stroke-width")),
-					dash,
-					gap,
-					offset: Number(attribute(tag, "stroke-dashoffset")),
-					values,
-					times: numbers(attribute(animate, "keyTimes"), /;/u),
-					cycle: seconds(cycleWritten),
-					cycleWritten,
-					begin: seconds(attribute(animate, "begin") ?? "0s"),
-				},
-			];
-		},
-	);
+function pointsOf(d: string): { x: number; y: number }[] {
+	const coordinates = d.match(/-?[\d.]+(?:e-?\d+)?/gu)!.map(Number);
+	return Array.from({ length: coordinates.length / 2 }, (_, index) => ({
+		x: coordinates[index * 2]!,
+		y: coordinates[index * 2 + 1]!,
+	}));
+}
+
+/**
+ * Every pulse in a piece of markup, in drawing order.
+ * @param markup The markup.
+ * @returns The pulses.
+ */
+function beams(markup: string): Beam[] {
+	return markup
+		.split('<g class="ab-pulse"')
+		.slice(1)
+		.map((chunk) => {
+			const masks = [...chunk.matchAll(/<mask [^>]*>([\s\S]*?)<\/mask>/gu)];
+			const motions = [...chunk.matchAll(/<animateTransform ([^>]*)>/gu)].map(
+				([, tag = ""]) => tag,
+			);
+			const gradient = /<linearGradient [^>]*>/u.exec(chunk)?.[0] ?? "";
+			return {
+				period: gradient.includes('spreadMethod="repeat"')
+					? Number(attribute(gradient, "x2"))
+					: undefined,
+				layers: [...(masks[0]?.[1] ?? "").matchAll(/<path /gu)].length,
+				pieces: motions.map((motion, index) => {
+					const cycleWritten = attribute(motion, "dur") ?? "";
+					const path = /<path d="([^"]+)"/u.exec(masks[index]?.[1] ?? "")?.[1] ?? "M0,0";
+					return {
+						values:
+							attribute(motion, "values") === undefined
+								? [
+										Number(attribute(motion, "from")?.split(" ")[0]),
+										Number(attribute(motion, "to")?.split(" ")[0]),
+									]
+								: attribute(motion, "values")!
+										.split(";")
+										.map((value) => Number(value.split(" ")[0])),
+						times: numbers(attribute(motion, "keyTimes"), /;/u),
+						cycle: seconds(cycleWritten),
+						cycleWritten,
+						begin: seconds(attribute(motion, "begin") ?? "0s"),
+						points: pointsOf(path),
+					};
+				}),
+			};
+		});
 }
 
 /**
@@ -105,65 +129,64 @@ function holding(svg: string, name: string, id: string): string {
 }
 
 /**
- * Every layer of the pulses one relationship's line carries.
+ * Every pulse one relationship's line carries.
  * @param svg The markup.
  * @param id The relationship's id.
- * @returns The layers, in drawing order.
+ * @returns The pulses.
  */
-function trafficLayers(svg: string, id: string): PulseLayer[] {
-	return pulseLayers(holding(svg, "data-traffic", id));
+function trafficBeams(svg: string, id: string): Beam[] {
+	return beams(holding(svg, "data-traffic", id));
 }
 
 /**
- * Every layer of the pulses a card carries round its edge.
+ * Every pulse a card carries round its edge.
  * @param svg The markup.
  * @param id The card's id.
- * @returns The layers, in drawing order.
+ * @returns The pulses.
  */
-function rimLayers(svg: string, id: string): PulseLayer[] {
-	return pulseLayers(holding(svg, "data-semantic-id", id));
+function rimBeams(svg: string, id: string): Beam[] {
+	return beams(holding(svg, "data-semantic-id", id));
 }
 
 /**
- * The pulses one message carries, a layer list for each.
+ * The pulses one message sends.
  * @param svg The markup.
  * @param id The message's id.
- * @returns One list of layers for every pulse it sends.
+ * @returns One for every pulse it sends.
  */
-function messagePulses(svg: string, id: string): PulseLayer[][] {
-	return holding(svg, "data-semantic-id", id)
-		.split('<g class="ab-pulse"')
-		.slice(1)
-		.map((pulse) => pulseLayers(pulse));
+function messageBeams(svg: string, id: string): Beam[] {
+	return beams(holding(svg, "data-semantic-id", id));
 }
 
 /**
- * How fast the dash of a steady layer moves along its route: how far its offset
- * runs in one cycle, over how long that takes.
- * @param layer The layer.
+ * How fast a train's bars slide along their pieces: how far one cycle slides
+ * them over how long it takes. A train slides one gradient period a cycle.
+ * @param beam The pulse.
  * @returns The speed, in diagram units a second.
  */
-function speedOf(layer: PulseLayer): number {
-	return Math.abs(layer.values[0]! - layer.values[1]!) / layer.cycle;
+function speedOf(beam: Beam): number {
+	const piece = beam.pieces[0]!;
+	return Math.abs(piece.values[1]! - piece.values[0]!) / piece.cycle;
 }
 
 /**
- * Where the heads of a steady layer are on a route of one length at a moment.
- * @param layer The layer.
- * @param time The moment, in seconds.
- * @param length How long the route is.
- * @returns How far along the route each head that is on it is.
+ * How fast a message's bar slides along its piece: how far it slides between
+ * the moments it starts and stops, over how long that takes.
+ * @param piece The piece.
+ * @returns The speed, in diagram units a second.
  */
-function headsAt(layer: PulseLayer, time: number, length: number): number[] {
-	const period = layer.dash + layer.gap;
-	const [from = 0, to = 0] = layer.values;
-	const offset = from + (to - from) * ((time / layer.cycle) % 1);
-	const heads: number[] = [];
-	for (let k = -Math.ceil(length / period) - 1; k <= Math.ceil(length / period) + 1; k += 1) {
-		const head = layer.dash - offset + k * period;
-		if (head >= 0 && head <= length) heads.push(head);
-	}
-	return heads;
+function slidingSpeedOf(piece: Piece): number {
+	const [, from = 0, to = 1] = piece.times;
+	return Math.abs(piece.values[2]! - piece.values[1]!) / ((to - from) * piece.cycle);
 }
 
-export { headsAt, messagePulses, pulseLayers, rimLayers, speedOf, trafficLayers, type PulseLayer };
+export {
+	beams,
+	messageBeams,
+	rimBeams,
+	slidingSpeedOf,
+	speedOf,
+	trafficBeams,
+	type Beam,
+	type Piece,
+};
