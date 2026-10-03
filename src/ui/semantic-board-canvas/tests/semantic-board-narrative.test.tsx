@@ -580,4 +580,6 @@ test("picking a card out of the picture still reports it while a walkthrough is 
 	// reports, and the step on screen stays the step on screen.
 	expect(stage.picks).toEqual(["n1"]);
 	expect(current()).toBe("The shape of it");
+	// While a walkthrough is presented, what the step is about stays what the picture is about.
+	expect(surface().classList.contains("is-probing")).toBe(false);
 });

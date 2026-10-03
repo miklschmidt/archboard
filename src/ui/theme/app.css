@@ -246,6 +246,41 @@
 	}
 }
 
+/* The picture answers a poke. While a part is picked out, or the pointer rests
+   on one, what it is wired to stays as drawn and the rest recedes. The recede is
+   a filter and not the opacity the picture's own stylesheet uses, for the reason
+   a presented step's veil is: a filter multiplies with the opacity a ghosted
+   subject is drawn at and with a flight's own writes. The viewer marks what
+   stays (`is-lit`), and the surface says how strongly (`is-probing`, and
+   `is-probing-light` for the pointer's rest, which recedes the rest less). */
+[data-slot="semantic-board-surface"] [data-semantic-id],
+[data-slot="semantic-board-surface"] [data-traffic],
+[data-slot="semantic-board-surface"] [data-members] {
+	transition: filter var(--lighting-ms, 0ms) ease-out;
+}
+[data-slot="semantic-board-surface"].is-probing {
+	--recede: 0.3;
+}
+[data-slot="semantic-board-surface"].is-probing.is-probing-light {
+	--recede: 0.5;
+}
+[data-slot="semantic-board-surface"].is-probing [data-semantic-id],
+[data-slot="semantic-board-surface"].is-probing [data-traffic],
+[data-slot="semantic-board-surface"].is-probing [data-members] {
+	filter: opacity(var(--recede));
+}
+[data-slot="semantic-board-surface"].is-probing .is-lit,
+[data-slot="semantic-board-surface"].is-probing .is-lit [data-semantic-id] {
+	filter: none;
+}
+@media (prefers-reduced-motion: reduce) {
+	[data-slot="semantic-board-surface"] [data-semantic-id],
+	[data-slot="semantic-board-surface"] [data-traffic],
+	[data-slot="semantic-board-surface"] [data-members] {
+		transition: none;
+	}
+}
+
 /* A picture's traffic changes on every frame. On a compositing layer of its own
    only the traffic is painted again, not the cards and labels under it, which
    took a third of a core on an idle board (TASK-385.01). */

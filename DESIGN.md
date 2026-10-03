@@ -224,6 +224,8 @@ both themes. The file app.css gives each one a `shadow-*` utility.
 
 **The Still Shadow Rule.** A shadow over the picture is a static box-shadow. Nothing over the picture viewport uses backdrop-filter, filter, blur or animation.
 
+**The Picture Answers Rule.** The light belongs to the picture, not to the shell. When a part is picked out or the pointer rests on one, the viewer marks what stays as drawn, and the picture's own subjects recede under an opacity filter. The shell lays no layer, blur or halo over the picture to do it.
+
 **The Planes Not Lines Rule.** Regions read as layered planes. A one-pixel rule stays only where it draws the edge of a control or a card, or where it divides regions on one plane.
 
 ## Shapes

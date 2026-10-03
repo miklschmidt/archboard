@@ -3,8 +3,19 @@
 //
 // A container's relationships are the ones that cross its edge, so the parts
 // inside it are not its neighbours: it stands for everything it holds.
+//
+// The same reading says what the picture lights when a part is poked (`litBy`):
+// the part and all it holds, every relationship that touches any of it, and the
+// parts at their other ends.
 
 import type { SemanticEdge, SemanticNode, VariantContent } from "@/shared/semantic-board/index";
+import type { SemanticAtlas } from "@/ui/semantic-board-canvas/api/semantic-boards";
+
+/** The parts and relationships of a variant, as far as containment and wiring are concerned. */
+interface Wiring {
+	readonly nodes: readonly Pick<SemanticNode, "id" | "parent">[];
+	readonly edges: readonly Pick<SemanticEdge, "id" | "from" | "to">[];
+}
 
 /** One relationship, seen from the part it is asked about. */
 interface Link {
@@ -26,7 +37,7 @@ interface Connections {
  * @param id The part.
  * @returns The ids.
  */
-function subtreeOf(nodes: readonly SemanticNode[], id: string): ReadonlySet<string> {
+function subtreeOf(nodes: Wiring["nodes"], id: string): ReadonlySet<string> {
 	const inside = new Set([id]);
 	const open = [id];
 	while (open.length > 0) {
@@ -59,4 +70,86 @@ function connectionsOf(content: VariantContent, id: string): Connections {
 	return { sends, receives };
 }
 
-export { connectionsOf, type Connections, type Link };
+/**
+ * Add the containers that hold some of a set of parts, so a lit part is never
+ * seen inside a frame that has receded.
+ * @param nodes Every part of the variant.
+ * @param lit The ids lit so far, which this adds to.
+ */
+function withContainers(nodes: Wiring["nodes"], lit: Set<string>): void {
+	const parentOf = new Map(nodes.map((node) => [node.id, node.parent]));
+	for (const id of lit) {
+		for (let up = parentOf.get(id); up !== undefined && !lit.has(up); up = parentOf.get(up)) {
+			lit.add(up);
+		}
+	}
+}
+
+/**
+ * Add the parts at both ends of every relationship lit so far.
+ * @param edges Every relationship of the variant.
+ * @param lit The ids lit so far, which this adds to.
+ */
+function withEnds(edges: Wiring["edges"], lit: Set<string>): void {
+	for (const edge of edges) {
+		if (lit.has(edge.id)) {
+			lit.add(edge.from);
+			lit.add(edge.to);
+		}
+	}
+}
+
+/**
+ * A part, what it holds, and every relationship with an end in any of it.
+ * @param wiring What the variant says.
+ * @param id The part.
+ * @returns The ids.
+ */
+function aroundPart(wiring: Wiring, id: string): Set<string> {
+	const lit = new Set(subtreeOf(wiring.nodes, id));
+	for (const edge of wiring.edges) {
+		if (lit.has(edge.from) || lit.has(edge.to)) lit.add(edge.id);
+	}
+	return lit;
+}
+
+/**
+ * Everything the picture leaves standing when a part, or a relationship, is poked.
+ *
+ * For a part that is the part and what it holds, every relationship with an end
+ * in any of it (those between its own parts included, which are its content),
+ * the parts at their other ends, and the containers that hold any of them. For
+ * a relationship it is the relationship, its two ends and their containers.
+ * @param wiring What the variant says.
+ * @param id The semantic id that was poked.
+ * @returns The ids, or null for an id that is neither a part nor a relationship.
+ */
+function litBy(wiring: Wiring, id: string): ReadonlySet<string> | null {
+	const isPart = wiring.nodes.some((node) => node.id === id);
+	if (!isPart && !wiring.edges.some((edge) => edge.id === id)) {
+		return null;
+	}
+	const lit = isPart ? aroundPart(wiring, id) : new Set([id]);
+	withEnds(wiring.edges, lit);
+	withContainers(wiring.nodes, lit);
+	return lit;
+}
+
+/**
+ * What the picture lights for a poke, when it has anything drawn to light: a
+ * part wired to nothing the picture draws has nothing to say.
+ * @param wiring What the variant says, or null while that is not known.
+ * @param atlas Where every subject of the picture ended up.
+ * @param id The semantic id that was poked, or null.
+ * @returns The ids to leave standing, or null for no light.
+ */
+function litInPicture(
+	wiring: Wiring | null,
+	atlas: SemanticAtlas,
+	id: string | null,
+): ReadonlySet<string> | null {
+	const lit = wiring === null || id === null ? null : litBy(wiring, id);
+	return lit !== null && [...lit].some((one) => one in atlas.edges) ? lit : null;
+}
+
+export { connectionsOf, litBy, litInPicture, type Connections, type Link, type Wiring };

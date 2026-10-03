@@ -15,6 +15,7 @@ import {
 	useState,
 	type JSX,
 	type KeyboardEvent,
+	type PointerEvent,
 	type ReactNode,
 } from "react";
 
@@ -35,6 +36,7 @@ import {
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 import { useDiagramGestures } from "@/ui/semantic-board-canvas/hooks/use-diagram-gestures";
 import { useDrillOpen } from "@/ui/semantic-board-canvas/hooks/use-drill-open";
+import { useLighting } from "@/ui/semantic-board-canvas/hooks/use-lighting";
 import {
 	usePictureTransition,
 	type StagedPicture,
@@ -43,6 +45,7 @@ import { usePresentationArrival } from "@/ui/semantic-board-canvas/hooks/use-pre
 import { useSubjectTip } from "@/ui/semantic-board-canvas/hooks/use-subject-tip";
 import { useViewerMarks } from "@/ui/semantic-board-canvas/hooks/use-viewer-marks";
 import { useStickyHeads } from "@/ui/semantic-board-canvas/hooks/use-sticky-heads";
+import { useSweep } from "@/ui/semantic-board-canvas/hooks/use-sweep";
 import { FAR_SCALE, PAN_STEP, type Size } from "@/ui/semantic-board-canvas/lib/camera";
 import {
 	leavePicture,
@@ -319,16 +322,40 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	// After the picture is staged, so a picture that just replaced a leaving one
 	// is never mistaken for it.
 	const departure = useLeaving(picture, props.departure, reducedMotion);
-	useViewerMarks(picture, { selection, focus, group: props.group, veil: props.veil });
+	const reading = drawnReading(props.reading, drawing);
+	// What the picture lights for a poke gives way to what a presented step or a
+	// group says the picture is about, and to the picture leaving.
+	const lighting = useLighting({
+		reading,
+		atlas: drawing.atlas,
+		selection,
+		veil: props.veil,
+		presenting: props.presenting,
+		group: props.group,
+		departure,
+	});
+	useViewerMarks(picture, { selection, focus, group: props.group, veil: lighting.standing });
+	useSweep(picture, lighting.lit, reducedMotion);
 	useStickyHeads(picture, drawing.atlas);
 	// Seen from far away, each card's name is drawn larger in place of what it
 	// says it does, which nobody reads at that size. Read as a yes or no, so the
 	// diagram is drawn again only when it flips, not on every move of the camera.
 	const far = useCameraWith(camera, seenFromFar);
-	const marks = surfaceMarks({ veiled: props.veil !== null, far });
+	const marks = surfaceMarks({ veiled: props.veil !== null, far, probing: lighting.mode });
 	const tip = useSubjectTip({ drawing, camera });
-	const { dismiss: dismissTip, onHover } = tip;
-	const reading = drawnReading(props.reading, drawing);
+	const { dismiss: dismissTip, onHover: tipHover } = tip;
+	const { onHover: lightHover, release: leave } = lighting;
+	const onHover = useCallback(
+		(event: PointerEvent<HTMLElement>): void => {
+			tipHover(event);
+			lightHover(event);
+		},
+		[tipHover, lightHover],
+	);
+	const onPointerLeave = useCallback((): void => {
+		dismissTip();
+		leave();
+	}, [dismissTip, leave]);
 	const openDown = useDrillOpen(reading, props.onOpenDown);
 	const { gesture, pointer } = useDiagramGestures({
 		camera,
@@ -338,6 +365,10 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		dismissTip,
 		openDown,
 	});
+	// A drag moves the picture under the pointer, so what the pointer rested on is no longer there.
+	useEffect(() => {
+		if (gesture === "dragging") leave();
+	}, [gesture, leave]);
 	// A drag draws a frame for every move, and moving traffic paints its lines
 	// again in each of them, more of them the closer the camera is. The traffic
 	// stands still until the drag ends.
@@ -390,7 +421,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 					tabIndex={0}
 					onKeyDown={onKeyDown}
 					{...pointer}
-					onPointerLeave={dismissTip}
+					onPointerLeave={onPointerLeave}
 					onWheel={dismissTip}
 					className={`relative flex min-h-0 min-w-0 flex-1 overflow-hidden outline-none ${
 						gesture === "idle" ? "cursor-grab" : "cursor-grabbing"
