@@ -272,7 +272,7 @@ on and its plan stand above the keys. When it is ready and on nothing, the dock
 says nothing, because the keys do. While voice is on, the raised voice circle
 takes the head of the dock, with the gold ring and the waveform, beside the
 state, what the agent is on and the voice's own line, and the conversation's
-key moves to the dock's top corner.
+key becomes a quiet icon in the voice line, beside mute and subtitles.
 
 The tray is lit by what the agent is doing: a warm wash spreads from the voice
 circle while voice is on, and a quieter one in the status colour while the agent

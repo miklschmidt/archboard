@@ -99,13 +99,7 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 		actions,
 		voice,
 		steps: dockSteps(view),
-		toggle: (
-			<ConversationToggle
-				open={props.panelOpen}
-				unread={props.unread}
-				onToggle={props.onTogglePanel}
-			/>
-		),
+		conversation: { open: props.panelOpen, unread: props.unread, onToggle: props.onTogglePanel },
 	};
 	return (
 		<section
@@ -126,8 +120,15 @@ interface DockParts {
 	readonly actions: AgentActions;
 	readonly voice: AgentVoiceView;
 	readonly steps: readonly CardStep[];
-	/** The key to the conversation. */
-	readonly toggle: JSX.Element;
+	/** The way to the conversation. */
+	readonly conversation: ConversationState;
+}
+
+/** Whether the conversation is open, whether words wait in it unread, and the toggle. */
+interface ConversationState {
+	readonly open: boolean;
+	readonly unread: boolean;
+	readonly onToggle: () => void;
 }
 
 /**
@@ -148,7 +149,7 @@ function CalmDock(props: DockParts): JSX.Element {
 			{voice.problem !== null && <VoiceProblem problem={voice.problem} />}
 			<div className="flex items-center gap-2">
 				<TalkKey voice={voice} actions={actions} problemId={VOICE_PROBLEM_ID} />
-				{props.toggle}
+				<ConversationToggle {...props.conversation} />
 			</div>
 		</>
 	);
@@ -168,9 +169,8 @@ function LiveDock(props: DockParts): JSX.Element {
 				<VoiceCircle voice={voice} actions={actions} problemId={VOICE_PROBLEM_ID} />
 				<div className="flex min-w-0 flex-1 flex-col">
 					<Activity status={status} now={props.now} actions={actions} />
-					<VoiceLine voice={voice} actions={actions} />
+					<VoiceLine voice={voice} actions={actions} conversation={props.conversation} />
 				</div>
-				<div className="self-start">{props.toggle}</div>
 			</div>
 			{props.steps.length > 0 && (
 				<PlanSteps
@@ -289,15 +289,17 @@ function WideAction(props: {
 
 /**
  * The voice in a word, why it cannot start when it cannot, and mute and
- * subtitles while it is on.
- * @param props The voice and the actions.
+ * subtitles while it is on, with the way to the conversation beside them.
+ * @param props The voice, the actions and the conversation.
  * @param props.voice The voice.
  * @param props.actions The actions.
+ * @param props.conversation The way to the conversation.
  * @returns The line.
  */
 function VoiceLine(props: {
 	readonly voice: AgentVoiceView;
 	readonly actions: AgentActions;
+	readonly conversation: ConversationState;
 }): JSX.Element {
 	const { voice } = props;
 	const state = circleState(voice, useAudible(voice));
@@ -315,6 +317,7 @@ function VoiceLine(props: {
 				{VOICE_WORDS[state]}
 			</output>
 			{on && <LiveControls voice={voice} actions={props.actions} />}
+			<ConversationToggle {...props.conversation} compact />
 		</div>
 	);
 }
@@ -346,37 +349,56 @@ function LiveControls(props: {
 	);
 }
 
+/** The conversation's key beside Talk, shut, and pressed in with a gold mark under it. */
+const KEY = "size-8 shrink-0 rounded-control! [&_svg]:size-4";
+const KEY_OPEN =
+	"bg-muted text-foreground shadow-pressed before:bg-primary-mark before:absolute before:inset-x-2 before:bottom-[3px] before:h-0.5 before:rounded-full";
+/** The conversation's icon in the voice line, lit while it is open. */
+const ICON_OPEN = "bg-sidebar-accent text-foreground";
+const SHUT = "text-muted-foreground";
+/** The dot for words waiting unread, on the key and on the icon. */
+const DOT = "bg-primary pointer-events-none absolute size-1.5 rounded-full";
+
 /**
- * The key to the conversation beside the navigator, which is where the composer
- * is: pressed in while it is open, with a gold dot while words wait in it unread.
- * @param props Whether it is open, whether words wait, and the toggle.
+ * How the conversation's control looks, by whether it is open and which form it takes.
+ * @param open Whether the conversation is open.
+ * @param compact Whether it is an icon in the voice line, not a key.
+ * @returns The classes.
+ */
+function toggleClass(open: boolean, compact: boolean): string {
+	if (compact) return open ? ICON_OPEN : SHUT;
+	return cn(KEY, open ? KEY_OPEN : SHUT);
+}
+
+/**
+ * The way to the conversation beside the navigator, which is where the composer
+ * is, with a gold dot while words wait in it unread. Beside Talk it is a raised
+ * key, pressed in with a gold mark under it while the conversation is open; in
+ * the voice line it is a quiet icon like mute and subtitles, lit while it is open.
+ * @param props Whether it is open, whether words wait, the toggle and its form.
  * @param props.open Whether it is open.
  * @param props.unread Whether words wait unread.
  * @param props.onToggle Open or close it.
- * @returns The key.
+ * @param props.compact Whether it is an icon in the voice line, not a key.
+ * @returns The control.
  */
-function ConversationToggle(props: {
-	readonly open: boolean;
-	readonly unread: boolean;
-	readonly onToggle: () => void;
-}): JSX.Element {
+function ConversationToggle(
+	props: ConversationState & { readonly compact?: boolean },
+): JSX.Element {
+	const { open } = props;
+	const compact = props.compact === true;
 	return (
 		<IconAction
-			variant="outline"
-			label={props.open ? "Close the conversation" : "Open the conversation"}
+			variant={compact ? "ghost" : "outline"}
+			label={open ? "Close the conversation" : "Open the conversation"}
 			onClick={props.onToggle}
-			className={cn(
-				"rounded-control! size-8 shrink-0 [&_svg]:size-4",
-				props.open
-					? "bg-muted text-foreground shadow-pressed before:bg-primary-mark before:absolute before:inset-x-2 before:bottom-[3px] before:h-0.5 before:rounded-full"
-					: "text-muted-foreground",
-			)}
+			className={toggleClass(open, compact)}
 		>
 			<RiChat3Line />
-			{props.unread && !props.open && (
+			{props.unread && !open && (
 				<span
 					aria-hidden="true"
-					className="bg-primary ring-card pointer-events-none absolute top-1 right-1 size-1.5 rounded-full ring-2"
+					className={cn(DOT, compact ? "top-0.5 right-0.5" : "ring-card top-1 right-1 ring-2")}
 				/>
 			)}
 		</IconAction>
