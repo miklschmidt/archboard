@@ -93,6 +93,7 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 	return (
 		<section
 			data-slot="agent-dock"
+			data-agent-tone={status.tone}
 			aria-label="Agent"
 			className="border-border bg-raised shadow-edge-up relative flex shrink-0 flex-col gap-3 border-t px-4 pt-4 pb-3"
 		>
