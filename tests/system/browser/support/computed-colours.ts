@@ -47,9 +47,9 @@ const edgeInks = (
 			`  band: opaque(getComputedStyle(band).stroke),` +
 			`  head: opaque(getComputedStyle(head).fill === "none"` +
 			`   ? getComputedStyle(head).stroke : getComputedStyle(head).fill),` +
-			`  streams: [...document.querySelectorAll("${surface} [data-traffic='${id}'] .ab-pulse")].map((pulse) => [...new Set(` +
-			// The hot core, the last part drawn, is nearer the text colour than the relationship's.
-			`   [...pulse.querySelectorAll("path:not(:last-of-type)")].map((path) => opaque(getComputedStyle(path).stroke)))].join("|")),` +
+			// A pulse is painted with a gradient, and its first stop is the colour of its body.
+			`  streams: [...document.querySelectorAll("${surface} [data-traffic='${id}'] .ab-pulse")].map((pulse) =>` +
+			`   opaque(getComputedStyle(pulse.querySelector("stop")).stopColor)),` +
 			` }; })()`,
 	);
 

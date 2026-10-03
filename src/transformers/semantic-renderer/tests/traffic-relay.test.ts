@@ -38,7 +38,10 @@ function lane(id: string, from: string, to: string, over: Partial<Lane> = {}): L
  * @returns How a pulse crosses any card.
  */
 function round(length: number) {
-	return () => ({ length, path: "M0,0 L1,1" });
+	return () => ({
+		length,
+		curve: { from: { x: 0, y: 0 }, segments: [{ kind: "line" as const, to: { x: 1, y: 1 } }] },
+	});
 }
 
 /**

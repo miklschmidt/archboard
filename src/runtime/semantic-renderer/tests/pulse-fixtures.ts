@@ -3,7 +3,6 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import type { VariantContent } from "@/shared/semantic-board/index";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
-import type { PulseLayer } from "@/runtime/semantic-renderer/tests/drawn-traffic";
 
 /** What a moving mark looks like in the markup, whichever grammar drew it. */
 export const MOTION = /<animate(?:Motion|Transform)?\b|@keyframes|animation:/u;
@@ -166,13 +165,4 @@ export function lengthOf(d: string): number {
 				sum + Math.hypot(point.x - points[index]!.x, point.y - points[index]!.y),
 			0,
 		);
-}
-
-/**
- * The layer that is the bright head of a pulse: the last one drawn.
- * @param layers One pulse's layers.
- * @returns The layer.
- */
-export function headLayer(layers: readonly PulseLayer[]): PulseLayer {
-	return layers.at(-2)!;
 }

@@ -149,12 +149,13 @@ test("crossing clearances share the drawn curve and narrowly clear the ink benea
 	}
 	for (const upper of lines) {
 		// The line and its halo: no background patch, and both on the same drawn
-		// curve. Its traffic rides that curve too, stopping short of the head.
+		// curve. Its traffic rides that curve too, a piece at a time, stopping short of
+		// the head: every piece but the last is a piece of the line itself.
 		expect(upper.own).toBe(2);
 		expect(upper.paths).toHaveLength(1);
-		expect(upper.rides.length).toBeLessThanOrEqual(1);
-		for (const ride of upper.rides) {
-			expect(upper.paths[0]!.startsWith(ride.replace(/ [LC][^LC]*$/u, ""))).toBe(true);
+		for (const ride of upper.rides.slice(0, -1)) {
+			const piece = ride.replace(/^M[-\d.,]+ L/u, "").replace(/ L[-\d.,]+$/u, "");
+			expect(upper.paths[0]!).toContain(piece);
 		}
 		for (const bridge of roundBridges(upper.paths[0]!)) {
 			const localCurve = bridge.span.trim().replace(/^L/u, "M");

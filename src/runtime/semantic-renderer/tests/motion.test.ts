@@ -1,19 +1,17 @@
 import { describe, expect, test } from "bun:test";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
 import {
-	headsAt,
-	pulseLayers,
-	rimLayers,
+	beams,
+	rimBeams,
 	speedOf,
-	trafficLayers,
+	trafficBeams,
 } from "@/runtime/semantic-renderer/tests/drawn-traffic";
 import {
 	SAMPLE,
 	chain,
 	drawn,
-	headLayer,
 	lengthOf,
-	pointsOf,
+	pointsOf as routeOf,
 	pulsesIn,
 	pulsesOn,
 	solo,
@@ -63,11 +61,13 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 			{ id: "cd", from: "c", to: "d", kind: "call" },
 			{ id: "ad", from: "a", to: "d", kind: "call", traffic: { speed: 80, volume: 1 } },
 		]);
-		const [short, long] = [trafficLayers(svg, "ab"), trafficLayers(svg, "ad")];
-		expect(lengthOf(long[0]!.d)).toBeGreaterThan(lengthOf(short[0]!.d) + 50);
-		for (const layer of [...short, ...long]) expect(speedOf(layer)).toBeCloseTo(160, 1);
+		const [short, long] = [trafficBeams(svg, "ab")[0]!, trafficBeams(svg, "ad")[0]!];
+		expect(short.pieces.length).toBeGreaterThan(0);
+		expect(long.pieces.length).toBeGreaterThan(0);
+		expect(speedOf(short)).toBeCloseTo(160, 1);
+		expect(speedOf(long)).toBeCloseTo(160, 1);
 		// The authored speed still says which line runs hotter.
-		for (const layer of trafficLayers(svg, "bc")) expect(speedOf(layer)).toBeCloseTo(320, 1);
+		expect(speedOf(trafficBeams(svg, "bc")[0]!)).toBeCloseTo(320, 1);
 	});
 
 	test("a line carries a steady train, spaced by its speed over its volume", async () => {
@@ -76,57 +76,48 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 			[60, 1],
 			[76, 2],
 		] as const) {
-			const layers = trafficLayers(await solo({ speed, volume }), "e");
-			expect(layers.length).toBeGreaterThan(1);
-			for (const layer of layers) {
-				// One dash and one gap, forever: no pulse comes early or late.
-				expect(layer.dash + layer.gap).toBeCloseTo(speed / volume, 1);
-				expect(layer.cycle).toBeCloseTo(1 / (2 * volume), 2);
-				// The dash moves exactly one spacing a cycle, so the train has no seam.
-				expect(Math.abs(layer.values[0]! - layer.values[1]!)).toBeCloseTo(speed / volume, 1);
+			const [beam] = trafficBeams(await solo({ speed, volume }), "e");
+			// One gradient that starts over every spacing: no pulse comes early or late.
+			expect(beam!.period).toBeCloseTo(speed / volume, 1);
+			for (const piece of beam!.pieces) {
+				expect(piece.cycle).toBeCloseTo(1 / (2 * volume), 2);
+				// The bar slides exactly one spacing a cycle, so the train has no seam.
+				expect(Math.abs(piece.values[1]! - piece.values[0]!)).toBeCloseTo(speed / volume, 1);
 			}
 		}
 	});
 
 	test("pulses are never closer than a blur and never further apart than the line is long", async () => {
-		const close = trafficLayers(await solo({ speed: 10, volume: 1 }), "e");
-		const sparse = trafficLayers(await solo({ speed: 400, volume: 1 }), "e");
-		expect(close[0]!.dash + close[0]!.gap).toBeCloseTo(36, 1);
-		expect(sparse[0]!.dash + sparse[0]!.gap).toBeCloseTo(lengthOf(sparse[0]!.d), 0);
+		const close = trafficBeams(await solo({ speed: 10, volume: 1 }), "e")[0]!;
+		const sparseSvg = await solo({ speed: 400, volume: 1 });
+		const sparse = trafficBeams(sparseSvg, "e")[0]!;
+		expect(close.period).toBeCloseTo(36, 1);
+		// The spacing holds to the ride, which stops short of the arrowhead: a pulse is always on the line.
+		const line = /<path d="([^"]+)"[^>]*marker-end=/u.exec(sparseSvg)![1]!;
+		expect(sparse.period!).toBeLessThanOrEqual(lengthOf(line));
+		expect(sparse.period!).toBeGreaterThan(lengthOf(line) - 14);
 	});
 
-	test("every line carries a pulse at every moment, however sparse its traffic", async () => {
-		const layers = trafficLayers(await solo({ speed: 40, volume: 0.001 }), "e");
-		const length = lengthOf(layers[0]!.d);
-		const head = headLayer(layers);
-		for (let step = 0; step < 24; step += 1) {
-			expect(headsAt(head, (head.cycle * step) / 24, length).length).toBeGreaterThanOrEqual(1);
-		}
-	});
-
-	test("a still picture shows the train, every part of a pulse ending on one head", async () => {
-		const layers = trafficLayers(await solo({ speed: 38, volume: 1 }), "e");
-		const length = lengthOf(layers[0]!.d);
-		for (const layer of layers) expect(layer.begin).toBe(0);
-		for (const time of [0, 0.3, 0.77]) {
-			const heads = layers.map((layer) => headsAt(layer, time, length));
-			expect(heads[0]!.length).toBeGreaterThan(0);
-			for (const mine of heads) {
-				expect(mine.length).toBe(heads[0]!.length);
-				mine.forEach((head, index) => expect(head).toBeCloseTo(heads[0]![index]!, 0));
-			}
-		}
+	test("a pulse is a gradient of light shaped to its line by a mask, one piece to a run and a bend", async () => {
+		const [beam] = trafficBeams(await solo({ speed: 38, volume: 1 }), "e");
+		expect(beam!.pieces.length).toBeGreaterThanOrEqual(1);
+		// Light falls off across the line in layers, not at an edge.
+		expect(beam!.layers).toBeGreaterThanOrEqual(3);
+		for (const piece of beam!.pieces) expect(piece.begin).toBe(0);
+		// Every piece slides on one clock.
+		expect(new Set(beam!.pieces.map(({ cycleWritten }) => cycleWritten)).size).toBe(1);
 	});
 
 	test("a pulse sinks into the base of the arrowhead and never covers it", async () => {
 		const svg = await solo({});
 		const group = svg.split('data-semantic-id="e"')[1]!.split("data-semantic-id=")[0]!;
 		const line = /<path d="([^"]+)"[^>]*marker-end=[^>]*>/u.exec(group)!;
-		const end = pointsOf(line[1]!).at(-1)!;
+		const end = routeOf(line[1]!).at(-1)!;
 		// A filled head's ink reaches four line widths back from the route's end.
 		const headBase = 4 * Number(/stroke-width="([^"]+)"/u.exec(line[0])![1]);
-		for (const layer of trafficLayers(svg, "e")) {
-			const rideEnd = pointsOf(layer.d).at(-1)!;
+		for (const piece of trafficBeams(svg, "e")[0]!.pieces) {
+			// The mask runs a hair past the end of the ride; the ride itself stops short.
+			const rideEnd = piece.points.at(-2)!;
 			expect(Math.hypot(end.x - rideEnd.x, end.y - rideEnd.y)).toBeGreaterThanOrEqual(headBase);
 		}
 	});
@@ -146,13 +137,10 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 			expect(pulsesOn(svg, "busy")).toBe(1);
 			// However extreme, traffic draws about as much as ordinary traffic does.
 			expect(svg.length).toBeLessThan(calm.svg.length * 1.1);
-			for (const layer of trafficLayers(svg, "busy")) {
-				expect(layer.cycleWritten).not.toContain("e");
-				expect(layer.cycle).toBeGreaterThan(0);
-				for (const value of [layer.dash, layer.gap, ...layer.values]) {
-					expect(Number.isFinite(value)).toBe(true);
-				}
-				expect(layer.dash + layer.gap).toBeGreaterThan(0);
+			for (const piece of trafficBeams(svg, "busy")[0]!.pieces) {
+				expect(piece.cycleWritten).not.toContain("e");
+				expect(piece.cycle).toBeGreaterThan(0);
+				for (const value of piece.values) expect(Number.isFinite(value)).toBe(true);
 			}
 		});
 	}
@@ -168,11 +156,11 @@ describe("a pulse is handed on through a card", () => {
 			{ id: "bd", from: "b", to: "d", kind: "call", traffic: { speed: 40, volume: 2 } },
 		]);
 		// B takes the pulses of ab and gives them to bc: it carries them round its edge.
-		expect(rimLayers(svg, "b").length).toBeGreaterThan(0);
+		expect(rimBeams(svg, "b").length).toBeGreaterThan(0);
 		// The line out at another volume keeps a rhythm of its own, and so does the card it ends at.
-		expect(rimLayers(svg, "c")).toHaveLength(0);
-		expect(rimLayers(svg, "d")).toHaveLength(0);
-		expect(rimLayers(svg, "a")).toHaveLength(0);
+		expect(rimBeams(svg, "c")).toHaveLength(0);
+		expect(rimBeams(svg, "d")).toHaveLength(0);
+		expect(rimBeams(svg, "a")).toHaveLength(0);
 	});
 
 	test("lines that keep different time hand nothing on", async () => {
@@ -187,7 +175,7 @@ describe("a pulse is handed on through a card", () => {
 					...(out === undefined ? {} : { traffic: out }),
 				},
 			]);
-			expect(rimLayers(svg, "b")).toHaveLength(0);
+			expect(rimBeams(svg, "b")).toHaveLength(0);
 		}
 	});
 
@@ -203,18 +191,20 @@ describe("a pulse is handed on through a card", () => {
 				.slice(1)
 				.map(Number);
 		const [x, y, width, height] = card as [number, number, number, number];
-		const layers = rimLayers(svg, "b");
-		expect(layers.length).toBeGreaterThan(0);
-		for (const layer of layers) {
-			for (const point of pointsOf(layer.d)) {
-				// On the outline of the card: as near one of its four sides as a rounded corner is.
-				const near = Math.min(
-					Math.abs(point.x - x),
-					Math.abs(point.x - (x + width)),
-					Math.abs(point.y - y),
-					Math.abs(point.y - (y + height)),
-				);
-				expect(near).toBeLessThan(2);
+		const around = rimBeams(svg, "b");
+		expect(around.length).toBeGreaterThan(0);
+		for (const beam of around) {
+			for (const piece of beam.pieces) {
+				for (const point of piece.points) {
+					// On the outline of the card: as near one of its four sides as a rounded corner is.
+					const near = Math.min(
+						Math.abs(point.x - x),
+						Math.abs(point.x - (x + width)),
+						Math.abs(point.y - y),
+						Math.abs(point.y - (y + height)),
+					);
+					expect(near).toBeLessThan(2);
+				}
 			}
 		}
 	});
@@ -226,11 +216,11 @@ describe("a pulse is handed on through a card", () => {
 		]);
 		const route = (id: string) => {
 			const group = svg.split(`data-semantic-id="${id}"`)[1]!.split("data-semantic-id=")[0]!;
-			return pointsOf(/<path d="([^"]+)"[^>]*marker-end=[^>]*>/u.exec(group)![1]!);
+			return routeOf(/<path d="([^"]+)"[^>]*marker-end=[^>]*>/u.exec(group)![1]!);
 		};
 		const [arrives, leaves] = [route("ab").at(-1)!, route("bc")[0]!];
-		const [way] = rimLayers(svg, "b");
-		const [first, last] = [pointsOf(way!.d)[0]!, pointsOf(way!.d).at(-1)!];
+		const [way] = rimBeams(svg, "b");
+		const [first, last] = [way!.pieces[0]!.points[1]!, way!.pieces.at(-1)!.points.at(-2)!];
 		expect(Math.hypot(first.x - arrives.x, first.y - arrives.y)).toBeLessThan(2);
 		expect(Math.hypot(last.x - leaves.x, last.y - leaves.y)).toBeLessThan(2);
 	});
@@ -240,7 +230,7 @@ describe("a pulse is handed on through a card", () => {
 			{ id: "ab", from: "a", to: "b", kind: "call", traffic: SAME },
 			{ id: "bc", from: "b", to: "c", kind: "call", traffic: SAME },
 		]);
-		for (const layer of rimLayers(svg, "b")) expect(speedOf(layer)).toBeCloseTo(SAME.speed * 2, 1);
+		for (const beam of rimBeams(svg, "b")) expect(speedOf(beam)).toBeCloseTo(SAME.speed * 2, 1);
 	});
 
 	test("a reader who asked for less motion loses the pulses on a card's edge too", async () => {
@@ -248,10 +238,9 @@ describe("a pulse is handed on through a card", () => {
 			{ id: "ab", from: "a", to: "b", kind: "call", traffic: SAME },
 			{ id: "bc", from: "b", to: "c", kind: "call", traffic: SAME },
 		]);
-		expect(pulseLayers(svg).length).toBeGreaterThan(0);
+		expect(beams(svg).length).toBeGreaterThan(0);
 		expect(svg).toContain("@media(prefers-reduced-motion:reduce){.ab-pulse{display:none}}");
-		// Every moving layer sits in a group that rule hides.
-		expect(svg.split("<animate ").length - 1).toBeGreaterThan(0);
+		// Every moving bar sits in a group that rule hides.
 		expect(svg.split('<g class="ab-pulse"').length - 1).toBeGreaterThanOrEqual(3);
 	});
 });

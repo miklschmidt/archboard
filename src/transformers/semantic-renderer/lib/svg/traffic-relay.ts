@@ -12,6 +12,7 @@
 // every time.
 import { type SemanticEdge } from "@/shared/semantic-board/index";
 import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
+import type { Curve } from "@/transformers/semantic-renderer/lib/layout/curves";
 
 /**
  * The least distance between two pulses on a line, in diagram units: closer
@@ -76,8 +77,8 @@ interface Rhythm {
 interface Across {
 	/** How long it is. */
 	readonly length: number;
-	/** The way, as path data, when it is drawn. */
-	readonly path?: string;
+	/** The way, when it is drawn. */
+	readonly curve?: Curve;
 }
 
 /**
@@ -98,8 +99,8 @@ interface Crossing {
 	readonly card: string;
 	/** The line it leaves the card on. */
 	readonly onto: string;
-	/** The way, as path data. */
-	readonly path: string;
+	/** The way. */
+	readonly curve: Curve;
 	/** How long it is. */
 	readonly length: number;
 	/** How its pulses move along it. */
@@ -234,11 +235,11 @@ function phasesOf(
 			const phase = within(phases.get(lane.id)! - lane.length, spacing);
 			phases.set(next.id, within(phase - way.length, spacing));
 			queue.push(next);
-			if (way.path !== undefined && way.length >= MIN_CROSSING) {
+			if (way.curve !== undefined && way.length >= MIN_CROSSING) {
 				crossings.push({
 					card: lane.to,
 					onto: next.id,
-					path: way.path,
+					curve: way.curve,
 					length: way.length,
 					rhythm: { speed, spacing, phase },
 				});
