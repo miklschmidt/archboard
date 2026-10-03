@@ -172,6 +172,7 @@ function PaneStage(props: PaneStageProps): JSX.Element {
 			),
 			notice: <ClaimBanner pane={pane} actions={actions} />,
 			shared: paneCount > 1,
+			active,
 		}),
 		[pane, letter, paneCount, active, actions],
 	);

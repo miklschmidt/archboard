@@ -10,7 +10,7 @@ import { useCallback, type JSX } from "react";
 
 import { cn } from "@/ui/components/class-names";
 import type { ShellActions, ShellPane } from "@/ui/shell/types/contracts";
-import { IconButton } from "@/ui/shell/components/IconButton";
+import { IconButton } from "@/ui/components/IconButton";
 import { presentShortcutLabel } from "@/ui/shell/lib/shortcuts";
 import { StatusDot } from "@/ui/shell/components/StatusDot";
 

@@ -8,7 +8,7 @@ import { useCallback, type JSX, type ReactNode } from "react";
 
 import type { ShellActions, ThemeChoice } from "@/ui/shell/types/contracts";
 import { Brand } from "@/ui/shell/components/Brand";
-import { IconButton } from "@/ui/shell/components/IconButton";
+import { IconButton } from "@/ui/components/IconButton";
 
 /** The settings trigger's id: the dialog it opens returns focus to it. */
 const SETTINGS_TRIGGER_ID = "shell-settings";

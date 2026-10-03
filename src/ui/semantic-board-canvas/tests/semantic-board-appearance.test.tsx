@@ -3,6 +3,7 @@ import { expect, test } from "bun:test";
 
 import { announceSemanticBoardChange } from "@/ui/semantic-board-canvas";
 import { pressKey } from "@/ui/semantic-board-canvas/tests/camera-probes";
+import { sidebarSettled } from "@/ui/semantic-board-canvas/tests/sidebar-probes";
 import {
 	drawing,
 	mountStage,
@@ -69,6 +70,7 @@ test("the legend explains the picture and survives a policy-only restyle", async
 	act(() => {
 		fireEvent.click(part("semantic-sidebar-toggle"));
 	});
+	await sidebarSettled();
 	const camera = surface().style.transform;
 	expect(document.querySelector('[data-slot="semantic-legend"]')).toBeNull();
 

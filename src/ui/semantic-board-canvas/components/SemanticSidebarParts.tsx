@@ -139,7 +139,7 @@ function SidebarChoice(props: SidebarChoiceProps): JSX.Element {
 			aria-pressed={pressed}
 			// The button's 1 px border and 7 px of padding put the words on the text
 			// column, 8 px in from the list's edge; 28 px high on one line.
-			className="hover:bg-sidebar-accent/50 dark:hover:bg-sidebar-accent/50 aria-pressed:bg-sidebar-accent aria-pressed:hover:bg-sidebar-accent aria-pressed:shadow-raised relative h-auto min-h-7 w-full min-w-0 items-start justify-start gap-2 px-[7px] py-[4px] text-left whitespace-normal"
+			className="hover:bg-sidebar-accent/50 dark:hover:bg-sidebar-accent/50 aria-pressed:bg-sidebar-accent aria-pressed:hover:bg-sidebar-accent aria-pressed:shadow-raised relative h-auto min-h-7 w-full min-w-0 items-start justify-start gap-2 px-[7px] py-[4px] text-left whitespace-normal transition-colors"
 			{...rest}
 		>
 			{pressed === true && (

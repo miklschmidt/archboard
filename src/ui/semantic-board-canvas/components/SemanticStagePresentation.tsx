@@ -11,6 +11,7 @@ import { SemanticPresentation } from "@/ui/semantic-board-canvas/components/Sema
 import type { WalkthroughReading } from "@/ui/semantic-board-canvas/hooks/use-walkthrough";
 import type { GroupSelection } from "@/ui/semantic-board-canvas/lib/groups";
 import type { BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
+import type { WalkthroughNarration } from "@/ui/semantic-board-canvas/lib/narration";
 
 /** What the stage hands the presentation. */
 interface PresentationView {
@@ -22,8 +23,8 @@ interface PresentationView {
 	readonly missing: readonly string[];
 	/** Leave the presentation. */
 	readonly onCloseNarrative: () => void;
-	/** Have the open walkthrough narrated, when the shell can. */
-	readonly onNarrate: ((walkthrough: string) => void) | undefined;
+	/** Narrating the open walkthrough aloud, when the shell can. */
+	readonly narration: WalkthroughNarration | undefined;
 	/** What the shell lays over the picture, such as subtitles of a voice; or nothing. */
 	readonly overlay: ReactNode;
 	/** The pane's camera, which keeps its fits clear of the caption. */
@@ -58,7 +59,7 @@ function presentationOver(view: PresentationView): ReactNode {
 			missing={view.missing}
 			onGo={narrative.goTo}
 			onLeave={view.onCloseNarrative}
-			onNarrate={view.onNarrate}
+			narration={view.narration}
 			reserve={view.camera.reserve}
 		/>
 	);

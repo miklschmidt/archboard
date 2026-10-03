@@ -5,7 +5,9 @@
 //
 // It only reads. The boards are read as the pages read them, on the same cache,
 // and only once somebody reaches for the field, so a shell nobody searches
-// reads nothing extra.
+// reads nothing extra. The shortcut that reaches the field is heard by the
+// sidebar's frame, which shows the sidebar when it is away and asks for the
+// field (use-search-request.ts): the field takes focus when it is drawn.
 
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { RiSearchLine } from "@remixicon/react";
@@ -16,12 +18,21 @@ import {
 	useMemo,
 	useRef,
 	useState,
+	type ChangeEvent,
 	type JSX,
 	type KeyboardEvent,
+	type MouseEvent,
+	type RefObject,
 } from "react";
 
 import { addressedVariant } from "@/shared/semantic-board/index";
 import { cn } from "@/ui/components/class-names";
+import { usePaneChrome } from "@/ui/components/PaneChrome";
+import { useSearchRequested } from "@/ui/semantic-board-canvas/hooks/use-search-request";
+import {
+	searchShortcutKeys,
+	searchShortcutLabel,
+} from "@/ui/semantic-board-canvas/lib/search-shortcut";
 import { readBoard } from "@/ui/semantic-board-canvas/lib/board-document";
 import {
 	semanticBoardDocumentQuery,
@@ -89,6 +100,19 @@ function partsOf(board: SearchedBoard, document: unknown): readonly IndexedPart[
 }
 
 /**
+ * Where in a part the words are found.
+ * @param part The part.
+ * @param needle The words, lowercased.
+ * @returns 0 for the start of its name, 1 inside it, 2 in what it is for or where its code is, or null when they are nowhere in it.
+ */
+function rankOf(part: IndexedPart, needle: string): number | null {
+	const at = part.name.toLowerCase().indexOf(needle);
+	if (at === 0) return 0;
+	if (at > 0) return 1;
+	return part.rest.includes(needle) ? 2 : null;
+}
+
+/**
  * The parts whose name, purpose or code path hold the words typed.
  * @param index Every part of every board read.
  * @param query The words.
@@ -101,42 +125,20 @@ function findParts(index: readonly IndexedPart[], query: string): PartHit[] {
 	}
 	const hits: PartHit[] = [];
 	for (const part of index) {
-		const at = part.name.toLowerCase().indexOf(needle);
-		if (at < 0 && !part.rest.includes(needle)) {
-			continue;
+		const rank = rankOf(part, needle);
+		if (rank !== null) {
+			hits.push({ board: part.board, id: part.id, name: part.name, kind: part.kind, rank });
 		}
-		hits.push({
-			board: part.board,
-			id: part.id,
-			name: part.name,
-			kind: part.kind,
-			rank: at === 0 ? 0 : at > 0 ? 1 : 2,
-		});
 	}
 	return hits
 		.toSorted((a, b) => a.rank - b.rank || a.name.localeCompare(b.name))
 		.slice(0, RESULT_LIMIT);
 }
 
-/** Whether a key event asks for the search: Ctrl or Command, Shift and F. */
-function asksForSearch(event: globalThis.KeyboardEvent): boolean {
-	return (
-		(event.ctrlKey || event.metaKey) &&
-		event.shiftKey &&
-		!event.altKey &&
-		event.key.toLowerCase() === "f"
-	);
-}
-
-/** The shortcut as the field says it. */
-const SHORTCUT = "Ctrl ⇧ F";
-
 /** Inputs for the search. */
 interface PartSearchProps {
 	/** The boards of the vault. */
 	readonly boards: readonly SearchedBoard[];
-	/** Whether the shortcut reaches this field: its pane has focus. */
-	readonly listening: boolean;
 	/**
 	 * The person chose a part.
 	 * @param hit The part and the board it is on.
@@ -145,48 +147,192 @@ interface PartSearchProps {
 }
 
 /**
+ * Keep the focus in the field while a result is pressed, so the field does not
+ * lose it, and the list with it, before the press lands.
+ * @param event The press.
+ */
+function keepFocus(event: MouseEvent): void {
+	event.preventDefault();
+}
+
+/** Inputs for one result. */
+interface ResultProps {
+	readonly hit: PartHit;
+	/** Its place in the list, which names it for the field that points at it. */
+	readonly id: string;
+	readonly active: boolean;
+	/** What its kind is called, in the vault's words. */
+	readonly kind: string;
+	readonly onChoose: (hit: PartHit) => void;
+}
+
+/**
+ * One part found: its name, what it is and the board it is on.
+ * @param props The part and what choosing it does.
+ * @returns The result.
+ */
+function Result(props: ResultProps): JSX.Element {
+	const { hit, onChoose } = props;
+	const choose = useCallback((): void => {
+		onChoose(hit);
+	}, [onChoose, hit]);
+	return (
+		// The list is the combobox pattern's listbox, its rows the options: the ARIA
+		// Authoring Practices pattern for a field with results, which is neither a
+		// select nor a datalist, so the two rules that ask for those do not apply.
+		// oxlint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role, jsx-a11y/prefer-tag-over-role -- the ARIA combobox pattern's option
+		<li id={props.id} role="option" aria-selected={props.active}>
+			<button
+				type="button"
+				tabIndex={-1}
+				data-active={props.active ? "" : undefined}
+				onMouseDown={keepFocus}
+				onClick={choose}
+				className="data-active:bg-sidebar-accent hover:bg-sidebar-accent/50 relative flex w-full flex-col px-4 py-1.5 text-left"
+			>
+				{props.active && (
+					<span
+						aria-hidden="true"
+						className="bg-primary-mark absolute inset-y-1 left-0 w-0.5 rounded-full"
+					/>
+				)}
+				<span className="text-control truncate">{hit.name}</span>
+				<span className="text-body text-muted-foreground truncate">
+					{props.kind} on {hit.board.name}
+				</span>
+			</button>
+		</li>
+	);
+}
+
+/** Inputs for the list of results. */
+interface ResultsProps {
+	readonly id: string;
+	readonly results: readonly PartHit[];
+	readonly active: number;
+	readonly kinds: Readonly<Record<string, { readonly name?: string | undefined }>> | undefined;
+	readonly onChoose: (hit: PartHit) => void;
+}
+
+/**
+ * The results under the field, or the word that none match.
+ * @param props The results, which is active and what choosing one does.
+ * @returns The list.
+ */
+function Results(props: ResultsProps): JSX.Element {
+	const { results, kinds } = props;
+	return (
+		<ul
+			id={props.id}
+			// oxlint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role, jsx-a11y/prefer-tag-over-role -- the ARIA combobox pattern's listbox
+			role="listbox"
+			aria-label="Matching parts"
+			className="bg-popover text-popover-foreground border-border shadow-float absolute top-full right-0 left-0 z-40 max-h-[60vh] overflow-y-auto border-b py-1"
+		>
+			{results.map((hit, at) => (
+				<Result
+					key={`${hit.board.key}-${hit.id}`}
+					hit={hit}
+					id={`${props.id}-${at}`}
+					active={at === props.active}
+					kind={kinds?.[hit.kind]?.name ?? hit.kind}
+					onChoose={props.onChoose}
+				/>
+			))}
+			{results.length === 0 && (
+				<li className="text-body text-muted-foreground px-4 py-2">No part matches.</li>
+			)}
+		</ul>
+	);
+}
+
+/**
+ * Take focus when the sidebar's frame says the shortcut was pressed.
+ * @param input The field.
+ */
+function useTakeFocusWhenAsked(input: RefObject<HTMLInputElement | null>): void {
+	const { requested, settled } = useSearchRequested();
+	useEffect(() => {
+		if (!requested) {
+			return;
+		}
+		input.current?.focus();
+		input.current?.select();
+		settled();
+	}, [requested, settled, input]);
+}
+
+/**
+ * What the boards' routes answered, in the boards' order.
+ * @param results Each route's query result.
+ * @returns Each answer, or undefined before it came.
+ */
+function answersOf(results: readonly { readonly data: unknown }[]): unknown[] {
+	return results.map((result) => result.data);
+}
+
+/**
+ * The parts the words typed find on any board, and what the vault calls their
+ * kinds. The boards are read once the field has focus, and not before.
+ * @param boards The boards to search.
+ * @param query The words typed.
+ * @param reading Whether to read the boards.
+ * @returns The results and the kinds.
+ */
+function useFoundParts(boards: readonly SearchedBoard[], query: string, reading: boolean) {
+	const kinds = useQuery(vaultCheckQuery()).data?.policy.nodeKinds;
+	const answers = useQueries({
+		queries: boards.map((board) => ({
+			...semanticBoardDocumentQuery(board.name),
+			enabled: reading,
+		})),
+		combine: answersOf,
+	});
+	const parts = useMemo(
+		() => boards.flatMap((board, at) => partsOf(board, answers[at])),
+		[boards, answers],
+	);
+	const results = useMemo(() => findParts(parts, query), [parts, query]);
+	return { results, kinds };
+}
+
+/**
+ * The shortcut as the field says it. The shortcut reaches the field of the pane
+ * with focus, so only that pane's field shows it, and not while it is typed in.
+ * @param props Whether the field has focus.
+ * @param props.typing Whether the field has focus.
+ * @returns The key hint.
+ */
+function ShortcutHint(props: { readonly typing: boolean }): JSX.Element {
+	const { active } = usePaneChrome();
+	return (
+		<kbd
+			aria-hidden="true"
+			className={cn(
+				"text-technical text-muted-foreground border-border bg-card shadow-raised dark:bg-input/30 rounded-control shrink-0 border px-1 font-mono leading-4",
+				(props.typing || !active) && "invisible",
+			)}
+		>
+			{searchShortcutLabel()}
+		</kbd>
+	);
+}
+
+/**
  * The search field with its results.
  * @param props The boards to read and what to do with a choice.
  * @returns The field.
  */
 function PartSearch(props: PartSearchProps): JSX.Element {
-	const { boards, onChoose, listening } = props;
+	const { boards, onChoose } = props;
 	const input = useRef<HTMLInputElement>(null);
 	const listId = useId();
 	const [query, setQuery] = useState("");
 	const [focused, setFocused] = useState(false);
 	const [active, setActive] = useState(0);
-	const kinds = useQuery(vaultCheckQuery()).data?.policy.nodeKinds;
-	const index = useQueries({
-		queries: boards.map((board) => ({
-			...semanticBoardDocumentQuery(board.name),
-			enabled: focused,
-		})),
-		combine: (results) => results.map((result) => result.data),
-	});
-	const parts = useMemo(
-		() => boards.flatMap((board, at) => partsOf(board, index[at])),
-		[boards, index],
-	);
-	const results = useMemo(() => findParts(parts, query), [parts, query]);
+	const { results, kinds } = useFoundParts(boards, query, focused);
 	const open = focused && query.trim().length > 0;
-
-	useEffect(() => {
-		if (!listening) {
-			return undefined;
-		}
-		const onKey = (event: globalThis.KeyboardEvent): void => {
-			if (document.fullscreenElement !== null || !asksForSearch(event)) {
-				return;
-			}
-			event.preventDefault();
-			input.current?.focus();
-			input.current?.select();
-		};
-		window.addEventListener("keydown", onKey);
-		return () => window.removeEventListener("keydown", onKey);
-	}, [listening]);
-
+	useTakeFocusWhenAsked(input);
 	const choose = useCallback(
 		(hit: PartHit | undefined): void => {
 			if (hit === undefined) {
@@ -198,12 +344,33 @@ function PartSearch(props: PartSearchProps): JSX.Element {
 		},
 		[onChoose],
 	);
+	const change = useCallback((event: ChangeEvent<HTMLInputElement>): void => {
+		setQuery(event.target.value);
+		setActive(0);
+	}, []);
+	const focus = useCallback((): void => {
+		setFocused(true);
+	}, []);
+	const blur = useCallback((): void => {
+		setFocused(false);
+	}, []);
+	// The first Escape lets go of what was typed. The next leaves the field, and
+	// reaches the sidebar around it, which puts away a panel that is laid over the picture.
+	const onEscape = useCallback(
+		(event: KeyboardEvent<HTMLInputElement>): void => {
+			if (query === "") {
+				input.current?.blur();
+				return;
+			}
+			event.stopPropagation();
+			setQuery("");
+		},
+		[query],
+	);
 	const onKeyDown = useCallback(
 		(event: KeyboardEvent<HTMLInputElement>): void => {
 			if (event.key === "Escape") {
-				event.stopPropagation();
-				setQuery("");
-				input.current?.blur();
+				onEscape(event);
 			} else if (event.key === "ArrowDown") {
 				event.preventDefault();
 				setActive((at) => Math.min(at + 1, results.length - 1));
@@ -214,9 +381,8 @@ function PartSearch(props: PartSearchProps): JSX.Element {
 				choose(results[active]);
 			}
 		},
-		[active, choose, results],
+		[active, choose, onEscape, results],
 	);
-
 	return (
 		<div
 			data-slot="part-search"
@@ -228,65 +394,23 @@ function PartSearch(props: PartSearchProps): JSX.Element {
 				value={query}
 				placeholder="Find a part"
 				aria-label="Find a part on any board"
-				aria-keyshortcuts="Control+Shift+F"
+				aria-keyshortcuts={searchShortcutKeys()}
 				role="combobox"
 				aria-expanded={open}
 				aria-controls={listId}
+				aria-activedescendant={open && results.length > 0 ? `${listId}-${active}` : undefined}
 				aria-autocomplete="list"
 				autoComplete="off"
 				spellCheck={false}
-				onChange={(event) => {
-					setQuery(event.target.value);
-					setActive(0);
-				}}
-				onFocus={() => setFocused(true)}
-				onBlur={() => setFocused(false)}
+				onChange={change}
+				onFocus={focus}
+				onBlur={blur}
 				onKeyDown={onKeyDown}
 				className="text-control placeholder:text-muted-foreground h-full min-w-0 flex-1 bg-transparent font-normal outline-none"
 			/>
-			{/* The shortcut reaches the field of the pane with focus, so only that field shows it. */}
-			<kbd
-				aria-hidden="true"
-				className={cn(
-					"text-technical text-muted-foreground border-border bg-card shadow-raised dark:bg-input/30 rounded-control shrink-0 border px-1 font-mono leading-4",
-					(focused || !listening) && "invisible",
-				)}
-			>
-				{SHORTCUT}
-			</kbd>
+			<ShortcutHint typing={focused} />
 			{open && (
-				<ul
-					id={listId}
-					role="listbox"
-					aria-label="Matching parts"
-					className="bg-popover text-popover-foreground border-border shadow-float absolute top-full right-0 left-0 z-40 max-h-[60vh] overflow-y-auto border-b py-1"
-				>
-					{results.map((hit, at) => (
-						<li key={`${hit.board.key}-${hit.id}`} role="option" aria-selected={at === active}>
-							<button
-								type="button"
-								data-active={at === active ? "" : undefined}
-								onMouseDown={(event) => event.preventDefault()}
-								onClick={() => choose(hit)}
-								className="data-active:bg-sidebar-accent hover:bg-sidebar-accent/50 relative flex w-full flex-col px-4 py-1.5 text-left"
-							>
-								{at === active && (
-									<span
-										aria-hidden="true"
-										className="bg-primary-mark absolute inset-y-1 left-0 w-0.5 rounded-full"
-									/>
-								)}
-								<span className="text-control truncate">{hit.name}</span>
-								<span className="text-body text-muted-foreground truncate">
-									{kinds?.[hit.kind]?.name ?? hit.kind} on {hit.board.name}
-								</span>
-							</button>
-						</li>
-					))}
-					{results.length === 0 && (
-						<li className="text-body text-muted-foreground px-4 py-2">No part matches.</li>
-					)}
-				</ul>
+				<Results id={listId} results={results} active={active} kinds={kinds} onChoose={choose} />
 			)}
 		</div>
 	);

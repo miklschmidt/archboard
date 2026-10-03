@@ -35,6 +35,7 @@ import {
 	type SemanticBoardStageProps,
 	type SemanticPaneReading,
 	type SemanticTarget,
+	type WalkthroughNarration,
 } from "@/ui/semantic-board-canvas";
 import {
 	createBrowserWorkbenchTransport,
@@ -68,12 +69,8 @@ interface ApplicationPaneProps {
 	 * @param variant The variant's id or name, or null for whichever is current.
 	 */
 	onVariantChange: (variant: string | null) => void;
-	/**
-	 * Have a walkthrough of this pane's board narrated aloud, when voice can be
-	 * started for this pane.
-	 * @param walkthrough The walkthrough's id.
-	 */
-	onNarrate?: ((walkthrough: string) => void) | undefined;
+	/** Narrating this pane's walkthroughs aloud, when the shell can start voice for it. */
+	narration?: WalkthroughNarration | undefined;
 	/** What the shell lays over this pane's picture, such as subtitles of the voice running for it. */
 	overlay?: ReactNode;
 	/** Whether the person asked for reduced motion. */
@@ -287,14 +284,17 @@ interface PaneDiagramProps extends ApplicationPaneProps {
  */
 const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Element {
 	const { address, openCode, onPick, onUserChanged, onViewChange, picked, view } = props;
-	const { boards, outline, onOpenBoard, openedKey, focused } = props;
+	const { boards, outline, onOpenBoard, openedKey } = props;
 	// Where a board sits, as the navigator places it: each board above, a way to it here.
 	const placeOf = useCallback(
 		(board: string) =>
 			boardAncestors(outline, board).map((above) => ({
 				name: above.name,
 				level: above.level,
-				open: (): void => onOpenBoard(above.key),
+				/** Show the board above in this pane. */
+				open: (): void => {
+					onOpenBoard(above.key);
+				},
 			})),
 		[outline, onOpenBoard],
 	);
@@ -310,13 +310,12 @@ const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Elem
 		() => (
 			<PartSearchHost
 				boards={boards}
-				active={focused}
 				boardKey={openedKey}
 				onPick={onFound}
 				onOpenBoard={onOpenBoard}
 			/>
 		),
-		[boards, focused, openedKey, onFound, onOpenBoard],
+		[boards, openedKey, onFound, onOpenBoard],
 	);
 	// The stage calls these from a click or a key and from nothing else: a walkthrough step
 	// highlights its subjects and reads through its own view without going through either, and
@@ -353,7 +352,7 @@ const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Elem
 			onOpenCode={onOpenCode}
 			onReading={props.onReading}
 			driven={props.driven}
-			onNarrate={props.onNarrate}
+			narration={props.narration}
 			overlay={props.overlay}
 			reducedMotion={props.reducedMotion}
 			search={search}

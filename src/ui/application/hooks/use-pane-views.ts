@@ -44,7 +44,7 @@ interface PaneViewSources {
 	 * @param variant The variant's id or name, or null for whichever is current.
 	 */
 	readonly onVariantChange: (paneId: string, variant: string | null) => void;
-	/** The focused pane's narration, or null while voice cannot be started for it. */
+	/** Narration, offered to every pane, or null where the page does not narrate by hand. */
 	readonly narration: Narration | null;
 	/** What is laid over one pane's picture, or null: the subtitles of the voice running for it. */
 	readonly overlay: PaneOverlay | null;
@@ -103,6 +103,13 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 	function showVariantHere(variant: string | null): void {
 		sources.onVariantChange(paneId, variant);
 	}
+	/**
+	 * The pane showed a board: where a part its search found is.
+	 * @param key The board key.
+	 */
+	function openBoardHere(key: string): void {
+		sources.openBoard(key, paneId);
+	}
 	return createElement(ApplicationPane, {
 		key: paneId,
 		paneId,
@@ -115,12 +122,12 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 		picked: readings.pickedIn(paneId),
 		onPick: pickHere,
 		onVariantChange: showVariantHere,
-		onNarrate: sources.narration?.paneId === paneId ? sources.narration.start : undefined,
+		narration: sources.narration?.forPane(paneId),
 		overlay: sources.overlay?.paneId === paneId ? sources.overlay.element : undefined,
 		reducedMotion: sources.reducedMotion,
 		boards: sources.boards,
 		outline: sources.outline,
-		onOpenBoard: (key: string): void => sources.openBoard(key, paneId),
+		onOpenBoard: openBoardHere,
 	});
 }
 

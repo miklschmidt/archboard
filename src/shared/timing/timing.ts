@@ -477,6 +477,7 @@ export {
 	TRAFFIC_STREAK_MS,
 } from "@/shared/timing/lib/diagram-motion";
 export { EXPLORING_MS } from "@/shared/timing/lib/exploring";
+export { SIDEBAR_MS } from "@/shared/timing/lib/sidebar-motion";
 export {
 	RECORDING_ENCODE_FINISH_MS,
 	RECORDING_ENCODER_PROBE_MS,

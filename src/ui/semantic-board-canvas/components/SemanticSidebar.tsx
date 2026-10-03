@@ -1,38 +1,54 @@
 // The one column on the right of a semantic diagram: the search for a part at
 // its top, level with the navigator's search for a board, then the board, and
 // whatever is selected on it. Docked, it takes its width beside the picture;
-// resting, it is its rail, and a pick or a tab chosen on the rail lays the
-// panel over the picture's edge (use-sidebar.ts says when each holds).
+// floating, its panel is laid over the picture's edge; away, it is nowhere, and
+// the control in the pane's header brings it back (use-sidebar.ts says when each
+// holds, and where it comes back to).
 //
-// One column rather than a key on one side and details on the other, and at
-// one width whichever tab is open, because the pane refits its picture when it
-// changes size: a column that came and went with a pick would move the diagram
-// under the pointer that picked. Only collapsing and expanding it changes the
-// pane's width, and that is the person asking for the room.
+// One panel, held at the pane's edge at one width whichever tab is open and
+// whether the column around it is docked or not, because the pane refits its
+// picture when it changes size: a panel that came and went with a pick would
+// move the diagram under the pointer that picked. Only hiding and showing a
+// docked sidebar changes the pane's width, and that is the person asking for
+// the room. It eases (use-sidebar-slide.ts, app.css): the column its width, with
+// the panel sliding in under the pane's edge and never reflowing; a floating
+// panel its place and its opacity, from the edge it is laid against.
 //
 // Its width is the shell's, so the pane a drawing's fit is measured against is
 // the pane a reader actually has. A pane presented fullscreen is the picture
 // alone, so the sidebar steps out of it for as long as the presentation lasts;
 // so does a presented walkthrough, which is the picture and its caption.
 
+import { RiCloseLine, RiPushpinLine } from "@remixicon/react";
 import {
-	RiCloseLine,
-	RiCursorLine,
-	RiNodeTree,
-	RiPushpinLine,
-	RiSidebarFoldLine,
-	RiSidebarUnfoldLine,
-} from "@remixicon/react";
-import { useCallback, type CSSProperties, type JSX, type ReactNode } from "react";
+	useCallback,
+	useEffect,
+	useRef,
+	type CSSProperties,
+	type JSX,
+	type ReactNode,
+	type RefObject,
+} from "react";
 
 import { SIDEBAR_WIDTH } from "@/shared/shell-geometry/index";
-import { Button } from "@/ui/components/button";
+import { SIDEBAR_MS } from "@/shared/timing/timing";
+import { cn } from "@/ui/components/class-names";
+import { IconButton } from "@/ui/components/IconButton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/components/tabs";
+import {
+	SearchRequestContext,
+	useSearchRequest,
+} from "@/ui/semantic-board-canvas/hooks/use-search-request";
 import type { Sidebar, SidebarTab } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
+import {
+	useSidebarSlide,
+	type Place,
+	type Slide,
+} from "@/ui/semantic-board-canvas/hooks/use-sidebar-slide";
 
 /** Inputs for the sidebar. */
 interface SemanticSidebarProps {
-	/** Which tab is open, whether the sidebar is collapsed, and how to change either. */
+	/** Which tab is open, where the sidebar is, and how to change either. */
 	readonly sidebar: Sidebar;
 	/** The tabs' panels, each a `SidebarPanel`. */
 	readonly children: ReactNode;
@@ -56,83 +72,222 @@ function SidebarPanel(props: {
 	return (
 		<TabsContent
 			value={props.tab}
-			className="flex min-h-0 flex-col overflow-x-hidden overflow-y-auto"
+			// A panel that scrolls is a tab stop, so the keys can scroll it: it shows where it is.
+			className="focus-visible:ring-ring flex min-h-0 flex-col overflow-x-hidden overflow-y-auto focus-visible:ring-2 focus-visible:ring-inset"
 		>
 			{props.children}
 		</TabsContent>
 	);
 }
 
-/** The sidebar's width while open. */
-const OPEN_STYLE: CSSProperties = { width: SIDEBAR_WIDTH };
+/**
+ * What the stylesheet eases the column with: its width when docked and the
+ * durations the shell owns. The width itself is the stylesheet's (app.css), so
+ * that the column can start from none when it opens.
+ */
+const COLUMN_STYLE: CSSProperties = {
+	"--sidebar-width": `${SIDEBAR_WIDTH}px`,
+	"--sidebar-dock-ms": `${SIDEBAR_MS.dock}ms`,
+	"--sidebar-float-in-ms": `${SIDEBAR_MS.floatIn}ms`,
+	"--sidebar-float-out-ms": `${SIDEBAR_MS.floatOut}ms`,
+	"--sidebar-subject-in-ms": `${SIDEBAR_MS.subjectIn}ms`,
+};
 
-/** What each tab is called and drawn with. */
-const TABS: readonly {
-	readonly tab: SidebarTab;
-	readonly label: string;
-	readonly icon: ReactNode;
-}[] = [
-	{ tab: "board", label: "Board", icon: <RiNodeTree /> },
-	{ tab: "selection", label: "Selection", icon: <RiCursorLine /> },
+/** The panel's width, whatever the column around it is doing. */
+const PANEL_STYLE: CSSProperties = { width: SIDEBAR_WIDTH };
+
+/** The two tabs, in order. */
+const TABS: readonly { readonly tab: SidebarTab; readonly label: string }[] = [
+	{ tab: "board", label: "Board" },
+	{ tab: "selection", label: "Selection" },
 ];
 
-/**
- * One tab's icon while the sidebar is collapsed, which opens it.
- * @param props The tab, whether it is the open one, and the sidebar.
- * @param props.entry The tab.
- * @param props.sidebar The sidebar.
- * @returns The button.
- */
-function RailButton(props: {
-	readonly entry: (typeof TABS)[number];
+/** Inputs for the row above the open sidebar. */
+interface SidebarTabsProps {
 	readonly sidebar: Sidebar;
-}): JSX.Element {
-	const { entry, sidebar } = props;
-	const { open } = sidebar;
-	const choose = useCallback((): void => {
-		open(entry.tab);
-	}, [open, entry.tab]);
+	readonly onClearSelection: (() => void) | null;
+}
+
+/**
+ * The row above the open sidebar: its tabs, the way to let go of the selection
+ * right after the selection tab while that tab is open, and at the far end the
+ * way to dock a panel that floats. Showing and hiding the sidebar is not here:
+ * it is one control, in the pane's header, which is there when the sidebar is not.
+ * @param props The sidebar, and how to let go of the selection.
+ * @param props.sidebar The sidebar.
+ * @param props.onClearSelection Let go of the selection, or null when there is none.
+ * @returns The row.
+ */
+function SidebarTabs(props: SidebarTabsProps): JSX.Element {
+	const { sidebar, onClearSelection } = props;
+	const clear = sidebar.tab === "selection" ? onClearSelection : null;
 	return (
-		<Button
-			type="button"
-			variant={sidebar.tab === entry.tab ? "secondary" : "ghost"}
-			size="icon-sm"
-			aria-label={`Open ${entry.label.toLowerCase()}`}
-			aria-pressed={sidebar.tab === entry.tab}
-			data-slot="semantic-sidebar-rail-tab"
-			data-tab={entry.tab}
-			onClick={choose}
-		>
-			{entry.icon}
-		</Button>
+		// The labels' words start on the column the tab's content starts on, 16 px
+		// in, with each underline reaching 8 px past its words.
+		<div className="border-border h-band flex shrink-0 items-center gap-1 border-b pr-2">
+			<TabsList variant="underline" className="h-full w-auto flex-none border-b-0 pl-2">
+				{TABS.map((entry) => (
+					<TabsTrigger
+						key={entry.tab}
+						value={entry.tab}
+						data-slot="semantic-sidebar-tab"
+						data-tab={entry.tab}
+						className="text-control px-2"
+					>
+						{entry.label}
+					</TabsTrigger>
+				))}
+			</TabsList>
+			{clear !== null && (
+				<IconButton label="Clear selection" slot="semantic-selection-clear" onClick={clear}>
+					<RiCloseLine />
+				</IconButton>
+			)}
+			{sidebar.floating && (
+				<IconButton
+					label="Pin the sidebar beside the picture"
+					slot="semantic-sidebar-pin"
+					className="ml-auto"
+					onClick={sidebar.pin}
+				>
+					<RiPushpinLine />
+				</IconButton>
+			)}
+		</div>
 	);
 }
 
 /**
- * The sidebar folded to its tab icons.
- * @param props The sidebar.
- * @param props.sidebar Its state and controls.
- * @returns The rail.
+ * Put a floating panel away when Escape is pressed inside it, and give focus
+ * back to the control that brings it back, so the keyboard is where it was. It
+ * goes by where the key was pressed, and not by where focus is now, so a field
+ * that lets go of focus on the same key does not keep the panel.
+ * @param panel The panel's element.
+ * @param sidebar The sidebar.
  */
-function SidebarRail(props: { readonly sidebar: Sidebar }): JSX.Element {
-	const { sidebar } = props;
+function useEscapeAway(panel: RefObject<HTMLElement | null>, sidebar: Sidebar): void {
+	const { floating, putAway, toggleId } = sidebar;
+	useEffect(() => {
+		if (!floating) {
+			return undefined;
+		}
+		/**
+		 * Put the panel away on Escape pressed inside it.
+		 * @param event The key event.
+		 */
+		const onKey = (event: KeyboardEvent): void => {
+			const inside = event.target instanceof Node && panel.current?.contains(event.target) === true;
+			if (event.key !== "Escape" || !inside) {
+				return;
+			}
+			event.stopPropagation();
+			putAway();
+			document.getElementById(toggleId)?.focus();
+		};
+		document.addEventListener("keydown", onKey);
+		return () => document.removeEventListener("keydown", onKey);
+	}, [floating, panel, putAway, toggleId]);
+}
+
+/**
+ * Where the sidebar is.
+ * @param sidebar The sidebar.
+ * @returns Docked, floating or away.
+ */
+function placeOf(sidebar: Sidebar): Place {
+	if (sidebar.docked) return "docked";
+	return sidebar.floating ? "floating" : "away";
+}
+
+/** Inputs for the column and the panel in it. */
+interface ColumnProps {
+	readonly slide: Slide;
+	/** Where the sidebar is now, which is not where it is drawn while it leaves. */
+	readonly place: Place;
+	readonly sidebar: Sidebar;
+	readonly children: ReactNode;
+}
+
+/**
+ * The column and the one panel in it. The column is a box that has a width and
+ * nothing else: no rule, no shadow, which a column of no width would still draw.
+ * The panel has them, and is held at the pane's edge.
+ * @param props What is drawn and where.
+ * @returns The column.
+ */
+function Column(props: ColumnProps): JSX.Element {
+	const { slide, place, sidebar } = props;
+	const panel = useRef<HTMLDivElement>(null);
+	useEscapeAway(panel, sidebar);
+	const floating = slide.shownAs === "floating";
+	const leaving = slide.leaving ? "" : undefined;
 	return (
-		<div className="flex flex-col items-center gap-1 py-1.5">
-			<Button
-				type="button"
-				variant="ghost"
-				size="icon-sm"
-				aria-label="Pin the sidebar open"
-				title="Pin the sidebar open"
-				data-slot="semantic-sidebar-toggle"
-				onClick={sidebar.pin}
+		<aside
+			aria-label="Board sidebar"
+			data-slot="semantic-sidebar"
+			data-tab={sidebar.tab}
+			data-place={slide.shownAs}
+			data-motion={slide.motion}
+			data-docked={place === "docked" ? "" : undefined}
+			data-leaving={leaving}
+			style={COLUMN_STYLE}
+			className={cn(
+				"relative z-30 flex min-h-0 shrink-0 flex-col in-data-presenting:hidden in-data-walkthrough:hidden",
+				!floating && "overflow-hidden",
+			)}
+		>
+			<div
+				ref={panel}
+				id={sidebar.panelId}
+				data-slot="semantic-sidebar-panel"
+				data-place={slide.shownAs}
+				data-motion={slide.motion}
+				data-leaving={leaving}
+				inert={slide.leaving}
+				style={PANEL_STYLE}
+				className={cn(
+					"border-border bg-sidebar absolute inset-y-0 right-0 flex min-h-0 flex-col border-l",
+					floating
+						? "shadow-[var(--elevation-float),var(--elevation-edge-side)]"
+						: "shadow-edge-side",
+				)}
 			>
-				<RiSidebarUnfoldLine className="-scale-x-100" />
-			</Button>
-			{TABS.map((entry) => (
-				<RailButton key={entry.tab} entry={entry} sidebar={sidebar} />
-			))}
-		</div>
+				{props.children}
+			</div>
+		</aside>
+	);
+}
+
+/**
+ * The column beside the diagram.
+ * @param props The sidebar state and what each tab shows.
+ * @returns The sidebar, or nothing while it is away.
+ */
+function SemanticSidebar(props: SemanticSidebarProps): JSX.Element | null {
+	const { sidebar } = props;
+	const place = placeOf(sidebar);
+	const slide = useSidebarSlide(place);
+	const request = useSearchRequest(sidebar);
+	const { open } = sidebar;
+	const choose = useCallback(
+		(value: unknown): void => {
+			if (value === "board" || value === "selection") {
+				open(value);
+			}
+		},
+		[open],
+	);
+	if (!slide.mounted) {
+		return null;
+	}
+	return (
+		<Column slide={slide} place={place} sidebar={sidebar}>
+			<SearchRequestContext.Provider value={request}>{props.search}</SearchRequestContext.Provider>
+			<Tabs value={sidebar.tab} onValueChange={choose} className="min-h-0 flex-1 gap-0">
+				<SidebarTabs sidebar={sidebar} onClearSelection={props.onClearSelection} />
+				{props.children}
+			</Tabs>
+		</Column>
 	);
 }
 
@@ -146,139 +301,6 @@ function NothingSelected(): JSX.Element {
 			Pick something out of the diagram to see what the board says about it.
 		</p>
 	);
-}
-
-/**
- * The row above the open sidebar: its tabs, letting go of the selection while
- * that tab is open, and collapsing.
- * @param props The sidebar, and how to let go of the selection.
- * @param props.sidebar The sidebar.
- * @param props.onClearSelection Let go of the selection, or null when there is none.
- * @returns The row.
- */
-function SidebarHeader(props: {
-	readonly sidebar: Sidebar;
-	readonly onClearSelection: (() => void) | null;
-}): JSX.Element {
-	const { sidebar } = props;
-	const clear = sidebar.tab === "selection" ? props.onClearSelection : null;
-	return (
-		// The labels' words start on the column the tab's content starts on, 16 px
-		// in, with each underline reaching 8 px past its words.
-		<div className="border-border h-band flex shrink-0 items-center gap-1 border-b pr-2">
-			<TabsList variant="underline" className="h-full border-b-0 pl-2">
-				{TABS.map((entry) => (
-					<TabsTrigger
-						key={entry.tab}
-						value={entry.tab}
-						data-slot="semantic-sidebar-tab"
-						data-tab={entry.tab}
-						className="text-control px-2"
-					>
-						{entry.label}
-					</TabsTrigger>
-				))}
-			</TabsList>
-			<span className="ml-auto" />
-			{clear !== null && (
-				<Button
-					type="button"
-					variant="ghost"
-					size="icon-sm"
-					aria-label="Clear selection"
-					data-slot="semantic-selection-clear"
-					onClick={clear}
-				>
-					<RiCloseLine />
-				</Button>
-			)}
-			{sidebar.floating && (
-				<Button
-					type="button"
-					variant="ghost"
-					size="icon-sm"
-					aria-label="Pin the sidebar open"
-					title="Pin the sidebar open"
-					data-slot="semantic-sidebar-pin"
-					onClick={sidebar.pin}
-				>
-					<RiPushpinLine />
-				</Button>
-			)}
-			<Button
-				type="button"
-				variant="ghost"
-				size="icon-sm"
-				aria-label={sidebar.floating ? "Put the sidebar away" : "Collapse sidebar"}
-				title={sidebar.floating ? "Put the sidebar away" : "Collapse sidebar"}
-				data-slot="semantic-sidebar-toggle"
-				onClick={sidebar.collapse}
-			>
-				<RiSidebarFoldLine className="-scale-x-100" />
-			</Button>
-		</div>
-	);
-}
-
-/**
- * The column beside the diagram.
- * @param props The sidebar state and what each tab shows.
- * @returns The sidebar.
- */
-function SemanticSidebar(props: SemanticSidebarProps): JSX.Element {
-	const { sidebar } = props;
-	const { open } = sidebar;
-	const choose = useCallback(
-		(value: unknown): void => {
-			if (value === "board" || value === "selection") {
-				open(value);
-			}
-		},
-		[open],
-	);
-	const panel = (
-		<>
-			{props.search}
-			<Tabs value={sidebar.tab} onValueChange={choose} className="min-h-0 flex-1 gap-0">
-				<SidebarHeader sidebar={sidebar} onClearSelection={props.onClearSelection} />
-				{props.children}
-			</Tabs>
-		</>
-	);
-	return (
-		<aside
-			aria-label="Board sidebar"
-			data-slot="semantic-sidebar"
-			data-tab={sidebar.tab}
-			data-collapsed={sidebar.collapsed}
-			data-place={place(sidebar)}
-			className="border-border bg-sidebar shadow-edge-side relative z-30 flex min-h-0 shrink-0 flex-col border-l in-data-presenting:hidden in-data-walkthrough:hidden"
-			style={sidebar.docked ? OPEN_STYLE : undefined}
-		>
-			{sidebar.docked ? panel : <SidebarRail sidebar={sidebar} />}
-			{sidebar.floating && (
-				// Laid over the picture's edge, the width it would take docked, so the
-				// picture keeps its size and nothing in it moves.
-				<div
-					data-slot="semantic-sidebar-float"
-					style={OPEN_STYLE}
-					className="border-border bg-sidebar absolute inset-y-0 right-0 z-30 flex min-h-0 flex-col border-l shadow-[var(--elevation-float),var(--elevation-edge-side)]"
-				>
-					{panel}
-				</div>
-			)}
-		</aside>
-	);
-}
-
-/**
- * Where the sidebar is, for tests and styles.
- * @param sidebar The sidebar.
- * @returns Docked, floating or resting.
- */
-function place(sidebar: Sidebar): "docked" | "floating" | "resting" {
-	if (sidebar.docked) return "docked";
-	return sidebar.floating ? "floating" : "resting";
 }
 
 export { NothingSelected, SemanticSidebar, SidebarPanel, type SemanticSidebarProps };
