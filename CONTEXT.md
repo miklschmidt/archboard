@@ -392,6 +392,14 @@ bends and route length. Fit, page area and card share break ties between
 drawings that read equally well.
 _Avoid_: score, cost, quality metric
 
+**Light**:
+What the picture leaves as drawn when a user picks a part out or rests the
+pointer on one: the part and everything it contains, every relationship that
+touches any of it, the parts at their other ends, and the containers that hold
+them. The rest recedes. The light is attention, like the selection: nothing is
+written, and a presented walkthrough step or a selected group takes its place.
+_Avoid_: highlight, focus mode, dim, spotlight
+
 ### Working
 
 **Tab session**:

@@ -201,20 +201,42 @@ function lightByMembers(surface: Element, standing: ReadonlySet<string>): void {
 /** The class the surface carries while the picture is seen from far away. */
 const FAR_VIEW_CLASS = "is-far";
 
+/** The class the surface carries while the picture lights what a poked part is wired to. */
+const PROBING_CLASS = "is-probing";
+
+/** The class it adds when the pointer rests on a part, which lights more lightly than a pick. */
+const PROBING_LIGHT_CLASS = "is-probing-light";
+
+/** How strongly the picture answers a poke: to the part picked out, or to one the pointer rests on. */
+type ProbeMode = "pick" | "hover";
+
 /**
  * The classes the surface itself carries for the picture's stylesheet: that a
- * presented step veils the picture, and that it is seen from far away,
- * where each card draws its name and the start of its responsibility larger. They
- * are part of the surface's rendered class, never toggled on it afterwards: a
- * render that writes the surface's class (a pan starting, say) would wipe a
- * class put there by hand.
+ * presented step veils the picture, that it is seen from far away, where each
+ * card draws its name and the start of its responsibility larger, and that it
+ * lights what a poked part is wired to. They are part of the surface's rendered
+ * class, never toggled on it afterwards: a render that writes the surface's
+ * class (a pan starting, say) would wipe a class put there by hand.
  * @param state What the surface says.
  * @param state.veiled Whether a presented step veils the picture.
  * @param state.far Whether the picture is seen from far away.
+ * @param state.probing How strongly the picture lights a poked part's connections, or null for not at all.
  * @returns The classes, each with a leading space, or nothing.
  */
-function surfaceMarks({ veiled, far }: { veiled: boolean; far: boolean }): string {
-	return `${veiled ? ` ${VEILED_CLASS}` : ""}${far ? ` ${FAR_VIEW_CLASS}` : ""}`;
+function surfaceMarks({
+	veiled,
+	far,
+	probing = null,
+}: {
+	veiled: boolean;
+	far: boolean;
+	probing?: ProbeMode | null;
+}): string {
+	const lighting =
+		probing === null
+			? ""
+			: ` ${PROBING_CLASS}${probing === "hover" ? ` ${PROBING_LIGHT_CLASS}` : ""}`;
+	return `${veiled ? ` ${VEILED_CLASS}` : ""}${far ? ` ${FAR_VIEW_CLASS}` : ""}${lighting}`;
 }
 
 /** Every class the viewer puts on a subject's group; none of them is the renderer's. */
@@ -274,4 +296,5 @@ export {
 	subjectAt,
 	subjectBox,
 	surfaceMarks,
+	type ProbeMode,
 };

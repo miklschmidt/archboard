@@ -7,6 +7,7 @@ status: To Do
 assignee:
   - '@claude'
 created_date: '2026-10-03 15:14'
+updated_date: '2026-10-03 16:04'
 labels:
   - frontend
 dependencies: []
@@ -19,14 +20,14 @@ ordinal: 673000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Lighting shows where the lines of a part run, but not what they say, and nobody can walk the picture from the keyboard. The selection tab says what a part is and not what it is wired to. Two questions follow a pick: what is this part wired to, and how far does a change to it reach? The first is a list a reader can read and follow. The second is a wave across the picture that shows its depth at a glance.
+The selection tab already lists a picked part's relationships as Sends to and Receives from, and a click on a row picks the part at the other end (DetailsPanel, brought in with the prototype picks). Three things are missing. Pointing at a row does not show where its line runs on the picture. Following a row can leave the part it picks out of view, because only a panel laid over the picture ever moves the camera. And nothing answers the question that comes after "what is it wired to": how far does a change to it reach? The first two make the list and the picture one thing, and a person can walk the architecture from either. The third is a wave across the picture that shows its depth at a glance.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The selection tab lists the relationships of a picked part as Calls and Called by, each row naming the other part and the relationship's label
-- [ ] #2 Pointing at or focusing a row lights that relationship on the picture, and activating it picks the other part and moves the camera just far enough to show both
-- [ ] #3 Two controls light everything the part depends on, or everything that depends on it, hop by hop with the nearest strongest, and each shows how many parts that is
-- [ ] #4 Every control is reachable from the keyboard, has an accessible name and state, and honors reduced motion
+- [ ] #1 Pointing at or focusing a relationship row in the selection tab lights that relationship and its two parts on the picture, as lightly as a resting pointer does
+- [ ] #2 Choosing a row picks the part at the other end and moves the camera once, just far enough to show both parts when they are not both in view, and moves nothing when they are
+- [ ] #3 Two controls light everything the part depends on, or everything that depends on it, hop by hop with the nearest strongest, and each says how many parts that is
+- [ ] #4 Every new control is reachable from the keyboard, has an accessible name and state, and honors reduced motion
 - [ ] #5 A sequence view keeps the selection tab it has
 <!-- AC:END -->

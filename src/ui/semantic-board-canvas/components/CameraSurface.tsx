@@ -3,7 +3,7 @@
 
 import { useMemo, type CSSProperties, type JSX } from "react";
 
-import { PRESENTATION_STEP_MS } from "@/shared/timing/timing";
+import { EXPLORING_MS, PRESENTATION_STEP_MS } from "@/shared/timing/timing";
 import { useCameraView, type BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import { cameraTransform, type Size } from "@/ui/semantic-board-canvas/lib/camera";
 
@@ -61,6 +61,7 @@ function CameraSurface(props: CameraSurfaceProps): JSX.Element {
 			height,
 			transform: cameraTransform(camera),
 			"--presentation-step-ms": `${PRESENTATION_STEP_MS}ms`,
+			"--lighting-ms": `${EXPLORING_MS.lightingFade}ms`,
 		}),
 		[width, height, camera],
 	);
