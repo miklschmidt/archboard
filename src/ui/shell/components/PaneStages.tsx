@@ -134,7 +134,7 @@ function PaneStages(props: PaneStagesProps): JSX.Element {
  */
 function stageClass(framed: boolean): string {
 	return framed
-		? "relative flex min-h-0 min-w-0 flex-1 flex-col outline-none data-active:after:pointer-events-none data-active:after:absolute data-active:after:inset-0 data-active:after:z-30 data-active:after:ring-1 data-active:after:ring-primary-text data-active:after:ring-inset"
+		? "relative flex min-h-0 min-w-0 flex-1 flex-col outline-none data-active:after:pointer-events-none data-active:after:absolute data-active:after:inset-0 data-active:after:z-30 data-active:after:ring-1 data-active:after:ring-primary-mark data-active:after:ring-inset"
 		: "relative flex min-h-0 min-w-0 flex-1 flex-col outline-none";
 }
 

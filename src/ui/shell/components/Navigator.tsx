@@ -294,7 +294,7 @@ function ListingState(props: ListingStateProps): JSX.Element | null {
 				<button
 					type="button"
 					onClick={retry}
-					className="text-primary-text shrink-0 font-medium hover:underline"
+					className="text-primary-text decoration-primary-mark shrink-0 font-medium underline underline-offset-2 hover:decoration-2"
 				>
 					Retry
 				</button>
@@ -308,7 +308,7 @@ function ListingState(props: ListingStateProps): JSX.Element | null {
 				<button
 					type="button"
 					onClick={clear}
-					className="text-primary-text font-medium hover:underline"
+					className="text-primary-text decoration-primary-mark font-medium underline underline-offset-2 hover:decoration-2"
 				>
 					Clear
 				</button>

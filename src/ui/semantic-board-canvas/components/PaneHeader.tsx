@@ -268,7 +268,7 @@ function PageTab(props: {
 			data-slot="board-tab"
 			data-tab={entry.tab}
 			title={count === undefined ? entry.label : `${entry.label} ${count}`}
-			className="text-control data-active:[&_svg]:text-primary-text gap-1.5 px-2"
+			className="text-control data-active:[&_svg]:text-primary-mark gap-1.5 px-2"
 		>
 			<Icon aria-hidden="true" className="size-4" />
 			<span className={folds}>{entry.label}</span>

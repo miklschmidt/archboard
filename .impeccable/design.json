@@ -44,8 +44,16 @@
 				"displayName": "Reading Tone",
 				"canonical": "oklch(0.935 0.006 85)"
 			},
-			"card-white": { "role": "neutral", "displayName": "Card White", "canonical": "oklch(1 0 0)" },
-			"rule": { "role": "neutral", "displayName": "Rule", "canonical": "oklch(0.905 0.005 85)" },
+			"card-white": {
+				"role": "neutral",
+				"displayName": "Card White",
+				"canonical": "oklch(1 0 0)"
+			},
+			"rule": {
+				"role": "neutral",
+				"displayName": "Rule",
+				"canonical": "oklch(0.905 0.005 85)"
+			},
 			"field-rule": {
 				"role": "neutral",
 				"displayName": "Field Rule",
@@ -86,11 +94,6 @@
 				"displayName": "Gold Ink",
 				"canonical": "oklch(0.2 0.02 70)"
 			},
-			"gold-text": {
-				"role": "primary",
-				"displayName": "Gold Text",
-				"canonical": "oklch(0.5 0.105 76)"
-			},
 			"gold-tint": {
 				"role": "primary",
 				"displayName": "Gold Tint",
@@ -105,6 +108,11 @@
 				"role": "status",
 				"displayName": "Changed Orange",
 				"canonical": "oklch(0.69 0.19 48)"
+			},
+			"gold-mark": {
+				"role": "primary",
+				"displayName": "Gold Mark",
+				"canonical": "oklch(0.72 0.15 77)"
 			}
 		},
 		"typographyMeta": {
@@ -112,9 +120,18 @@
 				"displayName": "Display",
 				"purpose": "A name set as a title, in tracked capitals."
 			},
-			"title": { "displayName": "Title", "purpose": "The titles of regions and dialogs." },
-			"control": { "displayName": "Control", "purpose": "Buttons, tabs and fields." },
-			"body": { "displayName": "Body", "purpose": "Prose and row labels." },
+			"title": {
+				"displayName": "Title",
+				"purpose": "The titles of regions and dialogs."
+			},
+			"control": {
+				"displayName": "Control",
+				"purpose": "Buttons, tabs and fields."
+			},
+			"body": {
+				"displayName": "Body",
+				"purpose": "Prose and row labels."
+			},
 			"technical": {
 				"displayName": "Technical",
 				"purpose": "Identifiers, paths, versions, counts and times, in mono."
@@ -151,13 +168,21 @@
 				"value": "var(--elevation-pressed)",
 				"purpose": "A raised control while pressed."
 			},
-			{ "name": "card", "value": "var(--elevation-card)", "purpose": "A card on a page." },
+			{
+				"name": "card",
+				"value": "var(--elevation-card)",
+				"purpose": "A card on a page."
+			},
 			{
 				"name": "float",
 				"value": "var(--elevation-float)",
 				"purpose": "Menus, tips, lists of matches, the floating sidebar."
 			},
-			{ "name": "dialog", "value": "var(--elevation-dialog)", "purpose": "Dialogs." },
+			{
+				"name": "dialog",
+				"value": "var(--elevation-dialog)",
+				"purpose": "Dialogs."
+			},
 			{
 				"name": "primary",
 				"value": "var(--elevation-primary)",
@@ -170,9 +195,18 @@
 			}
 		],
 		"motion": [
-			{ "name": "control", "value": "120ms", "purpose": "Controls change state in 120ms." }
+			{
+				"name": "control",
+				"value": "120ms",
+				"purpose": "Controls change state in 120ms."
+			}
 		],
-		"breakpoints": [{ "name": "desktop", "value": "1920px" }]
+		"breakpoints": [
+			{
+				"name": "desktop",
+				"value": "1920px"
+			}
+		]
 	},
 	"components": [
 		{
@@ -212,7 +246,7 @@
 			"refersTo": "nav-row-chosen",
 			"description": "The chosen row of the navigator, raised as a plate with a gold bar.",
 			"html": "<div class=\"ds-nav\"><div class=\"ds-nav-row\">Agent workbench</div><div class=\"ds-nav-row ds-nav-chosen\">Archboard server</div><div class=\"ds-nav-row\">Browser application</div></div>",
-			"css": ".ds-nav { width: 300px; padding: 4px; background: var(--sidebar); } .ds-nav-row { position: relative; height: 28px; padding: 0 12px; display: flex; align-items: center; font: 500 14px/20px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--sidebar-foreground); border-radius: 3px; } .ds-nav-row:hover { background: color-mix(in oklch, var(--sidebar-accent) 50%, transparent); } .ds-nav-chosen { background: var(--sidebar-accent); box-shadow: var(--elevation-raised); } .ds-nav-chosen::before { content: ''; position: absolute; left: 0; top: 4px; bottom: 4px; width: 2px; border-radius: 2px; background: var(--primary-text); }"
+			"css": ".ds-nav { width: 300px; padding: 4px; background: var(--sidebar); } .ds-nav-row { position: relative; height: 28px; padding: 0 12px; display: flex; align-items: center; font: 500 14px/20px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--sidebar-foreground); border-radius: 3px; } .ds-nav-row:hover { background: color-mix(in oklch, var(--sidebar-accent) 50%, transparent); } .ds-nav-chosen { background: var(--sidebar-accent); box-shadow: var(--elevation-raised); } .ds-nav-chosen::before { content: ''; position: absolute; left: 0; top: 4px; bottom: 4px; width: 2px; border-radius: 2px; background: var(--primary-mark); }"
 		},
 		{
 			"name": "Page Card",
@@ -244,6 +278,11 @@
 			{
 				"name": "The One Gold Rule",
 				"body": "Gold marks what is chosen, the one primary action of a region, and the voice and the brand mark. Nothing else is gold.",
+				"section": "colors"
+			},
+			{
+				"name": "The Ink On Chalk Rule",
+				"body": "Text on chalk is never gold. A gold dark enough to clear 4.5:1 on chalk reads as brown. Text stays in the ink, and a gold mark beside or under it carries the accent. On graphite, accent text is the gold itself (oklch(0.86 0.125 86)).",
 				"section": "colors"
 			},
 			{

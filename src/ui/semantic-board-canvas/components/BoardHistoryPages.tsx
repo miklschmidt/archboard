@@ -145,7 +145,7 @@ function TimelineRow(props: {
 				{drawn && (
 					<span
 						aria-hidden="true"
-						className="bg-primary-text absolute inset-y-1.5 left-0 w-0.5 rounded-full"
+						className="bg-primary-mark absolute inset-y-1.5 left-0 w-0.5 rounded-full"
 					/>
 				)}
 				<TimelineLane lane={lane} geometry={PAGE_LANE} />

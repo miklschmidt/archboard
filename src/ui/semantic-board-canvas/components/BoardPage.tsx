@@ -77,7 +77,7 @@ function PartCard(props: PartCardProps): JSX.Element {
 				data-slot="part-card"
 				data-part={node.id}
 				onClick={() => props.onPick(picked ? null : node.id)}
-				className="border-border bg-card shadow-card hover:border-foreground/25 hover:shadow-float aria-pressed:border-primary-text aria-pressed:bg-primary-subtle rounded-panel relative flex h-full w-full min-w-0 gap-3 border p-3 text-left"
+				className="border-border bg-card shadow-card hover:border-foreground/25 hover:shadow-float aria-pressed:border-primary-mark aria-pressed:bg-primary-subtle rounded-panel relative flex h-full w-full min-w-0 gap-3 border p-3 text-left"
 			>
 				<KindIcon
 					look={look}

@@ -50,10 +50,13 @@
      2. the one primary action of a region: opening the board a picked part
         leads to, sending a message, the confirming button of a dialog;
      3. the voice, and the brand mark.
-   --primary is the gold as a flat fill. --primary-text is the same gold as
-   text or a thin line, deeper on chalk so it clears 4.5:1 there.
-   --primary-subtle is the gold as a quiet tint behind something chosen on a
-   page.
+   --primary is the gold as a flat fill. --primary-mark is the gold as a mark:
+   a 2px bar or underline, a ring, an icon, the edge of something chosen.
+   --primary-text is the accent as text. On graphite it is the gold. On chalk
+   it is the ink: a gold dark enough to clear 4.5:1 there reads as brown, so
+   text on chalk stays ink and a gold mark beside or under it (a bar, an
+   underline) carries the accent. --primary-subtle is the gold as a quiet tint
+   behind something chosen on a page.
 
    A primary action is the one control drawn as a physical piece of gold
    (`primary-finish` in app.css): a subtle top-to-bottom gradient
@@ -96,7 +99,8 @@
 
 	--primary: oklch(0.831 0.134 84.5);
 	--primary-foreground: oklch(0.2 0.02 70);
-	--primary-text: oklch(0.5 0.105 76);
+	--primary-text: oklch(0.17 0.006 75);
+	--primary-mark: oklch(0.72 0.15 77);
 	--primary-subtle: oklch(0.968 0.03 88);
 	--ring: oklch(0.62 0.13 78);
 	--sidebar-primary: oklch(0.831 0.134 84.5);
@@ -167,6 +171,7 @@
 	--primary: oklch(0.831 0.134 84.5);
 	--primary-foreground: oklch(0.2 0.02 70);
 	--primary-text: oklch(0.86 0.125 86);
+	--primary-mark: oklch(0.86 0.125 86);
 	--primary-subtle: oklch(0.29 0.045 80);
 	--ring: oklch(0.831 0.134 84.5);
 	--sidebar-primary: oklch(0.831 0.134 84.5);

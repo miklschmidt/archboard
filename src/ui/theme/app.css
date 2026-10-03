@@ -131,8 +131,10 @@
 	--color-secondary: var(--secondary);
 	--color-primary-foreground: var(--primary-foreground);
 	--color-primary: var(--primary);
-	/* The accent as text or a line on the page: the fill gold is too pale for that on chalk. */
+	/* The accent as text: gold on graphite, the ink on chalk (palette.css). */
 	--color-primary-text: var(--primary-text);
+	/* The accent as a mark: a bar, an underline, a ring, an icon, an edge. */
+	--color-primary-mark: var(--primary-mark);
 	/* The accent as a quiet tint behind something chosen on a page. */
 	--color-primary-subtle: var(--primary-subtle);
 	/* The rim of a primary action's gold (`primary-finish`). */
