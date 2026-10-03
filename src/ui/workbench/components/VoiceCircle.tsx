@@ -1,10 +1,10 @@
-// The voice, seen and controlled in one place: a circle at the agent dock's
-// head. Pressing it starts voice — setting up whatever is missing first — and
-// pressing it again ends it. While voice is off the circle holds a microphone;
-// on its way, a turning ring; while it is on, a gold ring around the waveform,
-// whose lines nearly fill the circle: each line is as tall as the circle is
-// where it stands, under a round mask a little inside the ring, so at its peak
-// a line ends on the circle's own curve.
+// The voice, seen and controlled in one place. While voice is off it is a key
+// that says Talk; pressing it starts voice — setting up whatever is missing
+// first. Once voice is on it is a circle at the agent dock's head, and pressing
+// that ends it. On its way, the circle holds a turning ring; while it is on, a
+// gold ring around the waveform, whose lines nearly fill the circle: each line
+// is as tall as the circle is where it stands, under a round mask a little
+// inside the ring, so at its peak a line ends on the circle's own curve.
 //
 // The waveform follows the model's measured output level while it speaks and
 // breathes slowly while it listens. Nothing here listens to the microphone.
@@ -12,6 +12,7 @@
 import { RiErrorWarningLine, RiMicLine } from "@remixicon/react";
 import { useEffect, useRef, type CSSProperties, type JSX } from "react";
 
+import { Button } from "@/ui/components/button";
 import { cn } from "@/ui/components/class-names";
 import { useAudible } from "@/ui/workbench/components/TalkControl";
 import type { AgentActions, AgentVoiceView } from "@/ui/workbench/contracts";
@@ -137,7 +138,10 @@ function VoiceCircle(props: VoiceCircleProps): JSX.Element {
 	// to the circle's style here rather than drawn through React.
 	useEffect(() => {
 		const { level } = voice;
-		const draw = (): void => circle.current?.style.setProperty("--level", String(level.read()));
+		/** Write the output level to the circle's style. */
+		const draw = (): void => {
+			circle.current?.style.setProperty("--level", String(level.read()));
+		};
 		draw();
 		return level.subscribe(draw);
 	}, [voice]);
@@ -161,6 +165,31 @@ function VoiceCircle(props: VoiceCircleProps): JSX.Element {
 		>
 			<CircleFace state={state} problem={voice.problem !== null} />
 		</button>
+	);
+}
+
+/**
+ * The key that starts voice while it is off: the microphone and Talk, as wide
+ * as the room it is given.
+ * @param props The voice, the actions and where its problem is said.
+ * @returns The key.
+ */
+function TalkKey(props: VoiceCircleProps): JSX.Element {
+	const { voice, actions } = props;
+	return (
+		<Button
+			variant="outline"
+			data-slot="voice-circle"
+			data-voice-state="off"
+			aria-label={CIRCLE_NAMES.off}
+			aria-describedby={voice.problem === null ? undefined : props.problemId}
+			disabled={voice.busy}
+			onClick={actions.talk}
+			className="group/voice hover:border-primary-mark rounded-control! min-w-0 flex-1 gap-2 px-3"
+		>
+			<OffMark problem={voice.problem !== null} className="size-4" />
+			{CIRCLE_NAMES.off}
+		</Button>
 	);
 }
 
@@ -195,19 +224,24 @@ function CircleFace(props: {
 /**
  * What the circle holds while voice is off: the microphone, or a warning when
  * voice could not start.
- * @param props Whether something is wrong.
+ * @param props Whether something is wrong, and the mark's size.
  * @param props.problem Whether voice cannot start or failed.
+ * @param props.className The mark's size, when it is not the circle's.
  * @returns The mark.
  */
-function OffMark(props: { readonly problem: boolean }): JSX.Element {
+function OffMark(props: { readonly problem: boolean; readonly className?: string }): JSX.Element {
+	const size = props.className ?? "size-5";
 	return props.problem ? (
-		<RiErrorWarningLine aria-hidden="true" className="text-destructive size-5" />
+		<RiErrorWarningLine aria-hidden="true" className={cn("text-destructive", size)} />
 	) : (
 		<RiMicLine
 			aria-hidden="true"
-			className="text-muted-foreground group-hover/voice:text-primary-mark size-5 transition-colors"
+			className={cn(
+				"text-muted-foreground group-hover/voice:text-primary-mark transition-colors",
+				size,
+			)}
 		/>
 	);
 }
 
-export { VOICE_WORDS, VoiceCircle, circleState, type CircleState, type VoiceCircleProps };
+export { VOICE_WORDS, TalkKey, VoiceCircle, circleState, type CircleState, type VoiceCircleProps };

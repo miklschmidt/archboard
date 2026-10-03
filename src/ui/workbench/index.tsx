@@ -1,5 +1,5 @@
-// The agent surfaces: the agent dock at the navigator's foot — the voice
-// circle, the agent's state, its plan and the way to the conversation — and the
+// The agent surfaces: the agent dock at the navigator's foot — the way to talk,
+// the agent's state and its plan, and the way to the conversation — and the
 // conversation beside the navigator, with the composer at its foot. Both read
 // one `AgentView` and act through one `AgentActions`.
 

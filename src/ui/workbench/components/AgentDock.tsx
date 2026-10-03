@@ -1,15 +1,15 @@
-// The agent, at the foot of the navigator column: its voice and its state. The
-// voice circle is its head — press it to talk, press it again to end — and
-// beside it the agent's name with its state, what it is on, and the voice's own
-// line with mute and subtitles while voice is on. Under it the steps of its
-// plan, and at the foot the control that opens the conversation right beside
-// this column, where the composer is.
+// The agent, at the foot of the navigator column: its voice and its state.
+// While voice is off the dock is calm: what the agent is on, when it is on
+// anything, with its plan under it, and at the foot a key to talk and a key to
+// the conversation, where the composer is. Nothing says that it is ready and
+// that voice is off: the keys do. While voice is on the circle is its head,
+// beside the state, what it is on and the voice's own line with mute and
+// subtitles, and the plan under them.
 
 import { RiChat3Line, RiMicLine, RiMicOffLine } from "@remixicon/react";
 import type { JSX } from "react";
 
 import { AGENT_ELAPSED_TICK_MS, SHELL_AGE_TICK_MS } from "@/shared/timing/timing";
-import { Button } from "@/ui/components/button";
 import { cn } from "@/ui/components/class-names";
 import { useClock } from "@/ui/components/use-clock";
 import { SubtitlesToggle } from "@/ui/voice-subtitles";
@@ -17,9 +17,14 @@ import { IconAction } from "@/ui/workbench/components/IconAction";
 import { PlanSteps } from "@/ui/workbench/components/PlanSteps";
 import { StatusAction, StatusLamp, Timing } from "@/ui/workbench/components/StatusParts";
 import { useAudible } from "@/ui/workbench/components/TalkControl";
-import { VOICE_WORDS, VoiceCircle, circleState } from "@/ui/workbench/components/VoiceCircle";
+import {
+	VOICE_WORDS,
+	TalkKey,
+	VoiceCircle,
+	circleState,
+} from "@/ui/workbench/components/VoiceCircle";
 import type { AgentActions, AgentView, AgentVoiceView } from "@/ui/workbench/contracts";
-import { agentStatus, type AgentStatus } from "@/ui/workbench/lib/agent-status";
+import { agentStatus, isReady, type AgentStatus } from "@/ui/workbench/lib/agent-status";
 import {
 	DEMO_DOING,
 	DEMO_SINCE_MS,
@@ -78,7 +83,7 @@ function dockSteps(view: AgentView): readonly CardStep[] {
 
 /**
  * The agent dock.
- * @param props The view, the actions, the draft and the conversation's state.
+ * @param props The view, the actions and the conversation's state.
  * @returns The dock.
  */
 function AgentDock(props: AgentDockProps): JSX.Element {
@@ -87,46 +92,152 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 	const now = useClock(running || VOICE_DEMO ? AGENT_ELAPSED_TICK_MS : SHELL_AGE_TICK_MS, true);
 	const status = dockStatus(view, now);
 	const voice = VOICE_DEMO ? DEMO_VOICE : view.voice;
-	const steps = dockSteps(view);
-	return (
-		<section
-			data-slot="agent-dock"
-			data-agent-tone={status.tone}
-			aria-label="Agent"
-			className="border-border bg-raised shadow-edge-up relative flex shrink-0 flex-col gap-3 border-t px-4 pt-4 pb-3"
-		>
-			<div className="flex items-center gap-3">
-				<VoiceCircle voice={voice} actions={actions} problemId={VOICE_PROBLEM_ID} />
-				<div className="flex min-w-0 flex-1 flex-col">
-					<AgentLine status={status} now={now} actions={actions} />
-					{status.detail !== null && (
-						<p
-							data-slot="agent-doing"
-							className="text-control truncate font-normal"
-							title={status.detail}
-						>
-							{status.detail}
-						</p>
-					)}
-					<VoiceLine voice={voice} actions={actions} />
-				</div>
-			</div>
-			{steps.length > 0 && (
-				<PlanSteps steps={steps} sinceMs={status.sinceMs} now={now} className="pl-[76px]" />
-			)}
-			<WideAction status={status} actions={actions} />
+	const live = circleState(voice, useAudible(voice)) !== "off";
+	const parts: DockParts = {
+		status,
+		now,
+		actions,
+		voice,
+		steps: dockSteps(view),
+		toggle: (
 			<ConversationToggle
 				open={props.panelOpen}
 				unread={props.unread}
 				onToggle={props.onTogglePanel}
 			/>
+		),
+	};
+	return (
+		<section
+			data-slot="agent-dock"
+			data-agent-tone={status.tone}
+			aria-label="Agent"
+			className="border-border bg-raised shadow-edge-up relative flex shrink-0 flex-col gap-3 border-t px-4 py-3"
+		>
+			{live ? <LiveDock {...parts} /> : <CalmDock {...parts} />}
 		</section>
 	);
 }
 
+/** What both layouts of the dock are made of. */
+interface DockParts {
+	readonly status: AgentStatus;
+	readonly now: number;
+	readonly actions: AgentActions;
+	readonly voice: AgentVoiceView;
+	readonly steps: readonly CardStep[];
+	/** The key to the conversation. */
+	readonly toggle: JSX.Element;
+}
+
 /**
- * The agent's name, its state in a word with how long, and the control that
- * state needs when it is a small one.
+ * The dock while voice is off: what the agent is on, when it is on anything,
+ * and at the foot the keys to talk and to type.
+ * @param props What the dock is made of.
+ * @returns The rows.
+ */
+function CalmDock(props: DockParts): JSX.Element {
+	const { status, actions, voice } = props;
+	return (
+		<>
+			<Activity status={status} now={props.now} actions={actions} />
+			{props.steps.length > 0 && (
+				<PlanSteps steps={props.steps} sinceMs={status.sinceMs} now={props.now} />
+			)}
+			<WideAction status={status} actions={actions} />
+			{voice.problem !== null && <VoiceProblem problem={voice.problem} />}
+			<div className="flex items-center gap-2">
+				<TalkKey voice={voice} actions={actions} problemId={VOICE_PROBLEM_ID} />
+				{props.toggle}
+			</div>
+		</>
+	);
+}
+
+/**
+ * The dock while voice is on: the circle at its head, beside the state, what
+ * the agent is on and the voice's own line, with the plan under them.
+ * @param props What the dock is made of.
+ * @returns The rows.
+ */
+function LiveDock(props: DockParts): JSX.Element {
+	const { status, actions, voice } = props;
+	return (
+		<>
+			<div className="flex items-center gap-3">
+				<VoiceCircle voice={voice} actions={actions} problemId={VOICE_PROBLEM_ID} />
+				<div className="flex min-w-0 flex-1 flex-col">
+					<Activity status={status} now={props.now} actions={actions} />
+					<VoiceLine voice={voice} actions={actions} />
+				</div>
+				<div className="self-start">{props.toggle}</div>
+			</div>
+			{props.steps.length > 0 && (
+				<PlanSteps
+					steps={props.steps}
+					sinceMs={status.sinceMs}
+					now={props.now}
+					className="pl-[76px]"
+				/>
+			)}
+			<WideAction status={status} actions={actions} />
+		</>
+	);
+}
+
+/**
+ * What the agent is on: its state and how long, and what it is doing. Nothing
+ * while it is ready and on nothing.
+ * @param props The status, the clock and the actions.
+ * @param props.status The status.
+ * @param props.now The clock.
+ * @param props.actions The actions.
+ * @returns The lines, or nothing.
+ */
+function Activity(props: {
+	readonly status: AgentStatus;
+	readonly now: number;
+	readonly actions: AgentActions;
+}): JSX.Element | null {
+	const { status } = props;
+	if (isReady(status)) return null;
+	return (
+		<div className="flex min-w-0 flex-col">
+			<AgentLine status={status} now={props.now} actions={props.actions} />
+			{status.detail !== null && (
+				<p
+					data-slot="agent-doing"
+					className="text-control truncate font-normal"
+					title={status.detail}
+				>
+					{status.detail}
+				</p>
+			)}
+		</div>
+	);
+}
+
+/**
+ * Why voice cannot start.
+ * @param props The problem.
+ * @param props.problem The words.
+ * @returns The line.
+ */
+function VoiceProblem(props: { readonly problem: string }): JSX.Element {
+	return (
+		<p
+			id={VOICE_PROBLEM_ID}
+			title={props.problem}
+			className="text-body text-destructive flex h-6 items-center truncate"
+		>
+			{props.problem}
+		</p>
+	);
+}
+
+/**
+ * The agent's state in a word with how long, and the control that state needs
+ * when it is a small one.
  * @param props The status, the clock and the actions.
  * @param props.status The status.
  * @param props.now The clock.
@@ -142,7 +253,6 @@ function AgentLine(props: {
 	const small = status.action === "stop" || status.action === "review" || status.action === "show";
 	return (
 		<div data-slot="agent-status" data-tone={status.tone} className="flex h-6 items-center gap-2">
-			<h2 className="shrink-0 text-[13px] leading-5 font-[650]">Codex</h2>
 			<StatusLamp tone={status.tone} />
 			<span className="text-control text-muted-foreground min-w-0 truncate font-medium">
 				{status.headline}
@@ -191,17 +301,7 @@ function VoiceLine(props: {
 }): JSX.Element {
 	const { voice } = props;
 	const state = circleState(voice, useAudible(voice));
-	if (voice.problem !== null && state === "off") {
-		return (
-			<p
-				id={VOICE_PROBLEM_ID}
-				title={voice.problem}
-				className="text-body text-destructive flex h-6 items-center truncate"
-			>
-				{voice.problem}
-			</p>
-		);
-	}
+	if (voice.problem !== null && state === "off") return <VoiceProblem problem={voice.problem} />;
 	const on = state !== "off" && state !== "ending";
 	return (
 		<div className="flex h-6 items-center gap-1">
@@ -247,14 +347,13 @@ function LiveControls(props: {
 }
 
 /**
- * Open or close the conversation beside the navigator, with a dot while words
- * wait in it unread. The composer is in the conversation, so this is the way
- * to it.
+ * The key to the conversation beside the navigator, which is where the composer
+ * is: pressed in while it is open, with a gold dot while words wait in it unread.
  * @param props Whether it is open, whether words wait, and the toggle.
  * @param props.open Whether it is open.
  * @param props.unread Whether words wait unread.
  * @param props.onToggle Open or close it.
- * @returns The control.
+ * @returns The key.
  */
 function ConversationToggle(props: {
 	readonly open: boolean;
@@ -262,21 +361,25 @@ function ConversationToggle(props: {
 	readonly onToggle: () => void;
 }): JSX.Element {
 	return (
-		<Button
-			variant="ghost"
-			aria-label={props.open ? "Close the conversation" : "Open the conversation"}
+		<IconAction
+			variant="outline"
+			label={props.open ? "Close the conversation" : "Open the conversation"}
 			onClick={props.onToggle}
 			className={cn(
-				"-mx-1 w-auto justify-start gap-2",
-				props.open ? "text-foreground bg-sidebar-accent" : "text-muted-foreground",
+				"rounded-control! size-8 shrink-0 [&_svg]:size-4",
+				props.open
+					? "bg-muted text-foreground shadow-pressed before:bg-primary-mark before:absolute before:inset-x-2 before:bottom-[3px] before:h-0.5 before:rounded-full"
+					: "text-muted-foreground",
 			)}
 		>
-			<RiChat3Line aria-hidden="true" className="size-4 shrink-0" />
-			<span className="min-w-0 flex-1 truncate text-left">Conversation</span>
+			<RiChat3Line />
 			{props.unread && !props.open && (
-				<span aria-hidden="true" className="bg-primary size-1.5 shrink-0 rounded-full" />
+				<span
+					aria-hidden="true"
+					className="bg-primary ring-card pointer-events-none absolute top-1 right-1 size-1.5 rounded-full ring-2"
+				/>
 			)}
-		</Button>
+		</IconAction>
 	);
 }
 

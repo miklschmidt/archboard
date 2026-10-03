@@ -38,6 +38,19 @@ interface AgentStatus {
 	readonly signInUrl: string | null;
 }
 
+/** What the agent says when it has nothing to say: it is there, and not on anything. */
+const READY_HEADLINE = "Ready";
+
+/**
+ * Whether the agent has nothing to say. A dock shows no line for it: the
+ * controls already say it can be talked to.
+ * @param status The status.
+ * @returns True when it is ready and on nothing.
+ */
+function isReady(status: AgentStatus): boolean {
+	return status.tone === "quiet" && status.headline === READY_HEADLINE;
+}
+
 const BLANK: Omit<AgentStatus, "tone" | "headline"> = {
 	detail: null,
 	sinceMs: null,
@@ -360,10 +373,11 @@ function conversationStatus(
 		return { ...BLANK, tone: "working", headline: "Sending" };
 	}
 	const last = turns.at(-1);
-	return last === undefined ? { ...BLANK, tone: "quiet", headline: "Ready" } : ended(last);
+	return last === undefined ? { ...BLANK, tone: "quiet", headline: READY_HEADLINE } : ended(last);
 }
 
 export {
+	isReady,
 	agentStatus,
 	unsettledApprovals,
 	waitingApprovals,
