@@ -240,7 +240,7 @@ test("a state that has not been brought forward at all names what it is waiting 
 	// must not lead with.
 	expect(said.textContent).not.toContain("0 things");
 	expect(said.textContent).toContain("has not been brought forward");
-	// And the state it is waiting for is named the way the variant bar names it.
+	// And the state it is waiting for is named the way the navigator names it.
 	// An id in the sentence is a reader being told to go and look it up.
 	expect(said.textContent).toContain("Drawing is the board");
 	expect(said.textContent).not.toContain('"v1" is itself unsettled');

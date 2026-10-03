@@ -4,9 +4,9 @@
 // The order is the order a reader asks in (TASK-383,
 // docs/design/pane-sidebar-hierarchy.md), one region per question:
 //
-// 1. What is this, and what does it change? The variants of a board a level
-//    down, the variant's own summary of its scope, and for a variant read
-//    against another the key to its marks with how much each one covers.
+// 1. What is this, and what does it change? The variant's own summary of its
+//    scope, and for a variant read against another the key to its marks with how
+//    much each one covers.
 // 2. How do I read it? The author's walkthroughs first, the way into a first
 //    read; then the views, the reader's own; then the groups, the concerns the
 //    reader can pick out.
@@ -16,11 +16,10 @@
 // Each part decides for itself whether it has anything to offer, and a region
 // with nothing in it is not drawn.
 //
-// The pane's own board offers no choice of variant here. The navigator lists
-// every variant of every board and says which one a pane shows, and two places
-// to make one choice at the same time is one too many. A board somebody
-// followed a drill-down into is not the pane's own and the navigator does not
-// hold it, so its variants are offered here instead.
+// No board's variants are offered here. The navigator lists the variants of
+// every board, the Variants page of the pane's header lists them with the record
+// of each and opens one in this pane, and the header's breadcrumb names the one
+// on screen: a fourth place to make one choice is one too many (TASK-388).
 
 import type { JSX, ReactNode } from "react";
 
@@ -33,7 +32,6 @@ import {
 	SidebarRegion,
 	SidebarSection,
 } from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
-import { SemanticVariantBar } from "@/ui/semantic-board-canvas/components/SemanticVariantBar";
 import { SemanticViewBar } from "@/ui/semantic-board-canvas/components/SemanticViewBar";
 import { SemanticWalkthroughBar } from "@/ui/semantic-board-canvas/components/SemanticWalkthroughBar";
 import type { WalkthroughReading } from "@/ui/semantic-board-canvas/hooks/use-walkthrough";
@@ -52,12 +50,6 @@ interface SemanticBoardPanelProps {
 	 * @param view The view's id, or null for the whole variant.
 	 */
 	onChooseView: ((view: string | null) => void) | undefined;
-	/**
-	 * The person chose a variant of a board a level down; undefined on the pane's
-	 * own board, whose variants the navigator offers.
-	 * @param variant The variant's id, or null for whichever is current.
-	 */
-	onChooseVariant: ((variant: string | null) => void) | undefined;
 	/** What this variant explains about itself, and what is being read. */
 	narrative: WalkthroughReading;
 	/**
@@ -82,31 +74,6 @@ interface SemanticBoardPanelProps {
 	comparison: boolean;
 	/** Change the canvas comparison treatment. */
 	onComparisonChange: (enabled: boolean) => void;
-}
-
-/**
- * The variants of a board a level down.
- * @param props What the tab is assembled from.
- * @returns The section, or null on the pane's own board.
- */
-function variantSection(props: SemanticBoardPanelProps): ReactNode {
-	const { reading, onChooseVariant } = props;
-	if (onChooseVariant === undefined || reading === null) {
-		return null;
-	}
-	return (
-		<SidebarSection
-			title={reading.variants.length === 1 ? "Variant" : "Variants"}
-			slot="semantic-board-panel-variants"
-		>
-			<SemanticVariantBar
-				variants={reading.variants}
-				showing={reading.showing?.id ?? null}
-				opens={reading.opens}
-				onChoose={onChooseVariant}
-			/>
-		</SidebarSection>
-	);
 }
 
 /**
@@ -241,7 +208,6 @@ function SemanticBoardPanel(props: SemanticBoardPanelProps): JSX.Element {
 	return (
 		<div data-slot="semantic-board-panel" className="flex flex-col">
 			<SidebarRegion slot="semantic-board-panel-about">
-				{variantSection(props)}
 				{summary(props)}
 				{changes(props)}
 			</SidebarRegion>

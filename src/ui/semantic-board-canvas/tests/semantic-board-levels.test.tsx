@@ -3,9 +3,10 @@
 // A drill-down opens another board in the same pane. It is not addressed — the
 // trail is local and the address still names where the reader started — but it
 // is still a board somebody is reading, so it offers what any board offers:
-// its own ways of being read, and its own states. What it must not offer is the
-// level above's: a view id belongs to one board and a variant id to
-// one board, so the reading starts again at each level.
+// its own ways of being read, in the sidebar, and its own states, on the
+// Variants page. What it must not offer is the level above's: a view id belongs
+// to one board and a variant id to one board, so the reading starts again at
+// each level.
 //
 // The pane is mounted with motion off throughout: these are about what a level
 // reads, and a board that opens by flying into its card is the dive's tests.
@@ -21,6 +22,11 @@ import {
 	server,
 	settle,
 } from "@/ui/semantic-board-canvas/tests/stage-harness";
+import {
+	listedVariants,
+	openVariantsPage,
+	variantEntry,
+} from "@/ui/semantic-board-canvas/tests/variants-page";
 
 /** The two ways the board below can be read. */
 const ENGINE_VIEWS = [
@@ -129,28 +135,6 @@ function buttons(slot: string): HTMLElement[] {
 }
 
 /**
- * One variant's choice in the sidebar, by its id.
- * @param id The variant's id.
- * @returns The choice.
- */
-function variantChoice(id: string): HTMLElement {
-	return document.querySelector<HTMLElement>(
-		`[data-slot='semantic-variant-choice'][data-semantic-variant='${id}']`,
-	)!;
-}
-
-/**
- * Each variant choice's id and lifecycle, in the order the sidebar lists them.
- * @returns The pairs.
- */
-function listedVariants(): (string | undefined)[][] {
-	return buttons("semantic-variant-choice").map((one) => [
-		one.dataset["semanticVariant"],
-		one.dataset["semanticLifecycle"],
-	]);
-}
-
-/**
  * Follow the selected node's drill-down.
  * @returns Settles once the level below is on screen.
  */
@@ -190,15 +174,16 @@ test("a board a level down offers its own views and its own states", async () =>
 		"The parts",
 		"One write, in order",
 	]);
-	// And its own variants, so a reader can tell whether what they followed a
-	// link into is the architecture, a proposal, or history: in the navigator's
-	// order, the one the board's name opens first.
+	// And its own variants, on the Variants page, so a reader can tell whether
+	// what they followed a link into is the architecture, a proposal, or history:
+	// the one the board's name opens first.
+	openVariantsPage();
 	expect(listedVariants()).toEqual([
 		["e2", "current"],
 		["e1", "draft"],
 	]);
 	// The link named "as built", so that is what is on screen.
-	expect(variantChoice("e1").getAttribute("aria-pressed")).toBe("true");
+	expect(variantEntry("e1").getAttribute("aria-pressed")).toBe("true");
 });
 
 test("double-clicking a card opens the board it drills down to", async () => {
@@ -220,7 +205,8 @@ test("double-clicking a card opens the board it drills down to", async () => {
 	const stage = document.querySelector("[data-slot='semantic-board-stage']");
 	expect(stage?.getAttribute("data-board")).toBe("engine");
 	// The variant the link names, as the inspector's way in would have opened.
-	expect(variantChoice("e1").getAttribute("aria-pressed")).toBe("true");
+	openVariantsPage();
+	expect(variantEntry("e1").getAttribute("aria-pressed")).toBe("true");
 });
 
 test("a double-click whose board answers after the pane moved on opens nothing", async () => {
@@ -326,14 +312,15 @@ test("choosing at the level below asks for that reading of the board below", asy
 	// silently change the reading the person chose.
 	// The board below's current state is asked for as the absence of a variant,
 	// the same way the pane asks for its own.
+	openVariantsPage();
 	await act(async () => {
-		fireEvent.click(variantChoice("e2"));
+		fireEvent.click(variantEntry("e2"));
 	});
 	await settle();
 	const afterwards = renderCalls().at(-1) ?? "";
 	expect(afterwards).toContain("board=engine");
 	expect(afterwards).toContain("view=ev2");
-	expect(variantChoice("e2").getAttribute("aria-pressed")).toBe("true");
+	expect(variantEntry("e2").getAttribute("aria-pressed")).toBe("true");
 	expect(buttons("semantic-view-choice")[2]?.getAttribute("aria-pressed")).toBe("true");
 });
 
@@ -440,7 +427,8 @@ test("choosing a way of reading a level does not change which state it is", asyn
 	const asked = renderCalls().at(-1) ?? "";
 	expect(asked).toContain("board=engine");
 	expect(asked).toContain("variant=e1");
-	expect(variantChoice("e1").getAttribute("aria-pressed")).toBe("true");
+	openVariantsPage();
+	expect(variantEntry("e1").getAttribute("aria-pressed")).toBe("true");
 });
 
 test("choosing the current state at a level, then a view, stays on the current state", async () => {
@@ -459,8 +447,9 @@ test("choosing the current state at a level, then a view, stays on the current s
 
 	// The link named a draft; the person asks for what is current instead, which
 	// is asked for as the absence of a variant.
+	openVariantsPage();
 	await act(async () => {
-		fireEvent.click(variantChoice("e2"));
+		fireEvent.click(variantEntry("e2"));
 	});
 	await settle();
 	expect(renderCalls().at(-1)).not.toContain("variant=");
@@ -475,7 +464,7 @@ test("choosing the current state at a level, then a view, stays on the current s
 	const asked = renderCalls().at(-1) ?? "";
 	expect(asked).toContain("board=engine");
 	expect(asked).not.toContain("variant=");
-	expect(variantChoice("e2").getAttribute("aria-pressed")).toBe("true");
+	expect(variantEntry("e2").getAttribute("aria-pressed")).toBe("true");
 });
 
 test("a link into a proposal that was let go says so before it opens, and after", async () => {
@@ -503,8 +492,10 @@ test("a link into a proposal that was let go says so before it opens, and after"
 	expect(open?.getAttribute("data-variant-lifecycle")).toBe("shelved");
 
 	await openDown();
-	// And on screen once it is open, where draft and current already say where
-	// they stand: the shelved variant after the live one, as the navigator lists it.
+	// And on screen once it is open: the header names the variant that is shown,
+	// and the Variants page lists the shelved variant after the live one.
+	expect(document.querySelector("[data-slot='board-state']")?.textContent).toContain("as built");
+	openVariantsPage();
 	expect(listedVariants()).toEqual([
 		["e2", "current"],
 		["e1", "shelved"],

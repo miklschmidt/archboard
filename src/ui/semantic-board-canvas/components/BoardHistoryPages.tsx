@@ -31,9 +31,9 @@ interface VariantsPageProps {
 	readonly showing: string | null;
 	/**
 	 * The person chose a variant to read.
-	 * @param variant The variant's id.
+	 * @param variant The variant's id, or null for whichever is current.
 	 */
-	readonly onChoose: ((variant: string) => void) | undefined;
+	readonly onChoose: ((variant: string | null) => void) | undefined;
 }
 
 /** Where the timeline's columns are: the navigator's rail, at the page's room. */
@@ -110,7 +110,10 @@ function reasonOf(entry: TimelineEntry): string | undefined {
 
 /**
  * One variant on the timeline: its lane and mark, its name, where it stands
- * and why. Choosing it opens it in this pane.
+ * and why. Choosing it opens it in this pane. The current variant is asked for
+ * as the absence of a variant, which is what an address with no variant in it
+ * already means: naming it by id would pin the pane to a variant that stops
+ * being current the moment somebody adopts a proposal.
  * @param props The variant, its lane, whether it is on screen and how to open it.
  * @param props.entry The variant on the timeline.
  * @param props.lane Its lane.
@@ -122,13 +125,18 @@ function TimelineRow(props: {
 	readonly entry: TimelineEntry;
 	readonly lane: Lane;
 	readonly drawn: boolean;
-	readonly onChoose: ((variant: string) => void) | undefined;
+	readonly onChoose: ((variant: string | null) => void) | undefined;
 }): JSX.Element {
 	const { entry, lane, drawn, onChoose } = props;
 	const { variant } = entry;
 	const markX = PAGE_LANE.origin + lane.depth * PAGE_LANE.step;
 	const reason = reasonOf(entry);
-	const choose = useCallback((): void => onChoose?.(variant.id), [onChoose, variant.id]);
+	const rowStyle = useMemo(() => ({ paddingLeft: markX + TEXT_AFTER_MARK }), [markX]);
+	const markStyle = useMemo(() => ({ left: markX - 8, top: PAGE_LANE.middle - 8 }), [markX]);
+	const choose = useCallback(
+		(): void => onChoose?.(variant.lifecycle === "current" ? null : variant.id),
+		[onChoose, variant.id, variant.lifecycle],
+	);
 	return (
 		<li className="relative">
 			<button
@@ -140,7 +148,7 @@ function TimelineRow(props: {
 				data-lifecycle={variant.lifecycle}
 				onClick={choose}
 				className="hover:bg-sidebar-accent/50 aria-pressed:bg-sidebar-accent aria-pressed:shadow-raised rounded-control relative flex w-full min-w-0 py-3 pr-4 text-left disabled:cursor-default"
-				style={{ paddingLeft: markX + TEXT_AFTER_MARK }}
+				style={rowStyle}
 			>
 				{drawn && (
 					<span
@@ -152,7 +160,7 @@ function TimelineRow(props: {
 				<span
 					aria-hidden="true"
 					className="absolute flex size-4 items-center justify-center"
-					style={{ left: markX - 8, top: PAGE_LANE.middle - 8 }}
+					style={markStyle}
 				>
 					<VariantMark lifecycle={variant.lifecycle} />
 				</span>
@@ -203,6 +211,49 @@ interface WalkthroughCardProps extends WalkthroughsPageProps {
 	readonly walkthrough: SemanticWalkthrough;
 }
 
+/** Inputs for one step of a walkthrough's card. */
+interface BeatRowProps {
+	/** The walkthrough's id. */
+	readonly walkthrough: string;
+	/** Which step, counted from zero. */
+	readonly index: number;
+	/** What the step is called. */
+	readonly heading: string;
+	/**
+	 * The person chose the step to read.
+	 * @param walkthrough The walkthrough's id.
+	 * @param beat Which step, counted from zero.
+	 */
+	readonly onChoose: (walkthrough: string, beat: number) => void;
+}
+
+/**
+ * One step of a walkthrough, which presents the walkthrough from there.
+ * @param props The step and how to read it.
+ * @returns The step.
+ */
+function BeatRow(props: BeatRowProps): JSX.Element {
+	const { walkthrough, index, onChoose } = props;
+	const choose = useCallback((): void => {
+		onChoose(walkthrough, index);
+	}, [onChoose, walkthrough, index]);
+	return (
+		<li className="border-border border-t">
+			<button
+				type="button"
+				data-slot="walkthrough-beat"
+				onClick={choose}
+				className="text-control hover:bg-muted/60 rounded-control -mx-2 flex min-h-9 w-[calc(100%+16px)] items-center gap-3 px-2 py-1.5 text-left"
+			>
+				<span className="text-technical text-muted-foreground w-4 shrink-0 font-mono">
+					{index + 1}
+				</span>
+				<span className="min-w-0">{props.heading}</span>
+			</button>
+		</li>
+	);
+}
+
 /**
  * One walkthrough: its name, how many steps it has, and the steps, each of
  * which presents the walkthrough from there.
@@ -225,19 +276,13 @@ function WalkthroughCard(props: WalkthroughCardProps): JSX.Element {
 			)}
 			<ol className="mt-3">
 				{walkthrough.beats.map((beat, index) => (
-					<li key={beat.id} className={cn("border-border border-t")}>
-						<button
-							type="button"
-							data-slot="walkthrough-beat"
-							onClick={() => props.onChoose(walkthrough.id, index)}
-							className="text-control hover:bg-muted/60 rounded-control -mx-2 flex min-h-9 w-[calc(100%+16px)] items-center gap-3 px-2 py-1.5 text-left"
-						>
-							<span className="text-technical text-muted-foreground w-4 shrink-0 font-mono">
-								{index + 1}
-							</span>
-							<span className="min-w-0">{beat.heading}</span>
-						</button>
-					</li>
+					<BeatRow
+						key={beat.id}
+						walkthrough={walkthrough.id}
+						index={index}
+						heading={beat.heading}
+						onChoose={props.onChoose}
+					/>
 				))}
 			</ol>
 		</li>
