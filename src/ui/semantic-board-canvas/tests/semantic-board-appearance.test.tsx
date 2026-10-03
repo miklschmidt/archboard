@@ -81,7 +81,7 @@ test("the legend explains the picture and survives a policy-only restyle", async
 	expect(
 		surface().querySelector('[data-semantic-id="n1"]')?.classList.contains("is-selected"),
 	).toBe(true);
-	// The person collapsed the sidebar; a restyle does not open it again.
+	// The person hid the sidebar; a restyle does not show it again.
 	expect(document.querySelector('[data-slot="semantic-legend"]')).toBeNull();
 	act(() => {
 		fireEvent.click(part("semantic-sidebar-toggle"));

@@ -40,10 +40,11 @@ const SearchRequestContext = createContext<SearchRequest>(NOTHING_ASKED);
  */
 function useSearchRequest(sidebar: Sidebar): SearchRequest {
 	const { active } = usePaneChrome();
-	const { shown, toggle } = sidebar;
+	const { shown, toggle, steppedAside } = sidebar;
 	const [requested, setRequested] = useState(false);
 	useEffect(() => {
-		if (!active) {
+		// A presented walkthrough has the sidebar stepped aside: nothing here is on screen to ask for.
+		if (!active || steppedAside) {
 			return undefined;
 		}
 		/**
@@ -51,7 +52,7 @@ function useSearchRequest(sidebar: Sidebar): SearchRequest {
 		 * @param event The key event.
 		 */
 		const onKey = (event: KeyboardEvent): void => {
-			if (document.fullscreenElement !== null || !asksForSearch(event)) {
+			if (document.fullscreenElement !== null || event.defaultPrevented || !asksForSearch(event)) {
 				return;
 			}
 			event.preventDefault();
@@ -60,7 +61,7 @@ function useSearchRequest(sidebar: Sidebar): SearchRequest {
 		};
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
-	}, [active, shown, toggle]);
+	}, [active, steppedAside, shown, toggle]);
 	const settled = useCallback((): void => {
 		setRequested(false);
 	}, []);

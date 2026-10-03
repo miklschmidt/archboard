@@ -93,10 +93,12 @@ function ReadingArea(props: {
 	readonly children: ReactNode;
 }): JSX.Element {
 	return (
+		// A floating sidebar eases in from the pane's right edge, so the area clips what
+		// is drawn outside it: a panel never shows over the pane beside this one.
 		<div
 			data-slot="semantic-reading-area"
 			data-walkthrough={props.presenting ? "" : undefined}
-			className="flex min-h-0 min-w-0 flex-1"
+			className="flex min-h-0 min-w-0 flex-1 overflow-clip"
 		>
 			{props.children}
 		</div>

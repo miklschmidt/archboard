@@ -16,7 +16,9 @@
 // again, so neither refits the picture under the pointer that made it. What the
 // person asks for is theirs for as long as the pane lives: pinning docks a
 // floating panel, and hiding a docked sidebar means it docks again, and does
-// not float, when they ask for it back.
+// not float, when they ask for it back. A presented walkthrough steps the
+// sidebar aside, as it does the rest of the pane's chrome: while it lasts the
+// sidebar is not on screen, and nothing shows or hides it.
 
 import { useCallback, useId, useState } from "react";
 
@@ -31,10 +33,14 @@ interface Sidebar {
 	readonly docked: boolean;
 	/** Whether its panel is laid over the picture's edge. */
 	readonly floating: boolean;
-	/** Whether its panel is on screen, docked or floating. */
+	/** Whether its panel is on screen, docked or floating, and not stepped aside. */
 	readonly shown: boolean;
+	/** Whether a presented walkthrough has stepped it aside, so that it is not on screen and nothing shows or hides it. */
+	readonly steppedAside: boolean;
 	/** The panel's id, which the control that shows and hides it points at. */
 	readonly panelId: string;
+	/** The id of the selection tab, which a control that goes with the selection gives focus to. */
+	readonly selectionTabId: string;
 	/** The id of the control that shows and hides it, which a panel put away gives focus back to. */
 	readonly toggleId: string;
 	/**
@@ -99,6 +105,21 @@ function dockedBy(state: Frame, resting: boolean): boolean {
 }
 
 /**
+ * Whether the sidebar is docked or floating, from what the person has asked for.
+ * @param state The state.
+ * @param resting Whether the sidebar stays away unless the person docks it.
+ * @returns Whether it docks, and whether its panel floats; a sidebar that docks does not float.
+ */
+function placementOf(
+	state: Frame,
+	resting: boolean,
+): { readonly pinned: boolean; readonly docked: boolean; readonly floating: boolean } {
+	const pinned = dockedBy(state, resting);
+	const docked = pinned && !state.away;
+	return { pinned, docked, floating: !docked && state.floatBy !== null };
+}
+
+/**
  * The state after the control that shows and hides the sidebar was pressed.
  * @param state The state before.
  * @param docked Whether the sidebar is docked now.
@@ -120,9 +141,10 @@ function toggled(state: Frame, docked: boolean, floating: boolean, pinned: boole
  * Keep the sidebar's tab in step with what is selected, and its place with the panes.
  * @param selection The selected subject, or null.
  * @param resting Whether the sidebar stays away unless the person docks it: while two panes share the centre.
+ * @param steppedAside Whether a presented walkthrough has the sidebar stepped aside.
  * @returns The sidebar state and its controls.
  */
-function useSidebar(selection: string | null, resting: boolean): Sidebar {
+function useSidebar(selection: string | null, resting: boolean, steppedAside: boolean): Sidebar {
 	const [state, setState] = useState<Frame>({
 		tab: selection === null ? "board" : "selection",
 		before: "board",
@@ -133,25 +155,29 @@ function useSidebar(selection: string | null, resting: boolean): Sidebar {
 	});
 	const panelId = useId();
 	const toggleId = useId();
-	const pinned = dockedBy(state, resting);
-	const docked = pinned && !state.away;
-	const floating = !docked && state.floatBy !== null;
+	const selectionTabId = useId();
+	const { pinned, docked, floating } = placementOf(state, resting);
 	// Brought up to date during render, as React asks for state derived from a
 	// prop: the tab and the selection are never seen out of step.
 	if (state.seen !== selection) {
 		setState(followSelection(state, selection));
 	}
+	// Choosing a tab only chooses a tab. In a panel laid over the picture it also
+	// makes the float the person's, so that letting go of a pick does not take
+	// away what they have been reading.
 	const open = useCallback((tab: SidebarTab): void => {
 		setState((current) => ({
 			...current,
 			tab,
 			before: tab === "selection" ? current.before : tab,
-			floatBy: "person",
+			floatBy: current.floatBy === null ? null : "person",
 		}));
 	}, []);
 	const toggle = useCallback((): void => {
-		setState((current) => toggled(current, docked, floating, pinned));
-	}, [docked, floating, pinned]);
+		if (!steppedAside) {
+			setState((current) => toggled(current, docked, floating, pinned));
+		}
+	}, [steppedAside, docked, floating, pinned]);
 	const pin = useCallback((): void => {
 		setState((current) => ({ ...current, pinned: true, away: false, floatBy: null }));
 	}, []);
@@ -162,8 +188,10 @@ function useSidebar(selection: string | null, resting: boolean): Sidebar {
 		tab: state.tab,
 		docked,
 		floating,
-		shown: docked || floating,
+		shown: !steppedAside && (docked || floating),
+		steppedAside,
 		panelId,
+		selectionTabId,
 		toggleId,
 		open,
 		toggle,

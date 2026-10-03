@@ -27,7 +27,7 @@
 // already says: the button is the explanation's presence on screen, and pressing
 // it again is how anything pressed is let go.
 
-import { RiMicLine, RiPlayCircleFill, RiPlayCircleLine } from "@remixicon/react";
+import { RiMicLine, RiPlayCircleLine } from "@remixicon/react";
 import { useCallback, type JSX } from "react";
 
 import type { SemanticWalkthrough } from "@/shared/semantic-board/index";
@@ -109,11 +109,7 @@ function WalkthroughRow(props: WalkthroughRowProps): JSX.Element {
 				onClick={choose}
 			>
 				<SidebarGlyph>
-					{open ? (
-						<RiPlayCircleFill className="text-foreground size-4" />
-					) : (
-						<RiPlayCircleLine className="text-muted-foreground size-4" />
-					)}
+					<RiPlayCircleLine className="text-muted-foreground size-4" />
 				</SidebarGlyph>
 				<SidebarLabel>
 					{walkthrough.name} <SidebarMeta>{lengthOf(walkthrough)}</SidebarMeta>

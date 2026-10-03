@@ -23,6 +23,7 @@ import { RiCloseLine, RiPushpinLine } from "@remixicon/react";
 import {
 	useCallback,
 	useEffect,
+	useLayoutEffect,
 	useRef,
 	type CSSProperties,
 	type JSX,
@@ -121,6 +122,13 @@ interface SidebarTabsProps {
 function SidebarTabs(props: SidebarTabsProps): JSX.Element {
 	const { sidebar, onClearSelection } = props;
 	const clear = sidebar.tab === "selection" ? onClearSelection : null;
+	const { selectionTabId } = sidebar;
+	// The control goes with the selection it lets go of, so focus is given to the
+	// tab beside it first, and the keyboard is not left on the page's body.
+	const letGo = useCallback((): void => {
+		document.getElementById(selectionTabId)?.focus();
+		clear?.();
+	}, [clear, selectionTabId]);
 	return (
 		// The labels' words start on the column the tab's content starts on, 16 px
 		// in, with each underline reaching 8 px past its words.
@@ -129,6 +137,7 @@ function SidebarTabs(props: SidebarTabsProps): JSX.Element {
 				{TABS.map((entry) => (
 					<TabsTrigger
 						key={entry.tab}
+						id={entry.tab === "selection" ? selectionTabId : undefined}
 						value={entry.tab}
 						data-slot="semantic-sidebar-tab"
 						data-tab={entry.tab}
@@ -139,7 +148,7 @@ function SidebarTabs(props: SidebarTabsProps): JSX.Element {
 				))}
 			</TabsList>
 			{clear !== null && (
-				<IconButton label="Clear selection" slot="semantic-selection-clear" onClick={clear}>
+				<IconButton label="Clear selection" slot="semantic-selection-clear" onClick={letGo}>
 					<RiCloseLine />
 				</IconButton>
 			)}
@@ -158,15 +167,14 @@ function SidebarTabs(props: SidebarTabsProps): JSX.Element {
 }
 
 /**
- * Put a floating panel away when Escape is pressed inside it, and give focus
- * back to the control that brings it back, so the keyboard is where it was. It
- * goes by where the key was pressed, and not by where focus is now, so a field
- * that lets go of focus on the same key does not keep the panel.
+ * Put a floating panel away when Escape is pressed inside it. It goes by where
+ * the key was pressed, and not by where focus is now, so a field that lets go of
+ * focus on the same key does not keep the panel.
  * @param panel The panel's element.
  * @param sidebar The sidebar.
  */
 function useEscapeAway(panel: RefObject<HTMLElement | null>, sidebar: Sidebar): void {
-	const { floating, putAway, toggleId } = sidebar;
+	const { floating, putAway } = sidebar;
 	useEffect(() => {
 		if (!floating) {
 			return undefined;
@@ -182,11 +190,32 @@ function useEscapeAway(panel: RefObject<HTMLElement | null>, sidebar: Sidebar): 
 			}
 			event.stopPropagation();
 			putAway();
-			document.getElementById(toggleId)?.focus();
 		};
 		document.addEventListener("keydown", onKey);
 		return () => document.removeEventListener("keydown", onKey);
-	}, [floating, panel, putAway, toggleId]);
+	}, [floating, panel, putAway]);
+}
+
+/**
+ * Give focus back to the control that shows the sidebar when the panel is put
+ * away with focus inside it, by whatever means: Escape, letting go of the pick
+ * its control belongs to, or the pin. Left alone, a focused control that goes
+ * inert and unmounts leaves the keyboard on the page's body. It is done before
+ * the browser takes focus away from what is inert.
+ * @param panel The panel's element.
+ * @param leaving Whether the panel is on its way out.
+ * @param toggleId The id of the control that shows the sidebar.
+ */
+function useFocusBackWhenLeaving(
+	panel: RefObject<HTMLElement | null>,
+	leaving: boolean,
+	toggleId: string,
+): void {
+	useLayoutEffect(() => {
+		if (leaving && panel.current?.contains(document.activeElement) === true) {
+			document.getElementById(toggleId)?.focus();
+		}
+	}, [leaving, panel, toggleId]);
 }
 
 /**
@@ -209,9 +238,11 @@ interface ColumnProps {
 }
 
 /**
- * The column and the one panel in it. The column is a box that has a width and
- * nothing else: no rule, no shadow, which a column of no width would still draw.
- * The panel has them, and is held at the pane's edge.
+ * The column and the one panel in it. The column is a box that has a width, and
+ * while it is docked it casts the edge's shadow onto the picture, which moves
+ * with the column's edge; it is outside the clip that keeps the panel inside the
+ * column. The panel has the rule, and the float's shadow while it floats, and is
+ * held at the pane's edge.
  * @param props What is drawn and where.
  * @returns The column.
  */
@@ -219,6 +250,7 @@ function Column(props: ColumnProps): JSX.Element {
 	const { slide, place, sidebar } = props;
 	const panel = useRef<HTMLDivElement>(null);
 	useEscapeAway(panel, sidebar);
+	useFocusBackWhenLeaving(panel, slide.leaving, sidebar.toggleId);
 	const floating = slide.shownAs === "floating";
 	const leaving = slide.leaving ? "" : undefined;
 	return (
@@ -233,7 +265,7 @@ function Column(props: ColumnProps): JSX.Element {
 			style={COLUMN_STYLE}
 			className={cn(
 				"relative z-30 flex min-h-0 shrink-0 flex-col in-data-presenting:hidden in-data-walkthrough:hidden",
-				!floating && "overflow-hidden",
+				!floating && "shadow-edge-side overflow-hidden",
 			)}
 		>
 			<div
@@ -247,9 +279,7 @@ function Column(props: ColumnProps): JSX.Element {
 				style={PANEL_STYLE}
 				className={cn(
 					"border-border bg-sidebar absolute inset-y-0 right-0 flex min-h-0 flex-col border-l",
-					floating
-						? "shadow-[var(--elevation-float),var(--elevation-edge-side)]"
-						: "shadow-edge-side",
+					floating && "shadow-[var(--elevation-float),var(--elevation-edge-side)]",
 				)}
 			>
 				{props.children}

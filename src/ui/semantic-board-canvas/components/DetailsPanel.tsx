@@ -111,7 +111,7 @@ function TraceToggle(props: TraceToggleProps): JSX.Element | null {
 			data-slot="semantic-inspector-trace"
 			data-way={way}
 			onClick={toggle}
-			className="text-body border-border hover:bg-sidebar-accent/50 aria-pressed:border-primary-mark aria-pressed:bg-primary-subtle rounded-control flex h-6 shrink-0 items-center gap-1.5 border px-2"
+			className="text-body border-border hover:bg-sidebar-accent/50 aria-pressed:border-primary-mark aria-pressed:bg-primary-subtle rounded-control flex h-6 shrink-0 items-center gap-1.5 border px-2 transition-colors"
 		>
 			{way === "onward" ? "Trace onward" : "Trace back"}
 			<span aria-hidden="true" className="text-technical text-muted-foreground font-mono">

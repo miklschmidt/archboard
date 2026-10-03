@@ -5,8 +5,12 @@
 // once the voice has moved to it: started any sooner it would narrate for the
 // pane that was active before. A pointer press has already made the pane
 // active by the time its click arrives; a key press has not, and that is the
-// case this exists for. It holds no React state, so the order can be read, and
-// tested, on its own.
+// case this exists for. A pane that has no voice to move (it has no connection
+// just now) starts the narration all the same, so the person is told why it
+// cannot happen, as a press that needs no wait is. A narration whose pane the
+// person has left before the voice followed, or that voice has started since, is
+// dropped: it must never start later, with nobody asking. It holds no React
+// state, so the order can be read, and tested, on its own.
 
 import type { WalkthroughNarration } from "@/ui/semantic-board-canvas";
 
@@ -63,10 +67,15 @@ interface Waiting {
 function createNarrator(ports: NarratorPorts): Narrator {
 	let state: ShellState = { active: "", followed: null, idle: false };
 	let waiting: Waiting | null = null;
-	/** Start the waiting narration once its pane is the active one and the voice follows it. */
-	function startWhenFollowed(): void {
-		if (waiting?.paneId === state.active && state.active === state.followed) {
-			const { walkthrough } = waiting;
+	/** Settle the narration that waits for its pane: start it, keep it waiting, or drop it. */
+	function settleWaiting(): void {
+		if (waiting === null) {
+			return;
+		}
+		const { paneId, walkthrough } = waiting;
+		if (state.active !== paneId || !state.idle) {
+			waiting = null;
+		} else if (state.followed === paneId || state.followed === null) {
 			waiting = null;
 			ports.talk(walkthrough);
 		}
@@ -78,7 +87,7 @@ function createNarrator(ports: NarratorPorts): Narrator {
 		 */
 		sync: (next) => {
 			state = next;
-			startWhenFollowed();
+			settleWaiting();
 		},
 		/**
 		 * Narrate, now or once the pane has the voice.

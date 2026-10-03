@@ -13,7 +13,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
-import { pictureAtRest, sidebarTab } from "./support/semantic-page.ts";
+import { partSearchState, pictureAtRest, sidebarTab } from "./support/semantic-page.ts";
 
 /**
  * How wide the picture's viewport is.
@@ -391,8 +391,8 @@ test("a person reads containment, code and the level below it, and writes nothin
 		WAIT,
 	);
 
-	// Collapsing the sidebar gives its width back to the picture, which refits
-	// to it while nobody has moved the camera; expanding it takes the width back.
+	// Hiding the sidebar gives its width back to the picture, which refits to it
+	// while nobody has moved the camera; showing it takes the width back.
 	await pollUntil(
 		() => pictureAtRest(browser.eval.bind(browser)),
 		(atRest) => atRest,
@@ -405,7 +405,7 @@ test("a person reads containment, code and the level below it, and writes nothin
 	await pollUntil(
 		() => viewportWidth(browser),
 		(width) => width > open,
-		"the picture's viewport to widen once the sidebar collapses",
+		"the picture's viewport to widen once the sidebar is hidden",
 		WAIT,
 	);
 	await pollUntil(
@@ -419,6 +419,47 @@ test("a person reads containment, code and the level below it, and writes nothin
 		() => surfaceTransform(browser),
 		(transform) => sameVisibleFit(transform, fittedOpen),
 		"the picture to refit to the sidebar coming back",
+		WAIT,
+	);
+
+	// With the sidebar hidden, the search shortcut brings it back and takes focus
+	// in the part search. The first Escape lets go of what was typed, and the next
+	// leaves the field.
+	const searching = (): ReturnType<typeof partSearchState> =>
+		partSearchState(browser.eval.bind(browser));
+	await press(browser, "[data-slot='semantic-sidebar-toggle']");
+	await pollUntil(
+		() => sidebarTab(browser.eval.bind(browser)),
+		(tab) => tab === null,
+		"the hidden sidebar to leave the page",
+		WAIT,
+	);
+	await browser.run(["press", "Control+Shift+K"]);
+	await pollUntil(
+		searching,
+		(state) => state.focused,
+		"the search shortcut to take focus in the part search",
+		WAIT,
+	);
+	await browser.run(["keyboard", "type", "board"]);
+	await pollUntil(
+		searching,
+		(state) => state.value === "board" && state.listed,
+		"the part search to list what it found",
+		WAIT,
+	);
+	await browser.run(["press", "Escape"]);
+	await pollUntil(
+		searching,
+		(state) => state.value === "" && state.focused && !state.listed,
+		"the first Escape to clear the field and keep it",
+		WAIT,
+	);
+	await browser.run(["press", "Escape"]);
+	await pollUntil(
+		searching,
+		(state) => !state.focused,
+		"the second Escape to leave the field",
 		WAIT,
 	);
 

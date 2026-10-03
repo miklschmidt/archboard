@@ -252,7 +252,7 @@ interface RenderView extends SemanticBoardStageProps {
 	readonly group: GroupSelection | null;
 	/** Select a group's members in place of the selection and any guided reading; null to let go. */
 	readonly onChooseGroup: (group: string | null) => void;
-	/** The sidebar's tab and collapse state. */
+	/** The sidebar's tab, and where it is. */
 	readonly sidebar: Sidebar;
 	/** What the picture on screen draws each kind with, for the key and the inspector. */
 	readonly appearances: ReadonlyMap<string, AppliedAppearance>;
@@ -705,7 +705,7 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 	// how to leave: into the card that was picked, or back out.
 	const departure = useDeparture(drawn, drill.board, render);
 	// Two panes rest their sidebars, so each picture has the room (use-sidebar.ts).
-	const sidebar = useSidebar(props.selection, usePaneChrome().shared);
+	const sidebar = useSidebar(props.selection, usePaneChrome().shared, narrative.open !== null);
 	useClearOfPanel(picture, sidebar.floating, props.selection, camera.ease);
 	useReveal({
 		camera,

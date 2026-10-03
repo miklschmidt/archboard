@@ -179,9 +179,9 @@ function Result(props: ResultProps): JSX.Element {
 	return (
 		// The list is the combobox pattern's listbox, its rows the options: the ARIA
 		// Authoring Practices pattern for a field with results, which is neither a
-		// select nor a datalist, so the two rules that ask for those do not apply.
-		// oxlint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role, jsx-a11y/prefer-tag-over-role -- the ARIA combobox pattern's option
-		<li id={props.id} role="option" aria-selected={props.active}>
+		// select nor a datalist, so the rule that asks for those does not apply.
+		// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- the ARIA combobox pattern's option
+		<div id={props.id} role="option" aria-selected={props.active}>
 			<button
 				type="button"
 				tabIndex={-1}
@@ -201,7 +201,7 @@ function Result(props: ResultProps): JSX.Element {
 					{props.kind} on {hit.board.name}
 				</span>
 			</button>
-		</li>
+		</div>
 	);
 }
 
@@ -222,9 +222,9 @@ interface ResultsProps {
 function Results(props: ResultsProps): JSX.Element {
 	const { results, kinds } = props;
 	return (
-		<ul
+		<div
 			id={props.id}
-			// oxlint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role, jsx-a11y/prefer-tag-over-role -- the ARIA combobox pattern's listbox
+			// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- the ARIA combobox pattern's listbox
 			role="listbox"
 			aria-label="Matching parts"
 			className="bg-popover text-popover-foreground border-border shadow-float absolute top-full right-0 left-0 z-40 max-h-[60vh] overflow-y-auto border-b py-1"
@@ -240,9 +240,18 @@ function Results(props: ResultsProps): JSX.Element {
 				/>
 			))}
 			{results.length === 0 && (
-				<li className="text-body text-muted-foreground px-4 py-2">No part matches.</li>
+				// The one row of a list with nothing in it, which cannot be chosen.
+				<div
+					// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- the ARIA combobox pattern's option
+					role="option"
+					aria-disabled="true"
+					aria-selected="false"
+					className="text-body text-muted-foreground px-4 py-2"
+				>
+					No part matches.
+				</div>
 			)}
-		</ul>
+		</div>
 	);
 }
 
@@ -332,6 +341,10 @@ function PartSearch(props: PartSearchProps): JSX.Element {
 	const [active, setActive] = useState(0);
 	const { results, kinds } = useFoundParts(boards, query, focused);
 	const open = focused && query.trim().length > 0;
+	// The results can change under a pointed-at row without a new query, as the
+	// boards arrive or one changes, so what is pointed at is kept inside the list.
+	const last = Math.max(results.length - 1, 0);
+	const pointed = Math.min(active, last);
 	useTakeFocusWhenAsked(input);
 	const choose = useCallback(
 		(hit: PartHit | undefined): void => {
@@ -373,15 +386,15 @@ function PartSearch(props: PartSearchProps): JSX.Element {
 				onEscape(event);
 			} else if (event.key === "ArrowDown") {
 				event.preventDefault();
-				setActive((at) => Math.min(at + 1, results.length - 1));
+				setActive(Math.min(pointed + 1, last));
 			} else if (event.key === "ArrowUp") {
 				event.preventDefault();
-				setActive((at) => Math.max(at - 1, 0));
+				setActive(Math.max(pointed - 1, 0));
 			} else if (event.key === "Enter") {
-				choose(results[active]);
+				choose(results[pointed]);
 			}
 		},
-		[active, choose, onEscape, results],
+		[pointed, last, choose, onEscape, results],
 	);
 	return (
 		<div
@@ -398,7 +411,7 @@ function PartSearch(props: PartSearchProps): JSX.Element {
 				role="combobox"
 				aria-expanded={open}
 				aria-controls={listId}
-				aria-activedescendant={open && results.length > 0 ? `${listId}-${active}` : undefined}
+				aria-activedescendant={open && results.length > 0 ? `${listId}-${pointed}` : undefined}
 				aria-autocomplete="list"
 				autoComplete="off"
 				spellCheck={false}
@@ -410,7 +423,7 @@ function PartSearch(props: PartSearchProps): JSX.Element {
 			/>
 			<ShortcutHint typing={focused} />
 			{open && (
-				<Results id={listId} results={results} active={active} kinds={kinds} onChoose={choose} />
+				<Results id={listId} results={results} active={pointed} kinds={kinds} onChoose={choose} />
 			)}
 		</div>
 	);

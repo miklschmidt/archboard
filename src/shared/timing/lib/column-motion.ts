@@ -1,6 +1,15 @@
-// How a pane's sidebar comes and goes: motion a person watches for a moment and
-// then reads on from, so each is judged by whether it explains where the panel
+// How the shell's columns come and go: motion a person watches for a moment and
+// then reads on from, so each is judged by whether it explains where the column
 // lives and is gone before the next thing is asked of it. Nothing here loops.
+
+// The conversation slides open beside the navigator and shut again. It is motion
+// a person watches, not waits out: long enough to read as a slide, short enough
+// that opening it to type is not slowed. The pane centre beside it changes size on
+// every frame of the slide, and the board is fitted to it once, at the end. A
+// pane's docked sidebar does the same beside the picture, and in the same time.
+
+/** How long the conversation takes to slide open or shut, and a docked sidebar with it. */
+const AGENT_PANEL_SLIDE_MS = 220;
 
 /** The durations of the pane sidebar's coming and going, in milliseconds. */
 const SIDEBAR_MS = Object.freeze({
@@ -16,7 +25,7 @@ const SIDEBAR_MS = Object.freeze({
 	 * about 300 ms the board waits behind a moving column, and under about 150 ms
 	 * the column reads as a jump.
 	 */
-	dock: 220,
+	dock: AGENT_PANEL_SLIDE_MS,
 	/**
 	 * How long a floating panel takes to arrive: it fades in while it moves a
 	 * short way from the pane's edge. It is laid over the picture, so only its own
@@ -47,4 +56,4 @@ const SIDEBAR_MS = Object.freeze({
 	subjectIn: 120,
 });
 
-export { SIDEBAR_MS };
+export { AGENT_PANEL_SLIDE_MS, SIDEBAR_MS };
