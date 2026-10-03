@@ -273,7 +273,18 @@ function PageTab(props: {
 			<Icon aria-hidden="true" className="size-4" />
 			<span className={folds}>{entry.label}</span>
 			{count !== undefined && (
-				<span className={cn("text-technical text-muted-foreground font-mono", folds)}>{count}</span>
+				<span className={folds}>
+					<span
+						className={cn(
+							"rounded-chip flex h-4 min-w-4 items-center justify-center px-1 font-mono text-[11px] leading-none tabular-nums",
+							open
+								? "bg-primary-subtle text-foreground ring-primary-mark ring-1 ring-inset"
+								: "bg-foreground/10 text-foreground/80",
+						)}
+					>
+						{count}
+					</span>
+				</span>
 			)}
 		</TabsTrigger>
 	);
