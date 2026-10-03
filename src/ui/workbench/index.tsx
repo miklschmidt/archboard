@@ -1,7 +1,7 @@
 // The agent surfaces: the agent dock at the navigator's foot — the voice
-// circle, the agent's state, its plan and the composer — and the conversation
-// beside the navigator. Both read one `AgentView` and act through one
-// `AgentActions`.
+// circle, the agent's state, its plan and the way to the conversation — and the
+// conversation beside the navigator, with the composer at its foot. Both read
+// one `AgentView` and act through one `AgentActions`.
 
 export { AgentDock, type AgentDockProps } from "@/ui/workbench/components/AgentDock";
 export { AgentPanel, type AgentPanelProps } from "@/ui/workbench/components/AgentPanel";

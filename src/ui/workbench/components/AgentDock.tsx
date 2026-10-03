@@ -1,18 +1,18 @@
-// The agent, at the foot of the navigator column: one place for talking and
-// typing to it. The voice circle is its head — press it to talk, press it
-// again to end — and beside it the agent's name with its state, what it is on,
-// and the voice's own line with mute and subtitles while voice is on. Under it
-// the steps of its plan, and at the foot the composer, which opens the
-// conversation right beside this column.
+// The agent, at the foot of the navigator column: its voice and its state. The
+// voice circle is its head — press it to talk, press it again to end — and
+// beside it the agent's name with its state, what it is on, and the voice's own
+// line with mute and subtitles while voice is on. Under it the steps of its
+// plan, and at the foot the control that opens the conversation right beside
+// this column, where the composer is.
 
 import { RiChat3Line, RiMicLine, RiMicOffLine } from "@remixicon/react";
 import type { JSX } from "react";
 
 import { AGENT_ELAPSED_TICK_MS, SHELL_AGE_TICK_MS } from "@/shared/timing/timing";
+import { Button } from "@/ui/components/button";
 import { cn } from "@/ui/components/class-names";
 import { useClock } from "@/ui/components/use-clock";
 import { SubtitlesToggle } from "@/ui/voice-subtitles";
-import { AgentComposer } from "@/ui/workbench/components/AgentComposer";
 import { IconAction } from "@/ui/workbench/components/IconAction";
 import { PlanSteps } from "@/ui/workbench/components/PlanSteps";
 import { StatusAction, StatusLamp, Timing } from "@/ui/workbench/components/StatusParts";
@@ -20,7 +20,6 @@ import { useAudible } from "@/ui/workbench/components/TalkControl";
 import { VOICE_WORDS, VoiceCircle, circleState } from "@/ui/workbench/components/VoiceCircle";
 import type { AgentActions, AgentView, AgentVoiceView } from "@/ui/workbench/contracts";
 import { agentStatus, type AgentStatus } from "@/ui/workbench/lib/agent-status";
-import type { DraftStore } from "@/ui/workbench/lib/draft-store";
 import {
 	DEMO_DOING,
 	DEMO_SINCE_MS,
@@ -39,7 +38,6 @@ const VOICE_PROBLEM_ID = "voice-problem";
 interface AgentDockProps {
 	readonly view: AgentView;
 	readonly actions: AgentActions;
-	readonly draft: DraftStore;
 	readonly panelOpen: boolean;
 	/** Agent words arrived while the conversation was closed. */
 	readonly unread: boolean;
@@ -95,7 +93,7 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 			data-slot="agent-dock"
 			data-agent-tone={status.tone}
 			aria-label="Agent"
-			className="border-border bg-raised shadow-edge-up relative flex shrink-0 flex-col gap-3 border-t px-4 pt-4"
+			className="border-border bg-raised shadow-edge-up relative flex shrink-0 flex-col gap-3 border-t px-4 pt-4 pb-3"
 		>
 			<div className="flex items-center gap-3">
 				<VoiceCircle voice={voice} actions={actions} problemId={VOICE_PROBLEM_ID} />
@@ -117,19 +115,11 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 				<PlanSteps steps={steps} sinceMs={status.sinceMs} now={now} className="pl-[76px]" />
 			)}
 			<WideAction status={status} actions={actions} />
-			<div className="bg-foreground/4 -mx-4 flex items-end gap-1 px-4 py-3 shadow-[inset_0_1px_0_color-mix(in_oklch,var(--foreground)_6%,transparent)]">
-				<AgentComposer
-					draft={props.draft}
-					context={view.context}
-					running={running}
-					onSend={actions.send}
-				/>
-				<ConversationToggle
-					open={props.panelOpen}
-					unread={props.unread}
-					onToggle={props.onTogglePanel}
-				/>
-			</div>
+			<ConversationToggle
+				open={props.panelOpen}
+				unread={props.unread}
+				onToggle={props.onTogglePanel}
+			/>
 		</section>
 	);
 }
@@ -258,7 +248,8 @@ function LiveControls(props: {
 
 /**
  * Open or close the conversation beside the navigator, with a dot while words
- * wait in it unread.
+ * wait in it unread. The composer is in the conversation, so this is the way
+ * to it.
  * @param props Whether it is open, whether words wait, and the toggle.
  * @param props.open Whether it is open.
  * @param props.unread Whether words wait unread.
@@ -271,24 +262,21 @@ function ConversationToggle(props: {
 	readonly onToggle: () => void;
 }): JSX.Element {
 	return (
-		<span className="relative flex h-9 items-center">
-			<IconAction
-				label={props.open ? "Close the conversation" : "Open the conversation"}
-				onClick={props.onToggle}
-				className={cn(
-					"size-7",
-					props.open ? "text-foreground bg-sidebar-accent" : "text-muted-foreground",
-				)}
-			>
-				<RiChat3Line />
-			</IconAction>
-			{props.unread && !props.open && (
-				<span
-					aria-hidden="true"
-					className="bg-primary pointer-events-none absolute top-1.5 right-0.5 size-1.5 rounded-full"
-				/>
+		<Button
+			variant="ghost"
+			aria-label={props.open ? "Close the conversation" : "Open the conversation"}
+			onClick={props.onToggle}
+			className={cn(
+				"-mx-1 w-auto justify-start gap-2",
+				props.open ? "text-foreground bg-sidebar-accent" : "text-muted-foreground",
 			)}
-		</span>
+		>
+			<RiChat3Line aria-hidden="true" className="size-4 shrink-0" />
+			<span className="min-w-0 flex-1 truncate text-left">Conversation</span>
+			{props.unread && !props.open && (
+				<span aria-hidden="true" className="bg-primary size-1.5 shrink-0 rounded-full" />
+			)}
+		</Button>
 	);
 }
 

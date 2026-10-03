@@ -1,7 +1,7 @@
-// The conversation beside the navigator, next to the composer that opens it: a
-// title row level with every column's header row, and the conversation — or, before anybody has signed in, the
-// sign-in, and on request the details of the session. It opens only when the
-// person asks: the toggle, a message sent, Review, or the status line.
+// The conversation beside the navigator: a title row level with every column's
+// header row, the conversation — or, before anybody has signed in, the sign-in,
+// and on request the details of the session — and at its foot the composer. It
+// opens only when the person asks: the toggle, Review, or the status line.
 
 import { RiCloseLine, RiMoreLine } from "@remixicon/react";
 import type { JSX } from "react";
@@ -14,6 +14,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/ui/components/dropdown-menu";
 import type { AgentActions, AgentView } from "@/ui/workbench/contracts";
+import { AgentComposer } from "@/ui/workbench/components/AgentComposer";
 import { AgentDetails } from "@/ui/workbench/components/AgentDetails";
 import { EmptyConversation } from "@/ui/workbench/components/EmptyConversation";
 import { IconAction } from "@/ui/workbench/components/IconAction";
@@ -23,6 +24,7 @@ import { VoiceLines } from "@/ui/workbench/components/VoiceLines";
 import { AgentRuntimeProvider } from "@/ui/workbench-runtime";
 import { Conversation } from "@/ui/workbench-thread";
 import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
+import type { DraftStore } from "@/ui/workbench/lib/draft-store";
 
 /** Inputs for the panel. */
 interface AgentPanelProps {
@@ -30,6 +32,8 @@ interface AgentPanelProps {
 	readonly actions: AgentActions;
 	/** The focused pane's transport, or null while its socket is down. */
 	readonly transport: BrowserWorkbenchTransport | null;
+	/** What the composer holds. */
+	readonly draft: DraftStore;
 	/** Put a suggestion in the composer. */
 	readonly suggest: (text: string) => void;
 	/** The session's details show in place of the conversation. */
@@ -84,7 +88,38 @@ function AgentPanel(props: AgentPanelProps): JSX.Element {
 				</IconAction>
 			</header>
 			{details ? <AgentDetails view={view} /> : <PanelBody {...props} />}
+			{!details && <PanelFooter view={view} actions={actions} draft={props.draft} />}
 		</aside>
+	);
+}
+
+/**
+ * The composer, on a tray at the foot of the conversation, which it takes room
+ * from as a message grows.
+ * @param props The view, the actions and the draft.
+ * @param props.view The agent view.
+ * @param props.actions The actions.
+ * @param props.draft What the composer holds.
+ * @returns The foot.
+ */
+function PanelFooter(props: {
+	readonly view: AgentView;
+	readonly actions: AgentActions;
+	readonly draft: DraftStore;
+}): JSX.Element {
+	const running = props.view.conversation.turns.some((turn) => turn.outcome === "running");
+	return (
+		<div
+			data-slot="agent-panel-footer"
+			className="border-border bg-raised shadow-edge-up relative shrink-0 border-t px-4 py-3"
+		>
+			<AgentComposer
+				draft={props.draft}
+				context={props.view.context}
+				running={running}
+				onSend={props.actions.send}
+			/>
+		</div>
 	);
 }
 
