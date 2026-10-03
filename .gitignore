@@ -67,6 +67,11 @@ skills/archboard/references/generated/
 # granted on one machine. The shared .claude/settings.json stays tracked.
 .claude/settings.local.json
 
+# Impeccable's design comps and question-server state: exploration output that
+# reproduces from the tool, not authored input.
+/.impeccable/mocks/
+/.impeccable/questions/
+
 # TASK-150 local reference snapshot; never stage or import it.
 /legacy/
 
