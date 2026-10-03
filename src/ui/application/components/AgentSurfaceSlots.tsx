@@ -28,7 +28,9 @@ interface AgentSurfaceProps {
  * @param props.reducedMotion Whether the person asked for reduced motion.
  * @returns The dock.
  */
-function AgentDockSlot(props: AgentSurfaceProps & { readonly reducedMotion: boolean }): JSX.Element {
+function AgentDockSlot(
+	props: AgentSurfaceProps & { readonly reducedMotion: boolean },
+): JSX.Element {
 	const { agent } = props;
 	const view = useAgentView(props, agent.voice);
 	const unread = useUnread(view.conversation, agent.panel.open);
@@ -36,7 +38,6 @@ function AgentDockSlot(props: AgentSurfaceProps & { readonly reducedMotion: bool
 		<AgentDock
 			view={view}
 			actions={agent.actions}
-			draft={agent.draft}
 			panelOpen={agent.panel.open}
 			unread={unread}
 			onTogglePanel={agent.panel.togglePanel}
@@ -59,6 +60,7 @@ function AgentPanelSlot(props: AgentSurfaceProps): JSX.Element {
 			view={view}
 			actions={agent.actions}
 			transport={workbench.owners?.transport ?? null}
+			draft={agent.draft}
 			suggest={agent.draft.fill}
 			details={panel.details}
 			onDetails={panel.showDetails}

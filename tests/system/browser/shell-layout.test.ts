@@ -320,9 +320,10 @@ test(
 		expect(closed.bar.bottom).toBe(closed.viewport.height);
 		expect(closed.bar.height).toBe(DOCK_BAR_HEIGHT);
 		expect(closed.panel).toBeNull();
+		expect(closed.composer).toBeNull();
 
-		// Opening the conversation puts the panel right of the panes, over the
-		// composer's region, and takes its width from the stage alone.
+		// Opening the conversation puts the panel right of the panes, with the
+		// composer at its foot, and takes its width from the stage alone.
 		await roleAction(browser, "button", "Open the conversation");
 		const open = await pollUntil(
 			() => browser.eval<DesktopShell>(READ_DESKTOP),
@@ -336,7 +337,8 @@ test(
 		expect(panel.bottom).toBeLessThanOrEqual(open.bar.top + 0.5);
 		expect(open.composer.left).toBeGreaterThanOrEqual(panel.left - 0.5);
 		expect(open.composer.right).toBeLessThanOrEqual(panel.right + 0.5);
-		expect(open.composer.top).toBeGreaterThanOrEqual(open.bar.top - 0.5);
+		expect(open.composer.top).toBeGreaterThanOrEqual(panel.top - 0.5);
+		expect(open.composer.bottom).toBeLessThanOrEqual(panel.bottom + 0.5);
 		expect(open.stages.width).toBe(closed.stages.width - AGENT_PANEL_WIDTH);
 		expect(open.stages.height).toBe(closed.stages.height);
 		expect(open.bar).toEqual(closed.bar);

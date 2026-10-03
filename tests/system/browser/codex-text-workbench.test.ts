@@ -28,6 +28,7 @@ import {
 	BOARD_NAME_EXPRESSION,
 	COMPOSER,
 	PANE_SECTIONS,
+	openConversation,
 } from "./support/shell-dom.ts";
 
 const serverPath = join(import.meta.dir, "../server-state/fixtures/codex-production-server.ts");
@@ -36,7 +37,7 @@ const executableSource = join(import.meta.dir, "../server-state/fixtures/fake-co
 /** The provider page the fixture names for a ChatGPT sign-in. */
 const LOGIN_URL = "https://example.test/login";
 const MESSAGE = "Check the rendered workbench.";
-const SEND = `${AGENT_BAR} button[aria-label="Send"]`;
+const SEND = `${AGENT_PANEL} button[aria-label="Send"]`;
 const STATUS = `${AGENT_BAR} [data-slot="agent-status"]`;
 
 interface FixtureRecord {
@@ -176,6 +177,13 @@ test(
 			(surface) => surface.statusButtons.includes("Sign in with ChatGPT"),
 			"the signed-out agent to offer sign-in",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+		// The composer is at the foot of the conversation, which opens through its toggle.
+		await openConversation(browser);
+		await pollUntil(
+			() => browser.eval<boolean>(`document.querySelector('${COMPOSER}') !== null`),
+			Boolean,
+			"the composer to show at the foot of the conversation",
 		);
 		await browser.eval<boolean>(
 			`(() => { const input = document.querySelector('${COMPOSER}'); input?.focus(); return document.activeElement === input; })()`,

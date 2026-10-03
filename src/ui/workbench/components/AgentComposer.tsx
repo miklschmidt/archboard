@@ -1,9 +1,8 @@
-// The composer, at the foot of the agent dock beside where the conversation
-// opens: type and press Enter. While a turn runs, Enter steers it and Ctrl or
-// Cmd with Enter queues the message to run after it; Shift with Enter starts a
-// new line. It grows upward as the message grows, taking room from the
-// navigator above it, never from the panes. It says which board the agent
-// will read.
+// The composer, at the foot of the conversation: type and press Enter. While a
+// turn runs, Enter steers it and Ctrl or Cmd with Enter queues the message to
+// run after it; Shift with Enter starts a new line. It grows upward as the
+// message grows, taking room from the conversation above it. It says which
+// board the agent will read.
 
 import { RiArrowUpLine } from "@remixicon/react";
 import {
