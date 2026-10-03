@@ -2,6 +2,9 @@
 // turn, at one speed, and waits until the one before it has arrived.
 import { describe, expect, test } from "bun:test";
 import { DEFAULT_TRAFFIC_SPEED } from "@/shared/semantic-board/index";
+
+/** How fast a pulse flies on a message: twice the pace of a relationship's default traffic. */
+const FLOWN = DEFAULT_TRAFFIC_SPEED * 2;
 import { FLOW_CYCLE_CAP_MS } from "@/shared/timing/timing";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
 import { messagePulses } from "@/runtime/semantic-renderer/tests/drawn-traffic";
@@ -61,10 +64,10 @@ describe("an exchange is told on one clock", () => {
 		expect(starts.at(-1)!).toBeLessThan(told[0]!.cycle);
 	});
 
-	test("every pulse flies at the pace of a relationship's default traffic, however long its message", async () => {
+	test("every pulse flies at the same pace, however long its message", async () => {
 		const svg = await drawn("data-flow");
 		for (const { speed } of turns(svg, ["asks", "again", "answers"])) {
-			expect(speed).toBeCloseTo(DEFAULT_TRAFFIC_SPEED, 1);
+			expect(speed).toBeCloseTo(FLOWN, 1);
 		}
 	});
 
@@ -118,6 +121,6 @@ describe("an exchange is told on one clock", () => {
 			steps.map(({ id }) => id),
 		);
 		expect(told[0]!.cycle).toBeLessThanOrEqual(FLOW_CYCLE_CAP_MS / 1000 + 0.001);
-		for (const { speed } of told) expect(speed).toBeGreaterThan(DEFAULT_TRAFFIC_SPEED);
+		for (const { speed } of told) expect(speed).toBeGreaterThan(FLOWN);
 	});
 });

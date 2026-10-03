@@ -19,6 +19,7 @@ import {
 	type Ride,
 } from "@/transformers/semantic-renderer/lib/svg/pulse";
 import type { SubjectStanding } from "@/transformers/semantic-renderer/lib/svg/standing";
+import { PULSE_PACE } from "@/transformers/semantic-renderer/lib/svg/traffic-relay";
 import {
 	fullLineColour,
 	lineColour,
@@ -62,18 +63,15 @@ interface Crossing {
  * @returns The clock, which has no turns for a drawing where nothing crosses.
  */
 function exchangeClock(lengths: readonly number[]): Crossing {
-	const distance = lengths.reduce((sum, length) => sum + length, 0);
-	const speed = Math.max(
-		DEFAULT_TRAFFIC_SPEED,
-		(distance + PULSE_LENGTH) / (FLOW_CYCLE_CAP_MS / 1000),
-	);
+	const distance = lengths.reduce((sum, length) => sum + length, 0) + PULSE_LENGTH;
+	const speed = Math.max(DEFAULT_TRAFFIC_SPEED * PULSE_PACE, distance / (FLOW_CYCLE_CAP_MS / 1000));
 	let along = 0;
 	const starts = lengths.map((length) => {
 		const start = along / speed;
 		along += length;
 		return start;
 	});
-	return { cycle: (distance + PULSE_LENGTH) / speed, speed, starts };
+	return { cycle: distance / speed, speed, starts };
 }
 
 /**

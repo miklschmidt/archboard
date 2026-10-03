@@ -1,7 +1,7 @@
 // How a board's traffic keeps time (ADR 0027).
 //
 // A line carries a steady train of pulses: one every `spacing` units, every one
-// flying at the line's authored speed. Lines that keep the same time hand their
+// flying a fixed multiple of the line's authored speed. Lines that keep the same time hand their
 // pulses on. When a card has lines going out that carry the same speed and
 // volume as a line coming in, the pulse that sinks into the card runs round its
 // edge and leaves on every one of them, so a reader follows one pulse through
@@ -19,6 +19,13 @@ import type { Point } from "@/transformers/semantic-renderer/lib/geometry";
  * its author asked for.
  */
 const MIN_SPACING = 36;
+
+/**
+ * How many times faster a pulse flies than the speed its author gave. The
+ * authored speed still says which lines run hotter, and the distance between
+ * two pulses still follows it: speed over volume, as the author stated them.
+ */
+const PULSE_PACE = 2;
 
 /**
  * The slowest and fastest a pulse flies, in diagram units a second, whatever its
@@ -176,15 +183,15 @@ function chains(lanes: readonly Lane[]): Lane[][] {
 
 /**
  * The distance between two pulses on every line of a chain: what the authored
- * volume says, no further apart than the shortest line of the chain is long,
- * so that every line is carrying a pulse at every moment.
+ * speed and volume say, no further apart than the shortest line of the chain is
+ * long, so that every line is carrying a pulse at every moment.
  * @param chain The lanes that keep one another's time.
- * @param speed How fast the chain's pulses fly.
  * @returns The spacing.
  */
-function spacingOf(chain: readonly Lane[], speed: number): number {
+function spacingOf(chain: readonly Lane[]): number {
+	const { speed, volume } = chain[0]!.traffic;
 	const shortest = Math.min(...chain.filter(({ ride }) => ride > 0).map(({ ride }) => ride));
-	return Math.max(MIN_SPACING, Math.min(speed / chain[0]!.traffic.volume, shortest));
+	return Math.max(MIN_SPACING, Math.min(speed / volume, shortest));
 }
 
 /**
@@ -267,10 +274,10 @@ function relayRhythms(
 	const crossings: Crossing[] = [];
 	for (const chain of chains(lanes)) {
 		const speed = Math.min(
-			Math.max(chain[0]!.traffic.speed, SPEED_LIMITS.slowest),
+			Math.max(chain[0]!.traffic.speed * PULSE_PACE, SPEED_LIMITS.slowest),
 			SPEED_LIMITS.fastest,
 		);
-		const spacing = spacingOf(chain, speed);
+		const spacing = spacingOf(chain);
 		const placed = phasesOf(chain, { spacing, speed }, across);
 		for (const { id } of chain) rhythms.set(id, { speed, spacing, phase: placed.phases.get(id)! });
 		crossings.push(...placed.crossings);
@@ -278,4 +285,12 @@ function relayRhythms(
 	return { rhythms, crossings };
 }
 
-export { relayRhythms, type Across, type AcrossCard, type Crossing, type Lane, type Rhythm };
+export {
+	PULSE_PACE,
+	relayRhythms,
+	type Across,
+	type AcrossCard,
+	type Crossing,
+	type Lane,
+	type Rhythm,
+};

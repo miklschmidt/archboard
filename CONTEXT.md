@@ -136,9 +136,10 @@ is not a count of marks on the line.
 _Avoid_: dot count, shot rate, traffic speed
 
 **Traffic speed**:
-How fast a pulse flies along a connection, literally, in diagram units per
-second (held between 8 and 600). A longer line takes a pulse longer to cross,
-and a higher speed is a faster line.
+How fast a pulse flies along a connection, in diagram units per second. A pulse
+flies twice the authored speed (held between 8 and 600), and the distance
+between two pulses is the authored speed divided by the volume. A longer line
+takes a pulse longer to cross, and a higher speed is a faster line.
 _Avoid_: traversal duration, traffic volume
 
 **Emphasis**:

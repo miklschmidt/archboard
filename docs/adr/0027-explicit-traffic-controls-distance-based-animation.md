@@ -21,9 +21,9 @@ thin: as thick as its line plus 0.6 units. It has no ring of the page's
 background, no glow and no round blob. It follows a bend as its line does.
 
 A line with traffic carries a steady train of pulses. They are evenly spaced by
-the speed divided by the volume, and each flies at exactly the authored speed.
-Speed is clamped to 8 to 600 diagram units a second. There is no jitter, no
-seeded launch cycle, no multiple of the speed, no shots and no resting streak.
+the authored speed divided by the volume, and each flies at twice the authored
+speed. The flown speed is clamped to 8 to 600 diagram units a second. There is
+no jitter, no seeded launch cycle, no shots and no resting streak.
 The tail is cut short on a close train, so two pulses never merge.
 
 The spacing is held to two limits. It is never below 36 units. It is never above
@@ -51,16 +51,17 @@ board order.
 Sequence diagrams use the same pulse. Each message sends one pulse in turn, and
 a repeated step sends up to three. All the pulses share one clock for the whole
 page, and a message waits until the one before it has arrived. Every pulse flies
-at the default traffic speed, 80 units a second, so a long message takes longer
-than a short one. When the whole cycle would pass 16 seconds, every pulse flies
+at twice the default traffic speed, 160 units a second, so a long message takes
+longer than a short one. When the whole cycle would pass 16 seconds, every pulse flies
 faster by the same factor.
 
 Reduced motion hides every pulse. A relationship that is removed or removed
 standing carries no traffic. Traffic is still illustration, not measurement.
 
-The paragraphs after the settled requirements hold again. A pulse takes L/S
-seconds to cross a line of length L, the spacing is S/V (within the limits
-above), and a longer line holds more pulses rather than faster ones.
+The paragraphs after the settled requirements hold again, with one change: a
+pulse flies at 2S, so it takes L/2S seconds to cross a line of length L. The
+spacing is S/V (within the limits above), and a longer line holds more pulses
+rather than faster ones.
 
 ## Earlier amendments (history)
 
