@@ -47,8 +47,9 @@ const edgeInks = (
 			`  band: opaque(getComputedStyle(band).stroke),` +
 			`  head: opaque(getComputedStyle(head).fill === "none"` +
 			`   ? getComputedStyle(head).stroke : getComputedStyle(head).fill),` +
-			`  streams: [...document.querySelectorAll("${surface} [data-traffic='${id}'] .ab-pulse")].map((comet) => [...new Set(` +
-			`   [...comet.querySelectorAll("path:not([data-pulse-part='moat'])")].map((path) => opaque(getComputedStyle(path).stroke)))].join("|")),` +
+			`  streams: [...document.querySelectorAll("${surface} [data-traffic='${id}'] .ab-pulse")].map((pulse) => [...new Set(` +
+			// The hot core, the last part drawn, is nearer the text colour than the relationship's.
+			`   [...pulse.querySelectorAll("path:not(:last-of-type)")].map((path) => opaque(getComputedStyle(path).stroke)))].join("|")),` +
 			` }; })()`,
 	);
 
@@ -59,8 +60,8 @@ const edgeInks = (
  * each element's `style` (TASK-346). An expression the page cannot resolve
  * does not fail loudly: the property falls back to its initial value, a black
  * fill or stop, or no stroke at all. So every fill, stroke and gradient stop
- * the picture declares — lines, arrowheads, the comets its traffic moves and the
- * stops their tails fade through — is read back as the browser computed it.
+ * the picture declares — lines, arrowheads and the pulses its traffic moves — is
+ * read back as the browser computed it.
  * A mask's shapes are not paint: they are black or white by design, saying
  * where a line's ink is hidden, and are left out.
  * @param browser The page.

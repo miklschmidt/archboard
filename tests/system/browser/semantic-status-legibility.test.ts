@@ -357,7 +357,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	const added = await edgeInks(browser, SURFACE, ids["added"] ?? "");
 	expect(added.head).toBe(added.line);
 	expect(sameHue(added.line, added.band)).toBe(true);
-	// The comets carry the relationship's colour, the band's hue; the line is drawn weaker.
+	// The pulses carry the relationship's colour, the band's hue; the line is drawn weaker.
 	expect(added.streams.length).toBe(1);
 	for (const stream of added.streams) {
 		for (const part of stream.split("|")) {
@@ -427,15 +427,15 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	const stepId = await browser.eval<string>(
 		`document.querySelector("${SURFACE} [data-semantic-kind='step']").dataset.semanticId`,
 	);
-	// The exchange's timed comets: their motion and the gradient stops their tails fade through.
+	// The exchange's pulses, each in the colours of its message.
 	expect(
-		await browser.eval<number>(`document.querySelectorAll("${SURFACE} svg stop").length`),
+		await browser.eval<number>(`document.querySelectorAll("${SURFACE} .ab-pulse").length`),
 	).toBeGreaterThan(0);
 	expect(await unresolvedPaints(browser, SURFACE)).toEqual([]);
 	const message = await overThePill(browser, stepId);
 	expect(message.traffic).toBeGreaterThan(0);
 	expect(message.trafficFirst).toBe(true);
-	expect(message.hit).not.toBe("circle.ab-pulse");
+	expect(message.hit).not.toBe("path.ab-pulse");
 
 	// And all of it again on the other ground. The inks change, because they are
 	// picked for the ground they are drawn on; what they say does not.

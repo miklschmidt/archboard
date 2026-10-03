@@ -48,8 +48,12 @@ import {
 } from "@/transformers/semantic-renderer/lib/svg/flow-subjects";
 import { canvasFor, coord, union } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
-import { FLOW_CYCLE_CAP_MS, FLOW_STEP_TRAVEL_MS } from "@/shared/timing/timing";
-import { timedCrossings, type Crossing } from "@/transformers/semantic-renderer/lib/svg/flow-clock";
+import {
+	exchangeClock,
+	timedCrossings,
+	type Crossing,
+} from "@/transformers/semantic-renderer/lib/svg/flow-clock";
+import { standoffOf, type Ride } from "@/transformers/semantic-renderer/lib/svg/pulse";
 import {
 	activationLookup,
 	layoutDataFlow,
@@ -85,6 +89,7 @@ import {
 	type UnsettledOf,
 } from "@/transformers/semantic-renderer/lib/svg/standing";
 import {
+	headBase,
 	litMarkerFor,
 	markerFor,
 	stylesFor,
@@ -143,16 +148,17 @@ function stepAttributes(
  * The path a self-message takes: out to the right, down, and back.
  * @param placed The message.
  * @param activated Whether its column is busy at that height.
+ * @param cut How much of the way back to leave undrawn, for the part of it that stops short.
  * @returns The path's `d`.
  */
-function selfPath(placed: PlacedStep, activated: boolean): string {
+function selfPath(placed: PlacedStep, activated: boolean, cut = 0): string {
 	const start = selfStart(placed, activated);
 	return (
 		`M${coord(start)},${coord(placed.y)} h${coord(SELF_LOOP_REACH)} ` +
 		`a${SELF_LOOP_CORNER},${SELF_LOOP_CORNER} 0 0 1 ${SELF_LOOP_CORNER},${SELF_LOOP_CORNER} ` +
 		`v${coord(SELF_LOOP_DROP)} ` +
 		`a${SELF_LOOP_CORNER},${SELF_LOOP_CORNER} 0 0 1 -${SELF_LOOP_CORNER},${SELF_LOOP_CORNER} ` +
-		`h-${coord(SELF_LOOP_REACH - arrowStandoff("self"))}`
+		`h-${coord(SELF_LOOP_REACH - arrowStandoff("self") - cut)}`
 	);
 }
 
@@ -169,6 +175,35 @@ function stepPath(placed: PlacedStep, activeAt: ActiveAt): string {
 	}
 	const ends = endsFor(placed, activeAt, direction);
 	return `M${coord(ends.start)},${coord(placed.y)} L${coord(ends.end)},${coord(placed.y)}`;
+}
+
+/**
+ * The part of one message's line its pulses ride: all of it but the base of its
+ * arrowhead, which a pulse sinks into rather than covers.
+ * @param placed The message.
+ * @param activeAt Whether a column is busy at a given height.
+ * @returns The route and its length, or undefined when the line is too short to carry a pulse.
+ */
+function stepRide(placed: PlacedStep, activeAt: ActiveAt): Ride | undefined {
+	const { kind } = placed.step;
+	const cut = standoffOf(headBase(STEP_HEAD[kind], STEP_WEIGHT));
+	const direction = travelOf(kind, placed.fromX, placed.toX);
+	if (direction === 0) {
+		const back = SELF_LOOP_REACH - arrowStandoff(kind) - cut;
+		if (back <= 0) return undefined;
+		const bends = Math.PI * SELF_LOOP_CORNER;
+		return {
+			path: selfPath(placed, activeAt(placed.step.from, placed.y), cut),
+			length: SELF_LOOP_REACH + SELF_LOOP_DROP + bends + back,
+		};
+	}
+	const { start, end } = endsFor(placed, activeAt, direction);
+	const length = (end - start) * direction - cut;
+	if (length <= 0) return undefined;
+	return {
+		path: `M${coord(start)},${coord(placed.y)} L${coord(start + direction * length)},${coord(placed.y)}`,
+		length,
+	};
 }
 
 /**
@@ -196,6 +231,7 @@ function paintStep(
 ): string {
 	const styles = stylesFor(palette);
 	const path = stepPath(placed, activeAt);
+	const ride = stepRide(placed, activeAt);
 	return wrap(
 		"g",
 		subjectGroup("step", placed.step.id, standing),
@@ -225,13 +261,13 @@ function paintStep(
 				...styles.halo,
 				"stroke-width": STROKE_WIDTH[STEP_WEIGHT] + LIT_TRACE_EXTRA,
 			}),
-			// The dots over the line and under the words, which is the order a
-			// reader needs: a dot crossing an opaque plate put a hole in the middle
+			// The pulses over the line and under the words, which is the order a
+			// reader needs: a pulse crossing an opaque plate put a hole in the middle
 			// of what the message says. A message the proposal no longer sends is
 			// drawn for context and must not read as live traffic.
-			standing === "removed"
+			standing === "removed" || ride === undefined
 				? ""
-				: timedCrossings(placed, path, palette, { ...crossing, standing: mark }),
+				: timedCrossings(placed.slot, ride, palette, { ...crossing, standing: mark }),
 		]),
 	);
 }
@@ -459,13 +495,17 @@ function paintDataFlow(
 		policy,
 		level,
 	);
-	// One clock for everything drawn, so the whole page is told in order. It
-	// grows with the number of turns and then stops growing: past the cap a
-	// reader who looked away would not see the beginning come round again.
-	const crossing: Crossing = {
-		turns: layout.turns,
-		cycle: Math.min(layout.turns * FLOW_STEP_TRAVEL_MS, FLOW_CYCLE_CAP_MS) / 1000,
-	};
+	// One clock for everything drawn, so the whole page is told in order. Every
+	// turn the page holds is on it, drawn or not, so what is drawn crosses when it
+	// crosses with the rest.
+	const crossing = exchangeClock(
+		laid.flows.flatMap((one) => {
+			const activeAt = activationLookup(one.columns);
+			return one.steps.flatMap((placed) =>
+				Array.from({ length: placed.slot.count }, () => stepRide(placed, activeAt)?.length ?? 0),
+			);
+		}),
+	);
 	const painted = layout.flows.map((one) =>
 		paintFlow(one, palette, standingOf, crossing, unsettledOf, appearances),
 	);

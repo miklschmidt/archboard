@@ -80,6 +80,17 @@ function headReach(head: Head, weight: Weight): number {
 }
 
 /**
+ * How far back from the end of its line an arrowhead's base lies: what a mark
+ * that rides the line must stop short of, so it never covers the head.
+ * @param head Which form.
+ * @param weight How loudly the line speaks.
+ * @returns The distance, in the page's units.
+ */
+function headBase(head: Head, weight: Weight): number {
+	return (HEAD_REF_X[head] / 10) * HEAD_SIZE[weight] * STROKE_WIDTH[weight];
+}
+
+/**
  * The ink a line and its arrowhead are drawn in; its comets carry the same
  * colour at full strength (`fullLineColour`).
  *
@@ -285,6 +296,7 @@ export {
 	edgeAttributes,
 	stylesFor,
 	headReach,
+	headBase,
 	HEAD_REF_X,
 	HEAD_SIZE,
 	STROKE_WIDTH,
