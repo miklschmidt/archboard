@@ -281,6 +281,34 @@
 	}
 }
 
+/* Seen from far away, a picture shows its structure and not its words: each
+   card draws its name alone (the picture's own stylesheet), and a relationship's
+   label, which is under 6 px there and covers the line it names, goes with it.
+   It stays for a relationship that is lit or picked, and returns as the camera
+   comes close. A message of a sequence is the sequence itself and stays. */
+[data-slot="semantic-board-surface"] [data-semantic-kind="edge"][data-semantic-part="label"] {
+	transition:
+		filter var(--lighting-ms, 0ms) ease-out,
+		opacity var(--far-view-ms, 0ms) ease,
+		visibility 0s;
+}
+[data-slot="semantic-board-surface"].is-far
+	[data-semantic-kind="edge"][data-semantic-part="label"]:not(.is-lit, .is-selected) {
+	opacity: 0;
+	visibility: hidden;
+	transition:
+		filter var(--lighting-ms, 0ms) ease-out,
+		opacity var(--far-view-ms, 0ms) ease,
+		visibility 0s linear var(--far-view-ms, 0ms);
+}
+@media (prefers-reduced-motion: reduce) {
+	[data-slot="semantic-board-surface"] [data-semantic-kind="edge"][data-semantic-part="label"],
+	[data-slot="semantic-board-surface"].is-far
+		[data-semantic-kind="edge"][data-semantic-part="label"]:not(.is-lit, .is-selected) {
+		transition: none;
+	}
+}
+
 /* A picture's traffic changes on every frame. On a compositing layer of its own
    only the traffic is painted again, not the cards and labels under it, which
    took a third of a core on an idle board (TASK-385.01). */
