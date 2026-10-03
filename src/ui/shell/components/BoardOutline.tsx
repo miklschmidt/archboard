@@ -17,7 +17,9 @@ import { OutlineRow } from "@/ui/shell/components/OutlineRow";
 import type { RowHandlers } from "@/ui/shell/components/TreeRow";
 import type { EarlierRow, NavigatorRow, VariantRow } from "@/ui/shell/types/navigator-rows";
 import { outlineKey, type OutlineKeyAction } from "@/ui/shell/lib/outline-keys";
+import { rowSelected } from "@/ui/shell/lib/navigator-rows";
 import { ROW_GUTTER } from "@/ui/shell/lib/tree-grid";
+import { treeGuides } from "@/ui/shell/lib/tree-guides";
 import { timelineLanes, type Lane } from "@/ui/variant-lifecycle";
 
 /**
@@ -54,6 +56,21 @@ function variantRuns(rows: readonly NavigatorRow[]): (VariantRow | EarlierRow)[]
 		last = row.board.key;
 	}
 	return runs;
+}
+
+/**
+ * The depth of the first level of the timeline each variant and Earlier row is
+ * on, which is where the guides give way to the timeline.
+ * @param rows The rows, in order.
+ * @returns That depth, by row id.
+ */
+function timelineDepths(rows: readonly NavigatorRow[]): ReadonlyMap<string, number> {
+	const depths = new Map<string, number>();
+	for (const run of variantRuns(rows)) {
+		const first = Math.min(...run.map((row) => row.depth));
+		for (const row of run) depths.set(row.id, first);
+	}
+	return depths;
 }
 
 /** Inputs for the tree. */
@@ -96,6 +113,7 @@ function typesCharacter(event: KeyboardEvent<HTMLElement>): boolean {
 function BoardOutline(props: BoardOutlineProps): JSX.Element {
 	const { rows, homeId, onOpen, onExpand, onTypeAhead, filtering } = props;
 	const lanes = useMemo(() => variantLanes(rows), [rows]);
+	const guides = useMemo(() => treeGuides(rows, rowSelected, timelineDepths(rows)), [rows]);
 	const tree = useRef<HTMLDivElement>(null);
 	const [focusedId, setFocusedId] = useState<string | null>(null);
 	const stop = [focusedId, homeId, rows[0]?.id].find(
@@ -154,6 +172,7 @@ function BoardOutline(props: BoardOutlineProps): JSX.Element {
 					key={row.id}
 					row={row}
 					lane={lanes.get(row.id)}
+					guides={guides.get(row.id)}
 					focusable={row.id === stop}
 					onFocusRow={setFocusedId}
 					onOpen={onOpen}

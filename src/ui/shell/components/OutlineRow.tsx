@@ -19,6 +19,8 @@ interface OutlineRowProps extends RowHandlers {
 	readonly row: NavigatorRow;
 	/** The row's place on its board's timeline, for a variant or an Earlier row. */
 	readonly lane?: Lane | undefined;
+	/** The lines that join it to the rows it sits under. */
+	readonly guides?: string | undefined;
 }
 
 /**

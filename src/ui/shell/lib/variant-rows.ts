@@ -3,8 +3,8 @@
 // board's variants uses (variant-lifecycle): first the variant its name
 // opens, then its other live variants, a draft nested under the variant it was
 // derived from, so the list reads as a timeline with branches. The historical and shelved variants wait behind one Earlier
-// row, newest first. A board lists its variants while it has more than one,
-// and one of them is a proposal or a pane shows the board. While a filter is
+// row, newest first. A board lists its variants while it has more than one, so
+// a board with a history opens whether or not a pane is on it. While a filter is
 // on, a board lists the variants the filter finds directly under it, with no
 // Earlier row. Pure.
 
@@ -56,17 +56,12 @@ function paneOnBoard(pane: PaneMark, board: CatalogBoard): boolean {
 }
 
 /**
- * Whether a board lists its variants when it is open: it has more than one,
- * and one of them is a proposal or a pane shows the board.
- * @param panes The panes.
+ * Whether a board lists its variants when it is open: it has more than one.
  * @param board The board.
  * @returns True when its variants are listed while it is open.
  */
-function listsVariants(panes: readonly PaneMark[], board: CatalogBoard): boolean {
-	return (
-		board.variants.length > 1 &&
-		(board.variants.some(isDraft) || panes.some((pane) => paneOnBoard(pane, board)))
-	);
+function listsVariants(board: CatalogBoard): boolean {
+	return board.variants.length > 1;
 }
 
 /**
@@ -192,7 +187,7 @@ function variantRows(
 	at: VariantPlace,
 ): Unplaced<NavigatorRow>[] {
 	if (inputs.query.length > 0) return foundVariantRows(inputs, board, at);
-	if (!listsVariants(inputs.panes, board)) return [];
+	if (!listsVariants(board)) return [];
 	const ordered = variantOrder(board.variants, board.opens);
 	const earlier = ordered.filter((variant) => !isLive(variant));
 	return [

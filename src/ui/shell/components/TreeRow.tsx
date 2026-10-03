@@ -53,11 +53,18 @@ const CHEVRON_STYLE: CSSProperties = {
  * line is `--row-line` high, and every column of the row centres on it.
  */
 const ROW_METRICS: Readonly<Record<NavigatorRow["kind"], CSSProperties>> = {
-	board: { "--row-line": "20px", paddingBlock: 8 },
-	folder: { "--row-line": "20px", paddingBlock: 8 },
-	variant: { "--row-line": "18px", paddingBlock: 6 },
-	earlier: { "--row-line": "18px", paddingBlock: 6 },
+	board: { "--row-line": "20px", "--row-mid": "18px", paddingBlock: 8 },
+	folder: { "--row-line": "20px", "--row-mid": "18px", paddingBlock: 8 },
+	variant: { "--row-line": "18px", "--row-mid": "15px", paddingBlock: 6 },
+	earlier: { "--row-line": "18px", "--row-mid": "15px", paddingBlock: 6 },
 };
+
+/**
+ * How far an elbow runs from its line: to the chevron's column when the row has
+ * a chevron, else on across the column the chevron would take, to the marker.
+ */
+const TICK_TO_CHEVRON = DISCLOSURE_WIDTH / 2 - 2;
+const TICK_TO_MARKER = DISCLOSURE_WIDTH / 2 + DISCLOSURE_WIDTH - 4;
 
 /** The marker column, as wide as the grid says. */
 const MARKER_STYLE: CSSProperties = { width: MARKER_WIDTH };
@@ -89,6 +96,8 @@ interface TreeRowProps extends RowHandlers {
 	readonly label: string;
 	/** Its place on its board's timeline, for a variant or an Earlier row. */
 	readonly lane?: Lane | undefined;
+	/** The lines that join it to the rows it sits under (tree-guides). */
+	readonly guides?: string | undefined;
 	readonly children: ReactNode;
 }
 
@@ -104,13 +113,15 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 	const expanded = rowOpen(row);
 	const selected = rowSelected(row);
 	const handleFocus = useCallback(() => onFocusRow(row.id), [onFocusRow, row.id]);
+	const opens = expanded !== undefined;
 	const style = useMemo(
 		(): CSSProperties => ({
 			...ROW_METRICS[row.kind],
+			"--tick": `${opens ? TICK_TO_CHEVRON : TICK_TO_MARKER}px`,
 			paddingLeft: disclosureX(row.depth) - ROW_GUTTER,
 			paddingRight: FACTS_INSET - ROW_GUTTER,
 		}),
-		[row.depth, row.kind],
+		[row.depth, row.kind, opens],
 	);
 	const handleClick = useCallback(
 		(event: MouseEvent<HTMLDivElement>) => {
@@ -137,14 +148,8 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 			style={style}
 			className={`group/row focus-visible:ring-ring rounded-control relative flex w-full min-w-0 cursor-default flex-wrap items-start outline-none select-none focus-visible:ring-1 focus-visible:ring-inset ${selected ? "bg-sidebar-accent shadow-raised" : "hover:bg-sidebar-accent/50"}`}
 		>
-			<RowGuides depth={row.depth} />
+			<RowGuides guides={props.guides ?? ""} />
 			{props.lane !== undefined && <RowLane row={row} lane={props.lane} />}
-			{selected && (
-				<span
-					aria-hidden="true"
-					className="bg-primary-mark absolute inset-y-1 left-0 w-0.5 rounded-full"
-				/>
-			)}
 			{props.children}
 		</div>
 	);
@@ -179,41 +184,62 @@ const LANE_MIDDLE = 6 + 18 / 2;
 /** How far the timeline stops short of a mark's middle: the mark's half and a little air. */
 const LANE_CLEARANCE = 9;
 
+/** What each character of a row's guides draws (tree-guides). */
+const GUIDES: Readonly<
+	Record<
+		string,
+		{ readonly kind: "through" | "elbow" | "last"; readonly lit?: "rail" | "mid" | "branch" }
+	>
+> = {
+	t: { kind: "through" },
+	T: { kind: "through", lit: "rail" },
+	e: { kind: "elbow" },
+	E: { kind: "elbow", lit: "rail" },
+	P: { kind: "elbow", lit: "mid" },
+	l: { kind: "last" },
+	L: { kind: "last", lit: "branch" },
+};
+
 /**
- * One guide for each row this one sits under, through the middle of that
- * row's disclosure, so a reader sees what sits under what.
- * @param props The row's depth.
- * @param props.depth How many rows it sits under.
+ * The lines that join this row to the rows it sits under: one for each, through
+ * the middle of that row's disclosure, so a reader sees what sits under what.
+ * Where the row itself hangs from its parent the line turns to it, and the last
+ * of a parent's rows ends the line there.
+ * @param props The row's guides.
+ * @param props.guides One character for each row it sits under.
  * @returns The guides.
  */
-function RowGuides(props: { readonly depth: number }): JSX.Element {
-	const levels = Array.from({ length: props.depth }, (_, level) => level);
+function RowGuides(props: { readonly guides: string }): JSX.Element {
 	return (
 		<>
-			{levels.map((level) => (
-				<Guide key={level} level={level} />
+			{Array.from(props.guides, (character, level) => (
+				<Guide key={level} level={level} character={character} />
 			))}
 		</>
 	);
 }
 
 /**
- * The guide of one open row.
- * @param props The open row's depth.
- * @param props.level The depth.
- * @returns The guide.
+ * The guide of one level of a row.
+ * @param props The level and what it draws.
+ * @param props.level The depth of the row it hangs from.
+ * @param props.character What it draws (tree-guides).
+ * @returns The guide, or nothing for a level that draws none.
  */
-function Guide(props: { readonly level: number }): JSX.Element {
+function Guide(props: { readonly level: number; readonly character: string }): JSX.Element | null {
+	const drawn = GUIDES[props.character];
 	const style = useMemo(
 		(): CSSProperties => ({ left: guideX(props.level) - ROW_GUTTER }),
 		[props.level],
 	);
+	if (drawn === undefined) return null;
 	return (
 		<span
 			aria-hidden="true"
 			data-slot="tree-guide"
+			data-guide={drawn.kind}
+			data-lit={drawn.lit}
 			style={style}
-			className="bg-border absolute inset-y-0 w-px"
 		/>
 	);
 }
