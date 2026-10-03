@@ -1,28 +1,29 @@
 // The agent, at the foot of the navigator column: its voice and its state.
-// While voice is off the dock is calm: what the agent is on, when it is on
-// anything, with its plan under it, and at the foot a key to talk and a key to
-// the conversation, where the composer is. Nothing says that it is ready and
-// that voice is off: the keys do. While voice is on the circle is its head,
-// beside the state, what it is on and the voice's own line with mute and
-// subtitles, and the plan under them.
+// The dock is one grid in two layouts. While voice is off it is calm: what the
+// agent is on, when it is on anything, with its plan under it, and at the foot a
+// key to talk and a key to the conversation, where the composer is. Nothing says
+// that it is ready and that voice is off: the keys do. While voice is on the
+// circle is the head of the dock, beside the state, what the agent is on and the
+// voice's own line with mute and subtitles, and the plan under them.
+//
+// Both layouts hold the same parts, which the grid places (app.css, [data-part]).
+// So the Talk key turns into the circle, and the dock's motion plays every part
+// from its old place to its new one (hooks/use-dock-motion.ts).
 
 import { RiChat3Line, RiMicLine, RiMicOffLine } from "@remixicon/react";
-import type { JSX } from "react";
+import { useRef, type CSSProperties, type JSX } from "react";
 
 import { AGENT_ELAPSED_TICK_MS, SHELL_AGE_TICK_MS } from "@/shared/timing/timing";
+import { VOICE_MORPH_MS } from "@/shared/timing/voice";
 import { cn } from "@/ui/components/class-names";
 import { useClock } from "@/ui/components/use-clock";
 import { SubtitlesToggle } from "@/ui/voice-subtitles";
+import { useDockMotion } from "@/ui/workbench/hooks/use-dock-motion";
 import { IconAction } from "@/ui/workbench/components/IconAction";
 import { PlanSteps } from "@/ui/workbench/components/PlanSteps";
 import { StatusAction, StatusLamp, Timing } from "@/ui/workbench/components/StatusParts";
 import { useAudible } from "@/ui/workbench/components/TalkControl";
-import {
-	VOICE_WORDS,
-	TalkKey,
-	VoiceCircle,
-	circleState,
-} from "@/ui/workbench/components/VoiceCircle";
+import { VOICE_WORDS, VoiceControl, circleState } from "@/ui/workbench/components/VoiceControl";
 import type { AgentActions, AgentView, AgentVoiceView } from "@/ui/workbench/contracts";
 import { agentStatus, isReady, type AgentStatus } from "@/ui/workbench/lib/agent-status";
 import {
@@ -35,9 +36,13 @@ import {
 	stepsOf,
 	type CardStep,
 } from "@/ui/workbench/lib/plan-steps";
+import { VOICE_DEMO_CYCLE, demoVoiceAt } from "@/ui/workbench/lib/voice-demo";
 
 /** Where the words saying why voice cannot start are. */
 const VOICE_PROBLEM_ID = "voice-problem";
+
+/** How long the dock takes to turn between its layouts, for the stylesheet that eases them. */
+const DOCK_STYLE: CSSProperties = { "--voice-morph-ms": `${VOICE_MORPH_MS}ms` };
 
 /** Inputs for the dock. */
 interface AgentDockProps {
@@ -82,106 +87,70 @@ function dockSteps(view: AgentView): readonly CardStep[] {
 }
 
 /**
+ * The voice the dock shows: the real one, or the demonstration's.
+ * @param view The agent view.
+ * @param now The clock.
+ * @returns The voice.
+ */
+function dockVoice(view: AgentView, now: number): AgentVoiceView {
+	// DEMONSTRATION: `?voiceDemo` holds the voice speaking, `=cycle` walks its stages (lib/voice-demo.ts).
+	if (VOICE_DEMO_CYCLE) return demoVoiceAt(now);
+	return VOICE_DEMO ? DEMO_VOICE : view.voice;
+}
+
+/**
+ * The dock's clock: it counts seconds while a turn runs or a demonstration moves,
+ * and ticks slowly otherwise.
+ * @param view The agent view.
+ * @returns The time in milliseconds.
+ */
+function useDockClock(view: AgentView): number {
+	const running = view.conversation.turns.some((turn) => turn.outcome === "running");
+	const ticking = running || VOICE_DEMO || VOICE_DEMO_CYCLE;
+	return useClock(ticking ? AGENT_ELAPSED_TICK_MS : SHELL_AGE_TICK_MS, true);
+}
+
+/**
  * The agent dock.
  * @param props The view, the actions and the conversation's state.
  * @returns The dock.
  */
 function AgentDock(props: AgentDockProps): JSX.Element {
 	const { view, actions } = props;
-	const running = view.conversation.turns.some((turn) => turn.outcome === "running");
-	const now = useClock(running || VOICE_DEMO ? AGENT_ELAPSED_TICK_MS : SHELL_AGE_TICK_MS, true);
+	const now = useDockClock(view);
 	const status = dockStatus(view, now);
-	const voice = VOICE_DEMO ? DEMO_VOICE : view.voice;
+	const voice = dockVoice(view, now);
 	const live = circleState(voice, useAudible(voice)) !== "off";
-	const parts: DockParts = {
-		status,
-		now,
-		actions,
-		voice,
-		steps: dockSteps(view),
-		conversation: { open: props.panelOpen, unread: props.unread, onToggle: props.onTogglePanel },
-	};
+	const steps = dockSteps(view);
+	const dock = useRef<HTMLElement>(null);
+	useDockMotion(dock, live, props.reducedMotion);
 	return (
 		<section
+			ref={dock}
 			data-slot="agent-dock"
+			data-live={live}
 			data-agent-tone={status.tone}
 			aria-label="Agent"
-			className="border-border bg-raised shadow-edge-up relative flex shrink-0 flex-col gap-3 border-t px-4 py-3"
+			style={DOCK_STYLE}
+			className="border-border bg-raised shadow-edge-up relative shrink-0 border-t px-4 py-3"
 		>
-			{live ? <LiveDock {...parts} /> : <CalmDock {...parts} />}
+			<VoiceControl
+				voice={voice}
+				actions={actions}
+				problemId={VOICE_PROBLEM_ID}
+				reducedMotion={props.reducedMotion}
+			/>
+			<Activity status={status} now={now} actions={actions} />
+			<VoiceRow live={live} voice={voice} actions={actions} />
+			<DockPlan steps={steps} sinceMs={status.sinceMs} now={now} />
+			<WideAction status={status} actions={actions} />
+			<ConversationToggle
+				open={props.panelOpen}
+				unread={props.unread}
+				onToggle={props.onTogglePanel}
+				compact={live}
+			/>
 		</section>
-	);
-}
-
-/** What both layouts of the dock are made of. */
-interface DockParts {
-	readonly status: AgentStatus;
-	readonly now: number;
-	readonly actions: AgentActions;
-	readonly voice: AgentVoiceView;
-	readonly steps: readonly CardStep[];
-	/** The way to the conversation. */
-	readonly conversation: ConversationState;
-}
-
-/** Whether the conversation is open, whether words wait in it unread, and the toggle. */
-interface ConversationState {
-	readonly open: boolean;
-	readonly unread: boolean;
-	readonly onToggle: () => void;
-}
-
-/**
- * The dock while voice is off: what the agent is on, when it is on anything,
- * and at the foot the keys to talk and to type.
- * @param props What the dock is made of.
- * @returns The rows.
- */
-function CalmDock(props: DockParts): JSX.Element {
-	const { status, actions, voice } = props;
-	return (
-		<>
-			<Activity status={status} now={props.now} actions={actions} />
-			{props.steps.length > 0 && (
-				<PlanSteps steps={props.steps} sinceMs={status.sinceMs} now={props.now} />
-			)}
-			<WideAction status={status} actions={actions} />
-			{voice.problem !== null && <VoiceProblem problem={voice.problem} />}
-			<div className="flex items-center gap-2">
-				<TalkKey voice={voice} actions={actions} problemId={VOICE_PROBLEM_ID} />
-				<ConversationToggle {...props.conversation} />
-			</div>
-		</>
-	);
-}
-
-/**
- * The dock while voice is on: the circle at its head, beside the state, what
- * the agent is on and the voice's own line, with the plan under them.
- * @param props What the dock is made of.
- * @returns The rows.
- */
-function LiveDock(props: DockParts): JSX.Element {
-	const { status, actions, voice } = props;
-	return (
-		<>
-			<div className="flex items-center gap-3">
-				<VoiceCircle voice={voice} actions={actions} problemId={VOICE_PROBLEM_ID} />
-				<div className="flex min-w-0 flex-1 flex-col">
-					<Activity status={status} now={props.now} actions={actions} />
-					<VoiceLine voice={voice} actions={actions} conversation={props.conversation} />
-				</div>
-			</div>
-			{props.steps.length > 0 && (
-				<PlanSteps
-					steps={props.steps}
-					sinceMs={status.sinceMs}
-					now={props.now}
-					className="pl-[76px]"
-				/>
-			)}
-			<WideAction status={status} actions={actions} />
-		</>
 	);
 }
 
@@ -202,7 +171,7 @@ function Activity(props: {
 	const { status } = props;
 	if (isReady(status)) return null;
 	return (
-		<div className="flex min-w-0 flex-col">
+		<div data-part="status" className="flex min-w-0 flex-col">
 			<AgentLine status={status} now={props.now} actions={props.actions} />
 			{status.detail !== null && (
 				<p
@@ -218,6 +187,46 @@ function Activity(props: {
 }
 
 /**
+ * What the dock says about the voice: its line while it is on, and why it cannot
+ * start when it is off and cannot.
+ * @param props Whether voice is on, the voice and the actions.
+ * @param props.live Whether voice is on.
+ * @param props.voice The voice.
+ * @param props.actions The actions.
+ * @returns The line, or nothing.
+ */
+function VoiceRow(props: {
+	readonly live: boolean;
+	readonly voice: AgentVoiceView;
+	readonly actions: AgentActions;
+}): JSX.Element | null {
+	const { voice } = props;
+	if (props.live) return <VoiceLine voice={voice} actions={props.actions} />;
+	return voice.problem === null ? null : <VoiceProblem problem={voice.problem} />;
+}
+
+/**
+ * The agent's plan, under what it is on. Nothing while it has none.
+ * @param props The steps, when the turn began and the clock.
+ * @param props.steps The steps.
+ * @param props.sinceMs When the turn began, or null.
+ * @param props.now The clock.
+ * @returns The plan, or nothing.
+ */
+function DockPlan(props: {
+	readonly steps: readonly CardStep[];
+	readonly sinceMs: number | null;
+	readonly now: number;
+}): JSX.Element | null {
+	if (props.steps.length === 0) return null;
+	return (
+		<div data-part="plan">
+			<PlanSteps steps={props.steps} sinceMs={props.sinceMs} now={props.now} />
+		</div>
+	);
+}
+
+/**
  * Why voice cannot start.
  * @param props The problem.
  * @param props.problem The words.
@@ -227,6 +236,7 @@ function VoiceProblem(props: { readonly problem: string }): JSX.Element {
 	return (
 		<p
 			id={VOICE_PROBLEM_ID}
+			data-part="problem"
 			title={props.problem}
 			className="text-body text-destructive flex h-6 items-center truncate"
 		>
@@ -281,32 +291,28 @@ function WideAction(props: {
 	const { status } = props;
 	if (status.action !== "sign_in" && status.action !== "cancel_sign_in") return null;
 	return (
-		<div className="flex justify-end">
+		<div data-part="wide" className="flex justify-end">
 			<StatusAction status={status} actions={props.actions} />
 		</div>
 	);
 }
 
 /**
- * The voice in a word, why it cannot start when it cannot, and mute and
- * subtitles while it is on, with the way to the conversation beside them.
- * @param props The voice, the actions and the conversation.
+ * The voice in a word, with mute and subtitles, while it is on.
+ * @param props The voice and the actions.
  * @param props.voice The voice.
  * @param props.actions The actions.
- * @param props.conversation The way to the conversation.
  * @returns The line.
  */
 function VoiceLine(props: {
 	readonly voice: AgentVoiceView;
 	readonly actions: AgentActions;
-	readonly conversation: ConversationState;
 }): JSX.Element {
 	const { voice } = props;
 	const state = circleState(voice, useAudible(voice));
-	if (voice.problem !== null && state === "off") return <VoiceProblem problem={voice.problem} />;
 	const on = state !== "off" && state !== "ending";
 	return (
-		<div className="flex h-6 items-center gap-1">
+		<div data-part="words" className="flex h-6 items-center gap-1">
 			<output
 				aria-live="polite"
 				className={cn(
@@ -317,7 +323,6 @@ function VoiceLine(props: {
 				{VOICE_WORDS[state]}
 			</output>
 			{on && <LiveControls voice={voice} actions={props.actions} />}
-			<ConversationToggle {...props.conversation} compact />
 		</div>
 	);
 }
@@ -375,6 +380,7 @@ function toggleClass(open: boolean, compact: boolean): string {
  * is, with a gold dot while words wait in it unread. Beside Talk it is a raised
  * key, pressed in with a gold mark under it while the conversation is open; in
  * the voice line it is a quiet icon like mute and subtitles, lit while it is open.
+ * It is one control in both, and the dock's grid moves it between them.
  * @param props Whether it is open, whether words wait, the toggle and its form.
  * @param props.open Whether it is open.
  * @param props.unread Whether words wait unread.
@@ -382,26 +388,30 @@ function toggleClass(open: boolean, compact: boolean): string {
  * @param props.compact Whether it is an icon in the voice line, not a key.
  * @returns The control.
  */
-function ConversationToggle(
-	props: ConversationState & { readonly compact?: boolean },
-): JSX.Element {
-	const { open } = props;
-	const compact = props.compact === true;
+function ConversationToggle(props: {
+	readonly open: boolean;
+	readonly unread: boolean;
+	readonly onToggle: () => void;
+	readonly compact: boolean;
+}): JSX.Element {
+	const { open, compact } = props;
 	return (
-		<IconAction
-			variant={compact ? "ghost" : "outline"}
-			label={open ? "Close the conversation" : "Open the conversation"}
-			onClick={props.onToggle}
-			className={toggleClass(open, compact)}
-		>
-			<RiChat3Line />
-			{props.unread && !open && (
-				<span
-					aria-hidden="true"
-					className={cn(DOT, compact ? "top-0.5 right-0.5" : "ring-card top-1 right-1 ring-2")}
-				/>
-			)}
-		</IconAction>
+		<div data-part="chat" className="flex items-center justify-center">
+			<IconAction
+				variant={compact ? "ghost" : "outline"}
+				label={open ? "Close the conversation" : "Open the conversation"}
+				onClick={props.onToggle}
+				className={toggleClass(open, compact)}
+			>
+				<RiChat3Line />
+				{props.unread && !open && (
+					<span
+						aria-hidden="true"
+						className={cn(DOT, compact ? "top-0.5 right-0.5" : "ring-card top-1 right-1 ring-2")}
+					/>
+				)}
+			</IconAction>
+		</div>
 	);
 }
 

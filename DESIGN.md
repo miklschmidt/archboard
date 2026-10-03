@@ -273,16 +273,34 @@ a key to the conversation, an icon alone. The conversation's key is pressed in,
 with a gold mark under it, while the conversation is open, and has a gold dot
 while words wait unread. When the agent is on something, its state, what it is
 on and its plan stand above the keys. When it is ready and on nothing, the dock
-says nothing, because the keys do. While voice is on, the raised voice circle
-takes the head of the dock, with the gold ring and the waveform, beside the
-state, what the agent is on and the voice's own line, and the conversation's
-key becomes a quiet icon in the voice line, beside mute and subtitles.
+says nothing, because the keys do. While voice is on, the voice circle takes the
+head of the dock, with the gold ring and the lines of light, beside the state,
+what the agent is on and the voice's own line, and the conversation's key becomes
+a quiet icon in the voice line, beside mute and subtitles.
 
-The tray is lit by what the agent is doing: a warm wash spreads from the voice
-circle while voice is on, and a quieter one in the status colour while the agent
-works. At rest it is plain. Its lines are all 13px and are told apart by weight
-and ink: its state at 500 in muted ink, what it is on at 400. The clock is 12px
-mono.
+The two layouts hold the same parts, so nothing is swapped. The Talk key and the
+voice circle are one button, and keyboard focus stays on it. When voice starts,
+the key's plate narrows to a 64px circle and rises to the head of the dock while
+the dock grows and every part glides to its place. It takes half a second, and it
+runs the other way when voice ends. A part that was not there fades in. The
+reduced-motion preference cuts between the layouts.
+
+The circle's face is a ring of gold, with a sheen that turns round it, set round
+a lens of eleven ruled lines, like the lines of a drafting sheet. While voice is
+on its way a spark laps the ring, and the ring draws itself round as it connects.
+While the voice listens the lines lie flat and breathe. While the model speaks
+they heave: each line shows what the line in front of it showed a moment ago, so a
+loud moment rolls back through the sheet, and the lines in front hide the ones
+behind. The sheen turns faster the louder it gets, and a hard onset sends a ring
+of light out over the tray. Muted, the lines go flat and dim. The face follows the
+model's measured output level and nothing else. It never listens to the
+microphone.
+
+The tray is lit by what the agent is doing: a warm wash blooms from the voice
+circle while voice is on and brightens and fades with the voice, and a quieter
+one in the status colour spreads while the agent works. At rest it is plain. Its
+lines are all 13px and are told apart by weight and ink: its state at 500 in muted
+ink, what it is on at 400. The clock is 12px mono.
 
 The composer is in the conversation pane, on a tray at its foot (Tray Chalk and
 `shadow-edge-up`), with its gold Send. It grows upward as a message grows, and
