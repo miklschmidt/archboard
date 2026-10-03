@@ -78,29 +78,25 @@ state:
 
 ## The pane sidebar
 
-Revised 2026-09-17 (TASK-249) and 2026-09-30 (TASK-383). The generated
-reference above places selection details in a column on the right of the
-canvas. The pane sidebar supersedes that column. A semantic pane now has one
-sidebar on the left of its picture. The sidebar has the width of the old
-inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
+Revised 2026-09-17 (TASK-249), 2026-09-30 (TASK-383) and 2026-10-03
+(TASK-388). The generated reference above places selection details in a column
+on the right of the canvas. The pane sidebar supersedes that column. A semantic
+pane now has one sidebar on the right of its picture. The sidebar has the width
+of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
 
 - **Board**: what the board on screen is, and how to read it. The tab is
   ordered by the questions a reader asks, in the order they ask them.
   [The study behind the order](pane-sidebar-hierarchy.md) derives it from the
   use cases and from research on how people read diagrams. There are four
   regions, and a rule separates one region from the next:
-  1. **What is this, and what does it change?** On a board reached by a
-     drill-down, its variants, said and ordered as the navigator says and
-     orders them: the lifecycle's mark before the name, the historical and
-     shelved names receding and last. All of them are listed, with no Earlier
-     row, because this is the only place their variants are chosen. Then the
-     summary of the variant on screen, with no heading: the board's own
-     statement of its scope. On a variant read against another,
-     the changes: which variant it is compared with, one row for each standing
-     that occurs with the pin the picture draws and how many subjects stand
-     so, and the control that marks the changes on the picture. The counts are
-     of what the picture draws, so a view in which nothing differs says so of
-     the view and keeps the control.
+  1. **What is this, and what does it change?** The summary of the variant on
+     screen, with no heading: the board's own statement of its scope. On a
+     variant read against another, the changes: a heading that names the
+     variant it is compared with, one row for each standing that occurs with
+     the pin the picture draws and how many subjects stand so, and the control
+     that marks the changes on the picture. The counts are of what the picture
+     draws, so a view in which nothing differs says so of the view and keeps
+     the control.
   2. **How do I read it?** The walkthroughs, each with its number of steps and
      Narrate beside it. Choosing one presents it (see below). Then the views,
      with Everything first and the summary of the view on screen under its
@@ -111,14 +107,42 @@ inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
   4. **The layout engine**, a preference of this browser, in one row at the
      foot.
 
-  A section with nothing to show is absent. The pane's own board offers no
-  choice of variant: the navigator lists every variant of every board, so the
-  person makes one choice in one place. Views live here and not in a switcher
-  on the picture, because a switcher over the picture can cover what it
-  switches.
+  A section with nothing to show is absent. The tab lists no variants. The
+  navigator lists the variants of every board, the Variants page of the pane's
+  header lists them with the record of each and opens one in the pane, and the
+  breadcrumb in the header names the one on screen (TASK-388). Views live here
+  and not in a switcher on the picture, because a switcher over the picture can
+  cover what it switches.
 
-- **Selection**: the inspector for whatever is picked out, with the control that
-  lets go of the selection in the tab row.
+- **Selection**: what the board says about whatever is picked out, with the
+  control that lets go of the selection in the tab row. Every subject opens
+  under one title: its name in the display face, wrapped and never cut, and one
+  line that says what it is. A part also wears its kind's icon in a gold ring.
+  Its line names its kind and the groups it belongs to, each the control that
+  selects the group's members. A relationship's line is its kind, drawn as the
+  legend draws it. No panel shows an id. The tab builds from the same regions
+  and sections as the Board tab, in the order a reader asks:
+  1. **What is it?** The title, the line the subject is responsible for and
+     its longer account. Nothing says that either is missing.
+  2. **How does it stand?** Only in a comparison, or with a disagreement still
+     open: what nobody has decided about it, and how it differs from the
+     variant it is read against, with the fields that moved shown whole, each
+     as what it was and what it is.
+  3. **What is it wired to?** For a part, Sends to and Receives from, each with
+     its number of parts and the control that traces how far it reaches. A row
+     names the other part and what the relationship carries under the name,
+     with the relationship's kind at the end of the name's line so the words
+     keep the whole width. For a relationship, the parts at its two ends. For an
+     exchange, who takes part. For a message, where it comes in its exchange.
+
+  A part that leads somewhere has a foot on a tray, pinned under the panel's
+  scroll, with no heading. Open the board it drills into is the gold primary
+  action, and says which way that board lies, what level it is and, for a state
+  that is not the current architecture, what sort of state it is. View in code
+  names the bound path, opens it in the person's editor and comes with the
+  control that copies the path. The repository, branch and commit are on its
+  title. This is the one place a binding is shown, and a part with none has no
+  such row and no sentence about it.
 
 Both tabs share one frame. Text starts 16 px from either edge of the sidebar,
 and so do the tab labels. A section heading is 12 px semibold in the muted
@@ -158,10 +182,12 @@ the rows that they pass over. They never go below the flow's last row.
 tab](assets/semantic-pane-sidebar.png)
 
 The image holds rendered captures of the dogfood vault at 1920×1080, not
-generated mockups, cut to the pane. From the left: the board tab on the
+generated mockups, cut to the right 640 px: the tabs of the pane's header, the
+sidebar and the edge of the picture. From the left: the board tab on the
 current variant of `Archboard server` in the light theme, the board tab on its
-historical variant `Current architecture` in the dark theme, and the selection
-tab in the light theme.
+historical variant `Current architecture` in the dark theme, where it is read
+against the current variant, and the selection tab on `Board routes` in the
+light theme.
 
 ## The navigator
 

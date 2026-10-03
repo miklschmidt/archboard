@@ -7,6 +7,13 @@ last section derives the hierarchy that the redesign builds. The pane sidebar
 section of [operator-canvas-shell.md](operator-canvas-shell.md) states the
 result as the visual authority.
 
+Revised 2026-10-03 (TASK-388). The tab no longer lists the variants of a board
+that a reader reached by a drill-down (task 7 below). The Variants page of the
+pane's header lists them with the record of each and opens one in the pane, and
+the header's breadcrumb names the one on screen. The changes section names the
+variant that it is compared with in its own heading. The rest of the study
+stands as it was found.
+
 The evidence has three kinds. The product documents say what each element is
 for. The boards in `.archboard/vault` and `examples/web-shop` say how often
 each element has anything to show. Research on diagram reading and interface
