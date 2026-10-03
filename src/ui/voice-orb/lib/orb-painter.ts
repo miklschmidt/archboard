@@ -1,18 +1,24 @@
 // How the voice orb looks. A lens set in a gold ring, and on the lens a ridge of
 // eleven ruled lines, like the lines of a drafting sheet. At rest the lines lie
-// flat and breathe. When the model speaks the ridge heaves: each line shows what
-// the line in front of it showed a moment ago, so a loud moment rolls back through
-// the sheet, and the lines in front hide the ones behind them. The ring's sheen
-// turns faster the louder it gets, and a hard onset sends a ring of light out
-// over the dock.
+// flat and breathe. When the model speaks, every line is a record of the model's
+// output level: the middle of a line is now and its edges are the past, so a
+// syllable swells in the middle and spreads out to both sides as it ages. Each line
+// behind reads a step further back, so a loud moment rolls back through the sheet,
+// and the lines in front hide the ones behind them. The ring's sheen turns faster
+// the louder it gets, and a hard onset sends a ring of light out round the circle.
 //
 // The painter draws one frame from the state it is handed and keeps nothing.
 // The canvas it draws on is `SIZE` pixels across, and the circle is in the middle
 // of it, with `PAD` of room all round for the rings of light.
 
-import { VOICE_BREATH_MS, VOICE_COMET_MS } from "@/shared/timing/voice";
+import {
+	VOICE_BREATH_MS,
+	VOICE_COMET_MS,
+	VOICE_ROW_STEP_MS,
+	VOICE_TRACE_MS,
+} from "@/shared/timing/voice";
 import { rgba, type OrbColors } from "@/ui/voice-orb/lib/orb-colors";
-import { ROWS, TAU, orbLight, type OrbDynamics } from "@/ui/voice-orb/lib/orb-dynamics";
+import { TAU, levelAgo, orbLight, type OrbDynamics } from "@/ui/voice-orb/lib/orb-dynamics";
 
 /** The circle the person presses, in pixels. */
 const CIRCLE = 64;
@@ -26,6 +32,14 @@ const CENTER = SIZE / 2;
 /** The ring's radius to the middle of its stroke, and the lens inside it. */
 const RING_RADIUS = CIRCLE / 2 - 1;
 const LENS_RADIUS = RING_RADIUS - 1;
+/** How many lines the sheet has. */
+const ROWS = 11;
+/** Where now sits on a line, in sheet radii from its middle: a little to the right, so a line is not mirrored. */
+const NOW_AT = 0.15;
+/** How much of a line's half width, at each edge, it tapers to nothing over, so the past reads across the sheet. */
+const EDGE_TAPER = 0.2;
+/** How round the line is at now, in sheet radii: the past folds out from now without a point. */
+const NOW_SOFTNESS = 0.16;
 /** The radius the lines are cut to, a little inside the ring. */
 const SHEET_RADIUS = LENS_RADIUS - 3;
 /** Where the front line and the back line rest, as a share of the sheet's radius. */
@@ -84,11 +98,22 @@ function hill(u: number, centre: number, width: number): number {
 }
 
 /**
- * The height of the ridge at one place on one line, as a share of that line's reach.
- * A crest in the middle that wanders as a voice does, shouldered by two lower hills
- * that the sentence's swell raises, and a little ragged where the voice bites. Each
- * line leans a step further along than the one in front, so the ridge flows back.
- * Nothing at the sheet's edges.
+ * How much of a line shows at a place: all of it across the middle, tapering to
+ * nothing only over the outer edge, so a line begins and ends on its baseline.
+ * @param u Where, in sheet radii from the middle.
+ * @returns A number in 0..1.
+ */
+function taper(u: number): number {
+	const inside = (1 - Math.abs(u)) / EDGE_TAPER;
+	if (inside >= 1) return 1;
+	return inside <= 0 ? 0 : 0.5 - 0.5 * Math.cos(Math.PI * inside);
+}
+
+/**
+ * The height of the ridge at one place on one line, as a share of the line's reach:
+ * the level the model had as long ago as that place and that line read back, or the
+ * slow breath of a listening voice in the middle, whichever is more. A little ragged
+ * where the voice bites. Nothing at the sheet's edges.
  * @param x Where across the sheet, in pixels from its middle.
  * @param row The line, 0 at the front.
  * @param dyn The state.
@@ -96,28 +121,21 @@ function hill(u: number, centre: number, width: number): number {
  */
 function ridge(x: number, row: number, dyn: OrbDynamics): number {
 	const u = x / SHEET_RADIUS;
-	const t = (dyn.clock / 1000) * (1 + 2 * dyn.voice);
-	const lean = row * 0.45;
-	const crest = hill(u, 0.16 * Math.sin(t * 0.9 + lean), 0.27);
-	const left = hill(u, -0.52 + 0.1 * Math.sin(t * 1.3 + 1 + lean), 0.17);
-	const right = hill(u, 0.5 + 0.1 * Math.sin(t * 1.1 + 2 + lean), 0.17);
-	const sway = 0.5 + 0.35 * Math.sin(t * 1.6 + lean * 1.2);
-	const shoulders = (left + right) * sway * (0.3 + 0.7 * dyn.swell);
-	const rough = 0.12 * Math.sin(u * 23 + t * 6 + row * 2.3) * dyn.spark * (1 - row / ROWS);
-	return Math.max(0, 1 - u * u) * (crest + shoulders + rough);
+	const away = Math.hypot(u - NOW_AT, NOW_SOFTNESS) - NOW_SOFTNESS;
+	const heard = levelAgo(dyn, row * VOICE_ROW_STEP_MS + away * VOICE_TRACE_MS);
+	const breathing = 0.5 + 0.5 * Math.sin((dyn.clock / VOICE_BREATH_MS) * TAU - row * 0.55);
+	const breath = BREATH * breathing * hill(u, 0, 0.34);
+	const rough = 0.06 * Math.sin(u * 23 + (dyn.clock / 1000) * 6 + row * 2.3) * dyn.spark * heard;
+	return taper(u) * (Math.max(heard, breath) + rough);
 }
 
 /**
- * How far a line reaches now, in pixels: what the line showed a step ago, or the
- * slow breath of a listening voice, whichever is more, and less when it is hushed.
+ * How far a line reaches at the full level, in pixels: less when the voice is hushed.
  * @param dyn The state.
- * @param row The line, 0 at the front.
  * @returns The reach.
  */
-function rowReach(dyn: OrbDynamics, row: number): number {
-	const breath = BREATH * (0.5 + 0.5 * Math.sin((dyn.clock / VOICE_BREATH_MS) * TAU - row * 0.55));
-	const heard = dyn.rows[row] ?? 0;
-	return SHEET_RADIUS * REACH * Math.max(heard, breath) * (1 - 0.9 * dyn.hush.x);
+function sheetReach(dyn: OrbDynamics): number {
+	return SHEET_RADIUS * REACH * (1 - 0.9 * dyn.hush.x);
 }
 
 /**
@@ -128,7 +146,7 @@ function rowReach(dyn: OrbDynamics, row: number): number {
  */
 function traceRow(ctx: CanvasRenderingContext2D, dyn: OrbDynamics, row: number): void {
 	const base = FRONT * SHEET_RADIUS - row * PITCH;
-	const reach = rowReach(dyn, row);
+	const reach = sheetReach(dyn);
 	ctx.beginPath();
 	for (let step = 0; step <= SEGMENTS; step += 1) {
 		const x = -SHEET_RADIUS + (2 * SHEET_RADIUS * step) / SEGMENTS;

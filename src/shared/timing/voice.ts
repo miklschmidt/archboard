@@ -18,4 +18,7 @@ export {
 	VOICE_ROW_STEP_MS,
 	VOICE_SPARK_MS,
 	VOICE_SWELL_MS,
+	VOICE_SYLLABLE_MS,
+	VOICE_TRACE_MS,
+	VOICE_TRACE_STEP_MS,
 } from "@/shared/timing/lib/voice-motion";

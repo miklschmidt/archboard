@@ -34,8 +34,11 @@ interface Layout {
 
 /** The part whose shape changes: it is the key, and it is the circle. */
 const PLATE = "plate";
-/** The voice's button, which holds its plate and its words and leaves them to move themselves. */
-const HOLDER = "voice";
+/**
+ * The parts that another part carries: the voice's button holds its plate and its
+ * words, and the plate holds the orb. Each moves with what carries it.
+ */
+const CARRIED = new Set(["voice", "orb"]);
 /** How the dock's own animations are told apart from the page's. */
 const GLIDE = "dock-glide";
 /** Fast at first and slow to arrive, as the conversation's slide is. */
@@ -60,7 +63,7 @@ function partsOf(dock: HTMLElement): ReadonlyMap<string, HTMLElement> {
 	const parts = new Map<string, HTMLElement>();
 	for (const node of dock.querySelectorAll<HTMLElement>("[data-part]")) {
 		const name = node.dataset["part"];
-		if (name !== undefined && name !== HOLDER) parts.set(name, node);
+		if (name !== undefined && !CARRIED.has(name)) parts.set(name, node);
 	}
 	return parts;
 }
@@ -86,6 +89,68 @@ function layoutOf(dock: HTMLElement, parts: ReadonlyMap<string, HTMLElement>): L
 }
 
 /**
+ * How far a running glide has carried a part from its place at rest, in pixels.
+ * @param node The part.
+ * @returns The shift, nothing when it is not being carried.
+ */
+function shiftOf(node: HTMLElement): { readonly dx: number; readonly dy: number } {
+	const { transform } = getComputedStyle(node);
+	if (transform === "none" || typeof DOMMatrix !== "function") return { dx: 0, dy: 0 };
+	const matrix = new DOMMatrix(transform);
+	return { dx: matrix.m41, dy: matrix.m42 };
+}
+
+/**
+ * Where a part looks to be while a glide still carries it: its place at rest, and
+ * what the glide adds. The plate is carried by its own box, the others by a shift.
+ * @param name The part.
+ * @param node Its element.
+ * @param rest Where it stood when the glide began to settle.
+ * @returns The place the eye sees.
+ */
+function seenPlace(name: string, node: HTMLElement, rest: Place): Place {
+	if (name !== PLATE) {
+		const { dx, dy } = shiftOf(node);
+		return {
+			rect: { ...rest.rect, left: rest.rect.left + dx, top: rest.rect.top + dy },
+			radius: rest.radius,
+		};
+	}
+	const style = getComputedStyle(node);
+	return {
+		rect: {
+			left: rest.rect.left + (Number.parseFloat(style.left) || 0),
+			top: rest.rect.top + (Number.parseFloat(style.top) || 0),
+			width: Number.parseFloat(style.width) || rest.rect.width,
+			height: Number.parseFloat(style.height) || rest.rect.height,
+		},
+		radius: style.borderTopLeftRadius,
+	};
+}
+
+/**
+ * The dock as the eye sees it while a glide is running. The page has already
+ * changed layout, so the parts cannot be measured: each is placed where the glide
+ * it is in had settled it, plus what that glide has carried it by so far.
+ * @param dock The dock.
+ * @param stood The layout the running glide was heading to.
+ * @param parts The parts, as they are now.
+ * @returns The layout the eye sees.
+ */
+function seenLayout(
+	dock: HTMLElement,
+	stood: Layout,
+	parts: ReadonlyMap<string, HTMLElement>,
+): Layout {
+	const places = new Map<string, Place>();
+	for (const [name, rest] of stood.places) {
+		const node = parts.get(name);
+		places.set(name, node === undefined ? rest : seenPlace(name, node, rest));
+	}
+	return { height: dock.getBoundingClientRect().height, places };
+}
+
+/**
  * The dock's own animations that are running.
  * @param dock The dock.
  * @returns They.
@@ -96,7 +161,8 @@ function glides(dock: HTMLElement): Animation[] {
 }
 
 /**
- * The plate as a keyframe: where it is, how big and how round.
+ * The plate as a keyframe: where it is, how big and how round. It clips what it
+ * holds while it moves, so the orb belongs to the shape that is changing.
  * @param place The shape.
  * @param left Its left edge from the plate's place at rest, in pixels.
  * @param top Its top edge from there, in pixels.
@@ -111,6 +177,7 @@ function plateBox(place: Place, left: number, top: number): Keyframe {
 		width: `${place.rect.width}px`,
 		height: `${place.rect.height}px`,
 		borderRadius: place.radius,
+		overflow: "clip",
 	};
 }
 
@@ -143,10 +210,10 @@ function playPart(name: string, node: HTMLElement, before: Place | undefined, no
 		node.animate(
 			[
 				{ opacity: 0, offset: 0 },
-				{ opacity: 0, offset: FADE_DELAY },
+				{ opacity: 0, offset: FADE_DELAY, easing: "ease-out" },
 				{ opacity: 1, offset: 1 },
 			],
-			GLIDE_OPTIONS,
+			{ ...GLIDE_OPTIONS, easing: "linear" },
 		);
 		return;
 	}
@@ -165,12 +232,14 @@ function playPart(name: string, node: HTMLElement, before: Place | undefined, no
  * old height while the parts are measured, so each starts exactly where it was,
  * and then it grows or shrinks to its new height as they settle.
  * @param dock The dock.
- * @param first The layout it had.
+ * @param stood The layout it settled in.
  * @returns The layout it has now, once it has settled.
  */
-function glide(dock: HTMLElement, first: Layout): Layout {
-	for (const running of glides(dock)) running.cancel();
+function glide(dock: HTMLElement, stood: Layout): Layout {
 	const parts = partsOf(dock);
+	// A glide that is still running is what the eye sees, so a reversal starts from there.
+	const first = glides(dock).length > 0 ? seenLayout(dock, stood, parts) : stood;
+	for (const running of glides(dock)) running.cancel();
 	const settled = layoutOf(dock, parts);
 	dock.style.height = `${first.height}px`;
 	const start = layoutOf(dock, parts);

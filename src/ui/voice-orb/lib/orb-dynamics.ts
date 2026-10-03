@@ -16,9 +16,10 @@ import {
 	VOICE_PULSE_REST_MS,
 	VOICE_RELEASE_MS,
 	VOICE_RING_TURN_MS,
-	VOICE_ROW_STEP_MS,
 	VOICE_SPARK_MS,
 	VOICE_SWELL_MS,
+	VOICE_SYLLABLE_MS,
+	VOICE_TRACE_STEP_MS,
 } from "@/shared/timing/voice";
 
 /** What the orb shows, from the voice's stage. */
@@ -37,9 +38,6 @@ interface Spring {
 	v: number;
 }
 
-/** How many lines the ridge has. */
-const ROWS = 11;
-
 /** The longest step the state takes at once, so a stalled tab does not jump on return. */
 const MAX_STEP_MS = 50;
 /** One frame at 60 Hz, which a rise in the level is measured against. */
@@ -55,8 +53,16 @@ const PULSE_PRESENCE = 0.95;
 const MAX_PULSES = 3;
 /** The state at which a critically damped spring has settled, in time constants. */
 const SETTLE_CONSTANTS = 6;
-/** How much faster the ring's sheen turns while the voice is at its fullest. */
-const SHEEN_GAIN = 14;
+/**
+ * How much faster the ring's sheen turns while the voice is at its fullest:
+ * 24 s a lap at rest and about 5 s at the loudest, which is far from the
+ * 1.3 s lap of the spark that says the voice is connecting.
+ */
+const SHEEN_GAIN = 4;
+/** How far back the trace of the level reaches, in milliseconds: further than any line reads. */
+const TRACE_SPAN_MS = 2000;
+/** How many samples the trace holds. */
+const TRACE_LEN = Math.ceil(TRACE_SPAN_MS / VOICE_TRACE_STEP_MS) + 2;
 /** A full turn. */
 const TAU = Math.PI * 2;
 
@@ -84,6 +90,8 @@ interface OrbDynamics {
 	voice: number;
 	/** The slow follower, 0..1. */
 	swell: number;
+	/** The follower the lines are drawn from: quick both ways, so syllables show, 0..1. */
+	syllable: number;
 	/** The bite of a hard onset, 0..1. */
 	spark: number;
 	/** The level of the last frame. */
@@ -92,10 +100,10 @@ interface OrbDynamics {
 	clock: number;
 	/** How far the ring's sheen has turned, in radians. It turns faster while the voice is loud. */
 	turn: number;
-	sinceRow: number;
+	sinceTrace: number;
 	sincePulse: number;
-	/** The voice a ridge step ago, line by line: the front line first. */
-	readonly rows: Float32Array;
+	/** The syllable follower, sampled every trace step: the newest sample first. */
+	readonly trace: Float32Array;
 	/** How far each ring in the air has gone, 0..1. */
 	readonly pulses: number[];
 }
@@ -112,13 +120,14 @@ function createOrbDynamics(): OrbDynamics {
 		pending: { x: 0, v: 0 },
 		voice: 0,
 		swell: 0,
+		syllable: 0,
 		spark: 0,
 		previous: 0,
 		clock: 0,
 		turn: 0,
-		sinceRow: 0,
+		sinceTrace: 0,
 		sincePulse: VOICE_PULSE_REST_MS,
-		rows: new Float32Array(ROWS),
+		trace: new Float32Array(TRACE_LEN),
 		pulses: [],
 	};
 }
@@ -173,6 +182,8 @@ function followLevel(dyn: OrbDynamics, level: number, dtMs: number): void {
 	const tau = level > dyn.voice ? VOICE_ATTACK_MS : VOICE_RELEASE_MS;
 	dyn.voice += (level - dyn.voice) * (1 - Math.exp(-dtMs / tau));
 	dyn.swell += (dyn.voice - dyn.swell) * (1 - Math.exp(-dtMs / VOICE_SWELL_MS));
+	const syllableTau = level > dyn.syllable ? VOICE_ATTACK_MS : VOICE_SYLLABLE_MS;
+	dyn.syllable += (level - dyn.syllable) * (1 - Math.exp(-dtMs / syllableTau));
 	const rise = (Math.max(0, level - dyn.previous) * FRAME_MS) / dtMs;
 	dyn.spark = Math.max(
 		dyn.spark * Math.exp(-dtMs / VOICE_SPARK_MS),
@@ -182,17 +193,32 @@ function followLevel(dyn: OrbDynamics, level: number, dtMs: number): void {
 }
 
 /**
- * Carry the ridge back a step when one has passed: every line takes what the
- * line in front of it showed, and the front line takes the voice now.
+ * Take the syllable level into the trace each step, and let the older samples
+ * move one place further back.
  * @param dyn The state.
  * @param dtMs The step.
  */
-function rollRows(dyn: OrbDynamics, dtMs: number): void {
-	dyn.sinceRow += dtMs;
-	if (dyn.sinceRow < VOICE_ROW_STEP_MS) return;
-	dyn.sinceRow %= VOICE_ROW_STEP_MS;
-	dyn.rows.copyWithin(1, 0, ROWS - 1);
-	dyn.rows[0] = dyn.voice;
+function recordTrace(dyn: OrbDynamics, dtMs: number): void {
+	dyn.sinceTrace += dtMs;
+	while (dyn.sinceTrace >= VOICE_TRACE_STEP_MS) {
+		dyn.sinceTrace -= VOICE_TRACE_STEP_MS;
+		dyn.trace.copyWithin(1, 0, TRACE_LEN - 1);
+		dyn.trace[0] = dyn.syllable;
+	}
+}
+
+/**
+ * What the model's level was some time ago, as the sheet's lines read it.
+ * @param dyn The state.
+ * @param agoMs How long ago, in milliseconds.
+ * @returns A number in 0..1, between the two samples either side of that time.
+ */
+function levelAgo(dyn: OrbDynamics, agoMs: number): number {
+	const at = Math.min(Math.max(agoMs, 0), TRACE_SPAN_MS) / VOICE_TRACE_STEP_MS;
+	const before = Math.floor(at);
+	const near = dyn.trace[before] ?? 0;
+	const far = dyn.trace[before + 1] ?? near;
+	return near + (far - near) * (at - before);
 }
 
 /**
@@ -254,7 +280,7 @@ function stepOrb(dyn: OrbDynamics, input: OrbInput, stepMs: number): void {
 	easeSpring(dyn.hush, input.mode === "muted" ? 1 : 0, VOICE_HUSH_MS, dt);
 	easeSpring(dyn.pending, input.mode === "starting" ? 1 : 0, VOICE_HUSH_MS, dt);
 	followLevel(dyn, heard(input), dt);
-	rollRows(dyn, dt);
+	recordTrace(dyn, dt);
 	launchPulse(dyn, dt);
 	ageRings(dyn, dt);
 	dyn.clock += dt;
@@ -277,8 +303,9 @@ function restOrb(dyn: OrbDynamics, mode: OrbMode): void {
 	dyn.pending.v = 0;
 	dyn.voice = resting;
 	dyn.swell = resting;
+	dyn.syllable = resting;
 	dyn.spark = 0;
-	dyn.rows.fill(resting);
+	dyn.trace.fill(resting);
 	dyn.pulses.length = 0;
 }
 
@@ -305,9 +332,9 @@ function orbMoves(dyn: OrbDynamics, mode: OrbMode): boolean {
 }
 
 export {
-	ROWS,
 	TAU,
 	createOrbDynamics,
+	levelAgo,
 	orbLight,
 	orbMoves,
 	restOrb,

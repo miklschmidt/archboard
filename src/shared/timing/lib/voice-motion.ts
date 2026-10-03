@@ -73,14 +73,36 @@ const VOICE_SWELL_MS = 380;
 const VOICE_SPARK_MS = 150;
 
 /**
- * How often the ridge of lines takes the next sample of the light: each line
- * shows what the line in front of it showed this long ago, so a loud moment rolls
- * back through the lines. A ridge of eleven takes about three quarters of a second
- * to carry one syllable to the back. Pulls against the syllables themselves: a step
- * longer than a syllable smears two into one, and one much shorter makes the lines
- * a copy of each other.
+ * How much older each line of the sheet reads than the line in front of it, so
+ * a loud moment rolls back through the sheet. Eleven lines read about 0.64 s of
+ * the past between the front one and the back one. Pulls against the syllables
+ * themselves: a step much longer than a syllable makes the lines separate
+ * pictures, and one much shorter makes them copies of each other.
  */
 const VOICE_ROW_STEP_MS = 64;
+
+/**
+ * How far back one line reads, from its middle to its edge. The middle of a line
+ * is now and its edges are the past, so a syllable spreads out from the middle as
+ * it ages. About a second holds a few syllables across the width of the circle.
+ * Pulls against what the eye can follow at 64px: shorter and a line shows one
+ * bump, longer and it shows a texture.
+ */
+const VOICE_TRACE_MS = 1000;
+
+/**
+ * How often the level is taken for the lines to read back. Fine enough that a
+ * syllable of about a tenth of a second has several samples, and coarse enough
+ * that a second of the past fits in a few dozen numbers.
+ */
+const VOICE_TRACE_STEP_MS = 24;
+
+/**
+ * How fast the level the lines are drawn from falls after a syllable. Much
+ * shorter than the release of the light above, so that the gap between two
+ * syllables shows in a line as a dip and a word does not run into one swell.
+ */
+const VOICE_SYLLABLE_MS = 110;
 
 /**
  * How long a ring of light takes to leave the circle and fade, once the voice
@@ -96,8 +118,9 @@ const VOICE_PULSE_MS = 1000;
 const VOICE_PULSE_REST_MS = 340;
 
 /**
- * How long the ring's gold sheen takes to turn once around. Slow enough to read
- * as metal catching the light and not as a spinner.
+ * How long the ring's gold sheen takes to turn once around at rest. Slow enough
+ * to read as metal catching the light and not as a spinner. The voice speeds it
+ * up, but never to the pace of the spark below.
  */
 const VOICE_RING_TURN_MS = 24_000;
 
@@ -129,4 +152,7 @@ export {
 	VOICE_ROW_STEP_MS,
 	VOICE_SPARK_MS,
 	VOICE_SWELL_MS,
+	VOICE_SYLLABLE_MS,
+	VOICE_TRACE_MS,
+	VOICE_TRACE_STEP_MS,
 };

@@ -4,6 +4,7 @@
 
 export {
 	createOrbDynamics,
+	levelAgo,
 	orbMoves,
 	restOrb,
 	stepOrb,

@@ -106,20 +106,20 @@ function VoiceControl(props: VoiceControlProps): JSX.Element {
 			onClick={off ? actions.talk : actions.endVoice}
 			className="group/voice relative outline-none"
 		>
-			<span aria-hidden="true" data-part="plate" className={PLATE} />
+			<span aria-hidden="true" data-part="plate" className={PLATE}>
+				<span
+					data-part="orb"
+					className="pointer-events-none absolute top-1/2 left-1/2 -translate-1/2"
+				>
+					<VoiceOrb mode={state} level={voice.level.read} reducedMotion={props.reducedMotion} />
+				</span>
+			</span>
 			<span
 				data-part="label"
 				className="text-control relative flex items-center justify-center gap-2 font-medium"
 			>
 				<OffMark problem={voice.problem !== null} />
 				{CIRCLE_NAMES.off}
-			</span>
-			<span
-				aria-hidden="true"
-				data-part="orb"
-				className="pointer-events-none absolute top-1/2 left-1/2 -translate-1/2"
-			>
-				<VoiceOrb mode={state} level={voice.level.read} reducedMotion={props.reducedMotion} />
 			</span>
 		</button>
 	);
