@@ -35,8 +35,7 @@ import { colourId } from "@/transformers/semantic-renderer/lib/svg/colour";
 import { shifted } from "@/transformers/semantic-renderer/lib/svg/document";
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { junctionMarks } from "@/transformers/semantic-renderer/lib/svg/junctions";
-import { travellingPulses } from "@/transformers/semantic-renderer/lib/svg/pulse";
-import { meetingPlaces, type Around } from "@/transformers/semantic-renderer/lib/svg/comet-rest";
+import { paintTraffic } from "@/transformers/semantic-renderer/lib/svg/traffic";
 import {
 	PART_ATTRIBUTE,
 	markedBox,
@@ -47,7 +46,6 @@ import {
 	type StandingOf,
 	type SubjectStanding,
 	type UnsettledOf,
-	TRAFFIC_ATTRIBUTE,
 } from "@/transformers/semantic-renderer/lib/svg/standing";
 import {
 	edgeAttributes,
@@ -191,52 +189,6 @@ function paintEdgeLine(
 				...attributes,
 			}),
 		]),
-	);
-}
-
-/**
- * Paint a relationship's traffic in a layer of its own, over every line and
- * under every card and every relationship's words. Drawn with its line, the
- * shots riding a stretch two joined lines share were covered by whichever
- * line was painted after, and cut where its line is cut beneath a crossing.
- * The layer names its relationship, so a viewer lights, dims and raises it
- * with its line. A relationship the proposal no longer has is drawn for
- * context and must not read as live traffic.
- * @param routed The supplied route.
- * @param look The page's colours, the vault's policy, and whether the line is a flow step.
- * @param look.palette The selected theme.
- * @param look.policy Current vault policy.
- * @param look.step Whether this line is a flow step drawn on the board.
- * @param standing Its architectural change.
- * @param around Every relationship's label, drawn over the shots, and where other lines meet this one.
- * @returns The traffic's group, or nothing for a line without traffic.
- */
-function paintEdgeTraffic(
-	routed: DrawingEdge,
-	look: { palette: Palette; policy: SemanticPolicy; step: boolean },
-	standing: SubjectStanding | undefined,
-	around: Around,
-): string {
-	const { edge } = routed;
-	if (standing === "removed" || edge.traffic === undefined) return "";
-	const { palette, policy, step } = look;
-	const width = strokeWidthOf(edge);
-	const appearance = lineAppearance(edge.kind, policy, step);
-	const attributes = edgeAttributes(edge, palette, standing, policy, appearance);
-	return wrap(
-		"g",
-		{ [TRAFFIC_ATTRIBUTE]: edge.id },
-		travellingPulses({
-			id: edge.id,
-			curve: routed.curve,
-			headReach: arrowheadReach(appearance.arrowhead, width),
-			colour: relationshipInk(edge, palette, standing, policy, appearance),
-			lineColour: String(attributes["stroke"]),
-			lineWidth: width,
-			page: palette,
-			traffic: edge.traffic,
-			around,
-		}),
 	);
 }
 
@@ -391,8 +343,29 @@ function paintArchitecture(
 		level,
 	);
 	const { inked, labelled } = lineBoxes(edges);
-	const labels = labelled.map(({ box }) => box);
-	const met = meetingPlaces(drawing);
+	// A relationship the proposal no longer has is drawn for context and carries
+	// no traffic.
+	const traffic = paintTraffic(
+		edges.flatMap((routed) => {
+			const { edge } = routed;
+			if (edge.traffic === undefined || standingOf(edge.id) === "removed") return [];
+			const width = strokeWidthOf(edge);
+			const appearance = lineAppearance(edge.kind, policy, derived.has(edge.id));
+			const attributes = edgeAttributes(edge, palette, standingOf(edge.id), policy, appearance);
+			return [
+				{
+					routed,
+					traffic: edge.traffic,
+					headReach: arrowheadReach(appearance.arrowhead, width),
+					ink: relationshipInk(edge, palette, standingOf(edge.id), policy, appearance),
+					lineColour: String(attributes["stroke"]),
+					lineWidth: width,
+				},
+			];
+		}),
+		new Map(cards.map(({ measured, box }) => [measured.node.id, box])),
+		palette,
+	);
 	const framed = containers.map(({ measured, box }) => ({ id: measured.node.id, box }));
 	const cardBoxes = cards.map(({ measured, box }) => ({ id: measured.node.id, box }));
 	const canvas = canvasFor(
@@ -451,15 +424,8 @@ function paintArchitecture(
 			}),
 		),
 		// Every relationship's traffic, over all the lines so a stretch two joined
-		// lines share never covers the other's shots, and under the cards and words.
-		...edges.map((edge) =>
-			paintEdgeTraffic(
-				edge,
-				{ palette, policy, step: derived.has(edge.edge.id) },
-				standingOf(edge.edge.id),
-				{ labels, met: met.get(edge.edge.id) ?? [] },
-			),
-		),
+		// lines share never covers the other's pulses, and under the cards and words.
+		...edges.map((edge) => traffic.lines.get(edge.edge.id) ?? ""),
 		...orderedCards.map((card) =>
 			paintMeasuredCard(
 				card,
@@ -467,6 +433,7 @@ function paintArchitecture(
 				standingOf(card.measured.node.id),
 				unsettledOf(card.measured.node.id),
 				appearances.get(card.measured.node.id)!,
+				traffic.rims.get(card.measured.node.id),
 			),
 		),
 		...edges.map((edge) =>

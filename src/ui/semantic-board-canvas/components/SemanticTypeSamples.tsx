@@ -2,7 +2,7 @@
 // a relationship kind's line with its dash and arrowhead. The legend keys the
 // picture with them, and a subject's tip says with them what the subject is.
 // So do the marks a line and a subject carry beside their kind: how heavy a
-// line is drawn, the streaks that ride it, and the pin a proposal puts on what
+// line is drawn, the pulses that ride it, and the pin a proposal puts on what
 // it changed. A key's symbol is the picture's symbol, or it keys nothing.
 
 import { useMemo, type JSX, type ReactNode } from "react";
@@ -113,15 +113,19 @@ function EmphasisSample(props: { readonly width: number }): JSX.Element {
 	);
 }
 
+/** How thick a pulse's core is on a line, and how long its tail and its head are: the picture's own proportions. */
+const PULSE = { width: PLAIN_WIDTH + 0.6, tail: 18, head: 8 } as const;
+
 /**
- * A line with a streak on it, the still shape of the shots that fly along a
- * line whose author illustrated its traffic.
+ * A line with a pulse on it, the still shape of the laser bolts that fly along
+ * a line whose author illustrated its traffic: a head, flat at the front, with
+ * a tail that fades back into the line.
  * @param props How wide the sample is.
  * @param props.width The width.
  * @returns The sample.
  */
 function TrafficSample(props: { readonly width: number }): JSX.Element {
-	const middle = props.width / 2;
+	const front = props.width / 2 + PULSE.head / 2;
 	return (
 		<LineFrame width={props.width} color={NEUTRAL_LINE}>
 			<path
@@ -131,11 +135,17 @@ function TrafficSample(props: { readonly width: number }): JSX.Element {
 				strokeWidth={PLAIN_WIDTH}
 			/>
 			<path
-				d={`M${middle - 5} ${LINE_BOX.middle}H${middle + 5}`}
+				d={`M${front - PULSE.tail} ${LINE_BOX.middle}H${front}`}
 				fill="none"
 				stroke="var(--foreground)"
-				strokeWidth="3.5"
-				strokeLinecap="round"
+				strokeOpacity="0.35"
+				strokeWidth={PULSE.width}
+			/>
+			<path
+				d={`M${front - PULSE.head} ${LINE_BOX.middle}H${front}`}
+				fill="none"
+				stroke="var(--foreground)"
+				strokeWidth={PULSE.width}
 			/>
 		</LineFrame>
 	);

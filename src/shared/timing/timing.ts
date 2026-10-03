@@ -449,8 +449,6 @@ const CODEX_QUEUE_REREAD_FLOOR_MS = 1000;
 export {
 	FAR_VIEW_FADE_MS,
 	FLOW_CYCLE_CAP_MS,
-	FLOW_PULSE_RAMP,
-	FLOW_STEP_TRAVEL_MS,
 	PICTURE_ENTRY_MS,
 	PICTURE_ENTRY_PHASES,
 	PICTURE_EXIT_MS,
@@ -460,9 +458,6 @@ export {
 	PRESENTATION_BOX_STEP_MS,
 	PRESENTATION_STEP_MS,
 	SUBJECT_TIP_DELAY_MS,
-	TRAFFIC_GAP_LIMITS_MS,
-	TRAFFIC_STILL_MS,
-	TRAFFIC_STREAK_MS,
 } from "@/shared/timing/lib/diagram-motion";
 export { EXPLORING_MS } from "@/shared/timing/lib/exploring";
 export { AGENT_PANEL_SLIDE_MS, SIDEBAR_MS } from "@/shared/timing/lib/column-motion";

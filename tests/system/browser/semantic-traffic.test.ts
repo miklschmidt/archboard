@@ -2,7 +2,7 @@
 // runs it as Web Animations instead, because SMIL kept an idle board at about one core.
 //
 // What this catches: SMIL left running in the page; a form the renderer writes that the page
-// translates wrongly, so a streak or a comet is somewhere else, or at another opacity, than SMIL
+// translates wrongly, so a pulse is somewhere else, or at another opacity, than SMIL
 // would have put it at the same moment; and a picture put up again for a new version whose
 // traffic jumps back to the start instead of running on.
 
@@ -25,7 +25,7 @@ import { SEMANTIC_SURFACE, pictureAtRest } from "./support/semantic-page.ts";
 
 const WAIT = { timeoutMs: 8_000 } as const;
 
-/** The example vault: its boards draw streaks, and its sequence view draws comets. */
+/** The example vault: its boards draw trains of pulses, and its sequence view draws one pulse a message. */
 const EXAMPLE = join(import.meta.dir, "../../../examples/web-shop");
 
 /** The board, and the id of its sequence view. */
@@ -151,7 +151,7 @@ test("the page runs a picture's traffic where SMIL would, without SMIL, and runs
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	const board = encodeURIComponent(BOARD);
 
-	// Streaks on the board, and comets on its sequence view: every form the renderer writes.
+	// Trains on the board, and a pulse a message on its sequence view: every form the renderer writes.
 	for (const address of [`?paneA=${board}`, `?paneA=${board}&viewA=${SEQUENCE_VIEW}`]) {
 		await openAtRest(browser, `${server.base}/${address}`);
 		const compared = await compareTraffic(browser);
