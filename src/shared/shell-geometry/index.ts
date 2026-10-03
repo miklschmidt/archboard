@@ -38,7 +38,8 @@ const PANE_BAR_HEIGHT = 36;
 const DOCK_BAR_HEIGHT = 41;
 
 /**
- * The conversation panel beside the panes, while it is open. It is not part of
+ * The conversation panel beside the panes, while it is open, as wide as it
+ * starts; the person can drag its edge to another width. It is not part of
  * the stage a drawing is measured against: it opens only when the person asks,
  * and the camera refits the narrower pane.
  */

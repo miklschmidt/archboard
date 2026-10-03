@@ -217,7 +217,15 @@ const AGENT_ELAPSED_TICK_MS = 1000;
 /** How long a running turn reports nothing new before the agent bar says it is quiet. */
 const AGENT_QUIET_MS = 120_000;
 
-export { AGENT_ELAPSED_TICK_MS, AGENT_QUIET_MS, SHELL_AGE_TICK_MS };
+// The conversation slides open beside the navigator and shut again. It is motion
+// a person watches, not waits out: long enough to read as a slide, short enough
+// that opening it to type is not slowed. The pane centre beside it is refitted
+// as it moves, so a longer slide is also a longer run of refits.
+
+/** How long the conversation takes to slide open or shut. */
+const AGENT_PANEL_SLIDE_MS = 220;
+
+export { AGENT_ELAPSED_TICK_MS, AGENT_PANEL_SLIDE_MS, AGENT_QUIET_MS, SHELL_AGE_TICK_MS };
 
 /** Outer cap for any browser-owned export request. The wait ends on correlation, not delay. */
 const BROWSER_EXPORT_TIMEOUT_MS = 30_000;

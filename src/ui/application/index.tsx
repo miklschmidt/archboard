@@ -179,7 +179,7 @@ interface AgentSlotSources {
 }
 
 /**
- * The agent's surfaces drawn: the dock, the panel while it is open, and the
+ * The agent's surfaces drawn: the dock, the panel for the shell to show while it is open, and the
  * Talk control a presentation carries. The dock and the panel read what changes
  * while the agent works themselves, so these elements are made again only when
  * the person acts.
@@ -198,9 +198,7 @@ function useAgentSlots(sources: AgentSlotSources): AgentSlots {
 					reducedMotion={reducedMotion}
 				/>
 			),
-			panel: agent.panel.open ? (
-				<AgentPanelSlot agent={agent} workbench={workbench} context={context} />
-			) : null,
+			panel: <AgentPanelSlot agent={agent} workbench={workbench} context={context} />,
 			voiceControls: (
 				<TalkControl voice={agent.voice} actions={agent.actions} reducedMotion={reducedMotion} />
 			),
@@ -472,6 +470,8 @@ function ApplicationBody(): JSX.Element {
 				voiceControls={slots.voiceControls}
 				agentDock={slots.dock}
 				agentPanel={slots.panel}
+				agentPanelOpen={agent.panel.open}
+				onAgentPanelClose={agent.panel.closePanel}
 				attachStage={fullscreen.attachStage}
 			/>
 			<SettingsHosts surface={settings} notices={notices} onClose={closeSettings} />
