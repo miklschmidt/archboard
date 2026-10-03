@@ -8,6 +8,7 @@
 
 import type { ConversationTurn } from "@/ui/workbench-timeline";
 import type { AgentVoiceView } from "@/ui/workbench/contracts";
+import { SPEAKING_LEVEL, VOICE_DEMO_CYCLE } from "@/ui/workbench/lib/voice-demo";
 
 /** Whether a plan step is behind the agent, what it is on, or still to come. */
 type StepState = "done" | "now" | "next";
@@ -49,16 +50,23 @@ function stepsOf(turn: ConversationTurn | undefined): readonly CardStep[] {
 	}));
 }
 
-/** Whether the page was opened asking for the demonstration. Read once, before the address is rewritten. */
+/**
+ * Whether the page was opened asking for the invented turn, with the voice
+ * speaking (`?voiceDemo`). `?voiceDemo=cycle` asks for the voice's stages instead
+ * (lib/voice-demo.ts) and leaves the agent's real state. Read once, before the
+ * address is rewritten.
+ */
 const VOICE_DEMO: boolean =
-	typeof window !== "undefined" && new URLSearchParams(window.location.search).has("voiceDemo");
+	typeof window !== "undefined" &&
+	new URLSearchParams(window.location.search).has("voiceDemo") &&
+	!VOICE_DEMO_CYCLE;
 
 /** DEMONSTRATION: the voice the dock shows when the page asks for the demonstration. */
 const DEMO_VOICE: AgentVoiceView = {
 	stage: "speaking",
 	problem: null,
 	busy: false,
-	level: { read: () => 0.62, subscribe: () => () => undefined },
+	level: SPEAKING_LEVEL,
 };
 
 /** DEMONSTRATION: what the agent is doing. */
