@@ -11,6 +11,7 @@ import { useLayoutEffect, useMemo } from "react";
 
 import type { StagedPicture } from "@/ui/semantic-board-canvas/hooks/use-picture-transition";
 import type { GroupSelection } from "@/ui/semantic-board-canvas/lib/groups";
+import { lightInk } from "@/ui/semantic-board-canvas/lib/lit-ink";
 import { subjectMarks, type BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
 import { markReach, markSubjects, markVeil } from "@/ui/semantic-board-canvas/lib/subjects";
 
@@ -46,12 +47,14 @@ function useViewerMarks(picture: StagedPicture | null, marks: ViewerMarks): void
 	useLayoutEffect(() => {
 		if (picture !== null) {
 			markSubjects(picture.root, attended);
+			lightInk(picture.root);
 		}
 	}, [picture, attended]);
 	// The veil is its own mark, independent of attention.
 	useLayoutEffect(() => {
 		if (picture !== null) {
 			markVeil(picture.surface, veil);
+			lightInk(picture.root);
 		}
 	}, [picture, veil]);
 	// A trace grades what it reached by how far it is, on top of the veil's marks.

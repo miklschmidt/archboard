@@ -134,3 +134,64 @@ test("the relationships that light are drawn on once, and not for a reader who a
 	expect(lighting()).toBe("pick");
 	expect(sweeping()).toBe(0);
 });
+
+/**
+ * The id a `url(#id)` refers to.
+ * @param value A style or an attribute.
+ * @returns The id, or undefined when it refers to none.
+ */
+function referredTo(value: string | null | undefined): string | undefined {
+	return /url\(["']?#([^"')]+)["']?\)/.exec(value ?? "")?.[1];
+}
+
+/**
+ * What a route's line group is masked with right now: the mask it is pointed at
+ * by style, or the picture's own.
+ * @param id The relationship.
+ * @returns The mask's id, as the group refers to it.
+ */
+function maskOf(id: string): string | null {
+	const group = surface().querySelector(`g[data-semantic-id='${id}']`);
+	return (
+		referredTo(group?.getAttribute("style")) ?? referredTo(group?.getAttribute("mask")) ?? null
+	);
+}
+
+/**
+ * What a mask cuts away, by the cap of each stroke.
+ * @param id The mask's id.
+ * @returns The caps, in order.
+ */
+function cutsOf(id: string | null): (string | null)[] {
+	const mask = surface().querySelector(`mask[id='${id}']`);
+	return [...(mask?.querySelectorAll("path") ?? [])].map((path) =>
+		path.getAttribute("stroke-linecap"),
+	);
+}
+
+test("a lit relationship that shares a lane keeps its own ink along it, and a gap under a crossing line", async () => {
+	// The picture draws the stretch of the queue's relationship to the worker with another route's line.
+	await served({ trunks: ["e3", "e1"] });
+	expect(cutsOf(maskOf("e3"))).toEqual(["butt", "round"]);
+	await pick("q");
+	expect(lit()).toContain("e3");
+	// The cut for the shared lane is lifted, so the line is lit from end to end; the gap for a crossing stays.
+	expect(cutsOf(maskOf("e3"))).toEqual(["round"]);
+	// A relationship the poke does not light is drawn as the picture draws it.
+	expect(cutsOf(maskOf("e1"))).toEqual(["butt", "round"]);
+	await act(async () => {
+		fireEvent.keyDown(viewport(), { key: "Escape" });
+	});
+	await settle();
+	expect(cutsOf(maskOf("e3"))).toEqual(["butt", "round"]);
+});
+
+test("a relationship that is picked out is drawn as the picture draws it", async () => {
+	await served({ trunks: ["e3"] });
+	await pick("e3");
+	expect(lit()).toContain("e3");
+	// The picture shows the picked relationship in full by its own rule, which a mask of the viewer's would override.
+	expect(
+		surface().querySelector("g[data-semantic-id='e3']")?.getAttribute("style") ?? "",
+	).not.toContain("mask");
+});

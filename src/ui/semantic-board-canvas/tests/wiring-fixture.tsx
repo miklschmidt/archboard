@@ -53,12 +53,32 @@ const BOX: Place = { x: 0, y: 0, width: 10, height: 10 };
  * One drawn subject of the picture.
  * @param kind What it is.
  * @param id Its id.
+ * @param masked Whether the picture masks a line, as it does one that shares a lane.
  * @returns The markup.
  */
-function drawn(kind: string, id: string): string {
+function drawn(kind: string, id: string, masked = false): string {
 	// A line is drawn as the renderer draws it: a halo under the route, which ends in an arrowhead.
 	const route = kind === "edge" ? `<path d="M0 0 L10 10" marker-end="url(#head)"></path>` : "";
-	return `<g data-semantic-kind="${kind}" data-semantic-id="${id}"><path class="ab-halo"></path><rect width="10" height="10"></rect>${route}</g>`;
+	const mask = masked ? ` mask="url(#cut-${id})"` : "";
+	return `<g data-semantic-kind="${kind}" data-semantic-id="${id}"${mask}><path class="ab-halo"></path><rect width="10" height="10"></rect>${route}</g>`;
+}
+
+/**
+ * The mask the picture gives a route that shares a lane: the stretch another
+ * route draws cut away with butt ends, and the gap under a line that crosses
+ * over it with round ones.
+ * @param id The route's relationship.
+ * @returns The mask.
+ */
+function trunkMask(id: string): string {
+	const cut = `fill="none" stroke="black"`;
+	return (
+		`<mask id="cut-${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="400" height="300">` +
+		`<rect x="0" y="0" width="400" height="300" fill="white"></rect>` +
+		`<path d="M0 0 L4 4" ${cut} stroke-width="18" stroke-linecap="butt"></path>` +
+		`<path d="M6 6 L8 8" ${cut} stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>` +
+		`</mask>`
+	);
 }
 
 /**
@@ -107,6 +127,8 @@ interface PictureOptions {
 	readonly hidden?: readonly string[];
 	/** Where some subjects sit. */
 	readonly places?: Readonly<Record<string, Place>>;
+	/** Relationships whose line shares a lane, so the picture masks the stretch another route draws. */
+	readonly trunks?: readonly string[];
 }
 
 /**
@@ -120,10 +142,12 @@ function picture(options: PictureOptions = {}): Record<string, unknown> {
 	const containers = NODES.filter((node) => NODES.some((child) => child.parent === node.id));
 	const cards = NODES.filter((node) => !hidden.includes(node.id) && !containers.includes(node));
 	const wires = EDGES.filter((edge) => !hidden.includes(edge.id));
+	const trunks = options.trunks ?? [];
 	const svg = [
+		`<defs>${trunks.map(trunkMask).join("")}</defs>`,
 		...containers.map((node) => drawn("region", node.id)),
 		...cards.map((node) => drawn("node", node.id)),
-		...wires.map((edge) => drawn("edge", edge.id)),
+		...wires.map((edge) => drawn("edge", edge.id, trunks.includes(edge.id))),
 	].join("");
 	return {
 		success: true,

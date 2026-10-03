@@ -59,6 +59,16 @@ and so on). The surface carries the strength (`is-probing`, `is-far`). Rules in
 style sheet do not change, so an export is the same bytes as before. The
 drawn-on lines are copies in a layer that the viewer adds and removes.
 
+Where routes of one kind lie on one line, the renderer has one of them draw each
+shared stretch and cuts it from the others with a mask, so a trunk reads as one
+line. The light is by relationship, so a lit route would be lit only up to the
+junction where it joins the trunk, and pale along it. The viewer points a lit
+route at a copy of its mask without those cutouts (`lib/lit-ink.ts`, TASK-387).
+The gaps under a line that crosses over stay, and so does the picture's own rule
+for a picked route. The renderer's output does not change. It tells the two
+kinds of cutout apart by their caps, butt for a trunk and round for a crossing,
+and a test of the renderer holds it to that.
+
 The surface's classes reach every descendant, so they would reach the board
 inside a card too. One rule in `app.css` gives that board no filter. The board
 inside a card also carries `is-far` when it will be seen from far where the
