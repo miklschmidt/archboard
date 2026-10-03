@@ -311,13 +311,14 @@ function VoiceLine(props: {
 	const { voice } = props;
 	const state = circleState(voice, useAudible(voice));
 	const on = state !== "off" && state !== "ending";
+	const lit = on && state !== "muted";
 	return (
 		<div data-part="words" className="flex h-6 items-center gap-1">
 			<output
 				aria-live="polite"
 				className={cn(
 					"text-control min-w-0 flex-1 truncate font-medium",
-					on ? "text-primary-text" : "text-muted-foreground",
+					lit ? "text-primary-text" : "text-muted-foreground",
 				)}
 			>
 				{VOICE_WORDS[state]}

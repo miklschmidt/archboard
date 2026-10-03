@@ -443,6 +443,11 @@
 [data-slot="agent-dock"] > [data-part] {
 	min-width: 0;
 }
+/* The voice's plate passes under every other part while it glides. */
+[data-slot="agent-dock"] > [data-part]:not([data-part="voice"]) {
+	position: relative;
+	z-index: 1;
+}
 [data-slot="agent-dock"] > [data-part="status"] {
 	grid-column: 1 / -1;
 	order: 1;
@@ -512,10 +517,16 @@
 	align-items: center;
 	justify-content: center;
 }
+[data-slot="voice-circle"] [data-part="plate"] {
+	transition-duration: calc(var(--voice-morph-ms, 520ms) * 0.5);
+}
 [data-slot="voice-circle"]:not([data-voice-state="off"]) [data-part="plate"] {
-	border-color: transparent;
+	border-color: var(--primary-mark);
 	border-radius: 32px;
 	background-color: var(--card);
+}
+[data-slot="voice-circle"][data-voice-state="muted"] [data-part="plate"] {
+	border-color: var(--border);
 }
 [data-slot="voice-circle"] [data-part="label"] {
 	transition: opacity calc(var(--voice-morph-ms) * 0.3) linear calc(var(--voice-morph-ms) * 0.6);
@@ -531,7 +542,7 @@
 }
 [data-slot="voice-circle"]:not([data-voice-state="off"]) canvas {
 	opacity: 1;
-	transition: opacity calc(var(--voice-morph-ms) * 0.4) ease-out calc(var(--voice-morph-ms) * 0.45);
+	transition: opacity calc(var(--voice-morph-ms) * 0.4) ease-out calc(var(--voice-morph-ms) * 0.35);
 }
 
 /* The dock is lit by what the agent is doing. While voice is on, a warm wash

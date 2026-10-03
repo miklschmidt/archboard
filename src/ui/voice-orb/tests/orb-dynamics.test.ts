@@ -6,6 +6,7 @@ import { expect, test } from "bun:test";
 
 import {
 	createOrbDynamics,
+	levelAgo,
 	orbMoves,
 	restOrb,
 	stepOrb,
@@ -62,6 +63,16 @@ test("a ragged loud level sends rings one at a time, never a ring a frame", () =
 	expect(most).toBeLessThanOrEqual(3);
 	run(dyn, "speaking", 0, 1500);
 	expect(dyn.pulses).toHaveLength(0);
+});
+
+test("a line records what the model's level was: a burst shows where it was, then ages out", () => {
+	const dyn = createOrbDynamics();
+	run(dyn, "speaking", 0.2, 240);
+	run(dyn, "speaking", 0, 600);
+	expect(levelAgo(dyn, 700)).toBeGreaterThan(0.5);
+	expect(levelAgo(dyn, 0)).toBeLessThan(0.05);
+	run(dyn, "speaking", 0, 1800);
+	expect(levelAgo(dyn, 700)).toBeLessThan(0.05);
 });
 
 test("a mute hushes the orb: the lines go flat and it gives the room no light", () => {
