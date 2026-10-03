@@ -300,8 +300,8 @@
 	}
 }
 
-/* A name set as a title, in the display face: a pane's board, a picked part,
-   a variant, a walkthrough. Tracked capitals at the name size. */
+/* A name set as a title, in the display face: a picked part, a variant, a
+   walkthrough. Tracked capitals at the name size. */
 @utility title-name {
 	font-family: var(--font-display);
 	font-size: var(--text-name);

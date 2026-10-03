@@ -102,8 +102,9 @@ Constraints that every surface keeps:
 
 ## Brand Commitments
 
-The name is archboard. The CLI and the wordmark write it in lowercase. Prose
-writes Archboard at the start of a sentence and as the product's name.
+The name is archboard. The CLI writes it in lowercase. The wordmark sets it in
+the display face's tracked capitals, and its text stays archboard. Prose writes
+Archboard at the start of a sentence and as the product's name.
 
 The voice is plain English, and this is binding for UI copy and docs. Sentences
 are short and literal. Copy names what happened and what the reader can do

@@ -1,8 +1,8 @@
 // The mark and the wordmark: a gold peak with a second stroke inside it and a
 // swoosh over its shoulder, and archboard beside it in the display face, the
-// tall condensed face every board's name is set in. The wordmark keeps the
-// name's lowercase, as the CLI writes it, which is also what sets it apart
-// from a board's name, always in capitals.
+// tall condensed face that sets a name as a title, in the same tracked
+// capitals. The text stays archboard, as the CLI writes it: the capitals come
+// from the style.
 
 import type { JSX } from "react";
 
@@ -55,7 +55,7 @@ function Brand(): JSX.Element {
 			<Mark />
 			<span
 				aria-hidden="true"
-				className="font-display -mb-[3px] text-[25px] leading-[22px] font-bold tracking-[0.03em]"
+				className="font-display -mb-px text-[25px] leading-[22px] font-[650] tracking-[0.07em] uppercase"
 			>
 				archboard
 			</span>

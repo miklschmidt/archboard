@@ -172,7 +172,7 @@ paths, versions, counts and times.
 
 ### Hierarchy
 
-- **Display** (650, 20px, 24px, 0.07em, capitals): a name set as a title. Examples are the board of a pane, a picked part, a variant and a walkthrough. The utility is `title-name`.
+- **Display** (650, 20px, 24px, 0.07em, capitals): a name set as a title. Examples are a picked part, a variant and a walkthrough. The utility is `title-name`. The board in a pane's breadcrumb is not one: it is Onest (650, 13px) in full ink, so the display face stays with the wordmark and the titles.
 - **Title** (600, 14px, 20px): the titles of regions and dialogs.
 - **Nav** (500, 14px, 20px): the name of a board in the navigator.
 - **Control** (500, 13px, 18px): buttons, tabs and fields.

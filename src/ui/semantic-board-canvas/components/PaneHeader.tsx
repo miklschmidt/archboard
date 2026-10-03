@@ -2,13 +2,13 @@
 // screen sits and the ways to read it, with the shell's parts of the row at
 // either end.
 //
-//   [A] ◇ Archboard › ▣ ARCHBOARD SERVER › ◷ TASK-373   Diagram Parts … Walkthroughs 1   [⛶] [×]
+//   [A] ◇ Archboard › ▣ Archboard server › ◷ TASK-373   Diagram Parts … Walkthroughs 1   [⛶] [×]
 //
 // The pane's letter (while two panes share the centre) and its controls are
 // the shell's (`usePaneChrome`); the rest is the board's. Where the board sits
 // is one breadcrumb, the navigator's own placing of it: the boards above, each
 // with its level's mark and each a way to it in this pane, then the board in
-// the display face, then the variant when it is not the one the name opens.
+// bold, full ink, then the variant when it is not the one the name opens.
 // The tabs switch what the area under the row shows: the picture, or one of
 // the board's pages. While the row is narrow (two panes), the tabs that are not
 // open keep only their marks and the middle of the breadcrumb folds behind one
@@ -162,7 +162,7 @@ function Folded(props: { readonly places: readonly BoardPlace[] }): JSX.Element 
 
 /**
  * Where the pane is, as one breadcrumb: the boards above, each with its
- * level's mark and each a way to it; the board on screen in the display face
+ * level's mark and each a way to it; the board on screen in bold, full ink
  * with its level's mark; and the variant on screen with its lifecycle's mark
  * when it is not the one the board's name opens. The board and the variant are
  * where the pane is, not links.
@@ -184,7 +184,7 @@ function Breadcrumb(props: PaneHeaderProps): JSX.Element {
 					<h2
 						data-slot="pane-board-name"
 						title={level === undefined ? name : `${name} · ${level}`}
-						className="title-name min-w-0 truncate"
+						className="text-foreground min-w-0 truncate text-[13px] leading-[18px] font-[650]"
 					>
 						{name}
 					</h2>
