@@ -373,16 +373,18 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		[drawing.atlas, dismissTip],
 	);
 
-	const onPointerMove = useCallback(
-		(event: PointerEvent<HTMLElement>): void => {
-			const started = drag.current;
-			if (started === null) {
-				onHover(event);
-				return;
-			}
-			if (started.pointerId !== event.pointerId) {
-				return;
-			}
+	// A press whose end this viewport never saw, so it is over: forgotten, and
+	// whatever the press landed on with it, so the next click cannot inherit it.
+	const abandon = useCallback((): void => {
+		drag.current = null;
+		dragged.current = false;
+		pressed.current = null;
+		setGesture("idle");
+	}, []);
+
+	// One move of a press: a pan once it has travelled, which takes the pointer.
+	const panStep = useCallback(
+		(started: Drag, event: PointerEvent<HTMLElement>): void => {
 			const panned = dragged.current || hasTravelled(started, event.clientX, event.clientY);
 			if (panned && !dragged.current) setGesture("dragging");
 			dragged.current = panned;
@@ -394,7 +396,31 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 			};
 			camera.panBy(event.clientX - started.x, event.clientY - started.y);
 		},
-		[camera, onHover],
+		[camera],
+	);
+
+	const onPointerMove = useCallback(
+		(event: PointerEvent<HTMLElement>): void => {
+			const started = drag.current;
+			if (started === null) {
+				onHover(event);
+				return;
+			}
+			if (started.pointerId !== event.pointerId) {
+				return;
+			}
+			// A move with no button held is not part of a press. The press ended where
+			// this viewport could not see it: a resize handle took the pointer, or it
+			// was let go outside the window. Left as it was, the diagram would follow
+			// the pointer with nothing held.
+			if (event.buttons === 0) {
+				abandon();
+				onHover(event);
+				return;
+			}
+			panStep(started, event);
+		},
+		[abandon, onHover, panStep],
 	);
 
 	const onPointerUp = useCallback((event: PointerEvent<HTMLElement>): void => {
@@ -412,15 +438,15 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 
 	// A gesture the browser took away never became a pick. Whatever the press
 	// landed on is forgotten, so the next click cannot inherit it.
-	const onPointerCancel = useCallback((event: PointerEvent<HTMLElement>): void => {
-		if (drag.current?.pointerId !== event.pointerId) {
-			return;
-		}
-		drag.current = null;
-		dragged.current = false;
-		pressed.current = null;
-		setGesture("idle");
-	}, []);
+	const onPointerCancel = useCallback(
+		(event: PointerEvent<HTMLElement>): void => {
+			if (drag.current?.pointerId !== event.pointerId) {
+				return;
+			}
+			abandon();
+		},
+		[abandon],
+	);
 
 	// A drag that ends on a card is not a pick: the person was moving the
 	// diagram and happened to let go over something.

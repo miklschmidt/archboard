@@ -254,7 +254,7 @@ test("a picture seen from far away is told so through a pan, and told again when
 	// A pan redraws the surface's class, and the far view stays through it.
 	act(() => {
 		fireEvent.pointerDown(viewport(), { pointerId: 1, button: 0, clientX: 40, clientY: 40 });
-		fireEvent.pointerMove(viewport(), { pointerId: 1, clientX: 90, clientY: 40 });
+		fireEvent.pointerMove(viewport(), { pointerId: 1, buttons: 1, clientX: 90, clientY: 40 });
 	});
 	expect(surface().classList.contains("is-far")).toBe(true);
 	act(() => {
