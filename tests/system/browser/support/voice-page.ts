@@ -150,7 +150,7 @@ function presentationSnapshot(browser: AgentBrowserSession): Promise<Presentatio
 		const stage = document.querySelector('${STAGE_ROOT}');
 		const control = document.querySelector('${PRESENTATION_VOICE}');
 		const presented = [...document.querySelectorAll('${PANE_SECTIONS}')].find(node => !node.hidden);
-		const chrome = [...(presented?.querySelectorAll('[data-slot="semantic-sidebar"], [data-slot="semantic-view-bar"], [data-slot="semantic-variant-bar"]') ?? [])];
+		const chrome = [...(presented?.querySelectorAll('[data-slot="semantic-sidebar"], [data-slot="semantic-view-bar"]') ?? [])];
 		return {
 			fullscreen: document.fullscreenElement === stage,
 			voice: ${readVoice(PRESENTATION_VOICE)},

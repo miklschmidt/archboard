@@ -2,11 +2,12 @@
 // architecture, and the states that used to be current.
 //
 // A proposal nobody can reach is a proposal nobody reviews. The navigator offers
-// every state of every board, and a pane does not offer its own board's states a
-// second time (a board a level down is another matter, held by the levels
-// tests). These check what the pane still owns: the state it is told to show is
-// the one it asks the server for, and moving between states is reading rather
-// than editing, which fits the selected view to the arriving variant.
+// every state of every board, and so does the Variants page of the pane's header,
+// which opens one in the pane; the sidebar offers none. These check what the pane
+// still owns: the state it is told to show is the one it asks the server for, a
+// state chosen on the page is asked of the shell the way the navigator asks for
+// it, and moving between states is reading rather than editing, which fits the
+// selected view to the arriving variant.
 
 import { expect, test } from "bun:test";
 import { act, fireEvent } from "@testing-library/react";
@@ -23,6 +24,7 @@ import {
 	settle,
 } from "@/ui/semantic-board-canvas/tests/stage-harness";
 import { cameraNow, pressKey } from "@/ui/semantic-board-canvas/tests/camera-probes";
+import { openVariantsPage, variantEntry } from "@/ui/semantic-board-canvas/tests/variants-page";
 
 /**
  * One board document with a family of variants.
@@ -181,6 +183,31 @@ test.each([false, true])(
 		expect(cameraNow()).toEqual(fitted);
 	},
 );
+
+test("the Variants page asks the shell for a state by its id, and for the current one as no state", async () => {
+	server.documents["pipeline"] = boardOf([AS_IT_IS, PROPOSED]);
+	server.reply = { status: 200, body: drawing(1) };
+	const asked: (string | null)[] = [];
+	/**
+	 * Keep what the pane asked the shell to show.
+	 * @param variant The variant's id, or null for whichever is current.
+	 */
+	function record(variant: string | null): void {
+		asked.push(variant);
+	}
+	mountStage(null, { onVariantChange: record });
+	await settle();
+	openVariantsPage();
+
+	// A state is named by its id, so the pane stays on it. The current one is
+	// asked for by no name, the way the navigator asks, so the pane follows it
+	// when a proposal is adopted instead of staying on what has become history.
+	await act(async () => {
+		fireEvent.click(variantEntry("v2"));
+		fireEvent.click(variantEntry("v1"));
+	});
+	expect(asked).toEqual(["v2", null]);
+});
 
 test("Everything fits the whole proposal and current state instead of zooming to changed subjects", async () => {
 	serving([AS_IT_IS, PROPOSED]);

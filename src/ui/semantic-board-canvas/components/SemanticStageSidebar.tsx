@@ -28,7 +28,7 @@ import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
 /** What the stage hands the sidebar. */
 interface StageSidebarView extends Omit<
 	SemanticBoardPanelProps,
-	"answer" | "onChooseView" | "onChooseVariant" | "selectedGroup"
+	"answer" | "onChooseView" | "selectedGroup"
 > {
 	/** The selected group and its members, or null. */
 	readonly group: GroupSelection | null;
@@ -38,12 +38,9 @@ interface StageSidebarView extends Omit<
 	readonly render: { readonly data: SemanticRender | undefined };
 	/** The selected subject, or null. */
 	readonly selection: string | null;
-	/** How deep the pane has followed drill-downs; its own board is depth zero. */
-	readonly drill: { readonly trail: readonly unknown[] };
-	/** Whether views and variants can be chosen at this level. */
+	/** Whether views can be chosen at this level. */
 	readonly level: {
 		readonly onView: ((view: string | null) => void) | undefined;
-		readonly onVariant: ((variant: string | null) => void) | undefined;
 	};
 	/**
 	 * Choose a view of this level, leaving any guided reading.
@@ -121,8 +118,6 @@ function SemanticStageSidebar(props: {
 					answer={view.render.data}
 					reading={view.reading}
 					onChooseView={level.onView === undefined ? undefined : view.onChooseView}
-					// The pane's own board takes its variant from the navigator.
-					onChooseVariant={view.drill.trail.length === 0 ? undefined : level.onVariant}
 					narrative={view.narrative}
 					onChooseWalkthrough={view.onChooseWalkthrough}
 					onNarrate={view.onNarrate}
