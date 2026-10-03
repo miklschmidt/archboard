@@ -179,8 +179,8 @@ function Breadcrumb(props: PaneHeaderProps): JSX.Element {
 				{ancestors.map((place, index) => (
 					<Ancestor key={place.name} place={place} middle={index < ancestors.length - 1} />
 				))}
-				<li className="flex min-w-24 shrink items-center gap-2" aria-current="page">
-					<LevelMark level={level} className="size-4" />
+				<li className="flex min-w-24 shrink items-center gap-1.5" aria-current="page">
+					<LevelMark level={level} />
 					<h2
 						data-slot="pane-board-name"
 						title={level === undefined ? name : `${name} · ${level}`}
