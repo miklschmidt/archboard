@@ -263,14 +263,22 @@ tone.
 ### Agent dock
 
 The agent dock is a tray at the foot of the navigator. It uses Tray Chalk and
-`shadow-edge-up`. It holds the raised voice circle, which shows the gold ring
-and the waveform while voice is on. It also holds the name, the status and the
-plan of the agent. Under them is the row that opens the conversation, with a
-gold dot while words wait unread. The tray is lit by what the agent is doing: a
-warm wash spreads from the voice circle while voice is on, and a quieter one in
-the status colour while the agent works. At rest it is plain. Its lines are all
-13px and are told apart by weight and ink: the name at 650, its state at 500 in
-muted ink, what it is on at 400. The clock is 12px mono.
+`shadow-edge-up`. While voice is off it is calm. Two raised keys of one height
+(32px, 3px corners) stand in a row at its foot: Talk, as wide as the room, and
+a key to the conversation, an icon alone. The conversation's key is pressed in,
+with a gold mark under it, while the conversation is open, and has a gold dot
+while words wait unread. When the agent is on something, its state, what it is
+on and its plan stand above the keys. When it is ready and on nothing, the dock
+says nothing, because the keys do. While voice is on, the raised voice circle
+takes the head of the dock, with the gold ring and the waveform, beside the
+state, what the agent is on and the voice's own line, and the conversation's
+key moves to the dock's top corner.
+
+The tray is lit by what the agent is doing: a warm wash spreads from the voice
+circle while voice is on, and a quieter one in the status colour while the agent
+works. At rest it is plain. Its lines are all 13px and are told apart by weight
+and ink: its state at 500 in muted ink, what it is on at 400. The clock is 12px
+mono.
 
 The composer is in the conversation pane, on a tray at its foot (Tray Chalk and
 `shadow-edge-up`), with its gold Send. It grows upward as a message grows, and
