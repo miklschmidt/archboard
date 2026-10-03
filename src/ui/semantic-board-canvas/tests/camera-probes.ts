@@ -1,7 +1,91 @@
 // Reading a pane's camera back off its surface, and moving it the way a
 // pointer does, for the stage tests.
 
-import { surface } from "@/ui/semantic-board-canvas/tests/stage-harness";
+import { act, fireEvent } from "@testing-library/react";
+
+import { driveFramesFrom } from "@/ui/frame-clock";
+import { createSteppedClock } from "@/ui/frame-clock/replay";
+import { surface, viewport } from "@/ui/semantic-board-canvas/tests/stage-harness";
+
+/** How long a camera that was moved by hand is given to come to rest, in milliseconds. */
+const REST_MS = 1500;
+
+/** A frame, in milliseconds. */
+const FRAME_MS = 16;
+
+/** The frame clock, taken for a test and run by hand. */
+interface FramesByHand {
+	/**
+	 * Run frames, in the page's act, for this long.
+	 * @param ms How long, in milliseconds.
+	 */
+	readonly run: (ms: number) => void;
+	/**
+	 * How many frames have been asked for so far.
+	 * @returns The count.
+	 */
+	readonly asked: () => number;
+	/** Give the browser's frames back. */
+	readonly restore: () => void;
+}
+
+/**
+ * Take the frame clock, so a move that runs over many frames can be run to its end.
+ * @returns How to run it, how many frames were asked of it, and how to give it back.
+ */
+function takeFrames(): FramesByHand {
+	const clock = createSteppedClock(0);
+	let asked = 0;
+	const request = clock.requestFrame.bind(clock);
+	/**
+	 * Ask for a frame, and count it.
+	 * @param callback Run once, with the frame's time.
+	 * @returns The request.
+	 */
+	clock.requestFrame = (callback) => {
+		asked += 1;
+		return request(callback);
+	};
+	const restore = driveFramesFrom(clock);
+	let now = 0;
+	return {
+		/**
+		 * Run frames for this long.
+		 * @param ms How long, in milliseconds.
+		 */
+		run: (ms) => {
+			for (const end = now + ms; now < end;) {
+				now += FRAME_MS;
+				act(() => {
+					clock.advanceTo(now);
+					clock.runFrame();
+				});
+			}
+		},
+		/**
+		 * How many frames have been asked for.
+		 * @returns The count.
+		 */
+		asked: () => asked,
+		restore,
+	};
+}
+
+/**
+ * Press a key at the viewport and let the camera it moves come to rest.
+ * @param key The key.
+ */
+function pressKey(key: string): void {
+	const frames = takeFrames();
+	try {
+		act(() => {
+			fireEvent.keyDown(viewport(), { key });
+		});
+		frames.run(REST_MS);
+	} finally {
+		frames.restore();
+	}
+}
 
 /** Where the pane is looking, read back off the surface. */
 interface ReadCamera {
@@ -42,6 +126,34 @@ function wheelAt(deltaY: number, at: readonly [number, number]): WheelEvent {
 }
 
 /**
+ * Send a pointer event to the viewport as it would arrive at a moment.
+ *
+ * The moment is attached rather than passed in, for the reason the wheel's
+ * coordinates are: this DOM stamps an event with the time it was made, and how
+ * fast a drag was going when it was let go is the whole of what a throw
+ * depends on.
+ * @param type The event, such as "pointermove".
+ * @param at The pointer's place in the viewport, and the moment in milliseconds.
+ * @param at.x Across.
+ * @param at.t When.
+ */
+function pointerAt(type: string, at: { readonly x: number; readonly t: number }): void {
+	const event = new PointerEvent(type, {
+		pointerId: 1,
+		button: 0,
+		buttons: type === "pointerup" ? 0 : 1,
+		clientX: at.x,
+		clientY: 100,
+		bubbles: true,
+		cancelable: true,
+	});
+	Object.defineProperty(event, "timeStamp", { value: at.t });
+	act(() => {
+		viewport().dispatchEvent(event);
+	});
+}
+
+/**
  * Which point of the diagram is under one point of the viewport.
  * @param camera Where the pane is looking.
  * @param at The viewport point.
@@ -51,4 +163,14 @@ function diagramPointUnder(camera: ReadCamera, at: readonly [number, number]): [
 	return [(at[0] - camera.x) / camera.scale, (at[1] - camera.y) / camera.scale];
 }
 
-export { cameraNow, diagramPointUnder, wheelAt, type ReadCamera };
+export {
+	REST_MS,
+	cameraNow,
+	diagramPointUnder,
+	pointerAt,
+	pressKey,
+	takeFrames,
+	wheelAt,
+	type FramesByHand,
+	type ReadCamera,
+};

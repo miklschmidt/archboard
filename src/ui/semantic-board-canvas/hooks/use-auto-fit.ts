@@ -204,7 +204,8 @@ function useAutoFit(
 	focus: BeatFocus,
 	request: FitRequest = { presenting: false },
 ): BoardCamera {
-	const camera = useBoardCamera();
+	const reducedMotion = request.reducedMotion === true;
+	const camera = useBoardCamera(reducedMotion);
 	const target = useMemo<FitTarget | null>(
 		() =>
 			drawing === null || camera.room === null
@@ -222,7 +223,6 @@ function useAutoFit(
 	const held = useRef<HeldCamera | null>(null);
 	const room = roomKey(camera.room);
 	const { presenting } = request;
-	const reducedMotion = request.reducedMotion === true;
 	// Before paint: the first picture fits at once; later readings and
 	// walkthrough steps start their glide from the camera the reader saw.
 	useLayoutEffect(() => {

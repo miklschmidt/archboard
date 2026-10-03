@@ -22,7 +22,7 @@ import {
 	server,
 	settle,
 } from "@/ui/semantic-board-canvas/tests/stage-harness";
-import { cameraNow } from "@/ui/semantic-board-canvas/tests/camera-probes";
+import { cameraNow, pressKey } from "@/ui/semantic-board-canvas/tests/camera-probes";
 
 /**
  * One board document with a family of variants.
@@ -283,9 +283,7 @@ for (const move of MOVES) {
 			expect(cameraNow().x).toBeCloseTo((800 - 900 * destination) / 2, 6);
 			expect(cameraNow().y).toBeCloseTo((600 - 600 * destination) / 2, 6);
 			const arrived = cameraNow();
-			act(() => {
-				fireEvent.keyDown(viewport(), { key: "ArrowLeft" });
-			});
+			pressKey("ArrowLeft");
 			expect(cameraNow().x - arrived.x).toBeCloseTo(64, 6);
 			await settle();
 		} finally {

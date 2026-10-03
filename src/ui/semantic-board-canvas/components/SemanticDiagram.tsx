@@ -12,18 +12,16 @@ import {
 	useEffect,
 	useLayoutEffect,
 	useMemo,
-	useRef,
 	useState,
 	type JSX,
 	type KeyboardEvent,
-	type MouseEvent,
-	type PointerEvent,
 	type ReactNode,
 } from "react";
 
+import { EXPLORING_MS } from "@/shared/timing/timing";
 import { holdTraffic } from "@/ui/frame-clock";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
-import { CameraSurface, type Gesture } from "@/ui/semantic-board-canvas/components/CameraSurface";
+import { CameraSurface } from "@/ui/semantic-board-canvas/components/CameraSurface";
 import { SemanticSubjectTip } from "@/ui/semantic-board-canvas/components/SemanticSubjectTip";
 import {
 	STAGE_CLASS,
@@ -35,6 +33,7 @@ import {
 	type CameraView,
 } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
+import { useDiagramGestures } from "@/ui/semantic-board-canvas/hooks/use-diagram-gestures";
 import { useDrillOpen } from "@/ui/semantic-board-canvas/hooks/use-drill-open";
 import {
 	usePictureTransition,
@@ -51,15 +50,8 @@ import {
 	type Departure,
 } from "@/ui/semantic-board-canvas/lib/picture-departure";
 import { NO_FOCUS, type BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
-import {
-	capturePointer,
-	hasTravelled,
-	takePointerToPan,
-	type Drag,
-} from "@/ui/semantic-board-canvas/lib/pointer-gesture";
-import { openableAt } from "@/ui/semantic-board-canvas/lib/subject-tips";
 import type { GroupSelection } from "@/ui/semantic-board-canvas/lib/groups";
-import { subjectAt, surfaceMarks } from "@/ui/semantic-board-canvas/lib/subjects";
+import { surfaceMarks } from "@/ui/semantic-board-canvas/lib/subjects";
 
 /** Which way each arrow key moves the diagram under the viewport. */
 const PAN_KEYS: Readonly<Record<string, readonly [number, number]>> = {
@@ -73,16 +65,23 @@ const PAN_KEYS: Readonly<Record<string, readonly [number, number]>> = {
 const ZOOM_KEYS: Readonly<Record<string, number>> = { "+": 1, "=": 1, "-": -1, _: -1 };
 
 /**
- * Act on a key that moves the camera.
+ * Act on a key that moves the camera: the arrows ease it, `+` and `-` ease a
+ * zoom about the middle, and `0` glides to the whole board.
  * @param key The key that was pressed.
  * @param camera The camera.
  * @param content How big the diagram is, for the key that fits it.
+ * @param reducedMotion Whether the person asked for no motion, which makes the fit a cut.
  * @returns True when the key was one of the camera's.
  */
-function moveCameraByKey(key: string, camera: BoardCamera, content: Size): boolean {
+function moveCameraByKey(
+	key: string,
+	camera: BoardCamera,
+	content: Size,
+	reducedMotion: boolean,
+): boolean {
 	const pan = PAN_KEYS[key];
 	if (pan !== undefined) {
-		camera.panBy(pan[0] * PAN_STEP, pan[1] * PAN_STEP);
+		camera.ease(pan[0] * PAN_STEP, pan[1] * PAN_STEP);
 		return true;
 	}
 	const zoom = ZOOM_KEYS[key];
@@ -91,7 +90,7 @@ function moveCameraByKey(key: string, camera: BoardCamera, content: Size): boole
 		return true;
 	}
 	if (key === "0") {
-		camera.fit({ kind: "whole", content });
+		camera.glide({ kind: "whole", content }, reducedMotion ? 0 : EXPLORING_MS.cameraFit);
 		return true;
 	}
 	return false;
@@ -303,15 +302,6 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	);
 	const { attachViewport } = camera;
 	const [surface, setSurface] = useState<HTMLDivElement | null>(null);
-	const [gesture, setGesture] = useState<Gesture>("idle");
-	const drag = useRef<Drag | null>(null);
-	const dragged = useRef(false);
-	// What the last press landed on, carried from pointerup to the click that
-	// follows it. A click is the only event that means "the person picked this",
-	// and it is the one event whose target cannot be trusted to say what. The
-	// box is null when no press is waiting to be spent, which is how a
-	// synthesised click is told from a real one.
-	const pressed = useRef<{ readonly subject: string | null } | null>(null);
 	const focus = props.focus ?? NO_FOCUS;
 
 	// The surface stays mounted across pictures and the picture inside it is
@@ -340,6 +330,14 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	const { dismiss: dismissTip, onHover } = tip;
 	const reading = drawnReading(props.reading, drawing);
 	const openDown = useDrillOpen(reading, props.onOpenDown);
+	const { gesture, pointer } = useDiagramGestures({
+		camera,
+		atlas: drawing.atlas,
+		onSelect,
+		onHover,
+		dismissTip,
+		openDown,
+	});
 	// A drag draws a frame for every move, and moving traffic paints its lines
 	// again in each of them, more of them the closer the camera is. The traffic
 	// stands still until the drag ends.
@@ -348,140 +346,9 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		return holdTraffic(surface);
 	}, [gesture, surface]);
 
-	const onPointerDown = useCallback(
-		(event: PointerEvent<HTMLElement>): void => {
-			if (event.button !== 0) {
-				return;
-			}
-			// What was pressed is decided here and nowhere else. By the time a click
-			// arrives the diagram may have been panned, and the click may have been
-			// retargeted by pointer capture; neither can change what was under the
-			// pointer when the person pressed.
-			drag.current = {
-				pointerId: event.pointerId,
-				fromX: event.clientX,
-				fromY: event.clientY,
-				x: event.clientX,
-				y: event.clientY,
-				pressed: subjectAt(event.target, drawing.atlas),
-				captured: false,
-			};
-			dragged.current = false;
-			setGesture("pressed");
-			dismissTip();
-		},
-		[drawing.atlas, dismissTip],
-	);
-
-	// A press whose end this viewport never saw, so it is over: forgotten, and
-	// whatever the press landed on with it, so the next click cannot inherit it.
-	const abandon = useCallback((): void => {
-		drag.current = null;
-		dragged.current = false;
-		pressed.current = null;
-		setGesture("idle");
-	}, []);
-
-	// One move of a press: a pan once it has travelled, which takes the pointer.
-	const panStep = useCallback(
-		(started: Drag, event: PointerEvent<HTMLElement>): void => {
-			const panned = dragged.current || hasTravelled(started, event.clientX, event.clientY);
-			if (panned && !dragged.current) setGesture("dragging");
-			dragged.current = panned;
-			drag.current = {
-				...started,
-				x: event.clientX,
-				y: event.clientY,
-				captured: takePointerToPan(event, started, panned),
-			};
-			camera.panBy(event.clientX - started.x, event.clientY - started.y);
-		},
-		[camera],
-	);
-
-	const onPointerMove = useCallback(
-		(event: PointerEvent<HTMLElement>): void => {
-			const started = drag.current;
-			if (started === null) {
-				onHover(event);
-				return;
-			}
-			if (started.pointerId !== event.pointerId) {
-				return;
-			}
-			// A move with no button held is not part of a press. The press ended where
-			// this viewport could not see it: a resize handle took the pointer, or it
-			// was let go outside the window. Left as it was, the diagram would follow
-			// the pointer with nothing held.
-			if (event.buttons === 0) {
-				abandon();
-				onHover(event);
-				return;
-			}
-			panStep(started, event);
-		},
-		[abandon, onHover, panStep],
-	);
-
-	const onPointerUp = useCallback((event: PointerEvent<HTMLElement>): void => {
-		const started = drag.current;
-		if (started?.pointerId !== event.pointerId) {
-			return;
-		}
-		pressed.current = { subject: started.pressed };
-		drag.current = null;
-		setGesture("idle");
-		if (started.captured) {
-			capturePointer(event.currentTarget, event.pointerId, false);
-		}
-	}, []);
-
-	// A gesture the browser took away never became a pick. Whatever the press
-	// landed on is forgotten, so the next click cannot inherit it.
-	const onPointerCancel = useCallback(
-		(event: PointerEvent<HTMLElement>): void => {
-			if (drag.current?.pointerId !== event.pointerId) {
-				return;
-			}
-			abandon();
-		},
-		[abandon],
-	);
-
-	// A drag that ends on a card is not a pick: the person was moving the
-	// diagram and happened to let go over something.
-	//
-	// The pick is what the press landed on, not what the click reports. A click
-	// is retargeted to whichever element holds the pointer, and it arrives after
-	// a pan has already moved the diagram under the cursor, so its own target
-	// answers a different question from the one being asked.
-	const onClick = useCallback(
-		(event: MouseEvent<HTMLElement>): void => {
-			const landed = pressed.current;
-			pressed.current = null;
-			if (dragged.current) {
-				dragged.current = false;
-				return;
-			}
-			// A click with no press behind it can only have been synthesised; there
-			// its own target is the only thing there is to go on.
-			onSelect(landed === null ? subjectAt(event.target, drawing.atlas) : landed.subject);
-		},
-		[onSelect, drawing.atlas],
-	);
-
-	// A double-click on a card, or a container's header, opens the board one
-	// level down, when it has one.
-	const onDoubleClick = useCallback(
-		(event: MouseEvent<HTMLElement>): void => {
-			openDown(openableAt(event.target, event.clientY));
-		},
-		[openDown],
-	);
-
 	const onKeyDown = useCallback(
 		(event: KeyboardEvent<HTMLElement>): void => {
-			if (moveCameraByKey(event.key, camera, content)) {
+			if (moveCameraByKey(event.key, camera, content, reducedMotion)) {
 				event.preventDefault();
 				return;
 			}
@@ -490,7 +357,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 				event.preventDefault();
 			}
 		},
-		[camera, content, onSelect],
+		[camera, content, onSelect, reducedMotion],
 	);
 
 	return (
@@ -522,14 +389,9 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 					inert={isLeaving(departure)}
 					tabIndex={0}
 					onKeyDown={onKeyDown}
-					onPointerDown={onPointerDown}
-					onPointerMove={onPointerMove}
-					onPointerUp={onPointerUp}
-					onPointerCancel={onPointerCancel}
+					{...pointer}
 					onPointerLeave={dismissTip}
 					onWheel={dismissTip}
-					onClick={onClick}
-					onDoubleClick={onDoubleClick}
 					className={`relative flex min-h-0 min-w-0 flex-1 overflow-hidden outline-none ${
 						gesture === "idle" ? "cursor-grab" : "cursor-grabbing"
 					}`}
