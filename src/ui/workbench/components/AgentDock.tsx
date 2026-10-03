@@ -95,7 +95,7 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 			data-slot="agent-dock"
 			data-agent-tone={status.tone}
 			aria-label="Agent"
-			className="border-border bg-raised shadow-edge-up relative flex shrink-0 flex-col gap-3 border-t px-4 pt-4 pb-3"
+			className="border-border bg-raised shadow-edge-up relative flex shrink-0 flex-col gap-3 border-t px-4 pt-4"
 		>
 			<div className="flex items-center gap-3">
 				<VoiceCircle voice={voice} actions={actions} problemId={VOICE_PROBLEM_ID} />
@@ -117,7 +117,7 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 				<PlanSteps steps={steps} sinceMs={status.sinceMs} now={now} className="pl-[76px]" />
 			)}
 			<WideAction status={status} actions={actions} />
-			<div className="flex items-end gap-1">
+			<div className="bg-foreground/4 -mx-4 flex items-end gap-1 px-4 py-3 shadow-[inset_0_1px_0_color-mix(in_oklch,var(--foreground)_6%,transparent)]">
 				<AgentComposer
 					draft={props.draft}
 					context={view.context}
