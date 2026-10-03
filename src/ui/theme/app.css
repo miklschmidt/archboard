@@ -273,6 +273,20 @@
 [data-slot="semantic-board-surface"].is-probing .is-lit [data-semantic-id] {
 	filter: none;
 }
+/* A trace lights what a part reaches beyond its connections, each further hop
+   more faintly and one hop after another: the delay grows with the hop. */
+[data-slot="semantic-board-surface"].is-probing .is-reach-2 {
+	filter: opacity(0.78);
+	transition-delay: var(--reach-hop-ms, 0ms);
+}
+[data-slot="semantic-board-surface"].is-probing .is-reach-3 {
+	filter: opacity(0.6);
+	transition-delay: calc(var(--reach-hop-ms, 0ms) * 2);
+}
+[data-slot="semantic-board-surface"].is-probing .is-reach-4 {
+	filter: opacity(0.46);
+	transition-delay: calc(var(--reach-hop-ms, 0ms) * 3);
+}
 @media (prefers-reduced-motion: reduce) {
 	[data-slot="semantic-board-surface"] [data-semantic-id],
 	[data-slot="semantic-board-surface"] [data-traffic],

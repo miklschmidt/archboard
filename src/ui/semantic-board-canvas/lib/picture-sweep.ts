@@ -29,19 +29,25 @@ const DRAW_EASING = "cubic-bezier(0.2, 0, 0, 1)";
 /** How much of a sweep's time is spent drawing the line on; the rest is the line settling back to its own weight. */
 const DRAWING_SHARE = 0.65;
 
+/** The drawn line of one relationship. */
+interface Line {
+	readonly id: string;
+	readonly path: SVGPathElement;
+}
+
 /**
  * The lines of a picture that draw a relationship, by relationship.
  * @param root The picture's root.
  * @param ids The subjects to look for; those that are not relationships are passed over.
  * @returns The drawn line of each relationship that has one.
  */
-function linesOf(root: SVGElement, ids: ReadonlySet<string>): SVGPathElement[] {
-	const lines: SVGPathElement[] = [];
+function linesOf(root: SVGElement, ids: ReadonlySet<string>): Line[] {
+	const lines: Line[] = [];
 	for (const group of root.querySelectorAll(":scope > g[data-semantic-kind='edge']")) {
 		const id = group.getAttribute("data-semantic-id");
 		if (id === null || !ids.has(id)) continue;
 		for (const path of group.querySelectorAll(":scope > path:not(.ab-halo)")) {
-			if (path instanceof SVGPathElement) lines.push(path);
+			if (path instanceof SVGPathElement) lines.push({ id, path });
 		}
 	}
 	return lines;
@@ -116,11 +122,16 @@ function ignoreCancel(): void {}
  * Draw on, once, every relationship among the subjects a picture lights.
  * @param root The picture's root.
  * @param lit The subjects the picture lights.
+ * @param delayOf How long a relationship waits before it is drawn on, in milliseconds.
  * @returns Stop the sweep and take it away.
  */
-function sweepLines(root: SVGElement, lit: ReadonlySet<string>): () => void {
+function sweepLines(
+	root: SVGElement,
+	lit: ReadonlySet<string>,
+	delayOf: (id: string) => number,
+): () => void {
 	const lines = linesOf(root, lit);
-	if (lines.length === 0 || typeof lines[0]?.animate !== "function") {
+	if (lines.length === 0 || typeof lines[0]?.path.animate !== "function") {
 		return () => undefined;
 	}
 	const layer = document.createElementNS(SVG_NS, "g");
@@ -128,13 +139,14 @@ function sweepLines(root: SVGElement, lit: ReadonlySet<string>): () => void {
 	layer.setAttribute("pointer-events", "none");
 	// Above the lines and below the cards and the labels, which are drawn after the first card.
 	root.insertBefore(layer, root.querySelector(":scope > g[data-semantic-kind='node']"));
-	const animations = lines.map((line) => {
-		const copy = copyOf(line);
+	const animations = lines.map(({ id, path }) => {
+		const copy = copyOf(path);
 		layer.append(copy);
-		const own = Number.parseFloat(line.getAttribute("stroke-width") ?? "");
+		const own = Number.parseFloat(path.getAttribute("stroke-width") ?? "");
 		const drawn = copy.animate(keyframesOf(Number.isFinite(own) ? own : 1.2), {
-			duration: durationOf(line),
-			fill: "forwards",
+			duration: durationOf(path),
+			delay: delayOf(id),
+			fill: "both",
 		});
 		drawn.addEventListener("finish", () => removeOnFinish(copy));
 		// A sweep taken away early is cancelled, which a browser answers quietly and a lighter DOM does not.

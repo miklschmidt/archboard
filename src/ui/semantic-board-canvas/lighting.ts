@@ -3,3 +3,4 @@
 // what a poke lights can be held to from outside the module's private folders.
 
 export { litBy } from "@/ui/semantic-board-canvas/lib/connections";
+export { reachOf, type Reach, type Way } from "@/ui/semantic-board-canvas/lib/reach";

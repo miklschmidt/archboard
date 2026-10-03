@@ -71,6 +71,25 @@ const EXPLORING_MS = Object.freeze({
 	 */
 	sweepShortest: 180,
 	sweepLongest: 520,
+	/**
+	 * How long each further hop of a trace waits for the one before it, so that
+	 * what a part reaches lights outward from it, nearest first.
+	 *
+	 * Pulls against the trace: shorter than about 60 ms and the hops land as one
+	 * flash and say nothing of how far each is; longer than about 160 ms and a
+	 * trace of five hops makes the reader wait most of a second for its answer.
+	 */
+	reachHop: 110,
+	/**
+	 * How long the camera takes to bring into view a part picked out from
+	 * somewhere other than the picture.
+	 *
+	 * Pulls against the pick: the reader chose the part and is waiting to see
+	 * it, so it is shorter than a walkthrough step (`PRESENTATION_STEP_MS`); and
+	 * long enough that the move reads as a glide to the part and not a cut that
+	 * leaves the reader to find where the board went.
+	 */
+	reveal: 480,
 });
 
 export { EXPLORING_MS };

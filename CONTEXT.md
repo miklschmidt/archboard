@@ -400,6 +400,16 @@ them. The rest recedes. The light is attention, like the selection: nothing is
 written, and a presented walkthrough step or a selected group takes its place.
 _Avoid_: highlight, focus mode, dim, spotlight
 
+**Trace**:
+A user's question of a picked part: how far does it reach? Onward lights
+everything the part sends to, directly or through other parts. Back lights
+everything that sends to it. Each further relationship hop lights more faintly,
+and a part reached by more than one route is as near as its nearest route. A
+trace belongs to the part and goes with the pick. Nothing is written, and no
+traffic or telemetry is implied: it is a walk along the relationships the board
+states.
+_Avoid_: impact analysis, blast radius, dependency graph
+
 ### Working
 
 **Tab session**:

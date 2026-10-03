@@ -198,6 +198,29 @@ function lightByMembers(surface: Element, standing: ReadonlySet<string>): void {
 	}
 }
 
+/**
+ * The classes a subject a trace reached carries, by how many hops beyond the
+ * first it is: the faintest class is shared by every hop from the last on.
+ */
+const REACH_CLASSES: readonly string[] = ["is-reach-2", "is-reach-3", "is-reach-4"];
+
+/**
+ * Grade the subjects a trace reached, or take the grading off.
+ *
+ * Each carries the class for how far it is, so the stylesheet can light the
+ * nearest strongest and let the wave spread by hop. The marks that say what is
+ * lit at all are {@link markVeil}'s.
+ * @param surface The element the picture was put into.
+ * @param reach How many hops beyond the first each subject is; null for no trace.
+ */
+function markReach(surface: Element, reach: ReadonlyMap<string, number> | null): void {
+	for (const group of surface.querySelectorAll(MARKED)) {
+		const hops = reach?.get(markedId(group) ?? "") ?? 0;
+		const grade = Math.min(hops, REACH_CLASSES.length + 1) - 2;
+		REACH_CLASSES.forEach((one, index) => group.classList.toggle(one, index === grade));
+	}
+}
+
 /** The class the surface carries while the picture is seen from far away. */
 const FAR_VIEW_CLASS = "is-far";
 
@@ -240,7 +263,7 @@ function surfaceMarks({
 }
 
 /** Every class the viewer puts on a subject's group; none of them is the renderer's. */
-const VIEWER_MARKS: readonly string[] = [SELECTED_CLASS, LIT_CLASS];
+const VIEWER_MARKS: readonly string[] = [SELECTED_CLASS, LIT_CLASS, ...REACH_CLASSES];
 
 /**
  * The viewer's marks on a surface, by subject.
@@ -290,6 +313,7 @@ export {
 	TRAFFIC_ATTRIBUTE,
 	isSubject,
 	keepingMarks,
+	markReach,
 	markSubjects,
 	markVeil,
 	raise,
