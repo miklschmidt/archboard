@@ -16,8 +16,6 @@ import type { CatalogBoard } from "@/ui/types";
 interface PartSearchHostProps {
 	/** The boards of the vault. */
 	readonly boards: readonly CatalogBoard[];
-	/** Whether the pane has focus, which is the pane the shortcut reaches. */
-	readonly active: boolean;
 	/** The board the pane shows, by its key. */
 	readonly boardKey: string | null;
 	/**
@@ -44,7 +42,7 @@ interface Waiting {
  * @returns The search field.
  */
 function PartSearchHost(props: PartSearchHostProps): JSX.Element {
-	const { boards, boardKey, onPick, onOpenBoard, active } = props;
+	const { boards, boardKey, onPick, onOpenBoard } = props;
 	const waiting = useRef<Waiting | null>(null);
 	const searched = useMemo(
 		() => boards.map((board) => ({ name: board.name, key: board.key })),
@@ -73,7 +71,7 @@ function PartSearchHost(props: PartSearchHostProps): JSX.Element {
 		waiting.current = null;
 		onPick(part.subject);
 	}, [onPick, shown]);
-	return <PartSearch boards={searched} onChoose={onChoose} listening={active} />;
+	return <PartSearch boards={searched} onChoose={onChoose} />;
 }
 
 export { PartSearchHost, type PartSearchHostProps };

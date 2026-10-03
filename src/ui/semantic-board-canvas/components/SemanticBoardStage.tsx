@@ -90,6 +90,7 @@ import {
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 import type { GroupChoice, GroupSelection } from "@/ui/semantic-board-canvas/lib/groups";
 import type { BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
+import type { WalkthroughNarration } from "@/ui/semantic-board-canvas/lib/narration";
 import { semanticRenderQuery } from "@/ui/semantic-board-canvas/lib/queries";
 
 /** Inputs for a semantic pane. */
@@ -160,12 +161,12 @@ interface SemanticBoardStageProps {
 	 */
 	driven?: DrivenPlace | null | undefined;
 	/**
-	 * Have the open walkthrough narrated aloud, when the shell can start voice for
-	 * this pane. The pane knows nothing about voice: the control appears only when
-	 * the shell supplies this, and the pane goes back to the first step for it.
-	 * @param walkthrough The open walkthrough's id.
+	 * Narrating this pane's walkthroughs aloud, when the shell can start voice for
+	 * it. The pane knows nothing about voice: the controls are drawn only when the
+	 * shell supplies this, whichever pane is active, and say why when a narration
+	 * cannot start now.
 	 */
-	onNarrate?: ((walkthrough: string) => void) | undefined;
+	narration?: WalkthroughNarration | undefined;
 	/** What the shell lays over the picture, such as subtitles of a voice; clear of the caption. */
 	overlay?: ReactNode;
 	/**
@@ -225,8 +226,8 @@ interface RenderView extends SemanticBoardStageProps {
 	readonly narrative: WalkthroughReading;
 	/** Where a presented walkthrough has got to, and how the surface says it arrived. */
 	readonly presented: PresentationPosition;
-	/** Have the open walkthrough narrated, when the shell can. */
-	readonly onNarrate: ((walkthrough: string) => void) | undefined;
+	/** Narrating the walkthroughs aloud, when the shell can. */
+	readonly narration: WalkthroughNarration | undefined;
 	/** What the shell lays over the picture, or nothing. */
 	readonly overlay: ReactNode;
 	/** How the board on screen is being read, at whatever level it is. */
@@ -503,6 +504,7 @@ function StageHeader(props: { readonly view: RenderView }): JSX.Element {
 			ancestors={ancestors}
 			tab={view.tab}
 			onTab={view.onTab}
+			sidebar={view.sidebar}
 		/>
 	);
 }
@@ -774,7 +776,7 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		heading: departure.heading,
 		narrative,
 		presented,
-		onNarrate: props.onNarrate,
+		narration: props.narration,
 		overlay: props.overlay,
 		level,
 		reading,

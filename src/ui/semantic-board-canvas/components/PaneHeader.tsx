@@ -2,7 +2,7 @@
 // screen sits at the start, and at the end the ways to read it and the shell's
 // controls, a rule between them.
 //
-//   [A] ◇ Archboard › ▣ Archboard server › ◷ TASK-373      Diagram Parts … Walkthroughs 1 | [⛶] [×]
+//   [A] ◇ Archboard › ▣ Archboard server › ◷ TASK-373      Diagram Parts … Walkthroughs 1 | [▯] [⛶] [×]
 //
 // The pane's letter (while two panes share the centre) and its controls are
 // the shell's (`usePaneChrome`); the rest is the board's. Where the board sits
@@ -12,7 +12,8 @@
 // The tabs switch what the area under the row shows: the picture, or one of
 // the board's pages. While the row is narrow (two panes), the tabs that are not
 // open keep only their marks and the middle of the breadcrumb folds behind one
-// control, never the board itself.
+// control, never the board itself. The first of the controls at the end is the
+// pane's: it shows and hides the sidebar, which is the pane's too.
 
 import {
 	RiArrowLeftRightLine,
@@ -36,6 +37,8 @@ import {
 import { usePaneChrome } from "@/ui/components/PaneChrome";
 import { Tabs, TabsList, TabsTrigger } from "@/ui/components/tabs";
 import { LevelMark } from "@/ui/semantic-board-canvas/components/LevelMark";
+import { SidebarToggle } from "@/ui/semantic-board-canvas/components/SidebarToggle";
+import type { Sidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
 import type { OfferedVariant } from "@/ui/semantic-board-canvas/lib/board-document";
 import { VariantMark } from "@/ui/variant-lifecycle";
 
@@ -85,6 +88,8 @@ interface PaneHeaderProps {
 	readonly onTab: (tab: BoardTab) => void;
 	/** How many of the things a tab lists, where a number says something. */
 	readonly counts: Readonly<Partial<Record<BoardTab, number | undefined>>>;
+	/** The pane's sidebar, which the first of the controls at the end shows and hides. */
+	readonly sidebar: Sidebar;
 }
 
 /**
@@ -310,7 +315,10 @@ function PaneHeader(props: PaneHeaderProps): JSX.Element {
 				<div className="ml-auto flex h-full shrink-0 items-center gap-2">
 					<PageTabs tab={props.tab} onTab={props.onTab} counts={props.counts} />
 					<span aria-hidden="true" className="bg-border h-4 w-px shrink-0" />
-					{chrome.controls}
+					<span className="flex shrink-0 items-center gap-1">
+						<SidebarToggle sidebar={props.sidebar} />
+						{chrome.controls}
+					</span>
 				</div>
 			</header>
 			{chrome.notice}

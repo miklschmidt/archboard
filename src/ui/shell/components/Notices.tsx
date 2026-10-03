@@ -15,7 +15,7 @@ import { GitHubHttpsUrlSchema, type CodeTargetNoticeAction } from "@/shared/code
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/ui/components/alert";
 import { Button, buttonVariants } from "@/ui/components/button";
 import type { ShellActions, ShellNotice, ShellNoticeAction } from "@/ui/shell/types/contracts";
-import { IconButton } from "@/ui/shell/components/IconButton";
+import { IconButton } from "@/ui/components/IconButton";
 
 /** A 24px outline action with two-pixel corners. */
 const ACTION_CLASS = "rounded-chip font-medium";

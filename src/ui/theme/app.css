@@ -612,6 +612,68 @@
 	}
 }
 
+/* The pane sidebar's coming and going (SIDEBAR_MS, use-sidebar-slide.ts). A
+   docked column eases its width, and its panel, held at its own width to the
+   pane's edge, slides in under it: the picture beside it gives way frame by
+   frame and the board is fitted once, at the end, as for the conversation. A
+   floating panel fades in from a little right of its place and out the same
+   way, faster; only its own layer moves, the shadow is the one it always has,
+   and nothing under it is painted again (the Still Shadow Rule). A panel that is
+   pinned is a swap and is not seen to move (data-motion="none"). The width is
+   the stylesheet's and not the element's, so that it can start from none. */
+[data-slot="semantic-sidebar"] {
+	width: 0;
+	transition: width var(--sidebar-dock-ms, 220ms) cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-slot="semantic-sidebar"][data-docked] {
+	width: var(--sidebar-width);
+}
+[data-slot="semantic-sidebar"][data-motion="none"] {
+	transition: none;
+}
+@starting-style {
+	[data-slot="semantic-sidebar"][data-docked][data-motion="dock"] {
+		width: 0;
+	}
+}
+[data-slot="semantic-sidebar-panel"][data-place="floating"] {
+	transition:
+		opacity var(--sidebar-float-in-ms, 160ms) ease-out,
+		transform var(--sidebar-float-in-ms, 160ms) cubic-bezier(0.22, 1, 0.36, 1);
+}
+@starting-style {
+	[data-slot="semantic-sidebar-panel"][data-place="floating"][data-motion="float"] {
+		opacity: 0;
+		transform: translateX(2rem);
+	}
+}
+[data-slot="semantic-sidebar-panel"][data-place="floating"][data-leaving] {
+	opacity: 0;
+	transform: translateX(2rem);
+	transition-duration: var(--sidebar-float-out-ms, 110ms);
+	transition-timing-function: ease-in;
+}
+
+/* The sidebar's scroll areas are quiet: a thin bar, no arrows, in the theme's
+   own tone, in place of the system's full-width one. */
+[data-slot="semantic-sidebar-panel"],
+[data-slot="semantic-sidebar-panel"] * {
+	scrollbar-width: thin;
+	scrollbar-color: color-mix(in oklch, var(--muted-foreground) 45%, transparent) transparent;
+}
+
+/* A tab's panel arrives with a short fade. The selection's is keyed by what is
+   selected, so each pick draws a new one at its top (SemanticStageSidebar.tsx):
+   a new subject is seen to be new, and its title is never left scrolled away. */
+[data-slot="semantic-sidebar-panel"] [data-slot="tabs-content"] {
+	transition: opacity var(--sidebar-subject-in-ms, 120ms) ease-out;
+}
+@starting-style {
+	[data-slot="semantic-sidebar-panel"] [data-slot="tabs-content"] {
+		opacity: 0;
+	}
+}
+
 /* The navigator's tree lines (tree-guides). Each row draws, for every row it
    sits under, a line through the middle of that row's chevron. Where it hangs
    from its parent the line turns to it with an elbow, and the last of a

@@ -17,6 +17,8 @@ interface PaneChrome {
 	readonly notice: ReactNode;
 	/** Whether another pane shares the centre, which leaves each picture less room. */
 	readonly shared: boolean;
+	/** Whether the pane is the one with focus, which the keyboard shortcuts reach. */
+	readonly active: boolean;
 }
 
 /** A pane outside the shell, such as a recording page's: a header with nothing of the shell's. */
@@ -25,6 +27,7 @@ const NO_CHROME: PaneChrome = Object.freeze({
 	controls: null,
 	notice: null,
 	shared: false,
+	active: true,
 });
 
 /** The shell's parts of the pane being drawn. */
@@ -38,4 +41,4 @@ function usePaneChrome(): PaneChrome {
 	return useContext(PaneChromeContext);
 }
 
-export { PaneChromeContext, usePaneChrome, type PaneChrome };
+export { NO_CHROME, PaneChromeContext, usePaneChrome, type PaneChrome };

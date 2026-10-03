@@ -2,13 +2,24 @@
 //
 // A preference of this browser rather than a fact about the board on screen,
 // so it is the last row of the board tab, under its own rule, and says in one
-// line what it sets (TASK-383).
+// line what it sets (TASK-383). Its list is the shared select's, in the
+// theme's own surface, in place of the system's.
 
-import { useCallback, useId, type ChangeEvent, type JSX } from "react";
+import { useCallback, useId, type JSX } from "react";
 
 import { LayoutEngineSchema } from "@/shared/semantic-board/index";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/ui/components/select";
 import { useLayoutEngine } from "@/ui/semantic-board-canvas/hooks/use-layout-engine";
 import { LAYOUT_ENGINES, chooseLayoutEngine } from "@/ui/semantic-board-canvas/lib/layout-engine";
+
+/** The engines as the select lists them: a value, and the words it shows. */
+const ENGINE_ITEMS = LAYOUT_ENGINES.map(({ name, label }) => ({ value: name, label }));
 
 /**
  * Choose the engine every pane lays its board out with.
@@ -17,8 +28,8 @@ import { LAYOUT_ENGINES, chooseLayoutEngine } from "@/ui/semantic-board-canvas/l
 function SemanticEngineBar(): JSX.Element {
 	const engine = useLayoutEngine();
 	const id = useId();
-	const onChange = useCallback((event: ChangeEvent<HTMLSelectElement>): void => {
-		const parsed = LayoutEngineSchema.safeParse(event.target.value);
+	const onChange = useCallback((value: string | null): void => {
+		const parsed = LayoutEngineSchema.safeParse(value);
 		if (parsed.success) chooseLayoutEngine(parsed.data);
 	}, []);
 	return (
@@ -26,19 +37,18 @@ function SemanticEngineBar(): JSX.Element {
 			<label htmlFor={id} className="text-body text-muted-foreground shrink-0">
 				Layout engine
 			</label>
-			<select
-				id={id}
-				data-slot="semantic-engine-choice"
-				className="text-control border-border bg-background hover:bg-accent focus-visible:ring-ring h-7 min-w-0 rounded-sm border px-2 focus-visible:ring-2 focus-visible:outline-none"
-				value={engine}
-				onChange={onChange}
-			>
-				{LAYOUT_ENGINES.map(({ name, label }) => (
-					<option key={name} value={name}>
-						{label}
-					</option>
-				))}
-			</select>
+			<Select items={ENGINE_ITEMS} value={engine} onValueChange={onChange}>
+				<SelectTrigger id={id} size="sm" data-slot="semantic-engine-choice" className="min-w-0">
+					<SelectValue />
+				</SelectTrigger>
+				<SelectContent>
+					{ENGINE_ITEMS.map(({ value, label }) => (
+						<SelectItem key={value} value={value}>
+							{label}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
 		</div>
 	);
 }

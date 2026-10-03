@@ -32,7 +32,7 @@ interface StageSidebarView extends Omit<
 > {
 	/** The selected group and its members, or null. */
 	readonly group: GroupSelection | null;
-	/** The sidebar's tab and collapse state. */
+	/** The sidebar's tab, and where it is. */
 	readonly sidebar: Sidebar;
 	/** The query's answer for the board on screen. */
 	readonly render: { readonly data: SemanticRender | undefined };
@@ -120,7 +120,7 @@ function SemanticStageSidebar(props: {
 					onChooseView={level.onView === undefined ? undefined : view.onChooseView}
 					narrative={view.narrative}
 					onChooseWalkthrough={view.onChooseWalkthrough}
-					onNarrate={view.onNarrate}
+					narration={view.narration}
 					groups={view.groups}
 					selectedGroup={view.group === null ? null : view.group.group}
 					onChooseGroup={view.onChooseGroup}
@@ -129,7 +129,8 @@ function SemanticStageSidebar(props: {
 					onComparisonChange={view.onComparisonChange}
 				/>
 			</SidebarPanel>
-			<SidebarPanel tab="selection">
+			{/* Keyed by what is selected, so a pick is a new panel: it opens at its top and arrives with a fade. */}
+			<SidebarPanel key={selection ?? "none"} tab="selection">
 				<SelectionPanel view={view} />
 			</SidebarPanel>
 		</SemanticSidebar>

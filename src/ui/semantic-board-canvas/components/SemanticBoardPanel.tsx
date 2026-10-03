@@ -38,6 +38,7 @@ import type { WalkthroughReading } from "@/ui/semantic-board-canvas/hooks/use-wa
 import { keyOf, type AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 import type { GroupChoice } from "@/ui/semantic-board-canvas/lib/groups";
+import type { WalkthroughNarration } from "@/ui/semantic-board-canvas/lib/narration";
 
 /** Inputs for the board tab. */
 interface SemanticBoardPanelProps {
@@ -57,8 +58,8 @@ interface SemanticBoardPanelProps {
 	 * @param walkthrough The walkthrough's id, or null to close the rail.
 	 */
 	onChooseWalkthrough: (walkthrough: string | null) => void;
-	/** Have an explanation narrated aloud, when the shell can start voice for this pane. */
-	onNarrate?: ((walkthrough: string) => void) | undefined;
+	/** Narrating the explanations aloud, when the shell can start voice for this pane. */
+	narration?: WalkthroughNarration | undefined;
 	/** Every group the variant on screen uses. */
 	groups: readonly GroupChoice[];
 	/** The selected group's id, or null for none. */
@@ -139,7 +140,7 @@ function walkthroughSection(props: SemanticBoardPanelProps): ReactNode {
 				walkthroughs={narrative.offered}
 				open={narrative.open?.id ?? null}
 				onChoose={props.onChooseWalkthrough}
-				onNarrate={props.onNarrate}
+				narration={props.narration}
 			/>
 		</SidebarSection>
 	);

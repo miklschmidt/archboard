@@ -9,6 +9,7 @@ import { act, cleanup, render } from "@testing-library/react";
 import { createElement, useEffect, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@/shared/code-target";
+import { NO_CHROME, PaneChromeContext, type PaneChrome } from "@/ui/components/PaneChrome";
 import { SemanticBoardStage, type SemanticPaneReading } from "@/ui/semantic-board-canvas";
 import { withFixtureOrders } from "@/ui/semantic-board-canvas/tests/fixture-orders";
 
@@ -103,76 +104,6 @@ function documentAsked(url: string): string | null {
 		? (new URLSearchParams(url.split("?")[1]).get("board") ?? "")
 		: null;
 }
-
-/**
- * One drawn board, with a card and an edge the atlas knows about and one group
- * it does not, so that "the atlas decides what is a subject" is observable.
- * Every subject carries the ring the renderer draws outside it — invisible
- * until a viewer lights it — because lighting it is how the pane says what is
- * selected, what a beat is about, and what is in dispute.
- * @param version The board version this drawing is of.
- * @param board Which board it is of; the pane's own by default.
- * @returns The render route's success body.
- */
-function drawing(version: number, board = "pipeline"): Record<string, unknown> {
-	return {
-		success: true,
-		board,
-		version,
-		variant: { id: "v1", name: "current", lifecycle: "current" },
-		view: null,
-		views: [],
-		changes: null,
-		waiting: null,
-		width: 400,
-		height: 300,
-		svg:
-			`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300">` +
-			`<g data-semantic-kind="node" data-semantic-id="n1">` +
-			`<path class="ab-halo" id="card-halo"></path><rect id="card" width="80" height="40"></rect></g>` +
-			`<g data-semantic-kind="edge" data-semantic-id="e1">` +
-			`<path class="ab-halo" id="wire-halo"></path><path id="wire" d="M0 0 L10 10"></path></g>` +
-			`<g data-semantic-kind="node" data-semantic-id="ghost"><rect id="stray"></rect></g>` +
-			`</svg>`,
-		atlas: {
-			nodes: { n1: { x: 0, y: 0, width: 80, height: 40 } },
-			edges: { e1: { x: 80, y: 20, width: 40, height: 2 } },
-			regions: {},
-		},
-	};
-}
-
-/** A board that is there with nothing on it. */
-const NOTHING_DRAWN = {
-	status: 200,
-	body: {
-		success: true,
-		board: "pipeline",
-		version: 3,
-		variant: { id: "v1", name: "current", lifecycle: "current" },
-		view: null,
-		views: [],
-		changes: null,
-		waiting: null,
-		empty: "NOTHING_TO_RENDER",
-	},
-} as const;
-
-/** The vault has no such board. */
-const NO_SUCH_BOARD = {
-	status: 404,
-	body: {
-		success: false,
-		code: "BOARD_MISSING",
-		error: 'there is no semantic board called "pipeline"',
-	},
-} as const;
-
-/** The board was there and has stopped being readable. */
-const UNREADABLE = {
-	status: 422,
-	body: { success: false, code: "BOARD_UNREADABLE", error: "the board file is not valid JSON" },
-} as const;
 
 /**
  * The URL a request named, whichever way it was spelled.
@@ -291,11 +222,12 @@ const serving: typeof fetch = Object.assign(fakeFetch, { preconnect: realFetch.p
 
 /**
  * The stage's own props a test may state as they are: a driven step, what is
- * laid over the picture, and the boards above the one on screen.
+ * laid over the picture, the boards above the one on screen, the shell's
+ * narration and the search over parts.
  */
 type StagePassThrough = Pick<
 	Parameters<typeof SemanticBoardStage>[0],
-	"driven" | "overlay" | "placeOf"
+	"driven" | "overlay" | "placeOf" | "narration" | "search"
 >;
 /** What else a mounted pane may be told, beyond what it is showing. */
 interface MountOptions extends StagePassThrough {
@@ -331,6 +263,8 @@ interface MountOptions extends StagePassThrough {
 	 * @param binding Where the code is.
 	 */
 	readonly onOpenCode?: ((binding: CodeBinding) => void) | undefined;
+	/** What the shell puts in the pane's header; a pane alone in the shell by default. */
+	readonly chrome?: PaneChrome | undefined;
 }
 
 /** Every option the harness passes straight through to the stage. */
@@ -345,6 +279,8 @@ const READING_PROPS = [
 	"driven",
 	"overlay",
 	"placeOf",
+	"narration",
+	"search",
 ] as const satisfies readonly (keyof MountOptions)[];
 
 /**
@@ -505,17 +441,17 @@ function mountStage(selection: string | null = null, options: MountOptions = {})
 	function onSelect(id: string | null): void {
 		picks.push(id);
 	}
+	const stage =
+		options.live === true
+			? createElement(Held, { ...options, selection, report: onSelect })
+			: createElement(SemanticBoardStage, {
+					board: "pipeline",
+					...paneReading(options),
+					selection,
+					onSelect,
+				});
 	render(
-		Cache(
-			options.live === true
-				? createElement(Held, { ...options, selection, report: onSelect })
-				: createElement(SemanticBoardStage, {
-						board: "pipeline",
-						...paneReading(options),
-						selection,
-						onSelect,
-					}),
-		),
+		Cache(createElement(PaneChromeContext.Provider, { value: options.chrome ?? NO_CHROME }, stage)),
 	);
 	return { picks };
 }
@@ -579,10 +515,6 @@ export {
 	settle,
 	server,
 	renderCalls,
-	drawing,
-	NOTHING_DRAWN,
-	NO_SUCH_BOARD,
-	UNREADABLE,
 	chooseVariantInShell,
 	driveInShell,
 	mountStage,
@@ -594,3 +526,10 @@ export {
 	inPicture,
 	type Mounted,
 };
+
+export {
+	NOTHING_DRAWN,
+	NO_SUCH_BOARD,
+	UNREADABLE,
+	drawing,
+} from "@/ui/semantic-board-canvas/tests/render-answers";

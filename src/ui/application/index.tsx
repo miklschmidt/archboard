@@ -400,7 +400,19 @@ function ApplicationBody(): JSX.Element {
 		},
 		[variantSources],
 	);
-	const narration = useNarration(workbench.setup, agent.voice, panes.list.activePaneId);
+	// The actions are read when somebody acts, so the panes are not made again
+	// each time they are: a pane is offered one function for as long as it lives.
+	const [actionsNow] = useState(() => new LiveBinding<ShellActions>());
+	actionsNow.bind(actions);
+	const selectBoard = useCallback(
+		(key: string, paneId: string): void => actionsNow.read().selectBoard(key, paneId),
+		[actionsNow],
+	);
+	const selectPane = useCallback(
+		(paneId: string): void => actionsNow.read().selectPane(paneId),
+		[actionsNow],
+	);
+	const narration = useNarration(workbench, agent.voice, panes.list.activePaneId, selectPane);
 	const overlay = useSubtitleOverlay(workbench, reducedMotion, recorder !== null);
 	const recorded = useRecordedViews(recorder, workbench, { narration, overlay });
 	const outline = useMemo(
@@ -415,7 +427,7 @@ function ApplicationBody(): JSX.Element {
 		onVariantChange,
 		boards: catalog.listing.boards,
 		outline,
-		openBoard: actions.selectBoard,
+		openBoard: selectBoard,
 		...recorded,
 	});
 	const view = useShellView({

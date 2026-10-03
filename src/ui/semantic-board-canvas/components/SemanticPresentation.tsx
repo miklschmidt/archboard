@@ -20,7 +20,10 @@ import { RiArrowLeftSLine, RiArrowRightSLine, RiCloseLine, RiMicLine } from "@re
 import { useCallback, type JSX, type ReactNode } from "react";
 
 import type { SemanticWalkthrough } from "@/shared/semantic-board/index";
-import { Button } from "@/ui/components/button";
+import { Button, buttonVariants } from "@/ui/components/button";
+import { cn } from "@/ui/components/class-names";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/components/tooltip";
+import type { WalkthroughNarration } from "@/ui/semantic-board-canvas/lib/narration";
 import { useCaptionReserve } from "@/ui/semantic-board-canvas/hooks/use-caption-reserve";
 import { usePresentationKeys } from "@/ui/semantic-board-canvas/hooks/use-presentation-keys";
 
@@ -39,11 +42,8 @@ interface SemanticPresentationProps {
 	readonly onGo: (index: number) => void;
 	/** Leave the presentation. */
 	readonly onLeave: () => void;
-	/**
-	 * Have this walkthrough narrated aloud from its first step, when the shell can.
-	 * @param walkthrough The walkthrough's id.
-	 */
-	readonly onNarrate?: ((walkthrough: string) => void) | undefined;
+	/** Narrating this walkthrough aloud from its first step, when the shell can. */
+	readonly narration?: WalkthroughNarration | undefined;
 	/** What the shell lays over the picture; here it sits just above the caption, never on it. */
 	readonly overlay?: ReactNode;
 	/**
@@ -109,6 +109,47 @@ function StepMissing(props: { readonly missing: readonly string[] }): JSX.Elemen
 }
 
 /**
+ * The control that has the walkthrough narrated. It stays where it is while a
+ * narration cannot start, so the controls under it do not move: it is dimmed,
+ * and its tooltip says why.
+ * @param props The walkthrough and the narration.
+ * @param props.walkthrough The walkthrough's id.
+ * @param props.narration What the shell offers.
+ * @returns The control.
+ */
+function NarrateWord(props: {
+	readonly walkthrough: string;
+	readonly narration: WalkthroughNarration;
+}): JSX.Element {
+	const { walkthrough, narration } = props;
+	const { held, start } = narration;
+	// A narration starts on the first step whatever the reader had reached; the server opens it
+	// once voice is starting, so the voice is handed the step it arrived on.
+	const narrate = useCallback((): void => {
+		start(walkthrough);
+	}, [start, walkthrough]);
+	return (
+		<Tooltip>
+			<TooltipTrigger
+				data-slot="semantic-presentation-narrate"
+				className={cn(
+					buttonVariants({ variant: "outline", size: "sm" }),
+					held !== null &&
+						"hover:bg-card active:shadow-raised dark:hover:bg-input/30 cursor-default opacity-50 active:translate-y-0",
+				)}
+				aria-label={held === null ? undefined : `Narrate. ${held}`}
+				aria-disabled={held === null ? undefined : true}
+				onClick={held === null ? narrate : undefined}
+			>
+				<RiMicLine />
+				Narrate
+			</TooltipTrigger>
+			{held !== null && <TooltipContent>{held}</TooltipContent>}
+		</Tooltip>
+	);
+}
+
+/**
  * A walkthrough presented over the picture.
  * @param props The walkthrough, the step shown, and how to step and leave.
  * @returns The caption and its controls.
@@ -125,12 +166,6 @@ function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 	const next = useCallback((): void => {
 		onGo(Math.min(count - 1, index + 1));
 	}, [onGo, index, count]);
-	const { onNarrate } = props;
-	// A narration starts on the first step whatever the reader had reached; the server opens it
-	// once voice is starting, so the voice is handed the step it arrived on.
-	const narrate = useCallback((): void => {
-		onNarrate?.(walkthrough.id);
-	}, [onNarrate, walkthrough.id]);
 	return (
 		<section
 			ref={attach}
@@ -173,17 +208,8 @@ function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 				)}
 			</div>
 			<div className="flex shrink-0 flex-col items-end gap-3">
-				{props.onNarrate !== undefined && (
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						data-slot="semantic-presentation-narrate"
-						onClick={narrate}
-					>
-						<RiMicLine />
-						Narrate
-					</Button>
+				{props.narration !== undefined && (
+					<NarrateWord walkthrough={walkthrough.id} narration={props.narration} />
 				)}
 				<Button
 					type="button"
