@@ -212,6 +212,11 @@ interface SemanticDiagramProps {
 	 */
 	heading?: Departure | null | undefined;
 	/**
+	 * This picture is the board a flight arrived at: it takes over from the board
+	 * inside its card, in the same place, with no entrance of its own.
+	 */
+	cut?: boolean | undefined;
+	/**
 	 * The step of a presented walkthrough on screen, or null while none is
 	 * presented. The pane says which step it is showing, lets what the step is
 	 * not about recede gradually, and carries a step read through another view
@@ -318,6 +323,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		keepStill: camera.followPicture,
 		heading: props.heading,
 		presenting: presentationMarks(props.presenting).surface !== "",
+		cut: props.cut,
 	});
 	usePresentationArrival(surface, props.arrivalKey ?? null, props.onSettled);
 	// After the picture is staged, so a picture that just replaced a leaving one

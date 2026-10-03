@@ -6,6 +6,9 @@
 // its own ways of being read, and its own states. What it must not offer is the
 // level above's: a view id belongs to one board and a variant id to
 // one board, so the reading starts again at each level.
+//
+// The pane is mounted with motion off throughout: these are about what a level
+// reads, and a board that opens by flying into its card is the dive's tests.
 
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
@@ -171,7 +174,12 @@ test("a board a level down offers its own views and its own states", async () =>
 	server.documents["pipeline"] = PIPELINE;
 	server.documents["engine"] = ENGINE;
 	server.reply = { status: 200, body: { ...drawing(1), views: [PIPELINE_VIEW] } };
-	mountStage("n1", { live: true, onViewChange: ignoreChoice, onVariantChange: ignoreChoice });
+	mountStage("n1", {
+		live: true,
+		reducedMotion: true,
+		onViewChange: ignoreChoice,
+		onVariantChange: ignoreChoice,
+	});
 	await settle();
 	await openDown();
 
@@ -197,7 +205,12 @@ test("double-clicking a card opens the board it drills down to", async () => {
 	server.documents["pipeline"] = PIPELINE;
 	server.documents["engine"] = ENGINE;
 	server.reply = { status: 200, body: { ...drawing(1), views: [PIPELINE_VIEW] } };
-	mountStage(null, { live: true, onViewChange: ignoreChoice, onVariantChange: ignoreChoice });
+	mountStage(null, {
+		live: true,
+		reducedMotion: true,
+		onViewChange: ignoreChoice,
+		onVariantChange: ignoreChoice,
+	});
 	await settle();
 	server.reply = { status: 200, body: { ...drawing(1, "engine"), views: [...ENGINE_VIEWS] } };
 	await act(async () => {
@@ -225,7 +238,12 @@ test("a double-click whose board answers after the pane moved on opens nothing",
 	const engineRead = Promise.withResolvers<void>();
 	server.held["engine"] = engineRead.promise;
 	server.reply = { status: 200, body: { ...drawing(1), views: [PIPELINE_VIEW] } };
-	mountStage(null, { live: true, onViewChange: ignoreChoice, onVariantChange: ignoreChoice });
+	mountStage(null, {
+		live: true,
+		reducedMotion: true,
+		onViewChange: ignoreChoice,
+		onVariantChange: ignoreChoice,
+	});
 	await settle();
 	await act(async () => {
 		fireEvent.doubleClick(document.querySelector("#card")!);
@@ -253,7 +271,12 @@ test("while the board below is drawn, the board above stays on the pane only to 
 	server.documents["pipeline"] = PIPELINE;
 	server.documents["engine"] = ENGINE;
 	server.reply = { status: 200, body: { ...drawing(1), views: [PIPELINE_VIEW] } };
-	mountStage("n1", { live: true, onViewChange: ignoreChoice, onVariantChange: ignoreChoice });
+	mountStage("n1", {
+		live: true,
+		reducedMotion: true,
+		onViewChange: ignoreChoice,
+		onVariantChange: ignoreChoice,
+	});
 	await settle();
 
 	server.reply = "pending";
@@ -277,7 +300,12 @@ test("choosing at the level below asks for that reading of the board below", asy
 	server.documents["pipeline"] = PIPELINE;
 	server.documents["engine"] = ENGINE;
 	server.reply = { status: 200, body: { ...drawing(1), views: [PIPELINE_VIEW] } };
-	mountStage("n1", { live: true, onViewChange: ignoreChoice, onVariantChange: ignoreChoice });
+	mountStage("n1", {
+		live: true,
+		reducedMotion: true,
+		onViewChange: ignoreChoice,
+		onVariantChange: ignoreChoice,
+	});
 	await settle();
 	await openDown();
 
@@ -313,7 +341,7 @@ test("coming back up leaves the pane reading its own board as it was", async () 
 	server.documents["pipeline"] = PIPELINE;
 	server.documents["engine"] = ENGINE;
 	server.reply = { status: 200, body: { ...drawing(1), views: [PIPELINE_VIEW] } };
-	mountStage("n1", { live: true, view: "pv1", onViewChange: ignoreChoice });
+	mountStage("n1", { live: true, reducedMotion: true, view: "pv1", onViewChange: ignoreChoice });
 	await settle();
 	await openDown();
 	await act(async () => {
@@ -366,6 +394,7 @@ test("the pane says which board it is actually reading, not the one it was opene
 	server.reply = { status: 200, body: { ...drawing(1), views: [PIPELINE_VIEW] } };
 	mountStage("n1", {
 		live: true,
+		reducedMotion: true,
 		onViewChange: ignoreChoice,
 		onVariantChange: ignoreChoice,
 		onReading: report,
@@ -390,7 +419,12 @@ test("choosing a way of reading a level does not change which state it is", asyn
 	server.documents["pipeline"] = PIPELINE;
 	server.documents["engine"] = ENGINE;
 	server.reply = { status: 200, body: { ...drawing(1), views: [PIPELINE_VIEW] } };
-	mountStage("n1", { live: true, onViewChange: ignoreChoice, onVariantChange: ignoreChoice });
+	mountStage("n1", {
+		live: true,
+		reducedMotion: true,
+		onViewChange: ignoreChoice,
+		onVariantChange: ignoreChoice,
+	});
 	await settle();
 	await openDown();
 	// The link named "as built", which is not the board below's current state.
@@ -413,7 +447,12 @@ test("choosing the current state at a level, then a view, stays on the current s
 	server.documents["pipeline"] = PIPELINE;
 	server.documents["engine"] = ENGINE;
 	server.reply = { status: 200, body: { ...drawing(1), views: [PIPELINE_VIEW] } };
-	mountStage("n1", { live: true, onViewChange: ignoreChoice, onVariantChange: ignoreChoice });
+	mountStage("n1", {
+		live: true,
+		reducedMotion: true,
+		onViewChange: ignoreChoice,
+		onVariantChange: ignoreChoice,
+	});
 	await settle();
 	await openDown();
 	expect(renderCalls().at(-1)).toContain("variant=e1");
@@ -451,7 +490,12 @@ test("a link into a proposal that was let go says so before it opens, and after"
 		ENGINE_SCOPES,
 	);
 	server.reply = { status: 200, body: { ...drawing(1), views: [PIPELINE_VIEW] } };
-	mountStage("n1", { live: true, onViewChange: ignoreChoice, onVariantChange: ignoreChoice });
+	mountStage("n1", {
+		live: true,
+		reducedMotion: true,
+		onViewChange: ignoreChoice,
+		onVariantChange: ignoreChoice,
+	});
 	await settle();
 
 	// Disclosed before it is followed, beside the name the link asked for.

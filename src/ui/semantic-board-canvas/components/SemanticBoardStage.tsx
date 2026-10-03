@@ -12,7 +12,11 @@
 // owns fetched state; the pane owns camera and selection across requests (ADR 0023).
 
 import { useAutoFit } from "@/ui/semantic-board-canvas/hooks/use-auto-fit";
-import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
+import {
+	useBoardCamera,
+	type BoardCamera,
+} from "@/ui/semantic-board-canvas/hooks/use-board-camera";
+import { useDive } from "@/ui/semantic-board-canvas/hooks/use-dive";
 import { SemanticStanding } from "@/ui/semantic-board-canvas/components/SemanticStanding";
 import type { SemanticPaneReading } from "@/ui/semantic-board-canvas/lib/address";
 import type { SelectedSubject } from "@/ui/semantic-board-canvas/lib/board-document";
@@ -52,6 +56,7 @@ import {
 	useDrillDown,
 	type DrillNavigation,
 } from "@/ui/semantic-board-canvas/hooks/use-drill-down";
+import { useDrillMoves } from "@/ui/semantic-board-canvas/hooks/use-drill-moves";
 import type { GroupControls } from "@/ui/semantic-board-canvas/components/SemanticInspectorParts";
 import { useDeparture, type Leaving } from "@/ui/semantic-board-canvas/hooks/use-departure";
 import type { Departure } from "@/ui/semantic-board-canvas/lib/picture-departure";
@@ -210,6 +215,8 @@ interface RenderView extends SemanticBoardStageProps {
 	readonly onOpenDown: (board: string, variant: string) => void;
 	/** Go back a level, clearing the selection made on the level below. */
 	readonly onBack: () => void;
+	/** The picture on screen is the board a flight arrived at: it took over from the board inside its card with no entrance. */
+	readonly cut: boolean;
 	/** The last board's picture, on its way out while this one is drawn; null otherwise. */
 	readonly leaving: Leaving | null;
 	/** Where the reader went from the last board, until this board's picture is up; null otherwise. */
@@ -368,6 +375,7 @@ function stageBody(view: RenderView): JSX.Element {
 			focus={view.focus}
 			{...pictureMarks(view)}
 			heading={view.heading}
+			cut={view.cut}
 			presenting={view.narrative.open === null ? null : view.narrative.beatIndex}
 			arrivalKey={view.presented.arrivalKey}
 			onSettled={view.presented.onSettled}
@@ -586,9 +594,25 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		viewToRead(narrative.beat, level.view),
 		reading,
 	);
-	const camera = useAutoFit(drawn, focus, {
+	const reducedMotion = props.reducedMotion === true;
+	const camera = useBoardCamera(reducedMotion);
+	// The picture's area, which a flight over the picture and a panel laid over its edge both look inside.
+	const picture = useRef<HTMLDivElement | null>(null);
+	const attachPicture = useCallback((element: HTMLDivElement | null): void => {
+		picture.current = element;
+	}, []);
+	const dive = useDive({
+		camera,
+		area: picture,
+		drawn,
+		reading: { comparison, layout },
+		reducedMotion,
 		presenting: narrative.open !== null,
-		reducedMotion: props.reducedMotion,
+	});
+	useAutoFit(camera, drawn, focus, {
+		presenting: narrative.open !== null,
+		reducedMotion,
+		cut: dive.cut,
 	});
 	// A subject is named to a reader by its name. Which ones the picture could
 	// not find is settled against the atlas; what to call them is the board's.
@@ -680,10 +704,6 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 	const departure = useDeparture(drawn, drill.board, render);
 	// Two panes rest their sidebars, so each picture has the room (use-sidebar.ts).
 	const sidebar = useSidebar(props.selection, usePaneChrome().shared);
-	const picture = useRef<HTMLDivElement | null>(null);
-	const attachPicture = useCallback((element: HTMLDivElement | null): void => {
-		picture.current = element;
-	}, []);
 	useClearOfPanel(picture, sidebar.floating, props.selection, camera.ease);
 	useReveal({
 		camera,
@@ -691,7 +711,7 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		reading,
 		selection: props.selection,
 		off: narrative.open !== null || sidebar.floating,
-		reducedMotion: props.reducedMotion === true,
+		reducedMotion,
 	});
 	const appearances = useStageAppearances(drawn, departure.leaving);
 	const look = useKindLook(appearances);
@@ -721,23 +741,15 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		},
 		[choose, goTo],
 	);
-	const { leave } = departure;
-	const picked = props.selection;
-	const onOpenDown = useCallback(
-		(target: string, asked: string): void => {
-			leave("into", picked);
-			onSelect(null);
-			onUserChanged?.("board");
-			drill.open(target, asked);
-		},
-		[drill, leave, onSelect, onUserChanged, picked],
-	);
-	const onBack = useCallback((): void => {
-		leave("out");
-		onSelect(null);
-		onUserChanged?.("board");
-		drill.back();
-	}, [drill, leave, onSelect, onUserChanged]);
+	const { onOpenDown, onBack } = useDrillMoves({
+		drill,
+		flier: dive,
+		leave: departure.leave,
+		picked: props.selection,
+		ownView: props.view,
+		onSelect,
+		onUserChanged,
+	});
 
 	return renderedView({
 		...props,
@@ -750,6 +762,7 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		onPick,
 		onOpenDown,
 		onBack,
+		cut: dive.cut,
 		leaving: departure.leaving,
 		sidebar,
 		appearances,

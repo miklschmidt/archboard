@@ -288,8 +288,14 @@ function Cache(children: ReactNode): JSX.Element {
  */
 const serving: typeof fetch = Object.assign(fakeFetch, { preconnect: realFetch.preconnect });
 
-/** The stage's own props a test may state as they are: a driven step, and what is laid over the picture. */
-type StagePassThrough = Pick<Parameters<typeof SemanticBoardStage>[0], "driven" | "overlay">;
+/**
+ * The stage's own props a test may state as they are: a driven step, what is
+ * laid over the picture, and the boards above the one on screen.
+ */
+type StagePassThrough = Pick<
+	Parameters<typeof SemanticBoardStage>[0],
+	"driven" | "overlay" | "placeOf"
+>;
 /** What else a mounted pane may be told, beyond what it is showing. */
 interface MountOptions extends StagePassThrough {
 	/** Which view the pane reads its board through. */
@@ -331,6 +337,7 @@ const READING_PROPS = [
 	"onReading",
 	"driven",
 	"overlay",
+	"placeOf",
 ] as const satisfies readonly (keyof MountOptions)[];
 
 /**

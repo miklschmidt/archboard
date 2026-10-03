@@ -410,6 +410,15 @@ traffic or telemetry is implied: it is a walk along the relationships the board
 states.
 _Avoid_: impact analysis, blast radius, dependency graph
 
+**Dive**:
+How a drill-down looks. The board that a card opens is put inside the card, the
+camera flies into the card, and the board grows to the size of the pane. Going
+back out runs the flight the other way. At the end of the flight the board
+itself takes over from the picture inside the card, in the same place. The dive
+is presentation: it happens when the board's picture is to hand in a moment,
+and it gives way to the plain opening of the board when it cannot happen.
+_Avoid_: zoom transition, page transition, animation
+
 ### Working
 
 **Tab session**:

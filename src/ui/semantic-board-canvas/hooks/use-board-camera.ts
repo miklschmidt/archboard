@@ -69,6 +69,14 @@ interface BoardCamera {
 	 * would be a fit to nothing.
 	 */
 	readonly room: Size | null;
+	/**
+	 * How big the window on the diagram is right now. `room` says the same once
+	 * the stage has stopped changing size; a flight that must end where a fit
+	 * will put the camera asks for this, so it does not plan for a size the stage
+	 * has since left.
+	 * @returns The size, or null before the stage has been laid out.
+	 */
+	readonly measure: () => Size | null;
 	/** Attach the viewport: the window the diagram is seen through. */
 	readonly attachViewport: (element: HTMLElement | null) => void;
 	/**
@@ -362,9 +370,14 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 		[settle, motion],
 	);
 
+	const measure = useCallback(
+		(): Size | null => usable(sizeOf(viewport), bottom),
+		[viewport, bottom],
+	);
+
 	const zoomCentre = useCallback(
 		(direction: number): void => {
-			const size = usable(sizeOf(viewport), bottom);
+			const size = measure();
 			if (size === null) {
 				return;
 			}
@@ -375,12 +388,12 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 				y: size.height / 2,
 			});
 		},
-		[viewport, bottom, settle, motion],
+		[measure, settle, motion],
 	);
 
 	const fit = useCallback(
 		(target: FitTarget, atOnce = false): boolean => {
-			const size = usable(sizeOf(viewport), bottom);
+			const size = measure();
 			const fitted = size === null ? null : cameraFor(size, target);
 			if (fitted === null) {
 				return false;
@@ -392,12 +405,12 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 			write({ camera: fitted, instant: atOnce });
 			return true;
 		},
-		[viewport, bottom, flight, motion, write],
+		[measure, flight, motion, write],
 	);
 
 	const glide = useCallback(
 		(to: FitTarget | Camera, duration: number, handledAfter = false): boolean => {
-			const size = usable(sizeOf(viewport), bottom);
+			const size = measure();
 			const destination = destinationIn(size, to);
 			const surface = surfaceIn(viewport);
 			if (size === null || destination === null || surface === null) {
@@ -421,7 +434,7 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 			});
 			return true;
 		},
-		[viewport, bottom, flight, motion, read, write],
+		[viewport, measure, flight, motion, read, write],
 	);
 
 	const reserve = useCallback((pixels: number): void => {
@@ -471,6 +484,7 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 			view: read,
 			subscribe: store.subscribe,
 			room,
+			measure,
 			attachViewport: setViewport,
 			panBy,
 			ease,
@@ -487,6 +501,7 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 			store,
 			read,
 			room,
+			measure,
 			panBy,
 			ease,
 			motion,

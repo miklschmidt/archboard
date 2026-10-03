@@ -21,10 +21,7 @@
 import { useLayoutEffect, useMemo, useRef } from "react";
 
 import { PICTURE_TRANSITION_MS, PRESENTATION_STEP_MS } from "@/shared/timing/timing";
-import {
-	useBoardCamera,
-	type BoardCamera,
-} from "@/ui/semantic-board-canvas/hooks/use-board-camera";
+import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import type { BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
 import type { Camera, FitTarget, Size } from "@/ui/semantic-board-canvas/lib/camera";
@@ -35,12 +32,16 @@ interface FitReading {
 	readonly presenting: boolean;
 	/** Whether the person asked for no motion; then every glide lands at once. */
 	readonly reducedMotion: boolean;
+	/** Whether the picture on screen is the one a flight arrived at, which has put the camera where it belongs. */
+	readonly cut: boolean;
 }
 
 /** How a pane says it is being read, before anything is decided about it. */
 interface FitRequest {
 	readonly presenting: boolean;
 	readonly reducedMotion?: boolean | undefined;
+	/** The picture on screen is the one a flight arrived at: the camera lands on it at once. */
+	readonly cut?: boolean | undefined;
 }
 
 /** The camera a reader had before a presentation took it. */
@@ -110,6 +111,9 @@ function moveTo(
 	picture: string | null,
 ): boolean {
 	const pictureChanged = fitted.picture !== picture;
+	if (reading.cut && pictureChanged) {
+		return camera.fit(target, true);
+	}
 	if (fitted.subject !== null && (reading.presenting || pictureChanged)) {
 		return camera.glide(target, stepDuration(reading, pictureChanged));
 	}
@@ -192,20 +196,21 @@ function keepFitted(
 }
 
 /**
- * Own the stage camera across loading, empty and drawn states. Variants share
- * presentation state; another board, variant, view or walkthrough focus fits afresh.
+ * Keep the stage camera fitted across loading, empty and drawn states. Variants
+ * share presentation state; another board, variant, view or walkthrough focus fits afresh.
+ * @param camera The stage camera.
  * @param drawing The resolved drawing, or null while no picture is available.
  * @param focus The walkthrough's focus, when one is being read.
- * @param request Whether a walkthrough is presented, and whether motion is reduced.
- * @returns The camera, including explicit pan, zoom and fit controls.
+ * @param request Whether a walkthrough is presented, whether motion is reduced, and whether the picture on screen is the one a flight arrived at.
  */
 function useAutoFit(
+	camera: BoardCamera,
 	drawing: SemanticDrawing | null,
 	focus: BeatFocus,
 	request: FitRequest = { presenting: false },
-): BoardCamera {
+): void {
 	const reducedMotion = request.reducedMotion === true;
-	const camera = useBoardCamera(reducedMotion);
+	const cut = request.cut === true;
 	const target = useMemo<FitTarget | null>(
 		() =>
 			drawing === null || camera.room === null
@@ -230,10 +235,9 @@ function useAutoFit(
 		if (target === null) {
 			return;
 		}
-		const reading = { presenting, reducedMotion };
+		const reading = { presenting, reducedMotion, cut };
 		keepFitted(camera, { target, subject, picture, room, reading }, fitted, held);
-	}, [camera, target, subject, picture, room, presenting, reducedMotion]);
-	return camera;
+	}, [camera, target, subject, picture, room, presenting, reducedMotion, cut]);
 }
 
 export { useAutoFit, type FitReading };
