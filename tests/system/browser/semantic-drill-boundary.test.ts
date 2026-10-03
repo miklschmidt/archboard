@@ -217,7 +217,7 @@ test("a board followed down becomes the board the pane holds, everywhere", async
 	const link = await drawnId(browser, "board-io");
 	await pick(browser, link ?? "");
 	await pollUntil(
-		() => textOf(browser, "[data-slot='semantic-drill-down']"),
+		() => textOf(browser, DRILL_OPEN),
 		(said) => said.includes("as proposed"),
 		"the link to name where it goes before anybody follows it",
 		WAIT,

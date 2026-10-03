@@ -1,209 +1,63 @@
-// What the board says about one picked part, set out for reading: what it is
-// for, where its code is, what it sends to and receives from, and at the foot
-// the ways to go deeper (`GoDeeper`).
+// What the board says about one picked part, set out for reading in the order a
+// reader asks: what it is (its title, the line it is responsible for and the
+// longer account), where it stands against the variant it is read against (only
+// in a comparison), and what it is wired to. At the foot are the ways to go
+// deeper (`GoDeeper`).
 //
 // It is the selection tab of the pane's sidebar, so it has the sidebar's one
-// width and its type. The heading of a section is the sidebar's own.
+// width and its regions, sections and rows (`SemanticSidebarParts`): a rule
+// divides one question from the next, and space divides the sections of one.
 
-import { RiBookLine, RiCheckLine, RiFileCopyLine, RiFileLine } from "@remixicon/react";
-import { useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
+import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@/shared/code-target";
 import type { VariantContent } from "@/shared/semantic-board/index";
 import { KindIcon, RelationshipChip } from "@/ui/semantic-board-canvas/components/BoardPageParts";
 import { GoDeeper } from "@/ui/semantic-board-canvas/components/GoDeeper";
-import { SidebarHeading } from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
+import {
+	Account,
+	Membership,
+	SubjectTitle,
+	type GroupControls,
+} from "@/ui/semantic-board-canvas/components/SemanticInspectorParts";
+import {
+	SidebarChoice,
+	SidebarChoices,
+	SidebarGlyph,
+	SidebarHeading,
+	SidebarLabel,
+	SidebarMeta,
+	SidebarRegion,
+} from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
 import { usePeekControl, usePeeked } from "@/ui/semantic-board-canvas/hooks/use-peek";
 import type { NodeSubject } from "@/ui/semantic-board-canvas/lib/board-document";
 import { connectionsOf, type Link } from "@/ui/semantic-board-canvas/lib/connections";
 import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
 import { reachOf, type Way } from "@/ui/semantic-board-canvas/lib/reach";
 
-/** A section of the panel: a heading over its body, under the rule above. */
-function PanelSection(props: {
-	readonly title: ReactNode;
-	readonly slot: string;
-	readonly children: ReactNode;
-}): JSX.Element {
-	return (
-		<section
-			data-slot={props.slot}
-			className="border-border flex flex-col gap-2 border-t px-4 py-4"
-		>
-			<SidebarHeading level={3}>{props.title}</SidebarHeading>
-			{props.children}
-		</section>
-	);
-}
-
 /** Inputs for the title. */
-interface PanelTitleProps {
-	readonly subject: NodeSubject;
+interface PartTitleProps {
+	readonly node: NodeSubject["node"];
 	readonly look: KindLook;
-	/** What the vault calls each group, by id. */
-	readonly groupNames: Readonly<Record<string, { readonly name: string }>>;
+	/** What the vault calls each group, and how to select one. */
+	readonly groups: GroupControls;
 }
 
 /**
- * The part: its kind's icon in a gold ring, the ring the picture draws round
- * what is picked out; its name in the display face, as the pane's header sets
- * the board's; and what kind it is and which groups it belongs to.
+ * The part: its name, what kind it is, and the groups it belongs to, each the
+ * control that selects its members.
  * @param props The part.
- * @returns The title block.
+ * @returns The title.
  */
-function PanelTitle(props: PanelTitleProps): JSX.Element {
-	const { node } = props.subject;
-	const groups = (node.groups ?? []).map((id) => props.groupNames[id]?.name ?? id);
+function PartTitle(props: PartTitleProps): JSX.Element {
+	const { node, look, groups } = props;
 	return (
-		<div className="flex items-center gap-3 px-4 py-4">
-			<span
-				aria-hidden="true"
-				className="border-primary-mark bg-primary-subtle text-primary-text shadow-raised flex size-10 shrink-0 items-center justify-center rounded-full border-[1.5px]"
-			>
-				<KindIcon look={props.look} kind={node.kind} className="size-5" />
-			</span>
-			<div className="flex min-w-0 flex-1 flex-col">
-				<h2 className="title-name truncate" title={node.name}>
-					{node.name}
-				</h2>
-				<p className="text-body text-muted-foreground truncate">
-					{[props.look.nodeName(node.kind), ...groups].join(" · ")}
-				</p>
-			</div>
-		</div>
-	);
-}
-
-/**
- * What the part is for: the line it is responsible for, then the longer account.
- * @param props The part's two statements.
- * @param props.responsibility The line, when there is one.
- * @param props.description The account, when there is one.
- * @returns The section.
- */
-function Purpose(props: {
-	readonly responsibility: string | undefined;
-	readonly description: string | undefined;
-}): JSX.Element {
-	const { responsibility, description } = props;
-	return (
-		<PanelSection title="Purpose" slot="semantic-inspector-purpose">
-			{responsibility === undefined && description === undefined && (
-				<p className="text-muted-foreground text-body">
-					The board states no purpose for this part.
-				</p>
-			)}
-			{responsibility !== undefined && <p className="text-body">{responsibility}</p>}
-			{description !== undefined && (
-				<p
-					className="text-body text-muted-foreground whitespace-pre-line"
-					data-slot="semantic-inspector-description"
-				>
-					{description}
-				</p>
-			)}
-		</PanelSection>
-	);
-}
-
-/**
- * A path or a repository with a place to break the line after each slash, so a
- * long one wraps between its parts and not in the middle of a name.
- * @param text The path.
- * @returns The path, breakable.
- */
-function breakable(text: string): ReactNode {
-	const parts = text.split("/");
-	return parts.map((part, index) => (
-		<span key={`${index}-${part}`}>
-			{part}
-			{index < parts.length - 1 && (
-				<>
-					/<wbr />
-				</>
-			)}
-		</span>
-	));
-}
-
-/** Inputs for one line of the code location. */
-interface CopyRowProps {
-	readonly icon: ReactNode;
-	readonly text: string;
-	readonly label: string;
-}
-
-/**
- * One piece of the code location, with the control that copies it.
- * @param props The icon, the text and what it is.
- * @returns The row.
- */
-function CopyRow(props: CopyRowProps): JSX.Element {
-	const { text } = props;
-	const [copied, setCopied] = useState(false);
-	const copy = useCallback((): void => {
-		navigator.clipboard?.writeText(text).then(
-			() => {
-				setCopied(true);
-				window.setTimeout(() => setCopied(false), 1200);
-			},
-			() => undefined,
-		);
-	}, [text]);
-	return (
-		<div className="flex min-h-7 items-start gap-2 py-1">
-			<span
-				aria-hidden="true"
-				className="text-muted-foreground flex size-4 shrink-0 [&_svg]:size-full"
-			>
-				{props.icon}
-			</span>
-			<span
-				title={text}
-				className="text-technical min-w-0 flex-1 font-mono [overflow-wrap:anywhere]"
-			>
-				{breakable(text)}
-			</span>
-			<button
-				type="button"
-				aria-label={copied ? `Copied ${props.label}` : `Copy ${props.label}`}
-				data-slot="semantic-inspector-copy"
-				onClick={copy}
-				className="text-muted-foreground hover:bg-sidebar-accent hover:text-foreground rounded-control -my-1 flex size-6 shrink-0 items-center justify-center [&_svg]:size-3.5"
-			>
-				{copied ? <RiCheckLine /> : <RiFileCopyLine />}
-			</button>
-		</div>
-	);
-}
-
-/**
- * Where the part's code is: its repository and its path, each to copy.
- * @param props The binding, when the part has one.
- * @param props.binding The binding.
- * @returns The section.
- */
-function CodeLocation(props: { readonly binding: CodeBinding | undefined }): JSX.Element {
-	const { binding } = props;
-	return (
-		<PanelSection title="Code location" slot="semantic-inspector-binding">
-			{binding === undefined ? (
-				<p className="text-muted-foreground text-body" data-slot="semantic-inspector-unbound">
-					No code binding.
-				</p>
-			) : (
-				<div className="flex flex-col">
-					<CopyRow icon={<RiBookLine />} text={binding.repo} label="repository" />
-					<CopyRow icon={<RiFileLine />} text={binding.path} label="path" />
-					{binding.branch !== undefined && (
-						<p className="text-technical text-muted-foreground mt-1 truncate pl-6 font-mono">
-							{binding.branch}
-							{binding.commit === undefined ? "" : ` @ ${binding.commit.slice(0, 8)}`}
-						</p>
-					)}
-				</div>
-			)}
-		</PanelSection>
+		<SubjectTitle name={node.name} look={look} kind={node.kind}>
+			<span>{look.nodeName(node.kind)}</span>
+			{(node.groups ?? []).map((group) => (
+				<Membership key={group} group={group} controls={groups} />
+			))}
+		</SubjectTitle>
 	);
 }
 
@@ -257,7 +111,7 @@ function TraceToggle(props: TraceToggleProps): JSX.Element | null {
 			data-slot="semantic-inspector-trace"
 			data-way={way}
 			onClick={toggle}
-			className="text-body border-border hover:bg-sidebar-accent/50 aria-pressed:border-primary-mark aria-pressed:bg-primary-subtle rounded-control ml-auto flex h-6 shrink-0 items-center gap-1.5 border px-2"
+			className="text-body border-border hover:bg-sidebar-accent/50 aria-pressed:border-primary-mark aria-pressed:bg-primary-subtle rounded-control flex h-6 shrink-0 items-center gap-1.5 border px-2"
 		>
 			{way === "onward" ? "Trace onward" : "Trace back"}
 			<span aria-hidden="true" className="text-technical text-muted-foreground font-mono">
@@ -275,9 +129,10 @@ interface LinkRowProps {
 }
 
 /**
- * One relationship of a part: the other part with its kind's icon, its name and
- * what the relationship carries, and the relationship's kind at the end.
- * Pointing at it, or focusing it, lights the relationship on the picture.
+ * One relationship of a part: the other part with its kind's icon and its
+ * name, what the relationship carries under the name, and the relationship's
+ * kind at the end of the name's line, so the words under it keep the whole
+ * width. Pointing at it, or focusing it, lights the relationship on the picture.
  * @param props The relationship, as seen from the part, and what to do with a pick.
  * @returns The row.
  */
@@ -291,29 +146,27 @@ function LinkRow(props: LinkRowProps): JSX.Element {
 		if (other !== undefined) onPick(other.id);
 	}, [onPick, other]);
 	return (
-		<li>
-			<button
-				type="button"
-				disabled={other === undefined}
-				data-slot="semantic-inspector-link"
-				data-edge={edge.id}
-				onClick={choose}
-				onPointerEnter={aim}
-				onPointerLeave={leave}
-				onFocus={aim}
-				onBlur={leave}
-				className="hover:bg-sidebar-accent/50 rounded-control flex min-h-9 w-full items-center gap-2 px-2 py-1 text-left disabled:opacity-60"
-			>
+		<SidebarChoice
+			disabled={other === undefined}
+			data-slot="semantic-inspector-link"
+			data-edge={edge.id}
+			onClick={choose}
+			onPointerEnter={aim}
+			onPointerLeave={leave}
+			onFocus={aim}
+			onBlur={leave}
+		>
+			<SidebarGlyph>
 				<KindIcon look={look} kind={other?.kind ?? "other"} className="text-foreground/80 size-4" />
-				<span className="flex min-w-0 flex-1 flex-col">
-					<span className="text-body truncate font-medium">{other?.name ?? "Unknown part"}</span>
-					{edge.label !== undefined && (
-						<span className="text-body text-muted-foreground truncate">{edge.label}</span>
-					)}
-				</span>
+			</SidebarGlyph>
+			<SidebarLabel>
+				{other?.name ?? "Unknown part"}
+				{edge.label !== undefined && <SidebarMeta>{edge.label}</SidebarMeta>}
+			</SidebarLabel>
+			<span className="flex h-[18px] shrink-0 items-center">
 				<RelationshipChip look={look} kind={edge.kind} />
-			</button>
-		</li>
+			</span>
+		</SidebarChoice>
 	);
 }
 
@@ -338,31 +191,33 @@ interface LinksProps {
  * @returns The list, or nothing when there are none.
  */
 function Links(props: LinksProps): JSX.Element | null {
-	const { links, look } = props;
+	const { title, links, look } = props;
 	if (links.length === 0) {
 		return null;
 	}
 	return (
-		<div data-slot="semantic-inspector-links" className="flex flex-col">
-			<div className="mt-1 mb-0.5 flex items-center gap-1.5">
-				<h4 className="text-body flex items-baseline gap-1.5 font-medium">
-					{props.title}
-					<span className="text-technical text-muted-foreground font-mono font-normal">
-						{links.length}
-					</span>
-				</h4>
+		<section
+			data-slot="semantic-inspector-links"
+			aria-label={title}
+			className="flex flex-col gap-1"
+		>
+			<div className="flex min-h-6 items-center justify-between gap-2">
+				<SidebarHeading level={3}>
+					{title}
+					<span className="text-technical ml-1.5 font-mono font-normal">{links.length}</span>
+				</SidebarHeading>
 				<TraceToggle part={props.part} name={props.name} way={props.way} parts={props.reach} />
 			</div>
-			<ul className="-mx-2">
+			<SidebarChoices label={title} slot="semantic-inspector-link-list">
 				{links.map((link) => (
 					<LinkRow key={link.edge.id} link={link} look={look} onPick={props.onPick} />
 				))}
-			</ul>
-		</div>
+			</SidebarChoices>
+		</section>
 	);
 }
 
-/** Inputs for the relationships section. */
+/** Inputs for the relationships. */
 interface RelationshipsProps {
 	readonly content: VariantContent;
 	readonly partId: string;
@@ -374,18 +229,18 @@ interface RelationshipsProps {
 /**
  * What the part sends to and what it receives from, and how far each reaches.
  * @param props The variant, the part and what to do with a link.
- * @returns The section.
+ * @returns The two lists, or the word that nothing connects to the part.
  */
 function Relationships(props: RelationshipsProps): JSX.Element {
 	const { content, partId, name } = props;
 	const { sends, receives } = connectionsOf(content, partId);
 	const onward = useMemo(() => reachOf(content, partId, "onward").parts, [content, partId]);
 	const back = useMemo(() => reachOf(content, partId, "back").parts, [content, partId]);
+	if (sends.length + receives.length === 0) {
+		return <p className="text-muted-foreground text-body">Nothing on this board connects to it.</p>;
+	}
 	return (
-		<PanelSection title="Relationships" slot="semantic-inspector-relationships">
-			{sends.length + receives.length === 0 && (
-				<p className="text-muted-foreground text-body">Nothing on this board connects to it.</p>
-			)}
+		<>
 			<Links
 				title="Sends to"
 				links={sends}
@@ -406,7 +261,7 @@ function Relationships(props: RelationshipsProps): JSX.Element {
 				way="back"
 				reach={back}
 			/>
-		</PanelSection>
+		</>
 	);
 }
 
@@ -416,8 +271,8 @@ interface DetailsPanelProps {
 	/** What the variant that holds the part says. */
 	readonly content: VariantContent;
 	readonly look: KindLook;
-	/** What the vault calls each group. */
-	readonly groupNames: PanelTitleProps["groupNames"];
+	/** What the vault calls each group, and how to select one. */
+	readonly groups: GroupControls;
 	/**
 	 * Pick another part out, the one at the other end of a relationship.
 	 * @param id The part.
@@ -427,7 +282,7 @@ interface DetailsPanelProps {
 	readonly onOpenCode: ((binding: CodeBinding) => void) | undefined;
 	/** The level of the board the part is drawn on, which places the board it opens. */
 	readonly level: string | undefined;
-	/** Everything under the details: what was decided about the part, and where it stands. */
+	/** Where the part stands, set between what it is and what it is wired to. */
 	readonly children?: ReactNode;
 }
 
@@ -442,17 +297,20 @@ function DetailsPanel(props: DetailsPanelProps): JSX.Element {
 	return (
 		<div data-slot="semantic-details" className="flex min-h-0 flex-1 flex-col">
 			<div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
-				<PanelTitle subject={subject} look={props.look} groupNames={props.groupNames} />
-				<Purpose responsibility={node.responsibility} description={node.description} />
-				<CodeLocation binding={node.binding} />
-				<Relationships
-					content={props.content}
-					partId={node.id}
-					name={node.name}
-					look={props.look}
-					onPick={props.onPick}
-				/>
+				<SidebarRegion slot="semantic-inspector-about">
+					<PartTitle node={node} look={props.look} groups={props.groups} />
+					<Account lead={node.responsibility} detail={node.description} />
+				</SidebarRegion>
 				{props.children}
+				<SidebarRegion slot="semantic-inspector-wiring">
+					<Relationships
+						content={props.content}
+						partId={node.id}
+						name={node.name}
+						look={props.look}
+						onPick={props.onPick}
+					/>
+				</SidebarRegion>
 			</div>
 			<GoDeeper
 				target={node.drillDown}

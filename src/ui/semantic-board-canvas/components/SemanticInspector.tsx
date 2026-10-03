@@ -12,29 +12,33 @@
 // ones it does draw.
 
 import { useQuery } from "@tanstack/react-query";
-import type { JSX } from "react";
+import type { JSX, ReactNode } from "react";
 
 import {
 	addressedVariant,
 	type ReconciliationIssue,
 	type SemanticBoard,
+	type SemanticNode,
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
+import { RelationshipChip } from "@/ui/semantic-board-canvas/components/BoardPageParts";
 import { DetailsPanel } from "@/ui/semantic-board-canvas/components/DetailsPanel";
 import type { CodeBinding } from "@/shared/code-target";
 import {
-	Described,
-	Memberships,
+	Account,
+	Facts,
 	Row,
-	Section,
-	TitleBlock,
+	SubjectTitle,
 	type GroupControls,
 } from "@/ui/semantic-board-canvas/components/SemanticInspectorParts";
 import {
-	StandingBlock,
-	WaitingBlock,
+	Standing,
 	type StandingProps,
 } from "@/ui/semantic-board-canvas/components/SemanticInspectorStanding";
+import {
+	SidebarRegion,
+	SidebarSection,
+} from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
 import { cn } from "@/ui/components/class-names";
 import { useSemanticBoardChanges } from "@/ui/semantic-board-canvas/hooks/use-semantic-board-changes";
 import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
@@ -49,10 +53,23 @@ import {
 	type Subject,
 } from "@/ui/semantic-board-canvas/lib/board-document";
 
+/**
+ * What a part is called, or the id the board names it by when the variant no
+ * longer holds it.
+ * @param node The part, when the variant still holds it.
+ * @param id The id the board names it by.
+ * @returns The name.
+ */
+function nameOf(node: SemanticNode | undefined, id: string): string {
+	return node?.name ?? id;
+}
+
 /** Inputs for the flow body. */
 interface FlowBodyProps {
 	/** The selected exchange, with its cast. */
 	subject: FlowSubject;
+	/** Where it stands, set between what it is and who takes part. */
+	children: ReactNode;
 }
 
 /**
@@ -64,15 +81,23 @@ function FlowBody(props: FlowBodyProps): JSX.Element {
 	const { flow, participants } = props.subject;
 	return (
 		<>
-			<TitleBlock name={flow.name} kind="flow" id={flow.id} responsibility={flow.summary} />
-			<Section title="Taking part">
-				<p className="text-body" data-slot="semantic-inspector-participants">
-					{participants.join(", ")}
-				</p>
-				<p className="text-body" data-slot="semantic-inspector-step-count">
-					{flow.steps.length === 1 ? "One message" : `${flow.steps.length} messages`}
-				</p>
-			</Section>
+			<SidebarRegion slot="semantic-inspector-about">
+				<SubjectTitle name={flow.name}>
+					<span>Exchange</span>
+				</SubjectTitle>
+				<Account lead={flow.summary} />
+			</SidebarRegion>
+			{props.children}
+			<SidebarRegion slot="semantic-inspector-wiring">
+				<SidebarSection title="Taking part" slot="semantic-inspector-cast" level={3}>
+					<p className="text-body" data-slot="semantic-inspector-participants">
+						{participants.join(", ")}
+					</p>
+					<p className="text-body" data-slot="semantic-inspector-step-count">
+						{flow.steps.length === 1 ? "One message" : `${flow.steps.length} messages`}
+					</p>
+				</SidebarSection>
+			</SidebarRegion>
 		</>
 	);
 }
@@ -81,6 +106,8 @@ function FlowBody(props: FlowBodyProps): JSX.Element {
 interface StepBodyProps {
 	/** The selected message, with its ends and where it comes. */
 	subject: StepSubject;
+	/** Where it stands, set between what it is and where it comes. */
+	children: ReactNode;
 }
 
 /**
@@ -95,21 +122,28 @@ function StepBody(props: StepBodyProps): JSX.Element {
 	const { step, flow, position, from, to } = props.subject;
 	return (
 		<>
-			<TitleBlock name={step.label} kind={step.kind} id={step.id} />
-			<Section title="In this exchange">
-				<dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-2.5">
-					<Row field="flow" label="flow" value={flow.name} />
-					{/* Counted within the state that holds this message, which for one
-					    this variant does not send is the variant it is read against. The
-					    composed picture the diagram is drawn from holds both at once and
-					    is nobody's architecture, so nothing is counted against it. */}
-					<Row field="position" label="step" value={`${position} of ${flow.steps.length}`} />
-					<Row label="from" value={from?.name ?? step.from} />
-					<Row label="to" value={to?.name ?? step.to} />
-					{step.repeat !== undefined && <Row label="repeats" value={`${step.repeat}×`} />}
-				</dl>
-			</Section>
-			<Described text={step.note} />
+			<SidebarRegion slot="semantic-inspector-about">
+				<SubjectTitle name={step.label}>
+					<span>Message · {step.kind}</span>
+				</SubjectTitle>
+				<Account detail={step.note} />
+			</SidebarRegion>
+			{props.children}
+			<SidebarRegion slot="semantic-inspector-wiring">
+				<SidebarSection title="In this exchange" slot="semantic-inspector-exchange" level={3}>
+					<Facts>
+						<Row field="flow" label="flow" value={flow.name} />
+						{/* Counted within the state that holds this message, which for one
+						    this variant does not send is the variant it is read against. The
+						    composed picture the diagram is drawn from holds both at once and
+						    is nobody's architecture, so nothing is counted against it. */}
+						<Row field="position" label="step" value={`${position} of ${flow.steps.length}`} />
+						<Row label="from" value={nameOf(from, step.from)} />
+						<Row label="to" value={nameOf(to, step.to)} />
+						{step.repeat !== undefined && <Row label="repeats" value={`${step.repeat}×`} />}
+					</Facts>
+				</SidebarSection>
+			</SidebarRegion>
 		</>
 	);
 }
@@ -118,6 +152,10 @@ function StepBody(props: StepBodyProps): JSX.Element {
 interface EdgeBodyProps {
 	/** The selected relationship, with the nodes at its ends. */
 	subject: EdgeSubject;
+	/** How the vault's kinds look, for the relationship's kind. */
+	look: KindLook;
+	/** Where it stands, set between what it is and what it joins. */
+	children: ReactNode;
 }
 
 /**
@@ -129,14 +167,21 @@ function EdgeBody(props: EdgeBodyProps): JSX.Element {
 	const { edge, from, to } = props.subject;
 	return (
 		<>
-			<TitleBlock name={edge.label ?? "Connection"} kind={edge.kind} id={edge.id} />
-			<Section title="Between">
-				<dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-2.5">
-					<Row label="from" value={from?.name ?? edge.from} />
-					<Row label="to" value={to?.name ?? edge.to} />
-				</dl>
-			</Section>
-			<Described text={edge.description} />
+			<SidebarRegion slot="semantic-inspector-about">
+				<SubjectTitle name={edge.label ?? "Connection"}>
+					<RelationshipChip look={props.look} kind={edge.kind} />
+				</SubjectTitle>
+				<Account detail={edge.description} />
+			</SidebarRegion>
+			{props.children}
+			<SidebarRegion slot="semantic-inspector-wiring">
+				<SidebarSection title="Between" slot="semantic-inspector-between" level={3}>
+					<Facts>
+						<Row label="from" value={nameOf(from, edge.from)} />
+						<Row label="to" value={nameOf(to, edge.to)} />
+					</Facts>
+				</SidebarSection>
+			</SidebarRegion>
 		</>
 	);
 }
@@ -145,13 +190,27 @@ function EdgeBody(props: EdgeBodyProps): JSX.Element {
  * Whichever of the other three bodies the selected subject calls for. A part
  * has its own panel, `DetailsPanel`.
  * @param subject What the board says the selection is.
+ * @param look How the vault's kinds look.
+ * @param standing Where the subject stands, which each body sets after what it is.
  * @returns The body.
  */
-function bodyFor(subject: EdgeSubject | FlowSubject | StepSubject): JSX.Element {
+function bodyFor(
+	subject: EdgeSubject | FlowSubject | StepSubject,
+	look: KindLook,
+	standing: ReactNode,
+): JSX.Element {
 	if (subject.kind === "edge") {
-		return <EdgeBody subject={subject} />;
+		return (
+			<EdgeBody subject={subject} look={look}>
+				{standing}
+			</EdgeBody>
+		);
 	}
-	return subject.kind === "flow" ? <FlowBody subject={subject} /> : <StepBody subject={subject} />;
+	return subject.kind === "flow" ? (
+		<FlowBody subject={subject}>{standing}</FlowBody>
+	) : (
+		<StepBody subject={subject}>{standing}</StepBody>
+	);
 }
 
 /** Inputs for the body. */
@@ -160,7 +219,7 @@ interface BodyProps {
 	 * Open the code a node is bound to, when the shell around the pane can.
 	 * @param binding Where the code is.
 	 */
-	onOpenCode?: (binding: CodeBinding) => void;
+	onOpenCode?: ((binding: CodeBinding) => void) | undefined;
 	/** What the board says the selection is, or undefined while that is not known. */
 	subject: Subject | undefined;
 	/** What to say when there is no subject: still reading, or a reason. */
@@ -193,9 +252,9 @@ interface BodyProps {
 /**
  * The inspector's body for whatever was picked out.
  *
- * What the change did to the subject is a section of its own rather than a badge
- * on the title: for a changed subject it is not one word but a list of fields
- * with two values each.
+ * What the change did to the subject is a region of its own, after what the
+ * subject is, rather than a badge on the title: for a changed subject it is not
+ * one word but a list of fields with two values each.
  * @param props The subject, what the change did to it, the fallback words and the drill-down action.
  * @returns The body.
  */
@@ -204,31 +263,19 @@ function InspectorBody(props: BodyProps): JSX.Element {
 	if (subject === undefined) {
 		return <p className="text-muted-foreground text-body px-4 py-4">{props.notice}</p>;
 	}
-	const standing = (
-		<>
-			<WaitingBlock open={props.open} />
-			{against !== null && (
-				<StandingBlock
-					standing={against.standing}
-					against={against.against}
-					moved={against.moved}
-				/>
-			)}
-		</>
-	);
+	const standing = <Standing open={props.open} against={against} />;
 	if (subject.kind === "node" && props.held !== undefined) {
 		return (
 			<DetailsPanel
 				subject={subject}
 				content={props.held.content}
 				look={props.look}
-				groupNames={props.groups.names}
+				groups={props.groups}
 				onPick={props.onPick}
 				onOpen={props.onOpen}
 				onOpenCode={props.onOpenCode}
 				level={props.level}
 			>
-				<Memberships groups={subject.node.groups} controls={props.groups} />
 				{standing}
 			</DetailsPanel>
 		);
@@ -236,12 +283,7 @@ function InspectorBody(props: BodyProps): JSX.Element {
 	if (subject.kind === "node") {
 		return <p className="text-muted-foreground text-body px-4 py-4">{props.notice}</p>;
 	}
-	return (
-		<>
-			{bodyFor(subject)}
-			{standing}
-		</>
-	);
+	return bodyFor(subject, props.look, standing);
 }
 
 /** What the board turned out to say about the selection, and what to say instead. */
@@ -372,7 +414,7 @@ interface SemanticInspectorProps {
 	 * Open the code a node is bound to, when the shell around the pane can.
 	 * @param binding Where the code is.
 	 */
-	onOpenCode?: (binding: CodeBinding) => void;
+	onOpenCode?: ((binding: CodeBinding) => void) | undefined;
 	/** The board on screen. */
 	board: string;
 	/** The id of the variant the drawing is of. */
@@ -437,7 +479,7 @@ function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 				notice={explained.notice}
 				onOpen={props.onOpen}
 				groups={props.groups}
-				{...(props.onOpenCode === undefined ? {} : { onOpenCode: props.onOpenCode })}
+				onOpenCode={props.onOpenCode}
 			/>
 		</section>
 	);

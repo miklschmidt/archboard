@@ -63,6 +63,26 @@ const VIEWPORT = "[data-slot='semantic-board-viewport']";
 const INSPECTOR = "[data-slot='semantic-inspector']";
 
 /**
+ * What the pointer resting on the way to a part's code says: the repository.
+ * @param browser The page.
+ * @returns The title, or an empty string when the part has no way to code.
+ */
+const codeTitle = (browser: AgentBrowserSession): Promise<string> =>
+	browser.eval<string>(
+		`document.querySelector("[data-slot='semantic-inspector-open-code']")?.getAttribute("title") ?? ""`,
+	);
+
+/**
+ * What sort of state the way down to a part's board opens.
+ * @param browser The page.
+ * @returns The lifecycle, or an empty string when the part has no way down.
+ */
+const lifecycleOnOffer = (browser: AgentBrowserSession): Promise<string> =>
+	browser.eval<string>(
+		`document.querySelector("[data-slot='semantic-drill-down-open']")?.getAttribute("data-variant-lifecycle") ?? ""`,
+	);
+
+/**
  * Which of the pane's states is on screen.
  * @param browser The page.
  * @returns The `data-state`, or null before the pane is there.
@@ -305,38 +325,37 @@ test("a person reads containment, code and the level below it, and writes nothin
 	expect(await sidebarTab(browser.eval.bind(browser))).toBe("selection");
 	const inspected = await textOf(browser, INSPECTOR);
 	expect(inspected).toContain("The one place a note is read or written");
-	expect(inspected).toContain("archboard");
 	expect(inspected).toContain("src/runtime/engine/board-io.ts");
+	expect(await codeTitle(browser)).toContain("archboard");
 
-	// A node bound to a different repository says so, and a planned one says it
-	// is planned rather than showing an empty field.
+	// A node bound to a different repository says so where the pointer rests on
+	// the way to its code, and one with no binding has no way to code at all.
 	await pick(browser, ids["other"] ?? "");
 	await pollUntil(
-		() => textOf(browser, INSPECTOR),
-		(said) => said.includes("coordinator"),
-		"the inspector to name the other node's repository",
+		() => codeTitle(browser),
+		(title) => title.includes("coordinator"),
+		"the way to the code to name the other node's repository",
 		WAIT,
 	);
 	await pick(browser, ids["planned"] ?? "");
 	await pollUntil(
 		() => textOf(browser, INSPECTOR),
-		(said) => said.includes("No code binding."),
-		"the inspector to say the node has no code binding",
+		(said) => said.includes("Write Lease"),
+		"the inspector to explain the node with no binding",
 		WAIT,
 	);
+	expect(await codeTitle(browser)).toBe("");
 
-	// The level below: the target variant and where it stands are disclosed
-	// before anything opens, and opening it really shows the other board.
+	// The level below: where it stands is disclosed before anything opens, and
+	// opening it really shows the other board.
 	await pick(browser, ids["module"] ?? "");
 	await pollUntil(
-		() => textOf(browser, "[data-slot='semantic-drill-down']"),
-		(said) => said.includes("as built"),
-		"the drill-down to name the target variant",
+		() => lifecycleOnOffer(browser),
+		(lifecycle) => lifecycle === "current",
+		"the way down to say what sort of state it opens",
 		WAIT,
 	);
-	expect(await textOf(browser, "[data-slot='semantic-drill-down']")).toContain(
-		"the current architecture",
-	);
+	expect(await textOf(browser, "[data-slot='semantic-drill-down-open']")).toContain("engine");
 	await press(browser, "[data-slot='semantic-drill-down-open']");
 	await pollUntil(
 		() => shownBoard(browser),
@@ -355,9 +374,9 @@ test("a person reads containment, code and the level below it, and writes nothin
 		"the address to name the board the reader followed into",
 		WAIT,
 	);
-	// The way back is the trail, which is the reader's own and is not addressed.
-	expect(await textOf(browser, "[data-slot='semantic-board-trail']")).toContain("pipeline");
-	await press(browser, "[data-slot='semantic-board-trail'] button");
+	// The way back is the breadcrumb, which is the reader's own and is not addressed.
+	expect(await textOf(browser, "[data-slot='pane-header'] nav")).toContain("pipeline");
+	await press(browser, "[data-slot='pane-crumb']");
 	await pollUntil(
 		() => shownBoard(browser),
 		(board) => board === "pipeline",

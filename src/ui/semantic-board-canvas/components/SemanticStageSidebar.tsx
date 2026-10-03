@@ -83,7 +83,7 @@ function SelectionPanel(props: { readonly view: StageSidebarView }): JSX.Element
 			variant={answer.variant.id}
 			selection={selection}
 			onOpen={view.onOpenDown}
-			{...(onOpenCode === undefined ? {} : { onOpenCode })}
+			onOpenCode={onOpenCode}
 			groups={view.groupControls}
 			look={view.look}
 			onPick={view.onPick}
