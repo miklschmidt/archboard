@@ -9,6 +9,7 @@ import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
 import type { WalkthroughNarration } from "@/ui/semantic-board-canvas/index";
+import { EXPLAINED_BOARD } from "@/ui/semantic-board-canvas/tests/render-answers";
 import {
 	drawing,
 	mountStage,
@@ -16,46 +17,6 @@ import {
 	settle,
 } from "@/ui/semantic-board-canvas/tests/stage-harness";
 import { offers } from "@/ui/semantic-board-canvas/tests/presentation-probes";
-
-/**
- * A walkthrough of one step. Ids are one to eight characters, and a step's is its walkthrough's with a digit.
- * @param id Its id.
- * @param name Its name.
- * @returns The walkthrough.
- */
-function walkthrough(id: string, name: string): Record<string, unknown> {
-	return {
-		id,
-		name,
-		beats: [{ id: `${id}1`, heading: "First", body: "The first step.", subjects: [] }],
-	};
-}
-
-/** A board that explains itself twice. */
-const BOARD = {
-	schemaVersion: "2.0.0",
-	kind: "semantic-board",
-	id: "bd",
-	name: "pipeline",
-	level: "system",
-	version: 1,
-	createdAt: "2026-09-11T00:00:00.000Z",
-	updatedAt: "2026-09-11T00:00:00.000Z",
-	views: [],
-	current: "v1",
-	variants: [
-		{
-			id: "v1",
-			name: "as it is",
-			lifecycle: "current",
-			content: {
-				nodes: [{ id: "n1", name: "API", kind: "module" }],
-				edges: [],
-				walkthroughs: [walkthrough("tour", "The tour"), walkthrough("deploy", "Deploying")],
-			},
-		},
-	],
-};
 
 /**
  * A narration that records what it was asked to start.
@@ -88,7 +49,7 @@ function narrating(held: string | null): {
  * @returns Settles once the board tab lists its walkthroughs.
  */
 async function mountExplained(narration?: WalkthroughNarration): Promise<void> {
-	server.documents["pipeline"] = BOARD;
+	server.documents["pipeline"] = EXPLAINED_BOARD;
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage(null, { narration });
 	await settle();

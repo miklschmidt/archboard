@@ -72,7 +72,17 @@ interface StageSidebarView extends Omit<
  */
 function SelectionPanel(props: { readonly view: StageSidebarView }): JSX.Element {
 	const { view } = props;
-	const { selection, onOpenCode } = view;
+	const { selection, onOpenCode, onPick, sidebar } = view;
+	const { selectionTabId } = sidebar;
+	// A subject picked from a row of this panel is drawn in a new panel, and the row
+	// goes with the old one, so focus is given to the tab first and is not lost.
+	const pickFromPanel = useCallback(
+		(id: string | null): void => {
+			document.getElementById(selectionTabId)?.focus();
+			onPick(id);
+		},
+		[onPick, selectionTabId],
+	);
 	const answer = view.render.data;
 	if (selection === null || answer === undefined) {
 		return <NothingSelected />;
@@ -86,7 +96,7 @@ function SelectionPanel(props: { readonly view: StageSidebarView }): JSX.Element
 			onOpenCode={onOpenCode}
 			groups={view.groupControls}
 			look={view.look}
-			onPick={view.onPick}
+			onPick={pickFromPanel}
 		/>
 	);
 }

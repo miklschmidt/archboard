@@ -3,7 +3,8 @@
 // A preference of this browser rather than a fact about the board on screen,
 // so it is the last row of the board tab, under its own rule, and says in one
 // line what it sets (TASK-383). Its list is the shared select's, in the
-// theme's own surface, in place of the system's.
+// theme's own surface, in place of the system's. Its label is above it and it
+// takes the width of the column, so that the longest engine's name is read whole.
 
 import { useCallback, useId, type JSX } from "react";
 
@@ -33,12 +34,12 @@ function SemanticEngineBar(): JSX.Element {
 		if (parsed.success) chooseLayoutEngine(parsed.data);
 	}, []);
 	return (
-		<div className="flex items-center justify-between gap-2">
-			<label htmlFor={id} className="text-body text-muted-foreground shrink-0">
+		<div className="flex flex-col gap-1.5">
+			<label htmlFor={id} className="text-body text-muted-foreground">
 				Layout engine
 			</label>
 			<Select items={ENGINE_ITEMS} value={engine} onValueChange={onChange}>
-				<SelectTrigger id={id} size="sm" data-slot="semantic-engine-choice" className="min-w-0">
+				<SelectTrigger id={id} size="sm" data-slot="semantic-engine-choice" className="w-full">
 					<SelectValue />
 				</SelectTrigger>
 				<SelectContent>

@@ -14,7 +14,7 @@ import type { AgentSetup } from "@/ui/agent-setup";
 import { narrate } from "@/ui/application/agent-setup-ports";
 import { createNarrator, offerNarration } from "@/ui/application/narrator";
 import type { WalkthroughNarration } from "@/ui/semantic-board-canvas";
-import type { AgentVoiceView } from "@/ui/workbench/contracts";
+import type { AgentVoiceView, VoiceStage } from "@/ui/workbench/contracts";
 
 /** What narrating reads of the agent over the panes. */
 interface NarrationSources {
@@ -36,8 +36,21 @@ interface Narration {
 	readonly forPane: (paneId: string) => WalkthroughNarration;
 }
 
-/** What a narration cannot start for, in the words a held control shows. */
+/** What a narration cannot start for while voice is on, in the words a held control shows. */
 const VOICE_IS_ON = "Voice is on. End it to narrate.";
+
+/**
+ * What a narration cannot start for at each stage of voice. Voice can be ended
+ * from the moment it connects, so only then does the reason say to end it.
+ */
+const HELD_WORDS: Readonly<Record<Exclude<VoiceStage, "idle">, string>> = {
+	preparing: "Voice is starting.",
+	connecting: VOICE_IS_ON,
+	listening: VOICE_IS_ON,
+	speaking: VOICE_IS_ON,
+	muted: VOICE_IS_ON,
+	stopping: "Voice is ending.",
+};
 
 /**
  * Narration for every pane.
@@ -55,6 +68,7 @@ function useNarration(
 ): Narration {
 	const { setup } = workbench;
 	const idle = voice.stage === "idle";
+	const held = voice.stage === "idle" ? null : HELD_WORDS[voice.stage];
 	const followed = workbench.voice?.paneId ?? null;
 	const narrator = useMemo(
 		() =>
@@ -73,10 +87,7 @@ function useNarration(
 	useEffect(() => {
 		narrator.sync({ active: activePaneId, followed, idle });
 	}, [narrator, activePaneId, followed, idle]);
-	return useMemo(
-		() => ({ forPane: offerNarration(narrator, idle ? null : VOICE_IS_ON) }),
-		[idle, narrator],
-	);
+	return useMemo(() => ({ forPane: offerNarration(narrator, held) }), [held, narrator]);
 }
 
 export { useNarration, type Narration };

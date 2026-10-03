@@ -75,6 +75,28 @@ test("one asked for in the other pane makes that pane active and starts once the
 	expect(shell.talks).toEqual(["tour"]);
 });
 
+test("one whose pane the person left before the voice followed never starts later", () => {
+	const shell = mountNarrator(QUIET);
+	shell.narrator.start("b", "tour");
+	shell.narrator.sync({ ...QUIET, active: "b" });
+	shell.narrator.sync(QUIET);
+	shell.narrator.sync({ ...QUIET, active: "b", followed: "b" });
+	expect(shell.talks).toEqual([]);
+});
+
+test("one that voice overtook is dropped, and one for a pane with no voice to follow starts, to say why it cannot", () => {
+	const overtaken = mountNarrator(QUIET);
+	overtaken.narrator.start("b", "tour");
+	overtaken.narrator.sync({ ...QUIET, active: "b", idle: false });
+	overtaken.narrator.sync({ ...QUIET, active: "b", followed: "b" });
+	expect(overtaken.talks).toEqual([]);
+
+	const unconnected = mountNarrator(QUIET);
+	unconnected.narrator.start("b", "tour");
+	unconnected.narrator.sync({ ...QUIET, active: "b", followed: null });
+	expect(unconnected.talks).toEqual(["tour"]);
+});
+
 test("nothing starts while voice runs", () => {
 	const shell = mountNarrator({ ...QUIET, idle: false });
 	shell.narrator.start("a", "tour");

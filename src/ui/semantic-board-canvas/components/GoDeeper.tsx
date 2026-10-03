@@ -71,7 +71,7 @@ function Go(props: GoProps): JSX.Element {
 			title={props.tip}
 			onClick={props.onClick}
 			className={cn(
-				"rounded-control flex min-h-11 w-full min-w-0 items-center gap-3 border px-3 py-1.5 text-left active:translate-y-px",
+				"rounded-control flex min-h-11 w-full min-w-0 items-center gap-3 border px-3 py-1.5 text-left transition-colors active:translate-y-px",
 				primary === true
 					? "primary-finish"
 					: "border-border bg-card shadow-raised hover:bg-muted active:shadow-pressed dark:border-input dark:bg-input/30 dark:hover:bg-input/50",

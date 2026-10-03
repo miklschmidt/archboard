@@ -1,6 +1,7 @@
 // The one icon-only control the chrome uses: a 28px ghost button inside a
 // 32px hit area (the documented desktop exception to a 44px target), named
-// by its tooltip, which is also its accessible name. A shortcut, when the
+// by its label, which is also its tooltip unless a `tip` says more, as for a
+// control whose name stays while its state changes. A shortcut, when the
 // action has one, sits in the tooltip as a key cap and in the name as words.
 // The shell's header, a pane's header and the sidebar's own controls share it.
 //
@@ -34,7 +35,6 @@ interface IconButtonProps {
 	/** A key combination shown as a key cap in the tooltip, when the action has one. */
 	shortcut?: string | undefined;
 	onClick: () => void;
-	disabled?: boolean | undefined;
 	/** Why the action cannot be done now, or null when it can: the button stays, dimmed, and says why. */
 	held?: string | null | undefined;
 	/** For disclosure controls: whether what the button reveals is shown. */
@@ -109,7 +109,6 @@ function IconButton(props: IconButtonProps): JSX.Element {
 				aria-controls={props.controls}
 				aria-disabled={state.ariaDisabled}
 				onClick={state.onClick}
-				disabled={props.disabled}
 			>
 				{props.children}
 			</TooltipTrigger>

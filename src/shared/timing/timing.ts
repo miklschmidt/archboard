@@ -217,27 +217,13 @@ const AGENT_ELAPSED_TICK_MS = 1000;
 /** How long a running turn reports nothing new before the agent bar says it is quiet. */
 const AGENT_QUIET_MS = 120_000;
 
-// The conversation slides open beside the navigator and shut again. It is motion
-// a person watches, not waits out: long enough to read as a slide, short enough
-// that opening it to type is not slowed. The pane centre beside it changes size on
-// every frame of the slide, and the board is fitted to it once, at the end.
-
-/** How long the conversation takes to slide open or shut. */
-const AGENT_PANEL_SLIDE_MS = 220;
-
 /**
  * How long a board's viewport keeps its size before the camera fits to it: longer than
  * a slow frame, so a slide is fitted at its end, and short enough not to trail a resize.
  */
 const BOARD_RESIZE_SETTLE_MS = 64;
 
-export {
-	AGENT_ELAPSED_TICK_MS,
-	AGENT_PANEL_SLIDE_MS,
-	AGENT_QUIET_MS,
-	BOARD_RESIZE_SETTLE_MS,
-	SHELL_AGE_TICK_MS,
-};
+export { AGENT_ELAPSED_TICK_MS, AGENT_QUIET_MS, BOARD_RESIZE_SETTLE_MS, SHELL_AGE_TICK_MS };
 
 /** Outer cap for any browser-owned export request. The wait ends on correlation, not delay. */
 const BROWSER_EXPORT_TIMEOUT_MS = 30_000;
@@ -477,7 +463,7 @@ export {
 	TRAFFIC_STREAK_MS,
 } from "@/shared/timing/lib/diagram-motion";
 export { EXPLORING_MS } from "@/shared/timing/lib/exploring";
-export { SIDEBAR_MS } from "@/shared/timing/lib/sidebar-motion";
+export { AGENT_PANEL_SLIDE_MS, SIDEBAR_MS } from "@/shared/timing/lib/column-motion";
 export {
 	RECORDING_ENCODE_FINISH_MS,
 	RECORDING_ENCODER_PROBE_MS,

@@ -9,7 +9,7 @@ import { act, cleanup, render } from "@testing-library/react";
 import { createElement, useEffect, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@/shared/code-target";
-import { NO_CHROME, PaneChromeContext, type PaneChrome } from "@/ui/components/PaneChrome";
+import { PaneChromeContext, usePaneChrome, type PaneChrome } from "@/ui/components/PaneChrome";
 import { SemanticBoardStage, type SemanticPaneReading } from "@/ui/semantic-board-canvas";
 import { withFixtureOrders } from "@/ui/semantic-board-canvas/tests/fixture-orders";
 
@@ -304,16 +304,19 @@ function paneReading(options: MountOptions): Record<string, unknown> {
 type Driven = MountOptions["driven"];
 
 /**
- * The shell's hold on a held pane's variant, which the navigator changes, and
- * on the step it asks the pane to present, which a narration or an agent
- * starts: neither is the pane's own control, so a test changes them from here.
+ * The shell's hold on a held pane's variant, which the navigator changes, on
+ * the step it asks the pane to present, which a narration or an agent starts,
+ * and on what it puts in the pane's header, which a second pane changes:
+ * none is the pane's own control, so a test changes them from here.
  */
 const shellHold: {
 	setVariant: ((variant: string | undefined) => void) | null;
 	setDriven: ((driven: Driven) => void) | null;
+	setChrome: ((chrome: PaneChrome) => void) | null;
 } = {
 	setVariant: null,
 	setDriven: null,
+	setChrome: null,
 };
 
 /**
@@ -341,6 +344,20 @@ function driveInShell(driven: Driven): void {
 	}
 	act(() => {
 		set(driven);
+	});
+}
+
+/**
+ * Change what the shell puts in the held pane's header, as another pane opening beside it does.
+ * @param chrome What the shell puts there now.
+ */
+function changeChromeInShell(chrome: PaneChrome): void {
+	const set = shellHold.setChrome;
+	if (set === null) {
+		throw new Error("No held pane is mounted; mount with { live: true }.");
+	}
+	act(() => {
+		set(chrome);
 	});
 }
 
@@ -382,12 +399,16 @@ function Held(props: HeldProps): JSX.Element {
 	const [variant, setVariant] = useState<string | undefined>(props.variant);
 	const [view, setView] = useState<string | undefined>(props.view);
 	const [driven, setDriven] = useState<Driven>(props.driven);
+	const alone = usePaneChrome();
+	const [chrome, setChrome] = useState(props.chrome);
 	useEffect(() => {
 		shellHold.setVariant = setVariant;
 		shellHold.setDriven = setDriven;
+		shellHold.setChrome = setChrome;
 		return (): void => {
 			shellHold.setVariant = null;
 			shellHold.setDriven = null;
+			shellHold.setChrome = null;
 		};
 	}, []);
 	/**
@@ -412,17 +433,21 @@ function Held(props: HeldProps): JSX.Element {
 	function onViewChange(chosen: string | null): void {
 		setView(chosen ?? undefined);
 	}
-	return createElement(SemanticBoardStage, {
-		board: "pipeline",
-		...paneReading(props),
-		variant,
-		onVariantChange,
-		view,
-		onViewChange,
-		driven,
-		selection: picked,
-		onSelect,
-	});
+	return createElement(
+		PaneChromeContext.Provider,
+		{ value: chrome ?? alone },
+		createElement(SemanticBoardStage, {
+			board: "pipeline",
+			...paneReading(props),
+			variant,
+			onVariantChange,
+			view,
+			onViewChange,
+			driven,
+			selection: picked,
+			onSelect,
+		}),
+	);
 }
 
 /**
@@ -441,6 +466,7 @@ function mountStage(selection: string | null = null, options: MountOptions = {})
 	function onSelect(id: string | null): void {
 		picks.push(id);
 	}
+	// A held pane puts its own header's contents in place, so that they can change.
 	const stage =
 		options.live === true
 			? createElement(Held, { ...options, selection, report: onSelect })
@@ -450,9 +476,11 @@ function mountStage(selection: string | null = null, options: MountOptions = {})
 					selection,
 					onSelect,
 				});
-	render(
-		Cache(createElement(PaneChromeContext.Provider, { value: options.chrome ?? NO_CHROME }, stage)),
-	);
+	const framed =
+		options.live !== true && options.chrome !== undefined
+			? createElement(PaneChromeContext.Provider, { value: options.chrome }, stage)
+			: stage;
+	render(Cache(framed));
 	return { picks };
 }
 
@@ -516,6 +544,7 @@ export {
 	server,
 	renderCalls,
 	chooseVariantInShell,
+	changeChromeInShell,
 	driveInShell,
 	mountStage,
 	openSidebarTab,

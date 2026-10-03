@@ -41,4 +41,4 @@ function usePaneChrome(): PaneChrome {
 	return useContext(PaneChromeContext);
 }
 
-export { NO_CHROME, PaneChromeContext, usePaneChrome, type PaneChrome };
+export { PaneChromeContext, usePaneChrome, type PaneChrome };

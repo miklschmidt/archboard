@@ -7,7 +7,9 @@
 // so refits the picture under the pointer that made it, a float the person
 // asked for that a released pick takes away, a panel that is put away without
 // giving the keyboard back, and a shortcut that does nothing until the sidebar
-// has been opened some other way.
+// has been opened some other way, a control that says the sidebar is shown while
+// a presented walkthrough has it stepped aside, and a tab chosen in a docked
+// sidebar that turns into a float when a second pane arrives.
 
 import { act, fireEvent } from "@testing-library/react";
 import { beforeAll, expect, test } from "bun:test";
@@ -15,10 +17,14 @@ import { createElement } from "react";
 
 import type { PaneChrome } from "@/ui/components/PaneChrome";
 import { PartSearch } from "@/ui/semantic-board-canvas/index";
+import { EXPLAINED_BOARD } from "@/ui/semantic-board-canvas/tests/render-answers";
 import {
+	changeChromeInShell,
 	drawing,
+	driveInShell,
 	inPicture,
 	mountStage,
+	openSidebarTab,
 	part,
 	server,
 	settle,
@@ -76,6 +82,14 @@ function column(): HTMLElement | null {
  */
 function placeNow(): string | null {
 	return column()?.getAttribute("data-place") ?? null;
+}
+
+/**
+ * Which part of the pane has focus.
+ * @returns Its `data-slot`, or null while nothing in the page has focus.
+ */
+function focusedSlot(): string | null {
+	return document.activeElement?.getAttribute("data-slot") ?? null;
 }
 
 /**
@@ -143,7 +157,7 @@ test("with two panes the sidebar rests, the control lays it over the picture, an
 		fireEvent.keyDown(inside, { key: "Escape" });
 	});
 	expect(part("semantic-sidebar-toggle").getAttribute("aria-expanded")).toBe("false");
-	expect(document.activeElement).toBe(part("semantic-sidebar-toggle"));
+	expect(focusedSlot()).toBe("semantic-sidebar-toggle");
 });
 
 test("a pick lays a resting sidebar over the picture and letting go puts it away, so neither refits the picture", async () => {
@@ -194,7 +208,7 @@ test("the search shortcut shows an away sidebar in the pane with focus and takes
 	pressSearchShortcut();
 	await settle();
 	expect(placeNow()).toBe("floating");
-	expect(document.activeElement).toBe(part("part-search").querySelector("input"));
+	expect(document.activeElement?.getAttribute("role")).toBe("combobox");
 });
 
 test("the search shortcut is for the pane with focus alone", async () => {
@@ -202,4 +216,49 @@ test("the search shortcut is for the pane with focus alone", async () => {
 	pressSearchShortcut();
 	await settle();
 	expect(column()).toBeNull();
+});
+
+test("letting go of a pick from inside the panel that it floated gives the keyboard back to the control", async () => {
+	await mountPane(SHARED);
+	await pickCard();
+	const clear = part("semantic-selection-clear");
+	act(() => clear.focus());
+	expect(focusedSlot()).toBe("semantic-selection-clear");
+
+	act(() => {
+		fireEvent.click(clear);
+	});
+	await settle();
+	expect(focusedSlot()).toBe("semantic-sidebar-toggle");
+});
+
+test("a tab chosen in a docked sidebar does not turn it into a float when a second pane arrives", async () => {
+	await mountPane();
+	openSidebarTab("selection");
+	await settle();
+	changeChromeInShell(SHARED);
+	await sidebarSettled();
+	expect(column()).toBeNull();
+});
+
+test("a presented walkthrough steps the sidebar aside: its control is held, and nothing brings the sidebar back", async () => {
+	server.documents["pipeline"] = EXPLAINED_BOARD;
+	await mountPane(SHARED);
+	await settle();
+	driveInShell({ request: "present", walkthrough: "tour", beat: 0 });
+	await settle();
+	expect(part("semantic-sidebar-toggle").getAttribute("aria-disabled")).toBe("true");
+	expect(part("semantic-sidebar-toggle").getAttribute("aria-expanded")).toBe("false");
+
+	press("semantic-sidebar-toggle");
+	pressSearchShortcut();
+	await settle();
+	expect(column()).toBeNull();
+
+	act(() => {
+		fireEvent.keyDown(document.body, { key: "Escape" });
+	});
+	await settle();
+	expect(column()).toBeNull();
+	expect(part("semantic-sidebar-toggle").hasAttribute("aria-disabled")).toBe(false);
 });

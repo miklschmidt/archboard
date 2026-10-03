@@ -9,7 +9,8 @@
 import { usesCommandKey } from "@/ui/components/command-key";
 
 /**
- * Whether a key event asks for the search: Ctrl or Command, Shift and K.
+ * Whether a key event asks for the search: Ctrl or Command, Shift and K, pressed
+ * once and not held down.
  * @param event The key event.
  * @returns Whether it does.
  */
@@ -18,6 +19,7 @@ function asksForSearch(event: KeyboardEvent): boolean {
 		(event.ctrlKey || event.metaKey) &&
 		event.shiftKey &&
 		!event.altKey &&
+		!event.repeat &&
 		event.key.toLowerCase() === "k"
 	);
 }

@@ -1,6 +1,6 @@
-// What the fake server answers a stage's render requests with: one drawn board
-// and the three ways a board can be there without a picture. The stage harness
-// serves them.
+// What the fake server answers a stage's requests with: one drawn board, the
+// three ways a board can be there without a picture, and a board document that
+// explains itself twice. The stage harness serves them.
 
 /**
  * One drawn board, with a card and an edge the atlas knows about and one group
@@ -72,4 +72,44 @@ const UNREADABLE = {
 	body: { success: false, code: "BOARD_UNREADABLE", error: "the board file is not valid JSON" },
 } as const;
 
-export { NOTHING_DRAWN, NO_SUCH_BOARD, UNREADABLE, drawing };
+/**
+ * A walkthrough of one step. Ids are one to eight characters, and a step's is its walkthrough's with a digit.
+ * @param id Its id.
+ * @param name Its name.
+ * @returns The walkthrough.
+ */
+function walkthrough(id: string, name: string): Record<string, unknown> {
+	return {
+		id,
+		name,
+		beats: [{ id: `${id}1`, heading: "First", body: "The first step.", subjects: [] }],
+	};
+}
+
+/** A board that explains itself twice. */
+const EXPLAINED_BOARD = {
+	schemaVersion: "2.0.0",
+	kind: "semantic-board",
+	id: "bd",
+	name: "pipeline",
+	level: "system",
+	version: 1,
+	createdAt: "2026-09-11T00:00:00.000Z",
+	updatedAt: "2026-09-11T00:00:00.000Z",
+	views: [],
+	current: "v1",
+	variants: [
+		{
+			id: "v1",
+			name: "as it is",
+			lifecycle: "current",
+			content: {
+				nodes: [{ id: "n1", name: "API", kind: "module" }],
+				edges: [],
+				walkthroughs: [walkthrough("tour", "The tour"), walkthrough("deploy", "Deploying")],
+			},
+		},
+	],
+};
+
+export { EXPLAINED_BOARD, NOTHING_DRAWN, NO_SUCH_BOARD, UNREADABLE, drawing };

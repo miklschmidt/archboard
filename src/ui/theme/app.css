@@ -654,12 +654,19 @@
 	transition-timing-function: ease-in;
 }
 
-/* The sidebar's scroll areas are quiet: a thin bar, no arrows, in the theme's
-   own tone, in place of the system's full-width one. */
+/* The sidebar's scroll areas are quiet: a thin bar in the theme's own tone, in
+   place of the system's full-width one. */
 [data-slot="semantic-sidebar-panel"],
 [data-slot="semantic-sidebar-panel"] * {
 	scrollbar-width: thin;
 	scrollbar-color: color-mix(in oklch, var(--muted-foreground) 45%, transparent) transparent;
+}
+
+/* Base UI keeps the tab panel that is leaving until its transitions end. The
+   fade belongs to the panel that arrives, so one that leaves is gone at once,
+   and two panels are never drawn in one frame. */
+[data-slot="semantic-sidebar-panel"] [data-slot="tabs-content"][data-ending-style] {
+	display: none;
 }
 
 /* A tab's panel arrives with a short fade. The selection's is keyed by what is

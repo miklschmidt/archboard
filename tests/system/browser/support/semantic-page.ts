@@ -139,6 +139,32 @@ function sidebarTab(evaluate: <T>(expression: string) => Promise<T>): Promise<st
 	);
 }
 
+/** What the part search in the pane's sidebar is doing. */
+interface PartSearchState {
+	/** Whether the field has focus. */
+	readonly focused: boolean;
+	/** What is typed in it. */
+	readonly value: string;
+	/** Whether a list of results is open under it. */
+	readonly listed: boolean;
+}
+
+/**
+ * What the part search in the pane's sidebar is doing.
+ * @param evaluate How the owner evaluates an expression in the page.
+ * @returns Whether the field has focus, what is typed and whether results are listed.
+ */
+function partSearchState(
+	evaluate: <T>(expression: string) => Promise<T>,
+): Promise<PartSearchState> {
+	return evaluate<PartSearchState>(
+		`(() => { const field = document.querySelector('[data-slot="part-search"] input');` +
+			` return { focused: field !== null && field === document.activeElement,` +
+			` value: field === null ? "" : field.value,` +
+			` listed: document.querySelector('[role="listbox"]') !== null }; })()`,
+	);
+}
+
 /**
  * Open one tab of the pane's sidebar, as a person does.
  * @param evaluate How the owner evaluates an expression in the page.
@@ -161,6 +187,7 @@ export {
 	SEMANTIC_SURFACE,
 	addressShowing,
 	openSidebarTab,
+	partSearchState,
 	pictureAtRest,
 	sidebarTab,
 	seedSemanticBoard,
