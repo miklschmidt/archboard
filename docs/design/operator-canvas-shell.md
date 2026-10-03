@@ -125,8 +125,8 @@ and so do the tab labels. A section heading is 12 px semibold in the muted
 colour and in sentence case. No section heading is a small uppercase label.
 Every row is at least 28 px high, and a long name wraps rather than being cut
 off. A choice's fill reaches 8 px past its text. The choice on screen takes the
-reading tone and a cobalt bar, as the navigator's selected row does. A row
-under the pointer takes half the reading tone and no bar, so it never looks
+reading tone, as the navigator's selected row does. A row
+under the pointer takes half the reading tone, so it never looks
 chosen. The spacing steps are 4, 8 and 16 px.
 
 Picking something out opens the selection tab. Letting go gives back the tab
@@ -213,15 +213,15 @@ filter that finds variants by name (dark).
   is on, the variants it finds are listed directly under their board, with no
   Earlier row. The header draws the same lifecycle mark before the variant it
   names (`src/ui/variant-lifecycle`). A board lists its
-  variants while it has more than one, and one of them is a proposal or a pane
-  shows the board. A board has one disclosure. Opening it lists its variants
+  variants while it has more than one. A board has one disclosure. Opening it lists its variants
   and the boards it drills down to together.
 - **The tree says what each pane shows.** The way to every pane's reading is
   open. While two panes are open, each pane letter sits on exactly one row:
   the variant's row where it is listed, else the board's row. One row is
-  selected, the one the active pane shows. It takes the reading tone and a
-  cobalt bar, and its name keeps the foreground colour. A row under the
-  pointer takes half the reading tone and no bar, so it never looks selected.
+  selected, the one the active pane shows. It takes the reading tone, and its name keeps the foreground colour. The tree
+  draws its levels with rails and elbows, and the line from the root to the
+  selected row is lit in Gold Mark. A row under the pointer takes half the
+  reading tone and no lit line, so it never looks selected.
   The pane sidebar marks its choices the same way. The active pane's board
   sets its name in semibold.
 - **Finding is the filter**: Ctrl K, `/`, or typing in the tree. It keeps tree

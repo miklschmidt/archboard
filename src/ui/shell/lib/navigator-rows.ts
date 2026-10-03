@@ -122,7 +122,7 @@ function unbuiltBoard(board: CatalogBoard): boolean {
  */
 function boardOpens(inputs: NavigatorRowInputs, node: BoardNode, listed: number): boolean {
 	if (inputs.query.length > 0) return listed > 0;
-	return node.children.length > 0 || listsVariants(inputs.panes, node.board);
+	return node.children.length > 0 || listsVariants(node.board);
 }
 
 /**

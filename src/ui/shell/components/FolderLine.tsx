@@ -21,7 +21,9 @@ import type { FolderRow } from "@/ui/shell/types/navigator-rows";
  * @param props The row and the tree's handlers.
  * @returns The row.
  */
-function FolderLine(props: RowHandlers & { readonly row: FolderRow }): JSX.Element {
+function FolderLine(
+	props: RowHandlers & { readonly row: FolderRow; readonly guides?: string | undefined },
+): JSX.Element {
 	const { row } = props;
 	return (
 		<TreeRow {...props} label={`${row.name}, folder, ${row.count} boards`}>

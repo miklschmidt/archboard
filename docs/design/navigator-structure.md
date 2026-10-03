@@ -269,11 +269,11 @@ and their place first under the board.
   first. The row opens when a pane shows one of them. While a filter is on,
   the variants it finds are listed directly under their board, in the same
   order, with no Earlier row.
-- **A board lists its variants while it has more than one, and one of them is
-  a proposal or a pane shows the board.** A board has one disclosure, and
-  opening it lists its variants and its child boards together. A board
-  whose other variants are all history lists nothing until a pane shows it.
-  Walking a drill chain then shows the drill chain.
+- **A board lists its variants while it has more than one.** A board has one
+  disclosure, and opening it lists its variants and its child boards
+  together. A board whose other variants are all history lists its current
+  variant and one Earlier row, so a board with a history always shows a
+  chevron, whether or not a pane shows it.
 - **The draft count stays on the board row**, as Figma keeps a branch count on
   a file, so a reader sees which boards carry proposals without opening them.
 

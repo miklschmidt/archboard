@@ -22,7 +22,11 @@ import type { EarlierRow } from "@/ui/shell/types/navigator-rows";
  * @returns The row.
  */
 function EarlierLine(
-	props: RowHandlers & { readonly row: EarlierRow; readonly lane?: Lane | undefined },
+	props: RowHandlers & {
+		readonly row: EarlierRow;
+		readonly lane?: Lane | undefined;
+		readonly guides?: string | undefined;
+	},
 ): JSX.Element {
 	const { row } = props;
 	return (

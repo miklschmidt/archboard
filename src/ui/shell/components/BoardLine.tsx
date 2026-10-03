@@ -94,7 +94,9 @@ function BoardLamp(props: { readonly row: BoardRow }): JSX.Element | null {
  * @param props The row and the tree's handlers.
  * @returns The row.
  */
-function BoardLine(props: RowHandlers & { readonly row: BoardRow }): JSX.Element {
+function BoardLine(
+	props: RowHandlers & { readonly row: BoardRow; readonly guides?: string | undefined },
+): JSX.Element {
 	const { row } = props;
 	return (
 		<TreeRow {...props} label={boardRowName(row)}>

@@ -132,7 +132,7 @@ every role and changes the values. The file palette.css holds both themes.
 - **Gold Top and Gold Bottom** (oklch(0.87 0.135 88) to oklch(0.805 0.142 81)): the subtle gradient from top to bottom of a primary action. Both themes use the same values.
 - **Gold Rim** (oklch(0.7 0.125 76), dark oklch(0.58 0.11 74)): the edge of a primary action, one pixel wide.
 - **Gold Ink** (oklch(0.2 0.02 70)): text and icons on gold. It has a contrast of at least 8.5:1 on every stop of the gradient.
-- **Gold Mark** (oklch(0.72 0.15 77), dark oklch(0.86 0.125 86)): the gold as a mark: a 2px bar or underline, a ring, an icon or the edge of something chosen. It marks the chosen row, the active tab and the underline of a link.
+- **Gold Mark** (oklch(0.72 0.15 77), dark oklch(0.86 0.125 86)): the gold as a mark: a 2px bar or underline, a ring, an icon or the edge of something chosen. It lights the way to the chosen row, the active tab and the underline of a link.
 - **Gold Tint** (oklch(0.968 0.03 88), dark oklch(0.29 0.045 80)): a quiet wash behind something chosen on a page.
 
 ### Neutral
@@ -258,7 +258,7 @@ tone.
 
 ### Navigation
 
-- **Style:** a tree on Chrome Chalk with rows of 28px. The chosen row is a plate in Reading Tone with `shadow-raised` and a 2px bar of Gold Mark on its left. Tabs have an underline of Gold Mark. A link is ink with an underline of Gold Mark.
+- **Style:** a tree on Chrome Chalk with rows of 28px. Rails and elbows draw its levels, and the line from the root to the chosen row is lit in Gold Mark. The chosen row is a plate in Reading Tone with `shadow-raised`. Tabs have an underline of Gold Mark. A link is ink with an underline of Gold Mark.
 
 ### Agent dock
 

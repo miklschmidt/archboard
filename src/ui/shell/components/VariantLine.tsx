@@ -35,7 +35,11 @@ function variantRowName(row: VariantRow): string {
  * @returns The row.
  */
 function VariantLine(
-	props: RowHandlers & { readonly row: VariantRow; readonly lane?: Lane | undefined },
+	props: RowHandlers & {
+		readonly row: VariantRow;
+		readonly lane?: Lane | undefined;
+		readonly guides?: string | undefined;
+	},
 ): JSX.Element {
 	const { row } = props;
 	const { lifecycle } = row.variant;
