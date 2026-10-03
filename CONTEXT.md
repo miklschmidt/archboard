@@ -396,8 +396,10 @@ _Avoid_: score, cost, quality metric
 What the picture leaves as drawn when a user picks a part out or rests the
 pointer on one: the part and everything it contains, every relationship that
 touches any of it, the parts at their other ends, and the containers that hold
-them. The rest recedes. The light is attention, like the selection: nothing is
-written, and a presented walkthrough step or a selected group takes its place.
+them. The rest recedes. A relationship is lit along the whole of its route, even
+where the picture has another relationship draw a stretch of a lane they share.
+The light is attention, like the selection: nothing is written, and a presented
+walkthrough step or a selected group takes its place.
 _Avoid_: highlight, focus mode, dim, spotlight
 
 **Trace**:

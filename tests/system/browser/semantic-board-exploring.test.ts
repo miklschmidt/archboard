@@ -26,8 +26,8 @@ import {
 import { serverPath } from "./support/navigator-support.ts";
 
 // Exploring a board in a real browser: a card opens by flying into it, the
-// part a person pokes lights what it is wired to, and the picture gives its
-// words up when it is seen from far.
+// part a person pokes lights what it is wired to along the whole of each route,
+// and the picture gives its words up when it is seen from far.
 //
 // What the stage's module owners cannot see is the page around them: the style
 // sheet that makes the rest recede, the layout that gives the flight its
@@ -174,6 +174,37 @@ function filtersByName(browser: AgentBrowserSession): Promise<Record<string, str
 	);
 }
 
+/** What the page paints of the lit relationships' lines. */
+interface LitInk {
+	/** How many lit lines the picture cuts a stretch out of because another line of a trunk draws it. */
+	readonly trunked: number;
+	/** How many lit lines still have that stretch cut out of what the browser paints. */
+	readonly cut: number;
+}
+
+/**
+ * Whether the lines the picture is lit along are painted whole.
+ *
+ * The picture has one line of a trunk draw each shared stretch and cuts it from
+ * the others with a mask whose cutouts for it have butt ends. A lit line must
+ * not lose that stretch, or the lane it rides looks receded along the trunk.
+ * @param browser The page.
+ * @returns How many lit lines are cut for a trunk, and how many still are.
+ */
+function litInk(browser: AgentBrowserSession): Promise<LitInk> {
+	return browser.eval<LitInk>(
+		`(() => { const root = document.querySelector("${SURFACE} > svg");` +
+			` const trunk = (mask) => mask !== null && [...mask.querySelectorAll("path")].some((cut) => cut.getAttribute("stroke-linecap") === "butt");` +
+			` const named = (url) => { const id = /#([^")]+)/.exec(url)?.[1]; return id === undefined ? null : root.querySelector("mask[id='" + id + "']"); };` +
+			` let trunked = 0; let cut = 0;` +
+			` for (const line of root.querySelectorAll("g[data-semantic-kind='edge'].is-lit[mask]")) {` +
+			`   if (!trunk(named(line.getAttribute("mask")))) continue;` +
+			`   trunked += 1;` +
+			`   if (trunk(named(getComputedStyle(line).maskImage))) cut += 1; }` +
+			` return { trunked, cut }; })()`,
+	);
+}
+
 /**
  * Press a key at the stage, the way a person at its tab stop does.
  * @param browser The page.
@@ -251,6 +282,26 @@ test("a board opens by flying into its card, a poke lights what it is wired to, 
 		},
 	});
 	expect(pipeline.status).toBe(200);
+	// One module calls three others, whose routes leave it along one lane.
+	const fanout = await request<{ success: boolean }>("/api/semantic-boards/create", {
+		method: "POST",
+		doing: "drawing the fan-out",
+		body: {
+			board: "fanout",
+			origin: "agent",
+			create: {
+				level: "module",
+				nodes: ["Hub", "North", "South", "East"].map((name) => ({ name, kind: "module" })),
+				edges: ["North", "South", "East"].map((to) => ({
+					from: "Hub",
+					to,
+					kind: "call",
+					label: `asks ${to}`,
+				})),
+			},
+		},
+	});
+	expect(fanout.status).toBe(200);
 
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", `${server.base}/?paneA=pipeline`]);
@@ -337,4 +388,22 @@ test("a board opens by flying into its card, a poke lights what it is wired to, 
 		"the relationship labels to return once the whole board is fitted again",
 		WAIT,
 	);
+
+	// A relationship is lit along the whole of its route, though the picture has
+	// another line of its trunk draw the first stretch of it.
+	await browser.run(["open", `${server.base}/?paneA=fanout`]);
+	await pollUntil(
+		() => stageState(browser),
+		(state) => state === "drawn",
+		"the fan-out to be drawn",
+		WAIT,
+	);
+	await pick(browser, (await drawnId(browser, "East")) ?? "");
+	const ink = await pollUntil(
+		() => litInk(browser),
+		(found) => found.trunked > 0,
+		"the poked card's line to be one the picture cuts a stretch out of",
+		WAIT,
+	);
+	expect(ink.cut).toBe(0);
 });
