@@ -22,6 +22,8 @@ import {
 	useSyncExternalStore,
 } from "react";
 
+import { BOARD_RESIZE_SETTLE_MS } from "@/shared/timing/timing";
+import { frameClock } from "@/ui/frame-clock";
 import { useCameraGlide } from "@/ui/semantic-board-canvas/hooks/use-camera-glide";
 import {
 	IDENTITY_CAMERA,
@@ -282,9 +284,21 @@ function useBoardCamera(): BoardCamera {
 		if (typeof ResizeObserver !== "function") {
 			return undefined;
 		}
-		const observer = new ResizeObserver(measure);
+		// A size that keeps changing, as a slide beside the pane does, is fitted to once it settles.
+		let settling: number | undefined;
+		/** Stop waiting for the size to settle. */
+		const stopWaiting = (): void => {
+			if (settling !== undefined) frameClock().cancelAfter(settling);
+		};
+		const observer = new ResizeObserver(() => {
+			stopWaiting();
+			settling = frameClock().after(BOARD_RESIZE_SETTLE_MS, measure);
+		});
 		observer.observe(element);
-		return (): void => observer.disconnect();
+		return (): void => {
+			stopWaiting();
+			observer.disconnect();
+		};
 	}, [viewport]);
 
 	const panBy = useCallback(

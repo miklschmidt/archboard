@@ -373,31 +373,13 @@
 	}
 }
 
-/* The conversation's content slides in from the navigator and out again by a
-   transform, on a layer of its own, so nothing is laid out as it moves: the
-   columns hold their final sizes and the content holds its width. Shutting eases
-   in, so it leaves briskly; opening eases out, so it settles. */
-@keyframes conversation-in {
-	from {
-		transform: translateX(-100%);
-	}
-}
-@keyframes conversation-out {
-	to {
-		transform: translateX(-100%);
-	}
-}
-[data-slot="conversation-slide"][data-slide="in"] {
-	animation: conversation-in var(--panel-slide-ms, 220ms) cubic-bezier(0.22, 1, 0.36, 1);
-	will-change: transform;
-}
-[data-slot="conversation-slide"][data-slide="out"] {
-	animation: conversation-out var(--panel-slide-ms, 220ms) cubic-bezier(0.55, 0, 0.8, 0.4) forwards;
-	will-change: transform;
-}
-@media (prefers-reduced-motion: reduce) {
-	[data-slot="conversation-slide"] {
-		animation: none !important;
+/* The conversation's column is eased to its size while it opens or shuts
+   (data-sliding), so the pane centre gives way frame by frame. The content holds
+   its width, so it slides in from the navigator and never reflows. A drag is not
+   eased: it must stay under the pointer. */
+@media (prefers-reduced-motion: no-preference) {
+	[data-slot="resizable-panel-group"][data-sliding] > [data-panel] {
+		transition: flex-grow var(--panel-slide-ms, 220ms) cubic-bezier(0.22, 1, 0.36, 1);
 	}
 }
 

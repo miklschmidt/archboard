@@ -14,6 +14,9 @@ import { withFixtureOrders } from "@/ui/semantic-board-canvas/tests/fixture-orde
 /** The window on the diagram every measured element reports in these tests. */
 const VIEWPORT = Object.freeze({ width: 800, height: 600 });
 
+/** The window the elements measure now: a test may narrow it, and each test starts from VIEWPORT. */
+const room: { width: number; height: number } = { ...VIEWPORT };
+
 beforeAll(() => {
 	GlobalRegistrator.register();
 	Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
@@ -25,7 +28,7 @@ beforeAll(() => {
 	 * @returns The one window these tests measure everything through.
 	 */
 	function measured(): DOMRect {
-		return new DOMRect(0, 0, VIEWPORT.width, VIEWPORT.height);
+		return new DOMRect(0, 0, room.width, room.height);
 	}
 	Element.prototype.getBoundingClientRect = measured;
 });
@@ -59,6 +62,7 @@ const realFetch = globalThis.fetch;
 
 afterEach(() => {
 	cleanup();
+	Object.assign(room, VIEWPORT);
 	globalThis.fetch = realFetch;
 	server.reply = "pending";
 	server.calls = [];
@@ -556,6 +560,7 @@ function inPicture(id: string): Element {
 
 export {
 	VIEWPORT,
+	room,
 	type MountOptions,
 	settle,
 	server,
