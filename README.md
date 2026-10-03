@@ -173,7 +173,7 @@ archboard semantic rasterize "Web shop" --scale 2 --out web-shop.png
   <img alt="The Web shop board as it is built today: the storefront, a checkout API with Place order, Basket route and a timeout guard, the orders database and the basket cache. It also has the Payments and Fulfilment groups." src="docs/readme/web-shop-light.svg" width="100%">
 </picture>
 
-<p align="center"><sub>The SVG embeds its fonts and keeps the traffic animation: the streaks on the hot path move.</sub></p>
+<p align="center"><sub>The SVG embeds its fonts and keeps the traffic animation: the pulses on the hot path fly.</sub></p>
 
 ---
 

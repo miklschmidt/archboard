@@ -107,7 +107,7 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
      name. Then the groups, each with its colour. Choosing a group selects
      every member.
   3. **What do the marks mean?** The legend of what the picture draws: its node
-     kinds, its relationship kinds, and what a heavier line and a streak mean.
+     kinds, its relationship kinds, and what a heavier line and a pulse mean.
   4. **The layout engine**, a preference of this browser, in one row at the
      foot.
 
