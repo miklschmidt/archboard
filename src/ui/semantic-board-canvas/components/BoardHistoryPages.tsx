@@ -139,7 +139,7 @@ function TimelineRow(props: {
 				data-variant={variant.id}
 				data-lifecycle={variant.lifecycle}
 				onClick={choose}
-				className="hover:bg-sidebar-accent/50 aria-pressed:bg-sidebar-accent rounded-control relative flex w-full min-w-0 py-3 pr-4 text-left disabled:cursor-default"
+				className="hover:bg-sidebar-accent/50 aria-pressed:bg-sidebar-accent aria-pressed:shadow-raised rounded-control relative flex w-full min-w-0 py-3 pr-4 text-left disabled:cursor-default"
 				style={{ paddingLeft: markX + TEXT_AFTER_MARK }}
 			>
 				{drawn && (
@@ -213,7 +213,7 @@ function WalkthroughCard(props: WalkthroughCardProps): JSX.Element {
 	const { walkthrough } = props;
 	const count = walkthrough.beats.length;
 	return (
-		<li className="border-border bg-card rounded-panel min-w-0 border p-4">
+		<li className="border-border bg-card shadow-card rounded-panel min-w-0 border p-4">
 			<div className="flex items-center justify-between gap-3">
 				<h3 className="title-name truncate">{walkthrough.name}</h3>
 				<span className="text-body text-muted-foreground shrink-0">

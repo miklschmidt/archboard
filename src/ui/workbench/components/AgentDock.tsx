@@ -94,7 +94,7 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 		<section
 			data-slot="agent-dock"
 			aria-label="Agent"
-			className="border-border flex shrink-0 flex-col gap-3 border-t px-4 pt-4 pb-3"
+			className="border-border bg-raised shadow-edge-up relative flex shrink-0 flex-col gap-3 border-t px-4 pt-4 pb-3"
 		>
 			<div className="flex items-center gap-3">
 				<VoiceCircle voice={voice} actions={actions} problemId={VOICE_PROBLEM_ID} />

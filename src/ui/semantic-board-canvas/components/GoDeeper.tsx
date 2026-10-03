@@ -62,10 +62,10 @@ function Go(props: GoProps): JSX.Element {
 			title={props.title}
 			onClick={props.onClick}
 			className={cn(
-				"rounded-control flex min-h-11 w-full min-w-0 items-center gap-3 px-3 py-1.5 text-left",
+				"rounded-control flex min-h-11 w-full min-w-0 items-center gap-3 border px-3 py-1.5 text-left active:translate-y-px",
 				props.primary === true
-					? "bg-primary text-primary-foreground hover:bg-primary/90"
-					: "border-input hover:bg-sidebar-accent/50 border",
+					? "primary-finish"
+					: "border-border bg-card shadow-raised hover:bg-muted active:shadow-pressed dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
 			)}
 		>
 			<span aria-hidden="true" className="flex size-4 shrink-0 [&_svg]:size-full">
@@ -216,7 +216,7 @@ function GoDeeper(props: GoDeeperProps): JSX.Element | null {
 	return (
 		<footer
 			data-slot="semantic-go-deeper"
-			className="border-border bg-sidebar flex shrink-0 flex-col gap-2 border-t px-4 py-4"
+			className="border-border bg-raised shadow-edge-up relative flex shrink-0 flex-col gap-2 border-t px-4 py-4"
 		>
 			<SidebarHeading level={3}>Go deeper</SidebarHeading>
 			{target !== undefined && (

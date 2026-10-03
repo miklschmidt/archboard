@@ -290,7 +290,7 @@ function PaneHeader(props: PaneHeaderProps): JSX.Element {
 		<>
 			<header
 				data-slot="pane-header"
-				className="border-border bg-sidebar h-chrome @container/pane-header flex shrink-0 items-center border-b pr-2 pl-4 in-data-presenting:hidden"
+				className="border-border bg-sidebar h-chrome shadow-edge-down @container/pane-header relative z-30 flex shrink-0 items-center border-b pr-2 pl-4 in-data-presenting:hidden"
 			>
 				<div className="mr-5 flex min-w-0 shrink items-center gap-3">
 					{chrome.letter}

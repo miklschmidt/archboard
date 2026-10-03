@@ -135,6 +135,10 @@
 	--color-primary-text: var(--primary-text);
 	/* The accent as a quiet tint behind something chosen on a page. */
 	--color-primary-subtle: var(--primary-subtle);
+	/* The rim of a primary action's gold (`primary-finish`). */
+	--color-primary-edge: var(--primary-edge);
+	/* A plane raised over the chrome: the tray at the foot of a column. */
+	--color-raised: var(--raised);
 	--color-popover-foreground: var(--popover-foreground);
 	--color-popover: var(--popover);
 	--color-card-foreground: var(--card-foreground);
@@ -161,10 +165,23 @@
 	--radius-chip: 2px;
 	--radius-control: 3px;
 	--radius-panel: 4px;
-	/* Depth. The chrome is flat: regions are separated by one-pixel rules.
-	   Only what floats over the picture or the chrome casts a shadow. */
-	--shadow-float: 0 6px 20px -6px oklch(0.2 0.02 70 / 0.28), 0 1px 3px oklch(0.2 0.02 70 / 0.12);
-	/* Motion. Controls move in 120ms; the chrome is flat and quick. */
+	/* Depth: the elevation scale of palette.css, one shadow utility per plane
+	   (`shadow-well`, `shadow-raised`, `shadow-float` and the rest). The
+	   chrome that casts an edge shadow onto the picture is `relative z-30`, so
+	   its shadow lies over the picture and a board's pages (z-20) and under
+	   menus and dialogs (z-50). */
+	--shadow-well: var(--elevation-well);
+	--shadow-edge-down: var(--elevation-edge-down);
+	--shadow-edge-side: var(--elevation-edge-side);
+	--shadow-edge-up: var(--elevation-edge-up);
+	--shadow-raised: var(--elevation-raised);
+	--shadow-pressed: var(--elevation-pressed);
+	--shadow-card: var(--elevation-card);
+	--shadow-float: var(--elevation-float);
+	--shadow-dialog: var(--elevation-dialog);
+	--shadow-primary: var(--elevation-primary);
+	--shadow-primary-pressed: var(--elevation-primary-pressed);
+	/* Motion. Controls move in 120ms; the chrome is quick. */
 	--default-transition-duration: 120ms;
 	--radius-sm: calc(var(--radius) * 0.6);
 	--radius-md: calc(var(--radius) * 0.8);
@@ -250,6 +267,35 @@
 	   root from src/shared/shell-geometry: geometry is not the palette's. */
 	/* Small corners: controls about 3px, dialogs about 4px. */
 	--radius: 0.3rem;
+}
+
+/* The finish of a region's one primary action (palette.css, "The accent"): a
+   piece of gold with a subtle top-to-bottom gradient, a highlight along its
+   top edge, a darker rim and a shadow that seats it. Hovered, it brightens.
+   Pressed, the gradient turns over and the shadow moves inside; the control
+   sinks a pixel with the `active:translate-y-px` its site gives it. A site
+   that has a disabled look of its own sets it with `disabled:` utilities. */
+@utility primary-finish {
+	color: var(--primary-foreground);
+	border-color: var(--primary-edge);
+	background-color: var(--primary-bottom);
+	background-image: linear-gradient(180deg, var(--primary-top), var(--primary-bottom));
+	@apply shadow-primary;
+	&:hover:not(:disabled) {
+		background-image: linear-gradient(
+			180deg,
+			color-mix(in oklch, var(--primary-top), white 16%),
+			color-mix(in oklch, var(--primary-bottom), white 9%)
+		);
+	}
+	&:active:not(:disabled) {
+		background-image: linear-gradient(
+			180deg,
+			color-mix(in oklch, var(--primary-bottom), black 4%),
+			var(--primary-top)
+		);
+		@apply shadow-primary-pressed;
+	}
 }
 
 /* A name set as a title, in the display face: a pane's board, a picked part,

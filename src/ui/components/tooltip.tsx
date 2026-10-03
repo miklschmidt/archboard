@@ -22,7 +22,7 @@ function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {
  */
 const LOOKS = {
 	label: {
-		popup: "bg-foreground text-background max-w-xs rounded-md px-3 py-1.5",
+		popup: "bg-foreground text-background shadow-float max-w-xs rounded-md px-3 py-1.5",
 		arrow: "bg-foreground fill-foreground",
 		arrowPadding: 5,
 	},
@@ -30,7 +30,7 @@ const LOOKS = {
 		// Clear of the card's rounded corner when the card is pushed against an edge of the screen.
 		arrowPadding: 14,
 		popup:
-			"bg-popover text-popover-foreground border-border max-h-(--available-height) max-w-[min(24rem,calc(var(--available-width)-1rem))] rounded-lg border px-3.5 py-3 shadow-lg shadow-black/10 dark:shadow-black/40",
+			"bg-popover text-popover-foreground border-border max-h-(--available-height) max-w-[min(24rem,calc(var(--available-width)-1rem))] rounded-lg border px-3.5 py-3 shadow-float",
 		arrow:
 			"bg-popover fill-popover border-border data-[side=bottom]:border-t data-[side=bottom]:border-l data-[side=left]:border-t data-[side=left]:border-r data-[side=right]:border-b data-[side=right]:border-l data-[side=top]:border-r data-[side=top]:border-b",
 	},

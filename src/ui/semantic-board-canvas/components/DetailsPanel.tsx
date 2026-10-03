@@ -56,7 +56,7 @@ function PanelTitle(props: PanelTitleProps): JSX.Element {
 		<div className="flex items-center gap-3 px-4 py-4">
 			<span
 				aria-hidden="true"
-				className="border-primary-text bg-primary-subtle text-primary-text flex size-10 shrink-0 items-center justify-center rounded-full border-[1.5px]"
+				className="border-primary-text bg-primary-subtle text-primary-text shadow-raised flex size-10 shrink-0 items-center justify-center rounded-full border-[1.5px]"
 			>
 				<KindIcon look={props.look} kind={node.kind} className="size-5" />
 			</span>

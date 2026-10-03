@@ -25,8 +25,31 @@ const TYPE_ROLES = [
 	"subtitle",
 ] as const;
 
+/**
+ * The elevations `app.css` defines under `--shadow-*` (palette.css explains
+ * them). Without these, `cn` reads `shadow-raised` as a shadow colour, keeps
+ * it beside a `shadow-none` meant to replace it, and drops it beside a
+ * `shadow-black/10`.
+ */
+const ELEVATIONS = [
+	"well",
+	"edge-down",
+	"edge-side",
+	"edge-up",
+	"raised",
+	"pressed",
+	"card",
+	"float",
+	"dialog",
+	"primary",
+	"primary-pressed",
+] as const;
+
 const cn = createCn({
 	extend: {
+		theme: {
+			shadow: [...ELEVATIONS],
+		},
 		classGroups: {
 			"font-size": [{ text: [...TYPE_ROLES] }],
 		},
