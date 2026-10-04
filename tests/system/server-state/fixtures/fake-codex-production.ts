@@ -4,6 +4,8 @@ import {
 	configFixture,
 	dynamicItem,
 	explainStep,
+	narrating,
+	speakAgain,
 	startRealtime,
 	coordinatorModelFixture,
 	modelFixtures,
@@ -85,12 +87,6 @@ const realtimeSessions = new Map<string, string>();
 let workhorseThreadId: string | null = null;
 let reverseRequestsSent = false;
 let speechSequence = 0;
-/**
- * Whether the fixture is a recording's voice, which speaks only about steps it is handed.
- * @returns True when the control file says it narrates.
- */
-const narrating = (): boolean =>
-	(JSON.parse(readFileSync(controlPath, "utf8")) as { narrates?: boolean }).narrates === true;
 
 const configResponse = () => ({
 	config: { ...configFixture, sqlite_home: process.env["CODEX_SQLITE_HOME"] },
@@ -401,13 +397,13 @@ const handle = (frame: WireFrame): void => {
 			}
 			realtimeSessions.set(threadId, String(params["realtimeSessionId"]));
 			respond(frame as never, {});
-			setTimeout(() => startRealtime(notify, params, narrating()), 10);
+			setTimeout(() => startRealtime(notify, params, narrating(controlPath)), 10);
 			return;
 		}
 		case "thread/realtime/appendSpeech": {
 			respond(frame as never, {});
 			const realtimeSessionId = realtimeSessions.get(String(params["threadId"])) ?? null;
-			if (narrating()) explainStep(notify, params, realtimeSessionId, ++speechSequence);
+			if (narrating(controlPath)) explainStep(notify, params, realtimeSessionId, ++speechSequence);
 			return;
 		}
 		case "thread/realtime/stop": {
@@ -461,10 +457,12 @@ const controlTimer = setInterval(() => {
 			exit?: unknown;
 			completeLogin?: boolean;
 			completeWorkhorseTurn?: boolean;
+			speaks?: number;
 		};
 		if (control.exit === true) {
 			process.exit(17);
 		}
+		speakAgain(notify, realtimeSessions, control.speaks);
 		const workhorse = threads.get(workhorseThreadId ?? "");
 		const turn = workhorse?.turns[0];
 		if (control.completeWorkhorseTurn === true && workhorse && turn?.["status"] === "inProgress") {

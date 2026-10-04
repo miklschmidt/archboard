@@ -1,7 +1,9 @@
-import { writeFileSync } from "node:fs";
+import { readFileSync, renameSync, writeFileSync } from "node:fs";
 
+import type { ProductionFixture } from "../../server-state/support/codex-production.ts";
 import { pollUntil } from "./agent-browser.ts";
 import type { AgentBrowserSession } from "./agent-browser.ts";
+import { productionFixtureRecords } from "./codex-workbench-production.ts";
 
 interface ControlledVoiceMediaAudit {
 	readonly localTracks: readonly { readonly enabled: boolean; readonly stopCount: number }[];
@@ -218,6 +220,48 @@ async function setControlledOutputSilent(browser: BrowserOperator, silent: boole
 }
 
 export { setControlledOutputSilent };
+
+/**
+ * Have every live voice say the fake's scripted line once more, a word at a time, as a real
+ * session's transcript arrives. It waits for the fake to carry a voice session first, since a
+ * session that has not started says nothing. The control file is replaced whole, so the fake
+ * never reads half of it.
+ * @param fixture The fake Codex's files.
+ * @returns The item id the line is said under.
+ */
+async function askToSpeak(fixture: ProductionFixture): Promise<string> {
+	await pollUntil(
+		() =>
+			productionFixtureRecords<FixtureRecord>(fixture).some(
+				(record) => record.kind === "notification" && record.method === "thread/realtime/started",
+			),
+		Boolean,
+		"the fake Codex to carry a live voice session",
+	);
+	const control = JSON.parse(readFileSync(fixture.controlPath, "utf8")) as { speaks?: number };
+	const speaks = (control.speaks ?? 0) + 1;
+	const next = `${fixture.controlPath}.next`;
+	writeFileSync(next, JSON.stringify({ ...control, speaks }));
+	renameSync(next, fixture.controlPath);
+	return `controlled-assistant-transcript-${speaks}`;
+}
+
+/**
+ * Whether the fake Codex has said the whole of one line.
+ * @param fixture The fake Codex's files.
+ * @param itemId The line's item id.
+ * @returns True once its last word is out.
+ */
+function lineSaid(fixture: ProductionFixture, itemId: string): boolean {
+	return productionFixtureRecords<FixtureRecord>(fixture).some(
+		(record) =>
+			record.kind === "notification" &&
+			record.method === "thread/realtime/item/completed" &&
+			(record.params?.["item"] as { readonly id?: unknown } | undefined)?.id === itemId,
+	);
+}
+
+export { askToSpeak, lineSaid };
 
 /** The coordinator thread the fixture creates first, at Talk; voice runs on it. */
 const RAW_COORDINATOR_THREAD_ID = "thread-1";

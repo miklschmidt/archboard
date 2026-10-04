@@ -1,7 +1,84 @@
 // What the browser owners of the voice read of the page: where the voice is and where its orb is,
 // the page a frame at a time while the orb moves, and the subtitles control in either surface.
+// And how they get a voice: the production server over the fake Codex, a page whose microphone,
+// peer connection and audio are stand-ins, and a press of Talk. The fake's model says a scripted
+// line a word at a time, and its output is a steady tone, which the voice hears as speaking.
 
-import type { AgentBrowserSession } from "./agent-browser.ts";
+import { mkdirSync } from "node:fs";
+import { join } from "node:path";
+
+import {
+	prepareProductionFixture,
+	type ProductionFixture,
+} from "../../server-state/support/codex-production.ts";
+import { startOwnedServer, type OwnedServer } from "../../support/owned-server.ts";
+import {
+	browserTestRoots,
+	registerServerBase,
+	serverTestEnvironment,
+	type AgentBrowserSession,
+} from "./agent-browser.ts";
+import { openWithControlledVoiceMedia } from "./codex-live-voice.ts";
+
+/** The production server, with the fake Codex in place of the real one. */
+const VOICE_SERVER = join(
+	import.meta.dir,
+	"../../server-state/fixtures/codex-production-server.ts",
+);
+const FAKE_CODEX = join(import.meta.dir, "../../server-state/fixtures/fake-codex-production.ts");
+
+/** A server whose Codex is the fake, and the fake's files. */
+export interface VoiceServer {
+	readonly server: OwnedServer;
+	readonly fixture: ProductionFixture;
+}
+
+/**
+ * Start a server whose Codex is the fake, so that Talk starts a real voice session.
+ * @param resources What tears it down.
+ * @param vaultName The vault's directory under the owner's root.
+ * @returns The server and the fake's files.
+ */
+export async function startVoiceServer(
+	resources: AsyncDisposableStack,
+	vaultName: string,
+): Promise<VoiceServer> {
+	const fixture = prepareProductionFixture(resources, FAKE_CODEX);
+	const vault = join(browserTestRoots().ownerRoot, vaultName);
+	mkdirSync(vault, { recursive: true });
+	const server = await startOwnedServer({
+		serverPath: VOICE_SERVER,
+		vault,
+		env: serverTestEnvironment({
+			ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
+			ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
+			ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
+		}),
+	});
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	return { server, fixture };
+}
+
+/**
+ * Open a page whose media are stand-ins, so that Talk needs no microphone.
+ * @param browser The browser.
+ * @param url The page.
+ */
+export const openForVoice = (browser: AgentBrowserSession, url: string): Promise<void> =>
+	openWithControlledVoiceMedia(
+		browser,
+		url,
+		join(browserTestRoots().ownerRoot, "controlled-voice-media.js"),
+	);
+
+/**
+ * Press Talk in the agent dock.
+ * @param browser The page.
+ * @returns What the browser said.
+ */
+export const talk = (browser: AgentBrowserSession): Promise<string> =>
+	browser.run(["click", '[data-slot="agent-dock"] [data-slot="voice-circle"]']);
 
 /** The subtitles control in the voice box. */
 export const SUBTITLES_IN_BOX = '[data-slot="voice-box"] [data-slot="voice-subtitles-toggle"]';
@@ -24,6 +101,8 @@ export interface VoiceWhere {
 	readonly orbs: number;
 	/** The surface that holds keyboard focus: the voice box, the dock, or neither. */
 	readonly focus: string | null;
+	/** Whether the box's words show. */
+	readonly words: boolean;
 	/** Whether the box's own words let the picture under them take the pointer. */
 	readonly wordsClickThrough: boolean;
 	/** Whether the box's subtitles control takes the pointer. */
@@ -83,6 +162,7 @@ export const WHERE = `(() => {
 		keyName: key?.getAttribute('aria-label') ?? null,
 		orbs: document.querySelectorAll('[data-slot="voice-orb"]').length,
 		focus: document.activeElement?.closest('[data-slot="voice-box"], [data-slot="agent-dock"]')?.getAttribute('data-slot') ?? null,
+		words: words?.getAttribute('data-showing') === 'true',
 		wordsClickThrough: words ? !under(words)?.closest('[data-slot="voice-box"]') : true,
 		controlClickable: control ? under(control) === control || control.contains(under(control)) : true,
 		at: holder && !Number.isNaN(hx) ? [hx, hy] : null,
