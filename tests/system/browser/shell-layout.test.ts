@@ -208,19 +208,19 @@ test(
 			expect(cell.screenshotSha256).toHaveLength(64);
 		}
 
-		// The shell draws what the shared geometry says (ADR 0028), with the
-		// conversation closed: the navigator's column, the chrome row at the top of
-		// every column, and a lone pane's picture beside its docked sidebar, which
-		// less the fit margin is the reference pane a drawing's fit is measured
-		// against.
+		// The shell draws what the shared geometry says, with the conversation
+		// closed: the navigator's column, the chrome row at the top of every
+		// column, and a lone pane's picture beside its docked sidebar, whose width
+		// less the fit margin is the width a drawing's fit is measured against.
+		// The reference pane's height is the renderer's page shape, not the
+		// shell's (ADR 0043).
 		for (const cell of matrix.cells.filter(({ viewport }) => viewport === "desktop")) {
 			const { column, header, picture } = cell.geometry;
 			expect(column?.width, "navigator column width").toBe(NAVIGATOR_WIDTH);
 			expect(header?.height, "chrome row height").toBe(CHROME_HEIGHT);
-			expect(
-				{ width: picture!.width - 2 * FIT_MARGIN, height: picture!.height - 2 * FIT_MARGIN },
-				"the reference pane",
-			).toEqual(REFERENCE_PANE);
+			expect(picture!.width - 2 * FIT_MARGIN, "the reference pane's width").toBe(
+				REFERENCE_PANE.width,
+			);
 		}
 		// With its sidebar put away, the picture has the whole stage.
 		await roleAction(browser, "button", "Sidebar");
