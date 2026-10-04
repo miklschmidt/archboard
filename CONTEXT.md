@@ -402,9 +402,9 @@ It is a property of the rendered variant, never of its authored content.
 _Avoid_: orientation, rotation, layout direction, landscape, portrait
 
 **Reference pane**:
-The board area of the desktop shell at its one supported size, with the
-navigator and the inspector open and the fit margin taken off every side. What
-a drawing is measured against.
+The picture of a lone pane in the desktop shell at its one supported size:
+under the pane's header, beside its docked sidebar, with the conversation shut
+and the fit margin taken off every side. What a drawing is measured against.
 _Avoid_: viewport, screen, window, canvas size, page
 
 **Fit**:

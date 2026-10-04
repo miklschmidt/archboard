@@ -35,9 +35,10 @@ responsive layouts unless the user explicitly reverses this decision.
   paths, versions, and timing.
 - Use a board navigator on the left (see [The navigator](#the-navigator)).
   Put one sidebar beside the picture of each pane for the board and the
-  selection (see [The pane sidebar](#the-pane-sidebar)). Put one agent bar below
-  the panes (see [The agent](#the-agent)). Show the conversation beside the
-  panes only on request. Each region must earn the space it takes.
+  selection (see [The pane sidebar](#the-pane-sidebar)). Put the agent in one
+  dock at the foot of the navigator (see [The agent](#the-agent)), so nothing
+  runs under the panes. Show the conversation beside the panes only on
+  request. Each region must earn the space it takes.
 
 ## Product mapping
 
@@ -324,9 +325,9 @@ filter that finds variants by name (dark).
 ## The agent
 
 Revised 2026-09-23 (TASK-302) and 2026-09-29 (TASK-373). The collapsible workbench, its tabs, its session
-column and the Agent settings dialog are gone. The agent is one bar under the
-panes. When the person asks, and only then, it is also one conversation beside
-them:
+column and the Agent settings dialog are gone. The agent is one dock at the
+foot of the navigator. When the person asks, and only then, it is also one
+conversation beside the panes:
 
 ![The agent bar and the conversation, finished and
 working](assets/operator-shell-agent.png)
@@ -334,14 +335,15 @@ working](assets/operator-shell-agent.png)
 Rendered captures at 1920×1080: a finished turn in the light theme, a turn at
 work in the dark theme.
 
-- **The agent bar** is the collapsed geometry ADR 0028 measures against: forty
-  pixels and a rule, whatever the agent is doing. Its line says in one phrase what
+- **The agent dock** sits in the navigator's column, so it takes no height
+  from the panes, and the reference pane ADR 0028 measures against is a pane's
+  picture under its one chrome row. Its line says in one phrase what
   the agent is doing: the current step of the plan, else the latest step. The
   line also says for how long, how far the agent is through its plan, what is
   queued, and whether the agent is now quiet. It offers the one control that
   state needs: Stop, Review, or signing in.
-  Talk sits beside it. The composer sits at its right, under where the
-  conversation opens, and says which board the agent will read.
+  Talk sits beside it. The composer is at the foot of the conversation, and
+  says which board the agent will read.
 - **Nothing to set up.** The first message or press of Talk signs the person
   in, as needed. It also starts Codex and creates the conversation of the tab:
   its voice coordinator first, then its workhorse. A message that waits on
