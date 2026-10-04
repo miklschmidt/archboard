@@ -50,7 +50,7 @@ Only weights 400 and 500 are loaded. DM Mono is reserved for technical tokens
 such as levels, revisions, paths, hashes, and timestamps; human headings and
 labels remain Onest.
 
-## Prototype addition (branch prototype/shell-worlds)
+## Big Shoulders Display
 
 One display face, licensed under the SIL Open Font License 1.1 (the license
 text of the family is in its upstream Google Fonts directory). It is not a

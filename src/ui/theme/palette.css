@@ -1,5 +1,5 @@
-/* The shell's palette (prototype, branch prototype/shell-worlds): the colours
-   and the depth of the redesigned shell in both themes, laid over the shared
+/* The shell's palette: the colours and the depth of the shell in both
+   themes, laid over the shared
    theme (src/shared/theme/theme.css), which the server and the CLI draw
    standalone pictures with. Every token here is a role, not a colour name;
    components reach them through Tailwind's utilities (`bg-sidebar`,
