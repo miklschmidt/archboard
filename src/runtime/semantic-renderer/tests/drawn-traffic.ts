@@ -91,7 +91,9 @@ function beams(markup: string): Beam[] {
 				layers: [...(masks[0]?.[1] ?? "").matchAll(/<path /gu)].length,
 				pieces: motions.map((motion, index) => {
 					const cycleWritten = attribute(motion, "dur") ?? "";
-					const path = /<path d="([^"]+)"/u.exec(masks[index]?.[1] ?? "")?.[1] ?? "M0,0";
+					// The narrowest layer is the last, and the one that runs into the next piece.
+					const path =
+						[...(masks[index]?.[1] ?? "").matchAll(/<path d="([^"]+)"/gu)].at(-1)?.[1] ?? "M0,0";
 					return {
 						values:
 							attribute(motion, "values") === undefined

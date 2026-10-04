@@ -139,13 +139,21 @@ function hashOf(markup: string): string {
 }
 
 /**
- * How high a bar must be to cover its piece's mask.
+ * How much room a mask keeps beyond the widest layer of the glow, and how much
+ * a bar keeps. The bar's edge is inside the mask's, so the two never meet.
+ */
+const MASK_ROOM = 2;
+const BAR_ROOM = 1;
+
+/**
+ * How high a bar must be to cover its piece's mask: the widest layer of the glow
+ * and a little over, and as far again as the piece strays from a straight line.
  * @param leg The piece.
  * @param core How thick the pulse's core is.
  * @returns The height.
  */
 function barHeight(leg: Leg, core: number): number {
-	return core + GLOW[0].over + 2 * leg.sag + 4;
+	return core + GLOW[0].over + 2 * leg.sag + 2 * BAR_ROOM;
 }
 
 /**
@@ -157,8 +165,9 @@ function barHeight(leg: Leg, core: number): number {
  * @returns The mask's id and its markup.
  */
 function maskOf(leg: Leg, core: number): { id: string; markup: string } {
-	const d = legPath(leg);
-	const reach = (core + GLOW[0].over) / 2 + 2;
+	const joined = legPath(leg);
+	const exact = legPath(leg, false);
+	const reach = (core + GLOW[0].over) / 2 + MASK_ROOM;
 	const { from, segment } = leg;
 	const points = [
 		from,
@@ -171,7 +180,7 @@ function maskOf(leg: Leg, core: number): { id: string; markup: string } {
 	const [width, height] = [Math.max(...xs) + reach - x0, Math.max(...ys) + reach - y0];
 	const layers = GLOW.map(({ over, light }) =>
 		tag("path", {
-			d,
+			d: over > HALO_OVER ? exact : joined,
 			fill: "none",
 			stroke: over > HALO_OVER ? HALO_CUT : "#ffffff",
 			"stroke-width": plain(core + over, 2),
