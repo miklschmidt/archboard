@@ -52,7 +52,9 @@
 		"shadcn": "shadcn",
 		"lint:tests": "bun scripts/lint.ts --disable-nested-config --config .oxlintrc.tests.jsonc tests src/runtime/*/tests src/server/*/tests src/shared/*/tests src/cli/*/tests",
 		"lint:policy": "bun scripts/lint.ts --type-aware --threads 1 --deny-warnings --max-warnings 0 --report-unused-disable-directives-severity error --config .oxlintrc.jsonc src frontend scripts tools vite.config.ts",
-		"eval:skill": "bun scripts/evaluate-skill.ts"
+		"eval:skill": "bun scripts/evaluate-skill.ts",
+		"readme:assets": "bun scripts/readme-assets/make.ts",
+		"readme:check": "bun scripts/readme-assets/check.ts"
 	},
 	"dependencies": {
 		"@archboard/elk-rs": "0.11.3",
