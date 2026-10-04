@@ -30,10 +30,8 @@ test.each([
 	expect(labelsOffRuns(drawing)).toEqual([]);
 });
 
-// Long enough that two columns stand taller than the reference pane and a
-// third column is worth its line.
 test("a long reading selects three downward columns when two cannot fit", async () => {
-	const nodes = Array.from({ length: 30 }, (_, index) => ({
+	const nodes = Array.from({ length: 24 }, (_, index) => ({
 		id: `s${index}`,
 		name: `Stage ${index + 1}`,
 		kind: "module",
@@ -50,8 +48,8 @@ test("a long reading selects three downward columns when two cannot fit", async 
 	const drawing = await renderArchitecture({ content, theme: "light" });
 	const columns = new Set(Object.values(drawing.atlas.nodes).map((box) => box.x));
 	expect(columns.size).toBe(3);
-	expect(Object.keys(drawing.atlas.nodes)).toHaveLength(30);
-	expect(Object.keys(drawing.atlas.edges)).toHaveLength(29);
+	expect(Object.keys(drawing.atlas.nodes)).toHaveLength(24);
+	expect(Object.keys(drawing.atlas.edges)).toHaveLength(23);
 	expect(routesThroughCards(drawing, content)).toEqual([]);
 });
 

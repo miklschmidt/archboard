@@ -1,18 +1,19 @@
-// The desktop shell's fixed geometry, in one place, and the reference pane a
-// drawing is measured against, derived from it (ADR 0028).
+// The desktop shell's fixed geometry, in one place, and the page shape the
+// renderer lays a board out for (ADR 0028, ADR 0039, ADR 0043).
 //
-// The shell is desktop-only at one viewport, so the pane a reader gets is a
-// fixed rectangle. A lone pane's picture is the viewport less the navigator
-// column, less the line between that column and the panes, and less the one
-// chrome row at the top of the pane. Nothing runs under the panes: the agent
-// dock is at the navigator's foot. The reference pane is that picture less the
-// sidebar docked beside it, less the fit margin on every side. The camera fits
-// a diagram into a pane with the arithmetic below; the layout suite and the
-// measure script fit it into this pane with the same arithmetic, so "fit 0.65"
-// means the same thing in a test, in a note and on a screen. The shell root
-// sets the navigator's width and the chrome row's height from here, and
-// `tests/system/browser/shell-layout.test.ts` holds the mounted shell to these
-// numbers.
+// Two kinds of number live here. The shell's are measured facts: the shell is
+// desktop-only at one viewport, and a lone pane's picture is the viewport less
+// the navigator column, less the line between that column and the panes, and
+// less the one chrome row at the top of the pane. Nothing runs under the
+// panes: the agent dock is at the navigator's foot. The shell root sets the
+// navigator's width and the chrome row's height from here, and
+// `tests/system/browser/shell-layout.test.ts` holds the mounted shell to them.
+//
+// The renderer's page shape is not one of them. It is a tuned aspect ratio,
+// `LAYOUT_ASPECT`, which the layouts were chosen for. The reference pane takes
+// its width from the shell, so "fit 0.65" means the same thing in a test, in a
+// note and on a screen, and its height from that aspect, so a row of the shell
+// that changes height never lays every board out again (ADR 0043).
 //
 // Shared by the browser, the renderer's tests and a script, so nothing here
 // reads `process` or a file.
@@ -66,14 +67,23 @@ const STAGE: Size = {
 };
 
 /**
- * The reference pane: the stage with the sidebar docked beside the picture
- * and the fit margin taken off every side. What a drawing's fit is measured
- * against.
+ * The page shape the renderer lays a board out for: width over height. A
+ * tuned ratio the layouts were chosen for, not a measure of the shell: a
+ * plain 1.4, close to the 1272 by 899 pane the layouts were tuned against
+ * before the shell lost two rows (ADR 0043). Changing it lays boards out
+ * again: which columns loose cards take, where a wide rank wraps, and which
+ * fold or packing fits best (ADR 0039).
  */
-const REFERENCE_PANE: Size = {
-	width: STAGE.width - SIDEBAR_WIDTH - 2 * FIT_MARGIN,
-	height: STAGE.height - 2 * FIT_MARGIN,
-};
+const LAYOUT_ASPECT = 1.4;
+
+/** A lone pane's picture beside its docked sidebar, less the fit margin on either side. */
+const REFERENCE_WIDTH = STAGE.width - SIDEBAR_WIDTH - 2 * FIT_MARGIN;
+
+/**
+ * The reference pane a drawing's fit is measured against: as wide as the
+ * shell gives a drawing, and as tall as the page shape makes that width.
+ */
+const REFERENCE_PANE: Size = { width: REFERENCE_WIDTH, height: REFERENCE_WIDTH / LAYOUT_ASPECT };
 
 /**
  * The scale at which a rectangle shows whole in a room: the tighter of the
@@ -100,6 +110,7 @@ export {
 	AGENT_PANEL_WIDTH,
 	CHROME_HEIGHT,
 	FIT_MARGIN,
+	LAYOUT_ASPECT,
 	NAVIGATOR_WIDTH,
 	SIDEBAR_WIDTH,
 	REFERENCE_PANE,
