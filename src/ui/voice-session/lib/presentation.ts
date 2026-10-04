@@ -1,10 +1,7 @@
-// The seams to the committed presentation: the voice controls' view and the
-// output wave's inputs, both derived from the projected session view.
+// The seam to the committed voice controls: their view, derived from the
+// projected session view.
 
-import type { RealtimePhase } from "@/ui/codex-realtime";
 import type { VoiceControlsView, VoiceSessionState } from "@/ui/voice-controls/contracts";
-import { projectVoiceOutputWave } from "@/ui/voice-output-level";
-import type { VoiceOutputWaveView } from "@/ui/voice-output-level";
 import type { VoiceSessionStatus, VoiceSessionView } from "@/ui/voice-session/contract";
 
 /** The browser model's voice state each presented status maps onto. */
@@ -38,14 +35,4 @@ function voiceControlsView(view: VoiceSessionView): VoiceControlsView {
 	});
 }
 
-/**
- * The output wave's inputs for one realtime phase and measured level.
- * @param phase The realtime phase, or null with no run.
- * @param level The measured model output level.
- * @returns The wave inputs.
- */
-function voiceWaveView(phase: RealtimePhase | null, level: number): VoiceOutputWaveView {
-	return projectVoiceOutputWave(phase, level);
-}
-
-export { voiceControlsView, voiceWaveView };
+export { voiceControlsView };

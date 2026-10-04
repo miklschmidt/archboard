@@ -14,7 +14,7 @@ import type {
 import { bindingReplaced, captureBinding, observeBinding } from "@/ui/voice-session/lib/binding";
 import { presentedFailure } from "@/ui/voice-session/lib/failure";
 import { createLevelChannel } from "@/ui/voice-session/lib/level-channel";
-import { voiceControlsView, voiceWaveView } from "@/ui/voice-session/lib/presentation";
+import { voiceControlsView } from "@/ui/voice-session/lib/presentation";
 import { projectVoiceSession } from "@/ui/voice-session/lib/projection";
 import { sameView } from "@/ui/voice-session/lib/view-equality";
 
@@ -289,11 +289,6 @@ function createVoiceSession(ports: VoiceSessionPorts): VoiceSession {
 		},
 		level: levels.level,
 		subscribeLevel: levels.subscribe,
-		/**
-		 * The wave inputs.
-		 * @returns The wave inputs.
-		 */
-		wave: () => voiceWaveView(realtime.snapshot()?.state.phase ?? null, levels.level()),
 		/**
 		 * The controls' inputs.
 		 * @returns The controls' view.

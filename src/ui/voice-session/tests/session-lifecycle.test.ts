@@ -239,7 +239,7 @@ describe("voice session controls", () => {
 		expect(session.view().status).toBe("unavailable");
 	});
 
-	test("projects the controls' view and the wave inputs from the same state", async () => {
+	test("projects the controls' view and keeps the model's level while muted", async () => {
 		const { session, realtime } = harness();
 		expect(session.controlsView()).toEqual({
 			available: true,
@@ -248,18 +248,14 @@ describe("voice session controls", () => {
 			pending: false,
 			failure: null,
 		});
-		expect(session.wave()).toEqual({ state: "inactive", level: 0, active: false });
 
 		await session.start();
 		expect(session.controlsView().sessionState).toBe("active");
-		expect(session.wave()).toEqual({ state: "listening", level: 0, active: true });
 
 		realtime.levels.set(0.4);
-		expect(session.wave()).toEqual({ state: "speaking", level: 0.4, active: true });
-
 		await session.mute();
 		expect(session.controlsView().muted).toBe(true);
-		// The model's output still drives the wave while the microphone is muted.
-		expect(session.wave().state).toBe("speaking");
+		// The model's output still reaches the level while the microphone is muted.
+		expect(session.level()).toBe(0.4);
 	});
 });

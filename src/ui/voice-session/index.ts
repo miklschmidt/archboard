@@ -1,11 +1,11 @@
 // The voice session adapter: availability, source binding, notifications,
-// session and mute lifecycle, recovery, and the seams to the committed voice
-// controls and output wave.
+// session and mute lifecycle, recovery, and the seam to the committed voice
+// controls.
 
 export { VOICE_SESSION_FAILURE_CODES, VOICE_SESSION_STATUSES } from "@/ui/voice-session/contract";
 export { createVoiceSession } from "@/ui/voice-session/lib/session";
 export { projectVoiceSession } from "@/ui/voice-session/lib/projection";
-export { voiceControlsView, voiceWaveView } from "@/ui/voice-session/lib/presentation";
+export { voiceControlsView } from "@/ui/voice-session/lib/presentation";
 export type {
 	VoiceNarration,
 	VoiceRealtimePort,
