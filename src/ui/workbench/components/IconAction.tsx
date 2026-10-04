@@ -18,6 +18,8 @@ interface IconActionProps {
 	disabled?: boolean | undefined;
 	variant?: "ghost" | "outline" | undefined;
 	className?: string | undefined;
+	/** Which side of the button its tooltip opens on: above it unless something sits there. */
+	tipSide?: "top" | "left" | undefined;
 	/** The icon. */
 	children: ReactNode;
 }
@@ -44,7 +46,7 @@ function IconAction(props: IconActionProps): JSX.Element {
 			>
 				{props.children}
 			</TooltipTrigger>
-			<TooltipContent>{props.label}</TooltipContent>
+			<TooltipContent side={props.tipSide ?? "top"}>{props.label}</TooltipContent>
 		</Tooltip>
 	);
 }

@@ -6,7 +6,9 @@
 // cut, never left in the air or lost, when motion is not wanted and when a home is not on screen;
 // a socket that goes while the orb is in it, or flying to it, leaves the orb where it was, and the
 // orb goes on from there to whichever home is offered next, with no stop in between; a dark orb
-// waits in a home and not out of sight; and a surface can ask whether a home is on the page.
+// waits in a home and not out of sight, and is lit where it is wanted and not flown there; a
+// socket says whether the orb rests in it, which is how the stylesheet draws a seat only for an
+// orb that is there; and a surface can ask whether a home is on the page.
 //
 // This DOM lays nothing out, so each socket is given a box, and the frames a flight runs on are
 // stepped by hand.
@@ -32,6 +34,13 @@ import {
 beforeAll(() => {
 	GlobalRegistrator.register();
 	Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
+	// What the stylesheet does with the holder, without its fade: lit it shows, dark it does not.
+	const style = document.createElement("style");
+	style.textContent = `
+		[data-slot="voice-orb-holder"] { opacity: 0; }
+		[data-slot="voice-orb-holder"][data-shown="true"] { opacity: 1; }
+	`;
+	document.head.append(style);
 });
 
 afterAll(async () => {
@@ -149,6 +158,8 @@ function homes(): Homes {
 	const dock = placed(document.createElement("div"), 100, 600, 64);
 	const box = placed(document.createElement("div"), 600, 700, 64);
 	document.body.append(dock, box);
+	// The garage is on the page, as it is in the application: a holder in a tree that is not has no style to read.
+	stage.connect();
 	// The holder is where its socket is, so an orb leaving a home leaves from its middle.
 	stage.holder.getBoundingClientRect = holderBox(stage.holder);
 	return { stage, frames, dock, box };
@@ -322,7 +333,7 @@ test("a box that moves to another pane takes the orb on from where it was, and t
 	expect(stage.holder.parentElement).toBe(elsewhere);
 });
 
-test("a dark orb in a socket that goes waits in the home that is left, and lights from there", () => {
+test("a dark orb in a socket that goes waits in the home that is left, and is lit where it is wanted next", () => {
 	const { stage, frames, dock, box } = homes();
 	stage.offer("dock", homed(dock, "dock"));
 	const withdrawBox = stage.offer("box", homed(box, "box"));
@@ -331,17 +342,60 @@ test("a dark orb in a socket that goes waits in the home that is left, and light
 	withdrawBox();
 	expect(whereIs(stage)).toBe("dock");
 
-	// Voice starts again with the box wanted: the orb leaves the dock's circle for it.
+	// Voice starts again with the box wanted: the orb is dark, so it is not launched out of the
+	// dock's circle. It is lit in the box.
 	stage.offer("box", homed(box, "box"));
 	stage.wish({ home: "box", shown: true, fly: true });
+	expect(whereIs(stage)).toBe("box");
+	expect(stage.holder.dataset["shown"]).toBe("true");
+	expect(frames.pending).toBe(0);
+});
+
+test("a flight carries an orb that is seen: a dark one, and one only just lit, are lit where they are wanted", () => {
+	const { stage, frames, dock, box } = homes();
+	stage.offer("dock", homed(dock, "dock"));
+	stage.offer("box", homed(box, "box"));
+	expect(whereIs(stage)).toBe("dock");
+	stage.wish({ home: "box", shown: true, fly: true });
+	expect(whereIs(stage)).toBe("box");
+	expect(frames.pending).toBe(0);
+
+	// Lit in the dock, and asked for in the box before its fade-in has shown anything.
+	stage.wish({ home: "dock", shown: false, fly: false });
+	stage.wish({ home: "dock", shown: true, fly: true });
+	stage.holder.style.opacity = "0.1";
+	stage.wish({ home: "box", shown: true, fly: true });
+	expect(whereIs(stage)).toBe("box");
+	expect(frames.pending).toBe(0);
+});
+
+test("a socket says whether the orb rests in it, in the air neither does, and the one it lands in does at once", () => {
+	const { stage, frames, dock, box } = homes();
+	stage.offer("dock", homed(dock, "dock"));
+	stage.offer("box", homed(box, "box"));
+	stage.wish({ home: "dock", shown: true, fly: true });
+	expect([dock.hasAttribute("data-occupied"), box.hasAttribute("data-occupied")]).toEqual([
+		true,
+		false,
+	]);
+
+	stage.wish({ home: "box", shown: true, fly: true });
 	expect(whereIs(stage)).toBe("air");
+	expect([dock.hasAttribute("data-occupied"), box.hasAttribute("data-occupied")]).toEqual([
+		false,
+		false,
+	]);
+
 	frames.step(0);
-	expect(inTheAir(stage)).toEqual({ x: 100, y: 600 });
+	frames.step(VOICE_FLIGHT_MS);
+	expect([dock.hasAttribute("data-occupied"), box.hasAttribute("data-occupied")]).toEqual([
+		false,
+		true,
+	]);
 });
 
 test("a dark orb waits in the first home that is offered, and out of sight only while there is none", () => {
 	const { stage, dock } = homes();
-	stage.connect();
 	expect(whereIs(stage)).toBe("garage");
 	stage.offer("dock", homed(dock, "dock"));
 	expect(whereIs(stage)).toBe("dock");

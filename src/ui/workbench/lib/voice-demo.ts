@@ -1,14 +1,20 @@
 // DEMONSTRATION: the voice the dock and the voice box show when the page asks for it.
 // `?voiceDemo` holds the voice speaking, with a level that moves like speech, and
-// `?voiceDemo=cycle` takes it through every stage again and again, so the dock's
-// turn from the Talk key to the circle and back can be watched without Codex, a
-// microphone or a turn. Either also puts the voice box over the active pane, with an
+// `?voiceDemo=cycle` takes it through every stage again and again, from its start when
+// the page opens, so the dock's turn from the Talk key to the circle and back can be
+// watched without Codex, a microphone or a turn. Either also puts the voice box over the active pane, with an
 // invented transcript that is spoken a word at a time with silences between, so the
 // orb's flight between the dock and the box can be watched too. Nothing real reads
 // this and it changes nothing the agent does.
 
 import type { SubtitleSource } from "@/ui/voice-subtitles";
 import type { AgentVoiceView, VoiceStage } from "@/ui/workbench/contracts";
+
+/**
+ * When the page was opened. The demonstration runs from there, so it begins at its start every
+ * time: the voice idle, then starting, and the script at its first word.
+ */
+const OPENED_AT = Date.now();
 
 /** The stages the cycle visits, and how long each lasts in milliseconds. */
 const CYCLE: readonly (readonly [VoiceStage, number])[] = [
@@ -65,7 +71,7 @@ interface DemoSaid {
  */
 function demoSaidAt(now: number): DemoSaid {
 	const length = DEMO_SCRIPT.reduce((sum, _, index) => sum + utteranceMs(index), 0);
-	let left = now % length;
+	let left = Math.max(0, now - OPENED_AT) % length;
 	for (const [index, text] of DEMO_SCRIPT.entries()) {
 		const ms = utteranceMs(index);
 		if (left < ms) {
@@ -145,7 +151,7 @@ const QUIET_LEVEL: AgentVoiceView["level"] = {
  */
 function stageAt(now: number): VoiceStage {
 	const length = CYCLE.reduce((sum, [, ms]) => sum + ms, 0);
-	let left = now % length;
+	let left = Math.max(0, now - OPENED_AT) % length;
 	for (const [stage, ms] of CYCLE) {
 		if (left < ms) return stage;
 		left -= ms;

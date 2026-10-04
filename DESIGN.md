@@ -229,7 +229,7 @@ gives each one a `shadow-*` utility.
 
 ### Named Rules
 
-**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. The floating sidebar takes at most 160ms, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off and when voice starts with subtitles on, in a layer of its own, over 680ms.
+**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. The floating sidebar takes at most 160ms, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off, in a layer of its own, over 680ms.
 
 **The Picture Answers Rule.** The light belongs to the picture, not to the shell. When a part is picked out or the pointer rests on one, the viewer marks what stays as drawn, and the picture's own subjects recede under an opacity filter. The shell lays no layer, blur or halo over the picture to do it.
 
@@ -325,10 +325,14 @@ the key's plate narrows to a 64px circle and rises to the head of the dock while
 the dock grows and every part glides to its place. The key's edge turns gold as it
 narrows, so gold runs unbroken from the key to the ring. The plate passes under the
 other parts and holds the orb inside it. It takes half a second, and it runs the
-other way when voice ends, and when the orb goes to the voice box. A part that was
-not there fades in once the plate has passed. The orb is not drawn in the plate: it
-sits in a socket in it, and flies in and out. The reduced-motion preference cuts
-between the layouts.
+other way when voice ends. A part that was not there fades in once the plate has
+passed. The orb is not drawn in the plate: it sits in a socket in it, and flies in
+and out. As the circle the plate is the orb's seat, and a seat is drawn only while the
+orb is in it. When the orb goes to the voice box the circle does not wait empty: the
+seat is gone as the orb lifts, and the key grows out of where it was once the plate
+has all but arrived. When the orb comes back from the box nothing waits for it at the
+head of the dock, and the circle is there the moment it lands. The reduced-motion
+preference cuts between the layouts.
 
 The circle's face is a ring of gold, with a sheen that turns round it, set round
 a lens of eleven ruled lines, like the lines of a drafting sheet. While voice is
@@ -361,19 +365,27 @@ takes the room from the conversation.
 While the person wants subtitles and a voice is live, the voice is not in the dock.
 It is in a box over the picture of the pane it runs for, low in the frame where the
 subtitles are, so the words are read beside the voice that says them. The box is a
-Card White plate with the float shadow and a Rule edge, 78px high, over the picture
-and under nothing. In a row it holds the orb in a socket, a 64px circle with the
-gold edge and the raised plate of the dock's circle, then the words, then two quiet
-icons stacked at the end: mute, and the subtitles control, which puts the voice back
-in the dock. Mute is dimmed while the voice is starting or ending. Where there are no
-words the box says what the voice is doing in a word, at 13px, in the accent text while
-the voice is lit and in muted ink while it is muted or ending. The words are 20px and
-two lines at most. A warm wash blooms from the socket and breathes with the voice, as
-it does in the dock, on the box's own layer. The box takes no pointer input from the
-picture except at its two icons. It is over a page of the board as well as the diagram,
-it is clear of a sidebar that floats over the picture, and in a pane too narrow for it
-the words give way and the orb and the two icons stay. While it leaves it takes no input
-at all.
+capsule in Card White with the float shadow and a Rule edge, 78px high, over the picture
+and under nothing, and both its ends are half circles. The left end hugs the orb: the
+orb's plate, a 64px circle with the gold edge and the raised face of the dock's circle,
+sits in it with the same margin all the way round. Then come the words, and at the right
+end the two keys that belong with them: mute above, and the subtitles control below,
+which puts the voice back in the dock. They are the dock's keys, outlined and raised, with
+a line glyph of one weight. The mute key sinks while the voice is muted. The subtitles key
+shows no state, because pressing it acts. They stand 6px in from the capsule's edge, as the
+orb does, and 6px from each other, one stack as high as the orb. The stack is a half circle
+on its right, round the same middle as the capsule's own end, so each key is a quarter of
+it, and the curve follows the capsule's all the way round at the same distance. They are
+straight on the side that looks into the box and where the two face each other, with the
+corner of a key, 3px, at the two corners that look into the box. Mute is dimmed while the
+voice is starting or ending. Where there are no words the box says what
+the voice is doing in a word, at 13px, in the accent text while the voice is lit and in
+muted ink while it is muted or ending. The words are 20px and two lines at most. A warm
+wash blooms from the orb and breathes with the voice, as it does in the dock, on the
+box's own layer. The box takes no pointer input from the picture except at its two keys.
+It is over a page of the board as well as the diagram, it is clear of a sidebar that
+floats over the picture, and in a pane too narrow for it the words give way and the orb
+and the keys stay. While it leaves it takes no input at all.
 
 The words arrive one at a time, and each fades in over 640ms, slow to start and slow to
 arrive, so the end of the line is a soft edge and not a blink. A cue that is full gives
@@ -383,15 +395,19 @@ do not come back under the next ones. The voice's word waits for the words to be
 before it fades in, and leaves as fast as they return. Only opacity moves.
 
 The orb is one canvas, so it keeps its light and the last second of the voice it
-has drawn wherever it is. It rests in the dock's circle or in the box's socket, and
-when the person turns subtitles off or on it lifts off, crosses the page in a layer
-of its own, a little larger at the top of its flight, and settles in the circle or
-the socket in 680ms. When voice starts with subtitles on, the orb lifts out of the Talk
-key's plate and crosses to the box the same way. When voice ends it fades where it is,
-with the box. The dock's key turns into the circle as the orb arrives and the
-circle into the key as it leaves, and the box rises and fades in as the orb is on
-its way. A flight meets its socket where the socket is, so a socket that is still
-moving is met, and the opposite choice turns a flight round from where the orb is.
+has drawn wherever it is, and it is one shared element: the orb and its plate are one
+object, and there is only ever one of it on the page. It rests in the dock's circle or in
+the box's socket, and when the person turns subtitles off or on it lifts off from where it
+was seen, crosses the page in a layer of its own, a little larger at the top of its flight,
+and settles in the circle or the socket in 680ms. The box has no seat of its own and the
+dock's is drawn only while the orb is in it, so nothing that looks like the orb waits where
+it left or where it will land. A flight carries an orb that can be seen. When voice starts
+the orb is dark, so it is lit where it is wanted: with subtitles on it fades in inside the
+box as the box rises, and it does not come out of the Talk key. When voice ends it fades
+where it is, with the box. The dock's key grows out of the seat the orb has left as the
+orb flies out, and the circle forms as the orb arrives, and the box rises and fades in as
+the orb is on its way. A flight meets its socket where the socket is, so a socket that is
+still moving is met, and the opposite choice turns a flight round from where the orb is.
 When a pane is presented its voice controls are in the presentation bar and the
 subtitles are plain, and so they are on a recording page, whatever the person chose.
 With reduced motion the orb is in its home, and the box is there or gone, at once.

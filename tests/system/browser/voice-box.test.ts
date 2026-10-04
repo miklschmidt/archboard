@@ -22,9 +22,12 @@ import { serverPath } from "./support/navigator-support.ts";
 // picture, where its words are read, and the dock's key ends voice. Turning subtitles off flies
 // the one orb back to the circle at the head of the dock and takes the box away, and turning
 // them on flies it out again. What this owner holds is what a person sees come out of that: one
-// orb, resting exactly in the socket of the home it is in, never left in the air, with the box
-// taking no pointer input from the picture except at its two controls, and keyboard focus following
-// the subtitles control from the surface that loses it to the one that takes it, pressed twice at once.
+// orb, resting exactly in the socket of the home it is in, never left in the air, and seen as one
+// shared element: it leaves from where it was seen, the dock draws no seat for it while it is in the
+// air, and the box draws none of its own. The page never grows past the window, not even for a frame.
+// The box takes no pointer input from the picture except at its two controls, and keyboard focus
+// follows the subtitles control from the surface that loses it to the one that takes it, pressed
+// twice at once. Voice starting with subtitles on is lit in the box and not launched out of the Talk key.
 
 /** The subtitles control in the voice box. */
 const SUBTITLES_IN_BOX = '[data-slot="voice-box"] [data-slot="voice-subtitles-toggle"]';
@@ -51,6 +54,30 @@ interface VoiceWhere {
 	readonly wordsClickThrough: boolean;
 	/** Whether the box's subtitles control takes the pointer. */
 	readonly controlClickable: boolean;
+	/** Where the orb's middle is, or null while it is nowhere on the page. */
+	readonly at: readonly [number, number] | null;
+	/** How much of the orb shows: a flight carries an orb that is seen, and a fresh one has not faded in yet. */
+	readonly opacity: number;
+	/** Whether the box's socket draws a seat of its own: the plate is the orb's. */
+	readonly boxDrawsSeat: boolean;
+}
+
+/** What the page saw of the orb and of itself on one frame. */
+interface Seen {
+	/** How far the page's scrollable size is past the window, in pixels. */
+	readonly over: number;
+	/** Whether the orb is in the layer it flies in. */
+	readonly air: boolean;
+	readonly at: readonly [number, number] | null;
+	readonly opacity: number | null;
+	/** The dock's key: the circle while the orb is at home in the dock, the key while it is not. */
+	readonly form: string | null;
+	/** How much of the dock's plate is drawn. */
+	readonly seat: number | null;
+	/** The home the orb rests in, or null while it is in the air. */
+	readonly home: string | null;
+	/** What the voice is doing, as the dock says. */
+	readonly state: string | null;
 }
 
 /** What the page says of where the voice is. */
@@ -70,6 +97,8 @@ const WHERE = `(() => {
 		const [x, y] = centre(element);
 		return document.elementFromPoint(x, y);
 	};
+	const seat = document.querySelector('[data-slot="voice-box"] [data-slot="voice-orb-socket"]');
+	const seatStyle = seat ? getComputedStyle(seat) : null;
 	return {
 		box: document.querySelector('[data-slot="voice-box"]') !== null,
 		home: socket?.getAttribute('data-home') ?? null,
@@ -80,8 +109,53 @@ const WHERE = `(() => {
 		focus: document.activeElement?.closest('[data-slot="voice-box"], [data-slot="agent-dock"]')?.getAttribute('data-slot') ?? null,
 		wordsClickThrough: words ? !under(words)?.closest('[data-slot="voice-box"]') : true,
 		controlClickable: control ? under(control) === control || control.contains(under(control)) : true,
+		at: holder && !Number.isNaN(hx) ? [hx, hy] : null,
+		opacity: holder ? Number(getComputedStyle(holder).opacity) : 0,
+		boxDrawsSeat: seatStyle ? Number.parseFloat(seatStyle.borderTopWidth) > 0 || seatStyle.boxShadow !== 'none' || seatStyle.backgroundColor !== 'rgba(0, 0, 0, 0)' : false,
 	};
 })()`;
+
+/** Watch the page a frame at a time, from now on: what it did while the orb moved is read afterwards. */
+const WATCH = `(() => {
+	const seen = [];
+	window.__voiceSeen = seen;
+	(function frame() {
+		const page = document.scrollingElement;
+		const holder = document.querySelector('[data-slot="voice-orb-holder"]');
+		const box = holder?.getBoundingClientRect();
+		const key = document.querySelector('[data-slot="voice-circle"]');
+		const plate = key?.querySelector('[data-part="plate"]');
+		seen.push({
+			over: Math.max(page.scrollHeight - innerHeight, page.scrollWidth - innerWidth),
+			air: holder?.parentElement?.getAttribute('data-slot') === 'voice-orb-layer',
+			at: box && box.width ? [box.x + box.width / 2, box.y + box.height / 2] : null,
+			opacity: holder ? Number(getComputedStyle(holder).opacity) : null,
+			form: key?.getAttribute('data-form') ?? null,
+			seat: plate ? Number(getComputedStyle(plate).opacity) : null,
+			home: holder?.parentElement?.getAttribute('data-home') ?? null,
+			state: key?.getAttribute('data-voice-state') ?? null,
+		});
+		requestAnimationFrame(frame);
+	})();
+	return true;
+})()`;
+
+/**
+ * Everything the page has seen since it was watched.
+ * @param browser The page.
+ * @returns The frames, oldest first.
+ */
+const seenSoFar = (browser: AgentBrowserSession): Promise<Seen[]> =>
+	browser.eval<Seen[]>("window.__voiceSeen");
+
+/**
+ * How far apart two places are.
+ * @param from One place.
+ * @param to Another.
+ * @returns The distance in pixels.
+ */
+const apart = (from: readonly [number, number], to: readonly [number, number]): number =>
+	Math.hypot(from[0] - to[0], from[1] - to[1]);
 
 /**
  * Where the voice is.
@@ -122,12 +196,13 @@ test("the voice is in the box while subtitles are on, and the one orb flies betw
 		"the board to be drawn before the voice is looked at",
 		WAIT,
 	);
+	await browser.eval(WATCH);
 
 	// Subtitles start on: the voice is in the box, the dock is calm and its key ends voice.
 	const boxed = await pollUntil(
 		() => voiceWhere(browser),
-		(where) => where.box && where.home === "box" && where.off < 1,
-		"the orb to rest in the voice box's socket",
+		(where) => where.box && where.home === "box" && where.off < 1 && where.opacity === 1,
+		"the orb to rest in the voice box's socket, with all of it showing",
 		WAIT,
 	);
 	expect(boxed.orbs).toBe(1);
@@ -136,8 +211,11 @@ test("the voice is in the box while subtitles are on, and the one orb flies betw
 	// The box lets the picture under its words take the pointer, and takes it at its control.
 	expect(boxed.wordsClickThrough).toBeTrue();
 	expect(boxed.controlClickable).toBeTrue();
+	// The plate is the orb's, so the box has none of its own for an orb that has left to leave behind.
+	expect(boxed.boxDrawsSeat).toBeFalse();
 
 	// Turn subtitles off in the box: the orb flies home to the dock's circle and the box goes.
+	const toDock = (await seenSoFar(browser)).length;
 	expect(await clickSubtitles(browser, "voice-box")).toBeTrue();
 	const docked = await pollUntil(
 		() => voiceWhere(browser),
@@ -147,8 +225,17 @@ test("the voice is in the box while subtitles are on, and the one orb flies betw
 	);
 	expect(docked.orbs).toBe(1);
 	expect(docked.form).toBe("circle");
+	// One shared element: it left from where the box had it, and the dock drew no circle for it
+	// until it landed, so that no orb was seen at both ends.
+	const flightToDock = (await seenSoFar(browser)).slice(toDock);
+	const leavesBox = flightToDock.find((frame) => frame.air);
+	expect(leavesBox?.at && boxed.at && apart(leavesBox.at, boxed.at)).toBeLessThan(24);
+	const bound = flightToDock.filter((frame) => frame.air && frame.form === "circle");
+	expect(bound.length).toBeGreaterThan(10);
+	expect(Math.max(...bound.slice(-10).map((frame) => frame.seat ?? 1))).toBe(0);
 
 	// And on again, from the dock's voice line: the orb flies out to the box.
+	const toBox = (await seenSoFar(browser)).length;
 	expect(await clickSubtitles(browser, "agent-dock")).toBeTrue();
 	const again = await pollUntil(
 		() => voiceWhere(browser),
@@ -158,6 +245,9 @@ test("the voice is in the box while subtitles are on, and the one orb flies betw
 	);
 	expect(again.orbs).toBe(1);
 	expect(again.form).toBe("key");
+	// It left the dock's circle from where the circle was, and not from where the key turned out to be.
+	const leavesDock = (await seenSoFar(browser)).slice(toBox).find((frame) => frame.air);
+	expect(leavesDock?.at && docked.at && apart(leavesDock.at, docked.at)).toBeLessThan(24);
 
 	// From the keyboard: Enter on the box's control hands focus to the dock's, and Enter there, at
 	// once, hands it back to the box's, which is still leaving or has only just gone.
@@ -175,5 +265,42 @@ test("the voice is in the box while subtitles are on, and the one orb flies betw
 	expect(boxAgain.focus).toBe("voice-box");
 	expect(boxAgain.orbs).toBe(1);
 
+	// The page was never larger than the window, on any frame of any of it.
+	expect(Math.max(...(await seenSoFar(browser)).map((frame) => frame.over))).toBe(0);
+
+	await server.assertRunning();
+}, 40_000);
+
+test("voice starting with subtitles on is lit in the box, and the orb is not launched out of the Talk key", async () => {
+	await using resources = new AsyncDisposableStack();
+	const { ownerRoot } = browserTestRoots();
+	const vault = join(ownerRoot, "voice-start-vault");
+	mkdirSync(vault, { recursive: true });
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	await seedSemanticBoard(createJsonRequester(server), "pipeline");
+
+	// The cycle begins at its start when the page opens: voice is off for a few seconds, then it starts.
+	const browser = resources.use(await createAgentBrowser());
+	await browser.run(["open", `${addressShowing(server.base, "pipeline")}&voiceDemo=cycle`]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	await browser.eval(WATCH);
+	await pollUntil(
+		() => voiceWhere(browser),
+		(where) => where.box && where.home === "box" && where.off < 1,
+		"the voice to start and the orb to rest in the voice box",
+		{ timeoutMs: 15_000 },
+	);
+
+	const seen = await seenSoFar(browser);
+	// The watch began while voice was off, or what follows proves nothing.
+	expect(seen[0]?.state).toBe("off");
+	// Nothing was launched: the orb was never in the air, and it showed nothing at the Talk key.
+	expect(seen.some((frame) => frame.air)).toBeFalse();
+	expect(
+		Math.max(...seen.filter((frame) => frame.home === "dock").map((frame) => frame.opacity ?? 0)),
+	).toBeLessThan(0.05);
+	expect(Math.max(...seen.map((frame) => frame.over))).toBe(0);
 	await server.assertRunning();
 }, 40_000);

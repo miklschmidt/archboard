@@ -8,7 +8,7 @@
 // for it, and keyboard focus stays on it. The dock's motion moves its plate between
 // the shapes (hooks/use-dock-motion.ts); the voice orb draws the circle's face
 // (src/ui/voice-orb), and the one orb is drawn here, into a holder that flies it
-// between the dock's circle and the box.
+// between the dock's circle and the box, where the dock says it is wanted.
 //
 // The orb follows the model's measured output level while it speaks and breathes
 // while it listens. Nothing here listens to the microphone.
@@ -17,7 +17,7 @@ import { RiErrorWarningLine, RiMicLine, RiPhoneLine } from "@remixicon/react";
 import type { JSX } from "react";
 
 import { cn } from "@/ui/components/class-names";
-import { OrbHost, OrbSlot, useOrbPlacement } from "@/ui/voice-orb";
+import { OrbHost, OrbSlot } from "@/ui/voice-orb";
 import type { AgentActions, AgentVoiceView } from "@/ui/workbench/contracts";
 import { useCircleState } from "@/ui/workbench/hooks/use-circle-state";
 import { CIRCLE_NAMES, type CircleState } from "@/ui/workbench/lib/circle-state";
@@ -67,11 +67,6 @@ function VoiceControl(props: VoiceControlProps): JSX.Element {
 	const { voice, actions, boxed } = props;
 	const state = useCircleState(voice);
 	const off = state === "off";
-	useOrbPlacement({
-		home: boxed ? "box" : "dock",
-		shown: !off,
-		reducedMotion: props.reducedMotion,
-	});
 	return (
 		<button
 			type="button"

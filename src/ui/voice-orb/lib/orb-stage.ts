@@ -1,5 +1,5 @@
 // Where the orb is drawn: one canvas that lives in one of two homes and flies
-// between them.
+// between them, as one shared element.
 //
 // The orb is a canvas whose lines are a record of the last second of the model's
 // output level, so it cannot be drawn twice: a second canvas would start dark and
@@ -9,6 +9,12 @@
 // socket it is wanted in, in a layer over the page so that nothing clips it on the
 // way, and puts it back in the socket on arrival. The canvas is never remounted,
 // so its light and its history go with it.
+//
+// The orb is the only one of its kind on the page at any moment, and so is the seat
+// it has. The holder carries a plate of its own, and a home draws its plate only
+// while the orb sits in it: the stage marks that socket occupied, and the stylesheet
+// draws the dock's seat for it. So nothing that looks like the orb waits where it
+// left or where it will land, and what is left behind is the room the orb had.
 //
 // A flight meets its socket where the socket is on every frame, not where it was,
 // because a socket may itself be moving (the dock's plate is still forming, the
@@ -20,9 +26,11 @@
 // flown when motion is not wanted, when either end is not on screen, and when the
 // socket it was heading for stops taking room on the page.
 //
-// A dark orb waits in a home and fades where it is. It is lit by a wish, and a
-// holder moved in the same task as it is lit has no transition to run, so the stage
-// lets its style settle between the two.
+// A flight carries an orb that can be seen. One that is dark, or has only just been
+// lit, is lit where it is wanted: voice starting does not launch the orb out of the
+// Talk key. A dark orb waits in a home and fades where it is. A holder moved in the
+// same task as it is lit has no transition to run, so the stage lets its style
+// settle between the two.
 
 import { VOICE_FLIGHT_MS, VOICE_MORPH_MS } from "@/shared/timing/voice";
 import { flightAt, type Spot } from "@/ui/voice-orb/lib/orb-flight";
@@ -121,6 +129,9 @@ interface StageState {
 
 /** The stacking of the layer a flight crosses in: over the page, under a tip or a menu. */
 const LAYER_Z = 45;
+
+/** How much of the orb must be showing for it to be worth a flight: half. Below it the orb is as good as dark. */
+const SEEN = 0.5;
 
 /** The style a flight gives the holder, which a socket gives back to the stylesheet. */
 const FLIGHT_STYLE = ["position", "left", "top", "translate", "transform"] as const;
@@ -237,14 +248,24 @@ function isBound(state: StageState, socket: HTMLElement): boolean {
 }
 
 /**
- * Whether the orb may be flown to a socket: motion is wanted, the orb is lit, and the socket is on screen.
+ * Whether the orb can be seen: it is lit, and not still on its way to being lit.
+ * @param holder The holder.
+ * @returns True when at least half of it shows.
+ */
+function isSeen(holder: HTMLElement): boolean {
+	return Number.parseFloat(getComputedStyle(holder).opacity) >= SEEN;
+}
+
+/**
+ * Whether the orb may be flown to a socket: motion is wanted, the orb is lit and seen, and the socket is on screen.
  * @param state The stage.
+ * @param holder The holder.
  * @param socket Where it would go.
  * @returns True when it may.
  */
-function mayFly(state: StageState, socket: HTMLElement): boolean {
+function mayFly(state: StageState, holder: HTMLElement, socket: HTMLElement): boolean {
 	const { wish } = state;
-	return wish.fly && wish.shown && isInView(socket.getBoundingClientRect());
+	return wish.fly && wish.shown && isSeen(holder) && isInView(socket.getBoundingClientRect());
 }
 
 /**
@@ -314,15 +335,28 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 	const release = (): void => {
 		stopFlight();
 		for (const name of FLIGHT_STYLE) holder.style.removeProperty(name);
-		delete holder.dataset["flying"];
 		state.layer.remove();
 	};
 
 	/**
-	 * Say whether the orb is lit, after the style it had where it now is has settled: a holder
-	 * that was moved in this task has no style to change from, so its fade would not run.
+	 * Say which socket the holder rests in, or none, so that the stylesheet draws a home's
+	 * seat only while the orb is in it.
+	 * @param socket The socket, or null while the holder is in the air or the garage.
 	 */
-	const light = (): void => {
+	const seat = (socket: HTMLElement | null): void => {
+		if (state.resting !== null) delete state.resting.dataset["occupied"];
+		state.resting = socket;
+		if (socket !== null) socket.dataset["occupied"] = "";
+	};
+
+	/**
+	 * Say whether the orb is lit, after the style it had where it now is has settled: a holder
+	 * that was moved in this task has no style to change from, so its fade would not run. An orb
+	 * that is not seen is put out first, so that it fades in where it has landed.
+	 * @param fresh Whether the orb could not be seen before it was moved.
+	 */
+	const light = (fresh = false): void => {
+		if (fresh) holder.dataset["shown"] = "false";
 		void getComputedStyle(holder).opacity;
 		holder.dataset["shown"] = String(state.wish.shown);
 	};
@@ -332,11 +366,12 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 	 * @param socket The socket.
 	 */
 	const land = (socket: HTMLElement): void => {
+		const fresh = !isSeen(holder);
 		release();
 		state.leftFrom = null;
+		seat(socket);
 		socket.append(holder);
-		state.resting = socket;
-		light();
+		light(fresh);
 		holder.dispatchEvent(new Event(ORB_MOVED));
 	};
 
@@ -344,7 +379,7 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 	const park = (): void => {
 		release();
 		state.garage.append(holder);
-		state.resting = null;
+		seat(null);
 	};
 
 	/**
@@ -375,10 +410,9 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 		stopFlight();
 		state.seen = from;
 		state.leftFrom = null;
-		state.resting = null;
+		seat(null);
 		state.layer.append(holder);
 		if (!state.layer.isConnected) document.body.append(state.layer);
-		holder.dataset["flying"] = "";
 		placeInLayer(holder, from);
 		light();
 		state.flight = { socket, from, start: null, request: 0 };
@@ -390,7 +424,7 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 	 * @param socket Where it is going.
 	 */
 	const carry = (socket: HTMLElement): void => {
-		const from = mayFly(state, socket) ? departure(state, holder) : null;
+		const from = mayFly(state, holder, socket) ? departure(state, holder) : null;
 		if (from === null) land(socket);
 		else fly(socket, from);
 	};

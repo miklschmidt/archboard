@@ -3,13 +3,18 @@
 // While the person wants subtitles and a voice is live, the voice has no circle in the
 // agent dock. It sits in a box over the picture of the pane it runs for, where the
 // subtitles are, so whoever reads the words sees the voice that says them. The box
-// holds the orb in a socket, the voice's state in a word while there are no words, the
-// words themselves, and the two controls that belong with them: mute, and the
-// subtitles control, which puts the voice back in the dock. It is click-through
-// except for those two controls, because the canvas under it is what the person is
-// working with. It is as high as the plain subtitles were and wider by the orb and the
-// two controls, so it hides little that they did not, and in a pane too narrow for it
-// the words give way and the orb and the controls stay.
+// is a capsule that hugs the orb: its left end is a half circle round the orb's socket,
+// and at its right end are the two controls that belong with the words, one above the
+// other, mute and the subtitles control, which puts the voice back in the dock. They are
+// the dock's keys. They stand the margin in from the box's edge that the orb does, and the
+// same margin from each other, as one stack as high as the orb. The stack is a half circle
+// on its right, round the same middle as the box's own end, so each key is a quarter of it:
+// straight on the side that looks into the box and where the two face each other, with the
+// corner of a key at the two corners that look into the box (app.css, `voice-keys`).
+// The box is click-through except for them, because the canvas under it is what the
+// person is working with. It is as high as the plain subtitles were and wider by the
+// orb and the keys, so it hides little that they did not, and in a pane too narrow for
+// it the words give way and the orb and the keys stay.
 //
 // The box comes with the voice and leaves with it. It stays mounted while it leaves,
 // so it eases away with the orb's flight out of it, and it takes no input while it
@@ -47,6 +52,21 @@ const BOX_STYLE: CSSProperties = {
 	"--subtitle-back-ms": `${SUBTITLE_BACK_MS}ms`,
 };
 
+/**
+ * A key at the end of the box: the dock's key (outlined, raised, sunk while pressed), in the
+ * share of the stack that is its own. Its glyph sits a little left of the middle, where the
+ * quarter circle it is leaves the most room. Its hit area runs into the margin between it and
+ * its neighbour as far as the middle of it, so there is no dead strip between them.
+ */
+const CAP_KEY = cn(
+	"text-muted-foreground relative size-auto min-h-0 flex-1 px-0 pr-1.5",
+	"hover:text-foreground after:inset-x-0 after:-inset-y-[3px]",
+	"[&_svg:not([class*='size-'])]:size-4",
+);
+
+/** A key that is on, and so is down: the voice is muted. */
+const CAP_KEY_ON = "bg-muted text-foreground shadow-pressed";
+
 /** Inputs for the voice box. */
 interface VoiceBoxProps {
 	readonly voice: AgentVoiceView;
@@ -75,8 +95,7 @@ function VoiceBox(props: VoiceBoxProps): JSX.Element | null {
  * @returns The box.
  */
 function Box(props: VoiceBoxProps): JSX.Element {
-	const { voice, actions } = props;
-	const state = useCircleState(voice);
+	const state = useCircleState(props.voice);
 	return (
 		<section
 			aria-label="Voice"
@@ -87,13 +106,13 @@ function Box(props: VoiceBoxProps): JSX.Element {
 			data-still={props.reducedMotion ? "" : undefined}
 			inert={!props.shown}
 			style={BOX_STYLE}
-			className="group/box bg-card/96 border-border rounded-panel shadow-float pointer-events-none relative isolate flex max-w-full items-center gap-3 border py-1.5 pr-2 pl-1.5"
+			className="bg-card/96 border-border shadow-float pointer-events-none relative isolate flex max-w-full items-stretch rounded-full border"
 		>
-			<OrbSlot
-				home="box"
-				className="border-primary-mark bg-card shadow-raised group-data-[voice-state=muted]/box:border-border relative size-16 shrink-0 rounded-full border"
-			/>
-			<div data-slot="voice-words" className="grid min-w-0 grid-cols-[minmax(0,1fr)] items-center">
+			<OrbSlot home="box" className="relative m-1.5 size-16 shrink-0 self-center" />
+			<div
+				data-slot="voice-words"
+				className="mr-3 ml-1.5 grid min-w-0 grid-cols-[minmax(0,1fr)] items-center self-center"
+			>
 				<SubtitleWords
 					transcript={props.transcript}
 					reducedMotion={props.reducedMotion}
@@ -101,11 +120,39 @@ function Box(props: VoiceBoxProps): JSX.Element {
 				/>
 				<VoiceWord state={state} />
 			</div>
-			<div className="pointer-events-auto flex flex-col items-center gap-1">
-				<MuteAction voice={voice} actions={actions} />
-				<SubtitlesToggle />
-			</div>
+			<Cap voice={props.voice} actions={props.actions} muted={state === "muted"} />
 		</section>
+	);
+}
+
+/**
+ * The two keys at the box's right end: mute above, the subtitles control below, a margin in from
+ * the box's edge and from each other, and as high together as the orb.
+ * @param props The voice, the actions and whether the voice is muted.
+ * @param props.voice The voice.
+ * @param props.actions The actions.
+ * @param props.muted Whether the voice is muted, which sinks the mute key.
+ * @returns The end of the box.
+ */
+function Cap(props: {
+	readonly voice: AgentVoiceView;
+	readonly actions: AgentActions;
+	readonly muted: boolean;
+}): JSX.Element {
+	return (
+		<div
+			data-slot="voice-keys"
+			className="pointer-events-auto m-1.5 ml-0 flex h-16 w-11 shrink-0 flex-col gap-1.5 self-center"
+		>
+			<MuteAction
+				keyed
+				voice={props.voice}
+				actions={props.actions}
+				tipSide="left"
+				className={cn(CAP_KEY, props.muted && CAP_KEY_ON)}
+			/>
+			<SubtitlesToggle keyed tipSide="left" className={CAP_KEY} />
+		</div>
 	);
 }
 

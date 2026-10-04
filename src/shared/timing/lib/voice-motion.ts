@@ -154,6 +154,14 @@ const VOICE_BREATH_MS = 3800;
 const VOICE_FLIGHT_MS = 680;
 
 /**
+ * How long the dock's circle takes to let go of its seat once the orb is not in it: the
+ * seat is drawn only while the orb is there, and the orb has gone or is yet to come.
+ * Pulls against the flight: it must be gone in a blink, or an empty circle is seen
+ * waiting for an orb that is already in the air.
+ */
+const VOICE_SEAT_OUT_MS = 90;
+
+/**
  * How long the voice box takes to arrive over the picture: its glass rises and
  * fades in while the orb is still on its way, so the socket is there to receive
  * it. Pulls against the flight: the box must be seen before the orb lands in it,
@@ -237,6 +245,7 @@ export {
 	VOICE_RELEASE_MS,
 	VOICE_RING_TURN_MS,
 	VOICE_ROW_STEP_MS,
+	VOICE_SEAT_OUT_MS,
 	VOICE_SPARK_MS,
 	VOICE_SWELL_MS,
 	VOICE_SYLLABLE_MS,

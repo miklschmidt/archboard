@@ -47,6 +47,12 @@ const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 const STILL_PX = 0.5;
 /** The share of the glide a part that was not there waits before it fades in, so it arrives into a settled place. */
 const FADE_DELAY = 0.3;
+/**
+ * The share of the glide a key waits before it fades in as it grows out of a seat the orb has
+ * left. It waits until the plate has all but arrived, so that no empty outline is seen
+ * travelling down the dock on the way.
+ */
+const SEAT_DELAY = 0.4;
 
 const GLIDE_OPTIONS: KeyframeAnimationOptions = {
 	duration: VOICE_MORPH_MS,
@@ -182,6 +188,36 @@ function plateBox(place: Place, left: number, top: number): Keyframe {
 }
 
 /**
+ * Fade a part in once the glide has gone some way: nothing of it is seen until then.
+ * @param node The part.
+ * @param after The share of the glide to wait.
+ */
+function fadeIn(node: HTMLElement, after: number): void {
+	node.animate(
+		[
+			{ opacity: 0, offset: 0 },
+			{ opacity: 0, offset: after, easing: "ease-out" },
+			{ opacity: 1, offset: 1 },
+		],
+		{ ...GLIDE_OPTIONS, easing: "linear" },
+	);
+}
+
+/**
+ * Whether the plate is a circle that becomes a key with nobody in it: the orb is leaving for the
+ * voice box (the dock is marked data-boxed), so what was its seat must not be seen turning into
+ * the key. The key grows out of it. The orb is told to leave after this motion has begun, so
+ * whether it is still in the circle cannot be asked of the page here.
+ * @param node The plate.
+ * @param before Where it stood.
+ * @param now Where it stands.
+ * @returns True when the orb leaves for the box and the plate goes from a circle to a key.
+ */
+function growsOutOfEmptySeat(node: HTMLElement, before: Place, now: Place): boolean {
+	return before.rect.width < now.rect.width / 2 && node.closest("[data-boxed]") !== null;
+}
+
+/**
  * Play the plate from the shape it had to the shape it has: the key's box, then
  * the circle's, with the corners going from firm to round on the way.
  * @param node The plate.
@@ -196,6 +232,7 @@ function morphPlate(node: HTMLElement, before: Place, now: Place): void {
 		],
 		GLIDE_OPTIONS,
 	);
+	if (growsOutOfEmptySeat(node, before, now)) fadeIn(node, SEAT_DELAY);
 }
 
 /**
@@ -207,14 +244,7 @@ function morphPlate(node: HTMLElement, before: Place, now: Place): void {
  */
 function playPart(name: string, node: HTMLElement, before: Place | undefined, now: Place): void {
 	if (before === undefined) {
-		node.animate(
-			[
-				{ opacity: 0, offset: 0 },
-				{ opacity: 0, offset: FADE_DELAY, easing: "ease-out" },
-				{ opacity: 1, offset: 1 },
-			],
-			{ ...GLIDE_OPTIONS, easing: "linear" },
-		);
+		fadeIn(node, FADE_DELAY);
 		return;
 	}
 	if (name === PLATE) {

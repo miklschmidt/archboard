@@ -52,16 +52,65 @@ function followFocus(pressed: HTMLElement | null): void {
 interface SubtitlesToggleProps {
 	/** The preference it changes; the page's own unless a test supplies one. */
 	readonly preference?: SubtitlePreference;
+	/**
+	 * Whether it is a key of the voice box, drawn as the dock's keys are. Pressing it acts, so it
+	 * does not show that subtitles are on by changing its glyph, as an icon among icons does.
+	 */
+	readonly keyed?: boolean;
+	/** What shapes the control where it is not an icon among icons, as at the end of the voice box. */
+	readonly className?: string;
+	/** Which side its tooltip opens on. */
+	readonly tipSide?: "top" | "left";
+}
+
+/**
+ * The control's glyph: closed captions, filled while subtitles are on in an icon among icons.
+ * @param props Whether to draw it filled.
+ * @param props.filled Whether to draw it filled.
+ * @returns The glyph.
+ */
+function Glyph(props: { readonly filled: boolean }): JSX.Element {
+	return props.filled ? (
+		<RiClosedCaptioningFill aria-hidden="true" />
+	) : (
+		<RiClosedCaptioningLine aria-hidden="true" />
+	);
+}
+
+/** How the control looks. */
+interface Face {
+	readonly variant: "ghost" | "outline";
+	/** The ink of the glyph. */
+	readonly tone: string;
+	/** Whether the glyph is filled. */
+	readonly filled: boolean;
+}
+
+/**
+ * How the control looks. An icon among icons shows that subtitles are on by a filled glyph and
+ * the ink; a key of the voice box does not, because pressing it acts.
+ * @param wanted Whether subtitles are on.
+ * @param keyed Whether it is a key of the voice box.
+ * @returns The face.
+ */
+function faceOf(wanted: boolean, keyed: boolean): Face {
+	const filled = wanted && !keyed;
+	return {
+		variant: keyed ? "outline" : "ghost",
+		tone: filled ? "text-foreground" : "text-muted-foreground",
+		filled,
+	};
 }
 
 /**
  * The subtitles toggle, a pressed button while subtitles are on.
- * @param props The preference, when not the page's own.
+ * @param props The preference, when not the page's own, and whether it is a key of the voice box.
  * @returns An icon button with a tooltip.
  */
 function SubtitlesToggle(props: SubtitlesToggleProps): JSX.Element {
 	const preference = props.preference ?? subtitlePreference;
 	const wanted = useSubtitlesWanted(preference);
+	const face = faceOf(wanted, props.keyed === true);
 	const label = wanted ? "Hide subtitles" : "Show subtitles";
 	const trigger = useRef<HTMLButtonElement>(null);
 	const toggle = useCallback((): void => {
@@ -78,22 +127,19 @@ function SubtitlesToggle(props: SubtitlesToggleProps): JSX.Element {
 				ref={trigger}
 				data-slot="voice-subtitles-toggle"
 				className={cn(
-					buttonVariants({ variant: "ghost", size: "icon-xs" }),
+					buttonVariants({ variant: face.variant, size: "icon-xs" }),
 					"relative rounded-sm after:absolute after:-inset-1",
-					wanted ? "text-foreground" : "text-muted-foreground",
+					face.tone,
+					props.className,
 				)}
 				aria-label={label}
 				aria-pressed={wanted}
 				onClick={toggle}
 			>
-				{wanted ? (
-					<RiClosedCaptioningFill aria-hidden="true" />
-				) : (
-					<RiClosedCaptioningLine aria-hidden="true" />
-				)}
+				<Glyph filled={face.filled} />
 				<span className="sr-only">{label}</span>
 			</TooltipTrigger>
-			<TooltipContent side="top">{label}</TooltipContent>
+			<TooltipContent side={props.tipSide ?? "top"}>{label}</TooltipContent>
 		</Tooltip>
 	);
 }
