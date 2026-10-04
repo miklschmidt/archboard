@@ -75,8 +75,10 @@ test("a line to its label runs without a hook", async () => {
 	for (const [id, points] of routes) expect(doublesBack(points), id).toBe(false);
 });
 
+// Long enough that one column fits the reference pane too poorly to be worth
+// keeping whole against the line a fold draws between its columns.
 test("a long chain folds into columns whose first cards stand on one line", async () => {
-	const stages = Array.from({ length: 14 }, (_, index) => `s${index}`);
+	const stages = Array.from({ length: 16 }, (_, index) => `s${index}`);
 	const chain = orderedFixture({
 		nodes: stages.map((id) => ({ id, name: `Stage ${id}`, kind: "module" })),
 		edges: stages.slice(1).map((to, index) => ({

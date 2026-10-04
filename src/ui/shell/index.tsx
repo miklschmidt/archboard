@@ -8,7 +8,7 @@
 
 import { useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
 
-import { NAVIGATOR_WIDTH } from "@/shared/shell-geometry/index";
+import { CHROME_HEIGHT, NAVIGATOR_WIDTH } from "@/shared/shell-geometry/index";
 import { buildOutline } from "@/ui/board-catalog";
 import type {
 	LivePresentation,
@@ -32,12 +32,14 @@ import { PaneStages } from "@/ui/shell/components/PaneStages";
 import { isPresentShortcut, presentShortcutLabel } from "@/ui/shell/lib/shortcuts";
 
 /**
- * The navigator's width is the shell's one fixed column, set here from the
- * shared shell geometry so the reference pane a drawing is measured against
- * is derived from the width the shell draws (ADR 0028).
+ * The navigator's width, the shell's one fixed column, and the height of the
+ * chrome row at the top of every column, set here from the shared shell
+ * geometry so the reference pane a drawing is measured against is derived from
+ * what the shell draws (ADR 0028).
  */
 const SHELL_STYLE: CSSProperties = {
 	"--shell-navigator-width": `${NAVIGATOR_WIDTH}px`,
+	"--shell-chrome-height": `${CHROME_HEIGHT}px`,
 };
 
 /** A close that does nothing, for a shell with no conversation. */
