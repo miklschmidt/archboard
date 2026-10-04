@@ -17,7 +17,9 @@
 // it the words give way and the orb and the keys stay.
 //
 // At the foot of a presented walkthrough's box (TASK-392) it has no skin of its own: the box's
-// pill is its skin, and it is drawn in it, and it fades where it stands. A fullscreen
+// pill is its skin, and it is drawn in it, and it fades where it stands. The pill is as wide as the
+// words above it, so the words take the width the orb and the keys leave, a little farther from the
+// orb than they stand in the capsule. A fullscreen
 // presentation has no dock to take the voice back, so the box carries it there whatever the
 // person wants of subtitles, and the subtitles control then decides only whether there are words.
 //
@@ -80,7 +82,7 @@ type VoiceBoxPlace = "free" | "foot";
 
 /** How each place draws the box's own surface. */
 const SKINS: Readonly<Record<VoiceBoxPlace, string>> = {
-	free: "bg-card/96 border-border shadow-float relative max-w-full rounded-full border",
+	free: "bg-card border-border shadow-float relative max-w-full rounded-full border",
 	foot: "relative h-full min-w-0 flex-1 rounded-full",
 };
 
@@ -131,12 +133,15 @@ function Box(props: VoiceBoxProps): JSX.Element {
 			<OrbSlot home="box" className="relative m-1.5 size-16 shrink-0 self-center" />
 			<div
 				data-slot="voice-words"
-				className="mr-3 ml-1.5 grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] items-center self-center"
+				className={cn(
+					"mr-3 grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] items-center self-center",
+					props.place === "foot" ? "ml-3" : "ml-1.5",
+				)}
 			>
 				<SubtitleWords
 					transcript={props.transcript}
 					reducedMotion={props.reducedMotion}
-					className="col-start-1 row-start-1 max-w-full"
+					className={cn("col-start-1 row-start-1 max-w-full", props.place === "foot" && "w-full")}
 				/>
 				<VoiceWord state={state} />
 			</div>

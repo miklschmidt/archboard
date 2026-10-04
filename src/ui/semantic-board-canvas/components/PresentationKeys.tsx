@@ -1,23 +1,32 @@
 // The keys of a presented walkthrough's box: the previous step, the next one, and leaving. They
-// are one row of the box's own keys, at the end of the step's heading, and a recording draws none of
-// them, because nobody can press anything in the video.
+// are one row of the box's own keys, beside the words, and a recording draws none of them, because
+// nobody can press anything in the video.
+//
+// A key that has nowhere to go, the previous one on the first step and the next one on the last, is
+// dimmed and does nothing, but it stays a key: a disabled button cannot hold keyboard focus, and
+// the reader who pressed Next onto the last step would be left on nothing.
 
 import { RiArrowLeftSLine, RiArrowRightSLine, RiCloseLine } from "@remixicon/react";
 import type { JSX } from "react";
 
 import { Button } from "@/ui/components/button";
+import { cn } from "@/ui/components/class-names";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/components/tooltip";
 
-/** A key's tooltip: what it does, and the key that does it where there is one. */
+/** What a key that has nowhere to go looks like: dimmed, flat, and out of the pointer's way. */
+const SPENT =
+	"aria-disabled:pointer-events-none aria-disabled:opacity-50 aria-disabled:shadow-none";
+
+/** A key's tooltip: what it does. */
 interface KeyTipProps {
 	readonly children: JSX.Element;
 	readonly label: string;
 }
 
 /**
- * A key with its tooltip.
- * @param props The key and what it does.
- * @returns The key with its tooltip.
+ * A control with its tooltip.
+ * @param props The control and what it does.
+ * @returns The control with its tooltip.
  */
 function KeyTip(props: KeyTipProps): JSX.Element {
 	return (
@@ -40,18 +49,20 @@ interface PresentationKeysProps {
 	readonly onNext: () => void;
 	/** Leave the presentation. */
 	readonly onLeave: () => void;
+	/** What places the row in the box. */
+	readonly className?: string;
 }
 
 /**
  * The previous, next and leave keys.
- * @param props Whether there is a step either way, and what each key does.
+ * @param props Whether there is a step either way, what each key does and what places the row.
  * @returns The row of keys.
  */
 function PresentationKeys(props: PresentationKeysProps): JSX.Element {
 	return (
 		<div
 			data-slot="semantic-presentation-keys"
-			className="flex items-start gap-1.5 in-data-recording:hidden"
+			className={cn("flex items-start gap-1.5 in-data-recording:hidden", props.className)}
 		>
 			<KeyTip label="Previous step">
 				<Button
@@ -60,7 +71,8 @@ function PresentationKeys(props: PresentationKeysProps): JSX.Element {
 					size="icon"
 					data-slot="semantic-presentation-previous"
 					aria-label="Previous step"
-					disabled={!props.hasPrevious}
+					aria-disabled={props.hasPrevious ? undefined : true}
+					className={SPENT}
 					onClick={props.onPrevious}
 				>
 					<RiArrowLeftSLine />
@@ -73,7 +85,8 @@ function PresentationKeys(props: PresentationKeysProps): JSX.Element {
 					size="icon"
 					data-slot="semantic-presentation-next"
 					aria-label="Next step"
-					disabled={!props.hasNext}
+					aria-disabled={props.hasNext ? undefined : true}
+					className={SPENT}
 					onClick={props.onNext}
 				>
 					<RiArrowRightSLine />
@@ -95,4 +108,4 @@ function PresentationKeys(props: PresentationKeysProps): JSX.Element {
 	);
 }
 
-export { PresentationKeys, type PresentationKeysProps };
+export { KeyTip, PresentationKeys, type PresentationKeysProps };

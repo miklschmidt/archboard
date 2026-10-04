@@ -198,22 +198,28 @@ header is held and says so, and neither it nor the search shortcut shows or hide
 the sidebar.
 
 A presented walkthrough (TASK-250, TASK-392) is the picture and one plate laid over its
-foot, with the sidebar stepped aside. The plate has a rail of steps along its top, the
-step's number set as a drawing's sheet number is, its heading in the `presentation` type
-role with its words under it in the `reading` role and the name of the walkthrough under
-those, and at their end the keys: previous, next and leave. At its foot is a pill for the
-voice: the key that narrates the walkthrough while voice is off, and the voice box, with
-its orb, its words, mute and the subtitles control, while it is live. The box keeps one
-height whatever the voice is doing, so the picture does not move with it. A fullscreen
-presentation has no dock, so the voice box carries the voice there whatever the person
-wants of subtitles, and the bar holds one key that starts and ends voice. DESIGN.md
-describes the plate.
+foot, with the sidebar stepped aside. The plate is as wide as the pane less the margin it
+keeps at its foot. It has a rail of steps along its top, with one piece of gold that travels to
+the step shown. Under the rail, the words stand in a column in the middle. The column is left
+aligned and 64rem wide at most. It holds the step's heading in the `presentation` type role,
+its words in the `reading` role, and the name of the walkthrough under those. The step's
+number is set as a drawing's sheet number is, to the left of the column. The keys, previous,
+next and leave, are to its right.
 
-![The walkthrough box with the voice at its foot, idle and while the voice speaks, in
-the light and the dark theme](assets/walkthrough-box.png)
+Under the words, as wide as they are, is a pill for the voice. While voice is off, the pill
+holds the key that narrates the walkthrough. While voice is live, it holds the voice box, with
+its orb, its words, mute and the subtitles control. The box keeps one height whatever the voice
+is doing and whichever step is shown, so the picture does not move with either. A fullscreen
+presentation has no dock. So the voice box carries the voice there, whatever the person wants
+of subtitles, and the bar holds one key that starts and ends voice. DESIGN.md describes the
+plate.
 
-Rendered captures at 1920×1080. Top, the box while voice is off, with the key that
-narrates. Bottom, the box while the voice speaks.
+![The walkthrough box, idle and while the voice speaks, in the dark and the light
+theme](assets/walkthrough-box.png)
+
+Rendered captures at 1920×1080, cropped to the box. In each theme, the upper capture shows
+the box while voice is off, with the key that narrates. The lower capture shows the box while
+the voice speaks. The dark theme is above the light one.
 
 The camera keeps the subjects of the step clear
 of the plate. The subjects include the parts at both ends of each relationship

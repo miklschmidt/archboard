@@ -156,9 +156,11 @@ interface BoardCamera {
 
 /**
  * The most of a viewport's height a reserve may keep clear: past this, what the
- * reserve is for would be crowding out the picture it is laid over.
+ * reserve is for would be crowding out the picture it is laid over. Half is what
+ * the box of a presented walkthrough may need, in a pane as narrow as one of two,
+ * for the longest words a step has had.
  */
-const MOST_RESERVED = 0.4;
+const MOST_RESERVED = 0.5;
 
 /**
  * The part of a viewport a fit may use, once the reserve at its bottom is kept clear.

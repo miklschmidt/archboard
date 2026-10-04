@@ -7,21 +7,33 @@
 // camera glides to the step and what the step is not about recedes. Escape leaves, and gives the
 // reader back the camera and the view they had.
 //
-// The box is one plate. Along its top is the rail of steps, with the one shown in gold. Under it
-// are the step's number, its heading and words and the name of the walkthrough, and at their end
-// the keys that step and leave. At its foot is the voice's place (PresentationFoot): the key that
-// has the walkthrough narrated, which the voice's orb takes over, and the words the voice says.
-// Everything the box holds is kept clear of by the camera, the voice included, so nothing the
-// voice says covers a subject of the step.
+// The box is one plate, as wide as the pane less the margin it keeps at its foot. Along its top is
+// the rail of steps, with a piece of gold that travels to the step shown. Under it the words stand
+// in a column in the middle, left aligned and as wide as 64rem: each step's heading and words with
+// the name of the walkthrough under them, the step's number to their left and the keys that step
+// and leave to their right. Under the words, as wide as they are, is the voice's place
+// (PresentationFoot): the key that has the walkthrough narrated, which the voice's orb takes over,
+// and the words the voice says. A step is handed to the next by the steps' own places (see
+// PresentationStep), and the box is as high as its highest step, so stepping never changes the
+// room the picture has. The camera keeps the subjects of the step clear of the whole box, the voice
+// included, up to half the height of the picture.
 //
 // The stage decides everything the picture does; this is the box and its keys. A page recording
 // the walkthrough (TASK-304) steps it by itself and nobody can press anything in the video, so
 // there the box keeps where it is in the walkthrough and drops the keys.
 
-import { useCallback, type CSSProperties, type JSX, type ReactNode } from "react";
+import {
+	useCallback,
+	useEffect,
+	useRef,
+	type CSSProperties,
+	type JSX,
+	type ReactNode,
+	type RefObject,
+} from "react";
 
 import type { SemanticWalkthrough } from "@/shared/semantic-board/index";
-import { PRESENTATION_BOX_IN_MS } from "@/shared/timing/timing";
+import { PRESENTATION_BOX_IN_MS, PRESENTATION_BOX_STEP_MS } from "@/shared/timing/timing";
 import { PresentationFoot } from "@/ui/semantic-board-canvas/components/PresentationFoot";
 import { PresentationKeys } from "@/ui/semantic-board-canvas/components/PresentationKeys";
 import { PresentationRail } from "@/ui/semantic-board-canvas/components/PresentationRail";
@@ -30,8 +42,11 @@ import { useCaptionReserve } from "@/ui/semantic-board-canvas/hooks/use-caption-
 import { usePresentationKeys } from "@/ui/semantic-board-canvas/hooks/use-presentation-keys";
 import type { WalkthroughNarration } from "@/ui/semantic-board-canvas/lib/narration";
 
-/** The pace the stylesheet eases the box in by (app.css, `semantic-presentation`). */
-const BOX_STYLE: CSSProperties = { "--presentation-box-in-ms": `${PRESENTATION_BOX_IN_MS}ms` };
+/** The paces the stylesheet eases the box in by, and hands a step to the next by (app.css, `semantic-presentation`). */
+const BOX_STYLE: CSSProperties = {
+	"--presentation-box-in-ms": `${PRESENTATION_BOX_IN_MS}ms`,
+	"--presentation-step-ms": `${PRESENTATION_BOX_STEP_MS}ms`,
+};
 
 /** Inputs for a presented walkthrough. */
 interface SemanticPresentationProps {
@@ -60,6 +75,21 @@ interface SemanticPresentationProps {
 }
 
 /**
+ * Take keyboard focus into the box when it opens, unless the reader is typing somewhere: the
+ * control that presented the walkthrough steps aside with the sidebar, and focus would be left on
+ * nothing.
+ * @returns The ref for the box.
+ */
+function useFocusWhenOpened(): RefObject<HTMLElement | null> {
+	const box = useRef<HTMLElement>(null);
+	useEffect(() => {
+		const held = document.activeElement;
+		if (held === null || held === document.body) box.current?.focus({ preventScroll: true });
+	}, []);
+	return box;
+}
+
+/**
  * A walkthrough presented over the picture.
  * @param props The walkthrough, the step shown, and how to step and leave.
  * @returns The box.
@@ -69,6 +99,7 @@ function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 	const count = walkthrough.beats.length;
 	usePresentationKeys({ index, count, go: onGo, leave: onLeave }, true);
 	const attach = useCaptionReserve(props.reserve);
+	const box = useFocusWhenOpened();
 	const previous = useCallback((): void => {
 		onGo(Math.max(0, index - 1));
 	}, [onGo, index]);
@@ -81,33 +112,46 @@ function SemanticPresentation(props: SemanticPresentationProps): JSX.Element {
 		<div
 			ref={attach}
 			data-slot="semantic-presentation-frame"
-			className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center px-6 pb-5"
+			className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-5 pb-5"
 		>
 			<section
+				ref={box}
+				tabIndex={-1}
 				aria-label={`Walkthrough ${walkthrough.name}`}
 				aria-roledescription="presentation"
 				data-slot="semantic-presentation"
 				data-step={index}
 				style={BOX_STYLE}
-				className="bg-card border-border shadow-float rounded-panel pointer-events-auto flex w-full max-w-[55rem] flex-col gap-4 border p-5"
+				className="bg-card border-border shadow-float rounded-panel pointer-events-auto flex w-full flex-col gap-4 border p-5 outline-none"
 			>
 				<PresentationRail walkthrough={walkthrough} index={index} onGo={onGo} />
-				<div className="flex gap-5">
-					<StepFigure index={index} count={count} />
-					<StepWords walkthrough={walkthrough} index={index} missing={props.missing} />
+				<div className="grid grid-cols-[minmax(auto,1fr)_minmax(0,64rem)_minmax(auto,1fr)] gap-x-5 gap-y-4">
+					<StepFigure
+						walkthrough={walkthrough}
+						index={index}
+						className="col-start-1 row-start-1 justify-self-end"
+					/>
+					<StepWords
+						walkthrough={walkthrough}
+						index={index}
+						missing={props.missing}
+						className="col-start-2 row-start-1"
+					/>
 					<PresentationKeys
 						hasPrevious={index > 0}
 						hasNext={index < count - 1}
 						onPrevious={previous}
 						onNext={next}
 						onLeave={onLeave}
+						className="col-start-3 row-start-1 justify-self-start"
+					/>
+					<PresentationFoot
+						walkthrough={walkthrough.id}
+						narration={props.narration}
+						overlay={props.overlay}
+						className="col-start-2 row-start-2"
 					/>
 				</div>
-				<PresentationFoot
-					walkthrough={walkthrough.id}
-					narration={props.narration}
-					overlay={props.overlay}
-				/>
 			</section>
 		</div>
 	);

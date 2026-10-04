@@ -178,7 +178,7 @@ paths, versions, counts and times.
 - **Control** (500, 13px, 18px): buttons, tabs and fields.
 - **Body** (400, 12px, 16px): prose and row labels. A section heading uses it in semibold.
 - **Presentation** (600, 28px, 34px): the heading of a presented step.
-- **Reading** (400, 16px, 24px): the words of a presented step, at 66 characters wide at most.
+- **Reading** (400, 16px, 24px): the words of a presented step, in a column 64rem wide at most.
 - **Figure** (650, 44px, 44px, display face): the number of a presented step.
 - **Subtitle** (500, 20px, 28px): the words the voice says.
 - **Technical** (400, 11px, 14px, mono): identifiers, paths, versions, counts and times.
@@ -216,8 +216,8 @@ over the picture is blurred or filtered, and nothing there loops but the voice
 orb, which draws itself on a canvas of its own, because every repaint over the
 picture makes it slower to drag. What moves over it moves as a layer of its own,
 once: a tip or a menu as it opens, the floating sidebar when it is shown or put
-away, the voice box as it comes and goes, and each word of a subtitle as it
-arrives. The file palette.css holds the values for both themes. The file app.css
+away, the walkthrough box as it arrives and as it hands one step to the next, the
+voice box as it comes and goes, and each word of a subtitle as it arrives. The file palette.css holds the values for both themes. The file app.css
 gives each one a `shadow-*` utility.
 
 ### Shadow Vocabulary
@@ -233,7 +233,7 @@ gives each one a `shadow-*` utility.
 
 ### Named Rules
 
-**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar, the walkthrough box or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. The floating sidebar takes at most 160ms, the walkthrough box 220ms to arrive, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off, in a layer of its own, over 680ms.
+**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar, the walkthrough box or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. The floating sidebar takes at most 160ms, the walkthrough box 220ms to arrive and 520ms to hand one step to the next, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off, in a layer of its own, over 680ms.
 
 **The Picture Answers Rule.** The light belongs to the picture, not to the shell. When a part is picked out or the pointer rests on one, the viewer marks what stays as drawn, and the picture's own subjects recede under an opacity filter. The shell lays no layer, blur or halo over the picture to do it.
 
@@ -368,37 +368,62 @@ takes the room from the conversation.
 
 ### Walkthrough box
 
-A presented walkthrough lays one plate over the foot of its pane's picture. It is
-centred, 880px wide at most and 20px above the pane's edge, and the camera keeps the
-picture clear of all of it, the voice at its foot included. The plate is a card in Card
-White with a Rule edge, 4px corners and the float shadow, with 20px of padding and
-16px between its rows.
+A presented walkthrough lays one plate over the foot of its pane's picture. The plate is as
+wide as the pane less 20px at each side, the margin it keeps at its foot. The camera keeps
+the picture clear of all of it, the voice at its foot included, up to half the height of the
+pane. The plate is a card in Card White with a Rule edge, 4px corners and the float shadow.
+It has 20px of padding and 16px between its rows.
 
-The rail runs along its top: one 6px segment for each step, the step shown in Gold
-Mark and the rest in the Rule tone. Each segment is a button that names its step and
-goes to it. Under the rail are three columns. The step's number is set in the
-display face at 44px over a mono "of N", with a rule on its right, as the sheet number
-of a drawing is. The step's heading (28px) stands over its words (16px, 66 characters
-wide at most), with the name of the walkthrough under them in muted ink. At the end of
-the heading's row are the box's three keys, 32px high: previous, next, and leave, which
-says Esc. A recording draws no keys, because nobody can press anything in the video.
+The rail runs along the top of the plate, across its full width. It has one segment for each
+step. Each segment is a button, and a tooltip names its step. The segments are 4px high, in
+Muted Ink at 70%, which is 3:1 against the plate, because they are controls. One piece of
+Gold Mark marks the step shown. It is 6px high and as wide as a segment, with a paler wake of
+the same gold behind it.
 
-At the foot is the voice pill, 78px high and round at both ends, a field sunk into the
-plate (the well shadow, on Chrome Chalk). It is there for as long as the shell has a
-voice to offer, so the box keeps one height whether the voice is off, starting, speaking
-or over, and the picture does not move with it. While voice is off the pill holds the key
-that narrates the walkthrough: a circle where the orb will be lit, with a microphone in
-it, then "Narrate" and a line of muted ink that says what it does. While a narration
-cannot start the key is dimmed and never taken out, and the line says why. While the
-voice is live and the voice box has it, the voice box is drawn in the pill and the key
-gives way to it: the orb takes the circle, then come the words or the voice's word, and
-mute above the subtitles control at the right end, as the box over the picture has them.
-A recording and the replay of a kept talk draw plain subtitles in the pill, with no orb
-and no keys.
+Under the rail, the words stand in a column in the middle of the plate. The column is 64rem
+wide at most, and its text is left aligned. It holds the heading of the step (28px) and the
+words of the step (16px). Under them is the name of the walkthrough, in muted ink. The
+step's number stands to the left of the column. It is set in the display face at 44px, over a
+mono "of N". A rule stands on its right, as it does on the sheet number of a drawing.
 
-The plate arrives once, rising 10px as it fades in over 220ms, and leaves at once. The
-words of a new step fade in over 200ms, and the rail's gold follows over 150ms. Nothing
-else moves. With reduced motion everything cuts.
+The box's three keys stand to the right of the column. They are 32px high: previous, next,
+and leave, which says Esc. A key with nowhere to go is dimmed, as previous is on the first
+step. It stays a key, so that focus is not left on nothing. A recording draws no keys,
+because nobody can press anything in the video.
+
+Under the words, as wide as they are, is the voice pill. It is 78px high and round at both
+ends, a field sunk into the plate (the well shadow, on Chrome Chalk). It is there for as long
+as the shell has a voice to offer. So the box keeps one height whether the voice is off,
+starting, speaking or over, and the picture does not move with it.
+
+While voice is off, the pill holds the key that narrates the walkthrough. The key is a circle
+where the orb will be lit, with a microphone in it. Then come "Narrate" and a line of muted
+ink that says what it does. While a narration cannot start, the key is dimmed and never taken
+out, and the line says why. Pressing the key hands keyboard focus to the pill, because the key
+gives way.
+
+While the voice is live and the voice box has it, the pill holds the voice box, and the key
+gives way. The orb takes the circle. Then come the words, which take the width that
+the orb and the keys leave, or the voice's word. Mute above the subtitles control stands at
+the right end, as in the box over the picture. A recording and the replay of a kept talk draw
+plain subtitles in the pill, with no orb and no keys.
+
+Every step stands in one cell of the column. So the box is as high as its highest step, and
+stepping never changes the room the picture has. A step is handed to the next over 520ms, and
+nothing else in the box moves. The step shown leaves first and fast. When the reader steps
+on, it leaves to the left. When the reader goes back, it leaves to the right. The number rolls
+up or down the same way, like the digit of a flip board.
+
+The next step arrives as the old one goes, its heading and then its words. The gold of the
+rail travels to the new step, with its wake behind it. The wake is the one part that ends
+later. It sets out 26ms after the gold and takes 676ms, which is 1.3 times the pace, so it
+settles about 180ms after the rest. A step chosen out of order is handed over the same way.
+The steps that are not shown can be neither reached nor found.
+
+The plate itself arrives once. It rises 10px as it fades in over 220ms, and it leaves at
+once. With reduced motion, everything cuts. A recording and the replay of a kept talk cut as
+well. A stepped clock draws their frames, and a transition that starts on a frame is drawn a
+few milliseconds ahead of that clock. Their picture still glides, because the clock drives it.
 
 ### Voice box
 
