@@ -3,12 +3,13 @@
 //
 // What is guarded: with subtitles on and a voice live the subtitles are the box's, so the voice
 // is read where its words are; turning subtitles off takes the box away; a pane that is presented
-// (which has its own voice controls) or has no voice owner keeps plain subtitles, and a recording
+// (which has its own voice controls) keeps plain subtitles, and a recording
 // has them whatever the person chose, because nobody watching the video can turn them on; and a
 // voice that is not on has no box.
 //
-// The words themselves come from the demonstration's transcript, which is what a pane is given
-// when it has no transport: where the words come from is not what is under test.
+// The words come from the demonstration's transcript, which is what a pane is given when it has
+// no transport, except in the one test of a voice heard over a transport, where a stand-in feed
+// takes its place: where the words come from is not what is under test.
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { act, cleanup, render } from "@testing-library/react";
@@ -17,6 +18,7 @@ import type { JSX } from "react";
 
 import { VOICE_BOX_OUT_MS } from "@/shared/timing/voice";
 import { PaneSubtitles } from "@/ui/application/pane-subtitles";
+import type { VoiceFeed } from "@/ui/application/subtitled-transcript";
 import { TooltipProvider } from "@/ui/components/tooltip";
 import { driveFramesFrom } from "@/ui/frame-clock";
 import { createSteppedClock } from "@/ui/frame-clock/replay";
@@ -118,11 +120,39 @@ function voiceIn(stage: AgentVoiceView["stage"]): AgentVoiceView {
 	};
 }
 
+/**
+ * Nothing to hear when the page has no transport to listen on.
+ * @returns How to stop listening.
+ */
+function listenToNothing(): () => undefined {
+	return () => undefined;
+}
+
+/** A voice a transport carries, with nothing said yet. */
+const HEARD_VOICE: ReturnType<VoiceFeed["voice"]> = Object.freeze({
+	state: "active",
+	recording: false,
+	transcript: [],
+});
+
+/**
+ * The voice the transport last published, which is the same one until it publishes another.
+ * @returns The voice.
+ */
+function heardVoice(): ReturnType<VoiceFeed["voice"]> {
+	return HEARD_VOICE;
+}
+
+/** A pane's voice as a transport would carry it. */
+const HEARD: VoiceFeed = { subscribe: listenToNothing, voice: heardVoice };
+
 /** What a pane is given. */
 interface PaneSetup {
 	readonly stage?: AgentVoiceView["stage"];
-	readonly captionable?: boolean;
+	readonly boxAvailable?: boolean;
 	readonly recording?: boolean;
+	/** Where the pane hears its voice, or null for the demonstration. */
+	readonly feed?: VoiceFeed | null;
 }
 
 /**
@@ -136,10 +166,10 @@ function pane(setup: PaneSetup = {}): JSX.Element {
 			<TooltipProvider>
 				<VoiceSurfaceProvider voice={voiceIn(setup.stage ?? "listening")} actions={NO_ACTIONS}>
 					<PaneSubtitles
-						transport={null}
+						feed={setup.feed ?? null}
 						reducedMotion={false}
 						recording={setup.recording ?? false}
-						captionable={setup.captionable ?? true}
+						boxAvailable={setup.boxAvailable ?? true}
 					/>
 				</VoiceSurfaceProvider>
 			</TooltipProvider>
@@ -202,15 +232,23 @@ test("a voice that is not on has no box", () => {
 	expect(boxed()).toBe(false);
 });
 
-test("a pane that is presented or has no voice owner keeps plain subtitles", () => {
-	render(pane({ captionable: false }));
+test("a voice heard over a transport is carried by the box too, and by plain subtitles where the box has no place", () => {
+	const view = render(pane({ feed: HEARD }));
+	expect(boxed()).toBe(true);
+	view.rerender(pane({ feed: HEARD, boxAvailable: false }));
+	expect(boxed()).toBe(false);
+	expect(plain()).toBe(true);
+});
+
+test("a pane that is presented keeps plain subtitles, and its voice controls are in the presentation", () => {
+	render(pane({ boxAvailable: false }));
 	expect(boxed()).toBe(false);
 	expect(plain()).toBe(true);
 });
 
 test("a recording has plain subtitles whatever the person chose, and never the box", () => {
 	subtitlePreference.change(false);
-	render(pane({ captionable: false, recording: true }));
+	render(pane({ boxAvailable: false, recording: true }));
 	expect(boxed()).toBe(false);
 	expect(plain()).toBe(true);
 });

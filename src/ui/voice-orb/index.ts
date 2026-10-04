@@ -10,7 +10,11 @@ export {
 	OrbStageProvider,
 	type OrbSlotProps,
 } from "@/ui/voice-orb/components/OrbStage";
-export { useOrbPlacement, type OrbPlacement } from "@/ui/voice-orb/hooks/use-orb-stage";
+export {
+	useOrbOffered,
+	useOrbPlacement,
+	type OrbPlacement,
+} from "@/ui/voice-orb/hooks/use-orb-stage";
 export {
 	createOrbStage,
 	type OrbFrames,

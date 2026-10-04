@@ -9,23 +9,22 @@
 
 import { useSyncExternalStore, type JSX } from "react";
 
-import { subtitledTranscript } from "@/ui/application/subtitled-transcript";
+import { subtitledTranscript, type VoiceFeed } from "@/ui/application/subtitled-transcript";
 import { VoiceSubtitles, useSubtitlesWanted, useVoiceBoxed } from "@/ui/voice-subtitles";
 import type { SubtitleSource } from "@/ui/voice-subtitles";
-import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 import { VoiceBox, useVoiceSurface } from "@/ui/workbench";
 import { useDemoTranscript } from "@/ui/workbench/demo";
 
 /** Inputs for a pane's subtitles. */
 interface PaneSubtitlesProps {
-	/** The transport of the pane voice runs for, or null where the page demonstrates the voice (`?voiceDemo`). */
-	readonly transport: BrowserWorkbenchTransport | null;
+	/** Where the pane hears the voice it runs for, or null where the page demonstrates the voice (`?voiceDemo`). */
+	readonly feed: VoiceFeed | null;
 	/** Whether the person asked for reduced motion. */
 	readonly reducedMotion: boolean;
 	/** Whether this page is a recording. */
 	readonly recording: boolean;
 	/** Whether the voice box may carry the voice over this pane: it has a voice owner and nothing is presented. */
-	readonly captionable: boolean;
+	readonly boxAvailable: boolean;
 }
 
 /** What the subtitles are drawn from. */
@@ -33,40 +32,31 @@ interface SubtitledProps {
 	readonly transcript: readonly SubtitleSource[];
 	readonly reducedMotion: boolean;
 	readonly recording: boolean;
-	readonly captionable: boolean;
+	readonly boxAvailable: boolean;
 }
 
 /**
  * The subtitles of the voice running for one pane.
- * @param props The pane's transport, the motion preference and whether the page is a recording.
+ * @param props Where the pane hears the voice, the motion preference, whether the page is a recording and whether the box may carry the voice.
  * @returns The subtitle on screen, or the voice box, or null.
  */
 function PaneSubtitles(props: PaneSubtitlesProps): JSX.Element {
-	const { transport, ...rest } = props;
-	return transport === null ? (
-		<DemoSubtitles {...rest} />
-	) : (
-		<HeardSubtitles {...rest} transport={transport} />
-	);
+	const { feed, ...rest } = props;
+	return feed === null ? <DemoSubtitles {...rest} /> : <HeardSubtitles {...rest} feed={feed} />;
 }
 
 /**
  * The subtitles of a voice heard over the pane's transport.
- * @param props The pane's transport, the motion preference and where the voice may sit.
- * @param props.transport The transport.
+ * @param props Where the voice is heard, the motion preference and where the voice may sit.
+ * @param props.feed The feed.
  * @returns The subtitles.
  */
 function HeardSubtitles(
-	props: Omit<PaneSubtitlesProps, "transport"> & { readonly transport: BrowserWorkbenchTransport },
+	props: Omit<PaneSubtitlesProps, "feed"> & { readonly feed: VoiceFeed },
 ): JSX.Element {
-	const { transport, ...rest } = props;
-	const state = useSyncExternalStore(transport.subscribe, transport.state, transport.state);
-	return (
-		<Subtitled
-			{...rest}
-			transcript={subtitledTranscript(state.snapshot?.voice ?? null, props.recording)}
-		/>
-	);
+	const { feed, ...rest } = props;
+	const voice = useSyncExternalStore(feed.subscribe, feed.voice, feed.voice);
+	return <Subtitled {...rest} transcript={subtitledTranscript(voice, props.recording)} />;
 }
 
 /**
@@ -74,7 +64,7 @@ function HeardSubtitles(
  * @param props The motion preference and where the voice may sit.
  * @returns The subtitles.
  */
-function DemoSubtitles(props: Omit<PaneSubtitlesProps, "transport">): JSX.Element {
+function DemoSubtitles(props: Omit<PaneSubtitlesProps, "feed">): JSX.Element {
 	return <Subtitled {...props} transcript={useDemoTranscript()} />;
 }
 
@@ -86,7 +76,7 @@ function DemoSubtitles(props: Omit<PaneSubtitlesProps, "transport">): JSX.Elemen
 function Subtitled(props: SubtitledProps): JSX.Element {
 	const wanted = useSubtitlesWanted();
 	const surface = useVoiceSurface();
-	const boxable = props.captionable && surface !== null;
+	const boxable = props.boxAvailable && surface !== null;
 	const boxed = useVoiceBoxed(surface !== null && surface.voice.stage !== "idle", boxable);
 	if (boxable) {
 		return (

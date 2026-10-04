@@ -4,7 +4,8 @@
 // voice leaving the dock (the orb's socket, the voice's state in a word, mute and the subtitles
 // control); its two controls act on the voice and on the preference; it comes and goes with the
 // voice, staying on the page for as long as it takes to leave so that it eases away under the
-// orb's flight and is not cut from under it; and a person who asked for no motion sees it come
+// orb's flight and is not cut from under it, taking no input while it does, and turning round
+// from where it is when it is wanted again; and a person who asked for no motion sees it come
 // and go at once.
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
@@ -148,9 +149,7 @@ function press(name: string): void {
 
 test("the box holds what the dock's voice line did: the orb's socket, the state in words, mute and the subtitles control", () => {
 	render(box());
-	expect(
-		theBox()?.querySelector('[data-slot="voice-orb-socket"][data-home="caption"]'),
-	).not.toBeNull();
+	expect(theBox()?.querySelector('[data-slot="voice-orb-socket"][data-home="box"]')).not.toBeNull();
 	expect(theBox()?.querySelector("output")?.textContent).toBe("Listening");
 	expect(control("Mute")).not.toBeNull();
 	expect(control("Hide subtitles")).not.toBeNull();
@@ -193,6 +192,8 @@ test("the box stays on the page for as long as it takes to leave, and is gone wh
 
 		view.rerender(box({ shown: false, reducedMotion: false }));
 		expect(theBox()?.hasAttribute("data-leaving")).toBe(true);
+		// It takes no input while it leaves: its controls are not for pressing, nor to be tabbed to.
+		expect(theBox()?.hasAttribute("inert")).toBe(true);
 		act(() => {
 			clock.advanceTo(VOICE_BOX_OUT_MS - 1);
 		});
@@ -205,6 +206,30 @@ test("the box stays on the page for as long as it takes to leave, and is gone wh
 		// It comes back with the voice, with nothing left of the last time.
 		view.rerender(box({ shown: true, reducedMotion: false }));
 		expect(theBox()?.hasAttribute("data-leaving")).toBe(false);
+	} finally {
+		restore();
+	}
+});
+
+test("a box that is wanted again while it leaves is the same box, turned round, and the first wait takes nothing", () => {
+	const clock = createSteppedClock(0);
+	const restore = driveFramesFrom(clock);
+	try {
+		const view = render(box());
+		view.rerender(box({ shown: false, reducedMotion: false }));
+		const leaving = theBox();
+		act(() => {
+			clock.advanceTo(VOICE_BOX_OUT_MS / 2);
+		});
+		view.rerender(box({ shown: true, reducedMotion: false }));
+		expect(theBox()).toBe(leaving);
+		expect(theBox()?.hasAttribute("data-leaving")).toBe(false);
+		expect(theBox()?.hasAttribute("inert")).toBe(false);
+
+		act(() => {
+			clock.advanceTo(VOICE_BOX_OUT_MS * 2);
+		});
+		expect(theBox()).toBe(leaving);
 	} finally {
 		restore();
 	}

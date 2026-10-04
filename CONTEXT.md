@@ -323,11 +323,12 @@ _Avoid_: caption (the walkthrough's step text), transcript (the conversation's r
 
 **Voice box**:
 The subtitle's box with the voice in it. While the user wants subtitles and a
-voice is live, the voice's orb, its state in a word, mute and the subtitles
-control are in a box over the picture of the pane voice runs for, beside the
-words, and the agent dock does not draw the circle. Turning subtitles off flies
-the one orb back to the dock. A presented pane and a recording have plain
-subtitles, with no box. It is presentation, like the subtitle.
+voice is live and a box is on the page, the voice's orb, its state in a word,
+mute and the subtitles control are in a box over the picture of the pane voice
+runs for, beside the words, and the agent dock does not draw the circle: it
+gives the voice up only to a box that is there. Turning subtitles off flies the
+one orb back to the dock. A presented pane and a recording have plain subtitles,
+with no box. It is presentation, like the subtitle.
 _Avoid_: caption box, voice panel, subtitle bar
 
 **Pane news**:

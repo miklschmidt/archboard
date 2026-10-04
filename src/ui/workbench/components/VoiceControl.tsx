@@ -43,18 +43,18 @@ interface VoiceControlProps {
 	/** Whether the person asked for no motion. */
 	readonly reducedMotion: boolean;
 	/** Whether the voice box over a pane's picture carries the voice, so the orb is not drawn here. */
-	readonly captioned: boolean;
+	readonly boxed: boolean;
 }
 
 /**
  * Which shape the button has: the key, while voice is off and while the voice box has the orb,
  * and the circle while the orb is at home in the dock.
  * @param state What the circle shows.
- * @param captioned Whether the voice box has the voice.
+ * @param boxed Whether the voice box has the voice.
  * @returns The form.
  */
-function formOf(state: CircleState, captioned: boolean): "key" | "circle" {
-	return state === "off" || captioned ? "key" : "circle";
+function formOf(state: CircleState, boxed: boolean): "key" | "circle" {
+	return state === "off" || boxed ? "key" : "circle";
 }
 
 /**
@@ -64,11 +64,11 @@ function formOf(state: CircleState, captioned: boolean): "key" | "circle" {
  * @returns The button.
  */
 function VoiceControl(props: VoiceControlProps): JSX.Element {
-	const { voice, actions, captioned } = props;
+	const { voice, actions, boxed } = props;
 	const state = useCircleState(voice);
 	const off = state === "off";
 	useOrbPlacement({
-		home: captioned ? "caption" : "dock",
+		home: boxed ? "box" : "dock",
 		shown: !off,
 		reducedMotion: props.reducedMotion,
 	});
@@ -78,7 +78,7 @@ function VoiceControl(props: VoiceControlProps): JSX.Element {
 			data-slot="voice-circle"
 			data-part="voice"
 			data-voice-state={state}
-			data-form={formOf(state, captioned)}
+			data-form={formOf(state, boxed)}
 			aria-label={CIRCLE_NAMES[state]}
 			aria-describedby={voice.problem === null ? undefined : props.problemId}
 			title={off ? undefined : CIRCLE_NAMES[state]}
@@ -95,7 +95,7 @@ function VoiceControl(props: VoiceControlProps): JSX.Element {
 			</span>
 			<span
 				data-part="label"
-				className="text-control relative flex items-center justify-center gap-2 font-medium"
+				className="text-control relative flex items-center justify-center gap-2 font-medium whitespace-nowrap"
 			>
 				<KeyMark off={off} problem={voice.problem !== null} />
 				{CIRCLE_NAMES[state]}

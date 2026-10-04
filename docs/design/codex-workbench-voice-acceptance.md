@@ -221,9 +221,12 @@ microphone can remain the configured default. On a PipeWire desktop,
 problem; inspect locally without retaining device details. Select the intended
 physical input in system audio settings or reconnect it.
 
-Press `Talk` in the agent bar and grant microphone permission if asked. Talk
-sets up whatever voice still needs, then turns into the live control: the
-wave, the word Listening or Speaking, `Mute` and `End`. If Talk comes back
+Press `Talk` in the agent dock and grant microphone permission if asked. Talk
+sets up whatever voice still needs, then turns into the live control. With
+subtitles on, the orb flies to the voice box over the pane, with the word
+Listening or Speaking, `Mute` and the subtitles control, and the key reads
+`End voice`. With subtitles off, the live control is the circle at the head of
+the dock, with the same word, `Mute` and the subtitles control beside it. If Talk comes back
 with a warning instead, hover it for the reason. For `Requested device not
 found`, repair the default input and press Talk again. Successful SDP
 negotiation does not prove microphone capture. Do not use virtual devices. Say:
@@ -328,9 +331,9 @@ must raise a new approval; never repeat an approval whose outcome is unknown.
 
 ## 10. End voice, start a new voice session, and shut down
 
-1. Press `End` in the agent bar. Confirm the live control returns to `Talk`,
-   the wave and the active audio transport disappear, and the composer remains
-   usable.
+1. Press `End voice` in the agent dock. Confirm the live control returns to
+   `Talk`, the orb, the voice box and the active audio transport disappear, and
+   the composer remains usable.
 2. Press `Talk` again. Say `Reply with the word restarted.` Confirm one new
    `You` line and one audible `restarted` response.
 3. Press `End` again. Close the browser tab that this run opened.

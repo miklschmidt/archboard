@@ -5,13 +5,18 @@
 // walkthrough is left when somebody selects a group: both say what the reader
 // is attending to, and the picture says one of them at a time.
 
-import type { JSX, ReactNode } from "react";
+import type { CSSProperties, JSX, ReactNode } from "react";
 
+import { SIDEBAR_WIDTH } from "@/shared/shell-geometry/index";
 import { SemanticPresentation } from "@/ui/semantic-board-canvas/components/SemanticPresentation";
+import type { Sidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
 import type { WalkthroughReading } from "@/ui/semantic-board-canvas/hooks/use-walkthrough";
 import type { GroupSelection } from "@/ui/semantic-board-canvas/lib/groups";
 import type { BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
 import type { WalkthroughNarration } from "@/ui/semantic-board-canvas/lib/narration";
+
+/** What a floating sidebar covers of the picture's right edge, with the overlay's own gutter beyond it. */
+const CLEAR_OF_SIDEBAR: CSSProperties = { paddingRight: `calc(${SIDEBAR_WIDTH}px + 2rem)` };
 
 /** What the stage hands the presentation. */
 interface PresentationView {
@@ -29,6 +34,8 @@ interface PresentationView {
 	readonly overlay: ReactNode;
 	/** The pane's camera, which keeps its fits clear of the caption. */
 	readonly camera: { readonly reserve: (bottom: number) => void };
+	/** The sidebar, which the overlay keeps clear of while it floats over the picture. */
+	readonly sidebar: Pick<Sidebar, "floating">;
 	/** The selected group and its members, or null. */
 	readonly group: GroupSelection | null;
 }
@@ -41,11 +48,13 @@ interface PresentationView {
 function presentationOver(view: PresentationView): ReactNode {
 	const { narrative } = view;
 	if (narrative.open === null) {
-		// Low in the frame, over the picture, taking no pointer input from the canvas under it.
+		// Low in the frame, over the picture and over a page of the board, taking no pointer input from
+		// the canvas under it, and clear of a sidebar that floats over its right edge.
 		return view.overlay === null || view.overlay === undefined ? null : (
 			<div
 				data-slot="semantic-stage-overlay"
-				className="pointer-events-none absolute inset-x-0 bottom-6 z-10 flex justify-center px-8"
+				style={view.sidebar.floating ? CLEAR_OF_SIDEBAR : undefined}
+				className="pointer-events-none absolute inset-x-0 bottom-6 z-25 flex justify-center px-8"
 			>
 				{view.overlay}
 			</div>

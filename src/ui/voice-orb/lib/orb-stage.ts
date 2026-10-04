@@ -13,21 +13,31 @@
 // A flight meets its socket where the socket is on every frame, not where it was,
 // because a socket may itself be moving (the dock's plate is still forming, the
 // voice box is still rising). A new wish during a flight turns it round from where
-// the orb is. The orb is cut in place of flown when motion is not wanted, when
-// either end is not on screen, when a presentation covers the page, and when the
-// socket it was heading for goes while it is on its way.
+// the orb is. A socket that goes while the orb is in it, or flying to it, leaves
+// the orb where it was, and the orb goes on from there to the next home that is
+// offered, which may be offered in the same moment: a voice box that moves from one
+// pane to another does not send the orb through the dock. The orb is cut in place of
+// flown when motion is not wanted, when either end is not on screen, and when the
+// socket it was heading for stops taking room on the page.
+//
+// A dark orb waits in a home and fades where it is. It is lit by a wish, and a
+// holder moved in the same task as it is lit has no transition to run, so the stage
+// lets its style settle between the two.
 
-import { VOICE_FLIGHT_MS } from "@/shared/timing/voice";
+import { VOICE_FLIGHT_MS, VOICE_MORPH_MS } from "@/shared/timing/voice";
 import { flightAt, type Spot } from "@/ui/voice-orb/lib/orb-flight";
 import { SIZE } from "@/ui/voice-orb/lib/orb-painter";
 
 /** The two places the orb lives: the circle in the agent dock, and the voice box over a pane's picture. */
-type OrbHome = "dock" | "caption";
+type OrbHome = "dock" | "box";
+
+/** What the holder is told after it has landed in a socket, so the orb can light the room it is in now. */
+const ORB_MOVED = "voice-orb-moved";
 
 /** Where the orb is wanted, and how it may get there. */
 interface OrbWish {
 	readonly home: OrbHome;
-	/** Whether the orb is lit at all: voice is on. While it is not, the orb fades where it is, and lights from the dock's circle. */
+	/** Whether the orb is lit at all: voice is on. While it is not, the orb fades where it is and waits in a home. */
 	readonly shown: boolean;
 	/** Whether a change of home may be flown. */
 	readonly fly: boolean;
@@ -66,6 +76,18 @@ interface OrbStage {
 	 */
 	readonly offer: (home: OrbHome, socket: HTMLElement) => () => void;
 	/**
+	 * Whether a home has offered a socket.
+	 * @param home Which home.
+	 * @returns True while it has.
+	 */
+	readonly offered: (home: OrbHome) => boolean;
+	/**
+	 * Hear about every socket offered or withdrawn.
+	 * @param listener Called after each.
+	 * @returns How to stop hearing.
+	 */
+	readonly subscribe: (listener: () => void) => () => void;
+	/**
 	 * Say where the orb is wanted.
 	 * @param wish The home, whether the orb shows, and whether it may fly.
 	 */
@@ -84,12 +106,15 @@ interface Flight {
 /** What a stage holds besides its holder. */
 interface StageState {
 	readonly sockets: Map<OrbHome, HTMLElement>;
+	readonly listeners: Set<() => void>;
 	wish: OrbWish;
 	/** The socket the holder sits in, or null while it is in the garage or the air. */
 	resting: HTMLElement | null;
 	flight: Flight | null;
 	/** Where the orb was last drawn in the air. */
 	seen: Spot;
+	/** Where the orb was when its socket went, until it flies on from there. */
+	leftFrom: Spot | null;
 	readonly garage: HTMLElement;
 	readonly layer: HTMLElement;
 }
@@ -101,7 +126,7 @@ const LAYER_Z = 45;
 const FLIGHT_STYLE = ["position", "left", "top", "translate", "transform"] as const;
 
 /** Where the orb goes when the home it was wanted in is not there. */
-const OTHER_HOME: Readonly<Record<OrbHome, OrbHome>> = { dock: "caption", caption: "dock" };
+const OTHER_HOME: Readonly<Record<OrbHome, OrbHome>> = { dock: "box", box: "dock" };
 
 /** The page's own frames. */
 const PAGE_FRAMES: OrbFrames = {
@@ -157,21 +182,22 @@ function isInView(rect: DOMRect): boolean {
 }
 
 /**
- * Whether a presentation has the page, with the dock and the voice box behind it.
- * @returns True while an element is fullscreen.
+ * Where the middle of a box is, with the orb drawn at its own size there.
+ * @param rect The box.
+ * @returns The spot.
  */
-function inFullscreen(): boolean {
-	return "fullscreenElement" in document && document.fullscreenElement !== null;
+function spotOf(rect: DOMRect): Spot {
+	return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, scale: 1 };
 }
 
 /**
- * Where the middle of a box is.
- * @param rect The box.
- * @param scale How large the orb is drawn there.
+ * Where an element is, as a spot, or null when it is not on screen to be left from or met.
+ * @param element The element.
  * @returns The spot.
  */
-function spotOf(rect: DOMRect, scale: number): Spot {
-	return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, scale };
+function spotIn(element: HTMLElement): Spot | null {
+	const rect = element.getBoundingClientRect();
+	return isDrawn(rect) && isInView(rect) ? spotOf(rect) : null;
 }
 
 /**
@@ -211,59 +237,27 @@ function isBound(state: StageState, socket: HTMLElement): boolean {
 }
 
 /**
- * Whether the orb may be flown to a socket: motion is wanted, the orb is lit, no
- * presentation covers the page, and the socket is on screen.
+ * Whether the orb may be flown to a socket: motion is wanted, the orb is lit, and the socket is on screen.
  * @param state The stage.
  * @param socket Where it would go.
  * @returns True when it may.
  */
 function mayFly(state: StageState, socket: HTMLElement): boolean {
 	const { wish } = state;
-	return wish.fly && wish.shown && !inFullscreen() && isInView(socket.getBoundingClientRect());
+	return wish.fly && wish.shown && isInView(socket.getBoundingClientRect());
 }
 
 /**
- * What the orb would leave from: where it is, or, when it is in no socket, the dock's circle,
- * which is where it lights from, unless that is where it is going.
+ * Where the orb would leave from, or null when it is not on screen to leave: where it is in
+ * the air, where its socket was when that went, or where it sits.
  * @param state The stage.
  * @param holder The holder.
- * @param socket Where it is going.
- * @returns The element it leaves from, or undefined when it leaves from nowhere.
- */
-function originOf(
-	state: StageState,
-	holder: HTMLElement,
-	socket: HTMLElement,
-): HTMLElement | undefined {
-	if (state.resting !== null) return holder;
-	const dock = state.sockets.get("dock");
-	return dock === socket ? undefined : dock;
-}
-
-/**
- * Where an element is, as a spot, or null when it is not on screen to be left from or met.
- * @param element The element.
- * @param measured Whether the element is the orb's holder, whose size says how large the orb is
- * drawn: a socket is the size of the circle, and the orb is drawn at its own size in it.
  * @returns The spot.
  */
-function spotIn(element: HTMLElement, measured: boolean): Spot | null {
-	const rect = element.getBoundingClientRect();
-	return isDrawn(rect) && isInView(rect) ? spotOf(rect, measured ? rect.width / SIZE : 1) : null;
-}
-
-/**
- * Where the orb would leave from, or null when it is not on screen to leave.
- * @param state The stage.
- * @param holder The holder.
- * @param socket Where it is going.
- * @returns The spot.
- */
-function departure(state: StageState, holder: HTMLElement, socket: HTMLElement): Spot | null {
+function departure(state: StageState, holder: HTMLElement): Spot | null {
 	if (state.flight !== null) return state.seen;
-	const origin = originOf(state, holder, socket);
-	if (origin === undefined) return null;
-	return spotIn(origin, origin === holder);
+	if (state.leftFrom !== null) return state.leftFrom;
+	return state.resting === null ? null : spotIn(holder);
 }
 
 /**
@@ -277,14 +271,17 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 		width: `${SIZE}px`,
 		height: `${SIZE}px`,
 	});
+	holder.style.setProperty("--voice-morph-ms", `${VOICE_MORPH_MS}ms`);
 	holder.setAttribute("aria-hidden", "true");
 	holder.dataset["shown"] = "false";
 	const state: StageState = {
 		sockets: new Map(),
+		listeners: new Set(),
 		wish: { home: "dock", shown: false, fly: false },
 		resting: null,
 		flight: null,
 		seen: { x: 0, y: 0, scale: 1 },
+		leftFrom: null,
 		garage: stageElement("div", "voice-orb-garage", {
 			position: "fixed",
 			left: "0",
@@ -302,6 +299,11 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 	};
 	state.garage.append(holder);
 
+	/** Tell whoever listens that a socket was offered or withdrawn. */
+	const notify = (): void => {
+		for (const listener of state.listeners) listener();
+	};
+
 	/** Stop a flight's frames, leaving the holder where the last one drew it. */
 	const stopFlight = (): void => {
 		if (state.flight !== null) frames.cancel(state.flight.request);
@@ -316,8 +318,12 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 		state.layer.remove();
 	};
 
-	/** Say whether the orb is lit. */
-	const mark = (): void => {
+	/**
+	 * Say whether the orb is lit, after the style it had where it now is has settled: a holder
+	 * that was moved in this task has no style to change from, so its fade would not run.
+	 */
+	const light = (): void => {
+		void getComputedStyle(holder).opacity;
 		holder.dataset["shown"] = String(state.wish.shown);
 	};
 
@@ -327,9 +333,11 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 	 */
 	const land = (socket: HTMLElement): void => {
 		release();
+		state.leftFrom = null;
 		socket.append(holder);
 		state.resting = socket;
-		mark();
+		light();
+		holder.dispatchEvent(new Event(ORB_MOVED));
 	};
 
 	/** Put the holder in the garage, where no home is offered to hold it. */
@@ -353,7 +361,7 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 			land(flight.socket);
 			return;
 		}
-		state.seen = flightAt(flight.from, spotOf(rect, 1), progress);
+		state.seen = flightAt(flight.from, spotOf(rect), progress);
 		placeInLayer(holder, state.seen);
 		flight.request = frames.request(step);
 	};
@@ -366,12 +374,13 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 	const fly = (socket: HTMLElement, from: Spot): void => {
 		stopFlight();
 		state.seen = from;
+		state.leftFrom = null;
 		state.resting = null;
 		state.layer.append(holder);
 		if (!state.layer.isConnected) document.body.append(state.layer);
 		holder.dataset["flying"] = "";
 		placeInLayer(holder, from);
-		mark();
+		light();
 		state.flight = { socket, from, start: null, request: 0 };
 		state.flight.request = frames.request(step);
 	};
@@ -381,29 +390,45 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 	 * @param socket Where it is going.
 	 */
 	const carry = (socket: HTMLElement): void => {
-		const from = mayFly(state, socket) ? departure(state, holder, socket) : null;
+		const from = mayFly(state, socket) ? departure(state, holder) : null;
 		if (from === null) land(socket);
 		else fly(socket, from);
 	};
 
-	/** Bring the holder to where the wish says it should be. A dark orb fades where it is. */
+	/**
+	 * A dark orb fades where it is, and waits in a home when it is in none.
+	 * @param socket The home it waits in.
+	 */
+	const rest = (socket: HTMLElement): void => {
+		state.leftFrom = null;
+		if (state.resting === null && state.flight === null) land(socket);
+		else holder.dataset["shown"] = "false";
+	};
+
+	/** Bring the holder to where the wish says it should be. */
 	const reconcile = (): void => {
 		const socket = socketFor(state);
 		if (socket === undefined) park();
-		else if (!state.wish.shown || isBound(state, socket)) mark();
+		else if (!state.wish.shown) rest(socket);
+		else if (isBound(state, socket)) light();
 		else carry(socket);
 	};
 
 	/**
-	 * Take a socket back.
+	 * Take a socket back. An orb in it, or flying to it, is left where it was, to fly on from there.
 	 * @param home Which home it was offered for.
 	 * @param socket The socket.
 	 */
 	const withdraw = (home: OrbHome, socket: HTMLElement): void => {
 		if (state.sockets.get(home) !== socket) return;
 		state.sockets.delete(home);
-		if (isBound(state, socket)) park();
+		if (isBound(state, socket)) {
+			const was = state.flight === null ? spotIn(holder) : state.seen;
+			park();
+			state.leftFrom = was;
+		}
 		reconcile();
+		notify();
 	};
 
 	return {
@@ -429,8 +454,26 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 		offer: (home, socket) => {
 			state.sockets.set(home, socket);
 			reconcile();
+			notify();
 			return (): void => {
 				withdraw(home, socket);
+			};
+		},
+		/**
+		 * Whether a home has offered a socket.
+		 * @param home Which home.
+		 * @returns True while it has.
+		 */
+		offered: (home) => state.sockets.has(home),
+		/**
+		 * Hear about every socket offered or withdrawn.
+		 * @param listener Called after each.
+		 * @returns How to stop hearing.
+		 */
+		subscribe: (listener) => {
+			state.listeners.add(listener);
+			return (): void => {
+				state.listeners.delete(listener);
 			};
 		},
 		/**
@@ -444,4 +487,4 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 	};
 }
 
-export { createOrbStage, type OrbFrames, type OrbHome, type OrbStage, type OrbWish };
+export { ORB_MOVED, createOrbStage, type OrbFrames, type OrbHome, type OrbStage, type OrbWish };

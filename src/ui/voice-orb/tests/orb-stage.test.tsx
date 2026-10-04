@@ -2,9 +2,11 @@
 //
 // What is guarded: there is one orb, the same canvas in either home, so what it has drawn of the
 // voice goes with it; it is flown between homes over the page and lands exactly in its socket;
-// the opposite wish turns a flight round from where the orb is, not from where it began; and it
-// is cut, never left in the air or lost, when motion is not wanted, when a home is not on screen,
-// and when the socket it is in or heading for goes.
+// the opposite wish turns a flight round from where the orb is, not from where it began; it is
+// cut, never left in the air or lost, when motion is not wanted and when a home is not on screen;
+// a socket that goes while the orb is in it, or flying to it, leaves the orb where it was, and the
+// orb goes on from there to whichever home is offered next, with no stop in between; a dark orb
+// waits in a home and not out of sight; and a surface can ask whether a home is on the page.
 //
 // This DOM lays nothing out, so each socket is given a box, and the frames a flight runs on are
 // stepped by hand.
@@ -20,6 +22,7 @@ import {
 	OrbSlot,
 	OrbStageProvider,
 	createOrbStage,
+	useOrbOffered,
 	useOrbPlacement,
 	type OrbFrames,
 	type OrbHome,
@@ -154,7 +157,7 @@ function homes(): Homes {
 /**
  * Where the holder sits.
  * @param stage The stage.
- * @returns "dock" or "caption" in a socket, "air" over the page, or "garage".
+ * @returns "dock" or "box" in a socket, "air" over the page, or "garage".
  */
 function whereIs(stage: OrbStage): string {
 	const parent = stage.holder.parentElement;
@@ -190,9 +193,9 @@ function inTheAir(stage: OrbStage): { x: number; y: number } {
 test("the orb rests in the home it is wanted in, and it is the one holder in either", () => {
 	const { stage, dock, box } = homes();
 	stage.offer("dock", homed(dock, "dock"));
-	stage.offer("caption", homed(box, "caption"));
-	stage.wish({ home: "caption", shown: true, fly: false });
-	expect(whereIs(stage)).toBe("caption");
+	stage.offer("box", homed(box, "box"));
+	stage.wish({ home: "box", shown: true, fly: false });
+	expect(whereIs(stage)).toBe("box");
 	expect(stage.holder.dataset["shown"]).toBe("true");
 	stage.wish({ home: "dock", shown: true, fly: false });
 	expect(whereIs(stage)).toBe("dock");
@@ -201,21 +204,21 @@ test("the orb rests in the home it is wanted in, and it is the one holder in eit
 test("a dark orb fades where it is and is not carried anywhere", () => {
 	const { stage, dock, box } = homes();
 	stage.offer("dock", homed(dock, "dock"));
-	stage.offer("caption", homed(box, "caption"));
-	stage.wish({ home: "caption", shown: true, fly: false });
+	stage.offer("box", homed(box, "box"));
+	stage.wish({ home: "box", shown: true, fly: false });
 	stage.wish({ home: "dock", shown: false, fly: true });
-	expect(whereIs(stage)).toBe("caption");
+	expect(whereIs(stage)).toBe("box");
 	expect(stage.holder.dataset["shown"]).toBe("false");
 });
 
 test("an orb is flown to its other home over the page and lands exactly in the socket", () => {
 	const { stage, frames, dock, box } = homes();
 	stage.offer("dock", homed(dock, "dock"));
-	stage.offer("caption", homed(box, "caption"));
+	stage.offer("box", homed(box, "box"));
 	stage.wish({ home: "dock", shown: true, fly: true });
 	expect(whereIs(stage)).toBe("dock");
 
-	stage.wish({ home: "caption", shown: true, fly: true });
+	stage.wish({ home: "box", shown: true, fly: true });
 	expect(whereIs(stage)).toBe("air");
 	frames.step(1000);
 	expect(inTheAir(stage)).toEqual({ x: 100, y: 600 });
@@ -226,7 +229,7 @@ test("an orb is flown to its other home over the page and lands exactly in the s
 	expect(halfway.x).toBeLessThan(600);
 
 	frames.step(1000 + VOICE_FLIGHT_MS);
-	expect(whereIs(stage)).toBe("caption");
+	expect(whereIs(stage)).toBe("box");
 	expect(stage.holder.style.position).toBe("");
 	expect(document.querySelector("[data-slot='voice-orb-layer']")).toBeNull();
 	expect(frames.pending).toBe(0);
@@ -235,9 +238,9 @@ test("an orb is flown to its other home over the page and lands exactly in the s
 test("the opposite wish turns a flight round from where the orb is", () => {
 	const { stage, frames, dock, box } = homes();
 	stage.offer("dock", homed(dock, "dock"));
-	stage.offer("caption", homed(box, "caption"));
+	stage.offer("box", homed(box, "box"));
 	stage.wish({ home: "dock", shown: true, fly: true });
-	stage.wish({ home: "caption", shown: true, fly: true });
+	stage.wish({ home: "box", shown: true, fly: true });
 	frames.step(0);
 	frames.step(VOICE_FLIGHT_MS * 0.6);
 	const turned = inTheAir(stage);
@@ -255,11 +258,11 @@ test("the opposite wish turns a flight round from where the orb is", () => {
 test("an orb is cut and not flown when motion is not wanted or a home is not on screen", () => {
 	const { stage, frames, dock, box } = homes();
 	stage.offer("dock", homed(dock, "dock"));
-	stage.offer("caption", homed(box, "caption"));
+	stage.offer("box", homed(box, "box"));
 	stage.wish({ home: "dock", shown: true, fly: true });
 
-	stage.wish({ home: "caption", shown: true, fly: false });
-	expect(whereIs(stage)).toBe("caption");
+	stage.wish({ home: "box", shown: true, fly: false });
+	expect(whereIs(stage)).toBe("box");
 
 	// The dock is behind something that has no box on the page.
 	placed(dock, 0, 0, 0);
@@ -268,47 +271,109 @@ test("an orb is cut and not flown when motion is not wanted or a home is not on 
 	expect(frames.pending).toBe(0);
 });
 
-test("a socket that goes while the orb is in it, or flying to it, gives the orb to the other home", () => {
-	const { stage, frames, dock, box } = homes();
+test("a socket that goes while the orb rests in it leaves the orb in the other home, cut when motion is not wanted", () => {
+	const { stage, dock, box } = homes();
 	stage.offer("dock", homed(dock, "dock"));
-	const withdrawBox = stage.offer("caption", homed(box, "caption"));
-	stage.wish({ home: "caption", shown: true, fly: false });
+	const withdrawBox = stage.offer("box", homed(box, "box"));
+	stage.wish({ home: "box", shown: true, fly: false });
 	withdrawBox();
 	expect(whereIs(stage)).toBe("dock");
+});
 
-	const withdrawAgain = stage.offer("caption", homed(box, "caption"));
+test("a socket that goes while the orb flies to it sends the orb on from where it was", () => {
+	const { stage, frames, dock, box } = homes();
+	stage.offer("dock", homed(dock, "dock"));
+	const withdrawBox = stage.offer("box", homed(box, "box"));
 	stage.wish({ home: "dock", shown: true, fly: true });
-	stage.wish({ home: "caption", shown: true, fly: true });
+	stage.wish({ home: "box", shown: true, fly: true });
+	frames.step(0);
+	frames.step(VOICE_FLIGHT_MS * 0.5);
+	const left = inTheAir(stage);
+
+	withdrawBox();
+	// Still in the air, where it was: it is not dropped in the dock, and it does not jump.
 	expect(whereIs(stage)).toBe("air");
-	withdrawAgain();
+	expect(inTheAir(stage)).toEqual(left);
+
+	frames.step(10_000);
+	frames.step(10_000 + VOICE_FLIGHT_MS);
 	expect(whereIs(stage)).toBe("dock");
 	expect(frames.pending).toBe(0);
 });
 
-test("a dark orb in a socket that goes is kept in the garage, and lights from the dock's circle", () => {
+test("a box that moves to another pane takes the orb on from where it was, and the orb never stops in the dock", () => {
+	const { stage, frames, dock, box } = homes();
+	const elsewhere = placed(document.createElement("div"), 900, 300, 64);
+	document.body.append(elsewhere);
+	stage.offer("dock", homed(dock, "dock"));
+	const withdrawBox = stage.offer("box", homed(box, "box"));
+	stage.wish({ home: "box", shown: true, fly: false });
+	stage.wish({ home: "box", shown: true, fly: true });
+	expect(whereIs(stage)).toBe("box");
+
+	// The old box goes and the new one is offered in the same commit.
+	withdrawBox();
+	stage.offer("box", homed(elsewhere, "box"));
+	expect(whereIs(stage)).toBe("air");
+	frames.step(0);
+	expect(inTheAir(stage)).toEqual({ x: 600, y: 700 });
+	frames.step(VOICE_FLIGHT_MS);
+	expect(whereIs(stage)).toBe("box");
+	expect(stage.holder.parentElement).toBe(elsewhere);
+});
+
+test("a dark orb in a socket that goes waits in the home that is left, and lights from there", () => {
 	const { stage, frames, dock, box } = homes();
 	stage.offer("dock", homed(dock, "dock"));
-	const withdrawBox = stage.offer("caption", homed(box, "caption"));
-	stage.wish({ home: "caption", shown: true, fly: false });
+	const withdrawBox = stage.offer("box", homed(box, "box"));
+	stage.wish({ home: "box", shown: true, fly: false });
 	stage.wish({ home: "dock", shown: false, fly: true });
 	withdrawBox();
-	expect(whereIs(stage)).toBe("garage");
+	expect(whereIs(stage)).toBe("dock");
 
 	// Voice starts again with the box wanted: the orb leaves the dock's circle for it.
-	stage.offer("caption", homed(box, "caption"));
-	stage.wish({ home: "caption", shown: true, fly: true });
+	stage.offer("box", homed(box, "box"));
+	stage.wish({ home: "box", shown: true, fly: true });
 	expect(whereIs(stage)).toBe("air");
 	frames.step(0);
 	expect(inTheAir(stage)).toEqual({ x: 100, y: 600 });
 });
 
+test("a dark orb waits in the first home that is offered, and out of sight only while there is none", () => {
+	const { stage, dock } = homes();
+	stage.connect();
+	expect(whereIs(stage)).toBe("garage");
+	stage.offer("dock", homed(dock, "dock"));
+	expect(whereIs(stage)).toBe("dock");
+	expect(stage.holder.dataset["shown"]).toBe("false");
+});
+
+test("a home says whether it has a socket, and who hears of a socket coming or going is told", () => {
+	const { stage, dock, box } = homes();
+	let told = 0;
+	const stopHearing = stage.subscribe(() => {
+		told += 1;
+	});
+	expect(stage.offered("box")).toBe(false);
+	const withdraw = stage.offer("box", homed(box, "box"));
+	expect(stage.offered("box")).toBe(true);
+	expect(stage.offered("dock")).toBe(false);
+	withdraw();
+	expect(stage.offered("box")).toBe(false);
+	expect(told).toBe(2);
+
+	stopHearing();
+	stage.offer("dock", homed(dock, "dock"));
+	expect(told).toBe(2);
+});
+
 test("an orb wanted in a home that is not there yet is in the other, and goes when the home comes", () => {
 	const { stage, dock, box } = homes();
 	stage.offer("dock", homed(dock, "dock"));
-	stage.wish({ home: "caption", shown: true, fly: false });
+	stage.wish({ home: "box", shown: true, fly: false });
 	expect(whereIs(stage)).toBe("dock");
-	stage.offer("caption", homed(box, "caption"));
-	expect(whereIs(stage)).toBe("caption");
+	stage.offer("box", homed(box, "box"));
+	expect(whereIs(stage)).toBe("box");
 });
 
 /**
@@ -323,7 +388,7 @@ function Surfaces(props: { readonly home: OrbHome; readonly shown: boolean }): J
 	return (
 		<>
 			<OrbSlot home="dock" data-testid="dock" />
-			<OrbSlot home="caption" data-testid="caption" />
+			<OrbSlot home="box" data-testid="box" />
 			<OrbHost mode="listening" level={silence} reducedMotion />
 		</>
 	);
@@ -358,10 +423,42 @@ test("the page draws one canvas, and it is the same canvas in whichever home it 
 
 	view.rerender(
 		<OrbStageProvider>
-			<Surfaces home="caption" shown />
+			<Surfaces home="box" shown />
 		</OrbStageProvider>,
 	);
 	expect(canvases()).toEqual([canvas]);
-	expect(view.getByTestId("caption").contains(canvas)).toBe(true);
+	expect(view.getByTestId("box").contains(canvas)).toBe(true);
 	expect(view.getByTestId("dock").contains(canvas)).toBe(false);
+});
+
+/**
+ * What a surface that asks whether the box is on the page sees.
+ * @returns The answer, in a node a test can read.
+ */
+function AsksForTheBox(): JSX.Element {
+	return <output data-testid="asked">{String(useOrbOffered("box"))}</output>;
+}
+
+test("a surface that asks for a home is told when its socket is on the page and when it is gone", () => {
+	const view = render(
+		<OrbStageProvider>
+			<AsksForTheBox />
+		</OrbStageProvider>,
+	);
+	expect(view.getByTestId("asked").textContent).toBe("false");
+
+	view.rerender(
+		<OrbStageProvider>
+			<AsksForTheBox />
+			<OrbSlot home="box" />
+		</OrbStageProvider>,
+	);
+	expect(view.getByTestId("asked").textContent).toBe("true");
+
+	view.rerender(
+		<OrbStageProvider>
+			<AsksForTheBox />
+		</OrbStageProvider>,
+	);
+	expect(view.getByTestId("asked").textContent).toBe("false");
 });

@@ -13,9 +13,9 @@ export {
 	type SubtitlesToggleProps,
 } from "@/ui/voice-subtitles/components/SubtitlesToggle";
 export {
-	Captions,
+	SubtitleWords,
 	VoiceSubtitles,
-	type CaptionsProps,
+	type SubtitleWordsProps,
 	type VoiceSubtitlesProps,
 } from "@/ui/voice-subtitles/components/VoiceSubtitles";
 export type { SubtitleSource } from "@/ui/voice-subtitles/hooks/use-voice-subtitles";

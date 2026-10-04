@@ -52,6 +52,7 @@ function VoiceOrb(props: VoiceOrbProps): JSX.Element {
 	return (
 		<canvas
 			ref={canvas}
+			data-slot="voice-orb"
 			aria-hidden="true"
 			style={CANVAS_STYLE}
 			className={cn("pointer-events-none block", props.className)}

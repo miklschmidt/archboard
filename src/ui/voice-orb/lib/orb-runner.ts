@@ -1,7 +1,9 @@
 // What keeps the orb moving on a page: the canvas, its frames, and the theme.
 // It runs one animation frame loop while the orb is lit or on its way to dark,
 // and none while it is dark and meant to be. A person who asked for no motion
-// gets the orb at rest in its mode, redrawn when the mode changes.
+// gets the orb at rest in its mode, redrawn when the mode changes. It draws once
+// more when the stage lands the orb in a room, so the room it left lets go of its
+// light and the room it came to takes it up, even while nothing else moves.
 
 import {
 	createOrbDynamics,
@@ -14,6 +16,7 @@ import {
 } from "@/ui/voice-orb/lib/orb-dynamics";
 import { readOrbColors, type OrbColors } from "@/ui/voice-orb/lib/orb-colors";
 import { SIZE, paintOrb } from "@/ui/voice-orb/lib/orb-painter";
+import { ORB_MOVED } from "@/ui/voice-orb/lib/orb-stage";
 
 /** What the orb is told, read again on every frame from where the page keeps it. */
 interface OrbFeed {
@@ -139,8 +142,12 @@ function runOrb(canvas: HTMLCanvasElement, feed: OrbFeed, reducedMotion: boolean
 		wake();
 	});
 	theme.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-	/** Stop watching the theme and asking for frames. */
+	// The holder the stage moves the canvas with, which tells it when it has landed.
+	const holder = canvas.parentElement;
+	holder?.addEventListener(ORB_MOVED, wake);
+	/** Stop watching the theme and the stage, and asking for frames. */
 	const stop = (): void => {
+		holder?.removeEventListener(ORB_MOVED, wake);
 		theme.disconnect();
 		if (state.frame !== null) cancelAnimationFrame(state.frame);
 		state.frame = null;

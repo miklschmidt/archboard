@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } f
 import type { CodeTargetNotice } from "@/shared/code-target";
 import { LiveBinding } from "@/ui/application/lib/live-binding";
 import { livePanesOver } from "@/ui/application/lib/live-panes";
-import { voiceBoxAvailable } from "@/ui/application/lib/voice-box-available";
+import { voiceBoxAvailable } from "@/ui/application/voice-box-available";
 import { codeTargetShellNotice, infoNotice, presentationNotice } from "@/ui/application/notices";
 import { OpenerSettings } from "@/ui/application/components/OpenerSettings";
 import { paneEvents } from "@/ui/application/lib/pane-events";
@@ -21,6 +21,7 @@ import {
 	openingPaneList,
 } from "@/ui/application/lib/workspace-port";
 import { assembleShellView } from "@/ui/application/shell-view";
+import { heardOver } from "@/ui/application/subtitled-transcript";
 import { applyTheme, initialTheme } from "@/ui/application/lib/theme";
 import { usePaneReadings } from "@/ui/application/hooks/use-pane-reading";
 import { usePaneViews, type PaneOverlay } from "@/ui/application/hooks/use-pane-views";
@@ -141,7 +142,7 @@ interface SubtitleOverlaySources {
 	/** Whether the page is a recording. */
 	readonly recording: boolean;
 	/** Whether the voice box may carry the voice: the pane has a voice owner and nothing is presented. */
-	readonly captionable: boolean;
+	readonly boxAvailable: boolean;
 	/** The pane the demonstration of the voice is laid over, where the page demonstrates it. */
 	readonly activePaneId: string;
 }
@@ -154,7 +155,7 @@ interface SubtitleOverlaySources {
  * @returns The overlay and the pane it belongs over, or null.
  */
 function useSubtitleOverlay(sources: SubtitleOverlaySources): PaneOverlay | null {
-	const { workbench, reducedMotion, recording, captionable, activePaneId } = sources;
+	const { workbench, reducedMotion, recording, boxAvailable, activePaneId } = sources;
 	const { voice } = workbench;
 	return useMemo(() => {
 		if (VOICE_DEMONSTRATING) {
@@ -162,10 +163,10 @@ function useSubtitleOverlay(sources: SubtitleOverlaySources): PaneOverlay | null
 				paneId: activePaneId,
 				element: (
 					<PaneSubtitles
-						transport={null}
+						feed={null}
 						reducedMotion={reducedMotion}
 						recording={recording}
-						captionable={captionable}
+						boxAvailable={boxAvailable}
 					/>
 				),
 			};
@@ -176,14 +177,14 @@ function useSubtitleOverlay(sources: SubtitleOverlaySources): PaneOverlay | null
 					paneId: voice.paneId,
 					element: (
 						<PaneSubtitles
-							transport={voice.transport}
+							feed={heardOver(voice.transport)}
 							reducedMotion={reducedMotion}
 							recording={recording}
-							captionable={captionable}
+							boxAvailable={boxAvailable}
 						/>
 					),
 				};
-	}, [voice, reducedMotion, recording, captionable, activePaneId]);
+	}, [voice, reducedMotion, recording, boxAvailable, activePaneId]);
 }
 
 /** The agent's surfaces as the shell places them. */
@@ -200,8 +201,6 @@ interface AgentSlotSources {
 	/** The board the agent sees with the next message. */
 	readonly context: AgentContext;
 	readonly reducedMotion: boolean;
-	/** Whether a pane's voice box may carry the voice. */
-	readonly captionable: boolean;
 }
 
 /**
@@ -213,7 +212,7 @@ interface AgentSlotSources {
  * @returns The slots.
  */
 function useAgentSlots(sources: AgentSlotSources): AgentSlots {
-	const { agent, workbench, context, reducedMotion, captionable } = sources;
+	const { agent, workbench, context, reducedMotion } = sources;
 	return useMemo(
 		() => ({
 			dock: (
@@ -222,7 +221,6 @@ function useAgentSlots(sources: AgentSlotSources): AgentSlots {
 					workbench={workbench}
 					context={context}
 					reducedMotion={reducedMotion}
-					captionable={captionable}
 				/>
 			),
 			panel: <AgentPanelSlot agent={agent} workbench={workbench} context={context} />,
@@ -230,7 +228,7 @@ function useAgentSlots(sources: AgentSlotSources): AgentSlots {
 				<TalkControl voice={agent.voice} actions={agent.actions} reducedMotion={reducedMotion} />
 			),
 		}),
-		[agent, workbench, context, reducedMotion, captionable],
+		[agent, workbench, context, reducedMotion],
 	);
 }
 
@@ -397,13 +395,13 @@ function ApplicationBody(): JSX.Element {
 		[raise],
 	);
 	const fullscreen = useFullscreen({ onRefused });
-	const captionable = voiceBoxAvailable({
-		workbench,
+	const boxAvailable = voiceBoxAvailable({
+		owned: workbench.voice !== null,
 		presentedPane: fullscreen.snapshot.paneId,
 		recording: recorder !== null,
 		demonstrating: VOICE_DEMONSTRATING,
 	});
-	const slots = useAgentSlots({ agent, workbench, context, reducedMotion, captionable });
+	const slots = useAgentSlots({ agent, workbench, context, reducedMotion });
 	// The address bar over the panes the shell already owns: it writes down what
 	// they show, and restores what a direct load or a Back/Forward asks for.
 	useWorkspaceAddressing({ panes, notices, readings }, addressBinding);
@@ -472,7 +470,7 @@ function ApplicationBody(): JSX.Element {
 		workbench,
 		reducedMotion,
 		recording: recorder !== null,
-		captionable,
+		boxAvailable,
 		activePaneId: panes.list.activePaneId,
 	});
 	const recorded = useRecordedViews(recorder, workbench, { narration, overlay });

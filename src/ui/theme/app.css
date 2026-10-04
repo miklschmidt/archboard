@@ -528,7 +528,11 @@
 	border-radius: 32px;
 	background-color: var(--card);
 }
-[data-slot="voice-circle"][data-form="key"]:not([data-voice-state="off"]) [data-part="plate"] {
+[data-slot="voice-circle"][data-form="key"]:not(
+		[data-voice-state="off"],
+		[data-voice-state="muted"]
+	)
+	[data-part="plate"] {
 	border-color: var(--primary-mark);
 }
 [data-slot="voice-circle"][data-voice-state="muted"] [data-part="plate"] {
@@ -575,30 +579,31 @@
 }
 
 /* The voice box: the subtitles' glass with the voice in it, over the picture. It rises
-   and fades in as the orb is on its way, and eases away as the orb leaves, once each,
-   as its own layer's opacity and transform. It is lit by the orb it holds (--lit,
-   written by the orb): a warm wash that blooms from the socket and breathes with the
-   voice, on the box's own layer, never on the picture. */
-@keyframes voice-box-in {
-	from {
+   and fades in as the orb is on its way, and eases away as the orb leaves, once each, as
+   its own layer's opacity and transform. They are transitions and not keyframes, so a
+   box that is wanted again while it leaves turns round from where it is and does not
+   start over (data-leaving). It is lit by the orb it holds (--lit, written by the orb):
+   a warm wash that blooms from the socket and breathes with the voice, on the box's own
+   layer, never on the picture. */
+[data-slot="voice-box"] {
+	transition:
+		opacity var(--voice-box-in-ms, 360ms) cubic-bezier(0.16, 1, 0.3, 1),
+		transform var(--voice-box-in-ms, 360ms) cubic-bezier(0.16, 1, 0.3, 1);
+}
+@starting-style {
+	[data-slot="voice-box"] {
 		opacity: 0;
 		transform: translateY(8px);
 	}
 }
-@keyframes voice-box-out {
-	to {
-		opacity: 0;
-		transform: translateY(4px);
-	}
-}
-[data-slot="voice-box"] {
-	animation: voice-box-in var(--voice-box-in-ms, 360ms) cubic-bezier(0.16, 1, 0.3, 1) backwards;
-}
 [data-slot="voice-box"][data-leaving] {
-	animation: voice-box-out var(--voice-box-out-ms, 240ms) ease-in forwards;
+	opacity: 0;
+	transform: translateY(4px);
+	transition-duration: var(--voice-box-out-ms, 240ms);
+	transition-timing-function: ease-in;
 }
 [data-slot="voice-box"][data-still] {
-	animation: none;
+	transition: none;
 }
 [data-slot="voice-box"]::before {
 	content: "";
@@ -619,24 +624,25 @@
 	opacity: 0.2;
 }
 
-/* The words of a subtitle. Each fades in as it arrives; a cue that gives way to the next
-   fades under it; and a subtitle that has stopped growing fades out. Only opacity moves,
-   once for each, because the words are over the picture. */
-@keyframes caption-in {
+/* The words of a subtitle. Each fades in as it arrives, slow to start and slow to
+   arrive; a cue that gives way to the next fades under it; and a subtitle that has
+   stopped growing fades out. Only opacity moves, once for each, because the words are
+   over the picture. */
+@keyframes subtitle-in {
 	from {
 		opacity: 0;
 	}
 }
-@keyframes caption-out {
+@keyframes subtitle-out {
 	to {
 		opacity: 0;
 	}
 }
 [data-slot="voice-subtitles"] {
-	transition: opacity var(--caption-out-ms, 560ms) ease-out;
+	transition: opacity var(--subtitle-out-ms, 560ms) ease-out;
 }
 [data-slot="voice-subtitles"][data-showing="true"] {
-	transition-duration: 120ms;
+	transition-duration: var(--subtitle-back-ms, 120ms);
 }
 [data-slot="voice-subtitles"][data-showing="false"] {
 	opacity: 0;
@@ -645,10 +651,24 @@
 	transition: none;
 }
 [data-slot="voice-subtitles"] [data-fade] {
-	animation: caption-in var(--caption-word-ms, 520ms) cubic-bezier(0.16, 1, 0.3, 1) backwards;
+	animation: subtitle-in var(--subtitle-word-ms, 640ms) cubic-bezier(0.3, 0, 0.3, 1) backwards;
 }
 [data-slot="voice-subtitles"] [data-fade-out] {
-	animation: caption-out var(--caption-swap-ms, 260ms) ease-out forwards;
+	animation: subtitle-out var(--subtitle-swap-ms, 260ms) ease-out forwards;
+}
+
+/* The voice's word shares a cell with the words in the voice box. It waits for them to
+   be gone before it fades in, and leaves as fast as they come back, so the two are
+   never on screen together. */
+[data-slot="voice-word"] {
+	transition: opacity var(--voice-word-in-ms, 300ms) ease-out var(--subtitle-out-ms, 560ms);
+}
+[data-slot="voice-words"]:has([data-showing="true"]) > [data-slot="voice-word"] {
+	opacity: 0;
+	transition: opacity var(--subtitle-back-ms, 120ms) linear;
+}
+[data-slot="voice-box"][data-still] [data-slot="voice-word"] {
+	transition: none;
 }
 
 /* The dock is lit by what the agent is doing. While voice is on, a warm wash
