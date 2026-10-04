@@ -1,13 +1,20 @@
-// How long the voice in the agent dock takes to move, as a second entrypoint of
-// the module. `timing.ts` is at its length limit, and only the dock and the voice
-// orb read these, so the group is exported from here and written in
-// `lib/voice-motion.ts` with what each duration pulls against.
+// How long the voice takes to move, as a second entrypoint of the module: in the
+// agent dock, between the dock and the voice box, and in the words of a subtitle.
+// `timing.ts` is at its length limit, and only the voice surfaces read these, so
+// the group is exported from here and written in `lib/voice-motion.ts` with what
+// each duration pulls against.
 
 export {
+	CAPTION_OUT_MS,
+	CAPTION_SWAP_MS,
+	CAPTION_WORD_MS,
 	VOICE_ATTACK_MS,
+	VOICE_BOX_IN_MS,
+	VOICE_BOX_OUT_MS,
 	VOICE_BREATH_MS,
 	VOICE_COMET_MS,
 	VOICE_EXTINGUISH_MS,
+	VOICE_FLIGHT_MS,
 	VOICE_HUSH_MS,
 	VOICE_IGNITE_MS,
 	VOICE_MORPH_MS,

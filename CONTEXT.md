@@ -321,6 +321,15 @@ the browser's own, written nowhere, and the user can turn it off. What the
 user says is never subtitled.
 _Avoid_: caption (the walkthrough's step text), transcript (the conversation's record)
 
+**Voice box**:
+The subtitle's box with the voice in it. While the user wants subtitles and a
+voice is live, the voice's orb, its state in a word, mute and the subtitles
+control are in a box over the picture of the pane voice runs for, beside the
+words, and the agent dock does not draw the circle. Turning subtitles off flies
+the one orb back to the dock. A presented pane and a recording have plain
+subtitles, with no box. It is presentation, like the subtitle.
+_Avoid_: caption box, voice panel, subtitle bar
+
 **Pane news**:
 Where a user's reading of a pane stands after they changed it by hand: the board,
 variant or view they are now looking at, what they now have selected, or the pane

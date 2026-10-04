@@ -35,12 +35,14 @@ interface RunState {
 	last: number;
 	colors: OrbColors;
 	scale: number;
+	/** The room the orb is lighting now: wherever it sits, which is not always the same place. */
+	room: HTMLElement | null;
 }
 
 /** The step the first frame takes, when there was no frame before it. */
 const FIRST_STEP_MS = 16.7;
-/** The element whose room the orb lights, and the property it is told by. */
-const LIT_HOST = '[data-slot="agent-dock"]';
+/** The element whose room the orb lights, and the property it is told by. The dock and the voice box mark themselves. */
+const LIT_HOST = "[data-lit-by-orb]";
 const LIT_PROPERTY = "--lit";
 
 /** Nothing to run: there is no canvas to draw on. */
@@ -71,12 +73,19 @@ function fitCanvas(
 }
 
 /**
- * Tell the dock how much light the voice gives it, so the tray can answer.
- * @param canvas The orb's canvas, inside the dock.
+ * Tell the room the orb sits in how much light the voice gives it, so the room can
+ * answer. A room the orb has left is told it has none.
+ * @param canvas The orb's canvas, inside the dock or the voice box, or in the air between them.
  * @param dyn The state.
+ * @param state The run.
  */
-function shareLight(canvas: HTMLCanvasElement, dyn: OrbDynamics): void {
-	canvas.closest<HTMLElement>(LIT_HOST)?.style.setProperty(LIT_PROPERTY, orbLight(dyn).toFixed(3));
+function shareLight(canvas: HTMLCanvasElement, dyn: OrbDynamics, state: RunState): void {
+	const room = canvas.closest<HTMLElement>(LIT_HOST);
+	if (room !== state.room) {
+		state.room?.style.removeProperty(LIT_PROPERTY);
+		state.room = room;
+	}
+	room?.style.setProperty(LIT_PROPERTY, orbLight(dyn).toFixed(3));
 }
 
 /**
@@ -90,12 +99,18 @@ function runOrb(canvas: HTMLCanvasElement, feed: OrbFeed, reducedMotion: boolean
 	const context = canvas.getContext("2d");
 	if (context === null) return NO_RUNNER;
 	const dyn = createOrbDynamics();
-	const state: RunState = { frame: null, last: 0, colors: readOrbColors(canvas), scale: 0 };
+	const state: RunState = {
+		frame: null,
+		last: 0,
+		colors: readOrbColors(canvas),
+		scale: 0,
+		room: null,
+	};
 	/** Draw the orb as it stands. */
 	const draw = (): void => {
 		fitCanvas(canvas, context, state);
 		paintOrb(context, dyn, state.colors);
-		shareLight(canvas, dyn);
+		shareLight(canvas, dyn, state);
 	};
 	/**
 	 * One frame: step on by the time that passed, draw, and ask for another while the orb moves.

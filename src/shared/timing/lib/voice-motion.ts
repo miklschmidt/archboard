@@ -1,6 +1,8 @@
 // How long the voice in the agent dock takes to move: the Talk key turning into
 // the voice circle, the circle lighting, and the light following the model's
-// speech.
+// speech. And how long the voice takes to move between the dock and the voice
+// box over a pane's picture, and what the words in that box do as they come and
+// go.
 //
 // A person watches every one of these and nobody waits one out, so what they
 // pull against is attention and the ear. Too slow and the circle lags what the
@@ -137,11 +139,69 @@ const VOICE_COMET_MS = 1300;
  */
 const VOICE_BREATH_MS = 3800;
 
+/**
+ * How long the orb takes to fly between the dock's circle and the voice box over
+ * a pane's picture, in either direction. It is the key's own morph and a little
+ * more, so the orb lands in a circle that has just formed (or leaves one that is
+ * about to become the key) and is the last thing to arrive, never the first.
+ *
+ * Pulls against the press that started it. The orb crosses up to a thousand
+ * pixels, so a flight under about half a second is a jump and one over about
+ * three quarters of a second is a wait. The easing is soft at both ends, because
+ * the orb is the one lit thing on the page and a stop that is abrupt reads as a
+ * collision.
+ */
+const VOICE_FLIGHT_MS = 680;
+
+/**
+ * How long the voice box takes to arrive over the picture: its glass rises and
+ * fades in while the orb is still on its way, so the socket is there to receive
+ * it. Pulls against the flight: the box must be seen before the orb lands in it,
+ * and it must not hide the picture for longer than the flight takes.
+ */
+const VOICE_BOX_IN_MS = 360;
+
+/**
+ * How long the voice box takes to leave. Shorter than arriving, as a menu is,
+ * because it is going away from what the person is reading, and the orb that
+ * left it is already on its way to the dock.
+ */
+const VOICE_BOX_OUT_MS = 240;
+
+/**
+ * How long each word of a subtitle takes to fade in. Words arrive about every
+ * third of a second in speech, so a word that takes this long is still arriving
+ * when the next one starts, and the end of the line is a soft edge, not a
+ * blink. Pulls against the voice: much slower and the words lag what is said,
+ * much faster and they are on screen before the eye has seen them come.
+ */
+const CAPTION_WORD_MS = 520;
+
+/**
+ * How long the lines of one cue take to fade out under the cue that replaces
+ * them, so a full box is not cut to its first new word. Short, because the
+ * words it holds have been read.
+ */
+const CAPTION_SWAP_MS = 260;
+
+/**
+ * How long a subtitle that has stopped growing takes to fade out once it has
+ * lingered. Pulls against the linger before it: the words are going, and they
+ * should leave as they came, quietly.
+ */
+const CAPTION_OUT_MS = 560;
+
 export {
+	CAPTION_OUT_MS,
+	CAPTION_SWAP_MS,
+	CAPTION_WORD_MS,
 	VOICE_ATTACK_MS,
+	VOICE_BOX_IN_MS,
+	VOICE_BOX_OUT_MS,
 	VOICE_BREATH_MS,
 	VOICE_COMET_MS,
 	VOICE_EXTINGUISH_MS,
+	VOICE_FLIGHT_MS,
 	VOICE_HUSH_MS,
 	VOICE_IGNITE_MS,
 	VOICE_MORPH_MS,

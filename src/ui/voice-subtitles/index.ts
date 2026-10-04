@@ -7,12 +7,15 @@ export {
 	type SubtitlePreference,
 } from "@/ui/voice-subtitles/lib/preference";
 export { useSubtitlesWanted } from "@/ui/voice-subtitles/hooks/use-subtitle-preference";
+export { useVoiceBoxed } from "@/ui/voice-subtitles/hooks/use-voice-boxed";
 export {
 	SubtitlesToggle,
 	type SubtitlesToggleProps,
 } from "@/ui/voice-subtitles/components/SubtitlesToggle";
 export {
+	Captions,
 	VoiceSubtitles,
+	type CaptionsProps,
 	type VoiceSubtitlesProps,
 } from "@/ui/voice-subtitles/components/VoiceSubtitles";
 export type { SubtitleSource } from "@/ui/voice-subtitles/hooks/use-voice-subtitles";
