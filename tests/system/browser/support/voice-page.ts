@@ -12,6 +12,11 @@ const DOCK_VOICE = `${AGENT_DOCK} [data-slot="voice-circle"]`;
 const DOCK_SUBTITLES = `${AGENT_DOCK} [data-slot="voice-subtitles-toggle"]`;
 /** The voice key in the bar of a fullscreen presentation: Talk, then End voice. */
 const BAR_VOICE = `${PRESENTATION_BAR} [data-voice-controls]`;
+/**
+ * Whether a voice key presses nothing, in the page. Such a key stays focusable and says so with
+ * aria-disabled, so a key that is not disabled can still press nothing.
+ */
+const PRESSES_NOTHING = `(key) => !(key instanceof HTMLButtonElement) || key.disabled || key.getAttribute('aria-disabled') === 'true'`;
 
 /** One line of what was said aloud, as the conversation panel lists it. */
 interface SaidLine {
@@ -64,10 +69,11 @@ function voiceNow(browser: AgentBrowserSession): Promise<VoiceNow> {
 		const box = document.querySelector('[data-slot="voice-box"]:not([data-leaving])');
 		const bar = document.querySelector('${BAR_VOICE}');
 		const presented = document.fullscreenElement;
+		const pressesNothing = ${PRESSES_NOTHING};
 		return {
 			state: key?.getAttribute('data-voice-state') ?? null,
 			form: key?.getAttribute('data-form') ?? null,
-			enabled: key instanceof HTMLButtonElement && !key.disabled,
+			enabled: !pressesNothing(key),
 			orb: socket?.getAttribute('data-home') ?? null,
 			lit: holder?.getAttribute('data-shown') === 'true',
 			box: box && {
@@ -78,7 +84,7 @@ function voiceNow(browser: AgentBrowserSession): Promise<VoiceNow> {
 			},
 			bar: bar && {
 				mode: bar.getAttribute('data-voice-controls'),
-				enabled: bar instanceof HTMLButtonElement && !bar.disabled,
+				enabled: !pressesNothing(bar),
 			},
 		};
 	})()`);
@@ -129,17 +135,17 @@ function presentedStep(
 }
 
 /**
- * Whether the focused element matches a selector, and whether it is disabled.
+ * Whether the focused element matches a selector, and whether a press of it does nothing.
  * @param browser The page.
  * @param selector The element expected to hold focus.
- * @returns [matches, disabled].
+ * @returns [matches, presses nothing].
  */
 function focusIs(
 	browser: AgentBrowserSession,
 	selector: string,
 ): Promise<readonly [boolean, boolean]> {
 	return browser.eval<readonly [boolean, boolean]>(
-		`[document.activeElement?.matches(${JSON.stringify(selector)}) === true, document.activeElement instanceof HTMLButtonElement && document.activeElement.disabled]`,
+		`[document.activeElement?.matches(${JSON.stringify(selector)}) === true, (${PRESSES_NOTHING})(document.activeElement)]`,
 	);
 }
 
