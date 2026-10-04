@@ -3,11 +3,14 @@
 // voice itself, with its orb, its words, mute and subtitles, is in the voice box over the picture or
 // at the foot of the walkthrough's box (TASK-392), and the bar holds the one key that starts and
 // ends it. It never disappears: when voice cannot start it says why beside the key that retries.
+// It is one element in every stage, so the key that says Talk turns into the key that says End
+// voice and back instead of being swapped for it, and keyboard focus stays on it.
 
 import { RiErrorWarningLine, RiLoader4Line, RiMicLine, RiPhoneLine } from "@remixicon/react";
 import type { JSX } from "react";
 
 import { Button } from "@/ui/components/button";
+import { cn } from "@/ui/components/class-names";
 import type { AgentActions, AgentVoiceView, VoiceStage } from "@/ui/workbench/contracts";
 
 /** Inputs for the Talk control. */
@@ -26,105 +29,84 @@ const TALK_PROBLEM_ID = "talk-problem";
 const ENDABLE: ReadonlySet<VoiceStage> = new Set(["connecting", "listening", "speaking", "muted"]);
 
 /**
- * The voice key.
+ * What a press of the key does: start voice while it is off, end it once it connects, and nothing
+ * while it is on its way to connecting, while it ends, or while a control is on the wire.
+ * @param voice The voice.
+ * @param actions The actions.
+ * @returns The action, or undefined while a press does nothing.
+ */
+function pressOf(voice: AgentVoiceView, actions: AgentActions): (() => void) | undefined {
+	if (voice.stage === "idle") return actions.talk;
+	return ENDABLE.has(voice.stage) && !voice.busy ? actions.endVoice : undefined;
+}
+
+/**
+ * The voice key: Talk, or where getting voice going stands, and End voice once it connects, with
+ * its edge gold then, as the dock's key is while the voice box carries the voice. A key that does
+ * nothing is dimmed and stays focusable (aria-disabled), because a disabled button drops the
+ * keyboard's place.
  * @param props The voice and the actions.
- * @returns The key.
+ * @returns The key, with why voice cannot start beside it.
  */
 function TalkControl(props: TalkControlProps): JSX.Element {
 	const { voice, actions } = props;
-	return ENDABLE.has(voice.stage) ? (
-		<EndButton voice={voice} actions={actions} />
-	) : (
-		<TalkButton voice={voice} actions={actions} />
-	);
-}
-
-/**
- * End voice, while it is on or getting there. The edge is gold, as the dock's key is while the voice
- * box carries the voice.
- * @param props The voice and the actions.
- * @param props.voice The voice.
- * @param props.actions The actions.
- * @returns The key.
- */
-function EndButton(props: {
-	readonly voice: AgentVoiceView;
-	readonly actions: AgentActions;
-}): JSX.Element {
-	return (
-		<Button
-			variant="outline"
-			size="sm"
-			data-voice-controls="live"
-			className="rounded-control border-primary-mark h-7 gap-1.5 px-2.5"
-			onClick={props.actions.endVoice}
-			disabled={props.voice.busy}
-		>
-			<RiPhoneLine aria-hidden="true" className="size-3.5 rotate-[135deg]" />
-			End voice
-		</Button>
-	);
-}
-
-/**
- * Talk, or where getting voice going stands.
- * @param props The voice and the actions.
- * @param props.voice The voice.
- * @param props.actions The actions.
- * @returns The button.
- */
-function TalkButton(props: {
-	readonly voice: AgentVoiceView;
-	readonly actions: AgentActions;
-}): JSX.Element {
-	const { voice, actions } = props;
-	const waiting = voice.stage !== "idle";
+	const live = ENDABLE.has(voice.stage);
+	const problem = live ? null : voice.problem;
+	const press = pressOf(voice, actions);
 	return (
 		<span className="flex min-w-0 shrink items-center gap-2">
-			{voice.problem !== null && (
+			{problem !== null && (
 				<span
 					id={TALK_PROBLEM_ID}
-					title={voice.problem}
+					title={problem}
 					className="text-body text-destructive max-w-72 min-w-0 truncate"
 				>
-					{voice.problem}
+					{problem}
 				</span>
 			)}
 			<Button
 				variant="outline"
 				size="sm"
-				data-voice-controls="talk"
-				disabled={waiting}
-				onClick={actions.talk}
-				aria-describedby={voice.problem === null ? undefined : TALK_PROBLEM_ID}
-				className="rounded-control h-7 shrink-0 gap-1.5 px-2.5"
+				data-voice-controls={live ? "live" : "talk"}
+				disabled={press === undefined}
+				focusableWhenDisabled
+				onClick={press}
+				aria-describedby={problem === null ? undefined : TALK_PROBLEM_ID}
+				className={cn(
+					"rounded-control h-7 shrink-0 gap-1.5 px-2.5 aria-disabled:opacity-50 aria-disabled:shadow-none",
+					live && "border-primary-mark",
+				)}
 			>
-				<TalkIcon stage={voice.stage} problem={voice.problem !== null} />
-				{waiting ? STAGE_WORDS[voice.stage] : "Talk"}
+				<KeyMark stage={voice.stage} problem={problem !== null} />
+				{KEY_WORDS[voice.stage]}
 			</Button>
 		</span>
 	);
 }
 
-/** What the button says while voice is on its way. */
-const STAGE_WORDS: Readonly<Record<VoiceStage, string>> = {
+/** What the key says: Talk at rest, where getting voice going stands, and End voice once it connects. */
+const KEY_WORDS: Readonly<Record<VoiceStage, string>> = {
 	idle: "Talk",
 	preparing: "Starting",
-	connecting: "Connecting",
-	listening: "Listening",
-	speaking: "Speaking",
-	muted: "Muted",
+	connecting: "End voice",
+	listening: "End voice",
+	speaking: "End voice",
+	muted: "End voice",
 	stopping: "Ending",
 };
 
 /**
- * The Talk button's icon: the microphone, a spinner on the way, a warning when it failed.
+ * What the key holds: the microphone at rest, a warning when voice cannot start, a spinner on the
+ * way, and the hung-up handset once voice connects.
  * @param props The stage and whether something is wrong.
  * @param props.stage The stage.
  * @param props.problem Whether voice cannot start or failed.
- * @returns The icon.
+ * @returns The mark.
  */
-function TalkIcon(props: { readonly stage: VoiceStage; readonly problem: boolean }): JSX.Element {
+function KeyMark(props: { readonly stage: VoiceStage; readonly problem: boolean }): JSX.Element {
+	if (ENDABLE.has(props.stage)) {
+		return <RiPhoneLine aria-hidden="true" className="size-3.5 rotate-[135deg]" />;
+	}
 	if (props.stage !== "idle") {
 		return <RiLoader4Line aria-hidden="true" className="size-3.5 motion-safe:animate-spin" />;
 	}

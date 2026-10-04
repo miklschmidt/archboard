@@ -2,11 +2,12 @@
 //
 // What is guarded: the key is always there, starts voice from rest, and ends it from the moment it
 // connects, so a session stuck connecting can always be ended; while voice is on its way to connecting it
-// says so and cannot be pressed twice; and when voice cannot start it says why beside the key that retries.
+// says so and cannot be pressed twice; it is one element throughout, so keyboard focus stays on it; and
+// when voice cannot start it says why beside the key that retries.
 // Voice itself, its words, mute and subtitles, are not in the bar (the voice box carries them).
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
-import { cleanup, fireEvent, render } from "@testing-library/react";
+import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 
 import { TalkControl } from "@/ui/workbench";
@@ -52,13 +53,29 @@ test("voice is ended from the key from the moment it connects, whatever it is do
 	}
 });
 
-test("while voice is starting or ending the key says so and cannot be pressed", () => {
-	for (const stage of ["preparing", "stopping"] as const) {
-		const { button, pressed } = key(voiceIn(stage));
-		expect(button.hasAttribute("disabled")).toBe(true);
+test("while voice is starting, ending or on the wire the key presses nothing and stays in the tab order", () => {
+	for (const voice of [voiceIn("preparing"), voiceIn("stopping"), voiceIn("listening", true)]) {
+		const { button, pressed } = key(voice);
 		fireEvent.click(button);
 		expect(pressed).toEqual([]);
+		expect(button.getAttribute("aria-disabled")).toBe("true");
+		// A disabled button would drop the keyboard's place while Talk turns into End voice.
+		expect(button.hasAttribute("disabled")).toBe(false);
 		cleanup();
+	}
+});
+
+test("the key that says Talk is the key that says End voice, and keeps the keyboard's place", () => {
+	const shown = render(<TalkControl voice={voiceIn("idle")} actions={recordingActions([])} />);
+	const button = shown.getByRole("button");
+	act(() => {
+		button.focus();
+	});
+	for (const stage of ["preparing", "connecting", "speaking", "stopping", "idle"] as const) {
+		shown.rerender(<TalkControl voice={voiceIn(stage)} actions={recordingActions([])} />);
+		// One element in every stage: a key swapped for another takes the keyboard's place with it.
+		expect(shown.getByRole("button")).toBe(button);
+		expect(document.activeElement).toBe(button);
 	}
 });
 
