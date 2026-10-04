@@ -7,7 +7,7 @@ import { expect, test } from "bun:test";
 import { voiceBoxAvailable } from "@/ui/application/voice-box-available";
 
 /** A pane that has a voice owner, on a page that is not a recording: the place the box may carry the voice. */
-const PANE = { owned: true, recording: false, demonstrating: false };
+const PANE = { owned: true, recording: false };
 
 test("the box may carry the voice over a pane that has a voice owner", () => {
 	expect(voiceBoxAvailable(PANE)).toBe(true);
@@ -16,10 +16,4 @@ test("the box may carry the voice over a pane that has a voice owner", () => {
 test("it may not on a recording page, or with no voice owner", () => {
 	expect(voiceBoxAvailable({ ...PANE, recording: true })).toBe(false);
 	expect(voiceBoxAvailable({ ...PANE, owned: false })).toBe(false);
-});
-
-test("a page that demonstrates the voice has a box with no owner, but never on a recording", () => {
-	const demonstrated = { ...PANE, owned: false, demonstrating: true };
-	expect(voiceBoxAvailable(demonstrated)).toBe(true);
-	expect(voiceBoxAvailable({ ...demonstrated, recording: true })).toBe(false);
 });

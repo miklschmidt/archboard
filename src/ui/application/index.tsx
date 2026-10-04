@@ -62,7 +62,6 @@ import type { BoardListing } from "@/ui/types";
 import { RecordingStage } from "@/ui/walkthrough-recording";
 import { OrbStageProvider } from "@/ui/voice-orb";
 import { VoiceSurfaceProvider } from "@/ui/workbench";
-import { DemoVoiceSurface, VOICE_DEMONSTRATING } from "@/ui/workbench/demo";
 import { AgentDockSlot, AgentPanelSlot } from "@/ui/application/components/AgentSurfaceSlots";
 import { PresentationVoiceKey } from "@/ui/application/components/PresentationVoiceKey";
 import type { AgentContext } from "@/ui/workbench/contracts";
@@ -265,28 +264,6 @@ function SettingsHosts(props: SettingsHostsProps): JSX.Element | null {
 }
 
 /**
- * Offer the voice and its actions to the surfaces below: the voice box over a pane reads them
- * where it is drawn. A page opened with `?voiceDemo` offers the demonstration's voice instead.
- * @param props The agent's surfaces and what is drawn.
- * @param props.agent The agent's surfaces.
- * @param props.children What is drawn.
- * @returns What is drawn, with the voice offered to it.
- */
-function VoiceSurface(props: {
-	readonly agent: AgentSurfaces;
-	readonly children: ReactNode;
-}): JSX.Element {
-	const { agent, children } = props;
-	if (VOICE_DEMONSTRATING)
-		return <DemoVoiceSurface actions={agent.actions}>{children}</DemoVoiceSurface>;
-	return (
-		<VoiceSurfaceProvider voice={agent.voice} actions={agent.actions}>
-			{children}
-		</VoiceSurfaceProvider>
-	);
-}
-
-/**
  * The root component's body, inside the providers it needs.
  * @returns The shell, the settings dialogs and the workbench.
  */
@@ -347,7 +324,6 @@ function ApplicationBody(): JSX.Element {
 	const boxAvailable = voiceBoxAvailable({
 		owned: workbench.voice !== null,
 		recording: recorder !== null,
-		demonstrating: VOICE_DEMONSTRATING,
 	});
 	// The agent dock is off screen while a pane is presented fullscreen.
 	const dockless = fullscreen.snapshot.paneId !== null;
@@ -422,7 +398,6 @@ function ApplicationBody(): JSX.Element {
 		recording: recorder !== null,
 		boxAvailable,
 		presentedPaneId: fullscreen.snapshot.paneId,
-		activePaneId: panes.list.activePaneId,
 	});
 	const recorded = useRecordedViews(recorder, workbench, { narration, overlay });
 	const outline = useMemo(
@@ -485,7 +460,8 @@ function ApplicationBody(): JSX.Element {
 	}
 	return (
 		<OrbStageProvider>
-			<VoiceSurface agent={agent}>
+			{/* The voice box over a pane reads the voice and its actions where it is drawn. */}
+			<VoiceSurfaceProvider voice={agent.voice} actions={agent.actions}>
 				<TooltipProvider>
 					<Shell
 						view={view}
@@ -500,7 +476,7 @@ function ApplicationBody(): JSX.Element {
 					/>
 					<SettingsHosts surface={settings} notices={notices} onClose={closeSettings} />
 				</TooltipProvider>
-			</VoiceSurface>
+			</VoiceSurfaceProvider>
 		</OrbStageProvider>
 	);
 }

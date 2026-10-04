@@ -210,13 +210,6 @@ const SUBTITLE_OUT_MS = 560;
 const SUBTITLE_BACK_MS = 120;
 
 /**
- * How often a demonstration of the voice (`?voiceDemo`) is read, by the dock and by the voice box
- * alike, so that the two never disagree about the voice's stage. Often enough that a word arrives
- * when it is due, and no slower than a word of speech is long.
- */
-const VOICE_DEMO_TICK_MS = 100;
-
-/**
  * How long the voice's word ("Listening", "Muted") takes to fade in once the
  * words have gone from the box. It follows the words' own fade out, so the two
  * are never on screen together. Pulls against that wait: the box should not be
@@ -234,7 +227,6 @@ export {
 	VOICE_BOX_OUT_MS,
 	VOICE_BREATH_MS,
 	VOICE_COMET_MS,
-	VOICE_DEMO_TICK_MS,
 	VOICE_EXTINGUISH_MS,
 	VOICE_FLIGHT_MS,
 	VOICE_HUSH_MS,

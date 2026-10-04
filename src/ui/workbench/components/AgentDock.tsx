@@ -22,7 +22,7 @@ import { RiChat3Line } from "@remixicon/react";
 import { useRef, type CSSProperties, type JSX } from "react";
 
 import { AGENT_ELAPSED_TICK_MS, SHELL_AGE_TICK_MS } from "@/shared/timing/timing";
-import { VOICE_DEMO_TICK_MS, VOICE_MORPH_MS, VOICE_SEAT_OUT_MS } from "@/shared/timing/voice";
+import { VOICE_MORPH_MS, VOICE_SEAT_OUT_MS } from "@/shared/timing/voice";
 import { cn } from "@/ui/components/class-names";
 import { useClock } from "@/ui/components/use-clock";
 import { useOrbOffered, useOrbPlacement } from "@/ui/voice-orb";
@@ -37,17 +37,7 @@ import type { AgentActions, AgentView, AgentVoiceView } from "@/ui/workbench/con
 import { useCircleState } from "@/ui/workbench/hooks/use-circle-state";
 import { agentStatus, isReady, type AgentStatus } from "@/ui/workbench/lib/agent-status";
 import { VOICE_WORDS } from "@/ui/workbench/lib/circle-state";
-import {
-	DEMO_DOING,
-	DEMO_SINCE_MS,
-	DEMO_STEPS,
-	DEMO_VOICE,
-	VOICE_DEMO,
-	shownSteps,
-	stepsOf,
-	type CardStep,
-} from "@/ui/workbench/lib/plan-steps";
-import { VOICE_DEMO_CYCLE, demoVoiceAt } from "@/ui/workbench/lib/voice-demo";
+import { shownSteps, stepsOf, type CardStep } from "@/ui/workbench/lib/plan-steps";
 
 /** Where the words saying why voice cannot start are. */
 const VOICE_PROBLEM_ID = "voice-problem";
@@ -72,68 +62,23 @@ interface AgentDockProps {
 }
 
 /**
- * The agent's state as the dock says it: the real one, or the demonstration's.
- * @param view The agent view.
- * @param now The clock.
- * @returns The state.
- */
-function dockStatus(view: AgentView, now: number): AgentStatus {
-	const status = agentStatus(view, now);
-	// DEMONSTRATION: `?voiceDemo` shows an invented turn (lib/plan-steps.ts).
-	return VOICE_DEMO
-		? {
-				...status,
-				tone: "working",
-				headline: "Working",
-				detail: DEMO_DOING,
-				sinceMs: DEMO_SINCE_MS,
-			}
-		: status;
-}
-
-/**
  * The steps the dock lists: the running turn's plan, none once it has ended.
  * @param view The agent view.
  * @returns The steps.
  */
 function dockSteps(view: AgentView): readonly CardStep[] {
-	if (VOICE_DEMO) return shownSteps(DEMO_STEPS);
 	const running = view.conversation.turns.findLast((turn) => turn.outcome === "running");
 	return running === undefined ? [] : shownSteps(stepsOf(running));
 }
 
 /**
- * The voice the dock shows: the real one, or the demonstration's.
- * @param view The agent view.
- * @param now The clock.
- * @returns The voice.
- */
-function dockVoice(view: AgentView, now: number): AgentVoiceView {
-	// DEMONSTRATION: `?voiceDemo` holds the voice speaking, `=cycle` walks its stages (lib/voice-demo.ts).
-	if (VOICE_DEMO_CYCLE) return demoVoiceAt(now);
-	return VOICE_DEMO ? DEMO_VOICE : view.voice;
-}
-
-/**
- * How often the dock's clock ticks: as often as the voice box reads a demonstration that walks
- * the voice's stages, so that the two agree; every second while a turn runs or a demonstration
- * holds still; and slowly otherwise.
- * @param view The agent view.
- * @returns The tick in milliseconds.
- */
-function dockTickMs(view: AgentView): number {
-	if (VOICE_DEMO_CYCLE) return VOICE_DEMO_TICK_MS;
-	const running = view.conversation.turns.some((turn) => turn.outcome === "running");
-	return running || VOICE_DEMO ? AGENT_ELAPSED_TICK_MS : SHELL_AGE_TICK_MS;
-}
-
-/**
- * The dock's clock.
+ * The dock's clock: every second while a turn runs, and slowly otherwise.
  * @param view The agent view.
  * @returns The time in milliseconds.
  */
 function useDockClock(view: AgentView): number {
-	return useClock(dockTickMs(view), true);
+	const running = view.conversation.turns.some((turn) => turn.outcome === "running");
+	return useClock(running ? AGENT_ELAPSED_TICK_MS : SHELL_AGE_TICK_MS, true);
 }
 
 /**
@@ -143,9 +88,9 @@ function useDockClock(view: AgentView): number {
  */
 function AgentDock(props: AgentDockProps): JSX.Element {
 	const { view, actions } = props;
+	const { voice } = view;
 	const now = useDockClock(view);
-	const status = dockStatus(view, now);
-	const voice = dockVoice(view, now);
+	const status = agentStatus(view, now);
 	const on = useCircleState(voice) !== "off";
 	// The voice is in the box over the picture, or at the head of the dock: the dock's layout is live in the second.
 	const boxed = useVoiceBoxed(on, useOrbOffered("box"), props.dockless);
