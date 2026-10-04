@@ -1,6 +1,6 @@
 {
 	"schemaVersion": 2,
-	"generatedAt": "2026-10-04T00:00:00Z",
+	"generatedAt": "2026-10-04T18:57:33Z",
 	"title": "Design System: archboard",
 	"extensions": {
 		"colorMeta": {
@@ -124,6 +124,10 @@
 				"displayName": "Title",
 				"purpose": "The titles of regions and dialogs."
 			},
+			"nav": {
+				"displayName": "Nav",
+				"purpose": "The name of a board in the navigator."
+			},
 			"control": {
 				"displayName": "Control",
 				"purpose": "Buttons, tabs and fields."
@@ -131,6 +135,22 @@
 			"body": {
 				"displayName": "Body",
 				"purpose": "Prose and row labels."
+			},
+			"presentation": {
+				"displayName": "Presentation",
+				"purpose": "The heading of a presented step."
+			},
+			"reading": {
+				"displayName": "Reading",
+				"purpose": "The words of a presented step, in a column 64rem wide at most."
+			},
+			"figure": {
+				"displayName": "Figure",
+				"purpose": "The number of a presented step, in the display face."
+			},
+			"subtitle": {
+				"displayName": "Subtitle",
+				"purpose": "The words the voice says."
 			},
 			"technical": {
 				"displayName": "Technical",
@@ -225,7 +245,7 @@
 			"refersTo": "button-primary",
 			"description": "The one primary action of a region, as a physical piece of gold.",
 			"html": "<button class=\"ds-btn-primary\">Save</button>",
-			"css": ".ds-btn-primary { font: 500 13px/18px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--primary-foreground); background-color: var(--primary-bottom); background-image: linear-gradient(180deg, var(--primary-top), var(--primary-bottom)); border: 1px solid var(--primary-edge); border-radius: 3px; height: 28px; padding: 0 10px; box-shadow: var(--elevation-primary); cursor: pointer; } .ds-btn-primary:hover { background-image: linear-gradient(180deg, color-mix(in oklch, var(--primary-top), white 16%), color-mix(in oklch, var(--primary-bottom), white 9%)); } .ds-btn-primary:active { background-image: linear-gradient(180deg, color-mix(in oklch, var(--primary-bottom), black 4%), var(--primary-top)); box-shadow: var(--elevation-primary-pressed); transform: translateY(1px); } .ds-btn-primary:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }"
+			"css": ".ds-btn-primary { font: 500 13px/18px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--primary-foreground); background-color: var(--primary-bottom); background-image: linear-gradient(180deg, var(--primary-top), var(--primary-bottom)); border: 1px solid var(--primary-edge); border-radius: 3px; height: 32px; padding: 0 10px; box-shadow: var(--elevation-primary); cursor: pointer; } .ds-btn-primary:hover { background-image: linear-gradient(180deg, color-mix(in oklch, var(--primary-top), white 16%), color-mix(in oklch, var(--primary-bottom), white 9%)); } .ds-btn-primary:active { background-image: linear-gradient(180deg, color-mix(in oklch, var(--primary-bottom), black 4%), var(--primary-top)); box-shadow: var(--elevation-primary-pressed); transform: translateY(1px); } .ds-btn-primary:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }"
 		},
 		{
 			"name": "Outline Button",
@@ -233,7 +253,7 @@
 			"refersTo": "button-outline",
 			"description": "A secondary action, raised off the surface.",
 			"html": "<button class=\"ds-btn-outline\">Test</button>",
-			"css": ".ds-btn-outline { font: 500 13px/18px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--foreground); background: var(--card); border: 1px solid var(--border); border-radius: 3px; height: 28px; padding: 0 10px; box-shadow: var(--elevation-raised); cursor: pointer; } .ds-btn-outline:hover { background: var(--muted); } .ds-btn-outline:active { box-shadow: var(--elevation-pressed); transform: translateY(1px); } .ds-btn-outline:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }"
+			"css": ".ds-btn-outline { font: 500 13px/18px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--foreground); background: var(--card); border: 1px solid var(--border); border-radius: 3px; height: 32px; padding: 0 10px; box-shadow: var(--elevation-raised); cursor: pointer; } .ds-btn-outline:hover { background: var(--muted); } .ds-btn-outline:active { box-shadow: var(--elevation-pressed); transform: translateY(1px); } .ds-btn-outline:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }"
 		},
 		{
 			"name": "Go Deeper Row",
@@ -314,7 +334,17 @@
 			},
 			{
 				"name": "The Still Shadow Rule",
-				"body": "A shadow over the picture is a static box-shadow. Nothing over the picture viewport uses backdrop-filter, filter, blur or animation.",
+				"body": "A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar, the walkthrough box or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. The floating sidebar takes at most 160ms, the walkthrough box 220ms to arrive and 520ms to hand one step to the next, with the wake on its rail settling by about 700ms, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off, in a layer of its own, over 680ms.",
+				"section": "elevation"
+			},
+			{
+				"name": "The Picture Answers Rule",
+				"body": "The light belongs to the picture, not to the shell. When a part is picked out or the pointer rests on one, the viewer marks what stays as drawn, and the picture's own subjects recede under an opacity filter. The shell lays no layer, blur or halo over the picture to do it.",
+				"section": "elevation"
+			},
+			{
+				"name": "The Card Is a Window Rule",
+				"body": "A card that opens a board is a window onto it. The board opens when the camera flies into the card, and going back flies out of it. The board's picture sits inside the card, in the picture's own units, so one camera carries both and the board that opens stands where the board in the card stood. The shell adds no layer for the flight.",
 				"section": "elevation"
 			},
 			{
@@ -330,7 +360,8 @@
 			"Do keep the ink on gold at Gold Ink (at least 8.5:1)."
 		],
 		"donts": [
-			"Do not put backdrop-filter, filter, blur or animation over the picture viewport.",
+			"Do not put backdrop-filter, filter, blur or a looping animation over the picture viewport.",
+			"Do not take a control out of a row when it cannot be used. Dim it and say why in its tooltip, so the row does not move.",
 			"Do not paint gold or decoration onto a card in the picture.",
 			"Do not use a grey-black blur or a halo without an offset as a shadow.",
 			"Do not add a phone or narrow layout.",
