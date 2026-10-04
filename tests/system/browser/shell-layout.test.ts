@@ -4,9 +4,12 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
 	AGENT_PANEL_WIDTH,
+	CHROME_HEIGHT,
+	FIT_MARGIN,
 	NAVIGATOR_WIDTH,
+	REFERENCE_PANE,
 	SHELL_VIEWPORT,
-	SIDEBAR_WIDTH,
+	STAGE,
 } from "@/shared/shell-geometry/index";
 import { readThemeColors, themeColor } from "@/shared/theme/server";
 
@@ -64,6 +67,14 @@ const READ_DESKTOP = `(() => {
 		column: box(document.querySelector('${NAVIGATOR_COLUMN}')), stages: box(document.querySelector('${STAGE_ROOT}')),
 		pane: box(document.querySelector('${PANE_SECTIONS}')), dock: box(document.querySelector('${AGENT_DOCK}')),
 		composer: box(document.querySelector('${COMPOSER}')), panel: box(document.querySelector('${AGENT_PANEL}')) };
+})()`;
+
+/** The lone pane's width, and the size of its window on the picture. */
+const READ_PICTURE = `(() => {
+	const pane = document.querySelector('${PANE_SECTIONS}');
+	const picture = pane?.querySelector('[data-slot="semantic-board-viewport"]')?.getBoundingClientRect();
+	return { pane: pane?.getBoundingClientRect().width ?? 0, width: picture?.width ?? -1,
+		height: picture?.height ?? -1 };
 })()`;
 
 /** The pane letters, present only while two panes are open. */
@@ -197,24 +208,28 @@ test(
 			expect(cell.screenshotSha256).toHaveLength(64);
 		}
 
-		// The shell takes its fixed widths from the shared geometry (ADR 0028), with
-		// the conversation closed: the navigator's column, and the docked sidebar
-		// a lone pane gives its width from the picture. The pane centre runs from
-		// the column to the viewport's edge, top to bottom, with nothing across it.
+		// The shell draws what the shared geometry says (ADR 0028), with the
+		// conversation closed: the navigator's column, the chrome row at the top of
+		// every column, and a lone pane's picture beside its docked sidebar, which
+		// less the fit margin is the reference pane a drawing's fit is measured
+		// against.
 		for (const cell of matrix.cells.filter(({ viewport }) => viewport === "desktop")) {
-			const { column, stages, pane } = cell.geometry;
+			const { column, header, picture } = cell.geometry;
 			expect(column?.width, "navigator column width").toBe(NAVIGATOR_WIDTH);
-			expect(stages!.x + stages!.width, "pane centre right edge").toBe(SHELL_VIEWPORT.width);
-			expect(stages?.height, "pane centre height").toBe(SHELL_VIEWPORT.height);
-			expect(pane?.width, "the lone pane fills the centre").toBe(stages?.width);
+			expect(header?.height, "chrome row height").toBe(CHROME_HEIGHT);
+			expect(
+				{ width: picture!.width - 2 * FIT_MARGIN, height: picture!.height - 2 * FIT_MARGIN },
+				"the reference pane",
+			).toEqual(REFERENCE_PANE);
 		}
-		const picture = await browser.eval<{ pane: number; stage: number } | null>(`(() => {
-			const pane = document.querySelector('${PANE_SECTIONS}');
-			const stage = pane?.querySelector('[data-slot="semantic-board-stage"]');
-			return pane && stage ? { pane: pane.getBoundingClientRect().width, stage: stage.getBoundingClientRect().width } : null;
-		})()`);
-		expect(picture, "the picture's stage in the pane").not.toBeNull();
-		expect(picture!.pane - picture!.stage, "the docked sidebar's width").toBe(SIDEBAR_WIDTH);
+		// With its sidebar put away, the picture has the whole stage.
+		await roleAction(browser, "button", "Sidebar");
+		const stage = await pollUntil(
+			() => browser.eval<{ pane: number; width: number; height: number }>(READ_PICTURE),
+			(picture) => picture.width === picture.pane,
+			"the sidebar to give the picture the pane's whole width",
+		);
+		expect({ width: stage.width, height: stage.height }, "the stage").toEqual(STAGE);
 
 		const themes = matrix.cells
 			.filter(({ viewport, mode }) => viewport === "desktop" && mode === "normal")

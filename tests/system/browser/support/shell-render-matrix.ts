@@ -235,14 +235,17 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 			.find(node => readRow === null || !node.matches(readRow))?.querySelector('[data-board-key]');
 		// A section heading in the pane's sidebar.
 		const sectionHeading = pane?.querySelector('[data-slot] > h2');
+		// The pane's window on the picture: the room the camera fits a drawing into.
+		const picture = pane?.querySelector('[data-slot="semantic-board-viewport"]');
 		if (!shell || !header || !wordmark || !control || !paneHeader || !board || !variant || !technical ||
 			!present || !column || !nav || !filter || !stages || !bar || !pane || !selectedBoard || !rowLabel ||
-			!sectionHeading) {
+			!sectionHeading || !picture) {
 			throw new Error('shell matrix probe is incomplete: ' + JSON.stringify({
 				shell: !!shell, header: !!header, wordmark: !!wordmark, control: !!control,
 				paneHeader: !!paneHeader, board: !!board, variant: !!variant, technical: !!technical,
 				present: !!present, column: !!column, nav: !!nav, filter: !!filter, stages: !!stages, bar: !!bar,
-				pane: !!pane, selectedBoard: !!selectedBoard, rowLabel: !!rowLabel, sectionHeading: !!sectionHeading }));
+				pane: !!pane, selectedBoard: !!selectedBoard, rowLabel: !!rowLabel, sectionHeading: !!sectionHeading,
+				picture: !!picture }));
 		}
 		const round = value => Math.round(value * 1000) / 1000;
 		const rect = node => {
@@ -330,8 +333,8 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 				paneCount: panes.length, paneLetterCount: document.querySelectorAll('${PANE_LETTERS}').length,
 				rootChildCount: document.getElementById('root')?.childElementCount ?? 0 },
 			geometry: { shell: rect(shell), header: rect(header), paneHeader: rect(paneHeader), column: rect(column),
-				nav: rect(nav), stages: rect(stages), bar: rect(bar), pane: rect(pane), board: rect(board),
-				control: rect(control) },
+				nav: rect(nav), stages: rect(stages), bar: rect(bar), pane: rect(pane), picture: rect(picture),
+				board: rect(board), control: rect(control) },
 			themeSnapshot: {
 				theme: document.documentElement.dataset.theme, wordmark: wordmark.textContent.trim(),
 				wordmarkSize: rect(wordmark),
