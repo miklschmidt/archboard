@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 26,
+	"version": 30,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-04T11:28:07.700Z",
+	"updatedAt": "2026-10-04T13:22:57.706Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -32,7 +32,7 @@
 			"id": "D87Mmg83",
 			"name": "Working with an agent",
 			"grammar": "architecture",
-			"summary": "The agent bar, the setup that carries a message or Talk through, the voice with its subtitles, and the pane socket's agent channel.",
+			"summary": "The agent bar, the setup that carries a message or Talk through, the voice with its orb and subtitles, and the pane socket's agent channel.",
 			"scope": {
 				"kind": "selection",
 				"nodes": [
@@ -44,7 +44,8 @@
 					"941UBxya",
 					"xsn0RvSi",
 					"G4NHQC25",
-					"aG0rP4SX"
+					"aG0rP4SX",
+					"t5Wy06ua"
 				],
 				"edges": [],
 				"flows": []
@@ -2183,7 +2184,7 @@
 		{
 			"id": "AGqdyyRg",
 			"name": "TASK-385.01",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "80VnkWkx",
 			"summary": "Service level: browser application modules. Follow linked subjects for related levels.",
 			"content": {
@@ -2971,9 +2972,9 @@
 		{
 			"id": "sxq1TJxc",
 			"name": "TASK-391",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "AGqdyyRg",
-			"summary": "The voice box moves into the subtitle box and back to the dock",
+			"summary": "Service level: browser application modules. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
@@ -3079,22 +3080,7 @@
 						"order": 7000,
 						"name": "Workbench client",
 						"kind": "service",
-						"responsibility": "The agent bar under the panes and the conversation beside them: the agent's state and its one action, Talk, the composer, and the tab's own conversation with its work, plans and approvals",
-						"description": "Reads one AgentView and acts through one AgentActions, both composed by the application over the agent setup, the focused pane's controllers and the voice session.",
-						"parent": "yAFyqal3",
-						"groups": [
-							"agent"
-						],
-						"binding": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/workbench/index.tsx"
-						},
-						"drillDown": {
-							"board": "Agent workbench",
-							"variant": {
-								"kind": "current"
-							}
-						}
+						"description": "Reads one AgentView and acts through one AgentActions, both composed by the application over the agent setup, the focused pane's controllers and the voice session. While the person wants subtitles it also draws the voice box over the voice's pane, which carries the voice the dock otherwise shows; the dock hands the voice over only to a box that the orb's stage says is on the page."
 					},
 					{
 						"id": "0SRnYXnC",
@@ -3303,16 +3289,7 @@
 						"order": 21000,
 						"name": "Voice orb",
 						"kind": "module",
-						"responsibility": "The voice's face: one canvas drawn from the model's output level, at rest in the dock's circle or in the voice box, and the stage that flies it between them",
-						"description": "The canvas is made once and moved, never remounted, so the light and the last second of level it has drawn go with it. The dock offers its circle as one home and the voice box offers a socket as the other; the stage flies the orb over the page between them and cuts when motion is not wanted or a home is not on screen.",
-						"parent": "yAFyqal3",
-						"groups": [
-							"voice"
-						],
-						"binding": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/voice-orb/index.ts"
-						}
+						"description": "The canvas is made once and moved, never remounted, so the light and the last second of level it has drawn go with it. The dock offers its circle as one home and the voice box offers a socket as the other; the stage flies the orb over the page between them, meets a socket where it is as it moves, turns a flight round from where the orb is, and cuts when motion is not wanted or a home is not on screen. It says whether a home is on the page, so a surface gives the voice up only to a home that is there."
 					}
 				],
 				"edges": [
@@ -3676,7 +3653,7 @@
 						"from": "0yb2VbKc",
 						"to": "rouptSyK",
 						"kind": "call",
-						"label": "a line's linger",
+						"label": "a line's linger and its fades",
 						"emphasis": "normal"
 					},
 					{
@@ -3703,7 +3680,16 @@
 						"from": "0x47EMoO",
 						"to": "0yb2VbKc",
 						"kind": "render",
-						"label": "its captions, inside the voice box",
+						"label": "its words, inside the voice box",
+						"emphasis": "normal"
+					},
+					{
+						"id": "ZISV4NoQ",
+						"order": 46000,
+						"from": "HggZR41l",
+						"to": "t5Wy06ua",
+						"kind": "render",
+						"label": "the stage the one orb is flown on",
 						"emphasis": "normal"
 					}
 				],
@@ -3783,7 +3769,7 @@
 			}
 		}
 	],
-	"current": "AGqdyyRg",
+	"current": "sxq1TJxc",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -3802,6 +3788,12 @@
 			"from": "80VnkWkx",
 			"at": "2026-10-01T04:08:44.414Z",
 			"reason": "The frame clock stands a picture's traffic at the picture's clock; the page runs no SMIL"
+		},
+		{
+			"variant": "sxq1TJxc",
+			"from": "AGqdyyRg",
+			"at": "2026-10-04T13:22:57.706Z",
+			"reason": "TASK-391: while subtitles are on the voice sits in a box over the voice's pane beside its words, and the one orb flies between that box and the dock's circle when subtitles are turned off or on."
 		}
 	]
 }
