@@ -1,0 +1,274 @@
+<!doctype html>
+<!--
+	The agent's terminal beside the shell in the hero and take-back clips. It shows what the
+	person asked, each command the agent runs as it runs it, and what came back. It paints with
+	the shell's own theme tokens and faces, so it sits in the same palette as the pane beside it.
+	The take drives it through window.terminal; every method resolves once its text is on screen.
+-->
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>coding agent</title>
+		<link rel="stylesheet" href="../../../src/shared/theme/theme.css" />
+		<style>
+			@font-face {
+				font-family: "Archboard Onest";
+				src: url("../../../src/ui/shell/assets/fonts/Onest-wght-v1.000.ttf");
+				font-weight: 100 900;
+			}
+			@font-face {
+				font-family: "Archboard DM Mono";
+				src: url("../../../src/ui/shell/assets/fonts/DMMono-Regular-v1.000.ttf");
+				font-weight: 400;
+			}
+			@font-face {
+				font-family: "Archboard DM Mono";
+				src: url("../../../src/ui/shell/assets/fonts/DMMono-Medium-v1.000.ttf");
+				font-weight: 500;
+			}
+			* {
+				box-sizing: border-box;
+			}
+			html,
+			body {
+				margin: 0;
+				height: 100%;
+				overflow: hidden;
+				background: var(--sidebar);
+				color: var(--foreground);
+				font-family: "Archboard Onest", ui-sans-serif, system-ui, sans-serif;
+				-webkit-font-smoothing: antialiased;
+			}
+			main {
+				position: absolute;
+				inset: 0;
+				display: flex;
+				flex-direction: column;
+				border-right: 1px solid var(--border);
+			}
+			header {
+				height: 40px;
+				flex: none;
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				padding: 0 22px;
+				border-bottom: 1px solid var(--border);
+				font:
+					500 13px/1 "Archboard DM Mono",
+					ui-monospace,
+					monospace;
+				color: var(--muted-foreground);
+			}
+			header .lamp {
+				width: 7px;
+				height: 7px;
+				border-radius: 50%;
+				background: var(--status);
+			}
+			header .path {
+				margin-left: auto;
+			}
+			#log {
+				flex: 1;
+				overflow: hidden;
+				display: flex;
+				flex-direction: column;
+				padding: 26px;
+				gap: 14px;
+			}
+			.line {
+				flex: none;
+				font:
+					400 15px/1.5 "Archboard DM Mono",
+					ui-monospace,
+					monospace;
+				white-space: pre-wrap;
+				overflow-wrap: anywhere;
+				animation: arrive 220ms ease-out both;
+			}
+			@keyframes arrive {
+				from {
+					opacity: 0;
+					transform: translateY(6px);
+				}
+			}
+			.you {
+				font:
+					500 17px/1.45 "Archboard Onest",
+					ui-sans-serif,
+					system-ui,
+					sans-serif;
+				padding: 14px 16px;
+				border: 1px solid var(--border);
+				border-radius: 8px;
+				background: var(--primary-subtle);
+			}
+			.you .who {
+				display: block;
+				margin-bottom: 8px;
+				font:
+					500 12px/1 "Archboard DM Mono",
+					ui-monospace,
+					monospace;
+				color: var(--primary-text);
+			}
+			.command,
+			.out,
+			.say {
+				position: relative;
+				padding-left: 22px;
+			}
+			.command::before {
+				content: "●";
+				position: absolute;
+				left: 0;
+				font-size: 12px;
+				line-height: 22px;
+				color: var(--primary-mark);
+			}
+			.command.done::before {
+				color: var(--standing-added);
+			}
+			.command.refused::before {
+				color: var(--standing-removed);
+			}
+			.command .program {
+				color: var(--primary-text);
+				font-weight: 500;
+			}
+			.command .flag {
+				color: var(--muted-foreground);
+				white-space: nowrap;
+			}
+			.command .text {
+				color: var(--standing-added);
+			}
+			.out {
+				margin-top: -8px;
+				color: var(--muted-foreground);
+			}
+			.out::before {
+				content: "└ ";
+			}
+			.out.refused {
+				color: var(--standing-removed);
+			}
+			.say {
+				font:
+					400 16px/1.5 "Archboard Onest",
+					ui-sans-serif,
+					system-ui,
+					sans-serif;
+			}
+			.say::before {
+				content: "✦";
+				position: absolute;
+				left: 0;
+				color: var(--primary-mark);
+			}
+			.caret {
+				display: inline-block;
+				width: 8px;
+				height: 17px;
+				margin-left: 1px;
+				vertical-align: -3px;
+				background: var(--primary-mark);
+			}
+		</style>
+	</head>
+	<body>
+		<main>
+			<header>
+				<span class="lamp"></span><span>coding agent</span><span class="path">~/web-shop</span>
+			</header>
+			<div id="log"></div>
+		</main>
+		<script>
+			const query = new URLSearchParams(location.search);
+			document.documentElement.dataset.theme = query.get("theme") || "dark";
+			const log = document.getElementById("log");
+			let last = null;
+
+			/** Keep the newest lines, dropping the oldest, as a terminal scrolls. */
+			function scroll() {
+				while (log.scrollHeight > log.clientHeight + 1 && log.children.length > 1) {
+					log.removeChild(log.firstChild);
+				}
+			}
+
+			/** A new line of a kind, empty. */
+			function line(kind) {
+				const element = document.createElement("div");
+				element.className = `line ${kind}`;
+				log.appendChild(element);
+				return element;
+			}
+
+			/** The words of a command, as elements: the program, flags and quoted text apart. */
+			function words(text) {
+				const fragment = document.createDocumentFragment();
+				for (const token of text.match(/"[^"]*"|\S+|\s+/g) || []) {
+					const span = document.createElement("span");
+					span.textContent = token;
+					if (token.startsWith('"')) span.className = "text";
+					else if (token.startsWith("--")) span.className = "flag";
+					else if (fragment.childNodes.length === 0) span.className = "program";
+					fragment.appendChild(span);
+				}
+				return fragment;
+			}
+
+			/** Type text into a line, a few characters a frame, with a caret at its end. */
+			async function type(element, text, perSecond, render) {
+				const step = Math.max(1, Math.round(perSecond / 60));
+				const caret = document.createElement("span");
+				caret.className = "caret";
+				for (let shown = 0; shown <= text.length; shown += step) {
+					element.replaceChildren(render(text.slice(0, shown)), caret);
+					scroll();
+					await new Promise((resolve) => requestAnimationFrame(resolve));
+				}
+				element.replaceChildren(render(text));
+			}
+
+			/** Print lines of a command's answer. */
+			function answer(lines, kind) {
+				for (const text of lines) line(`out ${kind}`).textContent = text;
+				scroll();
+			}
+
+			window.terminal = {
+				async you(text) {
+					const element = line("you");
+					await type(element, text, 70, (shown) => {
+						const fragment = document.createDocumentFragment();
+						const who = document.createElement("span");
+						who.className = "who";
+						who.textContent = "YOU";
+						fragment.append(who, shown);
+						return fragment;
+					});
+				},
+				async command(text) {
+					last = line("command");
+					await type(last, text, 110, words);
+				},
+				done(lines) {
+					last?.classList.add("done");
+					answer(lines, "");
+				},
+				refused(lines) {
+					last?.classList.add("refused");
+					answer(lines, "refused");
+				},
+				async say(text) {
+					await type(line("say"), text, 90, (shown) => document.createTextNode(shown));
+				},
+			};
+			document.fonts.ready.then(() => {
+				window.ready = true;
+			});
+		</script>
+	</body>
+</html>

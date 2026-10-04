@@ -1,0 +1,175 @@
+<!doctype html>
+<!--
+	The timeline strip under the pane in the history clip. It names each state of the board, its
+	lifecycle and adoption date, and the reason the board file records for it. The take reads all
+	of that from `archboard semantic show` and drives the strip through window.timeline. It paints
+	with the shell's own theme tokens and faces.
+-->
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>timeline</title>
+		<link rel="stylesheet" href="../../../src/shared/theme/theme.css" />
+		<style>
+			@font-face {
+				font-family: "Archboard Onest";
+				src: url("../../../src/ui/shell/assets/fonts/Onest-wght-v1.000.ttf");
+				font-weight: 100 900;
+			}
+			@font-face {
+				font-family: "Archboard DM Mono";
+				src: url("../../../src/ui/shell/assets/fonts/DMMono-Medium-v1.000.ttf");
+				font-weight: 500;
+			}
+			* {
+				box-sizing: border-box;
+			}
+			html,
+			body {
+				margin: 0;
+				height: 100%;
+				overflow: hidden;
+				background: var(--sidebar);
+				color: var(--foreground);
+				font-family: "Archboard Onest", ui-sans-serif, system-ui, sans-serif;
+				-webkit-font-smoothing: antialiased;
+				border-top: 1px solid var(--border);
+			}
+			.track {
+				position: absolute;
+				left: 16%;
+				right: 16%;
+				top: 50px;
+				height: 2px;
+				background: var(--border);
+			}
+			.fill {
+				position: absolute;
+				inset: 0 auto 0 0;
+				width: 0;
+				background: var(--colour);
+				transition: width 900ms cubic-bezier(0.4, 0, 0.2, 1);
+			}
+			.stop {
+				position: absolute;
+				top: 41px;
+				width: 420px;
+				transform: translateX(-50%);
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+			}
+			.dot {
+				width: 16px;
+				height: 16px;
+				border-radius: 50%;
+				background: var(--sidebar);
+				border: 2px solid var(--border);
+				transition:
+					background 400ms ease,
+					border-color 400ms ease;
+			}
+			.name {
+				margin-top: 18px;
+				font-size: 22px;
+				font-weight: 600;
+				white-space: nowrap;
+				color: var(--muted-foreground);
+				transition: color 400ms ease;
+			}
+			.state {
+				margin-top: 8px;
+				font:
+					500 12px/1 "Archboard DM Mono",
+					ui-monospace,
+					monospace;
+				letter-spacing: 0.1em;
+				text-transform: uppercase;
+				color: var(--muted-foreground);
+			}
+			.why {
+				margin-top: 10px;
+				max-width: 400px;
+				font-size: 15px;
+				line-height: 1.35;
+				text-align: center;
+				color: var(--muted-foreground);
+				opacity: 0;
+				transition: opacity 500ms ease;
+			}
+			.stop.on .dot {
+				background: var(--colour);
+				border-color: var(--colour);
+			}
+			.stop.on .name {
+				color: var(--foreground);
+			}
+			.stop.on .state {
+				color: var(--colour);
+			}
+			.stop.on .why {
+				opacity: 1;
+			}
+			.stop.past .dot {
+				background: var(--muted-foreground);
+				border-color: var(--muted-foreground);
+			}
+		</style>
+	</head>
+	<body>
+		<div class="track"><div class="fill" id="fill"></div></div>
+		<div id="stops"></div>
+		<script>
+			const query = new URLSearchParams(location.search);
+			document.documentElement.dataset.theme = query.get("theme") || "dark";
+			const colours = {
+				historical: "var(--muted-foreground)",
+				current: "var(--primary-mark)",
+				draft: "var(--standing-changed)",
+				shelved: "var(--standing-removed)",
+			};
+			let stops = [];
+
+			window.timeline = {
+				/** Lay out the states: each has a name, a lifecycle, a label and a reason. */
+				set(states) {
+					const host = document.getElementById("stops");
+					host.replaceChildren();
+					stops = states.map((state, index) => {
+						const stop = document.createElement("div");
+						stop.className = "stop";
+						const at = states.length === 1 ? 0.5 : index / (states.length - 1);
+						stop.style.left = `calc(16% + 68% * ${at})`;
+						stop.style.setProperty("--colour", colours[state.lifecycle] || colours.current);
+						for (const [kind, text] of [
+							["dot", ""],
+							["name", state.name],
+							["state", state.label],
+							["why", state.why],
+						]) {
+							const part = document.createElement("span");
+							part.className = kind;
+							part.textContent = text;
+							stop.appendChild(part);
+						}
+						host.appendChild(stop);
+						return { stop, state };
+					});
+				},
+				/** Light the state at an index, and the ones before it as past. */
+				go(index) {
+					stops.forEach(({ stop }, other) => {
+						stop.classList.toggle("on", other === index);
+						stop.classList.toggle("past", other < index);
+					});
+					const fill = document.getElementById("fill");
+					fill.style.setProperty("--colour", colours[stops[index].state.lifecycle]);
+					fill.style.width = stops.length === 1 ? "100%" : `${(index / (stops.length - 1)) * 100}%`;
+				},
+			};
+			document.fonts.ready.then(() => {
+				window.ready = true;
+			});
+		</script>
+	</body>
+</html>
