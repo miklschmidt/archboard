@@ -1,12 +1,11 @@
 /* Archboard's one application stylesheet: Tailwind, the shadcn Base UI theme
    from preset b3QvqlIdU (Nova, neutral, blue, lime charts, small radius,
-   Remix Icon), the shell's palette over the shared theme (palette.css), and
-   the shell's type, space, shape, depth and motion tokens below. */
+   Remix Icon), the colours the shell shares with the pictures (theme.css),
+   and the shell's type, space, shape, depth and motion tokens below. */
 @import "tailwindcss";
 @import "shadcn/tailwind.css";
 @import "tw-animate-css";
 @import "../../shared/theme/theme.css";
-@import "./palette.css";
 
 /* Vite's root is `frontend/`, which is where Tailwind would otherwise look for
    class names. Every class lives under `src/ui`, one level up from here. */
@@ -132,7 +131,7 @@
 	--color-secondary: var(--secondary);
 	--color-primary-foreground: var(--primary-foreground);
 	--color-primary: var(--primary);
-	/* The accent as text: gold on graphite, the ink on chalk (palette.css). */
+	/* The accent as text: gold on graphite, the ink on chalk (theme.css). */
 	--color-primary-text: var(--primary-text);
 	/* The accent as a mark: a bar, an underline, a ring, an icon, an edge. */
 	--color-primary-mark: var(--primary-mark);
@@ -168,9 +167,9 @@
 	--radius-chip: 2px;
 	--radius-control: 3px;
 	--radius-panel: 4px;
-	/* Depth: the elevation scale of palette.css, one shadow utility per plane
-	   (`shadow-well`, `shadow-raised`, `shadow-float` and the rest). The
-	   chrome that casts an edge shadow onto the picture is `relative z-30`, so
+	/* Depth: the elevation scale below (`--elevation-*`), one shadow utility
+	   per plane (`shadow-well`, `shadow-raised`, `shadow-float` and the rest).
+	   The chrome that casts an edge shadow onto the picture is `relative z-30`, so
 	   its shadow lies over the picture and a board's pages (z-20) and under
 	   menus and dialogs (z-50). */
 	--shadow-well: var(--elevation-well);
@@ -357,7 +356,94 @@
 	--radius: 0.3rem;
 }
 
-/* The finish of a region's one primary action (palette.css, "The accent"): a
+/* Depth. The shell is built as planes stacked over the picture, not as lines
+   on one sheet. Light comes from above. A plane says how high it sits with
+   its tone, a fine highlight on its top edge (--highlight, theme.css) and the
+   shadow it casts. Every shadow is soft, has an offset and is tinted toward
+   the warm neutrals; none is a grey-black blur. From the bottom up:
+     ground   the picture. Nothing is drawn into it to make depth; the shell
+              sits around it and over it. Only still shadows fall on it:
+              nothing over it is blurred, filtered or animated, because every
+              repaint over the picture slows down dragging it.
+     well     a field sunk into a surface (--elevation-well): an inner shadow
+              under its top edge.
+     chrome   the navigator, a pane's header, the sidebar and the
+              conversation's header stand on the ground and cast a short
+              shadow onto what lies beside or under them
+              (--elevation-edge-down, -edge-side). A tray at the foot of a
+              column casts one up over the list that scrolls under it
+              (--elevation-edge-up).
+     raised   a control, a key cap or the chosen row of a list, standing on
+              a surface (--elevation-raised): a highlight on top, a seat
+              below. Pressed, a control sinks: its shadow moves inside
+              (--elevation-pressed).
+     card     a card on a page (--elevation-card).
+     float    what floats over the picture or the chrome (--elevation-float):
+              the floating sidebar, menus, popovers, tips, a list of matches.
+     dialog   a dialog over everything (--elevation-dialog).
+   A primary action is seated by --elevation-primary and sinks into
+   --elevation-primary-pressed (`primary-finish` below).
+   A one-pixel --border stays where it still does work: it draws the edge of a
+   control or a card, and it divides regions that share one plane. */
+:root {
+	/* Depth on chalk: shadows in a warm umber, highlights in white. */
+	--elevation-well: inset 0 1px 2px oklch(0.33 0.035 65 / 0.1);
+	--elevation-edge-down:
+		0 1px 2px oklch(0.33 0.035 65 / 0.07), 0 8px 18px -8px oklch(0.33 0.035 65 / 0.2);
+	--elevation-edge-side:
+		-1px 0 2px oklch(0.33 0.035 65 / 0.05), -8px 0 18px -8px oklch(0.33 0.035 65 / 0.16),
+		1px 0 2px oklch(0.33 0.035 65 / 0.05), 8px 0 18px -8px oklch(0.33 0.035 65 / 0.16);
+	--elevation-edge-up:
+		0 -1px 2px oklch(0.33 0.035 65 / 0.05), 0 -8px 18px -10px oklch(0.33 0.035 65 / 0.18);
+	--elevation-raised:
+		inset 0 1px 0 var(--highlight), inset 0 -1px 0 oklch(0.33 0.035 65 / 0.05),
+		0 1px 1px oklch(0.33 0.035 65 / 0.07), 0 1px 3px -1px oklch(0.33 0.035 65 / 0.12);
+	--elevation-pressed: inset 0 1px 2px oklch(0.33 0.035 65 / 0.16);
+	--elevation-card:
+		inset 0 1px 0 var(--highlight), 0 1px 2px oklch(0.33 0.035 65 / 0.06),
+		0 4px 12px -4px oklch(0.33 0.035 65 / 0.11);
+	--elevation-float:
+		inset 0 1px 0 var(--highlight), 0 1px 2px oklch(0.33 0.035 65 / 0.07),
+		0 8px 20px -6px oklch(0.33 0.035 65 / 0.14), 0 22px 48px -14px oklch(0.33 0.035 65 / 0.18);
+	--elevation-dialog:
+		inset 0 1px 0 var(--highlight), 0 2px 4px oklch(0.33 0.035 65 / 0.08),
+		0 14px 32px -8px oklch(0.33 0.035 65 / 0.18), 0 36px 80px -16px oklch(0.33 0.035 65 / 0.26);
+	--elevation-primary:
+		inset 0 1px 0 oklch(1 0.04 95 / 0.6), inset 0 -1px 0 oklch(0.5 0.11 70 / 0.16),
+		0 1px 2px oklch(0.42 0.09 70 / 0.26), 0 2px 6px -2px oklch(0.42 0.09 70 / 0.32);
+	--elevation-primary-pressed: inset 0 1px 3px oklch(0.42 0.1 70 / 0.4);
+}
+
+:root[data-theme="dark"] {
+	/* Depth on graphite: shadows in a warm near-black, highlights faint. */
+	--elevation-well: inset 0 1px 2px oklch(0.06 0.01 70 / 0.5);
+	--elevation-edge-down:
+		0 1px 2px oklch(0.05 0.01 70 / 0.45), 0 12px 28px -10px oklch(0.05 0.01 70 / 0.8);
+	--elevation-edge-side:
+		-1px 0 2px oklch(0.05 0.01 70 / 0.35), -12px 0 28px -10px oklch(0.05 0.01 70 / 0.7),
+		1px 0 2px oklch(0.05 0.01 70 / 0.35), 12px 0 28px -10px oklch(0.05 0.01 70 / 0.7);
+	--elevation-edge-up:
+		0 -1px 2px oklch(0.05 0.01 70 / 0.4), 0 -10px 24px -10px oklch(0.05 0.01 70 / 0.7);
+	--elevation-raised:
+		inset 0 1px 0 var(--highlight), 0 1px 2px oklch(0.06 0.01 70 / 0.55),
+		0 2px 4px -2px oklch(0.06 0.01 70 / 0.4);
+	--elevation-pressed: inset 0 1px 3px oklch(0.04 0.01 70 / 0.6);
+	--elevation-card:
+		inset 0 1px 0 var(--highlight), 0 1px 2px oklch(0.06 0.01 70 / 0.45),
+		0 6px 16px -6px oklch(0.06 0.01 70 / 0.55);
+	--elevation-float:
+		inset 0 1px 0 var(--highlight), 0 2px 4px oklch(0.06 0.01 70 / 0.4),
+		0 12px 28px -8px oklch(0.06 0.01 70 / 0.55), 0 28px 60px -16px oklch(0.06 0.01 70 / 0.6);
+	--elevation-dialog:
+		inset 0 1px 0 var(--highlight), 0 2px 6px oklch(0.06 0.01 70 / 0.45),
+		0 18px 40px -10px oklch(0.06 0.01 70 / 0.6), 0 40px 96px -20px oklch(0.06 0.01 70 / 0.7);
+	--elevation-primary:
+		inset 0 1px 0 oklch(1 0.05 95 / 0.55), inset 0 -1px 0 oklch(0.45 0.1 70 / 0.28),
+		0 1px 2px oklch(0.05 0.01 70 / 0.6), 0 4px 10px -3px oklch(0.05 0.01 70 / 0.55);
+	--elevation-primary-pressed: inset 0 1px 3px oklch(0.4 0.1 70 / 0.55);
+}
+
+/* The finish of a region's one primary action (theme.css, "The accent"): a
    piece of gold with a subtle top-to-bottom gradient, a highlight along its
    top edge, a darker rim and a shadow that seats it. Hovered, it brightens.
    Pressed, the gradient turns over and the shadow moves inside; the control

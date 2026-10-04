@@ -356,7 +356,7 @@
 		"dos": [
 			"Do draw the one primary action of a region with `primary-finish`, and only that one.",
 			"Do separate regions with tone steps and elevation tokens before you add a rule.",
-			"Do keep shadows warm and offset. Take them from the elevation tokens in palette.css.",
+			"Do keep shadows warm and offset. Take them from the elevation tokens in app.css.",
 			"Do keep the ink on gold at Gold Ink (at least 8.5:1)."
 		],
 		"donts": [
