@@ -137,32 +137,6 @@ const browserClock: FrameClock = {
 	},
 };
 
-/** An element around pictures, as a hold of their traffic reads it. */
-interface TrafficHolder {
-	readonly getAnimations?: (
-		options?: GetAnimationsOptions,
-	) => readonly Pick<Animation, "id" | "playState" | "pause" | "play">[];
-}
-
-/**
- * Stand the traffic of the pictures in an element still, for as long as a drag
- * of them lasts. Moving traffic paints its lines again on every frame, and a
- * drag already asks for every frame. Only what was running stops, and only that
- * runs again, so traffic that had finished does not start over.
- * @param root The element around the pictures.
- * @returns Run the traffic again.
- */
-function holdTraffic(root: TrafficHolder): () => void {
-	if (typeof root.getAnimations !== "function") return () => undefined;
-	const held = root
-		.getAnimations({ subtree: true })
-		.filter((animation) => animation.id === PICTURE_CLOCK && animation.playState === "running");
-	for (const animation of held) animation.pause();
-	return (): void => {
-		for (const animation of held) if (animation.playState === "paused") animation.play();
-	};
-}
-
 let current: FrameClock = browserClock;
 
 /**
@@ -186,4 +160,4 @@ function driveFramesFrom(clock: FrameClock): () => void {
 	};
 }
 
-export { PICTURE_CLOCK, driveFramesFrom, frameClock, holdTraffic, type FrameClock };
+export { PICTURE_CLOCK, driveFramesFrom, frameClock, type FrameClock };

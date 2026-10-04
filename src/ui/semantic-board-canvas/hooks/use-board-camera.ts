@@ -46,6 +46,12 @@ interface CameraView {
 	readonly camera: Camera;
 	/** Whether the last move was one that must land at once, rather than be eased. */
 	readonly instant: boolean;
+	/**
+	 * Whether a hand made the last move: a drag, a throw, a wheel or a key. A fit,
+	 * a glide and the camera following its picture are the stage's, and leave it
+	 * unsaid.
+	 */
+	readonly hand?: boolean;
 }
 
 /** How a person moves the camera, and where it is now. */
@@ -306,7 +312,7 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 			 * @param instant Whether the surface lands there at once.
 			 */
 			draw: (camera, instant) => {
-				write({ camera, instant });
+				write({ camera, instant, hand: true });
 			},
 		}),
 		[read, write],
@@ -358,7 +364,7 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 			settle();
 			motion.halt();
 			moved.current = true;
-			write({ camera: panCamera(read().camera, dx, dy), instant: false });
+			write({ camera: panCamera(read().camera, dx, dy), instant: false, hand: true });
 		},
 		[settle, motion, read, write],
 	);

@@ -4,14 +4,15 @@
 // leaves out what the far view hides, a label's tip that loses the kind of
 // line it names, and a container whose whole frame, rather than its header,
 // answers the pointer, a lifeline that answers for its participant, and a
-// double-click that opens anything but a card or a container's header.
+// double-click that opens anything but a card or a container's header, and a tip
+// that moves with the traffic running round the card it explains.
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 
 import { SemanticVariantSchema } from "@/shared/semantic-board/index";
 import { withFixtureOrders } from "@/ui/semantic-board-canvas/tests/fixture-orders";
-import { openableAt, subjectTip, tipTargetAt } from "@/ui/semantic-board-canvas/tips";
+import { openableAt, subjectTip, tipAnchor, tipTargetAt } from "@/ui/semantic-board-canvas/tips";
 
 beforeAll(() => {
 	GlobalRegistrator.register();
@@ -145,4 +146,38 @@ test("a double-click opens a card or a container by its header, and a lifeline h
 	expect(openableAt(at(picture, "frame"), 60)).toBeNull();
 	expect(openableAt(at(picture, "pill"), 0)).toBeNull();
 	expect(tipTargetAt(at(picture, "bar"), 0)).toBeNull();
+});
+
+/**
+ * Where the card is, in a DOM that does no layout.
+ * @returns Its box.
+ */
+function cardBox(): DOMRect {
+	return new DOMRect(100, 50, 200, 80);
+}
+
+/**
+ * Where a pulse's bar is, far wider than the card it runs round.
+ * @returns Its box.
+ */
+function pulseBox(): DOMRect {
+	return new DOMRect(-40, 10, 600, 200);
+}
+
+test("a tip is placed against the card, not against the pulses that run round it", () => {
+	const picture = drawn();
+	const card = at(picture, "card");
+	card.getBoundingClientRect = cardBox;
+	// A pulse slides in a bar far wider than the card, and its box moves with it.
+	const group = card.parentElement!;
+	const pulse = document.createElementNS("http://www.w3.org/2000/svg", "g");
+	pulse.setAttribute("class", "ab-pulse");
+	pulse.getBoundingClientRect = pulseBox;
+	group.append(pulse);
+
+	const anchor = tipAnchor(group);
+
+	expect(anchor.getBoundingClientRect()).toMatchObject({ x: 100, y: 50, width: 200, height: 80 });
+	// What the positioning library watches for change holds still while the pulse moves.
+	expect(anchor.contextElement).toBe(picture);
 });

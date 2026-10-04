@@ -20,7 +20,6 @@ import {
 } from "react";
 
 import { EXPLORING_MS } from "@/shared/timing/timing";
-import { holdTraffic } from "@/ui/frame-clock";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { CameraSurface } from "@/ui/semantic-board-canvas/components/CameraSurface";
 import { SemanticSubjectTip } from "@/ui/semantic-board-canvas/components/SemanticSubjectTip";
@@ -47,6 +46,7 @@ import { useSubjectTip } from "@/ui/semantic-board-canvas/hooks/use-subject-tip"
 import { useViewerMarks } from "@/ui/semantic-board-canvas/hooks/use-viewer-marks";
 import { useStickyHeads } from "@/ui/semantic-board-canvas/hooks/use-sticky-heads";
 import { useSweep } from "@/ui/semantic-board-canvas/hooks/use-sweep";
+import { useTrafficRest } from "@/ui/semantic-board-canvas/hooks/use-traffic-rest";
 import { FAR_SCALE, PAN_STEP, type Size } from "@/ui/semantic-board-canvas/lib/camera";
 import {
 	leavePicture,
@@ -384,13 +384,10 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	useEffect(() => {
 		if (gesture === "dragging") leave();
 	}, [gesture, leave]);
-	// A drag draws a frame for every move, and moving traffic paints its lines
-	// again in each of them, more of them the closer the camera is. The traffic
-	// stands still until the drag ends.
-	useEffect(() => {
-		if (gesture !== "dragging" || surface === null) return undefined;
-		return holdTraffic(surface);
-	}, [gesture, surface]);
+	// A drag, a throw, a wheel or a key draws a frame for every move, and moving
+	// traffic paints its lines again in each of them. The traffic stands still until
+	// the camera has rested, and then comes back gently.
+	useTrafficRest(surface, camera, gesture === "dragging");
 
 	const onKeyDown = useCallback(
 		(event: KeyboardEvent<HTMLElement>): void => {

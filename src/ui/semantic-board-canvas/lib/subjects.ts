@@ -20,6 +20,13 @@ const SUBJECT_ATTRIBUTE = "data-semantic-id";
 const TRAFFIC_ATTRIBUTE = "data-traffic";
 
 /**
+ * The class every moving mark of traffic carries (the renderer's `PULSE_CLASS`).
+ * A pulse slides in a bar much longer than the part it runs along, so it is
+ * never part of what a box around a subject is measured from.
+ */
+const PULSE_CLASS = "ab-pulse";
+
+/**
  * The attribute a mark lists its members in, space-separated: a group's region
  * lists its cards, and a junction mark the relationships that meet at it.
  * Neither is a subject of its own: the veil lights each with its members.
@@ -309,6 +316,7 @@ function keepingMarks(surface: Element, stage: () => void): void {
 
 export {
 	LIT_CLASS,
+	PULSE_CLASS,
 	SELECTED_CLASS,
 	SUBJECT_ATTRIBUTE,
 	TRAFFIC_ATTRIBUTE,
