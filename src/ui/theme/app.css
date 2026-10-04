@@ -430,9 +430,16 @@
    foot, Talk as wide as the room. Live: the circle (64px, the voice orb's) at the
    head, beside what the agent is on and the voice's line, the plan under them
    in the same column. A part that is not there leaves no row. Each part
-   is named in the order it is placed in, so the DOM keeps the circle first. */
+   is named in the order it is placed in, so the DOM keeps the circle first.
+
+   The dock clips what is laid out beyond it. It is at the foot of the window, and its
+   key is 32px high with the orb's socket (64px) and the canvas that waits in it (84px)
+   centred on it, and while the dock grows its parts are laid out for the size it is
+   growing to. Left to show, they stick out below the window, however still they are
+   drawn, and make the whole page scroll. */
 [data-slot="agent-dock"] {
 	isolation: isolate;
+	overflow: clip;
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) 32px;
 	align-content: start;
@@ -521,12 +528,25 @@
 	justify-content: center;
 }
 [data-slot="voice-circle"] [data-part="plate"] {
-	transition-duration: calc(var(--voice-morph-ms, 520ms) * 0.5);
+	transition-property: border-color, background-color, box-shadow, opacity;
+	transition-duration:
+		calc(var(--voice-morph-ms, 520ms) * 0.5), calc(var(--voice-morph-ms, 520ms) * 0.5),
+		calc(var(--voice-morph-ms, 520ms) * 0.5), 0s;
 }
 [data-slot="voice-circle"][data-form="circle"] [data-part="plate"] {
 	border-color: var(--primary-mark);
 	border-radius: 32px;
 	background-color: var(--card);
+}
+/* As the circle the plate is the orb's seat, and a seat is drawn only while the orb is in
+   it (the stage marks the socket occupied). While the orb is in the air, bound for the
+   dock or away from it, nothing waits where it will land: the orb carries its own plate,
+   and the seat is there the moment it lands. */
+[data-slot="voice-circle"][data-form="circle"] [data-part="plate"]:not(:has([data-occupied])) {
+	opacity: 0;
+	transition-duration:
+		calc(var(--voice-morph-ms, 520ms) * 0.5), calc(var(--voice-morph-ms, 520ms) * 0.5),
+		calc(var(--voice-morph-ms, 520ms) * 0.5), var(--voice-seat-out-ms, 90ms);
 }
 [data-slot="voice-circle"][data-form="key"]:not(
 		[data-voice-state="off"],
@@ -549,8 +569,11 @@
 
 /* The one voice orb: its holder is in a socket at rest, in the dock's plate or the
    voice box, and in the air over the page while it flies. It fades in once the circle
-   has formed and out as it dims, as the canvas did before it had two homes. In the air
-   it is a medallion with a still shadow: the shadow does not change as it moves. */
+   has formed and out as it dims, as the canvas did before it had two homes. The holder
+   carries the plate the orb sits on (a ring, a disc and a seat of light, the same as the
+   dock's circle), so the plate flies with the orb and the shadow does not change as it
+   moves. In the dock the plate is the voice button's own, so the holder does not draw
+   it there. */
 [data-slot="voice-orb-socket"] > [data-slot="voice-orb-holder"] {
 	position: absolute;
 	top: 50%;
@@ -566,13 +589,21 @@
 	transition: opacity calc(var(--voice-morph-ms, 520ms) * 0.4) ease-out
 		calc(var(--voice-morph-ms, 520ms) * 0.35);
 }
-[data-slot="voice-orb-holder"][data-flying]::before {
+[data-slot="voice-orb-holder"]::before {
 	content: "";
 	position: absolute;
 	inset: 10px;
+	box-sizing: border-box;
+	border: 1px solid var(--primary-mark);
 	border-radius: 50%;
 	background-color: var(--card);
-	box-shadow: var(--elevation-float);
+	box-shadow: var(--elevation-raised);
+}
+[data-slot="voice-orb-socket"][data-home="dock"] > [data-slot="voice-orb-holder"]::before {
+	content: none;
+}
+[data-slot="voice-box"][data-voice-state="muted"] [data-slot="voice-orb-holder"]::before {
+	border-color: var(--border);
 }
 [data-slot="voice-orb-holder"] > canvas {
 	position: relative;
@@ -613,7 +644,7 @@
 	pointer-events: none;
 	border-radius: inherit;
 	background: radial-gradient(
-		ellipse 320px 120px at 38px 50%,
+		ellipse 320px 120px at 39px 50%,
 		color-mix(in oklch, var(--primary-mark) 20%, transparent),
 		transparent 72%
 	);
@@ -622,6 +653,22 @@
 [data-slot="voice-box"][data-voice-state="muted"]::before,
 [data-slot="voice-box"][data-voice-state="ending"]::before {
 	opacity: 0.2;
+}
+
+/* The keys at the box's right end stand a margin in from its edge, and from each other, as
+   the orb does at the other end: the plate is 64px and the margin 6px. They are one stack as
+   high as the plate, and its right end is the half circle round the middle of the box's own
+   end, 6px inside it. The upper key is the upper quarter of that half circle and the lower
+   key the lower quarter, each with the corner of a key (3px) on the side that looks into the
+   box. A quarter's arc is drawn as the ellipse of the key's own size, 32px by 29px, which is
+   within a pixel of the circle. */
+[data-slot="voice-keys"] > :first-child {
+	border-radius: var(--radius-control) 32px 0 var(--radius-control) / var(--radius-control) 29px 0
+		var(--radius-control);
+}
+[data-slot="voice-keys"] > :last-child {
+	border-radius: var(--radius-control) 0 32px var(--radius-control) / var(--radius-control) 0 29px
+		var(--radius-control);
 }
 
 /* The words of a subtitle. Each fades in as it arrives, slow to start and slow to

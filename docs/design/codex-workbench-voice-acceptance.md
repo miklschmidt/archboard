@@ -223,9 +223,9 @@ physical input in system audio settings or reconnect it.
 
 Press `Talk` in the agent dock and grant microphone permission if asked. Talk
 sets up whatever voice still needs, then turns into the live control. With
-subtitles on, the orb flies to the voice box over the pane, with the word
+subtitles on, the voice box rises over the pane with the orb lit in it, the word
 Listening or Speaking, `Mute` and the subtitles control, and the key reads
-`End voice`. With subtitles off, the live control is the circle at the head of
+`End voice`. The orb does not fly out of the Talk key. With subtitles off, the live control is the circle at the head of
 the dock, with the same word, `Mute` and the subtitles control beside it. If Talk comes back
 with a warning instead, hover it for the reason. For `Requested device not
 found`, repair the default input and press Talk again. Successful SDP

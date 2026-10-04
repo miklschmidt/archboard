@@ -21,10 +21,10 @@ import { RiChat3Line } from "@remixicon/react";
 import { useRef, type CSSProperties, type JSX } from "react";
 
 import { AGENT_ELAPSED_TICK_MS, SHELL_AGE_TICK_MS } from "@/shared/timing/timing";
-import { VOICE_DEMO_TICK_MS, VOICE_MORPH_MS } from "@/shared/timing/voice";
+import { VOICE_DEMO_TICK_MS, VOICE_MORPH_MS, VOICE_SEAT_OUT_MS } from "@/shared/timing/voice";
 import { cn } from "@/ui/components/class-names";
 import { useClock } from "@/ui/components/use-clock";
-import { useOrbOffered } from "@/ui/voice-orb";
+import { useOrbOffered, useOrbPlacement } from "@/ui/voice-orb";
 import { SubtitlesToggle, useVoiceBoxed } from "@/ui/voice-subtitles";
 import { useDockMotion } from "@/ui/workbench/hooks/use-dock-motion";
 import { IconAction } from "@/ui/workbench/components/IconAction";
@@ -51,8 +51,11 @@ import { VOICE_DEMO_CYCLE, demoVoiceAt } from "@/ui/workbench/lib/voice-demo";
 /** Where the words saying why voice cannot start are. */
 const VOICE_PROBLEM_ID = "voice-problem";
 
-/** How long the dock takes to turn between its layouts, for the stylesheet that eases them. */
-const DOCK_STYLE: CSSProperties = { "--voice-morph-ms": `${VOICE_MORPH_MS}ms` };
+/** How long the dock takes to turn between its layouts and to let go of an empty seat, for the stylesheet that eases them. */
+const DOCK_STYLE: CSSProperties = {
+	"--voice-morph-ms": `${VOICE_MORPH_MS}ms`,
+	"--voice-seat-out-ms": `${VOICE_SEAT_OUT_MS}ms`,
+};
 
 /** Inputs for the dock. */
 interface AgentDockProps {
@@ -147,12 +150,20 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 	const steps = dockSteps(view);
 	const dock = useRef<HTMLElement>(null);
 	useDockMotion(dock, live, props.reducedMotion);
+	// After the dock's motion, not before: the orb leaves from where it was seen, and the motion
+	// has just put the dock's circle back under it, where the layout it turned to has not.
+	useOrbPlacement({
+		home: boxed ? "box" : "dock",
+		shown: on,
+		reducedMotion: props.reducedMotion,
+	});
 	return (
 		<section
 			ref={dock}
 			data-slot="agent-dock"
 			data-lit-by-orb=""
 			data-live={live}
+			data-boxed={boxed ? "" : undefined}
 			data-agent-tone={status.tone}
 			aria-label="Agent"
 			style={DOCK_STYLE}

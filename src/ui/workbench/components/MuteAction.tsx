@@ -12,6 +12,12 @@ import type { AgentActions, AgentVoiceView } from "@/ui/workbench/contracts";
 interface MuteActionProps {
 	readonly voice: AgentVoiceView;
 	readonly actions: AgentActions;
+	/** Whether it is a key of the voice box, drawn as the dock's keys are. */
+	readonly keyed?: boolean;
+	/** What shapes the control where it is not an icon among icons, as at the end of the voice box. */
+	readonly className?: string;
+	/** Which side its tooltip opens on. */
+	readonly tipSide?: "top" | "left";
 }
 
 /** The stages in which a voice can be muted or unmuted: it is connected and not ending. */
@@ -31,6 +37,9 @@ function MuteAction(props: MuteActionProps): JSX.Element {
 			label={muted ? "Unmute" : "Mute"}
 			onClick={muted ? actions.unmute : actions.mute}
 			disabled={voice.busy || !MUTABLE.has(voice.stage)}
+			variant={props.keyed === true ? "outline" : "ghost"}
+			className={props.className}
+			tipSide={props.tipSide}
 		>
 			{muted ? <RiMicOffLine /> : <RiMicLine />}
 		</IconAction>
