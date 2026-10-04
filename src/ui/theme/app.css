@@ -40,9 +40,8 @@
 	font-display: block;
 }
 
-/* The display face (prototype, branch prototype/shell-worlds): Big Shoulders
-   Display, tall condensed capitals, for names set as titles and for the
-   wordmark. Nothing else uses it. */
+/* The display face: Big Shoulders Display, tall condensed capitals, for names
+   set as titles and for the wordmark. Nothing else uses it. */
 @font-face {
 	font-family: "Archboard Display";
 	src: url("../shell/assets/fonts/BigShouldersDisplay-wght.ttf") format("truetype");

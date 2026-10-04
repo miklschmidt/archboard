@@ -3,7 +3,7 @@
 //
 // DEMONSTRATION: opening the page with `?voiceDemo` shows the dock with an
 // invented agent state and a speaking voice, so it can be looked at without
-// Codex, a microphone or a turn. It is for screenshots of this prototype;
+// Codex, a microphone or a turn. The browser tests and screenshots use it;
 // nothing real reads it, and it changes nothing the agent does.
 
 import type { ConversationTurn } from "@/ui/workbench-timeline";
