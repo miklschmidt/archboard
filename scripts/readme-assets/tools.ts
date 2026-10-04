@@ -81,6 +81,26 @@ async function run(argv: readonly string[], options: RunOptions = {}): Promise<R
 }
 
 /**
+ * Run a step for each item, one after another, and collect what each step returned. Every
+ * sequence in the kit goes through here: each step acts on what the one before left (a page, a
+ * board's version, the machine kept quiet for a take), so the steps never overlap.
+ * @param items The items, in order.
+ * @param step What is done with one item and its place.
+ * @returns What each step returned, in order.
+ */
+async function inOrder<Item, Result>(
+	items: Iterable<Item>,
+	step: (item: Item, index: number) => Promise<Result>,
+): Promise<Result[]> {
+	const results: Result[] = [];
+	for (const [index, item] of [...items].entries()) {
+		// oxlint-disable-next-line no-await-in-loop -- the kit's one sequence: each step starts once the one before has finished
+		results.push(await step(item, index));
+	}
+	return results;
+}
+
+/**
  * The scratch directory, made when absent.
  * @param parts A directory inside it.
  * @returns Its path.
@@ -199,6 +219,7 @@ export {
 	attempt,
 	chromiumPath,
 	ffmpeg,
+	inOrder,
 	pyftsubsetCommand,
 	requireEncoders,
 	run,

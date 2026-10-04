@@ -2,12 +2,17 @@
 // agent answers from the board. It runs on a server with the machine's Archboard Codex sign-in and
 // spends Codex usage. The wait for the answer is played faster, so it lasts about seven seconds.
 
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { now, type Page } from "./browser.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { encodeTake, filmTogether, moment, withTake } from "./film.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { readmeFile, type Producer } from "./producer.ts";
+import {
+	encodeTake,
+	filmTogether,
+	moment,
+	now,
+	readmeFile,
+	withTake,
+	type Page,
+	type Producer,
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+} from "./kit.ts";
 
 const BOARD = "Web shop";
 const PART = "Timeout guard";

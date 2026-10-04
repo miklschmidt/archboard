@@ -23,8 +23,16 @@ import {
 } from "./manifest.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 import { disagreements, inRepository, type Need, type Producer } from "./producer.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { ROOT, chromiumPath, pyftsubsetCommand, requireEncoders, run, toolLines } from "./tools.ts";
+import {
+	ROOT,
+	chromiumPath,
+	inOrder,
+	pyftsubsetCommand,
+	requireEncoders,
+	run,
+	toolLines,
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+} from "./tools.ts";
 
 /** The encoders every filmed or rasterized asset is written with. */
 const ENCODERS = ["libwebp_anim", "libwebp", "libx264"] as const;
@@ -165,30 +173,27 @@ function say(line: string): void {
  */
 async function makeAll(manifest: ReadmeManifest, assets: readonly ReadmeAsset[]): Promise<void> {
 	const needs = new Set(assets.flatMap((asset) => producerOf(asset).needs));
-	for (const need of needs) {
-		// oxlint-disable-next-line no-await-in-loop -- each tool is proved before anything starts
-		await prove(need);
-	}
+	// Every tool is proved before anything starts.
+	await inOrder(needs, prove);
 	if (needs.has("chromium")) {
 		console.log("Building the frontend the takes are filmed from.");
 		await run([process.execPath, "run", "build:frontend"]);
 	}
 	const hasher = checkoutHasher(ROOT);
 	let made = manifest;
-	for (const [index, asset] of assets.entries()) {
+	// Assets are made one at a time, so a take has the machine to itself.
+	await inOrder(assets, async (asset, index) => {
 		console.log(planLines(asset, index + 1, assets.length)[0]);
 		const hash = hasher.hash(asset.sources);
-		// oxlint-disable-next-line no-await-in-loop -- assets are made one at a time on a quiet machine
 		await producerOf(asset).make({ say });
 		made = {
 			...made,
 			assets: made.assets.map((one) => (one.name === asset.name ? { ...one, hash } : one)),
 		};
 		writeManifest(ROOT, made);
-		// oxlint-disable-next-line no-await-in-loop -- the manifest is formatted as the repository keeps JSON
 		await run([join(ROOT, "node_modules/.bin/oxfmt"), MANIFEST_PATH]);
 		console.log(`  made ${sizes(asset)}`);
-	}
+	});
 }
 
 /**

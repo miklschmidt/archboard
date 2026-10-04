@@ -2,10 +2,17 @@
 // agent shows one competing proposal in each pane, through the CLI, and each pane redraws as its
 // proposal, marked against the shared starting point.
 
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { encodeTake, filmTogether, fit, foldSidebars, moment, withTake } from "./film.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { readmeFile, type Producer } from "./producer.ts";
+import {
+	encodeTake,
+	filmTogether,
+	fit,
+	foldSidebars,
+	moment,
+	readmeFile,
+	withTake,
+	type Producer,
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+} from "./kit.ts";
 
 const BOARD = "Recommendations";
 const START = "Starting point";

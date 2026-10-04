@@ -19,7 +19,7 @@ import {
 import { SHELL_VIEWPORT } from "@/shared/shell-geometry";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { chromiumPath } from "./tools.ts";
+import { chromiumPath, inOrder } from "./tools.ts";
 
 /** How long a DevTools call or a page evaluation may take. */
 const CALL_MS = 20_000;
@@ -149,15 +149,23 @@ class Page {
 	 * @throws {Error} When it is not truthy in time.
 	 */
 	async waitFor(expression: string, label: string, timeoutMs = CALL_MS): Promise<unknown> {
-		const deadline = Date.now() + timeoutMs;
-		for (;;) {
-			// oxlint-disable-next-line no-await-in-loop -- each look waits for the answer of the one before
-			const value = await this.evaluate(expression).catch(() => undefined);
-			if (value) return value;
-			if (Date.now() > deadline) throw new Error(`Timed out waiting for ${label}.`);
-			// oxlint-disable-next-line no-await-in-loop -- a poll waits between looks
-			await Bun.sleep(POLL_MS);
-		}
+		return this.#look(expression, label, Date.now() + timeoutMs);
+	}
+
+	/**
+	 * Look at an expression, and look again a moment later until it is truthy or time is up.
+	 * @param expression The expression.
+	 * @param label What is waited for, for the failure.
+	 * @param deadline When to give up, as a timestamp.
+	 * @returns The expression's value.
+	 * @throws {Error} When it is not truthy by the deadline.
+	 */
+	async #look(expression: string, label: string, deadline: number): Promise<unknown> {
+		const value = await this.evaluate(expression).catch(() => undefined);
+		if (value) return value;
+		if (Date.now() > deadline) throw new Error(`Timed out waiting for ${label}.`);
+		await Bun.sleep(POLL_MS);
+		return this.#look(expression, label, deadline);
 	}
 
 	/**
@@ -195,14 +203,14 @@ class Page {
 	 */
 	async moveTo(to: Point, steps = 24): Promise<void> {
 		const from = this.#pointer;
-		for (let step = 1; step <= steps; step++) {
-			const x = from.x + ((to.x - from.x) * step) / steps;
-			const y = from.y + ((to.y - from.y) * step) / steps;
-			// oxlint-disable-next-line no-await-in-loop -- a pointer path is one move after another
+		const path = Array.from({ length: steps }, (_, index) => (index + 1) / steps);
+		await inOrder(path, async (along) => {
+			const x = from.x + (to.x - from.x) * along;
+			const y = from.y + (to.y - from.y) * along;
 			await this.#mouse("mouseMoved", { x, y }, 0);
-			// oxlint-disable-next-line no-await-in-loop -- the moves are spread over time, as a hand's are
+			// The moves are spread over time, as a hand's are.
 			if (steps > 1) await Bun.sleep(16);
-		}
+		});
 		this.#pointer = to;
 	}
 
@@ -226,12 +234,10 @@ class Page {
 	async doubleClick(selector: string): Promise<void> {
 		const at = await this.centreOf(selector);
 		await this.moveTo(at);
-		for (const clickCount of [1, 2]) {
-			// oxlint-disable-next-line no-await-in-loop -- the second click follows the first
+		await inOrder([1, 2], async (clickCount) => {
 			await this.#mouse("mousePressed", at, clickCount);
-			// oxlint-disable-next-line no-await-in-loop -- a release follows its press
 			await this.#mouse("mouseReleased", at, clickCount);
-		}
+		});
 	}
 
 	/**
@@ -256,12 +262,10 @@ class Page {
 	 * @param text The text.
 	 */
 	async type(text: string): Promise<void> {
-		for (const character of text) {
-			// oxlint-disable-next-line no-await-in-loop -- characters land in order
+		await inOrder(Array.from(text), async (character) => {
 			await this.devtools.call("Input.insertText", { text: character });
-			// oxlint-disable-next-line no-await-in-loop -- typing takes time
 			await Bun.sleep(28);
-		}
+		});
 	}
 
 	/**

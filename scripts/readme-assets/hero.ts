@@ -13,14 +13,19 @@ import { z } from "zod";
 
 import type { VariantContent } from "@/shared/semantic-board";
 
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { Terminal, encodeTake, filmTogether, present, withTake } from "./film.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { readmeFile, type Producer } from "./producer.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { readBoard, type TakeServer } from "./server.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { scratch } from "./tools.ts";
+import {
+	Terminal,
+	encodeTake,
+	filmTogether,
+	present,
+	readBoard,
+	readmeFile,
+	scratch,
+	withTake,
+	type Producer,
+	type TakeServer,
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+} from "./kit.ts";
 
 const BOARD = "Web shop";
 const PROPOSAL = "Off the request path";

@@ -2,12 +2,18 @@
 // control in the pane, and the agent's next write is refused. The agent's terminal stands on the
 // left; every command it shows ran against the server as shown.
 
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { Terminal, encodeTake, filmTogether, moment, present, withTake } from "./film.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { readmeFile, type Producer } from "./producer.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { readBoard } from "./server.ts";
+import {
+	Terminal,
+	encodeTake,
+	filmTogether,
+	moment,
+	present,
+	readBoard,
+	readmeFile,
+	withTake,
+	type Producer,
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+} from "./kit.ts";
 
 const BOARD = "Web shop";
 const REASON = "proposing event-sourced orders";

@@ -7,14 +7,20 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { encodeThumbnail } from "./encode.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { inRepository, readmeFile, type Producer } from "./producer.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { startServer, type TakeServer, type TrackedVault } from "./server.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { pyftsubsetCommand, run, scratch } from "./tools.ts";
+import {
+	encodeThumbnail,
+	inOrder,
+	inRepository,
+	pyftsubsetCommand,
+	readmeFile,
+	run,
+	scratch,
+	startServer,
+	type Producer,
+	type TakeServer,
+	type TrackedVault,
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+} from "./kit.ts";
 
 /** One README diagram, drawn in both themes. */
 interface DiagramSpec {
@@ -92,12 +98,11 @@ async function subsetFaces(input: string, output: string, work: string): Promise
 	const characters = join(work, "characters.txt");
 	const kept = new Set([...codePoints(text), ...KEPT_CHARACTERS]);
 	writeFileSync(characters, [...kept].toSorted().join(""));
-	let smaller = svg;
-	for (const [index, face] of faces.entries()) {
+	// One subsetter at a time keeps the machine quiet.
+	const cuts = await inOrder(faces, async (face, index) => {
 		const whole = join(work, `face-${index}.ttf`);
 		const cut = join(work, `face-${index}.subset.ttf`);
 		writeFileSync(whole, Buffer.from(face, "base64"));
-		// oxlint-disable-next-line no-await-in-loop -- one subsetter at a time keeps the machine quiet
 		await run([
 			...pyftsubsetCommand(),
 			whole,
@@ -107,8 +112,12 @@ async function subsetFaces(input: string, output: string, work: string): Promise
 			"--no-hinting",
 			"--desubroutinize",
 		]);
-		smaller = smaller.replace(face, readFileSync(cut).toString("base64"));
-	}
+		return readFileSync(cut).toString("base64");
+	});
+	const smaller = faces.reduce(
+		(picture, face, index) => picture.replace(face, cuts[index] ?? face),
+		svg,
+	);
 	writeFileSync(output, smaller);
 }
 
@@ -188,10 +197,8 @@ function diagramProducer(spec: DiagramSpec): Producer {
 			const work = scratch("diagrams", spec.name);
 			const server = await startServer(`diagram-${spec.name}`, spec.vault, false);
 			try {
-				let size: z.infer<typeof RenderReceiptSchema> | undefined;
-				for (const theme of ["light", "dark"] as const) {
+				const [size] = await inOrder(["light", "dark"] as const, async (theme) => {
 					const drawn = join(work, `${theme}.svg`);
-					// oxlint-disable-next-line no-await-in-loop -- the themes are drawn one after the other
 					const receipt = await server.cli([
 						"semantic",
 						"render",
@@ -201,10 +208,9 @@ function diagramProducer(spec: DiagramSpec): Producer {
 						"--out",
 						drawn,
 					]);
-					size = RenderReceiptSchema.parse(receipt);
-					// oxlint-disable-next-line no-await-in-loop -- the subsetter runs once per theme
 					await subsetFaces(drawn, inRepository(readmeFile(`${spec.name}-${theme}.svg`)), work);
-				}
+					return RenderReceiptSchema.parse(receipt);
+				});
 				if (size !== undefined) await thumbnail(spec, server, size, work);
 			} finally {
 				await server.stop();
