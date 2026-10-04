@@ -190,6 +190,8 @@ test(
 		);
 		expect(speaking.form).toBe("circle");
 		expect(speaking.box).toBeNull();
+		// The keyboard keeps its place on the key that turned into the circle.
+		expect((await focusIs(browser, DOCK_VOICE))[0]).toBe(true);
 		// The wire, in order: the coordinator and then the workhorse are created, the
 		// conversation reads the workhorse as the tab's linked thread, voice starts on the
 		// coordinator, and the coordinator is given the board catalogue this voice session

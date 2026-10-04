@@ -31,7 +31,7 @@ const PLATE = cn(
 	"dark:border-input dark:bg-input/30 transition-[border-color,background-color,box-shadow]",
 	"group-hover/voice:border-primary-mark group-active/voice:shadow-pressed",
 	"group-focus-visible/voice:ring-ring group-focus-visible/voice:ring-2 group-focus-visible/voice:ring-offset-2 group-focus-visible/voice:ring-offset-(--raised)",
-	"group-disabled/voice:opacity-50",
+	"group-aria-disabled/voice:opacity-50",
 );
 
 /** Inputs for the voice control. */
@@ -58,6 +58,24 @@ function formOf(state: CircleState, boxed: boolean): "key" | "circle" {
 }
 
 /**
+ * What a press of the button does: nothing while voice is on the wire or ending, else
+ * start voice while it is off and end it while it is on. The button that does nothing
+ * says so with aria-disabled, not disabled: a disabled button drops the keyboard's place.
+ * @param state What the circle shows.
+ * @param voice The voice.
+ * @param actions The actions.
+ * @returns The action, or undefined while a press does nothing.
+ */
+function pressOf(
+	state: CircleState,
+	voice: AgentVoiceView,
+	actions: AgentActions,
+): (() => void) | undefined {
+	if (state === "ending" || voice.busy) return undefined;
+	return state === "off" ? actions.talk : actions.endVoice;
+}
+
+/**
  * The voice control: Talk while voice is off, the circle that ends it while the orb
  * is at home, and the End voice key while the voice box has the orb.
  * @param props The voice, the actions, where its problem is said, the motion preference and where the voice is.
@@ -67,6 +85,7 @@ function VoiceControl(props: VoiceControlProps): JSX.Element {
 	const { voice, actions, boxed } = props;
 	const state = useCircleState(voice);
 	const off = state === "off";
+	const press = pressOf(state, voice, actions);
 	return (
 		<button
 			type="button"
@@ -77,8 +96,8 @@ function VoiceControl(props: VoiceControlProps): JSX.Element {
 			aria-label={CIRCLE_NAMES[state]}
 			aria-describedby={voice.problem === null ? undefined : props.problemId}
 			title={off ? undefined : CIRCLE_NAMES[state]}
-			disabled={state === "ending" || voice.busy}
-			onClick={off ? actions.talk : actions.endVoice}
+			aria-disabled={press === undefined}
+			onClick={press}
 			className="group/voice relative outline-none"
 		>
 			<span aria-hidden="true" data-part="plate" className={PLATE}>

@@ -15,7 +15,12 @@ import { OrbSlot, OrbStageProvider } from "@/ui/voice-orb";
 import { subtitlePreference } from "@/ui/voice-subtitles";
 import { AgentDock } from "@/ui/workbench";
 import type { AgentView, AgentVoiceView } from "@/ui/workbench/contracts";
-import { IDLE_ACTIONS, nothing, voiceIn } from "@/ui/workbench/tests/voice-fixtures";
+import {
+	IDLE_ACTIONS,
+	nothing,
+	recordingActions,
+	voiceIn,
+} from "@/ui/workbench/tests/voice-fixtures";
 
 beforeAll(() => {
 	GlobalRegistrator.register();
@@ -42,14 +47,15 @@ const READY: AgentSetupSnapshot = {
 /**
  * A ready agent with nothing to say, and a voice in a stage.
  * @param stage The voice's stage.
+ * @param busy Whether a voice control is on the wire.
  * @returns The view.
  */
-function viewWith(stage: AgentVoiceView["stage"]): AgentView {
+function viewWith(stage: AgentVoiceView["stage"], busy = false): AgentView {
 	return {
 		setup: READY,
 		snapshot: null,
 		conversation: { snapshot: null, turns: [], failure: null },
-		voice: voiceIn(stage),
+		voice: voiceIn(stage, busy),
 		context: { board: "payments", state: null },
 		busyApprovals: [],
 		approvalErrors: {},
@@ -109,6 +115,35 @@ test("the key that says Talk is the circle that ends voice, and keeps the keyboa
 	expect(voice()?.getAttribute("aria-label")).toBe("End voice");
 	expect(root()?.getAttribute("data-live")).toBe("true");
 	expect(document.activeElement).toBe(key);
+});
+
+test("while voice is on the wire or ending the key presses nothing and stays in the tab order", () => {
+	for (const [stage, busy] of [
+		["preparing", true],
+		["stopping", false],
+	] as const) {
+		const pressed: string[] = [];
+		const shown = render(
+			<OrbStageProvider>
+				<AgentDock
+					view={viewWith(stage, busy)}
+					actions={recordingActions(pressed)}
+					panelOpen={false}
+					unread={false}
+					onTogglePanel={nothing}
+					reducedMotion
+					dockless={false}
+				/>
+			</OrbStageProvider>,
+		);
+		const key = shown.container.querySelector<HTMLElement>('[data-slot="voice-circle"]');
+		act(() => key?.click());
+		expect(pressed).toEqual([]);
+		expect(key?.getAttribute("aria-disabled")).toBe("true");
+		// A disabled button would drop the keyboard's place while Talk turns into the circle.
+		expect(key?.hasAttribute("disabled")).toBe(false);
+		shown.unmount();
+	}
 });
 
 /** How many animations the page was asked to play. */
