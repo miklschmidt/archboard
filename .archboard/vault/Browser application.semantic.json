@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 30,
+	"version": 31,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-04T13:22:57.706Z",
+	"updatedAt": "2026-10-04T14:40:01.484Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -3080,7 +3080,7 @@
 						"order": 7000,
 						"name": "Workbench client",
 						"kind": "service",
-						"description": "Reads one AgentView and acts through one AgentActions, both composed by the application over the agent setup, the focused pane's controllers and the voice session. While the person wants subtitles it also draws the voice box over the voice's pane, which carries the voice the dock otherwise shows; the dock hands the voice over only to a box that the orb's stage says is on the page."
+						"description": "Reads one AgentView and acts through one AgentActions, both composed by the application over the agent setup, the focused pane's controllers and the voice session. While the person wants subtitles it also draws the voice box over the voice's pane, a capsule round the orb with mute and the subtitles control as two keys at its end, which carries the voice the dock otherwise shows; the dock hands the voice over only to a box that the orb's stage says is on the page, and places the orb after its own motion so the orb leaves from where it was seen."
 					},
 					{
 						"id": "0SRnYXnC",
@@ -3289,7 +3289,7 @@
 						"order": 21000,
 						"name": "Voice orb",
 						"kind": "module",
-						"description": "The canvas is made once and moved, never remounted, so the light and the last second of level it has drawn go with it. The dock offers its circle as one home and the voice box offers a socket as the other; the stage flies the orb over the page between them, meets a socket where it is as it moves, turns a flight round from where the orb is, and cuts when motion is not wanted or a home is not on screen. It says whether a home is on the page, so a surface gives the voice up only to a home that is there."
+						"description": "The canvas is made once and moved, never remounted, so the light and the last second of level it has drawn go with it, and it carries the plate it sits on: what flies is one object, only one is ever on the page, and a home draws its seat only while the orb rests in it. The dock offers its circle as one home and the voice box offers a socket as the other; the stage flies an orb that can be seen over the page between them from where it was seen, meets a socket where it is as it moves, turns a flight round from where the orb is, and cuts when motion is not wanted, when a home is not on screen or when the orb is not yet seen, so voice starting lights it where it is wanted and does not launch it from the Talk key. It says whether a home is on the page, so a surface gives the voice up only to a home that is there."
 					}
 				],
 				"edges": [
