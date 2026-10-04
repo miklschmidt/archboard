@@ -1,32 +1,75 @@
-// The step a presented walkthrough's box shows: its number among all of them, set the way a
-// drawing's sheet number is, and beside it the step's heading, its words, and the name of the
-// walkthrough they belong to.
+// The steps a presented walkthrough's box shows: each step's number, set the way a drawing's sheet
+// number is, and beside it each step's heading and words, with the name of the walkthrough under
+// the words.
+//
+// Every step stands in one cell, so the cell is as high as the highest step and the box keeps one
+// height from the first step to the last. Which step is shown is a matter of where each one stands
+// against it: the steps before it wait on its left (the number's: above), the steps after it on its
+// right (below), and the stylesheet (app.css, `presentation-slides`) slides them in and out. A step
+// chosen out of order slides the same way, and a reader who steps again at once turns the move
+// round from where it is. What is drawn is the same words that the live region says, once, so the
+// drawn steps are hidden from assistive technology, and the ones that are not shown can neither be
+// focused nor found.
 
 import type { JSX } from "react";
 
 import type { SemanticWalkthrough } from "@/shared/semantic-board/index";
+import { cn } from "@/ui/components/class-names";
 
-/** Inputs for the step's number. */
+/** Where a step stands against the one shown. */
+type Place = "before" | "shown" | "after";
+
+/**
+ * Where a step stands against the one shown.
+ * @param step The step.
+ * @param shown The step shown.
+ * @returns Before it, shown, or after it.
+ */
+function placeOf(step: number, shown: number): Place {
+	if (step === shown) return "shown";
+	return step < shown ? "before" : "after";
+}
+
+/** Inputs for the steps' numbers. */
 interface StepFigureProps {
+	/** The walkthrough, for the steps it has. */
+	readonly walkthrough: SemanticWalkthrough;
 	/** Which step is shown. */
 	readonly index: number;
-	/** How many steps there are. */
-	readonly count: number;
+	/** What places the cell in the box. */
+	readonly className?: string;
 }
 
 /**
- * The step's number, and how many there are.
- * @param props The step and the count.
+ * The number of the step shown, and how many steps there are. The numbers roll like the digits of
+ * a flip board: the one before leaves upwards and the next rises in, and stepping back runs it the
+ * other way.
+ * @param props The walkthrough, the step shown and what places the cell.
  * @returns The figure.
  */
 function StepFigure(props: StepFigureProps): JSX.Element {
+	const { beats } = props.walkthrough;
 	return (
 		<div
+			aria-hidden="true"
 			data-slot="semantic-presentation-count"
-			className="border-border flex w-14 shrink-0 flex-col items-center justify-center gap-0.5 border-r pr-5"
+			className={cn(
+				"border-border flex w-14 shrink-0 flex-col items-center justify-center gap-0.5 border-r pr-5",
+				props.className,
+			)}
 		>
-			<span className="title-figure">{props.index + 1}</span>
-			<span className="text-technical text-muted-foreground font-mono">of {props.count}</span>
+			<div data-slot="presentation-figures" className="grid overflow-clip">
+				{beats.map((beat, at) => (
+					<span
+						key={beat.id}
+						data-place={placeOf(at, props.index)}
+						className="title-figure col-start-1 row-start-1"
+					>
+						{at + 1}
+					</span>
+				))}
+			</div>
+			<span className="text-technical text-muted-foreground font-mono">of {beats.length}</span>
 		</div>
 	);
 }
@@ -48,44 +91,56 @@ function StepMissing(props: { readonly missing: readonly string[] }): JSX.Elemen
 	);
 }
 
-/** Inputs for the step's words. */
+/** Inputs for the steps' words. */
 interface StepWordsProps {
-	/** The walkthrough, for its name. */
+	/** The walkthrough, for its steps and its name. */
 	readonly walkthrough: SemanticWalkthrough;
 	/** Which step is shown. */
 	readonly index: number;
-	/** The step's subjects this reading does not draw, in words. */
+	/** The step shown's subjects this reading does not draw, in words. */
 	readonly missing: readonly string[];
+	/** What places the column in the box. */
+	readonly className?: string;
 }
 
 /**
- * The step's heading and words, which are announced as the step changes, and under them the name
- * of the walkthrough.
- * @param props The walkthrough, the step and what the reading does not draw.
+ * The words of each step, with the one shown in place, and under them the name of the walkthrough.
+ * The live region says the step shown once, with its place among the steps, whenever it changes.
+ * @param props The walkthrough, the step shown, what the reading does not draw and what places the column.
  * @returns The words.
  */
 function StepWords(props: StepWordsProps): JSX.Element {
-	const { walkthrough } = props;
-	const beat = walkthrough.beats[props.index];
+	const { walkthrough, index } = props;
+	const beat = walkthrough.beats[index];
 	return (
-		<div className="flex min-w-0 flex-1 flex-col gap-2">
-			<div aria-live="polite" className="flex min-w-0 flex-col gap-2">
-				{beat !== undefined && (
-					<div
-						key={beat.id}
-						className="animate-in fade-in flex min-w-0 flex-col gap-2 duration-200 motion-reduce:animate-none"
-					>
-						<h2
-							data-slot="semantic-presentation-heading"
-							className="text-presentation text-balance"
+		<div className={cn("flex min-w-0 flex-col gap-2", props.className)}>
+			<output className="sr-only">
+				{beat === undefined
+					? null
+					: `Step ${index + 1} of ${walkthrough.beats.length}. ${beat.heading}. ${beat.body}`}
+			</output>
+			<div aria-hidden="true" data-slot="presentation-slides" className="grid overflow-clip">
+				{walkthrough.beats.map((one, at) => {
+					const place = placeOf(at, index);
+					return (
+						<div
+							key={one.id}
+							data-place={place}
+							inert={place !== "shown"}
+							className="col-start-1 row-start-1 flex flex-col gap-2"
 						>
-							{beat.heading}
-						</h2>
-						<p className="text-reading max-w-[66ch] whitespace-pre-line">{beat.body}</p>
-						<StepMissing missing={props.missing} />
-					</div>
-				)}
+							<h2
+								data-slot={place === "shown" ? "semantic-presentation-heading" : undefined}
+								className="text-presentation text-balance"
+							>
+								{one.heading}
+							</h2>
+							<p className="text-reading whitespace-pre-line">{one.body}</p>
+						</div>
+					);
+				})}
 			</div>
+			<StepMissing missing={props.missing} />
 			<p
 				data-slot="semantic-presentation-name"
 				className="text-body text-muted-foreground truncate"

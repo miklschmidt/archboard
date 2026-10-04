@@ -190,6 +190,18 @@ const PRESENTATION_STEP_MS = 900;
 const PRESENTATION_BOX_IN_MS = 220;
 
 /**
+ * How long a presented walkthrough's box takes to hand one step to the next: the rail's gold
+ * travels to the new step, the step's number rolls, and the heading and the words slide out and
+ * in along the way the reader stepped, one after the other.
+ *
+ * Pulls against the camera's glide (`PRESENTATION_STEP_MS`, 900): the new words are to be readable
+ * well before the camera has settled, so this is the shorter. It also pulls against a reader who
+ * steps again at once: nothing waits for it, and a move turns round from where it is. Shorter than
+ * about 350ms the gold cannot be followed across the rail, and it is the eye that follows it.
+ */
+const PRESENTATION_BOX_STEP_MS = 520;
+
+/**
  * How long a picture takes to cross-fade between its cards drawn near (name
  * and responsibility) and seen from far away (name alone, larger), when the
  * camera crosses the far-view scale. Pulls against the zoom it follows: shorter
@@ -218,6 +230,7 @@ export {
 	PICTURE_TRANSITION_MS,
 	PICTURE_TRANSITION_PHASES,
 	PRESENTATION_BOX_IN_MS,
+	PRESENTATION_BOX_STEP_MS,
 	PRESENTATION_STEP_MS,
 	SUBJECT_TIP_DELAY_MS,
 	TRAFFIC_GAP_LIMITS_MS,

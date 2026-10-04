@@ -688,6 +688,106 @@
 	}
 }
 
+/* A presented walkthrough's box hands one step to the next (TASK-392). Every step stands in one
+   cell. The steps before the one shown wait on its left (a number's: above) and the steps after it
+   on its right (below), so a step chosen out of order slides the same way, and a reader who steps
+   again at once turns the move round from where it is. A step leaves first and quickly, and the
+   next arrives as it goes, its heading and then its words. The step's number rolls like the digit
+   of a flip board. The gold of the rail is one piece, as wide as a segment, and it travels to the
+   new step with a paler wake that arrives a little after it. Only transform and opacity move, once,
+   on the box's own layer, and with reduced motion nothing does. `--presentation-step-ms` paces all
+   of it, and the wake, which trails the gold, ends a little after it. */
+[data-slot="presentation-slides"] > [data-place] {
+	visibility: hidden;
+	transition: visibility 0s linear calc(var(--presentation-step-ms, 520ms) * 0.5);
+}
+[data-slot="presentation-slides"] > [data-place="shown"] {
+	visibility: visible;
+	transition-delay: 0s;
+}
+[data-slot="presentation-slides"] > [data-place] > * {
+	opacity: 0;
+	transition:
+		opacity calc(var(--presentation-step-ms, 520ms) * 0.24) cubic-bezier(0.1, 0.7, 0.3, 1),
+		transform calc(var(--presentation-step-ms, 520ms) * 0.5) cubic-bezier(0.5, 0, 0.75, 0);
+}
+[data-slot="presentation-slides"] > [data-place="before"] > * {
+	transform: translateX(-28px);
+}
+[data-slot="presentation-slides"] > [data-place="after"] > * {
+	transform: translateX(28px);
+}
+[data-slot="presentation-slides"] > [data-place="shown"] > * {
+	opacity: 1;
+	transform: none;
+	transition:
+		opacity calc(var(--presentation-step-ms, 520ms) * 0.45) ease-out var(--arrive, 0s),
+		transform calc(var(--presentation-step-ms, 520ms) * 0.62) cubic-bezier(0.22, 1, 0.36, 1)
+			var(--arrive, 0s);
+}
+[data-slot="presentation-slides"] > [data-place="shown"] > :nth-child(1) {
+	--arrive: calc(var(--presentation-step-ms, 520ms) * 0.3);
+}
+[data-slot="presentation-slides"] > [data-place="shown"] > :nth-child(2) {
+	--arrive: calc(var(--presentation-step-ms, 520ms) * 0.38);
+}
+[data-slot="presentation-figures"] > [data-place] {
+	opacity: 0;
+	transition:
+		opacity calc(var(--presentation-step-ms, 520ms) * 0.3) cubic-bezier(0.1, 0.7, 0.3, 1),
+		transform calc(var(--presentation-step-ms, 520ms) * 0.55) cubic-bezier(0.5, 0, 0.75, 0);
+}
+[data-slot="presentation-figures"] > [data-place="before"] {
+	transform: translateY(-100%);
+}
+[data-slot="presentation-figures"] > [data-place="after"] {
+	transform: translateY(100%);
+}
+[data-slot="presentation-figures"] > [data-place="shown"] {
+	opacity: 1;
+	transform: none;
+	transition:
+		opacity calc(var(--presentation-step-ms, 520ms) * 0.5) ease-out
+			calc(var(--presentation-step-ms, 520ms) * 0.14),
+		transform calc(var(--presentation-step-ms, 520ms) * 0.72) cubic-bezier(0.22, 1, 0.36, 1)
+			calc(var(--presentation-step-ms, 520ms) * 0.14);
+}
+[data-slot="semantic-presentation-rail"] > [data-mark] {
+	pointer-events: none;
+	position: absolute;
+	top: 7px;
+	left: 0;
+	z-index: 1;
+	height: 6px;
+	border-radius: 9999px;
+	width: calc((100% - (var(--count) - 1) * 4px) / var(--count));
+	transform: translateX(calc(var(--at) * (100% + 4px)));
+	transition: transform calc(var(--presentation-step-ms, 520ms) * 0.92)
+		cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-slot="semantic-presentation-rail"] > [data-mark="wake"] {
+	transition-duration: calc(var(--presentation-step-ms, 520ms) * 1.3);
+	transition-delay: calc(var(--presentation-step-ms, 520ms) * 0.05);
+}
+@media (prefers-reduced-motion: reduce) {
+	[data-slot="presentation-slides"] > [data-place],
+	[data-slot="presentation-slides"] > [data-place] > *,
+	[data-slot="presentation-figures"] > [data-place],
+	[data-slot="semantic-presentation-rail"] > [data-mark] {
+		transition: none !important;
+	}
+}
+/* A talk is rendered frame by frame from a stepped clock. A transform or opacity transition that
+   begins on a frame is drawn a few milliseconds ahead of the clock on that frame, because the
+   compositor starts it before the clock can hold it, and then the same talk would not render to
+   the same frames twice. So in a recording page and in the replay of a kept talk the box arrives
+   where it stands and cuts from step to step, as it does with reduced motion. The picture's glide
+   is driven by the clock and still moves. */
+[data-recording] [data-slot="semantic-presentation-frame"],
+[data-recording] [data-slot="semantic-presentation-frame"] * {
+	transition: none !important;
+}
+
 /* The voice box at the foot of a presented walkthrough's box (TASK-392): the pill it is
    drawn in is its skin, and the pill stays, so the box fades in and out where it stands and
    does not rise. Under it, while voice is off, is the key that narrates, which gives way once

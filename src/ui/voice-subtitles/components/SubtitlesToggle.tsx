@@ -17,9 +17,9 @@ import { subtitlePreference, type SubtitlePreference } from "@/ui/voice-subtitle
 const TOGGLE = '[data-slot="voice-subtitles-toggle"]';
 
 /**
- * Whether the control that was pressed still has focus where it is: a control that does replaced
- * nothing, as in a presentation's bar. One that was taken away or made inert by a surface that is
- * leaving did not keep it.
+ * Whether the control that was pressed still has focus where it is: a control that replaced
+ * nothing, because the voice box stays where it is, as in a fullscreen presentation. One that was
+ * taken away or made inert by a surface that is leaving did not keep it.
  * @param pressed The control that was pressed, or null once it is gone from the page.
  * @returns True when it has kept focus.
  */

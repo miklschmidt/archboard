@@ -22,7 +22,7 @@ interface PaneStagesProps {
 	activePaneId: string;
 	/** The pane presented fullscreen, or null in the workspace. */
 	presentation: ShellPresentation | null;
-	/** Live voice controls for the presentation bar. */
+	/** The key that starts and ends voice, for the presentation bar. */
 	voiceControls: ReactNode;
 	/** The fullscreen root: the application presents this element. */
 	attachStage: ((element: HTMLDivElement | null) => void) | undefined;

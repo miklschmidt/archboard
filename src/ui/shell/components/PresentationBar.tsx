@@ -1,6 +1,6 @@
 // Fullscreen presentation of one pane: a slim bar with the exit control and
-// the slot for the voice workbench's controls, above the pane's own canvas,
-// which stays mounted where it is.
+// the slot for the voice workbench's key, above the pane's own canvas, which
+// stays mounted where it is.
 
 import { RiFullscreenExitLine } from "@remixicon/react";
 import { useCallback, useEffect, useRef, type JSX, type ReactNode } from "react";
@@ -13,7 +13,7 @@ interface PresentationBarProps {
 	pane: ShellPane;
 	/** A refused exit, shown in the bar so it is seen from inside the presentation. */
 	error: string | null;
-	/** Live voice controls, when the voice workbench supplies them. */
+	/** The key that starts and ends voice, when the voice workbench supplies it. */
 	voiceControls: ReactNode;
 	actions: ShellActions;
 }
@@ -81,7 +81,7 @@ interface VoiceSlotProps {
 }
 
 /**
- * The labelled slot the voice workbench's controls occupy.
+ * The labelled slot the voice workbench's key occupies.
  * @param props The controls, or nothing while no voice workbench is attached.
  * @returns The slot.
  */

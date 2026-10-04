@@ -127,14 +127,14 @@ function serving(content: Record<string, unknown> = CONTENT): void {
 }
 
 // The harness measures every element at 800×600, the caption included, so the
-// caption keeps the most it may of the viewport clear: 40% of 600, which leaves
-// 800×360 to fit into, less the margin.
+// caption keeps the most it may of the viewport clear: half of 600, which leaves
+// 800×300 to fit into, less the margin.
 
 /** The whole picture, fitted above the caption. */
-const WHOLE_ABOVE_CAPTION = { x: 192, y: 24, scale: 1.04 };
+const WHOLE_ABOVE_CAPTION = { x: 232, y: 24, scale: 0.84 };
 
 /** `n1`, fitted above the caption: 80×40 at the origin, at half again its drawn size. */
-const N1_ABOVE_CAPTION = { x: 340, y: 150, scale: 1.5 };
+const N1_ABOVE_CAPTION = { x: 340, y: 120, scale: 1.5 };
 
 /** The whole picture, fitted to the whole viewport, as the reader had it before presenting. */
 const WHOLE_PICTURE = { x: 32, y: 24, scale: 1.84 };
@@ -166,7 +166,9 @@ test("choosing a walkthrough presents its first step, in the frame, with where i
 	await presenting();
 	expect(current()).toBe("The shape of it");
 	expect(part("semantic-presentation").textContent).toContain("Two modules and one call.");
-	expect(part("semantic-presentation-count").textContent.replaceAll(/\s/g, "")).toBe("1of4");
+	const figure = part("semantic-presentation-count");
+	expect(figure.querySelector("[data-place='shown']")?.textContent).toBe("1");
+	expect(figure.textContent).toContain("of 4");
 	expect(part("semantic-presentation-name").textContent).toBe(WALKTHROUGH.name);
 	const steps = [...document.querySelectorAll("[data-slot='semantic-presentation-step']")];
 	expect(steps).toHaveLength(4);

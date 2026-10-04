@@ -48,7 +48,7 @@ interface ShellProps {
 	diagnostics?: ReactNode;
 	view: ShellView;
 	actions: ShellActions;
-	/** Live voice controls for the presentation bar, when the voice workbench supplies them. */
+	/** The key that starts and ends voice, for the presentation bar, when the voice workbench supplies it. */
 	voiceControls?: ReactNode;
 	/** The agent at the navigator's foot: its voice, what it is doing, and the way to the conversation. */
 	agentDock?: ReactNode;

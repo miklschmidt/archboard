@@ -4,7 +4,8 @@
 // move a step, Home and End go to the ends, Escape leaves. They are heard on
 // the window, before the diagram's own keys, because a presentation is the one
 // thing the pane is doing while it lasts and Escape must leave it rather than
-// clear a selection underneath. A key typed into a field is left alone.
+// clear a selection underneath. A key typed into a field is left alone, and so is
+// Space while focus is on a control, which presses that control instead of stepping.
 
 import { useEffect } from "react";
 
@@ -65,13 +66,30 @@ function typedIntoField(target: EventTarget | null): boolean {
 }
 
 /**
+ * Whether Space pressed here would press a control: focus is on a button or a link.
+ * @param event The key.
+ * @returns True when it would.
+ */
+function pressesAControl(event: KeyboardEvent): boolean {
+	return (
+		event.key === " " &&
+		event.target instanceof Element &&
+		event.target.closest("button, a[href], [role='button']") !== null
+	);
+}
+
+/**
  * Whether a key is one a presentation leaves alone: already handled, typed into
- * a field, or held with a modifier that makes it somebody else's shortcut.
+ * a field, held with a modifier that makes it somebody else's shortcut, or Space
+ * on a control.
  * @param event The key.
  * @returns True to ignore it.
  */
 function notOurs(event: KeyboardEvent): boolean {
-	return event.defaultPrevented || typedIntoField(event.target) || event.metaKey || event.ctrlKey;
+	const modified = event.metaKey || event.ctrlKey;
+	return (
+		event.defaultPrevented || typedIntoField(event.target) || modified || pressesAControl(event)
+	);
 }
 
 /**

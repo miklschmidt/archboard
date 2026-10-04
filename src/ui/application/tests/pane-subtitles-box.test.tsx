@@ -129,12 +129,18 @@ function listenToNothing(): () => undefined {
 	return () => undefined;
 }
 
+/**
+ * A voice a transport carries, with the voice model part way through saying something.
+ * @param text What it has said so far; nothing for none.
+ * @returns The voice, a value of its own that stays the same until another is made.
+ */
+function carried(text: string): ReturnType<VoiceFeed["voice"]> {
+	const said = [{ itemId: "said-1", speaker: "assistant", text, final: false }] as const;
+	return { state: "active", recording: false, transcript: text === "" ? [] : said };
+}
+
 /** A voice a transport carries, with nothing said yet. */
-const HEARD_VOICE: ReturnType<VoiceFeed["voice"]> = Object.freeze({
-	state: "active",
-	recording: false,
-	transcript: [],
-});
+const HEARD_VOICE = carried("");
 
 /**
  * The voice the transport last published, which is the same one until it publishes another.
@@ -146,6 +152,42 @@ function heardVoice(): ReturnType<VoiceFeed["voice"]> {
 
 /** A pane's voice as a transport would carry it. */
 const HEARD: VoiceFeed = { subscribe: listenToNothing, voice: heardVoice };
+
+/**
+ * A voice that says more as the test lets it, as a transport publishes it a word at a time. What a
+ * pane finds said when it begins to watch is history, so words show only for what is said after.
+ * @returns The feed, and how to have the voice say something.
+ */
+function speakingFeed(): { readonly feed: VoiceFeed; readonly say: (text: string) => void } {
+	let voice = HEARD_VOICE;
+	const listeners = new Set<() => void>();
+	return {
+		feed: {
+			/**
+			 * Hear the voice change.
+			 * @param listener Called on each change.
+			 * @returns How to stop.
+			 */
+			subscribe: (listener) => {
+				listeners.add(listener);
+				return () => listeners.delete(listener);
+			},
+			/**
+			 * The voice as last published.
+			 * @returns It.
+			 */
+			voice: () => voice,
+		},
+		/**
+		 * Say something: the voice is published again with it in its transcript.
+		 * @param text What the voice model has said so far.
+		 */
+		say: (text) => {
+			voice = carried(text);
+			for (const listener of listeners) listener();
+		},
+	};
+}
 
 /** What a pane is given. */
 interface PaneSetup {
@@ -197,6 +239,18 @@ function pane(setup: Partial<PaneSetup> = {}): JSX.Element {
  */
 function boxed(): boolean {
 	return document.querySelector('[data-slot="voice-box"]') !== null;
+}
+
+/**
+ * Whether the words of the voice box show.
+ * @returns True while the box says something.
+ */
+function words(): boolean {
+	return (
+		document
+			.querySelector('[data-slot="voice-box"] [data-slot="voice-subtitles"]')
+			?.getAttribute("data-showing") === "true"
+	);
 }
 
 /**
@@ -254,16 +308,21 @@ test("a voice heard over a transport is carried by the box too, and by plain sub
 	expect(plain()).toBe(true);
 });
 
-test("a fullscreen presentation has no dock, so the box carries the voice whatever the person chose", () => {
-	subtitlePreference.change(false);
-	render(pane({ dockless: true }));
+test("a fullscreen presentation has no dock, so the box carries the voice whatever the person chose, and the choice is only whether there are words", () => {
+	const { feed, say } = speakingFeed();
+	render(pane({ dockless: true, feed }));
 	expect(boxed()).toBe(true);
-	// The words are what the person turned off: the box holds the voice and says nothing.
-	expect(
-		document
-			.querySelector('[data-slot="voice-box"] [data-slot="voice-subtitles"]')
-			?.getAttribute("data-showing"),
-	).toBe("false");
+	act(() => {
+		say("The ledger sets");
+	});
+	expect(words()).toBe(true);
+
+	// The words are what the person turns off: the box holds the voice and says nothing.
+	act(() => {
+		subtitlePreference.change(false);
+	});
+	expect(boxed()).toBe(true);
+	expect(words()).toBe(false);
 });
 
 test("a recording has plain subtitles whatever the person chose, and never the box", () => {
