@@ -48,15 +48,20 @@ layout looks for a resting place.
 
 A card hands pulses on. When a card has lines going out that have the same
 effective speed and the same effective volume as a line coming in, the pulse
-that sinks into the card runs round the card's edge, the shorter way, at the same
-speed, and leaves on every such outgoing line. The pulse never crosses what the
-card says. A fan-out splits one pulse into several. Where the speed or the volume
-differs, nothing is handed on, and the line keeps its own rhythm. A hand-off
-across a frame, which has no edge to run round, or across a gap under 8 units, is
-not drawn. A chain's first lines start where nothing feeds them, at a place drawn
-from the source card's id, so one board draws the same bytes every time. A line
-fed by two lines follows the one reached first when the chain is walked in
-board order.
+that sinks into the card leaves on every such outgoing line after the time it
+would take to run the shorter way round the card's edge at the same speed. The
+card draws nothing of the pulse in that time: the pulse sinks into the end of
+one line and comes out of the start of the next, in step. A fan-out splits one
+pulse into several. Where the speed or the volume differs, nothing is handed on,
+and the line keeps its own rhythm. A hand-off across a frame, which has no edge,
+is held for the straight distance across it. A chain's first lines start where
+nothing feeds them, at a place drawn from the source card's id, so one board
+draws the same bytes every time. A line fed by two lines follows the one reached
+first when the chain is walked in board order.
+
+An earlier form of this amendment drew the pulse running round the card's edge.
+It did not read well, so the pulse is no longer drawn there and only the timing
+stays.
 
 Sequence diagrams use the same pulse. Each message sends one pulse in turn, and
 a repeated step sends up to three. All the pulses share one clock for the whole

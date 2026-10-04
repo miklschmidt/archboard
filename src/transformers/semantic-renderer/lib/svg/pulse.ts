@@ -33,9 +33,8 @@ import type { Rhythm } from "@/transformers/semantic-renderer/lib/svg/traffic-re
 // repeating gradient, so a line costs one animation for each piece of its route
 // however many pulses it carries.
 //
-// Lines in an architecture carry a steady train of beams, the edges of cards
-// carry them round, and the messages of a sequence carry one each in turn, so a
-// reader learns one mark.
+// Lines in an architecture carry a steady train of beams, and the messages of a
+// sequence carry one each in turn, so a reader learns one mark.
 
 /**
  * The class every moving mark carries.

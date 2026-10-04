@@ -85,7 +85,6 @@ function drillCorner(
  * @param standing How it stands against the variant it is read against.
  * @param unsettled Whether its architecture needs reconciliation.
  * @param appearance Resolved containment and type channels.
- * @param onEdge The pulses that run round its edge, over the edge and clear of its words.
  * @returns The card group.
  */
 function paintMeasuredCard(
@@ -94,7 +93,6 @@ function paintMeasuredCard(
 	standing: SubjectStanding | undefined,
 	unsettled: boolean,
 	appearance: NodeAppearance,
-	onEdge = "",
 ): string {
 	const { measured, box } = placed;
 	const styles = stylesFor(palette);
@@ -118,7 +116,6 @@ function paintMeasuredCard(
 				...bodyAttributes(appearance),
 				...standingOutline(standing, palette),
 			}),
-			onEdge,
 			nearLayer(
 				typeChip(chipX, chipY, appearance, palette) +
 					paintTextRuns(measured.runs, box, palette) +
