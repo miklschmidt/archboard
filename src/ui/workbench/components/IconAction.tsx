@@ -1,6 +1,8 @@
 // The one icon-only control the dense panels use: a 24px icon button whose
 // hit area reaches 32px (the documented desktop exception to a 44px target),
-// named by its tooltip, which is also its accessible name.
+// named by its tooltip, which is also its accessible name. A control that cannot be
+// used is dimmed and does nothing when pressed: the tooltip trigger's own `disabled`
+// only stops the tip, so the button is told it is disabled as well.
 
 import { cn } from "cn";
 import type { JSX, ReactNode } from "react";
@@ -32,11 +34,13 @@ function IconAction(props: IconActionProps): JSX.Element {
 				className={cn(
 					buttonVariants({ variant: props.variant ?? "ghost", size: "icon-xs" }),
 					"relative rounded-sm after:absolute after:-inset-1",
+					props.disabled === true && "pointer-events-none opacity-50",
 					props.className,
 				)}
 				aria-label={props.label}
+				aria-disabled={props.disabled === true ? true : undefined}
 				disabled={props.disabled}
-				onClick={props.onClick}
+				onClick={props.disabled === true ? undefined : props.onClick}
 			>
 				{props.children}
 			</TooltipTrigger>

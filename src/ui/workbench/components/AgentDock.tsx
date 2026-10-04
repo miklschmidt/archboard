@@ -6,26 +6,33 @@
 // circle is the head of the dock, beside the state, what the agent is on and the
 // voice's own line with mute and subtitles, and the plan under them.
 //
+// While the person wants subtitles, the voice is not in the dock at all: the voice box
+// over the pane's picture carries the orb, the voice's word, mute and the subtitles
+// control, and the dock is calm again, with the Talk key turned into a key that ends
+// voice. Turning subtitles off flies the orb back and the key becomes the circle.
+//
 // Both layouts hold the same parts, which the grid places (app.css, [data-part]).
 // So the Talk key turns into the circle, and the dock's motion plays every part
 // from its old place to its new one (hooks/use-dock-motion.ts).
 
-import { RiChat3Line, RiMicLine, RiMicOffLine } from "@remixicon/react";
+import { RiChat3Line } from "@remixicon/react";
 import { useRef, type CSSProperties, type JSX } from "react";
 
 import { AGENT_ELAPSED_TICK_MS, SHELL_AGE_TICK_MS } from "@/shared/timing/timing";
 import { VOICE_MORPH_MS } from "@/shared/timing/voice";
 import { cn } from "@/ui/components/class-names";
 import { useClock } from "@/ui/components/use-clock";
-import { SubtitlesToggle } from "@/ui/voice-subtitles";
+import { SubtitlesToggle, useVoiceBoxed } from "@/ui/voice-subtitles";
 import { useDockMotion } from "@/ui/workbench/hooks/use-dock-motion";
 import { IconAction } from "@/ui/workbench/components/IconAction";
+import { MuteAction } from "@/ui/workbench/components/MuteAction";
 import { PlanSteps } from "@/ui/workbench/components/PlanSteps";
 import { StatusAction, StatusLamp, Timing } from "@/ui/workbench/components/StatusParts";
-import { useAudible } from "@/ui/workbench/components/TalkControl";
-import { VOICE_WORDS, VoiceControl, circleState } from "@/ui/workbench/components/VoiceControl";
+import { VoiceControl } from "@/ui/workbench/components/VoiceControl";
 import type { AgentActions, AgentView, AgentVoiceView } from "@/ui/workbench/contracts";
+import { useCircleState } from "@/ui/workbench/hooks/use-circle-state";
 import { agentStatus, isReady, type AgentStatus } from "@/ui/workbench/lib/agent-status";
+import { VOICE_WORDS } from "@/ui/workbench/lib/circle-state";
 import {
 	DEMO_DOING,
 	DEMO_SINCE_MS,
@@ -49,6 +56,8 @@ interface AgentDockProps {
 	readonly view: AgentView;
 	readonly actions: AgentActions;
 	readonly panelOpen: boolean;
+	/** Whether a pane's voice box can carry the voice: the pane has a voice owner and nothing is presented. */
+	readonly captionable: boolean;
 	/** Agent words arrived while the conversation was closed. */
 	readonly unread: boolean;
 	readonly onTogglePanel: () => void;
@@ -120,7 +129,10 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 	const now = useDockClock(view);
 	const status = dockStatus(view, now);
 	const voice = dockVoice(view, now);
-	const live = circleState(voice, useAudible(voice)) !== "off";
+	const on = useCircleState(voice) !== "off";
+	// The voice is in the box over the picture, or at the head of the dock: the dock's layout is live in the second.
+	const captioned = useVoiceBoxed(on, props.captionable);
+	const live = on && !captioned;
 	const steps = dockSteps(view);
 	const dock = useRef<HTMLElement>(null);
 	useDockMotion(dock, live, props.reducedMotion);
@@ -128,6 +140,7 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 		<section
 			ref={dock}
 			data-slot="agent-dock"
+			data-lit-by-orb=""
 			data-live={live}
 			data-agent-tone={status.tone}
 			aria-label="Agent"
@@ -139,6 +152,7 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 				actions={actions}
 				problemId={VOICE_PROBLEM_ID}
 				reducedMotion={props.reducedMotion}
+				captioned={captioned}
 			/>
 			<Activity status={status} now={now} actions={actions} />
 			<VoiceRow live={live} voice={voice} actions={actions} />
@@ -309,7 +323,7 @@ function VoiceLine(props: {
 	readonly actions: AgentActions;
 }): JSX.Element {
 	const { voice } = props;
-	const state = circleState(voice, useAudible(voice));
+	const state = useCircleState(voice);
 	const on = state !== "off" && state !== "ending";
 	const lit = on && state !== "muted";
 	return (
@@ -340,16 +354,9 @@ function LiveControls(props: {
 	readonly actions: AgentActions;
 }): JSX.Element {
 	const { voice, actions } = props;
-	const muted = voice.stage === "muted";
 	return (
 		<>
-			<IconAction
-				label={muted ? "Unmute" : "Mute"}
-				onClick={muted ? actions.unmute : actions.mute}
-				disabled={voice.busy}
-			>
-				{muted ? <RiMicOffLine /> : <RiMicLine />}
-			</IconAction>
+			<MuteAction voice={voice} actions={actions} />
 			<SubtitlesToggle />
 		</>
 	);

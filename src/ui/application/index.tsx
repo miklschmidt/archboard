@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } f
 import type { CodeTargetNotice } from "@/shared/code-target";
 import { LiveBinding } from "@/ui/application/lib/live-binding";
 import { livePanesOver } from "@/ui/application/lib/live-panes";
+import { voiceBoxAvailable } from "@/ui/application/lib/voice-box-available";
 import { codeTargetShellNotice, infoNotice, presentationNotice } from "@/ui/application/notices";
 import { OpenerSettings } from "@/ui/application/components/OpenerSettings";
 import { paneEvents } from "@/ui/application/lib/pane-events";
@@ -59,7 +60,9 @@ import { TooltipProvider } from "@/ui/components/tooltip";
 import { boardAddressOf, boardKeyFor } from "@/ui/semantic-board-canvas";
 import type { BoardListing } from "@/ui/types";
 import { RecordingStage } from "@/ui/walkthrough-recording";
-import { TalkControl } from "@/ui/workbench";
+import { OrbStageProvider } from "@/ui/voice-orb";
+import { TalkControl, VoiceSurfaceProvider } from "@/ui/workbench";
+import { DemoVoiceSurface, VOICE_DEMONSTRATING } from "@/ui/workbench/demo";
 import { AgentDockSlot, AgentPanelSlot } from "@/ui/application/components/AgentSurfaceSlots";
 import type { AgentContext } from "@/ui/workbench/contracts";
 import {
@@ -131,35 +134,56 @@ function agentContextOf(listing: BoardListing, boardKey: string | null): AgentCo
 	};
 }
 
+/** What the subtitles over a pane are drawn from. */
+interface SubtitleOverlaySources {
+	readonly workbench: Workbench;
+	readonly reducedMotion: boolean;
+	/** Whether the page is a recording. */
+	readonly recording: boolean;
+	/** Whether the voice box may carry the voice: the pane has a voice owner and nothing is presented. */
+	readonly captionable: boolean;
+	/** The pane the demonstration of the voice is laid over, where the page demonstrates it. */
+	readonly activePaneId: string;
+}
+
 /**
- * The subtitles of the voice, laid over the pane it runs for.
- * @param workbench The workbench.
- * @param reducedMotion The motion preference.
- * @param recording Whether the page is a recording.
+ * The subtitles of the voice, laid over the pane it runs for, with the voice itself in the
+ * voice box while the person wants subtitles. A page opened with `?voiceDemo` demonstrates the
+ * voice over the active pane, in place of the voice there is not.
+ * @param sources The workbench, the motion preference and where the voice may sit.
  * @returns The overlay and the pane it belongs over, or null.
  */
-function useSubtitleOverlay(
-	workbench: Workbench,
-	reducedMotion: boolean,
-	recording: boolean,
-): PaneOverlay | null {
+function useSubtitleOverlay(sources: SubtitleOverlaySources): PaneOverlay | null {
+	const { workbench, reducedMotion, recording, captionable, activePaneId } = sources;
 	const { voice } = workbench;
-	return useMemo(
-		() =>
-			voice === null
-				? null
-				: {
-						paneId: voice.paneId,
-						element: (
-							<PaneSubtitles
-								transport={voice.transport}
-								reducedMotion={reducedMotion}
-								recording={recording}
-							/>
-						),
-					},
-		[voice, reducedMotion, recording],
-	);
+	return useMemo(() => {
+		if (VOICE_DEMONSTRATING) {
+			return {
+				paneId: activePaneId,
+				element: (
+					<PaneSubtitles
+						transport={null}
+						reducedMotion={reducedMotion}
+						recording={recording}
+						captionable={captionable}
+					/>
+				),
+			};
+		}
+		return voice === null
+			? null
+			: {
+					paneId: voice.paneId,
+					element: (
+						<PaneSubtitles
+							transport={voice.transport}
+							reducedMotion={reducedMotion}
+							recording={recording}
+							captionable={captionable}
+						/>
+					),
+				};
+	}, [voice, reducedMotion, recording, captionable, activePaneId]);
 }
 
 /** The agent's surfaces as the shell places them. */
@@ -176,6 +200,8 @@ interface AgentSlotSources {
 	/** The board the agent sees with the next message. */
 	readonly context: AgentContext;
 	readonly reducedMotion: boolean;
+	/** Whether a pane's voice box may carry the voice. */
+	readonly captionable: boolean;
 }
 
 /**
@@ -187,7 +213,7 @@ interface AgentSlotSources {
  * @returns The slots.
  */
 function useAgentSlots(sources: AgentSlotSources): AgentSlots {
-	const { agent, workbench, context, reducedMotion } = sources;
+	const { agent, workbench, context, reducedMotion, captionable } = sources;
 	return useMemo(
 		() => ({
 			dock: (
@@ -196,6 +222,7 @@ function useAgentSlots(sources: AgentSlotSources): AgentSlots {
 					workbench={workbench}
 					context={context}
 					reducedMotion={reducedMotion}
+					captionable={captionable}
 				/>
 			),
 			panel: <AgentPanelSlot agent={agent} workbench={workbench} context={context} />,
@@ -203,7 +230,7 @@ function useAgentSlots(sources: AgentSlotSources): AgentSlots {
 				<TalkControl voice={agent.voice} actions={agent.actions} reducedMotion={reducedMotion} />
 			),
 		}),
-		[agent, workbench, context, reducedMotion],
+		[agent, workbench, context, reducedMotion, captionable],
 	);
 }
 
@@ -291,6 +318,28 @@ function SettingsHosts(props: SettingsHostsProps): JSX.Element | null {
 }
 
 /**
+ * Offer the voice and its actions to the surfaces below: the voice box over a pane reads them
+ * where it is drawn. A page opened with `?voiceDemo` offers the demonstration's voice instead.
+ * @param props The agent's surfaces and what is drawn.
+ * @param props.agent The agent's surfaces.
+ * @param props.children What is drawn.
+ * @returns What is drawn, with the voice offered to it.
+ */
+function VoiceSurface(props: {
+	readonly agent: AgentSurfaces;
+	readonly children: ReactNode;
+}): JSX.Element {
+	const { agent, children } = props;
+	if (VOICE_DEMONSTRATING)
+		return <DemoVoiceSurface actions={agent.actions}>{children}</DemoVoiceSurface>;
+	return (
+		<VoiceSurfaceProvider voice={agent.voice} actions={agent.actions}>
+			{children}
+		</VoiceSurfaceProvider>
+	);
+}
+
+/**
  * The root component's body, inside the providers it needs.
  * @returns The shell, the settings dialogs and the workbench.
  */
@@ -336,7 +385,6 @@ function ApplicationBody(): JSX.Element {
 		[catalog.listing, panes.active.status.boardKey],
 	);
 	const agent = useAgentSurfaces(workbench);
-	const slots = useAgentSlots({ agent, workbench, context, reducedMotion });
 	const { raise } = notices;
 	// A refused exit stays with the presentation, where the person is; a
 	// refused entry becomes a notice in the workspace they are still in.
@@ -349,6 +397,13 @@ function ApplicationBody(): JSX.Element {
 		[raise],
 	);
 	const fullscreen = useFullscreen({ onRefused });
+	const captionable = voiceBoxAvailable({
+		workbench,
+		presentedPane: fullscreen.snapshot.paneId,
+		recording: recorder !== null,
+		demonstrating: VOICE_DEMONSTRATING,
+	});
+	const slots = useAgentSlots({ agent, workbench, context, reducedMotion, captionable });
 	// The address bar over the panes the shell already owns: it writes down what
 	// they show, and restores what a direct load or a Back/Forward asks for.
 	useWorkspaceAddressing({ panes, notices, readings }, addressBinding);
@@ -413,7 +468,13 @@ function ApplicationBody(): JSX.Element {
 		[actionsNow],
 	);
 	const narration = useNarration(workbench, agent.voice, panes.list.activePaneId, selectPane);
-	const overlay = useSubtitleOverlay(workbench, reducedMotion, recorder !== null);
+	const overlay = useSubtitleOverlay({
+		workbench,
+		reducedMotion,
+		recording: recorder !== null,
+		captionable,
+		activePaneId: panes.list.activePaneId,
+	});
 	const recorded = useRecordedViews(recorder, workbench, { narration, overlay });
 	const outline = useMemo(
 		() => buildOutline(catalog.listing.boards, catalog.listing.levels),
@@ -474,20 +535,24 @@ function ApplicationBody(): JSX.Element {
 		);
 	}
 	return (
-		<TooltipProvider>
-			<Shell
-				view={view}
-				actions={actions}
-				diagnostics={diagnostics}
-				voiceControls={slots.voiceControls}
-				agentDock={slots.dock}
-				agentPanel={slots.panel}
-				agentPanelOpen={agent.panel.open}
-				onAgentPanelClose={agent.panel.closePanel}
-				attachStage={fullscreen.attachStage}
-			/>
-			<SettingsHosts surface={settings} notices={notices} onClose={closeSettings} />
-		</TooltipProvider>
+		<OrbStageProvider>
+			<VoiceSurface agent={agent}>
+				<TooltipProvider>
+					<Shell
+						view={view}
+						actions={actions}
+						diagnostics={diagnostics}
+						voiceControls={slots.voiceControls}
+						agentDock={slots.dock}
+						agentPanel={slots.panel}
+						agentPanelOpen={agent.panel.open}
+						onAgentPanelClose={agent.panel.closePanel}
+						attachStage={fullscreen.attachStage}
+					/>
+					<SettingsHosts surface={settings} notices={notices} onClose={closeSettings} />
+				</TooltipProvider>
+			</VoiceSurface>
+		</OrbStageProvider>
 	);
 }
 

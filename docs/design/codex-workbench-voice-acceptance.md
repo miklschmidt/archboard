@@ -245,6 +245,10 @@ by direct observation:
   speaker;
 - the same answer appears once as a `Voice` line, and with subtitles on it is
   shown over the pane while it plays;
+- with subtitles on, the voice is in the voice box over the pane: its orb moves
+  with the spoken answer beside the words, and the key in the agent dock reads
+  End voice. Turning subtitles off from the box flies the orb to the circle at
+  the head of the dock, and turning them on from the dock flies it back;
 - the pane still shows `$accept_board`, and the thread in `Session details` is
   the one it showed in section 4 (compare on screen; do not record it).
 

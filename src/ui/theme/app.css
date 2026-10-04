@@ -508,10 +508,13 @@
 }
 
 /* The voice control. The plate is the key and then the circle: use-dock-motion
-   carries it from one shape to the other, so here it only says what each shape is.
-   The key's words fade out as it leaves and back in once it has re-formed, and the
-   orb's canvas fades in once the circle has formed and out as it dims. Both follow
-   the dock's own morph time (--voice-morph-ms). */
+   carries it from one shape to the other, so here it only says what each shape is
+   (data-form). The key's words fade out as it leaves and back in once it has
+   re-formed. While the voice box over a picture carries the voice the plate is the
+   key again, with the gold edge the circle has, so the dock still says that voice is
+   on. The orb is not drawn here: it sits in the socket in the plate, and the stage
+   (src/ui/voice-orb) flies it in and out. Both follow the dock's own morph time
+   (--voice-morph-ms). */
 [data-slot="voice-circle"] {
 	display: flex;
 	align-items: center;
@@ -520,10 +523,13 @@
 [data-slot="voice-circle"] [data-part="plate"] {
 	transition-duration: calc(var(--voice-morph-ms, 520ms) * 0.5);
 }
-[data-slot="voice-circle"]:not([data-voice-state="off"]) [data-part="plate"] {
+[data-slot="voice-circle"][data-form="circle"] [data-part="plate"] {
 	border-color: var(--primary-mark);
 	border-radius: 32px;
 	background-color: var(--card);
+}
+[data-slot="voice-circle"][data-form="key"]:not([data-voice-state="off"]) [data-part="plate"] {
+	border-color: var(--primary-mark);
 }
 [data-slot="voice-circle"][data-voice-state="muted"] [data-part="plate"] {
 	border-color: var(--border);
@@ -531,18 +537,118 @@
 [data-slot="voice-circle"] [data-part="label"] {
 	transition: opacity calc(var(--voice-morph-ms) * 0.3) linear calc(var(--voice-morph-ms) * 0.6);
 }
-[data-slot="voice-circle"]:not([data-voice-state="off"]) [data-part="label"] {
+[data-slot="voice-circle"][data-form="circle"] [data-part="label"] {
 	opacity: 0;
 	transition-duration: calc(var(--voice-morph-ms) * 0.2);
 	transition-delay: 0ms;
 }
-[data-slot="voice-circle"] canvas {
-	opacity: 0;
-	transition: opacity calc(var(--voice-morph-ms) * 0.6) ease-in;
+
+/* The one voice orb: its holder is in a socket at rest, in the dock's plate or the
+   voice box, and in the air over the page while it flies. It fades in once the circle
+   has formed and out as it dims, as the canvas did before it had two homes. In the air
+   it is a medallion with a still shadow: the shadow does not change as it moves. */
+[data-slot="voice-orb-socket"] > [data-slot="voice-orb-holder"] {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	translate: -50% -50%;
 }
-[data-slot="voice-circle"]:not([data-voice-state="off"]) canvas {
+[data-slot="voice-orb-holder"] {
+	opacity: 0;
+	transition: opacity calc(var(--voice-morph-ms, 520ms) * 0.6) ease-in;
+}
+[data-slot="voice-orb-holder"][data-shown="true"] {
 	opacity: 1;
-	transition: opacity calc(var(--voice-morph-ms) * 0.4) ease-out calc(var(--voice-morph-ms) * 0.35);
+	transition: opacity calc(var(--voice-morph-ms, 520ms) * 0.4) ease-out
+		calc(var(--voice-morph-ms, 520ms) * 0.35);
+}
+[data-slot="voice-orb-holder"][data-flying]::before {
+	content: "";
+	position: absolute;
+	inset: 10px;
+	border-radius: 50%;
+	background-color: var(--card);
+	box-shadow: var(--elevation-float);
+}
+[data-slot="voice-orb-holder"] > canvas {
+	position: relative;
+}
+
+/* The voice box: the subtitles' glass with the voice in it, over the picture. It rises
+   and fades in as the orb is on its way, and eases away as the orb leaves, once each,
+   as its own layer's opacity and transform. It is lit by the orb it holds (--lit,
+   written by the orb): a warm wash that blooms from the socket and breathes with the
+   voice, on the box's own layer, never on the picture. */
+@keyframes voice-box-in {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+}
+@keyframes voice-box-out {
+	to {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+}
+[data-slot="voice-box"] {
+	animation: voice-box-in var(--voice-box-in-ms, 360ms) cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+[data-slot="voice-box"][data-leaving] {
+	animation: voice-box-out var(--voice-box-out-ms, 240ms) ease-in forwards;
+}
+[data-slot="voice-box"][data-still] {
+	animation: none;
+}
+[data-slot="voice-box"]::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	pointer-events: none;
+	border-radius: inherit;
+	background: radial-gradient(
+		ellipse 320px 120px at 38px 50%,
+		color-mix(in oklch, var(--primary-mark) 20%, transparent),
+		transparent 72%
+	);
+	opacity: calc(0.45 + 0.55 * var(--lit, 0));
+}
+[data-slot="voice-box"][data-voice-state="muted"]::before,
+[data-slot="voice-box"][data-voice-state="ending"]::before {
+	opacity: 0.2;
+}
+
+/* The words of a subtitle. Each fades in as it arrives; a cue that gives way to the next
+   fades under it; and a subtitle that has stopped growing fades out. Only opacity moves,
+   once for each, because the words are over the picture. */
+@keyframes caption-in {
+	from {
+		opacity: 0;
+	}
+}
+@keyframes caption-out {
+	to {
+		opacity: 0;
+	}
+}
+[data-slot="voice-subtitles"] {
+	transition: opacity var(--caption-out-ms, 560ms) ease-out;
+}
+[data-slot="voice-subtitles"][data-showing="true"] {
+	transition-duration: 120ms;
+}
+[data-slot="voice-subtitles"][data-showing="false"] {
+	opacity: 0;
+}
+[data-slot="voice-subtitles"][data-still] {
+	transition: none;
+}
+[data-slot="voice-subtitles"] [data-fade] {
+	animation: caption-in var(--caption-word-ms, 520ms) cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+[data-slot="voice-subtitles"] [data-fade-out] {
+	animation: caption-out var(--caption-swap-ms, 260ms) ease-out forwards;
 }
 
 /* The dock is lit by what the agent is doing. While voice is on, a warm wash
@@ -597,7 +703,7 @@
 	[data-slot="agent-dock"]::before,
 	[data-slot="agent-dock"]::after,
 	[data-slot="voice-circle"] [data-part="label"],
-	[data-slot="voice-circle"] canvas {
+	[data-slot="voice-orb-holder"] {
 		transition: none;
 	}
 }

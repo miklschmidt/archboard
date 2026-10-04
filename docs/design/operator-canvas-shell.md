@@ -337,8 +337,23 @@ work in the dark theme.
   finished run of work folds to one line. What was said aloud stays at the
   foot as voice lines. Decisions that the agent waits on sit last, where the
   person is reading. Sending opens it. Approvals and voice never do.
+- **The voice is read where its words are.** While the person wants subtitles and a
+  voice is live, the voice is not in the agent dock at the navigator's foot. It is
+  in a box over the picture of the pane it runs for, with its orb, its word, mute
+  and the subtitles control, and the dock's key reads End voice. Turning subtitles
+  off flies the one orb back to the circle at the head of the dock and takes the
+  box away, and turning them on flies it out again. A presented pane and a
+  recording have plain subtitles. DESIGN.md describes the dock and the box.
 - Session details (account, model, context used, thread, the voice
   coordinator) are one menu away, not on screen.
+
+![The dock while the voice box carries the voice, the voice box with its words,
+and the dock once subtitles are turned off, in the light and the dark
+theme](assets/voice-box.png)
+
+Rendered captures at 1920×1080. Left, the dock while the voice box carries the
+voice. In the middle, the voice box over the picture, with its words arriving.
+Right, the dock after subtitles are turned off, with the orb back in its circle.
 
 ## Typography and wordmark contract
 

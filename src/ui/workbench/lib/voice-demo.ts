@@ -1,9 +1,13 @@
-// DEMONSTRATION: the voice the dock shows when the page asks for it. `?voiceDemo`
-// holds the voice speaking, with a level that moves like speech, and
+// DEMONSTRATION: the voice the dock and the voice box show when the page asks for it.
+// `?voiceDemo` holds the voice speaking, with a level that moves like speech, and
 // `?voiceDemo=cycle` takes it through every stage again and again, so the dock's
 // turn from the Talk key to the circle and back can be watched without Codex, a
-// microphone or a turn. Nothing real reads this and it changes nothing the agent does.
+// microphone or a turn. Either also puts the voice box over the active pane, with an
+// invented transcript that is spoken a word at a time with silences between, so the
+// orb's flight between the dock and the box can be watched too. Nothing real reads
+// this and it changes nothing the agent does.
 
+import type { SubtitleSource } from "@/ui/voice-subtitles";
 import type { AgentVoiceView, VoiceStage } from "@/ui/workbench/contracts";
 
 /** The stages the cycle visits, and how long each lasts in milliseconds. */
@@ -21,6 +25,69 @@ const CYCLE: readonly (readonly [VoiceStage, number])[] = [
 const VOICE_DEMO_CYCLE: boolean =
 	typeof window !== "undefined" &&
 	new URLSearchParams(window.location.search).get("voiceDemo") === "cycle";
+
+/** Whether the page was opened asking for any demonstration of the voice. Read once, before the address is rewritten. */
+const VOICE_DEMONSTRATING: boolean =
+	typeof window !== "undefined" && new URLSearchParams(window.location.search).has("voiceDemo");
+
+/** What the demonstration's voice says, one utterance after another. */
+const DEMO_SCRIPT: readonly string[] = [
+	"The reservation ledger sets items aside only while an order is open, so a stock count can never go below zero.",
+	"Warehouse sync runs every five minutes and sets each count to what the warehouse reports.",
+	"If the two disagree, the warehouse wins, and the ledger keeps the difference as a note.",
+];
+/** How many words a second the demonstration speaks, and how long it is quiet after each utterance. */
+const WORDS_PER_S = 2.8;
+/** Longer than a subtitle lingers, so the words fade and the box shows the voice's state in a word. */
+const QUIET_MS = 4800;
+
+/**
+ * How long one utterance of the script takes, with the quiet after it.
+ * @param index Which utterance.
+ * @returns The time in milliseconds.
+ */
+function utteranceMs(index: number): number {
+	return ((DEMO_SCRIPT[index]?.split(" ").length ?? 0) / WORDS_PER_S) * 1000 + QUIET_MS;
+}
+
+/** How much of the script the demonstration has said at a time. */
+interface DemoSaid {
+	/** Which utterance it is in. */
+	readonly index: number;
+	/** How many words of it are out. */
+	readonly words: number;
+}
+
+/**
+ * How much of the script has been said at a time: it goes round again and again.
+ * @param now The time in milliseconds.
+ * @returns Which utterance, and how many of its words.
+ */
+function demoSaidAt(now: number): DemoSaid {
+	const length = DEMO_SCRIPT.reduce((sum, _, index) => sum + utteranceMs(index), 0);
+	let left = now % length;
+	for (const [index, text] of DEMO_SCRIPT.entries()) {
+		const ms = utteranceMs(index);
+		if (left < ms) {
+			const total = text.split(" ").length;
+			return { index, words: Math.min(total, Math.floor((left / 1000) * WORDS_PER_S)) };
+		}
+		left -= ms;
+	}
+	return { index: 0, words: 0 };
+}
+
+/**
+ * The transcript of the demonstration once it has said some of the script.
+ * @param said How much of the script is out.
+ * @returns The transcript: the one utterance, still being said.
+ */
+function demoTranscript(said: DemoSaid): readonly SubtitleSource[] {
+	const words = (DEMO_SCRIPT[said.index] ?? "").split(" ").slice(0, said.words);
+	return [
+		{ itemId: `demo-${said.index}`, speaker: "assistant", text: words.join(" "), final: false },
+	];
+}
 
 /** How long a word is, and how long of it is sounded, in seconds. */
 const WORD_S = 1.35;
@@ -87,13 +154,11 @@ function stageAt(now: number): VoiceStage {
 }
 
 /**
- * The voice of the demonstration at a time: in the stage the cycle is in, with
- * a level that speaks only while it speaks.
- * @param now The time in milliseconds.
+ * The voice of the demonstration in a stage, with a level that speaks only while it speaks.
+ * @param stage The stage.
  * @returns The voice.
  */
-function demoVoiceAt(now: number): AgentVoiceView {
-	const stage = stageAt(now);
+function demoVoiceIn(stage: VoiceStage): AgentVoiceView {
 	return {
 		stage,
 		problem: null,
@@ -102,4 +167,23 @@ function demoVoiceAt(now: number): AgentVoiceView {
 	};
 }
 
-export { SPEAKING_LEVEL, VOICE_DEMO_CYCLE, demoVoiceAt };
+/**
+ * The voice of the demonstration at a time: in the stage the cycle is in.
+ * @param now The time in milliseconds.
+ * @returns The voice.
+ */
+function demoVoiceAt(now: number): AgentVoiceView {
+	return demoVoiceIn(stageAt(now));
+}
+
+export {
+	SPEAKING_LEVEL,
+	VOICE_DEMONSTRATING,
+	VOICE_DEMO_CYCLE,
+	demoSaidAt,
+	demoTranscript,
+	demoVoiceAt,
+	demoVoiceIn,
+	stageAt,
+	type DemoSaid,
+};

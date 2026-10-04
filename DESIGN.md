@@ -208,11 +208,13 @@ Each plane shows its height in three ways. The first is a tone step. The second
 is a fine highlight on its top edge. The third is a soft shadow with an offset,
 tinted toward the warm neutrals: umber on chalk and a warm near-black on
 graphite. The picture is the ground, and only still shadows fall on it. Nothing
-over the picture is blurred or filtered, and nothing there loops, because every
-repaint over the picture makes it slower to drag. What moves over it moves as a
-layer of its own, once: a tip or a menu as it opens, and the floating sidebar
-when it is shown or put away. The file palette.css holds the values for
-both themes. The file app.css gives each one a `shadow-*` utility.
+over the picture is blurred or filtered, and nothing there loops but the voice
+orb, which draws itself on a canvas of its own, because every repaint over the
+picture makes it slower to drag. What moves over it moves as a layer of its own,
+once: a tip or a menu as it opens, the floating sidebar when it is shown or put
+away, the voice box as it comes and goes, and each word of a subtitle as it
+arrives. The file palette.css holds the values for both themes. The file app.css
+gives each one a `shadow-*` utility.
 
 ### Shadow Vocabulary
 
@@ -227,7 +229,7 @@ both themes. The file app.css gives each one a `shadow-*` utility.
 
 ### Named Rules
 
-**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops. A tip, a menu or the floating sidebar may ease its own layer's transform and opacity, once. The floating sidebar takes at most 160ms.
+**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on. A tip, a menu, the floating sidebar or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. The floating sidebar takes at most 160ms, and the voice box 360ms to arrive and 240ms to leave. The orb itself crosses the page when subtitles are turned on or off, in a layer of its own, over 680ms.
 
 **The Picture Answers Rule.** The light belongs to the picture, not to the shell. When a part is picked out or the pointer rests on one, the viewer marks what stays as drawn, and the picture's own subjects recede under an opacity filter. The shell lays no layer, blur or halo over the picture to do it.
 
@@ -311,7 +313,11 @@ on and its plan stand above the keys. When it is ready and on nothing, the dock
 says nothing, because the keys do. While voice is on, the voice circle takes the
 head of the dock, with the gold ring and the lines of light, beside the state,
 what the agent is on and the voice's own line, and the conversation's key becomes
-a quiet icon in the voice line, beside mute and subtitles.
+a quiet icon in the voice line, beside mute and subtitles. That is where voice is
+while the person does not want subtitles. While they do, the voice is in the voice
+box over the picture (below), and the dock is calm again: the Talk key reads End
+voice, with a handset and the gold edge of the circle, and ends voice, and the
+voice line, mute and the subtitles control are in the box.
 
 The two layouts hold the same parts, so nothing is swapped. The Talk key and the
 voice circle are one button, and keyboard focus stays on it. When voice starts,
@@ -319,8 +325,10 @@ the key's plate narrows to a 64px circle and rises to the head of the dock while
 the dock grows and every part glides to its place. The key's edge turns gold as it
 narrows, so gold runs unbroken from the key to the ring. The plate passes under the
 other parts and holds the orb inside it. It takes half a second, and it runs the
-other way when voice ends. A part that was not there fades in once the plate has
-passed. The reduced-motion preference cuts between the layouts.
+other way when voice ends, and when the orb goes to the voice box. A part that was
+not there fades in once the plate has passed. The orb is not drawn in the plate: it
+sits in a socket in it, and flies in and out. The reduced-motion preference cuts
+between the layouts.
 
 The circle's face is a ring of gold, with a sheen that turns round it, set round
 a lens of eleven ruled lines, like the lines of a drafting sheet. While voice is
@@ -346,6 +354,40 @@ ink while it is muted. The clock is 12px mono.
 The composer is in the conversation pane, on a tray at its foot (Tray Chalk and
 `shadow-edge-up`), with its gold Send. It grows upward as a message grows, and
 takes the room from the conversation.
+
+### Voice box
+
+While the person wants subtitles and a voice is live, the voice is not in the dock.
+It is in a box over the picture of the pane it runs for, low in the frame where the
+subtitles are, so the words are read beside the voice that says them. The box is a
+Card White plate with the float shadow and a Rule edge, 78px high, over the picture
+and under nothing. In a row it holds the orb in a socket, a 64px circle with the
+gold edge and the raised plate of the dock's circle, then the words, then two quiet
+icons stacked at the end: mute, and the subtitles control, which puts the voice back
+in the dock. Where there are no words it says what the voice is doing in a word, at
+13px, in gold while the voice is lit and in muted ink while it is muted. The words
+are 20px and two lines at most. A warm wash blooms from the socket and breathes with
+the voice, as it does in the dock, on the box's own layer. The box takes no pointer
+input from the picture except at its two icons.
+
+The words arrive one at a time, and each fades in over 520ms, so the end of the line
+is a soft edge and not a blink. A cue that is full gives way to the next with its
+lines fading under the new first word, and a subtitle that has stopped growing
+lingers and then fades out over 560ms. The voice's word waits for the words to be
+gone before it fades in. Only opacity moves.
+
+The orb is one canvas, so it keeps its light and the last second of the voice it
+has drawn wherever it is. It rests in the dock's circle or in the box's socket, and
+when the person turns subtitles off or on it lifts off, crosses the page in a layer
+of its own, a little larger at the top of its flight, and settles in the circle or
+the socket in 680ms. The dock's key turns into the circle as the orb arrives and the
+circle into the key as it leaves, and the box rises and fades in as the orb is on
+its way. A flight meets its socket where the socket is, so a socket that is still
+moving is met, and the opposite choice turns a flight round from where the orb is.
+When a pane is presented its voice controls are in the presentation bar and the
+subtitles are plain, and so they are on a recording page, whatever the person chose.
+With reduced motion the orb is in its home, and the box is there or gone, at once.
+Keyboard focus follows the subtitles control to the surface that takes it over.
 
 ## Do's and Don'ts
 

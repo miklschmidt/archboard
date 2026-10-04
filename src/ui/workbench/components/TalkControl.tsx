@@ -3,21 +3,15 @@
 // subtitles and end while it is on. It never disappears: when voice cannot
 // start it says why beside the control that retries.
 
-import {
-	RiErrorWarningLine,
-	RiLoader4Line,
-	RiMicLine,
-	RiMicOffLine,
-	RiPhoneLine,
-} from "@remixicon/react";
-import { useSyncExternalStore, type JSX } from "react";
+import { RiErrorWarningLine, RiLoader4Line, RiMicLine, RiPhoneLine } from "@remixicon/react";
+import type { JSX } from "react";
 
 import { Button } from "@/ui/components/button";
-import { VOICE_OUTPUT_SPEAKING_LEVEL } from "@/ui/voice-output-level";
 import { SubtitlesToggle } from "@/ui/voice-subtitles";
 import { VoiceOutputWave, type VoiceWaveState } from "@/ui/voice-wave";
 import type { AgentActions, AgentVoiceView, VoiceStage } from "@/ui/workbench/contracts";
-import { IconAction } from "@/ui/workbench/components/IconAction";
+import { MuteAction } from "@/ui/workbench/components/MuteAction";
+import { useAudible } from "@/ui/workbench/hooks/use-audible";
 
 /** Inputs for the Talk control. */
 interface TalkControlProps {
@@ -47,27 +41,6 @@ const WAVE_STATES: Readonly<Record<VoiceStage, VoiceWaveState>> = {
 	muted: "listening",
 	stopping: "inactive",
 };
-
-/** The stages in which the model's measured output can make it audible. */
-const LIVE_STAGES: ReadonlySet<VoiceStage> = new Set(["listening", "speaking", "muted"]);
-
-/**
- * Whether the model is audible now, by its measured output. It is heard as a yes
- * or no, so the control is drawn again when that flips, not on every frame the
- * level moves.
- * @param voice The voice.
- * @returns True while a live voice's output is over the speaking level.
- */
-function useAudible(voice: AgentVoiceView): boolean {
-	const { level } = voice;
-	/**
-	 * Whether the output is over the speaking level now.
-	 * @returns True when it is.
-	 */
-	const loud = (): boolean => level.read() >= VOICE_OUTPUT_SPEAKING_LEVEL;
-	const overSpeaking = useSyncExternalStore(level.subscribe, loud, loud);
-	return LIVE_STAGES.has(voice.stage) && overSpeaking;
-}
 
 /**
  * What the live voice is doing, in a word: muted says so first; otherwise the
@@ -107,7 +80,6 @@ function LiveVoice(
 	props: TalkControlProps & { readonly word: string; readonly audible: boolean },
 ): JSX.Element {
 	const { voice, actions } = props;
-	const muted = voice.stage === "muted";
 	return (
 		<div data-voice-controls="live" className="flex shrink-0 items-center gap-1.5">
 			<VoiceOutputWave
@@ -121,13 +93,7 @@ function LiveVoice(
 			<output aria-live="polite" className="text-control w-[76px] font-medium">
 				{props.word}
 			</output>
-			<IconAction
-				label={muted ? "Unmute" : "Mute"}
-				onClick={muted ? actions.unmute : actions.mute}
-				disabled={voice.busy}
-			>
-				{muted ? <RiMicOffLine /> : <RiMicLine />}
-			</IconAction>
+			<MuteAction voice={voice} actions={actions} />
 			<SubtitlesToggle />
 			<Button
 				variant="outline"
@@ -212,4 +178,4 @@ function TalkIcon(props: { readonly stage: VoiceStage; readonly problem: boolean
 	);
 }
 
-export { TalkControl, useAudible, type TalkControlProps };
+export { TalkControl, type TalkControlProps };
