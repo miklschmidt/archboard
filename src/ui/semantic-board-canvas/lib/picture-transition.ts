@@ -38,7 +38,7 @@ import {
 	type SubjectGroup,
 } from "@/ui/semantic-board-canvas/lib/picture-pairing";
 import { clockOf, setClock } from "@/ui/semantic-board-canvas/lib/picture-clock";
-import { runTraffic } from "@/ui/semantic-board-canvas/lib/picture-traffic";
+import { runTraffic, stopTraffic } from "@/ui/semantic-board-canvas/lib/picture-traffic";
 import { SUBJECT_ATTRIBUTE, keepingMarks } from "@/ui/semantic-board-canvas/lib/subjects";
 
 /** A transition in progress: where it is, and how it ends. */
@@ -125,7 +125,8 @@ function continuousPictures(before: SemanticDrawing, after: SemanticDrawing): bo
  * pane has to hit-test its groups, toggle the classes the embedded stylesheet
  * draws a selection with, and move its parts. Nothing else is ever put through
  * this property. It is made away from the page and its traffic run there, so
- * none of its SMIL ever starts in the page.
+ * none of its SMIL ever starts in the page. The traffic of what it replaces is
+ * stopped, since it would run on with nothing to move.
  * @param surface The element the picture is put into.
  * @param svg The picture.
  */
@@ -133,6 +134,7 @@ function stagePicture(surface: HTMLElement, svg: string): void {
 	const made = surface.ownerDocument.createElement("div");
 	made.innerHTML = svg;
 	runTraffic(made, 0);
+	stopTraffic(surface);
 	surface.replaceChildren(...made.childNodes);
 }
 

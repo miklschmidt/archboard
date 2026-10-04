@@ -198,10 +198,28 @@ function keptMotions(element: Element, scratch: Element): Motion[] {
 }
 
 /**
+ * The traffic the page runs, by the element it moves. A browser does not stop
+ * an animation when its element leaves the document, and an element that is
+ * gone cannot be asked for its animations, so they are kept here.
+ */
+const running = new WeakMap<Element, Animation[]>();
+
+/**
+ * The elements of markup that carry traffic.
+ * @param markup The markup: a picture, or part of one.
+ * @returns The markup itself when it carries some, and every element under it that does.
+ */
+function carriersOf(markup: Element): Element[] {
+	const kept = [...markup.querySelectorAll(`[${MOTION_ATTRIBUTE}]`)];
+	return markup.matches(`[${MOTION_ATTRIBUTE}]`) ? [markup, ...kept] : kept;
+}
+
+/**
  * Run the traffic of markup the page has just made, as Web Animations. Call it
  * once for each new piece of markup, before or as it goes into the page: a
  * picture put up, a copy of one, a group borrowed into another. Running it
- * twice over the same elements runs their traffic twice.
+ * twice over the same elements runs their traffic twice, and whatever takes the
+ * markup out of the page again must `stopTraffic` it first.
  * @param markup The markup: a picture, or part of one.
  * @param seconds Where on its picture's clock the traffic starts.
  */
@@ -210,13 +228,28 @@ function runTraffic(markup: Element, seconds: number): void {
 	if (typeof markup.animate !== "function") return;
 	keepTraffic(markup);
 	const scratch = markup.ownerDocument.createElementNS(SVG_NS, "g");
-	const kept = markup.querySelectorAll(`[${MOTION_ATTRIBUTE}]`);
-	for (const element of markup.matches(`[${MOTION_ATTRIBUTE}]`) ? [markup, ...kept] : kept) {
+	for (const element of carriersOf(markup)) {
 		for (const { keyframes, timing } of keptMotions(element, scratch)) {
 			const animation = element.animate(keyframes, { ...timing, id: PICTURE_CLOCK });
 			animation.currentTime = seconds * 1000;
+			running.set(element, [...(running.get(element) ?? []), animation]);
 		}
 	}
 }
 
-export { runTraffic };
+/**
+ * Stop the traffic of markup that is leaving the page, or is about to be thrown
+ * away. An animation that is left running on an element that has gone from the
+ * document runs on, off the page, and the page is asked for a frame on every
+ * vsync because of it: all of its lines are painted again each time, and so is
+ * every other animation it has.
+ * @param markup The markup: a picture, or part of one, in the page or not.
+ */
+function stopTraffic(markup: Element): void {
+	for (const element of carriersOf(markup)) {
+		for (const animation of running.get(element) ?? []) animation.cancel();
+		running.delete(element);
+	}
+}
+
+export { runTraffic, stopTraffic };

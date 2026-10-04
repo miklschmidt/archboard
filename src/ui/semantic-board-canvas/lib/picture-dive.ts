@@ -12,7 +12,7 @@
 import { EXPLORING_MS } from "@/shared/timing/timing";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import type { Rect } from "@/ui/semantic-board-canvas/lib/camera";
-import { runTraffic } from "@/ui/semantic-board-canvas/lib/picture-traffic";
+import { runTraffic, stopTraffic } from "@/ui/semantic-board-canvas/lib/picture-traffic";
 
 /** The mark the board's picture inside its card carries. */
 const INSET_ATTRIBUTE = "data-dive-inset";
@@ -226,6 +226,7 @@ function startDive(
 				fade.finished.catch(ignoreCancel);
 				fade.cancel();
 			}
+			stopTraffic(frame);
 			frame.remove();
 		},
 	};
