@@ -201,15 +201,32 @@ async function readControlledVoiceMediaAudit(
 	return audit;
 }
 
+/**
+ * Whether one voice session let go of everything it took from the browser.
+ * @param media The media audit.
+ * @param session Which session, oldest first.
+ * @returns True once its microphone and the model's track are stopped, its peer and audio context closed, and no audio element is left.
+ */
+function released(media: ControlledVoiceMediaAudit, session: number): boolean {
+	return (
+		media.localTracks[session]?.stopCount === 1 &&
+		media.remoteTracks[session]?.stopCount === 1 &&
+		media.peers[session]?.closeCount === 1 &&
+		media.contexts[session]?.closeCount === 1 &&
+		media.attachedAudioElements === 0
+	);
+}
+
 export {
 	openWithControlledVoiceMedia,
 	readControlledVoiceMediaAudit,
+	released,
 	type ControlledVoiceMediaAudit,
 };
 
 /**
  * Silence or restore the controlled model output while the microphone track
- * stays live: the wave must follow the model, never the microphone.
+ * stays live: the voice speaks when the model does, never the microphone.
  * @param browser The page.
  * @param silent True to make the model output silent.
  */
@@ -261,7 +278,18 @@ function lineSaid(fixture: ProductionFixture, itemId: string): boolean {
 	);
 }
 
-export { askToSpeak, lineSaid };
+/**
+ * How many voice sessions the fake Codex was asked to start.
+ * @param fixture The fake Codex's files.
+ * @returns The count of realtime starts on its wire.
+ */
+function voiceStarts(fixture: ProductionFixture): number {
+	return productionFixtureRecords<FixtureRecord>(fixture).filter(
+		(record) => record.kind === "frame" && record.method === "thread/realtime/start",
+	).length;
+}
+
+export { askToSpeak, lineSaid, voiceStarts };
 
 /** The coordinator thread the fixture creates first, at Talk; voice runs on it. */
 const RAW_COORDINATOR_THREAD_ID = "thread-1";

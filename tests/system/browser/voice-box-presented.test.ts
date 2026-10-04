@@ -13,7 +13,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import type { ProductionFixture } from "../server-state/support/codex-production.ts";
-import { askToSpeak, lineSaid } from "./support/codex-live-voice.ts";
+import { askToSpeak, lineSaid, voiceStarts } from "./support/codex-live-voice.ts";
 import { roleAction } from "./support/opener-settings-interaction.ts";
 import { press } from "./support/drilling.ts";
 import {
@@ -240,6 +240,8 @@ test("a presented walkthrough carries the voice at the foot of its box, in the p
 	const quiet = await presentedNow(browser);
 	expect(quiet.place).toBe("foot");
 	expect(quiet.orbInBox).toBeTrue();
+	// All of it is the one session Talk started in the dock: fullscreen started no other.
+	expect(voiceStarts(fixture)).toBe(1);
 
 	// Leaving the walkthrough leaves the voice in fullscreen, in the box over the picture. (Escape is
 	// the browser's own there: it leaves fullscreen first.)
