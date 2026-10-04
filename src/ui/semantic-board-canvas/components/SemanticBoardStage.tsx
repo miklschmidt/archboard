@@ -12,7 +12,7 @@
 // owns fetched state; the pane owns camera and selection across requests (ADR 0023).
 
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useMemo, useRef, useState, type JSX, type ReactNode } from "react";
+import { memo, useCallback, useMemo, useRef, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@/shared/code-target";
 import type { WalkthroughBeat } from "@/shared/semantic-board/index";
@@ -176,10 +176,33 @@ function drawingIn(answer: SemanticRender | undefined): SemanticDrawing | null {
 
 /**
  * A read-only semantic board in one pane.
+ *
+ * The shell's parts of the pane's header change with every piece of news about
+ * the pane: who holds the board, what an agent says it is doing, whether the
+ * socket is up. The header reads them for itself. The reading needs only to
+ * know whether another pane shares the centre, so news about anything else
+ * draws none of it again (TASK-385.05).
  * @param props The board, the variant, the selection and the pick.
  * @returns Whichever of the four states is true.
  */
 function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
+	const { shared } = usePaneChrome();
+	return <BoardReading {...props} resting={shared} />;
+}
+
+/** Inputs for the reading of a pane's board. */
+interface BoardReadingProps extends SemanticBoardStageProps {
+	/** Whether the sidebar stays away unless the person docks it: while two panes share the centre. */
+	readonly resting: boolean;
+}
+
+/**
+ * The reading of the board in one pane: its state, and what it draws.
+ * @param props The pane's inputs, and whether another pane shares the centre.
+ * @returns Whichever of the four states is true.
+ */
+const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.Element {
+	const { resting, ...stage } = props;
 	const { board, variant, onSelect, onUserChanged } = props;
 	const [comparison, onComparisonChange] = useState(true);
 	const drill = useDrillDown(board, variant);
@@ -294,7 +317,7 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 	// how to leave: into the card that was picked, or back out.
 	const departure = useDeparture(drawn, drill.board, render);
 	// Two panes rest their sidebars, so each picture has the room (use-sidebar.ts).
-	const sidebar = useSidebar(props.selection, usePaneChrome().shared, narrative.open !== null);
+	const sidebar = useSidebar(props.selection, resting, narrative.open !== null);
 	useClearOfPanel(picture, sidebar.floating, props.selection, camera.ease);
 	useReveal({
 		camera,
@@ -327,7 +350,7 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 
 	return (
 		<SemanticStageView
-			{...props}
+			{...stage}
 			comparison={comparison}
 			onComparisonChange={onComparisonChange}
 			camera={camera}
@@ -364,6 +387,6 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 			onChooseGroup={onChooseGroup}
 		/>
 	);
-}
+});
 
 export { SemanticBoardStage, type SemanticBoardStageProps };
