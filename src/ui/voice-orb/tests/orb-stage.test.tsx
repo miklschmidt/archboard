@@ -8,7 +8,9 @@
 // orb goes on from there to whichever home is offered next, with no stop in between; a dark orb
 // waits in a home and not out of sight, and is lit where it is wanted and not flown there; a
 // socket says whether the orb rests in it, which is how the stylesheet draws a seat only for an
-// orb that is there; and a surface can ask whether a home is on the page.
+// orb that is there; a surface can ask whether a home is on the page; and while the page is
+// fullscreen, which paints nothing but the element presented, a flight crosses inside that element
+// and a home outside it is not on screen.
 //
 // This DOM lays nothing out, so each socket is given a box, and the frames a flight runs on are
 // stepped by hand.
@@ -515,4 +517,68 @@ test("a surface that asks for a home is told when its socket is on the page and 
 		</OrbStageProvider>,
 	);
 	expect(view.getByTestId("asked").textContent).toBe("false");
+});
+
+/**
+ * Present an element fullscreen, as far as the stage can tell, for the length of a test.
+ * @param presented The element, or null to leave fullscreen.
+ */
+function presentFullscreen(presented: HTMLElement | null): void {
+	Object.defineProperty(document, "fullscreenElement", {
+		configurable: true,
+		value: presented,
+	});
+}
+
+afterEach(() => {
+	Reflect.deleteProperty(document, "fullscreenElement");
+});
+
+test("while the page is fullscreen a flight crosses inside the element presented, the only one the browser paints", () => {
+	const { stage, frames, dock, box } = homes();
+	const presented = document.createElement("div");
+	document.body.append(presented);
+	presented.append(dock, box);
+	stage.offer("dock", homed(dock, "dock"));
+	stage.offer("box", homed(box, "box"));
+	stage.wish({ home: "dock", shown: true, fly: true });
+	presentFullscreen(presented);
+
+	stage.wish({ home: "box", shown: true, fly: true });
+	expect(whereIs(stage)).toBe("air");
+	expect(stage.holder.parentElement?.parentElement).toBe(presented);
+	frames.step(0);
+	frames.step(VOICE_FLIGHT_MS);
+	expect(whereIs(stage)).toBe("box");
+});
+
+test("a home outside the element presented is not on screen, so the orb is cut to and from it and not flown", () => {
+	const { stage, frames, dock, box } = homes();
+	const presented = document.createElement("div");
+	document.body.append(presented);
+	presented.append(box);
+	stage.offer("dock", homed(dock, "dock"));
+	stage.offer("box", homed(box, "box"));
+	stage.wish({ home: "dock", shown: true, fly: true });
+	presentFullscreen(presented);
+
+	stage.wish({ home: "box", shown: true, fly: true });
+	expect(whereIs(stage)).toBe("box");
+	stage.wish({ home: "dock", shown: true, fly: true });
+	expect(whereIs(stage)).toBe("dock");
+	expect(frames.pending).toBe(0);
+});
+
+test("a flight in the air when the page goes fullscreen lands where it was going", () => {
+	const { stage, frames, dock, box } = homes();
+	stage.offer("dock", homed(dock, "dock"));
+	stage.offer("box", homed(box, "box"));
+	stage.wish({ home: "dock", shown: true, fly: true });
+	stage.wish({ home: "box", shown: true, fly: true });
+	expect(whereIs(stage)).toBe("air");
+
+	presentFullscreen(document.body);
+	document.dispatchEvent(new Event("fullscreenchange"));
+	expect(whereIs(stage)).toBe("box");
+	expect(frames.pending).toBe(0);
 });
