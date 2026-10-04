@@ -8,7 +8,7 @@
 // comes back.
 
 import { RiArrowRightLine } from "@remixicon/react";
-import type { JSX, ReactNode } from "react";
+import { useCallback, useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
 
 import type { SemanticEdge, SemanticNode, VariantContent } from "@/shared/semantic-board/index";
 import { cn } from "@/ui/components/class-names";
@@ -23,7 +23,14 @@ import type { BoardTab } from "@/ui/semantic-board-canvas/components/PaneHeader"
 import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
 import type { GroupNames } from "@/ui/semantic-board-canvas/lib/groups";
 
-/** The page shell: it covers the picture and scrolls on its own. */
+/**
+ * The page shell: it covers the picture and scrolls on its own.
+ * @param props The tab, what the page is called and what it holds.
+ * @param props.tab The tab the page belongs to.
+ * @param props.label What the page is called to assistive technology.
+ * @param props.children What the page holds.
+ * @returns The page.
+ */
 function PageFrame(props: {
 	readonly tab: BoardTab;
 	readonly label: string;
@@ -42,7 +49,12 @@ function PageFrame(props: {
 	);
 }
 
-/** What a page says while it has nothing to list. */
+/**
+ * What a page says while it has nothing to list.
+ * @param props What it says.
+ * @param props.children What it says.
+ * @returns The line.
+ */
 function Nothing(props: { readonly children: ReactNode }): JSX.Element {
 	return <p className="text-muted-foreground text-control py-2">{props.children}</p>;
 }
@@ -67,8 +79,16 @@ interface PartCardProps extends Omit<PartsPageProps, "content"> {
  * @returns The card.
  */
 function PartCard(props: PartCardProps): JSX.Element {
-	const { node, look, groups } = props;
+	const { node, look, groups, onPick } = props;
 	const picked = props.selection === node.id;
+	const pick = useCallback((): void => {
+		onPick(picked ? null : node.id);
+	}, [onPick, picked, node.id]);
+	// A kind's colour is the chip's ink, and the wash and edge are drawn from it.
+	const ink = useMemo<CSSProperties>(
+		() => ({ "--kind": look.nodeColor(node.kind) }),
+		[look, node.kind],
+	);
 	return (
 		<li className="min-w-0">
 			<button
@@ -76,14 +96,13 @@ function PartCard(props: PartCardProps): JSX.Element {
 				aria-pressed={picked}
 				data-slot="part-card"
 				data-part={node.id}
-				onClick={() => props.onPick(picked ? null : node.id)}
+				onClick={pick}
 				className="bg-muted shadow-card hover:border-foreground/35 hover:shadow-float relative flex h-full w-full min-w-0 items-start gap-2.5 rounded-[6px] border border-(color:--diagram-edge) px-3.5 py-3 text-left outline-offset-3 aria-pressed:outline-2 aria-pressed:outline-(color:--diagram-selection)"
 			>
 				<span
 					aria-hidden="true"
 					className="inline-flex size-6 shrink-0 items-center justify-center rounded-[5px] border border-(color:--kind)/45 bg-(color:--kind)/14 text-(color:--kind) [&>*]:size-4"
-					// A kind's colour is the chip's ink, and the wash and edge are drawn from it.
-					style={{ "--kind": look.nodeColor(node.kind) }}
+					style={ink}
 				>
 					<KindIcon look={look} kind={node.kind} />
 				</span>
@@ -99,18 +118,27 @@ function PartCard(props: PartCardProps): JSX.Element {
 				{node.groups !== undefined && node.groups.length > 0 && (
 					<span aria-hidden="true" className="absolute top-2.5 right-2.5 flex gap-1">
 						{node.groups.map((group) => (
-							<i
-								key={group}
-								title={groups[group]?.name ?? group}
-								className="size-1.5 rounded-full"
-								style={{ background: `var(--semantic-${groups[group]?.color ?? "pink"})` }}
-							/>
+							<GroupDot key={group} group={group} groups={groups} />
 						))}
 					</span>
 				)}
 			</button>
 		</li>
 	);
+}
+
+/**
+ * One group a part belongs to, as a dot in the group's colour.
+ * @param props The group and what the vault calls its groups.
+ * @param props.group The group's id.
+ * @param props.groups What the vault calls each group, and its colour.
+ * @returns The dot.
+ */
+function GroupDot(props: { readonly group: string; readonly groups: GroupNames }): JSX.Element {
+	const named = props.groups[props.group];
+	const color = named?.color ?? "pink";
+	const paint = useMemo<CSSProperties>(() => ({ background: `var(--semantic-${color})` }), [color]);
+	return <i title={named?.name ?? props.group} className="size-1.5 rounded-full" style={paint} />;
 }
 
 /**
@@ -147,22 +175,35 @@ interface RelationshipRowProps extends Omit<RelationshipsPageProps, "content"> {
 }
 
 /**
+ * Whether what is picked out lights a relationship: the relationship itself, or
+ * a part at either end of it.
+ * @param edge The relationship.
+ * @param selection What is picked out, or null.
+ * @returns Whether its row is lit.
+ */
+function lights(edge: SemanticEdge, selection: string | null): boolean {
+	return selection === edge.id || selection === edge.from || selection === edge.to;
+}
+
+/**
  * One relationship: where it starts, where it ends, what it carries and what kind it is.
  * @param props The relationship and the names of its ends.
  * @returns The row.
  */
 function RelationshipRow(props: RelationshipRowProps): JSX.Element {
-	const { edge, names, selection } = props;
-	const lit = selection === edge.id || selection === edge.from || selection === edge.to;
+	const { edge, names, selection, onPick } = props;
 	const picked = selection === edge.id;
+	const pick = useCallback((): void => {
+		onPick(picked ? null : edge.id);
+	}, [onPick, picked, edge.id]);
 	return (
-		<li className={cn("border-border border-b", lit && "bg-primary-subtle")}>
+		<li className={cn("border-border border-b", lights(edge, selection) && "bg-primary-subtle")}>
 			<button
 				type="button"
 				aria-pressed={picked}
 				data-slot="relationship-row"
 				data-relationship={edge.id}
-				onClick={() => props.onPick(picked ? null : edge.id)}
+				onClick={pick}
 				className={cn(
 					RELATIONSHIP_GRID,
 					"text-control hover:bg-muted/60 min-h-10 w-full py-1.5 text-left",
@@ -238,35 +279,43 @@ interface BoardPageProps {
  * @returns The page.
  */
 function BoardPage(props: BoardPageProps): JSX.Element {
-	const { tab, content } = props;
+	const { tab } = props;
 	return (
 		<PageFrame tab={tab} label={PAGE_NAMES[tab]}>
-			{tab === "variants" && <VariantsPage {...props.variants} />}
-			{tab === "walkthroughs" && <WalkthroughsPage {...props.walkthroughs} />}
-			{tab === "parts" &&
-				(content === null ? (
-					<Nothing>Reading the board…</Nothing>
-				) : (
-					<PartsPage
-						content={content}
-						look={props.look}
-						groups={props.groups}
-						selection={props.selection}
-						onPick={props.onPick}
-					/>
-				))}
-			{tab === "relationships" &&
-				(content === null ? (
-					<Nothing>Reading the board…</Nothing>
-				) : (
-					<RelationshipsPage
-						content={content}
-						look={props.look}
-						selection={props.selection}
-						onPick={props.onPick}
-					/>
-				))}
+			<OpenPage {...props} />
 		</PageFrame>
+	);
+}
+
+/**
+ * What the open tab lists. The parts and the relationships are read from the
+ * variant, so they wait for the board to arrive.
+ * @param props What the pages are made from.
+ * @returns The open tab's page.
+ */
+function OpenPage(props: BoardPageProps): JSX.Element {
+	const { tab, content } = props;
+	if (tab === "variants") return <VariantsPage {...props.variants} />;
+	if (tab === "walkthroughs") return <WalkthroughsPage {...props.walkthroughs} />;
+	if (content === null) return <Nothing>Reading the board…</Nothing>;
+	if (tab === "parts") {
+		return (
+			<PartsPage
+				content={content}
+				look={props.look}
+				groups={props.groups}
+				selection={props.selection}
+				onPick={props.onPick}
+			/>
+		);
+	}
+	return (
+		<RelationshipsPage
+			content={content}
+			look={props.look}
+			selection={props.selection}
+			onPick={props.onPick}
+		/>
 	);
 }
 
