@@ -10,8 +10,8 @@ type PageEvaluator = Pick<AgentBrowserSession, "eval">;
 
 /** The element the browser presents fullscreen: the centre stage. */
 const STAGE_ROOT = '[data-slot="pane-stages"]';
-/** The header's board breadcrumb; its first span is the board name. */
-const BOARD_BREADCRUMB = 'nav[aria-label="Current board"]';
+/** The breadcrumb in the header of the pane with focus: the boards above, the board, then the variant. */
+const BOARD_BREADCRUMB = 'section[aria-current="true"] nav[aria-label="Where this board sits"]';
 /** One pane's section, by its accessible name. */
 const paneSection = (label: string): string => `section[aria-label=${JSON.stringify(label)}]`;
 /** Every pane section. */
@@ -56,8 +56,8 @@ const buttonNamed = (name: string, scope = "document"): string => `(() => {
 		(node.getAttribute('aria-label') ?? node.textContent ?? '').trim() === wanted) ?? null;
 })()`;
 
-/** The board name the header shows. */
-const BOARD_NAME_EXPRESSION = `document.querySelector('${BOARD_BREADCRUMB} span')?.textContent?.trim() ?? null`;
+/** The board name the header of the pane with focus shows. */
+const BOARD_NAME_EXPRESSION = `document.querySelector('${BOARD_BREADCRUMB} [data-slot="pane-board-name"]')?.textContent?.trim() ?? null`;
 
 /** The theme the root element carries. */
 const THEME_EXPRESSION = "document.documentElement.getAttribute('data-theme') ?? ''";
