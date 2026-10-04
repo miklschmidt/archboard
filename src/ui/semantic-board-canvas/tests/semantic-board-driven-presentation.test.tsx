@@ -8,10 +8,10 @@
 
 import { act, cleanup, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
-import { createElement } from "react";
+import { createElement, type JSX } from "react";
 
 import { PRESENTATION_STEP_MS } from "@/shared/timing/timing";
-import type { SemanticPaneReading } from "@/ui/semantic-board-canvas";
+import { useOverlayPlace, type SemanticPaneReading } from "@/ui/semantic-board-canvas";
 import {
 	drawing,
 	mountStage,
@@ -174,12 +174,21 @@ test("a user stepping by hand takes the position back, and the same request does
 	expect(part("semantic-board-stage").hasAttribute("data-presentation-step")).toBe(false);
 });
 
-test("what the shell lays over the picture is drawn with and without a walkthrough presented", async () => {
+/**
+ * What the shell lays over the picture, drawn so that it says where the stage laid it.
+ * @returns The overlay.
+ */
+function WhereItIsLaid(): JSX.Element {
+	return <p data-slot="laid-over">{useOverlayPlace()}</p>;
+}
+
+test("what the shell lays over the picture is drawn with and without a walkthrough presented, and is told where", async () => {
 	serving();
-	const overlay = createElement("p", { "data-slot": "laid-over" }, "said aloud");
+	const overlay = createElement(WhereItIsLaid);
 	mountStage(null, { reducedMotion: true, overlay });
 	await settle();
-	expect(part("semantic-stage-overlay").textContent).toBe("said aloud");
+	// Free over the picture, low in the frame.
+	expect(part("semantic-stage-overlay").textContent).toBe("free");
 	cleanup();
 	mountStage(null, {
 		reducedMotion: true,
@@ -187,11 +196,11 @@ test("what the shell lays over the picture is drawn with and without a walkthrou
 		driven: { request: "request-1", walkthrough: WALKTHROUGH.id, beat: 0 },
 	});
 	await settle();
-	// Presented, it belongs to the caption, which keeps it above itself rather than under it.
-	const caption = part("semantic-presentation-heading").closest(
-		"[data-slot='semantic-presentation']",
-	);
-	expect(caption?.querySelector("[data-slot='semantic-stage-overlay']")?.textContent).toBe(
-		"said aloud",
-	);
+	// Presented, it belongs to the box, which gives it a place at its foot and keeps the picture
+	// clear of it.
+	const foot = part("semantic-presentation-heading")
+		.closest("[data-slot='semantic-presentation']")
+		?.querySelector("[data-slot='semantic-presentation-foot']");
+	expect(foot?.textContent).toBe("foot");
+	expect(document.querySelector("[data-slot='semantic-stage-overlay']")).toBeNull();
 });

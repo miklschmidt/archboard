@@ -2,14 +2,19 @@
 // voice itself with them while the person wants subtitles (TASK-391).
 //
 // What the subtitles show is decided in `subtitled-transcript`. A recording is always subtitled:
-// nobody watching the video can turn them on (TASK-306). A pane that is presented has its voice
-// controls in the presentation bar, and a recording has no dock, so both keep plain subtitles.
-// Otherwise the subtitles are the words in the voice box, which carries the voice's orb and its
-// controls too, and leaves the dock when subtitles are off.
+// nobody watching the video can turn them on (TASK-306), and it has no dock and nobody at its
+// controls, so its subtitles are plain. Otherwise the subtitles are the words in the voice box, which
+// carries the voice's orb and its controls too, and leaves the dock when subtitles are off. A
+// fullscreen presentation has no dock to leave for, so the box carries the voice there whatever the
+// person wants of subtitles (TASK-392), and what they want decides only whether there are words.
+//
+// Where the box is drawn is the stage's to say: free over the picture, or in the foot of a presented
+// walkthrough's box (use-overlay-place), where the voice is drawn in the pill that the box gives it.
 
 import { useSyncExternalStore, type JSX } from "react";
 
 import { subtitledTranscript, type VoiceFeed } from "@/ui/application/subtitled-transcript";
+import { useOverlayPlace } from "@/ui/semantic-board-canvas";
 import { VoiceSubtitles, useSubtitlesWanted, useVoiceBoxed } from "@/ui/voice-subtitles";
 import type { SubtitleSource } from "@/ui/voice-subtitles";
 import { VoiceBox, useVoiceSurface } from "@/ui/workbench";
@@ -23,8 +28,10 @@ interface PaneSubtitlesProps {
 	readonly reducedMotion: boolean;
 	/** Whether this page is a recording. */
 	readonly recording: boolean;
-	/** Whether the voice box may carry the voice over this pane: it has a voice owner and nothing is presented. */
+	/** Whether the voice box may carry the voice over this pane: it has a voice owner and the page is not a recording. */
 	readonly boxAvailable: boolean;
+	/** Whether the agent dock is off screen, as in a fullscreen presentation, so the box carries the voice whatever the person wants of subtitles. */
+	readonly dockless: boolean;
 }
 
 /** What the subtitles are drawn from. */
@@ -33,7 +40,11 @@ interface SubtitledProps {
 	readonly reducedMotion: boolean;
 	readonly recording: boolean;
 	readonly boxAvailable: boolean;
+	readonly dockless: boolean;
 }
+
+/** What a box without words holds while the person does not want subtitles. */
+const NO_WORDS: readonly SubtitleSource[] = [];
 
 /**
  * The subtitles of the voice running for one pane.
@@ -70,22 +81,25 @@ function DemoSubtitles(props: Omit<PaneSubtitlesProps, "feed">): JSX.Element {
 
 /**
  * The words and, where the voice may sit in the box, the box that holds them.
- * @param props What was said, the motion preference and whether the voice may sit in the box.
+ * @param props What was said, the motion preference, whether the voice may sit in the box and whether the dock is off screen.
  * @returns The voice box, or the subtitles alone.
  */
 function Subtitled(props: SubtitledProps): JSX.Element {
 	const wanted = useSubtitlesWanted();
 	const surface = useVoiceSurface();
+	const place = useOverlayPlace();
 	const boxable = props.boxAvailable && surface !== null;
-	const boxed = useVoiceBoxed(surface !== null && surface.voice.stage !== "idle", boxable);
+	const on = surface !== null && surface.voice.stage !== "idle";
+	const boxed = useVoiceBoxed(on, boxable, props.dockless);
 	if (boxable) {
 		return (
 			<VoiceBox
 				voice={surface.voice}
 				actions={surface.actions}
-				transcript={props.transcript}
+				transcript={wanted ? props.transcript : NO_WORDS}
 				reducedMotion={props.reducedMotion}
 				shown={boxed}
+				place={place}
 			/>
 		);
 	}
@@ -94,6 +108,7 @@ function Subtitled(props: SubtitledProps): JSX.Element {
 			transcript={props.transcript}
 			enabled={wanted || props.recording}
 			reducedMotion={props.reducedMotion}
+			bare={place === "foot"}
 		/>
 	);
 }

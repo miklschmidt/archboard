@@ -24,12 +24,13 @@ interface AgentSurfaceProps {
 
 /**
  * The agent dock, and whether the agent said something while the panel was closed.
- * @param props The workbench, the context, the agent and the motion preference.
+ * @param props The workbench, the context, the agent, the motion preference and whether the dock is off screen.
  * @param props.reducedMotion Whether the person asked for reduced motion.
+ * @param props.dockless Whether the dock is off screen, as while a pane is presented fullscreen.
  * @returns The dock.
  */
 function AgentDockSlot(
-	props: AgentSurfaceProps & { readonly reducedMotion: boolean },
+	props: AgentSurfaceProps & { readonly reducedMotion: boolean; readonly dockless: boolean },
 ): JSX.Element {
 	const { agent } = props;
 	const view = useAgentView(props, agent.voice);
@@ -42,6 +43,7 @@ function AgentDockSlot(
 			unread={unread}
 			onTogglePanel={agent.panel.togglePanel}
 			reducedMotion={props.reducedMotion}
+			dockless={props.dockless}
 		/>
 	);
 }

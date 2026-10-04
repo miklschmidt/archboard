@@ -21,10 +21,10 @@ import {
 	openingPaneList,
 } from "@/ui/application/lib/workspace-port";
 import { assembleShellView } from "@/ui/application/shell-view";
-import { heardOver } from "@/ui/application/subtitled-transcript";
 import { applyTheme, initialTheme } from "@/ui/application/lib/theme";
 import { usePaneReadings } from "@/ui/application/hooks/use-pane-reading";
-import { usePaneViews, type PaneOverlay } from "@/ui/application/hooks/use-pane-views";
+import { usePaneViews } from "@/ui/application/hooks/use-pane-views";
+import { useSubtitleOverlay } from "@/ui/application/hooks/use-subtitle-overlay";
 import { useReleasedBoards } from "@/ui/application/hooks/use-released-boards";
 import {
 	shellPresentationOf,
@@ -43,7 +43,6 @@ import {
 	usePageRecorder,
 	useRecordedViews,
 } from "@/ui/application/hooks/use-page-recording";
-import { PaneSubtitles } from "@/ui/application/components/PaneSubtitles";
 import { useAgentSurfaces, type AgentSurfaces } from "@/ui/application/hooks/use-agent-surfaces";
 import { useWorkbench, type Workbench } from "@/ui/application/hooks/use-workbench";
 import { useWorkspaceAddressing } from "@/ui/application/hooks/use-workspace-addressing";
@@ -62,9 +61,10 @@ import { boardAddressOf, boardKeyFor } from "@/ui/semantic-board-canvas";
 import type { BoardListing } from "@/ui/types";
 import { RecordingStage } from "@/ui/walkthrough-recording";
 import { OrbStageProvider } from "@/ui/voice-orb";
-import { TalkControl, VoiceSurfaceProvider } from "@/ui/workbench";
+import { VoiceSurfaceProvider } from "@/ui/workbench";
 import { DemoVoiceSurface, VOICE_DEMONSTRATING } from "@/ui/workbench/demo";
 import { AgentDockSlot, AgentPanelSlot } from "@/ui/application/components/AgentSurfaceSlots";
+import { PresentationVoiceKey } from "@/ui/application/components/PresentationVoiceKey";
 import type { AgentContext } from "@/ui/workbench/contracts";
 import {
 	SETTINGS_TRIGGER_ID,
@@ -135,58 +135,6 @@ function agentContextOf(listing: BoardListing, boardKey: string | null): AgentCo
 	};
 }
 
-/** What the subtitles over a pane are drawn from. */
-interface SubtitleOverlaySources {
-	readonly workbench: Workbench;
-	readonly reducedMotion: boolean;
-	/** Whether the page is a recording. */
-	readonly recording: boolean;
-	/** Whether the voice box may carry the voice: the pane has a voice owner and nothing is presented. */
-	readonly boxAvailable: boolean;
-	/** The pane the demonstration of the voice is laid over, where the page demonstrates it. */
-	readonly activePaneId: string;
-}
-
-/**
- * The subtitles of the voice, laid over the pane it runs for, with the voice itself in the
- * voice box while the person wants subtitles. A page opened with `?voiceDemo` demonstrates the
- * voice over the active pane, in place of the voice there is not.
- * @param sources The workbench, the motion preference and where the voice may sit.
- * @returns The overlay and the pane it belongs over, or null.
- */
-function useSubtitleOverlay(sources: SubtitleOverlaySources): PaneOverlay | null {
-	const { workbench, reducedMotion, recording, boxAvailable, activePaneId } = sources;
-	const { voice } = workbench;
-	return useMemo(() => {
-		if (VOICE_DEMONSTRATING) {
-			return {
-				paneId: activePaneId,
-				element: (
-					<PaneSubtitles
-						feed={null}
-						reducedMotion={reducedMotion}
-						recording={recording}
-						boxAvailable={boxAvailable}
-					/>
-				),
-			};
-		}
-		return voice === null
-			? null
-			: {
-					paneId: voice.paneId,
-					element: (
-						<PaneSubtitles
-							feed={heardOver(voice.transport)}
-							reducedMotion={reducedMotion}
-							recording={recording}
-							boxAvailable={boxAvailable}
-						/>
-					),
-				};
-	}, [voice, reducedMotion, recording, boxAvailable, activePaneId]);
-}
-
 /** The agent's surfaces as the shell places them. */
 interface AgentSlots {
 	readonly dock: ReactNode;
@@ -201,18 +149,20 @@ interface AgentSlotSources {
 	/** The board the agent sees with the next message. */
 	readonly context: AgentContext;
 	readonly reducedMotion: boolean;
+	/** Whether the agent dock is off screen, as while a pane is presented fullscreen. */
+	readonly dockless: boolean;
 }
 
 /**
  * The agent's surfaces drawn: the dock, the panel for the shell to show while it is open, and the
- * Talk control a presentation carries. The dock and the panel read what changes
+ * voice key a presentation's bar carries. The dock and the panel read what changes
  * while the agent works themselves, so these elements are made again only when
  * the person acts.
- * @param sources The agent, the workbench, the context and the motion preference.
+ * @param sources The agent, the workbench, the context, the motion preference and whether the dock is off screen.
  * @returns The slots.
  */
 function useAgentSlots(sources: AgentSlotSources): AgentSlots {
-	const { agent, workbench, context, reducedMotion } = sources;
+	const { agent, workbench, context, reducedMotion, dockless } = sources;
 	return useMemo(
 		() => ({
 			dock: (
@@ -221,14 +171,13 @@ function useAgentSlots(sources: AgentSlotSources): AgentSlots {
 					workbench={workbench}
 					context={context}
 					reducedMotion={reducedMotion}
+					dockless={dockless}
 				/>
 			),
 			panel: <AgentPanelSlot agent={agent} workbench={workbench} context={context} />,
-			voiceControls: (
-				<TalkControl voice={agent.voice} actions={agent.actions} reducedMotion={reducedMotion} />
-			),
+			voiceControls: <PresentationVoiceKey />,
 		}),
-		[agent, workbench, context, reducedMotion],
+		[agent, workbench, context, reducedMotion, dockless],
 	);
 }
 
@@ -397,11 +346,12 @@ function ApplicationBody(): JSX.Element {
 	const fullscreen = useFullscreen({ onRefused });
 	const boxAvailable = voiceBoxAvailable({
 		owned: workbench.voice !== null,
-		presentedPane: fullscreen.snapshot.paneId,
 		recording: recorder !== null,
 		demonstrating: VOICE_DEMONSTRATING,
 	});
-	const slots = useAgentSlots({ agent, workbench, context, reducedMotion });
+	// The agent dock is off screen while a pane is presented fullscreen.
+	const dockless = fullscreen.snapshot.paneId !== null;
+	const slots = useAgentSlots({ agent, workbench, context, reducedMotion, dockless });
 	// The address bar over the panes the shell already owns: it writes down what
 	// they show, and restores what a direct load or a Back/Forward asks for.
 	useWorkspaceAddressing({ panes, notices, readings }, addressBinding);
@@ -471,6 +421,7 @@ function ApplicationBody(): JSX.Element {
 		reducedMotion,
 		recording: recorder !== null,
 		boxAvailable,
+		presentedPaneId: fullscreen.snapshot.paneId,
 		activePaneId: panes.list.activePaneId,
 	});
 	const recorded = useRecordedViews(recorder, workbench, { narration, overlay });

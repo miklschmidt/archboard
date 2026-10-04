@@ -75,6 +75,7 @@ function dock(stage: AgentVoiceView["stage"], reducedMotion = true, box = false)
 				unread={false}
 				onTogglePanel={nothing}
 				reducedMotion={reducedMotion}
+				dockless={false}
 			/>
 			{box && <OrbSlot home="box" />}
 		</OrbStageProvider>

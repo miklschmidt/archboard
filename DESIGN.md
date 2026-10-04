@@ -177,6 +177,10 @@ paths, versions, counts and times.
 - **Nav** (500, 14px, 20px): the name of a board in the navigator.
 - **Control** (500, 13px, 18px): buttons, tabs and fields.
 - **Body** (400, 12px, 16px): prose and row labels. A section heading uses it in semibold.
+- **Presentation** (600, 28px, 34px): the heading of a presented step.
+- **Reading** (400, 16px, 24px): the words of a presented step, at 66 characters wide at most.
+- **Figure** (650, 44px, 44px, display face): the number of a presented step.
+- **Subtitle** (500, 20px, 28px): the words the voice says.
 - **Technical** (400, 11px, 14px, mono): identifiers, paths, versions, counts and times.
 
 ### Named Rules
@@ -229,7 +233,7 @@ gives each one a `shadow-*` utility.
 
 ### Named Rules
 
-**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. The floating sidebar takes at most 160ms, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off, in a layer of its own, over 680ms.
+**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar, the walkthrough box or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. The floating sidebar takes at most 160ms, the walkthrough box 220ms to arrive, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off, in a layer of its own, over 680ms.
 
 **The Picture Answers Rule.** The light belongs to the picture, not to the shell. When a part is picked out or the pointer rests on one, the viewer marks what stays as drawn, and the picture's own subjects recede under an opacity filter. The shell lays no layer, blur or halo over the picture to do it.
 
@@ -317,7 +321,9 @@ a quiet icon in the voice line, beside mute and subtitles. That is where voice i
 while the person does not want subtitles. While they do, the voice is in the voice
 box over the picture (below), and the dock is calm again: the Talk key reads End
 voice, with a handset and the gold edge of the circle, and ends voice, and the
-voice line, mute and the subtitles control are in the box.
+voice line, mute and the subtitles control are in the box. In a fullscreen
+presentation the dock is off screen, so the box carries the voice there whatever
+the person wants.
 
 The two layouts hold the same parts, so nothing is swapped. The Talk key and the
 voice circle are one button, and keyboard focus stays on it. When voice starts,
@@ -359,6 +365,40 @@ ink while it is muted or ending. The clock is 12px mono.
 The composer is in the conversation pane, on a tray at its foot (Tray Chalk and
 `shadow-edge-up`), with its gold Send. It grows upward as a message grows, and
 takes the room from the conversation.
+
+### Walkthrough box
+
+A presented walkthrough lays one plate over the foot of its pane's picture. It is
+centred, 880px wide at most and 20px above the pane's edge, and the camera keeps the
+picture clear of all of it, the voice at its foot included. The plate is a card in Card
+White with a Rule edge, 4px corners and the float shadow, with 20px of padding and
+16px between its rows.
+
+The rail runs along its top: one 6px segment for each step, the step shown in Gold
+Mark and the rest in the Rule tone. Each segment is a button that names its step and
+goes to it. Under the rail are three columns. The step's number is set in the
+display face at 44px over a mono "of N", with a rule on its right, as the sheet number
+of a drawing is. The step's heading (28px) stands over its words (16px, 66 characters
+wide at most), with the name of the walkthrough under them in muted ink. At the end of
+the heading's row are the box's three keys, 32px high: previous, next, and leave, which
+says Esc. A recording draws no keys, because nobody can press anything in the video.
+
+At the foot is the voice pill, 78px high and round at both ends, a field sunk into the
+plate (the well shadow, on Chrome Chalk). It is there for as long as the shell has a
+voice to offer, so the box keeps one height whether the voice is off, starting, speaking
+or over, and the picture does not move with it. While voice is off the pill holds the key
+that narrates the walkthrough: a circle where the orb will be lit, with a microphone in
+it, then "Narrate" and a line of muted ink that says what it does. While a narration
+cannot start the key is dimmed and never taken out, and the line says why. While the
+voice is live and the voice box has it, the voice box is drawn in the pill and the key
+gives way to it: the orb takes the circle, then come the words or the voice's word, and
+mute above the subtitles control at the right end, as the box over the picture has them.
+A recording and the replay of a kept talk draw plain subtitles in the pill, with no orb
+and no keys.
+
+The plate arrives once, rising 10px as it fades in over 220ms, and leaves at once. The
+words of a new step fade in over 200ms, and the rail's gold follows over 150ms. Nothing
+else moves. With reduced motion everything cuts.
 
 ### Voice box
 
@@ -408,9 +448,15 @@ where it is, with the box. The dock's key grows out of the seat the orb has left
 orb flies out, and the circle forms as the orb arrives, and the box rises and fades in as
 the orb is on its way. A flight meets its socket where the socket is, so a socket that is
 still moving is met, and the opposite choice turns a flight round from where the orb is.
-When a pane is presented its voice controls are in the presentation bar and the
-subtitles are plain, and so they are on a recording page, whatever the person chose.
-With reduced motion the orb is in its home, and the box is there or gone, at once.
+While a walkthrough is presented the voice box is not over the picture: it is drawn in the
+pill at the foot of the walkthrough box (above), the orb flies there from the dock or from the
+box over the picture as it does between them, and it flies back when the walkthrough is left.
+A fullscreen presentation has no dock to take the voice back, so the box carries the voice
+there whatever the person chose, over the picture or in the walkthrough box, and the
+subtitles control decides only whether there are words: with none, the box says what the
+voice is doing in a word. The presentation's bar holds one key, Talk, which reads End voice
+while the voice is live. A recording and the replay of a kept talk draw plain subtitles, with
+no orb and no keys. With reduced motion the orb is in its home, and the box is there or gone, at once.
 Keyboard focus follows the subtitles control to the surface that takes it over.
 
 ## Do's and Don'ts

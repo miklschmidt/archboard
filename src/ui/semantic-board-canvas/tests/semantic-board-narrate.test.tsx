@@ -1,5 +1,5 @@
-// The control that narrates a walkthrough aloud, in the board tab's rows and in
-// the caption of a presented one.
+// The control that narrates a walkthrough aloud, in the board tab's rows and at the
+// foot of the box of a presented one.
 //
 // What these catch: a Narrate control that is taken out of its row while voice
 // runs or another pane is active, which resizes the row and moves everything
@@ -93,17 +93,33 @@ test("while voice runs every row keeps its control, dimmed, and says why, and pr
 	});
 	expect(held.started).toEqual([]);
 
-	// The caption of a presented walkthrough keeps its control in the same way.
+	// The foot of a presented walkthrough's box keeps its key in the same way, and says why.
 	act(() => {
 		fireEvent.click(offers()[0] ?? document.body);
 	});
 	await settle();
-	const caption = document.querySelector("[data-slot='semantic-presentation-narrate']");
-	expect(caption?.getAttribute("aria-disabled")).toBe("true");
+	const foot = document.querySelector("[data-slot='semantic-presentation-narrate']");
+	expect(foot?.getAttribute("aria-disabled")).toBe("true");
+	expect(foot?.textContent).toContain("Voice is on");
 	act(() => {
-		fireEvent.click(caption ?? document.body);
+		fireEvent.click(foot ?? document.body);
 	});
 	expect(held.started).toEqual([]);
+});
+
+test("the key at the foot of a presented walkthrough's box narrates that walkthrough", async () => {
+	const free = narrating(null);
+	await mountExplained(free.narration);
+	act(() => {
+		fireEvent.click(offers()[0] ?? document.body);
+	});
+	await settle();
+	const foot = document.querySelector("[data-slot='semantic-presentation-narrate']");
+	expect(foot?.getAttribute("aria-disabled")).toBeNull();
+	act(() => {
+		fireEvent.click(foot ?? document.body);
+	});
+	expect(free.started).toEqual(["tour"]);
 });
 
 test("a page that narrates nothing by hand offers no Narrate control", async () => {

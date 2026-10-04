@@ -12,7 +12,7 @@ Side panels present ordinary unavailability and empty states with
 `components/PanelLine.tsx`: muted words and a grey dot; only a real failure gets the
 destructive dot, and its words stay in the foreground colour.
 
-Type roles come from the theme's `text-kicker`, `text-technical`, `text-body`,
+Type roles come from the theme's `text-technical`, `text-body`,
 `text-control` and `text-title` utilities. The registry's `cn` treats an
 unknown `text-*` utility as a colour, so a role and a text colour must never
 share one `cn` call or one `className` handed to a shared component: put both

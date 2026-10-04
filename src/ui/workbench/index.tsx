@@ -7,7 +7,11 @@
 export { AgentDock, type AgentDockProps } from "@/ui/workbench/components/AgentDock";
 export { AgentPanel, type AgentPanelProps } from "@/ui/workbench/components/AgentPanel";
 export { TalkControl, type TalkControlProps } from "@/ui/workbench/components/TalkControl";
-export { VoiceBox, type VoiceBoxProps } from "@/ui/workbench/components/VoiceBox";
+export {
+	VoiceBox,
+	type VoiceBoxPlace,
+	type VoiceBoxProps,
+} from "@/ui/workbench/components/VoiceBox";
 export {
 	VoiceSurfaceProvider,
 	type VoiceSurfaceProviderProps,

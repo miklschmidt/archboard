@@ -42,6 +42,9 @@ const SUBTITLE_STYLE: CSSProperties = {
 const GLASS =
 	"bg-card/96 border-border rounded-panel pointer-events-none border px-5 py-2.5 shadow-float";
 
+/** What sets the words in the pill of a presented walkthrough's box, which is their glass. */
+const BARE = "pointer-events-none mx-6 self-center";
+
 /** Inputs for the words. */
 interface SubtitleWordsProps {
 	/** The voice session's transcript, oldest first. */
@@ -60,6 +63,8 @@ interface VoiceSubtitlesProps {
 	readonly enabled: boolean;
 	/** Whether the person asked for reduced motion, which cuts the fades. */
 	readonly reducedMotion: boolean;
+	/** Whether the words are drawn without glass, in a pill that is theirs, at the foot of a presented walkthrough's box. */
+	readonly bare?: boolean;
 }
 
 /**
@@ -109,8 +114,8 @@ function SubtitleWords(props: SubtitleWordsProps): JSX.Element {
 }
 
 /**
- * The subtitle on screen, in glass of its own, or nothing.
- * @param props The transcript, whether subtitles are wanted, and motion.
+ * The subtitle on screen, in glass of its own or bare in a pill that gives it one, or nothing.
+ * @param props The transcript, whether subtitles are wanted, motion, and whether it is drawn bare.
  * @returns The subtitle, or null while they are off.
  */
 function VoiceSubtitles(props: VoiceSubtitlesProps): JSX.Element | null {
@@ -118,7 +123,7 @@ function VoiceSubtitles(props: VoiceSubtitlesProps): JSX.Element | null {
 		<SubtitleWords
 			transcript={props.transcript}
 			reducedMotion={props.reducedMotion}
-			className={GLASS}
+			className={props.bare === true ? BARE : GLASS}
 		/>
 	) : null;
 }

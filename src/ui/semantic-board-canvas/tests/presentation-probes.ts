@@ -39,7 +39,7 @@ function goTo(index: number): void {
 	act(() => {
 		fireEvent.click(
 			document.querySelector<HTMLElement>(
-				`[data-slot='semantic-presentation-dot'][data-step='${index}']`,
+				`[data-slot='semantic-presentation-step'][data-step='${index}']`,
 			)!,
 		);
 	});
