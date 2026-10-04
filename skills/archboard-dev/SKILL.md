@@ -75,6 +75,17 @@ When the task closes, before you mark any acceptance criterion:
 
 If a task closes without its change, shelve its proposals with the reason.
 
+## The README's assets
+
+The README shows the renderer, the shell, the example vault, some of the
+dogfood boards and CLI output. A task that changes any of them can leave the
+README showing an older product. Before such a task closes, run
+`bun run readme:check`. If it lists an asset that your change made stale,
+refresh it with `bun run readme:assets <name>` and look at what it wrote.
+Commit the files with `docs/readme/assets.json`. Codex assets spend the
+owner's Codex usage: list them in the report for a person to run.
+`docs/agents/readme-assets.md` says how each asset is made.
+
 ## Removing or renaming something
 
 Every description of archboard outlives the code it describes unless the change

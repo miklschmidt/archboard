@@ -114,8 +114,10 @@ Archboard server. Nothing here was dragged into place."
 
 ## Evidence on Hand
 
-- `docs/readme/`: the README's clips and images, each filmed or rendered from
-  a running Archboard server, and SVGs drawn by `archboard semantic render`.
+- `docs/readme/`: the README's SVGs drawn by `archboard semantic render`, its
+  clips filmed from a running Archboard server, and its banner made with Codex
+  image generation. `bun run readme:assets` makes each of them
+  (`docs/agents/readme-assets.md`).
 - Three narrated videos on GitHub, linked from the README.
 - `examples/web-shop`: the example vault with history, proposals, drill-down
   and walkthroughs.
