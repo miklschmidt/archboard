@@ -14,32 +14,33 @@ type Rect = {
 	height: number;
 };
 
-/** The shell's columns and bars as the desktop viewport lays them out. */
+/** The shell's columns as the desktop viewport lays them out. */
 type DesktopShell = {
 	viewport: { width: number; height: number };
-	nav: Rect;
-	centre: Rect;
+	/** The navigator's column: the brand bar, the navigator and the agent dock. */
+	column: Rect;
+	/** The pane centre: every pane and its header. */
 	stages: Rect;
 	pane: Rect;
-	bar: Rect;
-	composer: Rect;
+	/** The agent dock at the navigator's foot. */
+	dock: Rect;
+	/** The composer, at the foot of the conversation while it is open. */
+	composer: Rect | null;
 	/** The conversation panel, while it is open. */
 	panel: Rect | null;
 };
 
 type ThemeSnapshot = {
 	theme: "light" | "dark";
+	/** The wordmark's visible text, set in the display face. */
 	wordmark: string;
-	wordmarkMask: string;
 	wordmarkSize: { width: number; height: number };
-	unexpectedBrandIconCount: number;
-	headerHeight: number;
-	selection: string;
+	/** The brand bar and the pane header share one top edge and one height. */
+	chromeRowsAligned: boolean;
 	status: string;
 	background: string;
 	inkContrast: number;
 	flatSurfaces: boolean;
-	shadowlessSurfaces: boolean;
 	visibleFocus: boolean;
 	boardIdentity: string;
 	/** The name of the variant the header says is shown. */
@@ -47,10 +48,10 @@ type ThemeSnapshot = {
 	/** The board the navigator marks as the one being read. */
 	selectedBoard: string | null;
 	focusedPaneCount: number;
-	/** Visible connection warnings in the header; none while the socket is up. */
+	/** Visible connection warnings in the pane header; none while the socket is up. */
 	connectionTrouble: number;
+	/** The board's name sits before the pane's controls, centred on one line with them. */
 	headerSectionsAligned: boolean;
-	wordmarkTracking: string;
 	fontChecks: boolean[];
 	fontResources: string[];
 	diagramFontResources: string[];
@@ -66,11 +67,11 @@ type ThemeSnapshot = {
 	presentTarget: { width: number; height: number };
 };
 
-type PaneBarLayout = {
-	tabCount: number;
-	tabHeights: number[];
-	pressedCount: number;
-	tabType: ShellMetrics | null;
+/** The pane letters in the pane headers. */
+type PaneLetters = {
+	count: number;
+	/** How many are drawn as the letter of the pane with focus. */
+	active: number;
 };
 
 type NoticeLayout = {
@@ -88,6 +89,6 @@ export {
 	type ShellMetrics,
 	type DesktopShell,
 	type ThemeSnapshot,
-	type PaneBarLayout,
+	type PaneLetters,
 	type NoticeLayout,
 };
