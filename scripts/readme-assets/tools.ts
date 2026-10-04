@@ -86,10 +86,17 @@ async function run(argv: readonly string[], options: RunOptions = {}): Promise<R
  * @returns Its path.
  */
 function scratch(...parts: readonly string[]): string {
-	const base = process.env["ARCHBOARD_README_SCRATCH"] || join(tmpdir(), "archboard-readme-assets");
-	const directory = join(base, ...parts);
+	const directory = join(scratchRoot(), ...parts);
 	mkdirSync(directory, { recursive: true });
 	return directory;
+}
+
+/**
+ * Where the scratch directory is, made or not.
+ * @returns Its path.
+ */
+function scratchRoot(): string {
+	return process.env["ARCHBOARD_README_SCRATCH"] || join(tmpdir(), "archboard-readme-assets");
 }
 
 /**
@@ -179,7 +186,7 @@ function toolLine(name: string, find: () => string): string {
  */
 function toolLines(): readonly string[] {
 	return [
-		toolLine("scratch", () => scratch()),
+		toolLine("scratch", scratchRoot),
 		toolLine("chromium", chromiumPath),
 		toolLine("ffmpeg", () => ffmpegCommand().join(" ")),
 		toolLine("pyftsubset", () => pyftsubsetCommand().join(" ")),
