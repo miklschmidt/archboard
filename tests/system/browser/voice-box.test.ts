@@ -26,8 +26,7 @@ import {
 // them on flies it out again. What this owner holds is what a person sees come out of that: one
 // orb, resting exactly in the socket of the home it is in, never left in the air, and seen as one
 // shared element: it leaves from where it was seen, the dock draws no seat for it while it is in the
-// air, and the box draws none of its own. While voice starts and while the orb flies, the page never
-// grows past the window, not even for a frame.
+// air, and the box draws none of its own. The page never grows past the window, not even for a frame.
 // The box takes no pointer input from the picture except at its two controls, and keyboard focus
 // follows the subtitles control from the surface that loses it to the one that takes it, pressed
 // twice at once. Voice starting with subtitles on is lit in the box and not launched out of the Talk key.
@@ -109,11 +108,6 @@ test("the voice is in the box while subtitles are on, and the one orb flies betw
 	const leavesDock = (await seenSoFar(browser)).slice(toBox).find((frame) => frame.air);
 	expect(leavesDock?.at && docked.at && apart(leavesDock.at, docked.at)).toBeLessThan(24);
 
-	// The page was never larger than the window, on any frame of the start or of either flight. The
-	// keyboard's handoff below is left out: the tooltip of the control that takes focus opens at that
-	// control's place in a dock that is still growing, and its arrow lies below the window for a frame.
-	expect(Math.max(...(await seenSoFar(browser)).map((frame) => frame.over))).toBe(0);
-
 	// From the keyboard: Enter on the box's control hands focus to the dock's, and Enter there, at
 	// once, hands it back to the box's, which is still leaving or has only just gone.
 	await browser.run(["focus", SUBTITLES_IN_BOX]);
@@ -129,6 +123,10 @@ test("the voice is in the box while subtitles are on, and the one orb flies betw
 	);
 	expect(boxAgain.focus).toBe("voice-box");
 	expect(boxAgain.orbs).toBe(1);
+
+	// The page was never larger than the window, on any frame of any of it. The keyboard's handoff
+	// opens the tooltip of the dock's control while the dock is still growing to show it.
+	expect(Math.max(...(await seenSoFar(browser)).map((frame) => frame.over))).toBe(0);
 
 	await server.assertRunning();
 }, 40_000);

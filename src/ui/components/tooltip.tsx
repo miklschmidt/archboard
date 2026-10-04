@@ -57,6 +57,10 @@ function TooltipContent({
 				// Archboard: a tooltip with no trigger, such as one over a part of a
 				// drawn picture, is placed against the element it explains.
 				anchor={anchor}
+				// Archboard: fixed, so a tooltip never makes the page larger than the
+				// window. Its arrow can hang past the edge for a frame while a control it
+				// points at is still moving into view, as the agent dock's are.
+				positionMethod="fixed"
 				align={align}
 				alignOffset={alignOffset}
 				side={side}
