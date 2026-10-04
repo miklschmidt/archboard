@@ -1,111 +1,68 @@
-// Voice, in one place: Talk while voice is off, which sets up whatever is
-// missing before it listens; the live meter, what the voice is doing, mute,
-// subtitles and end while it is on. It never disappears: when voice cannot
-// start it says why beside the control that retries.
+// The voice key of a fullscreen presentation's bar: Talk while voice is off, which sets up whatever
+// is missing before it listens, and End voice while it is on. A presented pane has no dock, so the
+// voice itself, with its orb, its words, mute and subtitles, is in the voice box over the picture or
+// at the foot of the walkthrough's box (TASK-392), and the bar holds the one key that starts and
+// ends it. It never disappears: when voice cannot start it says why beside the key that retries.
 
 import { RiErrorWarningLine, RiLoader4Line, RiMicLine, RiPhoneLine } from "@remixicon/react";
 import type { JSX } from "react";
 
 import { Button } from "@/ui/components/button";
-import { SubtitlesToggle } from "@/ui/voice-subtitles";
-import { VoiceOutputWave, type VoiceWaveState } from "@/ui/voice-wave";
 import type { AgentActions, AgentVoiceView, VoiceStage } from "@/ui/workbench/contracts";
-import { MuteAction } from "@/ui/workbench/components/MuteAction";
-import { useAudible } from "@/ui/workbench/hooks/use-audible";
 
 /** Inputs for the Talk control. */
 interface TalkControlProps {
 	readonly voice: AgentVoiceView;
 	readonly actions: AgentActions;
-	readonly reducedMotion: boolean;
 }
 
 /** Where the element saying why voice cannot start is, for the button it describes. */
 const TALK_PROBLEM_ID = "talk-problem";
 
-/** What the voice is doing, in a word, while it is on or connecting. */
-const LIVE_WORDS: Partial<Readonly<Record<VoiceStage, string>>> = {
-	connecting: "Connecting",
-	listening: "Listening",
-	speaking: "Speaking",
-	muted: "Muted",
-};
-
-/** The wave's state for each live stage. */
-const WAVE_STATES: Readonly<Record<VoiceStage, VoiceWaveState>> = {
-	idle: "inactive",
-	preparing: "connecting",
-	connecting: "connecting",
-	listening: "listening",
-	speaking: "speaking",
-	muted: "listening",
-	stopping: "inactive",
-};
-
 /**
- * What the live voice is doing, in a word: muted says so first; otherwise the
- * model's measured output decides whether it is speaking.
- * @param voice The voice.
- * @param audible Whether the model is audible now.
- * @returns The word, or undefined while voice is not live.
+ * The stages in which the key ends voice: from the moment voice connects, so a session stuck
+ * connecting or recovering can always be ended.
  */
-function liveWord(voice: AgentVoiceView, audible: boolean): string | undefined {
-	const word = LIVE_WORDS[voice.stage];
-	if (word === undefined || voice.stage === "muted") return word;
-	return audible ? "Speaking" : word;
-}
+const ENDABLE: ReadonlySet<VoiceStage> = new Set(["connecting", "listening", "speaking", "muted"]);
 
 /**
- * Voice, in one place.
- * @param props The voice, the actions and the motion preference.
- * @returns The control.
+ * The voice key.
+ * @param props The voice and the actions.
+ * @returns The key.
  */
 function TalkControl(props: TalkControlProps): JSX.Element {
-	const audible = useAudible(props.voice);
-	const word = liveWord(props.voice, audible);
-	if (word === undefined) return <TalkButton voice={props.voice} actions={props.actions} />;
-	return <LiveVoice {...props} word={word} audible={audible} />;
+	const { voice, actions } = props;
+	return ENDABLE.has(voice.stage) ? (
+		<EndButton voice={voice} actions={actions} />
+	) : (
+		<TalkButton voice={voice} actions={actions} />
+	);
 }
 
 /**
- * Voice while it is on, or getting there: the output wave, what it is doing,
- * mute, subtitles and End — which is there from the moment voice connects, so
- * a session stuck connecting or recovering can always be ended.
- * @param props The voice, the actions, the motion preference and the word.
- * @param props.word What the voice is doing, in a word.
- * @param props.audible Whether the model is audible now.
- * @returns The live controls.
+ * End voice, while it is on or getting there. The edge is gold, as the dock's key is while the voice
+ * box carries the voice.
+ * @param props The voice and the actions.
+ * @param props.voice The voice.
+ * @param props.actions The actions.
+ * @returns The key.
  */
-function LiveVoice(
-	props: TalkControlProps & { readonly word: string; readonly audible: boolean },
-): JSX.Element {
-	const { voice, actions } = props;
+function EndButton(props: {
+	readonly voice: AgentVoiceView;
+	readonly actions: AgentActions;
+}): JSX.Element {
 	return (
-		<div data-voice-controls="live" className="flex shrink-0 items-center gap-1.5">
-			<VoiceOutputWave
-				state={props.audible ? "speaking" : WAVE_STATES[voice.stage]}
-				level={voice.level.read}
-				active
-				size="icon"
-				reducedMotion={props.reducedMotion}
-				className="w-16 overflow-hidden"
-			/>
-			<output aria-live="polite" className="text-control w-[76px] font-medium">
-				{props.word}
-			</output>
-			<MuteAction voice={voice} actions={actions} />
-			<SubtitlesToggle />
-			<Button
-				variant="outline"
-				size="sm"
-				className="rounded-control h-7 gap-1.5 px-2.5"
-				onClick={actions.endVoice}
-				disabled={voice.busy}
-			>
-				<RiPhoneLine aria-hidden="true" className="size-3.5 rotate-[135deg]" />
-				End
-			</Button>
-		</div>
+		<Button
+			variant="outline"
+			size="sm"
+			data-voice-controls="live"
+			className="rounded-control border-primary-mark h-7 gap-1.5 px-2.5"
+			onClick={props.actions.endVoice}
+			disabled={props.voice.busy}
+		>
+			<RiPhoneLine aria-hidden="true" className="size-3.5 rotate-[135deg]" />
+			End voice
+		</Button>
 	);
 }
 

@@ -197,11 +197,26 @@ A presented walkthrough steps the sidebar aside. While it lasts the control in t
 header is held and says so, and neither it nor the search shortcut shows or hides
 the sidebar.
 
-A presented walkthrough (TASK-250) is the picture and a caption laid over its
-bottom edge, with the sidebar stepped aside: the step's heading in the
-`presentation` type role, its words under it, where it is in the walkthrough, the
-steps, and previous and next. The camera keeps the subjects of the step clear
-of the caption. The subjects include the parts at both ends of each relationship
+A presented walkthrough (TASK-250, TASK-392) is the picture and one plate laid over its
+foot, with the sidebar stepped aside. The plate has a rail of steps along its top, the
+step's number set as a drawing's sheet number is, its heading in the `presentation` type
+role with its words under it in the `reading` role and the name of the walkthrough under
+those, and at their end the keys: previous, next and leave. At its foot is a pill for the
+voice: the key that narrates the walkthrough while voice is off, and the voice box, with
+its orb, its words, mute and the subtitles control, while it is live. The box keeps one
+height whatever the voice is doing, so the picture does not move with it. A fullscreen
+presentation has no dock, so the voice box carries the voice there whatever the person
+wants of subtitles, and the bar holds one key that starts and ends voice. DESIGN.md
+describes the plate.
+
+![The walkthrough box with the voice at its foot, idle and while the voice speaks, in
+the light and the dark theme](assets/walkthrough-box.png)
+
+Rendered captures at 1920×1080. Top, the box while voice is off, with the key that
+narrates. Bottom, the box while the voice speaks.
+
+The camera keeps the subjects of the step clear
+of the plate. The subjects include the parts at both ends of each relationship
 or step that the step names. If the step names messages of a flow, the camera
 shows their rows, and the one row before them, from the top of the picture.
 The row before them stays because it usually says why they happen. The camera
@@ -346,7 +361,9 @@ work in the dark theme.
   and takes the capsule away, and turning them on flies it out again: only one orb
   is ever on the page, and nothing that looks like it waits where it left or where
   it will land. Voice starting lights the orb in the capsule and does not launch it
-  from the Talk key. A presented pane and a recording have plain subtitles.
+  from the Talk key. While a walkthrough is presented the voice is at the foot of its box, and in a
+  fullscreen presentation, which has no dock, it stays in a box whatever the person wants of
+  subtitles. A recording has plain subtitles.
   DESIGN.md describes the dock and the box.
 - Session details (account, model, context used, thread, the voice
   coordinator) are one menu away, not on screen.

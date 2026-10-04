@@ -178,6 +178,18 @@ const PICTURE_EXIT_MS = 280;
 const PRESENTATION_STEP_MS = 900;
 
 /**
+ * How long a presented walkthrough's box takes to arrive over the foot of the picture: it rises a
+ * few pixels and fades in, once, as the camera sets out for the first step.
+ *
+ * Pulls against two things. The box is what is read first, so it is in well before the camera's
+ * glide ends (`PRESENTATION_STEP_MS`), and it is there before the voice's orb, which flies into its
+ * foot, can land (`VOICE_FLIGHT_MS`). And it is the answer to the press that opened the
+ * walkthrough, so it cannot make a person wait: past a quarter of a second it is slower than the
+ * press.
+ */
+const PRESENTATION_BOX_IN_MS = 220;
+
+/**
  * How long a picture takes to cross-fade between its cards drawn near (name
  * and responsibility) and seen from far away (name alone, larger), when the
  * camera crosses the far-view scale. Pulls against the zoom it follows: shorter
@@ -205,6 +217,7 @@ export {
 	PICTURE_EXIT_MS,
 	PICTURE_TRANSITION_MS,
 	PICTURE_TRANSITION_PHASES,
+	PRESENTATION_BOX_IN_MS,
 	PRESENTATION_STEP_MS,
 	SUBJECT_TIP_DELAY_MS,
 	TRAFFIC_GAP_LIMITS_MS,

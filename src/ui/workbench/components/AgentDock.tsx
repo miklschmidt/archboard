@@ -11,7 +11,8 @@
 // the subtitles control, and the dock is calm again, with the Talk key turned into a key
 // that ends voice. Turning subtitles off flies the orb back and the key becomes the circle.
 // The dock asks the orb's stage whether the box is there, so it never gives the voice up
-// to a box that no pane draws.
+// to a box that no pane draws. While the dock is off screen, as in a fullscreen presentation,
+// the box carries the voice whatever the person wants of subtitles.
 //
 // Both layouts hold the same parts, which the grid places (app.css, [data-part]).
 // So the Talk key turns into the circle, and the dock's motion plays every part
@@ -66,6 +67,8 @@ interface AgentDockProps {
 	readonly unread: boolean;
 	readonly onTogglePanel: () => void;
 	readonly reducedMotion: boolean;
+	/** Whether the dock is off screen, as while a pane is presented fullscreen: the voice box then carries the voice. */
+	readonly dockless: boolean;
 }
 
 /**
@@ -145,7 +148,7 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 	const voice = dockVoice(view, now);
 	const on = useCircleState(voice) !== "off";
 	// The voice is in the box over the picture, or at the head of the dock: the dock's layout is live in the second.
-	const boxed = useVoiceBoxed(on, useOrbOffered("box"));
+	const boxed = useVoiceBoxed(on, useOrbOffered("box"), props.dockless);
 	const live = on && !boxed;
 	const steps = dockSteps(view);
 	const dock = useRef<HTMLElement>(null);

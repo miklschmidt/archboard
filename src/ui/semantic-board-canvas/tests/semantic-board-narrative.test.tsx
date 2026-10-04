@@ -166,10 +166,11 @@ test("choosing a walkthrough presents its first step, in the frame, with where i
 	await presenting();
 	expect(current()).toBe("The shape of it");
 	expect(part("semantic-presentation").textContent).toContain("Two modules and one call.");
-	expect(part("semantic-presentation-count").textContent.replaceAll(/\s/g, "")).toBe("1/4");
-	const dots = [...document.querySelectorAll("[data-slot='semantic-presentation-dot']")];
-	expect(dots).toHaveLength(4);
-	expect(dots[0]?.getAttribute("aria-current")).toBe("step");
+	expect(part("semantic-presentation-count").textContent.replaceAll(/\s/g, "")).toBe("1of4");
+	expect(part("semantic-presentation-name").textContent).toBe(WALKTHROUGH.name);
+	const steps = [...document.querySelectorAll("[data-slot='semantic-presentation-step']")];
+	expect(steps).toHaveLength(4);
+	expect(steps[0]?.getAttribute("aria-current")).toBe("step");
 	// The pane is the picture and its caption while it lasts: the sidebar steps aside.
 	expect(part("semantic-reading-area").hasAttribute("data-walkthrough")).toBe(true);
 	expect(part("semantic-board-stage").getAttribute("data-presentation-step")).toBe("0");

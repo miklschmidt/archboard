@@ -14,7 +14,6 @@ import { createCn } from "cn/config";
  * be unreachable and would stop colour conflicts from merging.
  */
 const TYPE_ROLES = [
-	"kicker",
 	"technical",
 	"body",
 	"control",
@@ -22,6 +21,8 @@ const TYPE_ROLES = [
 	"nav",
 	"name",
 	"presentation",
+	"reading",
+	"figure",
 	"subtitle",
 ] as const;
 

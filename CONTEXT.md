@@ -284,6 +284,17 @@ target views, and focused diagram subjects. It supports presenting architecture
 while highlighting the parts being discussed.
 _Avoid_: variant, flow
 
+**Walkthrough box**:
+The plate a presented walkthrough lays over the foot of its pane's picture. It
+holds the step's number, its heading and its words (the caption), the name of
+the walkthrough, the keys that step and leave, and a rail of steps that goes to
+any of them. At its foot is a pill for the voice: the key that starts a
+narration while voice is off, and the voice box while it is live. A recording
+and the replay of a kept talk draw it without keys. It is presentation: the
+browser's own, written nowhere.
+_Avoid_: caption strip (its retired form), presentation bar (the bar over a
+fullscreen presentation), subtitle bar
+
 **Narration**:
 A voice session started to explain one walkthrough while the user steps
 through it by hand. Archboard opens its first step in the pane. It hands the
@@ -327,8 +338,11 @@ voice is live and a box is on the page, the voice's orb, its state in a word,
 mute and the subtitles control are in a box over the picture of the pane voice
 runs for, beside the words, and the agent dock does not draw the circle: it
 gives the voice up only to a box that is there. Turning subtitles off flies the
-one orb back to the dock. A presented pane and a recording have plain subtitles,
-with no box. It is presentation, like the subtitle.
+one orb back to the dock. While a walkthrough is presented the voice box is in
+the foot of the walkthrough box. A fullscreen presentation has no dock, so the
+box carries the voice there whatever the user wants of subtitles, which then
+decide only whether there are words. A recording has plain subtitles, with no
+box. It is presentation, like the subtitle.
 _Avoid_: caption box, voice panel, subtitle bar
 
 **Pane news**:

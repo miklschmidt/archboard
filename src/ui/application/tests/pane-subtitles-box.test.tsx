@@ -2,10 +2,11 @@
 // and plain subtitles where the box has no place.
 //
 // What is guarded: with subtitles on and a voice live the subtitles are the box's, so the voice
-// is read where its words are; turning subtitles off takes the box away; a pane that is presented
-// (which has its own voice controls) keeps plain subtitles, and a recording
-// has them whatever the person chose, because nobody watching the video can turn them on; and a
-// voice that is not on has no box.
+// is read where its words are; turning subtitles off takes the box away; a fullscreen presentation,
+// which has no dock to take the voice back, keeps the box whatever the person chose and lets the
+// subtitles decide only whether there are words; a recording has plain subtitles whatever the
+// person chose, because nobody watching the video can turn them on; and a voice that is not on has
+// no box.
 //
 // The words come from the demonstration's transcript, which is what a pane is given when it has
 // no transport, except in the one test of a voice heard over a transport, where a stand-in feed
@@ -148,28 +149,41 @@ const HEARD: VoiceFeed = { subscribe: listenToNothing, voice: heardVoice };
 
 /** What a pane is given. */
 interface PaneSetup {
-	readonly stage?: AgentVoiceView["stage"];
-	readonly boxAvailable?: boolean;
-	readonly recording?: boolean;
+	readonly stage: AgentVoiceView["stage"];
+	readonly boxAvailable: boolean;
+	readonly recording: boolean;
+	/** Whether the agent dock is off screen, as in a fullscreen presentation. */
+	readonly dockless: boolean;
 	/** Where the pane hears its voice, or null for the demonstration. */
-	readonly feed?: VoiceFeed | null;
+	readonly feed: VoiceFeed | null;
 }
+
+/** A live voice in a pane that can carry it, in the workspace, unless a test says otherwise. */
+const LIVE_PANE: PaneSetup = {
+	stage: "listening",
+	boxAvailable: true,
+	recording: false,
+	dockless: false,
+	feed: null,
+};
 
 /**
  * A pane's subtitles, in a page that has the orb's stage and the voice.
  * @param setup What differs from a live voice in a pane that can carry it.
  * @returns The subtitles, drawn.
  */
-function pane(setup: PaneSetup = {}): JSX.Element {
+function pane(setup: Partial<PaneSetup> = {}): JSX.Element {
+	const given = { ...LIVE_PANE, ...setup };
 	return (
 		<OrbStageProvider>
 			<TooltipProvider>
-				<VoiceSurfaceProvider voice={voiceIn(setup.stage ?? "listening")} actions={NO_ACTIONS}>
+				<VoiceSurfaceProvider voice={voiceIn(given.stage)} actions={NO_ACTIONS}>
 					<PaneSubtitles
-						feed={setup.feed ?? null}
+						feed={given.feed}
 						reducedMotion={false}
-						recording={setup.recording ?? false}
-						boxAvailable={setup.boxAvailable ?? true}
+						recording={given.recording}
+						boxAvailable={given.boxAvailable}
+						dockless={given.dockless}
 					/>
 				</VoiceSurfaceProvider>
 			</TooltipProvider>
@@ -240,10 +254,16 @@ test("a voice heard over a transport is carried by the box too, and by plain sub
 	expect(plain()).toBe(true);
 });
 
-test("a pane that is presented keeps plain subtitles, and its voice controls are in the presentation", () => {
-	render(pane({ boxAvailable: false }));
-	expect(boxed()).toBe(false);
-	expect(plain()).toBe(true);
+test("a fullscreen presentation has no dock, so the box carries the voice whatever the person chose", () => {
+	subtitlePreference.change(false);
+	render(pane({ dockless: true }));
+	expect(boxed()).toBe(true);
+	// The words are what the person turned off: the box holds the voice and says nothing.
+	expect(
+		document
+			.querySelector('[data-slot="voice-box"] [data-slot="voice-subtitles"]')
+			?.getAttribute("data-showing"),
+	).toBe("false");
 });
 
 test("a recording has plain subtitles whatever the person chose, and never the box", () => {

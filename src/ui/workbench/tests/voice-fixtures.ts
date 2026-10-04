@@ -60,6 +60,10 @@ function voiceIn(stage: AgentVoiceView["stage"], busy = false): AgentVoiceView {
 function recordingActions(pressed: string[]): AgentActions {
 	return {
 		...IDLE_ACTIONS,
+		/** Talk was pressed. */
+		talk: () => {
+			pressed.push("talk");
+		},
 		/** Mute was pressed. */
 		mute: () => {
 			pressed.push("mute");
