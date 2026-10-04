@@ -25,6 +25,24 @@ const EXPLORING_MS = Object.freeze({
 	 */
 	cameraFling: 320,
 	/**
+	 * How long the camera must have been still, after a hand moved it, before the
+	 * traffic of the picture begins to move again.
+	 *
+	 * Pulls against the hand. A thrown drag slows to a crawl before it stops, so
+	 * at 150 ms or less traffic wakes up under a board that is still drifting; past
+	 * about 600 ms a board the reader has let go of looks stalled.
+	 */
+	trafficRest: 400,
+	/**
+	 * How long traffic takes to come back to its full speed, from standing still.
+	 *
+	 * Pulls against the eye. At 500 ms or less the pulses lurch into motion, which
+	 * reads as a switch; past about two seconds the lines look sluggish for as
+	 * long as the reader has already looked at the board. It eases in and out, so
+	 * the first moments are barely a creep.
+	 */
+	trafficStart: 1500,
+	/**
 	 * How long the camera glides to the whole board when the fit key is pressed.
 	 * Shorter than a walkthrough step (`PRESENTATION_STEP_MS`) because the reader
 	 * asked for it and is waiting; long enough that the path, which pulls back to

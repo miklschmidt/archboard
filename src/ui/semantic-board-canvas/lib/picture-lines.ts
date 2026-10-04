@@ -26,7 +26,11 @@ import {
 	type Updater,
 } from "@/ui/semantic-board-canvas/lib/picture-motion";
 import { cloneElement, type SubjectGroup } from "@/ui/semantic-board-canvas/lib/picture-pairing";
-import { SUBJECT_ATTRIBUTE, TRAFFIC_ATTRIBUTE } from "@/ui/semantic-board-canvas/lib/subjects";
+import {
+	PULSE_CLASS,
+	SUBJECT_ATTRIBUTE,
+	TRAFFIC_ATTRIBUTE,
+} from "@/ui/semantic-board-canvas/lib/subjects";
 
 /** How much of an arrival is spent fading in before the rest is drawing on. */
 const ARRIVE_FADE_SHARE = 0.25;
@@ -68,8 +72,8 @@ function pulsesOn(group: Element): SVGElement[] {
 	const id = group.getAttribute(SUBJECT_ATTRIBUTE);
 	const layer = group
 		.closest("svg")
-		?.querySelectorAll<SVGElement>(`[${TRAFFIC_ATTRIBUTE}="${id}"] .ab-pulse`);
-	return [...group.querySelectorAll<SVGElement>(".ab-pulse"), ...(layer ?? [])];
+		?.querySelectorAll<SVGElement>(`[${TRAFFIC_ATTRIBUTE}="${id}"] .${PULSE_CLASS}`);
+	return [...group.querySelectorAll<SVGElement>(`.${PULSE_CLASS}`), ...(layer ?? [])];
 }
 
 /**

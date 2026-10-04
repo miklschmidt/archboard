@@ -19,7 +19,9 @@ import { paletteInk } from "@/ui/semantic-board-canvas/lib/palette";
 import { vaultCheckQuery } from "@/ui/semantic-board-canvas/lib/queries";
 import {
 	subjectTip,
+	tipAnchor,
 	type SubjectTip,
+	type TipAnchor,
 	type TipTarget,
 } from "@/ui/semantic-board-canvas/lib/subject-tips";
 
@@ -39,13 +41,14 @@ function SemanticSubjectTip(props: {
 	const { target } = props;
 	const levels = useQuery(vaultCheckQuery()).data?.policy.levels;
 	const tip = target === null ? null : tipOver(target, props.reading, props.far, levels);
-	if (target === null || tip === null) {
+	const anchor = useTipAnchor(target);
+	if (tip === null || anchor === null) {
 		return null;
 	}
 	return (
 		<Tooltip open>
 			<TooltipContent
-				anchor={target.anchor}
+				anchor={anchor}
 				sideOffset={10}
 				look="card"
 				data-slot="semantic-subject-tip"
@@ -56,6 +59,18 @@ function SemanticSubjectTip(props: {
 			</TooltipContent>
 		</Tooltip>
 	);
+}
+
+/**
+ * What a tip is placed against: the part it is over, drawn without its traffic.
+ * The same for as long as the tip is over one part, so the tip is not placed
+ * afresh on every render.
+ * @param target The part whose tip is open, or null.
+ * @returns The anchor, or null when no tip is open.
+ */
+function useTipAnchor(target: TipTarget | null): TipAnchor | null {
+	const part = target?.anchor ?? null;
+	return useMemo(() => (part === null ? null : tipAnchor(part)), [part]);
 }
 
 /**

@@ -68,6 +68,12 @@ faster by the same factor.
 Reduced motion hides every pulse. A relationship that is removed or removed
 standing carries no traffic. Traffic is still illustration, not measurement.
 
+In the browser, traffic stands still while a hand moves the camera: a drag, a
+throw that is still coasting, a wheel or a key. It comes back only after the
+camera has been still for 400 ms, and then it starts from a creep and reaches
+its speed over 1.5 seconds, so no pulse jumps. A camera that the page moves by
+itself, such as a fit or a step of a walkthrough, leaves traffic running.
+
 The paragraphs after the settled requirements hold again, with one change: a
 pulse flies at 2S, so it takes L/2S seconds to cross a line of length L. The
 spacing is S/V (within the limits above), and a longer line holds more pulses

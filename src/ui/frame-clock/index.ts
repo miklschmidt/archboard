@@ -5,6 +5,6 @@ export {
 	PICTURE_CLOCK,
 	driveFramesFrom,
 	frameClock,
-	holdTraffic,
 	type FrameClock,
 } from "@/ui/frame-clock/lib/clock";
+export { paceTraffic, type TrafficPace } from "@/ui/frame-clock/lib/traffic-pace";

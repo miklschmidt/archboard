@@ -11,6 +11,7 @@
 import { drillWayWords } from "@/ui/semantic-board-canvas/lib/drill-way";
 import type { SemanticEdge, SemanticNode, SemanticVariant } from "@/shared/semantic-board/index";
 import { drawnAppearance, type AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
+import { PULSE_CLASS } from "@/ui/semantic-board-canvas/lib/subjects";
 
 /** The attribute naming the subject a group of the picture draws. */
 const SUBJECT_ATTRIBUTE = "data-semantic-id";
@@ -72,6 +73,54 @@ function partOf(group: Element, id: string, clientY: number): TipTarget | null {
 		return { id, part: "card", anchor: group };
 	}
 	return kind === "region" ? headerBand(group, id, clientY) : null;
+}
+
+/** A box a tip is placed against, as a positioning library reads one that is no element. */
+interface TipAnchor {
+	/** The element the box is in, which is what the library watches for changes. */
+	readonly contextElement: Element;
+	/**
+	 * Where the box is now.
+	 * @returns The box, in viewport pixels.
+	 */
+	readonly getBoundingClientRect: () => DOMRect;
+}
+
+/**
+ * The box a tip is placed against: the part as the picture draws it, without
+ * the traffic that runs along its edge. A pulse slides in a bar far longer than
+ * the card it rounds, so the box of the card's group swells and shrinks with
+ * every frame, and a tip placed against that moves with it.
+ *
+ * The picture is what is watched for change, not the part: a part that moves
+ * with the camera closes its tip, and the box itself is read afresh each time.
+ * @param part The part's group.
+ * @returns The anchor.
+ */
+function tipAnchor(part: Element): TipAnchor {
+	return {
+		contextElement: part.closest("svg") ?? part,
+		/**
+		 * The part's box now, without its traffic.
+		 * @returns The box.
+		 */
+		getBoundingClientRect: () => {
+			const boxes = [...part.children]
+				.filter((child) => !child.classList.contains(PULSE_CLASS))
+				.map((child) => child.getBoundingClientRect())
+				// A layer the picture hides at this distance has no box to count.
+				.filter((box) => box.width > 0 || box.height > 0);
+			if (boxes.length === 0) return part.getBoundingClientRect();
+			const left = Math.min(...boxes.map((box) => box.left));
+			const top = Math.min(...boxes.map((box) => box.top));
+			return new DOMRect(
+				left,
+				top,
+				Math.max(...boxes.map((box) => box.right)) - left,
+				Math.max(...boxes.map((box) => box.bottom)) - top,
+			);
+		},
+	};
 }
 
 /**
@@ -222,4 +271,12 @@ function messageKind(kind: string): string {
 /** The lines a label's tip leaves out unless it has them. */
 const UNSAID = { lead: undefined, body: undefined, hint: undefined } as const;
 
-export { openableAt, subjectTip, tipTargetAt, type SubjectTip, type TipTarget };
+export {
+	openableAt,
+	subjectTip,
+	tipAnchor,
+	tipTargetAt,
+	type SubjectTip,
+	type TipAnchor,
+	type TipTarget,
+};
