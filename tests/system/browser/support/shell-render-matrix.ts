@@ -5,11 +5,14 @@ import { dirname, join, resolve as resolvePath } from "node:path";
 import { browserTestRoots, type AgentBrowserSession } from "./agent-browser.ts";
 import type { ThemeSnapshot } from "./shell-contract-types.ts";
 import {
-	AGENT_BAR,
+	AGENT_DOCK,
 	BOARD_BREADCRUMB,
+	BRAND_BAR,
 	NAVIGATOR,
+	NAVIGATOR_COLUMN,
+	PANE_HEADER,
+	PANE_LETTERS,
 	PANE_SECTIONS,
-	PANE_TABS,
 	STAGE_ROOT,
 	switchTheme,
 } from "./shell-dom.ts";
@@ -194,29 +197,33 @@ async function emulateMedia(
 async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 	return browser.eval<MatrixProbe>(`(() => {
 		const shell = document.getElementById('root')?.firstElementChild;
-		const header = document.querySelector('header');
-		const wordmark = header?.querySelector('h1');
+		// The navigator's top row: the brand and the application's own controls.
+		const header = document.querySelector('${BRAND_BAR}');
+		const wordmark = header?.querySelector('h1 > span[aria-hidden="true"]');
 		const named = (root, name) => [...(root?.querySelectorAll('button') ?? [])]
 			.find(node => (node.getAttribute('aria-label') ?? node.textContent ?? '').trim() === name) ?? null;
-		// The header's settings. Nothing on the header opens a board any more:
-		// a person reads what an agent has authored, and moving a pane is the
-		// navigator's job (ADR 0023).
+		// The settings. Nothing in the brand bar opens a board: a person reads
+		// what an agent has authored, and moving a pane is the navigator's job
+		// (ADR 0023).
 		const control = named(header, 'Settings');
+		const panes = [...document.querySelectorAll('${PANE_SECTIONS}')];
+		const pane = panes.find(node => node.getAttribute('aria-current') === 'true');
+		// The pane's own top row, level with the brand bar: where the board sits,
+		// the ways to read it and the pane's controls.
+		const paneHeader = pane?.querySelector('${PANE_HEADER}');
 		const breadcrumb = document.querySelector('${BOARD_BREADCRUMB}');
-		const board = breadcrumb?.querySelector('span');
-		// Which variant is on screen, named beside the board: the fact that
-		// changes while somebody watches (ADR 0023). The level is the board's
-		// altitude, a technical token in the mono face.
-		const variant = breadcrumb?.querySelector('[data-slot="board-state"]');
-		const level = breadcrumb?.querySelector('span.font-mono');
-		const present = document.querySelector('button[aria-label^="Present pane"]');
+		const board = breadcrumb?.querySelector('[data-slot="pane-board-name"]');
+		// Which variant is on screen, named after the board: the fact that
+		// changes while somebody watches (ADR 0023).
+		const variant = breadcrumb?.querySelector('[data-slot="board-state"] > span:last-child');
+		// A technical token in the mono face: how many a tab lists.
+		const technical = paneHeader?.querySelector('[data-slot="board-tab"] .font-mono');
+		const present = paneHeader?.querySelector('button[aria-label^="Present"]');
+		const column = document.querySelector('${NAVIGATOR_COLUMN}');
 		const nav = document.querySelector('${NAVIGATOR}');
 		const filter = nav?.querySelector('input');
 		const stages = document.querySelector('${STAGE_ROOT}');
-		const bar = document.querySelector('${AGENT_BAR}');
-		const status = bar?.querySelector('[data-slot="agent-status"]');
-		const panes = [...document.querySelectorAll('${PANE_SECTIONS}')];
-		const pane = panes.find(node => node.getAttribute('aria-current') === 'true');
+		const bar = document.querySelector('${AGENT_DOCK}');
 		// The navigator selects what the focused pane reads — the board, or its
 		// state when the board's states are listed; the board's name is a human
 		// label beside the header's.
@@ -228,13 +235,14 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 			.find(node => readRow === null || !node.matches(readRow))?.querySelector('[data-board-key]');
 		// A section heading in the pane's sidebar.
 		const sectionHeading = pane?.querySelector('[data-slot] > h2');
-		if (!shell || !header || !wordmark || !control || !board || !variant || !level || !present ||
-			!nav || !filter || !stages || !bar || !status || !pane || !selectedBoard || !rowLabel || !sectionHeading) {
+		if (!shell || !header || !wordmark || !control || !paneHeader || !board || !variant || !technical ||
+			!present || !column || !nav || !filter || !stages || !bar || !pane || !selectedBoard || !rowLabel ||
+			!sectionHeading) {
 			throw new Error('shell matrix probe is incomplete: ' + JSON.stringify({
-				shell: !!shell, header: !!header, wordmark: !!wordmark, control: !!control, board: !!board,
-				variant: !!variant, level: !!level, present: !!present, nav: !!nav, filter: !!filter,
-				stages: !!stages, bar: !!bar, status: !!status, pane: !!pane, selectedBoard: !!selectedBoard,
-				rowLabel: !!rowLabel, sectionHeading: !!sectionHeading }));
+				shell: !!shell, header: !!header, wordmark: !!wordmark, control: !!control,
+				paneHeader: !!paneHeader, board: !!board, variant: !!variant, technical: !!technical,
+				present: !!present, column: !!column, nav: !!nav, filter: !!filter, stages: !!stages, bar: !!bar,
+				pane: !!pane, selectedBoard: !!selectedBoard, rowLabel: !!rowLabel, sectionHeading: !!sectionHeading }));
 		}
 		const round = value => Math.round(value * 1000) / 1000;
 		const rect = node => {
@@ -249,8 +257,6 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		const colorContext = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
 		const rgb = value => { colorContext.clearRect(0, 0, 1, 1); colorContext.fillStyle = value;
 			colorContext.fillRect(0, 0, 1, 1); return [...colorContext.getImageData(0, 0, 1, 1).data].slice(0, 3); };
-		const hairline = shadow => shadow === 'none' || shadow.split(/\\),\\s*/).every(part =>
-			(part.replace(/(rgba?|oklch|color)\\([^)]*\\)/g, '').match(/-?[\\d.]+px/g) ?? []).slice(0, 3).every(px => parseFloat(px) === 0));
 		const luminance = value => {
 			const channels = rgb(value).map(channel => {
 				const unit = channel / 255;
@@ -258,7 +264,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 			});
 			return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
 		};
-		const flat = [shell, header, nav, filter, stages, bar, status, pane];
+		const flat = [shell, header, paneHeader, nav, filter, stages, bar, pane];
 		const humanLabels = [selectedBoard, board];
 		control.focus();
 		const focusStyle = getComputedStyle(control);
@@ -270,9 +276,10 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		document.body.append(animationProbe);
 		const animationStyle = getComputedStyle(animationProbe);
 		const rootStyle = getComputedStyle(document.documentElement);
-		// Every control the header actually offers, read off the header rather
-		// than written down here; an empty header is a failure, not a vacuous pass.
-		const actionTargets = [...header.querySelectorAll('button')].map(node => rect(node));
+		// Every control the two top rows actually offer, read off them rather
+		// than written down here; no control is a failure, not a vacuous pass.
+		const actionTargets = [...header.querySelectorAll('button'), ...paneHeader.querySelectorAll('button')]
+			.map(node => rect(node));
 		if (actionTargets.length === 0) {
 			throw new Error('shell matrix probe found no header controls');
 		}
@@ -284,12 +291,23 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 			animationDuration: animationStyle.animationDuration,
 			animationIterationCount: animationStyle.animationIterationCount };
 		animationProbe.remove();
+		// The surface a node is drawn on: its own fill, else the nearest one under it.
+		const surface = node => {
+			for (let at = node; at; at = at.parentElement) {
+				const fill = getComputedStyle(at).backgroundColor;
+				if (fill !== 'transparent' && !/^rgba\\(.*,\\s*0\\)$/.test(fill)) return fill;
+			}
+			return getComputedStyle(document.body).backgroundColor;
+		};
 		const foreground = luminance(getComputedStyle(wordmark).color);
-		const backdrop = luminance(getComputedStyle(header).backgroundColor);
+		const backdrop = luminance(surface(header));
 		const boardRect = board.getBoundingClientRect();
-		// A live socket is the normal state and says nothing: the header's only
-		// visible output is the reconnecting warning.
-		const connectionTrouble = [...header.querySelectorAll('output')]
+		const presentRect = present.getBoundingClientRect();
+		const headerRect = header.getBoundingClientRect();
+		const paneHeaderRect = paneHeader.getBoundingClientRect();
+		// A live socket is the normal state and says nothing: the pane header's
+		// only visible output is the reconnecting warning.
+		const connectionTrouble = [...paneHeader.querySelectorAll('output')]
 			.filter(node => !node.classList.contains('sr-only')).length;
 		return {
 			deviceScaleFactor: devicePixelRatio,
@@ -308,29 +326,26 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 				document.body.scrollWidth > innerWidth || document.body.scrollHeight > innerHeight,
 			touchTargets,
 			state: { board: board.textContent.trim(), variant: variant.textContent.trim(),
-				level: level.textContent.trim(), connectionTrouble, pane: pane.getAttribute('aria-label'),
-				paneCount: panes.length, paneTabCount: document.querySelectorAll('${PANE_TABS}').length,
+				technical: technical.textContent.trim(), connectionTrouble, pane: pane.getAttribute('aria-label'),
+				paneCount: panes.length, paneLetterCount: document.querySelectorAll('${PANE_LETTERS}').length,
 				rootChildCount: document.getElementById('root')?.childElementCount ?? 0 },
-			geometry: { shell: rect(shell), header: rect(header), nav: rect(nav), stages: rect(stages),
-				bar: rect(bar), pane: rect(pane), board: rect(board), control: rect(control) },
+			geometry: { shell: rect(shell), header: rect(header), paneHeader: rect(paneHeader), column: rect(column),
+				nav: rect(nav), stages: rect(stages), bar: rect(bar), pane: rect(pane), board: rect(board),
+				control: rect(control) },
 			themeSnapshot: {
 				theme: document.documentElement.dataset.theme, wordmark: wordmark.textContent.trim(),
-				wordmarkMask: getComputedStyle(wordmark).maskImage || getComputedStyle(wordmark).webkitMaskImage,
-				wordmarkSize: rect(wordmark), unexpectedBrandIconCount: wordmark.querySelectorAll('svg, img').length,
-				headerHeight: header.getBoundingClientRect().height,
-				selection: rootStyle.getPropertyValue('--primary').trim().toLowerCase(),
+				wordmarkSize: rect(wordmark),
+				chromeRowsAligned: headerRect.top === paneHeaderRect.top && headerRect.height === paneHeaderRect.height,
 				status: rootStyle.getPropertyValue('--status').trim().toLowerCase(), background: getComputedStyle(shell).backgroundColor,
 				inkContrast: (Math.max(foreground, backdrop) + 0.05) / (Math.min(foreground, backdrop) + 0.05),
 				flatSurfaces: flat.every(node => getComputedStyle(node).backgroundImage === 'none'),
-				shadowlessSurfaces: flat.every(node => hairline(getComputedStyle(node).boxShadow)),
 				visibleFocus: ringVisible,
 				boardIdentity: board.textContent.trim(), variant: variant.textContent.trim(),
 				selectedBoard: selectedBoard.getAttribute('data-board-key'),
 				focusedPaneCount: panes.filter(node => node.getAttribute('aria-current') === 'true').length,
 				connectionTrouble,
-				headerSectionsAligned: boardRect.right < focusRect.left &&
-					Math.abs((boardRect.top + boardRect.height / 2) - (focusRect.top + focusRect.height / 2)) < 0.5,
-				wordmarkTracking: rootStyle.getPropertyValue('--tracking-wordmark').trim(),
+				headerSectionsAligned: boardRect.right < presentRect.left &&
+					Math.abs((boardRect.top + boardRect.height / 2) - (presentRect.top + presentRect.height / 2)) < 0.5,
 				fontChecks: [document.fonts.check('400 14px "Archboard Onest"'), document.fonts.check('500 14px "Archboard Onest"'),
 					document.fonts.check('600 14px "Archboard Onest"'), document.fonts.check('700 14px "Archboard Onest"'),
 					document.fonts.check('400 10px "Archboard DM Mono"'), document.fonts.check('500 10px "Archboard DM Mono"')],
@@ -347,7 +362,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 					family: value.fontFamily.toLowerCase(), transform: value.textTransform, weight: parseFloat(value.fontWeight) }; }),
 				sectionHeading: { ...metrics(sectionHeading), transform: getComputedStyle(sectionHeading).textTransform },
 				titleType: metrics(board), bodyType: metrics(rowLabel), stateType: metrics(variant),
-				technicalType: metrics(level), controlType: metrics(control),
+				technicalType: metrics(technical), controlType: metrics(control),
 				actionTargets: actionTargets.map(({ width, height }) => ({ width, height })),
 				presentTarget: (() => { const value = rect(present); return { width: value.width, height: value.height }; })(),
 			}

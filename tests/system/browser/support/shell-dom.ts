@@ -16,10 +16,20 @@ const BOARD_BREADCRUMB = 'section[aria-current="true"] nav[aria-label="Where thi
 const paneSection = (label: string): string => `section[aria-label=${JSON.stringify(label)}]`;
 /** Every pane section. */
 const PANE_SECTIONS = 'section[aria-label^="Pane "]';
+/** A pane's top row: where its board sits, the ways to read it and the pane's controls. */
+const PANE_HEADER = '[data-slot="pane-header"]';
+/** The pane letters in the pane headers, present while two panes are open. */
+const PANE_LETTERS = '[data-slot="pane-header"] [data-slot="pane-letter"]';
+/** The navigator's top row, level with every pane header: the brand, Settings and the theme. */
+const BRAND_BAR = '[data-slot="brand-bar"]';
+/** The agent at the foot of the navigator: its state, Talk and the way to the conversation. */
+const AGENT_DOCK = '[data-slot="agent-dock"]';
 /** The pane chooser and its tabs, present while two panes are open. */
 const PANE_TABS = '[data-slot="toggle-group"][aria-label="Pane"] [data-slot="toggle-group-item"]';
-/** The navigator column. */
+/** The navigator: the filter, the boards and where agents are working. */
 const NAVIGATOR = '[data-slot="navigator"]';
+/** The navigator's whole column: the brand bar, the navigator and the agent dock. */
+const NAVIGATOR_COLUMN = '[data-slot="navigator-column"]';
 /** The agent bar under the panes: the agent's state, Talk and the composer. */
 const AGENT_BAR = '[data-slot="agent-bar"]';
 /** The conversation panel beside the panes, present while it is open. */
@@ -188,13 +198,18 @@ function stageIsFullscreen(browser: PageEvaluator): Promise<boolean> {
 
 export {
 	AGENT_BAR,
+	AGENT_DOCK,
 	AGENT_PANEL,
 	BOARD_BREADCRUMB,
 	BOARD_NAME_EXPRESSION,
+	BRAND_BAR,
 	CLAIM_BANNER,
 	COMPOSER,
 	CONVERSATION_TOGGLE,
 	NAVIGATOR,
+	NAVIGATOR_COLUMN,
+	PANE_HEADER,
+	PANE_LETTERS,
 	PANE_SECTIONS,
 	PANE_TABS,
 	PRESENTATION_BAR,
