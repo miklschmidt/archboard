@@ -157,9 +157,12 @@
 	--color-warning-foreground: var(--warning-foreground);
 	--color-warning-subtle: var(--warning-subtle);
 	/* Rows. chrome: the top row of every column (the brand, a pane's header,
-	   the conversation's title). band: the row under it (the two find fields,
-	   the sidebar's tabs). row: the least a row of a list takes on one line. */
-	--spacing-chrome: 40px;
+	   the conversation's title), as tall as the shell root says
+	   (--shell-chrome-height, from src/shared/shell-geometry): the reference
+	   pane a drawing is measured against is derived from it. band: the row
+	   under it (the two find fields, the sidebar's tabs). row: the least a row
+	   of a list takes on one line. */
+	--spacing-chrome: var(--shell-chrome-height);
 	--spacing-band: 36px;
 	--spacing-row: 28px;
 	/* Shape. chip: a key cap or a pane letter. control: buttons, fields, rows.
@@ -350,7 +353,8 @@
 }
 
 :root {
-	/* The navigator/header width, --shell-navigator-width, is set on the shell
+	/* The navigator's width and the chrome row's height,
+	   --shell-navigator-width and --shell-chrome-height, are set on the shell
 	   root from src/shared/shell-geometry: geometry is not the palette's. */
 	/* Small corners: controls about 3px, dialogs about 4px. */
 	--radius: 0.3rem;
