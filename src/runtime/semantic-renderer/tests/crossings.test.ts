@@ -48,10 +48,10 @@ function routes(svg: string) {
 					].map((path) => path[1]!),
 				),
 			],
-			// The curves its traffic rides, whatever layers the theme gives the traffic.
+			// The curves its traffic rides: the narrow layers of its masks, which run into the next piece.
 			rides: [
 				...new Set(
-					[...trafficOf(svg, group[1]!).matchAll(/<path[^>]* d="([^"]+)"/gu)].map(
+					[...trafficOf(svg, group[1]!).matchAll(/<path d="([^"]+)"[^>]*stroke="#ffffff"/gu)].map(
 						(path) => path[1]!,
 					),
 				),

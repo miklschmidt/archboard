@@ -16,8 +16,10 @@ const CHORDS = 16;
 const LEAST_PIECE = 0.5;
 
 /**
- * How far each piece of a route's mask runs into the next, so the light has no
- * seam where two pieces meet.
+ * How far the narrow, bright layers of a piece's mask run into the next piece, so
+ * the light has no seam where two pieces meet. The wide, faint layers do not: two
+ * of them overlapping add up to twice the light, a bright line across the glow at
+ * every joint, and a seam in a layer that faint is not seen.
  */
 const OVERLAP = 0.5;
 
@@ -211,13 +213,16 @@ function tangentOf(leg: Leg, end: boolean): Point | undefined {
 }
 
 /**
- * One piece of a route as path data, run a hair past each end along the way the
- * route goes, so the masks of two pieces overlap rather than leave a seam.
+ * One piece of a route as path data. Run a hair past each end along the way the
+ * route goes, so the masks of two pieces overlap rather than leave a seam, or
+ * cut off exactly at its ends.
  * @param leg The piece.
+ * @param overlapping Whether to run past the ends.
  * @returns The path data.
  */
-function legPath(leg: Leg): string {
+function legPath(leg: Leg, overlapping = true): string {
 	const { from, segment } = leg;
+	if (!overlapping) return pathOf({ from, segments: [segment] });
 	const start = tangentOf(leg, false) ?? { x: 0, y: 0 };
 	const end = tangentOf(leg, true) ?? { x: 0, y: 0 };
 	return (
