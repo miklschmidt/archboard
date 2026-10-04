@@ -17,7 +17,7 @@ import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 import { useSyncExternalStore, type JSX } from "react";
 
 import { SUBTITLE_LINGER_MS } from "@/shared/timing/timing";
-import { CAPTION_OUT_MS, CAPTION_SWAP_MS } from "@/shared/timing/voice";
+import { SUBTITLE_OUT_MS, SUBTITLE_SWAP_MS } from "@/shared/timing/voice";
 import { TooltipProvider } from "@/ui/components/tooltip";
 import { driveFramesFrom } from "@/ui/frame-clock";
 import { createSteppedClock } from "@/ui/frame-clock/replay";
@@ -192,7 +192,7 @@ test("the subtitle fades out once the voice has been silent for the linger, and 
 		expect(showing()).toBe("false");
 		expect(onScreen()).toBe("Done.");
 		act(() => {
-			clock.advanceTo(SUBTITLE_LINGER_MS + CAPTION_OUT_MS);
+			clock.advanceTo(SUBTITLE_LINGER_MS + SUBTITLE_OUT_MS);
 		});
 		expect(onScreen()).toBeNull();
 	} finally {
@@ -248,8 +248,33 @@ test("a cue gives way to the next with its lines fading under it, and they are g
 		expect(onScreen()).toBe("family");
 		expect(fadingOut()).toBe(words.slice(0, -1).join(" "));
 		act(() => {
-			clock.advanceTo(CAPTION_SWAP_MS);
+			clock.advanceTo(SUBTITLE_SWAP_MS);
 		});
+		expect(fadingOut()).toBeNull();
+	} finally {
+		restore();
+	}
+});
+
+test("words that had begun to fade out do not come back under the next ones", () => {
+	const clock = createSteppedClock(0);
+	const restore = driveFramesFrom(clock);
+	try {
+		const view = render(
+			<VoiceSubtitles transcript={transcriptOf("")} enabled reducedMotion={false} />,
+		);
+		view.rerender(
+			<VoiceSubtitles transcript={transcriptOf("Done.")} enabled reducedMotion={false} />,
+		);
+		act(() => {
+			clock.advanceTo(SUBTITLE_LINGER_MS);
+		});
+		// The paragraph is fading out, and its words are still there.
+		expect(showing()).toBe("false");
+		expect(onScreen()).toBe("Done.");
+
+		view.rerender(<VoiceSubtitles transcript={SURE_THEN_HERE} enabled reducedMotion={false} />);
+		expect(onScreen()).toBe("Here");
 		expect(fadingOut()).toBeNull();
 	} finally {
 		restore();
@@ -407,4 +432,79 @@ test("a subtitles control that did not have focus hands none on", () => {
 	});
 	expect(document.querySelector("[data-surface='dock']")).not.toBeNull();
 	expect(focusSurface()).toBeNull();
+});
+
+/**
+ * Both surfaces on the page at once, as the voice box is while it leaves: the one the preference
+ * does not choose is inert, and still has its control.
+ * @param props The preference both read.
+ * @param props.preference The preference.
+ * @returns The two controls.
+ */
+function BothSurfaces(props: { readonly preference: SubtitlePreference }): JSX.Element {
+	const { preference } = props;
+	const wanted = useSyncExternalStore(preference.subscribe, preference.wanted);
+	return (
+		<TooltipProvider>
+			<div data-surface="box" inert={!wanted}>
+				<SubtitlesToggle preference={preference} />
+			</div>
+			<div data-surface="dock" inert={wanted}>
+				<SubtitlesToggle preference={preference} />
+			</div>
+		</TooltipProvider>
+	);
+}
+
+/**
+ * The subtitles control in one surface.
+ * @param surface Which surface.
+ * @returns The button.
+ */
+function toggleIn(surface: string): HTMLElement {
+	const toggle = document.querySelector<HTMLElement>(
+		`[data-surface='${surface}'] [data-slot='voice-subtitles-toggle']`,
+	);
+	if (toggle === null) throw new Error(`There is no subtitles toggle in the ${surface}.`);
+	return toggle;
+}
+
+test("focus follows the control when the surface that was pressed stays on the page, and when it is pressed again at once", () => {
+	kept.clear();
+	const preference = createSubtitlePreference(storage);
+	render(<BothSurfaces preference={preference} />);
+	act(() => {
+		toggleIn("box").focus();
+	});
+	act(() => {
+		fireEvent.click(toggleIn("box"));
+	});
+	expect(focusSurface()).toBe("dock");
+	// Pressed again before the box has gone: the choice turns round, and focus with it.
+	act(() => {
+		fireEvent.click(toggleIn("dock"));
+	});
+	expect(focusSurface()).toBe("box");
+});
+
+test("a subtitles control that is still there with focus keeps it, whatever other controls are on the page", () => {
+	kept.clear();
+	const preference = createSubtitlePreference(storage);
+	render(
+		<TooltipProvider>
+			<div data-surface="bar">
+				<SubtitlesToggle preference={preference} />
+			</div>
+			<div data-surface="elsewhere">
+				<SubtitlesToggle preference={preference} />
+			</div>
+		</TooltipProvider>,
+	);
+	act(() => {
+		toggleIn("bar").focus();
+	});
+	act(() => {
+		fireEvent.click(toggleIn("bar"));
+	});
+	expect(focusSurface()).toBe("bar");
 });

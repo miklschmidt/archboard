@@ -14,8 +14,12 @@ interface MuteActionProps {
 	readonly actions: AgentActions;
 }
 
+/** The stages in which a voice can be muted or unmuted: it is connected and not ending. */
+const MUTABLE: ReadonlySet<AgentVoiceView["stage"]> = new Set(["listening", "speaking", "muted"]);
+
 /**
- * Mute the voice, or unmute it while it is muted.
+ * Mute the voice, or unmute it while it is muted. It is dimmed, and does nothing, while the
+ * voice is still starting or already ending.
  * @param props The voice and the actions.
  * @returns The control.
  */
@@ -26,7 +30,7 @@ function MuteAction(props: MuteActionProps): JSX.Element {
 		<IconAction
 			label={muted ? "Unmute" : "Mute"}
 			onClick={muted ? actions.unmute : actions.mute}
-			disabled={voice.busy}
+			disabled={voice.busy || !MUTABLE.has(voice.stage)}
 		>
 			{muted ? <RiMicOffLine /> : <RiMicLine />}
 		</IconAction>

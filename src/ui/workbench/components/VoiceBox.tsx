@@ -7,19 +7,27 @@
 // words themselves, and the two controls that belong with them: mute, and the
 // subtitles control, which puts the voice back in the dock. It is click-through
 // except for those two controls, because the canvas under it is what the person is
-// working with, and it takes no more room than the subtitles did, so it hides
-// nothing they did not.
+// working with. It is as high as the plain subtitles were and wider by the orb and the
+// two controls, so it hides little that they did not, and in a pane too narrow for it
+// the words give way and the orb and the controls stay.
 //
 // The box comes with the voice and leaves with it. It stays mounted while it leaves,
-// so it eases away with the orb's flight out of it, and the stage that flies the orb
-// is told where it goes by the preference alone (src/ui/voice-orb).
+// so it eases away with the orb's flight out of it, and it takes no input while it
+// does: it is inert. The stage that flies the orb is told where it goes by the
+// preference alone (src/ui/voice-orb).
 
 import type { CSSProperties, JSX } from "react";
 
-import { CAPTION_OUT_MS, VOICE_BOX_IN_MS, VOICE_BOX_OUT_MS } from "@/shared/timing/voice";
+import {
+	SUBTITLE_BACK_MS,
+	SUBTITLE_OUT_MS,
+	VOICE_BOX_IN_MS,
+	VOICE_BOX_OUT_MS,
+	VOICE_WORD_IN_MS,
+} from "@/shared/timing/voice";
 import { cn } from "@/ui/components/class-names";
 import { OrbSlot } from "@/ui/voice-orb";
-import { Captions, SubtitlesToggle, type SubtitleSource } from "@/ui/voice-subtitles";
+import { SubtitleWords, SubtitlesToggle, type SubtitleSource } from "@/ui/voice-subtitles";
 import { MuteAction } from "@/ui/workbench/components/MuteAction";
 import type { AgentActions, AgentVoiceView } from "@/ui/workbench/contracts";
 import { useCircleState } from "@/ui/workbench/hooks/use-circle-state";
@@ -27,13 +35,16 @@ import { useVoiceBoxPresence } from "@/ui/workbench/hooks/use-voice-box-presence
 import { VOICE_WORDS, type CircleState } from "@/ui/workbench/lib/circle-state";
 
 /**
- * The durations the stylesheet eases the box by (app.css, `voice-box`), and how long the words
- * take to fade out, which the voice's word waits for before it fades in.
+ * The durations the stylesheet eases the box by (app.css, `voice-box`), and the ones the voice's
+ * word shares with the words: it waits for them to fade out before it fades in, and leaves as
+ * fast as they come back.
  */
 const BOX_STYLE: CSSProperties = {
 	"--voice-box-in-ms": `${VOICE_BOX_IN_MS}ms`,
 	"--voice-box-out-ms": `${VOICE_BOX_OUT_MS}ms`,
-	"--caption-out-ms": `${CAPTION_OUT_MS}ms`,
+	"--voice-word-in-ms": `${VOICE_WORD_IN_MS}ms`,
+	"--subtitle-out-ms": `${SUBTITLE_OUT_MS}ms`,
+	"--subtitle-back-ms": `${SUBTITLE_BACK_MS}ms`,
 };
 
 /** Inputs for the voice box. */
@@ -74,18 +85,19 @@ function Box(props: VoiceBoxProps): JSX.Element {
 			data-voice-state={state}
 			data-leaving={props.shown ? undefined : ""}
 			data-still={props.reducedMotion ? "" : undefined}
+			inert={!props.shown}
 			style={BOX_STYLE}
-			className="group/box bg-card/96 border-border rounded-panel shadow-float pointer-events-none relative isolate flex items-center gap-3 border py-1.5 pr-2 pl-1.5"
+			className="group/box bg-card/96 border-border rounded-panel shadow-float pointer-events-none relative isolate flex max-w-full items-center gap-3 border py-1.5 pr-2 pl-1.5"
 		>
 			<OrbSlot
-				home="caption"
+				home="box"
 				className="border-primary-mark bg-card shadow-raised group-data-[voice-state=muted]/box:border-border relative size-16 shrink-0 rounded-full border"
 			/>
-			<div className="group/words grid min-w-0 items-center">
-				<Captions
+			<div data-slot="voice-words" className="grid min-w-0 grid-cols-[minmax(0,1fr)] items-center">
+				<SubtitleWords
 					transcript={props.transcript}
 					reducedMotion={props.reducedMotion}
-					className="col-start-1 row-start-1"
+					className="col-start-1 row-start-1 max-w-full"
 				/>
 				<VoiceWord state={state} />
 			</div>
@@ -114,10 +126,9 @@ function VoiceWord(props: { readonly state: CircleState }): JSX.Element {
 			</output>
 			<span
 				aria-hidden="true"
+				data-slot="voice-word"
 				className={cn(
-					// The word waits for the words to fade out before it fades in, and leaves at once when they return.
-					"text-control col-start-1 row-start-1 px-1 font-medium transition-opacity [transition-delay:var(--caption-out-ms)] duration-300",
-					"group-has-[[data-showing=true]]/words:opacity-0 group-has-[[data-showing=true]]/words:[transition-delay:0ms] group-has-[[data-showing=true]]/words:duration-100",
+					"text-control col-start-1 row-start-1 px-1 font-medium",
 					lit ? "text-primary-text" : "text-muted-foreground",
 				)}
 			>

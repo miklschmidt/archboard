@@ -172,34 +172,61 @@ const VOICE_BOX_OUT_MS = 240;
  * How long each word of a subtitle takes to fade in. Words arrive about every
  * third of a second in speech, so a word that takes this long is still arriving
  * when the next one starts, and the end of the line is a soft edge, not a
- * blink. Pulls against the voice: much slower and the words lag what is said,
- * much faster and they are on screen before the eye has seen them come.
+ * blink. Its ease is slow to start and slow to arrive, so a word is half seen
+ * about a third of the way through and fully seen near the end. Pulls against
+ * the voice: much slower and the words lag what is said, much faster and they
+ * are on screen before the eye has seen them come.
  */
-const CAPTION_WORD_MS = 520;
+const SUBTITLE_WORD_MS = 640;
 
 /**
  * How long the lines of one cue take to fade out under the cue that replaces
  * them, so a full box is not cut to its first new word. Short, because the
  * words it holds have been read.
  */
-const CAPTION_SWAP_MS = 260;
+const SUBTITLE_SWAP_MS = 260;
 
 /**
  * How long a subtitle that has stopped growing takes to fade out once it has
  * lingered. Pulls against the linger before it: the words are going, and they
  * should leave as they came, quietly.
  */
-const CAPTION_OUT_MS = 560;
+const SUBTITLE_OUT_MS = 560;
+
+/**
+ * How long a subtitle that is fading out takes to come back to full, and the
+ * voice's word to leave, when words arrive again. Pulls against the fade out
+ * above: it must be much faster, or the words of a voice that has started to
+ * speak again are dim, and the voice's word is still on screen under them.
+ */
+const SUBTITLE_BACK_MS = 120;
+
+/**
+ * How often a demonstration of the voice (`?voiceDemo`) is read, by the dock and by the voice box
+ * alike, so that the two never disagree about the voice's stage. Often enough that a word arrives
+ * when it is due, and no slower than a word of speech is long.
+ */
+const VOICE_DEMO_TICK_MS = 100;
+
+/**
+ * How long the voice's word ("Listening", "Muted") takes to fade in once the
+ * words have gone from the box. It follows the words' own fade out, so the two
+ * are never on screen together. Pulls against that wait: the box should not be
+ * empty of both for longer than the fade itself.
+ */
+const VOICE_WORD_IN_MS = 300;
 
 export {
-	CAPTION_OUT_MS,
-	CAPTION_SWAP_MS,
-	CAPTION_WORD_MS,
+	SUBTITLE_BACK_MS,
+	SUBTITLE_OUT_MS,
+	SUBTITLE_SWAP_MS,
+	SUBTITLE_WORD_MS,
 	VOICE_ATTACK_MS,
 	VOICE_BOX_IN_MS,
 	VOICE_BOX_OUT_MS,
 	VOICE_BREATH_MS,
 	VOICE_COMET_MS,
+	VOICE_DEMO_TICK_MS,
 	VOICE_EXTINGUISH_MS,
 	VOICE_FLIGHT_MS,
 	VOICE_HUSH_MS,
@@ -215,4 +242,5 @@ export {
 	VOICE_SYLLABLE_MS,
 	VOICE_TRACE_MS,
 	VOICE_TRACE_STEP_MS,
+	VOICE_WORD_IN_MS,
 };

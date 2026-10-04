@@ -7,11 +7,19 @@
 
 import type { BrowserSnapshot } from "@/shared/codex-browser-model";
 import type { SubtitleSource } from "@/ui/voice-subtitles";
+import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 
 /** What of the voice the subtitles read: whether it carries audio, whose it is, and what it said. */
 type SubtitledVoice = Pick<BrowserSnapshot["voice"], "state" | "recording"> & {
 	readonly transcript: readonly SubtitleSource[];
 };
+
+/** Where a pane hears the voice: what it last published, and when that changes. */
+interface VoiceFeed {
+	readonly subscribe: (listener: () => void) => () => void;
+	/** The voice as last published, or null without a snapshot. The same value until it changes. */
+	readonly voice: () => SubtitledVoice | null;
+}
 
 /** Nothing to subtitle. */
 const NOTHING_SAID: readonly SubtitleSource[] = Object.freeze([]);
@@ -33,4 +41,20 @@ function subtitledTranscript(
 	return audible && (voice.recording === true) === recording ? voice.transcript : NOTHING_SAID;
 }
 
-export { subtitledTranscript };
+/**
+ * The voice as a pane hears it over its transport.
+ * @param transport The pane's transport.
+ * @returns The feed.
+ */
+function heardOver(transport: Pick<BrowserWorkbenchTransport, "subscribe" | "state">): VoiceFeed {
+	return {
+		subscribe: transport.subscribe,
+		/**
+		 * The voice as the transport last published it.
+		 * @returns The voice, or null without a snapshot.
+		 */
+		voice: () => transport.state().snapshot?.voice ?? null,
+	};
+}
+
+export { heardOver, subtitledTranscript, type SubtitledVoice, type VoiceFeed };

@@ -1,7 +1,7 @@
 // The orb's stage, as a component reads it, and the one move a surface makes on
 // it: saying where the orb is wanted.
 
-import { createContext, useContext, useLayoutEffect } from "react";
+import { createContext, useContext, useLayoutEffect, useSyncExternalStore } from "react";
 
 import type { OrbHome, OrbStage } from "@/ui/voice-orb/lib/orb-stage";
 
@@ -39,4 +39,20 @@ function useOrbPlacement(placement: OrbPlacement): void {
 	}, [stage, home, shown, reducedMotion]);
 }
 
-export { OrbStageContext, useOrbPlacement, useOrbStage, type OrbPlacement };
+/**
+ * Whether a home has a socket on the page for the orb: the voice box is on the page, and not
+ * only wanted. A surface that would lose the voice to a home asks this, so that it gives the
+ * voice up only to a home that is there.
+ * @param home Which home.
+ * @returns True for as long as the home offers a socket.
+ */
+function useOrbOffered(home: OrbHome): boolean {
+	const stage = useOrbStage();
+	return useSyncExternalStore(
+		stage.subscribe,
+		() => stage.offered(home),
+		() => false,
+	);
+}
+
+export { OrbStageContext, useOrbOffered, useOrbPlacement, useOrbStage, type OrbPlacement };

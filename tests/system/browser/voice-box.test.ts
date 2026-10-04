@@ -23,7 +23,11 @@ import { serverPath } from "./support/navigator-support.ts";
 // the one orb back to the circle at the head of the dock and takes the box away, and turning
 // them on flies it out again. What this owner holds is what a person sees come out of that: one
 // orb, resting exactly in the socket of the home it is in, never left in the air, with the box
-// taking no pointer input from the picture except at its two controls.
+// taking no pointer input from the picture except at its two controls, and keyboard focus following
+// the subtitles control from the surface that loses it to the one that takes it, pressed twice at once.
+
+/** The subtitles control in the voice box. */
+const SUBTITLES_IN_BOX = '[data-slot="voice-box"] [data-slot="voice-subtitles-toggle"]';
 
 /** Short on purpose: a flight is under a second, and every wait here names itself. */
 const WAIT = { timeoutMs: 8_000 } as const;
@@ -39,8 +43,10 @@ interface VoiceWhere {
 	/** The dock's key: the circle while the orb is at home in the dock, the key while the box has it. */
 	readonly form: string | null;
 	readonly keyName: string | null;
-	/** How many orbs the page draws. */
+	/** How many orbs the page draws, wherever they are. */
 	readonly orbs: number;
+	/** The surface that holds keyboard focus: the voice box, the dock, or neither. */
+	readonly focus: string | null;
 	/** Whether the box's own words let the picture under them take the pointer. */
 	readonly wordsClickThrough: boolean;
 	/** Whether the box's subtitles control takes the pointer. */
@@ -70,7 +76,8 @@ const WHERE = `(() => {
 		off: socket ? Math.round(Math.hypot(hx - sx, hy - sy) * 10) / 10 : -1,
 		form: key?.getAttribute('data-form') ?? null,
 		keyName: key?.getAttribute('aria-label') ?? null,
-		orbs: document.querySelectorAll('[data-slot="voice-orb-holder"] canvas').length,
+		orbs: document.querySelectorAll('[data-slot="voice-orb"]').length,
+		focus: document.activeElement?.closest('[data-slot="voice-box"], [data-slot="agent-dock"]')?.getAttribute('data-slot') ?? null,
 		wordsClickThrough: words ? !under(words)?.closest('[data-slot="voice-box"]') : true,
 		controlClickable: control ? under(control) === control || control.contains(under(control)) : true,
 	};
@@ -85,12 +92,12 @@ const voiceWhere = (browser: AgentBrowserSession): Promise<VoiceWhere> =>
 	browser.eval<VoiceWhere>(WHERE);
 
 /**
- * Press the subtitles control in one surface, the way a person does.
+ * Click the subtitles control in one surface, where a script can: the keyboard has its own check below.
  * @param browser The page.
  * @param surface The surface that has it.
- * @returns True when the control was there to press.
+ * @returns True when the control was there to click.
  */
-const pressSubtitles = (browser: AgentBrowserSession, surface: "voice-box" | "agent-dock") =>
+const clickSubtitles = (browser: AgentBrowserSession, surface: "voice-box" | "agent-dock") =>
 	browser.eval<boolean>(
 		`(() => { const button = document.querySelector('[data-slot="${surface}"] [data-slot="voice-subtitles-toggle"]');` +
 			` if (!button) return false; button.click(); return true; })()`,
@@ -119,7 +126,7 @@ test("the voice is in the box while subtitles are on, and the one orb flies betw
 	// Subtitles start on: the voice is in the box, the dock is calm and its key ends voice.
 	const boxed = await pollUntil(
 		() => voiceWhere(browser),
-		(where) => where.box && where.home === "caption" && where.off < 1,
+		(where) => where.box && where.home === "box" && where.off < 1,
 		"the orb to rest in the voice box's socket",
 		WAIT,
 	);
@@ -131,7 +138,7 @@ test("the voice is in the box while subtitles are on, and the one orb flies betw
 	expect(boxed.controlClickable).toBeTrue();
 
 	// Turn subtitles off in the box: the orb flies home to the dock's circle and the box goes.
-	expect(await pressSubtitles(browser, "voice-box")).toBeTrue();
+	expect(await clickSubtitles(browser, "voice-box")).toBeTrue();
 	const docked = await pollUntil(
 		() => voiceWhere(browser),
 		(where) => !where.box && where.home === "dock" && where.off < 1,
@@ -142,15 +149,31 @@ test("the voice is in the box while subtitles are on, and the one orb flies betw
 	expect(docked.form).toBe("circle");
 
 	// And on again, from the dock's voice line: the orb flies out to the box.
-	expect(await pressSubtitles(browser, "agent-dock")).toBeTrue();
+	expect(await clickSubtitles(browser, "agent-dock")).toBeTrue();
 	const again = await pollUntil(
 		() => voiceWhere(browser),
-		(where) => where.box && where.home === "caption" && where.off < 1,
+		(where) => where.box && where.home === "box" && where.off < 1,
 		"the orb to fly back to the voice box",
 		WAIT,
 	);
 	expect(again.orbs).toBe(1);
 	expect(again.form).toBe("key");
+
+	// From the keyboard: Enter on the box's control hands focus to the dock's, and Enter there, at
+	// once, hands it back to the box's, which is still leaving or has only just gone.
+	await browser.run(["focus", SUBTITLES_IN_BOX]);
+	expect((await voiceWhere(browser)).focus).toBe("voice-box");
+	await browser.run(["press", "Enter"]);
+	expect((await voiceWhere(browser)).focus).toBe("agent-dock");
+	await browser.run(["press", "Enter"]);
+	const boxAgain = await pollUntil(
+		() => voiceWhere(browser),
+		(where) => where.box && where.home === "box" && where.off < 1,
+		"the orb to fly back to the voice box once more",
+		WAIT,
+	);
+	expect(boxAgain.focus).toBe("voice-box");
+	expect(boxAgain.orbs).toBe(1);
 
 	await server.assertRunning();
 }, 40_000);

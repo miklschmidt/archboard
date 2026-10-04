@@ -2,7 +2,7 @@
 //
 // A subtitle is read at a glance by somebody looking at a diagram, so it is one cue of two lines
 // at most, low in the frame. Words arrive one at a time as they are spoken, so the cue is set the
-// way live captions are: a box of fixed width and height with the text running from its left edge,
+// way live subtitles are: a box of fixed width and height with the text running from its left edge,
 // where a word arriving never moves the ones before it. Each word fades in, slowly enough to be
 // seen coming and quickly enough not to lag the voice; a cue gives way to the next with its lines
 // fading under the new first word; and a subtitle that has stopped growing fades out. The
@@ -11,34 +11,39 @@
 // person is working with, and it is hidden from assistive technology, because the same words are
 // already being spoken and the transcript panel is the accessible record of them.
 //
-// `Captions` is the paragraph alone, which the voice box carries inside its own glass. `VoiceSubtitles`
+// `SubtitleWords` is the paragraph alone, which the voice box carries inside its own glass. `VoiceSubtitles`
 // is the paragraph in glass of its own, for a presented pane and for the replay of a kept talk.
 
-import { useCallback, useState, type CSSProperties, type JSX } from "react";
+import type { CSSProperties, JSX } from "react";
 
-import { CAPTION_OUT_MS, CAPTION_SWAP_MS, CAPTION_WORD_MS } from "@/shared/timing/voice";
+import {
+	SUBTITLE_BACK_MS,
+	SUBTITLE_OUT_MS,
+	SUBTITLE_SWAP_MS,
+	SUBTITLE_WORD_MS,
+} from "@/shared/timing/voice";
 import { cn } from "@/ui/components/class-names";
-import { useCaptionFade } from "@/ui/voice-subtitles/hooks/use-caption-fade";
+import { useMeasuredLines } from "@/ui/voice-subtitles/hooks/use-measured-lines";
+import { useSubtitleFade } from "@/ui/voice-subtitles/hooks/use-subtitle-fade";
 import {
 	useVoiceSubtitles,
 	type SubtitleSource,
 } from "@/ui/voice-subtitles/hooks/use-voice-subtitles";
-import type { LineCount } from "@/ui/voice-subtitles/lib/cues";
-import { faceLoading, lineCountOf } from "@/ui/voice-subtitles/lib/measured-lines";
 
 /** The durations the stylesheet eases the words by (app.css, `voice-subtitles`). */
-const CAPTION_STYLE: CSSProperties = {
-	"--caption-word-ms": `${CAPTION_WORD_MS}ms`,
-	"--caption-swap-ms": `${CAPTION_SWAP_MS}ms`,
-	"--caption-out-ms": `${CAPTION_OUT_MS}ms`,
+const SUBTITLE_STYLE: CSSProperties = {
+	"--subtitle-word-ms": `${SUBTITLE_WORD_MS}ms`,
+	"--subtitle-swap-ms": `${SUBTITLE_SWAP_MS}ms`,
+	"--subtitle-out-ms": `${SUBTITLE_OUT_MS}ms`,
+	"--subtitle-back-ms": `${SUBTITLE_BACK_MS}ms`,
 };
 
 /** The glass a subtitle has when no voice box carries it. */
 const GLASS =
 	"bg-card/96 border-border rounded-panel pointer-events-none border px-5 py-2.5 shadow-float";
 
-/** Inputs for the captions. */
-interface CaptionsProps {
+/** Inputs for the words. */
+interface SubtitleWordsProps {
 	/** The voice session's transcript, oldest first. */
 	readonly transcript: readonly SubtitleSource[];
 	/** Whether the person asked for reduced motion, which cuts the fades. */
@@ -59,38 +64,24 @@ interface VoiceSubtitlesProps {
 
 /**
  * The words on screen: the cue being said, or the last one while it fades. It is measured for
- * where it breaks its lines, in the face it is drawn in, once that face has loaded.
+ * where it breaks its lines, in the face it is drawn in, once that face has loaded and again
+ * whenever its width changes.
  * @param props The transcript, the motion preference and what places the paragraph.
  * @returns The paragraph.
  */
-function Captions(props: CaptionsProps): JSX.Element {
-	const [lines, setLines] = useState<LineCount | null>(null);
-	const measure = useCallback((box: HTMLParagraphElement | null): void => {
-		if (box === null) {
-			return;
-		}
-		/** Measure the box in the face it is drawn in. */
-		const measured = (): void => {
-			setLines(() => lineCountOf(box));
-		};
-		const loading = faceLoading(box);
-		if (loading === null) {
-			measured();
-		} else {
-			void loading.then(measured, measured);
-		}
-	}, []);
+function SubtitleWords(props: SubtitleWordsProps): JSX.Element {
+	const { ref, lines } = useMeasuredLines();
 	const cue = useVoiceSubtitles(props.transcript, lines);
-	const { shown, replaced } = useCaptionFade(cue);
+	const { shown, replaced } = useSubtitleFade(cue);
 	const fades = !props.reducedMotion;
 	return (
 		<p
-			ref={measure}
+			ref={ref}
 			data-slot="voice-subtitles"
 			data-showing={cue !== null}
 			data-still={fades ? undefined : ""}
 			aria-hidden="true"
-			style={CAPTION_STYLE}
+			style={SUBTITLE_STYLE}
 			className={cn(
 				"text-subtitle text-foreground box-content h-[56px] w-[46ch] overflow-hidden text-left",
 				props.className,
@@ -124,8 +115,12 @@ function Captions(props: CaptionsProps): JSX.Element {
  */
 function VoiceSubtitles(props: VoiceSubtitlesProps): JSX.Element | null {
 	return props.enabled ? (
-		<Captions transcript={props.transcript} reducedMotion={props.reducedMotion} className={GLASS} />
+		<SubtitleWords
+			transcript={props.transcript}
+			reducedMotion={props.reducedMotion}
+			className={GLASS}
+		/>
 	) : null;
 }
 
-export { Captions, VoiceSubtitles, type CaptionsProps, type VoiceSubtitlesProps };
+export { SubtitleWords, VoiceSubtitles, type SubtitleWordsProps, type VoiceSubtitlesProps };

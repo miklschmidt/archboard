@@ -3,6 +3,7 @@
 
 import { useMemo } from "react";
 
+import { VOICE_DEMO_TICK_MS } from "@/shared/timing/voice";
 import { useClock } from "@/ui/components/use-clock";
 import type { SubtitleSource } from "@/ui/voice-subtitles";
 import type { AgentVoiceView } from "@/ui/workbench/contracts";
@@ -15,15 +16,12 @@ import {
 	stageAt,
 } from "@/ui/workbench/lib/voice-demo";
 
-/** How often the demonstration is read: often enough that a word arrives when it is due. */
-const DEMO_TICK_MS = 100;
-
 /**
  * What the demonstration's voice has said, a word at a time.
  * @returns The transcript.
  */
 function useDemoTranscript(): readonly SubtitleSource[] {
-	const now = useClock(DEMO_TICK_MS);
+	const now = useClock(VOICE_DEMO_TICK_MS);
 	const { index, words } = demoSaidAt(now);
 	return useMemo(() => demoTranscript({ index, words }), [index, words]);
 }
@@ -33,7 +31,7 @@ function useDemoTranscript(): readonly SubtitleSource[] {
  * @returns The voice.
  */
 function useDemoVoice(): AgentVoiceView {
-	const now = useClock(DEMO_TICK_MS);
+	const now = useClock(VOICE_DEMO_TICK_MS);
 	const stage = VOICE_DEMO_CYCLE ? stageAt(now) : null;
 	return useMemo(() => (stage === null ? DEMO_VOICE : demoVoiceIn(stage)), [stage]);
 }

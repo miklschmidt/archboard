@@ -26,11 +26,10 @@ interface AgentSurfaceProps {
  * The agent dock, and whether the agent said something while the panel was closed.
  * @param props The workbench, the context, the agent and the motion preference.
  * @param props.reducedMotion Whether the person asked for reduced motion.
- * @param props.captionable Whether a pane's voice box may carry the voice.
  * @returns The dock.
  */
 function AgentDockSlot(
-	props: AgentSurfaceProps & { readonly reducedMotion: boolean; readonly captionable: boolean },
+	props: AgentSurfaceProps & { readonly reducedMotion: boolean },
 ): JSX.Element {
 	const { agent } = props;
 	const view = useAgentView(props, agent.voice);
@@ -40,7 +39,6 @@ function AgentDockSlot(
 			view={view}
 			actions={agent.actions}
 			panelOpen={agent.panel.open}
-			captionable={props.captionable}
 			unread={unread}
 			onTogglePanel={agent.panel.togglePanel}
 			reducedMotion={props.reducedMotion}

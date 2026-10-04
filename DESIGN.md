@@ -229,7 +229,7 @@ gives each one a `shadow-*` utility.
 
 ### Named Rules
 
-**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on. A tip, a menu, the floating sidebar or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. The floating sidebar takes at most 160ms, and the voice box 360ms to arrive and 240ms to leave. The orb itself crosses the page when subtitles are turned on or off, in a layer of its own, over 680ms.
+**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. The floating sidebar takes at most 160ms, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off and when voice starts with subtitles on, in a layer of its own, over 680ms.
 
 **The Picture Answers Rule.** The light belongs to the picture, not to the shell. When a part is picked out or the pointer rests on one, the viewer marks what stays as drawn, and the picture's own subjects recede under an opacity filter. The shell lays no layer, blur or halo over the picture to do it.
 
@@ -348,8 +348,9 @@ The tray is lit by what the agent is doing: a warm wash blooms from the voice
 circle while voice is on and brightens and fades with the voice, and a quieter
 one in the status colour spreads while the agent works. At rest it is plain. Its
 lines are all 13px and are told apart by weight and ink: its state at 500 in muted
-ink, what it is on at 400. The voice's word is gold while the circle is lit and muted
-ink while it is muted. The clock is 12px mono.
+ink, what it is on at 400. The voice's word is in the accent text while the circle is
+lit, which is gold on graphite and ink on chalk (the Ink On Chalk Rule), and in muted
+ink while it is muted or ending. The clock is 12px mono.
 
 The composer is in the conversation pane, on a tray at its foot (Tray Chalk and
 `shadow-edge-up`), with its gold Send. It grows upward as a message grows, and
@@ -364,23 +365,30 @@ Card White plate with the float shadow and a Rule edge, 78px high, over the pict
 and under nothing. In a row it holds the orb in a socket, a 64px circle with the
 gold edge and the raised plate of the dock's circle, then the words, then two quiet
 icons stacked at the end: mute, and the subtitles control, which puts the voice back
-in the dock. Where there are no words it says what the voice is doing in a word, at
-13px, in gold while the voice is lit and in muted ink while it is muted. The words
-are 20px and two lines at most. A warm wash blooms from the socket and breathes with
-the voice, as it does in the dock, on the box's own layer. The box takes no pointer
-input from the picture except at its two icons.
+in the dock. Mute is dimmed while the voice is starting or ending. Where there are no
+words the box says what the voice is doing in a word, at 13px, in the accent text while
+the voice is lit and in muted ink while it is muted or ending. The words are 20px and
+two lines at most. A warm wash blooms from the socket and breathes with the voice, as
+it does in the dock, on the box's own layer. The box takes no pointer input from the
+picture except at its two icons. It is over a page of the board as well as the diagram,
+it is clear of a sidebar that floats over the picture, and in a pane too narrow for it
+the words give way and the orb and the two icons stay. While it leaves it takes no input
+at all.
 
-The words arrive one at a time, and each fades in over 520ms, so the end of the line
-is a soft edge and not a blink. A cue that is full gives way to the next with its
-lines fading under the new first word, and a subtitle that has stopped growing
-lingers and then fades out over 560ms. The voice's word waits for the words to be
-gone before it fades in. Only opacity moves.
+The words arrive one at a time, and each fades in over 640ms, slow to start and slow to
+arrive, so the end of the line is a soft edge and not a blink. A cue that is full gives
+way to the next with its lines fading under the new first word, and a subtitle that has
+stopped growing lingers and then fades out over 560ms. Words that had begun to fade out
+do not come back under the next ones. The voice's word waits for the words to be gone
+before it fades in, and leaves as fast as they return. Only opacity moves.
 
 The orb is one canvas, so it keeps its light and the last second of the voice it
 has drawn wherever it is. It rests in the dock's circle or in the box's socket, and
 when the person turns subtitles off or on it lifts off, crosses the page in a layer
 of its own, a little larger at the top of its flight, and settles in the circle or
-the socket in 680ms. The dock's key turns into the circle as the orb arrives and the
+the socket in 680ms. When voice starts with subtitles on, the orb lifts out of the Talk
+key's plate and crosses to the box the same way. When voice ends it fades where it is,
+with the box. The dock's key turns into the circle as the orb arrives and the
 circle into the key as it leaves, and the box rises and fades in as the orb is on
 its way. A flight meets its socket where the socket is, so a socket that is still
 moving is met, and the opposite choice turns a flight round from where the orb is.

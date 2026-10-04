@@ -97,8 +97,11 @@ function subtitleSnapshot(browser: AgentBrowserSession): Promise<SubtitleSnapsho
 		const pane = subtitle?.closest('${PANE_SECTIONS}') ?? null;
 		const inner = subtitle?.getBoundingClientRect();
 		const outer = pane?.getBoundingClientRect();
+		// The words being said, not the lines of a cue that is giving way, which fade under them.
+		const reading = [...(subtitle?.firstElementChild?.children ?? [])]
+			.filter(word => !word.hasAttribute('data-fade-out'));
 		return {
-			text: subtitle?.textContent || null,
+			text: reading.map(word => word.textContent).join('') || null,
 			pane: pane?.getAttribute('aria-label') ?? null,
 			withinPane: !!inner && !!outer && inner.width > 0 && inner.left >= outer.left &&
 				inner.right <= outer.right && inner.top >= outer.top && inner.bottom <= outer.bottom,

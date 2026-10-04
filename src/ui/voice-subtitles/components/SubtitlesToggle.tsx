@@ -1,16 +1,52 @@
 // The control over subtitles: on or off, beside the voice controls it belongs with. There is
 // one in the dock's voice line and one in the voice box, and pressing either moves the voice to
-// the other's surface, so the one pressed hands keyboard focus on to the one that appears.
+// the other's surface, which takes the pressed one away or makes it inert. A person who pressed
+// it with focus on it is not left on the page: focus goes to the one that took its place.
 
 import { RiClosedCaptioningFill, RiClosedCaptioningLine } from "@remixicon/react";
 import { cn } from "cn";
-import { useCallback, useLayoutEffect, useRef, type JSX } from "react";
+import { useCallback, useRef, type JSX } from "react";
+import { flushSync } from "react-dom";
 
 import { buttonVariants } from "@/ui/components/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/components/tooltip";
 import { useSubtitlesWanted } from "@/ui/voice-subtitles/hooks/use-subtitle-preference";
-import { handFocusOn, takeFocusHandedOn } from "@/ui/voice-subtitles/lib/focus-relay";
 import { subtitlePreference, type SubtitlePreference } from "@/ui/voice-subtitles/lib/preference";
+
+/** What every subtitles control is told apart by. */
+const TOGGLE = '[data-slot="voice-subtitles-toggle"]';
+
+/**
+ * Whether the control that was pressed still has focus where it is: a control that does replaced
+ * nothing, as in a presentation's bar. One that was taken away or made inert by a surface that is
+ * leaving did not keep it.
+ * @param pressed The control that was pressed, or null once it is gone from the page.
+ * @returns True when it has kept focus.
+ */
+function holdsFocus(pressed: HTMLElement | null): boolean {
+	return pressed !== null && document.activeElement === pressed && !pressed.closest("[inert]");
+}
+
+/**
+ * The subtitles control that can take the place of the pressed one: another that is on the
+ * page and is not inert.
+ * @param pressed The control that was pressed, or null once it is gone from the page.
+ * @returns The control, or undefined when there is none.
+ */
+function twinOf(pressed: HTMLElement | null): HTMLElement | undefined {
+	return [...document.querySelectorAll<HTMLElement>(TOGGLE)].find(
+		(toggle) => toggle !== pressed && !toggle.closest("[inert]"),
+	);
+}
+
+/**
+ * Give keyboard focus to the subtitles control that took the pressed one's place, when the
+ * pressed one has lost it.
+ * @param pressed The control that was pressed, or null once it is gone from the page.
+ */
+function followFocus(pressed: HTMLElement | null): void {
+	if (!holdsFocus(pressed)) twinOf(pressed)?.focus();
+}
 
 /** Inputs for the toggle. */
 interface SubtitlesToggleProps {
@@ -28,12 +64,13 @@ function SubtitlesToggle(props: SubtitlesToggleProps): JSX.Element {
 	const wanted = useSubtitlesWanted(preference);
 	const label = wanted ? "Hide subtitles" : "Show subtitles";
 	const trigger = useRef<HTMLButtonElement>(null);
-	useLayoutEffect(() => {
-		if (takeFocusHandedOn()) trigger.current?.focus();
-	}, []);
 	const toggle = useCallback((): void => {
-		if (document.activeElement === trigger.current) handFocusOn();
-		preference.change(!preference.wanted());
+		const focused = document.activeElement === trigger.current;
+		// Settle the surfaces now, so the control that takes this one's place is there to be given focus.
+		flushSync(() => {
+			preference.change(!preference.wanted());
+		});
+		if (focused) followFocus(trigger.current);
 	}, [preference]);
 	return (
 		<Tooltip>

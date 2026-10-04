@@ -6,10 +6,12 @@
 // circle is the head of the dock, beside the state, what the agent is on and the
 // voice's own line with mute and subtitles, and the plan under them.
 //
-// While the person wants subtitles, the voice is not in the dock at all: the voice box
-// over the pane's picture carries the orb, the voice's word, mute and the subtitles
-// control, and the dock is calm again, with the Talk key turned into a key that ends
-// voice. Turning subtitles off flies the orb back and the key becomes the circle.
+// While the person wants subtitles and a voice box is on the page, the voice is not in the
+// dock at all: the box over the pane's picture carries the orb, the voice's word, mute and
+// the subtitles control, and the dock is calm again, with the Talk key turned into a key
+// that ends voice. Turning subtitles off flies the orb back and the key becomes the circle.
+// The dock asks the orb's stage whether the box is there, so it never gives the voice up
+// to a box that no pane draws.
 //
 // Both layouts hold the same parts, which the grid places (app.css, [data-part]).
 // So the Talk key turns into the circle, and the dock's motion plays every part
@@ -19,9 +21,10 @@ import { RiChat3Line } from "@remixicon/react";
 import { useRef, type CSSProperties, type JSX } from "react";
 
 import { AGENT_ELAPSED_TICK_MS, SHELL_AGE_TICK_MS } from "@/shared/timing/timing";
-import { VOICE_MORPH_MS } from "@/shared/timing/voice";
+import { VOICE_DEMO_TICK_MS, VOICE_MORPH_MS } from "@/shared/timing/voice";
 import { cn } from "@/ui/components/class-names";
 import { useClock } from "@/ui/components/use-clock";
+import { useOrbOffered } from "@/ui/voice-orb";
 import { SubtitlesToggle, useVoiceBoxed } from "@/ui/voice-subtitles";
 import { useDockMotion } from "@/ui/workbench/hooks/use-dock-motion";
 import { IconAction } from "@/ui/workbench/components/IconAction";
@@ -56,8 +59,6 @@ interface AgentDockProps {
 	readonly view: AgentView;
 	readonly actions: AgentActions;
 	readonly panelOpen: boolean;
-	/** Whether a pane's voice box can carry the voice: the pane has a voice owner and nothing is presented. */
-	readonly captionable: boolean;
 	/** Agent words arrived while the conversation was closed. */
 	readonly unread: boolean;
 	readonly onTogglePanel: () => void;
@@ -108,15 +109,25 @@ function dockVoice(view: AgentView, now: number): AgentVoiceView {
 }
 
 /**
- * The dock's clock: it counts seconds while a turn runs or a demonstration moves,
- * and ticks slowly otherwise.
+ * How often the dock's clock ticks: as often as the voice box reads a demonstration that walks
+ * the voice's stages, so that the two agree; every second while a turn runs or a demonstration
+ * holds still; and slowly otherwise.
+ * @param view The agent view.
+ * @returns The tick in milliseconds.
+ */
+function dockTickMs(view: AgentView): number {
+	if (VOICE_DEMO_CYCLE) return VOICE_DEMO_TICK_MS;
+	const running = view.conversation.turns.some((turn) => turn.outcome === "running");
+	return running || VOICE_DEMO ? AGENT_ELAPSED_TICK_MS : SHELL_AGE_TICK_MS;
+}
+
+/**
+ * The dock's clock.
  * @param view The agent view.
  * @returns The time in milliseconds.
  */
 function useDockClock(view: AgentView): number {
-	const running = view.conversation.turns.some((turn) => turn.outcome === "running");
-	const ticking = running || VOICE_DEMO || VOICE_DEMO_CYCLE;
-	return useClock(ticking ? AGENT_ELAPSED_TICK_MS : SHELL_AGE_TICK_MS, true);
+	return useClock(dockTickMs(view), true);
 }
 
 /**
@@ -131,8 +142,8 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 	const voice = dockVoice(view, now);
 	const on = useCircleState(voice) !== "off";
 	// The voice is in the box over the picture, or at the head of the dock: the dock's layout is live in the second.
-	const captioned = useVoiceBoxed(on, props.captionable);
-	const live = on && !captioned;
+	const boxed = useVoiceBoxed(on, useOrbOffered("box"));
+	const live = on && !boxed;
 	const steps = dockSteps(view);
 	const dock = useRef<HTMLElement>(null);
 	useDockMotion(dock, live, props.reducedMotion);
@@ -152,7 +163,7 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 				actions={actions}
 				problemId={VOICE_PROBLEM_ID}
 				reducedMotion={props.reducedMotion}
-				captioned={captioned}
+				boxed={boxed}
 			/>
 			<Activity status={status} now={now} actions={actions} />
 			<VoiceRow live={live} voice={voice} actions={actions} />
@@ -373,14 +384,16 @@ const SHUT = "text-muted-foreground";
 const DOT = "bg-primary pointer-events-none absolute size-1.5 rounded-full";
 
 /**
- * How the conversation's control looks, by whether it is open and which form it takes.
+ * How the conversation's control looks, by whether it is open and which form it takes. Its colours
+ * ease and its size does not: the dock measures where its parts settle the moment its layout turns,
+ * so a part that was still shrinking then would leave the dock a few pixels short of that.
  * @param open Whether the conversation is open.
  * @param compact Whether it is an icon in the voice line, not a key.
  * @returns The classes.
  */
 function toggleClass(open: boolean, compact: boolean): string {
-	if (compact) return open ? ICON_OPEN : SHUT;
-	return cn(KEY, open ? KEY_OPEN : SHUT);
+	if (compact) return cn("transition-colors", open ? ICON_OPEN : SHUT);
+	return cn("transition-colors", KEY, open ? KEY_OPEN : SHUT);
 }
 
 /**

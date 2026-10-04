@@ -1,9 +1,9 @@
 // The agent dock's voice control is one button while voice is off and while it
 // is on. Pressing Talk must not swap the control for another, because the dock
 // moves it between its shapes and a person who pressed it by keyboard keeps their
-// place on it. While subtitles are on the voice box over a pane carries the voice, and
+// place on it. While subtitles are on and a voice box is on the page it carries the voice, and
 // the dock is calm, with the key ending voice; turning subtitles off puts the voice back at
-// the head of the dock, in the same button.
+// the head of the dock, in the same button. A page with no box leaves the voice in the dock.
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { act, render } from "@testing-library/react";
@@ -11,7 +11,7 @@ import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 import type { JSX } from "react";
 
 import type { AgentSetupSnapshot } from "@/ui/agent-setup";
-import { OrbStageProvider } from "@/ui/voice-orb";
+import { OrbSlot, OrbStageProvider } from "@/ui/voice-orb";
 import { subtitlePreference } from "@/ui/voice-subtitles";
 import { AgentDock } from "@/ui/workbench";
 import type { AgentView, AgentVoiceView } from "@/ui/workbench/contracts";
@@ -58,28 +58,25 @@ function viewWith(stage: AgentVoiceView["stage"]): AgentView {
 }
 
 /**
- * The dock, in a voice stage.
+ * The dock, in a voice stage, on a page that has a voice box or not. The box is stood in for by
+ * its socket, which is all the dock asks of it.
  * @param stage The voice's stage.
  * @param reducedMotion Whether the person asked for no motion.
- * @param captionable Whether a pane's voice box can carry the voice.
+ * @param box Whether a voice box is on the page.
  * @returns The dock, drawn.
  */
-function dock(
-	stage: AgentVoiceView["stage"],
-	reducedMotion = true,
-	captionable = false,
-): JSX.Element {
+function dock(stage: AgentVoiceView["stage"], reducedMotion = true, box = false): JSX.Element {
 	return (
 		<OrbStageProvider>
 			<AgentDock
 				view={viewWith(stage)}
 				actions={IDLE_ACTIONS}
 				panelOpen={false}
-				captionable={captionable}
 				unread={false}
 				onTogglePanel={nothing}
 				reducedMotion={reducedMotion}
 			/>
+			{box && <OrbSlot home="box" />}
 		</OrbStageProvider>
 	);
 }
@@ -186,7 +183,7 @@ function keyOf(container: HTMLElement): HTMLElement | null {
 	return container.querySelector<HTMLElement>('[data-slot="voice-circle"]');
 }
 
-test("while the voice box carries the voice the dock is calm and its key ends voice", () => {
+test("while a voice box is on the page the dock is calm and its key ends voice", () => {
 	const shown = render(dock("listening", true, true));
 	const key = keyOf(shown.container);
 	expect(rootOf(shown.container)?.getAttribute("data-live")).toBe("false");
@@ -201,7 +198,7 @@ test("while the voice box carries the voice the dock is calm and its key ends vo
 	).not.toBeNull();
 });
 
-test("a pane that cannot carry the voice leaves it at the head of the dock, with its controls", () => {
+test("a page with no voice box leaves the voice at the head of the dock, with its controls", () => {
 	const shown = render(dock("listening", true, false));
 	expect(rootOf(shown.container)?.getAttribute("data-live")).toBe("true");
 	expect(keyOf(shown.container)?.getAttribute("data-form")).toBe("circle");
