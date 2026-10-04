@@ -22,7 +22,7 @@
 
 import { PICTURE_EXIT_MS } from "@/shared/timing/timing";
 import { clockOf, setClock } from "@/ui/semantic-board-canvas/lib/picture-clock";
-import { runTraffic } from "@/ui/semantic-board-canvas/lib/picture-traffic";
+import { runTraffic, stopTraffic } from "@/ui/semantic-board-canvas/lib/picture-traffic";
 import type { SemanticBox } from "@/ui/semantic-board-canvas/api/semantic-boards";
 
 /** Where the reader went, as far as the picture leaving is concerned. */
@@ -292,6 +292,7 @@ function ghostPicture(surface: HTMLElement, heading: Departure | null, moved: Of
 		{ duration: PICTURE_EXIT_MS * look.opacity, easing: "ease-out", fill: "forwards" },
 	);
 	fade.addEventListener("finish", () => {
+		stopTraffic(made.ghost);
 		made.ghost.remove();
 	});
 }

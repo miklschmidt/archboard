@@ -28,6 +28,7 @@ import {
 	type PictureTransition,
 	type Shift,
 } from "@/ui/semantic-board-canvas/lib/picture-transition";
+import { stopTraffic } from "@/ui/semantic-board-canvas/lib/picture-traffic";
 
 /** The picture on the surface, as something to mark up. */
 interface StagedPicture {
@@ -357,10 +358,12 @@ function usePictureTransition(
 		seen.current = reducedMotion ? null : paneAt(surface);
 	});
 	// Leaving the surface stops asking for frames; what it showed does not matter any more.
+	// Its traffic stops with it: an animation does not stop when its element goes.
 	useLayoutEffect(
 		() => (): void => {
 			flight.current?.stop();
 			flight.current = null;
+			if (shown.current !== null) stopTraffic(shown.current.surface);
 		},
 		[],
 	);
