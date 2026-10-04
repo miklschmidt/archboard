@@ -4,6 +4,11 @@ status: accepted
 
 # The renderer reads a board in a direction and is measured by fit in the reader's pane
 
+Superseded in part by
+[ADR 0043](0043-the-renderer-lays-boards-out-for-a-tuned-page-shape.md): the
+reference pane is no longer derived from the desktop shell. Its width comes
+from the shell, and its height from a tuned page shape of 1.4.
+
 ADR 0023 records that PR Lens's layout was chosen for its clarity and finish. It
 records that fitting one viewport is not a success criterion. It also records
 that no density policy is wanted. The compound layout of 2026-09-13 replaced PR

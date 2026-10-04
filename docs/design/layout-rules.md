@@ -437,21 +437,27 @@ reader gets: a 997 by 1468 column and a 3952 by 460 ribbon are the same
 area and fit the pane at 0.65 against 0.32. ADR 0028 makes fit the measure.
 Fit is the scale at which the whole drawing shows in the reference pane,
 capped at one: `min(pane.width / page.width, pane.height / page.height)`,
-the arithmetic the viewer's own fit uses. The reference pane is derived in
-`src/shared/shell-geometry/index.ts` from the desktop shell the product
-supports: 1920 by 1080, less the 320 navigator, the one-pixel line between
-the navigator and the panes, and the pane's 40 chrome row, which leaves a
-stage of 1599 by 1040; less the 280 sidebar docked beside the picture, less
-the 24 fit margin on every side, which is 1271 by 992. Nothing runs under
-the panes: the agent dock is at the navigator's foot. (Until 2026-10-04,
-TASK-395, the module still took off the shell from before its redesign, a
-56 header, a 36 pane bar and a 41 agent bar, which made the pane 1272 by
-899: the fits recorded before that date are against that pane. TASK-245
-estimated 952 tall before the pane bar and the dock were counted.) The
-camera reads its margin and its fit arithmetic from that module, the shell
-root takes the navigator's width and the chrome row's height from it and
-the sidebar its width, and the shell-layout browser owner holds the mounted
-shell's stage and reference pane to it.
+the arithmetic the viewer's own fit uses. `src/shared/shell-geometry/index.ts`
+holds two kinds of number. The shell's are measured: 1920 by 1080, less the
+320 navigator, the one-pixel line between the navigator and the panes, and the
+pane's 40 chrome row, which leaves a stage of 1599 by 1040. Nothing runs under
+the panes: the agent dock is at the navigator's foot. The renderer's page shape
+is tuned, not measured: `LAYOUT_ASPECT`, a plain 1.4 (ADR 0043). The reference
+pane takes its width from the shell, the stage less the 280 sidebar docked
+beside the picture and the 24 fit margin on either side, which is 1271, and
+its height from that aspect, about 908. The grid of loose cards and the wrap
+of a wide rank read the aspect alone. (Until 2026-10-05, TASK-395, the pane
+was derived whole from the shell before its redesign, a 56 header, a 36 pane
+bar and a 41 agent bar, which made it 1272 by 899: the fits recorded before
+that date are against that pane. Matched to the redesigned shell it became
+1271 by 992, and 18 of 130 drawings moved. ADR 0043 records why the height
+now comes from the tuned aspect. At 1.4, 2 of the 130 move: Browser
+application's Working with an agent and its whole board, both Blocks.
+TASK-245 estimated 952 tall before the pane bar and the dock were counted.)
+The camera reads its margin and its fit arithmetic from that module, the
+shell root takes the navigator's width and the chrome row's height from it
+and the sidebar its width, and the shell-layout browser owner holds the
+mounted shell's stage, chrome row and docked picture width to it.
 
 `src/runtime/semantic-renderer/tests/drawn-ink.ts` is the one owner of the
 measurements, read by `tests/wide-boards.test.ts` and by `measure.ts`: fit,
