@@ -88,9 +88,29 @@ function kindLookOf(
 		}
 	}
 	return {
+		/**
+		 * What a part kind is called.
+		 * @param kind The kind.
+		 * @returns The vault's name for it, or the kind itself when the vault has none.
+		 */
 		nodeName: (kind) => policy.nodeKinds[kind]?.name ?? capital(kind),
+		/**
+		 * The icon the picture draws a part kind with.
+		 * @param kind The kind.
+		 * @returns Its markup, or undefined when the picture draws no part of that kind.
+		 */
 		nodeIcon: (kind) => icons.get(kind),
+		/**
+		 * The colour of a part kind.
+		 * @param kind The kind.
+		 * @returns The colour; a neutral for a kind with none.
+		 */
 		nodeColor: (kind) => paletteColor(policy.nodeKinds[kind]?.color),
+		/**
+		 * How a relationship kind is drawn as a chip.
+		 * @param kind The kind.
+		 * @returns Its name, its line colour and its dash.
+		 */
 		relationship: (kind) => {
 			const found = policy.relationshipKinds[kind];
 			return {
