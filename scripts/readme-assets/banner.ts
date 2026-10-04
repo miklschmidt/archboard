@@ -22,12 +22,18 @@ import { pathToFileURL } from "node:url";
 
 import { resolveProjectCodexExecutable } from "@/runtime/codex-process/executable";
 
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { Browser } from "./browser.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { inRepository, readmeFile, type MakeContext, type Producer } from "./producer.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { ffmpeg, run, scratch } from "./tools.ts";
+import {
+	Browser,
+	ffmpeg,
+	inOrder,
+	inRepository,
+	readmeFile,
+	run,
+	scratch,
+	type MakeContext,
+	type Producer,
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+} from "./kit.ts";
 
 /** The model that drives the image tool; the pixels come from the tool's own image model. */
 const IMAGE_MODEL = "gpt-6.1-sol";
@@ -178,14 +184,14 @@ async function makeBanner(context: MakeContext): Promise<void> {
 	await generate(readFileSync(join(prompts, "dark.txt"), "utf8"), dark, []);
 	context.say("Generating its light companion, with the dark art as Image 1.");
 	await generate(readFileSync(join(prompts, "light.txt"), "utf8"), light, [dark]);
-	for (const [theme, art] of [
+	const themes = [
 		["dark", dark],
 		["light", light],
-	] as const) {
+	] as const;
+	// One browser at a time keeps the machine quiet; each banner is encoded from its own art.
+	await inOrder(themes, async ([theme, art]) => {
 		const files = FILES[theme];
-		// oxlint-disable-next-line no-await-in-loop -- one browser at a time keeps the machine quiet
 		await overlayWordmark(art, theme, inRepository(files.art));
-		// oxlint-disable-next-line no-await-in-loop -- each banner is encoded from its own art
 		await ffmpeg([
 			"-i",
 			inRepository(files.art),
@@ -195,7 +201,7 @@ async function makeBanner(context: MakeContext): Promise<void> {
 			"80",
 			inRepository(files.banner),
 		]);
-	}
+	});
 }
 
 const banner: Producer = {

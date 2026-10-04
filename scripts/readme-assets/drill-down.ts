@@ -1,10 +1,17 @@
 // The drill-down clip: the pointer rests on a part that has a board of its own until its tip
 // offers to open it, a double-click dives into that board, and the breadcrumb leads back.
 
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { encodeTake, filmTogether, fit, foldSidebars, moment, withTake } from "./film.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { readmeFile, type Producer } from "./producer.ts";
+import {
+	encodeTake,
+	filmTogether,
+	fit,
+	foldSidebars,
+	moment,
+	readmeFile,
+	withTake,
+	type Producer,
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+} from "./kit.ts";
 
 const BOARD = "Web shop";
 const PART = "Inventory service";

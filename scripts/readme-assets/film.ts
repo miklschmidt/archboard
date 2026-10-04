@@ -18,7 +18,7 @@ import { inRepository } from "./producer.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 import { startServer, type TakeServer, type TrackedVault } from "./server.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { ROOT, scratch } from "./tools.ts";
+import { ROOT, inOrder, scratch } from "./tools.ts";
 
 /** A take that ran: each window's footage, the take's first and last second, and what it noted. */
 interface Take<Noted> {
@@ -171,30 +171,30 @@ async function fit(page: Page): Promise<void> {
 	const panes = await page.evaluate(
 		`document.querySelectorAll("[data-slot='semantic-board-viewport']").length`,
 	);
-	for (let index = 0; index < Number(panes); index++) {
-		// oxlint-disable-next-line no-await-in-loop -- one pane takes the key at a time
-		await page.evaluate(
-			`document.querySelectorAll("[data-slot='semantic-board-viewport']")[${index}].focus()`,
-		);
-		// oxlint-disable-next-line no-await-in-loop -- the key goes to the pane just focused
-		await page.key("0");
-	}
+	// One pane takes the key at a time: the key goes to the pane just focused.
+	await inOrder(
+		Array.from({ length: Number(panes) }, (_, index) => index),
+		async (index) => {
+			await page.evaluate(
+				`document.querySelectorAll("[data-slot='semantic-board-viewport']")[${index}].focus()`,
+			);
+			await page.key("0");
+		},
+	);
 	await page.evaluate("document.activeElement && document.activeElement.blur()");
 }
 
 /**
- * Fold away every pane's sidebar that is open, so the picture has the room.
+ * Fold away every pane's sidebar that is open, so the picture has the room: fold the first one
+ * still open, let it animate, and look again.
  * @param page The shell.
  */
 async function foldSidebars(page: Page): Promise<void> {
 	const open = "[data-slot='semantic-sidebar-toggle'][aria-expanded='true']";
-	// oxlint-disable-next-line no-await-in-loop -- each look follows the fold before it
-	while (await page.evaluate(`!!document.querySelector(${JSON.stringify(open)})`)) {
-		// oxlint-disable-next-line no-await-in-loop -- each fold changes what the next look finds
-		await page.click(open);
-		// oxlint-disable-next-line no-await-in-loop -- the fold animates
-		await Bun.sleep(400);
-	}
+	if (!(await page.evaluate(`!!document.querySelector(${JSON.stringify(open)})`))) return;
+	await page.click(open);
+	await Bun.sleep(400);
+	await foldSidebars(page);
 }
 
 /**

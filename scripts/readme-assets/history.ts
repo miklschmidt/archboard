@@ -4,14 +4,20 @@
 
 import type { SemanticBoard } from "@/shared/semantic-board";
 
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { now } from "./browser.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { encodeTake, filmTogether, present, stageUrl, withTake, type Moment } from "./film.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { readmeFile, type Producer } from "./producer.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { readBoard } from "./server.ts";
+import {
+	encodeTake,
+	filmTogether,
+	inOrder,
+	now,
+	present,
+	readBoard,
+	readmeFile,
+	stageUrl,
+	withTake,
+	type Moment,
+	type Producer,
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+} from "./kit.ts";
 
 const BOARD = "Renderer layout";
 const CLIP = readmeFile("history.webp");
@@ -115,20 +121,17 @@ const history: Producer = {
 			await page.atRest();
 			await Bun.sleep(1500);
 			const take = await filmTogether("history", [page, strip], async () => {
-				let second: Moment | null = null;
 				await Bun.sleep(2600);
-				for (const [index, stop] of stops.entries()) {
-					if (index === 0) continue;
-					// oxlint-disable-next-line no-await-in-loop -- the states are shown one after another
+				// The later states are shown one after another, the strip moving with the pane, and
+				// each holds long enough to read. The thumbnail is the first of them.
+				const shown = await inOrder(stops.slice(1), async (stop, index): Promise<Moment> => {
 					await server.cli(["browser", "show", `${BOARD}@${stop.id}`, "--pane", "primary"]);
-					// oxlint-disable-next-line no-await-in-loop -- the strip moves with the pane
-					await strip.evaluate(`window.timeline.go(${index})`);
-					// oxlint-disable-next-line no-await-in-loop -- each state holds long enough to read
+					await strip.evaluate(`window.timeline.go(${index + 1})`);
 					await Bun.sleep(3800);
-					second ??= { at: now(), crop: LOWER_PART };
-				}
+					return { at: now(), crop: LOWER_PART };
+				});
 				await Bun.sleep(600);
-				return second;
+				return shown[0] ?? null;
 			});
 			await encodeTake(take, { clip: CLIP, width: 1280, stack: "above", thumbnail: THUMBNAIL });
 		}),

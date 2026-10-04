@@ -10,14 +10,18 @@ import { join } from "node:path";
 import { readTalk } from "@/runtime/walkthrough-recorder";
 import { TALK_SAMPLE_RATE, type Talk } from "@/shared/walkthrough-recording/talk";
 
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { encodeExcerpt, encodeThumbnail, type Crop } from "./encode.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { inRepository, type MakeContext, type Producer } from "./producer.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { startServer, type TrackedVault } from "./server.ts";
-// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { scratch } from "./tools.ts";
+import {
+	encodeExcerpt,
+	encodeThumbnail,
+	inRepository,
+	scratch,
+	startServer,
+	type Crop,
+	type MakeContext,
+	type Producer,
+	type TrackedVault,
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+} from "./kit.ts";
 
 /** The lower-left 16:9 part of a 1920x1080 recording, where the step's caption sits. */
 const CAPTION_CROP: Crop = { x: 0, y: 360, width: 1280, height: 720 };
