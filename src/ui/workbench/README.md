@@ -6,7 +6,7 @@ link and coordinator as a definition list with the link actions, then the
 lease, operation and board-context tokens in mono), the official assistant-ui
 thread in the centre with Archboard's intent controls rendered inside the
 composer's action row through the thread's `ComposerFooter` slot, and a 320px
-right column with the voice row (output wave, state words, icon controls) over
+right column with the voice row (state words, icon controls) over
 flat underlined tabs for queue, approvals, captured context and transcript.
 Side panels present ordinary unavailability and empty states with
 `components/PanelLine.tsx`: muted words and a grey dot; only a real failure gets the
@@ -25,9 +25,9 @@ owns the wire and must wrap `Workbench` in the assistant-ui runtime provider.
 ## Roots
 
 - `index.tsx` — `Workbench`.
-- `WorkbenchHeaderControls.tsx` — `WorkbenchHeaderControls`: compact voice controls,
-  the small output wave and the waiting-approval count, for the collapsed dock
-  header and the fullscreen slot.
+- `WorkbenchHeaderControls.tsx` — `WorkbenchHeaderControls`: compact voice controls
+  and the waiting-approval count, for the collapsed dock header and the
+  fullscreen slot.
 - `contracts.ts` — `WorkbenchView`, `WorkbenchActions`, `ApprovalChoice`,
   `ComposerIntent`, `DynamicApprovalVerdict` and the nested view/action shapes.
 - `session-projection.ts`, `queue-projection.ts`, `approval-projection.ts` —
@@ -55,7 +55,9 @@ are warnings.
 
 ## Voice
 
-`WorkbenchVoiceView` carries the `VoiceControlsView` for
-`src/ui/voice-controls` and the `{ state, level }` inputs for
-`src/ui/voice-wave`. `copyVoiceContext` receives the canonical brief exactly
-as stored; the panel never reformats it.
+`AgentVoiceView` carries the voice's stage, why it cannot start or why it
+failed, whether a control is on the wire, and the model's measured output
+`level`. The level is a
+source, not a value: the voice orb (`src/ui/voice-orb`) reads it on every
+frame, and `hooks/use-audible.ts` reads only whether it is over the speaking
+level.

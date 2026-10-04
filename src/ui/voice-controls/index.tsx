@@ -1,9 +1,9 @@
 // Start, mute, unmute, stop and restart for the live voice session, from
-// shadcn Buttons and Tooltips. The expanded variant sits in the workbench's
-// voice row beside the output wave and shows the state words; the compact
-// variant fits the dock header and the fullscreen slot. Both are 24px icon
-// controls whose visible label is the tooltip and whose text is read by
-// assistive technology. Neither reads audio: there is no input meter.
+// shadcn Buttons and Tooltips. The expanded variant shows the state words
+// beside the controls; the compact variant keeps the words for assistive
+// technology only. Both are 24px icon controls whose visible label is the
+// tooltip and whose text is read by assistive technology. Neither reads
+// audio: there is no input meter.
 
 import { RiMicLine, RiMicOffLine, RiPlayLine, RiRestartLine, RiStopLine } from "@remixicon/react";
 import { cn } from "cn";
@@ -175,7 +175,7 @@ function StateText(props: StateTextProps): JSX.Element {
 
 /**
  * The compact variant: icon buttons with tooltips and the state text for
- * assistive technology, for the dock header and the fullscreen slot.
+ * assistive technology.
  * @param props The view, the callbacks and an optional class.
  * @returns A toolbar of icon controls.
  */
@@ -195,8 +195,7 @@ function VoiceControlsCompact(props: VoiceControlsProps): JSX.Element {
 }
 
 /**
- * The expanded variant: the visible state words and the icon controls, for
- * the workbench's voice row beside the output wave.
+ * The expanded variant: the visible state words and the icon controls.
  * @param props The view, the callbacks and an optional class.
  * @returns The state line and a toolbar of controls.
  */
