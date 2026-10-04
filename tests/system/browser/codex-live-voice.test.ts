@@ -2,8 +2,6 @@ import { expect, test } from "bun:test";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 
-import { waveStateText } from "@/ui/voice-wave/wave-state";
-
 import {
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
 	TEST_PANE_MESSAGE_TIMEOUT_MS,
@@ -25,9 +23,11 @@ import {
 	readControlledVoiceMediaAudit,
 	setControlledOutputSilent,
 	talkWire,
+	type ControlledVoiceMediaAudit,
 	type FixtureRecord,
 } from "./support/codex-live-voice.ts";
 import {
+	AGENT_DOCK,
 	productionFixtureRecords,
 	workbenchControlOperability,
 } from "./support/codex-workbench-production.ts";
@@ -37,23 +37,19 @@ import {
 	AGENT_PANEL,
 	BOARD_NAME_EXPRESSION,
 	PANE_SECTIONS,
-	PANE_TABS,
 	openConversation,
 	stageIsFullscreen,
 } from "./support/shell-dom.ts";
 import { emulateMedia } from "./support/shell-render-matrix.ts";
 import {
 	BAR_VOICE,
-	PRESENTATION_VOICE,
-	endButton,
+	DOCK_SUBTITLES,
+	DOCK_VOICE,
 	focusIs,
-	layoutSnapshot,
-	liveButton,
-	presentationSnapshot,
 	presentedStep,
 	saidLines,
 	subtitleSnapshot,
-	voiceSnapshot,
+	voiceNow,
 } from "./support/voice-page.ts";
 
 const serverPath = join(import.meta.dir, "../server-state/fixtures/codex-production-server.ts");
@@ -61,12 +57,27 @@ const executableSource = join(import.meta.dir, "../server-state/fixtures/fake-co
 /** What the controlled session transcribes, as the fixture emits it. */
 const USER_SAID = "Show the controlled voice context.";
 const VOICE_SAID = "The controlled voice context is visible.";
+/** Where the page keeps whether the person wants subtitles (src/ui/voice-subtitles/lib/preference.ts). */
+const SUBTITLES_KEY = "archboard.voice.subtitles";
 
-/** WCAG 2.5.8 target size floor. */
-const MIN_TARGET = 24;
+/**
+ * Whether one voice session let go of everything it took from the browser.
+ * @param media The media audit.
+ * @param session Which session, oldest first.
+ * @returns True once its microphone and the model's track are stopped, its peer and audio context closed, and no audio element is left.
+ */
+function released(media: ControlledVoiceMediaAudit, session: number): boolean {
+	return (
+		media.localTracks[session]?.stopCount === 1 &&
+		media.remoteTracks[session]?.stopCount === 1 &&
+		media.peers[session]?.closeCount === 1 &&
+		media.contexts[session]?.closeCount === 1 &&
+		media.attachedAudioElements === 0
+	);
+}
 
 test(
-	"Talk carries itself through to live voice in the agent bar and the presentation bar",
+	"Talk starts a live voice in the dock, and the voice box and the presentation bar carry it",
 	async () => {
 		await using resources = new AsyncDisposableStack();
 		const fixture = prepareProductionFixture(resources, executableSource);
@@ -113,17 +124,23 @@ test(
 			server.base,
 			join(ownerRoot, "controlled-voice-media.js"),
 		);
+		// This person turned subtitles off on an earlier visit, and the page keeps that choice.
+		await browser.eval<boolean>(`(localStorage.setItem('${SUBTITLES_KEY}', 'false'), true)`);
+		await browser.run(["reload"]);
 		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 		expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/iu);
-		expect(
-			await browser.eval<readonly [boolean, boolean]>(
-				"[Boolean(globalThis.__archboardControlledVoiceMedia), String(navigator.mediaDevices?.getUserMedia).includes('audit.localTracks')]",
-			),
-		).toEqual([true, true]);
+		await pollUntil(
+			() =>
+				browser.eval<readonly [boolean, boolean]>(
+					"[Boolean(globalThis.__archboardControlledVoiceMedia), String(navigator.mediaDevices?.getUserMedia).includes('audit.localTracks')]",
+				),
+			([installed, patched]) => installed && patched,
+			"the controlled voice media to be installed in the reloaded page",
+		);
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(
-					`document.querySelector('${PANE_SECTIONS} ${SEMANTIC_STAGE}') !== null && document.querySelectorAll('${PANE_TABS}').length === 0`,
+					`document.querySelector('${PANE_SECTIONS} ${SEMANTIC_STAGE}') !== null && document.querySelectorAll('${PANE_SECTIONS}').length === 1`,
 				),
 			Boolean,
 			"the production shell and its one canvas pane to mount",
@@ -144,38 +161,35 @@ test(
 		await browser.run(["console", "--clear"]);
 		await browser.run(["errors", "--clear"]);
 
-		// Nothing is set up: no conversation exists, and Talk is the one voice control.
+		// Nothing is set up: no conversation exists, and the dock offers Talk.
 		const idle = await pollUntil(
-			() => voiceSnapshot(browser),
-			(value) => value.mode === "talk" && value.talkEnabled,
-			"Talk to be offered in the agent bar",
+			() => voiceNow(browser),
+			(value) => value.state === "off" && value.enabled,
+			"Talk to be offered in the agent dock",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
-		expect(idle.controls).toEqual([]);
-		const desktop = await layoutSnapshot(browser);
-		expect(desktop.viewport).toEqual([1920, 1080, 1]);
-		expect(desktop.pageOverflow).toBe(false);
-		expect(desktop.voiceInsideBar).toBe(true);
-		expect(desktop.voiceOverlapsStage).toBe(false);
-		expect((await workbenchControlOperability(browser, BAR_VOICE)).operable).toBe(true);
+		expect(idle.form).toBe("key");
+		expect(idle.lit).toBe(false);
+		expect((await workbenchControlOperability(browser, DOCK_VOICE)).operable).toBe(true);
 		const beforeTalk = records().length;
 		// Nothing is started: Talk starts the coordinator, the workhorse and voice.
 		expect(frames(0, "thread/start")).toEqual([]);
 		expect(frames(0, "thread/realtime/start")).toEqual([]);
 
-		// One gesture: Talk creates and links the conversation, then starts voice over the media.
-		await browser.run(["focus", BAR_VOICE]);
-		expect(await focusIs(browser, BAR_VOICE)).toEqual([true, false]);
+		// One gesture from the keyboard: Talk creates and links the conversation, then starts voice
+		// over the media. With subtitles off the orb is lit in the dock's circle, which the Talk key
+		// turns into.
+		await browser.run(["focus", DOCK_VOICE]);
+		expect(await focusIs(browser, DOCK_VOICE)).toEqual([true, false]);
 		await browser.run(["press", "Enter"]);
-		// The model is audible from the first frame: the wave follows its output.
 		const speaking = await pollUntil(
-			() => voiceSnapshot(browser),
-			(value) => value.mode === "live" && value.waveText === waveStateText("speaking"),
-			"Talk to set up the conversation, start voice and follow the model's output",
+			() => voiceNow(browser),
+			(value) => value.state === "speaking" && value.orb === "dock" && value.lit,
+			"Talk to set up the conversation and light the orb in the dock's circle as the model speaks",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
-		expect(speaking.wavePresentation).toBe("animated");
-		expect(speaking.controls).toContain("Mute");
+		expect(speaking.form).toBe("circle");
+		expect(speaking.box).toBeNull();
 		// The wire, in order: the coordinator and then the workhorse are created, the
 		// conversation reads the workhorse as the tab's linked thread, voice starts on the
 		// coordinator, and the coordinator is given the board catalogue this voice session
@@ -194,32 +208,30 @@ test(
 		expect(wire.readAt).toBeGreaterThan(wire.createdAt);
 		expect(wire.voiceAt).toBeGreaterThan(wire.readAt);
 		expect(wire.catalogueAt).toBeGreaterThan(wire.voiceAt);
-		// Voice never opens the conversation on its own, and the bar never grows.
+		// Voice never opens the conversation on its own.
 		expect(await browser.eval<boolean>(`document.querySelector('${AGENT_PANEL}') === null`)).toBe(
 			true,
 		);
-		const live = await layoutSnapshot(browser);
-		expect(live.barHeight).toBe(desktop.barHeight);
-		expect(live.voiceInsideBar).toBe(true);
-		expect(live.voiceOverlapsStage).toBe(false);
-		expect(live.pageOverflow).toBe(false);
 
-		// What the model says is subtitled over the pane voice runs for, as its words arrive.
-		const subtitled = await pollUntil(
-			() => subtitleSnapshot(browser),
-			(value) => value.text !== null && value.text.length > 0,
-			"the model's words to be subtitled over the picture",
+		// Microphone-only silence: the microphone stays live, the model goes quiet, and the
+		// voice listens instead of speaking. It follows the model's output, never the microphone.
+		await setControlledOutputSilent(browser, true);
+		await pollUntil(
+			() => voiceNow(browser),
+			(value) => value.state === "listening",
+			"silent model output to rest the voice while the microphone stays live",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
-		expect(VOICE_SAID).toStartWith(subtitled.text ?? "?");
-		const whole = await pollUntil(
-			() => subtitleSnapshot(browser),
-			(value) => value.text === VOICE_SAID,
-			"the whole sentence to be subtitled",
+		expect((await readControlledVoiceMediaAudit(browser)).localTracks).toEqual([
+			{ enabled: true, stopCount: 0 },
+		]);
+		await setControlledOutputSilent(browser, false);
+		await pollUntil(
+			() => voiceNow(browser),
+			(value) => value.state === "speaking",
+			"model output to make the voice speak again",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
-		expect(whole.pane).toBe("Pane A");
-		expect(whole.withinPane).toBe(true);
 
 		// What was said stays in the conversation, both sides, once the panel is opened.
 		await openConversation(browser);
@@ -239,64 +251,11 @@ test(
 			"the conversation to close",
 		);
 
-		// Microphone-only silence: the microphone stays live, the model goes quiet,
-		// and the wave rests in listening instead of speaking.
-		await setControlledOutputSilent(browser, true);
-		const silent = await pollUntil(
-			() => voiceSnapshot(browser),
-			(value) => value.waveText === waveStateText("listening"),
-			"silent model output to rest the wave while the microphone stays live",
-			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
-		);
-		expect(silent.mode).toBe("live");
-		expect((await readControlledVoiceMediaAudit(browser)).localTracks).toEqual([
-			{ enabled: true, stopCount: 0 },
-		]);
-		await setControlledOutputSilent(browser, false);
+		// Mute in the dock's voice line silences the microphone and nothing else.
+		await browser.run(["click", `${AGENT_DOCK} button[aria-label="Mute"]`]);
 		await pollUntil(
-			() => voiceSnapshot(browser),
-			(value) => value.waveText === waveStateText("speaking"),
-			"model output to drive the wave again",
-			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
-		);
-
-		// The live controls are reached in order from the keyboard: Mute, subtitles, End.
-		await browser.run(["focus", liveButton(BAR_VOICE, "Mute")]);
-		expect(await focusIs(browser, liveButton(BAR_VOICE, "Mute"))).toEqual([true, false]);
-		await browser.run(["press", "Tab"]);
-		expect(await focusIs(browser, `${BAR_VOICE} [data-slot="voice-subtitles-toggle"]`)).toEqual([
-			true,
-			false,
-		]);
-		await browser.run(["press", "Tab"]);
-		expect(await focusIs(browser, endButton(BAR_VOICE))).toEqual([true, false]);
-
-		// Reduced motion: the wave becomes a static rule with the same state text.
-		const releaseReduced = await emulateMedia(browser, "light", "reduced-motion");
-		try {
-			const reduced = await pollUntil(
-				() => voiceSnapshot(browser),
-				(value) => value.wavePresentation === "static",
-				"the rendered output wave to honor reduced motion",
-			);
-			expect([waveStateText("speaking"), waveStateText("listening")]).toContain(
-				reduced.waveText ?? "",
-			);
-		} finally {
-			await releaseReduced();
-		}
-		const releaseNormal = await emulateMedia(browser, "light", "normal");
-		await releaseNormal();
-		await pollUntil(
-			() => voiceSnapshot(browser),
-			(value) => value.wavePresentation === "animated",
-			"the animated wave to return with motion allowed",
-		);
-
-		await browser.run(["click", liveButton(BAR_VOICE, "Mute")]);
-		await pollUntil(
-			() => voiceSnapshot(browser),
-			(value) => value.controls.includes("Unmute"),
+			() => voiceNow(browser),
+			(value) => value.state === "muted",
 			"the controlled microphone to render muted",
 		);
 		expect(await readControlledVoiceMediaAudit(browser)).toMatchObject({
@@ -306,37 +265,44 @@ test(
 			playCount: 1,
 		});
 
-		await browser.run(["set", "viewport", "1920", "1080", "2"]);
-		const flipLive = await layoutSnapshot(browser);
-		expect(flipLive.viewport).toEqual([1920, 1080, 2]);
-		expect(flipLive.pageOverflow).toBe(false);
-		expect(flipLive.voiceInsideBar).toBe(true);
-		expect(flipLive.voiceOverlapsStage).toBe(false);
-		expect(flipLive.buttons.map(({ name }) => name)).toContain("Unmute");
-		expect(flipLive.buttons).toHaveLength(3);
-		expect(flipLive.buttons.every(({ height }) => height >= MIN_TARGET)).toBe(true);
-		await browser.run(["set", "viewport", "1920", "1080", "1"]);
+		// Subtitles on carry the orb to the voice box over the pane voice runs for. The box shows the
+		// same session, still muted, and the dock's key is the key that ends voice.
+		await browser.run(["click", DOCK_SUBTITLES]);
+		const boxed = await pollUntil(
+			() => voiceNow(browser),
+			(value) => value.box !== null && value.orb === "box" && value.lit,
+			"subtitles on to carry the orb to the voice box",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+		expect(boxed.box).toMatchObject({ place: "free", state: "muted", pane: "Pane A" });
+		expect(boxed.form).toBe("key");
 
-		// Presented fullscreen, the pane carries the same live control in its bar.
-		await roleAction(browser, "button", "Present pane A fullscreen");
+		// Presented fullscreen, the bar's key ends the same session, and the voice box carries it
+		// inside the presented stage.
+		await roleAction(browser, "button", "Present fullscreen");
 		const presented = await pollUntil(
-			() => presentationSnapshot(browser),
-			(value) => value.fullscreen && value.voice.mode === "live",
-			"the live voice control to reach the fullscreen presentation bar",
+			() => voiceNow(browser),
+			(value) => value.bar?.mode === "live" && value.box?.presented === true,
+			"the presentation bar and the voice box to carry the live voice in fullscreen",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
-		expect(presented.voice.controls).toEqual((await voiceSnapshot(browser)).controls);
-		expect(presented.voice.controls).toContain("Unmute");
-		expect(presented.insideStage).toBe(true);
-		expect(presented.paneChromeHidden).toBe(true);
-		expect(await workbenchControlOperability(browser, endButton(PRESENTATION_VOICE))).toMatchObject(
-			{ clipped: false, centerHit: true, operable: true },
-		);
-
+		expect(await stageIsFullscreen(browser)).toBe(true);
+		expect(presented.box?.state).toBe("muted");
+		expect(presented.orb).toBe("box");
+		for (const scale of ["1", "2"]) {
+			await browser.run(["set", "viewport", "1920", "1080", scale]);
+			expect(await workbenchControlOperability(browser, BAR_VOICE)).toMatchObject({
+				clipped: false,
+				centerHit: true,
+				operable: true,
+			});
+		}
+		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 		const releaseForcedColors = await emulateMedia(browser, "light", "forced-colors");
 		try {
 			expect(
 				await browser.eval<readonly [boolean, string, string]>(`(() => {
-					const end = document.querySelector(${JSON.stringify(endButton(PRESENTATION_VOICE))});
+					const end = document.querySelector(${JSON.stringify(BAR_VOICE)});
 					const style = getComputedStyle(end);
 					return [matchMedia('(forced-colors: active)').matches, style.forcedColorAdjust, style.borderTopStyle];
 				})()`),
@@ -344,56 +310,31 @@ test(
 		} finally {
 			await releaseForcedColors();
 		}
-		const releaseNormalAgain = await emulateMedia(browser, "light", "normal");
-		await releaseNormalAgain();
+		const releaseNormal = await emulateMedia(browser, "light", "normal");
+		await releaseNormal();
 
-		await browser.run(["set", "viewport", "1920", "1080", "2"]);
-		const scaled = await pollUntil(
-			() => presentationSnapshot(browser),
-			(value) => value.fullscreen && value.voice.mode === "live",
-			"the same voice control at the desktop scaled viewport",
-		);
-		expect(
-			await browser.eval<readonly [number, number, number]>(
-				"[innerWidth, innerHeight, devicePixelRatio]",
-			),
-		).toEqual([1920, 1080, 2]);
-		expect(scaled.insideStage).toBe(true);
-		expect(await workbenchControlOperability(browser, endButton(PRESENTATION_VOICE))).toMatchObject(
-			{ clipped: false, centerHit: true, operable: true },
-		);
-		await browser.run(["set", "viewport", "1920", "1080", "1"]);
-
-		// End from the presentation bar retires voice and releases the browser's media;
-		// the bar offers Talk again.
-		await browser.run(["click", endButton(PRESENTATION_VOICE)]);
-		await pollUntil(
+		// The bar's key ends voice and releases the browser's media, then offers Talk again.
+		await browser.run(["click", BAR_VOICE]);
+		const ended = await pollUntil(
 			async () => ({
-				snapshot: await presentationSnapshot(browser),
+				voice: await voiceNow(browser),
 				media: await readControlledVoiceMediaAudit(browser),
 			}),
-			(value) =>
-				value.snapshot.voice.mode === "talk" &&
-				value.snapshot.voice.talkEnabled &&
-				value.media.localTracks[0]?.stopCount === 1 &&
-				value.media.remoteTracks[0]?.stopCount === 1 &&
-				value.media.peers[0]?.closeCount === 1 &&
-				value.media.contexts[0]?.closeCount === 1 &&
-				value.media.attachedAudioElements === 0,
-			"the fullscreen End to retire voice and release browser media",
+			({ voice, media }) => voice.bar?.mode === "talk" && voice.bar.enabled && released(media, 0),
+			"the bar's key to end voice and release the browser's media",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
+		expect(ended.voice.box).toBeNull();
 		await roleAction(browser, "button", "Exit presentation");
 		const stopped = await pollUntil(
 			async () => ({
 				fullscreen: await stageIsFullscreen(browser),
-				voice: await voiceSnapshot(browser),
-				subtitle: await subtitleSnapshot(browser),
+				voice: await voiceNow(browser),
 			}),
-			(value) => !value.fullscreen && value.voice.mode === "talk" && value.voice.talkEnabled,
-			"an ended session to leave an enabled Talk in the agent bar",
+			({ fullscreen, voice }) => !fullscreen && voice.state === "off" && voice.enabled,
+			"an ended session to leave an enabled Talk in the agent dock",
 		);
-		expect(stopped.subtitle.text).toBeNull();
+		expect(stopped.voice.lit).toBe(false);
 		expect(
 			await browser.eval<boolean>(`(() => {
 				const stage = document.querySelector('${PANE_SECTIONS} ${SEMANTIC_STAGE}');
@@ -405,7 +346,8 @@ test(
 		// hands it to the voice model as speech. The user then steps by hand, and leaves; each is
 		// handed over the same way, and no coordinator turn is started for any of it. Narrating is a
 		// new voice session, and the talk before it carried the first coordinator, so it runs on a
-		// fresh one (TASK-301).
+		// fresh one (TASK-301). Subtitles are still on, so the voice is in the box at the foot of the
+		// presented walkthrough, with the model's words.
 		const narrationFrom = records().length;
 		const speeches = () =>
 			frames(narrationFrom, "thread/realtime/appendSpeech").map(({ params }) =>
@@ -425,6 +367,21 @@ test(
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
 		expect(first).toContain("All of it");
+		const footed = await pollUntil(
+			() => voiceNow(browser),
+			(value) => value.box?.place === "foot" && value.orb === "box" && value.lit,
+			"the voice to be in the box at the foot of the presented walkthrough",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+		expect(footed.box?.pane).toBe("Pane A");
+		const subtitled = await pollUntil(
+			() => subtitleSnapshot(browser),
+			(value) => value.text === VOICE_SAID,
+			"the model's words to be subtitled in the voice box",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+		expect(subtitled.pane).toBe("Pane A");
+		expect(subtitled.withinPane).toBe(true);
 		// The step was opened by the server, so the pane credits nobody with what it lit.
 		const context = await api<{ panes: { byUser?: string[] }[] }>("/api/panes/semantic-context");
 		expect(context.body.panes[0]?.byUser).toBeUndefined();
@@ -450,11 +407,24 @@ test(
 		const narrationCoordinator = narrationStart?.params?.["threadId"];
 		expect(narrationCoordinator).not.toBe(RAW_COORDINATOR_THREAD_ID);
 		expect(frames(narrationFrom, "turn/start")).toEqual([]);
-		await browser.run(["click", endButton(BAR_VOICE)]);
+
+		// The dock's key, which ends voice while the box has it, ends the narration and releases its media.
+		const freed = await pollUntil(
+			() => voiceNow(browser),
+			(value) => value.box?.place === "free" && value.form === "key" && value.enabled,
+			"the voice to be back in the box over the picture once the walkthrough is left",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+		expect(freed.state).not.toBe("off");
+		await browser.run(["click", DOCK_VOICE]);
 		await pollUntil(
-			() => voiceSnapshot(browser),
-			(value) => value.mode === "talk" && value.talkEnabled,
-			"the narration to end",
+			async () => ({
+				voice: await voiceNow(browser),
+				media: await readControlledVoiceMediaAudit(browser),
+			}),
+			({ voice, media }) =>
+				voice.state === "off" && voice.enabled && voice.box === null && released(media, 1),
+			"the dock's key to end the narration and release the browser's media",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
 		// Each End stops its session's realtime on the coordinator that session ran on.

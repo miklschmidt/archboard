@@ -324,18 +324,23 @@ repeat them.
 
 ### Controlled live voice (TASK-143.04.07)
 
-Extends the same exact-version production composition through one controlled
-browser media session. One short rendered lifecycle proves that CanvasPane's
-caller-owned session reaches Shell and WorkbenchFrame with its source, captured
-context, and transcript visible. It then mutes the session, carries the same
-identity into the fullscreen dock, and stops it there before checking text-only
-cleanup and the unchanged mounted board pane.
+Extends the same exact-version production composition through controlled
+browser media. The person turned subtitles off on an earlier visit. Talk in the
+agent dock creates and links the conversation, starts voice and lights the orb
+in the dock's circle. The owner checks the order of that wire. It checks that
+the voice follows the model's output and not the microphone, that what was
+said lands in the conversation, and that mute stops only the microphone.
+Subtitles on carry the orb to the voice box over the pane. In a fullscreen
+presentation the bar's key and the voice box carry the same session. The bar's
+key ends it and releases the browser's media. Narrating the walkthrough then
+starts a second session on a fresh coordinator. Its words are in the voice box
+at the foot of the presented walkthrough. The dock's key ends it and releases
+its media, and the mounted board pane is unchanged.
 
-The owner checks desktop and desktop scaled geometry, target size, focus
-order, live-region semantics, reduced motion, forced colors, browser errors,
-and resource cleanup. Focused realtime, media, session, transcript, context,
-spoken-approval, frame, and shell owners keep their exhaustive state and
-failure matrices.
+The owner checks target size at desktop and desktop scaled, forced colors,
+browser errors and resource cleanup. Focused realtime, media, session,
+transcript, context, spoken-approval, orb, voice box and shell owners keep
+their exhaustive state and failure matrices.
 
 ## Source boundary check
 
