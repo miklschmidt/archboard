@@ -18,12 +18,12 @@ import {
 	runServerCli,
 } from "./support/agent-browser.ts";
 import {
-	AGENT_DOCK,
 	productionFixtureRecords,
 	workbenchControlOperability,
 } from "./support/codex-workbench-production.ts";
 import { SEMANTIC_STAGE, seedSemanticBoard } from "./support/semantic-page.ts";
 import {
+	AGENT_DOCK,
 	AGENT_PANEL,
 	BOARD_NAME_EXPRESSION,
 	COMPOSER,
