@@ -336,8 +336,7 @@ Rendered captures at 1920×1080: a finished turn in the light theme, a turn at
 work in the dark theme.
 
 - **The agent dock** sits in the navigator's column, so it takes no height
-  from the panes, and the reference pane ADR 0028 measures against is a pane's
-  picture under its one chrome row. Its line says in one phrase what
+  from the panes. Its line says in one phrase what
   the agent is doing: the current step of the plan, else the latest step. The
   line also says for how long, how far the agent is through its plan, what is
   queued, and whether the agent is now quiet. It offers the one control that
