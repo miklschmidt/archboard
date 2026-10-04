@@ -37,8 +37,10 @@ interface CameraStage {
 	 * Draw the camera somewhere.
 	 * @param camera Where.
 	 * @param instant Whether the surface lands there at once, rather than easing there itself.
+	 * @param byHand Whether a hand is still moving the camera: a wheel or a key, and not a
+	 * thrown drag coasting on after the hand let go of it.
 	 */
-	readonly draw: (camera: Camera, instant: boolean) => void;
+	readonly draw: (camera: Camera, instant: boolean, byHand: boolean) => void;
 }
 
 /** The moves of a camera that run over many frames. */
@@ -105,7 +107,7 @@ function useCameraMotion(stage: CameraStage, reducedMotion: boolean): CameraMoti
 				lastAt.current = now;
 				const stepped = stepMotion(stage.read(), current, dt);
 				motion.current = stepped.motion;
-				stage.draw(stepped.camera, true);
+				stage.draw(stepped.camera, true, current.fling === null);
 				if (stepped.motion !== null) {
 					frame.current = clock.requestFrame(tick);
 				}
@@ -121,7 +123,7 @@ function useCameraMotion(stage: CameraStage, reducedMotion: boolean): CameraMoti
 	const zoomAt = useCallback(
 		(factor: number, at: Pair): void => {
 			if (reducedMotion || !frameClock().animates) {
-				stage.draw(zoomCameraAbout(stage.read(), factor, at.x, at.y), false);
+				stage.draw(zoomCameraAbout(stage.read(), factor, at.x, at.y), false, true);
 				return;
 			}
 			const before = motion.current ?? STILL;
@@ -136,7 +138,7 @@ function useCameraMotion(stage: CameraStage, reducedMotion: boolean): CameraMoti
 	const ease = useCallback(
 		(dx: number, dy: number): void => {
 			if (reducedMotion || !frameClock().animates) {
-				stage.draw(panCamera(stage.read(), dx, dy), false);
+				stage.draw(panCamera(stage.read(), dx, dy), false, true);
 				return;
 			}
 			run(easeMotion(motion.current ?? STILL, dx, dy));

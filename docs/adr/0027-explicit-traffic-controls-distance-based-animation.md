@@ -69,9 +69,10 @@ Reduced motion hides every pulse. A relationship that is removed or removed
 standing carries no traffic. Traffic is still illustration, not measurement.
 
 In the browser, traffic stands still while a hand moves the camera: a drag, a
-throw that is still coasting, a wheel or a key. It comes back only after the
-camera has been still for 400 ms, and then it starts from a creep and reaches
-its speed over 1.5 seconds, so no pulse jumps. A camera that the page moves by
+wheel or a key. It comes back the moment a drag is let go, even if the picture
+is thrown and coasts on, and 400 ms after the last turn of a wheel or press of
+a key. It never returns at its speed: it starts from a creep and reaches its
+speed over 1.5 seconds, so no pulse jumps. A camera that the page moves by
 itself, such as a fit or a step of a walkthrough, leaves traffic running.
 
 The paragraphs after the settled requirements hold again, with one change: a

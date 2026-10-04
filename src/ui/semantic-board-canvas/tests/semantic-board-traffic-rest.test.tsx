@@ -1,10 +1,10 @@
 // The traffic of a picture while its camera is moved by a hand.
 //
-// What this catches: traffic that keeps running under a drag, or that comes
-// back the moment a drag is let go, while the thrown picture is still coasting;
-// traffic that jumps to its full speed once the picture has stopped, rather than
-// gathering it; and a camera the stage moves itself, which never needs the
-// traffic stood still.
+// What this catches: traffic that keeps running under a drag; traffic that waits
+// for a thrown picture to stop before it comes back, or is stood still again by
+// the picture coasting on; traffic that jumps to its full speed rather than
+// gathering it; a wheel or a key that leaves traffic running; and a camera the
+// stage moves itself, which never needs the traffic stood still.
 
 import { act, fireEvent } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test } from "bun:test";
@@ -88,7 +88,7 @@ function dragPicture(): void {
 	}
 }
 
-test("traffic stands still under a drag and a throw, and comes back gently once the picture rests", async () => {
+test("traffic stands still under a drag and comes back gently the moment the drag is let go", async () => {
 	const traffic = await mountWithTraffic();
 	const frames = takeFrames();
 	try {
@@ -96,19 +96,14 @@ test("traffic stands still under a drag and a throw, and comes back gently once 
 		expect(traffic.playState).toBe("paused");
 
 		pointerAt("pointerup", { x: 300, t: 1082 });
-		// Coasting: the picture moves on, and the traffic is still for as long as it does.
 		const letGo = cameraNow().x;
-		let waited = 0;
-		for (; waited < 4000 && traffic.playState === "paused"; waited += 16) frames.run(16);
-		expect(cameraNow().x).toBeGreaterThan(letGo + 50);
-		expect(waited).toBeGreaterThan(EXPLORING_MS.cameraFling * 3);
-
-		// The traffic came back as a creep, and the picture had stopped for good before it did.
-		expect(traffic.playState).toBe("running");
-		expect(traffic.playbackRate).toBeLessThan(0.05);
-		const stopped = cameraNow().x;
 		frames.run(100);
-		expect(cameraNow().x).toBe(stopped);
+
+		// The picture was thrown and is coasting, and the traffic is already creeping back.
+		expect(cameraNow().x).toBeGreaterThan(letGo + 50);
+		expect(traffic.playState).toBe("running");
+		expect(traffic.playbackRate).toBeGreaterThan(0);
+		expect(traffic.playbackRate).toBeLessThan(0.05);
 
 		frames.run(EXPLORING_MS.trafficStart / 2);
 		expect(traffic.playbackRate).toBeGreaterThan(0.3);

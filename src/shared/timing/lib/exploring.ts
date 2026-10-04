@@ -25,12 +25,13 @@ const EXPLORING_MS = Object.freeze({
 	 */
 	cameraFling: 320,
 	/**
-	 * How long the camera must have been still, after a hand moved it, before the
-	 * traffic of the picture begins to move again.
+	 * How long a wheel or a key must have left the camera alone before the traffic
+	 * of the picture begins to move again. A drag does not wait: traffic starts as
+	 * the hand lets go.
 	 *
-	 * Pulls against the hand. A thrown drag slows to a crawl before it stops, so
-	 * at 150 ms or less traffic wakes up under a board that is still drifting; past
-	 * about 600 ms a board the reader has let go of looks stalled.
+	 * Pulls against the hand. A wheel is a run of turns with no end of its own, so
+	 * at 150 ms or less traffic wakes up between two turns of one zoom; past about
+	 * 600 ms a board the reader has let go of looks stalled.
 	 */
 	trafficRest: 400,
 	/**
