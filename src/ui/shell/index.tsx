@@ -34,8 +34,8 @@ import { isPresentShortcut, presentShortcutLabel } from "@/ui/shell/lib/shortcut
 /**
  * The navigator's width, the shell's one fixed column, and the height of the
  * chrome row at the top of every column, set here from the shared shell
- * geometry so the reference pane a drawing is measured against is derived from
- * what the shell draws (ADR 0028).
+ * geometry, which the shell-layout owner holds the mounted shell to. The
+ * reference pane takes its width from the same geometry (ADR 0043).
  */
 const SHELL_STYLE: CSSProperties = {
 	"--shell-navigator-width": `${NAVIGATOR_WIDTH}px`,

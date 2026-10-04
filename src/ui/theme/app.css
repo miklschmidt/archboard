@@ -158,8 +158,7 @@
 	--color-warning-subtle: var(--warning-subtle);
 	/* Rows. chrome: the top row of every column (the brand, a pane's header,
 	   the conversation's title), as tall as the shell root says
-	   (--shell-chrome-height, from src/shared/shell-geometry): the reference
-	   pane a drawing is measured against is derived from it. band: the row
+	   (--shell-chrome-height, from src/shared/shell-geometry). band: the row
 	   under it (the two find fields, the sidebar's tabs). row: the least a row
 	   of a list takes on one line. */
 	--spacing-chrome: var(--shell-chrome-height);
