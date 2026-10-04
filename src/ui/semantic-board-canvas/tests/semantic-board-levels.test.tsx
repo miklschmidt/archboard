@@ -341,11 +341,7 @@ test("coming back up leaves the pane reading its own board as it was", async () 
 		body: { ...drawing(1), views: [PIPELINE_VIEW], view: PIPELINE_VIEW },
 	};
 	await act(async () => {
-		fireEvent.click(
-			document
-				.querySelector<HTMLElement>("[data-slot='semantic-board-trail']")!
-				.querySelector("button")!,
-		);
+		fireEvent.click(document.querySelector<HTMLElement>("[data-slot='pane-crumb']")!);
 	});
 	await settle();
 	// The level below's choice went with the level; the pane's own board is read

@@ -306,16 +306,17 @@ test("following a drill-down shows the target board and offers the way back", as
 
 	expect(slot("semantic-board-stage")?.getAttribute("data-board")).toBe("engine");
 	expect(server.calls.some((url) => url.includes("board=engine"))).toBe(true);
-	// The pane says where it is and how to get back; the address still names the
-	// board the pane was opened on, which is why the trail has to be on screen.
-	expect(slot("semantic-board-trail")?.textContent).toContain("pipeline");
+	// The pane says where it came from and how to get back, with no navigator to
+	// place the board: the address still names the board the pane was opened on,
+	// so the way back has to be in the pane's own breadcrumb.
+	expect(slot("pane-crumb")?.textContent).toContain("pipeline");
 
 	await act(async () => {
-		fireEvent.click(slot("semantic-board-trail")!.querySelector("button")!);
+		fireEvent.click(slot("pane-crumb")!);
 	});
 	await settled();
 	expect(slot("semantic-board-stage")?.getAttribute("data-board")).toBe("pipeline");
-	expect(slot("semantic-board-trail")).toBeNull();
+	expect(slot("pane-crumb")).toBeNull();
 });
 
 test("a link written before its board and variant were renamed opens them by the names they have now", async () => {
@@ -373,9 +374,9 @@ test("the way back survives drilling into a board with nothing on it", async () 
 	await settled();
 
 	expect(slot("semantic-board-stage")?.getAttribute("data-state")).toBe("empty");
-	expect(slot("semantic-board-trail")?.textContent).toContain("pipeline");
+	expect(slot("pane-crumb")?.textContent).toContain("pipeline");
 	await act(async () => {
-		fireEvent.click(slot("semantic-board-trail")!.querySelector("button")!);
+		fireEvent.click(slot("pane-crumb")!);
 	});
 	await settled();
 	expect(slot("semantic-board-stage")?.getAttribute("data-board")).toBe("pipeline");

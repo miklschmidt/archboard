@@ -12,6 +12,7 @@ import {
 	type PaneHeaderProps,
 } from "@/ui/semantic-board-canvas/components/PaneHeader";
 import type { DrillNavigation } from "@/ui/semantic-board-canvas/hooks/use-drill-down";
+import { useDrillPlaces } from "@/ui/semantic-board-canvas/hooks/use-drill-places";
 import type { Sidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 
@@ -62,32 +63,6 @@ function headerFacts(
 }
 
 /**
- * A board above the one on screen that the reader drilled down from in this
- * pane is reached by going back along the drill, not by opening it again: the
- * pane is still on the board it was opened on, and only the drill moved.
- * @param place The board above, as the navigator places it.
- * @param trail How the pane got here, from the board it was opened on.
- * @param onBack Go back one level.
- * @returns The place, with its way to it.
- */
-function backAlong(
-	place: BoardPlace,
-	trail: readonly { readonly board: string }[],
-	onBack: () => void,
-): BoardPlace {
-	const at = trail.findIndex((stop) => stop.board.toLowerCase() === place.name.toLowerCase());
-	if (at < 0) return place;
-	const steps = trail.length - at;
-	return {
-		...place,
-		/** Go back along the drill to this board. */
-		open: (): void => {
-			for (let step = 0; step < steps; step += 1) onBack();
-		},
-	};
-}
-
-/**
  * The pane's header: where the board on screen sits, and the tabs.
  * @param props What the stage knows.
  * @param props.view What the stage knows.
@@ -95,13 +70,8 @@ function backAlong(
  */
 function StageHeader(props: { readonly view: StageHeaderView }): JSX.Element {
 	const { view } = props;
-	const { placeOf } = view;
 	const facts = useMemo(() => headerFacts(view.reading), [view.reading]);
-	const { drill, onBack } = view;
-	const ancestors = useMemo(
-		() => (placeOf?.(drill.board) ?? []).map((place) => backAlong(place, drill.trail, onBack)),
-		[placeOf, drill.board, drill.trail, onBack],
-	);
+	const ancestors = useDrillPlaces(view.placeOf, view.drill, view.onBack);
 	return (
 		<PaneHeader
 			{...facts}

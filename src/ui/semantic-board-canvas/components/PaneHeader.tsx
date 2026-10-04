@@ -6,9 +6,11 @@
 //
 // The pane's letter (while two panes share the centre) and its controls are
 // the shell's (`usePaneChrome`); the rest is the board's. Where the board sits
-// is one breadcrumb, the navigator's own placing of it: the boards above, each
-// with its level's mark and each a way to it in this pane, then the board in
-// bold, full ink, then the variant when it is not the one the name opens.
+// is one breadcrumb: the boards above, each with its level's mark and each a
+// way to it in this pane, then the board in bold, full ink, then the variant
+// when it is not the one the name opens. The boards above are the navigator's
+// own placing of the board, and after a drill-down they end with the boards the
+// reader came down through, each a way back (`use-drill-places.ts`).
 // The tabs switch what the area under the row shows: the picture, or one of
 // the board's pages. While the row is narrow (two panes), the tabs that are not
 // open keep only their marks and the middle of the breadcrumb folds behind one
@@ -58,7 +60,7 @@ const TABS: readonly {
 	{ tab: "walkthroughs", label: "Walkthroughs", icon: RiPlayCircleLine },
 ];
 
-/** A board above the one on screen, as the navigator places it. */
+/** A board above the one on screen, as the navigator places it or as the reader came down from it. */
 interface BoardPlace {
 	readonly name: string;
 	/** Its level, as it states it. */
@@ -73,7 +75,7 @@ interface PaneHeaderProps {
 	readonly name: string;
 	/** Its level, when the board states one. */
 	readonly level: string | undefined;
-	/** The boards above it, outermost first, as the navigator places them. */
+	/** The boards above it, outermost first. */
 	readonly ancestors: readonly BoardPlace[];
 	/** The variant on screen, when it is not the one the board's name opens. */
 	readonly variant: OfferedVariant | null;
@@ -90,6 +92,28 @@ interface PaneHeaderProps {
 	readonly counts: Readonly<Partial<Record<BoardTab, number | undefined>>>;
 	/** The pane's sidebar, which the first of the controls at the end shows and hides. */
 	readonly sidebar: Sidebar;
+}
+
+/** One place of the breadcrumb, and what tells it apart from the others. */
+interface KeyedPlace {
+	readonly place: BoardPlace;
+	readonly key: string;
+}
+
+/**
+ * The places of the breadcrumb, each with a key of its own. A reader can pass
+ * one board more than once on the way down, so a name does not tell its places
+ * apart: the key also counts how often the name came before.
+ * @param places The places, outermost first.
+ * @returns The places, keyed.
+ */
+function keyed(places: readonly BoardPlace[]): readonly KeyedPlace[] {
+	const seen = new Map<string, number>();
+	return places.map((place) => {
+		const before = seen.get(place.name) ?? 0;
+		seen.set(place.name, before + 1);
+		return { place, key: `${place.name}#${before}` };
+	});
 }
 
 /**
@@ -140,7 +164,7 @@ function Ancestor(props: { readonly place: BoardPlace; readonly middle: boolean 
  * @param props.places The boards between the top and the nearest above.
  * @returns The fold, or nothing when there is nothing to fold.
  */
-function Folded(props: { readonly places: readonly BoardPlace[] }): JSX.Element | null {
+function Folded(props: { readonly places: readonly KeyedPlace[] }): JSX.Element | null {
 	if (props.places.length === 0) return null;
 	return (
 		<li className="flex shrink-0 items-center gap-1 @min-[880px]/pane-header:hidden">
@@ -152,8 +176,8 @@ function Folded(props: { readonly places: readonly BoardPlace[] }): JSX.Element 
 					<RiMoreLine className="size-4" />
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="start" sideOffset={6} className="w-56">
-					{props.places.map((place) => (
-						<DropdownMenuItem key={place.name} onClick={place.open} className="gap-2">
+					{props.places.map(({ place, key }) => (
+						<DropdownMenuItem key={key} onClick={place.open} className="gap-2">
 							<LevelMark level={place.level} />
 							{place.name}
 						</DropdownMenuItem>
@@ -175,14 +199,15 @@ function Folded(props: { readonly places: readonly BoardPlace[] }): JSX.Element 
  * @returns The breadcrumb.
  */
 function Breadcrumb(props: PaneHeaderProps): JSX.Element {
-	const { name, level, variant, ancestors } = props;
+	const { name, level, variant } = props;
+	const ancestors = keyed(props.ancestors);
 	const middle = ancestors.slice(0, -1);
 	return (
 		<nav aria-label="Where this board sits" className="min-w-0 shrink">
 			<ol className="flex min-w-0 items-center gap-1">
 				<Folded places={middle} />
-				{ancestors.map((place, index) => (
-					<Ancestor key={place.name} place={place} middle={index < ancestors.length - 1} />
+				{ancestors.map(({ place, key }, index) => (
+					<Ancestor key={key} place={place} middle={index < ancestors.length - 1} />
 				))}
 				<li className="flex min-w-24 shrink items-center gap-1.5" aria-current="page">
 					<LevelMark level={level} />
