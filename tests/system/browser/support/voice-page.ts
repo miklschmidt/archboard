@@ -1,29 +1,18 @@
-// What the live voice owner reads off the page: the one voice control (Talk,
-// or the live controls) in the agent bar and in the presentation bar, the
-// subtitle over the voice pane, what was said in the conversation panel, a
-// walkthrough's position and the focused control.
+// What the live voice owner reads off the page: where the voice is (the dock's key and circle,
+// the orb, the voice box over a pane and the key in a presentation's bar), the subtitle in the
+// voice box, what was said in the conversation, a walkthrough's position and the focused control.
 
+import { AGENT_DOCK } from "./codex-workbench-production.ts";
 import { SEMANTIC_STAGE } from "./semantic-page.ts";
-import {
-	AGENT_BAR,
-	AGENT_PANEL,
-	PANE_SECTIONS,
-	PRESENTATION_BAR,
-	STAGE_ROOT,
-} from "./shell-dom.ts";
+import { AGENT_PANEL, PANE_SECTIONS, PRESENTATION_BAR } from "./shell-dom.ts";
 import type { AgentBrowserSession } from "./agent-browser.ts";
 
-/** The voice control in the agent bar: Talk while voice is off, the live controls while on. */
-const BAR_VOICE = `${AGENT_BAR} [data-voice-controls]`;
-/** The same control in the fullscreen presentation bar. */
-const PRESENTATION_VOICE = `${PRESENTATION_BAR} [data-voice-controls]`;
-
-/** One live control's button, by accessible name, inside a bar's voice control. */
-const liveButton = (scope: string, name: string): string =>
-	`${scope}[data-voice-controls="live"] button[aria-label=${JSON.stringify(name)}]`;
-/** The live control's End: its one button named by its words rather than a label. */
-const endButton = (scope: string): string =>
-	`${scope}[data-voice-controls="live"] > button:not([aria-label])`;
+/** The dock's voice key: Talk while voice is off, then the circle, or End voice while the box has the voice. */
+const DOCK_VOICE = `${AGENT_DOCK} [data-slot="voice-circle"]`;
+/** The subtitles control in the dock's voice line, while the dock has the voice. */
+const DOCK_SUBTITLES = `${AGENT_DOCK} [data-slot="voice-subtitles-toggle"]`;
+/** The voice key in the bar of a fullscreen presentation: Talk, then End voice. */
+const BAR_VOICE = `${PRESENTATION_BAR} [data-voice-controls]`;
 
 /** One line of what was said aloud, as the conversation panel lists it. */
 interface SaidLine {
@@ -32,21 +21,34 @@ interface SaidLine {
 	readonly partial: boolean;
 }
 
-/** The voice control as one bar presents it. */
-interface VoiceSnapshot {
-	/** talk or live, from the control's own marker; null when the bar has none. */
-	readonly mode: string | null;
-	/** Whether Talk can be pressed (false while voice is on its way, or live). */
-	readonly talkEnabled: boolean;
-	/** The live controls' buttons, by accessible name. */
-	readonly controls: string[];
-	/** The output wave's state text, from its live region. */
-	readonly waveText: string | null;
-	/** animated or static, from the wave's own marker. */
-	readonly wavePresentation: string | null;
+/** Where the voice is, as the page shows it. */
+interface VoiceNow {
+	/** What the dock's key shows: `off` while it offers Talk, else the voice's state. */
+	readonly state: string | null;
+	/** The key's shape: `key` while it offers Talk or the box has the voice, `circle` while the orb is home in the dock. */
+	readonly form: string | null;
+	/** Whether the dock's key can be pressed. */
+	readonly enabled: boolean;
+	/** The home the orb rests in, `dock` or `box`, or null while it is in the air or nowhere. */
+	readonly orb: string | null;
+	/** Whether the orb is lit. */
+	readonly lit: boolean;
+	/** The voice box while it is on the page and not leaving, or null. */
+	readonly box: {
+		/** `free` over the picture, or `foot` in a presented walkthrough's box. */
+		readonly place: string | null;
+		/** The voice's state, as the box shows it. */
+		readonly state: string | null;
+		/** The label of the pane section the box is drawn in. */
+		readonly pane: string | null;
+		/** Whether the box and the orb are inside the element presented fullscreen. */
+		readonly presented: boolean;
+	} | null;
+	/** The presentation bar's voice key, `talk` or `live`, and whether it can be pressed; null outside a presentation. */
+	readonly bar: { readonly mode: string | null; readonly enabled: boolean } | null;
 }
 
-/** The subtitle over the picture, and the pane it sits over. */
+/** The subtitle in the voice box, and the pane it sits over. */
 interface SubtitleSnapshot {
 	readonly text: string | null;
 	/** The label of the pane section the subtitle is drawn inside, or null. */
@@ -55,45 +57,37 @@ interface SubtitleSnapshot {
 	readonly withinPane: boolean;
 }
 
-interface LayoutSnapshot {
-	readonly viewport: readonly [number, number, number];
-	readonly pageOverflow: boolean;
-	readonly voiceInsideBar: boolean;
-	readonly voiceOverlapsStage: boolean;
-	readonly barHeight: number;
-	/** Every button of the bar's voice control: its name and height. */
-	readonly buttons: readonly { readonly name: string; readonly height: number }[];
-}
-
-interface PresentationSnapshot {
-	readonly fullscreen: boolean;
-	readonly voice: VoiceSnapshot;
-	readonly insideStage: boolean;
-	readonly paneChromeHidden: boolean;
-}
-
-/** The expression reading one voice control, given a selector for it. */
-const readVoice = (selector: string): string => `(() => {
-	const control = document.querySelector('${selector}');
-	const talk = control?.getAttribute('data-voice-controls') === 'talk' ? control : null;
-	const wave = control?.querySelector('[data-voice-wave]');
-	return {
-		mode: control?.getAttribute('data-voice-controls') ?? null,
-		talkEnabled: talk instanceof HTMLButtonElement && !talk.disabled,
-		controls: talk ? [] : [...(control?.querySelectorAll('button') ?? [])]
-			.map(node => (node.getAttribute('aria-label') ?? node.textContent ?? '').trim()),
-		waveText: wave?.querySelector('output')?.textContent?.trim() ?? null,
-		wavePresentation: wave?.getAttribute('data-voice-wave') ?? null,
-	};
-})()`;
-
-function voiceSnapshot(browser: AgentBrowserSession): Promise<VoiceSnapshot> {
-	return browser.eval<VoiceSnapshot>(readVoice(BAR_VOICE));
+function voiceNow(browser: AgentBrowserSession): Promise<VoiceNow> {
+	return browser.eval<VoiceNow>(`(() => {
+		const key = document.querySelector('${DOCK_VOICE}');
+		const holder = document.querySelector('[data-slot="voice-orb-holder"]');
+		const socket = holder?.parentElement?.getAttribute('data-slot') === 'voice-orb-socket' ? holder.parentElement : null;
+		const box = document.querySelector('[data-slot="voice-box"]:not([data-leaving])');
+		const bar = document.querySelector('${BAR_VOICE}');
+		const presented = document.fullscreenElement;
+		return {
+			state: key?.getAttribute('data-voice-state') ?? null,
+			form: key?.getAttribute('data-form') ?? null,
+			enabled: key instanceof HTMLButtonElement && !key.disabled,
+			orb: socket?.getAttribute('data-home') ?? null,
+			lit: holder?.getAttribute('data-shown') === 'true',
+			box: box && {
+				place: box.getAttribute('data-place'),
+				state: box.getAttribute('data-voice-state'),
+				pane: box.closest('${PANE_SECTIONS}')?.getAttribute('aria-label') ?? null,
+				presented: !!presented && presented.contains(box) && !!holder && presented.contains(holder),
+			},
+			bar: bar && {
+				mode: bar.getAttribute('data-voice-controls'),
+				enabled: bar instanceof HTMLButtonElement && !bar.disabled,
+			},
+		};
+	})()`);
 }
 
 function subtitleSnapshot(browser: AgentBrowserSession): Promise<SubtitleSnapshot> {
 	return browser.eval<SubtitleSnapshot>(`(() => {
-		const subtitle = document.querySelector('[data-slot="voice-subtitles"]');
+		const subtitle = document.querySelector('[data-slot="voice-box"] [data-slot="voice-subtitles"]');
 		const pane = subtitle?.closest('${PANE_SECTIONS}') ?? null;
 		const inner = subtitle?.getBoundingClientRect();
 		const outer = pane?.getBoundingClientRect();
@@ -119,48 +113,6 @@ function saidLines(browser: AgentBrowserSession): Promise<SaidLine[]> {
 			text: (line.lastElementChild?.textContent ?? '').trim(),
 			partial: line.getAttribute('aria-busy') === 'true',
 		}))`);
-}
-
-function layoutSnapshot(browser: AgentBrowserSession): Promise<LayoutSnapshot> {
-	return browser.eval<LayoutSnapshot>(`(() => {
-		const rect = node => node?.getBoundingClientRect() ?? new DOMRect();
-		const overlaps = (left, right) => left.width > 0 && left.height > 0 && right.width > 0 &&
-			right.height > 0 && left.left < right.right && left.right > right.left &&
-			left.top < right.bottom && left.bottom > right.top;
-		const voice = document.querySelector('${BAR_VOICE}');
-		const voiceRect = rect(voice);
-		const barRect = rect(document.querySelector('${AGENT_BAR}'));
-		const buttons = voice instanceof HTMLButtonElement ? [voice] : [...(voice?.querySelectorAll('button') ?? [])];
-		return {
-			viewport: [innerWidth, innerHeight, devicePixelRatio],
-			pageOverflow: document.documentElement.scrollWidth > innerWidth ||
-				document.documentElement.scrollHeight > innerHeight,
-			voiceInsideBar: voiceRect.width > 0 && voiceRect.left >= barRect.left &&
-				voiceRect.right <= barRect.right && voiceRect.top >= barRect.top &&
-				voiceRect.bottom <= barRect.bottom,
-			voiceOverlapsStage: overlaps(voiceRect, rect(document.querySelector('${STAGE_ROOT}'))),
-			barHeight: barRect.height,
-			buttons: buttons.map(node => ({
-				name: (node.getAttribute('aria-label') ?? node.textContent ?? '').trim(),
-				height: node.getBoundingClientRect().height,
-			})),
-		};
-	})()`);
-}
-
-function presentationSnapshot(browser: AgentBrowserSession): Promise<PresentationSnapshot> {
-	return browser.eval<PresentationSnapshot>(`(() => {
-		const stage = document.querySelector('${STAGE_ROOT}');
-		const control = document.querySelector('${PRESENTATION_VOICE}');
-		const presented = [...document.querySelectorAll('${PANE_SECTIONS}')].find(node => !node.hidden);
-		const chrome = [...(presented?.querySelectorAll('[data-slot="semantic-sidebar"], [data-slot="semantic-view-bar"]') ?? [])];
-		return {
-			fullscreen: document.fullscreenElement === stage,
-			voice: ${readVoice(PRESENTATION_VOICE)},
-			insideStage: !!control && !!stage && stage.contains(control),
-			paneChromeHidden: chrome.every(node => !node.checkVisibility()),
-		};
-	})()`);
 }
 
 /** Where the pane is in its presentation: the step index, or null, and whether it still moves. */
@@ -194,15 +146,13 @@ function focusIs(
 
 export {
 	BAR_VOICE,
-	PRESENTATION_VOICE,
-	endButton,
+	DOCK_SUBTITLES,
+	DOCK_VOICE,
 	focusIs,
-	layoutSnapshot,
-	liveButton,
-	presentationSnapshot,
 	presentedStep,
 	saidLines,
 	subtitleSnapshot,
-	voiceSnapshot,
+	voiceNow,
 	type SaidLine,
+	type VoiceNow,
 };
