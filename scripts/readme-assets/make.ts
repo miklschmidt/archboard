@@ -1,0 +1,230 @@
+// `bun run readme:assets [name ...] [--codex] [--dry-run]`: make README assets from the checkout.
+//
+// With no name it makes every asset that needs no Codex sign-in, one at a time. A named asset is
+// made whatever it needs, and --codex adds every asset that needs Codex. --dry-run prints each
+// asset's plan and where each tool comes from, and starts nothing. Each asset made records the
+// hash of its sources in docs/readme/assets.json; docs/agents/readme-assets.md says more.
+
+import { statSync } from "node:fs";
+import { join } from "node:path";
+
+import { resolveProjectCodexExecutable } from "@/runtime/codex-process/executable";
+
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+import { PRODUCERS } from "./assets.ts";
+import {
+	MANIFEST_PATH,
+	checkoutHasher,
+	readManifest,
+	writeManifest,
+	type ReadmeAsset,
+	type ReadmeManifest,
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+} from "./manifest.ts";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+import { disagreements, inRepository, type Need, type Producer } from "./producer.ts";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+import { ROOT, chromiumPath, pyftsubsetCommand, requireEncoders, run, toolLines } from "./tools.ts";
+
+/** The encoders every filmed or rasterized asset is written with. */
+const ENCODERS = ["libwebp_anim", "libwebp", "libx264"] as const;
+
+/** What the command line asked for. */
+interface Request {
+	readonly names: readonly string[];
+	readonly codex: boolean;
+	readonly dryRun: boolean;
+}
+
+/** A command line the command does not read; it exits 2 and makes nothing. */
+class UsageError extends Error {
+	/**
+	 * Refuse a command line.
+	 * @param message What was wrong and what the command reads.
+	 */
+	constructor(message: string) {
+		super(message);
+		this.name = "UsageError";
+	}
+
+	/**
+	 * The refusal as the command prints it.
+	 * @returns The message alone.
+	 */
+	override toString(): string {
+		return this.message;
+	}
+}
+
+/**
+ * Read the command line.
+ * @param argv The arguments after the script.
+ * @returns The request.
+ * @throws {UsageError} When an option is not one the command reads.
+ */
+function requestOf(argv: readonly string[]): Request {
+	const unknown = argv.filter(
+		(word) => word.startsWith("-") && !["--codex", "--dry-run"].includes(word),
+	);
+	if (unknown.length > 0) {
+		throw new UsageError(`readme:assets reads --codex and --dry-run, not ${unknown.join(" ")}.`);
+	}
+	return {
+		names: argv.filter((word) => !word.startsWith("-")),
+		codex: argv.includes("--codex"),
+		dryRun: argv.includes("--dry-run"),
+	};
+}
+
+/**
+ * The assets a request selects, in the manifest's order.
+ * @param manifest The manifest.
+ * @param request The request.
+ * @returns The assets.
+ * @throws {UsageError} When a name is not an asset's.
+ */
+function selected(manifest: ReadmeManifest, request: Request): readonly ReadmeAsset[] {
+	const known = manifest.assets.map((asset) => asset.name);
+	const strange = request.names.filter((name) => !known.includes(name));
+	if (strange.length > 0) {
+		throw new UsageError(
+			`No README asset is named ${strange.join(", ")}. The assets: ${known.join(", ")}.`,
+		);
+	}
+	return manifest.assets.filter((asset) =>
+		request.names.length > 0 ? request.names.includes(asset.name) : request.codex || !asset.codex,
+	);
+}
+
+/**
+ * The producer of an asset.
+ * @param asset The asset.
+ * @returns Its producer.
+ * @throws {Error} When the kit has none.
+ */
+function producerOf(asset: ReadmeAsset): Producer {
+	const producer = PRODUCERS[asset.name];
+	if (producer === undefined) throw new Error(`The kit has no producer for ${asset.name}.`);
+	return producer;
+}
+
+/**
+ * Prove one tool is there before anything is made.
+ * @param need The tool.
+ */
+async function prove(need: Need): Promise<void> {
+	if (need === "chromium") chromiumPath();
+	if (need === "ffmpeg") await requireEncoders(ENCODERS);
+	if (need === "pyftsubset") pyftsubsetCommand();
+	if (need === "codex") resolveProjectCodexExecutable();
+}
+
+/**
+ * Say what one asset is and what making it does.
+ * @param asset The asset.
+ * @param index Its place in the run, counted from one.
+ * @param total How many assets the run makes.
+ * @returns The lines.
+ */
+function planLines(asset: ReadmeAsset, index: number, total: number): readonly string[] {
+	const producer = producerOf(asset);
+	const codex = asset.codex ? ", needs a Codex sign-in" : "";
+	return [
+		`[${index}/${total}] ${asset.name} (${asset.kind}${codex})`,
+		...producer.plan.map((step) => `  - ${step}`),
+		asset.files.length === 0
+			? "  writes nothing in the repository"
+			: `  writes ${asset.files.join(", ")}`,
+	];
+}
+
+/**
+ * The size of each file an asset wrote.
+ * @param asset The asset.
+ * @returns One phrase per file.
+ */
+function sizes(asset: ReadmeAsset): string {
+	if (asset.files.length === 0) return "nothing in the repository";
+	return asset.files
+		.map((file) => `${file} (${Math.round(statSync(inRepository(file)).size / 1024)} KB)`)
+		.join(", ");
+}
+
+/**
+ * Say what a producer is doing, under its asset's line.
+ * @param line The sentence.
+ */
+function say(line: string): void {
+	console.log(`  ${line}`);
+}
+
+/**
+ * Make the selected assets one at a time, and record each one's source hash as it is made.
+ * @param manifest The manifest.
+ * @param assets The assets.
+ */
+async function makeAll(manifest: ReadmeManifest, assets: readonly ReadmeAsset[]): Promise<void> {
+	const needs = new Set(assets.flatMap((asset) => producerOf(asset).needs));
+	for (const need of needs) {
+		// oxlint-disable-next-line no-await-in-loop -- each tool is proved before anything starts
+		await prove(need);
+	}
+	if (needs.has("chromium")) {
+		console.log("Building the frontend the takes are filmed from.");
+		await run([process.execPath, "run", "build:frontend"]);
+	}
+	const hasher = checkoutHasher(ROOT);
+	let made = manifest;
+	for (const [index, asset] of assets.entries()) {
+		console.log(planLines(asset, index + 1, assets.length)[0]);
+		const hash = hasher.hash(asset.sources);
+		// oxlint-disable-next-line no-await-in-loop -- assets are made one at a time on a quiet machine
+		await producerOf(asset).make({ say });
+		made = {
+			...made,
+			assets: made.assets.map((one) => (one.name === asset.name ? { ...one, hash } : one)),
+		};
+		writeManifest(ROOT, made);
+		// oxlint-disable-next-line no-await-in-loop -- the manifest is formatted as the repository keeps JSON
+		await run([join(ROOT, "node_modules/.bin/oxfmt"), MANIFEST_PATH]);
+		console.log(`  made ${sizes(asset)}`);
+	}
+}
+
+/**
+ * Print the plan of each selected asset and where each tool comes from; start nothing.
+ * @param assets The assets.
+ */
+function dryRun(assets: readonly ReadmeAsset[]): void {
+	console.log("A dry run: nothing is started, filmed, generated or spent.");
+	for (const line of toolLines()) console.log(line);
+	for (const [index, asset] of assets.entries()) {
+		console.log(planLines(asset, index + 1, assets.length).join("\n"));
+	}
+}
+
+/**
+ * Read the command line and the manifest, then plan or make what was asked for.
+ * @throws {Error} When the manifest and the kit disagree.
+ */
+async function main(): Promise<void> {
+	const request = requestOf(process.argv.slice(2));
+	const manifest = readManifest(ROOT);
+	const disagreeing = manifest.assets.flatMap((asset) =>
+		disagreements(asset, PRODUCERS[asset.name]),
+	);
+	if (disagreeing.length > 0) {
+		throw new Error(`${MANIFEST_PATH} and the kit disagree:\n${disagreeing.join("\n")}`);
+	}
+	const assets = selected(manifest, request);
+	if (request.dryRun) dryRun(assets);
+	else await makeAll(manifest, assets);
+}
+
+await main().catch((error: unknown) => {
+	const usage = error instanceof UsageError;
+	console.error(
+		usage || !(error instanceof Error) ? String(error) : (error.stack ?? error.message),
+	);
+	process.exitCode = usage ? 2 : 1;
+});
