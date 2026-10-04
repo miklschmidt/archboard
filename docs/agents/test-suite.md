@@ -327,15 +327,17 @@ repeat them.
 Extends the same exact-version production composition through controlled
 browser media. The person turned subtitles off on an earlier visit. Talk in the
 agent dock creates and links the conversation, starts voice and lights the orb
-in the dock's circle. The owner checks the order of that wire. It checks that
-the voice follows the model's output and not the microphone, that what was
-said lands in the conversation, and that mute stops only the microphone.
-Subtitles on carry the orb to the voice box over the pane. In a fullscreen
-presentation the bar's key and the voice box carry the same session. The bar's
-key ends it and releases the browser's media. Narrating the walkthrough then
-starts a second session on a fresh coordinator. Its words are in the voice box
-at the foot of the presented walkthrough. The dock's key ends it and releases
-its media, and the mounted board pane is unchanged.
+in the dock's circle, and the keyboard keeps its place on the key. The owner
+checks the order of that wire. It checks that the voice follows the model's
+output and not the microphone, that what was said lands in the conversation,
+and that mute stops only the microphone. Subtitles on carry the orb to the
+voice box over the pane. In a fullscreen presentation the bar's key and the
+voice box carry that same session. From the keyboard, the bar's key ends it,
+releases the browser's media and keeps its focus. Talk on the same key then
+starts a second session that the voice box carries, and Space ends it.
+Narrating the walkthrough starts a third session on a fresh coordinator. Its
+words are in the voice box at the foot of the presented walkthrough. The dock's
+key ends it and releases its media, and the mounted board pane is unchanged.
 
 The owner checks target size at desktop and desktop scaled, forced colors,
 browser errors and resource cleanup. Focused realtime, media, session,
