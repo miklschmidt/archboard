@@ -1,30 +1,24 @@
 import { expect, test } from "bun:test";
-import { mkdirSync } from "node:fs";
-import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
-import { startOwnedServer } from "../support/owned-server.ts";
-import {
-	browserTestRoots,
-	serverTestEnvironment,
-	createAgentBrowser,
-	pollUntil,
-	registerServerBase,
-} from "./support/agent-browser.ts";
+import { createAgentBrowser, pollUntil } from "./support/agent-browser.ts";
+import { askToSpeak } from "./support/codex-live-voice.ts";
 import { addressShowing, seedSemanticBoard, stageState } from "./support/semantic-page.ts";
-import { serverPath } from "./support/navigator-support.ts";
 import {
 	SUBTITLES_IN_BOX,
 	WAIT,
 	WATCH,
 	apart,
 	clickSubtitles,
+	openForVoice,
 	seenSoFar,
+	startVoiceServer,
+	talk,
 	voiceWhere,
 } from "./support/voice-box-page.ts";
 
-// Where the voice is, in the real shell, with the page's own demonstration of it (`?voiceDemo`)
-// in place of a Codex session there is not here.
+// Where the voice is, in the real shell, with a real voice session started by Talk over the fake
+// Codex and stand-in browser media (support/voice-box-page.ts).
 //
 // While subtitles are on, the voice is not in the agent dock: it is in the voice box over the
 // picture, where its words are read, and the dock's key ends voice. Turning subtitles off flies
@@ -32,7 +26,8 @@ import {
 // them on flies it out again. What this owner holds is what a person sees come out of that: one
 // orb, resting exactly in the socket of the home it is in, never left in the air, and seen as one
 // shared element: it leaves from where it was seen, the dock draws no seat for it while it is in the
-// air, and the box draws none of its own. The page never grows past the window, not even for a frame.
+// air, and the box draws none of its own. While voice starts and while the orb flies, the page never
+// grows past the window, not even for a frame.
 // The box takes no pointer input from the picture except at its two controls, and keyboard focus
 // follows the subtitles control from the surface that loses it to the one that takes it, pressed
 // twice at once. Voice starting with subtitles on is lit in the box and not launched out of the Talk key.
@@ -40,16 +35,11 @@ import {
 
 test("the voice is in the box while subtitles are on, and the one orb flies between the box and the dock", async () => {
 	await using resources = new AsyncDisposableStack();
-	const { ownerRoot } = browserTestRoots();
-	const vault = join(ownerRoot, "voice-box-vault");
-	mkdirSync(vault, { recursive: true });
-	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
-	resources.defer(() => server.dispose());
-	registerServerBase(server.base);
+	const { server, fixture } = await startVoiceServer(resources, "voice-box-vault");
 	await seedSemanticBoard(createJsonRequester(server), "pipeline");
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${addressShowing(server.base, "pipeline")}&voiceDemo`]);
+	await openForVoice(browser, addressShowing(server.base, "pipeline"));
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() => stageState(browser.eval.bind(browser)),
@@ -58,12 +48,21 @@ test("the voice is in the box while subtitles are on, and the one orb flies betw
 		WAIT,
 	);
 	await browser.eval(WATCH);
+	await talk(browser);
 
 	// Subtitles start on: the voice is in the box, the dock is calm and its key ends voice.
-	const boxed = await pollUntil(
+	await pollUntil(
 		() => voiceWhere(browser),
 		(where) => where.box && where.home === "box" && where.off < 1 && where.opacity === 1,
 		"the orb to rest in the voice box's socket, with all of it showing",
+		WAIT,
+	);
+	// The voice speaks again, so that its words are in the box when the pointer is tried on them.
+	await askToSpeak(fixture);
+	const boxed = await pollUntil(
+		() => voiceWhere(browser),
+		(where) => where.words && where.box && where.home === "box" && where.off < 1,
+		"the voice's words to show in the box, with the orb at rest in it",
 		WAIT,
 	);
 	expect(boxed.orbs).toBe(1);
@@ -110,6 +109,11 @@ test("the voice is in the box while subtitles are on, and the one orb flies betw
 	const leavesDock = (await seenSoFar(browser)).slice(toBox).find((frame) => frame.air);
 	expect(leavesDock?.at && docked.at && apart(leavesDock.at, docked.at)).toBeLessThan(24);
 
+	// The page was never larger than the window, on any frame of the start or of either flight. The
+	// keyboard's handoff below is left out: the tooltip of the control that takes focus opens at that
+	// control's place in a dock that is still growing, and its arrow lies below the window for a frame.
+	expect(Math.max(...(await seenSoFar(browser)).map((frame) => frame.over))).toBe(0);
+
 	// From the keyboard: Enter on the box's control hands focus to the dock's, and Enter there, at
 	// once, hands it back to the box's, which is still leaving or has only just gone.
 	await browser.run(["focus", SUBTITLES_IN_BOX]);
@@ -126,32 +130,30 @@ test("the voice is in the box while subtitles are on, and the one orb flies betw
 	expect(boxAgain.focus).toBe("voice-box");
 	expect(boxAgain.orbs).toBe(1);
 
-	// The page was never larger than the window, on any frame of any of it.
-	expect(Math.max(...(await seenSoFar(browser)).map((frame) => frame.over))).toBe(0);
-
 	await server.assertRunning();
 }, 40_000);
 
 test("voice starting with subtitles on is lit in the box, and the orb is not launched out of the Talk key", async () => {
 	await using resources = new AsyncDisposableStack();
-	const { ownerRoot } = browserTestRoots();
-	const vault = join(ownerRoot, "voice-start-vault");
-	mkdirSync(vault, { recursive: true });
-	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
-	resources.defer(() => server.dispose());
-	registerServerBase(server.base);
+	const { server } = await startVoiceServer(resources, "voice-start-vault");
 	await seedSemanticBoard(createJsonRequester(server), "pipeline");
 
-	// The cycle begins at its start when the page opens: voice is off for a few seconds, then it starts.
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${addressShowing(server.base, "pipeline")}&voiceDemo=cycle`]);
+	await openForVoice(browser, addressShowing(server.base, "pipeline"));
 	await browser.run(["set", "viewport", "1920", "1080"]);
+	await pollUntil(
+		() => stageState(browser.eval.bind(browser)),
+		(state) => state === "drawn",
+		"the board to be drawn before voice is started",
+		WAIT,
+	);
 	await browser.eval(WATCH);
+	await talk(browser);
 	await pollUntil(
 		() => voiceWhere(browser),
 		(where) => where.box && where.home === "box" && where.off < 1,
 		"the voice to start and the orb to rest in the voice box",
-		{ timeoutMs: 15_000 },
+		WAIT,
 	);
 
 	const seen = await seenSoFar(browser);

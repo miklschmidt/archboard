@@ -12,6 +12,8 @@ import {
 	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
+import type { ProductionFixture } from "../server-state/support/codex-production.ts";
+import { askToSpeak, lineSaid } from "./support/codex-live-voice.ts";
 import { roleAction } from "./support/opener-settings-interaction.ts";
 import { press } from "./support/drilling.ts";
 import {
@@ -21,10 +23,19 @@ import {
 	stageState,
 } from "./support/semantic-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
-import { WAIT, WATCH, clickSubtitles, seenSoFar, voiceWhere } from "./support/voice-box-page.ts";
+import {
+	WAIT,
+	WATCH,
+	clickSubtitles,
+	openForVoice,
+	seenSoFar,
+	startVoiceServer,
+	talk,
+	voiceWhere,
+} from "./support/voice-box-page.ts";
 
-// The voice in the box of a presented walkthrough, in the real shell, with the page's own
-// demonstration of it (`?voiceDemo`) in place of a Codex session there is not here.
+// The voice in the box of a presented walkthrough, in the real shell, with a real voice session
+// started by Talk over the fake Codex and stand-in browser media (support/voice-box-page.ts).
 //
 // A presented walkthrough carries the voice at the foot of its own box, and the box keeps one height
 // whether the voice is in it or not, so the picture does not move with the voice. A fullscreen
@@ -93,12 +104,19 @@ const TOUR = {
 };
 
 /**
- * Wait for the box's words to say what they are told to, and prove it for a while: the voice speaks
- * and falls silent, so one look at the words proves nothing about them.
+ * Have the voice say a line, and hold the box's words to what they are told to do while it does:
+ * words show only for what is said after subtitles are turned on, so without a line said now one
+ * look at the words proves nothing about them.
  * @param browser The page.
- * @param showing What the words do: `true` once they show, `false` for as long as it is watched.
+ * @param fixture The fake Codex, whose voice says the line.
+ * @param showing What the words do: `true` once they show, `false` for the whole line.
  */
-async function wordsStay(browser: AgentBrowserSession, showing: "true" | "false"): Promise<void> {
+async function wordsStay(
+	browser: AgentBrowserSession,
+	fixture: ProductionFixture,
+	showing: "true" | "false",
+): Promise<void> {
+	const line = await askToSpeak(fixture);
 	if (showing === "true") {
 		await pollUntil(
 			() => presentedNow(browser),
@@ -108,24 +126,28 @@ async function wordsStay(browser: AgentBrowserSession, showing: "true" | "false"
 		);
 		return;
 	}
-	for (let look = 0; look < 12; look += 1) {
-		expect((await presentedNow(browser)).words).toBe("false");
-		await Bun.sleep(250);
-	}
+	// A word that shows stays for the linger, so a look until the last word is out sees any of them.
+	const looks: (string | null)[] = [];
+	await pollUntil(
+		async () => {
+			looks.push((await presentedNow(browser)).words);
+			return lineSaid(fixture, line);
+		},
+		Boolean,
+		"the voice to say its whole line",
+		WAIT,
+	);
+	// Every look found the box, and its words hidden.
+	expect(looks.filter((words) => words !== "false")).toEqual([]);
 }
 
 test("a presented walkthrough carries the voice at the foot of its box, in the pane and in fullscreen", async () => {
 	await using resources = new AsyncDisposableStack();
-	const { ownerRoot } = browserTestRoots();
-	const vault = join(ownerRoot, "voice-foot-vault");
-	mkdirSync(vault, { recursive: true });
-	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
-	resources.defer(() => server.dispose());
-	registerServerBase(server.base);
+	const { server, fixture } = await startVoiceServer(resources, "voice-foot-vault");
 	await seedSemanticBoard(createJsonRequester(server), "pipeline", TOUR);
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${addressShowing(server.base, "pipeline")}&voiceDemo`]);
+	await openForVoice(browser, addressShowing(server.base, "pipeline"));
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() => stageState(browser.eval.bind(browser)),
@@ -134,6 +156,13 @@ test("a presented walkthrough carries the voice at the foot of its box, in the p
 		WAIT,
 	);
 	await browser.eval(WATCH);
+	await talk(browser);
+	await pollUntil(
+		() => presentedNow(browser),
+		(now) => now.place === "free",
+		"the voice box to float over the picture once voice has started",
+		WAIT,
+	);
 
 	// Presenting while the voice box floats over the picture: the orb flies into the foot of the box.
 	await press(browser, "[data-slot='semantic-walkthrough-choice']");
@@ -200,14 +229,14 @@ test("a presented walkthrough carries the voice at the foot of its box, in the p
 	expect(full.bar).toBe("live");
 	expect((await voiceWhere(browser)).orbs).toBe(1);
 	// Subtitles are still off: the box holds the voice and says nothing.
-	await wordsStay(browser, "false");
+	await wordsStay(browser, fixture, "false");
 
 	// What the person wants of subtitles decides only whether there are words, and the voice stays.
 	expect(await clickSubtitles(browser, "voice-box")).toBeTrue();
-	await wordsStay(browser, "true");
+	await wordsStay(browser, fixture, "true");
 	expect((await presentedNow(browser)).place).toBe("foot");
 	expect(await clickSubtitles(browser, "voice-box")).toBeTrue();
-	await wordsStay(browser, "false");
+	await wordsStay(browser, fixture, "false");
 	const quiet = await presentedNow(browser);
 	expect(quiet.place).toBe("foot");
 	expect(quiet.orbInBox).toBeTrue();
@@ -248,8 +277,8 @@ test("the key that narrates takes the pointer at the foot of a presented walkthr
 	registerServerBase(server.base);
 	await seedSemanticBoard(createJsonRequester(server), "pipeline", TOUR);
 
-	// No demonstration: a real pane with a voice owner and the voice off, where what the shell lays
-	// over the picture is drawn over the key, empty, and must let a press through to it.
+	// A real pane with a voice owner and the voice off, where what the shell lays over the picture is
+	// drawn over the key, empty, and must let a press through to it.
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", addressShowing(server.base, "pipeline")]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
