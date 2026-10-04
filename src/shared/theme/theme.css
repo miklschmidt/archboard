@@ -1,7 +1,53 @@
-/* Canonical shadcn theme colors, shared by the shell and the diagrams, which paint
-   with these tokens. Keep theme colors as literal CSS colors; the export reader
-   resolves them to sRGB for a standalone SVG. */
-/* Light: chalk white, pale stone panels, near-black text, cobalt selection. */
+/* Every colour of the shell and of the pictures, in both themes. The shell and a
+   picture in the page paint with these tokens; the export reader resolves them
+   to sRGB for a picture that stands alone. Keep each a literal colour in OKLCH.
+   Every token is a role, not a colour name; components reach them through
+   Tailwind's utilities (`bg-sidebar`, `text-primary-text` and so on), which
+   src/ui/theme/app.css registers. The depth of the shell (the elevation and
+   its shadows) is not a colour and lives in app.css.
+
+   Neutrals. Warm graphite and chalk: the hue of every neutral sits near the
+   gold's (75 to 95), at a chroma low enough to read as grey. Four surface
+   steps carry the shell:
+     --background  the ground: the picture, and the pages drawn in its place;
+     --sidebar     the chrome that frames it (navigator, pane header, sidebar);
+     --raised      a plane raised over the chrome: the tray at the foot of a
+                   column (the agent dock, Go deeper);
+     --sidebar-accent  the reading tone: the chosen row of a list, raised off
+                   it as a plate.
+   --highlight is the fine highlight on the top edge of a plane.
+
+   The accent. One warm gold, from the picks (the wayfinding band and the
+   streaming title wall). It marks three things and nothing else:
+     1. what is chosen: the row or tab on screen (a 2px bar or underline),
+        the focused pane, the part picked out on the picture;
+     2. the one primary action of a region: opening the board a picked part
+        leads to, sending a message, the confirming button of a dialog;
+     3. the voice, and the brand mark.
+   --primary is the gold as a flat fill. --primary-mark is the gold as a mark:
+   a 2px bar or underline, a ring, an icon, the edge of something chosen.
+   --primary-text is the accent as text. On graphite it is the gold. On chalk
+   it is the ink: a gold dark enough to clear 4.5:1 there reads as brown, so
+   text on chalk stays ink and a gold mark beside or under it (a bar, an
+   underline) carries the accent. --primary-subtle is the gold as a quiet tint
+   behind something chosen on a page. --diagram-selection is the gold on the
+   picture.
+
+   A primary action is the one control drawn as a physical piece of gold
+   (`primary-finish` in app.css): a subtle top-to-bottom gradient
+   (--primary-top to --primary-bottom), a fine highlight along its top edge, a
+   darker rim (--primary-edge) and a shadow that seats it. The ink on it
+   (--primary-foreground) clears 8.5:1 on every stop of the gradient, pressed
+   included, and 5:1 at 75%. The brand mark and the voice keep a gradient of
+   their own (--mark-hi to --mark-lo). A card on the picture that opens another
+   board is marked in the card's own ink, never in gold: the picture is the
+   renderer's, and the shell does not paint on it.
+
+   Status keeps its own colours: the acid lime of live state (--status) and the
+   comparison's green, orange and red. "Changed" is an orange and not the
+   amber, which sits on the gold's hue, so no comparison mark reads as a
+   choice. */
+/* Light: chalk, warm ink, the gold. */
 :root {
 	/* Named colors used by node types, groups and relationships. */
 	--semantic-red: oklch(63.7% 0.237 25.331);
@@ -22,26 +68,34 @@
 	--semantic-pink: oklch(65.6% 0.241 354.308);
 	--semantic-rose: oklch(58.6% 0.253 17.585);
 
-	--background: oklch(0.99 0.002 95);
-	--foreground: oklch(0.145 0 0);
+	--background: oklch(0.99 0.0025 90);
+	--foreground: oklch(0.17 0.006 75);
 	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.145 0 0);
+	--card-foreground: oklch(0.17 0.006 75);
 	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.145 0 0);
-	--primary: oklch(0.5367412 0.22860543 262.173533);
-	--primary-foreground: oklch(0.97 0.014 254.604);
-	--secondary: oklch(0.967 0.001 286.375);
-	--secondary-foreground: oklch(0.21 0.006 285.885);
-	--muted: oklch(0.97 0 0);
+	--popover-foreground: oklch(0.17 0.006 75);
+	--primary: oklch(0.831 0.134 84.5);
+	--primary-foreground: oklch(0.2 0.02 70);
+	--primary-text: oklch(0.17 0.006 75);
+	--primary-mark: oklch(0.72 0.15 77);
+	--primary-subtle: oklch(0.968 0.03 88);
+	--primary-top: oklch(0.87 0.135 88);
+	--primary-bottom: oklch(0.805 0.142 81);
+	--primary-edge: oklch(0.7 0.125 76);
+	--mark-hi: oklch(0.8 0.145 86);
+	--mark-lo: oklch(0.6 0.125 72);
+	--secondary: oklch(0.955 0.004 85);
+	--secondary-foreground: oklch(0.2 0.006 75);
+	--muted: oklch(0.955 0.004 85);
 	/* Darker than the preset's 0.556: secondary text must clear 4.5:1 on the
-	   pale stone sidebar and inspector, not only on chalk white. */
-	--muted-foreground: oklch(0.5 0 0);
-	--accent: oklch(0.97 0 0);
-	--accent-foreground: oklch(0.205 0 0);
+	   chrome (--sidebar), not only on the ground. */
+	--muted-foreground: oklch(0.48 0.008 75);
+	--accent: oklch(0.955 0.004 85);
+	--accent-foreground: oklch(0.2 0.006 75);
 	--destructive: oklch(0.577 0.245 27.325);
-	--border: oklch(0.922 0 0);
-	--input: oklch(0.922 0 0);
-	--ring: oklch(0.5367412 0.22860543 262.173533);
+	--border: oklch(0.905 0.005 85);
+	--input: oklch(0.88 0.006 85);
+	--ring: oklch(0.62 0.13 78);
 	--chart-1: oklch(0.897 0.196 126.665);
 	--chart-2: oklch(0.768 0.233 130.85);
 	--chart-3: oklch(0.648 0.2 131.684);
@@ -51,24 +105,26 @@
 	--status-foreground: oklch(0.40178217 0.09855448 133.653014);
 	--status-subtle: oklch(0.95294765 0.08717228 120.463839);
 	--standing-added: oklch(64.8% 0.2 131.684);
-	--standing-changed: oklch(76.9% 0.188 70.08);
+	--standing-changed: oklch(0.69 0.19 48);
 	--standing-removed: oklch(50.5% 0.213 27.518);
-	--diagram-selection: oklch(0.5367412 0.22860543 262.173533);
+	--diagram-selection: oklch(0.66 0.14 80);
 	--diagram-edge: oklch(70.5% 0.015 286.067);
 	--warning: oklch(79.5% 0.184 86.047);
 	--warning-foreground: oklch(0.43816934 0.09171983 76.864627);
 	--warning-subtle: oklch(0.95920698 0.03574366 89.442142);
-	--sidebar: oklch(0.975 0.003 95);
-	--sidebar-foreground: oklch(0.145 0 0);
-	--sidebar-primary: oklch(0.5367412 0.22860543 262.173533);
-	--sidebar-primary-foreground: oklch(0.97 0.014 254.604);
-	--sidebar-accent: oklch(0.945 0.003 95);
-	--sidebar-accent-foreground: oklch(0.205 0 0);
-	--sidebar-border: oklch(0.922 0 0);
-	--sidebar-ring: oklch(0.5367412 0.22860543 262.173533);
+	--sidebar: oklch(0.973 0.004 88);
+	--sidebar-foreground: oklch(0.17 0.006 75);
+	--sidebar-primary: oklch(0.831 0.134 84.5);
+	--sidebar-primary-foreground: oklch(0.2 0.02 70);
+	--sidebar-accent: oklch(0.935 0.006 85);
+	--sidebar-accent-foreground: oklch(0.17 0.006 75);
+	--sidebar-border: oklch(0.905 0.005 85);
+	--sidebar-ring: oklch(0.62 0.13 78);
+	--raised: oklch(0.986 0.003 88);
+	--highlight: oklch(1 0 0 / 0.85);
 }
 
-/* Dark: deep charcoal, black panels, bone-white text, the same two accents. */
+/* Dark: warm graphite, bone-white text, the same gold. */
 :root[data-theme="dark"] {
 	/* Named colors used by node types, groups and relationships. */
 	--semantic-red: oklch(0.71062735 0.16614792 22.216224);
@@ -89,24 +145,32 @@
 	--semantic-pink: oklch(0.72526641 0.17522733 349.760748);
 	--semantic-rose: oklch(0.71918609 0.16898359 13.427993);
 
-	--background: oklch(0.2 0.004 264);
-	--foreground: oklch(0.965 0.004 95);
-	--card: oklch(0.165 0.004 264);
-	--card-foreground: oklch(0.965 0.004 95);
-	--popover: oklch(0.205 0 0);
-	--popover-foreground: oklch(0.965 0.004 95);
-	--primary: oklch(0.5367412 0.22860543 262.173533);
-	--primary-foreground: oklch(0.97 0.014 254.604);
-	--secondary: oklch(0.274 0.006 286.033);
-	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(27.4% 0.006 286.033);
-	--muted-foreground: oklch(0.708 0 0);
-	--accent: oklch(27.4% 0.006 286.033);
-	--accent-foreground: oklch(0.985 0 0);
+	--background: oklch(0.2 0.006 75);
+	--foreground: oklch(0.955 0.006 90);
+	--card: oklch(0.235 0.007 75);
+	--card-foreground: oklch(0.955 0.006 90);
+	--popover: oklch(0.235 0.007 75);
+	--popover-foreground: oklch(0.955 0.006 90);
+	--primary: oklch(0.831 0.134 84.5);
+	--primary-foreground: oklch(0.2 0.02 70);
+	--primary-text: oklch(0.86 0.125 86);
+	--primary-mark: oklch(0.86 0.125 86);
+	--primary-subtle: oklch(0.29 0.045 80);
+	--primary-top: oklch(0.87 0.135 88);
+	--primary-bottom: oklch(0.8 0.142 81);
+	--primary-edge: oklch(0.58 0.11 74);
+	--mark-hi: oklch(0.89 0.105 90);
+	--mark-lo: oklch(0.72 0.13 75);
+	--secondary: oklch(0.255 0.007 75);
+	--secondary-foreground: oklch(0.955 0.006 90);
+	--muted: oklch(0.255 0.007 75);
+	--muted-foreground: oklch(0.72 0.01 80);
+	--accent: oklch(0.255 0.007 75);
+	--accent-foreground: oklch(0.955 0.006 90);
 	--destructive: oklch(0.704 0.191 22.216);
-	--border: oklch(1 0 0 / 10%);
-	--input: oklch(1 0 0 / 15%);
-	--ring: oklch(0.5367412 0.22860543 262.173533);
+	--border: oklch(1 0.01 85 / 9%);
+	--input: oklch(1 0.01 85 / 14%);
+	--ring: oklch(0.831 0.134 84.5);
 	--chart-1: oklch(0.897 0.196 126.665);
 	--chart-2: oklch(0.768 0.233 130.85);
 	--chart-3: oklch(0.648 0.2 131.684);
@@ -116,19 +180,21 @@
 	--status-foreground: oklch(0.94741891 0.15565109 123.504754);
 	--status-subtle: oklch(0.31354752 0.05775641 130.475651);
 	--standing-added: oklch(79.2% 0.209 151.711);
-	--standing-changed: oklch(82.8% 0.189 84.429);
+	--standing-changed: oklch(0.77 0.17 52);
 	--standing-removed: oklch(70.4% 0.191 22.216);
-	--diagram-selection: oklch(0.64396219 0.18987857 263.145359);
+	--diagram-selection: oklch(0.831 0.134 84.5);
 	--diagram-edge: oklch(44.2% 0.017 285.786);
 	--warning: oklch(0.72131034 0.14180263 80.931184);
 	--warning-foreground: oklch(0.85278573 0.12194932 86.127776);
 	--warning-subtle: oklch(0.30488372 0.04761708 85.022106);
-	--sidebar: oklch(0.165 0.004 264);
-	--sidebar-foreground: oklch(0.965 0.004 95);
-	--sidebar-primary: oklch(0.5367412 0.22860543 262.173533);
-	--sidebar-primary-foreground: oklch(0.97 0.014 254.604);
-	--sidebar-accent: oklch(27.4% 0.006 286.033);
-	--sidebar-accent-foreground: oklch(0.985 0 0);
-	--sidebar-border: oklch(1 0 0 / 10%);
-	--sidebar-ring: oklch(0.5367412 0.22860543 262.173533);
+	--sidebar: oklch(0.165 0.005 75);
+	--sidebar-foreground: oklch(0.955 0.006 90);
+	--sidebar-primary: oklch(0.831 0.134 84.5);
+	--sidebar-primary-foreground: oklch(0.2 0.02 70);
+	--sidebar-accent: oklch(0.255 0.008 78);
+	--sidebar-accent-foreground: oklch(0.955 0.006 90);
+	--sidebar-border: oklch(1 0.01 85 / 9%);
+	--sidebar-ring: oklch(0.831 0.134 84.5);
+	--raised: oklch(0.205 0.007 75);
+	--highlight: oklch(1 0.01 85 / 0.09);
 }

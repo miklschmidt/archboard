@@ -27,8 +27,8 @@ const TYPE_ROLES = [
 ] as const;
 
 /**
- * The elevations `app.css` defines under `--shadow-*` (palette.css explains
- * them). Without these, `cn` reads `shadow-raised` as a shadow colour, keeps
+ * The elevations `app.css` defines under `--shadow-*` and explains under
+ * "Depth". Without these, `cn` reads `shadow-raised` as a shadow colour, keeps
  * it beside a `shadow-none` meant to replace it, and drops it beside a
  * `shadow-black/10`.
  */

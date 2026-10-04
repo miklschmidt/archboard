@@ -115,9 +115,9 @@ components:
 # Design System: archboard
 
 This file records the shell as it stands in code. Two files are normative:
-`src/ui/theme/palette.css` holds the colours and the elevation of both themes,
-and `src/ui/theme/app.css` holds type, space, shape, the shadow utilities and
-the gold finish. If this file and those files disagree, those files win and this
+`src/shared/theme/theme.css` holds the colours of both themes, which the shell
+and every picture paint with, and `src/ui/theme/app.css` holds the elevation of
+both themes, type, space, shape, the shadow utilities and the gold finish. If this file and those files disagree, those files win and this
 file is stale.
 
 ## Overview
@@ -151,7 +151,7 @@ gold.
 
 The neutrals are warm graphite and chalk (hue 75 to 95, at a chroma low enough
 to read as grey). One warm yellow-gold sits over them. The dark theme keeps
-every role and changes the values. The file palette.css holds both themes.
+every role and changes the values. The file theme.css holds both themes.
 
 ### Primary
 
@@ -246,8 +246,8 @@ picture makes it slower to drag. What moves over it moves as a layer of its own,
 once: a tip or a menu as it opens, the floating sidebar when it is shown or put
 away, the walkthrough box as it arrives and as it hands one step to the next,
 the voice box as it comes and goes, and each word of a subtitle as it arrives.
-The file palette.css holds the values for both themes. The file app.css gives
-each one a `shadow-*` utility.
+The file app.css holds the values for both themes and gives each one a
+`shadow-*` utility.
 
 ### Shadow Vocabulary
 
@@ -524,7 +524,7 @@ Keyboard focus follows the subtitles control to the surface that takes it over.
 
 - **Do** draw the one primary action of a region with `primary-finish`, and only that one.
 - **Do** separate regions with tone steps and elevation tokens before you add a rule.
-- **Do** keep shadows warm and offset. Take them from the elevation tokens in palette.css.
+- **Do** keep shadows warm and offset. Take them from the elevation tokens in app.css.
 - **Do** keep the ink on gold at Gold Ink (at least 8.5:1).
 
 ### Don't:
