@@ -241,8 +241,8 @@ conversation: your words as `You`, the answer as `Voice`. Confirm all of these
 by direct observation:
 
 - the live word changes from Listening to Speaking while the answer plays, and
-  the wave moves with the spoken answer when reduced motion is off (with
-  reduced motion it stays still);
+  the orb moves with the spoken answer when reduced motion is off (with
+  reduced motion it is drawn at rest);
 - your final words appear once as a `You` line;
 - a relevant answer, naming `$accept_board`, is audible through the real
   speaker;
