@@ -27,13 +27,13 @@ import {
 	type FixtureRecord,
 } from "./support/codex-live-voice.ts";
 import {
-	AGENT_DOCK,
 	productionFixtureRecords,
 	workbenchControlOperability,
 } from "./support/codex-workbench-production.ts";
 import { SEMANTIC_STAGE, seedSemanticBoard } from "./support/semantic-page.ts";
 import { roleAction } from "./support/opener-settings-interaction.ts";
 import {
+	AGENT_DOCK,
 	AGENT_PANEL,
 	BOARD_NAME_EXPRESSION,
 	PANE_SECTIONS,

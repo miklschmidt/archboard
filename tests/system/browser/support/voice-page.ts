@@ -2,9 +2,8 @@
 // the orb, the voice box over a pane and the key in a presentation's bar), the subtitle in the
 // voice box, what was said in the conversation, a walkthrough's position and the focused control.
 
-import { AGENT_DOCK } from "./codex-workbench-production.ts";
 import { SEMANTIC_STAGE } from "./semantic-page.ts";
-import { AGENT_PANEL, PANE_SECTIONS, PRESENTATION_BAR } from "./shell-dom.ts";
+import { AGENT_DOCK, AGENT_PANEL, PANE_SECTIONS, PRESENTATION_BAR } from "./shell-dom.ts";
 import type { AgentBrowserSession } from "./agent-browser.ts";
 
 /** The dock's voice key: Talk while voice is off, then the circle, or End voice while the box has the voice. */

@@ -3,9 +3,6 @@ import { readFileSync } from "node:fs";
 import type { ProductionFixture } from "../../server-state/support/codex-production.ts";
 import type { AgentBrowserSession } from "./agent-browser.ts";
 
-/** The agent dock at the foot of the navigator: the agent's state, its voice and the key to the conversation. */
-const AGENT_DOCK = 'section[data-slot="agent-dock"]';
-
 interface WorkbenchControlOperability {
 	readonly width: number;
 	readonly height: number;
@@ -66,9 +63,4 @@ function workbenchControlOperability(
 	})()`);
 }
 
-export {
-	AGENT_DOCK,
-	type WorkbenchControlOperability,
-	productionFixtureRecords,
-	workbenchControlOperability,
-};
+export { type WorkbenchControlOperability, productionFixtureRecords, workbenchControlOperability };
