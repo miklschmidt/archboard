@@ -18,12 +18,11 @@ import { useOverlayPlace } from "@/ui/semantic-board-canvas";
 import { VoiceSubtitles, useSubtitlesWanted, useVoiceBoxed } from "@/ui/voice-subtitles";
 import type { SubtitleSource } from "@/ui/voice-subtitles";
 import { VoiceBox, useVoiceSurface } from "@/ui/workbench";
-import { useDemoTranscript } from "@/ui/workbench/demo";
 
 /** Inputs for a pane's subtitles. */
 interface PaneSubtitlesProps {
-	/** Where the pane hears the voice it runs for, or null where the page demonstrates the voice (`?voiceDemo`). */
-	readonly feed: VoiceFeed | null;
+	/** Where the pane hears the voice it runs for. */
+	readonly feed: VoiceFeed;
 	/** Whether the person asked for reduced motion. */
 	readonly reducedMotion: boolean;
 	/** Whether this page is a recording. */
@@ -53,30 +52,8 @@ const NO_WORDS: readonly SubtitleSource[] = [];
  */
 function PaneSubtitles(props: PaneSubtitlesProps): JSX.Element {
 	const { feed, ...rest } = props;
-	return feed === null ? <DemoSubtitles {...rest} /> : <HeardSubtitles {...rest} feed={feed} />;
-}
-
-/**
- * The subtitles of a voice heard over the pane's transport.
- * @param props Where the voice is heard, the motion preference and where the voice may sit.
- * @param props.feed The feed.
- * @returns The subtitles.
- */
-function HeardSubtitles(
-	props: Omit<PaneSubtitlesProps, "feed"> & { readonly feed: VoiceFeed },
-): JSX.Element {
-	const { feed, ...rest } = props;
 	const voice = useSyncExternalStore(feed.subscribe, feed.voice, feed.voice);
 	return <Subtitled {...rest} transcript={subtitledTranscript(voice, props.recording)} />;
-}
-
-/**
- * The subtitles of the demonstration's voice.
- * @param props The motion preference and where the voice may sit.
- * @returns The subtitles.
- */
-function DemoSubtitles(props: Omit<PaneSubtitlesProps, "feed">): JSX.Element {
-	return <Subtitled {...props} transcript={useDemoTranscript()} />;
 }
 
 /**

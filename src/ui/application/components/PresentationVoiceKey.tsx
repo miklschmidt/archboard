@@ -1,6 +1,6 @@
 // The voice key a fullscreen presentation's bar carries (TASK-392). It reads the voice the surfaces
-// below the application read, the demonstration's included, so the bar's key and the voice box over
-// the picture always say the same thing.
+// below the application read, so the bar's key and the voice box over the picture always say the
+// same thing.
 
 import type { JSX } from "react";
 

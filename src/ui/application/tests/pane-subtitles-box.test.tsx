@@ -8,9 +8,8 @@
 // person chose, because nobody watching the video can turn them on; and a voice that is not on has
 // no box.
 //
-// The words come from the demonstration's transcript, which is what a pane is given when it has
-// no transport, except in the one test of a voice heard over a transport, where a stand-in feed
-// takes its place: where the words come from is not what is under test.
+// The words come from a stand-in feed, as a transport publishes them: where the words come from is
+// not what is under test.
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { act, cleanup, render } from "@testing-library/react";
@@ -196,8 +195,8 @@ interface PaneSetup {
 	readonly recording: boolean;
 	/** Whether the agent dock is off screen, as in a fullscreen presentation. */
 	readonly dockless: boolean;
-	/** Where the pane hears its voice, or null for the demonstration. */
-	readonly feed: VoiceFeed | null;
+	/** Where the pane hears its voice. */
+	readonly feed: VoiceFeed;
 }
 
 /** A live voice in a pane that can carry it, in the workspace, unless a test says otherwise. */
@@ -206,7 +205,7 @@ const LIVE_PANE: PaneSetup = {
 	boxAvailable: true,
 	recording: false,
 	dockless: false,
-	feed: null,
+	feed: HEARD,
 };
 
 /**
@@ -300,10 +299,8 @@ test("a voice that is not on has no box", () => {
 	expect(boxed()).toBe(false);
 });
 
-test("a voice heard over a transport is carried by the box too, and by plain subtitles where the box has no place", () => {
-	const view = render(pane({ feed: HEARD }));
-	expect(boxed()).toBe(true);
-	view.rerender(pane({ feed: HEARD, boxAvailable: false }));
+test("where the box has no place the subtitles are plain", () => {
+	render(pane({ boxAvailable: false }));
 	expect(boxed()).toBe(false);
 	expect(plain()).toBe(true);
 });
