@@ -26,6 +26,10 @@
 // flown when motion is not wanted, when either end is not on screen, and when the
 // socket it was heading for stops taking room on the page.
 //
+// A fullscreen presentation paints only the element presented, and nothing of the page outside it,
+// so a flight crosses in that element, and a home that is outside it is not on screen: an orb is
+// neither flown to it nor from it, but cut.
+//
 // A flight carries an orb that can be seen. One that is dark, or has only just been
 // lit, is lit where it is wanted: voice starting does not launch the orb out of the
 // Talk key. A dark orb waits in a home and fades where it is. A holder moved in the
@@ -193,6 +197,25 @@ function isInView(rect: DOMRect): boolean {
 }
 
 /**
+ * What the page paints: the element presented fullscreen when there is one, because the browser
+ * paints nothing outside it, and the page itself otherwise.
+ * @returns The element.
+ */
+function painted(): HTMLElement {
+	const presented = document.fullscreenElement;
+	return presented instanceof HTMLElement ? presented : document.body;
+}
+
+/**
+ * Whether an element is on screen: in what the page paints, and in the window.
+ * @param element The element.
+ * @returns True when it is.
+ */
+function isOnScreen(element: HTMLElement): boolean {
+	return painted().contains(element) && isInView(element.getBoundingClientRect());
+}
+
+/**
  * Where the middle of a box is, with the orb drawn at its own size there.
  * @param rect The box.
  * @returns The spot.
@@ -208,7 +231,7 @@ function spotOf(rect: DOMRect): Spot {
  */
 function spotIn(element: HTMLElement): Spot | null {
 	const rect = element.getBoundingClientRect();
-	return isDrawn(rect) && isInView(rect) ? spotOf(rect) : null;
+	return isDrawn(rect) && isOnScreen(element) ? spotOf(rect) : null;
 }
 
 /**
@@ -265,7 +288,7 @@ function isSeen(holder: HTMLElement): boolean {
  */
 function mayFly(state: StageState, holder: HTMLElement, socket: HTMLElement): boolean {
 	const { wish } = state;
-	return wish.fly && wish.shown && isSeen(holder) && isInView(socket.getBoundingClientRect());
+	return wish.fly && wish.shown && isSeen(holder) && isOnScreen(socket);
 }
 
 /**
@@ -412,7 +435,8 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 		state.leftFrom = null;
 		seat(null);
 		state.layer.append(holder);
-		if (!state.layer.isConnected) document.body.append(state.layer);
+		const root = painted();
+		if (state.layer.parentElement !== root) root.append(state.layer);
 		placeInLayer(holder, from);
 		light();
 		state.flight = { socket, from, start: null, request: 0 };
@@ -465,6 +489,14 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 		notify();
 	};
 
+	/**
+	 * The page went into or out of fullscreen: what it paints changed under a flight in the air, so
+	 * the flight lands where it was going, and what is wanted next is worked out again from there.
+	 */
+	const settleFlight = (): void => {
+		if (state.flight !== null) land(state.flight.socket);
+	};
+
 	return {
 		holder,
 		/**
@@ -473,7 +505,9 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 		 */
 		connect: () => {
 			if (!state.garage.isConnected) document.body.append(state.garage);
+			document.addEventListener("fullscreenchange", settleFlight);
 			return (): void => {
+				document.removeEventListener("fullscreenchange", settleFlight);
 				stopFlight();
 				state.layer.remove();
 				state.garage.remove();
