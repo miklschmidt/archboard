@@ -1,8 +1,8 @@
 # Shell fonts
 
 Archboard bundles these files so the operator shell renders identically on a
-machine with no installed fonts. Both families are licensed under the SIL Open
-Font License 1.1; the exact license texts sit beside the binaries.
+machine with no installed fonts. All three families are licensed under the SIL
+Open Font License 1.1; the exact license texts sit beside the binaries.
 
 ## Onest 1.000
 
@@ -50,13 +50,21 @@ Only weights 400 and 500 are loaded. DM Mono is reserved for technical tokens
 such as levels, revisions, paths, hashes, and timestamps; human headings and
 labels remain Onest.
 
-## Big Shoulders Display
+## Big Shoulders Display 2.000
 
-One display face, licensed under the SIL Open Font License 1.1 (the license
-text of the family is in its upstream Google Fonts directory). It is not a
-human-interface face, so every label and sentence still uses Onest.
+One display face. It is not a human-interface face, so every label and
+sentence still uses Onest.
 
-- `BigShouldersDisplay-wght.ttf`: Big Shoulders Display, variable weight, from
-  the Google Fonts release of 2026-03-13. A name set as the title of what a
-  region is about (a pane's board, a picked part, a variant, a walkthrough) in
-  tracked capitals, and the lowercase archboard wordmark.
+- `BigShouldersDisplay-wght.ttf` is the variable font at Google Fonts commit
+  [`7d86539`](https://github.com/google/fonts/blob/7d86539c3e24d8ea2cae7b3ff04c64250dca99c5/ofl/bigshouldersdisplay/BigShouldersDisplay%5Bwght%5D.ttf).
+  Google Fonts added this file as version 2.000 in commit `94ee6b8` and has not
+  changed it since. SHA-256:
+  `60e208dc276a1c35fc5b62e94f9fb959c40c11783a9eb7548175c14b1fbeb720`.
+  A name set as the title of what a region is about (a pane's board, a picked
+  part, a variant, a walkthrough) in tracked capitals, and the lowercase
+  archboard wordmark.
+- `OFL-BigShouldersDisplay-1.1.txt` is the upstream license text, normalized to
+  LF line endings with trailing whitespace removed, from the
+  [OFL file](https://github.com/google/fonts/blob/7d86539c3e24d8ea2cae7b3ff04c64250dca99c5/ofl/bigshouldersdisplay/OFL.txt)
+  pinned at the same commit. SHA-256:
+  `bf3b5640d5d1d94a8d057bfa0232c6a405cad28ecaa28a0c17fdf879f5b91842`.
