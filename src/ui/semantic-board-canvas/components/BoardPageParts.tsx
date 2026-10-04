@@ -2,7 +2,7 @@
 // icon and a relationship kind's chip.
 
 import { RiPuzzleLine } from "@remixicon/react";
-import type { CSSProperties, JSX } from "react";
+import { useMemo, type CSSProperties, type JSX } from "react";
 
 import { cn } from "@/ui/components/class-names";
 import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
@@ -35,7 +35,11 @@ interface KindIconProps {
  */
 function KindIcon(props: KindIconProps): JSX.Element {
 	const { look, kind } = props;
-	const markup = look.nodeIcon(kind);
+	const icon = look.nodeIcon(kind);
+	const markup = useMemo(
+		() => (icon === undefined ? undefined : { __html: uncoloured(icon) }),
+		[icon],
+	);
 	if (markup === undefined) {
 		return (
 			<RiPuzzleLine
@@ -55,7 +59,7 @@ function KindIcon(props: KindIconProps): JSX.Element {
 			)}
 			style={props.style}
 			// The markup is the renderer's own, from icon path data the Archboard server serves.
-			dangerouslySetInnerHTML={{ __html: uncoloured(markup) }}
+			dangerouslySetInnerHTML={markup}
 		/>
 	);
 }
@@ -82,7 +86,7 @@ interface RelationshipChipProps {
  */
 function RelationshipChip(props: RelationshipChipProps): JSX.Element {
 	const { dash, color, name } = props.look.relationship(props.kind);
-	const sample: CSSProperties = { borderColor: color };
+	const sample = useMemo<CSSProperties>(() => ({ borderColor: color }), [color]);
 	return (
 		<span
 			data-slot="relationship-chip"
