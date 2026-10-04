@@ -21,9 +21,9 @@ import {
 	RAW_COORDINATOR_THREAD_ID,
 	openWithControlledVoiceMedia,
 	readControlledVoiceMediaAudit,
+	released,
 	setControlledOutputSilent,
 	talkWire,
-	type ControlledVoiceMediaAudit,
 	type FixtureRecord,
 } from "./support/codex-live-voice.ts";
 import {
@@ -59,22 +59,6 @@ const USER_SAID = "Show the controlled voice context.";
 const VOICE_SAID = "The controlled voice context is visible.";
 /** Where the page keeps whether the person wants subtitles (src/ui/voice-subtitles/lib/preference.ts). */
 const SUBTITLES_KEY = "archboard.voice.subtitles";
-
-/**
- * Whether one voice session let go of everything it took from the browser.
- * @param media The media audit.
- * @param session Which session, oldest first.
- * @returns True once its microphone and the model's track are stopped, its peer and audio context closed, and no audio element is left.
- */
-function released(media: ControlledVoiceMediaAudit, session: number): boolean {
-	return (
-		media.localTracks[session]?.stopCount === 1 &&
-		media.remoteTracks[session]?.stopCount === 1 &&
-		media.peers[session]?.closeCount === 1 &&
-		media.contexts[session]?.closeCount === 1 &&
-		media.attachedAudioElements === 0
-	);
-}
 
 test(
 	"Talk starts a live voice in the dock, and the voice box and the presentation bar carry it",
@@ -280,16 +264,16 @@ test(
 		expect(boxed.form).toBe("key");
 
 		// Presented fullscreen, the bar's key ends the same session, and the voice box carries it
-		// inside the presented stage.
+		// over the picture inside the presented stage, still muted.
 		await roleAction(browser, "button", "Present fullscreen");
 		const presented = await pollUntil(
 			() => voiceNow(browser),
-			(value) => value.bar?.mode === "live" && value.box?.presented === true,
+			(value) => value.bar?.mode === "live" && value.bar.enabled && value.box?.presented === true,
 			"the presentation bar and the voice box to carry the live voice in fullscreen",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
 		expect(await stageIsFullscreen(browser)).toBe(true);
-		expect(presented.box?.state).toBe("muted");
+		expect(presented.box).toMatchObject({ place: "free", state: "muted" });
 		expect(presented.orb).toBe("box");
 		for (const scale of ["1", "2"]) {
 			await browser.run(["set", "viewport", "1920", "1080", scale]);
@@ -315,8 +299,12 @@ test(
 		const releaseNormal = await emulateMedia(browser, "light", "normal");
 		await releaseNormal();
 
-		// The bar's key ends voice and releases the browser's media, then offers Talk again.
-		await browser.run(["click", BAR_VOICE]);
+		// From the keyboard, the bar's key ends voice and releases the browser's media, then offers
+		// Talk again. The key that read End voice is the key that reads Talk, so the keyboard keeps
+		// its place on it.
+		await browser.run(["focus", BAR_VOICE]);
+		expect(await focusIs(browser, BAR_VOICE)).toEqual([true, false]);
+		await browser.run(["press", "Enter"]);
 		const ended = await pollUntil(
 			async () => ({
 				voice: await voiceNow(browser),
@@ -327,6 +315,41 @@ test(
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
 		expect(ended.voice.box).toBeNull();
+		expect(await focusIs(browser, BAR_VOICE)).toEqual([true, false]);
+
+		// Talk on the bar's key starts one new session in fullscreen. The voice box carries it over
+		// the picture, and the same key, still focused, reads End voice. Space on it ends that session
+		// and releases its media.
+		const barFrom = records().length;
+		await browser.run(["press", "Enter"]);
+		const barLive = await pollUntil(
+			() => voiceNow(browser),
+			(value) =>
+				value.bar?.mode === "live" &&
+				value.bar.enabled &&
+				value.box?.presented === true &&
+				value.orb === "box" &&
+				value.lit,
+			"Talk on the bar's key to start a voice that the box carries in fullscreen",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+		expect(barLive.box?.place).toBe("free");
+		expect(await focusIs(browser, BAR_VOICE)).toEqual([true, false]);
+		const barStarts = frames(barFrom, "thread/realtime/start");
+		expect(barStarts).toHaveLength(1);
+		const barCoordinator = barStarts[0]?.params?.["threadId"];
+		await browser.run(["press", "Space"]);
+		const barEnded = await pollUntil(
+			async () => ({
+				voice: await voiceNow(browser),
+				media: await readControlledVoiceMediaAudit(browser),
+			}),
+			({ voice, media }) => voice.bar?.mode === "talk" && voice.bar.enabled && released(media, 1),
+			"Space on the bar's key to end the session it started and release its media",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+		expect(barEnded.voice.box).toBeNull();
+		expect(await focusIs(browser, BAR_VOICE)).toEqual([true, false]);
 		await roleAction(browser, "button", "Exit presentation");
 		const stopped = await pollUntil(
 			async () => ({
@@ -347,9 +370,9 @@ test(
 		// Narrate: the server opens the first step in the pane and, once the pane says it arrived,
 		// hands it to the voice model as speech. The user then steps by hand, and leaves; each is
 		// handed over the same way, and no coordinator turn is started for any of it. Narrating is a
-		// new voice session, and the talk before it carried the first coordinator, so it runs on a
-		// fresh one (TASK-301). Subtitles are still on, so the voice is in the box at the foot of the
-		// presented walkthrough, with the model's words.
+		// new voice session, and a coordinator carries one voice session, so it runs on a fresh one
+		// (TASK-301). Subtitles are still on, so the voice is in the box at the foot of the presented
+		// walkthrough, with the model's words.
 		const narrationFrom = records().length;
 		const speeches = () =>
 			frames(narrationFrom, "thread/realtime/appendSpeech").map(({ params }) =>
@@ -407,7 +430,9 @@ test(
 		expect(narrationStart?.params?.["initialItems"]).toEqual([]);
 		expect(frames(narrationFrom, "thread/start")).toHaveLength(1);
 		const narrationCoordinator = narrationStart?.params?.["threadId"];
-		expect(narrationCoordinator).not.toBe(RAW_COORDINATOR_THREAD_ID);
+		// Each voice session ran on a coordinator of its own: Talk in the dock, Talk on the bar's
+		// key, and the narration.
+		expect(new Set([RAW_COORDINATOR_THREAD_ID, barCoordinator, narrationCoordinator]).size).toBe(3);
 		expect(frames(narrationFrom, "turn/start")).toEqual([]);
 
 		// The dock's key, which ends voice while the box has it, ends the narration and releases its media.
@@ -425,7 +450,7 @@ test(
 				media: await readControlledVoiceMediaAudit(browser),
 			}),
 			({ voice, media }) =>
-				voice.state === "off" && voice.enabled && voice.box === null && released(media, 1),
+				voice.state === "off" && voice.enabled && voice.box === null && released(media, 2),
 			"the dock's key to end the narration and release the browser's media",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
@@ -433,12 +458,13 @@ test(
 		expect(
 			await pollUntil(
 				() => records().filter(({ kind }) => kind === "realtime_stop"),
-				(stops) => stops.length === 2,
+				(stops) => stops.length === 3,
 				"each ended session to stop on the coordinator",
 				{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 			),
 		).toEqual([
 			expect.objectContaining({ threadId: RAW_COORDINATOR_THREAD_ID }),
+			expect.objectContaining({ threadId: barCoordinator }),
 			expect.objectContaining({ threadId: narrationCoordinator }),
 		]);
 
