@@ -141,16 +141,6 @@ function trafficBeams(svg: string, id: string): Beam[] {
 }
 
 /**
- * Every pulse a card carries round its edge.
- * @param svg The markup.
- * @param id The card's id.
- * @returns The pulses.
- */
-function rimBeams(svg: string, id: string): Beam[] {
-	return beams(holding(svg, "data-semantic-id", id));
-}
-
-/**
  * The pulses one message sends.
  * @param svg The markup.
  * @param id The message's id.
@@ -182,13 +172,4 @@ function slidingSpeedOf(piece: Piece): number {
 	return Math.abs(piece.values[2]! - piece.values[1]!) / ((to - from) * piece.cycle);
 }
 
-export {
-	beams,
-	messageBeams,
-	rimBeams,
-	slidingSpeedOf,
-	speedOf,
-	trafficBeams,
-	type Beam,
-	type Piece,
-};
+export { beams, messageBeams, slidingSpeedOf, speedOf, trafficBeams, type Beam, type Piece };

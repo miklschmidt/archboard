@@ -423,7 +423,7 @@ function paintArchitecture(
 		),
 		// Every relationship's traffic, over all the lines so a stretch two joined
 		// lines share never covers the other's pulses, and under the cards and words.
-		...edges.map((edge) => traffic.lines.get(edge.edge.id) ?? ""),
+		...edges.map((edge) => traffic.get(edge.edge.id) ?? ""),
 		...orderedCards.map((card) =>
 			paintMeasuredCard(
 				card,
@@ -431,7 +431,6 @@ function paintArchitecture(
 				standingOf(card.measured.node.id),
 				unsettledOf(card.measured.node.id),
 				appearances.get(card.measured.node.id)!,
-				traffic.rims.get(card.measured.node.id),
 			),
 		),
 		...edges.map((edge) =>

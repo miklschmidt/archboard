@@ -1,25 +1,15 @@
-// The way around the edge of a card (ADR 0027).
+// How long a pulse is held in a card (ADR 0027).
 //
-// A pulse that sinks into a card runs the card's edge, the shorter way round, to
-// the place the next line leaves, so it never crosses what the card says. The
-// edge is walked as a ring of short straight pieces: a corner's quarter turn is
+// A pulse that sinks into a card takes the shorter way round the card's edge to
+// the place the next line leaves, and nothing of it is drawn there: the card holds
+// it for as long as that takes, so the line out lies the line in by the way round.
+// The edge is walked as a ring of short straight pieces: a corner's quarter turn is
 // a few of them, which is as far from the drawn arc as a hairline.
 import { CARD_RADIUS } from "@/transformers/semantic-renderer/lib/design";
-import { coord, type Box, type Point } from "@/transformers/semantic-renderer/lib/geometry";
-import type { Curve } from "@/transformers/semantic-renderer/lib/layout/curves";
+import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 
 /** How many straight pieces walk a quarter turn of a corner. */
 const CORNER_PIECES = 3;
-
-/** The way from one place on a card's edge to another. */
-interface Rim {
-	/** The way, as a route. */
-	readonly curve: Curve;
-	/** The way, as path data. */
-	readonly path: string;
-	/** How long it is. */
-	readonly length: number;
-}
 
 /** A card's edge, walked clockwise from where its top edge begins. */
 interface Ring {
@@ -98,56 +88,17 @@ function locate(ring: Ring, point: Point): number {
 }
 
 /**
- * The point a distance along the ring.
- * @param ring The ring.
- * @param distance How far, held to one turn.
- * @returns The point.
- */
-function pointAlong(ring: Ring, distance: number): Point {
-	const at = ((distance % ring.length) + ring.length) % ring.length;
-	const index = Math.max(
-		0,
-		ring.along.findLastIndex((along) => along <= at),
-	);
-	const from = ring.points[index]!;
-	const to = ring.points[(index + 1) % ring.points.length]!;
-	const size = Math.hypot(to.x - from.x, to.y - from.y);
-	const t = size === 0 ? 0 : (at - ring.along[index]!) / size;
-	return { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t };
-}
-
-/**
- * The shorter way round the edge of a card from one place to another.
+ * How far the shorter way round the edge of a card is from one place to another.
  * @param box The card.
  * @param from Where the pulse comes in: the end of a line, on the card.
  * @param to Where it leaves: the start of a line, on the card.
- * @returns The way and its length.
+ * @returns The distance, never more than halfway round.
  */
-function rimRoute(box: Box, from: Point, to: Point): Rim {
+function rimLength(box: Box, from: Point, to: Point): number {
 	const ring = ringOf(box);
-	const start = locate(ring, from);
-	const forward = (((locate(ring, to) - start) % ring.length) + ring.length) % ring.length;
-	const clockwise = forward <= ring.length - forward;
-	const length = clockwise ? forward : ring.length - forward;
-	const direction = clockwise ? 1 : -1;
-	// The ring's own points the way passes, nearest first.
-	const between = ring.points
-		.map((point, index) => ({
-			point,
-			reach:
-				(((direction * (ring.along[index]! - start)) % ring.length) + ring.length) % ring.length,
-		}))
-		.filter(({ reach }) => reach > 1e-6 && reach < length - 1e-6)
-		.toSorted((a, b) => a.reach - b.reach)
-		.map(({ point }) => point);
-	const way = [pointAlong(ring, start), ...between, pointAlong(ring, start + direction * length)];
-	return {
-		curve: { from: way[0]!, segments: way.slice(1).map((point) => ({ kind: "line", to: point })) },
-		path: way
-			.map(({ x, y }, index) => `${index === 0 ? "M" : "L"}${coord(x)},${coord(y)}`)
-			.join(" "),
-		length,
-	};
+	const forward =
+		(((locate(ring, to) - locate(ring, from)) % ring.length) + ring.length) % ring.length;
+	return Math.min(forward, ring.length - forward);
 }
 
-export { rimRoute, type Rim };
+export { rimLength };

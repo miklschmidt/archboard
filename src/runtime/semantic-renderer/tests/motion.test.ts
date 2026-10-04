@@ -1,11 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
-import {
-	beams,
-	rimBeams,
-	speedOf,
-	trafficBeams,
-} from "@/runtime/semantic-renderer/tests/drawn-traffic";
+import { beams, speedOf, trafficBeams } from "@/runtime/semantic-renderer/tests/drawn-traffic";
 import {
 	SAMPLE,
 	chain,
@@ -149,22 +144,8 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 describe("a pulse is handed on through a card", () => {
 	const SAME = { speed: 40, volume: 0.5 };
 
-	test("a card whose lines out keep the time of the line in carries the pulse round its edge", async () => {
-		const svg = await chain([
-			{ id: "ab", from: "a", to: "b", kind: "call", traffic: SAME },
-			{ id: "bc", from: "b", to: "c", kind: "call", traffic: SAME },
-			{ id: "bd", from: "b", to: "d", kind: "call", traffic: { speed: 40, volume: 2 } },
-		]);
-		// B takes the pulses of ab and gives them to bc: it carries them round its edge.
-		expect(rimBeams(svg, "b").length).toBeGreaterThan(0);
-		// The line out at another volume keeps a rhythm of its own, and so does the card it ends at.
-		expect(rimBeams(svg, "c")).toHaveLength(0);
-		expect(rimBeams(svg, "d")).toHaveLength(0);
-		expect(rimBeams(svg, "a")).toHaveLength(0);
-	});
-
-	test("lines that keep different time hand nothing on", async () => {
-		for (const out of [{ speed: 80, volume: 0.5 }, { speed: 40, volume: 1 }, undefined]) {
+	test("a card draws no pulse of its own, whether or not its lines keep the time", async () => {
+		for (const out of [SAME, { speed: 80, volume: 0.5 }, { speed: 40, volume: 1 }, undefined]) {
 			const svg = await chain([
 				{ id: "ab", from: "a", to: "b", kind: "call", traffic: SAME },
 				{
@@ -175,65 +156,23 @@ describe("a pulse is handed on through a card", () => {
 					...(out === undefined ? {} : { traffic: out }),
 				},
 			]);
-			expect(rimBeams(svg, "b")).toHaveLength(0);
+			for (const card of ["a", "b", "c"]) {
+				const group = svg.split(`data-semantic-id="${card}"`)[1]!.split("data-semantic-id=")[0]!;
+				expect(group).not.toContain("ab-pulse");
+			}
 		}
 	});
 
-	test("the pulse runs the edge of the card and never crosses what it says", async () => {
+	test("every pulse is a line's own, and a card hands one on without drawing it", async () => {
 		const svg = await chain([
 			{ id: "ab", from: "a", to: "b", kind: "call", traffic: SAME },
 			{ id: "bc", from: "b", to: "c", kind: "call", traffic: SAME },
 			{ id: "bd", from: "b", to: "d", kind: "call", traffic: SAME },
 		]);
-		const card =
-			/data-semantic-id="b"[^>]*><rect class="ab-halo"[^>]*\/>\s*<rect x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"/u
-				.exec(svg)!
-				.slice(1)
-				.map(Number);
-		const [x, y, width, height] = card as [number, number, number, number];
-		const around = rimBeams(svg, "b");
-		expect(around.length).toBeGreaterThan(0);
-		for (const beam of around) {
-			for (const piece of beam.pieces) {
-				for (const point of piece.points) {
-					// On the outline of the card: as near one of its four sides as a rounded corner is.
-					const near = Math.min(
-						Math.abs(point.x - x),
-						Math.abs(point.x - (x + width)),
-						Math.abs(point.y - y),
-						Math.abs(point.y - (y + height)),
-					);
-					expect(near).toBeLessThan(2);
-				}
-			}
-		}
+		expect(beams(svg)).toHaveLength(3);
 	});
 
-	test("the pulse leaves a line's end for the next line's start", async () => {
-		const svg = await chain([
-			{ id: "ab", from: "a", to: "b", kind: "call", traffic: SAME },
-			{ id: "bc", from: "b", to: "c", kind: "call", traffic: SAME },
-		]);
-		const route = (id: string) => {
-			const group = svg.split(`data-semantic-id="${id}"`)[1]!.split("data-semantic-id=")[0]!;
-			return routeOf(/<path d="([^"]+)"[^>]*marker-end=[^>]*>/u.exec(group)![1]!);
-		};
-		const [arrives, leaves] = [route("ab").at(-1)!, route("bc")[0]!];
-		const [way] = rimBeams(svg, "b");
-		const [first, last] = [way!.pieces[0]!.points[1]!, way!.pieces.at(-1)!.points.at(-2)!];
-		expect(Math.hypot(first.x - arrives.x, first.y - arrives.y)).toBeLessThan(2);
-		expect(Math.hypot(last.x - leaves.x, last.y - leaves.y)).toBeLessThan(2);
-	});
-
-	test("a pulse on the way round flies at the speed it flies everywhere", async () => {
-		const svg = await chain([
-			{ id: "ab", from: "a", to: "b", kind: "call", traffic: SAME },
-			{ id: "bc", from: "b", to: "c", kind: "call", traffic: SAME },
-		]);
-		for (const beam of rimBeams(svg, "b")) expect(speedOf(beam)).toBeCloseTo(SAME.speed * 2, 1);
-	});
-
-	test("a reader who asked for less motion loses the pulses on a card's edge too", async () => {
+	test("a reader who asked for less motion loses the pulses of a chain too", async () => {
 		const svg = await chain([
 			{ id: "ab", from: "a", to: "b", kind: "call", traffic: SAME },
 			{ id: "bc", from: "b", to: "c", kind: "call", traffic: SAME },
@@ -241,7 +180,7 @@ describe("a pulse is handed on through a card", () => {
 		expect(beams(svg).length).toBeGreaterThan(0);
 		expect(svg).toContain("@media(prefers-reduced-motion:reduce){.ab-pulse{display:none}}");
 		// Every moving bar sits in a group that rule hides.
-		expect(svg.split('<g class="ab-pulse"').length - 1).toBeGreaterThanOrEqual(3);
+		expect(svg.split('<g class="ab-pulse"').length - 1).toBe(2);
 	});
 });
 
