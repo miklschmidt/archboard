@@ -1,6 +1,6 @@
 ---
 name: archboard
-description: The redesigned shell (branch prototype/shell-worlds), around a picture the renderer draws.
+description: The shell of archboard as it stands in code, around a picture the renderer draws.
 colors:
   ground-chalk: "oklch(0.99 0.0025 90)"
   ink-graphite: "oklch(0.17 0.006 75)"
@@ -32,6 +32,11 @@ typography:
     fontSize: "14px"
     fontWeight: 600
     lineHeight: "20px"
+  nav:
+    fontFamily: "Archboard Onest, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "14px"
+    fontWeight: 500
+    lineHeight: "20px"
   control:
     fontFamily: "Archboard Onest, ui-sans-serif, system-ui, sans-serif"
     fontSize: "13px"
@@ -42,6 +47,28 @@ typography:
     fontSize: "12px"
     fontWeight: 400
     lineHeight: "16px"
+  presentation:
+    fontFamily: "Archboard Onest, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "28px"
+    fontWeight: 600
+    lineHeight: "34px"
+    letterSpacing: "-0.01em"
+  reading:
+    fontFamily: "Archboard Onest, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "16px"
+    fontWeight: 400
+    lineHeight: "24px"
+  figure:
+    fontFamily: "Archboard Display, Big Shoulders Display, sans-serif"
+    fontSize: "44px"
+    fontWeight: 650
+    lineHeight: "44px"
+    letterSpacing: "0.02em"
+  subtitle:
+    fontFamily: "Archboard Onest, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "20px"
+    fontWeight: 500
+    lineHeight: "28px"
   technical:
     fontFamily: "Archboard DM Mono, ui-monospace, monospace"
     fontSize: "11px"
@@ -87,11 +114,11 @@ components:
 
 # Design System: archboard
 
-This file records the shell of the prototype branch `prototype/shell-worlds` as
-it stands in code. Two files are normative: `src/ui/theme/palette.css` holds
-the colours and the elevation of both themes, and `src/ui/theme/app.css` holds
-type, space, shape, the shadow utilities and the gold finish. If this file and
-those files disagree, those files win and this file is stale.
+This file records the shell as it stands in code. Two files are normative:
+`src/ui/theme/palette.css` holds the colours and the elevation of both themes,
+and `src/ui/theme/app.css` holds type, space, shape, the shadow utilities and
+the gold finish. If this file and those files disagree, those files win and this
+file is stale.
 
 ## Overview
 
@@ -189,21 +216,22 @@ paths, versions, counts and times.
 
 ## Layout
 
-The shell puts columns around the picture. The navigator (320px) is on the
-left, and the agent dock is at its foot. The panes are in the centre, one or
-two side by side. The conversation opens between the navigator and the panes:
-it slides in and out, and a handle on its edge, a grip on a line that takes the
-gold while it is dragged, resizes it between 320px and 720px, or drags it shut
-below that. Each pane has a sidebar (280px) on the right, shown and hidden by
-one control at the end of the pane's header. Beside a lone pane the sidebar is
-docked and takes its width from the picture. With two panes it is away until
-somebody asks for it, and its panel then floats over the edge of the picture
-until it is pinned. A sidebar that is away is nowhere: it leaves no strip, no
-icons and no empty column behind. Every column starts with a chrome row (40px)
-and then a band (36px) for the find fields and the tabs of the sidebar. A pane's header stands on a whole-pixel grid: 16px lines and
-icons, 32px crumbs and text trimmed to its cap height, so its parts sit on one
-line at any display scale. A row of a list is at least 28px high. Panels have
-16px of padding. The shell has no narrow or phone layout.
+The shell puts columns around the picture. The navigator (320px) is on the left,
+and the agent dock is at its foot. The panes are in the centre, one or two side
+by side. The conversation opens between the navigator and the panes: it slides
+in and out, and a handle on its edge, a grip on a line that takes the gold while
+it is dragged, resizes it between 320px and 720px, or drags it shut below that.
+Each pane has a sidebar (280px) on the right, shown and hidden by one control at
+the end of the pane's header. Beside a lone pane the sidebar is docked and takes
+its width from the picture. With two panes it is away until somebody asks for
+it, and its panel then floats over the edge of the picture until it is pinned. A
+sidebar that is away is nowhere: it leaves no strip, no icons and no empty
+column behind. Every column starts with a chrome row (40px) and then a band
+(36px) for the find fields and the tabs of the sidebar. A pane's header stands
+on a whole-pixel grid: 16px lines and icons, 32px crumbs and text trimmed to its
+cap height, so its parts sit on one line at any display scale. A row of a list
+is at least 28px high. Panels have 16px of padding. The shell has no narrow or
+phone layout.
 
 ## Elevation & Depth
 
@@ -216,24 +244,25 @@ over the picture is blurred or filtered, and nothing there loops but the voice
 orb, which draws itself on a canvas of its own, because every repaint over the
 picture makes it slower to drag. What moves over it moves as a layer of its own,
 once: a tip or a menu as it opens, the floating sidebar when it is shown or put
-away, the walkthrough box as it arrives and as it hands one step to the next, the
-voice box as it comes and goes, and each word of a subtitle as it arrives. The file palette.css holds the values for both themes. The file app.css
-gives each one a `shadow-*` utility.
+away, the walkthrough box as it arrives and as it hands one step to the next,
+the voice box as it comes and goes, and each word of a subtitle as it arrives.
+The file palette.css holds the values for both themes. The file app.css gives
+each one a `shadow-*` utility.
 
 ### Shadow Vocabulary
 
 - **well** (`--elevation-well`, an inner shadow of 1px offset and 2px blur): a field sunk into a surface, such as an input or the composer.
-- **edge-down, edge-side and edge-up** (`--elevation-edge-*`, a 1px contact shadow and a soft shadow with an 8px offset): the chrome casts these onto what is under it or beside it. A tray casts edge-up over the list that scrolls under it.
+- **edge-down, edge-side and edge-up** (`--elevation-edge-*`): the chrome casts these onto what is under it or beside it. Each is a 1px contact shadow and a soft shadow. The soft shadow has an 8px offset on chalk and 10px to 12px on graphite. A tray casts edge-up over the list that scrolls under it.
 - **raised** (`--elevation-raised`, a white highlight on top and a 1px seat): a control, a key cap, the voice circle and the chosen row of a list.
 - **pressed** (`--elevation-pressed`, an inner shadow): a raised control while somebody presses it.
 - **card** (`--elevation-card`): a card on a page.
-- **float** (`--elevation-float`, three layers): menus, tips, lists of matches and the floating sidebar.
-- **dialog** (`--elevation-dialog`, three layers): dialogs.
+- **float** (`--elevation-float`, a highlight on top and three shadows): menus, tips, lists of matches, the floating sidebar, the walkthrough box and the voice box.
+- **dialog** (`--elevation-dialog`, a highlight on top and three shadows): dialogs.
 - **primary and primary-pressed** (`--elevation-primary*`): the gold finish at rest and pressed.
 
 ### Named Rules
 
-**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar, the walkthrough box or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. The floating sidebar takes at most 160ms, the walkthrough box 220ms to arrive and 520ms to hand one step to the next, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off, in a layer of its own, over 680ms.
+**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar, the walkthrough box or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. The floating sidebar takes at most 160ms, the walkthrough box 220ms to arrive and 520ms to hand one step to the next, with the wake on its rail settling by about 700ms, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off, in a layer of its own, over 680ms.
 
 **The Picture Answers Rule.** The light belongs to the picture, not to the shell. When a part is picked out or the pointer rests on one, the viewer marks what stays as drawn, and the picture's own subjects recede under an opacity filter. The shell lays no layer, blur or halo over the picture to do it.
 
@@ -243,10 +272,15 @@ gives each one a `shadow-*` utility.
 
 ## Shapes
 
-Corners are small and firm. Chips and key caps have 2px corners. Controls and
-rows have 3px corners. Cards, menus and dialogs have 4px corners. The voice and
-the medallion of a part are circles. Edges are one-pixel rules in the Rule
-tone.
+Corners are small and firm. Chips have 2px corners, and so does the key
+combination in a tooltip. Controls, rows and the key cap that hints a shortcut
+beside a field have 3px corners. Cards, menus and dialogs have 4px corners. The
+voice and the medallion of a part are circles.
+
+Some forms are capsules, round at both ends. These are the voice box and the
+voice pill at the foot of the walkthrough box. The segments of the rail and the
+gold piece that travels along it are capsules too. Edges are one-pixel rules in
+the Rule tone.
 
 ## Components
 
