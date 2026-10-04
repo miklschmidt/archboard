@@ -1,11 +1,12 @@
 // Traffic that stands still while a hand moves the camera, and wakes up gently.
 //
-// A drag, a throw, a wheel and a key all move the picture on every frame, and
-// moving traffic paints its lines again in each of them. So the traffic of the
-// picture stops with the first move, stays stopped while the camera is still
-// moving, which includes a thrown drag coasting to rest, and comes back only once
-// the camera has been still for a moment, and then at a creep that gathers speed.
-// What the stage moves itself, a fit or a glide to a step, leaves it alone.
+// A drag, a wheel and a key move the picture, and a hand that moves it has no use
+// for traffic that draws the eye. So the traffic of the picture stops with the first
+// move and stays stopped for as long as the hand moves it. It comes back the moment a
+// drag is let go, even if the picture is thrown and coasts on, and a moment after the
+// last turn of a wheel or press of a key. It never returns at its speed: it starts as
+// a creep and gathers it. What the stage moves itself, a fit or a glide to a step,
+// leaves it alone.
 
 import { useEffect, useMemo } from "react";
 
@@ -46,10 +47,9 @@ function useTrafficRest(
 				pace.resume(EXPLORING_MS.trafficStart);
 			});
 		};
-		// A drag holds the traffic even while the pointer rests. When it ends, the camera is
-		// still or a throw takes over and moves it, so the wait for rest starts here.
+		// A drag holds the traffic even while the pointer rests, and lets it go as it ends.
 		if (dragging) pace.hold();
-		else if (pace.holding()) settle();
+		else pace.resume(EXPLORING_MS.trafficStart);
 		const hearing = subscribe(() => {
 			if (view().hand !== true) return;
 			pace.hold();

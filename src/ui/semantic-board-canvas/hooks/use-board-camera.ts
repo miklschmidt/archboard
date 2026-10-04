@@ -47,9 +47,9 @@ interface CameraView {
 	/** Whether the last move was one that must land at once, rather than be eased. */
 	readonly instant: boolean;
 	/**
-	 * Whether a hand made the last move: a drag, a throw, a wheel or a key. A fit,
-	 * a glide and the camera following its picture are the stage's, and leave it
-	 * unsaid.
+	 * Whether a hand made the last move: a drag, a wheel or a key. A throw
+	 * coasting on after the hand let go, a fit, a glide and the camera following
+	 * its picture are not a hand's, and leave it unsaid.
 	 */
 	readonly hand?: boolean;
 }
@@ -310,9 +310,10 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 			 * Draw the camera somewhere.
 			 * @param camera Where.
 			 * @param instant Whether the surface lands there at once.
+			 * @param byHand Whether a hand is still moving it.
 			 */
-			draw: (camera, instant) => {
-				write({ camera, instant, hand: true });
+			draw: (camera, instant, byHand) => {
+				write({ camera, instant, hand: byHand });
 			},
 		}),
 		[read, write],
