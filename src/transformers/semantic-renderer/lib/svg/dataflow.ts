@@ -15,8 +15,8 @@ import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 // the same identity and selection machinery the architecture grammar carries, so
 // a pane can hit-test one picture the way it hit-tests the other.
 //
-// The dots do not compete with the walkthrough: a beat moves the camera and
-// marks its subjects, and neither is a thing a dot does.
+// The pulses do not compete with the walkthrough: a beat moves the camera and
+// marks its subjects, and neither is a thing a pulse does.
 //
 // The layer order is load-bearing. A row's mark passes behind everything on
 // the row; a lifeline passes behind a card; a message passes over a lifeline;
@@ -216,7 +216,7 @@ function stepRide(placed: PlacedStep, activeAt: ActiveAt): Ride | undefined {
 }
 
 /**
- * One message: a glow a viewer can light up, the line itself, and the dots
+ * One message: a glow a viewer can light up, the line itself, and the pulses
  * that ride it.
  *
  * Its words are drawn on the layer above every run ({@link paintStepWords}), in

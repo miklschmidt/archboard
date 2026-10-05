@@ -173,7 +173,7 @@ function stylesheet(palette: Palette, fonts: FontSource): string {
 			".is-veiled .is-lit,.is-veiled .is-lit [data-semantic-id]{opacity:1}",
 			// A reader who has asked their system for less motion gets a still
 			// picture even when nobody asked this renderer for one. CSS cannot stop
-			// a SMIL animation, so the layer it moves is hidden instead: the dots go
+			// a SMIL animation, so the layer it moves is hidden instead: the pulses go
 			// and the lines they rode stay exactly as they were.
 			`@media(prefers-reduced-motion:reduce){.${PULSE_CLASS}{display:none}}`,
 		].join(""),

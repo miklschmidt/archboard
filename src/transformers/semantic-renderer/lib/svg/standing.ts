@@ -178,7 +178,7 @@ const SWIPE_OPACITY: Readonly<Record<SubjectStanding, number>> = {
 /**
  * The ink one standing is drawn in, and the one question every channel asks.
  *
- * The line, the arrowhead it ends in and the dots that ride it all ask this, so
+ * The line, the arrowhead it ends in and the pulses that ride it all ask this, so
  * a relationship drawn as changed is amber all the way through instead of an
  * amber band behind a grey line — which reads as a glow behind something
  * unrelated to it rather than as the line's own standing.

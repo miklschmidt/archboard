@@ -37,8 +37,8 @@ const BASELINE_RATIO = 1.02;
 
 /**
  * How strong a coloured line is drawn, as its share of its colour over the
- * page: three quarters, so the comets riding it stand out at full strength.
- * The neutral line keeps its own colour; its comets are shaded instead.
+ * page: three quarters, so the pulses riding it stand out at full strength.
+ * The neutral line keeps its own colour; its pulses are shaded instead.
  */
 const LINE_STRENGTH = 0.75;
 

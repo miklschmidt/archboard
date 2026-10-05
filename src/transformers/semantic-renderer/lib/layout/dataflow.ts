@@ -110,13 +110,13 @@ interface PlacedStep {
 	/** Its note, when the step carries one. */
 	readonly note?: PlacedNote | undefined;
 	/**
-	 * This message's turn on the drawing's shared clock: where its first dot
-	 * starts, and how many dots it sends.
+	 * This message's turn on the drawing's shared clock: where its first pulse
+	 * starts, and how many pulses it sends.
 	 *
 	 * The clock is the whole drawing's, so turns keep counting across the stack
 	 * of flows rather than restarting at each one. Every message takes a turn and
 	 * the turns do not overlap, so a reader sees the exchange told in order
-	 * rather than a dozen dots crossing at once — and reads one page of flows in
+	 * rather than a dozen pulses crossing at once — and reads one page of flows in
 	 * the order they are stated rather than as several running at once. A
 	 * repeated step sends its repeat — capped, because a step somebody wrote
 	 * `×40` on would otherwise take the whole cycle and everything after it
@@ -152,7 +152,7 @@ interface DataFlowLayout {
 	/** The flows, in document order, stacked down the page. */
 	readonly flows: readonly FlowLayout[];
 	/**
-	 * How many turns the drawing's clock is divided into: every dot every
+	 * How many turns the drawing's clock is divided into: every pulse every
 	 * message of every flow sends, counted once.
 	 *
 	 * Zero when nothing crosses, which is a drawing with no clock at all.
@@ -305,7 +305,7 @@ function placeColumnCard(
  * @param centreOf Where each participant's lifeline runs.
  * @param bounds The flow's columns, which a note stays inside.
  * @param firstY The height the first message runs at.
- * @param firstTurn The turn of the drawing's clock this flow's first dot takes.
+ * @param firstTurn The turn of the drawing's clock this flow's first pulse takes.
  * @returns The placed messages.
  */
 function placeSteps(
