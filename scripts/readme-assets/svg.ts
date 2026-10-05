@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import {
 	encodeThumbnail,
+	holding,
 	inOrder,
 	inRepository,
 	pyftsubsetCommand,
@@ -196,7 +197,7 @@ function diagramProducer(spec: DiagramSpec): Producer {
 		make: async () => {
 			const work = scratch("diagrams", spec.name);
 			const server = await startServer(`diagram-${spec.name}`, spec.vault, false);
-			try {
+			await holding(server.stop, async () => {
 				const [size] = await inOrder(["light", "dark"] as const, async (theme) => {
 					const drawn = join(work, `${theme}.svg`);
 					const receipt = await server.cli([
@@ -212,9 +213,7 @@ function diagramProducer(spec: DiagramSpec): Producer {
 					return RenderReceiptSchema.parse(receipt);
 				});
 				if (size !== undefined) await thumbnail(spec, server, size, work);
-			} finally {
-				await server.stop();
-			}
+			});
 		},
 	};
 }

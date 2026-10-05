@@ -1,10 +1,11 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { PRODUCERS } from "../../../scripts/readme-assets/assets.ts";
+import { holding } from "../../../scripts/readme-assets/holding.ts";
 import {
 	SourceHasher,
 	assess,
@@ -198,5 +199,59 @@ describe("README asset manifest", () => {
 		const hasher = new SourceHasher(repoRoot, checkoutFiles(repoRoot));
 
 		expect(manifest.assets.flatMap((one) => hasher.unmatched(one.sources))).toEqual([]);
+	});
+});
+
+function signalListeners(): number[] {
+	return [process.listenerCount("SIGINT"), process.listenerCount("SIGTERM")];
+}
+
+describe("what a README take holds", () => {
+	test("is stopped once when the take ends, and leaves no signal handler", async () => {
+		const before = signalListeners();
+		const stops: string[] = [];
+		const stop = (name: string) => async () => {
+			stops.push(name);
+		};
+
+		const made = await holding(stop("server"), async () => {
+			expect(signalListeners()).not.toEqual(before);
+			return holding(stop("browser"), async () => "made");
+		});
+		const failed = holding(stop("server"), async () => {
+			throw new Error("the take failed");
+		});
+
+		expect(made).toBe("made");
+		await expect(failed).rejects.toThrow("the take failed");
+		expect(stops).toEqual(["browser", "server", "server"]);
+		expect(signalListeners()).toEqual(before);
+	});
+
+	test("is stopped on SIGINT, and the kit exits with the signal's status", async () => {
+		const exit = spyOn(process, "exit").mockImplementation(
+			(() => undefined) as typeof process.exit,
+		);
+		try {
+			const stops: string[] = [];
+			const scene = Promise.withResolvers<void>();
+			const take = holding(
+				async () => {
+					stops.push("server");
+				},
+				async () => scene.promise,
+			);
+
+			process.emit("SIGINT", "SIGINT");
+			await Bun.sleep(0);
+			expect(stops).toEqual(["server"]);
+			expect(exit).toHaveBeenCalledWith(130);
+
+			scene.resolve();
+			await take;
+			expect(stops).toEqual(["server"]);
+		} finally {
+			exit.mockRestore();
+		}
 	});
 });

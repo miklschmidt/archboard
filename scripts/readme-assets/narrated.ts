@@ -13,6 +13,7 @@ import { TALK_SAMPLE_RATE, type Talk } from "@/shared/walkthrough-recording/talk
 import {
 	encodeExcerpt,
 	encodeThumbnail,
+	holding,
 	inRepository,
 	scratch,
 	startServer,
@@ -118,7 +119,7 @@ async function record(spec: NarratedSpec, context: MakeContext): Promise<void> {
 	const video = join(work, `${spec.name}.mp4`);
 	rmSync(talk, { recursive: true, force: true });
 	const server = await startServer(`narrated-${spec.name}`, spec.vault, true);
-	try {
+	await holding(server.stop, async () => {
 		await server.cli([
 			"semantic",
 			"record",
@@ -130,9 +131,7 @@ async function record(spec: NarratedSpec, context: MakeContext): Promise<void> {
 			"--out",
 			video,
 		]);
-	} finally {
-		await server.stop();
-	}
+	});
 	await cutFrom(spec, video, readTalk(talk));
 	context.say(`The narrated MP4 is ${video}. Attach it to the README's player by hand.`);
 }

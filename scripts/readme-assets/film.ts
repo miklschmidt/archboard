@@ -14,6 +14,8 @@ import { Browser, now, type Footage, type Page } from "./browser.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 import { encodeClip, encodeThumbnail, frameAt, type ClipCut, type Crop } from "./encode.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+import { holding } from "./holding.ts";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 import { inRepository } from "./producer.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 import { startServer, type TakeServer, type TrackedVault } from "./server.ts";
@@ -36,7 +38,7 @@ interface Moment {
 
 /**
  * Run a scene with a server over a fresh copy of a vault and a private browser, and stop both
- * whatever happens.
+ * whatever happens, a Ctrl-C included.
  * @param name The clip, which names its directory in the scratch directory.
  * @param vault The tracked vault it is filmed over.
  * @param codex Whether it needs the machine's Codex sign-in.
@@ -49,16 +51,13 @@ async function withTake(
 	scene: (server: TakeServer, browser: Browser) => Promise<void>,
 ): Promise<void> {
 	const server = await startServer(name, vault, codex);
-	try {
+	await holding(server.stop, async () => {
 		const browser = await Browser.start();
-		try {
-			await scene(server, browser);
-		} finally {
-			await browser.close();
-		}
-	} finally {
-		await server.stop();
-	}
+		await holding(
+			async () => browser.close(),
+			async () => scene(server, browser),
+		);
+	});
 }
 
 /**
