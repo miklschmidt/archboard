@@ -272,7 +272,6 @@ function cameraOf(transform: string): Camera | null {
 
 export {
 	FAR_SCALE,
-	FIT_MARGIN,
 	FOCUS_MAX_SCALE,
 	IDENTITY_CAMERA,
 	MAX_SCALE,

@@ -10,11 +10,12 @@
 
 import { useEffect, useRef } from "react";
 
+import { FIT_MARGIN } from "@/shared/shell-geometry/index";
 import { EXPLORING_MS } from "@/shared/timing/timing";
 import type { SemanticAtlas } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
-import { FIT_MARGIN, type Rect } from "@/ui/semantic-board-canvas/lib/camera";
+import type { Rect } from "@/ui/semantic-board-canvas/lib/camera";
 import { revealCamera } from "@/ui/semantic-board-canvas/lib/reveal";
 import { subjectBox } from "@/ui/semantic-board-canvas/lib/subjects";
 
