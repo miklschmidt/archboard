@@ -22,7 +22,8 @@ import {
 import { assembleShellView } from "@/ui/application/shell-view";
 import { applyTheme, initialTheme } from "@/ui/application/lib/theme";
 import { usePaneReadings } from "@/ui/application/hooks/use-pane-reading";
-import { usePaneViews, type PaneOverlay } from "@/ui/application/hooks/use-pane-views";
+import { usePaneViews } from "@/ui/application/hooks/use-pane-views";
+import { useSubtitleOverlay } from "@/ui/application/hooks/use-subtitle-overlay";
 import { useReleasedBoards } from "@/ui/application/hooks/use-released-boards";
 import {
 	shellPresentationOf,
@@ -41,13 +42,13 @@ import {
 	usePageRecorder,
 	useRecordedViews,
 } from "@/ui/application/hooks/use-page-recording";
-import { PaneSubtitles } from "@/ui/application/components/PaneSubtitles";
 import { useAgentSurfaces, type AgentSurfaces } from "@/ui/application/hooks/use-agent-surfaces";
 import { useWorkbench, type Workbench } from "@/ui/application/hooks/use-workbench";
 import { useWorkspaceAddressing } from "@/ui/application/hooks/use-workspace-addressing";
 import { useBesideOpening } from "@/ui/application/hooks/use-beside-opening";
 import {
 	BoardCatalogProvider,
+	buildOutline,
 	listedBoard,
 	listedBoardKey,
 	useBoardCatalog,
@@ -58,8 +59,10 @@ import { TooltipProvider } from "@/ui/components/tooltip";
 import { boardAddressOf, boardKeyFor } from "@/ui/semantic-board-canvas";
 import type { BoardListing } from "@/ui/types";
 import { RecordingStage } from "@/ui/walkthrough-recording";
-import { TalkControl } from "@/ui/workbench";
-import { AgentBarSlot, AgentPanelSlot } from "@/ui/application/components/AgentSurfaceSlots";
+import { OrbStageProvider } from "@/ui/voice-orb";
+import { VoiceSurfaceProvider } from "@/ui/workbench";
+import { AgentDockSlot, AgentPanelSlot } from "@/ui/application/components/AgentSurfaceSlots";
+import { PresentationVoiceKey } from "@/ui/application/components/PresentationVoiceKey";
 import type { AgentContext } from "@/ui/workbench/contracts";
 import {
 	SETTINGS_TRIGGER_ID,
@@ -130,40 +133,9 @@ function agentContextOf(listing: BoardListing, boardKey: string | null): AgentCo
 	};
 }
 
-/**
- * The subtitles of the voice, laid over the pane it runs for.
- * @param workbench The workbench.
- * @param reducedMotion The motion preference.
- * @param recording Whether the page is a recording.
- * @returns The overlay and the pane it belongs over, or null.
- */
-function useSubtitleOverlay(
-	workbench: Workbench,
-	reducedMotion: boolean,
-	recording: boolean,
-): PaneOverlay | null {
-	const { voice } = workbench;
-	return useMemo(
-		() =>
-			voice === null
-				? null
-				: {
-						paneId: voice.paneId,
-						element: (
-							<PaneSubtitles
-								transport={voice.transport}
-								reducedMotion={reducedMotion}
-								recording={recording}
-							/>
-						),
-					},
-		[voice, reducedMotion, recording],
-	);
-}
-
 /** The agent's surfaces as the shell places them. */
 interface AgentSlots {
-	readonly bar: ReactNode;
+	readonly dock: ReactNode;
 	readonly panel: ReactNode;
 	readonly voiceControls: ReactNode;
 }
@@ -175,36 +147,35 @@ interface AgentSlotSources {
 	/** The board the agent sees with the next message. */
 	readonly context: AgentContext;
 	readonly reducedMotion: boolean;
+	/** Whether the agent dock is off screen, as while a pane is presented fullscreen. */
+	readonly dockless: boolean;
 }
 
 /**
- * The agent's surfaces drawn: the bar, the panel while it is open, and the
- * Talk control a presentation carries. The bar and the panel read what changes
+ * The agent's surfaces drawn: the dock, the panel for the shell to show while it is open, and the
+ * voice key a presentation's bar carries. The dock and the panel read what changes
  * while the agent works themselves, so these elements are made again only when
  * the person acts.
- * @param sources The agent, the workbench, the context and the motion preference.
+ * @param sources The agent, the workbench, the context, the motion preference and whether the dock is off screen.
  * @returns The slots.
  */
 function useAgentSlots(sources: AgentSlotSources): AgentSlots {
-	const { agent, workbench, context, reducedMotion } = sources;
+	const { agent, workbench, context, reducedMotion, dockless } = sources;
 	return useMemo(
 		() => ({
-			bar: (
-				<AgentBarSlot
+			dock: (
+				<AgentDockSlot
 					agent={agent}
 					workbench={workbench}
 					context={context}
 					reducedMotion={reducedMotion}
+					dockless={dockless}
 				/>
 			),
-			panel: agent.panel.open ? (
-				<AgentPanelSlot agent={agent} workbench={workbench} context={context} />
-			) : null,
-			voiceControls: (
-				<TalkControl voice={agent.voice} actions={agent.actions} reducedMotion={reducedMotion} />
-			),
+			panel: <AgentPanelSlot agent={agent} workbench={workbench} context={context} />,
+			voiceControls: <PresentationVoiceKey />,
 		}),
-		[agent, workbench, context, reducedMotion],
+		[agent, workbench, context, reducedMotion, dockless],
 	);
 }
 
@@ -337,7 +308,6 @@ function ApplicationBody(): JSX.Element {
 		[catalog.listing, panes.active.status.boardKey],
 	);
 	const agent = useAgentSurfaces(workbench);
-	const slots = useAgentSlots({ agent, workbench, context, reducedMotion });
 	const { raise } = notices;
 	// A refused exit stays with the presentation, where the person is; a
 	// refused entry becomes a notice in the workspace they are still in.
@@ -350,6 +320,9 @@ function ApplicationBody(): JSX.Element {
 		[raise],
 	);
 	const fullscreen = useFullscreen({ onRefused });
+	// The agent dock is off screen while a pane is presented fullscreen.
+	const dockless = fullscreen.snapshot.paneId !== null;
+	const slots = useAgentSlots({ agent, workbench, context, reducedMotion, dockless });
 	// The address bar over the panes the shell already owns: it writes down what
 	// they show, and restores what a direct load or a Back/Forward asks for.
 	useWorkspaceAddressing({ panes, notices, readings }, addressBinding);
@@ -401,15 +374,39 @@ function ApplicationBody(): JSX.Element {
 		},
 		[variantSources],
 	);
-	const narration = useNarration(workbench.setup, agent.voice, panes.list.activePaneId);
-	const overlay = useSubtitleOverlay(workbench, reducedMotion, recorder !== null);
+	// The actions are read when somebody acts, so the panes are not made again
+	// each time they are: a pane is offered one function for as long as it lives.
+	const [actionsNow] = useState(() => new LiveBinding<ShellActions>());
+	actionsNow.bind(actions);
+	const selectBoard = useCallback(
+		(key: string, paneId: string): void => actionsNow.read().selectBoard(key, paneId),
+		[actionsNow],
+	);
+	const selectPane = useCallback(
+		(paneId: string): void => actionsNow.read().selectPane(paneId),
+		[actionsNow],
+	);
+	const narration = useNarration(workbench, agent.voice, panes.list.activePaneId, selectPane);
+	const overlay = useSubtitleOverlay({
+		workbench,
+		reducedMotion,
+		recording: recorder !== null,
+		presentedPaneId: fullscreen.snapshot.paneId,
+	});
 	const recorded = useRecordedViews(recorder, workbench, { narration, overlay });
+	const outline = useMemo(
+		() => buildOutline(catalog.listing.boards, catalog.listing.levels),
+		[catalog.listing.boards, catalog.listing.levels],
+	);
 	const mounted = usePaneViews({
 		panes,
 		theme,
 		readings,
 		reducedMotion,
 		onVariantChange,
+		boards: catalog.listing.boards,
+		outline,
+		openBoard: selectBoard,
 		...recorded,
 	});
 	const view = useShellView({
@@ -456,18 +453,26 @@ function ApplicationBody(): JSX.Element {
 		);
 	}
 	return (
-		<TooltipProvider>
-			<Shell
-				view={view}
-				actions={actions}
-				diagnostics={diagnostics}
-				voiceControls={slots.voiceControls}
-				agentBar={slots.bar}
-				agentPanel={slots.panel}
-				attachStage={fullscreen.attachStage}
-			/>
-			<SettingsHosts surface={settings} notices={notices} onClose={closeSettings} />
-		</TooltipProvider>
+		<OrbStageProvider>
+			{/* The voice box over a pane reads the voice and its actions where it is drawn. */}
+			<VoiceSurfaceProvider voice={agent.voice} actions={agent.actions}>
+				<TooltipProvider>
+					<Shell
+						view={view}
+						outline={outline}
+						actions={actions}
+						diagnostics={diagnostics}
+						voiceControls={slots.voiceControls}
+						agentDock={slots.dock}
+						agentPanel={slots.panel}
+						agentPanelOpen={agent.panel.open}
+						onAgentPanelClose={agent.panel.closePanel}
+						attachStage={fullscreen.attachStage}
+					/>
+					<SettingsHosts surface={settings} notices={notices} onClose={closeSettings} />
+				</TooltipProvider>
+			</VoiceSurfaceProvider>
+		</OrbStageProvider>
 	);
 }
 

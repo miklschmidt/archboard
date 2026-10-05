@@ -52,7 +52,7 @@ const OTHER_VOICE: VoiceStanding = Object.freeze({ kind: "other" });
 const NOT_SIGNED_IN: AgentReadiness = Object.freeze({
 	kind: "refused",
 	reason:
-		"Codex is not signed in on this Archboard server. Sign in from the agent bar, then record again.",
+		"Codex is not signed in on this Archboard server. Sign in from the agent dock, then record again.",
 });
 
 /** Whether voice can be started, for every phase but the one that says why it cannot. */

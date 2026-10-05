@@ -20,9 +20,13 @@ import {
 	surface,
 	viewport,
 } from "@/ui/semantic-board-canvas/tests/stage-harness";
+import { EXPLORING_MS } from "@/shared/timing/timing";
 import {
 	cameraNow,
 	diagramPointUnder,
+	pointerAt,
+	pressKey,
+	takeFrames,
 	wheelAt,
 } from "@/ui/semantic-board-canvas/tests/camera-probes";
 import { announceSemanticBoardChange } from "@/ui/semantic-board-canvas";
@@ -74,14 +78,23 @@ test("a drawn board is fitted to the pane, and `0` puts it back", async () => {
 	expect(fit.x).toBeCloseTo((800 - 400 * fit.scale) / 2, 6);
 	expect(fit.y).toBeCloseTo((600 - 300 * fit.scale) / 2, 6);
 
-	act(() => {
-		fireEvent.keyDown(viewport(), { key: "ArrowDown" });
-	});
+	pressKey("ArrowDown");
 	expect(cameraNow()).not.toEqual(fit);
-	act(() => {
-		fireEvent.keyDown(viewport(), { key: "0" });
-	});
-	expect(cameraNow()).toEqual(fit);
+	// The fit key glides: it is on its way partway through, and lands on the fit.
+	const frames = takeFrames();
+	try {
+		act(() => {
+			fireEvent.keyDown(viewport(), { key: "0" });
+		});
+		frames.run(EXPLORING_MS.cameraFit / 2);
+		expect(surface().hasAttribute("data-camera-motion")).toBe(true);
+		expect(cameraNow()).not.toEqual(fit);
+		frames.run(EXPLORING_MS.cameraFit);
+		expect(surface().hasAttribute("data-camera-motion")).toBe(false);
+		expect(cameraNow()).toEqual(fit);
+	} finally {
+		frames.restore();
+	}
 });
 
 test("the camera moves with the keyboard and survives the board changing under it", async () => {
@@ -90,9 +103,7 @@ test("the camera moves with the keyboard and survives the board changing under i
 	await settle();
 	const before = cameraNow();
 
-	act(() => {
-		fireEvent.keyDown(viewport(), { key: "ArrowLeft" });
-	});
+	pressKey("ArrowLeft");
 	const panned = cameraNow();
 	expect(panned.x - before.x).toBeCloseTo(64, 6);
 	expect(panned.y).toBeCloseTo(before.y, 6);
@@ -101,9 +112,7 @@ test("the camera moves with the keyboard and survives the board changing under i
 	// Zooming by key is about the middle of the viewport: what is in the middle
 	// stays in the middle.
 	const middle = [400, 300] as const;
-	act(() => {
-		fireEvent.keyDown(viewport(), { key: "+" });
-	});
+	pressKey("+");
 	const zoomed = cameraNow();
 	expect(zoomed.scale).toBeCloseTo(panned.scale * 1.1, 6);
 	const [wasX, wasY] = diagramPointUnder(panned, middle);
@@ -123,33 +132,158 @@ test("the camera moves with the keyboard and survives the board changing under i
 	expect(surface().style.transform).toBe(transform);
 });
 
-test("a wheel over the diagram zooms about the pointer", async () => {
+test("a wheel over the diagram zooms about the pointer, by how far it turned", async () => {
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage();
 	await settle();
 	const stage = viewport();
-	const before = cameraNow();
 	const pointer = [200, 150] as const;
+	const frames = takeFrames();
+	try {
+		const before = cameraNow();
+		act(() => {
+			stage.dispatchEvent(wheelAt(-100, pointer));
+		});
+		// The camera runs toward the zoom, and is not there on the first frame.
+		frames.run(16);
+		expect(cameraNow().scale).toBeGreaterThan(before.scale);
+		expect(cameraNow().scale).toBeLessThan(before.scale * 1.1);
+		// Whatever was under the pointer stays under it on the way.
+		const [wasX, wasY] = diagramPointUnder(before, pointer);
+		const [midX, midY] = diagramPointUnder(cameraNow(), pointer);
+		expect(midX).toBeCloseTo(wasX, 6);
+		expect(midY).toBeCloseTo(wasY, 6);
+		frames.run(EXPLORING_MS.cameraEase * 20);
+		const after = cameraNow();
+		// One notch of a mouse wheel is the step a key zooms by.
+		expect(after.scale).toBeCloseTo(before.scale * 1.1, 6);
+		const [isX, isY] = diagramPointUnder(after, pointer);
+		expect(isX).toBeCloseTo(wasX, 6);
+		expect(isY).toBeCloseTo(wasY, 6);
 
-	act(() => {
-		stage.dispatchEvent(wheelAt(-120, pointer));
-	});
-	const after = cameraNow();
-	expect(after.scale).toBeCloseTo(before.scale * 1.1, 6);
-	// Anchored on the pointer: whatever was under it is still under it.
-	const [wasX, wasY] = diagramPointUnder(before, pointer);
-	const [isX, isY] = diagramPointUnder(after, pointer);
-	expect(isX).toBeCloseTo(wasX, 6);
-	expect(isY).toBeCloseTo(wasY, 6);
+		// A gentler turn zooms by less, and a pinch (a wheel with Control held) turns far less to do as much.
+		act(() => {
+			stage.dispatchEvent(wheelAt(-50, pointer));
+		});
+		frames.run(EXPLORING_MS.cameraEase * 20);
+		expect(cameraNow().scale).toBeCloseTo(after.scale * Math.sqrt(1.1), 6);
+	} finally {
+		frames.restore();
+	}
+});
+
+test("a camera at rest asks for no more frames", async () => {
+	server.reply = { status: 200, body: drawing(1) };
+	mountStage();
+	await settle();
+	const frames = takeFrames();
+	try {
+		act(() => {
+			viewport().dispatchEvent(wheelAt(-100, [200, 150]));
+		});
+		expect(frames.asked()).toBeGreaterThan(0);
+		frames.run(EXPLORING_MS.cameraEase * 20);
+		const asked = frames.asked();
+		frames.run(1000);
+		expect(frames.asked()).toBe(asked);
+	} finally {
+		frames.restore();
+	}
+});
+
+test("a reader who asked for reduced motion has the camera land at once", async () => {
+	server.reply = { status: 200, body: drawing(1) };
+	mountStage(null, { reducedMotion: true });
+	await settle();
+	const frames = takeFrames();
+	try {
+		const fit = cameraNow();
+		act(() => {
+			viewport().dispatchEvent(wheelAt(-100, [200, 150]));
+		});
+		expect(cameraNow().scale).toBeCloseTo(fit.scale * 1.1, 6);
+		const zoomed = cameraNow();
+		act(() => {
+			fireEvent.keyDown(viewport(), { key: "ArrowLeft" });
+		});
+		expect(cameraNow().x - zoomed.x).toBeCloseTo(64, 6);
+		act(() => {
+			fireEvent.keyDown(viewport(), { key: "0" });
+		});
+		expect(cameraNow()).toEqual(fit);
+		expect(surface().hasAttribute("data-camera-motion")).toBe(false);
+		// Nothing was left for a frame to do.
+		expect(frames.asked()).toBe(0);
+	} finally {
+		frames.restore();
+	}
+});
+
+test("a drag let go while it is moving is thrown, and a press stops it where it is", async () => {
+	server.reply = { status: 200, body: drawing(1) };
+	mountStage();
+	await settle();
+	const frames = takeFrames();
+	try {
+		// 200 pixels in 80 milliseconds, let go at once: 2.5 pixels a millisecond.
+		pointerAt("pointerdown", { x: 100, t: 1000 });
+		for (let step = 1; step <= 5; step += 1) {
+			pointerAt("pointermove", { x: 100 + step * 40, t: 1000 + step * 16 });
+		}
+		pointerAt("pointerup", { x: 300, t: 1082 });
+		const letGo = cameraNow().x;
+		frames.run(100);
+		const drifting = cameraNow().x;
+		expect(drifting).toBeGreaterThan(letGo + 50);
+		frames.run(EXPLORING_MS.cameraFling * 5);
+		const stopped = cameraNow().x;
+		expect(stopped).toBeGreaterThan(drifting);
+		// Slowed to rest: nothing moves it now.
+		frames.run(500);
+		expect(cameraNow().x).toBe(stopped);
+
+		// The same throw, stopped by a press.
+		pointerAt("pointerdown", { x: 100, t: 5000 });
+		for (let step = 1; step <= 5; step += 1) {
+			pointerAt("pointermove", { x: 100 + step * 40, t: 5000 + step * 16 });
+		}
+		pointerAt("pointerup", { x: 300, t: 5082 });
+		frames.run(100);
+		pointerAt("pointerdown", { x: 300, t: 5200 });
+		pointerAt("pointerup", { x: 300, t: 5210 });
+		const held = cameraNow().x;
+		frames.run(500);
+		expect(cameraNow().x).toBe(held);
+	} finally {
+		frames.restore();
+	}
+});
+
+test("a drag let go after resting, or a slow one, is not thrown", async () => {
+	server.reply = { status: 200, body: drawing(1) };
+	mountStage();
+	await settle();
+	const frames = takeFrames();
+	try {
+		pointerAt("pointerdown", { x: 100, t: 1000 });
+		for (let step = 1; step <= 5; step += 1) {
+			pointerAt("pointermove", { x: 100 + step * 40, t: 1000 + step * 16 });
+		}
+		// The pointer rested for a good while before it was let go.
+		pointerAt("pointerup", { x: 300, t: 1400 });
+		const letGo = cameraNow().x;
+		frames.run(800);
+		expect(cameraNow().x).toBe(letGo);
+	} finally {
+		frames.restore();
+	}
 });
 
 test("a refresh that fails keeps the diagram, says the picture is old, and retries", async () => {
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage();
 	await settle();
-	act(() => {
-		fireEvent.keyDown(viewport(), { key: "ArrowLeft" });
-	});
+	pressKey("ArrowLeft");
 	const camera = surface().style.transform;
 
 	// The board stops being readable after it had been readable. The picture
@@ -254,16 +388,23 @@ test("a picture seen from far away is told so through a pan, and told again when
 	// A pan redraws the surface's class, and the far view stays through it.
 	act(() => {
 		fireEvent.pointerDown(viewport(), { pointerId: 1, button: 0, clientX: 40, clientY: 40 });
-		fireEvent.pointerMove(viewport(), { pointerId: 1, clientX: 90, clientY: 40 });
+		fireEvent.pointerMove(viewport(), { pointerId: 1, buttons: 1, clientX: 90, clientY: 40 });
 	});
 	expect(surface().classList.contains("is-far")).toBe(true);
 	act(() => {
 		fireEvent.pointerUp(viewport(), { pointerId: 1, clientX: 90, clientY: 40 });
 	});
 	expect(surface().classList.contains("is-far")).toBe(true);
-	for (let press = 0; press < 20; press += 1)
-		act(() => {
-			fireEvent.keyDown(viewport(), { key: "+" });
-		});
+	// Twenty presses ask for a zoom, and the far view ends as the camera comes close enough to read.
+	const frames = takeFrames();
+	try {
+		for (let press = 0; press < 20; press += 1)
+			act(() => {
+				fireEvent.keyDown(viewport(), { key: "+" });
+			});
+		frames.run(EXPLORING_MS.cameraEase * 20);
+	} finally {
+		frames.restore();
+	}
 	expect(surface().classList.contains("is-far")).toBe(false);
 });

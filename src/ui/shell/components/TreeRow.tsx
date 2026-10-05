@@ -26,21 +26,63 @@ import {
 	FACTS_INSET,
 	guideX,
 	MARKER_WIDTH,
+	markerX,
 	NAME_GAP,
 	ROW_GUTTER,
 	TARGET_SIZE,
+	TREE_STEP,
 } from "@/ui/shell/lib/tree-grid";
 import type { TextRange } from "@/ui/shell/lib/text-match";
+import { TimelineLane, type Lane, type LaneGeometry } from "@/ui/variant-lifecycle";
 
 /** The disclosure column, as wide as the grid says. */
 const DISCLOSURE_STYLE: CSSProperties = { width: DISCLOSURE_WIDTH };
 
-/** A chevron is a full pointer target that reaches past its column on both sides. */
+/** A chevron is a full pointer target that reaches past its column, and past its line, on every side. */
 const CHEVRON_STYLE: CSSProperties = {
 	width: TARGET_SIZE,
 	height: TARGET_SIZE,
 	marginInline: (DISCLOSURE_WIDTH - TARGET_SIZE) / 2,
+	marginBlock: `calc((var(--row-line) - ${TARGET_SIZE}px) / 2)`,
 };
+
+/**
+ * A board and a folder are the tree's landmarks: a taller row with a larger
+ * name. A board's variants and its Earlier row are set closer and smaller
+ * under it, so a glance tells a board from what it holds. Each row's first
+ * line is `--row-line` high, and every column of the row centres on it.
+ * `--row-mid` is the middle of that line, from the row's top.
+ * @param line The height of the first line, in pixels.
+ * @param padding The padding above and below the row, in pixels.
+ * @returns The row's metrics.
+ */
+function rowMetrics(line: number, padding: number): CSSProperties {
+	return {
+		"--row-line": `${line}px`,
+		"--row-mid": `${padding + line / 2}px`,
+		paddingBlock: padding,
+	};
+}
+
+/** A variant's and an Earlier row's first line, and the padding around the row. */
+const HELD_LINE = 18;
+const HELD_PADDING = 6;
+
+const LANDMARK_METRICS = rowMetrics(20, 8);
+const HELD_METRICS = rowMetrics(HELD_LINE, HELD_PADDING);
+const ROW_METRICS: Readonly<Record<NavigatorRow["kind"], CSSProperties>> = {
+	board: LANDMARK_METRICS,
+	folder: LANDMARK_METRICS,
+	variant: HELD_METRICS,
+	earlier: HELD_METRICS,
+};
+
+/**
+ * How far an elbow runs from its line: to the chevron's column when the row has
+ * a chevron, else on across the column the chevron would take, to the marker.
+ */
+const TICK_TO_CHEVRON = DISCLOSURE_WIDTH / 2 - 2;
+const TICK_TO_MARKER = DISCLOSURE_WIDTH / 2 + DISCLOSURE_WIDTH - 4;
 
 /** The marker column, as wide as the grid says. */
 const MARKER_STYLE: CSSProperties = { width: MARKER_WIDTH };
@@ -70,6 +112,10 @@ interface TreeRowProps extends RowHandlers {
 	readonly row: NavigatorRow;
 	/** Everything the row shows, for assistive technology. */
 	readonly label: string;
+	/** Its place on its board's timeline, for a variant or an Earlier row. */
+	readonly lane?: Lane | undefined;
+	/** The lines that join it to the rows it sits under (tree-guides). */
+	readonly guides?: string | undefined;
 	readonly children: ReactNode;
 }
 
@@ -85,12 +131,15 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 	const expanded = rowOpen(row);
 	const selected = rowSelected(row);
 	const handleFocus = useCallback(() => onFocusRow(row.id), [onFocusRow, row.id]);
+	const opens = expanded !== undefined;
 	const style = useMemo(
 		(): CSSProperties => ({
+			...ROW_METRICS[row.kind],
+			"--tick": `${opens ? TICK_TO_CHEVRON : TICK_TO_MARKER}px`,
 			paddingLeft: disclosureX(row.depth) - ROW_GUTTER,
 			paddingRight: FACTS_INSET - ROW_GUTTER,
 		}),
-		[row.depth],
+		[row.depth, row.kind, opens],
 	);
 	const handleClick = useCallback(
 		(event: MouseEvent<HTMLDivElement>) => {
@@ -115,55 +164,100 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 			onClick={handleClick}
 			onKeyDown={props.onRowKeyDown}
 			style={style}
-			className={`group/row focus-visible:ring-ring relative flex min-h-7 w-full min-w-0 cursor-default flex-wrap items-start rounded-[3px] py-[5px] outline-none select-none focus-visible:ring-1 focus-visible:ring-inset ${selected ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/50"}`}
+			className={`group/row focus-visible:ring-ring rounded-control relative flex w-full min-w-0 cursor-default flex-wrap items-start outline-none select-none focus-visible:ring-1 focus-visible:ring-inset ${selected ? "bg-sidebar-accent shadow-raised" : "hover:bg-sidebar-accent/50"}`}
 		>
-			<RowGuides depth={row.depth} />
-			{selected && (
-				<span
-					aria-hidden="true"
-					className="bg-primary absolute inset-y-1 left-0 w-0.5 rounded-full"
-				/>
-			)}
+			<RowGuides guides={props.guides ?? ""} />
+			{props.lane !== undefined && <RowLane row={row} lane={props.lane} />}
 			{props.children}
 		</div>
 	);
 }
 
 /**
- * One guide for each row this one sits under, through the middle of that
- * row's disclosure, so a reader sees what sits under what.
- * @param props The row's depth.
- * @param props.depth How many rows it sits under.
+ * A variant's place on its board's timeline: the main line through the marks
+ * of the variant the board's name opens and its history, and the branches its
+ * drafts take off the variant they came from, through the marker column.
+ * @param props The row and its lane.
+ * @param props.row The row.
+ * @param props.lane Its lane.
+ * @returns The lines.
+ */
+function RowLane(props: { readonly row: NavigatorRow; readonly lane: Lane }): JSX.Element {
+	const { row, lane } = props;
+	const geometry = useMemo(
+		(): LaneGeometry => ({
+			origin: markerX(row.depth - lane.depth) + MARKER_WIDTH / 2 - ROW_GUTTER,
+			step: TREE_STEP,
+			middle: LANE_MIDDLE,
+			clearance: LANE_CLEARANCE,
+		}),
+		[row.depth, lane.depth],
+	);
+	return <TimelineLane lane={lane} geometry={geometry} />;
+}
+
+/** From a variant row's top to the middle of its mark: its padding and half its first line. */
+const LANE_MIDDLE = HELD_PADDING + HELD_LINE / 2;
+
+/** How far the timeline stops short of a mark's middle: the mark's half and a little air. */
+const LANE_CLEARANCE = 9;
+
+/** What each character of a row's guides draws (tree-guides). */
+const GUIDES: Readonly<
+	Record<
+		string,
+		{ readonly kind: "through" | "elbow" | "last"; readonly lit?: "rail" | "mid" | "branch" }
+	>
+> = {
+	t: { kind: "through" },
+	T: { kind: "through", lit: "rail" },
+	e: { kind: "elbow" },
+	E: { kind: "elbow", lit: "rail" },
+	P: { kind: "elbow", lit: "mid" },
+	l: { kind: "last" },
+	L: { kind: "last", lit: "branch" },
+};
+
+/**
+ * The lines that join this row to the rows it sits under: one for each, through
+ * the middle of that row's disclosure, so a reader sees what sits under what.
+ * Where the row itself hangs from its parent the line turns to it, and the last
+ * of a parent's rows ends the line there.
+ * @param props The row's guides.
+ * @param props.guides One character for each row it sits under.
  * @returns The guides.
  */
-function RowGuides(props: { readonly depth: number }): JSX.Element {
-	const levels = Array.from({ length: props.depth }, (_, level) => level);
+function RowGuides(props: { readonly guides: string }): JSX.Element {
 	return (
 		<>
-			{levels.map((level) => (
-				<Guide key={level} level={level} />
+			{Array.from(props.guides, (character, level) => (
+				<Guide key={level} level={level} character={character} />
 			))}
 		</>
 	);
 }
 
 /**
- * The guide of one open row.
- * @param props The open row's depth.
- * @param props.level The depth.
- * @returns The guide.
+ * The guide of one level of a row.
+ * @param props The level and what it draws.
+ * @param props.level The depth of the row it hangs from.
+ * @param props.character What it draws (tree-guides).
+ * @returns The guide, or nothing for a level that draws none.
  */
-function Guide(props: { readonly level: number }): JSX.Element {
+function Guide(props: { readonly level: number; readonly character: string }): JSX.Element | null {
+	const drawn = GUIDES[props.character];
 	const style = useMemo(
 		(): CSSProperties => ({ left: guideX(props.level) - ROW_GUTTER }),
 		[props.level],
 	);
+	if (drawn === undefined) return null;
 	return (
 		<span
 			aria-hidden="true"
 			data-slot="tree-guide"
+			data-guide={drawn.kind}
+			data-lit={drawn.lit}
 			style={style}
-			className="bg-border absolute inset-y-0 w-px"
 		/>
 	);
 }
@@ -192,7 +286,7 @@ function TreeRowDisclosure(props: {
 		[id, expanded, onExpand],
 	);
 	if (expanded === undefined) {
-		return <span aria-hidden="true" style={DISCLOSURE_STYLE} className="h-[18px] shrink-0" />;
+		return <span aria-hidden="true" style={DISCLOSURE_STYLE} className="h-(--row-line) shrink-0" />;
 	}
 	return (
 		<button
@@ -201,7 +295,7 @@ function TreeRowDisclosure(props: {
 			aria-label={`${expanded ? "Collapse" : "Expand"} ${props.name}`}
 			onClick={handleClick}
 			style={CHEVRON_STYLE}
-			className="text-muted-foreground hover:text-foreground -my-[3px] flex shrink-0 items-center justify-center rounded-[2px]"
+			className="text-muted-foreground hover:text-foreground rounded-chip flex shrink-0 items-center justify-center"
 		>
 			<RiArrowRightSLine
 				className={`size-3.5 transition-transform motion-reduce:transition-none ${expanded ? "rotate-90" : ""}`}
@@ -229,7 +323,7 @@ function TreeRowMarker(props: {
 		<span
 			title={props.title}
 			style={MARKER_STYLE}
-			className="relative flex h-[18px] shrink-0 items-center justify-center"
+			className="relative flex h-(--row-line) shrink-0 items-center justify-center"
 		>
 			{Icon !== undefined && <Icon className="text-muted-foreground size-3.5" aria-hidden="true" />}
 			{props.children}
@@ -259,7 +353,7 @@ function TreeRowName(props: {
 			data-board-key={props.boardKey}
 			title={props.title}
 			style={NAME_STYLE}
-			className={`line-clamp-2 min-w-0 flex-1 leading-[18px] wrap-break-word ${props.className}`}
+			className={`line-clamp-2 min-w-0 flex-1 leading-(--row-line) wrap-break-word ${props.className}`}
 		>
 			<Matched text={props.text} match={props.match} />
 		</span>
@@ -279,7 +373,7 @@ function Matched(props: { readonly text: string; readonly match: TextRange | nul
 	return (
 		<>
 			{text.slice(0, match.start)}
-			<mark className="bg-primary/15 text-foreground rounded-[2px]">
+			<mark className="bg-primary/15 text-foreground rounded-chip">
 				{text.slice(match.start, match.end)}
 			</mark>
 			{text.slice(match.end)}
@@ -297,7 +391,7 @@ function TreeRowFacts(props: { readonly children: ReactNode }): JSX.Element {
 	return (
 		<span
 			style={FACTS_STYLE}
-			className="text-technical text-muted-foreground flex h-[18px] shrink-0 items-center gap-1.5 font-mono"
+			className="text-technical text-muted-foreground flex h-(--row-line) shrink-0 items-center gap-1.5 font-mono"
 		>
 			{props.children}
 		</span>

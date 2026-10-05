@@ -30,6 +30,13 @@ export {
 	type SemanticBoardStageProps,
 } from "@/ui/semantic-board-canvas/components/SemanticBoardStage";
 export type { SelectedSubject } from "@/ui/semantic-board-canvas/lib/board-document";
+export type { WalkthroughNarration } from "@/ui/semantic-board-canvas/lib/narration";
+export {
+	useOverlayPlace,
+	type OverlayPlace,
+} from "@/ui/semantic-board-canvas/hooks/use-overlay-place";
+export { LevelMark, type LevelMarkProps } from "@/ui/semantic-board-canvas/components/LevelMark";
+export { NoBoardHeader, type BoardPlace } from "@/ui/semantic-board-canvas/components/PaneHeader";
 export {
 	boardAddressOf,
 	boardKeyFor,
@@ -38,6 +45,12 @@ export {
 	type SemanticTarget,
 } from "@/ui/semantic-board-canvas/lib/address";
 export { SemanticStanding } from "@/ui/semantic-board-canvas/components/SemanticStanding";
+export {
+	PartSearch,
+	type PartHit,
+	type PartSearchProps,
+	type SearchedBoard,
+} from "@/ui/semantic-board-canvas/components/PartSearch";
 export {
 	announceSemanticBoardChange,
 	onSemanticBoardChange,

@@ -2,7 +2,7 @@
 // or starts waiting on the user, whoever started the turn, and what the workhorse tells it, only
 // while voice is live.
 //
-// What is guarded: a turn the agent bar started reaches the coordinator when it ends, as news
+// What is guarded: a turn the conversation started reaches the coordinator when it ends, as news
 // that it finished, failed or was stopped; a wait is news when it begins, not on every status
 // change while it lasts; another thread, a prior epoch and a session with no voice tell the
 // coordinator nothing; the coordinator is given a plain sentence, never the callback envelope; and
@@ -129,7 +129,7 @@ function tellCoordinator(h: Harness, message: string): DynamicServerRequest {
 }
 
 describe("workhorse news", () => {
-	test("a turn the agent bar started reaches the coordinator when it ends, as a plain sentence", async () => {
+	test("a turn the conversation started reaches the coordinator when it ends, as a plain sentence", async () => {
 		const h = harness(true);
 		for (const status of ["completed", "failed", "interrupted"] as const) {
 			h.callbacks.onNotification(turnCompleted(h, status));

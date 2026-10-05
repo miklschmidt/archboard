@@ -1,7 +1,9 @@
 import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { createRoot, type Root } from "react-dom/client";
+import { buildOutline } from "@/ui/board-catalog";
 import { Shell, type ShellActions, type ShellPane, type ShellView } from "@/ui/shell";
 import type { AgentActivityEntry, CatalogBoard, ListedVariant } from "@/ui/types";
 
@@ -159,10 +161,29 @@ function mountNavigator(overrides: Partial<ShellView> = {}): Mounted {
 		agentActivity: {},
 		...overrides,
 	};
+	// Built once, as the application builds it once per listing: the news a test shows keeps the listing.
+	const outline = buildOutline(view.boards.boards, view.boards.levels);
 	const container = document.createElement("div");
 	document.body.append(container);
 	root = createRoot(container);
-	act(() => root.render(createElement(Shell, { view, actions })));
+	// A board's mark is its level's, drawn from the vault vocabulary the shell reads through its query cache.
+	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	/**
+	 * Draw the shell over a view.
+	 * @param shown The view.
+	 */
+	const draw = (shown: ShellView): void => {
+		act(() =>
+			root.render(
+				createElement(
+					QueryClientProvider,
+					{ client },
+					createElement(Shell, { view: shown, outline, actions }),
+				),
+			),
+		);
+	};
+	draw(view);
 	return {
 		...asked,
 		/**
@@ -170,7 +191,7 @@ function mountNavigator(overrides: Partial<ShellView> = {}): Mounted {
 		 * @param changes What changed.
 		 */
 		show: (changes) => {
-			act(() => root.render(createElement(Shell, { view: { ...view, ...changes }, actions })));
+			draw({ ...view, ...changes });
 		},
 	};
 }
@@ -225,6 +246,17 @@ function row(id: string): HTMLElement {
 }
 
 /**
+ * The lines a row draws to join it to what it sits under, as `shape` or `shape:lit`.
+ * @param id The row id.
+ * @returns One entry for each line drawn, outermost first.
+ */
+function guides(id: string): string[] {
+	return [...row(id).querySelectorAll<HTMLElement>('[data-slot="tree-guide"]')].map(
+		(line) => `${line.dataset["guide"]}${line.dataset["lit"] ? `:${line.dataset["lit"]}` : ""}`,
+	);
+}
+
+/**
  * The rows carrying a pane's letter.
  * @param letter The letter.
  * @returns Their ids.
@@ -255,7 +287,7 @@ test("each board is one row under the board it drills down from, with the varian
 		"board:board:checkout@1",
 		"board:board:payments@2",
 		"variant:variant:payments@3",
-		"variant:variant:payments@queued@3",
+		"variant:variant:payments@queued@4",
 		"earlier:earlier:payments@3",
 		"board:board:ledger@3",
 	]);
@@ -263,6 +295,44 @@ test("each board is one row under the board it drills down from, with the varian
 	expect(row("board:payments").getAttribute("aria-selected")).toBe("false");
 	expect(row("variant:payments").getAttribute("aria-selected")).toBe("true");
 	expect(document.querySelectorAll('[role="treeitem"][aria-selected="true"]')).toHaveLength(1);
+});
+
+test("a board with a history has a disclosure with no pane on it, and opens to its current variant and Earlier", () => {
+	const archive = board(
+		"Archive",
+		"service",
+		[],
+		[
+			variant("archive", "now", null, "current", true),
+			variant("archive", "old", null, "historical"),
+		],
+	);
+	mountNavigator({
+		boards: { boards: [archive], levels: ["system", "service", "module"], onScreen: [] },
+		panes: [pane("A", null)],
+		selectedBoardKey: null,
+	});
+	expect(row("board:archive").getAttribute("aria-expanded")).toBe("false");
+	act(() => {
+		row("board:archive").querySelector("button")?.click();
+	});
+	expect(rows()).toEqual([
+		"board:board:archive@1",
+		"variant:variant:archive@2",
+		"earlier:earlier:archive@2",
+	]);
+});
+
+test("the tree turns a line to each row, ends it at the last sibling, and lights the way to the selected row", () => {
+	mountNavigator();
+	// A top row hangs from nothing.
+	expect(guides("board:checkout")).toEqual([]);
+	// The only board under Checkout, on the way to the selected variant: its line ends here, lit.
+	expect(guides("board:payments")).toEqual(["last:branch"]);
+	// The selected variant is not the last under its board, so its line goes on past it.
+	expect(guides("variant:payments")).toEqual(["elbow:mid"]);
+	// The last board under Payments ends the line, and is not on the way.
+	expect(guides("board:ledger")).toEqual(["last"]);
 });
 
 test("every row at one depth has one indent, and each depth moves one step", () => {
@@ -321,7 +391,7 @@ test("the arrows walk the tree: right opens a row, then steps in; left closes it
 	expect(document.activeElement).toBe(row("board:payments"));
 	press("ArrowRight");
 	// Opening a board with a proposal lists its variants and the boards under it together.
-	expect(rows()).toContain("variant:variant:payments@queued@3");
+	expect(rows()).toContain("variant:variant:payments@queued@4");
 	expect(rows()).toContain("board:board:ledger@3");
 	press("ArrowRight");
 	expect(document.activeElement).toBe(row("variant:payments"));

@@ -28,6 +28,7 @@ import {
 	type PictureTransition,
 	type Shift,
 } from "@/ui/semantic-board-canvas/lib/picture-transition";
+import { stopTraffic } from "@/ui/semantic-board-canvas/lib/picture-traffic";
 
 /** The picture on the surface, as something to mark up. */
 interface StagedPicture {
@@ -67,6 +68,12 @@ interface PictureMotion {
 	 * camera glides to the step instead of following the shared cards.
 	 */
 	readonly presenting?: boolean | undefined;
+	/**
+	 * The picture is the one a flight arrived at, which has already put the board
+	 * where it belongs: it is put up as it is, with no entrance and nothing of
+	 * the last picture carried into it.
+	 */
+	readonly cut?: boolean | undefined;
 }
 
 /**
@@ -298,6 +305,8 @@ function usePictureTransition(
 	const { reducedMotion, keepStill } = motion;
 	const heading = motion.heading ?? null;
 	const presenting = motion.presenting === true;
+	// A picture a flight arrived at moves nowhere: it is put up as it is, as for a reader who asked for no motion.
+	const still = reducedMotion || motion.cut === true;
 	const shown = useRef<Shown | null>(null);
 	const flight = useRef<Flight | null>(null);
 	const seen = useRef<Point | null>(null);
@@ -328,7 +337,7 @@ function usePictureTransition(
 			surface,
 			last,
 			drawing,
-			reducedMotion,
+			reducedMotion: still,
 			keepStill,
 			heading,
 			presenting,
@@ -341,7 +350,7 @@ function usePictureTransition(
 		});
 		surface.toggleAttribute(PICTURE_MOTION_ATTRIBUTE, flight.current !== null);
 		publish(store.current, surface);
-	}, [surface, drawing, reducedMotion, keepStill, heading, presenting]);
+	}, [surface, drawing, still, keepStill, heading, presenting]);
 	// Where the pane is after every commit, so the next picture knows where the
 	// last one was seen. After the picture is written, and read only when motion
 	// is allowed: nothing else needs it.
@@ -349,10 +358,12 @@ function usePictureTransition(
 		seen.current = reducedMotion ? null : paneAt(surface);
 	});
 	// Leaving the surface stops asking for frames; what it showed does not matter any more.
+	// Its traffic stops with it: an animation does not stop when its element goes.
 	useLayoutEffect(
 		() => (): void => {
 			flight.current?.stop();
 			flight.current = null;
+			if (shown.current !== null) stopTraffic(shown.current.surface);
 		},
 		[],
 	);

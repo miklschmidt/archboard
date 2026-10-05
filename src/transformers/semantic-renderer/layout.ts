@@ -1,10 +1,12 @@
 // The layout's own rules that focused runtime checks hold without a whole
-// board: corner rounding, crossing bridges, the marks where routes join, where
-// a streak rests, and how Track and Blocks weigh one reading against another.
+// board: corner rounding, crossing bridges, the marks where routes join, how
+// traffic keeps time and is held in a card, and how Track and Blocks weigh one
+// reading against another.
 export { bridgeCrossings } from "@/transformers/semantic-renderer/lib/layout/crossings";
 export { shownDrawing } from "@/transformers/semantic-renderer/lib/shown";
 export { junctionsOf } from "@/transformers/semantic-renderer/lib/svg/junctions";
-export { meetingPlaces, restingPlace } from "@/transformers/semantic-renderer/lib/svg/comet-rest";
+export { rimLength } from "@/transformers/semantic-renderer/lib/svg/card-rim";
+export { relayRhythms, type Lane } from "@/transformers/semantic-renderer/lib/svg/traffic-relay";
 export {
 	curveThrough,
 	curveClearanceIssue,

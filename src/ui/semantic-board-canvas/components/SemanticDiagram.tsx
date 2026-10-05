@@ -9,33 +9,34 @@
 
 import {
 	useCallback,
+	useEffect,
 	useLayoutEffect,
 	useMemo,
-	useRef,
 	useState,
-	type CSSProperties,
 	type JSX,
 	type KeyboardEvent,
-	type MouseEvent,
 	type PointerEvent,
 	type ReactNode,
 } from "react";
 
-import { PRESENTATION_STEP_MS } from "@/shared/timing/timing";
+import { EXPLORING_MS } from "@/shared/timing/timing";
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
+import { CameraSurface } from "@/ui/semantic-board-canvas/components/CameraSurface";
 import { SemanticSubjectTip } from "@/ui/semantic-board-canvas/components/SemanticSubjectTip";
 import {
 	STAGE_CLASS,
 	StageSpinner,
 } from "@/ui/semantic-board-canvas/components/SemanticStageStates";
 import {
-	useCameraView,
 	useCameraWith,
 	type BoardCamera,
 	type CameraView,
 } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
+import { useDiagramGestures } from "@/ui/semantic-board-canvas/hooks/use-diagram-gestures";
 import { useDrillOpen } from "@/ui/semantic-board-canvas/hooks/use-drill-open";
+import { useLighting } from "@/ui/semantic-board-canvas/hooks/use-lighting";
+import { usePeeked } from "@/ui/semantic-board-canvas/hooks/use-peek";
 import {
 	usePictureTransition,
 	type StagedPicture,
@@ -44,27 +45,17 @@ import { usePresentationArrival } from "@/ui/semantic-board-canvas/hooks/use-pre
 import { useSubjectTip } from "@/ui/semantic-board-canvas/hooks/use-subject-tip";
 import { useViewerMarks } from "@/ui/semantic-board-canvas/hooks/use-viewer-marks";
 import { useStickyHeads } from "@/ui/semantic-board-canvas/hooks/use-sticky-heads";
-import {
-	FAR_SCALE,
-	PAN_STEP,
-	cameraTransform,
-	type Size,
-} from "@/ui/semantic-board-canvas/lib/camera";
+import { useSweep } from "@/ui/semantic-board-canvas/hooks/use-sweep";
+import { useTrafficRest } from "@/ui/semantic-board-canvas/hooks/use-traffic-rest";
+import { FAR_SCALE, PAN_STEP, type Size } from "@/ui/semantic-board-canvas/lib/camera";
 import {
 	leavePicture,
 	stayPicture,
 	type Departure,
 } from "@/ui/semantic-board-canvas/lib/picture-departure";
 import { NO_FOCUS, type BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
-import {
-	capturePointer,
-	hasTravelled,
-	takePointerToPan,
-	type Drag,
-} from "@/ui/semantic-board-canvas/lib/pointer-gesture";
-import { openableAt } from "@/ui/semantic-board-canvas/lib/subject-tips";
 import type { GroupSelection } from "@/ui/semantic-board-canvas/lib/groups";
-import { subjectAt, surfaceMarks } from "@/ui/semantic-board-canvas/lib/subjects";
+import { surfaceMarks } from "@/ui/semantic-board-canvas/lib/subjects";
 
 /** Which way each arrow key moves the diagram under the viewport. */
 const PAN_KEYS: Readonly<Record<string, readonly [number, number]>> = {
@@ -78,16 +69,23 @@ const PAN_KEYS: Readonly<Record<string, readonly [number, number]>> = {
 const ZOOM_KEYS: Readonly<Record<string, number>> = { "+": 1, "=": 1, "-": -1, _: -1 };
 
 /**
- * Act on a key that moves the camera.
+ * Act on a key that moves the camera: the arrows ease it, `+` and `-` ease a
+ * zoom about the middle, and `0` glides to the whole board.
  * @param key The key that was pressed.
  * @param camera The camera.
  * @param content How big the diagram is, for the key that fits it.
+ * @param reducedMotion Whether the person asked for no motion, which makes the fit a cut.
  * @returns True when the key was one of the camera's.
  */
-function moveCameraByKey(key: string, camera: BoardCamera, content: Size): boolean {
+function moveCameraByKey(
+	key: string,
+	camera: BoardCamera,
+	content: Size,
+	reducedMotion: boolean,
+): boolean {
 	const pan = PAN_KEYS[key];
 	if (pan !== undefined) {
-		camera.panBy(pan[0] * PAN_STEP, pan[1] * PAN_STEP);
+		camera.ease(pan[0] * PAN_STEP, pan[1] * PAN_STEP);
 		return true;
 	}
 	const zoom = ZOOM_KEYS[key];
@@ -96,26 +94,10 @@ function moveCameraByKey(key: string, camera: BoardCamera, content: Size): boole
 		return true;
 	}
 	if (key === "0") {
-		camera.fit({ kind: "whole", content });
+		camera.glide({ kind: "whole", content }, reducedMotion ? 0 : EXPLORING_MS.cameraFit);
 		return true;
 	}
 	return false;
-}
-
-/**
- * The surface's classes: a transition for a keyed move or a fit, and none
- * while a drag is in progress, since a pan is meant to track the pointer, nor
- * for a move that follows the picture, which must land in the frame the picture does.
- * @param panning Whether a drag is in progress.
- * @param reducedMotion Whether the person asked for reduced motion.
- * @param following Whether the camera last moved to follow the picture.
- * @returns The class list.
- */
-function surfaceClass(panning: boolean, reducedMotion: boolean, following = false): string {
-	const base = "absolute top-0 left-0 origin-top-left select-none";
-	return panning || reducedMotion || following
-		? base
-		: `${base} transition-transform duration-100 ease-out motion-reduce:transition-none`;
 }
 
 /**
@@ -230,6 +212,11 @@ interface SemanticDiagramProps {
 	 */
 	heading?: Departure | null | undefined;
 	/**
+	 * This picture is the board a flight arrived at: it takes over from the board
+	 * inside its card, in the same place, with no entrance of its own.
+	 */
+	cut?: boolean | undefined;
+	/**
 	 * The step of a presented walkthrough on screen, or null while none is
 	 * presented. The pane says which step it is showing, lets what the step is
 	 * not about recede gradually, and carries a step read through another view
@@ -311,51 +298,6 @@ function seenFromFar(view: CameraView): boolean {
 	return view.camera.scale < FAR_SCALE;
 }
 
-/** What the surface the camera moves is drawn with. */
-interface CameraSurfaceProps {
-	/** The camera that moves it. */
-	readonly camera: BoardCamera;
-	/** Where the picture's element is handed to whatever writes the picture into it. */
-	readonly attach: (element: HTMLDivElement | null) => void;
-	/** How big the picture is. */
-	readonly size: Size;
-	/** Whether a drag is in progress. */
-	readonly panning: boolean;
-	/** Whether the person asked for reduced motion. */
-	readonly reducedMotion: boolean;
-	/** The classes the picture's state adds. */
-	readonly marks: string;
-}
-
-/**
- * The element the camera moves. It is the one thing drawn again on every move
- * of the camera (TASK-385.02).
- * @param props The camera, the picture's size and its classes.
- * @returns The surface, which the picture is written into rather than rendered.
- */
-function CameraSurface(props: CameraSurfaceProps): JSX.Element {
-	const { attach, size, panning, reducedMotion, marks } = props;
-	const { camera, instant } = useCameraView(props.camera);
-	const { width, height } = size;
-	const style = useMemo<CSSProperties>(
-		() => ({
-			width,
-			height,
-			transform: cameraTransform(camera),
-			"--presentation-step-ms": `${PRESENTATION_STEP_MS}ms`,
-		}),
-		[width, height, camera],
-	);
-	return (
-		<div
-			ref={attach}
-			data-slot="semantic-board-surface"
-			style={style}
-			className={`${surfaceClass(panning, reducedMotion, instant)}${marks}`}
-		/>
-	);
-}
-
 /**
  * A drawn semantic board: pan, zoom and selection over the server's picture.
  * @param props The drawing, the selection and what to do with a pick.
@@ -369,15 +311,6 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	);
 	const { attachViewport } = camera;
 	const [surface, setSurface] = useState<HTMLDivElement | null>(null);
-	const [panning, setPanning] = useState(false);
-	const drag = useRef<Drag | null>(null);
-	const dragged = useRef(false);
-	// What the last press landed on, carried from pointerup to the click that
-	// follows it. A click is the only event that means "the person picked this",
-	// and it is the one event whose target cannot be trusted to say what. The
-	// box is null when no press is waiting to be spent, which is how a
-	// synthesised click is told from a real one.
-	const pressed = useRef<{ readonly subject: string | null } | null>(null);
 	const focus = props.focus ?? NO_FOCUS;
 
 	// The surface stays mounted across pictures and the picture inside it is
@@ -390,130 +323,75 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		keepStill: camera.followPicture,
 		heading: props.heading,
 		presenting: presentationMarks(props.presenting).surface !== "",
+		cut: props.cut,
 	});
 	usePresentationArrival(surface, props.arrivalKey ?? null, props.onSettled);
 	// After the picture is staged, so a picture that just replaced a leaving one
 	// is never mistaken for it.
 	const departure = useLeaving(picture, props.departure, reducedMotion);
-	useViewerMarks(picture, { selection, focus, group: props.group, veil: props.veil });
+	const reading = drawnReading(props.reading, drawing);
+	// What the picture lights for a poke gives way to what a presented step or a
+	// group says the picture is about, and to the picture leaving.
+	const peeked = usePeeked();
+	const lighting = useLighting({
+		reading,
+		atlas: drawing.atlas,
+		selection,
+		peeked,
+		veil: props.veil,
+		presenting: props.presenting,
+		group: props.group,
+		departure,
+	});
+	useViewerMarks(picture, {
+		selection,
+		focus,
+		group: props.group,
+		veil: lighting.standing,
+		reach: lighting.reach,
+	});
+	useSweep(picture, lighting.light, lighting.reach, reducedMotion);
 	useStickyHeads(picture, drawing.atlas);
 	// Seen from far away, each card's name is drawn larger in place of what it
 	// says it does, which nobody reads at that size. Read as a yes or no, so the
 	// diagram is drawn again only when it flips, not on every move of the camera.
 	const far = useCameraWith(camera, seenFromFar);
-	const marks = surfaceMarks({ veiled: props.veil !== null, far });
+	const marks = surfaceMarks({ veiled: props.veil !== null, far, probing: lighting.mode });
 	const tip = useSubjectTip({ drawing, camera });
-	const { dismiss: dismissTip, onHover } = tip;
-	const reading = drawnReading(props.reading, drawing);
+	const { dismiss: dismissTip, onHover: tipHover } = tip;
+	const { onHover: lightHover, release: leave } = lighting;
+	const onHover = useCallback(
+		(event: PointerEvent<HTMLElement>): void => {
+			tipHover(event);
+			lightHover(event);
+		},
+		[tipHover, lightHover],
+	);
+	const onPointerLeave = useCallback((): void => {
+		dismissTip();
+		leave();
+	}, [dismissTip, leave]);
 	const openDown = useDrillOpen(reading, props.onOpenDown);
-
-	const onPointerDown = useCallback(
-		(event: PointerEvent<HTMLElement>): void => {
-			if (event.button !== 0) {
-				return;
-			}
-			// What was pressed is decided here and nowhere else. By the time a click
-			// arrives the diagram may have been panned, and the click may have been
-			// retargeted by pointer capture; neither can change what was under the
-			// pointer when the person pressed.
-			drag.current = {
-				pointerId: event.pointerId,
-				fromX: event.clientX,
-				fromY: event.clientY,
-				x: event.clientX,
-				y: event.clientY,
-				pressed: subjectAt(event.target, drawing.atlas),
-				captured: false,
-			};
-			dragged.current = false;
-			setPanning(true);
-			dismissTip();
-		},
-		[drawing.atlas, dismissTip],
-	);
-
-	const onPointerMove = useCallback(
-		(event: PointerEvent<HTMLElement>): void => {
-			const started = drag.current;
-			if (started === null) {
-				onHover(event);
-				return;
-			}
-			if (started.pointerId !== event.pointerId) {
-				return;
-			}
-			const panned = dragged.current || hasTravelled(started, event.clientX, event.clientY);
-			dragged.current = panned;
-			drag.current = {
-				...started,
-				x: event.clientX,
-				y: event.clientY,
-				captured: takePointerToPan(event, started, panned),
-			};
-			camera.panBy(event.clientX - started.x, event.clientY - started.y);
-		},
-		[camera, onHover],
-	);
-
-	const onPointerUp = useCallback((event: PointerEvent<HTMLElement>): void => {
-		const started = drag.current;
-		if (started?.pointerId !== event.pointerId) {
-			return;
-		}
-		pressed.current = { subject: started.pressed };
-		drag.current = null;
-		setPanning(false);
-		if (started.captured) {
-			capturePointer(event.currentTarget, event.pointerId, false);
-		}
-	}, []);
-
-	// A gesture the browser took away never became a pick. Whatever the press
-	// landed on is forgotten, so the next click cannot inherit it.
-	const onPointerCancel = useCallback((event: PointerEvent<HTMLElement>): void => {
-		if (drag.current?.pointerId !== event.pointerId) {
-			return;
-		}
-		drag.current = null;
-		dragged.current = false;
-		pressed.current = null;
-		setPanning(false);
-	}, []);
-
-	// A drag that ends on a card is not a pick: the person was moving the
-	// diagram and happened to let go over something.
-	//
-	// The pick is what the press landed on, not what the click reports. A click
-	// is retargeted to whichever element holds the pointer, and it arrives after
-	// a pan has already moved the diagram under the cursor, so its own target
-	// answers a different question from the one being asked.
-	const onClick = useCallback(
-		(event: MouseEvent<HTMLElement>): void => {
-			const landed = pressed.current;
-			pressed.current = null;
-			if (dragged.current) {
-				dragged.current = false;
-				return;
-			}
-			// A click with no press behind it can only have been synthesised; there
-			// its own target is the only thing there is to go on.
-			onSelect(landed === null ? subjectAt(event.target, drawing.atlas) : landed.subject);
-		},
-		[onSelect, drawing.atlas],
-	);
-
-	// A double-click on a card, or a container's header, opens the board one
-	// level down, when it has one.
-	const onDoubleClick = useCallback(
-		(event: MouseEvent<HTMLElement>): void => {
-			openDown(openableAt(event.target, event.clientY));
-		},
-		[openDown],
-	);
+	const { gesture, pointer } = useDiagramGestures({
+		camera,
+		atlas: drawing.atlas,
+		onSelect,
+		onHover,
+		dismissTip,
+		openDown,
+	});
+	// A drag moves the picture under the pointer, so what the pointer rested on is no longer there.
+	useEffect(() => {
+		if (gesture === "dragging") leave();
+	}, [gesture, leave]);
+	// A drag, a throw, a wheel or a key draws a frame for every move, and moving
+	// traffic paints its lines again in each of them. The traffic stands still until
+	// the camera has rested, and then comes back gently.
+	useTrafficRest(surface, camera, gesture === "dragging");
 
 	const onKeyDown = useCallback(
 		(event: KeyboardEvent<HTMLElement>): void => {
-			if (moveCameraByKey(event.key, camera, content)) {
+			if (moveCameraByKey(event.key, camera, content, reducedMotion)) {
 				event.preventDefault();
 				return;
 			}
@@ -522,7 +400,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 				event.preventDefault();
 			}
 		},
-		[camera, content, onSelect],
+		[camera, content, onSelect, reducedMotion],
 	);
 
 	return (
@@ -554,16 +432,11 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 					inert={isLeaving(departure)}
 					tabIndex={0}
 					onKeyDown={onKeyDown}
-					onPointerDown={onPointerDown}
-					onPointerMove={onPointerMove}
-					onPointerUp={onPointerUp}
-					onPointerCancel={onPointerCancel}
-					onPointerLeave={dismissTip}
+					{...pointer}
+					onPointerLeave={onPointerLeave}
 					onWheel={dismissTip}
-					onClick={onClick}
-					onDoubleClick={onDoubleClick}
 					className={`relative flex min-h-0 min-w-0 flex-1 overflow-hidden outline-none ${
-						panning ? "cursor-grabbing" : "cursor-grab"
+						gesture === "idle" ? "cursor-grab" : "cursor-grabbing"
 					}`}
 				>
 					{/* The picture inside is the transition's to write, never React's:
@@ -572,7 +445,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 						camera={camera}
 						attach={setSurface}
 						size={content}
-						panning={panning}
+						gesture={gesture}
 						reducedMotion={reducedMotion}
 						marks={`${presentationMarks(props.presenting).surface}${marks}`}
 					/>
@@ -585,4 +458,4 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	);
 }
 
-export { SemanticDiagram, moveCameraByKey, surfaceClass, type SemanticDiagramProps };
+export { SemanticDiagram, moveCameraByKey, type SemanticDiagramProps };

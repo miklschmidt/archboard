@@ -2,6 +2,11 @@
 // screen differs on it from the variant it is read against — the current one,
 // or on a board with none the one it came from — and what nobody has decided yet.
 //
+// One region of the panel, set right after what the subject is, because for a
+// reader of a proposal it is what the panel is for: it is not the last thing at
+// the foot of a long list of relationships. A subject that stands unchanged has
+// no such region, and neither has one with nothing open.
+//
 // Split out of the panel so the panel stays about what the board says a
 // subject is, and this stays about how it is standing. Both read the same
 // comparison and the same reconciliation the picture is drawn from.
@@ -9,7 +14,11 @@
 import type { JSX } from "react";
 
 import type { ChangeKind, FieldChange, ReconciliationIssue } from "@/shared/semantic-board/index";
-import { Row, Section } from "@/ui/semantic-board-canvas/components/SemanticInspectorParts";
+import { cn } from "@/ui/components/class-names";
+import {
+	SidebarRegion,
+	SidebarSection,
+} from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
 
 /** How the selected subject stands against the variant this one is read against. */
 interface StandingProps {
@@ -21,6 +30,95 @@ interface StandingProps {
 	moved: readonly FieldChange[];
 }
 
+/** Inputs for one field that moved. */
+interface MovedProps {
+	/** The field, with what it said and what it says. */
+	change: FieldChange;
+}
+
+/** Inputs for one value of a field that moved. */
+interface MovedValueProps {
+	/** What the field said, or says. */
+	text: string;
+	/** Which it is. */
+	when: "was" | "now";
+}
+
+/**
+ * One value of a field that moved, after the word that says which it is: what
+ * it said first and quieter, what it says under that, the whole of each wrapped.
+ * @param props The value.
+ * @returns The value.
+ */
+function MovedValue(props: MovedValueProps): JSX.Element {
+	return (
+		<dd className="grid grid-cols-[1.75rem_minmax(0,1fr)] gap-x-1.5">
+			<span className="text-muted-foreground text-body">{props.when}</span>
+			<span
+				className={cn(
+					"text-body [overflow-wrap:anywhere]",
+					props.when === "was" && "text-muted-foreground",
+				)}
+			>
+				{props.text}
+			</span>
+		</dd>
+	);
+}
+
+/**
+ * One field that moved, its name over what it said and what it says: the whole
+ * of both, because which part of a long description or a binding moved is
+ * exactly what a reader is asking.
+ * @param props The field.
+ * @returns The field.
+ */
+function Moved(props: MovedProps): JSX.Element {
+	const { change } = props;
+	return (
+		<div data-field={change.field} className="flex flex-col gap-1">
+			<dt className="text-muted-foreground text-body">{change.field}</dt>
+			{change.field === "traffic" ? (
+				<dd className="text-body">Illustrated traffic changed</dd>
+			) : (
+				<>
+					<MovedValue text={valueText(change.before)} when="was" />
+					<MovedValue text={valueText(change.after)} when="now" />
+				</>
+			)}
+		</div>
+	);
+}
+
+/** Inputs for the standing block. */
+interface StandingBlockProps {
+	/** How the subject stands, or null when the variant is read against nothing. */
+	against: StandingProps | null;
+}
+
+/**
+ * What to say in a sentence of how the subject stands: nothing for one that
+ * stands unchanged, and nothing for a changed one whose fields say it already.
+ * @param against How it stands.
+ * @returns The sentence, or undefined.
+ */
+function sentenceOf(against: StandingProps): string | undefined {
+	if (against.standing === "changed" && against.moved.length > 0) {
+		return undefined;
+	}
+	return standingSentence(against.standing, against.against);
+}
+
+/**
+ * Whether the subject differs from what it is read against, so that there is
+ * something to say of it.
+ * @param against How it stands, or null.
+ * @returns Whether it does.
+ */
+function differs(against: StandingProps | null): against is StandingProps {
+	return against !== null && (against.moved.length > 0 || sentenceOf(against) !== undefined);
+}
+
 /**
  * How the selected subject differs, and what moved.
  *
@@ -29,49 +127,44 @@ interface StandingProps {
  * standing without a before and an after is a badge rather than information.
  * Nothing at all for a subject that stands unchanged — most of a variant does,
  * and saying so on every panel would bury the few that moved.
- * @param props The standing, what it is compared against, and what moved.
+ * @param props How it stands, what it is compared against, and what moved.
  * @returns The block, or nothing.
  */
-function StandingBlock(props: StandingProps): JSX.Element | null {
-	const sentence = standingSentence(props.standing, props.against);
-	if (sentence === undefined) {
+function StandingBlock(props: StandingBlockProps): JSX.Element | null {
+	const { against } = props;
+	if (!differs(against)) {
 		return null;
 	}
+	const sentence = sentenceOf(against);
 	return (
-		<Section title={`Against ${props.against}`}>
-			<p
-				className="text-body"
-				data-slot="semantic-inspector-standing"
-				data-standing={props.standing}
-			>
-				{sentence}
-			</p>
-			{props.moved.length > 0 && (
-				<dl
-					className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-2.5"
-					data-slot="semantic-inspector-moved"
+		<SidebarSection
+			title={`Against ${against.against}`}
+			slot="semantic-inspector-against"
+			level={3}
+		>
+			{sentence !== undefined && (
+				<p
+					className="text-body"
+					data-slot="semantic-inspector-standing"
+					data-standing={against.standing}
 				>
-					{props.moved.map((change) => (
-						<Row
-							key={change.field}
-							field={change.field}
-							label={change.field}
-							value={
-								change.field === "traffic"
-									? "Illustrated traffic changed"
-									: `${valueText(change.before)} → ${valueText(change.after)}`
-							}
-						/>
+					{sentence}
+				</p>
+			)}
+			{against.moved.length > 0 && (
+				<dl data-slot="semantic-inspector-moved" className="mt-1 flex flex-col gap-2">
+					{against.moved.map((change) => (
+						<Moved key={change.field} change={change} />
 					))}
 				</dl>
 			)}
-		</Section>
+		</SidebarSection>
 	);
 }
 
 /** Inputs for the undecided block. */
 interface WaitingProps {
-	/** The disagreements this subject is held up by; never empty when shown. */
+	/** The disagreements this subject is held up by; empty when it is held up by none. */
 	open: readonly ReconciliationIssue[];
 }
 
@@ -85,15 +178,19 @@ interface WaitingProps {
  * repair it suggested. Quoted rather than rewritten, because the thing that
  * found the disagreement is the thing that knows what it is.
  * @param props The open disagreements.
- * @returns The block.
+ * @returns The block, or nothing.
  */
 function WaitingBlock(props: WaitingProps): JSX.Element | null {
 	if (props.open.length === 0) {
 		return null;
 	}
 	return (
-		<Section title="Nobody has decided this yet">
-			<ul className="flex flex-col gap-2.5" data-slot="semantic-inspector-waiting">
+		<SidebarSection
+			title="Nobody has decided this yet"
+			slot="semantic-inspector-undecided"
+			level={3}
+		>
+			<ul className="flex flex-col gap-2" data-slot="semantic-inspector-waiting">
 				{props.open.map((issue) => (
 					// The repair is part of the identity, not decoration. One subject can
 					// hold two disagreements of the same kind about no field at all — a
@@ -108,7 +205,29 @@ function WaitingBlock(props: WaitingProps): JSX.Element | null {
 					</li>
 				))}
 			</ul>
-		</Section>
+		</SidebarSection>
+	);
+}
+
+/** Inputs for the standing region. */
+interface StandingRegionProps extends WaitingProps, StandingBlockProps {}
+
+/**
+ * The region of the panel that says where the subject stands: what nobody has
+ * decided about it, then how it differs from what it is read against.
+ * @param props What is open on the subject and how it stands.
+ * @returns The region, or nothing when there is nothing to say.
+ */
+function Standing(props: StandingRegionProps): JSX.Element | null {
+	const { open, against } = props;
+	if (open.length === 0 && !differs(against)) {
+		return null;
+	}
+	return (
+		<SidebarRegion slot="semantic-inspector-standing-region">
+			<WaitingBlock open={open} />
+			<StandingBlock against={against} />
+		</SidebarRegion>
 	);
 }
 
@@ -171,4 +290,4 @@ function standingSentence(standing: ChangeKind, against: string): string | undef
 	return standing === "changed" ? `Different on ${against}.` : undefined;
 }
 
-export { StandingBlock, WaitingBlock, standingSentence, valueText, type StandingProps };
+export { Standing, type StandingProps };

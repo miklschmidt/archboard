@@ -64,7 +64,7 @@ function ApprovalCard(props: ApprovalCardProps): JSX.Element {
 			data-slot="approval"
 			data-phase={card.phase}
 			aria-busy={busy}
-			className={`bg-background flex flex-col gap-2 rounded-[4px] border px-3 py-2.5 ${PHASE_BORDERS[card.phase]}`}
+			className={`bg-background rounded-panel flex flex-col gap-2 border px-3 py-2.5 ${PHASE_BORDERS[card.phase]}`}
 		>
 			<header className="flex items-baseline justify-between gap-3">
 				<h3 className="text-control shrink-0 font-semibold">{card.title}</h3>
@@ -136,7 +136,7 @@ function Details(props: { readonly card: Card }): JSX.Element | null {
 					<dd
 						className={
 							detail.mono
-								? "bg-muted/70 text-technical rounded-[3px] px-2 py-1 font-mono break-all whitespace-pre-wrap"
+								? "bg-muted/70 text-technical rounded-control px-2 py-1 font-mono break-all whitespace-pre-wrap"
 								: "text-body wrap-break-word"
 						}
 					>
@@ -169,7 +169,7 @@ function Decision(props: {
 			size="sm"
 			disabled={props.disabled}
 			onClick={handleClick}
-			className="h-7 rounded-[3px] px-3"
+			className="rounded-control h-7 px-3"
 		>
 			{option.label}
 		</Button>

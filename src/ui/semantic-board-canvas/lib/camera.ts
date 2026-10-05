@@ -92,7 +92,8 @@ const CONTEXT_SHARE = 0.9;
  * Below this magnification the picture is seen from far away: a card's
  * responsibility, drawn at 11 units, is under 8.25 px on screen and nobody
  * reads it, while its name, at 14, is still read with effort. The picture
- * then draws each card's name larger in its place.
+ * then draws each card's name larger, with a larger tile for its kind and
+ * the start of its responsibility set to read.
  */
 const FAR_SCALE = 0.75;
 
@@ -271,7 +272,6 @@ function cameraOf(transform: string): Camera | null {
 
 export {
 	FAR_SCALE,
-	FIT_MARGIN,
 	FOCUS_MAX_SCALE,
 	IDENTITY_CAMERA,
 	MAX_SCALE,

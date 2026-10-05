@@ -136,7 +136,7 @@ function paintNote(
  *
  * The plate and the warning badge, in a group that says it is the message, for
  * the same reason the architecture grammar splits a relationship in two: the
- * words of one message have to sit above the dots of ALL of them. Upstream, and
+ * words of one message have to sit above the pulses of ALL of them. Upstream, and
  * this fork until now, argued that a stack of horizontal runs at a fixed pitch
  * could never reach each other's plates — and mostly it cannot, but "mostly"
  * is a thing that has to be re-derived every time somebody adds a self-message

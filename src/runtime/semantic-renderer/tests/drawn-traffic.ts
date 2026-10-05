@@ -1,28 +1,30 @@
-// A relationship's traffic as the drawn markup states it: every layer of its
-// streaks, its still picture and its moving train, read back from the SVG.
+// A pulse as the drawn markup states it, read back from the SVG: the gradient it
+// is painted with, the masks that shape it to its route, and how its bars slide.
 
-/** One layer of a relationship's streaks, as drawn. */
-interface TrafficLayer {
-	/** The route it rides, as path data. */
-	readonly d: string;
-	/** How thick it is. */
-	readonly width: number;
-	/** Whether it is the ring in the page's colour around the head. */
-	readonly moat: boolean;
-	/** The still picture's dash pattern. */
-	readonly still: readonly number[];
-	/** The dash offset both pictures start from. */
-	readonly offset: number;
-	/** The moving picture's dash pattern: one dash and one gap per shot in a cycle. */
-	readonly train: readonly number[];
-	/** How far the train moves in one cycle. */
-	readonly travel: number;
+/** One piece of a route's beam: how its bar slides and the path of its mask. */
+interface Piece {
+	/** The offsets the bar slides through, along its frame. */
+	readonly values: readonly number[];
+	/** When each of those is reached, as a share of the cycle: only a message's pulse says. */
+	readonly times: readonly number[];
 	/** How long one cycle takes, in seconds. */
 	readonly cycle: number;
 	/** How long one cycle takes, as written. */
 	readonly cycleWritten: string;
-	/** When each of its animations begins, in seconds. */
-	readonly begins: readonly number[];
+	/** When its animation begins, in seconds. */
+	readonly begin: number;
+	/** The points the piece's mask runs through. */
+	readonly points: readonly { readonly x: number; readonly y: number }[];
+}
+
+/** One pulse, as drawn: every piece of its route. */
+interface Beam {
+	/** The pieces, in route order. */
+	readonly pieces: readonly Piece[];
+	/** How far apart the pulses of a train are, when it is a train: the length of its gradient. */
+	readonly period: number | undefined;
+	/** How many layers of glow its masks stack. */
+	readonly layers: number;
 }
 
 /**
@@ -38,13 +40,11 @@ function attribute(markup: string, name: string): string | undefined {
 /**
  * A list of numbers as SVG writes one.
  * @param value The attribute's value.
+ * @param separator What the numbers are separated by.
  * @returns The numbers.
  */
-function numbers(value: string | undefined): number[] {
-	return (value ?? "")
-		.trim()
-		.split(/[\s,]+/u)
-		.map(Number);
+function numbers(value: string | undefined, separator = /[\s,;]+/u): number[] {
+	return (value ?? "").trim().split(separator).map(Number);
 }
 
 /**
@@ -57,83 +57,128 @@ function seconds(value: string | undefined): number {
 }
 
 /**
- * Every layer of the streaks one relationship's group carries.
+ * The points a path of straight pieces and bends passes through, ends only.
+ * @param d The path data.
+ * @returns The points, the end of every piece.
+ */
+function pointsOf(d: string): { x: number; y: number }[] {
+	const coordinates = d.match(/-?[\d.]+(?:e-?\d+)?/gu)!.map(Number);
+	return Array.from({ length: coordinates.length / 2 }, (_, index) => ({
+		x: coordinates[index * 2]!,
+		y: coordinates[index * 2 + 1]!,
+	}));
+}
+
+/**
+ * Every pulse in a piece of markup, in drawing order.
+ * @param markup The markup.
+ * @returns The pulses.
+ */
+function beams(markup: string): Beam[] {
+	return markup
+		.split('<g class="ab-pulse"')
+		.slice(1)
+		.map((chunk) => {
+			const masks = [...chunk.matchAll(/<mask [^>]*>([\s\S]*?)<\/mask>/gu)];
+			const motions = [...chunk.matchAll(/<animateTransform ([^>]*)>/gu)].map(
+				([, tag = ""]) => tag,
+			);
+			const gradient = /<linearGradient [^>]*>/u.exec(chunk)?.[0] ?? "";
+			return {
+				period: gradient.includes('spreadMethod="repeat"')
+					? Number(attribute(gradient, "x2"))
+					: undefined,
+				layers: [...(masks[0]?.[1] ?? "").matchAll(/<path /gu)].length,
+				pieces: motions.map((motion, index) => {
+					const cycleWritten = attribute(motion, "dur") ?? "";
+					// The narrowest layer is the last, and the one that runs into the next piece.
+					const path =
+						[...(masks[index]?.[1] ?? "").matchAll(/<path d="([^"]+)"/gu)].at(-1)?.[1] ?? "M0,0";
+					return {
+						values:
+							attribute(motion, "values") === undefined
+								? [
+										Number(attribute(motion, "from")?.split(" ")[0]),
+										Number(attribute(motion, "to")?.split(" ")[0]),
+									]
+								: attribute(motion, "values")!
+										.split(";")
+										.map((value) => Number(value.split(" ")[0])),
+						times: numbers(attribute(motion, "keyTimes"), /;/u),
+						cycle: seconds(cycleWritten),
+						cycleWritten,
+						begin: seconds(attribute(motion, "begin") ?? "0s"),
+						points: pointsOf(path),
+					};
+				}),
+			};
+		});
+}
+
+/**
+ * The markup a subject's group holds, up to the next subject's.
+ *
+ * Counted from where the subject is named to where the next one is, because a
+ * group holds nested groups of its own — a label pill is one — and matching
+ * closing tags by hand would stop at the first of them.
+ * @param svg The markup.
+ * @param name The attribute naming it, such as `data-traffic`.
+ * @param id The subject's id.
+ * @returns The markup.
+ */
+function holding(svg: string, name: string, id: string): string {
+	return (svg.split(`${name}="${id}"`)[1] ?? "").split(/data-(?:semantic-id|traffic)=/u)[0]!;
+}
+
+/**
+ * Every pulse one relationship's line carries.
  * @param svg The markup.
  * @param id The relationship's id.
- * @returns The layers, in drawing order.
+ * @returns The pulses.
  */
-function trafficLayers(svg: string, id: string): TrafficLayer[] {
-	// A line's traffic is painted in a layer of its own that names the line.
-	const group = (svg.split(`data-traffic="${id}"`)[1] ?? "").split(
-		/data-(?:semantic-id|traffic)=/u,
-	)[0]!;
-	const traffic = group.split('<g class="ab-pulse"')[1] ?? "";
-	return [...traffic.matchAll(/<path ([^>]*)>([\s\S]*?)<\/path>/gu)].map(
-		([, tag = "", body = ""]) => {
-			const set = /<set ([^>]*)>/u.exec(body)?.[1] ?? "";
-			const animate = /<animate ([^>]*)>/u.exec(body)?.[1] ?? "";
-			const cycleWritten = attribute(animate, "dur") ?? "";
-			return {
-				d: attribute(tag, "d") ?? "",
-				width: Number(attribute(tag, "stroke-width")),
-				moat: attribute(tag, "data-pulse-part") === "moat",
-				still: numbers(attribute(tag, "stroke-dasharray")),
-				offset: Number(attribute(tag, "stroke-dashoffset")),
-				train: numbers(attribute(set, "to")),
-				travel: Number(attribute(animate, "from")) - Number(attribute(animate, "to")),
-				cycle: seconds(cycleWritten),
-				cycleWritten,
-				begins: [set, animate].map((element) => seconds(attribute(element, "begin"))),
-			};
-		},
-	);
+function trafficBeams(svg: string, id: string): Beam[] {
+	return beams(holding(svg, "data-traffic", id));
 }
 
 /**
- * Where the dashes of a pattern end along a route of one length: the heads a
- * picture shows on it.
- * @param pattern The dash pattern: dash, gap, dash, gap.
- * @param offset The dash offset.
- * @param length How long the route is.
- * @param reach How far a dash's round cap reaches past its ends: a dash that
- * stops short of the route by less than this still shows.
- * @returns How far along the route each dash that shows on it ends.
+ * The pulses one message sends.
+ * @param svg The markup.
+ * @param id The message's id.
+ * @returns One for every pulse it sends.
  */
-function headsOn(pattern: readonly number[], offset: number, length: number, reach = 0): number[] {
-	const period = pattern.reduce((sum, value) => sum + value, 0);
-	const heads: number[] = [];
-	let start = -offset - period * Math.ceil((length + offset) / period + 1);
-	while (start <= length + reach) {
-		for (let index = 0; index < pattern.length; index += 2) {
-			const end = start + pattern[index]!;
-			if (end >= -reach && start <= length + reach) heads.push(end);
-			start = end + (pattern[index + 1] ?? 0);
-		}
-	}
-	return heads;
+function messageBeams(svg: string, id: string): Beam[] {
+	return beams(holding(svg, "data-semantic-id", id));
 }
 
 /**
- * How far one cycle of a layer's moving pattern repeats over.
- * @param layer The layer.
- * @returns The pattern's length.
+ * How fast a train's bars slide along their pieces: how far one cycle slides
+ * them over how long it takes. A train slides one gradient period a cycle.
+ * @param beam The pulse.
+ * @returns The speed, in diagram units a second.
  */
-function trainPeriod(layer: TrafficLayer): number {
-	return layer.train.reduce((sum, value) => sum + value, 0);
+function speedOf(beam: Beam): number {
+	const piece = beam.pieces[0]!;
+	return Math.abs(piece.values[1]! - piece.values[0]!) / piece.cycle;
 }
 
 /**
- * The seconds between one launch and the next over one cycle of a layer's train.
- * @param layer The layer.
- * @returns The gaps.
+ * How fast a message's bar slides along its piece: how far it slides between
+ * the moments it starts and stops, over how long that takes.
+ * @param piece The piece.
+ * @returns The speed, in diagram units a second.
  */
-function launchGaps(layer: TrafficLayer): number[] {
-	const speed = layer.travel / layer.cycle;
-	const gaps: number[] = [];
-	for (let index = 0; index < layer.train.length; index += 2) {
-		gaps.push((layer.train[index]! + layer.train[index + 1]!) / speed);
-	}
-	return gaps;
+function slidingSpeedOf(piece: Piece): number {
+	const [, from = 0, to = 1] = piece.times;
+	return Math.abs(piece.values[2]! - piece.values[1]!) / ((to - from) * piece.cycle);
 }
 
-export { headsOn, launchGaps, trafficLayers, trainPeriod, type TrafficLayer };
+export {
+	beams,
+	messageBeams,
+	pointsOf,
+	slidingSpeedOf,
+	speedOf,
+	trafficBeams,
+	type Beam,
+	type Piece,
+};

@@ -1,5 +1,5 @@
 // What the agent surfaces show and what a person can do from them. The agent
-// bar and the conversation panel read one `AgentView` and act through one
+// dock and the conversation panel read one `AgentView` and act through one
 // `AgentActions`; the application composes both from the workbench owners.
 
 import type {
@@ -45,7 +45,7 @@ type VoiceStage =
 	| "muted"
 	| "stopping";
 
-/** The voice as the agent bar shows it. */
+/** The voice as the agent dock shows it. */
 interface AgentVoiceView {
 	readonly stage: VoiceStage;
 	/** Why voice cannot start, or why it failed, in one sentence; null when nothing is wrong. */

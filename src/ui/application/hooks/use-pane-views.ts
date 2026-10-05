@@ -14,8 +14,10 @@ import {
 import type { Narration } from "@/ui/application/hooks/use-narration";
 import type { PaneReadings, PickedSubject } from "@/ui/application/hooks/use-pane-reading";
 import type { Panes } from "@/ui/application/hooks/use-panes";
+import type { OutlineNode } from "@/ui/board-catalog";
 import type { PaneTheme } from "@/ui/pane-session";
 import type { SemanticPaneReading } from "@/ui/semantic-board-canvas";
+import type { CatalogBoard } from "@/ui/types";
 import type { RecordedStep } from "@/ui/walkthrough-recording";
 
 /** Something the shell lays over one pane's picture. */
@@ -42,12 +44,22 @@ interface PaneViewSources {
 	 * @param variant The variant's id or name, or null for whichever is current.
 	 */
 	readonly onVariantChange: (paneId: string, variant: string | null) => void;
-	/** The focused pane's narration, or null while voice cannot be started for it. */
+	/** Narration, offered to every pane, or null where the page does not narrate by hand. */
 	readonly narration: Narration | null;
 	/** What is laid over one pane's picture, or null: the subtitles of the voice running for it. */
 	readonly overlay: PaneOverlay | null;
 	/** The page records its one pane (TASK-304), or null. */
 	readonly recording: PaneRecording | null;
+	/** The vault's boards, which a pane's search for a part reads. */
+	readonly boards: readonly CatalogBoard[];
+	/** The vault's boards as the navigator places them, for the boards above a pane's own. */
+	readonly outline: readonly OutlineNode<CatalogBoard>[];
+	/**
+	 * Show a board in one pane: where a part its search found is.
+	 * @param key The board key.
+	 * @param paneId The pane.
+	 */
+	readonly openBoard: (key: string, paneId: string) => void;
 }
 
 /** What a recording page gives its pane. */
@@ -91,6 +103,13 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 	function showVariantHere(variant: string | null): void {
 		sources.onVariantChange(paneId, variant);
 	}
+	/**
+	 * The pane showed a board: where a part its search found is.
+	 * @param key The board key.
+	 */
+	function openBoardHere(key: string): void {
+		sources.openBoard(key, paneId);
+	}
 	return createElement(ApplicationPane, {
 		key: paneId,
 		paneId,
@@ -103,9 +122,12 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 		picked: readings.pickedIn(paneId),
 		onPick: pickHere,
 		onVariantChange: showVariantHere,
-		onNarrate: sources.narration?.paneId === paneId ? sources.narration.start : undefined,
+		narration: sources.narration?.forPane(paneId),
 		overlay: sources.overlay?.paneId === paneId ? sources.overlay.element : undefined,
 		reducedMotion: sources.reducedMotion,
+		boards: sources.boards,
+		outline: sources.outline,
+		onOpenBoard: openBoardHere,
 	});
 }
 
@@ -152,8 +174,19 @@ function recordedOrNot(
  * @returns The mounted panes by pane id.
  */
 function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNode>> {
-	const { panes, theme, readings, reducedMotion, onVariantChange, narration, overlay, recording } =
-		sources;
+	const {
+		panes,
+		theme,
+		readings,
+		reducedMotion,
+		onVariantChange,
+		narration,
+		overlay,
+		recording,
+		boards,
+		outline,
+		openBoard,
+	} = sources;
 	const { list, callbacks, handles } = panes;
 	return useMemo(() => {
 		const mounted: Record<string, ReactNode> = {};
@@ -168,6 +201,9 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 					narration,
 					overlay,
 					recording,
+					boards,
+					outline,
+					openBoard,
 				},
 				entry.paneId,
 				index,
@@ -185,6 +221,9 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		narration,
 		overlay,
 		recording,
+		boards,
+		outline,
+		openBoard,
 	]);
 }
 

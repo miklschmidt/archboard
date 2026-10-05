@@ -139,27 +139,32 @@ for (const grammar of ["architecture", "data-flow"] satisfies DiagramGrammar[]) 
 }
 
 for (const grammar of ["architecture", "data-flow"] satisfies DiagramGrammar[])
-	test(`${grammar}, seen from far away, draws only each card's name, larger and at one size for every card`, async () => {
+	test(`${grammar}, seen from far away, draws each card's name larger, with the start of what it is responsible for`, async () => {
 		const rendered = await renderSemanticView({ grammar, content, theme: "light" });
 		const faces = registeredFaces(rendered.svg);
 		const near = drawnTexts(rendered.svg);
 		const far = drawnTexts(rendered.svg, "far");
-		const sizes = new Set<number>();
 		for (const id of ["api", "store"]) {
+			const node = content.nodes.find((candidate) => candidate.id === id)!;
 			const box = cardBox(rendered, id);
 			const title = near.find((run) => run.subject.id === id && run.weight !== 400)!;
 			const runs = far.filter((run) => run.subject.id === id);
-			expect(runs.map((run) => run.text).join(" ")).toBe(
-				content.nodes.find((node) => node.id === id)!.name,
-			);
+			const names = runs.filter((run) => run.weight !== 400);
+			expect(names.map((run) => run.text).join(" ")).toBe(node.name);
+			for (const run of names) expect(run.size).toBeGreaterThan(title.size);
+			// What it says of its responsibility is the start of it, cut short where the card is out of room.
+			const gist = runs
+				.filter((run) => run.weight === 400)
+				.map((run) => run.text)
+				.join(" ")
+				.replace(/…$/u, "");
+			expect(node.responsibility!.replace(/\s+/gu, " ")).toStartWith(gist);
+			if (grammar === "architecture") expect(gist).not.toBe("");
 			for (const run of runs) {
-				expect(run.size).toBeGreaterThan(title.size);
 				expect(spanFits(drawnSpan(run, faces), box)).toBe(true);
 				expect(run.y + run.size * 0.3).toBeLessThan(box.y + box.height);
-				sizes.add(run.size);
 			}
 		}
-		expect(sizes.size).toBe(1);
 		if (grammar === "data-flow") return;
 		// A container's name stays in its header, above what it holds.
 		const header = far.filter((run) => run.subject.id === "system");

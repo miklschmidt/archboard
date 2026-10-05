@@ -1,0 +1,287 @@
+{
+	"about": "Every file in docs/readme, what makes it, and a hash of the sources it shows. bun run readme:assets <name> makes an asset and records its hash; bun run readme:check lists the stale ones. docs/agents/readme-assets.md explains both.",
+	"assets": [
+		{
+			"name": "banner",
+			"kind": "art",
+			"codex": true,
+			"command": "bun run readme:assets banner",
+			"files": [
+				"docs/assets/archboard-banner-history-dark.png",
+				"docs/assets/archboard-banner-history-light.png",
+				"docs/readme/banner-dark.webp",
+				"docs/readme/banner-light.webp"
+			],
+			"sources": [
+				"src/ui/shell/assets/archboard-wordmark.svg",
+				"scripts/readme-assets/banner.ts",
+				"scripts/readme-assets/browser.ts"
+			],
+			"hash": null
+		},
+		{
+			"name": "hero",
+			"kind": "clip",
+			"codex": false,
+			"command": "bun run readme:assets hero",
+			"files": ["docs/readme/hero.webp"],
+			"sources": [
+				"examples/web-shop",
+				"frontend",
+				"src/ui",
+				"src/cli",
+				"src/server",
+				"src/transformers/semantic-renderer",
+				"src/shared",
+				"scripts/readme-assets/hero.ts",
+				"scripts/readme-assets/hero-change.json",
+				"scripts/readme-assets/stage/terminal.html",
+				"scripts/readme-assets/film.ts",
+				"scripts/readme-assets/browser.ts",
+				"scripts/readme-assets/encode.ts"
+			],
+			"hash": "61102a2f7a363081a61ffb0569b65539bf7b334ca0ac8db71fa489ec64a291fa"
+		},
+		{
+			"name": "explainer",
+			"kind": "narrated",
+			"codex": true,
+			"command": "bun run readme:assets explainer",
+			"files": [],
+			"sources": [
+				".archboard/vault/Archboard.semantic.json",
+				".archboard/vault/.archboard/config.yaml",
+				"frontend",
+				"src/ui",
+				"src/transformers/semantic-renderer",
+				"src/shared",
+				"src/runtime/walkthrough-recorder",
+				"src/runtime/codex-realtime",
+				"src/server/archboard/lib/walkthrough-narration.ts",
+				"scripts/readme-assets/narrated.ts"
+			],
+			"hash": null
+		},
+		{
+			"name": "plan",
+			"kind": "clip",
+			"codex": false,
+			"command": "bun run readme:assets plan",
+			"files": ["docs/readme/plan.webp", "docs/readme/idx-plan.webp"],
+			"sources": [
+				"examples/web-shop",
+				"frontend",
+				"src/ui",
+				"src/transformers/semantic-renderer",
+				"src/shared",
+				"scripts/readme-assets/plan.ts",
+				"scripts/readme-assets/film.ts",
+				"scripts/readme-assets/browser.ts",
+				"scripts/readme-assets/encode.ts"
+			],
+			"hash": "a365b08d994ac329f984eb261f0401958217134ad2500bd6cf7a8105730b7a5b"
+		},
+		{
+			"name": "history",
+			"kind": "clip",
+			"codex": false,
+			"command": "bun run readme:assets history",
+			"files": ["docs/readme/history.webp", "docs/readme/idx-history.webp"],
+			"sources": [
+				".archboard/vault/Renderer layout.semantic.json",
+				".archboard/vault/.archboard/config.yaml",
+				"frontend",
+				"src/ui",
+				"src/transformers/semantic-renderer",
+				"src/shared",
+				"scripts/readme-assets/history.ts",
+				"scripts/readme-assets/stage/timeline.html",
+				"scripts/readme-assets/film.ts",
+				"scripts/readme-assets/browser.ts",
+				"scripts/readme-assets/encode.ts"
+			],
+			"hash": "b744472600785c526b119d8847cc7c6b9a8f1d310ebe6343a38a7cfd8aa58464"
+		},
+		{
+			"name": "pr-walkthrough",
+			"kind": "narrated",
+			"codex": true,
+			"command": "bun run readme:assets pr-walkthrough",
+			"files": ["docs/readme/pr-walkthrough.webp", "docs/readme/idx-voice.webp"],
+			"sources": [
+				"examples/web-shop",
+				"frontend",
+				"src/ui",
+				"src/transformers/semantic-renderer",
+				"src/shared",
+				"src/runtime/walkthrough-recorder",
+				"src/runtime/codex-realtime",
+				"src/server/archboard/lib/walkthrough-narration.ts",
+				"scripts/readme-assets/narrated.ts",
+				"scripts/readme-assets/encode.ts"
+			],
+			"hash": null
+		},
+		{
+			"name": "sequence",
+			"kind": "svg",
+			"codex": false,
+			"command": "bun run readme:assets sequence",
+			"files": [
+				"docs/readme/sequence-light.svg",
+				"docs/readme/sequence-dark.svg",
+				"docs/readme/idx-sequence.webp"
+			],
+			"sources": [
+				"examples/web-shop/Web shop.semantic.json",
+				"examples/web-shop/.archboard/config.yaml",
+				"src/transformers/semantic-renderer",
+				"src/runtime/semantic-renderer",
+				"src/runtime/semantic-rasterizer",
+				"src/shared/code-target",
+				"src/shared/ids",
+				"src/shared/semantic-board",
+				"src/shared/semantic-policy",
+				"src/shared/shell-geometry",
+				"src/shared/theme",
+				"src/shared/timing",
+				"src/ui/shell/assets/fonts",
+				"scripts/readme-assets/svg.ts",
+				"scripts/readme-assets/encode.ts"
+			],
+			"hash": "dfd621a8d3aa8d1b2394146712046881f3acaf23a1fc9ed7663910356f399ac5"
+		},
+		{
+			"name": "newcomer",
+			"kind": "narrated",
+			"codex": true,
+			"command": "bun run readme:assets newcomer",
+			"files": ["docs/readme/newcomer.webp", "docs/readme/idx-newcomer.webp"],
+			"sources": [
+				"examples/web-shop",
+				"frontend",
+				"src/ui",
+				"src/transformers/semantic-renderer",
+				"src/shared",
+				"src/runtime/walkthrough-recorder",
+				"src/runtime/codex-realtime",
+				"src/server/archboard/lib/walkthrough-narration.ts",
+				"scripts/readme-assets/narrated.ts",
+				"scripts/readme-assets/encode.ts"
+			],
+			"hash": null
+		},
+		{
+			"name": "drill-down",
+			"kind": "clip",
+			"codex": false,
+			"command": "bun run readme:assets drill-down",
+			"files": ["docs/readme/drill-down.webp", "docs/readme/idx-drill.webp"],
+			"sources": [
+				"examples/web-shop",
+				"frontend",
+				"src/ui",
+				"src/transformers/semantic-renderer",
+				"src/shared",
+				"scripts/readme-assets/drill-down.ts",
+				"scripts/readme-assets/film.ts",
+				"scripts/readme-assets/browser.ts",
+				"scripts/readme-assets/encode.ts"
+			],
+			"hash": "b732f1bf345c7547e91e3a25972ab9b758ecd4f9a6bd2cfa6e4d89835d7082c8"
+		},
+		{
+			"name": "ask",
+			"kind": "clip",
+			"codex": true,
+			"command": "bun run readme:assets ask",
+			"files": ["docs/readme/ask.webp", "docs/readme/idx-ask.webp"],
+			"sources": [
+				"examples/web-shop",
+				"frontend",
+				"src/ui",
+				"src/transformers/semantic-renderer",
+				"src/shared",
+				"scripts/readme-assets/ask.ts",
+				"scripts/readme-assets/film.ts",
+				"scripts/readme-assets/browser.ts",
+				"scripts/readme-assets/encode.ts"
+			],
+			"hash": null
+		},
+		{
+			"name": "take-back",
+			"kind": "clip",
+			"codex": false,
+			"command": "bun run readme:assets take-back",
+			"files": ["docs/readme/take-back.webp", "docs/readme/idx-safety.webp"],
+			"sources": [
+				"examples/web-shop",
+				"frontend",
+				"src/ui",
+				"src/cli",
+				"src/server",
+				"src/transformers/semantic-renderer",
+				"src/shared",
+				"scripts/readme-assets/take-back.ts",
+				"scripts/readme-assets/stage/terminal.html",
+				"scripts/readme-assets/film.ts",
+				"scripts/readme-assets/browser.ts",
+				"scripts/readme-assets/encode.ts"
+			],
+			"hash": "2688a5b8e3c75c87b86a47cab08d5b8506383b782dd1dbecc08e94ccd6b7e0f7"
+		},
+		{
+			"name": "web-shop",
+			"kind": "svg",
+			"codex": false,
+			"command": "bun run readme:assets web-shop",
+			"files": [
+				"docs/readme/web-shop-light.svg",
+				"docs/readme/web-shop-dark.svg",
+				"docs/readme/idx-docs.webp"
+			],
+			"sources": [
+				"examples/web-shop/Web shop.semantic.json",
+				"examples/web-shop/.archboard/config.yaml",
+				"src/transformers/semantic-renderer",
+				"src/runtime/semantic-renderer",
+				"src/runtime/semantic-rasterizer",
+				"src/shared/code-target",
+				"src/shared/ids",
+				"src/shared/semantic-board",
+				"src/shared/semantic-policy",
+				"src/shared/shell-geometry",
+				"src/shared/theme",
+				"src/shared/timing",
+				"src/ui/shell/assets/fonts",
+				"scripts/readme-assets/svg.ts",
+				"scripts/readme-assets/encode.ts"
+			],
+			"hash": "dfd621a8d3aa8d1b2394146712046881f3acaf23a1fc9ed7663910356f399ac5"
+		},
+		{
+			"name": "architecture",
+			"kind": "svg",
+			"codex": false,
+			"command": "bun run readme:assets architecture",
+			"files": ["docs/readme/architecture-light.svg", "docs/readme/architecture-dark.svg"],
+			"sources": [
+				".archboard/vault/Archboard.semantic.json",
+				".archboard/vault/.archboard/config.yaml",
+				"src/transformers/semantic-renderer",
+				"src/runtime/semantic-renderer",
+				"src/shared/code-target",
+				"src/shared/ids",
+				"src/shared/semantic-board",
+				"src/shared/semantic-policy",
+				"src/shared/shell-geometry",
+				"src/shared/theme",
+				"src/shared/timing",
+				"src/ui/shell/assets/fonts",
+				"scripts/readme-assets/svg.ts"
+			],
+			"hash": "386d8eb6fe882b6df41b13e74a9ae1457b93463efb935b6b116833c0de41459e"
+		}
+	]
+}

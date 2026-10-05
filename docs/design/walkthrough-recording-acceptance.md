@@ -40,7 +40,7 @@ Open the file in a browser.
 
 | #   | Observe                                                                                                                        |
 | --- | ------------------------------------------------------------------------------------------------------------------------------ |
-| a   | The video is 1920x1080 and shows only the board: no navigator, header, agent bar, sidebar or caption controls.                 |
+| a   | The video is 1920x1080 and shows only the board: no navigator, pane header, agent dock, sidebar or caption controls.           |
 | b   | It opens on the whole board, then glides into step 1 while the voice begins explaining it.                                     |
 | c   | The voice explains each step in English, in its own words, with names and no ids, and never says a step's number.              |
 | d   | After each explanation there is a short pause, then the next step glides in. No step starts while the voice is still speaking. |
@@ -85,9 +85,9 @@ n=619   # a frame from the lists above
 ffmpeg -v error -i /tmp/archboard.mp4 -vf "select='between(n,$((n - 1)),$n)'" -fps_mode passthrough /tmp/frame-%d.png
 ```
 
-For a step, `/tmp/frame-1.png` shows the count of the step before in the
-caption, such as `1 / 5`. `/tmp/frame-2.png` shows the step's own count, such
-as `2 / 5`. For a first
+For a step, `/tmp/frame-1.png` shows the number of the step before in the
+walkthrough box, such as `1` over `of 5`. `/tmp/frame-2.png` shows the step's
+own number, such as `2` over `of 5`. For a first
 word, `/tmp/frame-1.png` shows no subtitle or the line before, and
 `/tmp/frame-2.png` is the first frame where the subtitle changes.
 

@@ -1,6 +1,6 @@
 // The other way to sign in, where the conversation will be: an OpenAI API
 // key. Signing in with ChatGPT, its pending page and its cancel live in the
-// agent bar's status line, the one place the sign-in state is said.
+// agent dock's status line, the one place the sign-in state is said.
 
 import { useCallback, useState, type ChangeEvent, type FormEvent, type JSX } from "react";
 
@@ -48,13 +48,13 @@ function SignInCard(props: SignInCardProps): JSX.Element {
 					value={apiKey}
 					onChange={changeKey}
 					placeholder="sk-…"
-					className="border-border bg-background text-control focus:border-ring/60 h-8 min-w-0 flex-1 rounded-[3px] border px-2.5 font-mono outline-none"
+					className="border-border bg-background text-control focus:border-ring/60 rounded-control h-8 min-w-0 flex-1 border px-2.5 font-mono outline-none"
 				/>
 				<Button
 					type="submit"
 					variant="outline"
 					size="sm"
-					className="h-8 rounded-[3px] px-3"
+					className="rounded-control h-8 px-3"
 					disabled={apiKey.trim() === ""}
 				>
 					Use key

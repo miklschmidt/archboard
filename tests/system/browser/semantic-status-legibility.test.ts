@@ -124,15 +124,17 @@ const overThePill = (
 ): Promise<{ hit: string; traffic: number; trafficFirst: boolean }> =>
 	browser.eval(
 		`(() => {` +
+			// A pulse draws shapes of its own, rectangles among them: the plate is the
+			// rectangle that is neither a glow nor part of a pulse.
 			` const pill = [...document.querySelectorAll("${SURFACE} [data-semantic-id='${id}'] rect")]` +
-			`  .find((rect) => !rect.classList.contains("ab-halo"));` +
+			`  .find((rect) => !rect.classList.contains("ab-halo") && rect.closest(".ab-pulse") === null);` +
 			` const traffic = [...document.querySelectorAll("${SURFACE} .ab-pulse")];` +
 			` const at = pill.getBoundingClientRect();` +
 			` const under = document.elementFromPoint(` +
 			`   Math.round(at.x + at.width / 2), Math.round(at.y + at.height / 2));` +
 			` return {` +
 			`  hit: under === null ? "nothing" : under.tagName.toLowerCase() +` +
-			`   (under.classList.contains("ab-pulse") ? ".ab-pulse" : ""),` +
+			`   (under.closest(".ab-pulse") === null ? "" : ".ab-pulse"),` +
 			`  traffic: traffic.length,` +
 			`  trafficFirst: traffic.length > 0 && traffic.every((mark) =>` +
 			`   (pill.compareDocumentPosition(mark) & Node.DOCUMENT_POSITION_PRECEDING) !== 0),` +
@@ -357,7 +359,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	const added = await edgeInks(browser, SURFACE, ids["added"] ?? "");
 	expect(added.head).toBe(added.line);
 	expect(sameHue(added.line, added.band)).toBe(true);
-	// The comets carry the relationship's colour, the band's hue; the line is drawn weaker.
+	// The pulses carry the relationship's colour, the band's hue; the line is drawn weaker.
 	expect(added.streams.length).toBe(1);
 	for (const stream of added.streams) {
 		for (const part of stream.split("|")) {
@@ -377,7 +379,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	const words = await overThePill(browser, ids["hero"] ?? "");
 	expect(words.traffic).toBeGreaterThan(0);
 	expect(words.trafficFirst).toBe(true);
-	expect(words.hit).not.toBe("path.ab-pulse");
+	expect(words.hit).not.toEndWith(".ab-pulse");
 
 	// Configured types keep distinct chips even when the nodes share a group.
 	const writePath = await iconInk(browser, "Gateway");
@@ -427,15 +429,15 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	const stepId = await browser.eval<string>(
 		`document.querySelector("${SURFACE} [data-semantic-kind='step']").dataset.semanticId`,
 	);
-	// The exchange's timed comets: their motion and the gradient stops their tails fade through.
+	// The exchange's pulses, each in the colours of its message.
 	expect(
-		await browser.eval<number>(`document.querySelectorAll("${SURFACE} svg stop").length`),
+		await browser.eval<number>(`document.querySelectorAll("${SURFACE} .ab-pulse").length`),
 	).toBeGreaterThan(0);
 	expect(await unresolvedPaints(browser, SURFACE)).toEqual([]);
 	const message = await overThePill(browser, stepId);
 	expect(message.traffic).toBeGreaterThan(0);
 	expect(message.trafficFirst).toBe(true);
-	expect(message.hit).not.toBe("circle.ab-pulse");
+	expect(message.hit).not.toEndWith(".ab-pulse");
 
 	// And all of it again on the other ground. The inks change, because they are
 	// picked for the ground they are drawn on; what they say does not.

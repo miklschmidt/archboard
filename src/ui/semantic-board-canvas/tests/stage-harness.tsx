@@ -8,11 +8,16 @@ import { afterAll, afterEach, beforeAll } from "bun:test";
 import { act, cleanup, render } from "@testing-library/react";
 import { createElement, useEffect, useState, type JSX, type ReactNode } from "react";
 
+import type { CodeBinding } from "@/shared/code-target";
+import { PaneChromeContext, usePaneChrome, type PaneChrome } from "@/ui/components/PaneChrome";
 import { SemanticBoardStage, type SemanticPaneReading } from "@/ui/semantic-board-canvas";
 import { withFixtureOrders } from "@/ui/semantic-board-canvas/tests/fixture-orders";
 
 /** The window on the diagram every measured element reports in these tests. */
 const VIEWPORT = Object.freeze({ width: 800, height: 600 });
+
+/** The window the elements measure now: a test may narrow it, and each test starts from VIEWPORT. */
+const room: { width: number; height: number } = { ...VIEWPORT };
 
 beforeAll(() => {
 	GlobalRegistrator.register();
@@ -25,7 +30,7 @@ beforeAll(() => {
 	 * @returns The one window these tests measure everything through.
 	 */
 	function measured(): DOMRect {
-		return new DOMRect(0, 0, VIEWPORT.width, VIEWPORT.height);
+		return new DOMRect(0, 0, room.width, room.height);
 	}
 	Element.prototype.getBoundingClientRect = measured;
 });
@@ -59,6 +64,7 @@ const realFetch = globalThis.fetch;
 
 afterEach(() => {
 	cleanup();
+	Object.assign(room, VIEWPORT);
 	globalThis.fetch = realFetch;
 	server.reply = "pending";
 	server.calls = [];
@@ -98,76 +104,6 @@ function documentAsked(url: string): string | null {
 		? (new URLSearchParams(url.split("?")[1]).get("board") ?? "")
 		: null;
 }
-
-/**
- * One drawn board, with a card and an edge the atlas knows about and one group
- * it does not, so that "the atlas decides what is a subject" is observable.
- * Every subject carries the ring the renderer draws outside it — invisible
- * until a viewer lights it — because lighting it is how the pane says what is
- * selected, what a beat is about, and what is in dispute.
- * @param version The board version this drawing is of.
- * @param board Which board it is of; the pane's own by default.
- * @returns The render route's success body.
- */
-function drawing(version: number, board = "pipeline"): Record<string, unknown> {
-	return {
-		success: true,
-		board,
-		version,
-		variant: { id: "v1", name: "current", lifecycle: "current" },
-		view: null,
-		views: [],
-		changes: null,
-		waiting: null,
-		width: 400,
-		height: 300,
-		svg:
-			`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300">` +
-			`<g data-semantic-kind="node" data-semantic-id="n1">` +
-			`<path class="ab-halo" id="card-halo"></path><rect id="card" width="80" height="40"></rect></g>` +
-			`<g data-semantic-kind="edge" data-semantic-id="e1">` +
-			`<path class="ab-halo" id="wire-halo"></path><path id="wire" d="M0 0 L10 10"></path></g>` +
-			`<g data-semantic-kind="node" data-semantic-id="ghost"><rect id="stray"></rect></g>` +
-			`</svg>`,
-		atlas: {
-			nodes: { n1: { x: 0, y: 0, width: 80, height: 40 } },
-			edges: { e1: { x: 80, y: 20, width: 40, height: 2 } },
-			regions: {},
-		},
-	};
-}
-
-/** A board that is there with nothing on it. */
-const NOTHING_DRAWN = {
-	status: 200,
-	body: {
-		success: true,
-		board: "pipeline",
-		version: 3,
-		variant: { id: "v1", name: "current", lifecycle: "current" },
-		view: null,
-		views: [],
-		changes: null,
-		waiting: null,
-		empty: "NOTHING_TO_RENDER",
-	},
-} as const;
-
-/** The vault has no such board. */
-const NO_SUCH_BOARD = {
-	status: 404,
-	body: {
-		success: false,
-		code: "BOARD_MISSING",
-		error: 'there is no semantic board called "pipeline"',
-	},
-} as const;
-
-/** The board was there and has stopped being readable. */
-const UNREADABLE = {
-	status: 422,
-	body: { success: false, code: "BOARD_UNREADABLE", error: "the board file is not valid JSON" },
-} as const;
 
 /**
  * The URL a request named, whichever way it was spelled.
@@ -284,8 +220,15 @@ function Cache(children: ReactNode): JSX.Element {
  */
 const serving: typeof fetch = Object.assign(fakeFetch, { preconnect: realFetch.preconnect });
 
-/** The stage's own props a test may state as they are: a driven step, and what is laid over the picture. */
-type StagePassThrough = Pick<Parameters<typeof SemanticBoardStage>[0], "driven" | "overlay">;
+/**
+ * The stage's own props a test may state as they are: a driven step, what is
+ * laid over the picture, the boards above the one on screen, the shell's
+ * narration, the search over parts, and what the shell hears the person changed.
+ */
+type StagePassThrough = Pick<
+	Parameters<typeof SemanticBoardStage>[0],
+	"driven" | "overlay" | "placeOf" | "narration" | "search" | "onUserChanged"
+>;
 /** What else a mounted pane may be told, beyond what it is showing. */
 interface MountOptions extends StagePassThrough {
 	/** Which view the pane reads its board through. */
@@ -315,6 +258,13 @@ interface MountOptions extends StagePassThrough {
 	 * @param reading The board, variant, view and selection on screen.
 	 */
 	readonly onReading?: ((reading: SemanticPaneReading) => void) | undefined;
+	/**
+	 * The person asked to open a part's code, which only a shell can do.
+	 * @param binding Where the code is.
+	 */
+	readonly onOpenCode?: ((binding: CodeBinding) => void) | undefined;
+	/** What the shell puts in the pane's header; a pane alone in the shell by default. */
+	readonly chrome?: PaneChrome | undefined;
 }
 
 /** Every option the harness passes straight through to the stage. */
@@ -325,8 +275,13 @@ const READING_PROPS = [
 	"onVariantChange",
 	"reducedMotion",
 	"onReading",
+	"onOpenCode",
 	"driven",
 	"overlay",
+	"placeOf",
+	"narration",
+	"search",
+	"onUserChanged",
 ] as const satisfies readonly (keyof MountOptions)[];
 
 /**
@@ -350,16 +305,19 @@ function paneReading(options: MountOptions): Record<string, unknown> {
 type Driven = MountOptions["driven"];
 
 /**
- * The shell's hold on a held pane's variant, which the navigator changes, and
- * on the step it asks the pane to present, which a narration or an agent
- * starts: neither is the pane's own control, so a test changes them from here.
+ * The shell's hold on a held pane's variant, which the navigator changes, on
+ * the step it asks the pane to present, which a narration or an agent starts,
+ * and on what it puts in the pane's header, which a second pane changes:
+ * none is the pane's own control, so a test changes them from here.
  */
 const shellHold: {
 	setVariant: ((variant: string | undefined) => void) | null;
 	setDriven: ((driven: Driven) => void) | null;
+	setChrome: ((chrome: PaneChrome) => void) | null;
 } = {
 	setVariant: null,
 	setDriven: null,
+	setChrome: null,
 };
 
 /**
@@ -387,6 +345,20 @@ function driveInShell(driven: Driven): void {
 	}
 	act(() => {
 		set(driven);
+	});
+}
+
+/**
+ * Change what the shell puts in the held pane's header, as another pane opening beside it does.
+ * @param chrome What the shell puts there now.
+ */
+function changeChromeInShell(chrome: PaneChrome): void {
+	const set = shellHold.setChrome;
+	if (set === null) {
+		throw new Error("No held pane is mounted; mount with { live: true }.");
+	}
+	act(() => {
+		set(chrome);
 	});
 }
 
@@ -428,12 +400,16 @@ function Held(props: HeldProps): JSX.Element {
 	const [variant, setVariant] = useState<string | undefined>(props.variant);
 	const [view, setView] = useState<string | undefined>(props.view);
 	const [driven, setDriven] = useState<Driven>(props.driven);
+	const alone = usePaneChrome();
+	const [chrome, setChrome] = useState(props.chrome);
 	useEffect(() => {
 		shellHold.setVariant = setVariant;
 		shellHold.setDriven = setDriven;
+		shellHold.setChrome = setChrome;
 		return (): void => {
 			shellHold.setVariant = null;
 			shellHold.setDriven = null;
+			shellHold.setChrome = null;
 		};
 	}, []);
 	/**
@@ -458,17 +434,21 @@ function Held(props: HeldProps): JSX.Element {
 	function onViewChange(chosen: string | null): void {
 		setView(chosen ?? undefined);
 	}
-	return createElement(SemanticBoardStage, {
-		board: "pipeline",
-		...paneReading(props),
-		variant,
-		onVariantChange,
-		view,
-		onViewChange,
-		driven,
-		selection: picked,
-		onSelect,
-	});
+	return createElement(
+		PaneChromeContext.Provider,
+		{ value: chrome ?? alone },
+		createElement(SemanticBoardStage, {
+			board: "pipeline",
+			...paneReading(props),
+			variant,
+			onVariantChange,
+			view,
+			onViewChange,
+			driven,
+			selection: picked,
+			onSelect,
+		}),
+	);
 }
 
 /**
@@ -487,18 +467,21 @@ function mountStage(selection: string | null = null, options: MountOptions = {})
 	function onSelect(id: string | null): void {
 		picks.push(id);
 	}
-	render(
-		Cache(
-			options.live === true
-				? createElement(Held, { ...options, selection, report: onSelect })
-				: createElement(SemanticBoardStage, {
-						board: "pipeline",
-						...paneReading(options),
-						selection,
-						onSelect,
-					}),
-		),
-	);
+	// A held pane puts its own header's contents in place, so that they can change.
+	const stage =
+		options.live === true
+			? createElement(Held, { ...options, selection, report: onSelect })
+			: createElement(SemanticBoardStage, {
+					board: "pipeline",
+					...paneReading(options),
+					selection,
+					onSelect,
+				});
+	const framed =
+		options.live !== true && options.chrome !== undefined
+			? createElement(PaneChromeContext.Provider, { value: options.chrome }, stage)
+			: stage;
+	render(Cache(framed));
 	return { picks };
 }
 
@@ -556,15 +539,13 @@ function inPicture(id: string): Element {
 
 export {
 	VIEWPORT,
+	room,
 	type MountOptions,
 	settle,
 	server,
 	renderCalls,
-	drawing,
-	NOTHING_DRAWN,
-	NO_SUCH_BOARD,
-	UNREADABLE,
 	chooseVariantInShell,
+	changeChromeInShell,
 	driveInShell,
 	mountStage,
 	openSidebarTab,
@@ -575,3 +556,10 @@ export {
 	inPicture,
 	type Mounted,
 };
+
+export {
+	NOTHING_DRAWN,
+	NO_SUCH_BOARD,
+	UNREADABLE,
+	drawing,
+} from "@/ui/semantic-board-canvas/tests/render-answers";

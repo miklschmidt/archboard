@@ -197,6 +197,23 @@ test("a changed subject says which field moved and what it moved between", async
 	expect(moved!.querySelector("[data-field='kind']")).toBeNull();
 });
 
+test("where a part stands is read before what it is wired to", async () => {
+	inspecting("io");
+	await settled();
+
+	// What changed is what a reader of a proposal opens the panel for, so it comes
+	// right after what the part is and not at the foot of its relationships.
+	const about = slot("semantic-inspector-about")!;
+	const standingRegion = slot("semantic-inspector-standing-region")!;
+	const wiring = slot("semantic-inspector-wiring")!;
+	expect(
+		about.compareDocumentPosition(standingRegion) & Node.DOCUMENT_POSITION_FOLLOWING,
+	).toBeTruthy();
+	expect(
+		standingRegion.compareDocumentPosition(wiring) & Node.DOCUMENT_POSITION_FOLLOWING,
+	).toBeTruthy();
+});
+
 test("a subject the proposal adds says so, and has nothing to show as moved", async () => {
 	inspecting("queue");
 	await settled();
@@ -228,6 +245,8 @@ test("an exchange is a subject a user can inspect", async () => {
 	await settled();
 
 	expect(inspector()).toContain("Agent edit");
+	// A subject is named, not numbered: its id is not what a panel is for.
+	expect(inspector()).not.toContain("f1");
 	expect(slot("semantic-inspector-participants")?.textContent).toContain("board-io");
 	expect(inspector()).not.toContain("not on the board any more");
 	// Its cast moved, so it reads as changed like any other subject.
@@ -242,6 +261,7 @@ test("one message of an exchange is a subject a user can inspect", async () => {
 	await settled();
 
 	expect(inspector()).toContain("enqueue");
+	expect(inspector()).not.toContain("s3");
 	expect(inspector()).not.toContain("not on the board any more");
 	expect(inspector()).toContain("Agent edit");
 	// Who sent it and who received it, in names rather than ids.

@@ -166,11 +166,11 @@ voice coordinator of the tab, then creates the workhorse and links it to the tab
 (ADR 0019). In the browser:
 
 1. Confirm the header names `$accept_board`.
-2. Type `Reply with the word ready.` into the composer in the agent bar
-   (`Message the agent`) and press Enter. The conversation panel opens.
+2. Open the conversation with its key beside Talk. Type `Reply with the word ready.`
+   into the composer (`Message the agent`) and press Enter.
 3. If Archboard is signed out, the message is held in the panel, the status
    line asks you to sign in, and the ChatGPT sign-in page opens in a new tab.
-   If the browser blocked the tab, use `Open the page` in the agent bar.
+   If the browser blocked the tab, use `Open the page` in the agent dock.
    Finish signing in there. Do not copy the URL or account details into
    evidence.
 4. Without sending again, confirm the held message delivers by itself: the
@@ -199,11 +199,10 @@ Replace `<accept_run>` with the shell value. Then:
 1. Paste it into `Message the agent` and press Enter. Confirm the conversation
    shows the message once, the status line says Working with the current step,
    and the composer now offers to steer the running turn.
-2. Press `Stop` in the agent bar while the 15-second command is active. Confirm
+2. Press `Stop` in the agent dock while the 15-second command is active. Confirm
    the turn settles as stopped. Do not send another message yet.
 3. Reload the browser tab once. If the conversation panel is closed after the
-   reload, open it with the conversation toggle at the right end of the agent
-   bar.
+   reload, open it with the conversation key beside Talk in the agent dock.
 4. Confirm the same conversation returns, the composer is empty, and the exact
    user-marker message appears once. A held copy of the message, a copy marked
    as possibly not arrived, or a second user item is a failure.
@@ -221,9 +220,12 @@ microphone can remain the configured default. On a PipeWire desktop,
 problem; inspect locally without retaining device details. Select the intended
 physical input in system audio settings or reconnect it.
 
-Press `Talk` in the agent bar and grant microphone permission if asked. Talk
-sets up whatever voice still needs, then turns into the live control: the
-wave, the word Listening or Speaking, `Mute` and `End`. If Talk comes back
+Press `Talk` in the agent dock and grant microphone permission if asked. Talk
+sets up whatever voice still needs, then turns into the live control. With
+subtitles on, the voice box rises over the pane with the orb lit in it, the word
+Listening or Speaking, `Mute` and the subtitles control, and the key reads
+`End voice`. The orb does not fly out of the Talk key. With subtitles off, the live control is the circle at the head of
+the dock, with the same word, `Mute` and the subtitles control beside it. If Talk comes back
 with a warning instead, hover it for the reason. For `Requested device not
 found`, repair the default input and press Talk again. Successful SDP
 negotiation does not prove microphone capture. Do not use virtual devices. Say:
@@ -238,13 +240,17 @@ conversation: your words as `You`, the answer as `Voice`. Confirm all of these
 by direct observation:
 
 - the live word changes from Listening to Speaking while the answer plays, and
-  the wave moves with the spoken answer when reduced motion is off (with
-  reduced motion it stays still);
+  the orb moves with the spoken answer when reduced motion is off (with
+  reduced motion it is drawn at rest);
 - your final words appear once as a `You` line;
 - a relevant answer, naming `$accept_board`, is audible through the real
   speaker;
 - the same answer appears once as a `Voice` line, and with subtitles on it is
   shown over the pane while it plays;
+- with subtitles on, the voice is in the voice box over the pane: its orb moves
+  with the spoken answer beside the words, and the key in the agent dock reads
+  End voice. Turning subtitles off from the box flies the orb to the circle at
+  the head of the dock, and turning them on from the dock flies it back;
 - the pane still shows `$accept_board`, and the thread in `Session details` is
   the one it showed in section 4 (compare on screen; do not record it).
 
@@ -279,7 +285,7 @@ Send a second message from the composer:
 Run `bun -e 'await Bun.sleep(15000); console.log("busy turn finished")'`, then report the one-line output.
 ```
 
-While the agent bar shows `Stop`, say:
+While the agent dock shows `Stop`, say:
 
 ```text
 Queue exactly one follow-up for the linked workhorse. Its prompt is: read TESTING.md and reply with only its first heading. Do not steer the active turn and do not add another queue item.
@@ -324,12 +330,12 @@ must raise a new approval; never repeat an approval whose outcome is unknown.
 
 ## 10. End voice, start a new voice session, and shut down
 
-1. Press `End` in the agent bar. Confirm the live control returns to `Talk`,
-   the wave and the active audio transport disappear, and the composer remains
-   usable.
+1. Press `End voice` in the agent dock. Confirm the live control returns to
+   `Talk`, the orb, the voice box and the active audio transport disappear, and
+   the composer remains usable.
 2. Press `Talk` again. Say `Reply with the word restarted.` Confirm one new
    `You` line and one audible `restarted` response.
-3. Press `End` again. Close the browser tab that this run opened.
+3. Press `End voice` again. Close the browser tab that this run opened.
 4. Stop only this run's server.
 
 ```bash

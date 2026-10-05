@@ -23,11 +23,13 @@ import {
 } from "./support/codex-workbench-production.ts";
 import { SEMANTIC_STAGE, seedSemanticBoard } from "./support/semantic-page.ts";
 import {
-	AGENT_BAR,
+	AGENT_DOCK,
 	AGENT_PANEL,
 	BOARD_NAME_EXPRESSION,
 	COMPOSER,
 	PANE_SECTIONS,
+	dockFocusOrder,
+	openConversation,
 } from "./support/shell-dom.ts";
 
 const serverPath = join(import.meta.dir, "../server-state/fixtures/codex-production-server.ts");
@@ -36,8 +38,7 @@ const executableSource = join(import.meta.dir, "../server-state/fixtures/fake-co
 /** The provider page the fixture names for a ChatGPT sign-in. */
 const LOGIN_URL = "https://example.test/login";
 const MESSAGE = "Check the rendered workbench.";
-const SEND = `${AGENT_BAR} button[aria-label="Send"]`;
-const STATUS = `${AGENT_BAR} [data-slot="agent-status"]`;
+const SEND = `${AGENT_PANEL} button[aria-label="Send"]`;
 
 interface FixtureRecord {
 	readonly kind?: string;
@@ -50,15 +51,16 @@ interface FixtureRecord {
 
 type Browser = Awaited<ReturnType<typeof createAgentBrowser>>;
 
-/** What the agent bar's status line and the conversation show, read through their hooks. */
+/** What the agent dock and the conversation show, read through their hooks. */
 interface AgentSurface {
+	/** How the dock lights the agent's state: quiet, working, attention or failed. */
 	readonly tone: string | null;
 	readonly panelOpen: boolean;
 	readonly held: { readonly state: string | null; readonly text: string }[];
 	readonly prompts: string[];
-	/** Links and buttons the status line offers, by accessible name or href. */
-	readonly statusLinks: (string | null)[];
-	readonly statusButtons: string[];
+	/** Links and buttons the dock offers, by href or accessible name. */
+	readonly dockLinks: (string | null)[];
+	readonly dockButtons: string[];
 	readonly cards: {
 		readonly busy: boolean;
 		readonly details: string;
@@ -72,19 +74,19 @@ interface AgentSurface {
 function agentSurface(browser: Browser): Promise<AgentSurface> {
 	return browser.eval<AgentSurface>(`(() => {
 		const panel = document.querySelector('${AGENT_PANEL}');
-		const status = document.querySelector('${STATUS}');
+		const dock = document.querySelector('${AGENT_DOCK}');
 		const named = node => (node.getAttribute('aria-label') ?? node.textContent ?? '').trim();
 		const prompts = [...(panel?.querySelectorAll('[data-slot="prompt"]') ?? [])];
 		return {
-			tone: status?.getAttribute('data-tone') ?? null,
+			tone: dock?.getAttribute('data-agent-tone') ?? null,
 			panelOpen: panel !== null,
 			held: [...(panel?.querySelectorAll('[data-slot="held-prompt"]') ?? [])].map(node => ({
 				state: node.getAttribute('data-state'),
 				text: node.textContent ?? '',
 			})),
 			prompts: prompts.map(node => node.textContent ?? ''),
-			statusLinks: [...(status?.querySelectorAll('a') ?? [])].map(node => node.getAttribute('href')),
-			statusButtons: [...(status?.querySelectorAll('button') ?? [])].map(named),
+			dockLinks: [...(dock?.querySelectorAll('a') ?? [])].map(node => node.getAttribute('href')),
+			dockButtons: [...(dock?.querySelectorAll('button') ?? [])].map(named),
 			cards: [...(panel?.querySelectorAll('article[data-slot="approval"]') ?? [])].map(card => ({
 				busy: card.getAttribute('aria-busy') === 'true',
 				details: [...card.querySelectorAll('dd')].map(node => node.textContent).join('\\n'),
@@ -170,15 +172,30 @@ test(
 		await browser.run(["console", "--clear"]);
 		await browser.run(["errors", "--clear"]);
 
-		// Signed out, the status line offers sign-in before anything is sent.
+		// Signed out, the dock offers sign-in before anything is sent.
 		await pollUntil(
 			() => agentSurface(browser),
-			(surface) => surface.statusButtons.includes("Sign in with ChatGPT"),
+			(surface) => surface.dockButtons.includes("Sign in with ChatGPT"),
 			"the signed-out agent to offer sign-in",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
+		// The keyboard reads the calm dock as the eye does: sign-in above, then the keys at its foot.
+		const signInOrder = await dockFocusOrder(browser);
+		expect(signInOrder.tabbed).toEqual(signInOrder.seen);
+		// The composer is at the foot of the conversation, which opens through its toggle.
+		await openConversation(browser);
+		await pollUntil(
+			() => browser.eval<boolean>(`document.querySelector('${COMPOSER}') !== null`),
+			Boolean,
+			"the composer to show at the foot of the conversation",
+		);
 		await browser.eval<boolean>(
 			`(() => { const input = document.querySelector('${COMPOSER}'); input?.focus(); return document.activeElement === input; })()`,
+		);
+		// A person types into a field the page has drawn. Chrome leaves the caret before a key
+		// typed into the conversation before its first frame, so the burst waits for one.
+		await browser.eval<boolean>(
+			"new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))",
 		);
 		await browser.run(["keyboard", "type", MESSAGE]);
 		await pollUntil(
@@ -223,13 +240,13 @@ test(
 				surface.panelOpen &&
 				surface.held.length === 1 &&
 				surface.held[0]?.state === "waiting" &&
-				surface.statusLinks.includes(LOGIN_URL),
+				surface.dockLinks.includes(LOGIN_URL),
 			"the held message to wait on a pending sign-in",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
 		expect(pending.held[0]?.text).toContain(MESSAGE);
 		expect(pending.tone).toBe("attention");
-		expect(pending.statusButtons).toContain("Cancel");
+		expect(pending.dockButtons).toContain("Cancel");
 		expect(await browser.eval<string>(`document.querySelector('${COMPOSER}').value`)).toBe("");
 		expect(startedThreads(records())).toEqual([]);
 		expect(turnStarts(records())).toEqual([]);
@@ -270,7 +287,10 @@ test(
 			expect(card.top).toBeGreaterThanOrEqual(asked.promptBottom ?? Number.POSITIVE_INFINITY);
 		}
 		expect(asked.tone).toBe("attention");
-		expect(asked.statusButtons).toContain("Review");
+		expect(asked.dockButtons).toContain("Review");
+		// The status line's control is read before the keys under it, by the keyboard as by the eye.
+		const askedOrder = await dockFocusOrder(browser);
+		expect(askedOrder.tabbed).toEqual(askedOrder.seen);
 
 		expect(
 			await browser.eval<boolean>(`(() => {

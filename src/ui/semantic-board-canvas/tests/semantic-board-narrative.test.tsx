@@ -35,6 +35,7 @@ import {
 	presenting,
 	press,
 	unveiled,
+	wordRows,
 } from "@/ui/semantic-board-canvas/tests/presentation-probes";
 
 /** The view the variant offers, which one step is told through. */
@@ -127,14 +128,14 @@ function serving(content: Record<string, unknown> = CONTENT): void {
 }
 
 // The harness measures every element at 800×600, the caption included, so the
-// caption keeps the most it may of the viewport clear: 40% of 600, which leaves
-// 800×360 to fit into, less the margin.
+// caption keeps the most it may of the viewport clear: half of 600, which leaves
+// 800×300 to fit into, less the margin.
 
 /** The whole picture, fitted above the caption. */
-const WHOLE_ABOVE_CAPTION = { x: 192, y: 24, scale: 1.04 };
+const WHOLE_ABOVE_CAPTION = { x: 232, y: 24, scale: 0.84 };
 
 /** `n1`, fitted above the caption: 80×40 at the origin, at half again its drawn size. */
-const N1_ABOVE_CAPTION = { x: 340, y: 150, scale: 1.5 };
+const N1_ABOVE_CAPTION = { x: 340, y: 120, scale: 1.5 };
 
 /** The whole picture, fitted to the whole viewport, as the reader had it before presenting. */
 const WHOLE_PICTURE = { x: 32, y: 24, scale: 1.84 };
@@ -166,10 +167,13 @@ test("choosing a walkthrough presents its first step, in the frame, with where i
 	await presenting();
 	expect(current()).toBe("The shape of it");
 	expect(part("semantic-presentation").textContent).toContain("Two modules and one call.");
-	expect(part("semantic-presentation-count").textContent.replaceAll(/\s/g, "")).toBe("1/4");
-	const dots = [...document.querySelectorAll("[data-slot='semantic-presentation-dot']")];
-	expect(dots).toHaveLength(4);
-	expect(dots[0]?.getAttribute("aria-current")).toBe("step");
+	const figure = part("semantic-presentation-count");
+	expect(figure.querySelector("[data-place='shown']")?.textContent).toBe("1");
+	expect(figure.textContent).toContain("of 4");
+	expect(part("semantic-presentation-name").textContent).toBe(WALKTHROUGH.name);
+	const steps = [...document.querySelectorAll("[data-slot='semantic-presentation-step']")];
+	expect(steps).toHaveLength(4);
+	expect(steps[0]?.getAttribute("aria-current")).toBe("step");
 	// The pane is the picture and its caption while it lasts: the sidebar steps aside.
 	expect(part("semantic-reading-area").hasAttribute("data-walkthrough")).toBe(true);
 	expect(part("semantic-board-stage").getAttribute("data-presentation-step")).toBe("0");
@@ -265,13 +269,16 @@ test("a step told through a view keeps the last step's framing until that view's
 	expect(unveiled()).toEqual(["n1"]);
 });
 
-test("a step about something this reading does not draw says so", async () => {
+test("a step about something this reading does not draw says so, on a line every step has", async () => {
 	serving();
 	mountStage(null, { reducedMotion: true });
 	await presenting();
+	const rows = wordRows();
 	goTo(3);
 	await settle();
-	expect(part("semantic-beat-missing").textContent).toBe("This reading does not draw Write Lease.");
+	expect(part("semantic-beat-missing").textContent).toContain("Write Lease");
+	// The notice takes no row of its own, so the box keeps its height from step to step.
+	expect(wordRows()).toEqual(rows);
 	expect(marked()).toEqual([]);
 	expectCamera(cameraNow(), WHOLE_ABOVE_CAPTION);
 });
@@ -580,4 +587,6 @@ test("picking a card out of the picture still reports it while a walkthrough is 
 	// reports, and the step on screen stays the step on screen.
 	expect(stage.picks).toEqual(["n1"]);
 	expect(current()).toBe("The shape of it");
+	// While a walkthrough is presented, what the step is about stays what the picture is about.
+	expect(surface().classList.contains("is-probing")).toBe(false);
 });

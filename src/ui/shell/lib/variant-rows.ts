@@ -1,10 +1,10 @@
 // Which variants a board lists under it, and in what order. They sit one
 // depth in, before the boards it drills down to, in the order every list of a
 // board's variants uses (variant-lifecycle): first the variant its name
-// opens, then its other live variants, a draft nested under the draft it was
-// derived from. The historical and shelved variants wait behind one Earlier
-// row, newest first. A board lists its variants while it has more than one,
-// and one of them is a proposal or a pane shows the board. While a filter is
+// opens, then its other live variants, a draft nested under the variant it was
+// derived from, so the list reads as a timeline with branches. The historical and shelved variants wait behind one Earlier
+// row, newest first. A board lists its variants while it has more than one, so
+// a board with a history opens whether or not a pane is on it. While a filter is
 // on, a board lists the variants the filter finds directly under it, with no
 // Earlier row. Pure.
 
@@ -56,28 +56,25 @@ function paneOnBoard(pane: PaneMark, board: CatalogBoard): boolean {
 }
 
 /**
- * Whether a board lists its variants when it is open: it has more than one,
- * and one of them is a proposal or a pane shows the board.
- * @param panes The panes.
+ * Whether a board lists its variants when it is open: it has more than one.
  * @param board The board.
  * @returns True when its variants are listed while it is open.
  */
-function listsVariants(panes: readonly PaneMark[], board: CatalogBoard): boolean {
-	return (
-		board.variants.length > 1 &&
-		(board.variants.some(isDraft) || panes.some((pane) => paneOnBoard(pane, board)))
-	);
+function listsVariants(board: CatalogBoard): boolean {
+	return board.variants.length > 1;
 }
 
 /**
- * The listed draft a variant is nested under: the draft it was derived from.
+ * The listed variant a draft is nested under: the variant it was derived from,
+ * so a proposal branches off what it proposes to change, and a draft off a
+ * draft branches again.
  * @param variant The variant.
- * @param drafts The ids of the listed drafts.
+ * @param listed The ids of the variants listed with it.
  * @returns The parent's id, or null for a variant on the first level.
  */
-function nestedUnder(variant: ListedVariant, drafts: ReadonlySet<string>): string | null {
+function nestedUnder(variant: ListedVariant, listed: ReadonlySet<string>): string | null {
 	const parent = variant.parentId;
-	return isDraft(variant) && parent !== null && drafts.has(parent) ? parent : null;
+	return isDraft(variant) && parent !== null && listed.has(parent) ? parent : null;
 }
 
 /**
@@ -108,7 +105,7 @@ function nestedVariants(
 	variants: readonly ListedVariant[],
 	at: VariantPlace,
 ): Unplaced<VariantRow>[] {
-	const drafts = new Set(variants.filter(isDraft).map((variant) => variant.id));
+	const listed = new Set(variants.map((variant) => variant.id));
 	const rows: Unplaced<VariantRow>[] = [];
 	/**
 	 * List the variants under one parent and, after each, those derived from it.
@@ -116,7 +113,7 @@ function nestedVariants(
 	 * @param place Their depth and the row they sit under.
 	 */
 	const walk = (parent: string | null, place: VariantPlace): void => {
-		for (const variant of variants.filter((one) => nestedUnder(one, drafts) === parent)) {
+		for (const variant of variants.filter((one) => nestedUnder(one, listed) === parent)) {
 			const row = variantRow(board, variant, place);
 			rows.push(row);
 			walk(variant.id, { depth: place.depth + 1, parentId: row.id });
@@ -190,7 +187,7 @@ function variantRows(
 	at: VariantPlace,
 ): Unplaced<NavigatorRow>[] {
 	if (inputs.query.length > 0) return foundVariantRows(inputs, board, at);
-	if (!listsVariants(inputs.panes, board)) return [];
+	if (!listsVariants(board)) return [];
 	const ordered = variantOrder(board.variants, board.opens);
 	const earlier = ordered.filter((variant) => !isLive(variant));
 	return [

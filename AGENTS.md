@@ -21,6 +21,8 @@ Where things are written down:
 - Measured investigations: `docs/design/`. The visual authority of the UI is
   `docs/design/operator-canvas-shell.md` with its reference image.
 - Changing tests or CI: `docs/agents/test-suite.md`
+- Refreshing the README's diagrams, clips, banner and videos:
+  `docs/agents/readme-assets.md`
 - Working on this repo, including planning and closing a task (each carries a board
   proposal): the `archboard-dev` skill. Using archboard: the `archboard` skill
 - Reading or updating this repo's architecture: `.archboard/README.md`. Start at

@@ -1,18 +1,39 @@
 // What the production fixture says for a realtime voice session.
 //
 // By default a session speaks one scripted exchange as soon as it starts, which is what the live
-// voice owner reads. A fixture told to narrate (`{ "narrates": true }` in its control file) is the
-// recording's voice instead: it says nothing until a step is handed to it with appendSpeech, then
-// explains it in one line spoken a word at a time, as a real session's transcript arrives, and
-// answers a real browser's WebRTC offer with an answer that browser accepts.
+// voice owner reads. A test that needs the voice to speak again later raises `speaks` in the
+// control file, and every live session says the scripted line once more. A fixture told to
+// narrate (`{ "narrates": true }` in its control file) is the recording's voice instead: it says
+// nothing until a step is handed to it with appendSpeech, then explains it in one line spoken a
+// word at a time, as a real session's transcript arrives, and answers a real browser's WebRTC
+// offer with an answer that browser accepts.
+
+import { readFileSync } from "node:fs";
 
 type Notify = (method: string, params: unknown) => void;
+
+/** How many times the live sessions have been asked to speak again. */
+let spokenAgain = 0;
+
+/**
+ * Whether the fixture is a recording's voice, which speaks only about steps it is handed.
+ * @param controlPath The fixture's control file.
+ * @returns True when the control file says it narrates.
+ */
+function narrating(controlPath: string): boolean {
+	return (
+		(JSON.parse(readFileSync(controlPath, "utf8")) as { narrates?: boolean }).narrates === true
+	);
+}
 
 /** How long apart the words of the scripted exchange arrive, in milliseconds. */
 const SCRIPTED_WORD_MS = 300;
 
 /** How long apart the words of a narrated step arrive: brisker, so a recording stays short. */
 const NARRATED_WORD_MS = 120;
+
+/** What the voice model says in the scripted exchange. */
+const SCRIPTED_LINE = "The controlled voice context is visible.";
 
 /**
  * An answer a real browser accepts for its offer, which nobody will ever connect to: the offer's
@@ -105,9 +126,34 @@ function startRealtime(notify: Notify, params: Record<string, unknown>, narrates
 		notify,
 		{ threadId, realtimeSessionId },
 		"controlled-assistant-transcript",
-		"The controlled voice context is visible.",
+		SCRIPTED_LINE,
 		SCRIPTED_WORD_MS,
 	);
+}
+
+/**
+ * Say the scripted line once more on every live session, each time a test raises `speaks` in the
+ * control file.
+ * @param notify Sends a notification.
+ * @param sessions The realtime session of each thread that carries one.
+ * @param speaks How many times a test has asked in all, as the control file says.
+ */
+function speakAgain(
+	notify: Notify,
+	sessions: ReadonlyMap<string, string>,
+	speaks: number | undefined,
+): void {
+	if (speaks === undefined || speaks <= spokenAgain) return;
+	spokenAgain = speaks;
+	for (const [threadId, realtimeSessionId] of sessions) {
+		speak(
+			notify,
+			{ threadId, realtimeSessionId },
+			`controlled-assistant-transcript-${speaks}`,
+			SCRIPTED_LINE,
+			SCRIPTED_WORD_MS,
+		);
+	}
 }
 
 /**
@@ -133,4 +179,4 @@ function explainStep(
 	);
 }
 
-export { explainStep, startRealtime };
+export { explainStep, narrating, speakAgain, startRealtime };

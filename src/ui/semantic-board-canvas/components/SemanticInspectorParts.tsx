@@ -1,24 +1,24 @@
-// The inspector's own small vocabulary: a definition row, a section, a title
-// block, and a description. Its headings are the sidebar's
-// (`SemanticSidebarParts`), so both tabs of one sidebar read alike.
+// The inspector's own small vocabulary: the title every subject opens under,
+// the words it says of itself, a group the part belongs to, and a list of facts.
+// Its regions and sections are the sidebar's (`SemanticSidebarParts`), so both
+// tabs of one sidebar read alike.
 //
 // These carry no knowledge of what a semantic board is. They are the shapes the
-// panel is built out of, kept together so that a section looks the same
-// whichever sort of subject is being explained — a node, a relationship, an
-// exchange or one message of one — and so that the panel itself is about what
-// the board says rather than about padding and type scales.
+// panel is built out of, kept together so that a title looks the same whichever
+// sort of subject is being explained — a part, a relationship, an exchange or one
+// message of one — and so that the panel itself is about what the board says
+// rather than about padding and type scales.
 
 import { useCallback, type JSX, type ReactNode } from "react";
 
 import { Button } from "@/ui/components/button";
-
-import type { CodeBinding } from "@/shared/code-target";
-import { Badge } from "@/ui/components/badge";
+import { cn } from "@/ui/components/class-names";
+import { KindIcon } from "@/ui/semantic-board-canvas/components/BoardPageParts";
 import { SemanticGroupChip } from "@/ui/semantic-board-canvas/components/SemanticGroupChip";
-import { SidebarHeading } from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
 import { groupLabel, type GroupNames } from "@/ui/semantic-board-canvas/lib/groups";
+import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
 
-/** Inputs for one definition row. */
+/** Inputs for one fact. */
 interface RowProps {
 	/** What the value is. */
 	label: string;
@@ -29,209 +29,131 @@ interface RowProps {
 }
 
 /**
- * One row of the definition grid: a muted label, then the value in the mono
- * face, carrying its full text as a title so a truncated path is still readable.
- * @param props The row.
+ * One fact of a list: a muted label, then its value beside it. A long value
+ * wraps rather than being cut off.
+ * @param props The fact.
  * @returns A definition pair.
  */
 function Row(props: RowProps): JSX.Element {
 	return (
 		<>
-			<dt className="text-muted-foreground text-body truncate">{props.label}</dt>
-			<dd
-				title={props.value}
-				data-field={props.field}
-				className="text-technical truncate text-right font-mono"
-			>
+			<dt className="text-muted-foreground text-body">{props.label}</dt>
+			<dd data-field={props.field} className="text-body min-w-0 [overflow-wrap:anywhere]">
 				{props.value}
 			</dd>
 		</>
 	);
 }
 
-/** Inputs for a section wrapper. */
-interface SectionProps {
-	/** Its heading. */
-	title: string;
-	/** Its body. */
+/**
+ * A list of facts, each a `Row`.
+ * @param props The rows.
+ * @param props.children The rows.
+ * @returns The list.
+ */
+function Facts(props: { readonly children: ReactNode }): JSX.Element {
+	return (
+		<dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-2">{props.children}</dl>
+	);
+}
+
+/** Inputs for the title. */
+interface SubjectTitleProps {
+	/** What the subject is called. */
+	name: string;
+	/** The vault's kinds, for the icon in the ring; with `kind`, for a part. */
+	look?: KindLook | undefined;
+	/** The kind of part whose icon stands in the ring. Left out for a subject that is not a part. */
+	kind?: string | undefined;
+	/** What it is, in one line: its kind and, for a part, the groups it belongs to. */
 	children: ReactNode;
 }
 
 /**
- * One section of the inspector, under a one-pixel rule, headed the way every
- * section of the sidebar is.
- * @param props The heading and the body.
- * @returns The section.
+ * The title every subject opens under: its name in the display face, wrapped
+ * and never cut, and one line saying what it is. A part wears its kind's icon
+ * in a gold ring, the ring the picture draws round what is picked out.
+ * @param props The name, the kind of part and the line.
+ * @returns The title.
  */
-function Section(props: SectionProps): JSX.Element {
+function SubjectTitle(props: SubjectTitleProps): JSX.Element {
+	const { look, kind } = props;
 	return (
-		<div className="border-border flex flex-col gap-2 border-t px-4 py-4">
-			<SidebarHeading level={3}>{props.title}</SidebarHeading>
-			{props.children}
-		</div>
-	);
-}
-
-/** Inputs for the binding rows. */
-interface BindingProps {
-	/** The node's primary code binding, when it has one. */
-	binding: CodeBinding | undefined;
-	/**
-	 * Open the code this node is bound to, when the shell around the pane can.
-	 *
-	 * Optional because the pane is a picture of an architecture and knows
-	 * nothing about opening an editor: whether code can be opened at all is the
-	 * shell's business, and a control that did nothing would be worse than no
-	 * control. Absent means no control is drawn.
-	 */
-	onOpenCode?: ((binding: CodeBinding) => void) | undefined;
-}
-
-/**
- * Where the selected node's code is.
- *
- * A node with no binding is not a node with an empty one. Architecture is
- * not bound to anything, which is a fact about the board and not about the
- * work: a part may be implemented and simply not bound yet, so this says what
- * is missing rather than guessing why. The repository is
- * shown on every bound node rather than only where it differs, because two
- * nodes side by side may name two different repositories and a reader has no
- * other way to tell.
- * @param props The binding, when there is one.
- * @returns The rows, or the sentence that says there are none.
- */
-function BindingBody(props: BindingProps): JSX.Element {
-	const { binding } = props;
-	if (binding === undefined) {
-		return (
-			<p className="text-muted-foreground text-body" data-slot="semantic-inspector-unbound">
-				No code binding.
-			</p>
-		);
-	}
-	return (
-		<>
-			<dl
-				className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-2.5"
-				data-slot="semantic-inspector-binding"
-			>
-				<Row label="repo" value={binding.repo} />
-				<Row label="path" value={binding.path} />
-				{binding.branch !== undefined && <Row label="branch" value={binding.branch} />}
-				{binding.commit !== undefined && <Row label="commit" value={binding.commit} />}
-				{binding.confirmedAt !== undefined && <Row label="confirmed" value={binding.confirmedAt} />}
-			</dl>
-			{props.onOpenCode !== undefined && (
-				<OpenCode binding={binding} onOpenCode={props.onOpenCode} />
+		<div className="flex items-center gap-3">
+			{look !== undefined && kind !== undefined && (
+				<span
+					aria-hidden="true"
+					className="border-primary-mark bg-primary-subtle text-primary-text shadow-raised flex size-10 shrink-0 items-center justify-center rounded-full border-[1.5px]"
+				>
+					<KindIcon look={look} kind={kind} className="size-5" />
+				</span>
 			)}
-		</>
-	);
-}
-
-/** Inputs for the control that opens a node's code. */
-interface OpenCodeProps {
-	binding: CodeBinding;
-	/**
-	 * Open this binding.
-	 * @param binding Where the code is.
-	 */
-	onOpenCode: (binding: CodeBinding) => void;
-}
-
-/**
- * The control that opens the code a node is bound to.
- * @param props The binding and what to do with it.
- * @returns The control.
- */
-function OpenCode(props: OpenCodeProps): JSX.Element {
-	const { binding, onOpenCode } = props;
-	const open = useCallback((): void => {
-		onOpenCode(binding);
-	}, [binding, onOpenCode]);
-	return (
-		<Button
-			type="button"
-			variant="secondary"
-			size="sm"
-			// A path is as long as somebody's directories, and the panel is as wide
-			// as the panel: the label says what it opens and gives way at the end,
-			// the way the path row above it does. Unbounded, it ran out of the
-			// button and out of the pane.
-			className="mt-3 flex w-full min-w-0 justify-start"
-			title={`Open ${binding.path}`}
-			data-slot="semantic-inspector-open-code"
-			onClick={open}
-		>
-			<span className="truncate">Open {binding.path}</span>
-		</Button>
-	);
-}
-
-/** Inputs for the title block. */
-interface TitleProps {
-	/** What the subject is called. */
-	name: string;
-	/** Its kind, as the badge says it. */
-	kind: string;
-	/** Its stable id. */
-	id: string;
-	/** The one line it is responsible for, when it has one. */
-	responsibility?: string | undefined;
-}
-
-/**
- * The title block: the name, the kind beside it, the id under it, and the one
- * line it is responsible for.
- * @param props The name, kind, id and responsibility.
- * @returns The title block.
- */
-function TitleBlock(props: TitleProps): JSX.Element {
-	return (
-		<div className="flex flex-col gap-1 px-4 py-4">
-			<div className="flex items-center justify-between gap-2">
-				<h2 className="text-title truncate" title={props.name}>
-					{props.name}
-				</h2>
-				<Badge variant="outline" size="technical" className="shrink-0 uppercase">
-					{props.kind}
-				</Badge>
+			<div className="flex min-w-0 flex-1 flex-col gap-0.5">
+				<h2 className="title-name [overflow-wrap:anywhere]">{props.name}</h2>
+				<div className="text-body text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1">
+					{props.children}
+				</div>
 			</div>
-			<p className="text-technical text-muted-foreground truncate font-mono" title={props.id}>
-				{props.id}
-			</p>
-			{props.responsibility !== undefined && (
-				<p className="text-body pt-1">{props.responsibility}</p>
-			)}
 		</div>
 	);
 }
 
-/** Inputs for the description body. */
-interface DescribedProps {
-	/** The longer explanation, when one was written. */
+/** Inputs for one passage of what a subject says of itself. */
+interface SaidProps {
+	/** Where tests and styles find it. */
+	slot: string;
+	/** The words, when the board has some. */
 	text: string | undefined;
+	/** Whether it is the second passage, set quieter than the first. */
+	muted?: boolean | undefined;
 }
 
 /**
- * The longer explanation, which is deliberately not drawn on the card.
- *
- * Nothing at all when nobody wrote one — its own heading included, which is why
- * the section is in here rather than around each call. A line reporting the
- * absence of a description is a line a reader has to read to learn that there is
- * nothing to read, and a heading over it is the same line twice.
- * @param props The description, when there is one.
- * @returns The section, or nothing.
+ * One passage of what a subject says of itself, or nothing when the board
+ * wrote none: a line reporting that there is nothing to read is a line a reader
+ * has to read to learn it.
+ * @param props The words.
+ * @returns The passage, or nothing.
  */
-function Described(props: DescribedProps): JSX.Element | null {
+function Said(props: SaidProps): JSX.Element | null {
 	if (props.text === undefined) {
 		return null;
 	}
 	return (
-		<Section title="Description">
-			<p className="text-body whitespace-pre-line" data-slot="semantic-inspector-description">
-				{props.text}
-			</p>
-		</Section>
+		<p
+			data-slot={props.slot}
+			className={cn(
+				"text-body whitespace-pre-line",
+				props.muted === true && "text-muted-foreground",
+			)}
+		>
+			{props.text}
+		</p>
+	);
+}
+
+/**
+ * What a subject says of itself, under its title: the line it is responsible
+ * for, then the longer account, which is deliberately not drawn on the card
+ * (ADR 0023). A subject with only an account has it in the foreground.
+ * @param props The two passages, either of which the board may not have written.
+ * @param props.lead The one line it is responsible for.
+ * @param props.detail The longer account.
+ * @returns The passages, or nothing.
+ */
+function Account(props: {
+	readonly lead?: string | undefined;
+	readonly detail?: string | undefined;
+}): JSX.Element | null {
+	const { lead, detail } = props;
+	if (lead === undefined && detail === undefined) {
+		return null;
+	}
+	return (
+		<div className="flex flex-col gap-2">
+			<Said slot="semantic-inspector-purpose" text={lead} />
+			<Said slot="semantic-inspector-description" text={detail} muted={lead !== undefined} />
+		</div>
 	);
 }
 
@@ -255,7 +177,8 @@ interface MembershipProps {
 }
 
 /**
- * One group the node belongs to, as the control that selects its members.
+ * One group the part belongs to, as the control that selects its members: how a
+ * reader sees the rest of it across whatever contains each part.
  *
  * Named by what the vault calls it and marked when the vault no longer does:
  * a membership in a group nobody defines is the board saying something the
@@ -273,7 +196,7 @@ function Membership(props: MembershipProps): JSX.Element {
 		<Button
 			type="button"
 			variant="outline"
-			size="sm"
+			size="xs"
 			disabled={controls.onChoose === undefined}
 			data-slot="semantic-inspector-group"
 			data-group={group}
@@ -283,7 +206,7 @@ function Membership(props: MembershipProps): JSX.Element {
 					? `Select every part in ${groupLabel(group, controls.names)}`
 					: `${group} is not configured`
 			}
-			className="gap-2"
+			className="gap-1.5"
 			onClick={choose}
 		>
 			<SemanticGroupChip
@@ -296,44 +219,4 @@ function Membership(props: MembershipProps): JSX.Element {
 	);
 }
 
-/** Inputs for the memberships section. */
-interface MembershipsProps {
-	/** The groups the node belongs to, as the board spells them. */
-	groups: readonly string[] | undefined;
-	/** The controls the panel was given. */
-	controls: GroupControls;
-}
-
-/**
- * What the node belongs to, each membership as a control that selects the
- * group's members: how a reader sees the rest of it across whatever contains
- * each part.
- * @param props The memberships and the controls.
- * @returns The section, or nothing for a node in no group.
- */
-function Memberships(props: MembershipsProps): JSX.Element | null {
-	const groups = props.groups ?? [];
-	if (groups.length === 0) {
-		return null;
-	}
-	return (
-		<Section title="Belongs to">
-			<div className="flex flex-wrap gap-1.5" data-slot="semantic-inspector-groups">
-				{groups.map((group) => (
-					<Membership key={group} group={group} controls={props.controls} />
-				))}
-			</div>
-		</Section>
-	);
-}
-
-export {
-	BindingBody,
-	Described,
-	Memberships,
-	OpenCode,
-	Row,
-	Section,
-	TitleBlock,
-	type GroupControls,
-};
+export { Account, Facts, Membership, Row, SubjectTitle, type GroupControls };

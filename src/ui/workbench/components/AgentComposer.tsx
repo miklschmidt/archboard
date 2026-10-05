@@ -1,8 +1,8 @@
-// The composer, always in the agent bar under where the conversation opens:
-// type and press Enter. While a turn runs, Enter steers it and Ctrl or Cmd
-// with Enter queues the message to run after it; Shift with Enter starts a new
-// line. It grows upward as the message grows, over whatever is above it,
-// without moving the panes. It says which board the agent will read.
+// The composer, at the foot of the conversation: type and press Enter. While a
+// turn runs, Enter steers it and Ctrl or Cmd with Enter queues the message to
+// run after it; Shift with Enter starts a new line. It grows upward as the
+// message grows, taking room from the conversation above it. It says which
+// board the agent will read.
 
 import { RiArrowUpLine } from "@remixicon/react";
 import {
@@ -85,8 +85,8 @@ function AgentComposer(props: AgentComposerProps): JSX.Element {
 	const handleSend = useCallback(() => send(false), [send]);
 	const empty = value.trim() === "";
 	return (
-		<div data-slot="agent-composer" className="relative h-full min-w-0 flex-1">
-			<div className="border-border bg-background focus-within:border-ring/60 absolute inset-x-0 bottom-1.5 flex items-end gap-1 rounded-[4px] border py-[3px] pr-[3px] pl-2.5">
+		<div data-slot="agent-composer" className="min-w-0 flex-1">
+			<div className="border-input bg-background dark:bg-sidebar shadow-well focus-within:border-ring/70 rounded-control flex min-h-9 items-end gap-1 border py-[5px] pr-[5px] pl-3">
 				<textarea
 					ref={field}
 					rows={1}
@@ -95,14 +95,14 @@ function AgentComposer(props: AgentComposerProps): JSX.Element {
 					onKeyDown={handleKeyDown}
 					aria-label="Message the agent"
 					placeholder={placeholderOf(props.context, running)}
-					className="text-control placeholder:text-muted-foreground [field-sizing:content] max-h-[40vh] min-h-6 min-w-0 flex-1 resize-none bg-transparent py-[3px] font-normal outline-none"
+					className="text-control placeholder:text-muted-foreground [field-sizing:content] max-h-[30vh] min-h-6 min-w-0 flex-1 resize-none bg-transparent py-[3px] font-normal outline-none"
 				/>
 				<button
 					type="button"
 					aria-label="Send"
 					disabled={empty}
 					onClick={handleSend}
-					className="bg-primary text-primary-foreground disabled:text-muted-foreground/60 flex size-6 shrink-0 items-center justify-center rounded-[3px] disabled:bg-transparent"
+					className="primary-finish disabled:text-muted-foreground/60 rounded-control flex size-6 shrink-0 items-center justify-center border active:translate-y-px disabled:border-transparent disabled:bg-transparent disabled:bg-none disabled:shadow-none"
 				>
 					<RiArrowUpLine aria-hidden="true" className="size-3.5" />
 				</button>

@@ -199,7 +199,7 @@ const BOARD_CACHE_GC_MS = 5 * 60_000;
 // ── Time passing, as the shell says it (TASK-302) ─────────────────────────
 //
 // The navigator says how long ago an agent last said what it was doing, and
-// the agent bar how long a turn has run. Neither is a deadline: each is a clock
+// the agent dock how long a turn has run. Neither is a deadline: each is a clock
 // a person reads at a glance. The age is coarse ("now", "12s", "4m"), so a
 // slower tick is enough and re-renders the navigator less often; the elapsed
 // time counts seconds, so it ticks every second while a turn runs and not at
@@ -211,13 +211,19 @@ const BOARD_CACHE_GC_MS = 5 * 60_000;
 /** How often the navigator re-reads how long ago each agent spoke. */
 const SHELL_AGE_TICK_MS = 5000;
 
-/** How often the agent bar counts a running turn's seconds. */
+/** How often the agent dock counts a running turn's seconds. */
 const AGENT_ELAPSED_TICK_MS = 1000;
 
-/** How long a running turn reports nothing new before the agent bar says it is quiet. */
+/** How long a running turn reports nothing new before the agent dock says it is quiet. */
 const AGENT_QUIET_MS = 120_000;
 
-export { AGENT_ELAPSED_TICK_MS, AGENT_QUIET_MS, SHELL_AGE_TICK_MS };
+/**
+ * How long a board's viewport keeps its size before the camera fits to it: longer than
+ * a slow frame, so a slide is fitted at its end, and short enough not to trail a resize.
+ */
+const BOARD_RESIZE_SETTLE_MS = 64;
+
+export { AGENT_ELAPSED_TICK_MS, AGENT_QUIET_MS, BOARD_RESIZE_SETTLE_MS, SHELL_AGE_TICK_MS };
 
 /** Outer cap for any browser-owned export request. The wait ends on correlation, not delay. */
 const BROWSER_EXPORT_TIMEOUT_MS = 30_000;
@@ -443,19 +449,22 @@ const CODEX_QUEUE_REREAD_FLOOR_MS = 1000;
 export {
 	FAR_VIEW_FADE_MS,
 	FLOW_CYCLE_CAP_MS,
-	FLOW_PULSE_RAMP,
-	FLOW_STEP_TRAVEL_MS,
 	PICTURE_ENTRY_MS,
 	PICTURE_ENTRY_PHASES,
 	PICTURE_EXIT_MS,
 	PICTURE_TRANSITION_MS,
 	PICTURE_TRANSITION_PHASES,
+	PRESENTATION_BOX_IN_MS,
+	PRESENTATION_BOX_STEP_MS,
 	PRESENTATION_STEP_MS,
 	SUBJECT_TIP_DELAY_MS,
-	TRAFFIC_GAP_LIMITS_MS,
-	TRAFFIC_STILL_MS,
-	TRAFFIC_STREAK_MS,
 } from "@/shared/timing/lib/diagram-motion";
+export { EXPLORING_MS } from "@/shared/timing/lib/exploring";
+export {
+	AGENT_PANEL_SLIDE_MS,
+	SIDEBAR_MS,
+	SLIDE_SETTLED_MS,
+} from "@/shared/timing/lib/column-motion";
 export {
 	RECORDING_ENCODE_FINISH_MS,
 	RECORDING_ENCODER_PROBE_MS,

@@ -38,6 +38,9 @@ interface SessionState {
 	/** Where the server pointed the pane; a drill-down does not move it. */
 	openedKey: string | null;
 	setOpened: (key: string | null) => void;
+	/** How many times the server pointed the pane somewhere other than the board on screen. */
+	arrivals: number;
+	arrived: () => void;
 	heldBy: LockHolder | null;
 	setHeldBy: (holder: LockHolder | null) => void;
 	doing: DoingEntry[];
@@ -52,6 +55,8 @@ function useSessionState(): SessionState {
 	const { contact, setConnected } = usePaneContact();
 	const [board, setBoard] = useState<BoardIdentity | null>(null);
 	const [openedKey, setOpened] = useState<string | null>(null);
+	const [arrivals, setArrivals] = useState(0);
+	const arrived = useCallback((): void => setArrivals((count) => count + 1), []);
 	// It starts as somebody else's until the server says otherwise: a pane that
 	// has not been told does not read the board as free (ADR 0016).
 	const [heldBy, setHeldBy] = useState<LockHolder | null>(UNKNOWN_HOLDER);
@@ -63,6 +68,8 @@ function useSessionState(): SessionState {
 		setBoard,
 		openedKey,
 		setOpened,
+		arrivals,
+		arrived,
 		heldBy,
 		setHeldBy,
 		doing,
@@ -145,6 +152,7 @@ function usePaneSession<Transport extends WorkbenchTransportPort>(
 			setConnected: state.setConnected,
 			setBoard: state.setBoard,
 			setOpened: state.setOpened,
+			arrived: state.arrived,
 			setHeldBy: state.setHeldBy,
 			setDoing: state.setDoing,
 		}),
@@ -187,6 +195,7 @@ function usePaneSession<Transport extends WorkbenchTransportPort>(
 		clientId,
 		attachPaneElement,
 		openedKey: state.openedKey,
+		arrivals: state.arrivals,
 		board: state.board,
 		connected: state.contact.connected,
 		heldBy: state.heldBy,

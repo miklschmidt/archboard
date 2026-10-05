@@ -11,8 +11,8 @@ const badgeVariants = cva(
 			// level, a type or a pane letter; `chip` is the 24px flat state chip.
 			size: {
 				default: "h-5 rounded-4xl px-2 py-0.5 text-body font-medium",
-				technical: "text-technical h-4 rounded-[2px] px-1 font-mono font-medium",
-				chip: "text-body h-6 gap-1.5 rounded-[2px] px-2 font-normal",
+				technical: "text-technical h-4 rounded-chip px-1 font-mono font-medium",
+				chip: "text-body h-6 gap-1.5 rounded-chip px-2 font-normal",
 			},
 			variant: {
 				default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
@@ -21,7 +21,7 @@ const badgeVariants = cva(
 					"bg-destructive/10 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",
 				outline: "border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
 				ghost: "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
-				link: "text-primary underline-offset-4 hover:underline",
+				link: "text-primary-text decoration-primary-mark underline underline-offset-4 hover:decoration-2",
 			},
 		},
 		defaultVariants: {

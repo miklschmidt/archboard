@@ -1,0 +1,371 @@
+{
+	"schemaVersion": 2,
+	"generatedAt": "2026-10-04T18:57:33Z",
+	"title": "Design System: archboard",
+	"extensions": {
+		"colorMeta": {
+			"ground-chalk": {
+				"role": "neutral",
+				"displayName": "Ground Chalk",
+				"canonical": "oklch(0.99 0.0025 90)",
+				"tonalRamp": [
+					"oklch(0.2 0.006 75)",
+					"oklch(0.3 0.006 78)",
+					"oklch(0.42 0.006 80)",
+					"oklch(0.55 0.005 82)",
+					"oklch(0.68 0.005 85)",
+					"oklch(0.8 0.004 88)",
+					"oklch(0.9 0.004 88)",
+					"oklch(0.99 0.0025 90)"
+				]
+			},
+			"ink-graphite": {
+				"role": "neutral",
+				"displayName": "Ink Graphite",
+				"canonical": "oklch(0.17 0.006 75)"
+			},
+			"muted-ink": {
+				"role": "neutral",
+				"displayName": "Muted Ink",
+				"canonical": "oklch(0.48 0.008 75)"
+			},
+			"chrome-chalk": {
+				"role": "neutral",
+				"displayName": "Chrome Chalk",
+				"canonical": "oklch(0.973 0.004 88)"
+			},
+			"tray-chalk": {
+				"role": "neutral",
+				"displayName": "Tray Chalk",
+				"canonical": "oklch(0.986 0.003 88)"
+			},
+			"reading-tone": {
+				"role": "neutral",
+				"displayName": "Reading Tone",
+				"canonical": "oklch(0.935 0.006 85)"
+			},
+			"card-white": {
+				"role": "neutral",
+				"displayName": "Card White",
+				"canonical": "oklch(1 0 0)"
+			},
+			"rule": {
+				"role": "neutral",
+				"displayName": "Rule",
+				"canonical": "oklch(0.905 0.005 85)"
+			},
+			"field-rule": {
+				"role": "neutral",
+				"displayName": "Field Rule",
+				"canonical": "oklch(0.88 0.006 85)"
+			},
+			"wayfinding-gold": {
+				"role": "primary",
+				"displayName": "Wayfinding Gold",
+				"canonical": "oklch(0.831 0.134 84.5)",
+				"tonalRamp": [
+					"oklch(0.2 0.02 70)",
+					"oklch(0.38 0.08 74)",
+					"oklch(0.5 0.105 76)",
+					"oklch(0.62 0.13 78)",
+					"oklch(0.72 0.135 80)",
+					"oklch(0.831 0.134 84.5)",
+					"oklch(0.9 0.1 88)",
+					"oklch(0.968 0.03 88)"
+				]
+			},
+			"gold-top": {
+				"role": "primary",
+				"displayName": "Gold Top",
+				"canonical": "oklch(0.87 0.135 88)"
+			},
+			"gold-bottom": {
+				"role": "primary",
+				"displayName": "Gold Bottom",
+				"canonical": "oklch(0.805 0.142 81)"
+			},
+			"gold-rim": {
+				"role": "primary",
+				"displayName": "Gold Rim",
+				"canonical": "oklch(0.7 0.125 76)"
+			},
+			"gold-ink": {
+				"role": "primary",
+				"displayName": "Gold Ink",
+				"canonical": "oklch(0.2 0.02 70)"
+			},
+			"gold-tint": {
+				"role": "primary",
+				"displayName": "Gold Tint",
+				"canonical": "oklch(0.968 0.03 88)"
+			},
+			"live-lime": {
+				"role": "status",
+				"displayName": "Live Lime",
+				"canonical": "oklch(0.849 0.207 128.8)"
+			},
+			"changed-orange": {
+				"role": "status",
+				"displayName": "Changed Orange",
+				"canonical": "oklch(0.69 0.19 48)"
+			},
+			"gold-mark": {
+				"role": "primary",
+				"displayName": "Gold Mark",
+				"canonical": "oklch(0.72 0.15 77)"
+			}
+		},
+		"typographyMeta": {
+			"display": {
+				"displayName": "Display",
+				"purpose": "A name set as a title, in tracked capitals."
+			},
+			"title": {
+				"displayName": "Title",
+				"purpose": "The titles of regions and dialogs."
+			},
+			"nav": {
+				"displayName": "Nav",
+				"purpose": "The name of a board in the navigator."
+			},
+			"control": {
+				"displayName": "Control",
+				"purpose": "Buttons, tabs and fields."
+			},
+			"body": {
+				"displayName": "Body",
+				"purpose": "Prose and row labels."
+			},
+			"presentation": {
+				"displayName": "Presentation",
+				"purpose": "The heading of a presented step."
+			},
+			"reading": {
+				"displayName": "Reading",
+				"purpose": "The words of a presented step, in a column 64rem wide at most."
+			},
+			"figure": {
+				"displayName": "Figure",
+				"purpose": "The number of a presented step, in the display face."
+			},
+			"subtitle": {
+				"displayName": "Subtitle",
+				"purpose": "The words the voice says."
+			},
+			"technical": {
+				"displayName": "Technical",
+				"purpose": "Identifiers, paths, versions, counts and times, in mono."
+			}
+		},
+		"shadows": [
+			{
+				"name": "well",
+				"value": "var(--elevation-well)",
+				"purpose": "A field sunk into a surface."
+			},
+			{
+				"name": "edge-down",
+				"value": "var(--elevation-edge-down)",
+				"purpose": "A header casting onto what is under it."
+			},
+			{
+				"name": "edge-side",
+				"value": "var(--elevation-edge-side)",
+				"purpose": "A column casting onto what is beside it."
+			},
+			{
+				"name": "edge-up",
+				"value": "var(--elevation-edge-up)",
+				"purpose": "A tray casting over the list that scrolls under it."
+			},
+			{
+				"name": "raised",
+				"value": "var(--elevation-raised)",
+				"purpose": "A control, a key cap or the chosen row of a list."
+			},
+			{
+				"name": "pressed",
+				"value": "var(--elevation-pressed)",
+				"purpose": "A raised control while pressed."
+			},
+			{
+				"name": "card",
+				"value": "var(--elevation-card)",
+				"purpose": "A card on a page."
+			},
+			{
+				"name": "float",
+				"value": "var(--elevation-float)",
+				"purpose": "Menus, tips, lists of matches, the floating sidebar."
+			},
+			{
+				"name": "dialog",
+				"value": "var(--elevation-dialog)",
+				"purpose": "Dialogs."
+			},
+			{
+				"name": "primary",
+				"value": "var(--elevation-primary)",
+				"purpose": "The gold finish of a primary action at rest."
+			},
+			{
+				"name": "primary-pressed",
+				"value": "var(--elevation-primary-pressed)",
+				"purpose": "The gold finish of a primary action while pressed."
+			}
+		],
+		"motion": [
+			{
+				"name": "control",
+				"value": "120ms",
+				"purpose": "Controls change state in 120ms."
+			},
+			{
+				"name": "presentation-box-in",
+				"value": "220ms",
+				"purpose": "A presented walkthrough's box arrives once, rising 10px as it fades in (PRESENTATION_BOX_IN_MS)."
+			},
+			{
+				"name": "presentation-box-step",
+				"value": "520ms",
+				"purpose": "A presented walkthrough's box hands one step to the next, with transform and opacity only (PRESENTATION_BOX_STEP_MS). The rail's paler wake settles last, at 1.3 times this pace."
+			}
+		],
+		"breakpoints": [
+			{
+				"name": "desktop",
+				"value": "1920px"
+			}
+		]
+	},
+	"components": [
+		{
+			"name": "Primary Button",
+			"kind": "button",
+			"refersTo": "button-primary",
+			"description": "The one primary action of a region, as a physical piece of gold.",
+			"html": "<button class=\"ds-btn-primary\">Save</button>",
+			"css": ".ds-btn-primary { font: 500 13px/18px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--primary-foreground); background-color: var(--primary-bottom); background-image: linear-gradient(180deg, var(--primary-top), var(--primary-bottom)); border: 1px solid var(--primary-edge); border-radius: 3px; height: 32px; padding: 0 10px; box-shadow: var(--elevation-primary); cursor: pointer; } .ds-btn-primary:hover { background-image: linear-gradient(180deg, color-mix(in oklch, var(--primary-top), white 16%), color-mix(in oklch, var(--primary-bottom), white 9%)); } .ds-btn-primary:active { background-image: linear-gradient(180deg, color-mix(in oklch, var(--primary-bottom), black 4%), var(--primary-top)); box-shadow: var(--elevation-primary-pressed); transform: translateY(1px); } .ds-btn-primary:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }"
+		},
+		{
+			"name": "Outline Button",
+			"kind": "button",
+			"refersTo": "button-outline",
+			"description": "A secondary action, raised off the surface.",
+			"html": "<button class=\"ds-btn-outline\">Test</button>",
+			"css": ".ds-btn-outline { font: 500 13px/18px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--foreground); background: var(--card); border: 1px solid var(--border); border-radius: 3px; height: 32px; padding: 0 10px; box-shadow: var(--elevation-raised); cursor: pointer; } .ds-btn-outline:hover { background: var(--muted); } .ds-btn-outline:active { box-shadow: var(--elevation-pressed); transform: translateY(1px); } .ds-btn-outline:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }"
+		},
+		{
+			"name": "Go Deeper Row",
+			"kind": "custom",
+			"description": "The primary way down from a picked part, at the foot of the details panel.",
+			"html": "<button class=\"ds-go\"><span class=\"ds-go-text\"><span class=\"ds-go-title\">Open Archboard server</span><span class=\"ds-go-sub\">One level down · Service</span></span><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"currentColor\"><path d=\"M16.17 13H4v-2h12.17l-5.36-5.36 1.42-1.42L20 12l-7.78 7.78-1.42-1.42z\"/></svg></button>",
+			"css": ".ds-go { display: flex; align-items: center; gap: 12px; width: 280px; min-height: 44px; padding: 6px 12px; text-align: left; color: var(--primary-foreground); background-color: var(--primary-bottom); background-image: linear-gradient(180deg, var(--primary-top), var(--primary-bottom)); border: 1px solid var(--primary-edge); border-radius: 3px; box-shadow: var(--elevation-primary); cursor: pointer; } .ds-go:hover { background-image: linear-gradient(180deg, color-mix(in oklch, var(--primary-top), white 16%), color-mix(in oklch, var(--primary-bottom), white 9%)); } .ds-go:active { box-shadow: var(--elevation-primary-pressed); transform: translateY(1px); } .ds-go-text { display: flex; flex-direction: column; flex: 1; min-width: 0; } .ds-go-title { font: 600 13px/18px var(--font-sans, 'Archboard Onest', sans-serif); } .ds-go-sub { font: 400 12px/16px var(--font-sans, 'Archboard Onest', sans-serif); opacity: 0.75; }"
+		},
+		{
+			"name": "Field",
+			"kind": "input",
+			"refersTo": "field",
+			"description": "A field sunk into its surface.",
+			"html": "<input class=\"ds-field\" placeholder=\"Ask about Archboard\">",
+			"css": ".ds-field { font: 400 13px/18px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--foreground); background: transparent; border: 1px solid var(--input); border-radius: 3px; height: 32px; padding: 4px 10px; box-shadow: var(--elevation-well); outline: none; } .ds-field::placeholder { color: var(--muted-foreground); } .ds-field:focus-visible { border-color: var(--ring); }"
+		},
+		{
+			"name": "Navigator Row",
+			"kind": "nav",
+			"refersTo": "nav-row-chosen",
+			"description": "The chosen row of the navigator, raised as a plate. The line of the tree to it is lit in Gold Mark, and the row has no bar.",
+			"html": "<div class=\"ds-nav\"><div class=\"ds-nav-row\">Agent workbench</div><div class=\"ds-nav-row ds-nav-chosen\">Archboard server</div><div class=\"ds-nav-row\">Browser application</div></div>",
+			"css": ".ds-nav { width: 300px; padding: 4px; background: var(--sidebar); } .ds-nav-row { position: relative; height: 36px; padding: 0 12px; display: flex; align-items: center; font: 500 14px/20px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--sidebar-foreground); border-radius: 3px; } .ds-nav-row:hover { background: color-mix(in oklch, var(--sidebar-accent) 50%, transparent); } .ds-nav-chosen { background: var(--sidebar-accent); box-shadow: var(--elevation-raised); }"
+		},
+		{
+			"name": "Page Card",
+			"kind": "card",
+			"refersTo": "page-card",
+			"description": "A part on the Parts page.",
+			"html": "<div class=\"ds-card\"><div class=\"ds-card-title\">Agent CLI</div><div class=\"ds-card-kind\">Service</div><p class=\"ds-card-body\">Authors named boards: one short-lived process per command.</p></div>",
+			"css": ".ds-card { width: 260px; padding: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 4px; box-shadow: var(--elevation-card); } .ds-card:hover { box-shadow: var(--elevation-float); } .ds-card-title { font: 600 14px/20px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--foreground); } .ds-card-kind { font: 400 12px/16px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--muted-foreground); } .ds-card-body { margin: 6px 0 0; font: 400 12px/16px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--foreground); }"
+		},
+		{
+			"name": "Walkthrough Box",
+			"kind": "custom",
+			"description": "A presented walkthrough's plate over the foot of the picture: a rail of steps with one piece of gold, the step's number, its words in a centred column, the keys, and the voice pill under the words.",
+			"html": "<section class=\"ds-wt\"><div class=\"ds-wt-rail\"><span></span><span></span><span></span><span></span><i class=\"ds-wt-gold\"></i></div><div class=\"ds-wt-grid\"><div class=\"ds-wt-count\"><span class=\"ds-wt-figure\">2</span><span class=\"ds-wt-of\">of 4</span></div><div class=\"ds-wt-words\"><h2 class=\"ds-wt-heading\">Stock is held while the card is charged</h2><p class=\"ds-wt-reading\">Place order reserves the items first and only then charges the card.</p><p class=\"ds-wt-name\">How an order is placed today</p><button class=\"ds-wt-pill\"><span class=\"ds-wt-seat\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"currentColor\"><path d=\"M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zm0-2a5 5 0 0 0-5 5v6a5 5 0 0 0 10 0V6a5 5 0 0 0-5-5zM3.06 13h2.02a7 7 0 0 0 13.84 0h2.02A9 9 0 0 1 13 20.94V23h-2v-2.06A9 9 0 0 1 3.06 13z\"/></svg></span><span class=\"ds-wt-narrate\"><b>Narrate</b><small>Hear this walkthrough read aloud.</small></span></button></div><div class=\"ds-wt-keys\"><button class=\"ds-wt-key\" aria-label=\"Previous step\">&lsaquo;</button><button class=\"ds-wt-key\" aria-label=\"Next step\">&rsaquo;</button><button class=\"ds-wt-key ds-wt-esc\">&times; <span>Esc</span></button></div></div></section>",
+			"css": ".ds-wt { display: flex; flex-direction: column; gap: 16px; width: 960px; padding: 20px; background: var(--card); border: 1px solid var(--border); border-radius: 4px; box-shadow: var(--elevation-float); color: var(--foreground); } .ds-wt-rail { position: relative; display: flex; gap: 4px; height: 20px; align-items: center; } .ds-wt-rail > span { flex: 1; height: 4px; border-radius: 9999px; background: color-mix(in oklch, var(--muted-foreground) 70%, transparent); } .ds-wt-gold { position: absolute; top: 7px; left: calc(25% + 1px); width: calc(25% - 3px); height: 6px; border-radius: 9999px; background: var(--primary-mark); } .ds-wt-grid { display: grid; grid-template-columns: minmax(auto, 1fr) minmax(0, 64rem) minmax(auto, 1fr); column-gap: 20px; } .ds-wt-count { justify-self: end; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 56px; padding-right: 20px; border-right: 1px solid var(--border); } .ds-wt-figure { font: 650 44px/44px var(--font-display, 'Archboard Display', sans-serif); letter-spacing: 0.02em; font-variant-numeric: lining-nums tabular-nums; } .ds-wt-of { font: 400 11px/14px var(--font-mono, 'Archboard DM Mono', monospace); color: var(--muted-foreground); } .ds-wt-words { display: flex; flex-direction: column; gap: 8px; min-width: 0; } .ds-wt-heading { margin: 0; font: 600 28px/34px var(--font-sans, 'Archboard Onest', sans-serif); letter-spacing: -0.01em; } .ds-wt-reading { margin: 0; font: 400 16px/24px var(--font-sans, 'Archboard Onest', sans-serif); } .ds-wt-name { margin: 0; font: 400 12px/16px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--muted-foreground); } .ds-wt-pill { display: flex; align-items: center; gap: 12px; height: 78px; margin-top: 8px; padding: 0 24px 0 0; text-align: left; color: var(--foreground); background: var(--sidebar); border: 1px solid var(--border); border-radius: 9999px; box-shadow: var(--elevation-well); cursor: pointer; } .ds-wt-pill:focus-visible { outline: 2px solid var(--ring); } .ds-wt-seat { display: grid; place-items: center; width: 64px; height: 64px; margin: 6px; border-radius: 9999px; color: var(--muted-foreground); background: var(--card); border: 1px solid var(--border); box-shadow: var(--elevation-raised); } .ds-wt-pill:hover .ds-wt-seat { color: var(--primary-mark); border-color: var(--primary-mark); } .ds-wt-narrate { display: flex; flex-direction: column; } .ds-wt-narrate b { font: 500 13px/18px var(--font-sans, 'Archboard Onest', sans-serif); } .ds-wt-narrate small { font: 400 12px/16px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--muted-foreground); } .ds-wt-keys { justify-self: start; display: flex; align-items: flex-start; gap: 6px; } .ds-wt-key { height: 32px; min-width: 32px; padding: 0 8px; font: 500 13px/18px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--foreground); background: var(--card); border: 1px solid var(--border); border-radius: 3px; box-shadow: var(--elevation-raised); cursor: pointer; } .ds-wt-key:active { box-shadow: var(--elevation-pressed); transform: translateY(1px); } .ds-wt-key:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; } .ds-wt-esc span { font: 400 11px/14px var(--font-mono, 'Archboard DM Mono', monospace); }"
+		},
+		{
+			"name": "Key Cap",
+			"kind": "chip",
+			"description": "A keyboard shortcut, raised as a key.",
+			"html": "<kbd class=\"ds-kbd\">Ctrl K</kbd>",
+			"css": ".ds-kbd { font: 400 11px/16px var(--font-mono, 'Archboard DM Mono', monospace); color: var(--muted-foreground); background: var(--card); border: 1px solid var(--border); border-radius: 3px; padding: 0 4px; box-shadow: var(--elevation-raised); }"
+		}
+	],
+	"narrative": {
+		"northStar": "The Lit Drafting Table",
+		"overview": "The picture is a drawing that lies flat on a table. The shell is the furniture around it: rails, a header under the lamp, a tray at the foot of each column and a few pieces of gold hardware. An agent drew the picture, and the architect reads it. Nothing in the shell competes with the picture for attention, and nothing in the shell paints on it.\n\nThe shell is dense desktop chrome at 1920×1080. It uses 13px controls, 28px rows and small corners. Its neutrals are warm graphite and chalk, tinted toward the hue of the gold. Depth comes from planes, not from lines. The chrome stands on the picture and casts a short, warm, still shadow onto it. Controls stand on the chrome with a highlight on their top edge. Menus and dialogs float above everything. One warm yellow-gold marks what is chosen. It also marks the one primary action of a region, and that action is drawn as a physical piece of gold.",
+		"keyCharacteristics": [
+			"The picture is the ground. The shell sits around it and over it.",
+			"Planes stack under a light from above. Each plane has a tone step, a highlight on its top edge and a warm shadow with an offset.",
+			"One gold has three uses: what is chosen, the one primary action, and the voice and the brand mark.",
+			"Tall condensed capitals set a name as a title. Plain sans sets every other word. Mono sets technical tokens only.",
+			"The shell is for the desktop only, near full screen at 1920×1080."
+		],
+		"rules": [
+			{
+				"name": "The One Gold Rule",
+				"body": "Gold marks what is chosen, the one primary action of a region, and the voice and the brand mark. Nothing else is gold.",
+				"section": "colors"
+			},
+			{
+				"name": "The Ink On Chalk Rule",
+				"body": "Text on chalk is never gold. A gold dark enough to clear 4.5:1 on chalk reads as brown. Text stays in the ink, and a gold mark beside or under it carries the accent. On graphite, accent text is the gold itself (oklch(0.86 0.125 86)).",
+				"section": "colors"
+			},
+			{
+				"name": "The Untouched Picture Rule",
+				"body": "The renderer draws the picture. The shell never paints gold, shadow or decoration on a card in it.",
+				"section": "colors"
+			},
+			{
+				"name": "The Mono Is Data Rule",
+				"body": "Mono sets technical tokens only. It never sets a label or a heading.",
+				"section": "typography"
+			},
+			{
+				"name": "The Still Shadow Rule",
+				"body": "A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar, the walkthrough box or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. The floating sidebar takes at most 160ms, the walkthrough box 220ms to arrive and 520ms to hand one step to the next, with the wake on its rail settling by about 700ms, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off, in a layer of its own, over 680ms.",
+				"section": "elevation"
+			},
+			{
+				"name": "The Picture Answers Rule",
+				"body": "The light belongs to the picture, not to the shell. When a part is picked out or the pointer rests on one, the viewer marks what stays as drawn, and the picture's own subjects recede under an opacity filter. The shell lays no layer, blur or halo over the picture to do it.",
+				"section": "elevation"
+			},
+			{
+				"name": "The Card Is a Window Rule",
+				"body": "A card that opens a board is a window onto it. The board opens when the camera flies into the card, and going back flies out of it. The board's picture sits inside the card, in the picture's own units, so one camera carries both and the board that opens stands where the board in the card stood. The shell adds no layer for the flight.",
+				"section": "elevation"
+			},
+			{
+				"name": "The Planes Not Lines Rule",
+				"body": "Regions read as layered planes. A one-pixel rule stays only where it draws the edge of a control or a card, or where it divides regions on one plane.",
+				"section": "elevation"
+			}
+		],
+		"dos": [
+			"Do draw the one primary action of a region with `primary-finish`, and only that one.",
+			"Do separate regions with tone steps and elevation tokens before you add a rule.",
+			"Do keep shadows warm and offset. Take them from the elevation tokens in app.css.",
+			"Do keep the ink on gold at Gold Ink (at least 8.5:1)."
+		],
+		"donts": [
+			"Do not put backdrop-filter, filter, blur or a looping animation over the picture viewport.",
+			"Do not take a control out of a row when it cannot be used. Dim it and say why in its tooltip, so the row does not move.",
+			"Do not paint gold or decoration onto a card in the picture.",
+			"Do not use a grey-black blur or a halo without an offset as a shadow.",
+			"Do not add a phone or narrow layout.",
+			"Do not set a label or a heading in mono."
+		]
+	}
+}

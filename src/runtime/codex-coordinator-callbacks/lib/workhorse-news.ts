@@ -2,7 +2,7 @@
 //
 // The coordinator decides what the voice model says, so it hears when a workhorse turn ends or
 // starts waiting on the user, whoever started the turn: work the coordinator gave it, and a turn
-// the user started from the agent bar alike. That comes from the workhorse thread's own
+// the user started from the conversation alike. That comes from the workhorse thread's own
 // notifications, one source for every turn, so the coordinator's delegations are not reported
 // twice. It also hears what the workhorse tells it through tell_coordinator. What reaches the
 // coordinator is one plain sentence; it reads the rest through inspect_workhorse.

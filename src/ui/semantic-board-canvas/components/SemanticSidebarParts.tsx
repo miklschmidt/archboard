@@ -23,7 +23,7 @@ import { cn } from "@/ui/components/class-names";
  * @returns The heading.
  */
 function SidebarHeading(props: {
-	readonly level?: 2 | 3;
+	readonly level?: 2 | 3 | undefined;
 	readonly children: ReactNode;
 }): JSX.Element {
 	const Heading = props.level === 3 ? "h3" : "h2";
@@ -63,17 +63,19 @@ function SidebarRegion(props: {
  * @param props The heading and the content.
  * @param props.title The heading.
  * @param props.slot Where tests and styles find it.
+ * @param props.level 2 for a section of the tab, 3 for one under a title of its own.
  * @param props.children The content.
  * @returns The section.
  */
 function SidebarSection(props: {
 	readonly title: string;
 	readonly slot: string;
+	readonly level?: 2 | 3 | undefined;
 	readonly children: ReactNode;
 }): JSX.Element {
 	return (
 		<section data-slot={props.slot} aria-label={props.title} className="flex flex-col gap-1">
-			<SidebarHeading>{props.title}</SidebarHeading>
+			<SidebarHeading level={props.level}>{props.title}</SidebarHeading>
 			{props.children}
 		</section>
 	);
@@ -111,18 +113,19 @@ type SidebarChoiceProps = Omit<
 	ComponentProps<typeof Button>,
 	"variant" | "size" | "type" | "className"
 > & {
-	/** Whether it is the one on screen. */
-	readonly pressed: boolean;
+	/** Whether it is the one on screen; left out for a row that goes somewhere and is never on screen. */
+	readonly pressed?: boolean | undefined;
 };
 
 /**
  * One choice of a list: a row the width of the list whose words start on the
- * text column. The one on screen takes the reading tone and a cobalt bar at
+ * text column. The one on screen takes the reading tone and a gold bar at
  * its edge, as the navigator's selected row does, so "on screen" looks the same
  * in every column of the shell. Hover takes half that tone and no bar, so a row
  * under the pointer never looks chosen. Its children are its parts, in order:
  * a `SidebarGlyph` when the list has one for every row, a `SidebarLabel`, and a
- * `SidebarMeta` when there is a quiet fact to add.
+ * `SidebarMeta` when there is a quiet fact to add. A row that picks another
+ * part is not a toggle, so it leaves `pressed` out and says nothing of being on.
  * @param props The choice, and the attributes that say which one it is.
  * @returns The row.
  */
@@ -136,10 +139,10 @@ function SidebarChoice(props: SidebarChoiceProps): JSX.Element {
 			aria-pressed={pressed}
 			// The button's 1 px border and 7 px of padding put the words on the text
 			// column, 8 px in from the list's edge; 28 px high on one line.
-			className="hover:bg-sidebar-accent/50 dark:hover:bg-sidebar-accent/50 aria-pressed:bg-sidebar-accent aria-pressed:hover:bg-sidebar-accent relative h-auto min-h-7 w-full min-w-0 items-start justify-start gap-2 px-[7px] py-[4px] text-left whitespace-normal"
+			className="hover:bg-sidebar-accent/50 dark:hover:bg-sidebar-accent/50 aria-pressed:bg-sidebar-accent aria-pressed:hover:bg-sidebar-accent aria-pressed:shadow-raised relative h-auto min-h-7 w-full min-w-0 items-start justify-start gap-2 px-[7px] py-[4px] text-left whitespace-normal transition-colors active:translate-y-0"
 			{...rest}
 		>
-			{pressed && (
+			{pressed === true && (
 				<span
 					aria-hidden="true"
 					data-slot="sidebar-choice-bar"

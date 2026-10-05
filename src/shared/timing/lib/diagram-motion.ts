@@ -1,64 +1,21 @@
-// How long a drawn diagram takes to say a line carries traffic.
+// How long a drawn diagram takes to tell an exchange.
 //
-// The only durations here a person watches rather than waits out, so what they
-// pull against is attention: too fast reads as agitation and pulls the eye off
-// what somebody was reading, too slow reads as a picture that has stopped.
-// They come from the renderer this repository forked.
+// The only duration here a person watches rather than waits out, so what it
+// pulls against is attention: too long and a reader who looked away never sees
+// the beginning come round again, so the page reads as stalled. A pulse flies at
+// a speed (a distance a second), which is not a duration and lives with the
+// renderer that draws it.
 
 /**
- * How long one message of an exchange holds the shared cycle.
+ * The longest a whole exchange's cycle may take before every pulse in it flies
+ * faster to keep to it.
  *
- * Every message takes its turn on one clock, so the cycle is this times the
- * number of turns. Pulls against the cap below: a long exchange would otherwise
- * take a minute to come round.
- */
-const FLOW_STEP_TRAVEL_MS = 1400;
-
-/**
- * The longest a whole exchange's cycle may take before it stops growing.
- *
- * Past this the relay reads as stalled rather than slow, so a long flow
- * compresses: every message still gets a turn, and the turns get shorter.
- * Pulls against the legibility of one crossing.
+ * Past this the exchange reads as stalled rather than slow, so a long one
+ * compresses: every message still gets a turn, and the pulses fly faster
+ * together. Pulls against the speed of one crossing, which is what says where
+ * the message goes.
  */
 const FLOW_CYCLE_CAP_MS = 16_000;
-
-/**
- * How much of a message's own turn is spent fading its dot in and out.
- *
- * A dot that appeared and vanished at full opacity would flash. Pulls against
- * the travel itself, which is what says where the message goes, so it is a
- * fraction of the turn rather than a fixed number of milliseconds.
- */
-const FLOW_PULSE_RAMP = 0.08;
-
-// ── A relationship's traffic: shots fired along its line (ADR 0027) ──────
-
-/**
- * How much of a shot's travel its streak's tail spans: the tail is as long as
- * the shot travels in this time, so a faster line draws a longer streak. Pulls
- * against the line it rides: a streak much longer than this fills a short line
- * and reads as a lit segment rather than a shot, which is why the renderer also
- * caps it at a share of the line.
- */
-const TRAFFIC_STREAK_MS = 260;
-
-/**
- * How long the still picture holds before the first shot fires: the picture at
- * time zero shows one streak at rest on each line, and the shots start this
- * much later. Pulls against being seen: it only has to be later than time zero,
- * which is the moment every still picture is taken, and short enough that
- * nobody watching the page sees the traffic wait.
- */
-const TRAFFIC_STILL_MS = 16;
-
-/**
- * The shortest and longest mean gap between two shots on one line, however
- * much traffic its author asked for. Past the shortest, shots fired faster than
- * a screen draws blur into one line; past the longest, nobody watches long
- * enough to see the next. Both keep the timing a finite number a browser reads.
- */
-const TRAFFIC_GAP_LIMITS_MS = Object.freeze({ shortest: 20, longest: 3_600_000 });
 
 // ── One picture of a board turning into the next ─────────────────────────
 
@@ -178,6 +135,30 @@ const PICTURE_EXIT_MS = 280;
 const PRESENTATION_STEP_MS = 900;
 
 /**
+ * How long a presented walkthrough's box takes to arrive over the foot of the picture: it rises a
+ * few pixels and fades in, once, as the camera sets out for the first step.
+ *
+ * Pulls against two things. The box is what is read first, so it is in well before the camera's
+ * glide ends (`PRESENTATION_STEP_MS`), and it is there before the voice's orb, which flies into its
+ * foot, can land (`VOICE_FLIGHT_MS`). And it is the answer to the press that opened the
+ * walkthrough, so it cannot make a person wait: past a quarter of a second it is slower than the
+ * press.
+ */
+const PRESENTATION_BOX_IN_MS = 220;
+
+/**
+ * How long a presented walkthrough's box takes to hand one step to the next: the rail's gold
+ * travels to the new step, the step's number rolls, and the heading and the words slide out and
+ * in along the way the reader stepped, one after the other.
+ *
+ * Pulls against the camera's glide (`PRESENTATION_STEP_MS`, 900): the new words are to be readable
+ * well before the camera has settled, so this is the shorter. It also pulls against a reader who
+ * steps again at once: nothing waits for it, and a move turns round from where it is. Shorter than
+ * about 350ms the gold cannot be followed across the rail, and it is the eye that follows it.
+ */
+const PRESENTATION_BOX_STEP_MS = 520;
+
+/**
  * How long a picture takes to cross-fade between its cards drawn near (name
  * and responsibility) and seen from far away (name alone, larger), when the
  * camera crosses the far-view scale. Pulls against the zoom it follows: shorter
@@ -198,16 +179,13 @@ const SUBJECT_TIP_DELAY_MS = 450;
 export {
 	FAR_VIEW_FADE_MS,
 	FLOW_CYCLE_CAP_MS,
-	FLOW_PULSE_RAMP,
-	FLOW_STEP_TRAVEL_MS,
 	PICTURE_ENTRY_MS,
 	PICTURE_ENTRY_PHASES,
 	PICTURE_EXIT_MS,
 	PICTURE_TRANSITION_MS,
 	PICTURE_TRANSITION_PHASES,
+	PRESENTATION_BOX_IN_MS,
+	PRESENTATION_BOX_STEP_MS,
 	PRESENTATION_STEP_MS,
 	SUBJECT_TIP_DELAY_MS,
-	TRAFFIC_GAP_LIMITS_MS,
-	TRAFFIC_STILL_MS,
-	TRAFFIC_STREAK_MS,
 };

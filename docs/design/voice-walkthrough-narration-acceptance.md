@@ -35,7 +35,7 @@ in to Codex as needed and starts the conversation of the tab.
 
 1. Open the pane's sidebar, choose the walkthrough "Read this board", and step
    to 3 with the arrow key, so the start is not already on step 1.
-2. Press **Narrate** in the caption. If the browser asks, allow the microphone.
+2. Press **Narrate** at the foot of the walkthrough box. If the browser asks, allow the microphone.
 
 Observe, in order:
 
@@ -58,5 +58,5 @@ note what it did instead.
 
 ## 3. Stop
 
-Stop voice with End in the agent bar, then `./bin/dogfood stop`. Presenting and narrating
+End voice with its key in the agent dock, then `./bin/dogfood stop`. Presenting and narrating
 write nothing: `git status .archboard/vault` is clean.

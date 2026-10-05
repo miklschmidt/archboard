@@ -1,27 +1,22 @@
 import { expect } from "bun:test";
-import { readThemeColors, themeColor } from "@/shared/theme/server";
-import { PaletteColorSchema } from "@/shared/semantic-policy/index";
+import { readFileSync } from "node:fs";
+import { readThemeColors } from "@/shared/theme/server";
 import type { AgentBrowserSession } from "./agent-browser.ts";
 
+/** Every colour of both themes, as a standalone picture is drawn in them. */
+const THEME = readThemeColors(
+	readFileSync(new URL("../../../../src/shared/theme/theme.css", import.meta.url), "utf8"),
+);
+
 /**
- * Verify the built shell consumes the same theme definitions as standalone SVGs.
+ * Verify the built page paints with the colours a standalone picture is drawn
+ * in: every colour theme.css sets, in both themes, with nothing laid over them.
  * Normalize through the export converter: browsers may gamut-map saturated OKLCH
  * differently, and matching those upstream conversion algorithms is not our contract.
  * @param browser The running shell browser.
  */
 async function assertThemeParity(browser: AgentBrowserSession): Promise<void> {
-	const tokens = [
-		"--background",
-		"--card",
-		"--border",
-		"--muted-foreground",
-		"--standing-added",
-		"--standing-changed",
-		"--standing-removed",
-		"--diagram-selection",
-		"--diagram-edge",
-		...PaletteColorSchema.options.map((name) => `--semantic-${name}`),
-	];
+	const tokens = Object.keys(THEME.dark);
 	const css = await browser.eval<string>(`(() => {
 		const tokens = ${JSON.stringify(tokens)};
 		const root = document.documentElement;
@@ -39,10 +34,7 @@ async function assertThemeParity(browser: AgentBrowserSession): Promise<void> {
 			else root.setAttribute("data-theme", original);
 		}
 	})()`);
-	const shell = readThemeColors(css);
-	for (const theme of ["light", "dark"] as const) {
-		for (const token of tokens) expect(shell[theme][token]).toBe(themeColor(theme, token));
-	}
+	expect(readThemeColors(css)).toEqual(THEME);
 }
 
 export { assertThemeParity };

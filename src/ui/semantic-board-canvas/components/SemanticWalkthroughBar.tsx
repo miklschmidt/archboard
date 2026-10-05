@@ -7,9 +7,15 @@
 //
 // It comes before the views because it is the author's way in: a first reader
 // takes the explanation, then reads on their own (TASK-383). A row therefore
-// says what it does before what it is called: the mark that it presents, the
-// whole name, and how many steps it takes, which is what a reader weighs before
-// starting one.
+// says what it does before what it is called: the mark that it plays, the whole
+// name, and how many steps it takes, which is what a reader weighs before
+// starting one. The mark is a play button, not a bare triangle: a triangle
+// beside a name is how a row says it folds open, and nothing in a row does.
+//
+// Narrating one is offered beside the row, in a slot of its own that is there in
+// every pane whenever the shell can narrate, so a row is the same size and
+// holds its place whichever pane is active and whatever voice is doing. While
+// a narration cannot start, the control is dimmed and says why.
 //
 // A variant that states no walkthrough is offered nothing — no rail, no empty
 // list, no control that would only ever be disabled — and that is decided in one
@@ -21,11 +27,11 @@
 // already says: the button is the explanation's presence on screen, and pressing
 // it again is how anything pressed is let go.
 
-import { RiMicLine, RiPlayFill } from "@remixicon/react";
+import { RiMicLine, RiPlayCircleLine } from "@remixicon/react";
 import { useCallback, type JSX } from "react";
 
 import type { SemanticWalkthrough } from "@/shared/semantic-board/index";
-import { Button } from "@/ui/components/button";
+import { IconButton } from "@/ui/components/IconButton";
 import {
 	SidebarChoice,
 	SidebarChoices,
@@ -33,6 +39,7 @@ import {
 	SidebarLabel,
 	SidebarMeta,
 } from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
+import type { WalkthroughNarration } from "@/ui/semantic-board-canvas/lib/narration";
 
 /** Inputs for the walkthrough bar. */
 interface SemanticWalkthroughBarProps {
@@ -46,11 +53,10 @@ interface SemanticWalkthroughBarProps {
 	 */
 	onChoose: (walkthrough: string | null) => void;
 	/**
-	 * Have an explanation narrated aloud, when the shell can start voice for this pane. Offered
+	 * Narrating an explanation aloud, when the shell can start voice for this pane. Offered
 	 * here, beside each explanation, so a narration can be started without first opening it.
-	 * @param walkthrough The walkthrough's id.
 	 */
-	onNarrate?: ((walkthrough: string) => void) | undefined;
+	narration?: WalkthroughNarration | undefined;
 }
 
 /** One walkthrough's row. */
@@ -64,8 +70,8 @@ interface WalkthroughRowProps {
 	 * @param walkthrough The walkthrough's id, or null to close it.
 	 */
 	onChoose: (walkthrough: string | null) => void;
-	/** Have it narrated, when the shell can. */
-	onNarrate: ((walkthrough: string) => void) | undefined;
+	/** Narrating it, when the shell can. */
+	narration: WalkthroughNarration | undefined;
 }
 
 /**
@@ -88,12 +94,12 @@ function WalkthroughRow(props: WalkthroughRowProps): JSX.Element {
 	const choose = useCallback((): void => {
 		onChoose(open ? null : walkthrough.id);
 	}, [onChoose, open, walkthrough.id]);
-	const { onNarrate } = props;
+	const { narration } = props;
 	// The server opens the explanation on its first step once voice is starting, so the voice is
 	// handed the step it arrived on.
 	const narrate = useCallback((): void => {
-		onNarrate?.(walkthrough.id);
-	}, [onNarrate, walkthrough.id]);
+		narration?.start(walkthrough.id);
+	}, [narration, walkthrough.id]);
 	return (
 		<div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-1">
 			<SidebarChoice
@@ -103,24 +109,22 @@ function WalkthroughRow(props: WalkthroughRowProps): JSX.Element {
 				onClick={choose}
 			>
 				<SidebarGlyph>
-					<RiPlayFill className="text-muted-foreground size-3" />
+					<RiPlayCircleLine className="text-muted-foreground size-4" />
 				</SidebarGlyph>
 				<SidebarLabel>
 					{walkthrough.name} <SidebarMeta>{lengthOf(walkthrough)}</SidebarMeta>
 				</SidebarLabel>
 			</SidebarChoice>
-			{onNarrate !== undefined && (
-				<Button
-					type="button"
-					variant="ghost"
-					size="icon-sm"
-					data-slot="semantic-walkthrough-narrate"
-					aria-label={`Narrate ${walkthrough.name}`}
-					title="Narrate aloud"
+			{narration !== undefined && (
+				<IconButton
+					label={`Narrate ${walkthrough.name}`}
+					tip="Narrate aloud"
+					held={narration.held}
+					slot="semantic-walkthrough-narrate"
 					onClick={narrate}
 				>
 					<RiMicLine />
-				</Button>
+				</IconButton>
 			)}
 		</div>
 	);
@@ -132,7 +136,7 @@ function WalkthroughRow(props: WalkthroughRowProps): JSX.Element {
  * @returns The list. The sidebar decides whether there is one.
  */
 function SemanticWalkthroughBar(props: SemanticWalkthroughBarProps): JSX.Element {
-	const { walkthroughs, open, onChoose, onNarrate } = props;
+	const { walkthroughs, open, onChoose, narration } = props;
 	return (
 		<SidebarChoices slot="semantic-walkthrough-bar" label="Explanations of this board">
 			{walkthroughs.map((walkthrough) => (
@@ -141,7 +145,7 @@ function SemanticWalkthroughBar(props: SemanticWalkthroughBarProps): JSX.Element
 					walkthrough={walkthrough}
 					open={open === walkthrough.id}
 					onChoose={onChoose}
-					onNarrate={onNarrate}
+					narration={narration}
 				/>
 			))}
 		</SidebarChoices>

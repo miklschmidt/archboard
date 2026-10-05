@@ -287,8 +287,8 @@ What the source shows for each row, and what you author for it:
   included; never on teardown or cleanup, an error or exception path, an
   optional hook most passes skip, startup, registration or a one-shot call.
   Traffic is authored intent chosen from what the source runs per request,
-  never a measurement; a still picture shows the marks at rest and proves
-  nothing about motion.
+  never a measurement; a still picture shows the pulses where they are at time zero
+  and proves nothing about motion.
 - `emphasis`. _Shows:_ a spine: the path or backbone the board's question is
   about, and the lines that are only context. _Author:_ `emphasis: "hero"` on
   the spine — a third of the relationships, never past half — and `"muted"` on

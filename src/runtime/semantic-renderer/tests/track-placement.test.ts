@@ -14,7 +14,7 @@ import { expect, test } from "bun:test";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
-import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
+import { LAYOUT_ASPECT } from "@/shared/shell-geometry/index";
 import {
 	corridorPoints,
 	routeLabels,
@@ -250,9 +250,7 @@ test("a board that reads about as well stacked keeps the page that fits the pane
 		policy: browserPolicy,
 		layout: "track",
 	});
-	expect(drawing.width / drawing.height).toBeGreaterThan(
-		REFERENCE_PANE.width / REFERENCE_PANE.height,
-	);
+	expect(drawing.width / drawing.height).toBeGreaterThan(LAYOUT_ASPECT);
 });
 
 // Taken from a board of this repository: its containers laid stacked scored

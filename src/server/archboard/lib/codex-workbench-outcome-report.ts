@@ -49,7 +49,7 @@ const OUTCOME_HANDLING =
 /** What the coordinator is asked to do with each situation of workhorse news. */
 const NEWS_ACTIONS: Readonly<Record<WorkhorseNewsSituation, string>> = Object.freeze({
 	ended:
-		"If the user is waiting on this work, whether they asked you for it by voice or started it from the agent bar, inspect the workhorse to read what was done, then say in your [FINAL] message what came of it, or what went wrong and what they can do next.",
+		"If the user is waiting on this work, whether they asked you for it by voice or typed it in the conversation, inspect the workhorse to read what was done, then say in your [FINAL] message what came of it, or what went wrong and what they can do next.",
 	waiting:
 		"If the user is waiting on this work, tell them in your [FINAL] message that it is paused until they answer the request on the workbench.",
 	message:

@@ -20,6 +20,13 @@ const SUBJECT_ATTRIBUTE = "data-semantic-id";
 const TRAFFIC_ATTRIBUTE = "data-traffic";
 
 /**
+ * The class every moving mark of traffic carries (the renderer's `PULSE_CLASS`).
+ * A pulse slides in a bar much longer than the part it runs along, so it is
+ * never part of what a box around a subject is measured from.
+ */
+const PULSE_CLASS = "ab-pulse";
+
+/**
  * The attribute a mark lists its members in, space-separated: a group's region
  * lists its cards, and a junction mark the relationships that meet at it.
  * Neither is a subject of its own: the veil lights each with its members.
@@ -198,27 +205,72 @@ function lightByMembers(surface: Element, standing: ReadonlySet<string>): void {
 	}
 }
 
+/**
+ * The classes a subject a trace reached carries, by how many hops beyond the
+ * first it is: the faintest class is shared by every hop from the last on.
+ */
+const REACH_CLASSES: readonly string[] = ["is-reach-2", "is-reach-3", "is-reach-4"];
+
+/**
+ * Grade the subjects a trace reached, or take the grading off.
+ *
+ * Each carries the class for how far it is, so the stylesheet can light the
+ * nearest strongest and let the wave spread by hop. The marks that say what is
+ * lit at all are {@link markVeil}'s.
+ * @param surface The element the picture was put into.
+ * @param reach How many hops beyond the first each subject is; null for no trace.
+ */
+function markReach(surface: Element, reach: ReadonlyMap<string, number> | null): void {
+	for (const group of surface.querySelectorAll(MARKED)) {
+		const hops = reach?.get(markedId(group) ?? "") ?? 0;
+		const grade = Math.min(hops, REACH_CLASSES.length + 1) - 2;
+		REACH_CLASSES.forEach((one, index) => group.classList.toggle(one, index === grade));
+	}
+}
+
 /** The class the surface carries while the picture is seen from far away. */
 const FAR_VIEW_CLASS = "is-far";
 
+/** The class the surface carries while the picture lights what a poked part is wired to. */
+const PROBING_CLASS = "is-probing";
+
+/** The class it adds when the pointer rests on a part, which lights more lightly than a pick. */
+const PROBING_LIGHT_CLASS = "is-probing-light";
+
+/** How strongly the picture answers a poke: to the part picked out, or to one the pointer rests on. */
+type ProbeMode = "pick" | "hover";
+
 /**
  * The classes the surface itself carries for the picture's stylesheet: that a
- * presented step veils the picture, and that it is seen from far away,
- * where each card draws its name larger in place of its responsibility. They
- * are part of the surface's rendered class, never toggled on it afterwards: a
- * render that writes the surface's class (a pan starting, say) would wipe a
- * class put there by hand.
+ * presented step veils the picture, that it is seen from far away, where each
+ * card draws its name and the start of its responsibility larger, and that it
+ * lights what a poked part is wired to. They are part of the surface's rendered
+ * class, never toggled on it afterwards: a render that writes the surface's
+ * class (a pan starting, say) would wipe a class put there by hand.
  * @param state What the surface says.
  * @param state.veiled Whether a presented step veils the picture.
  * @param state.far Whether the picture is seen from far away.
+ * @param state.probing How strongly the picture lights a poked part's connections, or null for not at all.
  * @returns The classes, each with a leading space, or nothing.
  */
-function surfaceMarks({ veiled, far }: { veiled: boolean; far: boolean }): string {
-	return `${veiled ? ` ${VEILED_CLASS}` : ""}${far ? ` ${FAR_VIEW_CLASS}` : ""}`;
+function surfaceMarks({
+	veiled,
+	far,
+	probing = null,
+}: {
+	veiled: boolean;
+	far: boolean;
+	probing?: ProbeMode | null;
+}): string {
+	const lighting =
+		probing === null
+			? ""
+			: ` ${PROBING_CLASS}${probing === "hover" ? ` ${PROBING_LIGHT_CLASS}` : ""}`;
+	return `${veiled ? ` ${VEILED_CLASS}` : ""}${far ? ` ${FAR_VIEW_CLASS}` : ""}${lighting}`;
 }
 
 /** Every class the viewer puts on a subject's group; none of them is the renderer's. */
-const VIEWER_MARKS: readonly string[] = [SELECTED_CLASS, LIT_CLASS];
+const VIEWER_MARKS: readonly string[] = [SELECTED_CLASS, LIT_CLASS, ...REACH_CLASSES];
 
 /**
  * The viewer's marks on a surface, by subject.
@@ -263,15 +315,19 @@ function keepingMarks(surface: Element, stage: () => void): void {
 }
 
 export {
+	LIT_CLASS,
+	PULSE_CLASS,
 	SELECTED_CLASS,
 	SUBJECT_ATTRIBUTE,
 	TRAFFIC_ATTRIBUTE,
 	isSubject,
 	keepingMarks,
+	markReach,
 	markSubjects,
 	markVeil,
 	raise,
 	subjectAt,
 	subjectBox,
 	surfaceMarks,
+	type ProbeMode,
 };

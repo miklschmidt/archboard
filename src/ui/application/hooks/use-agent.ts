@@ -1,6 +1,6 @@
 // The agent surfaces' one view and one set of actions, over the server-wide
 // agent setup, the focused pane's owners and the voice session. Everything the
-// agent bar and the conversation panel show comes through `AgentView`;
+// agent dock and the conversation panel show comes through `AgentView`;
 // everything a person does there goes out through `AgentActions`.
 
 import { useMemo, useSyncExternalStore } from "react";
@@ -75,7 +75,7 @@ function useStore<T>(store: SnapshotStore<T>): T {
  * they are drawn, never at the application's root, which would draw the whole
  * shell again for every piece of a reply (TASK-385.03).
  * @param inputs The workbench and the context.
- * @param voice The voice, as the agent bar shows it.
+ * @param voice The voice, as the agent dock shows it.
  * @returns The view.
  */
 function useAgentView(

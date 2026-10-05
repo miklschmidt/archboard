@@ -10,25 +10,26 @@ type PageEvaluator = Pick<AgentBrowserSession, "eval">;
 
 /** The element the browser presents fullscreen: the centre stage. */
 const STAGE_ROOT = '[data-slot="pane-stages"]';
-/** The header's board breadcrumb; its first span is the board name. */
-const BOARD_BREADCRUMB = 'nav[aria-label="Current board"]';
-/** One pane's section, by its accessible name. */
-const paneSection = (label: string): string => `section[aria-label=${JSON.stringify(label)}]`;
+/** The breadcrumb in the header of the pane with focus: the boards above, the board, then the variant. */
+const BOARD_BREADCRUMB = 'section[aria-current="true"] nav[aria-label="Where this board sits"]';
 /** Every pane section. */
 const PANE_SECTIONS = 'section[aria-label^="Pane "]';
-/** The pane chooser and its tabs, present while two panes are open. */
-const PANE_TABS = '[data-slot="toggle-group"][aria-label="Pane"] [data-slot="toggle-group-item"]';
-/** The navigator column. */
+/** A pane's top row: where its board sits, the ways to read it and the pane's controls. */
+const PANE_HEADER = '[data-slot="pane-header"]';
+/** The pane letters in the pane headers, present while two panes are open. */
+const PANE_LETTERS = '[data-slot="pane-header"] [data-slot="pane-letter"]';
+/** The navigator's top row, level with every pane header: the brand, Settings and the theme. */
+const BRAND_BAR = '[data-slot="brand-bar"]';
+/** The agent at the foot of the navigator: its state, its voice and the key to the conversation. */
+const AGENT_DOCK = 'section[data-slot="agent-dock"]';
+/** The navigator: the filter, the boards and where agents are working. */
 const NAVIGATOR = '[data-slot="navigator"]';
-/** The agent bar under the panes: the agent's state, Talk and the composer. */
-const AGENT_BAR = '[data-slot="agent-bar"]';
-/** The conversation panel beside the panes, present while it is open. */
+/** The navigator's whole column: the brand bar, the navigator and the agent dock. */
+const NAVIGATOR_COLUMN = '[data-slot="navigator-column"]';
+/** The conversation between the navigator and the panes, present while it is open. */
 const AGENT_PANEL = '[data-slot="agent-panel"]';
-/** The composer in the agent bar. */
+/** The composer at the foot of the conversation. */
 const COMPOSER = 'textarea[aria-label="Message the agent"]';
-/** The toggle that opens and closes the conversation panel. */
-const CONVERSATION_TOGGLE =
-	'button[aria-label="Open the conversation"], button[aria-label="Close the conversation"]';
 /** One notice, by its title. */
 const noticeByTitle = (title: string): string => `(() => {
 	const titles = [...document.querySelectorAll('[data-slot="alert"] [data-slot="alert-title"]')];
@@ -40,24 +41,13 @@ const SHELL_NOTICES = `[...document.querySelectorAll('[data-slot="alert"]')]
 	.filter(node => !node.closest('[role="dialog"], [role="alertdialog"]'))`;
 /** The presented pane's bar, present only during a presentation. */
 const PRESENTATION_BAR = '[data-slot="presentation-bar"]';
-/** The claim banner across one stage. */
-const CLAIM_BANNER = '[data-slot="claim-banner"]';
 
 /** A navigator row's name by the board key it selects (identity hook); a click on it opens the row. */
 const navigatorRow = (key: string): string =>
 	`${NAVIGATOR} [data-board-key=${JSON.stringify(key)}]`;
 
-/** A button by exact accessible name, searched within an optional scope. */
-const buttonNamed = (name: string, scope = "document"): string => `(() => {
-	const root = ${scope};
-	if (!root) return null;
-	const wanted = ${JSON.stringify(name)};
-	return [...root.querySelectorAll('button, a[role="button"]')].find(node =>
-		(node.getAttribute('aria-label') ?? node.textContent ?? '').trim() === wanted) ?? null;
-})()`;
-
-/** The board name the header shows. */
-const BOARD_NAME_EXPRESSION = `document.querySelector('${BOARD_BREADCRUMB} span')?.textContent?.trim() ?? null`;
+/** The board name the header of the pane with focus shows. */
+const BOARD_NAME_EXPRESSION = `document.querySelector('${BOARD_BREADCRUMB} [data-slot="pane-board-name"]')?.textContent?.trim() ?? null`;
 
 /** The theme the root element carries. */
 const THEME_EXPRESSION = "document.documentElement.getAttribute('data-theme') ?? ''";
@@ -134,20 +124,6 @@ function dismissNotice(browser: PageEvaluator, title: string): Promise<boolean> 
 	})()`);
 }
 
-/**
- * Dismiss the first shell notice, whatever its title.
- * @param browser The page.
- * @returns True when a notice was dismissed.
- */
-function dismissFirstNotice(browser: PageEvaluator): Promise<boolean> {
-	return browser.eval<boolean>(`(() => {
-		const dismiss = ${SHELL_NOTICES}[0]?.querySelector('button[aria-label^="Dismiss notice"]');
-		if (!dismiss) return false;
-		dismiss.click();
-		return true;
-	})()`);
-}
-
 /** One shell notice as an owner reads it. */
 interface ShellNoticeView {
 	title: string;
@@ -187,29 +163,27 @@ function stageIsFullscreen(browser: PageEvaluator): Promise<boolean> {
 }
 
 export {
-	AGENT_BAR,
+	AGENT_DOCK,
 	AGENT_PANEL,
 	BOARD_BREADCRUMB,
 	BOARD_NAME_EXPRESSION,
-	CLAIM_BANNER,
+	BRAND_BAR,
 	COMPOSER,
-	CONVERSATION_TOGGLE,
 	NAVIGATOR,
+	NAVIGATOR_COLUMN,
+	PANE_HEADER,
+	PANE_LETTERS,
 	PANE_SECTIONS,
-	PANE_TABS,
 	PRESENTATION_BAR,
 	SHELL_NOTICES,
 	STAGE_ROOT,
 	THEME_EXPRESSION,
 	boardName,
-	buttonNamed,
 	clickNavigatorRow,
 	currentTheme,
-	dismissFirstNotice,
 	dismissNotice,
 	navigatorRow,
 	noticeByTitle,
-	paneSection,
 	shellNotices,
 	stageIsFullscreen,
 	switchTheme,
@@ -237,4 +211,46 @@ async function openConversation(browser: AgentBrowserSession): Promise<void> {
 	})()`);
 }
 
-export { openConversation, pressSettings };
+/** The agent dock's controls as the eye reads them, and as Tab reaches them. */
+interface DockFocusOrder {
+	/** Each control's name, the top row first and left to right within a row. */
+	readonly seen: readonly string[];
+	/** The name of what has focus once the first control is focused, and after each Tab from it. */
+	readonly tabbed: readonly string[];
+}
+
+/** A control's name in the page: its label, or else its words. */
+const NAME_OF = `(node) => (node?.getAttribute('aria-label') ?? node?.textContent ?? '').trim()`;
+
+/**
+ * Read the agent dock's controls in the order the eye reads them, then focus the first and press
+ * Tab once for each of the others. The dock's grid places its parts, so only their order in the
+ * page keeps the keyboard in step with the eye.
+ * @param browser The page.
+ * @returns The two orders, which match when the keyboard follows the eye.
+ */
+async function dockFocusOrder(browser: AgentBrowserSession): Promise<DockFocusOrder> {
+	const seen = await browser.eval<string[]>(`(() => {
+		const controls = [...document.querySelectorAll('${AGENT_DOCK} button, ${AGENT_DOCK} a[href]')]
+			.filter((node) => node.tabIndex >= 0 && node.checkVisibility())
+			.map((node) => ({ node, box: node.getBoundingClientRect() }))
+			.sort((a, b) => {
+				if (a.box.bottom <= b.box.top) return -1;
+				if (b.box.bottom <= a.box.top) return 1;
+				return a.box.left - b.box.left;
+			})
+			.map(({ node }) => node);
+		controls[0]?.focus();
+		return controls.map(${NAME_OF});
+	})()`);
+	const focused = (): Promise<string> =>
+		browser.eval<string>(`(${NAME_OF})(document.activeElement)`);
+	const tabbed = [await focused()];
+	while (tabbed.length < seen.length) {
+		await browser.run(["press", "Tab"]);
+		tabbed.push(await focused());
+	}
+	return { seen, tabbed };
+}
+
+export { dockFocusOrder, openConversation, pressSettings, type DockFocusOrder };

@@ -41,7 +41,7 @@ function TakeBackControl(props: TakeBackControlProps): JSX.Element {
 			<Button
 				variant="outline"
 				size="xs"
-				className="border-status-foreground/40 bg-background/60 hover:bg-background text-status-foreground hover:text-status-foreground shrink-0 rounded-[2px] font-medium"
+				className="border-status-foreground/40 bg-background/60 hover:bg-background text-status-foreground hover:text-status-foreground rounded-chip shrink-0 font-medium"
 				onClick={handleClick}
 				disabled={pending}
 				aria-busy={pending}

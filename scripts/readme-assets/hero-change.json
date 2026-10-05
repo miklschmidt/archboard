@@ -1,0 +1,214 @@
+{
+	"nodes": [
+		{
+			"id": "@N:Place order",
+			"name": "Place order",
+			"kind": "route",
+			"parent": "Checkout API",
+			"responsibility": "POST /orders: saves the order as pending and starts the payment, then answers"
+		},
+		{
+			"name": "Payment webhook",
+			"kind": "route",
+			"parent": "Checkout API",
+			"groups": ["payments"],
+			"responsibility": "POST /payments/webhook: records the outcome the payment provider reports"
+		},
+		{
+			"name": "Order events",
+			"kind": "queue",
+			"groups": ["fulfilment"],
+			"responsibility": "Carries each paid order to the work that follows it"
+		},
+		{
+			"name": "Fulfilment worker",
+			"kind": "job",
+			"groups": ["fulfilment"],
+			"responsibility": "Reserves the stock and sends the receipt for each paid order, retrying on its own"
+		}
+	],
+	"removeNodes": ["Timeout guard"],
+	"removeWalkthroughs": ["How an order is placed today"],
+	"edges": [
+		{
+			"id": "@E:reserve stock, and wait",
+			"from": "Fulfilment worker",
+			"to": "Inventory service",
+			"kind": "http",
+			"label": "reserve stock",
+			"traffic": {}
+		},
+		{
+			"id": "@E:charge the card, and wait",
+			"from": "Place order",
+			"to": "Payment provider",
+			"kind": "http",
+			"label": "start the payment",
+			"emphasis": "hero",
+			"traffic": {}
+		},
+		{
+			"id": "@E:write the paid order",
+			"from": "Place order",
+			"to": "Orders DB",
+			"kind": "data",
+			"label": "write the order as pending",
+			"traffic": {}
+		},
+		{
+			"id": "@E:send the receipt, and wait",
+			"from": "Fulfilment worker",
+			"to": "Email provider",
+			"kind": "http",
+			"label": "send the receipt",
+			"traffic": {},
+			"description": "Retried with backoff until the email provider accepts it; the shopper already has their confirmation page."
+		},
+		{
+			"from": "Payment provider",
+			"to": "Payment webhook",
+			"kind": "event",
+			"label": "payment succeeded",
+			"emphasis": "hero",
+			"traffic": {}
+		},
+		{
+			"from": "Payment webhook",
+			"to": "Orders DB",
+			"kind": "data",
+			"label": "mark the order paid"
+		},
+		{
+			"from": "Payment webhook",
+			"to": "Order events",
+			"kind": "queue",
+			"label": "publish order paid",
+			"emphasis": "hero",
+			"traffic": {}
+		},
+		{
+			"from": "Order events",
+			"to": "Fulfilment worker",
+			"kind": "queue",
+			"label": "deliver order paid",
+			"traffic": {}
+		}
+	],
+	"flows": [
+		{
+			"id": "@F:Place an order",
+			"name": "Place an order",
+			"summary": "One press of Pay, from the basket to the order-received page.",
+			"participants": ["Storefront", "Place order", "Orders DB", "Payment provider"],
+			"steps": [
+				{
+					"id": "@S:Place an order:POST /orders",
+					"from": "Storefront",
+					"to": "Place order",
+					"label": "POST /orders"
+				},
+				{
+					"id": "@S:Place an order:load and price the basket",
+					"from": "Place order",
+					"to": "Place order",
+					"kind": "self",
+					"label": "load and price the basket"
+				},
+				{
+					"id": "@S:Place an order:write the paid order",
+					"from": "Place order",
+					"to": "Orders DB",
+					"label": "write the order as pending"
+				},
+				{
+					"id": "@S:Place an order:charge the card",
+					"from": "Place order",
+					"to": "Payment provider",
+					"label": "start the payment"
+				},
+				{
+					"id": "@S:Place an order:paid",
+					"from": "Payment provider",
+					"to": "Place order",
+					"kind": "return",
+					"label": "payment started"
+				},
+				{
+					"id": "@S:Place an order:order confirmed",
+					"from": "Place order",
+					"to": "Storefront",
+					"kind": "return",
+					"label": "order received"
+				}
+			]
+		},
+		{
+			"name": "Fulfil a paid order",
+			"summary": "What happens once the card is paid, off the shopper's clock.",
+			"participants": [
+				"Payment provider",
+				"Payment webhook",
+				"Orders DB",
+				"Order events",
+				"Fulfilment worker",
+				"Inventory service",
+				"Email provider"
+			],
+			"steps": [
+				{
+					"from": "Payment provider",
+					"to": "Payment webhook",
+					"kind": "async",
+					"label": "payment succeeded",
+					"note": "the provider may deliver the same event more than once"
+				},
+				{
+					"from": "Payment webhook",
+					"to": "Orders DB",
+					"label": "mark the order paid"
+				},
+				{
+					"from": "Payment webhook",
+					"to": "Order events",
+					"kind": "async",
+					"label": "publish order paid"
+				},
+				{
+					"from": "Payment webhook",
+					"to": "Payment provider",
+					"kind": "return",
+					"label": "200 OK"
+				},
+				{
+					"from": "Order events",
+					"to": "Fulfilment worker",
+					"kind": "async",
+					"label": "order paid"
+				},
+				{
+					"from": "Fulfilment worker",
+					"to": "Inventory service",
+					"label": "reserve the items"
+				},
+				{
+					"from": "Inventory service",
+					"to": "Fulfilment worker",
+					"kind": "return",
+					"label": "reserved"
+				},
+				{
+					"from": "Fulfilment worker",
+					"to": "Email provider",
+					"label": "send the receipt",
+					"note": "retried with backoff until accepted; the shopper already has their page"
+				},
+				{
+					"from": "Email provider",
+					"to": "Fulfilment worker",
+					"kind": "return",
+					"label": "accepted"
+				}
+			]
+		}
+	]
+}

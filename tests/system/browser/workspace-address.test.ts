@@ -15,7 +15,7 @@ import {
 } from "./support/agent-browser.ts";
 import { seedSemanticBoard } from "./support/semantic-page.ts";
 import { serverPath, type PanesBody } from "./support/navigator-support.ts";
-import { PANE_TABS, clickNavigatorRow, shellNotices } from "./support/shell-dom.ts";
+import { PANE_SECTIONS, clickNavigatorRow, shellNotices } from "./support/shell-dom.ts";
 
 /**
  * The search parameters the address bar is showing.
@@ -203,14 +203,9 @@ test("choosing a variant in the navigator moves the pane it was chosen for, and 
 		"both panes to settle on payments",
 	);
 
-	// The right-hand pane's tab, then the proposal's row, pressed the way a person presses them.
-	const focused = await browser.eval<boolean>(`(() => {
-		const tab = [...document.querySelectorAll(${JSON.stringify(PANE_TABS)})].at(-1);
-		if (!tab) return false;
-		tab.click();
-		return true;
-	})()`);
-	expect(focused).toBeTrue();
+	// The right-hand pane, then the proposal's row, pressed the way a person
+	// presses them: a pointer pressed in a pane gives it focus.
+	await browser.run(["click", `${PANE_SECTIONS}:last-of-type [data-slot="pane-board-name"]`]);
 	await pollUntil(
 		() => addressSearch(browser),
 		(search) => search.endsWith("pane=B"),

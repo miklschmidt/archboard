@@ -5,6 +5,7 @@ import type { TextRun } from "@/transformers/semantic-renderer/lib/drawing";
 import { measureNoteLines } from "@/transformers/semantic-renderer/lib/measurement";
 import { CARD_NOTE_FONT, CARD_TITLE_FONT } from "@/transformers/semantic-renderer/lib/fonts";
 import { measure } from "@/transformers/semantic-renderer/lib/text";
+import { DRILL_MARK_ROOM } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
 import {
 	CARD_PADDING_X,
 	ICON_CHIP_SIZE,
@@ -31,6 +32,27 @@ interface SequenceCard {
  */
 function cardTextWidth(cardWidth: number): number {
 	return cardWidth - CARD_PADDING_X * 2 - ICON_CHIP_SIZE - ICON_CHIP_GAP;
+}
+
+/**
+ * The room a participant keeps beside its name for the mark of a part that
+ * opens another board.
+ * @param node The participant.
+ * @returns The room, nothing for a part that opens no board.
+ */
+function markRoom(node: SemanticNode): number {
+	return node.drillDown === undefined ? 0 : DRILL_MARK_ROOM;
+}
+
+/**
+ * The run a participant's name has on a card: the text run, less the mark of a
+ * part that opens another board.
+ * @param node The participant.
+ * @param cardWidth The column's card width.
+ * @returns Name space in diagram units.
+ */
+function titleRoom(node: SemanticNode, cardWidth: number): number {
+	return cardTextWidth(cardWidth) - markRoom(node);
 }
 
 /**
@@ -72,8 +94,16 @@ function cardContentWidth(node: SemanticNode): number {
 		CARD_PADDING_X * 2 +
 		ICON_CHIP_SIZE +
 		ICON_CHIP_GAP +
-		Math.max(measure(node.name, CARD_TITLE_FONT, TITLE_SIZE), noteWidth)
+		Math.max(measure(node.name, CARD_TITLE_FONT, TITLE_SIZE) + markRoom(node), noteWidth)
 	);
 }
 
-export { type SequenceCard, cardTextWidth, cardHeight, cardNotes, cardContentWidth };
+export {
+	type SequenceCard,
+	cardTextWidth,
+	cardHeight,
+	cardNotes,
+	cardContentWidth,
+	markRoom,
+	titleRoom,
+};

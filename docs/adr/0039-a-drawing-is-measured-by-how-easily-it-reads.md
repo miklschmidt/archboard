@@ -9,6 +9,11 @@ Superseded in part by
 what the Graphviz engine counts, its route settlement (`even-pins.ts`) and its
 column fold describe code that no longer exists.
 
+Superseded in part by
+[ADR 0043](0043-the-renderer-lays-boards-out-for-a-tuned-page-shape.md): the
+reference pane it keeps as the yardstick for fit takes its height from a tuned
+page shape of 1.4, not from the desktop shell.
+
 This decision supersedes the section "Fit in the reference pane is the measure"
 of
 [ADR 0028](0028-the-renderer-reads-a-board-in-a-direction-and-is-measured-by-fit.md),

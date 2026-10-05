@@ -1,5 +1,5 @@
 // The key to the picture on screen: what each node kind's chip and each
-// relationship kind's line mean, and what a line's weight and its streaks say.
+// relationship kind's line mean, and what a line's weight and its pulses say.
 //
 // It keys only what the picture draws, in the order the picture draws it, with
 // the picture's own symbols: a legend that lists what is not on the page is a

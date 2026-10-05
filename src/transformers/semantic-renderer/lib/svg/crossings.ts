@@ -115,7 +115,7 @@ function pastEnd(piece: Curve, end: Point, past: number): Curve {
 
 /**
  * Hide every stretch of a route's ink another route of its trunk draws: its
- * line, its dashes, its comets and an arrowhead on the same point, so the trunk
+ * line, its dashes, its pulses and an arrowhead on the same point, so the trunk
  * reads as one line. Square across its ends, so where the routes part the
  * route's own ink carries on from exactly there.
  * @param routes The routes before any hop is drawn, as the trunks were found.
@@ -193,7 +193,7 @@ function crossingMasks(
 	const masks = new Map<string, string>();
 	const definitions: string[] = [];
 	for (const [edgeId, paths] of grouped) {
-		// Keep the full stroke, selection halo, comets and endpoints inside the mask.
+		// Keep the full stroke, selection halo, pulses and endpoints inside the mask.
 		const box = inflate(curveBounds(byId.get(edgeId)!.curve), 18);
 		const bounds = {
 			x: coord(box.x),

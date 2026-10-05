@@ -4,9 +4,10 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
 	AGENT_PANEL_WIDTH,
-	DOCK_BAR_HEIGHT,
-	HEADER_HEIGHT,
+	CHROME_HEIGHT,
+	FIT_MARGIN,
 	NAVIGATOR_WIDTH,
+	REFERENCE_PANE,
 	SHELL_VIEWPORT,
 	STAGE,
 } from "@/shared/shell-geometry/index";
@@ -24,19 +25,20 @@ import {
 	registerServerBase,
 } from "./support/agent-browser.ts";
 import { PERSISTENT_NOTICE_TEXT, publishActionableNotice } from "./support/shell-notices.ts";
-import type { DesktopShell, NoticeLayout, PaneBarLayout } from "./support/shell-contract-types.ts";
+import type { DesktopShell, NoticeLayout, PaneLetters } from "./support/shell-contract-types.ts";
 import { roleAction } from "./support/opener-settings-interaction.ts";
 import { captureShellRenderMatrix } from "./support/shell-render-matrix.ts";
 import { addressShowing, seedSemanticBoard, stageState } from "./support/semantic-page.ts";
 import {
-	AGENT_BAR,
+	AGENT_DOCK,
 	AGENT_PANEL,
 	BOARD_BREADCRUMB,
 	BOARD_NAME_EXPRESSION,
 	COMPOSER,
 	NAVIGATOR,
+	NAVIGATOR_COLUMN,
+	PANE_LETTERS,
 	PANE_SECTIONS,
-	PANE_TABS,
 	STAGE_ROOT,
 } from "./support/shell-dom.ts";
 
@@ -53,27 +55,32 @@ const activityLines = [
 ] as const;
 /** WCAG 2.5.8 target size: the floor every control keeps at the desktop viewport. */
 const MIN_TARGET = 24;
+/** The wordmark's box, set in the display face. */
+const WORDMARK = { width: 70.75, height: 21 } as const;
 
-/** The shell's columns and bars, measured in the page. */
+/** The shell's columns, measured in the page. */
 const READ_DESKTOP = `(() => {
 	const box = node => { if (!node) return null; const value = node.getBoundingClientRect();
 		return { left: value.left, top: value.top, right: value.right, bottom: value.bottom,
 			width: value.width, height: value.height }; };
-	const nav = document.querySelector('${NAVIGATOR}');
-	return { viewport: { width: innerWidth, height: innerHeight }, nav: box(nav),
-		centre: box(nav?.nextElementSibling), stages: box(document.querySelector('${STAGE_ROOT}')),
-		pane: box(document.querySelector('${PANE_SECTIONS}')), bar: box(document.querySelector('${AGENT_BAR}')),
+	return { viewport: { width: innerWidth, height: innerHeight },
+		column: box(document.querySelector('${NAVIGATOR_COLUMN}')), stages: box(document.querySelector('${STAGE_ROOT}')),
+		pane: box(document.querySelector('${PANE_SECTIONS}')), dock: box(document.querySelector('${AGENT_DOCK}')),
 		composer: box(document.querySelector('${COMPOSER}')), panel: box(document.querySelector('${AGENT_PANEL}')) };
 })()`;
 
-/** The pane tabs, present only while two panes are open. */
-const READ_PANE_BAR = `(() => {
-	const tabs = [...document.querySelectorAll('${PANE_TABS}')];
-	const value = tabs[0] ? getComputedStyle(tabs[0]) : null;
-	return { tabCount: tabs.length, tabHeights: tabs.map(tab => tab.getBoundingClientRect().height),
-		pressedCount: tabs.filter(tab => tab.getAttribute('aria-pressed') === 'true').length,
-		tabType: value && { family: value.fontFamily.toLowerCase(), size: parseFloat(value.fontSize),
-			lineHeight: parseFloat(value.lineHeight), weight: parseFloat(value.fontWeight) } };
+/** The lone pane's width, and the size of its window on the picture. */
+const READ_PICTURE = `(() => {
+	const pane = document.querySelector('${PANE_SECTIONS}');
+	const picture = pane?.querySelector('[data-slot="semantic-board-viewport"]')?.getBoundingClientRect();
+	return { pane: pane?.getBoundingClientRect().width ?? 0, width: picture?.width ?? -1,
+		height: picture?.height ?? -1 };
+})()`;
+
+/** The pane letters, present only while two panes are open. */
+const READ_PANE_LETTERS = `(() => {
+	const letters = [...document.querySelectorAll('${PANE_LETTERS}')];
+	return { count: letters.length, active: letters.filter(letter => letter.hasAttribute('data-active')).length };
 })()`;
 
 /**
@@ -144,7 +151,7 @@ test(
 		await pollUntil(
 			() =>
 				browser.eval<string | null>(
-					`document.querySelector('${BOARD_BREADCRUMB} [data-slot="board-state"]')?.textContent?.trim() ?? null`,
+					`document.querySelector('${BOARD_BREADCRUMB} [data-slot="board-state"] > span:last-child')?.textContent?.trim() ?? null`,
 				),
 			(variant) => variant === proposal.name,
 			"the header to name the proposal being read",
@@ -201,17 +208,28 @@ test(
 			expect(cell.screenshotSha256).toHaveLength(64);
 		}
 
-		// The reference pane a drawing's fit is measured against is derived from
-		// these widths and heights (ADR 0028); the mounted shell is what they are,
-		// with the conversation panel closed.
+		// The shell draws what the shared geometry says, with the conversation
+		// closed: the navigator's column, the chrome row at the top of every
+		// column, and a lone pane's picture beside its docked sidebar, whose width
+		// less the fit margin is the width a drawing's fit is measured against.
+		// The reference pane's height is the renderer's page shape, not the
+		// shell's (ADR 0043).
 		for (const cell of matrix.cells.filter(({ viewport }) => viewport === "desktop")) {
-			const { nav, header, stages, bar } = cell.geometry;
-			expect(nav?.width, "navigator width").toBe(NAVIGATOR_WIDTH);
-			expect(header?.height, "header height").toBe(HEADER_HEIGHT);
-			expect(stages?.width, "stage width").toBe(STAGE.width);
-			expect(stages?.height, "stage height").toBe(STAGE.height);
-			expect(bar?.height, "agent bar height with its rule").toBe(DOCK_BAR_HEIGHT);
+			const { column, header, picture } = cell.geometry;
+			expect(column?.width, "navigator column width").toBe(NAVIGATOR_WIDTH);
+			expect(header?.height, "chrome row height").toBe(CHROME_HEIGHT);
+			expect(picture!.width - 2 * FIT_MARGIN, "the reference pane's width").toBe(
+				REFERENCE_PANE.width,
+			);
 		}
+		// With its sidebar put away, the picture has the whole stage.
+		await roleAction(browser, "button", "Sidebar");
+		const stage = await pollUntil(
+			() => browser.eval<{ pane: number; width: number; height: number }>(READ_PICTURE),
+			(picture) => picture.width === picture.pane,
+			"the sidebar to give the picture the pane's whole width",
+		);
+		expect({ width: stage.width, height: stage.height }, "the stage").toEqual(STAGE);
 
 		const themes = matrix.cells
 			.filter(({ viewport, mode }) => viewport === "desktop" && mode === "normal")
@@ -219,25 +237,22 @@ test(
 		expect(themes.map(({ theme }) => theme).toSorted()).toEqual(["dark", "light"]);
 		for (const snapshot of themes) {
 			expect(snapshot.wordmark).toBe("archboard");
-			expect(Math.abs(snapshot.wordmarkSize.width - 85.7815)).toBeLessThan(0.02);
-			expect(Math.abs(snapshot.wordmarkSize.height - 13.209)).toBeLessThan(0.02);
-			expect(snapshot.unexpectedBrandIconCount).toBe(0);
-			expect(snapshot.headerHeight).toBeCloseTo(56, 0);
-			const colors = readThemeColors(
-				`:root { --primary: ${snapshot.selection}; --status: ${snapshot.status}; }`,
-			).light;
-			expect(colors["--primary"]).toBe(themeColor(snapshot.theme, "--primary"));
+			// The wordmark's own face: a fallback face sets it at another size.
+			expect(Math.abs(snapshot.wordmarkSize.width - WORDMARK.width)).toBeLessThan(0.02);
+			expect(Math.abs(snapshot.wordmarkSize.height - WORDMARK.height)).toBeLessThan(0.02);
+			// Every column starts with one chrome row, and the rows line up.
+			expect(snapshot.chromeRowsAligned).toBe(true);
+			const colors = readThemeColors(`:root { --status: ${snapshot.status}; }`).light;
 			expect(colors["--status"]).toBe(themeColor(snapshot.theme, "--status"));
 			expect(snapshot.inkContrast).toBeGreaterThanOrEqual(4.5);
 			expect(snapshot.flatSurfaces).toBe(true);
-			expect(snapshot.shadowlessSurfaces).toBe(true);
 			expect(snapshot.visibleFocus).toBe(true);
 			expect(snapshot.boardIdentity).toBe("fixedpoint");
 			expect(snapshot.variant).toBe(proposal.name);
 			// The navigator marks the board the one focused pane reads.
 			expect(snapshot.selectedBoard).toBe("fixedpoint");
 			expect(snapshot.focusedPaneCount).toBe(1);
-			// A live socket says nothing in the header.
+			// A live socket says nothing in the pane header.
 			expect(snapshot.connectionTrouble).toBe(0);
 			expect(snapshot.headerSectionsAligned).toBe(true);
 			expect(snapshot.fontChecks).toEqual([true, true, true, true, true, true]);
@@ -257,15 +272,14 @@ test(
 			expect(
 				snapshot.humanLabels.every(
 					({ family, transform, weight }) =>
-						family.includes("archboard onest") &&
-						transform === "none" &&
-						[500, 600].includes(weight),
+						family.includes("archboard onest") && transform === "none" && weight >= 500,
 				),
 			).toBe(true);
-			// The type roles (TASK-150.08): board name 600, body 400, the state and
-			// controls 500, technical tokens in the mono face at 400 or 500, and a
-			// sidebar section heading 600 at the body size, never uppercase (TASK-383).
-			expect(snapshot.titleType).toMatchObject({ weight: 600 });
+			// The type roles (DESIGN.md): the board in the pane's breadcrumb 650,
+			// body 400, the state and controls 500, technical tokens in the mono face
+			// at 400 or 500, and a sidebar section heading 600 at the body size,
+			// never uppercase (TASK-383).
+			expect(snapshot.titleType).toMatchObject({ weight: 650 });
 			expect(snapshot.sectionHeading).toMatchObject({
 				weight: 600,
 				transform: "none",
@@ -304,55 +318,56 @@ test(
 		}
 		expect(themes[0]?.background).not.toBe(themes[1]?.background);
 
-		// The columns: the navigator left of the centre, both under the header;
-		// the agent bar under the panes, from the navigator's edge to the
-		// viewport's; the conversation panel closed.
+		// The columns: the navigator's column at the left edge, top to bottom,
+		// with the agent dock at its foot; the pane centre beside it to the
+		// viewport's edge; the conversation closed.
 		const closed = await browser.eval<DesktopShell>(READ_DESKTOP);
 		expect(closed.viewport).toEqual(SHELL_VIEWPORT);
-		expect(closed.nav.right).toBeLessThanOrEqual(closed.centre.left + 0.5);
-		expect(Math.abs(closed.nav.top - closed.centre.top)).toBeLessThan(1);
-		expect(Math.abs(closed.nav.bottom - closed.centre.bottom)).toBeLessThan(1);
-		expect(closed.centre.width).toBeGreaterThan(closed.nav.width);
-		expect(closed.pane.height).toBeGreaterThan(closed.bar.height);
-		expect(closed.bar.top).toBeGreaterThanOrEqual(closed.pane.bottom - 0.5);
-		expect(closed.bar.left).toBe(closed.nav.right);
-		expect(closed.bar.right).toBe(closed.viewport.width);
-		expect(closed.bar.bottom).toBe(closed.viewport.height);
-		expect(closed.bar.height).toBe(DOCK_BAR_HEIGHT);
+		expect(closed.column).toMatchObject({ left: 0, top: 0, bottom: closed.viewport.height });
+		expect(closed.stages.left).toBeGreaterThanOrEqual(closed.column.right);
+		expect(closed.stages.right).toBe(closed.viewport.width);
+		expect(closed.dock.left).toBeGreaterThanOrEqual(closed.column.left);
+		expect(closed.dock.right).toBeLessThanOrEqual(closed.column.right);
+		expect(closed.dock.bottom).toBe(closed.viewport.height);
 		expect(closed.panel).toBeNull();
+		expect(closed.composer).toBeNull();
 
-		// Opening the conversation puts the panel right of the panes, over the
-		// composer's region, and takes its width from the stage alone.
+		// Opening the conversation puts the panel between the navigator and the
+		// panes, with the composer at its foot, and takes its width from the pane
+		// centre alone.
 		await roleAction(browser, "button", "Open the conversation");
 		const open = await pollUntil(
 			() => browser.eval<DesktopShell>(READ_DESKTOP),
-			(layout) => layout.panel !== null && layout.stages.width < closed.stages.width,
-			"the conversation panel to open beside the panes",
+			(layout) =>
+				layout.panel !== null && layout.stages.width === closed.stages.width - AGENT_PANEL_WIDTH,
+			"the conversation to open between the navigator and the panes",
 		);
 		const panel = open.panel!;
+		const composer = open.composer!;
 		expect(panel.width).toBe(AGENT_PANEL_WIDTH);
-		expect(panel.left).toBe(open.stages.right);
-		expect(panel.right).toBe(open.viewport.width);
-		expect(panel.bottom).toBeLessThanOrEqual(open.bar.top + 0.5);
-		expect(open.composer.left).toBeGreaterThanOrEqual(panel.left - 0.5);
-		expect(open.composer.right).toBeLessThanOrEqual(panel.right + 0.5);
-		expect(open.composer.top).toBeGreaterThanOrEqual(open.bar.top - 0.5);
-		expect(open.stages.width).toBe(closed.stages.width - AGENT_PANEL_WIDTH);
+		expect(panel.left).toBeGreaterThanOrEqual(open.column.right);
+		expect(panel.right).toBeLessThanOrEqual(open.stages.left);
+		expect(composer.left).toBeGreaterThanOrEqual(panel.left - 0.5);
+		expect(composer.right).toBeLessThanOrEqual(panel.right + 0.5);
+		expect(composer.top).toBeGreaterThanOrEqual(panel.top - 0.5);
+		expect(composer.bottom).toBeLessThanOrEqual(panel.bottom + 0.5);
+		expect(open.stages.right).toBe(closed.stages.right);
 		expect(open.stages.height).toBe(closed.stages.height);
-		expect(open.bar).toEqual(closed.bar);
+		expect(open.column).toEqual(closed.column);
+		expect(open.dock).toEqual(closed.dock);
 		await roleAction(browser, "button", "Close the conversation");
 		const reclosed = await pollUntil(
 			() => browser.eval<DesktopShell>(READ_DESKTOP),
-			(layout) => layout.panel === null,
-			"the conversation panel to close",
+			(layout) => layout.panel === null && layout.stages.width === closed.stages.width,
+			"the conversation to close",
 		);
 		expect(reclosed.stages).toEqual(closed.stages);
-		expect(reclosed.bar).toEqual(closed.bar);
+		expect(reclosed.dock).toEqual(closed.dock);
 
-		// One pane has nothing to choose between: no tabs. Two panes get a tab
-		// each, the focused one pressed.
-		const readPaneBar = () => browser.eval<PaneBarLayout>(READ_PANE_BAR);
-		expect((await readPaneBar()).tabCount).toBe(0);
+		// One pane has nothing to tell apart: no letters. Two panes each carry
+		// their letter in their header, and only the focused pane's is filled.
+		const readPaneLetters = () => browser.eval<PaneLetters>(READ_PANE_LETTERS);
+		expect((await readPaneLetters()).count).toBe(0);
 		expect((await api("/api/panes/open", { method: "POST", body: {} })).status).toBe(200);
 		await pollUntil(
 			() => api<PanesBody>("/api/panes").then((response) => response.body),
@@ -360,17 +375,13 @@ test(
 			"the desktop shell to mount two panes",
 			{ timeoutMs: PANE_SETTLE_CAP_MS },
 		);
-		const twoPaneBar = await pollUntil(
-			readPaneBar,
-			(layout) => layout.tabCount === 2,
-			"the two pane tabs to render",
+		const twoPanes = await pollUntil(
+			readPaneLetters,
+			(letters) => letters.count === 2,
+			"the two pane letters to render",
 			{ timeoutMs: PANE_SETTLE_CAP_MS },
 		);
-		expect(twoPaneBar.tabHeights.every((height) => height >= MIN_TARGET)).toBe(true);
-		expect(twoPaneBar.pressedCount).toBe(1);
-		expect(twoPaneBar.tabType).toMatchObject({ weight: 500 });
-		expect(twoPaneBar.tabType?.family).toContain("archboard onest");
-		expect(twoPaneBar.tabType?.size).toBeGreaterThanOrEqual(11);
+		expect(twoPanes.active).toBe(1);
 		expect(
 			(await api("/api/panes/close", { method: "POST", body: { pane: "focused" } })).status,
 		).toBe(200);
@@ -380,11 +391,11 @@ test(
 			"the desktop shell to return to one pane",
 			{ timeoutMs: PANE_SETTLE_CAP_MS },
 		);
-		await pollUntil(readPaneBar, (layout) => layout.tabCount === 0, "the pane tabs to go");
+		await pollUntil(readPaneLetters, (letters) => letters.count === 0, "the pane letters to go");
 
 		// An agent at work shows in the navigator, which is where the tree never
 		// moves for it: the latest thing it said under "Working now" and a lamp
-		// on the board's row. The bar under the panes never grows for it.
+		// on the board's row. The pane never gives up room for it.
 		const paneHeight = () =>
 			browser.eval<number>(
 				`document.querySelector('${PANE_SECTIONS}').getBoundingClientRect().height`,
@@ -417,7 +428,6 @@ test(
 		expect(activity.entries).toBe(1);
 		expect(activity.lamp).toBe(true);
 		expect(await paneHeight()).toBe(restingPaneHeight);
-		expect((await browser.eval<DesktopShell>(READ_DESKTOP)).bar).toEqual(closed.bar);
 
 		expect(await publishActionableNotice(browser)).toBe(true);
 		const notice = await pollUntil(
@@ -425,7 +435,7 @@ test(
 				browser.eval<NoticeLayout | null>(`(() => {
 					const notice = [...document.querySelectorAll('[data-slot="alert"]')].find(node =>
 						node.querySelector('[data-slot="alert-description"]')?.textContent?.trim() === ${JSON.stringify(PERSISTENT_NOTICE_TEXT)});
-					const centre = document.querySelector('${NAVIGATOR}')?.nextElementSibling;
+					const centre = document.querySelector('${STAGE_ROOT}')?.parentElement;
 					const text = notice?.querySelector('[data-slot="alert-description"]');
 					const action = notice?.querySelector('[data-slot="alert-action"] button');
 					const dismiss = notice?.querySelector('button[aria-label^="Dismiss notice"]');

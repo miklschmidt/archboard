@@ -178,7 +178,7 @@ const SWIPE_OPACITY: Readonly<Record<SubjectStanding, number>> = {
 /**
  * The ink one standing is drawn in, and the one question every channel asks.
  *
- * The line, the arrowhead it ends in and the dots that ride it all ask this, so
+ * The line, the arrowhead it ends in and the pulses that ride it all ask this, so
  * a relationship drawn as changed is amber all the way through instead of an
  * amber band behind a grey line — which reads as a glow behind something
  * unrelated to it rather than as the line's own standing.
@@ -418,6 +418,8 @@ const BADGE_SIZE = 11;
  * below, which the page counts where it reaches past a subject.
  */
 const BADGE_REACH = { side: 5.4, above: 5.2, below: 4.4 };
+/** How far below its box's top a box's warning badge reaches. */
+const BADGE_DEPTH = PIN_INSET + BADGE_REACH.below;
 const BADGE_GLYPH = `M0,-${BADGE_REACH.above} L${BADGE_REACH.side},${BADGE_REACH.below} H-${BADGE_REACH.side} Z`;
 const BADGE_BANG = "M0,-2.4 V0.9";
 const BADGE_DOT = "M0,2.6 V2.9";
@@ -536,6 +538,7 @@ export {
 	type StandingOf,
 	type SubjectKind,
 	type UnsettledOf,
+	BADGE_DEPTH,
 	BADGE_SIZE,
 	PIN_INSET,
 	HEAD_ATTRIBUTE,
