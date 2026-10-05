@@ -47,7 +47,7 @@ interface NavigatorProps {
 	actions: ShellActions;
 	/** The column's top row: the brand and the application's own controls. */
 	head: ReactNode;
-	/** The column's foot: the agent, its voice and the composer. */
+	/** The column's foot: the agent dock, with its voice and the way to the conversation. */
 	foot?: ReactNode;
 }
 

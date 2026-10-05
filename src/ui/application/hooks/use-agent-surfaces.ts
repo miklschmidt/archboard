@@ -19,7 +19,7 @@ import type { AgentActions, AgentVoiceView } from "@/ui/workbench/contracts";
 
 /** The agent's surfaces, as the application holds them. */
 interface AgentSurfaces {
-	/** The voice, as the bar and a presentation's Talk control show it. */
+	/** The voice, as the agent dock and a presentation's Talk control show it. */
 	readonly voice: AgentVoiceView;
 	readonly actions: AgentActions;
 	/** What the composer holds, which the panel's suggestions fill. */

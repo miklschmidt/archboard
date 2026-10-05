@@ -30,7 +30,7 @@ const STAGES: Readonly<Record<VoiceSessionStatus, VoiceStage>> = {
 	failed: "idle",
 };
 
-/** What the bar reads from a voice session, or from its absence. */
+/** What the agent dock reads from a voice session, or from its absence. */
 interface VoiceSource {
 	readonly subscribe: VoiceSession["subscribe"];
 	readonly view: () => VoiceSessionView | null;
