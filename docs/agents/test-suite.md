@@ -10,9 +10,11 @@ native lanes in this order:
 - `test:system`: system product owners under the seven explicit non-browser
   directories, with `--max-concurrency=1` because they own real processes and
   shared local ports;
-- `test:repository`: the source-boundary lint fixtures, the skill frontmatter check, and
+- `test:repository`: the source-boundary lint fixtures, the skill frontmatter check,
   the README asset manifest and staleness owner
-  (`tests/system/repository-policy/readme-assets.test.ts`), which starts no browser;
+  (`tests/system/repository-policy/readme-assets.test.ts`), which starts no browser,
+  and the owner that holds the README banner's mark to the shell's
+  (`tests/system/repository-policy/readme-lockup.test.ts`);
 - `test:serial-browser`: every owner in the executable `BROWSER_TEST_PATHS`
   inventory through the strict adapter.
 

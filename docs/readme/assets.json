@@ -4,20 +4,33 @@
 		{
 			"name": "banner",
 			"kind": "art",
-			"codex": true,
+			"codex": false,
 			"command": "bun run readme:assets banner",
 			"files": [
-				"docs/assets/archboard-banner-history-dark.png",
-				"docs/assets/archboard-banner-history-light.png",
 				"docs/readme/banner-dark.webp",
-				"docs/readme/banner-light.webp"
+				"docs/readme/banner-light.webp",
+				"docs/assets/archboard-social-card.jpg"
 			],
 			"sources": [
-				"src/ui/shell/assets/archboard-wordmark.svg",
+				"examples/web-shop/Web shop.semantic.json",
+				"examples/web-shop/.archboard/config.yaml",
+				"src/transformers/semantic-renderer",
+				"src/runtime/semantic-renderer",
+				"src/runtime/semantic-rasterizer",
+				"src/shared/code-target",
+				"src/shared/ids",
+				"src/shared/semantic-board",
+				"src/shared/semantic-policy",
+				"src/shared/shell-geometry",
+				"src/shared/theme",
+				"src/shared/timing",
+				"src/ui/shell/assets/fonts",
+				"src/ui/shell/components/Brand.tsx",
 				"scripts/readme-assets/banner.ts",
+				"scripts/readme-assets/lockup.ts",
 				"scripts/readme-assets/browser.ts"
 			],
-			"hash": null
+			"hash": "9094a8c750d63519f1c47cc266ee8a7e0fe566a16631898f639d3120e512d75b"
 		},
 		{
 			"name": "hero",
