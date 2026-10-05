@@ -2,7 +2,7 @@
 
 **Reviewed input:** 2026-09-28
 
-**Protocol:** Codex app-server 0.158.0 with experimental APIs
+**Protocol:** Codex app-server 0.160.0 with experimental APIs
 
 **Owner:** TASK-143.01.17
 

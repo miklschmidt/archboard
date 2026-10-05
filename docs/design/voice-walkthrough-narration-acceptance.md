@@ -52,7 +52,7 @@ Observe, in order:
 
 Every step and leaving reach the voice model as speakable text, the path that a
 coordinator's answer takes. This path is necessary because, in a full-duplex
-session, appended text is only quiet context (Codex 0.158.0). If (a), (d) or (h)
+session, appended text is only quiet context (Codex 0.160.0). If (a), (d) or (h)
 does not make it speak,
 note what it did instead.
 
