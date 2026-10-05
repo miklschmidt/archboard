@@ -182,7 +182,7 @@ function paintCard(
 							),
 				]),
 			),
-			paintFarCard(node, box, { appearance, palette }),
+			paintFarCard(node, box, { appearance, palette }, unsettled),
 			standingPin(box, standing, palette),
 			// The opposite corner from the pin, inside the padding the words already
 			// stop short of, so a card can say both at once and neither mark lands on
