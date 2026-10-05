@@ -418,7 +418,9 @@ the same gold behind it.
 
 Under the rail, the words stand in a column in the middle of the plate. The column is 64rem
 wide at most, and its text is left aligned. It holds the heading of the step (28px) and the
-words of the step (16px). Under them is the name of the walkthrough, in muted ink. The
+words of the step (16px). Under them is the name of the walkthrough, in muted ink. When
+the picture does not draw some subjects of the step, the same line says so after the name.
+The line is cut short and never wraps, so the plate keeps its height. The
 step's number stands to the left of the column. It is set in the display face at 44px, over a
 mono "of N". A rule stands on its right, as it does on the sheet number of a drawing.
 

@@ -1,6 +1,7 @@
 // The steps a presented walkthrough's box shows: each step's number, set the way a drawing's sheet
 // number is, and beside it each step's heading and words, with the name of the walkthrough under
-// the words.
+// the words. When this reading does not draw some subjects of the step shown, that line says so
+// after the name, so the notice changes no height.
 //
 // Every step stands in one cell, so the cell is as high as the highest step and the box keeps one
 // height from the first step to the last. Which step is shown is a matter of where each one stands
@@ -75,7 +76,9 @@ function StepFigure(props: StepFigureProps): JSX.Element {
 }
 
 /**
- * What a step says about subjects this reading does not draw.
+ * What a step says about subjects this reading does not draw, after the walkthrough's name on the
+ * one line under the words. It is cut short rather than wrapped, so it never adds a line, and its
+ * title holds the whole sentence.
  * @param props The subjects, in words.
  * @param props.missing Their names.
  * @returns The sentence, or nothing when every subject is drawn.
@@ -84,10 +87,14 @@ function StepMissing(props: { readonly missing: readonly string[] }): JSX.Elemen
 	if (props.missing.length === 0) {
 		return null;
 	}
+	const words = `This reading does not draw ${props.missing.join(", ")}.`;
 	return (
-		<p data-slot="semantic-beat-missing" className="text-muted-foreground text-body">
-			This reading does not draw {props.missing.join(", ")}.
-		</p>
+		<>
+			<span aria-hidden="true">·</span>
+			<span data-slot="semantic-beat-missing" className="min-w-0 truncate" title={words}>
+				{words}
+			</span>
+		</>
 	);
 }
 
@@ -140,12 +147,11 @@ function StepWords(props: StepWordsProps): JSX.Element {
 					);
 				})}
 			</div>
-			<StepMissing missing={props.missing} />
-			<p
-				data-slot="semantic-presentation-name"
-				className="text-body text-muted-foreground truncate"
-			>
-				{walkthrough.name}
+			<p className="text-body text-muted-foreground flex min-w-0 gap-2">
+				<span data-slot="semantic-presentation-name" className="max-w-1/2 shrink-0 truncate">
+					{walkthrough.name}
+				</span>
+				<StepMissing missing={props.missing} />
 			</p>
 		</div>
 	);
