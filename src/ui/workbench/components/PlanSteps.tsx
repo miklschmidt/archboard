@@ -16,7 +16,6 @@ interface PlanStepsProps {
 	readonly sinceMs: number | null;
 	/** The clock. */
 	readonly now: number;
-	readonly className?: string | undefined;
 }
 
 /** What a screen reader hears before each step, by where the step stands. */
@@ -40,7 +39,7 @@ const STATE_TYPE: Readonly<Record<CardStep["state"], string>> = {
  */
 function PlanSteps(props: PlanStepsProps): JSX.Element {
 	return (
-		<ol aria-label="The plan" className={cn("flex flex-col", props.className)}>
+		<ol aria-label="The plan" className="flex flex-col">
 			{props.steps.map((step) => (
 				<StepRow key={step.text} step={step} sinceMs={props.sinceMs} now={props.now} />
 			))}
