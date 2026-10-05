@@ -1,4 +1,4 @@
-// The agent's state in one line, for the agent bar: what it is doing or
+// The agent's state in one line, for the agent dock: what it is doing or
 // waiting on, since when, how far through its plan, what is queued behind it,
 // and the one thing the person can do about it. Only the first rule that
 // applies speaks, so the line never says two things at once. Pure.
@@ -36,6 +36,19 @@ interface AgentStatus {
 	readonly action: StatusAction;
 	/** The provider's sign-in page, while a sign-in waits on it. */
 	readonly signInUrl: string | null;
+}
+
+/** What the agent says when it has nothing to say: it is there, and not on anything. */
+const READY_HEADLINE = "Ready";
+
+/**
+ * Whether the agent has nothing to say. A dock shows no line for it: the
+ * controls already say it can be talked to.
+ * @param status The status.
+ * @returns True when it is ready and on nothing.
+ */
+function isReady(status: AgentStatus): boolean {
+	return status.tone === "quiet" && status.headline === READY_HEADLINE;
 }
 
 const BLANK: Omit<AgentStatus, "tone" | "headline"> = {
@@ -360,10 +373,11 @@ function conversationStatus(
 		return { ...BLANK, tone: "working", headline: "Sending" };
 	}
 	const last = turns.at(-1);
-	return last === undefined ? { ...BLANK, tone: "quiet", headline: "Ready" } : ended(last);
+	return last === undefined ? { ...BLANK, tone: "quiet", headline: READY_HEADLINE } : ended(last);
 }
 
 export {
+	isReady,
 	agentStatus,
 	unsettledApprovals,
 	waitingApprovals,

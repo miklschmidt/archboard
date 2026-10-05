@@ -27,9 +27,8 @@ const SubjectOrderSchema = z.int().nonnegative();
  */
 const DEFAULT_TRAFFIC_SPEED = 80;
 /**
- * Effective mark-entry rate when an author enables traffic without stating one,
- * in marks a second: with the speed, one mark every 80 units, the spacing the
- * slower default had.
+ * Effective pulse rate when an author enables traffic without stating one, in
+ * pulses a second: with the speed, one pulse every 80 units.
  */
 const DEFAULT_TRAFFIC_VOLUME = 1;
 

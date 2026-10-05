@@ -153,7 +153,7 @@ function WorkingItem(props: WorkingItemProps): JSX.Element {
 				type="button"
 				onClick={handleClick}
 				style={ENTRY_STYLE}
-				className="hover:bg-sidebar-accent flex w-full min-w-0 flex-col gap-0.5 rounded-[3px] py-1.5 text-left"
+				className="hover:bg-sidebar-accent rounded-control flex w-full min-w-0 flex-col gap-0.5 py-1.5 text-left"
 			>
 				<span className="flex w-full min-w-0 items-center">
 					<span style={LAMP_STYLE} className="flex shrink-0 justify-center">

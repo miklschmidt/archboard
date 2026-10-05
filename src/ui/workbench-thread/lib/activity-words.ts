@@ -1,5 +1,5 @@
 // The words and numbers a row of work is summed up in: what it was, how long
-// it took, what it changed. Pure, so the agent bar can say the same thing
+// it took, what it changed. Pure, so the agent dock can say the same thing
 // about the live row as the conversation does.
 
 import type { ActivityItem } from "@/ui/workbench-runtime";

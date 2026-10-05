@@ -19,6 +19,12 @@ const RENDERER_SOURCES = [
 	"src/runtime/semantic-renderer/lib/layout-worker.ts",
 	"src/shared/semantic-board",
 	"src/shared/semantic-policy",
+	"src/shared/code-target",
+	"src/shared/ids",
+	"src/shared/shell-geometry",
+	"src/shared/timing",
+	"node_modules/@chenglou/pretext/package.json",
+	"node_modules/@remixicon/react/package.json",
 	"node_modules/@viz-js/viz/package.json",
 	"node_modules/libavoid-js/package.json",
 	"node_modules/libavoid-js/dist/libavoid.wasm",
@@ -70,9 +76,33 @@ function rendererBuild(): Plugin {
 	};
 }
 
+/**
+ * Let the dev server serve the stylesheet that index.html links one level above
+ * its root. The build resolves that link, but the dev server stops a `..` at the
+ * root and answers with the page itself, so a dev page would draw with no styles.
+ * @returns The plugin.
+ */
+function stylesheetBeyondRoot(): Plugin {
+	const link = 'href="../src/ui/theme/app.css"';
+	const served = `href="/@fs${join(repositoryRoot, "src/ui/theme/app.css")}"`;
+	return {
+		name: "archboard-stylesheet-beyond-root",
+		apply: "serve",
+		transformIndexHtml: {
+			order: "pre",
+			/**
+			 * Point the stylesheet link where the dev server can serve it from.
+			 * @param html The page.
+			 * @returns The page, with its stylesheet link rewritten.
+			 */
+			handler: (html) => html.replace(link, served),
+		},
+	};
+}
+
 export default defineConfig({
 	root: "frontend",
-	plugins: [react(), tailwindcss(), rendererBuild()],
+	plugins: [react(), tailwindcss(), rendererBuild(), stylesheetBeyondRoot()],
 	resolve: {
 		alias: {
 			"@": sourceRoot,

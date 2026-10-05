@@ -8,8 +8,12 @@ import { useMemo, useSyncExternalStore, type JSX } from "react";
 
 import type { Talk } from "@/shared/walkthrough-recording/talk";
 import { TooltipProvider } from "@/ui/components/tooltip";
-import { SemanticBoardStage, type SemanticPaneReading } from "@/ui/semantic-board-canvas";
-import { VoiceSubtitles } from "@/ui/voice-subtitles";
+import {
+	SemanticBoardStage,
+	useOverlayPlace,
+	type SemanticPaneReading,
+} from "@/ui/semantic-board-canvas";
+import { VoiceSubtitles, type SubtitleSource } from "@/ui/voice-subtitles";
 import { RecordingStage } from "@/ui/walkthrough-recording";
 import type { TalkPlayback } from "@/ui/walkthrough-replay/lib/talk-playback";
 
@@ -28,6 +32,24 @@ interface ReplayStageProps {
 	readonly onReading: (reading: SemanticPaneReading) => void;
 }
 
+/**
+ * The voice's subtitles as the talk kept them, bare where the stage lays them at the foot of a
+ * presented walkthrough's box, which has the pill they are drawn in.
+ * @param props What the voice has said so far.
+ * @param props.transcript The transcript.
+ * @returns The subtitles.
+ */
+function ReplaySubtitles(props: { readonly transcript: readonly SubtitleSource[] }): JSX.Element {
+	return (
+		<VoiceSubtitles
+			transcript={props.transcript}
+			enabled
+			reducedMotion={false}
+			bare={useOverlayPlace() === "foot"}
+		/>
+	);
+}
+
 /** Nobody picks anything out of a rendered talk. */
 function pickNothing(): void {
 	// A recording is watched, not handled.
@@ -42,7 +64,7 @@ function ReplayStage(props: ReplayStageProps): JSX.Element {
 	const { talk, playback } = props;
 	const moment = useSyncExternalStore(playback.subscribe, playback.moment);
 	const subtitles = useMemo(
-		() => <VoiceSubtitles transcript={moment.transcript} enabled reducedMotion={false} />,
+		() => <ReplaySubtitles transcript={moment.transcript} />,
 		[moment.transcript],
 	);
 	return (

@@ -90,6 +90,33 @@ const opacityOfCard = (browser: AgentBrowserSession, words: string): Promise<num
 			` return Number(look.opacity) * (filtered ? Number(filtered[1]) : 1); })()`,
 	);
 
+/**
+ * Watch the box hand a step over, a frame at a time, from now on: the shown step's heading as it
+ * fades in, and the gold of the rail as it travels. What a real browser did is read afterwards.
+ */
+const WATCH_HAND_OVER = `(() => {
+	const log = [];
+	window.__handOver = log;
+	(function frame() {
+		const heading = document.querySelector("[data-slot='semantic-presentation-heading']");
+		const gold = document.querySelector("[data-slot='semantic-presentation-rail'] [data-mark='gold']");
+		log.push({
+			text: heading?.textContent ?? null,
+			opacity: heading ? Number(getComputedStyle(heading).opacity) : null,
+			gold: gold ? new DOMMatrix(getComputedStyle(gold).transform).m41 : null,
+		});
+		requestAnimationFrame(frame);
+	})();
+	return true;
+})()`;
+
+/** What the sampler saw of the hand-over. */
+interface HandOverFrame {
+	readonly text: string | null;
+	readonly opacity: number | null;
+	readonly gold: number | null;
+}
+
 test("a person presents a walkthrough step by step, and leaving gives the pane back", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
@@ -156,6 +183,7 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 	expect(first.sidebar).toBe(false);
 
 	// A key steps, wherever focus is; the camera glides there and lands.
+	await browser.eval(WATCH_HAND_OVER);
 	await browser.run(["press", "ArrowRight"]);
 	await pollUntil(
 		() => presented(browser),
@@ -166,6 +194,29 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 	const second = await arrivedAt(browser, "1");
 	expect(second.heading).toBe("The gateway");
 	expect(second.camera).not.toBe(first.camera);
+	// The box handed the step over rather than swapping it: the new heading faded in through frames
+	// that were part way, and the gold of the rail travelled across, never going back.
+	const handed = await pollUntil(
+		() => browser.eval<HandOverFrame[]>("window.__handOver"),
+		(frames) => frames.some((frame) => frame.text === "The gateway" && frame.opacity === 1),
+		"the new heading to be all the way in",
+		ARRIVAL,
+	);
+	const arriving = handed.filter((frame) => frame.text === "The gateway");
+	expect(arriving.some((frame) => (frame.opacity ?? 0) > 0.05 && (frame.opacity ?? 1) < 0.95)).toBe(
+		true,
+	);
+	const gold = handed.map((frame) => frame.gold ?? 0);
+	const far = Math.max(...gold);
+	expect(far).toBeGreaterThan(0);
+	expect(gold.some((place) => place > 1 && place < far - 1)).toBe(true);
+	expect(gold.every((place, at) => at === 0 || place >= (gold[at - 1] ?? 0) - 0.5)).toBe(true);
+	// And what was shown has gone, not only faded: it can be neither seen nor reached.
+	expect(
+		await browser.eval<boolean>(
+			`getComputedStyle(document.querySelector("[data-slot='presentation-slides'] > [data-place='before']")).visibility === "hidden"`,
+		),
+	).toBe(true);
 	// What the step is about stands; the rest recedes, once the cross-fade is done.
 	await pollUntil(
 		() => opacityOfCard(browser, "Reports"),

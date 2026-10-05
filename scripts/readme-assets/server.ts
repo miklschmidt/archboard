@@ -1,0 +1,133 @@
+// One Archboard server for one take, over a fresh copy of a tracked vault.
+//
+// The copy holds the vault's tracked files and nothing else, so a take shows what the checkout
+// holds and its writes never reach the repository. The server listens on a free port. A take that
+// needs no Codex gets a state directory of its own in the scratch directory (on Linux, through
+// XDG_STATE_HOME), so it starts without a Codex sign-in and leaves the machine's state alone. A
+// take that needs Codex uses the machine's state directory and its Archboard Codex sign-in, which
+// every Archboard server on the machine shares.
+
+import { copyFileSync, mkdirSync, rmSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
+
+import { parseSemanticBoard, type SemanticBoard } from "@/shared/semantic-board";
+
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+import { ROOT, attempt, run, scratch, type Ran } from "./tools.ts";
+
+/** The tracked vaults a take can be filmed over. */
+type TrackedVault = "examples/web-shop" | ".archboard/vault";
+
+/** A running take server. */
+interface TakeServer {
+	readonly url: string;
+	/**
+	 * Run the CLI against the server and read its JSON answer.
+	 * @param args The CLI's arguments.
+	 * @returns The answer.
+	 */
+	readonly cli: (args: readonly string[]) => Promise<unknown>;
+	/**
+	 * Run the CLI against the server, and keep its exit status rather than refusing a failure.
+	 * @param args The CLI's arguments.
+	 * @returns What it printed and its exit status.
+	 */
+	readonly attempt: (args: readonly string[]) => Promise<Ran>;
+	/** Stop the server. */
+	readonly stop: () => Promise<void>;
+}
+
+/**
+ * A port nothing listens on now.
+ * @returns The port.
+ */
+function freePort(): number {
+	const listener = Bun.listen({
+		hostname: "127.0.0.1",
+		port: 0,
+		socket: {
+			/** A probe socket reads nothing. */
+			data() {
+				// Nothing connects to the probe.
+			},
+		},
+	});
+	const { port } = listener;
+	listener.stop(true);
+	return port;
+}
+
+/**
+ * Copy a tracked vault's tracked files into a directory.
+ * @param vault The tracked vault.
+ * @param into The directory.
+ */
+async function copyTracked(vault: TrackedVault, into: string): Promise<void> {
+	const { stdout } = await run(["git", "ls-files", "-z", "--", vault]);
+	rmSync(into, { recursive: true, force: true });
+	for (const path of stdout.split("\0").filter((entry) => entry !== "")) {
+		const target = join(into, relative(vault, path));
+		mkdirSync(dirname(target), { recursive: true });
+		copyFileSync(join(ROOT, path), target);
+	}
+}
+
+/**
+ * Start a server for a take, over a fresh copy of a tracked vault.
+ * @param name The take, which names its directory in the scratch directory.
+ * @param vault The tracked vault it is filmed over.
+ * @param codex Whether the take needs the machine's Codex sign-in.
+ * @returns The running server.
+ */
+async function startServer(name: string, vault: TrackedVault, codex: boolean): Promise<TakeServer> {
+	const home = scratch("takes", name);
+	const copy = join(home, "vault");
+	await copyTracked(vault, copy);
+	const url = `http://127.0.0.1:${freePort()}`;
+	const env: Record<string, string> = {
+		ARCHBOARD_URL: url,
+		ARCHBOARD_VAULT: copy,
+		ARCHBOARD_NO_AUTOSTART: "1",
+		...(codex ? {} : { XDG_STATE_HOME: join(home, "state") }),
+	};
+	const cli = join(ROOT, "bin/archboard");
+	await run([cli, "start"], { env });
+	return {
+		url,
+
+		/**
+		 * Run the CLI against the server and read its JSON answer.
+		 * @param args The CLI's arguments.
+		 * @returns The answer.
+		 */
+		cli: async (args) => JSON.parse((await run([cli, ...args], { env })).stdout) as unknown,
+		/**
+		 * Run the CLI against the server, keeping its exit status.
+		 * @param args The CLI's arguments.
+		 * @returns What it printed and its exit status.
+		 */
+		attempt: async (args) => attempt([cli, ...args], { env }),
+		/** Stop the server. */
+		stop: async () => {
+			await run([cli, "stop"], { env });
+		},
+	};
+}
+
+/**
+ * A board as `semantic show` reports it, read through the board's own schema.
+ * @param server The server.
+ * @param name The board.
+ * @returns The board.
+ * @throws {Error} When the answer holds no board.
+ */
+async function readBoard(server: TakeServer, name: string): Promise<SemanticBoard> {
+	const shown = await server.cli(["semantic", "show", name]);
+	const parsed = parseSemanticBoard(
+		typeof shown === "object" && shown !== null && "board" in shown ? shown.board : undefined,
+	);
+	if (!parsed.ok) throw new Error(`semantic show "${name}" held no board: ${parsed.problem}`);
+	return parsed.board;
+}
+
+export { readBoard, startServer, type TakeServer, type TrackedVault };

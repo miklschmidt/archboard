@@ -75,7 +75,7 @@ function ActivityRun(props: ActivityRunProps): JSX.Element {
 					type="button"
 					aria-expanded={open}
 					onClick={toggle}
-					className="text-body text-muted-foreground hover:text-foreground -mx-1.5 flex h-7 items-center gap-1.5 rounded-[3px] px-1.5 text-left"
+					className="text-body text-muted-foreground hover:text-foreground rounded-control -mx-1.5 flex h-7 items-center gap-1.5 px-1.5 text-left"
 				>
 					<RiArrowRightSLine
 						aria-hidden="true"
@@ -166,7 +166,7 @@ function ActivityRow(props: ActivityRowProps): JSX.Element {
 				disabled={open === undefined}
 				aria-expanded={open}
 				onClick={toggle}
-				className="group/row enabled:hover:bg-muted/60 -mx-1.5 flex h-7 w-[calc(100%+12px)] min-w-0 items-center gap-2 rounded-[3px] px-1.5 text-left"
+				className="group/row enabled:hover:bg-muted/60 rounded-control -mx-1.5 flex h-7 w-[calc(100%+12px)] min-w-0 items-center gap-2 px-1.5 text-left"
 			>
 				<RowIcon item={item} live={live} />
 				<RowLabel item={item} live={live} />

@@ -7,17 +7,18 @@
 // with the element it animates on every frame that element moves. So the page
 // takes each SMIL element out of the picture before it ever runs, keeps its
 // markup in an attribute of the element it animated, and runs the same motion
-// from there as a Web Animation. A copy of the picture carries the attribute,
-// so it can run its traffic again.
+// from there as a Web Animation, which a browser can run off its main thread. A
+// copy of the picture carries the attribute, so it can run its traffic again.
 //
-// Only the forms the renderer writes are run this way. Anything else is left to
+// Only the one form the renderer writes is run this way: a bar of light sliding
+// along its frame (`animateTransform`, translating). Anything else is left to
 // SMIL, which still moves it: a picture never stands still for want of a
 // translation, it only costs more.
 
 import { PICTURE_CLOCK } from "@/ui/frame-clock";
 
 /** The SMIL elements a picture can carry. */
-const SMIL = "set, animate, animateMotion";
+const SMIL = "animateTransform";
 
 /** Where an element keeps the SMIL markup of the traffic it runs. */
 const MOTION_ATTRIBUTE = "data-traffic-motion";
@@ -26,13 +27,6 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 
 /** What SMIL can say that a Web Animation is not told here: such an element stays SMIL. */
 const UNREAD = ["href", "xlink:href", "by", "additive", "accumulate", "min", "max", "end", "fill"];
-
-/** The attributes the renderer animates, as the CSS properties a Web Animation moves. */
-const PROPERTIES: Readonly<Record<string, string>> = {
-	opacity: "opacity",
-	"stroke-dasharray": "strokeDasharray",
-	"stroke-dashoffset": "strokeDashoffset",
-};
 
 /** One motion, as a Web Animation states it. */
 interface Motion {
@@ -104,42 +98,7 @@ function timingOf(smil: Element): KeyframeAnimationOptions | null {
 }
 
 /**
- * A motion through a list of values, at the key times SMIL gave them.
- * @param values The values.
- * @param smil The element, for its key times.
- * @param timing The timing.
- * @param frame The keyframe for one value.
- * @returns The motion, or null when the key times do not match the values.
- */
-function motionOver(
-	values: readonly string[],
-	smil: Element,
-	timing: KeyframeAnimationOptions,
-	frame: (value: string) => Keyframe,
-): Motion | null {
-	const times = listOf(smil.getAttribute("keyTimes"));
-	if (times !== null && times.length !== values.length) return null;
-	const keyframes = values.map((value, index) =>
-		times === null ? frame(value) : { ...frame(value), offset: Number(times[index]) },
-	);
-	return { keyframes, timing };
-}
-
-/**
- * A `set`: from when it begins, the attribute holds its value.
- * @param smil The element.
- * @param property The property it sets.
- * @returns The motion, or null for a form this does not read.
- */
-function setMotion(smil: Element, property: string): Motion | null {
-	const to = smil.getAttribute("to");
-	const delay = beginOf(smil);
-	if (to === null || delay === null || smil.hasAttribute("dur")) return null;
-	return { keyframes: [{ [property]: to }], timing: { delay, duration: 0, fill: "forwards" } };
-}
-
-/**
- * The values an `animate` moves through: its list, or from one to the other.
+ * The values a motion moves through: its list, or from one to the other.
  * @param smil The element.
  * @returns The values, or null when it states neither.
  */
@@ -152,48 +111,33 @@ function valuesOf(smil: Element): string[] | null {
 }
 
 /**
- * An `animate` of one attribute, from one value to another or through a list.
- * @param smil The element.
- * @param property The property it moves.
- * @returns The motion, or null for a form this does not read.
+ * One translation as a keyframe: SMIL spells it `x y`, CSS `translate(x, y)`.
+ * @param value The translation.
+ * @returns The keyframe.
  */
-function attributeMotion(smil: Element, property: string): Motion | null {
-	const values = valuesOf(smil);
-	const timing = timingOf(smil);
-	const linear = (smil.getAttribute("calcMode") ?? "linear") === "linear";
-	if (!linear || values === null || timing === null) return null;
-	return motionOver(values, smil, timing, (value) => ({ [property]: value }));
+function translation(value: string): Keyframe {
+	const [x = "0", y = "0"] = value.trim().split(/[\s,]+/u);
+	return { transform: `translate(${Number(x)}px, ${Number(y)}px)` };
 }
 
 /**
- * How `animateMotion` turns what it moves, as `offset-rotate` says it: along the
- * path, or not at all.
- * @param rotate Its `rotate`, or null.
- * @returns The rotation, or null for a form this does not read.
+ * A motion through a list of values, at the key times SMIL gave them.
+ * @param values The values.
+ * @param smil The element, for its key times.
+ * @param timing The timing.
+ * @returns The motion, or null when the key times do not match the values.
  */
-function rotationOf(rotate: string | null): string | null {
-	if (rotate === null) return "0deg";
-	return rotate === "auto" ? "auto" : null;
-}
-
-/**
- * An `animateMotion` along a path at a linear pace, as CSS motion along the same path.
- * @param smil The element.
- * @returns The motion, or null for a form this does not read.
- */
-function pathMotion(smil: Element): Motion | null {
-	const path = smil.getAttribute("path");
-	const rotate = rotationOf(smil.getAttribute("rotate"));
-	const timing = timingOf(smil);
-	const linear = smil.getAttribute("calcMode") === "linear";
-	if (path === null || rotate === null || timing === null || !linear) return null;
-	const route = `path(${JSON.stringify(path)})`;
-	const points = listOf(smil.getAttribute("keyPoints")) ?? ["0", "1"];
-	return motionOver(points, smil, timing, (point) => ({
-		offsetPath: route,
-		offsetRotate: rotate,
-		offsetDistance: `${Number(point) * 100}%`,
-	}));
+function motionOver(
+	values: readonly string[],
+	smil: Element,
+	timing: KeyframeAnimationOptions,
+): Motion | null {
+	const times = listOf(smil.getAttribute("keyTimes"));
+	if (times !== null && times.length !== values.length) return null;
+	const keyframes = values.map((value, index) =>
+		times === null ? translation(value) : { ...translation(value), offset: Number(times[index]) },
+	);
+	return { keyframes, timing };
 }
 
 /**
@@ -202,7 +146,14 @@ function pathMotion(smil: Element): Motion | null {
  * @returns True when it does.
  */
 function readable(smil: Element): boolean {
-	return smil.children.length === 0 && !UNREAD.some((name) => smil.hasAttribute(name));
+	const linear = (smil.getAttribute("calcMode") ?? "linear") === "linear";
+	const translating = smil.getAttribute("type") === "translate";
+	return (
+		linear &&
+		translating &&
+		smil.children.length === 0 &&
+		!UNREAD.some((name) => smil.hasAttribute(name))
+	);
 }
 
 /**
@@ -212,10 +163,9 @@ function readable(smil: Element): boolean {
  */
 function motionOf(smil: Element): Motion | null {
 	if (!readable(smil)) return null;
-	if (smil.localName === "animateMotion") return pathMotion(smil);
-	const property = PROPERTIES[smil.getAttribute("attributeName") ?? ""];
-	if (property === undefined) return null;
-	return smil.localName === "set" ? setMotion(smil, property) : attributeMotion(smil, property);
+	const values = valuesOf(smil);
+	const timing = timingOf(smil);
+	return values === null || timing === null ? null : motionOver(values, smil, timing);
 }
 
 /**
@@ -248,10 +198,28 @@ function keptMotions(element: Element, scratch: Element): Motion[] {
 }
 
 /**
+ * The traffic the page runs, by the element it moves. A browser does not stop
+ * an animation when its element leaves the document, and an element that is
+ * gone cannot be asked for its animations, so they are kept here.
+ */
+const running = new WeakMap<Element, Animation[]>();
+
+/**
+ * The elements of markup that carry traffic.
+ * @param markup The markup: a picture, or part of one.
+ * @returns The markup itself when it carries some, and every element under it that does.
+ */
+function carriersOf(markup: Element): Element[] {
+	const kept = [...markup.querySelectorAll(`[${MOTION_ATTRIBUTE}]`)];
+	return markup.matches(`[${MOTION_ATTRIBUTE}]`) ? [markup, ...kept] : kept;
+}
+
+/**
  * Run the traffic of markup the page has just made, as Web Animations. Call it
  * once for each new piece of markup, before or as it goes into the page: a
  * picture put up, a copy of one, a group borrowed into another. Running it
- * twice over the same elements runs their traffic twice.
+ * twice over the same elements runs their traffic twice, and whatever takes the
+ * markup out of the page again must `stopTraffic` it first.
  * @param markup The markup: a picture, or part of one.
  * @param seconds Where on its picture's clock the traffic starts.
  */
@@ -260,13 +228,28 @@ function runTraffic(markup: Element, seconds: number): void {
 	if (typeof markup.animate !== "function") return;
 	keepTraffic(markup);
 	const scratch = markup.ownerDocument.createElementNS(SVG_NS, "g");
-	const kept = markup.querySelectorAll(`[${MOTION_ATTRIBUTE}]`);
-	for (const element of markup.matches(`[${MOTION_ATTRIBUTE}]`) ? [markup, ...kept] : kept) {
+	for (const element of carriersOf(markup)) {
 		for (const { keyframes, timing } of keptMotions(element, scratch)) {
 			const animation = element.animate(keyframes, { ...timing, id: PICTURE_CLOCK });
 			animation.currentTime = seconds * 1000;
+			running.set(element, [...(running.get(element) ?? []), animation]);
 		}
 	}
 }
 
-export { runTraffic };
+/**
+ * Stop the traffic of markup that is leaving the page, or is about to be thrown
+ * away. An animation that is left running on an element that has gone from the
+ * document runs on, off the page, and the page is asked for a frame on every
+ * vsync because of it: all of its lines are painted again each time, and so is
+ * every other animation it has.
+ * @param markup The markup: a picture, or part of one, in the page or not.
+ */
+function stopTraffic(markup: Element): void {
+	for (const element of carriersOf(markup)) {
+		for (const animation of running.get(element) ?? []) animation.cancel();
+		running.delete(element);
+	}
+}
+
+export { runTraffic, stopTraffic };

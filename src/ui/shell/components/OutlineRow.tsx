@@ -12,33 +12,22 @@ import type { RowHandlers } from "@/ui/shell/components/TreeRow";
 import { VariantLine } from "@/ui/shell/components/VariantLine";
 import { sameData } from "@/ui/shell/lib/same-data";
 import type { NavigatorRow } from "@/ui/shell/types/navigator-rows";
+import type { Lane } from "@/ui/variant-lifecycle";
 
 /** Inputs for one row. */
 interface OutlineRowProps extends RowHandlers {
 	readonly row: NavigatorRow;
+	/** The row's place on its board's timeline, for a variant or an Earlier row. */
+	readonly lane?: Lane | undefined;
+	/** The lines that join it to the rows it sits under. */
+	readonly guides?: string | undefined;
 }
 
 /**
- * Whether a row would be drawn the same: its row says the same, and every
- * handler is the same one. The navigator makes its rows again on every piece of
- * pane news, and only the rows that news is about are drawn again (TASK-385.04).
- * @param before The props it was drawn with.
- * @param after The props it is given now.
- * @returns True when nothing it draws changed.
- */
-function sameRowProps(before: OutlineRowProps, after: OutlineRowProps): boolean {
-	const { row: was, ...wasHandlers } = before;
-	const { row: is, ...isHandlers } = after;
-	return (
-		sameData(was, is) &&
-		Object.keys(isHandlers).every(
-			(key) => Reflect.get(wasHandlers, key) === Reflect.get(isHandlers, key),
-		)
-	);
-}
-
-/**
- * One row of the navigator's tree.
+ * One row of the navigator's tree. The navigator makes its rows and their lanes
+ * again on every piece of pane news, so a row is drawn again only when its props
+ * say something new: its row, its lane and its guides by what they say, and every
+ * handler by identity (TASK-385.04).
  * @param props The row and the tree's handlers.
  * @returns The row.
  */
@@ -48,6 +37,6 @@ const OutlineRow = memo(function OutlineRow(props: OutlineRowProps): JSX.Element
 	if (row.kind === "board") return <BoardLine {...props} row={row} />;
 	if (row.kind === "earlier") return <EarlierLine {...props} row={row} />;
 	return <VariantLine {...props} row={row} />;
-}, sameRowProps);
+}, sameData);
 
 export { OutlineRow, type OutlineRowProps };

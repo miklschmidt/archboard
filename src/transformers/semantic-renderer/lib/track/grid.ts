@@ -4,7 +4,7 @@
 // card above it in its column by an invisible, heavy edge one rank long, so
 // Graphviz stacks the rows and keeps the columns straight.
 import type { Edge } from "@viz-js/viz";
-import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
+import { LAYOUT_ASPECT } from "@/shared/shell-geometry/index";
 import { EMPTY_CHANNEL } from "@/transformers/semantic-renderer/lib/track/spacing";
 
 /** The fewest loose cards set out as a grid rather than left on one rank. */
@@ -33,8 +33,7 @@ function gridEdges(cards: readonly { id: string; width: number; height: number }
 	if (!grids(cards)) return [];
 	const width = Math.max(...cards.map((card) => card.width)) + COLUMN_ROOM;
 	const height = Math.max(...cards.map((card) => card.height)) + EMPTY_CHANNEL;
-	const shape = REFERENCE_PANE.width / REFERENCE_PANE.height;
-	const fitting = Math.round(Math.sqrt((cards.length * shape * height) / width));
+	const fitting = Math.round(Math.sqrt((cards.length * LAYOUT_ASPECT * height) / width));
 	const columns = Math.max(1, Math.min(cards.length, fitting));
 	return cards.slice(columns).map((head, index) => ({
 		tail: cards[index]!.id,

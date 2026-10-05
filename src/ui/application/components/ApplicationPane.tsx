@@ -9,7 +9,11 @@
 
 import { memo, useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 
+import { boardAncestors, type OutlineNode } from "@/ui/board-catalog";
+import type { CatalogBoard } from "@/ui/types";
+
 import type { PanePresentRequest, SemanticPanePart } from "@/shared/semantic-pane-context";
+import { PartSearchHost } from "@/ui/application/components/PartSearchHost";
 import type { PaneCallbacks } from "@/ui/application/hooks/use-panes";
 import type { PickedSubject } from "@/ui/application/hooks/use-pane-reading";
 import { readingOf } from "@/ui/application/pane-reading";
@@ -26,11 +30,13 @@ import {
 } from "@/ui/pane-session/workbench-socket";
 import {
 	boardAddressOf,
+	NoBoardHeader,
 	SemanticBoardStage,
 	type SelectedSubject,
 	type SemanticBoardStageProps,
 	type SemanticPaneReading,
 	type SemanticTarget,
+	type WalkthroughNarration,
 } from "@/ui/semantic-board-canvas";
 import {
 	createBrowserWorkbenchTransport,
@@ -64,16 +70,21 @@ interface ApplicationPaneProps {
 	 * @param variant The variant's id or name, or null for whichever is current.
 	 */
 	onVariantChange: (variant: string | null) => void;
-	/**
-	 * Have a walkthrough of this pane's board narrated aloud, when voice can be
-	 * started for this pane.
-	 * @param walkthrough The walkthrough's id.
-	 */
-	onNarrate?: ((walkthrough: string) => void) | undefined;
+	/** Narrating this pane's walkthroughs aloud, when the shell can start voice for it. */
+	narration?: WalkthroughNarration | undefined;
 	/** What the shell lays over this pane's picture, such as subtitles of the voice running for it. */
 	overlay?: ReactNode;
 	/** Whether the person asked for reduced motion. */
 	reducedMotion: boolean;
+	/** The vault's boards, which the pane's search for a part reads. */
+	boards: readonly CatalogBoard[];
+	/** The vault's boards as the navigator places them: where a board sits, for the breadcrumb. */
+	outline: readonly OutlineNode<CatalogBoard>[];
+	/**
+	 * Show a board in this pane: where a part its search found is.
+	 * @param key The board key.
+	 */
+	onOpenBoard: (key: string) => void;
 	/** A walkthrough step the page moves this pane to itself (a recording, TASK-304), or null. */
 	step?: SemanticBoardStageProps["driven"];
 	/** The pane is a recording page's, which the server leaves out of addressing (TASK-304). */
@@ -220,13 +231,17 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 			ref={attachStage}
 			className="relative flex min-h-0 min-w-0 flex-1 flex-col"
 		>
-			{address === null ? null : (
+			{address === null ? (
+				<NoBoard />
+			) : (
 				<PaneDiagram
 					address={address}
+					arrival={session.arrivals}
 					openCode={session.openCode}
 					onReading={showReading}
 					onUserChanged={session.userChanged}
 					driven={props.step ?? asked}
+					shown={onScreen?.board ?? null}
 					{...props}
 				/>
 			)}
@@ -234,10 +249,28 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 	);
 }
 
+/**
+ * A pane the server has pointed at no board, as in a vault with none or before
+ * the server first answers: the header row every pane has, which says so and
+ * keeps the pane's controls, its socket's trouble and a claim, over the ground
+ * an empty board is drawn on. The navigator says why there is no board.
+ * @returns The header and the empty ground.
+ */
+function NoBoard(): JSX.Element {
+	return (
+		<>
+			<NoBoardHeader />
+			<div className="bg-background min-h-0 flex-1" />
+		</>
+	);
+}
+
 /** What one pane's diagram is drawn from. */
 interface PaneDiagramProps extends ApplicationPaneProps {
 	/** The board and variant the pane is on. */
 	readonly address: SemanticTarget;
+	/** Which time the server has pointed the pane at a board, which leaves a drill-down. */
+	readonly arrival: number;
 	/**
 	 * Open the code a subject is bound to.
 	 * @param subjectId The semantic id.
@@ -255,6 +288,8 @@ interface PaneDiagramProps extends ApplicationPaneProps {
 	readonly onUserChanged: (part: SemanticPanePart) => void;
 	/** A walkthrough step somebody narrating it asked for, or the page recording it chose, or null. */
 	readonly driven: SemanticBoardStageProps["driven"];
+	/** The board on screen, the drilled-into one when there is one, or null before the stage says. */
+	readonly shown: string | null;
 }
 
 /**
@@ -271,6 +306,36 @@ interface PaneDiagramProps extends ApplicationPaneProps {
  */
 const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Element {
 	const { address, openCode, onPick, onUserChanged, onViewChange, picked, view } = props;
+	const { boards, outline, onOpenBoard, shown } = props;
+	// Where a board sits, as the navigator places it: each board above, a way to it here.
+	const placeOf = useCallback(
+		(board: string) =>
+			boardAncestors(outline, board).map((above) => ({
+				name: above.name,
+				level: above.level,
+				/** Show the board above in this pane. */
+				open: (): void => {
+					onOpenBoard(above.key);
+				},
+			})),
+		[outline, onOpenBoard],
+	);
+	// The pick a search makes is the person's hand, as a click on the picture is.
+	const onFound = useCallback(
+		(subject: PickedSubject): void => {
+			onUserChanged("selection");
+			onPick(subject);
+		},
+		[onPick, onUserChanged],
+	);
+	// The search picks on the board on screen, which after a drill-down is not the
+	// one the server pointed the pane at.
+	const search = useMemo(
+		() => (
+			<PartSearchHost boards={boards} shown={shown} onPick={onFound} onOpenBoard={onOpenBoard} />
+		),
+		[boards, shown, onFound, onOpenBoard],
+	);
 	// The stage calls these from a click or a key and from nothing else: a walkthrough step
 	// highlights its subjects and reads through its own view without going through either, and
 	// a pane that moves has its pick cleared above this. So this is where the user's hand is.
@@ -297,6 +362,7 @@ const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Elem
 		<SemanticBoardStage
 			board={address.board}
 			variant={address.variant}
+			arrival={props.arrival}
 			onVariantChange={props.onVariantChange}
 			view={view === null ? undefined : view}
 			onViewChange={onView}
@@ -306,9 +372,11 @@ const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Elem
 			onOpenCode={onOpenCode}
 			onReading={props.onReading}
 			driven={props.driven}
-			onNarrate={props.onNarrate}
+			narration={props.narration}
 			overlay={props.overlay}
 			reducedMotion={props.reducedMotion}
+			search={search}
+			placeOf={placeOf}
 		/>
 	);
 });

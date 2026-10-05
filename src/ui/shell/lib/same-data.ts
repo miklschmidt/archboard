@@ -4,7 +4,8 @@
 
 /**
  * Whether two plain values say the same: equal primitives, or arrays and objects
- * whose entries say the same, all the way down.
+ * whose entries say the same, all the way down. A function says the same only as
+ * itself.
  * @param a One value.
  * @param b The other.
  * @returns True when they say the same.

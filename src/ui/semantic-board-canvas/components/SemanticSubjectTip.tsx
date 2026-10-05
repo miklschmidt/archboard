@@ -2,6 +2,7 @@
 // says what the part is, drawn as the picture draws its kind, and what the
 // picture leaves out about it.
 
+import { useQuery } from "@tanstack/react-query";
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type JSX } from "react";
 
 import { cn } from "@/ui/components/class-names";
@@ -15,9 +16,12 @@ import {
 import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
 import { paletteInk } from "@/ui/semantic-board-canvas/lib/palette";
+import { vaultCheckQuery } from "@/ui/semantic-board-canvas/lib/queries";
 import {
 	subjectTip,
+	tipAnchor,
 	type SubjectTip,
+	type TipAnchor,
 	type TipTarget,
 } from "@/ui/semantic-board-canvas/lib/subject-tips";
 
@@ -26,7 +30,7 @@ import {
  * @param props The part, the reading it is described from and how far away the picture is seen.
  * @param props.target The part whose tip is open, or null.
  * @param props.reading What the board says about the variant the picture draws, or null.
- * @param props.far Whether the picture is seen from far away, showing names alone.
+ * @param props.far Whether the picture is seen from far away, where a card says only the start of its responsibility.
  * @returns The tip, or nothing when there is nothing to add.
  */
 function SemanticSubjectTip(props: {
@@ -35,14 +39,16 @@ function SemanticSubjectTip(props: {
 	readonly far: boolean;
 }): JSX.Element | null {
 	const { target } = props;
-	const tip = target === null ? null : tipOver(target, props.reading, props.far);
-	if (target === null || tip === null) {
+	const levels = useQuery(vaultCheckQuery()).data?.policy.levels;
+	const tip = target === null ? null : tipOver(target, props.reading, props.far, levels);
+	const anchor = useTipAnchor(target);
+	if (tip === null || anchor === null) {
 		return null;
 	}
 	return (
 		<Tooltip open>
 			<TooltipContent
-				anchor={target.anchor}
+				anchor={anchor}
 				sideOffset={10}
 				look="card"
 				data-slot="semantic-subject-tip"
@@ -53,6 +59,18 @@ function SemanticSubjectTip(props: {
 			</TooltipContent>
 		</Tooltip>
 	);
+}
+
+/**
+ * What a tip is placed against: the part it is over, drawn without its traffic.
+ * The same for as long as the tip is over one part, so the tip is not placed
+ * afresh on every render.
+ * @param target The part whose tip is open, or null.
+ * @returns The anchor, or null when no tip is open.
+ */
+function useTipAnchor(target: TipTarget | null): TipAnchor | null {
+	const part = target?.anchor ?? null;
+	return useMemo(() => (part === null ? null : tipAnchor(part)), [part]);
 }
 
 /**
@@ -86,15 +104,19 @@ function TipLines(props: { readonly tip: SubjectTip }): JSX.Element {
  * @param target The part under the pointer.
  * @param reading What the board says about the variant the picture draws, or null.
  * @param far Whether the picture is seen from far away.
+ * @param levels The vault's levels, coarsest first, which place the board a part opens.
  * @returns The tip, or null when there is nothing to add.
  */
 function tipOver(
 	target: TipTarget,
 	reading: VariantReading | null,
 	far: boolean,
+	levels: readonly string[] | undefined,
 ): SubjectTip | null {
 	const variant = reading?.variant ?? null;
-	return variant === null ? null : subjectTip(variant, target, far);
+	return variant === null
+		? null
+		: subjectTip(variant, target, far, { here: reading?.level, levels });
 }
 
 /**

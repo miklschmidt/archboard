@@ -13,6 +13,7 @@ import {
 	TreeRowName,
 	type RowHandlers,
 } from "@/ui/shell/components/TreeRow";
+import type { Lane } from "@/ui/variant-lifecycle";
 import type { EarlierRow } from "@/ui/shell/types/navigator-rows";
 
 /**
@@ -20,13 +21,23 @@ import type { EarlierRow } from "@/ui/shell/types/navigator-rows";
  * @param props The row and the tree's handlers.
  * @returns The row.
  */
-function EarlierLine(props: RowHandlers & { readonly row: EarlierRow }): JSX.Element {
+function EarlierLine(
+	props: RowHandlers & {
+		readonly row: EarlierRow;
+		readonly lane?: Lane | undefined;
+		readonly guides?: string | undefined;
+	},
+): JSX.Element {
 	const { row } = props;
 	return (
 		<TreeRow {...props} label={`Earlier variants of ${row.board.name}, ${row.count}`}>
 			<TreeRowDisclosure row={row} name="earlier variants" onExpand={props.onExpand} />
 			<TreeRowMarker icon={RiHistoryLine} />
-			<TreeRowName text="Earlier" match={null} className="text-body text-muted-foreground" />
+			<TreeRowName
+				text="Earlier"
+				match={null}
+				className="text-control text-muted-foreground font-normal"
+			/>
 			<TreeRowFacts>{row.count}</TreeRowFacts>
 		</TreeRow>
 	);

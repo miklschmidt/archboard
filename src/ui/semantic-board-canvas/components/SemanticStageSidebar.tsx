@@ -5,7 +5,7 @@
 // It is beside every state of the pane, not only a drawn one. An empty view is
 // left by choosing another view, and the board tab is where the views are.
 
-import { useCallback, type JSX } from "react";
+import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@/shared/code-target";
 import type { SemanticRender } from "@/ui/semantic-board-canvas/api/semantic-boards";
@@ -23,26 +23,24 @@ import {
 import type { Sidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
 import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
 import type { GroupSelection } from "@/ui/semantic-board-canvas/lib/groups";
+import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
 
 /** What the stage hands the sidebar. */
 interface StageSidebarView extends Omit<
 	SemanticBoardPanelProps,
-	"answer" | "onChooseView" | "onChooseVariant" | "selectedGroup"
+	"answer" | "onChooseView" | "selectedGroup"
 > {
 	/** The selected group and its members, or null. */
 	readonly group: GroupSelection | null;
-	/** The sidebar's tab and collapse state. */
+	/** The sidebar's tab, and where it is. */
 	readonly sidebar: Sidebar;
 	/** The query's answer for the board on screen. */
 	readonly render: { readonly data: SemanticRender | undefined };
 	/** The selected subject, or null. */
 	readonly selection: string | null;
-	/** How deep the pane has followed drill-downs; its own board is depth zero. */
-	readonly drill: { readonly trail: readonly unknown[] };
-	/** Whether views and variants can be chosen at this level. */
+	/** Whether views can be chosen at this level. */
 	readonly level: {
 		readonly onView: ((view: string | null) => void) | undefined;
-		readonly onVariant: ((variant: string | null) => void) | undefined;
 	};
 	/**
 	 * Choose a view of this level, leaving any guided reading.
@@ -60,6 +58,10 @@ interface StageSidebarView extends Omit<
 	readonly onOpenCode?: ((binding: CodeBinding) => void) | undefined;
 	/** How the inspector names memberships and selects one. */
 	readonly groupControls: GroupControls;
+	/** How the vault's kinds look, for the details panel. */
+	readonly look: KindLook;
+	/** The search over every board's parts, at the sidebar's top. */
+	readonly search?: ReactNode;
 }
 
 /**
@@ -70,7 +72,33 @@ interface StageSidebarView extends Omit<
  */
 function SelectionPanel(props: { readonly view: StageSidebarView }): JSX.Element {
 	const { view } = props;
-	const { selection, onOpenCode } = view;
+	const { selection, onOpenCode, onPick, sidebar, groupControls } = view;
+	const { selectionTabId } = sidebar;
+	// A subject picked from a row of this panel is drawn in a new panel, and a group
+	// chosen from its title lets the selection go, so the control pressed goes with
+	// the old panel either way. Focus is given to the tab first and is not lost.
+	const pickFromPanel = useCallback(
+		(id: string | null): void => {
+			document.getElementById(selectionTabId)?.focus();
+			onPick(id);
+		},
+		[onPick, selectionTabId],
+	);
+	const groupsFromPanel = useMemo((): GroupControls => {
+		const { onChoose } = groupControls;
+		if (onChoose === undefined) {
+			return groupControls;
+		}
+		/**
+		 * Select a group's members, after giving focus to the selection tab.
+		 * @param group The group's id.
+		 */
+		const choose = (group: string): void => {
+			document.getElementById(selectionTabId)?.focus();
+			onChoose(group);
+		};
+		return { names: groupControls.names, onChoose: choose };
+	}, [groupControls, selectionTabId]);
 	const answer = view.render.data;
 	if (selection === null || answer === undefined) {
 		return <NothingSelected />;
@@ -81,8 +109,10 @@ function SelectionPanel(props: { readonly view: StageSidebarView }): JSX.Element
 			variant={answer.variant.id}
 			selection={selection}
 			onOpen={view.onOpenDown}
-			{...(onOpenCode === undefined ? {} : { onOpenCode })}
-			groups={view.groupControls}
+			onOpenCode={onOpenCode}
+			groups={groupsFromPanel}
+			look={view.look}
+			onPick={pickFromPanel}
 		/>
 	);
 }
@@ -104,17 +134,19 @@ function SemanticStageSidebar(props: {
 		onPick(null);
 	}, [onPick]);
 	return (
-		<SemanticSidebar sidebar={view.sidebar} onClearSelection={selection === null ? null : clear}>
+		<SemanticSidebar
+			sidebar={view.sidebar}
+			onClearSelection={selection === null ? null : clear}
+			search={view.search}
+		>
 			<SidebarPanel tab="board">
 				<SemanticBoardPanel
 					answer={view.render.data}
 					reading={view.reading}
 					onChooseView={level.onView === undefined ? undefined : view.onChooseView}
-					// The pane's own board takes its variant from the navigator.
-					onChooseVariant={view.drill.trail.length === 0 ? undefined : level.onVariant}
 					narrative={view.narrative}
 					onChooseWalkthrough={view.onChooseWalkthrough}
-					onNarrate={view.onNarrate}
+					narration={view.narration}
 					groups={view.groups}
 					selectedGroup={view.group === null ? null : view.group.group}
 					onChooseGroup={view.onChooseGroup}
@@ -123,7 +155,8 @@ function SemanticStageSidebar(props: {
 					onComparisonChange={view.onComparisonChange}
 				/>
 			</SidebarPanel>
-			<SidebarPanel tab="selection">
+			{/* Keyed by what is selected, so a pick is a new panel: it opens at its top and arrives with a fade. */}
+			<SidebarPanel key={selection ?? "none"} tab="selection">
 				<SelectionPanel view={view} />
 			</SidebarPanel>
 		</SemanticSidebar>

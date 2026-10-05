@@ -21,7 +21,7 @@ function AnswerLink(props: ComponentPropsWithoutRef<"a">): JSX.Element {
 			href={props.href}
 			target="_blank"
 			rel="noreferrer noopener"
-			className="aui-md-a text-primary hover:text-primary/80 underline underline-offset-2"
+			className="aui-md-a text-primary-text hover:text-primary-text/80 decoration-primary-mark underline underline-offset-2"
 		>
 			{props.children}
 		</a>
@@ -42,7 +42,7 @@ function AnswerImage(props: ComponentPropsWithoutRef<"img">): JSX.Element {
 			href={src}
 			target="_blank"
 			rel="noreferrer noopener"
-			className="aui-md-a text-primary hover:text-primary/80 underline underline-offset-2"
+			className="aui-md-a text-primary-text hover:text-primary-text/80 decoration-primary-mark underline underline-offset-2"
 		>
 			{props.alt === undefined || props.alt === "" ? src : props.alt}
 		</a>

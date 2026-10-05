@@ -1,7 +1,9 @@
-import { writeFileSync } from "node:fs";
+import { readFileSync, renameSync, writeFileSync } from "node:fs";
 
+import type { ProductionFixture } from "../../server-state/support/codex-production.ts";
 import { pollUntil } from "./agent-browser.ts";
 import type { AgentBrowserSession } from "./agent-browser.ts";
+import { productionFixtureRecords } from "./codex-workbench-production.ts";
 
 interface ControlledVoiceMediaAudit {
 	readonly localTracks: readonly { readonly enabled: boolean; readonly stopCount: number }[];
@@ -199,15 +201,32 @@ async function readControlledVoiceMediaAudit(
 	return audit;
 }
 
+/**
+ * Whether one voice session let go of everything it took from the browser.
+ * @param media The media audit.
+ * @param session Which session, oldest first.
+ * @returns True once its microphone and the model's track are stopped, its peer and audio context closed, and no audio element is left.
+ */
+function released(media: ControlledVoiceMediaAudit, session: number): boolean {
+	return (
+		media.localTracks[session]?.stopCount === 1 &&
+		media.remoteTracks[session]?.stopCount === 1 &&
+		media.peers[session]?.closeCount === 1 &&
+		media.contexts[session]?.closeCount === 1 &&
+		media.attachedAudioElements === 0
+	);
+}
+
 export {
 	openWithControlledVoiceMedia,
 	readControlledVoiceMediaAudit,
+	released,
 	type ControlledVoiceMediaAudit,
 };
 
 /**
  * Silence or restore the controlled model output while the microphone track
- * stays live: the wave must follow the model, never the microphone.
+ * stays live: the voice speaks when the model does, never the microphone.
  * @param browser The page.
  * @param silent True to make the model output silent.
  */
@@ -218,6 +237,59 @@ async function setControlledOutputSilent(browser: BrowserOperator, silent: boole
 }
 
 export { setControlledOutputSilent };
+
+/**
+ * Have every live voice say the fake's scripted line once more, a word at a time, as a real
+ * session's transcript arrives. It waits for the fake to carry a voice session first, since a
+ * session that has not started says nothing. The control file is replaced whole, so the fake
+ * never reads half of it.
+ * @param fixture The fake Codex's files.
+ * @returns The item id the line is said under.
+ */
+async function askToSpeak(fixture: ProductionFixture): Promise<string> {
+	await pollUntil(
+		() =>
+			productionFixtureRecords<FixtureRecord>(fixture).some(
+				(record) => record.kind === "notification" && record.method === "thread/realtime/started",
+			),
+		Boolean,
+		"the fake Codex to carry a live voice session",
+	);
+	const control = JSON.parse(readFileSync(fixture.controlPath, "utf8")) as { speaks?: number };
+	const speaks = (control.speaks ?? 0) + 1;
+	const next = `${fixture.controlPath}.next`;
+	writeFileSync(next, JSON.stringify({ ...control, speaks }));
+	renameSync(next, fixture.controlPath);
+	return `controlled-assistant-transcript-${speaks}`;
+}
+
+/**
+ * Whether the fake Codex has said the whole of one line.
+ * @param fixture The fake Codex's files.
+ * @param itemId The line's item id.
+ * @returns True once its last word is out.
+ */
+function lineSaid(fixture: ProductionFixture, itemId: string): boolean {
+	return productionFixtureRecords<FixtureRecord>(fixture).some(
+		(record) =>
+			record.kind === "notification" &&
+			record.method === "thread/realtime/item/completed" &&
+			(record.params?.["item"] as { readonly id?: unknown } | undefined)?.id === itemId,
+	);
+}
+
+/**
+ * How many voice sessions the fake Codex was asked to start.
+ * @param fixture The fake Codex's files.
+ * @returns The count of realtime starts on its wire.
+ */
+function voiceStarts(fixture: ProductionFixture): number {
+	return productionFixtureRecords<FixtureRecord>(fixture).filter(
+		(record) => record.kind === "frame" && record.method === "thread/realtime/start",
+	).length;
+}
+
+export { askToSpeak, lineSaid, voiceStarts };
 
 /** The coordinator thread the fixture creates first, at Talk; voice runs on it. */
 const RAW_COORDINATOR_THREAD_ID = "thread-1";

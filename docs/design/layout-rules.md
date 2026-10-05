@@ -9,6 +9,12 @@ below are the dated inventory's; file references describe the tree at that time.
 [Section 28](#28-every-variant-is-laid-out-fresh-2026-09-19-task-276) records the
 removal of predecessor geometry constraints under ADR 0032.
 
+Traffic no longer has a place where it rests, so layout owes it nothing. Sections
+40 to 43 once held rules about where a still picture rested a traffic streak
+(`comet-rest.ts`). They were removed on 2026-10-04 with that code. A still picture
+now shows the whole train of pulses at its phase
+([ADR 0027](../adr/0027-explicit-traffic-controls-distance-based-animation.md)).
+
 ## 1. The pipeline, and who decides what
 
 | Stage                               | Decided by | Where                                                                                                       |
@@ -431,14 +437,27 @@ reader gets: a 997 by 1468 column and a 3952 by 460 ribbon are the same
 area and fit the pane at 0.65 against 0.32. ADR 0028 makes fit the measure.
 Fit is the scale at which the whole drawing shows in the reference pane,
 capped at one: `min(pane.width / page.width, pane.height / page.height)`,
-the arithmetic the viewer's own fit uses. The reference pane is derived in
-`src/shared/shell-geometry/index.ts` from the desktop shell the product
-supports: 1920 by 1080, less the 320 navigator, the 56 header, the 36 pane
-bar and the 41 collapsed dock bar, less the 280 inspector drawn over the
-diagram's right edge, less the 24 fit margin on every side, which is 1272 by 899. (TASK-245 estimated 952 tall before the pane bar and the dock were
-counted.) The camera reads its margin and its fit arithmetic from that
-module, the shell root and the inspector take their widths from it, and the
-shell-layout browser owner holds the mounted shell's stage to it.
+the arithmetic the viewer's own fit uses. `src/shared/shell-geometry/index.ts`
+holds two kinds of number. The shell's are measured: 1920 by 1080, less the
+320 navigator, the one-pixel line between the navigator and the panes, and the
+pane's 40 chrome row, which leaves a stage of 1599 by 1040. Nothing runs under
+the panes: the agent dock is at the navigator's foot. The renderer's page shape
+is tuned, not measured: `LAYOUT_ASPECT`, a plain 1.4 (ADR 0043). The reference
+pane takes its width from the shell, the stage less the 280 sidebar docked
+beside the picture and the 24 fit margin on either side, which is 1271, and
+its height from that aspect, about 908. The grid of loose cards and the wrap
+of a wide rank read the aspect alone. (Until 2026-10-05, TASK-395, the pane
+was derived whole from the shell before its redesign, a 56 header, a 36 pane
+bar and a 41 agent bar, which made it 1272 by 899: the fits recorded before
+that date are against that pane. Matched to the redesigned shell it became
+1271 by 992, and 18 of 130 drawings moved. ADR 0043 records why the height
+now comes from the tuned aspect. At 1.4, 2 of the 130 move: Browser
+application's Working with an agent and its whole board, both Blocks.
+TASK-245 estimated 952 tall before the pane bar and the dock were counted.)
+The camera reads its margin and its fit arithmetic from that module, the
+shell root takes the navigator's width and the chrome row's height from it
+and the sidebar its width, and the shell-layout browser owner holds the
+mounted shell's stage, chrome row and docked picture width to it.
 
 `src/runtime/semantic-renderer/tests/drawn-ink.ts` is the one owner of the
 measurements, read by `tests/wide-boards.test.ts` and by `measure.ts`: fit,
@@ -1987,11 +2006,10 @@ unrelated lines that hid a crossing is parted (Agent workbench, Archboard
 server, Durable write boundary, Recording a walkthrough, Skill evaluation,
 Platform Phone API).
 
-## 40. Standing pins cleared card by card, rules owned, streaks off labels (2026-09-27)
+## 40. Standing pins cleared card by card, rules owned (2026-09-27)
 
 Round 4's reviews, judged against the merge base `ed9c7d8d`, left two
-drawings reading worse, rules no test owned, and a traffic streak resting on
-its own label.
+drawings reading worse and rules no test owned.
 
 - **A centred port keeps its face** (`endpoint-options.ts`, `hold`). Without
   it the work vault's `Shared SQL boundary` traded the centred west port into
@@ -2009,11 +2027,6 @@ its own label.
   lines it sends off may take a bend more. Cleared together, Board
   persistence's three cards drew two more crossings for one of them. A corner
   pin seated exactly at the pin's clearance is no longer refused by rounding.
-- **A resting streak keeps a lane from every label where its line has room**
-  (`comet-rest.ts`), its head and the body of its tail: Agent workbench's
-  `turn/start when idle` rested 2 px above its own label, and Board
-  rasterizer's `CDP over a WebSocket` under its label with its tail running up
-  out of the label's border.
 - **Rules without owners.** Every rule round 4's review found a drawing
   depending on now has an owner that fails without it, and the lone-port
   rules it listed as unneeded (the slot check, the refusal of an end run that
@@ -2050,12 +2063,11 @@ junction mark):
 | dogfood | 212 → 192 | 22 (2318) → 4 (808) | 12 → 4  | 144 → 63 | 54 → 30      | 5 → 1    | 9 → 6         | 7 → 7               |
 | work    | 35 → 33   | 2 (76) → 0          | 3 → 1   | 29 → 11  | 20 → 13      | 0 → 0    | 1 → 1         | 0 → 0               |
 
-## 41. Stacks counted as crossings, hooks cured card by card, streaks off hops (2026-09-27)
+## 41. Stacks counted as crossings, hooks cured card by card (2026-09-27)
 
 Round 5's reviews, judged against `ed9c7d8d`, left Board persistence whole
 reading worse at four spots, Board rasterizer whole keeping 704 px of stacked
-unrelated lines, resting streaks on hops and past junction dots, and rules
-no test owned.
+unrelated lines, and rules no test owned.
 
 - **The settlement veto counts crossings seen** (`even-pins.ts`
   `defectsIn`): a stack of two unrelated lines counts as the crossing it may
@@ -2079,12 +2091,6 @@ no test owned.
 - **The pin pass excuses one bend a pin** (`finishing.ts` `noWorse`): a
   line it sends off a pin may take one bend more for each pin it leaves, as
   the pass clears one card at a time, and no more.
-- **A resting streak keeps clear of where other lines meet its own**
-  (`comet-rest.ts` `meetingPlaces`): the hops it carries or passes under and
-  the stretches it shares with another line, as it keeps clear of labels;
-  where no place keeps a lane from all of them it rests where it keeps the
-  most room. Track and Blocks share the painter: every one of their 333
-  moved streaks was looked at against `ed9c7d8d`, and none reads worse.
 - **Owners.** The pin pass's wiring through the compound layout (a rendered
   proposal, `pinned-side.json`), its accumulated clearance, its top-face
   ends, the label pre-filter a lane past the line, the exemption of two
@@ -2137,13 +2143,6 @@ vault` all read cleanly. The cost is a page as wide as the base's (3781 px
 read the port, stop the group` straight into Chromium executable's top.
   Board persistence's `the links out of every board` is not cured this way:
   its label's row moves other lines into a hook and a crowded label.
-- **A resting streak ranks by the room it keeps** (`comet-rest.ts`): short of
-  a lane, how deep it runs onto a hop or a shared stretch counts, so it
-  rests off a hop's middle; a label drawn over it hides it, so a glow that
-  reaches a label keeps no room from it and no less. Counted as deep,
-  Command interface's `requestJson` rested against a junction dot to keep
-  its tail from under its own label. Track and Blocks share the painter:
-  two streaks move, off a junction dot to below their label.
 
 Against `ed9c7d8d` (the measures of section 40, and crossings within a lane
 of a bend):
@@ -2181,12 +2180,6 @@ lease` rode 2.2 px beside the trunk into Former names from a different pin
   every crossing with the two runs it joins; `crossingsOf` counts their
   places and `cornered-crossings.ts` keeps those within a lane of a bend,
   whichever line turns, before or after the crossing, each half owned.
-- **A resting streak with as much room keeps more from where other lines
-  meet its own** (`comet-rest.ts` `better`): once its tail reaches a label
-  it keeps no room, and it rested with its glow 1 px from a hop where 10 px
-  were to be had. Command interface's `requestJson` streak comes 5.5 px up
-  off the bend into the junction dot, to just below its label; `board
-operation` and three work streaks move 0.5 px.
 - **The pin pass excuses only the card it tries** (`finishing.ts` `byCard`):
   a line cleared on one card could take a bend more on every later card
   kept. No drawing changes.

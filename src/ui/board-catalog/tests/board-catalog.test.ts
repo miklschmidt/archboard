@@ -6,17 +6,18 @@ import {
 	listingError,
 	listedBoardKey,
 	nothingBuiltOn,
+	vaultHalf,
 } from "@/ui/board-catalog/listing";
-import type { SemanticBoardEntry, SemanticBoardListing } from "@/ui/semantic-board-canvas";
+import type { SemanticBoardEntry } from "@/ui/semantic-board-canvas";
 import type { BrowserPaneListing } from "@/ui/types";
 
 /**
- * A vault listing of these boards, with the dogfood levels.
+ * The vault's half of the listing of these boards, with the dogfood levels.
  * @param boards The boards.
- * @returns The listing.
+ * @returns The half.
  */
-function vault(boards: readonly SemanticBoardEntry[]): SemanticBoardListing {
-	return { levels: ["system", "service", "module"], boards: [...boards] };
+function vault(boards: readonly SemanticBoardEntry[]): ReturnType<typeof vaultHalf> {
+	return vaultHalf({ levels: ["system", "service", "module"], boards: [...boards] });
 }
 
 const VAULT: readonly SemanticBoardEntry[] = [

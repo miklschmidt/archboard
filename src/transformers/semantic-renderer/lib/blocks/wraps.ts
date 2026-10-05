@@ -2,7 +2,7 @@
 // as a grid, when that scores clearly better than the block whole (`scoreOf`
 // in track/score.ts).
 import type { Graphviz } from "@/transformers/semantic-renderer/lib/blocks/graphviz-once";
-import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
+import { LAYOUT_ASPECT } from "@/shared/shell-geometry/index";
 import { CardLayout } from "@/transformers/semantic-renderer/lib/blocks/card-layout";
 import type { Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import { layBoth, settled, type Laying } from "@/transformers/semantic-renderer/lib/blocks/laying";
@@ -210,9 +210,8 @@ function columnChoices(lowered: ReadonlyMap<string, number>, nesting: Nesting): 
  * @returns Each wrap, as how far each wrapped item is lowered.
  */
 function wrapsOf(whole: Laid, block: Block, tree: BlockTree): Map<string, number>[] {
-	const pane = REFERENCE_PANE.width / REFERENCE_PANE.height;
 	const bands = whole.bands.filter(({ items }) => items.length >= MIN_WRAPPED);
-	if (bands.length === 0 || whole.width / whole.height <= pane) return [];
+	if (bands.length === 0 || whole.width / whole.height <= LAYOUT_ASPECT) return [];
 	const widest = bands.reduce((one, other) =>
 		other.items.length > one.items.length ? other : one,
 	);

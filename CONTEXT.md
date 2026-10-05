@@ -124,18 +124,23 @@ The consumer-defined type of architectural relationship represented by an edge.
 _Avoid_: line style, arrowhead, emphasis
 
 **Traffic**:
-An optional illustration of flow along a connection, with independent animation
-volume and speed; it is neither measured real-world activity nor connection importance.
-_Avoid_: emphasis, pulse count
+An optional illustration of flow along a connection: a steady train of pulses
+that fly along its line, with independent volume and speed. It is neither
+measured real-world activity nor connection importance.
+_Avoid_: emphasis, pulse count, shot
 
 **Traffic volume**:
-The mean rate at which illustrated traffic shots are fired along a connection,
-expressed in shots per second; the moments between them vary.
-_Avoid_: dot count, traffic speed
+The authored rate of a connection's traffic. With the traffic speed it sets how
+far apart the pulses are: the speed divided by the volume, within limits. A
+pulse flies twice the authored speed, so pulses reach the end of the line twice
+as often as the volume says. It is not a count of marks on the line.
+_Avoid_: dot count, shot rate, traffic speed
 
 **Traffic speed**:
-The authored pace of illustrated traffic along a connection, in diagram units per
-second. A shot flies a fixed multiple of it, so a higher speed is a faster line.
+How fast a pulse flies along a connection, in diagram units per second. A pulse
+flies twice the authored speed (held between 8 and 600), and the distance
+between two pulses is the authored speed divided by the volume. A longer line
+takes a pulse longer to cross, and a higher speed is a faster line.
 _Avoid_: traversal duration, traffic volume
 
 **Emphasis**:
@@ -284,6 +289,17 @@ target views, and focused diagram subjects. It supports presenting architecture
 while highlighting the parts being discussed.
 _Avoid_: variant, flow
 
+**Walkthrough box**:
+The plate a presented walkthrough lays over the foot of its pane's picture. It
+holds the step's number, its heading and its words (the caption), the name of
+the walkthrough, the keys that step and leave, and a rail of steps that goes to
+any of them. At its foot is a pill for the voice: the key that starts a
+narration while voice is off, and the voice box while it is live. A recording
+and the replay of a kept talk draw it without keys. It is presentation: the
+browser's own, written nowhere.
+_Avoid_: caption strip (its retired form), presentation bar (the bar over a
+fullscreen presentation), subtitle bar
+
 **Narration**:
 A voice session started to explain one walkthrough while the user steps
 through it by hand. Archboard opens its first step in the pane. It hands the
@@ -320,6 +336,19 @@ the voice has been silent longer than it pauses mid-thought. It is presentation:
 the browser's own, written nowhere, and the user can turn it off. What the
 user says is never subtitled.
 _Avoid_: caption (the walkthrough's step text), transcript (the conversation's record)
+
+**Voice box**:
+The subtitle's box with the voice in it. While the user wants subtitles and a
+voice is live and a box is on the page, the voice's orb, its state in a word,
+mute and the subtitles control are in a box over the picture of the pane voice
+runs for, beside the words, and the agent dock does not draw the circle: it
+gives the voice up only to a box that is there. Turning subtitles off flies the
+one orb back to the dock. While a walkthrough is presented the voice box is in
+the foot of the walkthrough box. A fullscreen presentation has no dock, so the
+box carries the voice there whatever the user wants of subtitles, which then
+decide only whether there are words. A recording has plain subtitles, with no
+box. It is presentation, like the subtitle.
+_Avoid_: caption box, voice panel, subtitle bar
 
 **Pane news**:
 Where a user's reading of a pane stands after they changed it by hand: the board,
@@ -374,9 +403,11 @@ It is a property of the rendered variant, never of its authored content.
 _Avoid_: orientation, rotation, layout direction, landscape, portrait
 
 **Reference pane**:
-The board area of the desktop shell at its one supported size, with the
-navigator and the inspector open and the fit margin taken off every side. What
-a drawing is measured against.
+What a drawing is measured against. Its width is the shell's: a lone pane's
+picture at the one supported size, beside its docked sidebar, with the
+conversation shut and the fit margin taken off either side. Its height is not
+the shell's: it is that width over the page shape the renderer lays boards out
+for, a tuned 1.4, so a row of the shell never lays a board out again.
 _Avoid_: viewport, screen, window, canvas size, page
 
 **Fit**:
@@ -391,6 +422,35 @@ crossings, stacked and double-tracked lines, hooks, crowded ports and labels,
 bends and route length. Fit, page area and card share break ties between
 drawings that read equally well.
 _Avoid_: score, cost, quality metric
+
+**Light**:
+What the picture leaves as drawn when a user picks a part out or rests the
+pointer on one: the part and everything it contains, every relationship that
+touches any of it, the parts at their other ends, and the containers that hold
+them. The rest recedes. A relationship is lit along the whole of its route, even
+where the picture has another relationship draw a stretch of a lane they share.
+The light is attention, like the selection: nothing is written, and a presented
+walkthrough step or a selected group takes its place.
+_Avoid_: highlight, focus mode, dim, spotlight
+
+**Trace**:
+A user's question of a picked part: how far does it reach? Onward lights
+everything the part sends to, directly or through other parts. Back lights
+everything that sends to it. Each further relationship hop lights more faintly,
+and a part reached by more than one route is as near as its nearest route. A
+trace belongs to the part and goes with the pick. Nothing is written, and no
+traffic or telemetry is implied: it is a walk along the relationships the board
+states.
+_Avoid_: impact analysis, blast radius, dependency graph
+
+**Dive**:
+How a drill-down looks. The board that a card opens is put inside the card, the
+camera flies into the card, and the board grows to the size of the pane. Going
+back out runs the flight the other way. At the end of the flight the board
+itself takes over from the picture inside the card, in the same place. The dive
+is presentation: it happens when the board's picture is to hand in a moment,
+and it gives way to the plain opening of the board when it cannot happen.
+_Avoid_: zoom transition, page transition, animation
 
 ### Working
 

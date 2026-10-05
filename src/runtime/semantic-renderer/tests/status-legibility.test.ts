@@ -176,24 +176,21 @@ function headInk(svg: string, id: string): string {
 }
 
 /**
- * The inks the traffic marks on one relationship are drawn in: every part of
- * every comet but the ring of the page's own colour around its head, read from
- * its traffic layer, which is painted apart from its line.
+ * The inks the traffic marks on one relationship are drawn in: every stop of the
+ * gradient of every pulse, read from its traffic layer, which is painted apart
+ * from its line.
  * @param svg The drawn document.
  * @param id The relationship.
  * @returns The colours, one per inked part.
  */
-function dotInks(svg: string, id: string): string[] {
+function pulseInks(svg: string, id: string): string[] {
 	// A sequence step carries its marks; a relationship's traffic is a layer of its own that names it.
 	const traffic = [`data-semantic-id="${id}"`, `data-traffic="${id}"`]
 		.map((named) => (svg.split(named)[1] ?? "").split(/data-(?:semantic-id|traffic)=/u)[0]!)
 		.join("");
-	return [...traffic.matchAll(/<g class="ab-pulse"[^>]*>([\s\S]*?)<\/g>/gu)].flatMap((comet) =>
-		[
-			...comet[1]!.matchAll(
-				/<(?:circle|path)(?![^>]*data-pulse-part="moat")[^>]*?(?:fill|stroke)="(#[0-9a-f]{6})(?:[0-9a-f]{2})?"/gu,
-			),
-		].map((found) => found[1]!),
+	// A pulse is painted with a gradient: its colours are its stops'.
+	return [...traffic.matchAll(/<stop [^>]*?stop-color="(#[0-9a-f]{6})(?:[0-9a-f]{2})?"/gu)].map(
+		(found) => found[1]!,
 	);
 }
 
@@ -297,7 +294,7 @@ function badges(rendered: RenderedDiagram): Map<string, At> {
 }
 
 describe("a relationship is drawn in one colour from end to end", () => {
-	test("the line and its arrowhead agree, and its comets carry the same colour at full strength", async () => {
+	test("the line and its arrowhead agree, and its pulses carry the same colour at full strength", async () => {
 		const drawn = await architecture();
 		// The light page is near white, so a weaker line sits nearer white.
 		const page = "#ffffff";
@@ -305,14 +302,14 @@ describe("a relationship is drawn in one colour from end to end", () => {
 			const drawnLine = line(subject(drawn, "edge", id));
 			// Every channel of the same relationship, asked separately.
 			expect(headInk(drawn.svg, drawnLine.head)).toBe(drawnLine.ink);
-			const comets = dotInks(drawn.svg, id);
-			expect(comets.length).toBeGreaterThan(0);
-			// The same colour, never a grey over it: every part of a comet has the
+			const pulses = pulseInks(drawn.svg, id);
+			expect(pulses.length).toBeGreaterThan(0);
+			// The same colour, never a grey over it: every stop of a pulse has the
 			// line's hue, and its head stands farther from the page than the line.
-			for (const comet of comets) {
-				expect(Math.abs(hueOf(comet) - hueOf(drawnLine.ink))).toBeLessThan(6);
+			for (const pulse of pulses) {
+				expect(Math.abs(hueOf(pulse) - hueOf(drawnLine.ink))).toBeLessThan(6);
 			}
-			const strongest = Math.max(...comets.map((comet) => colourDistance(comet, page)));
+			const strongest = Math.max(...pulses.map((pulse) => colourDistance(pulse, page)));
 			expect(strongest).toBeGreaterThan(colourDistance(drawnLine.ink, page));
 		}
 		// A plain board uses another colour, and two standings do not share one;
@@ -361,9 +358,9 @@ describe("a relationship is drawn in one colour from end to end", () => {
 		expect(band![4]).toBe("7 3.5");
 	});
 
-	test("a relationship the proposal no longer has sends no dots", async () => {
-		expect(dotInks((await architecture()).svg, "gone")).toHaveLength(0);
-		expect(dotInks(sequence().svg, "answers")).toHaveLength(0);
+	test("a relationship the proposal no longer has sends no pulses", async () => {
+		expect(pulseInks((await architecture()).svg, "gone")).toHaveLength(0);
+		expect(pulseInks(sequence().svg, "answers")).toHaveLength(0);
 	});
 });
 

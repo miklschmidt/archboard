@@ -1,6 +1,6 @@
 // Persistent notices above the canvas. A message that carries a recovery
 // action is never a toast: it stays up until the person chooses or dismisses.
-// They stack flat above the pane bar, one-pixel rules between them, never
+// They stack flat above the panes, one-pixel rules between them, never
 // floating over the canvas.
 
 import {
@@ -15,10 +15,10 @@ import { GitHubHttpsUrlSchema, type CodeTargetNoticeAction } from "@/shared/code
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/ui/components/alert";
 import { Button, buttonVariants } from "@/ui/components/button";
 import type { ShellActions, ShellNotice, ShellNoticeAction } from "@/ui/shell/types/contracts";
-import { IconButton } from "@/ui/shell/components/IconButton";
+import { IconButton } from "@/ui/components/IconButton";
 
 /** A 24px outline action with two-pixel corners. */
-const ACTION_CLASS = "rounded-[2px] font-medium";
+const ACTION_CLASS = "rounded-chip font-medium";
 
 const LINK_BUTTON_CLASS = buttonVariants({
 	variant: "outline",

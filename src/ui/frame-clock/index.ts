@@ -7,3 +7,4 @@ export {
 	frameClock,
 	type FrameClock,
 } from "@/ui/frame-clock/lib/clock";
+export { paceTraffic, type TrafficPace } from "@/ui/frame-clock/lib/traffic-pace";

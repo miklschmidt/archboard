@@ -143,6 +143,13 @@ interface PaneSession<Transport extends WorkbenchTransportPort> {
 	 * reports from what is actually drawn.
 	 */
 	readonly openedKey: string | null;
+	/**
+	 * How many times the server has pointed this pane somewhere other than the
+	 * board on screen. It counts the one move `openedKey` cannot show: the pane
+	 * pointed back at the board it was opened on while a drill-down has another
+	 * board on screen, which the viewer answers by leaving the drill-down.
+	 */
+	readonly arrivals: number;
 	readonly board: BoardIdentity | null;
 	readonly connected: boolean;
 	/** Who holds the board, or null when nobody does. */

@@ -16,7 +16,7 @@ import {
 	type RowHandlers,
 } from "@/ui/shell/components/TreeRow";
 import type { VariantRow } from "@/ui/shell/types/navigator-rows";
-import { VariantMark, variantRecedes } from "@/ui/variant-lifecycle";
+import { VariantMark, variantRecedes, type Lane } from "@/ui/variant-lifecycle";
 
 /**
  * A variant row's accessible name.
@@ -34,7 +34,13 @@ function variantRowName(row: VariantRow): string {
  * @param props The row and the tree's handlers.
  * @returns The row.
  */
-function VariantLine(props: RowHandlers & { readonly row: VariantRow }): JSX.Element {
+function VariantLine(
+	props: RowHandlers & {
+		readonly row: VariantRow;
+		readonly lane?: Lane | undefined;
+		readonly guides?: string | undefined;
+	},
+): JSX.Element {
 	const { row } = props;
 	const { lifecycle } = row.variant;
 	const muted = variantRecedes(lifecycle) && !row.selected ? "text-muted-foreground" : "";
@@ -49,7 +55,7 @@ function VariantLine(props: RowHandlers & { readonly row: VariantRow }): JSX.Ele
 				match={row.match}
 				boardKey={row.variant.key}
 				title={row.variant.name}
-				className={`text-body ${row.selected ? "font-medium" : ""} ${muted}`}
+				className={`text-control ${row.selected ? "font-medium" : "font-normal"} ${muted}`}
 			/>
 			<TreeRowFacts>
 				<PaneChips letters={row.onScreen} />

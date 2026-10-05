@@ -204,7 +204,6 @@ every token that it uses. Lightning CSS converts those tokens to sRGB.
 
 After you edit `theme.css`, run `bun run build`. Then restart the Archboard
 server, because the server reads the file only once, at start.
-`tests/system/browser/measured-text.test.ts` compares the colors of the built
-page with those of a standalone picture in both themes. It compares only the
-tokens in `tests/system/browser/support/theme-parity.ts`. When you add a new
-token, add it there too.
+`tests/system/browser/measured-text.test.ts` compares every color that
+`theme.css` sets with the color the built page has, in both themes. So no other
+stylesheet may set a theme token.

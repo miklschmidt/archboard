@@ -2,10 +2,10 @@
 // a relationship kind's line with its dash and arrowhead. The legend keys the
 // picture with them, and a subject's tip says with them what the subject is.
 // So do the marks a line and a subject carry beside their kind: how heavy a
-// line is drawn, the streaks that ride it, and the pin a proposal puts on what
+// line is drawn, the pulses that ride it, and the pin a proposal puts on what
 // it changed. A key's symbol is the picture's symbol, or it keys nothing.
 
-import { useMemo, type JSX, type ReactNode } from "react";
+import { useId, useMemo, type JSX, type ReactNode } from "react";
 
 import {
 	lineInk,
@@ -113,17 +113,50 @@ function EmphasisSample(props: { readonly width: number }): JSX.Element {
 	);
 }
 
+/** The picture's own proportions of a pulse in small: how thick its core is, and how long its light runs. */
+const PULSE = { width: PLAIN_WIDTH + 0.6, span: 40, glow: 3 } as const;
+
 /**
- * A line with a streak on it, the still shape of the shots that fly along a
- * line whose author illustrated its traffic.
+ * The light of a pulse along its length: nothing, a tail that gathers toward a
+ * bright head, and a short soft front.
+ */
+const PULSE_STOPS = [
+	[0, 0],
+	[0.35, 0.05],
+	[0.6, 0.2],
+	[0.78, 0.5],
+	[0.9, 1],
+	[1, 0],
+] as const;
+
+/**
+ * A line with a pulse on it, the still shape of the beams that fly along a line
+ * whose author illustrated its traffic: a gradient of light that gathers toward
+ * a head, in a soft glow.
  * @param props How wide the sample is.
  * @param props.width The width.
  * @returns The sample.
  */
 function TrafficSample(props: { readonly width: number }): JSX.Element {
-	const middle = props.width / 2;
+	const gradient = `pulse-${useId().replaceAll(":", "")}`;
+	const front = props.width / 2 + PULSE.span / 2;
+	const run = `M${front - PULSE.span} ${LINE_BOX.middle}H${front}`;
 	return (
 		<LineFrame width={props.width} color={NEUTRAL_LINE}>
+			<defs>
+				<linearGradient
+					id={gradient}
+					gradientUnits="userSpaceOnUse"
+					x1={front - PULSE.span}
+					x2={front}
+					y1="0"
+					y2="0"
+				>
+					{PULSE_STOPS.map(([offset, light]) => (
+						<stop key={offset} offset={offset} stopColor="var(--foreground)" stopOpacity={light} />
+					))}
+				</linearGradient>
+			</defs>
 			<path
 				d={`M1 ${LINE_BOX.middle}H${props.width - 1}`}
 				fill="none"
@@ -131,12 +164,13 @@ function TrafficSample(props: { readonly width: number }): JSX.Element {
 				strokeWidth={PLAIN_WIDTH}
 			/>
 			<path
-				d={`M${middle - 5} ${LINE_BOX.middle}H${middle + 5}`}
+				d={run}
 				fill="none"
-				stroke="var(--foreground)"
-				strokeWidth="3.5"
-				strokeLinecap="round"
+				stroke={`url(#${gradient})`}
+				strokeOpacity="0.25"
+				strokeWidth={PULSE.width + PULSE.glow}
 			/>
+			<path d={run} fill="none" stroke={`url(#${gradient})`} strokeWidth={PULSE.width} />
 		</LineFrame>
 	);
 }

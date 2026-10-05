@@ -18,7 +18,7 @@
 
 </div>
 
-<img alt="On the left: the commands that a coding agent runs for this request. It claims the Web shop board, branches a proposal, edits it and compares it with today. On the right: the browser pane shows the claim and then redraws the board as the proposal. It shows new parts in green and a moved call in amber. The removed timeout guard is a red ghost." src="docs/readme/hero.webp" width="100%">
+<img alt="On the left: the commands that a coding agent runs for this request. It claims the Web shop board, branches a proposal, edits it and compares it with today. On the right: the browser pane shows the claim and then redraws the board as the proposal. It shows new parts in green and a moved call in orange. The removed timeout guard is a red ghost." src="docs/readme/hero.webp" width="100%">
 
 <p align="center"><sub>Filmed live against a real Archboard server. The terminal on the left replays the commands an agent runs for this request, and each one ran against the server as shown. The pane on the right is the real browser, redrawing on every write. Nothing here was dragged into place.</sub></p>
 
@@ -54,7 +54,7 @@ https://github.com/user-attachments/assets/7427203b-ff88-4d85-9e36-254ebd2edd9e
 
 ## Plan the next architecture with your agent
 
-See a change before anyone builds it. Ask your agent for one and you get a **proposal**: the same board, redrawn as its difference from what exists. New parts arrive green, changed ones amber, and removed ones stay on the page as red ghosts. A call that moves is shown as one change, not as a deletion beside an addition.
+See a change before anyone builds it. Ask your agent for one and you get a **proposal**: the same board, redrawn as its difference from what exists. New parts arrive green, changed ones orange, and removed ones stay on the page as red ghosts. A call that moves is shown as one change, not as a deletion beside an addition.
 
 <img src="docs/readme/plan.webp" width="100%" alt="A board that nobody has built yet, marked not built, opened in two panes. The left pane turns into the Nightly batch proposal. The right pane turns into the Live events proposal. Both are marked against their shared starting point.">
 
@@ -144,7 +144,7 @@ One map, from the whole system down to the file. Boards link to boards: hover a 
 
 ## Ask your architecture
 
-Select a part and ask. The Codex agent in the agent bar reads the board and your selection, and answers from the architecture, not from the pixels. Press **Talk** to ask out loud instead: the voice hands your question to a Codex agent that reads the boards, then says the answer back.
+Select a part and ask. The Codex agent in the conversation reads the board and your selection, and answers from the architecture, not from the pixels. Press **Talk** to ask out loud instead: the voice hands your question to a Codex agent that reads the boards, then says the answer back.
 
 <img src="docs/readme/ask.webp" width="100%" alt="The Timeout guard is selected. A question about why this part exists and what breaks without it is typed into the agent bar. The conversation panel fills with an answer drawn from the board.">
 
@@ -173,7 +173,7 @@ archboard semantic rasterize "Web shop" --scale 2 --out web-shop.png
   <img alt="The Web shop board as it is built today: the storefront, a checkout API with Place order, Basket route and a timeout guard, the orders database and the basket cache. It also has the Payments and Fulfilment groups." src="docs/readme/web-shop-light.svg" width="100%">
 </picture>
 
-<p align="center"><sub>The SVG embeds its fonts and keeps the traffic animation: the streaks on the hot path move.</sub></p>
+<p align="center"><sub>The SVG embeds its fonts and keeps the traffic animation: the pulses on the hot path fly.</sub></p>
 
 ---
 
@@ -231,7 +231,7 @@ Archboard's SVG renderer began as a fork of the PR Lens renderer (MIT, Coldtea A
 
 ## Quick start
 
-You need Linux or macOS, Bun 1.4 or newer, and Git. Chromium or Google Chrome draws PNGs and the frames of a video, and `ffmpeg` (or Nix, which fetches it) encodes the video. The agent bar, the voice, narration and recordings also need a Codex sign-in. You sign in from the agent bar with ChatGPT or an API key.
+You need Linux or macOS, Bun 1.4 or newer, and Git. Chromium or Google Chrome draws PNGs and the frames of a video, and `ffmpeg` (or Nix, which fetches it) encodes the video. The agent, the voice, narration and recordings also need a Codex sign-in. You sign in from the agent dock with ChatGPT or an API key.
 
 **See it in a minute** with the example vault from this README:
 
@@ -284,7 +284,7 @@ No, and that is the point. If a picture says something wrong, fix the meaning an
 <details><summary><b>Which agents does it work with?</b></summary>
 <br>
 
-Any agent that can run a CLI can write boards. `archboard install-skill` sets up Claude Code and Codex. The agent bar in the browser, the voice, narration and recordings run on Codex. Archboard runs Codex as its own private app-server with its own sign-in.
+Any agent that can run a CLI can write boards. `archboard install-skill` sets up Claude Code and Codex. The agent in the browser, the voice, narration and recordings run on Codex. Archboard runs Codex as its own private app-server with its own sign-in.
 </details>
 
 <details><summary><b>Why is a narration silent with my Bluetooth headset?</b></summary>

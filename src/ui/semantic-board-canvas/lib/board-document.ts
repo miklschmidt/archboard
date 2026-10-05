@@ -14,6 +14,8 @@
 import {
 	addressedVariant,
 	comparedWith,
+	type Adoption,
+	type Shelving,
 	compareVariants,
 	parseSemanticBoard,
 	standingOf,
@@ -300,12 +302,18 @@ interface OfferedVariant {
 	readonly lifecycle: VariantLifecycle;
 	/** The variant it came from, when it came from one. */
 	readonly parent: string | undefined;
+	/** What the variant says about itself, when it says. */
+	readonly summary: string | undefined;
 }
 
 /** What one variant says about itself beyond the picture drawn of it. */
 interface VariantReading {
 	/** Every variant of the board, in the order the board states them. */
 	readonly variants: readonly OfferedVariant[];
+	/** Every time the designation of the current architecture moved, oldest first. */
+	readonly adoptions: readonly Adoption[];
+	/** Every time a proposal was let go, oldest first. */
+	readonly shelvings: readonly Shelving[];
 	/**
 	 * Every view of the board, with what each answers, in the order the board
 	 * states them. The board tab reads a view's summary here rather than from the
@@ -321,6 +329,8 @@ interface VariantReading {
 	 * the name opens none. Lists of variants put it first.
 	 */
 	readonly opens: string | null;
+	/** The board's level, as the board states it. */
+	readonly level: string;
 	/** The one this pane is showing, or null when the board has no such variant. */
 	readonly showing: OfferedVariant | null;
 	/** That variant whole, or null when the board has no such variant. */
@@ -408,6 +418,7 @@ function offeredVariant(variant: SemanticVariant): OfferedVariant {
 		name: variant.name,
 		lifecycle: variant.lifecycle,
 		parent: variant.parent,
+		summary: variant.summary,
 	};
 }
 
@@ -427,7 +438,10 @@ function idItself(id: string): string {
  * @returns Its explanations, and how to name what they are about.
  */
 function readingOf(
-	family: Pick<VariantReading, "variants" | "views" | "opens">,
+	family: Pick<
+		VariantReading,
+		"variants" | "adoptions" | "shelvings" | "views" | "opens" | "level"
+	>,
 	variant: SemanticVariant,
 ): VariantReading {
 	/**
@@ -484,8 +498,11 @@ function readVariant(document: unknown, asked: string | undefined): VariantReadi
 	const named = addressedVariant(reading.board, undefined);
 	const family = {
 		variants: reading.board.variants.map(offeredVariant),
+		adoptions: reading.board.adoptions ?? [],
+		shelvings: reading.board.shelvings ?? [],
 		views: reading.board.views,
 		opens: named.ok ? named.variant.id : null,
+		level: reading.board.level,
 	};
 	const opened = addressedVariant(reading.board, asked);
 	// The board reads even when the variant asked for is not one of its own: the
@@ -509,7 +526,10 @@ function nothingHeld(): SelectedSubject | undefined {
 }
 
 /** A reading of a board whose asked-for variant is not one of its own. */
-const NOTHING_SHOWN: Omit<VariantReading, "variants" | "views" | "opens"> = Object.freeze({
+const NOTHING_SHOWN: Omit<
+	VariantReading,
+	"variants" | "adoptions" | "shelvings" | "views" | "opens" | "level"
+> = Object.freeze({
 	showing: null,
 	variant: null,
 	walkthroughs: [],

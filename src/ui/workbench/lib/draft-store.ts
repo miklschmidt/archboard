@@ -1,4 +1,4 @@
-// The composer's draft, kept outside the composer so it survives the agent bar
+// The composer's draft, kept outside the composer so it survives the conversation
 // re-rendering for another pane, and so a suggestion or a held message taken
 // back for editing can be put in it with the field focused.
 

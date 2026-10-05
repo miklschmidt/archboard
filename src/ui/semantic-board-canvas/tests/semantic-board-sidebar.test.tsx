@@ -20,7 +20,7 @@ import {
 	settle,
 	viewport,
 } from "@/ui/semantic-board-canvas/tests/stage-harness";
-import { cameraNow } from "@/ui/semantic-board-canvas/tests/camera-probes";
+import { cameraNow, pressKey } from "@/ui/semantic-board-canvas/tests/camera-probes";
 
 /**
  * Which tab the sidebar has open.
@@ -85,9 +85,7 @@ test("moving between tabs leaves the picture where the user was looking", async 
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage(null, { live: true });
 	await settle();
-	act(() => {
-		fireEvent.keyDown(viewport(), { key: "ArrowLeft" });
-	});
+	pressKey("ArrowLeft");
 	const before = cameraNow();
 	openSidebarTab("selection");
 	await settle();
@@ -96,4 +94,31 @@ test("moving between tabs leaves the picture where the user was looking", async 
 	pickCard();
 	await settle();
 	expect(cameraNow()).toEqual(before);
+});
+
+/**
+ * The panel of the tab that is open, which scrolls.
+ * @returns The panel.
+ */
+function openPanel(): HTMLElement {
+	return (
+		part("semantic-sidebar-panel").querySelector<HTMLElement>("[data-slot='tabs-content']") ??
+		part("semantic-sidebar-panel")
+	);
+}
+
+test("a new pick opens the selection at its top", async () => {
+	server.reply = { status: 200, body: drawing(1) };
+	mountStage(null, { live: true });
+	await settle();
+	pickCard();
+	await settle();
+	openPanel().scrollTop = 120;
+	expect(openPanel().scrollTop).toBe(120);
+
+	act(() => {
+		fireEvent.click(inPicture("wire"));
+	});
+	await settle();
+	expect(openPanel().scrollTop).toBe(0);
 });

@@ -1,5 +1,5 @@
-// The navigator's filter: one field at the top of the column, level with the
-// pane bar, that narrows the tree in place as a person types. While it holds
+// The navigator's filter: one field at the top of the column, under the
+// brand bar, that narrows the tree in place as a person types. While it holds
 // text it says how many boards it found; Enter opens the first, Alt+Enter
 // opens it beside, the down arrow walks into the tree, Escape clears. Its icon
 // sits in the tree's marker column and its text starts where the names of the
@@ -93,7 +93,7 @@ function NavigatorFilter(props: NavigatorFilterProps): JSX.Element {
 	);
 	const filtering = query.trim() !== "";
 	return (
-		<div style={FILTER_STYLE} className="border-border flex h-9 shrink-0 items-center border-b">
+		<div style={FILTER_STYLE} className="border-border h-band flex shrink-0 items-center border-b">
 			<span style={ICON_STYLE} className="flex shrink-0 justify-center">
 				<RiSearchLine className="text-muted-foreground size-3.5" aria-hidden="true" />
 			</span>
@@ -121,13 +121,13 @@ function NavigatorFilter(props: NavigatorFilterProps): JSX.Element {
 						type="button"
 						aria-label="Clear the filter"
 						onClick={handleClear}
-						className="text-muted-foreground hover:text-foreground hover:bg-sidebar-accent flex size-6 shrink-0 items-center justify-center rounded-[3px]"
+						className="text-muted-foreground hover:text-foreground hover:bg-sidebar-accent rounded-control flex size-6 shrink-0 items-center justify-center"
 					>
 						<RiCloseLine className="size-3.5" aria-hidden="true" />
 					</button>
 				</>
 			) : (
-				<kbd className="text-technical text-muted-foreground border-border shrink-0 rounded-[3px] border px-1 font-mono leading-4">
+				<kbd className="text-technical text-muted-foreground border-border bg-card shadow-raised dark:bg-input/30 rounded-control shrink-0 border px-1 font-mono leading-4">
 					{usesCommandKey() ? "⌘K" : "Ctrl K"}
 				</kbd>
 			)}

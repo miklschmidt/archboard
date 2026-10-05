@@ -15,8 +15,8 @@ import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 // the same identity and selection machinery the architecture grammar carries, so
 // a pane can hit-test one picture the way it hit-tests the other.
 //
-// The dots do not compete with the walkthrough: a beat moves the camera and
-// marks its subjects, and neither is a thing a dot does.
+// The pulses do not compete with the walkthrough: a beat moves the camera and
+// marks its subjects, and neither is a thing a pulse does.
 //
 // The layer order is load-bearing. A row's mark passes behind everything on
 // the row; a lifeline passes behind a card; a message passes over a lifeline;
@@ -46,11 +46,15 @@ import {
 	columnSubjects,
 	stepSubjects,
 } from "@/transformers/semantic-renderer/lib/svg/flow-subjects";
-import { farSizeFor } from "@/transformers/semantic-renderer/lib/measurement";
 import { canvasFor, coord, union } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
-import { FLOW_CYCLE_CAP_MS, FLOW_STEP_TRAVEL_MS } from "@/shared/timing/timing";
-import { timedCrossings, type Crossing } from "@/transformers/semantic-renderer/lib/svg/flow-clock";
+import {
+	exchangeClock,
+	timedCrossings,
+	type Crossing,
+} from "@/transformers/semantic-renderer/lib/svg/flow-clock";
+import { routeLength, standoffOf, type Ride } from "@/transformers/semantic-renderer/lib/svg/pulse";
+import { curveThrough } from "@/transformers/semantic-renderer/lib/layout/curves";
 import {
 	activationLookup,
 	layoutDataFlow,
@@ -86,6 +90,7 @@ import {
 	type UnsettledOf,
 } from "@/transformers/semantic-renderer/lib/svg/standing";
 import {
+	headBase,
 	litMarkerFor,
 	markerFor,
 	stylesFor,
@@ -173,7 +178,45 @@ function stepPath(placed: PlacedStep, activeAt: ActiveAt): string {
 }
 
 /**
- * One message: a glow a viewer can light up, the line itself, and the dots
+ * The part of one message's line its pulses ride: all of it but the base of its
+ * arrowhead, which a pulse sinks into rather than covers.
+ * @param placed The message.
+ * @param activeAt Whether a column is busy at a given height.
+ * @returns The route and its length, or undefined when the line is too short to carry a pulse.
+ */
+function stepRide(placed: PlacedStep, activeAt: ActiveAt): Ride | undefined {
+	const { kind } = placed.step;
+	const cut = standoffOf(headBase(STEP_HEAD[kind], STEP_WEIGHT));
+	const direction = travelOf(kind, placed.fromX, placed.toX);
+	if (direction === 0) {
+		if (SELF_LOOP_REACH - arrowStandoff(kind) - cut <= 0) return undefined;
+		// Out to the right, down and back, as `selfPath` draws it, with its turns
+		// rounded as it rounds them and its end cut short.
+		const x = selfStart(placed, activeAt(placed.step.from, placed.y));
+		const right = x + SELF_LOOP_REACH + SELF_LOOP_CORNER;
+		const low = placed.y + SELF_LOOP_DROP + 2 * SELF_LOOP_CORNER;
+		const curve = curveThrough([
+			{ x, y: placed.y },
+			{ x: right, y: placed.y },
+			{ x: right, y: low },
+			{ x: x + arrowStandoff(kind) + cut, y: low },
+		]);
+		return { curve, length: routeLength(curve) };
+	}
+	const { start, end } = endsFor(placed, activeAt, direction);
+	const length = (end - start) * direction - cut;
+	if (length <= 0) return undefined;
+	return {
+		curve: {
+			from: { x: start, y: placed.y },
+			segments: [{ kind: "line", to: { x: start + direction * length, y: placed.y } }],
+		},
+		length,
+	};
+}
+
+/**
+ * One message: a glow a viewer can light up, the line itself, and the pulses
  * that ride it.
  *
  * Its words are drawn on the layer above every run ({@link paintStepWords}), in
@@ -197,6 +240,7 @@ function paintStep(
 ): string {
 	const styles = stylesFor(palette);
 	const path = stepPath(placed, activeAt);
+	const ride = stepRide(placed, activeAt);
 	return wrap(
 		"g",
 		subjectGroup("step", placed.step.id, standing),
@@ -226,13 +270,13 @@ function paintStep(
 				...styles.halo,
 				"stroke-width": STROKE_WIDTH[STEP_WEIGHT] + LIT_TRACE_EXTRA,
 			}),
-			// The dots over the line and under the words, which is the order a
-			// reader needs: a dot crossing an opaque plate put a hole in the middle
+			// The pulses over the line and under the words, which is the order a
+			// reader needs: a pulse crossing an opaque plate put a hole in the middle
 			// of what the message says. A message the proposal no longer sends is
 			// drawn for context and must not read as live traffic.
-			standing === "removed"
+			standing === "removed" || ride === undefined
 				? ""
-				: timedCrossings(placed, path, palette, { ...crossing, standing: mark }),
+				: timedCrossings(placed.slot, ride, palette, { ...crossing, standing: mark }),
 		]),
 	);
 }
@@ -336,9 +380,7 @@ function headShade(
  * @param standingOf How each subject stands against the variant this one came from.
  * @param crossing The drawing's shared clock, which this flow takes its turns on.
  * @param unsettledOf Whether the board says a subject is still undecided.
- * @param cards How the participant cards are drawn.
- * @param cards.appearances Type channels for the depicted participant cards.
- * @param cards.farSize The size their names are set at from far away.
+ * @param appearances Type channels for the depicted participant cards.
  * @returns Everything it draws, and the words that go above every flow's runs.
  */
 function paintFlow(
@@ -347,7 +389,7 @@ function paintFlow(
 	standingOf: StandingOf,
 	crossing: Crossing,
 	unsettledOf: UnsettledOf,
-	{ appearances, farSize }: { appearances: ReadonlyMap<string, NodeAppearance>; farSize: number },
+	appearances: ReadonlyMap<string, NodeAppearance>,
 ): { readonly body: string; readonly words: string } {
 	const activeAt = activationLookup(layout.columns);
 	const flowStanding = standingOf(layout.flow.id);
@@ -381,7 +423,6 @@ function paintFlow(
 						standingOf(column.card.node.id),
 						unsettledOf(column.card.node.id),
 						appearances.get(column.card.node.id)!,
-						farSize,
 					),
 				),
 			]),
@@ -435,7 +476,9 @@ interface DataFlowPainting {
  * @param palette The theme's colours.
  * @param standingOf How each subject stands against the variant this one came from.
  * @param unsettledOf Whether the board says a subject is still undecided.
- * @param policy Current vault policy.
+ * @param vocabulary The vault's policy, and the level of the board drawn.
+ * @param vocabulary.policy Current vault policy.
+ * @param vocabulary.level The board's level, which places the boards its participants open.
  * @param page What the page holds beyond what is drawn: the flows, participants and
  * messages laid out but left out, and the marks the comparison would draw, so what is
  * drawn stands where it stands with them.
@@ -449,33 +492,31 @@ function paintDataFlow(
 	palette: Palette,
 	standingOf: StandingOf,
 	unsettledOf: UnsettledOf,
-	policy: SemanticPolicy,
+	vocabulary: { readonly policy: SemanticPolicy; readonly level: string | undefined },
 	page: { held: readonly SemanticFlow[] | undefined; standingOf: StandingOf },
 ): DataFlowPainting {
+	const { policy, level } = vocabulary;
 	const laid = layoutDataFlow(flows, nodes);
 	const layout = shownFlows(laid, page.held);
 	// Sequence columns are cards; containment is not depicted in this grammar.
 	const appearances = nodeAppearances(
 		nodes.map(({ parent: _parent, ...node }) => node),
 		policy,
+		level,
 	);
-	// One clock for everything drawn, so the whole page is told in order. It
-	// grows with the number of turns and then stops growing: past the cap a
-	// reader who looked away would not see the beginning come round again.
-	const crossing: Crossing = {
-		turns: layout.turns,
-		cycle: Math.min(layout.turns * FLOW_STEP_TRAVEL_MS, FLOW_CYCLE_CAP_MS) / 1000,
-	};
-	const painted = layout.flows.map((one) =>
-		paintFlow(one, palette, standingOf, crossing, unsettledOf, {
-			appearances,
-			// Set for every card the flow lays out, drawn or not, so leaving some out moves no name.
-			farSize: farSizeFor(
-				laid.flows
-					.find(({ flow }) => flow.id === one.flow.id)!
-					.columns.map(({ card }) => ({ name: card.node.name, box: card.box })),
-			),
+	// One clock for everything drawn, so the whole page is told in order. Every
+	// turn the page holds is on it, drawn or not, so what is drawn crosses when it
+	// crosses with the rest.
+	const crossing = exchangeClock(
+		laid.flows.flatMap((one) => {
+			const activeAt = activationLookup(one.columns);
+			return one.steps.flatMap((placed) =>
+				Array.from({ length: placed.slot.count }, () => stepRide(placed, activeAt)?.length ?? 0),
+			);
 		}),
+	);
+	const painted = layout.flows.map((one) =>
+		paintFlow(one, palette, standingOf, crossing, unsettledOf, appearances),
 	);
 	const columns = layout.flows.flatMap(columnSubjects);
 	const steps = layout.flows.flatMap(stepSubjects);

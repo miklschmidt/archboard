@@ -1,4 +1,4 @@
-// The voice as the agent bar shows it: where getting voice going stands or
+// The voice as the agent dock shows it: where getting voice going stands or
 // what the live voice is doing, why it failed, and the model's output level
 // for the meter. Read from the voice session adapter and the agent setup; a
 // voice that is merely not set up yet is not a problem, because Talk sets it up.
@@ -30,7 +30,7 @@ const STAGES: Readonly<Record<VoiceSessionStatus, VoiceStage>> = {
 	failed: "idle",
 };
 
-/** What the bar reads from a voice session, or from its absence. */
+/** What the agent dock reads from a voice session, or from its absence. */
 interface VoiceSource {
 	readonly subscribe: VoiceSession["subscribe"];
 	readonly view: () => VoiceSessionView | null;
@@ -85,7 +85,7 @@ function problemOf(view: VoiceSessionView | null, setup: AgentSetupSnapshot): st
 }
 
 /**
- * The voice as the agent bar shows it.
+ * The voice as the agent dock shows it.
  * @param voice The voice session and its pane, or null.
  * @param setup The agent setup.
  * @returns The voice view.

@@ -18,8 +18,9 @@
 //
 // The control hides the marks and the removed context from the picture. While
 // they are hidden the rows go too, because they would key nothing on screen;
-// the line that says what the variant is read against stays, because that is
-// true either way.
+// the heading, which says what the variant is read against, stays, because that
+// is true either way. It is the section's own name: a heading "Changes" over a
+// line that said what they were against said the one thing twice (TASK-388).
 
 import { useId, type JSX } from "react";
 
@@ -58,10 +59,7 @@ function SemanticChanges(props: SemanticChangesProps): JSX.Element {
 	const counts = countsOf(props.changes.standing);
 	const identical = counts.length === 0 && !props.inView;
 	return (
-		<SidebarSection title="Changes" slot="semantic-changes">
-			<p className="text-body text-muted-foreground">
-				Compared with <span className="text-foreground">{props.changes.against.name}</span>
-			</p>
+		<SidebarSection title={`Compared with ${props.changes.against.name}`} slot="semantic-changes">
 			{identical ? (
 				<p className="text-body text-muted-foreground">Nothing differs.</p>
 			) : (

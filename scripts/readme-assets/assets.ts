@@ -1,0 +1,76 @@
+// Every README asset the kit makes, by the name the manifest gives it.
+
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+import { ask } from "./ask.ts";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+import { banner } from "./banner.ts";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+import { drillDown } from "./drill-down.ts";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+import { hero } from "./hero.ts";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+import { history } from "./history.ts";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+import { narratedProducer } from "./narrated.ts";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+import { plan } from "./plan.ts";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+import type { Producer } from "./producer.ts";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+import { diagramProducer } from "./svg.ts";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+import { takeBack } from "./take-back.ts";
+
+/** The producers, by asset name. */
+const PRODUCERS: Readonly<Record<string, Producer>> = {
+	banner,
+	hero,
+	explainer: narratedProducer({
+		name: "explainer",
+		vault: ".archboard/vault",
+		board: "Archboard",
+		walkthrough: "Read this board",
+	}),
+	plan,
+	history,
+	"pr-walkthrough": narratedProducer({
+		name: "pr-walkthrough",
+		vault: "examples/web-shop",
+		board: "Web shop",
+		variant: "Queued fulfilment",
+		walkthrough: "Why checkout stops waiting",
+		loop: { file: "docs/readme/pr-walkthrough.webp", from: 0, to: 2, width: 900 },
+		thumbnail: { file: "docs/readme/idx-voice.webp", step: 1 },
+	}),
+	sequence: diagramProducer({
+		name: "sequence",
+		vault: "examples/web-shop",
+		board: "Web shop",
+		view: "Place an order",
+		thumbnail: { file: "docs/readme/idx-sequence.webp", theme: "light", width: 1120 },
+	}),
+	newcomer: narratedProducer({
+		name: "newcomer",
+		vault: "examples/web-shop",
+		board: "Inventory service",
+		walkthrough: "How stock is reserved",
+		loop: { file: "docs/readme/newcomer.webp", from: 1, to: 3, width: 1200 },
+		thumbnail: { file: "docs/readme/idx-newcomer.webp", step: 4 },
+	}),
+	"drill-down": drillDown,
+	ask,
+	"take-back": takeBack,
+	"web-shop": diagramProducer({
+		name: "web-shop",
+		vault: "examples/web-shop",
+		board: "Web shop",
+		thumbnail: { file: "docs/readme/idx-docs.webp", theme: "dark", width: 1600 },
+	}),
+	architecture: diagramProducer({
+		name: "architecture",
+		vault: ".archboard/vault",
+		board: "Archboard",
+	}),
+};
+
+export { PRODUCERS };

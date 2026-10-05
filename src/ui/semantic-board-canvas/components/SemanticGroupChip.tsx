@@ -38,7 +38,7 @@ function SemanticGroupChip(props: SemanticGroupChipProps): JSX.Element {
 			data-slot="semantic-group-chip"
 			data-selected={selected}
 			className={cn(
-				"size-3 shrink-0 rounded-[3px] border-2",
+				"rounded-control size-3 shrink-0 border-2",
 				color === undefined && "border-muted-foreground border-dashed",
 			)}
 			style={style}

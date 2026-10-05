@@ -5,6 +5,7 @@
 import {
 	useCallback,
 	useLayoutEffect,
+	useMemo,
 	useRef,
 	useState,
 	type CSSProperties,
@@ -14,9 +15,63 @@ import {
 
 import { OutlineRow } from "@/ui/shell/components/OutlineRow";
 import type { RowHandlers } from "@/ui/shell/components/TreeRow";
-import type { NavigatorRow } from "@/ui/shell/types/navigator-rows";
+import type { EarlierRow, NavigatorRow, VariantRow } from "@/ui/shell/types/navigator-rows";
 import { outlineKey, type OutlineKeyAction } from "@/ui/shell/lib/outline-keys";
+import { rowSelected } from "@/ui/shell/lib/navigator-rows";
 import { ROW_GUTTER } from "@/ui/shell/lib/tree-grid";
+import { treeGuides } from "@/ui/shell/lib/tree-guides";
+import { timelineLanes, type Lane } from "@/ui/variant-lifecycle";
+
+/**
+ * The timeline lanes of every board's variants: each run of a board's variant
+ * and Earlier rows is one line with branches, its first level the main line.
+ * @param rows The rows, in order.
+ * @returns Each such row's lane, by row id.
+ */
+function variantLanes(rows: readonly NavigatorRow[]): ReadonlyMap<string, Lane> {
+	const lanes = new Map<string, Lane>();
+	for (const run of variantRuns(rows)) {
+		const base = Math.min(...run.map((row) => row.depth));
+		const found = timelineLanes(run.map((row) => row.depth - base));
+		run.forEach((row, index) => lanes.set(row.id, found[index]!));
+	}
+	return lanes;
+}
+
+/**
+ * The runs of one board's variant and Earlier rows, in order.
+ * @param rows The rows.
+ * @returns The runs.
+ */
+function variantRuns(rows: readonly NavigatorRow[]): (VariantRow | EarlierRow)[][] {
+	const runs: (VariantRow | EarlierRow)[][] = [];
+	let last: string | null = null;
+	for (const row of rows) {
+		if (row.kind !== "variant" && row.kind !== "earlier") {
+			last = null;
+			continue;
+		}
+		if (last !== row.board.key) runs.push([]);
+		runs.at(-1)!.push(row);
+		last = row.board.key;
+	}
+	return runs;
+}
+
+/**
+ * The depth of the first level of the timeline each variant and Earlier row is
+ * on, which is where the guides give way to the timeline.
+ * @param rows The rows, in order.
+ * @returns That depth, by row id.
+ */
+function timelineDepths(rows: readonly NavigatorRow[]): ReadonlyMap<string, number> {
+	const depths = new Map<string, number>();
+	for (const run of variantRuns(rows)) {
+		const first = Math.min(...run.map((row) => row.depth));
+		for (const row of run) depths.set(row.id, first);
+	}
+	return depths;
+}
 
 /** Inputs for the tree. */
 interface BoardOutlineProps extends Omit<RowHandlers, "focusable" | "onFocusRow" | "onRowKeyDown"> {
@@ -57,6 +112,8 @@ function typesCharacter(event: KeyboardEvent<HTMLElement>): boolean {
  */
 function BoardOutline(props: BoardOutlineProps): JSX.Element {
 	const { rows, homeId, onOpen, onExpand, onTypeAhead, filtering } = props;
+	const lanes = useMemo(() => variantLanes(rows), [rows]);
+	const guides = useMemo(() => treeGuides(rows, rowSelected, timelineDepths(rows)), [rows]);
 	const tree = useRef<HTMLDivElement>(null);
 	const [focusedId, setFocusedId] = useState<string | null>(null);
 	const stop = [focusedId, homeId, rows[0]?.id].find(
@@ -108,12 +165,14 @@ function BoardOutline(props: BoardOutlineProps): JSX.Element {
 			aria-label="Boards"
 			tabIndex={-1}
 			style={TREE_STYLE}
-			className="flex flex-col py-1 outline-none"
+			className="flex flex-col py-2 outline-none"
 		>
 			{rows.map((row) => (
 				<OutlineRow
 					key={row.id}
 					row={row}
+					lane={lanes.get(row.id)}
+					guides={guides.get(row.id)}
 					focusable={row.id === stop}
 					onFocusRow={setFocusedId}
 					onOpen={onOpen}

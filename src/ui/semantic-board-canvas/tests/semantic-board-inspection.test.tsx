@@ -6,10 +6,13 @@
 // is, and the board under it — is reached by inspecting, and that
 // is what these check. They read the rendered panel rather than the module's
 // internals, because "a person can find this out" is the claim being made.
+// The code and the board under it are the panel's foot, where a part's ways
+// deeper are.
 
 import { expect, test } from "bun:test";
 import { act, fireEvent } from "@testing-library/react";
 
+import type { CodeBinding } from "@/shared/code-target";
 import { announceSemanticBoardChange } from "@/ui/semantic-board-canvas";
 import {
 	drawing,
@@ -95,6 +98,17 @@ function lostEnd(end: string): Record<string, unknown> {
 	};
 }
 
+/** What the person has asked the shell to open, in order. */
+const opened: CodeBinding[] = [];
+
+/**
+ * The shell's way of opening a part's code: it keeps what it was asked for.
+ * @param binding Where the code is.
+ */
+function record(binding: CodeBinding): void {
+	opened.push(binding);
+}
+
 /**
  * Put a board of nodes and a drawing of it in front of a pane.
  * @param nodes The board's nodes.
@@ -137,42 +151,57 @@ function slot(name: string): HTMLElement | null {
 
 test("picking a node shows what its card cannot: the description and the code", async () => {
 	serving();
-	mountStage("n1");
+	mountStage("n1", { onOpenCode: record });
 	await settled();
 
 	expect(inspector()).toContain("board-io");
 	expect(inspector()).toContain("The one place a note is read or written");
-	expect(slot("semantic-inspector-binding")?.textContent).toContain("archboard");
-	expect(slot("semantic-inspector-binding")?.textContent).toContain(
-		"src/runtime/engine/board-io.ts",
-	);
-	expect(inspector()).not.toContain("Containment");
+	// The bound file is said once, at the foot, with the way to open it and to
+	// copy it; the repository is where the pointer rests on the way to open it.
+	expect(slot("semantic-inspector-code")?.textContent).toContain("src/runtime/engine/board-io.ts");
+	expect(slot("semantic-inspector-open-code")?.getAttribute("title")).toContain("archboard");
+	expect(slot("semantic-inspector-copy")).not.toBeNull();
 });
 
-test("an unbound node says so plainly rather than showing an empty binding", async () => {
+test("an unbound node with nothing written says nothing of what it does not have", async () => {
 	serving();
-	mountStage("n2");
+	mountStage("n2", { onOpenCode: record });
 	await settled();
 
-	// What is missing, not why. A part may be implemented and simply not bound
-	// yet, and "planned" would be the panel guessing at the work from the board.
-	expect(slot("semantic-inspector-unbound")?.textContent).toBe("No code binding.");
-	expect(inspector()).not.toContain("Planned");
-	expect(slot("semantic-inspector-binding")).toBeNull();
-	// And nothing at all is said about a description nobody wrote: a heading over
-	// an absence is a line to read in order to learn there is nothing to read.
-	expect(inspector()).not.toContain("No description written.");
-	expect(inspector()).not.toContain("Description");
+	// A part may be implemented and simply not bound yet, and "planned" would be
+	// the panel guessing at the work from the board. A way to code that is not
+	// there is not drawn, and no line says so: a line over an absence is a line
+	// to read in order to learn there is nothing to read.
+	expect(slot("semantic-inspector-code")).toBeNull();
+	expect(slot("semantic-inspector-open-code")).toBeNull();
+	expect(slot("semantic-go-deeper")).toBeNull();
+	expect(slot("semantic-inspector-purpose")).toBeNull();
 	expect(slot("semantic-inspector-description")).toBeNull();
+	// What it does have is its name and its kind.
+	expect(inspector()).toContain("Write Lease");
 });
 
 test("two nodes of one board can name two different repositories", async () => {
 	serving();
-	mountStage("n3");
+	mountStage("n3", { onOpenCode: record });
 	await settled();
 
-	expect(slot("semantic-inspector-binding")?.textContent).toContain("coordinator");
-	expect(slot("semantic-inspector-binding")?.textContent).not.toContain("archboard");
+	const open = slot("semantic-inspector-open-code");
+	expect(open?.getAttribute("title")).toContain("coordinator");
+	expect(open?.getAttribute("title")).not.toContain("archboard");
+	expect(slot("semantic-inspector-code")?.textContent).toContain("src/voice/bridge.ts");
+});
+
+test("opening a part's code hands the shell the binding the board states", async () => {
+	serving();
+	opened.length = 0;
+	mountStage("n1", { onOpenCode: record });
+	await settled();
+
+	await act(async () => {
+		fireEvent.click(slot("semantic-inspector-open-code")!);
+	});
+	expect(opened).toEqual([{ repo: "archboard", path: "src/runtime/engine/board-io.ts" }]);
 });
 
 test("a drill-down discloses the target variant and where it stands before opening it", async () => {
@@ -195,15 +224,16 @@ test("a drill-down discloses the target variant and where it stands before openi
 	const open = slot("semantic-drill-down-open");
 	expect(open?.textContent).toContain("engine");
 	// Which variant, and what sort of state it is — not merely that there is one.
-	expect(slot("semantic-drill-down")?.textContent).toContain("as built");
-	expect(slot("semantic-drill-down")?.textContent).toContain("draft proposal");
+	expect(open?.textContent).toContain("as built");
+	expect(open?.textContent).toContain("draft proposal");
 	expect(open?.getAttribute("data-variant-lifecycle")).toBe("draft");
 });
 
 test("a drill-down that asks for whichever variant is current says that it asked", async () => {
 	// The designation is a written intention, not the fallback for a name that
-	// is not there — so a link that asks for it says so, and what it resolves to
-	// is disclosed like any other target before it opens.
+	// is not there — so a link that asks for it says so. What it resolves to is
+	// the current architecture, which needs no name before it opens: only a
+	// state that is not the architecture says what it is.
 	serving([
 		{
 			id: "n1",
@@ -218,8 +248,8 @@ test("a drill-down that asks for whichever variant is current says that it asked
 	mountStage("n1");
 	await settled();
 
-	expect(slot("semantic-drill-down")?.textContent).toContain("whichever variant is current");
-	expect(slot("semantic-drill-down")?.textContent).toContain("as it is");
+	expect(slot("semantic-go-deeper")?.textContent).toContain("whichever variant is current");
+	expect(slot("semantic-drill-down-open")?.textContent).not.toContain("as it is");
 	expect(slot("semantic-drill-down-open")?.getAttribute("data-variant-lifecycle")).toBe("current");
 });
 
@@ -231,8 +261,8 @@ test("a drill-down naming a variant the target has not got says so and opens not
 	mountStage("n1");
 	await settled();
 
-	expect(slot("semantic-drill-down")?.textContent).toContain('no variant called "as built"');
-	expect(slot("semantic-drill-down")?.textContent).toContain("Nothing was opened in its place");
+	expect(slot("semantic-go-deeper")?.textContent).toContain('no variant called "as built"');
+	expect(slot("semantic-go-deeper")?.textContent).toContain("Nothing was opened in its place");
 	expect(slot("semantic-drill-down-open")).toBeNull();
 });
 
@@ -241,8 +271,8 @@ test("a drill-down whose board the vault has not got names the board rather than
 	mountStage("n1");
 	await settled();
 
-	expect(slot("semantic-drill-down")?.textContent).toContain("could not be opened");
-	expect(slot("semantic-drill-down")?.textContent).toContain("engine");
+	expect(slot("semantic-go-deeper")?.textContent).toContain("could not be opened");
+	expect(slot("semantic-go-deeper")?.textContent).toContain("engine");
 	expect(slot("semantic-drill-down-open")).toBeNull();
 });
 
@@ -271,16 +301,17 @@ test("following a drill-down shows the target board and offers the way back", as
 
 	expect(slot("semantic-board-stage")?.getAttribute("data-board")).toBe("engine");
 	expect(server.calls.some((url) => url.includes("board=engine"))).toBe(true);
-	// The pane says where it is and how to get back; the address still names the
-	// board the pane was opened on, which is why the trail has to be on screen.
-	expect(slot("semantic-board-trail")?.textContent).toContain("pipeline");
+	// The pane says where it came from and how to get back, with no navigator to
+	// place the board: the address still names the board the pane was opened on,
+	// so the way back has to be in the pane's own breadcrumb.
+	expect(slot("pane-crumb")?.textContent).toContain("pipeline");
 
 	await act(async () => {
-		fireEvent.click(slot("semantic-board-trail")!.querySelector("button")!);
+		fireEvent.click(slot("pane-crumb")!);
 	});
 	await settled();
 	expect(slot("semantic-board-stage")?.getAttribute("data-board")).toBe("pipeline");
-	expect(slot("semantic-board-trail")).toBeNull();
+	expect(slot("pane-crumb")).toBeNull();
 });
 
 test("a link written before its board and variant were renamed opens them by the names they have now", async () => {
@@ -308,8 +339,8 @@ test("a link written before its board and variant were renamed opens them by the
 	await settled();
 
 	expect(slot("semantic-drill-down-open")?.getAttribute("data-variant-lifecycle")).toBe("draft");
-	expect(slot("semantic-drill-down")?.textContent).toContain("Board Engine");
-	expect(slot("semantic-drill-down")?.textContent).toContain("Fully built");
+	expect(slot("semantic-go-deeper")?.textContent).toContain("Board Engine");
+	expect(slot("semantic-go-deeper")?.textContent).toContain("Fully built");
 
 	server.reply = { status: 200, body: drawing(1, "Board Engine") };
 	await act(async () => {
@@ -338,9 +369,9 @@ test("the way back survives drilling into a board with nothing on it", async () 
 	await settled();
 
 	expect(slot("semantic-board-stage")?.getAttribute("data-state")).toBe("empty");
-	expect(slot("semantic-board-trail")?.textContent).toContain("pipeline");
+	expect(slot("pane-crumb")?.textContent).toContain("pipeline");
 	await act(async () => {
-		fireEvent.click(slot("semantic-board-trail")!.querySelector("button")!);
+		fireEvent.click(slot("pane-crumb")!);
 	});
 	await settled();
 	expect(slot("semantic-board-stage")?.getAttribute("data-board")).toBe("pipeline");
@@ -360,7 +391,7 @@ test("a drill-down asking for the current variant follows it when it moves", asy
 	]);
 	mountStage("n1", { live: true });
 	await settled();
-	expect(slot("semantic-drill-down")?.textContent).toContain("as it is");
+	expect(slot("semantic-drill-down-open")?.getAttribute("data-variant-lifecycle")).toBe("current");
 
 	// The target board adopts something else. A preview pinned for the life of
 	// the tab would go on calling the old state current and open it.
@@ -382,8 +413,6 @@ test("a drill-down asking for the current variant follows it when it moves", asy
 	});
 	await settled();
 
-	expect(slot("semantic-drill-down")?.textContent).toContain("as it now is");
-	expect(slot("semantic-drill-down")?.textContent).not.toContain("as it is —");
 	server.reply = { status: 200, body: { ...NOTHING_DRAWN.body, board: "engine" } };
 	await act(async () => {
 		fireEvent.click(slot("semantic-drill-down-open")!);

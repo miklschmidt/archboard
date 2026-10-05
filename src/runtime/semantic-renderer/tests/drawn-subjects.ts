@@ -168,7 +168,9 @@ interface DrawnStroke {
  */
 function strokesOf(group: DrawnGroup): DrawnStroke[] {
 	const strokes: DrawnStroke[] = [];
-	for (const match of group.markup.matchAll(/<path\s[^>]*\/>/g)) {
+	// The masks that shape a pulse to its line are not strokes of the picture.
+	const markup = group.markup.replace(/<mask[\s\S]*?<\/mask>/g, "");
+	for (const match of markup.matchAll(/<path\s[^>]*\/>/g)) {
 		const attributes = attributesOf(match[0]);
 		const width = attributes["stroke-width"];
 		if (width !== undefined) {

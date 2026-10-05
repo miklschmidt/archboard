@@ -25,9 +25,12 @@ interface SubtitleSource {
 	readonly final: boolean;
 }
 
+/** A cue, and which utterance it is part of: a cue is told apart by both. */
+type SpokenCue = SubtitleCue & { readonly item: string };
+
 /** The voice model's latest utterance, cut into cues. */
 interface Utterance extends SubtitleProgress {
-	readonly cues: readonly SubtitleCue[];
+	readonly cues: readonly SpokenCue[];
 }
 
 /** The voice model has said nothing. */
@@ -51,7 +54,7 @@ function latestUtterance(
 	return {
 		itemId: said.itemId,
 		words: words.length,
-		cues: lines === null ? [] : cuesOf(words, lines),
+		cues: lines === null ? [] : cuesOf(words, lines).map((cue) => ({ ...cue, item: said.itemId })),
 	};
 }
 
@@ -65,7 +68,7 @@ function latestUtterance(
 function useVoiceSubtitles(
 	transcript: readonly SubtitleSource[],
 	lines: LineCount | null,
-): SubtitleCue | null {
+): SpokenCue | null {
 	const utterance = useMemo(() => latestUtterance(transcript, lines), [transcript, lines]);
 	const mark = progressMark(utterance);
 	const [from] = useState(mark);
@@ -84,4 +87,4 @@ function useVoiceSubtitles(
 	return subtitleShowing(utterance, { from, lapsed }) ? (utterance.cues.at(-1) ?? null) : null;
 }
 
-export { useVoiceSubtitles, type SubtitleSource };
+export { useVoiceSubtitles, type SpokenCue, type SubtitleSource };

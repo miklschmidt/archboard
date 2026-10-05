@@ -63,7 +63,7 @@ board is narrated by a voice and recorded to video.
   usually committed with the code, so a board change is reviewed in the same
   pull request as the code change.
 - The shell has a navigator of boards, up to two panes side by side, a sidebar
-  for each pane, and an agent bar under the panes. Talk and Narrate start the
+  for each pane, and an agent dock at the foot of the navigator. Talk and Narrate start the
   voice.
 - Code bindings open a part's file in VS Code, Cursor, Zed or on GitHub.
 - Boards also leave the app: as SVG or PNG for docs, ADRs and pull requests,
@@ -82,7 +82,7 @@ Shipped capabilities:
 - levels and drill-down from board to board
 - variants with a lifecycle, and comparison of any two of them
 - walkthroughs, narration by the Codex voice, and recording to video
-- an agent bar and conversation that read the board and the selection
+- an agent dock and conversation that read the board and the selection
 - claims, the doing of each write, and the control that takes a board back
 - groups, code bindings, illustrated traffic, and SVG and PNG renders
 
@@ -95,15 +95,16 @@ Constraints that every surface keeps:
   renderer has a bug.
 - Archboard is a desktop app for use near full screen at 1920×1080. Screens
   smaller than 1080p are out of scope, and it has no phone or narrow layout.
-- Codex runs the agent bar, the voice, narration and recording, through a
+- Codex runs the agent, the voice, narration and recording, through a
   private app-server with its own sign-in. Any agent that runs a CLI can author
   boards.
 - Archboard is young and its interfaces change often. It is not on npm.
 
 ## Brand Commitments
 
-The name is archboard. The CLI and the wordmark write it in lowercase. Prose
-writes Archboard at the start of a sentence and as the product's name.
+The name is archboard. The CLI writes it in lowercase. The wordmark sets it in
+the display face's tracked capitals, and its text stays archboard. Prose writes
+Archboard at the start of a sentence and as the product's name.
 
 The voice is plain English, and this is binding for UI copy and docs. Sentences
 are short and literal. Copy names what happened and what the reader can do
@@ -113,8 +114,10 @@ Archboard server. Nothing here was dragged into place."
 
 ## Evidence on Hand
 
-- `docs/readme/`: the README's clips and images, each filmed or rendered from
-  a running Archboard server, and SVGs drawn by `archboard semantic render`.
+- `docs/readme/`: the README's SVGs drawn by `archboard semantic render`, its
+  clips filmed from a running Archboard server, and its banner made with Codex
+  image generation. `bun run readme:assets` makes each of them
+  (`docs/agents/readme-assets.md`).
 - Three narrated videos on GitHub, linked from the README.
 - `examples/web-shop`: the example vault with history, proposals, drill-down
   and walkthroughs.

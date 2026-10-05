@@ -3,7 +3,11 @@ import {
 	ARCHITECTURE_CARD_PADDING,
 	ARCHITECTURE_HEADER_PADDING,
 } from "@/transformers/semantic-renderer/config";
-import { CARD_RADIUS, BAND_RADIUS } from "@/transformers/semantic-renderer/lib/design";
+import {
+	CARD_RADIUS,
+	BAND_RADIUS,
+	ICON_CHIP_SIZE,
+} from "@/transformers/semantic-renderer/lib/design";
 import { farSizeOf } from "@/transformers/semantic-renderer/lib/measurement";
 import type { DrawingNode } from "@/transformers/semantic-renderer/lib/drawing";
 import { coord } from "@/transformers/semantic-renderer/lib/geometry";
@@ -14,7 +18,9 @@ import {
 	appearanceAttributes,
 	typeChip,
 } from "@/transformers/semantic-renderer/lib/svg/appearance";
-import { cardInk, deck, halo } from "@/transformers/semantic-renderer/lib/svg/cards";
+import { halo } from "@/transformers/semantic-renderer/lib/svg/cards";
+import { cornerDrillMark } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
+import { paintFarCard } from "@/transformers/semantic-renderer/lib/svg/far-card";
 import { nearLayer, paintFarTitle } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { stylesFor } from "@/transformers/semantic-renderer/lib/svg/styles";
@@ -36,17 +42,47 @@ import {
  * @param look Its type chip's colour and glyph, and the selected theme.
  * @param look.appearance Its type chip's colour and glyph.
  * @param look.palette The selected theme.
+ * @param unsettled Whether the frame wears the warning badge.
  * @returns The far layer.
  */
 function paintFarHeader(
 	placed: DrawingNode,
 	farSize: number,
 	look: { appearance: NodeAppearance; palette: Palette },
+	unsettled: boolean,
 ): string {
 	const { name } = placed.measured.node;
-	const header = { ...placed.box, height: placed.measured.headerHeight };
+	// The name is sized and broken clear of the frame's far mark, as its near name is.
+	const header = {
+		...placed.box,
+		height: placed.measured.headerHeight,
+		mark: look.appearance.drill !== null,
+	};
 	const size = Math.min(farSize, farSizeOf(name, header));
-	return paintFarTitle(name, header, { size, align: "start" }, look);
+	return paintFarTitle(name, header, { size, align: "start" }, look, unsettled);
+}
+
+/**
+ * The mark of a part that opens another board, in the corner opposite its
+ * chip and level with it; nothing for a part that opens none.
+ * @param box The part's box, or its header's.
+ * @param box.x Its left edge.
+ * @param box.y Its top edge.
+ * @param box.width Its width.
+ * @param padding How far in its chip sits.
+ * @param appearance Its channels, which say whether it opens a board and which way.
+ * @param palette The selected theme.
+ * @returns The mark, or nothing.
+ */
+function drillCorner(
+	box: { readonly x: number; readonly y: number; readonly width: number },
+	padding: number,
+	appearance: NodeAppearance,
+	palette: Palette,
+): string {
+	return appearance.drill === null
+		? ""
+		: cornerDrillMark(box, padding, padding + ICON_CHIP_SIZE / 2, appearance.drill, palette.glyph);
 }
 
 /**
@@ -56,8 +92,6 @@ function paintFarHeader(
  * @param standing How it stands against the variant it is read against.
  * @param unsettled Whether its architecture needs reconciliation.
  * @param appearance Resolved containment and type channels.
- * @param farSize Its name's size from far away: one for every card of the
- * picture, which reads as one scale where each card's own largest would not.
  * @returns The card group.
  */
 function paintMeasuredCard(
@@ -66,7 +100,6 @@ function paintMeasuredCard(
 	standing: SubjectStanding | undefined,
 	unsettled: boolean,
 	appearance: NodeAppearance,
-	farSize: number,
 ): string {
 	const { measured, box } = placed;
 	const styles = stylesFor(palette);
@@ -79,9 +112,6 @@ function paintMeasuredCard(
 			...appearanceAttributes(appearance),
 		},
 		lines([
-			measured.node.drillDown === undefined
-				? ""
-				: deck(box, CARD_RADIUS, cardInk(styles, appearance)),
 			halo(box, CARD_RADIUS, styles),
 			tag("rect", {
 				x: coord(box.x),
@@ -94,14 +124,11 @@ function paintMeasuredCard(
 				...standingOutline(standing, palette),
 			}),
 			nearLayer(
-				typeChip(chipX, chipY, appearance, palette) + paintTextRuns(measured.runs, box, palette),
+				typeChip(chipX, chipY, appearance, palette) +
+					paintTextRuns(measured.runs, box, palette) +
+					drillCorner(box, ARCHITECTURE_CARD_PADDING, appearance, palette),
 			),
-			paintFarTitle(
-				measured.node.name,
-				box,
-				{ size: farSize, align: "centre" },
-				{ appearance, palette },
-			),
+			paintFarCard(measured.node, box, { appearance, palette }, unsettled),
 			standingPin(box, standing, palette),
 			warningBadge(box, unsettled, palette),
 		]),
@@ -189,9 +216,11 @@ function paintMeasuredHeader(
 					placed.box.y + ARCHITECTURE_HEADER_PADDING,
 					appearance,
 					palette,
-				) + paintTextRuns(placed.measured.runs, placed.box, palette),
+				) +
+					paintTextRuns(placed.measured.runs, placed.box, palette) +
+					drillCorner(placed.box, ARCHITECTURE_HEADER_PADDING, appearance, palette),
 			),
-			paintFarHeader(placed, farSize, { appearance, palette }),
+			paintFarHeader(placed, farSize, { appearance, palette }, unsettled),
 			warningBadge(placed.box, unsettled, palette),
 		]),
 	);

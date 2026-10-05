@@ -74,7 +74,7 @@ function VoiceContextBody(props: { readonly voiceContext: VoiceContext }): JSX.E
 					<RiFileCopyLine />
 				</IconAction>
 			</div>
-			<pre className="border-border bg-muted/40 text-technical max-h-48 overflow-auto rounded-[3px] border p-2 font-mono whitespace-pre-wrap">
+			<pre className="border-border bg-muted/40 text-technical rounded-control max-h-48 overflow-auto border p-2 font-mono whitespace-pre-wrap">
 				{brief}
 			</pre>
 			{voiceContext.entries.length > 0 && (

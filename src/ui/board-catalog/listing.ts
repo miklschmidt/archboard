@@ -11,6 +11,12 @@ import type { BoardListing, BrowserPaneListing, CatalogBoard, ListedVariant } fr
 /** The listing before either half has been read. */
 const EMPTY_LISTING: BoardListing = Object.freeze({ boards: [], levels: [], onScreen: [] });
 
+/** The vault's half of the listing: its boards as the shell lists them, and its levels. */
+type VaultHalf = Omit<BoardListing, "onScreen">;
+
+/** The vault's half while it is unread. */
+const NO_BOARDS: VaultHalf = Object.freeze({ boards: [], levels: [] });
+
 /**
  * One board as the shell lists it: every variant carries the key a pane opens
  * it by, bare for the variant the board's name opens.
@@ -31,29 +37,31 @@ function catalogBoard(board: SemanticBoardEntry): CatalogBoard {
  * The listing the shell reads, from whichever halves have been read. An unread
  * vault is not an empty one, which is why the navigator asks the query whether
  * it is pending rather than reading anything into a vault with no boards.
- * @param vault The vault's listing, or undefined while unread.
+ *
+ * The vault's half comes in already made, so a caller that keeps it while only
+ * the panes move hands on the same boards: every pane reads them, and new ones
+ * would draw every pane again for a move in another pane.
+ * @param vault The vault's half, or undefined while unread.
  * @param panes The live panes, or undefined while unread.
  * @returns The listing.
  */
 function composeListing(
-	vault: SemanticBoardListing | undefined,
+	vault: VaultHalf | undefined,
 	panes: BrowserPaneListing | undefined,
 ): BoardListing {
 	if (vault === undefined && panes === undefined) {
 		return EMPTY_LISTING;
 	}
-	return { ...vaultHalf(vault), onScreen: paneHalf(panes) };
+	return { ...(vault ?? NO_BOARDS), onScreen: paneHalf(panes) };
 }
 
 /**
- * The vault half: its boards and levels, empty while unread.
- * @param vault The vault's listing, or undefined while unread.
+ * The vault's half: its boards, each variant with the key a pane opens it by, and its levels.
+ * @param vault The vault's listing.
  * @returns The boards and levels.
  */
-function vaultHalf(vault: SemanticBoardListing | undefined): Omit<BoardListing, "onScreen"> {
-	return vault === undefined
-		? { boards: [], levels: [] }
-		: { boards: vault.boards.map(catalogBoard), levels: vault.levels };
+function vaultHalf(vault: SemanticBoardListing): VaultHalf {
+	return { boards: vault.boards.map(catalogBoard), levels: vault.levels };
 }
 
 /**
@@ -156,4 +164,12 @@ function nothingBuiltOn(listing: BoardListing, board: string): boolean {
 	return variants.length > 0 && variants.every((variant) => variant.lifecycle !== "current");
 }
 
-export { EMPTY_LISTING, composeListing, listedBoard, listingError, listedBoardKey, nothingBuiltOn };
+export {
+	EMPTY_LISTING,
+	composeListing,
+	listedBoard,
+	listingError,
+	listedBoardKey,
+	nothingBuiltOn,
+	vaultHalf,
+};

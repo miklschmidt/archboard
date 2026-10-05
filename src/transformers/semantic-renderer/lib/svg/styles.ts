@@ -80,7 +80,18 @@ function headReach(head: Head, weight: Weight): number {
 }
 
 /**
- * The ink a line and its arrowhead are drawn in; its comets carry the same
+ * How far back from the end of its line an arrowhead's base lies: what a mark
+ * that rides the line must stop short of, so it never covers the head.
+ * @param head Which form.
+ * @param weight How loudly the line speaks.
+ * @returns The distance, in the page's units.
+ */
+function headBase(head: Head, weight: Weight): number {
+	return (HEAD_REF_X[head] / 10) * HEAD_SIZE[weight] * STROKE_WIDTH[weight];
+}
+
+/**
+ * The ink a line and its arrowhead are drawn in; its pulses carry the same
  * colour at full strength (`fullLineColour`).
  *
  * A relationship that stands for something takes the standing's ink; everything
@@ -105,7 +116,7 @@ function lineColour(palette: Palette, standing: SubjectStanding | undefined): st
 /**
  * The colour a line stands for at full strength: the standing's, or the
  * neutral relationship ink. The line itself is drawn weaker (`drawnInk`); the
- * comets that ride it carry this.
+ * pulses that ride it carry this.
  * @param palette The theme's colours.
  * @param standing How it stands, when this is a proposal and it moved.
  * @returns The colour.
@@ -117,7 +128,7 @@ function fullLineColour(palette: Palette, standing: SubjectStanding | undefined)
 
 /**
  * The colour a line is drawn in, from the colour it stands for: a coloured line
- * at three quarters of its colour over the page, so the comets riding it stand
+ * at three quarters of its colour over the page, so the pulses riding it stand
  * out at full strength; the neutral line as it is. Mixed rather than made
  * translucent, so two lines sharing a lane draw no darker where they overlap.
  * @param ink The colour at full strength.
@@ -285,6 +296,7 @@ export {
 	edgeAttributes,
 	stylesFor,
 	headReach,
+	headBase,
 	HEAD_REF_X,
 	HEAD_SIZE,
 	STROKE_WIDTH,

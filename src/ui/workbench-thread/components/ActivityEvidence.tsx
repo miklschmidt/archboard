@@ -59,7 +59,7 @@ function CommandEvidence(props: {
 				)}
 			</p>
 			{item.output !== null && (
-				<pre className="bg-muted/70 text-technical max-h-60 overflow-auto rounded-[3px] px-2.5 py-2 font-mono leading-[15px] break-all whitespace-pre-wrap">
+				<pre className="bg-muted/70 text-technical rounded-control max-h-60 overflow-auto px-2.5 py-2 font-mono leading-[15px] break-all whitespace-pre-wrap">
 					{item.outputTruncated && <span className="text-muted-foreground">…{"\n"}</span>}
 					{item.output}
 				</pre>
@@ -132,7 +132,7 @@ function ToolEvidence(props: {
 	return (
 		<div className="flex flex-col gap-1.5">
 			{item.arguments !== null && (
-				<pre className="bg-muted/70 text-technical max-h-40 overflow-auto rounded-[3px] px-2.5 py-2 font-mono leading-[15px] break-all whitespace-pre-wrap">
+				<pre className="bg-muted/70 text-technical rounded-control max-h-40 overflow-auto px-2.5 py-2 font-mono leading-[15px] break-all whitespace-pre-wrap">
 					{item.arguments}
 				</pre>
 			)}

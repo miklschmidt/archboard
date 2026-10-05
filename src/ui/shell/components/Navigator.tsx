@@ -1,14 +1,24 @@
-// The left navigator: a filter, the vault's boards as an outline (folders,
-// then the boards each board drills down to, then names), and where agents
-// are working. Each board is one row; its variants are listed under it while
-// a pane shows it or the person opens a board that has a proposal. The way to
-// what every pane shows is open, and nothing an agent does reorders the tree.
+// The left column: the brand bar at its top, a filter, the vault's boards as
+// an outline (folders, then the boards each board drills down to, then
+// names), where agents are working, and the agent itself at its foot. Each
+// board is one row; a board with more than one variant lists them under it
+// when it is open. The way to what every pane shows is open, and nothing an
+// agent does reorders the tree.
 //
 // Nothing here makes a board. A person reads an architecture an agent wrote
 // (ADR 0023), so the navigator is a way of choosing which one to look at.
 
 import { RiErrorWarningLine } from "@remixicon/react";
-import { useCallback, useEffect, useMemo, useRef, useState, type JSX, type RefObject } from "react";
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+	type JSX,
+	type ReactNode,
+	type RefObject,
+} from "react";
 
 import { listedBoard, listedBoardKey, type OutlineNode } from "@/ui/board-catalog";
 import { Skeleton } from "@/ui/components/skeleton";
@@ -35,6 +45,10 @@ interface NavigatorProps {
 	/** The vault's outline, derived once for the shell. */
 	outline: readonly OutlineNode<CatalogBoard>[];
 	actions: ShellActions;
+	/** The column's top row: the brand and the application's own controls. */
+	head: ReactNode;
+	/** The column's foot: the agent dock, with its voice and the way to the conversation. */
+	foot?: ReactNode;
 }
 
 /** Messages line up with the names at the top of the tree. */
@@ -169,41 +183,48 @@ function Navigator(props: NavigatorProps): JSX.Element {
 	);
 
 	return (
-		<nav
-			ref={column}
-			aria-label="Boards"
-			data-slot="navigator"
-			className="border-border bg-sidebar text-sidebar-foreground flex w-(--shell-navigator-width) shrink-0 flex-col border-r"
+		<div
+			data-slot="navigator-column"
+			className="border-border bg-sidebar text-sidebar-foreground shadow-edge-side relative z-30 flex w-(--shell-navigator-width) shrink-0 flex-col border-r"
 		>
-			<NavigatorFilter
-				input={input}
-				query={query}
-				onQuery={setQuery}
-				count={filterCount(rows, listing.boards.length)}
-				onOpenFirst={onOpenFirst}
-				onEnterTree={onEnterTree}
-			/>
-			<div className="min-h-0 flex-1 overflow-y-auto">
-				<ListingState
-					loading={view.boardsLoading}
-					error={view.boardsError}
-					empty={listing.boards.length === 0}
-					noMatch={folded.length > 0 && rows.length === 0}
+			{props.head}
+			<nav
+				ref={column}
+				aria-label="Boards"
+				data-slot="navigator"
+				className="flex min-h-0 flex-1 flex-col"
+			>
+				<NavigatorFilter
+					input={input}
 					query={query}
-					actions={actions}
-					onClear={setQuery}
+					onQuery={setQuery}
+					count={filterCount(rows, listing.boards.length)}
+					onOpenFirst={onOpenFirst}
+					onEnterTree={onEnterTree}
 				/>
-				<BoardOutline
-					rows={rows}
-					homeId={homeId}
-					onOpen={open}
-					onExpand={expansion.setExpanded}
-					onTypeAhead={onTypeAhead}
-					filtering={folded.length > 0}
-				/>
-			</div>
-			<WorkingNow entries={workingEntries(view, panes)} onOpen={openBoard} />
-		</nav>
+				<div className="min-h-0 flex-1 overflow-y-auto">
+					<ListingState
+						loading={view.boardsLoading}
+						error={view.boardsError}
+						empty={listing.boards.length === 0}
+						noMatch={folded.length > 0 && rows.length === 0}
+						query={query}
+						actions={actions}
+						onClear={setQuery}
+					/>
+					<BoardOutline
+						rows={rows}
+						homeId={homeId}
+						onOpen={open}
+						onExpand={expansion.setExpanded}
+						onTypeAhead={onTypeAhead}
+						filtering={folded.length > 0}
+					/>
+				</div>
+				<WorkingNow entries={workingEntries(view, panes)} onOpen={openBoard} />
+			</nav>
+			{props.foot}
+		</div>
 	);
 }
 
@@ -264,7 +285,7 @@ function ListingState(props: ListingStateProps): JSX.Element | null {
 		return (
 			<div
 				role="alert"
-				className="text-body m-2 flex items-start gap-2 rounded-[3px] border px-3 py-2"
+				className="text-body rounded-control m-2 flex items-start gap-2 border px-3 py-2"
 			>
 				<RiErrorWarningLine
 					className="text-destructive mt-px size-3.5 shrink-0"
@@ -274,7 +295,7 @@ function ListingState(props: ListingStateProps): JSX.Element | null {
 				<button
 					type="button"
 					onClick={retry}
-					className="text-primary shrink-0 font-medium hover:underline"
+					className="text-primary-text decoration-primary-mark shrink-0 font-medium underline underline-offset-2 hover:decoration-2"
 				>
 					Retry
 				</button>
@@ -285,7 +306,11 @@ function ListingState(props: ListingStateProps): JSX.Element | null {
 		return (
 			<p style={MESSAGE_STYLE} className="text-body text-muted-foreground py-3 pr-4">
 				No board matches “{props.query.trim()}”.{" "}
-				<button type="button" onClick={clear} className="text-primary font-medium hover:underline">
+				<button
+					type="button"
+					onClick={clear}
+					className="text-primary-text decoration-primary-mark font-medium underline underline-offset-2 hover:decoration-2"
+				>
 					Clear
 				</button>
 			</p>
@@ -313,7 +338,7 @@ function ListingSkeleton(): JSX.Element {
 				Reading the vault…
 			</p>
 			{["w-3/5", "w-1/2", "w-2/3", "w-2/5"].map((width) => (
-				<Skeleton key={width} className={`h-3 rounded-[2px] motion-reduce:animate-none ${width}`} />
+				<Skeleton key={width} className={`rounded-chip h-3 motion-reduce:animate-none ${width}`} />
 			))}
 		</div>
 	);

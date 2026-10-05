@@ -9,7 +9,8 @@ import { rendersDuring } from "@/ui/semantic-board-canvas/tests/render-watch";
 
 // React's renderer is loaded only now, once the watch is there for it to find.
 const { act, fireEvent } = await import("@testing-library/react");
-const { cameraNow, wheelAt } = await import("@/ui/semantic-board-canvas/tests/camera-probes");
+const { cameraNow, takeFrames, wheelAt } =
+	await import("@/ui/semantic-board-canvas/tests/camera-probes");
 const { drawing, mountStage, server, settle, viewport } =
 	await import("@/ui/semantic-board-canvas/tests/stage-harness");
 
@@ -21,23 +22,30 @@ test("a pan or a zoom draws the surface again and nothing around it", async () =
 	mountStage();
 	await settle();
 	const before = cameraNow();
-
-	const panned = rendersDuring(() => {
-		act(() => {
-			fireEvent.keyDown(viewport(), { key: "ArrowLeft" });
+	// Both run over many frames now, and each frame draws the surface and nothing else.
+	const frames = takeFrames();
+	try {
+		const panned = rendersDuring(() => {
+			act(() => {
+				fireEvent.keyDown(viewport(), { key: "ArrowLeft" });
+			});
+			frames.run(400);
 		});
-	});
-	const zoomed = rendersDuring(() => {
-		act(() => {
-			viewport().dispatchEvent(wheelAt(-100, [400, 300]));
+		const zoomed = rendersDuring(() => {
+			act(() => {
+				viewport().dispatchEvent(wheelAt(-100, [400, 300]));
+			});
+			frames.run(400);
 		});
-	});
 
-	expect(cameraNow()).not.toEqual(before);
-	expect(panned.length).toBeGreaterThan(0);
-	expect(zoomed.length).toBeGreaterThan(0);
-	for (const name of AROUND_THE_PICTURE) {
-		expect(panned).not.toContain(name);
-		expect(zoomed).not.toContain(name);
+		expect(cameraNow()).not.toEqual(before);
+		expect(panned.length).toBeGreaterThan(0);
+		expect(zoomed.length).toBeGreaterThan(0);
+		for (const name of AROUND_THE_PICTURE) {
+			expect(panned).not.toContain(name);
+			expect(zoomed).not.toContain(name);
+		}
+	} finally {
+		frames.restore();
 	}
 });

@@ -39,7 +39,7 @@ function goTo(index: number): void {
 	act(() => {
 		fireEvent.click(
 			document.querySelector<HTMLElement>(
-				`[data-slot='semantic-presentation-dot'][data-step='${index}']`,
+				`[data-slot='semantic-presentation-step'][data-step='${index}']`,
 			)!,
 		);
 	});
@@ -93,4 +93,13 @@ function litRegions(): string[] {
 	);
 }
 
-export { current, goTo, litRegions, marked, offers, presenting, press, unveiled };
+/**
+ * The rows of the column of the presented step's words.
+ * @returns Each row's slot, or its tag when it has none.
+ */
+function wordRows(): string[] {
+	const rows = document.querySelector("[data-slot='presentation-slides']")?.parentElement?.children;
+	return [...(rows ?? [])].map((row) => row.getAttribute("data-slot") ?? row.tagName);
+}
+
+export { current, goTo, litRegions, marked, offers, presenting, press, unveiled, wordRows };

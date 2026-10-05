@@ -96,6 +96,8 @@ test("a reconnect becomes connected only after its unchanged pane is registered 
 		setBoard: (): void => {},
 		/** This fixture makes no board navigation. */
 		setOpened: (): void => {},
+		/** This fixture makes no board navigation. */
+		arrived: (): void => {},
 		/** No board claim is involved. */
 		setHeldBy: (): void => {},
 		/** No agent activity is involved. */
@@ -167,6 +169,8 @@ function dialledTabSession(paneId: string): string | null {
 		setBoard: (): void => {},
 		/** This fixture makes no board navigation. */
 		setOpened: (): void => {},
+		/** This fixture makes no board navigation. */
+		arrived: (): void => {},
 		/** No board claim is involved. */
 		setHeldBy: (): void => {},
 		/** No agent activity is involved. */

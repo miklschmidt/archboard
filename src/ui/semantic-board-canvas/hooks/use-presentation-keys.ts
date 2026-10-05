@@ -4,9 +4,16 @@
 // move a step, Home and End go to the ends, Escape leaves. They are heard on
 // the window, before the diagram's own keys, because a presentation is the one
 // thing the pane is doing while it lasts and Escape must leave it rather than
-// clear a selection underneath. A key typed into a field is left alone.
+// clear a selection underneath. A key typed into a field is left alone, and so is
+// Space while focus is on a control, which presses that control instead of stepping.
+//
+// Two panes can each present a walkthrough at once, and the keys step only one
+// of them: the active pane's, which is where the shell sends every shortcut, or,
+// while the active pane presents nothing, the one presented first.
 
-import { useEffect } from "react";
+import { useEffect, useRef, type RefObject } from "react";
+
+import { usePaneChrome } from "@/ui/components/PaneChrome";
 
 /** How far each stepping key moves. */
 const STEP_KEYS: Readonly<Record<string, number>> = {
@@ -65,13 +72,73 @@ function typedIntoField(target: EventTarget | null): boolean {
 }
 
 /**
+ * Whether Space pressed here would press a control: focus is on a button or a link.
+ * @param event The key.
+ * @returns True when it would.
+ */
+function pressesAControl(event: KeyboardEvent): boolean {
+	return (
+		event.key === " " &&
+		event.target instanceof Element &&
+		event.target.closest("button, a[href], [role='button']") !== null
+	);
+}
+
+/**
  * Whether a key is one a presentation leaves alone: already handled, typed into
- * a field, or held with a modifier that makes it somebody else's shortcut.
+ * a field, held with a modifier that makes it somebody else's shortcut, or Space
+ * on a control.
  * @param event The key.
  * @returns True to ignore it.
  */
 function notOurs(event: KeyboardEvent): boolean {
-	return event.defaultPrevented || typedIntoField(event.target) || event.metaKey || event.ctrlKey;
+	const modified = event.metaKey || event.ctrlKey;
+	return (
+		event.defaultPrevented || typedIntoField(event.target) || modified || pressesAControl(event)
+	);
+}
+
+/** One presented walkthrough's claim on the keys: whether its pane is the active one. */
+interface KeyClaim {
+	active: boolean;
+}
+
+/** The claims of every walkthrough presented in the page, in the order they were presented. */
+const claims: KeyClaim[] = [];
+
+/**
+ * Whether the keys are one presentation's: the active pane's has them, and while the active pane
+ * presents nothing, the one presented first does.
+ * @param claim The presentation's claim.
+ * @returns True when they are.
+ */
+function holdsTheKeys(claim: KeyClaim): boolean {
+	return (claims.find((one) => one.active) ?? claims[0]) === claim;
+}
+
+/**
+ * Hold a claim on the keys while a walkthrough is presented, kept up to date with whether its pane
+ * is the active one.
+ * @param open Whether a walkthrough is presented.
+ * @returns The claim, read when a key is pressed.
+ */
+function useKeyClaim(open: boolean): RefObject<KeyClaim> {
+	const { active } = usePaneChrome();
+	const claim = useRef<KeyClaim>({ active });
+	useEffect(() => {
+		claim.current.active = active;
+	}, [active]);
+	useEffect(() => {
+		if (!open) {
+			return undefined;
+		}
+		const mine = claim.current;
+		claims.push(mine);
+		return (): void => {
+			claims.splice(claims.indexOf(mine), 1);
+		};
+	}, [open]);
+	return claim;
 }
 
 /**
@@ -81,6 +148,7 @@ function notOurs(event: KeyboardEvent): boolean {
  */
 function usePresentationKeys(keys: PresentationKeys, open: boolean): void {
 	const { index, count, go, leave } = keys;
+	const claim = useKeyClaim(open);
 	useEffect(() => {
 		if (!open) {
 			return undefined;
@@ -90,7 +158,7 @@ function usePresentationKeys(keys: PresentationKeys, open: boolean): void {
 		 * @param event The key.
 		 */
 		function onKey(event: KeyboardEvent): void {
-			if (notOurs(event)) {
+			if (!holdsTheKeys(claim.current) || notOurs(event)) {
 				return;
 			}
 			if (event.key === "Escape") {
@@ -111,7 +179,7 @@ function usePresentationKeys(keys: PresentationKeys, open: boolean): void {
 		}
 		window.addEventListener("keydown", onKey, { capture: true });
 		return (): void => window.removeEventListener("keydown", onKey, { capture: true });
-	}, [open, index, count, go, leave]);
+	}, [open, claim, index, count, go, leave]);
 }
 
 export { stepFor, usePresentationKeys };

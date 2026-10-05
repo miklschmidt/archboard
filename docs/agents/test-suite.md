@@ -10,7 +10,9 @@ native lanes in this order:
 - `test:system`: system product owners under the seven explicit non-browser
   directories, with `--max-concurrency=1` because they own real processes and
   shared local ports;
-- `test:repository`: the source-boundary lint fixtures and the skill frontmatter check;
+- `test:repository`: the source-boundary lint fixtures, the skill frontmatter check, and
+  the README asset manifest and staleness owner
+  (`tests/system/repository-policy/readme-assets.test.ts`), which starts no browser;
 - `test:serial-browser`: every owner in the executable `BROWSER_TEST_PATHS`
   inventory through the strict adapter.
 
@@ -324,18 +326,27 @@ repeat them.
 
 ### Controlled live voice (TASK-143.04.07)
 
-Extends the same exact-version production composition through one controlled
-browser media session. One short rendered lifecycle proves that CanvasPane's
-caller-owned session reaches Shell and WorkbenchFrame with its source, captured
-context, and transcript visible. It then mutes the session, carries the same
-identity into the fullscreen dock, and stops it there before checking text-only
-cleanup and the unchanged mounted board pane.
+Extends the same exact-version production composition through controlled
+browser media. The person turned subtitles off on an earlier visit. Talk in the
+agent dock creates and links the conversation, starts voice and lights the orb
+in the dock's circle, and the keyboard keeps its place on the key. The owner
+checks the order of that wire. It checks that the voice follows the model's
+output and not the microphone, that what was said lands in the conversation,
+and that mute stops only the microphone. Subtitles on carry the orb to the
+voice box over the pane. In a fullscreen presentation the bar's key and the
+voice box carry that same session. From the keyboard, the bar's key ends it,
+releases the browser's media and keeps its focus. Talk on the same key then
+starts a second session that the voice box carries, and Space ends it.
+Narrating the walkthrough starts a third session on a fresh coordinator. Its
+words are in the voice box at the foot of the presented walkthrough. The dock's
+key ends it and releases its media, and the mounted board pane is unchanged.
 
-The owner checks desktop and desktop scaled geometry, target size, focus
-order, live-region semantics, reduced motion, forced colors, browser errors,
-and resource cleanup. Focused realtime, media, session, transcript, context,
-spoken-approval, frame, and shell owners keep their exhaustive state and
-failure matrices.
+The owner checks the keyboard order of the dock's voice controls, the target
+size of the voice keys at desktop and desktop scaled, that a presented pane
+hides its header and sidebar, forced colors, that reduced motion reaches the
+voice box, browser errors and resource cleanup. Focused realtime, media, session,
+transcript, context, spoken-approval, orb, voice box and shell owners keep
+their exhaustive state and failure matrices.
 
 ## Source boundary check
 

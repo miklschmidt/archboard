@@ -7,6 +7,13 @@ last section derives the hierarchy that the redesign builds. The pane sidebar
 section of [operator-canvas-shell.md](operator-canvas-shell.md) states the
 result as the visual authority.
 
+Revised 2026-10-03 (TASK-388). The tab no longer lists the variants of a board
+that a reader reached by a drill-down (task 7 below). The Variants page of the
+pane's header lists them with the record of each and opens one in the pane, and
+the header's breadcrumb names the one on screen. The changes section names the
+variant that it is compared with in its own heading. The rest of the study
+stands as it was found.
+
 The evidence has three kinds. The product documents say what each element is
 for. The boards in `.archboard/vault` and `examples/web-shop` say how often
 each element has anything to show. Research on diagram reading and interface
@@ -214,7 +221,7 @@ draws one.
 3. **What do the marks mean?** The legend (task 6), under one heading. The node
    kinds the picture draws, as the picture's chips. The relationship kinds, as
    the picture's lines. Then two samples for what a line's weight and its
-   moving streaks say, where there are relationships. Only what the picture
+   moving pulses say, where there are relationships. Only what the picture
    draws is keyed, in the order the picture draws it [8, 10].
 4. **A preference of this browser.** The layout engine (task 8), one row at
    the foot, under the last rule.
@@ -231,7 +238,7 @@ Nothing is collapsed by default, and no section can collapse on its own. The
 lists of choices are short (at most six rows on any board), and a reader of a
 first board needs most of the tab [15]. The legend is longer, but C4 asks that
 the key always be there [11], and the legend already keys only what is
-drawn. Collapsing the whole sidebar to its tab icons
+drawn. Hiding the whole sidebar, with the control in the pane's header,
 stays the one way to hide it all, the legend included, which keeps the legend
 visible by default and hideable (ADR 0025).
 

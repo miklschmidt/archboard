@@ -13,7 +13,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
-import { pictureAtRest, sidebarTab } from "./support/semantic-page.ts";
+import { partSearchState, pictureAtRest, sidebarTab } from "./support/semantic-page.ts";
 
 /**
  * How wide the picture's viewport is.
@@ -61,6 +61,26 @@ const VIEWPORT = "[data-slot='semantic-board-viewport']";
 
 /** The panel beside the diagram. */
 const INSPECTOR = "[data-slot='semantic-inspector']";
+
+/**
+ * What the pointer resting on the way to a part's code says: the repository.
+ * @param browser The page.
+ * @returns The title, or an empty string when the part has no way to code.
+ */
+const codeTitle = (browser: AgentBrowserSession): Promise<string> =>
+	browser.eval<string>(
+		`document.querySelector("[data-slot='semantic-inspector-open-code']")?.getAttribute("title") ?? ""`,
+	);
+
+/**
+ * What sort of state the way down to a part's board opens.
+ * @param browser The page.
+ * @returns The lifecycle, or an empty string when the part has no way down.
+ */
+const lifecycleOnOffer = (browser: AgentBrowserSession): Promise<string> =>
+	browser.eval<string>(
+		`document.querySelector("[data-slot='semantic-drill-down-open']")?.getAttribute("data-variant-lifecycle") ?? ""`,
+	);
 
 /**
  * Which of the pane's states is on screen.
@@ -305,38 +325,37 @@ test("a person reads containment, code and the level below it, and writes nothin
 	expect(await sidebarTab(browser.eval.bind(browser))).toBe("selection");
 	const inspected = await textOf(browser, INSPECTOR);
 	expect(inspected).toContain("The one place a note is read or written");
-	expect(inspected).toContain("archboard");
 	expect(inspected).toContain("src/runtime/engine/board-io.ts");
+	expect(await codeTitle(browser)).toContain("archboard");
 
-	// A node bound to a different repository says so, and a planned one says it
-	// is planned rather than showing an empty field.
+	// A node bound to a different repository says so where the pointer rests on
+	// the way to its code, and one with no binding has no way to code at all.
 	await pick(browser, ids["other"] ?? "");
 	await pollUntil(
-		() => textOf(browser, INSPECTOR),
-		(said) => said.includes("coordinator"),
-		"the inspector to name the other node's repository",
+		() => codeTitle(browser),
+		(title) => title.includes("coordinator"),
+		"the way to the code to name the other node's repository",
 		WAIT,
 	);
 	await pick(browser, ids["planned"] ?? "");
 	await pollUntil(
 		() => textOf(browser, INSPECTOR),
-		(said) => said.includes("No code binding."),
-		"the inspector to say the node has no code binding",
+		(said) => said.includes("Write Lease"),
+		"the inspector to explain the node with no binding",
 		WAIT,
 	);
+	expect(await codeTitle(browser)).toBe("");
 
-	// The level below: the target variant and where it stands are disclosed
-	// before anything opens, and opening it really shows the other board.
+	// The level below: where it stands is disclosed before anything opens, and
+	// opening it really shows the other board.
 	await pick(browser, ids["module"] ?? "");
 	await pollUntil(
-		() => textOf(browser, "[data-slot='semantic-drill-down']"),
-		(said) => said.includes("as built"),
-		"the drill-down to name the target variant",
+		() => lifecycleOnOffer(browser),
+		(lifecycle) => lifecycle === "current",
+		"the way down to say what sort of state it opens",
 		WAIT,
 	);
-	expect(await textOf(browser, "[data-slot='semantic-drill-down']")).toContain(
-		"the current architecture",
-	);
+	expect(await textOf(browser, "[data-slot='semantic-drill-down-open']")).toContain("engine");
 	await press(browser, "[data-slot='semantic-drill-down-open']");
 	await pollUntil(
 		() => shownBoard(browser),
@@ -355,9 +374,9 @@ test("a person reads containment, code and the level below it, and writes nothin
 		"the address to name the board the reader followed into",
 		WAIT,
 	);
-	// The way back is the trail, which is the reader's own and is not addressed.
-	expect(await textOf(browser, "[data-slot='semantic-board-trail']")).toContain("pipeline");
-	await press(browser, "[data-slot='semantic-board-trail'] button");
+	// The way back is the breadcrumb, which is the reader's own and is not addressed.
+	expect(await textOf(browser, "[data-slot='pane-header'] nav")).toContain("pipeline");
+	await press(browser, "[data-slot='pane-crumb']");
 	await pollUntil(
 		() => shownBoard(browser),
 		(board) => board === "pipeline",
@@ -372,8 +391,8 @@ test("a person reads containment, code and the level below it, and writes nothin
 		WAIT,
 	);
 
-	// Collapsing the sidebar gives its width back to the picture, which refits
-	// to it while nobody has moved the camera; expanding it takes the width back.
+	// Hiding the sidebar gives its width back to the picture, which refits to it
+	// while nobody has moved the camera; showing it takes the width back.
 	await pollUntil(
 		() => pictureAtRest(browser.eval.bind(browser)),
 		(atRest) => atRest,
@@ -386,7 +405,7 @@ test("a person reads containment, code and the level below it, and writes nothin
 	await pollUntil(
 		() => viewportWidth(browser),
 		(width) => width > open,
-		"the picture's viewport to widen once the sidebar collapses",
+		"the picture's viewport to widen once the sidebar is hidden",
 		WAIT,
 	);
 	await pollUntil(
@@ -402,6 +421,75 @@ test("a person reads containment, code and the level below it, and writes nothin
 		"the picture to refit to the sidebar coming back",
 		WAIT,
 	);
+
+	// With the sidebar hidden, the search shortcut brings it back and takes focus
+	// in the part search. The first Escape lets go of what was typed, and the next
+	// leaves the field.
+	const searching = (): ReturnType<typeof partSearchState> =>
+		partSearchState(browser.eval.bind(browser));
+	await press(browser, "[data-slot='semantic-sidebar-toggle']");
+	await pollUntil(
+		() => sidebarTab(browser.eval.bind(browser)),
+		(tab) => tab === null,
+		"the hidden sidebar to leave the page",
+		WAIT,
+	);
+	await browser.run(["press", "Control+Shift+K"]);
+	await pollUntil(
+		searching,
+		(state) => state.focused,
+		"the search shortcut to take focus in the part search",
+		WAIT,
+	);
+	await browser.run(["keyboard", "type", "board"]);
+	await pollUntil(
+		searching,
+		(state) => state.value === "board" && state.listed,
+		"the part search to list what it found",
+		WAIT,
+	);
+	await browser.run(["press", "Escape"]);
+	await pollUntil(
+		searching,
+		(state) => state.value === "" && state.focused && !state.listed,
+		"the first Escape to clear the field and keep it",
+		WAIT,
+	);
+	await browser.run(["press", "Escape"]);
+	await pollUntil(
+		searching,
+		(state) => !state.focused,
+		"the second Escape to leave the field",
+		WAIT,
+	);
+
+	// The field names its list only while the list is drawn, and a row keeps a
+	// name it cuts short in its title. Choosing a part gives the keyboard to the
+	// selection tab that explains it, not to the page's body.
+	expect((await searching()).controls).toBeNull();
+	await browser.run(["press", "Control+Shift+K"]);
+	await pollUntil(
+		searching,
+		(state) => state.focused,
+		"the search shortcut to take focus in the part search again",
+		WAIT,
+	);
+	await browser.run(["keyboard", "type", "board"]);
+	await pollUntil(
+		searching,
+		(state) => state.listed && state.controls === "list",
+		"the field to name the list it draws",
+		WAIT,
+	);
+	expect((await searching()).fullNames).toBe(true);
+	await browser.run(["press", "Enter"]);
+	await pollUntil(
+		() => browser.eval<string | null>("document.activeElement?.getAttribute('data-tab') ?? null"),
+		(tab) => tab === "selection",
+		"the part chosen in the search to take the keyboard to the selection tab",
+		WAIT,
+	);
+	expect(await searching()).toMatchObject({ listed: false, controls: null });
 
 	// Nothing a person did in the browser wrote a board.
 	expect(readFileSync(join(vault, "pipeline.semantic.json"), "utf8")).toBe(before);

@@ -332,9 +332,6 @@
 				"src/ui/workbench-thread/markdown-text.tsx",
 				"src/ui/workbench-thread/tooltip-icon-button.tsx",
 				"src/ui/workbench-thread/use-copy-to-clipboard.ts",
-				// TASK-150.05: official LiveKit Agents UI wave renderer and shader host (voice-wave/LICENSE-NOTICE.md)
-				"src/ui/voice-wave/agent-audio-visualizer-wave.tsx",
-				"src/ui/voice-wave/react-shader-toy.tsx",
 			],
 			"rules": {
 				"complexity": "off",

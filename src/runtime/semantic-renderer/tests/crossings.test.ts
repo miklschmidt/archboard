@@ -48,10 +48,10 @@ function routes(svg: string) {
 					].map((path) => path[1]!),
 				),
 			],
-			// The curves its traffic rides, whatever layers the theme gives the traffic.
+			// The curves its traffic rides: the narrow layers of its masks, which run into the next piece.
 			rides: [
 				...new Set(
-					[...trafficOf(svg, group[1]!).matchAll(/<path[^>]* d="([^"]+)"/gu)].map(
+					[...trafficOf(svg, group[1]!).matchAll(/<path d="([^"]+)"[^>]*stroke="#ffffff"/gu)].map(
 						(path) => path[1]!,
 					),
 				),
@@ -149,12 +149,13 @@ test("crossing clearances share the drawn curve and narrowly clear the ink benea
 	}
 	for (const upper of lines) {
 		// The line and its halo: no background patch, and both on the same drawn
-		// curve. Its traffic rides that curve too, stopping short of the head.
+		// curve. Its traffic rides that curve too, a piece at a time, stopping short of
+		// the head: every piece but the last is a piece of the line itself.
 		expect(upper.own).toBe(2);
 		expect(upper.paths).toHaveLength(1);
-		expect(upper.rides.length).toBeLessThanOrEqual(1);
-		for (const ride of upper.rides) {
-			expect(upper.paths[0]!.startsWith(ride.replace(/ [LC][^LC]*$/u, ""))).toBe(true);
+		for (const ride of upper.rides.slice(0, -1)) {
+			const piece = ride.replace(/^M[-\d.,]+ L/u, "").replace(/ L[-\d.,]+$/u, "");
+			expect(upper.paths[0]!).toContain(piece);
 		}
 		for (const bridge of roundBridges(upper.paths[0]!)) {
 			const localCurve = bridge.span.trim().replace(/^L/u, "M");
