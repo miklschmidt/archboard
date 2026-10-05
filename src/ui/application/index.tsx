@@ -9,7 +9,6 @@ import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } f
 import type { CodeTargetNotice } from "@/shared/code-target";
 import { LiveBinding } from "@/ui/application/lib/live-binding";
 import { livePanesOver } from "@/ui/application/lib/live-panes";
-import { voiceBoxAvailable } from "@/ui/application/voice-box-available";
 import { codeTargetShellNotice, infoNotice, presentationNotice } from "@/ui/application/notices";
 import { OpenerSettings } from "@/ui/application/components/OpenerSettings";
 import { paneEvents } from "@/ui/application/lib/pane-events";
@@ -321,10 +320,6 @@ function ApplicationBody(): JSX.Element {
 		[raise],
 	);
 	const fullscreen = useFullscreen({ onRefused });
-	const boxAvailable = voiceBoxAvailable({
-		owned: workbench.voice !== null,
-		recording: recorder !== null,
-	});
 	// The agent dock is off screen while a pane is presented fullscreen.
 	const dockless = fullscreen.snapshot.paneId !== null;
 	const slots = useAgentSlots({ agent, workbench, context, reducedMotion, dockless });
@@ -396,7 +391,6 @@ function ApplicationBody(): JSX.Element {
 		workbench,
 		reducedMotion,
 		recording: recorder !== null,
-		boxAvailable,
 		presentedPaneId: fullscreen.snapshot.paneId,
 	});
 	const recorded = useRecordedViews(recorder, workbench, { narration, overlay });

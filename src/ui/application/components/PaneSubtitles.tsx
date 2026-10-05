@@ -25,10 +25,8 @@ interface PaneSubtitlesProps {
 	readonly feed: VoiceFeed;
 	/** Whether the person asked for reduced motion. */
 	readonly reducedMotion: boolean;
-	/** Whether this page is a recording. */
+	/** Whether this page is a recording, which has plain subtitles and never the voice box. */
 	readonly recording: boolean;
-	/** Whether the voice box may carry the voice over this pane: it has a voice owner and the page is not a recording. */
-	readonly boxAvailable: boolean;
 	/** Whether the agent dock is off screen, as in a fullscreen presentation, so the box carries the voice whatever the person wants of subtitles. */
 	readonly dockless: boolean;
 }
@@ -38,7 +36,6 @@ interface SubtitledProps {
 	readonly transcript: readonly SubtitleSource[];
 	readonly reducedMotion: boolean;
 	readonly recording: boolean;
-	readonly boxAvailable: boolean;
 	readonly dockless: boolean;
 }
 
@@ -47,7 +44,7 @@ const NO_WORDS: readonly SubtitleSource[] = [];
 
 /**
  * The subtitles of the voice running for one pane.
- * @param props Where the pane hears the voice, the motion preference, whether the page is a recording and whether the box may carry the voice.
+ * @param props Where the pane hears the voice, the motion preference, and whether the page is a recording.
  * @returns The subtitle on screen, or the voice box, or null.
  */
 function PaneSubtitles(props: PaneSubtitlesProps): JSX.Element {
@@ -58,14 +55,14 @@ function PaneSubtitles(props: PaneSubtitlesProps): JSX.Element {
 
 /**
  * The words and, where the voice may sit in the box, the box that holds them.
- * @param props What was said, the motion preference, whether the voice may sit in the box and whether the dock is off screen.
+ * @param props What was said, the motion preference, whether the page is a recording and whether the dock is off screen.
  * @returns The voice box, or the subtitles alone.
  */
 function Subtitled(props: SubtitledProps): JSX.Element {
 	const wanted = useSubtitlesWanted();
 	const surface = useVoiceSurface();
 	const place = useOverlayPlace();
-	const boxable = props.boxAvailable && surface !== null;
+	const boxable = surface !== null && !props.recording;
 	const on = surface !== null && surface.voice.stage !== "idle";
 	const boxed = useVoiceBoxed(on, boxable, props.dockless);
 	if (boxable) {
