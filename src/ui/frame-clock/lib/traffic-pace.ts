@@ -32,11 +32,6 @@ interface TrafficPace {
 	readonly resume: (ms: number) => void;
 	/** Let the held traffic go at its speed at once. */
 	readonly release: () => void;
-	/**
-	 * Whether the traffic is held, which is also whether anything waits to resume it.
-	 * @returns True while it is.
-	 */
-	readonly holding: () => boolean;
 }
 
 /** Do nothing. */
@@ -44,20 +39,11 @@ function idle(): void {
 	// Where no browser can list animations there is nothing to pace.
 }
 
-/**
- * Never holding.
- * @returns False.
- */
-function never(): boolean {
-	return false;
-}
-
 /** Pacing nothing. */
 const NO_PACE: TrafficPace = Object.freeze({
 	hold: idle,
 	resume: idle,
 	release: idle,
-	holding: never,
 });
 
 /**
@@ -162,13 +148,7 @@ function paceTraffic(root: TrafficHolder): TrafficPace {
 		letGo();
 	};
 
-	/**
-	 * Whether the traffic is held.
-	 * @returns True while it is.
-	 */
-	const isHolding = (): boolean => holding;
-
-	return { hold, resume, release, holding: isHolding };
+	return { hold, resume, release };
 }
 
 export { paceTraffic, type TrafficPace };

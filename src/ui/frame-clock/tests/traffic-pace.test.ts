@@ -166,7 +166,7 @@ test("holding again, as every frame of a drag does, looks through the picture on
 	expect(element.asked).toBe(1);
 });
 
-test("a picture with no traffic asks for no frames when it is resumed, and says when it is held", () => {
+test("a picture with no traffic asks for no frames when it is resumed", () => {
 	let asked = 0;
 	const request = clock.requestFrame.bind(clock);
 	/**
@@ -179,13 +179,10 @@ test("a picture with no traffic asks for no frames when it is resumed, and says 
 		return request(callback);
 	};
 	const pace = paceTraffic(new FakeElement([new FakeAnimation("", "running")]));
-	expect(pace.holding()).toBe(false);
 
 	pace.hold();
-	expect(pace.holding()).toBe(true);
 	pace.resume(RAMP_MS);
 
-	expect(pace.holding()).toBe(false);
 	expect(asked).toBe(0);
 });
 
