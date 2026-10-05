@@ -14,8 +14,6 @@ interface SubtitleOverlaySources {
 	readonly reducedMotion: boolean;
 	/** Whether the page is a recording. */
 	readonly recording: boolean;
-	/** Whether the voice box may carry the voice: the pane has a voice owner and the page is not a recording. */
-	readonly boxAvailable: boolean;
 	/** The pane presented fullscreen, or null in the workspace. */
 	readonly presentedPaneId: string | null;
 }
@@ -29,7 +27,7 @@ interface SubtitleOverlaySources {
  * @returns The overlay and the pane it belongs over, or null.
  */
 function useSubtitleOverlay(sources: SubtitleOverlaySources): PaneOverlay | null {
-	const { workbench, reducedMotion, recording, boxAvailable, presentedPaneId } = sources;
+	const { workbench, reducedMotion, recording, presentedPaneId } = sources;
 	const { voice } = workbench;
 	return useMemo(() => {
 		if (voice === null) return null;
@@ -39,11 +37,10 @@ function useSubtitleOverlay(sources: SubtitleOverlaySources): PaneOverlay | null
 				feed: heardOver(voice.transport),
 				reducedMotion,
 				recording,
-				boxAvailable,
 				dockless: presentedPaneId !== null,
 			}),
 		};
-	}, [voice, reducedMotion, recording, boxAvailable, presentedPaneId]);
+	}, [voice, reducedMotion, recording, presentedPaneId]);
 }
 
 export { useSubtitleOverlay, type SubtitleOverlaySources };

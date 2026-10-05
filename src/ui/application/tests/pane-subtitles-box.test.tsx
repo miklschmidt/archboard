@@ -191,7 +191,6 @@ function speakingFeed(): { readonly feed: VoiceFeed; readonly say: (text: string
 /** What a pane is given. */
 interface PaneSetup {
 	readonly stage: AgentVoiceView["stage"];
-	readonly boxAvailable: boolean;
 	readonly recording: boolean;
 	/** Whether the agent dock is off screen, as in a fullscreen presentation. */
 	readonly dockless: boolean;
@@ -202,7 +201,6 @@ interface PaneSetup {
 /** A live voice in a pane that can carry it, in the workspace, unless a test says otherwise. */
 const LIVE_PANE: PaneSetup = {
 	stage: "listening",
-	boxAvailable: true,
 	recording: false,
 	dockless: false,
 	feed: HEARD,
@@ -223,7 +221,6 @@ function pane(setup: Partial<PaneSetup> = {}): JSX.Element {
 						feed={given.feed}
 						reducedMotion={false}
 						recording={given.recording}
-						boxAvailable={given.boxAvailable}
 						dockless={given.dockless}
 					/>
 				</VoiceSurfaceProvider>
@@ -299,12 +296,6 @@ test("a voice that is not on has no box", () => {
 	expect(boxed()).toBe(false);
 });
 
-test("where the box has no place the subtitles are plain", () => {
-	render(pane({ boxAvailable: false }));
-	expect(boxed()).toBe(false);
-	expect(plain()).toBe(true);
-});
-
 test("a fullscreen presentation has no dock, so the box carries the voice whatever the person chose, and the choice is only whether there are words", () => {
 	const { feed, say } = speakingFeed();
 	render(pane({ dockless: true, feed }));
@@ -324,7 +315,7 @@ test("a fullscreen presentation has no dock, so the box carries the voice whatev
 
 test("a recording has plain subtitles whatever the person chose, and never the box", () => {
 	subtitlePreference.change(false);
-	render(pane({ boxAvailable: false, recording: true }));
+	render(pane({ recording: true }));
 	expect(boxed()).toBe(false);
 	expect(plain()).toBe(true);
 });
