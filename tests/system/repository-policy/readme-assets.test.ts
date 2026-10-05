@@ -199,4 +199,11 @@ describe("README asset manifest", () => {
 		);
 		expect(manifest.assets.flatMap((one) => disagreements(one, PRODUCERS[one.name]))).toEqual([]);
 	});
+
+	test("every source of the tracked manifest covers a file, so its hash sees what it names", () => {
+		const manifest = readManifest(repoRoot);
+		const hasher = new SourceHasher(repoRoot, checkoutFiles(repoRoot));
+
+		expect(manifest.assets.flatMap((one) => hasher.unmatched(one.sources))).toEqual([]);
+	});
 });
