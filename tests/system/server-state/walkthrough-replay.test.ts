@@ -4,9 +4,10 @@
 // render can only have drawn it from the talk. No Codex and no voice are involved.
 //
 // What is guarded: one talk renders to the same frames every time, drawn on one page or split
-// across two, which hand their frames on in order; the picture moves when a step is shown and is
-// still once the step has arrived; every frame is 1920x1080, one per 1/30 s of the talk; the
-// other theme is another picture from the first frame; and the receipt says what was rendered.
+// across two, which hand their frames on in order, with the voice's orb in the walkthrough box
+// following a voice that speaks and falls silent; the orb moves on every frame once it is shown;
+// every frame is 1920x1080, one per 1/30 s of the talk; the other theme is another picture from
+// the first frame; and the receipt says what was rendered.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
@@ -29,6 +30,20 @@ const BOARD = "tour";
 /** The frame step two is shown on, and the talk's last frame. */
 const STEP_TWO_FRAME = 12;
 const FRAMES = 60;
+
+/**
+ * A voice that speaks and falls silent by turns, a third of a second each: a tone at a quarter of
+ * full scale, so the orb has a level to follow and the voice box turns between speaking and not.
+ * @param samples How many samples it has.
+ * @returns The voice.
+ */
+function voiceOf(samples: number): Int16Array {
+	return Int16Array.from({ length: samples }, (_, index) =>
+		Math.floor(index / 16_000) % 2 === 0
+			? Math.round(8192 * Math.sin((2 * Math.PI * 220 * index) / 48_000))
+			: 0,
+	);
+}
 
 let root: string;
 let server: OwnedServer;
@@ -129,7 +144,7 @@ beforeAll(async () => {
 	expect(discarded.status).toBe(200);
 	talkDirectory = writeTalk({
 		talk,
-		voice: new Int16Array(talk.audio.samples),
+		voice: voiceOf(talk.audio.samples),
 		place: askedTalkPlace(join(root, "talk")),
 	});
 	ffmpeg = prepareFakeFfmpeg(root).executablePath;
@@ -199,7 +214,7 @@ async function replayOnTwoPages(): Promise<readonly string[]> {
 }
 
 test(
-	"a kept talk renders to the same frames every time, on one page or two, moving at its steps, and again in the other theme",
+	"a kept talk renders to the same frames every time, on one page or two, with its voice's orb moving, and again in the other theme",
 	async () => {
 		const first = replay("first");
 		const again = await replayOnTwoPages();
@@ -215,13 +230,11 @@ test(
 		});
 		expect(first.frames).toHaveLength(FRAMES);
 		expect(again).toEqual(first.frames);
-		// The second step moves the picture on from where the first left it...
-		const { frames } = first;
-		expect(frames[STEP_TWO_FRAME + 3]).not.toBe(frames[STEP_TWO_FRAME - 1]);
-		// ...and once it has arrived, nothing moves until the talk ends.
-		expect(new Set(frames.slice(FRAMES - 10)).size).toBe(1);
+		// Once the walkthrough is presented, its voice box holds the orb, which never stands still.
+		const lit = first.frames.slice(FRAMES - 10);
+		expect(new Set(lit).size).toBe(lit.length);
 		expect(dark.receipt).toMatchObject({ theme: "dark", frames: FRAMES });
-		expect(dark.frames[0]).not.toBe(frames[0]);
+		expect(dark.frames[0]).not.toBe(first.frames[0]);
 	},
 	TEST_RECORDING_CASE_MS,
 );

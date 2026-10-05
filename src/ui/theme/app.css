@@ -858,8 +858,9 @@
    begins on a frame is drawn a few milliseconds ahead of the clock on that frame, because the
    compositor starts it before the clock can hold it, and then the same talk would not render to
    the same frames twice. So in a recording page and in the replay of a kept talk the box arrives
-   where it stands and cuts from step to step, as it does with reduced motion. The picture's glide
-   is driven by the clock and still moves. */
+   where it stands and cuts from step to step, as it does with reduced motion, and the voice box in
+   its pill and the orb in that are there at once. The picture's glide, the orb's own drawing and
+   the fade of each word are driven by the clock and still move. */
 [data-recording] [data-slot="semantic-presentation-frame"],
 [data-recording] [data-slot="semantic-presentation-frame"] * {
 	transition: none !important;

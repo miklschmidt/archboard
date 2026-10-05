@@ -22,6 +22,9 @@
 // orb than they stand in the capsule. A fullscreen
 // presentation has no dock to take the voice back, so the box carries it there whatever the
 // person wants of subtitles, and the subtitles control then decides only whether there are words.
+// A recording is drawn with this same box at the foot of the same walkthrough box
+// (src/ui/walkthrough-replay): the orb follows the recorded voice, and the keys are drawn as here,
+// with nobody to press them.
 //
 // The box comes with the voice and leaves with it. It stays mounted while it leaves,
 // so it eases away with the orb's flight out of it, and it takes no input while it
@@ -41,8 +44,8 @@ import {
 import { cn } from "@/ui/components/class-names";
 import { OrbSlot } from "@/ui/voice-orb";
 import { SubtitleWords, SubtitlesToggle, type SubtitleSource } from "@/ui/voice-subtitles";
-import { MuteAction } from "@/ui/workbench/components/MuteAction";
-import type { AgentActions, AgentVoiceView } from "@/ui/workbench/contracts";
+import { MuteAction, type MuteActions } from "@/ui/workbench/components/MuteAction";
+import type { AgentVoiceView } from "@/ui/workbench/contracts";
 import { useCircleState } from "@/ui/workbench/hooks/use-circle-state";
 import { useVoiceBoxPresence } from "@/ui/workbench/hooks/use-voice-box-presence";
 import { VOICE_WORDS, type CircleState } from "@/ui/workbench/lib/circle-state";
@@ -90,7 +93,8 @@ const SKINS: Readonly<Record<VoiceBoxPlace, string>> = {
 /** Inputs for the voice box. */
 interface VoiceBoxProps {
 	readonly voice: AgentVoiceView;
-	readonly actions: AgentActions;
+	/** What its keys do to the voice. */
+	readonly actions: MuteActions;
 	/** What the voice has said, for the subtitles inside. */
 	readonly transcript: readonly SubtitleSource[];
 	/** Whether the person asked for no motion: the box then comes and goes at once. */
@@ -162,7 +166,7 @@ function Box(props: VoiceBoxProps): JSX.Element {
  */
 function Cap(props: {
 	readonly voice: AgentVoiceView;
-	readonly actions: AgentActions;
+	readonly actions: MuteActions;
 	readonly muted: boolean;
 }): JSX.Element {
 	return (

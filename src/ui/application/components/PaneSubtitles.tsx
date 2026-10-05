@@ -2,8 +2,10 @@
 // voice itself with them while the person wants subtitles (TASK-391).
 //
 // What the subtitles show is decided in `subtitled-transcript`. A recording is always subtitled:
-// nobody watching the video can turn them on (TASK-306), and it has no dock and nobody at its
-// controls, so its subtitles are plain. Otherwise the subtitles are the words in the voice box, which
+// nobody watching the video can turn them on (TASK-306). The page that records a talk captures no
+// picture and nobody sees it, so it lays only the words and has no orb stage: the video's picture
+// is rendered afterwards by the replay page (src/ui/walkthrough-replay), which draws the voice box
+// as the shell does (TASK-400). Otherwise the subtitles are the words in the voice box, which
 // carries the voice's orb and its controls too, and leaves the dock when subtitles are off. A
 // fullscreen presentation has no dock to leave for, so the box carries the voice there whatever the
 // person wants of subtitles (TASK-392), and what they want decides only whether there are words.
@@ -25,7 +27,7 @@ interface PaneSubtitlesProps {
 	readonly feed: VoiceFeed;
 	/** Whether the person asked for reduced motion. */
 	readonly reducedMotion: boolean;
-	/** Whether this page is a recording, which has plain subtitles and never the voice box. */
+	/** Whether this page records a talk: nobody sees it, so it lays the words alone and never the voice box. */
 	readonly recording: boolean;
 	/** Whether the agent dock is off screen, as in a fullscreen presentation, so the box carries the voice whatever the person wants of subtitles. */
 	readonly dockless: boolean;
