@@ -96,7 +96,7 @@ function useSidebarSlide(place: Place): Slide {
 			return undefined;
 		}
 		const clock = frameClock();
-		const timer = clock.after(leavingMs(shownAs) + 20, () =>
+		const timer = clock.after(leavingMs(shownAs) + SIDEBAR_MS.settle, () =>
 			setKept((now) => ({ ...now, leaving: false })),
 		);
 		return () => clock.cancelAfter(timer);
@@ -106,7 +106,7 @@ function useSidebarSlide(place: Place): Slide {
 			return undefined;
 		}
 		const clock = frameClock();
-		const timer = clock.after(SIDEBAR_MS.dock + 20, () =>
+		const timer = clock.after(SIDEBAR_MS.dock + SIDEBAR_MS.settle, () =>
 			setKept((now) => ({ ...now, motion: "none" })),
 		);
 		return () => clock.cancelAfter(timer);
