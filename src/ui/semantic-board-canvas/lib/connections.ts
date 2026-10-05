@@ -170,4 +170,13 @@ function litInPicture(
 	return lit !== null && [...lit].some((one) => one in atlas.edges) ? lit : null;
 }
 
-export { connectionsOf, litBy, litInPicture, withReach, type Connections, type Link, type Wiring };
+export {
+	connectionsOf,
+	litBy,
+	litInPicture,
+	subtreeOf,
+	withReach,
+	type Connections,
+	type Link,
+	type Wiring,
+};
