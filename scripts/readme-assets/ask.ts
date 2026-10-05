@@ -28,9 +28,10 @@ const FAST_WAIT_SECONDS = 7;
 const ANSWER_MS = 240_000;
 
 /**
- * Wait until the agent dock knows whether Codex is signed in, and refuse when it is not.
+ * Wait until the agent dock knows whether Codex is signed in, and refuse when it is not or when
+ * Codex could not start.
  * @param page The shell.
- * @throws {Error} When Codex is not signed in, before anything is spent.
+ * @throws {Error} When Codex is not signed in or is unavailable, before anything is spent.
  */
 async function requireSignedIn(page: Page): Promise<void> {
 	const status = String(
@@ -44,6 +45,9 @@ async function requireSignedIn(page: Page): Promise<void> {
 		throw new Error(
 			"Codex is not signed in on this machine's Archboard. Sign in from the agent dock of any Archboard server, then run this again.",
 		);
+	}
+	if (status.startsWith("Codex is unavailable")) {
+		throw new Error(`The agent dock says: ${status}. Nothing was asked, so nothing was spent.`);
 	}
 }
 
