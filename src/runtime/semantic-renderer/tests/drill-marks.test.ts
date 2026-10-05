@@ -8,13 +8,23 @@
 // name its card had been widened to hold was cut with an ellipsis. And the mark
 // drawn from far away stays on its card and clear of the warning badge in the
 // same corner: it once stood a radius and a half from the corner whatever the
-// corner held, so the badge of an unsettled part sat inside its ring.
+// corner held, so the badge of an unsettled part sat inside its ring. A
+// frame's name drawn from far away once kept no room for the frame's far mark,
+// so a long name ran under it.
 import { expect, test } from "bun:test";
 import type { DiagramBox, DiagramGrammar } from "@/shared/semantic-board/index";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
-import { distanceToRoute, type DrawnPoint } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import {
+	bodyShift,
+	distanceToRoute,
+	type DrawnPoint,
+} from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { subjectGroups, type DrawnGroup } from "@/runtime/semantic-renderer/tests/drawn-subjects";
-import { drawnTexts } from "@/runtime/semantic-renderer/tests/drawn-text";
+import {
+	drawnSpan,
+	drawnTexts,
+	registeredFaces,
+} from "@/runtime/semantic-renderer/tests/drawn-text";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 
 const OPENS = { board: "elsewhere", variant: { kind: "current" } };
@@ -223,3 +233,40 @@ for (const grammar of ["architecture", "data-flow"] satisfies DiagramGrammar[]) 
 		}
 	});
 }
+
+test("an architecture keeps a frame's far name clear of its far mark", async () => {
+	const { svg } = await renderSemanticView({
+		content: orderedFixture({
+			nodes: [
+				{
+					id: "frame",
+					name: "the frame that holds every part of the board store",
+					kind: "system",
+					drillDown: OPENS,
+				},
+				{
+					id: "part",
+					name: "Part",
+					kind: "service",
+					parent: "frame",
+					responsibility:
+						"Keeps every write it answers on disk before it answers, and tells each watcher once",
+				},
+			],
+		}),
+		grammar: "architecture",
+		theme: "light",
+		level: "service",
+	});
+	const ring = subjectGroups(svg)
+		.filter(({ id }) => id === "frame")
+		.map(farRingOf)
+		.find((found) => found !== undefined)!;
+	const shift = bodyShift(svg);
+	const faces = registeredFaces(svg);
+	const name = drawnTexts(svg, "far").filter(({ subject }) => subject.id === "frame");
+	expect(name.length).toBeGreaterThan(0);
+	for (const line of name) {
+		expect(drawnSpan(line, faces).right, line.text).toBeLessThan(shift.x + ring.x - ring.reach);
+	}
+});

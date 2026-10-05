@@ -52,7 +52,12 @@ function paintFarHeader(
 	unsettled: boolean,
 ): string {
 	const { name } = placed.measured.node;
-	const header = { ...placed.box, height: placed.measured.headerHeight };
+	// The name is sized and broken clear of the frame's far mark, as its near name is.
+	const header = {
+		...placed.box,
+		height: placed.measured.headerHeight,
+		mark: look.appearance.drill !== null,
+	};
 	const size = Math.min(farSize, farSizeOf(name, header));
 	return paintFarTitle(name, header, { size, align: "start" }, look, unsettled);
 }

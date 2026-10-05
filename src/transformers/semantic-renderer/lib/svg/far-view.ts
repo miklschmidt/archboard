@@ -5,7 +5,7 @@
 // caption draw their name grown, which is what this file paints.
 import { ICON_CHIP_SIZE } from "@/transformers/semantic-renderer/lib/design";
 import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
-import { measureFarTitle } from "@/transformers/semantic-renderer/lib/measurement";
+import { measureFarTitle, type FarBox } from "@/transformers/semantic-renderer/lib/measurement";
 import type { NodeAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { typeChip } from "@/transformers/semantic-renderer/lib/svg/appearance";
@@ -105,7 +105,7 @@ function farMark(
  * viewer says the picture is far: the name grown, the chip grown to match,
  * the responsibility left out.
  * @param name The card's name.
- * @param box The card's box, or a container's header.
+ * @param box The card's box, or a container's header, and whether its corner holds a mark.
  * @param place The name's size, and whether it stands centred or at the start.
  * @param place.size The name's size.
  * @param place.align Centred in the box, or at its start.
@@ -117,7 +117,7 @@ function farMark(
  */
 function paintFarTitle(
 	name: string,
-	box: Box,
+	box: Box & FarBox,
 	place: { size: number; align: "centre" | "start" },
 	{ appearance, palette }: { appearance: NodeAppearance; palette: Palette },
 	unsettled: boolean,
