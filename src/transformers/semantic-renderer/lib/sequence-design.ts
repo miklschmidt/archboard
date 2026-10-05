@@ -94,7 +94,7 @@ const STEP_NOTE_MIN_WIDTH = 180;
 const STEP_NOTE_MAX_WIDTH = 320;
 
 /**
- * Maximum animated dots per repeated step, keeping them countable and preventing
+ * Maximum pulses per repeated step, keeping them countable and preventing
  * a high repetition count from delaying the rest of the sequence.
  */
 const MAX_PULSES_PER_STEP = 3;

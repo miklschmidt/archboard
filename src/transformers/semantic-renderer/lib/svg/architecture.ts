@@ -152,8 +152,8 @@ function paintEdgeLine(
 	const { edge, path } = routed;
 	const styles = stylesFor(palette);
 	const width = strokeWidthOf(edge);
-	// One colour for the line, the head it ends in and the comets that ride it:
-	// the line and its head drawn weaker, the comets at full strength.
+	// One colour for the line, the head it ends in and the pulses that ride it:
+	// the line and its head drawn weaker, the pulses at full strength.
 	const appearance = lineAppearance(edge.kind, policy, step);
 	const attributes = edgeAttributes(edge, palette, standing, policy, appearance);
 	const ink = String(attributes["stroke"]);
