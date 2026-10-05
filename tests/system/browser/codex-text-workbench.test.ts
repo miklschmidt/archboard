@@ -28,6 +28,7 @@ import {
 	BOARD_NAME_EXPRESSION,
 	COMPOSER,
 	PANE_SECTIONS,
+	dockFocusOrder,
 	openConversation,
 } from "./support/shell-dom.ts";
 
@@ -178,6 +179,9 @@ test(
 			"the signed-out agent to offer sign-in",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
+		// The keyboard reads the calm dock as the eye does: sign-in above, then the keys at its foot.
+		const signInOrder = await dockFocusOrder(browser);
+		expect(signInOrder.tabbed).toEqual(signInOrder.seen);
 		// The composer is at the foot of the conversation, which opens through its toggle.
 		await openConversation(browser);
 		await pollUntil(
@@ -284,6 +288,9 @@ test(
 		}
 		expect(asked.tone).toBe("attention");
 		expect(asked.dockButtons).toContain("Review");
+		// The status line's control is read before the keys under it, by the keyboard as by the eye.
+		const askedOrder = await dockFocusOrder(browser);
+		expect(askedOrder.tabbed).toEqual(askedOrder.seen);
 
 		expect(
 			await browser.eval<boolean>(`(() => {
