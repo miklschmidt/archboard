@@ -54,6 +54,17 @@ const SIDEBAR_MS = Object.freeze({
 	 * seen, which is all it is for.
 	 */
 	subjectIn: 120,
+	/**
+	 * How long past the end of its transition the sidebar waits before it
+	 * forgets the change: unmounts a panel that left, or drops the easing a
+	 * change asked for.
+	 *
+	 * Pulls against the transition. A timer of the transition's own length can
+	 * fire a frame before the transition ends, and the panel then vanishes on
+	 * its last frame; a longer margin keeps a panel that has left mounted for
+	 * no reason.
+	 */
+	settle: 20,
 });
 
 export { AGENT_PANEL_SLIDE_MS, SIDEBAR_MS };
