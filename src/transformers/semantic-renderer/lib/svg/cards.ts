@@ -40,7 +40,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/fonts";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import {
-	cardTextWidth,
+	titleRoom,
 	type SequenceCard,
 } from "@/transformers/semantic-renderer/lib/layout/sequence-card";
 import type { NodeAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
@@ -49,10 +49,7 @@ import {
 	appearanceAttributes,
 	typeChip,
 } from "@/transformers/semantic-renderer/lib/svg/appearance";
-import {
-	DRILL_MARK_ROOM,
-	cornerDrillMark,
-} from "@/transformers/semantic-renderer/lib/svg/drill-mark";
+import { cornerDrillMark } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
 import { paintFarCard } from "@/transformers/semantic-renderer/lib/svg/far-card";
 import { nearLayer } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { lines, tag, textNode, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
@@ -119,7 +116,7 @@ function paintCard(
 	const { node, box, titleSize, notes } = placed;
 	const textX = box.x + CARD_PADDING_X + ICON_CHIP_SIZE + ICON_CHIP_GAP;
 	// A card that opens another board keeps its name clear of the mark.
-	const room = cardTextWidth(box.width) - (appearance.drill === null ? 0 : DRILL_MARK_ROOM);
+	const room = titleRoom(node, box.width);
 	const hasNote = notes.length > 0;
 	const titleY = hasNote
 		? box.y + TITLE_BASELINE_WITH_NOTE
