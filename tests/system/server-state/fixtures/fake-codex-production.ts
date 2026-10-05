@@ -48,7 +48,7 @@ const request = (id: string, method: string, params: unknown): void => {
 
 if (process.argv[2] === "--version") {
 	record({ kind: "version_probe", args: process.argv.slice(2) });
-	process.stdout.write("codex-cli 0.158.0\n");
+	process.stdout.write("codex-cli 0.160.0\n");
 	process.exit(0);
 }
 if (
@@ -127,7 +127,7 @@ const buildThread = (
 		status: { type: "idle" },
 		path: null,
 		cwd: String(params["cwd"]),
-		cliVersion: "0.158.0",
+		cliVersion: "0.160.0",
 		source: "vscode",
 		canAcceptDirectInput: true,
 		threadSource: "archboard",
@@ -249,7 +249,7 @@ const handle = (frame: WireFrame): void => {
 				return;
 			}
 			respond(frame as never, {
-				userAgent: "Codex Desktop/0.158.0",
+				userAgent: "Codex Desktop/0.160.0",
 				codexHome: process.env["CODEX_HOME"],
 				platformFamily: "unix",
 				platformOs: "linux",

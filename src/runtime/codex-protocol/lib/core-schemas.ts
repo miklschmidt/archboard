@@ -159,6 +159,7 @@ const CodexErrorInfoSchema = z.union([
 		"serverOverloaded",
 		"cyberPolicy",
 		"misalignmentPolicyViolation",
+		"tooManyDenials",
 		"internalServerError",
 		"unauthorized",
 		"badRequest",
