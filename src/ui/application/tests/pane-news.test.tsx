@@ -86,6 +86,17 @@ const DRAWING = {
 	atlas: { nodes: { n1: { x: 0, y: 0, width: 80, height: 40 } }, edges: {}, regions: {} },
 };
 
+/** The board as the vault lists it. */
+const LISTED = {
+	name: "pipeline",
+	key: "pipeline",
+	level: "system",
+	opens: "v1",
+	links: [],
+	description: null,
+	variants: [{ id: "v1", name: "current", lifecycle: "current", parentId: null }],
+};
+
 /**
  * A JSON answer.
  * @param body The body.
@@ -98,17 +109,25 @@ function answer(body: unknown, status = 200): Promise<Response> {
 	);
 }
 
+/** What the server says every live pane holds, across every tab: what the navigator marks. */
+const inventory: { panes: Record<string, unknown>[]; reads: number } = { panes: [], reads: 0 };
+
 /**
  * The server, faked at fetch.
  * @param input What the page asked for.
+ * @param init How it asked.
  * @returns The answer.
  */
-function fakeServer(input: RequestInfo | URL): Promise<Response> {
+function fakeServer(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
 	const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
 	const path = new URL(url, "http://127.0.0.1:3000/").pathname;
+	if (path === "/api/panes" && (init?.method ?? "GET") === "GET") {
+		inventory.reads += 1;
+		return answer({ success: true, panes: inventory.panes });
+	}
 	if (path === "/api/panes") return answer({ success: true, registered: true, paneCount: 1 });
 	if (path === "/api/semantic-boards")
-		return answer({ success: true, levels: ["system"], boards: [] });
+		return answer({ success: true, levels: ["system"], boards: [LISTED] });
 	if (path === "/api/semantic-boards/render") return answer(DRAWING);
 	return answer({ success: false, error: "not faked" }, 404);
 }
@@ -123,6 +142,7 @@ beforeAll(() => {
 
 afterEach(() => {
 	cleanup();
+	inventory.panes = [];
 });
 
 afterAll(async () => {
@@ -245,5 +265,29 @@ test("a claim, an agent's doing, its activity and a pane status reach the shell 
 	);
 	await settle();
 
+	expect(drawingOf("semantic-board-stage")).toBe(drawn);
+});
+
+test("another pane moving, or an agent writing another board, draws no board stage again", async () => {
+	const socket = await paneShowingTheBoard();
+	const drawn = drawingOf("semantic-board-stage");
+	expect(drawn).toBeDefined();
+	const reads = inventory.reads;
+
+	// A pane in another tab moves to another board, and an agent writes that board:
+	// the listing is read again, and only its pane half says anything new.
+	inventory.panes = [
+		{
+			paneId: "B",
+			place: "right",
+			board: "engine",
+			identity: { board: "engine", variant: "current" },
+		},
+	];
+	act(() => socket.say({ type: "board_note", semantic: true, board: "engine", version: 2 }));
+	await settleUntil(() => inventory.reads > reads);
+	await settle();
+
+	expect(inventory.reads).toBeGreaterThan(reads);
 	expect(drawingOf("semantic-board-stage")).toBe(drawn);
 });
