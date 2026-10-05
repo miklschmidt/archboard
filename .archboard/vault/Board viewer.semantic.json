@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 44,
+	"version": 45,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-10-03T19:01:02.794Z",
+	"updatedAt": "2026-10-05T04:07:37.641Z",
 	"views": [],
 	"variants": [
 		{
@@ -7717,11 +7717,10 @@
 						"name": "Render stage states",
 						"kind": "function",
 						"responsibility": "Present every reachable state",
-						"description": "The renderedView and stageBody functions in SemanticBoardStage.tsx present loading, waiting, empty, error, stale and drawn states, with the inspector, variant, view and walkthrough controls and the drill trail, from the entry point's query and reading state.",
-						"parent": "pZRxBz2h",
+						"description": "The stageBody function in SemanticStageView.tsx presents the waiting, problem, empty and drawn states, and says when the picture on screen is old, from the entry point's query and reading state. SemanticStageView lays the header with its way back, the variant's standing, the page of the open tab and the sidebar around them.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx"
+							"path": "src/ui/semantic-board-canvas/components/SemanticStageView.tsx"
 						}
 					},
 					{
