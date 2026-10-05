@@ -35,6 +35,7 @@ import {
 	presenting,
 	press,
 	unveiled,
+	wordRows,
 } from "@/ui/semantic-board-canvas/tests/presentation-probes";
 
 /** The view the variant offers, which one step is told through. */
@@ -268,13 +269,16 @@ test("a step told through a view keeps the last step's framing until that view's
 	expect(unveiled()).toEqual(["n1"]);
 });
 
-test("a step about something this reading does not draw says so", async () => {
+test("a step about something this reading does not draw says so, on a line every step has", async () => {
 	serving();
 	mountStage(null, { reducedMotion: true });
 	await presenting();
+	const rows = wordRows();
 	goTo(3);
 	await settle();
-	expect(part("semantic-beat-missing").textContent).toBe("This reading does not draw Write Lease.");
+	expect(part("semantic-beat-missing").textContent).toContain("Write Lease");
+	// The notice takes no row of its own, so the box keeps its height from step to step.
+	expect(wordRows()).toEqual(rows);
 	expect(marked()).toEqual([]);
 	expectCamera(cameraNow(), WHOLE_ABOVE_CAPTION);
 });
