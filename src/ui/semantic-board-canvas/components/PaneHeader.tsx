@@ -161,7 +161,7 @@ function Ancestor(props: { readonly place: BoardPlace; readonly middle: boolean 
 /**
  * The middle places, folded behind one control while the header is narrow.
  * @param props The folded places.
- * @param props.places The boards between the top and the nearest above.
+ * @param props.places Every board above the nearest one, the outermost included.
  * @returns The fold, or nothing when there is nothing to fold.
  */
 function Folded(props: { readonly places: readonly KeyedPlace[] }): JSX.Element | null {
