@@ -23,6 +23,7 @@ const RENDERER_SOURCES = [
 	"src/shared/ids",
 	"src/shared/shell-geometry",
 	"src/shared/timing",
+	"node_modules/@chenglou/pretext/package.json",
 	"node_modules/@remixicon/react/package.json",
 	"node_modules/@viz-js/viz/package.json",
 	"node_modules/libavoid-js/package.json",
