@@ -341,8 +341,10 @@ Narrating the walkthrough starts a third session on a fresh coordinator. Its
 words are in the voice box at the foot of the presented walkthrough. The dock's
 key ends it and releases its media, and the mounted board pane is unchanged.
 
-The owner checks target size at desktop and desktop scaled, forced colors,
-browser errors and resource cleanup. Focused realtime, media, session,
+The owner checks the keyboard order of the dock's voice controls, the target
+size of the voice keys at desktop and desktop scaled, that a presented pane
+hides its header and sidebar, forced colors, that reduced motion reaches the
+voice box, browser errors and resource cleanup. Focused realtime, media, session,
 transcript, context, spoken-approval, orb, voice box and shell owners keep
 their exhaustive state and failure matrices.
 

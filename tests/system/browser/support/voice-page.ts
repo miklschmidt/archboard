@@ -8,8 +8,12 @@ import type { AgentBrowserSession } from "./agent-browser.ts";
 
 /** The dock's voice key: Talk while voice is off, then the circle, or End voice while the box has the voice. */
 const DOCK_VOICE = `${AGENT_DOCK} [data-slot="voice-circle"]`;
+/** Mute in the dock's voice line, while the dock has the voice. */
+const DOCK_MUTE = `${AGENT_DOCK} button[aria-label="Mute"]`;
 /** The subtitles control in the dock's voice line, while the dock has the voice. */
 const DOCK_SUBTITLES = `${AGENT_DOCK} [data-slot="voice-subtitles-toggle"]`;
+/** Unmute at the end of the voice box, while the voice is muted. */
+const BOX_UNMUTE = '[data-slot="voice-box"] button[aria-label="Unmute"]';
 /** The voice key in the bar of a fullscreen presentation: Talk, then End voice. */
 const BAR_VOICE = `${PRESENTATION_BAR} [data-voice-controls]`;
 /**
@@ -108,6 +112,17 @@ function subtitleSnapshot(browser: AgentBrowserSession): Promise<SubtitleSnapsho
 	})()`);
 }
 
+/**
+ * Whether the voice box holds still, as it does for a person who asked for less motion.
+ * @param browser The page.
+ * @returns True while the box is on the page and still.
+ */
+function voiceStill(browser: AgentBrowserSession): Promise<boolean> {
+	return browser.eval<boolean>(
+		`document.querySelector('[data-slot="voice-box"]:not([data-leaving])')?.hasAttribute('data-still') === true`,
+	);
+}
+
 /** What was said aloud, as the open conversation panel lists it; empty while it is closed. */
 function saidLines(browser: AgentBrowserSession): Promise<SaidLine[]> {
 	return browser.eval<
@@ -151,6 +166,8 @@ function focusIs(
 
 export {
 	BAR_VOICE,
+	BOX_UNMUTE,
+	DOCK_MUTE,
 	DOCK_SUBTITLES,
 	DOCK_VOICE,
 	focusIs,
@@ -158,6 +175,7 @@ export {
 	saidLines,
 	subtitleSnapshot,
 	voiceNow,
+	voiceStill,
 	type SaidLine,
 	type VoiceNow,
 };
