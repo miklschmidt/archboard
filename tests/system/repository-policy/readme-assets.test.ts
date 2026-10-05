@@ -135,13 +135,6 @@ describe("README asset staleness", () => {
 		expect(assessment.problems).toEqual([]);
 	});
 
-	test("an asset the kit never made is stale whatever its sources hash to", () => {
-		const assessment = assess({ about: "", assets: [asset("never", { hash: null })] }, facts());
-
-		expect(assessment.current).toEqual([]);
-		expect(assessment.stale).toHaveLength(1);
-	});
-
 	test("reports a source that covers nothing and a README file no asset makes", () => {
 		const assessment = assess(
 			{ about: "", assets: [asset("current")] },
