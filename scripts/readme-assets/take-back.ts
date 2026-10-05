@@ -79,6 +79,9 @@ const takeBack: Producer = {
 					`archboard semantic branch "${BOARD}" --as "${PROPOSAL}" --expect-version ${version} --doing "${REASON}"`,
 				);
 				const refused = await server.attempt(branch);
+				if (refused.status === 0) {
+					throw new Error("The agent's write after Take back control was not refused.");
+				}
 				const why = refused.stderr.split("\n").find((line) => line.trim() !== "") ?? "";
 				await terminal.refused(`refused · exit ${refused.status}`, why.replace(/^Error:\s*/, ""));
 				await Bun.sleep(900);
