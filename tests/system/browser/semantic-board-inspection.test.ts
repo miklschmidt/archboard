@@ -463,6 +463,34 @@ test("a person reads containment, code and the level below it, and writes nothin
 		WAIT,
 	);
 
+	// The field names its list only while the list is drawn, and a row keeps a
+	// name it cuts short in its title. Choosing a part gives the keyboard to the
+	// selection tab that explains it, not to the page's body.
+	expect((await searching()).controls).toBeNull();
+	await browser.run(["press", "Control+Shift+K"]);
+	await pollUntil(
+		searching,
+		(state) => state.focused,
+		"the search shortcut to take focus in the part search again",
+		WAIT,
+	);
+	await browser.run(["keyboard", "type", "board"]);
+	await pollUntil(
+		searching,
+		(state) => state.listed && state.controls === "list",
+		"the field to name the list it draws",
+		WAIT,
+	);
+	expect((await searching()).fullNames).toBe(true);
+	await browser.run(["press", "Enter"]);
+	await pollUntil(
+		() => browser.eval<string | null>("document.activeElement?.getAttribute('data-tab') ?? null"),
+		(tab) => tab === "selection",
+		"the part chosen in the search to take the keyboard to the selection tab",
+		WAIT,
+	);
+	expect(await searching()).toMatchObject({ listed: false, controls: null });
+
 	// Nothing a person did in the browser wrote a board.
 	expect(readFileSync(join(vault, "pipeline.semantic.json"), "utf8")).toBe(before);
 	await server.assertRunning();

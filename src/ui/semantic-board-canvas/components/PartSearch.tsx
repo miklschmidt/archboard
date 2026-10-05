@@ -1,7 +1,8 @@
 // The search at the top of a pane's sidebar, level with the navigator's search
 // for a board: parts by their names, what they are for and where their code
 // is, across every board of the vault. Choosing a result shows its board in
-// this pane and picks the part out, so it is explained right under the field.
+// this pane and picks the part out, so it is explained right under the field,
+// and the keyboard goes with it to the selection tab.
 //
 // It only reads. The boards are read as the pages read them, on the same cache,
 // and only once somebody reaches for the field, so a shell nobody searches
@@ -196,8 +197,13 @@ function Result(props: ResultProps): JSX.Element {
 						className="bg-primary-mark absolute inset-y-1 left-0 w-0.5 rounded-full"
 					/>
 				)}
-				<span className="text-control truncate">{hit.name}</span>
-				<span className="text-body text-muted-foreground truncate">
+				<span className="text-control truncate" title={hit.name}>
+					{hit.name}
+				</span>
+				<span
+					className="text-body text-muted-foreground truncate"
+					title={`${props.kind} on ${hit.board.name}`}
+				>
 					{props.kind} on {hit.board.name}
 				</span>
 			</button>
@@ -346,16 +352,19 @@ function PartSearch(props: PartSearchProps): JSX.Element {
 	const last = Math.max(results.length - 1, 0);
 	const pointed = Math.min(active, last);
 	useTakeFocusWhenAsked(input);
+	const { chosen } = useSearchRequested();
 	const choose = useCallback(
 		(hit: PartHit | undefined): void => {
 			if (hit === undefined) {
 				return;
 			}
+			// The keyboard goes first, to the tab that explains the part, so that the
+			// list closing under it leaves nothing on the page's body.
+			chosen();
 			onChoose(hit);
 			setQuery("");
-			input.current?.blur();
 		},
-		[onChoose],
+		[chosen, onChoose],
 	);
 	const change = useCallback((event: ChangeEvent<HTMLInputElement>): void => {
 		setQuery(event.target.value);
@@ -410,7 +419,7 @@ function PartSearch(props: PartSearchProps): JSX.Element {
 				aria-keyshortcuts={searchShortcutKeys()}
 				role="combobox"
 				aria-expanded={open}
-				aria-controls={listId}
+				aria-controls={open ? listId : undefined}
 				aria-activedescendant={open && results.length > 0 ? `${listId}-${pointed}` : undefined}
 				aria-autocomplete="list"
 				autoComplete="off"
