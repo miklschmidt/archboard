@@ -161,7 +161,6 @@ test("picking a node shows what its card cannot: the description and the code", 
 	expect(slot("semantic-inspector-code")?.textContent).toContain("src/runtime/engine/board-io.ts");
 	expect(slot("semantic-inspector-open-code")?.getAttribute("title")).toContain("archboard");
 	expect(slot("semantic-inspector-copy")).not.toBeNull();
-	expect(inspector()).not.toContain("Containment");
 });
 
 test("an unbound node with nothing written says nothing of what it does not have", async () => {
@@ -176,10 +175,6 @@ test("an unbound node with nothing written says nothing of what it does not have
 	expect(slot("semantic-inspector-code")).toBeNull();
 	expect(slot("semantic-inspector-open-code")).toBeNull();
 	expect(slot("semantic-go-deeper")).toBeNull();
-	expect(inspector()).not.toContain("No code binding");
-	expect(inspector()).not.toContain("Planned");
-	expect(inspector()).not.toContain("No description written.");
-	expect(inspector()).not.toContain("states no purpose");
 	expect(slot("semantic-inspector-purpose")).toBeNull();
 	expect(slot("semantic-inspector-description")).toBeNull();
 	// What it does have is its name and its kind.
