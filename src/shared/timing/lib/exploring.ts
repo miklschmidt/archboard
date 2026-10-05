@@ -25,6 +25,38 @@ const EXPLORING_MS = Object.freeze({
 	 */
 	cameraFling: 320,
 	/**
+	 * The longest one frame of a zoom, an ease or a thrown drag counts for. A
+	 * frame that comes late, after the tab was hidden or the page stalled, moves
+	 * the camera by no more than this much time.
+	 *
+	 * Pulls against a slow page. It is four frames at 60 Hz, so a page that drops
+	 * a frame or two still moves at its own pace; a longer cap lets one stall
+	 * throw the camera across the board.
+	 */
+	cameraFrameLongest: 64,
+	/**
+	 * How far back a released drag looks for the speed it is thrown at.
+	 *
+	 * Pulls against the hand's last moments. A shorter window reads the speed off
+	 * one or two pointer events and their uneven timing; a longer one throws a
+	 * drag that slowed before it was let go at the speed it had before it slowed.
+	 */
+	throwTrail: 100,
+	/**
+	 * The shortest stretch of a drag's last moments that tells its speed. A
+	 * shorter one is a single pointer event, and its speed is mostly the noise in
+	 * when it was reported, so the drag is not thrown.
+	 */
+	throwSpan: 8,
+	/**
+	 * How long the pointer may rest before it is let go and still throw the drag.
+	 *
+	 * Pulls against a deliberate stop: a hand that stops the picture and then
+	 * lets go means it to stay where it is, so a longer rest than this throws
+	 * nothing.
+	 */
+	throwRest: 60,
+	/**
 	 * How long a wheel or a key must have left the camera alone before the traffic
 	 * of the picture begins to move again. A drag does not wait: traffic starts as
 	 * the hand lets go.

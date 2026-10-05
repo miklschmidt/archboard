@@ -239,12 +239,6 @@ interface Sample {
 	readonly y: number;
 }
 
-/** How far back a release looks for its speed, in milliseconds. */
-const TRAIL_MS = 100;
-
-/** How long the pointer may rest before its release, in milliseconds, and still throw the drag. */
-const RESTED_MS = 60;
-
 /** The slowest drag, in pixels per millisecond, that is thrown at all. */
 const THROW_MIN = 0.25;
 
@@ -258,7 +252,7 @@ const THROW_MAX = 3;
  * @returns The places that still count.
  */
 function trailWith(trail: readonly Sample[], sample: Sample): Sample[] {
-	return [...trail.filter((older) => sample.t - older.t <= TRAIL_MS), sample];
+	return [...trail.filter((older) => sample.t - older.t <= EXPLORING_MS.throwTrail), sample];
 }
 
 /**
@@ -271,11 +265,11 @@ function trailWith(trail: readonly Sample[], sample: Sample): Sample[] {
 function throwOf(trail: readonly Sample[], releasedAt: number): Pair | null {
 	const first = trail[0];
 	const last = trail.at(-1);
-	if (first === undefined || last === undefined || releasedAt - last.t > RESTED_MS) {
+	if (first === undefined || last === undefined || releasedAt - last.t > EXPLORING_MS.throwRest) {
 		return null;
 	}
 	const span = last.t - first.t;
-	if (span < 8) {
+	if (span < EXPLORING_MS.throwSpan) {
 		return null;
 	}
 	const speed = { x: (last.x - first.x) / span, y: (last.y - first.y) / span };

@@ -11,6 +11,7 @@
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
+import { EXPLORING_MS } from "@/shared/timing/timing";
 import { frameClock } from "@/ui/frame-clock";
 import { panCamera, zoomCameraAbout, type Camera } from "@/ui/semantic-board-canvas/lib/camera";
 import {
@@ -22,9 +23,6 @@ import {
 	type Motion,
 	type Pair,
 } from "@/ui/semantic-board-canvas/lib/camera-motion";
-
-/** The longest a frame counts for, in milliseconds: a tab that slept must not throw the camera across the board. */
-const LONGEST_FRAME_MS = 64;
 
 /** Where the camera is drawn, and how to draw it somewhere else. */
 interface CameraStage {
@@ -103,7 +101,7 @@ function useCameraMotion(stage: CameraStage, reducedMotion: boolean): CameraMoti
 				if (current === null) {
 					return;
 				}
-				const dt = Math.min(LONGEST_FRAME_MS, Math.max(0, now - lastAt.current));
+				const dt = Math.min(EXPLORING_MS.cameraFrameLongest, Math.max(0, now - lastAt.current));
 				lastAt.current = now;
 				const stepped = stepMotion(stage.read(), current, dt);
 				motion.current = stepped.motion;
