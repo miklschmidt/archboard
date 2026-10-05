@@ -25,8 +25,9 @@
 //
 // The box comes with the voice and leaves with it. It stays mounted while it leaves,
 // so it eases away with the orb's flight out of it, and it takes no input while it
-// does: it is inert. The stage that flies the orb is told where it goes by the
-// preference alone (src/ui/voice-orb).
+// does: it is inert. The dock tells the stage that flies the orb where it goes
+// (src/ui/voice-orb), by the rule the box asks too (useVoiceBoxed), once the box has
+// offered the stage its socket.
 
 import type { CSSProperties, JSX } from "react";
 

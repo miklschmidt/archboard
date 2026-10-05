@@ -5,8 +5,8 @@ import { useSubtitlesWanted } from "@/ui/voice-subtitles/hooks/use-subtitle-pref
 /**
  * Whether the voice sits in a box over a pane's picture, and not in the agent dock: voice is on
  * and a box can carry it, and the person wants subtitles or there is no dock to put it in, as in
- * a fullscreen presentation. The dock, the box and the stage each ask, so the one rule is written
- * here.
+ * a fullscreen presentation. The dock and the box each ask, and the dock tells the orb's stage, so the
+ * one rule is written here.
  * @param on Whether voice is on.
  * @param available Whether a pane can carry the voice.
  * @param dockless Whether the dock is off screen, so the box is the only place the voice can be seen.
