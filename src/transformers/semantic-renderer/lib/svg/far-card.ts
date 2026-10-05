@@ -250,12 +250,14 @@ function runsOf(stack: Stack, x: number, top: number): TextRun[] {
  * @param look The card's chip and the selected theme.
  * @param look.appearance Its type chip's colour and glyph, and whether it opens a board.
  * @param look.palette The selected theme.
+ * @param unsettled Whether the card wears the warning badge.
  * @returns The far layer.
  */
 function paintFarCard(
 	node: { readonly name: string; readonly responsibility?: string | undefined },
 	box: Box,
 	look: { appearance: NodeAppearance; palette: Palette },
+	unsettled: boolean,
 ): string {
 	const tile = Math.min(TILE, box.height - EDGE * 2);
 	const x = EDGE + tile + EDGE;
@@ -266,7 +268,7 @@ function paintFarCard(
 	return farLayer(
 		farChip(box, { x: EDGE, y: (box.height - tile) / 2, size: tile }, look) +
 			paintTextRuns(runsOf(stack, x, (box.height - stack.height) / 2), box, look.palette) +
-			farMark(box, MARK_SCALE, look),
+			farMark(box, MARK_SCALE, look, unsettled),
 	);
 }
 

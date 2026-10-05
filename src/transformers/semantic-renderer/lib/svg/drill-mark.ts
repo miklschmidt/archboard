@@ -23,6 +23,12 @@ type DrillDirection = "up" | "down" | "across" | "elsewhere";
 /** The ring's radius: a mark two thirds the size of a kind glyph. */
 const DRILL_MARK_RADIUS = 6.5;
 
+/** The ring's stroke. */
+const RING_STROKE = 1.2;
+
+/** How far the ring's ink reaches from its centre: its radius and half its stroke. */
+const DRILL_MARK_REACH = DRILL_MARK_RADIUS + RING_STROKE / 2;
+
 /** What a part keeps clear beside its name for the mark: the ring and the gap before it. */
 const DRILL_MARK_ROOM = 2 * DRILL_MARK_RADIUS + 8;
 
@@ -84,7 +90,7 @@ function drillMark(
 			r: DRILL_MARK_RADIUS,
 			fill: "none",
 			stroke: ink,
-			"stroke-width": 1.2,
+			"stroke-width": RING_STROKE,
 			"stroke-opacity": 0.75,
 		}) +
 			tag("path", {
@@ -128,6 +134,7 @@ function cornerDrillMark(
 
 export {
 	DRILL_MARK_RADIUS,
+	DRILL_MARK_REACH,
 	DRILL_MARK_ROOM,
 	cornerDrillMark,
 	drillDirection,

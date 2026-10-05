@@ -42,17 +42,19 @@ import {
  * @param look Its type chip's colour and glyph, and the selected theme.
  * @param look.appearance Its type chip's colour and glyph.
  * @param look.palette The selected theme.
+ * @param unsettled Whether the frame wears the warning badge.
  * @returns The far layer.
  */
 function paintFarHeader(
 	placed: DrawingNode,
 	farSize: number,
 	look: { appearance: NodeAppearance; palette: Palette },
+	unsettled: boolean,
 ): string {
 	const { name } = placed.measured.node;
 	const header = { ...placed.box, height: placed.measured.headerHeight };
 	const size = Math.min(farSize, farSizeOf(name, header));
-	return paintFarTitle(name, header, { size, align: "start" }, look);
+	return paintFarTitle(name, header, { size, align: "start" }, look, unsettled);
 }
 
 /**
@@ -121,7 +123,7 @@ function paintMeasuredCard(
 					paintTextRuns(measured.runs, box, palette) +
 					drillCorner(box, ARCHITECTURE_CARD_PADDING, appearance, palette),
 			),
-			paintFarCard(measured.node, box, { appearance, palette }),
+			paintFarCard(measured.node, box, { appearance, palette }, unsettled),
 			standingPin(box, standing, palette),
 			warningBadge(box, unsettled, palette),
 		]),
@@ -213,7 +215,7 @@ function paintMeasuredHeader(
 					paintTextRuns(placed.measured.runs, placed.box, palette) +
 					drillCorner(placed.box, ARCHITECTURE_HEADER_PADDING, appearance, palette),
 			),
-			paintFarHeader(placed, farSize, { appearance, palette }),
+			paintFarHeader(placed, farSize, { appearance, palette }, unsettled),
 			warningBadge(placed.box, unsettled, palette),
 		]),
 	);
