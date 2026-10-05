@@ -24,13 +24,13 @@
 				"src/shared/shell-geometry",
 				"src/shared/theme",
 				"src/shared/timing",
-				"src/ui/shell/assets/fonts",
+				"src/ui/shell/assets/fonts/*.ttf",
 				"src/ui/shell/components/Brand.tsx",
 				"scripts/readme-assets/banner.ts",
 				"scripts/readme-assets/lockup.ts",
 				"scripts/readme-assets/browser.ts"
 			],
-			"hash": "9094a8c750d63519f1c47cc266ee8a7e0fe566a16631898f639d3120e512d75b"
+			"hash": "a5863d0c1b33ac6a991ac8757d5aba3df16ce698d7b1b5821cd1aa01565b65ed"
 		},
 		{
 			"name": "hero",
