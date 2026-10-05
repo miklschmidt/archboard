@@ -211,6 +211,8 @@ test("the search shortcut shows an away sidebar in the pane with focus and takes
 	expect(placeNow()).toBe("floating");
 	const field = document.activeElement;
 	expect(field?.getAttribute("role")).toBe("combobox");
+	// Nothing is typed, so no list is drawn, and the field names none.
+	expect(field?.hasAttribute("aria-controls")).toBe(false);
 
 	// Escape in the empty field lets go of the field and puts the float away, and
 	// the keyboard goes back to the control, not to the body of the page.

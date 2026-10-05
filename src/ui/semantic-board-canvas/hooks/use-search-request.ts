@@ -3,7 +3,9 @@
 // only the field hears does nothing in the one layout, two panes, where the
 // sidebar is away most of the time. The frame shows the sidebar where the person
 // last had it when it is away, and asks for the field; the field takes focus
-// when it is there to take it, and says that it has.
+// when it is there to take it, and says that it has. A part chosen in the field
+// is explained in the selection tab under it, and the frame gives that tab the
+// keyboard, as it does for every control that goes with a pick.
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
@@ -11,24 +13,30 @@ import { usePaneChrome } from "@/ui/components/PaneChrome";
 import type { Sidebar } from "@/ui/semantic-board-canvas/hooks/use-sidebar";
 import { asksForSearch } from "@/ui/semantic-board-canvas/lib/search-shortcut";
 
-/** Whether the field has been asked for, and how to say that it has taken focus. */
+/** Whether the field has been asked for, how to say that it has taken focus, and where focus goes after a choice. */
 interface SearchRequest {
 	/** The shortcut was pressed in this pane and the field has not taken focus yet. */
 	readonly requested: boolean;
 	/** The field took focus. */
 	readonly settled: () => void;
+	/** A part was chosen: give focus to the tab that explains it, so the keyboard is not left on the page's body. */
+	readonly chosen: () => void;
 }
 
 /**
- * Nothing to say: a field outside a sidebar is never asked for.
+ * Nothing to do: a field outside a sidebar is never asked for, and keeps focus after a choice.
  * @returns Nothing.
  */
-function settleNothing(): void {
+function doNothing(): void {
 	return undefined;
 }
 
 /** What a field outside a sidebar hears: nothing asked. */
-const NOTHING_ASKED: SearchRequest = Object.freeze({ requested: false, settled: settleNothing });
+const NOTHING_ASKED: SearchRequest = Object.freeze({
+	requested: false,
+	settled: doNothing,
+	chosen: doNothing,
+});
 
 /** Carries what the frame heard to the field it holds. */
 const SearchRequestContext = createContext<SearchRequest>(NOTHING_ASKED);
@@ -40,7 +48,7 @@ const SearchRequestContext = createContext<SearchRequest>(NOTHING_ASKED);
  */
 function useSearchRequest(sidebar: Sidebar): SearchRequest {
 	const { active } = usePaneChrome();
-	const { shown, toggle, steppedAside } = sidebar;
+	const { shown, toggle, steppedAside, selectionTabId } = sidebar;
 	const [requested, setRequested] = useState(false);
 	useEffect(() => {
 		// A presented walkthrough has the sidebar stepped aside: nothing here is on screen to ask for.
@@ -65,7 +73,10 @@ function useSearchRequest(sidebar: Sidebar): SearchRequest {
 	const settled = useCallback((): void => {
 		setRequested(false);
 	}, []);
-	return useMemo(() => ({ requested, settled }), [requested, settled]);
+	const chosen = useCallback((): void => {
+		document.getElementById(selectionTabId)?.focus();
+	}, [selectionTabId]);
+	return useMemo(() => ({ requested, settled, chosen }), [requested, settled, chosen]);
 }
 
 /**
