@@ -211,4 +211,46 @@ async function openConversation(browser: AgentBrowserSession): Promise<void> {
 	})()`);
 }
 
-export { openConversation, pressSettings };
+/** The agent dock's controls as the eye reads them, and as Tab reaches them. */
+interface DockFocusOrder {
+	/** Each control's name, the top row first and left to right within a row. */
+	readonly seen: readonly string[];
+	/** The name of what has focus once the first control is focused, and after each Tab from it. */
+	readonly tabbed: readonly string[];
+}
+
+/** A control's name in the page: its label, or else its words. */
+const NAME_OF = `(node) => (node?.getAttribute('aria-label') ?? node?.textContent ?? '').trim()`;
+
+/**
+ * Read the agent dock's controls in the order the eye reads them, then focus the first and press
+ * Tab once for each of the others. The dock's grid places its parts, so only their order in the
+ * page keeps the keyboard in step with the eye.
+ * @param browser The page.
+ * @returns The two orders, which match when the keyboard follows the eye.
+ */
+async function dockFocusOrder(browser: AgentBrowserSession): Promise<DockFocusOrder> {
+	const seen = await browser.eval<string[]>(`(() => {
+		const controls = [...document.querySelectorAll('${AGENT_DOCK} button, ${AGENT_DOCK} a[href]')]
+			.filter((node) => node.tabIndex >= 0 && node.checkVisibility())
+			.map((node) => ({ node, box: node.getBoundingClientRect() }))
+			.sort((a, b) => {
+				if (a.box.bottom <= b.box.top) return -1;
+				if (b.box.bottom <= a.box.top) return 1;
+				return a.box.left - b.box.left;
+			})
+			.map(({ node }) => node);
+		controls[0]?.focus();
+		return controls.map(${NAME_OF});
+	})()`);
+	const focused = (): Promise<string> =>
+		browser.eval<string>(`(${NAME_OF})(document.activeElement)`);
+	const tabbed = [await focused()];
+	while (tabbed.length < seen.length) {
+		await browser.run(["press", "Tab"]);
+		tabbed.push(await focused());
+	}
+	return { seen, tabbed };
+}
+
+export { dockFocusOrder, openConversation, pressSettings, type DockFocusOrder };

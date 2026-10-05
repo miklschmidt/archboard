@@ -15,8 +15,12 @@
 // the box carries the voice whatever the person wants of subtitles.
 //
 // Both layouts hold the same parts, which the grid places (app.css, [data-part]).
-// So the Talk key turns into the circle, and the dock's motion plays every part
-// from its old place to its new one (hooks/use-dock-motion.ts).
+// The page lists them in the order the eye reads them in each layout, so the
+// keyboard follows the eye. The voice control and the conversation's control keep
+// their places in the page in both, so the Talk key turns into the circle and keeps
+// the keyboard on it. The parts around them are drawn again on their side of the
+// circle. The dock's motion plays every part from its old place to its new one
+// (hooks/use-dock-motion.ts).
 
 import { RiChat3Line } from "@remixicon/react";
 import { useRef, type CSSProperties, type JSX } from "react";
@@ -109,6 +113,13 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 		shown: on,
 		reducedMotion: props.reducedMotion,
 	});
+	const slots = slotsOf(live, {
+		activity: <Activity status={status} now={now} actions={actions} />,
+		plan: <DockPlan steps={steps} sinceMs={status.sinceMs} now={now} />,
+		wide: <WideAction status={status} actions={actions} />,
+		problem: <VoiceProblem problem={voice.problem} />,
+		line: <VoiceLine voice={voice} actions={actions} />,
+	});
 	return (
 		<section
 			ref={dock}
@@ -121,6 +132,7 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 			style={DOCK_STYLE}
 			className="border-border bg-raised shadow-edge-up relative shrink-0 border-t px-4 py-3"
 		>
+			{slots.head}
 			<VoiceControl
 				voice={voice}
 				actions={actions}
@@ -128,18 +140,70 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 				reducedMotion={props.reducedMotion}
 				boxed={boxed}
 			/>
-			<Activity status={status} now={now} actions={actions} />
-			<VoiceRow live={live} voice={voice} actions={actions} />
-			<DockPlan steps={steps} sinceMs={status.sinceMs} now={now} />
-			<WideAction status={status} actions={actions} />
+			{slots.beside}
 			<ConversationToggle
 				open={props.panelOpen}
 				unread={props.unread}
 				onToggle={props.onTogglePanel}
 				compact={live}
 			/>
+			{slots.under}
 		</section>
 	);
+}
+
+/** The dock's parts other than its two controls. */
+interface DockParts {
+	readonly activity: JSX.Element;
+	readonly plan: JSX.Element;
+	readonly wide: JSX.Element;
+	readonly problem: JSX.Element;
+	readonly line: JSX.Element;
+}
+
+/**
+ * The parts before the voice control in the page, between it and the conversation's control, and
+ * after that. Each slot keeps its place in the page whichever layout fills it.
+ */
+interface DockSlots {
+	readonly head: JSX.Element | null;
+	readonly beside: JSX.Element | null;
+	readonly under: JSX.Element | null;
+}
+
+/**
+ * Where each part goes in the page, so the page reads in the order the eye does. Calm: what the
+ * agent is on, its plan and why voice cannot start, then the keys. Live: the circle, what the agent
+ * is on, the voice's line with the conversation's icon at its end, then the plan.
+ * @param live Whether the dock is in its live layout.
+ * @param parts The parts.
+ * @returns The slots.
+ */
+function slotsOf(live: boolean, parts: DockParts): DockSlots {
+	if (!live) {
+		const head = (
+			<>
+				{parts.activity}
+				{parts.plan}
+				{parts.wide}
+				{parts.problem}
+			</>
+		);
+		return { head, beside: null, under: null };
+	}
+	const beside = (
+		<>
+			{parts.activity}
+			{parts.line}
+		</>
+	);
+	const under = (
+		<>
+			{parts.plan}
+			{parts.wide}
+		</>
+	);
+	return { head: null, beside, under };
 }
 
 /**
@@ -175,25 +239,6 @@ function Activity(props: {
 }
 
 /**
- * What the dock says about the voice: its line while it is on, and why it cannot
- * start when it is off and cannot.
- * @param props Whether voice is on, the voice and the actions.
- * @param props.live Whether voice is on.
- * @param props.voice The voice.
- * @param props.actions The actions.
- * @returns The line, or nothing.
- */
-function VoiceRow(props: {
-	readonly live: boolean;
-	readonly voice: AgentVoiceView;
-	readonly actions: AgentActions;
-}): JSX.Element | null {
-	const { voice } = props;
-	if (props.live) return <VoiceLine voice={voice} actions={props.actions} />;
-	return voice.problem === null ? null : <VoiceProblem problem={voice.problem} />;
-}
-
-/**
  * The agent's plan, under what it is on. Nothing while it has none.
  * @param props The steps, when the turn began and the clock.
  * @param props.steps The steps.
@@ -215,12 +260,13 @@ function DockPlan(props: {
 }
 
 /**
- * Why voice cannot start.
+ * Why voice cannot start. Nothing while it can.
  * @param props The problem.
- * @param props.problem The words.
- * @returns The line.
+ * @param props.problem The words, or null.
+ * @returns The line, or nothing.
  */
-function VoiceProblem(props: { readonly problem: string }): JSX.Element {
+function VoiceProblem(props: { readonly problem: string | null }): JSX.Element | null {
+	if (props.problem === null) return null;
 	return (
 		<p
 			id={VOICE_PROBLEM_ID}

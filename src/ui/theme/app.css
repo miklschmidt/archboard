@@ -530,8 +530,9 @@
    place to its new one. Calm: what the agent is on, its plan and the keys at the
    foot, Talk as wide as the room. Live: the circle (64px, the voice orb's) at the
    head, beside what the agent is on and the voice's line, the plan under them
-   in the same column. A part that is not there leaves no row. Each part
-   is named in the order it is placed in, so the DOM keeps the circle first.
+   in the same column. A part that is not there leaves no row. The page lists the
+   parts in the order the eye reads them in each layout (AgentDock), so the grid
+   places them without reordering any, and the keyboard follows the eye.
 
    The dock clips what is laid out beyond it. It is at the foot of the window, and its
    key is 32px high with the orb's socket (64px) and the canvas that waits in it (84px)
@@ -556,30 +557,18 @@
 	position: relative;
 	z-index: 1;
 }
-[data-slot="agent-dock"] > [data-part="status"] {
-	grid-column: 1 / -1;
-	order: 1;
-}
-[data-slot="agent-dock"] > [data-part="plan"] {
-	grid-column: 1 / -1;
-	order: 2;
-}
-[data-slot="agent-dock"] > [data-part="wide"] {
-	grid-column: 1 / -1;
-	order: 3;
-}
+[data-slot="agent-dock"] > [data-part="status"],
+[data-slot="agent-dock"] > [data-part="plan"],
+[data-slot="agent-dock"] > [data-part="wide"],
 [data-slot="agent-dock"] > [data-part="problem"] {
 	grid-column: 1 / -1;
-	order: 4;
 }
 [data-slot="agent-dock"] > [data-part="voice"] {
 	grid-column: 1;
-	order: 5;
 	height: 32px;
 }
 [data-slot="agent-dock"] > [data-part="chat"] {
 	grid-column: 2;
-	order: 6;
 }
 [data-slot="agent-dock"][data-live="true"] {
 	grid-template-columns: 64px minmax(0, 1fr) 24px;
