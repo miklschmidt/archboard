@@ -83,7 +83,7 @@ function easeOut(t: number): number {
  */
 function rowVisibility(rise: number, row: number): number {
 	const late = (row / (ROWS - 1)) * STAGGER;
-	return Math.min(1, Math.max(0, (rise * (1 + STAGGER) - late) / 1));
+	return Math.min(1, Math.max(0, rise * (1 + STAGGER) - late));
 }
 
 /**
@@ -351,4 +351,4 @@ function paintOrb(ctx: CanvasRenderingContext2D, dyn: OrbDynamics, colors: OrbCo
 	ctx.restore();
 }
 
-export { CIRCLE, PAD, SIZE, paintOrb };
+export { SIZE, paintOrb };
