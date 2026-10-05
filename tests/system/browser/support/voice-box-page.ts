@@ -19,6 +19,7 @@ import {
 	type AgentBrowserSession,
 } from "./agent-browser.ts";
 import { openWithControlledVoiceMedia } from "./codex-live-voice.ts";
+import { DOCK_VOICE } from "./voice-page.ts";
 
 /** The production server, with the fake Codex in place of the real one. */
 const VOICE_SERVER = join(
@@ -27,17 +28,18 @@ const VOICE_SERVER = join(
 );
 const FAKE_CODEX = join(import.meta.dir, "../../server-state/fixtures/fake-codex-production.ts");
 
-/** A server whose Codex is the fake, and the fake's files. */
+/** A server whose Codex is the fake, the fake's files and the server's vault. */
 export interface VoiceServer {
 	readonly server: OwnedServer;
 	readonly fixture: ProductionFixture;
+	readonly vault: string;
 }
 
 /**
  * Start a server whose Codex is the fake, so that Talk starts a real voice session.
  * @param resources What tears it down.
  * @param vaultName The vault's directory under the owner's root.
- * @returns The server and the fake's files.
+ * @returns The server, the fake's files and the vault.
  */
 export async function startVoiceServer(
 	resources: AsyncDisposableStack,
@@ -57,7 +59,7 @@ export async function startVoiceServer(
 	});
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
-	return { server, fixture };
+	return { server, fixture, vault };
 }
 
 /**
@@ -78,7 +80,7 @@ export const openForVoice = (browser: AgentBrowserSession, url: string): Promise
  * @returns What the browser said.
  */
 export const talk = (browser: AgentBrowserSession): Promise<string> =>
-	browser.run(["click", '[data-slot="agent-dock"] [data-slot="voice-circle"]']);
+	browser.run(["click", DOCK_VOICE]);
 
 /** The subtitles control in the voice box. */
 export const SUBTITLES_IN_BOX = '[data-slot="voice-box"] [data-slot="voice-subtitles-toggle"]';

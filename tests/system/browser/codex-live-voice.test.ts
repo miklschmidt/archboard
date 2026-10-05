@@ -1,25 +1,13 @@
 import { expect, test } from "bun:test";
-import { mkdirSync } from "node:fs";
-import { join } from "node:path";
 
 import {
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
 	TEST_PANE_MESSAGE_TIMEOUT_MS,
 } from "../support/timing.ts";
 import { createJsonRequester } from "../support/http.ts";
-import { prepareProductionFixture } from "../server-state/support/codex-production.ts";
-import { startOwnedServer } from "../support/owned-server.ts";
-import {
-	browserTestRoots,
-	serverTestEnvironment,
-	createAgentBrowser,
-	pollUntil,
-	registerServerBase,
-	runServerCli,
-} from "./support/agent-browser.ts";
+import { createAgentBrowser, pollUntil, runServerCli } from "./support/agent-browser.ts";
 import {
 	RAW_COORDINATOR_THREAD_ID,
-	openWithControlledVoiceMedia,
 	readControlledVoiceMediaAudit,
 	released,
 	setControlledOutputSilent,
@@ -51,9 +39,8 @@ import {
 	subtitleSnapshot,
 	voiceNow,
 } from "./support/voice-page.ts";
+import { openForVoice, startVoiceServer } from "./support/voice-box-page.ts";
 
-const serverPath = join(import.meta.dir, "../server-state/fixtures/codex-production-server.ts");
-const executableSource = join(import.meta.dir, "../server-state/fixtures/fake-codex-production.ts");
 /** What the controlled session transcribes, as the fixture emits it. */
 const USER_SAID = "Show the controlled voice context.";
 const VOICE_SAID = "The controlled voice context is visible.";
@@ -64,21 +51,7 @@ test(
 	"Talk starts a live voice in the dock, and the voice box and the presentation bar carry it",
 	async () => {
 		await using resources = new AsyncDisposableStack();
-		const fixture = prepareProductionFixture(resources, executableSource);
-		const { ownerRoot } = browserTestRoots();
-		const vault = join(ownerRoot, "vault");
-		mkdirSync(vault, { recursive: true });
-		const server = await startOwnedServer({
-			serverPath,
-			vault,
-			env: serverTestEnvironment({
-				ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
-				ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
-				ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
-			}),
-		});
-		resources.defer(() => server.dispose());
-		registerServerBase(server.base);
+		const { server, fixture, vault } = await startVoiceServer(resources, "vault");
 		const browser = resources.use(await createAgentBrowser());
 		const api = createJsonRequester(server);
 		const records = () => productionFixtureRecords<FixtureRecord>(fixture);
@@ -103,11 +76,7 @@ test(
 				},
 			],
 		});
-		await openWithControlledVoiceMedia(
-			browser,
-			server.base,
-			join(ownerRoot, "controlled-voice-media.js"),
-		);
+		await openForVoice(browser, server.base);
 		// This person turned subtitles off on an earlier visit, and the page keeps that choice.
 		await browser.eval<boolean>(`(localStorage.setItem('${SUBTITLES_KEY}', 'false'), true)`);
 		await browser.run(["reload"]);
