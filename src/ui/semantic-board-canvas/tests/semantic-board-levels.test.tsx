@@ -395,13 +395,14 @@ test("a crumb two levels up goes straight back to its board, as one change by ha
 	server.documents["store"] = cardBoard("store", undefined);
 	server.reply = { status: 200, body: drawing(1) };
 	const changed: string[] = [];
-	mountStage(null, {
-		live: true,
-		reducedMotion: true,
-		onUserChanged: (part) => {
-			changed.push(part);
-		},
-	});
+	/**
+	 * Keep what the shell heard the person changed by hand.
+	 * @param part The part of the reading.
+	 */
+	function heard(part: string): void {
+		changed.push(part);
+	}
+	mountStage(null, { live: true, reducedMotion: true, onUserChanged: heard });
 	await settle();
 	await doubleClickInto("engine");
 	await doubleClickInto("store");
