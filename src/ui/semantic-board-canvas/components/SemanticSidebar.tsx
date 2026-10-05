@@ -167,14 +167,15 @@ function SidebarTabs(props: SidebarTabsProps): JSX.Element {
 }
 
 /**
- * Put a floating panel away when Escape is pressed inside it. It goes by where
- * the key was pressed, and not by where focus is now, so a field that lets go of
- * focus on the same key does not keep the panel.
+ * Put a floating panel away when Escape is pressed inside it, and give focus to
+ * the control that shows it. It goes by where the key was pressed, and not by
+ * where focus is now, so a field that lets go of focus on the same key does not
+ * keep the panel or leave the keyboard on the page's body.
  * @param panel The panel's element.
  * @param sidebar The sidebar.
  */
 function useEscapeAway(panel: RefObject<HTMLElement | null>, sidebar: Sidebar): void {
-	const { floating, putAway } = sidebar;
+	const { floating, putAway, toggleId } = sidebar;
 	useEffect(() => {
 		if (!floating) {
 			return undefined;
@@ -189,11 +190,12 @@ function useEscapeAway(panel: RefObject<HTMLElement | null>, sidebar: Sidebar): 
 				return;
 			}
 			event.stopPropagation();
+			document.getElementById(toggleId)?.focus();
 			putAway();
 		};
 		document.addEventListener("keydown", onKey);
 		return () => document.removeEventListener("keydown", onKey);
-	}, [floating, panel, putAway]);
+	}, [floating, panel, putAway, toggleId]);
 }
 
 /**
