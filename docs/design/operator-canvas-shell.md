@@ -295,7 +295,9 @@ filter that finds variants by name (dark).
   a draft, a clock for historical and an archive box for shelved. A variant's
   name is smaller and lighter than a board's. The variant the board's name
   opens comes first, then the other live variants. A draft nests under the
-  draft it was derived from, and under nothing else. The historical and
+  variant it was derived from, so the variants read as a timeline: a line
+  through the variant the board's name opens and its history, and a branch off
+  it for each draft. The historical and
   shelved variants wait behind one Earlier row, newest first. While a filter
   is on, the variants it finds are listed directly under their board, with no
   Earlier row. The header draws the same lifecycle mark before the variant it
