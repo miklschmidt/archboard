@@ -67,9 +67,12 @@ correctness check rather than a style rule.
 - `label.tsx`: one documented statement-level suppression for the
   association rule, which cannot see the spread `htmlFor`.
 - Every file: `cn` comes from `@/ui/components/class-names` (see above) instead of the
-  bare `cn` package. Same engine, same semantics, plus the six type roles.
+  bare `cn` package. Same engine, same semantics, plus the type roles and the
+  elevations.
 - `tooltip.tsx`: the positioner is `pointer-events-none`, so a tooltip that is
-  closing or open on focus never swallows a click meant for a neighbour.
+  closing or open on focus never swallows a click meant for a neighbour. It is
+  also positioned `fixed`, so a tooltip never makes the page larger than the
+  window.
 - `badge.tsx`: a `size` axis (`default`, `technical`, `chip`) beside the
   official variants; every official variant is untouched.
 - `toggle-group.tsx`: CSS custom properties in `style` are
