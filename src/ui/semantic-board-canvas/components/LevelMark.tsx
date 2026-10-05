@@ -1,9 +1,12 @@
 // A level's mark: the icon the vault's vocabulary gives the node kind of that
 // level's name (ADR 0029), which is also what a card standing for a board of
 // that level wears on the picture. So a level reads the same in the navigator,
-// in a pane's breadcrumb and on a card. The vocabulary and the icon's path data
-// are read through the same caches the picture is drawn from; a level the
-// vocabulary gives no icon, or an icon not yet read, shows the plain board mark.
+// in a pane's breadcrumb and on a card. The vocabulary is read through the same
+// cache the picture is drawn from. The icon's path data comes from the same
+// server route the renderer fetches it from, but through this page's query
+// cache: the renderer keeps its own copy in its chunk, which the page loads
+// apart from the shell (frontend/main.tsx). A level the vocabulary gives no icon,
+// or an icon not yet read, shows the plain board mark.
 
 import { RiFlowChart } from "@remixicon/react";
 import { useQuery, queryOptions } from "@tanstack/react-query";
