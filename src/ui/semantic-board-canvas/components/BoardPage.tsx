@@ -28,18 +28,21 @@ import type { GroupNames } from "@/ui/semantic-board-canvas/lib/groups";
  * @param props The tab, what the page is called and what it holds.
  * @param props.tab The tab the page belongs to.
  * @param props.label What the page is called to assistive technology.
+ * @param props.busy Whether the board has not arrived yet.
  * @param props.children What the page holds.
  * @returns The page.
  */
 function PageFrame(props: {
 	readonly tab: BoardTab;
 	readonly label: string;
+	readonly busy: boolean;
 	readonly children: ReactNode;
 }): JSX.Element {
 	return (
 		<section
 			role="tabpanel"
 			aria-label={props.label}
+			aria-busy={props.busy || undefined}
 			data-slot="board-page"
 			data-tab={props.tab}
 			className="bg-background absolute inset-0 z-20 overflow-x-hidden overflow-y-auto"
@@ -263,13 +266,14 @@ const RELATIONSHIP_GRID =
 /** Inputs for the page of whichever tab is open. */
 interface BoardPageProps {
 	readonly tab: Exclude<BoardTab, "diagram">;
-	/** What the variant says, or null while the board has not arrived. */
+	/** What the variant on screen says, or null when the board has no such variant. */
 	readonly content: VariantContent | null;
 	readonly look: KindLook;
 	readonly groups: GroupNames;
 	readonly selection: string | null;
 	readonly onPick: (id: string | null) => void;
-	readonly variants: VariantsPageProps;
+	/** The board's variants and its record, or null while the board has not arrived. */
+	readonly variants: VariantsPageProps | null;
 	readonly walkthroughs: WalkthroughsPageProps;
 }
 
@@ -281,23 +285,26 @@ interface BoardPageProps {
 function BoardPage(props: BoardPageProps): JSX.Element {
 	const { tab } = props;
 	return (
-		<PageFrame tab={tab} label={PAGE_NAMES[tab]}>
+		<PageFrame tab={tab} label={PAGE_NAMES[tab]} busy={props.variants === null}>
 			<OpenPage {...props} />
 		</PageFrame>
 	);
 }
 
 /**
- * What the open tab lists. The parts and the relationships are read from the
- * variant, so they wait for the board to arrive.
+ * What the open tab lists. Every page waits for the board to arrive, so that
+ * none says the board has no variant, walkthrough or part before it is read.
+ * The parts, the relationships and the walkthroughs are the variant's, so they
+ * also need the board to have the variant on screen.
  * @param props What the pages are made from.
  * @returns The open tab's page.
  */
 function OpenPage(props: BoardPageProps): JSX.Element {
-	const { tab, content } = props;
-	if (tab === "variants") return <VariantsPage {...props.variants} />;
+	const { tab, content, variants } = props;
+	if (variants === null) return <Nothing>Reading the board…</Nothing>;
+	if (tab === "variants") return <VariantsPage {...variants} />;
+	if (content === null) return <Nothing>The board has no such variant.</Nothing>;
 	if (tab === "walkthroughs") return <WalkthroughsPage {...props.walkthroughs} />;
-	if (content === null) return <Nothing>Reading the board…</Nothing>;
 	if (tab === "parts") {
 		return (
 			<PartsPage

@@ -272,14 +272,14 @@ function SemanticStageView(view: RenderView): JSX.Element {
  * What the Variants page lists, from what the board says about itself.
  * @param reading What the board says about itself, or null before it arrives.
  * @param onChoose Read another state of the board, when the pane can.
- * @returns The page's inputs.
+ * @returns The page's inputs, or null while the board has not arrived.
  */
 function variantsPage(
 	reading: VariantReading | null,
 	onChoose: VariantsPageProps["onChoose"],
-): VariantsPageProps {
+): VariantsPageProps | null {
 	if (reading === null) {
-		return { variants: [], adoptions: [], shelvings: [], showing: null, onChoose };
+		return null;
 	}
 	return {
 		variants: reading.variants,
