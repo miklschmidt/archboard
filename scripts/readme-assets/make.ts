@@ -1,8 +1,11 @@
-// `bun run readme:assets [name ...] [--codex] [--dry-run]`: make README assets from the checkout.
+// `bun run readme:assets [name ...] [--codex] [--replay] [--dry-run]`: make README assets from the
+// checkout.
 //
 // With no name it makes every asset that needs no Codex sign-in, one at a time. A named asset is
-// made whatever it needs, and --codex adds every asset that needs Codex. --dry-run prints each
-// asset's plan and where each tool comes from, and starts nothing. Each asset made records the
+// made whatever it needs, and --codex adds every asset that needs Codex. --replay renders a
+// narrated asset again from the talk its last recording kept, which spends no Codex usage (with no
+// name it selects the narrated assets). --dry-run prints each asset's plan and where each tool
+// comes from, and starts nothing. Each asset made records the
 // hash of its sources in docs/readme/assets.json; docs/agents/readme-assets.md says more.
 
 import { statSync } from "node:fs";
@@ -41,6 +44,7 @@ const ENCODERS = ["libwebp_anim", "libwebp", "libx264"] as const;
 interface Request {
 	readonly names: readonly string[];
 	readonly codex: boolean;
+	readonly replay: boolean;
 	readonly dryRun: boolean;
 }
 
@@ -72,14 +76,17 @@ class UsageError extends Error {
  */
 function requestOf(argv: readonly string[]): Request {
 	const unknown = argv.filter(
-		(word) => word.startsWith("-") && !["--codex", "--dry-run"].includes(word),
+		(word) => word.startsWith("-") && !["--codex", "--replay", "--dry-run"].includes(word),
 	);
 	if (unknown.length > 0) {
-		throw new UsageError(`readme:assets reads --codex and --dry-run, not ${unknown.join(" ")}.`);
+		throw new UsageError(
+			`readme:assets reads --codex, --replay and --dry-run, not ${unknown.join(" ")}.`,
+		);
 	}
 	return {
 		names: argv.filter((word) => !word.startsWith("-")),
 		codex: argv.includes("--codex"),
+		replay: argv.includes("--replay"),
 		dryRun: argv.includes("--dry-run"),
 	};
 }
@@ -89,7 +96,7 @@ function requestOf(argv: readonly string[]): Request {
  * @param manifest The manifest.
  * @param request The request.
  * @returns The assets.
- * @throws {UsageError} When a name is not an asset's.
+ * @throws {UsageError} When a name is not an asset's, or --replay reaches an asset with no kept talk.
  */
 function selected(manifest: ReadmeManifest, request: Request): readonly ReadmeAsset[] {
 	const known = manifest.assets.map((asset) => asset.name);
@@ -99,9 +106,18 @@ function selected(manifest: ReadmeManifest, request: Request): readonly ReadmeAs
 			`No README asset is named ${strange.join(", ")}. The assets: ${known.join(", ")}.`,
 		);
 	}
-	return manifest.assets.filter((asset) =>
-		request.names.length > 0 ? request.names.includes(asset.name) : request.codex || !asset.codex,
-	);
+	const chosen = manifest.assets.filter((asset) => {
+		if (request.names.length > 0) return request.names.includes(asset.name);
+		if (request.replay) return asset.kind === "narrated";
+		return request.codex || !asset.codex;
+	});
+	const unkept = request.replay ? chosen.filter((asset) => asset.kind !== "narrated") : [];
+	if (unkept.length > 0) {
+		throw new UsageError(
+			`--replay renders a narrated asset from its kept talk, and ${unkept.map((asset) => asset.name).join(", ")} keeps none.`,
+		);
+	}
+	return chosen;
 }
 
 /**
@@ -132,11 +148,17 @@ async function prove(need: Need): Promise<void> {
  * @param asset The asset.
  * @param index Its place in the run, counted from one.
  * @param total How many assets the run makes.
+ * @param replay Whether narrated assets are rendered again from their kept talks, with no Codex.
  * @returns The lines.
  */
-function planLines(asset: ReadmeAsset, index: number, total: number): readonly string[] {
+function planLines(
+	asset: ReadmeAsset,
+	index: number,
+	total: number,
+	replay: boolean,
+): readonly string[] {
 	const producer = producerOf(asset);
-	const codex = asset.codex ? ", needs a Codex sign-in" : "";
+	const codex = asset.codex && !replay ? ", needs a Codex sign-in" : "";
 	return [
 		`[${index}/${total}] ${asset.name} (${asset.kind}${codex})`,
 		...producer.plan.map((step) => `  - ${step}`),
@@ -170,9 +192,18 @@ function say(line: string): void {
  * Make the selected assets one at a time, and record each one's source hash as it is made.
  * @param manifest The manifest.
  * @param assets The assets.
+ * @param replay Whether narrated assets are rendered again from their kept talks.
  */
-async function makeAll(manifest: ReadmeManifest, assets: readonly ReadmeAsset[]): Promise<void> {
-	const needs = new Set(assets.flatMap((asset) => producerOf(asset).needs));
+async function makeAll(
+	manifest: ReadmeManifest,
+	assets: readonly ReadmeAsset[],
+	replay: boolean,
+): Promise<void> {
+	const needs = new Set(
+		assets
+			.flatMap((asset) => producerOf(asset).needs)
+			.filter((need) => !replay || need !== "codex"),
+	);
 	// Every tool is proved before anything starts.
 	await inOrder(needs, prove);
 	if (needs.has("chromium")) {
@@ -183,9 +214,9 @@ async function makeAll(manifest: ReadmeManifest, assets: readonly ReadmeAsset[])
 	let made = manifest;
 	// Assets are made one at a time, so a take has the machine to itself.
 	await inOrder(assets, async (asset, index) => {
-		console.log(planLines(asset, index + 1, assets.length)[0]);
+		console.log(planLines(asset, index + 1, assets.length, replay)[0]);
 		const hash = hasher.hash(asset.sources);
-		await producerOf(asset).make({ say });
+		await producerOf(asset).make({ say, replay });
 		made = {
 			...made,
 			assets: made.assets.map((one) => (one.name === asset.name ? { ...one, hash } : one)),
@@ -199,12 +230,13 @@ async function makeAll(manifest: ReadmeManifest, assets: readonly ReadmeAsset[])
 /**
  * Print the plan of each selected asset and where each tool comes from; start nothing.
  * @param assets The assets.
+ * @param replay Whether narrated assets are rendered again from their kept talks.
  */
-function dryRun(assets: readonly ReadmeAsset[]): void {
+function dryRun(assets: readonly ReadmeAsset[], replay: boolean): void {
 	console.log("A dry run: nothing is started, filmed, generated or spent.");
 	for (const line of toolLines()) console.log(line);
 	for (const [index, asset] of assets.entries()) {
-		console.log(planLines(asset, index + 1, assets.length).join("\n"));
+		console.log(planLines(asset, index + 1, assets.length, replay).join("\n"));
 	}
 }
 
@@ -222,8 +254,8 @@ async function main(): Promise<void> {
 		throw new Error(`${MANIFEST_PATH} and the kit disagree:\n${disagreeing.join("\n")}`);
 	}
 	const assets = selected(manifest, request);
-	if (request.dryRun) dryRun(assets);
-	else await makeAll(manifest, assets);
+	if (request.dryRun) dryRun(assets, request.replay);
+	else await makeAll(manifest, assets, request.replay);
 }
 
 await main().catch((error: unknown) => {

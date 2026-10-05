@@ -19,6 +19,11 @@ interface MakeContext {
 	 * @param line The sentence.
 	 */
 	readonly say: (line: string) => void;
+	/**
+	 * Whether a narrated asset is rendered again from the talk it kept, which spends no Codex usage,
+	 * in place of being recorded again.
+	 */
+	readonly replay: boolean;
 }
 
 /** One asset's maker. */
