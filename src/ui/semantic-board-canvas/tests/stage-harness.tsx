@@ -223,11 +223,11 @@ const serving: typeof fetch = Object.assign(fakeFetch, { preconnect: realFetch.p
 /**
  * The stage's own props a test may state as they are: a driven step, what is
  * laid over the picture, the boards above the one on screen, the shell's
- * narration and the search over parts.
+ * narration, the search over parts, and what the shell hears the person changed.
  */
 type StagePassThrough = Pick<
 	Parameters<typeof SemanticBoardStage>[0],
-	"driven" | "overlay" | "placeOf" | "narration" | "search"
+	"driven" | "overlay" | "placeOf" | "narration" | "search" | "onUserChanged"
 >;
 /** What else a mounted pane may be told, beyond what it is showing. */
 interface MountOptions extends StagePassThrough {
@@ -281,6 +281,7 @@ const READING_PROPS = [
 	"placeOf",
 	"narration",
 	"search",
+	"onUserChanged",
 ] as const satisfies readonly (keyof MountOptions)[];
 
 /**

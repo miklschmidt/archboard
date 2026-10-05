@@ -357,6 +357,70 @@ test("coming back up leaves the pane reading its own board as it was", async () 
 	).toBe(true);
 });
 
+/**
+ * A board of one card, n1, that drills down to another board's current variant.
+ * @param name What the board is called.
+ * @param below The board its card opens, or undefined for a card that opens none.
+ * @returns The document.
+ */
+function cardBoard(name: string, below: string | undefined): Record<string, unknown> {
+	const card = { id: "n1", name: name + " card", kind: "module" };
+	const node =
+		below === undefined
+			? card
+			: { ...card, drillDown: { board: below, variant: { kind: "current" } } };
+	return boardOf(
+		name,
+		[{ id: "v1", name: "as it is", lifecycle: "current", content: { nodes: [node], edges: [] } }],
+		"v1",
+	);
+}
+
+/**
+ * Open the board the card drills down to, as a double-click on it does.
+ * @param board The board it opens, which the next picture is of.
+ * @returns Settles once that board is on screen.
+ */
+async function doubleClickInto(board: string): Promise<void> {
+	server.reply = { status: 200, body: drawing(1, board) };
+	await act(async () => {
+		fireEvent.doubleClick(document.querySelector("#card")!);
+	});
+	await settle();
+}
+
+test("a crumb two levels up goes straight back to its board, as one change by hand", async () => {
+	server.documents["pipeline"] = cardBoard("pipeline", "engine");
+	server.documents["engine"] = cardBoard("engine", "store");
+	server.documents["store"] = cardBoard("store", undefined);
+	server.reply = { status: 200, body: drawing(1) };
+	const changed: string[] = [];
+	mountStage(null, {
+		live: true,
+		reducedMotion: true,
+		onUserChanged: (part) => {
+			changed.push(part);
+		},
+	});
+	await settle();
+	await doubleClickInto("engine");
+	await doubleClickInto("store");
+	const crumbs = buttons("pane-crumb");
+	expect(crumbs.map((crumb) => crumb.textContent)).toEqual(["pipeline", "engine"]);
+
+	changed.length = 0;
+	server.reply = { status: 200, body: drawing(1) };
+	await act(async () => {
+		fireEvent.click(crumbs[0]!);
+	});
+	await settle();
+	expect(
+		document.querySelector("[data-slot='semantic-board-stage']")?.getAttribute("data-board"),
+	).toBe("pipeline");
+	expect(buttons("pane-crumb")).toEqual([]);
+	expect(changed).toEqual(["board"]);
+});
+
 /** What the pane said it was reading, as these tests read it back. */
 type Reading = { board: string; variant: string | null; view: string | null };
 

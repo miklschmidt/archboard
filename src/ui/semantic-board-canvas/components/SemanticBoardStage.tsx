@@ -338,7 +338,7 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 		},
 		[choose, goTo],
 	);
-	const { onOpenDown, onBack } = useDrillMoves({
+	const { onOpenDown, onBackTo } = useDrillMoves({
 		drill,
 		flier: dive,
 		leave: departure.leave,
@@ -359,7 +359,7 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 			drill={drill}
 			onPick={onPick}
 			onOpenDown={onOpenDown}
-			onBack={onBack}
+			onBackTo={onBackTo}
 			cut={dive.cut}
 			leaving={departure.leaving}
 			sidebar={sidebar}
