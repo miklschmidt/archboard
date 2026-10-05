@@ -159,3 +159,28 @@ test("choosing a row brings the part at its other end into view, and moves nothi
 		frames.restore();
 	}
 });
+
+/** The ledger, bigger than the room at any scale the board is fitted at: it is never all in view. */
+const BIGGER_THAN_THE_ROOM = { l: { x: -2000, y: -2000, width: 5000, height: 5000 } };
+
+test("a click on the picture leaves the camera where it is, even on a part bigger than the room, and the list still brings that part into view", async () => {
+	await served({ places: BIGGER_THAN_THE_ROOM });
+	const frames = takeFrames();
+	try {
+		const before = cameraNow();
+		// The reader's own hand on a part that is there: the camera does not chase it.
+		await pick("l");
+		frames.run(EXPLORING_MS.reveal + 200);
+		expect(cameraNow()).toEqual(before);
+
+		// The same part chosen from a row of the list is somebody else's pick.
+		await pickWithDetails("w");
+		act(() => {
+			fireEvent.click(row("e4"));
+		});
+		frames.run(EXPLORING_MS.reveal + 200);
+		expect(cameraNow()).not.toEqual(before);
+	} finally {
+		frames.restore();
+	}
+});

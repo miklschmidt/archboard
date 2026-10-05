@@ -65,6 +65,12 @@ interface RenderView extends SemanticBoardStageProps {
 	 * @param id The semantic id, or null.
 	 */
 	readonly onPick: (id: string | null) => void;
+	/**
+	 * The person picked a subject out on the picture itself, where it is: the
+	 * camera stays where they left it.
+	 * @param id The semantic id, or null.
+	 */
+	readonly onPickInPicture: (id: string | null) => void;
 	/** Follow a drill-down, clearing the selection it was made from. */
 	readonly onOpenDown: (board: string, variant: string) => void;
 	/**
@@ -199,7 +205,7 @@ function stageBody(view: RenderView): JSX.Element {
 			camera={view.camera}
 			drawing={answer}
 			selection={view.selection}
-			onSelect={view.onPick}
+			onSelect={view.onPickInPicture}
 			reading={view.reading}
 			onOpenDown={view.onOpenDown}
 			reducedMotion={view.reducedMotion ?? false}
