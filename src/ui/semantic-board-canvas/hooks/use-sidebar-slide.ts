@@ -12,7 +12,7 @@
 
 import { useEffect, useState } from "react";
 
-import { SIDEBAR_MS } from "@/shared/timing/timing";
+import { SIDEBAR_MS, SLIDE_SETTLED_MS } from "@/shared/timing/timing";
 import { frameClock } from "@/ui/frame-clock";
 
 /** Where the sidebar is. */
@@ -96,7 +96,7 @@ function useSidebarSlide(place: Place): Slide {
 			return undefined;
 		}
 		const clock = frameClock();
-		const timer = clock.after(leavingMs(shownAs) + SIDEBAR_MS.settle, () =>
+		const timer = clock.after(leavingMs(shownAs) + SLIDE_SETTLED_MS, () =>
 			setKept((now) => ({ ...now, leaving: false })),
 		);
 		return () => clock.cancelAfter(timer);
@@ -106,7 +106,7 @@ function useSidebarSlide(place: Place): Slide {
 			return undefined;
 		}
 		const clock = frameClock();
-		const timer = clock.after(SIDEBAR_MS.dock + SIDEBAR_MS.settle, () =>
+		const timer = clock.after(SIDEBAR_MS.dock + SLIDE_SETTLED_MS, () =>
 			setKept((now) => ({ ...now, motion: "none" })),
 		);
 		return () => clock.cancelAfter(timer);

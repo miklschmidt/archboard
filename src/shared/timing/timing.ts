@@ -460,7 +460,11 @@ export {
 	SUBJECT_TIP_DELAY_MS,
 } from "@/shared/timing/lib/diagram-motion";
 export { EXPLORING_MS } from "@/shared/timing/lib/exploring";
-export { AGENT_PANEL_SLIDE_MS, SIDEBAR_MS } from "@/shared/timing/lib/column-motion";
+export {
+	AGENT_PANEL_SLIDE_MS,
+	SIDEBAR_MS,
+	SLIDE_SETTLED_MS,
+} from "@/shared/timing/lib/column-motion";
 export {
 	RECORDING_ENCODE_FINISH_MS,
 	RECORDING_ENCODER_PROBE_MS,
