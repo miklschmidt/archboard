@@ -114,9 +114,10 @@ function paceTraffic(root: TrafficHolder): TrafficPace {
 		if (holding) return;
 		holding = true;
 		stopComing();
-		// Traffic being brought back is what is held, if it is not done yet.
-		if (held.length === 0) held = runningTraffic(root);
-		for (const animation of held) if (animation.playState === "running") animation.pause();
+		// What runs now, traffic still being brought back included. Read afresh, as
+		// the picture may have been put up again since the last hold.
+		held = runningTraffic(root);
+		for (const animation of held) animation.pause();
 	};
 
 	/**
