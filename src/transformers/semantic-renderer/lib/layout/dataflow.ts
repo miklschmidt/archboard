@@ -68,6 +68,8 @@ import {
 	cardNotes,
 	cardContentWidth,
 	cardTextWidth,
+	markRoom,
+	titleRoom,
 	type SequenceCard,
 } from "@/transformers/semantic-renderer/lib/layout/sequence-card";
 
@@ -235,9 +237,10 @@ function measureColumns(
 		[...participants].map((id) => [id, cardNotes(participantNode(id, byId), preferred)]),
 	);
 	const painted = [...notes.values()].flatMap((runs) => runs.map((run) => run.width));
-	const names = [...participants].map((id) =>
-		measure(participantNode(id, byId).name, CARD_TITLE_FONT, TITLE_SIZE_MIN),
-	);
+	const names = [...participants].map((id) => {
+		const node = participantNode(id, byId);
+		return measure(node.name, CARD_TITLE_FONT, TITLE_SIZE_MIN) + markRoom(node);
+	});
 	const insets = preferred - cardTextWidth(preferred);
 	return {
 		width: Math.max(
@@ -289,7 +292,7 @@ function placeColumnCard(
 			node.name,
 			CARD_TITLE_FONT,
 			width >= ICON_MIN_CARD_WIDTH ? TITLE_SIZE : TITLE_SIZE_SMALL,
-			cardTextWidth(width),
+			titleRoom(node, width),
 			TITLE_SIZE_MIN,
 			TITLE_SIZE_STEP,
 		),
