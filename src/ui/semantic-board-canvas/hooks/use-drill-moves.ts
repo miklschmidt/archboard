@@ -1,9 +1,12 @@
-// What following a card's drill-down, and going back a level, do to a pane.
+// What following a card's drill-down, and going back up the trail, do to a pane.
 //
 // Both clear the selection the move was made from, tell the shell that the
 // reader changed the board by hand, and say which way the reader went so the
-// picture being left knows how to leave. Which of the two is a flight is the
+// picture being left knows how to leave. Going back any number of levels is
+// one move, so the shell hears of it once. Which move is a flight is the
 // dive's to decide: it is handed what the plain move does, and ends with it.
+// Only the board one level up opened the board on screen from one of its
+// cards, so only going back to it can fly out of that card.
 
 import { useCallback, useMemo } from "react";
 
@@ -45,8 +48,11 @@ interface DrillMoves {
 	 * @param variant The variant to open, by id.
 	 */
 	readonly onOpenDown: (board: string, variant: string) => void;
-	/** Go back a level. */
-	readonly onBack: () => void;
+	/**
+	 * Go back to one of the boards the reader came down through.
+	 * @param depth Where it is in the trail: 0 is the board the pane was opened on.
+	 */
+	readonly onBackTo: (depth: number) => void;
 }
 
 /**
@@ -92,21 +98,24 @@ function useDrillMoves(inputs: DrillMovesInputs): DrillMoves {
 		},
 		[drill, into, leave, onSelect, onUserChanged, picked],
 	);
-	const onBack = useCallback((): void => {
-		/** Go back the plain way. */
-		const proceed = (): void => {
-			leave("out");
-			onSelect(null);
-			onUserChanged?.("board");
-			drill.back();
-		};
-		if (above === null) {
-			proceed();
-			return;
-		}
-		out(above, proceed);
-	}, [above, drill, leave, onSelect, onUserChanged, out]);
-	return { onOpenDown, onBack };
+	const onBackTo = useCallback(
+		(depth: number): void => {
+			/** Go back the plain way. */
+			const proceed = (): void => {
+				leave("out");
+				onSelect(null);
+				onUserChanged?.("board");
+				drill.backTo(depth);
+			};
+			if (above === null || depth !== drill.trail.length - 1) {
+				proceed();
+				return;
+			}
+			out(above, proceed);
+		},
+		[above, drill, leave, onSelect, onUserChanged, out],
+	);
+	return { onOpenDown, onBackTo };
 }
 
 export { useDrillMoves };

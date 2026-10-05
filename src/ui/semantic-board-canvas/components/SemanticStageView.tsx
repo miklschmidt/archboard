@@ -67,8 +67,11 @@ interface RenderView extends SemanticBoardStageProps {
 	readonly onPick: (id: string | null) => void;
 	/** Follow a drill-down, clearing the selection it was made from. */
 	readonly onOpenDown: (board: string, variant: string) => void;
-	/** Go back a level, clearing the selection made on the level below. */
-	readonly onBack: () => void;
+	/**
+	 * Go back to one of the boards the reader came down through, clearing the selection made below it.
+	 * @param depth Where it is in the trail: 0 is the board the pane was opened on.
+	 */
+	readonly onBackTo: (depth: number) => void;
 	/** The picture on screen is the board a flight arrived at: it took over from the board inside its card with no entrance. */
 	readonly cut: boolean;
 	/** The last board's picture, on its way out while this one is drawn; null otherwise. */

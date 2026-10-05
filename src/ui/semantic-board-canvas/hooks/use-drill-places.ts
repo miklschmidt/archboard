@@ -42,28 +42,16 @@ function namesOf(results: readonly { readonly data: unknown }[]): (Named | undef
 }
 
 /**
- * Go back along the drill by some number of levels.
- * @param steps How many levels.
- * @param onBack Go back one level.
- * @returns The way back.
- */
-function backBy(steps: number, onBack: () => void): () => void {
-	return (): void => {
-		for (let step = 0; step < steps; step += 1) onBack();
-	};
-}
-
-/**
  * The boards above the one on screen, outermost first, each a way to it.
  * @param placeOf The boards above one as the navigator places them, when the shell can say.
  * @param drill The board on screen, and how the pane got there.
- * @param onBack Go back one level.
+ * @param onBackTo Go back to the board at this depth of the trail.
  * @returns The places.
  */
 function useDrillPlaces(
 	placeOf: ((board: string) => readonly BoardPlace[]) | undefined,
 	drill: Pick<DrillNavigation, "board" | "trail">,
-	onBack: () => void,
+	onBackTo: (depth: number) => void,
 ): readonly BoardPlace[] {
 	const { board, trail } = drill;
 	const names = useQueries({
@@ -75,10 +63,12 @@ function useDrillPlaces(
 		const passed = trail.map((stop, at) => ({
 			name: names[at]?.name ?? stop.board,
 			level: names[at]?.level,
-			open: backBy(trail.length - at, onBack),
+			open: (): void => {
+				onBackTo(at);
+			},
 		}));
 		return [...(placeOf?.(own) ?? []), ...passed];
-	}, [placeOf, board, trail, names, onBack]);
+	}, [placeOf, board, trail, names, onBackTo]);
 }
 
 export { useDrillPlaces };

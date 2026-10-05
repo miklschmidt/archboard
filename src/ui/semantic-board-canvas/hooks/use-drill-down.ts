@@ -38,10 +38,11 @@ interface DrillNavigation {
 	 * @param variant A variant id or name, or undefined for its current one.
 	 */
 	readonly open: (board: string, variant: string | undefined) => void;
-	/** Go back one level. */
-	readonly back: () => void;
-	/** Go back to the board the pane was opened on. */
-	readonly home: () => void;
+	/**
+	 * Go back to one of the boards of the trail.
+	 * @param depth Where it is in the trail: 0 is the board the pane was opened on.
+	 */
+	readonly backTo: (depth: number) => void;
 }
 
 /**
@@ -69,11 +70,8 @@ function useDrillDown(board: string, variant: string | undefined): DrillNavigati
 	const open = useCallback((target: string, asked: string | undefined): void => {
 		setStack((current) => [...current, { board: target, variant: asked }]);
 	}, []);
-	const back = useCallback((): void => {
-		setStack((current) => current.slice(0, -1));
-	}, []);
-	const home = useCallback((): void => {
-		setStack([]);
+	const backTo = useCallback((depth: number): void => {
+		setStack((current) => current.slice(0, depth));
 	}, []);
 
 	return useMemo(() => {
@@ -83,10 +81,9 @@ function useDrillDown(board: string, variant: string | undefined): DrillNavigati
 			variant: here === undefined ? variant : here.variant,
 			trail: stack.length === 0 ? [] : [{ board, variant }, ...stack.slice(0, -1)],
 			open,
-			back,
-			home,
+			backTo,
 		};
-	}, [stack, board, variant, open, back, home]);
+	}, [stack, board, variant, open, backTo]);
 }
 
 export { type DrillNavigation, type DrillStop, useDrillDown };

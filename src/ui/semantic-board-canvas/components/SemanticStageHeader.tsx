@@ -24,8 +24,11 @@ interface StageHeaderView {
 	readonly render: { readonly data: SemanticRender | undefined };
 	/** Which board the pane is looking at, and how it got there. */
 	readonly drill: Pick<DrillNavigation, "board" | "trail">;
-	/** Go back a level. */
-	readonly onBack: () => void;
+	/**
+	 * Go back to one of the boards the reader came down through.
+	 * @param depth Where it is in the trail: 0 is the board the pane was opened on.
+	 */
+	readonly onBackTo: (depth: number) => void;
 	/**
 	 * The boards above one, outermost first, as the navigator places them.
 	 * @param board The board on screen.
@@ -71,7 +74,7 @@ function headerFacts(
 function StageHeader(props: { readonly view: StageHeaderView }): JSX.Element {
 	const { view } = props;
 	const facts = useMemo(() => headerFacts(view.reading), [view.reading]);
-	const ancestors = useDrillPlaces(view.placeOf, view.drill, view.onBack);
+	const ancestors = useDrillPlaces(view.placeOf, view.drill, view.onBackTo);
 	return (
 		<PaneHeader
 			{...facts}
