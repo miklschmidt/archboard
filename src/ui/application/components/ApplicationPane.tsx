@@ -30,6 +30,7 @@ import {
 } from "@/ui/pane-session/workbench-socket";
 import {
 	boardAddressOf,
+	NoBoardHeader,
 	SemanticBoardStage,
 	type SelectedSubject,
 	type SemanticBoardStageProps,
@@ -230,7 +231,9 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 			ref={attachStage}
 			className="relative flex min-h-0 min-w-0 flex-1 flex-col"
 		>
-			{address === null ? null : (
+			{address === null ? (
+				<NoBoard />
+			) : (
 				<PaneDiagram
 					address={address}
 					openCode={session.openCode}
@@ -242,6 +245,22 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 				/>
 			)}
 		</div>
+	);
+}
+
+/**
+ * A pane the server has pointed at no board, as in a vault with none or before
+ * the server first answers: the header row every pane has, which says so and
+ * keeps the pane's controls, its socket's trouble and a claim, over the ground
+ * an empty board is drawn on. The navigator says why there is no board.
+ * @returns The header and the empty ground.
+ */
+function NoBoard(): JSX.Element {
+	return (
+		<>
+			<NoBoardHeader />
+			<div className="bg-background min-h-0 flex-1" />
+		</>
 	);
 }
 

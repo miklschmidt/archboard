@@ -15,7 +15,9 @@
 // the board's pages. While the row is narrow (two panes), the tabs that are not
 // open keep only their marks and the middle of the breadcrumb folds behind one
 // control, never the board itself. The first of the controls at the end is the
-// pane's: it shows and hides the sidebar, which is the pane's too.
+// pane's: it shows and hides the sidebar, which is the pane's too. A pane the
+// server has pointed at no board keeps the same row: it says so, and keeps the
+// shell's letter, controls and notice.
 
 import {
 	RiArrowLeftRightLine,
@@ -27,7 +29,7 @@ import {
 	RiPlayCircleLine,
 	type RemixiconComponentType,
 } from "@remixicon/react";
-import { useCallback, type JSX } from "react";
+import { useCallback, type JSX, type ReactNode } from "react";
 
 import { cn } from "@/ui/components/class-names";
 import {
@@ -321,12 +323,16 @@ function PageTab(props: {
 }
 
 /**
- * The header of one pane, and under it what the shell says about the pane.
- * @param props The board, where the reader came from and the tabs.
+ * The row every pane's header is: the shell's letter and where the pane is at
+ * the start, what can be done at the end, and under the row what the shell
+ * says about the pane.
+ * @param props The two ends of the row.
+ * @param props.start Where the pane is.
+ * @param props.end What can be done, the shell's controls included.
  * @returns The header row.
  */
-function PaneHeader(props: PaneHeaderProps): JSX.Element {
-	const chrome = usePaneChrome();
+function HeaderRow(props: { readonly start: ReactNode; readonly end: ReactNode }): JSX.Element {
+	const { letter, notice } = usePaneChrome();
 	return (
 		<>
 			<header
@@ -334,21 +340,57 @@ function PaneHeader(props: PaneHeaderProps): JSX.Element {
 				className="bg-sidebar h-chrome shadow-edge-down after:bg-border @container/pane-header relative z-30 flex shrink-0 items-center pr-2 pl-4 after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px in-data-presenting:hidden"
 			>
 				<div className="mr-5 flex min-w-0 shrink items-center gap-3">
-					{chrome.letter}
-					<Breadcrumb {...props} />
+					{letter}
+					{props.start}
 				</div>
-				<div className="ml-auto flex h-full shrink-0 items-center gap-2">
-					<PageTabs tab={props.tab} onTab={props.onTab} counts={props.counts} />
-					<span aria-hidden="true" className="bg-border h-4 w-px shrink-0" />
-					<span className="flex shrink-0 items-center gap-1">
-						<SidebarToggle sidebar={props.sidebar} />
-						{chrome.controls}
-					</span>
-				</div>
+				<div className="ml-auto flex h-full shrink-0 items-center gap-2">{props.end}</div>
 			</header>
-			{chrome.notice}
+			{notice}
 		</>
 	);
 }
 
-export { PaneHeader, TABS, type BoardPlace, type BoardTab, type PaneHeaderProps };
+/**
+ * The header of one pane, and under it what the shell says about the pane.
+ * @param props The board, where the reader came from and the tabs.
+ * @returns The header row.
+ */
+function PaneHeader(props: PaneHeaderProps): JSX.Element {
+	const { controls } = usePaneChrome();
+	return (
+		<HeaderRow
+			start={<Breadcrumb {...props} />}
+			end={
+				<>
+					<PageTabs tab={props.tab} onTab={props.onTab} counts={props.counts} />
+					<span aria-hidden="true" className="bg-border h-4 w-px shrink-0" />
+					<span className="flex shrink-0 items-center gap-1">
+						<SidebarToggle sidebar={props.sidebar} />
+						{controls}
+					</span>
+				</>
+			}
+		/>
+	);
+}
+
+/**
+ * The header of a pane the server has pointed at no board, as in a vault with
+ * none: it says so, and keeps the shell's controls and what the shell says.
+ * @returns The header row.
+ */
+function NoBoardHeader(): JSX.Element {
+	const { controls } = usePaneChrome();
+	return (
+		<HeaderRow
+			start={
+				<h2 className="text-muted-foreground truncate text-[13px] leading-[18px] font-[650]">
+					No board
+				</h2>
+			}
+			end={controls}
+		/>
+	);
+}
+
+export { NoBoardHeader, PaneHeader, TABS, type BoardPlace, type BoardTab, type PaneHeaderProps };

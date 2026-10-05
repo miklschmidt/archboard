@@ -36,7 +36,7 @@ export {
 	type OverlayPlace,
 } from "@/ui/semantic-board-canvas/hooks/use-overlay-place";
 export { LevelMark, type LevelMarkProps } from "@/ui/semantic-board-canvas/components/LevelMark";
-export type { BoardPlace } from "@/ui/semantic-board-canvas/components/PaneHeader";
+export { NoBoardHeader, type BoardPlace } from "@/ui/semantic-board-canvas/components/PaneHeader";
 export {
 	boardAddressOf,
 	boardKeyFor,
