@@ -22,17 +22,24 @@ responsive layouts unless the user explicitly reverses this decision.
 
 ## Visual direction to preserve
 
-- Use the compact lowercase `archboard` wordmark without an icon tile.
-- Keep the canvas as the largest region. Chrome is flat, dense, and aligned to
-  a strict grid.
-- Give light and dark modes the same structure and hierarchy. Light mode uses
-  chalk white, pale stone, near-black text, cobalt selection, and an acid-lime
-  status accent. Dark mode uses deep charcoal, black panels, bone-white text,
-  and the same two accents.
-- Prefer one-pixel rules, small corner radii, and little or no shadow. Do not
-  introduce gradients, glow, or rounded dashboard cards.
+Revised 2026-10-05. The shell keeps the layout of the reference. Its colours,
+depth, faces and wordmark have moved on from the image, and
+[DESIGN.md](../../DESIGN.md) records them as built.
+
+- Set the `archboard` wordmark in the display face's tracked capitals beside
+  the gold peak mark, without an icon tile.
+- Keep the canvas as the largest region. Chrome is dense and aligned to a
+  strict grid.
+- Give light and dark modes the same structure and hierarchy. Both use warm
+  chalk and graphite neutrals, one gold for what is chosen, the one primary
+  action of a region, the voice and the brand mark, and acid lime for live
+  status.
+- Show depth with planes: a tone step, a highlight on the top edge and a warm,
+  still shadow. Keep corner radii small. The one gradient is the gold of a
+  primary action. Do not introduce glow or rounded dashboard cards.
 - Pair a neutral sans serif with monospaced secondary text for identifiers,
-  paths, versions, and timing.
+  paths, versions, and timing, and set a name that titles a region in the
+  display face.
 - Use a board navigator on the left (see [The navigator](#the-navigator)).
   Put one sidebar beside the picture of each pane for the board and the
   selection (see [The pane sidebar](#the-pane-sidebar)). Put the agent in one
@@ -460,8 +467,10 @@ to zero, and emits the byte-stable 85.7815×13.209 view box. The static source i
 deliberate: that version of `opentype.js` reads a variable font's `fvar` table
 but does not apply its `gvar` deltas to the paths that it generates. The SVG contains
 only safe metadata and the `currentColor` path. It contains no text, image, script, event,
-external reference, or runtime font dependency. The shell consumes it as a CSS
-mask and gives the mark the accessible name `archboard`.
+external reference, or runtime font dependency. The shell no longer draws
+this path: the brand bar sets the wordmark as text in the display face
+(`src/ui/shell/components/Brand.tsx`). The README banner still lays the path
+over its art (`scripts/readme-assets/banner.ts`).
 
 ## Verification standard
 
