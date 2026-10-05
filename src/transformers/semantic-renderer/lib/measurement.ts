@@ -317,6 +317,18 @@ const FAR_LINES = 2;
  */
 const FAR_ONE_LINE_SHARE = 0.85;
 
+/**
+ * The box a far name stands in: a card, or a container's header. The mark of
+ * a part that opens another board stands in its top-right corner, grown with
+ * the chip, and the name keeps clear of it as the name drawn near does.
+ */
+interface FarBox {
+	readonly width: number;
+	readonly height: number;
+	/** Whether the mark of a part that opens another board stands in its corner. */
+	readonly mark?: boolean;
+}
+
 /** A title a picture draws from far away: its text and the box it stands in. */
 interface FarSubject {
 	readonly name: string;
@@ -353,16 +365,10 @@ function sharedFarSize(subjects: readonly FarSubject[], lines: number): number {
  * drawn near.
  * @param name The name.
  * @param box The box it stands in.
- * @param box.width Its width.
- * @param box.height Its height.
  * @param lines The most lines it may take.
  * @returns The size.
  */
-function farSizeOf(
-	name: string,
-	box: { width: number; height: number },
-	lines: number = FAR_LINES,
-): number {
+function farSizeOf(name: string, box: FarBox, lines: number = FAR_LINES): number {
 	let low = TITLE.fontSize;
 	let high = Math.max(low, Math.min(FAR_MAX_SIZE, box.height * FAR_HEIGHT_SHARE));
 	while (high - low > 0.5) {
@@ -380,8 +386,6 @@ function farSizeOf(
  * container's stand at its header's start, as a heading does.
  * @param name The name.
  * @param box The box it stands in: a card, or a container's header.
- * @param box.width Its width.
- * @param box.height Its height.
  * @param place Its size, at most {@link farSizeOf} the box, and where the block stands.
  * @param place.size The name's size.
  * @param place.align Centred in the box, or at its start.
@@ -389,7 +393,7 @@ function farSizeOf(
  */
 function measureFarTitle(
 	name: string,
-	box: { width: number; height: number },
+	box: FarBox,
 	place: { size: number; align: "centre" | "start" },
 ): FarTitle {
 	const lines = farLines(name, box, place.size, FAR_LINES) ?? farWrap(name, box, place.size);
@@ -401,18 +405,11 @@ function measureFarTitle(
  * at most some lines, broken only between words.
  * @param name The name.
  * @param box The box it stands in.
- * @param box.width Its width.
- * @param box.height Its height.
  * @param size The name's size.
  * @param most The most lines it may take.
  * @returns The lines, or nothing when they do not fit.
  */
-function farLines(
-	name: string,
-	box: { width: number; height: number },
-	size: number,
-	most: number,
-): string[] | undefined {
+function farLines(name: string, box: FarBox, size: number, most: number): string[] | undefined {
 	const style = farStyle(size);
 	const lines = farWrap(name, box, size);
 	// At a size where one word is wider than the room, the wrap breaks it, which a far name never is.
@@ -430,12 +427,10 @@ function farLines(
  * the name drawn near would wrap: a word wider than the room breaks.
  * @param name The name.
  * @param box The box it stands in.
- * @param box.width Its width.
- * @param box.height Its height.
  * @param size The name's size.
  * @returns The lines.
  */
-function farWrap(name: string, box: { width: number; height: number }, size: number): string[] {
+function farWrap(name: string, box: FarBox, size: number): string[] {
 	const style = farStyle(size);
 	const prepared = prepare(name, style);
 	return layoutWithLines(
@@ -455,15 +450,16 @@ function farStyle(size: number): TextStyle {
 }
 
 /**
- * The width a far name has beside its chip at one size.
+ * The width a far name has beside its chip at one size, less the room for a
+ * mark in the box's corner, which grows with the chip.
  * @param box The box it stands in.
- * @param box.width Its width.
- * @param box.height Its height.
  * @param size The name's size.
  * @returns The width.
  */
-function farRoom(box: { width: number; height: number }, size: number): number {
-	return box.width - FAR_PADDING_X * 2 - farChip(box, size) - size * FAR_GAP;
+function farRoom(box: FarBox, size: number): number {
+	const chip = farChip(box, size);
+	const mark = box.mark === true ? (DRILL_MARK_ROOM * chip) / ICON_CHIP_SIZE : 0;
+	return box.width - FAR_PADDING_X * 2 - chip - size * FAR_GAP - mark;
 }
 
 /**
@@ -591,5 +587,6 @@ export {
 	measureFarTitle,
 	measureMessageLines,
 	measureNoteLines,
+	type FarBox,
 	type FarTitle,
 };
