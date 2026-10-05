@@ -40,7 +40,7 @@ shared component. Put both on a plain `className` string, or put the role on an 
 - `lib/agent-status.ts`: the agent's state in one line, from the first rule that applies.
 - `lib/plan-steps.ts`: the steps of the plan the dock lists, each done, now or next.
 - `lib/draft-store.ts`: the composer's draft, kept outside the composer so that it survives
-  the dock or the panel drawing again, and so that a suggestion can be put in it.
+  the conversation drawing again, and so that a suggestion can be put in it.
 
 ## Composer intent
 
