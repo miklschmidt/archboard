@@ -38,7 +38,7 @@ function key(voice: AgentVoiceView): { readonly button: HTMLElement; readonly pr
 
 test("voice is started from the key while it is off", () => {
 	const { button, pressed } = key(voiceIn("idle"));
-	expect(button.getAttribute("data-voice-controls")).toBe("talk");
+	expect(button.getAttribute("data-voice-key")).toBe("talk");
 	fireEvent.click(button);
 	expect(pressed).toEqual(["talk"]);
 });
@@ -46,7 +46,7 @@ test("voice is started from the key while it is off", () => {
 test("voice is ended from the key from the moment it connects, whatever it is doing", () => {
 	for (const stage of ["connecting", "listening", "speaking", "muted"] as const) {
 		const { button, pressed } = key(voiceIn(stage));
-		expect(button.getAttribute("data-voice-controls")).toBe("live");
+		expect(button.getAttribute("data-voice-key")).toBe("live");
 		fireEvent.click(button);
 		expect(pressed).toEqual(["endVoice"]);
 		cleanup();

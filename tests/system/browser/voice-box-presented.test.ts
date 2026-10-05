@@ -69,14 +69,14 @@ const PRESENTED = `(() => {
 	const voice = document.querySelector('[data-slot="voice-box"]');
 	const holder = document.querySelector('[data-slot="voice-orb-holder"]');
 	const narrate = box?.querySelector('[data-slot="semantic-presentation-narrate"]');
-	const key = document.querySelector('[data-slot="presentation-bar"] [data-voice-controls]');
+	const key = document.querySelector('[data-slot="presentation-bar"] [data-voice-key]');
 	return {
 		fullscreen: document.fullscreenElement !== null,
 		place: voice?.getAttribute('data-place') ?? null,
 		orbInBox: !!box && !!holder && box.contains(holder),
 		height: box ? Math.round(box.getBoundingClientRect().height) : 0,
 		narrateShown: !!narrate && getComputedStyle(narrate).visibility !== 'hidden',
-		bar: key?.getAttribute('data-voice-controls') ?? null,
+		bar: key?.getAttribute('data-voice-key') ?? null,
 		words: voice?.querySelector('[data-slot="voice-subtitles"]')?.getAttribute('data-showing') ?? null,
 	};
 })()`;
