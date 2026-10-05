@@ -21,9 +21,9 @@ import {
 import { SEMANTIC_STAGE, seedSemanticBoard } from "./support/semantic-page.ts";
 import { roleAction } from "./support/opener-settings-interaction.ts";
 import {
-	AGENT_DOCK,
 	AGENT_PANEL,
 	BOARD_NAME_EXPRESSION,
+	PANE_HEADER,
 	PANE_SECTIONS,
 	openConversation,
 	stageIsFullscreen,
@@ -31,6 +31,8 @@ import {
 import { emulateMedia } from "./support/shell-render-matrix.ts";
 import {
 	BAR_VOICE,
+	BOX_UNMUTE,
+	DOCK_MUTE,
 	DOCK_SUBTITLES,
 	DOCK_VOICE,
 	focusIs,
@@ -38,8 +40,9 @@ import {
 	saidLines,
 	subtitleSnapshot,
 	voiceNow,
+	voiceStill,
 } from "./support/voice-page.ts";
-import { openForVoice, startVoiceServer } from "./support/voice-box-page.ts";
+import { SUBTITLES_IN_BOX, openForVoice, startVoiceServer } from "./support/voice-box-page.ts";
 
 /** What the controlled session transcribes, as the fixture emits it. */
 const USER_SAID = "Show the controlled voice context.";
@@ -145,6 +148,13 @@ test(
 		expect(speaking.box).toBeNull();
 		// The keyboard keeps its place on the key that turned into the circle.
 		expect((await focusIs(browser, DOCK_VOICE))[0]).toBe(true);
+		// From the circle the keyboard reaches mute and then the subtitles control. The dock's grid
+		// places its parts, so only their order in the page keeps the keyboard in step with the eye.
+		for (const control of [DOCK_MUTE, DOCK_SUBTITLES]) {
+			await browser.run(["press", "Tab"]);
+			expect(await focusIs(browser, control)).toEqual([true, false]);
+			expect((await workbenchControlOperability(browser, control)).operable).toBe(true);
+		}
 		// The wire, in order: the coordinator and then the workhorse are created, the
 		// conversation reads the workhorse as the tab's linked thread, voice starts on the
 		// coordinator, and the coordinator is given the board catalogue this voice session
@@ -207,7 +217,7 @@ test(
 		);
 
 		// Mute in the dock's voice line silences the microphone and nothing else.
-		await browser.run(["click", `${AGENT_DOCK} button[aria-label="Mute"]`]);
+		await browser.run(["click", DOCK_MUTE]);
 		await pollUntil(
 			() => voiceNow(browser),
 			(value) => value.state === "muted",
@@ -244,13 +254,19 @@ test(
 		expect(await stageIsFullscreen(browser)).toBe(true);
 		expect(presented.box).toMatchObject({ place: "free", state: "muted" });
 		expect(presented.orb).toBe("box");
+		// The presented pane is the picture alone: its header and its sidebar step out of it.
+		expect(
+			await browser.eval<readonly [number, number]>(`(() => {
+				const chrome = [...document.querySelectorAll('${PANE_SECTIONS} ${PANE_HEADER}, ${PANE_SECTIONS} [data-slot="semantic-sidebar"]')];
+				return [chrome.length, chrome.filter(node => node.checkVisibility()).length];
+			})()`),
+		).toEqual([2, 0]);
+		// The bar's key and the keys at the end of the voice box over the picture can be pressed.
 		for (const scale of ["1", "2"]) {
 			await browser.run(["set", "viewport", "1920", "1080", scale]);
-			expect(await workbenchControlOperability(browser, BAR_VOICE)).toMatchObject({
-				clipped: false,
-				centerHit: true,
-				operable: true,
-			});
+			for (const control of [BAR_VOICE, BOX_UNMUTE, SUBTITLES_IN_BOX]) {
+				expect((await workbenchControlOperability(browser, control)).operable).toBe(true);
+			}
 		}
 		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 		const releaseForcedColors = await emulateMedia(browser, "light", "forced-colors");
@@ -265,8 +281,24 @@ test(
 		} finally {
 			await releaseForcedColors();
 		}
+		// The browser's wish for less motion reaches the voice: the voice box holds still.
+		const releaseReduced = await emulateMedia(browser, "light", "reduced-motion");
+		try {
+			await pollUntil(
+				() => voiceStill(browser),
+				Boolean,
+				"the voice box to hold still for a person who asked for less motion",
+			);
+		} finally {
+			await releaseReduced();
+		}
 		const releaseNormal = await emulateMedia(browser, "light", "normal");
 		await releaseNormal();
+		await pollUntil(
+			() => voiceStill(browser),
+			(still) => !still,
+			"the voice box to move again once motion is allowed",
+		);
 
 		// From the keyboard, the bar's key ends voice and releases the browser's media, then offers
 		// Talk again. The key that read End voice is the key that reads Talk, so the keyboard keeps
