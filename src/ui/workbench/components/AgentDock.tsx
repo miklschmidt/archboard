@@ -22,7 +22,7 @@ import { RiChat3Line } from "@remixicon/react";
 import { useRef, type CSSProperties, type JSX } from "react";
 
 import { AGENT_ELAPSED_TICK_MS, SHELL_AGE_TICK_MS } from "@/shared/timing/timing";
-import { VOICE_MORPH_MS, VOICE_SEAT_OUT_MS } from "@/shared/timing/voice";
+import { DOCK_WASH_MS, VOICE_MORPH_MS, VOICE_SEAT_OUT_MS } from "@/shared/timing/voice";
 import { cn } from "@/ui/components/class-names";
 import { useClock } from "@/ui/components/use-clock";
 import { useOrbOffered, useOrbPlacement } from "@/ui/voice-orb";
@@ -42,10 +42,14 @@ import { shownSteps, stepsOf, type CardStep } from "@/ui/workbench/lib/plan-step
 /** Where the words saying why voice cannot start are. */
 const VOICE_PROBLEM_ID = "voice-problem";
 
-/** How long the dock takes to turn between its layouts and to let go of an empty seat, for the stylesheet that eases them. */
+/**
+ * How long the dock takes to turn between its layouts, to let go of an empty seat and to light up
+ * while the agent works, for the stylesheet that eases them.
+ */
 const DOCK_STYLE: CSSProperties = {
 	"--voice-morph-ms": `${VOICE_MORPH_MS}ms`,
 	"--voice-seat-out-ms": `${VOICE_SEAT_OUT_MS}ms`,
+	"--dock-wash-ms": `${DOCK_WASH_MS}ms`,
 };
 
 /** Inputs for the dock. */

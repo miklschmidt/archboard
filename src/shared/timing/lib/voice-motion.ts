@@ -2,7 +2,7 @@
 // the voice circle, the circle lighting, and the light following the model's
 // speech. And how long the voice takes to move between the dock and the voice
 // box over a pane's picture, and what the words in that box do as they come and
-// go.
+// go. And how long the dock takes to light up while the agent works.
 //
 // A person watches every one of these and nobody waits one out, so what they
 // pull against is attention and the ear. Too slow and the circle lags what the
@@ -162,6 +162,13 @@ const VOICE_FLIGHT_MS = 680;
 const VOICE_SEAT_OUT_MS = 90;
 
 /**
+ * How long the dock's wash in the status colour takes to come up while the agent works, and to go
+ * once it stops. Pulls against the status line it lights, which changes at once: much slower and
+ * the light lags the word, much faster and a short turn makes the dock flicker.
+ */
+const DOCK_WASH_MS = 360;
+
+/**
  * How long the voice box takes to arrive over the picture: its glass rises and
  * fades in while the orb is still on its way, so the socket is there to receive
  * it. Pulls against the flight: the box must be seen before the orb lands in it,
@@ -218,6 +225,7 @@ const SUBTITLE_BACK_MS = 120;
 const VOICE_WORD_IN_MS = 300;
 
 export {
+	DOCK_WASH_MS,
 	SUBTITLE_BACK_MS,
 	SUBTITLE_OUT_MS,
 	SUBTITLE_SWAP_MS,

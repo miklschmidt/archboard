@@ -5,6 +5,7 @@
 // each duration pulls against.
 
 export {
+	DOCK_WASH_MS,
 	SUBTITLE_BACK_MS,
 	SUBTITLE_OUT_MS,
 	SUBTITLE_SWAP_MS,
