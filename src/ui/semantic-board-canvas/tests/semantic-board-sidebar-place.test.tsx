@@ -208,7 +208,16 @@ test("the search shortcut shows an away sidebar in the pane with focus and takes
 	pressSearchShortcut();
 	await settle();
 	expect(placeNow()).toBe("floating");
-	expect(document.activeElement?.getAttribute("role")).toBe("combobox");
+	const field = document.activeElement;
+	expect(field?.getAttribute("role")).toBe("combobox");
+
+	// Escape in the empty field lets go of the field and puts the float away, and
+	// the keyboard goes back to the control, not to the body of the page.
+	act(() => {
+		fireEvent.keyDown(field ?? document.body, { key: "Escape" });
+	});
+	expect(part("semantic-sidebar-toggle").getAttribute("aria-expanded")).toBe("false");
+	expect(focusedSlot()).toBe("semantic-sidebar-toggle");
 });
 
 test("the search shortcut is for the pane with focus alone", async () => {
