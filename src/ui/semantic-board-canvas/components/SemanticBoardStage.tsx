@@ -67,6 +67,12 @@ interface SemanticBoardStageProps {
 	/** A variant id or name; the board's current variant when absent. */
 	variant?: string | undefined;
 	/**
+	 * Which time the pane has been pointed at a board, when the shell counts. A
+	 * new count leaves a drill-down even when the board and the variant did not
+	 * change: the pane was pointed back at the board it was opened on.
+	 */
+	arrival?: number | undefined;
+	/**
 	 * Which of the board's named views to read it through, or nothing for the
 	 * whole variant. Reading is not writing: this changes what the pane asks the
 	 * server to draw and touches no board.
@@ -203,7 +209,7 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	const { resting, ...stage } = props;
 	const { board, variant, onSelect, onUserChanged } = props;
 	const [comparison, onComparisonChange] = useState(true);
-	const drill = useDrillDown(board, variant);
+	const drill = useDrillDown(board, variant, props.arrival);
 	// How the board on screen is read: the shell's answer for the pane's own
 	// board, and this pane's own for a level somebody drilled into, where there
 	// is no address to hold it and the ids from the level above mean nothing.

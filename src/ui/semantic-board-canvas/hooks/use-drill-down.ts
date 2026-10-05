@@ -51,21 +51,29 @@ interface DrillNavigation {
  * The stack is emptied whenever the pane itself is pointed somewhere else,
  * because at that moment the trail is a history of a different pane: the shell
  * decided what this one shows, and a back button leading to the board somebody
- * was reading before that would be lying about where they came from.
+ * was reading before that would be lying about where they came from. Pointed
+ * back at the board it was opened on, the pane's board and variant stay as they
+ * were, so a new arrival says so.
  * @param board The board the pane was opened on.
  * @param variant The variant the pane was opened on, if it named one.
+ * @param arrival Which time the pane has been pointed at a board, when the shell counts.
  * @returns The board on screen, the trail behind it, and the moves.
  */
-function useDrillDown(board: string, variant: string | undefined): DrillNavigation {
+function useDrillDown(
+	board: string,
+	variant: string | undefined,
+	arrival: number | undefined,
+): DrillNavigation {
 	const [stack, setStack] = useState<readonly DrillStop[]>([]);
-	const opened = useRef({ board, variant });
+	const opened = useRef({ board, variant, arrival });
 
 	useEffect(() => {
-		if (opened.current.board !== board || opened.current.variant !== variant) {
-			opened.current = { board, variant };
-			setStack([]);
+		const was = opened.current;
+		if (was.board !== board || was.variant !== variant || was.arrival !== arrival) {
+			opened.current = { board, variant, arrival };
+			setStack((current) => (current.length === 0 ? current : []));
 		}
-	}, [board, variant]);
+	}, [board, variant, arrival]);
 
 	const open = useCallback((target: string, asked: string | undefined): void => {
 		setStack((current) => [...current, { board: target, variant: asked }]);

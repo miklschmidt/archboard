@@ -236,11 +236,12 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 			) : (
 				<PaneDiagram
 					address={address}
+					arrival={session.arrivals}
 					openCode={session.openCode}
 					onReading={showReading}
 					onUserChanged={session.userChanged}
 					driven={props.step ?? asked}
-					openedKey={openedKey}
+					shown={onScreen?.board ?? null}
 					{...props}
 				/>
 			)}
@@ -268,6 +269,8 @@ function NoBoard(): JSX.Element {
 interface PaneDiagramProps extends ApplicationPaneProps {
 	/** The board and variant the pane is on. */
 	readonly address: SemanticTarget;
+	/** Which time the server has pointed the pane at a board, which leaves a drill-down. */
+	readonly arrival: number;
 	/**
 	 * Open the code a subject is bound to.
 	 * @param subjectId The semantic id.
@@ -285,8 +288,8 @@ interface PaneDiagramProps extends ApplicationPaneProps {
 	readonly onUserChanged: (part: SemanticPanePart) => void;
 	/** A walkthrough step somebody narrating it asked for, or the page recording it chose, or null. */
 	readonly driven: SemanticBoardStageProps["driven"];
-	/** The board key the server pointed this pane at. */
-	readonly openedKey: string | null;
+	/** The board on screen, the drilled-into one when there is one, or null before the stage says. */
+	readonly shown: string | null;
 }
 
 /**
@@ -303,7 +306,7 @@ interface PaneDiagramProps extends ApplicationPaneProps {
  */
 const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Element {
 	const { address, openCode, onPick, onUserChanged, onViewChange, picked, view } = props;
-	const { boards, outline, onOpenBoard, openedKey } = props;
+	const { boards, outline, onOpenBoard, shown } = props;
 	// Where a board sits, as the navigator places it: each board above, a way to it here.
 	const placeOf = useCallback(
 		(board: string) =>
@@ -325,16 +328,13 @@ const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Elem
 		},
 		[onPick, onUserChanged],
 	);
+	// The search picks on the board on screen, which after a drill-down is not the
+	// one the server pointed the pane at.
 	const search = useMemo(
 		() => (
-			<PartSearchHost
-				boards={boards}
-				boardKey={openedKey}
-				onPick={onFound}
-				onOpenBoard={onOpenBoard}
-			/>
+			<PartSearchHost boards={boards} shown={shown} onPick={onFound} onOpenBoard={onOpenBoard} />
 		),
-		[boards, openedKey, onFound, onOpenBoard],
+		[boards, shown, onFound, onOpenBoard],
 	);
 	// The stage calls these from a click or a key and from nothing else: a walkthrough step
 	// highlights its subjects and reads through its own view without going through either, and
@@ -362,6 +362,7 @@ const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Elem
 		<SemanticBoardStage
 			board={address.board}
 			variant={address.variant}
+			arrival={props.arrival}
 			onVariantChange={props.onVariantChange}
 			view={view === null ? undefined : view}
 			onViewChange={onView}
