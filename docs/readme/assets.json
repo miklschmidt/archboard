@@ -4,20 +4,33 @@
 		{
 			"name": "banner",
 			"kind": "art",
-			"codex": true,
+			"codex": false,
 			"command": "bun run readme:assets banner",
 			"files": [
-				"docs/assets/archboard-banner-history-dark.png",
-				"docs/assets/archboard-banner-history-light.png",
 				"docs/readme/banner-dark.webp",
-				"docs/readme/banner-light.webp"
+				"docs/readme/banner-light.webp",
+				"docs/assets/archboard-social-card.jpg"
 			],
 			"sources": [
-				"src/ui/shell/assets/archboard-wordmark.svg",
+				"examples/web-shop/Web shop.semantic.json",
+				"examples/web-shop/.archboard/config.yaml",
+				"src/transformers/semantic-renderer",
+				"src/runtime/semantic-renderer",
+				"src/runtime/semantic-rasterizer",
+				"src/shared/code-target",
+				"src/shared/ids",
+				"src/shared/semantic-board",
+				"src/shared/semantic-policy",
+				"src/shared/shell-geometry",
+				"src/shared/theme",
+				"src/shared/timing",
+				"src/ui/shell/assets/fonts/*.ttf",
+				"src/ui/shell/components/Brand.tsx",
 				"scripts/readme-assets/banner.ts",
+				"scripts/readme-assets/lockup.ts",
 				"scripts/readme-assets/browser.ts"
 			],
-			"hash": null
+			"hash": "b4f6479c2f21bb9e6e5e09cedfb1b91c99b4319ae09276de8620ba2c85e7736e"
 		},
 		{
 			"name": "hero",
@@ -40,7 +53,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "61102a2f7a363081a61ffb0569b65539bf7b334ca0ac8db71fa489ec64a291fa"
+			"hash": "9f3c3be4715b8a8f786c442385c3ac651aec86c85a456d89e67166d1b690db20"
 		},
 		{
 			"name": "explainer",
@@ -60,7 +73,7 @@
 				"src/server/archboard/lib/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts"
 			],
-			"hash": null
+			"hash": "d8fd2b1593523d1c3aadc6190ab38f94cd38f342aed88c8e18e57767926a0bfa"
 		},
 		{
 			"name": "plan",
@@ -79,7 +92,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "a365b08d994ac329f984eb261f0401958217134ad2500bd6cf7a8105730b7a5b"
+			"hash": "19cdf1bd4b929d063c7508e6af42de50939e75fcfdec398e20707501df0cf7bc"
 		},
 		{
 			"name": "history",
@@ -100,7 +113,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "b744472600785c526b119d8847cc7c6b9a8f1d310ebe6343a38a7cfd8aa58464"
+			"hash": "c59cf9c7e729c8d291678a103cc19a0ed4f2293843f605e82204dbe71c9b5648"
 		},
 		{
 			"name": "pr-walkthrough",
@@ -120,7 +133,7 @@
 				"scripts/readme-assets/narrated.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": null
+			"hash": "dc4f8841a372f1c52560b2de8cdd56a9c300aea44f0c0a6d696a32d411ac37d7"
 		},
 		{
 			"name": "sequence",
@@ -149,7 +162,7 @@
 				"scripts/readme-assets/svg.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "dfd621a8d3aa8d1b2394146712046881f3acaf23a1fc9ed7663910356f399ac5"
+			"hash": "a203483f7c00d60f9acaa686404be6904b368b065ade1f6ab662641012d54b92"
 		},
 		{
 			"name": "newcomer",
@@ -169,7 +182,7 @@
 				"scripts/readme-assets/narrated.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": null
+			"hash": "dc4f8841a372f1c52560b2de8cdd56a9c300aea44f0c0a6d696a32d411ac37d7"
 		},
 		{
 			"name": "drill-down",
@@ -188,7 +201,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "b732f1bf345c7547e91e3a25972ab9b758ecd4f9a6bd2cfa6e4d89835d7082c8"
+			"hash": "d6a513c60a4f35fc849cb3a664ce81849c2535bbac752a3f853d45ba20ef0a27"
 		},
 		{
 			"name": "ask",
@@ -207,7 +220,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": null
+			"hash": "8bb84daf9fcff46998e9c6e6ffda1dc26b97f78c2b04bed9f9b1f38b211dd163"
 		},
 		{
 			"name": "take-back",
@@ -229,7 +242,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "2688a5b8e3c75c87b86a47cab08d5b8506383b782dd1dbecc08e94ccd6b7e0f7"
+			"hash": "afb32681e91ecb1ea9091b9758703e1e6296c8c05fb09bfb94ed7a7ab23a056f"
 		},
 		{
 			"name": "web-shop",
@@ -258,7 +271,7 @@
 				"scripts/readme-assets/svg.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "dfd621a8d3aa8d1b2394146712046881f3acaf23a1fc9ed7663910356f399ac5"
+			"hash": "a203483f7c00d60f9acaa686404be6904b368b065ade1f6ab662641012d54b92"
 		},
 		{
 			"name": "architecture",
@@ -281,7 +294,7 @@
 				"src/ui/shell/assets/fonts",
 				"scripts/readme-assets/svg.ts"
 			],
-			"hash": "386d8eb6fe882b6df41b13e74a9ae1457b93463efb935b6b116833c0de41459e"
+			"hash": "d9cae7a86b00785369f7fdcce22a5140a56231810974799e5305970d72403185"
 		}
 	]
 }

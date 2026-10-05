@@ -28,19 +28,39 @@ const FAST_WAIT_SECONDS = 7;
 const ANSWER_MS = 240_000;
 
 /**
- * Wait until the agent dock knows whether Codex is signed in, and refuse when it is not or when
- * Codex could not start.
- * @param page The shell.
- * @throws {Error} When Codex is not signed in or is unavailable, before anything is spent.
+ * A script for the page that shows a person's home directory as `~`: the agent's activity rows
+ * name the shell it runs commands in, by its whole path, and a clip in a public README should not
+ * carry the name of whoever filmed it.
  */
-async function requireSignedIn(page: Page): Promise<void> {
-	const status = String(
-		await page.waitFor(
-			`(() => { const s = ${STATUS}; return s === "" || s.startsWith("Connecting") || s.startsWith("Starting") ? null : s; })()`,
-			"the agent dock's status",
-			60_000,
-		),
-	);
+const SCRUB_HOME = `(() => {
+	const home = /\\/home\\/[^/\\s]+/g;
+	const scrub = () => {
+		const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+		for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+			if (node.nodeValue !== null && /\\/home\\/[^/\\s]+/.test(node.nodeValue)) {
+				node.nodeValue = node.nodeValue.replace(home, "~");
+			}
+		}
+	};
+	new MutationObserver(scrub).observe(document.body, { childList: true, subtree: true, characterData: true });
+	scrub();
+})()`;
+
+/** How long the dock may take to settle on a status or on none. */
+const SETTLE_MS = 90_000;
+
+/** How many looks in a row must find the dock's status empty before the agent counts as ready. */
+const READY_LOOKS = 8;
+
+/** How long to wait between two looks at the dock's status. */
+const LOOK_MS = 500;
+
+/**
+ * Refuse a status that says Codex is not signed in or could not start.
+ * @param status What the agent dock says.
+ * @throws {Error} When the status says so, before anything is spent.
+ */
+function refuse(status: string): void {
 	if (status.startsWith("Sign in") || status.startsWith("Finish signing in")) {
 		throw new Error(
 			"Codex is not signed in on this machine's Archboard. Sign in from the agent dock of any Archboard server, then run this again.",
@@ -49,6 +69,31 @@ async function requireSignedIn(page: Page): Promise<void> {
 	if (status.startsWith("Codex is unavailable")) {
 		throw new Error(`The agent dock says: ${status}. Nothing was asked, so nothing was spent.`);
 	}
+}
+
+/**
+ * Look at the agent dock's status until it says what is wrong, or until it has said nothing for a
+ * while: a signed-in agent that is ready says nothing, because the keys say it.
+ * @param page The shell.
+ * @param quiet How many looks in a row have found the status empty.
+ * @param deadline When to give up, as a timestamp.
+ * @returns Once the agent is ready.
+ * @throws {Error} When Codex is not signed in or is unavailable, or when the dock never settles.
+ */
+async function requireSignedIn(
+	page: Page,
+	quiet = 0,
+	deadline = Date.now() + SETTLE_MS,
+): Promise<void> {
+	const status = String(await page.evaluate(STATUS).catch(() => ""));
+	refuse(status);
+	const calm = status === "" ? quiet + 1 : 0;
+	if (calm >= READY_LOOKS) return;
+	if (Date.now() > deadline) {
+		throw new Error(`The agent dock never settled: its status read "${status}".`);
+	}
+	await Bun.sleep(LOOK_MS);
+	return requireSignedIn(page, calm, deadline);
 }
 
 const ask: Producer = {
@@ -73,6 +118,7 @@ const ask: Producer = {
 				cursor: true,
 			});
 			await page.atRest();
+			await page.evaluate(SCRUB_HOME);
 			await requireSignedIn(page);
 			const open = "button[aria-label='Open the conversation']";
 			if (await page.evaluate(`!!document.querySelector("${open}")`)) await page.click(open);

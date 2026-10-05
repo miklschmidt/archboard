@@ -13,9 +13,10 @@ Open Font License 1.1; the exact license texts sit beside the binaries.
   [`838e8c6`](https://github.com/simpals/onest/commit/838e8c63a8e9efd5cb81cddcc7ffacb15bd9a596).
   SHA-256:
   `3faa4b905661849b2332e394b42f91b5bf5575e553c516caa81811e868a4d589`.
-- `Onest-Medium-v1.000.ttf` is the deterministic wordmark-outline source from
-  the official
-  [`1.000` release](https://github.com/simpals/onest/releases/tag/1.000).
+- `Onest-Medium-v1.000.ttf` is the static Medium face, from the official
+  [`1.000` release](https://github.com/simpals/onest/releases/tag/1.000). The
+  renderer draws the weight 500 of a diagram with it
+  (`src/transformers/semantic-renderer/lib/fonts.ts`).
   SHA-256:
   `c3014cae121488aea22ae5b50b584db332f130189be95217edf57469ef297cec`.
 - `OFL-Onest-1.1.txt` is the upstream license text, normalized to LF line
@@ -26,9 +27,9 @@ Open Font License 1.1; the exact license texts sit beside the binaries.
 
 The official static release has no SemiBold file. The variable runtime file is
 therefore required for the application weights 400, 500, 600, and 700. The
-separate static Medium file exists because `opentype.js` 1.3.4 reads the
-variable font's `fvar` table but does not apply `gvar` deltas while generating
-paths. It is byte-pinned to the same 1.000 design and is not loaded by the app.
+separate static Medium file is the diagrams' weight 500, byte-pinned to the same
+1.000 design. The shell's stylesheet does not register it. A pane loads it only
+to draw a diagram, from the server's `/assets/diagram-fonts`.
 
 ## DM Mono 1.000
 
@@ -60,9 +61,9 @@ sentence still uses Onest.
   Google Fonts added this file in commit `94ee6b8` and has not changed it since.
   Its name table says Version 2.002, as that commit's description does. SHA-256:
   `60e208dc276a1c35fc5b62e94f9fb959c40c11783a9eb7548175c14b1fbeb720`.
-  A name set as the title of what a region is about (a pane's board, a picked
-  part, a variant, a walkthrough) in tracked capitals, and the lowercase
-  archboard wordmark.
+  A name set as the title of what a region is about (a picked part, a variant,
+  a walkthrough) in tracked capitals, and the archboard wordmark, set in tracked
+  capitals as well.
 - `OFL-BigShouldersDisplay-1.1.txt` is the upstream license text, normalized to
   LF line endings with trailing whitespace removed, from the
   [OFL file](https://github.com/google/fonts/blob/7d86539c3e24d8ea2cae7b3ff04c64250dca99c5/ofl/bigshouldersdisplay/OFL.txt)

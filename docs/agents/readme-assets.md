@@ -18,7 +18,7 @@ bun run readme:assets --codex             # make every asset
 An asset is stale when the kit never made it, when its sources changed since
 it was made, or when one of its files is missing. The hash covers the content
 of every file the asset's sources name, tracked or new, except files under a
-`tests` directory. `readme:check` also reports a source that names no file and
+`tests` directory and Markdown files. `readme:check` also reports a source that names no file and
 a file in `docs/readme` that no asset makes. It is not part of `bun run check`:
 a stale README is listed, and it does not fail the gate.
 
@@ -36,12 +36,19 @@ Refresh an asset when `readme:check` lists it after your change. Then:
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------- | ----- |
 | `architecture`, `sequence`, `web-shop`               | `semantic render` in light and dark, faces cut to the characters drawn; two add a thumbnail | no    |
 | `hero`, `plan`, `history`, `drill-down`, `take-back` | the real shell filmed in headless Chromium while the CLI writes, encoded to WebP            | no    |
-| `ask`                                                | the shell filmed while a Codex agent answers a question in the agent dock                   | yes   |
+| `ask`                                                | the shell filmed while a Codex agent answers a question typed into the conversation         | yes   |
 | `explainer`, `pr-walkthrough`, `newcomer`            | `semantic record`, narrated by the Codex voice; the loop and thumbnail are cut from it      | yes   |
-| `banner`                                             | Codex image generation, with the wordmark laid over it                                      | yes   |
+| `banner`                                             | `semantic rasterize` of a web-shop proposal, laid beside the lockup in Chromium             | no    |
 
 Most assets also write an index thumbnail (`idx-*.webp`). The manifest lists
 the files of each asset. `explainer` writes nothing in the repository.
+
+The banner's lockup, the mark beside the name, comes from
+`scripts/readme-assets/lockup.ts`. A test in the repository lane holds that mark
+to the one the shell draws in `src/ui/shell/components/Brand.tsx`. The banner
+also writes `docs/assets/archboard-social-card.jpg`, GitHub's social preview, cut
+from the dark banner. GitHub does not read it from the repository: the owner
+uploads it by hand under Social preview in the repository's settings.
 
 The clips are filmed over fresh copies of the tracked files of
 `examples/web-shop` or `.archboard/vault`, never over a vault from elsewhere.
@@ -57,13 +64,9 @@ the account's Codex usage.
   the machine's Archboard Codex sign-in. If Codex is not signed in, they stop
   before anything is spent. Sign in from the agent dock of any Archboard server.
 - The narrated MP4s stay in the scratch directory. GitHub plays a video with
-  sound only from an attachment, so upload each MP4 through GitHub's editor and
-  put its new address in `README.md` by hand.
-- `banner` runs `codex exec` with the image tool, with your own Codex CLI
-  sign-in (`CODEX_HOME`, by default `~/.codex`). Its prompts are kept outside
-  the repository: `ARCHBOARD_README_BANNER_PROMPTS` names a directory that holds
-  `dark.txt` and `light.txt`. The light prompt edits the dark art. The art is
-  not reproducible, so the PNGs in `docs/assets` are the canonical art.
+  sound only from an attachment, so run `gh attach <file>.mp4` (the
+  `joseustra/gh-attach` extension, which uploads to the current repository) and
+  put the address it prints in `README.md`.
 
 ## What the kit needs
 
