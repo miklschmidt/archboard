@@ -131,8 +131,6 @@ interface SemanticBoardStageProps {
 	 * at the top of the sidebar, where the part it finds is explained.
 	 */
 	search?: ReactNode;
-	/** Whether this pane has focus, which is the pane the search's shortcut reaches. */
-	focused?: boolean | undefined;
 	/**
 	 * The boards above one, outermost first, as the navigator places them, each
 	 * a way to it in this pane: the header's breadcrumb.
