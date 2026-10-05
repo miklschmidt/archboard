@@ -36,7 +36,7 @@ Refresh an asset when `readme:check` lists it after your change. Then:
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------- | ----- |
 | `architecture`, `sequence`, `web-shop`               | `semantic render` in light and dark, faces cut to the characters drawn; two add a thumbnail | no    |
 | `hero`, `plan`, `history`, `drill-down`, `take-back` | the real shell filmed in headless Chromium while the CLI writes, encoded to WebP            | no    |
-| `ask`                                                | the shell filmed while a Codex agent answers a question in the agent dock                   | yes   |
+| `ask`                                                | the shell filmed while a Codex agent answers a question typed into the conversation         | yes   |
 | `explainer`, `pr-walkthrough`, `newcomer`            | `semantic record`, narrated by the Codex voice; the loop and thumbnail are cut from it      | yes   |
 | `banner`                                             | `semantic rasterize` of a web-shop proposal, laid beside the lockup in Chromium             | no    |
 
@@ -64,9 +64,9 @@ the account's Codex usage.
   the machine's Archboard Codex sign-in. If Codex is not signed in, they stop
   before anything is spent. Sign in from the agent dock of any Archboard server.
 - The narrated MP4s stay in the scratch directory. GitHub plays a video with
-  sound only from an attachment, so run `gh attach <file>.mp4` (the `gh-attach`
-  extension, which uploads to the current repository) and put the address it
-  prints in `README.md`.
+  sound only from an attachment, so run `gh attach <file>.mp4` (the
+  `joseustra/gh-attach` extension, which uploads to the current repository) and
+  put the address it prints in `README.md`.
 
 ## What the kit needs
 
