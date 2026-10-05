@@ -6,7 +6,6 @@
 import type { BrowserSnapshot, BrowserVoicePresentation } from "@/shared/codex-browser-model";
 import type { RealtimeMediaSnapshot } from "@/ui/codex-realtime";
 import type { BrowserWorkbenchMediaState } from "@/ui/codex-workbench-media";
-import type { VoiceControlsView } from "@/ui/voice-controls/contracts";
 import type { VoiceOutputLevelSource } from "@/ui/voice-output-level";
 import type { BrowserWorkbenchCapabilities, BrowserWorkbenchState } from "@/ui/workbench-transport";
 
@@ -196,8 +195,6 @@ interface VoiceSession {
 	 */
 	readonly level: () => number;
 	readonly subscribeLevel: (listener: () => void) => () => void;
-	/** The voice controls' inputs for the current view. */
-	readonly controlsView: () => VoiceControlsView;
 	/** Re-reads both authoritative sources and republishes if the view changed. */
 	readonly refresh: () => VoiceSessionView;
 	/**
