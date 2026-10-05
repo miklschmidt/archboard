@@ -1,7 +1,8 @@
 // What a pane's news draws again (TASK-385.05): who holds a board, what an agent
 // says it is doing and where agents work land in the pane records at the
 // application's root, and the shell shows them. The board stage shows none of
-// it, so it is not drawn again for any of it.
+// it, so it is not drawn again for any of it. Where agents work is shown in the
+// navigator alone, so the pane's header is not drawn again for it either.
 //
 // The application is mounted through its entrypoint, as the page mounts it, over
 // a server faked at the network: fetch, and a socket the test opens and speaks on.
@@ -148,17 +149,18 @@ async function settle(): Promise<void> {
 }
 
 /**
- * The props the board stage's element was last drawn with. React replaces them
- * only when it draws the stage again, so the same object means it was left as it was.
- * @returns The props, or undefined while there is no stage.
+ * The props one element of the pane was last drawn with. React replaces them
+ * only when it draws the element again, so the same object means it was left as it was.
+ * @param slot The element's slot: the board stage, or the pane's header.
+ * @returns The props, or undefined while there is no such element.
  */
-function stageDrawing(): unknown {
-	const stage = document.querySelector("[data-slot='semantic-board-stage']");
+function drawingOf(slot: string): unknown {
+	const element = document.querySelector(`[data-slot='${slot}']`);
 	const key =
-		stage === null
+		element === null
 			? undefined
-			: Object.keys(stage).find((name) => name.startsWith("__reactProps$"));
-	return stage === null || key === undefined ? undefined : Reflect.get(stage, key);
+			: Object.keys(element).find((name) => name.startsWith("__reactProps$"));
+	return element === null || key === undefined ? undefined : Reflect.get(element, key);
 }
 
 /** An agent's claim on the board, as the server announces it. */
@@ -212,13 +214,15 @@ test("a claim, an agent's doing, its activity and a pane status reach the shell 
 	expect(
 		document.querySelector("[data-slot='semantic-board-stage']")?.getAttribute("data-state"),
 	).toBe("drawn");
-	const drawn = stageDrawing();
+	const drawn = drawingOf("semantic-board-stage");
 	expect(drawn).toBeDefined();
 
 	act(() => socket.say({ type: "board_lock", board: "pipeline", held: true, holder: CLAIM }));
 	await settle();
 	expect(document.querySelector("[data-slot='claim-banner']")).not.toBeNull();
 	act(() => socket.say({ type: "board_doing", board: "pipeline", recent: [DOING] }));
+	await settle();
+	const header = drawingOf("pane-header");
 	act(() =>
 		socket.say({
 			type: "agent_activity",
@@ -227,6 +231,7 @@ test("a claim, an agent's doing, its activity and a pane status reach the shell 
 	);
 	await settle();
 	expect(document.querySelector("[data-slot='working-now']")).not.toBeNull();
+	expect(drawingOf("pane-header")).toBe(header);
 	act(() => socket.say({ type: "board_lock", board: "pipeline", held: false, holder: null }));
 	await settle();
 	expect(document.querySelector("[data-slot='claim-banner']")).toBeNull();
@@ -240,5 +245,5 @@ test("a claim, an agent's doing, its activity and a pane status reach the shell 
 	);
 	await settle();
 
-	expect(stageDrawing()).toBe(drawn);
+	expect(drawingOf("semantic-board-stage")).toBe(drawn);
 });
