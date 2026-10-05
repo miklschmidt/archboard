@@ -10,7 +10,7 @@
 //
 // Pure, and ids only, like the rest of the reading of connections.
 
-import type { Wiring } from "@/ui/semantic-board-canvas/lib/connections";
+import { subtreeOf, type Wiring } from "@/ui/semantic-board-canvas/lib/connections";
 
 /** Which way along the relationships a trace walks. */
 type Way = "onward" | "back";
@@ -25,26 +25,6 @@ interface Reach {
 	readonly hops: ReadonlyMap<string, number>;
 	/** How many parts other than the part itself, and what it holds, were reached. */
 	readonly parts: number;
-}
-
-/**
- * Every part inside a part, the part itself first.
- * @param nodes Every part of the variant.
- * @param id The part.
- * @returns Its ids.
- */
-function holdings(nodes: Wiring["nodes"], id: string): Set<string> {
-	const inside = new Set([id]);
-	for (let grew = true; grew;) {
-		grew = false;
-		for (const node of nodes) {
-			if (node.parent !== undefined && inside.has(node.parent) && !inside.has(node.id)) {
-				inside.add(node.id);
-				grew = true;
-			}
-		}
-	}
-	return inside;
 }
 
 /** A walk under way: what it walks over, which way, and how far it has got. */
@@ -101,7 +81,7 @@ function stepOnce(walk: Walk, frontier: ReadonlySet<string>, hop: number): Set<s
  * @returns How far each subject is, and how many parts that is.
  */
 function reachOf(wiring: Wiring, id: string, way: Way): Reach {
-	const start = holdings(wiring.nodes, id);
+	const start = subtreeOf(wiring.nodes, id);
 	const hops = new Map<string, number>([...start].map((one) => [one, 0]));
 	// A relationship between two parts of the part is its own content.
 	for (const edge of wiring.edges) {
