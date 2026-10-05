@@ -12,8 +12,6 @@ type PageEvaluator = Pick<AgentBrowserSession, "eval">;
 const STAGE_ROOT = '[data-slot="pane-stages"]';
 /** The breadcrumb in the header of the pane with focus: the boards above, the board, then the variant. */
 const BOARD_BREADCRUMB = 'section[aria-current="true"] nav[aria-label="Where this board sits"]';
-/** One pane's section, by its accessible name. */
-const paneSection = (label: string): string => `section[aria-label=${JSON.stringify(label)}]`;
 /** Every pane section. */
 const PANE_SECTIONS = 'section[aria-label^="Pane "]';
 /** A pane's top row: where its board sits, the ways to read it and the pane's controls. */
@@ -32,9 +30,6 @@ const NAVIGATOR_COLUMN = '[data-slot="navigator-column"]';
 const AGENT_PANEL = '[data-slot="agent-panel"]';
 /** The composer at the foot of the conversation. */
 const COMPOSER = 'textarea[aria-label="Message the agent"]';
-/** The dock's key that opens and closes the conversation. */
-const CONVERSATION_TOGGLE =
-	'button[aria-label="Open the conversation"], button[aria-label="Close the conversation"]';
 /** One notice, by its title. */
 const noticeByTitle = (title: string): string => `(() => {
 	const titles = [...document.querySelectorAll('[data-slot="alert"] [data-slot="alert-title"]')];
@@ -46,21 +41,10 @@ const SHELL_NOTICES = `[...document.querySelectorAll('[data-slot="alert"]')]
 	.filter(node => !node.closest('[role="dialog"], [role="alertdialog"]'))`;
 /** The presented pane's bar, present only during a presentation. */
 const PRESENTATION_BAR = '[data-slot="presentation-bar"]';
-/** The claim banner across one stage. */
-const CLAIM_BANNER = '[data-slot="claim-banner"]';
 
 /** A navigator row's name by the board key it selects (identity hook); a click on it opens the row. */
 const navigatorRow = (key: string): string =>
 	`${NAVIGATOR} [data-board-key=${JSON.stringify(key)}]`;
-
-/** A button by exact accessible name, searched within an optional scope. */
-const buttonNamed = (name: string, scope = "document"): string => `(() => {
-	const root = ${scope};
-	if (!root) return null;
-	const wanted = ${JSON.stringify(name)};
-	return [...root.querySelectorAll('button, a[role="button"]')].find(node =>
-		(node.getAttribute('aria-label') ?? node.textContent ?? '').trim() === wanted) ?? null;
-})()`;
 
 /** The board name the header of the pane with focus shows. */
 const BOARD_NAME_EXPRESSION = `document.querySelector('${BOARD_BREADCRUMB} [data-slot="pane-board-name"]')?.textContent?.trim() ?? null`;
@@ -140,20 +124,6 @@ function dismissNotice(browser: PageEvaluator, title: string): Promise<boolean> 
 	})()`);
 }
 
-/**
- * Dismiss the first shell notice, whatever its title.
- * @param browser The page.
- * @returns True when a notice was dismissed.
- */
-function dismissFirstNotice(browser: PageEvaluator): Promise<boolean> {
-	return browser.eval<boolean>(`(() => {
-		const dismiss = ${SHELL_NOTICES}[0]?.querySelector('button[aria-label^="Dismiss notice"]');
-		if (!dismiss) return false;
-		dismiss.click();
-		return true;
-	})()`);
-}
-
 /** One shell notice as an owner reads it. */
 interface ShellNoticeView {
 	title: string;
@@ -198,9 +168,7 @@ export {
 	BOARD_BREADCRUMB,
 	BOARD_NAME_EXPRESSION,
 	BRAND_BAR,
-	CLAIM_BANNER,
 	COMPOSER,
-	CONVERSATION_TOGGLE,
 	NAVIGATOR,
 	NAVIGATOR_COLUMN,
 	PANE_HEADER,
@@ -211,14 +179,11 @@ export {
 	STAGE_ROOT,
 	THEME_EXPRESSION,
 	boardName,
-	buttonNamed,
 	clickNavigatorRow,
 	currentTheme,
-	dismissFirstNotice,
 	dismissNotice,
 	navigatorRow,
 	noticeByTitle,
-	paneSection,
 	shellNotices,
 	stageIsFullscreen,
 	switchTheme,
