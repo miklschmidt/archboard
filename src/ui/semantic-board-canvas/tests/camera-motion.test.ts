@@ -202,9 +202,11 @@ describe("a thrown drag", () => {
 		expect(camera.y - START.y).toBeCloseTo(-0.5 * EXPLORING_MS.cameraFling, -1);
 	});
 
-	test("is taken over by the next zoom", () => {
+	test("is taken over by the next zoom, and stopped by one at a limit of the zoom", () => {
 		const flung = flingMotion({ x: 1, y: 0 });
 		expect(zoomMotion(START, flung, 1.5, { x: 100, y: 100 }).fling).toBeNull();
+		const closest = { ...START, scale: 8 };
+		expect(zoomMotion(closest, flung, 1.5, { x: 100, y: 100 }).fling).toBeNull();
 	});
 });
 

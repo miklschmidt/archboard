@@ -98,13 +98,14 @@ function wheelZoomFactor(turn: WheelTurn): number {
  * @param motion What it is doing now.
  * @param factor How much to magnify by, on top of where it is going.
  * @param at The point of the viewport to zoom about.
- * @returns What it does now; the same motion when it is at the limit already.
+ * @returns What it does now. At a limit already it zooms no further, and only
+ * stops a thrown drag, as any turn of the wheel does; with none, it is the same motion.
  */
 function zoomMotion(camera: Camera, motion: Motion, factor: number, at: Pair): Motion {
 	const from = motion.zoom?.scale ?? camera.scale;
 	const scale = clampScale(from * factor);
 	if (scale === from) {
-		return motion;
+		return motion.fling === null ? motion : { ...motion, fling: null };
 	}
 	const under = { x: (at.x - camera.x) / camera.scale, y: (at.y - camera.y) / camera.scale };
 	return { ...motion, zoom: { scale, keep: at, under }, fling: null };
