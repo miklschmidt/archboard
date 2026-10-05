@@ -4,8 +4,8 @@
 // list, the part search, an agent), it may be out of the pane. The camera then
 // moves once, just far enough to show it, and shows the part the reader was on
 // with it when the two are wired together, so the relationship between them is in
-// view. A part already in view moves nothing, and so a pick on the picture, which
-// can only be of a part that is there, never moves the camera.
+// view. A part already in view moves nothing. A pick on the picture is never
+// brought into view at all: the reader's hand put it there (use-reveal.ts).
 //
 // Pure, like the rest of the camera.
 

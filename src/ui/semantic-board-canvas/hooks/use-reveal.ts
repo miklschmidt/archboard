@@ -1,14 +1,17 @@
 // Bringing a part picked out from somewhere other than the picture into view.
 //
 // The picture is where a part is picked out most of the time, and then the part
-// is there. A row of the list, the part search or an agent can pick one that is
-// not: the camera glides once, just far enough to show it, and shows with it the
-// part the reader was on when the two are wired together. A part already in view
-// moves nothing, so this never answers a click on the picture, and it stands
-// aside while a walkthrough is presented or a panel laid over the picture
-// already moves the camera clear of it.
+// is there: the reader's own hand put it there, so the camera stays where the
+// reader left it, even for a part only partly in view or bigger than the pane.
+// The stage hands the picture the pick this hook returns, so a pick says where
+// it came from. A row of the list, the part search, an agent or a command can
+// pick one that is not in view: the camera glides once, just far enough to show
+// it, and shows with it the part the reader was on when the two are wired
+// together. A part already in view moves nothing, and this stands aside while a
+// walkthrough is presented or a panel laid over the picture already moves the
+// camera clear of it.
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { FIT_MARGIN } from "@/shared/shell-geometry/index";
 import { EXPLORING_MS } from "@/shared/timing/timing";
@@ -32,6 +35,11 @@ interface RevealInputs {
 	readonly off: boolean;
 	/** Whether the person asked for no motion, which lands the camera at once. */
 	readonly reducedMotion: boolean;
+	/**
+	 * Pick a subject out, or clear the selection.
+	 * @param id The semantic id, or null.
+	 */
+	readonly onPick: (id: string | null) => void;
 }
 
 /**
@@ -102,22 +110,34 @@ function showPick(inputs: RevealInputs, previous: string | null): void {
 
 /**
  * Glide the camera to a part picked out from elsewhere, when it is not in view.
- * @param inputs The camera, the picture's atlas, the pick, and whether to stand aside.
+ * @param inputs The camera, the picture's atlas, the pick, whether to stand aside and how to pick.
+ * @returns The picture's own pick: the reader's hand, which leaves the camera where it is.
  */
-function useReveal(inputs: RevealInputs): void {
-	const { selection } = inputs;
+function useReveal(inputs: RevealInputs): (id: string | null) => void {
+	const { selection, onPick } = inputs;
 	const latest = useRef(inputs);
 	const previous = useRef<string | null>(selection);
+	// What the picture picked last, until the selection it asked for arrives.
+	const byHand = useRef<string | null>(null);
 	useEffect(() => {
 		latest.current = inputs;
 	});
 	useEffect(() => {
 		const was = previous.current;
+		const fromPicture = byHand.current === selection;
 		previous.current = selection;
-		if (selection !== null && selection !== was) {
+		byHand.current = null;
+		if (selection !== null && selection !== was && !fromPicture) {
 			showPick(latest.current, was);
 		}
 	}, [selection]);
+	return useCallback(
+		(id: string | null): void => {
+			byHand.current = id;
+			onPick(id);
+		},
+		[onPick],
+	);
 }
 
 export { useReveal };

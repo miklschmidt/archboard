@@ -317,13 +317,14 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	// Two panes rest their sidebars, so each picture has the room (use-sidebar.ts).
 	const sidebar = useSidebar(props.selection, resting, narrative.open !== null);
 	useClearOfPanel(picture, sidebar.floating, props.selection, camera.ease);
-	useReveal({
+	const onPickInPicture = useReveal({
 		camera,
 		atlas: drawn?.atlas ?? null,
 		reading,
 		selection: props.selection,
 		off: narrative.open !== null || sidebar.floating,
 		reducedMotion,
+		onPick,
 	});
 	const appearances = useStageAppearances(drawn, departure.leaving);
 	const look = useKindLook(appearances);
@@ -356,6 +357,7 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 			onRetry={onRetry}
 			drill={drill}
 			onPick={onPick}
+			onPickInPicture={onPickInPicture}
 			onOpenDown={onOpenDown}
 			onBackTo={onBackTo}
 			cut={dive.cut}
