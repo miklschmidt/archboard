@@ -52,8 +52,8 @@
 @theme inline {
 	/* Three families. sans: every human word. mono: technical tokens only
 	   (identifiers, paths, versions, counts, times). display: a name set as the
-	   title of what a region is about (a pane's board, a picked part, a variant,
-	   a walkthrough) and the wordmark, always in tracked capitals. */
+	   title of what a region is about (a picked part, a variant, a walkthrough),
+	   the step number of a presented walkthrough, and the wordmark. */
 	--font-display: "Archboard Display", "Big Shoulders Display", sans-serif;
 	--font-sans: "Archboard Onest", ui-sans-serif, system-ui, sans-serif;
 	--font-mono: "Archboard DM Mono", ui-monospace, monospace;
@@ -74,8 +74,8 @@
 	--text-title: 14px;
 	--text-title--line-height: 20px;
 	--text-title--font-weight: 600;
-	/* nav: a board's name in the navigator, a step up from control so the tree
-	   reads at a glance; its variants stay at body. */
+	/* nav: the name of a board or a folder in the navigator, a step up from
+	   control so the tree reads at a glance; its variants are at control. */
 	--text-nav: 14px;
 	--text-nav--line-height: 20px;
 	--text-nav--font-weight: 500;
