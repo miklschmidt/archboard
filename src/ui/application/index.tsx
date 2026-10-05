@@ -459,6 +459,7 @@ function ApplicationBody(): JSX.Element {
 				<TooltipProvider>
 					<Shell
 						view={view}
+						outline={outline}
 						actions={actions}
 						diagnostics={diagnostics}
 						voiceControls={slots.voiceControls}
