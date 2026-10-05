@@ -15,7 +15,7 @@ const DOCK_SUBTITLES = `${AGENT_DOCK} [data-slot="voice-subtitles-toggle"]`;
 /** Unmute at the end of the voice box, while the voice is muted. */
 const BOX_UNMUTE = '[data-slot="voice-box"] button[aria-label="Unmute"]';
 /** The voice key in the bar of a fullscreen presentation: Talk, then End voice. */
-const BAR_VOICE = `${PRESENTATION_BAR} [data-voice-controls]`;
+const BAR_VOICE = `${PRESENTATION_BAR} [data-voice-key]`;
 /**
  * Whether a voice key presses nothing, in the page. Such a key stays focusable and says so with
  * aria-disabled, so a key that is not disabled can still press nothing.
@@ -87,7 +87,7 @@ function voiceNow(browser: AgentBrowserSession): Promise<VoiceNow> {
 				presented: !!presented && presented.contains(box) && !!holder && presented.contains(holder),
 			},
 			bar: bar && {
-				mode: bar.getAttribute('data-voice-controls'),
+				mode: bar.getAttribute('data-voice-key'),
 				enabled: !pressesNothing(bar),
 			},
 		};

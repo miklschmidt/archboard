@@ -50,7 +50,7 @@ function TalkControl(props: TalkControlProps): JSX.Element {
 			<Button
 				variant="outline"
 				size="sm"
-				data-voice-controls={live ? "live" : "talk"}
+				data-voice-key={live ? "live" : "talk"}
 				disabled={press === undefined}
 				focusableWhenDisabled
 				onClick={press}
