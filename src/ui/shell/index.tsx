@@ -9,7 +9,8 @@
 import { useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
 
 import { CHROME_HEIGHT, NAVIGATOR_WIDTH } from "@/shared/shell-geometry/index";
-import { buildOutline } from "@/ui/board-catalog";
+import type { OutlineNode } from "@/ui/board-catalog";
+import type { CatalogBoard } from "@/ui/types";
 import type {
 	LivePresentation,
 	RecoveryPresentation,
@@ -49,6 +50,8 @@ function noop(): void {}
 interface ShellProps {
 	diagnostics?: ReactNode;
 	view: ShellView;
+	/** The vault's boards as the navigator places them: the outline of `view.boards`, built once by the caller. */
+	outline: readonly OutlineNode<CatalogBoard>[];
 	actions: ShellActions;
 	/** The key that starts and ends voice, for the presentation bar, when the voice workbench supplies it. */
 	voiceControls?: ReactNode;
@@ -71,9 +74,7 @@ interface ShellProps {
  * @returns The full frame.
  */
 function Shell(props: ShellProps): JSX.Element {
-	const { view, actions } = props;
-	const { boards, levels } = view.boards;
-	const outline = useMemo(() => buildOutline(boards, levels), [boards, levels]);
+	const { view, actions, outline } = props;
 	const head = useMemo(
 		() => <BrandBar theme={view.theme} actions={actions} diagnostics={props.diagnostics} />,
 		[view.theme, actions, props.diagnostics],

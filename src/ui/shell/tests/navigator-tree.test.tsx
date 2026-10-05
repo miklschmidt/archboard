@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { createRoot, type Root } from "react-dom/client";
+import { buildOutline } from "@/ui/board-catalog";
 import { Shell, type ShellActions, type ShellPane, type ShellView } from "@/ui/shell";
 import type { AgentActivityEntry, CatalogBoard, ListedVariant } from "@/ui/types";
 
@@ -160,6 +161,8 @@ function mountNavigator(overrides: Partial<ShellView> = {}): Mounted {
 		agentActivity: {},
 		...overrides,
 	};
+	// Built once, as the application builds it once per listing: the news a test shows keeps the listing.
+	const outline = buildOutline(view.boards.boards, view.boards.levels);
 	const container = document.createElement("div");
 	document.body.append(container);
 	root = createRoot(container);
@@ -175,7 +178,7 @@ function mountNavigator(overrides: Partial<ShellView> = {}): Mounted {
 				createElement(
 					QueryClientProvider,
 					{ client },
-					createElement(Shell, { view: shown, actions }),
+					createElement(Shell, { view: shown, outline, actions }),
 				),
 			),
 		);
