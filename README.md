@@ -54,7 +54,7 @@ https://github.com/user-attachments/assets/7427203b-ff88-4d85-9e36-254ebd2edd9e
 
 ## Plan the next architecture with your agent
 
-See a change before anyone builds it. Ask your agent for one and you get a **proposal**: the same board, redrawn as its difference from what exists. New parts arrive green, changed ones amber, and removed ones stay on the page as red ghosts. A call that moves is shown as one change, not as a deletion beside an addition.
+See a change before anyone builds it. Ask your agent for one and you get a **proposal**: the same board, redrawn as its difference from what exists. New parts arrive green, changed ones orange, and removed ones stay on the page as red ghosts. A call that moves is shown as one change, not as a deletion beside an addition.
 
 <img src="docs/readme/plan.webp" width="100%" alt="A board that nobody has built yet, marked not built, opened in two panes. The left pane turns into the Nightly batch proposal. The right pane turns into the Live events proposal. Both are marked against their shared starting point.">
 
