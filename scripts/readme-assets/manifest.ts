@@ -4,8 +4,8 @@
 // command needs a Codex sign-in, and the sources the asset shows. When the kit makes an asset it
 // records a hash of those sources. An asset is stale when it has no hash (the kit never made it),
 // when its sources hash to something else now, or when one of its files is missing. A source is a
-// repository path: a file, a directory, or a glob. Files under a `tests` directory never count,
-// because no test changes what an asset shows.
+// repository path: a file, a directory, or a glob. Files under a `tests` directory and Markdown
+// files never count, because no test and no note beside the code changes what an asset shows.
 
 import { existsSync, lstatSync, readFileSync, readlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -106,8 +106,17 @@ function isTestPath(path: string): boolean {
 }
 
 /**
+ * Whether a repository path is a note and not code, so that no asset shows it.
+ * @param path The path.
+ * @returns Whether it is a Markdown file.
+ */
+function isNotePath(path: string): boolean {
+	return path.endsWith(".md");
+}
+
+/**
  * Every file of the checkout an asset can show: tracked files and new files git does not ignore,
- * that exist, and that do not belong to a test.
+ * that exist, and that are neither a test nor a Markdown note.
  * @param root The repository root.
  * @returns The paths, sorted.
  * @throws {Error} When git cannot list the checkout.
@@ -122,7 +131,10 @@ function checkoutFiles(root: string): readonly string[] {
 	}
 	const paths = new Set(listed.stdout.toString().split("\0"));
 	return [...paths]
-		.filter((path) => path !== "" && !isTestPath(path) && existsSync(join(root, path)))
+		.filter(
+			(path) =>
+				path !== "" && !isTestPath(path) && !isNotePath(path) && existsSync(join(root, path)),
+		)
 		.toSorted();
 }
 

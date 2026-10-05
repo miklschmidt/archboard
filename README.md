@@ -2,7 +2,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/readme/banner-dark.webp">
-  <img src="docs/readme/banner-light.webp" width="100%" alt="archboard: an architecture hologram with its earlier states behind it and a proposed part in front.">
+  <img src="docs/readme/banner-light.webp" width="100%" alt="Archboard: the gold peak mark and the name archboard in tall capitals, beside a proposal for the example web shop that Archboard drew, on a sheet that tilts away. New parts are green, a changed part is orange, and the removed timeout guard is a red ghost.">
 </picture>
 
 <h3>Plan the next architecture with your coding agent. <br>Archboard draws every proposal against what is built, keeps the record of why it changed, and walks your team through it out loud.
@@ -26,9 +26,9 @@
 
 Plan the next step before anyone writes code. Ask for a change and see it drawn against today's architecture, weigh competing options side by side, and adopt the one that ships: the architecture it replaces becomes history, kept with the reason it changed. The Codex voice can explain any board out loud while you step through it. One command can film it into a narrated video for a design review or a pull request.
 
-**Hear Archboard explain itself**. Its own system board, narrated by the Codex voice in about two and a half minutes. Turn the sound on.
+**Hear Archboard explain itself**. Its own system board, narrated by the Codex voice in under two minutes. Turn the sound on.
 
-https://github.com/user-attachments/assets/7427203b-ff88-4d85-9e36-254ebd2edd9e
+https://github.com/user-attachments/assets/bcc22296-892b-4b47-9e22-022894927b85
 
 ## What you can do with it
 
@@ -97,7 +97,7 @@ gh pr comment 128 --attach pr-128.mp4 --body "A narrated walkthrough of this cha
 
 **A pull request, explained to its reviewers**: why the change exists, what it changed, and where to look closely. The loop above is silent. The player below carries the voice, so turn the sound on.
 
-https://github.com/user-attachments/assets/b0e33bd4-2547-473c-9339-a96ac923768a
+https://github.com/user-attachments/assets/cf49eba1-f5be-495c-8d4c-76e844ea026e
 
 <p align="center"><sub>Each video is what <code>archboard semantic record</code> wrote.</sub></p>
 
@@ -130,7 +130,7 @@ Give the tour once, and every new hire can play it back. A newcomer's walkthroug
 
 <p align="center"><sub>"How stock is reserved", six steps on the example Inventory service board. The player below has the voice.</sub></p>
 
-https://github.com/user-attachments/assets/a4aa4d54-278e-4eec-af9a-6b8053965201
+https://github.com/user-attachments/assets/661cac9a-b458-42ec-936d-8d554eff8601
 
 ```text
 I'm new here. Walk me through what happens to stock when a shopper presses Pay.
@@ -146,9 +146,9 @@ One map, from the whole system down to the file. Boards link to boards: hover a 
 
 Select a part and ask. The Codex agent in the conversation reads the board and your selection, and answers from the architecture, not from the pixels. Press **Talk** to ask out loud instead: the voice hands your question to a Codex agent that reads the boards, then says the answer back.
 
-<img src="docs/readme/ask.webp" width="100%" alt="The Timeout guard is selected. A question about why this part exists and what breaks without it is typed into the agent bar. The conversation panel fills with an answer drawn from the board.">
+<img src="docs/readme/ask.webp" width="100%" alt="The Timeout guard is selected. A question about why this part exists and what breaks without it is typed into the composer of the conversation, which opens beside the navigator. The conversation fills with an answer drawn from the board.">
 
-<p align="center"><sub>A real answer from a Codex agent, typed in the agent bar. The wait for the answer is sped up.</sub></p>
+<p align="center"><sub>A real answer from a Codex agent, typed in the conversation. The wait for the answer is sped up.</sub></p>
 
 ## Agents work in plain sight
 
@@ -327,4 +327,4 @@ Archboard is young and moves fast. Its interfaces change often, and it is not pu
 
 [INSTALL.md](INSTALL.md) · [TESTING.md](TESTING.md) · [CONTEXT.md](CONTEXT.md) · [Architecture decisions](docs/adr/) · [The agent skill](skills/archboard/SKILL.md) · [AGENTS.md](AGENTS.md)
 
-<sub>Archboard drew every diagram in this README. Every clip was filmed from a running Archboard server. The SVGs' embedded fonts are subset to keep the page light. Codex generated the banner art. Its full-size sources and a GitHub social preview are in <a href="docs/assets"><code>docs/assets</code></a>. Licensed under the Business Source License 1.1.</sub>
+<sub>Archboard drew every diagram in this README. Every clip was filmed from a running Archboard server. The SVGs' embedded fonts are subset to keep the page light. The banner is a proposal Archboard drew, beside the logo. A GitHub social preview cut from it is in <a href="docs/assets"><code>docs/assets</code></a>. Licensed under the Business Source License 1.1.</sub>

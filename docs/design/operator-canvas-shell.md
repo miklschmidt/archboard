@@ -459,18 +459,11 @@ Both families use the SIL Open Font License 1.1. Exact binary, license, source,
 and SHA-256 provenance is recorded beside the assets in
 `src/ui/shell/assets/fonts/README.md`.
 
-The canonical lowercase wordmark is one SVG path generated from the official
-Onest 1.000 static Medium TTF with pair kerning and
-`-0.02027027027em` tracking. `scripts/generate-wordmark.ts` pins and verifies
-the source SHA, uses `opentype.js` 1.3.4, translates the optical outline bounds
-to zero, and emits the byte-stable 85.7815×13.209 view box. The static source is
-deliberate: that version of `opentype.js` reads a variable font's `fvar` table
-but does not apply its `gvar` deltas to the paths that it generates. The SVG contains
-only safe metadata and the `currentColor` path. It contains no text, image, script, event,
-external reference, or runtime font dependency. The shell no longer draws
-this path: the brand bar sets the wordmark as text in the display face
-(`src/ui/shell/components/Brand.tsx`). The README banner still lays the path
-over its art (`scripts/readme-assets/banner.ts`).
+Nothing draws the lowercase Onest wordmark measured above any more. The brand
+bar sets the wordmark as text in the display face's tracked capitals beside the
+gold peak mark (`src/ui/shell/components/Brand.tsx`). The README banner sets
+the same lockup from `scripts/readme-assets/lockup.ts`, whose mark the
+repository lane holds to the shell's.
 
 ## Verification standard
 
