@@ -18,7 +18,7 @@ bun run readme:assets --codex             # make every asset
 An asset is stale when the kit never made it, when its sources changed since
 it was made, or when one of its files is missing. The hash covers the content
 of every file the asset's sources name, tracked or new, except files under a
-`tests` directory. `readme:check` also reports a source that names no file and
+`tests` directory and Markdown files. `readme:check` also reports a source that names no file and
 a file in `docs/readme` that no asset makes. It is not part of `bun run check`:
 a stale README is listed, and it does not fail the gate.
 
@@ -64,8 +64,9 @@ the account's Codex usage.
   the machine's Archboard Codex sign-in. If Codex is not signed in, they stop
   before anything is spent. Sign in from the agent dock of any Archboard server.
 - The narrated MP4s stay in the scratch directory. GitHub plays a video with
-  sound only from an attachment, so upload each MP4 through GitHub's editor and
-  put its new address in `README.md` by hand.
+  sound only from an attachment, so run `gh attach <file>.mp4` (the `gh-attach`
+  extension, which uploads to the current repository) and put the address it
+  prints in `README.md`.
 
 ## What the kit needs
 
