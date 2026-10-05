@@ -1,7 +1,7 @@
 # Codex workbench real-voice acceptance
 
 This is the release smoke for one Archboard server, its one package-local Codex
-app-server, and one person. It covers exact Codex 0.158.0 text and real audio.
+app-server, and one person. It covers exact Codex 0.160.0 text and real audio.
 Run it after the deterministic owners pass. It is not a stress, performance,
 multi-server, or concurrency exercise.
 
@@ -50,7 +50,7 @@ signal, prerequisite refusal, or nonzero exit is a failed gate, not a pass.
 ```bash
 bun install
 bun run build
-test "$(node_modules/.bin/codex --version)" = "codex-cli 0.158.0"
+test "$(node_modules/.bin/codex --version)" = "codex-cli 0.160.0"
 
 timeout -k 5s 25s bun test \
   src/runtime/codex-process/tests/storage.test.ts \
@@ -362,7 +362,7 @@ Record one row per run. Use `pass`, `fail`, or `not reached`.
 
 | Checkpoint                             | Result | Safe evidence                                                  |
 | -------------------------------------- | ------ | -------------------------------------------------------------- |
-| Exact 0.158.0 and deterministic owners |        | Commands, exits, elapsed seconds                               |
+| Exact 0.160.0 and deterministic owners |        | Commands, exits, elapsed seconds                               |
 | Clean server and one app-server        |        | Status facts, no pid or argv dump                              |
 | Private config and effective SQLite    |        | `0700`, `0700`, `0600`, exact match, readiness label           |
 | Signed-in conversation                 |        | Signed in, one conversation, session details present           |

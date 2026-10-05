@@ -1,9 +1,9 @@
-const CODEX_PROTOCOL_VERSION = "0.158.0" as const;
-const CODEX_PROTOCOL_BINARY_VERSION = "codex-cli 0.158.0" as const;
+const CODEX_PROTOCOL_VERSION = "0.160.0" as const;
+const CODEX_PROTOCOL_BINARY_VERSION = "codex-cli 0.160.0" as const;
 
 /**
  * Checks that a server user agent names the bound Codex version as a whole token, so
- * 0.158.0 does not match 10.158.0 or 0.158.01.
+ * 0.160.0 does not match 10.160.0 or 0.160.01.
  * @param userAgent - The user agent string from the initialize response.
  * @returns Whether the bound protocol version appears in it.
  */

@@ -294,10 +294,16 @@ const ThreadTurnsListParamsSchema = z.strictObject({
 	sortDirection: SortDirectionSchema.nullable().optional(),
 	itemsView: TurnItemsViewSchema.nullable().optional(),
 });
+/** An opaque continuation cursor, or an exclusive item anchor in the requested turn. */
+const ThreadItemsListCursorSchema = z.union([
+	z.string(),
+	z.strictObject({ type: z.literal("item"), itemId: z.string() }),
+]);
 const ThreadItemsListParamsSchema = z.strictObject({
 	threadId: z.string(),
 	turnId: z.string().nullable().optional(),
 	...NullablePageSchema,
+	cursor: ThreadItemsListCursorSchema.nullable().optional(),
 	sortDirection: SortDirectionSchema.nullable().optional(),
 });
 const ThreadDeleteParamsSchema = z.strictObject({ threadId: z.string() });

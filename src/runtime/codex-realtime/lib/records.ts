@@ -14,7 +14,7 @@ import type { ActiveRealtimeSession } from "@/runtime/codex-realtime/lib/state";
  */
 function orderedRecords(session: ActiveRealtimeSession): readonly RealtimeTranscriptRecord[] {
 	// Codex starts every segment with empty text and sends its first words a moment later
-	// (0.158.0, `realtime_history.rs`). A segment nobody has said anything in yet is not a
+	// (0.160.0, `realtime_history.rs`). A segment nobody has said anything in yet is not a
 	// transcript record, and the browser contract rightly cannot carry an empty one.
 	return [...session.entries.values()]
 		.filter((entry) => entry.text.length > 0)
