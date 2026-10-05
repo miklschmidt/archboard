@@ -210,6 +210,9 @@ const hero: Producer = {
 					"--variant",
 					PROPOSAL,
 				]);
+				if (compared.status !== 0) {
+					throw new Error(`semantic compare exited ${compared.status}: ${compared.stderr.trim()}`);
+				}
 				await terminal.done(...comparedLines(compared.stderr));
 				await Bun.sleep(1200);
 				await terminal.command(`archboard browser show "${BOARD}@${PROPOSAL}"`);
