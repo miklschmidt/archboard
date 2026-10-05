@@ -69,7 +69,7 @@ function farChip(
 
 /**
  * The mark of a part that opens another board, grown, in the corner it keeps
- * from near: as far in from the top and the side as it is wide over two.
+ * from near: its centre a radius and a half in from the top and the side.
  * @param box The card's box, or a container's header.
  * @param scale How much larger than near it is drawn.
  * @param look Which way the board it opens lies, and the selected theme.
