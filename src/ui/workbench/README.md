@@ -18,12 +18,14 @@ and `-transport`, and `src/ui/voice-session`. This module draws them.
   `AgentComposer` is the composer.
 - `components/VoiceBox.tsx`: the voice over a pane's picture. While the person wants
   subtitles, the voice has no circle in the dock. The box carries the orb, the words, mute
-  and the subtitles control.
+  and the subtitles control. A rendered recording draws the same box at the foot of its
+  walkthrough box (`src/ui/walkthrough-replay`).
 - `components/TalkControl.tsx`: the one key of a fullscreen presentation's bar, Talk and then
   End voice.
 
 `index.tsx` exports `AgentDock`, `AgentPanel`, `TalkControl`, `VoiceBox`,
-`VoiceSurfaceProvider`, `useVoiceSurface`, `agentStatus` and `createDraftStore`.
+`VoiceSurfaceProvider`, `useVoiceSurface`, `useCircleState`, `agentStatus` and
+`createDraftStore`.
 
 Type roles come from the theme's `text-technical`, `text-body`, `text-control` and
 `text-title` utilities. The registry's `cn` treats an unknown `text-*` utility as a colour.

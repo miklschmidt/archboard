@@ -11,8 +11,10 @@
 // person is working with, and it is hidden from assistive technology, because the same words are
 // already being spoken and the transcript panel is the accessible record of them.
 //
-// `SubtitleWords` is the paragraph alone, which the voice box carries inside its own glass. `VoiceSubtitles`
-// is the paragraph in glass of its own, for a presented pane and for the replay of a kept talk.
+// `SubtitleWords` is the paragraph alone, which the voice box carries inside its own glass, in the
+// shell and in the replay of a kept talk. `VoiceSubtitles` is the paragraph in glass of its own, or
+// bare in the pill of a presented walkthrough's box, for the page that records a talk, which nobody
+// sees.
 
 import type { CSSProperties, JSX } from "react";
 

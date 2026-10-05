@@ -8,10 +8,13 @@ import type { JSX } from "react";
 import { IconAction } from "@/ui/workbench/components/IconAction";
 import type { AgentActions, AgentVoiceView } from "@/ui/workbench/contracts";
 
+/** What the mute control does to a voice. */
+type MuteActions = Pick<AgentActions, "mute" | "unmute">;
+
 /** Inputs for the mute control. */
 interface MuteActionProps {
 	readonly voice: AgentVoiceView;
-	readonly actions: AgentActions;
+	readonly actions: MuteActions;
 	/** Whether it is a key of the voice box, drawn as the dock's keys are. */
 	readonly keyed?: boolean;
 	/** What shapes the control where it is not an icon among icons, as at the end of the voice box. */
@@ -46,4 +49,4 @@ function MuteAction(props: MuteActionProps): JSX.Element {
 	);
 }
 
-export { MuteAction };
+export { MuteAction, type MuteActions };

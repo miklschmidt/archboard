@@ -4,9 +4,9 @@
 // What is guarded: with subtitles on and a voice live the subtitles are the box's, so the voice
 // is read where its words are; turning subtitles off takes the box away; a fullscreen presentation,
 // which has no dock to take the voice back, keeps the box whatever the person chose and lets the
-// subtitles decide only whether there are words; a recording has plain subtitles whatever the
-// person chose, because nobody watching the video can turn them on; and a voice that is not on has
-// no box.
+// subtitles decide only whether there are words; the page that records a talk has plain subtitles
+// whatever the person chose, and never the box, because nobody sees that page (the video is
+// rendered afterwards by the replay page, with the box); and a voice that is not on has no box.
 //
 // The words come from a stand-in feed, as a transport publishes them: where the words come from is
 // not what is under test.
@@ -313,7 +313,7 @@ test("a fullscreen presentation has no dock, so the box carries the voice whatev
 	expect(words()).toBe(false);
 });
 
-test("a recording has plain subtitles whatever the person chose, and never the box", () => {
+test("the page that records a talk has plain subtitles whatever the person chose, and never the box", () => {
 	subtitlePreference.change(false);
 	render(pane({ recording: true }));
 	expect(boxed()).toBe(false);
