@@ -77,6 +77,17 @@ test("pointing at a row lights its relationship and the parts at its ends, and l
 	expect(lit()).toEqual(["e3", "orders", "q", "shipping", "w"]);
 });
 
+test("each list of a part's relationships is headed by its title and its count, read apart", async () => {
+	await served();
+	await pickWithDetails("w");
+	const headings = [
+		...document.querySelectorAll("[data-slot='semantic-inspector-links'] :is(h2, h3)"),
+	];
+	expect(headings).toHaveLength(2);
+	// A heading is named by its text as it stands, so the count needs a space before it.
+	for (const heading of headings) expect(heading.textContent).toMatch(/\S \d+$/);
+});
+
 test("a trace onward lights what a part reaches beyond its connections, the nearer the stronger", async () => {
 	await served();
 	await pickWithDetails("q");

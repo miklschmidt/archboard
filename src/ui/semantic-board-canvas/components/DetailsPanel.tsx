@@ -203,8 +203,8 @@ function Links(props: LinksProps): JSX.Element | null {
 		>
 			<div className="flex min-h-6 items-center justify-between gap-2">
 				<SidebarHeading level={3}>
-					{title}
-					<span className="text-technical ml-1.5 font-mono font-normal">{links.length}</span>
+					{title}{" "}
+					<span className="text-technical ml-0.5 font-mono font-normal">{links.length}</span>
 				</SidebarHeading>
 				<TraceToggle part={props.part} name={props.name} way={props.way} parts={props.reach} />
 			</div>
