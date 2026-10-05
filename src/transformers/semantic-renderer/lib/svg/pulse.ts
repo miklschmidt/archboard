@@ -6,6 +6,7 @@ import {
 	TAIL,
 	HEAD,
 	barHeight,
+	clipOf,
 	gradientOf,
 	maskOf,
 	pulseBreadth,
@@ -101,11 +102,12 @@ function within(value: number, period: number): number {
 }
 
 /**
- * One piece of a pulse: the mask in the shape of a piece of the route, and the
- * bar of light that slides behind it.
+ * One piece of a pulse: the mask in the shape of a piece of the route, the clip
+ * to the mask's box, and the bar of light that slides behind them.
  * @param leg The piece.
  * @param bar The bar: how it sits in the piece's frame, and what it is painted with.
  * @param bar.mask The piece's mask.
+ * @param bar.clip The clip to the box of the piece's mask.
  * @param bar.gradient The id of the gradient the bar is painted with.
  * @param bar.shift How far along its frame the bar starts.
  * @param bar.from How far along its frame the bar's left edge is, before it moves.
@@ -118,6 +120,7 @@ function legMarkup(
 	leg: Leg,
 	bar: {
 		mask: string;
+		clip: string;
 		gradient: string;
 		shift: number;
 		from: number;
@@ -129,7 +132,7 @@ function legMarkup(
 	const shift = bar.shift === 0 ? "" : ` translate(${plain(bar.shift, 2)} 0)`;
 	return wrap(
 		"g",
-		{ mask: `url(#${bar.mask})` },
+		{ "clip-path": `url(#${bar.clip})`, mask: `url(#${bar.mask})` },
 		wrap(
 			"g",
 			{ transform: `${leg.frame}${shift}` },
@@ -149,21 +152,22 @@ function legMarkup(
 }
 
 /**
- * A pulse as a group: its gradient and the masks of its pieces, then the pieces.
+ * A pulse as a group: its gradient and the masks and clips of its pieces, then
+ * the pieces.
  * @param gradient The gradient the bars are painted with.
  * @param gradient.markup The gradient's markup.
- * @param pieces Each piece's mask and markup.
+ * @param pieces Each piece's mask, clip and markup.
  * @returns The group.
  */
 function pulseGroup(
 	gradient: { markup: string },
-	pieces: readonly { mask: { markup: string }; markup: string }[],
+	pieces: readonly { mask: { markup: string }; clip: { markup: string }; markup: string }[],
 ): string {
+	const defs = pieces.map(({ mask, clip }) => mask.markup + clip.markup).join("");
 	return wrap(
 		"g",
 		{ class: PULSE_CLASS, "pointer-events": "none" },
-		wrap("defs", {}, gradient.markup + pieces.map(({ mask }) => mask.markup).join("")) +
-			pieces.map(({ markup }) => markup).join(""),
+		wrap("defs", {}, gradient.markup + defs) + pieces.map(({ markup }) => markup).join(""),
 	);
 }
 
@@ -195,8 +199,10 @@ function steadyPulses(train: { look: Look; ride: Ride; rhythm: Rhythm }): string
 	});
 	const pieces = legsOf(ride.curve).map((leg) => {
 		const mask = maskOf(leg, core);
+		const clip = clipOf(leg, core);
 		const bar = {
 			mask: mask.id,
+			clip: clip.id,
 			gradient: gradient.id,
 			// The gradient's far end, where its front fades, sits a front's reach
 			// past the head, which is on the phase.
@@ -206,7 +212,7 @@ function steadyPulses(train: { look: Look; ride: Ride; rhythm: Rhythm }): string
 			height: barHeight(leg, core),
 			motion,
 		};
-		return { mask, markup: legMarkup(leg, bar) };
+		return { mask, clip, markup: legMarkup(leg, bar) };
 	});
 	return pulseGroup(gradient, pieces);
 }
@@ -280,8 +286,10 @@ function turnPulse(crossing: {
 	const gradient = gradientOf(look, span, TAIL, false);
 	const pieces = legsOf(ride.curve).map((leg) => {
 		const mask = maskOf(leg, core);
+		const clip = clipOf(leg, core);
 		const bar = {
 			mask: mask.id,
+			clip: clip.id,
 			gradient: gradient.id,
 			shift: 0,
 			from: 0,
@@ -289,7 +297,7 @@ function turnPulse(crossing: {
 			height: barHeight(leg, core),
 			motion: slideOf(leg, { speed, cycle, start }),
 		};
-		return { mask, markup: legMarkup(leg, bar) };
+		return { mask, clip, markup: legMarkup(leg, bar) };
 	});
 	return pulseGroup(gradient, pieces);
 }

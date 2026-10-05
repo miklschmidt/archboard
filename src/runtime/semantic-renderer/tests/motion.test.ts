@@ -33,6 +33,17 @@ function drawnWith(busy: Record<string, number>) {
 	});
 }
 
+/**
+ * The box an element's attributes give: where it is and how big, as written.
+ * @param attributes The attributes of its opening tag.
+ * @returns Its x, y, width and height.
+ */
+function boxIn(attributes: string): (string | undefined)[] {
+	return ["x", "y", "width", "height"].map(
+		(name) => new RegExp(`\\s${name}="([^"]*)"`, "u").exec(attributes)?.[1],
+	);
+}
+
 describe("explicit traffic is independent of relationship kind and emphasis", () => {
 	test("only presence enables a stream, including on a muted edge", async () => {
 		const svg = await drawn("architecture");
@@ -105,6 +116,31 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 		for (const piece of beam!.pieces) expect(piece.begin).toBe(0);
 		// Every piece slides on one clock.
 		expect(new Set(beam!.pieces.map(({ cycleWritten }) => cycleWritten)).size).toBe(1);
+	});
+
+	test("the light of every piece is clipped to the box of its mask", async () => {
+		// The page slides each bar on the compositor, and there Chromium let light
+		// through outside the box of the mask: stray marks in empty canvas.
+		for (const grammar of ["architecture", "data-flow"] as const) {
+			const svg = await drawn(grammar);
+			const masks = new Map(
+				[...svg.matchAll(/<mask id="(ab-mask-[^"]+)"([^>]*)>/gu)].map(([, id, box]) => [
+					id!,
+					boxIn(box!),
+				]),
+			);
+			const clips = new Map(
+				[...svg.matchAll(/<clipPath id="([^"]+)"><rect([^>]*)\/><\/clipPath>/gu)].map(
+					([, id, box]) => [id!, boxIn(box!)],
+				),
+			);
+			const pieces = [...svg.matchAll(/<g ([^>]*mask="url\(#ab-mask-[^>]*)>/gu)].map(([, tag]) => ({
+				mask: /mask="url\(#([^)]+)\)"/u.exec(tag!)![1]!,
+				clip: /clip-path="url\(#([^)]+)\)"/u.exec(tag!)?.[1] ?? "",
+			}));
+			expect(pieces.length).toBeGreaterThan(0);
+			for (const { mask, clip } of pieces) expect(clips.get(clip)).toEqual(masks.get(mask)!);
+		}
 	});
 
 	test("a pulse sinks into the base of the arrowhead and never covers it", async () => {

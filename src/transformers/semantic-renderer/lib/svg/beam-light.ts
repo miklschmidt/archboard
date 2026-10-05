@@ -157,16 +157,14 @@ function barHeight(leg: Leg, core: number): number {
 }
 
 /**
- * The mask that lets a beam through only where a piece of the route is: the piece
- * stroked in layers, thin and bright on top of wide and faint, which is the way
- * light falls off across the line.
+ * The box the light of a piece stays inside: round every point the piece runs
+ * through, as far out as the widest layer of the glow and a little room. Its
+ * numbers are spelt as the markup spells them.
  * @param leg The piece.
  * @param core How thick the pulse's core is.
- * @returns The mask's id and its markup.
+ * @returns The box.
  */
-function maskOf(leg: Leg, core: number): { id: string; markup: string } {
-	const joined = legPath(leg);
-	const exact = legPath(leg, false);
+function boxOf(leg: Leg, core: number): { x: string; y: string; width: string; height: string } {
 	const reach = (core + GLOW[0].over) / 2 + MASK_ROOM;
 	const { from, segment } = leg;
 	const points = [
@@ -178,6 +176,40 @@ function maskOf(leg: Leg, core: number): { id: string; markup: string } {
 	const ys = points.map(({ y }) => y);
 	const [x0, y0] = [Math.min(...xs) - reach, Math.min(...ys) - reach];
 	const [width, height] = [Math.max(...xs) + reach - x0, Math.max(...ys) + reach - y0];
+	return { x: coord(x0), y: coord(y0), width: coord(width), height: coord(height) };
+}
+
+/**
+ * The clip that keeps the light of a piece inside the box of its mask.
+ *
+ * A mask already hides whatever lies outside its box, so the clip changes
+ * nothing a browser draws as it should. But the page slides the bar on the
+ * compositor (a Web Animation, `picture-traffic.ts`), and there Chromium let
+ * slivers of the bar through outside the box while a pulse went by: stray marks
+ * in empty canvas, tens of pixels past a bend. A clip to the same box holds
+ * them in, and the bar still slides on the compositor.
+ * @param leg The piece.
+ * @param core How thick the pulse's core is.
+ * @returns The clip's id and its markup.
+ */
+function clipOf(leg: Leg, core: number): { id: string; markup: string } {
+	const markup = tag("rect", boxOf(leg, core));
+	const id = `ab-clip-${hashOf(markup)}`;
+	return { id, markup: `<clipPath id="${id}">${markup}</clipPath>` };
+}
+
+/**
+ * The mask that lets a beam through only where a piece of the route is: the piece
+ * stroked in layers, thin and bright on top of wide and faint, which is the way
+ * light falls off across the line.
+ * @param leg The piece.
+ * @param core How thick the pulse's core is.
+ * @returns The mask's id and its markup.
+ */
+function maskOf(leg: Leg, core: number): { id: string; markup: string } {
+	const joined = legPath(leg);
+	const exact = legPath(leg, false);
+	const box = boxOf(leg, core);
 	const layers = GLOW.map(({ over, light }) =>
 		tag("path", {
 			d: over > HALO_OVER ? exact : joined,
@@ -188,8 +220,8 @@ function maskOf(leg: Leg, core: number): { id: string; markup: string } {
 		}),
 	).join("");
 	const markup =
-		`maskUnits="userSpaceOnUse" x="${coord(x0)}" y="${coord(y0)}" ` +
-		`width="${coord(width)}" height="${coord(height)}">${layers}`;
+		`maskUnits="userSpaceOnUse" x="${box.x}" y="${box.y}" ` +
+		`width="${box.width}" height="${box.height}">${layers}`;
 	const id = `ab-mask-${hashOf(markup)}`;
 	return { id, markup: `<mask id="${id}" ${markup}</mask>` };
 }
@@ -249,6 +281,7 @@ export {
 	PULSE_LENGTH,
 	TAIL,
 	barHeight,
+	clipOf,
 	gradientOf,
 	maskOf,
 	pulseBreadth,
