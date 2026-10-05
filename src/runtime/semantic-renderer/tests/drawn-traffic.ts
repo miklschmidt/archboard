@@ -172,4 +172,13 @@ function slidingSpeedOf(piece: Piece): number {
 	return Math.abs(piece.values[2]! - piece.values[1]!) / ((to - from) * piece.cycle);
 }
 
-export { beams, messageBeams, slidingSpeedOf, speedOf, trafficBeams, type Beam, type Piece };
+export {
+	beams,
+	messageBeams,
+	pointsOf,
+	slidingSpeedOf,
+	speedOf,
+	trafficBeams,
+	type Beam,
+	type Piece,
+};

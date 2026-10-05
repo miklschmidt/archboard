@@ -3,6 +3,7 @@
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import type { VariantContent } from "@/shared/semantic-board/index";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
+import { pointsOf } from "@/runtime/semantic-renderer/tests/drawn-traffic";
 
 /** What a moving mark looks like in the markup, whichever grammar drew it. */
 export const MOTION = /<animate(?:Motion|Transform)?\b|@keyframes|animation:/u;
@@ -136,19 +137,6 @@ export function pulsesOn(svg: string, id: string): number {
 	return [`data-semantic-id="${id}"`, `data-traffic="${id}"`]
 		.map((named) => (svg.split(named)[1] ?? "").split(/data-(?:semantic-id|traffic)=/u)[0]!)
 		.reduce((sum, own) => sum + [...own.matchAll(/<g class="ab-pulse"/gu)].length, 0);
-}
-
-/**
- * The points a path of straight pieces passes through.
- * @param d The path data.
- * @returns The points, in order.
- */
-export function pointsOf(d: string): { x: number; y: number }[] {
-	const numbers = d.match(/-?[\d.]+(?:e-?\d+)?/gu)!.map(Number);
-	return Array.from({ length: numbers.length / 2 }, (_, index) => ({
-		x: numbers[index * 2]!,
-		y: numbers[index * 2 + 1]!,
-	}));
 }
 
 /**
