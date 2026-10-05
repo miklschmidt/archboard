@@ -1,22 +1,20 @@
 // The banner: the lockup beside a real proposal that Archboard draws, in both themes, and the
 // social card cut from the dark one.
 //
-// An Archboard server over a copy of examples/web-shop rasterizes the Web shop's Queued fulfilment
-// proposal, drawn against the architecture that is built: new parts in green, a changed part in
-// orange, and a removed part as a red ghost. A page in Chromium lays the drawing as a sheet on the
-// picture's own ground, which is the ground of the whole banner, tilted away from the reader, and
-// sets the lockup (lockup.ts) beside it. The page
-// loads the theme's colours from src/shared/theme/theme.css and the display face from the
-// repository. The same checkout makes the same banner.
+// An Archboard server over a copy of examples/web-shop renders the Web shop's Queued fulfilment
+// proposal as an SVG, drawn against the architecture that is built: new parts in green, a changed
+// part in orange, and a removed part as a red ghost. A page in Chromium puts that SVG in as vector,
+// a sheet tilted away from the reader, and sets the lockup (lockup.ts) beside it. The ground of the
+// page is the ground of GitHub's page in the colour mode of the banner, and the drawing is given
+// the same ground, so the banner shows no edge where it lies on the README. The page loads the
+// theme's colours from src/shared/theme/theme.css and the display face from the repository. It is
+// photographed at two pixels per CSS pixel and scaled down, so the tilt is sampled finely. Repeated
+// makes agree to within a few anti-aliased pixels of the tilted sheet, not byte for byte.
 
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-
-import {
-	SemanticRasterReceiptSchema,
-	type SemanticRasterPageSize,
-} from "@/runtime/semantic-rasterizer/receipt";
+import { z } from "zod";
 
 import {
 	Browser,
@@ -45,8 +43,8 @@ const BANNER = { width: 2172, height: 724 } as const;
 /** GitHub's social preview: the banner's left 2:1, lockup included, at GitHub's size. */
 const SOCIAL = { width: 1280, height: 640 } as const;
 
-/** Bitmap pixels per diagram pixel: the near edge of the sheet is drawn larger than the diagram. */
-const DRAWING_SCALE = 2;
+/** Device pixels per CSS pixel of the page, so the tilted drawing is sampled finely. */
+const PIXEL_RATIO = 2;
 
 /** The name's size in the lockup, in banner pixels; the mark follows it. */
 const NAME_SIZE = 120;
@@ -63,10 +61,28 @@ const FILES = {
 
 type Theme = "dark" | "light";
 
-/** One theme's drawing of the proposal, and the diagram's size in diagram pixels. */
-interface Drawing extends SemanticRasterPageSize {
-	readonly file: string;
-}
+/** The ground of GitHub's page in each of its colour modes (Primer's default background). */
+const GROUND: Readonly<Record<Theme, string>> = { dark: "#0d1117", light: "#ffffff" };
+
+/** What the page says once its drawing and its faces are ready. */
+const PageReadySchema = z.object({ failed: z.array(z.string()), display: z.boolean() });
+
+/**
+ * The page script that makes the picture ready: leave the traffic marks at their first frame by
+ * removing their animation (none begins later than time zero, so the first frame is the picture
+ * without it), and load every face that the page and the drawing declare.
+ */
+const READY_SCRIPT = `(async () => {
+	const svg = document.querySelector(".sheet svg");
+	svg.querySelectorAll("animate, animateTransform, animateMotion, set").forEach((animation) => animation.remove());
+	const faces = [...document.fonts];
+	await Promise.all(faces.map((face) => face.load().catch(() => undefined)));
+	await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
+	return {
+		failed: faces.filter((face) => face.status !== "loaded").map((face) => face.family),
+		display: faces.some((face) => face.family.includes("Archboard Display") && face.status === "loaded"),
+	};
+})()`;
 
 /**
  * The address of a repository file, for the page.
@@ -78,83 +94,85 @@ function fileUrl(path: string): string {
 }
 
 /**
- * The banner of one theme, as a page. The picture's own ground is the ground of the whole banner,
- * so nothing marks where the sheet ends. The drawing lies on it as a tilted sheet, and the ground
- * washes over the sheet's far edges, so the left third stays calm for the lockup.
+ * The banner of one theme, as a page. GitHub's ground is the ground of the whole banner and of the
+ * drawing, so nothing marks where the sheet ends. The drawing lies on it as a tilted sheet, and the
+ * ground washes over the sheet's far edges, so the left third stays calm for the lockup.
  * @param theme The theme.
- * @param drawing The proposal drawn in that theme.
+ * @param drawing The SVG that the renderer drew in that theme.
  * @returns The page.
  */
-function bannerPage(theme: Theme, drawing: Drawing): string {
-	return `<!doctype html><html data-theme="${theme}"><head><meta charset="utf-8">
+function bannerPage(theme: Theme, drawing: string): string {
+	return `<!doctype html><html data-theme="${theme}" style="--ground: ${GROUND[theme]}"><head><meta charset="utf-8">
 <link rel="stylesheet" href="${fileUrl("src/shared/theme/theme.css")}">
 <style>
 @font-face { font-family: "Archboard Display"; src: url("${fileUrl(DISPLAY_FACE)}") format("truetype"); font-weight: 100 900; font-display: block; }
-body { position: relative; margin: 0; width: ${BANNER.width}px; height: ${BANNER.height}px; overflow: hidden; background: var(--background); }
-.sheet { position: absolute; left: 900px; top: -10px; width: ${drawing.width}px; height: ${drawing.height}px; overflow: hidden;
-	transform-origin: 0 0; transform: perspective(2400px) rotateX(48deg) rotateZ(-9deg) scale(0.74);
-	background: var(--background); }
-.sheet img { display: block; width: 100%; height: 100%; }
+body { position: relative; margin: 0; width: ${BANNER.width}px; height: ${BANNER.height}px; overflow: hidden; background: var(--ground); }
+.sheet { position: absolute; left: 900px; top: -10px; line-height: 0;
+	transform-origin: 0 0; transform: perspective(2400px) rotateX(48deg) rotateZ(-9deg) scale(0.74); }
+.sheet svg { display: block; --background: var(--ground) !important; }
 .falloff { position: absolute; inset: 0; background:
-	linear-gradient(90deg, var(--background) 34%, transparent 46%),
-	radial-gradient(130% 150% at 60% 75%, transparent 55%, var(--background) 100%); }
+	linear-gradient(90deg, var(--ground) 34%, transparent 46%),
+	radial-gradient(130% 150% at 60% 75%, transparent 55%, var(--ground) 100%); }
 .lockup { position: absolute; left: 150px; top: 50%; transform: translateY(-50%); }
 </style></head><body>
-<div class="sheet"><img src="${pathToFileURL(drawing.file).toString()}"></div>
+<div class="sheet">${drawing}</div>
 <div class="falloff"></div>
 <div class="lockup">${lockupMarkup(NAME_SIZE)}</div>
 </body></html>`;
 }
 
 /**
- * Rasterize the proposal, drawn against today, in one theme.
+ * Render the proposal, drawn against today, in one theme.
  * @param server The server over a copy of the example vault.
  * @param theme The theme.
  * @param work Where the drawing goes.
- * @returns The drawing.
+ * @returns The SVG.
  */
-async function drawProposal(server: TakeServer, theme: Theme, work: string): Promise<Drawing> {
-	const file = join(work, `drawing-${theme}.png`);
-	const receipt = await server.cli([
+async function drawProposal(server: TakeServer, theme: Theme, work: string): Promise<string> {
+	const file = join(work, `drawing-${theme}.svg`);
+	await server.cli([
 		"semantic",
-		"rasterize",
+		"render",
 		BOARD,
 		"--variant",
 		PROPOSAL,
 		"--theme",
 		theme,
-		"--scale",
-		String(DRAWING_SCALE),
 		"--out",
 		file,
 	]);
-	return { file, ...SemanticRasterReceiptSchema.parse(receipt).diagram };
+	return readFileSync(file, "utf8");
 }
 
 /**
  * Lay one theme's banner out in Chromium and save what it shows.
  * @param browser The browser.
  * @param theme The theme.
- * @param drawing The proposal drawn in that theme.
+ * @param drawing The SVG that the renderer drew in that theme.
  * @param out Where the picture goes.
+ * @throws {Error} When a face did not load, so the banner would be photographed in another face.
  */
 async function photograph(
 	browser: Browser,
 	theme: Theme,
-	drawing: Drawing,
+	drawing: string,
 	out: string,
 ): Promise<void> {
 	const page = join(scratch("banner"), `${theme}.html`);
 	writeFileSync(page, bannerPage(theme, drawing));
-	const window = await browser.open({ url: pathToFileURL(page).toString(), theme, ...BANNER });
-	await window.waitFor(
-		"document.images[0]?.complete && document.images[0].naturalWidth > 0",
-		"the drawing",
-	);
-	const faces = await window.evaluate(
-		`document.fonts.load('500 ${NAME_SIZE}px "Archboard Display"').then((faces) => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(faces.length)))))`,
-	);
-	if (faces === 0) throw new Error("The banner page loaded no Archboard Display face.");
+	const window = await browser.open({
+		url: pathToFileURL(page).toString(),
+		theme,
+		pixelRatio: PIXEL_RATIO,
+		...BANNER,
+	});
+	await window.waitFor('document.querySelector(".sheet svg") !== null', "the drawing");
+	const ready = PageReadySchema.parse(await window.evaluate(READY_SCRIPT));
+	if (ready.failed.length > 0 || !ready.display) {
+		throw new Error(
+			`The banner page did not load every face (${ready.failed.join(", ") || "no Archboard Display"}).`,
+		);
+	}
 	await window.screenshot(out);
 }
 
@@ -177,6 +195,8 @@ async function makeBanner(context: MakeContext): Promise<void> {
 					await ffmpeg([
 						"-i",
 						picture,
+						"-vf",
+						`scale=${BANNER.width}:${BANNER.height}:flags=lanczos`,
 						"-c:v",
 						"libwebp",
 						"-quality",
@@ -190,7 +210,7 @@ async function makeBanner(context: MakeContext): Promise<void> {
 		"-i",
 		join(work, "banner-dark.png"),
 		"-vf",
-		`crop=${BANNER.height * 2}:${BANNER.height}:0:0,scale=${SOCIAL.width}:${SOCIAL.height}:flags=lanczos`,
+		`crop=${BANNER.height * 2 * PIXEL_RATIO}:${BANNER.height * PIXEL_RATIO}:0:0,scale=${SOCIAL.width}:${SOCIAL.height}:flags=lanczos`,
 		"-q:v",
 		"2",
 		inRepository(FILES.social),
@@ -204,9 +224,9 @@ const banner: Producer = {
 	needs: ["chromium", "ffmpeg"],
 	plan: [
 		"Start an Archboard server over a copy of examples/web-shop.",
-		`Rasterize ${BOARD}'s ${PROPOSAL} proposal against today in dark and light with archboard semantic rasterize, at ${DRAWING_SCALE}x.`,
-		`Lay each drawing as a tilted sheet beside the lockup (the mark from lockup.ts and archboard in the display face, in theme.css's colours) in Chromium at ${BANNER.width}x${BANNER.height}.`,
-		`Encode each as a still WebP in docs/readme, and cut the dark banner's left 2:1 into the ${SOCIAL.width}x${SOCIAL.height} social card in docs/assets.`,
+		`Render ${BOARD}'s ${PROPOSAL} proposal against today in dark and light with archboard semantic render.`,
+		`Lay each SVG as a tilted sheet beside the lockup (the mark from lockup.ts and archboard in the display face, in theme.css's colours) on GitHub's ground for that colour mode, in Chromium at ${BANNER.width}x${BANNER.height} and ${PIXEL_RATIO} pixels per CSS pixel.`,
+		`Scale each picture down and encode it as a still WebP in docs/readme, and cut the dark banner's left 2:1 into the ${SOCIAL.width}x${SOCIAL.height} social card in docs/assets.`,
 	],
 	make: makeBanner,
 };
