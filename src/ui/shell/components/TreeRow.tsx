@@ -51,12 +51,30 @@ const CHEVRON_STYLE: CSSProperties = {
  * name. A board's variants and its Earlier row are set closer and smaller
  * under it, so a glance tells a board from what it holds. Each row's first
  * line is `--row-line` high, and every column of the row centres on it.
+ * `--row-mid` is the middle of that line, from the row's top.
+ * @param line The height of the first line, in pixels.
+ * @param padding The padding above and below the row, in pixels.
+ * @returns The row's metrics.
  */
+function rowMetrics(line: number, padding: number): CSSProperties {
+	return {
+		"--row-line": `${line}px`,
+		"--row-mid": `${padding + line / 2}px`,
+		paddingBlock: padding,
+	};
+}
+
+/** A variant's and an Earlier row's first line, and the padding around the row. */
+const HELD_LINE = 18;
+const HELD_PADDING = 6;
+
+const LANDMARK_METRICS = rowMetrics(20, 8);
+const HELD_METRICS = rowMetrics(HELD_LINE, HELD_PADDING);
 const ROW_METRICS: Readonly<Record<NavigatorRow["kind"], CSSProperties>> = {
-	board: { "--row-line": "20px", "--row-mid": "18px", paddingBlock: 8 },
-	folder: { "--row-line": "20px", "--row-mid": "18px", paddingBlock: 8 },
-	variant: { "--row-line": "18px", "--row-mid": "15px", paddingBlock: 6 },
-	earlier: { "--row-line": "18px", "--row-mid": "15px", paddingBlock: 6 },
+	board: LANDMARK_METRICS,
+	folder: LANDMARK_METRICS,
+	variant: HELD_METRICS,
+	earlier: HELD_METRICS,
 };
 
 /**
@@ -179,7 +197,7 @@ function RowLane(props: { readonly row: NavigatorRow; readonly lane: Lane }): JS
 }
 
 /** From a variant row's top to the middle of its mark: its padding and half its first line. */
-const LANE_MIDDLE = 6 + 18 / 2;
+const LANE_MIDDLE = HELD_PADDING + HELD_LINE / 2;
 
 /** How far the timeline stops short of a mark's middle: the mark's half and a little air. */
 const LANE_CLEARANCE = 9;
