@@ -10,9 +10,9 @@
 // level places the other board. Where either is not a level the policy lists,
 // the mark says only that the part opens another board.
 //
-// From far away, where a card is its name grown to fill it, the mark grows with
-// the card's chip and keeps to the same corner, so a fitted picture of a large
-// board still says which cards open another board, and which way.
+// From far away the mark is drawn larger in the same corner, so a fitted
+// picture of a large board still says which cards open another board, and
+// which way.
 
 import { coord } from "@/transformers/semantic-renderer/lib/geometry";
 import { tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
