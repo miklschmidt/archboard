@@ -172,7 +172,9 @@ function toolCallError(item: SessionItem<"mcpToolCall" | "dynamicToolCall">): st
 }
 
 /**
- * Why a turn failed, bounded; Codex reports an error only for a failed turn.
+ * Why a turn failed or was stopped, bounded. Codex reports an error for a failed turn, and for a
+ * turn that the auto-review circuit breaker stops in its strict mode (Codex 0.160.0,
+ * `guardian/review_request.rs`).
  * @param turn The turn.
  * @returns The bounded error, or null.
  */

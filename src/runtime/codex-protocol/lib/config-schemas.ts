@@ -52,7 +52,7 @@ const ConfigLayerSchema = looseObject({
 	name: ConfigLayerSourceSchema,
 	version: z.string(),
 	config: JsonValueSchema,
-	// Codex 0.158.0 omits this nullable generated field when the layer is enabled.
+	// Codex 0.160.0 omits this nullable generated field when the layer is enabled.
 	disabledReason: z
 		.string()
 		.nullable()

@@ -475,7 +475,7 @@ function projectElicitation(
 		...envelope,
 		approvalKind: request.family,
 		serverName: params.serverName,
-		// Codex 0.158.0 spells the OpenAI form two ways; the browser knows one.
+		// Codex 0.160.0 spells the OpenAI form two ways; the browser knows one.
 		mode: params.mode === "openaiForm" ? "openai/form" : params.mode,
 		message: params.message,
 		url: params.mode === "url" ? safeUrl(params.url) : null,
