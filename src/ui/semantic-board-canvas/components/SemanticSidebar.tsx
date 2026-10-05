@@ -252,7 +252,8 @@ function Column(props: ColumnProps): JSX.Element {
 	const { slide, place, sidebar } = props;
 	const panel = useRef<HTMLDivElement>(null);
 	useEscapeAway(panel, sidebar);
-	useFocusBackWhenLeaving(panel, slide.leaving, sidebar.toggleId);
+	// A presented walkthrough that steps the panel aside takes focus itself.
+	useFocusBackWhenLeaving(panel, slide.leaving && !sidebar.steppedAside, sidebar.toggleId);
 	const floating = slide.shownAs === "floating";
 	const leaving = slide.leaving ? "" : undefined;
 	return (

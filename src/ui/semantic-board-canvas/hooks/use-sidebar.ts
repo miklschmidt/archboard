@@ -31,7 +31,7 @@ interface Sidebar {
 	readonly tab: SidebarTab;
 	/** Whether it takes its width beside the picture. */
 	readonly docked: boolean;
-	/** Whether its panel is laid over the picture's edge. */
+	/** Whether its panel is laid over the picture's edge, which it is not while it is stepped aside. */
 	readonly floating: boolean;
 	/** Whether its panel is on screen, docked or floating, and not stepped aside. */
 	readonly shown: boolean;
@@ -156,7 +156,11 @@ function useSidebar(selection: string | null, resting: boolean, steppedAside: bo
 	const panelId = useId();
 	const toggleId = useId();
 	const selectionTabId = useId();
-	const { pinned, docked, floating } = placementOf(state, resting);
+	const placement = placementOf(state, resting);
+	const { pinned, docked } = placement;
+	// Stepped aside, the panel is laid over nothing, so nothing keeps clear of it,
+	// and a float the pick or the person asked for comes back when the walkthrough ends.
+	const floating = placement.floating && !steppedAside;
 	// Brought up to date during render, as React asks for state derived from a
 	// prop: the tab and the selection are never seen out of step.
 	if (state.seen !== selection) {
