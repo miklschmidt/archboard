@@ -382,7 +382,8 @@ that they show is now the dock at the foot of the navigator.
   it will land. Voice starting lights the orb in the capsule and does not launch it
   from the Talk key. While a walkthrough is presented the voice is at the foot of its box, and in a
   fullscreen presentation, which has no dock, it stays in a box whatever the person wants of
-  subtitles. A recording has plain subtitles.
+  subtitles. A recording draws the same voice box at the foot of its walkthrough box, with an
+  orb that the recorded voice moves.
   DESIGN.md describes the dock and the box.
 - Session details (account, model, context used, thread, the voice
   coordinator) are one menu away, not on screen.

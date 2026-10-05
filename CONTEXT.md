@@ -346,8 +346,9 @@ gives the voice up only to a box that is there. Turning subtitles off flies the
 one orb back to the dock. While a walkthrough is presented the voice box is in
 the foot of the walkthrough box. A fullscreen presentation has no dock, so the
 box carries the voice there whatever the user wants of subtitles, which then
-decide only whether there are words. A recording has plain subtitles, with no
-box. It is presentation, like the subtitle.
+decide only whether there are words. A recording draws the same voice box at
+the foot of its walkthrough box, its orb moved by the recorded voice. It is
+presentation, like the subtitle.
 _Avoid_: caption box, voice panel, subtitle bar
 
 **Pane news**:
