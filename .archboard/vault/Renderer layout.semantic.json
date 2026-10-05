@@ -4,9 +4,9 @@
 	"id": "OjRLKb74",
 	"name": "Renderer layout",
 	"level": "module",
-	"version": 22,
+	"version": 23,
 	"createdAt": "2026-09-13T00:02:13.555Z",
-	"updatedAt": "2026-09-27T22:27:17.039Z",
+	"updatedAt": "2026-10-05T04:04:51.558Z",
 	"views": [
 		{
 			"id": "gKxiRSCO",
@@ -1598,7 +1598,7 @@
 								"to": "oycxx6G2",
 								"label": "Keep the solve that reads best",
 								"kind": "self",
-								"note": "weighed as drawn: crossings, line length and pane fit"
+								"note": "weighed as drawn: crossings, line length and fit in the reference pane of the tuned 1.4 page shape"
 							},
 							{
 								"id": "LxoOhChw",
@@ -1663,7 +1663,7 @@
 							{
 								"id": "AOPSXwkc",
 								"heading": "The drawing that reads best is kept",
-								"body": "A board is solved more than one way, and the answers are weighed as drawn: crossings, line length and how well it fits the pane. A block of cards wraps a wide rank or folds tall ranks into columns only where that reads better. Nobody authors the reading, and every variant is laid out fresh.",
+								"body": "A board is solved more than one way, and the answers are weighed as drawn: crossings, line length and how well it fits the reference pane, which is as wide as the shell gives a drawing and as tall as the tuned 1.4 page shape makes that width, not the shell's own pane (ADR 0043). A block of cards wraps a wide rank or folds tall ranks into columns only where that reads better. Nobody authors the reading, and every variant is laid out fresh.",
 								"subjects": [
 									"oycxx6G2",
 									"qtwaBhit"
