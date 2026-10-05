@@ -60,7 +60,7 @@
 				"src/server/archboard/lib/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts"
 			],
-			"hash": null
+			"hash": "2f9baa93528d3df09f11189c2c7012d2ea6f3abf44ee1f3f5fd501dc09b36ba6"
 		},
 		{
 			"name": "plan",
@@ -120,7 +120,7 @@
 				"scripts/readme-assets/narrated.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": null
+			"hash": "f9271f0717b0317a2269bdbd7f9abd3c9a0627a74f822817ed6dd8b512d50295"
 		},
 		{
 			"name": "sequence",
@@ -169,7 +169,7 @@
 				"scripts/readme-assets/narrated.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": null
+			"hash": "f9271f0717b0317a2269bdbd7f9abd3c9a0627a74f822817ed6dd8b512d50295"
 		},
 		{
 			"name": "drill-down",
