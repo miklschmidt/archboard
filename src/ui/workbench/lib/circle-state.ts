@@ -1,7 +1,7 @@
 // What the voice's circle shows, and what pressing it does, from the voice's stage.
 
 import type { OrbMode } from "@/ui/voice-orb";
-import type { AgentVoiceView } from "@/ui/workbench/contracts";
+import type { AgentActions, AgentVoiceView, VoiceStage } from "@/ui/workbench/contracts";
 
 /** What the circle shows, from the voice's stage. */
 type CircleState = OrbMode;
@@ -47,4 +47,26 @@ const VOICE_WORDS: Readonly<Record<CircleState, string>> = {
 	ending: "Ending",
 };
 
-export { CIRCLE_NAMES, VOICE_WORDS, circleState, type CircleState };
+/**
+ * The stages in which voice can be ended: from the moment it connects, so a session stuck
+ * connecting or recovering can always be ended. While the setup is still preparing there is no
+ * session to end yet.
+ */
+const ENDABLE: ReadonlySet<VoiceStage> = new Set(["connecting", "listening", "speaking", "muted"]);
+
+/**
+ * What a press of a voice key does, for every key that starts and ends voice: start it while it
+ * is off, end it once it connects, and nothing while a control is on the wire, while voice is on
+ * its way to connecting or while it ends. A key that does nothing says so with aria-disabled,
+ * not disabled: a disabled button drops the keyboard's place.
+ * @param voice The voice.
+ * @param actions The actions.
+ * @returns The action, or undefined while a press does nothing.
+ */
+function voicePress(voice: AgentVoiceView, actions: AgentActions): (() => void) | undefined {
+	if (voice.busy) return undefined;
+	if (voice.stage === "idle") return actions.talk;
+	return ENDABLE.has(voice.stage) ? actions.endVoice : undefined;
+}
+
+export { CIRCLE_NAMES, ENDABLE, VOICE_WORDS, circleState, voicePress, type CircleState };

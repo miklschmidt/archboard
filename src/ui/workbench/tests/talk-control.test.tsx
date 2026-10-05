@@ -54,7 +54,12 @@ test("voice is ended from the key from the moment it connects, whatever it is do
 });
 
 test("while voice is starting, ending or on the wire the key presses nothing and stays in the tab order", () => {
-	for (const voice of [voiceIn("preparing"), voiceIn("stopping"), voiceIn("listening", true)]) {
+	for (const voice of [
+		voiceIn("preparing"),
+		voiceIn("stopping"),
+		voiceIn("listening", true),
+		voiceIn("idle", true),
+	]) {
 		const { button, pressed } = key(voice);
 		fireEvent.click(button);
 		expect(pressed).toEqual([]);
