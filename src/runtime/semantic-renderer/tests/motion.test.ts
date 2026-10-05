@@ -1,12 +1,16 @@
 import { describe, expect, test } from "bun:test";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
-import { beams, speedOf, trafficBeams } from "@/runtime/semantic-renderer/tests/drawn-traffic";
+import {
+	beams,
+	pointsOf as routeOf,
+	speedOf,
+	trafficBeams,
+} from "@/runtime/semantic-renderer/tests/drawn-traffic";
 import {
 	SAMPLE,
 	chain,
 	drawn,
 	lengthOf,
-	pointsOf as routeOf,
 	pulsesIn,
 	pulsesOn,
 	solo,
