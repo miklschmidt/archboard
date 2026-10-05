@@ -324,11 +324,14 @@ test("a membership in the inspector selects the same group, with its colour", as
 		memberships[0]?.querySelector<HTMLElement>("[data-slot='semantic-group-chip']")?.style
 			.borderColor,
 	).toBe("var(--semantic-amber)");
+	act(() => memberships[1]!.focus());
 	await act(async () => {
 		fireEvent.click(memberships[1]!);
 	});
 	await settled();
 	expect(selected()).toEqual(["h", "q", "w"]);
+	// The control goes with the selection it let go of, and the keyboard is not left on the page.
+	expect(document.activeElement).not.toBe(document.body);
 	openSidebarTab("board");
 	expect(listed()).toBe("fulfillment");
 });

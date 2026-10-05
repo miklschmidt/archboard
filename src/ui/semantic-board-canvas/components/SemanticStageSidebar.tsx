@@ -5,7 +5,7 @@
 // It is beside every state of the pane, not only a drawn one. An empty view is
 // left by choosing another view, and the board tab is where the views are.
 
-import { useCallback, type JSX, type ReactNode } from "react";
+import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@/shared/code-target";
 import type { SemanticRender } from "@/ui/semantic-board-canvas/api/semantic-boards";
@@ -72,10 +72,11 @@ interface StageSidebarView extends Omit<
  */
 function SelectionPanel(props: { readonly view: StageSidebarView }): JSX.Element {
 	const { view } = props;
-	const { selection, onOpenCode, onPick, sidebar } = view;
+	const { selection, onOpenCode, onPick, sidebar, groupControls } = view;
 	const { selectionTabId } = sidebar;
-	// A subject picked from a row of this panel is drawn in a new panel, and the row
-	// goes with the old one, so focus is given to the tab first and is not lost.
+	// A subject picked from a row of this panel is drawn in a new panel, and a group
+	// chosen from its title lets the selection go, so the control pressed goes with
+	// the old panel either way. Focus is given to the tab first and is not lost.
 	const pickFromPanel = useCallback(
 		(id: string | null): void => {
 			document.getElementById(selectionTabId)?.focus();
@@ -83,6 +84,21 @@ function SelectionPanel(props: { readonly view: StageSidebarView }): JSX.Element
 		},
 		[onPick, selectionTabId],
 	);
+	const groupsFromPanel = useMemo((): GroupControls => {
+		const { onChoose } = groupControls;
+		if (onChoose === undefined) {
+			return groupControls;
+		}
+		/**
+		 * Select a group's members, after giving focus to the selection tab.
+		 * @param group The group's id.
+		 */
+		const choose = (group: string): void => {
+			document.getElementById(selectionTabId)?.focus();
+			onChoose(group);
+		};
+		return { names: groupControls.names, onChoose: choose };
+	}, [groupControls, selectionTabId]);
 	const answer = view.render.data;
 	if (selection === null || answer === undefined) {
 		return <NothingSelected />;
@@ -94,7 +110,7 @@ function SelectionPanel(props: { readonly view: StageSidebarView }): JSX.Element
 			selection={selection}
 			onOpen={view.onOpenDown}
 			onOpenCode={onOpenCode}
-			groups={view.groupControls}
+			groups={groupsFromPanel}
 			look={view.look}
 			onPick={pickFromPanel}
 		/>
