@@ -75,16 +75,21 @@ interface SemanticPresentationProps {
 }
 
 /**
- * Take keyboard focus into the box when it opens, unless the reader is typing somewhere: the
- * control that presented the walkthrough steps aside with the sidebar, and focus would be left on
- * nothing.
+ * Take keyboard focus into the box when it opens, when focus is on nothing or anywhere in this
+ * pane's reading area: the control that presented the walkthrough steps aside with the sidebar,
+ * and focus would be left on nothing. It is taken at once, while that control still holds focus,
+ * because the browser lets go of it only once the sidebar is hidden. Focus somewhere else, such as
+ * a field of the conversation or the other pane, is left where it is.
  * @returns The ref for the box.
  */
 function useFocusWhenOpened(): RefObject<HTMLElement | null> {
 	const box = useRef<HTMLElement>(null);
 	useEffect(() => {
-		const held = document.activeElement;
-		if (held === null || held === document.body) box.current?.focus({ preventScroll: true });
+		const element = box.current;
+		if (element === null) return;
+		const held = document.activeElement ?? document.body;
+		const area = element.closest("[data-slot='semantic-reading-area']") ?? element;
+		if (held === document.body || area.contains(held)) element.focus({ preventScroll: true });
 	}, []);
 	return box;
 }
