@@ -4,7 +4,8 @@
 // An Archboard server over a copy of examples/web-shop rasterizes the Web shop's Queued fulfilment
 // proposal, drawn against the architecture that is built: new parts in green, a changed part in
 // orange, and a removed part as a red ghost. A page in Chromium lays the drawing as a sheet on the
-// theme's chrome, tilted away from the reader, and sets the lockup (lockup.ts) beside it. The page
+// picture's own ground, which is the ground of the whole banner, tilted away from the reader, and
+// sets the lockup (lockup.ts) beside it. The page
 // loads the theme's colours from src/shared/theme/theme.css and the display face from the
 // repository. The same checkout makes the same banner.
 
@@ -80,9 +81,9 @@ function fileUrl(path: string): string {
 }
 
 /**
- * The banner of one theme, as a page. The chrome is the ground. The drawing lies on it as a sheet
- * in the picture's own ground, and the chrome's tone washes over the sheet's far edges, so the
- * left third stays calm for the lockup.
+ * The banner of one theme, as a page. The picture's own ground is the ground of the whole banner,
+ * so nothing marks where the sheet ends. The drawing lies on it as a tilted sheet, and the ground
+ * washes over the sheet's far edges, so the left third stays calm for the lockup.
  * @param theme The theme.
  * @param drawing The proposal drawn in that theme.
  * @returns The page.
@@ -92,16 +93,14 @@ function bannerPage(theme: Theme, drawing: Drawing): string {
 <link rel="stylesheet" href="${fileUrl("src/shared/theme/theme.css")}">
 <style>
 @font-face { font-family: "Archboard Display"; src: url("${fileUrl(DISPLAY_FACE)}") format("truetype"); font-weight: 100 900; font-display: block; }
-:root { --shade: color-mix(in oklch, var(--foreground) 22%, transparent); }
-:root[data-theme="dark"] { --shade: color-mix(in oklch, var(--sidebar) 25%, black); }
-body { position: relative; margin: 0; width: ${BANNER.width}px; height: ${BANNER.height}px; overflow: hidden; background: var(--sidebar); }
+body { position: relative; margin: 0; width: ${BANNER.width}px; height: ${BANNER.height}px; overflow: hidden; background: var(--background); }
 .sheet { position: absolute; left: 900px; top: -10px; width: ${drawing.width}px; height: ${drawing.height}px; overflow: hidden;
 	transform-origin: 0 0; transform: perspective(2400px) rotateX(48deg) rotateZ(-9deg) scale(0.74);
-	border-radius: 8px; background: var(--background); box-shadow: 0 0 0 1px var(--border), 0 30px 70px -10px var(--shade); }
+	background: var(--background); }
 .sheet img { display: block; width: 100%; height: 100%; }
 .falloff { position: absolute; inset: 0; background:
-	linear-gradient(90deg, var(--sidebar) 34%, transparent 46%),
-	radial-gradient(130% 150% at 60% 75%, transparent 55%, var(--sidebar) 100%); }
+	linear-gradient(90deg, var(--background) 34%, transparent 46%),
+	radial-gradient(130% 150% at 60% 75%, transparent 55%, var(--background) 100%); }
 .lockup { position: absolute; left: 150px; top: 50%; transform: translateY(-50%); }
 </style></head><body>
 <div class="sheet"><img src="${pathToFileURL(drawing.file).toString()}"></div>
