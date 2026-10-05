@@ -70,6 +70,7 @@ describe("README asset source hashes", () => {
 	const files = {
 		"src/ui/pane.ts": "pane",
 		"src/ui/tests/pane.test.ts": "test",
+		"src/ui/README.md": "note",
 		"src/server/route.ts": "route",
 	};
 
@@ -80,6 +81,7 @@ describe("README asset source hashes", () => {
 
 			fs.writeFileSync(path.join(root, "src/server/route.ts"), "another route");
 			fs.writeFileSync(path.join(root, "src/ui/tests/pane.test.ts"), "another test");
+			fs.writeFileSync(path.join(root, "src/ui/README.md"), "another note");
 			expect(hashOf(root, ["src/ui"])).toBe(before);
 
 			fs.writeFileSync(path.join(root, "src/ui/pane.ts"), "another pane");
