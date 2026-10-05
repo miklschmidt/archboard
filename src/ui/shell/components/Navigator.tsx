@@ -1,8 +1,9 @@
 // The left column: the brand bar at its top, a filter, the vault's boards as
 // an outline (folders, then the boards each board drills down to, then
-// names), where agents are working, and the agent itself at its foot. Each board is one row; its variants are listed under it while
-// a pane shows it or the person opens a board that has a proposal. The way to
-// what every pane shows is open, and nothing an agent does reorders the tree.
+// names), where agents are working, and the agent itself at its foot. Each
+// board is one row; a board with more than one variant lists them under it
+// when it is open. The way to what every pane shows is open, and nothing an
+// agent does reorders the tree.
 //
 // Nothing here makes a board. A person reads an architecture an agent wrote
 // (ADR 0023), so the navigator is a way of choosing which one to look at.
