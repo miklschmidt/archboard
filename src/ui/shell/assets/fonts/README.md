@@ -28,7 +28,8 @@ Open Font License 1.1; the exact license texts sit beside the binaries.
 The official static release has no SemiBold file. The variable runtime file is
 therefore required for the application weights 400, 500, 600, and 700. The
 separate static Medium file is the diagrams' weight 500, byte-pinned to the same
-1.000 design. The shell's pages do not load it.
+1.000 design. The shell's stylesheet does not register it. A pane loads it only
+to draw a diagram, from the server's `/assets/diagram-fonts`.
 
 ## DM Mono 1.000
 
