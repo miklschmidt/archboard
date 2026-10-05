@@ -40,8 +40,8 @@ Refresh an asset when `readme:check` lists it after your change. Then:
 | `explainer`, `pr-walkthrough`, `newcomer`            | `semantic record`, narrated by the Codex voice; the loop and thumbnail are cut from it      | yes   |
 | `banner`                                             | Codex image generation, with the wordmark laid over it                                      | yes   |
 
-Each clip writes its index thumbnail (`idx-*.webp`) too. `explainer` writes
-nothing in the repository.
+Most assets also write an index thumbnail (`idx-*.webp`). The manifest lists
+the files of each asset. `explainer` writes nothing in the repository.
 
 The clips are filmed over fresh copies of the tracked files of
 `examples/web-shop` or `.archboard/vault`, never over a vault from elsewhere.
