@@ -182,7 +182,7 @@ function ConversationColumns(props: ConversationColumnsProps): JSX.Element {
 					{props.conversation}
 				</ConversationSlide>
 			</ResizablePanel>
-			<ResizableHandle withHandle disabled={!open} />
+			<ResizableHandle withHandle disabled={!open} aria-label="Conversation width" />
 			<ResizablePanel
 				id="centre"
 				minSize={CENTRE_MIN_WIDTH}
