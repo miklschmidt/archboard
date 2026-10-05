@@ -24,7 +24,11 @@ import {
 	settle,
 } from "@/ui/semantic-board-canvas/tests/stage-harness";
 import { cameraNow, pressKey } from "@/ui/semantic-board-canvas/tests/camera-probes";
-import { openVariantsPage, variantEntry } from "@/ui/semantic-board-canvas/tests/variants-page";
+import {
+	listedVariants,
+	openVariantsPage,
+	variantEntry,
+} from "@/ui/semantic-board-canvas/tests/variants-page";
 
 /**
  * One board document with a family of variants.
@@ -207,6 +211,31 @@ test("the Variants page asks the shell for a state by its id, and for the curren
 		fireEvent.click(variantEntry("v1"));
 	});
 	expect(asked).toEqual(["v2", null]);
+});
+
+test("the Variants page waits for the board before it lists anything", async () => {
+	serving([AS_IT_IS, PROPOSED]);
+	const read = Promise.withResolvers<void>();
+	server.held["pipeline"] = read.promise;
+	mountStage();
+	await settle();
+	openVariantsPage();
+	// A page that read an absent board as a board with no variants would say
+	// that nothing it describes is built.
+	const page = (): HTMLElement | null =>
+		document.querySelector<HTMLElement>("[data-slot='board-page'][data-tab='variants']");
+	expect(page()?.getAttribute("aria-busy")).toBe("true");
+	expect(listedVariants()).toEqual([]);
+
+	await act(async () => {
+		read.resolve();
+	});
+	await settle();
+	expect(page()?.getAttribute("aria-busy")).toBeNull();
+	expect(listedVariants()).toEqual([
+		["v1", "current"],
+		["v2", "draft"],
+	]);
 });
 
 test("Everything fits the whole proposal and current state instead of zooming to changed subjects", async () => {
