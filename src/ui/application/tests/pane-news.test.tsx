@@ -2,7 +2,8 @@
 // says it is doing and where agents work land in the pane records at the
 // application's root, and the shell shows them. The board stage shows none of
 // it, so it is not drawn again for any of it. Where agents work is shown in the
-// navigator alone, so the pane's header is not drawn again for it either.
+// navigator alone, so the pane's header is not drawn again for it either. A pane
+// on no board has no stage, and its header still shows its news and its controls.
 //
 // The application is mounted through its entrypoint, as the page mounts it, over
 // a server faked at the network: fetch, and a socket the test opens and speaks on.
@@ -14,7 +15,7 @@ GlobalRegistrator.register({ url: "http://127.0.0.1:3000/" });
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
 
 // React's renderer is loaded once the page's globals are there.
-const { act, render, cleanup } = await import("@testing-library/react");
+const { act, render, cleanup, within } = await import("@testing-library/react");
 const { createElement } = await import("react");
 const { Application } = await import("@/ui/application");
 const { createBoardRoutingHost } = await import("@/ui/board-routing");
@@ -290,4 +291,30 @@ test("another pane moving, or an agent writing another board, draws no board sta
 
 	expect(inventory.reads).toBeGreaterThan(reads);
 	expect(drawingOf("semantic-board-stage")).toBe(drawn);
+});
+
+test("a pane on no board says its socket is down and can be closed", async () => {
+	await paneShowingTheBoard();
+	/**
+	 * The second pane's element, while it is there.
+	 * @returns The element, or null.
+	 */
+	const second = (): HTMLElement | null =>
+		document.querySelector<HTMLElement>("[data-slot='pane-stage'][data-pane='B']");
+	const first = document.querySelector<HTMLElement>("[data-slot='pane-stage'][data-pane='A']")!;
+	act(() =>
+		within(first)
+			.getByRole("button", { name: /second pane/i })
+			.click(),
+	);
+	await settleUntil(() => second() !== null);
+
+	// Its socket is never answered, so the server never points it at a board.
+	const pane = second()!;
+	expect(pane.querySelector("[data-slot='semantic-board-stage']")).toBeNull();
+	expect(pane.querySelector("[data-slot='pane-header'] output")).not.toBeNull();
+	act(() => within(pane).getByRole("button", { name: /close/i }).click());
+	await settleUntil(() => second() === null);
+
+	expect(second()).toBeNull();
 });
