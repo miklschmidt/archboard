@@ -11,6 +11,7 @@ import { PaneChromeContext, type PaneChrome } from "@/ui/components/PaneChrome";
 import { Separator } from "@/ui/components/separator";
 import { ClaimBanner } from "@/ui/shell/components/ClaimBanner";
 import { PaneControls, PaneLetter } from "@/ui/shell/components/PaneControls";
+import { useKept } from "@/ui/shell/hooks/use-kept";
 import type { ShellActions, ShellPane, ShellPresentation } from "@/ui/shell/types/contracts";
 import { paneLetter } from "@/ui/shell/lib/pane-letters";
 import { PresentationBar } from "@/ui/shell/components/PresentationBar";
@@ -138,6 +139,23 @@ function stageClass(framed: boolean): string {
 		: "relative flex min-h-0 min-w-0 flex-1 flex-col outline-none";
 }
 
+/**
+ * Whether two shell panes say the same: each part is the same one. The shell
+ * view makes every pane new for any piece of news, and a pane whose own parts
+ * did not change keeps the shell's parts of its header, so its header and the
+ * pane's search are not drawn again (TASK-385).
+ * @param kept The pane kept from before.
+ * @param next The pane this render.
+ * @returns True when every part is the same.
+ */
+function samePane(kept: ShellPane, next: ShellPane): boolean {
+	const parts = Object.keys(next);
+	return (
+		parts.length === Object.keys(kept).length &&
+		parts.every((part) => Object.is(Reflect.get(kept, part), Reflect.get(next, part)))
+	);
+}
+
 /** Inputs for one pane's stage. */
 interface PaneStageProps {
 	pane: ShellPane;
@@ -162,7 +180,8 @@ interface PaneStageProps {
  * @returns The mounted pane.
  */
 function PaneStage(props: PaneStageProps): JSX.Element {
-	const { actions, pane, letter, paneCount, active } = props;
+	const { actions, letter, paneCount, active } = props;
+	const pane = useKept(props.pane, samePane);
 	const { paneId } = pane.status;
 	const chrome = useMemo<PaneChrome>(
 		() => ({
