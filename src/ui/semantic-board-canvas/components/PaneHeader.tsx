@@ -322,32 +322,53 @@ function PageTab(props: {
 	);
 }
 
+/** The parts of a header row. */
+interface HeaderPartProps {
+	readonly children: ReactNode;
+}
+
 /**
- * The row every pane's header is: the shell's letter and where the pane is at
- * the start, what can be done at the end, and under the row what the shell
- * says about the pane.
- * @param props The two ends of the row.
- * @param props.start Where the pane is.
- * @param props.end What can be done, the shell's controls included.
+ * The row every pane's header is, and under it what the shell says about the pane.
+ * @param props The row's start and end.
  * @returns The header row.
  */
-function HeaderRow(props: { readonly start: ReactNode; readonly end: ReactNode }): JSX.Element {
-	const { letter, notice } = usePaneChrome();
+function HeaderRow(props: HeaderPartProps): JSX.Element {
+	const { notice } = usePaneChrome();
 	return (
 		<>
 			<header
 				data-slot="pane-header"
 				className="bg-sidebar h-chrome shadow-edge-down after:bg-border @container/pane-header relative z-30 flex shrink-0 items-center pr-2 pl-4 after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px in-data-presenting:hidden"
 			>
-				<div className="mr-5 flex min-w-0 shrink items-center gap-3">
-					{letter}
-					{props.start}
-				</div>
-				<div className="ml-auto flex h-full shrink-0 items-center gap-2">{props.end}</div>
+				{props.children}
 			</header>
 			{notice}
 		</>
 	);
+}
+
+/**
+ * The start of the row: the shell's letter, then where the pane is.
+ * @param props Where the pane is.
+ * @returns The start.
+ */
+function HeaderStart(props: HeaderPartProps): JSX.Element {
+	const { letter } = usePaneChrome();
+	return (
+		<div className="mr-5 flex min-w-0 shrink items-center gap-3">
+			{letter}
+			{props.children}
+		</div>
+	);
+}
+
+/**
+ * The end of the row: what can be done, the shell's controls included.
+ * @param props What can be done.
+ * @returns The end.
+ */
+function HeaderEnd(props: HeaderPartProps): JSX.Element {
+	return <div className="ml-auto flex h-full shrink-0 items-center gap-2">{props.children}</div>;
 }
 
 /**
@@ -358,19 +379,19 @@ function HeaderRow(props: { readonly start: ReactNode; readonly end: ReactNode }
 function PaneHeader(props: PaneHeaderProps): JSX.Element {
 	const { controls } = usePaneChrome();
 	return (
-		<HeaderRow
-			start={<Breadcrumb {...props} />}
-			end={
-				<>
-					<PageTabs tab={props.tab} onTab={props.onTab} counts={props.counts} />
-					<span aria-hidden="true" className="bg-border h-4 w-px shrink-0" />
-					<span className="flex shrink-0 items-center gap-1">
-						<SidebarToggle sidebar={props.sidebar} />
-						{controls}
-					</span>
-				</>
-			}
-		/>
+		<HeaderRow>
+			<HeaderStart>
+				<Breadcrumb {...props} />
+			</HeaderStart>
+			<HeaderEnd>
+				<PageTabs tab={props.tab} onTab={props.onTab} counts={props.counts} />
+				<span aria-hidden="true" className="bg-border h-4 w-px shrink-0" />
+				<span className="flex shrink-0 items-center gap-1">
+					<SidebarToggle sidebar={props.sidebar} />
+					{controls}
+				</span>
+			</HeaderEnd>
+		</HeaderRow>
 	);
 }
 
@@ -382,14 +403,14 @@ function PaneHeader(props: PaneHeaderProps): JSX.Element {
 function NoBoardHeader(): JSX.Element {
 	const { controls } = usePaneChrome();
 	return (
-		<HeaderRow
-			start={
+		<HeaderRow>
+			<HeaderStart>
 				<h2 className="text-muted-foreground truncate text-[13px] leading-[18px] font-[650]">
 					No board
 				</h2>
-			}
-			end={controls}
-		/>
+			</HeaderStart>
+			<HeaderEnd>{controls}</HeaderEnd>
+		</HeaderRow>
 	);
 }
 
