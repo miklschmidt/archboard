@@ -161,21 +161,22 @@ class WalkthroughReplay {
 	/**
 	 * Put a talk on the page and play the board's entrance through.
 	 * @param value The talk, as `talk.json` holds it.
-	 * @param options The theme to render it in.
+	 * @param options The theme to render it in, and how loud its voice is on each frame.
 	 * @returns How many frames it renders to.
 	 * @throws {Error} When the talk cannot be read, the page already has one, or the board never draws.
 	 */
 	async load(value: unknown, options: unknown): Promise<{ readonly frames: number }> {
 		if (this.#rendering !== null) throw new Error("This page already has a talk; open it again.");
 		const talk = TalkSchema.parse(value);
-		document.documentElement.dataset["theme"] = ReplayOptionsSchema.parse(options).theme;
+		const { theme, levels } = ReplayOptionsSchema.parse(options);
+		document.documentElement.dataset["theme"] = theme;
 		const clock = createSteppedClock(-PREROLL_FRAMES * FRAME_MS);
 		driveFramesFrom(clock);
 		clock.install(window);
 		const rendering: Rendering = {
 			talk,
 			clock,
-			playback: new TalkPlayback(talk),
+			playback: new TalkPlayback(talk, levels),
 			client: createBoardQueryClient(),
 			readiness: new FrameReadiness(this.#root),
 			foreign: [],

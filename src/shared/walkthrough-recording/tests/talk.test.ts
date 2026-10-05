@@ -5,12 +5,19 @@
 // whose voice and end disagree, which would pad or cut the sound against the
 // picture; and one whose pictures were drawn from another version of the board
 // than the snapshot it carries, which would render a picture the voice never
-// spoke over.
+// spoke over. Of its voice, they catch an orb that moves a frame early, before
+// the sound that moves it, or that reads the voice on another scale than the
+// shell's meter.
 
 import { describe, expect, test } from "bun:test";
 
 import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
-import { TalkSchema, framesOf, type TalkEvent } from "@/shared/walkthrough-recording/talk";
+import {
+	TalkSchema,
+	framesOf,
+	voiceLevels,
+	type TalkEvent,
+} from "@/shared/walkthrough-recording/talk";
 
 /** A board of two parts and a walkthrough of two steps, at version 3. */
 const BOARD = {
@@ -148,5 +155,20 @@ describe("a talk", () => {
 		expect(TalkSchema.safeParse(talk({ document: { kind: "semantic-board" } })).success).toBe(
 			false,
 		);
+	});
+});
+
+describe("a talk's voice", () => {
+	test("is as loud on each frame as the voice meter would read it at the frame's moment, from the samples heard by then", () => {
+		// Silent for two frames, then a square wave at half scale.
+		const samples = Int16Array.from({ length: 144_001 }, (_, index) =>
+			index < 3200 ? 0 : (index % 2 === 0 ? 1 : -1) * 16_384,
+		);
+		const levels = voiceLevels(samples);
+		expect(levels).toHaveLength(91);
+		expect(levels.slice(0, 3)).toEqual([0, 0, 0]);
+		// The meter's window of 2048 samples is 1600 samples into the sound by frame three.
+		expect(levels[3]).toBeCloseTo(0.5 * Math.sqrt(1600 / 2048), 9);
+		expect(levels.slice(4)).toEqual(Array.from({ length: 87 }, () => 0.5));
 	});
 });
