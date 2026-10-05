@@ -63,6 +63,7 @@ function useDrillPlaces(
 		const passed = trail.map((stop, at) => ({
 			name: names[at]?.name ?? stop.board,
 			level: names[at]?.level,
+			/** Go back to this board of the trail. */
 			open: (): void => {
 				onBackTo(at);
 			},
