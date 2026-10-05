@@ -25,6 +25,7 @@ import { resolveProjectCodexExecutable } from "@/runtime/codex-process/executabl
 import {
 	Browser,
 	ffmpeg,
+	holding,
 	inOrder,
 	inRepository,
 	readmeFile,
@@ -162,13 +163,14 @@ async function overlayWordmark(art: string, theme: Theme, out: string): Promise<
 		</body></html>`,
 	);
 	const browser = await Browser.start();
-	try {
-		const window = await browser.open({ url: pathToFileURL(page).toString(), theme, ...size });
-		await window.waitFor("document.images[0]?.complete", "the art");
-		await window.screenshot(out);
-	} finally {
-		await browser.close();
-	}
+	await holding(
+		async () => browser.close(),
+		async () => {
+			const window = await browser.open({ url: pathToFileURL(page).toString(), theme, ...size });
+			await window.waitFor("document.images[0]?.complete", "the art");
+			await window.screenshot(out);
+		},
+	);
 }
 
 /**
