@@ -130,9 +130,10 @@ measured real-world activity nor connection importance.
 _Avoid_: emphasis, pulse count, shot
 
 **Traffic volume**:
-The rate at which pulses leave a connection's line. With the traffic speed it
-sets how far apart the pulses are (speed divided by volume, within limits). It
-is not a count of marks on the line.
+The authored rate of a connection's traffic. With the traffic speed it sets how
+far apart the pulses are: the speed divided by the volume, within limits. A
+pulse flies twice the authored speed, so pulses reach the end of the line twice
+as often as the volume says. It is not a count of marks on the line.
 _Avoid_: dot count, shot rate, traffic speed
 
 **Traffic speed**:
