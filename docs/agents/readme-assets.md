@@ -13,6 +13,7 @@ bun run readme:assets --dry-run           # print what a run would do; start not
 bun run readme:assets                     # make every asset that needs no Codex sign-in
 bun run readme:assets hero plan           # make the named assets, Codex ones included
 bun run readme:assets --codex             # make every asset
+bun run readme:assets --replay            # render the narrated videos again from their kept talks
 ```
 
 An asset is stale when the kit never made it, when its sources changed since
@@ -63,6 +64,12 @@ the account's Codex usage.
 - `ask`, `explainer`, `pr-walkthrough` and `newcomer` run on a server that uses
   the machine's Archboard Codex sign-in. If Codex is not signed in, they stop
   before anything is spent. Sign in from the agent dock of any Archboard server.
+- A recording keeps its talk (the board, the steps, the words and the voice)
+  in the scratch directory. When only the renderer changed, the walkthrough and
+  the voice did not, so `--replay` renders the kept talk again with
+  `semantic replay`, cuts the loop and the thumbnail from it, and spends no
+  Codex usage. It stops when no recording kept a talk. Record again only when
+  the walkthrough or the voice should change.
 - The narrated MP4s stay in the scratch directory. GitHub plays a video with
   sound only from an attachment, so run `gh attach <file>.mp4` (the
   `joseustra/gh-attach` extension, which uploads to the current repository) and
