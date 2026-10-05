@@ -14,11 +14,13 @@ import { PICTURE_CLOCK } from "@/ui/frame-clock";
 import { cameraNow, pointerAt, takeFrames } from "@/ui/semantic-board-canvas/tests/camera-probes";
 import {
 	drawing,
+	inPicture,
 	mountStage,
 	server,
 	settle,
 	surface,
 	viewport,
+	type MountOptions,
 } from "@/ui/semantic-board-canvas/tests/stage-harness";
 
 /** A moving mark of traffic, reduced to what pacing touches. */
@@ -61,11 +63,12 @@ afterEach(() => {
 
 /**
  * Mount a pane and give its picture some traffic.
+ * @param options How the pane is mounted, when not alone with nothing picked.
  * @returns The traffic.
  */
-async function mountWithTraffic(): Promise<FakeTraffic> {
+async function mountWithTraffic(options?: MountOptions): Promise<FakeTraffic> {
 	server.reply = { status: 200, body: drawing(1) };
-	mountStage();
+	mountStage(null, options);
 	await settle();
 	const traffic = new FakeTraffic();
 	/**
@@ -154,6 +157,30 @@ test("a camera the stage moves itself leaves the traffic running", async () => {
 		});
 		frames.run(EXPLORING_MS.cameraFit + 100);
 
+		expect([traffic.playState, traffic.playbackRate]).toEqual(["running", 1]);
+	} finally {
+		frames.restore();
+	}
+});
+
+test("a pick that a panel laid over the picture would cover moves the picture clear and leaves the traffic running", async () => {
+	// Two panes share the centre, so a pick lays the sidebar's panel over the
+	// picture's edge, and in this DOM every part reaches under it.
+	const traffic = await mountWithTraffic({
+		live: true,
+		chrome: { letter: null, controls: null, notice: null, shared: true, active: true },
+	});
+	const frames = takeFrames();
+	try {
+		const before = cameraNow().x;
+		act(() => {
+			fireEvent.click(inPicture("card"));
+		});
+		frames.run(32);
+		expect([traffic.playState, traffic.playbackRate]).toEqual(["running", 1]);
+
+		frames.run(1000);
+		expect(cameraNow().x).toBeLessThan(before);
 		expect([traffic.playState, traffic.playbackRate]).toEqual(["running", 1]);
 	} finally {
 		frames.restore();

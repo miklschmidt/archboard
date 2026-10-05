@@ -316,7 +316,7 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	const departure = useDeparture(drawn, drill.board, render);
 	// Two panes rest their sidebars, so each picture has the room (use-sidebar.ts).
 	const sidebar = useSidebar(props.selection, resting, narrative.open !== null);
-	useClearOfPanel(picture, sidebar.floating, props.selection, camera.ease);
+	useClearOfPanel(picture, sidebar.floating, props.selection, camera, reducedMotion);
 	const onPickInPicture = useReveal({
 		camera,
 		atlas: drawn?.atlas ?? null,
