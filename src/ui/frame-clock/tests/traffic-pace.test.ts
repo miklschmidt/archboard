@@ -3,7 +3,8 @@
 // What this catches: a hold that stops anything but running traffic, or a
 // resume that starts over traffic which had finished; traffic that comes back
 // at its full speed at once rather than gathering it; a hold taken while it is
-// coming back that leaves it running; a hold that looks through the whole
+// coming back that leaves it running, or that misses the traffic of a picture
+// put up again meanwhile; a hold that looks through the whole
 // picture again for every frame of a drag; and traffic left standing still
 // where the picture goes away.
 
@@ -137,6 +138,23 @@ test("a hold taken while traffic is coming back stands it still, and it comes ba
 	expect(traffic.playbackRate).toBe(0);
 	frameAt(900 + RAMP_MS);
 	expect([traffic.playState, traffic.playbackRate]).toEqual(["running", 1]);
+});
+
+test("a hold after the picture was put up again while its traffic came back stands the new traffic still", () => {
+	const replaced = new FakeAnimation(PICTURE_CLOCK, "running");
+	const animations = [replaced];
+	const pace = paceTraffic(new FakeElement(animations));
+	pace.hold();
+	pace.resume(RAMP_MS);
+	frameAt(300);
+
+	// The picture is put up again: its old traffic is cancelled, and the new picture runs its own.
+	replaced.playState = "idle";
+	const fresh = new FakeAnimation(PICTURE_CLOCK, "running");
+	animations.push(fresh);
+	pace.hold();
+
+	expect(fresh.playState).toBe("paused");
 });
 
 test("holding again, as every frame of a drag does, looks through the picture once", () => {
