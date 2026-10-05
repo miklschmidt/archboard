@@ -274,9 +274,9 @@
 			"name": "Navigator Row",
 			"kind": "nav",
 			"refersTo": "nav-row-chosen",
-			"description": "The chosen row of the navigator, raised as a plate with a gold bar.",
+			"description": "The chosen row of the navigator, raised as a plate. The line of the tree to it is lit in Gold Mark, and the row has no bar.",
 			"html": "<div class=\"ds-nav\"><div class=\"ds-nav-row\">Agent workbench</div><div class=\"ds-nav-row ds-nav-chosen\">Archboard server</div><div class=\"ds-nav-row\">Browser application</div></div>",
-			"css": ".ds-nav { width: 300px; padding: 4px; background: var(--sidebar); } .ds-nav-row { position: relative; height: 28px; padding: 0 12px; display: flex; align-items: center; font: 500 14px/20px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--sidebar-foreground); border-radius: 3px; } .ds-nav-row:hover { background: color-mix(in oklch, var(--sidebar-accent) 50%, transparent); } .ds-nav-chosen { background: var(--sidebar-accent); box-shadow: var(--elevation-raised); } .ds-nav-chosen::before { content: ''; position: absolute; left: 0; top: 4px; bottom: 4px; width: 2px; border-radius: 2px; background: var(--primary-mark); }"
+			"css": ".ds-nav { width: 300px; padding: 4px; background: var(--sidebar); } .ds-nav-row { position: relative; height: 36px; padding: 0 12px; display: flex; align-items: center; font: 500 14px/20px var(--font-sans, 'Archboard Onest', sans-serif); color: var(--sidebar-foreground); border-radius: 3px; } .ds-nav-row:hover { background: color-mix(in oklch, var(--sidebar-accent) 50%, transparent); } .ds-nav-chosen { background: var(--sidebar-accent); box-shadow: var(--elevation-raised); }"
 		},
 		{
 			"name": "Page Card",

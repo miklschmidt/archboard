@@ -279,7 +279,8 @@ filter that finds variants by name (dark).
   disclosure, the marker, the name and the facts. Each depth moves a row 16 px
   to the right, one disclosure column, so a row's disclosure sits under its
   parent's marker. A guide runs down from every open row, through the middle
-  of its disclosure. Every row is 28 px for one line of name. The filter's icon
+  of its disclosure. A board or folder row is 36 px for one line of name, and a
+  variant or Earlier row 30 px. The filter's icon
   and the lamps of Working now sit in the marker column of the top rows, and
   their text starts where the names of the top rows start.
 - **One row per board.** The row shows the board's mark, its full name, and
