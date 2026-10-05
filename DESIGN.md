@@ -104,7 +104,7 @@ components:
     backgroundColor: "{colors.reading-tone}"
     textColor: "{colors.ink-graphite}"
     rounded: "{rounded.control}"
-    height: "{spacing.row}"
+    height: "36px"
   page-card:
     backgroundColor: "{colors.card-white}"
     textColor: "{colors.ink-graphite}"
@@ -307,7 +307,7 @@ the Rule tone.
 
 ### Navigation
 
-- **Style:** a tree on Chrome Chalk with rows of 28px. Rails and elbows draw its levels, and the line from the root to the chosen row is lit in Gold Mark. The chosen row is a plate in Reading Tone with `shadow-raised`. Tabs have an underline of Gold Mark. A link is ink with an underline of Gold Mark.
+- **Style:** a tree on Chrome Chalk. A board or folder row is 36px and a variant or Earlier row 30px, for one line of name. Rails and elbows draw its levels, and the line from the root to the chosen row is lit in Gold Mark. The chosen row is a plate in Reading Tone with `shadow-raised`. Tabs have an underline of Gold Mark. A link is ink with an underline of Gold Mark.
 
 ### Pane sidebar
 
