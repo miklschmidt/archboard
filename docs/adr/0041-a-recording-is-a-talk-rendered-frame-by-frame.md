@@ -10,6 +10,15 @@ user decided on the two passes on 2026-09-30, after comparing Archboard's
 recorder with Remotion's capture pipeline. The user also decided that the
 encoder is ffmpeg. TASK-381 built it.
 
+Amended by TASK-400 (2026-10-06): the user wants the voice box in a recording to
+be the voice box of a presented walkthrough in the shell. The replay page draws
+the shell's voice box at the foot of the walkthrough box, with the orb, the
+words or the voice's word, and the keys. The orb follows the level of the
+talk's voice on each frame. The CLI measures that level from `voice.wav` when it
+renders and gives it to the page. The talk's format does not change, so a talk
+that was kept before this amendment renders with the orb too. The sections
+below say so. Everything else stands.
+
 ## Context
 
 ADR 0035 made a recording in one live pass. The page paced the walkthrough on
@@ -144,10 +153,28 @@ event log.
 The server serves `/?replay=1` from the same static files. For that address the
 entry point mounts `src/ui/walkthrough-replay` in place of the application, with
 no workbench, no pane session and no socket. The page mounts the recording
-stage, the board stage and the subtitles, as the recording page does. It reads
-the board and the vault policy only from the talk, through the board-reads port
+stage and the board stage, as the recording page does. It reads the board and
+the vault policy only from the talk, through the board-reads port
 (`readBoardsFrom`). It publishes `window.archboardReplay` with
-`load(talk, options)` and `frame(n)`.
+`load(talk, options)` and `frame(n)`. The options are the theme and the level
+of the voice on each frame.
+
+The page draws the voice as the shell draws a live voice in a presented
+walkthrough: the voice box of `src/ui/workbench` at the foot of the walkthrough
+box. The voice of a talk is live from its first frame to its last. A recording
+has no dock, so the page hosts the one orb itself and keeps it in the box. The
+box is drawn from the first step on, because before it the talk shows the whole
+board. The orb is in its socket from the first frame that shows the box, and it
+is never flown. Nobody presses a key in a video, so the box's keys are drawn
+and do nothing.
+
+The level of the voice on frame `n` is what the shell's meter would read at the
+frame's moment: the root mean square of the 2048 samples before sample
+`n * 1600`, which is the window of a Web Audio analyser at its default size.
+`voiceLevels` in `talk.ts` computes it. The render (`render.ts`) measures it
+from `voice.wav` once and passes it to `load` on every page. It is a function of the voice alone, so it
+renders the same every time. It is not stored in `talk.json`, so the talk's
+format and its version stay as they were.
 
 `load` plays the board's entrance through `RECORDING_REPLAY_PREROLL_MS` of
 frames that nobody captures, so frame 0 shows the board at rest. Frame `n` is at
@@ -185,7 +212,9 @@ Everything that moves on a board's pane reads one clock, `frameClock()` from
 
 A live page gets the browser's clock. The replay page installs a stepped clock
 once, before anything mounts. Lint keeps `src/ui/semantic-board-canvas` and
-`src/ui/voice-subtitles` off the browser's timers.
+`src/ui/voice-subtitles` off the browser's timers. The voice's orb asks the
+page for animation frames, which `install()` gives to the stepped clock (below),
+so the orb moves one frame's time on each frame.
 
 The draft refused every call to the browser's own `requestAnimationFrame` once
 the stepped clock was installed. The build runs those calls instead. `install()`
@@ -354,5 +383,10 @@ This reverses these parts of ADR 0035:
   The state directory keeps the newest 10.
 - Pass 1 makes sure only that the board's version did not change. A change to
   the vault policy during pass 1 goes unnoticed.
-- The replay page and the recording page must build the same DOM. The replay
-  mounts the recording's own `RecordingStage` so that they do.
+- The replay page and the recording page must lay out the same frame. The
+  replay mounts the recording's own `RecordingStage` so that the pane and its
+  walkthrough box stand where they stood. Their voice differs: the recording
+  page captures no picture and nobody sees it, so it lays only the words, and
+  the replay draws the voice box in the walkthrough box's pill. The pill has one
+  height whatever it holds, so the camera frames each step the same way on both
+  pages.

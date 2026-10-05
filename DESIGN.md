@@ -443,8 +443,10 @@ gives way.
 While the voice is live and the voice box has it, the pill holds the voice box, and the key
 gives way. The orb takes the circle. Then come the words, which take the width that
 the orb and the keys leave, or the voice's word. Mute above the subtitles control stands at
-the right end, as in the box over the picture. A recording and the replay of a kept talk draw
-plain subtitles in the pill, with no orb and no keys.
+the right end, as in the box over the picture. A recording draws the same voice box in the
+pill, with the orb, the words or the voice's word, mute and the subtitles control. Its orb
+follows the voice that was recorded. Mute and the subtitles control are drawn as the shell
+draws them, although nobody can press them in the video.
 
 Every step stands in one cell of the column. So the box is as high as its highest step, and
 stepping never changes the room the picture has. A step is handed to the next over 520ms, and
@@ -518,8 +520,11 @@ A fullscreen presentation has no dock to take the voice back, so the box carries
 there whatever the person chose, over the picture or in the walkthrough box, and the
 subtitles control decides only whether there are words: with none, the box says what the
 voice is doing in a word. The presentation's bar holds one key, Talk, which reads End voice
-while the voice is live. A recording and the replay of a kept talk draw plain subtitles, with
-no orb and no keys. With reduced motion the orb is in its home, and the box is there or gone, at once.
+while the voice is live. A recording has no dock either. It draws the voice box at the foot of
+its walkthrough box, as a presented pane does, from the first frame that shows the walkthrough
+box. The orb is in its socket from that frame and is never flown, and it moves with the level of
+the recorded voice on each frame. With reduced motion the orb is in its home, and the box is
+there or gone, at once.
 Keyboard focus follows the subtitles control to the surface that takes it over.
 
 ## Do's and Don'ts
