@@ -1,11 +1,13 @@
 // Which way a drill-down leads, in the words and marks the chrome uses for it:
-// the same reading the renderer draws on the card (a ring around an arrow), so
-// the card, its hover tip and Go deeper say one thing. Up opens a coarser
-// board, the whole this one is a part of; down a finer one, the part's inside;
-// across a board at the same level. Pure.
+// the renderer's own reading of the way, which it draws on the card (a ring
+// around an arrow), so the card, its hover tip and Go deeper say one thing. Up
+// opens a coarser board, the whole this one is a part of; down a finer one, the
+// part's inside; across a board at the same level. Pure.
+
+import { drillDirection, type DrillDirection } from "@/transformers/semantic-renderer/index";
 
 /** Which way the board a part opens lies from the board it is drawn on. */
-type DrillWay = "up" | "down" | "across";
+type DrillWay = Exclude<DrillDirection, "elsewhere">;
 
 /**
  * Which way a board lies from another, by their levels in the vault's order.
@@ -19,21 +21,9 @@ function drillWay(
 	here: string | undefined,
 	levels: readonly string[] | undefined,
 ): DrillWay | null {
-	const to = rank(there, levels);
-	const from = rank(here, levels);
-	if (to < 0 || from < 0) return null;
-	if (to === from) return "across";
-	return to < from ? "up" : "down";
-}
-
-/**
- * Where a level stands in the vault's order, coarsest first.
- * @param level The level, when known.
- * @param levels The vault's levels, when read.
- * @returns Its place, or -1 when either is not known.
- */
-function rank(level: string | undefined, levels: readonly string[] | undefined): number {
-	return level === undefined ? -1 : (levels?.indexOf(level) ?? -1);
+	if (there === undefined || levels === undefined) return null;
+	const way = drillDirection(there, here, levels);
+	return way === "elsewhere" ? null : way;
 }
 
 /** How many levels apart, in words. */

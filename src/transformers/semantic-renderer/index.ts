@@ -55,6 +55,10 @@ import { paintArchitecture } from "@/transformers/semantic-renderer/lib/svg/arch
 import { paintDataFlow } from "@/transformers/semantic-renderer/lib/svg/dataflow";
 import { svgDocument } from "@/transformers/semantic-renderer/lib/svg/document";
 import {
+	drillDirection,
+	type DrillDirection,
+} from "@/transformers/semantic-renderer/lib/svg/drill-mark";
+import {
 	drawnInk,
 	STROKE_WIDTH,
 	type Weight,
@@ -552,6 +556,8 @@ export {
 	renderArchitecture,
 	renderDataFlow,
 	renderSemanticView,
+	drillDirection,
+	type DrillDirection,
 	lineInk,
 	lineWidth,
 	standingMark,
