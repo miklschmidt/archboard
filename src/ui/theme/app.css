@@ -994,7 +994,7 @@
 	z-index: -1;
 	pointer-events: none;
 	opacity: 0;
-	transition: opacity 360ms ease-out;
+	transition: opacity var(--dock-wash-ms, 360ms) ease-out;
 }
 [data-slot="agent-dock"]::before {
 	--wash: color-mix(in oklch, var(--primary-mark) 17%, transparent);
