@@ -28,7 +28,7 @@ Plan the next step before anyone writes code. Ask for a change and see it drawn 
 
 **Hear Archboard explain itself**. Its own system board, narrated by the Codex voice in under two minutes. Turn the sound on.
 
-https://github.com/user-attachments/assets/cac6478b-02c2-40c4-9629-7bb0651b4128
+https://github.com/user-attachments/assets/bcc22296-892b-4b47-9e22-022894927b85
 
 ## What you can do with it
 
@@ -97,7 +97,7 @@ gh pr comment 128 --attach pr-128.mp4 --body "A narrated walkthrough of this cha
 
 **A pull request, explained to its reviewers**: why the change exists, what it changed, and where to look closely. The loop above is silent. The player below carries the voice, so turn the sound on.
 
-https://github.com/user-attachments/assets/5e4c89f0-bf1f-4e9c-a011-4689ea709727
+https://github.com/user-attachments/assets/cf49eba1-f5be-495c-8d4c-76e844ea026e
 
 <p align="center"><sub>Each video is what <code>archboard semantic record</code> wrote.</sub></p>
 
@@ -130,7 +130,7 @@ Give the tour once, and every new hire can play it back. A newcomer's walkthroug
 
 <p align="center"><sub>"How stock is reserved", six steps on the example Inventory service board. The player below has the voice.</sub></p>
 
-https://github.com/user-attachments/assets/55f7e604-e436-444d-a7fe-4426583f71f6
+https://github.com/user-attachments/assets/661cac9a-b458-42ec-936d-8d554eff8601
 
 ```text
 I'm new here. Walk me through what happens to stock when a shopper presses Pay.
@@ -146,9 +146,9 @@ One map, from the whole system down to the file. Boards link to boards: hover a 
 
 Select a part and ask. The Codex agent in the conversation reads the board and your selection, and answers from the architecture, not from the pixels. Press **Talk** to ask out loud instead: the voice hands your question to a Codex agent that reads the boards, then says the answer back.
 
-<img src="docs/readme/ask.webp" width="100%" alt="The Timeout guard is selected. A question about why this part exists and what breaks without it is typed into the agent bar. The conversation panel fills with an answer drawn from the board.">
+<img src="docs/readme/ask.webp" width="100%" alt="The Timeout guard is selected. A question about why this part exists and what breaks without it is typed into the composer of the conversation, which opens beside the navigator. The conversation fills with an answer drawn from the board.">
 
-<p align="center"><sub>A real answer from a Codex agent, typed in the agent bar. The wait for the answer is sped up.</sub></p>
+<p align="center"><sub>A real answer from a Codex agent, typed in the conversation. The wait for the answer is sped up.</sub></p>
 
 ## Agents work in plain sight
 
