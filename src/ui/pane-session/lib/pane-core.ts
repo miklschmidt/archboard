@@ -53,6 +53,8 @@ interface PaneCorePorts<Transport extends WorkbenchTransportPort> {
 	readonly setBoard: (board: BoardIdentity | null) => void;
 	/** Where the server pointed the pane; a drill-down does not move it. */
 	readonly setOpened: (key: string | null) => void;
+	/** The server pointed the pane somewhere other than the board on screen. */
+	readonly arrived: () => void;
 	readonly setHeldBy: (holder: LockHolder | null) => void;
 	readonly setDoing: (entries: DoingEntry[]) => void;
 }
@@ -240,7 +242,9 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 			return;
 		}
 		const previousKey = status.opened;
-		const changed = previousKey !== key;
+		// The board on screen moves, even when the pane is pointed back at the board
+		// it was opened on: a drill-down had put another board there.
+		const moved = previousKey !== key || status.boardKey !== key;
 		// Arriving sets both: the pane is showing the board it was pointed at,
 		// and that is also where any later drill starts from.
 		status.opened = key;
@@ -248,7 +252,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		status.board = identity ?? { board: key, variant: "current" };
 		ports.setOpened(key);
 		ports.setBoard(status.board);
-		if (changed) {
+		if (moved) {
 			// A different board is a different version and a different writer, and
 			// what an agent said about the last one is not news about this one.
 			status.version = null;
@@ -259,6 +263,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 			setHolder(UNKNOWN_HOLDER);
 			reading.reset();
 			ports.options().onBoardAdopted?.(paneId, key, previousKey);
+			ports.arrived();
 		}
 		publishStatus();
 		// Immediately, not on the debounce: `browser panes` is read every turn.

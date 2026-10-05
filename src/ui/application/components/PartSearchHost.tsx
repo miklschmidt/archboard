@@ -4,20 +4,15 @@
 import { useCallback, useEffect, useMemo, useRef, type JSX } from "react";
 
 import type { PickedSubject } from "@/ui/application/hooks/use-pane-reading";
-import {
-	PartSearch,
-	boardAddressOf,
-	sameBoardName,
-	type PartHit,
-} from "@/ui/semantic-board-canvas";
+import { PartSearch, sameBoardName, type PartHit } from "@/ui/semantic-board-canvas";
 import type { CatalogBoard } from "@/ui/types";
 
 /** Inputs for the search host. */
 interface PartSearchHostProps {
 	/** The boards of the vault. */
 	readonly boards: readonly CatalogBoard[];
-	/** The board the pane shows, by its key. */
-	readonly boardKey: string | null;
+	/** The board on screen, which a drill-down moves, or null before the pane says. */
+	readonly shown: string | null;
 	/**
 	 * Pick a part out in the pane.
 	 * @param subject The part.
@@ -34,42 +29,49 @@ interface PartSearchHostProps {
 interface Waiting {
 	readonly board: string;
 	readonly subject: PickedSubject;
+	/** The board on screen when it was chosen: the part waits only until the pane shows another. */
+	readonly from: string | null;
 }
 
 /**
  * The search, over the vault's boards, for one pane.
- * @param props The boards, the pane's board and what picks and opens.
+ * @param props The boards, the board on screen and what picks and opens.
  * @returns The search field.
  */
 function PartSearchHost(props: PartSearchHostProps): JSX.Element {
-	const { boards, boardKey, onPick, onOpenBoard } = props;
+	const { boards, shown, onPick, onOpenBoard } = props;
 	const waiting = useRef<Waiting | null>(null);
 	const searched = useMemo(
 		() => boards.map((board) => ({ name: board.name, key: board.key })),
 		[boards],
 	);
-	const shown = boardAddressOf(boardKey)?.board;
 	const onChoose = useCallback(
 		(hit: PartHit): void => {
 			const subject: PickedSubject = { id: hit.id, kind: "node", name: hit.name };
-			if (shown !== undefined && sameBoardName(shown, hit.board.name)) {
+			if (shown !== null && sameBoardName(shown, hit.board.name)) {
+				waiting.current = null;
 				onPick(subject);
 				return;
 			}
 			// The pane's board change clears what was picked, so the part is picked
 			// once the pane says it shows the board.
-			waiting.current = { board: hit.board.name, subject };
+			waiting.current = { board: hit.board.name, subject, from: shown };
 			onOpenBoard(hit.board.key);
 		},
 		[onOpenBoard, onPick, shown],
 	);
+	// The next board the pane shows settles the wait: the part is picked when it
+	// is that part's board, and forgotten when it is not, so a board that never
+	// opened does not pick a stale part on some later visit.
 	useEffect(() => {
 		const part = waiting.current;
-		if (part === null || shown === undefined || !sameBoardName(shown, part.board)) {
+		if (part === null || shown === part.from) {
 			return;
 		}
 		waiting.current = null;
-		onPick(part.subject);
+		if (shown !== null && sameBoardName(shown, part.board)) {
+			onPick(part.subject);
+		}
 	}, [onPick, shown]);
 	return <PartSearch boards={searched} onChoose={onChoose} />;
 }
