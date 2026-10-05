@@ -12,7 +12,11 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { z } from "zod";
+
+import {
+	SemanticRasterReceiptSchema,
+	type SemanticRasterPageSize,
+} from "@/runtime/semantic-rasterizer/receipt";
 
 import {
 	Browser,
@@ -59,16 +63,9 @@ const FILES = {
 
 type Theme = "dark" | "light";
 
-/** What `semantic rasterize` answers about the diagram it drew. */
-const RasterReceiptSchema = z.object({
-	diagram: z.object({ width: z.number(), height: z.number() }),
-});
-
 /** One theme's drawing of the proposal, and the diagram's size in diagram pixels. */
-interface Drawing {
+interface Drawing extends SemanticRasterPageSize {
 	readonly file: string;
-	readonly width: number;
-	readonly height: number;
 }
 
 /**
@@ -131,7 +128,7 @@ async function drawProposal(server: TakeServer, theme: Theme, work: string): Pro
 		"--out",
 		file,
 	]);
-	return { file, ...RasterReceiptSchema.parse(receipt).diagram };
+	return { file, ...SemanticRasterReceiptSchema.parse(receipt).diagram };
 }
 
 /**
@@ -154,9 +151,10 @@ async function photograph(
 		"document.images[0]?.complete && document.images[0].naturalWidth > 0",
 		"the drawing",
 	);
-	await window.evaluate(
-		`document.fonts.load('500 ${NAME_SIZE}px "Archboard Display"').then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))`,
+	const faces = await window.evaluate(
+		`document.fonts.load('500 ${NAME_SIZE}px "Archboard Display"').then((faces) => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(faces.length)))))`,
 	);
+	if (faces === 0) throw new Error("The banner page loaded no Archboard Display face.");
 	await window.screenshot(out);
 }
 
