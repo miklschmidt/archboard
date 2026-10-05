@@ -120,6 +120,7 @@ test("the key that says Talk is the circle that ends voice, and keeps the keyboa
 test("while voice is on the wire or ending the key presses nothing and stays in the tab order", () => {
 	for (const [stage, busy] of [
 		["preparing", true],
+		["preparing", false],
 		["stopping", false],
 	] as const) {
 		const pressed: string[] = [];

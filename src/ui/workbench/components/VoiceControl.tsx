@@ -20,7 +20,7 @@ import { cn } from "@/ui/components/class-names";
 import { OrbHost, OrbSlot } from "@/ui/voice-orb";
 import type { AgentActions, AgentVoiceView } from "@/ui/workbench/contracts";
 import { useCircleState } from "@/ui/workbench/hooks/use-circle-state";
-import { CIRCLE_NAMES, type CircleState } from "@/ui/workbench/lib/circle-state";
+import { CIRCLE_NAMES, voicePress, type CircleState } from "@/ui/workbench/lib/circle-state";
 
 /**
  * The plate as the key: an outline button's face. As the circle it is the same
@@ -58,24 +58,6 @@ function formOf(state: CircleState, boxed: boolean): "key" | "circle" {
 }
 
 /**
- * What a press of the button does: nothing while voice is on the wire or ending, else
- * start voice while it is off and end it while it is on. The button that does nothing
- * says so with aria-disabled, not disabled: a disabled button drops the keyboard's place.
- * @param state What the circle shows.
- * @param voice The voice.
- * @param actions The actions.
- * @returns The action, or undefined while a press does nothing.
- */
-function pressOf(
-	state: CircleState,
-	voice: AgentVoiceView,
-	actions: AgentActions,
-): (() => void) | undefined {
-	if (state === "ending" || voice.busy) return undefined;
-	return state === "off" ? actions.talk : actions.endVoice;
-}
-
-/**
  * The voice control: Talk while voice is off, the circle that ends it while the orb
  * is at home, and the End voice key while the voice box has the orb.
  * @param props The voice, the actions, where its problem is said, the motion preference and where the voice is.
@@ -85,7 +67,7 @@ function VoiceControl(props: VoiceControlProps): JSX.Element {
 	const { voice, actions, boxed } = props;
 	const state = useCircleState(voice);
 	const off = state === "off";
-	const press = pressOf(state, voice, actions);
+	const press = voicePress(voice, actions);
 	return (
 		<button
 			type="button"

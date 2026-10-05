@@ -12,6 +12,7 @@ import type { JSX } from "react";
 import { Button } from "@/ui/components/button";
 import { cn } from "@/ui/components/class-names";
 import type { AgentActions, AgentVoiceView, VoiceStage } from "@/ui/workbench/contracts";
+import { ENDABLE, voicePress } from "@/ui/workbench/lib/circle-state";
 
 /** Inputs for the Talk control. */
 interface TalkControlProps {
@@ -21,24 +22,6 @@ interface TalkControlProps {
 
 /** Where the element saying why voice cannot start is, for the button it describes. */
 const TALK_PROBLEM_ID = "talk-problem";
-
-/**
- * The stages in which the key ends voice: from the moment voice connects, so a session stuck
- * connecting or recovering can always be ended.
- */
-const ENDABLE: ReadonlySet<VoiceStage> = new Set(["connecting", "listening", "speaking", "muted"]);
-
-/**
- * What a press of the key does: start voice while it is off, end it once it connects, and nothing
- * while it is on its way to connecting, while it ends, or while a control is on the wire.
- * @param voice The voice.
- * @param actions The actions.
- * @returns The action, or undefined while a press does nothing.
- */
-function pressOf(voice: AgentVoiceView, actions: AgentActions): (() => void) | undefined {
-	if (voice.stage === "idle") return actions.talk;
-	return ENDABLE.has(voice.stage) && !voice.busy ? actions.endVoice : undefined;
-}
 
 /**
  * The voice key: Talk, or where getting voice going stands, and End voice once it connects, with
@@ -52,7 +35,7 @@ function TalkControl(props: TalkControlProps): JSX.Element {
 	const { voice, actions } = props;
 	const live = ENDABLE.has(voice.stage);
 	const problem = live ? null : voice.problem;
-	const press = pressOf(voice, actions);
+	const press = voicePress(voice, actions);
 	return (
 		<span className="flex min-w-0 shrink items-center gap-2">
 			{problem !== null && (
