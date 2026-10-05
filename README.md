@@ -144,7 +144,7 @@ One map, from the whole system down to the file. Boards link to boards: hover a 
 
 ## Ask your architecture
 
-Select a part and ask. The Codex agent in the agent bar reads the board and your selection, and answers from the architecture, not from the pixels. Press **Talk** to ask out loud instead: the voice hands your question to a Codex agent that reads the boards, then says the answer back.
+Select a part and ask. The Codex agent in the conversation reads the board and your selection, and answers from the architecture, not from the pixels. Press **Talk** to ask out loud instead: the voice hands your question to a Codex agent that reads the boards, then says the answer back.
 
 <img src="docs/readme/ask.webp" width="100%" alt="The Timeout guard is selected. A question about why this part exists and what breaks without it is typed into the agent bar. The conversation panel fills with an answer drawn from the board.">
 
@@ -231,7 +231,7 @@ Archboard's SVG renderer began as a fork of the PR Lens renderer (MIT, Coldtea A
 
 ## Quick start
 
-You need Linux or macOS, Bun 1.4 or newer, and Git. Chromium or Google Chrome draws PNGs and the frames of a video, and `ffmpeg` (or Nix, which fetches it) encodes the video. The agent bar, the voice, narration and recordings also need a Codex sign-in. You sign in from the agent bar with ChatGPT or an API key.
+You need Linux or macOS, Bun 1.4 or newer, and Git. Chromium or Google Chrome draws PNGs and the frames of a video, and `ffmpeg` (or Nix, which fetches it) encodes the video. The agent, the voice, narration and recordings also need a Codex sign-in. You sign in from the agent dock with ChatGPT or an API key.
 
 **See it in a minute** with the example vault from this README:
 
@@ -284,7 +284,7 @@ No, and that is the point. If a picture says something wrong, fix the meaning an
 <details><summary><b>Which agents does it work with?</b></summary>
 <br>
 
-Any agent that can run a CLI can write boards. `archboard install-skill` sets up Claude Code and Codex. The agent bar in the browser, the voice, narration and recordings run on Codex. Archboard runs Codex as its own private app-server with its own sign-in.
+Any agent that can run a CLI can write boards. `archboard install-skill` sets up Claude Code and Codex. The agent in the browser, the voice, narration and recordings run on Codex. Archboard runs Codex as its own private app-server with its own sign-in.
 </details>
 
 <details><summary><b>Why is a narration silent with my Bluetooth headset?</b></summary>

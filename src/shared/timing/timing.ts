@@ -199,7 +199,7 @@ const BOARD_CACHE_GC_MS = 5 * 60_000;
 // ── Time passing, as the shell says it (TASK-302) ─────────────────────────
 //
 // The navigator says how long ago an agent last said what it was doing, and
-// the agent bar how long a turn has run. Neither is a deadline: each is a clock
+// the agent dock how long a turn has run. Neither is a deadline: each is a clock
 // a person reads at a glance. The age is coarse ("now", "12s", "4m"), so a
 // slower tick is enough and re-renders the navigator less often; the elapsed
 // time counts seconds, so it ticks every second while a turn runs and not at
@@ -211,10 +211,10 @@ const BOARD_CACHE_GC_MS = 5 * 60_000;
 /** How often the navigator re-reads how long ago each agent spoke. */
 const SHELL_AGE_TICK_MS = 5000;
 
-/** How often the agent bar counts a running turn's seconds. */
+/** How often the agent dock counts a running turn's seconds. */
 const AGENT_ELAPSED_TICK_MS = 1000;
 
-/** How long a running turn reports nothing new before the agent bar says it is quiet. */
+/** How long a running turn reports nothing new before the agent dock says it is quiet. */
 const AGENT_QUIET_MS = 120_000;
 
 /**

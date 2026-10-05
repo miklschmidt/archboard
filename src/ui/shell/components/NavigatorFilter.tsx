@@ -1,5 +1,5 @@
-// The navigator's filter: one field at the top of the column, level with the
-// pane bar, that narrows the tree in place as a person types. While it holds
+// The navigator's filter: one field at the top of the column, under the
+// brand bar, that narrows the tree in place as a person types. While it holds
 // text it says how many boards it found; Enter opens the first, Alt+Enter
 // opens it beside, the down arrow walks into the tree, Escape clears. Its icon
 // sits in the tree's marker column and its text starts where the names of the

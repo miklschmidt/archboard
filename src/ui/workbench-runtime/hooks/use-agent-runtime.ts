@@ -1,7 +1,7 @@
 // The conversation as an assistant-ui runtime: the transport's published
 // timeline, projected into turns and adapted into messages at the one seam.
 // The runtime only shows; nothing is sent through it — messages go through the
-// agent setup from the composer in the agent bar.
+// agent setup from the composer in the conversation.
 
 import { useExternalStoreRuntime, type AssistantRuntime } from "@assistant-ui/react";
 import { useMemo, useSyncExternalStore } from "react";
@@ -91,7 +91,7 @@ function useAgentRuntime(transport: BrowserWorkbenchTransport): {
 		convertMessage: toThreadMessageLike,
 		isRunning: running,
 		/**
-		 * Messages are sent from the agent bar, never through this runtime.
+		 * Messages are sent from the composer, never through this runtime.
 		 * @returns Nothing sent.
 		 */
 		onNew: () => Promise.resolve(),

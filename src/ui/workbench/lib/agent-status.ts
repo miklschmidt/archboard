@@ -1,4 +1,4 @@
-// The agent's state in one line, for the agent bar: what it is doing or
+// The agent's state in one line, for the agent dock: what it is doing or
 // waiting on, since when, how far through its plan, what is queued behind it,
 // and the one thing the person can do about it. Only the first rule that
 // applies speaks, so the line never says two things at once. Pure.

@@ -166,11 +166,11 @@ voice coordinator of the tab, then creates the workhorse and links it to the tab
 (ADR 0019). In the browser:
 
 1. Confirm the header names `$accept_board`.
-2. Type `Reply with the word ready.` into the composer in the agent bar
-   (`Message the agent`) and press Enter. The conversation panel opens.
+2. Open the conversation with its key beside Talk. Type `Reply with the word ready.`
+   into the composer (`Message the agent`) and press Enter.
 3. If Archboard is signed out, the message is held in the panel, the status
    line asks you to sign in, and the ChatGPT sign-in page opens in a new tab.
-   If the browser blocked the tab, use `Open the page` in the agent bar.
+   If the browser blocked the tab, use `Open the page` in the agent dock.
    Finish signing in there. Do not copy the URL or account details into
    evidence.
 4. Without sending again, confirm the held message delivers by itself: the
@@ -199,11 +199,10 @@ Replace `<accept_run>` with the shell value. Then:
 1. Paste it into `Message the agent` and press Enter. Confirm the conversation
    shows the message once, the status line says Working with the current step,
    and the composer now offers to steer the running turn.
-2. Press `Stop` in the agent bar while the 15-second command is active. Confirm
+2. Press `Stop` in the agent dock while the 15-second command is active. Confirm
    the turn settles as stopped. Do not send another message yet.
 3. Reload the browser tab once. If the conversation panel is closed after the
-   reload, open it with the conversation toggle at the right end of the agent
-   bar.
+   reload, open it with the conversation key beside Talk in the agent dock.
 4. Confirm the same conversation returns, the composer is empty, and the exact
    user-marker message appears once. A held copy of the message, a copy marked
    as possibly not arrived, or a second user item is a failure.
@@ -286,7 +285,7 @@ Send a second message from the composer:
 Run `bun -e 'await Bun.sleep(15000); console.log("busy turn finished")'`, then report the one-line output.
 ```
 
-While the agent bar shows `Stop`, say:
+While the agent dock shows `Stop`, say:
 
 ```text
 Queue exactly one follow-up for the linked workhorse. Its prompt is: read TESTING.md and reply with only its first heading. Do not steer the active turn and do not add another queue item.
