@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-05 18:02'
-updated_date: '2026-10-05 18:21'
+updated_date: '2026-10-05 18:33'
 labels:
   - codex
   - tooling
@@ -43,6 +43,8 @@ Archboard pins the exact @openai/codex that it runs, and every Codex fact in the
 
 <!-- SECTION:NOTES:BEGIN -->
 Evidence, 2026-10-05. 0.160.0 is npm latest and the newest stable release (published 2026-10-01). The tag rust-v0.160.1 is a Windows MCP backport that is not on npm. Pins: package.json, expectedCodexVersion in scripts/generate-codex-app-server-contract.ts, and CODEX_PROTOCOL_VERSION with CODEX_PROTOCOL_BINARY_VERSION in src/runtime/codex-protocol/lib/version.ts. I checked after bun install: the pinned binary reports codex-cli 0.160.0, `bun run ensure:codex-contract` and `bun run type-check` exit 0, lint and fmt:check exit 0, 693 Codex module tests and 19 repository tests pass, and `codex exec -m gpt-6.1-sol` with the pinned binary printed model gpt-6.1-sol and answered, so the account accepts the model now. Changes between rust-v0.158.0 and rust-v0.160.0, as the implementing agent read them in the source (I did not diff the Codex source myself): the error code tooManyDenials (adopted in core-schemas.ts); the thread/items/list cursor may be an opaque string or an item anchor (adopted in client-request-schemas.ts, Archboard sends null); an interrupted turn can carry an error when the auto-review circuit breaker runs in strict mode, which Archboard does not set (behaviour change, one comment corrected); mcpServerStatus/list serverName and the archive change (ignored, not called); other app-server changes (ignored); realtime unchanged except an internal refactor; the model list keeps gpt-6-sol with low effort and gains gpt-6.1-sol as the default model (ignored, Archboard names its models). Only the fake Codex production fixture needed new literals. Every re-read claim now names 0.160.0, and the remaining 0.158.0 hits are history or a measurement. The agent ran every gate lane (lint, fmt:check, type-check, build:frontend, test:modules 3924, test:system 189, test:repository 19, serial browser 19 owners) and a signed-in server on a scratch copy of web-shop answered one message, with the coordinator thread start recorded delivered in the epoch manifest. I repeated only the lint, format, type-check, Codex module, repository and model checks. Side effect: the bump edits comments under src/ui, and the README asset hash covers src/ui, so readme:check lists the clips and the narrated assets as stale until they are made again.
+
+Correction after the review, 2026-10-05. The note above says realtime is unchanged except an internal refactor. More exactly, no realtime source file changed between rust-v0.158.0 and rust-v0.160.0 (core/src/*realtime*, codex-api/src/endpoint/realtime_websocket, realtime_history.rs and realtime_prompt.rs differ only in tests). The one change on the path that the dev skill lists is core/src/session/world_state.rs. Persistent mode now goes through the persistent_execution_enabled feature gate, and every context contributor receives the previous world state. The realtime start-instructions section of that file is unchanged, so no claim of Archboard moves. A reviewer diffed both tags in the Codex source and found the same wire changes, the same model list and the same moved claims as the note above. I re-read the world_state.rs diff myself.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
