@@ -50,15 +50,15 @@ Only weights 400 and 500 are loaded. DM Mono is reserved for technical tokens
 such as levels, revisions, paths, hashes, and timestamps; human headings and
 labels remain Onest.
 
-## Big Shoulders Display 2.000
+## Big Shoulders Display 2.002
 
 One display face. It is not a human-interface face, so every label and
 sentence still uses Onest.
 
 - `BigShouldersDisplay-wght.ttf` is the variable font at Google Fonts commit
   [`7d86539`](https://github.com/google/fonts/blob/7d86539c3e24d8ea2cae7b3ff04c64250dca99c5/ofl/bigshouldersdisplay/BigShouldersDisplay%5Bwght%5D.ttf).
-  Google Fonts added this file as version 2.000 in commit `94ee6b8` and has not
-  changed it since. SHA-256:
+  Google Fonts added this file in commit `94ee6b8` and has not changed it since.
+  Its name table says Version 2.002, as that commit's description does. SHA-256:
   `60e208dc276a1c35fc5b62e94f9fb959c40c11783a9eb7548175c14b1fbeb720`.
   A name set as the title of what a region is about (a pane's board, a picked
   part, a variant, a walkthrough) in tracked capitals, and the lowercase
