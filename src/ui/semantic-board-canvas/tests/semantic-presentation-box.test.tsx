@@ -11,7 +11,12 @@ import { expect, test } from "bun:test";
 
 import { EXPLAINED_BOARD, drawing } from "@/ui/semantic-board-canvas/tests/render-answers";
 import { mountStage, part, server, settle } from "@/ui/semantic-board-canvas/tests/stage-harness";
-import { current, presenting, press } from "@/ui/semantic-board-canvas/tests/presentation-probes";
+import {
+	current,
+	offers,
+	presenting,
+	press,
+} from "@/ui/semantic-board-canvas/tests/presentation-probes";
 
 /** A board that tells itself in three steps. */
 const THREE_STEPS = {
@@ -137,7 +142,7 @@ test("a key with nowhere to go is dimmed and stays a key, so focus is not left o
 	await settle();
 	expect(current()).toBe("Three");
 	expect(next.getAttribute("aria-disabled")).toBe("true");
-	expect(document.activeElement).toBe(next);
+	expect(document.activeElement?.getAttribute("data-slot")).toBe("semantic-presentation-next");
 });
 
 test("Space presses a control that has focus and steps from anywhere else", async () => {
@@ -157,6 +162,16 @@ test("Space presses a control that has focus and steps from anywhere else", asyn
 });
 
 test("the box takes keyboard focus when it opens, since the control that opened it steps aside", async () => {
-	await present();
-	expect(document.activeElement).toBe(part("semantic-presentation"));
+	server.documents["pipeline"] = THREE_STEPS;
+	server.reply = { status: 200, body: drawing(1) };
+	mountStage(null, { reducedMotion: true });
+	await settle();
+	// A row pressed in the sidebar has focus when the box opens, and the sidebar is then hidden.
+	const row = offers()[0]!;
+	act(() => {
+		row.focus();
+		fireEvent.click(row);
+	});
+	await settle();
+	expect(document.activeElement?.getAttribute("data-slot")).toBe("semantic-presentation");
 });
