@@ -335,7 +335,7 @@ must raise a new approval; never repeat an approval whose outcome is unknown.
    the composer remains usable.
 2. Press `Talk` again. Say `Reply with the word restarted.` Confirm one new
    `You` line and one audible `restarted` response.
-3. Press `End` again. Close the browser tab that this run opened.
+3. Press `End voice` again. Close the browser tab that this run opened.
 4. Stop only this run's server.
 
 ```bash

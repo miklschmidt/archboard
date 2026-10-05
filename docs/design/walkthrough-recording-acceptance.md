@@ -85,9 +85,9 @@ n=619   # a frame from the lists above
 ffmpeg -v error -i /tmp/archboard.mp4 -vf "select='between(n,$((n - 1)),$n)'" -fps_mode passthrough /tmp/frame-%d.png
 ```
 
-For a step, `/tmp/frame-1.png` shows the count of the step before in the
-caption, such as `1 / 5`. `/tmp/frame-2.png` shows the step's own count, such
-as `2 / 5`. For a first
+For a step, `/tmp/frame-1.png` shows the number of the step before in the
+walkthrough box, such as `1` over `of 5`. `/tmp/frame-2.png` shows the step's
+own number, such as `2` over `of 5`. For a first
 word, `/tmp/frame-1.png` shows no subtitle or the line before, and
 `/tmp/frame-2.png` is the first frame where the subtitle changes.
 
