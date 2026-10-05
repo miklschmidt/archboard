@@ -71,7 +71,7 @@ export const TWO_FLOWS = variant({
 });
 
 /** Four parts in a row: each hands on to the next, and one line skips two of them. */
-export const CHAIN_NODES = [
+const CHAIN_NODES = [
 	{ id: "a", name: "A", kind: "service" },
 	{ id: "b", name: "B", kind: "service" },
 	{ id: "c", name: "C", kind: "service" },

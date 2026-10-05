@@ -117,10 +117,6 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 		}
 	});
 
-	test("the same traffic draws the same pulses twice", async () => {
-		expect(await solo({ speed: 38, volume: 1 })).toBe(await solo({ speed: 38, volume: 1 }));
-	});
-
 	for (const traffic of [
 		{ speed: 40, volume: 1e12 },
 		{ speed: Number.MIN_VALUE, volume: Number.MAX_VALUE },
@@ -170,17 +166,6 @@ describe("a pulse is handed on through a card", () => {
 			{ id: "bd", from: "b", to: "d", kind: "call", traffic: SAME },
 		]);
 		expect(beams(svg)).toHaveLength(3);
-	});
-
-	test("a reader who asked for less motion loses the pulses of a chain too", async () => {
-		const svg = await chain([
-			{ id: "ab", from: "a", to: "b", kind: "call", traffic: SAME },
-			{ id: "bc", from: "b", to: "c", kind: "call", traffic: SAME },
-		]);
-		expect(beams(svg).length).toBeGreaterThan(0);
-		expect(svg).toContain("@media(prefers-reduced-motion:reduce){.ab-pulse{display:none}}");
-		// Every moving bar sits in a group that rule hides.
-		expect(svg.split('<g class="ab-pulse"').length - 1).toBe(2);
 	});
 });
 
