@@ -9,6 +9,7 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
+import type { PaneChrome } from "@/ui/components/PaneChrome";
 import { EXPLAINED_BOARD, drawing } from "@/ui/semantic-board-canvas/tests/render-answers";
 import { mountStage, part, server, settle } from "@/ui/semantic-board-canvas/tests/stage-harness";
 import {
@@ -159,6 +160,46 @@ test("Space presses a control that has focus and steps from anywhere else", asyn
 	press(" ");
 	await settle();
 	expect(current()).toBe("Two");
+});
+
+/**
+ * A pane beside another, the active one or not, each with its sidebar docked so its walkthroughs are offered.
+ * @param active Whether the pane is the active one.
+ * @returns What the shell puts in its header.
+ */
+function besideAnother(active: boolean): PaneChrome {
+	return { letter: null, controls: null, notice: null, shared: false, active };
+}
+
+/**
+ * The step each presented walkthrough on the page shows, in the order the panes were mounted.
+ * @returns The steps.
+ */
+function stepsShown(): (string | null)[] {
+	return [...document.querySelectorAll("[data-slot='semantic-presentation']")].map((box) =>
+		box.getAttribute("data-step"),
+	);
+}
+
+test("with two panes presenting, the keys step the active pane's walkthrough and leave the other's", async () => {
+	server.documents["pipeline"] = THREE_STEPS;
+	server.reply = { status: 200, body: drawing(1) };
+	// The pane that is not active presents first, so it is the first to listen.
+	mountStage(null, { reducedMotion: true, chrome: besideAnother(false) });
+	mountStage(null, { reducedMotion: true, chrome: besideAnother(true) });
+	await settle();
+	// Each pane offers the walkthrough in its sidebar, in the order the panes were mounted.
+	for (const offer of offers()) {
+		act(() => {
+			fireEvent.click(offer);
+		});
+	}
+	await settle();
+	expect(stepsShown()).toEqual(["0", "0"]);
+
+	press("ArrowRight");
+	await settle();
+	expect(stepsShown()).toEqual(["0", "1"]);
 });
 
 test("the box takes keyboard focus when it opens, since the control that opened it steps aside", async () => {
