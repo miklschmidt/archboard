@@ -40,7 +40,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": null
+			"hash": "61102a2f7a363081a61ffb0569b65539bf7b334ca0ac8db71fa489ec64a291fa"
 		},
 		{
 			"name": "explainer",
@@ -79,7 +79,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": null
+			"hash": "a365b08d994ac329f984eb261f0401958217134ad2500bd6cf7a8105730b7a5b"
 		},
 		{
 			"name": "history",
@@ -100,7 +100,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": null
+			"hash": "b744472600785c526b119d8847cc7c6b9a8f1d310ebe6343a38a7cfd8aa58464"
 		},
 		{
 			"name": "pr-walkthrough",
@@ -149,7 +149,7 @@
 				"scripts/readme-assets/svg.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": null
+			"hash": "dfd621a8d3aa8d1b2394146712046881f3acaf23a1fc9ed7663910356f399ac5"
 		},
 		{
 			"name": "newcomer",
@@ -188,7 +188,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": null
+			"hash": "b732f1bf345c7547e91e3a25972ab9b758ecd4f9a6bd2cfa6e4d89835d7082c8"
 		},
 		{
 			"name": "ask",
@@ -229,7 +229,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": null
+			"hash": "2688a5b8e3c75c87b86a47cab08d5b8506383b782dd1dbecc08e94ccd6b7e0f7"
 		},
 		{
 			"name": "web-shop",
@@ -258,7 +258,7 @@
 				"scripts/readme-assets/svg.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": null
+			"hash": "dfd621a8d3aa8d1b2394146712046881f3acaf23a1fc9ed7663910356f399ac5"
 		},
 		{
 			"name": "architecture",
@@ -281,7 +281,7 @@
 				"src/ui/shell/assets/fonts",
 				"scripts/readme-assets/svg.ts"
 			],
-			"hash": null
+			"hash": "386d8eb6fe882b6df41b13e74a9ae1457b93463efb935b6b116833c0de41459e"
 		}
 	]
 }
