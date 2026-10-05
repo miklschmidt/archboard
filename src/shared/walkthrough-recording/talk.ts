@@ -207,8 +207,47 @@ const REPLAY_SEARCH_PARAM = "replay";
 /** The global the replay page publishes itself on. */
 const REPLAY_PAGE_GLOBAL = "archboardReplay";
 
-/** How a talk is rendered. */
-const ReplayOptionsSchema = z.object({ theme: DiagramThemeSchema }).strict();
+/**
+ * How many samples the shell's voice meter reads a level from: the window of a Web Audio analyser
+ * left at its default size, which is what the meter the orb follows live is
+ * (src/ui/voice-output-level).
+ */
+const LEVEL_WINDOW_SAMPLES = 2048;
+
+/** The largest magnitude of a 16-bit sample, which is full scale. */
+const FULL_SCALE = 32_768;
+
+/**
+ * How loud the voice is at a moment, as the shell's meter reads it then: the root mean square of
+ * the window of samples heard by that moment, where nothing was heard before the first.
+ * @param samples The voice: 16-bit mono at the talk's sample rate.
+ * @param end The moment, in samples from the start.
+ * @returns The level, 0..1.
+ */
+function levelAt(samples: Int16Array, end: number): number {
+	let sum = 0;
+	for (let index = Math.max(0, end - LEVEL_WINDOW_SAMPLES); index < end; index += 1) {
+		const value = samples[index]! / FULL_SCALE;
+		sum += value * value;
+	}
+	return Math.min(1, Math.sqrt(sum / LEVEL_WINDOW_SAMPLES));
+}
+
+/**
+ * How loud the voice is on each frame of a talk: its level at the frame's moment, which is what
+ * the voice's orb follows. It is the voice's alone, so a talk renders to the same frames every time.
+ * @param samples The voice: 16-bit mono at the talk's sample rate.
+ * @returns One level for each frame the voice renders to, 0..1, from frame nought.
+ */
+function voiceLevels(samples: Int16Array): number[] {
+	const frames = Math.ceil(samples.length / SAMPLES_PER_FRAME);
+	return Array.from({ length: frames }, (_, frame) => levelAt(samples, frame * SAMPLES_PER_FRAME));
+}
+
+/** How a talk is rendered: in which theme, and how loud its voice is on each frame (`voiceLevels`). */
+const ReplayOptionsSchema = z
+	.object({ theme: DiagramThemeSchema, levels: z.array(z.number().min(0).max(1)) })
+	.strict();
 type ReplayOptions = z.infer<typeof ReplayOptionsSchema>;
 
 /**
@@ -257,6 +296,7 @@ export {
 	TalkSchema,
 	framesOf,
 	replayAskedOf,
+	voiceLevels,
 	type ReplayOptions,
 	type ReplayPage,
 	type Talk,

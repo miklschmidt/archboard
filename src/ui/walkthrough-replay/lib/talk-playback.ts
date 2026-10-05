@@ -1,14 +1,17 @@
-// Where a talk stands at each frame of its rendering: the step on screen and
-// what the voice has said (TASK-381).
+// Where a talk stands at each frame of its rendering: the step on screen, what
+// the voice has said (TASK-381) and how loud the voice is (TASK-400).
 //
 // An event shows on the first frame at or after the moment it happened, so a
 // step or a word is never more than one frame late and never early. The page
 // plays the talk forward one frame at a time and reads the moment it reached;
-// nothing here knows about the clock or the page.
+// nothing here knows about the clock or the page. How loud the voice is changes
+// on nearly every frame, so it is not part of the moment: it is read where it is
+// drawn, as the shell reads the level of a live voice.
 
 import { SAMPLES_PER_FRAME, type Talk, type TalkEvent } from "@/shared/walkthrough-recording/talk";
 import type { SubtitleSource } from "@/ui/voice-subtitles";
 import { recordedStep, type RecordedStep } from "@/ui/walkthrough-recording";
+import type { VoiceLevel } from "@/ui/workbench/contracts";
 
 /** Where a talk stands at one frame. */
 interface TalkMoment {
@@ -68,20 +71,49 @@ function after(moment: TalkMoment, event: TalkEvent, walkthrough: string): TalkM
 class TalkPlayback {
 	readonly #events: readonly TalkEvent[];
 	readonly #walkthrough: string;
+	readonly #levels: readonly number[];
 	readonly #listeners = new Set<() => void>();
+	readonly #heard = new Set<() => void>();
 	#next = 0;
 	#moment: TalkMoment = OPENING;
+	/** The frame played to, or -1 before the first. */
+	#frame = -1;
 
 	/**
 	 * A talk, played to before its first frame.
 	 * @param talk The talk.
 	 * @param talk.events What happened, in order.
 	 * @param talk.board The board, with the walkthrough presented.
+	 * @param levels How loud the voice is on each frame, from frame nought.
 	 */
-	constructor(talk: { readonly events: readonly TalkEvent[]; readonly board: Talk["board"] }) {
+	constructor(
+		talk: { readonly events: readonly TalkEvent[]; readonly board: Talk["board"] },
+		levels: readonly number[],
+	) {
 		this.#events = talk.events;
 		this.#walkthrough = talk.board.walkthrough.id;
+		this.#levels = levels;
 	}
+
+	/** How loud the voice is on the frame played to, 0..1, and silent before the first. */
+	readonly level: VoiceLevel = {
+		/**
+		 * The level now.
+		 * @returns It.
+		 */
+		read: () => this.#levels[this.#frame] ?? 0,
+		/**
+		 * Hear it change.
+		 * @param listener Called after each change.
+		 * @returns Stops listening.
+		 */
+		subscribe: (listener) => {
+			this.#heard.add(listener);
+			return () => {
+				this.#heard.delete(listener);
+			};
+		},
+	};
 
 	/**
 	 * Where the talk stands.
@@ -102,11 +134,13 @@ class TalkPlayback {
 	};
 
 	/**
-	 * Play on to a frame: every event that shows by then happens, in order.
+	 * Play on to a frame: the voice is as loud as it was then, and every event that shows by then
+	 * happens, in order.
 	 * @param frame The frame, counted from nought.
 	 * @returns The beat of the step on screen then, or null before the first.
 	 */
 	playTo(frame: number): number | null {
+		this.#hearAt(frame);
 		let moment = this.#moment;
 		for (; this.#next < this.#events.length; this.#next += 1) {
 			const event = this.#events[this.#next]!;
@@ -118,6 +152,17 @@ class TalkPlayback {
 			for (const listener of this.#listeners) listener();
 		}
 		return moment.step === null ? null : moment.step.beat;
+	}
+
+	/**
+	 * Hear the voice as it was on a frame, and tell whoever listens when it is louder or quieter.
+	 * @param frame The frame, counted from nought.
+	 */
+	#hearAt(frame: number): void {
+		const was = this.level.read();
+		this.#frame = frame;
+		if (this.level.read() === was) return;
+		for (const listener of this.#heard) listener();
 	}
 }
 

@@ -2,7 +2,8 @@
 //
 // The picture is not captured while the voice speaks. It is drawn afterwards, by the Archboard
 // server's own page opened as a replay in a private headless Chromium: the page is given the
-// talk, and draws frame n when asked for it, on a clock the page controls, so every frame is
+// talk and how loud its voice is on each frame (the page never hears the voice itself), and draws
+// frame n when asked for it, on a clock the page controls, so every frame is
 // fully drawn whatever the machine is doing. Each frame is screenshotted as a JPEG and written to
 // one ffmpeg, which encodes the frames with the talk's voice. The file is written beside where it
 // goes and renamed into place only once ffmpeg has finished it.
@@ -36,6 +37,8 @@ import {
 	TALK_FRAME_RATE,
 	TALK_VOICE_FILE,
 	framesOf,
+	voiceLevels,
+	type ReplayOptions,
 	type Talk,
 } from "@/shared/walkthrough-recording/talk";
 import {
@@ -46,6 +49,7 @@ import {
 import { openVideoEncoder, type FfmpegCommand, type VideoEncoder } from "@/runtime/video-encoder";
 import { WalkthroughRecordingError } from "@/runtime/walkthrough-recorder/lib/errors";
 import { FrameOrder } from "@/runtime/walkthrough-recorder/lib/frame-order";
+import { voiceSamples } from "@/runtime/walkthrough-recorder/lib/talk-files";
 import { resolveEncoder, startBrowser } from "@/runtime/walkthrough-recorder/lib/tools";
 
 /** What to render, and where. */
@@ -210,19 +214,20 @@ async function pageReady(window: HeadlessWindow, signal: AbortSignal): Promise<v
 }
 
 /**
- * Hand the page the talk, and prove it renders as many frames as the talk has.
+ * Hand the page the talk and how to render it, and prove it renders as many frames as the talk has.
  * @param window The window.
  * @param request What to render.
- * @param frames How many frames the talk has.
+ * @param share How many frames the talk has, and how every page renders it.
  * @throws {Error} When the page refuses the talk or counts other frames.
  */
 async function loadTalk(
 	window: HeadlessWindow,
 	request: RenderTalkRequest,
-	frames: number,
+	share: Pick<PageShare, "frames" | "options">,
 ): Promise<void> {
+	const { frames } = share;
 	const loaded = await window.page.evaluate(
-		`${PAGE}.load(${JSON.stringify(request.talk)}, ${JSON.stringify({ theme: request.theme })})`,
+		`${PAGE}.load(${JSON.stringify(request.talk)}, ${JSON.stringify(share.options)})`,
 		{ timeoutMs: RECORDING_FRAME_CALL_MS },
 	);
 	const counted = isJsonRecord(loaded) ? loaded["frames"] : undefined;
@@ -264,6 +269,8 @@ interface PageShare {
 	readonly pages: number;
 	/** How many frames the talk has. */
 	readonly frames: number;
+	/** How every page renders the talk: its theme, and how loud its voice is on each frame. */
+	readonly options: ReplayOptions;
 	/** Where the frames go, in order. */
 	readonly order: FrameOrder;
 	/** Stops every page. */
@@ -344,7 +351,7 @@ async function renderPage(
 ): Promise<void> {
 	const window = await openReplayPage(chromium, request);
 	await pageReady(window, share.signal);
-	await loadTalk(window, request, share.frames);
+	await loadTalk(window, request, share);
 	await drawFrames(window, share);
 }
 
@@ -387,8 +394,9 @@ async function stopAll(browsers: readonly HeadlessChromium[]): Promise<readonly 
 }
 
 /**
- * Draw every frame on the pages, and hand them to the encoder in order. The first page that fails
- * stops the others.
+ * Draw every frame on the pages, and hand them to the encoder in order. Every page is told how loud
+ * the voice is on each frame, measured here from the talk's voice. The first page that fails stops
+ * the others.
  * @param browsers One browser per page.
  * @param request What to render.
  * @param encoder Takes the frames.
@@ -409,6 +417,10 @@ async function drawOnPages(
 	};
 	request.signal.addEventListener("abort", cancel, { once: true });
 	const order = new FrameOrder(encoder, AHEAD_ROUNDS * pages * CHUNK_FRAMES);
+	const options: ReplayOptions = {
+		theme: request.theme,
+		levels: voiceLevels(voiceSamples(join(request.directory, TALK_VOICE_FILE))),
+	};
 	let said = 0;
 	/**
 	 * Say how far the render is, once a second of video.
@@ -427,6 +439,7 @@ async function drawOnPages(
 					page,
 					pages,
 					frames,
+					options,
 					order,
 					signal: stop.signal,
 					handed,

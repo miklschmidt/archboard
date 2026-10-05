@@ -2,8 +2,9 @@
 //
 // What these catch: a step or a word shown a frame early or later than the
 // first frame at or after it happened; an utterance that grows shown as two
-// subtitles; and a playback that tells the stage about a frame on which nothing
-// happened, which would draw the frame again for nothing.
+// subtitles; a playback that tells the stage about a frame on which nothing
+// happened, which would draw the frame again for nothing; and an orb that
+// follows the voice of another frame than the one drawn.
 
 import { describe, expect, test } from "bun:test";
 
@@ -13,19 +14,23 @@ import { TalkPlayback, frameOf } from "@/ui/walkthrough-replay";
 /**
  * A playback of some events, of a walkthrough of id "wk".
  * @param events The events.
+ * @param levels How loud the voice is on each frame.
  * @returns The playback.
  */
-function playbackOf(events: readonly TalkEvent[]): TalkPlayback {
-	return new TalkPlayback({
-		events,
-		board: {
-			name: "Pipeline",
-			variant: null,
-			version: 1,
-			walkthrough: { id: "wk", name: "For the board" },
-			steps: 2,
+function playbackOf(events: readonly TalkEvent[], levels: readonly number[] = []): TalkPlayback {
+	return new TalkPlayback(
+		{
+			events,
+			board: {
+				name: "Pipeline",
+				variant: null,
+				version: 1,
+				walkthrough: { id: "wk", name: "For the board" },
+				steps: 2,
+			},
 		},
-	});
+		levels,
+	);
 }
 
 describe("a talk played frame by frame", () => {
@@ -71,5 +76,20 @@ describe("a talk played frame by frame", () => {
 		expect(told).toBe(0);
 		playback.playTo(2);
 		expect(told).toBe(1);
+	});
+
+	test("is as loud on each frame as the voice was then, silent before the first, and says when that changes", () => {
+		const playback = playbackOf([{ kind: "end", at: 6400 }], [0, 0.3, 0.3, 0.1]);
+		let told = 0;
+		playback.level.subscribe(() => {
+			told += 1;
+		});
+		const heard = [playback.level.read()];
+		for (const frame of [0, 1, 2, 3]) {
+			playback.playTo(frame);
+			heard.push(playback.level.read());
+		}
+		expect(heard).toEqual([0, 0, 0.3, 0.3, 0.1]);
+		expect(told).toBe(2);
 	});
 });
