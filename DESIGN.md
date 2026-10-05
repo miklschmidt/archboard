@@ -156,7 +156,7 @@ every role and changes the values. The file theme.css holds both themes.
 ### Primary
 
 - **Wayfinding Gold** (oklch(0.831 0.134 84.5)): the gold as a flat fill. It fills the voice ring, a status dot, a checked box and, in the dark theme, the selection on the picture.
-- **Gold Top and Gold Bottom** (oklch(0.87 0.135 88) to oklch(0.805 0.142 81)): the subtle gradient from top to bottom of a primary action. Both themes use the same values.
+- **Gold Top and Gold Bottom** (oklch(0.87 0.135 88) to oklch(0.805 0.142 81)): the subtle gradient from top to bottom of a primary action. The dark theme sets the bottom a step darker, at oklch(0.8 0.142 81).
 - **Gold Rim** (oklch(0.7 0.125 76), dark oklch(0.58 0.11 74)): the edge of a primary action, one pixel wide.
 - **Gold Ink** (oklch(0.2 0.02 70)): text and icons on gold. It has a contrast of at least 8.5:1 on every stop of the gradient.
 - **Gold Mark** (oklch(0.72 0.15 77), dark oklch(0.86 0.125 86)): the gold as a mark: a 2px bar or underline, a ring, an icon or the edge of something chosen. It lights the way to the chosen row, the active tab and the underline of a link.
@@ -302,7 +302,7 @@ the Rule tone.
 
 ### Inputs / Fields
 
-- **Style:** a Rule edge, `shadow-well` and Ground Chalk. The dark theme uses Chrome Chalk.
+- **Style:** a Field Rule edge and `shadow-well`, with no fill of its own, so it takes the tone of the surface it sits in. The dark theme fills it with the Field Rule at 30%.
 - **Focus:** the edge changes to the ring colour.
 
 ### Navigation
