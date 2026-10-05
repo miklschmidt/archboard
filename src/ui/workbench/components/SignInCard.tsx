@@ -1,6 +1,6 @@
 // The other way to sign in, where the conversation will be: an OpenAI API
 // key. Signing in with ChatGPT, its pending page and its cancel live in the
-// agent bar's status line, the one place the sign-in state is said.
+// agent dock's status line, the one place the sign-in state is said.
 
 import { useCallback, useState, type ChangeEvent, type FormEvent, type JSX } from "react";
 

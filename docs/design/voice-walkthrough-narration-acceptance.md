@@ -58,5 +58,5 @@ note what it did instead.
 
 ## 3. Stop
 
-Stop voice with End in the agent bar, then `./bin/dogfood stop`. Presenting and narrating
+End voice with its key in the agent dock, then `./bin/dogfood stop`. Presenting and narrating
 write nothing: `git status .archboard/vault` is clean.

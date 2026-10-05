@@ -160,8 +160,8 @@ never start another server. They share one Codex sign-in. If you sign out in one
 of them. A server that is already running shows a sign-in or a sign-out from
 another server only after you restart it.
 
-Open the server URL in your browser. The agent bar, the voice and video
-recording need a Codex sign-in. Sign in from the agent bar, with ChatGPT or with
+Open the server URL in your browser. The conversation, the voice and video
+recording need a Codex sign-in. Sign in from the agent dock, with ChatGPT or with
 an OpenAI API key. The sign-in is kept apart from your own `~/.codex`, in
 `codex-workbench/codex-home` in the state directory.
 

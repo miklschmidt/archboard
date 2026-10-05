@@ -51,7 +51,8 @@ The reference introduces three product additions worth building:
 
 - A shell inspector for the selected element and its persisted code binding.
 - A bottom agent surface that presents real agent state and `doing` data. This
-  surface shipped as the agent bar (TASK-302).
+  surface shipped as the agent bar (TASK-302) and is now the agent dock at the foot of
+  the navigator.
 - A non-persistent focus mode for the architecture path connected to the
   selected element.
 - A lazy navigator preview that depicts the real current board scene without
@@ -333,7 +334,8 @@ conversation beside the panes:
 working](assets/operator-shell-agent.png)
 
 Rendered captures at 1920×1080: a finished turn in the light theme, a turn at
-work in the dark theme.
+work in the dark theme. They predate the dock (TASK-373): the bar under the panes
+that they show is now the dock at the foot of the navigator.
 
 - **The agent dock** sits in the navigator's column, so it takes no height
   from the panes. Its line says in one phrase what

@@ -55,7 +55,7 @@ const HELD_WORDS: Readonly<Record<Exclude<VoiceStage, "idle">, string>> = {
 /**
  * Narration for every pane.
  * @param workbench What narrating reads of the agent over the panes.
- * @param voice The voice as the agent bar shows it.
+ * @param voice The voice as the agent dock shows it.
  * @param activePaneId The active pane.
  * @param selectPane Make a pane the active one.
  * @returns What every pane is offered; the same object until voice starts or ends.

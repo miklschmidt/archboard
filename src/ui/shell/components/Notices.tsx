@@ -1,6 +1,6 @@
 // Persistent notices above the canvas. A message that carries a recovery
 // action is never a toast: it stays up until the person chooses or dismisses.
-// They stack flat above the pane bar, one-pixel rules between them, never
+// They stack flat above the panes, one-pixel rules between them, never
 // floating over the canvas.
 
 import {

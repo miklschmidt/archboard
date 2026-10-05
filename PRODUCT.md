@@ -63,7 +63,7 @@ board is narrated by a voice and recorded to video.
   usually committed with the code, so a board change is reviewed in the same
   pull request as the code change.
 - The shell has a navigator of boards, up to two panes side by side, a sidebar
-  for each pane, and an agent bar under the panes. Talk and Narrate start the
+  for each pane, and an agent dock at the foot of the navigator. Talk and Narrate start the
   voice.
 - Code bindings open a part's file in VS Code, Cursor, Zed or on GitHub.
 - Boards also leave the app: as SVG or PNG for docs, ADRs and pull requests,
@@ -82,7 +82,7 @@ Shipped capabilities:
 - levels and drill-down from board to board
 - variants with a lifecycle, and comparison of any two of them
 - walkthroughs, narration by the Codex voice, and recording to video
-- an agent bar and conversation that read the board and the selection
+- an agent dock and conversation that read the board and the selection
 - claims, the doing of each write, and the control that takes a board back
 - groups, code bindings, illustrated traffic, and SVG and PNG renders
 
@@ -95,7 +95,7 @@ Constraints that every surface keeps:
   renderer has a bug.
 - Archboard is a desktop app for use near full screen at 1920×1080. Screens
   smaller than 1080p are out of scope, and it has no phone or narrow layout.
-- Codex runs the agent bar, the voice, narration and recording, through a
+- Codex runs the agent, the voice, narration and recording, through a
   private app-server with its own sign-in. Any agent that runs a CLI can author
   boards.
 - Archboard is young and its interfaces change often. It is not on npm.
