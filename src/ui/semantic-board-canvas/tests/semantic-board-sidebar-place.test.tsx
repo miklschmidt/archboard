@@ -9,7 +9,8 @@
 // giving the keyboard back, and a shortcut that does nothing until the sidebar
 // has been opened some other way, a control that says the sidebar is shown while
 // a presented walkthrough has it stepped aside, and a tab chosen in a docked
-// sidebar that turns into a float when a second pane arrives.
+// sidebar that turns into a float when a second pane arrives, and a pick during
+// a presented walkthrough that lays a panel nobody sees over the picture.
 
 import { act, fireEvent } from "@testing-library/react";
 import { beforeAll, expect, test } from "bun:test";
@@ -264,10 +265,17 @@ test("a presented walkthrough steps the sidebar aside: its control is held, and 
 	await settle();
 	expect(column()).toBeNull();
 
+	// A pick on the picture does not lay a panel over it either, so nothing moves
+	// the picture to keep clear of a panel that is not there.
+	await pickCard();
+	await sidebarSettled();
+	expect(column()).toBeNull();
+
+	// Leaving gives the pick its panel.
 	act(() => {
 		fireEvent.keyDown(document.body, { key: "Escape" });
 	});
 	await settle();
-	expect(column()).toBeNull();
+	expect(placeNow()).toBe("floating");
 	expect(part("semantic-sidebar-toggle").hasAttribute("aria-disabled")).toBe(false);
 });
