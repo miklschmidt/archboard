@@ -6,6 +6,15 @@ before this task, and it sets the representation that replaced it. The visual
 authority stays [The navigator](operator-canvas-shell.md#the-navigator) in the
 shell reference.
 
+Revised 2026-10-05. The tree has since changed how it draws what this study
+derived, and the navigator section of the shell reference states it. A board
+and a folder take a 36 px row and a 14 px name, and a variant and the Earlier
+row a 30 px row and a 13 px name. A board's mark is its level's icon. Rails and
+elbows join the rows, and the line to the selected row is lit in gold in place
+of a bar on the row. A board lists its variants while it has more than one,
+and a draft nests under the variant it was derived from. The measurements of
+the old tree and the research stand as they were found.
+
 ## What a vault holds
 
 The listing route reports every board with its name, level, variants and the
@@ -259,12 +268,10 @@ and their place first under the board.
 
 - **The live variants come first.** The variant the board's name opens comes
   first, then its other live variants as the board lists them.
-- **A draft nests under the draft it was derived from, and only there.** A
-  draft derived from the current variant sits beside it, because every draft
-  is compared with the current variant anyway. On a board with no current
-  variant, the drafts derived from the first draft nest under it, which is the
-  variant they are compared with. History never nests, so adoptions make no
-  staircase.
+- **A draft nests under the variant it was derived from.** A draft derived
+  from the current variant nests under it, and a draft derived from a draft
+  nests under that draft, so the list reads as a timeline with a branch for
+  each proposal. History never nests, so adoptions make no staircase.
 - **Historical and shelved variants wait behind one Earlier row**, newest
   first. The row opens when a pane shows one of them. While a filter is on,
   the variants it finds are listed directly under their board, in the same
