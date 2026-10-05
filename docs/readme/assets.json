@@ -16,7 +16,6 @@
 				"examples/web-shop/.archboard/config.yaml",
 				"src/transformers/semantic-renderer",
 				"src/runtime/semantic-renderer",
-				"src/runtime/semantic-rasterizer",
 				"src/shared/code-target",
 				"src/shared/ids",
 				"src/shared/semantic-board",
@@ -30,7 +29,7 @@
 				"scripts/readme-assets/lockup.ts",
 				"scripts/readme-assets/browser.ts"
 			],
-			"hash": "b4f6479c2f21bb9e6e5e09cedfb1b91c99b4319ae09276de8620ba2c85e7736e"
+			"hash": "e7cc0d7f0b453f80e49e58fb5fd65807de9d60a334437b8f53ab2b75c63227aa"
 		},
 		{
 			"name": "hero",

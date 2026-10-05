@@ -38,7 +38,7 @@ Refresh an asset when `readme:check` lists it after your change. Then:
 | `hero`, `plan`, `history`, `drill-down`, `take-back` | the real shell filmed in headless Chromium while the CLI writes, encoded to WebP            | no    |
 | `ask`                                                | the shell filmed while a Codex agent answers a question typed into the conversation         | yes   |
 | `explainer`, `pr-walkthrough`, `newcomer`            | `semantic record`, narrated by the Codex voice; the loop and thumbnail are cut from it      | yes   |
-| `banner`                                             | `semantic rasterize` of a web-shop proposal, laid beside the lockup in Chromium             | no    |
+| `banner`                                             | `semantic render` of a web-shop proposal, laid as vector beside the lockup in Chromium      | no    |
 
 Most assets also write an index thumbnail (`idx-*.webp`). The manifest lists
 the files of each asset. `explainer` writes nothing in the repository.

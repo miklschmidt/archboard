@@ -58,6 +58,8 @@ interface WindowOptions {
 	/** The page's size; the shell's reference viewport when absent. */
 	readonly width?: number;
 	readonly height?: number;
+	/** Device pixels per CSS pixel; one when absent. A screenshot is that many times as wide. */
+	readonly pixelRatio?: number;
 	/** Draw a dot that follows the pointer, since a headless screenshot shows no cursor. */
 	readonly cursor?: boolean;
 }
@@ -387,7 +389,7 @@ class Browser {
 		await page.call("Emulation.setDeviceMetricsOverride", {
 			width,
 			height,
-			deviceScaleFactor: 1,
+			deviceScaleFactor: options.pixelRatio ?? 1,
 			mobile: false,
 		});
 		await page.call("Emulation.setEmulatedMedia", {

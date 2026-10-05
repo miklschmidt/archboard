@@ -116,7 +116,7 @@ Archboard server. Nothing here was dragged into place."
 
 - `docs/readme/`: the README's SVGs drawn by `archboard semantic render`, its
   clips filmed from a running Archboard server, and its banner, which sets the
-  logo beside a proposal that `archboard semantic rasterize` drew.
+  logo beside a proposal that `archboard semantic render` drew.
   `bun run readme:assets` makes each of them (`docs/agents/readme-assets.md`).
 - Three narrated videos on GitHub, linked from the README.
 - `examples/web-shop`: the example vault with history, proposals, drill-down
