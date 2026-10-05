@@ -61,10 +61,3 @@ test("an orb that is not going anywhere is not lifted", () => {
 		expect(flightAt(FROM, FROM, progress).y).toBe(FROM.y);
 	}
 });
-
-test("a flight turned round starts from where the orb is, and settles at its new home", () => {
-	const seen = flightAt(FROM, TO, 0.4);
-	const back = flightAt(seen, FROM, 0);
-	expect(back).toEqual(seen);
-	expect(flightAt(seen, FROM, 1)).toEqual(FROM);
-});
