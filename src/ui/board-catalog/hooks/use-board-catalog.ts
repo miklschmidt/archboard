@@ -5,7 +5,7 @@
 import { useQuery, useQueryClient, type QueryClient, type QueryKey } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 
-import { composeListing, listingError } from "@/ui/board-catalog/listing";
+import { composeListing, listingError, vaultHalf } from "@/ui/board-catalog/listing";
 import { boardCatalogKeys, paneInventoryQuery } from "@/ui/board-catalog/lib/queries";
 import {
 	onSemanticBoardChange,
@@ -136,7 +136,14 @@ function useBoardCatalog(): BoardCatalog {
 	// under a claim that has not ended — so its states and standing in the
 	// navigator are read again with it.
 	useEffect(() => onSemanticBoardChange(() => invalidateListing(client)), [client]);
-	const listing = useMemo(() => composeListing(vault.data, panes.data), [vault.data, panes.data]);
+	// The vault's half is made again only when the vault's answer is new, so a
+	// pane moving keeps the boards every pane reads (the cache keeps an answer
+	// that reads the same as the one it replaces).
+	const boards = useMemo(
+		() => (vault.data === undefined ? undefined : vaultHalf(vault.data)),
+		[vault.data],
+	);
+	const listing = useMemo(() => composeListing(boards, panes.data), [boards, panes.data]);
 	const error = listingError(vault.error, panes.error, panes.data !== undefined);
 	return useMemo(
 		() => ({ listing, error, loading: vault.isPending, ...commands }),
