@@ -96,10 +96,11 @@ components:
     height: "32px"
     padding: "0 10px"
   field:
-    backgroundColor: "{colors.ground-chalk}"
+    backgroundColor: "transparent"
     textColor: "{colors.ink-graphite}"
     rounded: "{rounded.control}"
-    height: "36px"
+    height: "32px"
+    padding: "4px 10px"
   nav-row-chosen:
     backgroundColor: "{colors.reading-tone}"
     textColor: "{colors.ink-graphite}"
@@ -303,6 +304,7 @@ the Rule tone.
 ### Inputs / Fields
 
 - **Style:** a Field Rule edge and `shadow-well`, with no fill of its own, so it takes the tone of the surface it sits in. The dark theme fills it with the Field Rule at 30%.
+- **Size:** 32px high, with 10px of room at each side, as a button is.
 - **Focus:** the edge changes to the ring colour.
 
 ### Navigation
