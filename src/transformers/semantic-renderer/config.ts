@@ -28,7 +28,10 @@ export const ROUTE_OBSTACLE_CLEARANCE = 8;
 export const ROUTE_LANE = 16;
 /** Fixed radius of ordinary edge bends. Routing must provide enough room; this never shrinks. */
 export const BEND_RADIUS = 8;
-/** Required straight run after the final bend, for every arrow (largest marker reaches 9.735px). */
+/**
+ * Required straight run after the final bend, for every arrow. The longest head,
+ * open and 11 long, reaches 9.735px back; a renderer test holds every head to it.
+ */
 export const APPROACH_STRAIGHT = 12;
 /** Crossing bridge size and clearance from surrounding ink. */
 export const BRIDGE_RADIUS = 7;

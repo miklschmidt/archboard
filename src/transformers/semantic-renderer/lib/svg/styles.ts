@@ -56,10 +56,25 @@ const WEIGHTS: readonly Weight[] = ["hero", "normal", "muted"];
 const STROKE_WIDTH: Readonly<Record<Weight, number>> = { hero: 2.2, normal: 1.4, muted: 1.2 };
 
 /**
- * How big an arrowhead of each weight is, in widths of its line. A hero's head
- * is part of its weight.
+ * How long an arrowhead of each weight is, from its base to its tip, in the
+ * page's units. Every board and every sequence draws its heads from this.
+ *
+ * A default head is as long as a hero's (TASK-403). A smaller one left the
+ * reader to guess which way most lines run. The hero line still speaks louder
+ * by its width. A muted head keeps the size it had, so the quietest line is
+ * still told apart from a default one at a glance.
  */
-const HEAD_SIZE: Readonly<Record<Weight, number>> = { hero: 7.5, normal: 6, muted: 5.5 };
+const HEAD_LENGTH: Readonly<Record<Weight, number>> = { hero: 11, normal: 11, muted: 6 };
+
+/**
+ * How big an arrowhead of a weight is drawn, in widths of its line: a marker
+ * is drawn in the units of the line that ends in it.
+ * @param weight How loudly the line speaks.
+ * @returns The marker's side, in line widths.
+ */
+function headWidths(weight: Weight): number {
+	return HEAD_LENGTH[weight] / STROKE_WIDTH[weight];
+}
 
 /**
  * Where on its ten-unit drawing each head sits on the end of its line. The open
@@ -76,7 +91,7 @@ const HEAD_REF_X: Readonly<Record<Head, number>> = { filled: 8, open: 10 };
  * @returns The distance, in the page's units.
  */
 function headReach(head: Head, weight: Weight): number {
-	return ((10 - HEAD_REF_X[head]) / 10) * HEAD_SIZE[weight] * STROKE_WIDTH[weight];
+	return ((10 - HEAD_REF_X[head]) / 10) * HEAD_LENGTH[weight];
 }
 
 /**
@@ -87,7 +102,7 @@ function headReach(head: Head, weight: Weight): number {
  * @returns The distance, in the page's units.
  */
 function headBase(head: Head, weight: Weight): number {
-	return (HEAD_REF_X[head] / 10) * HEAD_SIZE[weight] * STROKE_WIDTH[weight];
+	return (HEAD_REF_X[head] / 10) * HEAD_LENGTH[weight];
 }
 
 /**
@@ -286,7 +301,8 @@ export {
 	stylesFor,
 	headReach,
 	headBase,
+	headWidths,
 	HEAD_REF_X,
-	HEAD_SIZE,
+	HEAD_LENGTH,
 	STROKE_WIDTH,
 };

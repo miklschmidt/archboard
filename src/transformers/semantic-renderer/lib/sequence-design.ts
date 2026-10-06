@@ -56,10 +56,10 @@ const ACTIVATION_RADIUS = 3;
 const BAR_THICKNESS = 2.5;
 /**
  * How far an activation bar runs past the call that starts it and the reply
- * that ends it: past its rounded corner and half an arrowhead, so the arrow
- * meets a straight side.
+ * that ends it: past its rounded corner and half an arrowhead (5.5 for a head
+ * 11 long), so the arrow meets a straight side.
  */
-const BAR_OVERHANG = 8;
+const BAR_OVERHANG = 9;
 
 /** How far right a self-message reaches, and how far it drops before turning back. */
 const SELF_LOOP_REACH = 52;
@@ -70,9 +70,11 @@ const SELF_LOOP_EXTENT = SELF_LOOP_DROP + SELF_LOOP_CORNER * 2;
 
 /**
  * Gap between an interaction label and its arrow. Sequence labels sit above
- * horizontal arrows to keep their direction visible.
+ * horizontal arrows to keep their direction visible. A wide label reaches over
+ * the arrowhead, so the gap clears the half of the head that stands above its
+ * line (5.5 for a head 11 long) with a little air.
  */
-const MESSAGE_LABEL_GAP = 5;
+const MESSAGE_LABEL_GAP = 7;
 /** How far a self-message's label stands off the loop it names. */
 const SELF_LABEL_GAP = 8;
 /** The step from one line of a wrapped message label to the next. */
