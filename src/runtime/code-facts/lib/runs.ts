@@ -6,9 +6,11 @@
 // derives from it. A name at the start of a chain that the code calls, or
 // inside it, runs too: `api.read()` runs `api`, and `Schema.parse()` runs
 // `Schema`, because the check cannot tell a member that the name's module
-// defines from one of a library. Any other use at run time uses the name as a
-// value: it reads a constant, passes the name on, or tests a value against a
-// class, as `instanceof` and a catch do.
+// defines from one of a library. A subscript is a link of a chain as a member
+// is: `handlers[kind]()` runs `handlers`. Any other use at run time uses the
+// name as a value: it reads a constant, passes the name on, or tests a value
+// against a class, as `instanceof` and a catch do. Passing a handler on is one
+// such use, though the code that receives it may run it later (ADR 0046).
 
 import type { Node } from "web-tree-sitter";
 

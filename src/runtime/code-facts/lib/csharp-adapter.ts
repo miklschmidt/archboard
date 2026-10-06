@@ -316,6 +316,7 @@ const RUN_SYNTAX: RunSyntax = {
 		qualified_name: ["qualifier", "name"],
 		alias_qualified_name: ["alias", "name"],
 		generic_name: [""],
+		element_access_expression: ["expression"],
 	},
 };
 

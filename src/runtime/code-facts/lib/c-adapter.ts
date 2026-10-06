@@ -379,7 +379,7 @@ const RUN_SYNTAX: RunSyntax = {
 		declaration: constructsIn,
 		...Object.fromEntries([...CONSTRUCTING].map((type) => [type, constructsIn])),
 	},
-	chains: { field_expression: ["argument", "field"] },
+	chains: { field_expression: ["argument", "field"], subscript_expression: ["argument"] },
 };
 
 /** One name, as the file writes it and where. */

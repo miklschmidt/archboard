@@ -121,13 +121,14 @@ test("a use at run time is call evidence, a declared type or an interface import
 	]);
 });
 
-test("a call, a construction, an attribute and a base class run what they name, and a static member read, typeof and a name passed on use it as a value", async () => {
+test("a call, also through a member or an element, a construction, an attribute and a base class run what they name, and a static member read, typeof and a name passed on use it as a value", async () => {
 	const asValue = await asValueOf("Uses.cs", [
 		"[Audited]",
 		"class Child : Base {",
 		"\tobject Use() {",
 		"\t\tCall();",
 		"\t\tApi.Read();",
+		'\t\tHandlers["kind"]();',
 		"\t\tvar made = new Made();",
 		"\t\tSchedule(Passed);",
 		"\t\treturn Limits.Max + typeof(Shown).Name;",
@@ -140,6 +141,7 @@ test("a call, a construction, an attribute and a base class run what they name, 
 		Call: false,
 		Api: false,
 		"Api.Read": false,
+		Handlers: false,
 		Made: false,
 		Passed: true,
 		Limits: true,

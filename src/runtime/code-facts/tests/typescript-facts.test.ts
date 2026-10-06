@@ -164,14 +164,15 @@ test("a use at run time is call evidence, a use only as a type is import evidenc
 	expect(imports["./money"]).toMatchObject({ typeOnly: false, resolved: "src/money.ts" });
 });
 
-test("a call, a construction, a component, a decorator and a base class run what they name, and a constant read, an instanceof test and a name passed on use it as a value", async () => {
+test("a call, also through a member or a subscript, a construction, a component, a decorator and a base class run what they name, and a constant read, an instanceof test and a name passed on use it as a value", async () => {
 	const asValue = await asValueOf("uses.tsx", [
-		'import { Base, Failure, LIMIT, call, passed, decorate, api, Shown } from "./runs";',
+		'import { Base, Failure, LIMIT, call, passed, decorate, api, handlers, Shown } from "./runs";',
 		"@decorate",
 		"export class Child extends Base {}",
 		"export function use(error: unknown) {",
 		"\tcall();",
 		"\tapi.read();",
+		'\thandlers["kind"]();',
 		"\tqueueMicrotask(passed);",
 		"\tif (error instanceof Failure) return LIMIT;",
 		"\treturn <Shown />;",
@@ -183,6 +184,7 @@ test("a call, a construction, a component, a decorator and a base class run what
 		call: false,
 		api: false,
 		"api.read": false,
+		handlers: false,
 		Shown: false,
 		passed: true,
 		Failure: true,
