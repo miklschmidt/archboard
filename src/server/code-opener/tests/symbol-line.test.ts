@@ -25,7 +25,7 @@ beforeAll(() => {
 	root = mkdtempSync(join(tmpdir(), "archboard-symbol-line-"));
 	mkdirSync(join(root, "src"));
 	writeFileSync(join(root, "src", "ledger.ts"), LEDGER);
-	writeFileSync(join(root, "src", "ledger.py"), "def settle():\n    pass\n");
+	writeFileSync(join(root, "src", "ledger.rb"), "def settle\nend\n");
 });
 
 afterAll(() => {
@@ -71,7 +71,7 @@ describe("the line of a bound symbol", () => {
 	});
 
 	test("is nothing for a file that code facts read as text, or that is gone", async () => {
-		expect(await lineOf("src/ledger.py", "settle")).toBeUndefined();
+		expect(await lineOf("src/ledger.rb", "settle")).toBeUndefined();
 		expect(await lineOf("src/gone.ts", "settle")).toBeUndefined();
 	});
 });
