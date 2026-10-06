@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:17'
-updated_date: '2026-10-06 10:40'
+updated_date: '2026-10-06 10:41'
 labels:
   - interfaces
   - architecture
@@ -61,4 +61,13 @@ Command dispatch@TASK-368.05 (branched from Current architecture at v7, adopted 
 - Differences from index.ts: run.ts also calls cliSurfaceOf (:125) and helpText (:142), from cliSurface and commandHelp, which nothing in src, scripts, tools or tests calls. So the board draws no relationship for them. TASK-368.10 owns reporting exposed names that nothing reaches. contract and child (lib/route.ts) build the command table and are not drawn.
 - Compare: one interface change (Command routing gains runCliWith and Registry and surface, caller Command catalogue), the container added, 7 parents changed, no relationship changed.
 - Picture: 1549x953 against 1604x853. The catalogue enters the container from the top right; runCommand and Server client sit outside it. Labels legible.
+
+Skill evaluation@TASK-368.05 (branched from Initial at v9, adopted at v12).
+- Container: Evaluation harness (module), bound to src/runtime/skill-evaluation. The 21 parts bound under its lib/ are its children; every id kept. Eval CLI (scripts/evaluate-skill.ts), Evaluation inputs (evals), Agent CLI, Archboard server, Codex CLI and Claude CLI stay outside.
+- semantic inspect --container 'Evaluation harness': 4 entry points (Suite loader, Batch orchestrator, Grading session, Report), 17 hidden parts, 1 caller (Eval CLI), 6 outgoing (to Evaluation inputs, Codex CLI twice, Claude CLI, Archboard server, Agent CLI), 0 pass-through.
+- Evidence: scripts/evaluate-skill.ts imports through skill-evaluation/index.ts and calls loadSuite (:135, lib/suite.ts), runBatch (:238, lib/batch.ts), gradeBatch (:269, lib/grading-run.ts) and writeReport (:285 and :311, lib/records.ts). These are the files the four entry points bind, so no relationship moved.
+- Differences from index.ts: the script also calls resumeSelection (:186), which lives in batch.ts, the Batch orchestrator entry point, as part of run. It also calls pinVersions (:293, lib/pin-versions.ts) for the pin subcommand and executableVersion (lib/version.ts). No part draws those two, because the board's question is how a batch is run, graded and reported. Repinning is outside that scope. The script is the only file outside the module that imports it. index.ts exports many more names, which only the module's own tests use. TASK-368.10 owns reporting them.
+- The board had no summary. It now carries 'Service level: the harness that measures the consumer skill, the four entry points the eval CLI reaches, and the runs, grading and report behind them. Follow linked subjects for related levels.'
+- Compare: one interface change (Evaluation harness gains the 4 entry points and the caller Eval CLI), the container added, 21 parents changed, all 37 relationships unchanged.
+- Picture: 3860x1729 against 3438x1813. The container holds everything but the CLI and the externals, and the Grading region sits inside it. Eval CLI enters at the top left, and the outgoing lines leave right and down to the CLIs and the server.
 <!-- SECTION:NOTES:END -->
