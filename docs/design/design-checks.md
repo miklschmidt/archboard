@@ -434,6 +434,71 @@ the endpoints module call to the VPC holds through the call's argument
 `vpc_id = module.vpc.vpc_id` and the output of the `vpc` module, and the one
 drawn from the public subnets to the private NAT route has no reference.
 
+#### Reading .NET projects through the C# adapter
+
+TASK-367.11 measured the C# adapter on 2026-10-06 with Bun 1.4.2, on shallow
+clones of `dotnet/command-line-api` (System.CommandLine, `ba7fb9b`) and
+`dotnet/BenchmarkDotNet` (`34da531`), while other agents kept the machine at
+a load average of 11 to 16 on 24 cores. One process read every tracked `.cs`
+and `.csproj` file in one pass. A file's names resolve through its project,
+so the first file of a project reads the facts of all of its files and of the
+projects it references, through the cache, one parse at a time.
+
+| Checkout           | Files | Cold              | Warm          | Definitions | Uses in code | Lead to a file | Of another file | Unparsed lines |
+| ------------------ | ----- | ----------------- | ------------- | ----------- | ------------ | -------------- | --------------- | -------------- |
+| System.CommandLine | 213   | 415 to 644 ms     | 29 to 60 ms   | 2,161       | 8,482        | 1,774          | 947             | 288 in 4 files |
+| BenchmarkDotNet    | 1,204 | 1,464 to 1,775 ms | 198 to 294 ms | 15,121      | 50,547       | 15,035         | 7,542           | 23 in 11 files |
+
+The longest wait of the event loop in a cold pass was 89 to 186 ms: the first
+parse loads the grammar, and with the grammar loaded the longest single parse
+of BenchmarkDotNet held the loop for 103 ms. Reading one file of
+BenchmarkDotNet's test project in a new pass read its 730 files from the cache
+in 10 ms, with a longest wait of 2 ms. A `ProjectReference` resolved in each
+of the 11 and 52 cases. `InternalsVisibleTo` gave an internal member of
+BenchmarkDotNet its 10 friends, named in attributes as
+`"BenchmarkDotNet.Tests,PublicKey=" + BenchmarkDotNetInfo.PublicKey`.
+
+Tree-sitter reads every branch of an `#if` as code. In System.CommandLine,
+two branches that each hold half an `if` statement put all 133 lines of
+`Argument{T}.cs` in one error node. The adapter now reads the first branch of
+each `#if` and blanks the other branches and the directives, keeping every
+line in place, and the library parses fully. The 288 lines left are in tests
+and in one project: tree-sitter-c-sharp 0.23.5 does not read an interpolated
+verbatim string with doubled quotes (`$@"move --to ""{path}"""`), which put a
+whole test file of 242 lines in error, or a C# 14 `extension` block.
+
+A board of 12 parts and 8 relationships over System.CommandLine ran through
+the real check in 486 to 637 ms cold and 166 to 199 ms warm. The library's
+project file was bound as a container, with `Command.cs`, `ParseResult.cs`,
+four of its directories and one symbol inside it, beside `dotnet-suggest` by
+its directory, the static completions by their project file, and the tests.
+Every finding is right:
+
+- `BINDING_SYMBOL_MISSING` on a planted binding, and `ANCHOR_MISMATCH` on a
+  planted anchor: `dotnet-suggest -> Help` anchored at `Command`, which the
+  library's `Command.cs` declares.
+- `RELATIONSHIP_UNDRAWN` on Parsing, Invocation and Completions, each piece a
+  construction, a static member or a base class: `ParseDiagramAction.Diagram`,
+  `TokenType.Directive`, `new AnonymousSynchronousCommandLineAction`,
+  `CompletionAction : SynchronousCommandLineAction`, `new CompletionItem`,
+  `CompletionContext.Empty`.
+- `RELATIONSHIP_BACKWARDS` on `Invocation -> Parse result`: `ParseResult`
+  calls `InvocationPipeline.InvokeAsync`. And on
+  `System.CommandLine -> Static completions`: the static completions' project
+  file references the library, a build dependency.
+
+The anchored relationships hold, and `Help -> Invocation` is supported because
+`HelpAction` derives from `SynchronousCommandLineAction`. The first runs gave
+five wrong pieces on two findings, each a name taken for the type of the same
+name: an inherited property passed as a value (`ParseResult`), a member that
+a property pattern names (`{ Command.Action: ... }`), a member of a cast's
+result, and two `is Option or Command` patterns read as calls. So a name may
+be found as a type only where the syntax lets only a type stand, a member of
+a value the code does not name is looked up nowhere, and a pattern is a type. A board
+of 9 parts over BenchmarkDotNet ran in 1,686 ms cold and 379 ms warm and gave
+six undrawn warnings and one backwards finding, each right, among them a test
+project's `ProjectReference` to the Windows diagnostics.
+
 #### Resolving candidates with the TypeScript language server
 
 TASK-367.13 measured the language server on 2026-10-06. It used Bun 1.4.2 and
