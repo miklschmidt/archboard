@@ -1,8 +1,15 @@
-// The lines `archboard check --code` writes beside its JSON answer: what the
-// code check skipped, one line for each reason with a count, and how far each
-// board is behind its code, per board and per part (ADR 0045, ADR 0046).
+// The lines `archboard check --code` writes beside its JSON answer: each
+// finding as a diagnostic line with the evidence it rests on, what the code
+// check skipped, one line for each reason with a count, and how far each board
+// is behind its code, per board and per part (ADR 0045, ADR 0046).
 
-import type { BoardBehind, CodeCheckAnswer } from "@/shared/code-check/index";
+import type {
+	BoardBehind,
+	CodeCheckAnswer,
+	CodeCheckSkip,
+	CodeFinding,
+} from "@/shared/code-check/index";
+import { diagnosticLine } from "@/shared/semantic-policy/index";
 
 /**
  * Count entries by a key, in the order each key first appears.
@@ -59,15 +66,59 @@ function behindLines(board: BoardBehind): string[] {
 }
 
 /**
+ * One finding, then each piece of evidence it rests on: its kind, its
+ * resolution and its place in code.
+ * @param finding The finding.
+ * @returns Its lines.
+ */
+function findingLines(finding: CodeFinding): string[] {
+	return [
+		diagnosticLine(finding),
+		...(finding.evidence ?? []).map(
+			(evidence) => `  ${evidence.kind}, ${evidence.resolution}, ${evidence.path}:${evidence.line}`,
+		),
+	];
+}
+
+/**
+ * What a skip is about: a subject, a whole board, or a whole checkout.
+ * @param skip The skip.
+ * @returns The noun.
+ */
+function skippedNoun(skip: CodeCheckSkip): string {
+	if (skip.subject !== undefined) return "subject";
+	return skip.board === undefined ? "checkout" : "board";
+}
+
+/**
+ * One line for each reason the check skipped something, with a count. A
+ * reason that holds for whole checkouts names them, since it names no subject.
+ * @param skipped What the check skipped.
+ * @returns The lines.
+ */
+function skippedLines(skipped: readonly CodeCheckSkip[]): string[] {
+	const byReason = new Map<string, CodeCheckSkip[]>();
+	for (const skip of skipped) {
+		const key = `${skippedNoun(skip)} ${skip.reason}`;
+		byReason.set(key, [...(byReason.get(key) ?? []), skip]);
+	}
+	return [...byReason.values()].map((same) => {
+		const [first] = same;
+		const noun = first === undefined ? "" : skippedNoun(first);
+		const repos = noun === "checkout" ? ` (${same.map((skip) => skip.repo).join(", ")})` : "";
+		return `code check: skipped ${plural(same.length, noun)}: ${first?.reason}${repos}`;
+	});
+}
+
+/**
  * Every line the code check writes beside its answer.
  * @param answer The code check's answer.
  * @returns The lines.
  */
 function codeCheckLines(answer: CodeCheckAnswer): string[] {
 	return [
-		...counts(answer.skipped.map((skip) => skip.reason)).map(
-			([reason, count]) => `code check: skipped ${plural(count, "board")}: ${reason}`,
-		),
+		...answer.findings.flatMap(findingLines),
+		...skippedLines(answer.skipped),
 		...answer.behind.flatMap(behindLines),
 	];
 }

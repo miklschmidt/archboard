@@ -10,10 +10,10 @@
 // the exit status.
 //
 // TASK-369.02 built this answer with `behind` filled. TASK-367.05 fills
-// `findings` and adds the skip reasons of the code pass.
+// `findings` from the text reading and adds the skip reasons of the code pass.
 
 import { z } from "zod";
-import { VaultDiagnosticSchema } from "@/shared/semantic-policy/index";
+import { EvidenceKindSchema, VaultDiagnosticSchema } from "@/shared/semantic-policy/index";
 
 /** The part, relationship or step an entry is about, as every diagnostic names it. */
 const CodeCheckSubjectSchema = VaultDiagnosticSchema.shape.subject.unwrap();
@@ -24,21 +24,80 @@ const CodeCheckBoardSchema = z
 	.strict();
 
 /**
+ * One piece of code a finding rests on: what it proves, whether a language
+ * server or the code itself named what it reaches (`resolved`) or the check
+ * matched it by name only (`candidate`), the parts whose bound code makes the
+ * use and holds what it reaches where the check knows them, and its place in
+ * code. It quotes a symbol, a path and a line, and never other text of a file
+ * (ADR 0046).
+ */
+const CodeEvidenceSchema = z
+	.object({
+		kind: EvidenceKindSchema,
+		resolution: z.enum(["resolved", "candidate"]),
+		from: z.string().optional(),
+		to: z.string().optional(),
+		repo: z.string(),
+		path: z.string(),
+		line: z.int().positive(),
+		symbol: z.string(),
+	})
+	.strict();
+
+/**
  * One thing the code pass found. It has the shape of a vault diagnostic, and
- * its severity is warning or information, never error (ADR 0046).
+ * its severity is warning or information, never error (ADR 0046). A finding
+ * that says something is missing rests on nothing, so it has no `evidence`.
  */
 const CodeFindingSchema = VaultDiagnosticSchema.extend({
 	severity: z.enum(["warning", "information"]),
+	evidence: z.array(CodeEvidenceSchema).min(1).optional(),
 });
 
+/** A pinned binding's ref, and what its checkout has out instead. */
+const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).strict();
+
 /**
- * Why the check read nothing of a whole board: it has no current variant, so
- * nothing on it is built (ADR 0031), or its file is not a board.
+ * Something the code pass did not read, with the reason (ADR 0046). A skipped
+ * subject gets no finding and changes no exit status, and it is listed so it
+ * never looks like a subject with nothing to report.
+ *
+ * - `no-current-variant`: a board with nothing built and no draft of the
+ *   named variant (ADR 0031). `board-unreadable`: its file is not a board.
+ * - `repository-unregistered`: a part, relationship or step whose binding or
+ *   anchor names a repository this machine has not registered. It stays
+ *   silent, and is listed.
+ * - `ref-not-checked-out`: a binding pinned to a branch or a commit its
+ *   checkout does not have out; a relationship or step with such a part at an
+ *   end is skipped with its anchor.
+ * - `path-ignored`: a bound or anchored path that Git ignores.
+ * - `path-never-read`: Terraform state, a variable file or the `.terraform`
+ *   directory, which can hold secrets in plain text.
+ * - `checkout-unavailable`: a registered checkout that is gone, is no longer
+ *   a Git checkout, or no longer identifies as its repository.
+ * - `text-only`: the check read a checkout only as text, so it judged its
+ *   anchors and bound symbols and nothing that needs references.
+ *
+ * A reason that holds for a whole checkout names its `repo` and no subject,
+ * which is how the check says a thing once.
  */
 const CodeCheckSkipSchema = z
 	.object({
-		reason: z.enum(["no-current-variant", "board-unreadable"]),
-		board: z.string(),
+		reason: z.enum([
+			"no-current-variant",
+			"board-unreadable",
+			"repository-unregistered",
+			"ref-not-checked-out",
+			"path-ignored",
+			"path-never-read",
+			"checkout-unavailable",
+			"text-only",
+		]),
+		board: z.string().optional(),
+		variant: z.string().optional(),
+		subject: CodeCheckSubjectSchema.optional(),
+		repo: z.string().optional(),
+		ref: OtherRefSchema.optional(),
 		detail: z.string().optional(),
 	})
 	.strict();
@@ -67,9 +126,6 @@ const BehindPartSchema = z
 		commits: z.array(z.string()),
 	})
 	.strict();
-
-/** A pinned binding's ref, and what its checkout has out instead. */
-const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).strict();
 
 /**
  * A part the reading did not read. It is in no count, so it must never look
@@ -144,6 +200,7 @@ type CodeCheckAnswer = z.infer<typeof CodeCheckAnswerSchema>;
 type CodeCheckBoard = z.infer<typeof CodeCheckBoardSchema>;
 type CodeCheckSkip = z.infer<typeof CodeCheckSkipSchema>;
 type CodeFinding = z.infer<typeof CodeFindingSchema>;
+type CodeEvidence = z.infer<typeof CodeEvidenceSchema>;
 type BoardBehind = z.infer<typeof BoardBehindSchema>;
 type BehindCommit = z.infer<typeof BehindCommitSchema>;
 type BehindPart = z.infer<typeof BehindPartSchema>;
@@ -164,6 +221,8 @@ export {
 	type CodeCheckBoard,
 	CodeCheckSkipSchema,
 	type CodeCheckSkip,
+	CodeEvidenceSchema,
+	type CodeEvidence,
 	CodeFindingSchema,
 	type CodeFinding,
 };

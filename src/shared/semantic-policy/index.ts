@@ -140,14 +140,17 @@ const DEFAULT_SEMANTIC_POLICY: SemanticPolicy = {
 	groups: {},
 };
 /**
- * The one node or relationship a diagnostic is about. The board and variant
- * it sits on are the diagnostic's own, so `id` alone finds it there. The kinds
- * are the board's own subject kinds (`edge` is a relationship). `name` is what
- * a reader would call it, carried so a line of text can say it without
- * reading the board again.
+ * The one node, relationship or flow step a diagnostic is about. The board and
+ * variant it sits on are the diagnostic's own, so `id` alone finds it there.
+ * The kinds are the board's own subject kinds (`edge` is a relationship). A
+ * step carries an anchor, so the code check names one (ADR 0046); the plain
+ * check never does, and every reader accepts one. `name` is what a reader
+ * would call it, carried so a line of text can say it without reading the
+ * board again: a step, which has no name of its own, is named by its flow, its
+ * ends and its label.
  */
 const DiagnosticSubjectSchema = z.object({
-	kind: z.enum(["node", "edge"]),
+	kind: z.enum(["node", "edge", "step"]),
 	id: z.string(),
 	name: z.string(),
 });
@@ -164,24 +167,47 @@ const VaultDiagnosticSchema = z.object({
 });
 type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
 /**
+ * A diagnostic as a line of text reads it. A finding of the code check has
+ * the same shape with the severity `information` beside `warning` (ADR 0046).
+ */
+type DiagnosticOfAnySeverity = Omit<VaultDiagnostic, "severity"> & {
+	severity: VaultDiagnostic["severity"] | "information";
+};
+/** Each subject kind in the words of a person. */
+const SUBJECT_WORD = { node: "node", edge: "relationship", step: "step" } as const;
+/**
  * A subject as a line of text names it.
  * @param subject The diagnostic's subject.
  * @returns Its kind in the words of a person, then its quoted name.
  */
 function describeSubject(subject: DiagnosticSubject): string {
-	return `${subject.kind === "edge" ? "relationship" : "node"} ${JSON.stringify(subject.name)}`;
+	return `${SUBJECT_WORD[subject.kind]} ${JSON.stringify(subject.name)}`;
 }
 /**
- * One diagnostic as a line of text: severity, where, the node or relationship
- * it is about when it names one, and what is wrong.
- * @param issue The diagnostic.
+ * One diagnostic as a line of text: severity, where, the node, relationship or
+ * step it is about when it names one, and what is wrong.
+ * @param issue The diagnostic, or a finding of the code check.
  * @returns The line.
  */
-function diagnosticLine(issue: VaultDiagnostic): string {
+function diagnosticLine(issue: DiagnosticOfAnySeverity): string {
 	const where = `${issue.file}${issue.path === undefined ? "" : `:${issue.path}`}`;
 	const about = issue.subject === undefined ? "" : `${describeSubject(issue.subject)}: `;
 	return `${issue.severity}: ${where}: ${about}${issue.message}`;
 }
+/**
+ * What one piece of code or infrastructure proves about two parts (ADR 0046).
+ * They live beside the vocabulary because the vault configuration will name
+ * the ones each relationship kind accepts (TASK-367.07).
+ */
+const EvidenceKindSchema = z.enum([
+	"call",
+	"configured-path",
+	"permission",
+	"import",
+	"build-dependency",
+	"provisioning",
+]);
+type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
 const VaultCheckSchema = z.object({
 	policy: SemanticPolicySchema,
 	configurationValid: z.boolean(),
@@ -203,6 +229,8 @@ export {
 	type DiagnosticSubject,
 	describeSubject,
 	diagnosticLine,
+	EvidenceKindSchema,
+	type EvidenceKind,
 	VaultDiagnosticSchema,
 	type VaultDiagnostic,
 	VaultCheckSchema,

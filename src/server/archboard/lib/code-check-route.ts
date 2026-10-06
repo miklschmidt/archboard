@@ -1,4 +1,5 @@
-// The code check's route, `GET /api/vault/code-check` (ADR 0046).
+// The code check's route, `GET /api/vault/code-check[?variant=<draft>]`
+// (ADR 0046).
 //
 // `archboard check --code` asks it after the plain check. It reads code and
 // Git, which takes seconds, so it runs only on a request and never inside
@@ -7,23 +8,26 @@
 // cancels it, and a stop cancels it and waits for it to settle, so a stop
 // never refuses because of it. A pass changes nothing, so the route is a GET.
 //
-// The answer has four parts. This route fills `boards`, the board-level
-// `skipped`, and `behind` (ADR 0045, TASK-369.02). `findings` stays empty
-// until the code pass of TASK-367.05 joins it.
+// The code pass (`src/runtime/code-check`) reads every board at its current
+// variant, or at the draft `variant` names, and gives `boards`, `findings` and
+// `skipped`. Behind (ADR 0045, TASK-369.02) reads the current variant of each
+// board, whatever the pass reads. A `variant` that names no draft on any board
+// is refused with the drafts that exist.
 
 import type { Express, Request, Response } from "express";
+import { checkCode, readBoardsToCheck, type NoSuchDraft } from "@/runtime/code-check/index";
 import { requireVaultRoot } from "@/runtime/engine/board";
-import { createBehindReading, type BoardToRead } from "@/runtime/history-lens/index";
-import { listSemanticBoards, readSemanticBoardAt } from "@/runtime/semantic-board-store/index";
+import { createBehindReading } from "@/runtime/history-lens/index";
+import { queryString } from "@/server/archboard/lib/request-board";
 import { checkoutWork } from "@/server/archboard/lib/server-owners";
-import {
-	CodeCheckAnswerSchema,
-	type CodeCheckAnswer,
-	type CodeCheckBoard,
-	type CodeCheckSkip,
-} from "@/shared/code-check/index";
-import { currentVariant } from "@/shared/semantic-board/index";
+import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@/shared/code-check/index";
 import { errorMessage } from "@/shared/thrown-error/index";
+
+/** What one request asks for: the draft to read where a board has one, and how to cancel. */
+interface CodeCheckRequest {
+	readonly variant: string | undefined;
+	readonly signal: AbortSignal;
+}
 
 /** What the route needs, which the Archboard server supplies and a test can replace. */
 interface CodeCheckRouteDependencies {
@@ -34,39 +38,58 @@ interface CodeCheckRouteDependencies {
 		name: string,
 		work: (signal: AbortSignal) => Promise<T>,
 	): Promise<T>;
-	/** Run the code check. */
-	readonly check: (signal: AbortSignal) => Promise<CodeCheckAnswer>;
+	/** Run the code check, or say that no board has the named draft. */
+	readonly check: (request: CodeCheckRequest) => Promise<CodeCheckAnswer | NoSuchDraft>;
 }
 
 /** The server's one reading of behind, so its memory serves every request. */
 const behindReading = createBehindReading();
 
 /**
- * Run the code check over every board of the vault, at its current variant.
- * @param signal Cancels the check and every Git command it runs.
- * @returns The answer.
+ * Run the code check over every board of the vault, at its current variant or
+ * the named draft, with behind beside it.
+ * @param request The draft to read, and the signal that cancels the check and
+ * every Git command it runs.
+ * @returns The answer, or the drafts that exist when no board has the named one.
  */
-async function runCodeCheck(signal: AbortSignal): Promise<CodeCheckAnswer> {
+async function runCodeCheck(request: CodeCheckRequest): Promise<CodeCheckAnswer | NoSuchDraft> {
 	const vault = requireVaultRoot();
-	const boards: CodeCheckBoard[] = [];
-	const skipped: CodeCheckSkip[] = [];
-	const toRead: BoardToRead[] = [];
-	for (const location of listSemanticBoards(vault)) {
-		const read = readSemanticBoardAt(location);
-		if (!read.ok) {
-			skipped.push({ reason: "board-unreadable", board: location.name, detail: read.problem });
-			continue;
-		}
-		const variant = currentVariant(read.board);
-		if (variant === undefined) {
-			skipped.push({ reason: "no-current-variant", board: read.board.name });
-			continue;
-		}
-		boards.push({ board: read.board.name, variant: variant.id, version: read.board.version });
-		toRead.push({ board: read.board, file: location.file });
-	}
-	const behind = await behindReading.read(vault, toRead, signal);
-	return CodeCheckAnswerSchema.parse({ boards, findings: [], skipped, behind });
+	const read = readBoardsToCheck(vault, request.variant);
+	if (!read.ok) return read;
+	const [code, behind] = await Promise.all([
+		checkCode(read.boards, request.signal),
+		behindReading.read(
+			vault,
+			read.boards.map(({ board, file }) => ({ board, file })),
+			request.signal,
+		),
+	]);
+	return CodeCheckAnswerSchema.parse({
+		boards: read.boards.map(({ board, variant }) => ({
+			board: board.name,
+			variant: variant.id,
+			version: board.version,
+		})),
+		findings: code.findings,
+		skipped: [...read.skipped, ...code.skipped],
+		behind,
+	});
+}
+
+/**
+ * The refusal of a variant that names no draft.
+ * @param refused The variant asked for and the drafts that exist.
+ * @returns The refusal's body.
+ */
+function noSuchDraft(refused: NoSuchDraft): { code: string; error: string } {
+	const drafts =
+		refused.drafts.length === 0
+			? "No board has a draft."
+			: `The drafts that exist: ${refused.drafts.map((name) => JSON.stringify(name)).join(", ")}.`;
+	return {
+		code: "NO_SUCH_DRAFT",
+		error: `No board has a draft named ${JSON.stringify(refused.variant)}, so there is nothing to read at it. ${drafts}`,
+	};
 }
 
 /**
@@ -80,6 +103,16 @@ function callerGone(request: Request, response: Response): boolean {
 }
 
 /**
+ * The draft a request names.
+ * @param request The request.
+ * @returns Its `variant`, or undefined when it is absent or blank.
+ */
+function variantOf(request: Request): string | undefined {
+	const asked = queryString(request, "variant")?.trim();
+	return asked === "" ? undefined : asked;
+}
+
+/**
  * Answer one request with a code check run as checkout work.
  * @param dependencies How the pass runs.
  * @param request The request.
@@ -90,14 +123,17 @@ async function answerCodeCheck(
 	request: Request,
 	response: Response,
 ): Promise<void> {
+	const variant = variantOf(request);
 	try {
 		const answer = await dependencies.runCheckout(
 			request,
 			response,
 			"GET /api/vault/code-check",
-			dependencies.check,
+			(signal) => dependencies.check({ variant, signal }),
 		);
-		if (!callerGone(request, response)) response.json({ success: true, ...answer });
+		if (callerGone(request, response)) return;
+		if ("boards" in answer) response.json({ success: true, ...answer });
+		else response.status(422).json({ success: false, ...noSuchDraft(answer) });
 	} catch (error) {
 		if (!callerGone(request, response)) {
 			response.status(500).json({ success: false, error: errorMessage(error) });
