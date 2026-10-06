@@ -36,6 +36,15 @@ const checkout = fixtureCheckout({
 	"packages/kit/setup.ts": "export const setup = 1;\n",
 	"packages/built/package.json": JSON.stringify({ exports: "./dist/index.js" }),
 	"packages/built/src/index.ts": "export const built = 1;\n",
+	// Exports names it imports, as export ... from would pass them on.
+	"src/passing/index.ts": [
+		'import { readShelf } from "../store/lib/read";',
+		'import * as rules from "../store/lib/rules";',
+		'import main from "../store/index";',
+		"export { readShelf, readShelf as again, rules as policy };",
+		"export default main;",
+		"",
+	].join("\n"),
 });
 const facts = createCodeFacts();
 
@@ -91,4 +100,16 @@ test("a package's exports names its root files, and exports that name only built
 	expect(kit?.rootFiles).toEqual(["packages/kit/src/main.ts", "packages/kit/src/parts/one.ts"]);
 	expect(kit?.exposed.map((each) => each.name)).toEqual(["main", "one"]);
 	expect(await exposureOf("packages/built")).toBeUndefined();
+});
+
+test("a root file exposes a name it imports and exports, under the name it exports it by", async () => {
+	const exposure = await exposureOf("src/passing");
+	expect(exposure?.exposed.map((each) => [each.name, each.path]).toSorted()).toEqual(
+		[
+			["readShelf", "src/store/lib/read.ts"],
+			["again", "src/store/lib/read.ts"],
+			["policy.limit", "src/store/lib/rules.ts"],
+			["default", "src/store/index.ts"],
+		].toSorted(),
+	);
 });

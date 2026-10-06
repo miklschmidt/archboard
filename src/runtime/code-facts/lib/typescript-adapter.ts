@@ -21,7 +21,12 @@ import type {
 import type { Grammar } from "@/runtime/code-facts/lib/grammars";
 import { spansOf, type Spans } from "@/runtime/code-facts/lib/spans";
 import { definitionsOf, exportedNames } from "@/runtime/code-facts/lib/typescript-definitions";
-import { dynamicImport, staticImport } from "@/runtime/code-facts/lib/typescript-imports";
+import {
+	dynamicImport,
+	exportedImports,
+	staticImport,
+	takenNames,
+} from "@/runtime/code-facts/lib/typescript-imports";
 import { unparsedOf } from "@/runtime/code-facts/lib/unparsed";
 
 /** The captures of one file, by what the query calls them. */
@@ -316,14 +321,20 @@ function typeScriptFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 	const exported = exportedNames(captured.exportName, captured.exportDefault);
 	const references = referencesOf(captured, context);
 	const uses = usesOf(references);
+	const dynamic = captured.dynamic.filter((node) => !unparsed.holds(node.startIndex));
 	const imports = [
 		...captured.import.filter((node) => !unparsed.holds(node.startIndex)).map(staticImport),
-		...captured.dynamic.filter((node) => !unparsed.holds(node.startIndex)).map(dynamicImport),
+		...dynamic.map(dynamicImport),
 	].map((found) => withUses(found, uses));
+	const taken = new Set(dynamic.flatMap((node) => takenNames(node).map(([, name]) => name.id)));
+	const declared = captured.definition.filter((node) => !taken.has(node.id));
+	const passed = [...captured.exportName, ...captured.exportDefault].filter(
+		(node) => !unparsed.holds(node.startIndex),
+	);
 	return {
-		definitions: definitionsOf(captured.definition, { unparsed, exported }),
+		definitions: definitionsOf(declared, { unparsed, exported }),
 		references: distinct(references, imports),
-		imports,
+		imports: [...imports, ...exportedImports(passed, imports)],
 		unparsed: unparsedOf(captured.unparsed),
 	};
 }

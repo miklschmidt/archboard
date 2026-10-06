@@ -61,6 +61,14 @@ const checkout = fixtureCheckout({
 		"export default Ledger;",
 		"",
 	].join("\n"),
+	"src/entry.ts": [
+		'const { round } = await import("./money");',
+		'const ledger = require("./ledger");',
+		'const { ...everything } = await import("./types");',
+		"round(1);",
+		"ledger.settle(everything);",
+		"",
+	].join("\n"),
 	"src/panel.tsx": [
 		'import { Badge } from "./badge";',
 		'export function Panel() { return <div><Badge tone="calm" /></div>; }',
@@ -160,6 +168,16 @@ test("an export passes a name on and never uses it, also a name an import brough
 	expect(barrel.references).toEqual([]);
 	const ledger = await syntax("src/ledger.ts");
 	expect(ledger.references.some((reference) => reference.symbol === "api")).toBe(false);
+});
+
+test("a declaration that takes names from import() or require() imports them and declares none, and one with a rest loads the whole file", async () => {
+	const entry = await syntax("src/entry.ts");
+	const target = (symbol: string) =>
+		entry.references.find((each) => each.symbol === symbol)?.target;
+	expect(target("round")).toEqual({ path: "src/money.ts", symbol: "round" });
+	expect(target("ledger.settle")).toEqual({ path: "src/ledger.ts", symbol: "settle" });
+	expect(entry.definitions).toEqual([]);
+	expect(entry.imports.find((found) => found.specifier === "./types")?.names).toEqual([]);
 });
 
 test("a name in a comment or an ordinary string is no use, and the names of environment values and events are", async () => {
