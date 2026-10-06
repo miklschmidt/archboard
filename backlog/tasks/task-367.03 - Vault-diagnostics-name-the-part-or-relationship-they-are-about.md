@@ -1,11 +1,11 @@
 ---
 id: TASK-367.03
 title: Vault diagnostics name the part or relationship they are about
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 02:41'
+updated_date: '2026-10-06 09:53'
 labels:
   - code-check
   - cli
@@ -26,10 +26,10 @@ A diagnostic says which file, board and variant it is about, but not which subje
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A diagnostic can carry the kind and id of the subject it is about
-- [ ] #2 Existing diagnostics about one node or relationship fill it in: missing binding path, drill-down checks, unknown vocabulary on a node or relationship
-- [ ] #3 `archboard check` prints the subject's name beside the message, and its machine-readable answer carries the id
-- [ ] #4 Generated schemas and the skill references are regenerated where the answer shape changed
+- [x] #1 A diagnostic can carry the kind and id of the subject it is about
+- [x] #2 Existing diagnostics about one node or relationship fill it in: missing binding path, drill-down checks, unknown vocabulary on a node or relationship
+- [x] #3 `archboard check` prints the subject's name beside the message, and its machine-readable answer carries the id
+- [x] #4 Generated schemas and the skill references are regenerated where the answer shape changed
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -47,4 +47,12 @@ A diagnostic says which file, board and variant it is about, but not which subje
 
 <!-- SECTION:NOTES:BEGIN -->
 Built: DiagnosticSubjectSchema {kind: node|edge, id, name} on VaultDiagnosticSchema (src/shared/semantic-policy). kind reuses the board's SubjectKind words; name is carried so check and the UI print it without reading the board; a relationship's name is 'From -> To'. Producers: bindings.ts, drill-down.ts, vocabulary.ts via lib/subject.ts (board level has no subject). One diagnosticLine() in semantic-policy now formats every CLI line (check and the commands that print answer warnings), replacing 7 inline templates; the others gain lowercase severity and the path. UI DiagnosticList shows the subject. Routes, client and eval reader pass the schema through unchanged. RELATIONSHIP_REPLACED/DUPLICATED write notices left without a subject: they carry no variant and name the relationship in path. No board affected (no part added or rewired). README assets: readme:check lists all 13 stale because their sources include src/ui, src/cli, src/shared; no picture changed, not regenerated.
+
+Independent review (2026-10-06) found that no test covered criterion 3 on the real check path. It added src/cli/commands/tests/check.test.ts, which runs runCli(["check"]) against a stand-in server (543b459a5). It also built relationship names from one node lookup per state and printed every warning in one form (2716dec72). Constraint for TASK-367.05: the subject kind allows only node and edge, so a finding about a flow step must widen it, and every reader parses the whole check answer through that enum.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Vault diagnostics now carry an optional subject { kind, id, name } for the node or relationship they are about. Missing binding paths, the three drill-down checks and unknown node, group and relationship vocabulary fill it in. archboard check prints the subject's name beside the message, and its JSON answer carries the id. Verified with check.test.ts on the real CLI path, plus bindings, drill-down and policy tests (24 pass with --isolate). The reviewer reported every gate lane passing.
+<!-- SECTION:FINAL_SUMMARY:END -->
