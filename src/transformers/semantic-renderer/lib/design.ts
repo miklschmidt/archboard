@@ -76,9 +76,6 @@ const TRAY_LIP = 2;
 const TRAY_CREASE = 1;
 /** How thick the nameplate seated against a tray's top wall shows at its foot. */
 const PLATE_THICKNESS = 3;
-/** How thick the foot along a group region's bottom is, and the tab its caption is printed on. */
-const REGION_FOOT = 3;
-const TAB_THICKNESS = 2;
 /** How thick an icon chip is: a small tile raised off the face it sits on. */
 const CHIP_THICKNESS = 1.5;
 /** How thick a relationship's label is: a tile as low as a chip, which sits on its line. */
@@ -132,8 +129,6 @@ export {
 	TRAY_LIP,
 	TRAY_CREASE,
 	PLATE_THICKNESS,
-	REGION_FOOT,
-	TAB_THICKNESS,
 	CHIP_THICKNESS,
 	PILL_THICKNESS,
 	CARD_HEIGHT,
