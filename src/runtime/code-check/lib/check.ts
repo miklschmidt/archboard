@@ -6,7 +6,7 @@
 // holds a symbol wherever its last name stands. A missing path or symbol says
 // that something is missing, so the check is sure of it, the code contradicts
 // the board, and a right change clears it: each one is a warning, and the only
-// finding about its binding or anchor. An anchor that holds, and whose symbol
+// finding about its binding or anchor (claim-findings.ts). An anchor that holds, and whose symbol
 // is defined outside the bound code of both ends, is `ANCHOR_MISMATCH`
 // (support.ts), and so is one whose uses are all of an evidence kind its
 // relationship kind does not accept (anchor-kind.ts). Then each board's
@@ -34,11 +34,18 @@ import {
 	type ClaimSite,
 } from "@/runtime/code-check/lib/claims";
 import { judgeAnchorKind } from "@/runtime/code-check/lib/anchor-kind";
+import {
+	anchorPathMissing,
+	anchorSymbolMissing,
+	bindingPathMissing,
+	bindingSymbolMissing,
+} from "@/runtime/code-check/lib/claim-findings";
 import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
 import { joinEnvironment } from "@/runtime/code-check/lib/environment-join";
-import { evidenceOf, lineagesOf } from "@/runtime/code-check/lib/evidence";
+import { evidenceOf } from "@/runtime/code-check/lib/evidence";
 import { infrastructureRunners } from "@/runtime/code-check/lib/infrastructure-runners";
 import { judgeInterfaces, type ModuleReadings } from "@/runtime/code-check/lib/interfaces";
+import { lineagesOf } from "@/runtime/code-check/lib/ownership";
 import { kubernetesEvidenceOf } from "@/runtime/code-check/lib/kubernetes-evidence";
 import { partCodesOf } from "@/runtime/code-check/lib/part-code";
 import { judgeRelationships } from "@/runtime/code-check/lib/relationships";
@@ -46,7 +53,7 @@ import { openResolution, type Resolve } from "@/runtime/code-check/lib/resolutio
 import { judgeSupport } from "@/runtime/code-check/lib/support";
 import { heldInFiles, terraformRootOfTarget, type Held } from "@/runtime/code-check/lib/symbols";
 import { terraformEvidenceOf } from "@/runtime/code-check/lib/terraform-evidence";
-import { createCodeFacts, lastName, type Accept, type FactsPass } from "@/runtime/code-facts/index";
+import { createCodeFacts, type Accept, type FactsPass } from "@/runtime/code-facts/index";
 import {
 	resolveLocalCodeTarget,
 	snapshotCheckoutAccess,
@@ -56,7 +63,6 @@ import {
 import type { CodeCheckSkip, CodeFinding } from "@/shared/code-check/index";
 import type { CodeBinding } from "@/shared/code-target/index";
 import { readLanguageServers, type LanguageServerTable } from "@/runtime/language-servers/index";
-import { describeSubject } from "@/shared/semantic-policy/index";
 
 /** What one pass found and what it did not read. */
 interface CodeCheckOutcome {
@@ -82,17 +88,6 @@ interface Pass {
 	/** What each module a container binds exposes, read once for every board. */
 	readonly modules: ModuleReadings;
 	readonly outcome: CodeCheckOutcome;
-}
-
-/**
- * A warning about one claim.
- * @param site Where the claim sits.
- * @param code The finding's code.
- * @param message What is wrong and what to do.
- * @returns The finding.
- */
-function warning(site: ClaimSite, code: string, message: string): CodeFinding {
-	return { ...site, severity: "warning", code, message };
 }
 
 /**
@@ -242,74 +237,6 @@ function searchOf(checkout: ClaimCheckout, pass: Pass) {
 	};
 }
 
-/** What a missing symbol's message says the path lacks, by what it binds and how it was read. */
-const LACKS = {
-	file: { code: "the file does not define it", text: "the file does not hold the name" },
-	directory: {
-		code: "no file below the directory defines it",
-		text: "no file below the directory holds the name",
-	},
-	anchor: { code: "the file neither defines nor uses it", text: "the file does not hold the name" },
-} as const;
-
-/**
- * What a path lacks of a symbol, in the words of how it was read: a file a
- * grammar reads lacks a definition or a use, and a file read as text lacks
- * the symbol's last name.
- * @param lacks The phrases for the claim.
- * @param held Where the search looked.
- * @param symbol The symbol.
- * @returns The phrase.
- */
-function lacking(lacks: (typeof LACKS)[keyof typeof LACKS], held: Held, symbol: string): string {
-	const asText = held.status === "absent" && held.asText === true;
-	return asText ? `${lacks.text} ${JSON.stringify(lastName(symbol))}` : lacks.code;
-}
-
-/**
- * The warning for a bound path that a named draft names and the checkout lacks.
- * @param claim The binding.
- * @param root The checkout.
- * @returns The finding.
- */
-function bindingPathMissing(claim: BindingClaim, root: string): CodeFinding {
-	const { binding, site } = claim;
-	return warning(
-		site,
-		"BINDING_PATH_MISSING",
-		`Node ${JSON.stringify(site.subject.name)} is bound to ${JSON.stringify(binding.path)} in ` +
-			`${JSON.stringify(binding.repo)} on the named draft, and there is no such file or ` +
-			`directory in the checkout at ${JSON.stringify(root)}. Naming a draft says that its code ` +
-			"is built now: bind the part to where its code lives, write that code, or leave --variant " +
-			"out until it is built.",
-	);
-}
-
-/**
- * The warning for a bound symbol that the bound file or directory does not define.
- * @param claim The binding.
- * @param symbol Its symbol.
- * @param kind Whether it binds a file or a directory.
- * @param held Where the search looked.
- * @returns The finding.
- */
-function bindingSymbolMissing(
-	claim: BindingClaim,
-	symbol: string,
-	kind: "file" | "directory",
-	held: Held,
-): CodeFinding {
-	const { binding, site } = claim;
-	return warning(
-		site,
-		"BINDING_SYMBOL_MISSING",
-		`Node ${JSON.stringify(site.subject.name)} is bound to ${JSON.stringify(symbol)} in ` +
-			`${JSON.stringify(binding.path)}, and ${lacking(LACKS[kind], held, symbol)}. Bind the part ` +
-			"to the definition it stands for now, or leave out the symbol to bind the whole file or " +
-			"directory.",
-	);
-}
-
 /**
  * What the pass reads of a binding, or nothing when its path is not in the
  * checkout: on a named draft that is a finding, and on the current variant the
@@ -361,41 +288,6 @@ async function judgeBoundSymbol(
 	if (held?.status === "absent") {
 		pass.outcome.findings.push(bindingSymbolMissing(claim, symbol, target.kind, held));
 	}
-}
-
-/**
- * The warning for an anchor whose file is not in the checkout.
- * @param claim The anchor.
- * @param root The checkout.
- * @returns The finding.
- */
-function anchorPathMissing(claim: AnchorClaim, root: string): CodeFinding {
-	const { anchor, site } = claim;
-	return warning(
-		site,
-		"ANCHOR_PATH_MISSING",
-		`The anchor of ${describeSubject(site.subject)} names ${JSON.stringify(anchor.path)} in ` +
-			`${JSON.stringify(anchor.repo)}, and there is no such file in the checkout at ` +
-			`${JSON.stringify(root)}. Cite the file that holds the code now, or remove the anchor if ` +
-			"the code that proved it is gone.",
-	);
-}
-
-/**
- * The warning for an anchor whose file neither defines nor uses its symbol.
- * @param claim The anchor.
- * @param held Where the search looked.
- * @returns The finding.
- */
-function anchorSymbolMissing(claim: AnchorClaim, held: Held): CodeFinding {
-	const { anchor, site } = claim;
-	return warning(
-		site,
-		"ANCHOR_SYMBOL_MISSING",
-		`The anchor of ${describeSubject(site.subject)} names ${JSON.stringify(anchor.symbol)} in ` +
-			`${JSON.stringify(anchor.path)}, and ${lacking(LACKS.anchor, held, anchor.symbol)}. Cite ` +
-			"the symbol that proves it now, or change the board to what the code does.",
-	);
 }
 
 /**

@@ -22,7 +22,7 @@ import {
 	type Runner,
 	type Setting,
 } from "@/runtime/code-check/lib/environment-join";
-import { ownersOf, ownersOfSite, type Owners } from "@/runtime/code-check/lib/evidence";
+import { ownersOf, ownersOfSite, type Owners } from "@/runtime/code-check/lib/ownership";
 import type { PartCode, ReadPart } from "@/runtime/code-check/lib/part-code";
 import {
 	kubernetesLinks,

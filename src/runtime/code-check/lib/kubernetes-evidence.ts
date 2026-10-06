@@ -14,14 +14,13 @@
 // bound to `Deployment/cart`. A Service that a part binds is that part's,
 // and the reference reaches it (evidence.ts).
 
+import { piecesBetween, type Piece } from "@/runtime/code-check/lib/evidence";
 import {
 	ownersAtLine,
 	ownersOf,
 	ownersOfSite,
-	piecesBetween,
 	type Owners,
-	type Piece,
-} from "@/runtime/code-check/lib/evidence";
+} from "@/runtime/code-check/lib/ownership";
 import type { PartCode, ReadPart } from "@/runtime/code-check/lib/part-code";
 import {
 	kubernetesLinks,

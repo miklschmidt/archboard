@@ -36,13 +36,13 @@
 // code and is not its caller at run time, so a test file is no caller.
 
 import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
+import type { Piece } from "@/runtime/code-check/lib/evidence";
 import {
 	ownersAtLine,
 	ownersOf,
 	ownersOfSite,
 	type Owners,
-	type Piece,
-} from "@/runtime/code-check/lib/evidence";
+} from "@/runtime/code-check/lib/ownership";
 import {
 	isTestPath,
 	type PartCode,
