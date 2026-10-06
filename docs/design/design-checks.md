@@ -693,7 +693,10 @@ rules hold in every provider:
 - A reference in a module call, a variable, an output or a local value has no
   provider, so it stays a configured path. Such a reference only passes a
   value on. The kind of a way through it is the kind of the reference that
-  starts the way, in a resource.
+  starts the way, in a resource. The call of a module that the check does not
+  read reaches what its arguments name as provisioning, unless the argument is
+  an environment value or a named plan shows the resource that it flows into,
+  because an argument such as `vpc_id` only places what the module creates.
 
 A joining declaration joins two other declarations. Its table entry names the
 arguments that name the end the join runs from and the arguments that name
@@ -704,7 +707,8 @@ arguments name no declaration for is the joining declaration itself. So a
 Cloud Function's `event_trigger` runs from its topic to the function, and a
 pull subscription runs from its topic to the subscription. An anchor can name
 a joining declaration, and the check does not require it to be in the code of
-either end. Any other Terraform declaration that an anchor names is judged as
+either end. The check judges it by the kind of its join, so a Lambda
+permission that anchors a `call` is an `ANCHOR_MISMATCH` warning. Any other Terraform declaration that an anchor names is judged as
 code is: it must be in the code of an end.
 
 The tables cover the common connections of each provider. A type that is
