@@ -94,6 +94,14 @@ When the task closes, before you mark any acceptance criterion:
        about a relationship with no anchor: the code runs it the other way, or
        shows no accepted evidence. Anchor every relationship that you add or
        change. A relationship with an anchor is judged only by its anchor.
+     - `ENTRY_POINT_UNEXPOSED` and `CALLER_UNDRAWN` hold a container against
+       its module's interface
+       ([ADR 0044](../../docs/adr/0044-a-containers-interface-is-what-relationships-from-outside-reach.md)).
+       For the first, make the callers use what the module exposes, or expose
+       what they use. For the second, if the board's question needs the
+       caller, draw it. `EXPOSED_UNUSED` is information: a `>` line names an export
+       that your commits added and nothing outside the module uses. Remove it,
+       unless a caller is part of the task.
    - Read by hand what the check does not cover, with the evidence rules of the
      consumer skill:
      - A part's responsibility and `description`. The binding proves a file or
