@@ -265,10 +265,14 @@ The file app.css holds the values for both themes and gives each one a
 
 The picture has a depth vocabulary of its own, and the renderer draws it. Its
 light falls from above. A card is a slab: a lit top face, a front edge along
-its foot and a soft shadow below it. A container is a tray cut into the page,
-with its top wall in shade, two quieter side walls alike, a lit lip along its
-bottom, and a raised nameplate against its top wall. Its walls are neutral
-shades of its floor; the floor and the nameplate carry the container's kind.
+its foot and a soft shadow below it. A container is a neutral well cut into
+the page, its floor only just darker than the page, with its top wall in
+shade, two quieter side walls alike and a lit lip along its bottom. Its header
+is a card's slab standing on the floor, a 5-unit gap inside the walls, just
+enough to see the well round it. The first row of cards stands as far under it
+as from the sides and the bottom of the well. The header takes the
+color of the group that places the container, as a card does, and the
+container's kind shows on its icon chip alone.
 The region of a group has no fill: a thin frame in a faded tone of the
 group's color, thick corner brackets and a caption tab in its full color. Each
 shadow is a stack of translucent shapes, with no filter or blur. The colors

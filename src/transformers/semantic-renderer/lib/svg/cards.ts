@@ -11,10 +11,10 @@
 // Hierarchy here is built from weight, size, colour and space, in that order. A
 // card's name is the medium face and its responsibility the regular one, which
 // is a step a reader takes in before reading either. A flow's frame is a
-// container's family: its name and summary are set on its nameplate in the
-// medium and regular faces and at the sizes a container's nameplate uses, so
-// a sequence's frame and an architecture's container read alike. What sets the
-// frame's name apart from the cards under it is the nameplate it lies on.
+// container's family: its name and summary are set on its header slab in the
+// medium and regular faces and at the sizes a container's header uses, so a
+// sequence's frame and an architecture's container read alike. What sets the
+// frame's name apart from the cards under it is the slab it lies on.
 //
 // Both weights are real files (`lib/fonts.ts`). Nothing above 500 exists, and
 // nothing here may ask for one: a browser would invent it, wider than what was
@@ -195,7 +195,7 @@ function paintCard(
 }
 
 /**
- * A flow's title block, printed on its frame's nameplate: its name as a
+ * A flow's title block, printed on its frame's header slab: its name as a
  * container's is, and its summary under it in the secondary ink, each line
  * set where a container's measured lines are, a line's size below its top.
  * @param header Where the block goes.

@@ -22,8 +22,6 @@ interface Palette {
 	readonly trayFloor: string;
 	/** What a nested container's floor sinks toward, a step for each level. */
 	readonly traySink: string;
-	/** The nameplate seated against a container's top wall, before its kind tints it. */
-	readonly trayPlate: string;
 	/** The lit lip along the bottom of a container. */
 	readonly trayLip: string;
 	/** Text that carries the meaning: a card's name. */
@@ -94,7 +92,6 @@ const PALETTE: Palette = {
 	slabShadow: token("--slab-shadow"),
 	trayFloor: token("--tray-floor"),
 	traySink: token("--tray-sink"),
-	trayPlate: token("--tray-plate"),
 	trayLip: token("--tray-lip"),
 	foreground: token("--diagram-text"),
 	muted: token("--diagram-text-muted"),

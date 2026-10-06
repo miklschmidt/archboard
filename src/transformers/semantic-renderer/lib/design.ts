@@ -5,14 +5,17 @@
 // is gone rather than retuned. Its parts are drawn as blocks with a visible
 // thickness (`lib/svg/slab.ts`): the thicknesses and the corners are here.
 
-import { ARCHITECTURE_NOTE_GAP } from "@/transformers/semantic-renderer/config";
+import {
+	ARCHITECTURE_CARD_PADDING,
+	ARCHITECTURE_NOTE_GAP,
+} from "@/transformers/semantic-renderer/config";
 
 /** The corners of a container's tray and of a group's region. */
 const BAND_RADIUS = 10;
 
 /**
  * A measured part's name and what it is responsible for: a card's, and a
- * container's or a flow's on its nameplate. Each is a size and the room one
+ * container's or a flow's on its header slab. Each is a size and the room one
  * line of it takes.
  */
 const PART_TITLE = { size: 14, line: 20 } as const;
@@ -20,15 +23,10 @@ const PART_NOTE = { size: 11, line: 17 } as const;
 
 /**
  * A flow header's height with a name alone, and with a summary under it: set
- * as a container's nameplate is, so a flow's frame and a container are one family.
+ * as a container's header is, so a flow's frame and a container are one family.
  */
 const HEADER_HEIGHT = PART_TITLE.line;
 const HEADER_HEIGHT_WITH_NOTE = PART_TITLE.line + ARCHITECTURE_NOTE_GAP + PART_NOTE.line;
-/**
- * How far a flow's nameplate reaches below its header's words, its front edge
- * included. The plate is seated against the top wall of the flow's frame.
- */
-const FLOW_PLATE_FOOT = 16;
 
 /**
  * The ratio between a font size and the vertical room one line of it takes.
@@ -74,8 +72,22 @@ const TRAY_WALL = 7;
 const TRAY_SIDE = 3;
 const TRAY_LIP = 2;
 const TRAY_CREASE = 1;
-/** How thick the nameplate seated against a tray's top wall shows at its foot. */
-const PLATE_THICKNESS = 3;
+/**
+ * The floor a tray shows round its header slab, above it and at its sides: a
+ * gap just wide enough to see, so the walls and the depth of the well show
+ * round the header. The slab stands inside the walls, this far from each. The
+ * room under it, down to the first row, is the container's inset as at its
+ * sides (`CONTAINER_INSET`).
+ */
+const WELL_GAP = 5;
+/** How far a header slab stands in from the sides of its tray's box, and how far below its top. */
+const HEADER_SLAB_INSET = TRAY_SIDE + WELL_GAP;
+const HEADER_SLAB_TOP = TRAY_WALL + WELL_GAP;
+/**
+ * How far a container's words stand in from the sides of its box: on its
+ * header slab, as a card's stand on its own.
+ */
+const ARCHITECTURE_HEADER_PADDING = HEADER_SLAB_INSET + ARCHITECTURE_CARD_PADDING;
 /** How thick an icon chip is: a small tile raised off the face it sits on. */
 const CHIP_THICKNESS = 1.5;
 /** How thick a relationship's label is: a tile as low as a chip, which sits on its line. */
@@ -117,7 +129,9 @@ export {
 	BAND_RADIUS,
 	HEADER_HEIGHT,
 	HEADER_HEIGHT_WITH_NOTE,
-	FLOW_PLATE_FOOT,
+	ARCHITECTURE_HEADER_PADDING,
+	HEADER_SLAB_INSET,
+	HEADER_SLAB_TOP,
 	PART_TITLE,
 	PART_NOTE,
 	TEXT_LINE_HEIGHT,
@@ -128,7 +142,6 @@ export {
 	TRAY_SIDE,
 	TRAY_LIP,
 	TRAY_CREASE,
-	PLATE_THICKNESS,
 	CHIP_THICKNESS,
 	PILL_THICKNESS,
 	CARD_HEIGHT,
@@ -152,8 +165,6 @@ export {
 export {
 	DIAGRAM_MARGIN,
 	NEST_INSET,
-	HEADER_GAP,
-	CONTAINER_TOP_PAD,
 	CONTAINER_BOTTOM_PAD,
 	CARD_PADDING_X,
 	BEND_RADIUS,

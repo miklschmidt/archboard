@@ -20,7 +20,8 @@ function blockOf(markup: string): { edge: string; face: string } {
 
 /**
  * The opaque rects a subject paints after its selection ring, in order: for a
- * container's tray, its lip, its top wall, its side walls and its nameplate.
+ * container's tray, its lip, its top wall, its side walls and its floor, then
+ * its header slab's front edge, highlight and face.
  * @param markup The subject's group, painted in literals.
  * @returns Their colours.
  */
@@ -93,10 +94,10 @@ const nodes = [
 describe("a card's body takes its group's colour and its chip its type's", () => {
 	const grouped = SemanticPolicySchema.parse({
 		...policy,
-		groups: { core: { name: "Core", color: "green" } },
+		groups: { core: { name: "Core", color: "green" }, shell: { name: "Shell", color: "orange" } },
 	});
 	const members = [
-		{ id: "cloud", name: "Azure", kind: "azure" },
+		{ id: "cloud", name: "Azure", kind: "azure", groups: ["shell"] },
 		{ id: "gate", name: "Gateway", kind: "api", parent: "cloud", groups: ["core"] },
 		{ id: "work", name: "Worker", kind: "plain", parent: "cloud", groups: ["core"] },
 		{ id: "side", name: "Sidecar", kind: "api", parent: "cloud" },
@@ -116,20 +117,32 @@ describe("a card's body takes its group's colour and its chip its type's", () =>
 				expect(sameHue(hueOf(blockOf(markup).edge), green), id).toBeTrue();
 				expect(markup).toContain('data-body-color="green"');
 			}
-			// A container draws its own nameplate in its kind's colour and passes none to what it holds.
+			// A container's header slab takes the colour of the group that places it,
+			// as a card does, and the container passes none to what it holds (TASK-423).
 			expect(groupOf(drawn, "node", "side")!.markup).toContain('data-body-color="neutral"');
 			const frame = groupOf(drawn, "region", "cloud")!.markup;
-			expect(frame).toContain('data-body-color="blue"');
-			const [, top, side, nameplate] = opaqueRects(frame);
-			expect(sameHue(hueOf(nameplate!), hueOf(themeColor(theme, "--semantic-blue")))).toBeTrue();
-			// Its walls are shades of its floor with no colour of its kind (TASK-414).
-			for (const wall of [top!, side!]) expect(chromaOf(wall), wall).toBeLessThan(0.012);
+			expect(frame).toContain('data-body-color="orange"');
+			const [lip, top, side, floor, edge] = opaqueRects(frame);
+			const orange = hueOf(themeColor(theme, "--semantic-orange"));
+			expect(sameHue(hueOf(edge!), orange)).toBeTrue();
+			// Its well is neutral: no colour of its kind or its group on the lip, the
+			// walls or the floor.
+			for (const well of [lip!, top!, side!, floor!])
+				expect(chromaOf(well), well).toBeLessThan(0.012);
 			// A group's only member at its level still takes the group's colour (ADR 0038).
 			expect(groupOf(drawn, "node", "lone")!.markup).toContain('data-body-color="green"');
 			// The chip keeps its type's colour.
 			expect(groupOf(drawn, "node", "gate")!.markup).toContain('data-type-color="violet"');
 			expect(groupOf(drawn, "node", "lone")!.markup).toContain('data-type-color="green"');
 			expect(groupOf(drawn, "region", "cloud")!.markup).toContain('data-type-color="blue"');
+			// A container no group places has a neutral header slab, whatever its kind's colour.
+			const plain = paintedIn(
+				(await renderArchitecture({ content: orderedFixture({ nodes }), policy })).svg,
+				theme,
+			);
+			const unplaced = groupOf(plain, "region", "cloud")!.markup;
+			expect(unplaced).toContain('data-body-color="neutral"');
+			expect(chromaOf(opaqueRects(unplaced)[4]!)).toBeLessThan(0.012);
 			const unknown = await renderArchitecture({
 				content: orderedFixture({ nodes: [{ id: "u", name: "Old kind", kind: "retired" }] }),
 				policy: grouped,

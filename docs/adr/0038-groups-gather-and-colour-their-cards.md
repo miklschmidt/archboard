@@ -14,8 +14,9 @@ Tracked as TASK-347. The user decided it on 2026-09-25.
 how this decision draws its colors. A region is now a thin faded frame in its
 group's color, with thick corner brackets and a caption tab in the full color,
 and no fill. A card carries its group's
-color on its front edge and its face, not on a border. A container is a tray
-that carries its kind's color on its floor and its nameplate. Which group
+color on its front edge and its face, not on a border. A container is a
+neutral tray whose header is a slab colored by its placing group, as a card
+is. Which group
 places a card, and which cards a region gathers, stand. The amendment of
 2026-10-06 at the end says what is true now.
 
@@ -164,11 +165,15 @@ color, and its face is a quiet tone of the group's color. A card with no
 placing group has a grey front edge and a neutral face.
 
 "A container's frame takes the color of its own kind. Its border and faint tint
-are the color of its kind, and a kind without a color draws it neutral." The
-first sentence holds. A container is now a tray cut into the page. Its floor
-carries a calm tint of its kind, and its walls are neutral. Its nameplate
-carries a tone a step stronger on its face and on its front edge. A kind without
-a color draws a neutral tray.
+are the color of its kind, and a kind without a color draws it neutral." This
+no longer holds (TASK-423). The owner asked for the colors to go from the
+containers, and for a container's header to take its color from the groups,
+as a card does. A container is now a neutral well cut into the page. Its
+header is a card's slab standing on the floor, in the color of the group that
+places the container, and neutral when no group places it. The container's
+kind shows on its icon chip, as every part's kind does. This reverses the
+revert of 2026-09-26: a frame no longer takes its kind's color. A container
+still passes no color to what it holds.
 
 Where this record speaks of the outline of a region, read the frame, the corner
 brackets and the caption tab. A reader finds every member of a group by the

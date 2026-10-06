@@ -274,7 +274,7 @@ function paintFarCard(
 
 /**
  * A heading from far away that has no kind of its own to show, a flow's on its
- * nameplate: its name and the start of its summary, set as a far card's are,
+ * header slab: its name and the start of its summary, set as a far card's are,
  * from the box's start. It is hidden until a viewer says the picture is far.
  * @param name The heading's name.
  * @param summary What it says under its name, when it says.

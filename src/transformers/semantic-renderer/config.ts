@@ -42,21 +42,14 @@ export const BRIDGE_CLEARANCE = 3;
 /** Reach of a self-returning curve. */
 export const SELF_LOOP_REACH = 26;
 
-// Sequence/flow spacing.
+// Sequence/flow spacing: a flow's heads stand in from its frame's sides, and
+// under the foot of its header slab, as far as this.
 export const NEST_INSET = 18;
-/**
- * How far a flow's heads stand under its title row: past the foot of the
- * nameplate the title is printed on (`FLOW_PLATE_FOOT`), and 14 more.
- */
-export const HEADER_GAP = 30;
-/** How far a flow's title stands under the top of its frame's nameplate. */
-export const CONTAINER_TOP_PAD = 16;
 export const CONTAINER_BOTTOM_PAD = 14;
 export const CARD_PADDING_X = 13;
 
 // Padding inside measured architecture cards and relationship labels.
 export const ARCHITECTURE_CARD_PADDING = 16;
-export const ARCHITECTURE_HEADER_PADDING = 20;
 export const ARCHITECTURE_ICON_GAP = 12;
 export const ARCHITECTURE_NOTE_GAP = 2;
 export const ARCHITECTURE_LABEL_PADDING_X = 10;

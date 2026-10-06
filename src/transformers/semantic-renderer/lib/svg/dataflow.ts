@@ -31,8 +31,8 @@ import type {
 } from "@/shared/semantic-board/index";
 import {
 	BAND_RADIUS,
+	CARD_THICKNESS,
 	DIAGRAM_MARGIN,
-	FLOW_PLATE_FOOT,
 } from "@/transformers/semantic-renderer/lib/design";
 import { paintFarHeading } from "@/transformers/semantic-renderer/lib/svg/far-card";
 import { nearLayer } from "@/transformers/semantic-renderer/lib/svg/far-view";
@@ -69,7 +69,7 @@ import {
 	type PlacedStep,
 } from "@/transformers/semantic-renderer/lib/layout/dataflow";
 import { endsFor, selfStart, travelOf } from "@/transformers/semantic-renderer/lib/layout/messages";
-import { trayLook } from "@/transformers/semantic-renderer/lib/svg/appearance";
+import { cardLook, trayLook } from "@/transformers/semantic-renderer/lib/svg/appearance";
 import { halo, paintCard, paintHeader } from "@/transformers/semantic-renderer/lib/svg/cards";
 import { paintColumn } from "@/transformers/semantic-renderer/lib/svg/flow-columns";
 import {
@@ -86,7 +86,7 @@ import {
 	type Attributes,
 } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { ghostFace, slabSeat, slabShadow } from "@/transformers/semantic-renderer/lib/svg/slab";
-import { floorOf, plateFace, tray } from "@/transformers/semantic-renderer/lib/svg/tray";
+import { floorOf, tray } from "@/transformers/semantic-renderer/lib/svg/tray";
 import {
 	HEAD_ATTRIBUTE,
 	MEMBERS_ATTRIBUTE,
@@ -299,8 +299,8 @@ function paintStep(
  * a reader clicks to mean "this exchange", and it is what keeps several flows on
  * one page from reading as one very long sequence.
  *
- * It is built as an architecture's container is: a tray the exchange stands
- * in, with a nameplate seated against its top wall that the flow's name is
+ * It is built as an architecture's container is: a neutral well the exchange
+ * stands in, with a header slab standing on its floor that the flow's name is
  * printed on.
  *
  * Its standing is the pin on its corner, and its face stays the frame's own:
@@ -319,14 +319,12 @@ function paintFrame(
 	standing: SubjectStanding | undefined,
 	unsettled: boolean,
 ): string {
-	const { frame, header } = layout;
+	const { frame, header, slab } = layout;
 	const styles = stylesFor(palette);
 	const ghosted = standing === "removed" ? standing : undefined;
-	const plateHeight = header.y + header.height + FLOW_PLATE_FOOT - frame.y;
-	const look = trayLook(undefined, palette, 0, plateHeight);
-	// The nameplate's face across the heading, which its far words stand on.
-	const face = plateFace(frame, plateHeight);
-	const plate = { ...header, y: face.y, height: face.height };
+	const look = trayLook({ box: slab, look: cardLook({}, palette) }, palette, 0);
+	// The header slab's face across the heading, which its far words stand on.
+	const plate = { ...header, y: slab.y, height: slab.height - CARD_THICKNESS };
 	return wrap(
 		"g",
 		subjectGroup("flow", layout.flow.id, standing),

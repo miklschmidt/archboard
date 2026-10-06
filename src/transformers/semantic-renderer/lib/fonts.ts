@@ -166,7 +166,7 @@ function faceRules(source: FontSource): string {
 
 /**
  * A card's name — the one thing on a card a reader is scanning for — and a
- * container's or a flow's, on its nameplate.
+ * container's or a flow's, on its header slab.
  */
 const CARD_TITLE_FONT: DiagramFont = { family: "sans", weight: 500 };
 /** What a card, a container or a flow is responsible for, subordinate to its name. */

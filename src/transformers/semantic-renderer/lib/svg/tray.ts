@@ -1,39 +1,39 @@
 // A container is a tray cut into whatever holds it: the page, or the floor of
-// the tray it is nested in. It is the opposite of the blocks that stand on it
-// (`slab.ts`), built of the same flat shapes and lit as they are, from straight
-// above, like a tray cut into a table under a lamp.
+// the tray it is nested in, a well its cards stand in. It is the opposite of
+// the blocks that stand on it (`slab.ts`), built of the same flat shapes and
+// lit as they are, from straight above, like a tray cut into a table under a
+// lamp.
 //
 // Its walls show inside its box. The top wall faces the reader and turns away
 // from the light: a reader sees its face in shade, a band a step thicker than a
-// card's front edge, and it throws a short, soft shadow straight down on what
-// lies under it. The side walls are alike, a narrow band each, and quieter: the
-// light only grazes them. The bottom wall faces the light: a reader sees a lip
-// of it, and below that lip a crease where the tray meets what it is cut into.
-// The walls are shades of the floor with no colour of their own. The floor lies
-// a step below what holds it, quietly tinted by the container's kind. A tray
-// nested in another is cut a step deeper into that one's floor. Nothing about a
-// tray floats: it casts no shadow.
+// card's front edge, and it throws a short, soft shadow straight down on the
+// floor under it. The side walls are alike, a narrow band each, and quieter:
+// the light only grazes them. The bottom wall faces the light: a reader sees a
+// lip of it, and below that lip a crease where the tray meets what it is cut
+// into. The floor lies a step below what holds it, a neutral only just darker
+// than the page, and nothing about the well has a colour of its own. A tray
+// nested in another is cut a step deeper into that one's floor. Nothing about
+// a tray floats: it casts no shadow.
 //
-// Its nameplate is a plate seated on the floor against the top wall, as wide as
-// the floor, in the container's kind, with a front edge of its own. What the
-// container itself relates to leaves from the foot of that front edge, so the
-// edge is the line's visible origin.
+// Its header is a slab like a card's (`slab`), standing on the floor and rising
+// to the level of what the tray is cut into. It stands inside the walls, a
+// small gap from the top wall and from each side wall (`WELL_GAP`), so the
+// walls and the depth of the well show round it. It takes its colour from the group
+// that places the container, as a card does. What the container itself
+// relates to leaves from the foot of the header's front edge, so the edge is
+// the line's visible origin. A proposal's standing borders the header's face,
+// as it does a card's; a removed container leaves the ghost every removed block
+// leaves (`slab.ts`).
 //
-// A proposal's standing takes over the tray's outline: a border in the
-// standing's ink along the edge of its box, inside it, round the walls that
-// are the container's own outline (`standingBorder`). The floor and the
-// nameplate keep the kind. A removed container leaves the ghost every removed
-// block leaves (`slab.ts`).
-//
-// Every shape is a rect at an offset from the container's box or a line across
-// or down it, so a viewer that carries a container from one picture to the next
-// (`picture-cards.ts`) draws each at the moving box: every rect reaches the
-// foot of the box, and a tone that ends partway down, the nameplate's, is
-// covered from there by the next.
+// Every shape of the well is a rect at an offset from the container's box or a
+// line across it, so a viewer that carries a container from one picture to the
+// next (`picture-cards.ts`) draws each at the moving box.
 
 import {
 	BAND_RADIUS,
-	PLATE_THICKNESS,
+	HEADER_SLAB_INSET,
+	HEADER_SLAB_TOP,
+	SLAB_RADIUS,
 	TRAY_CREASE,
 	TRAY_LIP,
 	TRAY_SIDE,
@@ -42,29 +42,32 @@ import {
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { lines } from "@/transformers/semantic-renderer/lib/svg/primitives";
-import { across, plate, standingBorder } from "@/transformers/semantic-renderer/lib/svg/slab";
+import {
+	across,
+	plate,
+	slab,
+	slabShadow,
+	type SlabLook,
+} from "@/transformers/semantic-renderer/lib/svg/slab";
 import type { SubjectStanding } from "@/transformers/semantic-renderer/lib/svg/standing";
 
-/** How a tray looks: its floor, its walls and its nameplate. */
+/** How a tray looks: its floor, its walls and its header. */
 interface TrayLook {
-	/** Its floor, tinted by its kind. */
+	/** Its floor, a neutral a step below what holds it. */
 	readonly floor: string;
 	/** The face of its top wall, in shade, and of its side walls, quieter. */
 	readonly walls: { readonly top: string; readonly side: string };
-	/**
-	 * Its nameplate: how far down the box it reaches, from the top of the box to
-	 * the foot of its front edge, and its face and front edge.
-	 */
-	readonly nameplate: { readonly height: number; readonly face: string; readonly edge: string };
+	/** Its header slab: its box (`headerOf`) and how it looks. */
+	readonly header: { readonly box: Box; readonly look: SlabLook };
 }
 
-/** The corners of a tray's floor and nameplate: its box's, inside its walls. */
+/** The corners of a tray's floor: its box's, inside its walls. */
 const FLOOR_RADIUS = BAND_RADIUS - TRAY_WALL;
 
 /**
- * The short, soft shadow the top wall throws straight down on what lies under
- * it, as bands each a unit and a half deep and fainter than the one before.
- * Lines rather than one gradient, so each stretches with the floor it lies on.
+ * The short, soft shadow the top wall throws straight down on the floor, as
+ * bands each a unit and a half deep and fainter than the one before. Lines
+ * rather than one gradient, so each stretches with the floor it lies on.
  */
 const WALL_SHADOW = [0.5, 0.2] as const;
 const SHADOW_BAND = 1.5;
@@ -85,44 +88,27 @@ function floorOf(box: Box): Box {
 }
 
 /**
- * The face of a tray's nameplate, the words of its heading stand on: the floor
- * from under the top wall to the plate's front edge.
+ * The box of a tray's header slab: inside its walls, a small gap from the top
+ * wall and from each side wall, and its foot where the header ends.
  * @param box The tray's box.
- * @param height How far down the box the nameplate reaches, its front edge included.
- * @returns The plate's face.
+ * @param height How far down the box the header reaches, to the slab's foot.
+ * @returns The slab's box.
  */
-function plateFace(box: Box, height: number): Box {
-	const floor = floorOf(box);
-	return { ...floor, height: height - TRAY_WALL - PLATE_THICKNESS };
-}
-
-/**
- * A face from one height down to its foot, in one tone. It is drawn as the
- * rounded face from that height and a stroke as wide as the corners are round
- * along its top, which squares those corners off, so the step from the tone
- * above is one straight line across the face.
- * @param face The face.
- * @param top Where the tone starts.
- * @param fill The tone.
- * @param radius The face's corners.
- * @returns The face below that height, or nothing when too little is left of it.
- */
-function toneFrom(face: Box, top: number, fill: string, radius: number): string {
-	const rest = { ...face, y: top, height: face.y + face.height - top };
-	if (rest.height <= 2 * radius) return "";
-	return lines([
-		plate(rest, radius, { fill }),
-		across(face, top + radius / 2, { stroke: fill, "stroke-width": radius }),
-	]);
+function headerOf(box: Box, height: number): Box {
+	return {
+		x: box.x + HEADER_SLAB_INSET,
+		y: box.y + HEADER_SLAB_TOP,
+		width: box.width - 2 * HEADER_SLAB_INSET,
+		height: height - HEADER_SLAB_TOP,
+	};
 }
 
 /**
  * One tray, cut into what holds it: the crease and the lip along its bottom,
- * its top wall and its side walls, its nameplate seated against the top wall
- * and its floor below that, with the shadow the top wall throws on what lies
- * under it, and a standing's border round it. A removed container has lost its
- * tray: its ghost is drawn under the selection ring (`slabShadow`), and this
- * draws nothing.
+ * its top wall and its side walls, its floor with the shadow the top wall
+ * throws on it, and its header slab standing on the floor. A removed container
+ * has lost its tray: its ghost is drawn under the selection ring
+ * (`slabShadow`), and this draws nothing.
  * @param box The container's box.
  * @param look How the tray looks.
  * @param palette The theme's colours.
@@ -132,7 +118,7 @@ function toneFrom(face: Box, top: number, fill: string, radius: number): string 
 function tray(box: Box, look: TrayLook, palette: Palette, standing?: SubjectStanding): string {
 	if (standing === "removed") return "";
 	const floor = floorOf(box);
-	const foot = box.y + look.nameplate.height;
+	const header = look.header.box;
 	// The walls, above the lip.
 	const walls = { ...box, height: box.height - TRAY_CREASE - TRAY_LIP };
 	return lines([
@@ -145,9 +131,7 @@ function tray(box: Box, look: TrayLook, palette: Palette, standing?: SubjectStan
 		plate({ ...walls, y: walls.y + TRAY_WALL, height: walls.height - TRAY_WALL }, BAND_RADIUS, {
 			fill: look.walls.side,
 		}),
-		plate(floor, FLOOR_RADIUS, { fill: look.nameplate.face }),
-		toneFrom(floor, foot - PLATE_THICKNESS, look.nameplate.edge, FLOOR_RADIUS),
-		toneFrom(floor, foot, look.floor, FLOOR_RADIUS),
+		plate(floor, FLOOR_RADIUS, { fill: look.floor }),
 		...WALL_SHADOW.map((share, index) =>
 			across(floor, floor.y + (index + 0.5) * SHADOW_BAND, {
 				stroke: palette.slabShadow,
@@ -155,8 +139,9 @@ function tray(box: Box, look: TrayLook, palette: Palette, standing?: SubjectStan
 				"stroke-width": SHADOW_BAND,
 			}),
 		),
-		standingBorder(box, BAND_RADIUS, standing, palette),
+		slabShadow(header, SLAB_RADIUS, "card", palette),
+		slab(header, look.header.look, palette, standing),
 	]);
 }
 
-export { type TrayLook, floorOf, plateFace, tray };
+export { type TrayLook, floorOf, headerOf, tray };
