@@ -1,5 +1,5 @@
 // PROTOTYPE (TASK-416), to be removed once the owner picks one look: the
-// drawing of three looks for a group region (`regions.ts` chooses one).
+// drawing of four looks for a group region (`regions.ts` chooses one).
 import { BAND_RADIUS } from "@/transformers/semantic-renderer/lib/design";
 import type { DrawingRegion, TextRun } from "@/transformers/semantic-renderer/lib/drawing";
 import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
@@ -9,22 +9,40 @@ import type { Tone } from "@/transformers/semantic-renderer/lib/svg/colour";
 import { lines, tag } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
 
-// PROTOTYPE (TASK-416), to be removed once the owner picks one look. Three
+// PROTOTYPE (TASK-416), to be removed once the owner picks one look. Four
 // looks for a group region, chosen by ARCHBOARD_GROUP_LOOK, which only a server
 // reads: "a" a thick frame with a solid tab grown from its corner, "b" a
 // solid banner across the top with thin sides, "c" thick corner brackets with
-// a solid tab. Absent, the region keeps its current look.
+// a solid tab, "d" a thin faded frame with thick corner brackets and the tab in
+// full colour. Absent, the region keeps its current look.
 const GROUP_LOOK: string | undefined =
 	typeof process === "undefined" ? undefined : process.env["ARCHBOARD_GROUP_LOOK"];
-/** The solid colour of a frame, a banner, a bracket and a solid tab, and the words on it. */
-const SOLID: Tone = {
-	light: { lightness: 0.72, chroma: 1 },
-	dark: { lightness: 0.66, chroma: 0.95 },
+/**
+ * The solid colour of a frame, a banner, a bracket and a solid tab, and the
+ * words on it. Look d takes a deeper solid on the light ground, so its corners
+ * and its tab reach 3:1 against the page and a tray's floor, with light words
+ * on it at 4.5:1.
+ */
+const SOLID: Tone =
+	GROUP_LOOK === "d"
+		? { light: { lightness: 0.52, chroma: 1 }, dark: { lightness: 0.66, chroma: 0.95 } }
+		: { light: { lightness: 0.72, chroma: 1 }, dark: { lightness: 0.66, chroma: 0.95 } };
+const SOLID_INK: Tone =
+	GROUP_LOOK === "d"
+		? { light: { lightness: 0.985, chroma: 0.08 }, dark: { lightness: 0.2, chroma: 0.4 } }
+		: { light: { lightness: 0.22, chroma: 0.4 }, dark: { lightness: 0.2, chroma: 0.4 } };
+/**
+ * Look d: the faded frame, a quiet tone of the group's colour near the ground,
+ * so it shows the group's extent at a third of the corners' strength; never a
+ * see-through colour, so it is one tone on the page and on a tray's floor.
+ */
+const FADED: Tone = {
+	light: { lightness: 0.74, chroma: 0.6 },
+	dark: { lightness: 0.47, chroma: 0.6 },
 };
-const SOLID_INK: Tone = {
-	light: { lightness: 0.22, chroma: 0.4 },
-	dark: { lightness: 0.2, chroma: 0.4 },
-};
+/** Look d: how thick its faded frame is, and its corner brackets. */
+const THIN_FRAME = 2.5;
+const THICK_BRACKET = 6;
 /** Look a: how thick the frame is. Look b: how tall the banner is near, its words' size, and its sides. */
 const FRAME = 4;
 const BANNER = 24;
@@ -56,13 +74,15 @@ function outline(box: Box, width: number, ink: string): string {
 }
 
 /**
- * PROTOTYPE (TASK-416), look c: four thick brackets, one round each corner of a box.
+ * PROTOTYPE (TASK-416), looks c and d: four thick brackets, one round each
+ * corner of a box, their outer edge on the box.
  * @param box The box.
  * @param ink Their colour.
+ * @param thickness How thick they are.
  * @returns The brackets.
  */
-function brackets(box: Box, ink: string): string {
-	const inset = BRACKET / 2;
+function brackets(box: Box, ink: string, thickness = BRACKET): string {
+	const inset = thickness / 2;
 	const radius = BAND_RADIUS - inset;
 	const left = box.x + inset;
 	const right = box.x + box.width - inset;
@@ -86,7 +106,7 @@ function brackets(box: Box, ink: string): string {
 				d: `M${start} L${arcFrom} A${coord(radius)},${coord(radius)} 0 0 ${sweep} ${arcTo} L${end}`,
 				fill: "none",
 				stroke: ink,
-				"stroke-width": BRACKET,
+				"stroke-width": thickness,
 			});
 		}),
 	);
@@ -146,4 +166,16 @@ function banner(
 	]);
 }
 
-export { BANNER_SIDE, FRAME, GROUP_LOOK, SOLID, SOLID_INK, banner, brackets, outline };
+export {
+	BANNER_SIDE,
+	FADED,
+	FRAME,
+	GROUP_LOOK,
+	SOLID,
+	SOLID_INK,
+	THICK_BRACKET,
+	THIN_FRAME,
+	banner,
+	brackets,
+	outline,
+};

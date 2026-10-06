@@ -29,8 +29,11 @@ import { MEMBERS_ATTRIBUTE } from "@/transformers/semantic-renderer/lib/svg/stan
 import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
 import {
 	BANNER_SIDE,
+	FADED,
 	FRAME,
 	GROUP_LOOK,
+	THICK_BRACKET,
+	THIN_FRAME,
 	SOLID,
 	SOLID_INK,
 	banner,
@@ -87,7 +90,8 @@ interface GroupColours {
 	readonly tab: string;
 	readonly tabEdge: string;
 	readonly words: string;
-	/** PROTOTYPE (TASK-416): the solid colour of looks a, b and c, and the words on it. */
+	/** PROTOTYPE (TASK-416): look d's faded frame, and the solid colour of looks a to d and the words on it. */
+	readonly faded: string;
 	readonly solid: string;
 	readonly solidInk: string;
 }
@@ -213,6 +217,7 @@ function matColours(ink: string): GroupColours {
 		tab: toned(ink, TAB_FACE),
 		tabEdge: toned(ink, TAB_EDGE),
 		words: toned(ink, CAPTION),
+		faded: toned(ink, FADED),
 		solid: toned(ink, SOLID),
 		solidInk: toned(ink, SOLID_INK),
 	};
@@ -270,7 +275,8 @@ function captionIn(
 ): string {
 	if (GROUP_LOOK === "b")
 		return banner(region, run, { atEnd: place.corner === "end", far: place.far }, look);
-	if (GROUP_LOOK === "a" || GROUP_LOOK === "c") return solidTab(region, run, place, look);
+	if (GROUP_LOOK === "a" || GROUP_LOOK === "c" || GROUP_LOOK === "d")
+		return solidTab(region, run, place, look);
 	return captionTab(region, run, place, look);
 }
 
@@ -284,6 +290,8 @@ function boundaryIn(box: Box, colours: GroupColours): string {
 	if (GROUP_LOOK === "a") return outline(box, FRAME, colours.solid);
 	if (GROUP_LOOK === "b") return outline(box, BANNER_SIDE, colours.solid);
 	if (GROUP_LOOK === "c") return brackets(box, colours.solid);
+	if (GROUP_LOOK === "d")
+		return outline(box, THIN_FRAME, colours.faded) + brackets(box, colours.solid, THICK_BRACKET);
 	return boundary(box, colours.boundary);
 }
 
