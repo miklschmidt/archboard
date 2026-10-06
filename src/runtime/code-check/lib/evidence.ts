@@ -26,6 +26,12 @@
 // bind the same code: the board already says that the one holds the other,
 // and the check cannot tell the code of the two apart. A file read as text
 // gives no evidence.
+//
+// In a Nix flake, the code of a part may hold an expression the static
+// reading cannot follow, such as a package `callPackage` builds from another
+// file: what that code is built from is unknown there (TASK-367.22). The
+// evidence notes, for each part, the first such expression its code holds, so
+// that the relationships it starts are not judged unsupported.
 
 import { moduleLevelDefinition } from "@/runtime/code-check/lib/module-level";
 import {
@@ -55,6 +61,11 @@ interface BoardEvidence {
 	readonly pieces: readonly Piece[];
 	/** For each repository, the files the pass read through code facts rather than as text. */
 	readonly parsed: ReadonlyMap<string, ReadonlySet<string>>;
+	/**
+	 * For each part whose code holds a Nix expression the static reading cannot
+	 * follow, by its id: the file and lines of the first one.
+	 */
+	readonly unfollowed: ReadonlyMap<string, string>;
 }
 
 /** What reading the evidence needs. */
@@ -83,6 +94,8 @@ interface RepoReading {
 	readonly owners: Owners;
 	/** Each part and its containers. */
 	readonly lineages: ReadonlyMap<string, ReadonlySet<string>>;
+	/** The parts whose code holds a Nix expression the reading cannot follow, which the reading adds to. */
+	readonly unfollowed: Map<string, string>;
 }
 
 /**
@@ -360,7 +373,25 @@ async function piecesOfPath(
 		return [];
 	}
 	parsed.add(file);
+	noteUnfollowed(repo, facts);
 	return piecesOfFile(repo, facts);
+}
+
+/**
+ * Note the parts whose code holds a part of a Nix file that the static
+ * reading cannot follow, or that did not parse: what that code is built from
+ * is unknown there.
+ * @param repo The repository's reading, which this adds to.
+ * @param facts The file's facts.
+ */
+function noteUnfollowed(repo: RepoReading, facts: SyntaxFacts): void {
+	if (facts.adapter !== "nix") return;
+	for (const { start, end } of facts.unparsed) {
+		const detail = `${facts.path}:${start === end ? start : `${start}-${end}`}`;
+		for (const owner of ownersAtLine(repo.owners, facts.path, start)) {
+			if (!repo.unfollowed.has(owner.node.id)) repo.unfollowed.set(owner.node.id, detail);
+		}
+	}
 }
 
 /**
@@ -382,18 +413,21 @@ function firstOfEach(pieces: readonly Piece[]): Piece[] {
  * @param parts The repository's read parts.
  * @param reading The pass.
  * @param lineages Each part and its containers.
+ * @param unfollowed The parts whose code holds a Nix expression the reading cannot follow, which this adds to.
  * @returns The pieces, and the files read through code facts.
  */
 async function evidenceInRepo(
 	parts: readonly [ReadPart, ...ReadPart[]],
 	reading: EvidenceReading,
 	lineages: ReadonlyMap<string, ReadonlySet<string>>,
+	unfollowed: Map<string, string>,
 ): Promise<{ pieces: Piece[]; parsed: Set<string> }> {
 	const repo: RepoReading = {
 		reading,
 		checkout: parts[0].checkout,
 		owners: ownersOf(parts),
 		lineages,
+		unfollowed,
 	};
 	const parsed = new Set<string>();
 	const pieces: Piece[] = [];
@@ -424,13 +458,14 @@ async function evidenceOf(
 	const lineages = lineagesOf(codes);
 	const pieces: Piece[] = [];
 	const parsed = new Map<string, ReadonlySet<string>>();
+	const unfollowed = new Map<string, string>();
 	for (const [repo, parts] of byRepo) {
 		// oxlint-disable-next-line no-await-in-loop -- one repository at a time, in board order
-		const read = await evidenceInRepo(parts, reading, lineages);
+		const read = await evidenceInRepo(parts, reading, lineages, unfollowed);
 		pieces.push(...read.pieces);
 		parsed.set(repo, read.parsed);
 	}
-	return { pieces: firstOfEach(pieces), parsed };
+	return { pieces: firstOfEach(pieces), parsed, unfollowed };
 }
 
 export { type BoardEvidence, type EvidenceReading, type Piece, evidenceOf, piecesBetween };

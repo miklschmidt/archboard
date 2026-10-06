@@ -182,9 +182,9 @@ function bindOne(binding: Node, building: Building, scope: Scope, budget: Budget
 const INHERITS = new Set(["inherit", "inherit_from"]);
 
 /**
- * Add the names an `inherit` or an `inherit (from)` binds. A name inherited
- * from a value the reading cannot follow is the library function of that
- * name, as `from.name` is.
+ * Add the names an `inherit` or an `inherit (from)` binds, each given by its
+ * own name in the binding. A name inherited from a value the reading cannot
+ * follow is the library function of that name, as `from.name` is.
  * @param binding The binding.
  * @param building The set.
  * @param scopes Where its values and inherited names are read.
@@ -193,19 +193,40 @@ const INHERITS = new Set(["inherit", "inherit_from"]);
 function inheritInto(binding: Node, building: Building, scopes: Scopes, budget: Budget): void {
 	const from = binding.childForFieldName("expression");
 	const source = from === null ? undefined : thunk(from, scopes.values, budget);
-	for (const name of attrNames(binding.childForFieldName("attrs"), scopes.values, budget)) {
-		const value =
-			name === undefined
-				? ready(OTHER)
-				: lazy(
-						() =>
-							source === undefined
-								? (lookup(scopes.inherited, name) ?? unknownAt(binding))
-								: orLibrary(selected(source(), name, binding), name, budget),
-						binding,
-					);
-		place(building, [name], value, binding);
+	const inherited = binding.childForFieldName("attrs");
+	const attrs = inherited?.childrenForFieldName("attr") ?? [];
+	for (const [index, name] of attrNames(inherited, scopes.values, budget).entries()) {
+		const value = inheritedValue(name, source, scopes, { binding, budget });
+		place(building, [name], value, attrs[index] ?? binding);
 	}
+}
+
+/**
+ * The value one inherited name has, read when first asked for: the name in
+ * scope, or the name of the value it is inherited from, else the library
+ * function of that name.
+ * @param name The name, undefined where the reading cannot tell it.
+ * @param source The value of `inherit (from)`, if any.
+ * @param scopes Where a plain `inherit` reads it.
+ * @param at The binding, and the reading's budget.
+ * @param at.binding The binding.
+ * @param at.budget The reading's budget.
+ * @returns Its value.
+ */
+function inheritedValue(
+	name: string | undefined,
+	source: Thunk | undefined,
+	scopes: Scopes,
+	at: { readonly binding: Node; readonly budget: Budget },
+): Thunk {
+	if (name === undefined) return ready(OTHER);
+	return lazy(
+		() =>
+			source === undefined
+				? (lookup(scopes.inherited, name) ?? unknownAt(at.binding))
+				: orLibrary(selected(source(), name, at.binding), name, at.budget),
+		at.binding,
+	);
 }
 
 /**
@@ -310,7 +331,7 @@ function selection(node: Node, scope: Scope, budget: Budget): NixValue {
 			const fallback = node.childForFieldName("default");
 			return fallback === null ? unknownAt(node) : evaluate(fallback, scope, budget);
 		}
-		value = name === undefined ? unknownAt(node) : selected(value, name, node);
+		value = selected(value, name, node);
 	}
 	return orLibrary(value, names.at(-1), budget);
 }
@@ -464,13 +485,15 @@ const READERS: ReadonlyMap<string, Reader> = new Map<string, Reader>([
 
 /**
  * Read the expression of a whole file: what its root expression gives. Every
- * value of it that is read later spends the same budget.
+ * value of it that is read later spends the same budget, and so does what
+ * the caller reads with it.
  * @param root The file's root node.
- * @returns Its value.
+ * @returns Its value, and the budget of its reading.
  */
-function readFile(root: Node): NixValue {
+function readFile(root: Node): { readonly value: NixValue; readonly budget: Budget } {
 	const budget: Budget = { steps: MAX_STEPS, depth: 0 };
-	return evaluate(root.childForFieldName("expression"), { names: new Map() }, budget);
+	const value = evaluate(root.childForFieldName("expression"), { names: new Map() }, budget);
+	return { value, budget };
 }
 
 export { MAX_DEPTH, readFile };
