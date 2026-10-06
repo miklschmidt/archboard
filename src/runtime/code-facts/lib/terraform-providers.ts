@@ -11,10 +11,11 @@
 // a target group and a network rule are configured paths; a grant is a
 // permission. An environment value a resource sets for the code it runs
 // points that code at another part, so it is a configured path in every
-// named provider, in the shapes they share. Every other reference of a named
-// provider is provisioning: a role, a log group or a subnet that a function
-// is set up with. A provider with no table keeps every reference a configured
-// path, because nothing says otherwise.
+// named provider, in the shapes they share: the ones TASK-367.23 joins with
+// the code that reads them (terraform-environment.ts). Every other reference
+// of a named provider is provisioning: a role, a log group or a subnet that a
+// function is set up with. A provider with no table keeps every reference a
+// configured path, because nothing says otherwise.
 //
 // A joining declaration, such as an event source mapping, joins two others:
 // its rule names the arguments that name the end the join runs from (the part
@@ -30,6 +31,8 @@
 // `for_each` of a `dynamic` block order or shape what is created, so a
 // reference in one is provisioning in every block.
 
+import type { Reference } from "@/runtime/code-facts/lib/facts";
+import { isEnvironmentArgument } from "@/runtime/code-facts/lib/terraform-environment";
 import type { EvidenceKind } from "@/shared/semantic-policy/index";
 
 /** The evidence kinds a Terraform reference can prove. */
@@ -39,7 +42,7 @@ type TerraformKind = Extract<
 >;
 
 /** Which end of a joining declaration a reference names. */
-type JoinEnd = "from" | "to";
+type JoinEnd = NonNullable<Reference["joins"]>;
 
 /** A declaration that joins two others, and the kind of evidence the join is. */
 interface Join {
@@ -340,30 +343,6 @@ const META_ARGUMENTS = new Set([
 	"connection",
 ]);
 
-/** The maps that hold a resource's environment values, wherever they stand in it. */
-const ENVIRONMENT_MAPS = new Set([
-	"environment_variables",
-	"runtime_environment_variables",
-	"app_settings",
-]);
-
-/**
- * Whether an argument is an environment value a resource sets for the code it
- * runs, in the shapes the providers share (as terraform-environment.ts reads
- * them): `environment { variables = ... }`, a map such as
- * `environment_variables`, or the `value` of an `env` block.
- * @param argument The argument's path.
- * @returns True when it is.
- */
-function isEnvironment(argument: readonly string[]): boolean {
-	const environment = argument.findIndex((name) => name === "environment");
-	return (
-		argument.some((name) => ENVIRONMENT_MAPS.has(name)) ||
-		(environment !== -1 && argument[environment + 1] === "variables") ||
-		argument.slice(-2).join(".") === "env.value"
-	);
-}
-
 /**
  * Whether an argument is one of the paths, or below one of them.
  * @param paths The paths, such as `default_action`.
@@ -421,7 +400,7 @@ function endNamed(joining: Join | undefined, path: string): Classified | undefin
  * @returns The kind.
  */
 function kindOf(rule: ResourceRule, argument: readonly string[]): TerraformKind {
-	if (isEnvironment(argument)) return "configured-path";
+	if (isEnvironmentArgument(argument)) return "configured-path";
 	const kinds = rule.arguments ?? {};
 	const named = holding(Object.keys(kinds), argument.join("."));
 	return named === undefined ? "provisioning" : (kinds[named] ?? "provisioning");
