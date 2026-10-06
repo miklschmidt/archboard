@@ -146,6 +146,7 @@ async function drawnReply(
 			...(proposal.changes === null ? {} : { standing: proposal.changes.standing }),
 			paintStanding: how.comparison,
 			held: scopedContent(variant.content, reading.scope),
+			variant: variant.content,
 			grammar: reading.grammar,
 			theme: how.theme,
 			fonts: how.fonts,

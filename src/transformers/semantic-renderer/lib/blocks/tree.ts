@@ -166,6 +166,8 @@ class BlockTree {
 	readonly cards = new Map<string, Card>();
 	/** Every card alone in its group's region, by id (`lone.ts`). */
 	readonly lone = new Map<string, Lone>();
+	/** Nodes drawn inline that are entry points of their container (`entry-row.ts`). */
+	readonly entries = new Set<string>();
 	/** Every relationship's projection, in the board's order. */
 	readonly projections: readonly Projection[];
 	/** How each relationship is drawn, by id. */

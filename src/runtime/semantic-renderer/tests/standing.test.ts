@@ -129,9 +129,21 @@ describe("a picture nobody stated a standing for", () => {
 		// This fixture needs separate comparison channels without additional card
 		// space. More crowded boards may need new layout reservations as routes change.
 		// A pin on a subject at the page's edge may move the whole drawing in to
-		// keep the margin; the arrangement is what must hold still.
-		const plain = arrangementOf(await drawn());
-		const compared = arrangementOf(await drawn(STANDING));
+		// keep the margin; the arrangement is what must hold still. The gateway
+		// also calls the legacy bridge, so it is an entry point of the runtime
+		// beside board-io (ADR 0044), and the lines of both into the vault share
+		// a trunk only while they stand alike.
+		const shared = orderedFixture({
+			...PROPOSAL,
+			edges: [
+				...PROPOSAL.edges,
+				{ id: "e6", from: "gw", to: "legacy", kind: "call", emphasis: "normal", order: 6000 },
+			],
+		});
+		const plain = arrangementOf(await renderArchitecture({ content: shared }));
+		const compared = arrangementOf(
+			await renderArchitecture({ content: shared, standing: STANDING }),
+		);
 		expect(compared.atlas.nodes).toEqual(plain.atlas.nodes);
 		expect(compared.atlas.regions).toEqual(plain.atlas.regions);
 		expect(compared.atlas.edges).not.toEqual(plain.atlas.edges);

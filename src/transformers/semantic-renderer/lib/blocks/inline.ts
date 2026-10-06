@@ -4,6 +4,7 @@
 // reads them in; `clusters.ts` lays them out.
 import type { ElkNode } from "@archboard/elk-rs";
 import { z } from "zod";
+import { ENTRY_POINT } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import { semanticOrder } from "@/transformers/semantic-renderer/lib/layout/semantic-order";
 import type {
 	Block,
@@ -146,7 +147,8 @@ function placing(
 
 /**
  * Add one node to a block drawn inline: a card as an item, a container as a
- * cluster with its children inside it, each in its group's region.
+ * cluster with its children inside it, each in its group's region; an entry
+ * point of its container is noted as one.
  * @param tree The blocks.
  * @param block The block that lays the node out.
  * @param node The node.
@@ -163,6 +165,7 @@ function addInline(
 	const group = placingGroup(tree.lone, tree.captions, node, siblings);
 	const { holder, within } = placing(tree, block, around, group);
 	if (within !== undefined) holder.clusterOf.set(node.id, within);
+	if (node.layoutOptions?.[ENTRY_POINT] !== undefined) tree.entries.add(node.id);
 	tree.holder.set(node.id, holder);
 	if (node.children?.length) {
 		addFrame(tree, holder, node, within);
