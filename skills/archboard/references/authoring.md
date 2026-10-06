@@ -101,11 +101,12 @@ compose file. With a symbol, two parts can bind one file and stay told apart;
 without one, the part owns the whole file or directory. A changed symbol is a
 changed binding in a comparison. `archboard check` tests the path only;
 `archboard check --code` warns with `BINDING_SYMBOL_MISSING` when the bound
-file or directory does not define the symbol; a file it reads only as text must
-hold the symbol's last name.
+file or directory does not define the symbol. Code facts read TypeScript, TSX
+and Python files (`.ts`, `.mts`, `.cts`, `.tsx`, `.py`, `.pyi`); a file of any
+other language is read only as text and must hold the symbol's last name.
 "View in code" opens a bound file in a local checkout at the line where the
-file defines the symbol. Code facts must find that definition (TypeScript and
-TSX for now). The opener must take a line: Visual Studio Code, Cursor, Zed, or
+file defines the symbol. Code facts must find that definition (TypeScript, TSX
+and Python for now). The opener must take a line: Visual Studio Code, Cursor, Zed, or
 a custom command with `{line}`. Otherwise it opens the file or directory. The
 inspector shows the symbol under the path.
 
