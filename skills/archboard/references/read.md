@@ -85,8 +85,8 @@ through the CLI, report it in the board's own terms, and change nothing.
    - A part in `skipped` was not read: it has no binding, it opens another
      board, its repository is not registered on this machine (or its checkout
      is gone), or it is pinned to a ref that its checkout does not have out.
-     Name it as not read, never as a part that no commit changed. A part with `count: 0` was read and had
-     no commit in the period.
+     Name it as not read, never as a part that no commit changed. A part with
+     `count: 0` was read and had no commit in the period.
    - Parts that bind the same file list the same commits; do not report them
      as separate pressure. A part bound to a directory counts every file below
      it, so a container tops the ranking by construction: compare parts at one
