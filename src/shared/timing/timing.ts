@@ -592,3 +592,6 @@ export {
 	HISTORY_LENS_GIT_TIMEOUT_MS,
 	LOCALITY_DEFAULT_PERIOD_MS,
 } from "@/shared/timing/lib/history-lens";
+
+// ── Code check (ADR 0046) ────────────────────────────────────────────────
+export { CODE_CHECK_GIT_TIMEOUT_MS } from "@/shared/timing/lib/code-check";

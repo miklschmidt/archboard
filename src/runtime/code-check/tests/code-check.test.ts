@@ -4,7 +4,10 @@
 //
 // The checkout `shop` is registered and holds the code. `stranger` is a
 // repository this machine has not registered, and `outside` is a directory
-// beside the checkout that a symbolic link inside it points at.
+// beside the checkout that a symbolic link inside it points at. Two tracked
+// links below `src` lead to the ignored `.env` and to a variable file, which
+// both hold the name `settle`, so a pass that read where they lead would find
+// it.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
@@ -122,14 +125,18 @@ beforeAll(async () => {
 	git("remote", "add", "origin", `https://${SHOP}.git`);
 	write(shop, {
 		".gitignore": ".env\nsrc/build/\n",
-		".env": "post=1\n",
+		".env": "post=1\nsettle=1\n",
 		"src/ledger.ts": "export class Ledger {\n\tpost(): void {}\n\tposter = 1;\n}\n",
-		"src/api.ts": "import { Ledger } from './ledger';\nnew Ledger().post();\n",
+		// `reverser` is not the whole word `reverse`.
+		"src/api.ts": "import { Ledger } from './ledger';\nnew Ledger().post();\nconst reverser = 1;\n",
 		"src/build/out.js": "function settle() {}\n",
-		"infra/prod.tfvars": "post = 1\n",
+		"infra/prod.tfvars": "post = 1\nsettle = 1\n",
+		"infra/dns.tf": 'resource "aws_route53_record" "www" {\n\tfor_each = local.domains\n}\n',
 	});
 	write(join(scratch, "outside"), { "secret.ts": "export const post = 1;\n" });
 	symlinkSync(join(scratch, "outside", "secret.ts"), join(shop, "src", "link.ts"));
+	symlinkSync(join(shop, ".env"), join(shop, "src", "env.ts"));
+	symlinkSync(join(shop, "infra", "prod.tfvars"), join(shop, "src", "vars.ts"));
 	git("add", "-A");
 	git("add", "-f", "infra/prod.tfvars");
 	git("commit", "-q", "--no-gpg-sign", "-m", "the code");
@@ -157,6 +164,13 @@ beforeAll(async () => {
 						6000,
 					),
 					{ id: "pX", name: "Stranger", kind: "module", order: 7000 },
+					// A key that holds a separator is no part of the last name, `www`.
+					part(
+						"pD",
+						"Records",
+						{ path: "infra/dns.tf", symbol: 'aws_route53_record.www["example.com"]' },
+						8000,
+					),
 				],
 				edges: [
 					{
@@ -313,7 +327,8 @@ test("the current variant reports a missing anchored file, anchor symbol and bou
 	expect(found(outcome).toSorted()).toEqual(
 		[
 			"BINDING_SYMBOL_MISSING pR",
-			// Only an ignored file below the directory holds the name.
+			// Only an ignored file below the directory, and the ignored file and
+			// the variable file the links below it lead to, hold the name.
 			"BINDING_SYMBOL_MISSING pS",
 			"ANCHOR_PATH_MISSING e2",
 			"ANCHOR_SYMBOL_MISSING e3",

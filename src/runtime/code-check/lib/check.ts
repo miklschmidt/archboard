@@ -13,6 +13,7 @@ import {
 	readCheckouts,
 	readableOf,
 	type Checkout,
+	type ReadCheckout,
 	type TextFiles,
 } from "@/runtime/code-check/lib/checkouts";
 import {
@@ -105,7 +106,7 @@ function pinOf(claim: Claim, snapshot: CheckoutSnapshot): Pick<CodeCheckSkip, "r
  * @param pass The pass.
  * @returns The checkout's root and files, or undefined when the claim is not read.
  */
-function checkoutFor(claim: Claim, pass: Pass): Extract<Checkout, { status: "read" }> | undefined {
+function checkoutFor(claim: Claim, pass: Pass): ReadCheckout | undefined {
 	const repo = repoOf(claim);
 	const checkout = pass.checkouts.get(repo);
 	if (checkout?.status === "unregistered") {
@@ -122,7 +123,7 @@ function checkoutFor(claim: Claim, pass: Pass): Extract<Checkout, { status: "rea
  * Whether the files of a path hold a symbol's name, or why they cannot be read.
  * @param claim The claim, for its skip.
  * @param readable What the pass may read of the path.
- * @param root The checkout's root.
+ * @param checkout The checkout it is in.
  * @param symbol The symbol.
  * @param pass The pass.
  * @returns Whether a file holds it, or undefined when the path is skipped.
@@ -130,7 +131,7 @@ function checkoutFor(claim: Claim, pass: Pass): Extract<Checkout, { status: "rea
 function holdsSymbol(
 	claim: Claim,
 	readable: ReturnType<typeof readableOf>,
-	root: string,
+	checkout: ReadCheckout,
 	symbol: string,
 	pass: Pass,
 ): boolean | undefined {
@@ -141,7 +142,7 @@ function holdsSymbol(
 		return undefined;
 	}
 	const test = textTest(symbol);
-	return readable.files.some((file) => test.holds(pass.text.read(root, file) ?? ""));
+	return readable.files.some((file) => test.holds(pass.text.read(checkout, file) ?? ""));
 }
 
 /**
@@ -176,12 +177,12 @@ function bindingSymbolMissing(
 	kind: "file" | "directory",
 ): CodeFinding {
 	const { binding, site } = claim;
-	const where = kind === "file" ? "the file" : "no file below the directory";
+	const where = kind === "file" ? "the file does not hold" : "no file below the directory holds";
 	return warning(
 		site,
 		"BINDING_SYMBOL_MISSING",
 		`Node ${JSON.stringify(site.subject.name)} is bound to ${JSON.stringify(symbol)} in ` +
-			`${JSON.stringify(binding.path)}, and ${where} holds the name ` +
+			`${JSON.stringify(binding.path)}, and ${where} the name ` +
 			`${JSON.stringify(textTest(symbol).name)}. Bind the part to the definition it stands for ` +
 			"now, or leave out the symbol to bind the whole file or directory.",
 	);
@@ -205,7 +206,7 @@ function judgeBinding(claim: BindingClaim, pass: Pass): void {
 	const { symbol } = claim.binding;
 	if (symbol === undefined) return;
 	const readable = readableOf(target, checkout.files);
-	if (holdsSymbol(claim, readable, checkout.root, symbol, pass) === false) {
+	if (holdsSymbol(claim, readable, checkout, symbol, pass) === false) {
 		pass.outcome.findings.push(bindingSymbolMissing(claim, symbol, target.kind));
 	}
 }
@@ -260,7 +261,7 @@ function judgeAnchor(claim: AnchorClaim, pass: Pass): void {
 		return;
 	}
 	const readable = readableOf(target, checkout.files);
-	if (holdsSymbol(claim, readable, checkout.root, symbol, pass) === false) {
+	if (holdsSymbol(claim, readable, checkout, symbol, pass) === false) {
 		pass.outcome.findings.push(anchorSymbolMissing(claim));
 	}
 }

@@ -64,3 +64,4 @@ export {
 } from "@/runtime/semantic-board-store/lib/propagate";
 
 export { checkSemanticVault } from "@/runtime/semantic-board-store/lib/diagnostics";
+export { edgeSubjects, nodeSubject } from "@/runtime/semantic-board-store/lib/subject";

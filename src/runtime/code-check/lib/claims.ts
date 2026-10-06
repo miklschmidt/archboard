@@ -8,6 +8,7 @@
 // current variant claims only its path, which the plain check tests.
 
 import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
+import { edgeSubjects, nodeSubject } from "@/runtime/semantic-board-store/index";
 import type { CodeAnchor, CodeBinding } from "@/shared/code-target/index";
 import type { SemanticNode } from "@/shared/semantic-board/index";
 import type { DiagnosticSubject, VaultDiagnostic } from "@/shared/semantic-policy/index";
@@ -40,6 +41,8 @@ type Claim = BindingClaim | AnchorClaim;
 interface ReadVariant {
 	readonly read: BoardToCheck;
 	readonly byId: ReadonlyMap<string, SemanticNode>;
+	/** A relationship as every diagnostic names it, `From -> To`. */
+	readonly edgeSubject: ReturnType<typeof edgeSubjects>;
 }
 
 /**
@@ -58,17 +61,6 @@ function siteOf(variant: ReadVariant, path: string, subject: DiagnosticSubject):
 		path: `variants.${read.id}.content.${path}`,
 		subject,
 	};
-}
-
-/**
- * What a relationship or a step is called by its ends, `From -> To`.
- * @param variant The variant read.
- * @param from The id of its start.
- * @param to The id of its end.
- * @returns The name.
- */
-function endsName(variant: ReadVariant, from: string, to: string): string {
-	return `${variant.byId.get(from)?.name ?? from} -> ${variant.byId.get(to)?.name ?? to}`;
 }
 
 /**
@@ -92,8 +84,7 @@ function bindingClaims(variant: ReadVariant): BindingClaim[] {
 	return variant.read.variant.content.nodes.flatMap((node) => {
 		const binding = node.binding;
 		if (binding === undefined || (binding.symbol === undefined && !named)) return [];
-		const subject = { kind: "node" as const, id: node.id, name: node.name };
-		const site = siteOf(variant, `nodes.${node.id}.binding`, subject);
+		const site = siteOf(variant, `nodes.${node.id}.binding`, nodeSubject(node));
 		return [{ kind: "binding" as const, site, binding, path: named }];
 	});
 }
@@ -106,12 +97,7 @@ function bindingClaims(variant: ReadVariant): BindingClaim[] {
 function edgeClaims(variant: ReadVariant): AnchorClaim[] {
 	return variant.read.variant.content.edges.flatMap((edge) => {
 		if (edge.anchor === undefined) return [];
-		const subject = {
-			kind: "edge" as const,
-			id: edge.id,
-			name: endsName(variant, edge.from, edge.to),
-		};
-		const site = siteOf(variant, `edges.${edge.id}.anchor`, subject);
+		const site = siteOf(variant, `edges.${edge.id}.anchor`, variant.edgeSubject(edge));
 		return [
 			{
 				kind: "anchor" as const,
@@ -125,7 +111,7 @@ function edgeClaims(variant: ReadVariant): AnchorClaim[] {
 
 /**
  * The claims of the anchored flow steps. A step is named by its flow, its ends
- * and its label, since it has no name of its own.
+ * as a relationship names them, and its label, since it has no name of its own.
  * @param variant The variant read.
  * @returns The claims.
  */
@@ -133,7 +119,7 @@ function stepClaims(variant: ReadVariant): AnchorClaim[] {
 	return variant.read.variant.content.flows.flatMap((flow) =>
 		flow.steps.flatMap((step) => {
 			if (step.anchor === undefined) return [];
-			const name = `${flow.name}: ${endsName(variant, step.from, step.to)}: ${step.label}`;
+			const name = `${flow.name}: ${variant.edgeSubject(step).name}: ${step.label}`;
 			const subject = { kind: "step" as const, id: step.id, name };
 			const site = siteOf(variant, `flows.${flow.id}.steps.${step.id}.anchor`, subject);
 			return [
@@ -154,9 +140,11 @@ function stepClaims(variant: ReadVariant): AnchorClaim[] {
  * @returns The claims, in the variant's order: parts, relationships, then steps.
  */
 function claimsOf(read: BoardToCheck): Claim[] {
+	const { content } = read.variant;
 	const variant = {
 		read,
-		byId: new Map(read.variant.content.nodes.map((node) => [node.id, node])),
+		byId: new Map(content.nodes.map((node) => [node.id, node])),
+		edgeSubject: edgeSubjects(content),
 	};
 	return [...bindingClaims(variant), ...edgeClaims(variant), ...stepClaims(variant)];
 }
