@@ -15,9 +15,9 @@
 // with the attributes, index keys and splats after it dropped. Its evidence
 // kind comes from the rules of the provider of the resource or data source
 // that writes it, by the argument it sits in (terraform-providers.ts); every
-// other reference is a configured path. A reference that is the whole value of
-// an argument, `bucket = var.bucket`, names that argument (TASK-368.11 reads a
-// variable passed on unchanged). A name that a `for` or a `dynamic`
+// other reference is a configured path. A reference names the argument it sits
+// in, and says when it is the argument's whole value, as `bucket = var.bucket`
+// passes a variable on unchanged (TASK-368.11). A name that a `for` or a `dynamic`
 // block binds, `count`, `each`, `path`, `terraform` and `self` name no
 // address. A `provider`, `providers` or
 // `ignore_changes` argument names a provider configuration or attributes, and
@@ -39,7 +39,7 @@ import type { Grammar } from "@/runtime/code-facts/lib/grammars";
 import { spansOf, type Spans } from "@/runtime/code-facts/lib/spans";
 import { addressOf } from "@/runtime/code-facts/lib/terraform-address";
 import { environmentOf } from "@/runtime/code-facts/lib/terraform-environment";
-import { classifyReference, isMetaArgument } from "@/runtime/code-facts/lib/terraform-providers";
+import { classifyReference } from "@/runtime/code-facts/lib/terraform-providers";
 import { unparsedOf } from "@/runtime/code-facts/lib/unparsed";
 
 /** What each kind of block declares: the address's first names, and its visibility. */
@@ -404,21 +404,22 @@ function argumentValue(first: Node): Node | undefined {
 }
 
 /**
- * The argument whose whole value a reference is, as `bucket = var.bucket`
+ * Where in its block a reference stands: the path of the argument it sits in,
+ * and whether it is that argument's whole value, as `bucket = var.bucket`
  * passes the variable on unchanged.
  * @param first The first name of the reference.
  * @param symbol The address it names.
  * @param argument The path of the argument it sits in.
- * @returns The argument's path, or undefined when an expression holds the
- * reference, or the argument is a meta-argument.
+ * @returns The fields, or none outside every argument.
  */
-function wholeArgument(
+function argumentOf(
 	first: Node,
 	symbol: string,
 	argument: readonly string[],
-): string | undefined {
+): Pick<Reference, "argument" | "whole"> {
+	if (argument.length === 0) return {};
 	const whole = argumentValue(first)?.text.trim() === symbol;
-	return whole && !isMetaArgument(argument) ? argument.join(".") : undefined;
+	return { argument: argument.join("."), ...(whole ? { whole } : {}) };
 }
 
 /**
@@ -434,14 +435,13 @@ function referenceAt(first: Node, unparsed: Spans): Reference | undefined {
 	if (symbol === undefined) return undefined;
 	const { type, argument } = placeOf(first);
 	const { kind, joins } = classifyReference(type, argument);
-	const passed = wholeArgument(first, symbol, argument);
 	return {
 		symbol,
 		line: first.startPosition.row + 1,
 		via: "code",
 		kind,
 		...(joins === undefined ? {} : { joins }),
-		...(passed === undefined ? {} : { argument: passed }),
+		...argumentOf(first, symbol, argument),
 		typeOnly: false,
 	};
 }

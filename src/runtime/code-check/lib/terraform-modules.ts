@@ -4,12 +4,15 @@
 // A module exposes its variables and outputs (module-exposure.ts). A variable
 // is a pass-through variable (Ousterhout) when the module uses it once, as the
 // whole value of one argument of a resource it manages: `bucket = var.bucket`,
-// with no expression around it. A use inside the variable's own block, such as
-// a validation, is no use. A module wraps one resource when it manages exactly
+// with no expression around it. A meta-argument, such as `count`, is no
+// argument of the resource. A use inside the variable's own block, such as a
+// validation, is no use. A module wraps one resource when it manages exactly
 // one and calls no module; its data sources and locals are aside, because they
-// only feed what it manages. A module that wraps one resource and passes every
-// variable through, at least one, is shallow: its interface is the resource's,
-// and the code proves it.
+// only feed what it manages. A module that wraps one resource is shallow when
+// it passes at least one variable through and every other variable only says
+// whether or how often to create the resource, in its `count` or `for_each`,
+// as `count = var.create ? 1 : 0` does: a caller can say that on the call
+// itself. Its interface is then the resource's, and the code proves it.
 //
 // Both findings are information on the container bound to the module, beside
 // `EXPOSED_UNUSED`:
@@ -24,12 +27,13 @@
 import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
 import type { RepoCheckout } from "@/runtime/code-check/lib/part-code";
 import { siteOf } from "@/runtime/code-check/lib/relationships";
-import type {
-	Definition,
-	FactsPass,
-	ModuleExposure,
-	Reference,
-	SyntaxFacts,
+import {
+	isMetaArgument,
+	type Definition,
+	type FactsPass,
+	type ModuleExposure,
+	type Reference,
+	type SyntaxFacts,
 } from "@/runtime/code-facts/index";
 import { nodeSubject } from "@/runtime/semantic-board-store/index";
 import type { CodeEvidence, CodeFinding } from "@/shared/code-check/index";
@@ -56,6 +60,8 @@ interface ModuleShape {
 	/** How many variables it declares. */
 	readonly variables: number;
 	readonly passed: readonly PassedVariable[];
+	/** The variables it uses only in the `count` or `for_each` of the resource it wraps. */
+	readonly toggles: readonly string[];
 }
 
 /** One use of a variable in the module's own configuration. */
@@ -129,14 +135,51 @@ function passedThrough(
 	uses: readonly VariableUse[],
 ): PassedVariable | undefined {
 	const [use, ...more] = uses;
-	const argument = more.length === 0 ? use?.reference.argument : undefined;
-	if (use === undefined || argument === undefined) return undefined;
-	const { line } = use.reference;
-	const resource = use.file.definitions.find(
-		(each) => each.visibility === "resource" && spans(each, line),
-	);
-	if (resource === undefined) return undefined;
+	if (use === undefined || more.length > 0) return undefined;
+	const argument = passedTo(use.reference);
+	const resource = resourceAt(use.file, use.reference.line);
+	if (argument === undefined || resource === undefined) return undefined;
 	return { name, resource: resource.symbol, argument, evidence: evidenceOf(repo, use) };
+}
+
+/**
+ * The argument a reference is the whole value of, when that is an argument
+ * of the resource and no meta-argument.
+ * @param reference The reference.
+ * @returns The argument's path, or undefined.
+ */
+function passedTo(reference: Reference): string | undefined {
+	const { argument, whole } = reference;
+	const passes = whole === true && argument !== undefined && !isMetaArgument(argument.split("."));
+	return passes ? argument : undefined;
+}
+
+/**
+ * The resource a module manages whose block holds a line.
+ * @param file The file.
+ * @param line The line.
+ * @returns The resource, or undefined.
+ */
+function resourceAt(file: SyntaxFacts, line: number): Definition | undefined {
+	return file.definitions.find((each) => each.visibility === "resource" && spans(each, line));
+}
+
+/**
+ * Whether a variable only says whether or how often to create the resource a
+ * module wraps: every use is in its `count` or `for_each`.
+ * @param wraps The resource the module wraps.
+ * @param uses The variable's uses.
+ * @returns True when it does.
+ */
+function toggles(wraps: string, uses: readonly VariableUse[]): boolean {
+	return (
+		uses.length > 0 &&
+		uses.every(({ file, reference }) => {
+			const [first] = reference.argument?.split(".") ?? [];
+			const shapes = first === "count" || first === "for_each";
+			return shapes && resourceAt(file, reference.line)?.symbol === wraps;
+		})
+	);
 }
 
 /**
@@ -198,8 +241,13 @@ async function terraformShape(
 	const uses = variableUses(files);
 	const { repo } = checkout;
 	const passed = variables.flatMap((name) => passedThrough(repo, name, uses.get(name) ?? []) ?? []);
+	const wraps = wrapped(files);
+	const toggled = variables.filter(
+		(name) => wraps !== undefined && toggles(wraps, uses.get(name) ?? []),
+	);
 	const { directory } = exposure;
-	return { repo, directory, wraps: wrapped(files), variables: variables.length, passed };
+	const counted = { variables: variables.length, passed, toggles: toggled };
+	return { repo, directory, wraps, ...counted };
 }
 
 /**
@@ -229,16 +277,18 @@ function terraformFindings(
 ): CodeFinding[] {
 	if (shape === undefined || shape.passed.length === 0) return [];
 	const subject = nodeSubject(container);
-	const { directory, wraps, variables, passed } = shape;
+	const { directory, wraps, variables, passed, toggles: toggled } = shape;
 	const site = siteOf(read, `nodes.${container.id}`, subject);
 	const binds = `${describeSubject(subject)} binds the module ${JSON.stringify(directory)}, which`;
 	const evidence = passed.map((each) => each.evidence);
-	if (wraps !== undefined && passed.length === variables) {
+	if (wraps !== undefined && passed.length + toggled.length === variables) {
+		const only =
+			toggled.length === 0 ? "" : `; ${toggled.join(", ")} only says whether to create it`;
 		const message =
-			`${binds} wraps one resource, ${wraps}, and passes each of its ${variables} variables to ` +
-			`one of its arguments unchanged: ${listed(passed, false)}. Its interface is the ` +
-			"resource's own, so it hides nothing (a shallow module): let callers declare the " +
-			"resource, or let the module decide what its callers need not.";
+			`${binds} wraps one resource, ${wraps}, and passes ${passed.length} of its ${variables} ` +
+			`variables to one of its arguments each, unchanged: ${listed(passed, false)}${only}. ` +
+			"Its interface is the resource's own, so it hides nothing (a shallow module): let " +
+			"callers declare the resource, or let the module decide what its callers need not.";
 		return [{ ...site, severity: "information", code: "MODULE_SHALLOW", message, evidence }];
 	}
 	const message =
