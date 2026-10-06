@@ -32,4 +32,4 @@ export {
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 export { readBoard, startServer, type TakeServer, type TrackedVault } from "./server.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-export { ffmpeg, inOrder, pyftsubsetCommand, run, scratch } from "./tools.ts";
+export { ffmpeg, inOrder, pyftsubsetCommand, run, scratch, scratchRoot } from "./tools.ts";

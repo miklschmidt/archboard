@@ -224,6 +224,7 @@ export {
 	requireEncoders,
 	run,
 	scratch,
+	scratchRoot,
 	toolLines,
 	type Ran,
 };
