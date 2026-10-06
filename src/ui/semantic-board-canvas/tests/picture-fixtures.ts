@@ -65,7 +65,8 @@ function cardMarkup(card: Card): string {
 }
 
 /**
- * A line as the renderer draws one: a halo path under the stroke.
+ * A line as the renderer draws one: the arrowhead it defines, then a halo path
+ * under the stroke.
  * @param line The line.
  * @returns Its group.
  */
@@ -73,6 +74,7 @@ function lineMarkup(line: Line): string {
 	const mask = line.masked === true ? ' mask="url(#crossing-1)"' : "";
 	return (
 		`<g data-semantic-kind="edge" data-semantic-id="${line.id}"${mask}${line.ghost === true ? ' opacity="0.4"' : ""}>` +
+		`<defs><marker id="head"><path d="M0,0 L10,5 L0,10 z"/></marker></defs>` +
 		`<path class="ab-halo" d="${line.d}" fill="none"/>` +
 		`<path d="${line.d}" fill="none" stroke="#999" marker-end="url(#head)"/>` +
 		`</g>`

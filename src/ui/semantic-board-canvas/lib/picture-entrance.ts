@@ -18,6 +18,7 @@ import type { SemanticBox, SemanticDrawing } from "@/ui/semantic-board-canvas/ap
 import { growIn } from "@/ui/semantic-board-canvas/lib/picture-cards";
 import { drawOn } from "@/ui/semantic-board-canvas/lib/picture-lines";
 import {
+	drawnPaths,
 	easeOut,
 	phase,
 	setOpacity,
@@ -53,12 +54,13 @@ function middleOf(box: SemanticBox): Point {
 }
 
 /**
- * Where a line begins: the first point its first drawn path moves to.
+ * Where a line begins: the first point its first drawn path moves to. Only the
+ * group's own paths follow the route; the arrowhead it defines is a path too.
  * @param group The line's group.
  * @returns The point, or null when the route does not say.
  */
 function lineStart(group: SubjectGroup): Point | null {
-	const route = group.element.querySelector("path[d]")?.getAttribute("d") ?? "";
+	const route = drawnPaths(group.element)[0]?.getAttribute("d") ?? "";
 	const match = /M\s*(-?[\d.]+)[\s,]+(-?[\d.]+)/i.exec(route);
 	return match === null ? null : { x: Number(match[1]), y: Number(match[2]) };
 }
