@@ -275,7 +275,7 @@ records the construction.
 
 A neutral line, its arrowhead and a lifeline are drawn in **Line Ink**
 (`--diagram-edge`, oklch(60% 0.015 286), dark oklch(60% 0.017 286)). It has 3:1
-or more against the ground and a plinth face in both themes, and it stays far
+or more against the ground and a container's floor in both themes, and it stays far
 under the contrast of text. A colored line is drawn in its full color on chalk
 and at three quarters of its color on graphite. Every arrowhead is 11 units
 long, whatever the emphasis of its line. A muted line is as wide as a default

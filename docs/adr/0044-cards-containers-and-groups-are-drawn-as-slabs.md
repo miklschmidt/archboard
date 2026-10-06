@@ -113,8 +113,9 @@ are in `lib/design.ts`.
 12. **A line reads on every ground.** A card has no border now, so a neutral
     line no longer matches one. A neutral line, its arrowhead and a lifeline
     are drawn in `--diagram-edge`. On the light ground it has a contrast of
-    3.9:1 against the page and 3.5:1 against a plinth face. On the dark ground
-    it has 4.6:1 and 4.3:1. Text has about 16:1. A colored line is drawn in its
+    3.9:1 against the page and 3.5:1 against the floor of a container
+    (`--tray-floor`). On the dark ground it has 4.6:1 and 4.8:1. Text has
+    about 16:1. A colored line is drawn in its
     full color on the light ground, and at three quarters of its color over the
     page on the dark ground (`LINE_STRENGTH` in `lib/design.ts`). On the light
     page, orange, amber, yellow, lime and sky stay under 3:1 even at full
