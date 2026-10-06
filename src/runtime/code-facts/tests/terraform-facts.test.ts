@@ -138,17 +138,24 @@ test("each address an expression names is a reference, and comments, bound names
  * @param read A file's facts.
  * @returns The references' addresses and arguments.
  */
-function passed(read: SyntaxFacts): string[][] {
-	return read.references.flatMap((each) =>
-		each.argument === undefined ? [] : [[each.symbol, each.argument]],
-	);
+function whole(read: SyntaxFacts): (string | undefined)[][] {
+	return read.references.flatMap((each) => (each.whole ? [[each.symbol, each.argument]] : []));
 }
 
-test("a reference that is an argument's whole value names the argument, and one inside an expression or a meta-argument does not", async () => {
-	// var.dead_letter sits in an object, var.topics in a for expression and var.dimensions in a dynamic block's for_each.
-	expect(passed(await terraform("infra/modules/queue/main.tf"))).toEqual([["var.name", "name"]]);
+test("a reference names the argument it sits in, and says when it is the argument's whole value", async () => {
+	const queue = await terraform("infra/modules/queue/main.tf");
+	// A dynamic block's for_each is named by its label; a meta-argument is an argument too.
+	expect(whole(queue)).toEqual([
+		["var.name", "name"],
+		["var.dimensions", "dimension.for_each"],
+	]);
+	// var.dead_letter sits in an object, and var.topics in a for expression.
+	const argument = (symbol: string) => queue.references.find((each) => each.symbol === symbol);
+	expect(argument("var.dead_letter")).toMatchObject({ argument: "redrive_policy" });
+	expect(argument("var.dead_letter")?.whole).toBeUndefined();
+	expect(argument("var.topics")).toMatchObject({ argument: "alarm_actions" });
 	// An argument of a nested block is named by its path; an attribute after the address is an expression around it.
-	const main = passed(await terraform("infra/main.tf"));
+	const main = whole(await terraform("infra/main.tf"));
 	expect(main).toContainEqual(["module.network.private_subnets", "vpc_config.subnet_ids"]);
 	expect(main.some(([symbol]) => symbol === "aws_iam_role.api")).toBe(false);
 });

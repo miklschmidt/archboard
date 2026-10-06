@@ -6,7 +6,8 @@
 // shallow. Each is information.
 //
 // The checkout `shop` holds the shallow module `modules/bucket`, which wraps
-// one bucket and passes its three variables through; the deep module
+// one bucket, passes three variables through and says with a fourth whether to
+// create it; the deep module
 // `modules/queue`, which computes a name and a retention from its variables
 // and passes only its timeout through; and the root module `infra`, which
 // calls both and reads one output of each.
@@ -62,6 +63,7 @@ beforeAll(async () => {
 			"  bucket        = var.bucket",
 			"  force_destroy = var.force_destroy",
 			"  tags          = var.tags",
+			"  count         = var.create ? 1 : 0",
 			"}",
 			"",
 		].join("\n"),
@@ -80,6 +82,9 @@ beforeAll(async () => {
 			'variable "tags" {',
 			"  type    = map(string)",
 			"  default = {}",
+			"}",
+			'variable "create" {',
+			"  default = true",
 			"}",
 			"",
 		].join("\n"),
@@ -208,8 +213,8 @@ test("a module's variables and outputs are what it exposes, and a call uses the 
 		["Jobs", "information"],
 	]);
 	const [assets, jobs] = unused.map((each) => each.message);
-	// The call sets bucket and force_destroy, and the function reads arn; nothing sets tags or reads id.
-	for (const name of ["var.tags", "output.id"]) expect(assets).toContain(name);
+	// The call sets bucket and force_destroy, and the function reads arn; nothing sets tags or create or reads id.
+	for (const name of ["var.tags", "var.create", "output.id"]) expect(assets).toContain(name);
 	for (const name of ["var.bucket", "var.force_destroy", "output.arn"]) {
 		expect(assets).not.toContain(name);
 	}
@@ -223,12 +228,13 @@ test("a caller reaches a module's resource only through an output, so no entry p
 	expect(findings("ENTRY_POINT_UNEXPOSED")).toEqual([]);
 });
 
-test("a module that wraps one resource and passes every variable through is shallow, with each variable's one use as evidence", () => {
+test("a module that wraps one resource and passes every variable through, but the one that says whether to create it, is shallow, with each variable's one use as evidence", () => {
 	const shallow = findings("MODULE_SHALLOW");
 	expect(shallow.map((each) => [each.subject?.id, each.severity])).toEqual([
 		["Assets", "information"],
 	]);
-	// A use inside the variable's own validation is no use.
+	expect(shallow[0]?.message).toContain("var.create");
+	// A use inside the variable's own validation is no use, and count is no argument of the bucket.
 	expect(shallow[0]?.evidence?.map(({ path, line, symbol }) => [path, line, symbol])).toEqual([
 		["modules/bucket/main.tf", 2, "var.bucket"],
 		["modules/bucket/main.tf", 3, "var.force_destroy"],

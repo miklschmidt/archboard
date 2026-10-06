@@ -86,13 +86,15 @@ interface Reference {
 	 */
 	readonly joins?: "from" | "to";
 	/**
-	 * In Terraform, the argument whose whole value the reference is, with no
-	 * expression around it, as `bucket = var.bucket` passes `var.bucket` on
-	 * unchanged: the argument's path, its names joined by `.`
-	 * (`versioning.enabled`). Never a meta-argument, which shapes what is
-	 * created rather than what it is.
+	 * In Terraform, the path of the argument of its block the reference sits
+	 * in, its names joined by `.`: `bucket`, `versioning.enabled`, `count`.
 	 */
 	readonly argument?: string;
+	/**
+	 * The reference is the whole value of its argument, with no expression
+	 * around it: `bucket = var.bucket` passes `var.bucket` on unchanged.
+	 */
+	readonly whole?: true;
 	readonly typeOnly: boolean;
 	/**
 	 * The syntax lets only a type stand here: a declared type, or C#'s
