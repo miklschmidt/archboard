@@ -461,4 +461,5 @@ export {
 	type TerraformKind,
 	classifyReference,
 	isJoiningDeclaration,
+	isMetaArgument,
 };

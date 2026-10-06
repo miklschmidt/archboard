@@ -8,7 +8,9 @@
 // directory (typescript-exposure.ts). A Python package's root file is its
 // `__init__.py`. A Swift module is a target of its package, and each of its
 // files is a root file (swift-exposure.ts). A C or C++ module's root files
-// are its public headers (c-exposure.ts). A language with no rule here
+// are its public headers (c-exposure.ts). A Terraform or OpenTofu module is
+// the configuration files directly in its directory, and exposes its
+// variables and outputs (TASK-368.11). A language with no rule here
 // exposes nothing the check can read, and the check says so.
 //
 // What a root file exposes reads the same in every language, from its code
@@ -29,6 +31,8 @@ import type { Definition, ImportedName, SyntaxFacts } from "@/runtime/code-facts
 import type { CheckoutFiles } from "@/runtime/code-facts/lib/module-resolution";
 import type { FactsPass } from "@/runtime/code-facts/lib/reader";
 import { SWIFT_FILE, swiftRootFiles } from "@/runtime/code-facts/lib/swift-exposure";
+import { isTerraformFile } from "@/runtime/code-facts/lib/terraform-address";
+import { directoryOf, terraformModules } from "@/runtime/code-facts/lib/terraform-resolution";
 import {
 	ENTRY_FILE,
 	TYPESCRIPT_FILE,
@@ -69,6 +73,13 @@ interface ExposureRule {
 	 * @param exposed Every name the module exposes.
 	 */
 	readonly member?: (name: ExposedName, exposed: readonly ExposedName[]) => boolean;
+	/**
+	 * Whether a file is the module's own, so no caller of it. Without it, every
+	 * file below the module's directory is.
+	 * @param directory The module's directory.
+	 * @param file A file of the language.
+	 */
+	readonly holds?: (directory: string, file: string) => boolean;
 }
 
 /** TypeScript's rule: a directory whose root files export what it exposes. */
@@ -203,8 +214,45 @@ const CSHARP: ExposureRule = {
 	},
 };
 
+/**
+ * Terraform's and OpenTofu's rule: a module is the configuration files
+ * directly in its directory, each a root file, and it exposes its variables
+ * and outputs, `var.name` and `output.url`, none a member of another. No file
+ * stands for a module, and a module in a directory below it, such as an
+ * example, is another module that can call it.
+ */
+const TERRAFORM: ExposureRule = {
+	writes: isTerraformFile,
+	/**
+	 * No file stands for a Terraform module.
+	 * @returns False.
+	 */
+	entry: () => false,
+	/**
+	 * The configuration files directly in the directory.
+	 * @param _pass The pass.
+	 * @param checkout The checkout.
+	 * @param directory The module's directory.
+	 * @returns The files, or none for a directory that holds no configuration.
+	 */
+	rootFiles: (_pass, checkout, directory) =>
+		Promise.resolve(terraformModules(checkout).get(directory) ?? []),
+	/**
+	 * Whether a file is directly in the module's directory.
+	 * @param directory The directory.
+	 * @param file The file.
+	 * @returns True when it is.
+	 */
+	holds: (directory, file) => directoryOf(file) === directory,
+	/**
+	 * A variable or an output is a member of nothing.
+	 * @returns False.
+	 */
+	member: () => false,
+};
+
 /** The rule of each adapter that reads a language. */
-const RULES: readonly ExposureRule[] = [TYPESCRIPT, PYTHON, SWIFT, C, CSHARP];
+const RULES: readonly ExposureRule[] = [TYPESCRIPT, PYTHON, SWIFT, C, CSHARP, TERRAFORM];
 
 /** One name a module exposes, and the definition it reaches. */
 interface ExposedName {
@@ -398,10 +446,10 @@ async function moduleExposure(
 			// oxlint-disable-next-line no-await-in-loop -- one root file at a time keeps the names in the root files' order
 			exposed.push(...(await exposedBy(search, file)));
 		}
+		const { member, holds = within } = rule;
 		const outside = [...checkout.files]
-			.filter((file) => rule.writes(file) && !within(directory, file))
+			.filter((file) => rule.writes(file) && !holds(directory, file))
 			.toSorted();
-		const { member } = rule;
 		const named =
 			member === undefined
 				? exposed

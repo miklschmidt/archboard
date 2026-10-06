@@ -5,7 +5,8 @@
 // from the fixture package `fixtures/python-shop`; a Swift module is a target
 // of the package `fixtures/swift-shop`, all of whose files are root files; a
 // C or C++ module's are its public headers, read from the fixture project
-// `fixtures/c-shop`.
+// `fixtures/c-shop`; a Terraform module is the configuration directly in its
+// directory, read from `fixtures/terraform-shop`.
 
 import { afterAll, expect, test } from "bun:test";
 import {
@@ -59,6 +60,7 @@ const checkout = fixtureCheckout({
 const pythonShop = fixtureDirectory("python-shop");
 const swiftShop = fixtureDirectory("swift-shop");
 const cShop = fixtureDirectory("c-shop");
+const terraformShop = fixtureDirectory("terraform-shop");
 const facts = createCodeFacts();
 
 afterAll(() => {
@@ -66,6 +68,7 @@ afterAll(() => {
 	pythonShop.remove();
 	swiftShop.remove();
 	cShop.remove();
+	terraformShop.remove();
 });
 
 /**
@@ -197,4 +200,29 @@ test("a C or C++ module's root files are the headers under its include directory
 	expect((await exposureOf("", cShop))?.rootFiles).toEqual(["include/shop/ledger.h"]);
 	// Every header of built/ is in a subfolder: the module has no public header.
 	expect(await exposureOf("built", cShop)).toBeUndefined();
+});
+
+test("a Terraform module is the configuration directly in its directory, and exposes its variables and outputs; a module below it is outside it", async () => {
+	// No file stands for a Terraform module.
+	expect(moduleOf("infra/main.tf", "file")).toBeUndefined();
+	const queue = await exposureOf("infra/modules/queue", terraformShop);
+	expect(queue?.rootFiles).toEqual([
+		"infra/modules/queue/main.tf",
+		"infra/modules/queue/outputs.tf",
+		"infra/modules/queue/variables.tf",
+	]);
+	expect(await namesOf("infra/modules/queue", terraformShop)).toEqual(
+		[
+			["output.url", "infra/modules/queue/outputs.tf"],
+			["var.dead_letter", "infra/modules/queue/variables.tf"],
+			["var.dimensions", "infra/modules/queue/variables.tf"],
+			["var.name", "infra/modules/queue/variables.tf"],
+			["var.topics", "infra/modules/queue/variables.tf"],
+		].toSorted(),
+	);
+	// The root module's caller-side files are outside the queue, and the queue below the root is outside the root.
+	expect(queue?.outside).toContain("infra/main.tf");
+	const infra = await exposureOf("infra", terraformShop);
+	expect(infra?.outside).toContain("infra/modules/queue/main.tf");
+	expect(infra?.outside).not.toContain("infra/main.tf");
 });

@@ -85,6 +85,14 @@ interface Reference {
 	 * and a function: the end the join runs from, or the one it runs to.
 	 */
 	readonly joins?: "from" | "to";
+	/**
+	 * In Terraform, the argument whose whole value the reference is, with no
+	 * expression around it, as `bucket = var.bucket` passes `var.bucket` on
+	 * unchanged: the argument's path, its names joined by `.`
+	 * (`versioning.enabled`). Never a meta-argument, which shapes what is
+	 * created rather than what it is.
+	 */
+	readonly argument?: string;
 	readonly typeOnly: boolean;
 	/**
 	 * The syntax lets only a type stand here: a declared type, or C#'s
