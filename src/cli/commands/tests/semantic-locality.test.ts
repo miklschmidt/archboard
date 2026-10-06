@@ -52,7 +52,8 @@ const answer: LocalityAnswer = {
 			repo: "github.com/test/orders",
 			commits: ["1", "2", "3", "4", "5"].map((digit) => digit.repeat(40)),
 			shared: 5,
-			degree: 41,
+			// No 1 in it, so only the hotspot line names Ledger beside a 1.
+			degree: 47,
 			unjoined: true,
 		},
 	],
@@ -164,7 +165,7 @@ test("it asks the locality route for the board, the draft and the start it was g
 	expect(LocalityReplySchema.parse(JSON.parse(stdout))).toEqual({ success: true, ...answer });
 	const lines = stderr.split("\n");
 	expect(lines.some((line) => line.includes("Ledger") && line.includes("1"))).toBe(true);
-	expect(lines.some((line) => /Ledger.*Checkout/u.test(line) && line.includes("41"))).toBe(true);
+	expect(lines.some((line) => /Ledger.*Checkout/u.test(line) && line.includes("47"))).toBe(true);
 });
 
 test("a board with no variant or start named asks for neither", async () => {
