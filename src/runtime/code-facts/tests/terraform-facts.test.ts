@@ -97,12 +97,13 @@ test("resources, data sources, module calls and their arguments, variables, outp
 	});
 });
 
-test("each address an expression names is a configured-path reference, and comments, bound names, provider and ignore_changes arguments and moved blocks are none", async () => {
+test("each address an expression names is a reference, and comments, bound names, provider and ignore_changes arguments and moved blocks are none", async () => {
 	const main = await terraform("infra/main.tf");
 	// The name of an environment value the function sets is no address (TASK-367.23).
 	const written = main.references.filter((each) => each.via === "code");
 	const named = new Set(written.map((each) => each.symbol));
-	expect(written.every((each) => each.kind === "configured-path")).toBe(true);
+	// What each proves is its provider's rule (terraform-providers.test.ts).
+	expect(written.every((each) => each.kind !== undefined)).toBe(true);
 	for (const address of [
 		"aws_iam_role.api",
 		"data.aws_iam_policy_document.assume",

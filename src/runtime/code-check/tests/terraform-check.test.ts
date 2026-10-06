@@ -1,8 +1,8 @@
 // The code pass reads parts bound to Terraform and OpenTofu addresses (ADR
 // 0046, TASK-367.17): a binding names an address of the root module its path
-// names, a reference that joins two bound declarations is configured-path
-// evidence, and a plan JSON an agent names fills in the remote module the
-// check does not read. The check never reads state, variable files or
+// names, a reference that joins two bound declarations is evidence of the
+// kind its provider's rules give it (TASK-367.18), and a plan JSON an agent
+// names fills in the remote module the check does not read. The check never reads state, variable files or
 // `.terraform`, never runs `terraform` or `tofu`, and never quotes a value.
 //
 // The checkout `shop` holds the root module `infra`, which calls the local
@@ -106,7 +106,10 @@ const PLAN = {
 								},
 							},
 						],
-						outputs: { private_subnets: { expression: { references: ["aws_subnet.private"] } } },
+						outputs: {
+							private_subnets: { expression: { references: ["aws_subnet.private"] } },
+							vpc_id: { expression: { references: ["aws_vpc.this.id", "aws_vpc.this"] } },
+						},
 					},
 				},
 			},
@@ -137,7 +140,11 @@ beforeAll(async () => {
 			'resource "aws_lambda_function" "api" {',
 			"  role = aws_iam_role.api.arn",
 			"  environment {",
-			"    variables = { QUEUE_URL = module.queue.url }",
+			"    variables = {",
+			"      QUEUE_URL    = module.queue.url",
+			"      DEAD_LETTERS = aws_sqs_queue.dead.url",
+			"      VPC_ID       = module.network.vpc_id",
+			"    }",
 			"  }",
 			"  vpc_config {",
 			"    subnet_ids = module.network.private_subnets",
@@ -212,6 +219,8 @@ beforeAll(async () => {
 					edge("e1", "pF", "pQ", "queue"),
 					// Drawn from the dead letters, while the queue's configuration names them.
 					edge("e2", "pD", "pQ", "dependency"),
+					// Drawn from the VPC, while the subnets name it; `other` accepts provisioning.
+					edge("e3", "pV", "pS", "other"),
 				],
 			},
 		},
@@ -258,7 +267,8 @@ test("a part bound to an address its root module no longer declares is reported,
 			"BINDING_SYMBOL_MISSING pG warning",
 			"BINDING_SYMBOL_MISSING pX warning",
 			"RELATIONSHIP_BACKWARDS e2 information",
-			"RELATIONSHIP_UNDRAWN pR warning",
+			// The function's environment names the dead letters; the role it runs as only sets it up.
+			"RELATIONSHIP_UNDRAWN pD warning",
 		].toSorted(),
 	);
 	const skipped = (reason: string) =>
@@ -274,11 +284,11 @@ test("a reference that joins two resource-bound parts supports their relationshi
 			kind: "configured-path",
 			resolution: "resolved",
 			from: "pF",
-			to: "pR",
+			to: "pD",
 			repo: SHOP,
 			path: "infra/main.tf",
-			line: 6,
-			symbol: "aws_iam_role.api",
+			line: 10,
+			symbol: "aws_sqs_queue.dead",
 		},
 	]);
 	const backwards = withoutPlan.findings.find((each) => each.subject?.id === "e2");
@@ -292,12 +302,18 @@ test("a named plan JSON declares the remote module's addresses and joins them by
 	expect(withPlan.skipped.map((each) => each.reason)).not.toContain("module-not-read");
 	const undrawn = withPlan.findings.filter((each) => each.code === "RELATIONSHIP_UNDRAWN");
 	const pieces = undrawn.flatMap((each) => each.evidence ?? []);
-	expect(pieces.map((piece) => [piece.from, piece.to, piece.path, piece.line])).toEqual(
-		expect.arrayContaining([
-			["pF", "pS", "infra/main.tf", 11],
-			["pS", "pV", "infra/plan.json", 1],
-		]),
-	);
+	// Through the plan's output `vpc_id` of the remote module.
+	expect(pieces.map((piece) => [piece.from, piece.to, piece.path, piece.line])).toContainEqual([
+		"pF",
+		"pV",
+		"infra/main.tf",
+		11,
+	]);
+	// A reference only the plan names cites the plan.
+	const backwards = withPlan.findings.find((each) => each.subject?.id === "e3");
+	expect(
+		backwards?.evidence?.map((piece) => [piece.from, piece.to, piece.path, piece.line]),
+	).toEqual([["pS", "pV", "infra/plan.json", 1]]);
 });
 
 test("the check never reads state, variable files or .terraform, never runs terraform or tofu, and never quotes a value", async () => {

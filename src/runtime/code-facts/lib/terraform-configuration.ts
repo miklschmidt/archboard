@@ -37,8 +37,11 @@ import {
 	namesOf,
 } from "@/runtime/code-facts/lib/terraform-address";
 import type { PlanModule, TerraformPlan } from "@/runtime/code-facts/lib/terraform-plan";
+import type { JoinEnd } from "@/runtime/code-facts/lib/terraform-providers";
+import { reachedFrom } from "@/runtime/code-facts/lib/terraform-reach";
 import { directoryOf, terraformModules } from "@/runtime/code-facts/lib/terraform-resolution";
 import { lastName } from "@/runtime/code-facts/lib/text-reading";
+import type { EvidenceKind } from "@/shared/semantic-policy/index";
 
 /** One declaration of the root module's address space. */
 interface Declaration {
@@ -60,6 +63,10 @@ interface Link {
 	readonly line: number;
 	/** The reference as the file or the plan writes it. */
 	readonly symbol: string;
+	/** What the reference proves, by its provider's rules (terraform-providers.ts). */
+	readonly kind: EvidenceKind;
+	/** The end of the joining declaration it is written in that it names, if any. */
+	readonly joins?: JoinEnd;
 }
 
 /** Where the checkout declares an address, or the module call that holds it. */
@@ -88,7 +95,8 @@ interface TerraformConfiguration {
 	/** Every resource, data source, ephemeral resource and module call. */
 	readonly endpoints: readonly Declaration[];
 	/**
-	 * What a declaration reaches, each with the reference of the declaration that starts the way there.
+	 * What a declaration reaches, each with the reference of the declaration
+	 * that starts the way there, once for each thing those references prove.
 	 * @param address The declaration's address.
 	 */
 	reached(address: string): readonly { readonly to: Declaration; readonly link: Link }[];
@@ -115,6 +123,8 @@ interface Written {
 	readonly path: string;
 	readonly line: number;
 	readonly symbol: string;
+	readonly kind: EvidenceKind;
+	readonly joins?: JoinEnd;
 }
 
 /** What the reading of one root module collects. */
@@ -167,9 +177,11 @@ function writtenIn(facts: SyntaxFacts, scope: string): Written[] {
 	return facts.references.flatMap((reference) => {
 		const holder = holderAt(facts, reference.line);
 		if (holder === undefined || reference.via !== "code") return [];
-		const { symbol, line } = reference;
+		const { symbol, line, joins } = reference;
 		const names = symbol.split(".");
-		return [{ from: `${scope}${holder.symbol}`, scope, names, path: facts.path, line, symbol }];
+		const kind = reference.kind ?? "configured-path";
+		const from = `${scope}${holder.symbol}`;
+		return [{ from, scope, names, path: facts.path, line, symbol, kind, ...(joins && { joins }) }];
 	});
 }
 
@@ -281,7 +293,11 @@ function readPlanScope(
 				// The address alone, as the adapter writes a reference: never an index key of the plan's.
 				const symbol = addressOf(names);
 				if (symbol === undefined) return [];
-				return [{ from: `${scope}${link.from}`, scope, names, path: plan.path, line: 1, symbol }];
+				const { kind, joins } = link;
+				const from = `${scope}${link.from}`;
+				return [
+					{ from, scope, names, path: plan.path, line: 1, symbol, kind, ...(joins && { joins }) },
+				];
 			}),
 		);
 	}
@@ -412,59 +428,6 @@ function declaredIn(reading: Reading, symbol: string): Declared {
 	return part === undefined ? { status: "absent" } : { status: "unparsed", ...part };
 }
 
-/** One way the search of what a declaration reaches still has to follow. */
-interface Way {
-	readonly to: string;
-	/** The link of the declaration that starts the way. */
-	readonly first: Link;
-}
-
-/**
- * Take one step of the search of what a declaration reaches: a declaration
- * that passes a value on leads further, and any other one is reached.
- * @param declaration Where the way leads, if the address space declares it.
- * @param way The way.
- * @param found What the search has reached, which this adds to.
- * @param links The links of each declaration.
- * @returns The ways that lead on from it.
- */
-function step(
-	declaration: Declaration | undefined,
-	way: Way,
-	found: Map<string, { to: Declaration; link: Link }>,
-	links: ReadonlyMap<string, readonly Link[]>,
-): Way[] {
-	if (declaration === undefined) return [];
-	if (!PASSING.has(declaration.kind)) {
-		found.set(way.to, { to: declaration, link: way.first });
-		return [];
-	}
-	return (links.get(way.to) ?? []).map((link) => ({ to: link.to, first: way.first }));
-}
-
-/**
- * What a declaration reaches, through every declaration that passes a value on.
- * @param declarations The address space.
- * @param links The links of each declaration.
- * @param address The declaration's address.
- * @returns Each declaration reached, with the link that starts the way there.
- */
-function reachedFrom(
-	declarations: ReadonlyMap<string, Declaration>,
-	links: ReadonlyMap<string, readonly Link[]>,
-	address: string,
-): { readonly to: Declaration; readonly link: Link }[] {
-	const found = new Map<string, { to: Declaration; link: Link }>();
-	const seen = new Set<string>([address]);
-	const ways: Way[] = (links.get(address) ?? []).map((link) => ({ to: link.to, first: link }));
-	for (let way = ways.shift(); way !== undefined; way = ways.shift()) {
-		if (seen.has(way.to)) continue;
-		seen.add(way.to);
-		ways.push(...step(declarations.get(way.to), way, found, links));
-	}
-	return [...found.values()];
-}
-
 /**
  * The address space as its readers ask it.
  * @param reading What the reading collected.
@@ -499,7 +462,7 @@ function configurationOf(reading: Reading, root: string): TerraformConfiguration
 		 * @returns Each declaration reached, with the link that starts the way.
 		 */
 		reached(address) {
-			return reachedFrom(declarations, links, address);
+			return reachedFrom(declarations, links, address, PASSING);
 		},
 	};
 }
