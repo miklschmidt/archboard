@@ -13,7 +13,8 @@
 //
 // An annotation and the body of `if TYPE_CHECKING:` are types, so a name used
 // only there is import evidence and an import there is type-only. Every other
-// use is at run time, a call. A name that a function, a lambda or a
+// use is at run time, a call; one that calls, constructs, decorates or
+// derives from nothing is a use as a value (runs.ts). A name that a function, a lambda or a
 // comprehension binds for itself, such as a parameter, is its own inside it,
 // so a use of it there reaches no import of the same name. Code in a part of
 // the file that did not parse holds no facts; the names written there are
@@ -32,6 +33,7 @@ import type { Grammar } from "@/runtime/code-facts/lib/grammars";
 import { definitionsOf, targetNames } from "@/runtime/code-facts/lib/python-definitions";
 import { dynamicImport, passedOn, staticImports } from "@/runtime/code-facts/lib/python-imports";
 import { holds, isLocal, type Shadows, shadowsOf } from "@/runtime/code-facts/lib/python-scopes";
+import { ANY, type RunSyntax, valueMark } from "@/runtime/code-facts/lib/runs";
 import { spansOf, type Spans } from "@/runtime/code-facts/lib/spans";
 import { unparsedOf } from "@/runtime/code-facts/lib/unparsed";
 
@@ -149,6 +151,21 @@ function spelling(node: Node): string {
 	return after ? (chain(parent) ?? node.text) : node.text;
 }
 
+/**
+ * Whether a list of arguments names the base classes of a class.
+ * @param list The list.
+ * @returns True for a class's bases.
+ */
+function namesBases(list: Node): boolean {
+	return list.parent?.type === "class_definition";
+}
+
+/** How Python runs a name: a call, also a construction, a decorator, a base class. */
+const RUN_SYNTAX: RunSyntax = {
+	runners: { call: "function", decorator: ANY, argument_list: namesBases },
+	chains: { attribute: ["object", "attribute"] },
+};
+
 /** What deciding whether a captured name is a use needs. */
 interface UseContext {
 	readonly declared: ReadonlySet<number>;
@@ -185,6 +202,7 @@ function codeReference(node: Node, context: UseContext, shadows: Shadows): Use |
 		via: "code",
 		kind: typeOnly ? "import" : "call",
 		typeOnly,
+		...valueMark(node, RUN_SYNTAX, typeOnly),
 	};
 	return isLocal(node, reference.symbol, shadows) ? { ...reference, local: true } : reference;
 }
@@ -446,7 +464,7 @@ function distinct(
 	const seen = new Map<string, ParsedFacts["references"][number]>();
 	for (const use of uses) {
 		const { local, ...reference } = use;
-		const key = `${use.via}\0${use.symbol}\0${String(use.typeOnly)}\0${String(local === true)}`;
+		const key = `${use.via}\0${use.symbol}\0${String(use.typeOnly)}\0${String(use.asValue)}\0${String(local === true)}`;
 		if (seen.has(key)) continue;
 		const through = reachesImport(use) ? throughImport(use.symbol, locals) : undefined;
 		seen.set(key, through === undefined ? reference : { ...reference, through });

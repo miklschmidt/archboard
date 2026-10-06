@@ -9,7 +9,9 @@
 //
 // A use at run time is call evidence: a call, a construction, a static member,
 // an attribute, `typeof`, and the base class a class derives from, whose code
-// runs in every instance. A name only in a type position is import evidence
+// runs in every instance. A use that calls, constructs, applies as an
+// attribute or derives from nothing, such as a static member read or
+// `typeof`, is a use as a value (runs.ts). A name only in a type position is import evidence
 // and type-only: a declared type, a type argument, a cast, `as`, a pattern,
 // a constraint, and an interface a type implements. A base list names the
 // base class first, if it has one; C# cannot tell a class from an interface
@@ -39,6 +41,7 @@
 
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
 import { csharpDefinitions } from "@/runtime/code-facts/lib/csharp-definitions";
+import { ANY, type RunSyntax, valueMark } from "@/runtime/code-facts/lib/runs";
 import { firstBranches } from "@/runtime/code-facts/lib/csharp-preprocessor";
 import type { Import, ParsedFacts, Reference, ReferenceVia } from "@/runtime/code-facts/lib/facts";
 import { treeSitter, type Grammar } from "@/runtime/code-facts/lib/grammars";
@@ -297,6 +300,25 @@ function baseEntries(lists: readonly Node[]): BaseEntry[] {
 	});
 }
 
+/** How C# runs a name: a call, `new`, an attribute, a base class. */
+const RUN_SYNTAX: RunSyntax = {
+	runners: {
+		invocation_expression: "function",
+		object_creation_expression: "type",
+		attribute: "name",
+		base_list: ANY,
+		primary_constructor_base_type: "type",
+	},
+	chains: {
+		member_access_expression: ["expression", "name"],
+		member_binding_expression: ["name"],
+		conditional_access_expression: ["condition", ""],
+		qualified_name: ["qualifier", "name"],
+		alias_qualified_name: ["alias", "name"],
+		generic_name: [""],
+	},
+};
+
 /** What deciding whether a captured name is a use needs. */
 interface UseContext {
 	readonly declared: ReadonlySet<number>;
@@ -327,6 +349,7 @@ function codeReference(node: Node, context: UseContext): Reference | undefined {
 		kind: typeOnly ? "import" : "call",
 		typeOnly,
 		...(context.typeNames.holds(at) ? { asType: true } : {}),
+		...valueMark(node, RUN_SYNTAX, typeOnly),
 	};
 }
 
@@ -375,7 +398,7 @@ function usingImport(node: Node): Import | undefined {
 function distinct(references: readonly Reference[]): Reference[] {
 	const seen = new Map<string, Reference>();
 	for (const reference of references) {
-		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}\0${String(reference.asType)}`;
+		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}\0${String(reference.asType)}\0${String(reference.asValue)}`;
 		if (!seen.has(key)) seen.set(key, reference);
 	}
 	return [...seen.values()];

@@ -22,6 +22,7 @@ import {
 	type SyntaxFacts,
 } from "@/runtime/code-facts/index";
 import { fixtureDirectory } from "@/runtime/code-facts/tests/checkout";
+import { asValueOf } from "@/runtime/code-facts/tests/uses";
 
 const checkout = fixtureDirectory("objc-shop");
 const facts = createCodeFacts();
@@ -154,6 +155,22 @@ test("a message send is a call of its selector, qualified by the receiver's clas
 			false,
 		);
 	}
+});
+
+test("a message to a class runs it, and a selector expression and a constant read use what they name as a value", async () => {
+	const asValue = await asValueOf("Uses.m", [
+		"void use(void) {",
+		"\t[Ledger post];",
+		"\tSEL chosen = @selector(settle:);",
+		"\tint n = LIMIT;",
+		"}",
+	]);
+	expect(asValue).toMatchObject({
+		Ledger: false,
+		"Ledger::post": false,
+		".settle:": true,
+		LIMIT: true,
+	});
 });
 
 test("#import, #include and @import resolve as a C include does, and a use leads to the pair's implementation", async () => {

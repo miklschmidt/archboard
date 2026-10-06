@@ -17,7 +17,8 @@
 //   base class, whose constructor runs. A plain `Ledger ledger;` and
 //   `Ledger ledger = {...}` are a type, because a C struct runs no code there.
 // - Every other name is a use at run time, a call: a function called, a
-//   variable or a macro read, a function passed on as a value.
+//   variable or a macro read, a function passed on as a value. One that is
+//   not called, constructed or sent a message is a use as a value (runs.ts).
 // A name after `::` is spelled with its qualifier (`shop::util::run`), and a
 // field after `.` or `->` with its chain through `.` (`ledger.post`), as
 // TypeScript spells a use through a value. A string counts as the name of an
@@ -34,6 +35,7 @@ import { cDefinitionsOf, isMisread, spell } from "@/runtime/code-facts/lib/c-def
 import type { Import, ParsedFacts, Reference } from "@/runtime/code-facts/lib/facts";
 import type { Grammar } from "@/runtime/code-facts/lib/grammars";
 import { cUnparsedOf } from "@/runtime/code-facts/lib/c-unparsed";
+import { type RunSyntax, valueMark } from "@/runtime/code-facts/lib/runs";
 import { spansOf, type Spans } from "@/runtime/code-facts/lib/spans";
 
 /** The captures of one file, by what the query calls them. */
@@ -356,6 +358,30 @@ function constructs(top: Node): boolean {
 	return parent.childrenForFieldName("declarator").some(constructsValue);
 }
 
+/**
+ * Whether a whole name stands where it constructs.
+ * @param _runner The syntax around it.
+ * @param top The whole name.
+ * @returns True when it constructs.
+ */
+function constructsIn(_runner: Node, top: Node): boolean {
+	return constructs(top);
+}
+
+/**
+ * How C and C++ run a whole name: a call, a type that constructs, and in
+ * Objective-C (objc-adapter.ts) a message to a class.
+ */
+const RUN_SYNTAX: RunSyntax = {
+	runners: {
+		call_expression: "function",
+		message_expression: "receiver",
+		declaration: constructsIn,
+		...Object.fromEntries([...CONSTRUCTING].map((type) => [type, constructsIn])),
+	},
+	chains: { field_expression: ["argument", "field"] },
+};
+
 /** One name, as the file writes it and where. */
 interface Named {
 	readonly node: Node;
@@ -443,6 +469,7 @@ function useOf(named: Named, locals: ReadonlySet<string>): Reference | undefined
 		via: "code",
 		kind: typeOnly ? "import" : "call",
 		typeOnly,
+		...valueMark(top, RUN_SYNTAX, typeOnly),
 	};
 }
 
@@ -484,7 +511,7 @@ function includeOf(node: Node): Import | undefined {
 function distinct(references: readonly Reference[]): Reference[] {
 	const seen = new Map<string, Reference>();
 	for (const reference of references) {
-		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}`;
+		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}\0${String(reference.asValue)}`;
 		if (!seen.has(key)) seen.set(key, reference);
 	}
 	return [...seen.values()];

@@ -24,6 +24,7 @@ import {
 	type SyntaxFacts,
 } from "@/runtime/code-facts/index";
 import { fixtureDirectory } from "@/runtime/code-facts/tests/checkout";
+import { asValueOf } from "@/runtime/code-facts/tests/uses";
 
 const checkout = fixtureDirectory("swift-shop");
 const facts = createCodeFacts();
@@ -166,6 +167,29 @@ test("a use leads into a module the file imports only to what that module expose
 		"Core",
 		"Util",
 	]);
+});
+
+test("a call, a construction and an attribute run what they name, and a static member read and a name passed on use it as a value", async () => {
+	const asValue = await asValueOf("Uses.swift", [
+		"@Wrapped var wrapped = 1",
+		"func use() -> Int {",
+		"\tcall()",
+		"\tlet made = Made()",
+		"\tApi.shared.read()",
+		"\tschedule(passed)",
+		"\treturn Limits.max",
+		"}",
+	]);
+	expect(asValue).toMatchObject({
+		Wrapped: false,
+		call: false,
+		Made: false,
+		Api: false,
+		"Api.shared.read": false,
+		passed: true,
+		Limits: true,
+		"Limits.max": true,
+	});
 });
 
 test("Package.swift is read without running it: its targets are definitions and their dependencies lead to the modules' directories", async () => {

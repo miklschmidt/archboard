@@ -11,8 +11,9 @@
 //
 // A name in a type, a generic constraint or an inheritance clause is a use
 // only as a type, `import` evidence: the syntax cannot tell a superclass from
-// a protocol. Every other use runs, `call` evidence, a type name in an
-// attribute too, as a property wrapper runs. A name in a comment or a string
+// a protocol. Every other use is at run time, `call` evidence, a type name in
+// an attribute too, as a property wrapper runs. One that neither is called nor
+// stands in an attribute is a use as a value (runs.ts). A name in a comment or a string
 // is never captured, but for the name of an environment value
 // (`ProcessInfo.processInfo.environment["NAME"]`, `getenv("NAME")`) and of a
 // notification (`Notification.Name("NAME")`). The member that a leading `.`
@@ -45,6 +46,7 @@ import type {
 	Unparsed,
 } from "@/runtime/code-facts/lib/facts";
 import type { Grammar } from "@/runtime/code-facts/lib/grammars";
+import { ANY, type RunSyntax, valueMark } from "@/runtime/code-facts/lib/runs";
 import { spansOf, type Spans } from "@/runtime/code-facts/lib/spans";
 import { definitionsOf } from "@/runtime/code-facts/lib/swift-definitions";
 
@@ -176,7 +178,28 @@ function spelling(node: Node): string {
 }
 
 /**
- * A use of a name in code.
+ * Whether a name is what a call calls, its first child.
+ * @param call The call.
+ * @param name The name.
+ * @returns True when the call calls it.
+ */
+function callee(call: Node, name: Node): boolean {
+	return call.namedChildren[0]?.id === name.id;
+}
+
+/** How Swift runs a name: a call, which is also how it constructs. */
+const RUN_SYNTAX: RunSyntax = {
+	runners: { call_expression: callee, attribute: ANY },
+	chains: {
+		navigation_expression: ["target", "suffix"],
+		navigation_suffix: ["suffix"],
+		user_type: [""],
+	},
+};
+
+/**
+ * A use of a name in code. A name in an attribute runs, as a property wrapper
+ * does; any other name runs only where the code calls it.
  * @param node The name.
  * @param context The file's bound names and spans.
  * @returns The use, or undefined when the name is not a use.
@@ -193,6 +216,7 @@ function codeReference(node: Node, context: UseContext): Reference | undefined {
 		via: "code",
 		kind: typeOnly ? "import" : "call",
 		typeOnly,
+		...valueMark(node, RUN_SYNTAX, typeOnly),
 	};
 }
 
@@ -262,7 +286,7 @@ function moduleUse(found: Import): Reference {
 function distinct(uses: readonly Reference[]): Reference[] {
 	const seen = new Map<string, Reference>();
 	for (const use of uses) {
-		const key = `${use.via}\0${use.symbol}\0${String(use.typeOnly)}\0${use.kind ?? ""}`;
+		const key = `${use.via}\0${use.symbol}\0${String(use.typeOnly)}\0${use.kind ?? ""}\0${String(use.asValue)}`;
 		if (!seen.has(key)) seen.set(key, use);
 	}
 	return [...seen.values()];

@@ -58,6 +58,28 @@ includes that resolve nowhere. 191 of those are system headers such as
 that resolves nowhere reaches no file of the checkout. A checkout that needs
 exact includes lists them in `compile_commands.json`.
 
+Amended by TASK-367.28 (2026-10-06): a use as a value never makes a
+dependency undrawn on its own. A call and a construction run a name. So do a
+rendered component, a decorator and an attribute. A message to a class and a
+class that derives from it also run it. In a chain that the
+code calls, each name runs, as `api` does in `api.read()`. The check cannot
+tell a member that the module of the name defines from a member of a library.
+Every other use at run time is a use as a value: it reads a constant, passes
+the name on, or tests a value against a class, as `instanceof`, `isinstance`
+and a catch do. Each adapter marks such a use (`asValue` on a reference). It
+stays call evidence, so it still supports a relationship and an anchor. But
+`RELATIONSHIP_UNDRAWN` and `CALLER_UNDRAWN` rest only on a use that runs code.
+The check is sure that a board must draw a dependency only where one part
+runs the code of the other. A board seldom needs a constant read or an error
+class in a catch. And nothing on a board can say that such a use is no
+dependency. On the dogfood vault, the rule cleared 6 of 31 undrawn warnings.
+It took parts out of 4 others, and it changed no other finding. The first
+trial made such a use import evidence instead. That turned 39 right anchors
+into `ANCHOR_MISMATCH` warnings. 25 of them are on call relationships that
+cite a handler or a contract that the code passes on. 11 are on data
+relationships that cite a constant, 2 on event and 1 on rpc relationships. So
+the evidence kind stays call.
+
 ## Context
 
 A board makes claims about code. Evidence rule 3 of the consumer skill makes an

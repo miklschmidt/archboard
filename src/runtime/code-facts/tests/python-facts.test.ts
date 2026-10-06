@@ -17,6 +17,7 @@ import {
 	type SyntaxFacts,
 } from "@/runtime/code-facts/index";
 import { fixtureDirectory } from "@/runtime/code-facts/tests/checkout";
+import { asValueOf } from "@/runtime/code-facts/tests/uses";
 
 const checkout = fixtureDirectory("python-shop");
 const facts = createCodeFacts();
@@ -120,6 +121,33 @@ test("a use at run time is call evidence, a use in an annotation or under TYPE_C
 			["event", "paid", undefined],
 		].toSorted(),
 	);
+});
+
+test("a call, a construction, a decorator and a base class run what they name, and a constant read, an isinstance test and a name passed on use it as a value", async () => {
+	const asValue = await asValueOf("uses.py", [
+		"from runs import Base, Failure, LIMIT, Made, call, passed, decorate, api",
+		"@decorate",
+		"class Child(Base):",
+		"    pass",
+		"def use(error):",
+		"    call()",
+		"    Made()",
+		"    api.read()",
+		"    schedule(passed)",
+		"    if isinstance(error, Failure):",
+		"        return LIMIT",
+	]);
+	expect(asValue).toMatchObject({
+		decorate: false,
+		Base: false,
+		call: false,
+		Made: false,
+		api: false,
+		"api.read": false,
+		passed: true,
+		Failure: true,
+		LIMIT: true,
+	});
 });
 
 test("absolute, relative and package imports resolve, a name that is a submodule reaches the submodule, and a module of the environment reaches no file", async () => {

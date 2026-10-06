@@ -19,6 +19,7 @@ import type {
 	ReferenceVia,
 } from "@/runtime/code-facts/lib/facts";
 import type { Grammar } from "@/runtime/code-facts/lib/grammars";
+import { ANY, type RunSyntax, valueMark } from "@/runtime/code-facts/lib/runs";
 import { spansOf, type Spans } from "@/runtime/code-facts/lib/spans";
 import { definitionsOf, exportedNames } from "@/runtime/code-facts/lib/typescript-definitions";
 import {
@@ -69,6 +70,19 @@ const JSX_TAGS = new Set([
 	"jsx_closing_element",
 	"jsx_self_closing_element",
 ]);
+
+/** How TypeScript runs a name: a call, also a tagged template, `new`, a component, a decorator, `extends`. */
+const RUN_SYNTAX: RunSyntax = {
+	runners: {
+		call_expression: "function",
+		new_expression: "constructor",
+		jsx_opening_element: "name",
+		jsx_self_closing_element: "name",
+		decorator: ANY,
+		extends_clause: "value",
+	},
+	chains: { member_expression: ["object", "property"] },
+};
 
 /** The syntax in which each kind of name is part of a qualified spelling. */
 const QUALIFIED_IN: Readonly<Record<string, string>> = {
@@ -176,6 +190,7 @@ function codeReference(node: Node, context: UseContext): Reference | undefined {
 		via: "code",
 		kind: typeOnly ? "import" : "call",
 		typeOnly,
+		...valueMark(node, RUN_SYNTAX, typeOnly),
 	};
 }
 
@@ -263,7 +278,7 @@ function distinct(
 	);
 	const seen = new Map<string, ParsedFacts["references"][number]>();
 	for (const reference of references) {
-		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}`;
+		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}\0${String(reference.asValue)}`;
 		if (seen.has(key)) continue;
 		const through = throughImport(reference, imported);
 		seen.set(key, through === undefined ? reference : { ...reference, through });

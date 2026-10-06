@@ -5,8 +5,9 @@
 // The checkout `mall` holds a store whose Read and Write both use the shared
 // `addressOf`, which uses `normalize` in the same file; a server that calls
 // the store through its index; a sender that a listener and a mailer call;
-// and a list that only names a type. Each relationship below says what the
-// check should find about it.
+// a list that only names a type; and limits that a checker uses only as values
+// and a guard constructs. Each relationship below says what the check should
+// find about it.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -127,6 +128,22 @@ beforeAll(async () => {
 		// Loads the sender's file at run time, which is a call to the whole file.
 		"src/notify/digest.ts":
 			'export async function digest(): Promise<void> { await import("./sender"); }\n',
+		"src/shared/limits.ts": "export const LIMIT = 3;\nexport class ShelfError extends Error {}\n",
+		// Uses the limits, the address and the sender as values only: a constant read, an
+		// instanceof test and names passed on, which run none of their code.
+		"src/notify/checker.ts": [
+			'import { addressOf } from "../shared/address";',
+			'import { LIMIT, ShelfError } from "../shared/limits";',
+			'import { send } from "./sender";',
+			"export function check(error: unknown, names: string[]): boolean {",
+			"\tqueueMicrotask(send);",
+			"\treturn error instanceof ShelfError || names.map(addressOf).length > LIMIT;",
+			"}",
+			"",
+		].join("\n"),
+		// Constructs the limits' error, which runs its code.
+		"src/notify/guard.ts":
+			'import { ShelfError } from "../shared/limits";\nexport function guard(): void { throw new ShelfError(); }\n',
 		// Calls the sender, which the flow draws as a step.
 		"src/notify/relay.ts":
 			'import { send } from "./sender";\nexport function relay(): void { send(); }\n',
@@ -154,6 +171,9 @@ beforeAll(async () => {
 					part("pM", "Mailer", { path: "src/notify/mailer.ts" }),
 					part("pD", "Digest", { path: "src/notify/digest.ts" }),
 					part("pY", "Relay", { path: "src/notify/relay.ts" }),
+					part("pV", "Limits", { path: "src/shared/limits.ts" }),
+					part("pC", "Checker", { path: "src/notify/checker.ts" }),
+					part("pG", "Guard", { path: "src/notify/guard.ts" }),
 				],
 				edges: [
 					// Drawn to the store, which holds the parts the server's code reaches.
@@ -175,6 +195,8 @@ beforeAll(async () => {
 					edge("e9", ["pS", "pB"], "call", ["src/server/routes.ts", "Shelf"]),
 					// The store holds the list, so evidence never joins them.
 					edge("e10", ["pT", "pL"], "call"),
+					// Anchored on a name the checker passes on as a value, which is call evidence.
+					edge("e11", ["pC", "pN"], "call", ["src/notify/checker.ts", "send"]),
 				],
 				flows: [
 					{
@@ -234,6 +256,7 @@ test("every finding of the relationship judgement, and nothing about a relations
 			"RELATIONSHIP_UNDRAWN pA warning",
 			"RELATIONSHIP_UNDRAWN pZ information",
 			"RELATIONSHIP_UNDRAWN pN warning",
+			"RELATIONSHIP_UNDRAWN pV warning",
 			"RELATIONSHIP_BACKWARDS e3 information",
 			"RELATIONSHIP_UNSUPPORTED e4 information",
 			"RELATIONSHIP_UNSUPPORTED e7 information",
@@ -264,6 +287,18 @@ test("the parts that use one shared part make one finding on it, one resolved pi
 	expect(sender?.map((piece) => [piece.from, piece.kind, piece.symbol])).toEqual([
 		["pD", "call", "./sender"],
 	]);
+});
+
+test("a use as a value, a constant read, an instanceof test or a name passed on, makes nothing undrawn and still supports an anchor, while a construction is undrawn", () => {
+	// The checker reads the limits and passes the address on: only the guard's construction reaches them undrawn.
+	const limits = finding("RELATIONSHIP_UNDRAWN", "pV")?.evidence;
+	expect(limits?.map((piece) => [piece.from, piece.kind, piece.symbol])).toEqual([
+		["pG", "call", "ShelfError"],
+	]);
+	expect(
+		finding("RELATIONSHIP_UNDRAWN", "pA")?.evidence?.some((piece) => piece.from === "pC"),
+	).toBe(false);
+	expect(outcome.findings.filter((each) => each.subject?.id === "e11")).toEqual([]);
 });
 
 test("with no language server, a use of a name the same file defines is a candidate, so its finding is information, and the missing server is said once", () => {

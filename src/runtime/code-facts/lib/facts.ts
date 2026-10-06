@@ -102,6 +102,14 @@ interface Reference {
 	 * value, so a lookup by name may take it for a type (csharp-resolution.ts).
 	 */
 	readonly asType?: true;
+	/**
+	 * A use at run time that runs none of the name's code (runs.ts): it reads
+	 * a constant, passes the name on, or tests a value against a class, as
+	 * `instanceof` and a catch do. It is call evidence that supports a
+	 * relationship, and the code check never calls a dependency undrawn on it
+	 * alone (ADR 0046, amended by TASK-367.28).
+	 */
+	readonly asValue?: true;
 }
 
 /** What one import names: `default`, `*` for the whole module, or an exported name. */
