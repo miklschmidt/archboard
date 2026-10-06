@@ -148,10 +148,41 @@ So it skips an address inside a remote module (the registry, Git) as
 `module-not-read`. To read that module, name a plan JSON with
 `check --code --plan <file>`: what `terraform show -json` or `tofu show -json`
 wrote into the root module's directory. A reference that joins two such parts
-is configured-path evidence, which `call` does not accept. The reference can
-go through the variables and outputs of a module. The call of a remote module
-reaches what its arguments name. Anchor such a relationship at the `.tf` file
-and the address that the referring declaration names.
+is evidence. The reference can go through the variables and outputs of a
+module, and the call of a remote module reaches what its arguments name. What
+the reference proves depends on the provider of the declaration that writes it
+and on the argument that holds it. For AWS (`aws_`), Google Cloud
+(`google_`), Azure (`azurerm_`) and Kubernetes (`kubernetes_`, `helm_`):
+
+- A trigger, a subscription and an event mapping are `call` evidence. Some
+  declarations join two others: `aws_lambda_event_source_mapping`,
+  `aws_sns_topic_subscription`, `google_pubsub_subscription` and
+  `azurerm_eventgrid_event_subscription` are examples. Such a declaration is
+  evidence from the part that sends to the part whose work it starts. It is
+  never evidence to or from the joining declaration itself. A Cloud Function's
+  `event_trigger` runs from its topic to the function.
+- A listener, a target group, a network rule, a Service selector and an
+  environment value (`environment { variables }`, `app_settings`,
+  `environment_variables`, an `env` block's `value`) are `configured-path`
+  evidence.
+- A grant is `permission` evidence: `aws_lambda_permission`, an IAM policy or
+  its attachment, a `google_*_iam_member`, `azurerm_role_assignment`, a
+  NetworkPolicy.
+- Every other reference is `provisioning` evidence and is never reported as an
+  undrawn relationship: the role a function runs as, its log group, its
+  subnets, `depends_on`, `count` and `for_each`.
+
+A reference of any other provider is `configured-path` evidence. `call`
+accepts only call evidence, and `http`, `event`, `queue` and `data` accept call
+and configured-path evidence. To anchor a relationship that a joining
+declaration makes, cite its `.tf` file and its address, such as
+`aws_lambda_event_source_mapping.jobs`: it need not be in the code of either
+end. Otherwise cite the `.tf` file and the address that the referring
+declaration names. Some modules take their event sources through a map that
+`for_each` reads (`each.value`), as terraform-aws-modules' Lambda module
+does. Such a module names no source that the check can follow. Anchor such a relationship
+at the `.tf` file of the module call and the address that its argument names,
+such as `aws_sqs_queue.jobs`.
 
 Bind a docker-compose service with the symbol `services.<name>`. The path is
 the file that compose reads in that directory: `compose.yaml`, `compose.yml`,
