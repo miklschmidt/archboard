@@ -1523,6 +1523,104 @@ interpreter wrote a mark each time it ran.
 - roslyn-ls 5.11.0, named in the `csharp` entry, answered an empty list, so
   the use stayed a candidate and no skip said why.
 
+#### Resolving C, C++ and Objective-C candidates with clangd
+
+TASK-367.15 measured clangd 21.1.8 (nixpkgs `clang-tools`) on 2026-10-06 in
+scratch checkouts, at a load average of 3 to 7 on 24 cores. Nothing was added
+to the repository. A scratch script ran the real `checkCode` over a temporary
+vault, with the table naming clangd or turning `c` off.
+
+What clangd does:
+
+- It refuses a question about a file that it has not opened (`trying to get
+AST for non-added document`), so the row opens each file. A definition
+  request sent at once after `didOpen` waits until clangd has parsed the file:
+  on Redis `db.c` the answer came 80 ms after the open, after the preamble of
+  `server.h`. So no settle request is needed for the parse.
+- It takes a file's language from its compile command, not from the
+  `languageId`: a `.h` opened as `c`, `cpp` or `objective-c` gave the same
+  outline and the same answer. A header gets the command of a source file
+  beside it.
+- With the background index off, an answer depends on which files the pass
+  opened before. `ledger_post` in `main.c` named the declaration in
+  `ledger.h` until `ledger.c` had been opened, and then named the definition
+  in `ledger.c`. Closing `ledger.c` did not undo that. `--index` is an
+  obsolete flag that turns nothing off. So the check keeps the background
+  index on, which indexes every file that `compile_commands.json` lists before
+  it answers.
+- The background index is written into `.cache/clangd/index` beside the
+  database it reads. With `--compile-commands-dir` naming a directory of the
+  server's own that holds a copy of the database, the index was written there,
+  and nothing was written into the checkout or into `~/.cache/clangd`.
+  clangd reports the index as the work-done progress
+  `backgroundIndexProgress`: a begin, a report `0/1` for the task that lists
+  the database, a report `0/N`, and an end once every file is indexed. The
+  check waits for that end after its first open. A database with no command,
+  or one that is not valid, starts no index and reports no progress, so such
+  a database is `language-server-unready`.
+- Index time: Redis (`7f44037`, 303 commands from `bear -- make`) 1.4 to
+  1.6 s, at low or normal thread priority alike; libuv (`954c1d1`, 35
+  commands from CMake) and leveldb (`7ee830d`, 39 commands) about 0.1 s.
+- Objective-C on Linux, with `-x objective-c -fobjc-runtime=gnustep-2.0` and
+  no SDK: a send to a method that a superclass implements, a send to `super`,
+  a send to an `id` and `[[Ledger alloc] init]` each named the
+  `@implementation` method in another `.m` file. A file that imports a
+  missing `<Foundation/Foundation.h>` was parsed past the import. clangd's
+  outline puts an Objective-C method's name at its sign (`-`), while a
+  definition answer names its first selector part, so the outline rule
+  accepts a method whose sign starts the line.
+
+What clangd runs, loads and writes, measured with a database whose commands
+name a script as the compiler, `-fplugin=`, `-Xclang -load`, `-fpass-plugin=`
+(each a library that writes a mark when it loads), `-MD -MF`, `-o`,
+`-save-temps`, `-ftime-trace`, `--serialize-diagnostics`,
+`-fcrash-diagnostics-dir` and `-fprofile-instr-generate`, each pointing into
+the checkout:
+
+- Without `--query-driver` it never ran the compiler script, in `--check`
+  mode, as a server or while it indexed.
+- It loaded no plugin. clang loads plugins when it runs its own front end,
+  and clangd parses without it.
+- It wrote none of those files.
+- It did write the module cache that `-fmodules-cache-path` names, into the
+  checkout, for an Objective-C file that imports a module (`@import Base;`).
+  So the copy of the database drops each `-fmodules-cache-path` and adds one
+  in the server's own directory.
+- A `.clangd` file in the checkout and `~/.config/clangd/config.yaml` were
+  both loaded by default. A `.clangd` can add flags, turn the background
+  index on, load an index file from any path and name a remote index server,
+  which a clangd built with remote index support reaches over the network.
+  This build has no remote index support (`Features: linux`), so that part
+  is read from clangd's documentation. `--enable-config=false` loaded
+  neither file. There is no flag that turns off only the project's file.
+  `-fplugin=` added through `.clangd` loaded no plugin either.
+- A repeated flag is allowed, and the last one wins: `--log=error
+--log=verbose` logged verbosely. So the check adds its flags after the
+  `args` of an entry, and they win.
+- On NixOS only the compiler wrapper knows where the C and C++ standard
+  headers are. Without `--query-driver`, clangd parsed leveldb's
+  `db_bench.cc` without `<atomic>` and `<cstdio>`, and `DB::Open` stayed a
+  candidate.
+
+The real `checkCode`, warm passes in one process:
+
+| Checkout and board                              | No server | clangd            | Moved from candidate or no evidence to resolved                                                                                                                                                              |
+| ----------------------------------------------- | --------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| libuv, 8 parts in `src` and `src/unix`, 4 edges | 92 ms     | 555 to 772 ms     | `uv__io_start` (anchor of Stream to Core) now holds; four undrawn warnings and one backwards: `uv__socket`, `uv__close` and others in `core.c`, `uv__write_cancel` in `stream.c`, `uv__tcp_close` in `tcp.c` |
+| libuv with `build/` moved away                  | 93 ms     | 93 ms             | none; `language-server-unready` once for the checkout                                                                                                                                                        |
+| leveldb, 8 parts, 4 edges                       | 93 ms     | 283 to 482 ms     | `WriteBatchInternal::Append` (anchor of DBImpl to WriteBatch) now holds; `Env::Default` in `env_posix.cc` became an undrawn warning                                                                          |
+| Redis, 8 parts, 3 edges                         | 146 ms    | 3,080 to 4,207 ms | `LFUDecrAndReturn` (in `evict.c`) and `clusterPromoteSelfToMaster` (in `cluster_legacy.c`) anchors now hold; five more undrawn warnings, such as `emptyData` and `selectDb` in `db.c`                        |
+| Objective-C sample, 4 parts, 3 edges            | 98 ms     | 132 to 226 ms     | the anchor `balance`, sent to an `id`, is judged at `Ledger.m` (a mismatch warning)                                                                                                                          |
+
+Each moved finding was read against its source line: every function named is
+defined in the file of the part that the evidence reaches. Before clangd, a
+use that an include led only to a declaration in a header whose own source
+file does not define it was a candidate, and where that header was the using
+part's own pair, it was no evidence at all. Redis declares nearly everything
+in `server.h`, so its passes ask many such uses, which is most of the 3 s.
+Every pass left no clangd process and no temporary directory, and `git status
+--ignored` showed nothing new in any checkout.
+
 #### Swift and Nix have no upstream WebAssembly file on npm
 
 Swift: the npm package `tree-sitter-swift` stops at 0.7.1 and has no `.wasm`.

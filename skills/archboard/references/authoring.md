@@ -515,6 +515,14 @@ do not build a package to clear it. C# runs csharp-ls only from an entry that
 the user writes, and says `language-server-unready` once for a checkout with no
 `.sln`, `.slnx` or `.csproj` file. Python says it once for a checkout whose
 `.venv` holds an interpreter that Git tracks, because the check never runs it.
+C, C++ and Objective-C use clangd where the machine has one. clangd reads the
+checkout's `compile_commands.json`, so the answer says
+`language-server-unready` once for a checkout with none, and keeps the
+candidates. With it, clangd names the definition of a function that a header
+only declares, such as one that Redis declares in `server.h` and defines in
+`evict.c`. Unless the user asks, do not generate the file to clear it: for
+CMake that is `cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`, which builds
+nothing, and other build tools need `bear -- make`, which builds.
 
 A relationship across a network hop shows no evidence in code alone. An
 example is an `http` call to another service. So `check --code` joins two
