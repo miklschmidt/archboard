@@ -23,6 +23,22 @@ know whether sourcekit-lsp can answer. So it reads the package's
 `.sourcekit-lsp/config.json` and looks for an index unit under `.build`. It
 reads nothing else there.
 
+Amended by TASK-367.11 and TASK-367.12 (2026-10-06): the refinement of
+TASK-367 #4 said that C# and Swift keep their candidates without a language
+server. As built, C# looks a name up over the namespaces of a project, and
+Swift looks it up over the files of a package's module. Each lookup finds a
+declaration by its address, as an import path names a file. So that evidence
+is resolved without a language server. A use that the lookup cannot place,
+such as a member of a value, still needs a language server.
+
+Amended by TASK-367.09 (2026-10-06): the refinement of TASK-367.09 #1 matched
+an include that resolves nowhere by its file name, as a candidate. That is not
+built. On Redis, 393 of the 1,686 includes that resolve nowhere would match
+one file by name. 191 of those are system headers such as `<stdint.h>`, which
+would match jemalloc's own copies. An include that resolves nowhere reaches no
+file of the checkout. A checkout that needs exact includes lists them in
+`compile_commands.json`.
+
 ## Context
 
 A board makes claims about code. Evidence rule 3 of the consumer skill makes an
