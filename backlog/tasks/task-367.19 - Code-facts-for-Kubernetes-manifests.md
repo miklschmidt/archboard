@@ -1,11 +1,11 @@
 ---
 id: TASK-367.19
 title: Code facts for Kubernetes manifests
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:16'
-updated_date: '2026-10-06 17:01'
+updated_date: '2026-10-06 17:02'
 labels:
   - code-check
 dependencies:
@@ -26,10 +26,10 @@ Kubernetes manifests declare how traffic reaches a workload and which services a
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Workloads, Services, Ingresses, Gateway routes, NetworkPolicies, ConfigMaps and Secrets are definitions, addressed as kind and name
-- [ ] #2 A Service selector to a workload and an environment value that names a Service are configured paths, a route to a Service is a call, and a NetworkPolicy that allows traffic is a permission
-- [ ] #3 Multi-document YAML files work, and Secret values are never read
-- [ ] #4 Parts bound to manifests get the anchor, binding and undrawn checks
+- [x] #1 Workloads, Services, Ingresses, Gateway routes, NetworkPolicies, ConfigMaps and Secrets are definitions, addressed as kind and name
+- [x] #2 A Service selector to a workload and an environment value that names a Service are configured paths, a route to a Service is a call, and a NetworkPolicy that allows traffic is a permission
+- [x] #3 Multi-document YAML files work, and Secret values are never read
+- [x] #4 Parts bound to manifests get the anchor, binding and undrawn checks
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -82,3 +82,9 @@ Gate after the fixes (shared tree): lint 0 and type-check 0 on re-run (first run
 
 Module lane re-run after the other agent's Nix fix: 4244 pass, 0 fail.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The code check now reads Kubernetes manifests: every named object of every document and List is a definition addressed as Kind/name, a Service selector to the workloads it picks and an environment value or envFrom that names a Service or key are configured paths, an Ingress or route backend is a call, and a NetworkPolicy is a permission from sender to receiver. Only Secret key names are read, never a value, and a Helm template (parsed or not) is skipped as expression-not-followed rather than read as a manifest. A tie between two equally near declarations gives no evidence. Verified by kubernetes-facts.test.ts and kubernetes-check.test.ts (pass with --isolate, each fix mutation-checked) and on microservices-demo, kubernetes/examples, kustomize and argocd-example-apps.
+<!-- SECTION:FINAL_SUMMARY:END -->
