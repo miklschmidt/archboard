@@ -10,6 +10,10 @@
 // its code and are not its code at run time, so they are left out, unless the
 // directory is itself one of tests.
 //
+// A C or C++ file comes with its pair (TASK-367.09): a part bound to
+// `ledger.c` also owns `ledger.h`, and one bound to the header also owns the
+// source file, where no part binds that file itself.
+//
 // A definition that a tool merges from several files, such as a compose
 // service and its block in an override file, is the part's in every one of
 // them (TASK-367.20).
@@ -161,7 +165,7 @@ function locateTarget(
 ): Located {
 	const target = resolveLocalCodeTarget(binding, snapshot);
 	if (!target.ok) return { status: "unread" };
-	const readable = readableOf(target, checkout.files);
+	const readable = readableOf(target, checkout.files, true);
 	if (readable.status === "files") {
 		const where = relativeTo(target.root, target.target);
 		return { status: "located", checkout, target, files: readable.files, where };
@@ -261,6 +265,22 @@ async function partCodeOf(node: SemanticNode, reading: PartReading): Promise<Par
 }
 
 /**
+ * The parts bound to a C or C++ file, by each file of its pair, which they own
+ * where no part binds that file itself.
+ * @param parts The parts.
+ * @returns The parts, by the files of their pairs.
+ */
+function pairsOf(parts: readonly ReadPart[]): Map<string, ReadPart[]> {
+	const pairs = new Map<string, ReadPart[]>();
+	for (const part of parts) {
+		const { grain } = part;
+		const pair = grain.kind === "file" ? part.files.filter((file) => file !== grain.file) : [];
+		for (const file of pair) pairs.set(file, [...(pairs.get(file) ?? []), part]);
+	}
+	return pairs;
+}
+
+/**
  * The bound code of every part of one board.
  * @param nodes The board's parts.
  * @param reading The pass.
@@ -287,5 +307,6 @@ export {
 	type SkippedPart,
 	definitionIn,
 	isTestPath,
+	pairsOf,
 	partCodesOf,
 };

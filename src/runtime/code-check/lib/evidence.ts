@@ -29,6 +29,7 @@
 
 import {
 	definitionIn,
+	pairsOf,
 	type PartCode,
 	type ReadPart,
 	type RepoCheckout,
@@ -106,6 +107,7 @@ function ownersOf(parts: readonly ReadPart[]): Owners {
 		else if (grain.kind === "file") addTo(files, grain.file, part);
 		else directories.push(part);
 	}
+	for (const [file, owners] of pairsOf(parts)) if (!files.has(file)) files.set(file, owners);
 	return { symbols, files, directories };
 }
 
@@ -305,7 +307,22 @@ async function reachedBy(
 		return targetReached(repo, facts, reference.symbol, reference.target);
 	}
 	if (imported.has(reference.symbol.split(".")[0] ?? "")) return undefined;
+	const site = await includedSiteOf(repo, facts, reference.symbol);
+	if (site !== undefined) return { to: ownersOfSite(repo.owners, site), resolution: "resolved" };
 	return serverReached(repo, facts, reference, imported);
+}
+
+/**
+ * Where a use in a C or C++ file is defined in another file, through its includes, resolved.
+ * @param repo The repository's reading.
+ * @param facts The file's facts.
+ * @param symbol The use as the file spells it.
+ * @returns The site, or undefined when the file has no include or no included header defines it.
+ */
+async function includedSiteOf(repo: RepoReading, facts: SyntaxFacts, symbol: string) {
+	if (!facts.imports.some((found) => found.inScope === true)) return undefined;
+	const site = await siteOf(repo, facts.path, symbol);
+	return site?.path === facts.path ? undefined : site;
 }
 
 /**
