@@ -1,5 +1,6 @@
-// How long the code check waits for Git (ADR 0046). The check runs only on a
-// request, so this pulls against a request that waits, never against a timer.
+// How long the code check waits for Git and for language servers (ADR 0046).
+// The check runs only on a request, so these pull against a request that
+// waits, never against a timer.
 
 /**
  * Outer bound for the one `git ls-files` with which the code check lists the
@@ -13,4 +14,23 @@
  */
 const CODE_CHECK_GIT_TIMEOUT_MS = 60_000;
 
-export { CODE_CHECK_GIT_TIMEOUT_MS };
+/**
+ * How long one pass of the code check waits for a language server it started
+ * (TASK-367.13). Each one bounds a server that hangs, never one that is slow,
+ * and a server that runs past one is stopped and said once as failed, so a
+ * pass waits for a hung server at most once. The request that started the
+ * pass, or a stop, ends every wait sooner and stops the server at once.
+ *
+ * - `startMs`: from the spawn to the answer of `initialize`. The `tsc --lsp`
+ *   of TypeScript 7.0.2 answered it in 3 to 4 ms on 2026-10-06, before it
+ *   reads any project.
+ * - `requestMs`: one definition request. The first one also loads the
+ *   project: 240 to 300 ms for this repository's 8,733 files on 2026-10-06,
+ *   and 200 more requests together took 20 to 25 ms. A project many times
+ *   larger stays well inside it.
+ * - `stopMs`: from `shutdown` to the end of the process, after which the
+ *   server is killed. `tsc --lsp` took 19 to 27 ms.
+ */
+const LANGUAGE_SERVER_TIMEOUTS = { startMs: 10_000, requestMs: 30_000, stopMs: 2000 } as const;
+
+export { CODE_CHECK_GIT_TIMEOUT_MS, LANGUAGE_SERVER_TIMEOUTS };
