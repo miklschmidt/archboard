@@ -82,7 +82,7 @@ function findingLines(finding: CodeFinding): string[] {
 
 /**
  * What a skip is about: a subject, a whole board, a whole checkout, or a
- * whole language, such as one with no language server on this machine.
+ * whole language that no checkout names.
  * @param skip The skip.
  * @returns The noun.
  */
@@ -95,8 +95,9 @@ function skippedNoun(skip: CodeCheckSkip): string {
 /**
  * What a line names for the skips of one reason: each checkout once, since a
  * reason can be said once for each project of a checkout, such as a Swift
- * package with no index; or each language with why. Skips of subjects and
- * boards name nothing.
+ * package with no index; or each language with why. A checkout with no server
+ * for a language says which language and what configures one, since that is
+ * its whole answer. Skips of subjects and boards name nothing.
  * @param same The skips of one reason.
  * @param noun What they are about.
  * @returns The names.
@@ -104,6 +105,9 @@ function skippedNoun(skip: CodeCheckSkip): string {
 function namesOf(same: readonly CodeCheckSkip[], noun: string): string[] {
 	if (noun === "language") return same.flatMap((skip) => skip.detail ?? []);
 	if (noun !== "checkout") return [];
+	if (same.every((skip) => skip.reason === "language-server-missing")) {
+		return same.map((skip) => `${skip.repo}: ${skip.detail}`);
+	}
 	return [...new Set(same.flatMap((skip) => skip.repo ?? []))];
 }
 
