@@ -88,7 +88,7 @@ function stated(
 		ok: false,
 		status: 400,
 		code: "BAD_REQUEST",
-		error: `"${name}" was stated but names one value; state it once or leave it out`,
+		error: `"${name}" was stated empty or more than once; state it once with a value, or leave it out.`,
 	};
 }
 
