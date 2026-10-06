@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:19'
-updated_date: '2026-10-06 12:27'
+updated_date: '2026-10-06 12:50'
 labels:
   - history
   - cli
@@ -76,4 +76,16 @@ Two parts that change in the same commits depend on each other, whether or not t
 Dogfood: the proposals Archboard server@TASK-369.04 and Command interface@TASK-369.04 already state what was built (three responsibilities, nothing else in semantic compare); they are left as drafts for the closing step to adopt. ./bin/dogfood check reports no diagnostics. Gate (2026-10-06): lint 0, fmt:check 0, type-check 0, test:modules 4046 pass, test:system 192 pass, test:repository 20 pass; bun run eval:skill check: 20 scenarios, 20 fixtures, 14 coverage parts. Commits: 28f849d71 (proposals), ae06ac9f3 (feature), 4a6095740 (skill, evals, audit).
 
 test:serial-browser exit 0 (after build:frontend).
+
+## Independent review (2026-10-06)
+
+couplePairs matches code-maat (logical_coupling.clj, coupling_algos.clj) and ADR 0045: at least 5 shared counted commits, degree as shared over the mean of the two counts, the 30% test on the exact ratio, the degree cut as code-maat's (int coupling), large commits out before counting (module-by-revs also counts after the size filter), one repository per pair, overlapping bound paths left out, and the split of the one walk. Re-run on the dogfood vault: Semantic renderer reads Architecture painter 29, Sequence painter 21, 11 shared, 44%, unjoined; an independent git log --follow gives the same, and at 048312ee it gives 24, 15, 7 shared, 35% (20, 13, 6 shared, 36% without following the move in 853a8a462). Command interface leaves Claims and Panes out: 12 shared, 10 of them large (50 to 864 files), 2 counted, 22%. Flask 3.0.0 (S18) has no pair: src/flask/app.py shares at most 3 counted commits with another bound file.
+
+Decisions 4 and 5 kept and recorded as an amendment of ADR 0045 (7f6bca3da). On the dogfood vault on 2026-10-06, decision 4 changes no pair (every call is also a relationship, as the consumer skill asks), and decision 5 changes one: Commands and Server client.
+
+Fixes: 6dedeead0 (the coupling test pinned neither the cut degree nor the exact 30% edge; the CLI test's degree 41 let the hotspot assertion pass on the coupling line), 7f6bca3da (ADR amendment, schema description of unjoined), d01828714 (read.md step 6 names coupled pairs; the coverage row says S18 grades only an empty list and nothing grades the unjoined reading; audit result), 55ada04eb (Locality on Command interface said it lists only unjoined pairs; both proposals carry their board's scope as summary; adopted, Archboard server version 54, Command interface version 39).
+
+Footprint against base 2711b8a8c: History lens and Locality are named and changed. Locality route is named and not changed: the route passes the lens's answer through, so its file did not change, but the answer it serves now holds change coupling, and its responsibility says so. Commands changed through ae06ac9f3 (semantic-locality.ts, named as Locality) and 6dedeead0 (a test under src/cli/commands/tests), nothing else inside it. Archboard server, Code check route, Code check and Vault check changed only through TASK-367.05 and TASK-367.24 commits. Behind after adoption: Skill evaluation's Evaluation inputs are behind by 4a6095740 and d01828714 (S18's prompt and feature, the coverage row); the board's parts still say what they do, so it stays right. ./bin/dogfood check reports no diagnostics.
+
+Review gate (2026-10-06, after 55ada04eb): lint 0, fmt:check 0, type-check 0 (both failed once on other agents' work in progress in src/runtime/code-check and web-tree-sitter types, and passed on the next run), test:modules 4068 pass, test:system 192 pass, test:repository 20 pass, build:frontend 0, test:serial-browser exit 0 (24 pass); bun run eval:skill check: 20 scenarios, 20 fixtures, 14 coverage parts; skill-evaluation and install-targets tests 242 pass.
 <!-- SECTION:NOTES:END -->
