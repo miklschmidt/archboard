@@ -11,8 +11,10 @@
 // read as text is not kept: its facts are its bytes, which the pass reads
 // anyway.
 //
-// What depends on other files, an import resolved through `tsconfig.json`, is
-// resolved again on each pass from the cached facts. A pass reads a file only
+// Which adapter reads a file is the adapter table's (adapters.ts). What
+// depends on other files, an import resolved through `tsconfig.json` or a
+// Python project's roots, is resolved again on each pass from the cached
+// facts, by the adapter's own resolver. A pass reads a file only
 // where its symbolic links lead to a file the caller lists for its checkout,
 // and never Terraform state, variable files or `.terraform`. Parsing is
 // synchronous, so parses run one at a time, also for files read together, and
@@ -21,28 +23,23 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import type { FileFacts, ParsedFacts, SyntaxFacts, Target } from "@/runtime/code-facts/lib/facts";
-import { grammars, type GrammarName } from "@/runtime/code-facts/lib/grammars";
-import {
-	createModuleResolver,
-	type CheckoutFiles,
-	type ModuleResolver,
-} from "@/runtime/code-facts/lib/module-resolution";
+import { adapterOf, type AdapterReading } from "@/runtime/code-facts/lib/adapters";
+import type {
+	FileFacts,
+	ImportResolver,
+	ParsedFacts,
+	ResolvedImport,
+	SyntaxFacts,
+	Target,
+} from "@/runtime/code-facts/lib/facts";
+import { grammar } from "@/runtime/code-facts/lib/grammars";
+import type { CheckoutFiles } from "@/runtime/code-facts/lib/module-resolution";
 import { neverRead } from "@/runtime/code-facts/lib/never-read";
-import { typeScriptFacts } from "@/runtime/code-facts/lib/typescript-adapter";
 
-/** The grammar of each extension an adapter reads; every other file is read as text. */
-const GRAMMAR_OF: Readonly<Record<string, GrammarName>> = {
-	".ts": "typescript",
-	".mts": "typescript",
-	".cts": "typescript",
-	".tsx": "tsx",
-};
-
-/** One cache entry: the hash of the bytes read, the grammar, and their facts. */
+/** One cache entry: the hash of the bytes read, the grammar file, and their facts. */
 interface Entry {
 	readonly hash: bigint | number;
-	readonly grammar: GrammarName;
+	readonly grammar: string;
 	readonly facts: ParsedFacts;
 }
 
@@ -88,25 +85,63 @@ function yieldToEventLoop(): Promise<void> {
 }
 
 /**
+ * Where a reference leads through a resolved import: the imported file, and
+ * the name there with the rest of the reference's spelling (`*` for the
+ * whole module).
+ * @param symbol The reference's spelling.
+ * @param local The import's local name the spelling starts with.
+ * @param found The resolved import.
+ * @returns The target, or undefined when the import leads to no file.
+ */
+function targetOf(
+	symbol: string,
+	local: string,
+	found: ResolvedImport | undefined,
+): Target | undefined {
+	const name = found?.names.find((each) => each.local === local);
+	if (found?.resolved === undefined || name === undefined) return undefined;
+	return { path: found.resolved, symbol: nameThere(symbol, local, name.imported) };
+}
+
+/**
+ * A reference's name in the file an import leads to: the imported name with
+ * the rest of the spelling, or the rest alone when the import is the whole
+ * module, and `*` when nothing remains.
+ * @param symbol The reference's spelling.
+ * @param local The import's local name the spelling starts with.
+ * @param imported What the import names in the file.
+ * @returns The name there.
+ */
+function nameThere(symbol: string, local: string, imported: string): string {
+	const rest = symbol === local ? [] : symbol.slice(local.length + 1).split(".");
+	const names = imported === "*" ? rest : [imported, ...rest];
+	return names.join(".") || "*";
+}
+
+/**
  * Where each reference and import of a file leads, for this pass.
  * @param parsed The cached facts.
  * @param file The file, relative to its checkout.
- * @param resolver The checkout's resolver.
+ * @param adapter The adapter that read it.
+ * @param resolver The checkout's resolver of the adapter's imports.
  * @returns The facts.
  */
-function resolved(parsed: ParsedFacts, file: string, resolver: ModuleResolver): SyntaxFacts {
-	const imports = parsed.imports.map((found): SyntaxFacts["imports"][number] => {
-		const to = resolver.resolve(file, found.specifier);
-		return to === undefined ? found : { ...found, resolved: to };
-	});
+function resolved(
+	parsed: ParsedFacts,
+	file: string,
+	adapter: SyntaxFacts["adapter"],
+	resolver: ImportResolver,
+): SyntaxFacts {
+	const imports = parsed.imports.map((found) => resolver.resolve(file, found));
 	const references = parsed.references.map(({ through, ...reference }) => {
-		const to = through === undefined ? undefined : imports[through.import]?.resolved;
-		const target: Target | undefined =
-			to === undefined || through === undefined ? undefined : { path: to, symbol: through.symbol };
+		const target =
+			through === undefined
+				? undefined
+				: targetOf(reference.symbol, through.local, imports[through.import]);
 		return target === undefined ? reference : { ...reference, target };
 	});
 	return {
-		adapter: "typescript",
+		adapter,
 		path: file,
 		definitions: parsed.definitions,
 		references,
@@ -198,7 +233,7 @@ interface PassContext {
  * @param context The cache, its queue and the pass's signal.
  * @param absolute The real file.
  * @param bytes Its bytes.
- * @param grammar The grammar that reads it.
+ * @param reading The adapter and the grammar that read it.
  * @param stats The pass's counts.
  * @returns The facts.
  */
@@ -206,37 +241,37 @@ async function parsedFacts(
 	context: PassContext,
 	absolute: string,
 	bytes: Uint8Array,
-	grammar: GrammarName,
+	reading: AdapterReading,
 	stats: PassStats,
 ): Promise<ParsedFacts> {
 	const hash = Bun.hash(bytes);
 	const entry = context.cache.get(absolute);
-	if (entry?.hash === hash && entry.grammar === grammar) {
+	if (entry?.hash === hash && entry.grammar === reading.grammar.wasm) {
 		stats.cached += 1;
 		return entry.facts;
 	}
 	const facts = await context.serial(() => {
 		context.signal.throwIfAborted();
-		return parse(bytes, grammar);
+		return parse(bytes, reading);
 	});
-	context.cache.set(absolute, { hash, grammar, facts });
+	context.cache.set(absolute, { hash, grammar: reading.grammar.wasm, facts });
 	stats.parsed += 1;
 	return facts;
 }
 
 /**
- * Parse a file's bytes with a grammar and read its facts.
+ * Parse a file's bytes with its adapter's grammar and read its facts.
  * @param bytes The bytes.
- * @param grammar The grammar.
+ * @param reading The adapter and its grammar.
  * @returns The facts.
  * @throws {Error} When the grammar gives no tree, which only a cancelled parse does.
  */
-async function parse(bytes: Uint8Array, grammar: GrammarName): Promise<ParsedFacts> {
-	const loaded = (await grammars()).get(grammar);
-	const tree = loaded?.parser.parse(new TextDecoder().decode(bytes)) ?? null;
-	if (loaded === undefined || tree === null) throw new Error(`The ${grammar} grammar gave no tree`);
+async function parse(bytes: Uint8Array, reading: AdapterReading): Promise<ParsedFacts> {
+	const loaded = await grammar(reading.grammar);
+	const tree = loaded.parser.parse(new TextDecoder().decode(bytes));
+	if (tree === null) throw new Error(`The ${reading.adapter.name} grammar gave no tree`);
 	try {
-		return typeScriptFacts(tree, loaded);
+		return reading.adapter.facts(tree, loaded);
 	} finally {
 		tree.delete();
 	}
@@ -251,20 +286,22 @@ function createPass(context: PassContext): FactsPass {
 	const { signal } = context;
 	const stats: PassStats = { read: 0, parsed: 0, cached: 0 };
 	const reads = new Map<string, Promise<FileFacts | undefined>>();
-	const resolvers = new Map<string, ModuleResolver>();
+	const resolvers = new Map<string, ImportResolver>();
 	/**
-	 * The resolver of a checkout, made once in a pass.
+	 * The resolver of one adapter's imports in a checkout, made once in a pass.
 	 * @param checkout The checkout.
+	 * @param reading The adapter.
 	 * @returns Its resolver.
 	 */
-	const resolverOf = (checkout: CheckoutFiles): ModuleResolver => {
-		let resolver = resolvers.get(checkout.root);
+	const resolverOf = (checkout: CheckoutFiles, reading: AdapterReading): ImportResolver => {
+		const key = `${checkout.root}\0${reading.adapter.name}`;
+		let resolver = resolvers.get(key);
 		if (resolver === undefined) {
-			resolver = createModuleResolver(checkout, (relative) => {
+			resolver = reading.adapter.resolver(checkout, (relative) => {
 				const target = listedTarget(checkout, relative);
 				return target === undefined ? undefined : fs.readFileSync(target.absolute, "utf8");
 			});
-			resolvers.set(checkout.root, resolver);
+			resolvers.set(key, resolver);
 		}
 		return resolver;
 	};
@@ -283,13 +320,13 @@ function createPass(context: PassContext): FactsPass {
 		if (target === undefined) return undefined;
 		const bytes = await Bun.file(target.absolute).bytes();
 		stats.read += 1;
-		const extension = path.posix.extname(target.relative);
-		const grammar = GRAMMAR_OF[extension];
-		if (grammar === undefined) {
+		const reading = adapterOf(target.relative);
+		if (reading === undefined) {
 			return { adapter: "text", path: target.relative, text: new TextDecoder().decode(bytes) };
 		}
-		const parsed = await parsedFacts(context, target.absolute, bytes, grammar, stats);
-		return resolved(parsed, target.relative, resolverOf(checkout));
+		const parsed = await parsedFacts(context, target.absolute, bytes, reading, stats);
+		const resolver = resolverOf(checkout, reading);
+		return resolved(parsed, target.relative, reading.adapter.name, resolver);
 	};
 	return {
 		stats,

@@ -1,0 +1,5 @@
+[project]
+name = "shop"
+
+[tool.setuptools.packages.find]
+where = ["lib"]

@@ -1,17 +1,17 @@
 // The grammars code facts parse with (ADR 0046): `web-tree-sitter` and the
 // published `.wasm` file of each grammar, loaded from `node_modules` with no
-// build step (ADR 0014), and the query file each adapter reads captures by.
+// build step (ADR 0014), and the query file an adapter reads captures by.
+// Which grammar and query read which file is the adapter table's
+// (adapters.ts).
 //
-// Each grammar loads once per process. A new grammar or query needs a restart
-// (ADR 0021), and a restart starts with an empty cache. Parsing is
-// synchronous; the reader yields to the event loop between files.
+// Each grammar loads once per process, the first time a pass reads a file of
+// it. A new grammar or query needs a restart (ADR 0021), and a restart starts
+// with an empty cache. Parsing is synchronous; the reader yields to the event
+// loop between files.
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Language, Parser, Query } from "web-tree-sitter";
-
-/** A grammar code facts parses with. */
-type GrammarName = "typescript" | "tsx";
 
 /** One grammar, ready: a parser set to its language, and its compiled query. */
 interface Grammar {
@@ -19,51 +19,50 @@ interface Grammar {
 	readonly query: Query;
 }
 
-/** Every grammar code facts loads. */
-const GRAMMARS: readonly GrammarName[] = ["typescript", "tsx"];
+/** A grammar's `.wasm` file as its package publishes it, and the query file beside this one. */
+interface GrammarSource {
+	readonly wasm: string;
+	readonly query: string;
+}
 
-/** The `.wasm` file of each grammar, as its package publishes it. */
-const WASM: Readonly<Record<GrammarName, string>> = {
-	typescript: "tree-sitter-typescript/tree-sitter-typescript.wasm",
-	tsx: "tree-sitter-typescript/tree-sitter-tsx.wasm",
-};
-
-/** The query file each grammar compiles. TypeScript and TSX share one. */
-const QUERY: Readonly<Record<GrammarName, string>> = {
-	typescript: "typescript.scm",
-	tsx: "typescript.scm",
-};
-
-let loaded: Promise<ReadonlyMap<GrammarName, Grammar>> | undefined;
+let runtime: Promise<void> | undefined;
+const loaded = new Map<string, Promise<Grammar>>();
 
 /**
  * Load one grammar and compile its query.
- * @param name The grammar.
+ * @param source The grammar's files.
  * @returns It, ready to parse.
  */
-async function loadGrammar(name: GrammarName): Promise<[GrammarName, Grammar]> {
-	const language = await Language.load(fileURLToPath(import.meta.resolve(WASM[name])));
-	const source = readFileSync(new URL(`./${QUERY[name]}`, import.meta.url), "utf8");
+async function loadGrammar(source: GrammarSource): Promise<Grammar> {
+	runtime ??= Parser.init().catch((error: unknown) => {
+		runtime = undefined;
+		throw error;
+	});
+	await runtime;
+	const language = await Language.load(fileURLToPath(import.meta.resolve(source.wasm)));
+	const query = readFileSync(new URL(`./${source.query}`, import.meta.url), "utf8");
 	const parser = new Parser();
 	parser.setLanguage(language);
-	return [name, { parser, query: new Query(language, source) }];
+	return { parser, query: new Query(language, query) };
 }
 
 /**
- * Every grammar, loaded once for the process. A load that fails is tried
- * again by the next caller, so one failure does not stay for the life of the
- * server.
- * @returns Each grammar by its name.
+ * One grammar, loaded once for the process. A load that fails is tried again
+ * by the next caller, so one failure does not stay for the life of the server.
+ * @param source The grammar's files.
+ * @returns The grammar.
  */
-function grammars(): Promise<ReadonlyMap<GrammarName, Grammar>> {
-	loaded ??= (async () => {
-		await Parser.init();
-		return new Map(await Promise.all(GRAMMARS.map(loadGrammar)));
-	})().catch((error: unknown) => {
-		loaded = undefined;
-		throw error;
-	});
-	return loaded;
+function grammar(source: GrammarSource): Promise<Grammar> {
+	const key = `${source.wasm}\0${source.query}`;
+	let loading = loaded.get(key);
+	if (loading === undefined) {
+		loading = loadGrammar(source).catch((error: unknown) => {
+			loaded.delete(key);
+			throw error;
+		});
+		loaded.set(key, loading);
+	}
+	return loading;
 }
 
-export { type Grammar, type GrammarName, grammars };
+export { type Grammar, type GrammarSource, grammar };
