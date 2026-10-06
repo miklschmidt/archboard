@@ -167,17 +167,28 @@ updated through their usual recipe, never through this one.
    base, not against the tip of `main`. Write one sentence that says why the
    pull request exists, as its author tells a reviewer. Done: the sentence names
    the need or the problem rather than the files touched.
-2. **Make the board with the architecture before the change**: the parts the
-   diff touches and the parts directly connected to them, which show the
-   reviewer what the change can reach, named as the vault's boards name them.
+2. **Choose the parts the change touches.** If the vault has a board whose
+   parts bind this repository's files, run
+   `archboard semantic footprint <board> --base origin/main`. Its `changed`
+   lists the parts whose bound files the pull request's commits changed, each
+   with its `path` and its `commits`. Read the subject of a commit marked
+   `large` (more than 30 files, often a rename or a format pass) before you
+   make a beat of it. `skipped` lists the parts it could not read, and a
+   `repositories` entry with `status: "unread"` names a checkout that lacks
+   the ref: take those parts from the diff. Done: every part of `changed` is on
+   the board of step 3, or you can say why it is not.
+3. **Make the board with the architecture before the change**: the parts of
+   step 2 and the parts directly connected to them, which show the reviewer
+   what the change can reach, named as the vault's boards name them.
    Helpers, configuration, types and tests stay out unless the change is about
-   them. Done: it reads as `main` does.
-3. **Branch the pull request from it** and make the change in one edit to the
+   them. With no board of the repository, take the parts from the diff. Done:
+   it reads as `main` does.
+4. **Branch the pull request from it** and make the change in one edit to the
    branch. The pane draws a draft's comparison with the current variant, the
    variant it was branched from. The screen thus marks what was added, changed
    and removed. Done: every change that the diff makes to the architecture is on
    the branch.
-4. **Write the walkthrough on the branch for a reviewer**, three to six beats
+5. **Write the walkthrough on the branch for a reviewer**, three to six beats
    [written for the voice](#walkthroughs):
    - The first beat is the why sentence, with no subjects.
    - Then the change that matters most, then each other change in its own
@@ -193,15 +204,16 @@ updated through their usual recipe, never through this one.
    stays within one to three minutes. Done: a reviewer can answer "what
    changed, and why" from the beats alone.
 
-5. **Record it outside the repository and discard the board.** Done: the receipt
+6. **Record it outside the repository and discard the board.** Done: the receipt
    says `discarded: true`.
-6. **Attach it to the pull request** with gh 2.99 or later (`--attach` also
+7. **Attach it to the pull request** with gh 2.99 or later (`--attach` also
    works on `gh pr create` and `gh pr edit`). GitHub takes videos up to 10 MB
    on free plans and 100 MB on paid ones. The receipt's `bytes` is the size.
    Done: the video plays in the pull request.
 
 ```bash
 git diff --find-renames origin/main...HEAD   # three dots: from the merge base
+archboard semantic footprint "Board store" --base origin/main   # the parts the commits changed
 archboard semantic new pr-128 --doing "drawing what pull request 128 changes" --input before.json
 archboard semantic branch pr-128 --as "This pull request" --expect-version 1 --doing "branching pull request 128"
 archboard semantic edit pr-128 --variant "This pull request" --expect-version 2 --doing "making pull request 128's change" --input change.json

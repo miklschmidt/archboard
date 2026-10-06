@@ -411,6 +411,20 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "tests/system/server-state/walkthrough-recording-refusals.test.ts (a missing or malformed talk is a usage error; no ffmpeg and no nix, or a named ffmpeg that cannot run, is ENCODER_UNAVAILABLE); tests/system/server-state/walkthrough-render.test.ts (RENDER_FAILED names the kept talk and writes nothing)"
+				},
+				{
+					"path": "semantic footprint <board> --base <ref>: the parts whose bound files the commits from the merge base of the ref and HEAD changed, with each part's commits, large commits marked, and the parts it could not read listed with the reason and in no list",
+					"expectedUse": "a pull request's recording takes the parts its steps are about from the footprint, reads a large commit's subject before making a beat of it, and takes a part it could not read from the diff",
+					"scenarios": ["S19"],
+					"evidence": "grader",
+					"owner": "grader footprint.changed-parts, footprint.unchanged-and-skipped; src/runtime/history-lens/tests/footprint.test.ts; src/server/archboard/tests/footprint-route.test.ts; src/cli/commands/tests/semantic-footprint.test.ts"
+				},
+				{
+					"path": "semantic footprint --variant <proposal>: the changed parts split into named and changed, changed but not named, and named but not changed, each named part with why the proposal names it, and a skipped part in none of the three",
+					"expectedUse": "archboard-dev sets a task's commits against its proposal at close; no author run does, because the answer is a reviewer's check on a task of this repository, not a workflow of the consumer skill",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/history-lens/tests/footprint.test.ts (the three lists, the reasons a part is named, skipped parts in none of them); src/server/archboard/tests/footprint-route.test.ts (a variant that is current, shelved or unknown is refused with a code)"
 				}
 			]
 		},
