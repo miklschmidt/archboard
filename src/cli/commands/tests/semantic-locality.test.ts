@@ -61,7 +61,10 @@ const server = Bun.serve({
 			return Response.json({ success: false, error: `unexpected ${pathname}` }, { status: 404 });
 		}
 		if (refuse) {
-			return Response.json({ success: false, error: "No such variant." }, { status: 400 });
+			return Response.json(
+				{ success: false, code: "UNKNOWN_VARIANT", error: "No such variant." },
+				{ status: 422 },
+			);
 		}
 		return Response.json({ success: true, ...answer });
 	},
@@ -168,7 +171,7 @@ test("a start that is not a date is a usage error and asks the server nothing", 
 	expect(asked).toEqual([]);
 });
 
-test("a refusal of the server fails the command and prints no answer", async () => {
+test("a variant the server cannot read is a usage error and prints no answer", async () => {
 	refuse = true;
 	const { stdout, stderr, exited } = await run([
 		"semantic",
@@ -177,7 +180,7 @@ test("a refusal of the server fails the command and prints no answer", async () 
 		"--variant",
 		"x",
 	]);
-	expect(exited).not.toBe(0);
+	expect(exited).toBe(2);
 	expect(stdout).toBe("");
 	expect(stderr).toContain("No such variant.");
 });

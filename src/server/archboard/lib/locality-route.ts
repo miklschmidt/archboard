@@ -46,11 +46,11 @@ interface LocalityRouteDependencies {
 /** The server's one reading of hotspots, so its memory serves every request. */
 const localityReading = createLocalityReading();
 
-/** A request that cannot be answered, and why. */
+/** A request the route turns away, with the code the CLI maps to its exit status. */
 interface Refusal {
 	readonly ok: false;
 	readonly status: number;
-	readonly code?: string;
+	readonly code: string;
 	readonly error: string;
 }
 
@@ -87,6 +87,7 @@ function stated(
 	return {
 		ok: false,
 		status: 400,
+		code: "BAD_REQUEST",
 		error: `"${name}" was stated but names one value; state it once or leave it out`,
 	};
 }
@@ -107,6 +108,7 @@ function validated(
 		return {
 			ok: false,
 			status: 400,
+			code: "BAD_REQUEST",
 			error: "Name the board: /api/semantic-boards/locality?board=<name>",
 		};
 	}
@@ -114,6 +116,7 @@ function validated(
 		return {
 			ok: false,
 			status: 400,
+			code: "BAD_REQUEST",
 			error: `"since" says "${since}"; give a date such as 2026-01-31, or a date and time with its offset.`,
 		};
 	}
@@ -147,18 +150,27 @@ function readableVariant(
 ): { readonly ok: true; readonly variant: SemanticVariant } | Refusal {
 	const variant = resolveVariant(board, asked);
 	if (variant === undefined) {
-		const error =
-			asked === undefined
-				? `"${board.name}" has no current variant: nothing it describes is built. Name a draft with the variant option.`
-				: `"${board.name}" has no variant called "${asked}".`;
-		return { ok: false, status: 400, error };
+		return asked === undefined
+			? {
+					ok: false,
+					status: 422,
+					code: "NO_CURRENT_VARIANT",
+					error: `"${board.name}" has no current variant: nothing it describes is built. Name a draft with the variant option.`,
+				}
+			: {
+					ok: false,
+					status: 422,
+					code: "UNKNOWN_VARIANT",
+					error: `"${board.name}" has no variant called "${asked}".`,
+				};
 	}
 	if (variant.lifecycle === "current" || variant.lifecycle === "draft") {
 		return { ok: true, variant };
 	}
 	return {
 		ok: false,
-		status: 400,
+		status: 422,
+		code: "NOT_A_DRAFT",
 		error: `"${variant.name}" is ${variant.lifecycle}: the lens reads only the current variant and a draft.`,
 	};
 }
@@ -211,11 +223,7 @@ async function answerLocality(
 	try {
 		const asked = askedLocality(request);
 		if (!asked.ok) {
-			response.status(asked.status).json({
-				success: false,
-				...(asked.code === undefined ? {} : { code: asked.code }),
-				error: asked.error,
-			});
+			response.status(asked.status).json({ success: false, code: asked.code, error: asked.error });
 			return;
 		}
 		const answer = await dependencies.runCheckout(
