@@ -297,9 +297,11 @@ test("the period ends at the commit time of HEAD and starts a year before it", a
 });
 
 test("since names another start, and an earlier one counts the commits before the default", async () => {
-	const early = await hotspots(new Date((LAST - 450 * DAY) * 1000));
+	// A start before 1973, and one before 1970, count every commit.
+	const early = await hotspots(new Date(DAY * 1000));
 	expect(early.hotspots.find((one) => one.subject.id === "pA")?.count).toBe(5);
 	expect(subjectsOf(early, "pR")).toContain("initial: before the period");
+	expect((await hotspots(new Date("1969-12-31"))).hotspots[0]?.count).toBe(5);
 	const late = await hotspots(new Date((LAST - 155 * DAY) * 1000));
 	expect(late.hotspots.map((one) => [one.subject.name, one.count])).toEqual([
 		["Renamed", 3],
