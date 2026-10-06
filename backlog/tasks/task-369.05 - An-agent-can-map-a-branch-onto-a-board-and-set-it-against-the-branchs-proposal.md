@@ -3,11 +3,11 @@ id: TASK-369.05
 title: >-
   An agent can map a branch onto a board and set it against the branch's
   proposal
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:19'
-updated_date: '2026-10-06 12:06'
+updated_date: '2026-10-06 12:07'
 labels:
   - history
   - cli
@@ -30,9 +30,9 @@ A reviewer wants to know which parts a change touched, and whether the proposal 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Given a base ref, the answer lists the parts whose bound files changed between the merge base and HEAD
-- [ ] #2 Given a proposal, the answer splits the parts into named and changed, changed but not named, and named but not changed
-- [ ] #3 The machine-readable answer has a schema, and the pull request recording recipe of the consumer skill uses it to choose the parts its steps are about
+- [x] #1 Given a base ref, the answer lists the parts whose bound files changed between the merge base and HEAD
+- [x] #2 Given a proposal, the answer splits the parts into named and changed, changed but not named, and named but not changed
+- [x] #3 The machine-readable answer has a schema, and the pull request recording recipe of the consumer skill uses it to choose the parts its steps are about
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -91,3 +91,9 @@ Review gate (after the fixes): type-check exit 0; lint:tests pass; test:modules 
 
 Correction: the dogfood server on port 3000 has since been restarted, and ./bin/dogfood semantic footprint answers through the new route (11 of 31 commits since c894b9e6c changed 6 parts of Archboard server).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard semantic footprint <board> --base <ref> [--variant <proposal>] lists the parts whose bound files changed between the merge base and HEAD in each checkout, and with a proposal splits them into named and changed, changed but not named, and named but not changed, saying why each part is named. GET /api/semantic-boards/footprint runs as checkout work, keeps no answer in memory (ADR 0045 amended), and never treats a ref as an option. The answer has a schema, and the pull request recording recipe chooses its parts from it. Verified by footprint.test.ts on temporary Git repositories, the route and CLI tests (pass with --isolate), S19 with eval:skill check, and a real run on the dogfood vault.
+<!-- SECTION:FINAL_SUMMARY:END -->
