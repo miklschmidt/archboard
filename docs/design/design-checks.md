@@ -291,6 +291,37 @@ right:
   because the proxy depends on the backend. An anchor at `services.dbx` is
   `ANCHOR_SYMBOL_MISSING`.
 
+The review of TASK-367.20 read compose-go (`compose-spec/compose-go`,
+`32d8d5d`) on 2026-10-06. `cli/options.go` names the base files and the
+override files in the order the check uses, and takes only the first override
+beside the first base. `override/merge.go` and `override/uncity.go` merge
+`environment` by name, `depends_on` and `networks` by name, `links`,
+`volumes_from` and `env_file` as lists that add up, and the mounts of a
+service by target, whatever the kind of the mount. `loader/loader.go` merges
+the YAML documents of one file in order. So a bind mount or an anonymous
+volume in an override replaces a named volume at the same target, and
+`network_mode: host` replaces `service:<name>`. The check missed both, and
+reads them now.
+
+The review also read 17 compose files of 16 public projects, among them
+Supabase, Immich, PostHog, Appwrite, Superset, Jitsi and Sentry's self-hosted
+release: 6,098 lines, their facts in 19 ms. Each line that a fact names holds
+its key or its item, except an entry that a YAML alias or merge key
+(`<<: *worker`) brings in, which stands at the line of the key that names the
+alias. A plain value with a bracket in it (`command: echo [`) had read as the
+start of a flow collection and put every later line under the service before
+it. Only a value that starts with a bracket opens one now. Appwrite's
+`depends_on: [${_APP_DB_HOST:-postgresql}]` read as a service named
+`${_APP_DB_HOST`, because the check interpolated only environment values, and
+compose interpolates every value before it merges. It interpolates every value
+now. Then 557 of the 566 configured paths of these files resolve. The other 9
+name the implicit `default` network, or a service that only another PostHog
+file declares, which compose merges only when `-f` names it. Bun 1.4.2 refuses
+Sentry's `docker-compose.yml`, which is valid YAML: a comment line inside a
+flow sequence, and a closing `]` at the indentation of its key, are each
+`Unexpected token`. The file is one part that did not parse, so its symbols
+are skipped and never missing.
+
 #### Reading Nix flakes
 
 TASK-367.21 measured the Nix adapter on 2026-10-06 with Bun 1.4.2. It read the
@@ -731,22 +762,26 @@ A compose file is one that compose finds by itself in a directory:
 in that order of preference. Then compose merges the first override file over
 it: `compose.override.yml`, `compose.override.yaml`,
 `docker-compose.override.yml` or `docker-compose.override.yaml`. The check
-merges in the same order (TASK-367.20). An override adds
-dependencies, links and networks to those of the base. Its environment value,
-volume mount or `network_mode` replaces the base's entry of that name or
-target, and the replaced entry is no evidence. A part bound to a service owns
-the service's block in each file of the project. A file that only `-f` names,
-such as `compose.prod.yaml`, merges as a command says, and no file records
-that command. So the check reads such a file as text.
+merges in the same order (TASK-367.20), and the YAML documents of one file in
+their order. An override adds dependencies, links and networks to those of the
+base. Its environment value replaces the base's value of that name, its mount
+of any kind the base's mount at that target, and its `network_mode` the
+base's, and the replaced entry is no evidence. A part bound to a service owns
+the service's block in each file and YAML document of the project. A file that
+only `-f` names, such as `compose.prod.yaml`, merges as a command says, and no
+file records that command. So the check reads such a file as text.
 
 If the host of an environment value is the name, `container_name`, `hostname`
 or network alias of a service, the value names that service. The host comes
-after a scheme or a user, or before a port. A bare word counts only under a name that ends in
-`HOST`, `SERVER` or `ADDR`, such as `REDIS_HOST: redis`. A host with a dot
-names a machine outside the project. An interpolation takes the default that
-the file writes (`${API_HOST:-api}`). The check never reads the shell or the
-project's `.env` for it. An env file gives the names it sets and never a
-value, and the check keeps no value of a compose file either.
+after a scheme or a user, or before a port. A bare word counts only under a
+name that ends in `HOST`, `HOSTS`, `HOSTNAME`, `SERVER`, `SERVERS`, `ADDR` or
+`ADDRESS`, such as `REDIS_HOST: redis`. A host with a dot names a machine
+outside the project. An interpolation in any value takes the default that the
+file writes (`${API_HOST:-api}`). The check never reads the shell or the
+project's `.env` for it. Of a compose file's values, the check keeps only the
+host that it reads as an address. An env file (`.env`, `<name>.env`) is a
+format of its own, which dotenv libraries and Kustomize read too: its adapter
+gives the names that it sets and never a value.
 
 The strongest result joins code and infrastructure. The code reads
 `QUEUE_URL`, and the infrastructure sets `QUEUE_URL` for that service to the

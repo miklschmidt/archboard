@@ -101,18 +101,19 @@ compose file. With a symbol, two parts can bind one file and stay told apart;
 without one, the part owns the whole file or directory. A changed symbol is a
 changed binding in a comparison. `archboard check` tests the path only;
 `archboard check --code` warns with `BINDING_SYMBOL_MISSING` when the bound
-file or directory does not define the symbol. Code facts read TypeScript, TSX
-and Python files (`.ts`, `.mts`, `.cts`, `.tsx`, `.py`, `.pyi`) and C and C++
-files (`.c`, `.h`, `.cc`, `.cpp`, `.cxx`, `.hh`, `.hpp`, `.hxx`); a file of any
-other language is read only as text and must hold the symbol's last name. A
-C or C++ part bound to a source file also owns its header, and one bound to a
-header owns its source file: the file of the other kind with the same name
-beside it, or the only one of that name in the checkout. So `symbol` can name
-what either file defines, and a C++ name is spelled with `::` or `.`:
-`shop::Ledger::post`, `Ledger.post`, `post`. Includes resolve through the
-nearest `compile_commands.json` that Git lists; without one, against the
-including file's directory, the checkout root and each directory named
-`include`.
+file or directory does not define the symbol. Code facts read TypeScript and
+TSX, Python, C and C++, C# and .NET project files, Swift, Terraform and
+OpenTofu, docker-compose files, env files and Nix flakes. Any other file is
+read only as text: it must hold the symbol's last name, and nothing that needs
+references is judged in it. `check --code` names the kinds of file that it
+read as text in its `text-only` skip. A C or C++ part bound to a source file
+also owns its header, and one bound to a header owns its source file: the file
+of the other kind with the same name beside it, or the only one of that name
+in the checkout. So `symbol` can name what either file defines, and a C++
+name is spelled with `::` or `.`: `shop::Ledger::post`, `Ledger.post`, `post`.
+Includes resolve through the nearest `compile_commands.json` that Git lists;
+without one, against the including file's directory, the checkout root and
+each directory named `include`.
 Code facts also read C# files (`.cs`) and .NET project files (`.csproj`). A
 C# `symbol` may leave out its namespace: `Shop.Core.Ledger.Post`,
 `Ledger.Post` and `Post` all find the method. A part can bind a project file
@@ -127,8 +128,8 @@ declares for the code of other projects. A `ProjectReference` is
 on a package outside the checkout. The check runs no build and evaluates no
 MSBuild. Of each `#if`, it reads the first branch.
 "View in code" opens a bound file in a local checkout at the line where the
-file defines the symbol. Code facts must find that definition (TypeScript, TSX,
-Python, C, C++ and C# for now). The opener must take a line: Visual Studio Code, Cursor, Zed, or
+file defines the symbol, so code facts must read the file and find that
+definition. The opener must take a line: Visual Studio Code, Cursor, Zed, or
 a custom command with `{line}`. Otherwise it opens the file or directory. The
 inspector shows the symbol under the path.
 
@@ -168,7 +169,8 @@ evidence:
   `hostname` or network alias names its service too.
 - A named volume that one service writes and another mounts.
 
-An override's environment value replaces the base's value of that name.
+An override's environment value replaces the base's value of that name, and
+its mount replaces the base's mount at that target.
 `http`, `data` and `dependency` accept configured-path evidence by default,
 and `call` does not. To anchor a
 relationship between two services, cite the compose file and the address of
