@@ -45,6 +45,9 @@ import { pythonFacts } from "@/runtime/code-facts/lib/python-adapter";
 import { createPythonResolver } from "@/runtime/code-facts/lib/python-resolution";
 import { terraformFacts } from "@/runtime/code-facts/lib/terraform-adapter";
 import { createTerraformResolver } from "@/runtime/code-facts/lib/terraform-resolution";
+import { swiftFacts } from "@/runtime/code-facts/lib/swift-adapter";
+import { manifestFacts } from "@/runtime/code-facts/lib/swift-package";
+import { createSwiftResolver } from "@/runtime/code-facts/lib/swift-resolution";
 import { typeScriptFacts } from "@/runtime/code-facts/lib/typescript-adapter";
 
 /** What one adapter reads, and how. */
@@ -109,6 +112,14 @@ const C = treeSitter("tree-sitter-c/tree-sitter-c.wasm", "c.scm", cFacts);
 /** A `.h` is read as C++, which reads the C headers of Redis and SQLite as the C grammar does (TASK-367.09). */
 const CPP = treeSitter("tree-sitter-cpp/tree-sitter-cpp.wasm", "c.scm", cFacts);
 
+/** A `Package.swift` is Swift, and its targets are read beside its code (TASK-367.12). */
+const SWIFT = treeSitter("@lumis-sh/wasm-swift/tree-sitter-swift.wasm", "swift.scm", swiftFacts);
+const SWIFT_MANIFEST = treeSitter(
+	"@lumis-sh/wasm-swift/tree-sitter-swift.wasm",
+	"swift.scm",
+	manifestFacts,
+);
+
 /** Every adapter, one entry each. */
 const ADAPTERS: readonly Adapter[] = [
 	{
@@ -120,6 +131,11 @@ const ADAPTERS: readonly Adapter[] = [
 		name: "python",
 		reads: { ".py": PYTHON, ".pyi": PYTHON },
 		resolver: createPythonResolver,
+	},
+	{
+		name: "swift",
+		reads: { ".swift": SWIFT, "Package.swift": SWIFT_MANIFEST },
+		resolver: createSwiftResolver,
 	},
 	{
 		name: "terraform",

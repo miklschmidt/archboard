@@ -29,7 +29,8 @@ interface Definition {
 	readonly visibility: string;
 	/**
 	 * Whether code outside the file can reach it: an exported declaration, or
-	 * a public member of an exposed one.
+	 * a public member of an exposed one. In Swift, whose files see the names of
+	 * their module, whether another module can: `open`, `public` or `package`.
 	 */
 	readonly exposed: boolean;
 }
@@ -141,6 +142,7 @@ type ParseFacts = (text: string) => ParsedFacts | Promise<ParsedFacts>;
 
 /** Where an import or a reference leads in the checkout: a file, and the name there. */
 interface Target {
+	/** The file, or a directory written with a trailing `/`, as the module a Swift import names. */
 	readonly path: string;
 	readonly symbol: string;
 	/**
@@ -152,7 +154,16 @@ interface Target {
 }
 
 /** The adapters that read files, one for each entry of the table in adapters.ts. */
-type AdapterName = "typescript" | "python" | "compose" | "csharp" | "c" | "cpp" | "nix" | "terraform";
+type AdapterName =
+	| "typescript"
+	| "python"
+	| "compose"
+	| "csharp"
+	| "c"
+	| "cpp"
+	| "nix"
+	| "terraform"
+	| "swift";
 
 /**
  * An import with the checkout file it resolves to, where the adapter can
