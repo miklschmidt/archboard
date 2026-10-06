@@ -489,11 +489,13 @@ kind under `relationshipKinds` in `config.yaml` says what it accepts; a kind
 without one accepts everything.
 
 Between the bound parts of a board, `check --code` reads the evidence in their
-code. A part whose code uses another bound part at run time, with no
-relationship or step between them or between parts that hold them, is
-`RELATIONSHIP_UNDRAWN` on the part it reaches, which lists every part that
-reaches it: draw the relationship the board's question needs. A use only as a
-type is never undrawn. A relationship with no anchor whose accepted evidence
+code. A part whose code runs another bound part's code (calls or constructs
+it, renders it, sends it a message), with no relationship or step between them
+or between parts that hold them, is `RELATIONSHIP_UNDRAWN` on the part it
+reaches, which lists every part that reaches it: draw the relationship the
+board's question needs. A use only as a type is never undrawn, and nor is a use
+as a value (a constant read, a name passed on, an `instanceof` test or a
+catch), which still supports a relationship and its anchor. A relationship with no anchor whose accepted evidence
 runs only the other way is `RELATIONSHIP_BACKWARDS`, and one that no accepted
 evidence joins is `RELATIONSHIP_UNSUPPORTED`. Both are information: a
 subscription runs in code from the handler to the part that sends the event,
@@ -593,8 +595,8 @@ check gives these findings:
 - `ENTRY_POINT_UNEXPOSED`, a warning: an entry point owns nothing that the
   module exposes, and the code of a caller drawn to it reaches it from outside
   the module. Make the callers use what the module exposes, or expose it.
-- `CALLER_UNDRAWN`, a warning: a file outside the module uses the exposed code
-  of a hidden part at run time, and no part on the board binds that file. Draw
+- `CALLER_UNDRAWN`, a warning: a file outside the module runs the exposed code
+  of a hidden part, and no part on the board binds that file. Draw
   the caller that the board's question needs. The check judges this only where
   the board draws a caller of the container.
 - `EXPOSED_UNUSED`, information on the container: the exposed names that no

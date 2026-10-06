@@ -18,7 +18,8 @@
 // the `.` alone, `.post:by:`, as C# and Swift spell a member of a value the
 // code does not name. Its definition is the language server's to find
 // (TASK-367.15). An `@selector(post:by:)` names a method with no receiver,
-// spelled `.post:by:` too. A protocol another protocol adopts is used only as
+// spelled `.post:by:` too; it passes the method on as a value and runs none of
+// it (runs.ts). A protocol another protocol adopts is used only as
 // a type.
 
 import type { Node } from "web-tree-sitter";
@@ -356,7 +357,7 @@ function sendOf(send: Node): Reference {
 }
 
 /**
- * An `@selector(post:by:)` as a use of the method it names.
+ * An `@selector(post:by:)` as a use of the method it names, as a value.
  * @param node The selector expression.
  * @returns The reference, or undefined when it names none.
  */
@@ -369,6 +370,7 @@ function selectorUse(node: Node): Reference | undefined {
 		via: "code",
 		kind: "call",
 		typeOnly: false,
+		asValue: true,
 	};
 }
 

@@ -12,6 +12,7 @@ import {
 	type SyntaxFacts,
 } from "@/runtime/code-facts/index";
 import { fixtureCheckout } from "@/runtime/code-facts/tests/checkout";
+import { asValueOf } from "@/runtime/code-facts/tests/uses";
 
 const checkout = fixtureCheckout({
 	"src/ledger.ts": [
@@ -161,6 +162,32 @@ test("a use at run time is call evidence, a use only as a type is import evidenc
 	expect(imports["./types"]?.typeOnly).toBe(true);
 	expect(imports["@/ports"]).toMatchObject({ typeOnly: true, resolved: "src/ports.ts" });
 	expect(imports["./money"]).toMatchObject({ typeOnly: false, resolved: "src/money.ts" });
+});
+
+test("a call, a construction, a component, a decorator and a base class run what they name, and a constant read, an instanceof test and a name passed on use it as a value", async () => {
+	const asValue = await asValueOf("uses.tsx", [
+		'import { Base, Failure, LIMIT, call, passed, decorate, api, Shown } from "./runs";',
+		"@decorate",
+		"export class Child extends Base {}",
+		"export function use(error: unknown) {",
+		"\tcall();",
+		"\tapi.read();",
+		"\tqueueMicrotask(passed);",
+		"\tif (error instanceof Failure) return LIMIT;",
+		"\treturn <Shown />;",
+		"}",
+	]);
+	expect(asValue).toMatchObject({
+		decorate: false,
+		Base: false,
+		call: false,
+		api: false,
+		"api.read": false,
+		Shown: false,
+		passed: true,
+		Failure: true,
+		LIMIT: true,
+	});
 });
 
 test("an export passes a name on and never uses it, also a name an import brought in, as export ... from does", async () => {

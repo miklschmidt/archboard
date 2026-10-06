@@ -19,6 +19,7 @@ import {
 	type SyntaxFacts,
 } from "@/runtime/code-facts/index";
 import { fixtureDirectory } from "@/runtime/code-facts/tests/checkout";
+import { asValueOf } from "@/runtime/code-facts/tests/uses";
 
 const checkout = fixtureDirectory("c-shop");
 checkout.write(
@@ -179,6 +180,44 @@ test("a call, a construction and a base class are call evidence, a type name is 
 		[20, "import"],
 		[21, "call"],
 	]);
+});
+
+test("a call, a construction and a base class run what they name, and a variable or macro read and a function passed on use it as a value", async () => {
+	const c = await asValueOf("uses.c", [
+		"void use(void) {",
+		"\tcall();",
+		"\tapi.read();",
+		"\tschedule(passed);",
+		"\tint n = LIMIT + table.count;",
+		"}",
+	]);
+	expect(c).toMatchObject({
+		call: false,
+		api: false,
+		"api.read": false,
+		passed: true,
+		LIMIT: true,
+		table: true,
+		"table.count": true,
+	});
+	const cpp = await asValueOf("uses.cpp", [
+		"class Child : public Base {};",
+		"void use() {",
+		"\tauto made = new Made();",
+		"\tLedger ledger(1);",
+		"\tns::call();",
+		"\tschedule(&passed);",
+		"\tint n = ns::LIMIT;",
+		"}",
+	]);
+	expect(cpp).toMatchObject({
+		Base: false,
+		Made: false,
+		Ledger: false,
+		"ns::call": false,
+		passed: true,
+		"ns::LIMIT": true,
+	});
 });
 
 test("without compile_commands.json an include resolves against its file's directory, the checkout root and each include directory", async () => {

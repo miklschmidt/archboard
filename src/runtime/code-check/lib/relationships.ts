@@ -221,6 +221,18 @@ function undrawnFinding(reading: RelationshipReading, to: ReadPart, pieces: Piec
 }
 
 /**
+ * Whether a piece makes a dependency undrawn where no relationship draws it:
+ * evidence of a dependency, unless its use runs none of the code it reaches.
+ * @param reading The board.
+ * @param piece The piece.
+ * @returns True when it does.
+ */
+function undrawnBy(reading: RelationshipReading, piece: Piece): boolean {
+	if (!DEPENDENCY_KINDS.has(piece.kind) || reading.evidence.values.has(piece)) return false;
+	return !drawn(reading, piece.from, piece.to);
+}
+
+/**
  * The parts that code reaches from bound parts the board does not join to them.
  * @param reading The board.
  * @returns One finding for each part reached.
@@ -228,7 +240,7 @@ function undrawnFinding(reading: RelationshipReading, to: ReadPart, pieces: Piec
 function undrawnFindings(reading: RelationshipReading): CodeFinding[] {
 	const byTarget = new Map<string, Piece[]>();
 	for (const piece of reading.evidence.pieces) {
-		if (!DEPENDENCY_KINDS.has(piece.kind) || drawn(reading, piece.from, piece.to)) continue;
+		if (!undrawnBy(reading, piece)) continue;
 		byTarget.set(piece.to, [...(byTarget.get(piece.to) ?? []), piece]);
 	}
 	return [...reading.codes.values()].flatMap((code) => {

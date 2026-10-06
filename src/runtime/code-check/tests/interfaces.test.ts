@@ -69,7 +69,7 @@ beforeAll(async () => {
 			'export { readShelf } from "./lib/read";',
 			'export { writeShelf } from "./lib/write";',
 			'export { auditShelf } from "./lib/audit";',
-			'export { unusedHelper, type ShelfType } from "./lib/util";',
+			'export { unusedHelper, SHELF_LIMIT, type ShelfType } from "./lib/util";',
 			"",
 		].join("\n"),
 		"src/store/lib/read.ts":
@@ -81,7 +81,7 @@ beforeAll(async () => {
 		"src/store/lib/inner.ts":
 			'import { hook } from "./hook";\nexport function inner(): void { hook(); }\n',
 		"src/store/lib/util.ts":
-			"export function unusedHelper(): void {}\nexport interface ShelfType { name: string }\n",
+			"export function unusedHelper(): void {}\nexport interface ShelfType { name: string }\nexport const SHELF_LIMIT = 3;\n",
 		// A file of tests at the store's root, which is no root file.
 		"src/store/index.test.ts": "export function shelfFixture(): void {}\n",
 		"src/server/routes.ts": [
@@ -91,8 +91,8 @@ beforeAll(async () => {
 			"",
 		].join("\n"),
 		"src/report/report.ts": [
-			'import { auditShelf, type ShelfType } from "../store";',
-			"export function report(shelf: ShelfType): string { auditShelf(); return shelf.name; }",
+			'import { auditShelf, SHELF_LIMIT, type ShelfType } from "../store";',
+			"export function report(shelf: ShelfType): string { auditShelf(); return shelf.name.slice(SHELF_LIMIT); }",
 			"",
 		].join("\n"),
 		"tests/system/store.test.ts":
@@ -224,12 +224,12 @@ test("a hidden part whose exposed code a file no part binds uses at run time is 
 	]);
 });
 
-test("a use by a part on the board is the undrawn relationship's to report, and a use only as a type is no caller", () => {
+test("a use by a part on the board is the undrawn relationship's to report, and a use only as a type or as a value is no caller", () => {
 	// The server, a part on the board, calls Write: RELATIONSHIP_UNDRAWN says so, once.
 	expect(findings("RELATIONSHIP_UNDRAWN", "Shop").map((each) => each.subject?.id)).toEqual([
 		"Write",
 	]);
-	// The report names Util's type only.
+	// The report names Util's type, and reads its constant, which runs none of Util's code.
 	expect(findings("CALLER_UNDRAWN", "Shop").some((each) => each.subject?.id === "Util")).toBe(
 		false,
 	);

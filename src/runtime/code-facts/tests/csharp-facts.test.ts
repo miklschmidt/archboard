@@ -23,6 +23,7 @@ import {
 	type SyntaxFacts,
 } from "@/runtime/code-facts/index";
 import { fixtureCheckout } from "@/runtime/code-facts/tests/checkout";
+import { asValueOf } from "@/runtime/code-facts/tests/uses";
 
 const FIXTURE = join(import.meta.dir, "fixtures", "csharp-shop");
 const checkout = fixtureCheckout(
@@ -118,6 +119,33 @@ test("a use at run time is call evidence, a declared type or an interface import
 	expect(audit.references.filter((each) => each.via !== "code")).toEqual([
 		{ symbol: "SHOP_AUDIT", line: 13, via: "environment", typeOnly: false },
 	]);
+});
+
+test("a call, a construction, an attribute and a base class run what they name, and a static member read, typeof and a name passed on use it as a value", async () => {
+	const asValue = await asValueOf("Uses.cs", [
+		"[Audited]",
+		"class Child : Base {",
+		"\tobject Use() {",
+		"\t\tCall();",
+		"\t\tApi.Read();",
+		"\t\tvar made = new Made();",
+		"\t\tSchedule(Passed);",
+		"\t\treturn Limits.Max + typeof(Shown).Name;",
+		"\t}",
+		"}",
+	]);
+	expect(asValue).toMatchObject({
+		Audited: false,
+		Base: false,
+		Call: false,
+		Api: false,
+		"Api.Read": false,
+		Made: false,
+		Passed: true,
+		Limits: true,
+		"Limits.Max": true,
+		Shown: true,
+	});
 });
 
 test("a name resolves within its project to the file that declares it, also a member of a partial class another file declares", async () => {

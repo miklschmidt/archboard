@@ -17,6 +17,13 @@
 // `import()`, a `require()` or an import for its side effects loads the whole
 // file at run time, so it is a call to the file.
 //
+// A use at run time that runs none of the name's code, such as a constant
+// read, a name passed on or an `instanceof` test (runs.ts in code facts), is
+// call evidence all the same, so it supports a relationship. The check is
+// sure of a dependency the board must draw only where code runs code, so such
+// a piece never makes a relationship undrawn on its own (ADR 0046, amended by
+// TASK-367.28): the evidence keeps it apart, as one of its values.
+//
 // Each piece goes from the part whose code makes the use to the part whose
 // code holds what it reaches, each the narrowest binding (ownership.ts). Code
 // facts keep only the first line of each spelling in a file, so where two
@@ -68,6 +75,8 @@ interface BoardEvidence {
 	 * path, with the file and the lines of the first (`flake.nix:12-14`).
 	 */
 	readonly unfollowed: ReadonlyMap<string, ReadonlyMap<string, string>>;
+	/** The pieces whose use runs none of the code it reaches: it uses the name as a value. */
+	readonly values: ReadonlySet<Piece>;
 }
 
 /** What reading the evidence needs. */
@@ -98,6 +107,8 @@ interface RepoReading {
 	readonly lineages: ReadonlyMap<string, ReadonlySet<string>>;
 	/** The parts whose code holds a Nix expression the reading cannot follow, which the reading adds to. */
 	readonly unfollowed: Map<string, Map<string, string>>;
+	/** The pieces whose use runs none of the code it reaches, which the reading adds to. */
+	readonly values: Set<Piece>;
 }
 
 /**
@@ -361,7 +372,24 @@ async function piecesOfUse(
 	const reached = await reachedBy(repo, facts, reference, imported);
 	if (reached === undefined) return [];
 	const evidence = { repo: repo.checkout.repo, path: facts.path, kind, line, symbol };
-	return piecesBetween(from, reached, repo.lineages, evidence);
+	return noted(repo, reference, piecesBetween(from, reached, repo.lineages, evidence));
+}
+
+/**
+ * Pieces of one use, noted among the values where the use runs none of the
+ * code it reaches.
+ * @param repo The repository's reading, whose values this adds to.
+ * @param reference The use.
+ * @param pieces Its pieces.
+ * @returns The pieces.
+ */
+function noted(
+	repo: RepoReading,
+	reference: SyntaxFacts["references"][number],
+	pieces: Piece[],
+): Piece[] {
+	if (reference.asValue === true) for (const piece of pieces) repo.values.add(piece);
+	return pieces;
 }
 
 /**
@@ -464,14 +492,16 @@ function ownersOfLines(owners: Owners, file: string, start: number, end: number)
 }
 
 /**
- * Keep the first piece of each kind and resolution between two parts.
+ * Keep the first piece of each kind and resolution between two parts, and
+ * of each way of use: one that runs code, and one that uses a value.
  * @param pieces The pieces, in the order the files were read.
+ * @param values The pieces that use a value.
  * @returns One piece for each.
  */
-function firstOfEach(pieces: readonly Piece[]): Piece[] {
+function firstOfEach(pieces: readonly Piece[], values: ReadonlySet<Piece>): Piece[] {
 	const seen = new Map<string, Piece>();
 	for (const piece of pieces) {
-		const key = `${piece.from}\0${piece.to}\0${piece.kind}\0${piece.resolution}`;
+		const key = `${piece.from}\0${piece.to}\0${piece.kind}\0${piece.resolution}\0${String(values.has(piece))}`;
 		if (!seen.has(key)) seen.set(key, piece);
 	}
 	return [...seen.values()];
@@ -482,21 +512,24 @@ function firstOfEach(pieces: readonly Piece[]): Piece[] {
  * @param parts The repository's read parts.
  * @param reading The pass.
  * @param lineages Each part and its containers.
- * @param unfollowed The parts whose code holds a Nix expression the reading cannot follow, which this adds to.
+ * @param found What the reading adds to: the parts whose code holds a Nix
+ * expression it cannot follow, and the pieces that use a value.
+ * @param found.unfollowed The parts whose code holds such an expression.
+ * @param found.values The pieces that use a value.
  * @returns The pieces, and the files read through code facts.
  */
 async function evidenceInRepo(
 	parts: readonly [ReadPart, ...ReadPart[]],
 	reading: EvidenceReading,
 	lineages: ReadonlyMap<string, ReadonlySet<string>>,
-	unfollowed: Map<string, Map<string, string>>,
+	found: Pick<RepoReading, "unfollowed" | "values">,
 ): Promise<{ pieces: Piece[]; parsed: Set<string> }> {
 	const repo: RepoReading = {
 		reading,
 		checkout: parts[0].checkout,
 		owners: ownersOf(parts),
 		lineages,
-		unfollowed,
+		...found,
 	};
 	const parsed = new Set<string>();
 	const pieces: Piece[] = [];
@@ -528,13 +561,14 @@ async function evidenceOf(
 	const pieces: Piece[] = [];
 	const parsed = new Map<string, ReadonlySet<string>>();
 	const unfollowed = new Map<string, Map<string, string>>();
+	const values = new Set<Piece>();
 	for (const [repo, parts] of byRepo) {
 		// oxlint-disable-next-line no-await-in-loop -- one repository at a time, in board order
-		const read = await evidenceInRepo(parts, reading, lineages, unfollowed);
+		const read = await evidenceInRepo(parts, reading, lineages, { unfollowed, values });
 		pieces.push(...read.pieces);
 		parsed.set(repo, read.parsed);
 	}
-	return { pieces: firstOfEach(pieces), parsed, unfollowed };
+	return { pieces: firstOfEach(pieces, values), parsed, unfollowed, values };
 }
 
 export { type BoardEvidence, type EvidenceReading, type Piece, evidenceOf, piecesBetween };
