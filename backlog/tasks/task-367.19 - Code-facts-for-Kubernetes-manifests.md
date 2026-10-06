@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:16'
-updated_date: '2026-10-06 16:09'
+updated_date: '2026-10-06 17:01'
 labels:
   - code-check
 dependencies:
@@ -68,4 +68,17 @@ microservices-demo (38e7348, cloned to scratch): 103 tracked YAML files; 86 mani
 For TASK-367.23: Kubernetes facts give, per workload (by line within its Kind/name span): environment references (the names it sets in env), configured-path references from an env value to Service/<name> at the same line, secretKeyRef/configMapKeyRef configured paths, and reexport imports (envFrom) whose resolved names are the keys of the ConfigMap or Secret under the prefix, never a value. A ConfigMap's env-name keys are environment references, and its values naming a Service are configured paths from the ConfigMap. Workloads run images, not directories, so no `runs` is set; the join needs code drawn inside a workload-bound part. kubernetesLinks gives the Service -> workload joins to pass a Service on to its workloads.
 
 Closing: Archboard server@TASK-367.19 branched at v131 from TASK-367.11 after TASK-367.09; Code facts and Code check descriptions restated (each at the 2000-character limit, so other adapters' sentences were tightened without dropping a fact a reader needs); summary set to the board's scope; compare: 2 parts changed. check --code with and without --variant TASK-367.19: no line differs (server not restarted: the dogfood repository holds no manifest). Footprint against base 928602761 (the parent of 52c0d4500): namedAndChanged Code check (52c0d4500) and Code facts (52c0d4500; 8ca30b732 is TASK-367.20); changedNotNamed and namedNotChanged empty. Adopted at v137. ./bin/dogfood check: no diagnostics. Behind lists neither of this task's commits.
+
+Independent review (2026-10-06), NOT CLEAN before fixes; fixed in ddf940725 (code, owners) and 6fd9d4a41 (docs).
+1. A Helm template that parses as YAML ({{ .Values.x }} is a YAML mapping) was a manifest with no objects: false BINDING_SYMBOL_MISSING and ANCHOR_SYMBOL_MISSING warnings on argocd-example-apps helm-guestbook/templates/service.yaml. Now a Helm action where YAML expects a value, or in a kind or name, makes the file one part whose every address is unknown. 18 templates that parse, across kubernetes/examples, kustomize and argocd-example-apps, are now skipped; no plain manifest is taken for a template (block scalars and quoted Go templates are not actions).
+2. Skip reason at the boundary with 0a89fab4d: the template's unknown part (under '') is reported as expression-not-followed, while authoring.md promised symbol-unparsed. Kept the one mechanism and named Helm templates under expression-not-followed in authoring.md, design-checks.md, archboard-dev and the skip schema; kubernetes-check.test.ts owns it.
+3. An address that two manifests at the nearest step declare resolved to the first in path order, as resolved evidence: the wrong copy for 6 of 8 such references in kustomize's test data. It now resolves to neither.
+4. A file whose documents Bun and the line reader count apart (%YAML directive, empty first document) gave Infinity lines, which the answer schema refuses, or was read as text with a Secret's values. Now one part whose addresses are unknown.
+5. A file without 'apiVersion' is not parsed (a 4 MB lockfile cost 120 ms in each pass's index).
+6. A template's unknown part kept its key names, including the left side of a key-shaped line inside a multi-line quoted value; it keeps none now (under '' already makes every symbol unknown).
+Safety probes (facts JSON and check outcome): data, stringData, base64, a Secret in a List, a Secret in a Helm template that parses and one that does not, an apiVersion v1beta9 Secret, credential URLs in env values and ConfigMap values, a block-scalar credential: no value in any fact, link, finding, evidence symbol or skip detail; Bun's parse error is discarded. A Secret document whose apiVersion is not a string is no object, so a file of only such is read as text, as before this task. Owned by the extended secret test.
+Judged, not changed: a Kustomization or kubeconfig is a manifest with no objects (decision 2); label joins and resolution ignore namespaces (0 joins across written namespaces in four repositories); nearest-step resolution can reach a sibling overlay; a NetworkPolicy rule without from/to (allow all) gives no permission; a two-name host is outside the cluster; the manifest index parses every manifest synchronously in a pass when an address does not resolve.
+Gate after the fixes (shared tree): lint 0 and type-check 0 on re-run (first run failed only in language-servers and nix files of other agents); fmt:check fails only on two untracked t367-22-*.ts scratch files at the root; test:system 195/0; test:repository 20/0; test:serial-browser 24/0; test:modules first run 4227/5, all five in nix-facts and nix-check whose sources another agent had uncommitted, and they pass on re-run.
+
+Module lane re-run after the other agent's Nix fix: 4244 pass, 0 fail.
 <!-- SECTION:NOTES:END -->
