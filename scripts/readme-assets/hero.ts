@@ -113,17 +113,20 @@ async function writeChange(server: TakeServer): Promise<string> {
 	return file;
 }
 
+/** How `semantic compare` starts the line that counts what it found besides the interfaces. */
+const OTHER_CHANGES = "Other changes: ";
+
 /**
- * The parts and relationships clauses of `semantic compare`'s summary.
+ * The parts and relationships clauses of the counts `semantic compare` says after its
+ * interface lines.
  * @param said What the command said on stderr.
  * @returns The clauses, one line each.
+ * @throws {Error} When the command said no counts.
  */
 function comparedLines(said: string): readonly string[] {
-	const summary = said.split("\n")[0] ?? "";
-	return summary
-		.slice(summary.indexOf(": ") + 2)
-		.split("; ")
-		.slice(0, 2);
+	const counts = said.split("\n").find((line) => line.startsWith(OTHER_CHANGES));
+	if (counts === undefined) throw new Error(`semantic compare said no counts: ${said.trim()}`);
+	return counts.slice(OTHER_CHANGES.length).split("; ").slice(0, 2);
 }
 
 const hero: Producer = {
