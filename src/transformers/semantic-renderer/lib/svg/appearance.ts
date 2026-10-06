@@ -27,10 +27,7 @@ import {
 	type Share,
 	type SlabLook,
 } from "@/transformers/semantic-renderer/lib/svg/slab";
-import {
-	standingInk,
-	type SubjectStanding,
-} from "@/transformers/semantic-renderer/lib/svg/standing";
+import type { SubjectStanding } from "@/transformers/semantic-renderer/lib/svg/standing";
 import type { TrayLook } from "@/transformers/semantic-renderer/lib/svg/tray";
 
 /**
@@ -48,7 +45,7 @@ function semanticInk(color: PaletteColor | undefined): string | undefined {
  * the edge and the face together are what say which concern a card serves, on
  * either ground. The face is a tone of the group's own hue (`toned`), a step
  * lighter than the mat it stands on and as quiet as a tint, so its words keep
- * 4.5:1, a standing's wash over it included. On the light ground the edge is
+ * 4.5:1. On the light ground the edge is
  * a lighter tint of the colour, a step from the face rather than a bar under it.
  */
 const CARD_FACE: Tone = {
@@ -87,8 +84,6 @@ const PLATE_EDGE: Share = { light: 0.3, dark: 0.3 };
 
 /** How far a label's front edge is shaded from its face toward `--slab-deep`. */
 const LABEL_EDGE = 0.6;
-/** How much of its standing's ink a marked label's front edge carries. */
-const LABEL_STANDING_EDGE: Share = { light: 0.75, dark: 0.55 };
 
 /** How much of its type's colour an icon chip's face and edge carry. */
 const CHIP_FACE: Share = { light: 0.14, dark: 0.2 };
@@ -100,20 +95,6 @@ const CHIP_EDGE: Share = { light: 0.32, dark: 0.2 };
  * ink already does.
  */
 const GLYPH_DEPTH = 0.3;
-
-/**
- * A front edge in an ink: mixed into a light edge tone on the light ground,
- * and into the deep shade on the dark one, so it is darker than the face it
- * carries on either.
- * @param light The edge's tone on the light ground.
- * @param ink The ink.
- * @param share How much of it, on each ground.
- * @param palette Selected theme.
- * @returns The edge.
- */
-function inkedEdge(light: string, ink: string, share: Share, palette: Palette): string {
-	return lightDark(mixed(light, ink, share.light), mixed(palette.slabDeep, ink, share.dark));
-}
 
 /**
  * A card's slab: its face tinted and its front edge toned by the group it is
@@ -131,26 +112,20 @@ function cardLook(appearance: NodeAppearance, palette: Palette): SlabLook {
 		thickness: CARD_THICKNESS,
 		radius: SLAB_RADIUS,
 		sheen: true,
-		hatch: true,
 	};
 }
 
 /**
  * A relationship's or a message's label: a low tile like a chip, its face the
  * opaque plate its words are read on, its front edge a shade of that face. A
- * label has no group, so a standing takes its front edge as well as its face.
+ * standing borders its face as it does a card's (`slab`).
  * @param palette Selected theme.
- * @param standing How its relationship stands, when this is a proposal.
  * @returns The label's look.
  */
-function labelLook(palette: Palette, standing?: SubjectStanding): SlabLook {
-	const ink = standing === undefined ? undefined : standingInk(standing, palette);
+function labelLook(palette: Palette): SlabLook {
 	return {
 		face: palette.pill,
-		edge:
-			ink === undefined
-				? mixed(palette.pill, palette.slabDeep, LABEL_EDGE)
-				: inkedEdge(palette.pill, ink, LABEL_STANDING_EDGE, palette),
+		edge: mixed(palette.pill, palette.slabDeep, LABEL_EDGE),
 		thickness: PILL_THICKNESS,
 		radius: PILL_RADIUS,
 		sheen: false,
@@ -186,7 +161,6 @@ function trayLook(
 	};
 	return {
 		floor: washed(ground, ink, TRAY_FLOOR, palette),
-		ground,
 		walls,
 		nameplate: {
 			height: plateHeight,

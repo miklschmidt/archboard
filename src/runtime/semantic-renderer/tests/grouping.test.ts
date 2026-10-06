@@ -30,6 +30,16 @@ function opaqueRects(markup: string): string[] {
 }
 
 /**
+ * One number attribute of a drawn tag.
+ * @param tag The tag.
+ * @param name The attribute.
+ * @returns Its value.
+ */
+function read(tag: string, name: string): number {
+	return Number(new RegExp(` ${name}="([^"]+)"`, "u").exec(tag)![1]);
+}
+
+/**
  * Whether two hues are within a few degrees of each other, round the circle.
  * @param a One hue.
  * @param b The other.
@@ -145,7 +155,7 @@ describe("a card's body takes its group's colour and its chip its type's", () =>
 		expect(groupOf(yellow.svg, "node", "gate")!.markup).toContain('data-body-color="yellow"');
 	});
 
-	test("comparison washes the face while preserving the block's edge and type chip", async () => {
+	test("comparison borders the face while preserving the block's face, edge and type chip", async () => {
 		const rendered = await renderArchitecture({
 			content: orderedFixture({ nodes }),
 			policy,
@@ -154,13 +164,24 @@ describe("a card's body takes its group's colour and its chip its type's", () =>
 		const api = groupOf(paintedIn(rendered.svg), "node", "api")!.markup;
 		const unmarked = await renderArchitecture({ content: orderedFixture({ nodes }), policy });
 		const before = groupOf(paintedIn(unmarked.svg), "node", "api")!.markup;
-		// The face takes the standing's colour; the front edge keeps the block's.
-		expect(
-			sameHue(hueOf(blockOf(api).face), hueOf(themeColor("light", "--standing-changed"))),
-		).toBeTrue();
-		expect(blockOf(api).edge).toBe(blockOf(before).edge);
-		// No second box inside the block: nothing on it but the selection ring is outlined.
-		expect(api).not.toMatch(/<rect (?!class="ab-halo")[^>]*fill="none" stroke=/u);
+		// The face and the front edge keep the group's colours (TASK-421).
+		expect(blockOf(api)).toEqual(blockOf(before));
+		// The standing takes over the face's outline: one dashed border in its ink,
+		// inside the top face and flush with it, the front edge below it.
+		const borders = [...api.matchAll(/<rect (?!class="ab-halo")[^>]*fill="none"[^>]*>/gu)].map(
+			([tag]) => tag,
+		);
+		const border = borders.find((tag) => tag.includes("stroke-dasharray"));
+		expect(border).toBeDefined();
+		expect(border).toContain(`stroke="${themeColor("light", "--standing-changed")}"`);
+		const body = /<rect [^>]*fill="#[0-9a-f]{6}"[^>]*>/u.exec(
+			api.slice(api.indexOf('class="ab-halo"')),
+		)![0];
+		const half = read(border!, "stroke-width") / 2;
+		expect(read(border!, "x") - half).toBeCloseTo(read(body, "x"), 3);
+		expect(read(border!, "y") - half).toBeCloseTo(read(body, "y"), 3);
+		expect(read(border!, "width") + 2 * half).toBeCloseTo(read(body, "width"), 3);
+		expect(read(border!, "height") + 2 * half).toBeLessThan(read(body, "height"));
 		expect(glyphOf(api)).toBe(glyphOf(before));
 		expect(
 			sameHue(hueOf(glyphOf(api)), hueOf(themeColor("light", "--semantic-violet"))),

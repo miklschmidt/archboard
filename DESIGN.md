@@ -274,7 +274,10 @@ and a caption tab. Each shadow is a stack of translucent shapes, with no filter
 or blur. The colors come from the `--slab-*` and `--tray-*` tokens in
 theme.css, in both themes. A group region's hairline, foot and tab and a
 grouped card's face are tones of the group's own color, set in OKLCH at one
-lightness for every color.
+lightness for every color. A comparison marks a part by its outline: a
+1.8-unit border in the comparison's green or Changed Orange along the inside edge of its
+top face, solid for added and dashed for changed, and a removed part's dashed
+red border round its footprint. The face and the front edge keep their colors.
 The shell touches none of it, and the Untouched Picture Rule still holds.
 [ADR 0044](docs/adr/0044-cards-containers-and-groups-are-drawn-as-slabs.md)
 records the construction.

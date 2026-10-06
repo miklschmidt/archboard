@@ -126,11 +126,12 @@ ground (ADR 0044, rule 13). Its traffic is its color with white mixed in
 (ADR 0027, TASK-407).
 
 "Added, changed and deleted comparison status overrides the semantic border on
-nodes and the semantic line color on edges." The part about edges holds. On a
-node, a standing now washes the face: green for added, and orange with a hatch
-for changed. The wash takes the place of the group's tint on a card, and the
-card keeps its group's color on its front edge. On a container, the wash takes
-the place of the kind's tint on the floor, and the nameplate and the walls keep
-the kind. A removed node has lost its depth: a flat, see-through face inside a
-dashed red footprint. The type chip still says the kind, and selection still adds a ring
-outside the part.
+nodes and the semantic line color on edges." This holds again (TASK-421). On a
+node, a standing takes over the outline of the top face, with the color, width
+and dash it had before the blocks: 1.8 units, solid green for added, dashed
+orange for changed. The border runs along the edge of the face, inside it. The
+card keeps its group's tint on its face and its group's color on its front
+edge. On a container, the border runs round the tray, and the floor, the
+nameplate and the walls keep their colors. A removed node has lost its depth: a
+flat, see-through face inside a dashed red border round its footprint. The type
+chip still says the kind, and selection still adds a ring outside the part.

@@ -19,9 +19,11 @@
 // container itself relates to leaves from the foot of that front edge, so the
 // edge is the line's visible origin.
 //
-// A proposal's standing washes the floor, in place of the kind's tint, which the
-// nameplate keeps; a changed container's nameplate is hatched as well. A
-// removed container leaves the ghost every removed block leaves (`slab.ts`).
+// A proposal's standing takes over the tray's outline: a border in the
+// standing's ink along the edge of its box, inside it, round the walls that
+// are the container's own outline (`standingBorder`). The floor and the
+// nameplate keep the kind. A removed container leaves the ghost every removed
+// block leaves (`slab.ts`).
 //
 // Every shape is a rect at an offset from the container's box or a line across
 // or down it, so a viewer that carries a container from one picture to the next
@@ -40,27 +42,13 @@ import {
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { lines } from "@/transformers/semantic-renderer/lib/svg/primitives";
-import {
-	across,
-	hatched,
-	plate,
-	washed,
-	type Share,
-} from "@/transformers/semantic-renderer/lib/svg/slab";
-import {
-	standingInk,
-	type SubjectStanding,
-} from "@/transformers/semantic-renderer/lib/svg/standing";
+import { across, plate, standingBorder } from "@/transformers/semantic-renderer/lib/svg/slab";
+import type { SubjectStanding } from "@/transformers/semantic-renderer/lib/svg/standing";
 
 /** How a tray looks: its floor, its walls and its nameplate. */
 interface TrayLook {
 	/** Its floor, tinted by its kind. */
 	readonly floor: string;
-	/**
-	 * Its floor before its kind tinted it, which a standing washes in place of
-	 * the kind: one tint to a face, which the nameplate still carries.
-	 */
-	readonly ground: string;
 	/** The face of its top wall, in shade, and of its side walls, quieter. */
 	readonly walls: { readonly top: string; readonly side: string };
 	/**
@@ -72,19 +60,6 @@ interface TrayLook {
 
 /** The corners of a tray's floor and nameplate: its box's, inside its walls. */
 const FLOOR_RADIUS = BAND_RADIUS - TRAY_WALL;
-
-/**
- * How much of its standing's ink an added or changed tray's floor is washed
- * with: less than a card's face, so the cards standing on it still read over it.
- */
-const FLOOR_WASH: Share = { light: 0.08, dark: 0.14 };
-
-/**
- * How much of the hatch's strength a nameplate takes: enough to texture it,
- * little enough that its kind's tint still reads and the words on it, and a
- * line that crosses it, keep their contrast.
- */
-const PLATE_HATCH = 0.5;
 
 /**
  * The short, soft shadow the top wall throws straight down on what lies under
@@ -145,8 +120,9 @@ function toneFrom(face: Box, top: number, fill: string, radius: number): string 
  * One tray, cut into what holds it: the crease and the lip along its bottom,
  * its top wall and its side walls, its nameplate seated against the top wall
  * and its floor below that, with the shadow the top wall throws on what lies
- * under it. A removed container has lost its tray: its ghost is drawn under
- * the selection ring (`slabShadow`), and this draws nothing.
+ * under it, and a standing's border round it. A removed container has lost its
+ * tray: its ghost is drawn under the selection ring (`slabShadow`), and this
+ * draws nothing.
  * @param box The container's box.
  * @param look How the tray looks.
  * @param palette The theme's colours.
@@ -155,8 +131,6 @@ function toneFrom(face: Box, top: number, fill: string, radius: number): string 
  */
 function tray(box: Box, look: TrayLook, palette: Palette, standing?: SubjectStanding): string {
 	if (standing === "removed") return "";
-	const ink = standing === undefined ? undefined : standingInk(standing, palette);
-	const floorTone = ink === undefined ? look.floor : washed(look.ground, ink, FLOOR_WASH, palette);
 	const floor = floorOf(box);
 	const foot = box.y + look.nameplate.height;
 	// The walls, above the lip.
@@ -172,9 +146,8 @@ function tray(box: Box, look: TrayLook, palette: Palette, standing?: SubjectStan
 			fill: look.walls.side,
 		}),
 		plate(floor, FLOOR_RADIUS, { fill: look.nameplate.face }),
-		standing === "changed" ? hatched(floor, FLOOR_RADIUS, PLATE_HATCH) : "",
 		toneFrom(floor, foot - PLATE_THICKNESS, look.nameplate.edge, FLOOR_RADIUS),
-		toneFrom(floor, foot, floorTone, FLOOR_RADIUS),
+		toneFrom(floor, foot, look.floor, FLOOR_RADIUS),
 		...WALL_SHADOW.map((share, index) =>
 			across(floor, floor.y + (index + 0.5) * SHADOW_BAND, {
 				stroke: palette.slabShadow,
@@ -182,6 +155,7 @@ function tray(box: Box, look: TrayLook, palette: Palette, standing?: SubjectStan
 				"stroke-width": SHADOW_BAND,
 			}),
 		),
+		standingBorder(box, BAND_RADIUS, standing, palette),
 	]);
 }
 
