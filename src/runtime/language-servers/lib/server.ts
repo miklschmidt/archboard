@@ -1,21 +1,27 @@
 // One language server process, from its start to its stop.
 //
-// It starts in the root of a checkout and is told that root is its one
-// workspace, so it finds the project there itself. The client asks it only
-// for definitions and for the outline of a file, and never asks it to build
-// or to run a command. It reads
-// each file from disk, as the code check does, so the client opens none.
-// Stopping asks it to shut down and exit, and kills it if it has not ended
-// within the bound; a cancelled pass kills it at once. Either way the stop
-// returns only once the process has ended.
+// It starts in the root of a project, a checkout or a package in one, and is
+// told that root is its one workspace, so it finds the project there itself.
+// The client asks it only for definitions and for the outline of a file, and
+// never asks it to build or to run a command. It starts with the options its
+// language's row names, and before the first question it is asked once to
+// load what it reads, where the row names such a request. A server that reads
+// each file from disk, as the code check does, gets no file opened; one whose
+// row says it answers only about an open file gets each file opened once,
+// with its text on disk. Stopping asks it to shut down and exit, and kills it
+// if it has not ended within the bound; a cancelled pass kills it at once.
+// Either way the stop returns only once the process has ended.
 
+import fs from "node:fs/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { z } from "zod";
 import {
 	connect,
+	RequestFailure,
 	type Connection,
 	type ServerProcess,
 } from "@/runtime/language-servers/lib/connection";
+import { LANGUAGES, languageOf, type Language } from "@/runtime/language-servers/lib/languages";
 import { outlineOf, type OutlineSymbol } from "@/runtime/language-servers/lib/outline";
 import type { LANGUAGE_SERVER_TIMEOUTS } from "@/shared/timing/timing";
 
@@ -47,7 +53,9 @@ interface Server {
 
 /** What one server needs to start. */
 interface ServerStart {
+	readonly language: Language;
 	readonly argv: readonly [string, ...string[]];
+	/** The project's root, where it starts. */
 	readonly root: string;
 	readonly signal: AbortSignal;
 	readonly timeouts: ServerTimeouts;
@@ -101,13 +109,16 @@ function exitReason(code: number, signal: string | null): string {
 }
 
 /**
- * The `initialize` request: the checkout as the one workspace, and a client
- * that asks for definitions and nothing else.
- * @param root The checkout.
+ * The `initialize` request: the project as the one workspace, a client that
+ * asks for definitions and outlines and nothing else, and the options the
+ * language's row names.
+ * @param root The project.
+ * @param language Its language.
  * @returns Its params.
  */
-function initializeParams(root: string): object {
+function initializeParams(root: string, language: Language): object {
 	const uri = pathToFileURL(root).href;
+	const { initializationOptions } = LANGUAGES[language];
 	return {
 		processId: process.pid,
 		clientInfo: { name: "archboard" },
@@ -117,6 +128,65 @@ function initializeParams(root: string): object {
 			general: { positionEncodings: ["utf-16"] },
 			textDocument: { documentSymbol: { hierarchicalDocumentSymbolSupport: true } },
 		},
+		...(initializationOptions === undefined ? {} : { initializationOptions }),
+	};
+}
+
+/**
+ * Ask a server once to load what it reads, where its language's row names
+ * such a request. A server that refuses it, as one that does not know it
+ * does, is asked the questions anyway.
+ * @param connection Its connection.
+ * @param language Its language.
+ * @param bounds How long to wait, and the pass's signal.
+ * @param bounds.timeoutMs How long to wait.
+ * @param bounds.signal The pass's signal.
+ */
+async function settle(
+	connection: Connection,
+	language: Language,
+	bounds: { readonly timeoutMs: number; readonly signal: AbortSignal },
+): Promise<void> {
+	const request = LANGUAGES[language].settle;
+	if (request === undefined) return;
+	try {
+		await connection.request(request.method, request.params, bounds);
+	} catch (error) {
+		if (!(error instanceof RequestFailure && error.kind === "answered")) throw error;
+	}
+}
+
+/**
+ * Open a file with its text on disk. An unreadable file stays closed, and the
+ * server refuses to answer about it.
+ * @param connection The server's connection.
+ * @param file The file, absolute.
+ */
+async function openFile(connection: Connection, file: string): Promise<void> {
+	const text = await fs.readFile(file, "utf8").catch(() => undefined);
+	if (text === undefined) return;
+	const languageId = languageOf(file)?.languageId ?? "plaintext";
+	const textDocument = { uri: pathToFileURL(file).href, languageId, version: 0, text };
+	connection.notify("textDocument/didOpen", { textDocument });
+}
+
+/**
+ * A function that opens a file once, for a server that answers only about an
+ * open file, and does nothing for any other.
+ * @param connection The server's connection.
+ * @param language Its language.
+ * @returns The function.
+ */
+function opener(connection: Connection, language: Language): (file: string) => Promise<void> {
+	if (LANGUAGES[language].opensFiles !== true) return () => Promise.resolve();
+	const opened = new Map<string, Promise<void>>();
+	return (file) => {
+		let open = opened.get(file);
+		if (open === undefined) {
+			open = openFile(connection, file);
+			opened.set(file, open);
+		}
+		return open;
 	};
 }
 
@@ -197,15 +267,17 @@ async function startServer(start: ServerStart): Promise<Server> {
 		stopping ??= stopProcess(child, connection, graceful, start.timeouts);
 		return stopping;
 	};
+	const bounds = { timeoutMs: start.timeouts.requestMs, signal: start.signal };
 	try {
-		const bounds = { timeoutMs: start.timeouts.startMs, signal: start.signal };
-		await connection.request("initialize", initializeParams(start.root), bounds);
+		const starting = { timeoutMs: start.timeouts.startMs, signal: start.signal };
+		await connection.request("initialize", initializeParams(start.root, start.language), starting);
+		connection.notify("initialized", {});
+		await settle(connection, start.language, bounds);
 	} catch (error) {
 		await stop(false);
 		throw error;
 	}
-	connection.notify("initialized", {});
-	const bounds = { timeoutMs: start.timeouts.requestMs, signal: start.signal };
+	const open = opener(connection, start.language);
 	return {
 		/**
 		 * Where the name at a position of a file is defined.
@@ -214,6 +286,7 @@ async function startServer(start: ServerStart): Promise<Server> {
 		 * @returns Each location in a file.
 		 */
 		definition: async (file, position) => {
+			await open(file);
 			const params = { textDocument: { uri: pathToFileURL(file).href }, position };
 			return locationsOf(await connection.request("textDocument/definition", params, bounds));
 		},
@@ -223,6 +296,7 @@ async function startServer(start: ServerStart): Promise<Server> {
 		 * @returns Its symbols.
 		 */
 		outline: async (file) => {
+			await open(file);
 			const params = { textDocument: { uri: pathToFileURL(file).href } };
 			return outlineOf(await connection.request("textDocument/documentSymbol", params, bounds));
 		},

@@ -6,10 +6,15 @@
 // by `<file>:<line>:<word>`: the file relative to its working directory, the
 // line from 1 and the whole word at the asked position. Each value is
 // `{ "path": <file>, "line": <line> }`, or a list of them. It appends its pid to
-// `<state-dir>/pids` when it starts, and each method it receives to
-// `<state-dir>/methods`, so a test can see what was asked and whether the
-// process still runs. A mode, or several joined by `,`, makes it misbehave:
+// `<state-dir>/pids` when it starts, each method it receives to
+// `<state-dir>/methods`, and its working directory and the
+// `initializationOptions` it was given to `<state-dir>/starts`, one JSON line
+// each, so a test can see what was asked, where, and whether the process still
+// runs. It refuses a request it does not know, as a server does. A mode, or
+// several joined by `,`, makes it misbehave:
 //
+// - `needs-open`: refuses a definition in a file the client has not opened,
+//   as sourcekit-lsp does.
 // - `hang-initialize`: never answers `initialize`.
 // - `hang-definition`: never answers a definition.
 // - `exit-on-definition`: exits with code 3 on the first definition.
@@ -36,8 +41,12 @@ interface Message {
 	readonly params?: {
 		readonly textDocument?: { readonly uri: string };
 		readonly position?: { readonly line: number; readonly character: number };
+		readonly initializationOptions?: unknown;
 	};
 }
+
+/** The files the client opened. */
+const opened = new Set<string>();
 
 /**
  * Write one framed message.
@@ -85,23 +94,39 @@ function definition(message: Message): object[] {
 }
 
 /**
+ * Answer a definition as the mode says.
+ * @param message The question.
+ */
+function answerDefinition(message: Message): void {
+	if (modes.has("exit-on-definition")) process.exit(3);
+	const closed = modes.has("needs-open") && !opened.has(message.params?.textDocument?.uri ?? "");
+	if (modes.has("refuse-definition") || closed)
+		send({ id: message.id, error: { code: -32_603, message: "no" } });
+	else if (!modes.has("hang-definition")) send({ id: message.id, result: definition(message) });
+}
+
+/**
  * Answer one message as the mode says.
  * @param message The message.
  */
 function receive(message: Message): void {
 	fs.appendFileSync(path.join(stateDir, "methods"), `${message.method ?? "answer"}\n`);
-	if (message.method === "initialize" && !modes.has("hang-initialize")) {
+	if (message.method === "initialize") {
+		const start = { cwd: process.cwd(), options: message.params?.initializationOptions ?? null };
+		fs.appendFileSync(path.join(stateDir, "starts"), `${JSON.stringify(start)}\n`);
+		if (modes.has("hang-initialize")) return;
 		send({ id: message.id, result: { capabilities: { definitionProvider: true } } });
 		send({ id: "ask-1", method: "workspace/configuration", params: { items: [{}] } });
+	} else if (message.method === "textDocument/didOpen") {
+		opened.add(message.params?.textDocument?.uri ?? "");
 	} else if (message.method === "textDocument/definition") {
-		if (modes.has("exit-on-definition")) process.exit(3);
-		if (modes.has("refuse-definition"))
-			send({ id: message.id, error: { code: -32_603, message: "no" } });
-		else if (!modes.has("hang-definition")) send({ id: message.id, result: definition(message) });
-	} else if (message.method === "shutdown" && !modes.has("deaf")) {
-		send({ id: message.id, result: null });
-	} else if (message.method === "exit" && !modes.has("deaf")) {
-		process.exit(0);
+		answerDefinition(message);
+	} else if (message.method === "shutdown") {
+		if (!modes.has("deaf")) send({ id: message.id, result: null });
+	} else if (message.method === "exit") {
+		if (!modes.has("deaf")) process.exit(0);
+	} else if (message.method !== undefined && message.id !== undefined) {
+		send({ id: message.id, error: { code: -32_601, message: `no method ${message.method}` } });
 	}
 }
 
