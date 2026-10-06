@@ -385,7 +385,9 @@ function paintArchitecture(
 		// Group regions: over the frames that hold them, under every line that crosses them.
 		...(drawing.regions ?? [])
 			.toSorted((a, b) => a.depth - b.depth)
-			.map((region) => paintRegion(region, { palette, policy, farSize })),
+			.map((region) =>
+				paintRegion(region, { palette, policy, farSize, routes: edges.map(({ curve }) => curve) }),
+			),
 		...edges.map((edge) =>
 			paintEdgeLine(
 				edge,
