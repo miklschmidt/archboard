@@ -31,7 +31,9 @@ interface GitRun {
  * @returns The running command.
  */
 function spawnGit(root: string, args: readonly string[], options: GitRunOptions) {
-	return Bun.spawn(["git", ...args], {
+	// A person who sets `log.showSignature` makes every `git log` run GPG for
+	// each commit and print its verdict among the records the lens reads.
+	return Bun.spawn(["git", "-c", "log.showSignature=false", ...args], {
 		cwd: root,
 		stdin: options.input === undefined ? "ignore" : new Blob([options.input]),
 		stdout: "pipe",
