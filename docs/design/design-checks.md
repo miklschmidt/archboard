@@ -197,6 +197,25 @@ The real `./bin/dogfood check --code` also runs the plain check and behind. It
 took 1,582 ms on its first run after a server restart, and 1,141 ms on the
 second run.
 
+#### Reading Flask through the Python adapter
+
+TASK-367.08 measured the Python adapter on 2026-10-06 with Bun 1.4.2 on Flask
+3.0.0 (`735a4701`), the checkout the skill evaluations pin. One process read
+all 82 tracked `.py` files in one pass: 168 to 171 ms cold, grammar load
+included, and 5 ms warm, with every file from the cache. No line of Flask fell
+in a part that did not parse. The files hold 1,096 definitions, 4,601
+references and 621 imports. 281 imports resolve to a file of the checkout.
+Every import of Flask's own code in `src` and `tests` resolves. The other
+imports name the standard library or installed packages. Each of the
+`examples` is a project of its own, and its `pyproject.toml` takes `flask`
+from the environment.
+
+A board of 13 parts bound to `src/flask` and 9 relationships ran through the
+real check in 189 ms cold and 102 ms warm. Every piece of evidence was
+resolved through an import, and nothing was read as text. The imports were
+relative (`from ..ctx import _AppCtxGlobals`), of a submodule
+(`from . import json`), or of a name that a package's `__init__.py` passes on.
+
 #### Swift and Nix have no upstream WebAssembly file on npm
 
 Swift: the npm package `tree-sitter-swift` stops at 0.7.1 and has no `.wasm`.
