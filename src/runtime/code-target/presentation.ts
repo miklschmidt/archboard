@@ -77,14 +77,32 @@ function githubRef(binding: CodeBinding): string {
 }
 
 /**
- * Builds the GitHub tree URL a binding points at, pinned to its commit, else
- * its branch, else HEAD. It exists so a binding can still be opened when no
- * local checkout resolves. It names the file or directory and ignores a
- * binding's `symbol`, as the local opener does (TASK-367.25).
+ * How GitHub shows a path: a file at a line as a blob with a fragment, anything else as a tree.
+ * @param suffix - The encoded path tail, empty for the repository root, which is a directory.
+ * @param line - The line to link to, if the caller found one.
+ * @returns The view and the fragment to put in the URL.
+ */
+function githubPlace(
+	suffix: string,
+	line: number | undefined,
+): { readonly view: "tree" | "blob"; readonly fragment: string } {
+	return line === undefined || suffix === ""
+		? { view: "tree", fragment: "" }
+		: { view: "blob", fragment: `#L${line}` };
+}
+
+/**
+ * Builds the GitHub URL a binding points at, pinned to its commit, else its
+ * branch, else HEAD. It exists so a binding can still be opened when no local
+ * checkout resolves, or when opening it fails. It names the file or directory,
+ * and a file at a line when the caller found one, as `blob/<ref>/<path>#L<n>`.
+ * The caller gives a line only when it read the file at that ref: a binding's
+ * `symbol` is looked up in a checkout (TASK-367.25), never on GitHub.
  * @param binding - The binding to present.
+ * @param line - The line to link to, found in a checkout that has the bound ref out.
  * @returns A validated GitHub URL, or undefined when the binding has none.
  */
-function githubUrlForBinding(binding: CodeBinding): GitHubHttpsUrl | undefined {
+function githubUrlForBinding(binding: CodeBinding, line?: number): GitHubHttpsUrl | undefined {
 	const parsed = CodeBindingSchema.safeParse(binding);
 	if (!parsed.success) {
 		return undefined;
@@ -94,7 +112,8 @@ function githubUrlForBinding(binding: CodeBinding): GitHubHttpsUrl | undefined {
 	if (parts === undefined || suffix === undefined) {
 		return undefined;
 	}
-	const target = `https://github.com/${encodeField(parts.owner)}/${encodeField(parts.repository)}/tree/${encodeField(githubRef(parsed.data))}${suffix}`;
+	const place = githubPlace(suffix, line);
+	const target = `https://github.com/${encodeField(parts.owner)}/${encodeField(parts.repository)}/${place.view}/${encodeField(githubRef(parsed.data))}${suffix}${place.fragment}`;
 	const validated = GitHubHttpsUrlSchema.safeParse(target);
 	return validated.success ? validated.data : undefined;
 }
