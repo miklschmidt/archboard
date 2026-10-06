@@ -150,7 +150,7 @@ async function follow(
 ): Promise<DefinitionSite | undefined> {
 	if (!looksIn(search, target, depth)) return undefined;
 	const facts = await search.pass.read(search.checkout, target.path);
-	if (facts?.adapter !== "typescript") return undefined;
+	if (facts === undefined || facts.adapter === "text") return undefined;
 	const symbol = ownSpelling(facts.definitions, target.symbol);
 	const definition = definitionsNamed(facts.definitions, symbol)[0];
 	if (definition !== undefined) return { path: facts.path, definition, via: [] };
@@ -176,7 +176,7 @@ async function definitionSite(
 	symbol: string,
 ): Promise<DefinitionSite | undefined> {
 	const facts = await pass.read(checkout, file);
-	if (facts?.adapter !== "typescript") return undefined;
+	if (facts === undefined || facts.adapter === "text") return undefined;
 	const own = definitionsNamed(facts.definitions, symbol)[0];
 	if (own !== undefined) return { path: facts.path, definition: own, via: [] };
 	const search: Search = { pass, checkout, seen: new Set() };

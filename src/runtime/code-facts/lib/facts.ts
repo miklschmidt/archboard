@@ -18,9 +18,12 @@ interface Definition {
 	readonly start: number;
 	readonly end: number;
 	/**
-	 * The language's own word: `export` or `export default` for a module-level
-	 * declaration and `module` for one that is not exported; `public`,
-	 * `protected`, `private` or `#private` for a member.
+	 * The language's own word. TypeScript: `export` or `export default` for a
+	 * module-level declaration and `module` for one that is not exported;
+	 * `public`, `protected`, `private` or `#private` for a member. Python:
+	 * `__all__` or `not in __all__` in a module that sets `__all__`, else
+	 * `public` or `non-public` (`_name`); `public`, `non-public` or
+	 * `name-mangled` (`__name`) for a class member.
 	 */
 	readonly visibility: string;
 	/**
@@ -77,12 +80,16 @@ interface Unparsed {
 	readonly names: readonly string[];
 }
 
-/** A reference that reaches a name another file defines, through an import. */
+/**
+ * A reference that reaches a name another file defines, through an import.
+ * Where it leads is read from the import once the import is resolved, because
+ * only resolution can tell whether a Python name is a submodule.
+ */
 interface ReferenceThroughImport {
 	/** The index of the import in `imports`. */
 	readonly import: number;
-	/** The name in the imported file, with the rest of the reference's spelling. */
-	readonly symbol: string;
+	/** The local name of the import the reference's spelling starts with: `Ledger`, `ns`, `a.b`. */
+	readonly local: string;
 }
 
 /**
@@ -102,15 +109,39 @@ interface Target {
 	readonly symbol: string;
 }
 
+/** The adapters a grammar reads files through, one for each entry of the table in adapters.ts. */
+type AdapterName = "typescript" | "python";
+
+/**
+ * An import with the checkout file it resolves to, where the adapter can
+ * resolve it. Its names are as the resolved file names them: a Python name
+ * that is a submodule becomes `*`, the whole submodule.
+ */
+type ResolvedImport = Import & { readonly resolved?: string };
+
+/** Reads one file of a checkout as text, or says it cannot. */
+type ReadText = (relative: string) => string | undefined;
+
+/** Resolves the imports of one checkout for one pass, as one adapter's language does. */
+interface ImportResolver {
+	/**
+	 * Where one import leads.
+	 * @param from The importing file, relative to the checkout.
+	 * @param found The import.
+	 * @returns The import, resolved where it names a file of the checkout.
+	 */
+	resolve(from: string, found: Import): ResolvedImport;
+}
+
 /** The code facts of one file a grammar reads, with its imports resolved for this pass. */
 interface SyntaxFacts {
-	readonly adapter: "typescript";
+	readonly adapter: AdapterName;
 	readonly path: string;
 	readonly definitions: readonly Definition[];
 	/** Each reference, and where it leads where an import names the file. */
 	readonly references: readonly (Reference & { readonly target?: Target })[];
 	/** Each import, and the checkout file it resolves to where the adapter can resolve it. */
-	readonly imports: readonly (Import & { readonly resolved?: string })[];
+	readonly imports: readonly ResolvedImport[];
 	readonly unparsed: readonly Unparsed[];
 }
 
@@ -124,14 +155,18 @@ interface TextFacts {
 type FileFacts = SyntaxFacts | TextFacts;
 
 export type {
+	AdapterName,
 	Definition,
 	FileFacts,
 	Import,
 	ImportedName,
+	ImportResolver,
 	ParsedFacts,
+	ReadText,
 	Reference,
 	ReferenceThroughImport,
 	ReferenceVia,
+	ResolvedImport,
 	SyntaxFacts,
 	Target,
 	TextFacts,

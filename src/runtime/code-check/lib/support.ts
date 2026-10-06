@@ -143,7 +143,7 @@ function usesOf(references: readonly Reference[], symbol: string): Reference[] {
  * @returns The evidence, or undefined.
  */
 function anchoredUse(facts: FileFacts | undefined, claim: AnchorClaim): CodeEvidence | undefined {
-	if (facts?.adapter !== "typescript") return undefined;
+	if (facts === undefined || facts.adapter === "text") return undefined;
 	const { symbol, repo } = claim.anchor;
 	const use = usesOf(facts.references, symbol)[0];
 	if (use?.kind === undefined) return undefined;

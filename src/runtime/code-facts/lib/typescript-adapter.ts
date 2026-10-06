@@ -17,12 +17,12 @@ import type {
 	Reference,
 	ReferenceThroughImport,
 	ReferenceVia,
-	Unparsed,
 } from "@/runtime/code-facts/lib/facts";
 import type { Grammar } from "@/runtime/code-facts/lib/grammars";
 import { spansOf, type Spans } from "@/runtime/code-facts/lib/spans";
 import { definitionsOf, exportedNames } from "@/runtime/code-facts/lib/typescript-definitions";
 import { dynamicImport, staticImport } from "@/runtime/code-facts/lib/typescript-imports";
+import { unparsedOf } from "@/runtime/code-facts/lib/unparsed";
 
 /** The captures of one file, by what the query calls them. */
 interface Captured {
@@ -71,9 +71,6 @@ const QUALIFIED_IN: Readonly<Record<string, string>> = {
 	type_identifier: "nested_type_identifier",
 };
 
-/** A whole word, as the text reading spells one. */
-const WORD = /[\p{L}\p{N}_$]+/gu;
-
 /**
  * Sort the captures into their lists.
  * @param captures The captures, in document order.
@@ -100,31 +97,6 @@ function sorted(captures: readonly QueryCapture[]): Captured {
 		if (list !== undefined) lists[list].push(capture.node);
 	}
 	return lists;
-}
-
-/**
- * Whether an error node lies inside another one.
- * @param node The error node.
- * @returns True when an ancestor is an error node too.
- */
-function insideAnotherError(node: Node): boolean {
-	for (let at = node.parent; at !== null; at = at.parent) if (at.type === "ERROR") return true;
-	return false;
-}
-
-/**
- * The parts of a file that did not parse, with the names written there.
- * @param nodes The error nodes, nested or not.
- * @returns One entry per outermost error node.
- */
-function unparsedOf(nodes: readonly Node[]): Unparsed[] {
-	return nodes
-		.filter((node) => !insideAnotherError(node))
-		.map((node) => ({
-			start: node.startPosition.row + 1,
-			end: node.endPosition.row + 1,
-			names: [...new Set(node.text.match(WORD) ?? [])],
-		}));
 }
 
 /**
@@ -253,22 +225,19 @@ function withUses(found: Import, uses: ReadonlyMap<string, Use>): Import {
 }
 
 /**
- * Where a reference leads through an import: the import that brings in its
- * first name, and the name in the imported file.
+ * The import that brings in a reference's first name.
  * @param reference The reference.
  * @param imported Each local name an import brings in, with its import's index.
  * @returns The import and the name, or undefined when no import brings it in.
  */
 function throughImport(
 	reference: Reference,
-	imported: ReadonlyMap<string, { readonly index: number; readonly name: ImportedName }>,
+	imported: ReadonlyMap<string, number>,
 ): ReferenceThroughImport | undefined {
 	if (reference.via !== "code") return undefined;
-	const [first = "", ...rest] = reference.symbol.split(".");
-	const from = imported.get(first);
-	if (from === undefined) return undefined;
-	const names = from.name.imported === "*" ? rest : [from.name.imported, ...rest];
-	return { import: from.index, symbol: names.length === 0 ? "*" : names.join(".") };
+	const first = reference.symbol.split(".")[0] ?? "";
+	const index = imported.get(first);
+	return index === undefined ? undefined : { import: index, local: first };
 }
 
 /**
@@ -284,7 +253,7 @@ function distinct(
 ): ParsedFacts["references"] {
 	const imported = new Map(
 		imports.flatMap((found, index) =>
-			found.reexport ? [] : found.names.map((name) => [name.local, { index, name }] as const),
+			found.reexport ? [] : found.names.map((name) => [name.local, index] as const),
 		),
 	);
 	const seen = new Map<string, ParsedFacts["references"][number]>();
