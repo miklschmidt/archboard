@@ -115,7 +115,12 @@ async function walkPeriod(
 		since === undefined
 			? untilSeconds - Math.floor(LOCALITY_DEFAULT_PERIOD_MS / 1000)
 			: Math.floor(since.getTime() / 1000);
-	const walked = await walkCommits(root, [`--since=@${sinceSeconds}`, head], options);
+	// `--max-age` takes the seconds as they are. Git's date parser reads
+	// `--since=@<seconds>` as a time only from 100000000 (1973) on, and a start
+	// before that would read as now and count nothing. A start at or before
+	// 1970 limits nothing.
+	const limit = sinceSeconds > 0 ? [`--max-age=${sinceSeconds}`] : [];
+	const walked = await walkCommits(root, [...limit, head], options);
 	return {
 		period: { repo, head, since: isoTime(sinceSeconds), until: isoTime(untilSeconds) },
 		commits: new Map(walked.map((commit) => [commit.commit, commit])),
