@@ -283,14 +283,6 @@ function measureMessageLines(
 		.map((line) => ({ text: line, width: exactWidth(line, style) }));
 }
 
-/** How a card's name is set when the picture is seen from far away. */
-interface FarTitle {
-	/** The type chip's side, and where it stands, relative to the card's corner. */
-	readonly chip: { readonly x: number; readonly y: number; readonly size: number };
-	/** The name's lines, relative to the card's corner. */
-	readonly runs: readonly TextRun[];
-}
-
 /** Room a far name keeps from its card's sides. */
 const FAR_PADDING_X = 16;
 /** Room a far name keeps from its card's top and bottom. */
@@ -317,22 +309,16 @@ const FAR_LINES = 2;
  */
 const FAR_ONE_LINE_SHARE = 0.85;
 
-/**
- * The box a far name stands in: a card, or a container's header. The mark of
- * a part that opens another board stands in its top-right corner, grown with
- * the chip, and the name keeps clear of it as the name drawn near does.
- */
+/** The box a far name stands in: a card. */
 interface FarBox {
 	readonly width: number;
 	readonly height: number;
-	/** Whether the mark of a part that opens another board stands in its corner. */
-	readonly mark?: boolean;
 }
 
 /** A title a picture draws from far away: its text and the box it stands in. */
 interface FarSubject {
 	readonly name: string;
-	readonly box: { readonly width: number; readonly height: number };
+	readonly box: FarBox;
 }
 
 /**
@@ -377,27 +363,6 @@ function farSizeOf(name: string, box: FarBox, lines: number = FAR_LINES): number
 		else low = middle;
 	}
 	return Math.floor(low * 2) / 2;
-}
-
-/**
- * A name set from far away, beside its type chip grown to match, its
- * responsibility left out: from far away the name is what a reader can still
- * take in. A card's name and chip stand centred in the card as one block; a
- * container's stand at its header's start, as a heading does.
- * @param name The name.
- * @param box The box it stands in: a card, or a container's header.
- * @param place Its size, at most {@link farSizeOf} the box, and where the block stands.
- * @param place.size The name's size.
- * @param place.align Centred in the box, or at its start.
- * @returns The chip's place and the name's lines.
- */
-function measureFarTitle(
-	name: string,
-	box: FarBox,
-	place: { size: number; align: "centre" | "start" },
-): FarTitle {
-	const lines = farLines(name, box, place.size, FAR_LINES) ?? farWrap(name, box, place.size);
-	return farTitleAt(box, place, lines);
 }
 
 /**
@@ -450,16 +415,13 @@ function farStyle(size: number): TextStyle {
 }
 
 /**
- * The width a far name has beside its chip at one size, less the room for a
- * mark in the box's corner, which grows with the chip.
+ * The width a far name has beside its chip at one size.
  * @param box The box it stands in.
  * @param size The name's size.
  * @returns The width.
  */
 function farRoom(box: FarBox, size: number): number {
-	const chip = farChip(box, size);
-	const mark = box.mark === true ? (DRILL_MARK_ROOM * chip) / ICON_CHIP_SIZE : 0;
-	return box.width - FAR_PADDING_X * 2 - chip - size * FAR_GAP - mark;
+	return box.width - FAR_PADDING_X * 2 - farChip(box, size) - size * FAR_GAP;
 }
 
 /**
@@ -472,48 +434,6 @@ function farRoom(box: FarBox, size: number): number {
  */
 function farChip(box: { height: number }, size: number): number {
 	return Math.min(size * FAR_CHIP, box.height - FAR_PADDING_Y * 2);
-}
-
-/**
- * Stand a far name's lines and chip in their box: the chip, then the lines
- * beside it, as one block centred top to bottom, and centred across the box
- * or at its start.
- * @param box The box it stands in.
- * @param box.width Its width.
- * @param box.height Its height.
- * @param place The name's size and where the block stands.
- * @param place.size The name's size.
- * @param place.align Centred in the box, or at its start.
- * @param lines The name's lines.
- * @returns The chip's place and the name's runs.
- */
-function farTitleAt(
-	box: { width: number; height: number },
-	place: { size: number; align: "centre" | "start" },
-	lines: readonly string[],
-): FarTitle {
-	const { size } = place;
-	const style = farStyle(size);
-	const chip = farChip(box, size);
-	const widths = lines.map((text) => exactWidth(text, style));
-	const block = chip + size * FAR_GAP + Math.max(0, ...widths);
-	const left =
-		place.align === "centre" ? Math.max(FAR_PADDING_X, (box.width - block) / 2) : FAR_PADDING_X;
-	const x = left + chip + size * FAR_GAP;
-	const top = (box.height - lines.length * style.lineHeight) / 2;
-	return {
-		chip: { x: left, y: (box.height - chip) / 2, size: chip },
-		runs: lines.map((text, index) => ({
-			text,
-			width: widths[index]!,
-			x,
-			// The baseline stands half a cap height below the line's middle.
-			y: top + style.lineHeight / 2 + size * 0.35 + index * style.lineHeight,
-			font: style.font,
-			fontSize: size,
-			role: "title",
-		})),
-	};
 }
 
 /**
@@ -580,13 +500,4 @@ function measureArchitecture(
 	};
 }
 
-export {
-	measureArchitecture,
-	farSizeFor,
-	farSizeOf,
-	measureFarTitle,
-	measureMessageLines,
-	measureNoteLines,
-	type FarBox,
-	type FarTitle,
-};
+export { measureArchitecture, farSizeFor, measureMessageLines, measureNoteLines };

@@ -382,8 +382,8 @@ function paintArchitecture(
 		(a, b) => a.depth - b.depth || a.measured.node.order - b.measured.node.order,
 	);
 	const orderedCards = cards.toSorted((a, b) => a.measured.node.order - b.measured.node.order);
-	// Container headers and group captions draw their names from far away at the largest size
-	// every card the page holds, drawn or not, fits its name at, so leaving some out moves no name.
+	// Group captions draw their names from far away at the largest size every card the page
+	// holds, drawn or not, fits its name at, so leaving some out moves no name.
 	const farSize = farSizeFor(
 		page.drawing.cards.map(({ measured, box }) => ({ name: measured.node.name, box })),
 	);
@@ -458,7 +458,6 @@ function paintArchitecture(
 				standingOf(held.measured.node.id),
 				unsettledOf(held.measured.node.id),
 				appearances.get(held.measured.node.id)!,
-				farSize,
 			),
 		),
 	]);

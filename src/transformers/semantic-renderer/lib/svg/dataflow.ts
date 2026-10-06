@@ -33,7 +33,10 @@ import {
 	BAND_RADIUS,
 	DIAGRAM_MARGIN,
 	FLOW_PLATE_FOOT,
+	PLATE_THICKNESS,
 } from "@/transformers/semantic-renderer/lib/design";
+import { paintFarHeading } from "@/transformers/semantic-renderer/lib/svg/far-card";
+import { nearLayer } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import {
 	HEAD_REACH,
 	HEAD_SHADE_CLASS,
@@ -323,12 +326,10 @@ function paintFrame(
 	const { frame, header } = layout;
 	const styles = stylesFor(palette);
 	const ghosted = standing === "removed" ? standing : undefined;
-	const look = plinthLook(
-		undefined,
-		palette,
-		0,
-		header.y + header.height + FLOW_PLATE_FOOT - frame.y,
-	);
+	const plateHeight = header.y + header.height + FLOW_PLATE_FOOT - frame.y;
+	const look = plinthLook(undefined, palette, 0, plateHeight);
+	// The nameplate's face, which the heading's far words stand on.
+	const plate = { ...header, y: frame.y, height: plateHeight - PLATE_THICKNESS };
 	return wrap(
 		"g",
 		subjectGroup("flow", layout.flow.id, standing),
@@ -337,7 +338,8 @@ function paintFrame(
 			slabShadow(frame, BAND_RADIUS, "plinth", palette, ghosted),
 			halo(frame, BAND_RADIUS, styles, ghosted),
 			slab(frame, look, palette, ghosted),
-			paintHeader(header, layout.flow.name, layout.flow.summary, styles),
+			nearLayer(paintHeader(header, layout.flow.name, layout.flow.summary, styles)),
+			paintFarHeading(layout.flow.name, layout.flow.summary, plate, palette),
 			standingPin(frame, standing, palette),
 			warningBadge(frame, unsettled, palette),
 		]),
