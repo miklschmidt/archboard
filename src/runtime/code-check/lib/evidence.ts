@@ -392,8 +392,11 @@ async function piecesOfPath(
 	parsed: Set<string>,
 ): Promise<Piece[]> {
 	const facts = await repo.reading.facts.read(repo.checkout, file);
-	if (facts?.adapter === "text") repo.reading.readAsText(repo.checkout, file);
-	if (facts?.adapter !== "typescript") return [];
+	if (facts === undefined) return [];
+	if (facts.adapter === "text") {
+		repo.reading.readAsText(repo.checkout, file);
+		return [];
+	}
 	parsed.add(file);
 	return piecesOfFile(repo, facts);
 }
