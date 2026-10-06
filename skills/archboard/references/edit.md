@@ -103,7 +103,7 @@ carry, or one a board name cannot hold (`@` is the variant's); a variant name
 another variant of the board answers to; and the name it already has. Each
 rename is one write, so take the next `--expect-version` from its answer.
 
-Read [authoring](references/authoring.md) only when the change needs it: a
+Read [authoring](authoring.md) only when the change needs it: a
 removal beyond `removeEdges`, a binding with revision evidence, group
 membership, a drill-down link, or a refusal you must repair. A change of one
 property on subjects you read needs nothing beyond this recipe.

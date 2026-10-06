@@ -123,5 +123,5 @@ through the CLI, report it in the board's own terms, and change nothing.
    and a contradiction between the board and the source is reported, not
    fixed, unless the request asks for the change.
 
-Read [authoring](references/authoring.md) for what groups, bindings and
+Read [authoring](authoring.md) for what groups, bindings and
 drill-down mean when the answer turns on them.
