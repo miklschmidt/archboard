@@ -11,6 +11,11 @@ const BAND_RADIUS = 10;
 /** A flow header's height with a name alone, and with a summary under it. */
 const HEADER_HEIGHT = 19;
 const HEADER_HEIGHT_WITH_NOTE = 33;
+/**
+ * How far a flow's nameplate reaches below its header's words, its front edge
+ * included. The plate starts at the top of the flow's frame.
+ */
+const FLOW_PLATE_FOOT = 10;
 
 const HEADER_NAME_SIZE = 10.5;
 /**
@@ -62,6 +67,8 @@ const CARD_THICKNESS = 4;
  */
 const PLINTH_THICKNESS = 6;
 const PLINTH_STEP = 1;
+/** How thick the nameplate lying across the top of a container's plinth is. */
+const PLATE_THICKNESS = 3;
 /** How thick a group's region is, and the tab its caption is printed on. */
 const MAT_THICKNESS = 3;
 const TAB_THICKNESS = 2;
@@ -106,6 +113,7 @@ export {
 	BAND_RADIUS,
 	HEADER_HEIGHT,
 	HEADER_HEIGHT_WITH_NOTE,
+	FLOW_PLATE_FOOT,
 	HEADER_NAME_SIZE,
 	HEADER_NAME_TRACKING,
 	HEADER_NOTE_SIZE,
@@ -116,6 +124,7 @@ export {
 	CARD_THICKNESS,
 	PLINTH_THICKNESS,
 	PLINTH_STEP,
+	PLATE_THICKNESS,
 	MAT_THICKNESS,
 	TAB_THICKNESS,
 	CHIP_THICKNESS,

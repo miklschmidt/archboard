@@ -4,9 +4,9 @@
 // strike-through for a removed node. Two things were added: the selection halo
 // every subject carries, and the `data-semantic-*` attributes that let a pane
 // map a click back onto the board. A card is drawn as a slab (`lib/svg/slab.ts`).
-// What a proposal's standing does to it — the front edge and the ring it takes
-// over and the pin on its corner — is decided in `lib/svg/standing.ts` and
-// applied here without moving anything.
+// What a proposal's standing does to it — the wash or the ghost on its face and
+// the pin on its corner — is decided in `lib/svg/slab.ts` and
+// `lib/svg/standing.ts` and applied here without moving anything.
 //
 // Hierarchy here is built from weight, size, colour, case, tracking and space,
 // in that order. A card's name is the medium face and its responsibility the
@@ -54,8 +54,14 @@ import { cornerDrillMark } from "@/transformers/semantic-renderer/lib/svg/drill-
 import { paintFarCard } from "@/transformers/semantic-renderer/lib/svg/far-card";
 import { nearLayer } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { lines, tag, textNode, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
-import { slab, slabSeat, slabShadow } from "@/transformers/semantic-renderer/lib/svg/slab";
 import {
+	FOOTPRINT_WIDTH,
+	slab,
+	slabSeat,
+	slabShadow,
+} from "@/transformers/semantic-renderer/lib/svg/slab";
+import {
+	standingPalette,
 	standingPin,
 	subjectGroup,
 	warningBadge,
@@ -77,19 +83,25 @@ const OPTICAL_CENTRE = 0.34;
  * The ring a viewer turns on to show what is selected. It is always in the
  * document and always invisible until a class says otherwise, which is what
  * keeps selection out of the geometry: turning it on moves nothing.
+ *
+ * Round a removed part it is drawn over the dashed footprint the part left
+ * (`slab.ts`), so a selected ghost wears one ring, not the selection's ring
+ * round the standing's.
  * @param box What is being ringed.
  * @param radius The corner radius of the thing inside it.
  * @param styles The palette's attribute bundles.
+ * @param standing How the part stands, when this is a proposal.
  * @returns The halo element.
  */
-function halo(box: Box, radius: number, styles: SvgStyles): string {
+function halo(box: Box, radius: number, styles: SvgStyles, standing?: SubjectStanding): string {
+	const inset = standing === "removed" ? -FOOTPRINT_WIDTH / 2 : HALO_INSET;
 	return tag("rect", {
 		class: "ab-halo",
-		x: coord(box.x - HALO_INSET),
-		y: coord(box.y - HALO_INSET),
-		width: coord(box.width + HALO_INSET * 2),
-		height: coord(box.height + HALO_INSET * 2),
-		rx: coord(radius + HALO_INSET),
+		x: coord(box.x - inset),
+		y: coord(box.y - inset),
+		width: coord(box.width + inset * 2),
+		height: coord(box.height + inset * 2),
+		rx: coord(radius + inset),
 		"stroke-width": HALO_WIDTH,
 		...styles.halo,
 	});
@@ -113,7 +125,7 @@ function paintCard(
 	unsettled: boolean,
 	appearance: NodeAppearance,
 ): string {
-	const styles = stylesFor(palette);
+	const styles = stylesFor(standingPalette(palette, standing));
 	const { node, box, titleSize, notes } = placed;
 	const textX = box.x + CARD_PADDING_X + ICON_CHIP_SIZE + ICON_CHIP_GAP;
 	// A card that opens another board keeps its name clear of the mark.
@@ -152,8 +164,8 @@ function paintCard(
 		{ ...subjectGroup("node", node.id, standing), ...appearanceAttributes(appearance) },
 		lines([
 			slabSeat(box, SLAB_RADIUS),
-			slabShadow(box, SLAB_RADIUS, "card", palette),
-			halo(box, SLAB_RADIUS, styles),
+			slabShadow(box, SLAB_RADIUS, "card", palette, standing),
+			halo(box, SLAB_RADIUS, styles, standing),
 			slab(box, cardLook(appearance, palette), palette, standing),
 			nearLayer(
 				lines([
@@ -162,6 +174,7 @@ function paintCard(
 						box.y + (box.height - ICON_CHIP_SIZE) / 2,
 						appearance,
 						palette,
+						standing,
 					),
 					title,
 					note,
@@ -176,7 +189,12 @@ function paintCard(
 							),
 				]),
 			),
-			paintFarCard(node, box, { appearance, palette }, unsettled),
+			paintFarCard(
+				node,
+				box,
+				{ appearance, palette: standingPalette(palette, standing) },
+				unsettled,
+			),
 			standingPin(box, standing, palette),
 			// The opposite corner from the pin, inside the padding the words already
 			// stop short of, so a card can say both at once and neither mark lands on
@@ -193,7 +211,9 @@ function paintCard(
  * Capitals and tracking are what a header uses instead of weight. They read as
  * a label rather than as a name, which is exactly the relationship a container
  * has to the things inside it — at any depth, because a box nested inside
- * another is still a frame around its contents and not a bigger card.
+ * another is still a frame around its contents and not a bigger card. The
+ * block is printed on its frame's nameplate, which is what sets it apart from
+ * the exchange below it.
  * @param header Where the block goes.
  * @param name The container's name.
  * @param responsibility Its responsibility, when it has one.
@@ -209,15 +229,6 @@ function paintHeader(
 	const nameBaseline = header.y + HEADER_NAME_SIZE * BASELINE_RATIO;
 	const noteBaseline = nameBaseline + HEADER_NOTE_SIZE * TEXT_LINE_HEIGHT;
 	return lines([
-		// One hairline, the shell's own way of separating two things without a
-		// rule of weight or a change of ground.
-		tag("line", {
-			x1: coord(header.x),
-			y1: coord(header.y + header.height),
-			x2: coord(header.x + header.width),
-			y2: coord(header.y + header.height),
-			...styles.headerRule,
-		}),
 		textNode(
 			{ x: coord(header.x), y: coord(nameBaseline), ...styles.headerName },
 			truncateTracked(

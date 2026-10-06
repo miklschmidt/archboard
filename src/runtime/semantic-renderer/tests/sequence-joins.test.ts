@@ -192,8 +192,10 @@ test("every message's arrowhead touches the bar or lifeline it arrives at", () =
 		}
 		// Otherwise it arrives at the straight side of the receiver's bar where
 		// one runs at that height, not at a rounded corner of it, or at its lifeline.
+		// A bar's box is the one its selection trace is drawn over; its shadow
+		// reaches past it.
 		const column = groups.find((group) => group.id === step.to && group.markup.includes("<line"))!;
-		const bar = [...column.markup.matchAll(/<rect\s(?![^>]*ab-halo)[^>]*>/g)]
+		const bar = [...column.markup.matchAll(/<rect class="ab-halo"[^>]*>/g)]
 			.map(([tag]) => numbersOf({ ...column, markup: tag }, "rect"))
 			.find(
 				(rect) =>
@@ -210,9 +212,10 @@ test("every message's arrowhead touches the bar or lifeline it arrives at", () =
 	}
 });
 
-test("a flow's title rule keeps the same inset from both sides of a frame its words widened", () => {
+test("a flow's nameplate spans the whole of a frame its words widened", () => {
 	// A self-message's words on the last column reach past the columns, and the
-	// frame grows to hold them; the rule under the flow's title grows with it.
+	// frame grows to hold them; the nameplate the flow's title is printed on
+	// grows with it, from one side of the frame to the other.
 	const long = "a label long enough to reach past every column of this flow";
 	const rendered = renderDataFlow({
 		theme: "light",
@@ -236,11 +239,11 @@ test("a flow's title rule keeps the same inset from both sides of a frame its wo
 	});
 	const flow = subjectGroups(rendered.svg).find((group) => group.kind === "flow")!;
 	const frame = numbersOf(flow, "rect", (tag) => !tag.includes("ab-halo"));
-	const rule = numbersOf(flow, "line");
-	expect(rule("y1")).toBe(rule("y2"));
-	const left = rule("x1") - frame("x");
-	expect(left).toBeGreaterThan(0);
-	expect(frame("x") + frame("width") - rule("x2")).toBeCloseTo(left, 2);
+	// The plate's foot, a line straight across the frame's face.
+	const plate = numbersOf(flow, "line");
+	expect(plate("y1")).toBe(plate("y2"));
+	expect(plate("x1")).toBeCloseTo(frame("x"), 2);
+	expect(plate("x2")).toBeCloseTo(frame("x") + frame("width"), 2);
 });
 
 test("a message's words stand between the lifelines either side of them", () => {

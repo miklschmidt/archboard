@@ -51,13 +51,15 @@
    The picture builds its parts as blocks lit from the upper left: each part
    has a top face, a front edge along its foot that shows how thick it is, and
    a soft shadow it casts down and to the right. A card is a slab (--slab-face
-   on --slab-edge), a container a deeper plinth (--plinth-face, its heading on
-   --plinth-head, on --plinth-edge), and a group's region a thin mat
-   (--mat-face, --mat-edge), each tinted by its own colour. --slab-deep is what
-   a group's colour is shaded into for the front edge of a card or a label.
-   --slab-glint is what the fine highlight on a face's top edge mixes toward,
-   --slab-sheen the light that falls off down a face, and --slab-shadow one
-   layer of the stacked shadow. */
+   on --slab-edge), a container a deeper plinth (--plinth-face on
+   --plinth-edge) with a nameplate across its top (--plinth-head, tinted by its
+   kind), and a group's region a thin mat (--mat-face, --mat-edge), each tinted
+   by its own colour. A container nested in another stands a step nearer the
+   light, its face and nameplate rising toward --plinth-rise. --slab-deep is
+   what a colour is shaded into for a front edge, and for a tint on the dark
+   ground. --slab-glint is what the fine highlight on a face's top edge mixes
+   toward, --slab-sheen the light that falls off down a face, and --slab-shadow
+   one layer of the stacked shadow. */
 /* Light: chalk, warm ink, the gold. */
 :root {
 	/* Named colors used by node types, groups and relationships. */
@@ -140,6 +142,7 @@
 	--slab-sheen: oklch(1 0 0 / 0.8);
 	--slab-shadow: oklch(0.3 0.025 65 / 0.2);
 	--plinth-face: oklch(0.956 0.004 85);
+	--plinth-rise: oklch(0.972 0.003 85);
 	--plinth-head: oklch(0.938 0.005 85);
 	--plinth-edge: oklch(0.78 0.006 80);
 	--mat-face: oklch(0.985 0.003 85);
@@ -219,15 +222,16 @@
 	--sidebar-ring: oklch(0.831 0.134 84.5);
 	--raised: oklch(0.205 0.007 75);
 	--highlight: oklch(1 0.01 85 / 0.09);
-	--slab-face: oklch(0.295 0.003 75);
-	--slab-edge: oklch(0.215 0.003 75);
-	--slab-deep: oklch(0.06 0.003 75);
-	--slab-glint: oklch(1 0.01 85);
-	--slab-sheen: oklch(1 0.01 85 / 0.05);
-	--slab-shadow: oklch(0.08 0.005 75 / 0.55);
-	--plinth-face: oklch(0.235 0.004 75);
-	--plinth-head: oklch(0.262 0.004 75);
-	--plinth-edge: oklch(0.185 0.004 75);
+	--slab-face: oklch(0.305 0.002 75);
+	--slab-edge: oklch(0.215 0.002 75);
+	--slab-deep: oklch(0.06 0.002 75);
+	--slab-glint: oklch(1 0.003 85);
+	--slab-sheen: oklch(1 0.003 85 / 0.05);
+	--slab-shadow: oklch(0.08 0.004 75 / 0.55);
+	--plinth-face: oklch(0.232 0.002 75);
+	--plinth-rise: oklch(0.3 0.002 75);
+	--plinth-head: oklch(0.27 0.002 75);
+	--plinth-edge: oklch(0.175 0.002 75);
 	--mat-face: oklch(0.235 0.006 75);
 	--mat-edge: oklch(0.22 0.006 75);
 }

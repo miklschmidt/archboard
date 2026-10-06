@@ -242,8 +242,7 @@ function edgeAttributes(
  */
 function stylesFor(palette: Palette) {
 	return {
-		// A sequence's frame. A card and a container are blocks (`slab.ts`).
-		band: { fill: palette.band, stroke: palette.bandBorder, "stroke-width": 1 },
+		// A flow's heading. A card, a container and a flow's frame are blocks (`slab.ts`).
 		headerName: {
 			"font-size": HEADER_NAME_SIZE,
 			"letter-spacing": `${HEADER_NAME_TRACKING}em`,
@@ -255,13 +254,8 @@ function stylesFor(palette: Palette) {
 			fill: palette.faint,
 			...fontAttributes(HEADER_NOTE_FONT),
 		},
-		headerRule: { stroke: palette.bandBorder, "stroke-width": 1 },
 		title: { fill: palette.foreground, ...fontAttributes(CARD_TITLE_FONT) },
 		note: { "font-size": NOTE_SIZE, fill: palette.muted, ...fontAttributes(CARD_NOTE_FONT) },
-		chip: { fill: palette.chip },
-		glyph: { fill: palette.glyph },
-		glyphStroke: { stroke: palette.glyph, "stroke-width": 1.3, fill: "none" },
-		pill: { fill: palette.pill, stroke: palette.pillBorder, "stroke-width": 1 },
 		pillText: {
 			"font-size": PILL_TEXT_SIZE,
 			fill: palette.pillText,

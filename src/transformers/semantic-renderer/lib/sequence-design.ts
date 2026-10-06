@@ -52,6 +52,8 @@ const LIFELINE_DASH = "3 5";
 const ACTIVATION_HALF_WIDTH = 6;
 /** The corner radius of an activation bar. */
 const ACTIVATION_RADIUS = 3;
+/** How thick an activation bar's slab is: its front edge, inside its box along its foot. */
+const BAR_THICKNESS = 2.5;
 /**
  * How far an activation bar runs past the call that starts it and the reply
  * that ends it: past its rounded corner and half an arrowhead, so the arrow
@@ -147,6 +149,7 @@ export {
 	HEAD_SHADE_CLASS,
 	ACTIVATION_HALF_WIDTH,
 	ACTIVATION_RADIUS,
+	BAR_THICKNESS,
 	BAR_OVERHANG,
 	STEP_HEAD,
 	arrowStandoff,

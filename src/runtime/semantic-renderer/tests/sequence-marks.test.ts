@@ -149,9 +149,20 @@ describe("a stated standing on a sequence", () => {
 		expect(both).toHaveLength(2);
 		for (const group of both) {
 			expect(group.standing).toBe("removed");
-			expect(group.opacity).toBeGreaterThan(0);
-			expect(group.opacity).toBeLessThan(1);
 		}
+		// The column of time is ghosted whole, and the card has lost its block:
+		// what is left of it is a flat face inside a dashed footprint.
+		const lifeline = 'data-semantic-part="lifeline"';
+		const column = both.find((group) => group.markup.includes(lifeline))!;
+		expect(column.opacity).toBeGreaterThan(0);
+		expect(column.opacity).toBeLessThan(1);
+		const card = both.find((group) => !group.markup.includes(lifeline))!;
+		const kept = subjectGroups(drawnSequence({ legacy: "unchanged" }).svg).find(
+			(group) => group.id === "legacy" && group.kind === "node" && !group.markup.includes(lifeline),
+		)!;
+		expect(card.markup).toContain("stroke-dasharray");
+		expect(kept.markup).not.toContain("stroke-dasharray");
+		expect(withoutColour(card)).not.toBe(withoutColour(kept));
 
 		// And the column reads differently from a participant that stayed, with the
 		// colour spent.
@@ -227,13 +238,19 @@ test("a selected participant or message is traced in the selection's ink over wh
 	const groups = subjectGroups(rendered.svg);
 	const selection = /\.is-selected \.ab-halo\{[^}]*stroke:([^;}]+)/.exec(rendered.svg)![1];
 	// A participant's column: each halo retraces its lifeline or one of its
-	// bars, and nothing rings the column as a whole.
+	// bars, and nothing rings the column as a whole. A bar is a slab, its box
+	// the body its face and edge are drawn on, with a shadow round it.
 	const column = groups.find(
 		(group) => group.id === "gw" && group.markup.includes('data-semantic-part="lifeline"'),
 	)!;
 	const drawn = column.markup.match(/<(?:line|rect)\s(?![^>]*ab-halo)[^>]*>/g)!.map(geometry);
 	const lit = column.markup.match(/<(?:line|rect) class="ab-halo"[^>]*>/g)!.map(geometry);
-	expect(lit.toSorted()).toEqual(drawn.toSorted());
+	expect(lit.length).toBeGreaterThan(1);
+	for (const trace of lit) {
+		expect(drawn).toContain(trace);
+	}
+	expect(new Set(lit).size).toBe(lit.length);
+	expect(column.markup.match(/<line class="ab-halo"/g)).toHaveLength(1);
 
 	// A message: a trace over its own line, ending in a head of the selection's
 	// ink, and a rule round its plate.

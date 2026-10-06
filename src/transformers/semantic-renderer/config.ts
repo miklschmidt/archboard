@@ -38,9 +38,14 @@ export const SELF_LOOP_REACH = 26;
 
 // Sequence/flow spacing.
 export const NEST_INSET = 18;
-/** A flow's heads stand as far under its title row as its sides stand from them. */
-export const HEADER_GAP = 18;
-export const CONTAINER_TOP_PAD = 8;
+/**
+ * How far a flow's heads stand under its title row: past the foot of the
+ * nameplate the title is printed on, and as far again as its sides stand from
+ * them.
+ */
+export const HEADER_GAP = 24;
+/** How far a flow's title stands under the top of its frame's nameplate. */
+export const CONTAINER_TOP_PAD = 14;
 export const CONTAINER_BOTTOM_PAD = 14;
 export const CARD_PADDING_X = 13;
 
