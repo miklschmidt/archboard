@@ -169,8 +169,8 @@ function unreadable(claim: Claim, readable: Exclude<Readable, { status: "files" 
 }
 
 /**
- * The skip of a symbol found only in code that did not parse, or of an
- * address inside a Terraform module the check does not read.
+ * The skip of a symbol found only in code that did not parse or below a Nix
+ * expression it cannot follow, or of an address in a module it does not read.
  * @param claim The claim.
  * @param held Where it was found.
  * @returns The skip, which names the file and its lines, or the module call.
@@ -183,9 +183,10 @@ function unparsedSkip(
 	if (held.status === "module-unread") {
 		return skipped(claim.site, { reason: "module-not-read", repo, detail: held.module });
 	}
-	const { start, end } = held.unparsed;
+	const { start, end, under } = held.unparsed;
 	const detail = `${held.file}:${start === end ? start : `${start}-${end}`}`;
-	return skipped(claim.site, { reason: "symbol-unparsed", repo, detail });
+	const reason = under === undefined ? "symbol-unparsed" : "expression-not-followed";
+	return skipped(claim.site, { reason, repo, detail });
 }
 
 /**

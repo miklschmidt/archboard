@@ -101,6 +101,10 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  * - `symbol-unparsed`: a bound or anchored symbol the check found only inside
  *   a part of a file that did not parse (ADR 0046). Its `detail` names the
  *   file and the lines.
+ * - `expression-not-followed`: a bound or anchored symbol that may lie below a
+ *   Nix expression the static reading of a flake cannot follow, such as an
+ *   `import` or a list of systems that an input gives (TASK-367.21). Its
+ *   `detail` names the file and the lines of the expression.
  * - `text-only`: the check read files of a checkout that no grammar reads as
  *   text, so it judged their anchors and bound symbols by name and nothing
  *   that needs references. Its `detail` names the kinds of file.
@@ -139,6 +143,7 @@ const CodeCheckSkipSchema = z
 			"path-never-read",
 			"checkout-unavailable",
 			"symbol-unparsed",
+			"expression-not-followed",
 			"text-only",
 			"ends-overlap",
 			"language-server-missing",

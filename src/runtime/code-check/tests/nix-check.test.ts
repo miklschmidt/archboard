@@ -143,7 +143,7 @@ beforeAll(async () => {
 				edges: [
 					// The lock pins nixpkgs: a dependency it supports.
 					edge("e1", ["pP", "pN"], "dependency", "inputs.nixpkgs"),
-					// A build dependency is no call.
+					// A build dependency is no call, and the lock is sure of it.
 					edge("e2", ["pP", "pN"], "call", "nixpkgs"),
 					// The lock pins no such input.
 					edge("e3", ["pP", "pN"], "dependency", "inputs.gone"),
@@ -185,13 +185,13 @@ test("a part bound to a flake output is held to the outputs the flake gives, and
 	const found = outcome.findings.map((each) => `${each.code} ${each.subject?.id} ${each.severity}`);
 	expect(found.toSorted()).toEqual(
 		[
-			"ANCHOR_MISMATCH e2 information",
+			"ANCHOR_MISMATCH e2 warning",
 			"ANCHOR_SYMBOL_MISSING e3 warning",
 			"BINDING_SYMBOL_MISSING pG warning",
 			"RELATIONSHIP_UNDRAWN pV warning",
 		].toSorted(),
 	);
-	const skipped = outcome.skipped.filter((each) => each.reason === "symbol-unparsed");
+	const skipped = outcome.skipped.filter((each) => each.reason === "expression-not-followed");
 	expect(skipped.map((each) => [each.subject?.id, each.detail])).toEqual([["pC", "flake.nix:12"]]);
 });
 
