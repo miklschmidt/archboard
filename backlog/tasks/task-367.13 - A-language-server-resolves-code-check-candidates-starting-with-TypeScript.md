@@ -1,11 +1,11 @@
 ---
 id: TASK-367.13
 title: 'A language server resolves code-check candidates, starting with TypeScript'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 15:45'
+updated_date: '2026-10-06 15:46'
 labels:
   - code-check
 dependencies:
@@ -26,11 +26,11 @@ Tree-sitter matches names, so two methods with one name give a false candidate. 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The check starts a language server over stdio, resolves each candidate with a definition request, and reports it as resolved or as a candidate
-- [ ] #2 When the server is not installed, the check says so once and reports candidates
-- [ ] #3 The server command for each language can be configured, and TypeScript works first
-- [ ] #4 Every server the check started has stopped when the check returns
-- [ ] #5 The added time on the dogfood vault is measured and recorded in the design note
+- [x] #1 The check starts a language server over stdio, resolves each candidate with a definition request, and reports it as resolved or as a candidate
+- [x] #2 When the server is not installed, the check says so once and reports candidates
+- [x] #3 The server command for each language can be configured, and TypeScript works first
+- [x] #4 Every server the check started has stopped when the check returns
+- [x] #5 The added time on the dogfood vault is measured and recorded in the design note
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -87,3 +87,9 @@ For TASK-367.14 to .16: the code-check tests other than language-servers.test.ts
 
 Review, continued: two more fixes. 569313afc: a missing server's stderr line read 'skipped 1 checkout: language-server-missing ()'; a skip with no subject, board or checkout is now about a language, and its line names the language and why. 4511eefeb aligns the cost in the evidence.ts comments with the design note. Gate after the fixes, one lane at a time: lint, fmt:check, type-check and build:frontend pass; test:modules 4,192 pass and 1 fail, the first-layout bound of src/runtime/semantic-renderer/tests/wide-boards.test.ts (4,769 ms and, run alone, 5,567 ms against 3,000 ms at a load average of 9 to 12), outside this task; test:system 195 pass; test:repository 20 pass; test:serial-browser 24 pass. No tsc --lsp or stand-in process ran after any lane.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The code check now starts a language server over stdio for one pass and resolves the uses whose answer can change a finding: a candidate that joins two parts, and the use an anchor names. TypeScript works with no setup through the native tsc --lsp of Archboard's own install, which loads no plugin from the checkout. language-servers.json in the state directory configures or turns off a server per language, a missing or failed server is said once with the candidates kept, and every server stops on close, cancel, timeout, crash and server stop. Verified by the session, lifecycle and real-server tests (pass with --isolate, no tsc left afterwards) and by the measurement in the design note: a warm pass on the dogfood vault takes about 1.6 s with the server against 1.0 s without, with the same findings.
+<!-- SECTION:FINAL_SUMMARY:END -->
