@@ -5,7 +5,9 @@
 // the import path names the file. A use of a name the same file defines is
 // matched by name only, a candidate, and a use through a value, such as
 // `ledger.post()`, reaches nothing code facts can name. The pass asks the
-// language server of the file where each such use is defined. A definition in
+// language server of the file where such a use is defined, but only where the
+// answer can change a finding: a candidate that joins two parts (evidence.ts)
+// and the use an anchor names (anchor-kind.ts, support.ts). A definition in
 // a file Git lists in the checkout is a site, and evidence that reaches it is
 // resolved. A definition only outside the checkout, such as in a library or in
 // the language's own declarations, reaches no part. A use the server was not

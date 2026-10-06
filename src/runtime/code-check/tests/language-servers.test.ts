@@ -1,14 +1,15 @@
 // The code pass with Archboard's own TypeScript language server (TASK-367.13):
-// a use of a name the same file defines, a candidate by name, is resolved; a
-// call through a value that only a type import names joins two parts; an
-// anchor reached through a value is judged where the server names its
-// definition; and no server is left running when the pass returns.
+// a candidate that joins two parts is resolved; a call through a value is no
+// evidence; an anchor reached through a value is judged where the server names
+// its definition, unless that is a member of an interface, which no code runs;
+// and no server is left running when the pass returns. Where this platform has
+// no native tsc, the owner of the default command fails, and these skip.
 //
 // The checkout `shop` holds an address helper whose two functions are bound
 // as two parts, a ledger, an order that calls the ledger through a parameter
 // typed by a type-only import, a memory interface the order calls through a
-// parameter, and a report the board joins to the order by an anchored
-// relationship whose anchor names the call to the ledger.
+// parameter, and a report the board joins to the order by two anchored
+// relationships: one names the call to the ledger, one the call to the memory.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import {
@@ -38,6 +39,8 @@ const vault = join(scratch, "vault");
 process.env["ARCHBOARD_VAULT"] = vault;
 process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
 const SHOP = "github.com/test/shop";
+const servers = readLanguageServers(join(scratch, "language-servers.json"));
+const native = servers.get("typescript")?.status === "command";
 let outcome: CodeCheckOutcome;
 
 /**
@@ -73,6 +76,7 @@ function processesInShop(): string[] {
 }
 
 beforeAll(async () => {
+	if (!native) return;
 	mkdirSync(shop, { recursive: true });
 	writeFileSync(join(scratch, "gitconfig"), "");
 	git(scratch, shop, "init", "-q", "-b", "main");
@@ -120,6 +124,14 @@ beforeAll(async () => {
 						kind: "call",
 						anchor: { repo: SHOP, path: "src/order.ts", symbol: "ledger.post" },
 					},
+					{
+						id: "e2",
+						order: 20,
+						from: "pO",
+						to: "pR",
+						kind: "call",
+						anchor: { repo: SHOP, path: "src/order.ts", symbol: "memory.remember" },
+					},
 				],
 			},
 		},
@@ -127,7 +139,6 @@ beforeAll(async () => {
 	const check: typeof CheckModule = await import("@/runtime/code-check/index");
 	const read = check.readBoardsToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
-	const servers = readLanguageServers(join(scratch, "language-servers.json"));
 	outcome = await check.checkCode(read.boards, new AbortController().signal, servers);
 });
 
@@ -149,44 +160,48 @@ function finding(code: string, id: string) {
 	return outcome.findings.find((each) => each.code === code && each.subject?.id === id);
 }
 
-test("a use of a name the same file defines is resolved by the server, so its undrawn finding is a warning", () => {
-	const undrawn = finding("RELATIONSHIP_UNDRAWN", "pN");
-	expect(undrawn?.severity).toBe("warning");
-	expect(undrawn?.evidence?.map((piece) => [piece.from, piece.to, piece.resolution])).toEqual([
-		["pA", "pN", "resolved"],
-	]);
-});
+test.skipIf(!native)(
+	"a candidate that joins two parts is resolved by the server, so its undrawn finding is a warning",
+	() => {
+		const undrawn = finding("RELATIONSHIP_UNDRAWN", "pN");
+		expect(undrawn?.severity).toBe("warning");
+		expect(undrawn?.evidence?.map((piece) => [piece.from, piece.to, piece.resolution])).toEqual([
+			["pA", "pN", "resolved"],
+		]);
+	},
+);
 
-test("a call through a value that only a type import names joins its parts, resolved", () => {
-	const undrawn = finding("RELATIONSHIP_UNDRAWN", "pL");
-	expect(undrawn?.severity).toBe("warning");
-	expect(undrawn?.evidence).toEqual([
-		{
-			kind: "call",
-			resolution: "resolved",
-			from: "pO",
-			to: "pL",
-			repo: SHOP,
-			path: "src/order.ts",
-			line: 2,
-			symbol: "ledger.post",
-		},
-	]);
-});
-
-test("a call through a value that lands on a member of an interface is no evidence, because no code of the interface runs", () => {
+test.skipIf(!native)("a call through a value is no evidence, so it joins no parts", () => {
+	expect(finding("RELATIONSHIP_UNDRAWN", "pL")).toBeUndefined();
 	expect(finding("RELATIONSHIP_UNDRAWN", "pM")).toBeUndefined();
 });
 
-test("an anchor reached through a value is judged where the server names its definition", () => {
-	const mismatch = finding("ANCHOR_MISMATCH", "e1");
-	expect(mismatch?.severity).toBe("warning");
-	expect(mismatch?.evidence?.[0]).toMatchObject({ kind: "call", resolution: "resolved", line: 2 });
-});
+test.skipIf(!native)(
+	"an anchor reached through a value is judged where the server names its definition",
+	() => {
+		const mismatch = finding("ANCHOR_MISMATCH", "e1");
+		expect(mismatch?.severity).toBe("warning");
+		expect(mismatch?.evidence?.[0]).toMatchObject({
+			kind: "call",
+			resolution: "resolved",
+			line: 2,
+		});
+	},
+);
 
-test("the pass says nothing is missing and leaves no server running when it returns", () => {
-	const reasons = outcome.skipped.map((each) => each.reason);
-	expect(reasons).not.toContain("language-server-missing");
-	expect(reasons).not.toContain("language-server-failed");
-	expect(processesInShop()).toEqual([]);
-});
+test.skipIf(!native)(
+	"an anchor whose call the server names on a member of an interface is not judged, because no code of the interface runs",
+	() => {
+		expect(finding("ANCHOR_MISMATCH", "e2")).toBeUndefined();
+	},
+);
+
+test.skipIf(!native)(
+	"the pass says nothing is missing and leaves no server running when it returns",
+	() => {
+		const reasons = outcome.skipped.map((each) => each.reason);
+		expect(reasons).not.toContain("language-server-missing");
+		expect(reasons).not.toContain("language-server-failed");
+		expect(processesInShop()).toEqual([]);
+	},
+);
