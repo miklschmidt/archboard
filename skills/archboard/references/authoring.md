@@ -119,6 +119,24 @@ Python, C and C++ for now). The opener must take a line: Visual Studio Code, Cur
 a custom command with `{line}`. Otherwise it opens the file or directory. The
 inspector shows the symbol under the path.
 
+Bind a Terraform or OpenTofu declaration to its root module, the directory of
+`.tf` or `.tofu` files that Terraform runs in, with its address as `symbol`,
+written as the configuration writes it and without an instance key:
+`aws_lambda_function.api` for a declaration of the root module itself,
+`module.checkout.aws_lambda_function.api` for one inside the module that the
+call `checkout` makes, and `module.checkout` for that whole module instance.
+`check --code` reads the root module and every local module it calls (a
+`source` that starts with `./` or `../`), and warns with
+`BINDING_SYMBOL_MISSING` when the configuration no longer declares the address.
+It never reads state, a `.tfvars` file or `.terraform`, and never runs
+`terraform` or `tofu`. So an address inside a remote module (the registry,
+Git) is skipped as `module-not-read`, unless `check --code --plan <file>` names
+a plan JSON that `terraform show -json` or `tofu show -json` wrote into the
+root module's directory. A reference that joins two such parts, also through
+a module's variables and outputs, is configured-path evidence, which `call`
+does not accept. Anchor such a relationship at the `.tf` file and the address
+that the referring declaration names.
+
 Bind a docker-compose service with the symbol `services.<name>`. The path is
 the file that compose reads in that directory: `compose.yaml`, `compose.yml`,
 `docker-compose.yml` or `docker-compose.yaml`. A network is
