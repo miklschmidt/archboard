@@ -14,7 +14,9 @@
 // What changed about each container's interface (ADR 0044) is read first, and
 // has a place of its own in the answer: one interface change costs every
 // caller, one implementation change costs one module. It sets no standing, so
-// a part a new caller reaches is not badged.
+// a part a new caller reaches is not badged. Beside it, the interface measures
+// of each container on each variant read, `--beside` adding competing
+// proposals: counts side by side, never a change mark, a score or a rank.
 //
 // It needs no browser and no second route: the server holds the aggregate, the
 // comparison is pure, and it is done here — the way `semantic inspect` runs the
@@ -50,7 +52,13 @@ import {
 	describedInterfaces,
 	InterfaceChangesSchema,
 } from "@/cli/commands/lib/compared-interfaces";
-import { readAgainst } from "@/cli/commands/lib/read-against";
+import {
+	besideVariants,
+	describedMeasures,
+	InterfaceMeasuresSectionSchema,
+	measuredInterfaces,
+} from "@/cli/commands/lib/measured-interfaces";
+import { nothingToCompareRefusal, readAgainst } from "@/cli/commands/lib/read-against";
 import { askedVariant, SelectorSchema, UNNAMED_VARIANT } from "@/cli/commands/lib/semantic-input";
 
 /** One field that moved, and what it moved between. */
@@ -154,6 +162,8 @@ const VariantComparisonResultSchema = z.object({
 	against: RenderedVariantSchema,
 	/** The interface changes of each container. They come before every other change. */
 	interfaceChanges: InterfaceChangesSchema,
+	/** Each container's interface measures on this variant, the one it is read against, and each `--beside`. */
+	interfaceMeasures: InterfaceMeasuresSectionSchema,
 	nodes: z.array(ComparedNodeSchema),
 	edges: z.array(ComparedEdgeSchema),
 	flows: z.array(ComparedFlowSchema),
@@ -164,15 +174,6 @@ const VariantComparisonResultSchema = z.object({
 });
 type VariantComparisonResult = z.infer<typeof VariantComparisonResultSchema>;
 type ComparedEdge = z.infer<typeof ComparedEdgeSchema>;
-
-const nothingToCompareRefusal = {
-	code: "NOTHING_TO_COMPARE",
-	exit: 2,
-	stream: "stderr" as const,
-	description:
-		"No --against was named and the variant has nothing to be read against: it is the current " +
-		"variant, which every other variant is read against, or a first draft on a board with none.",
-};
 
 /**
  * One field that moved, as the answer carries it.
@@ -341,6 +342,7 @@ function comparedBeat(change: SubjectChange<PlacedBeat>): z.infer<typeof Compare
  * @param variant The variant compared.
  * @param against The variant it is read against.
  * @param warnings What reading the vault warned about.
+ * @param beside The variants whose interface measures go beside these two.
  * @returns The comparison.
  */
 function comparisonAnswer(
@@ -348,6 +350,7 @@ function comparisonAnswer(
 	variant: SemanticVariant,
 	against: SemanticVariant,
 	warnings: readonly VaultDiagnostic[],
+	beside: readonly SemanticVariant[] = [],
 ): VariantComparisonResult {
 	const comparison: VariantComparison = compareVariants(against.content, variant.content);
 	const names = namesOf(variant.content, against.content);
@@ -358,6 +361,7 @@ function comparisonAnswer(
 		variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
 		against: { id: against.id, name: against.name, lifecycle: against.lifecycle },
 		interfaceChanges: comparedInterfaces(against.content, variant.content),
+		interfaceMeasures: measuredInterfaces([variant, against, ...beside]),
 		nodes: compared(comparison.nodes, comparedNode),
 		edges: compared(comparison.edges, (change) => comparedEdge(change, names)),
 		flows: compared(comparison.flows, comparedFlow),
@@ -458,6 +462,7 @@ function described(result: VariantComparisonResult): string[] {
 			variant: result.variant.name,
 			against: result.against.name,
 		}),
+		...describedMeasures(result.interfaceMeasures),
 		`Other changes: ${counts || "nothing on either"}.`,
 		...result.edges
 			.filter((edge) => edge.standing !== "unchanged")
@@ -469,6 +474,7 @@ const CompareInputSchema = z.object({
 	name: z.string(),
 	variant: SelectorSchema.optional(),
 	against: SelectorSchema.optional(),
+	beside: z.array(SelectorSchema).optional(),
 });
 
 const semanticCompareContract = defineCommand({
@@ -485,12 +491,15 @@ const semanticCompareContract = defineCommand({
 		"a connection whose end moved onto a replacing part reads as one relationship that moved " +
 		"rather than as a deletion beside an addition. Before them, for each container, the interface " +
 		"changes: the entry points added and removed, the parts that moved between the interface and " +
-		"the hidden parts, and the callers gained and lost; they set no standing on any part. Read over " +
+		"the hidden parts, and the callers gained and lost; they set no standing on any part. Beside " +
+		"them, each container's interface measures on the variant, the one it is read against and " +
+		"each variant --beside names, side by side and unranked. Read over " +
 		"the whole variant before any view narrows it. With no --against, the current variant and a first draft on a board with no " +
 		"current one have nothing to be read against and are refused.",
 	examples: [
 		'archboard semantic compare payments --variant "Queued ingest"',
 		'archboard semantic compare payments --variant "Queued ingest" --against "As built in May"',
+		'archboard semantic compare payments --variant "Queued ingest" --beside "Batched ingest"',
 	],
 	parameters: [
 		{
@@ -517,6 +526,16 @@ const semanticCompareContract = defineCommand({
 			description:
 				"What to read it against, by id or name; when absent, the current variant, or on a " +
 				"board with none the variant it came from",
+		},
+		{
+			kind: "option",
+			key: "beside",
+			spellings: ["--beside"],
+			value: "required",
+			occurrences: "append",
+			placeholder: "variant",
+			description:
+				"Another variant whose interface measures to put beside these two, by id or name",
 		},
 	],
 	input: { ingress: CompareInputSchema },
@@ -559,7 +578,8 @@ const semanticCompareContract = defineCommand({
 		const answer = await readSemanticBoardAnswerOnServer(input.name);
 		const variant = askedVariant(answer.board, input.variant);
 		const against = readAgainst(answer.board, variant, input.against);
-		const result = comparisonAnswer(answer.board, variant, against, answer.warnings);
+		const beside = besideVariants(answer.board, input.beside ?? [], [variant, against]);
+		const result = comparisonAnswer(answer.board, variant, against, answer.warnings, beside);
 		return {
 			result,
 			diagnostics: [...answer.warnings.map(diagnosticLine), ...described(result)],
@@ -568,6 +588,7 @@ const semanticCompareContract = defineCommand({
 });
 
 export {
+	besideVariants,
 	semanticCompareContract,
 	VariantComparisonResultSchema,
 	type VariantComparisonResult,

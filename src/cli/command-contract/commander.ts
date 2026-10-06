@@ -47,18 +47,20 @@ function optionFlags(parameter: OptionParameter): string {
 
 /**
  * What help says an option is for, with the facts the description alone does
- * not carry: that it must be present, or when it must.
+ * not carry: that it must be present, or when it must, and that it may be given
+ * more than once.
  * @param parameter - The option.
  * @returns The description help prints.
  */
 function optionDescription(parameter: OptionParameter): string {
-	if (parameter.required === true) {
-		return `${parameter.description} (required)`;
-	}
-	if (parameter.requiredWhen !== undefined) {
-		return `${parameter.description} (required ${parameter.requiredWhen})`;
-	}
-	return parameter.description;
+	const facts = [
+		...(parameter.required === true ? ["required"] : []),
+		...(parameter.requiredWhen === undefined ? [] : [`required ${parameter.requiredWhen}`]),
+		...(parameter.occurrences === "append" ? ["repeatable"] : []),
+	];
+	return facts.length === 0
+		? parameter.description
+		: `${parameter.description} (${facts.join(", ")})`;
 }
 
 /**
