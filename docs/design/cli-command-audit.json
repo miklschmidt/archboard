@@ -1712,7 +1712,7 @@
 			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/semantic-locality.ts",
 			"stdout": "json object",
-			"result": "the hotspots of one variant of one board: the period read in each repository (the checkout's HEAD and its start and end), every part the lens read ranked by the commits of the period that changed its bound files, each part's commits newest first with subject, time and file count, the coupled pairs (two parts that changed together in at least 5 of those commits at a degree of at least 30%) with their shared commits, degree and whether nothing on the board joins them, how many large commits the count left out, and the parts the lens did not read with the reason",
+			"result": "the hotspots and change coupling of one variant of one board: the period read in each repository (the checkout's HEAD and its start and end), every part the lens read ranked by the commits of the period that changed its bound files, each part's commits newest first with subject, time and file count, the coupled pairs (two parts that changed together in at least 5 of those commits at a degree of at least 30%) with their shared commits, degree and whether nothing on the board joins them, how many large commits the count left out, and the parts the lens did not read with the reason",
 			"diagnostics": "the board and variant, the period of each repository, the parts that changed in it most commits first, how many parts had none, the coupled pairs highest degree first with the unjoined ones marked, how many large commits were left out and how many parts were skipped per reason on stderr; usage/refusal on stderr",
 			"exits": [0, 1, 2, 3],
 			"prerequisites": ["server"],

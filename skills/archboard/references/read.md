@@ -116,7 +116,8 @@ through the CLI, report it in the board's own terms, and change nothing.
    members with their containers, internal relationships, boundary
    relationships as incoming or outgoing, neighbours, a container's entry
    points, hidden parts, callers and outgoing relationships, the ranked
-   hotspots with the large commits left out, and anything the question asked
+   hotspots with the large commits left out, the coupled pairs with each
+   unjoined pair as a question, and anything the question asked
    about that the board does not say. Do not read the vault
    file, and do not write: a question is not a request to repair the board,
    and a contradiction between the board and the source is reported, not
