@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 12:51'
+updated_date: '2026-10-06 12:56'
 labels:
   - code-check
 dependencies:
@@ -68,4 +68,6 @@ Measured (Bun 1.4.2, 773433125): dogfood vault 310 bindings, 1,154 files, 1,046 
 Real ./bin/dogfood check --code on the dogfood vault (after a server restart, 15 boards; current variants hold 8 anchors and 2 bound symbols): exit 1 with two ANCHOR_MISMATCH warnings and no skips. Both are anchors TASK-367.24 adopted, and both are right by ADR 0046: (1) Archboard server, Browser -> Code check route, anchored at fetchCodeFindings in src/ui/semantic-board-canvas/api/semantic-boards.ts, which that file defines (line 304); Browser binds src/ui/application/index.tsx and Code check route binds code-check-route.ts, so neither holds it. Evidence: call at semantic-boards.ts:317. (2) Board viewer, Render stage states -> Semantic queries, anchored at useCodeFindings in SemanticInspector.tsx, which hooks/use-code-findings.ts defines (line 28); the ends bind SemanticStageView.tsx and lib/queries.ts. Evidence: call at SemanticInspector.tsx:489. A clearing change for (2): anchor at hooks/use-code-findings.ts with codeFindingsQuery (defined in lib/queries.ts), or bind the hook to a part. For (1): bind Browser to the browser application's code, or cite what the route's own code defines. These boards belong to TASK-367.24's closing; TASK-367.06 did not edit them. The other six anchors and both bound symbols hold and support.
 
 Close of the proposal: Archboard server@TASK-367.06 branched from TASK-367.05's variant; TASK-367.24 adopted after, so the change was restated as TASK-367.06 after TASK-367.24 (same node, node change and anchored relationship), TASK-367.06 shelved with that reason, and adopted at v62 with the board's scope as its summary. Footprint against base 78eb66dc5 (parent of 2ae183442): namedAndChanged Code check (773433125; 4444544e8 is TASK-367.05's) and Code facts; changedNotNamed Archboard server, Code check route, Code findings memory (only 8eeca0e71, TASK-367.24) and History lens (ae06ac9f3, 6dedeead0, TASK-369.04); namedNotChanged none. ./bin/dogfood check: no diagnostics. Behind after adoption names none of this task's commits.
+
+Gate (at e0d5dccc9, lanes one at a time): lint 0, fmt:check 0, type-check 0 (after the EmscriptenModule declaration; before it the root tsc failed on web-tree-sitter's d.ts), build:frontend 0, test:modules 4071 pass 0 fail, test:system 192/0, test:repository 20/0, test:serial-browser exit 0.
 <!-- SECTION:NOTES:END -->
