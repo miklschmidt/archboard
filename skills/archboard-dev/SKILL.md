@@ -57,22 +57,79 @@ When the task closes, before you mark any acceptance criterion:
    current variant:
    the board's scope, not the task title and not a date.
    Done: every entry that `semantic compare` reports has a source line behind it.
-3. Adopt it:
+3. Set the task's commits against each proposal
+   ([ADR 0045](../../docs/adr/0045-git-history-is-read-through-bindings-on-request.md)).
+   The footprint says which parts the commits changed and which of them the
+   proposal named. It reads `HEAD`, so commit the task's code first. It compares
+   the proposal with the current variant, so run it before adoption:
+   an adopted proposal is refused as `NOTHING_TO_COMPARE`.
+   - The base is the commit before the task's first code commit. Every task
+     commit carries a `Refs: TASK-123` trailer, so the trailer finds the start
+     without a note that somebody forgot to write. The commit that recorded the
+     plan is the wrong anchor, because plans are written days before the work
+     and the range would then hold that time of other work. Write the dot of a
+     subtask id as `[.]`. A task on a branch uses `main` as the base.
+     ```bash
+     base=$(git rev-parse "$(git log --reverse --format=%H --grep='^Refs:.*TASK-123\b' -- . ':!backlog' ':!.archboard' | sed -n 1p)^")
+     ```
+   - For each proposal, run
+     `./bin/dogfood semantic footprint "<board>" --base "$base" --variant TASK-123`.
+     The answer's `current` must be the proposal's parent. If it is not,
+     another task adopted since you branched, and that task's parts read as
+     removed by your proposal. Restate first (step 5), and read the footprint
+     of the restated proposal, by its own name.
+   - Other work falls in the range: tasks that committed meanwhile, on the same
+     files or on others. `git log --format='%h %(trailers:key=Refs,valueonly,separator=%x20) %s' "$base"..HEAD`
+     names the task of each commit. The parts that only their commits changed
+     belong to the closing of those tasks. Leave them out of your notes.
+   - `namedAndChanged` is the plan as built.
+   - `changedNotNamed`, for a part that your commits changed. Ask what step 1
+     of planning asks: did the commit add, remove, rename or rewire something
+     that the board draws, or change what the part is for? Then add it to the
+     proposal with the evidence of step 1, and run the footprint again until the
+     part is in `namedAndChanged`. Otherwise the commit changed how the part
+     works inside (a fix, a refactor, a test), and the board stays true: write
+     one line in the task notes with the part, the commit and why. Decide it
+     here, because after adoption an addition costs a second proposal. A
+     container bound to a directory reads as changed whenever anything inside
+     changed, so it needs a line only for what the proposal does not name
+     inside it.
+   - `namedNotChanged`, read with `named`. A part named by `part` (added,
+     changed, removed) that no commit changed is a deviation: the plan was not
+     built, or its code is not where the binding says. Correct the proposal, as
+     in step 2. A part named only by a relationship is normal, because a new
+     caller does not change the file of what it calls.
+   - `skipped` parts are in no list, so none of them reads as unchanged. A
+     `drill-down` part opens another board: run this step on that board when
+     the task has a proposal there. For another reason, read
+     `git log -- <path>`. A repository `unread` lacks the base: run `git log`
+     in that checkout. A commit with `large` set (over 30 files) is a sweep,
+     such as a rename or a format run. Read its subject. Parts that only it
+     changed are not parts the task meant to change: explain them in the task
+     notes and do not add them.
+
+   Done: every part in `changedNotNamed` and `namedNotChanged` is in a proposal
+   or in the task notes, and the notes say that the footprint was read against
+   that base.
+
+4. Adopt it:
    `./bin/dogfood semantic adopt "<board>" --variant TASK-123 --reason "<what the task changed>" --expect-version <n> --doing "..."`.
    If the proposal holds a disagreement, adoption is refused until
    `semantic resolve` settles it ([variants](../archboard/references/variants.md)).
-4. If adoption is refused as `PARENT_SUPERSEDED`, another task adopted a
+5. If adoption is refused as `PARENT_SUPERSEDED`, another task adopted a
    proposal after you branched. If you adopt your proposal anyway, the adoption
    drops the change of that task.
-   Branch a new proposal from the current variant.
+   Branch a new proposal from the current variant, and name it
+   `TASK-123 after TASK-122`, so that `--variant` reads it and not the old one.
    On it, restate the change of this task from the change of the old proposal.
    Read that change with
    `semantic compare "<board>" --variant TASK-123 --against <its parent>`.
-   Shelve the old proposal with that reason, and adopt the new one.
+   Shelve the old proposal with that reason, run step 3 on the new one, and
+   adopt it.
    Use `--force` only to drop the change of the other task on purpose.
-5. Run `./bin/dogfood check`.
+6. Run `./bin/dogfood check`.
    Done: it reports no diagnostics. Commit the vault files with the closing.
-6. Run `./bin/dogfood check --code` and read `behind` (ADR 0045). It lists,
+7. Run `./bin/dogfood check --code` and read `behind` (ADR 0045). It lists,
    for each board and each part, the commits to bound files after the
    board's current variant last changed. An adoption moves that point, so
    your adopted boards read clean. Read every other board that your task's
