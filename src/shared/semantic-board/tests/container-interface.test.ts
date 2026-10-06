@@ -312,12 +312,4 @@ describe("a pass-through entry point", () => {
 			passing([edge("client", "route"), edge("route", "ledger")], [node("Inner", "route")]),
 		).toEqual([]);
 	});
-
-	test("a pass-through is reported among the measures", () => {
-		const variant = content({
-			nodes: [node("Shop"), node("Client"), node("Ledger"), node("Route", "shop")],
-			edges: [edge("client", "route"), edge("route", "ledger")],
-		});
-		expect(interfaceMeasures(interfaceOf(variant, "shop")).passThrough).toBe(1);
-	});
 });

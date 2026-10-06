@@ -116,8 +116,9 @@ function lineage(nodes: ReadonlyMap<string, SemanticNode>, start: string): strin
 }
 
 /**
- * Whether a part that sends one relationship passes the same call on: it is a
- * leaf, and everything it receives, from anywhere, is of the kind it sends.
+ * Whether a part sends exactly one relationship, of the same kind as every
+ * relationship it receives from anywhere. Whether it has children is the
+ * caller's question.
  * @param node The entry point.
  * @param edges Every relationship of the variant.
  * @returns True when it passes one call on.
@@ -132,60 +133,28 @@ function passesThrough(node: SemanticNode, edges: readonly SemanticEdge[]): bool
 	);
 }
 
-/** A relationship that enters or leaves one container. */
-interface Crossing {
-	readonly edge: SemanticEdge;
-	/** Whether it leaves the container, and otherwise enters it. */
-	readonly leaves: boolean;
-	/**
-	 * The child of the container that holds its end inside, or null when it
-	 * leaves or ends on the container itself.
-	 */
-	readonly child: string | null;
-}
-
 /**
- * Whether one relationship enters or leaves a container, and which child it reaches.
- * @param nodes Every node of the variant, by id.
- * @param id The container's id.
- * @param edge The relationship.
- * @returns The crossing, or null when both ends are inside or neither is.
- */
-function crossingOf(
-	nodes: ReadonlyMap<string, SemanticNode>,
-	id: string,
-	edge: SemanticEdge,
-): Crossing | null {
-	const fromInside = lineage(nodes, edge.from).includes(id);
-	const toChain = lineage(nodes, edge.to);
-	const toAt = toChain.indexOf(id);
-	if (fromInside === toAt >= 0) {
-		return null;
-	}
-	return { edge, leaves: fromInside, child: toAt > 0 ? (toChain[toAt - 1] ?? null) : null };
-}
-
-/**
- * The relationships that enter one container, with the child of the container
- * that each one reaches, and the relationships that leave it.
+ * Which child of one container holds each part inside it.
+ *
+ * A part below the container maps to the child it sits under, a child to
+ * itself, and the container to its own id. A part outside is not in the map.
+ * So a relationship enters the container when the map holds its end and not
+ * its start, and leaves it when the map holds its start and not its end.
  * @param content The variant's whole content.
  * @param id The container's id.
- * @returns The entering relationships (the child is null when one ends on the
- *   container itself) and the leaving ones.
+ * @returns Each inside part's id with the id of the child that holds it.
  */
-function crossings(
-	content: VariantContent,
-	id: string,
-): { readonly entering: readonly Crossing[]; readonly outgoing: readonly SemanticEdge[] } {
+function holdersIn(content: VariantContent, id: string): ReadonlyMap<string, string> {
 	const nodes = new Map(content.nodes.map((node) => [node.id, node]));
-	const found = content.edges.flatMap((edge) => {
-		const crossing = crossingOf(nodes, id, edge);
-		return crossing === null ? [] : [crossing];
-	});
-	return {
-		entering: found.filter((crossing) => !crossing.leaves),
-		outgoing: found.filter((crossing) => crossing.leaves).map((crossing) => crossing.edge),
-	};
+	return new Map(
+		content.nodes.flatMap((node) => {
+			const chain = lineage(nodes, node.id);
+			const at = chain.indexOf(id);
+			// The chain runs upwards, so the child sits just before the container
+			// in it. The container itself has nothing before it.
+			return at < 0 ? [] : [[node.id, chain[at - 1] ?? id] as const];
+		}),
+	);
 }
 
 /**
@@ -205,38 +174,29 @@ function inspectContainer(content: VariantContent, container: SemanticNode): Con
 	if (children.length === 0) {
 		return { container, holdsParts: false };
 	}
-	const { entering, outgoing } = crossings(content, id);
-	const reaching = new Set(entering.flatMap(({ child }) => (child === null ? [] : [child])));
-	const entryPoints = children
-		.filter((child) => reaching.has(child.id))
-		.map((node) => ({
-			node,
-			reachedBy: entering.filter(({ child }) => child === node.id).map(({ edge }) => edge),
-		}));
+	const holders = holdersIn(content, id);
+	const entering = content.edges.filter((edge) => !holders.has(edge.from) && holders.has(edge.to));
+	const entryPoints = children.flatMap((node) => {
+		const reachedBy = entering.filter((edge) => holders.get(edge.to) === node.id);
+		return reachedBy.length === 0 ? [] : [{ node, reachedBy }];
+	});
+	const reached = new Set(entryPoints.map((entry) => entry.node.id));
 	const callers = content.nodes.flatMap((node) => {
-		const sent = entering.filter(({ edge }) => edge.from === node.id);
-		const touched = new Set(sent.flatMap(({ child }) => (child === null ? [] : [child])));
-		return sent.length === 0
-			? []
-			: [
-					{
-						node,
-						edges: sent.map(({ edge }) => edge),
-						reaches: entryPoints
-							.filter(({ node: entry }) => touched.has(entry.id))
-							.map((entry) => entry.node.id),
-					},
-				];
+		const edges = entering.filter((edge) => edge.from === node.id);
+		const reaches = [...reached].filter((child) =>
+			edges.some((edge) => holders.get(edge.to) === child),
+		);
+		return edges.length === 0 ? [] : [{ node, edges, reaches }];
 	});
 	const parents = new Set(content.nodes.map((node) => node.parent));
 	return {
 		container,
 		holdsParts: true,
 		entryPoints,
-		hiddenParts: children.filter((child) => !reaching.has(child.id)),
+		hiddenParts: children.filter((child) => !reached.has(child.id)),
 		callers,
-		outgoing,
-		onContainer: entering.filter(({ child }) => child === null).map(({ edge }) => edge),
+		outgoing: content.edges.filter((edge) => holders.has(edge.from) && !holders.has(edge.to)),
+		onContainer: entering.filter((edge) => edge.to === id),
 		passThrough: entryPoints
 			.map((entry) => entry.node)
 			.filter((node) => !parents.has(node.id) && passesThrough(node, content.edges)),
