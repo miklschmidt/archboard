@@ -2,16 +2,18 @@
 // TASK-369.07): the commits that changed its bound files in the period and the
 // parts whose code changes in the same commits, each with a count, read from
 // the locality route. A part chosen from that list is picked on the picture.
-// On a variant the lens does not read it asks nothing. When the pane asks is
-// owned by `locality-on-selection.test.tsx`.
+// On a variant the lens does not read, and for a part with no binding, it asks
+// nothing. When the pane asks is owned by `locality-on-selection.test.tsx`.
 //
 // What these catch: a region that shows another part's commits or pairs, a
 // skipped part that looks like a part no commit changed, a pair row that picks
-// nothing, and a request about a variant the lens refuses.
+// nothing, a request about a variant the lens refuses, and a region that empties
+// while a write to the board is read again.
 
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
+import { announceSemanticBoardChange } from "@/ui/semantic-board-canvas";
 import {
 	openSidebarTab,
 	renderCalls,
@@ -38,6 +40,41 @@ const COMMITS = ["c6", "c5", "c4", "c3", "c2", "c1"].map((commit, index) => ({
  */
 function subject(id: string, name: string): { id: string; kind: "node"; name: string } {
 	return { id, kind: "node", name };
+}
+
+/**
+ * The pipeline's board, every part bound to a file but the worker.
+ * @param variants The variants, by id and lifecycle; the first current one is current.
+ * @param version The board's version.
+ * @returns The board document, as its route answers it.
+ */
+function boundBoard(
+	variants: readonly (readonly [string, string])[] = [["v1", "current"]],
+	version = 1,
+): Record<string, unknown> {
+	const nodes = WIRING.nodes.map((node) =>
+		node.id === "w"
+			? node
+			: { ...node, binding: { repo: "example/pipeline", path: `src/${node.id}.ts` } },
+	);
+	return {
+		schemaVersion: "2.2.0",
+		kind: "semantic-board",
+		id: "bd",
+		name: "pipeline",
+		level: "system",
+		version,
+		createdAt: "2026-09-11T00:00:00.000Z",
+		updatedAt: "2026-09-11T00:00:00.000Z",
+		views: [],
+		current: variants.find(([, lifecycle]) => lifecycle === "current")?.[0],
+		variants: variants.map(([id, lifecycle]) => ({
+			id,
+			name: `as it is (${id})`,
+			lifecycle,
+			content: { nodes, edges: WIRING.edges },
+		})),
+	};
 }
 
 /**
@@ -171,7 +208,7 @@ function selectedInPicture(): string[] {
 
 test("a picked part shows its commits and the parts it changes with, each with a count", async () => {
 	server.locality.reply = { status: 200, body: answer() };
-	await served();
+	await served({ document: boundBoard() });
 	const drawn = renderCalls().length;
 	await inspect("h");
 	// The answer is read beside the picture, which is not asked for again.
@@ -211,7 +248,7 @@ test("a picked part shows its commits and the parts it changes with, each with a
 
 test("a part chosen from the parts it changes with is picked on the picture, and that pick asks once more", async () => {
 	server.locality.reply = { status: 200, body: answer() };
-	await served();
+	await served({ document: boundBoard() });
 	await inspect("h");
 
 	await act(async () => {
@@ -224,12 +261,18 @@ test("a part chosen from the parts it changes with is picked on the picture, and
 	expect(server.locality.calls).toHaveLength(2);
 });
 
-test("a part the lens did not read says why, and a part no commit changed says that instead", async () => {
+test("a part with no binding has no history and asks nothing, a part the lens did not read says why, and a part no commit changed says that instead", async () => {
 	server.locality.reply = { status: 200, body: answer() };
-	await served();
+	await served({ document: boundBoard() });
 
 	await inspect("w");
-	expect(region("semantic-inspector-history-skipped")).not.toBeNull();
+	expect(document.querySelector("[data-slot='semantic-inspector-history']")).toBeNull();
+	expect(server.locality.calls).toHaveLength(0);
+
+	await inspect("orders");
+	expect(region("semantic-inspector-history-skipped")?.getAttribute("data-reason")).toBe(
+		"drill-down",
+	);
 	expect(region("semantic-inspector-commits")).toBeNull();
 
 	await inspect("g");
@@ -241,23 +284,12 @@ test("a part the lens did not read says why, and a part no commit changed says t
 test("on a historical variant the region says the lens does not read it, and asks nothing", async () => {
 	server.locality.reply = { status: 200, body: answer() };
 	// The variant on screen is history: another is current now.
-	const board = {
-		schemaVersion: "2.2.0",
-		kind: "semantic-board",
-		id: "bd",
-		name: "pipeline",
-		level: "system",
-		version: 1,
-		createdAt: "2026-09-11T00:00:00.000Z",
-		updatedAt: "2026-09-11T00:00:00.000Z",
-		views: [],
-		current: "v2",
-		variants: [
-			{ id: "v1", name: "as it was", lifecycle: "historical", content: WIRING },
-			{ id: "v2", name: "as it is", lifecycle: "current", content: WIRING },
-		],
-	};
-	await served({ document: board });
+	await served({
+		document: boundBoard([
+			["v1", "historical"],
+			["v2", "current"],
+		]),
+	});
 	await inspect("h");
 
 	expect(region("semantic-inspector-history-unread")).not.toBeNull();
@@ -267,7 +299,7 @@ test("on a historical variant the region says the lens does not read it, and ask
 
 test("a history that could not be read says so, and asks again only when the person says", async () => {
 	server.locality.reply = { status: 500, body: { success: false, error: "git failed" } };
-	await served();
+	await served({ document: boundBoard() });
 	await inspect("h");
 
 	const failed = region("semantic-inspector-history-failed");
@@ -279,5 +311,24 @@ test("a history that could not be read says so, and asks again only when the per
 	});
 	await settle();
 	expect(server.locality.calls).toHaveLength(2);
+	expect(count("semantic-inspector-commits")).toBe("6");
+});
+
+test("a write to the board reads the picked part again, and its last answer stays on screen meanwhile", async () => {
+	server.locality.reply = { status: 200, body: answer() };
+	await served({ document: boundBoard() });
+	await inspect("h");
+	expect(count("semantic-inspector-commits")).toBe("6");
+
+	// The board moves on while the part is picked, and its history is still being read.
+	server.locality.reply = undefined;
+	server.documents["pipeline"] = boundBoard([["v1", "current"]], 2);
+	await act(async () => {
+		announceSemanticBoardChange("pipeline", 2);
+	});
+	await settle();
+
+	expect(server.locality.calls).toHaveLength(2);
+	expect(region("semantic-inspector-history-reading")).toBeNull();
 	expect(count("semantic-inspector-commits")).toBe("6");
 });

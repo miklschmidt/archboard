@@ -6,14 +6,16 @@
 // The pane asks the locality route when a part is picked, and never on a
 // timer. The answer is derived from Git and the board on the server and kept
 // only in its memory and in this tab's read-only cache: nothing here is
-// stored, and the picture draws nothing for it (ADR 0027). A part the lens did
-// not read says why, so it never looks like a part that no commit changed.
+// stored, and the picture draws nothing for it (ADR 0027). A part with no
+// binding has no history and no region, as it has no row for its code at the
+// foot, and nothing is asked for it. A bound part the lens did not read says
+// why, so it never looks like a part that no commit changed.
 
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState, type JSX, type ReactNode } from "react";
 
 import type { BehindSkip } from "@/shared/code-check/index";
-import type { LocalityCommit, LocalityPeriod } from "@/shared/locality/index";
+import type { LocalityAnswer, LocalityCommit, LocalityPeriod } from "@/shared/locality/index";
 import type { SemanticNode, SemanticVariant } from "@/shared/semantic-board/index";
 import { KindIcon } from "@/ui/semantic-board-canvas/components/BoardPageParts";
 import {
@@ -38,13 +40,21 @@ import { localityQuery } from "@/ui/semantic-board-canvas/lib/queries";
 /** How many of a part's commits show before the person asks for the rest. */
 const FIRST_COMMITS = 5;
 
-/** Why the lens did not read a part, in words, for each reason the answer gives. */
+/**
+ * Why the lens did not read a part, in words, for each reason the answer gives.
+ * The region has no heading, so each sentence says that it is about the
+ * history of the part's code.
+ */
 const SKIPPED: Readonly<Record<BehindSkip["reason"], string>> = {
 	unbound: "It is bound to no code, so Git has no history of it.",
-	"drill-down": "It opens a board of its own, and that board's parts carry its history.",
-	"repository-unregistered": "Its repository is not registered on this machine.",
-	"checkout-unavailable": "Its repository's checkout could not be read.",
-	"ref-not-checked-out": "Its binding names a ref that its checkout does not have out.",
+	"drill-down":
+		"It opens a board of its own, and the parts of that board carry the history of its code.",
+	"repository-unregistered":
+		"The history of its code is not read, because its repository is not registered on this machine.",
+	"checkout-unavailable":
+		"The history of its code is not read, because its checkout could not be read.",
+	"ref-not-checked-out":
+		"The history of its code is not read, because its binding names a ref that its checkout does not have out.",
 };
 
 /** Inputs for the history of a part. */
@@ -70,17 +80,20 @@ interface PartHistoryProps {
  * draft, because only they say what is built or planned (ADR 0031), so on a
  * historical or shelved variant the region says so and asks nothing.
  * @param props The board, the variant, the part and what to do with a pick.
- * @returns The region.
+ * @returns The region, or nothing for a part with no binding.
  */
-function PartHistory(props: PartHistoryProps): JSX.Element {
+function PartHistory(props: PartHistoryProps): JSX.Element | null {
 	const { lifecycle } = props.variant;
+	if (props.node.binding === undefined) {
+		return null;
+	}
 	return (
 		<SidebarRegion slot="semantic-inspector-history">
 			{lifecycle === "current" || lifecycle === "draft" ? (
 				<LocalityReading {...props} />
 			) : (
 				<Note slot="semantic-inspector-history-unread">
-					The history of the code is read only for the current variant and drafts.
+					The history of its code is read only for the current variant and drafts.
 				</Note>
 			)}
 		</SidebarRegion>
@@ -102,13 +115,15 @@ function LocalityReading(props: PartHistoryProps): JSX.Element {
 	if (read.data !== undefined) {
 		return <PartReading {...props} answer={read.data} />;
 	}
-	if (read.error !== null) {
+	// A read the person asked for again says that it is reading, so pressing
+	// Read it again is seen to do something even when it fails the same way.
+	if (read.error !== null && !read.isFetching) {
 		return (
 			<div
 				data-slot="semantic-inspector-history-failed"
 				className="flex flex-col items-start gap-2"
 			>
-				<Note>The history of the code could not be read. {read.error.message}</Note>
+				<Note>The history of its code could not be read. {read.error.message}</Note>
 				<SmallButton onClick={again}>Read it again</SmallButton>
 			</div>
 		);
@@ -122,9 +137,7 @@ function LocalityReading(props: PartHistoryProps): JSX.Element {
  * @param props The part, the board's answer and what to do with a pick.
  * @returns The sections.
  */
-function PartReading(
-	props: PartHistoryProps & { readonly answer: Parameters<typeof partLocality>[0] },
-): JSX.Element {
+function PartReading(props: PartHistoryProps & { readonly answer: LocalityAnswer }): JSX.Element {
 	const { answer, node } = props;
 	const reading = partLocality(answer, node.id);
 	if (reading.kind !== "read") {
@@ -157,7 +170,7 @@ function Unread(props: {
 }): JSX.Element {
 	const { reading } = props;
 	if (reading.kind === "absent") {
-		return <Note>The history was read before this part was on the board.</Note>;
+		return <Note>The board changed while the history of its code was read.</Note>;
 	}
 	const { skip } = reading;
 	// What the reason rests on, where it rests on a fact: the repository, the
@@ -185,7 +198,9 @@ function Unread(props: {
 }
 
 /**
- * How many large commits the answer left out of every count, when it left any out.
+ * How many large commits the answer left out of every count, when it left any
+ * out. The answer counts them for the whole board and not for each part, so
+ * the line says that before it gives the number.
  * @param props The count.
  * @param props.count How many.
  * @returns The line, or nothing.
@@ -198,9 +213,8 @@ function LeftOut(props: { readonly count: number }): JSX.Element | null {
 	return (
 		<Note slot="semantic-inspector-large-commits" count={count}>
 			{count === 1
-				? "One large commit of over 30 files is"
-				: `${count} large commits of over 30 files are`}{" "}
-			left out of every count on this board.
+				? "On this board, one large commit of over 30 files is left out of every count."
+				: `On this board, ${count} large commits of over 30 files are left out of every count.`}
 		</Note>
 	);
 }
