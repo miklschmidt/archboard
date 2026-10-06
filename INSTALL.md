@@ -300,7 +300,9 @@ with `--enable-index-store`.
 
 The check never builds. It starts sourcekit-lsp in the package that holds the
 file, with background indexing off. Then the server reads the index under
-`.build/debug/index/store`, and it never runs `swift build` itself. The check
+`.build/debug/index/store`, and it never runs `swift build` itself. It keeps
+its index database and a module cache under `.build`, as it does in your
+editor. The check
 says `language-server-unready` once for each package that it cannot ask:
 
 - a package that has no index
@@ -315,7 +317,8 @@ A server can be absent: not installed, turned off, or named in a file that is
 not valid. Then the check says so once for each language with the reason
 `language-server-missing`, and reports candidates. If a server does not start,
 does not answer within 30 seconds or stops, the check says so once for that
-checkout with `language-server-failed`.
+checkout with `language-server-failed`. Then that check starts no other
+server of the language in that checkout, also not in its other Swift packages.
 
 ## Rendering to a bitmap
 

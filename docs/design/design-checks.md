@@ -1321,6 +1321,38 @@ anchor's `ledger.post`, outside both ends. In the last run, the check started
 no server and wrote nothing into the package. No `index-build` directory and
 no container were left after any run.
 
+The review of TASK-367.16 ran sourcekit-lsp 6.2.4 again in the same image.
+It used the check's own session. The scratch package had two targets and a
+test target, and `swift build` built it once.
+
+- With background indexing off, the server built nothing. No `index-build`
+  directory appeared, and no object file changed. The server wrote two things
+  under `.build/<triple>/debug`: its index database, and a module cache for
+  the Clang modules of the standard library. Nothing else in the package
+  changed. No option of version 6.2 moves them out of `.build`. Its `index`
+  options are only `indexPrefixMap` and `updateIndexStoreTimeout`. So ADR
+  0046 now lets a server that the user names keep its own files in the build
+  output of the project, which Git ignores.
+- `backgroundPreparationMode: "build"` in the package's configuration built
+  nothing. Preparation runs only inside background indexing.
+- `backgroundIndexing: true` in `~/.sourcekit-lsp/config.json` and in
+  `$XDG_CONFIG_HOME/sourcekit-lsp/config.json` built nothing. The options of
+  the client win over both files. The server's log showed background indexing
+  off.
+- `workspace/synchronize` with `{ "index": true }` waits for the build graph.
+  Then it reads the new units of the index store. With background indexing
+  off, sourcekit-lsp 6.2 has no index manager (`Workspace.swift`). So the
+  request starts no indexing and no preparation.
+- With a `buildServer.json` in the package, the server ran the program that
+  the file names. It did not read `Package.swift`, and every answer was
+  empty. That program is code of the checkout, which the user's entry allows.
+  An empty answer keeps the candidate.
+- After a build that skipped the tests, the server resolved two uses in a
+  test file: a name of another test file, and `ledger.post` in `Core`.
+- One package had 150 directories and 5,000 index units. The readiness check
+  looked at the package once for each directory and took 25 to 45 ms in each
+  pass. Now a pass looks at each package once, in 2 to 3 ms.
+
 #### Resolving Python and C# candidates with pyright and csharp-ls
 
 TASK-367.14 measured pyright 1.1.412, basedpyright 1.39.8 and csharp-ls 0.28.0
