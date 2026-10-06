@@ -134,9 +134,14 @@ test("a C++ file qualifies names by namespace and class, gives members their acc
 	for (const symbol of ["shop::Store::save", "Store::save", "Store.save", "save"]) {
 		expect(findSymbol(header, symbol, "definition")).toMatchObject({ status: "found", line: 9 });
 	}
-	// A macro before a namespace hides it from the grammar, which reads a function named `namespace::detail`.
-	const hidden = await read("cpp/export.hpp");
-	expect(hidden.definitions.map((each) => each.symbol)).toEqual(["shop::detail::rank"]);
+	// A macro before a namespace, or between `class` and its name, hides it from the grammar,
+	// which reads a function named `namespace::detail` or `Register`.
+	expect(await visibility("cpp/export.hpp")).toEqual({
+		"shop::Register": ["no linkage", true],
+		"shop::Register::open": ["public", true],
+		"shop::Register::count_": ["private", false],
+		"shop::detail::rank": ["extern", true],
+	});
 });
 
 test("a call, a construction and a base class are call evidence, a type name is import evidence, and locals, comments, strings and a destructor's name are no use", async () => {
@@ -163,6 +168,8 @@ test("a call, a construction and a base class are call evidence, a type name is 
 		"shop::Item true": "import",
 		"shop::Item false": "call",
 		"store.save false": "call",
+		// A member of a value the code does not name, a call's result, is spelled with the `.` alone.
+		".save false": "call",
 	});
 	const store = await read("cpp/store.cpp");
 	const stores = store.references.filter((each) => each.symbol === "Store");

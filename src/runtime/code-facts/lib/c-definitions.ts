@@ -281,17 +281,67 @@ function misreadNamespace(node: Node): string | undefined {
 	return name?.replaceAll(/\s+/gu, "");
 }
 
+/** The specifiers of a type whose body holds members. */
+const CLASS_SPECIFIERS = new Set(["class_specifier", "struct_specifier", "union_specifier"]);
+/** A declarator that is a name alone, which declares no function. */
+const BARE_NAMES = new Set(["identifier", "type_identifier"]);
+
 /**
- * A function definition, or a namespace a macro hid from the grammar.
+ * The class that a macro between `class` and its name hides from the grammar:
+ * `class LEVELDB_EXPORT WriteBatch { ... }` parses as a function named
+ * `WriteBatch` that returns `class LEVELDB_EXPORT`, whose body holds the
+ * members, with an access word read as a label. A function's declarator names
+ * its parameters, so one that is a bare name declares no function. leveldb
+ * exports every public class of `include/leveldb` so.
+ * @param node A function definition.
+ * @returns The specifier, for the access its members start with, or undefined for a function.
+ */
+function misreadClass(node: Node): Node | undefined {
+	const specifier = node.childForFieldName("type");
+	const declarator = node.childForFieldName("declarator");
+	if (specifier === null || declarator === null) return undefined;
+	return hidesClass(specifier, declarator) ? specifier : undefined;
+}
+
+/**
+ * Whether a function's return type and bare name are a class and its name.
+ * @param specifier The function's return type.
+ * @param declarator Its declarator.
+ * @returns True for a class, struct or union with no body, before a bare name.
+ */
+function hidesClass(specifier: Node, declarator: Node): boolean {
+	return (
+		BARE_NAMES.has(declarator.type) &&
+		CLASS_SPECIFIERS.has(specifier.type) &&
+		specifier.childForFieldName("body") === null
+	);
+}
+
+/**
+ * Whether a function definition is a namespace or a class that a macro hid
+ * from the grammar, so its names are no function's own.
+ * @param node A function definition.
+ * @returns True when it is.
+ */
+function isMisread(node: Node): boolean {
+	return misreadNamespace(node) !== undefined || misreadClass(node) !== undefined;
+}
+
+/**
+ * A function definition, or a namespace or a class a macro hid from the grammar.
  * @param walk Where it stands.
  * @param node The function definition.
  * @param extent What it spans.
  */
 function functionDefinition(walk: Walk, node: Node, extent: Node): void {
-	const hidden = misreadNamespace(node);
 	const body = node.childForFieldName("body");
-	if (hidden !== undefined && body !== null) namespaceBody(walk, hidden, body);
-	else variables(walk, node, extent);
+	const namespaceName = misreadNamespace(node);
+	const specifier = misreadClass(node);
+	const name = node.childForFieldName("declarator");
+	if (body !== null && namespaceName !== undefined) namespaceBody(walk, namespaceName, body);
+	else if (body !== null && specifier !== undefined && name !== null) {
+		classMembers(walk, specifier, body, define(walk, spell(name), extent, "no linkage"));
+	} else variables(walk, node, extent);
 }
 
 /**
@@ -488,6 +538,18 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
 	access_specifier: (walk, node) => {
 		if (walk.holder !== undefined) walk.holder.access = node.text.replace(/:$/u, "").trim();
 	},
+	/**
+	 * A member of a class a macro hid, with `public:` or another access word
+	 * before it read as a label (misreadClass).
+	 * @param walk The class body's walk.
+	 * @param node The labeled statement.
+	 */
+	labeled_statement: (walk, node) => {
+		const label = node.childForFieldName("label")?.text ?? "";
+		if (walk.holder !== undefined && MEMBER_ACCESS.has(label)) walk.holder.access = label;
+		const statement = node.namedChildren.at(-1);
+		if (statement !== undefined) declaration(walk, statement, statement);
+	},
 };
 
 /**
@@ -522,4 +584,4 @@ function cDefinitionsOf(root: Node): Definition[] {
 	return withMemberAccess(definitions);
 }
 
-export { cDefinitionsOf, misreadNamespace, spell };
+export { cDefinitionsOf, isMisread, spell };
