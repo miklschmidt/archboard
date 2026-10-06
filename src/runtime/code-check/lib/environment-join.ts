@@ -19,6 +19,10 @@
 //   bound to the declaration. This is how an image built elsewhere, such as a
 //   Kubernetes workload's, says which code it runs.
 //
+// A value reaches the parts whose code the declaration it names runs, by the
+// same two rules (its build, else the parts drawn inside a part bound to it),
+// and otherwise the parts that own that declaration.
+//
 // A read of a name that a runner of its code sets to the address of a part is
 // one piece from the part that owns the read (the narrowest binding, as all
 // code evidence) to that part, with its partner: the piece where the
@@ -167,6 +171,28 @@ function partsByRepo(codes: ReadonlyMap<string, PartCode>): [ReadPart, ...ReadPa
 		else parts.push(code);
 	}
 	return [...byRepo.values()];
+}
+
+/**
+ * The parts a value that names a declaration reaches, when no build says
+ * which code the declaration runs: the parts the board draws inside a part
+ * bound to it, whose code it runs, else the parts that own it.
+ * @param codes Each part's bound code, by its id.
+ * @param owners The parts that own the declaration.
+ * @returns The parts.
+ */
+function runningParts(
+	codes: ReadonlyMap<string, PartCode>,
+	owners: readonly ReadPart[],
+): ReadPart[] {
+	const bound = new Set(
+		owners.flatMap((part) => (part.grain.kind === "symbol" ? [part.node.id] : [])),
+	);
+	const inside = [...codes.values()].filter(
+		(code): code is ReadPart =>
+			code.status === "read" && code.node.parent !== undefined && bound.has(code.node.parent),
+	);
+	return inside.length > 0 ? inside : [...owners];
 }
 
 /**
@@ -431,4 +457,5 @@ export {
 	type Setting,
 	joinEnvironment,
 	partsByRepo,
+	runningParts,
 };

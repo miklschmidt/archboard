@@ -12,10 +12,11 @@
 //
 // A value a resource sets reaches what its references reach, through every
 // variable, module argument, output and local value on the way: the parts
-// that own the declaration at the end, as Terraform evidence owns it
+// drawn inside a part bound to the declaration at the end, whose code it runs,
+// else the parts that own it, as Terraform evidence owns it
 // (terraform-evidence.ts).
 
-import { partsByRepo, type Runner } from "@/runtime/code-check/lib/environment-join";
+import { partsByRepo, runningParts, type Runner } from "@/runtime/code-check/lib/environment-join";
 import type { PartCode, ReadPart } from "@/runtime/code-check/lib/part-code";
 import { ownershipIn } from "@/runtime/code-check/lib/terraform-evidence";
 import {
@@ -47,12 +48,14 @@ async function namesSet(
 
 /**
  * The runners of one root module.
+ * @param codes Each part's bound code, by its id.
  * @param configuration The root module's address space.
  * @param parts The read parts of the board in its checkout.
  * @param facts The pass.
  * @returns One runner per resource that sets an environment value.
  */
 async function runnersIn(
+	codes: ReadonlyMap<string, PartCode>,
 	configuration: TerraformConfiguration,
 	parts: readonly [ReadPart, ...ReadPart[]],
 	facts: FactsPass,
@@ -82,7 +85,9 @@ async function runnersIn(
 				reaches: [
 					...new Set(
 						reached.flatMap(({ to, link }) =>
-							link.path === path && link.line === line ? ownersAt(to.address) : [],
+							link.path === path && link.line === line
+								? runningParts(codes, ownersAt(to.address))
+								: [],
 						),
 					),
 				],
@@ -108,7 +113,7 @@ async function terraformRunners(
 			// oxlint-disable-next-line no-await-in-loop -- one root module at a time, in order
 			const configuration = await terraformConfiguration(facts, parts[0].checkout, root);
 			// oxlint-disable-next-line no-await-in-loop -- one root module at a time, in order
-			runners.push(...(await runnersIn(configuration, parts, facts)));
+			runners.push(...(await runnersIn(codes, configuration, parts, facts)));
 		}
 	}
 	return runners;
