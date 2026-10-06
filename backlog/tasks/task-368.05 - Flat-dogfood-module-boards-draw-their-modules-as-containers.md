@@ -82,4 +82,13 @@ Semantic renderer@TASK-368.05 (branched from ADR 0040 at v23, adopted at v26).
 - Summary: 'Module level: the renderer core, the entry points its two hosts reach, and how meaning becomes SVG and interaction geometry behind them. Follow linked subjects for related levels.'
 - Compare: one interface change (Renderer core gains Board answer and Renderer host, and the callers Bun host and Browser application), 1 node added, 12 parents changed, all 25 relationships unchanged.
 - Picture: 2332x1570 against 1889x1561. The hosts sit to the right of the container and enter at its top. Host canvas sits outside at the bottom right. Labels legible.
+
+Renderer layout@TASK-368.05 (branched from ADR 0040 at v23, adopted at v26).
+- Container: Renderer core (module), bound to src/transformers/semantic-renderer, with the same name and binding as on Semantic renderer. All 11 bound parts are its children; every id kept. Pretext, Host canvas, Graphviz and libavoid stay outside.
+- semantic inspect --container 'Renderer core': 0 entry points, 11 hidden parts, 0 callers, 4 outgoing (Measured text -> Pretext and Host canvas, Card blocks -> Graphviz, Trunk router -> libavoid), 0 pass-through.
+- Decision: no caller is drawn. The board's question is how one drawing settles inside the core. Its callers (Bun host and the browser renderer through board.ts and host.ts) are drawn on Semantic renderer, where View dispatcher links. ADR 0044 reads a container with no caller as 'the board draws no caller', not as the deepest module. So the container is drawn for what this board can say: where the core ends and which outside libraries it reaches. Adding the hosts would repeat Semantic renderer's parts on a second board.
+- The board had no crossing into another module's private file, so no relationship moved.
+- Summary: 'Module level: how the renderer core settles one drawing, and by what measure; the libraries and the canvas it reaches stay outside it. Follow linked subjects for related levels.'
+- Compare: Renderer core is a container only on the proposal (holdsParts variant true, against false), with no entry points and no callers. 1 node added, 11 parents changed, all 16 relationships unchanged.
+- Picture: 1842x1579 against 1633x1371. The container holds the whole pipeline, with View dispatcher at its top. Pretext and Host canvas sit to the right, Graphviz at the bottom right, libavoid below. Labels legible.
 <!-- SECTION:NOTES:END -->
