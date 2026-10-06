@@ -11,8 +11,10 @@ import {
 import {
 	CodeBindingSchema,
 	CodeTargetOpenRequestSchema,
+	LINE_TOKEN,
 	OpenerSelectionSchema,
 	OpenerSettingsTestRequestSchema,
+	PATH_TOKEN,
 	type CodeBinding,
 	type CodeTargetOpenSuccess,
 	type CodeTargetFailureCode,
@@ -259,7 +261,7 @@ function statusFor(code: CodeTargetFailureCode): number {
  * @param failure The failure code and message.
  * @param status The HTTP status; defaults to the code's status.
  * @param binding The binding whose GitHub link is offered as a fallback, when known.
- * @param line The line of its symbol in a checkout that has the bound ref out, which the link names.
+ * @param line The line of its symbol in the checkout's working tree, which the link names.
  */
 function sendFailure(
 	response: Response,
@@ -396,6 +398,16 @@ export function createCodeOpenerPreguard(): Router {
 }
 
 /**
+ * The command a selection runs, as the opener settings show it: with `{path}` and
+ * `{line}` where they go, as a custom command is written.
+ * @param selection The opener selection.
+ * @returns The planned command, or why the selection cannot be planned here.
+ */
+function shownCommand(selection: OpenerSelection): OpenerPlan {
+	return planOpenerCommand(selection, PATH_TOKEN, { line: LINE_TOKEN });
+}
+
+/**
  * Plans the opener command for a target and launches it when the plan succeeds.
  * @param selection The opener selection to plan with.
  * @param target The path to open.
@@ -450,13 +462,13 @@ export function createCodeOpenerRouter(
 		asyncEndpoint(async (request, response) => {
 			const current = readOpenerSelection();
 			if (!current.ok) return sendFailure(response, current);
-			const plannedCurrent = planOpenerCommand(current.selection, "{path}");
+			const plannedCurrent = shownCommand(current.selection);
 			const effective = plannedCurrent.ok
 				? resolveOpenerCommand(plannedCurrent.command)
 				: plannedCurrent;
-			const native = planOpenerCommand({ version: 1, kind: "platform" }, "{path}");
+			const native = shownCommand({ version: 1, kind: "platform" });
 			const presets = (["vscode", "cursor", "zed"] as const).map((preset) => {
-				const planned = planOpenerCommand({ version: 1, kind: "preset", preset }, "{path}");
+				const planned = shownCommand({ version: 1, kind: "preset", preset });
 				if (!planned.ok) throw new Error(planned.error);
 				return { preset, command: planned.command };
 			});
@@ -561,8 +573,10 @@ export function createCodeOpenerRouter(
 				if (!opening.ok)
 					return sendFailure(response, opening.failure, opening.status, found.binding);
 				const { target } = opening;
-				// A checkout on another ref never gets here with a GitHub link, because it was
-				// refused above, so a line found in this checkout is the line at the linked ref.
+				// The line is read from the working tree. A checkout on another ref than the
+				// binding pins never gets here with a GitHub link, because it was refused above,
+				// so the link names the line only where the checkout is on the pinned ref or the
+				// binding pins none (its link is GitHub's default branch).
 				const line = await symbolLine(found.binding, target, signal);
 				const current = readOpenerSelection();
 				if (!current.ok)

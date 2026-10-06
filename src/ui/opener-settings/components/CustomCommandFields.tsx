@@ -2,7 +2,7 @@
 
 import { useCallback, useId, type ChangeEvent, type JSX } from "react";
 
-import { PATH_TOKEN } from "@/shared/code-target";
+import { LINE_TOKEN, PATH_TOKEN } from "@/shared/code-target";
 import { Field, FieldDescription, FieldLabel } from "@/ui/components/field";
 import { Input } from "@/ui/components/input";
 import {
@@ -77,8 +77,9 @@ function CustomCommandFields(props: CustomCommandFieldsProps): JSX.Element {
 					/>
 					<InputGroupAddon align="block-end">
 						<InputGroupText>
-							One argument per line. Exactly one must be <Technical>{PATH_TOKEN}</Technical>, which
-							becomes the file to open.
+							One argument per line. Exactly one must hold <Technical>{PATH_TOKEN}</Technical>,
+							which becomes the file to open. <Technical>{LINE_TOKEN}</Technical> becomes the line
+							where the bound symbol is defined, or 1.
 						</InputGroupText>
 					</InputGroupAddon>
 				</InputGroup>
