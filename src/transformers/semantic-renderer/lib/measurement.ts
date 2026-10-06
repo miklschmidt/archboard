@@ -7,7 +7,6 @@ import {
 } from "@/transformers/semantic-renderer/config";
 import {
 	HEADER_SLAB_INSET,
-	HEADER_SLAB_TOP,
 	ICON_CHIP_SIZE,
 	PART_NOTE,
 	PART_TITLE,
@@ -155,7 +154,7 @@ function measureNode(node: SemanticNode, container: boolean): MeasuredNode {
 		most: CARD_WIDTH.most - 2 * HEADER_SLAB_INSET,
 		height: ICON_CHIP_SIZE + 2 * ARCHITECTURE_CARD_PADDING,
 	});
-	const headerHeight = HEADER_SLAB_TOP + slab.height;
+	const headerHeight = HEADER_SLAB_INSET + slab.height;
 	return {
 		node,
 		width: slab.width + 2 * HEADER_SLAB_INSET,
@@ -164,7 +163,7 @@ function measureNode(node: SemanticNode, container: boolean): MeasuredNode {
 		runs: slab.runs.map((run) => ({
 			...run,
 			x: run.x + HEADER_SLAB_INSET,
-			y: run.y + HEADER_SLAB_TOP,
+			y: run.y + HEADER_SLAB_INSET,
 		})),
 	};
 }

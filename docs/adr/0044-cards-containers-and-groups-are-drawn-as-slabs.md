@@ -73,10 +73,10 @@ in `lib/design.ts`.
    viewer veils and lights a shadow with its card or its line, and holds it
    back while a picture is in flight.
 3. **A container is a tray, lit from above as the blocks are.** Its top wall
-   faces the reader and turns away from the light. It shows as a 7-unit band in
+   faces the reader and turns away from the light. It shows as a 6-unit band in
    shade, and it throws a short, soft shadow straight down, 3 units deep, on
-   what lies under it. The two side walls are alike: each shows as a 3-unit
-   band, quieter than the top wall. The bottom wall faces the light and shows a
+   what lies under it. The two side walls are as thick as the top wall, a
+   6-unit band each, quieter than it (TASK-431). The bottom wall faces the light and shows a
    2-unit lit lip, with a 1-unit crease below it. Where two walls meet, each
    turns round the rounded corner of the box, so the walls read as one carved
    shape. The tray is a neutral well: its floor is only just darker than what
@@ -87,9 +87,11 @@ in `lib/design.ts`.
 4. **The heading of a container lies on a header slab.** The header slab is a
    card's slab (rule 1), with a 4-unit front edge and a card's shadow,
    standing on the floor with its face level with what the tray is cut into.
-   It stands inside the walls, a 5-unit gap of floor from the top wall and
-   from each side wall (`WELL_GAP`), just enough to see the walls and the depth
-   of the well round it. The owner found a wider margin too large. The first
+   It stands inside the walls, a 2-unit gap of floor from the top wall and
+   from each side wall (`WELL_GAP`), friction fit in the well: 8 units from
+   the outer edge of the box on the top, the left and the right alike
+   (`HEADER_SLAB_INSET`). The owner found a wider margin too large, and the
+   margin on the top larger than at the sides (TASK-431). The first
    row of cards stands 20 units under its foot when no line turns there, as
    far as the cards stand from the sides and the bottom of the box
    (`CONTAINER_INSET`). Its words stand on it as a card's do, 16 units in. The
@@ -152,8 +154,8 @@ in `lib/design.ts`.
    card. The bar of a participant in no group is shaded toward the secondary
    ink, about as pale as the bar of a grouped participant.
 9. **A sequence frame is a tray with a header slab,** built like a container
-   and always neutral. The slab stands the same 5-unit gap inside the frame's
-   walls, and the participants stand 18 units (`NEST_INSET`) under its foot,
+   and always neutral. The slab stands the same 8 units in from the frame's
+   outer edge, and the participants stand 18 units (`NEST_INSET`) under its foot,
    as far as in from the frame's sides. The name of the flow is printed on the
    slab as a
    container's name is: as written, not in capitals, in the medium face, 14
