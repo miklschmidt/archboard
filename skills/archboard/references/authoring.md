@@ -524,7 +524,10 @@ of the package. It exposes the names that its `__all__` lists. Without
 `__all__`, it exposes every name that it defines or imports and that does not
 start with `_`. In Swift, the module is the directory of a target that
 `Package.swift` declares. It exposes the `open`, `public` and `package`
-declarations of all its files. The check gives three findings:
+declarations of all its files. In C and C++, the module is a bound directory.
+Its public headers are the headers below its `include` directory, or else the
+headers directly in it whose source file is in it too. It exposes what they
+declare. The check gives three findings:
 
 - `ENTRY_POINT_UNEXPOSED`, a warning: an entry point owns nothing that the
   module exposes, and the code of a caller drawn to it reaches it from outside
