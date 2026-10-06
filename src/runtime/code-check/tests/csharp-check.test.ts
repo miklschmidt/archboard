@@ -7,7 +7,9 @@
 //
 // The checkout `shop`: `Shop.Core` declares the partial class `Ledger` in two
 // files and the static class `Clock`; `Shop.Api` and `Shop.Worker` reference
-// it by project, and their code calls `Ledger.Create`.
+// it by project, and their code calls `Ledger.Create`. A part bound to a
+// project file binds the project, so the part bound to `Shop.Worker.csproj`
+// owns the call in `Job.cs`.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -167,7 +169,7 @@ beforeAll(async () => {
 					part("pGone", `${CORE}/Ledger.cs`, { symbol: "Ledger.Missing" }),
 					part("pApi", "src/Shop.Api/Shop.Api.csproj"),
 					part("pCtl", CONTROLLER, { parent: "pApi" }),
-					part("pWork", "src/Shop.Worker"),
+					part("pWork", "src/Shop.Worker/Shop.Worker.csproj"),
 				],
 				edges: [
 					// The anchor holds, and the project file of an end passes its definition on.

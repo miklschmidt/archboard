@@ -18,7 +18,7 @@ import {
 	type OtherRef,
 } from "@/runtime/code-target/index";
 import { listReadableFiles } from "@/runtime/code-check/lib/readable-files";
-import { neverRead, pairOf } from "@/runtime/code-facts/index";
+import { neverRead, pairOf, projectDirectoryOf } from "@/runtime/code-facts/index";
 import type { CodeCheckSkip } from "@/shared/code-check/index";
 import type { CodeBinding } from "@/shared/code-target/index";
 import { errorMessage } from "@/shared/thrown-error/index";
@@ -121,17 +121,49 @@ function pathReadable(target: LocalCodeTarget, files: ReadonlySet<string>): Read
 }
 
 /**
+ * The project a bound .NET project file stands for, as a resolved directory.
+ * @param target The resolved path.
+ * @returns The project's directory, or undefined for a path that is no project file.
+ */
+function boundProject(target: LocalCodeTarget): LocalCodeTarget | undefined {
+	if (target.kind !== "file") return undefined;
+	const directory = projectDirectoryOf(normalized(path.relative(target.root, target.target)));
+	if (directory === undefined) return undefined;
+	return {
+		...target,
+		kind: "directory",
+		path: directory,
+		target: path.join(target.root, directory),
+	};
+}
+
+/**
  * What the pass may read of a resolved path. The bound code of a part takes in
  * the pair of a C or C++ file too, the header of a source file or the source
- * file of a header (TASK-367.09); an anchor names one file and reads only that.
+ * file of a header (TASK-367.09), and a .NET project file binds its project,
+ * every file below its directory (TASK-367.11); an anchor names one file and
+ * reads only that.
  * @param target The resolved path.
  * @param files The files Git does not ignore in its checkout.
  * @param bound Whether the path is the binding of a part.
  * @returns The files to read, or why there are none.
  */
 function readableOf(target: LocalCodeTarget, files: ReadonlySet<string>, bound = false): Readable {
+	return bound ? boundReadable(target, files) : pathReadable(target, files);
+}
+
+/**
+ * What the pass may read of the bound path of a part: a file with its pair,
+ * the project of a project file, or every file below a directory.
+ * @param target The resolved path.
+ * @param files The files Git does not ignore in its checkout.
+ * @returns The files to read, or why there are none.
+ */
+function boundReadable(target: LocalCodeTarget, files: ReadonlySet<string>): Readable {
+	const project = boundProject(target);
+	if (project !== undefined) return pathReadable(project, files);
 	const readable = pathReadable(target, files);
-	if (!bound || readable.status !== "files" || target.kind !== "file") return readable;
+	if (readable.status !== "files" || target.kind !== "file") return readable;
 	const pair = readable.files
 		.flatMap((file) => pairOf(file, files))
 		.filter((file) => !neverRead(file));

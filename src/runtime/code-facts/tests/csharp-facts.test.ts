@@ -6,10 +6,10 @@
 // not parse.
 //
 // The solution: `Shop.Core` declares the partial class `Ledger` in two files,
-// the internal class `Money`, and names `Shop.Api` (in its project file) and
-// `Shop.Tests` (in an attribute) as friends; `Shop.Api` references it by
-// project, brings its namespace in with a `global using`, and calls it from a
-// controller and from top-level statements.
+// one of which writes no accessibility, the internal class `Money`, and names
+// `Shop.Api` (in its project file) and `Shop.Tests` (in an attribute) as
+// friends; `Shop.Api` references it by project, brings its namespace in with a
+// `global using`, and calls it from a controller and from top-level statements.
 
 import { afterAll, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
@@ -95,6 +95,11 @@ test("a C# file defines its types, members and enum members, qualified by namesp
 		start: 12,
 		end: 18,
 	});
+	// A part of a partial class that writes no accessibility has the one another part writes.
+	expect(await visibility("src/Shop.Core/Ledger.Audit.cs")).toMatchObject({
+		"Shop.Core.Ledger": ["public", true],
+		"Shop.Core.Ledger.Close": ["public", true],
+	});
 });
 
 test("a use at run time is call evidence, a declared type or an interface import evidence, and comments and strings are no use", async () => {
@@ -132,13 +137,9 @@ test("a name resolves within its project to the file that declares it, also a me
 	expect(use(audit, "Console.WriteLine")?.target).toBeUndefined();
 });
 
-test("a name resolves through a project reference and the other project's file, a global using, an alias and a qualified name, and a use through a value reaches only the value", async () => {
+test("a name resolves through a project reference, a global using, an alias and a qualified name, and a use through a value reaches only the value", async () => {
 	const controller = await csharp("src/Shop.Api/Controllers/OrdersController.cs");
-	const create = {
-		path: "src/Shop.Core/Ledger.cs",
-		symbol: "Shop.Core.Ledger.Create",
-		via: [CORE],
-	};
+	const create = { path: "src/Shop.Core/Ledger.cs", symbol: "Shop.Core.Ledger.Create" };
 	expect(use(controller, "Ledger.Create")?.target).toEqual(create);
 	expect(use(controller, "L.Create")?.target).toEqual(create);
 	expect(use(controller, "_ledger.Post")?.target).toEqual({
@@ -158,7 +159,27 @@ test("a name resolves through a project reference and the other project's file, 
 	expect(use(program, "Ledger.Create")?.target).toEqual(create);
 	const pass = facts.pass(new AbortController().signal);
 	const site = await definitionSite(pass, checkout, "src/Shop.Api/Program.cs", "Ledger.Create");
-	expect(site).toMatchObject({ path: "src/Shop.Core/Ledger.cs", via: [CORE] });
+	expect(site).toMatchObject({ path: "src/Shop.Core/Ledger.cs" });
+});
+
+test("a name after `global::` is looked up from the global namespace alone", async () => {
+	const shadowed = fixtureCheckout({
+		"Shop.csproj": "<Project />",
+		"Ledger.cs":
+			"namespace Shop.Core;\npublic static class Ledger { public static void Create() { } }\n",
+		"Api/Ledger.cs":
+			"namespace Shop.Api.Shop.Core;\npublic static class Ledger { public static void Create() { } }\n",
+		"Api/Job.cs":
+			"namespace Shop.Api;\nclass Job\n{\n    void Run() => global::Shop.Core.Ledger.Create();\n    void Near() => Shop.Core.Ledger.Create();\n}\n",
+	});
+	const read = await facts.pass(new AbortController().signal).read(shadowed, "Api/Job.cs");
+	shadowed.remove();
+	const target = (symbol: string) =>
+		read?.adapter === "csharp"
+			? read.references.find((each) => each.symbol === symbol)?.target?.path
+			: undefined;
+	expect(target("global::Shop.Core.Ledger.Create")).toBe("Ledger.cs");
+	expect(target("Shop.Core.Ledger.Create")).toBe("Api/Ledger.cs");
 });
 
 test("a project file builds with the projects and packages it references, and names its friends", async () => {
@@ -191,8 +212,13 @@ test("code that did not parse holds no facts, a name found only there is unparse
 	});
 	expect(findSymbol(broken, "After", "definition").status).toBe("found");
 	expect(findSymbol(broken, "Before", "definition").status).toBe("found");
-	// Two branches of an `#if` that each hold half a statement: the first is read, and the file parses.
+	// Two branches of an `#if` that each hold half a statement: the first is
+	// read, and the file parses; a name only the other branch holds is unparsed.
 	const audit = await csharp("src/Shop.Core/Ledger.Audit.cs");
-	expect(audit.unparsed).toEqual([]);
 	expect(findSymbol(audit, "Ledger.Audit", "definition").status).toBe("found");
+	expect(findSymbol(audit, "Close", "definition").status).toBe("found");
+	expect(findSymbol(audit, "LegacyFloor", "definition-or-reference")).toMatchObject({
+		status: "unparsed",
+		unparsed: { start: 10, end: 10 },
+	});
 });

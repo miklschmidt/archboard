@@ -33,8 +33,8 @@ interface DefinitionSite {
 	readonly definition: Definition;
 	/**
 	 * The files that pass it on between the asking file and the definition:
-	 * each `export ... from`, the project file of a C# project, and the header
-	 * that declares a C or C++ name its pair defines.
+	 * each `export ... from`, and the header that declares a C or C++ name its
+	 * pair defines.
 	 */
 	readonly via: readonly string[];
 }
@@ -78,15 +78,6 @@ function usedTargets(facts: SyntaxFacts, symbol: string): Target[] {
 			: [],
 	);
 	return [...byPrefix, ...byTail].filter((target) => target.symbol !== "");
-}
-
-/**
- * The files that pass a target's name on to the file that uses it.
- * @param target The target.
- * @returns The files, none for a name an import reaches directly.
- */
-function passedOnBy(target: Target): readonly string[] {
-	return target.via ?? [];
 }
 
 /**
@@ -178,7 +169,7 @@ async function follow(
 	if (facts === undefined || facts.adapter === "text") return undefined;
 	const symbol = ownSpelling(facts.definitions, target.symbol);
 	const definition = definitionsNamedIn(facts.definitions, symbol)[0];
-	if (definition !== undefined) return { path: facts.path, definition, via: passedOnBy(target) };
+	if (definition !== undefined) return { path: facts.path, definition, via: [] };
 	const site = await firstSite(reexportTargets(facts, symbol), (next) =>
 		follow(search, next, depth - 1),
 	);

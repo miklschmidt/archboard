@@ -14,6 +14,11 @@
 // `ledger.c` also owns `ledger.h`, and one bound to the header also owns the
 // source file, where no part binds that file itself.
 //
+// A .NET project file stands for its project (TASK-367.11): a part bound to
+// `Shop.Core.csproj` binds the directory of the project, as a part bound to
+// that directory does, so it owns the project's code, what it declares and
+// what it uses, and a part bound to a folder inside is narrower.
+//
 // A definition that a tool merges from several blocks, such as a compose
 // service and its block in an override file or a later YAML document, is the
 // part's in every one of them (TASK-367.20).
@@ -33,7 +38,7 @@ import {
 	type ReadCheckout,
 } from "@/runtime/code-check/lib/checkouts";
 import { heldInFiles, terraformRootOfTarget, type Search } from "@/runtime/code-check/lib/symbols";
-import { mergedDefinitions, type Definition } from "@/runtime/code-facts/index";
+import { mergedDefinitions, projectDirectoryOf, type Definition } from "@/runtime/code-facts/index";
 import {
 	resolveLocalCodeTarget,
 	type CheckoutSnapshot,
@@ -146,8 +151,13 @@ type Located =
 			readonly checkout: RepoCheckout;
 			readonly target: LocalCodeTarget;
 			readonly files: readonly string[];
-			/** The path relative to the checkout, where its links lead. */
+			/**
+			 * The path relative to the checkout, where its links lead; the
+			 * directory of a .NET project file.
+			 */
 			readonly where: string;
+			/** Whether it binds one file or a directory, as a project file binds its project. */
+			readonly kind: "file" | "directory";
 	  }
 	| Omit<SkippedPart, "node">
 	| { readonly status: "unread" };
@@ -169,11 +179,26 @@ function locateTarget(
 	if (!target.ok) return { status: "unread" };
 	const readable = readableOf(target, checkout.files, true);
 	if (readable.status === "files") {
-		const where = relativeTo(target.root, target.target);
-		return { status: "located", checkout, target, files: readable.files, where };
+		return { status: "located", checkout, target, files: readable.files, ...boundAt(target) };
 	}
 	const reason = readable.status === "ignored" ? "path-ignored" : "path-never-read";
 	return { status: "skipped", skip: { reason, repo: checkout.repo, detail: binding.path } };
+}
+
+/**
+ * What a resolved bound path binds: its file or directory, or the project's
+ * directory for a .NET project file.
+ * @param target The resolved path.
+ * @returns The path relative to the checkout, and whether it is a file or a directory.
+ */
+function boundAt(
+	target: LocalCodeTarget,
+): Pick<Extract<Located, { status: "located" }>, "where" | "kind"> {
+	const real = relativeTo(target.root, target.target);
+	const project = target.kind === "file" ? projectDirectoryOf(real) : undefined;
+	return project === undefined
+		? { where: real, kind: target.kind }
+		: { where: project, kind: "directory" };
 }
 
 /**
@@ -206,8 +231,8 @@ function locate(binding: CodeBinding, reading: PartReading): Located {
 function wholeGrainOf(
 	located: Extract<Located, { status: "located" }>,
 ): Pick<ReadPart, "grain" | "files"> {
-	const { target, files, where } = located;
-	if (target.kind === "file") return { grain: { kind: "file", file: where }, files };
+	const { kind, files, where } = located;
+	if (kind === "file") return { grain: { kind: "file", file: where }, files };
 	const run = isTestPath(`${where}/`) ? files : files.filter((file) => !isTestPath(file));
 	return { grain: { kind: "directory", directory: where }, files: run };
 }

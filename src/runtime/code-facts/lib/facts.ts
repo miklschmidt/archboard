@@ -165,12 +165,6 @@ interface Target {
 	/** The file, or a directory written with a trailing `/`, as the module a Swift import names. */
 	readonly path: string;
 	readonly symbol: string;
-	/**
-	 * The files that pass the name on to the file that uses it, as the project
-	 * file of a C# project passes the names its files declare on to the
-	 * projects that reference it.
-	 */
-	readonly via?: readonly string[];
 }
 
 /** The adapters that read files, one for each entry of the table in adapters.ts. */
