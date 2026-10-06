@@ -1,11 +1,11 @@
 ---
 id: TASK-367.22
 title: 'Nix derivations: build dependencies between packages'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:16'
-updated_date: '2026-10-06 19:58'
+updated_date: '2026-10-06 19:59'
 labels:
   - code-check
 dependencies:
@@ -26,9 +26,9 @@ Inside a flake, a derivation names the packages it is built from. When those pac
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `buildInputs`, `nativeBuildInputs` and `propagatedBuildInputs` that name another package of the same flake or overlay are build dependencies
-- [ ] #2 Build dependencies between bound parts that the board does not draw are reported as in the undrawn check
-- [ ] #3 Expressions the static parse cannot follow are reported as unknown, never as missing
+- [x] #1 `buildInputs`, `nativeBuildInputs` and `propagatedBuildInputs` that name another package of the same flake or overlay are build dependencies
+- [x] #2 Build dependencies between bound parts that the board does not draw are reported as in the undrawn check
+- [x] #3 Expressions the static parse cannot follow are reported as unknown, never as missing
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -84,3 +84,9 @@ Probes, one real checkCode pass each: 100,000 inputs 307 ms (one line) and 242 m
 
 Gate after the fixes, lanes one at a time: lint 0, fmt:check 0, type-check 0, build:frontend 0, test:modules 4268 pass 0 fail, test:repository 21 pass 0 fail. test:system first gave 100 pass 33 fail and test:serial-browser 0 pass 1 fail: the Archboard server did not start, because the uncommitted work of TASK-367.10 in the shared tree imported readingHeaders, which objc-adapter.ts did not export then. The rerun once that tree was whole: test:system 195 pass 0 fail, test:serial-browser exit 0. The Nix owners (nix-facts, nix-build-dependencies, nix-check, nix-build-check) 15 pass 0 fail with --isolate.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A flake's packages now depend on each other: buildInputs, nativeBuildInputs, propagatedBuildInputs and callPackage's explicit arguments that hold another output of the same flake or overlay are build-dependency evidence, matched by value (self.packages, a let name, inherit, finalAttrs, final.lib, an alias), never by spelling. An overlay's packages are definitions at overlays.<name>.<package>. A build dependency the board does not draw is RELATIONSHIP_UNDRAWN. What the reading cannot follow (a callPackage'd file, an import, mkShell, an open set, an input on a line two packages share) is an unknown part at its lines, never a missing name, and an unanchored relationship to an output of the same flake whose start holds one is skipped as expression-not-followed. The review removed 13 false warnings where packages shared a line, narrowed the skip to the same flake so other languages are judged as before, and treated open-set inputs as unknown. Verified by nix-build-dependencies.test.ts and nix-build-check.test.ts, bounded by the reading's budget (100,000 inputs in about 300 ms), and on 11 real flakes with no false finding.
+<!-- SECTION:FINAL_SUMMARY:END -->
