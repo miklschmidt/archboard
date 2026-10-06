@@ -53,8 +53,8 @@ type ReferenceVia = "code" | "environment" | "event" | "assembly";
 /**
  * One use of a name, at the first line the file uses it that way. `symbol` is
  * spelled as the code spells it, through `.` from a name: `ns.run`, `Ledger`.
- * C# spells a name after `.` from a value the code does not name, such as a
- * call's result, with the `.` alone: `.Command`.
+ * C# and Swift spell a name after `.` from a value the code does not name,
+ * such as a call's result or `self`, with the `.` alone: `.Command`.
  */
 interface Reference {
 	readonly symbol: string;
