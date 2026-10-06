@@ -2,11 +2,11 @@
 // and where the group's edge runs) or what one container's interface is (which
 // of its children relationships from outside reach, and who calls it).
 //
-// Each answer is derived from the saved board by the same pure inspection the
-// browser runs over the same document, so a command line and a pane looking at
-// one variant say the same thing. It reads the whole variant before any view
-// narrows it, and it needs no browser: the server holds the board, and that is
-// all it asks for. A group's name comes from the vault policy.
+// Each answer is derived from the saved board by a pure inspection in the
+// shared model, so a command line and a pane that read it over one variant say
+// the same thing. It reads the whole variant before any view narrows it, and it
+// needs no browser: the server holds the board, and that is all it asks for. A
+// group's name comes from the vault policy.
 
 import { z } from "zod";
 import {
@@ -221,9 +221,9 @@ const semanticInspectContract = defineCommand({
 		"refused. A container is a node with children, and it answers with its interface: the " +
 		"entry points (the children that relationships from outside reach), the hidden parts " +
 		"(the children none reaches), the callers outside, the outgoing relationships, the " +
-		"relationships that end on the container itself, and the entry points that only pass one " +
-		"call on, with a count of each. A node with no children answers that it holds no parts. " +
-		"Give exactly one of --group and --container.",
+		"relationships that end on the container itself, and the pass-through entry points (the " +
+		"entry points that may only pass one call on), with a count of each. A node with no " +
+		"children answers that it holds no parts.",
 	examples: [
 		"archboard semantic inspect payments --group fulfillment",
 		'archboard semantic inspect payments --group billing --variant "Read cache"',
@@ -243,7 +243,7 @@ const semanticInspectContract = defineCommand({
 			spellings: ["--group"],
 			value: "required",
 			placeholder: "id",
-			requiredWhen: "unless --container is given",
+			requiredWhen: "unless --container is given instead",
 			description: "The configured group id to inspect",
 		},
 		{
@@ -252,7 +252,7 @@ const semanticInspectContract = defineCommand({
 			spellings: ["--container"],
 			value: "required",
 			placeholder: "node",
-			requiredWhen: "unless --group is given",
+			requiredWhen: "unless --group is given instead",
 			description: "The node whose interface to report, by id or by name",
 		},
 		{

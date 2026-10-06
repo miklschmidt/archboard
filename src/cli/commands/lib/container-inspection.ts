@@ -2,10 +2,10 @@
 // children relationships from outside reach, which they do not, who calls it
 // and where it calls out.
 //
-// The derivation is the shared model's `inspectContainer`, the same one a
-// pane, a comparison and a renderer read. Everything here is the command's
-// part: finding the node a person named, putting the derived facts into an
-// answer with a schema, and saying them in words for a reader.
+// The derivation is the shared model's `inspectContainer`, the one function
+// that ADR 0044 gives every reader of an interface. Everything here is the
+// command's part: finding the node a person named, putting the derived facts
+// into an answer with a schema, and saying them in words for a reader.
 
 import { z } from "zod";
 import {

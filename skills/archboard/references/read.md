@@ -18,28 +18,34 @@ through the CLI, report it in the board's own terms, and change nothing.
    neighbours outside. A member a view hides is still a member; to say which
    members a view leaves undrawn, read that view's `scope` from step 1 against
    the inspection's member list.
-3. For what a module exposes to the rest of the system,
+3. For which parts of a module its callers reach, run
    `archboard semantic inspect <board> --container <node> [--variant <name>]`
-   (the node by id or name) reports the interface of a node that has children,
-   over the whole variant. Its entry points are the children that a
-   relationship from outside the container reaches, at any depth below the
-   child; its hidden parts are the children that none reaches. Also reported:
-   the callers (the parts outside, each counted once), the outgoing
-   relationships (starting inside and ending outside), the relationships that
-   end on the container itself, and the pass-through entry points. Every kind
-   of relationship counts; flow steps do not. Report these as the board states
-   them, with these cautions:
+   with the node's id or name. It reports the interface of a node that has
+   children, over the whole variant. The interface comes from the board's
+   relationships, not from the code. An entry point is a child that a
+   relationship from outside the container reaches, on the child or on a part
+   inside it. A hidden part is a child that no such relationship reaches. The
+   answer also lists:
+   - the callers, the parts outside where those relationships start, each
+     counted once
+   - the outgoing relationships, from inside the container to outside it
+   - the relationships that end on the container itself
+   - the pass-through entry points
+
+   Every kind of relationship counts. Flow steps do not count. Report these as
+   the board states them, with these cautions:
    - A node with no children answers that it holds no parts. Say that, not
      "no entry points".
    - A container with no callers has only hidden parts. Say that the board
      draws no caller of it, not that its interface is small.
    - A relationship that ends on the container itself makes its source a
-     caller and makes no entry point: the board names no part of the module
-     that source uses. Report it as that, not as a fault.
-   - A pass-through entry point has no children, sends one relationship, and
-     sends the kind it receives. It is a question for the reader (would
-     deleting it lose only a line?), never a fault, and the counts are never a
-     verdict that a module is deep or shallow.
+     caller and makes no entry point, because the board names no part of the
+     module that the source uses. Report it as that, not as a fault.
+   - A pass-through entry point has no children and sends exactly one
+     relationship, of the same kind as every relationship it receives. It is a
+     question for the reader (does deleting it lose only a line?), never a
+     fault. The counts never say that a module is deep or shallow.
+
 4. For what one variant changed,
    `archboard semantic compare <board> [--variant <id|name>]` reads it against
    the current variant (on a board nobody has built, the variant it came from),
