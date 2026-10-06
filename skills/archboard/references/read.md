@@ -69,10 +69,10 @@ through the CLI, report it in the board's own terms, and change nothing.
    look at first in a refactor, whether the board's busiest parts are the ones
    it draws as central), run
    `archboard semantic locality <board> [--variant <name>] [--since <date>]`.
-   It reads the Git history of the files that each part's `binding` names. It
-   ranks every part it read by the number of commits that changed those
-   files, in `hotspots`, most commits first, and lists each part's commits
-   newest first (`commits` holds their subjects and times). It reads the
+   It reads the Git history of the files that each part's `binding` names.
+   `hotspots` ranks every part it read by the number of commits that changed
+   those files, most commits first. Each part lists its commits, newest
+   first, and `commits` holds their subjects and times. It reads the
    current variant, or the draft that `--variant` names. The period is the
    year before the commit time of each checkout's HEAD, so one HEAD gives one
    answer. `--since` names another start, and `periods` says what was read.
@@ -82,12 +82,11 @@ through the CLI, report it in the board's own terms, and change nothing.
    - `leftOut.largeCommits` counts the commits of more than 30 files that no
      count includes, because a bulk change says nothing about one part.
      Report the number beside the ranking.
-   - A part in `skipped` was not read: it has no binding, it opens another
-     board, its repository is not registered on this machine (or its checkout
-     is gone), or it is pinned to a ref that its checkout does not have out.
-     Name it as not read, never as a part that no commit changed. A part with
-     `count: 0` was read and had no commit in the period.
-   - Parts that bind the same file list the same commits; do not report them
+   - A part in `skipped` was not read. Its `reason` says why, such as no
+     binding or no checkout of its repository on this machine. Name it as not
+     read, never as a part that no commit changed. A part with `count: 0` was
+     read and had no commit in the period.
+   - Parts that bind the same file list the same commits. Do not report them
      as separate pressure. A part bound to a directory counts every file below
      it, so a container tops the ranking by construction: compare parts at one
      level of containment with each other.
