@@ -1,11 +1,11 @@
 ---
 id: TASK-367.05
 title: archboard check --code reports anchors and bound symbols that no longer hold
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 12:14'
+updated_date: '2026-10-06 12:39'
 labels:
   - code-check
   - cli
@@ -29,11 +29,11 @@ This is the tracer bullet of the code check: the whole path from a stored anchor
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 For the current variant of every board in a registered checkout, the check reports an anchored file that does not exist, an anchor symbol that the file does not contain, and a bound symbol that the bound file does not contain
-- [ ] #2 `--variant <name>` checks a named draft on request. Historical and shelved variants are never read
-- [ ] #3 The code pass runs on its own route or from a cache keyed on the checkout HEAD, never inside the check that canvases poll
-- [ ] #4 Repositories this machine has not registered stay silent, and the exit status follows `archboard check`
-- [ ] #5 Findings carry their subject, and the consumer skill's verification step names the command
+- [x] #1 For the current variant of every board in a registered checkout, the check reports an anchored file that does not exist, an anchor symbol that the file does not contain, and a bound symbol that the bound file does not contain
+- [x] #2 `--variant <name>` checks a named draft on request. Historical and shelved variants are never read
+- [x] #3 The code pass runs on its own route or from a cache keyed on the checkout HEAD, never inside the check that canvases poll
+- [x] #4 Repositories this machine has not registered stay silent, and the exit status follows `archboard check`
+- [x] #5 Findings carry their subject, and the consumer skill's verification step names the command
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -70,4 +70,12 @@ Decisions the ADR left open:
 Close of the proposal: Archboard server@TASK-367.05 matched the build (Code check binds src/runtime/code-check; Code check route -> Code check anchored at checkCode in code-check-route.ts; Code check -> Semantic board store anchored at readSemanticBoardAt in lib/boards.ts; the route's own call to the store removed). Given the board's scope as its summary and adopted at v46. ./bin/dogfood check: no diagnostics. Behind: my commits put Command interface (Vault check, Commands: vault.ts) and Skill evaluation (Evaluation inputs: evals) behind; both still right: Vault check still calls the code check route after the plain check (--variant is a query on the same call), and the coverage row adds no part.
 
 Gate (after c5377da46): lint 0, fmt:check 0, type-check 0, build:frontend 0, test:modules 4039 pass 0 fail, test:system 192/0, test:repository 20/0, test:serial-browser exit 0; eval:skill check: suite ok. Real run on the dogfood vault: ./bin/dogfood check --code exits 0 with no findings over 15 boards; the current variants carry 3 anchors (Board persistence 1, Archboard server 2) and no binding symbol, all hold; the one skip is text-only for github.com/miklschmidt/archboard. --variant TASK-367.05 (before adoption) read that draft on Archboard server and found nothing; --variant naming no draft was refused NO_SUCH_DRAFT, exit 2.
+
+Independent review (2026-10-06): the reader followed tracked symlinks without asking Git, so a link below a bound directory could read an ignored .env or a .tfvars file; every read now goes through readListed, which reads only real paths that git ls-files lists and that are not never-read paths (4444544e8). Terraform state backups and terraform.tfstate.d/ are now never read. The BINDING_SYMBOL_MISSING message was inverted for a file, and the last-name rule split before stripping an index or call. Decision 8 is superseded: git ls-files runs under CODE_CHECK_GIT_TIMEOUT_MS (60 s), re-exported by timing.ts. The plain check's insideCheckout now resolves symlinks with the code opener's two-step test (f9c94b7a3). The store exports edgeSubjects and nodeSubject, and claims.ts uses them. Help says --code is required with --variant (1efcf892d).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard check --code now reports, on the current variant of every board or a named draft with --variant, an anchored file that does not exist, an anchor symbol or bound symbol that its file does not hold, and on a named draft a bound path that is missing. It reads only files Git lists in registered checkouts, through their real paths, never Terraform state or variable files, from GET /api/vault/code-check and never the polled check. Findings carry a node, edge or step subject, unregistered repositories stay silent, and the skill's verification step names the command. Verified by code-check.test.ts, the route, CLI and bindings tests (pass with --isolate) and a clean run on the dogfood vault.
+<!-- SECTION:FINAL_SUMMARY:END -->
