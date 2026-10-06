@@ -7,7 +7,7 @@ import { join } from "node:path";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 import type { ReadmeAsset } from "./manifest.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { ROOT, scratch } from "./tools.ts";
+import { ROOT, scratchRoot } from "./tools.ts";
 
 /** A tool an asset is made with. */
 type Need = "chromium" | "ffmpeg" | "pyftsubset" | "codex";
@@ -59,11 +59,12 @@ function readmeFile(name: string): string {
 
 /**
  * Where a file that is attached to the README is written: the scratch directory, not the repository.
+ * Naming it makes no directory, so a producer can name it when the kit is loaded.
  * @param name The file's name.
  * @returns Its absolute path.
  */
 function attachmentFile(name: string): string {
-	return join(scratch("attachments"), name);
+	return join(scratchRoot(), "attachments", name);
 }
 
 /**

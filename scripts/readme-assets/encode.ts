@@ -5,8 +5,8 @@
 // duration of every frame, so ffmpeg plays them at the pace they were painted and samples them at
 // a steady 30 frames a second. Several windows are stacked side by side or one above the other.
 
-import { writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 import type { Footage, Frame } from "./browser.ts";
@@ -143,6 +143,7 @@ async function encodeClip(cut: ClipCut): Promise<void> {
 		concatList(footage, cut),
 	]);
 	const graph = `${stackFilter(cut.windows, cut.stack)},fps=${CLIP_FPS},${fastFilter(cut)}scale=${cut.width}:-2:flags=lanczos[clip]`;
+	mkdirSync(dirname(cut.out), { recursive: true });
 	await ffmpeg([
 		...inputs,
 		"-filter_complex",

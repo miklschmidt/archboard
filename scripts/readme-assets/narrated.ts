@@ -15,6 +15,7 @@ import {
 	holding,
 	inRepository,
 	scratch,
+	scratchRoot,
 	startServer,
 	type Crop,
 	type MakeContext,
@@ -80,7 +81,7 @@ async function cutThumbnail(spec: NarratedSpec, video: string, talk: Talk): Prom
  * @returns The MP4's path.
  */
 function videoOf(spec: NarratedSpec): string {
-	return join(scratch("narrated", spec.name), `${spec.name}.mp4`);
+	return join(scratchRoot(), "narrated", spec.name, `${spec.name}.mp4`);
 }
 
 /**
