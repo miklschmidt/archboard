@@ -58,13 +58,16 @@ test("AWS: an event source mapping names the end it runs from and the one it run
 	);
 });
 
-test("Google Cloud: a function's event trigger runs from its topic to the function, a push subscription and an Eventarc trigger join their topic and endpoint, and an IAM member is a grant", async () => {
+test("Google Cloud: a function's event trigger runs from its topic to the function, a push subscription and an Eventarc trigger join their source and endpoint, and an IAM member is a grant", async () => {
 	expect(await classified("google.tf")).toEqual(
 		[
+			// The account a function runs as, and the one a push subscription authenticates as.
 			"google_service_account.worker provisioning -",
 			"google_pubsub_topic.orders configured-path -",
 			// The trigger names only where it runs from: it runs to the function itself.
 			"google_pubsub_topic.orders call from",
+			// An Eventarc trigger on a bucket's events runs from the bucket its criteria match.
+			"google_storage_bucket.uploads call from",
 			"google_cloud_run_v2_service.api call to",
 			// The trigger's location sets it up.
 			"google_cloud_run_v2_service.api provisioning -",
@@ -80,6 +83,8 @@ test("Azure: an Event Grid subscription runs from its source to its queue, app s
 			"azurerm_resource_group.shop provisioning -",
 			"azurerm_storage_account.uploads call from",
 			"azurerm_storage_queue.uploads call to",
+			// azurerm 5 names a Service Bus endpoint `service_bus_queue_id`.
+			"azurerm_servicebus_queue.jobs call to",
 			// The account that holds the queue sets the endpoint up.
 			"azurerm_storage_account.uploads provisioning -",
 			"azurerm_service_plan.shop provisioning -",
