@@ -3,11 +3,11 @@ id: TASK-369.04
 title: >-
   An agent can list the parts that change together with no relationship between
   them
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:19'
-updated_date: '2026-10-06 12:50'
+updated_date: '2026-10-06 12:51'
 labels:
   - history
   - cli
@@ -29,9 +29,9 @@ Two parts that change in the same commits depend on each other, whether or not t
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 For a board, the answer lists part pairs that meet the ADR's thresholds, with their shared commits and degree, and marks the pairs that no relationship joins
-- [ ] #2 On Semantic renderer, the answer reproduces the painters measurement in the design note, or explains the difference by commits since
-- [ ] #3 On Command interface, Claims and Panes are not reported, because their shared commits are sweeps
+- [x] #1 For a board, the answer lists part pairs that meet the ADR's thresholds, with their shared commits and degree, and marks the pairs that no relationship joins
+- [x] #2 On Semantic renderer, the answer reproduces the painters measurement in the design note, or explains the difference by commits since
+- [x] #3 On Command interface, Claims and Panes are not reported, because their shared commits are sweeps
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -88,4 +88,12 @@ Fixes: 6dedeead0 (the coupling test pinned neither the cut degree nor the exact 
 Footprint against base 2711b8a8c: History lens and Locality are named and changed. Locality route is named and not changed: the route passes the lens's answer through, so its file did not change, but the answer it serves now holds change coupling, and its responsibility says so. Commands changed through ae06ac9f3 (semantic-locality.ts, named as Locality) and 6dedeead0 (a test under src/cli/commands/tests), nothing else inside it. Archboard server, Code check route, Code check and Vault check changed only through TASK-367.05 and TASK-367.24 commits. Behind after adoption: Skill evaluation's Evaluation inputs are behind by 4a6095740 and d01828714 (S18's prompt and feature, the coverage row); the board's parts still say what they do, so it stays right. ./bin/dogfood check reports no diagnostics.
 
 Review gate (2026-10-06, after 55ada04eb): lint 0, fmt:check 0, type-check 0 (both failed once on other agents' work in progress in src/runtime/code-check and web-tree-sitter types, and passed on the next run), test:modules 4068 pass, test:system 192 pass, test:repository 20 pass, build:frontend 0, test:serial-browser exit 0 (24 pass); bun run eval:skill check: 20 scenarios, 20 fixtures, 14 coverage parts; skill-evaluation and install-targets tests 242 pass.
+
+Independent review (2026-10-06): the coupling test could not tell a cut degree from a rounded one or > from >=; three new pairs now tell them apart (6dedeead0). Decisions 4 (a flow step joins its ends) and 5 (a container counts as at an end inside it) are kept and recorded as an amendment to ADR 0045 (7f6bca3da). The coverage row no longer claims S18 grades the unjoined reading (d01828714). Both proposals were adopted (55ada04eb).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard semantic locality now lists change coupling beside the hotspots: part pairs in one repository that share at least 5 counted commits at a degree of at least 30% (shared over the mean, cut to whole percent), with their shared commits, and marks the pairs that no relationship, flow step or containment joins. Large commits and pairs with overlapping paths are left out. Verified by coupling.test.ts at the threshold edges and semantic-locality.test.ts (pass with --isolate), and by real runs: Architecture painter and Sequence painter share 11 commits at 44% unjoined on Semantic renderer (the note's 6 and 36% did not follow a rename), and Claims and Panes are not reported on Command interface because 10 of their 12 shared commits are large.
+<!-- SECTION:FINAL_SUMMARY:END -->
