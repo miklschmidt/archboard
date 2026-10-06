@@ -21,8 +21,8 @@ the CLI refuses. Fragments here go into the JSON of `semantic new` or
 - `parent`: The containing node, by name or id. At most one; containment is
   acyclic.
 - `groups`: The configured group ids the node belongs to. Omit for none.
-- `binding`: Where the code is: `{ "repo", "path" }` plus optional `branch`,
-  `commit`, `confirmedAt`.
+- `binding`: Where the code is: `{ "repo", "path" }` plus optional `symbol`,
+  `branch`, `commit`, `confirmedAt`.
 - `drillDown`: The board this part opens:
   `{ "board": "<name>", "variant": { "kind": "current" } }` or
   `{ "kind": "named", "name": "<variant>" }`.
@@ -91,6 +91,16 @@ Register each checkout whose implementation you bind with
 `github.com/<owner>/<name>`) and every binding on every machine uses it with a
 repo-relative `path`. `branch`, `commit` and `confirmedAt` record what you
 actually confirmed; restating the node keeps them only if you restate them.
+
+`symbol` names the one definition at `path` that the node stands for, spelled
+as its language or tool spells a qualified name: `postPayment`, `Ledger.post`.
+In infrastructure it is the address of the declaration:
+`module.checkout.aws_lambda_function.api` under a Terraform root module,
+`Deployment/checkout` in a Kubernetes manifest, `services.checkout` in a
+compose file. With a symbol, two parts can bind one file and stay told apart;
+without one, the part owns the whole file or directory. A changed symbol is a
+changed binding in a comparison. `archboard check` tests the path only, and
+"View in code" opens the file; the inspector shows the symbol under the path.
 
 A binding names the implementation owner: the file whose body does what the
 node's responsibility says, not a file that imports the unit, registers it (a
@@ -174,6 +184,9 @@ one names its relationship in its `path`.
   context. Line weight only.
 - `traffic`: `{}` for moving marks at the defaults (speed 80, volume 1);
   `{ "speed", "volume" }` positive finite numbers; omit for none.
+- `anchor`: The code that proves it: `{ "repo", "path", "symbol" }`, all three
+  required, no line ([evidence for a relationship](#evidence-for-a-relationship)).
+  A step takes one too.
 
 Emphasis answers "what am I looking at": `hero` marks the spine, the path or
 backbone the board exists to show. On a board of how one write lands, that is
@@ -213,8 +226,8 @@ add or change it on an existing relationship, restate that relationship with its
 ### A step is not a relationship
 
 `emphasis` and `traffic` belong to a relationship; a flow step has neither. A
-step takes `from`, `to`, `label`, `kind`, `note` and `repeat` (with `id` or `as`
-to identify it) and nothing else, and `repeat` and `note` exist only there,
+step takes `from`, `to`, `label`, `kind`, `note`, `repeat` and `anchor` (with
+`id` or `as` to identify it) and nothing else, and `repeat` and `note` exist only there,
 never on a relationship. A node carries none of the four: emphasis is a property
 of a line, not of a part.
 
@@ -228,7 +241,31 @@ dropping it everywhere.
 
 Every relationship is a directional claim the source must support: hold the
 one-line record of [evidence rule 3](../SKILL.md#evidence-before-a-write)
-before it goes in a payload. That record decides what a valid payload cannot:
+before it goes in a payload, and write its file and symbol into the payload as
+the relationship's or step's `anchor`:
+
+```json
+{
+	"from": "Submit order",
+	"to": "Payment client",
+	"kind": "call",
+	"anchor": {
+		"repo": "github.com/<owner>/<name>",
+		"path": "src/checkout/submit.ts",
+		"symbol": "chargeCard"
+	}
+}
+```
+
+For a call, `path` is the file whose body makes it and `symbol` is what it
+calls ([the worked example](create-architecture.md) anchors every relationship).
+
+`repo` is spelled as on a binding and is never taken from a binding at an end:
+an end can be unbound or external, and the proof can live in another
+repository. The anchor stores no line, because a line moves with every edit
+above it. It is bookkeeping: a comparison never reads a new or better anchor
+as a change, and a proposal merges it like `emphasis`. That record decides
+what a valid payload cannot:
 
 - **Siblings are not a chain** (rule 3).
 - **The receiver is the part, not its container**
@@ -307,3 +344,6 @@ declares a replacement without this warning.
 `RELATIONSHIP_DUPLICATED` means the batch stated an existing relationship again
 without its `id`, so both now stand; do not remove the original to tidy up, but
 remove the copy and restate the original with its `id`.
+`ANCHOR_DROPPED` means the batch restated a relationship or a step without the
+`anchor` it had, so the anchor is gone; the message spells the anchor out, and
+restating the subject with it puts it back.

@@ -119,6 +119,16 @@ impossible; it is reported as a waiver whatever its axis.
   which belongs on a draft, binds only to a path the request states for it; an
   inspected implementation in another registered repository may bind there.
   Optional branch, commit and confirmedAt say only what was actually confirmed.
+  An optional `symbol` names the one definition at that path the node stands
+  for, as its language qualifies it; one that the file does not define, or a
+  symbol on a part drawn for the whole file or directory, is incorrect.
+- **Anchors**: a relationship's or step's `anchor` is its line of evidence:
+  `repo` the registered identity, `path` the repo-relative file and `symbol`
+  a name that file defines or references and that proves the mechanism (for a
+  call, the file whose body makes it and the name it calls). An anchor naming
+  a file or symbol that does not prove that relationship is incorrect. A
+  planned relationship carries one only where the request names the code. An
+  anchor is bookkeeping and never makes a relationship changed.
 - **Drill-down**: `{kind: "current"}` follows the target board's designation;
   `{kind: "named", name}` opens that variant and never falls back to current.
 - **Flows**: participants in column order; steps in sequence; `sync`, `async`,

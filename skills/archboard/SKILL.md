@@ -61,9 +61,9 @@ recipe names.
    inside which as children, which belong to another codebase, whether any of
    it is built (a part nobody has built is a proposal, drawn on a draft), and
    each one's `binding` ([evidence rule 2](#evidence-before-a-write)).
-6. **Map the relationships**, one line of evidence per `edge`: a source line,
-   or for an intended mechanism the sentence that states it
-   ([evidence rule 3](#evidence-before-a-write)).
+6. **Map the relationships**, one line of evidence per `edge`: the file and
+   symbol that prove it, written as its `anchor`, or for an intended mechanism
+   the sentence that states it ([evidence rule 3](#evidence-before-a-write)).
 7. **For a sequence, choose the columns before the messages**
    ([create a sequence diagram](references/create-sequence.md)).
 8. **Order the exchange**: the participants in column order, and every message
@@ -195,12 +195,21 @@ board needs all of it.
    one exact version; leave both out so the binding follows the default
    branch. An implementation in another checkout may bind after you inspect
    its owner and register that repository once with `archboard repo add`,
-   whose answer is the identity a `binding` names. When a node's
+   whose answer is the identity a `binding` names. When the node stands for
+   one definition in a file that holds others (a function of a module, a class
+   or one of its methods, a component), name it in `symbol`, spelled as the
+   language spells a qualified name (`Ledger.post`). When a node's
    responsibility spans files, narrow the responsibility or split the node
    rather than bind to the wrong one.
 3. **Prove each relationship and step from source.** For every `edge` and
    every flow step keep a one-line record: `from` → `to`, the semantic kind,
-   and the source file and function or symbol that prove the mechanism. For a
+   and the source file and function or symbol that prove the mechanism. Write
+   the file and symbol into the payload as that subject's `anchor`:
+   `{ "repo", "path", "symbol" }`, all three required, `repo` the identity a
+   `binding` would use and no line number. The symbol is the name in that
+   file that proves the mechanism: the function it calls, the component it
+   renders, the value it passes, the event it emits. Restate a subject with its
+   `anchor`, or the write drops it and says so. For a
    call (a function or method call, a hook, a component rendering another),
    `from` is the part whose body makes it and `to` is the part whose body runs,
    inside its `parent`. A board that describes a module draws it as a
@@ -273,7 +282,8 @@ What the source shows for each row, and what you author for it:
   with the configured kind it will have on a draft
   ([planning](#planning-what-nobody-has-built)).
 - `binding`. _Shows:_ the file whose body implements a part's responsibility.
-  _Author:_ `binding: { repo, path }` to that file
+  _Author:_ `binding: { repo, path }` to that file, with `symbol` when the part
+  is one definition among others in it
   ([evidence rule 2](#evidence-before-a-write)).
 - `containment`. _Shows:_ a part defined inside another (a function of a module,
   a method of a class, a component defined inside another, a closure inside its
@@ -288,7 +298,8 @@ What the source shows for each row, and what you author for it:
   it.
 - `relationship`. _Shows:_ a call, render, read, event, message, dependency or
   publication one body makes to another. _Author:_ an `edge` of the configured
-  kind, its `label` the message or mechanism.
+  kind, its `label` the message or mechanism, its `anchor` the file and symbol
+  that prove it ([evidence rule 3](#evidence-before-a-write)).
 - `traffic`. _Shows:_ the forward path one request or event takes at runtime:
   the calls that run on every pass. _Author:_ `traffic` on those relationships
   only (`{}`, or `speed`/`volume` to contrast a hotter path), a call an error
@@ -330,8 +341,8 @@ What the source shows for each row, and what you author for it:
 A row the source does not support stays out: an added relationship without a
 line of evidence is a wrong board, not a complete one.
 
-`from`, `to`, `kind` and `label` mean the same on a step and a relationship,
-and a step takes nothing else but `note` and `repeat`: `emphasis` or `traffic`
+`from`, `to`, `kind`, `label` and `anchor` mean the same on a step and a
+relationship, and a step takes nothing else but `note` and `repeat`: `emphasis` or `traffic`
 on one is refused by key name over the step it sits on
 (`→ at flows[0].steps[0]`), so move it onto the relationship between the same
 parts rather than dropping it from the payload.
@@ -354,8 +365,10 @@ has built never goes on the current variant, however the request words it:
 What stands in for a source line is the sentence that states the intent: in
 the request, or in a design document it names. Keep the same one-line record
 per relationship and step ([evidence rule 3](#evidence-before-a-write)), citing
-that sentence where you would cite a symbol, and leave out a mechanism nothing
-states: a plan that invents how a part works is as wrong as a board that
+that sentence where you would cite a symbol. A sentence is not an anchor: give
+a planned relationship an `anchor` only where the request names the code (the
+function the call will be in), and put the intent in its `description`
+otherwise. Leave out a mechanism nothing states: a plan that invents how a part works is as wrong as a board that
 invents a call. Bind a planned part only to a path the request states; a
 binding on a draft may name a file that does not exist yet, and `archboard
 check` does not report it until the variant is adopted. When the code is built

@@ -18,7 +18,9 @@ emphasis. A comparison, a view and a group inspection also read the
 relationship.
 
 1. Read the code path and record each message with its evidence: who calls whom,
-   from which function, in which order, and which messages come back.
+   from which function, in which order, and which messages come back. Each
+   step carries its file and symbol as its `anchor`, as a relationship does
+   ([evidence rule 3](../SKILL.md#evidence-before-a-write)).
 
    List the participants in reading order. The exchange is between the parts
    that the board has. A part drawn whole stays one column, whatever functions,
