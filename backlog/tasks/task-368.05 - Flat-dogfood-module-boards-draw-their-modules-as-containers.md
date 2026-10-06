@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:17'
-updated_date: '2026-10-06 10:42'
+updated_date: '2026-10-06 10:43'
 labels:
   - interfaces
   - architecture
@@ -91,4 +91,14 @@ Renderer layout@TASK-368.05 (branched from ADR 0040 at v23, adopted at v26).
 - Summary: 'Module level: how the renderer core settles one drawing, and by what measure; the libraries and the canvas it reaches stay outside it. Follow linked subjects for related levels.'
 - Compare: Renderer core is a container only on the proposal (holdsParts variant true, against false), with no entry points and no callers. 1 node added, 11 parents changed, all 16 relationships unchanged.
 - Picture: 1842x1579 against 1633x1371. The container holds the whole pipeline, with View dispatcher at its top. Pretext and Host canvas sit to the right, Graphviz at the bottom right, libavoid below. Labels legible.
+
+Codex workhorse@TASK-368.05 (branched from TASK-373 at v13, adopted at v16).
+- The board draws each module whole, as a card bound to its root index.ts, so every caller lands on that module's root file. Those cards need no container: a card bound to the root is the module drawn whole. The one crossing into a private file was Workhorse start -> Tell coordinator, which is bound to codex-coordinator-callbacks/lib/tell-coordinator.ts.
+- Container: Coordinator callbacks (module, group voice), bound to src/runtime/codex-coordinator-callbacks, with Tell coordinator as its one child (id kept). It is in voice because the module serves the voice coordinator, as Coordinator tools does.
+- Evidence: codex-workhorse-start/lib/model.ts:3-6 imports ARCHBOARD_COORDINATOR_MANIFEST_SHA256 and ARCHBOARD_COORDINATOR_NAMESPACE through the module root. index.ts re-exports both from lib/tell-coordinator.ts. model.ts uses them at :32 (manifest digest) and :56 (dynamic tool namespaces). So the existing dependency lands on the entry point that implements what the caller names, and no relationship moved.
+- semantic inspect --container 'Coordinator callbacks': 1 entry point (Tell coordinator, reached by Workhorse start), 0 hidden parts, 1 caller, 0 outgoing, 0 pass-through. The board draws no other part of the module. Its callback queue and delivery are on Voice coordinator, where Tell coordinator links.
+- Decision: not to rebind Tell coordinator to the module root. Its responsibility is the tool alone, and the binding names the file that owns it (evidence rule 2).
+- Summary: 'Module level: the workhorse thread, its queue, and the coordinator's door; each module is drawn whole except the coordinator callbacks, whose tool is the entry point the workhorse start names. Follow linked subjects for related levels.'
+- Compare: one interface change (Coordinator callbacks gains Tell coordinator and the caller Workhorse start), 1 node added, 1 parent changed, all 17 relationships unchanged.
+- Picture: 2927x1197 against 2276x1337. The container sits inside the Voice region beside Coordinator tools, and the dotted 'archboard_coordinator, by digest' line from Workhorse start enters it to reach Tell coordinator. Labels legible.
 <!-- SECTION:NOTES:END -->
