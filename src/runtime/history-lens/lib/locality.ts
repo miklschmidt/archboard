@@ -35,7 +35,7 @@ import type {
 	LocalityPeriod,
 } from "@/shared/locality/index";
 import type { SemanticBoard, SemanticVariant } from "@/shared/semantic-board/index";
-import { LOCALITY_DEFAULT_PERIOD_MS } from "@/shared/timing/locality";
+import { LOCALITY_DEFAULT_PERIOD_MS } from "@/shared/timing/timing";
 
 /** How many answers the server keeps: the boards that somebody selects parts on. */
 const KEPT_ANSWERS = 32;

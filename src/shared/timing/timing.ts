@@ -588,11 +588,7 @@ export const SKILL_EVAL_CODEX_TERM_GRACE_MS = 10_000;
 
 // ── History lens (ADR 0045) ─────────────────────────────────────────────
 
-/**
- * Outer bound for one Git command of the history lens: a walk of the commits
- * that changed bound files, the history of one board file, or a batch of board
- * file versions. On this repository a walk of a year (about 3,300 commits)
- * took 0.4 s on 2026-10-06, so this bounds a Git that hangs and never a walk
- * that is slow. The request that started it, or a stop, cancels it sooner.
- */
-export const HISTORY_LENS_GIT_TIMEOUT_MS = 60_000;
+export {
+	HISTORY_LENS_GIT_TIMEOUT_MS,
+	LOCALITY_DEFAULT_PERIOD_MS,
+} from "@/shared/timing/lib/history-lens";
