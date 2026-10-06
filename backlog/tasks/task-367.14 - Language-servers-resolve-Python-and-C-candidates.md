@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 17:15'
+updated_date: '2026-10-06 17:22'
 labels:
   - code-check
 dependencies:
@@ -65,4 +65,6 @@ Decisions the ADR left open:
 Manual runs (scratch, nixpkgs, nothing added to the repository): pyright 1.1.412 and basedpyright 1.39.8 on Flask 3.0.0 (735a470) with a .venv of its dependencies, a nine-part board through the real checkCode: no server 181 ms cold, 81 to 94 ms warm, two RELATIONSHIP_UNDRAWN information (candidate) and language-server-missing once; pyright 506 ms cold, 427 to 443 ms warm, the same two as warnings (resolved); basedpyright 537 ms cold, 450 to 654 ms warm, same findings. About 350 ms added per pass, load average about 7. BadRequestKeyError resolved into .venv/.../werkzeug/exceptions.py with the venv, to nothing without. csharp-ls 0.28.0 with dotnet-sdk 10.0.400 on a two-project solution: 2,659 to 2,808 ms per pass (the solution load), ANCHOR_MISMATCH resolved on an anchor at an inherited Post; with .csproj only, the same; with no project file, language-server-unready once and no server; with .NET 8, language-server-failed (exited with code 150). csharp-ls wrote design-time files under obj; no build, no restore. No server process was left after any run.
 
 Close: Archboard server@TASK-367.14 branched from xLa4QqhH (TASK-367.16) at v159, Language servers description only, adopted at v162, summary set to the board's scope at v163. check --code with and without --variant: no line differs (44 findings each). Footprint against base 7509307ec: namedAndChanged Language servers; changedNotNamed Archboard server (e1a21b7a2 changes only the route test, the board stays true), Code check (e1a21b7a2 changes only its tests' server table; the other commits are other tasks'), Code facts (other tasks' commits). check: no diagnostics. Behind: Command interface lists ba6c3ef88, which changes only the check --code help text in vault.ts; the board stays true.
+
+Gate, one lane at a time after 227407e27: lint exit 1 and fmt:check exit 1, each only on other agents' uncommitted files (objc-*.ts of TASK-367.10; terraform-modules.ts and module-reading.ts of TASK-368.11); type-check 0; build:frontend 0; test:modules 4,261 pass, 2 fail, both in src/runtime/code-check/tests/terraform-modules.test.ts, which TASK-368.11 is editing (still failing on a rerun); test:system 195 pass; test:repository 21 pass; test:serial-browser 24 pass. No language server or stand-in process was left after any lane.
 <!-- SECTION:NOTES:END -->
