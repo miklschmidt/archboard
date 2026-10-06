@@ -11,9 +11,10 @@ import {
 	SLAB_RADIUS,
 } from "@/transformers/semantic-renderer/lib/design";
 import {
-	lightDark,
+	inkedOver,
 	mixed,
 	toned,
+	type Inked,
 	type Tone,
 } from "@/transformers/semantic-renderer/lib/svg/colour";
 import { glyphGroup } from "@/transformers/semantic-renderer/lib/svg/icons";
@@ -23,7 +24,6 @@ import {
 	slab,
 	slabShadow,
 	tinted,
-	washed,
 	type Share,
 	type SlabLook,
 } from "@/transformers/semantic-renderer/lib/svg/slab";
@@ -40,19 +40,20 @@ function semanticInk(color: PaletteColor | undefined): string | undefined {
 }
 
 /**
- * A card's face in its group's colour, and how much of the colour its front
- * edge carries over the shade it is mixed into (`--slab-deep`): the colour of
- * the edge and the face together are what say which concern a card serves, on
- * either ground. The face is a tone of the group's own hue (`toned`), a step
- * lighter than the mat it stands on and as quiet as a tint, so its words keep
- * 4.5:1. On the light ground the edge is
- * a lighter tint of the colour, a step from the face rather than a bar under it.
+ * A card's face in its group's colour, and its front edge: the colour of the
+ * edge and the face together are what say which concern a card serves, on
+ * either ground. The face is a tone of the group's own hue (`toned`), as quiet
+ * as a tint, so its words keep 4.5:1. On the light ground the face is nearly
+ * white with a trace of the hue, since a light tint of a warm colour reads as
+ * beige. The edge carries the colour: a clean, strong tone of it, at a
+ * lightness where sRGB holds that chroma for every colour. On the dark ground
+ * the edge is the colour mixed into the deep shade (`--slab-deep`).
  */
 const CARD_FACE: Tone = {
-	light: { lightness: 0.955, chroma: 0.18 },
+	light: { lightness: 0.972, chroma: 0.09 },
 	dark: { lightness: 0.31, chroma: 0.27 },
 };
-const CARD_EDGE: Share = { light: 0.32, dark: 0.3 };
+const CARD_EDGE: Inked = { light: { lightness: 0.76, chroma: 1 }, dark: 0.3 };
 
 /**
  * How far each tray nested in another sinks toward `--tray-sink`, a step
@@ -63,38 +64,25 @@ const TRAY_SINK: Share = { light: 0.4, dark: 0.4 };
 const TRAY_SINK_MAX: Share = { light: 0.8, dark: 0.8 };
 
 /**
- * How far a tray's walls are shaded from its floor, before its kind tints the
- * floor, toward `--slab-deep`. The top wall turns away from the light above,
+ * How far a tray's walls are shaded from its floor toward `--slab-deep`. The
+ * top wall turns away from the light above,
  * as far from the floor as a card's front edge is from its face; the side walls
  * are only grazed by it, and are half as far.
  */
 const TOP_WALL: Share = { light: 0.8, dark: 0.45 };
 const SIDE_WALL: Share = { light: 0.4, dark: 0.28 };
 
-/**
- * How much of its kind's colour a container carries: on its floor a calm
- * tint, so the cards standing on it, tinted by their own groups, read over it;
- * and on its nameplate a related tone a step stronger, so the header belongs
- * to the floor rather than standing out of it, and on the nameplate's front
- * edge. Its walls carry none: they are shades of the floor under the light.
- */
-const TRAY_FLOOR: Share = { light: 0.045, dark: 0.12 };
-const PLATE_FACE: Share = { light: 0.08, dark: 0.15 };
-const PLATE_EDGE: Share = { light: 0.3, dark: 0.3 };
-
 /** How far a label's front edge is shaded from its face toward `--slab-deep`. */
 const LABEL_EDGE = 0.6;
 
-/** How much of its type's colour an icon chip's face and edge carry. */
-const CHIP_FACE: Share = { light: 0.14, dark: 0.2 };
-const CHIP_EDGE: Share = { light: 0.32, dark: 0.2 };
-
 /**
- * How far a glyph's ink leans toward the text colour on the light ground, so
- * every type's glyph clears 3:1 on its own tinted tile; on the dark ground the
- * ink already does.
+ * How much of its type's colour an icon chip's face and edge carry. On the
+ * light ground the face is a light, clean tone of the colour, light enough that
+ * the glyph, drawn in the colour itself, clears 3:1 on it; the edge is a
+ * strong tone of it, like a card's.
  */
-const GLYPH_DEPTH = 0.3;
+const CHIP_FACE: Inked = { light: { lightness: 0.945, chroma: 0.21 }, dark: 0.2 };
+const CHIP_EDGE: Inked = { light: { lightness: 0.78, chroma: 0.85 }, dark: 0.2 };
 
 /**
  * A card's slab: its face tinted and its front edge toned by the group it is
@@ -103,12 +91,12 @@ const GLYPH_DEPTH = 0.3;
  * @param palette Selected theme.
  * @returns The slab's look.
  */
-function cardLook(appearance: NodeAppearance, palette: Palette): SlabLook {
+function cardLook(appearance: Pick<NodeAppearance, "bodyColor">, palette: Palette): SlabLook {
 	const ink = semanticInk(appearance.bodyColor);
 	return {
 		face: ink === undefined ? palette.slabFace : toned(ink, CARD_FACE),
 		ground: palette.slabFace,
-		edge: ink === undefined ? palette.slabEdge : tinted(palette.slabDeep, ink, CARD_EDGE),
+		edge: ink === undefined ? palette.slabEdge : inkedOver(palette.slabDeep, ink, CARD_EDGE),
 		thickness: CARD_THICKNESS,
 		radius: SLAB_RADIUS,
 		sheen: true,
@@ -133,40 +121,29 @@ function labelLook(palette: Palette): SlabLook {
 }
 
 /**
- * A container's tray: its floor quietly tinted by the colour of the
- * container's own kind, with a nameplate a step stronger in that colour and a
- * front edge of it, and walls in neutral shades of the floor. A container of
- * no kind's colour is neutral. Each tray nested in another is cut a step
- * deeper into that one's floor, its walls with it.
- * @param ink The colour of its kind, or none.
+ * A container's tray: a neutral well, its floor only just darker than what
+ * holds it and its walls shades of that floor, with a header slab standing on
+ * the floor, which looks as a card does: in the colour of the group that places
+ * the container, or neutral (ADR 0038). Each tray nested in another is cut a
+ * step deeper into that one's floor, its walls with it.
+ * @param header The header slab: how far down the box it reaches, and how it looks.
  * @param palette Selected theme.
  * @param depth How many containers it is nested in.
- * @param plateHeight How far its nameplate reaches down its box.
  * @returns The tray's look.
  */
-function trayLook(
-	ink: string | undefined,
-	palette: Palette,
-	depth: number,
-	plateHeight: number,
-): TrayLook {
+function trayLook(header: TrayLook["header"], palette: Palette, depth: number): TrayLook {
 	const sink: Share = {
 		light: Math.min(TRAY_SINK_MAX.light, depth * TRAY_SINK.light),
 		dark: Math.min(TRAY_SINK_MAX.dark, depth * TRAY_SINK.dark),
 	};
-	const ground = tinted(palette.trayFloor, palette.traySink, sink);
-	const walls = {
-		top: tinted(ground, palette.slabDeep, TOP_WALL),
-		side: tinted(ground, palette.slabDeep, SIDE_WALL),
-	};
+	const floor = tinted(palette.trayFloor, palette.traySink, sink);
 	return {
-		floor: washed(ground, ink, TRAY_FLOOR, palette),
-		walls,
-		nameplate: {
-			height: plateHeight,
-			face: washed(palette.trayPlate, ink, PLATE_FACE, palette),
-			edge: tinted(walls.top, ink, PLATE_EDGE),
+		floor,
+		walls: {
+			top: tinted(floor, palette.slabDeep, TOP_WALL),
+			side: tinted(floor, palette.slabDeep, SIDE_WALL),
 		},
+		header,
 	};
 }
 
@@ -211,7 +188,7 @@ function typeChip(
 		appearance.icon,
 		x + ICON_CHIP_SIZE / 2,
 		y + (ICON_CHIP_SIZE - CHIP_THICKNESS) / 2,
-		lightDark(mixed(ink, palette.foreground, GLYPH_DEPTH), ink),
+		ink,
 	);
 	if (standing === "removed") {
 		return (
@@ -226,8 +203,8 @@ function typeChip(
 		);
 	}
 	const look: SlabLook = {
-		face: tinted(palette.slabFace, ink, CHIP_FACE),
-		edge: tinted(palette.slabEdge, ink, CHIP_EDGE),
+		face: inkedOver(palette.slabFace, ink, CHIP_FACE),
+		edge: inkedOver(palette.slabEdge, ink, CHIP_EDGE),
 		thickness: CHIP_THICKNESS,
 		radius: ICON_CHIP_RADIUS,
 		sheen: true,
