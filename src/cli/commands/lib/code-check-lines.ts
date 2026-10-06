@@ -81,18 +81,21 @@ function findingLines(finding: CodeFinding): string[] {
 }
 
 /**
- * What a skip is about: a subject, a whole board, or a whole checkout.
+ * What a skip is about: a subject, a whole board, a whole checkout, or a
+ * whole language, such as one with no language server on this machine.
  * @param skip The skip.
  * @returns The noun.
  */
 function skippedNoun(skip: CodeCheckSkip): string {
 	if (skip.subject !== undefined) return "subject";
-	return skip.board === undefined ? "checkout" : "board";
+	if (skip.board !== undefined) return "board";
+	return skip.repo === undefined ? "language" : "checkout";
 }
 
 /**
  * One line for each reason the check skipped something, with a count. A
- * reason that holds for whole checkouts names them, since it names no subject.
+ * reason that holds for whole checkouts names them, and one that holds for a
+ * whole language says which and why, since it names no subject.
  * @param skipped What the check skipped.
  * @returns The lines.
  */
@@ -105,8 +108,9 @@ function skippedLines(skipped: readonly CodeCheckSkip[]): string[] {
 	return [...byReason.values()].map((same) => {
 		const [first] = same;
 		const noun = first === undefined ? "" : skippedNoun(first);
-		const repos = noun === "checkout" ? ` (${same.map((skip) => skip.repo).join(", ")})` : "";
-		return `code check: skipped ${plural(same.length, noun)}: ${first?.reason}${repos}`;
+		const named = same.map((skip) => (noun === "language" ? skip.detail : skip.repo));
+		const list = noun === "checkout" || noun === "language" ? ` (${named.join("; ")})` : "";
+		return `code check: skipped ${plural(same.length, noun)}: ${first?.reason}${list}`;
 	});
 }
 
