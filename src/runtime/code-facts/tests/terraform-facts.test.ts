@@ -22,7 +22,7 @@ import {
 	type SyntaxFacts,
 	type TerraformPlan,
 } from "@/runtime/code-facts/index";
-import { fixtureDirectory } from "@/runtime/code-facts/tests/checkout";
+import { fixtureCheckout, fixtureDirectory } from "@/runtime/code-facts/tests/checkout";
 
 const checkout = fixtureDirectory("terraform-shop");
 const facts = createCodeFacts();
@@ -188,6 +188,36 @@ test("a declaration reaches another through variables, module arguments and outp
 	});
 });
 
+test("a module call the check does not read reaches what its arguments name, and a splat over a module's instances reaches its output", async () => {
+	const written = fixtureCheckout({
+		"main.tf": [
+			'module "worker" {',
+			'  source = "git::https://example.com/worker.git"',
+			"  queue  = aws_sqs_queue.jobs.url",
+			"}",
+			'module "topics" {',
+			'  source = "./topics"',
+			"  count  = 2",
+			"}",
+			'resource "aws_sqs_queue" "jobs" {',
+			"  policy = module.topics[*].arn",
+			"}",
+		].join("\n"),
+		"topics/main.tf":
+			'resource "aws_sns_topic" "this" {}\noutput "arn" {\n  value = aws_sns_topic.this.arn\n}\n',
+	});
+	const configuration = await terraformConfiguration(
+		facts.pass(new AbortController().signal),
+		written,
+		"",
+	);
+	const reached = (address: string) =>
+		configuration.reached(address).map(({ to, link }) => `${to.address} ${link.path}:${link.line}`);
+	expect(reached("module.worker")).toEqual(["aws_sqs_queue.jobs main.tf:3"]);
+	expect(reached("aws_sqs_queue.jobs")).toEqual(["module.topics.aws_sns_topic.this main.tf:10"]);
+	written.remove();
+});
+
 test("a plan JSON gives only addresses and references, and fills in the remote module while the configuration on disk decides the local one", async () => {
 	const kept = JSON.stringify(plan.configuration, (_key, value: unknown) =>
 		value instanceof Map ? [...value] : value,
@@ -213,7 +243,8 @@ test("a plan JSON gives only addresses and references, and fills in the remote m
 			link: expect.objectContaining({
 				path: "infra/plan.json",
 				line: 1,
-				symbol: "aws_vpc.this.id",
+				// The address, as a file's reference gives it: never an attribute or an index key of the plan's.
+				symbol: "aws_vpc.this",
 			}),
 		},
 	]);

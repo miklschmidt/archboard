@@ -18,7 +18,9 @@
 // module argument, output and local value on the way, which only pass a value
 // on. A module's variable takes what the calling module's argument gives it,
 // and a module call's output what the output's expression names. A reference
-// into a module the check does not read reaches the module call itself.
+// into a module the check does not read reaches the module call itself, and
+// that call reaches what its arguments name, as no code of the module is read
+// to take their values further.
 
 import type {
 	Definition,
@@ -274,14 +276,13 @@ function readPlanScope(
 			declare(reading, { address: `${scope}${address}`, kind });
 		}
 		reading.written.push(
-			...module.links.map((link) => ({
-				from: `${scope}${link.from}`,
-				scope,
-				names: namesOf(link.reference),
-				path: plan.path,
-				line: 1,
-				symbol: link.reference,
-			})),
+			...module.links.flatMap((link) => {
+				const names = namesOf(link.reference);
+				// The address alone, as the adapter writes a reference: never an index key of the plan's.
+				const symbol = addressOf(names);
+				if (symbol === undefined) return [];
+				return [{ from: `${scope}${link.from}`, scope, names, path: plan.path, line: 1, symbol }];
+			}),
 		);
 	}
 	for (const [name, child] of module.calls) {
@@ -306,6 +307,21 @@ function reachedAddress(reading: Reading, written: Written): string | undefined 
 }
 
 /**
+ * The declarations a reference is a link of: the one it is written in, and
+ * for an argument of a module call whose module the check does not read, the
+ * call too. No code of that module is read to take the value further, so the
+ * call itself reaches what the argument names.
+ * @param reading What the reading collects.
+ * @param from The declaration the reference is written in.
+ * @returns The declarations.
+ */
+function linkedFrom(reading: Reading, from: string): string[] {
+	if (reading.declarations.get(from)?.kind !== "argument") return [from];
+	const call = from.split(".").slice(0, -2).join(".");
+	return reading.unread.has(call) ? [from, call] : [from];
+}
+
+/**
  * The links of the address space, each reference resolved to its address.
  * @param reading What the reading collects.
  * @returns The links of each declaration, in the order the reading met them.
@@ -316,7 +332,9 @@ function linksOf(reading: Reading): Map<string, Link[]> {
 		const to = reachedAddress(reading, written);
 		if (to === undefined || to === written.from) continue;
 		const link: Link = { ...written, to };
-		links.set(written.from, [...(links.get(written.from) ?? []), link]);
+		for (const from of linkedFrom(reading, written.from)) {
+			links.set(from, [...(links.get(from) ?? []), link]);
+		}
 	}
 	return links;
 }
