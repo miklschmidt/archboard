@@ -26,7 +26,12 @@
 // and the check cannot tell the code of the two apart. A file read as text
 // gives no evidence.
 
-import type { PartCode, ReadPart, RepoCheckout } from "@/runtime/code-check/lib/part-code";
+import {
+	definitionIn,
+	type PartCode,
+	type ReadPart,
+	type RepoCheckout,
+} from "@/runtime/code-check/lib/part-code";
 import type { Resolve } from "@/runtime/code-check/lib/resolution";
 import {
 	definitionSite,
@@ -34,6 +39,7 @@ import {
 	type DefinitionSite,
 	type FactsPass,
 	type SyntaxFacts,
+	type Target,
 } from "@/runtime/code-facts/index";
 import type { CodeEvidence } from "@/shared/code-check/index";
 
@@ -94,7 +100,7 @@ function ownersOf(parts: readonly ReadPart[]): Owners {
 	const directories: ReadPart[] = [];
 	for (const part of parts) {
 		const { grain } = part;
-		if (grain.kind === "symbol") addTo(symbols, grain.file, part);
+		if (grain.kind === "symbol") part.files.forEach((file) => addTo(symbols, file, part));
 		else if (grain.kind === "file") addTo(files, grain.file, part);
 		else directories.push(part);
 	}
@@ -103,19 +109,22 @@ function ownersOf(parts: readonly ReadPart[]): Owners {
 
 /**
  * The parts with the narrowest definition among those that hold code.
- * @param parts Parts bound to a symbol.
+ * @param parts Parts bound to a symbol in the file.
+ * @param file The file.
  * @param holds Whether a part's definition holds the code.
  * @returns The parts whose definition spans the fewest lines.
  */
 function narrowestSymbols(
 	parts: readonly ReadPart[],
+	file: string,
 	holds: (definition: Definition) => boolean,
 ): ReadPart[] {
-	const holding = parts.flatMap((part) =>
-		part.grain.kind === "symbol" && holds(part.grain.definition)
-			? [{ part, span: part.grain.definition.end - part.grain.definition.start }]
-			: [],
-	);
+	const holding = parts.flatMap((part) => {
+		const definition = definitionIn(part, file);
+		return definition !== undefined && holds(definition)
+			? [{ part, span: definition.end - definition.start }]
+			: [];
+	});
 	const least = Math.min(...holding.map((each) => each.span));
 	return holding.filter((each) => each.span === least).map((each) => each.part);
 }
@@ -147,6 +156,7 @@ function deepestDirectories(directories: readonly ReadPart[], file: string): Rea
 function ownersAtLine(owners: Owners, file: string, line: number): ReadPart[] {
 	const symbols = narrowestSymbols(
 		owners.symbols.get(file) ?? [],
+		file,
 		(definition) => definition.start <= line && line <= definition.end,
 	);
 	if (symbols.length > 0) return symbols;
@@ -179,6 +189,7 @@ function ownersOfSite(
 ): ReadPart[] {
 	const symbols = narrowestSymbols(
 		owners.symbols.get(site.path) ?? [],
+		site.path,
 		(definition) =>
 			definition.start <= site.definition.start && site.definition.end <= definition.end,
 	);
@@ -249,6 +260,32 @@ function siteOf(
 }
 
 /**
+ * What a use that an import resolves reaches: the parts that hold its
+ * definition, else those that own the file it leads to. A definition of the
+ * same file is it only under the name the import leads to, as a compose file
+ * defines the service that another of its services depends on.
+ * @param repo The repository's reading.
+ * @param facts The file's facts.
+ * @param symbol The use as the file spells it.
+ * @param target Where its import leads.
+ * @returns The parts that hold what it reaches.
+ */
+async function targetReached(
+	repo: RepoReading,
+	facts: SyntaxFacts,
+	symbol: string,
+	target: Target,
+): Promise<Reached> {
+	const site = await siteOf(repo, facts.path, symbol);
+	const other = site?.path === facts.path && site.definition.symbol !== target.symbol;
+	const to =
+		site === undefined || other
+			? ownersOfFile(repo.owners, target.path)
+			: ownersOfSite(repo.owners, site);
+	return { to, resolution: "resolved" };
+}
+
+/**
  * What one use in a file reaches.
  * @param repo The repository's reading.
  * @param facts The file's facts.
@@ -263,12 +300,7 @@ async function reachedBy(
 	imported: ReadonlySet<string>,
 ): Promise<Reached | undefined> {
 	if (reference.target !== undefined) {
-		const site = await siteOf(repo, facts.path, reference.symbol);
-		const to =
-			site === undefined || site.path === facts.path
-				? ownersOfFile(repo.owners, reference.target.path)
-				: ownersOfSite(repo.owners, site);
-		return { to, resolution: "resolved" };
+		return targetReached(repo, facts, reference.symbol, reference.target);
 	}
 	if (imported.has(reference.symbol.split(".")[0] ?? "")) return undefined;
 	return serverReached(repo, facts, reference, imported);
