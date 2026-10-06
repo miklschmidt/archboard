@@ -60,13 +60,15 @@ const CARD_THICKNESS = 4;
  * How thick a container's plinth is at the top level, and how much thinner
  * each one nested in another stands, down to a card's.
  */
-const PLINTH_THICKNESS = 8;
-const PLINTH_STEP = 2;
+const PLINTH_THICKNESS = 6;
+const PLINTH_STEP = 1;
 /** How thick a group's region is, and the tab its caption is printed on. */
 const MAT_THICKNESS = 3;
 const TAB_THICKNESS = 2;
 /** How thick an icon chip is: a small tile raised off the face it sits on. */
 const CHIP_THICKNESS = 1.5;
+/** How thick a relationship's label is: a tile as low as a chip, which sits on its line. */
+const PILL_THICKNESS = 2;
 /** Minimum participant-card heights; each additional responsibility line adds its line height. */
 const CARD_HEIGHT = 46;
 const CARD_HEIGHT_WITH_NOTE = 58;
@@ -117,6 +119,7 @@ export {
 	MAT_THICKNESS,
 	TAB_THICKNESS,
 	CHIP_THICKNESS,
+	PILL_THICKNESS,
 	CARD_HEIGHT,
 	CARD_HEIGHT_WITH_NOTE,
 	ICON_CHIP_SIZE,

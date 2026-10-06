@@ -7,6 +7,8 @@ import {
 	CHIP_THICKNESS,
 	ICON_CHIP_SIZE,
 	ICON_CHIP_RADIUS,
+	PILL_RADIUS,
+	PILL_THICKNESS,
 	PLINTH_STEP,
 	PLINTH_THICKNESS,
 	SLAB_RADIUS,
@@ -32,26 +34,31 @@ function semanticInk(color: PaletteColor | undefined): string | undefined {
 }
 
 /**
- * How much of its group's colour a card's face and front edge carry. The dark
- * ground takes more on the face and less on the edge, so the edge stays darker
- * than the face it is the side of.
+ * How much of its group's colour a card's face carries, and how much its front
+ * edge carries over the shade it is mixed into (`--slab-deep`): the colour of
+ * the edge is what says which concern a card serves, on either ground.
  */
-const CARD_FACE: Share = { light: 0.06, dark: 0.09 };
-const CARD_EDGE: Share = { light: 0.5, dark: 0.14 };
+const CARD_FACE: Share = { light: 0.06, dark: 0.08 };
+const CARD_EDGE: Share = { light: 0.5, dark: 0.3 };
 
 /**
- * How much of its kind's colour a container's plinth carries: half a card's,
- * so the cards standing on it, tinted by their own groups, read over it.
+ * How much of its kind's colour a container's plinth carries: half a card's on
+ * its face, so the cards standing on it, tinted by their own groups, read over
+ * it, and a trace on its front edge, so its foot stays a quiet neutral.
  */
 const PLINTH_FACE: Share = { light: 0.03, dark: 0.035 };
-const PLINTH_EDGE: Share = { light: 0.14, dark: 0.06 };
+const PLINTH_EDGE: Share = { light: 0.055, dark: 0.06 };
 
 /**
  * How far each plinth nested in another rises toward a card's face, a step
- * nearer the light, and the furthest any rises.
+ * nearer the light, and the furthest any rises. The dark ground's steps are
+ * longer, where the same share of a dark tone is a smaller step of lightness.
  */
-const PLINTH_RISE = 0.3;
-const PLINTH_RISE_MAX = 0.6;
+const PLINTH_RISE: Share = { light: 0.3, dark: 0.5 };
+const PLINTH_RISE_MAX: Share = { light: 0.6, dark: 1 };
+
+/** How far a label's front edge is shaded from its face toward `--slab-deep`. */
+const LABEL_EDGE = 0.6;
 
 /** How much of its type's colour an icon chip's face and edge carry. */
 const CHIP_FACE: Share = { light: 0.14, dark: 0.2 };
@@ -66,7 +73,7 @@ const GLYPH_DEPTH = 0.3;
 
 /**
  * A card's slab: its face tinted and its front edge toned by the group it is
- * placed with (ADR 0038), a warm grey for a card in no group.
+ * placed with (ADR 0038), a grey for a card in no group.
  * @param appearance Resolved channels.
  * @param palette Selected theme.
  * @returns The slab's look.
@@ -75,10 +82,28 @@ function cardLook(appearance: NodeAppearance, palette: Palette): SlabLook {
 	const ink = semanticInk(appearance.bodyColor);
 	return {
 		face: tinted(palette.slabFace, ink, CARD_FACE),
-		edge: tinted(palette.slabEdge, ink, CARD_EDGE),
+		edge: ink === undefined ? palette.slabEdge : tinted(palette.slabDeep, ink, CARD_EDGE),
 		thickness: CARD_THICKNESS,
 		radius: SLAB_RADIUS,
 		sheen: true,
+	};
+}
+
+/**
+ * A relationship's label: a low tile like a chip, its face the opaque plate its
+ * words are read on, its front edge a shade of that face. Its standing's ring
+ * hugs its face, since a label has no selection ring of its own to clear.
+ * @param palette Selected theme.
+ * @returns The label's look.
+ */
+function labelLook(palette: Palette): SlabLook {
+	return {
+		face: palette.pill,
+		edge: mixed(palette.pill, palette.slabDeep, LABEL_EDGE),
+		thickness: PILL_THICKNESS,
+		radius: PILL_RADIUS,
+		sheen: false,
+		ringInset: 1,
 	};
 }
 
@@ -100,14 +125,17 @@ function plinthLook(
 	headerHeight: number,
 ): SlabLook {
 	const ink = semanticInk(appearance.bodyColor);
-	const rise = Math.min(PLINTH_RISE_MAX, depth * PLINTH_RISE);
+	const rise: Share = {
+		light: Math.min(PLINTH_RISE_MAX.light, depth * PLINTH_RISE.light),
+		dark: Math.min(PLINTH_RISE_MAX.dark, depth * PLINTH_RISE.dark),
+	};
 	/**
 	 * One tone of the plinth, risen and tinted.
 	 * @param base The tone at the top level.
 	 * @returns The tone.
 	 */
 	const toned = (base: string): string =>
-		tinted(mixed(base, palette.slabFace, rise), ink, PLINTH_FACE);
+		tinted(tinted(base, palette.slabFace, rise), ink, PLINTH_FACE);
 	return {
 		face: toned(palette.plinthFace),
 		edge: tinted(palette.plinthEdge, ink, PLINTH_EDGE),
@@ -166,4 +194,4 @@ function typeChip(x: number, y: number, appearance: NodeAppearance, palette: Pal
 	);
 }
 
-export { semanticInk, cardLook, plinthLook, appearanceAttributes, typeChip };
+export { semanticInk, cardLook, labelLook, plinthLook, appearanceAttributes, typeChip };

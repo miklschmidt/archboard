@@ -15,6 +15,7 @@ import {
 import type { DrawingRegion, TextRun } from "@/transformers/semantic-renderer/lib/drawing";
 import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
+import { measure } from "@/transformers/semantic-renderer/lib/text";
 import { semanticInk } from "@/transformers/semantic-renderer/lib/svg/appearance";
 import { lightDark, mixed } from "@/transformers/semantic-renderer/lib/svg/colour";
 import { farLayer, nearLayer } from "@/transformers/semantic-renderer/lib/svg/far-view";
@@ -32,13 +33,14 @@ import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-run
 
 /**
  * How much of the group's colour the mat's face, its front edge, its tab's
- * face and its tab's edge carry. The tab's edge is quieter than the mat's, the
- * thickness of a label rather than a rule under it.
+ * face and its tab's edge carry. The mat's edge is the group's colour at a
+ * middle lightness on either ground, a coloured foot under a quiet face; the
+ * tab's edge is quieter, the thickness of a label rather than a rule under it.
  */
 const MAT_FACE: Share = { light: 0.12, dark: 0.11 };
-const MAT_EDGE: Share = { light: 0.8, dark: 0.3 };
+const MAT_EDGE: Share = { light: 0.8, dark: 0.45 };
 const TAB_FACE: Share = { light: 0.17, dark: 0.17 };
-const TAB_EDGE: Share = { light: 0.4, dark: 0.2 };
+const TAB_EDGE: Share = { light: 0.4, dark: 0.35 };
 /** The tab's own corners; the one it shares with the mat is the mat's. */
 const TAB_RADIUS = 8;
 /** How far the caption's words lean from the group's colour toward the text colour. */
@@ -87,17 +89,25 @@ function tabPath(box: Box): string {
 /**
  * The tab a caption is printed on, as wide as its words and their margin on
  * either side and as tall as the caption's row: a small slab of its own on the
- * mat's corner, casting a short shadow on the mat.
+ * mat's corner, casting a short shadow on the mat. Words grown for the far
+ * view keep a margin after them grown as much.
  * @param region The region.
  * @param run The caption's words as they are set, near or far.
  * @param colours The group's colours.
  * @param palette The page's colours.
+ * @param grown How much larger than near the words are set.
  * @returns The tab.
  */
-function tab(region: DrawingRegion, run: TextRun, colours: MatColours, palette: Palette): string {
+function tab(
+	region: DrawingRegion,
+	run: TextRun,
+	colours: MatColours,
+	palette: Palette,
+	grown = 1,
+): string {
 	const { box, caption } = region;
 	const margin = caption.box.x + run.x - box.x;
-	const width = Math.min(box.width, margin * 2 + run.width);
+	const width = Math.min(box.width, margin * (1 + grown) + run.width);
 	const height = caption.box.y + caption.box.height - box.y;
 	const whole = { x: box.x, y: box.y, width, height };
 	const face = { ...whole, height: height - TAB_THICKNESS };
@@ -206,12 +216,12 @@ function farCaption(
 	const grown = {
 		...run,
 		fontSize: size,
-		width: (run.width * size) / run.fontSize,
+		width: measure(run.text, run.font, size),
 		// The baseline stands half a cap height below the row's middle.
 		y: caption.box.height / 2 + size * 0.35,
 	};
 	return farLayer(
-		tab(region, grown, colours, palette) +
+		tab(region, grown, colours, palette, size / run.fontSize) +
 			paintTextRuns([grown], caption.box, palette, colours.words),
 	);
 }

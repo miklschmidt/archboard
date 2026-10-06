@@ -136,7 +136,7 @@ describe("a card's body takes its group's colour and its chip its type's", () =>
 		expect(groupOf(yellow.svg, "node", "gate")!.markup).toContain('data-body-color="yellow"');
 	});
 
-	test("comparison takes over the front edge while preserving the face's tint and type chips", async () => {
+	test("comparison draws its ring while preserving the block's tones and type chips", async () => {
 		const rendered = await renderArchitecture({
 			content: orderedFixture({ nodes }),
 			policy,
@@ -145,8 +145,13 @@ describe("a card's body takes its group's colour and its chip its type's", () =>
 		const api = groupOf(paintedIn(rendered.svg), "node", "api")!.markup;
 		const unmarked = await renderArchitecture({ content: orderedFixture({ nodes }), policy });
 		const before = groupOf(paintedIn(unmarked.svg), "node", "api")!.markup;
-		expect(blockOf(api).edge).toBe(themeColor("light", "--standing-changed"));
-		expect(blockOf(api).face).toBe(blockOf(before).face);
+		expect(api).toMatch(
+			new RegExp(
+				`fill="none" stroke="${themeColor("light", "--standing-changed")}"[^>]*stroke-dasharray`,
+				"u",
+			),
+		);
+		expect(blockOf(api)).toEqual(blockOf(before));
 		expect(glyphOf(api)).toBe(glyphOf(before));
 		expect(
 			sameHue(hueOf(glyphOf(api)), hueOf(themeColor("light", "--semantic-violet"))),
