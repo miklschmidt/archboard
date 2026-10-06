@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 37,
+	"version": 39,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-06T12:11:37.895Z",
+	"updatedAt": "2026-10-06T12:41:42.530Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -6178,7 +6178,7 @@
 		{
 			"id": "S1LzX7nh",
 			"name": "TASK-369.05 after TASK-369.03",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "LnS4qG9S",
 			"summary": "An agent can map a branch onto a board and set it against the branch's proposal",
 			"content": {
@@ -7141,9 +7141,9 @@
 		{
 			"id": "gjVMc1az",
 			"name": "TASK-369.04",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "S1LzX7nh",
-			"summary": "An agent can list the parts that change together with no relationship between them",
+			"summary": "Service level: the CLI application's modules, the entry points one command passes through, and its command groups. Not separate deployed services. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
@@ -7559,7 +7559,7 @@
 						"order": 30000,
 						"name": "Locality",
 						"kind": "module",
-						"responsibility": "semantic locality: the parts of one board ranked by the commits that changed their bound files in a period, and the pairs that change together with no relationship between them",
+						"responsibility": "semantic locality: the parts of one board ranked by the commits that changed their bound files in a period, and the pairs that change together, marked where nothing on the board joins them",
 						"parent": "bLpk2XKU",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -8102,7 +8102,7 @@
 			}
 		}
 	],
-	"current": "S1LzX7nh",
+	"current": "gjVMc1az",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -8133,6 +8133,12 @@
 			"from": "LnS4qG9S",
 			"at": "2026-10-06T11:39:34.187Z",
 			"reason": "Adds the footprint route and command: the parts a branch changed, set against the parts its proposal names"
+		},
+		{
+			"variant": "gjVMc1az",
+			"from": "S1LzX7nh",
+			"at": "2026-10-06T12:41:42.530Z",
+			"reason": "TASK-369.04: semantic locality pairs the parts that change together and marks the unjoined pairs"
 		}
 	],
 	"shelvings": [
