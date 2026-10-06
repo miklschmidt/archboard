@@ -1,11 +1,11 @@
 ---
 id: TASK-368.05
 title: Flat dogfood module boards draw their modules as containers
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:17'
-updated_date: '2026-10-06 10:46'
+updated_date: '2026-10-06 10:47'
 labels:
   - interfaces
   - architecture
@@ -27,9 +27,9 @@ On 2026-09-29, 9 of the 15 dogfood boards drew no container. Not every board has
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Each board without a container either draws its modules as containers through an adopted proposal, or its task notes say why it has no module seam
-- [ ] #2 Relationships that crossed into another module's private file now land on that module's entry points, or the notes say why the code really does that
-- [ ] #3 `./bin/dogfood check` reports no diagnostics
+- [x] #1 Each board without a container either draws its modules as containers through an adopted proposal, or its task notes say why it has no module seam
+- [x] #2 Relationships that crossed into another module's private file now land on that module's entry points, or the notes say why the code really does that
+- [x] #3 `./bin/dogfood check` reports no diagnostics
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -136,4 +136,12 @@ Final measurements, current variants, 2026-10-06:
 - Left for another task: 36 crossings remain on boards that already drew a container and were not flat, so they are outside this task's scope. They are Board rasterizer 12 (headless-chromium and walkthrough-recorder lib files), Agent workbench 8, Voice coordinator 7, Board viewer 6 and Codex session 3.
 - Correction to the Archboard server note: board-announcements.ts imports onBoardLockChanged at :10 and registers its handler at :65.
 - ./bin/dogfood check: diagnostics [] after the last adoption.
+
+Parent verified on 2026-10-06: ./bin/dogfood check exits 0 with no diagnostics, and the cited calls hold (session.ts:12 and :75 call runCommand, scripts/evaluate-skill.ts imports loadSuite, runBatch, gradeBatch and writeReport). Scope read as the flat boards named by the task. 36 crossings into another module's private file remain on boards that already had a container (Board rasterizer 12, Agent workbench 8, Voice coordinator 7, Board viewer 6, Codex session 3); listed for the user's final review as a possible follow-up.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Seven flat dogfood boards now draw their modules as containers through adopted proposals: Command dispatch, Skill evaluation, Semantic renderer, Renderer layout, Codex workhorse, Archboard server and Command interface. On them, the relationships that crossed into another module's private file went from 13 to 0, and one call moved onto Command contract's runCommand entry point. Archboard, the system board, has no module seam, and the notes say why. Verified with ./bin/dogfood check (no diagnostics), semantic inspect --container on each new container, and spot checks of the cited source lines.
+<!-- SECTION:FINAL_SUMMARY:END -->
