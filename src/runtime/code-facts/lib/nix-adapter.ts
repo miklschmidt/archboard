@@ -20,13 +20,16 @@
 // unparsed part with `under` set to the path, and a symbol below it is
 // skipped, never reported missing. So are the names an open set may add, and
 // every name of a flake whose outputs the reading cannot follow at all
-// (`under` is the empty path). The inputs are in `flake.lock`
-// (flake-lock.ts). A part of the file that did not parse holds no facts.
+// (`under` is the empty path), and every name a reading that stops at its
+// bounds did not reach: 400 names deep, or 10,000 outputs. The inputs are in
+// `flake.lock` (flake-lock.ts). A part of the file that did not parse holds no
+// facts, and the names written there, as Nix spells a name (`hx-lsp`), are
+// skipped, never reported missing.
 
 import type { Node, Tree } from "web-tree-sitter";
 import type { Definition, ParsedFacts, Unparsed } from "@/runtime/code-facts/lib/facts";
 import type { Grammar } from "@/runtime/code-facts/lib/grammars";
-import { readFile } from "@/runtime/code-facts/lib/nix-evaluation";
+import { MAX_DEPTH, readFile } from "@/runtime/code-facts/lib/nix-evaluation";
 import {
 	type AttrsValue,
 	type NixValue,
@@ -65,10 +68,15 @@ const SCHEMA_DEPTH: ReadonlyMap<string, number> = new Map([
 /** How many definitions one file gives at most, so that no set the file builds runs away. */
 const MAX_DEFINITIONS = 10_000;
 
+/** A whole name as Nix spells one: an identifier may hold `-` and `'`. */
+const NIX_WORD = /[\p{L}\p{N}_'-]+/gu;
+
 /** What reading the outputs collects. */
 interface Outputs {
 	readonly definitions: Map<string, Definition>;
 	readonly unknown: Unparsed[];
+	/** The set where the reading stopped at its most definitions, if it did. */
+	stopped?: Node;
 }
 
 /**
@@ -105,11 +113,12 @@ function walk(
 	node: Node,
 	above: ReadonlySet<NixValue>,
 ): void {
-	if (outputs.definitions.size >= MAX_DEFINITIONS) return;
 	define(outputs, path, node);
 	if (deepEnough(path) || above.has(value)) return;
 	if (value.kind === "unknown") unknownBelow(outputs, path, value.node);
-	if (value.kind === "attrs") walkSet(outputs, value, { path, node }, above);
+	if (value.kind !== "attrs") return;
+	if (path.length >= MAX_DEPTH) unknownBelow(outputs, path, node);
+	else walkSet(outputs, value, { path, node }, above);
 }
 
 /**
@@ -174,6 +183,10 @@ function walkSet(
 ): void {
 	const within = new Set([...above, set]);
 	for (const [name, entry] of set.entries) {
+		if (outputs.definitions.size >= MAX_DEFINITIONS) {
+			outputs.stopped ??= place.node;
+			return;
+		}
 		const node = inside(entry.node, place.node) ? entry.node : place.node;
 		walk(outputs, entry.value(), [...place.path, name], node, within);
 	}
@@ -208,12 +221,13 @@ function flakeFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 	const outputs: Outputs = { definitions: new Map(), unknown: [] };
 	const found = outputsOf(readFile(tree.rootNode), tree.rootNode);
 	if (found !== undefined) walk(outputs, found.value, [], found.node, new Set());
+	if (outputs.stopped !== undefined) unknownBelow(outputs, [], outputs.stopped);
 	const errors = grammar.query.captures(tree.rootNode).map((capture) => capture.node);
 	return {
 		definitions: [...outputs.definitions.values()],
 		references: [],
 		imports: [],
-		unparsed: [...unparsedOf(errors), ...outputs.unknown],
+		unparsed: [...unparsedOf(errors, NIX_WORD), ...outputs.unknown],
 	};
 }
 

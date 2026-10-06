@@ -12,8 +12,34 @@
 // such as the systems of `genAttrs lib.systems.flakeExposed`.
 // Every entry of a set and every item of a list is lazy, as in Nix, and is
 // read at most once.
+//
+// One reading of a file has one budget. Each expression it reads, and each
+// name or item it binds, copies or walks, spends one step, so that no file
+// can make the reading run long or hold much memory: once the budget is
+// spent, every value still to read is unknown.
 
 import type { Node } from "web-tree-sitter";
+
+/** What one reading may still spend. */
+interface Budget {
+	steps: number;
+	depth: number;
+}
+
+/**
+ * Spend steps of a budget, or spend it all when it cannot pay them.
+ * @param budget The budget.
+ * @param steps The steps.
+ * @returns True when it paid them; false when the budget is spent.
+ */
+function spend(budget: Budget, steps: number): boolean {
+	if (budget.steps < steps) {
+		budget.steps = 0;
+		return false;
+	}
+	budget.steps -= steps;
+	return true;
+}
 
 /** A value, read when it is first asked for. */
 type Thunk = () => NixValue;
@@ -96,10 +122,12 @@ function ready(value: NixValue): Thunk {
 /**
  * The names a list of strings holds, where the reading can tell every one.
  * @param value The list.
- * @returns The names, or undefined when it is no list or an item is not a known string.
+ * @param budget The reading's budget, which pays for each item.
+ * @returns The names, or undefined when it is no list, an item is not a
+ * known string, or the budget is spent.
  */
-function namesOf(value: NixValue): string[] | undefined {
-	if (value.kind !== "list") return undefined;
+function namesOf(value: NixValue, budget: Budget): string[] | undefined {
+	if (value.kind !== "list" || !spend(budget, value.items.length)) return undefined;
 	const names: string[] = [];
 	for (const item of value.items) {
 		const read = item();
@@ -133,6 +161,20 @@ function selected(value: NixValue, name: string, node: Node): NixValue {
 }
 
 /**
+ * Whether the reading is sure a value has no attribute of a name: it is no
+ * set, or a set of which the reading can tell every name.
+ * @param value The value.
+ * @param name The name, undefined where the reading cannot tell it.
+ * @returns True when the name is surely absent.
+ */
+function surelyAbsent(value: NixValue, name: string | undefined): boolean {
+	if (value.kind === "unknown") return false;
+	if (value.kind !== "attrs") return true;
+	if (value.open !== undefined || value.entries.has(ANY)) return false;
+	return name !== undefined && !value.entries.has(name);
+}
+
+/**
  * Apply a value to an argument.
  * @param value The function.
  * @param argument The argument.
@@ -146,6 +188,7 @@ function applied(value: NixValue, argument: Thunk, call: Node): NixValue {
 export {
 	ANY,
 	type AttrsValue,
+	type Budget,
 	type Entry,
 	type FunctionValue,
 	type NixValue,
@@ -157,5 +200,7 @@ export {
 	namesOf,
 	ready,
 	selected,
+	spend,
+	surelyAbsent,
 	unknownAt,
 };

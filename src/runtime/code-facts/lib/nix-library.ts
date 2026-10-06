@@ -8,10 +8,9 @@
 // - flake-utils: `eachSystem systems f` and `eachDefaultSystem f`, which turn
 //   `{ packages.default = ...; }` for each system into
 //   `packages.<system>.default`; `eachSystemMap` and `eachDefaultSystemMap`,
-//   which are `genAttrs`; and `defaultSystems`, the four systems flake-utils
-//   names by default (`aarch64-linux`, `aarch64-darwin`, `x86_64-darwin`,
-//   `x86_64-linux`). A flake that changes them through the `systems` input is
-//   still read with these four.
+//   which are `genAttrs`. flake-utils' default systems are its `systems`
+//   input, which a flake can change, so they are a list the reading cannot
+//   tell.
 // - `recursiveUpdate a b`, and `a // b` (evaluation in nix-evaluation.ts),
 //   `mapAttrs f set`, `foldl' f init list`, and `optionalAttrs condition set`,
 //   whose names the reading counts as given, because it cannot tell the
@@ -24,10 +23,14 @@
 // `nixpkgs.lib.systems.flakeExposed` or `import systems`, gives one name `*`
 // that stands for every system (ANY in nix-values.ts): what the function gives
 // for a system it cannot tell, such as `packages.*.default`.
+//
+// Each name or item a function copies or walks spends a step of the reading's
+// budget (nix-values.ts).
 
 import type { Node } from "web-tree-sitter";
 import {
 	type AttrsValue,
+	type Budget,
 	type Entry,
 	type FunctionValue,
 	type NixValue,
@@ -38,11 +41,9 @@ import {
 	lazy,
 	namesOf,
 	ready,
+	spend,
 	unknownAt,
 } from "@/runtime/code-facts/lib/nix-values";
-
-/** The systems flake-utils names by default. */
-const DEFAULT_SYSTEMS = ["aarch64-linux", "aarch64-darwin", "x86_64-darwin", "x86_64-linux"];
 
 /** The outputs flake-parts gives once per system from `perSystem`. */
 const PER_SYSTEM_OUTPUTS = new Set([
@@ -53,6 +54,12 @@ const PER_SYSTEM_OUTPUTS = new Set([
 	"legacyPackages",
 	"packages",
 ]);
+
+/** The call that gives a value, and the reading's budget, which the function spends. */
+interface At {
+	readonly call: Node;
+	readonly budget: Budget;
+}
 
 /**
  * A string value.
@@ -94,12 +101,12 @@ function curried(body: (first: Thunk, second: Thunk, call: Node) => NixValue): F
  * its name, or, for a list the reading cannot tell, the one name `*` and an
  * unknown system.
  * @param list The list.
- * @param call The call, for an unknown system.
+ * @param at The call, for an unknown system, and the reading's budget.
  * @returns Each name, and the argument it stands for.
  */
-function systemsIn(list: NixValue, call: Node): [string, NixValue][] {
-	const names = namesOf(list);
-	if (names === undefined) return [[ANY, unknownAt(call)]];
+function systemsIn(list: NixValue, at: At): [string, NixValue][] {
+	const names = namesOf(list, at.budget);
+	if (names === undefined) return [[ANY, unknownAt(at.call)]];
 	return names.map((name) => [name, text(name)]);
 }
 
@@ -107,13 +114,13 @@ function systemsIn(list: NixValue, call: Node): [string, NixValue][] {
  * `genAttrs names f`: one name for each item, each with what `f` gives for it.
  * @param list The names.
  * @param f The function.
- * @param call The call.
+ * @param at The call, and the reading's budget.
  * @returns The set.
  */
-function genAttrs(list: Thunk, f: Thunk, call: Node): NixValue {
-	const entries = systemsIn(list(), call).map(([name, argument]): [string, Entry] => [
+function genAttrs(list: NixValue, f: Thunk, at: At): NixValue {
+	const entries = systemsIn(list, at).map(([name, argument]): [string, Entry] => [
 		name,
-		{ node: call, value: lazy(() => applied(f(), ready(argument), call), call) },
+		{ node: at.call, value: lazy(() => applied(f(), ready(argument), at.call), at.call) },
 	]);
 	return attrs(new Map(entries));
 }
@@ -123,45 +130,77 @@ function genAttrs(list: Thunk, f: Thunk, call: Node): NixValue {
  * `{ packages.default }` for each system becomes `packages.<system>.default`.
  * @param list The systems.
  * @param perSystem What one system gives.
- * @param call The call.
+ * @param at The call, and the reading's budget.
  * @param keep Which outputs to turn, when not every one.
  * @returns The outputs.
  */
 function transposed(
 	list: NixValue,
 	perSystem: (system: NixValue) => NixValue,
-	call: Node,
+	at: At,
 	keep?: ReadonlySet<string>,
 ): NixValue {
 	const each = new Map(
-		systemsIn(list, call).map(([name, system]) => [name, lazy(() => perSystem(system), call)]),
+		systemsIn(list, at).map(([name, system]) => [name, lazy(() => perSystem(system), at.call)]),
 	);
 	const [first] = each.values();
 	const probe = first?.() ?? attrs(new Map());
 	if (probe.kind === "unknown") return attrs(new Map(), probe.node);
 	if (probe.kind !== "attrs") return attrs(new Map());
+	if (!spend(at.budget, probe.entries.size)) return unknownAt(at.call);
 	const entries = [...probe.entries]
 		.filter(([output]) => keep?.has(output) !== false)
 		.map(([output, entry]): [string, Entry] => [
 			output,
-			{ node: entry.node, value: lazy(() => systemsOf(each, output), entry.node) },
+			{
+				node: entry.node,
+				value: lazy(
+					() => systemsOf(each, output, { call: entry.node, budget: at.budget }),
+					entry.node,
+				),
+			},
 		]);
 	return attrs(new Map(entries), probe.open);
 }
 
 /**
- * One output's value for each system.
+ * One output's value for each system. A system whose outputs the reading
+ * cannot tell may give it too, so the set is then open.
  * @param each What each system gives.
  * @param output The output.
- * @returns The set of systems.
+ * @param at The node that gives the output, and the reading's budget.
+ * @returns The set of systems; unknown when the budget cannot pay for it.
  */
-function systemsOf(each: ReadonlyMap<string, Thunk>, output: string): AttrsValue {
-	const entries = [...each].flatMap(([system, value]): [string, Entry][] => {
+function systemsOf(each: ReadonlyMap<string, Thunk>, output: string, at: At): NixValue {
+	if (!spend(at.budget, each.size)) return unknownAt(at.call);
+	const entries: [string, Entry][] = [];
+	let open: Node | undefined;
+	for (const [system, value] of each) {
 		const read = value();
 		const entry = read.kind === "attrs" ? read.entries.get(output) : undefined;
-		return entry === undefined ? [] : [[system, entry]];
-	});
-	return attrs(new Map(entries));
+		if (entry === undefined) open ??= mayAdd(read);
+		else entries.push([system, entry]);
+	}
+	return attrs(new Map(entries), open);
+}
+
+/**
+ * The expression that may add names to a value the reading cannot tell every name of.
+ * @param value The value.
+ * @returns The expression: the whole value when it is unknown, else what opens a set.
+ */
+function mayAdd(value: NixValue): Node | undefined {
+	if (value.kind === "unknown") return value.node;
+	return value.kind === "attrs" ? value.open : undefined;
+}
+
+/** How two values merge, and what pays for it. */
+interface Merge {
+	/** Whether sets under one name merge too, as `recursiveUpdate` merges them. */
+	readonly deep: boolean;
+	readonly budget: Budget;
+	/** The expression that merges them, for a merge the budget cannot pay. */
+	readonly node: Node;
 }
 
 /**
@@ -171,11 +210,11 @@ function systemsOf(each: ReadonlyMap<string, Thunk>, output: string): AttrsValue
  * the other's names and is open.
  * @param left The left value.
  * @param right The right value.
- * @param deep Whether sets under one name merge.
+ * @param merge How they merge.
  * @returns The merged value.
  */
-function updated(left: NixValue, right: NixValue, deep: boolean): NixValue {
-	if (left.kind === "attrs" && right.kind === "attrs") return mergedSets(left, right, deep);
+function updated(left: NixValue, right: NixValue, merge: Merge): NixValue {
+	if (left.kind === "attrs" && right.kind === "attrs") return mergedSets(left, right, merge);
 	return openedBy(left, right) ?? openedBy(right, left) ?? right;
 }
 
@@ -192,17 +231,19 @@ function openedBy(set: NixValue, other: NixValue): NixValue | undefined {
 }
 
 /**
- * Two sets merged: right wins, and with `deep` two sets under one name merge too.
+ * Two sets merged: right wins, and with `deep` two sets under one name merge
+ * too. Each name of either spends a step.
  * @param left The left set.
  * @param right The right set.
- * @param deep Whether sets under one name merge.
- * @returns The merged set.
+ * @param merge How they merge.
+ * @returns The merged set; unknown when the budget cannot pay for it.
  */
-function mergedSets(left: AttrsValue, right: AttrsValue, deep: boolean): AttrsValue {
+function mergedSets(left: AttrsValue, right: AttrsValue, merge: Merge): NixValue {
+	if (!spend(merge.budget, left.entries.size + right.entries.size)) return unknownAt(merge.node);
 	const entries = new Map(left.entries);
 	for (const [name, entry] of right.entries) {
 		const under = left.entries.get(name);
-		entries.set(name, deep && under !== undefined ? mergedEntry(under, entry) : entry);
+		entries.set(name, merge.deep && under !== undefined ? mergedEntry(under, entry, merge) : entry);
 	}
 	return attrs(entries, left.open ?? right.open);
 }
@@ -211,12 +252,16 @@ function mergedSets(left: AttrsValue, right: AttrsValue, deep: boolean): AttrsVa
  * Two entries of one name, merged as `recursiveUpdate` merges them.
  * @param left The left entry.
  * @param right The right entry.
+ * @param merge How they merge.
  * @returns The merged entry, at the left one's node.
  */
-function mergedEntry(left: Entry, right: Entry): Entry {
+function mergedEntry(left: Entry, right: Entry, merge: Merge): Entry {
 	return {
 		node: left.node,
-		value: lazy(() => updated(left.value(), right.value(), true), right.node),
+		value: lazy(
+			() => updated(left.value(), right.value(), { ...merge, node: right.node }),
+			right.node,
+		),
 	};
 }
 
@@ -224,34 +269,37 @@ function mergedEntry(left: Entry, right: Entry): Entry {
  * flake-parts `mkFlake args module`: the module's `flake`, and the outputs its
  * `perSystem` gives for each of its `systems`.
  * @param module The module: a set, or a function of the module arguments.
- * @param call The call.
+ * @param at The call, and the reading's budget.
  * @returns The outputs.
  */
-function mkFlake(module: Thunk, call: Node): NixValue {
+function mkFlake(module: Thunk, at: At): NixValue {
 	const read = module();
-	const value = read.kind === "function" ? read.apply(ready(attrs(new Map(), call)), call) : read;
+	const value =
+		read.kind === "function" ? read.apply(ready(attrs(new Map(), at.call)), at.call) : read;
 	if (value.kind !== "attrs") return value;
 	const flake = value.entries.get("flake")?.value() ?? attrs(new Map());
+	const merge = { deep: true, budget: at.budget, node: at.call };
 	return importing(
-		updated(perSystemOutputs(value, call), flake, true),
+		updated(perSystemOutputs(value, at), flake, merge),
 		value.entries.get("imports"),
+		at.budget,
 	);
 }
 
 /**
  * The outputs a flake-parts module's `perSystem` gives for each of its `systems`.
  * @param module The module.
- * @param call The call of `mkFlake`.
+ * @param at The call of `mkFlake`, and the reading's budget.
  * @returns The outputs; none without `perSystem`.
  */
-function perSystemOutputs(module: AttrsValue, call: Node): NixValue {
+function perSystemOutputs(module: AttrsValue, at: At): NixValue {
 	const perSystem = module.entries.get("perSystem")?.value();
 	if (perSystem === undefined) return attrs(new Map());
-	const systems = module.entries.get("systems")?.value() ?? unknownAt(call);
+	const systems = module.entries.get("systems")?.value() ?? unknownAt(at.call);
 	return transposed(
 		systems,
-		(system) => perSystemOf(perSystem, system, call),
-		call,
+		(system) => perSystemOf(perSystem, system, at.call),
+		at,
 		PER_SYSTEM_OUTPUTS,
 	);
 }
@@ -261,11 +309,14 @@ function perSystemOutputs(module: AttrsValue, call: Node): NixValue {
  * add outputs the reading cannot tell: open at the imports.
  * @param outputs The outputs the module gives itself.
  * @param imports Its `imports`, if any.
+ * @param budget The reading's budget.
  * @returns The outputs, open when it imports a module.
  */
-function importing(outputs: NixValue, imports: Entry | undefined): NixValue {
+function importing(outputs: NixValue, imports: Entry | undefined, budget: Budget): NixValue {
 	if (imports === undefined || outputs.kind !== "attrs") return outputs;
-	return namesOf(imports.value())?.length === 0 ? outputs : attrs(outputs.entries, imports.node);
+	return namesOf(imports.value(), budget)?.length === 0
+		? outputs
+		: attrs(outputs.entries, imports.node);
 }
 
 /**
@@ -286,11 +337,11 @@ function perSystemOf(perSystem: NixValue, system: NixValue, call: Node): NixValu
  * flake-utils `eachSystem systems f`: what `f` gives each system, turned.
  * @param list The systems.
  * @param f The function of one system.
- * @param call The call.
+ * @param at The call, and the reading's budget.
  * @returns The outputs.
  */
-function eachSystem(list: NixValue, f: Thunk, call: Node): NixValue {
-	return transposed(list, (system) => applied(f(), ready(system), call), call);
+function eachSystem(list: NixValue, f: Thunk, at: At): NixValue {
+	return transposed(list, (system) => applied(f(), ready(system), at.call), at);
 }
 
 /**
@@ -303,27 +354,20 @@ function unary(body: (argument: Thunk, call: Node) => NixValue): FunctionValue {
 }
 
 /**
- * The systems flake-utils names by default.
- * @returns Them, as a list.
- */
-function defaultSystems(): NixValue {
-	return { kind: "list", items: DEFAULT_SYSTEMS.map((system) => ready(text(system))) };
-}
-
-/**
  * `mapAttrs f set`: the set's names, each with what `f` gives for the name
  * and its value.
  * @param f The function.
  * @param set The set.
- * @param call The call.
+ * @param at The call, and the reading's budget.
  * @returns The set; unknown when the reading cannot tell the set.
  */
-function mapAttrs(f: Thunk, set: Thunk, call: Node): NixValue {
+function mapAttrs(f: Thunk, set: Thunk, at: At): NixValue {
 	const read = set();
-	if (read.kind !== "attrs") return read.kind === "unknown" ? read : unknownAt(call);
+	if (read.kind !== "attrs") return read.kind === "unknown" ? read : unknownAt(at.call);
+	if (!spend(at.budget, read.entries.size)) return unknownAt(at.call);
 	const entries = [...read.entries].map(([name, entry]): [string, Entry] => {
-		const named = ready(name === ANY ? unknownAt(call) : text(name));
-		const value = lazy(() => applied(applied(f(), named, call), entry.value, call), call);
+		const named = ready(name === ANY ? unknownAt(at.call) : text(name));
+		const value = lazy(() => applied(applied(f(), named, at.call), entry.value, at.call), at.call);
 		return [name, { node: entry.node, value }];
 	});
 	return attrs(new Map(entries), read.open);
@@ -334,41 +378,71 @@ function mapAttrs(f: Thunk, set: Thunk, call: Node): NixValue {
  * @param f The function.
  * @param init What it starts from.
  * @param list The list.
- * @param call The call.
+ * @param at The call, and the reading's budget.
  * @returns What the last application gives; unknown when the reading cannot tell the list.
  */
-function foldLeft(f: Thunk, init: Thunk, list: Thunk, call: Node): NixValue {
+function foldLeft(f: Thunk, init: Thunk, list: Thunk, at: At): NixValue {
 	const items = list();
-	if (items.kind !== "list") return unknownAt(call);
+	if (items.kind !== "list" || !spend(at.budget, items.items.length)) return unknownAt(at.call);
 	return items.items.reduce(
-		(sofar, item) => applied(applied(f(), ready(sofar), call), item, call),
+		(sofar, item) => applied(applied(f(), ready(sofar), at.call), item, at.call),
 		init(),
 	);
 }
 
-/** The library functions, by the name a flake calls them by. */
-const LIBRARY: ReadonlyMap<string, () => NixValue> = new Map<string, () => NixValue>([
-	["genAttrs", () => curried(genAttrs)],
-	["eachSystemMap", () => curried(genAttrs)],
-	["eachDefaultSystemMap", () => unary((f, call) => genAttrs(defaultSystems, f, call))],
-	["eachSystem", () => curried((list, f, call) => eachSystem(list(), f, call))],
-	["eachDefaultSystem", () => unary((f, call) => eachSystem(defaultSystems(), f, call))],
-	["defaultSystems", defaultSystems],
-	["recursiveUpdate", () => curried((left, right) => updated(left(), right(), true))],
-	["mapAttrs", () => curried(mapAttrs)],
+/** The library functions, by the name a flake calls them by, each spending the reading's budget. */
+const LIBRARY: ReadonlyMap<string, (budget: Budget) => NixValue> = new Map<
+	string,
+	(budget: Budget) => NixValue
+>([
+	["genAttrs", (budget) => curried((list, f, call) => genAttrs(list(), f, { call, budget }))],
+	["eachSystemMap", (budget) => curried((list, f, call) => genAttrs(list(), f, { call, budget }))],
+	[
+		"eachDefaultSystemMap",
+		(budget) => unary((f, call) => genAttrs(unknownAt(call), f, { call, budget })),
+	],
+	["eachSystem", (budget) => curried((list, f, call) => eachSystem(list(), f, { call, budget }))],
+	[
+		"eachDefaultSystem",
+		(budget) => unary((f, call) => eachSystem(unknownAt(call), f, { call, budget })),
+	],
+	[
+		"recursiveUpdate",
+		(budget) =>
+			curried((left, right, call) => updated(left(), right(), { deep: true, budget, node: call })),
+	],
+	["mapAttrs", (budget) => curried((f, set, call) => mapAttrs(f, set, { call, budget }))],
 	// The reading cannot tell the condition, so it counts the names as given.
 	["optionalAttrs", () => curried((_condition, set) => set())],
-	["foldl'", () => unary((f) => curried((init, list, call) => foldLeft(f, init, list, call)))],
-	["mkFlake", () => curried((_args, module, call) => mkFlake(module, call))],
+	[
+		"foldl'",
+		(budget) =>
+			unary((f) => curried((init, list, call) => foldLeft(f, init, list, { call, budget }))),
+	],
+	["mkFlake", (budget) => curried((_args, module, call) => mkFlake(module, { call, budget }))],
 ]);
 
 /**
  * The library value a name stands for, when the flake does not say what it is.
  * @param name The name, the last of a selection such as `nixpkgs.lib.genAttrs`.
+ * @param budget The reading's budget, which the function spends.
  * @returns The value, or undefined for a name the reading does not know.
  */
-function libraryValue(name: string): NixValue | undefined {
-	return LIBRARY.get(name)?.();
+function libraryValue(name: string, budget: Budget): NixValue | undefined {
+	return LIBRARY.get(name)?.(budget);
 }
 
-export { libraryValue, updated };
+/**
+ * The value a selection gives, or, where the reading cannot follow it, the
+ * library function its last name stands for: `nixpkgs.lib.genAttrs`.
+ * @param value The value the selection gives.
+ * @param name Its last name.
+ * @param budget The reading's budget.
+ * @returns The value, or the library function.
+ */
+function orLibrary(value: NixValue, name: string | undefined, budget: Budget): NixValue {
+	if (value.kind !== "unknown" || name === undefined) return value;
+	return libraryValue(name, budget) ?? value;
+}
+
+export { libraryValue, orLibrary, updated };

@@ -13,17 +13,25 @@
 //   interpolation, `//` and `++`;
 // - the library functions nix-library.ts knows, by the last name of the
 //   selection that names them (`nixpkgs.lib.genAttrs`,
-//   `flake-utils.lib.eachDefaultSystem`), or by a name `with` brings in.
+//   `inherit (nixpkgs.lib) genAttrs`, `flake-utils.lib.eachDefaultSystem`), or
+//   by a name `with` brings in.
 //
 // Everything else is unknown at its node: `import`, a builtin, an
 // `if`, a value of an input, a library function the reading does not know.
-// A reading has a budget of steps and of depth, so a recursion the file
-// writes ends as unknown too.
+// A default, `a.b or c` or a formal's `? c`, stands only where the reading is
+// sure the name is absent: of a set it can tell every name of, or of a value
+// that is no set. An input is never absent, because Nix gives the outputs
+// function every formal it names.
+//
+// A reading has a budget of steps and of depth (nix-values.ts), so a
+// recursion the file writes, and a list or a set it doubles, end as unknown
+// too.
 
 import type { Node } from "web-tree-sitter";
-import { libraryValue, updated } from "@/runtime/code-facts/lib/nix-library";
+import { libraryValue, orLibrary, updated } from "@/runtime/code-facts/lib/nix-library";
 import {
 	type AttrsValue,
+	type Budget,
 	type Entry,
 	type NixValue,
 	type Thunk,
@@ -33,6 +41,8 @@ import {
 	lazy,
 	ready,
 	selected,
+	spend,
+	surelyAbsent,
 	unknownAt,
 } from "@/runtime/code-facts/lib/nix-values";
 
@@ -43,13 +53,7 @@ interface Scope {
 	readonly with?: Thunk;
 }
 
-/** What one reading may still spend. */
-interface Budget {
-	steps: number;
-	depth: number;
-}
-
-/** How many expressions one file's reading reads at most. */
+/** How many steps one file's reading spends at most. */
 const MAX_STEPS = 200_000;
 /** How deep one reading nests at most. */
 const MAX_DEPTH = 400;
@@ -79,8 +83,7 @@ interface Pending {
  */
 function evaluate(node: Node | null, scope: Scope, budget: Budget): NixValue {
 	if (node === null) return OTHER;
-	if (budget.steps <= 0 || budget.depth >= MAX_DEPTH) return unknownAt(node);
-	budget.steps -= 1;
+	if (budget.depth >= MAX_DEPTH || !spend(budget, 1)) return unknownAt(node);
 	budget.depth += 1;
 	try {
 		return (READERS.get(node.type) ?? unknownAt)(node, scope, budget);
@@ -118,28 +121,17 @@ function attrName(attr: Node, scope: Scope, budget: Budget): string | undefined 
 }
 
 /**
- * The names of an attribute path.
+ * The names of an attribute path, each a step.
  * @param path The attribute path.
  * @param scope The names in scope.
  * @param budget The reading's budget.
- * @returns Each name, undefined where the reading cannot tell it.
+ * @returns Each name, undefined where the reading cannot tell it; one name it
+ * cannot tell once the budget is spent.
  */
 function attrNames(path: Node | null, scope: Scope, budget: Budget): (string | undefined)[] {
-	return (path?.childrenForFieldName("attr") ?? []).map((attr) => attrName(attr, scope, budget));
-}
-
-/**
- * The set below one name of a set being built, made where there is none yet.
- * @param building The set.
- * @param name The name.
- * @param node The binding.
- * @returns The set below it.
- */
-function nestedBelow(building: Building, name: string, node: Node): Building {
-	const pending = building.entries.get(name) ?? { node };
-	building.entries.set(name, pending);
-	pending.nested ??= { entries: new Map() };
-	return pending.nested;
+	const names = path?.childrenForFieldName("attr") ?? [];
+	if (!spend(budget, names.length)) return [undefined];
+	return names.map((attr) => attrName(attr, scope, budget));
 }
 
 /**
@@ -156,16 +148,29 @@ function place(
 	value: Thunk,
 	node: Node,
 ): void {
-	const [first, ...rest] = names;
-	if (first === undefined) {
-		building.open ??= node;
-	} else if (rest.length === 0) {
-		const pending = building.entries.get(first) ?? { node };
-		pending.value = value;
-		building.entries.set(first, pending);
-	} else {
-		place(nestedBelow(building, first, node), rest, value, node);
+	let at = building;
+	for (const [index, name] of names.entries()) {
+		if (name === undefined) {
+			at.open ??= node;
+			return;
+		}
+		const pending = pendingAt(at, name, node);
+		if (index === names.length - 1) pending.value = value;
+		else at = pending.nested ??= { entries: new Map() };
 	}
+}
+
+/**
+ * One name of a set being built, made where there is none yet.
+ * @param building The set.
+ * @param name The name.
+ * @param node The binding that names it.
+ * @returns The name's entry.
+ */
+function pendingAt(building: Building, name: string, node: Node): Pending {
+	const pending = building.entries.get(name) ?? { node };
+	building.entries.set(name, pending);
+	return pending;
 }
 
 /**
@@ -214,11 +219,12 @@ const CONSTANTS = new Set(["true", "false", "null"]);
  * The value of a name.
  * @param node The variable.
  * @param scope The names in scope.
+ * @param budget The reading's budget.
  * @returns What the scope binds it to, else the library value it names, else unknown.
  */
-function variable(node: Node, scope: Scope): NixValue {
+function variable(node: Node, scope: Scope, budget: Budget): NixValue {
 	const name = node.childForFieldName("name")?.text ?? node.text;
-	const value = lookup(scope, name) ?? libraryValue(name);
+	const value = lookup(scope, name) ?? libraryValue(name, budget);
 	if (value !== undefined) return value;
 	return CONSTANTS.has(name) ? OTHER : unknownAt(node);
 }
@@ -230,7 +236,7 @@ interface Scopes {
 }
 
 /**
- * Add the bindings of one binding set to a set being built.
+ * Add the bindings of one binding set to a set being built, each a step.
  * @param bindings The binding set.
  * @param building The set.
  * @param scopes Where its values and inherited names are read.
@@ -242,22 +248,36 @@ function bindInto(
 	scopes: Scopes,
 	budget: Budget,
 ): void {
-	for (const binding of bindings?.namedChildren ?? []) {
-		if (binding.type === "binding") {
-			const names = attrNames(binding.childForFieldName("attrpath"), scopes.values, budget);
-			const value = thunk(binding.childForFieldName("expression"), scopes.values, budget);
-			place(building, names, value, binding);
-		} else if (INHERITS.has(binding.type)) {
-			inheritInto(binding, building, scopes, budget);
-		}
+	if (bindings === undefined) return;
+	if (!spend(budget, bindings.namedChildCount)) {
+		place(building, [undefined], ready(OTHER), bindings);
+		return;
 	}
+	for (const binding of bindings.namedChildren) {
+		if (INHERITS.has(binding.type)) inheritInto(binding, building, scopes, budget);
+		else if (binding.type === "binding") bindOne(binding, building, scopes.values, budget);
+	}
+}
+
+/**
+ * Add one binding, `a.b = value;`, to a set being built.
+ * @param binding The binding.
+ * @param building The set.
+ * @param scope Where its names and its value are read.
+ * @param budget The reading's budget.
+ */
+function bindOne(binding: Node, building: Building, scope: Scope, budget: Budget): void {
+	const names = attrNames(binding.childForFieldName("attrpath"), scope, budget);
+	place(building, names, thunk(binding.childForFieldName("expression"), scope, budget), binding);
 }
 
 /** The bindings that inherit names. */
 const INHERITS = new Set(["inherit", "inherit_from"]);
 
 /**
- * Add the names an `inherit` or an `inherit (from)` binds.
+ * Add the names an `inherit` or an `inherit (from)` binds. A name inherited
+ * from a value the reading cannot follow is the library function of that
+ * name, as `from.name` is.
  * @param binding The binding.
  * @param building The set.
  * @param scopes Where its values and inherited names are read.
@@ -266,13 +286,17 @@ const INHERITS = new Set(["inherit", "inherit_from"]);
 function inheritInto(binding: Node, building: Building, scopes: Scopes, budget: Budget): void {
 	const from = binding.childForFieldName("expression");
 	const source = from === null ? undefined : thunk(from, scopes.values, budget);
-	const names = binding.childForFieldName("attrs")?.childrenForFieldName("attr") ?? [];
-	for (const attr of names) {
-		const name = attr.text;
+	for (const name of attrNames(binding.childForFieldName("attrs"), scopes.values, budget)) {
 		const value =
-			source === undefined
-				? lazy(() => lookup(scopes.inherited, name) ?? unknownAt(attr), attr)
-				: lazy(() => selected(source(), name, attr), attr);
+			name === undefined
+				? ready(OTHER)
+				: lazy(
+						() =>
+							source === undefined
+								? (lookup(scopes.inherited, name) ?? unknownAt(binding))
+								: orLibrary(selected(source(), name, binding), name, budget),
+						binding,
+					);
 		place(building, [name], value, binding);
 	}
 }
@@ -280,27 +304,33 @@ function inheritInto(binding: Node, building: Building, scopes: Scopes, budget: 
 /**
  * The set a set being built gives.
  * @param building The set.
+ * @param budget The reading's budget.
  * @returns The set.
  */
-function finished(building: Building): AttrsValue {
+function finished(building: Building, budget: Budget): AttrsValue {
 	const entries = new Map<string, Entry>();
 	for (const [name, pending] of building.entries) {
-		entries.set(name, { node: pending.node, value: valueOf(pending) });
+		entries.set(name, { node: pending.node, value: valueOf(pending, budget) });
 	}
 	return attrs(entries, building.open);
 }
 
 /**
  * The value of one name of a set being built: its value, the set bound
- * below it, or both merged, as `a = { b = 1; }; a.c = 2;` merges them.
+ * below it, or both merged, as `a = { b = 1; }; a.c = 2;` merges them. The
+ * set below is made when it is first asked for, one name deep at a time.
  * @param pending The name.
+ * @param budget The reading's budget.
  * @returns Its value.
  */
-function valueOf(pending: Pending): Thunk {
+function valueOf(pending: Pending, budget: Budget): Thunk {
 	const { nested, value } = pending;
 	if (nested === undefined) return value ?? ready(OTHER);
-	if (value === undefined) return ready(finished(nested));
-	return lazy(() => updated(value(), finished(nested), false), pending.node);
+	if (value === undefined) return lazy(() => finished(nested, budget), pending.node);
+	return lazy(
+		() => updated(value(), finished(nested, budget), { deep: false, budget, node: pending.node }),
+		pending.node,
+	);
 }
 
 /**
@@ -329,14 +359,14 @@ function recursive(
 	const inner: Scope = { names, parent: scope };
 	const building: Building = { entries: new Map() };
 	bindInto(bindingSetOf(node), building, { values: inner, inherited: scope }, budget);
-	const value = finished(building);
+	const value = finished(building, budget);
 	for (const [name, entry] of value.entries) names.set(name, entry.value);
 	return { value, scope: inner };
 }
 
 /**
  * The scope of a function's body for one argument: its name, and each
- * formal with the argument's value of that name or its default.
+ * formal with the argument's value of that name or its default, each a step.
  * @param node The function.
  * @param argument The argument.
  * @param scope The scope the function was written in.
@@ -348,9 +378,9 @@ function parameterScope(node: Node, argument: Thunk, scope: Scope, budget: Budge
 	const inner: Scope = { names, parent: scope };
 	const universal = node.childForFieldName("universal");
 	if (universal !== null) names.set(universal.text, argument);
-	for (const formal of node.childForFieldName("formals")?.childrenForFieldName("formal") ?? []) {
-		names.set(...formalOf(formal, argument, inner, budget));
-	}
+	const formals = node.childForFieldName("formals")?.childrenForFieldName("formal") ?? [];
+	if (!spend(budget, formals.length)) return inner;
+	for (const formal of formals) names.set(...formalOf(formal, argument, inner, budget));
 	return inner;
 }
 
@@ -370,7 +400,8 @@ function formalOf(formal: Node, argument: Thunk, scope: Scope, budget: Budget): 
 }
 
 /**
- * The value of one formal: the argument's value of its name, else its default.
+ * The value of one formal: the argument's value of its name, else its
+ * default where the reading is sure the argument has no such name.
  * @param argument The argument.
  * @param name The formal's name.
  * @param otherwise Its default, if any.
@@ -383,14 +414,14 @@ function given(
 	otherwise: Thunk | undefined,
 	formal: Node,
 ): NixValue {
-	const entry = argument.kind === "attrs" ? argument.entries.get(name) : undefined;
-	return entry?.value() ?? otherwise?.() ?? unknownAt(formal);
+	if (!surelyAbsent(argument, name)) return selected(argument, name, formal);
+	return otherwise?.() ?? unknownAt(formal);
 }
 
 /**
- * The value of a selection, `a.b.c` or `a.b or c`. A selection the reading
- * cannot follow whose last name is a library function it knows gives that
- * function.
+ * The value of a selection, `a.b.c` or `a.b or c`. The default stands only
+ * where the reading is sure a name is absent. A selection the reading cannot
+ * follow whose last name is a library function it knows gives that function.
  * @param node The selection.
  * @param scope The names in scope.
  * @param budget The reading's budget.
@@ -398,28 +429,33 @@ function given(
  */
 function selection(node: Node, scope: Scope, budget: Budget): NixValue {
 	const names = attrNames(node.childForFieldName("attrpath"), scope, budget);
-	const value = names.reduce(
-		(at, name) => (name === undefined ? unknownAt(node) : selected(at, name, node)),
-		evaluate(node.childForFieldName("expression"), scope, budget),
-	);
-	if (value.kind !== "unknown") return value;
-	const fallback = node.childForFieldName("default");
-	if (fallback !== null) return evaluate(fallback, scope, budget);
-	return libraryValue(names.at(-1) ?? "") ?? value;
+	let value = evaluate(node.childForFieldName("expression"), scope, budget);
+	for (const name of names) {
+		if (surelyAbsent(value, name)) {
+			const fallback = node.childForFieldName("default");
+			return fallback === null ? unknownAt(node) : evaluate(fallback, scope, budget);
+		}
+		value = name === undefined ? unknownAt(node) : selected(value, name, node);
+	}
+	return orLibrary(value, names.at(-1), budget);
 }
 
+/** What one binary operator gives for its two values. */
+type Operator = (left: NixValue, right: NixValue, node: Node, budget: Budget) => NixValue;
+
 /** What each binary operator that can give a set or a list gives; every other gives neither. */
-const OPERATORS: ReadonlyMap<string, (left: NixValue, right: NixValue, node: Node) => NixValue> =
-	new Map([
-		["//", (left: NixValue, right: NixValue) => updated(left, right, false)],
-		[
-			"++",
-			(left: NixValue, right: NixValue, node: Node): NixValue =>
-				left.kind === "list" && right.kind === "list"
-					? { kind: "list", items: [...left.items, ...right.items] }
-					: unknownAt(node),
-		],
-	]);
+const OPERATORS: ReadonlyMap<string, Operator> = new Map<string, Operator>([
+	["//", (left, right, node, budget) => updated(left, right, { deep: false, budget, node })],
+	[
+		"++",
+		(left, right, node, budget) =>
+			left.kind === "list" &&
+			right.kind === "list" &&
+			spend(budget, left.items.length + right.items.length)
+				? { kind: "list", items: [...left.items, ...right.items] }
+				: unknownAt(node),
+	],
+]);
 
 /**
  * The value of a binary expression: `//` merges two sets, `++` joins two
@@ -434,19 +470,34 @@ function binary(node: Node, scope: Scope, budget: Budget): NixValue {
 	const apply = OPERATORS.get(operator);
 	if (apply === undefined) return OTHER;
 	const left = evaluate(node.childForFieldName("left"), scope, budget);
-	return apply(left, evaluate(node.childForFieldName("right"), scope, budget), node);
+	return apply(left, evaluate(node.childForFieldName("right"), scope, budget), node, budget);
 }
 
 /**
  * The value of a string: its text where no interpolation or escape makes it.
  * @param node The string.
+ * @param budget The reading's budget, which pays for each part.
  * @returns The string.
  */
-function string(node: Node): NixValue {
+function string(node: Node, budget: Budget): NixValue {
+	if (!spend(budget, node.namedChildCount)) return { kind: "string" };
 	const parts = node.namedChildren;
 	return parts.every((part) => part.type === "string_fragment")
 		? { kind: "string", text: parts.map((part) => part.text).join("") }
 		: { kind: "string" };
+}
+
+/**
+ * The value of a list, each item a step.
+ * @param node The list.
+ * @param scope The names in scope.
+ * @param budget The reading's budget.
+ * @returns The list; unknown once the budget is spent.
+ */
+function list(node: Node, scope: Scope, budget: Budget): NixValue {
+	const items = node.childrenForFieldName("element");
+	if (!spend(budget, items.length)) return unknownAt(node);
+	return { kind: "list", items: items.map((item) => thunk(item, scope, budget)) };
 }
 
 /**
@@ -465,7 +516,7 @@ const READERS: ReadonlyMap<string, Reader> = new Map<string, Reader>([
 		(node, scope, budget) => {
 			const building: Building = { entries: new Map() };
 			bindInto(bindingSetOf(node), building, { values: scope, inherited: scope }, budget);
-			return finished(building);
+			return finished(building, budget);
 		},
 	],
 	["rec_attrset_expression", (node, scope, budget) => recursive(node, scope, budget).value],
@@ -501,7 +552,7 @@ const READERS: ReadonlyMap<string, Reader> = new Map<string, Reader>([
 			),
 	],
 	["select_expression", selection],
-	["variable_expression", (node, scope) => variable(node, scope)],
+	["variable_expression", variable],
 	["parenthesized_expression", field("expression")],
 	["assert_expression", field("body")],
 	[
@@ -518,14 +569,8 @@ const READERS: ReadonlyMap<string, Reader> = new Map<string, Reader>([
 			),
 	],
 	["binary_expression", binary],
-	[
-		"list_expression",
-		(node, scope, budget) => ({
-			kind: "list",
-			items: node.childrenForFieldName("element").map((item) => thunk(item, scope, budget)),
-		}),
-	],
-	["string_expression", (node) => string(node)],
+	["list_expression", list],
+	["string_expression", (node, _scope, budget) => string(node, budget)],
 	["indented_string_expression", () => ({ kind: "string" })],
 	...[
 		"integer_expression",
@@ -540,7 +585,8 @@ const READERS: ReadonlyMap<string, Reader> = new Map<string, Reader>([
 ]);
 
 /**
- * Read the expression of a whole file: what its root expression gives.
+ * Read the expression of a whole file: what its root expression gives. Every
+ * value of it that is read later spends the same budget.
  * @param root The file's root node.
  * @returns Its value.
  */
@@ -549,4 +595,4 @@ function readFile(root: Node): NixValue {
 	return evaluate(root.childForFieldName("expression"), { names: new Map() }, budget);
 }
 
-export { readFile };
+export { MAX_DEPTH, readFile };

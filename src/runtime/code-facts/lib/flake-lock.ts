@@ -44,6 +44,9 @@ function tokensOf(text: string): Token[] {
 	return tokens;
 }
 
+/** How many keys deep the scan names a key: an input of the root node is `nodes`, the root, `inputs`, its name. */
+const INPUT_DEPTH = 4;
+
 /** Where a scan of keys is: the keys of the containers it is in, and the last key. */
 interface Scan {
 	readonly lines: Map<string, number>;
@@ -52,14 +55,17 @@ interface Scan {
 }
 
 /**
- * The line of each key of a JSON text, by its path of keys from the root.
+ * The line of each key of a JSON text down to the depth of an input, by its
+ * path of keys from the root.
  * @param text The text, which parses as JSON.
  * @returns Each key's line, by its path joined with NUL.
  */
 function keyLines(text: string): ReadonlyMap<string, number> {
 	const scan: Scan = { lines: new Map(), keys: [], key: "" };
 	const tokens = tokensOf(text);
-	for (const [index, token] of tokens.entries()) step(scan, token, tokens[index + 1]?.text === ":");
+	for (const [index, token] of tokens.entries()) {
+		step(scan, token, tokens[index + 1]?.text === ":" && scan.keys.length <= INPUT_DEPTH);
+	}
 	return scan.lines;
 }
 
@@ -68,7 +74,7 @@ function keyLines(text: string): ReadonlyMap<string, number> {
  * a colon is a key.
  * @param scan The scan.
  * @param token The token.
- * @param key Whether a colon follows it, which only a key's string has.
+ * @param key Whether it is a key the scan names: a string a colon follows, no deeper than an input.
  */
 function step(scan: Scan, token: Token, key: boolean): void {
 	if (token.text === "{" || token.text === "[") {
