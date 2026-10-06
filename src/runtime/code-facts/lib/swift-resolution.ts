@@ -20,6 +20,15 @@
 // name the files, so the use is resolved, as the files of one C# project see
 // each other's names (TASK-367.11).
 //
+// A name is resolved only where nothing nearer can be it. A use whose first
+// name the file binds in a narrower scope (a parameter, a local, a closure's
+// or a generic parameter, a member of its types) may be that binding, and
+// leads nowhere: on swift-nio, 727 of 6,057 resolved uses were such names. A
+// member reached through a value (`self.close()`) is spelled `.close` and is
+// no name of the module. A definition in the part of a file that did not
+// parse may stand outside its declaration, a member read at file level or a
+// local read as a declaration, so no other file's use leads to it.
+//
 // An import of a local module that the importing target depends on in the
 // manifest leads to the module's directory, written with a trailing `/`, so
 // the build dependency reaches the part bound to that directory. The
@@ -36,6 +45,7 @@ import type {
 	Target,
 } from "@/runtime/code-facts/lib/facts";
 import type { CheckoutFiles } from "@/runtime/code-facts/lib/module-resolution";
+import { isSwiftFacts } from "@/runtime/code-facts/lib/swift-adapter";
 import { filePrivate } from "@/runtime/code-facts/lib/swift-definitions";
 import { isManifest, type SwiftTarget } from "@/runtime/code-facts/lib/swift-package";
 
@@ -67,13 +77,16 @@ interface PackageModel {
 type ModuleIndex = ReadonlyMap<string, ReadonlySet<string>>;
 
 /**
- * A path below a directory, `""` being the checkout.
+ * A directory below another, `""` being the checkout, as a manifest may write
+ * it: `Sources/Core/` and `./Sources/Core` are `Sources/Core`, and `.` is the
+ * package's own directory.
  * @param directory The directory.
  * @param name The path inside it.
- * @returns The joined path.
+ * @returns The joined path, with no trailing `/`.
  */
 function below(directory: string, name: string): string {
-	return directory === "" ? path.posix.normalize(name) : path.posix.join(directory, name);
+	const joined = path.posix.normalize(path.posix.join(directory, name)).replace(/\/+$/u, "");
+	return joined === "." ? "" : joined;
 }
 
 /**
@@ -128,10 +141,42 @@ function modelOf(
 /**
  * The module directory a use of a module leads to.
  * @param module The module.
- * @returns The target: the directory, with a trailing `/`.
+ * @returns The target: the directory, with a trailing `/`; none for a module
+ * that is the whole checkout, which every part holds.
  */
-function moduleTarget(module: SwiftModule): Target {
-	return { path: `${module.directory}/`, symbol: "*" };
+function moduleTarget(module: SwiftModule): Target | undefined {
+	return module.directory === "" ? undefined : { path: `${module.directory}/`, symbol: "*" };
+}
+
+/**
+ * The manifest of the package that holds a directory: the nearest
+ * `Package.swift` in it or above it.
+ * @param files The checkout's files.
+ * @param directory The directory, `.` or `""` being the checkout.
+ * @returns The manifest, or undefined when no package holds the directory.
+ */
+function manifestAbove(files: ReadonlySet<string>, directory: string): string | undefined {
+	const names = directory === "" || directory === "." ? [] : directory.split("/");
+	const above = names.map((_, index) => names.slice(0, names.length - index).join("/"));
+	return [...above.map((at) => `${at}/${MANIFEST}`), MANIFEST].find((file) => files.has(file));
+}
+
+/**
+ * The directory of each module the package that holds a directory declares.
+ * @param files The checkout's files.
+ * @param directory The directory.
+ * @param parsed Reads the facts of the package's manifest.
+ * @returns The directories, relative to the checkout; none when no package holds the directory.
+ */
+async function moduleDirectories(
+	files: ReadonlySet<string>,
+	directory: string,
+	parsed: ReadParsed,
+): Promise<string[]> {
+	const manifest = manifestAbove(files, directory);
+	if (manifest === undefined) return [];
+	const model = modelOf(manifest, await parsed(manifest), files);
+	return [...(model?.modules.values() ?? [])].map((module) => module.directory);
 }
 
 /**
@@ -155,6 +200,8 @@ function moduleHolding(model: PackageModel, file: string): SwiftModule | undefin
 interface NameLookup {
 	/** Every name the file defines itself. */
 	readonly own: ReadonlySet<string>;
+	/** The names the file binds in a scope narrower than the file. */
+	readonly scoped: ReadonlySet<string>;
 	readonly module: ModuleIndex;
 	/** The modules the file imports, by name, and what each exposes. */
 	readonly imported: ReadonlyMap<string, ModuleIndex>;
@@ -220,13 +267,15 @@ function spelledTarget(
 /**
  * Where one use of a name leads: in the file's module, else in a module it
  * imports. A spelling that starts with an imported module's name
- * (`Core.Ledger`) looks only in that module.
+ * (`Core.Ledger`) looks only in that module, and one that starts with a name
+ * the file binds in a narrower scope leads nowhere.
  * @param symbol The use's spelling.
  * @param lookup The asking file, its module and its imports.
  * @returns The target, or undefined.
  */
 function nameTarget(symbol: string, lookup: NameLookup): Target | undefined {
 	const [first = "", ...rest] = symbol.split(".");
+	if (lookup.scoped.has(first)) return undefined;
 	const qualified = rest.length > 0 ? lookup.imported.get(first) : undefined;
 	if (qualified !== undefined) {
 		return spelledTarget(rest, { ...lookup, own: new Set() }, [qualified]);
@@ -254,11 +303,26 @@ async function indexOf(
 	const index = new Map<string, Set<string>>();
 	for (const file of sources.toSorted()) {
 		// oxlint-disable-next-line no-await-in-loop -- one file at a time, through the pass's queue of parses
-		const definitions = (await parsed(file))?.definitions ?? [];
-		const seen = definitions.filter((each) => seenOutside(each, definitions, exposedOnly));
+		const seen = offered(await parsed(file), exposedOnly);
 		for (const { symbol } of seen) index.set(symbol, new Set([...(index.get(symbol) ?? []), file]));
 	}
 	return index;
+}
+
+/**
+ * The definitions of a file that other files can use: none in the part that
+ * did not parse, where a definition may stand outside its declaration.
+ * @param facts The file's facts.
+ * @param exposedOnly Whether the other files are in another module.
+ * @returns The definitions.
+ */
+function offered(facts: ParsedFacts | undefined, exposedOnly: boolean): Definition[] {
+	const { definitions = [], unparsed = [] } = facts ?? {};
+	return definitions.filter(
+		(each) =>
+			!unparsed.some((part) => part.start <= each.start && each.start <= part.end) &&
+			seenOutside(each, definitions, exposedOnly),
+	);
 }
 
 /**
@@ -297,18 +361,14 @@ function createSwiftResolver(
 	 * @returns The package, or undefined when none holds the file.
 	 */
 	const packageOf = (file: string): Promise<PackageModel | undefined> => {
-		for (let at = path.posix.dirname(file); ; at = path.posix.dirname(at)) {
-			const manifest = at === "." ? MANIFEST : `${at}/${MANIFEST}`;
-			if (checkout.files.has(manifest)) {
-				let model = packages.get(manifest);
-				if (model === undefined) {
-					model = parsed(manifest).then((facts) => modelOf(manifest, facts, checkout.files));
-					packages.set(manifest, model);
-				}
-				return model;
-			}
-			if (at === ".") return Promise.resolve(undefined);
+		const manifest = manifestAbove(checkout.files, path.posix.dirname(file));
+		if (manifest === undefined) return Promise.resolve(undefined);
+		let model = packages.get(manifest);
+		if (model === undefined) {
+			model = parsed(manifest).then((facts) => modelOf(manifest, facts, checkout.files));
+			packages.set(manifest, model);
 		}
+		return model;
 	};
 	/**
 	 * What a module offers other files, once in a pass.
@@ -360,6 +420,7 @@ function createSwiftResolver(
 			});
 			const lookup: NameLookup = {
 				own: new Set(facts.definitions.map((definition) => definition.symbol)),
+				scoped: new Set(isSwiftFacts(facts) ? facts.scoped : []),
 				module: await indexFor(module, false),
 				imported: new Map(
 					await Promise.all(
@@ -382,4 +443,4 @@ function createSwiftResolver(
 	};
 }
 
-export { createSwiftResolver };
+export { createSwiftResolver, moduleDirectories };

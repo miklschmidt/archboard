@@ -17,17 +17,44 @@
 // (`ProcessInfo.processInfo.environment["NAME"]`, `getenv("NAME")`) and of a
 // notification (`Notification.Name("NAME")`). The member that a leading `.`
 // names (`.shared`, `case .debit`) is no use: only the context says its type.
+// A member reached through a value the code does not name, such as `self`, a
+// call's result or a literal, is spelled with the `.` alone (`.close`), as C#
+// spells it: it is no name of the module.
+//
+// The facts keep the names the file binds in a scope narrower than the file:
+// a parameter, a local, a closure's or a generic parameter, a member. A use of
+// one of those names may be that binding, so the resolver leads it to no other
+// file.
+//
+// tree-sitter-swift recovers from code it cannot parse by guessing where the
+// code after it belongs, and the guess can be wrong: on swift-collections and
+// swift-nio, an `unsafe` expression (Swift 6.2) puts the members after it
+// inside the function it broke, and an `#if` condition it cannot read closes
+// a type early and puts its members at file level. So the part of a file that
+// did not parse runs from the first place the grammar could not read to the
+// end of the last declaration at file level that holds such a place: a name
+// the reading does not find there is unknown, never absent. A file whose whole
+// tree is an error holds no definitions, as it holds no uses.
 
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
-import type { Import, ParsedFacts, Reference, ReferenceVia } from "@/runtime/code-facts/lib/facts";
+import type {
+	Import,
+	ParsedFacts,
+	Reference,
+	ReferenceVia,
+	Unparsed,
+} from "@/runtime/code-facts/lib/facts";
 import type { Grammar } from "@/runtime/code-facts/lib/grammars";
 import { spansOf, type Spans } from "@/runtime/code-facts/lib/spans";
 import { definitionsOf } from "@/runtime/code-facts/lib/swift-definitions";
-import { unparsedOf } from "@/runtime/code-facts/lib/unparsed";
+
+/** The facts of a Swift file, with the names it binds in a scope narrower than the file. */
+type SwiftFacts = ParsedFacts & { readonly scoped: readonly string[] };
 
 /** The captures of one file, by what the query calls them. */
 interface Captured {
 	readonly binding: Node[];
+	readonly label: Node[];
 	readonly reference: Node[];
 	readonly environment: Node[];
 	readonly event: Node[];
@@ -41,6 +68,7 @@ interface Captured {
 /** Which list each capture of the query joins; a capture named `_...` only constrains a pattern. */
 const LIST_OF: Readonly<Record<string, keyof Captured>> = {
 	binding: "binding",
+	label: "label",
 	reference: "reference",
 	environment: "environment",
 	event: "event",
@@ -51,8 +79,12 @@ const LIST_OF: Readonly<Record<string, keyof Captured>> = {
 	unparsed: "unparsed",
 };
 
+/** A whole word, as the text reading spells one. */
+const WORD = /[\p{L}\p{N}_$]+/gu;
+
 /** What deciding whether a captured name is a use needs. */
 interface UseContext {
+	/** The names that are no use: bound where written, or an argument label. */
 	readonly declared: ReadonlySet<number>;
 	readonly skip: Spans;
 	readonly unparsed: Spans;
@@ -68,6 +100,7 @@ interface UseContext {
 function sorted(captures: readonly QueryCapture[]): Captured {
 	const lists: Captured = {
 		binding: [],
+		label: [],
 		reference: [],
 		environment: [],
 		event: [],
@@ -126,9 +159,10 @@ function qualifiedSpelling(node: Node, parent: Node): string {
 const QUALIFIED = new Set(["user_type", "identifier"]);
 
 /**
- * How a used name is spelled: the name after `.` with the chain before it, a
- * name of a qualified type or module with the names before it, else the name
- * alone.
+ * How a used name is spelled: the name after `.` with the chain before it,
+ * or with the `.` alone when the chain starts at a value the code does not
+ * name; a name of a qualified type or module with the names before it; else
+ * the name alone.
  * @param node The name.
  * @returns The spelling.
  */
@@ -137,7 +171,8 @@ function spelling(node: Node): string {
 	if (parent === null) return node.text;
 	if (QUALIFIED.has(parent.type)) return qualifiedSpelling(node, parent);
 	const navigation = parent.type === "navigation_suffix" ? parent.parent : null;
-	return (navigation === null ? undefined : chain(navigation)) ?? node.text;
+	if (navigation === null) return node.text;
+	return chain(navigation) ?? `.${node.text}`;
 }
 
 /**
@@ -234,16 +269,76 @@ function distinct(uses: readonly Reference[]): Reference[] {
 }
 
 /**
+ * The first place where the grammar could not read the code: an error, a
+ * token it took as missing, such as the `}` that closes a type early, or a
+ * token it read while recovering.
+ * @param root The file's syntax tree.
+ * @returns The node, or undefined for a file that parsed.
+ */
+function firstBroken(root: Node): Node | undefined {
+	if (!root.hasError) return undefined;
+	let node = root;
+	for (;;) {
+		const inner = node.children.find((child) => child.hasError || child.isMissing);
+		if (node.isError || node.isMissing || inner === undefined) return node;
+		node = inner;
+	}
+}
+
+/**
+ * The last line a node holds text on, 1-based.
+ * @param node The node.
+ * @returns The line.
+ */
+function lastLine(node: Node): number {
+	return node.endPosition.row + (node.endPosition.column === 0 ? 0 : 1);
+}
+
+/**
+ * The part of a file whose reading is uncertain, with every name written
+ * there: from the first place the grammar could not read to the end of the
+ * last declaration at file level that holds such a place. A type closed early
+ * leaves a `}` that the grammar cannot place, so the members it read at file
+ * level lie between the two.
+ * @param root The file's syntax tree.
+ * @returns The part, or none for a file that parsed.
+ */
+function uncertainPart(root: Node): Unparsed[] {
+	const first = firstBroken(root);
+	if (first === undefined) return [];
+	const broken = root.isError ? [root] : root.children.filter((child) => child.hasError);
+	const start = first.startPosition.row + 1;
+	const end = Math.max(start, ...broken.map(lastLine));
+	const lines = root.text
+		.split("\n")
+		.slice(start - 1 - root.startPosition.row, end - root.startPosition.row);
+	const names = new Set(lines.flatMap((line) => line.match(WORD) ?? []));
+	return [{ start, end, names: [...names] }];
+}
+
+/**
+ * The names a file binds in a scope narrower than the file: each bound name
+ * but those of the file's own declarations at file level.
+ * @param bindings The names written where they are bound.
+ * @param definitions The file's definitions.
+ * @returns The names.
+ */
+function scopedNames(bindings: readonly Node[], definitions: ParsedFacts["definitions"]): string[] {
+	const fileLevel = new Set(definitions.map((definition) => definition.symbol));
+	return [...new Set(bindings.map((node) => node.text))].filter((name) => !fileLevel.has(name));
+}
+
+/**
  * The code facts of one parsed Swift file.
  * @param tree The file's syntax tree.
  * @param grammar The grammar it was parsed with.
  * @returns Its facts.
  */
-function swiftFacts(tree: Tree, grammar: Grammar): ParsedFacts {
+function swiftFacts(tree: Tree, grammar: Grammar): SwiftFacts {
 	const captured = sorted(grammar.query.captures(tree.rootNode));
 	const unparsed = spansOf(captured.unparsed);
 	const context: UseContext = {
-		declared: new Set(captured.binding.map((node) => node.id)),
+		declared: new Set([...captured.binding, ...captured.label].map((node) => node.id)),
 		skip: spansOf(captured.skip),
 		unparsed,
 		types: spansOf(captured.type),
@@ -256,12 +351,23 @@ function swiftFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 		...captured.environment.flatMap((node) => stringReference(node, "environment", unparsed) ?? []),
 		...captured.event.flatMap((node) => stringReference(node, "event", unparsed) ?? []),
 	];
+	const definitions = definitionsOf(tree.rootNode);
 	return {
-		definitions: definitionsOf(tree.rootNode),
+		definitions,
 		references: distinct(uses),
 		imports,
-		unparsed: unparsedOf(captured.unparsed),
+		unparsed: uncertainPart(tree.rootNode),
+		scoped: scopedNames(captured.binding, definitions),
 	};
 }
 
-export { swiftFacts };
+/**
+ * Whether facts are a Swift file's.
+ * @param facts The facts a file gave.
+ * @returns True for the facts of a Swift file.
+ */
+function isSwiftFacts(facts: ParsedFacts): facts is SwiftFacts {
+	return "scoped" in facts;
+}
+
+export { type SwiftFacts, isSwiftFacts, swiftFacts };

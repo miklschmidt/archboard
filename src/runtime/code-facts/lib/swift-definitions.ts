@@ -38,13 +38,20 @@ interface Holder {
 /** What holds the declarations at file level. */
 const FILE: Holder = { symbol: "", level: "internal", imposed: false, exposed: true };
 
-/** The declarations that take the level of their enum or protocol. */
-const IMPOSED = new Set([
-	"enum_entry",
-	"protocol_function_declaration",
-	"protocol_property_declaration",
-	"associatedtype_declaration",
-]);
+/**
+ * Whether a member takes the level of what holds it, rather than writing its
+ * own: each case of an enum, and every requirement of a protocol, its
+ * initializers too.
+ * @param holder The declaration that holds the member.
+ * @param member The member.
+ * @returns True when it does.
+ */
+function takesLevel(holder: Node, member: Node): boolean {
+	if (holder.type === "protocol_declaration") return true;
+	return (
+		holder.childForFieldName("declaration_kind")?.text === "enum" && member.type === "enum_entry"
+	);
+}
 
 /**
  * The access level a declaration writes, leaving out a setter's own level such as `private(set)`.
@@ -110,7 +117,7 @@ function boundNames(node: Node): string[] {
 function members(node: Node, holder: Holder, imposed?: string): Definition[] {
 	const body = node.childForFieldName("body");
 	return (body?.namedChildren ?? []).flatMap((child) =>
-		imposed !== undefined && IMPOSED.has(child.type)
+		imposed !== undefined && takesLevel(node, child)
 			? declared(child, { ...holder, level: imposed, imposed: true })
 			: declared(child, holder),
 	);
@@ -128,9 +135,7 @@ function typeDefinitions(node: Node, holder: Holder): Definition[] {
 	const own = defined(node, name, holder);
 	const level = FILE_PRIVATE.has(own.visibility) ? "fileprivate" : "internal";
 	const inner: Holder = { symbol: own.symbol, level, imposed: false, exposed: own.exposed };
-	const kind = node.childForFieldName("declaration_kind")?.text;
-	const imposes = node.type === "protocol_declaration" || kind === "enum";
-	return [own, ...members(node, inner, imposes ? own.visibility : undefined)];
+	return [own, ...members(node, inner, own.visibility)];
 }
 
 /**
@@ -239,11 +244,14 @@ function declared(node: Node, holder: Holder): Definition[] {
 }
 
 /**
- * Every definition of a file.
+ * Every definition of a file. A file whose whole tree is an error has none:
+ * what tree-sitter recovers there stands outside its declarations, a member
+ * outside its type and a local at file level.
  * @param root The file's syntax tree.
  * @returns The definitions, in document order.
  */
 function definitionsOf(root: Node): Definition[] {
+	if (root.type === "ERROR") return [];
 	return root.namedChildren.flatMap((child) => declared(child, FILE));
 }
 

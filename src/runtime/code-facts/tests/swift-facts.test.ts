@@ -4,17 +4,25 @@
 // modules a file imports, `Package.swift` read without running it, and code
 // that did not parse.
 //
-// The package: `Package.swift` declares Core (`path:` written out, named by
-// a library product), Util (by convention) and App, which depends on both and
-// on a product of another package, the test target CoreTests and a plugin
-// that a product of the same name names. Core holds
+// The package: `Package.swift` declares Core (`path:` written out with a
+// trailing `/`, named by a library product), Util (by convention) and App,
+// which depends on both and on a product of another package, the test target
+// CoreTests and a plugin that a product of the same name names. Core holds
 // `Ledger`, an extension of it in `Ledger+Refund.swift`, `Money`, a file of
-// every access level and `Report.swift`, which uses names of the other files.
-// App imports Core and Util; `Broken.swift` uses a module selector, which the
-// grammar does not read.
+// every access level, `Report.swift`, which uses names of the other files,
+// and `Printer.swift`, whose member and parameter share names with them.
+// App imports Core and Util; `Broken.swift` uses a module selector and an
+// `unsafe` expression, which the grammar does not read, `Platform.swift` an
+// `#if` condition it does not read, and `Unclosed.swift` never closes its
+// type.
 
 import { afterAll, expect, test } from "bun:test";
-import { createCodeFacts, definitionSite, type SyntaxFacts } from "@/runtime/code-facts/index";
+import {
+	createCodeFacts,
+	definitionSite,
+	findSymbol,
+	type SyntaxFacts,
+} from "@/runtime/code-facts/index";
 import { fixtureDirectory } from "@/runtime/code-facts/tests/checkout";
 
 const checkout = fixtureDirectory("swift-shop");
@@ -65,10 +73,13 @@ test("a Swift file defines its declarations and their members with Swift's acces
 		hidden: ["fileprivate", false],
 		secret: ["private", false],
 		implicit: ["internal", false],
+		isOpen: ["internal", false],
 		Closed: ["private", false],
 		// Public as written, and still only for the file, because its type is private.
 		"Closed.opened": ["public", false],
 		Store: ["public", true],
+		// A protocol's requirements take its level, its initializers too.
+		"Store.init": ["public", true],
 		"Store.read": ["public", true],
 	});
 	expect(await levels("Sources/Core/Ledger.swift")).toMatchObject({
@@ -100,6 +111,17 @@ test("a use leads by name to the one other file of its module that defines it, e
 		"Money call": "Sources/Core/Money.swift#Money",
 		// Money.swift extends String with an initializer, and String's own are not read.
 		"String.init call": "nowhere",
+		// A use behind a prefix operator.
+		"isOpen call": "Sources/Core/Access.swift#isOpen",
+		// A member of a call's result is no name of the module.
+		".post call": "nowhere",
+	});
+	// The member helper, reached through self and implicitly, and the parameter
+	// isOpen are not the module's functions of those names.
+	expect(await targets("Sources/Core/Printer.swift")).toMatchObject({
+		".helper call": "nowhere",
+		"helper call": "nowhere",
+		"isOpen call": "nowhere",
 	});
 	expect(await targets("Sources/Core/Ledger.swift")).toMatchObject({
 		// The file defines Ledger itself, and an extension in another file defines Ledger.audit.
@@ -136,6 +158,8 @@ test("a use leads into a module the file imports only to what that module expose
 		// Internal and file-private names of Core are not Core's to give.
 		"helper call": "nowhere",
 		"hidden call": "nowhere",
+		// Defined after code of Broken.swift that did not parse, where it may stand in the wrong place.
+		"alsoOk call": "nowhere",
 	});
 	expect((await swift("Sources/App/main.swift")).imports.map((each) => each.specifier)).toEqual([
 		"Foundation",
@@ -169,11 +193,26 @@ test("Package.swift is read without running it: its targets are definitions and 
 	]);
 });
 
-test("a part of a Swift file that did not parse holds no facts, and the rest of the file keeps them", async () => {
+test("after a part of a Swift file that did not parse, a name the reading does not find is unknown, never absent", async () => {
 	const broken = await swift("Sources/App/Broken.swift");
-	expect(broken.unparsed).toEqual([{ start: 2, end: 2, names: ["Ledger"] }]);
-	expect(broken.definitions.map((each) => each.symbol)).toEqual(["ok", "selected", "alsoOk"]);
+	expect(broken.unparsed.map(({ start, end }) => [start, end])).toEqual([[2, 23]]);
+	expect(broken.definitions.map((each) => each.symbol)).toEqual([
+		"ok",
+		"selected",
+		"alsoOk",
+		"Table.count",
+	]);
 	expect(broken.references.some((use) => use.symbol === "ok" && use.line === 3)).toBe(true);
+	// The grammar puts `last` inside `count`, after the `unsafe` it could not read.
+	expect(findSymbol(broken, "Table.last", "definition").status).toBe("unparsed");
+	expect(findSymbol(broken, "Table.gone", "definition").status).toBe("absent");
+	// A condition the grammar does not read closes the type early, before any error.
+	const platform = await swift("Sources/App/Platform.swift");
+	expect(findSymbol(platform, "Platform.describe", "definition").status).toBe("unparsed");
+	// A file whose whole tree is an error holds no definitions, not the local it would read at file level.
+	const unclosed = await swift("Sources/App/Unclosed.swift");
+	expect(unclosed.definitions).toEqual([]);
+	expect(findSymbol(unclosed, "Draft.write", "definition").status).toBe("unparsed");
 });
 
 test("the name of an environment value a Swift file reads is a reference", async () => {

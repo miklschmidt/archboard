@@ -11,7 +11,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.0.0"),
     ],
     targets: [
-        .target(name: "Core", path: "Sources/Core"),
+        .target(name: "Core", path: "Sources/Core/"),
         .target(name: "Util"),
         .executableTarget(
             name: "App",

@@ -5,7 +5,8 @@
 ; of `Package.swift` by walking its calls (swift-package.ts).
 ;
 ; @binding     a name written where it is bound, so it is not a use: a declared
-;              name, a parameter, a pattern, an argument label.
+;              name, a parameter, a pattern.
+; @label       an argument label, which is neither a use nor bound.
 ; @reference   a use of a name; a name after `.` is spelled with its chain.
 ; @environment the name of an environment value:
 ;              `ProcessInfo.processInfo.environment["NAME"]`, `getenv("NAME")`.
@@ -23,9 +24,9 @@
 (_ bound_identifier: (simple_identifier) @binding)
 (pattern (simple_identifier) @binding)
 (parameter name: (simple_identifier) @binding)
-(parameter external_name: (simple_identifier) @binding)
+(parameter external_name: (simple_identifier) @label)
 (lambda_parameter name: (simple_identifier) @binding)
-(value_argument_label (simple_identifier) @binding)
+(value_argument_label (simple_identifier) @label)
 (type_parameter (type_identifier) @binding)
 (enum_entry name: (simple_identifier) @binding)
 (function_declaration name: (simple_identifier) @binding)
@@ -77,6 +78,7 @@
 
 (import_declaration) @skip
 (directive) @skip
-(prefix_expression target: (simple_identifier) @skip)
+; `!ready`, `-offset` and `&buffer` use their name.
+(prefix_expression operation: "." target: (simple_identifier) @skip)
 
 (ERROR) @unparsed
