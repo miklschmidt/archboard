@@ -23,6 +23,11 @@ import type {
 	ParseFacts,
 	ReadText,
 } from "@/runtime/code-facts/lib/facts";
+import { composeFacts, envFileFacts } from "@/runtime/code-facts/lib/compose-adapter";
+import {
+	COMPOSE_FILE_NAMES,
+	createComposeResolver,
+} from "@/runtime/code-facts/lib/compose-project";
 import { treeSitter } from "@/runtime/code-facts/lib/grammars";
 import {
 	createModuleResolver,
@@ -87,6 +92,14 @@ const ADAPTERS: readonly Adapter[] = [
 		name: "python",
 		reads: { ".py": PYTHON, ".pyi": PYTHON },
 		resolver: createPythonResolver,
+	},
+	{
+		name: "compose",
+		reads: {
+			...Object.fromEntries(COMPOSE_FILE_NAMES.map((name) => [name, composeFacts])),
+			".env": envFileFacts,
+		},
+		resolver: createComposeResolver,
 	},
 ];
 

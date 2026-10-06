@@ -1,0 +1,53 @@
+# The shop: the web front calls the API, which keeps orders in the database.
+name: shop
+
+x-api-env: &api-env
+  LOG_LEVEL: debug
+
+services:
+  web:
+    image: nginx:1.27
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    environment:
+      CACHE_URL: redis://cache:6379/0
+    volumes:
+      - static:/usr/share/nginx/html:ro
+
+  api:
+    build: ./api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      <<: *api-env
+      DATABASE_URL: postgres://shop:${DB_PASSWORD:-change-me-in-base}@db:5432/shop
+      REPORTS_URL: http://web/reports
+      SMTP_HOST: smtp.example.com
+    env_file:
+      - ./api.env
+    volumes:
+      - static:/srv/static
+      - uploads:/srv/uploads
+    networks:
+      - back
+
+  db:
+    image: postgres:16
+    container_name: shop-db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      back:
+        aliases:
+          - database
+
+networks:
+  back:
+
+volumes:
+  static:
+  uploads:
+  pgdata:
