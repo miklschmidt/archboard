@@ -25,16 +25,61 @@
   # neutral so the others stand out. No kind uses the comparison colours
   # (green added, amber changed, red removed) or the selection blue, which
   # would read as a change or a pick.
+  # Each kind names the evidence kinds that prove it to `check --code`, as the
+  # default vocabulary does (ADR 0046): a call and a render are uses in code; a
+  # network or data relationship is a use or a configured path; a dependency
+  # is anything that shows one part needs the other. Other accepts every kind.
   relationshipKinds:
     {
-      call: { name: Call, dash: solid, arrowhead: filled },
-      http: { name: HTTP, color: sky, dash: solid, arrowhead: filled },
-      rpc: { name: RPC, color: violet, dash: solid, arrowhead: filled },
-      event: { name: Event, color: fuchsia, dash: dashed, arrowhead: open },
-      queue: { name: Queue, color: orange, dash: dashed, arrowhead: open },
-      data: { name: Data, color: teal, dash: solid, arrowhead: filled },
-      dependency: { name: Dependency, dash: dotted, arrowhead: open },
-      render: { name: Render, color: pink, dash: solid, arrowhead: filled },
+      call: { name: Call, dash: solid, arrowhead: filled, evidence: [call] },
+      http:
+        {
+          name: HTTP,
+          color: sky,
+          dash: solid,
+          arrowhead: filled,
+          evidence: [call, configured-path],
+        },
+      rpc:
+        {
+          name: RPC,
+          color: violet,
+          dash: solid,
+          arrowhead: filled,
+          evidence: [call, configured-path],
+        },
+      event:
+        {
+          name: Event,
+          color: fuchsia,
+          dash: dashed,
+          arrowhead: open,
+          evidence: [call, configured-path],
+        },
+      queue:
+        {
+          name: Queue,
+          color: orange,
+          dash: dashed,
+          arrowhead: open,
+          evidence: [call, configured-path],
+        },
+      data:
+        {
+          name: Data,
+          color: teal,
+          dash: solid,
+          arrowhead: filled,
+          evidence: [call, configured-path],
+        },
+      dependency:
+        {
+          name: Dependency,
+          dash: dotted,
+          arrowhead: open,
+          evidence: [call, configured-path, import, build-dependency],
+        },
+      render: { name: Render, color: pink, dash: solid, arrowhead: filled, evidence: [call] },
       other: { name: Other, dash: solid, arrowhead: filled },
     },
   # A group is a concern that cuts across boards. It gathers the cards it
