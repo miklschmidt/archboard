@@ -113,9 +113,22 @@ what either file defines, and a C++ name is spelled with `::` or `.`:
 nearest `compile_commands.json` that Git lists; without one, against the
 including file's directory, the checkout root and each directory named
 `include`.
+Code facts also read C# files (`.cs`) and .NET project files (`.csproj`). A
+C# `symbol` may leave out its namespace: `Shop.Core.Ledger.Post`,
+`Ledger.Post` and `Post` all find the method. A part can bind a project file
+or the project's directory. The files of a project see each other without an
+import, so the check finds the name a file uses by C#'s own lookup in its
+project and in the projects its `ProjectReference` items name, and that
+evidence is resolved. A name used as a value, not as a type, is found only as
+a member of the type around it, because it may be a local or a member that a
+base class declares. A part bound to a `.csproj` holds what its project
+declares for the code of other projects. A `ProjectReference` is
+`build-dependency` evidence on the project it names, and a `PackageReference`
+on a package outside the checkout. The check runs no build and evaluates no
+MSBuild. Of each `#if`, it reads the first branch.
 "View in code" opens a bound file in a local checkout at the line where the
 file defines the symbol. Code facts must find that definition (TypeScript, TSX,
-Python, C and C++ for now). The opener must take a line: Visual Studio Code, Cursor, Zed, or
+Python, C, C++ and C# for now). The opener must take a line: Visual Studio Code, Cursor, Zed, or
 a custom command with `{line}`. Otherwise it opens the file or directory. The
 inspector shows the symbol under the path.
 
