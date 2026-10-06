@@ -133,6 +133,26 @@ function markSubjects(surface: Element, attended: ReadonlySet<string>): void {
  */
 const RAISED = `[data-semantic-kind='edge'],[data-semantic-kind='step'],[data-depiction='card'],[${TRAFFIC_ATTRIBUTE}]`;
 
+/**
+ * The groups that draw a line on an architecture picture, a relationship's route
+ * and its traffic: raised over the other lines, but under the cards, so a
+ * selected line's ring and its pulses never lie on the face of a card it runs
+ * into, and show only in the ports cut in it.
+ */
+const LINES = `[data-semantic-kind='edge'],[${TRAFFIC_ATTRIBUTE}]`;
+
+/**
+ * The first card drawn after a group, which a raised line goes under.
+ * @param group The group.
+ * @returns The card's group, or null when no card is drawn after it.
+ */
+function nextCard(group: Element): Element | null {
+	for (let next = group.nextElementSibling; next !== null; next = next.nextElementSibling) {
+		if (next.matches("[data-depiction='card']")) return next;
+	}
+	return null;
+}
+
 /** Where each raised group stood before it was raised, to go back to when it is let go. */
 const raisedFrom = new WeakMap<Element, Comment>();
 
@@ -163,7 +183,9 @@ function raise(group: Element, raised: boolean): void {
 		const mark = group.ownerDocument.createComment("");
 		group.before(mark);
 		raisedFrom.set(group, mark);
-		group.parentNode?.append(group);
+		const card = group.matches(LINES) ? nextCard(group) : null;
+		if (card === null) group.parentNode?.append(group);
+		else card.before(group);
 	} else {
 		slot.replaceWith(group);
 		raisedFrom.delete(group);
@@ -229,11 +251,40 @@ const REACH_CLASSES: readonly string[] = ["is-reach-2", "is-reach-3", "is-reach-
  */
 function markReach(surface: Element, reach: ReadonlyMap<string, number> | null): void {
 	for (const group of surface.querySelectorAll(MARKED)) {
-		const hops = reach?.get(markedId(group) ?? "") ?? 0;
-		const grade = Math.min(hops, REACH_CLASSES.length + 1) - 2;
-		REACH_CLASSES.forEach((one, index) => group.classList.toggle(one, index === grade));
+		gradeReach(group, reach?.get(markedId(group) ?? "") ?? 0);
+	}
+	// A card's shadow is graded with its card, so it fades as far as the card does.
+	for (const shadow of surface.querySelectorAll(SHADOWS)) {
+		gradeReach(shadow, membersReach(shadow, reach));
 	}
 }
+
+/**
+ * How far a trace reached what a mark lists: its farthest member's hops.
+ * @param mark The mark.
+ * @param reach How many hops beyond the first each subject is; null for no trace.
+ * @returns The hops; 0 for none.
+ */
+function membersReach(mark: Element, reach: ReadonlyMap<string, number> | null): number {
+	const members = mark.getAttribute(MEMBERS_ATTRIBUTE)?.split(" ") ?? [];
+	return Math.max(0, ...members.map((id) => reach?.get(id) ?? 0));
+}
+
+/**
+ * Put on a group the class for how far a trace reached it, and take the others off.
+ * @param group The group.
+ * @param hops How many hops beyond the first it is; 0 for none.
+ */
+function gradeReach(group: Element, hops: number): void {
+	const grade = Math.min(hops, REACH_CLASSES.length + 1) - 2;
+	REACH_CLASSES.forEach((one, index) => group.classList.toggle(one, index === grade));
+}
+
+/**
+ * The shadows the picture casts under its lines, each listing what cast it
+ * (the renderer's `SHADOW_CLASS`): veiled, lit and graded with it.
+ */
+const SHADOWS = `.ab-shadow[${MEMBERS_ATTRIBUTE}]`;
 
 /** The class the surface carries while the picture is seen from far away. */
 const FAR_VIEW_CLASS = "is-far";

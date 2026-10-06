@@ -45,6 +45,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/svg/slab";
 import { paintTraffic } from "@/transformers/semantic-renderer/lib/svg/traffic";
 import {
+	endsInPort,
 	portInside,
 	portPlan,
 	portsOf,
@@ -417,12 +418,11 @@ function paintArchitecture(
 				{
 					routed,
 					traffic: edge.traffic,
-					headReach: arrowheadReach(appearance.arrowhead, weightOf(edge)),
-					into: rideInto(
-						routed.curve,
-						ports.byEdge.get(edge.id) ?? [],
-						appearance.arrowhead !== "none",
-					),
+					// A pulse arriving in a head at a port rides on over the head into the hole.
+					headReach: endsInPort(routed.curve, ports.byEdge.get(edge.id) ?? [])
+						? 0
+						: arrowheadReach(appearance.arrowhead, weightOf(edge)),
+					into: rideInto(routed.curve, ports.byEdge.get(edge.id) ?? []),
 					ink: quietened(
 						relationshipInk(edge, palette, standingOf(edge.id), policy, appearance),
 						palette,

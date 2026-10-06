@@ -129,6 +129,8 @@ interface PictureOptions {
 	readonly places?: Readonly<Record<string, Place>>;
 	/** Relationships whose line shares a lane, so the picture masks the stretch another route draws. */
 	readonly trunks?: readonly string[];
+	/** Whether the picture casts each card's shadow under the lines, as the renderer does. */
+	readonly shadows?: boolean;
 }
 
 /**
@@ -146,6 +148,9 @@ function picture(options: PictureOptions = {}): Record<string, unknown> {
 	const svg = [
 		`<defs>${trunks.map(trunkMask).join("")}</defs>`,
 		...containers.map((node) => drawn("region", node.id)),
+		...(options.shadows === true
+			? cards.map((node) => `<g class="ab-shadow" data-members="${node.id}"><rect></rect></g>`)
+			: []),
 		...cards.map((node) => drawn("node", node.id)),
 		...wires.map((edge) => drawn("edge", edge.id, trunks.includes(edge.id))),
 	].join("");
