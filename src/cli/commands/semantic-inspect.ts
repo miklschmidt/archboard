@@ -1,11 +1,12 @@
-// Asking a board what one group is: who belongs, how they reach each other,
-// and where the group's edge runs.
+// Asking a board what one group is (who belongs, how they reach each other,
+// and where the group's edge runs) or what one container's interface is (which
+// of its children relationships from outside reach, and who calls it).
 //
-// The answer is derived from the saved board and the vault policy by the same
-// pure inspection the browser runs over the same document, so a command line
-// and a pane looking at one variant say the same thing about one group. It
-// reads the whole variant before any view narrows it, and it needs no browser:
-// the server holds the board and the policy, and that is all it asks for.
+// Each answer is derived from the saved board by the same pure inspection the
+// browser runs over the same document, so a command line and a pane looking at
+// one variant say the same thing. It reads the whole variant before any view
+// narrows it, and it needs no browser: the server holds the board, and that is
+// all it asks for. A group's name comes from the vault policy.
 
 import { z } from "zod";
 import {
@@ -14,8 +15,6 @@ import {
 	RenderedVariantSchema,
 	type GroupInspection,
 	type SemanticBoard,
-	type SemanticEdge,
-	type SemanticNode,
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
 import {
@@ -30,29 +29,24 @@ import {
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { serverRefusal } from "@/cli/command-contract/common";
 import { askedVariant, SelectorSchema, UNNAMED_VARIANT } from "@/cli/commands/lib/semantic-input";
+import {
+	InspectedEdgeSchema,
+	InspectedNodeSchema,
+	inspectedEdge,
+	inspectedNode,
+} from "@/cli/commands/lib/inspected-subjects";
+import {
+	ContainerInspectionResultSchema,
+	containerAnswer,
+	describedContainer,
+	inspectedContainer,
+} from "@/cli/commands/lib/container-inspection";
 
 const InspectInputSchema = z.object({
 	name: z.string(),
-	group: SelectorSchema,
+	group: SelectorSchema.optional(),
+	container: SelectorSchema.optional(),
 	variant: SelectorSchema.optional(),
-});
-
-/** One node as the inspection names it: enough to find it on the board. */
-const InspectedNodeSchema = z.object({
-	id: z.string(),
-	name: z.string(),
-	kind: z.string(),
-	parent: z.string().nullable(),
-	groups: z.array(z.string()),
-});
-
-/** One relationship as the inspection names it. */
-const InspectedEdgeSchema = z.object({
-	id: z.string(),
-	from: z.string(),
-	to: z.string(),
-	kind: z.string(),
-	label: z.string().nullable(),
 });
 
 const GroupInspectionResultSchema = z.object({
@@ -80,6 +74,15 @@ const GroupInspectionResultSchema = z.object({
 });
 type GroupInspectionResult = z.infer<typeof GroupInspectionResultSchema>;
 
+const unknownContainerRefusal = {
+	code: "UNKNOWN_CONTAINER",
+	exit: 2,
+	stream: "stderr" as const,
+	description:
+		"The container names no node of the variant, or a name that fits more than one node. " +
+		"Use the id. A node with no children is not refused: the answer says that it holds no parts.",
+};
+
 const unknownGroupRefusal = {
 	code: "UNKNOWN_GROUP",
 	exit: 2,
@@ -87,30 +90,6 @@ const unknownGroupRefusal = {
 	description:
 		"The group is neither configured in the vault nor a membership of any node on the variant.",
 };
-
-/**
- * One node, as the answer carries it.
- * @param node The node.
- * @returns Its identity, kind, container and memberships.
- */
-function inspectedNode(node: SemanticNode): z.infer<typeof InspectedNodeSchema> {
-	return {
-		id: node.id,
-		name: node.name,
-		kind: node.kind,
-		parent: node.parent ?? null,
-		groups: node.groups ?? [],
-	};
-}
-
-/**
- * One relationship, as the answer carries it.
- * @param edge The relationship.
- * @returns Its identity, ends, kind and label.
- */
-function inspectedEdge(edge: SemanticEdge): z.infer<typeof InspectedEdgeSchema> {
-	return { id: edge.id, from: edge.from, to: edge.to, kind: edge.kind, label: edge.label ?? null };
-}
 
 /**
  * The answer, assembled from the inspection and what the vault says the group is.
@@ -205,19 +184,50 @@ function refuseUnknownGroup(
 	);
 }
 
+/**
+ * Which one thing the command was asked to inspect.
+ * @param input What the command was given.
+ * @param input.group A group id, when one was given.
+ * @param input.container A node, when one was given.
+ * @returns The group or the container.
+ * @throws {CliUsageError} When neither or both were given.
+ */
+function whatWasAsked(input: {
+	readonly group?: string | undefined;
+	readonly container?: string | undefined;
+}): { readonly group: string } | { readonly container: string } {
+	const { group, container } = input;
+	if (group !== undefined && container === undefined) {
+		return { group };
+	}
+	if (container !== undefined && group === undefined) {
+		return { container };
+	}
+	throw new CliUsageError(
+		"Give exactly one of --group <id> to inspect a group and --container <node> to inspect a container.",
+	);
+}
+
 const semanticInspectContract = defineCommand({
 	path: ["semantic", "inspect"],
 	shared: ["url"],
-	summary: "Inspect one configured group of a semantic board",
+	summary: "Inspect one group or one container of a semantic board",
 	description:
-		"Reports one group of one variant: its explicit members, the relationships between them, " +
-		"the relationships crossing its boundary with their direction, and the immediate external " +
-		"neighbors those reach. Read over the whole variant before any view narrows it, so a member " +
-		"a view hides is still a member. A group the configuration defines but nobody has joined " +
-		"answers empty; an id that is neither configured nor a membership of any node is refused.",
+		"Reports one group or one container of one variant, over the whole variant before any " +
+		"view narrows it. A group answers with its explicit members, the relationships between " +
+		"them, the relationships crossing its boundary with their direction, and the immediate " +
+		"external neighbors those reach; a group the configuration defines but nobody has joined " +
+		"answers empty, and an id that is neither configured nor a membership of any node is " +
+		"refused. A container is a node with children, and it answers with its interface: the " +
+		"entry points (the children that relationships from outside reach), the hidden parts " +
+		"(the children none reaches), the callers outside, the outgoing relationships, the " +
+		"relationships that end on the container itself, and the entry points that only pass one " +
+		"call on, with a count of each. A node with no children answers that it holds no parts. " +
+		"Give exactly one of --group and --container.",
 	examples: [
 		"archboard semantic inspect payments --group fulfillment",
 		'archboard semantic inspect payments --group billing --variant "Read cache"',
+		'archboard semantic inspect payments --container "Board store"',
 	],
 	parameters: [
 		{
@@ -233,8 +243,17 @@ const semanticInspectContract = defineCommand({
 			spellings: ["--group"],
 			value: "required",
 			placeholder: "id",
-			required: true,
+			requiredWhen: "unless --container is given",
 			description: "The configured group id to inspect",
+		},
+		{
+			kind: "option",
+			key: "container",
+			spellings: ["--container"],
+			value: "required",
+			placeholder: "node",
+			requiredWhen: "unless --group is given",
+			description: "The node whose interface to report, by id or by name",
 		},
 		{
 			kind: "option",
@@ -246,14 +265,14 @@ const semanticInspectContract = defineCommand({
 		},
 	],
 	input: { ingress: InspectInputSchema },
-	result: GroupInspectionResultSchema,
+	result: z.union([GroupInspectionResultSchema, ContainerInspectionResultSchema]),
 	output: {
 		cases: [
 			{
 				id: "json",
 				when: {},
 				mode: "json",
-				description: "The group as it stands on that variant",
+				description: "The group or the container as it stands on that variant",
 				presentation: ["diagnostics", "result"],
 			},
 		],
@@ -265,33 +284,45 @@ const semanticInspectContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: [serverRefusal, unknownGroupRefusal],
+	refusals: [serverRefusal, unknownGroupRefusal, unknownContainerRefusal],
 	relationships: [
 		{
 			method: "GET",
 			path: "/api/semantic-boards/board",
 			cardinality: "one",
-			description: "The board the group is read off",
+			description: "The board the group or container is read off",
 		},
 		{
 			method: "GET",
 			path: "/api/vault/check",
-			cardinality: "one",
-			description: "The vault policy that names the group",
+			cardinality: "conditional",
+			description: "The vault policy that names a group, read only for --group",
 		},
 	],
 	/**
-	 * Inspect the group.
+	 * Inspect the group or the container.
 	 * @param input What the command was given.
 	 * @param context The command context.
-	 * @returns The group as it stands.
+	 * @returns The group or the container as it stands.
+	 * @throws {CliUsageError} When neither or both of --group and --container are given.
 	 */
 	async handler(input, context) {
+		const asked = whatWasAsked(input);
 		await context.require("server", "semantic inspect");
 		const answer = await readSemanticBoardAnswerOnServer(input.name);
 		const variant = askedVariant(answer.board, input.variant);
+		const warnings = answer.warnings.map(diagnosticLine);
+		if ("container" in asked) {
+			const result = containerAnswer(
+				answer.board,
+				variant,
+				inspectedContainer(variant, asked.container),
+				answer.warnings,
+			);
+			return { result, diagnostics: [...warnings, ...describedContainer(result)] };
+		}
 		const { policy } = await checkSemanticVaultOnServer();
-		const inspection = inspectGroup(variant.content, input.group);
+		const inspection = inspectGroup(variant.content, asked.group);
 		refuseUnknownGroup(policy, variant, inspection);
 		const result = answered(
 			answer.board,
@@ -300,10 +331,7 @@ const semanticInspectContract = defineCommand({
 			policy,
 			answer.warnings,
 		);
-		return {
-			result,
-			diagnostics: [...answer.warnings.map(diagnosticLine), ...described(result)],
-		};
+		return { result, diagnostics: [...warnings, ...described(result)] };
 	},
 });
 

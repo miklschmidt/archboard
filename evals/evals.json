@@ -1480,6 +1480,60 @@
 					"variant": "Pull request 4812"
 				}
 			]
+		},
+		{
+			"id": "S16",
+			"name": "inspect the interface of a container",
+			"report": "primary",
+			"workflow": "read",
+			"flask": "3.0.0",
+			"fixture": "fixtures/S16.json",
+			"sources": ["src/flask/app.py", "src/flask/ctx.py", "src/flask/sessions.py"],
+			"prompt": "On the `Flask application` board, what is the interface of the `Flask app` container: which of its parts do callers outside it reach, which parts stay hidden, who are those callers, and which relationships leave it? Answer from the saved board using the CLI. Change nothing.",
+			"expectedFeatures": [
+				{
+					"feature": "inspect.container",
+					"requirement": "`semantic inspect --container` names `Flask app` and the answer reports `WSGI entry` as its one entry point, `Dispatch`, `Finalize request` and `Process response` as hidden parts, `Development server` as the caller, and the relationships to `Request context push` and `Session interface` as the ones that leave it",
+					"skill": ["references/read.md#answer-a-question-from-a-saved-board"]
+				},
+				{
+					"feature": "inspect.container-terms",
+					"requirement": "the answer reads the entry points as the parts that callers outside the container reach, and says nothing about whether the module is deep or shallow",
+					"skill": ["references/read.md#answer-a-question-from-a-saved-board"]
+				},
+				{
+					"feature": "read-only",
+					"requirement": "no write happens",
+					"skill": [
+						"references/read.md#answer-a-question-from-a-saved-board",
+						"SKILL.md#which-recipe"
+					]
+				}
+			],
+			"outcomes": [
+				{
+					"check": "version-advanced-by",
+					"board": "Flask application",
+					"max": 0
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": [
+				"ids-stable",
+				"config-untouched",
+				"adopt-only-when-asked",
+				"doing-on-writes",
+				"no-writes"
+			],
+			"guidance": ["references/read.md"],
+			"captures": [
+				{
+					"label": "application",
+					"board": "Flask application"
+				}
+			]
 		}
 	]
 }

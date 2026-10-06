@@ -1662,14 +1662,21 @@
 			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/semantic-inspect.ts",
 			"stdout": "json object",
-			"result": "one group of one variant: members, internal edges, directed boundary edges, immediate neighbors",
+			"result": "one group of one variant (members, internal edges, directed boundary edges, immediate neighbors) or one container of one variant (entry points, hidden parts, callers, outgoing relationships, relationships onto the container itself, pass-through entry points, with the five counts), or the fact that the node holds no parts",
 			"diagnostics": "summary and vocabulary warnings on stderr; usage/refusal on stderr",
 			"exits": [0, 1, 2, 3],
 			"prerequisites": ["server"],
 			"relationships": ["GET /api/semantic-boards/board", "GET /api/vault/check"],
-			"semantics": "derived from the whole variant before any view narrows it, by the shared pure inspection; a configured empty group answers empty, an id neither configured nor used is refused",
-			"ordering": "read the board, resolve the variant, read the policy, inspect, then print",
-			"nextFields": ["group.configured", "members[].id", "boundaryEdges[].direction"],
+			"semantics": "derived from the whole variant before any view narrows it, by the shared pure inspections and never stored; a configured empty group answers empty, an id neither configured nor used is refused; a container is read by id or by a name that fits one node, and a node with no children answers that it holds no parts; exactly one of --group and --container is given",
+			"ordering": "read the board, resolve the variant, read the policy for a group, inspect, then print",
+			"nextFields": [
+				"group.configured",
+				"members[].id",
+				"boundaryEdges[].direction",
+				"holdsParts",
+				"entryPoints[].reachedBy",
+				"callers[].reaches"
+			],
 			"workflow": "necessary composition",
 			"effects": ["read"],
 			"refusals": [
@@ -1679,6 +1686,10 @@
 				},
 				{
 					"code": "UNKNOWN_GROUP",
+					"exit": 2
+				},
+				{
+					"code": "UNKNOWN_CONTAINER",
 					"exit": 2
 				}
 			],

@@ -101,6 +101,20 @@
 					"scenarios": ["S10"],
 					"evidence": "harness-check",
 					"owner": "fixture S10 holds hero and muted; edge-ids-retained shows they survive restate; src/shared/semantic-board/tests compare (emphasis not a change)"
+				},
+				{
+					"path": "semantic inspect --container: entry points, hidden parts, callers, outgoing relationships, pass-through entry points",
+					"expectedUse": "answer which parts of a module its callers reach, from the CLI",
+					"scenarios": ["S16"],
+					"evidence": "grader",
+					"owner": "grader inspect.container; src/shared/semantic-board/tests/container-interface.test.ts; tests/system/semantic-boards/container-interface.test.ts"
+				},
+				{
+					"path": "a node with no children holds no parts; a container nothing outside reaches has only hidden parts and no callers; a relationship to the container itself makes a caller and no entry point",
+					"expectedUse": "the answer says each in words instead of reporting zero entry points",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/shared/semantic-board/tests/container-interface.test.ts; tests/system/semantic-boards/container-interface.test.ts"
 				}
 			]
 		},
