@@ -8,37 +8,31 @@
 // the pin on its corner — is decided in `lib/svg/slab.ts` and
 // `lib/svg/standing.ts` and applied here without moving anything.
 //
-// Hierarchy here is built from weight, size, colour, case, tracking and space,
-// in that order. A card's name is the medium face and its responsibility the
-// regular one, which is a step a reader takes in before reading either; a
-// container's title is the medium face too, but small, tracked, uppercase and
-// grey, so it reads as the label on a frame rather than as a name. The same
-// title treatment is used at every depth: what says how deeply a box is nested
-// is where it sits and how far it is set in, not a different kind of lettering.
+// Hierarchy here is built from weight, size, colour and space, in that order. A
+// card's name is the medium face and its responsibility the regular one, which
+// is a step a reader takes in before reading either. A flow's frame is a
+// container's family: its name and summary are set on its nameplate in the
+// medium and regular faces and at the sizes a container's nameplate uses, so
+// a sequence's frame and an architecture's container read alike. What sets the
+// frame's name apart from the cards under it is the nameplate it lies on.
 //
 // Both weights are real files (`lib/fonts.ts`). Nothing above 500 exists, and
 // nothing here may ask for one: a browser would invent it, wider than what was
 // measured, and a fitted title would overflow the card it was fitted to.
 
+import { ARCHITECTURE_NOTE_GAP } from "@/transformers/semantic-renderer/config";
 import {
-	BASELINE_RATIO,
 	CARD_PADDING_X,
-	HEADER_NAME_SIZE,
-	HEADER_NAME_TRACKING,
-	HEADER_NOTE_SIZE,
 	ICON_CHIP_GAP,
 	ICON_CHIP_SIZE,
 	NOTE_SIZE,
+	PART_NOTE,
+	PART_TITLE,
 	SLAB_RADIUS,
-	TEXT_LINE_HEIGHT,
 } from "@/transformers/semantic-renderer/lib/design";
 import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
-import { truncate, truncateTracked } from "@/transformers/semantic-renderer/lib/text";
-import {
-	CARD_TITLE_FONT,
-	HEADER_NAME_FONT,
-	HEADER_NOTE_FONT,
-} from "@/transformers/semantic-renderer/lib/fonts";
+import { truncate } from "@/transformers/semantic-renderer/lib/text";
+import { CARD_NOTE_FONT, CARD_TITLE_FONT } from "@/transformers/semantic-renderer/lib/fonts";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import {
 	titleRoom,
@@ -205,18 +199,12 @@ function paintCard(
 }
 
 /**
- * A container's title block: its name in small tracked capitals, and its
- * responsibility under it in a quieter grey.
- *
- * Capitals and tracking are what a header uses instead of weight. They read as
- * a label rather than as a name, which is exactly the relationship a container
- * has to the things inside it — at any depth, because a box nested inside
- * another is still a frame around its contents and not a bigger card. The
- * block is printed on its frame's nameplate, which is what sets it apart from
- * the exchange below it.
+ * A flow's title block, printed on its frame's nameplate: its name as a
+ * container's is, and its summary under it in the secondary ink, each line
+ * set where a container's measured lines are, a line's size below its top.
  * @param header Where the block goes.
- * @param name The container's name.
- * @param responsibility Its responsibility, when it has one.
+ * @param name The flow's name.
+ * @param responsibility Its summary, when it has one.
  * @param styles The palette's attribute bundles.
  * @returns The header's text.
  */
@@ -226,24 +214,18 @@ function paintHeader(
 	responsibility: string | undefined,
 	styles: SvgStyles,
 ): string {
-	const nameBaseline = header.y + HEADER_NAME_SIZE * BASELINE_RATIO;
-	const noteBaseline = nameBaseline + HEADER_NOTE_SIZE * TEXT_LINE_HEIGHT;
+	const nameBaseline = header.y + PART_TITLE.size;
+	const noteBaseline = header.y + PART_TITLE.line + ARCHITECTURE_NOTE_GAP + PART_NOTE.size;
 	return lines([
 		textNode(
 			{ x: coord(header.x), y: coord(nameBaseline), ...styles.headerName },
-			truncateTracked(
-				name.toUpperCase(),
-				HEADER_NAME_FONT,
-				HEADER_NAME_SIZE,
-				HEADER_NAME_TRACKING,
-				header.width,
-			),
+			truncate(name, CARD_TITLE_FONT, PART_TITLE.size, header.width),
 		),
 		responsibility === undefined
 			? ""
 			: textNode(
 					{ x: coord(header.x), y: coord(noteBaseline), ...styles.headerNote },
-					truncate(responsibility, HEADER_NOTE_FONT, HEADER_NOTE_SIZE, header.width),
+					truncate(responsibility, CARD_NOTE_FONT, PART_NOTE.size, header.width),
 				),
 	]);
 }

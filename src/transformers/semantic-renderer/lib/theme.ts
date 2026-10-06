@@ -34,8 +34,6 @@ interface Palette {
 	readonly foreground: string;
 	/** Secondary text: a responsibility, a region name. */
 	readonly muted: string;
-	/** The quietest readable text on this ground. */
-	readonly faint: string;
 	/** An ordinary connection. */
 	readonly edge: string;
 	/** A connection deliberately pushed into the background. */
@@ -106,7 +104,6 @@ const PALETTE: Palette = {
 	matEdge: token("--mat-edge"),
 	foreground: token("--card-foreground"),
 	muted: token("--muted-foreground"),
-	faint: token("--muted-foreground"),
 	edge: token("--diagram-edge"),
 	edgeMuted: token("--muted-foreground"),
 	glyph: token("--muted-foreground"),

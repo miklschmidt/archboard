@@ -164,14 +164,13 @@ function faceRules(source: FontSource): string {
 	).join("");
 }
 
-/** A card's name — the one thing on a card a reader is scanning for. */
+/**
+ * A card's name — the one thing on a card a reader is scanning for — and a
+ * container's or a flow's, on its nameplate.
+ */
 const CARD_TITLE_FONT: DiagramFont = { family: "sans", weight: 500 };
-/** What a card is responsible for, subordinate to its name. */
+/** What a card, a container or a flow is responsible for, subordinate to its name. */
 const CARD_NOTE_FONT: DiagramFont = { family: "sans", weight: 400 };
-/** A band's name, which is a label rather than a name and is set as one. */
-const HEADER_NAME_FONT: DiagramFont = { family: "sans", weight: 500 };
-/** What a band is responsible for. */
-const HEADER_NOTE_FONT: DiagramFont = { family: "sans", weight: 400 };
 /** What a connection carries: small, technical, and on a plate. */
 const PILL_FONT: DiagramFont = { family: "sans", weight: 500 };
 /** The two kind glyphs that are drawn as characters rather than as shapes. */
@@ -188,8 +187,6 @@ export {
 	faceRules,
 	CARD_TITLE_FONT,
 	CARD_NOTE_FONT,
-	HEADER_NAME_FONT,
-	HEADER_NOTE_FONT,
 	PILL_FONT,
 	GLYPH_FONT,
 };

@@ -6,7 +6,7 @@ import {
 	ARCHITECTURE_LABEL_PADDING_X,
 	ARCHITECTURE_LABEL_PADDING_Y,
 } from "@/transformers/semantic-renderer/config";
-import { ICON_CHIP_SIZE } from "@/transformers/semantic-renderer/lib/design";
+import { ICON_CHIP_SIZE, PART_NOTE, PART_TITLE } from "@/transformers/semantic-renderer/lib/design";
 import { DRILL_MARK_ROOM } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
 // The words settle before placement. Pretext owns line breaking; the canvas of
 // the place drawing the picture measures the strings the SVG will paint.
@@ -43,14 +43,14 @@ type TextStyle = Pick<TextRun, "font" | "fontSize" | "role"> & {
 
 const TITLE: TextStyle = {
 	font: CARD_TITLE_FONT,
-	fontSize: 14,
-	lineHeight: 20,
+	fontSize: PART_TITLE.size,
+	lineHeight: PART_TITLE.line,
 	role: "title",
 };
 const NOTE: TextStyle = {
 	font: CARD_NOTE_FONT,
-	fontSize: 11,
-	lineHeight: 17,
+	fontSize: PART_NOTE.size,
+	lineHeight: PART_NOTE.line,
 	role: "note",
 };
 const LABEL: TextStyle = { font: PILL_FONT, fontSize: 10, lineHeight: 15, role: "label" };

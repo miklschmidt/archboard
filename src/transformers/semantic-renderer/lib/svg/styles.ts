@@ -23,19 +23,16 @@ import { relationshipAppearance } from "@/transformers/semantic-renderer/lib/sem
 import { semanticInk } from "@/transformers/semantic-renderer/lib/svg/appearance";
 import { lightDark, mixed } from "@/transformers/semantic-renderer/lib/svg/colour";
 import {
-	HEADER_NAME_SIZE,
-	HEADER_NAME_TRACKING,
-	HEADER_NOTE_SIZE,
 	LINE_STRENGTH,
 	NOTE_SIZE,
+	PART_NOTE,
+	PART_TITLE,
 	PILL_TEXT_SIZE,
 } from "@/transformers/semantic-renderer/lib/design";
 import {
 	fontAttributes,
 	CARD_NOTE_FONT,
 	CARD_TITLE_FONT,
-	HEADER_NAME_FONT,
-	HEADER_NOTE_FONT,
 	PILL_FONT,
 } from "@/transformers/semantic-renderer/lib/fonts";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
@@ -273,17 +270,16 @@ function edgeAttributes(
  */
 function stylesFor(palette: Palette) {
 	return {
-		// A flow's heading. A card, a container and a flow's frame are blocks (`slab.ts`).
+		// A flow's heading, set as a container's nameplate is.
 		headerName: {
-			"font-size": HEADER_NAME_SIZE,
-			"letter-spacing": `${HEADER_NAME_TRACKING}em`,
-			fill: palette.muted,
-			...fontAttributes(HEADER_NAME_FONT),
+			"font-size": PART_TITLE.size,
+			fill: palette.foreground,
+			...fontAttributes(CARD_TITLE_FONT),
 		},
 		headerNote: {
-			"font-size": HEADER_NOTE_SIZE,
-			fill: palette.faint,
-			...fontAttributes(HEADER_NOTE_FONT),
+			"font-size": PART_NOTE.size,
+			fill: palette.muted,
+			...fontAttributes(CARD_NOTE_FONT),
 		},
 		title: { fill: palette.foreground, ...fontAttributes(CARD_TITLE_FONT) },
 		note: { "font-size": NOTE_SIZE, fill: palette.muted, ...fontAttributes(CARD_NOTE_FONT) },

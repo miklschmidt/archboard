@@ -5,25 +5,30 @@
 // is gone rather than retuned. Its parts are drawn as blocks with a visible
 // thickness (`lib/svg/slab.ts`): the thicknesses and the corners are here.
 
+import { ARCHITECTURE_NOTE_GAP } from "@/transformers/semantic-renderer/config";
+
 /** The corners of a container's plinth and of a group's region. */
 const BAND_RADIUS = 10;
 
-/** A flow header's height with a name alone, and with a summary under it. */
-const HEADER_HEIGHT = 19;
-const HEADER_HEIGHT_WITH_NOTE = 33;
+/**
+ * A measured part's name and what it is responsible for: a card's, and a
+ * container's or a flow's on its nameplate. Each is a size and the room one
+ * line of it takes.
+ */
+const PART_TITLE = { size: 14, line: 20 } as const;
+const PART_NOTE = { size: 11, line: 17 } as const;
+
+/**
+ * A flow header's height with a name alone, and with a summary under it: set
+ * as a container's nameplate is, so a flow's frame and a container are one family.
+ */
+const HEADER_HEIGHT = PART_TITLE.line;
+const HEADER_HEIGHT_WITH_NOTE = PART_TITLE.line + ARCHITECTURE_NOTE_GAP + PART_NOTE.line;
 /**
  * How far a flow's nameplate reaches below its header's words, its front edge
  * included. The plate starts at the top of the flow's frame.
  */
-const FLOW_PLATE_FOOT = 10;
-
-const HEADER_NAME_SIZE = 10.5;
-/**
- * Uppercase and tracked, on top of the medium weight. Weight alone would make
- * a header look like a small card title; caps and tracking make it a label.
- */
-const HEADER_NAME_TRACKING = 0.12;
-const HEADER_NOTE_SIZE = 9;
+const FLOW_PLATE_FOOT = 16;
 
 /**
  * The ratio between a font size and the vertical room one line of it takes.
@@ -34,12 +39,6 @@ const HEADER_NOTE_SIZE = 9;
  * a line's height is decided.
  */
 const TEXT_LINE_HEIGHT = 1.35;
-
-/**
- * Distance from a text block's top edge to the first baseline, as a multiple
- * of the font size. Roughly the cap height plus the line's leading half.
- */
-const BASELINE_RATIO = 1.02;
 
 /**
  * How strong a coloured line is drawn, as its share of its colour over the
@@ -114,11 +113,9 @@ export {
 	HEADER_HEIGHT,
 	HEADER_HEIGHT_WITH_NOTE,
 	FLOW_PLATE_FOOT,
-	HEADER_NAME_SIZE,
-	HEADER_NAME_TRACKING,
-	HEADER_NOTE_SIZE,
+	PART_TITLE,
+	PART_NOTE,
 	TEXT_LINE_HEIGHT,
-	BASELINE_RATIO,
 	CARD_RADIUS,
 	SLAB_RADIUS,
 	CARD_THICKNESS,
