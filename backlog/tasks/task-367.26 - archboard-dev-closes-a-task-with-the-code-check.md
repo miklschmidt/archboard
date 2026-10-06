@@ -1,11 +1,11 @@
 ---
 id: TASK-367.26
 title: archboard-dev closes a task with the code check
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:16'
-updated_date: '2026-10-06 13:42'
+updated_date: '2026-10-06 13:43'
 labels:
   - code-check
   - skill
@@ -27,8 +27,8 @@ Today a task closes with a manual step: inspect each proposal against the code a
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The archboard-dev closing steps run `./bin/dogfood check --code --variant TASK-<n>` on each proposal before adoption
-- [ ] #2 The manual evidence rules remain only for what the check does not cover, and the skill says which
+- [x] #1 The archboard-dev closing steps run `./bin/dogfood check --code --variant TASK-<n>` on each proposal before adoption
+- [x] #2 The manual evidence rules remain only for what the check does not cover, and the skill says which
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -68,3 +68,9 @@ The scratch server is stopped and the scratch vault is in the session scratchpad
 
 Gate: bun run lint 0; bun run fmt:check 0; bun run test:repository 20 pass 0 fail.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard-dev's closing step 1 now runs ./bin/dogfood check --code --variant TASK-<n> once per proposal name, separates the task's own findings from those already present with a diff of the JSON findings with and without --variant, says what to do for each finding code, and keeps the manual evidence rules only for what the check does not cover (responsibilities, labels, flow steps, text-only code, network hops, unbound parts and unregistered repositories). Steps 2, 3, 5 and 7 point at it. Verified by a trial on a scratch vault with two drafts carrying deliberate defects: the diff showed exactly the introduced and cleared findings, one run per proposal name, and the refusal for an unknown name.
+<!-- SECTION:FINAL_SUMMARY:END -->
