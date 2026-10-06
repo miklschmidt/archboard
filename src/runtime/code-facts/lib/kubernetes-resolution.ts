@@ -4,10 +4,12 @@
 // The manifests of a checkout are its YAML files that hold an object of the
 // Kubernetes API, compose files aside. An address resolves to the nearest
 // manifest that declares it: the file itself, then the manifests of its
-// directory, then those of the directories one step further away, and so on,
-// in path order at each step. The manifests applied together usually sit
-// together, so the nearest declaration is the one the cluster would hold
-// beside the object that names it. A label selector picks the workloads whose
+// directory, then those of the directories one step further away, and so on.
+// The manifests applied together usually sit together, so the nearest
+// declaration is the one the cluster would hold beside the object that names
+// it. Where two manifests at the nearest step declare it, such as the copies
+// of one environment and another, the check cannot tell which one the cluster
+// holds, and the address resolves to none. A label selector picks the workloads whose
 // pod labels it matches among the manifests of the nearest step that holds
 // any. Each step reads its manifests once in a pass, and no further step is
 // read once one answers.
@@ -41,7 +43,8 @@ interface ManifestIndex {
 	 * The nearest declaration of an address.
 	 * @param from The file that names it.
 	 * @param address The address, `Service/cart`.
-	 * @returns The declaration, or undefined when no manifest of the checkout declares it.
+	 * @returns The declaration, or undefined when no manifest of the checkout declares it or
+	 * two at the nearest step do.
 	 */
 	declaration(from: string, address: string): Declared | undefined;
 	/**
@@ -137,9 +140,12 @@ function manifestIndex(files: ReadonlySet<string>, read: ReadText): ManifestInde
 		 * @returns The declaration, or undefined.
 		 */
 		declaration(from, address) {
-			for (const file of [from, ...ringsOf(from).flat()]) {
-				const object = objectsOf(file).find((each) => each.definition.symbol === address);
-				if (object !== undefined) return { path: file, object };
+			for (const ring of [[from], ...ringsOf(from)]) {
+				const declared = ring.flatMap((file) => {
+					const object = objectsOf(file).find((each) => each.definition.symbol === address);
+					return object === undefined ? [] : [{ path: file, object }];
+				});
+				if (declared.length > 0) return declared.length === 1 ? declared[0] : undefined;
 			}
 			return undefined;
 		},

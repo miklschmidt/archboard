@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cache
+  namespace: green
+spec:
+  selector:
+    app: cache

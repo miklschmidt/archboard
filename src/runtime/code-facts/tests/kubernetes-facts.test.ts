@@ -11,8 +11,12 @@
 // `envFrom`. `k8s/cart.yaml` runs `cart`. `k8s/routes.yaml` routes an Ingress
 // to `web` and an HTTPRoute to `cart`. `k8s/policy.yaml` lets `web` reach
 // `cart`. `k8s/config.yaml` holds the ConfigMap and a Secret with tempting
-// values. `payments/ledger.yaml` is a `List`. A GitHub workflow and a compose
-// file are YAML too, and so is a Helm template the test writes.
+// values. `payments/ledger.yaml` is a `List`, whose ledger, ConfigMap and
+// Secret hold credentials too. `envs/report.yaml` runs a CronJob that names
+// the cache, which two environments beside it declare. A GitHub workflow and
+// a compose file are YAML too. So is `k8s/old-secret.yaml`, whose first
+// document is empty, and so are a Helm template and a manifest that does not
+// parse, which the test writes because the formatter would rewrite them.
 
 import { afterAll, expect, test } from "bun:test";
 import {
@@ -26,18 +30,37 @@ import { fixtureDirectory } from "@/runtime/code-facts/tests/checkout";
 
 const checkout = fixtureDirectory("kubernetes-shop");
 const facts = createCodeFacts();
-/** A Helm template, which does not parse as YAML until Helm renders it. */
-const HELM_TEMPLATE = [
-	"{{- if .Values.worker.enabled }}",
-	"apiVersion: apps/v1",
-	"kind: Deployment",
-	"metadata:",
-	'  name: {{ include "shop.fullname" . }}-worker',
-	"{{- end }}",
-	"",
-].join("\n");
-/** What the Secret holds, as written and as its `data` encodes it. */
+/** Each manifest the check cannot read, and an address it may declare. */
+const UNREADABLE = {
+	// A Helm template that parses as YAML: Helm gives the name when it renders it.
+	"charts/shop/templates/secret.yaml": [
+		"Secret/shop-db",
+		[
+			"apiVersion: v1",
+			"kind: Secret",
+			"metadata:",
+			'  name: {{ include "shop.db" . }}',
+			"stringData:",
+			"  DB_PASSWORD: hunter2-in-a-template",
+		],
+	],
+	// One that quotes its actions, as YAML text.
+	"charts/shop/templates/config.yaml": [
+		"ConfigMap/shop-config",
+		["apiVersion: v1", "kind: ConfigMap", "metadata:", '  name: "{{ .Release.Name }}-config"'],
+	],
+	"k8s/broken.yaml": [
+		"Deployment/broken",
+		["apiVersion: apps/v1", "kind: Deployment", "metadata:", "  name: broken", "  labels: [app"],
+	],
+	"k8s/old-secret.yaml": ["Secret/old-token", undefined],
+} as const;
+/** What the Secrets and the credentials hold, as written and as `data` encodes them. */
 const SECRETS = ["hunter2", "aHVudGVy"];
+
+for (const [file, [, lines]] of Object.entries(UNREADABLE)) {
+	if (lines !== undefined) checkout.write(file, `${lines.join("\n")}\n`);
+}
 
 afterAll(() => {
 	checkout.remove();
@@ -95,12 +118,14 @@ test("each object of every document and list is a definition addressed as kind a
 		["ConfigMap/web-config", 1, 9, false],
 		["Secret/web-secrets", 11, 19, false],
 		["Service/ledger", 4, 11, false],
-		["Deployment/ledger", 12, 28, false],
+		["Deployment/ledger", 12, 31, false],
+		["ConfigMap/ledger-config", 32, 37, false],
+		["Secret/ledger-db", 38, 43, false],
 		["NetworkPolicy/cart-from-web", 1, 17, false],
 	]);
 });
 
-test("a route to a Service is a call, and what a workload's environment, envFrom and keys name are configured paths to the nearest declaration", async () => {
+test("a route to a Service is a call, and what a workload's environment, envFrom and keys name are configured paths to the nearest declaration, and to none where two at the nearest step declare it", async () => {
 	expect(addressed(await manifest("k8s/web.yaml"))).toEqual([
 		"19 configured-path Service/cart -> k8s/cart.yaml Service/cart",
 		"21 configured-path Service/ledger -> payments/ledger.yaml Service/ledger",
@@ -111,6 +136,9 @@ test("a route to a Service is a call, and what a workload's environment, envFrom
 	expect(addressed(await manifest("k8s/routes.yaml"))).toEqual([
 		"12 call Service/web -> k8s/web.yaml Service/web",
 		"31 call Service/cart -> k8s/cart.yaml Service/cart",
+	]);
+	expect(addressed(await manifest("envs/report.yaml"))).toEqual([
+		"15 configured-path Service/cache -> -",
 	]);
 });
 
@@ -145,7 +173,7 @@ test("a Service joins the workloads its selector picks, and a NetworkPolicy lets
 	]);
 });
 
-test("a Secret's values, in data or stringData, are in no fact", async () => {
+test("a Secret's values, in data or stringData, in a List or in a Helm template, and the credentials in an address are in no fact", async () => {
 	const pass = facts.pass(new AbortController().signal);
 	const files = [...checkout.files];
 	const everyFile = await Promise.all(files.map((file) => pass.read(checkout, file)));
@@ -158,11 +186,12 @@ test("a Secret's values, in data or stringData, are in no fact", async () => {
 	for (const secret of SECRETS) expect(written).not.toContain(secret);
 });
 
-test("YAML that holds no Kubernetes object is read as text, a compose file as compose, and a template that does not parse as one unparsed part", async () => {
+test("YAML that holds no Kubernetes object is read as text, a compose file as compose, and a manifest whose objects the check cannot read as one part where every address is unknown", async () => {
 	expect((await read(".github/workflows/ci.yml"))?.adapter).toBe("text");
 	expect((await read("compose.yaml"))?.adapter).toBe("compose");
-	checkout.write("charts/shop/templates/worker.yaml", HELM_TEMPLATE);
-	const template = await manifest("charts/shop/templates/worker.yaml");
-	expect(template.definitions).toEqual([]);
-	expect(findSymbol(template, "Deployment/worker", "definition").status).toBe("unparsed");
+	for (const [file, [address]] of Object.entries(UNREADABLE)) {
+		const unreadable = await manifest(file);
+		expect(unreadable.definitions).toEqual([]);
+		expect(findSymbol(unreadable, address, "definition").status).toBe("unparsed");
+	}
 });

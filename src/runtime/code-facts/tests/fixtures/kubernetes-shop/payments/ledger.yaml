@@ -26,3 +26,18 @@ items:
           containers:
             - name: ledger
               image: shop/ledger:1
+              env:
+                - name: DATABASE_URL
+                  value: postgres://ledger:hunter2-in-an-env@ledger:5432/ledger
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: ledger-config
+    data:
+      REPLICA_URL: postgres://ledger:hunter2-in-a-config@ledger:5432/ledger
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: ledger-db
+    stringData:
+      LEDGER_TOKEN: hunter2-in-a-list
