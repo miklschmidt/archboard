@@ -1,11 +1,11 @@
 ---
 id: TASK-367.15
 title: 'clangd resolves C, C++ and Objective-C candidates'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 21:47'
+updated_date: '2026-10-06 21:48'
 labels:
   - code-check
 dependencies:
@@ -28,8 +28,8 @@ clangd needs `compile_commands.json` to know the include paths and flags of each
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A C, C++ or Objective-C candidate resolves through clangd when the checkout has `compile_commands.json`
-- [ ] #2 Without `compile_commands.json`, the check says so once and reports candidates
+- [x] #1 A C, C++ or Objective-C candidate resolves through clangd when the checkout has `compile_commands.json`
+- [x] #2 Without `compile_commands.json`, the check says so once and reports candidates
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -105,3 +105,9 @@ Limits left: a selector part is asked at the first word on its line that a colon
 
 Gate after the fixes, one lane at a time: lint exit 0, fmt:check exit 0, type-check exit 0, build:frontend exit 0, test:modules 4,287 pass and 0 fail, test:system 195 pass and 0 fail, test:repository 21 pass and 0 fail, test:serial-browser 24 pass and 0 fail. After the lanes, no clangd, stand-in or tsc --lsp process ran, and no archboard-language-server-* directory was left. The code check over the dogfood vault, run in a scratch process with Archboard's tsc, gave no finding about Language servers, Code facts or Code check, and no language-server skip.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+C, C++ and Objective-C candidates resolve through clangd, a default from the PATH, when the checkout has a compile_commands.json (the nearest one, including an ignored build/ copy). clangd reads a rewritten copy of the database in a directory of its own, where its background index, module cache and temporary files stay, and the client asks only after the index ended. The copy drops response files, -B, --prefix, --config and every module-cache or GPU-program flag, moves a compiler named with a directory into the own directory, and pins a module cache and a nonexistent GPU program, so clang's driver runs nothing from the checkout. clangd starts without CLANGD_FLAGS and with --enable-config=false, never --query-driver, in its own process group, and a stop ends the group and removes the directory. Without a database, or with one that lists no command, is invalid or links outside the checkout, the check says language-server-unready once with the cause and keeps the candidates. Each pass rebuilds the index: Redis 1.5 s, the whole of LLVM 54 s, which fails once after 30 s. The review found and fixed the code execution, CLANGD_FLAGS, writes outside the own directory and a clangd that outlived its stop. Verified by clangd-server.test.ts and clangd-check.test.ts, and with clangd 21.1.8 under strace on libuv, leveldb, Redis and an Objective-C sample.
+<!-- SECTION:FINAL_SUMMARY:END -->
