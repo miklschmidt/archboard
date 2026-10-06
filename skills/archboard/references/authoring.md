@@ -114,7 +114,10 @@ defines, and a C++ name is spelled with `::` or `.`: `shop::Ledger::post`,
 `Ledger.post`, `post`.
 Includes resolve through the nearest `compile_commands.json` that Git lists;
 without one, against the including file's directory, the checkout root and
-each directory named `include`.
+each directory named `include`. A use of a name that a header declares reaches
+its code in the header's source file. Where that file does not define it, the
+code is somewhere the include does not name: the use matches by name only, and
+its finding is information.
 Code facts also read C# files (`.cs`) and .NET project files (`.csproj`). A
 C# `symbol` may leave out its namespace: `Shop.Core.Ledger.Post`,
 `Ledger.Post` and `Post` all find the method. A part bound to a `.csproj`

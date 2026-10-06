@@ -515,8 +515,19 @@ SQLite from 68,067 lines not parsed to 4,385, and Redis from 8,104 to 2,845.
 
 The longest single file was SQLite `autosetup/jimsh0.c`, 25,495 lines: about
 100 ms to parse and 145 ms to read its facts, in one turn of the event loop.
-No TypeScript file of this repository comes close, and a later task can split
-or skip such a file if a measurement of the server shows the need.
+No TypeScript file of this repository comes close. The review of TASK-367.09
+measured what that costs the server: another process sent an HTTP request
+every 10 ms while one pass read the file. The longest request waited 223 to
+260 ms, the time of that one file. While the pass read it with `btree.c`,
+`vdbe.c` and `where.c`, 550 ms in all, the longest request still waited
+225 ms, because the pass yields between files. A turn of the event loop
+between the parse and the facts of one file did not help under Bun 1.4.2: the
+longest request still waited for the whole file, 240 to 260 ms, so it was not
+kept. That wait is far below a pane's poll of 5 s and `SOCKET_RECONNECT_MS`. A
+vendored amalgamation is the limit: SQLite's `src/*.c` written as one file of
+208,963 lines takes 550 to 620 ms to parse and about 1,175 ms to read, most of
+it in tree-sitter's walk from a node to its parent. A checkout that tracks such
+a file would need the parse in a worker.
 
 A board of 12 parts bound to Redis `src` files and 7 relationships ran through
 the real check in 1,223 ms cold and 477 ms warm. A board of 9 parts bound to
@@ -541,14 +552,63 @@ CMake). The findings, each read against the code:
 - The anchors that cite real uses (`flushAppendOnlyFile`, `log::Writer`) hold
   and support their relationships.
 
-Two findings show what an include cannot tell. Redis declares nearly every
-function in `server.h`, so a use of `LFUDecrAndReturn`, which `evict.c`
-defines, reaches the part bound to `server.c`, whose pair is `server.h`.
-leveldb declares `WriteBatchInternal::Append` in
-`db/write_batch_internal.h` and defines it in `db/write_batch.cc`, which are
-no pair, so an anchor that cites it reads as a definition outside both ends.
-An include names the file of a declaration, not of the code that runs. clangd
-answers with the definition (TASK-367.15).
+An include names the file of a declaration, not of the code that runs. The
+first build took a use that reached a prototype as resolved evidence, so the
+part bound to the header's pair was credited with code that runs elsewhere.
+Redis declares nearly every function in `server.h`, so a use of
+`LFUDecrAndReturn`, which `evict.c` defines, reached the part bound to
+`server.c` as a warning. leveldb declares `WriteBatchInternal::Append` in
+`db/write_batch_internal.h` and defines it in `db/write_batch.cc`, which are no
+pair, so an anchor that cites it gave the warning `ANCHOR_MISMATCH`. No right
+change clears either, and ADR 0046 makes a warning need the check to be sure.
+
+The review of TASK-367.09 marks a prototype, a method declared without its
+body and an `extern` variable with no value as declarations. A use that
+reaches one leads to the definition of the name in the header's pair, and is
+resolved there. Where the pair defines nothing of the name, the use matches by
+name only: a candidate, until clangd names the definition (TASK-367.15). On
+the same two boards, four pieces changed. `LFUDecrAndReturn` gave way to
+`server`, the global that `server.c` defines. `getClusterConnectionsCount` and
+`clusterPromoteSelfToMaster`, which `cluster.h` declares and
+`cluster_legacy.c` defines, became candidates, so the first resolved use of
+the cluster part is the macro `INVALID_CLUSTER_SLOT` of `cluster.h`. The uses
+of `dictFind` in `rdb.c` and `server.c` now reach the part bound to `dictFind`
+in `dict.c`, as a warning, where they went to the part bound to the whole file.
+leveldb's `ANCHOR_MISMATCH` is now information. The include search moved into
+the include resolver, which gives every use its target as C# and Swift do, and
+lookups by name are narrowed by last name: in the same runs, the Redis board
+took 1,115 to 1,186 ms cold and 167 to 176 ms warm, against 1,079 to 1,444 ms
+and 410 to 776 ms before. A pass that reads all of Redis's files now resolves
+the includes of each one, 214 ms warm.
+
+The review also read two C++ libraries with templates and namespaces:
+fmt (`4afd0e4`, 74 files) and abseil-cpp (`95e66a0`, 876 files). A macro
+before a namespace, such as abseil's `ABSL_NAMESPACE_BEGIN` or fmt's
+`FMT_BEGIN_EXPORT`, makes the grammar read `namespace detail {` as a function
+named `namespace::detail`, with no error node, and every declaration inside it
+was lost: 505 such functions over 108,713 lines of abseil, and 9 over 1,933
+lines of fmt. No function can have that name, so the adapter now reads it as
+the namespace it is, and abseil went from 13,769 definitions to 24,233. Two
+more readings were wrong everywhere: an include guard was an exposed macro of
+every header, and a destructor's name read as a call to its class.
+
+ADR 0046 matches an include that resolves nowhere by its file name, as a
+candidate. It is not built. On Redis, 393 of the 1,686 includes that resolve
+nowhere would match one file by name. 279 of them are in angle brackets, and
+191 are system headers (`<stdint.h>`, `<assert.h>`, `<math.h>`, `<strings.h>`,
+`<stdbool.h>`) that would match jemalloc's own copies. The rest are in
+`modules/`, `tests/` and `deps/`, which resolve with a `compile_commands.json`.
+SQLite would gain 84 such matches, leveldb none, fmt 22 (gtest and gmock) and
+abseil 16.
+
+A C or C++ module is a directory (TASK-368.10). Its public headers are the
+headers below its `include` directory, or else the headers directly in it
+whose source file is in it too. A declaration in one is exposed where its code
+is, passed on by the header. leveldb's checkout publishes 15 headers under
+`include/leveldb`, which expose 148 names. Its `db` directory has 11 public
+headers and 206 names, 98 of them at the code of a source file. Redis's `src`
+has 67 public headers and 6,099 names, and its callers can be in the 577 C
+files outside it.
 
 #### Reading Terraform with the HCL grammar
 
