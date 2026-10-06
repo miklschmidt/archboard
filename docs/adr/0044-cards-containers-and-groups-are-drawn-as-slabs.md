@@ -215,6 +215,28 @@ in `lib/design.ts`.
     words are in `--diagram-text` and `--diagram-text-muted`, a deep navy and
     a slate. The dark ground keeps its values, except a grouped card's front
     edge (rule 7).
+16. **A line that meets the foot of a card runs into a port** (TASK-424). The
+    port is a slot cut through the card's front edge where the line meets the
+    foot: 2.7 units tall, under a 0.6-unit lid and over a 0.7-unit sill, as
+    long as the line and 2.1 units either side. The card's body and its
+    shadow are clipped round it, so the hole shows what lies under the card.
+    The line's own group draws the inside of the port there: a well that
+    darkens from its rim into its depth (`--port-wall` to `--port-deep`), a
+    lit crescent of floor by the sill (`--tray-lip`), and the end of the line
+    running up into it. So the end of the line takes the line's veil and
+    light. Over the slot the card draws the depth the line fades into, over
+    the traffic too, so a pulse goes into the dark with its line. Each line
+    has its own slot; two lines that meet the foot at one place share it. A
+    slot narrows as it nears a rounded corner, keeps at least 1.5 units of
+    edge between it and the next, and is left out where that leaves too
+    little room round the line. Ports are drawn near only: from far away the
+    slot is closed in the card's front edge. They are on a card's foot only:
+    a sequence's lifelines start a gap under their cards and meet no edge. A
+    port is a clip, the one clip the picture uses for depth, not a filter,
+    blur or mask. It adds six elements for each port (five shapes and a
+    group) and four for each card with a port, 2.2% to 2.4% more SVG on the
+    Codex session and the Web shop boards. The layout, the routes and the
+    atlas do not change.
 
 ## What stays
 

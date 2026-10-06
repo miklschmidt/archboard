@@ -285,6 +285,9 @@ the faded frame is a light tone of the color that keeps its hue. A comparison ma
 1.8-unit border in the comparison's green or Changed Orange along the inside edge of its
 top face, solid for added and dashed for changed, and a removed part's dashed
 red border round its footprint. The face and the front edge keep their colors.
+A line that meets the foot of a card runs into a port, a small slot cut
+through the card's front edge, dark inside, with a lit lower lip, and the
+line fades into its depth. Ports are drawn near only.
 The shell touches none of it, and the Untouched Picture Rule still holds.
 [ADR 0044](docs/adr/0044-cards-containers-and-groups-are-drawn-as-slabs.md)
 records the construction.

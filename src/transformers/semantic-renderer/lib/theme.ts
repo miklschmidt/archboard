@@ -22,8 +22,11 @@ interface Palette {
 	readonly trayFloor: string;
 	/** What a nested container's floor sinks toward, a step for each level. */
 	readonly traySink: string;
-	/** The lit lip along the bottom of a container. */
+	/** The lit lip along the bottom of a container, and the lit floor of a port. */
 	readonly trayLip: string;
+	/** A port's inside by its rim, and its depth (`lib/svg/ports.ts`). */
+	readonly portWall: string;
+	readonly portDeep: string;
 	/** Text that carries the meaning: a card's name. */
 	readonly foreground: string;
 	/** Secondary text: a responsibility, a region name. */
@@ -93,6 +96,8 @@ const PALETTE: Palette = {
 	trayFloor: token("--tray-floor"),
 	traySink: token("--tray-sink"),
 	trayLip: token("--tray-lip"),
+	portWall: token("--port-wall"),
+	portDeep: token("--port-deep"),
 	foreground: token("--diagram-text"),
 	muted: token("--diagram-text-muted"),
 	edge: token("--diagram-edge"),

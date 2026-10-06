@@ -39,6 +39,12 @@ import { junctionMarks } from "@/transformers/semantic-renderer/lib/svg/junction
 import { slab, slabSeat, slabShadow } from "@/transformers/semantic-renderer/lib/svg/slab";
 import { paintTraffic } from "@/transformers/semantic-renderer/lib/svg/traffic";
 import {
+	portCut,
+	portInside,
+	portsOf,
+	type Port,
+} from "@/transformers/semantic-renderer/lib/svg/ports";
+import {
 	PART_ATTRIBUTE,
 	ghostOpacity,
 	markedBox,
@@ -151,6 +157,7 @@ function edgeMarker(
  * @param policy Current vault policy.
  * @param mask Optional narrow cutouts beneath higher connections.
  * @param step Whether this line is a flow step drawn on the board, not an authored relationship.
+ * @param ports The ports its ends run into, cut through the feet of the cards it joins.
  * @returns The connection group.
  */
 function paintEdgeLine(
@@ -160,6 +167,7 @@ function paintEdgeLine(
 	policy: SemanticPolicy,
 	mask: string | undefined,
 	step: boolean,
+	ports: readonly Port[],
 ): string {
 	const { edge, path } = routed;
 	const styles = stylesFor(palette);
@@ -202,6 +210,7 @@ function paintEdgeLine(
 				"marker-end": appearance.arrowhead === "none" ? undefined : `url(#${markerId})`,
 				...attributes,
 			}),
+			...ports.map((port) => portInside(port, attributes, palette)),
 		]),
 	);
 }
@@ -291,6 +300,21 @@ function extentOf(
 	]);
 }
 
+/**
+ * A card's ports as its painter takes them: its slots and the id of the clip
+ * that cuts them.
+ * @param cut The card's slots and its clip, if it has any.
+ * @param cut.slots Its slots.
+ * @param cut.cut Its clip.
+ * @param cut.cut.id The clip's id.
+ * @returns The ports, or none.
+ */
+function portsFor(
+	cut: { readonly slots: readonly Port[]; readonly cut: { readonly id: string } } | undefined,
+): { readonly slots: readonly Port[]; readonly cut: string } | undefined {
+	return cut === undefined ? undefined : { slots: cut.slots, cut: cut.cut.id };
+}
+
 /** The drawing a page is fitted to, and how its subjects stand for the marks it holds. */
 interface HeldPage {
 	readonly drawing: PaintedDrawing;
@@ -343,6 +367,15 @@ function paintArchitecture(
 			),
 		),
 	]);
+	// Where a line meets the foot of a card, it runs into a port cut through the
+	// card's front edge; a removed card is a ghost and has no edge to cut.
+	const ports = portsOf(cards, edges, (id) => standingOf(id) !== "removed");
+	const cuts = new Map(
+		[...ports.byCard].flatMap(([id, slots]) => {
+			const cut = portCut(slots);
+			return cut === undefined ? [] : [[id, { slots, cut }] as const];
+		}),
+	);
 	// Every node the page lays out, drawn or not, so leaving some out changes
 	// no kept card's colour or whether it draws as a container.
 	const appearances = nodeAppearances(
@@ -394,6 +427,9 @@ function paintArchitecture(
 	);
 	const painted = lines([
 		definitions,
+		cuts.size === 0
+			? ""
+			: wrap("defs", {}, [...cuts.values()].map(({ cut }) => cut.markup).join("")),
 		...boxes.map((held) =>
 			paintMeasuredFrame(
 				held,
@@ -416,6 +452,7 @@ function paintArchitecture(
 				policy,
 				masks.get(edge.edge.id),
 				derived.has(edge.edge.id),
+				ports.byEdge.get(edge.edge.id) ?? [],
 			),
 		),
 		// Over the lines they join, under the cards and every relationship's words.
@@ -445,6 +482,7 @@ function paintArchitecture(
 				standingOf(card.measured.node.id),
 				unsettledOf(card.measured.node.id),
 				appearances.get(card.measured.node.id)!,
+				portsFor(cuts.get(card.measured.node.id)),
 			),
 		),
 		...edges.map((edge) =>

@@ -64,7 +64,10 @@
    --slab-deep is what a colour is shaded into for a front edge, and for a tint
    on the dark ground. --slab-glint is what the fine highlight on a face's top edge mixes
    toward, --slab-sheen the light that falls off down a face, and --slab-shadow
-   one layer of the stacked shadow.
+   one layer of the stacked shadow. Where a line meets a card's foot it goes
+   into a port, a slot cut through the front edge: --port-wall is its inside
+   by the rim and --port-deep its depth, which the line fades into; its floor
+   by the sill catches the light as a tray's lip does (--tray-lip).
 
    On the light ground the picture is crisp and vivid rather than pastel. Its
    own neutrals are clean and cool (hue near 255): a card face a hair under
@@ -168,6 +171,8 @@
 	--tray-floor: oklch(0.974 0.003 255);
 	--tray-sink: oklch(0.95 0.005 255);
 	--tray-lip: oklch(1 0 0);
+	--port-wall: oklch(0.52 0.01 260);
+	--port-deep: oklch(0.3 0.012 262);
 }
 
 /* Dark: warm graphite, bone-white text, the same gold. */
@@ -255,4 +260,6 @@
 	--tray-floor: oklch(0.185 0.002 75);
 	--tray-sink: oklch(0.15 0.002 75);
 	--tray-lip: oklch(0.3 0.002 75);
+	--port-wall: oklch(0.13 0.002 75);
+	--port-deep: oklch(0.06 0.002 75);
 }

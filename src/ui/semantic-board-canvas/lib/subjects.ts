@@ -27,6 +27,13 @@ const TRAFFIC_ATTRIBUTE = "data-traffic";
 const PULSE_CLASS = "ab-pulse";
 
 /**
+ * The class the inside of a port carries (the renderer's `PORT_CLASS`): where a
+ * line's end runs into a slot cut through a card's foot, drawn where the card
+ * lands, not where it is in flight.
+ */
+const PORT_CLASS = "ab-port";
+
+/**
  * The attribute a mark lists its members in, space-separated: a group's region
  * lists its cards, and a junction mark the relationships that meet at it.
  * Neither is a subject of its own: the veil lights each with its members.
@@ -316,6 +323,7 @@ function keepingMarks(surface: Element, stage: () => void): void {
 
 export {
 	LIT_CLASS,
+	PORT_CLASS,
 	PULSE_CLASS,
 	SELECTED_CLASS,
 	SUBJECT_ATTRIBUTE,
