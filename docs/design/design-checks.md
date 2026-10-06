@@ -1406,8 +1406,9 @@ What csharp-ls does:
   `Ledger`), a member through a value (`_ledger.Post`) and an extension method
   (`_ledger.Close`).
 - Its MSBuild evaluation wrote design-time files under each project's `obj`
-  (`AssemblyInfo.cs`, an `.editorconfig`). It built nothing and restored no
-  package.
+  (`AssemblyInfo.cs`, an `.editorconfig`). It compiled nothing and restored no
+  package, but it runs the project's targets up to the compiler (the review
+  below).
 - The Roslyn language server (roslyn-ls 5.11.0) loads nothing until the client
   sends its `solution/open` notification. It answers `null` until it sends
   `workspace/projectInitializationComplete`, and by default it runs
@@ -1429,6 +1430,37 @@ The server names `Ledger.Post` as the definition of the anchor's `Post`,
 outside both ends. The C# lookup cannot reach a member that a base class
 declares. The cost is the solution load, which every pass pays again because
 no answer is kept from one pass to the next.
+
+The independent review of TASK-367.14 ran the same servers from nixpkgs on
+2026-10-06 through the check's own session, in scratch checkouts. A probe
+interpreter wrote a mark each time it ran.
+
+- basedpyright 1.39.8 runs `.venv/bin/python` of its workspace by itself when
+  the client names no interpreter, `venvPath` or `venv`. A checkout that
+  committed `.venv` had its interpreter run three times, although the check
+  did not name it. pyright 1.1.412 has no such fallback: it runs the `python3`
+  on the `PATH`. Both remove the working directory from `sys.path` before
+  their script imports `json`, and pass `-I` only to read the version.
+- The check also named an interpreter that Git tracks in three other ways: an
+  untracked `.venv` link to a tracked directory, a committed `.Venv` on a disk
+  that ignores case (`git ls-files -- .venv` lists nothing for it when
+  `core.ignorecase` is set), and any `.venv` when Git could not list the
+  checkout. Now the check asks Git about the real places of the directory and
+  of the interpreter, in any case, and a checkout whose `.venv` holds an
+  interpreter that it does not name starts no Python server. Afterwards each
+  of these runs started no server, and only an ignored `.venv` made on the
+  machine ran its interpreter.
+- A `pyrightconfig.json` or `[tool.pyright]` cannot name an interpreter: it
+  names a `venvPath` and `venv`, whose `site-packages` pyright reads as files.
+- csharp-ls 0.28.0 ran a target that a project hooks before `CoreCompile`: its
+  `Exec` ran `touch`. A property function cannot write a file during
+  evaluation: MSBuild allows only reading members of `System.IO.File`, and the
+  project failed to load. A `PackageReference` with no assets file was not
+  restored and reached no network. A project whose `Sdk` names
+  `Microsoft.Build.NoTargets/3.7.56` made MSBuild try `api.nuget.org` over
+  HTTPS 24 times in a network namespace with no route, which cost 13.6 s.
+- roslyn-ls 5.11.0, named in the `csharp` entry, answered an empty list, so
+  the use stayed a candidate and no skip said why.
 
 #### Swift and Nix have no upstream WebAssembly file on npm
 

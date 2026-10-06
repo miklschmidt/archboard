@@ -237,13 +237,18 @@ For Python, install pyright or basedpyright, for example with
 `npm install -g pyright` or `pipx install basedpyright`. The check runs the
 first of `pyright-langserver` and `basedpyright-langserver` that is on your
 `PATH`. pyright reads `pyrightconfig.json` or `[tool.pyright]` in the
-`pyproject.toml` at the root of the checkout. If the checkout has a virtual
-environment in `.venv` or `venv` at its root, the check tells pyright to use
-it, so imports of installed packages resolve. It does this only when Git
-tracks no file in that directory, because pyright runs its interpreter once to
-find the packages. A virtual environment outside the checkout, such as one
-that Poetry or Hatch keeps elsewhere, needs a `venvPath` and `venv` in the
-pyright configuration. Without one, pyright uses the `python` on your `PATH`.
+`pyproject.toml` at the root of the checkout. The check can tell pyright to
+use a virtual environment in `.venv` or `venv` at the root of the checkout.
+Then imports of installed packages resolve. pyright runs the interpreter of
+that environment to find the packages. That interpreter also runs the startup
+hooks of the packages installed in it. When Git tracks no file in that
+directory and does not track its interpreter, also through a symbolic link,
+the check uses the environment. basedpyright runs `.venv/bin/python` by
+itself. If Git tracks that interpreter, the check starts no Python server in
+that checkout. It says `language-server-unready` once for it. A virtual
+environment outside the checkout, such as one that Poetry or Hatch keeps
+elsewhere, needs a `venvPath` and `venv` in the pyright configuration. Without
+one, pyright uses the `python3` on your `PATH`.
 
 To choose another server, or to turn one off, write `language-servers.json` in
 the state directory (see [Machine state and logs](#machine-state-and-logs)).
@@ -275,13 +280,18 @@ Install csharp-ls with `dotnet tool install --global csharp-ls`. It needs the
 .NET SDK that it was built for on your `PATH`: csharp-ls 0.28 needs .NET 10.
 The check tells it to load the `.sln` or `.slnx` file that is nearest the root
 of the checkout. With no solution, csharp-ls loads every `.csproj` file. The
-check never asks it to build or to restore packages. Its MSBuild evaluation
-still writes files under the `obj` directory of each project. A checkout with
-no `.sln`, `.slnx` or `.csproj` file that Git lists starts no server. The
-check says `language-server-unready` once for it, and its uses stay
-candidates. The Roslyn language server is not supported: it loads nothing
-until the client opens a solution with a message of its own, and by default it
-restores packages from the network. This was measured with csharp-ls 0.28.0.
+check never asks it to build or to restore packages. But csharp-ls runs the
+MSBuild targets of a project up to the compiler to load it. So a target that
+the project hooks there runs, such as an `Exec`. It writes files under the `obj`
+directory of each project. If a project names an MSBuild SDK with a version,
+such as `Microsoft.Build.NoTargets/3.7.56`, MSBuild downloads that SDK from
+NuGet. A checkout with no `.sln`, `.slnx` or `.csproj` file that Git lists
+starts no server. The check says `language-server-unready` once for it, and
+its uses stay candidates. The Roslyn language server is not supported: it
+loads nothing until the client opens a solution with a message of its own, and
+by default it restores packages from the network. If you name it in the
+`csharp` entry, it answers nothing, and the uses stay candidates. This was
+measured with csharp-ls 0.28.0 and roslyn-ls 5.11.0.
 
 Swift has no default server. sourcekit-lsp evaluates `Package.swift`, and that
 runs code of the checkout. So the check starts it only from an entry that you
