@@ -14,6 +14,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/design";
 import type { DrawingRegion, TextRun } from "@/transformers/semantic-renderer/lib/drawing";
 import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
+import { segmentStart, type Curve } from "@/transformers/semantic-renderer/lib/layout/curves";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { measure } from "@/transformers/semantic-renderer/lib/text";
 import { semanticInk } from "@/transformers/semantic-renderer/lib/svg/appearance";
@@ -145,15 +146,26 @@ function matColours(ink: string, palette: Palette): MatColours {
  * and from far away. The mat's body is its first shape, in the region's box.
  * @param region The region.
  * @param look The page's colours, the vault's policy for the group's colour,
- * and the size of the picture's card names from far away.
+ * the size of the picture's card names from far away, and the picture's routes.
  * @param look.palette The page's colours.
  * @param look.policy The vault's policy.
  * @param look.farSize The size of the picture's card names from far away.
+ * @param look.routes Every route the picture draws, which a far caption keeps clear of.
  * @returns The region's SVG.
  */
 function paintRegion(
 	region: DrawingRegion,
-	{ palette, policy, farSize }: { palette: Palette; policy: SemanticPolicy; farSize: number },
+	{
+		palette,
+		policy,
+		farSize,
+		routes,
+	}: {
+		palette: Palette;
+		policy: SemanticPolicy;
+		farSize: number;
+		routes: readonly Curve[];
+	},
 ): string {
 	const ink = semanticInk(policy.groups[region.group]?.color) ?? palette.muted;
 	const colours = matColours(ink, palette);
@@ -183,35 +195,74 @@ function paintRegion(
 				(near === undefined ? "" : tab(region, near, colours, palette)) +
 					paintTextRuns(caption.measured.runs, caption.box, palette, colours.words),
 			),
-			farCaption(region, farSize, colours, palette),
+			farCaption(region, { farSize, routes }, colours, palette),
 		]),
 	);
 }
 
+/** How far a far caption's tab stops short of a route that crosses its row. */
+const ROUTE_ROOM = 8;
+
+/**
+ * How far right a caption's tab may reach from far away: a little short of
+ * the nearest route that crosses the caption's row to the right of its near
+ * words, or the region's far wall. A route that crosses the row before the
+ * words end crosses the near tab too, and is the layout's to keep clear.
+ * @param region The region.
+ * @param words Where the caption's near words end.
+ * @param routes Every route the picture draws.
+ * @returns The rightmost the tab may reach.
+ */
+function farReach(region: DrawingRegion, words: number, routes: readonly Curve[]): number {
+	const { box, caption } = region;
+	const row = { top: caption.box.y, bottom: caption.box.y + caption.box.height };
+	const crossings = routes.flatMap((curve) =>
+		curve.segments.flatMap((segment, index) => {
+			const points = [segmentStart(curve, index), segment.to];
+			if (segment.kind === "cubic") points.push(segment.first, segment.second);
+			const left = Math.min(...points.map(({ x }) => x));
+			const crosses =
+				Math.min(...points.map(({ y }) => y)) < row.bottom &&
+				Math.max(...points.map(({ y }) => y)) > row.top;
+			return crosses && left > words ? [left - ROUTE_ROOM] : [];
+		}),
+	);
+	return Math.min(box.x + box.width, ...crossings);
+}
+
 /**
  * A group's caption from far away: one line as large as its row holds, up to
- * the size of the picture's card names, and never wider than its region, on a
- * tab grown to hold it.
+ * the size of the picture's card names, on a tab grown to hold it that never
+ * reaches past its region's wall or into a route crossing its row
+ * ({@link farReach}). It is never set smaller than near.
  * @param region The region.
- * @param farSize The size of the picture's card names from far away.
+ * @param far The size of the picture's card names from far away, and the picture's routes.
+ * @param far.farSize The size of the picture's card names from far away.
+ * @param far.routes Every route the picture draws.
  * @param colours The group's colours.
  * @param palette The page's colours.
  * @returns The far layer.
  */
 function farCaption(
 	region: DrawingRegion,
-	farSize: number,
+	{ farSize, routes }: { farSize: number; routes: readonly Curve[] },
 	colours: MatColours,
 	palette: Palette,
 ): string {
 	const { box, caption } = region;
 	const run = caption.measured.runs[0];
 	if (run === undefined) return "";
-	const room = box.width - 2 * run.x;
-	const size = Math.min(
-		farSize,
-		caption.box.height * FAR_CAPTION_SHARE,
-		(run.fontSize * room) / Math.max(1, run.width),
+	// The tab is the words' margin before them and as much again after them,
+	// both grown with the words (`tab`): its width at a size is linear in it.
+	const margin = caption.box.x + run.x - box.x;
+	const reach = farReach(region, caption.box.x + run.x + run.width, routes);
+	const size = Math.max(
+		run.fontSize,
+		Math.min(
+			farSize,
+			caption.box.height * FAR_CAPTION_SHARE,
+			(run.fontSize * (reach - box.x - margin)) / Math.max(1, margin + run.width),
+		),
 	);
 	const grown = {
 		...run,
