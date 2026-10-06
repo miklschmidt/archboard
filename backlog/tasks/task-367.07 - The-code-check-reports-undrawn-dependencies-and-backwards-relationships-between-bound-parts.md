@@ -3,11 +3,11 @@ id: TASK-367.07
 title: >-
   The code check reports undrawn dependencies and backwards relationships
   between bound parts
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 13:33'
+updated_date: '2026-10-06 14:49'
 labels:
   - code-check
 dependencies:
@@ -28,11 +28,11 @@ This is the finding that makes the check worth running: code that one part runs 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A runtime dependency from one bound part to another with no relationship between them is reported as not on the board
-- [ ] #2 Dependencies on one shared part are reported once for that part, and type-only imports are not reported
-- [ ] #3 A relationship drawn one way while the code runs only the other way is reported as drawn backwards
-- [ ] #4 Each finding names its evidence kind and says that it is a candidate until a language server resolves it
-- [ ] #5 On Board persistence the check reproduces the measurement in the design note or explains each difference by a code change since
+- [x] #1 A runtime dependency from one bound part to another with no relationship between them is reported as not on the board
+- [x] #2 Dependencies on one shared part are reported once for that part, and type-only imports are not reported
+- [x] #3 A relationship drawn one way while the code runs only the other way is reported as drawn backwards
+- [x] #4 Each finding names its evidence kind and says that it is a candidate until a language server resolves it
+- [x] #5 On Board persistence the check reproduces the measurement in the design note or explains each difference by a code change since
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -91,4 +91,12 @@ The two ANCHOR_MISMATCH warnings that TASK-367.06 reported are gone, because TAS
 Closing: Archboard server@TASK-367.07 branched from l8We8gCC. TASK-367.25 adopted after it, so the change was restated on TASK-367.07 after TASK-367.25: the Code check responsibility and description, and the label of Code check -> Semantic board store. TASK-367.07 was shelved with that reason, and the restated proposal was adopted at v75. The footprint was read against base 10740c626, the parent of 0db035f15. namedAndChanged: Code check (cd7397b85; the other commit is 5bc3ebc6b of TASK-367.06). changedNotNamed: Code opener (9a10b54dd, TASK-367.25) and Code facts (bf952f228, TASK-367.06). Those commits belong to other tasks, and this task's commits did not change either part. namedNotChanged: none. ./bin/dogfood check: no diagnostics. Behind after adoption names one commit of this task: Skill evaluation, Evaluation inputs (evals), 84f5a3b5a. That commit adds a coverage row and no part, so the board is still right.
 
 Gate (lanes one at a time, from 84f5a3b5a, with the adapter-neutral refactor 7th commit re-linted and type-checked): lint 0, type-check 0, build:frontend 0, test:system 195/0, test:repository 20/0, test:serial-browser exit 0. In that run, fmt:check failed on three of this task's scratch scripts at the repository root (since removed) and test:modules failed on 22 server tests that imported LINE_TOKEN while another agent was editing src/shared/code-target. On a rerun, fmt:check passed (0) and test:modules passed (4093 pass, 0 fail). eval:skill check: suite ok (20 scenarios, 20 fixtures, 14 coverage parts). Left for others: src/cli/commands/vault.ts check help names only the anchor and binding findings (outside this task's fence); docs/design/design-checks.md could carry the Board persistence comparison above (outside the fence); code-facts counts a name in export { name } of an imported name as a use (two wrong findings above).
+
+Independent review (2026-10-06): names in an export clause and in export default <name> counted as uses, which made the two wrong findings; they now count as re-exports (6caf00794). Decision 10 is superseded: the repository's lint rule no-compatibility-identifiers now matches backward(s) only before a compat word, so RELATIONSHIP_BACKWARDS needs no disable directive and every shim spelling is still caught (f742301bd). Test directories now match in any case and as a CamelCase Tests suffix (4f4578aa5). One definition-site memory per pass cut facts reads from 28,717 to 16,228 (afa938914). The check --code help names the relationship findings (03d55605b), decisions 2 and 5 got a test owner (c7dc840c7), and the design note carries the Board persistence comparison (c9ea4a894). Dogfood after the fixes: 86 undrawn warnings, 19 backwards, 186 unsupported.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The code check now reports, from the evidence in TypeScript code facts, a runtime dependency between bound parts that the board does not draw (one finding per reached part, a warning when resolved), a relationship drawn against the direction the code runs, and a relationship that no evidence of an accepted kind supports, both as information. Relationship kinds name the evidence kinds they accept through a new evidence key in the vault configuration, with defaults per ADR 0046, and ANCHOR_MISMATCH also judges the evidence kind. Verified by relationships.test.ts and typescript-facts.test.ts (pass with --isolate), and on Board persistence, where the check reproduces the design note's three undrawn calls, the shared helper's seven callers and the type-only imports, with each difference explained in the note.
+<!-- SECTION:FINAL_SUMMARY:END -->
