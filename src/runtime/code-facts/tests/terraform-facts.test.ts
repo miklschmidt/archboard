@@ -133,6 +133,26 @@ test("each address an expression names is a reference, and comments, bound names
 	);
 });
 
+/**
+ * Each reference that is an argument's whole value, and the argument.
+ * @param read A file's facts.
+ * @returns The references' addresses and arguments.
+ */
+function passed(read: SyntaxFacts): string[][] {
+	return read.references.flatMap((each) =>
+		each.argument === undefined ? [] : [[each.symbol, each.argument]],
+	);
+}
+
+test("a reference that is an argument's whole value names the argument, and one inside an expression or a meta-argument does not", async () => {
+	// var.dead_letter sits in an object, var.topics in a for expression and var.dimensions in a dynamic block's for_each.
+	expect(passed(await terraform("infra/modules/queue/main.tf"))).toEqual([["var.name", "name"]]);
+	// An argument of a nested block is named by its path; an attribute after the address is an expression around it.
+	const main = passed(await terraform("infra/main.tf"));
+	expect(main).toContainEqual(["module.network.private_subnets", "vpc_config.subnet_ids"]);
+	expect(main.some(([symbol]) => symbol === "aws_iam_role.api")).toBe(false);
+});
+
 test("a module call with a local source resolves to its directory, and a remote one to nothing", async () => {
 	const main = await terraform("infra/main.tf");
 	expect(main.imports.map((each) => [each.specifier, each.names[0]?.local, each.resolved])).toEqual(

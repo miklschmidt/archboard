@@ -31,9 +31,10 @@
 // - `EXPOSED_UNUSED`, information: names the module exposes that no file
 //   outside it uses, as code or as a type.
 //
-// A use is a reference in a file outside the module whose import leads into
-// it, followed through every re-export to its definition. A test exercises
-// code and is not its caller at run time, so a test file is no caller.
+// What a module exposes and how the files outside it use it is read once a
+// pass (module-reading.ts). A Terraform module is reached only through its
+// outputs, so no entry point of it is judged unexposed, and its container
+// also gets the findings about the module's shape (terraform-modules.ts).
 
 import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
 import type { Piece } from "@/runtime/code-check/lib/evidence";
@@ -44,22 +45,20 @@ import {
 	type Owners,
 } from "@/runtime/code-check/lib/ownership";
 import {
-	isTestPath,
-	type PartCode,
-	type ReadPart,
-	type RepoCheckout,
-} from "@/runtime/code-check/lib/part-code";
+	moduleReading,
+	type ModuleReading,
+	type ModuleReadings,
+	type OutsideUse,
+} from "@/runtime/code-check/lib/module-reading";
+import type { PartCode, ReadPart, RepoCheckout } from "@/runtime/code-check/lib/part-code";
 import { siteOf } from "@/runtime/code-check/lib/relationships";
+import { terraformFindings } from "@/runtime/code-check/lib/terraform-modules";
 import {
-	definitionSite,
-	moduleExposure,
 	moduleOf,
 	within,
 	type Definition,
-	type DefinitionSite,
 	type ExposedName,
 	type FactsPass,
-	type ModuleExposure,
 } from "@/runtime/code-facts/index";
 import { nodeSubject } from "@/runtime/semantic-board-store/index";
 import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "@/shared/code-check/index";
@@ -69,25 +68,6 @@ import {
 	type SemanticNode,
 } from "@/shared/semantic-board/index";
 import { describeSubject } from "@/shared/semantic-policy/index";
-
-/** One use of a module's code by a file outside it. */
-interface OutsideUse {
-	readonly file: string;
-	readonly line: number;
-	readonly symbol: string;
-	/** Whether the use runs: a use only as a type does not. */
-	readonly runs: boolean;
-	readonly site: DefinitionSite;
-}
-
-/** What one module exposes, and how the files outside it use it. */
-interface ModuleReading {
-	readonly exposure: ModuleExposure;
-	readonly uses: readonly OutsideUse[];
-}
-
-/** The modules one pass has read, by repository and directory, so two boards share one reading. */
-type ModuleReadings = Map<string, Promise<ModuleReading | undefined>>;
 
 /** What judging the containers of one board needs. */
 interface InterfaceReading {
@@ -114,87 +94,6 @@ interface Judged {
 	readonly module: ModuleReading;
 	readonly checkout: RepoCheckout;
 	readonly owners: Owners;
-}
-
-/**
- * The uses of a module's code in one file outside it.
- * @param facts The pass.
- * @param checkout The checkout.
- * @param directory The module.
- * @param file The file.
- * @returns Each use whose definition is in the module.
- */
-async function usesIn(
-	facts: FactsPass,
-	checkout: RepoCheckout,
-	directory: string,
-	file: string,
-): Promise<OutsideUse[]> {
-	const read = await facts.read(checkout, file);
-	if (read === undefined || read.adapter === "text") return [];
-	const into = read.references.filter(
-		(reference) =>
-			reference.via === "code" &&
-			reference.target !== undefined &&
-			within(directory, reference.target.path),
-	);
-	const uses: OutsideUse[] = [];
-	for (const { line, symbol, kind } of into) {
-		// oxlint-disable-next-line no-await-in-loop -- one site at a time; each search reads files the cache holds
-		const site = await definitionSite(facts, checkout, file, symbol);
-		if (site !== undefined && within(directory, site.path)) {
-			uses.push({ file, line, symbol, runs: kind === "call", site });
-		}
-	}
-	return uses;
-}
-
-/**
- * What a module exposes, leaving out a file of tests at its root, such as
- * `ledger.test.ts` beside `ledger.ts`: a test exposes nothing to a caller.
- * @param exposure What the module's root files expose.
- * @returns It without the tests, or undefined when only tests are at its root.
- */
-function withoutTests(exposure: ModuleExposure | undefined): ModuleExposure | undefined {
-	if (exposure === undefined) return undefined;
-	const { directory } = exposure;
-	const rootFiles = exposure.rootFiles.filter(
-		(file) => !isTestPath(directory === "" ? file : file.slice(directory.length + 1)),
-	);
-	if (rootFiles.length === 0) return undefined;
-	const exposed = exposure.exposed.filter((name) => rootFiles.includes(name.via[0] ?? name.path));
-	return { ...exposure, rootFiles, exposed };
-}
-
-/**
- * What a module exposes and how the files outside it use it, read once in a pass.
- * @param reading The board and the pass.
- * @param checkout The module's checkout.
- * @param directory The module.
- * @returns The reading, or undefined when no language the check reads has a root file there.
- */
-function moduleReading(
-	reading: InterfaceReading,
-	checkout: RepoCheckout,
-	directory: string,
-): Promise<ModuleReading | undefined> {
-	const key = `${checkout.repo}\0${directory}`;
-	let found = reading.modules.get(key);
-	if (found === undefined) {
-		found = (async () => {
-			const exposure = withoutTests(await moduleExposure(reading.facts, checkout, directory));
-			if (exposure === undefined) return undefined;
-			const uses: OutsideUse[] = [];
-			for (const file of exposure.outside) {
-				if (isTestPath(file)) continue;
-				// oxlint-disable-next-line no-await-in-loop -- one file at a time, so the pass yields between parses
-				uses.push(...(await usesIn(reading.facts, checkout, directory, file)));
-			}
-			return { exposure, uses };
-		})();
-		reading.modules.set(key, found);
-	}
-	return found;
 }
 
 /**
@@ -341,6 +240,8 @@ function unusedFinding(judged: Judged): CodeFinding | undefined {
  * @returns The pieces.
  */
 function reachesPast(judged: Judged, entry: ContainerInterface["entryPoints"][number]): Piece[] {
+	// Configuration outside a Terraform module reaches it only through its outputs.
+	if (judged.module.terraform !== undefined) return [];
 	const side = sideOf(judged.reading, entry.node.id);
 	const callers = new Set(
 		entry.reachedBy.flatMap((edge) => [...sideOf(judged.reading, edge.from)]),
@@ -492,6 +393,7 @@ async function judgeContainer(
 	if (judged === undefined) return;
 	const unused = unusedFinding(judged);
 	if (unused !== undefined) outcome.findings.push(unused);
+	outcome.findings.push(...terraformFindings(reading.read, container, judged.module.terraform));
 	await judgeChildren(judged, outcome.findings);
 }
 
