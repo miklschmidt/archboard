@@ -18,7 +18,7 @@
 
 </div>
 
-<img alt="On the left: the commands that a coding agent runs for this request. It claims the Web shop board, branches a proposal, edits it and compares it with today. On the right: the browser pane shows the claim and then redraws the board as the proposal. It shows new parts in green and a moved call in orange. The removed timeout guard is a red ghost." src="https://github.com/user-attachments/assets/dc72e962-d57a-425a-a58f-e14a78a475ee" width="100%">
+<img alt="On the left: the commands that a coding agent runs for this request. It claims the Web shop board, branches a proposal, edits it and compares it with today. On the right: the browser pane shows the claim and then redraws the board as the proposal. It shows new parts in green and a moved call in orange. The removed timeout guard is a red ghost." src="https://github.com/user-attachments/assets/c4dd12cc-2911-4568-a7a4-f729e873f372" width="100%">
 
 <p align="center"><sub>Filmed live against a real Archboard server. The terminal on the left replays the commands an agent runs for this request, and each one ran against the server as shown. The pane on the right is the real browser, redrawing on every write. Nothing here was dragged into place.</sub></p>
 
@@ -28,7 +28,7 @@ Plan the next step before anyone writes code. Ask for a change and see it drawn 
 
 **Hear Archboard explain itself**. Its own system board, narrated by the Codex voice in under two minutes. Turn the sound on.
 
-https://github.com/user-attachments/assets/e1bbe9fe-5284-4649-81d9-45438fb71399
+https://github.com/user-attachments/assets/7ae7ab41-2755-48cd-9887-c71eac90bfce
 
 ## What you can do with it
 
@@ -56,7 +56,7 @@ https://github.com/user-attachments/assets/e1bbe9fe-5284-4649-81d9-45438fb71399
 
 See a change before anyone builds it. Ask your agent for one and you get a **proposal**: the same board, redrawn as its difference from what exists. New parts arrive green, changed ones orange, and removed ones stay on the page as red ghosts. A call that moves is shown as one change, not as a deletion beside an addition.
 
-<img src="https://github.com/user-attachments/assets/acf7091e-18c8-4a1c-8946-ff9e09ba904c" width="100%" alt="A board that nobody has built yet, marked not built, opened in two panes. The left pane turns into the Nightly batch proposal. The right pane turns into the Live events proposal. Both are marked against their shared starting point.">
+<img src="https://github.com/user-attachments/assets/b70e0c4c-8998-4192-8eff-b1b80ba23cf1" width="100%" alt="A board that nobody has built yet, marked not built, opened in two panes. The left pane turns into the Nightly batch proposal. The right pane turns into the Live events proposal. Both are marked against their shared starting point.">
 
 <p align="center"><sub>Two competing proposals for a recommendations service that does not exist yet, one per pane. The header names the proposal in the focused pane and says <code>not built</code>: nothing here pretends to exist before somebody adopts it.</sub></p>
 
@@ -73,7 +73,7 @@ off the request path, compare it with today, and show me both side by side.
 
 Most diagrams show what changed. This one also remembers why. When a proposal ships, your agent **adopts** it: it becomes the current architecture, the one it replaces is frozen as history, and the date and reason are recorded. A proposal you decide against is **shelved** with its reason instead of deleted, so the next person who suggests it finds the answer.
 
-<img src="https://github.com/user-attachments/assets/50efd6f8-90f1-427b-bec8-cdac45913a8b" width="100%" alt="Archboard's own Renderer layout board walked through its three states: Initial with five parts, Readable layout with fourteen, and the current ADR 0040 with fifteen. A timeline added for this clip names each state, its adoption date and its recorded reason.">
+<img src="https://github.com/user-attachments/assets/88b46b20-bb4d-467d-b0dd-12d752d89af3" width="100%" alt="Archboard's own Renderer layout board walked through its three states: Initial with five parts, Readable layout with fourteen, and the current ADR 0040 with fifteen. A timeline added for this clip names each state, its adoption date and its recorded reason.">
 
 <p align="center"><sub>Real history from Archboard's own vault: its renderer board through three generations. The timeline strip is added for this README. Each state, date and quoted reason comes from the board file, as <code>archboard semantic show "Renderer layout"</code> prints it.</sub></p>
 
@@ -95,7 +95,7 @@ gh pr comment 128 --attach pr-128.mp4 --body "A narrated walkthrough of this cha
 
 **A pull request, explained to its reviewers**: why the change exists, what it changed, and where to look closely. Turn the sound on.
 
-https://github.com/user-attachments/assets/61c961eb-fd37-41f2-b334-0562f0c7bf60
+https://github.com/user-attachments/assets/3e5a432d-937d-4afd-ab63-3f97b1ede2b1
 
 <p align="center"><sub>Each video is what <code>archboard semantic record</code> wrote.</sub></p>
 
@@ -124,7 +124,7 @@ Add a sequence diagram of what happens when a shopper places an order, from the 
 
 Give the tour once, and every new hire can play it back. A newcomer's walkthrough starts with two parts and adds one piece at a time until the whole path is on screen. It stops at the place where things go wrong and ends on the one sentence worth remembering.
 
-https://github.com/user-attachments/assets/bc1df523-ca4e-45ad-a237-01084cb8b1c5
+https://github.com/user-attachments/assets/7a655d99-ec62-4cc1-a04c-883bb626b67e
 
 <p align="center"><sub>"How stock is reserved", six steps on the example Inventory service board. Turn the sound on.</sub></p>
 
@@ -136,7 +136,7 @@ I'm new here. Walk me through what happens to stock when a shopper presses Pay.
 
 One map, from the whole system down to the file. Boards link to boards: hover a part that has its own board and a tip offers to open it. Double-click and the view dives in, with a breadcrumb back. Parts are bound to their code, so **Open code** takes you to the file in VS Code, Cursor, Zed or on GitHub. A system spread over several repositories can share one vault, with each part bound to its own repository.
 
-<img src="https://github.com/user-attachments/assets/c3ed0a10-1233-451b-a6b9-73446049a84d" width="100%" alt="The Web shop board: the pointer rests on Inventory service, and a tip says double-click to open it. The view dives into the Inventory service board with the breadcrumb Web shop › Inventory service.">
+<img src="https://github.com/user-attachments/assets/bfedb527-77f6-4c5c-93f4-60c37df2c514" width="100%" alt="The Web shop board: the pointer rests on Inventory service, and a tip says double-click to open it. The view dives into the Inventory service board with the breadcrumb Web shop › Inventory service.">
 
 ## Ask your architecture
 
@@ -150,7 +150,7 @@ Select a part and ask. The Codex agent in the conversation reads the board and y
 
 Let agents work on the map without wondering what they touched. When an agent **claims** a board, every pane that has it open shows who, why, and since when. The pane also has one button to take the board back. Every write says in one line what it is doing, and every change to an existing board names the version it read. If the board moved since then, the write is refused, so two agents never overwrite each other.
 
-<img src="https://github.com/user-attachments/assets/047f5ccf-59ec-40ff-a0b8-3c2903d50472" width="100%" alt="An agent claims the Web shop board and the pane shows the claim. The pointer presses Take back control, and the banner goes. The agent's next write is refused with exit code 5.">
+<img src="https://github.com/user-attachments/assets/bb941a0a-b26f-4370-93a5-32f3dc52f9ea" width="100%" alt="An agent claims the Web shop board and the pane shows the claim. The pointer presses Take back control, and the banner goes. The agent's next write is refused with exit code 5.">
 
 <p align="center"><sub>You take the board back, and the agent's next write is refused. Nothing is half written. Every accepted write is on disk before the agent hears back.
 </sub></p>
