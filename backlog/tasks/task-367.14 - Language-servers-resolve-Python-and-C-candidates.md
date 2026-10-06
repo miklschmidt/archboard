@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 17:22'
+updated_date: '2026-10-06 19:59'
 labels:
   - code-check
 dependencies:
@@ -67,4 +67,30 @@ Manual runs (scratch, nixpkgs, nothing added to the repository): pyright 1.1.412
 Close: Archboard server@TASK-367.14 branched from xLa4QqhH (TASK-367.16) at v159, Language servers description only, adopted at v162, summary set to the board's scope at v163. check --code with and without --variant: no line differs (44 findings each). Footprint against base 7509307ec: namedAndChanged Language servers; changedNotNamed Archboard server (e1a21b7a2 changes only the route test, the board stays true), Code check (e1a21b7a2 changes only its tests' server table; the other commits are other tasks'), Code facts (other tasks' commits). check: no diagnostics. Behind: Command interface lists ba6c3ef88, which changes only the check --code help text in vault.ts; the board stays true.
 
 Gate, one lane at a time after 227407e27: lint exit 1 and fmt:check exit 1, each only on other agents' uncommitted files (objc-*.ts of TASK-367.10; terraform-modules.ts and module-reading.ts of TASK-368.11); type-check 0; build:frontend 0; test:modules 4,261 pass, 2 fail, both in src/runtime/code-check/tests/terraform-modules.test.ts, which TASK-368.11 is editing (still failing on a rerun); test:system 195 pass; test:repository 21 pass; test:serial-browser 24 pass. No language server or stand-in process was left after any lane.
+
+Independent review (2026-10-06): NOT CLEAN before its fixes eb48927b1, 2221db4ae, d8bba899f, d1549f511 and 3fedfb0f4.
+
+Safety probes (pyright 1.1.412, basedpyright 1.39.8, csharp-ls 0.28.0, roslyn-ls 5.11.0 from the nix store, run through the check's own session in scratch checkouts; a probe interpreter wrote a mark when it ran):
+1. basedpyright runs <root>/.venv/bin/python by itself when the client names no pythonPath, venvPath or venv (its config code; measured). A checkout that committed .venv had that interpreter run 3 times although the check refused to name it. pyright has no such fallback (it runs python3 on the PATH). Must fix.
+2. An untracked .venv link to a tracked tools/env: the check named the tracked interpreter; both servers ran it. Must fix.
+3. A committed .Venv on a disk that ignores case: git ls-files -- .venv lists nothing with core.ignorecase set, while stat finds .venv/pyvenv.cfg, so the check would name the committed interpreter (Git part measured; macOS disk part by reasoning). Must fix.
+4. A checkout Git cannot list: listedFiles answered [] and the check named the .venv interpreter (both ran it). Fail-open. Must fix.
+5. pyrightconfig.json and [tool.pyright] cannot name an interpreter: only venvPath and venv, whose site-packages pyright reads as files (pyright source). Both servers remove the working directory from sys.path before their script imports json; -I only for the version. No finding.
+6. pyvenv.cfg home pointing into the checkout, and the startup hooks (.pth, sitecustomize) of what is installed in an environment this machine made: left to the user, because only the user (or a script the user ran) writes them; recorded in python-environment.ts and INSTALL.md.
+7. csharp-ls ran an Exec target hooked BeforeTargets=CoreCompile (touch ran); a property function that writes a file fails evaluation (MSBuild allows only reading System.IO.File members); a PackageReference with no assets file was not restored and made no connection; a project with Sdk=Microsoft.Build.NoTargets/3.7.56 made MSBuild try api.nuget.org over HTTPS 24 times (no-route network namespace, 13.6 s); design-time files under obj. Judgement: the C# row is safe only because it already needs an entry the user writes for a trusted checkout (ADR 0046's trust rule, and the 367.16 review's amendment covers files in ignored build output). INSTALL.md now says all three.
+8. roslyn-ls named in the csharp entry answers an empty list: uses stay candidates, no skip says why. INSTALL.md now says so. Criterion #2 reads "csharp-ls or the Roslyn language server", so csharp-ls alone meets it; the gap is stated plainly.
+
+Findings and fixes:
+- python-environment.ts (eb48927b1): the interpreter of .venv or venv is named only when Git tracks neither the directory nor the interpreter where each really is (realpath), with :(icase,literal) pathspecs, and never when Git cannot answer; pyvenv.cfg no longer decides (a conda environment in .venv is named, as basedpyright would run it). A checkout whose .venv holds an interpreter that is not named starts no Python server: language-server-unready once. Probes 1-4 rerun: no server started, no mark; only an ignored .venv made on the machine ran.
+- listed-files.ts: undefined when Git cannot list (also a failed spawn or timeout); dotnet-solution.ts says "Git cannot list the checkout's files" instead of "no project file".
+- Boundary: the Python and C# looks now go through the row's once (keyed by checkout), so a pass runs them once per checkout rather than once per directory; the .NET look walks the untracked tree (0.09 s on an 8,670-file checkout).
+- session.ts (2221db4ae): a question still looking at its project when close() ran started a server after close that was never stopped (reproduced with the stand-in). A new start now needs the pass open; owner in session.test.ts (red before, green after).
+- nix-build-check.test.ts (d1549f511, TASK-367.22's file, my hunk only): the one code-check owner that still read this machine's language-servers.json now passes ownServers().
+- evals/coverage.json, INSTALL.md, design-checks.md, authoring.md, the skip reason comment (d8bba899f); timing comment for the reused Git bound (3fedfb0f4).
+
+Checked without a finding: the outline rule on real tsc --lsp (decorator, export, export default, a type alias member, an interface member, an arrow const): same choice as before; a one-line class (class OneLine { run() {} }) at its name now reads code where it read unknown, which is what the rule means. Swift not run (no sourcekit-lsp offline); by the rule's structure only one-line nests and a type holder below the named symbol change. ARCHBOARD_LANGUAGE_SERVERS is read like ARCHBOARD_OPENER_CONFIG and ARCHBOARD_REPOS (empty falls back), has no former name to refuse, and is test-facing like ARCHBOARD_OPENER_CONFIG, so it is not in INSTALL.md. No test needs a real pyright, basedpyright, csharp-ls or dotnet. Discovery: a solution in a submodule is not listed, and the code check does not read submodule files either.
+
+Row contract (boundary with TASK-367.16): languageIds, defaultServer, initializationOptions, opensFiles, settle and project(root, file, once) -> { root, unready?, settings? } are each used by a row and honoured on every path (definition, outline, the failed-checkout rule of 7c49d2997, the per-pass once, one server per language and project root). Unready agrees for all three rows: a missing server decides first, an unready project is said once with its checkout and starts nothing. Board: Language servers stays true (it names examples of unready projects), so the vault is unchanged.
+
+Gate after the fixes, one lane at a time: lint 0, fmt:check 0, type-check 0, build:frontend 0, test:modules 4,268 pass 0 fail, test:system 195 pass 0 fail (a first run had 44 failures from another agent's half-written code-facts edit, Export named 'distinct' not found in c-adapter.ts; the rerun passed), test:repository 21 pass, test:serial-browser 24 pass. No pyright, csharp-ls, roslyn-ls, stand-in or tsc --lsp process left.
 <!-- SECTION:NOTES:END -->
