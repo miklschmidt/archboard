@@ -99,4 +99,24 @@ function dynamicImport(specifier: Node): Import {
 	};
 }
 
-export { dynamicImport, staticImports };
+/**
+ * The names a module passes on from its imports, as `from module import *`
+ * reads it: each name an import binds that `__all__` lists, or, in a module
+ * that sets no `__all__`, each that does not start with `_`. Each is one more
+ * import, a re-export, beside the import that binds the name. A package's
+ * `__init__.py` passes names on this way (`from .book import Ledger`).
+ * @param imports The module's imports.
+ * @param listed The names `__all__` lists, or undefined when the module sets none.
+ * @returns The re-exports.
+ */
+function passedOn(imports: readonly Import[], listed: ReadonlySet<string> | undefined): Import[] {
+	return imports.flatMap((found): Import[] => {
+		if (found.reexport) return [];
+		const names = found.names.filter((name) =>
+			listed === undefined ? !name.local.startsWith("_") : listed.has(name.local),
+		);
+		return names.length === 0 ? [] : [{ ...found, names, reexport: true }];
+	});
+}
+
+export { dynamicImport, passedOn, staticImports };

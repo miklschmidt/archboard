@@ -10,27 +10,15 @@
 // `code` as its root.
 
 import { afterAll, expect, test } from "bun:test";
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import {
 	createCodeFacts,
 	definitionSite,
 	findSymbol,
 	type SyntaxFacts,
 } from "@/runtime/code-facts/index";
-import { fixtureCheckout } from "@/runtime/code-facts/tests/checkout";
+import { fixtureDirectory } from "@/runtime/code-facts/tests/checkout";
 
-const FIXTURE = join(import.meta.dir, "fixtures", "python-shop");
-const checkout = fixtureCheckout(
-	Object.fromEntries(
-		readdirSync(FIXTURE, { recursive: true, withFileTypes: true })
-			.filter((entry) => entry.isFile())
-			.map((entry) => {
-				const file = join(entry.parentPath, entry.name);
-				return [file.slice(FIXTURE.length + 1), readFileSync(file, "utf8")];
-			}),
-	),
-);
+const checkout = fixtureDirectory("python-shop");
 const facts = createCodeFacts();
 
 afterAll(() => {
@@ -161,7 +149,8 @@ test("absolute, relative and package imports resolve, a name that is a submodule
 	expect(target("first")).toEqual({ path: "lib/checkout/steps.py", symbol: "first" });
 	// A script finds its siblings in its own root; another project finds its packages through setup.cfg.
 	const report = await python("tools/report.py");
-	expect(report.imports.map((each) => each.resolved)).toEqual([
+	const bound = report.imports.filter((each) => !each.reexport);
+	expect(bound.map((each) => each.resolved)).toEqual([
 		"lib/ledger/__init__.py",
 		"tools/helpers.py",
 	]);
