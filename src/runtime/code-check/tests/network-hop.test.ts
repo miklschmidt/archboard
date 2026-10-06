@@ -13,7 +13,9 @@
 // which no orders code reads. The web code reads `FLAGS_URL`, which nothing sets, and names from
 // its env file and an outside host, which are set. The worker service runs an
 // image built elsewhere; the board draws the jobs code inside it, and compose
-// sets the jobs code's `QUEUE_URL` to the queue.
+// sets the jobs code's `QUEUE_URL` to the queue. Terraform gives a Lambda
+// function `EVENTS_URL`, the URL of a queue, and the board draws the notifier
+// code that reads it inside the function.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -147,6 +149,18 @@ beforeAll(async () => {
 		].join("\n"),
 		"jobs/worker.py": ["import os", "", 'QUEUE_URL = os.getenv("QUEUE_URL")', ""].join("\n"),
 		"ledger/app.py": "def post():\n    return 1\n",
+		"infra/main.tf": [
+			'resource "aws_sqs_queue" "events" {',
+			'  name = "events"',
+			"}",
+			'resource "aws_lambda_function" "notify" {',
+			"  environment {",
+			"    variables = { EVENTS_URL = aws_sqs_queue.events.url }",
+			"  }",
+			"}",
+			"",
+		].join("\n"),
+		"notifier/handler.ts": "export const handler = () => process.env.EVENTS_URL;\n",
 	});
 	git(scratch, hops, "add", "-A");
 	git(scratch, hops, "commit", "-q", "--no-gpg-sign", "-m", "the services");
@@ -166,6 +180,9 @@ beforeAll(async () => {
 					part("pD", "Database", "compose.yaml", { symbol: "services.db" }),
 					part("pC", "Cache", "compose.yaml", { symbol: "services.cache" }),
 					part("pQ", "Queue", "compose.yaml", { symbol: "services.queue" }),
+					part("pF", "Notify function", "infra", { symbol: "aws_lambda_function.notify" }),
+					part("pN", "Notifier", "notifier", { parent: "pF" }),
+					part("pE", "Events", "infra", { symbol: "aws_sqs_queue.events" }),
 				],
 				edges: [
 					edge("e1", ["pW", "pO"], "http"),
@@ -175,6 +192,8 @@ beforeAll(async () => {
 					edge("e5", ["pD", "pC"], "data"),
 					edge("e6", ["pJ", "pQ"], "queue"),
 					edge("e7", ["pK", "pQ"], "queue"),
+					edge("e8", ["pN", "pE"], "queue"),
+					edge("e9", ["pF", "pE"], "queue"),
 				],
 			},
 		},
@@ -195,9 +214,10 @@ afterAll(() => {
 
 test("a value the code reads, set for the service that runs it to another part's address, supports the relationship between the two parts", () => {
 	// TypeScript to Python through the web build, Python to a service through
-	// the Dockerfile's directory, and code drawn inside a service with an
-	// image built elsewhere.
-	for (const supported of ["e1", "e2", "e6"]) expect(about(supported)).toBeUndefined();
+	// the Dockerfile's directory, code drawn inside a service with an image
+	// built elsewhere, and code drawn inside a Lambda function that Terraform
+	// gives the queue's URL.
+	for (const supported of ["e1", "e2", "e6", "e8"]) expect(about(supported)).toBeUndefined();
 });
 
 test("a joined value no relationship draws is undrawn, with the read and the setting as its evidence", () => {

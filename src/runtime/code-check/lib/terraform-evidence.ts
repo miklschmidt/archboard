@@ -162,4 +162,4 @@ async function terraformEvidenceOf(
 	return firstPerPair(pieces);
 }
 
-export { terraformEvidenceOf };
+export { ownershipIn, terraformEvidenceOf };

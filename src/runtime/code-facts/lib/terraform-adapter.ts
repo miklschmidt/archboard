@@ -23,12 +23,18 @@
 //
 // A module call whose `source` is a string is an import of the module. Its
 // one name is the call, `module.N`, which brings in the module's outputs.
+//
+// The name of each environment value a resource sets for the code it runs is
+// a reference by `environment`, at the line of its value
+// (terraform-environment.ts): TASK-367.23 joins it with the code that reads
+// the name.
 
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
 import type { Definition, Import, ParsedFacts, Reference } from "@/runtime/code-facts/lib/facts";
 import type { Grammar } from "@/runtime/code-facts/lib/grammars";
 import { spansOf, type Spans } from "@/runtime/code-facts/lib/spans";
 import { addressOf } from "@/runtime/code-facts/lib/terraform-address";
+import { environmentOf } from "@/runtime/code-facts/lib/terraform-environment";
 import { unparsedOf } from "@/runtime/code-facts/lib/unparsed";
 
 /** What each kind of block declares: the address's first names, and its visibility. */
@@ -354,7 +360,7 @@ function terraformFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 	}
 	return {
 		definitions: captured.block.flatMap(blockDefinitions),
-		references: [...references.values()],
+		references: [...references.values(), ...captured.block.flatMap(environmentOf)],
 		imports: captured.block.flatMap((block) => moduleImport(block) ?? []),
 		unparsed: unparsedOf(captured.unparsed),
 	};

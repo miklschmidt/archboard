@@ -158,12 +158,13 @@ function declare(reading: Reading, declaration: Declaration): void {
  * narrowest declaration that holds it.
  * @param facts The file's facts.
  * @param scope The module instance.
- * @returns The references; one outside every declaration is none.
+ * @returns The references; one outside every declaration, and the name of an
+ * environment value, which names no address, are none.
  */
 function writtenIn(facts: SyntaxFacts, scope: string): Written[] {
 	return facts.references.flatMap((reference) => {
 		const holder = holderAt(facts, reference.line);
-		if (holder === undefined) return [];
+		if (holder === undefined || reference.via !== "code") return [];
 		const { symbol, line } = reference;
 		const names = symbol.split(".");
 		return [{ from: `${scope}${holder.symbol}`, scope, names, path: facts.path, line, symbol }];
