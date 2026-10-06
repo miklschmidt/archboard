@@ -1,9 +1,10 @@
 ---
 id: TASK-368
 title: Derive each container's interface from the board and hold it to the code
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-29 01:17'
+updated_date: '2026-10-06 19:43'
 labels:
   - interfaces
 dependencies: []
@@ -24,10 +25,16 @@ Part of the cause is the consumer skill: it binds a part to the file whose body 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `archboard semantic inspect` reports, for any container on any variant, its entry points, hidden parts, callers, the relationships that leave it and the entry points that only pass a call through, derived and never stored
-- [ ] #2 `archboard semantic compare` reports interface changes before implementation changes, and compares the interfaces of two or more proposals side by side
-- [ ] #3 The archboard skill draws a module that a board describes as a container, and callers land on its entry points
-- [ ] #4 The renderer places a container's entry points along its top edge, and every board still lays out under 1 second
-- [ ] #5 The code check reports entry points that the code does not expose, and exposed names that no outside part reaches, for every language TASK-367 reads
-- [ ] #6 The flat dogfood module boards draw their modules as containers
+- [x] #1 `archboard semantic inspect` reports, for any container on any variant, its entry points, hidden parts, callers, the relationships that leave it and the entry points that only pass a call through, derived and never stored
+- [x] #2 `archboard semantic compare` reports interface changes before implementation changes, and compares the interfaces of two or more proposals side by side
+- [x] #3 The archboard skill draws a module that a board describes as a container, and callers land on its entry points
+- [x] #4 The renderer places a container's entry points along its top edge, and every board still lays out under 1 second
+- [x] #5 The code check reports entry points that the code does not expose, and exposed names that no outside part reaches, for every language TASK-367 reads
+- [x] #6 The flat dogfood module boards draw their modules as containers
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A container's interface is derived from the board, never stored (ADR 0044): the children that relationships from outside reach are its entry points. semantic inspect --container reports entry points, hidden parts, callers, leaving relationships and pass-through entry points; semantic compare reports interface changes first and compares the interfaces of proposals side by side; the pane inspector shows a picked container's interface. The skill draws a described module as a container whose callers land on its entry points, the renderer puts entry points on a container's first row with every board laid out under 1 s, and the flat dogfood boards now draw their modules as containers. The code check holds the drawn interface against what the code exposes (ENTRY_POINT_UNEXPOSED, CALLER_UNDRAWN, EXPOSED_UNUSED) for TypeScript, Python, Swift, C, C++, Objective-C, C# and Terraform, which also gets VARIABLE_PASSED_THROUGH and MODULE_SHALLOW. Nix, Kubernetes and compose define no module, so a container bound to one is skipped as exposure-unknown.
+<!-- SECTION:FINAL_SUMMARY:END -->
