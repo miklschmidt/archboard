@@ -30,6 +30,15 @@ import {
 /** A relationship with both its ends named, because one end is often outside the container. */
 const NamedEdgeSchema = InspectedEdgeSchema.extend({ fromName: z.string(), toName: z.string() });
 
+/** The five interface measures (ADR 0044): counts, never combined into one number. */
+const InterfaceMeasuresSchema = z.object({
+	entryPoints: z.int(),
+	hiddenParts: z.int(),
+	callers: z.int(),
+	outgoing: z.int(),
+	passThrough: z.int(),
+});
+
 /** What every answer about a container says first. */
 const containerHead = {
 	success: z.literal(true),
@@ -52,13 +61,7 @@ const ContainerInspectionResultSchema = z.discriminatedUnion("holdsParts", [
 		...containerHead,
 		holdsParts: z.literal(true),
 		/** The five counts: each is the length of the list of the same name below. */
-		measures: z.object({
-			entryPoints: z.int(),
-			hiddenParts: z.int(),
-			callers: z.int(),
-			outgoing: z.int(),
-			passThrough: z.int(),
-		}),
+		measures: InterfaceMeasuresSchema,
 		/** The children that a relationship from outside reaches, with those relationships. */
 		entryPoints: z.array(InspectedNodeSchema.extend({ reachedBy: z.array(NamedEdgeSchema) })),
 		/** The children that none reaches. */
@@ -228,6 +231,7 @@ function describedContainer(result: ContainerInspectionResult): string[] {
 export {
 	ContainerInspectionResultSchema,
 	type ContainerInspectionResult,
+	InterfaceMeasuresSchema,
 	containerAnswer,
 	describedContainer,
 	inspectedContainer,

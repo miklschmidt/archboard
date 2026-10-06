@@ -81,6 +81,25 @@ describe("declared parameter facts", () => {
 		expect(JSON.parse((await executePublic(contract, [])).stdout)).toEqual({});
 	});
 
+	test("an appending option collects every occurrence, in the order given", async () => {
+		const contract = echoing(
+			[
+				{
+					kind: "option",
+					key: "beside",
+					spellings: ["--beside"],
+					value: "required",
+					occurrences: "append",
+					description: "which",
+				},
+			],
+			{ beside: z.array(z.string()).optional() },
+		);
+		const twice = await executePublic(contract, ["--beside", "b", "--beside", "a"]);
+		expect(JSON.parse(twice.stdout)).toEqual({ beside: ["b", "a"] });
+		expect(JSON.parse((await executePublic(contract, [])).stdout)).toEqual({});
+	});
+
 	test("a required positional is refused when missing, and a hidden tail still parses", async () => {
 		const contract = echoing(
 			[

@@ -9,6 +9,16 @@ import {
 } from "@/shared/semantic-board/index";
 import { CliUsageError } from "@/cli/command-contract/contract";
 
+/** The refusal `readAgainst` throws when nothing was named and there is nothing to read against. */
+const nothingToCompareRefusal = {
+	code: "NOTHING_TO_COMPARE",
+	exit: 2,
+	stream: "stderr" as const,
+	description:
+		"No --against was named and the variant has nothing to be read against: it is the current " +
+		"variant, which every other variant is read against, or a first draft on a board with none.",
+};
+
 /**
  * The variant one is read against: the one named, or the one its picture is
  * drawn against.
@@ -50,4 +60,4 @@ function readAgainst(
 	);
 }
 
-export { readAgainst };
+export { nothingToCompareRefusal, readAgainst };

@@ -138,4 +138,10 @@ function describedInterfaces(
 	});
 }
 
-export { InterfaceChangesSchema, comparedInterfaces, describedInterfaces };
+export {
+	InterfaceChangesSchema,
+	InterfacePartSchema,
+	comparedInterfaces,
+	describedInterfaces,
+	interfacePart,
+};
