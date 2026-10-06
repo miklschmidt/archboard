@@ -262,7 +262,7 @@ const layouts = new Map<string, Promise<PaintedDrawing>>();
  * @param policy The vault's groups, in order, which place and caption regions, and its
  * relationship kinds, which say how each line is drawn.
  * @param steps The lines that are flow steps drawn on the board.
- * @param entries The children that are entry points of their containers, sorted.
+ * @param entries Each child that is an entry point of its container, in id order, true when first.
  * @returns Its deterministic layout.
  */
 function layoutRemembered(
@@ -271,7 +271,7 @@ function layoutRemembered(
 	engine: LayoutEngineName,
 	policy: Pick<SemanticPolicy, "groups" | "relationshipKinds">,
 	steps: ReadonlySet<string>,
-	entries: readonly string[],
+	entries: ReadonlyMap<string, boolean>,
 ): Promise<PaintedDrawing> {
 	const standings =
 		standing === undefined
@@ -287,7 +287,7 @@ function layoutRemembered(
 	]);
 	// Which lines a flow draws depends on the variant's own reading as well as
 	// on the content, so the key is the content with those lines added.
-	const key = JSON.stringify([engine, expanded, [...steps], standings, named, lines, entries]);
+	const key = JSON.stringify([engine, expanded, [...steps], standings, named, lines, [...entries]]);
 	const known = layouts.get(key);
 	if (known !== undefined) {
 		layouts.delete(key);
@@ -298,7 +298,7 @@ function layoutRemembered(
 		expanded,
 		measureArchitecture(expanded, policy, steps),
 		standings,
-		new Set(entries),
+		entries,
 	);
 	layouts.set(key, layout);
 	// A failed layout is not remembered: the next request tries again.

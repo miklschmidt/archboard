@@ -112,6 +112,22 @@ test("an entry point keeps the first row in a view that hides its caller", async
 	expect(standsBelow(atlas, "api", "job")).toBe(true);
 });
 
+test("a view holds a container's first row only where the whole variant does", async () => {
+	// A composition root inside the service calls the API, so on the variant
+	// the API stands below its caller and holds no row. A view that hides the
+	// root draws no line into the API from inside, and still holds none.
+	const rooted = {
+		nodes: [
+			...service.nodes,
+			{ id: "boot", name: "Composition root", kind: "module", parent: "svc" },
+		],
+		edges: [...service.edges, { id: "wire", from: "boot", to: "api", kind: "call" }],
+	};
+	const atlas = await atlasOf(boardOf(rooted), { variant: "draft", view: "inside" });
+	expect(atlas.nodes["boot"]).toBeUndefined();
+	expect(standsBelow(atlas, "api", "job")).toBe(false);
+});
+
 test("a child a comparison puts back is never an entry point", async () => {
 	// The current variant reaches a webhook in the service from outside; the
 	// draft removes it, so its comparison draws the webhook back as removed.

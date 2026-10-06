@@ -165,7 +165,8 @@ function addInline(
 	const group = placingGroup(tree.lone, tree.captions, node, siblings);
 	const { holder, within } = placing(tree, block, around, group);
 	if (within !== undefined) holder.clusterOf.set(node.id, within);
-	if (node.layoutOptions?.[ENTRY_POINT] !== undefined) tree.entries.add(node.id);
+	const entry = node.layoutOptions?.[ENTRY_POINT];
+	if (entry !== undefined) tree.entries.set(node.id, entry === "true");
 	tree.holder.set(node.id, holder);
 	if (node.children?.length) {
 		addFrame(tree, holder, node, within);
