@@ -14,7 +14,7 @@
 // the line's own label. A run other lines share, a trunk, moves only with all
 // of them and only where none runs much longer for it; a line's first or
 // last run never leaves the card face it meets.
-import { BEND_RADIUS } from "@/transformers/semantic-renderer/config";
+import { APPROACH_STRAIGHT, BEND_RADIUS } from "@/transformers/semantic-renderer/config";
 import { inflate, type Box, type Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { corners } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import { TRUNK_CLEARANCE } from "@/transformers/semantic-renderer/lib/blocks/trunks";
@@ -32,6 +32,7 @@ import {
 	spanOf,
 	through,
 	wallSpans,
+	type Run,
 	type Span,
 } from "@/transformers/semantic-renderer/lib/blocks/spans";
 
@@ -39,6 +40,8 @@ import {
 const LABEL_CLEARANCE = LANE / 2;
 /** The shortest run between two turns, whose two bends need room. */
 const SHORTEST = 2 * BEND_RADIUS;
+/** The shortest last run after a turn: its bend, and the straight run its arrowhead needs. */
+const SHORTEST_ARRIVAL = BEND_RADIUS + APPROACH_STRAIGHT;
 /** How far apart two lines on one axis still read as one. */
 const HANDOFF = 4 * LANE;
 /**
@@ -179,16 +182,26 @@ function wayOf(from: Point, to: Point): string {
 }
 
 /**
- * Whether every run between two turns a slide made or changed has room for its bends.
+ * Whether every run between two turns a slide made or changed has room for its
+ * bends, and the last run after a turn room for its bend and its arrowhead.
  * @param next The line after a slide.
  * @param old The line before.
  * @returns True when it does.
  */
 function roomy(next: readonly Point[], old: readonly Point[]): boolean {
 	const was = runsOf(old).map(spanOf);
-	return runsOf(next)
-		.slice(1, -1)
-		.every((run) => lengthOf(run) >= SHORTEST || was.some((span) => sameSpan(span, spanOf(run))));
+	/**
+	 * Whether a run is one the line had before the slide.
+	 * @param run The run.
+	 * @returns True when it is.
+	 */
+	const kept = (run: Run): boolean => was.some((span) => sameSpan(span, spanOf(run)));
+	const runs = runsOf(next);
+	const arrival = runs.length > 1 ? runs.at(-1) : undefined;
+	return (
+		runs.slice(1, -1).every((run) => lengthOf(run) >= SHORTEST || kept(run)) &&
+		(arrival === undefined || lengthOf(arrival) >= SHORTEST_ARRIVAL || kept(arrival))
+	);
 }
 
 /**
