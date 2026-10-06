@@ -42,7 +42,9 @@ reads it against any other variant you name. What is compared:
 - **Views** belong to the board and are never a variant change.
 - **Interfaces** come first, in `interfaceChanges`: each container whose
   interface moved. They set no standing ([propose and compare](propose-compare.md),
-  step 3).
+  step 3). `interfaceMeasures` puts the five counts of each container on each
+  variant read side by side, and `--beside` adds a competing proposal
+  ([design it twice](propose-compare.md#design-it-twice)). They mark no change.
 
 Kept ids read as continuing (unchanged or changed); ids only on the variant read
 against as removed; ids only on the variant being read as added. On history
