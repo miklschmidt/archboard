@@ -113,3 +113,32 @@ flight meets it, so it draws the same cards as the board that opens.
   of events. The browser owner `semantic-board-exploring` holds what only a real
   page can show: the recede, the labels of the far view, and the flight landing
   where it says.
+
+## Amendment of 2026-10-06: a released drag stops, and a label is never hidden
+
+The owner asked for two changes on 2026-10-06 (TASK-403). In the owner's words:
+"The momentum where the canvas keeps moving after a drag is released needs to
+go. Scroll behavior stays as is." And: "Labels should never be hidden."
+
+**A released drag stops where it is drawn.** This replaces the sentence of
+answer 1 that says a released drag carries on at its release speed and slows to
+rest. The camera does not move after the hand lets go. The duration
+`cameraFling` is gone, and so are the three durations that measured how fast a
+drag was let go (`throwTrail`, `throwSpan` and `throwRest`). A picture that
+carries on alone moves the part that the reader aimed at out from under them.
+The wheel, the pinch and the arrow keys still ease toward where the hand sent
+the camera (`EXPLORING_MS.cameraEase`), and a press still stops that ease where
+it is drawn.
+
+**A relationship's label is drawn at every zoom.** This replaces the sentence of
+answer 2 that says relationship labels go when the picture is seen from far. A
+label stays when the surface carries `is-far`. Where the rest of the picture
+recedes, under a poke or under a presented step's veil, a label that is not lit
+recedes to half its strength and no further, so its words can still be read.
+The lines and the cards recede as before. A label that a trace reaches is graded
+by its hop, as before.
+
+The browser owner `semantic-board-exploring` now holds that every label is
+drawn from far, and that a label that a poke does not light keeps half its
+strength. A module owner of the stage holds that a released drag leaves the
+camera where it is drawn and asks for no frame.
