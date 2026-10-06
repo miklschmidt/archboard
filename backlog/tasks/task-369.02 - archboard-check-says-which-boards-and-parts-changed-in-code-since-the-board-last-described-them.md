@@ -3,11 +3,11 @@ id: TASK-369.02
 title: >-
   archboard check says which boards and parts changed in code since the board
   last described them
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:18'
-updated_date: '2026-10-06 10:52'
+updated_date: '2026-10-06 11:38'
 labels:
   - history
   - cli
@@ -29,11 +29,11 @@ The tracer bullet of the history lens, and its cheapest reading. TASK-257 found 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 For each board, the check reports the commits to its bound files since the point the ADR chose, per board and per part
-- [ ] #2 Parts that drill into another board are skipped, and a binding to a directory counts every file below it
-- [ ] #3 Renamed files keep their history, and repositories this machine has not registered stay silent
-- [ ] #4 The reading does not run inside the check that open canvases poll every 5 seconds
-- [ ] #5 archboard-dev and `.archboard/README.md` tell a maintainer to read it
+- [x] #1 For each board, the check reports the commits to its bound files since the point the ADR chose, per board and per part
+- [x] #2 Parts that drill into another board are skipped, and a binding to a directory counts every file below it
+- [x] #3 Renamed files keep their history, and repositories this machine has not registered stay silent
+- [x] #4 The reading does not run inside the check that open canvases poll every 5 seconds
+- [x] #5 archboard-dev and `.archboard/README.md` tell a maintainer to read it
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -85,4 +85,12 @@ The tracer bullet of the history lens, and its cheapest reading. TASK-257 found 
 ./bin/dogfood check --code on 2026-10-06 after adoption (exit 0, 0.9 s): Agent workbench 0, Archboard 1, Archboard server 0, Board persistence 1, Board rasterizer 0, Board viewer 10 (since 2779dff27), Browser application 9, Codex session 5 (3 large), Codex workhorse 0, Command dispatch 0, Command interface 0, Renderer layout 1, Semantic renderer 1, Skill evaluation 1, Voice coordinator 2. Six boards read 0 or 1 because TASK-368.05 edited their current variants in place today. None of the commits counted is a TASK-369.02 commit, so this task puts no board behind besides the two it adopted (closing step 6).
 
 Against the design note (048312ee, 2026-09-29: Board viewer 10, Command interface 3, Codex session 2, four boards 1, eight boards 0): the reading run on a clone at 048312ee gives Board viewer 10, Command interface 3, Codex session 2, four boards at 1 (Archboard, Board rasterizer, Skill evaluation, Voice coordinator), six boards at 0, and two boards that differ: Renderer layout 9 and Semantic renderer 2 where the note says 0. Their last change is 7e338b3f6 (2026-09-28 00:27); the counted commits (2026-09-27 17:02 to 22:24) were committed earlier on branches that merged after it (aadd67e33, 7f528637c). ADR 0045 counts the commits on HEAD that are not in the history of the last change, so they count; the note counted by time since the last write. The drill-down trap of the note (Semantic renderer card on Archboard server adds 259 commits) is skipped as drill-down.
+
+Independent review (2026-10-06): a board name with a space misparsed git cat-file's 'missing' line, so an ignored board read as uncommitted (fixed in d38d57647). A user's log.showSignature setting broke the walk, so every lens Git command turns it off (ddfbfdd46). Tests now cover a bound checkout other than the vault in the memory key, a deleted bound file, checkout-unavailable and the exit rule (c894b9e6c). Known deviation left for a later task: a board version this build cannot parse counts as a change, so a content-changing schema migration commit can become the last change; the fix needs a pure decode with migrations from semantic-board-store. Note for TASK-367.05: CodeCheckSkipSchema.board must become optional for checkout-wide skips.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard check --code now reports, per board and per part, the commits to bound files since the last commit that changed the board's current variant (ADR 0045). The reading runs from GET /api/vault/code-check as checkout work, never in the polled check. Drill-down parts are skipped, directory bindings count every file below, renames keep history, and unregistered repositories stay silent. archboard-dev's closing steps and .archboard/README.md tell a maintainer to read it. Verified by behind.test.ts on temporary Git repositories, code-check-route.test.ts and check-code.test.ts (13 pass with --isolate), and by the dogfood run, which reproduces the design note's counts or explains each difference.
+<!-- SECTION:FINAL_SUMMARY:END -->
