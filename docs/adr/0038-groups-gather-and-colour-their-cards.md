@@ -149,18 +149,19 @@ passages of this record no longer hold.
 
 "The layout draws each such region as an outline in the color of the group. The
 outline is twice as wide as the border of a card and has no fill." A region is
-now a mat, a low slab. Its face carries a light share of the group's color, and
-its front edge is a tone of the group's color. The caption is printed on a
-raised tab in a top corner of the mat. It is the corner where the words start,
+now a mat, a low slab. Its face is an opaque tone of the group's color, so it
+looks the same on the page and on the floor of a tray. Its front edge is a
+deeper tone of the group's color. The caption is printed on a raised tab in a
+top corner of the mat. It is the corner where the words start,
 unless a route runs down through it and none through the other top corner.
 Lines still cross a region.
 
 "A card's body color comes from its placing group. Its border and tint are the
 color of the group, and a card with no placing group is neutral." The first
 sentence holds. The front edge of a card now carries a tone of the group's
-color, and its face carries a share of it: a tenth on the light ground, and
-more of a deeper shade on the dark ground. A card with no placing group has a
-grey front edge and a neutral face.
+color, and its face is a quiet tone of the group's color, a step lighter than
+the mat it stands on. A card with no placing group has a grey front edge and a
+neutral face.
 
 "A container's frame takes the color of its own kind. Its border and faint tint
 are the color of its kind, and a kind without a color draws it neutral." The

@@ -25,6 +25,48 @@ function mixed(from: string, to: string, amount: number): string {
 	return `color-mix(in srgb, ${to} ${percent(amount)}, ${from})`;
 }
 
+/** One tone of an ink: how light it is in OKLCH, and how much of the ink's chroma it keeps. */
+interface ToneStep {
+	readonly lightness: number;
+	readonly chroma: number;
+}
+
+/** A tone of an ink on the light ground and on the dark one. */
+interface Tone {
+	readonly light: ToneStep;
+	readonly dark: ToneStep;
+}
+
+/**
+ * How much of an ink's chroma a tone counts: a vivid ink and a quiet one give
+ * tones of nearly one strength, and a grey ink gives a grey tone.
+ */
+const CHROMA_CAP = 0.12;
+
+/**
+ * A surface in an ink's colour: the ink's own hue, at a lightness of its own
+ * and a share of the ink's chroma, written as a relative OKLCH colour for CSS
+ * to resolve. A mix in sRGB with a grey or a near-white surface (`mixed`)
+ * turns the ink's hue and loses most of its chroma, which left a pale tint
+ * pale and a deep one muddy; this keeps the hue whole and sets the lightness
+ * apart from the ink's, so every ink gives a surface as light as every other.
+ * @param ink The ink.
+ * @param tone The tone, on each ground.
+ * @returns The surface.
+ */
+function toned(ink: string, tone: Tone): string {
+	/**
+	 * The tone on one ground.
+	 * @param step Its lightness and its share of the ink's chroma.
+	 * @param step.lightness Its lightness.
+	 * @param step.chroma Its share of the ink's chroma.
+	 * @returns The colour.
+	 */
+	const on = ({ lightness, chroma }: ToneStep): string =>
+		`oklch(from ${ink} ${lightness} calc(min(c, ${CHROMA_CAP}) * ${chroma}) h)`;
+	return lightDark(on(tone.light), on(tone.dark));
+}
+
 /**
  * A colour at a share of its strength, the rest see-through: what a stroke's
  * opacity says, said in the colour itself.
@@ -61,4 +103,4 @@ function colourId(colour: string): string {
 	);
 }
 
-export { colourId, lightDark, mixed, translucent };
+export { type Tone, colourId, lightDark, mixed, toned, translucent };

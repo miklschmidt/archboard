@@ -75,21 +75,13 @@ const DEEPEN = 0.55;
  * @param ink The ink, or none to leave the face as it is.
  * @param share How much of it, on each ground.
  * @param palette The theme's colours.
- * @param deepen How far the ink is shaded on the dark ground: further for a
- * wash that is to carry more of the ink at the face's own lightness.
  * @returns The washed face.
  */
-function washed(
-	base: string,
-	ink: string | undefined,
-	share: Share,
-	palette: Palette,
-	deepen = DEEPEN,
-): string {
+function washed(base: string, ink: string | undefined, share: Share, palette: Palette): string {
 	if (ink === undefined) return base;
 	return lightDark(
 		mixed(base, ink, share.light),
-		mixed(base, mixed(ink, palette.slabDeep, deepen), share.dark),
+		mixed(base, mixed(ink, palette.slabDeep, DEEPEN), share.dark),
 	);
 }
 

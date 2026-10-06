@@ -269,8 +269,10 @@ along its foot and a soft shadow. A container is a tray cut into the page, with
 walls in shade at its top and left, a lit lip at its bottom and right, and a
 raised nameplate against its top wall. The region of a group is a mat with a
 caption tab. Each shadow is a stack of translucent shapes, with no filter or
-blur. The colors come from the `--slab-*`, `--tray-*` and `--mat-*` tokens in
-theme.css, in both themes.
+blur. The colors come from the `--slab-*` and `--tray-*` tokens in theme.css,
+in both themes. A group's mat and a grouped card's face are opaque tones of the
+group's own color, set in OKLCH at one lightness for every color, so a mat looks
+the same on the page and on the floor of a tray.
 The shell touches none of it, and the Untouched Picture Rule still holds.
 [ADR 0044](docs/adr/0044-cards-containers-and-groups-are-drawn-as-slabs.md)
 records the construction.

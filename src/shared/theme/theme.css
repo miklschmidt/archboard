@@ -51,12 +51,14 @@
    The picture builds its parts as blocks lit from the upper left: each part
    has a top face, a front edge along its foot that shows how thick it is, and
    a soft shadow it casts down and to the right. A card is a slab (--slab-face
-   on --slab-edge), and a group's region a thin mat (--mat-face, --mat-edge).
-   A container is a tray cut into what holds it: a floor (--tray-floor) inside
-   walls in shade at its top and left and a lit lip (--tray-lip) at its bottom
-   and right, with a nameplate (--tray-plate) seated against its top wall. Each
-   is tinted by its own colour. A container nested in another is cut a step
-   deeper, its floor sinking toward --tray-sink. --slab-deep is
+   on --slab-edge). A container is a tray cut into what holds it: a floor
+   (--tray-floor) inside walls in shade at its top and left and a lit lip
+   (--tray-lip) at its bottom and right, with a nameplate (--tray-plate)
+   seated against its top wall. Each is tinted by its own colour. A container
+   nested in another is cut a step deeper, its floor sinking toward
+   --tray-sink. A group's region is a thin mat with no token of its own: its
+   faces are tones of the group's colour (--semantic-*) at a set lightness, in
+   OKLCH, and so is a grouped card's face. --slab-deep is
    what a colour is shaded into for a front edge, and for a tint on the dark
    ground. --slab-glint is what the fine highlight on a face's top edge mixes
    toward, --slab-sheen the light that falls off down a face, and --slab-shadow
@@ -153,8 +155,6 @@
 	--tray-sink: oklch(0.925 0.005 85);
 	--tray-plate: oklch(0.975 0.003 85);
 	--tray-lip: oklch(1 0 0);
-	--mat-face: oklch(0.985 0.003 85);
-	--mat-edge: oklch(0.86 0.008 80);
 }
 
 /* Dark: warm graphite, bone-white text, the same gold. */
@@ -241,6 +241,4 @@
 	--tray-sink: oklch(0.13 0.002 75);
 	--tray-plate: oklch(0.265 0.002 75);
 	--tray-lip: oklch(0.3 0.002 75);
-	--mat-face: oklch(0.235 0.006 75);
-	--mat-edge: oklch(0.22 0.006 75);
 }

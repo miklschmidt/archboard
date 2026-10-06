@@ -80,18 +80,25 @@ in `lib/design.ts`.
    kind's color, and the walls carry some of it too. The nameplate carries a
    tone a step stronger, and its front edge more again. A container of a kind
    with no color is neutral.
-6. **The region of a group is a mat.** The mat is 3 units thick. Its face
-   carries a light share of the group's color, and its front edge is a tone of
-   the group's color. It casts no shadow. Its caption is printed on a raised
-   tab in the top corner where the words start. When a route runs down through
-   that corner and no route runs through the other top corner, the tab moves to
-   the other corner. Lines cross the mat and the tab.
+6. **The region of a group is a mat.** The mat is 3 units thick. Its face is
+   opaque: a tone of the group's own hue, at one lightness for every color. On
+   the light ground it is a clean pastel, and on the dark ground a deep shade of
+   the color. So a mat looks the same on the page, on the floor of a tray and on
+   a nested floor. Its tab is a step deeper and more colored than its face, and
+   its front edge is the group's color at a middle lightness. It casts no
+   shadow. Its caption is printed on the tab in the top corner where the words
+   start. When a route runs down through that corner and no route runs through
+   the other top corner, the tab moves to the other corner. Lines cross the mat
+   and the tab. The caption is in the group's color, dark on the light ground
+   and light on the dark ground. It keeps at least 5:1 against its tab for
+   every color, light yellow, amber and lime included (TASK-413).
 7. **A card carries its group on its front edge and its face.** The front edge
    of a card is a tone of the group's color, quieter on the light ground. Its
-   face carries a tenth of the color on the light ground, and more of a deeper
-   shade on the dark ground. On the light ground a tinted face takes a softer
-   light, so its color does not pool at its foot. A card in no group has a grey
-   front edge and a neutral face.
+   face is a quiet tone of the group's hue, a step lighter than the mat it
+   stands on, on both grounds. The secondary words on it keep 5.2:1 or more.
+   On the light ground a tinted face takes a softer light, so its color does
+   not pool at its foot. A card in no group has a grey front edge and a neutral
+   face.
 8. **Small parts are low slabs.** An icon chip, the label of a relationship and
    the label of a sequence message are low tiles with a contact shadow. An
    activation bar is a slim slab. It takes the front edge of its participant's
@@ -137,8 +144,15 @@ in `lib/design.ts`.
     has about 2.4:1 against the page on both grounds. It is never made
     translucent, and its head and its pulses take the same ink (TASK-409).
 14. **The colors are tokens.** The faces, edges, walls, floors, highlights and
-    shadows come from the `--slab-*`, `--tray-*` and `--mat-*` tokens in
-    `src/shared/theme/theme.css`, in both themes.
+    shadows come from the `--slab-*` and `--tray-*` tokens in
+    `src/shared/theme/theme.css`, in both themes. A group's mat, its tab, its
+    caption and a grouped card's face are tones of the group's own color token
+    (`--semantic-*`). Each is a relative OKLCH color (`toned` in
+    `lib/svg/colour.ts`): the token's hue, a lightness of its own and a share
+    of the token's chroma. Mixing the color into a grey or a near-white surface
+    in sRGB turned its hue and lost most of its chroma. That made a mat pale on
+    the light ground, and muddy on the dark ground and on a tinted tray floor
+    (TASK-413).
 
 ## What stays
 

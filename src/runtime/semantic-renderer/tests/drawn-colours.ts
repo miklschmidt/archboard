@@ -1,8 +1,8 @@
 // Reading the colours a drawing is painted in, for owners that compare them.
 //
 // A picture paints with CSS expressions of the page's tokens — `var()`,
-// `color-mix(in srgb, …)` and `light-dark()` — and CSS resolves them where the
-// picture is shown. `paintedIn` resolves them the way CSS does, for one theme,
+// `color-mix(in srgb, …)`, `light-dark()` and relative `oklch(from …)` — and
+// CSS resolves them where the picture is shown. `paintedIn` resolves them the way CSS does, for one theme,
 // and writes each paint back as the literal attribute it stands for, so an
 // owner can compare colours as a reader sees them.
 
@@ -77,6 +77,77 @@ function mix(one: Rgba, share: number, other: Rgba): Rgba {
 }
 
 /**
+ * One sRGB channel, 0 to 255, as linear light, 0 to 1.
+ * @param channel The channel.
+ * @returns Its linear value.
+ */
+function linear(channel: number): number {
+	const part = channel / 255;
+	return part <= 0.040_45 ? part / 12.92 : ((part + 0.055) / 1.055) ** 2.4;
+}
+
+/**
+ * One linear value as an sRGB channel, clipped to the gamut as a browser paints it.
+ * @param value The linear value.
+ * @returns The channel, 0 to 255.
+ */
+function encoded(value: number): number {
+	const part = Math.min(1, Math.max(0, value));
+	return 255 * (part <= 0.003_130_8 ? 12.92 * part : 1.055 * part ** (1 / 2.4) - 0.055);
+}
+
+/**
+ * A colour in OKLCH: its lightness, chroma and hue in degrees.
+ * @param colour The colour.
+ * @returns Its OKLCH coordinates.
+ */
+function oklchOf(colour: Rgba): { l: number; c: number; h: number } {
+	const [r, g, b] = [linear(colour.r), linear(colour.g), linear(colour.b)];
+	const [l, m, s] = [
+		0.412_221_470_8 * r + 0.536_332_536_3 * g + 0.051_445_992_9 * b,
+		0.211_903_498_2 * r + 0.680_699_545_1 * g + 0.107_396_956_6 * b,
+		0.088_302_461_9 * r + 0.281_718_837_6 * g + 0.629_978_700_5 * b,
+	].map(Math.cbrt) as [number, number, number];
+	const lightness = 0.210_454_255_3 * l + 0.793_617_785 * m - 0.004_072_046_8 * s;
+	const a = 1.977_998_495_1 * l - 2.428_592_205 * m + 0.450_593_709_9 * s;
+	const bb = 0.025_904_037_1 * l + 0.782_771_766_2 * m - 0.808_675_766 * s;
+	return { l: lightness, c: Math.hypot(a, bb), h: Math.atan2(bb, a) };
+}
+
+/**
+ * A colour from OKLCH coordinates, clipped to sRGB.
+ * @param oklch Its lightness, chroma and hue in radians.
+ * @param oklch.l Its lightness.
+ * @param oklch.c Its chroma.
+ * @param oklch.h Its hue, in radians.
+ * @param alpha Its alpha.
+ * @returns Its channels.
+ */
+function fromOklch(
+	{ l: lightness, c, h }: { l: number; c: number; h: number },
+	alpha: number,
+): Rgba {
+	const [a, b] = [c * Math.cos(h), c * Math.sin(h)];
+	const l = (lightness + 0.396_337_777_4 * a + 0.215_803_757_3 * b) ** 3;
+	const m = (lightness - 0.105_561_345_8 * a - 0.063_854_172_8 * b) ** 3;
+	const s = (lightness - 0.089_484_177_5 * a - 1.291_485_548 * b) ** 3;
+	return {
+		r: encoded(4.076_741_662_1 * l - 3.307_711_591_3 * m + 0.230_969_929_2 * s),
+		g: encoded(-1.268_438_004_6 * l + 2.609_757_401_1 * m - 0.341_319_396_5 * s),
+		b: encoded(-0.004_196_086_3 * l - 0.703_418_614_7 * m + 1.707_695_66 * s),
+		a: alpha,
+	};
+}
+
+/**
+ * A relative OKLCH colour as the renderer writes one: an origin colour at a
+ * lightness of its own, keeping a share of the origin's chroma up to a cap,
+ * and the origin's hue.
+ */
+const RELATIVE_OKLCH =
+	/^from\s+([\s\S]+)\s+([\d.]+)\s+calc\(min\(c,\s*([\d.]+)\)\s*\*\s*([\d.]+)\)\s+h$/u;
+
+/**
  * One colour expression, resolved for one theme.
  * @param expression A colour the renderer painted with.
  * @param theme The theme it is shown in.
@@ -98,6 +169,16 @@ function resolve(expression: string, theme: DiagramTheme): Rgba {
 		return mix(resolve(first[1]!, theme), Number(first[2]) / 100, resolve(parts[2]!, theme));
 	}
 	if (name === "rgba") return literalColour(text);
+	const relative = name === "oklch" ? RELATIVE_OKLCH.exec(inner!) : null;
+	if (relative !== null) {
+		const [, origin, lightness, cap, share] = relative;
+		const colour = resolve(origin!, theme);
+		const { c, h } = oklchOf(colour);
+		return fromOklch(
+			{ l: Number(lightness), c: Math.min(c, Number(cap)) * Number(share), h },
+			colour.a,
+		);
+	}
 	throw new Error(`Not a colour the renderer paints with: ${text}`);
 }
 
