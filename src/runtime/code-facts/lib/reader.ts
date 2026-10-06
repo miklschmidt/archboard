@@ -28,18 +28,18 @@ import type {
 	FileFacts,
 	ImportResolver,
 	ParsedFacts,
+	ParseFacts,
 	ResolvedImport,
 	SyntaxFacts,
 	Target,
 } from "@/runtime/code-facts/lib/facts";
-import { grammar } from "@/runtime/code-facts/lib/grammars";
 import type { CheckoutFiles } from "@/runtime/code-facts/lib/module-resolution";
 import { neverRead } from "@/runtime/code-facts/lib/never-read";
 
-/** One cache entry: the hash of the bytes read, the grammar file, and their facts. */
+/** One cache entry: the hash of the bytes read, how its adapter read them, and their facts. */
 interface Entry {
 	readonly hash: bigint | number;
-	readonly grammar: string;
+	readonly parse: ParseFacts;
 	readonly facts: ParsedFacts;
 }
 
@@ -47,7 +47,7 @@ interface Entry {
 interface PassStats {
 	/** Files read, each once. */
 	read: number;
-	/** Files a grammar parsed, because the cache had no entry for their bytes. */
+	/** Files an adapter parsed, because the cache had no entry for their bytes. */
 	parsed: number;
 	/** Files whose facts came from the cache. */
 	cached: number;
@@ -233,7 +233,7 @@ interface PassContext {
  * @param context The cache, its queue and the pass's signal.
  * @param absolute The real file.
  * @param bytes Its bytes.
- * @param reading The adapter and the grammar that read it.
+ * @param reading The adapter and how it reads the file.
  * @param stats The pass's counts.
  * @returns The facts.
  */
@@ -246,35 +246,17 @@ async function parsedFacts(
 ): Promise<ParsedFacts> {
 	const hash = Bun.hash(bytes);
 	const entry = context.cache.get(absolute);
-	if (entry?.hash === hash && entry.grammar === reading.grammar.wasm) {
+	if (entry?.hash === hash && entry.parse === reading.parse) {
 		stats.cached += 1;
 		return entry.facts;
 	}
 	const facts = await context.serial(() => {
 		context.signal.throwIfAborted();
-		return parse(bytes, reading);
+		return Promise.resolve(reading.parse(new TextDecoder().decode(bytes)));
 	});
-	context.cache.set(absolute, { hash, grammar: reading.grammar.wasm, facts });
+	context.cache.set(absolute, { hash, parse: reading.parse, facts });
 	stats.parsed += 1;
 	return facts;
-}
-
-/**
- * Parse a file's bytes with its adapter's grammar and read its facts.
- * @param bytes The bytes.
- * @param reading The adapter and its grammar.
- * @returns The facts.
- * @throws {Error} When the grammar gives no tree, which only a cancelled parse does.
- */
-async function parse(bytes: Uint8Array, reading: AdapterReading): Promise<ParsedFacts> {
-	const loaded = await grammar(reading.grammar);
-	const tree = loaded.parser.parse(new TextDecoder().decode(bytes));
-	if (tree === null) throw new Error(`The ${reading.adapter.name} grammar gave no tree`);
-	try {
-		return reading.adapter.facts(tree, loaded);
-	} finally {
-		tree.delete();
-	}
 }
 
 /**

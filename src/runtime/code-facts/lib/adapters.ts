@@ -1,23 +1,29 @@
-// The table of adapters (ADR 0046): for each language a grammar reads, the
-// file extensions it reads with which grammar, the query file it captures by,
-// the function that turns the captures of one file into its facts, and the
-// resolver of its imports. A file whose extension no entry names is read as
+// The table of adapters (ADR 0046): for each language or file format an
+// adapter reads, the files it reads, how it reads each one from its text to
+// its facts, and the resolver of its imports. A file no entry names is read as
 // text (text-reading.ts).
 //
-// A new language adds its own files (a query, a facts function and an import
-// resolver), its name to `AdapterName` (facts.ts) and one entry here. Nothing
-// else changes: the reader, the cache, the definition search and the code
-// check read every adapter's facts the same way.
+// An adapter reads a file through a tree-sitter grammar and its query file
+// (`treeSitter`, grammars.ts), or with a parser Bun has: compose files and
+// Kubernetes manifests are YAML (`Bun.YAML.parse`) and `flake.lock` is JSON.
+// An entry names a file by its extension (`.py`) or by its whole name
+// (`flake.lock`), and a whole name wins over an extension. No two entries
+// read the same file.
+//
+// A new language or format adds its own files (its facts and its import
+// resolver, and a query file for a grammar), its name to `AdapterName`
+// (facts.ts) and one entry here. Nothing else changes: the reader, the cache,
+// the definition search and the code check read every adapter's facts the
+// same way.
 
 import path from "node:path";
-import type { Tree } from "web-tree-sitter";
 import type {
 	AdapterName,
 	ImportResolver,
-	ParsedFacts,
+	ParseFacts,
 	ReadText,
 } from "@/runtime/code-facts/lib/facts";
-import type { Grammar, GrammarSource } from "@/runtime/code-facts/lib/grammars";
+import { treeSitter } from "@/runtime/code-facts/lib/grammars";
 import {
 	createModuleResolver,
 	type CheckoutFiles,
@@ -30,12 +36,8 @@ import { typeScriptFacts } from "@/runtime/code-facts/lib/typescript-adapter";
 interface Adapter {
 	/** What the facts of a file it reads say read them. */
 	readonly name: AdapterName;
-	/** Each extension it reads, and the `.wasm` file of the grammar that parses it. */
-	readonly extensions: Readonly<Record<string, string>>;
-	/** The query file, beside grammars.ts, that every grammar of the adapter compiles. */
-	readonly query: string;
-	/** The facts of one parsed file, before its imports are resolved. */
-	readonly facts: (tree: Tree, grammar: Grammar) => ParsedFacts;
+	/** Each extension (`.ts`) or whole file name (`flake.lock`) it reads, and how it reads it. */
+	readonly reads: Readonly<Record<string, ParseFacts>>;
 	/** The resolver of one checkout's imports, made once in a pass. */
 	readonly resolver: (checkout: CheckoutFiles, read: ReadText) => ImportResolver;
 }
@@ -62,51 +64,65 @@ function typeScriptResolver(checkout: CheckoutFiles, read: ReadText): ImportReso
 	};
 }
 
-const TYPESCRIPT = "tree-sitter-typescript/tree-sitter-typescript.wasm";
-const TSX = "tree-sitter-typescript/tree-sitter-tsx.wasm";
-const PYTHON = "tree-sitter-python/tree-sitter-python.wasm";
+const TYPESCRIPT = treeSitter(
+	"tree-sitter-typescript/tree-sitter-typescript.wasm",
+	"typescript.scm",
+	typeScriptFacts,
+);
+const TSX = treeSitter(
+	"tree-sitter-typescript/tree-sitter-tsx.wasm",
+	"typescript.scm",
+	typeScriptFacts,
+);
+const PYTHON = treeSitter("tree-sitter-python/tree-sitter-python.wasm", "python.scm", pythonFacts);
 
 /** Every adapter, one entry each. */
 const ADAPTERS: readonly Adapter[] = [
 	{
 		name: "typescript",
-		extensions: { ".ts": TYPESCRIPT, ".mts": TYPESCRIPT, ".cts": TYPESCRIPT, ".tsx": TSX },
-		query: "typescript.scm",
-		facts: typeScriptFacts,
+		reads: { ".ts": TYPESCRIPT, ".mts": TYPESCRIPT, ".cts": TYPESCRIPT, ".tsx": TSX },
 		resolver: typeScriptResolver,
 	},
 	{
 		name: "python",
-		extensions: { ".py": PYTHON, ".pyi": PYTHON },
-		query: "python.scm",
-		facts: pythonFacts,
+		reads: { ".py": PYTHON, ".pyi": PYTHON },
 		resolver: createPythonResolver,
 	},
 ];
 
-/** The adapter that reads a file, and the grammar that parses it. */
+/** The adapter that reads a file, and how it reads it. */
 interface AdapterReading {
 	readonly adapter: Adapter;
-	readonly grammar: GrammarSource;
+	readonly parse: ParseFacts;
 }
-
-/** Each extension an adapter reads, and how. */
-const BY_EXTENSION: ReadonlyMap<string, AdapterReading> = new Map(
-	ADAPTERS.flatMap((adapter) =>
-		Object.entries(adapter.extensions).map(
-			([extension, wasm]) =>
-				[extension, { adapter, grammar: { wasm, query: adapter.query } }] as const,
-		),
-	),
-);
 
 /**
- * The adapter that reads a file.
- * @param file The file.
- * @returns The adapter and its grammar, or undefined for a file read as text.
+ * Each extension and file name an adapter reads, and how.
+ * @returns The readings, by extension or file name.
+ * @throws {Error} When two entries read the same extension or file name.
  */
-function adapterOf(file: string): AdapterReading | undefined {
-	return BY_EXTENSION.get(path.posix.extname(file));
+function readings(): ReadonlyMap<string, AdapterReading> {
+	const byName = new Map<string, AdapterReading>();
+	for (const adapter of ADAPTERS) {
+		for (const [name, parse] of Object.entries(adapter.reads)) {
+			const other = byName.get(name)?.adapter.name;
+			if (other !== undefined)
+				throw new Error(`The ${other} and ${adapter.name} adapters both read ${name}`);
+			byName.set(name, { adapter, parse });
+		}
+	}
+	return byName;
 }
 
-export { type Adapter, type AdapterReading, adapterOf };
+const BY_NAME = readings();
+
+/**
+ * The adapter that reads a file: by its whole name, else by its extension.
+ * @param file The file.
+ * @returns The adapter and how it reads the file, or undefined for a file read as text.
+ */
+function adapterOf(file: string): AdapterReading | undefined {
+	return BY_NAME.get(path.posix.basename(file)) ?? BY_NAME.get(path.posix.extname(file));
+}
+
+export { type AdapterReading, adapterOf };
