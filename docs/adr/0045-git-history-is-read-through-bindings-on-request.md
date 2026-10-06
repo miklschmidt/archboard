@@ -290,13 +290,18 @@ The pane inspector is the one place where a user sees a reading (TASK-369.07).
 
 The Archboard server derives the readings, because the pane inspector needs a
 route and the CLI talks to the server. One walk of each repository's log serves
-every board of one request. The server keeps each answer in memory. Its key is
-everything that the answer derives from. That is the options, the version of
-each board, and the checkout of each repository with its HEAD. For behind, the
-key also holds the HEAD of the vault's checkout. A request reads those HEADs
-first and reuses an answer whose key still holds. The memory goes with the
-process. It answers no question about what is on a board,
-so it is not a second copy of one.
+every board of one request. The server keeps each answer of behind and of
+locality in memory. Its key is everything that the answer derives from. That is
+the options, the version of each board, and the checkout of each repository
+with its HEAD. For behind, the key also holds the HEAD of the vault's checkout.
+A request reads those HEADs first and reuses an answer whose key still holds.
+The memory goes with the process. It answers no question about what is on a
+board, so it is not a second copy of one.
+
+The server keeps no footprint (TASK-369.05). No pane asks for one, and an agent
+asks once for a branch. Also, a ref such as `origin/main` can move while every
+HEAD stays. The key of a footprint then needs the commit of the ref in each
+checkout, and to find that is most of the work.
 
 No reading runs inside `/api/vault/check`, the check that every open canvas
 polls every 5 seconds (`VAULT_CHECK_POLL_MS`). The plain `archboard check`
