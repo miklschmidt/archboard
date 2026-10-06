@@ -122,7 +122,9 @@ function bracketDepth(text: string): number {
 
 /**
  * Read a value that follows a key or an item: a block scalar or a flow
- * collection that continues on later lines belongs to it.
+ * collection that continues on later lines belongs to it. Only a value that
+ * starts with a bracket is a flow collection: a bracket inside a plain
+ * scalar (`command: echo [`) is text.
  * @param scan The reading.
  * @param value The value, without anchors, tags or a comment.
  * @param column The column of the key or the item.
@@ -133,6 +135,7 @@ function valueOf(scan: Scan, value: string, column: number, path: YamlPath): voi
 		scan.scalar = column;
 		return;
 	}
+	if (!/^[[{]/u.test(value)) return;
 	const depth = bracketDepth(value);
 	if (depth > 0) {
 		scan.flow = depth;

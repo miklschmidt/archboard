@@ -10,7 +10,7 @@ services:
     ports:
       - "8080:80"
     depends_on:
-      - api
+      - ${API_SERVICE:-api}
     environment:
       CACHE_URL: redis://cache:6379/0
     volumes:

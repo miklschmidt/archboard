@@ -1,5 +1,5 @@
 // The compose adapter (ADR 0046, TASK-367.20): the code facts of one compose
-// file, and of an env file, from their text.
+// file, from its text.
 //
 // A compose file defines each service, network and volume, addressed as the
 // binding symbol spells it: `services.checkout`, `networks.front`,
@@ -24,86 +24,20 @@
 // `environment`, at the line that sets it, beside the service reference its
 // value gives: TASK-367.23 joins it with the code that reads the name. Each
 // env file a service reads is an import that passes names on: the resolver
-// fills its names from the env file, and never its values. An env file read
-// on its own gives the same: one `environment` reference per name.
+// fills its names from the env file (env-file.ts), and never its values.
 
 import {
 	composeFile,
 	type ComposeEntry,
 	type ComposeLayer,
 } from "@/runtime/code-facts/lib/compose-model";
-import type { Import, ParsedFacts, Reference } from "@/runtime/code-facts/lib/facts";
+import type { Import, ParsedFacts } from "@/runtime/code-facts/lib/facts";
 
 /** A reference, with the import it reaches its address through. */
 type ParsedReference = ParsedFacts["references"][number];
 
 /** The facts of a file that holds no compose declaration. */
 const EMPTY: ParsedFacts = { definitions: [], references: [], imports: [], unparsed: [] };
-
-/** One name an env file sets, with no value. */
-const ASSIGNMENT = /^\s*(?:export\s+)?(?<name>[A-Za-z_][A-Za-z0-9_.-]*)\s*(?:=(?<value>.*))?$/u;
-
-/**
- * The quote a value opens and does not close on its line, which the next
- * lines continue until it closes.
- * @param value The value after `=`.
- * @returns The quote, or undefined.
- */
-function openQuote(value: string): string | undefined {
-	const trimmed = value.trimStart();
-	const quote = trimmed[0];
-	if (quote !== '"' && quote !== "'") return undefined;
-	return trimmed.indexOf(quote, 1) === -1 ? quote : undefined;
-}
-
-/**
- * The name one line of an env file sets, and the value it gives it.
- * @param raw The line.
- * @returns The name and the value, or undefined for a comment or a line that sets nothing.
- */
-function assignmentOf(raw: string): { readonly name: string; readonly value: string } | undefined {
-	const groups = ASSIGNMENT.exec(raw)?.groups;
-	if (groups?.["name"] === undefined) return undefined;
-	return { name: groups["name"], value: groups["value"] ?? "" };
-}
-
-/**
- * The names an env file sets, each at its line: `NAME=value`, `export NAME=value`
- * or a bare `NAME`. A value is never kept, nor are the lines of a quoted value
- * that runs over several lines.
- * @param text The env file's text.
- * @returns Each name and its line.
- */
-function envNames(text: string): { readonly name: string; readonly line: number }[] {
-	const names: { name: string; line: number }[] = [];
-	let open: string | undefined;
-	text.split(/\r?\n/u).forEach((raw, index) => {
-		if (open !== undefined) {
-			open = raw.includes(open) ? undefined : open;
-			return;
-		}
-		const found = assignmentOf(raw);
-		if (found === undefined) return;
-		names.push({ name: found.name, line: index + 1 });
-		open = openQuote(found.value);
-	});
-	return names;
-}
-
-/**
- * The facts of an env file: one `environment` reference per name it sets.
- * @param text The env file's text.
- * @returns Its facts.
- */
-function envFileFacts(text: string): ParsedFacts {
-	const references: Reference[] = envNames(text).map(({ name, line }) => ({
-		symbol: name,
-		line,
-		via: "environment",
-		typeOnly: false,
-	}));
-	return { ...EMPTY, references };
-}
 
 /** The references and imports of a compose file, as they are gathered. */
 interface Gathered {
@@ -198,4 +132,4 @@ function composeFacts(text: string): ParsedFacts {
 	};
 }
 
-export { composeFacts, envFileFacts, envNames };
+export { composeFacts };

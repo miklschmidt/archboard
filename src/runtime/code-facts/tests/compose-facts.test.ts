@@ -8,8 +8,9 @@
 // the cache through `CACHE_URL`; `api`, which depends on `db`, reaches it
 // through `DATABASE_URL`, shares the `static` volume with `web` and reads
 // `api.env`; and `db`, whose network alias is `database`.
-// `compose.override.yml` adds `cache` and a dependency of `web` on it, and
-// replaces two of `api`'s environment values. `api.env` holds secrets.
+// `compose.override.yml` adds `cache` and a dependency of `web` on it,
+// replaces two of `api`'s environment values, and mounts a host directory
+// where `api` mounts the `uploads` volume. `api.env` holds secrets.
 
 import { afterAll, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
@@ -92,6 +93,7 @@ test("a compose file defines its services, networks and volumes, each spanning i
 test("dependencies, links to networks and volumes and environment values that name a service are configured paths, resolved where the project declares them", async () => {
 	const base = await compose("compose.yaml");
 	expect(configuredPaths(base)).toEqual([
+		// Every value is interpolated, with the default the file writes.
 		"13 services.api -> compose.yaml services.api",
 		// `cache` is declared only in the override.
 		"15 services.cache -> compose.override.yml services.cache",
@@ -103,7 +105,8 @@ test("dependencies, links to networks and volumes and environment values that na
 		// The API writes the volume the read-only web front mounts: a shared volume.
 		"32 volumes.static -> compose.yaml volumes.static",
 		"32 services.web -> compose.yaml services.web",
-		"33 volumes.uploads -> compose.yaml volumes.uploads",
+		// The override mounts a host directory at the same target.
+		"33 volumes.uploads -> -",
 		"35 networks.back -> compose.yaml networks.back",
 		"41 volumes.pgdata -> compose.yaml volumes.pgdata",
 		"43 networks.back -> compose.yaml networks.back",
@@ -141,7 +144,8 @@ test("an env file gives the names it sets and never a value, read through the co
 		"MAIL_FROM",
 	]);
 	const own = await read("api.env");
-	expect(own?.adapter === "text" ? [] : own?.references.map((each) => each.symbol)).toEqual([
+	if (own?.adapter !== "env") throw new Error("api.env was not read as an env file");
+	expect(own.references.map((each) => each.symbol)).toEqual([
 		"DB_PASSWORD",
 		"STRIPE_KEY",
 		"MAIL_FROM",
@@ -154,7 +158,20 @@ test("an env file gives the names it sets and never a value, read through the co
 
 test("compose reads the files it finds by name in a directory, and a file that is not YAML is one part that did not parse", async () => {
 	const other = fixtureCheckout({
-		"deploy/compose.yaml": "services:\n  web:\n    depends_on: [worker]\n  worker: {}\n",
+		"deploy/compose.yaml": [
+			"services:",
+			"  web:",
+			"    depends_on: [worker]",
+			"    env_file: /etc/web.env",
+			"  worker: {}",
+			"  vpn:",
+			"    network_mode: service:worker",
+			"",
+		].join("\n"),
+		// Any mode replaces the base's, so `vpn` no longer runs in `worker`'s network.
+		"deploy/compose.override.yaml": "services:\n  vpn:\n    network_mode: host\n",
+		// An absolute env file is outside the checkout, whatever the checkout holds there.
+		"deploy/etc/web.env": "WEB_SECRET=x\n",
 		// Compose reads compose.yaml here, so this file is a project of its own.
 		"deploy/docker-compose.yml": "services:\n  web:\n    depends_on: [worker]\n",
 		// A file named for `-f` merges only as a command says.
@@ -162,9 +179,12 @@ test("compose reads the files it finds by name in a directory, and a file that i
 		"broken/compose.yaml": "services:\n  web:\n    image: [unclosed\n",
 	});
 	try {
-		expect(configuredPaths(await compose("deploy/compose.yaml", other))).toEqual([
+		const deploy = await compose("deploy/compose.yaml", other);
+		expect(configuredPaths(deploy)).toEqual([
 			"3 services.worker -> deploy/compose.yaml services.worker",
+			"7 services.worker -> -",
 		]);
+		expect(deploy.imports.find((each) => each.reexport)?.resolved).toBeUndefined();
 		expect(configuredPaths(await compose("deploy/docker-compose.yml", other))).toEqual([
 			"3 services.worker -> -",
 		]);
@@ -172,6 +192,32 @@ test("compose reads the files it finds by name in a directory, and a file that i
 		const broken = await compose("broken/compose.yaml", other);
 		expect(broken.definitions).toEqual([]);
 		expect(findSymbol(broken, "services.web", "definition").status).toBe("unparsed");
+	} finally {
+		other.remove();
+	}
+});
+
+test("a definition spans its block whatever its values hold: a bracket in a plain value is text, and a flow collection runs to its closing bracket", async () => {
+	const other = fixtureCheckout({
+		"compose.yaml": [
+			"services:",
+			"  web:",
+			"    command: echo [",
+			"    depends_on: [api,",
+			"      db]",
+			"  api: {}",
+			"  db:",
+			"    image: postgres:16",
+			"",
+		].join("\n"),
+	});
+	try {
+		const file = await compose("compose.yaml", other);
+		expect(file.definitions.map((each) => [each.symbol, each.start, each.end])).toEqual([
+			["services.web", 2, 5],
+			["services.api", 6, 6],
+			["services.db", 7, 8],
+		]);
 	} finally {
 		other.remove();
 	}

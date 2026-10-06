@@ -14,9 +14,9 @@
 // `ledger.c` also owns `ledger.h`, and one bound to the header also owns the
 // source file, where no part binds that file itself.
 //
-// A definition that a tool merges from several files, such as a compose
-// service and its block in an override file, is the part's in every one of
-// them (TASK-367.20).
+// A definition that a tool merges from several blocks, such as a compose
+// service and its block in an override file or a later YAML document, is the
+// part's in every one of them (TASK-367.20).
 //
 // A part the pass cannot read says why where the reason is the board's or this
 // machine's to fix: a repository this machine has not registered, a ref its
@@ -80,8 +80,8 @@ type Grain =
 			readonly file: string;
 			readonly definition: Definition;
 			/**
-			 * The same definition in each other file its tool merges with the
-			 * file, such as a compose service's block in an override file.
+			 * The other blocks of the definition that its tool merges with it,
+			 * such as a compose service's block in an override file.
 			 */
 			readonly merged: readonly { readonly path: string; readonly definition: Definition }[];
 	  }
@@ -234,21 +234,21 @@ async function grainOf(
 	const { file, definition } = held;
 	const merged = await mergedDefinitions(search.facts, search.checkout, file, definition.symbol);
 	const grain: Grain = { kind: "symbol", file, definition, merged };
-	return { grain, files: [file, ...merged.map((each) => each.path)] };
+	return { grain, files: [...new Set([file, ...merged.map((each) => each.path)])] };
 }
 
 /**
- * A symbol-bound part's definition in one file: its own, or the block a tool
- * merges into it there.
+ * A symbol-bound part's definitions in one file: its own, and each block a
+ * tool merges into it there.
  * @param part The part.
  * @param file The file.
- * @returns The definition, or undefined when the part's symbol has none there.
+ * @returns The definitions; none when the part's symbol has none there.
  */
-function definitionIn(part: ReadPart, file: string): Definition | undefined {
+function definitionsIn(part: ReadPart, file: string): Definition[] {
 	const { grain } = part;
-	if (grain.kind !== "symbol") return undefined;
-	if (grain.file === file) return grain.definition;
-	return grain.merged.find((each) => each.path === file)?.definition;
+	if (grain.kind !== "symbol") return [];
+	const merged = grain.merged.filter((each) => each.path === file).map((each) => each.definition);
+	return grain.file === file ? [grain.definition, ...merged] : merged;
 }
 
 /**
@@ -311,7 +311,7 @@ export {
 	type ReadPart,
 	type RepoCheckout,
 	type SkippedPart,
-	definitionIn,
+	definitionsIn,
 	isTestPath,
 	pairsOf,
 	partCodesOf,

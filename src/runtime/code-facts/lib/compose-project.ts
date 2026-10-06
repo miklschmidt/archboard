@@ -12,17 +12,18 @@
 // that compose would not pick, such as `docker-compose.yml` beside
 // `compose.yaml`, is a project of its own.
 //
-// The merge decides which entries hold. A later file's environment value of
-// the same name, volume mount at the same target or `network_mode` replaces
-// an earlier one, so the earlier entry's reference stays unresolved and gives
-// no evidence. `depends_on`, `links`, `volumes_from` and `networks` add up.
+// The merge decides which entries hold. A later layer's environment value of
+// the same name, mount of any kind at the same target or `network_mode`
+// replaces an earlier one, so the earlier entry's reference stays unresolved
+// and gives no evidence. `depends_on`, `links`, `volumes_from` and `networks`
+// add up.
 // A reference resolves to the first file of the project that defines its
 // address, and a name that is a service's `container_name`, `hostname` or
 // network alias resolves to that service. The resolver reads each env file a
 // service names, if Git lists it, for its names only.
 
 import path from "node:path";
-import { envNames } from "@/runtime/code-facts/lib/compose-adapter";
+import { envNames } from "@/runtime/code-facts/lib/env-file";
 import {
 	composeFile,
 	type ComposeEntry,
@@ -228,7 +229,8 @@ function createComposeResolver(checkout: CheckoutFiles, read: ReadText): ImportR
 
 /**
  * An env file a service reads, resolved with the names it sets and never a
- * value. A file Git does not list, such as an ignored `.env`, is not read.
+ * value. A file Git does not list, such as an ignored `.env`, is not read,
+ * and an absolute path names no file of the checkout.
  * @param checkout The checkout's files.
  * @param read Reads a file the pass may read.
  * @param from The compose file.
@@ -241,6 +243,7 @@ function envFileImport(
 	from: string,
 	found: Import,
 ): ResolvedImport {
+	if (path.posix.isAbsolute(found.specifier)) return found;
 	const file = path.posix.normalize(path.posix.join(path.posix.dirname(from), found.specifier));
 	const text = checkout.files.has(file) ? read(file) : undefined;
 	if (text === undefined) return found;
