@@ -38,6 +38,13 @@ function talkReads(talk: Talk, foreign: (board: string) => void): BoardReads {
 		 * @returns No readings.
 		 */
 		codeFindings: async () => ({ readings: [] }),
+		/**
+		 * No history: a recording reads the board the voice spoke over, never Git.
+		 * @throws {Error} Always.
+		 */
+		locality: async () => {
+			throw new Error("A recording reads no history of the code.");
+		},
 	};
 }
 

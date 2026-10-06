@@ -63,6 +63,8 @@ const server: {
 	vault: unknown;
 	/** What the last code pass left in the server's memory, as its route answers it. */
 	findings: unknown;
+	/** The locality route's answer (none: a walk that never ends), and every request to it. */
+	locality: { reply: StubReply | undefined; calls: string[] };
 } = {
 	reply: "pending",
 	calls: [],
@@ -70,6 +72,7 @@ const server: {
 	held: {},
 	vault: undefined,
 	findings: NO_FINDINGS,
+	locality: { reply: undefined, calls: [] },
 };
 
 const realFetch = globalThis.fetch;
@@ -84,6 +87,7 @@ afterEach(() => {
 	server.held = {};
 	server.vault = undefined;
 	server.findings = NO_FINDINGS;
+	server.locality = { reply: undefined, calls: [] };
 });
 
 /** The route the shared vault checker answers on. */
@@ -140,11 +144,13 @@ function urlOf(input: RequestInfo | URL): string {
  */
 function fakeFetch(input: RequestInfo | URL): Promise<Response> {
 	const url = urlOf(input);
-	// Read on a timer beside everything else, so kept apart from the requests
-	// that tests count.
-	return url.startsWith(FINDINGS_ROUTE)
-		? answered({ status: 200, body: server.findings })
-		: serverReply(url);
+	// The findings are read on a timer, and the history when a part is picked:
+	// both are kept apart from the requests that tests count.
+	if (url.startsWith(FINDINGS_ROUTE)) return answered({ status: 200, body: server.findings });
+	if (!url.startsWith("/api/semantic-boards/locality")) return serverReply(url);
+	server.locality.calls.push(url);
+	const { reply } = server.locality;
+	return reply === undefined ? new Promise(() => undefined) : answered(reply);
 }
 
 /**

@@ -88,7 +88,7 @@ state:
 ## The pane sidebar
 
 Revised 2026-09-17 (TASK-249), 2026-09-30 (TASK-383), 2026-10-03
-(TASK-388), 2026-10-04 (TASK-390) and 2026-10-06 (TASK-368.09). The generated reference above places selection details in a column
+(TASK-388), 2026-10-04 (TASK-390) and 2026-10-06 (TASK-368.09, TASK-369.07). The generated reference above places selection details in a column
 on the right of the canvas. The pane sidebar supersedes that column. A semantic
 pane now has one sidebar on the right of its picture. The sidebar has the width
 of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
@@ -158,6 +158,24 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
      with the relationship's kind at the end of the name's line so the words
      keep the whole width. For a relationship, the parts at its two ends. For an
      exchange, who takes part. For a message, where it comes in its exchange.
+  5. **How has it changed in code?** Only for a part, read from Git through
+     its binding (ADR 0045). Recent commits has its count, the day the period
+     starts at the end of its line, and the newest five commits, each with its
+     subject, its short hash and its day. A control under them shows the rest.
+     Changes with has its count and one row for each part whose code changes in
+     the same commits, with how many commits the two share and what share of
+     their changes that is. If nothing on the board joins the two, the row says
+     so in the ink and not in the quiet tone, because that is the question the
+     reading asks. Choosing a row picks the part out, and pointing at it lights
+     the part. A part that Git does not read for the board says why in words:
+     it has no binding, it opens a board of its own, or its repository, checkout
+     or ref is not on this machine. A part that no commit changed says so. For a
+     part Git reads, the last line says how many large commits the board left
+     out of every count, when it left any out.
+     The pane asks the server when somebody picks a part out, and never on a
+     timer. On a historical or shelved variant it asks nothing and says that
+     the history is read only for the current variant and drafts. The picture
+     draws nothing for any of it.
 
   A part that leads somewhere has a foot on a tray, pinned under the panel's
   scroll, with no heading. Open the board it drills into is the gold primary

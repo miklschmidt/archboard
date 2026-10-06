@@ -57,6 +57,7 @@ export {
 } from "@/ui/semantic-board-canvas/lib/board-changes";
 export {
 	semanticBoardKeys,
+	localityQuery,
 	semanticBoardListQuery,
 	semanticRenderQuery,
 	vaultCheckQuery,

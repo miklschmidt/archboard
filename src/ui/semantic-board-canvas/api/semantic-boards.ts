@@ -3,7 +3,8 @@
 // Plain `fetch` on purpose: the browser never imports the board store or the
 // vault (ADR 0023). The reads are the whole of what a viewer is allowed to
 // know — which boards exist, what one board says, the vault policy, what the
-// last code check found, and what one variant looks like when the page draws
+// last code check found, where a board's code changes (its locality), and
+// what one variant looks like when the page draws
 // no pictures of its own — and every
 // one of them is answered by the server. There is no write call, because the
 // viewer never writes a board.
@@ -14,6 +15,7 @@
 
 import { z } from "zod";
 import { RememberedFindingsSchema, type RememberedFindings } from "@/shared/code-check/index";
+import { LocalityReplySchema, type LocalityAnswer } from "@/shared/locality/index";
 import { VaultCheckSchema, type VaultCheck } from "@/shared/semantic-policy/index";
 import {
 	BoardListingSchema,
@@ -312,9 +314,41 @@ async function fetchCodeFindings(signal?: AbortSignal): Promise<RememberedFindin
 	return parsed.data;
 }
 
+/** The route the server answers a board's hotspots and change coupling on (ADR 0045). */
+const LOCALITY_URL = "/api/semantic-boards/locality";
+
+/**
+ * Where change concentrates in one variant of one board: every part's commits
+ * in the period, and the parts that change together. The server walks Git for
+ * the first request at a HEAD and answers later ones from its memory, so a pane
+ * asks only when somebody picks a part out (ADR 0045).
+ * @param board The board's name.
+ * @param variant The variant's id: the current one or a draft.
+ * @param signal Cancels the read.
+ * @returns The answer, about every part of the variant.
+ */
+async function fetchLocality(
+	board: string,
+	variant: string,
+	signal?: AbortSignal,
+): Promise<LocalityAnswer> {
+	const search = new URLSearchParams({ board, variant });
+	const parsed = LocalityReplySchema.safeParse(
+		await readRoute(`${LOCALITY_URL}?${search.toString()}`, signal),
+	);
+	if (!parsed.success) {
+		throw new SemanticBoardError(
+			"REPLY_INVALID",
+			"The Archboard server sent no history of this board's code.",
+		);
+	}
+	return parsed.data;
+}
+
 export {
 	SemanticBoardError,
 	fetchCodeFindings,
+	fetchLocality,
 	fetchSemanticBoardDocument,
 	fetchSemanticBoards,
 	fetchSemanticRender,

@@ -182,6 +182,8 @@ function picture(options: PictureOptions = {}): Record<string, unknown> {
 interface ServedOptions extends PictureOptions {
 	/** Whether the person asked for reduced motion. */
 	readonly reducedMotion?: boolean;
+	/** The board document, when it is not the one variant this file draws. */
+	readonly document?: Record<string, unknown>;
 }
 
 /**
@@ -189,7 +191,7 @@ interface ServedOptions extends PictureOptions {
  * @param options What the picture hides and where subjects sit, and the person's preference for motion.
  */
 async function served(options: ServedOptions = {}): Promise<void> {
-	server.documents["pipeline"] = boardOf();
+	server.documents["pipeline"] = options.document ?? boardOf();
 	server.reply = { status: 200, body: picture(options) };
 	mountStage(null, { live: true, reducedMotion: options.reducedMotion });
 	await settle();
