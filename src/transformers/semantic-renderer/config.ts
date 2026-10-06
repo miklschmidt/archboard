@@ -11,6 +11,8 @@ export const PLANNED_FRAME_MARGIN = 16;
 export const PLANNED_FRAME_INSET = 8;
 /** Equal space below a container title and at its sides/bottom. */
 export const CONTAINER_INSET = 20;
+/** Equal space below a group region's caption tab and at its sides/bottom. */
+export const REGION_INSET = 14;
 
 /** Label-to-card whitespace. */
 export const LABEL_CARD_CLEARANCE = 16;

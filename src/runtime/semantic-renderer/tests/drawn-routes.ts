@@ -463,6 +463,7 @@ export {
 	roundBridges,
 	distanceToFrame,
 	distanceToRoute,
+	pointsOf,
 	routeCrosses,
 	routeEnds,
 	routeLabels,

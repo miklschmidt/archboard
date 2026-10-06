@@ -2,12 +2,7 @@
 // off: the header in its corner, with the ports on its rank beside it.
 import type { ElkNode } from "@archboard/elk-rs";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
-import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
-import {
-	CAPTION_INSET,
-	type Insets,
-	type Laid,
-} from "@/transformers/semantic-renderer/lib/blocks/laid";
+import type { Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
 import type { Rim } from "@/transformers/semantic-renderer/lib/track/spacing";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { extentOf } from "@/transformers/semantic-renderer/lib/track/labels";
@@ -141,20 +136,19 @@ function slidesOf(scene: Scene, block: Block): [Item, readonly [number, number]]
 }
 
 /**
- * The room a block of cards keeps where no line turns under its header, and
- * over its bottom ports when they stand on its edge: its inset, as below a
- * region's caption, which stands a little into its band. Alone in a region,
- * it keeps the inset it keeps in none: the region's own inset below stands
- * outside its edge.
+ * The room a block of cards keeps where no line turns under its header, a
+ * frame's title row or a region's caption tab, and over its bottom ports when
+ * they stand on its edge: the inset it keeps at its sides. Alone in a region,
+ * it keeps the inset it keeps in none: the region's own room stands outside
+ * its edge, and its caption band in its header.
  * @param block The block.
  * @param insets Its insets.
  * @returns The room, or nothing when the block draws no edge.
  */
 function rimOf(block: Block, insets: Insets): Rim | undefined {
 	if (block.header === undefined) return undefined;
-	const head = CONTAINER_INSET + (block.kind === "region" ? CAPTION_INSET : 0);
-	const foot = insets.side - (block.lone === undefined ? 0 : roomOf(block.lone));
-	return [...block.ports.values()].includes("bottom") ? { head, foot } : { head };
+	const own = insets.side - (block.lone === undefined ? 0 : roomOf(block.lone));
+	return [...block.ports.values()].includes("bottom") ? { head: own, foot: own } : { head: own };
 }
 
 export { PORT, cornerHeader, letPortsSlide, markRegions, pinnedLeaf, rimOf };

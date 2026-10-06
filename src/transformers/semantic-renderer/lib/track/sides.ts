@@ -8,6 +8,7 @@ import type { ElkExtendedEdge } from "@archboard/elk-rs";
 import {
 	ARCHITECTURE_HEADER_PADDING,
 	CONTAINER_INSET,
+	REGION_INSET,
 } from "@/transformers/semantic-renderer/config";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { LANE, REGION_CLEARANCE } from "@/transformers/semantic-renderer/lib/track/chains";
@@ -22,12 +23,6 @@ import {
 	TRACK_WIDE,
 	type Scene,
 } from "@/transformers/semantic-renderer/lib/track/scene";
-
-/**
- * Room a group region keeps beside its members; beside a line it holds it
- * keeps the clearance a lane keeps from its wall.
- */
-const REGION_INSET = 14;
 
 /** One container whose side walls are fitted. */
 interface Fitting {

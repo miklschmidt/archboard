@@ -16,7 +16,7 @@
 import type { ElkNode } from "@archboard/elk-rs";
 import { z } from "zod";
 import { fitIn } from "@/shared/shell-geometry/index";
-import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
+import { CONTAINER_INSET, REGION_INSET } from "@/transformers/semantic-renderer/config";
 import type { AvoidEngine } from "@/transformers/semantic-renderer/engine";
 import { Assembly } from "@/transformers/semantic-renderer/lib/blocks/assembly";
 import { CardLayout } from "@/transformers/semantic-renderer/lib/blocks/card-layout";
@@ -46,8 +46,6 @@ import { BlockTree, type Block, type Side } from "@/transformers/semantic-render
 import { PAGE_MARGIN } from "@/transformers/semantic-renderer/lib/track/route";
 import { crossingsOf, scoreOf, takes } from "@/transformers/semantic-renderer/lib/track/score";
 
-/** Room a group region keeps around its members. */
-const REGION_INSET = 14;
 /** The root option carrying the placed drawing, as the JSON the assembly answers. */
 const BLOCKS_PLACED = "archboard.blocks.placed";
 

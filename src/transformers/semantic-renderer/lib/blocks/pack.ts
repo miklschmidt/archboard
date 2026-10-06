@@ -22,7 +22,7 @@ import {
 	type Side,
 	type Size,
 } from "@/transformers/semantic-renderer/lib/blocks/tree";
-import { PORT } from "@/transformers/semantic-renderer/lib/blocks/leaves";
+import { PORT, rimOf } from "@/transformers/semantic-renderer/lib/blocks/leaves";
 import {
 	extentOf,
 	packingsOf,
@@ -494,28 +494,31 @@ class PackLayout {
 
 	/**
 	 * Close the gaps kept for trunks that turn under the header or over the
-	 * bottom ports to the block's inset, where no trunk turns.
+	 * bottom ports to the block's inset, where no trunk turns: under the
+	 * header, the inset a block of cards keeps there too (`rimOf`).
 	 * @param items Where the packed items start.
 	 * @param bottom Where the bottom ports stand.
 	 * @param ended Whether the block has bottom ports.
 	 * @returns Where the bottom ports stand now.
 	 */
 	closeStrips(items: number, bottom: number, ended: boolean): number {
-		const head = this.headRoom() > 0 ? this.close(items - HEAD_GAP, items) : 0;
+		const under = rimOf(this.block, this.insets)?.head ?? this.insets.side;
+		const head = this.headRoom() > 0 ? this.close(items - HEAD_GAP, items, under) : 0;
 		const low = bottom - head;
-		return ended ? low - this.close(low - HEAD_GAP, low) : low;
+		return ended ? low - this.close(low - HEAD_GAP, low, this.insets.side) : low;
 	}
 
 	/**
-	 * Close a strip across the block to the block's inset when no trunk turns
-	 * in it: everything at or below its foot moves up, and the trunks that
-	 * only cross it get shorter.
+	 * Close a strip across the block to some room when no trunk turns in it:
+	 * everything at or below its foot moves up, and the trunks that only
+	 * cross it get shorter.
 	 * @param from Where the strip starts.
 	 * @param to Where it ends.
+	 * @param room The room it keeps.
 	 * @returns How far everything below it moved up.
 	 */
-	close(from: number, to: number): number {
-		const by = to - from - this.insets.side;
+	close(from: number, to: number, room: number): number {
+		const by = to - from - room;
 		const lines = [...this.lines.values()];
 		const turns = lines.some((points) =>
 			points
