@@ -12,7 +12,10 @@
 // TASK-369.02 built this answer with `behind` filled. TASK-367.05 fills
 // `findings` from the text reading and adds the skip reasons of the code pass.
 // TASK-367.06 reads TypeScript through code facts, which adds `ANCHOR_MISMATCH`
-// and the skip `symbol-unparsed`.
+// and the skip `symbol-unparsed`. TASK-367.07 judges the relationships between
+// bound parts by the evidence that joins their code: `RELATIONSHIP_UNDRAWN`,
+// `RELATIONSHIP_BACKWARDS`, `RELATIONSHIP_UNSUPPORTED`, the evidence kind half
+// of `ANCHOR_MISMATCH`, and the skip `ends-overlap`.
 
 import { z } from "zod";
 import { EvidenceKindSchema, VaultDiagnosticSchema } from "@/shared/semantic-policy/index";
@@ -83,6 +86,9 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  * - `text-only`: the check read files of a checkout that no grammar reads as
  *   text, so it judged their anchors and bound symbols by name and nothing
  *   that needs references. Its `detail` names the kinds of file.
+ * - `ends-overlap`: a relationship with no anchor whose ends hold one another
+ *   or bind the same code. Evidence never joins such parts, so the check
+ *   cannot tell whether the code supports it (TASK-367.07).
  *
  * A reason that holds for a whole checkout names its `repo` and no subject,
  * which is how the check says a thing once.
@@ -99,6 +105,7 @@ const CodeCheckSkipSchema = z
 			"checkout-unavailable",
 			"symbol-unparsed",
 			"text-only",
+			"ends-overlap",
 		]),
 		board: z.string().optional(),
 		variant: z.string().optional(),

@@ -7,8 +7,14 @@
 // variant, and no draft of the named variant, has nothing built to read, and
 // is skipped (ADR 0031). A historical or a shelved variant is never read: it
 // is a record, and a finding on it would push somebody to rewrite a record.
+// Each board carries the vault's relationship kinds, which say the evidence
+// kinds each kind accepts (TASK-367.07).
 
-import { listSemanticBoards, readSemanticBoardAt } from "@/runtime/semantic-board-store/index";
+import {
+	listSemanticBoards,
+	readSemanticBoardAt,
+	readSemanticBoardConfiguration,
+} from "@/runtime/semantic-board-store/index";
 import type { CodeCheckSkip } from "@/shared/code-check/index";
 import {
 	currentVariant,
@@ -16,6 +22,7 @@ import {
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
+import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 
 /** One board the check reads, the variant it reads, and the file it lives in. */
 interface BoardToCheck {
@@ -24,6 +31,12 @@ interface BoardToCheck {
 	readonly variant: SemanticVariant;
 	/** True when the variant is the named draft: then a bound path must be in its checkout too. */
 	readonly named: boolean;
+	/**
+	 * The vault's relationship kinds, which say the evidence kinds each one
+	 * accepts; the bundled defaults where the configuration is invalid, as
+	 * everywhere else.
+	 */
+	readonly relationshipKinds: SemanticPolicy["relationshipKinds"];
 }
 
 /** The boards one pass reads, and the boards it skips with the reason. */
@@ -56,6 +69,7 @@ interface Reading {
 	readonly boards: BoardToCheck[];
 	readonly skipped: CodeCheckSkip[];
 	readonly drafts: Set<string>;
+	readonly relationshipKinds: SemanticPolicy["relationshipKinds"];
 }
 
 /**
@@ -92,6 +106,7 @@ function readOne(
 			file: location.file,
 			variant: chosen,
 			named: draft !== undefined,
+			relationshipKinds: reading.relationshipKinds,
 		});
 }
 
@@ -103,7 +118,8 @@ function readOne(
  * board has a draft of that name.
  */
 function readBoardsToCheck(vault: string, variant?: string): BoardsToCheck | NoSuchDraft {
-	const reading: Reading = { boards: [], skipped: [], drafts: new Set() };
+	const { relationshipKinds } = readSemanticBoardConfiguration(vault).configuration;
+	const reading: Reading = { boards: [], skipped: [], drafts: new Set(), relationshipKinds };
 	for (const location of listSemanticBoards(vault)) readOne(location, variant, reading);
 	if (variant !== undefined && !reading.boards.some((board) => board.named)) {
 		return { ok: false, variant, drafts: [...reading.drafts].toSorted() };
