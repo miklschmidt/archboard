@@ -88,7 +88,7 @@ state:
 ## The pane sidebar
 
 Revised 2026-09-17 (TASK-249), 2026-09-30 (TASK-383), 2026-10-03
-(TASK-388) and 2026-10-04 (TASK-390). The generated reference above places selection details in a column
+(TASK-388), 2026-10-04 (TASK-390) and 2026-10-06 (TASK-368.09). The generated reference above places selection details in a column
 on the right of the canvas. The pane sidebar supersedes that column. A semantic
 pane now has one sidebar on the right of its picture. The sidebar has the width
 of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
@@ -141,7 +141,14 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
      open: what nobody has decided about it, and how it differs from the
      variant it is read against, with the fields that moved shown whole, each
      as what it was and what it is.
-  3. **What is it wired to?** For a part, Sends to and Receives from, each with
+  3. **What does it offer the parts outside it?** Only for a part that holds
+     parts: its interface (ADR 0044), read off the variant that holds the part.
+     Entry points and Callers each have their count and one row for each part.
+     Hidden parts has its count alone. Choosing a row picks the part out, and
+     pointing at it lights the part. An entry point that passes one call on
+     says so under its name, and a caller says which entry points it reaches.
+     If nothing outside reaches the part, Callers says so in words.
+  4. **What is it wired to?** For a part, Sends to and Receives from, each with
      its number of parts and the control that traces how far it reaches. A row
      names the other part and what the relationship carries under the name,
      with the relationship's kind at the end of the name's line so the words
