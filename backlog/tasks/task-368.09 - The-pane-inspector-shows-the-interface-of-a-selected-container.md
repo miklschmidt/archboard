@@ -1,11 +1,11 @@
 ---
 id: TASK-368.09
 title: The pane inspector shows the interface of a selected container
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:18'
-updated_date: '2026-10-06 10:24'
+updated_date: '2026-10-06 10:39'
 labels:
   - interfaces
   - ui
@@ -27,9 +27,9 @@ The derived interface reaches an agent through the CLI. A user reading a board s
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Selecting a container shows its entry points, the count of its hidden parts and its callers in the pane sidebar
-- [ ] #2 Selecting an entry point from that list selects the part on the canvas
-- [ ] #3 Nothing is stored, and the sidebar reads the same derivation as the CLI
+- [x] #1 Selecting a container shows its entry points, the count of its hidden parts and its callers in the pane sidebar
+- [x] #2 Selecting an entry point from that list selects the part on the canvas
+- [x] #3 Nothing is stored, and the sidebar reads the same derivation as the CLI
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -55,4 +55,12 @@ Decisions the ADR left open:
 - Looked at it at 1920x1080 on a copy of the dogfood vault: Codex session (3 entry points, Gate protocol operations passes one call on, 5 hidden, 3 callers, the same as semantic inspect) in the light theme, and Browser client on Browser application (0 entry points, 19 hidden, no caller) in the dark theme.
 
 Gate (one lane at a time): fmt:check pass; lint exit 0; type-check exit 0; build:frontend exit 0; test:modules 3949 pass 0 fail; test:system 192 pass 0 fail; test:repository 20 pass 0 fail; test:serial-browser 19 owners, 24 pass 0 fail. readme:check lists all 13 assets stale, and they were stale before this change: every asset names src/shared among its sources, and f9f78af78 (TASK-368.02) changed it after the manifest was last made. No clip films a container's selection tab (the ask clip picks Timeout guard, a part with no children), so this change alters no asset's picture; none was refreshed.
+
+Independent review (2026-10-06): the browser owner repeated what the rendered stage test owns, so its interface block was removed (a2c4f94b6). operator-canvas-shell.md now names the container interface region of the selection tab (7a252bea4). A helper was renamed (646f745dd). The reviewer checked the pane against semantic inspect on a current, a historical, a draft and a removed-in-comparison container. No board is affected: Board viewer draws no inspector parts. Left for the user: Callers and Receives from name the same parts for a container.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Selecting a container in a pane now shows its entry points (with pass-through entry points named in words), its hidden-part count and its callers in the selection tab. Choosing an entry point or a caller selects that part on the canvas. The region reads inspectContainer from the shared model, on the variant the pane shows, and stores nothing. Verified by semantic-board-interface.test.tsx (2 pass with --isolate) and by the reviewer in a real browser at 1920x1080 in both themes, where it matched semantic inspect on current, historical, draft and compared variants.
+<!-- SECTION:FINAL_SUMMARY:END -->
