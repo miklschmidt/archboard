@@ -309,20 +309,29 @@ the imports do not show. TypeScript needs no setup. The file
 once and keeps the candidates. A server that did not answer is
 `language-server-failed`.
 
-For a container bound to a module (a directory, or the `index` file that
-stands for one), `check --code` also holds the interface the board derives
-against what the module exposes: in TypeScript, what its root files export
-(the files its `package.json` `exports` names, else the files directly in its
-directory). An entry point that owns nothing the module exposes, while the
-code of a caller drawn to it reaches it from outside the module, is
-`ENTRY_POINT_UNEXPOSED`, a warning: make the callers use what the module
-exposes, or expose it. A hidden part whose exposed code a file outside the
-module uses at run time, where no part on the board binds that file, is
-`CALLER_UNDRAWN`, a warning: draw the caller the board's question needs. It is
-judged only where the board draws some caller of the container.
-`EXPOSED_UNUSED`, information on the container, lists the exposed names that
-no file outside the module uses; a test is no caller. A container whose module
-has no root file the check reads is skipped as `exposure-unknown`.
+For a container bound to a module, `check --code` also holds the interface
+that the board derives against what the module exposes. The module is a bound
+directory, or the `index.ts` or `__init__.py` that stands for one. In
+TypeScript, the module exposes what its root files export, also the names that
+they import and export again. The root files are the files that its
+`package.json` `exports` names, or else the files directly in its directory. A
+file of tests is not a root file. In Python, the root file is the `__init__.py`
+of the package. It exposes the names that its `__all__` lists. Without
+`__all__`, it exposes every name that it defines or imports and that does not
+start with `_`. The check gives three findings:
+
+- `ENTRY_POINT_UNEXPOSED`, a warning: an entry point owns nothing that the
+  module exposes, and the code of a caller drawn to it reaches it from outside
+  the module. Make the callers use what the module exposes, or expose it.
+- `CALLER_UNDRAWN`, a warning: a file outside the module uses the exposed code
+  of a hidden part at run time, and no part on the board binds that file. Draw
+  the caller that the board's question needs. The check judges this only where
+  the board draws a caller of the container.
+- `EXPOSED_UNUSED`, information on the container: the exposed names that no
+  file outside the module uses. A test is not a caller.
+
+The check skips a container whose module has no root file that it reads, as
+`exposure-unknown`.
 
 That record decides what a valid payload cannot:
 
