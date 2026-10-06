@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 42,
+	"version": 44,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-06T11:53:14.933Z",
+	"updatedAt": "2026-10-06T11:54:56.220Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -7779,7 +7779,7 @@
 						"order": 28000,
 						"name": "Footprint route",
 						"kind": "route",
-						"responsibility": "Answers GET /api/vault/footprint on request as checkout work: reads the board and the proposal named, then asks the history lens for the parts a branch changed",
+						"responsibility": "Answers one board's footprint on request as checkout work: reads the board and the proposal named, then asks the history lens for the parts a branch changed; keeps no answer",
 						"parent": "nmbXuHCg",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -8879,7 +8879,7 @@
 						"order": 28000,
 						"name": "Footprint route",
 						"kind": "route",
-						"responsibility": "Answers GET /api/vault/footprint on request as checkout work: reads the board and the proposal named, then asks the history lens for the parts a branch changed",
+						"responsibility": "Answers one board's footprint on request as checkout work: reads the board and the proposal named, then asks the history lens for the parts a branch changed; keeps no answer",
 						"parent": "nmbXuHCg",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
