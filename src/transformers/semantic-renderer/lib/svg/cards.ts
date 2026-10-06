@@ -48,13 +48,9 @@ import { cornerDrillMark } from "@/transformers/semantic-renderer/lib/svg/drill-
 import { paintFarCard } from "@/transformers/semantic-renderer/lib/svg/far-card";
 import { nearLayer } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { lines, tag, textNode, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
+import { slab, slabSeat, slabShadow } from "@/transformers/semantic-renderer/lib/svg/slab";
 import {
-	FOOTPRINT_WIDTH,
-	slab,
-	slabSeat,
-	slabShadow,
-} from "@/transformers/semantic-renderer/lib/svg/slab";
-import {
+	OUTLINE_WIDTH,
 	standingPalette,
 	standingPin,
 	subjectGroup,
@@ -88,7 +84,7 @@ const OPTICAL_CENTRE = 0.34;
  * @returns The halo element.
  */
 function halo(box: Box, radius: number, styles: SvgStyles, standing?: SubjectStanding): string {
-	const inset = standing === "removed" ? -FOOTPRINT_WIDTH / 2 : HALO_INSET;
+	const inset = standing === "removed" ? -OUTLINE_WIDTH / 2 : HALO_INSET;
 	return tag("rect", {
 		class: "ab-halo",
 		x: coord(box.x - inset),

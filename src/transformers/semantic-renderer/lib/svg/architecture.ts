@@ -235,7 +235,7 @@ function paintEdgeWords(
 			: lines([
 					slabSeat(label.box, PILL_RADIUS),
 					slabShadow(label.box, PILL_RADIUS, "chip", palette, standing),
-					slab(label.box, labelLook(palette, standing), palette, standing),
+					slab(label.box, labelLook(palette), palette, standing),
 					paintTextRuns(label.measured.runs, label.box, standingPalette(palette, standing)),
 				]);
 	return pill === "" && badge === ""

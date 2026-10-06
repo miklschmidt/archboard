@@ -31,13 +31,13 @@
 //   no shadow, its words faded to the secondary ink, which still reads at 4.5:1
 //   ({@link standingPalette}). A removed message's words are faded the same way.
 //
-//   **Texture.** The block's face says it a third time. The group's colour
-//   lives on a block's front edge and the kind's on a container's nameplate,
-//   which leaves the face free: an added block's face is washed in green, a
-//   changed one's washed in orange and hatched (a grouped card's wash in place
-//   of its group's tint, which its edge still carries; a container's broad face
-//   below its nameplate washed, the plate faintly hatched), and a removed block
-//   leaves a dashed footprint where it stood. On a line — where a dash already means
+//   **Texture.** The block's outline says it a third time. A standing takes
+//   over the outline of a block's top face, as it took over a card's outline
+//   before the blocks: a border in its ink along the face's edge, inside it,
+//   solid for added and dashed for changed (`standingBorder` in `slab.ts`). The face
+//   keeps its group's tint and the front edge its group's colour; a container's
+//   border runs round its tray, whose walls are its outline. A removed block
+//   leaves the dashed border of a removal round its footprint. On a line — where a dash already means
 //   what kind of relationship it is, and the stroke weight already means how much
 //   attention its author asked for — the texture is carried by a wide tinted
 //   swipe laid under the line instead, so neither of the two meanings the line
@@ -52,7 +52,7 @@
 //
 // Only then colour, and colour never alone: green added, orange changed, red
 // removed, from the palette. Take all three hues away and the picture still
-// reads — pin shape, ghosting and the face's texture are each sufficient.
+// reads — pin shape, ghosting and the border's texture are each sufficient.
 //
 // ## What it deliberately does not touch
 //
@@ -65,11 +65,11 @@
 // ({@link markedBox}) and the whole drawing moves in by that much, as one.
 //
 // The selection halo. That ring sits three units *outside* a subject and is
-// invisible until a viewer puts `is-selected` on the group; the standing is on
-// the subject's face and its pin on its corner, so a selected added node shows
-// one ring, never two. A removed block's footprint is the one outline a
-// standing draws, and its selection ring is drawn over that footprint rather
-// than around it.
+// invisible until a viewer puts `is-selected` on the group; the standing's
+// border is inside the subject's face and its pin on its corner, so a selected
+// added node shows the border and one ring outside it, never two rings. A
+// removed block has no face to sit inside: its selection ring is drawn over
+// its footprint's border rather than around it.
 //
 // ## The warning, which is not a standing
 //
@@ -130,6 +130,19 @@ const PIN_RIM = 1.5;
  * something must be. Its dashed swipe and the missing pulses say the rest.
  */
 const GHOST_OPACITY = 0.7;
+
+/**
+ * The border a standing draws round a block's top face, which it takes over as
+ * the block's outline: how heavy it is, and its texture, solid for added and
+ * dashed for changed and for removed.
+ */
+const OUTLINE_WIDTH = 1.8;
+const OUTLINE_DASH: Readonly<Record<SubjectStanding, string | undefined>> = {
+	added: undefined,
+	removed: "7 3.5",
+	changed: "7 3.5",
+	unchanged: undefined,
+};
 
 /**
  * How much wider than its line a standing's swipe is drawn.
@@ -550,6 +563,8 @@ export {
 	type UnsettledOf,
 	BADGE_DEPTH,
 	BADGE_SIZE,
+	OUTLINE_DASH,
+	OUTLINE_WIDTH,
 	PIN_INSET,
 	HEAD_ATTRIBUTE,
 	PART_ATTRIBUTE,

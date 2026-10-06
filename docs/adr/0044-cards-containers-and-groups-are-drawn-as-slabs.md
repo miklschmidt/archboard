@@ -67,7 +67,7 @@ in `lib/design.ts`.
    shadow is a stack of translucent copies of the block's silhouette, each a
    little larger and fainter. No shadow reaches more than 12 units past its box.
    The picture uses no SVG filter, blur or mask for depth. It uses shared
-   gradients for the light on a face and one shared pattern for a hatch.
+   gradients for the light on a face.
 3. **A container is a tray, lit from above as the blocks are.** Its top wall
    faces the reader and turns away from the light. It shows as a 7-unit band in
    shade, and it throws a short, soft shadow straight down, 3 units deep, on
@@ -114,20 +114,26 @@ in `lib/design.ts`.
    always neutral. The name of the flow is printed on the nameplate as a
    container's name is: as written, not in capitals, in the medium face, 14
    units high. Its summary is 11 units high, in the secondary ink.
-10. **A change mark is on the face.** The pin stays on the corner of the part.
-    - On a card, a participant or a relationship's label, an added part's face
-      is washed in green, and a changed part's face is washed in orange. A
-      changed card or participant is also hatched. The wash takes the place of
-      the group's tint, and the card keeps its group's front edge. A label has
-      no group, so its standing also colors its front edge.
-    - On a container, the wash takes the place of the kind's tint on the floor,
-      less strongly than on a card. The nameplate and the walls keep the kind.
-      A changed container's nameplate is hatched at half strength.
+10. **A change mark is the outline of the face.** The pin stays on the corner
+    of the part (TASK-421).
+    - On a card, a participant or a relationship's label, the standing takes
+      over the outline of the top face, as on main before the blocks: a
+      1.8-unit border in the standing's ink, solid green for added and dashed
+      orange for changed (7 units on, 3.5 off). The border runs along the edge
+      of the face, inside it, its outer edge on the face's edge and its corners
+      the face's. The face keeps its group's tint and the front edge its
+      group's color.
+    - On a container, the border runs along the edge of the tray's box, round
+      its walls, which are the container's own outline. The floor, the
+      nameplate and the walls keep their colors.
+    - A selected marked part shows its border and the selection ring outside
+      the part, never two rings.
     - A sequence frame shows its standing by the pin alone, unless the flow was
       removed.
 11. **A removed part has lost its depth.** A card, a container, a participant or
-    a relationship's label is a flat, see-through face inside a dashed red
-    footprint, with no edge, no wall and no shadow. Its words are faded to the
+    a relationship's label is a flat, see-through face inside the dashed red
+    border of a removal round its footprint, with no edge, no wall and no
+    shadow. Its words are faded to the
     secondary ink. A removed message's words are in the secondary ink on a flat,
     opaque plate. A removed line is drawn whole at 70 % opacity. Its ink is
     weakened less than a live line's, so it keeps a contrast of 3:1 on every
@@ -222,4 +228,8 @@ in `lib/design.ts`.
   (`slab.ts`). Stacked translucent shapes give a soft shadow without one.
 - **A ring inside the face for a change mark.** The first build drew a ring five
   units inside the face (commit 26ce14b9c). The owner found that a change mark
-  drew a second box inside a card (TASK-402). The wash replaced the ring.
+  drew a second box inside a card (TASK-402). A wash of the face and a hatch
+  replaced the ring. The owner then found that the marks had become weaker than
+  on main (TASK-421): a wash took the place of the group's tint, and a pale
+  wash was hard to see. The border of main came back, on the edge of the face
+  rather than five units inside it.

@@ -13,11 +13,13 @@
 // depth is flat shapes, one shared gradient and stacked translucent copies of
 // the silhouette.
 //
-// A proposal's standing is said on the face, in place of the group's colour,
-// which the front edge still carries. An added block's face is washed in the
-// standing's green, a changed one's in its orange and hatched; a removed block
-// has lost its thickness. Its ghost is a flat, see-through face inside a dashed
-// footprint where the block stood, with no front edge and no shadow.
+// A proposal's standing takes over the outline of the block's top face: a
+// border in the standing's ink along the face's edge, inside it, solid for an
+// added block and dashed for a changed one (`standingBorder`). The face keeps
+// its group's tint and the front edge its group's colour. A removed block has
+// lost its thickness: its ghost is a flat, see-through face inside the dashed
+// border of a removal, round the footprint where the block stood, with no
+// front edge and no shadow.
 //
 // Each shape a block is built of is a rect at an offset from the part's box, or
 // a line across it, so a viewer that carries a card from one picture to the
@@ -36,6 +38,8 @@ import {
 	type Attributes,
 } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
+	OUTLINE_DASH,
+	OUTLINE_WIDTH,
 	standingInk,
 	type SubjectStanding,
 } from "@/transformers/semantic-renderer/lib/svg/standing";
@@ -90,10 +94,8 @@ interface SlabLook {
 	/** Its top face. */
 	readonly face: string;
 	/**
-	 * Its top face before a card's group tinted it. A standing washes this
-	 * rather than the tinted face, one tint to a face, so a green or an orange
-	 * wash reads as itself and not as a muddy mix with the group's colour, which
-	 * the front edge still carries.
+	 * Its top face before a card's group tinted it, set on a face a group may
+	 * tint, which takes the softer light ({@link SOFT_SHEEN_ID}).
 	 */
 	readonly ground?: string;
 	/** Its front edge, the side of the block that faces the reader. */
@@ -103,11 +105,6 @@ interface SlabLook {
 	readonly radius: number;
 	/** Whether light falls off down its face: a card's and a chip's, not a container's broad top. */
 	readonly sheen: boolean;
-	/**
-	 * Whether a changed part's face is hatched: a card's. A label's is not,
-	 * since the swipe under its line carries that texture.
-	 */
-	readonly hatch?: boolean;
 }
 
 /** How wide the highlight along the top edge of a face is. */
@@ -129,7 +126,7 @@ function glintOf(face: string, palette: Palette): string {
 /** The light that falls off down a face, one gradient every face shares. */
 const SHEEN_ID = "ab-slab-sheen";
 /**
- * The same light on a face a group's colour or a standing's tints. The plain
+ * The same light on a face a group's colour tints. The plain
  * sheen is nearly white on the light ground: over a near-white face it is a
  * faint change, but over a tinted face it bleached the top and left the colour
  * pooled at the foot. On the light ground this one is the glint at a fifth of
@@ -138,25 +135,6 @@ const SHEEN_ID = "ab-slab-sheen";
  */
 const SOFT_SHEEN_ID = "ab-slab-sheen-soft";
 const SOFT_SHEEN = 0.2;
-
-/** The hatch over a changed block's face, one pattern every face shares. */
-const HATCH_ID = "ab-slab-hatch";
-/** How far apart the hatch's strokes are, and how wide each is. */
-const HATCH_PITCH = 6;
-const HATCH_STROKE = 1.25;
-/**
- * How strong a hatch stroke is over the washed face, on each ground: a texture
- * the words read through, there to say "changed" to a reader who cannot tell
- * the orange wash from the green.
- */
-const HATCH: Share = { light: 0.2, dark: 0.12 };
-
-/**
- * How much of its standing's ink an added or changed face is washed with: a
- * clear tint at a glance that still leaves the face the ground its words were
- * chosen for.
- */
-const WASH: Share = { light: 0.15, dark: 0.2 };
 
 /** One translucent copy of a silhouette: how far it is moved, how much larger, and how dark. */
 interface ShadowLayer {
@@ -198,9 +176,6 @@ type Lift = keyof typeof SHADOWS;
 
 /** How much of a face a removed block's see-through ghost keeps. */
 const GHOST_FACE = 0.5;
-/** The dashed footprint a removed block leaves where it stood: its width and its dash. */
-const FOOTPRINT_WIDTH = 1.5;
-const FOOTPRINT_DASH = "6 4";
 
 /**
  * A rounded rect over a box, which takes no pointer unless it says so.
@@ -260,32 +235,51 @@ function ghostFace(palette: Palette): Attributes {
 }
 
 /**
- * Where a removed block stood: its face, flat and see-through, and a dashed
- * footprint in the standing's ink just inside its box.
+ * The border a standing draws round a face: the standing's ink along the
+ * face's own edge, inside it, its outer edge on the face's and its corners the
+ * face's, so it is the face's outline rather than a second box in or round it.
+ * A removed block's border goes round its footprint (`slab.ts`).
+ * @param face The face.
+ * @param radius Its corners.
+ * @param standing How the part stands, or undefined when this is not a proposal.
+ * @param palette The theme's colours.
+ * @returns The border, or nothing for a part that stands unchanged.
+ */
+function standingBorder(
+	face: Box,
+	radius: number,
+	standing: SubjectStanding | undefined,
+	palette: Palette,
+): string {
+	const ink = standing === undefined ? undefined : standingInk(standing, palette);
+	if (standing === undefined || ink === undefined) return "";
+	const inset = OUTLINE_WIDTH / 2;
+	return tag("rect", {
+		x: coord(face.x + inset),
+		y: coord(face.y + inset),
+		width: coord(face.width - OUTLINE_WIDTH),
+		height: coord(face.height - OUTLINE_WIDTH),
+		rx: coord(Math.max(0, radius - inset)),
+		fill: "none",
+		stroke: ink,
+		"stroke-width": OUTLINE_WIDTH,
+		"stroke-dasharray": OUTLINE_DASH[standing],
+		"pointer-events": "none",
+	});
+}
+
+/**
+ * Where a removed block stood: its face, flat and see-through, inside the
+ * dashed border a removal draws, round its footprint.
  * @param box The block's box.
  * @param radius Its corners.
  * @param palette The theme's colours.
  * @returns The ghost.
  */
 function ghost(box: Box, radius: number, palette: Palette): string {
-	const inset = FOOTPRINT_WIDTH / 2;
 	return lines([
 		plate(box, radius, ghostFace(palette)),
-		plate(
-			{
-				x: box.x + inset,
-				y: box.y + inset,
-				width: box.width - 2 * inset,
-				height: box.height - 2 * inset,
-			},
-			Math.max(0, radius - inset),
-			{
-				fill: "none",
-				stroke: palette.standingRemoved,
-				"stroke-width": FOOTPRINT_WIDTH,
-				"stroke-dasharray": FOOTPRINT_DASH,
-			},
-		),
+		standingBorder(box, radius, "removed", palette),
 	]);
 }
 
@@ -343,48 +337,11 @@ function castShadow(
 }
 
 /**
- * The hatch that says a part changed, over one face.
- * @param box The face.
- * @param radius Its corners.
- * @param strength How much of the hatch's strength it takes.
- * @returns The hatch.
- */
-function hatched(box: Box, radius: number, strength = 1): string {
-	return plate(box, radius, {
-		fill: `url(#${HATCH_ID})`,
-		"fill-opacity": strength < 1 ? strength : undefined,
-	});
-}
-
-/**
- * What a standing does to a block's face: an added one washed in its ink, a
- * changed one washed and, where the block takes one, hatched, in place of the
- * tint of its group, which its front edge still carries. A removed block draws
- * no face ({@link ghost}).
- * @param look How the block looks.
- * @param standing How the part stands, or undefined when this is not a proposal.
- * @param palette The theme's colours.
- * @returns The top face's colour, and whether it is hatched.
- */
-function standingFace(
-	look: SlabLook,
-	standing: SubjectStanding | undefined,
-	palette: Palette,
-): { readonly top: string; readonly hatch: boolean } {
-	const ink = standing === undefined ? undefined : standingInk(standing, palette);
-	return {
-		top: ink === undefined ? look.face : washed(look.ground ?? look.face, ink, WASH, palette),
-		hatch: standing === "changed" && look.hatch === true,
-	};
-}
-
-/**
  * One block, standing in its box: its body in the tone of its front edge, and
  * its face over that with the highlight along its top edge and the light
- * falling off down it. The face says how a proposal treats the part
- * ({@link standingFace}). A removed part has lost its block: what is left of
- * it is drawn under the selection ring ({@link slabShadow}), and this draws
- * nothing.
+ * falling off down it. A proposal's standing borders the face
+ * (`standingBorder`). A removed part has lost its block: what is left of it is
+ * drawn under the selection ring ({@link slabShadow}), and this draws nothing.
  * @param box The part's box.
  * @param look How the block looks.
  * @param palette The theme's colours.
@@ -393,16 +350,15 @@ function standingFace(
  */
 function slab(box: Box, look: SlabLook, palette: Palette, standing?: SubjectStanding): string {
 	if (standing === "removed") return "";
-	const { top, hatch } = standingFace(look, standing, palette);
 	// The top face is the box without its front edge.
 	const face = { ...box, height: box.height - look.thickness };
 	const lit = { ...face, y: face.y + GLINT_WIDTH, height: face.height - GLINT_WIDTH };
 	return lines([
 		plate(box, look.radius, { fill: look.edge }),
-		plate(face, look.radius, { fill: glintOf(top, palette) }),
-		plate(lit, look.radius, { fill: top }),
-		look.sheen ? plate(lit, look.radius, { fill: `url(#${sheenOf(look, standing)})` }) : "",
-		hatch ? hatched(lit, look.radius) : "",
+		plate(face, look.radius, { fill: glintOf(look.face, palette) }),
+		plate(lit, look.radius, { fill: look.face }),
+		look.sheen ? plate(lit, look.radius, { fill: `url(#${sheenOf(look)})` }) : "",
+		standingBorder(face, look.radius, standing, palette),
 	]);
 }
 
@@ -424,45 +380,27 @@ function sheenGradient(id: string, sheen: string): string {
 }
 
 /**
- * Which light falls off down a face: a tinted face's, a group's or a
- * standing's, takes the softer one ({@link SOFT_SHEEN}).
+ * Which light falls off down a face: a face a group may tint takes the softer
+ * one ({@link SOFT_SHEEN}).
  * @param look How the block looks.
- * @param standing How the part stands, when this is a proposal.
  * @returns The id of its gradient.
  */
-function sheenOf(look: SlabLook, standing: SubjectStanding | undefined): string {
-	const coloured = look.ground !== undefined || standing === "added" || standing === "changed";
-	return coloured ? SOFT_SHEEN_ID : SHEEN_ID;
+function sheenOf(look: SlabLook): string {
+	return look.ground === undefined ? SHEEN_ID : SOFT_SHEEN_ID;
 }
 
 /**
  * The definitions every slab reaches for: the light that falls off down a face,
- * full on a plain face and softer on a tinted one; and the hatch over a changed
- * face, at one pitch across the page.
+ * full on a plain face and softer on a tinted one.
  * @param palette The theme's colours.
- * @returns The gradient and the pattern.
+ * @returns The gradients.
  */
 function slabDefinitions(palette: Palette): string {
-	const hatch = lightDark(
-		translucent(palette.standingChanged, HATCH.light),
-		translucent(palette.standingChanged, HATCH.dark),
-	);
 	return (
 		sheenGradient(SHEEN_ID, palette.slabSheen) +
 		sheenGradient(
 			SOFT_SHEEN_ID,
 			lightDark(translucent(palette.slabGlint, SOFT_SHEEN), palette.slabSheen),
-		) +
-		wrap(
-			"pattern",
-			{
-				id: HATCH_ID,
-				width: HATCH_PITCH,
-				height: HATCH_PITCH,
-				patternUnits: "userSpaceOnUse",
-				patternTransform: "rotate(45)",
-			},
-			tag("rect", { width: HATCH_STROKE, height: HATCH_PITCH, fill: hatch }),
 		)
 	);
 }
@@ -470,18 +408,17 @@ function slabDefinitions(palette: Palette): string {
 export {
 	type Share,
 	type SlabLook,
-	FOOTPRINT_WIDTH,
 	GLINT_WIDTH,
 	across,
 	castShadow,
 	ghostFace,
 	glintOf,
-	hatched,
 	plate,
 	slab,
 	slabDefinitions,
 	slabSeat,
 	slabShadow,
+	standingBorder,
 	tinted,
 	washed,
 };
