@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:16'
-updated_date: '2026-10-06 15:15'
+updated_date: '2026-10-06 16:53'
 labels:
   - code-check
   - architecture
@@ -94,6 +94,32 @@ EXPOSED_UNUSED on Semantic viewer (63 of 89 names) also remains. Six anchors nam
 Layout after adoption: every board lays out under 1 s. Board viewer took 657 ms on a restarted server, with a peak of 912 ms during the proposals.
 
 Parent verification on 2026-10-06: across the 15 current boards, 599 relationships join two bound parts and none lacks an anchor. After a server restart, ./bin/dogfood check reports no diagnostics, and ./bin/dogfood check --code reports 22 RELATIONSHIP_UNDRAWN and 4 CALLER_UNDRAWN warnings, 13 EXPOSED_UNUSED information findings, and the skips exposure-unknown (src/ui) and text-only. Each remaining warning is explained above by its group. They are uses of constants, error classes, guards and helpers that the boards do not draw as dependencies.
+
+Layout regression on Archboard server (2026-10-06, after group B). Group B's 17 relationships and two parts (4a2fa8aaf, 3a7157874) made the board's first layout about three times slower, and wide-boards.test.ts "Archboard server (track)" failed its 3 s bound.
+
+Measured, same run, at a load of 5 to 8 (first layout of the variant, warm engine): the board at 9c4018633 took about 650 ms without the vault policy (what timing.ts measures) and about 1.4 s with it (what the wide-boards test measures). The board before this fix took about 1.7 s and 4.3 s. No one relationship carried the cost: removing any single one of the 21 added saved 0 to 30%, and removing all of them made it slower (Graphviz then also weighed wraps, 15 lays instead of 3). A profile of the Track solve showed the cost per lay had grown about 2.8 times: Graphviz, the lane searches in straighten and relay, and partCollinear in track/parting.ts, which counted collinear and swapped pairs over every net of the drawing for each pair and each move it tried.
+
+Renderer (b70da30a5): parting weighs only nets of one channel, which is the only place a pair can read as one or swap sides. Every drawing is byte-identical: 252 variants of the tracked vault in both engines, and the wide-board fixtures. Archboard server took about 30% less.
+
+Board (51b44717b, adopted as 'TASK-367.27 layout after TASK-368.11'; the first two proposals were shelved when TASK-367.12 review and then TASK-368.11 were adopted after them):
+- Merged: Tab session presence -> Codex workbench ('end a tab gone for 60 s') into Codex workbench -> Tab session presence, now 'a pane's tab, and the end of a tab gone for 60 s'. Both were calls that codex-wiring.ts makes into tab-sessions.ts: tabSessionOf, and endTabSessionsOnceGone, which subscribes to a tab's end. The walkthrough beat 'A tab keeps its conversation' names the one relationship.
+- No longer drawn, each a use below the board's grain, now an undrawn warning:
+  - Semantic renderer <- HTTP application: application.ts calls diagramIconPaths for the icon route. Board routes -> Semantic renderer draws the server's use of the renderer.
+  - Application lifetime <- Service routes: /health reports serverPhase, as it reports board and client counts (already explained).
+  - Semantic board store <- Pane registry: listSemanticBoards picks a new pane's first board.
+  - Disk change watcher <- HTTP application and Pane routes: application.ts starts the watch at load, and arrivedOnBoard takes the file's baseline (noteBoardShown). The watch's announcements (Disk change watcher -> Pane registry) and the lease sweep that drives it (Board lease -> Disk change watcher) stay drawn.
+  - Pane registry <- Codex workbench: boardForPane, a lookup the workbench makes for a pane's context. Pane routes -> Codex workbench draws how a pane's focus reaches the agent.
+  - Codex workbench <- Rename route: a renamed pane's focus is published the same way (publishPaneContext). Rename route -> Pane routes and Pane routes -> Codex workbench draw the moved pane's arrival.
+  - Board announcements <- Discard route: the discarder's doing, through announceDoing, as Board write routes -> Board announcements draws for every write.
+- Kept and still anchored: the other 82 relationships. Every `>` line of the closing-step-1 diff is one of the removals above; no other finding moved.
+
+After: at a load of 6, without policy 0.9 s and with policy 2.3 s (both renderers changed: board alone 1.1 s and 2.8 s, renderer alone 1.2 s and 3.4 s). timing.ts at a load of 14: Archboard server 803 ms (it was 1,652 ms at a load of 15); slowest Skill evaluation 844 ms. bun test --isolate wide-boards.test.ts: 36 pass, 0 fail, at a load of 7 to 14.
+
+Footprint against c611b5ffa (the parent of b70da30a5): current is the proposal's parent; nothing namedAndChanged; every namedNotChanged part is named only by a removed or changed relationship. changedNotNamed lists Archboard server, Code check, Code facts and Language servers, changed only by TASK-367.14, .18 and .19 commits in the range. Behind: b70da30a5 puts Renderer core behind on Renderer layout and Semantic renderer; both boards stay right, since the change is inside the parting pass and draws the same pictures.
+
+./bin/dogfood check: no diagnostics. ./bin/dogfood check --code on Archboard server: 10 RELATIONSHIP_UNDRAWN warnings (the five group B explained, now with Pane registry on Semantic board store and Codex workbench on Pane registry, plus Application lifetime, Semantic renderer, Disk change watcher, Codex workbench and Board announcements, each explained above) and EXPOSED_UNUSED on the container.
+
+What remains: the picture is still dense (82 relationships, most of them into the Live panes region). The honest way to fewer lines is a drill-down board for the live panes (Pane routes, Pane socket, Pane registry, Board announcements, Change feed, Tab session presence, Disk change watcher), which was outside this fix. With the policy, the first layout is still about 1.6 times the board at 9c4018633. The remaining cost is Graphviz (about a third), the lane searches in straighten.ts and relay.ts (crossingsOf over every chain for each column tried), and stacking and wrap choices that lay the board out 6 to 8 times.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
