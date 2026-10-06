@@ -201,7 +201,9 @@ beforeAll(async () => {
 	check = await import("@/runtime/code-check/index");
 	const read = check.readBoardsToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
-	outcome = await check.checkCode(read.boards, new AbortController().signal);
+	// No language server, so the judgement reads the evidence code facts give alone.
+	const servers = new Map([["typescript", { status: "missing", detail: "turned off" }] as const]);
+	outcome = await check.checkCode(read.boards, new AbortController().signal, servers);
 });
 
 afterAll(() => {
@@ -263,7 +265,7 @@ test("the parts that use one shared part make one finding on it, one resolved pi
 	]);
 });
 
-test("a use of a name the same file defines is a candidate, so its finding is information", () => {
+test("with no language server, a use of a name the same file defines is a candidate, so its finding is information, and the missing server is said once", () => {
 	expect(finding("RELATIONSHIP_UNDRAWN", "pZ")?.evidence).toEqual([
 		{
 			kind: "call",
@@ -275,6 +277,10 @@ test("a use of a name the same file defines is a candidate, so its finding is in
 			line: 3,
 			symbol: "normalize",
 		},
+	]);
+	const missing = outcome.skipped.filter((each) => each.reason === "language-server-missing");
+	expect(missing).toEqual([
+		{ reason: "language-server-missing", detail: "typescript: turned off" },
 	]);
 });
 

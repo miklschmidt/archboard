@@ -7,10 +7,14 @@
 // through an import is resolved, because the import path names the file, and
 // the check follows every re-export to the file that defines the name. A use
 // of a name the same file defines at module level is matched by name only, so
-// it is a candidate. A use the code reaches only through a value, such as
-// `ledger.post()`, gives no evidence until a language server resolves it
-// (TASK-367.13). An `import()`, a `require()` or an import for its side
-// effects loads the whole file at run time, so it is a call to the file.
+// it is a candidate. The language server of the file resolves every use that
+// no import resolves, also one the code reaches only through a value, such as
+// `ledger.post()` (TASK-367.13, resolution.ts): a definition in a file of the
+// checkout makes the evidence resolved, and one only outside the checkout
+// reaches no part. Without a server's answer, a use of a module-level name is
+// a candidate and a use through a value gives no evidence. An `import()`, a
+// `require()` or an import for its side effects loads the whole file at run
+// time, so it is a call to the file.
 //
 // Each piece goes from the part whose code makes the use to the part whose
 // code holds what it reaches, each the narrowest binding (part-code.ts). Code
@@ -23,6 +27,7 @@
 // gives no evidence.
 
 import type { PartCode, ReadPart, RepoCheckout } from "@/runtime/code-check/lib/part-code";
+import type { Resolve } from "@/runtime/code-check/lib/resolution";
 import {
 	definitionSite,
 	type Definition,
@@ -51,6 +56,8 @@ interface EvidenceReading {
 	 * @param file The file, relative to the checkout.
 	 */
 	readonly readAsText: (checkout: RepoCheckout, file: string) => void;
+	/** Where a language server says a use that no import resolves is defined. */
+	readonly resolve: Resolve;
 }
 
 /** The parts that bind code in one repository, by how narrowly. */
@@ -164,7 +171,12 @@ function ownersOfFile(owners: Owners, file: string): ReadPart[] {
  * @param site Where the definition is.
  * @returns The narrowest parts.
  */
-function ownersOfSite(owners: Owners, site: DefinitionSite): ReadPart[] {
+function ownersOfSite(
+	owners: Owners,
+	site: Pick<DefinitionSite, "path" | "via"> & {
+		readonly definition: Pick<DefinitionSite["definition"], "start" | "end">;
+	},
+): ReadPart[] {
 	const symbols = narrowestSymbols(
 		owners.symbols.get(site.path) ?? [],
 		(definition) =>
@@ -258,6 +270,49 @@ async function reachedBy(
 				: ownersOfSite(repo.owners, site);
 		return { to, resolution: "resolved" };
 	}
+	if (imported.has(reference.symbol.split(".")[0] ?? "")) return undefined;
+	return serverReached(repo, facts, reference, imported);
+}
+
+/**
+ * What a use that no import resolves reaches, as the language server of its
+ * file says: the parts that hold the definition it names in the checkout,
+ * nothing when it names one only outside, and what the name matches in the
+ * same file when no server answers.
+ * @param repo The repository's reading.
+ * @param facts The file's facts.
+ * @param reference The use.
+ * @param imported The names the file's imports bring in.
+ * @returns The parts that hold what it reaches, or undefined when the check cannot tell.
+ */
+async function serverReached(
+	repo: RepoReading,
+	facts: SyntaxFacts,
+	reference: SyntaxFacts["references"][number],
+	imported: ReadonlySet<string>,
+): Promise<Reached | undefined> {
+	const resolved = await repo.reading.resolve(repo.checkout, facts.path, reference);
+	if (resolved.status === "unknown") return candidateReached(repo, facts, reference, imported);
+	if (resolved.status === "elsewhere") return undefined;
+	const definition = { start: resolved.line, end: resolved.line };
+	const site = { path: resolved.path, definition, via: [] };
+	return { to: ownersOfSite(repo.owners, site), resolution: "resolved" };
+}
+/**
+ * What a use no server resolved reaches by name: the definition of a
+ * module-level name of the same file, a candidate.
+ * @param repo The repository's reading.
+ * @param facts The file's facts.
+ * @param reference The use.
+ * @param imported The names the file's imports bring in.
+ * @returns The parts that hold it, or undefined when the file defines no such name.
+ */
+function candidateReached(
+	repo: RepoReading,
+	facts: SyntaxFacts,
+	reference: SyntaxFacts["references"][number],
+	imported: ReadonlySet<string>,
+): Reached | undefined {
 	const definition = moduleLevelDefinition(facts, reference.symbol, imported);
 	if (definition === undefined) return undefined;
 	const site = { path: facts.path, definition, via: [] };
