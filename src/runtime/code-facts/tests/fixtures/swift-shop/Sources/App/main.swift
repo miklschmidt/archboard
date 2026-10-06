@@ -6,4 +6,4 @@ import Util
 let ledger = Ledger(name: "shop")
 let refund: Money = Ledger.refund(5)
 let qualified = Core.Ledger.Kind.debit
-print(ledger.post(refund), helper(), hidden())
+print(ledger.post(refund), helper(), hidden(), alsoOk())
