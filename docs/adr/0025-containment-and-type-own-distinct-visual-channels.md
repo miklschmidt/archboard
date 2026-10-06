@@ -126,7 +126,8 @@ a muted line still ends in a smaller head.
 nodes and the semantic line color on edges." The part about edges holds. On a
 node, a standing now washes the face: green for added, and orange with a hatch
 for changed. A card keeps the color of its group on its front edge. A
-container's nameplate keeps the color of its kind on its front edge. A removed
+container keeps the color of its kind on its nameplate, and the wash lies on
+the plinth's face below the nameplate. A removed
 node has lost its thickness: a flat, see-through face inside a dashed red
 footprint. The type chip still says the kind, and selection still adds a ring
 outside the part.

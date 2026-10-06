@@ -149,7 +149,7 @@ passages of this record no longer hold.
 outline is twice as wide as the border of a card and has no fill." A region is
 now a mat, a low slab. Its face carries a light share of the group's color, and
 its front edge is in the group's color. The caption is printed on a raised
-tab in the corner of the mat. Lines still cross a region.
+tab in a top corner of the mat. Lines still cross a region.
 
 "A card's body color comes from its placing group. Its border and tint are the
 color of the group, and a card with no placing group is neutral." The first
