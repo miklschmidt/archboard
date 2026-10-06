@@ -36,6 +36,7 @@ import { checkoutFor } from "@/runtime/engine/repo-registry";
 import type { CodeBinding } from "@/shared/code-target/index";
 import { currentVariant, type SemanticBoard } from "@/shared/semantic-board/index";
 import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
+import { nodeSubject } from "@/runtime/semantic-board-store/lib/subject";
 
 /** Where a repository identity lives on this machine, or nothing knowable. */
 type CheckoutLookup = (repo: string) => string | undefined;
@@ -89,13 +90,14 @@ function semanticBindingDiagnostics(
 				board: board.name,
 				variant: variant.id,
 				path: `variants.${variant.id}.content.nodes.${node.id}.binding`,
+				subject: nodeSubject(node),
 			}),
 		];
 	});
 }
 
 /** Where one binding is, in the words every vault diagnostic uses. */
-type DiagnosticSite = Pick<VaultDiagnostic, "file" | "board" | "variant" | "path">;
+type DiagnosticSite = Pick<VaultDiagnostic, "file" | "board" | "variant" | "path" | "subject">;
 
 /**
  * The warning for a node bound to a path that is not in its repository.

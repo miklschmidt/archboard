@@ -139,6 +139,19 @@ const DEFAULT_SEMANTIC_POLICY: SemanticPolicy = {
 	},
 	groups: {},
 };
+/**
+ * The one node or relationship a diagnostic is about. The board and variant
+ * it sits on are the diagnostic's own, so `id` alone finds it there. The kinds
+ * are the board's own subject kinds (`edge` is a relationship). `name` is what
+ * a reader would call it, carried so a line of text can say it without
+ * reading the board again.
+ */
+const DiagnosticSubjectSchema = z.object({
+	kind: z.enum(["node", "edge"]),
+	id: z.string(),
+	name: z.string(),
+});
+type DiagnosticSubject = z.infer<typeof DiagnosticSubjectSchema>;
 const VaultDiagnosticSchema = z.object({
 	severity: z.enum(["warning", "error"]),
 	code: z.string(),
@@ -146,9 +159,29 @@ const VaultDiagnosticSchema = z.object({
 	path: z.string().optional(),
 	board: z.string().optional(),
 	variant: z.string().optional(),
+	subject: DiagnosticSubjectSchema.optional(),
 	message: z.string(),
 });
 type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
+/**
+ * A subject as a line of text names it.
+ * @param subject The diagnostic's subject.
+ * @returns Its kind in the words of a person, then its quoted name.
+ */
+function describeSubject(subject: DiagnosticSubject): string {
+	return `${subject.kind === "edge" ? "relationship" : "node"} ${JSON.stringify(subject.name)}`;
+}
+/**
+ * One diagnostic as a line of text: severity, where, the node or relationship
+ * it is about when it names one, and what is wrong.
+ * @param issue The diagnostic.
+ * @returns The line.
+ */
+function diagnosticLine(issue: VaultDiagnostic): string {
+	const where = `${issue.file}${issue.path === undefined ? "" : `:${issue.path}`}`;
+	const about = issue.subject === undefined ? "" : `${describeSubject(issue.subject)}: `;
+	return `${issue.severity}: ${where}: ${about}${issue.message}`;
+}
 const VaultCheckSchema = z.object({
 	policy: SemanticPolicySchema,
 	configurationValid: z.boolean(),
@@ -167,6 +200,10 @@ export {
 	SemanticPolicySchema,
 	type SemanticPolicy,
 	DEFAULT_SEMANTIC_POLICY,
+	DiagnosticSubjectSchema,
+	type DiagnosticSubject,
+	describeSubject,
+	diagnosticLine,
 	VaultDiagnosticSchema,
 	type VaultDiagnostic,
 	VaultCheckSchema,

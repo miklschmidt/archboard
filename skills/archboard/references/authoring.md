@@ -154,9 +154,16 @@ Those three check a variant's content, so they run only over the variants a
 write can still change: no accepted write could clear a warning on a frozen
 variant. `BINDING_PATH_MISSING` runs only over the current variant: a binding to
 a file that existed then is a correct record, not drift, and one on a draft is
-ahead of the code rather than behind it. `UNKNOWN_VOCABULARY` is not one of them: its subject
+ahead of the code rather than behind it. `UNKNOWN_VOCABULARY` is not one of them: its cause
 is the vault configuration, so defining the kind again clears it wherever it
 sits.
+
+A check diagnostic about one node or one relationship carries a `subject`,
+`{ "kind": "node" | "edge", "id", "name" }`, next to its `board` and `variant`.
+`archboard check` prints the subject's name before the message. A
+relationship's name is its ends, `From -> To`. A diagnostic about the board or
+the configuration has none, and nor has a `RELATIONSHIP_*` write warning: that
+one names its relationship in its `path`.
 
 ## Relationships
 

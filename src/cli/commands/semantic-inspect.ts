@@ -18,7 +18,11 @@ import {
 	type SemanticNode,
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
-import { VaultDiagnosticSchema, type SemanticPolicy } from "@/shared/semantic-policy/index";
+import {
+	diagnosticLine,
+	VaultDiagnosticSchema,
+	type SemanticPolicy,
+} from "@/shared/semantic-policy/index";
 import {
 	checkSemanticVaultOnServer,
 	readSemanticBoardAnswerOnServer,
@@ -298,10 +302,7 @@ const semanticInspectContract = defineCommand({
 		);
 		return {
 			result,
-			diagnostics: [
-				...answer.warnings.map((warning) => `Warning: ${warning.file}: ${warning.message}`),
-				...described(result),
-			],
+			diagnostics: [...answer.warnings.map(diagnosticLine), ...described(result)],
 		};
 	},
 });

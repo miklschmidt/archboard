@@ -2,7 +2,7 @@ import { z } from "zod";
 import { defineCommand } from "@/cli/command-contract/contract";
 import { serverRefusal } from "@/cli/command-contract/common";
 import { checkSemanticVaultOnServer } from "@/runtime/semantic-board-client/index";
-import { VaultCheckSchema } from "@/shared/semantic-policy/index";
+import { diagnosticLine, VaultCheckSchema } from "@/shared/semantic-policy/index";
 import { SemanticBoardConfigurationSchema } from "@/runtime/semantic-board-store/index";
 
 const output = {
@@ -63,10 +63,7 @@ const checkContract = defineCommand({
 		return {
 			result,
 			...(result.diagnostics.length === 0 ? {} : { outcome: "issues" }),
-			diagnostics: result.diagnostics.map(
-				(issue) =>
-					`${issue.severity}: ${issue.file}${issue.path === undefined ? "" : `:${issue.path}`}: ${issue.message}`,
-			),
+			diagnostics: result.diagnostics.map(diagnosticLine),
 		};
 	},
 });

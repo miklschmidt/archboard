@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { VaultDiagnostic } from "@/shared/semantic-policy";
+import { describeSubject, type VaultDiagnostic } from "@/shared/semantic-policy";
 
 /**
  * The last check stays visible while the next check is pending or failed.
@@ -40,6 +40,7 @@ function Diagnostic(props: { diagnostic: VaultDiagnostic }): JSX.Element {
 				<p className="text-muted-foreground text-xs">
 					{diagnostic.board}
 					{diagnostic.variant === undefined ? "" : ` @ ${diagnostic.variant}`}
+					{diagnostic.subject === undefined ? "" : ` · ${describeSubject(diagnostic.subject)}`}
 				</p>
 			)}
 		</li>

@@ -1,5 +1,10 @@
 import type { SemanticBoard, VariantContent } from "@/shared/semantic-board/index";
-import type { SemanticPolicy, VaultDiagnostic } from "@/shared/semantic-policy/index";
+import type {
+	DiagnosticSubject,
+	SemanticPolicy,
+	VaultDiagnostic,
+} from "@/shared/semantic-policy/index";
+import { edgeSubject, nodeSubject } from "@/runtime/semantic-board-store/lib/subject";
 
 interface Reference {
 	key: string;
@@ -7,6 +12,8 @@ interface Reference {
 	value: string;
 	vocabulary: "levels" | "nodeKinds" | "relationshipKinds" | "groups";
 	variant?: string;
+	/** The node or relationship that states it; none for the board's own level. */
+	subject?: DiagnosticSubject;
 }
 
 /**
@@ -49,6 +56,7 @@ function contentReferences(content: VariantContent, variant: string, prefix: str
 			value: node.kind,
 			vocabulary: "nodeKinds" as const,
 			variant,
+			subject: nodeSubject(node),
 		})),
 		// One reference per membership, keyed by the node and the group rather
 		// than by where the id sits in the array: a membership is the same
@@ -60,6 +68,7 @@ function contentReferences(content: VariantContent, variant: string, prefix: str
 				value: group,
 				vocabulary: "groups" as const,
 				variant,
+				subject: nodeSubject(node),
 			})),
 		),
 		...content.edges.map((edge) => ({
@@ -68,6 +77,7 @@ function contentReferences(content: VariantContent, variant: string, prefix: str
 			value: edge.kind,
 			vocabulary: "relationshipKinds" as const,
 			variant,
+			subject: edgeSubject(edge, content),
 		})),
 	];
 }
@@ -103,6 +113,7 @@ function semanticVocabularyDiagnostics(
 			board: board.name,
 			path: reference.path,
 			...(reference.variant === undefined ? {} : { variant: reference.variant }),
+			...(reference.subject === undefined ? {} : { subject: reference.subject }),
 			message: `${reference.vocabulary} has no definition for ${JSON.stringify(reference.value)}. Add it to .archboard/config.yaml or change this reference to a configured value; existing content remains readable with neutral appearance.`,
 		}));
 }

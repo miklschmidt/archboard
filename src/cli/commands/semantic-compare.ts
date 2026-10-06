@@ -35,7 +35,11 @@ import {
 	type VariantComparison,
 	type VariantContent,
 } from "@/shared/semantic-board/index";
-import { VaultDiagnosticSchema, type VaultDiagnostic } from "@/shared/semantic-policy/index";
+import {
+	diagnosticLine,
+	VaultDiagnosticSchema,
+	type VaultDiagnostic,
+} from "@/shared/semantic-policy/index";
 import { readSemanticBoardAnswerOnServer } from "@/runtime/semantic-board-client/index";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { serverRefusal } from "@/cli/command-contract/common";
@@ -579,10 +583,7 @@ const semanticCompareContract = defineCommand({
 		const result = comparisonAnswer(answer.board, variant, against, answer.warnings);
 		return {
 			result,
-			diagnostics: [
-				...answer.warnings.map((warning) => `Warning: ${warning.file}: ${warning.message}`),
-				...described(result),
-			],
+			diagnostics: [...answer.warnings.map(diagnosticLine), ...described(result)],
 		};
 	},
 });

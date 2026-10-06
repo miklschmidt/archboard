@@ -113,6 +113,54 @@ test("removed definitions remain readable and editable, and cloning them preserv
 	expect(branch.outcome).toBe("applied");
 });
 
+test("an unknown kind names the node or the relationship that states it", async () => {
+	expect(
+		(
+			await store.writeSemanticBoard({
+				board: name,
+				writer,
+				transition: store.createBoardTransition(
+					contract.BoardCreateInputSchema.parse({
+						name,
+						level: "context",
+						nodes: [
+							{ name: "Gateway", kind: "api" },
+							{ name: "Worker", kind: "worker" },
+						],
+						edges: [{ from: "Gateway", to: "Worker", kind: "request" }],
+					}),
+				),
+			})
+		).outcome,
+	).toBe("applied");
+	save({
+		...policy,
+		nodeKinds: { worker: policy.nodeKinds["worker"]! },
+		relationshipKinds: { event: { name: "Event", dash: "dashed", arrowhead: "open" } },
+	});
+	const { content } = read().board.variants[0]!;
+	const gateway = content.nodes.find((node) => node.name === "Gateway")!;
+	const request = content.edges[0]!;
+	const subjects = read()
+		.warnings.filter((issue) => issue.code === "UNKNOWN_VOCABULARY")
+		.map((issue) => issue.subject);
+	expect(subjects).toHaveLength(2);
+	expect(subjects).toContainEqual({ kind: "node", id: gateway.id, name: "Gateway" });
+	expect(subjects).toContainEqual({
+		kind: "edge",
+		id: request.id,
+		name: "Gateway -> Worker",
+	});
+});
+
+test("an unknown level is about the board, so it names no subject", async () => {
+	await create("api", "detail");
+	save({ ...policy, levels: ["context"] });
+	const levelWarning = read().warnings.find((issue) => issue.path === "level");
+	expect(levelWarning?.code).toBe("UNKNOWN_VOCABULARY");
+	expect(levelWarning?.subject).toBeUndefined();
+});
+
 test("a historical removed kind cannot authorize a newly authored reference in an existing variant", async () => {
 	await create();
 	const node = read().board.variants[0]!.content.nodes[0]!;

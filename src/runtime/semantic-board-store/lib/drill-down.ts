@@ -28,6 +28,7 @@ import type { SemanticBoard, SemanticNode, VariantContent } from "@/shared/seman
 import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
 import { contentCheckedVariants } from "@/runtime/semantic-board-store/lib/content-checks";
 import { semanticBoardAddress } from "@/runtime/semantic-board-store/lib/location";
+import { nodeSubject } from "@/runtime/semantic-board-store/lib/subject";
 
 /** What the checker knows about one board it read, as another board's target. */
 interface DrillDownTarget {
@@ -94,13 +95,14 @@ function semanticDrillDownDiagnostics(
 						board: board.name,
 						variant: variant.id,
 						path: `variants.${variant.id}.content.nodes.${node.id}.drillDown`,
+						subject: nodeSubject(node),
 					}),
 		),
 	);
 }
 
 /** Where one link is, in the words every vault diagnostic uses. */
-type DiagnosticSite = Pick<VaultDiagnostic, "file" | "board" | "variant" | "path">;
+type DiagnosticSite = Pick<VaultDiagnostic, "file" | "board" | "variant" | "path" | "subject">;
 
 /**
  * Everything wrong with one node's link.
