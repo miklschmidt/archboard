@@ -1,11 +1,11 @@
 ---
 id: TASK-367.04
 title: 'Relationships and flow steps carry an anchor, and a binding can name a symbol'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 11:45'
+updated_date: '2026-10-06 12:08'
 labels:
   - code-check
   - semantic-model
@@ -28,11 +28,11 @@ Evidence rule 3 of the consumer skill makes an agent record a file and a symbol 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A relationship and a flow step accept an optional anchor, and a binding accepts an optional symbol, in the persisted schema and the agent input
-- [ ] #2 Comparison treats an anchor as bookkeeping and ignores it (ADR 0023). A changed binding symbol is a changed binding
-- [ ] #3 Reconciliation carries an anchor like other authored fields, and restating a relationship without its anchor does not lose it silently
-- [ ] #4 Every reader of a binding honours the symbol or says that it ignores it. The inspector shows the symbol
-- [ ] #5 The consumer skill writes the evidence record into the payload, one recipe's worked example shows an anchor, the generated schemas are regenerated, and the eval inputs and `coverage.json` row are updated
+- [x] #1 A relationship and a flow step accept an optional anchor, and a binding accepts an optional symbol, in the persisted schema and the agent input
+- [x] #2 Comparison treats an anchor as bookkeeping and ignores it (ADR 0023). A changed binding symbol is a changed binding
+- [x] #3 Reconciliation carries an anchor like other authored fields, and restating a relationship without its anchor does not lose it silently
+- [x] #4 Every reader of a binding honours the symbol or says that it ignores it. The inspector shows the symbol
+- [x] #5 The consumer skill writes the evidence record into the payload, one recipe's worked example shows an anchor, the generated schemas are regenerated, and the eval inputs and `coverage.json` row are updated
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -60,4 +60,12 @@ Built: CodeAnchorSchema {repo, path, symbol} beside CodeBindingSchema (src/share
 Decisions the ADR left open: (1) anchor path is nonempty (a binding path may be empty for a repo root; an anchor names a file). (2) No catalogue row for anchor: it is part of the relationship row, and CATALOGUE_ROWS in src/runtime/skill-evaluation is a closed set outside this task. (3) A dropped anchor is detected by id only (same id before and after, anchor gone); a step restated without its id is a new step, as before. (4) ANCHOR_DROPPED lives in its own module rather than replaced-relationships.ts, because it covers steps too; WriteNotice's code union gains it. (5) The inspector shows the binding symbol only; a relationship's anchor is not shown in the UI (TASK-367.24 marks the canvas). (6) skill-evaluation's outcomes-board reads binding.path only; it is the eval harness, outside the fence, and the symbol does not change its counts.
 
 Gate: type-check 0, build:frontend 0, test:modules 3996 pass 0 fail (an earlier run failed only on other agents' in-flight files: code-check-route, entry-row, measured-interfaces), test:system 192/0, test:repository 20/0, test:serial-browser 24/0, lint:policy 0; lint:tests and fmt:check fail only in TASK-368.07's comparison-answer.test.ts and commander.ts. eval:skill check: suite ok. My eval hunks (S00 edge.anchor and binding.symbol, S07 step.anchor, coverage rows) were in the index when TASK-368.07 committed and landed in cb186f616.
+
+Independent review (2026-10-06): the sequence and edit recipes' worked examples carried no anchors, against the new rule, and the architecture recipe miscounted write.ts's functions (9943897a7). stepProse was renamed optionalStepFields and the version comment names anchor and symbol (4e4fe2d9b). The Board persistence proposal was redrawn as a function in the checks group and adopted at version 30 (d1b305e03). The eval rows of this task landed in cb186f616 of TASK-368.07 by a shared-index accident; their content is correct.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A relationship and a flow step now accept an optional anchor { repo, path, symbol }, and a binding accepts an optional symbol, in the persisted schema and both agent inputs, with the board contract version kept at 2.4.0. Comparison ignores the anchor and treats a changed symbol as a changed binding. Reconciliation merges the anchor, and restating a relationship or step without it answers ANCHOR_DROPPED. Every binding reader honours or states that it ignores the symbol, and the inspector shows it. The consumer skill writes the evidence record as the anchor in every worked example, with S00 and S07 rows. Verified by anchors, comparison and reconciliation tests (pass with --isolate), eval:skill check, and the adopted Board persistence proposal with a clean ./bin/dogfood check.
+<!-- SECTION:FINAL_SUMMARY:END -->
