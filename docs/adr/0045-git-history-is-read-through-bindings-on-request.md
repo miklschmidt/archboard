@@ -213,9 +213,9 @@ TASK-369.04 amended the rule above for an unjoined pair. Two more things join
 two coupled parts. Everything else stands.
 
 A flow step joins the two parts at its ends, in either direction, as a
-relationship does. The board draws the message, and the architecture picture
-draws a step that no relationship joins as a step line. So the board does not
-miss that dependency. ADR 0044 leaves steps out of a container's interface,
+relationship does. The board holds the message, and the flow's data-flow view
+draws it. The architecture picture draws it as a step line only on a board with
+no relationships. So the board does not miss that dependency. ADR 0044 leaves steps out of a container's interface,
 because a return travels against the dependency. Change coupling has no
 direction, so that reason does not apply here.
 
