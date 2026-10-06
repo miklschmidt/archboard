@@ -44,7 +44,6 @@ import {
 	cardLook,
 	typeChip,
 } from "@/transformers/semantic-renderer/lib/svg/appearance";
-import { cornerDrillMark } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
 import { paintCardViews } from "@/transformers/semantic-renderer/lib/svg/far-card";
 import type { Anchor } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { lines, tag, textNode, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
@@ -168,18 +167,7 @@ function paintCard(
 						y: box.y + (box.height - ICON_CHIP_SIZE) / 2,
 					},
 					words: { markup: lines([title, note]), anchor: { x: textX, y: titleY, size: titleSize } },
-					mark:
-						appearance.drill === null
-							? ""
-							: cornerDrillMark(
-									box,
-									CARD_PADDING_X,
-									titleY - titleSize * OPTICAL_CENTRE - box.y,
-									appearance.drill,
-									palette.glyph,
-								),
 				},
-				unsettled,
 			),
 			standingPin(box, standing, palette),
 			// The opposite corner from the pin, inside the padding the words already
