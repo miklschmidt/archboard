@@ -48,20 +48,21 @@ Keep the real relationship kind when judging routing.
    repo-relative path.
 3. State the architecture in one payload and create the board. The evidence
    behind this one comes from archboard's own source. The Archboard server's
-   `editRoute` (`src/server/archboard/lib/semantic-board-writes.ts`) imports
-   two functions from `src/runtime/semantic-board-store/index.ts`, the board
-   store's interface. It builds the edit with `editVariantTransition`
-   (`lib/transitions.ts`) and hands it to `writeSemanticBoard`
-   (`lib/write.ts`). So the store is a container, bound to its directory, and
-   those two are its entry points. Behind them, inside the store,
-   `writeSemanticBoard` calls `underBoardLease`, which takes the board's lease
-   through `withBoardLock` (`src/runtime/engine/lib/board-lock-acquisition.ts`).
-   It also passes `underBoardLease` a callback that calls `applyUnderLease`.
-   `applyUnderLease` applies the edit through `transition.apply`, then calls
-   `persisted`. No file outside the store calls those three, so they are its
-   hidden parts. Each function's two calls come from its own body, so they are
-   siblings, not a chain. The agent running the command is the inbound caller
-   and lives outside the checkout, so it stays unbound.
+   `editRoute` (`src/server/archboard/lib/semantic-board-writes.ts`) calls
+   two functions that the board store exports from its interface,
+   `src/runtime/semantic-board-store/index.ts`. It builds the edit with
+   `editVariantTransition` (`lib/transitions.ts`) and hands it to
+   `writeSemanticBoard` (`lib/write.ts`). So the store is a container, bound to
+   its directory, and those two are its entry points. Behind them, inside the
+   store, `writeSemanticBoard` calls `underBoardLease`, which takes the board's
+   lease through `withBoardLock`
+   (`src/runtime/engine/lib/board-lock-acquisition.ts`). It also passes
+   `underBoardLease` a callback that calls `applyUnderLease`. `applyUnderLease`
+   runs the edit's `apply`, a closure that `editVariantTransition` defines,
+   then calls `persisted`. No file outside the store calls those three, so
+   they are its hidden parts. Each function's two calls come from its own
+   body, so they are siblings, not a chain. The agent running the command is
+   the inbound caller and lives outside the checkout, so it stays unbound.
 
 ```bash
 archboard semantic new "Semantic board writes" --doing "describing how one board edit reaches disk" <<'JSON'
@@ -107,15 +108,14 @@ archboard semantic inspect "Semantic board writes" --container "Board store"
 archboard semantic rasterize "Semantic board writes" --out /tmp/writes.png
 ```
 
-`Edit route` lands on the two functions that the store's `index.ts` exports,
-and not on `applyUnderLease` or `persisted`, although their bodies do the write
+`Edit route` calls the two entry points, not `applyUnderLease` or `persisted`,
+although their bodies do the write
 ([evidence rule 3](../SKILL.md#evidence-before-a-write)). The inspection reads
-that back: `editVariantTransition` and `writeSemanticBoard` are the entry
-points, the other three are hidden parts, `Edit route` is the one caller and
-the call to `Board lease` is the one outgoing relationship. `Board lease`
-receives `withBoardLock` itself because this board draws it whole, with no
-children. Draw its functions inside it, and the call lands on `withBoardLock`,
-its entry point.
+that back: two entry points, three hidden parts, `Edit route` as the one
+caller and the call to `Board lease` as the one outgoing relationship.
+`Board lease` receives `withBoardLock` itself because this board draws it
+whole, with no children. Draw its functions inside it, and the call lands on
+`withBoardLock`, its entry point.
 
 4. Check the answer against your record: every part you meant is there with a
    configured `kind`; every relationship's `from`, `to` and `kind` match its
@@ -129,5 +129,5 @@ its entry point.
    loop, not a repair. A request path the board carries is a `flow` drawn
    through a `data-flow` view, not a row to declare inapplicable.
 
-Read [authoring](references/authoring.md) for groups, drill-down links to
+Read [authoring](authoring.md) for groups, drill-down links to
 detail boards, traffic, emphasis, descriptions, and what a refusal means.

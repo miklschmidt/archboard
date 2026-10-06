@@ -206,17 +206,16 @@ board needs all of it.
    inside its `parent`. A board that describes a module draws it as a
    container: a part with children, whatever its kind (a module with its
    functions, a class with its methods, a component with the components it
-   defines). Its callers are parts outside it. A call from outside lands on
-   the entry point that the caller names: the exported function, public
-   method, rendered component or handled route that it calls. The calls
-   behind that entry point are drawn inside the container, down to the
-   helpers whose bodies do the work. A child that nothing outside reaches is a
-   hidden part. A relationship that ends on the container itself makes no
-   entry point. Keep it for a dependency on the whole module, where the source
-   names no part of it. When an existing part gets children, move every
-   relationship that landed on it to the entry point its caller names. That is
-   where a relationship lands, not who takes part in an exchange; a flow's
-   columns are chosen at step 7. For a return or a non-call relationship, state the
+   defines). Its callers stay outside it. A call from outside lands on the
+   entry point that the caller names: the exported function, public method,
+   rendered component or handled route. The calls behind that entry point
+   land inside the container, on the helpers that do the work. A
+   relationship that ends on the container itself makes no entry point. Keep
+   it for a dependency on the whole module, where the source names no part of
+   it. When an existing part gets children, move each relationship that landed
+   on it to the entry point that its caller names. That is where a
+   relationship lands, not who takes part in an exchange; a flow's columns are
+   chosen at step 7. For a return or a non-call relationship, state the
    directional claim in words and make the endpoints follow it (for example, A returns to B, A reads from B, A emits an event B
    handles, A resolves a promise B awaits, A passes B a callback or props, or
    A depends on B). Sibling calls are not a chain: when `apply()` calls
@@ -279,13 +278,14 @@ What the source shows for each row, and what you author for it:
 - `containment`. _Shows:_ a part defined inside another (a function of a module,
   a method of a class, a component defined inside another, a closure inside its
   factory). _Author:_ `parent`. A module that the board describes is a
-  container. Its children are the entry points that its callers name and the
-  hidden parts behind them, and its callers stay outside it
-  ([evidence rule 3](#evidence-before-a-write)). An instance a part holds or renders is not its
-  child: an object in a field, a value a closure captures, a dependency a
-  function or component is handed (a constructor argument, props, context) or
-  builds and keeps is a `relationship` from the holder, even when the request
-  says the holder owns it.
+  container, bound to its directory or file. Its children are the entry
+  points that its callers name and the hidden parts behind them, and its
+  callers stay outside it ([evidence rule 3](#evidence-before-a-write)). An
+  instance a part holds or renders is not its child: an object in a field, a
+  value a closure captures, a dependency a function or component is handed (a
+  constructor argument, props, context) or builds and keeps is a
+  `relationship` from the holder, even when the request says the holder owns
+  it.
 - `relationship`. _Shows:_ a call, render, read, event, message, dependency or
   publication one body makes to another. _Author:_ an `edge` of the configured
   kind, its `label` the message or mechanism.

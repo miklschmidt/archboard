@@ -30,20 +30,15 @@ the CLI refuses. Fragments here go into the JSON of `semantic new` or
 ### Containment and receivers
 
 `parent` says the child is defined inside the parent, and nothing about calls or
-about who holds an instance of it: holding one is a relationship. A relationship
-lands on the part that receives it:
-`Browser client -> Viewer entry point -> Fetch semantic reads`, both internal
-parts parented to `Semantic viewer`, not
-`Browser client -> Semantic viewer -> Fetch`. The renderer carries a line across
-a container's boundary when the receiver belongs inside it, and keeps other
-relationships outside. A container is the endpoint only when the source
-addresses the whole module (a dependency in a higher-level view). Any part drawn
-with children is a container, whatever its `kind`: a module, class or component
-node that defines its functions, methods or components receives nothing itself,
-and a call to it lands on the child whose body runs. When you give an existing
-part children, move every relationship that landed on it to the child that
-receives it. Before presenting, trace each incoming call to its actual receiver;
-valid ids alone cannot tell you this.
+about who holds an instance of it: holding one is a relationship. Where a
+relationship lands is [evidence rule 3](../SKILL.md#evidence-before-a-write). A
+call from outside a container lands on the entry point that the caller names.
+A call inside it lands on the part whose body runs. A handler calls the
+exported `apply()` of a module, and `apply()` calls the private `validate()`.
+The board says `handler -> apply -> validate`, with both functions parented to
+the module. It does not say `handler -> module` or `handler -> validate`. Trace
+each incoming call to the entry point that it names before you present the
+board. Valid ids cannot tell you this.
 
 ### Groups
 
