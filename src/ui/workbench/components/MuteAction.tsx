@@ -1,6 +1,5 @@
 // The mute control of a live voice, one control wherever the voice's controls are
-// drawn: the dock's voice line, the voice box over a picture and the Talk control a
-// presentation carries.
+// drawn: the dock's voice line and the voice box, in the shell and in a recording.
 
 import { RiMicLine, RiMicOffLine } from "@remixicon/react";
 import type { JSX } from "react";
