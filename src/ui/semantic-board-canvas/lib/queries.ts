@@ -3,7 +3,7 @@
 // call sites, so a subscription and an invalidation always name the same cache
 // entry and each resource's freshness contract is written down once.
 
-import { queryOptions } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 
 import { DEFAULT_LAYOUT_ENGINE } from "@/shared/semantic-board/index";
 import { VAULT_CHECK_POLL_MS } from "@/shared/timing/timing";
@@ -258,9 +258,20 @@ function codeFindingsQuery() {
  * answers from its memory unless a checkout's HEAD moved, so a pick after a
  * commit reads the new history. Nothing else asks again: no interval, no
  * return to the tab and no reconnect, because each of those is a request
- * nobody made. A new version of the board is a new key, so the next read is of
- * the board as it now stands. A failed read is not tried again by itself; the
- * region offers that to the person.
+ * nobody made. A failed read is not tried again by itself; the region offers
+ * that to the person.
+ *
+ * The read is not cancelled when the person picks another part. The old pick's
+ * subscription goes before the new one comes, so a read that a pick cancelled
+ * would be asked again by the next, and the server would start its walk of Git
+ * again for each pick. Instead a pick made while the read runs waits for it,
+ * and a series of picks asks once (ADR 0045: a request that arrives during the
+ * walk waits for it).
+ *
+ * A new version of the board is a new key, so the part on screen is read again
+ * as the board now stands, which is what says whether a relationship joins two
+ * parts. Its last answer stays on screen while that read runs, so a write by an
+ * agent does not empty the region.
  * @param on The board, the variant by id and the version on screen.
  * @returns The query options.
  */
@@ -269,10 +280,10 @@ function localityQuery(on: ReadingOnScreen) {
 		queryKey: semanticBoardKeys.locality(on),
 		/**
 		 * Ask the server for the board's locality.
-		 * @param context The query context, carrying this read's cancellation.
 		 * @returns The answer.
 		 */
-		queryFn: (context) => boardReads().locality(on.board, on.variant, context.signal),
+		queryFn: () => boardReads().locality(on.board, on.variant),
+		placeholderData: keepPreviousData,
 		staleTime: 0,
 		refetchOnMount: true,
 		refetchOnWindowFocus: false,

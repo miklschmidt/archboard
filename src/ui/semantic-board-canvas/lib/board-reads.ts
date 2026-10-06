@@ -38,17 +38,13 @@ interface BoardReads {
 	 */
 	readonly codeFindings: (signal?: AbortSignal) => Promise<RememberedFindings>;
 	/**
-	 * Where change concentrates in one variant of one board, read from Git.
+	 * Where change concentrates in one variant of one board, read from Git. It
+	 * takes no cancellation: a pick made while it runs waits for it.
 	 * @param board The board, by name.
 	 * @param variant The variant, by id: the current one or a draft.
-	 * @param signal Cancels the read.
 	 * @returns The answer.
 	 */
-	readonly locality: (
-		board: string,
-		variant: string,
-		signal?: AbortSignal,
-	) => Promise<LocalityAnswer>;
+	readonly locality: (board: string, variant: string) => Promise<LocalityAnswer>;
 }
 
 const fromServer: BoardReads = {

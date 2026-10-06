@@ -4,6 +4,8 @@
 // the server, and only somebody picking a part out asks for it. The selection
 // tab is drawn again for each pick, so each pick is a new subscription; the
 // stage test `semantic-board-history.test.tsx` holds that each pick asks once.
+// A pick made while a read runs waits for it, so a person who steps through
+// the parts during the first walk does not start the walk again at each part.
 //
 // The query library decides when it loads whether it runs in a browser, and
 // only a browser runs intervals. So this file registers the DOM before it loads
@@ -55,6 +57,9 @@ const ANSWER: LocalityAnswer = {
 /** How many times each read was asked. */
 const asked = { locality: 0, vaultCheck: 0 };
 
+/** A read the server has not answered yet, while a test holds it. */
+let walking: ReturnType<typeof Promise.withResolvers<LocalityAnswer>> | undefined;
+
 readBoardsFrom({
 	/**
 	 * No board is read here.
@@ -80,7 +85,7 @@ readBoardsFrom({
 	 */
 	locality: async () => {
 		asked.locality += 1;
-		return ANSWER;
+		return walking === undefined ? ANSWER : await walking.promise;
 	},
 });
 
@@ -118,6 +123,40 @@ function Pane(props: { readonly pick: number | null }): JSX.Element {
 }
 
 /**
+ * Mount the pane with nothing picked, and a way to pick.
+ * @param client The query cache of the tab.
+ * @returns How to pick a part out, or let go, and how to unmount.
+ */
+function mountPane(client: InstanceType<typeof QueryClient>): {
+	readonly choose: (pick: number | null) => Promise<void>;
+	readonly unmount: () => void;
+} {
+	/**
+	 * The tab's tree with one pick on screen.
+	 * @param pick A number for each pick, or null for none.
+	 * @returns The tree.
+	 */
+	function tree(pick: number | null): JSX.Element {
+		return createElement(QueryClientProvider, { client }, createElement(Pane, { pick }));
+	}
+	const mounted = render(tree(null));
+	return {
+		/**
+		 * Pick a part out, or let go.
+		 * @param pick A number for each pick, or null for none.
+		 */
+		choose: async (pick) => {
+			mounted.rerender(tree(pick));
+			await pass(0);
+		},
+		/** Take the tree down. */
+		unmount: () => {
+			mounted.unmount();
+		},
+	};
+}
+
+/**
  * Let time go by on the hand-driven clock, and what it sets off settle.
  * @param ms How long.
  */
@@ -133,17 +172,7 @@ async function pass(ms: number): Promise<void> {
 test("the locality is asked once for each pick, and never on the poll, a return to the tab or a reconnect", async () => {
 	jest.useFakeTimers();
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-	const mounted = render(
-		createElement(QueryClientProvider, { client }, createElement(Pane, { pick: null })),
-	);
-	/**
-	 * Pick a part out, or let go.
-	 * @param pick A number for each pick, or null for none.
-	 */
-	async function choose(pick: number | null): Promise<void> {
-		mounted.rerender(createElement(QueryClientProvider, { client }, createElement(Pane, { pick })));
-		await pass(0);
-	}
+	const { choose, unmount } = mountPane(client);
 	await pass(3 * VAULT_CHECK_POLL_MS);
 	expect(asked.vaultCheck).toBeGreaterThan(1);
 	expect(asked.locality).toBe(0);
@@ -169,7 +198,28 @@ test("the locality is asked once for each pick, and never on the poll, a return 
 	await choose(null);
 	await pass(3 * VAULT_CHECK_POLL_MS);
 	expect(asked.locality).toBe(2);
-	mounted.unmount();
+	unmount();
 	client.clear();
 	focusManager.setFocused(undefined);
+});
+
+test("picks made while the locality is read wait for that read and ask nothing more", async () => {
+	jest.useFakeTimers();
+	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const { choose, unmount } = mountPane(client);
+	asked.locality = 0;
+	walking = Promise.withResolvers<LocalityAnswer>();
+
+	await choose(1);
+	await choose(2);
+	await choose(3);
+	expect(asked.locality).toBe(1);
+
+	walking.resolve(ANSWER);
+	walking = undefined;
+	await pass(0);
+	await choose(4);
+	expect(asked.locality).toBe(2);
+	unmount();
+	client.clear();
 });
