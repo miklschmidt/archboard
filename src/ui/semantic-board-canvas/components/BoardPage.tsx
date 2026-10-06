@@ -100,7 +100,7 @@ function PartCard(props: PartCardProps): JSX.Element {
 				data-slot="part-card"
 				data-part={node.id}
 				onClick={pick}
-				className="bg-muted shadow-card hover:border-foreground/35 hover:shadow-float relative flex h-full w-full min-w-0 items-start gap-2.5 rounded-[6px] border border-(color:--diagram-edge) px-3.5 py-3 text-left outline-offset-3 aria-pressed:outline-2 aria-pressed:outline-(color:--diagram-selection)"
+				className="bg-muted shadow-card hover:border-foreground/35 hover:shadow-float relative flex h-full w-full min-w-0 items-start gap-2.5 rounded-[6px] border border-border px-3.5 py-3 text-left outline-offset-3 aria-pressed:outline-2 aria-pressed:outline-(color:--diagram-selection)"
 			>
 				<span
 					aria-hidden="true"
