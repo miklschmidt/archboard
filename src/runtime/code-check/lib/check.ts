@@ -11,8 +11,10 @@
 // (support.ts), and so is one whose uses are all of an evidence kind its
 // relationship kind does not accept (anchor-kind.ts). Then each board's
 // relationships are held to the evidence between its bound parts
-// (relationships.ts). What the pass cannot read is listed with the reason, and
-// never reported as a finding: a symbol found only in code that did not parse too.
+// (relationships.ts), and each container's interface to what the module it
+// binds exposes (interfaces.ts). What the pass cannot read is listed with the
+// reason, and never reported as a finding: a symbol found only in code that
+// did not parse too.
 
 import path from "node:path";
 import {
@@ -33,6 +35,7 @@ import {
 import { judgeAnchorKind } from "@/runtime/code-check/lib/anchor-kind";
 import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
 import { evidenceOf, lineagesOf } from "@/runtime/code-check/lib/evidence";
+import { judgeInterfaces, type ModuleReadings } from "@/runtime/code-check/lib/interfaces";
 import { partCodesOf } from "@/runtime/code-check/lib/part-code";
 import { judgeRelationships } from "@/runtime/code-check/lib/relationships";
 import { judgeSupport } from "@/runtime/code-check/lib/support";
@@ -67,6 +70,8 @@ interface Pass {
 	readonly facts: FactsPass;
 	/** The kinds of file read as text in each repository. */
 	readonly readAsText: Map<string, Set<string>>;
+	/** What each module a container binds exposes, read once for every board. */
+	readonly modules: ModuleReadings;
 	readonly outcome: CodeCheckOutcome;
 }
 
@@ -430,7 +435,8 @@ async function anchorMismatch(
 }
 
 /**
- * Hold one board's relationships to the evidence between its bound parts.
+ * Hold one board's relationships to the evidence between its bound parts,
+ * and its containers' interfaces to what their modules expose.
  * @param read The board, at the variant the check reads.
  * @param pass The pass.
  */
@@ -456,15 +462,24 @@ async function judgeBoardRelationships(read: BoardToCheck, pass: Pass): Promise<
 			searchOf(checkout, pass).readAsText(file);
 		},
 	});
+	const lineages = lineagesOf(codes);
 	const judged = judgeRelationships({
 		read,
 		codes,
 		evidence,
-		lineages: lineagesOf(codes),
+		lineages,
 		relationshipKinds: read.relationshipKinds,
 	});
-	pass.outcome.findings.push(...judged.findings);
-	pass.outcome.skipped.push(...judged.skipped);
+	const interfaces = await judgeInterfaces({
+		read,
+		codes,
+		lineages,
+		pieces: evidence.pieces,
+		facts: pass.facts,
+		modules: pass.modules,
+	});
+	pass.outcome.findings.push(...judged.findings, ...interfaces.findings);
+	pass.outcome.skipped.push(...judged.skipped, ...interfaces.skipped);
 }
 
 /**
@@ -554,6 +569,7 @@ async function checkCode(
 		checkouts,
 		facts: codeFacts.pass(signal),
 		readAsText: new Map(),
+		modules: new Map(),
 		outcome: { findings: [], skipped: [] },
 	};
 	await judgeAll(claims, pass);

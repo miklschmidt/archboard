@@ -213,7 +213,9 @@ function finding(code: string, id: string) {
 }
 
 test("every finding of the relationship judgement, and nothing about a relationship the evidence supports", () => {
-	const found = outcome.findings.map((each) => `${each.code} ${each.subject?.id} ${each.severity}`);
+	// The store's root files expose `list`, which nothing outside uses: the interface judgement's to own.
+	const judged = outcome.findings.filter((each) => each.code !== "EXPOSED_UNUSED");
+	const found = judged.map((each) => `${each.code} ${each.subject?.id} ${each.severity}`);
 	expect(found.toSorted()).toEqual(
 		[
 			"RELATIONSHIP_UNDRAWN pA warning",
