@@ -30,7 +30,9 @@ interface AnswerMemory<T> {
 }
 
 /**
- * Wait for work on behalf of one caller. The last caller to go stops the work.
+ * Wait for work on behalf of one caller. The last caller to go stops the work,
+ * and its wait ends only once the work has settled, so a server that stops
+ * and waits for its callers never leaves the work running behind it.
  * @param work The work.
  * @param signal The caller's signal, if the caller can hang up.
  * @returns The work's answer.
@@ -53,7 +55,10 @@ async function waitFor<T>(
 	} finally {
 		signal.removeEventListener("abort", leave);
 		work.waiters -= 1;
-		if (work.waiters === 0 && !work.settled) work.controller.abort(signal.reason);
+		if (work.waiters === 0 && !work.settled) {
+			work.controller.abort(signal.reason);
+			await work.promise.catch(() => undefined);
+		}
 	}
 }
 
