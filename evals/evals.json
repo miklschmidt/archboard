@@ -1600,6 +1600,65 @@
 					"board": "Flask application"
 				}
 			]
+		},
+		{
+			"id": "S19",
+			"name": "choose the parts a pull request's recording is about",
+			"report": "primary",
+			"workflow": "record",
+			"flask": "3.0.0",
+			"fixture": "fixtures/S19.json",
+			"sources": [
+				"src/flask/app.py",
+				"src/flask/cli.py",
+				"src/flask/ctx.py",
+				"src/flask/sessions.py"
+			],
+			"prompt": "This checkout is a pull request: its commits are the ones after the `2.3.3` tag. I will record its walkthrough for the reviewers, and the `Flask application` board binds its parts to the files of this checkout. Which parts of that board did the pull request's commits change, with how many commits changed each? Say which parts of the board you could not tell about and why, and whether any of the commits is large. Change nothing; I will record the video myself.",
+			"expectedFeatures": [
+				{
+					"feature": "footprint.changed-parts",
+					"requirement": "`semantic footprint` names the `Flask application` board with `--base 2.3.3`, and the answer reports `Flask app`, `WSGI entry`, `Dispatch`, `Finalize request` and `Process response` as changed by 6 commits each (one file, src/flask/app.py) and `CLI`, `Run command` and `App loader` as changed by 1 commit (src/flask/cli.py); the commits are the ones of the command, not a count from a hand-made `git log`",
+					"skill": ["references/sequences-views-walkthroughs.md#a-pull-requests-recording"]
+				},
+				{
+					"feature": "footprint.unchanged-and-skipped",
+					"requirement": "`Contexts`, `Request context push` and `Session interface` are not reported as changed, and `Development server` is reported as not read because it has no binding, never as a part that no commit changed; the answer says that none of the commits is large",
+					"skill": ["references/sequences-views-walkthroughs.md#a-pull-requests-recording"]
+				},
+				{
+					"feature": "read-only",
+					"requirement": "no write happens and no video is recorded",
+					"skill": [
+						"references/sequences-views-walkthroughs.md#a-pull-requests-recording",
+						"SKILL.md#which-recipe"
+					]
+				}
+			],
+			"outcomes": [
+				{
+					"check": "version-advanced-by",
+					"board": "Flask application",
+					"max": 0
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": [
+				"ids-stable",
+				"config-untouched",
+				"adopt-only-when-asked",
+				"doing-on-writes",
+				"no-writes"
+			],
+			"guidance": ["references/sequences-views-walkthroughs.md"],
+			"captures": [
+				{
+					"label": "application",
+					"board": "Flask application"
+				}
+			]
 		}
 	]
 }
