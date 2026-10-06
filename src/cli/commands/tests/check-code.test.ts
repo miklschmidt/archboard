@@ -258,3 +258,18 @@ test("check without --code never asks the code check", async () => {
 	expect(asked).toEqual(["/api/vault/check"]);
 	expect(JSON.parse(stdout)).not.toHaveProperty("codeCheck");
 });
+
+test("a skip that holds for a whole language says once which language and why", async () => {
+	plain = clean;
+	const detail = "typescript: tsc is not installed";
+	try {
+		answered = { ...codeCheck, skipped: [{ reason: "language-server-missing", detail }] };
+		const { stderr, exited } = await run(["check", "--code"]);
+		expect(exited).toBe(0);
+		const lines = stderr.split("\n").filter((line) => line.includes("language-server-missing"));
+		expect(lines).toHaveLength(1);
+		expect(lines[0]).toContain(detail);
+	} finally {
+		answered = codeCheck;
+	}
+});
