@@ -84,7 +84,7 @@ are in `lib/design.ts`.
    the label of a sequence message are low tiles with a contact shadow. An
    activation bar is a slim slab. It takes the front edge of its participant's
    card. The bar of a participant in no group is shaded toward the secondary
-   ink, so it stands out from the frame.
+   ink, about as pale as the bar of a grouped participant.
 8. **A sequence frame is a plinth with a nameplate,** built like a container.
    The name of the flow is printed on the nameplate as a container's name is:
    as written, not in capitals, in the medium face, 14 units high. Its summary
