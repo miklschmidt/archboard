@@ -360,6 +360,33 @@ no pair, so an anchor that cites it reads as a definition outside both ends.
 An include names the file of a declaration, not of the code that runs. clangd
 answers with the definition (TASK-367.15).
 
+#### Reading Terraform with the HCL grammar
+
+TASK-367.17 reads `.tf` and `.tofu` files with the `terraform` grammar of
+`@tree-sitter-grammars/tree-sitter-hcl` 1.2.0. The package also ships an
+`hcl` grammar, and both give the same tree on the files that were tried. The
+`terraform` grammar is the dialect that the package builds for Terraform's
+templates, so the adapter uses it. The JSON syntax (`.tf.json`) is read as
+text.
+
+On 2026-10-06, with Bun 1.4.2, one process read the 77 tracked `.tf` files of
+terraform-aws-modules `terraform-aws-vpc` (`b3abd6df2e`, version 6.7.3) in
+172 ms cold, grammar load included, and in 2 ms warm. They hold 2,631
+definitions and 3,090 references, and no line of them fell in a part that did
+not parse. A board of 10 parts bound to the root module `examples/complete`
+and 5 relationships ran through the real check in 216 ms cold and 95 ms warm.
+The root module calls the repository's own root (`../../`) as `vpc` and
+`modules/vpc-endpoints` three times, and its address space holds 189
+resources, data sources and module calls. The check found what was planted, a
+missing `module.vpc.aws_vpc.gone` and an address in the wrong module, and
+every other finding was right. It reported as undrawn the public subnets and
+the flow log, which reach the VPC through `local.vpc_id`, the NAT addresses
+and the NAT gateway, which name the internet gateway (one by `depends_on`),
+and the private NAT route, which names the NAT gateway. The relationship from
+the endpoints module call to the VPC holds through the call's argument
+`vpc_id = module.vpc.vpc_id` and the output of the `vpc` module, and the one
+drawn from the public subnets to the private NAT route has no reference.
+
 #### Resolving candidates with the TypeScript language server
 
 TASK-367.13 measured the language server on 2026-10-06. It used Bun 1.4.2 and
@@ -548,6 +575,20 @@ A part binds to a resource address as it binds to a code symbol. Examples are
 `packages.x86_64-linux.archboard`. The `symbol` field of a binding holds either
 (ADR 0046).
 
+A Terraform module is a directory, so a binding's path names a root module and
+its symbol an address in that root's address space (TASK-367.17). The check
+reads the root module and every local module that it calls, and each call
+gives its instance of the module addresses of its own:
+`module.checkout.aws_lambda_function.api`. A reference reaches its address
+through the variables, module arguments, outputs and local values that pass
+the value on, so a function that names `module.queue.url` reaches the queue
+that the output `url` of that module names. It never fetches a remote module
+and never reads the copy that `terraform init` keeps under `.terraform`. An
+address inside a remote module is skipped as `module-not-read`, unless a plan
+JSON that an agent names with `--plan` fills that module in. The configuration
+on disk decides every module that the check reads, so an older plan never
+brings back a declaration that the files removed.
+
 Nix says nothing about run time. It shows software dependencies that are not
 explicit anywhere else: flake inputs, and the packages that a derivation is
 built from.
@@ -604,8 +645,10 @@ The check reads files only. It never reads Terraform state, because state holds
 secrets in plain text, and the Archboard server has no authentication. It never
 runs `terraform plan`, `kubectl` or `nix eval`, because these need credentials,
 reach the network or run code. A plan JSON that CI already produced is an
-optional input. The difference between the infrastructure code and the live
-cloud stays the job of `terraform plan`.
+optional input that an agent names with `--plan`, inside a registered
+checkout. The check reads only the addresses and references of its
+`configuration`, never a value. The difference between the infrastructure code
+and the live cloud stays the job of `terraform plan`.
 
 ADR 0046 states the full rules. They include what the check reads from a plan
 JSON and which language servers it starts.
