@@ -13,7 +13,15 @@
 // that leave a mark when anything runs them.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+	chmodSync,
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	rmSync,
+	symlinkSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as CheckModule from "@/runtime/code-check/index";
@@ -32,7 +40,15 @@ const ran = join(scratch, "ran");
 process.env["ARCHBOARD_VAULT"] = vault;
 process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
 const SHOP = "github.com/test/shop";
-const SECRETS = ["state-secret", "tfvars-secret", "dot-terraform-secret", "plan-secret"];
+const SECRETS = [
+	"state-secret",
+	"tfvars-secret",
+	"dot-terraform-secret",
+	"plan-secret",
+	"source-secret",
+];
+/** The remote module's source, with a credential in it that nothing quotes. */
+const NETWORK = "git::https://ci:source-secret@example.com/network.git";
 let check: typeof CheckModule;
 let withoutPlan: CodeCheckOutcome;
 let withPlan: CodeCheckOutcome;
@@ -76,7 +92,7 @@ const PLAN = {
 		root_module: {
 			module_calls: {
 				network: {
-					source: "terraform-aws-modules/vpc/aws",
+					source: NETWORK,
 					module: {
 						resources: [
 							{ mode: "managed", type: "aws_vpc", name: "this", expressions: {} },
@@ -134,7 +150,7 @@ beforeAll(async () => {
 			"}",
 			"",
 			'module "network" {',
-			'  source = "terraform-aws-modules/vpc/aws"',
+			`  source = "${NETWORK}"`,
 			"}",
 			"",
 			'resource "aws_sqs_queue" "dead" {',
@@ -291,10 +307,13 @@ test("the check never reads state, variable files or .terraform, never runs terr
 	const refused = async (named: string) =>
 		!(await check.readPlans([named], new AbortController().signal)).ok;
 	writeFileSync(join(scratch, "elsewhere.json"), JSON.stringify(PLAN));
+	// Inside the checkout as named, outside it once its link resolves.
+	symlinkSync(join(scratch, "elsewhere.json"), join(shop, "infra", "linked.json"));
 	for (const named of [
 		join(shop, "infra", "terraform.tfstate"),
 		join(shop, "infra", "prod.tfvars"),
 		join(scratch, "elsewhere.json"),
+		join(shop, "infra", "linked.json"),
 		join(shop, "infra", "main.tf"),
 		"infra/plan.json",
 	]) {
