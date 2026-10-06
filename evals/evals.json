@@ -1536,6 +1536,70 @@
 					"board": "Flask application"
 				}
 			]
+		},
+		{
+			"id": "S18",
+			"name": "say which parts change most often",
+			"report": "primary",
+			"workflow": "read",
+			"flask": "3.0.0",
+			"fixture": "fixtures/S18.json",
+			"sources": [
+				"src/flask/app.py",
+				"src/flask/cli.py",
+				"src/flask/ctx.py",
+				"src/flask/sessions.py"
+			],
+			"prompt": "On the `Flask application` board, which parts change most often in the code they are bound to? Rank them by how many commits changed their files in the year before this checkout, say which parts could not be ranked and why, and say whether any commits were left out of the count. Answer from the saved board and the history of its bound files using the CLI. Change nothing.",
+			"expectedFeatures": [
+				{
+					"feature": "locality.hotspots",
+					"requirement": "`semantic locality` names the `Flask application` board and the answer ranks its parts by commits in the period: `Flask app`, `WSGI entry`, `Dispatch`, `Finalize request` and `Process response` first with 20 commits each, then `CLI`, `Run command` and `App loader` with 7, `Session interface` with 5, and `Contexts` and `Request context push` with 3; the year is the one before the checkout's HEAD, which the answer's period states",
+					"skill": ["references/read.md#answer-a-question-from-a-saved-board"]
+				},
+				{
+					"feature": "locality.shared-files",
+					"requirement": "the five parts bound to `src/flask/app.py` are reported as sharing one list of commits (one file's churn), not as five separate hotspots",
+					"skill": ["references/read.md#answer-a-question-from-a-saved-board"]
+				},
+				{
+					"feature": "locality.skipped",
+					"requirement": "`Development server` is reported as not ranked because it has no binding, never as a part that no commit changed; the answer says that the count left out no large commit",
+					"skill": ["references/read.md#answer-a-question-from-a-saved-board"]
+				},
+				{
+					"feature": "read-only",
+					"requirement": "no write happens",
+					"skill": [
+						"references/read.md#answer-a-question-from-a-saved-board",
+						"SKILL.md#which-recipe"
+					]
+				}
+			],
+			"outcomes": [
+				{
+					"check": "version-advanced-by",
+					"board": "Flask application",
+					"max": 0
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": [
+				"ids-stable",
+				"config-untouched",
+				"adopt-only-when-asked",
+				"doing-on-writes",
+				"no-writes"
+			],
+			"guidance": ["references/read.md"],
+			"captures": [
+				{
+					"label": "application",
+					"board": "Flask application"
+				}
+			]
 		}
 	]
 }

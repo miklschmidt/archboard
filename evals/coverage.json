@@ -211,6 +211,13 @@
 					"scenarios": ["S04"],
 					"evidence": "harness-check",
 					"owner": "board-count 2"
+				},
+				{
+					"path": "semantic locality: the hotspots of a board, its parts ranked by the commits that changed their bound files in a period, with large commits left out and counted and unread parts listed with the reason",
+					"expectedUse": "answer which parts of a board change most often from the CLI, report parts that share a file as one list of commits, and name a part that was not read as not read",
+					"scenarios": ["S18"],
+					"evidence": "grader",
+					"owner": "grader locality.hotspots, locality.shared-files, locality.skipped; src/runtime/history-lens/tests/locality.test.ts; src/cli/commands/tests/semantic-locality.test.ts; src/server/archboard/tests/locality-route.test.ts"
 				}
 			]
 		},

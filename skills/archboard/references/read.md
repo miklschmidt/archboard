@@ -65,11 +65,40 @@ through the CLI, report it in the board's own terms, and change nothing.
    read. Each `--beside <id|name>` adds one more variant, such as a competing
    proposal. Report the counts side by side as the answer gives them. Never
    rank the variants by them.
-5. Answer from what the CLI printed, naming subjects as the board names them:
+5. For where a board's code changes most often (which parts churn, what to
+   look at first in a refactor, whether the board's busiest parts are the ones
+   it draws as central), run
+   `archboard semantic locality <board> [--variant <name>] [--since <date>]`.
+   It reads the Git history of the files that each part's `binding` names. It
+   ranks every part it read by the number of commits that changed those
+   files, in `hotspots`, most commits first, and lists each part's commits
+   newest first (`commits` holds their subjects and times). It reads the
+   current variant, or the draft that `--variant` names. The period is the
+   year before the commit time of each checkout's HEAD, so one HEAD gives one
+   answer. `--since` names another start, and `periods` says what was read.
+   Report it with these cautions:
+   - A hotspot counts commits, not changed lines and not the complexity of the
+     code. Say that a part changes often, never that it is bad.
+   - `leftOut.largeCommits` counts the commits of more than 30 files that no
+     count includes, because a bulk change says nothing about one part.
+     Report the number beside the ranking.
+   - A part in `skipped` was not read: it has no binding, it opens another
+     board, its repository is not registered on this machine (or its checkout
+     is gone), or it is pinned to a ref that its checkout does not have out.
+     Name it as not read, never as a part that no commit changed. A part with `count: 0` was read and had
+     no commit in the period.
+   - Parts that bind the same file list the same commits; do not report them
+     as separate pressure. A part bound to a directory counts every file below
+     it, so a container tops the ranking by construction: compare parts at one
+     level of containment with each other.
+   - The ranking describes the code, not the board: it says nothing about
+     whether the board is right. Change nothing because of it.
+6. Answer from what the CLI printed, naming subjects as the board names them:
    members with their containers, internal relationships, boundary
    relationships as incoming or outgoing, neighbours, a container's entry
-   points, hidden parts, callers and outgoing relationships, and anything the
-   question asked about that the board does not say. Do not read the vault
+   points, hidden parts, callers and outgoing relationships, the ranked
+   hotspots with the large commits left out, and anything the question asked
+   about that the board does not say. Do not read the vault
    file, and do not write: a question is not a request to repair the board,
    and a contradiction between the board and the source is reported, not
    fixed, unless the request asks for the change.

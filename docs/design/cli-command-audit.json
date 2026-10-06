@@ -1702,6 +1702,37 @@
 			"classification": "board"
 		},
 		{
+			"path": "semantic locality",
+			"introducedBy": "TASK-369.03",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/semantic-locality.ts",
+			"stdout": "json object",
+			"result": "the hotspots of one variant of one board: the period read in each repository (the checkout's HEAD and its start and end), every part the lens read ranked by the commits of the period that changed its bound files, each part's commits newest first with subject, time and file count, how many large commits the count left out, and the parts the lens did not read with the reason",
+			"diagnostics": "the board and variant, the period of each repository, the parts that changed in it most commits first, how many parts had none, how many large commits were left out and how many parts were skipped per reason on stderr; usage/refusal on stderr",
+			"exits": [0, 1, 2, 3],
+			"prerequisites": ["server"],
+			"relationships": ["GET /api/semantic-boards/locality"],
+			"semantics": "derived on request from Git through the files each part binds and never stored (ADR 0045, ADR 0015); reads the current variant or the draft --variant names, and refuses a historical or shelved variant; the period is the commits on the HEAD of each registered checkout from --since, or the year before the commit time of HEAD, up to HEAD, so one HEAD gives one answer; commits of more than 30 files are left out of every count and counted; parts with no binding, a drill-down, an unregistered repository or a ref the checkout does not have out are listed as skipped; the server keeps each answer in memory keyed on the board version, the options and each checkout's HEAD",
+			"ordering": "validate --since, ask the server, which reads the board, resolves the variant, snapshots the checkouts, walks each repository once and ranks the parts, then print",
+			"nextFields": [
+				"periods[].head",
+				"hotspots[].count",
+				"hotspots[].commits",
+				"commits[].subject",
+				"leftOut.largeCommits",
+				"skipped[].reason"
+			],
+			"workflow": "necessary composition",
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "SERVER_UNREACHABLE",
+					"exit": 3
+				}
+			],
+			"classification": "board"
+		},
+		{
 			"path": "semantic render",
 			"introducedBy": "TASK-171",
 			"parserOwner": "CommandContract concrete Commander parser",
