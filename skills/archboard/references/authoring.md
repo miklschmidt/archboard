@@ -103,14 +103,15 @@ changed binding in a comparison. `archboard check` tests the path only;
 `archboard check --code` warns with `BINDING_SYMBOL_MISSING` when the bound
 file or directory does not define the symbol. Code facts read TypeScript and
 TSX, Python, C and C++, C# and .NET project files, Swift, Terraform and
-OpenTofu, docker-compose files, env files and Nix flakes. Any other file is
-read only as text: it must hold the symbol's last name, and nothing that needs
-references is judged in it. `check --code` names the kinds of file that it
-read as text in its `text-only` skip. A C or C++ part bound to a source file
-also owns its header, and one bound to a header owns its source file: the file
-of the other kind with the same name beside it, or the only one of that name
-in the checkout. So `symbol` can name what either file defines, and a C++
-name is spelled with `::` or `.`: `shop::Ledger::post`, `Ledger.post`, `post`.
+OpenTofu, Kubernetes manifests, docker-compose files, env files and Nix
+flakes. Any other file is read only as text: it must hold the symbol's last
+name, and nothing that needs references is judged in it. `check --code` names
+the kinds of file that it read as text in its `text-only` skip. A C or C++ part
+bound to a source file also owns its header, and one bound to a header owns its
+source file: the file of the other kind with the same name beside it, or the
+only one of that name in the checkout. So `symbol` can name what either file
+defines, and a C++ name is spelled with `::` or `.`: `shop::Ledger::post`,
+`Ledger.post`, `post`.
 Includes resolve through the nearest `compile_commands.json` that Git lists;
 without one, against the including file's directory, the checkout root and
 each directory named `include`.
@@ -176,6 +177,32 @@ and `call` does not. To anchor a
 relationship between two services, cite the compose file and the address of
 the service it reaches: `services.db` in the file where `api` depends on `db`.
 An env file gives the check the names it sets, never their values.
+
+Bind a Kubernetes object to its manifest, or to a directory of manifests, with
+its kind and name as `symbol`: `Deployment/checkout`, `Service/checkout`,
+`Ingress/shop`. Write the kind as the manifest writes it, and leave the
+namespace out. Code facts read a `.yaml` or `.yml` file as a manifest when one
+of its documents has an `apiVersion` and a `kind`, also the items of a `List`
+and Helm or Kustomize output that somebody rendered to files. Any other YAML
+file is read as text. A Helm template that does not parse is skipped as
+`symbol-unparsed`. The check never runs `kubectl`, `helm` or `kustomize`, and
+it reads only the names of a Secret's keys, never a value. This is evidence:
+
+- A call: an Ingress backend, and an HTTPRoute or GRPCRoute `backendRefs`
+  entry, each to the Service it routes to.
+- A configured path: a Service's selector, to each workload that it picks.
+  An environment value whose host is a Service, such as `cart:7070`,
+  `http://cart.shop.svc.cluster.local` or `CART_HOST: cart`. The ConfigMap,
+  Secret or claim that a workload's `env`, `envFrom` or volumes read.
+- A permission: a NetworkPolicy, from the workload that it lets send to the
+  one that receives. No default kind accepts it.
+
+A name resolves to the nearest manifest that declares it: the same file, then
+its directory, then the directories further out. A reference to a Service that
+no part binds reaches the workloads that the Service picks, so a board can
+bind only its workloads. To anchor a relationship between two workloads, cite
+the caller's manifest and the Service that it names: `Service/cart` in
+`k8s/web.yaml`.
 
 Bind a Nix flake output to `flake.nix`, with its attribute path as `symbol`,
 written whole from the output's name: `packages.x86_64-linux.archboard`,

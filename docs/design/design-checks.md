@@ -263,6 +263,45 @@ an extension of `String` in the library adds. The standard library's own
 initializers are not read, so a spelling resolves now only where the module
 or a module it imports declares its first name.
 
+#### Reading Kubernetes manifests
+
+TASK-367.19 measured the Kubernetes adapter on 2026-10-06 with Bun 1.4.2 on
+Google's `microservices-demo` (`38e7348`). Git tracks 103 YAML files in it. 86
+are manifests: the plain manifests, a rendered release, Kustomize bases,
+components and overlays, and Istio manifests. The other 17 are GitHub
+workflows, Cloud Build files and the Helm chart's `Chart.yaml` and
+`values.yaml`, and the check reads them as text. 13 of the manifests are Helm
+templates that do not parse as YAML, and each is one part that did not parse.
+One pass read the 103 files in 34 ms cold and in 17 to 26 ms warm. They declare
+147 objects, 55 configured paths and 4 calls by address, and 116 environment
+names. Every address resolves to a manifest that declares it. By labels,
+Services join 40 Service and workload pairs, and NetworkPolicies give 15
+permissions.
+
+A temporary vault with two boards bound 18 parts to Deployments, and one part
+to the directory of the NetworkPolicy component. The real check took 120 ms.
+Each finding was right:
+
+- `kubernetes-manifests`: the frontend's `AD_SERVICE_ADDR` names the Service
+  `adservice`. No part binds that Service, so the value reaches the ad
+  service's Deployment, and no relationship draws it (`RELATIONSHIP_UNDRAWN`,
+  a warning). Email service -> checkout service is `RELATIONSHIP_BACKWARDS`,
+  because the checkout service names the email service. No configuration
+  joins the payment service and the email service
+  (`RELATIONSHIP_UNSUPPORTED`). The anchor `Service/cartservice` in the
+  frontend's manifest holds. The anchor `Service/paymnt` is
+  `ANCHOR_SYMBOL_MISSING`, and a part bound to `Deployment/shoppingcart` is
+  `BINDING_SYMBOL_MISSING`. `REDIS_ADDR` supports cart service -> Redis.
+- `kustomize/base` with the `network-policies` component: payment service ->
+  checkout service is backwards. The checkout service names the payment
+  service in `PAYMENT_SERVICE_ADDR`, and the payment service's NetworkPolicy
+  lets the checkout service in, a permission from the checkout service to the
+  payment service. Checkout service -> cart service is undrawn.
+
+`SHOPPING_ASSISTANT_SERVICE_ADDR` resolves to the Service of the optional
+`shopping-assistant` component. That is the nearest manifest that declares the
+Service, though the default manifests do not deploy it.
+
 #### Reading docker-compose files
 
 TASK-367.20 measured the compose adapter on 2026-10-06 with Bun 1.4.2 on
@@ -756,6 +795,26 @@ is skipped as `symbol-unparsed`, never reported missing. The reading stops
 where the flake schema names an output, such as `packages.<system>.<name>` or
 `overlays.<name>`, because what a derivation or a module holds is not an
 output. Other `.nix` files are read as text.
+
+A Kubernetes manifest is a `.yaml` or `.yml` file with a document that has an
+`apiVersion` and a `kind` (TASK-367.19). The check reads other YAML files as
+text. A Helm template that does not parse is one part that did not parse, so
+its symbols are skipped and never missing. Each object is addressed as kind
+and name, `Deployment/checkout`, without its namespace: a namespace that
+`kubectl -n` or Kustomize gives is in no file. An Ingress backend and a
+Gateway API route's `backendRefs` are calls to a Service. These are configured
+paths: an environment value whose host is a Service (`cart`, or
+`cart.<namespace>.svc` with or without the cluster's domain), and the
+ConfigMap, Secret or claim that a pod reads. A name resolves to the nearest
+manifest that declares it: the same file, its directory, then the directories
+one step further away. A selector names no address, so the check joins
+objects by labels. A Service is a configured path to each workload whose pod
+labels its selector matches. A NetworkPolicy is a permission from each
+workload that it lets send to each workload that receives. A reference to a
+Service that no part binds reaches the workloads that the Service picks, so a
+board can draw only its workloads. Of a Secret, the check reads the names of
+its keys and never a value. `envFrom` passes those names, and a ConfigMap's,
+on to the workload.
 
 A compose file is one that compose finds by itself in a directory:
 `compose.yaml`, `compose.yml`, `docker-compose.yml` or `docker-compose.yaml`,
