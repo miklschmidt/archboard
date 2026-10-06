@@ -31,7 +31,7 @@ import {
 	COMPOSE_FILE_NAMES,
 	createComposeResolver,
 } from "@/runtime/code-facts/lib/compose-project";
-import { csharpFacts } from "@/runtime/code-facts/lib/csharp-adapter";
+import { readCSharp } from "@/runtime/code-facts/lib/csharp-adapter";
 import { projectFacts } from "@/runtime/code-facts/lib/csharp-project";
 import { createCSharpResolver } from "@/runtime/code-facts/lib/csharp-resolution";
 import { createFlakeResolver, flakeLockFacts } from "@/runtime/code-facts/lib/flake-lock";
@@ -108,11 +108,6 @@ const FLAKE = treeSitter("@lumis-sh/wasm-nix/tree-sitter-nix.wasm", "nix.scm", f
 const C = treeSitter("tree-sitter-c/tree-sitter-c.wasm", "c.scm", cFacts);
 /** A `.h` is read as C++, which reads the C headers of Redis and SQLite as the C grammar does (TASK-367.09). */
 const CPP = treeSitter("tree-sitter-cpp/tree-sitter-cpp.wasm", "c.scm", cFacts);
-const CSHARP = treeSitter(
-	"tree-sitter-c-sharp/tree-sitter-c_sharp.wasm",
-	"csharp.scm",
-	csharpFacts,
-);
 
 /** Every adapter, one entry each. */
 const ADAPTERS: readonly Adapter[] = [
@@ -147,7 +142,7 @@ const ADAPTERS: readonly Adapter[] = [
 	},
 	{
 		name: "csharp",
-		reads: { ".cs": CSHARP, ".csproj": projectFacts },
+		reads: { ".cs": readCSharp, ".csproj": projectFacts },
 		resolver: createCSharpResolver,
 	},
 	{

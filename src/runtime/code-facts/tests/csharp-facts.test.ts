@@ -109,34 +109,30 @@ test("a use at run time is call evidence, a declared type or an interface import
 	expect(ledger.references.filter((each) => each.symbol === "text")).toEqual([]);
 	const audit = await csharp("src/Shop.Core/Ledger.Audit.cs");
 	expect(audit.references.filter((each) => each.via !== "code")).toEqual([
-		{ symbol: "SHOP_AUDIT", line: 7, via: "environment", typeOnly: false },
+		{ symbol: "SHOP_AUDIT", line: 13, via: "environment", typeOnly: false },
 	]);
 });
 
 test("a name resolves within its project to the file that declares it, also a member of a partial class another file declares", async () => {
 	const ledger = await csharp("src/Shop.Core/Ledger.cs");
-	const via = [CORE];
 	expect(use(ledger, "Audit")?.target).toEqual({
 		path: "src/Shop.Core/Ledger.Audit.cs",
 		symbol: "Shop.Core.Ledger.Audit",
-		via,
 	});
 	expect(use(ledger, "Money.Round")?.target).toEqual({
 		path: "src/Shop.Core/Money.cs",
 		symbol: "Shop.Core.Money.Round",
-		via,
 	});
 	expect(use(ledger, "Order")?.target).toEqual({
 		path: "src/Shop.Core/Money.cs",
 		symbol: "Shop.Core.Order",
-		via,
 	});
 	// A name no project of the checkout declares leads nowhere.
 	const audit = await csharp("src/Shop.Core/Ledger.Audit.cs");
 	expect(use(audit, "Console.WriteLine")?.target).toBeUndefined();
 });
 
-test("a name resolves through a project reference, a global using, an alias and a qualified name, and a use through a value reaches only the value", async () => {
+test("a name resolves through a project reference and the other project's file, a global using, an alias and a qualified name, and a use through a value reaches only the value", async () => {
 	const controller = await csharp("src/Shop.Api/Controllers/OrdersController.cs");
 	const create = {
 		path: "src/Shop.Core/Ledger.cs",
@@ -148,8 +144,12 @@ test("a name resolves through a project reference, a global using, an alias and 
 	expect(use(controller, "_ledger.Post")?.target).toEqual({
 		path: "src/Shop.Api/Controllers/OrdersController.cs",
 		symbol: "Shop.Api.Controllers.OrdersController._ledger",
-		via: ["src/Shop.Api/Shop.Api.csproj"],
 	});
+	// A name used as a value is no type: it is a local or a member a base class declares.
+	expect(use(controller, "Ledger")?.target).toBeUndefined();
+	// A member of a value the code does not name is spelled from the `.`, and no lookup finds it.
+	expect(use(controller, ".Post")).toMatchObject({ kind: "call" });
+	expect(use(controller, ".Post")?.target).toBeUndefined();
 	const program = await csharp("src/Shop.Api/Program.cs");
 	expect(use(program, "Shop.Api.Controllers.OrdersController")?.target).toMatchObject({
 		path: "src/Shop.Api/Controllers/OrdersController.cs",
@@ -191,4 +191,8 @@ test("code that did not parse holds no facts, a name found only there is unparse
 	});
 	expect(findSymbol(broken, "After", "definition").status).toBe("found");
 	expect(findSymbol(broken, "Before", "definition").status).toBe("found");
+	// Two branches of an `#if` that each hold half a statement: the first is read, and the file parses.
+	const audit = await csharp("src/Shop.Core/Ledger.Audit.cs");
+	expect(audit.unparsed).toEqual([]);
+	expect(findSymbol(audit, "Ledger.Audit", "definition").status).toBe("found");
 });

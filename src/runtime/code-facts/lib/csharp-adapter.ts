@@ -10,23 +10,42 @@
 // A use at run time is call evidence: a call, a construction, a static member,
 // an attribute, `typeof`, and the base class a class derives from, whose code
 // runs in every instance. A name only in a type position is import evidence
-// and type-only: a declared type, a type argument, a cast, `as`, the type of a
-// pattern, a constraint, and an interface a type implements. A base list
-// names the base class first, if it has one; C# cannot tell a class from an
-// interface by syntax, so the first entry of a class or record is its base
-// class unless it is named as .NET names an interface (`I` and a capital).
+// and type-only: a declared type, a type argument, a cast, `as`, a pattern,
+// a constraint, and an interface a type implements. A base list names the
+// base class first, if it has one; C# cannot tell a class from an interface
+// by syntax, so the first entry of a class or record is its base class unless
+// it is named as .NET names an interface (`I` and a capital). Where only a
+// type can stand, in a type position or at `new`, an attribute, `typeof` or a
+// base list, the name is marked `asType`: it is no value, so a lookup may take
+// it for a type, while any other name may be a local or a member a base class
+// declares.
+//
+// A name after `.` is spelled with the chain before it, through `?.` too
+// (`order?.Total` is `order.Total`); after `this.` or `base.` it is spelled
+// alone; and after a value the code does not name, such as a call's result or
+// a cast, it is spelled with the `.` alone (`.Command`): only a language server
+// can tell what such a value is.
 //
 // A `using` names a namespace, or a type with `static`, never a file, so it
 // resolves to no file: each one is an import of every name there (`*`), and
 // an alias imports one name. A `global using` passes its names on to every
 // file of the project, so it is a re-export. Where a name leads is the
 // project's to say (csharp-resolution.ts). Code in a part of the file that
-// did not parse holds no facts; the names written there are kept.
+// did not parse holds no facts; the names written there are kept. Of each
+// `#if`, the first branch is read and the others are blanked
+// (csharp-preprocessor.ts).
 
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
-import type { Import, ParsedFacts, Reference, ReferenceVia } from "@/runtime/code-facts/lib/facts";
 import { csharpDefinitions } from "@/runtime/code-facts/lib/csharp-definitions";
-import type { Grammar } from "@/runtime/code-facts/lib/grammars";
+import { firstBranches } from "@/runtime/code-facts/lib/csharp-preprocessor";
+import type {
+	Import,
+	ParsedFacts,
+	ParseFacts,
+	Reference,
+	ReferenceVia,
+} from "@/runtime/code-facts/lib/facts";
+import { treeSitter, type Grammar } from "@/runtime/code-facts/lib/grammars";
 import { spansOf, type Span, type Spans } from "@/runtime/code-facts/lib/spans";
 import { unparsedOf } from "@/runtime/code-facts/lib/unparsed";
 
@@ -35,6 +54,7 @@ interface Captured {
 	readonly binding: Node[];
 	readonly reference: Node[];
 	readonly type: Node[];
+	readonly typeName: Node[];
 	readonly base: Node[];
 	readonly using: Node[];
 	readonly environment: Node[];
@@ -48,6 +68,7 @@ const LIST_OF: Readonly<Record<string, keyof Captured>> = {
 	binding: "binding",
 	reference: "reference",
 	type: "type",
+	typename: "typeName",
 	base: "base",
 	using: "using",
 	environment: "environment",
@@ -72,6 +93,7 @@ function sorted(captures: readonly QueryCapture[]): Captured {
 		binding: [],
 		reference: [],
 		type: [],
+		typeName: [],
 		base: [],
 		using: [],
 		environment: [],
@@ -102,6 +124,36 @@ const JOINED: Readonly<Record<string, readonly [string, string]>> = {
 	qualified_name: ["qualifier", "name"],
 };
 
+/** What a member access can start from that names the members of the type around it. */
+const OWN = new Set(["this", "base"]);
+
+/**
+ * What comes before `.` in a node that joins two names, and the name after:
+ * also `a?.b`, whose name is in the binding after the condition.
+ * @param node The node.
+ * @returns Both, or undefined for a node that joins no names.
+ */
+function joinedParts(node: Node): readonly [Node | null, Node | null] | undefined {
+	const fields = JOINED[node.type];
+	if (fields !== undefined) {
+		return [node.childForFieldName(fields[0]), node.childForFieldName(fields[1])];
+	}
+	return conditionalParts(node);
+}
+
+/**
+ * What comes before `?.` and the name after it: from the conditional access
+ * `a?.b`, or from the member binding `?.b` in it.
+ * @param node The node.
+ * @returns Both, or undefined for a node of no conditional access.
+ */
+function conditionalParts(node: Node): readonly [Node | null, Node | null] | undefined {
+	const access = node.type === "member_binding_expression" ? node.parent : node;
+	if (access?.type !== "conditional_access_expression") return undefined;
+	const binding = access.namedChildren.find((child) => child.type === "member_binding_expression");
+	return [access.childForFieldName("condition"), binding?.childForFieldName("name") ?? null];
+}
+
 /**
  * A name and the name before it, joined with `.`.
  * @param before The spelling before, if it has one.
@@ -113,30 +165,31 @@ function joinedNames(before: string | undefined, name: string | undefined): stri
 }
 
 /**
- * How code spells a chain of names through `.`, from a name: `Shop.Core.Ledger`,
- * `ledger.Post`. `global::` is left out, and a chain from `this`, `base` or a
- * call has no spelling.
- * @param node A name, a member access or a qualified name.
+ * How code spells a chain of names through `.` or `?.`, from a name:
+ * `Shop.Core.Ledger`, `ledger.Post`. `global::` is left out, and a chain from
+ * `this`, `base`, a call or any other value without a name has no spelling.
+ * @param node A name, a member access, a conditional access or a qualified name.
  * @returns The spelling, or undefined.
  */
 function chain(node: Node | null): string | undefined {
 	if (node === null) return undefined;
 	if (node.type === "alias_qualified_name") return segment(node.childForFieldName("name"));
-	const fields = JOINED[node.type];
-	if (fields === undefined) return segment(node);
-	return joinedNames(
-		chain(node.childForFieldName(fields[0])),
-		segment(node.childForFieldName(fields[1])),
-	);
+	const parts = joinedParts(node);
+	return parts === undefined ? segment(node) : joinedNames(chain(parts[0]), segment(parts[1]));
 }
 
 /** The nodes whose `name` is spelled with the chain before it. */
-const CHAINS = new Set(["member_access_expression", "qualified_name", "alias_qualified_name"]);
+const CHAINS = new Set([
+	"member_access_expression",
+	"member_binding_expression",
+	"qualified_name",
+	"alias_qualified_name",
+]);
 
 /**
  * The chain a name ends, where it is the name after `.`.
  * @param named The name, or the generic name it is the name of.
- * @returns The member access or qualified name, or undefined.
+ * @returns The member access, the conditional member or the qualified name, or undefined.
  */
 function chainEndedBy(named: Node): Node | undefined {
 	const parent = named.parent;
@@ -145,15 +198,30 @@ function chainEndedBy(named: Node): Node | undefined {
 }
 
 /**
- * How a used name is spelled: the name after `.` with the chain before it,
- * else the name alone.
+ * How a used name is spelled: the name after `.` with the chain before it;
+ * the name alone after `this.`, `base.`, `global::` and where no `.` comes
+ * before it; and the name after a lone `.` where it is a member of a value the
+ * code does not name, such as a call's result (`.Command`), which no lookup by
+ * name can find.
  * @param node The name.
  * @returns The spelling.
  */
 function spelling(node: Node): string {
+	const start = valueBefore(node);
+	const spelled = joinedNames(chain(start), node.text);
+	if (spelled !== undefined) return spelled;
+	return start === null || OWN.has(start.type) ? node.text : `.${node.text}`;
+}
+
+/**
+ * What comes before the `.` a name follows.
+ * @param node The name.
+ * @returns The node before, or null for a name no `.` comes before.
+ */
+function valueBefore(node: Node): Node | null {
 	const named = node.parent?.type === "generic_name" ? node.parent : node;
 	const ended = chainEndedBy(named);
-	return (ended === undefined ? undefined : chain(ended)) ?? node.text;
+	return ended === undefined ? null : (joinedParts(ended)?.[0] ?? null);
 }
 
 /**
@@ -179,19 +247,25 @@ function namesBaseClass(type: Node, index: number, deriving: boolean): boolean {
 	return deriving && index === 0 && !INTERFACE_NAME.test(name);
 }
 
+/** The type one base list entry names, and whether it is the base class. */
+interface BaseEntry {
+	readonly type: Node;
+	readonly baseClass: boolean;
+}
+
 /**
- * The entries of each base list that name a type only: every interface, and
- * every entry of a struct, an interface or an enum. The base class of a class
- * or a record runs at run time; its constructor arguments are code.
+ * The types each base list names. The base class of a class or a record runs
+ * at run time, and the arguments of its constructor are code; every interface,
+ * and every entry of a struct, an interface or an enum, is a type only.
  * @param lists The base lists.
- * @returns The entries that are types.
+ * @returns Each entry's type.
  */
-function interfaceEntries(lists: readonly Node[]): Span[] {
+function baseEntries(lists: readonly Node[]): BaseEntry[] {
 	return lists.flatMap((list) => {
 		const deriving = DERIVING.has(list.parent?.type ?? "");
 		return list.namedChildren.flatMap((entry, index) => {
 			const type = entryType(entry);
-			return type === null || namesBaseClass(type, index, deriving) ? [] : [type];
+			return type === null ? [] : [{ type, baseClass: namesBaseClass(type, index, deriving) }];
 		});
 	});
 }
@@ -201,7 +275,10 @@ interface UseContext {
 	readonly declared: ReadonlySet<number>;
 	readonly skip: Spans;
 	readonly unparsed: Spans;
+	/** Code where every name is a type. */
 	readonly types: Spans;
+	/** Code where only a type can stand: the types, and the types used at run time. */
+	readonly typeNames: Spans;
 }
 
 /**
@@ -222,6 +299,7 @@ function codeReference(node: Node, context: UseContext): Reference | undefined {
 		via: "code",
 		kind: typeOnly ? "import" : "call",
 		typeOnly,
+		...(context.typeNames.holds(at) ? { asType: true } : {}),
 	};
 }
 
@@ -270,7 +348,7 @@ function usingImport(node: Node): Import | undefined {
 function distinct(references: readonly Reference[]): Reference[] {
 	const seen = new Map<string, Reference>();
 	for (const reference of references) {
-		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}`;
+		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}\0${String(reference.asType)}`;
 		if (!seen.has(key)) seen.set(key, reference);
 	}
 	return [...seen.values()];
@@ -285,11 +363,17 @@ function distinct(references: readonly Reference[]): Reference[] {
 function csharpFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 	const captured = sorted(grammar.query.captures(tree.rootNode));
 	const unparsed = spansOf(captured.unparsed);
+	const bases = baseEntries(captured.base);
+	const types: Span[] = [
+		...captured.type,
+		...bases.flatMap((entry) => (entry.baseClass ? [] : [entry.type])),
+	];
 	const context: UseContext = {
 		declared: new Set(captured.binding.map((node) => node.id)),
 		skip: spansOf(captured.skip),
 		unparsed,
-		types: spansOf([...captured.type, ...interfaceEntries(captured.base)]),
+		types: spansOf(types),
+		typeNames: spansOf([...types, ...captured.typeName, ...bases.map((entry) => entry.type)]),
 	};
 	const inCode = captured.reference.flatMap((node) => codeReference(node, context) ?? []);
 	const inStrings = [
@@ -307,4 +391,17 @@ function csharpFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 	};
 }
 
-export { csharpFacts };
+/** The C# grammar and query, reading a parsed file through `csharpFacts`. */
+const PARSE = treeSitter("tree-sitter-c-sharp/tree-sitter-c_sharp.wasm", "csharp.scm", csharpFacts);
+
+/**
+ * How the adapter reads a `.cs` file: the first branch of each `#if`, through
+ * the C# grammar (csharp-preprocessor.ts).
+ * @param text The file's text.
+ * @returns Its facts.
+ */
+function readCSharp(text: string): ReturnType<ParseFacts> {
+	return PARSE(firstBranches(text));
+}
+
+export { readCSharp };

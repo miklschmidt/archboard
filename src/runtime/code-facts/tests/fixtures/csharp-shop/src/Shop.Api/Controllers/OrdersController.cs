@@ -17,5 +17,7 @@ public class OrdersController
         _ledger.Post(order);
         L.Create();
         Money.Round(order.Total);
+        Track(Ledger);
+        Pick()?.Post(order);
     }
 }
