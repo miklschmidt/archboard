@@ -49,7 +49,7 @@ function semanticInk(color: PaletteColor | undefined): string | undefined {
  * carry as much of the colour as the light face does and still leave the
  * card's secondary words at 4.5:1, a standing's wash over it included.
  */
-const CARD_FACE: Share = { light: 0.12, dark: 0.35 };
+const CARD_FACE: Share = { light: 0.1, dark: 0.35 };
 const CARD_EDGE: Share = { light: 0.32, dark: 0.3 };
 const CARD_DEEPEN = 0.75;
 

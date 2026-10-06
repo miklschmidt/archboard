@@ -147,6 +147,16 @@ function glintOf(face: string, palette: Palette): string {
 
 /** The light that falls off down a face, one gradient every face shares. */
 const SHEEN_ID = "ab-slab-sheen";
+/**
+ * The same light on a face a group's colour or a standing's tints. The plain
+ * sheen is nearly white on the light ground: over a near-white face it is a
+ * faint change, but over a tinted face it bleached the top and left the colour
+ * pooled at the foot. On the light ground this one is the glint at a fifth of
+ * the sheen's strength, so a tinted face changes from top to foot as gently as
+ * a plain one; on the dark ground it is the plain sheen, which is faint already.
+ */
+const SOFT_SHEEN_ID = "ab-slab-sheen-soft";
+const SOFT_SHEEN = 0.2;
 
 /** The hatch over a changed block's face, one pattern every face shares. */
 const HATCH_ID = "ab-slab-hatch";
@@ -454,7 +464,7 @@ function slab(box: Box, look: SlabLook, palette: Palette, standing?: SubjectStan
 		plate(box, look.radius, { fill: look.edge }),
 		plate(face, look.radius, { fill: glintOf(top, palette) }),
 		plate(lit, look.radius, { fill: top }),
-		look.sheen ? plate(lit, look.radius, { fill: `url(#${SHEEN_ID})` }) : "",
+		look.sheen ? plate(lit, look.radius, { fill: `url(#${sheenOf(look, standing)})` }) : "",
 		hatch === 0
 			? ""
 			: plate(lit, look.radius, {
@@ -466,10 +476,38 @@ function slab(box: Box, look: SlabLook, palette: Palette, standing?: SubjectStan
 }
 
 /**
+ * The light that falls off down a face, from the sheen at its top edge to
+ * nothing at its foot, one gradient in the face's own box so every face of
+ * any size shares it.
+ * @param id The gradient's id.
+ * @param sheen The light at the top edge.
+ * @returns The gradient.
+ */
+function sheenGradient(id: string, sheen: string): string {
+	return wrap(
+		"linearGradient",
+		{ id, x1: 0, y1: 0, x2: 0, y2: 1 },
+		tag("stop", { offset: 0, "stop-color": sheen }) +
+			tag("stop", { offset: 1, "stop-color": sheen, "stop-opacity": 0 }),
+	);
+}
+
+/**
+ * Which light falls off down a face: a tinted face's, a group's or a
+ * standing's, takes the softer one ({@link SOFT_SHEEN}).
+ * @param look How the block looks.
+ * @param standing How the part stands, when this is a proposal.
+ * @returns The id of its gradient.
+ */
+function sheenOf(look: SlabLook, standing: SubjectStanding | undefined): string {
+	const coloured = look.ground !== undefined || standing === "added" || standing === "changed";
+	return coloured ? SOFT_SHEEN_ID : SHEEN_ID;
+}
+
+/**
  * The definitions every slab reaches for: the light that falls off down a face,
- * from the sheen at its top edge to nothing at its foot, one gradient in the
- * face's own box so every face of any size shares it; and the hatch over a
- * changed face, at one pitch across the page.
+ * full on a plain face and softer on a tinted one; and the hatch over a changed
+ * face, at one pitch across the page.
  * @param palette The theme's colours.
  * @returns The gradient and the pattern.
  */
@@ -479,11 +517,10 @@ function slabDefinitions(palette: Palette): string {
 		translucent(palette.standingChanged, HATCH.dark),
 	);
 	return (
-		wrap(
-			"linearGradient",
-			{ id: SHEEN_ID, x1: 0, y1: 0, x2: 0, y2: 1 },
-			tag("stop", { offset: 0, "stop-color": palette.slabSheen }) +
-				tag("stop", { offset: 1, "stop-color": palette.slabSheen, "stop-opacity": 0 }),
+		sheenGradient(SHEEN_ID, palette.slabSheen) +
+		sheenGradient(
+			SOFT_SHEEN_ID,
+			lightDark(translucent(palette.slabGlint, SOFT_SHEEN), palette.slabSheen),
 		) +
 		wrap(
 			"pattern",
