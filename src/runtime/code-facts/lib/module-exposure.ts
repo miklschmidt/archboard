@@ -159,7 +159,7 @@ const SWIFT: ExposureRule = {
 const C: ExposureRule = {
 	writes: isCFile,
 	/**
-	 * No file stands for a C or C++ module.
+	 * No file stands for a C, C++ or Objective-C module.
 	 * @returns False.
 	 */
 	entry: () => false,

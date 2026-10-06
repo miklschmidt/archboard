@@ -2,11 +2,14 @@
 // (ADR 0046).
 //
 // The cache keeps one entry for each file a pass parsed: the hash of the
-// bytes it read, the adapter, and the facts those bytes gave. Each pass reads
-// and hashes every file again; where hash and adapter match it takes the facts
-// from the entry, and otherwise it parses and replaces the entry. So a pass
-// always sees an edit, an uncommitted one too, and the cache never holds more
-// than one entry for a file. Each pass drops the entries of files that no
+// bytes it read, the adapter's reading, and the facts those bytes gave. Each
+// pass reads and hashes every file again; where hash and reading match it
+// takes the facts from the entry, and otherwise it parses and replaces the
+// entry. A reading is the adapter's, except that an Objective-C file is read
+// with the SDK macros its checkout's headers wrap (objc-adapter.ts), and a
+// change to them is a new reading. So a pass always sees an edit, an
+// uncommitted one too, and the cache never holds more than one entry for a
+// file. Each pass drops the entries of files that no
 // longer exist, so a deleted or renamed file leaves nothing behind. A file
 // read as text is not kept: its facts are its bytes, which the pass reads
 // anyway. A file whose adapter finds it of another format, such as a `.yaml`
@@ -27,7 +30,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { adapterOf, type AdapterReading } from "@/runtime/code-facts/lib/adapters";
+import { type AdapterReading, readingsIn } from "@/runtime/code-facts/lib/adapters";
 import type {
 	FileFacts,
 	ImportResolver,
@@ -294,6 +297,21 @@ function createPass(context: PassContext): FactsPass {
 	const reads = new Map<string, Promise<FileFacts | undefined>>();
 	const resolvers = new Map<string, ImportResolver>();
 	const parses = new Map<string, Promise<ParsedFacts | undefined>>();
+	const readings = new Map<string, (file: string) => AdapterReading | undefined>();
+	/**
+	 * How a file of a checkout is read, by readings made once in the pass for the checkout.
+	 * @param checkout The checkout.
+	 * @param relative The file.
+	 * @returns The adapter and how it reads the file, or undefined for a file read as text.
+	 */
+	const readingOf = (checkout: CheckoutFiles, relative: string): AdapterReading | undefined => {
+		let of = readings.get(checkout.root);
+		if (of === undefined) {
+			of = readingsIn(checkout, (file) => readListed(checkout, file));
+			readings.set(checkout.root, of);
+		}
+		return of(relative);
+	};
 	/**
 	 * The facts an adapter gives a file's bytes, read and parsed once in the
 	 * pass, whether the pass reads the file or a resolver reads it first.
@@ -328,7 +346,7 @@ function createPass(context: PassContext): FactsPass {
 	): Promise<ParsedFacts | undefined> => {
 		signal.throwIfAborted();
 		const target = listedTarget(checkout, relative);
-		const reading = target === undefined ? undefined : adapterOf(target.relative);
+		const reading = target === undefined ? undefined : readingOf(checkout, target.relative);
 		return target === undefined || reading === undefined ? undefined : parsedOnce(target, reading);
 	};
 	/**
@@ -364,7 +382,7 @@ function createPass(context: PassContext): FactsPass {
 		const target = listedTarget(checkout, relative);
 		if (target === undefined) return undefined;
 		stats.read += 1;
-		const reading = adapterOf(target.relative);
+		const reading = readingOf(checkout, target.relative);
 		const parsed = reading === undefined ? undefined : await parsedOnce(target, reading);
 		if (reading === undefined || parsed === undefined) {
 			const bytes = await Bun.file(target.absolute).bytes();

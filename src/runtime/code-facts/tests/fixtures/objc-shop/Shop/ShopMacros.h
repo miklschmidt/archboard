@@ -7,4 +7,7 @@
 #define SHOP_API_AVAILABLE(...)
 #endif
 
+#define SHOP_AUDIT_BEGIN NS_HEADER_AUDIT_BEGIN
+#define SHOP_AUDIT_END NS_HEADER_AUDIT_END
+
 #endif

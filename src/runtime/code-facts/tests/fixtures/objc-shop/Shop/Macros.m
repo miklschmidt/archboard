@@ -12,7 +12,7 @@
 - (void)b NS_SWIFT_NAME(b()) MY_API_UNAVAILABLE(tvos) HIDDEN(x);
 @end
 
-typedef NS_OPTIONS(NSUInteger, Mode) {
+typedef NS_OPTIONS(NSUInteger, Mode /* the mode */) {
     ModeA = 1,
 };
 
