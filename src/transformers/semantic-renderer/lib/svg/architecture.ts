@@ -8,7 +8,13 @@ import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 import type { DiagramAtlas } from "@/shared/semantic-board/index";
 import type { DrawingEdge, PaintedDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import { DIAGRAM_MARGIN, PILL_RADIUS } from "@/transformers/semantic-renderer/lib/design";
-import { canvasFor, inflate, union, type Box } from "@/transformers/semantic-renderer/lib/geometry";
+import {
+	canvasFor,
+	coord,
+	inflate,
+	union,
+	type Box,
+} from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { atlasBoxes } from "@/transformers/semantic-renderer/lib/atlas";
 import { farSizeFor } from "@/transformers/semantic-renderer/lib/measurement";
@@ -45,10 +51,14 @@ import {
 	type UnsettledOf,
 } from "@/transformers/semantic-renderer/lib/svg/standing";
 import {
+	HEAD_LENGTH,
 	edgeAttributes,
+	headWidths,
 	relationshipInk,
 	strokeWidthOf,
 	stylesFor,
+	weightOf,
+	type Weight,
 } from "@/transformers/semantic-renderer/lib/svg/styles";
 
 /** Width added to a connection's invisible selection halo. */
@@ -66,9 +76,6 @@ function lineKind(step: boolean): "step" | "edge" {
 /** An arrowhead's drawing: a square this many marker units wide, the line's end at `refX`. */
 const MARKER_BOX = 10;
 
-/** How many line widths an arrowhead's box spans. */
-const MARKER_WIDTHS = 5;
-
 /** How thick the open head's arms are drawn, in marker units. */
 const OPEN_ARM = 1.7;
 
@@ -82,24 +89,31 @@ const MARKER_FORM = {
 /**
  * How far back from a route's end its arrowhead's ink reaches.
  * @param head The head form.
- * @param width The line's width.
+ * @param weight How loudly the line speaks, which sets how long its head is.
  * @returns The distance along the route, or 0 for a line with no head.
  */
-function arrowheadReach(head: "filled" | "open" | "none", width: number): number {
+function arrowheadReach(head: "filled" | "open" | "none", weight: Weight): number {
 	if (head === "none") return 0;
 	const form = MARKER_FORM[head];
-	return ((form.refX - form.back) * width * MARKER_WIDTHS) / MARKER_BOX;
+	return ((form.refX - form.back) * HEAD_LENGTH[weight]) / MARKER_BOX;
 }
 
 /**
  * A head uses the line's ink and SVG's proportional stroke-width units.
  * @param id Marker identity scoped to this edge.
  * @param head Configured arrowhead form.
+ * @param weight How loudly the line speaks, which sets how long its head is.
  * @param ink Resolved line ink.
  * @returns Marker definition or nothing for an absent head.
  */
-function edgeMarker(id: string, head: "filled" | "open" | "none", ink: string): string {
+function edgeMarker(
+	id: string,
+	head: "filled" | "open" | "none",
+	weight: Weight,
+	ink: string,
+): string {
 	if (head === "none") return "";
+	const side = coord(headWidths(weight));
 	return wrap(
 		"defs",
 		{},
@@ -110,8 +124,8 @@ function edgeMarker(id: string, head: "filled" | "open" | "none", ink: string): 
 				viewBox: `0 0 ${MARKER_BOX} ${MARKER_BOX}`,
 				refX: MARKER_FORM[head].refX,
 				refY: MARKER_BOX / 2,
-				markerWidth: MARKER_WIDTHS,
-				markerHeight: MARKER_WIDTHS,
+				markerWidth: side,
+				markerHeight: side,
 				orient: "auto-start-reverse",
 			},
 			head === "filled"
@@ -154,9 +168,10 @@ function paintEdgeLine(
 	const appearance = lineAppearance(edge.kind, policy, step);
 	const attributes = edgeAttributes(edge, palette, standing, policy, appearance);
 	const ink = String(attributes["stroke"]);
+	const weight = weightOf(edge);
 	// Inline panes share the document ID namespace. Equal IDs must always
 	// define equal heads, even when the same subject has a different standing.
-	const markerId = `edge-head-${appearance.arrowhead}-${colourId(ink)}`;
+	const markerId = `edge-head-${appearance.arrowhead}-${weight}-${colourId(ink)}`;
 
 	return wrap(
 		"g",
@@ -171,7 +186,7 @@ function paintEdgeLine(
 			"data-arrowhead": appearance.arrowhead,
 		},
 		lines([
-			edgeMarker(markerId, appearance.arrowhead, ink),
+			edgeMarker(markerId, appearance.arrowhead, weight, ink),
 			standingSwipe(path, width, standing, palette),
 			tag("path", {
 				class: "ab-halo",
@@ -347,7 +362,7 @@ function paintArchitecture(
 				{
 					routed,
 					traffic: edge.traffic,
-					headReach: arrowheadReach(appearance.arrowhead, width),
+					headReach: arrowheadReach(appearance.arrowhead, weightOf(edge)),
 					ink: relationshipInk(edge, palette, standingOf(edge.id), policy, appearance),
 					lineWidth: width,
 				},

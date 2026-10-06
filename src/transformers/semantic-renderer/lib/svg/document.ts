@@ -39,7 +39,7 @@ import { PULSE_CLASS } from "@/transformers/semantic-renderer/lib/svg/pulse";
 import { HEAD_SHADE_CLASS } from "@/transformers/semantic-renderer/lib/sequence-design";
 import {
 	HEAD_REF_X,
-	HEAD_SIZE,
+	headWidths,
 	LIT_HEAD,
 	WEIGHTS,
 	lineColour,
@@ -74,7 +74,7 @@ function marker(
 	weight: Weight,
 	{ colour, suffix }: { readonly colour: string; readonly suffix: string },
 ): string {
-	const size = HEAD_SIZE[weight];
+	const size = coord(headWidths(weight));
 	const shape =
 		head === "filled"
 			? tag("path", { d: "M0,0 L10,5 L0,10 z", fill: colour })
