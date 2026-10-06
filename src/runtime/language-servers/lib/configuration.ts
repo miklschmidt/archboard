@@ -5,7 +5,8 @@
 // disk are facts about one machine, not about the vault or a checkout. An
 // entry names the command for a language, or turns the language off with
 // `false`. A language with no entry uses its default (languages.ts). A bare
-// command is looked up on the `PATH`; a path names the program itself.
+// command is looked up on the `PATH`; an absolute path names the program
+// itself.
 //
 // The file is read again by every pass, so an edit applies to the next check
 // with no restart. A file that is not valid turns every server off for the
@@ -22,10 +23,21 @@ import {
 } from "@/runtime/language-servers/lib/languages";
 import { stateDir } from "@/runtime/engine/state-dir";
 
+/**
+ * A command: a name found on the `PATH`, or the absolute path of a program. A
+ * relative path would name a program from the server's working directory.
+ */
+const CommandSchema = z
+	.string()
+	.min(1)
+	.refine((command) => path.basename(command) === command || path.isAbsolute(command), {
+		message: "a command is a name on the PATH or an absolute path",
+	});
+
 /** One entry: the command of a language's server, or `false` to run none. */
 const ServerEntrySchema = z.union([
 	z.literal(false),
-	z.object({ command: z.string().min(1), args: z.array(z.string()).optional() }).strict(),
+	z.object({ command: CommandSchema, args: z.array(z.string()).optional() }).strict(),
 ]);
 
 /** The whole file: an entry for any language, and no key that names no language. */

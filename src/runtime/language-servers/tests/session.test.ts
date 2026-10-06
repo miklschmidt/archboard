@@ -241,6 +241,7 @@ describe("language-servers.json", () => {
 	test.each([
 		["turned off", { typescript: false }],
 		["not installed", { typescript: { command: "archboard-no-such-language-server" } }],
+		["named by a relative path", { typescript: { command: "node_modules/.bin/tsc" } }],
 		["in a file that names no language", { cobol: { command: "bun" } }],
 	])("have no server for a language %s", (_, entries) => {
 		expect(read(JSON.stringify(entries)).get("typescript")?.status).toBe("missing");
