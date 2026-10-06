@@ -9,8 +9,12 @@
 // expressions.
 
 import { afterAll, expect, test } from "bun:test";
-import { createCodeFacts, readTerraformPlan } from "@/runtime/code-facts/index";
-import { fixtureDirectory } from "@/runtime/code-facts/tests/checkout";
+import {
+	createCodeFacts,
+	readTerraformPlan,
+	terraformConfiguration,
+} from "@/runtime/code-facts/index";
+import { fixtureCheckout, fixtureDirectory } from "@/runtime/code-facts/tests/checkout";
 
 const checkout = fixtureDirectory("terraform-providers");
 const facts = createCodeFacts();
@@ -149,4 +153,61 @@ test("a plan's references are classified by the keys of their expressions, as th
 		"aws_lambda_event_source_mapping.jobs aws_sqs_queue.jobs.arn call from",
 		"aws_lambda_event_source_mapping.jobs aws_lambda_function.worker.arn call to",
 	]);
+});
+
+test("a plan that fills in a module the check does not read classifies an argument of its call by the resource the argument flows into", async () => {
+	const written = fixtureCheckout({
+		"main.tf": [
+			'resource "aws_sqs_queue" "dead" {}',
+			'module "worker" {',
+			'  source          = "terraform-aws-modules/lambda/aws"',
+			"  dead_letter_arn = aws_sqs_queue.dead.arn",
+			"}",
+		].join("\n"),
+	});
+	const configuration = await terraformConfiguration(
+		facts.pass(new AbortController().signal, [
+			{
+				checkoutRoot: written.root,
+				path: "plan.json",
+				module: "",
+				configuration: readTerraformPlan(
+					JSON.stringify({
+						configuration: {
+							root_module: {
+								module_calls: {
+									worker: {
+										module: {
+											resources: [
+												{
+													mode: "managed",
+													type: "aws_lambda_function",
+													name: "this",
+													expressions: {
+														dead_letter_config: [
+															{ target_arn: { references: ["var.dead_letter_arn"] } },
+														],
+													},
+												},
+											],
+										},
+									},
+								},
+							},
+						},
+					}),
+				),
+			},
+		]),
+		written,
+		"",
+	);
+	const reached = (address: string) =>
+		configuration.reached(address).map(({ to, link }) => `${to.address} ${link.kind}`);
+	// Without the plan, the call is set up with the queue (terraform-providers.test.ts in code-check).
+	expect(reached("module.worker")).toEqual([]);
+	expect(reached("module.worker.aws_lambda_function.this")).toEqual([
+		"aws_sqs_queue.dead configured-path",
+	]);
+	written.remove();
 });
