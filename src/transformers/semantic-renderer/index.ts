@@ -60,6 +60,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
 import {
 	drawnInk,
+	HEAD_LENGTH,
 	STROKE_WIDTH,
 	type Weight,
 } from "@/transformers/semantic-renderer/lib/svg/styles";
@@ -535,6 +536,17 @@ function lineWidth(emphasis: Weight): number {
 }
 
 /**
+ * How long a page draws the arrowhead of a line of one emphasis, from its base
+ * to its tip, in diagram units: for a key that has to draw a head the way the
+ * picture does.
+ * @param emphasis How loudly its author asked the line to speak.
+ * @returns The head's length, which is also its width.
+ */
+function headLength(emphasis: Weight): number {
+	return HEAD_LENGTH[emphasis];
+}
+
+/**
  * The pin a subject of one standing wears on its corner, as a page draws it:
  * for a key that has to show the mark the picture shows (TASK-383).
  * @param standing How the subject stands.
@@ -558,6 +570,7 @@ export {
 	renderSemanticView,
 	drillDirection,
 	type DrillDirection,
+	headLength,
 	lineInk,
 	lineWidth,
 	standingMark,
