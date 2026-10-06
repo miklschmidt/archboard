@@ -298,9 +298,16 @@ evidence joins is `RELATIONSHIP_UNSUPPORTED`. Both are information: a
 subscription runs in code from the handler to the part that sends the event,
 and a call across a network or through a value a part receives shows nothing in
 code. Its anchor makes the relationship a claim the check holds to the code.
-Evidence is `resolved` where the import names the file it reaches, and a
-`candidate` where it is matched by name only; a finding that rests only on
-candidates is information.
+Evidence is `resolved` where the import names the file it reaches, or where
+the language server of the file names the definition. It is a `candidate`
+where the check matched it by name only. A finding that rests only on
+candidates is information. A language server also follows a use through a
+value, such as `ledger.post()`. So with a server, the check sees calls that
+the imports do not show. TypeScript needs no setup. The file
+`language-servers.json` sets another server, or none, for the machine
+(INSTALL.md). Without a server, the answer says `language-server-missing`
+once and keeps the candidates. A server that did not answer is
+`language-server-failed`.
 
 For a container bound to a module (a directory, or the `index` file that
 stands for one), `check --code` also holds the interface the board derives

@@ -217,6 +217,39 @@ line, `{line}` becomes 1. For example: `--goto` and `{path}:{line}`.
 If there is no checkout of a GitHub repository, the browser opens the file on
 GitHub. It uses the commit, then the branch, then the default branch.
 
+## Language servers for the code check
+
+`archboard check --code` reads the registered checkouts and matches the names
+that the code uses. A match by name only is a _candidate_. A language server
+resolves a use to its real definition, also a use through a value such as
+`ledger.post()`. Evidence that a server resolved can make a warning, and a
+candidate never does.
+
+For TypeScript you need nothing more. The check runs `tsc --lsp --stdio` from
+the `typescript` package that archboard installs, never the TypeScript of the
+checkout. It loads no plugin of the checkout, and it never asks a server to
+build. The check starts each server once for each checkout that it reads, and
+stops it before the check answers.
+
+To choose another server, or to turn one off, write `language-servers.json` in
+the state directory (see [Machine state and logs](#machine-state-and-logs)).
+Each key is a language, and each value is a command or `false`:
+
+```json
+{
+  "typescript": { "command": "/opt/tsgo/bin/tsgo", "args": ["--lsp", "--stdio"] }
+}
+```
+
+`command` is a program on your `PATH` or the path of a program. `args` is
+optional. `false` turns the language off. Today the only language is
+`typescript`. Each check reads the file again, so a change needs no restart.
+
+A server can be absent: not installed, turned off, or named in a file that is
+not valid. Then the check says so once with the reason
+`language-server-missing`, and reports candidates. If a server does not start, does not answer within 30 seconds or
+stops, the check says so once for that checkout with `language-server-failed`.
+
 ## Rendering to a bitmap
 
 `archboard semantic render <board> --out <file.svg>` writes an SVG with its
@@ -306,8 +339,8 @@ There is no uninstall command. To remove archboard, delete these things:
 - The block between the markers in each repository.
 - The `archboard` link on your `PATH`.
 - The state directory. It holds the Codex sign-in, `repos.json`, the opener
-  configuration, the server process files, the log and the kept talks of
-  recordings.
+  configuration, `language-servers.json`, the server process files, the log
+  and the kept talks of recordings.
 
 If you do not want to keep the boards, delete the vault too.
 
