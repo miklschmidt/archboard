@@ -299,3 +299,124 @@ test("a moved end is reported as where the variant it is read against lands it, 
 	const moved = lines.find((line) => line.includes("holdBoard") && line.includes("changed"));
 	expect(moved).toMatch(/to Lease table on "As it is"/);
 });
+
+/**
+ * A lock store with a container: the routes call its acquire step, and the
+ * watcher polls its files.
+ * @param stated What differs between the two states.
+ * @param stated.nodes The container's children.
+ * @param stated.edges The relationships.
+ * @returns The content.
+ */
+function store(stated: Pick<VariantContent, "nodes" | "edges">): VariantContent {
+	return {
+		nodes: [
+			{ id: "hold", order: 1000, name: "holdBoard", kind: "route" },
+			{ id: "watch", order: 2000, name: "Lock watcher", kind: "job" },
+			{ id: "store", order: 3000, name: "Lock store", kind: "module" },
+			...stated.nodes,
+		],
+		edges: stated.edges,
+		flows: [],
+		walkthroughs: [],
+	};
+}
+const child = (id: string, name: string, order: number) => ({
+	id,
+	order,
+	name,
+	kind: "function",
+	parent: "store",
+});
+const call = (id: string, from: string, to: string, order: number) => ({
+	id,
+	order,
+	from,
+	to,
+	kind: "call",
+	emphasis: "normal" as const,
+});
+
+describe("the interface changes an agent reads first", () => {
+	const before = store({
+		nodes: [child("acq", "acquire", 4000), child("rel", "release", 5000)],
+		edges: [call("e1", "hold", "acq", 1000)],
+	});
+	// The watcher now polls release, and a new check step joins the interface.
+	const after = store({
+		nodes: [
+			child("acq", "acquire", 4000),
+			child("rel", "release", 5000),
+			child("chk", "check", 6000),
+		],
+		edges: [
+			call("e1", "hold", "acq", 1000),
+			call("e2", "watch", "rel", 2000),
+			call("e3", "hold", "chk", 3000),
+		],
+	});
+	const answer = VariantComparisonResultSchema.parse(
+		comparisonAnswer(
+			{ name: "Board lease", version: 6 },
+			variant("v2", "Watched", after, "v1"),
+			variant("v1", "Lock files", before),
+			[],
+		),
+	);
+	const changed = answer.interfaceChanges.changed[0];
+
+	test("each container says what its interface gained and lost, in the names of the variants", () => {
+		expect(answer.interfaceChanges.changed).toHaveLength(1);
+		expect(changed?.container.name).toBe("Lock store");
+		expect(changed?.holdsParts).toEqual({ variant: true, against: true });
+		expect(changed?.entryPointsAdded.map((part) => part.name)).toEqual(["check"]);
+		expect(changed?.becameEntryPoints.map((part) => part.name)).toEqual(["release"]);
+		expect(changed?.callersGained.map((part) => part.name)).toEqual(["Lock watcher"]);
+		expect(changed?.entryPointsRemoved).toEqual([]);
+		expect(changed?.becameHidden).toEqual([]);
+		expect(changed?.callersLost).toEqual([]);
+	});
+
+	test("read the other way, the same change is removals and parts that became hidden", () => {
+		const reversed = comparisonAnswer(
+			{ name: "Board lease", version: 6 },
+			variant("v1", "Lock files", before),
+			variant("v2", "Watched", after, "v1"),
+			[],
+		).interfaceChanges.changed[0];
+		expect(reversed?.entryPointsRemoved.map((part) => part.name)).toEqual(["check"]);
+		expect(reversed?.becameHidden.map((part) => part.name)).toEqual(["release"]);
+		expect(reversed?.callersLost.map((part) => part.name)).toEqual(["Lock watcher"]);
+	});
+
+	test("an interface change sets no standing: the part a caller reached is not changed", () => {
+		expect(standing(answer.nodes, "rel").standing).toBe("unchanged");
+		expect(standing(answer.nodes, "store").standing).toBe("unchanged");
+		expect(standing(answer.edges, "e2").standing).toBe("added");
+		expect(JSON.stringify(answer.interfaceChanges)).not.toContain("standing");
+	});
+
+	test("a container whose interface did not move is listed as read, so no change is a claim", () => {
+		const same = comparisonAnswer(
+			{ name: "Board lease", version: 6 },
+			variant("v2", "Same", before, "v1"),
+			variant("v1", "Lock files", before),
+			[],
+		);
+		expect(same.interfaceChanges.changed).toEqual([]);
+		expect(same.interfaceChanges.unchanged.map((part) => part.name)).toEqual(["Lock store"]);
+	});
+
+	test("the interface section is the first thing said, before the counts and the relationships", () => {
+		const lines = described(answer);
+		const interfaceAt = lines.findIndex((line) => line.includes("Lock store"));
+		const countsAt = lines.findIndex((line) => line.includes("relationships 2 added"));
+		const edgeAt = lines.findIndex((line) => line.includes("added: Lock watcher"));
+		expect(interfaceAt).toBeGreaterThan(-1);
+		expect(interfaceAt).toBeLessThan(countsAt);
+		expect(countsAt).toBeLessThan(edgeAt);
+		expect(Object.keys(answer).indexOf("interfaceChanges")).toBeLessThan(
+			Object.keys(answer).indexOf("nodes"),
+		);
+	});
+});

@@ -115,6 +115,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "src/shared/semantic-board/tests/container-interface.test.ts; tests/system/semantic-boards/container-interface.test.ts"
+				},
+				{
+					"path": "semantic compare reports each container's interface changes before the other changes: entry points added and removed, parts moved between the interface and the hidden parts, callers gained and lost, and no comparison status",
+					"expectedUse": "report the interface changes of a proposal first, naming the callers each one costs",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/shared/semantic-board/tests/compare-interface.test.ts; src/cli/commands/tests/comparison-answer.test.ts"
 				}
 			]
 		},
