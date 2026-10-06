@@ -70,6 +70,13 @@ the check that canvases poll. A finding has the shape of a vault diagnostic,
 with the evidence that it rests on: its kind, and whether it is resolved or a
 candidate (ADR 0046).
 
+On 2026-10-06 the check reproduced the Board persistence measurement above: 22
+calls, one type import, 3 undrawn calls and one finding for the 7 parts of the
+address helper (TASK-367.07). It counts 6 type-only imports, not 5, and all 6
+are in the files at `048312ee`, so the count above missed one. It also reports
+Archboard server to Board lease, because it reads directory bindings, and the
+measurement counted only pairs of bound files.
+
 ### Evidence kinds
 
 Not every link in code or infrastructure is a relationship at run time. Each
