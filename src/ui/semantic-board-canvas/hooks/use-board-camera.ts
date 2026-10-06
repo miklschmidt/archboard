@@ -41,7 +41,11 @@ import {
 	type Size,
 } from "@/ui/semantic-board-canvas/lib/camera";
 import { wheelZoomFactor } from "@/ui/semantic-board-canvas/lib/camera-motion";
-import { createCameraStore, type CameraView } from "@/ui/semantic-board-canvas/lib/camera-store";
+import {
+	createCameraStore,
+	type CameraStore,
+	type CameraView,
+} from "@/ui/semantic-board-canvas/lib/camera-store";
 
 /** How a person moves the camera, and where it is now. */
 interface BoardCamera {
@@ -226,6 +230,29 @@ function sameSize(one: Size | null, other: Size | null): boolean {
 }
 
 /**
+ * Bring a camera that a hand moved to rest. After a zoom it takes two frames.
+ * In the first the camera's own layer goes, and the browser draws the whole
+ * picture again at its new size. The rest follows in the next frame, so a swap
+ * between the near and the far view that the rest starts (TASK-428) begins in
+ * a frame of its own, not in the one that draws the whole picture again. A pan
+ * changes no size, so it can start no swap, and it comes to rest at once.
+ * @param store The camera's store.
+ */
+function comeToRest(store: CameraStore): void {
+	const { camera, rest } = store.read();
+	const clock = frameClock();
+	if (camera.scale === rest.scale || !clock.animates) {
+		store.settle();
+		return;
+	}
+	const letGo = store.hold();
+	store.settle();
+	clock.requestFrame(() => {
+		letGo();
+	});
+}
+
+/**
  * Where in the viewport a wheel event happened.
  * @param element The viewport.
  * @param event The event.
@@ -275,7 +302,7 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 			},
 			/** The ease has ended: the camera is at rest, unless a hand moved it a moment ago. */
 			still: () => {
-				if (resting.current === null) store.settle();
+				if (resting.current === null) comeToRest(store);
 			},
 		}),
 		[read, write, store],
@@ -293,7 +320,7 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 		if (resting.current !== null) clock.cancelAfter(resting.current);
 		resting.current = clock.after(EXPLORING_MS.cameraRest, () => {
 			resting.current = null;
-			if (!motion.easing()) store.settle();
+			if (!motion.easing()) comeToRest(store);
 		});
 	}, [motion, store]);
 	// A camera that goes away takes its timer with it.
