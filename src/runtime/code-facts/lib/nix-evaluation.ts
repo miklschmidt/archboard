@@ -30,14 +30,19 @@
 import type { Node } from "web-tree-sitter";
 import { libraryValue, orLibrary, updated } from "@/runtime/code-facts/lib/nix-library";
 import {
+	type Building,
+	type Scope,
+	finished,
+	lookup,
+	place,
+} from "@/runtime/code-facts/lib/nix-scope";
+import {
 	type AttrsValue,
 	type Budget,
-	type Entry,
 	type NixValue,
 	type Thunk,
 	OTHER,
 	applied,
-	attrs,
 	lazy,
 	ready,
 	selected,
@@ -46,13 +51,6 @@ import {
 	unknownAt,
 } from "@/runtime/code-facts/lib/nix-values";
 
-/** The names in scope: each lexical name, and the sets `with` brings in, which every lexical name shadows. */
-interface Scope {
-	readonly names: ReadonlyMap<string, Thunk>;
-	readonly parent?: Scope;
-	readonly with?: Thunk;
-}
-
 /** How many steps one file's reading spends at most. */
 const MAX_STEPS = 200_000;
 /** How deep one reading nests at most. */
@@ -60,19 +58,6 @@ const MAX_DEPTH = 400;
 
 /** Reads one kind of expression. */
 type Reader = (node: Node, scope: Scope, budget: Budget) => NixValue;
-
-/** A set being built from bindings: its names, and an expression that adds names it cannot tell. */
-interface Building {
-	readonly entries: Map<string, Pending>;
-	open?: Node;
-}
-
-/** One name of a set being built: its value, the names bound below it, or both. */
-interface Pending {
-	readonly node: Node;
-	value?: Thunk;
-	nested?: Building;
-}
 
 /**
  * The value of an expression.
@@ -132,84 +117,6 @@ function attrNames(path: Node | null, scope: Scope, budget: Budget): (string | u
 	const names = path?.childrenForFieldName("attr") ?? [];
 	if (!spend(budget, names.length)) return [undefined];
 	return names.map((attr) => attrName(attr, scope, budget));
-}
-
-/**
- * Place one binding's value at its attribute path. A name the reading cannot
- * tell makes the set that holds it open.
- * @param building The set.
- * @param names The attribute path.
- * @param value The value.
- * @param node The binding.
- */
-function place(
-	building: Building,
-	names: readonly (string | undefined)[],
-	value: Thunk,
-	node: Node,
-): void {
-	let at = building;
-	for (const [index, name] of names.entries()) {
-		if (name === undefined) {
-			at.open ??= node;
-			return;
-		}
-		const pending = pendingAt(at, name, node);
-		if (index === names.length - 1) pending.value = value;
-		else at = pending.nested ??= { entries: new Map() };
-	}
-}
-
-/**
- * One name of a set being built, made where there is none yet.
- * @param building The set.
- * @param name The name.
- * @param node The binding that names it.
- * @returns The name's entry.
- */
-function pendingAt(building: Building, name: string, node: Node): Pending {
-	const pending = building.entries.get(name) ?? { node };
-	building.entries.set(name, pending);
-	return pending;
-}
-
-/**
- * The value a lexical name or a set of `with` gives in a scope.
- * @param scope The scope.
- * @param name The name.
- * @returns The value, or undefined when no scope binds it.
- */
-function lookup(scope: Scope, name: string): NixValue | undefined {
-	return (lexical(scope, name) ?? brought(scope, name))?.();
-}
-
-/**
- * The value a lexical name has in a scope.
- * @param scope The scope.
- * @param name The name.
- * @returns The value, or undefined when no scope binds it.
- */
-function lexical(scope: Scope, name: string): Thunk | undefined {
-	for (let at: Scope | undefined = scope; at !== undefined; at = at.parent) {
-		const found = at.names.get(name);
-		if (found !== undefined) return found;
-	}
-	return undefined;
-}
-
-/**
- * The value a set of `with` gives a name in a scope, the innermost first.
- * @param scope The scope.
- * @param name The name.
- * @returns The value, or undefined when no set of `with` the reading can tell has it.
- */
-function brought(scope: Scope, name: string): Thunk | undefined {
-	for (let at: Scope | undefined = scope; at !== undefined; at = at.parent) {
-		const set = at.with?.();
-		const found = set?.kind === "attrs" ? set.entries.get(name) : undefined;
-		if (found !== undefined) return found.value;
-	}
-	return undefined;
 }
 
 /** The names Nix binds itself that the reading can tell are no set. */
@@ -299,38 +206,6 @@ function inheritInto(binding: Node, building: Building, scopes: Scopes, budget: 
 					);
 		place(building, [name], value, binding);
 	}
-}
-
-/**
- * The set a set being built gives.
- * @param building The set.
- * @param budget The reading's budget.
- * @returns The set.
- */
-function finished(building: Building, budget: Budget): AttrsValue {
-	const entries = new Map<string, Entry>();
-	for (const [name, pending] of building.entries) {
-		entries.set(name, { node: pending.node, value: valueOf(pending, budget) });
-	}
-	return attrs(entries, building.open);
-}
-
-/**
- * The value of one name of a set being built: its value, the set bound
- * below it, or both merged, as `a = { b = 1; }; a.c = 2;` merges them. The
- * set below is made when it is first asked for, one name deep at a time.
- * @param pending The name.
- * @param budget The reading's budget.
- * @returns Its value.
- */
-function valueOf(pending: Pending, budget: Budget): Thunk {
-	const { nested, value } = pending;
-	if (nested === undefined) return value ?? ready(OTHER);
-	if (value === undefined) return lazy(() => finished(nested, budget), pending.node);
-	return lazy(
-		() => updated(value(), finished(nested, budget), { deep: false, budget, node: pending.node }),
-		pending.node,
-	);
 }
 
 /**
@@ -497,7 +372,10 @@ function string(node: Node, budget: Budget): NixValue {
 function list(node: Node, scope: Scope, budget: Budget): NixValue {
 	const items = node.childrenForFieldName("element");
 	if (!spend(budget, items.length)) return unknownAt(node);
-	return { kind: "list", items: items.map((item) => thunk(item, scope, budget)) };
+	return {
+		kind: "list",
+		items: items.map((item) => ({ node: item, value: thunk(item, scope, budget) })),
+	};
 }
 
 /**

@@ -32,16 +32,17 @@ import {
 	type AttrsValue,
 	type Budget,
 	type Entry,
-	type FunctionValue,
 	type NixValue,
 	type Thunk,
 	ANY,
 	applied,
 	attrs,
+	curried,
 	lazy,
 	namesOf,
 	ready,
 	spend,
+	unary,
 	unknownAt,
 } from "@/runtime/code-facts/lib/nix-values";
 
@@ -68,32 +69,6 @@ interface At {
  */
 function text(value: string): NixValue {
 	return { kind: "string", text: value };
-}
-
-/**
- * A function of two arguments, applied one at a time.
- * @param body What it gives for both, at the call that applies the second.
- * @returns The function.
- */
-function curried(body: (first: Thunk, second: Thunk, call: Node) => NixValue): FunctionValue {
-	return {
-		kind: "function",
-		/**
-		 * Take the first argument.
-		 * @param first The first argument.
-		 * @returns The function of the second.
-		 */
-		apply: (first) => ({
-			kind: "function",
-			/**
-			 * Take the second argument.
-			 * @param second The second argument.
-			 * @param call The call.
-			 * @returns What the function gives.
-			 */
-			apply: (second, call) => body(first, second, call),
-		}),
-	};
 }
 
 /**
@@ -345,15 +320,6 @@ function eachSystem(list: NixValue, f: Thunk, at: At): NixValue {
 }
 
 /**
- * A function of one argument.
- * @param body What it gives for the argument, at the call.
- * @returns The function.
- */
-function unary(body: (argument: Thunk, call: Node) => NixValue): FunctionValue {
-	return { kind: "function", apply: body };
-}
-
-/**
  * `mapAttrs f set`: the set's names, each with what `f` gives for the name
  * and its value.
  * @param f The function.
@@ -385,7 +351,7 @@ function foldLeft(f: Thunk, init: Thunk, list: Thunk, at: At): NixValue {
 	const items = list();
 	if (items.kind !== "list" || !spend(at.budget, items.items.length)) return unknownAt(at.call);
 	return items.items.reduce(
-		(sofar, item) => applied(applied(f(), ready(sofar), at.call), item, at.call),
+		(sofar, item) => applied(applied(f(), ready(sofar), at.call), item.value, at.call),
 		init(),
 	);
 }
