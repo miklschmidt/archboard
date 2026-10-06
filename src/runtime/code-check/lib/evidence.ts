@@ -7,14 +7,15 @@
 // through an import is resolved, because the import path names the file, and
 // the check follows every re-export to the file that defines the name. A use
 // of a name the same file defines at module level is matched by name only, so
-// it is a candidate. The language server of the file resolves every use that
-// no import resolves, also one the code reaches only through a value, such as
-// `ledger.post()` (TASK-367.13, resolution.ts): a definition in a file of the
-// checkout makes the evidence resolved, and one only outside the checkout
-// reaches no part. Without a server's answer, a use of a module-level name is
-// a candidate and a use through a value gives no evidence. An `import()`, a
-// `require()` or an import for its side effects loads the whole file at run
-// time, so it is a call to the file.
+// it is a candidate. Where a candidate joins two parts, the language server of
+// the file resolves it (TASK-367.13, resolution.ts): a definition in a file of
+// the checkout makes the evidence resolved, one only outside the checkout
+// reaches no part, and with no answer it stays a candidate. A use through a
+// value, such as `ledger.post()`, gives no evidence. The server is asked about
+// one only for an anchor (anchor-kind.ts, support.ts): asking about every one
+// cost 3 to 4 s of each pass on the dogfood vault and changed no finding. An
+// `import()`, a `require()` or an import for its side effects loads the whole
+// file at run time, so it is a call to the file.
 //
 // Each piece goes from the part whose code makes the use to the part whose
 // code holds what it reaches, each the narrowest binding (part-code.ts). Code
@@ -32,6 +33,7 @@ import {
 	type ReadPart,
 	type RepoCheckout,
 } from "@/runtime/code-check/lib/part-code";
+import { moduleLevelDefinition } from "@/runtime/code-check/lib/module-level";
 import type { Resolve } from "@/runtime/code-check/lib/resolution";
 import {
 	definitionSite,
@@ -307,14 +309,18 @@ async function reachedBy(
 }
 
 /**
- * What a use that no import resolves reaches, as the language server of its
- * file says: the parts that hold the definition it names in the checkout,
- * nothing when it names one only outside, and what the name matches in the
- * same file when no server answers. Only two uses are asked about: a name the
- * file defines at module level, and a name spelled through a value, `a.b`. A
- * bare name the file does not define at module level is a local, a parameter
- * or a global: its definition is in the same function or outside the
- * checkout, so it never joins two parts.
+ * What a use that no import resolves reaches. A name the file defines at
+ * module level is matched by name, a candidate. Where that match joins two
+ * parts, the language server of the file says where the name is defined: the
+ * parts that hold the definition it names in the checkout, resolved, or
+ * nothing when it names one only outside; with no answer the candidate stays.
+ * Only there can the answer change a finding, since a match that joins a part
+ * to itself is no evidence, and asking about every candidate cost 3 to 4 s of
+ * each pass on the dogfood vault and changed no finding. Any other use gives
+ * no evidence: a bare name the file does not define at module level is a
+ * local, a parameter or a global, whose definition is in the same function or
+ * outside the checkout, and a use through a value is asked about only for an
+ * anchor.
  * @param repo The repository's reading.
  * @param facts The file's facts.
  * @param reference The use.
@@ -328,7 +334,12 @@ async function serverReached(
 	imported: ReadonlySet<string>,
 ): Promise<Reached | undefined> {
 	const candidate = candidateReached(repo, facts, reference, imported);
-	if (candidate === undefined && !reference.symbol.includes(".")) return undefined;
+	if (candidate === undefined) return undefined;
+	const from = ownersAtLine(repo.owners, facts.path, reference.line);
+	const lineages = repo.lineages;
+	if (!from.some((start) => candidate.to.some((end) => joins(start, end, lineages)))) {
+		return candidate;
+	}
 	const resolved = await repo.reading.resolve(repo.checkout, facts.path, reference);
 	if (resolved.status === "unknown") return candidate;
 	if (resolved.status === "elsewhere") return undefined;
@@ -358,35 +369,22 @@ function candidateReached(
 }
 
 /**
- * The definition a file gives a name exactly, as a module-level declaration
- * spells it or as `Holder.member`.
- * @param facts The file's facts.
- * @param name The name.
- * @returns The definition, or undefined.
+ * Whether evidence can join one part to another: never a part to a part
+ * inside it, and never two parts that bind the same code.
+ * @param start The part that makes a use.
+ * @param end The part that holds what it reaches.
+ * @param lineages Each part and its containers.
+ * @returns True when a piece can go from the one to the other.
  */
-function definedAs(facts: SyntaxFacts, name: string): Definition | undefined {
-	return facts.definitions.find((definition) => definition.symbol === name);
-}
-
-/**
- * The definition of the same file that a use names by its first name: a
- * declaration at module level, or the member of one that the rest of the
- * spelling names. A first name that an import brings in, or that no
- * module-level declaration has, such as a parameter or a local, names none.
- * @param facts The file's facts.
- * @param symbol The use as the file spells it.
- * @param imported The names the file's imports bring in.
- * @returns The definition, or undefined.
- */
-function moduleLevelDefinition(
-	facts: SyntaxFacts,
-	symbol: string,
-	imported: ReadonlySet<string>,
-): Definition | undefined {
-	const first = symbol.split(".")[0] ?? "";
-	if (imported.has(first)) return undefined;
-	const declared = definedAs(facts, first);
-	return declared === undefined ? undefined : (definedAs(facts, symbol) ?? declared);
+function joins(
+	start: ReadPart,
+	end: ReadPart,
+	lineages: ReadonlyMap<string, ReadonlySet<string>>,
+): boolean {
+	const a = start.node.id;
+	const b = end.node.id;
+	const nested = lineages.get(a)?.has(b) === true || lineages.get(b)?.has(a) === true;
+	return !nested && start.key !== end.key;
 }
 
 /**
@@ -406,13 +404,11 @@ function piecesBetween(
 	evidence: Omit<CodeEvidence, "from" | "to" | "resolution">,
 ): Piece[] {
 	return from.flatMap((start) =>
-		reached.to.flatMap((end): Piece[] => {
-			const a = start.node.id;
-			const b = end.node.id;
-			const nested = lineages.get(a)?.has(b) === true || lineages.get(b)?.has(a) === true;
-			if (nested || start.key === end.key) return [];
-			return [{ ...evidence, resolution: reached.resolution, from: a, to: b }];
-		}),
+		reached.to.flatMap((end): Piece[] =>
+			joins(start, end, lineages)
+				? [{ ...evidence, resolution: reached.resolution, from: start.node.id, to: end.node.id }]
+				: [],
+		),
 	);
 }
 
