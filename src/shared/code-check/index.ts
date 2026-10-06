@@ -75,8 +75,9 @@ const CodeEvidenceSchema = z
  * one side has evidence (TASK-367.23): `code` when the infrastructure sets a
  * value to the address of its end for the code of its start and that code
  * reads none of those names, `infrastructure` when the code of its start reads
- * names that nothing the check reads sets for it. Its evidence is then that
- * side's.
+ * names that nothing the check reads sets for it. Its evidence then ends with
+ * that side's: where the value is set, or the first read of each name that
+ * nothing sets.
  */
 const CodeFindingSchema = VaultDiagnosticSchema.extend({
 	severity: z.enum(["warning", "information"]),

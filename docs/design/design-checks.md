@@ -982,6 +982,20 @@ check and a temporary vault:
   owned by `src/runtime/code-check/tests/network-hop.test.ts`: a Lambda
   function's `environment` block, and a Deployment's `env` and `envFrom`.
 
+The independent review planted what the trials did not have. A value that
+names a service whose build holds two bound parts reached both parts as
+resolved evidence. So did a read in a directory that two services build to two
+targets with different values. Each gave a `RELATIONSHIP_UNDRAWN` warning that
+only a wrong relationship clears, through compose, Kubernetes and Terraform
+alike. Such pieces are now candidates. A synthetic repository with 300 compose
+projects (1,200 services) and a part bound to 4,000 TypeScript files took
+499 s through the real check, because the check searched which service runs a
+file again for each service and file. It now looks the services up by
+directory, and the same pass takes 0.8 s cold. No probe found a value in an
+answer: credentials in a compose `DATABASE_URL`, a Terraform `environment`
+literal, a Kubernetes `env` value, a Secret and an env file stay out of every
+finding.
+
 #### Resolving candidates with the TypeScript language server
 
 TASK-367.13 measured the language server on 2026-10-06. It used Bun 1.4.2 and
@@ -1340,8 +1354,14 @@ runs, by the same two rules. Otherwise it reaches the part that owns that
 declaration. In Kubernetes, a Service that no part binds leads to the
 workloads that it picks. In Terraform, a value reaches what its references
 reach through variables, module arguments, outputs and locals. The
-read and the setting are two pieces of resolved configured-path evidence. Both
-go from the part that reads to the part reached.
+read and the setting are two pieces of configured-path evidence. Both go from
+the part that reads to the part reached. They are resolved where the files
+leave no choice. They are candidates where the files leave one: the named
+declaration runs the code of several parts, so the address does not say which
+of them it reaches, or more than one runner runs the code that reads the name
+and they do not set it to the same parts, as two services that build one
+directory to two targets do. A candidate is never a warning, so the check
+never warns a right board about a part that the address may not reach.
 
 Some relationships have a kind that accepts a configured path, and nothing
 supports them. For such a relationship, `RELATIONSHIP_UNSUPPORTED` says which
