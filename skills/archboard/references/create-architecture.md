@@ -67,8 +67,9 @@ Keep the real relationship kind when judging routing.
    whose body makes the call and the name it calls. The agent's request
    reaches `editRoute` through the route table in
    `src/server/archboard/lib/semantic-board-routes.ts`, so that file anchors
-   it. Five functions share `write.ts`, so each binding names its function in
-   `symbol`; `Board lease` is drawn whole and owns its file.
+   it. Each function drawn shares its file with others (four share
+   `write.ts`), so each binding names its function in `symbol`. `Board lease`
+   is drawn whole and owns its file.
 
 ```bash
 archboard semantic new "Semantic board writes" --doing "describing how one board edit reaches disk" <<'JSON'

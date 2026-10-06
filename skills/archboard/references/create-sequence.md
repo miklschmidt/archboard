@@ -91,7 +91,10 @@ relationship.
    `git check-ignore` whether git ignores the vault, and returns the result to
    the command.
 
-   Each call between two parts is an `edge` as well as a step.
+   Each call between two parts is an `edge` as well as a step. Each message
+   that a file of the checkout sends carries that file and the name it calls
+   or returns from as its `anchor`. The user's command and git's answer come
+   from outside the checkout, so they carry none.
 
 ```bash
 archboard semantic new "Skill install" --doing "explaining how install-skill writes the repository setup" <<'JSON'
@@ -107,20 +110,27 @@ archboard semantic new "Skill install" --doing "explaining how install-skill wri
   ],
   "edges": [
     { "from": "User", "to": "install-skill command", "kind": "call", "label": "install-skill" },
-    { "from": "install-skill command", "to": "Setup block", "kind": "call", "label": "writeSetup", "emphasis": "hero" },
-    { "from": "Setup block", "to": "git", "kind": "call", "label": "check-ignore" }
+    { "from": "install-skill command", "to": "Setup block", "kind": "call", "label": "writeSetup", "emphasis": "hero",
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/install-skill.ts", "symbol": "writeSetup" } },
+    { "from": "Setup block", "to": "git", "kind": "call", "label": "check-ignore",
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup-block.ts", "symbol": "execFileSync" } }
   ],
   "flows": [{
     "name": "Repository setup",
     "participants": ["User", "install-skill command", "Setup block", "git"],
     "steps": [
       { "from": "User", "to": "install-skill command", "label": "install-skill" },
-      { "from": "install-skill command", "to": "Setup block", "label": "writeSetup" },
-      { "as": "find", "from": "Setup block", "to": "Setup block", "label": "find the agent document", "kind": "self", "repeat": 2, "note": "tries CLAUDE.md then AGENTS.md and keeps the first that exists; when neither does, the skill target names the one to create" },
-      { "as": "write", "from": "Setup block", "to": "Setup block", "label": "write the setup block", "kind": "self" },
-      { "from": "Setup block", "to": "git", "label": "check-ignore the vault" },
+      { "from": "install-skill command", "to": "Setup block", "label": "writeSetup",
+        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/install-skill.ts", "symbol": "writeSetup" } },
+      { "as": "find", "from": "Setup block", "to": "Setup block", "label": "find the agent document", "kind": "self", "repeat": 2, "note": "tries CLAUDE.md then AGENTS.md and keeps the first that exists; when neither does, the skill target names the one to create",
+        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup-block.ts", "symbol": "chooseDoc" } },
+      { "as": "write", "from": "Setup block", "to": "Setup block", "label": "write the setup block", "kind": "self",
+        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup-block.ts", "symbol": "applyBlock" } },
+      { "from": "Setup block", "to": "git", "label": "check-ignore the vault",
+        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup-block.ts", "symbol": "execFileSync" } },
       { "from": "git", "to": "Setup block", "label": "ignored or not", "kind": "return" },
-      { "from": "Setup block", "to": "install-skill command", "label": "setup result", "kind": "return" }
+      { "from": "Setup block", "to": "install-skill command", "label": "setup result", "kind": "return",
+        "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/cli/commands/lib/repo-setup-block.ts", "symbol": "writeSetup" } }
     ]
   }],
   "views": [{ "name": "Setup exchange", "grammar": "data-flow", "scope": { "kind": "selection", "flows": ["Repository setup"] } }],

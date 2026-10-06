@@ -50,8 +50,10 @@ archboard semantic edit "Board store" --expect-version 3 --doing "routing write 
     "responsibility": "Names every relationship a batch stated again under a new id",
     "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/replaced-relationships.ts" } }],
   "edges": [
-    { "from": "Edit content", "to": "Replaced relationships", "kind": "call", "label": "replacedRelationships" },
-    { "from": "applyUnderLease", "to": "persisted", "kind": "call", "label": "notices as warnings" }
+    { "from": "Edit content", "to": "Replaced relationships", "kind": "call", "label": "replacedRelationships",
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/edit-content.ts", "symbol": "replacedRelationships" } },
+    { "from": "applyUnderLease", "to": "persisted", "kind": "call", "label": "notices as warnings",
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/write.ts", "symbol": "persisted" } }
   ],
   "removeEdges": ["e7Kq2mP1"]
 }
