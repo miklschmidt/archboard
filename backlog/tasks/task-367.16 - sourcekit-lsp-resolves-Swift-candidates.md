@@ -1,7 +1,7 @@
 ---
 id: TASK-367.16
 title: sourcekit-lsp resolves Swift candidates
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
@@ -27,8 +27,8 @@ sourcekit-lsp reads the index of a built Swift package. A package that has never
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A Swift candidate in a Swift package resolves through sourcekit-lsp
-- [ ] #2 A package without an index is reported once, and the candidates stay
+- [x] #1 A Swift candidate in a Swift package resolves through sourcekit-lsp
+- [x] #2 A package without an index is reported once, and the candidates stay
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -105,3 +105,9 @@ Acceptance evidence: #1 swift-server.test.ts (started in the package with backgr
 
 Gate of the review, lanes one at a time: lint exit 0. fmt:check exit 0. type-check exit 0. build:frontend exit 0. test:modules 4,265 pass, 0 fail. test:system 195 pass, 0 fail. test:repository 21 pass, 0 fail. test:serial-browser 24 pass, 0 fail. After the lanes, no sourcekit-lsp, stand-in or tsc --lsp process ran, and no podman container was left.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A Swift candidate resolves through sourcekit-lsp when language-servers.json names it (Swift has no default). The check starts one server per Swift package, the nearest Package.swift, with background indexing off, waits for it to load the index with workspace/synchronize, and opens each file before it asks. A package that no build indexed, that its own .sourcekit-lsp/config.json would make build, or a Swift file that no package holds, is said once per package as language-server-unready, starts no server, and keeps its candidates. The review made the package look once per pass, stopped a failed server from being started again per package, fixed the human skip count, gave the reason mapping an owner, and amended ADR 0046: the check writes nothing into a checkout, while a server the user names keeps its index database under the package's ignored .build. Verified by swift-server.test.ts, swift-check.test.ts and check-code.test.ts, and by sourcekit-lsp 6.2.4 in the swift:6.2 image on a built and an unbuilt package.
+<!-- SECTION:FINAL_SUMMARY:END -->
