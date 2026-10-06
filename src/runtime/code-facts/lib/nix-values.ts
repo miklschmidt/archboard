@@ -65,17 +65,31 @@ interface FunctionValue {
 	readonly apply: (argument: Thunk, call: Node) => NixValue;
 }
 
+/**
+ * What a derivation the reading recognises is built from (nix-derivations.ts):
+ * each input with the expression that names it, and the first expression of
+ * its inputs the reading cannot follow, if any.
+ */
+interface Derivation {
+	readonly inputs: readonly Entry[];
+	readonly unfollowed?: Node;
+}
+
 /** A Nix value as far as a static reading can tell it. */
 type NixValue =
 	| AttrsValue
 	| FunctionValue
-	| { readonly kind: "list"; readonly items: readonly Thunk[] }
+	/** A list: each item with the expression that gives it. */
+	| { readonly kind: "list"; readonly items: readonly Entry[] }
 	/** A string; its text where no interpolation makes it. */
 	| { readonly kind: "string"; readonly text?: string }
 	/** A number, a path, a Boolean, null: no attribute set. */
 	| { readonly kind: "other" }
-	/** An expression the reading cannot follow. */
-	| { readonly kind: "unknown"; readonly node: Node };
+	/**
+	 * An expression the reading cannot follow. A derivation is one too, as far
+	 * as its names go, and it says what it is built from.
+	 */
+	| { readonly kind: "unknown"; readonly node: Node; readonly derivation?: Derivation };
 
 const OTHER: NixValue = { kind: "other" };
 
@@ -130,7 +144,7 @@ function namesOf(value: NixValue, budget: Budget): string[] | undefined {
 	if (value.kind !== "list" || !spend(budget, value.items.length)) return undefined;
 	const names: string[] = [];
 	for (const item of value.items) {
-		const read = item();
+		const read = item.value();
 		if (read.kind !== "string" || read.text === undefined) return undefined;
 		names.push(read.text);
 	}
@@ -185,10 +199,46 @@ function applied(value: NixValue, argument: Thunk, call: Node): NixValue {
 	return value.kind === "function" ? value.apply(argument, call) : unknownAt(call);
 }
 
+/**
+ * A function of one argument.
+ * @param body What it gives for the argument, at the call.
+ * @returns The function.
+ */
+function unary(body: (argument: Thunk, call: Node) => NixValue): FunctionValue {
+	return { kind: "function", apply: body };
+}
+
+/**
+ * A function of two arguments, applied one at a time.
+ * @param body What it gives for both, at the call that applies the second.
+ * @returns The function.
+ */
+function curried(body: (first: Thunk, second: Thunk, call: Node) => NixValue): FunctionValue {
+	return {
+		kind: "function",
+		/**
+		 * Take the first argument.
+		 * @param first The first argument.
+		 * @returns The function of the second.
+		 */
+		apply: (first) => ({
+			kind: "function",
+			/**
+			 * Take the second argument.
+			 * @param second The second argument.
+			 * @param call The call.
+			 * @returns What the function gives.
+			 */
+			apply: (second, call) => body(first, second, call),
+		}),
+	};
+}
+
 export {
 	ANY,
 	type AttrsValue,
 	type Budget,
+	type Derivation,
 	type Entry,
 	type FunctionValue,
 	type NixValue,
@@ -196,11 +246,13 @@ export {
 	OTHER,
 	applied,
 	attrs,
+	curried,
 	lazy,
 	namesOf,
 	ready,
 	selected,
 	spend,
 	surelyAbsent,
+	unary,
 	unknownAt,
 };
