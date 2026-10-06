@@ -514,7 +514,9 @@ they import and export again. The root files are the files that its
 file of tests is not a root file. In Python, the root file is the `__init__.py`
 of the package. It exposes the names that its `__all__` lists. Without
 `__all__`, it exposes every name that it defines or imports and that does not
-start with `_`. The check gives three findings:
+start with `_`. In Swift, the module is the directory of a target that
+`Package.swift` declares. It exposes the `open`, `public` and `package`
+declarations of all its files. The check gives three findings:
 
 - `ENTRY_POINT_UNEXPOSED`, a warning: an entry point owns nothing that the
   module exposes, and the code of a caller drawn to it reaches it from outside
