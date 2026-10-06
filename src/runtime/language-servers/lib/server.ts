@@ -149,7 +149,7 @@ async function askToExit(connection: Connection, timeouts: ServerTimeouts): Prom
 
 /**
  * Stop a process: ask it to exit, unless it must die at once, then kill it if
- * it has not ended within the bound.
+ * it has not ended within the bound, which counts from the stop.
  * @param child The process.
  * @param connection Its connection.
  * @param graceful Ask it to exit first.
@@ -161,13 +161,14 @@ async function stopProcess(
 	graceful: boolean,
 	timeouts: ServerTimeouts,
 ): Promise<void> {
+	const deadline = performance.now() + (graceful ? timeouts.stopMs : 0);
 	if (graceful && child.exitCode === null) await askToExit(connection, timeouts);
 	try {
 		await child.stdin.end();
 	} catch {
 		// The process has closed its input already.
 	}
-	if (await endedWithin(child.exited, graceful ? timeouts.stopMs : 0)) return;
+	if (await endedWithin(child.exited, Math.max(0, deadline - performance.now()))) return;
 	child.kill("SIGKILL");
 	await child.exited;
 }

@@ -139,7 +139,7 @@ describe("a pass's language servers", () => {
 		const session = openLanguageServers({
 			servers: at.table("hang-initialize"),
 			signal: new AbortController().signal,
-			timeouts: SHORT,
+			timeouts: { ...SHORT, startMs: SHORT.requestMs },
 		});
 		expect(
 			await session.definition({ root: at.root, file: "src/load.ts", line: 3, symbol: "helper" }),
