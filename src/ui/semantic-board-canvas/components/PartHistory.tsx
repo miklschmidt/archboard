@@ -117,13 +117,18 @@ function LocalityReading(props: PartHistoryProps): JSX.Element {
 	}
 	// A read the person asked for again says that it is reading, so pressing
 	// Read it again is seen to do something even when it fails the same way.
-	if (read.error !== null && !read.isFetching) {
+	// The control stays where it is, so the keyboard's focus is not lost.
+	if (read.error !== null) {
 		return (
 			<div
 				data-slot="semantic-inspector-history-failed"
 				className="flex flex-col items-start gap-2"
 			>
-				<Note>The history of its code could not be read. {read.error.message}</Note>
+				<Note>
+					{read.isFetching
+						? "Reading the history of its code…"
+						: `The history of its code could not be read. ${read.error.message}`}
+				</Note>
 				<SmallButton onClick={again}>Read it again</SmallButton>
 			</div>
 		);
