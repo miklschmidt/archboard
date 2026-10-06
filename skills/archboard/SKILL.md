@@ -161,7 +161,11 @@ recipe names.
   `archboard check --code` holds every anchor and bound `symbol` of each
   board's current variant to the files on disk: a file that is not there or
   does not hold the symbol is a warning that names its part, relationship or
-  step, and exits 1. Repair the anchor or binding it names. For a draft whose
+  step, and exits 1. Repair the anchor or binding it names. Code that one bound
+  part runs in another, with no relationship between them, is a warning on the
+  part it reaches (`RELATIONSHIP_UNDRAWN`): draw the relationship. A
+  relationship with no anchor that the code runs the other way or does not show
+  is information ([evidence](references/authoring.md#evidence-for-a-relationship)). For a draft whose
   code is written, add `--variant <draft>`. What it could not read (a
   repository this machine has not registered, a file Git ignores) is listed
   as skipped, never as a finding.

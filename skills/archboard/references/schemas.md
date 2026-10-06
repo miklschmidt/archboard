@@ -17,7 +17,7 @@ are running. Do not edit them.
   vault stores it: variants, lifecycle, ancestry, ids.
 - [`generated/vault-config.schema.json`](generated/vault-config.schema.json):
   `<vault>/.archboard/config.yaml`: levels, node kinds with icons and colors,
-  relationship kinds, groups.
+  relationship kinds with the evidence each accepts, groups.
 - [`generated/INSTALL.md`](generated/INSTALL.md): The installation and vault
   setup manual, copied from the active checkout that supplies the installed CLI;
   links into that checkout are absolute.

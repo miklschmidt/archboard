@@ -278,7 +278,27 @@ environment value or an event), and with `ANCHOR_MISMATCH` when the symbol is
 defined in the checkout outside the bound code of both ends and of every part
 inside them: cite what the code of an end defines or calls. Where one of those
 parts has no binding, the check cannot tell where its code is and does not
-judge this.
+judge this. It is also `ANCHOR_MISMATCH` when the file uses the symbol only in
+a way the relationship's kind does not accept: a name used only as a type is
+`import` evidence, which a `call` does not accept. The `evidence` list of each
+kind under `relationshipKinds` in `config.yaml` says what it accepts; a kind
+without one accepts everything.
+
+Between the bound parts of a board, `check --code` reads the evidence in their
+code. A part whose code uses another bound part at run time, with no
+relationship or step between them or between parts that hold them, is
+`RELATIONSHIP_UNDRAWN` on the part it reaches, which lists every part that
+reaches it: draw the relationship the board's question needs. A use only as a
+type is never undrawn. A relationship with no anchor whose accepted evidence
+runs only the other way is `RELATIONSHIP_BACKWARDS`, and one that no accepted
+evidence joins is `RELATIONSHIP_UNSUPPORTED`. Both are information: a
+subscription runs in code from the handler to the part that sends the event,
+and a call across a network or through a value a part receives shows nothing in
+code. Its anchor makes the relationship a claim the check holds to the code.
+Evidence is `resolved` where the import names the file it reaches, and a
+`candidate` where it is matched by name only; a finding that rests only on
+candidates is information.
+
 That record decides what a valid payload cannot:
 
 - **Siblings are not a chain** (rule 3).
@@ -291,7 +311,7 @@ That record decides what a valid payload cannot:
   event or a subscription is `event`; a message put on a queue is `queue`; an
   HTTP request is `http`; a dependency the source imports but never calls at
   this level is a `dependency`. Use the configured kind that names what the
-  source does.
+  source does; its `evidence` list says what `check --code` accepts as proof.
 
 After the write, read the saved `edges` against the record: every relationship
 has a line, every line has a relationship, and no relationship exists without
