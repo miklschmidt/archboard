@@ -4,8 +4,10 @@
 //
 // The code check asks for the facts of a file, where a symbol is defined and
 // what a module exposes. It never sees tree-sitter, a grammar or a query.
-// TypeScript and TSX have an adapter (TASK-367.06); every other file gets the
-// text reading. Each language says what its module exposes (TASK-368.10).
+// TypeScript and TSX (TASK-367.06) and Python (TASK-367.08) have an adapter,
+// one entry each in the table of adapters (lib/adapters.ts); every other file
+// gets the text reading. Each language says what its module exposes
+// (TASK-368.10).
 
 export {
 	type Definition,
