@@ -122,7 +122,8 @@ asked for this on 2026-10-06 (TASK-403). A smaller default head left the reader
 to guess which way most lines run. TASK-404 then gave a muted line a head of
 the same length, so every head is 11 units long. A colored line is now drawn
 in its full color on the light ground and at three quarters on the dark
-ground (ADR 0044, rule 12).
+ground (ADR 0044, rule 12). Its traffic is its color with white mixed in
+(ADR 0027, TASK-407).
 
 "Added, changed and deleted comparison status overrides the semantic border on
 nodes and the semantic line color on edges." The part about edges holds. On a

@@ -3,16 +3,16 @@
 // strokes: a short hot head with a long tail that fades smoothly away behind it,
 // in a soft glow, so it reads as light and not as marks.
 import { coord } from "@/transformers/semantic-renderer/lib/geometry";
-import { mixed } from "@/transformers/semantic-renderer/lib/svg/colour";
 import { tag } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { legPath, plain, type Leg } from "@/transformers/semantic-renderer/lib/svg/route-legs";
+import { tinted, type Share } from "@/transformers/semantic-renderer/lib/svg/slab";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 
 /** The colours of a pulse and how thick the line it rides is. */
 interface Look {
 	/** The colour of the beam's body ({@link pulseLook}). */
 	readonly head: string;
-	/** The colour of its hot front, nearer the page's text colour than the body is. */
+	/** The colour of its hot front, nearer white than the body is. */
 	readonly hot: string;
 	/** How thick what it rides is, so a heavier line carries a heavier pulse. */
 	readonly lineWidth: number;
@@ -35,14 +35,6 @@ const GLOW = [
 	{ over: 1.3, light: 0.5 },
 	{ over: 0, light: 0.9 },
 ] as const;
-
-/**
- * What a layer of the halo is cut with: white on a dark page, where the halo is
- * light, and a dim grey on a light page, where a halo can only darken and a full
- * one reads as a smudge. The core is white on both. A mask lets through as much
- * as the luminance of what it is drawn in.
- */
-const HALO_CUT = "light-dark(#4d4d4d, #ffffff)";
 
 /** How much wider than its core a layer of the glow must be to be part of the halo. */
 const HALO_OVER = 1;
@@ -73,13 +65,16 @@ const TAIL_LIGHT = 0.6;
 const TAIL_STEPS = 9;
 
 /**
- * How far the bright part of a pulse moves from its relationship's colour toward
- * the page's text colour: a little on a coloured line, whose colour already
- * stands out from a line drawn weaker, and far on the neutral grey, which must
- * stand out from a line of its own colour. Darker on a light page, brighter on
- * a dark one. The hot front goes further still.
+ * How much white a pulse mixes into the colour of its line, on each ground: its
+ * body, and its hot front, which goes further. A pulse is lighter than the line
+ * it rides, so it reads as light that travels along the line (TASK-407). On the
+ * light ground it goes nearer white, because there the pulse shows only against
+ * its own line.
  */
-const TEXT = { coloured: 0.25, neutral: 0.45, hot: 0.7 } as const;
+const LIGHT: Readonly<Record<"body" | "hot", Share>> = {
+	body: { light: 0.65, dark: 0.5 },
+	hot: { light: 0.9, dark: 0.8 },
+};
 
 /**
  * The longest a pulse is, from the front of its light to the end of its tail: the
@@ -90,19 +85,18 @@ const PULSE_LENGTH = FRONT + HEAD + TAIL + 2;
 
 /**
  * How a pulse on a line is drawn: its relationship's colour at full strength
- * with some of the page's text colour mixed in, and more of it in the front.
+ * with white mixed in, and more of it in the front.
  * @param ink The relationship's colour at full strength.
  * @param lineWidth How thick what the pulse rides is.
- * @param page The page: its neutral line colour and its text colour.
+ * @param page The page: the light a pulse mixes in.
  * @returns The look.
  */
-function pulseLook(
-	ink: string,
-	lineWidth: number,
-	page: Pick<Palette, "edge" | "foreground">,
-): Look {
-	const head = mixed(ink, page.foreground, ink === page.edge ? TEXT.neutral : TEXT.coloured);
-	return { head, hot: mixed(ink, page.foreground, TEXT.hot), lineWidth };
+function pulseLook(ink: string, lineWidth: number, page: Pick<Palette, "glow">): Look {
+	return {
+		head: tinted(ink, page.glow, LIGHT.body),
+		hot: tinted(ink, page.glow, LIGHT.hot),
+		lineWidth,
+	};
 }
 
 /**
@@ -215,7 +209,7 @@ function maskOf(leg: Leg, core: number): { id: string; markup: string } {
 		tag("path", {
 			d: over > HALO_OVER ? exact : joined,
 			fill: "none",
-			stroke: over > HALO_OVER ? HALO_CUT : "#ffffff",
+			stroke: "#ffffff",
 			"stroke-width": plain(core + over, 2),
 			"stroke-opacity": light,
 		}),

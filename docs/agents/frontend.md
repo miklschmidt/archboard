@@ -184,7 +184,8 @@ of the diagrams. It has the shadcn colors and the comparison colors
 the palette `--semantic-<name>`, whose names the kinds and groups of a vault
 use.
 `--diagram-edge` paints relationships that have no palette color, and the
-lifelines of a sequence. It is separate from `--muted-foreground`. The `--slab-*`, `--plinth-*` and `--mat-*`
+lifelines of a sequence. It is separate from `--muted-foreground`.
+`--diagram-glow` is the light that a traffic pulse mixes into its line. The `--slab-*`, `--plinth-*` and `--mat-*`
 colors paint the faces, front edges and shadows of the picture's cards,
 containers and group regions (ADR 0044).
 `src/ui/theme/app.css` imports the file and holds every value that is not a
