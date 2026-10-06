@@ -59,8 +59,8 @@ function judgedUses(
 	claim: AnchorClaim,
 	facts: FileFacts | undefined,
 ): readonly CodeEvidence[] | undefined {
-	if (claim.relationship?.accepts === undefined || facts?.adapter !== "typescript")
-		return undefined;
+	if (claim.relationship?.accepts === undefined || facts === undefined) return undefined;
+	if (facts.adapter === "text") return undefined;
 	const defined = findSymbol(facts, claim.anchor.symbol, "definition").status === "found";
 	return defined ? undefined : usesOf(facts, claim.anchor);
 }
