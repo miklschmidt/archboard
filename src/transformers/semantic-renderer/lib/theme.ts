@@ -24,7 +24,7 @@ interface Palette {
 	readonly traySink: string;
 	/** The nameplate seated against a container's top wall, before its kind tints it. */
 	readonly trayPlate: string;
-	/** The lit lip along a container's bottom and right walls. */
+	/** The lit lip along the bottom of a container. */
 	readonly trayLip: string;
 	/** Text that carries the meaning: a card's name. */
 	readonly foreground: string;

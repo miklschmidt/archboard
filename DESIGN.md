@@ -264,10 +264,11 @@ The file app.css holds the values for both themes and gives each one a
 ### The Picture's Own Depth
 
 The picture has a depth vocabulary of its own, and the renderer draws it. Its
-light falls from the upper left. A card is a slab: a lit top face, a front edge
-along its foot and a soft shadow. A container is a tray cut into the page, with
-walls in shade at its top and left, a lit lip at its bottom and right, and a
-raised nameplate against its top wall. The region of a group is a mat with a
+light falls from above. A card is a slab: a lit top face, a front edge along
+its foot and a soft shadow below it. A container is a tray cut into the page,
+with its top wall in shade, two quieter side walls alike, a lit lip along its
+bottom, and a raised nameplate against its top wall. Its walls are neutral
+shades of its floor; the floor and the nameplate carry the container's kind. The region of a group is a mat with a
 caption tab. Each shadow is a stack of translucent shapes, with no filter or
 blur. The colors come from the `--slab-*` and `--tray-*` tokens in theme.css,
 in both themes. A group's mat and a grouped card's face are opaque tones of the

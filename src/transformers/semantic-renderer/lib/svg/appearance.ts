@@ -66,20 +66,22 @@ const TRAY_SINK: Share = { light: 0.4, dark: 0.4 };
 const TRAY_SINK_MAX: Share = { light: 0.8, dark: 0.8 };
 
 /**
- * How far a tray's walls are shaded from its floor toward `--slab-deep`: as far
- * from the floor as a card's front edge is from its face.
+ * How far a tray's walls are shaded from its floor, before its kind tints the
+ * floor, toward `--slab-deep`. The top wall turns away from the light above,
+ * as far from the floor as a card's front edge is from its face; the side walls
+ * are only grazed by it, and are half as far.
  */
-const WALL_SHADE: Share = { light: 0.8, dark: 0.55 };
+const TOP_WALL: Share = { light: 0.8, dark: 0.45 };
+const SIDE_WALL: Share = { light: 0.4, dark: 0.28 };
 
 /**
  * How much of its kind's colour a container carries: on its floor a calm
  * tint, so the cards standing on it, tinted by their own groups, read over it;
- * on its walls, so the tray is one thing of its kind; and on its nameplate a
- * related tone a step stronger, so the header belongs to the floor rather than
- * standing out of it, and on the nameplate's front edge.
+ * and on its nameplate a related tone a step stronger, so the header belongs
+ * to the floor rather than standing out of it, and on the nameplate's front
+ * edge. Its walls carry none: they are shades of the floor under the light.
  */
 const TRAY_FLOOR: Share = { light: 0.045, dark: 0.12 };
-const WALL_KIND: Share = { light: 0.15, dark: 0.15 };
 const PLATE_FACE: Share = { light: 0.08, dark: 0.15 };
 const PLATE_EDGE: Share = { light: 0.3, dark: 0.3 };
 
@@ -156,11 +158,11 @@ function labelLook(palette: Palette, standing?: SubjectStanding): SlabLook {
 }
 
 /**
- * A container's tray: its floor and its walls quietly tinted by the colour of
- * the container's own kind, with a nameplate a step stronger in that colour
- * and a front edge of it. A container of no kind's colour is neutral. Each tray
- * nested in another is cut a step deeper into that one's floor, its walls
- * with it.
+ * A container's tray: its floor quietly tinted by the colour of the
+ * container's own kind, with a nameplate a step stronger in that colour and a
+ * front edge of it, and walls in neutral shades of the floor. A container of
+ * no kind's colour is neutral. Each tray nested in another is cut a step
+ * deeper into that one's floor, its walls with it.
  * @param ink The colour of its kind, or none.
  * @param palette Selected theme.
  * @param depth How many containers it is nested in.
@@ -178,16 +180,18 @@ function trayLook(
 		dark: Math.min(TRAY_SINK_MAX.dark, depth * TRAY_SINK.dark),
 	};
 	const ground = tinted(palette.trayFloor, palette.traySink, sink);
-	const floor = washed(ground, ink, TRAY_FLOOR, palette);
-	const wall = washed(tinted(ground, palette.slabDeep, WALL_SHADE), ink, WALL_KIND, palette);
+	const walls = {
+		top: tinted(ground, palette.slabDeep, TOP_WALL),
+		side: tinted(ground, palette.slabDeep, SIDE_WALL),
+	};
 	return {
-		floor,
+		floor: washed(ground, ink, TRAY_FLOOR, palette),
 		ground,
-		wall,
+		walls,
 		nameplate: {
 			height: plateHeight,
 			face: washed(palette.trayPlate, ink, PLATE_FACE, palette),
-			edge: tinted(wall, ink, PLATE_EDGE),
+			edge: tinted(walls.top, ink, PLATE_EDGE),
 		},
 	};
 }

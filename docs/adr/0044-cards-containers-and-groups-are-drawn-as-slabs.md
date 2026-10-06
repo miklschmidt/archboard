@@ -53,7 +53,7 @@ This record decides the version with all of these changes.
 
 ## Decision
 
-The picture is lit from the upper left. A card, a chip, a label and a group's
+The picture is lit from above. A card, a chip, a label and a group's
 region stand on the page as blocks (`src/transformers/semantic-renderer/lib/svg/slab.ts`).
 A container is cut into the page as a tray (`lib/svg/tray.ts`). The sizes are
 in `lib/design.ts`.
@@ -67,19 +67,25 @@ in `lib/design.ts`.
    little larger and fainter. No shadow reaches more than 12 units past its box.
    The picture uses no SVG filter, blur or mask for depth. It uses shared
    gradients for the light on a face and one shared pattern for a hatch.
-3. **A container is a tray.** Its top and left walls show as a 7-unit band in
-   shade. Its bottom and right walls show a 2-unit lit lip, with a 1-unit
-   crease outside it. Its floor lies a step below what holds it. A container
-   nested in another is cut a step deeper into that one's floor, for two levels
-   at most. A tray casts no shadow. The walls throw a short shadow on its floor.
+3. **A container is a tray, lit from above as the blocks are.** Its top wall
+   faces the reader and turns away from the light. It shows as a 7-unit band in
+   shade, and it throws a short, soft shadow straight down, 3 units deep, on
+   what lies under it. The two side walls are alike: each shows as a 3-unit
+   band, quieter than the top wall. The bottom wall faces the light and shows a
+   2-unit lit lip, with a 1-unit crease below it. Where two walls meet, each
+   turns round the rounded corner of the box, so the walls read as one carved
+   shape. The walls are neutral shades of the floor. The floor lies a step
+   below what holds it. A container nested in another is cut a step deeper
+   into that one's floor, for two levels at most. A tray casts no shadow
+   (TASK-414).
 4. **The heading of a container lies on a nameplate.** The nameplate is a
    raised plate on the floor, against the top wall. It has a 3-unit front edge
-   of its own. The lines that the container sends out leave from the foot of
-   that front edge.
+   of its own, and no shadow below that edge. The lines that the container
+   sends out leave from the foot of that front edge.
 5. **A container carries its kind.** The floor carries a calm tint of the
-   kind's color, and the walls carry some of it too. The nameplate carries a
-   tone a step stronger, and its front edge more again. A container of a kind
-   with no color is neutral.
+   kind's color. The walls carry none of it. The nameplate carries a tone a
+   step stronger, and its front edge more again. A container of a kind with no
+   color is neutral.
 6. **The region of a group is a mat.** The mat is 3 units thick. Its face is
    opaque: a tone of the group's own hue, at one lightness for every color. On
    the light ground it is a clean pastel, and on the dark ground a deep shade of
