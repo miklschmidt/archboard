@@ -101,6 +101,33 @@ cite a handler or a contract that the code passes on. 11 are on data
 relationships that cite a constant, 2 on event and 1 on rpc relationships. So
 the evidence kind stays call.
 
+Amended by the review of TASK-367.28 (2026-10-07): a subscript is a link of a
+chain, as a member is. So `handlers[kind]()` runs `handlers`, and a Python
+class whose base is generic, `Base[int]`, derives from `Base`. Swift writes a
+subscript as a call with its arguments in brackets, and that subscript reads
+and runs nothing. A name passed on is a use as a value, and that has a
+measured cost. On a copy of the dogfood vault with no relationships and no
+flows, the rule took 41 of 246 undrawn findings away. Passing a name as an
+argument was the only evidence for 28 pairs of parts. 21 of those pairs are
+handlers that one part registers with another: the 18 command contracts of
+the command table (`run.ts`), and the 3 write routes that the board routes
+mount. The other 7 are constants. On Flask, the same reading joined 8 pairs:
+each one was an `isinstance` test, a `TypeVar` bound or a `cast`. A part can
+also keep a value to run it later. Examples are a class in an attribute
+(`json_provider_class = DefaultJSONProvider` in Flask) and a function in a
+list. That is a use as a value too. The syntax cannot tell a handler that a
+part passes on from a constant that it passes on. And no right work clears a
+warning that asks the board to draw a constant. So the rule stays, and the
+check does not remind an author of a registration that the board leaves out.
+Every such registration on the dogfood boards is drawn. To tell the two apart,
+code facts must say whether a definition is a function, a class or a value.
+
+The drawn rule counts a flow step as it counts a relationship. The code check
+has done so since TASK-367.07 (`relationships.ts`). On a board that has
+relationships of its own, the architecture picture draws no line for a step
+(`step-lines.ts`). So a dependency that only a step draws shows only in the
+board's sequences. It is not part of a container's interface either (ADR 0044).
+
 ## Context
 
 A board makes claims about code. Evidence rule 3 of the consumer skill makes an
