@@ -23,17 +23,20 @@
 //   That is the one thing a reader has to get right without looking twice,
 //   because a removed subject is drawn as context for the change and is *not on
 //   the proposal*. A thing you can see through is not a thing the design claims
-//   to have. A line is ghosted whole: its group drops to under half opacity. A
-//   card, a container, a participant and a label are blocks (`slab.ts`), and a
-//   removed one has lost its thickness: a flat, see-through face with no front
-//   edge and no shadow, its words faded to the secondary ink, which still reads
-//   at 4.5:1 ({@link standingPalette}).
+//   to have. A line is ghosted whole: its group drops in opacity, its ink
+//   weakened less than a live line's so it stays a 3:1 mark
+//   ({@link ghostOpacity}, `drawnInk`). A card, a
+//   container, a participant and a label are blocks (`slab.ts`), and a removed
+//   one has lost its thickness: a flat, see-through face with no front edge and
+//   no shadow, its words faded to the secondary ink, which still reads at 4.5:1
+//   ({@link standingPalette}). A removed message's words are faded the same way.
 //
 //   **Texture.** The block's face says it a third time. The group's colour
 //   lives on a block's front edge and the kind's on a container's nameplate,
 //   which leaves the face free: an added block's face is washed in green, a
-//   changed one's washed in orange and hatched, and a removed block leaves a
-//   dashed footprint where it stood. On a line — where a dash already means
+//   changed one's washed in orange and hatched (a container's broad face below
+//   its nameplate washed, the plate faintly hatched), and a removed block
+//   leaves a dashed footprint where it stood. On a line — where a dash already means
 //   what kind of relationship it is, and the stroke weight already means how much
 //   attention its author asked for — the texture is carried by a wide tinted
 //   swipe laid under the line instead, so neither of the two meanings the line
@@ -120,8 +123,12 @@ const PIN_STROKE = 1.7;
  */
 const PIN_RIM = 1.5;
 
-/** What a ghosted line's ink is worth. */
-const GHOST_OPACITY = 0.4;
+/**
+ * What a ghosted line's ink is worth: clearly fainter than the proposal's own
+ * lines, and still 3:1 on every ground it crosses, as a mark that means
+ * something must be. Its dashed swipe and the missing pulses say the rest.
+ */
+const GHOST_OPACITY = 0.7;
 
 /**
  * How much wider than its line a standing's swipe is drawn.
@@ -164,13 +171,9 @@ const SWIPE_DASH: Readonly<Record<SubjectStanding, string | undefined>> = {
 };
 
 /**
- * How solid a swipe is.
- *
- * A removed subject's whole group is already at half opacity, so its swipe is
- * stated at roughly twice the others to land on the same tint once the ghosting
- * has been applied to it. The alternative — exempting the swipe from the ghost —
- * would mean a removed line whose brightest part was the mark saying it is not
- * there.
+ * How solid a swipe is: the same for every standing. A removed line's swipe is
+ * ghosted with the rest of its group rather than exempted from it, which would
+ * leave a removed line whose brightest part was the mark saying it is not there.
  */
 const SWIPE_OPACITY: Readonly<Record<SubjectStanding, number>> = {
 	added: 0.32,

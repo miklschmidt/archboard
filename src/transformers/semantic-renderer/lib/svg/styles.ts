@@ -21,7 +21,7 @@ import type { EdgeEmphasis, SemanticEdge } from "@/shared/semantic-board/index";
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
 import { relationshipAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import { semanticInk } from "@/transformers/semantic-renderer/lib/svg/appearance";
-import { mixed } from "@/transformers/semantic-renderer/lib/svg/colour";
+import { lightDark, mixed } from "@/transformers/semantic-renderer/lib/svg/colour";
 import {
 	HEADER_NAME_SIZE,
 	HEADER_NAME_TRACKING,
@@ -142,16 +142,32 @@ function fullLineColour(palette: Palette, standing: SubjectStanding | undefined)
 }
 
 /**
+ * How strong a removed line's ink is over the page, on each ground: with its
+ * group's ghosting, 3:1 on every ground it crosses, as a mark that says
+ * something must be, and fainter than the reds of the pin and the footprint.
+ */
+const REMOVED_STRENGTH = { light: 0.85, dark: 1 } as const;
+
+/**
  * The colour a line is drawn in, from the colour it stands for: a coloured line
  * at three quarters of its colour over the page, so the pulses riding it stand
  * out at full strength; the neutral line as it is. Mixed rather than made
  * translucent, so two lines sharing a lane draw no darker where they overlap.
+ * A removed line carries no pulses and its group is ghosted already
+ * (`ghostOpacity`), so its ink is weakened less ({@link REMOVED_STRENGTH}).
  * @param ink The colour at full strength.
  * @param palette The theme's colours.
  * @returns The line's colour.
  */
 function drawnInk(ink: string, palette: Palette): string {
-	return ink === palette.edge ? ink : mixed(palette.background, ink, LINE_STRENGTH);
+	if (ink === palette.edge) return ink;
+	if (ink === palette.standingRemoved) {
+		return lightDark(
+			mixed(palette.background, ink, REMOVED_STRENGTH.light),
+			mixed(palette.background, ink, REMOVED_STRENGTH.dark),
+		);
+	}
+	return mixed(palette.background, ink, LINE_STRENGTH);
 }
 
 /**

@@ -222,14 +222,14 @@
 	--sidebar-ring: oklch(0.831 0.134 84.5);
 	--raised: oklch(0.205 0.007 75);
 	--highlight: oklch(1 0.01 85 / 0.09);
-	--slab-face: oklch(0.305 0.002 75);
+	--slab-face: oklch(0.31 0.002 75);
 	--slab-edge: oklch(0.215 0.002 75);
 	--slab-deep: oklch(0.06 0.002 75);
 	--slab-glint: oklch(1 0.003 85);
 	--slab-sheen: oklch(1 0.003 85 / 0.05);
 	--slab-shadow: oklch(0.08 0.004 75 / 0.55);
-	--plinth-face: oklch(0.232 0.002 75);
-	--plinth-rise: oklch(0.3 0.002 75);
+	--plinth-face: oklch(0.225 0.002 75);
+	--plinth-rise: oklch(0.33 0.002 75);
 	--plinth-head: oklch(0.27 0.002 75);
 	--plinth-edge: oklch(0.175 0.002 75);
 	--mat-face: oklch(0.235 0.006 75);

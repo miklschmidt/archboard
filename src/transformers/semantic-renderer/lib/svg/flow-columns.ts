@@ -19,10 +19,16 @@ import type {
 } from "@/transformers/semantic-renderer/lib/layout/dataflow";
 import type { NodeAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
-import { cardLook } from "@/transformers/semantic-renderer/lib/svg/appearance";
+import { cardLook, semanticInk } from "@/transformers/semantic-renderer/lib/svg/appearance";
 import { lightDark, mixed } from "@/transformers/semantic-renderer/lib/svg/colour";
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
-import { slab, slabShadow, type SlabLook } from "@/transformers/semantic-renderer/lib/svg/slab";
+import {
+	slab,
+	slabShadow,
+	tinted,
+	type Share,
+	type SlabLook,
+} from "@/transformers/semantic-renderer/lib/svg/slab";
 import { stylesFor } from "@/transformers/semantic-renderer/lib/svg/styles";
 import {
 	PART_ATTRIBUTE,
@@ -41,6 +47,14 @@ const LIT_LIFELINE_WIDTH = 1.5;
 const BAR_SHADE = 0.4;
 
 /**
+ * A bar of a participant in no group, which has no colour to carry it: its
+ * face shaded toward the secondary ink until it reads at 3:1 on the frame's
+ * face, and its front edge a step deeper still.
+ */
+const NEUTRAL_BAR: Share = { light: 0.75, dark: 0.5 };
+const NEUTRAL_BAR_EDGE: Share = { light: 0.3, dark: 0.5 };
+
+/**
  * A participant's activation bar: a slim slab of the participant itself,
  * standing on its lifeline, with its card's front edge and its card's face,
  * shaded on the light ground, so the bar reads as the participant standing in
@@ -50,13 +64,23 @@ const BAR_SHADE = 0.4;
  * @returns The bar's look.
  */
 function barLook(appearance: NodeAppearance, palette: Palette): SlabLook {
+	const shape = { thickness: BAR_THICKNESS, radius: ACTIVATION_RADIUS, sheen: false };
+	if (semanticInk(appearance.bodyColor) === undefined) {
+		const face = tinted(palette.slabFace, palette.muted, NEUTRAL_BAR);
+		return {
+			...shape,
+			face,
+			edge: lightDark(
+				mixed(face, palette.foreground, NEUTRAL_BAR_EDGE.light),
+				mixed(face, palette.slabDeep, NEUTRAL_BAR_EDGE.dark),
+			),
+		};
+	}
 	const card = cardLook(appearance, palette);
 	return {
+		...shape,
 		face: lightDark(mixed(card.face, card.edge, BAR_SHADE), card.face),
 		edge: card.edge,
-		thickness: BAR_THICKNESS,
-		radius: ACTIVATION_RADIUS,
-		sheen: false,
 	};
 }
 
