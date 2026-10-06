@@ -18,6 +18,11 @@
 // code that reads it inside the function. A Kubernetes Deployment gives the
 // storefront code drawn inside it `CATALOG_URL`, the address of the Service
 // that picks the catalog Deployment, and `SF_SEARCH_URL` from a ConfigMap.
+// Two services, `reports` and `reports-worker`, build `reports/` to two
+// targets, which holds two bound parts: the override gives web `REPORTS_URL`,
+// the reports service, and the reports code reads `LEDGER_URL`, which only
+// one of the two sets. Several values hold a credential that no answer may
+// quote.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -106,7 +111,7 @@ beforeAll(async () => {
 			"      context: .",
 			"      dockerfile: orders/Dockerfile",
 			"    environment:",
-			"      - DATABASE_URL=postgres://app@db:5432/orders",
+			"      - DATABASE_URL=postgres://app:hunter2@db:5432/orders",
 			"      - LEDGER_URL=http://ledger:9000",
 			"  ledger:",
 			"    build: ./ledger",
@@ -120,6 +125,12 @@ beforeAll(async () => {
 			"    image: redis:7",
 			"  queue:",
 			"    image: rabbitmq:3",
+			"  reports:",
+			"    build: { context: ./reports, target: api }",
+			"    environment:",
+			"      LEDGER_URL: http://ledger:9000",
+			"  reports-worker:",
+			"    build: { context: ./reports, target: worker }",
 			"",
 		].join("\n"),
 		"compose.override.yml": [
@@ -127,6 +138,7 @@ beforeAll(async () => {
 			"  web:",
 			"    environment:",
 			"      CACHE_HOST: cache",
+			"      REPORTS_URL: http://reports:8000",
 			"",
 		].join("\n"),
 		"web.env": "SESSION_SECRET=not-read\n",
@@ -139,6 +151,7 @@ beforeAll(async () => {
 			"export function listOrders() {",
 			"\treturn fetch(`${orders}/orders`, { headers: { cache, session, metrics, flags } });",
 			"}",
+			"export const reports = process.env.REPORTS_URL;",
 			"",
 		].join("\n"),
 		"orders/app/main.py": [
@@ -152,13 +165,15 @@ beforeAll(async () => {
 		].join("\n"),
 		"jobs/worker.py": ["import os", "", 'QUEUE_URL = os.getenv("QUEUE_URL")', ""].join("\n"),
 		"ledger/app.py": "def post():\n    return 1\n",
+		"reports/api/views.py": 'import os\n\nLEDGER_URL = os.environ["LEDGER_URL"]\n',
+		"reports/models/report.py": "class Report:\n    pass\n",
 		"infra/main.tf": [
 			'resource "aws_sqs_queue" "events" {',
 			'  name = "events"',
 			"}",
 			'resource "aws_lambda_function" "notify" {',
 			"  environment {",
-			"    variables = { EVENTS_URL = aws_sqs_queue.events.url }",
+			'    variables = { EVENTS_URL = aws_sqs_queue.events.url, TOKEN = "hunter2" }',
 			"  }",
 			"}",
 			"",
@@ -181,7 +196,7 @@ beforeAll(async () => {
 			"          image: shop/storefront:1",
 			"          env:",
 			"            - name: CATALOG_URL",
-			"              value: http://catalog:8080",
+			"              value: http://shop:hunter2@catalog:8080",
 			"          envFrom:",
 			"            - configMapRef: { name: storefront }",
 			"              prefix: SF_",
@@ -268,6 +283,8 @@ beforeAll(async () => {
 					part("pT", "Storefront", "storefront", { parent: "pS" }),
 					part("pG", "Catalog", "k8s/shop.yaml", { symbol: "Deployment/catalog" }),
 					part("pH", "Search", "k8s/shop.yaml", { symbol: "Deployment/search" }),
+					part("pR", "Reports API", "reports/api"),
+					part("pP", "Report models", "reports/models"),
 				],
 				edges: [
 					edge("e1", ["pW", "pO"], "http"),
@@ -282,6 +299,7 @@ beforeAll(async () => {
 					edge("e10", ["pT", "pG"], "http"),
 					edge("e11", ["pS", "pG"], "http"),
 					edge("e12", ["pT", "pH"], "http"),
+					edge("e13", ["pW", "pR"], "http"),
 				],
 			},
 		},
@@ -356,4 +374,24 @@ test("an unsupported relationship across a network hop names the side with no ev
 	expect(neither?.code).toBe("RELATIONSHIP_UNSUPPORTED");
 	expect(neither?.missing).toBeUndefined();
 	expect(neither?.evidence).toBeUndefined();
+});
+
+test("a join is a candidate where the infrastructure leaves a choice, so the part it may not reach gets no warning", () => {
+	// The reports service builds two bound parts, so its address reaches each
+	// as a candidate: web -> Reports API stays supported, and Report models is
+	// told as information. Two services build the reports code and only one
+	// sets LEDGER_URL, so its read reaches the ledger as a candidate too.
+	expect(about("e13")).toBeUndefined();
+	for (const unsure of ["pP", "pL"]) {
+		const undrawn = about(unsure);
+		expect([undrawn?.code, undrawn?.severity]).toEqual(["RELATIONSHIP_UNDRAWN", "information"]);
+		expect(undrawn?.evidence?.map((each) => each.resolution)).toEqual(["candidate", "candidate"]);
+	}
+});
+
+test("no value an environment sets or an env file holds reaches the answer", () => {
+	// The join reads the values that name an address, here with a password in
+	// them, and quotes only the names (ADR 0046).
+	const answer = JSON.stringify(outcome);
+	for (const secret of ["hunter2", "not-read"]) expect(answer).not.toContain(secret);
 });

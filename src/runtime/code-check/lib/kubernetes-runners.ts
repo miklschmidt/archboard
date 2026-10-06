@@ -11,7 +11,8 @@
 // bound to that Service, as its symbol or its file; else the workloads the
 // Service picks by its selector, as Kubernetes evidence reaches them
 // (kubernetes-evidence.ts). Of those, it reaches the parts drawn inside, whose
-// code the workload runs, else the parts bound to it. A name that `envFrom`
+// code the workload runs, else the parts bound to it; several drawn inside are
+// each a candidate (environment-join.ts). A name that `envFrom`
 // passes on from a ConfigMap is set where the ConfigMap sets its key, and
 // reaches the Service that the key's value names. A name that comes from a
 // Secret is set, and its value is never read.
@@ -19,6 +20,7 @@
 import {
 	partsByRepo,
 	runningParts,
+	type Reach,
 	type Runner,
 	type Setting,
 } from "@/runtime/code-check/lib/environment-join";
@@ -138,9 +140,9 @@ async function passedOn(
  * The parts a value that names a Service reaches.
  * @param reading The repository's reading.
  * @param service Where the Service is declared.
- * @returns The parts bound to the Service, else those of the workloads it picks.
+ * @returns The parts bound to the Service, else those of each workload it picks.
  */
-async function reachedThrough(reading: Reading, service: Target): Promise<ReadPart[]> {
+async function reachedThrough(reading: Reading, service: Target): Promise<Reach[]> {
 	const { checkout } = reading.parts[0];
 	const facts = await reading.facts.read(checkout, service.path);
 	const definition =
@@ -151,14 +153,14 @@ async function reachedThrough(reading: Reading, service: Target): Promise<ReadPa
 	const bound = (site === undefined ? [] : ownersOfSite(reading.owners, site)).filter(
 		({ grain }) => grain.kind !== "directory",
 	);
-	if (bound.length > 0) return runningParts(reading.codes, bound);
+	if (bound.length > 0) return [runningParts(reading.codes, bound)];
 	const picked = kubernetesLinks(reading.facts, checkout, [service.path]).filter(
 		(link) =>
 			link.kind === "configured-path" &&
 			link.from.path === service.path &&
 			link.from.definition.symbol === service.symbol,
 	);
-	return picked.flatMap((link) =>
+	return picked.map((link) =>
 		runningParts(reading.codes, ownersOfSite(reading.owners, { ...link.to, via: [] })),
 	);
 }
@@ -171,12 +173,12 @@ async function reachedThrough(reading: Reading, service: Target): Promise<ReadPa
  */
 async function settingOf(reading: Reading, value: Omit<Assigned, "repo">): Promise<Setting> {
 	const { names, ...set } = value;
-	const reaches: ReadPart[] = [];
+	const reaches: Reach[] = [];
 	for (const service of names) {
 		// oxlint-disable-next-line no-await-in-loop -- one Service at a time; its manifest is cached by now
 		reaches.push(...(await reachedThrough(reading, service)));
 	}
-	return { ...set, repo: reading.parts[0].checkout.repo, reaches: [...new Set(reaches)] };
+	return { ...set, repo: reading.parts[0].checkout.repo, reaches };
 }
 
 /**
