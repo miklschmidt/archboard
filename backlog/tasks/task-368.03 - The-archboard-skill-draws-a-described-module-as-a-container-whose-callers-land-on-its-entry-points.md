@@ -3,11 +3,11 @@ id: TASK-368.03
 title: >-
   The archboard skill draws a described module as a container whose callers land
   on its entry points
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:17'
-updated_date: '2026-10-06 10:05'
+updated_date: '2026-10-06 10:22'
 labels:
   - interfaces
   - skill
@@ -29,9 +29,9 @@ The consumer skill binds a part to the file whose body runs, and lands a call on
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Evidence rule 3 and the containment row of the catalogue say, in portable terms, that a board describing a module draws it as a container and that an outside caller lands on the entry point it names
-- [ ] #2 One recipe's worked example about archboard's own source shows a container with entry points and hidden parts
-- [ ] #3 The eval scenario and `coverage.json` row for the rule are updated, and shared guidance names no archboard subject
+- [x] #1 Evidence rule 3 and the containment row of the catalogue say, in portable terms, that a board describing a module draws it as a container and that an outside caller lands on the entry point it names
+- [x] #2 One recipe's worked example about archboard's own source shows a container with entry points and hidden parts
+- [x] #3 The eval scenario and `coverage.json` row for the rule are updated, and shared guidance names no archboard subject
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -56,4 +56,12 @@ Decisions the ADR left open:
 - S00 grades the WSGI server landing on __call__, or on wsgi_app when the board folds in the one-line __call__ that hands the call on. Reason: __call__ is a pass-through the ADR says is a question, not a fault; failing a run on it would grade a judgement call.
 - evals/rubric.md 'Containment and receivers' summary restated, since the grader reads it and it restated the old rule.
 - Dogfood vault: skill-only change, no board affected.
+
+Independent review (2026-10-06, commit 1ab2ceb30): authoring.md 'Containment and receivers' still taught the old receiver rule with archboard names. It now points at rule 3 with generic names. The containment row and the rubric now allow a container bound to its directory or file. The example's evidence was made precise (editRoute calls two exported functions, applyUnderLease runs the apply closure editVariantTransition defines). A broken relative link was fixed. Left for a later sweep: the authoring.md Emphasis paragraph names archboard subjects, and read.md, edit.md and create-sequence.md carry the same broken references/authoring.md link.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Evidence rule 3 and the catalogue's containment row now say, in portable terms, that a board describing a module draws it as a container bound to its directory or file, with outside callers landing on the entry point they name and the calls behind it inside. create-architecture.md's worked example draws the board store as a container with two entry points and three hidden parts. S00, coverage.json and the rubric grade the rule. Verified by running the example payload in a scratch vault (semantic inspect --container reported 2 entry points, 3 hidden parts, 1 caller; check clean) and by eval:skill check (17 scenarios, 14 coverage parts).
+<!-- SECTION:FINAL_SUMMARY:END -->
