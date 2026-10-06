@@ -18,24 +18,39 @@
 // outside every checkout and resolve to no file.
 //
 // Which file is a header decides what it exposes. An `.m` file is a source
-// file. A `.h` file is read as Objective-C when a line starts with
-// `@interface`, `@protocol`, `@class`, `@end`, `@import` or `#import`, and as
-// C++ otherwise (TASK-367.09); the facts of a file depend on its bytes alone,
-// so its text decides, not its pair. An Objective-C++ file (`.mm`) has no
-// grammar and is read as text.
+// file. A `.h` file is read as Objective-C when a line outside a comment
+// starts with `@interface`, `@protocol`, `@class`, `@end`, `@import` or
+// `#import`, and as C++ otherwise (TASK-367.09); its text decides, not its
+// pair. An Objective-C++ file (`.mm`) has no grammar and is read as text.
+//
+// The facts of a file depend on its bytes and on one fact of its checkout:
+// the SDK attribute macros the checkout's headers wrap under their own names
+// (objc-macros.ts). So a reading is made for each set of them, and the cache
+// reads the files again when a header changes the set (reader.ts).
 
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
-import { cFactsOf } from "@/runtime/code-facts/lib/c-adapter";
+import { cFactsOf, distinct } from "@/runtime/code-facts/lib/c-adapter";
 import { cUnparsedOf } from "@/runtime/code-facts/lib/c-unparsed";
-import type { Import, ParsedFacts, ParseFacts, Reference } from "@/runtime/code-facts/lib/facts";
+import type { Import, ParsedFacts, ParseFacts, ReadText } from "@/runtime/code-facts/lib/facts";
 import { type Grammar, treeSitter } from "@/runtime/code-facts/lib/grammars";
+import type { CheckoutFiles } from "@/runtime/code-facts/lib/module-resolution";
 import { type ObjcRole, objcDefinitionsOf } from "@/runtime/code-facts/lib/objc-definitions";
-import { blankedMacros } from "@/runtime/code-facts/lib/objc-macros";
+import { attributeWrappers, blankedMacros } from "@/runtime/code-facts/lib/objc-macros";
 import { sendReferences } from "@/runtime/code-facts/lib/objc-sends";
 import { spansOf } from "@/runtime/code-facts/lib/spans";
 
 /** A line of a header that only Objective-C writes. */
 const OBJECTIVE_C_LINE = /^[ \t]*(?:@(?:interface|protocol|class|end|import)\b|#[ \t]*import\b)/mu;
+/**
+ * A comment or a string. A documentation tool writes `@interface` or `@class`
+ * at a line's start in a block comment, also in a C++ header.
+ */
+const COMMENT_OR_STRING =
+	/\/\*[\s\S]*?(?:\*\/|$)|\/\/[^\n]*|"(?:[^"\\\n]|\\.)*"?|'(?:[^'\\\n]|\\.)*'?/gu;
+/** An Objective-C source file, whose checkout's headers may wrap the SDK's macros. */
+const OBJECTIVE_C_SOURCE = /\.mm?$/u;
+/** A header whose macros every file of its checkout joins: a `.h`, or a prefix header. */
+const WRAPPING_HEADER = /\.(?:h|pch)$/u;
 
 /** The captures only this adapter reads. */
 interface ObjcCaptured {
@@ -79,22 +94,6 @@ function moduleImportOf(node: Node): Import | undefined {
 }
 
 /**
- * The references of a file, one for each spelling and way of use, at the
- * first line it occurs.
- * @param references Every reference.
- * @returns The references.
- */
-function distinct(references: readonly Reference[]): Reference[] {
-	const first = new Map<string, Reference>();
-	for (const reference of references) {
-		const key = `${reference.via}\0${reference.symbol}\0${String(reference.typeOnly)}`;
-		const seen = first.get(key);
-		if (seen === undefined || reference.line < seen.line) first.set(key, reference);
-	}
-	return [...first.values()];
-}
-
-/**
  * The code facts of one parsed Objective-C file, before its includes are resolved.
  * @param role Whether the file is a header or a source file.
  * @returns The facts of a tree the Objective-C grammar parsed.
@@ -112,7 +111,11 @@ function objcFacts(role: ObjcRole): (tree: Tree, grammar: Grammar) => ParsedFact
 			definitions: [...c.definitions, ...objcDefinitionsOf(tree.rootNode, role)].toSorted(
 				(left, right) => left.start - right.start,
 			),
-			references: distinct([...c.references, ...sendReferences(captured, unparsed)]),
+			references: distinct(
+				[...c.references, ...sendReferences(captured, unparsed)].toSorted(
+					(left, right) => left.line - right.line,
+				),
+			),
 			imports: [...c.imports, ...modules].toSorted((left, right) => left.line - right.line),
 			unparsed: c.unparsed,
 		};
@@ -124,20 +127,77 @@ const SOURCE = treeSitter(OBJC, "objc.scm", objcFacts("source"));
 const HEADER = treeSitter(OBJC, "objc.scm", objcFacts("header"));
 
 /**
- * Read an `.m` file.
- * @param text The file.
- * @returns Its facts.
+ * Whether a header's text is Objective-C: a line outside its block comments
+ * that only Objective-C writes.
+ * @param text The header.
+ * @returns True when it is.
  */
-const readObjectiveC: ParseFacts = (text) => SOURCE(blankedMacros(text));
-
-/**
- * How a `.h` file is read: as an Objective-C header where its text is
- * Objective-C, else as the C family's other reading does.
- * @param otherwise How a header of C or C++ is read.
- * @returns The reading of a `.h` file.
- */
-function readingHeaders(otherwise: ParseFacts): ParseFacts {
-	return (text) => (OBJECTIVE_C_LINE.test(text) ? HEADER(blankedMacros(text)) : otherwise(text));
+function isObjectiveC(text: string): boolean {
+	if (!OBJECTIVE_C_LINE.test(text)) return false;
+	const code = text.replaceAll(COMMENT_OR_STRING, (token) => (token.startsWith("/*") ? "" : token));
+	return OBJECTIVE_C_LINE.test(code);
 }
 
-export { readingHeaders, readObjectiveC };
+/** How the files of a checkout whose headers wrap the same SDK macros are read. */
+interface ObjectiveCReadings {
+	/** An `.m` file. */
+	readonly source: ParseFacts;
+	/** A `.h` file: as an Objective-C header where its text is Objective-C, else as C or C++. */
+	readonly header: ParseFacts;
+}
+
+/**
+ * The readings of the files of a checkout, by the SDK macros its headers
+ * wrap: one for each set of them, so the cache sees one reading while the set
+ * holds.
+ * @param otherwise How a header of C or C++ is read.
+ * @returns The readings for a set of wrappers (`wrappersIn`).
+ */
+function objectiveCReadings(
+	otherwise: ParseFacts,
+): (wrappers: ReadonlyMap<string, boolean>) => ObjectiveCReadings {
+	const made = new Map<string, ObjectiveCReadings>();
+	return (wrappers) => {
+		const key = [...wrappers]
+			.map(([name, takes]) => `${name}${takes ? "()" : ""}`)
+			.toSorted()
+			.join(" ");
+		let readings = made.get(key);
+		if (readings === undefined) {
+			readings = {
+				/**
+				 * Read an `.m` file.
+				 * @param text The file.
+				 * @returns Its facts.
+				 */
+				source: (text) => SOURCE(blankedMacros(text, wrappers)),
+				/**
+				 * Read a `.h` file.
+				 * @param text The file.
+				 * @returns Its facts.
+				 */
+				header: (text) =>
+					isObjectiveC(text) ? HEADER(blankedMacros(text, wrappers)) : otherwise(text),
+			};
+			made.set(key, readings);
+		}
+		return readings;
+	};
+}
+
+/**
+ * The SDK attribute macros a checkout's headers wrap under their own names,
+ * read once in a pass. A checkout with no Objective-C source file has none to
+ * read, so a C or C++ checkout reads no header for them.
+ * @param checkout The checkout.
+ * @param read Reads a file of the checkout as text.
+ * @returns The macros and whether each takes arguments, by name.
+ */
+function wrappersIn(checkout: CheckoutFiles, read: ReadText): Map<string, boolean> {
+	const files = [...checkout.files];
+	if (!files.some((file) => OBJECTIVE_C_SOURCE.test(file))) return new Map();
+	const headers = files.filter((file) => WRAPPING_HEADER.test(file)).toSorted();
+	return attributeWrappers(headers.flatMap((file) => read(file) ?? []));
+}
+
+export { type ObjectiveCReadings, objectiveCReadings, wrappersIn };

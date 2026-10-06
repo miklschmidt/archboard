@@ -12,7 +12,10 @@ typedef NS_ENUM(NSInteger, LedgerKind) {
     LedgerKindCard,
 };
 
-@interface Ledger : NSObject <Auditing>
+@interface Ledger : NSObject <Auditing> {
+  @package
+    long _count;
+}
 @property (nonatomic, readonly) long total;
 + (instancetype)ledgerNamed:(NSString *)name;
 - (void)post:(long)amount by:(User *)user SHOP_API_AVAILABLE(ios(13.0));

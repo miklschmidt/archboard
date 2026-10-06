@@ -9,7 +9,10 @@
 // - `self`, the class of the `@implementation` around it;
 // - a new object, `[[Ledger alloc] init]` and `[Ledger new]`;
 // - a parameter or a local the function or method around it declares as a
-//   pointer to a class, `Ledger *ledger`.
+//   pointer to a class, `Ledger *ledger`: the nearest declaration of the
+//   name, which a block, a loop (`for (Audit *each in audits)`) and an
+//   `@catch` may make. A name two branches of an `#if` declare as two classes
+//   leaves the class unknown.
 // Any other receiver, such as `super`, a property, an instance variable, `id`
 // or a call's result, leaves the class unknown, and the send is spelled with
 // the `.` alone, `.post:by:`, as C# and Swift spell a member of a value the
@@ -27,6 +30,16 @@ const CREATES = new Set(["alloc", "new", "allocWithZone:"]);
 
 /** Type names that name no class. */
 const NO_CLASS = new Set(["id", "instancetype", "Class"]);
+
+/** Nodes in a block whose declarations are the block's: a `case`, and a preprocessor condition. */
+const IN_BLOCK = new Set([
+	"case_statement",
+	"preproc_if",
+	"preproc_ifdef",
+	"preproc_else",
+	"preproc_elif",
+	"preproc_elifdef",
+]);
 
 /**
  * A send's selector: each method name with `:` where an argument follows.
@@ -112,6 +125,57 @@ function firstFound<T>(items: readonly Node[], find: (item: Node) => T | undefin
 }
 
 /**
+ * What a type and the declarator beside it declare of a name, as a loop
+ * variable or an `@catch` parameter does: `Audit *each`.
+ * @param type The type.
+ * @param declarator The declarator.
+ * @param name The name.
+ * @returns What it declares, or undefined when it declares another name.
+ */
+function declaredBeside(
+	type: Node | null,
+	declarator: Node | null | undefined,
+	name: string,
+): Declared | undefined {
+	if (declarator === null || declarator === undefined || nameOf(declarator) !== name) {
+		return undefined;
+	}
+	return { className: classOfType(type, isPointer(declarator)) };
+}
+
+/**
+ * The declarations of a block, in order, with those under a `case` or a
+ * preprocessor condition in it.
+ * @param block The block, or a node in it.
+ * @returns The declarations.
+ */
+function blockDeclarations(block: Node): Node[] {
+	return block.namedChildren.flatMap((child) => {
+		if (child.type === "declaration") return [child];
+		return IN_BLOCK.has(child.type) ? blockDeclarations(child) : [];
+	});
+}
+
+/**
+ * What a block's declarations before a send say of a name: the class they
+ * agree on, or none where two branches of a condition declare it as two.
+ * @param block The block.
+ * @param name The name.
+ * @param before The send's offset.
+ * @returns What they declare, or undefined when none declares the name.
+ */
+function blockDeclares(block: Node, name: string, before: number): Declared | undefined {
+	const found = blockDeclarations(block)
+		.filter((declaration) => declaration.startIndex < before)
+		.flatMap((declaration) => declaredIn(declaration, name) ?? []);
+	const [first] = found;
+	if (first === undefined) return undefined;
+	return found.every((each) => each.className === first.className)
+		? first
+		: { className: undefined };
+}
+
+/**
  * The class a method's parameter points to: `(Ledger *)ledger`.
  * @param parameter The method parameter.
  * @returns The class, or undefined.
@@ -153,23 +217,34 @@ type Declares = (around: Node, name: string, before: number) => Declared | undef
 
 /**
  * Where each kind of node around a send declares names: a statement block
- * before the send, and a method's, a function's or a block's parameters.
+ * before the send, a loop's variable, an `@catch` parameter, and a method's,
+ * a function's or a block's parameters.
  */
 const DECLARES: Readonly<Record<string, Declares>> = {
+	compound_statement: blockDeclares,
 	/**
-	 * The declarations of a statement block before the send.
-	 * @param around The block.
+	 * A loop's variable: `for (Ledger *each = first; ...)` or `for (Ledger *each in all)`.
+	 * @param around The loop.
 	 * @param name The name.
-	 * @param before The send's offset.
-	 * @returns What the first that declares the name says.
+	 * @returns What the loop declares of the name.
 	 */
-	compound_statement: (around, name, before) =>
-		firstFound(
-			around.namedChildren.filter(
-				(child) => child.type === "declaration" && child.startIndex < before,
-			),
-			(declaration) => declaredIn(declaration, name),
-		),
+	for_statement: (around, name) => {
+		const initializer = around.childForFieldName("initializer");
+		if (initializer?.type === "declaration") return declaredIn(initializer, name);
+		const type = around.childForFieldName("type");
+		return declaredBeside(type, type?.nextNamedSibling, name);
+	},
+	/**
+	 * An `@catch` parameter: `@catch (NSException *error)`.
+	 * @param around The catch clause.
+	 * @param name The name.
+	 * @returns What the parameter declares of the name.
+	 */
+	catch_clause: (around, name) => {
+		const parameter = around.namedChildren.find((child) => child.type === "type_name");
+		const [type, declarator] = parameter?.namedChildren ?? [];
+		return declaredBeside(type ?? null, declarator, name);
+	},
 	/**
 	 * A method's parameters.
 	 * @param around The method.

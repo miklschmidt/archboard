@@ -478,7 +478,7 @@ function includeOf(node: Node): Import | undefined {
 /**
  * The references of a file, one for each spelling and way of use at the
  * first line it occurs.
- * @param references Every reference.
+ * @param references Every reference, in the order of their lines.
  * @returns The references.
  */
 function distinct(references: readonly Reference[]): Reference[] {
@@ -536,4 +536,4 @@ function cFactsOf(tree: Tree, captures: readonly QueryCapture[]): ParsedFacts {
 	};
 }
 
-export { cFacts, cFactsOf };
+export { cFacts, cFactsOf, distinct };

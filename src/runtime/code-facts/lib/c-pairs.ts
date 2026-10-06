@@ -17,7 +17,7 @@ import path from "node:path";
  * file (`.mm`) is read as text (ADR 0046), so it pairs with no header.
  */
 const SOURCES: readonly string[] = [".c", ".cc", ".cpp", ".cxx", ".m"];
-/** The extensions of a C or C++ header. */
+/** The extensions of a C, C++ or Objective-C header. */
 const HEADERS: readonly string[] = [".h", ".hh", ".hpp", ".hxx"];
 
 /** Each checkout's files by name without extension, for the files of the other role. */
@@ -26,7 +26,7 @@ const STEMS = new WeakMap<ReadonlySet<string>, Map<string, string[]>>();
 /**
  * The files of a checkout by their name without extension.
  * @param files The checkout's files.
- * @returns Each name and the C and C++ files that have it.
+ * @returns Each name and the C, C++ and Objective-C files that have it.
  */
 function stemsOf(files: ReadonlySet<string>): Map<string, string[]> {
 	let stems = STEMS.get(files);
@@ -55,8 +55,8 @@ function otherRole(extension: string): readonly string[] | undefined {
 }
 
 /**
- * The pair of a C or C++ file: the header of a source file, or the source
- * file of a header.
+ * The pair of a C, C++ or Objective-C file: the header of a source file, or
+ * the source file of a header.
  * @param file The file, relative to its checkout.
  * @param files Every file of the checkout.
  * @returns The files of the other role beside it, else the one such file of

@@ -9,7 +9,8 @@
 // which hides more of the class in a class extension and holds C functions;
 // `Ledger+Report` is a category; `Auditing.h` is a protocol; `Money` is C;
 // `Checkout.m` mixes C and Objective-C; `Shop.h` is the umbrella header that
-// `@import Shop;` in `App/Main.m` names; `Bridge.mm` is Objective-C++.
+// `@import Shop;` in `App/Main.m` names; `Bridge.mm` is Objective-C++;
+// `ShopMacros.h` wraps SDK macros that other files use; `Engine.h` is C++.
 
 import { afterAll, expect, test } from "bun:test";
 import {
@@ -127,13 +128,19 @@ test("a message send is a call of its selector, qualified by the receiver's clas
 		// C in the same file, through its include.
 		money_round: "Shop/Money.h money_round",
 	});
-	expect(await uses("Shop/Checkout.m")).toMatchObject({
+	const checkoutUses = await uses("Shop/Checkout.m");
+	expect(checkoutUses).toMatchObject({
 		"Ledger::post:by:": "Shop/Ledger.h Ledger::post:by:",
 		"Ledger::report": "Shop/Ledger+Report.h Ledger::report",
 		// A call's result names no class, and a selector expression no receiver.
 		".length": "-",
 		".close": "-",
+		// A loop's variable shadows the parameter of the same name.
+		"User::notify": "-",
+		// An instance variable is a member, also where another class declares one `@package`.
+		_count: "-",
 	});
+	expect(Object.keys(checkoutUses)).not.toContain("Ledger::notify");
 	const checkoutFile = await read("Shop/Checkout.m");
 	expect(checkoutFile.references.find((each) => each.symbol === "Ledger::post:by:")).toMatchObject({
 		kind: "call",
@@ -194,9 +201,14 @@ test("an Objective-C directory is a module whose public headers expose its inter
 	expect(exposure?.outside).toEqual(["App/Main.m"]);
 });
 
-test("a header is read as Objective-C by its text, and an Objective-C++ file as text", async () => {
+test("a header is read as Objective-C by its text outside comments, and an Objective-C++ file as text", async () => {
 	expect((await read("Shop/Money.h")).definitions.map((each) => each.symbol)).toEqual([
 		"money_round",
+	]);
+	// `@class Engine` stands only in a documentation comment of a C++ header.
+	expect((await read("Shop/Engine.h")).definitions.map((each) => each.symbol)).toEqual([
+		"shop::Engine",
+		"shop::Engine::run",
 	]);
 	const bridge = await facts.pass(new AbortController().signal).read(checkout, "Shop/Bridge.mm");
 	expect(bridge?.adapter).toBe("text");
@@ -205,6 +217,10 @@ test("a header is read as Objective-C by its text, and an Objective-C++ file as 
 test("the attribute macros the grammar cannot read are blanked with every line in place, so the code around them parses", async () => {
 	// `SHOP_API_AVAILABLE`, `NS_ENUM` and `NS_ASSUME_NONNULL_BEGIN` stand in the header.
 	expect((await read("Shop/Ledger.h")).unparsed).toEqual([]);
+	// `ShopMacros.h` wraps `NS_HEADER_AUDIT_BEGIN`, which takes arguments, under another name.
+	expect((await read("Shop/Auditing.h")).references.map((each) => each.symbol)).toEqual([
+		"NSObject",
+	]);
 	const macros = await read("Shop/Macros.m");
 	expect(macros.unparsed).toEqual([]);
 	const declared = macros.definitions.filter((each) => each.visibility !== "macro");
@@ -222,4 +238,22 @@ test("the attribute macros the grammar cannot read are blanked with every line i
 	const symbols = macros.references.map((each) => each.symbol);
 	expect(symbols).toContain("Macros::shown");
 	expect(symbols).not.toContain("Macros::hidden");
+});
+
+test("a file is read again when a header of its checkout stops wrapping an SDK macro the file uses", async () => {
+	const edited = fixtureDirectory("objc-shop");
+	try {
+		const cache = createCodeFacts();
+		const usesOfAuditing = async () => {
+			const found = await cache.pass(new AbortController().signal).read(edited, "Shop/Auditing.h");
+			return found === undefined || found.adapter === "text"
+				? []
+				: found.references.map((each) => each.symbol);
+		};
+		expect(await usesOfAuditing()).not.toContain("SHOP_AUDIT_BEGIN");
+		edited.write("Shop/ShopMacros.h", "#define SHOP_AUDIT_BEGIN(...) shop_audit(__VA_ARGS__)\n");
+		expect(await usesOfAuditing()).toContain("SHOP_AUDIT_BEGIN");
+	} finally {
+		edited.remove();
+	}
 });

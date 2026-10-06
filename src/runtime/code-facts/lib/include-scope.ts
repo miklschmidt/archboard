@@ -35,8 +35,8 @@ import { lastName } from "@/runtime/code-facts/lib/text-reading";
 /** How many headers one file's includes may reach before the search stops reading. */
 const HEADER_LIMIT = 256;
 
-/** The visibility words of a member of a class. */
-const MEMBER = new Set(["public", "protected", "private"]);
+/** The visibility words of a member of a class, with Objective-C's `@package` (objc-definitions.ts). */
+const MEMBER = new Set(["public", "protected", "private", "package"]);
 
 /**
  * What the search needs: where an include leads, the facts of a header, and

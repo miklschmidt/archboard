@@ -43,7 +43,11 @@ import {
 	type CheckoutFiles,
 } from "@/runtime/code-facts/lib/module-resolution";
 import { kubernetesFacts } from "@/runtime/code-facts/lib/kubernetes-adapter";
-import { readingHeaders, readObjectiveC } from "@/runtime/code-facts/lib/objc-adapter";
+import {
+	type ObjectiveCReadings,
+	objectiveCReadings,
+	wrappersIn,
+} from "@/runtime/code-facts/lib/objc-adapter";
 import { createKubernetesResolver } from "@/runtime/code-facts/lib/kubernetes-resolution";
 import { flakeFacts } from "@/runtime/code-facts/lib/nix-adapter";
 import { pythonFacts } from "@/runtime/code-facts/lib/python-adapter";
@@ -117,11 +121,14 @@ const C = treeSitter("tree-sitter-c/tree-sitter-c.wasm", "c.scm", cFacts);
 /** A `.h` is read as C++, which reads the C headers of Redis and SQLite as the C grammar does (TASK-367.09). */
 const CPP = treeSitter("tree-sitter-cpp/tree-sitter-cpp.wasm", "c.scm", cFacts);
 /**
- * A `.h` that holds Objective-C is read as Objective-C, else as C++
- * (TASK-367.10). Both share the include resolver, so the entry that lists
- * `.h` only names the adapter of its facts.
+ * A `.h` that holds Objective-C is read as Objective-C, else as C++, and an
+ * `.m` as Objective-C (TASK-367.10). Both share the include resolver, so the
+ * entry that lists `.h` only names the adapter of its facts. A checkout's
+ * reading of them also depends on the SDK macros its headers wrap
+ * (`readingsIn`).
  */
-const HEADER = readingHeaders(CPP);
+const OBJECTIVE_C = objectiveCReadings(CPP);
+const { header: HEADER, source: OBJECTIVE_C_SOURCE } = OBJECTIVE_C(new Map());
 
 /** A `Package.swift` is Swift, and its targets are read beside its code (TASK-367.12). */
 const SWIFT = treeSitter("@lumis-sh/wasm-swift/tree-sitter-swift.wasm", "swift.scm", swiftFacts);
@@ -168,7 +175,7 @@ const ADAPTERS: readonly Adapter[] = [
 		resolver: createCResolver,
 	},
 	// An Objective-C++ file (`.mm`) has no grammar and is read as text (ADR 0046).
-	{ name: "objc", reads: { ".m": readObjectiveC }, resolver: createCResolver },
+	{ name: "objc", reads: { ".m": OBJECTIVE_C_SOURCE }, resolver: createCResolver },
 	{
 		name: "csharp",
 		reads: { ".cs": readCSharp, ".csproj": projectFacts },
@@ -228,4 +235,27 @@ function adapterOf(file: string): AdapterReading | undefined {
 	return BY_NAME.get(path.posix.basename(file)) ?? BY_NAME.get(path.posix.extname(file));
 }
 
-export { type AdapterReading, adapterOf };
+/**
+ * How the files of one checkout are read, made once in a pass: as
+ * `adapterOf` says, but an Objective-C file also blanks the SDK macros the
+ * checkout's headers wrap, which the pass reads when it first reads such a
+ * file (objc-adapter.ts).
+ * @param checkout The checkout.
+ * @param read Reads a file of the checkout as text.
+ * @returns The reading of each file of the checkout.
+ */
+function readingsIn(
+	checkout: CheckoutFiles,
+	read: ReadText,
+): (file: string) => AdapterReading | undefined {
+	let objectiveC: ObjectiveCReadings | undefined;
+	return (file) => {
+		const reading = adapterOf(file);
+		if (reading === undefined) return undefined;
+		if (reading.parse !== HEADER && reading.parse !== OBJECTIVE_C_SOURCE) return reading;
+		objectiveC ??= OBJECTIVE_C(wrappersIn(checkout, read));
+		return { ...reading, parse: reading.parse === HEADER ? objectiveC.header : objectiveC.source };
+	};
+}
+
+export { type AdapterReading, adapterOf, readingsIn };
