@@ -11,6 +11,7 @@ import {
 import { diagramIconPaths } from "@/runtime/semantic-renderer/index";
 import { app } from "@/server/archboard/lib/server-app";
 import { checkoutWork } from "@/server/archboard/lib/server-owners";
+import { mountCodeCheckRoute } from "@/server/archboard/lib/code-check-route";
 import { startServer } from "@/server/archboard/lib/server-startup";
 import { moduleDir } from "@/server/archboard/lib/module-paths";
 import { mountMutationAdmission, trackMutationWork } from "@/server/archboard/lib/mutation-work";
@@ -103,6 +104,7 @@ app.use(
 mountSemanticLockRoutes(app);
 mountPaneRoutes(app);
 mountSemanticBoardRoutes(app);
+mountCodeCheckRoute(app);
 mountSemanticPaneContextRoutes(app);
 mountVoiceStartTraceRoute(app);
 
