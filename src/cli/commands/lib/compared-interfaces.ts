@@ -99,9 +99,15 @@ function comparedInterfaces(against: VariantContent, variant: VariantContent): I
  * What to say about the interface changes, for a person: one line for each
  * container whose interface moved, or one line that none did.
  * @param interfaces The interface section of the answer.
+ * @param names What the variant compared and the one it is read against are called.
+ * @param names.variant The variant compared.
+ * @param names.against The variant it is read against.
  * @returns The lines.
  */
-function describedInterfaces(interfaces: InterfaceChanges): string[] {
+function describedInterfaces(
+	interfaces: InterfaceChanges,
+	names: { readonly variant: string; readonly against: string },
+): string[] {
 	if (interfaces.changed.length === 0) {
 		return [
 			interfaces.unchanged.length === 0
@@ -122,12 +128,13 @@ function describedInterfaces(interfaces: InterfaceChanges): string[] {
 			.filter(([, parts]) => parts.length > 0)
 			.map(([label, parts]) => `${label} ${parts.map((part) => part.name).join(", ")}`)
 			.join("; ");
-		const side = !change.holdsParts.against
-			? " (holds parts only on the variant)"
-			: !change.holdsParts.variant
-				? " (holds parts only on the variant it is read against)"
-				: "";
-		return `Interface of "${change.container.name}"${side}: ${moved}.`;
+		// Only a container that appeared or emptied can have moved nothing: nobody outside reaches it.
+		const only = change.holdsParts.variant ? names.variant : names.against;
+		const side =
+			change.holdsParts.variant === change.holdsParts.against
+				? ""
+				: ` (a container only on "${only}")`;
+		return `Interface of "${change.container.name}"${side}: ${moved || "no entry points and no callers"}.`;
 	});
 }
 

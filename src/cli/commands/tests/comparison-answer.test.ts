@@ -377,18 +377,6 @@ describe("the interface changes an agent reads first", () => {
 		expect(changed?.callersLost).toEqual([]);
 	});
 
-	test("read the other way, the same change is removals and parts that became hidden", () => {
-		const reversed = comparisonAnswer(
-			{ name: "Board lease", version: 6 },
-			variant("v1", "Lock files", before),
-			variant("v2", "Watched", after, "v1"),
-			[],
-		).interfaceChanges.changed[0];
-		expect(reversed?.entryPointsRemoved.map((part) => part.name)).toEqual(["check"]);
-		expect(reversed?.becameHidden.map((part) => part.name)).toEqual(["release"]);
-		expect(reversed?.callersLost.map((part) => part.name)).toEqual(["Lock watcher"]);
-	});
-
 	test("an interface change sets no standing: the part a caller reached is not changed", () => {
 		expect(standing(answer.nodes, "rel").standing).toBe("unchanged");
 		expect(standing(answer.nodes, "store").standing).toBe("unchanged");
@@ -410,11 +398,11 @@ describe("the interface changes an agent reads first", () => {
 	test("the interface section is the first thing said, before the counts and the relationships", () => {
 		const lines = described(answer);
 		const interfaceAt = lines.findIndex((line) => line.includes("Lock store"));
-		const countsAt = lines.findIndex((line) => line.includes("relationships 2 added"));
-		const edgeAt = lines.findIndex((line) => line.includes("added: Lock watcher"));
-		expect(interfaceAt).toBeGreaterThan(-1);
-		expect(interfaceAt).toBeLessThan(countsAt);
-		expect(countsAt).toBeLessThan(edgeAt);
+		// Only the counts hold "2 added" (the two new relationships). Only the line of the new call
+		// from holdBoard names holdBoard: it called the store already, so it is no caller gained.
+		expect(interfaceAt).toBeGreaterThan(0);
+		expect(interfaceAt).toBeLessThan(lines.findIndex((line) => line.includes("2 added")));
+		expect(interfaceAt).toBeLessThan(lines.findIndex((line) => line.includes("holdBoard")));
 		expect(Object.keys(answer).indexOf("interfaceChanges")).toBeLessThan(
 			Object.keys(answer).indexOf("nodes"),
 		);

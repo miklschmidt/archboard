@@ -454,7 +454,10 @@ function described(result: VariantComparisonResult): string[] {
 	return [
 		`"${result.variant.name}" against "${result.against.name}" on "${result.board}" ` +
 			`at version ${result.version}.`,
-		...describedInterfaces(result.interfaceChanges),
+		...describedInterfaces(result.interfaceChanges, {
+			variant: result.variant.name,
+			against: result.against.name,
+		}),
 		`Other changes: ${counts || "nothing on either"}.`,
 		...result.edges
 			.filter((edge) => edge.standing !== "unchanged")

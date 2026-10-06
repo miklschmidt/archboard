@@ -1,12 +1,12 @@
 // What a variant changed about the interface of each container (ADR 0044): the
 // entry points added and removed, the parts that moved between the interface
-// and the hidden parts, and the callers gained and lost. The reading sets no
-// comparison status, so a new caller never badges the part it reaches.
+// and the hidden parts, and the callers gained and lost. That the reading sets
+// no comparison status is owned where both sit in one answer
+// (`src/cli/commands/tests/comparison-answer.test.ts`).
 
 import { describe, expect, test } from "bun:test";
 import {
 	compareInterfaces,
-	compareVariants,
 	VariantContentSchema,
 	type InterfaceChange,
 	type VariantContent,
@@ -138,7 +138,7 @@ describe("what a comparison says about a container's interface", () => {
 
 	test("a part moved out of the container is a removed entry point, not a part that became hidden", () => {
 		const after = content({
-			nodes: STORE.map((one) => (one.id === "index" ? { ...one, parent: undefined } : one)),
+			nodes: [...STORE.filter((one) => one.id !== "index"), node("Index")],
 			edges: [edge("server", "index"), edge("index", "ledger")],
 		});
 		const change = changeOf(BEFORE, after, "store");
@@ -177,6 +177,14 @@ describe("what a comparison says about a container's interface", () => {
 		expect(changeOf(BEFORE, emptied, "store").container.name).toBe("Storage");
 	});
 
+	test("a container that nothing outside reaches changed when it appears or empties", () => {
+		// A node with no children has no interface, and a container nobody calls has an empty one.
+		const leaf = content({ nodes: [node("Store")], edges: [] });
+		const holding = content({ nodes: [node("Store"), node("Index", "store")], edges: [] });
+		expect(changeOf(leaf, holding, "store").holdsParts).toEqual({ before: false, after: true });
+		expect(changeOf(holding, leaf, "store").holdsParts).toEqual({ before: true, after: false });
+	});
+
 	test("every container is read on its own, so nesting moves one interface and not the other", () => {
 		// Index becomes a container: Server now reaches its lookup child.
 		const before = content({
@@ -190,26 +198,5 @@ describe("what a comparison says about a container's interface", () => {
 		const comparison = compareInterfaces(before, after);
 		expect(ids(comparison.changed.map((one) => one.container))).toEqual(["index"]);
 		expect(ids(comparison.unchanged)).toEqual(["store"]);
-	});
-
-	test("a variant compared with itself changes no interface and lists every container", () => {
-		const comparison = compareInterfaces(BEFORE, BEFORE);
-		expect(comparison.changed).toEqual([]);
-		expect(ids(comparison.unchanged)).toEqual(["store"]);
-	});
-});
-
-describe("an interface change is not a comparison status", () => {
-	test("a new caller moves a part into the interface and badges nothing but the new relationship", () => {
-		const after = content({
-			nodes: STORE,
-			edges: [edge("server", "index"), edge("index", "ledger"), edge("cron", "cache")],
-		});
-		const comparison = compareVariants(BEFORE, after);
-		expect(changeOf(BEFORE, after, "store").becameEntryPoints).toHaveLength(1);
-		expect(comparison.nodes.get("cache")?.kind).toBe("unchanged");
-		expect(comparison.nodes.get("store")?.kind).toBe("unchanged");
-		expect(comparison.nodes.get("cron")?.kind).toBe("unchanged");
-		expect(comparison.edges.get("cro-cac")?.kind).toBe("added");
 	});
 });

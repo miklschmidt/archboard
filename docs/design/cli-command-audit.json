@@ -1635,7 +1635,7 @@
 			"handlerOwner": "src/cli/commands/semantic-compare.ts",
 			"stdout": "json object",
 			"result": "one variant against the variant it is read against (the current variant, or on a board with none its direct predecessor; --against names another): first the interface changes of each container (entry points added and removed, parts moved between the interface and the hidden parts, callers gained and lost), then every part, relationship, sequence, step, walkthrough and beat either of them has, its standing, and the fields that moved",
-			"diagnostics": "interface changes first, then counts and one line per relationship that moved on stderr; usage/refusal on stderr",
+			"diagnostics": "the comparison named, then one line per container whose interface moved, then counts and one line per relationship that moved on stderr; usage/refusal on stderr",
 			"exits": [0, 1, 2, 3],
 			"prerequisites": ["server"],
 			"relationships": ["GET /api/semantic-boards/board"],
