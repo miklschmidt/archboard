@@ -251,6 +251,21 @@ class PendingRequests {
 }
 
 /**
+ * Kill a server and every process it started. It runs in a process group of
+ * its own, because a command can be a script that runs the real server as its
+ * child, as nixpkgs' `clangd` does; killing the script alone leaves the
+ * server running, and writing into its own directory after that is removed.
+ * @param child The server's process, the leader of its group.
+ */
+function killGroup(child: ServerProcess): void {
+	try {
+		process.kill(-child.pid, "SIGKILL");
+	} catch {
+		child.kill("SIGKILL");
+	}
+}
+
+/**
  * Read every message the process writes until it closes its output.
  * @param child The process.
  * @param receive What handles each message.
@@ -264,7 +279,7 @@ async function readAll(child: ServerProcess, receive: (message: Incoming) => voi
 			for (const message of taken.bodies.map(parsed)) if (message !== undefined) receive(message);
 		}
 	} catch {
-		child.kill("SIGKILL");
+		killGroup(child);
 	}
 }
 
@@ -366,4 +381,11 @@ function connect(
 	};
 }
 
-export { type Connection, type RequestBounds, RequestFailure, type ServerProcess, connect };
+export {
+	type Connection,
+	type RequestBounds,
+	RequestFailure,
+	type ServerProcess,
+	connect,
+	killGroup,
+};

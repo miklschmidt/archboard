@@ -2,10 +2,12 @@
 // that, as clangd does, answers only about an open file and knows a
 // definition in another file only once the index it reports has ended: the
 // server starts in the directory of the file's `compile_commands.json`, reads
-// a copy of it whose module cache and index stay in a directory of its own,
-// and is asked only once its index ended; a file with no database, or a
-// database with no command, is said once and starts nothing; an index that
-// never ends fails the server once.
+// a copy of it whose module cache, index and temporary files stay in a
+// directory of its own, with no `CLANGD_FLAGS`, and is asked only once its
+// index ended; the copy keeps nothing of a command that could run a program
+// or write elsewhere; a file with no database, or a database with no command,
+// is said once and starts nothing; an index that never ends fails the server
+// once.
 
 import { afterEach, expect, test } from "bun:test";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
@@ -30,6 +32,7 @@ const SENDS =
 let current: Workspace | undefined;
 
 afterEach(() => {
+	for (const pid of current?.pids().filter(running) ?? []) process.kill(pid, "SIGKILL");
 	current?.remove();
 	current = undefined;
 });
@@ -77,13 +80,20 @@ test("clangd starts in the directory of the file's database, reads a copy whose 
 	const at = current;
 	mkdirSync(join(at.root, "build"));
 	writeFileSync(join(at.root, "build/compile_commands.json"), database(at.root));
+	const flags = process.env["CLANGD_FLAGS"];
+	process.env["CLANGD_FLAGS"] = "--query-driver=**";
 	const session = clangdSession(at);
 	const question = { root: at.root, file: "src/ledger.c", line: 3, symbol: "audit_check" };
-	expect(await session.definition(question)).toEqual({
-		status: "answered",
-		locations: [{ path: join(at.root, "src/audit.c"), line: 1, character: 0 }],
-	});
-	await session.close();
+	try {
+		expect(await session.definition(question)).toEqual({
+			status: "answered",
+			locations: [{ path: join(at.root, "src/audit.c"), line: 1, character: 0 }],
+		});
+		await session.close();
+	} finally {
+		if (flags === undefined) delete process.env["CLANGD_FLAGS"];
+		else process.env["CLANGD_FLAGS"] = flags;
+	}
 	expect(session.unavailable()).toEqual([]);
 	expect(at.starts().map((start) => start.cwd)).toEqual([join(at.root, "build")]);
 	const [args = []] = at.argvs();
@@ -91,6 +101,7 @@ test("clangd starts in the directory of the file's database, reads a copy whose 
 	const own = args.find((arg) => arg.startsWith("--compile-commands-dir="))?.split("=")[1] ?? "";
 	expect(relative(at.root, own).startsWith("..")).toBe(true);
 	expect(existsSync(own)).toBe(false);
+	expect(at.environments()).toEqual([{ TMPDIR: own, CLANGD_FLAGS: null }]);
 	const [copy] = at.databases() as { directory: string; arguments: string[] }[][];
 	expect(copy?.map((command) => command.directory)).toEqual([
 		join(at.root, "build"),
@@ -99,13 +110,73 @@ test("clangd starts in the directory of the file's database, reads a copy whose 
 	for (const command of copy ?? []) {
 		const caches = command.arguments.filter((arg) => arg.includes("-fmodules-cache-path"));
 		expect(caches).toEqual([`-fmodules-cache-path=${join(own, "modules")}`]);
-		expect(command.arguments.indexOf(caches[0] ?? "")).toBeLessThan(
-			command.arguments.indexOf("--") < 0 ? Infinity : command.arguments.indexOf("--"),
-		);
 	}
 	const asked = at.methods().filter((method) => method !== "answer");
 	expect(asked.indexOf("textDocument/didOpen")).toBeLessThan(
 		asked.indexOf("textDocument/definition"),
+	);
+});
+
+test("the copy keeps nothing of a command that could run a program of the checkout or write outside the server's own directory", async () => {
+	const hostile = [
+		"tools/clang",
+		"-Iinclude",
+		"-Xclang=-fmodules-cache-path=mc",
+		"-Wp,-fmodules-cache-path=mc",
+		"@tools/flags.rsp",
+		"-Btools",
+		"-B",
+		"tools",
+		"--config=tools/x.cfg",
+		"-Xopenmp-target",
+		"--nvptx-arch-tool=tools/arch",
+		"-x",
+		"cuda",
+		"--offload-arch=native",
+		"-c",
+		"src/ledger.c",
+		"-sectcreate",
+		"--",
+		"src/ledger.c",
+		"--amdgpu-arch-tool=tools/arch",
+	];
+	const cl = [
+		"C:\\VS\\bin\\clang-cl.exe",
+		"/clang:--nvptx-arch-tool=tools\\arch",
+		"/c",
+		"ledger.c",
+	];
+	current = workspace({
+		"src/ledger.c": LEDGER,
+		"compile_commands.json": JSON.stringify([
+			{ directory: ".", file: "src/ledger.c", arguments: hostile },
+			{ directory: ".", file: "src/audit.c", arguments: cl },
+		]),
+	});
+	const at = current;
+	const session = clangdSession(at);
+	await session.definition({ root: at.root, file: "src/ledger.c", line: 3, symbol: "audit_check" });
+	await session.close();
+	const own = at
+		.argvs()[0]
+		?.find((arg) => arg.startsWith("--compile-commands-dir="))
+		?.split("=")[1];
+	const [copy = []] = at.databases() as { arguments: string[] }[][];
+	const [gcc = [], clangCl = []] = copy.map((command) => command.arguments);
+	// The compiler moves into the server's own directory under its name, and
+	// the copy's own flags stand right after it, where no flag of the command
+	// can take one as its value.
+	expect(gcc[0]).toBe(join(own ?? "", "compiler", "clang"));
+	expect(gcc.slice(1, 4).every((arg) => arg.includes(own ?? "?"))).toBe(true);
+	expect(clangCl.slice(1, 4).every((arg) => arg.startsWith("/clang:"))).toBe(true);
+	for (const args of [gcc, clangCl]) {
+		const named = args.filter((arg) => /fmodules-cache-path|arch-tool/u.test(arg));
+		expect(named.every((arg) => arg.includes(own ?? "?"))).toBe(true);
+		const kept = args.filter((arg) => /^(?:@|-B|--config|--prefix|--$)/u.test(arg));
+		expect(kept).toEqual([]);
+	}
+	expect(gcc).toEqual(
+		expect.arrayContaining(["-Iinclude", "--offload-arch=native", "-sectcreate"]),
 	);
 });
 
@@ -154,14 +225,14 @@ test("a file with no database in its checkout, and a database that lists no comm
 	expect(at.pids()).toEqual([]);
 });
 
-test("a server whose index never ends is said once as failed, and is stopped with its own directory removed", async () => {
+test("a server whose index never ends is said once as failed, and is stopped with the server it runs as its child, so nothing writes into its own directory once that is removed", async () => {
 	current = workspace({
 		"compile_commands.json": database("/elsewhere"),
 		"src/ledger.c": LEDGER,
 		"src/audit.c": LEDGER,
 	});
 	const at = current;
-	const session = clangdSession(at, "needs-open,indexes-never");
+	const session = clangdSession(at, "wrapped,needs-open,indexes-never,writes");
 	const ask = (file: string) =>
 		session.definition({ root: at.root, file, line: 3, symbol: "audit_check" });
 	expect(await Promise.all([ask("src/ledger.c"), ask("src/audit.c")])).toEqual([
@@ -170,6 +241,8 @@ test("a server whose index never ends is said once as failed, and is stopped wit
 	]);
 	await session.close();
 	expect(session.unavailable().map((entry) => entry.reason)).toEqual(["failed"]);
+	await Bun.sleep(100);
+	expect(at.pids()).toHaveLength(2);
 	expect(at.pids().filter(running)).toEqual([]);
 	const own = at.argvs()[0]?.find((arg) => arg.startsWith("--compile-commands-dir="));
 	expect(existsSync(own?.split("=")[1] ?? "")).toBe(false);
