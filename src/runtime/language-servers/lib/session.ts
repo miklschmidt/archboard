@@ -299,10 +299,10 @@ class Session {
 	async #running(
 		language: Language,
 		root: string,
-		project: string,
+		project: Project,
 		argv: readonly [string, ...string[]],
 	): Promise<Running | undefined> {
-		const key = `${language}\0${project}`;
+		const key = `${language}\0${project.root}`;
 		let start = this.#starts.get(key);
 		if (start === undefined) {
 			start = this.#start(language, root, project, argv);
@@ -317,11 +317,15 @@ class Session {
 	 * @param language The file's language.
 	 * @param root The checkout.
 	 * @param file The file, relative to the checkout.
-	 * @returns The project's root, or undefined when it is not ready.
+	 * @returns The project, or undefined when it is not ready.
 	 */
-	async #readyProject(language: Language, root: string, file: string): Promise<string | undefined> {
+	async #readyProject(
+		language: Language,
+		root: string,
+		file: string,
+	): Promise<Project | undefined> {
 		const project = await this.#projectOf(language, root, file);
-		if (project.unready === undefined) return project.root;
+		if (project.unready === undefined) return project;
 		this.#note({ language, reason: "unready", root, detail: project.unready }, project.root);
 		return undefined;
 	}
@@ -360,19 +364,20 @@ class Session {
 	 * Start a server, noting it as failed if it does not start.
 	 * @param language Its language.
 	 * @param root Its checkout.
-	 * @param project Its project, where it starts.
+	 * @param project Its project: where it starts, and what it is told of its configuration.
 	 * @param argv Its command.
 	 * @returns The server, or undefined when it failed.
 	 */
 	async #start(
 		language: Language,
 		root: string,
-		project: string,
+		project: Project,
 		argv: readonly [string, ...string[]],
 	): Promise<Server | undefined> {
 		const { signal } = this.#options;
 		try {
-			const start = { language, argv, root: project, signal, timeouts: this.#timeouts };
+			const { root: at, settings } = project;
+			const start = { language, argv, root: at, settings, signal, timeouts: this.#timeouts };
 			const server = await startServer(start);
 			this.#started.add(server);
 			return server;

@@ -5,13 +5,17 @@
 // It answers `textDocument/definition` from `<state-dir>/answers.json`, keyed
 // by `<file>:<line>:<word>`: the file relative to its working directory, the
 // line from 1 and the whole word at the asked position. Each value is
-// `{ "path": <file>, "line": <line> }`, or a list of them. It appends its pid to
-// `<state-dir>/pids` when it starts, each method it receives to
-// `<state-dir>/methods`, and its working directory and the
-// `initializationOptions` it was given to `<state-dir>/starts`, one JSON line
-// each, so a test can see what was asked, where, and whether the process still
-// runs. It refuses a request it does not know, as a server does. A mode, or
-// several joined by `,`, makes it misbehave:
+// `{ "path": <file>, "line": <line>, "character"?: <column> }`, or a list of
+// them. It answers `textDocument/documentSymbol` with the outline under
+// `outline:<file>`. It appends its pid to `<state-dir>/pids` when it starts,
+// each method it receives to `<state-dir>/methods`, and its working directory
+// and the `initializationOptions` it was given to `<state-dir>/starts`, one
+// JSON line each, so a test can see what was asked, where, and whether the
+// process still runs. Once initialized it asks for its configuration of the
+// sections `python` and `csharp`, and appends the client's answer to
+// `<state-dir>/configuration` as one JSON line. It refuses a request it does
+// not know, as a server does. A mode, or several joined by `,`, makes it
+// misbehave:
 //
 // - `needs-open`: refuses a definition in a file the client has not opened,
 //   as sourcekit-lsp does.
@@ -36,8 +40,9 @@ fs.appendFileSync(path.join(stateDir, "pids"), `${process.pid}\n`);
 
 /** One message the client sent. */
 interface Message {
-	readonly id?: number;
+	readonly id?: number | string;
 	readonly method?: string;
+	readonly result?: unknown;
 	readonly params?: {
 		readonly textDocument?: { readonly uri: string };
 		readonly position?: { readonly line: number; readonly character: number };
@@ -86,11 +91,13 @@ function definition(message: Message): object[] {
 	const each = (Array.isArray(found) ? found : found === undefined ? [] : [found]) as {
 		path: string;
 		line: number;
+		character?: number;
 	}[];
-	return each.map((at) => ({
-		uri: pathToFileURL(path.resolve(process.cwd(), at.path)).href,
-		range: { start: { line: at.line - 1, character: 0 }, end: { line: at.line - 1, character: 1 } },
-	}));
+	return each.map((at) => {
+		const start = { line: at.line - 1, character: at.character ?? 0 };
+		const end = { ...start, character: start.character + 1 };
+		return { uri: pathToFileURL(path.resolve(process.cwd(), at.path)).href, range: { start, end } };
+	});
 }
 
 /**
@@ -116,9 +123,16 @@ function receive(message: Message): void {
 		fs.appendFileSync(path.join(stateDir, "starts"), `${JSON.stringify(start)}\n`);
 		if (modes.has("hang-initialize")) return;
 		send({ id: message.id, result: { capabilities: { definitionProvider: true } } });
-		send({ id: "ask-1", method: "workspace/configuration", params: { items: [{}] } });
+		const items = [{ section: "python" }, { section: "csharp" }];
+		send({ id: "ask-1", method: "workspace/configuration", params: { items } });
+	} else if (message.id === "ask-1" && message.method === undefined) {
+		fs.appendFileSync(path.join(stateDir, "configuration"), `${JSON.stringify(message.result)}\n`);
 	} else if (message.method === "textDocument/didOpen") {
 		opened.add(message.params?.textDocument?.uri ?? "");
+	} else if (message.method === "textDocument/documentSymbol") {
+		const file = fileURLToPath(message.params?.textDocument?.uri ?? "");
+		const outline = answers[`outline:${path.relative(process.cwd(), file)}`] ?? [];
+		send({ id: message.id, result: outline });
 	} else if (message.method === "textDocument/definition") {
 		answerDefinition(message);
 	} else if (message.method === "shutdown") {

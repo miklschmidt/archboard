@@ -12,9 +12,13 @@
 // A row also says what its server needs beyond the protocol: options it must
 // start with whatever command runs it, files opened before it answers about
 // them, a request that waits until it has loaded what it reads, and the
-// project it starts in for a file, with why it cannot answer there yet.
+// project it starts in for a file, with why it cannot answer there yet and
+// what it is told when it asks for its configuration, such as the Python
+// environment or the .NET solution to read.
 
 import path from "node:path";
+import { dotnetProjectOf } from "@/runtime/language-servers/lib/dotnet-solution";
+import { pythonProjectOf } from "@/runtime/language-servers/lib/python-environment";
 import { swiftPackageOf } from "@/runtime/language-servers/lib/swift-package";
 
 /** A command that starts a server, as a program and its arguments. */
@@ -29,6 +33,12 @@ interface Project {
 	readonly root: string;
 	/** Why the server cannot answer about the project's files, when it cannot. */
 	readonly unready?: string;
+	/**
+	 * What the server is told when it asks for its configuration
+	 * (`workspace/configuration`), by section: `python` answers a question
+	 * about the section `python`, and `python.pythonPath` one about that key.
+	 */
+	readonly settings?: Readonly<Record<string, unknown>>;
 }
 
 /** A request, as its method and its params. */
@@ -86,8 +96,32 @@ function noSourcekitLsp(): string {
 	return "sourcekit-lsp evaluates Package.swift, so it runs only from an entry in language-servers.json";
 }
 
+/** The Python servers a default looks for on the `PATH`, in order: pyright, then its fork basedpyright. */
+const PYRIGHTS = ["pyright-langserver", "basedpyright-langserver"] as const;
+
+/**
+ * pyright or basedpyright, which read a project's files and environment
+ * without running the project.
+ * @returns The first of them on the `PATH`, or why there is none.
+ */
+function pyright(): ServerCommand | string {
+	const command = PYRIGHTS.find((name) => Bun.which(name) !== null);
+	return command === undefined
+		? `neither ${PYRIGHTS.join(" nor ")} is installed`
+		: { command, args: ["--stdio"] };
+}
+
+/**
+ * Why C# has no default server: csharp-ls and the Roslyn language server
+ * evaluate MSBuild files, which can run code of the checkout.
+ * @returns The reason.
+ */
+function noCSharpServer(): string {
+	return "csharp-ls evaluates MSBuild files, so it runs only from an entry in language-servers.json";
+}
+
 /** Every language a server can resolve, by its key in `language-servers.json`. */
-const LANGUAGE_KEYS = ["typescript", "swift"] as const;
+const LANGUAGE_KEYS = ["typescript", "python", "csharp", "swift"] as const;
 
 /** A language a server can resolve. */
 type Language = (typeof LANGUAGE_KEYS)[number];
@@ -102,6 +136,23 @@ const LANGUAGES: Readonly<Record<Language, LanguageRow>> = {
 			".tsx": "typescriptreact",
 		},
 		defaultServer: archboardTypeScript,
+	},
+	// Measured with pyright 1.1.412: it answers about a file it has not opened
+	// only once it has listed the project's files, and before that answers
+	// none; an opened file is answered once it has its configuration.
+	python: {
+		languageIds: { ".py": "python", ".pyi": "python" },
+		defaultServer: pyright,
+		opensFiles: true,
+		project: pythonProjectOf,
+	},
+	// Measured with csharp-ls 0.28.0: the first question waits until it has
+	// loaded the solution, and it answers about files it has not opened. Its
+	// MSBuild evaluation writes design-time files under each project's `obj`.
+	csharp: {
+		languageIds: { ".cs": "csharp" },
+		defaultServer: noCSharpServer,
+		project: dotnetProjectOf,
 	},
 	// sourcekit-lsp evaluates `Package.swift`, which runs code of the
 	// checkout. Measured with Swift 6.2.4: it answers only about an open file;

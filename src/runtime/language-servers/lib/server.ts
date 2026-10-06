@@ -4,8 +4,10 @@
 // told that root is its one workspace, so it finds the project there itself.
 // The client asks it only for definitions and for the outline of a file, and
 // never asks it to build or to run a command. It starts with the options its
-// language's row names, and before the first question it is asked once to
-// load what it reads, where the row names such a request. A server that reads
+// language's row names, is told the project's settings, such as the Python
+// environment, when it asks for its configuration, and before the first
+// question it is asked once to load what it reads, where the row names such
+// a request. A server that reads
 // each file from disk, as the code check does, gets no file opened; one whose
 // row says it answers only about an open file gets each file opened once,
 // with its text on disk. Stopping asks it to shut down and exit, and kills it
@@ -57,6 +59,8 @@ interface ServerStart {
 	readonly argv: readonly [string, ...string[]];
 	/** The project's root, where it starts. */
 	readonly root: string;
+	/** What it is told when it asks for its configuration, by section. */
+	readonly settings?: Readonly<Record<string, unknown>> | undefined;
 	readonly signal: AbortSignal;
 	readonly timeouts: ServerTimeouts;
 }
@@ -126,6 +130,7 @@ function initializeParams(root: string, language: Language): object {
 		workspaceFolders: [{ uri, name: "checkout" }],
 		capabilities: {
 			general: { positionEncodings: ["utf-16"] },
+			workspace: { configuration: true },
 			textDocument: { documentSymbol: { hierarchicalDocumentSymbolSupport: true } },
 		},
 		...(initializationOptions === undefined ? {} : { initializationOptions }),
@@ -256,7 +261,7 @@ async function startServer(start: ServerStart): Promise<Server> {
 		stderr: "ignore",
 	});
 	const closed = child.exited.then((code) => exitReason(code, child.signalCode));
-	const connection = connect(child, closed);
+	const connection = connect(child, closed, start.settings ?? {});
 	let stopping: Promise<void> | undefined;
 	/**
 	 * Stop the process, once, and wait until it has ended.
