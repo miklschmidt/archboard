@@ -29,6 +29,8 @@ interface Workspace {
 	readonly starts: () => { cwd: string; options: unknown }[];
 	/** The methods the stand-ins received, in order. */
 	readonly methods: () => string[];
+	/** What the client answered each stand-in that asked for its configuration. */
+	readonly configurations: () => unknown[];
 	readonly remove: () => void;
 }
 
@@ -71,6 +73,7 @@ function workspace(
 		starts: () =>
 			lines("starts").map((line) => JSON.parse(line) as { cwd: string; options: unknown }),
 		methods: () => lines("methods"),
+		configurations: () => lines("configuration").map((line): unknown => JSON.parse(line)),
 		remove: () => {
 			rmSync(base, { recursive: true, force: true });
 		},

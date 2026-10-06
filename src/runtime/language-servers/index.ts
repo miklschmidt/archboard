@@ -11,8 +11,11 @@
 // Each server is a separate program that a machine may not have, named for
 // this machine in `language-servers.json` in Archboard's state directory.
 // TypeScript needs nothing more: it runs the `tsc --lsp` of Archboard's own
-// `typescript` package, never the TypeScript of a checkout. A pass starts each
-// server it needs once, and stops every one before it returns.
+// `typescript` package, never the TypeScript of a checkout. Python runs
+// pyright, or basedpyright, from the `PATH` with the checkout's own virtual
+// environment. A server that evaluates project files, csharp-ls for C# or
+// sourcekit-lsp for Swift, runs only from an entry in that file. A pass starts
+// each server it needs once, and stops every one before it returns.
 
 export {
 	type LanguageServer,

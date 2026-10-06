@@ -2,10 +2,10 @@
 // stdio of one child process: each message is a `Content-Length` header, a
 // blank line and that many bytes of UTF-8 JSON.
 //
-// The client asks, and answers what the server asks with nothing: `null`, or
-// one `null` for each item of `workspace/configuration`, which tells a server
-// to use its own defaults. It ignores every notification, such as a log line
-// or diagnostics. Each request is bounded, and rejects when its time runs
+// The client asks, and answers what the server asks with nothing: `null`,
+// except `workspace/configuration`, whose each item gets the settings the
+// project gives its section, or `null`, which tells a server to use its own
+// default. It ignores every notification, such as a log line or diagnostics. Each request is bounded, and rejects when its time runs
 // out, when the pass is cancelled, or when the process ends.
 
 import { z } from "zod";
@@ -101,14 +101,42 @@ function framed(message: object): string {
 	return `Content-Length: ${Buffer.byteLength(body, "utf8")}${HEADER_END}${body}`;
 }
 
+/** One item of `workspace/configuration`: the section it asks about, if it names one. */
+const ConfigurationItemSchema = z.object({ section: z.string().optional() }).loose().catch({});
+
 /**
- * What the client answers a request from the server: nothing it knows of.
- * @param message The request.
- * @returns `null`, or one `null` for each configuration item.
+ * One setting of a group of settings.
+ * @param group The group.
+ * @param name The setting's name.
+ * @returns Its value, or undefined when the group is no group or has no such setting.
  */
-function answerTo(message: Incoming): unknown {
+function settingIn(group: unknown, name: string): unknown {
+	return typeof group === "object" && group !== null ? Reflect.get(group, name) : undefined;
+}
+
+/**
+ * The settings of a section, such as `python` or `python.pythonPath`.
+ * @param settings The settings, by section.
+ * @param section The section; none asks for every setting.
+ * @returns Its settings, or `null` when there are none.
+ */
+function settingsOf(settings: Readonly<Record<string, unknown>>, section?: string): unknown {
+	const names = section === undefined ? [] : section.split(".");
+	return names.reduce<unknown>(settingIn, settings) ?? null;
+}
+
+/**
+ * What the client answers a request from the server: the settings of each
+ * section `workspace/configuration` asks about, and nothing else it knows of.
+ * @param message The request.
+ * @param settings The project's settings, by section.
+ * @returns `null`, or the settings of each configuration item.
+ */
+function answerTo(message: Incoming, settings: Readonly<Record<string, unknown>>): unknown {
 	if (message.method !== "workspace/configuration") return null;
-	return (message.params?.items ?? []).map(() => null);
+	return (message.params?.items ?? []).map((item) =>
+		settingsOf(settings, ConfigurationItemSchema.parse(item).section),
+	);
 }
 
 /**
@@ -226,9 +254,14 @@ async function readAll(child: ServerProcess, receive: (message: Incoming) => voi
  * its output, then rejects every request still waiting.
  * @param child The server's process.
  * @param closed Resolves with why the process ended, once it has.
+ * @param settings What the server is told when it asks for its configuration, by section.
  * @returns The connection.
  */
-function connect(child: ServerProcess, closed: Promise<string>): Connection {
+function connect(
+	child: ServerProcess,
+	closed: Promise<string>,
+	settings: Readonly<Record<string, unknown>>,
+): Connection {
 	const pending = new PendingRequests();
 	let ended: string | undefined;
 
@@ -252,7 +285,8 @@ function connect(child: ServerProcess, closed: Promise<string>): Connection {
 	void (async () => {
 		await readAll(child, (message) => {
 			if (message.method === undefined) pending.settle(message);
-			else if (message.id !== undefined) write({ id: message.id, result: answerTo(message) });
+			else if (message.id !== undefined)
+				write({ id: message.id, result: answerTo(message, settings) });
 		});
 		ended ??= await closed;
 		pending.end(ended);

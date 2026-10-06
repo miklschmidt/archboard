@@ -10,7 +10,9 @@
 // constructor, a variable, a constant or an enum, and no interface holds it.
 // The definition must start where that symbol's name starts: a member of a
 // type literal shares a line with the type alias that holds it, and the
-// outline declares the alias and not the member. A property or a field holds
+// outline declares the alias and not the member. What the declaration holds
+// on its own line, such as the parameters pyright lists under a function,
+// does not hide it. A property or a field holds
 // data. Anything in an interface is a type. A name the outline does not
 // declare, such as that member or a local, is unknown.
 
@@ -157,12 +159,12 @@ function declarationAt(
 	at: { readonly line: number; readonly character: number },
 ): Declaration {
 	const holders = holdersOf(symbols, at.line - 1);
-	const innermost = holders.at(-1);
-	if (innermost === undefined) return "unknown";
-	if (holders.some((holder) => TYPE_KINDS.has(holder.kind))) return "type";
-	if (!names(innermost, at)) return "unknown";
-	if (CODE_KINDS.has(innermost.kind)) return "code";
-	return DATA_KINDS.has(innermost.kind) ? "data" : "unknown";
+	const named = holders.findLastIndex((holder) => names(holder, at));
+	const declared = holders[named];
+	if (declared === undefined) return "unknown";
+	if (holders.slice(0, named + 1).some((holder) => TYPE_KINDS.has(holder.kind))) return "type";
+	if (CODE_KINDS.has(declared.kind)) return "code";
+	return DATA_KINDS.has(declared.kind) ? "data" : "unknown";
 }
 
 export { type Declaration, type OutlineSymbol, declarationAt, outlineOf };
