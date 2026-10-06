@@ -1,11 +1,12 @@
 // What the inspector says about where a subject stands: how the variant on
 // screen differs on it from the variant it is read against — the current one,
-// or on a board with none the one it came from — and what nobody has decided yet.
+// or on a board with none the one it came from — what nobody has decided yet,
+// and what the last code check found about it.
 //
 // One region of the panel, set right after what the subject is, because for a
 // reader of a proposal it is what the panel is for: it is not the last thing at
 // the foot of a long list of relationships. A subject that stands unchanged has
-// no such region, and neither has one with nothing open.
+// no such region, and neither has one with nothing open and nothing found.
 //
 // Split out of the panel so the panel stays about what the board says a
 // subject is, and this stays about how it is standing. Both read the same
@@ -15,6 +16,10 @@ import type { JSX } from "react";
 
 import type { ChangeKind, FieldChange, ReconciliationIssue } from "@/shared/semantic-board/index";
 import { cn } from "@/ui/components/class-names";
+import {
+	CodeBlock,
+	type CodeStanding,
+} from "@/ui/semantic-board-canvas/components/SemanticInspectorCode";
 import {
 	SidebarRegion,
 	SidebarSection,
@@ -210,22 +215,27 @@ function WaitingBlock(props: WaitingProps): JSX.Element | null {
 }
 
 /** Inputs for the standing region. */
-interface StandingRegionProps extends WaitingProps, StandingBlockProps {}
+interface StandingRegionProps extends WaitingProps, StandingBlockProps {
+	/** What the last code check found about the subject, or null when it found nothing. */
+	code: CodeStanding | null;
+}
 
 /**
  * The region of the panel that says where the subject stands: what nobody has
- * decided about it, then how it differs from what it is read against.
- * @param props What is open on the subject and how it stands.
+ * decided about it and what the code check found, the two things the warning
+ * on the picture stands for, then how it differs from what it is read against.
+ * @param props What is open on the subject, what the code check found, and how it stands.
  * @returns The region, or nothing when there is nothing to say.
  */
 function Standing(props: StandingRegionProps): JSX.Element | null {
-	const { open, against } = props;
-	if (open.length === 0 && !differs(against)) {
+	const { open, against, code } = props;
+	if (open.length === 0 && !differs(against) && (code === null || code.findings.length === 0)) {
 		return null;
 	}
 	return (
 		<SidebarRegion slot="semantic-inspector-standing-region">
 			<WaitingBlock open={open} />
+			<CodeBlock code={code} />
 			<StandingBlock against={against} />
 		</SidebarRegion>
 	);

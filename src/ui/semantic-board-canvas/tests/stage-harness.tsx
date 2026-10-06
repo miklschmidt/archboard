@@ -50,6 +50,9 @@ type Reply = { readonly status: number; readonly body: unknown } | "pending";
  * a drill-down reads two boards at once and which of them answers first is not
  * something a test should have to predict.
  */
+/** A server no code pass has run on yet. */
+const NO_FINDINGS = { success: true, readings: [] } as const;
+
 const server: {
 	reply: Reply;
 	calls: string[];
@@ -58,7 +61,16 @@ const server: {
 	held: Record<string, Promise<unknown>>;
 	/** What the vault checker answers, or undefined for a checker that refuses. */
 	vault: unknown;
-} = { reply: "pending", calls: [], documents: {}, held: {}, vault: undefined };
+	/** What the last code pass left in the server's memory, as its route answers it. */
+	findings: unknown;
+} = {
+	reply: "pending",
+	calls: [],
+	documents: {},
+	held: {},
+	vault: undefined,
+	findings: NO_FINDINGS,
+};
 
 const realFetch = globalThis.fetch;
 
@@ -71,10 +83,14 @@ afterEach(() => {
 	server.documents = {};
 	server.held = {};
 	server.vault = undefined;
+	server.findings = NO_FINDINGS;
 });
 
 /** The route the shared vault checker answers on. */
 const VAULT_ROUTE = "/api/vault/check";
+
+/** The route the findings of the last code pass are read from. */
+const FINDINGS_ROUTE = "/api/vault/code-findings";
 
 /** The route a pane reads a whole board through. */
 const BOARD_ROUTE = "/api/semantic-boards/board";
@@ -124,6 +140,19 @@ function urlOf(input: RequestInfo | URL): string {
  */
 function fakeFetch(input: RequestInfo | URL): Promise<Response> {
 	const url = urlOf(input);
+	// Read on a timer beside everything else, so kept apart from the requests
+	// that tests count.
+	return url.startsWith(FINDINGS_ROUTE)
+		? answered({ status: 200, body: server.findings })
+		: serverReply(url);
+}
+
+/**
+ * Answer one request other than the findings from `server`, recording it.
+ * @param url The request's URL.
+ * @returns The reply, or a promise that never settles while it is pending.
+ */
+function serverReply(url: string): Promise<Response> {
 	server.calls.push(url);
 	const board = documentAsked(url);
 	if (board !== null) {

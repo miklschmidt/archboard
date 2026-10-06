@@ -1,4 +1,4 @@
-// The query keys and options for the three semantic-board resources the browser
+// The query keys and options for the semantic-board resources the browser
 // reads. As in `@/ui/board-catalog`, the options live here rather than at the
 // call sites, so a subscription and an invalidation always name the same cache
 // entry and each resource's freshness contract is written down once.
@@ -23,6 +23,8 @@ const semanticBoardKeys = {
 	all: [SEMANTIC_KEY] as const,
 	/** The vault's checked policy and diagnostics, which every picture is drawn under. */
 	vaultCheck: ["vault-check"] as const,
+	/** What the last code pass found on each board it read, as the server remembers it. */
+	codeFindings: ["code-findings"] as const,
 	/** The vault's semantic boards. */
 	boards: [SEMANTIC_KEY, "boards"] as const,
 	/** Every drawing of every board. */
@@ -206,7 +208,40 @@ function vaultCheckQuery() {
 	});
 }
 
+/**
+ * What the last code pass found on each board it read (ADR 0046, TASK-367.24).
+ *
+ * One cache entry for the whole tab, whichever panes read it, re-read on the
+ * vault check's timer: a pass runs when an agent asks for one, and nothing
+ * announces that it ran. The route answers from the server's memory and never
+ * starts a pass, so the timer costs a read of memory and never a reading of
+ * code. An answer that did not change keeps its reference, so a pane draws its
+ * marks again only when the findings move.
+ *
+ * A failed read leaves the marks as they were and is tried again on the next
+ * tick: the findings are a hint beside the board, and a pane that cannot read
+ * them still shows the board.
+ * @returns The query options.
+ */
+function codeFindingsQuery() {
+	return queryOptions({
+		queryKey: semanticBoardKeys.codeFindings,
+		/**
+		 * Read the remembered findings.
+		 * @param context The query context, carrying this read's cancellation.
+		 * @returns The readings.
+		 */
+		queryFn: (context) => boardReads().codeFindings(context.signal),
+		staleTime: VAULT_CHECK_POLL_MS,
+		refetchInterval: VAULT_CHECK_POLL_MS,
+		refetchOnWindowFocus: true,
+		refetchOnReconnect: true,
+		retry: false,
+	});
+}
+
 export {
+	codeFindingsQuery,
 	semanticBoardKeys,
 	semanticBoardDocumentQuery,
 	semanticBoardListQuery,

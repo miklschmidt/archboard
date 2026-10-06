@@ -32,6 +32,12 @@ function talkReads(talk: Talk, foreign: (board: string) => void): BoardReads {
 		 * @returns The vault check the talk kept.
 		 */
 		vaultCheck: async () => talk.policy,
+		/**
+		 * No findings: a recording draws the board the voice spoke over, never
+		 * what a code pass left in some server's memory.
+		 * @returns No readings.
+		 */
+		codeFindings: async () => ({ readings: [] }),
 	};
 }
 

@@ -1,0 +1,44 @@
+// What the last code pass found on the board on screen.
+//
+// The server remembers the findings of the last pass that read each board at
+// each variant, with the version of the board it read (ADR 0046). A pane shows
+// them only over that version of that variant. A board that moved since the
+// pass is a board the pass did not read: a right change to it must clear what
+// the pass said, and it does, at once. The next pass that somebody runs speaks
+// for the new version.
+
+import { useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
+
+import type { RememberedFindings, RememberedReading } from "@/shared/code-check/index";
+import { codeFindingsQuery } from "@/ui/semantic-board-canvas/lib/queries";
+
+/** One board as it is on screen: its name, the variant drawn, by id, and the version drawn. */
+interface ReadingOnScreen {
+	readonly board: string;
+	readonly variant: string;
+	readonly version: number;
+}
+
+/**
+ * The reading of the last pass over the board, variant and version on screen.
+ * @param on What is on screen, or null when nothing is.
+ * @returns The reading, or null when no pass read exactly that.
+ */
+function useCodeFindings(on: ReadingOnScreen | null): RememberedReading | null {
+	const board = on?.board;
+	const variant = on?.variant;
+	const version = on?.version;
+	const select = useCallback(
+		(remembered: RememberedFindings): RememberedReading | null =>
+			remembered.readings.find(
+				(reading) =>
+					reading.board === board && reading.variant === variant && reading.version === version,
+			) ?? null,
+		[board, variant, version],
+	);
+	const { data } = useQuery({ ...codeFindingsQuery(), select, enabled: on !== null });
+	return data ?? null;
+}
+
+export { useCodeFindings, type ReadingOnScreen };

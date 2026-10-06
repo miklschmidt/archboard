@@ -3,7 +3,8 @@
 // The card in the picture says a node's name, its kind and, when it has one,
 // the single line it is responsible for. That is all a card can carry and stay
 // readable, and ADR 0023 makes the rest reachable rather than drawn: the longer
-// description, the one optional primary code binding, and the board one level down.
+// description, the one optional primary code binding, the board one level down,
+// and what the last code check found about it.
 //
 // Everything here comes from the board document rather than from the picture.
 // The atlas decides what can be picked out of the drawing on screen; the board
@@ -23,6 +24,7 @@ import {
 } from "@/shared/semantic-board/index";
 import { RelationshipChip } from "@/ui/semantic-board-canvas/components/BoardPageParts";
 import { DetailsPanel } from "@/ui/semantic-board-canvas/components/DetailsPanel";
+import type { RememberedReading } from "@/shared/code-check/index";
 import type { CodeBinding } from "@/shared/code-target";
 import {
 	Account,
@@ -39,7 +41,12 @@ import {
 	SidebarRegion,
 	SidebarSection,
 } from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
+import type { CodeStanding } from "@/ui/semantic-board-canvas/components/SemanticInspectorCode";
 import { cn } from "@/ui/components/class-names";
+import {
+	useCodeFindings,
+	type ReadingOnScreen,
+} from "@/ui/semantic-board-canvas/hooks/use-code-findings";
 import { useSemanticBoardChanges } from "@/ui/semantic-board-canvas/hooks/use-semantic-board-changes";
 import type { KindLook } from "@/ui/semantic-board-canvas/lib/kind-look";
 import { semanticBoardDocumentQuery } from "@/ui/semantic-board-canvas/lib/queries";
@@ -228,6 +235,8 @@ interface BodyProps {
 	against: StandingProps | null;
 	/** What about this subject nobody has decided yet. */
 	open: readonly ReconciliationIssue[];
+	/** What the last code check found about this subject, or null for nothing. */
+	code: CodeStanding | null;
 	/**
 	 * Open the board one level down.
 	 * @param board The target board.
@@ -263,7 +272,7 @@ function InspectorBody(props: BodyProps): JSX.Element {
 	if (subject === undefined) {
 		return <p className="text-muted-foreground text-body px-4 py-4">{props.notice}</p>;
 	}
-	const standing = <Standing open={props.open} against={against} />;
+	const standing = <Standing open={props.open} against={against} code={props.code} />;
 	if (subject.kind === "node" && props.held !== undefined) {
 		return (
 			<DetailsPanel
@@ -300,6 +309,8 @@ interface Explanation {
 	readonly held: SemanticVariant | undefined;
 	/** The board's level, once it is read. */
 	readonly level?: string | undefined;
+	/** The board, variant and version the subject was read from, for the code check's findings. */
+	readonly on: ReadingOnScreen | null;
 }
 
 /**
@@ -369,7 +380,13 @@ function explain(
 	selection: string,
 ): Explanation {
 	const { data: document } = read;
-	const nothing = { subject: undefined, against: null, open: [], held: undefined } as const;
+	const nothing = {
+		subject: undefined,
+		against: null,
+		open: [],
+		held: undefined,
+		on: null,
+	} as const;
 	if (read.error !== null) {
 		return { ...nothing, notice: `This board could not be read. ${read.error.message}` };
 	}
@@ -389,6 +406,7 @@ function explain(
 		...comparedSubject(reading.board, shown, selection),
 		level: reading.board.level,
 		open: openOn(shown, selection),
+		on: { board: reading.board.name, variant: shown.id, version: reading.board.version },
 		notice: "This is not on the board any more. It may have gone since the picture was drawn.",
 	};
 }
@@ -406,6 +424,21 @@ function explain(
 function openOn(shown: SemanticVariant, selection: string): readonly ReconciliationIssue[] {
 	const issues = shown.reconciliation?.issues ?? [];
 	return issues.filter((issue) => issue.subject === selection);
+}
+
+/**
+ * What the last code check found about one subject, warnings first.
+ * @param reading What the pass found on the board on screen, or null.
+ * @param selection The picked semantic id.
+ * @returns Its findings and when the pass ran, or null when there are none.
+ */
+function codeOn(reading: RememberedReading | null, selection: string): CodeStanding | null {
+	const findings = (reading?.findings ?? [])
+		.filter((finding) => finding.subject?.id === selection)
+		.toSorted((a, b) => Number(b.severity === "warning") - Number(a.severity === "warning"));
+	return reading === null || findings.length === 0
+		? null
+		: { findings, checkedAt: reading.checkedAt };
 }
 
 /** Inputs for the inspector. */
@@ -453,6 +486,7 @@ function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 	useSemanticBoardChanges(props.board);
 	const explained = explain(document, props.variant, props.selection);
 	const { subject } = explained;
+	const code = codeOn(useCodeFindings(explained.on), props.selection);
 
 	return (
 		// A panel of the sidebar, which keeps one width whatever it shows, so
@@ -472,6 +506,7 @@ function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 				subject={subject}
 				against={explained.against}
 				open={explained.open}
+				code={code}
 				held={explained.held}
 				level={explained.level}
 				look={props.look}

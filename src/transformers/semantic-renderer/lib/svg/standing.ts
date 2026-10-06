@@ -77,7 +77,7 @@
 
 import type { ChangeKind } from "@/shared/semantic-board/index";
 import { coord, union, type Box } from "@/transformers/semantic-renderer/lib/geometry";
-import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
+import { PALETTE, type Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { tag, wrap, type Attributes } from "@/transformers/semantic-renderer/lib/svg/primitives";
 
 // The comparison's word for this is `ChangeKind` and the render contract's is a
@@ -532,6 +532,38 @@ function unsettledFrom(stated: readonly string[] | undefined): UnsettledOf {
 	return (id: string) => held.has(id);
 }
 
+/**
+ * The warning a part wears on its top-right corner, as a page draws it: the
+ * picture's own mark for a subject nobody has decided, for a viewer that
+ * marks a subject the code check warns about in the same place (TASK-367.24).
+ * @param box The part's body, in the units of the group it is drawn in.
+ * @param box.x Its left edge.
+ * @param box.y Its top edge.
+ * @param box.width Its width.
+ * @param box.height Its height.
+ * @returns The mark.
+ */
+function cornerWarning(box: {
+	readonly x: number;
+	readonly y: number;
+	readonly width: number;
+	readonly height: number;
+}): string {
+	return warningBadge(box, true, PALETTE);
+}
+
+/**
+ * The warning a relationship or a message wears where its words begin, as a
+ * page draws it, for the same viewer.
+ * @param at Where its centre goes.
+ * @param at.x Across.
+ * @param at.y Down.
+ * @returns The mark.
+ */
+function lineWarning(at: { readonly x: number; readonly y: number }): string {
+	return warningOnLine(at, true, PALETTE);
+}
+
 export {
 	type SubjectStanding,
 	type StatedStandings,
@@ -541,6 +573,8 @@ export {
 	BADGE_DEPTH,
 	BADGE_SIZE,
 	PIN_INSET,
+	cornerWarning,
+	lineWarning,
 	HEAD_ATTRIBUTE,
 	PART_ATTRIBUTE,
 	MEMBERS_ATTRIBUTE,
