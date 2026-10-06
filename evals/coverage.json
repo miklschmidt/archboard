@@ -245,7 +245,7 @@
 					"expectedUse": "answer which parts of a board change most often and which change together from the CLI, report parts that share a file as one list of commits and never as a coupled pair, report an unjoined pair as a question, and name a part that was not read as not read",
 					"scenarios": ["S18"],
 					"evidence": "grader",
-					"owner": "grader locality.hotspots, locality.shared-files, locality.skipped, locality.coupling; src/runtime/history-lens/tests/locality.test.ts; src/runtime/history-lens/tests/coupling.test.ts; src/cli/commands/tests/semantic-locality.test.ts; src/server/archboard/tests/locality-route.test.ts"
+					"owner": "grader locality.hotspots, locality.shared-files, locality.skipped, locality.coupling; src/runtime/history-lens/tests/locality.test.ts; src/runtime/history-lens/tests/coupling.test.ts (thresholds, unjoined); src/cli/commands/tests/semantic-locality.test.ts; src/server/archboard/tests/locality-route.test.ts. No pair passes the thresholds on Flask 3.0.0, so locality.coupling grades an empty list and no shared file reported as coupled; no run reports an unjoined pair, and nothing grades that reading"
 				}
 			]
 		},
