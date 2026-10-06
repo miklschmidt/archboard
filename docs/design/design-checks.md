@@ -216,6 +216,34 @@ resolved through an import, and nothing was read as text. The imports were
 relative (`from ..ctx import _AppCtxGlobals`), of a submodule
 (`from . import json`), or of a name that a package's `__init__.py` passes on.
 
+#### Reading docker-compose files
+
+TASK-367.20 measured the compose adapter on 2026-10-06 with Bun 1.4.2 on
+docker's `awesome-compose` samples (`30f4b7f`). One process read the 39
+compose files and 4 `.env` files that Git tracks: 9 to 13 ms cold and 2 ms
+warm. They hold 117 definitions, 92 configured paths and 126 environment
+names. Every configured path resolves to a service, network or volume that
+its project declares. No sample has an override file or an `env_file` entry,
+and the four `.env` files only fill interpolations. On the first run, one
+path was wrong: `REV_SERVER=true` read as a host named `true`. A YAML boolean
+word is now never a host.
+
+A temporary vault with two boards bound 9 parts to services, networks and
+volumes of two samples, through the real check, in 95 ms. Each finding was
+right:
+
+- `react-express-mysql`: the frontend depends on the backend, which supports
+  that relationship. The backend's anchor `services.db` holds. The database's
+  mount supports database -> database files. The check reports the backend
+  and the database joining the private network that no relationship draws
+  (`RELATIONSHIP_UNDRAWN`, a warning). No configuration joins the frontend
+  and the database (`RELATIONSHIP_UNSUPPORTED`). A part bound to
+  `services.cache`, which the file does not declare, is
+  `BINDING_SYMBOL_MISSING`.
+- `nginx-golang-postgres`: backend -> proxy is `RELATIONSHIP_BACKWARDS`,
+  because the proxy depends on the backend. An anchor at `services.dbx` is
+  `ANCHOR_SYMBOL_MISSING`.
+
 #### Resolving candidates with the TypeScript language server
 
 TASK-367.13 measured the language server on 2026-10-06. It used Bun 1.4.2 and
@@ -385,6 +413,28 @@ A part binds to a resource address as it binds to a code symbol. Examples are
 Nix says nothing about run time. It shows software dependencies that are not
 explicit anywhere else: flake inputs, and the packages that a derivation is
 built from.
+
+A compose file is one that compose finds by itself in a directory:
+`compose.yaml`, `compose.yml`, `docker-compose.yml` or `docker-compose.yaml`,
+in that order of preference. Then compose merges the first override file over
+it: `compose.override.yml`, `compose.override.yaml`,
+`docker-compose.override.yml` or `docker-compose.override.yaml`. The check
+merges in the same order (TASK-367.20). An override adds
+dependencies, links and networks to those of the base. Its environment value,
+volume mount or `network_mode` replaces the base's entry of that name or
+target, and the replaced entry is no evidence. A part bound to a service owns
+the service's block in each file of the project. A file that only `-f` names,
+such as `compose.prod.yaml`, merges as a command says, and no file records
+that command. So the check reads such a file as text.
+
+If the host of an environment value is the name, `container_name`, `hostname`
+or network alias of a service, the value names that service. The host comes
+after a scheme or a user, or before a port. A bare word counts only under a name that ends in
+`HOST`, `SERVER` or `ADDR`, such as `REDIS_HOST: redis`. A host with a dot
+names a machine outside the project. An interpolation takes the default that
+the file writes (`${API_HOST:-api}`). The check never reads the shell or the
+project's `.env` for it. An env file gives the names it sets and never a
+value, and the check keeps no value of a compose file either.
 
 The strongest result joins code and infrastructure. The code reads
 `QUEUE_URL`, and the infrastructure sets `QUEUE_URL` for that service to the
