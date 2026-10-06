@@ -5,7 +5,7 @@
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 export { Browser, now, type Page } from "./browser.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-export { encodeExcerpt, encodeThumbnail, type Crop } from "./encode.ts";
+export { encodeThumbnail, type Crop } from "./encode.ts";
 export {
 	Terminal,
 	encodeTake,

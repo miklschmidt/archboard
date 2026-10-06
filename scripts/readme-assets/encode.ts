@@ -227,42 +227,4 @@ async function encodeThumbnail(source: ThumbnailSource, crop: Crop, out: string)
 	]);
 }
 
-/**
- * Cut a stretch of a recording into an animated WebP loop with no sound. The loop is lossless for
- * the reason a clip is ({@link encodeClip}). It is attached to the README, so its size is no matter.
- * @param video The recording.
- * @param from The first second.
- * @param to The last second.
- * @param width The loop's width; its height follows.
- * @param out The loop.
- */
-async function encodeExcerpt(
-	video: string,
-	from: number,
-	to: number,
-	width: number,
-	out: string,
-): Promise<void> {
-	await ffmpeg([
-		"-ss",
-		String(from),
-		"-to",
-		String(to),
-		"-i",
-		video,
-		"-vf",
-		`fps=${CLIP_FPS},scale=${width}:-2:flags=lanczos`,
-		"-c:v",
-		"libwebp_anim",
-		"-lossless",
-		"1",
-		"-compression_level",
-		"6",
-		"-loop",
-		"0",
-		"-an",
-		out,
-	]);
-}
-
-export { encodeClip, encodeExcerpt, encodeThumbnail, frameAt, type ClipCut, type Crop };
+export { encodeClip, encodeThumbnail, frameAt, type ClipCut, type Crop };

@@ -1,8 +1,8 @@
 // The narrated videos: one walkthrough recorded by `archboard semantic record`, narrated by the
 // Codex voice, on a server that has the machine's Archboard Codex sign-in. The MP4 stays in the
 // scratch directory for a person to attach to the README's player: GitHub plays a video with
-// sound only from a user attachment, uploaded through its editor. The README's silent loop and its
-// index thumbnail are cut from the same recording, at the steps the kept talk says it reached.
+// sound only from a user attachment, uploaded through its editor. The README's index thumbnail is
+// cut from the same recording, at the step the kept talk says it reached.
 
 import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
@@ -11,8 +11,6 @@ import { readTalk } from "@/runtime/walkthrough-recorder";
 import { TALK_SAMPLE_RATE, type Talk } from "@/shared/walkthrough-recording/talk";
 
 import {
-	attachmentFile,
-	encodeExcerpt,
 	encodeThumbnail,
 	holding,
 	inRepository,
@@ -36,13 +34,6 @@ interface NarratedSpec {
 	readonly board: string;
 	readonly variant?: string;
 	readonly walkthrough: string;
-	/** The README's silent loop: the steps it runs from and to (counted from nought), and its width. */
-	readonly loop?: {
-		readonly file: string;
-		readonly from: number;
-		readonly to: number;
-		readonly width: number;
-	};
 	/** The index thumbnail: the step it shows, a moment into it. */
 	readonly thumbnail?: { readonly file: string; readonly step: number };
 }
@@ -72,27 +63,15 @@ function secondOf(seconds: readonly number[], step: number): number {
 }
 
 /**
- * Cut the loop and the thumbnail from a recording.
+ * Cut the thumbnail from a recording.
  * @param spec The video.
  * @param video The recording.
  * @param talk The kept talk.
  */
-async function cutFrom(spec: NarratedSpec, video: string, talk: Talk): Promise<void> {
-	const seconds = stepSeconds(talk);
-	if (spec.loop !== undefined) {
-		const { file, from, to, width } = spec.loop;
-		await encodeExcerpt(
-			video,
-			secondOf(seconds, from),
-			secondOf(seconds, to),
-			width,
-			attachmentFile(file),
-		);
-	}
-	if (spec.thumbnail !== undefined) {
-		const at = secondOf(seconds, spec.thumbnail.step) + 3;
-		await encodeThumbnail({ video, at }, CAPTION_CROP, inRepository(spec.thumbnail.file));
-	}
+async function cutThumbnail(spec: NarratedSpec, video: string, talk: Talk): Promise<void> {
+	if (spec.thumbnail === undefined) return;
+	const at = secondOf(stepSeconds(talk), spec.thumbnail.step) + 3;
+	await encodeThumbnail({ video, at }, CAPTION_CROP, inRepository(spec.thumbnail.file));
 }
 
 /**
@@ -154,7 +133,7 @@ async function record(spec: NarratedSpec, context: MakeContext): Promise<void> {
 					],
 		);
 	});
-	await cutFrom(spec, video, readTalk(talk));
+	await cutThumbnail(spec, video, readTalk(talk));
 	context.say(`The narrated MP4 is ${video}. Attach it to the README's player by hand.`);
 }
 
@@ -169,25 +148,17 @@ function narratedProducer(spec: NarratedSpec): Producer {
 		kind: "narrated",
 		codex: true,
 		files: spec.thumbnail === undefined ? [] : [spec.thumbnail.file],
-		attachments: [
-			videoOf(spec),
-			...(spec.loop === undefined ? [] : [attachmentFile(spec.loop.file)]),
-		],
+		attachments: [videoOf(spec)],
 		needs: ["chromium", "ffmpeg", "codex"],
 		plan: [
 			`Start an Archboard server over a copy of ${spec.vault} that uses this machine's Archboard Codex sign-in.`,
 			`Record "${spec.walkthrough}" on "${spec.board}"${variant} with archboard semantic record --theme dark, narrated by the Codex voice; this spends Codex usage. With --replay, render the talk that the last recording kept again with archboard semantic replay instead, which spends none. The MP4 stays in the scratch directory, to attach to the README by hand with gh attach.`,
-			...(spec.loop === undefined
-				? []
-				: [
-						`Cut steps ${spec.loop.from + 1} to ${spec.loop.to} into ${spec.loop.file} in the scratch directory, a silent ${spec.loop.width} px lossless WebP loop, to attach by hand.`,
-					]),
 			...(spec.thumbnail === undefined
 				? []
 				: [`Cut ${spec.thumbnail.file} from step ${spec.thumbnail.step + 1} and its caption.`]),
 		],
 		/**
-		 * Record the walkthrough and cut the loop and thumbnail from it.
+		 * Record the walkthrough and cut the thumbnail from it.
 		 * @param context What the producer is given.
 		 * @returns Once the files are written.
 		 */
