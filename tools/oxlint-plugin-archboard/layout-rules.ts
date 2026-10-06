@@ -24,7 +24,13 @@ const SIDE_EFFECT_IMPORTS = new Set([
 	"fs/promises",
 ]);
 
-const COMPATIBILITY_IDENTIFIER_PATTERN = /(?:^|_)(?:compat|compatibility|shim|backwards?)(?:$|_)/i;
+/**
+ * A name that reads as a compatibility shim: `compat`, `compatibility` or `shim`
+ * as a word of it, or `backward(s)` followed by one of the compat words. A
+ * lone `backwards` is a direction, such as a relationship drawn backwards.
+ */
+const COMPATIBILITY_IDENTIFIER_PATTERN =
+	/(?:^|_)(?:compat|compatibility|shim|backwards?_compat(?:ible|ibility)?)(?:$|_)/i;
 
 const ARCHIVE_SEGMENT = /(?:^|[/\\])legacy(?:[/\\]|$)/u;
 
