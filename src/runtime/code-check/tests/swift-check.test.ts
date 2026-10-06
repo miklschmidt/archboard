@@ -7,7 +7,11 @@
 // `Package.swift` makes its dependencies, and calls `Ledger.refund`, which an
 // extension in another file of Core defines. The extension's `refund` builds
 // a `Money`. Parts bind the target directories, the extension's member and
-// `Money.swift`.
+// `Money.swift`. One relationship is anchored at `ledger.balance`, a use
+// through a value that only sourcekit-lsp resolves. The pass names
+// sourcekit-lsp, and no build ever indexed the package, so the server is never
+// started, the check says so once for the package (TASK-367.16), and the
+// findings are the adapter's.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -16,6 +20,7 @@ import { join } from "node:path";
 import type { CodeCheckOutcome } from "@/runtime/code-check/index";
 import { board, git, register, write } from "@/runtime/code-check/tests/fixture";
 import { ownServers } from "@/runtime/code-check/tests/servers";
+import type { LanguageServerTable } from "@/runtime/language-servers/index";
 
 const caller = {
 	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
@@ -92,7 +97,13 @@ beforeAll(async () => {
 			")",
 			"",
 		].join("\n"),
-		"Sources/Core/Ledger.swift": "public struct Ledger {\n    public init() {}\n}\n",
+		"Sources/Core/Ledger.swift": [
+			"public struct Ledger {",
+			"    public init() {}",
+			"    public func balance() -> Int { 0 }",
+			"}",
+			"",
+		].join("\n"),
 		"Sources/Core/Ledger+Refund.swift": [
 			"public extension Ledger {",
 			"    static func refund(_ cents: Int) -> Money {",
@@ -109,6 +120,7 @@ beforeAll(async () => {
 			"",
 			"let ledger = Ledger()",
 			"let refund = Ledger.refund(5)",
+			"let balance = ledger.balance()",
 			"",
 		].join("\n"),
 	});
@@ -136,6 +148,8 @@ beforeAll(async () => {
 					edge("e2", ["pM", "pU"], "call", ["Sources/Core/Money.swift", "Nope"]),
 					// Drawn from Money, while the extension's refund builds a Money.
 					edge("e3", ["pM", "pR"], "call"),
+					// A call through a value, which the pass asks sourcekit-lsp about.
+					edge("e4", ["pA", "pC"], "call", ["Sources/App/main.swift", "ledger.balance"]),
 				],
 			},
 		},
@@ -143,7 +157,10 @@ beforeAll(async () => {
 	const check = await import("@/runtime/code-check/index");
 	const read = check.readBoardsToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
-	outcome = await check.checkCode(read.boards, new AbortController().signal, ownServers());
+	// A program no machine has: a pass that started it would say it failed.
+	const sourcekitLsp = { status: "command", argv: ["/nonexistent/sourcekit-lsp"] } as const;
+	const servers: LanguageServerTable = new Map(ownServers()).set("swift", sourcekitLsp);
+	outcome = await check.checkCode(read.boards, new AbortController().signal, servers);
 });
 
 afterAll(() => {
@@ -199,5 +216,11 @@ test("a call reaches an extension's member in another file of the imported modul
 	const turned = outcome.findings.find((each) => each.subject?.id === "e3");
 	expect(turned?.evidence?.map((piece) => [piece.from, piece.to, piece.kind])).toEqual([
 		["pR", "pM", "call"],
+	]);
+});
+
+test("a package no build has indexed is said once with its checkout, and its questions stay unasked", () => {
+	expect(outcome.skipped.filter((each) => each.reason.startsWith("language-server-"))).toEqual([
+		{ reason: "language-server-unready", repo: SHOP, detail: expect.any(String) },
 	]);
 });
