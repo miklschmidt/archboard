@@ -22,6 +22,8 @@
 // passed on by the file that declares it (definition-site.ts).
 
 import { cRootFiles, isCFile } from "@/runtime/code-facts/lib/c-exposure";
+import { projectDirectoryOf } from "@/runtime/code-facts/lib/csharp-project";
+import { projectFilesIn } from "@/runtime/code-facts/lib/csharp-resolution";
 import { codeSiteOf } from "@/runtime/code-facts/lib/definition-site";
 import type { Definition, ImportedName, SyntaxFacts } from "@/runtime/code-facts/lib/facts";
 import type { CheckoutFiles } from "@/runtime/code-facts/lib/module-resolution";
@@ -59,6 +61,14 @@ interface ExposureRule {
 		checkout: CheckoutFiles,
 		directory: string,
 	) => Promise<string[]>;
+	/**
+	 * Whether an exposed name is a member of another, counted for its holder,
+	 * where the language's names say more than their dots, as C# qualifies a
+	 * type by its namespace too. Without it, a name's `.` says so.
+	 * @param name The name.
+	 * @param exposed Every name the module exposes.
+	 */
+	readonly member?: (name: ExposedName, exposed: readonly ExposedName[]) => boolean;
 }
 
 /** TypeScript's rule: a directory whose root files export what it exposes. */
@@ -140,8 +150,61 @@ const C: ExposureRule = {
 	rootFiles: cRootFiles,
 };
 
+/** A C# file. */
+const CSHARP_FILE = /\.cs$/u;
+
+/**
+ * C#'s rule: a project, the `.cs` files below the directory of its project
+ * file, each of which is a root file, as the files of one assembly are. It
+ * exposes its public types and their public members. `InternalsVisibleTo`
+ * opens internal code to the friends it names, mostly the project's tests,
+ * which are no callers. It does not widen the interface, so a friend that
+ * uses internal code reaches past it.
+ */
+const CSHARP: ExposureRule = {
+	/**
+	 * Whether a file is C#.
+	 * @param file The file.
+	 * @returns True when it is.
+	 */
+	writes: (file) => CSHARP_FILE.test(file),
+	/**
+	 * Whether a file is a project file, which stands for its project.
+	 * @param name The file's name.
+	 * @returns True when it is.
+	 */
+	entry: (name) => projectDirectoryOf(name) !== undefined,
+	/**
+	 * The files of the project whose project file is in the directory.
+	 * @param _pass The pass.
+	 * @param checkout The checkout.
+	 * @param directory The project's directory.
+	 * @returns The files, or none for a directory that holds no project file.
+	 */
+	rootFiles: (_pass, checkout, directory) =>
+		Promise.resolve([...projectFilesIn(checkout.files, directory)]),
+	/**
+	 * Whether an exposed type or member is held by an exposed type around it
+	 * in its file; a type in a namespace is held by none.
+	 * @param name The name.
+	 * @param exposed Every name the project exposes.
+	 * @returns True for a member or a nested type.
+	 */
+	member: (name, exposed) => {
+		const { symbol, start, end } = name.definition;
+		const holder = symbol.slice(0, Math.max(symbol.lastIndexOf("."), 0));
+		return exposed.some(
+			(other) =>
+				other.path === name.path &&
+				other.definition.symbol === holder &&
+				other.definition.start <= start &&
+				end <= other.definition.end,
+		);
+	},
+};
+
 /** The rule of each adapter that reads a language. */
-const RULES: readonly ExposureRule[] = [TYPESCRIPT, PYTHON, SWIFT, C];
+const RULES: readonly ExposureRule[] = [TYPESCRIPT, PYTHON, SWIFT, C, CSHARP];
 
 /** One name a module exposes, and the definition it reaches. */
 interface ExposedName {
@@ -155,6 +218,8 @@ interface ExposedName {
 	readonly definition: Definition;
 	/** The files that pass it on, the root file first; empty when the root file defines it. */
 	readonly via: readonly string[];
+	/** Whether it is a member of another exposed name, where its language's rule says (`ExposureRule.member`). */
+	readonly member?: boolean;
 }
 
 /** What one module exposes, and where its callers can be. */
@@ -336,7 +401,12 @@ async function moduleExposure(
 		const outside = [...checkout.files]
 			.filter((file) => rule.writes(file) && !within(directory, file))
 			.toSorted();
-		return { directory, rootFiles, exposed, outside };
+		const { member } = rule;
+		const named =
+			member === undefined
+				? exposed
+				: exposed.map((name) => ({ ...name, member: member(name, exposed) }));
+		return { directory, rootFiles, exposed: named, outside };
 	}
 	return undefined;
 }

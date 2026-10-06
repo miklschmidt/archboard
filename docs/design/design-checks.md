@@ -776,6 +776,20 @@ another part writes. The `.Designer.cs` parts of eShopOnWeb's migrations were
 `internal` before. A later branch of an `#if` is now code that the check did
 not read, so it skips a symbol that only that branch holds.
 
+The same review gave C# its rule for the interface check: a project exposes
+the public types of all its files and their public members. On eShopOnWeb
+(`4da8212`), a board of 9 parts ran through the real check in 428 ms. Each
+project was bound by its project file, with three folders of ApplicationCore
+inside it. It gave five undrawn warnings, each right, among them Web's
+`ProjectReference` to BlazorAdmin. `EXPOSED_UNUSED` listed 8 of
+ApplicationCore's 40 names, and `git grep` finds none of them in the code of
+another project. On System.CommandLine, a board of 8 parts gave
+`CALLER_UNDRAWN` on Completions, from two benchmark files that no part binds,
+and `EXPOSED_UNUSED` listed 24 of the library's 37 names. Two of them,
+`ArgumentValidation` and `OptionValidation`, hold extension methods. A call of
+one goes through a value, which only a language server resolves
+(TASK-367.14).
+
 #### Joining code and infrastructure across a network hop
 
 TASK-367.23 tried the join on 2026-10-06 with Bun 1.4.2, through the real

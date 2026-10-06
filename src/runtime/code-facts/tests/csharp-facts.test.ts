@@ -18,6 +18,8 @@ import {
 	createCodeFacts,
 	definitionSite,
 	findSymbol,
+	moduleExposure,
+	moduleOf,
 	type SyntaxFacts,
 } from "@/runtime/code-facts/index";
 import { fixtureCheckout } from "@/runtime/code-facts/tests/checkout";
@@ -203,6 +205,31 @@ test("a project file builds with the projects and packages it references, and na
 		["Shop.Api", "assembly", undefined, undefined],
 	]);
 	expect(core.definitions).toEqual([]);
+});
+
+test("a project is a module whose files expose its public types and their public members, and InternalsVisibleTo exposes nothing more", async () => {
+	expect(moduleOf(CORE, "file")).toBe("src/Shop.Core");
+	const pass = facts.pass(new AbortController().signal);
+	const core = await moduleExposure(pass, checkout, "src/Shop.Core");
+	expect(core?.rootFiles).toContain("src/Shop.Core/Ledger.Audit.cs");
+	const names = (member: boolean) =>
+		[
+			...new Set(core?.exposed.filter((each) => each.member === member).map((each) => each.name)),
+		].toSorted();
+	expect(names(false)).toEqual(
+		["After", "Before", "Broken", "ILedger", "Ledger", "LedgerBase", "Order"]
+			.map((name) => `Shop.Core.${name}`)
+			.toSorted(),
+	);
+	expect(names(true)).toEqual(
+		["ILedger.Post", "Ledger.Close", "Ledger.Create", "Ledger.Post", "Order.Total"]
+			.map((name) => `Shop.Core.${name}`)
+			.toSorted(),
+	);
+	expect(core?.outside).toContain("src/Shop.Api/Program.cs");
+	expect(core?.outside.some((file) => file.startsWith("src/Shop.Core/"))).toBe(false);
+	// A directory that holds no project file is no module.
+	expect(await moduleExposure(pass, checkout, "src")).toBeUndefined();
 });
 
 test("code that did not parse holds no facts, a name found only there is unparsed, and the rest of the file keeps its facts", async () => {
