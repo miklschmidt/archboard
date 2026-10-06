@@ -301,6 +301,21 @@ Evidence is `resolved` where the import names the file it reaches, and a
 `candidate` where it is matched by name only; a finding that rests only on
 candidates is information.
 
+For a container bound to a module (a directory, or the `index` file that
+stands for one), `check --code` also holds the interface the board derives
+against what the module exposes: in TypeScript, what its root files export
+(the files its `package.json` `exports` names, else the files directly in its
+directory). An entry point that owns nothing the module exposes, while the
+code of a caller drawn to it reaches it from outside the module, is
+`ENTRY_POINT_UNEXPOSED`, a warning: make the callers use what the module
+exposes, or expose it. A hidden part whose exposed code a file outside the
+module uses at run time, where no part on the board binds that file, is
+`CALLER_UNDRAWN`, a warning: draw the caller the board's question needs. It is
+judged only where the board draws some caller of the container.
+`EXPOSED_UNUSED`, information on the container, lists the exposed names that
+no file outside the module uses; a test is no caller. A container whose module
+has no root file the check reads is skipped as `exposure-unknown`.
+
 That record decides what a valid payload cannot:
 
 - **Siblings are not a chain** (rule 3).
