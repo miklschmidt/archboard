@@ -3,11 +3,11 @@ id: TASK-368.02
 title: >-
   semantic inspect reports a container's entry points, hidden parts and
   crossings
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:17'
-updated_date: '2026-10-06 10:00'
+updated_date: '2026-10-06 10:26'
 labels:
   - interfaces
   - cli
@@ -30,10 +30,10 @@ The tracer bullet of the interface lens: one derivation, one command, any board.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 For a named container on any variant, the answer lists its entry points, hidden parts, the outside parts that call it, the relationships that leave it and the entry points that only pass a call through
-- [ ] #2 The derivation is a pure function of the variant's content, and nothing is stored
-- [ ] #3 The machine-readable answer has a schema, and the read recipe of the consumer skill says when to use it
-- [ ] #4 Tests own the derivation for nesting, relationships to the container itself, and a container with no outside caller
+- [x] #1 For a named container on any variant, the answer lists its entry points, hidden parts, the outside parts that call it, the relationships that leave it and the entry points that only pass a call through
+- [x] #2 The derivation is a pure function of the variant's content, and nothing is stored
+- [x] #3 The machine-readable answer has a schema, and the read recipe of the consumer skill says when to use it
+- [x] #4 Tests own the derivation for nesting, relationships to the container itself, and a container with no outside caller
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -64,4 +64,12 @@ Decisions the ADR did not settle:
 - Evals: S16 reuses S09's Flask board without groups and views; outcomes are version-advanced-by 0 and check-clean (the harness has no inspect-container check and that code is outside this task's write scope), so the grader owns inspect.container. Coverage rows added to part 2 (the part count stays 14).
 - Not touched: skills/archboard/references/authoring.md (another agent), SKILL.md (read.md carries the when-to-use; SKILL.md only points at it).
 - Verified on the dogfood vault: Browser client on Browser application answers 19 hidden parts, no entry point, no caller (ADR 0044's example).
+
+Independent review (2026-10-06): the derivation is correct against ADR 0044 rule by rule. The reviewer replaced the internal 'crossing' names with one map of holders, and showed the same answers on 1158 vault nodes and 3,000 random nested boards (2dc66c99c). It stated the --group and --container condition in requiredWhen instead of prose, and reworded read.md step 3 so that 'exposes' stays the code's side (a6a317444).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard semantic inspect <board> --container <id|name> reports a container's entry points, hidden parts, callers, outgoing relationships, pass-through entry points and the relationships that end on it, from inspectContainer in the shared model, a pure function of the variant's content. The answer has a schema, and read.md says when to use it. Verified by container-interface.test.ts (nesting, relationship to the container, no outside caller, pass-through, no children) and the system test on the real command, 19 pass with --isolate. The reviewer reported every gate lane passing.
+<!-- SECTION:FINAL_SUMMARY:END -->
