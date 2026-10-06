@@ -9,7 +9,9 @@
 //
 // A server starts in the project of the file: the checkout, or for a language
 // whose row names projects, such as a Swift package, the one that holds the
-// file. One server runs for each language and project.
+// file. One server runs for each language and project. The project of a
+// directory is looked up once in the pass, and what a row looks at for a
+// project, such as a package's index, once for that project.
 //
 // A question the session cannot put gets no answer, and the use stays as code
 // facts read it. The reason is said once: once for a language whose server is
@@ -17,8 +19,9 @@
 // each project where the server cannot answer yet, such as a package with no
 // index (`unready`), and once for each checkout where a server did not start,
 // did not answer in time or ended (`failed`). No server starts for a project
-// that is not ready. A server that failed is stopped at once and never asked
-// again in the pass, so a pass waits for a hung server at most once.
+// that is not ready. A server that failed is stopped at once, and no server of
+// its language is asked in that checkout again in the pass, however many
+// projects it holds, so a pass waits for a hung server at most once there.
 //
 // `close` stops every server the session started, and returns only once each
 // process has ended. It asks each to exit, unless the pass was cancelled:
@@ -32,6 +35,7 @@ import {
 	LANGUAGES,
 	languageOf,
 	type Language,
+	type Once,
 	type Project,
 } from "@/runtime/language-servers/lib/languages";
 import {
@@ -137,6 +141,22 @@ class Session {
 	readonly #answers = new Map<string, Promise<DefinitionAnswer>>();
 	readonly #unavailable = new Map<string, UnavailableServer>();
 	#closed = false;
+
+	/**
+	 * A look at a project the pass does once for a key: the first call looks,
+	 * and every later call with the key gets its answer.
+	 * @param key The key.
+	 * @param look The look.
+	 * @returns The project.
+	 */
+	readonly #once: Once = (key, look) => {
+		let project = this.#projects.get(key);
+		if (project === undefined) {
+			project = look();
+			this.#projects.set(key, project);
+		}
+		return project;
+	};
 
 	/**
 	 * A session that has started nothing yet.
@@ -282,7 +302,7 @@ class Session {
 	async #serverOf(root: string, file: string): Promise<Running | undefined> {
 		const language = this.#open() ? languageOf(file)?.language : undefined;
 		if (language === undefined) return undefined;
-		const argv = this.#commandOf(language);
+		const argv = this.#commandOf(language, root);
 		if (argv === undefined) return undefined;
 		const project = await this.#readyProject(language, root, file);
 		return project === undefined ? undefined : this.#running(language, root, project, argv);
@@ -331,11 +351,15 @@ class Session {
 	}
 
 	/**
-	 * The command of a language's server, noting once that it has none.
+	 * The command of a language's server in a checkout, noting once that the
+	 * language has none. Once a server of the language failed in the checkout,
+	 * there is none there for the rest of the pass.
 	 * @param language The language.
-	 * @returns The command, or undefined when the language has no server.
+	 * @param root The checkout.
+	 * @returns The command, or undefined when the language has no server there.
 	 */
-	#commandOf(language: Language): readonly [string, ...string[]] | undefined {
+	#commandOf(language: Language, root: string): readonly [string, ...string[]] | undefined {
+		if (this.#unavailable.has(keyOf({ language, reason: "failed", root }))) return undefined;
 		const configured = this.#options.servers.get(language);
 		if (configured?.status === "command") return configured.argv;
 		const detail = configured?.detail ?? `no server is configured for ${language}`;
@@ -351,13 +375,10 @@ class Session {
 	 * @returns The project: the checkout, unless the language's row names another.
 	 */
 	#projectOf(language: Language, root: string, file: string): Promise<Project> {
+		const { project } = LANGUAGES[language];
+		if (project === undefined) return Promise.resolve({ root });
 		const key = `${language}\0${root}\0${path.dirname(file)}`;
-		let project = this.#projects.get(key);
-		if (project === undefined) {
-			project = LANGUAGES[language].project?.(root, file) ?? Promise.resolve({ root });
-			this.#projects.set(key, project);
-		}
-		return project;
+		return this.#once(key, () => project(root, file, this.#once));
 	}
 
 	/**
@@ -412,9 +433,20 @@ class Session {
 	 * @param project The project, for a project that is not ready.
 	 */
 	#note(entry: UnavailableServer, project = ""): void {
-		const key = `${entry.reason}\0${entry.language}\0${entry.root ?? ""}\0${project}`;
+		const key = keyOf(entry, project);
 		if (!this.#unavailable.has(key)) this.#unavailable.set(key, entry);
 	}
+}
+
+/**
+ * The key a reason is said once under: for the language, the checkout, or
+ * the project that is not ready.
+ * @param entry Which, why and where.
+ * @param project The project, for a project that is not ready.
+ * @returns The key.
+ */
+function keyOf(entry: Omit<UnavailableServer, "detail">, project = ""): string {
+	return `${entry.reason}\0${entry.language}\0${entry.root ?? ""}\0${project}`;
 }
 
 /**

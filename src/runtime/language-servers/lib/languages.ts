@@ -47,6 +47,12 @@ interface Request {
 	readonly params: object;
 }
 
+/**
+ * A look at a project that a pass does once for a key: the first call looks,
+ * and every later call in the pass with that key gets its answer.
+ */
+type Once = (key: string, look: () => Promise<Project>) => Promise<Project>;
+
 /** What one language needs from a language server. */
 interface LanguageRow {
 	/** The `languageId` of each extension the language's files have. */
@@ -62,8 +68,12 @@ interface LanguageRow {
 	 * it reads. A server that does not know the request only refuses it.
 	 */
 	readonly settle?: Request;
-	/** The project of a file of a checkout; with none, the checkout. */
-	readonly project?: (root: string, file: string) => Promise<Project>;
+	/**
+	 * The project of a file of a checkout; with none, the checkout. It looks
+	 * at a project through `once`, so the directories of one project share
+	 * one look in a pass.
+	 */
+	readonly project?: (root: string, file: string, once: Once) => Promise<Project>;
 }
 
 /**
@@ -183,4 +193,12 @@ function languageOf(file: string): { language: Language; languageId: string } | 
 	return undefined;
 }
 
-export { type Language, type Project, type ServerCommand, LANGUAGES, LANGUAGE_KEYS, languageOf };
+export {
+	type Language,
+	type Once,
+	type Project,
+	type ServerCommand,
+	LANGUAGES,
+	LANGUAGE_KEYS,
+	languageOf,
+};
