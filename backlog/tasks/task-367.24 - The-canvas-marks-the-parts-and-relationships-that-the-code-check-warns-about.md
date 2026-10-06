@@ -1,11 +1,11 @@
 ---
 id: TASK-367.24
 title: The canvas marks the parts and relationships that the code check warns about
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:16'
-updated_date: '2026-10-06 12:54'
+updated_date: '2026-10-06 13:28'
 labels:
   - code-check
   - ui
@@ -29,10 +29,10 @@ Findings in a terminal reach an agent. A user reading a board sees nothing. Ever
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A pane shows that a part or relationship of the current variant has code findings, as a derived mark that is never stored
-- [ ] #2 The inspector lists the findings for the selected subject
-- [ ] #3 The pane reads cached findings and never starts a code pass itself
-- [ ] #4 The mark passes a picture review, and every board still lays out under 1 second
+- [x] #1 A pane shows that a part or relationship of the current variant has code findings, as a derived mark that is never stored
+- [x] #2 The inspector lists the findings for the selected subject
+- [x] #3 The pane reads cached findings and never starts a code pass itself
+- [x] #4 The mark passes a picture review, and every board still lays out under 1 second
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -73,4 +73,12 @@ Layout after adoption: Board viewer's first render rose to 1012-1063 ms (timing.
 Anchors: once TASK-367.06's ANCHOR_MISMATCH ran on the dogfood server, two of this task's anchors named a definition outside both ends (fetchCodeFindings for Browser -> Code check route; useCodeFindings for Semantic queries -> Render stage states). Corrected through 'TASK-367.24 anchors' on both boards (mountCodeCheckRoute in code-check-route.ts; codeFindingsQuery in queries.ts), adopted at Archboard server v65 and Board viewer v55. ./bin/dogfood check: no diagnostics; ./bin/dogfood check --code: no findings.
 Gate: lint fails only in src/runtime/code-check/lib/check.ts (complexity, TASK-367.06's uncommitted work); type-check fails only on node_modules/web-tree-sitter types (EmscriptenModule, TASK-367.06's dependency); fmt:check 0; build:frontend 0; test:modules 4068 pass 0 fail; test:system 192/0; test:repository 20/0; test:serial-browser: every owner passed except codex-live-voice (dock mute operability), which passed when run again alone.
 readme:check lists all 13 assets stale by source hash (the assets were made 119 commits ago); this task changes none of their pictures: no README asset runs a code pass, so no mark appears, and the renderer's output bytes are unchanged.
+
+Independent review and picture review (2026-10-06): a wordless line's mark landed near the picture's corner, because the code read the arrowhead path in the marker defs, and a participant of several exchanges was marked on one card only; both fixed and now owned by a test built on renderer-shaped markup (0f2af433d). Each finding now says its severity to assistive technology (42b260402). At 1:1 the mark reads well in both themes; at fit it is too small to read, the same rule as the undecided badge, and in far view it overlaps the drill mark of a part that opens a board. Both are recorded as follow-ups for the user, with a pane-level count of code warnings as the recommended remedy. Every board lays out under 1 s (slowest 529 ms).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A pane now marks each part, container, relationship and step of the current variant that the last code check warned about with the picture's own warning triangle, drawn by the pane as a derived layer, so picture bytes and layout never change. The selection tab lists the subject's findings, warnings first, with evidence and the pass time. The pane reads GET /api/vault/code-findings, a server memory filled only by a finished pass, and never starts a pass. Verified by semantic-board-code-findings.test.tsx and code-findings-route.test.ts (pass with --isolate), a picture review in light and dark at 1920x1080 with broken anchors and symbols, and layout times under 1 s for every board.
+<!-- SECTION:FINAL_SUMMARY:END -->
