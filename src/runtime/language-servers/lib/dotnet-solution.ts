@@ -11,7 +11,7 @@
 // once.
 
 import path from "node:path";
-import type { Project } from "@/runtime/language-servers/lib/languages";
+import type { Once, Project } from "@/runtime/language-servers/lib/languages";
 import { listedFiles } from "@/runtime/language-servers/lib/listed-files";
 
 /**
@@ -38,14 +38,27 @@ function nearest(solutions: readonly string[]): string | undefined {
  * @param root The checkout, absolute.
  * @returns The project.
  */
-async function dotnetProjectOf(root: string): Promise<Project> {
+async function solutionOf(root: string): Promise<Project> {
 	const files = await listedFiles(root, ["*.sln", "*.slnx", "*.csproj"], true);
+	if (files === undefined) return { root, unready: "Git cannot list the checkout's files" };
 	const solution = nearest(files.filter((file) => /\.slnx?$/u.test(file)));
 	if (solution !== undefined) {
 		return { root, settings: { csharp: { solutionPathOverride: path.join(root, solution) } } };
 	}
 	if (files.length > 0) return { root };
 	return { root, unready: "the checkout has no .sln, .slnx or .csproj file for it to load" };
+}
+
+/**
+ * The project csharp-ls answers about for a file: the checkout, looked at
+ * once in a pass, since Git walks the whole checkout to list its solutions.
+ * @param root The checkout, absolute.
+ * @param _file The file; every file of a checkout has one project.
+ * @param once A look the pass does once for each checkout.
+ * @returns The project.
+ */
+function dotnetProjectOf(root: string, _file: string, once: Once): Promise<Project> {
+	return once(`dotnet-solution\0${root}`, () => solutionOf(root));
 }
 
 export { dotnetProjectOf };
