@@ -10,7 +10,9 @@
 // the exit status.
 //
 // TASK-369.02 built this answer with `behind` filled. TASK-367.05 fills
-// `findings` from the text reading and adds the skip reasons of the code pass.
+// `findings` from the text reading, `ANCHOR_PATH_MISSING`,
+// `ANCHOR_SYMBOL_MISSING`, `BINDING_SYMBOL_MISSING` and, on a named draft,
+// `BINDING_PATH_MISSING`, and adds the skip reasons of the code pass.
 // TASK-367.06 reads TypeScript through code facts, which adds `ANCHOR_MISMATCH`
 // and the skip `symbol-unparsed`. TASK-367.07 judges the relationships between
 // bound parts by the evidence that joins their code: `RELATIONSHIP_UNDRAWN`,
