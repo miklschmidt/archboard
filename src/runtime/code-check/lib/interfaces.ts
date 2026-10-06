@@ -55,6 +55,7 @@ import {
 	moduleExposure,
 	moduleOf,
 	within,
+	type Definition,
 	type DefinitionSite,
 	type ExposedName,
 	type FactsPass,
@@ -197,6 +198,18 @@ function moduleReading(
 }
 
 /**
+ * Whether a C++ definition is a member of another by its name, as
+ * `shop::Store::open` is of `shop::Store`: a method is often defined in
+ * another file than its class.
+ * @param member The definition.
+ * @param holder The other definition.
+ * @returns True when it is.
+ */
+function memberOf(member: Definition, holder: Definition): boolean {
+	return member.symbol.startsWith(`${holder.symbol}::`);
+}
+
+/**
  * Whether a use reaches an exposed definition or one inside it, such as a member.
  * @param name The exposed name.
  * @param use The use.
@@ -204,20 +217,22 @@ function moduleReading(
  */
 function reaches(name: ExposedName, use: OutsideUse): boolean {
 	const { path, definition } = use.site;
-	return (
+	const inside =
 		path === name.path &&
 		name.definition.start <= definition.start &&
-		definition.end <= name.definition.end
-	);
+		definition.end <= name.definition.end;
+	return inside || memberOf(definition, name.definition);
 }
 
 /**
  * Whether an exposed name is a declaration of its file, not a member of one.
  * @param name The exposed name.
+ * @param exposed Every name its module exposes.
  * @returns True for a top-level name.
  */
-function topLevel(name: ExposedName): boolean {
-	return !name.definition.symbol.includes(".");
+function topLevel(name: ExposedName, exposed: readonly ExposedName[]): boolean {
+	const member = exposed.some((holder) => memberOf(name.definition, holder.definition));
+	return !name.definition.symbol.includes(".") && !member;
 }
 
 /**
@@ -293,7 +308,7 @@ async function parsedAny(facts: FactsPass, code: ReadPart): Promise<boolean> {
  */
 function unusedFinding(judged: Judged): CodeFinding | undefined {
 	const { exposure, uses } = judged.module;
-	const declared = exposure.exposed.filter(topLevel);
+	const declared = exposure.exposed.filter((name) => topLevel(name, exposure.exposed));
 	const unused = declared.filter((name) => !uses.some((use) => reaches(name, use)));
 	const names = [...new Set(unused.map((name) => name.name))];
 	if (names.length === 0) return undefined;
@@ -374,7 +389,7 @@ function unexposedFinding(
  */
 function undrawnUses(judged: Judged, hidden: SemanticNode): CodeEvidence[] {
 	return ownedBy(judged, hidden)
-		.filter(topLevel)
+		.filter((name) => topLevel(name, judged.module.exposure.exposed))
 		.flatMap((name): CodeEvidence[] => {
 			const use = judged.module.uses.find(
 				(each) =>

@@ -3,7 +3,9 @@
 // module's root files are what a package's `exports` names, else the files
 // directly in its directory; a Python package's is its `__init__.py`, read
 // from the fixture package `fixtures/python-shop`; a Swift module is a target
-// of the package `fixtures/swift-shop`, all of whose files are root files.
+// of the package `fixtures/swift-shop`, all of whose files are root files; a
+// C or C++ module's are its public headers, read from the fixture project
+// `fixtures/c-shop`.
 
 import { afterAll, expect, test } from "bun:test";
 import {
@@ -56,12 +58,14 @@ const checkout = fixtureCheckout({
 });
 const pythonShop = fixtureDirectory("python-shop");
 const swiftShop = fixtureDirectory("swift-shop");
+const cShop = fixtureDirectory("c-shop");
 const facts = createCodeFacts();
 
 afterAll(() => {
 	checkout.remove();
 	pythonShop.remove();
 	swiftShop.remove();
+	cShop.remove();
 });
 
 /**
@@ -174,4 +178,23 @@ test("a Swift module is a target of its package, and exposes the open, public an
 	expect(core?.outside.some((file) => file.startsWith("Sources/Core/"))).toBe(false);
 	// Sources holds every target and is none.
 	expect(await exposureOf("Sources", swiftShop)).toBeUndefined();
+});
+
+test("a C or C++ module's root files are the headers under its include directory, else the headers beside their source files", async () => {
+	// No file stands for a C or C++ module.
+	expect(moduleOf("src/ledger.c", "file")).toBeUndefined();
+	const src = await exposureOf("src", cShop);
+	expect(src?.rootFiles).toEqual(["src/money.h"]);
+	// A prototype is exposed where its source file defines it, passed on by the header.
+	expect(await namesOf("src", cShop)).toEqual([
+		["money_round", "src/money.c"],
+		["money_t", "src/money.h"],
+	]);
+	expect(src?.exposed.find((each) => each.name === "money_round")?.via).toEqual(["src/money.h"]);
+	expect(src?.outside).toContain("cpp/app.cpp");
+	expect(src?.outside.some((file) => file.startsWith("src/"))).toBe(false);
+	// The project publishes its headers under include/.
+	expect((await exposureOf("", cShop))?.rootFiles).toEqual(["include/shop/ledger.h"]);
+	// Every header of built/ is in a subfolder: the module has no public header.
+	expect(await exposureOf("built", cShop)).toBeUndefined();
 });
