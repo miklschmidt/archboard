@@ -4,7 +4,7 @@
 // through the project as compose merges it, and env files read for their
 // names alone.
 //
-// The project: `compose.yaml` runs `web`, which depends on `api` and reads
+// The project: `compose.yaml` runs `web`, which links to `api` and reads
 // the cache through `CACHE_URL`; `api`, which depends on `db`, reaches it
 // through `DATABASE_URL`, shares the `static` volume with `web` and reads
 // `api.env`; and `db`, whose network alias is `database`.
@@ -93,7 +93,7 @@ test("a compose file defines its services, networks and volumes, each spanning i
 test("dependencies, links to networks and volumes and environment values that name a service are configured paths, resolved where the project declares them", async () => {
 	const base = await compose("compose.yaml");
 	expect(configuredPaths(base)).toEqual([
-		// Every value is interpolated, with the default the file writes.
+		// A link, whose value is interpolated with the default the file writes.
 		"13 services.api -> compose.yaml services.api",
 		// `cache` is declared only in the override.
 		"15 services.cache -> compose.override.yml services.cache",
