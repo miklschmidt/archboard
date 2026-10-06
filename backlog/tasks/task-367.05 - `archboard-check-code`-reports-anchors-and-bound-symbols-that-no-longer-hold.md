@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 12:07'
+updated_date: '2026-10-06 12:14'
 labels:
   - code-check
   - cli
@@ -68,4 +68,6 @@ Decisions the ADR left open:
 12. Evals: one coverage row in part 4, evidence runtime-owner with no scenario: the command is mechanical validation, and each run's anchors are already graded per anchor. A harness outcome 'code-check-clean' (beside check-clean) would need src/runtime/skill-evaluation.
 
 Close of the proposal: Archboard server@TASK-367.05 matched the build (Code check binds src/runtime/code-check; Code check route -> Code check anchored at checkCode in code-check-route.ts; Code check -> Semantic board store anchored at readSemanticBoardAt in lib/boards.ts; the route's own call to the store removed). Given the board's scope as its summary and adopted at v46. ./bin/dogfood check: no diagnostics. Behind: my commits put Command interface (Vault check, Commands: vault.ts) and Skill evaluation (Evaluation inputs: evals) behind; both still right: Vault check still calls the code check route after the plain check (--variant is a query on the same call), and the coverage row adds no part.
+
+Gate (after c5377da46): lint 0, fmt:check 0, type-check 0, build:frontend 0, test:modules 4039 pass 0 fail, test:system 192/0, test:repository 20/0, test:serial-browser exit 0; eval:skill check: suite ok. Real run on the dogfood vault: ./bin/dogfood check --code exits 0 with no findings over 15 boards; the current variants carry 3 anchors (Board persistence 1, Archboard server 2) and no binding symbol, all hold; the one skip is text-only for github.com/miklschmidt/archboard. --variant TASK-367.05 (before adoption) read that draft on Archboard server and found nothing; --variant naming no draft was refused NO_SUCH_DRAFT, exit 2.
 <!-- SECTION:NOTES:END -->
