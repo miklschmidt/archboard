@@ -18,7 +18,7 @@
 // file at run time, so it is a call to the file.
 //
 // Each piece goes from the part whose code makes the use to the part whose
-// code holds what it reaches, each the narrowest binding (part-code.ts). Code
+// code holds what it reaches, each the narrowest binding (ownership.ts). Code
 // facts keep only the first line of each spelling in a file, so where two
 // parts bind two symbols of one file and both use one name, only the part
 // whose definition holds that first line is credited with the use.
@@ -27,18 +27,19 @@
 // and the check cannot tell the code of the two apart. A file read as text
 // gives no evidence.
 
-import {
-	definitionsIn,
-	pairsOf,
-	type PartCode,
-	type ReadPart,
-	type RepoCheckout,
-} from "@/runtime/code-check/lib/part-code";
 import { moduleLevelDefinition } from "@/runtime/code-check/lib/module-level";
+import {
+	lineagesOf,
+	ownersAtLine,
+	ownersOf,
+	ownersOfFile,
+	ownersOfSite,
+	type Owners,
+} from "@/runtime/code-check/lib/ownership";
+import type { PartCode, ReadPart, RepoCheckout } from "@/runtime/code-check/lib/part-code";
 import type { Resolve } from "@/runtime/code-check/lib/resolution";
 import {
 	definitionSite,
-	type Definition,
 	type DefinitionSite,
 	type FactsPass,
 	type SyntaxFacts,
@@ -69,158 +70,10 @@ interface EvidenceReading {
 	readonly resolve: Resolve;
 }
 
-/** The parts that bind code in one repository, by how narrowly. */
-interface Owners {
-	readonly symbols: ReadonlyMap<string, readonly ReadPart[]>;
-	readonly files: ReadonlyMap<string, readonly ReadPart[]>;
-	readonly directories: readonly ReadPart[];
-}
-
 /** What a use reaches: the parts that hold it, and whether the code named its file. */
 interface Reached {
 	readonly to: readonly ReadPart[];
 	readonly resolution: CodeEvidence["resolution"];
-}
-
-/**
- * Add a part to the list of a key.
- * @param map The lists.
- * @param key The key.
- * @param part The part.
- */
-function addTo(map: Map<string, ReadPart[]>, key: string, part: ReadPart): void {
-	map.set(key, [...(map.get(key) ?? []), part]);
-}
-
-/**
- * The parts of one repository, by how narrowly they bind.
- * @param parts The parts.
- * @returns The owners.
- */
-function ownersOf(parts: readonly ReadPart[]): Owners {
-	const symbols = new Map<string, ReadPart[]>();
-	const files = new Map<string, ReadPart[]>();
-	const directories: ReadPart[] = [];
-	for (const part of parts) {
-		const { grain } = part;
-		if (grain.kind === "symbol") part.files.forEach((file) => addTo(symbols, file, part));
-		else if (grain.kind === "file") addTo(files, grain.file, part);
-		else directories.push(part);
-	}
-	for (const [file, owners] of pairsOf(parts)) if (!files.has(file)) files.set(file, owners);
-	return { symbols, files, directories };
-}
-
-/**
- * The parts with the narrowest definition among those that hold code.
- * @param parts Parts bound to a symbol in the file.
- * @param file The file.
- * @param holds Whether a part's definition holds the code.
- * @returns The parts whose definition spans the fewest lines.
- */
-function narrowestSymbols(
-	parts: readonly ReadPart[],
-	file: string,
-	holds: (definition: Definition) => boolean,
-): ReadPart[] {
-	const holding = parts.flatMap((part) =>
-		definitionsIn(part, file).flatMap((definition) =>
-			holds(definition) ? [{ part, span: definition.end - definition.start }] : [],
-		),
-	);
-	const least = Math.min(...holding.map((each) => each.span));
-	return holding.filter((each) => each.span === least).map((each) => each.part);
-}
-
-/**
- * The deepest directories that hold a file.
- * @param directories Parts bound to a directory.
- * @param file The file.
- * @returns The parts bound to the deepest such directory.
- */
-function deepestDirectories(directories: readonly ReadPart[], file: string): ReadPart[] {
-	const holding = directories.flatMap((part) => {
-		if (part.grain.kind !== "directory") return [];
-		const { directory } = part.grain;
-		if (directory !== "" && !file.startsWith(`${directory}/`)) return [];
-		return [{ part, depth: directory === "" ? 0 : directory.split("/").length }];
-	});
-	const most = Math.max(...holding.map((each) => each.depth));
-	return holding.filter((each) => each.depth === most).map((each) => each.part);
-}
-
-/**
- * The parts that own one line of a file.
- * @param owners The repository's parts.
- * @param file The file.
- * @param line The line.
- * @returns The narrowest parts whose bound code holds it.
- */
-function ownersAtLine(owners: Owners, file: string, line: number): ReadPart[] {
-	const symbols = narrowestSymbols(
-		owners.symbols.get(file) ?? [],
-		file,
-		(definition) => definition.start <= line && line <= definition.end,
-	);
-	if (symbols.length > 0) return symbols;
-	return [...(owners.files.get(file) ?? deepestDirectories(owners.directories, file))];
-}
-
-/**
- * The parts that own a file as a whole.
- * @param owners The repository's parts.
- * @param file The file.
- * @returns The narrowest parts bound to it or a directory above it.
- */
-function ownersOfFile(owners: Owners, file: string): ReadPart[] {
-	return [...(owners.files.get(file) ?? deepestDirectories(owners.directories, file))];
-}
-
-/**
- * The parts that own a definition: a part bound to it or to a definition
- * around it, else to its file, else to a file that passes it on, nearest to
- * the definition first, else to a directory above its file.
- * @param owners The repository's parts.
- * @param site Where the definition is.
- * @returns The narrowest parts.
- */
-function ownersOfSite(
-	owners: Owners,
-	site: Pick<DefinitionSite, "path" | "via"> & {
-		readonly definition: Pick<DefinitionSite["definition"], "start" | "end">;
-	},
-): ReadPart[] {
-	const symbols = narrowestSymbols(
-		owners.symbols.get(site.path) ?? [],
-		site.path,
-		(definition) =>
-			definition.start <= site.definition.start && site.definition.end <= definition.end,
-	);
-	if (symbols.length > 0) return symbols;
-	const own = owners.files.get(site.path);
-	if (own !== undefined) return [...own];
-	const passing = site.via.toReversed().find((file) => owners.files.has(file));
-	if (passing !== undefined) return [...(owners.files.get(passing) ?? [])];
-	return deepestDirectories(owners.directories, site.path);
-}
-
-/**
- * Each part and every part that holds it, the part first.
- * @param codes The board's parts.
- * @returns For each part's id, the ids of it and its containers.
- */
-function lineagesOf(codes: ReadonlyMap<string, PartCode>): Map<string, Set<string>> {
-	const parentOf = new Map([...codes].map(([id, code]) => [id, code.node.parent]));
-	return new Map(
-		[...codes.keys()].map((id) => {
-			const chain = new Set<string>();
-			for (let at: string | undefined = id; at !== undefined && !chain.has(at);) {
-				chain.add(at);
-				at = parentOf.get(at);
-			}
-			return [id, chain];
-		}),
-	);
 }
 
 /** What reading one repository's evidence needs beside the reading. */
@@ -580,15 +433,4 @@ async function evidenceOf(
 	return { pieces: firstOfEach(pieces), parsed };
 }
 
-export {
-	type BoardEvidence,
-	type EvidenceReading,
-	type Owners,
-	type Piece,
-	evidenceOf,
-	lineagesOf,
-	ownersAtLine,
-	ownersOf,
-	ownersOfSite,
-	piecesBetween,
-};
+export { type BoardEvidence, type EvidenceReading, type Piece, evidenceOf, piecesBetween };

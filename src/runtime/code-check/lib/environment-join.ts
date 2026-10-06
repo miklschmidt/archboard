@@ -35,13 +35,13 @@
 // for the code of its start, and that code reads none of those names; or the
 // code of its start reads names that nothing the check reads sets for it.
 
+import { piecesBetween, type Piece } from "@/runtime/code-check/lib/evidence";
 import {
 	lineagesOf,
 	ownersAtLine,
 	ownersOf,
-	piecesBetween,
-} from "@/runtime/code-check/lib/evidence";
-import type { Owners, Piece } from "@/runtime/code-check/lib/evidence";
+	type Owners,
+} from "@/runtime/code-check/lib/ownership";
 import type { PartCode, ReadPart } from "@/runtime/code-check/lib/part-code";
 import type { FactsPass, FileFacts } from "@/runtime/code-facts/index";
 import type { CodeEvidence } from "@/shared/code-check/index";

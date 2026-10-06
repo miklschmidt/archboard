@@ -29,12 +29,8 @@
 // the referring declaration that starts the way: its file and line, or the
 // plan that names it.
 
-import {
-	ownersOf,
-	ownersOfSite,
-	piecesBetween,
-	type Piece,
-} from "@/runtime/code-check/lib/evidence";
+import { piecesBetween, type Piece } from "@/runtime/code-check/lib/evidence";
+import { ownersOf, ownersOfSite } from "@/runtime/code-check/lib/ownership";
 import type { PartCode, ReadPart } from "@/runtime/code-check/lib/part-code";
 import {
 	declarationAddress,
