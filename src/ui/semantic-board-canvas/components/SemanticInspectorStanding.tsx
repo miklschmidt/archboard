@@ -229,7 +229,7 @@ interface StandingRegionProps extends WaitingProps, StandingBlockProps {
  */
 function Standing(props: StandingRegionProps): JSX.Element | null {
 	const { open, against, code } = props;
-	if (open.length === 0 && !differs(against) && (code === null || code.findings.length === 0)) {
+	if (open.length === 0 && !differs(against) && code === null) {
 		return null;
 	}
 	return (

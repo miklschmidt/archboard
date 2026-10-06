@@ -20,7 +20,7 @@ import { cn } from "@/ui/components/class-names";
 
 /** What the code check said about one subject, and when. */
 interface CodeStanding {
-	/** Its findings, warnings first. */
+	/** Its findings, warnings first, and never none. */
 	readonly findings: readonly CodeFinding[];
 	/** When the pass that found them ran. */
 	readonly checkedAt: string;
@@ -63,6 +63,12 @@ function Evidence(props: { readonly evidence: CodeEvidence }): JSX.Element {
 	);
 }
 
+/** What assistive technology says before a finding, which a sighted reader tells by glyph and tone. */
+const SEVERITY_WORDS: Readonly<Record<CodeFinding["severity"], string>> = {
+	warning: "Warning",
+	information: "Information",
+};
+
 /**
  * One finding: its glyph, the check's words, and what it rests on.
  * @param props The finding.
@@ -79,6 +85,7 @@ function Finding(props: { readonly finding: CodeFinding }): JSX.Element {
 				<p
 					className={cn("text-body [overflow-wrap:anywhere]", !warning && "text-muted-foreground")}
 				>
+					<span className="sr-only">{SEVERITY_WORDS[finding.severity]}: </span>
 					{finding.message}
 				</p>
 				{finding.evidence !== undefined && (
@@ -118,7 +125,7 @@ function whenChecked(checkedAt: string): string {
  */
 function CodeBlock(props: { readonly code: CodeStanding | null }): JSX.Element | null {
 	const { code } = props;
-	if (code === null || code.findings.length === 0) {
+	if (code === null) {
 		return null;
 	}
 	return (

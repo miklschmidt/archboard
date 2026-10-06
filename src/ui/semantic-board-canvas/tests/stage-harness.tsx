@@ -42,6 +42,9 @@ afterAll(async () => {
 /** What the fake server answers a request with. */
 type Reply = { readonly status: number; readonly body: unknown } | "pending";
 
+/** A server no code pass has run on yet. */
+const NO_FINDINGS = { success: true, readings: [] } as const;
+
 /**
  * The reply the next request gets, every request made so far, and the board
  * documents inspection reads.
@@ -50,9 +53,6 @@ type Reply = { readonly status: number; readonly body: unknown } | "pending";
  * a drill-down reads two boards at once and which of them answers first is not
  * something a test should have to predict.
  */
-/** A server no code pass has run on yet. */
-const NO_FINDINGS = { success: true, readings: [] } as const;
-
 const server: {
 	reply: Reply;
 	calls: string[];
