@@ -2,7 +2,7 @@
 status: accepted
 ---
 
-# Cards, containers and groups are drawn as slabs
+# Cards and groups are drawn as slabs, and containers as trays
 
 This decision supersedes parts of
 [ADR 0025](0025-containment-and-type-own-distinct-visual-channels.md) and
@@ -42,91 +42,102 @@ proposals as unmerged history.
 The owner chose Slabs: "I reeeeeally like Slabs ... this is definitely direction
 i want to go. Let's adopt it!" The owner then found three faults in it. The
 sequence views still drew flat outlined boxes. A change mark drew a second box
-inside a card. The heading of a container looked weak. This record decides the
-fixed version. The owner also asked for three reading fixes. A default arrowhead
-is as large as an emphasized one. No label is ever hidden. The camera stops when
-the hand lets go of a drag.
+inside a card. The heading of a container looked weak. The owner also asked for
+three reading fixes. A default arrowhead is as large as an emphasized one. No
+label is ever hidden. The camera stops when the hand lets go of a drag.
+
+Later the same day the owner asked for two more changes. The front edges were
+too heavy in the light theme (TASK-410). A container was to be an inset like the
+Pockets container, with walls as thick as the front edge of a slab (TASK-412).
+This record decides the version with all of these changes.
 
 ## Decision
 
-The picture builds every part as a block lit from the upper left. The
-construction is `src/transformers/semantic-renderer/lib/svg/slab.ts`. Its sizes
-are in `lib/design.ts`.
+The picture is lit from the upper left. A card, a chip, a label and a group's
+region stand on the page as blocks (`src/transformers/semantic-renderer/lib/svg/slab.ts`).
+A container is cut into the page as a tray (`lib/svg/tray.ts`). The sizes are
+in `lib/design.ts`.
 
 1. **A card is a slab.** It has a top face, a fine highlight along the top edge
    of the face, and light that falls off down the face. Its front edge is 4
    units thick and lies inside its layout box, along its foot. So a line that
    ends on the foot of a card meets the edge that a reader sees.
-2. **A shadow is flat shapes.** A part casts its shadow down and to the right.
-   The shadow is a stack of translucent copies of the part's silhouette, each a
+2. **Depth is flat shapes.** A block casts its shadow down and to the right. The
+   shadow is a stack of translucent copies of the block's silhouette, each a
    little larger and fainter. No shadow reaches more than 12 units past its box.
-   The picture uses no SVG filter, blur or mask for depth. It uses one shared
-   gradient for the light on a face and one shared pattern for a hatch.
-3. **A container is a plinth.** A top-level plinth is 6 units thick. Each
-   container nested in another is 1 unit thinner, down to the 4 units of a card.
-   Its face also rises a step toward `--plinth-rise` for each level, for two
-   levels at most. A step is 30 % of the way on the light ground and a third of
-   the way on the dark ground. The plinth itself is neutral.
-4. **The heading of a container lies on a nameplate.** The nameplate lies across
-   the top of the plinth's face and has a front edge of its own. The face and
-   the front edge of the nameplate carry the color of the container's kind. The
-   lines that the container sends out leave from the foot of that front edge.
-5. **The region of a group is a mat.** The mat is 3 units thick. Its face
-   carries a light share of the group's color, and its front edge is in the
-   group's color. It casts no shadow. Its caption is printed on a raised tab in
-   the top corner where the words start. When a route runs down through that
-   corner and no route runs through the other top corner, the tab moves to the
-   other corner. Lines cross the mat and the tab.
-6. **A card carries its group on its front edge.** The front edge of a card is
-   the group's color, shaded deeper. Its face carries a light share of the same
-   color. A card in no group has a grey front edge and a neutral face.
-7. **Small parts are low slabs.** An icon chip, the label of a relationship and
+   The picture uses no SVG filter, blur or mask for depth. It uses shared
+   gradients for the light on a face and one shared pattern for a hatch.
+3. **A container is a tray.** Its top and left walls show as a 7-unit band in
+   shade. Its bottom and right walls show a 2-unit lit lip, with a 1-unit
+   crease outside it. Its floor lies a step below what holds it. A container
+   nested in another is cut a step deeper into that one's floor, for two levels
+   at most. A tray casts no shadow. The walls throw a short shadow on its floor.
+4. **The heading of a container lies on a nameplate.** The nameplate is a
+   raised plate on the floor, against the top wall. It has a 3-unit front edge
+   of its own. The lines that the container sends out leave from the foot of
+   that front edge.
+5. **A container carries its kind.** The floor carries a calm tint of the
+   kind's color, and the walls carry some of it too. The nameplate carries a
+   tone a step stronger, and its front edge more again. A container of a kind
+   with no color is neutral.
+6. **The region of a group is a mat.** The mat is 3 units thick. Its face
+   carries a light share of the group's color, and its front edge is a tone of
+   the group's color. It casts no shadow. Its caption is printed on a raised
+   tab in the top corner where the words start. When a route runs down through
+   that corner and no route runs through the other top corner, the tab moves to
+   the other corner. Lines cross the mat and the tab.
+7. **A card carries its group on its front edge and its face.** The front edge
+   of a card is a tone of the group's color, quieter on the light ground. Its
+   face carries a tenth of the color on the light ground, and more of a deeper
+   shade on the dark ground. On the light ground a tinted face takes a softer
+   light, so its color does not pool at its foot. A card in no group has a grey
+   front edge and a neutral face.
+8. **Small parts are low slabs.** An icon chip, the label of a relationship and
    the label of a sequence message are low tiles with a contact shadow. An
    activation bar is a slim slab. It takes the front edge of its participant's
    card. The bar of a participant in no group is shaded toward the secondary
    ink, about as pale as the bar of a grouped participant.
-8. **A sequence frame is a plinth with a nameplate,** built like a container.
-   The name of the flow is printed on the nameplate as a container's name is:
-   as written, not in capitals, in the medium face, 14 units high. Its summary
-   is 11 units high, in the secondary ink.
-9. **A change mark is on the face.** The pin stays on the corner of the part.
-   - On a card, a participant or a relationship's label, an added part's face
-     is washed in green, and a changed part's face is washed in orange. A
-     changed card or participant is also hatched. A card keeps its group's
-     front edge. A label has no group, so its standing also colors its front
-     edge.
-   - On a container, the nameplate keeps its kind's color. The standing washes
-     the plinth's face below the nameplate, less strongly than a card's. A
-     changed container's nameplate is hatched at half strength.
-   - A sequence frame shows its standing by the pin alone, unless the flow was
-     removed.
-10. **A removed part has lost its thickness.** A card, a container, a
-    participant or a relationship's label is a flat, see-through face inside a
-    dashed red footprint, with no front edge and no shadow. Its words are faded
-    to the secondary ink. A removed message's words are in the secondary ink on
-    a flat, opaque plate. A removed line is drawn whole at 70 % opacity. Its ink
-    is weakened less than a live line's, so it keeps a contrast of 3:1 on every
+9. **A sequence frame is a tray with a nameplate,** built like a container and
+   always neutral. The name of the flow is printed on the nameplate as a
+   container's name is: as written, not in capitals, in the medium face, 14
+   units high. Its summary is 11 units high, in the secondary ink.
+10. **A change mark is on the face.** The pin stays on the corner of the part.
+    - On a card, a participant or a relationship's label, an added part's face
+      is washed in green, and a changed part's face is washed in orange. A
+      changed card or participant is also hatched. The wash takes the place of
+      the group's tint, and the card keeps its group's front edge. A label has
+      no group, so its standing also colors its front edge.
+    - On a container, the wash takes the place of the kind's tint on the floor,
+      less strongly than on a card. The nameplate and the walls keep the kind.
+      A changed container's nameplate is hatched at half strength.
+    - A sequence frame shows its standing by the pin alone, unless the flow was
+      removed.
+11. **A removed part has lost its depth.** A card, a container, a participant or
+    a relationship's label is a flat, see-through face inside a dashed red
+    footprint, with no edge, no wall and no shadow. Its words are faded to the
+    secondary ink. A removed message's words are in the secondary ink on a flat,
+    opaque plate. A removed line is drawn whole at 70 % opacity. Its ink is
+    weakened less than a live line's, so it keeps a contrast of 3:1 on every
     ground it crosses.
-11. **Every arrowhead has one length.** Every head takes its length from
+12. **Every arrowhead has one length.** Every head takes its length from
     `HEAD_LENGTH` in `lib/svg/styles.ts`. A head is 11 units long whatever the
     emphasis of its line (TASK-404). Boards and sequences both read it.
-12. **A line reads on every ground.** A card has no border now, so a neutral
+13. **A line reads on every ground.** A card has no border now, so a neutral
     line no longer matches one. A neutral line, its arrowhead and a lifeline
     are drawn in `--diagram-edge`. On the light ground it has a contrast of
     3.9:1 against the page and 3.5:1 against the floor of a container
     (`--tray-floor`). On the dark ground it has 4.6:1 and 4.8:1. Text has
-    about 16:1. A colored line is drawn in its
-    full color on the light ground, and at three quarters of its color over the
-    page on the dark ground (`LINE_STRENGTH` in `lib/design.ts`). On the light
-    page, orange, amber, yellow, lime and sky stay under 3:1 even at full
-    color (TASK-404). A muted line is as wide as a default line. Its ink is
-    its default ink with the page mixed in, so that it keeps 70 % of it on the
-    light ground and 60 % on the dark ground (`MUTED_STRENGTH` in
-    `lib/svg/styles.ts`). A muted neutral line has about 2.4:1 against the
-    page on both grounds. It is never made translucent, and its head and its
-    pulses take the same ink (TASK-409).
-13. **The colors are tokens.** The faces, edges, highlights and shadows come
-    from the `--slab-*`, `--plinth-*` and `--mat-*` tokens in
+    about 16:1. A colored line is drawn in its full color on the light ground,
+    and at three quarters of its color over the page on the dark ground
+    (`LINE_STRENGTH` in `lib/design.ts`). On the light page, orange, amber,
+    yellow, lime and sky stay under 3:1 even at full color (TASK-404). A muted
+    line is as wide as a default line. Its ink is its default ink with the page
+    mixed in, so that it keeps 70 % of it on the light ground and 60 % on the
+    dark ground (`MUTED_STRENGTH` in `lib/svg/styles.ts`). A muted neutral line
+    has about 2.4:1 against the page on both grounds. It is never made
+    translucent, and its head and its pulses take the same ink (TASK-409).
+14. **The colors are tokens.** The faces, edges, walls, floors, highlights and
+    shadows come from the `--slab-*`, `--tray-*` and `--mat-*` tokens in
     `src/shared/theme/theme.css`, in both themes.
 
 ## What stays
@@ -139,11 +150,11 @@ are in `lib/design.ts`.
   part, it is drawn over the dashed footprint, so the part shows one ring.
 - **No filter over the picture.** The renderer draws depth with flat shapes
   only, as rule 2 says. The shell still paints nothing on the picture.
-- **The layout of an architecture board.** Each slab is drawn inside the box
-  that the layout gave it, so no card, container or region moves. One rule of
-  the Blocks engine changed. It refuses a slide that leaves the last run of a
-  line too short for its bend and its straight approach. A run that the line
-  had before is exempt.
+- **The layout of an architecture board.** Each slab and each tray is drawn
+  inside the box that the layout gave it, so no card, container or region
+  moves. One rule of the Blocks engine changed. It refuses a slide that leaves
+  the last run of a line too short for its bend and its straight approach. A
+  run that the line had before is exempt.
 
 ## Consequences
 
@@ -156,8 +167,9 @@ are in `lib/design.ts`.
   message label stands 7 units over its line instead of 5.
 - **A picture draws more shapes.** The slab look drew 2.0 to 2.7 times the
   shapes of the flat look. Its SVG files were 1.5 to 1.8 times as large. These
-  were measured on five test boards, with the Track engine in the light theme.
-  Nobody has measured how fast a large board drags with the slab look.
+  were measured before the tray, on five test boards, with the Track engine in
+  the light theme. Nobody has measured how fast a large board drags with the
+  slab look.
 - **The README pictures were made again in part.** The three diagrams, the
   banner and their thumbnails were made again with `bun run readme:assets`. The
   five filmed clips must be made again and attached to GitHub. The ask clip and
@@ -175,11 +187,19 @@ are in `lib/design.ts`.
 
 - **Vellum, stacked paper.** A part had no front edge, so the group color sat on
   the paper as a wash. Its change mark stayed a ring on the edge of the paper.
-- **Pockets, recessed containers.** Its depth did not show on the light ground
-  until a second pass. Its change mark also stayed a ring on the edge.
+- **Pockets, recessed parts.** Its depth did not show on the light ground until a
+  second pass, and its change mark stayed a ring on the edge. Its recessed
+  container came back as the tray, with walls as thick as a slab's edge
+  (TASK-412). Its plate cards and flush group inlays did not.
+- **A container as a raised plinth.** The first build of Slabs drew a container
+  as a block that stood on the page. The owner asked for an inset instead
+  (TASK-412).
+- **The top wall of a tray as the heading.** It made the heading the heaviest
+  part of every container in both themes, and it lost the front edge that the
+  container's lines leave from (TASK-412). The nameplate stays.
 - **An SVG filter for the shadow.** The construction rules out a filter, a blur
   and a mask, because a picture of a hundred cards is dragged and zoomed
   (`slab.ts`). Stacked translucent shapes give a soft shadow without one.
 - **A ring inside the face for a change mark.** The first build drew a ring five
-  units inside the face (commit 48eca5b63). The owner found that a change mark
+  units inside the face (commit 26ce14b9c). The owner found that a change mark
   drew a second box inside a card (TASK-402). The wash replaced the ring.
