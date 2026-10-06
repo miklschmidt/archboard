@@ -108,10 +108,7 @@ When the task closes, before you mark any acceptance criterion:
        `symbol-unparsed` means a file did not parse. A part that was skipped
        has no finding, and that is not the same as clear.
      - A relationship across a network hop, through an event bus or through a
-       value that a part receives. Code shows no evidence for it (TASK-367.23
-       reads an environment value that infrastructure sets), so the check
-       reports it as information at most. Anchor the code that sends or
-       subscribes.
+       value that a part receives. Anchor the code that sends or subscribes.
      - A part with no binding, and a binding into a repository that this
        machine has not registered (`./bin/dogfood repo add`).
 
