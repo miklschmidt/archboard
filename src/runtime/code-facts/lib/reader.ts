@@ -279,6 +279,28 @@ function createPass(context: PassContext): FactsPass {
 	const stats: PassStats = { read: 0, parsed: 0, cached: 0 };
 	const reads = new Map<string, Promise<FileFacts | undefined>>();
 	const resolvers = new Map<string, ImportResolver>();
+	const parses = new Map<string, Promise<ParsedFacts>>();
+	/**
+	 * The facts an adapter gives a file's bytes, read and parsed once in the
+	 * pass, whether the pass reads the file or a resolver reads it first.
+	 * @param target The real file.
+	 * @param target.absolute Its absolute path.
+	 * @param reading The adapter and how it reads the file.
+	 * @returns The facts.
+	 */
+	const parsedOnce = (
+		target: { readonly absolute: string },
+		reading: AdapterReading,
+	): Promise<ParsedFacts> => {
+		let parsing = parses.get(target.absolute);
+		if (parsing === undefined) {
+			parsing = Bun.file(target.absolute)
+				.bytes()
+				.then((bytes) => parsedFacts(context, target.absolute, bytes, reading, stats));
+			parses.set(target.absolute, parsing);
+		}
+		return parsing;
+	};
 	/**
 	 * The facts an adapter gives a file before its imports are resolved, for
 	 * a resolver that reads what the files around a file declare.
@@ -293,9 +315,7 @@ function createPass(context: PassContext): FactsPass {
 		signal.throwIfAborted();
 		const target = listedTarget(checkout, relative);
 		const reading = target === undefined ? undefined : adapterOf(target.relative);
-		if (target === undefined || reading === undefined) return undefined;
-		const bytes = await Bun.file(target.absolute).bytes();
-		return parsedFacts(context, target.absolute, bytes, reading, stats);
+		return target === undefined || reading === undefined ? undefined : parsedOnce(target, reading);
 	};
 	/**
 	 * The resolver of one adapter's imports in a checkout, made once in a pass.
@@ -332,13 +352,13 @@ function createPass(context: PassContext): FactsPass {
 		signal.throwIfAborted();
 		const target = listedTarget(checkout, relative);
 		if (target === undefined) return undefined;
-		const bytes = await Bun.file(target.absolute).bytes();
 		stats.read += 1;
 		const reading = adapterOf(target.relative);
 		if (reading === undefined) {
+			const bytes = await Bun.file(target.absolute).bytes();
 			return { adapter: "text", path: target.relative, text: new TextDecoder().decode(bytes) };
 		}
-		const parsed = await parsedFacts(context, target.absolute, bytes, reading, stats);
+		const parsed = await parsedOnce(target, reading);
 		const resolver = resolverOf(checkout, reading);
 		return resolved(parsed, target.relative, reading.adapter.name, resolver);
 	};

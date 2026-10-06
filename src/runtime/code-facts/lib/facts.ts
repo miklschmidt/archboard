@@ -44,6 +44,8 @@ type ReferenceVia = "code" | "environment" | "event" | "assembly";
 /**
  * One use of a name, at the first line the file uses it that way. `symbol` is
  * spelled as the code spells it, through `.` from a name: `ns.run`, `Ledger`.
+ * C# spells a name after `.` from a value the code does not name, such as a
+ * call's result, with the `.` alone: `.Command`.
  */
 interface Reference {
 	readonly symbol: string;
@@ -60,6 +62,12 @@ interface Reference {
 	 */
 	readonly kind?: Extract<EvidenceKind, "call" | "import" | "configured-path" | "build-dependency">;
 	readonly typeOnly: boolean;
+	/**
+	 * The syntax lets only a type stand here: a declared type, or C#'s
+	 * `new Ledger()`, an attribute, `typeof` and a base list. Such a name is no
+	 * value, so a lookup by name may take it for a type (csharp-resolution.ts).
+	 */
+	readonly asType?: true;
 }
 
 /** What one import names: `default`, `*` for the whole module, or an exported name. */
@@ -137,7 +145,8 @@ interface Target {
 	readonly symbol: string;
 	/**
 	 * The files that pass the name on to the file that uses it, as the project
-	 * file of a C# project passes on every name its files declare.
+	 * file of a C# project passes the names its files declare on to the
+	 * projects that reference it.
 	 */
 	readonly via?: readonly string[];
 }

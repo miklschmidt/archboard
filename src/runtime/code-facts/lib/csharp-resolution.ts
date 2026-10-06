@@ -20,8 +20,15 @@
 // declares: `Ledger.Post` leads to the method `Post` where it is declared,
 // and `Ledger.Instance.Post` to the property `Instance`, because what follows
 // a value is the value's type's, which only a language server knows
-// (TASK-367.14). A name declared in several files, a partial class, leads to
-// the using file itself if it declares it, else to the file named after the
+// (TASK-367.14). Where the syntax lets only a type stand (`asType`: a declared
+// type, `new`, an attribute, `typeof`, a base list), a name may be found as a
+// type in a namespace. Any other name may be a local or a member that a base
+// class declares, which the check cannot see, so in a namespace or a `using`
+// it needs the member after the type (`Ledger.Create`), and a bare `Ledger`
+// passed as a value finds no type; under a type around it, it is that type's
+// member. A member of a value the code does not name (`.Command`) is looked
+// up nowhere. A name declared in several files, a partial class, leads to the
+// using file itself if it declares it, else to the file named after the
 // type, else to the first in path order. The lookup is C#'s binding of a
 // namespace-qualified name to its declaration, so the evidence it gives is
 // resolved: the namespace and the name are the declaration's address, as an
@@ -31,12 +38,13 @@
 // A project is a `.csproj` file and the `.cs` files below its directory, as
 // the .NET SDK includes them by default: not those below a project file
 // further down, nor those in its `bin` or `obj`. A `.cs` file below no project
-// file belongs to the loose files of the checkout. A target names the project
-// file of the project that declares it, which passes the name on, so a part
-// bound to a `.csproj` holds what its project declares. A `ProjectReference`
+// file belongs to the loose files of the checkout. A `ProjectReference`
 // resolves against the directory of its project file, and the projects it
 // names are searched too, and theirs in turn, as the SDK passes project
-// references on.
+// references on. A name another project declares reaches the using file
+// through that project's file, as a name reaches a TypeScript file through
+// the `index.ts` it imports, so a part bound to a `.csproj` holds and owns what
+// its project declares for the code of other projects.
 //
 // An internal definition names the friends its project gives it: the
 // assemblies `InternalsVisibleTo` names, in an attribute of any of its files or
@@ -269,8 +277,9 @@ function enclosing(definitions: readonly Definition[], line: number): string[] {
 type Seen = readonly Project[];
 
 /**
- * Where one qualified name is declared in the projects a file sees.
- * @param seen The projects.
+ * Where one qualified name is declared in the projects a file sees. A name
+ * another project declares passes through that project's file.
+ * @param seen The projects, the file's own first.
  * @param symbol The qualified name.
  * @param from The using file.
  * @returns The target, or undefined when no project declares it.
@@ -280,28 +289,30 @@ function declaredAt(seen: Seen, symbol: string, from: string): Target | undefine
 		const declared = project.declared.get(symbol);
 		const file = declared === undefined ? undefined : chosenFile(declared, symbol, from);
 		if (file === undefined) continue;
-		return { path: file, symbol, ...(project.file === undefined ? {} : { via: [project.file] }) };
+		const passing = project === seen[0] ? undefined : project.file;
+		return { path: file, symbol, ...(passing === undefined ? {} : { via: [passing] }) };
 	}
 	return undefined;
+}
+
+/** One way to look a use up: a prefix, the names under it, and the fewest of them a match needs. */
+interface Lookup {
+	readonly prefix: string;
+	readonly names: readonly string[];
+	readonly least: number;
 }
 
 /**
  * Where one run of names leads under one prefix, in the projects a file sees.
  * @param seen The projects.
- * @param prefix The prefix.
- * @param names The use's names.
+ * @param way The prefix, the names, and the fewest names a match needs.
  * @param from The using file.
  * @returns The target of the longest run that is declared, or undefined.
  */
-function declaredUnder(
-	seen: Seen,
-	prefix: string,
-	names: readonly string[],
-	from: string,
-): Target | undefined {
-	for (let count = names.length; count > 0; count -= 1) {
-		const symbol = [prefix, ...names.slice(0, count)].filter((name) => name !== "").join(".");
-		const target = declaredAt(seen, symbol, from);
+function declaredUnder(seen: Seen, way: Lookup, from: string): Target | undefined {
+	for (let count = way.names.length; count >= way.least; count -= 1) {
+		const run = [way.prefix, ...way.names.slice(0, count)].filter((name) => name !== "");
+		const target = declaredAt(seen, run.join("."), from);
 		if (target !== undefined) return target;
 	}
 	return undefined;
@@ -319,36 +330,66 @@ interface UseScope {
 }
 
 /**
- * The prefixes and names a use is looked up as, in C#'s order: the types and
- * namespaces around it, an alias its first name is, then each using.
- * @param names The use's names.
- * @param scope Where it is.
- * @returns Each prefix with the names to look up under it.
+ * The fewest names of a use a match under a prefix needs. Under a type, a
+ * member or a `using static` type, one: the name is a member there. Under a
+ * namespace, one only where the syntax lets only a type stand; any other name
+ * may be a local or a member a base class declares, so a match there needs the
+ * member after the type (`Ledger.Create`), and a bare `Ledger` finds no type.
+ * @param prefix The prefix.
+ * @param asType Whether only a type can stand where the use is.
+ * @param seen The projects the file sees.
+ * @returns The fewest names.
  */
-function lookups(names: readonly string[], scope: UseScope): [string, readonly string[]][] {
+function leastUnder(prefix: string, asType: boolean, seen: Seen): number {
+	return asType || seen.some((project) => project.declared.has(prefix)) ? 1 : 2;
+}
+
+/**
+ * The ways a use is looked up, in C#'s order: the types and namespaces around
+ * it, an alias its first name is, then each using.
+ * @param names The use's names.
+ * @param asType Whether only a type can stand where the use is.
+ * @param scope Where it is.
+ * @returns The lookups.
+ */
+function lookups(names: readonly string[], asType: boolean, scope: UseScope): Lookup[] {
 	const [first, ...rest] = names;
 	const aliased = scope.imports.flatMap((found) =>
 		found.names.some((name) => name.local === first) ? [found.specifier] : [],
 	);
-	const usings = scope.imports.filter((found) => found.names.some((name) => name.local === "*"));
+	const usings = scope.imports.flatMap((found) =>
+		found.names.some((name) => name.local === "*") ? [found.specifier] : [],
+	);
+	/**
+	 * The lookup under one prefix.
+	 * @param prefix The prefix.
+	 * @returns The lookup.
+	 */
+	const under = (prefix: string): Lookup => ({
+		prefix,
+		names,
+		least: leastUnder(prefix, asType, scope.seen),
+	});
 	return [
-		...scope.enclosing.map((prefix): [string, readonly string[]] => [prefix, names]),
+		...scope.enclosing.map(under),
 		...aliased
 			.slice(0, 1)
-			.map((specifier): [string, readonly string[]] => ["", [specifier, ...rest]]),
-		...usings.map((found): [string, readonly string[]] => [found.specifier, names]),
+			.map((specifier) => ({ prefix: "", names: [specifier, ...rest], least: 1 })),
+		...usings.map(under),
 	];
 }
 
 /**
- * Where one use leads, by C#'s lookup.
- * @param use The use's spelling.
+ * Where one use leads, by C#'s lookup. A member of a value the code does not
+ * name (`.Command`) is found by no lookup.
+ * @param use The use.
  * @param scope Where it is.
  * @returns The target, or undefined when no project of the checkout declares it.
  */
-function lookup(use: string, scope: UseScope): Target | undefined {
-	for (const [prefix, names] of lookups(use.split("."), scope)) {
-		const target = declaredUnder(scope.seen, prefix, names, scope.from);
+function lookup(use: Reference, scope: UseScope): Target | undefined {
+	if (use.symbol.startsWith(".")) return undefined;
+	for (const each of lookups(use.symbol.split("."), use.asType === true, scope)) {
+		const target = declaredUnder(scope.seen, each, scope.from);
 		if (target !== undefined) return target;
 	}
 	return undefined;
@@ -447,7 +488,7 @@ function createCSharpResolver(
 			const seen = [own, ...referenced];
 			const targets = facts.references.map((reference: Reference) =>
 				reference.via === "code"
-					? lookup(reference.symbol, {
+					? lookup(reference, {
 							enclosing: enclosing(facts.definitions, reference.line),
 							imports,
 							seen,

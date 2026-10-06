@@ -8,8 +8,10 @@
 ;               an object or anonymous initializer, a label.
 ; @reference    a use of a name; a name after `.` is spelled with its chain.
 ; @type         code where every name is a type: a declared type, a type
-;               argument, a cast, `as`, a pattern's type, a constraint, the
-;               argument of `nameof`.
+;               argument, a cast, `as`, a pattern, a constraint, the argument
+;               of `nameof`.
+; @typename     a type the code uses at run time: what `new` constructs, an
+;               attribute, the type `typeof` names.
 ; @base         a base list, whose entries the adapter sorts into a base class,
 ;               a use at run time, and interfaces, which are types.
 ; @using        a using directive: a namespace, a type with `static`, or an alias.
@@ -17,7 +19,7 @@
 ;               `Environment.GetEnvironmentVariable("NAME")`.
 ; @friend       the assembly `[assembly: InternalsVisibleTo("Name")]` names.
 ; @skip         code where no name is a use: using directives, namespace names,
-;               preprocessor conditions.
+;               the members a property pattern names, preprocessor conditions.
 ; @unparsed     code that did not parse.
 
 ; ── Names written where they are declared or bound, never a use ─────────────
@@ -79,6 +81,10 @@
 (using_directive) @using
 (base_list) @base
 
+(object_creation_expression type: (_) @typename)
+(attribute name: (_) @typename)
+(typeof_expression type: (_) @typename)
+
 ; ── Where names are types, or not uses ──────────────────────────────────────
 (type_argument_list) @type
 (variable_declaration type: (_) @type)
@@ -98,6 +104,7 @@
 (declaration_pattern type: (_) @type)
 (recursive_pattern type: (_) @type)
 (type_pattern type: (_) @type)
+(constant_pattern) @type
 (declaration_expression type: (_) @type)
 (catch_declaration type: (_) @type)
 (foreach_statement type: (_) @type)
@@ -123,6 +130,7 @@
 (preproc_if condition: (_) @skip)
 (preproc_elif condition: (_) @skip)
 (preproc_if_in_attribute_list condition: (_) @skip)
+(subpattern (_) @skip . ":")
 (preproc_define) @skip
 (preproc_undef) @skip
 

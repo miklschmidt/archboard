@@ -4,6 +4,13 @@ public partial class Ledger
 {
     internal void Audit(Order order)
     {
-        Console.WriteLine(Environment.GetEnvironmentVariable("SHOP_AUDIT"));
+#if NET8_0_OR_GREATER
+        if (order.Total > 0)
+#else
+        if (order.Total >= 0)
+#endif
+        {
+            Console.WriteLine(Environment.GetEnvironmentVariable("SHOP_AUDIT"));
+        }
     }
 }
