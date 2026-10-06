@@ -15,7 +15,10 @@
 // file can hold a password in plain text. An interpolation takes the default
 // the file writes (`${API_HOST:-api}`) and is otherwise empty, because the
 // variables it reads (the shell's and the project's `.env`) are never read.
+// A service that builds its image runs the code of the directory it builds
+// (`runs` on its definition), which TASK-367.23 joins with what it sets.
 
+import { runsOf } from "@/runtime/code-facts/lib/compose-build";
 import type { Definition, Unparsed } from "@/runtime/code-facts/lib/facts";
 import { yamlLines, type YamlLines, type YamlPath } from "@/runtime/code-facts/lib/compose-lines";
 
@@ -313,6 +316,17 @@ function visibilityOf(kind: string, body: unknown): Pick<Definition, "visibility
 }
 
 /**
+ * The directory whose code a declaration runs: a service's build (compose-build.ts).
+ * @param kind The top-level key.
+ * @param body The declaration.
+ * @returns `runs` for a service that builds here, else nothing.
+ */
+function runsOfDeclaration(kind: string, body: unknown): Pick<Definition, "runs"> {
+	const runs = kind === "services" && isMapping(body) ? runsOf(body, interpolated) : undefined;
+	return runs === undefined ? {} : { runs };
+}
+
+/**
  * The definitions of one document: each service, network and volume.
  * @param top The document.
  * @param lines The file's lines.
@@ -329,7 +343,8 @@ function definitionsOf(
 			const span = lines.spanOf(document, [kind, name]);
 			const start = span?.start ?? 1;
 			const end = span?.own === true ? span.end : start;
-			return [{ symbol: `${kind}.${name}`, start, end, ...visibilityOf(kind, body) }];
+			const definition = { symbol: `${kind}.${name}`, start, end, ...visibilityOf(kind, body) };
+			return [{ ...definition, ...runsOfDeclaration(kind, body) }];
 		}),
 	);
 }

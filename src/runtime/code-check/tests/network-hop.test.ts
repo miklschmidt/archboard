@@ -1,0 +1,247 @@
+// The code pass joins code and infrastructure across a network hop (ADR 0046,
+// TASK-367.23): an environment value that code reads, which the compose
+// service that runs that code sets to the address of another part, is
+// configured-path evidence between the two parts. Where only one side has
+// evidence, the unsupported finding names the side that has none.
+//
+// The checkout `hops` holds a TypeScript service, `web`, built from `web/`,
+// and a Python service, `orders`, built from the root with
+// `orders/Dockerfile`. Compose sets `ORDERS_URL` for web to the orders
+// service, and the override adds `CACHE_HOST` (the cache), which the web code
+// also reads. The orders code reads `DATABASE_URL`, which compose sets to the
+// database; compose also sets `LEDGER_URL` for orders to the ledger service,
+// which no orders code reads. The web code reads `FLAGS_URL`, which nothing sets, and names from
+// its env file and an outside host, which are set. The worker service runs an
+// image built elsewhere; the board draws the jobs code inside it, and compose
+// sets the jobs code's `QUEUE_URL` to the queue.
+
+import { afterAll, beforeAll, expect, test } from "bun:test";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import type { CodeCheckOutcome } from "@/runtime/code-check/index";
+import { board, git, register, write } from "@/runtime/code-check/tests/fixture";
+
+const caller = {
+	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
+	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
+};
+const scratch = mkdtempSync(join(tmpdir(), "archboard-code-hops-"));
+const hops = join(scratch, "hops");
+const vault = join(scratch, "vault");
+process.env["ARCHBOARD_VAULT"] = vault;
+process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
+const HOPS = "github.com/test/hops";
+let outcome: CodeCheckOutcome;
+
+/**
+ * A part bound in the checkout.
+ * @param id Its id.
+ * @param name Its name.
+ * @param path Its bound path.
+ * @param extra Its symbol or its parent, if any.
+ * @param extra.symbol The address it binds in a compose file.
+ * @param extra.parent The part that holds it.
+ * @returns The node.
+ */
+function part(
+	id: string,
+	name: string,
+	path: string,
+	extra: { symbol?: string; parent?: string } = {},
+) {
+	const { symbol, parent } = extra;
+	return {
+		id,
+		name,
+		kind: "service",
+		order: id.charCodeAt(1) * 10,
+		binding: { repo: HOPS, path, ...(symbol === undefined ? {} : { symbol }) },
+		...(parent === undefined ? {} : { parent }),
+	};
+}
+
+/**
+ * A relationship with no anchor.
+ * @param id Its id.
+ * @param ends Its start and end.
+ * @param kind Its kind.
+ * @returns The relationship.
+ */
+function edge(id: string, ends: readonly [string, string], kind: string) {
+	const [from, to] = ends;
+	return { id, order: Number(id.slice(1)) * 10, from, to, kind };
+}
+
+/**
+ * The finding about one subject.
+ * @param id The subject's id.
+ * @returns The finding, if any.
+ */
+function about(id: string) {
+	return outcome.findings.find((each) => each.subject?.id === id);
+}
+
+beforeAll(async () => {
+	mkdirSync(hops, { recursive: true });
+	writeFileSync(join(scratch, "gitconfig"), "");
+	git(scratch, hops, "init", "-q", "-b", "main");
+	git(scratch, hops, "remote", "add", "origin", `https://${HOPS}.git`);
+	write(hops, {
+		"compose.yaml": [
+			"services:",
+			"  web:",
+			"    build: ./web",
+			"    environment:",
+			"      ORDERS_URL: http://orders:8000",
+			"      METRICS_URL: https://metrics.example.com",
+			"    env_file: ./web.env",
+			"  orders:",
+			"    build:",
+			"      context: .",
+			"      dockerfile: orders/Dockerfile",
+			"    environment:",
+			"      - DATABASE_URL=postgres://app@db:5432/orders",
+			"      - LEDGER_URL=http://ledger:9000",
+			"  ledger:",
+			"    build: ./ledger",
+			"  worker:",
+			"    image: registry.example.com/worker:1",
+			"    environment:",
+			"      QUEUE_URL: amqp://queue:5672",
+			"  db:",
+			"    image: postgres:16",
+			"  cache:",
+			"    image: redis:7",
+			"  queue:",
+			"    image: rabbitmq:3",
+			"",
+		].join("\n"),
+		"compose.override.yml": [
+			"services:",
+			"  web:",
+			"    environment:",
+			"      CACHE_HOST: cache",
+			"",
+		].join("\n"),
+		"web.env": "SESSION_SECRET=not-read\n",
+		"web/src/server.ts": [
+			"const orders = process.env.ORDERS_URL;",
+			'const cache = process.env["CACHE_HOST"];',
+			"const session = process.env.SESSION_SECRET;",
+			"const metrics = process.env.METRICS_URL;",
+			"const flags = process.env.FLAGS_URL;",
+			"export function listOrders() {",
+			"\treturn fetch(`${orders}/orders`, { headers: { cache, session, metrics, flags } });",
+			"}",
+			"",
+		].join("\n"),
+		"orders/app/main.py": [
+			"import os",
+			"",
+			'DATABASE_URL = os.environ["DATABASE_URL"]',
+			"",
+			"def connect():",
+			"    return DATABASE_URL",
+			"",
+		].join("\n"),
+		"jobs/worker.py": ["import os", "", 'QUEUE_URL = os.getenv("QUEUE_URL")', ""].join("\n"),
+		"ledger/app.py": "def post():\n    return 1\n",
+	});
+	git(scratch, hops, "add", "-A");
+	git(scratch, hops, "commit", "-q", "--no-gpg-sign", "-m", "the services");
+	register(scratch, { [HOPS]: hops });
+	board(vault, "Hops", [
+		{
+			id: "v1",
+			name: "Built",
+			lifecycle: "current",
+			content: {
+				nodes: [
+					part("pW", "Web", "web"),
+					part("pO", "Orders", "orders"),
+					part("pL", "Ledger", "ledger"),
+					part("pK", "Worker service", "compose.yaml", { symbol: "services.worker" }),
+					part("pJ", "Jobs", "jobs", { parent: "pK" }),
+					part("pD", "Database", "compose.yaml", { symbol: "services.db" }),
+					part("pC", "Cache", "compose.yaml", { symbol: "services.cache" }),
+					part("pQ", "Queue", "compose.yaml", { symbol: "services.queue" }),
+				],
+				edges: [
+					edge("e1", ["pW", "pO"], "http"),
+					edge("e2", ["pO", "pD"], "data"),
+					edge("e3", ["pO", "pL"], "http"),
+					edge("e4", ["pW", "pL"], "http"),
+					edge("e5", ["pD", "pC"], "data"),
+					edge("e6", ["pJ", "pQ"], "queue"),
+					edge("e7", ["pK", "pQ"], "queue"),
+				],
+			},
+		},
+	]);
+	const check = await import("@/runtime/code-check/index");
+	const read = check.readBoardsToCheck(vault, undefined);
+	if (!read.ok) throw new Error("no boards");
+	outcome = await check.checkCode(read.boards, new AbortController().signal);
+});
+
+afterAll(() => {
+	for (const [key, value] of Object.entries(caller)) {
+		if (value === undefined) delete process.env[key];
+		else process.env[key] = value;
+	}
+	rmSync(scratch, { recursive: true, force: true });
+});
+
+test("a value the code reads, set for the service that runs it to another part's address, supports the relationship between the two parts", () => {
+	// TypeScript to Python through the web build, Python to a service through
+	// the Dockerfile's directory, and code drawn inside a service with an
+	// image built elsewhere.
+	for (const supported of ["e1", "e2", "e6"]) expect(about(supported)).toBeUndefined();
+});
+
+test("a joined value no relationship draws is undrawn, with the read and the setting as its evidence", () => {
+	const undrawn = about("pC");
+	expect(undrawn?.code).toBe("RELATIONSHIP_UNDRAWN");
+	expect(undrawn?.severity).toBe("warning");
+	expect(undrawn?.evidence).toEqual([
+		{
+			kind: "configured-path",
+			resolution: "resolved",
+			from: "pW",
+			to: "pC",
+			repo: HOPS,
+			path: "web/src/server.ts",
+			line: 2,
+			symbol: "CACHE_HOST",
+		},
+		{
+			kind: "configured-path",
+			resolution: "resolved",
+			from: "pW",
+			to: "pC",
+			repo: HOPS,
+			path: "compose.override.yml",
+			line: 4,
+			symbol: "CACHE_HOST",
+		},
+	]);
+});
+
+test("an unsupported relationship across a network hop names the side with no evidence", () => {
+	const unread = about("e3");
+	expect([unread?.code, unread?.missing]).toEqual(["RELATIONSHIP_UNSUPPORTED", "code"]);
+	expect(unread?.evidence?.map((each) => [each.path, each.line, each.symbol])).toEqual([
+		["compose.yaml", 14, "LEDGER_URL"],
+	]);
+	// An env file's names and an outside host are set; only FLAGS_URL is not.
+	const unset = about("e4");
+	expect([unset?.code, unset?.missing]).toEqual(["RELATIONSHIP_UNSUPPORTED", "infrastructure"]);
+	expect(unset?.evidence?.map((each) => [each.path, each.line, each.symbol])).toEqual([
+		["web/src/server.ts", 5, "FLAGS_URL"],
+	]);
+	const neither = about("e5");
+	expect(neither?.code).toBe("RELATIONSHIP_UNSUPPORTED");
+	expect(neither?.missing).toBeUndefined();
+	expect(neither?.evidence).toBeUndefined();
+});
