@@ -44,27 +44,49 @@ interface Tone {
 const CHROMA_CAP = 0.12;
 
 /**
- * A surface in an ink's colour: the ink's own hue, at a lightness of its own
- * and a share of the ink's chroma, written as a relative OKLCH colour for CSS
- * to resolve. A mix in sRGB with a grey or a near-white surface (`mixed`)
- * turns the ink's hue and loses most of its chroma, which left a pale tint
- * pale and a deep one muddy; this keeps the hue whole and sets the lightness
- * apart from the ink's, so every ink gives a surface as light as every other.
+ * One tone of an ink: the ink's own hue, at a lightness of its own and a share
+ * of the ink's chroma, written as a relative OKLCH colour for CSS to resolve.
+ * A mix in sRGB with a grey or a near-white surface (`mixed`) turns the ink's
+ * hue and loses most of its chroma, which left a pale tint pale and a deep one
+ * muddy. This keeps the hue whole and sets the lightness apart from the ink's,
+ * so every ink gives a tone as light as every other.
  * @param ink The ink.
- * @param tone The tone, on each ground.
+ * @param step Its lightness and its share of the ink's chroma.
+ * @param step.lightness Its lightness.
+ * @param step.chroma Its share of the ink's chroma.
+ * @returns The tone.
+ */
+function tone(ink: string, { lightness, chroma }: ToneStep): string {
+	return `oklch(from ${ink} ${lightness} calc(min(c, ${CHROMA_CAP}) * ${chroma}) h)`;
+}
+
+/**
+ * A surface in an ink's colour, a tone of it ({@link tone}) on each ground.
+ * @param ink The ink.
+ * @param steps The tone, on each ground.
  * @returns The surface.
  */
-function toned(ink: string, tone: Tone): string {
-	/**
-	 * The tone on one ground.
-	 * @param step Its lightness and its share of the ink's chroma.
-	 * @param step.lightness Its lightness.
-	 * @param step.chroma Its share of the ink's chroma.
-	 * @returns The colour.
-	 */
-	const on = ({ lightness, chroma }: ToneStep): string =>
-		`oklch(from ${ink} ${lightness} calc(min(c, ${CHROMA_CAP}) * ${chroma}) h)`;
-	return lightDark(on(tone.light), on(tone.dark));
+function toned(ink: string, steps: Tone): string {
+	return lightDark(tone(ink, steps.light), tone(ink, steps.dark));
+}
+
+/** A colour in an ink: a tone of it on the light ground, a share of it over a base on the dark one. */
+interface Inked {
+	readonly light: ToneStep;
+	readonly dark: number;
+}
+
+/**
+ * A surface in an ink's colour: on the light ground a tone of the ink
+ * ({@link tone}), clean and in its own hue; on the dark ground the ink mixed
+ * into a base, as the dark picture is drawn.
+ * @param base The surface the ink is mixed into on the dark ground.
+ * @param ink The ink.
+ * @param inked The tone on the light ground, and the share of the ink on the dark.
+ * @returns The surface.
+ */
+function inkedOver(base: string, ink: string, inked: Inked): string {
+	return lightDark(tone(ink, inked.light), mixed(base, ink, inked.dark));
 }
 
 /**
@@ -103,4 +125,4 @@ function colourId(colour: string): string {
 	);
 }
 
-export { type Tone, colourId, lightDark, mixed, toned, translucent };
+export { type Inked, type Tone, colourId, inkedOver, lightDark, mixed, toned, translucent };

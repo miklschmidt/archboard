@@ -89,7 +89,7 @@ function grounds(theme: DiagramTheme) {
 	return {
 		page: themeColor(theme, "--background"),
 		floor: themeColor(theme, "--tray-floor"),
-		text: themeColor(theme, "--card-foreground"),
+		text: themeColor(theme, "--diagram-text"),
 	};
 }
 
