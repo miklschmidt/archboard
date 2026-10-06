@@ -16,9 +16,9 @@
 
 import fs from "node:fs";
 import { snapshotCheckoutAccess, type CheckoutSnapshot } from "@/runtime/code-target/index";
+import { isoTime, markedCommit } from "@/runtime/history-lens/lib/answer-commit";
 import {
 	commitsByBoundPath,
-	isLargeCommit,
 	walkCommits,
 	type WalkedCommit,
 } from "@/runtime/history-lens/lib/commits";
@@ -173,32 +173,6 @@ async function walkRepositories(
 }
 
 /**
- * A time in seconds as the answer writes it.
- * @param seconds Seconds since the epoch.
- * @returns The ISO time.
- */
-function isoTime(seconds: number): string {
-	return new Date(seconds * 1000).toISOString();
-}
-
-/**
- * One commit as the answer carries it.
- * @param repo Its repository.
- * @param commit The walked commit.
- * @returns The answer's commit.
- */
-function answerCommit(repo: string, commit: WalkedCommit): BehindCommit {
-	return {
-		repo,
-		commit: commit.commit,
-		committedAt: isoTime(commit.committedAt),
-		subject: commit.subject,
-		files: commit.changes.length,
-		large: isLargeCommit(commit),
-	};
-}
-
-/**
  * The commits that count against one part, newest first.
  * @param walk The walk of its repository.
  * @param part The part.
@@ -234,7 +208,7 @@ function answerFor(
 	const answerParts = parts.read.map((part) => {
 		const counted = countedAgainst(walks.get(part.repo), part, since);
 		for (const commit of counted) {
-			commits.set(`${part.repo}\0${commit.commit}`, answerCommit(part.repo, commit));
+			commits.set(`${part.repo}\0${commit.commit}`, markedCommit(part.repo, commit));
 		}
 		return {
 			subject: { kind: "node" as const, id: part.node.id, name: part.node.name },
