@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 14:50'
+updated_date: '2026-10-06 14:51'
 labels:
   - code-check
 dependencies:
@@ -69,4 +69,6 @@ Closing: Archboard server@TASK-367.08 branched from CcqLAdE6; TASK-368.10 adopte
 Left open: (1) module-exposure.ts (TASK-368.10) says Python adds its exposure rule with this adapter. It is not added: it needs the module's __all__ list in the facts and a rule for what __init__.py passes on (from .app import Flask as Flask); a follow-up decides it. (2) code-facts/index.ts's header still says only TypeScript and TSX have an adapter; TASK-368.10 had an uncommitted hunk on those lines, so it was left. (3) skills/archboard-dev/SKILL.md step 1 says only TypeScript and TSX have an adapter (TASK-367.26's file).
 
 Correction to Left open (2): code-facts/index.ts was clean again later, so its header now names Python and the adapter table.
+
+Gate (lanes one at a time, after a665606e1): lint exit 1 only on evidence.ts reachedBy complexity, an uncommitted hunk of another agent (TASK-367.13); fmt:check exit 1 only on INSTALL.md, another agent's uncommitted edit; type-check 0; build:frontend 0; test:modules 4133 pass 0 fail, exit 1 from one unhandled React teardown error (window is not defined) in a UI test; test:system 195/0; test:repository 20/0; test:serial-browser exit 0. code-facts and code-check owners 43/0 with --isolate; eval:skill check: suite ok.
 <!-- SECTION:NOTES:END -->
