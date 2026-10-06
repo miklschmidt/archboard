@@ -142,7 +142,7 @@ One map, from the whole system down to the file. Boards link to boards: hover a 
 
 Select a part and ask. The Codex agent in the conversation reads the board and your selection, and answers from the architecture, not from the pixels. Press **Talk** to ask out loud instead: the voice hands your question to a Codex agent that reads the boards, then says the answer back.
 
-<img src="https://github.com/user-attachments/assets/f890e8dd-05d2-4a3d-a6c6-656121b296ae" width="100%" alt="The Timeout guard is selected. A question about why this part exists and what breaks without it is typed into the composer of the conversation, which opens beside the navigator. The conversation fills with an answer drawn from the board.">
+<img src="https://github.com/user-attachments/assets/23cd59b4-966f-4ee3-b7db-f6535ba5d650" width="100%" alt="The Timeout guard is selected. A question about why this part exists and what breaks without it is typed into the composer of the conversation, which opens beside the navigator. The conversation fills with an answer drawn from the board.">
 
 <p align="center"><sub>A real answer from a Codex agent, typed in the conversation. The wait for the answer is sped up.</sub></p>
 
