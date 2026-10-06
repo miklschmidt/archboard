@@ -1729,6 +1729,18 @@
 				{
 					"code": "SERVER_UNREACHABLE",
 					"exit": 3
+				},
+				{
+					"code": "NO_CURRENT_VARIANT",
+					"exit": 2
+				},
+				{
+					"code": "UNKNOWN_VARIANT",
+					"exit": 2
+				},
+				{
+					"code": "NOT_A_DRAFT",
+					"exit": 2
 				}
 			],
 			"classification": "board"

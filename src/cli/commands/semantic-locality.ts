@@ -15,7 +15,6 @@ import {
 	LocalityReplySchema,
 	PeriodStartSchema,
 	type LocalityAnswer,
-	type LocalityReply,
 } from "@/shared/locality/index";
 
 const LocalityInputSchema = z.object({
@@ -23,6 +22,27 @@ const LocalityInputSchema = z.object({
 	variant: SelectorSchema.optional(),
 	since: z.string().optional(),
 });
+
+const noCurrentVariantRefusal = {
+	code: "NO_CURRENT_VARIANT",
+	exit: 2,
+	stream: "stderr" as const,
+	description:
+		"The board has no current variant, so nothing it describes is built. Name a draft with --variant.",
+};
+const unknownVariantRefusal = {
+	code: "UNKNOWN_VARIANT",
+	exit: 2,
+	stream: "stderr" as const,
+	description: "--variant names no variant of the board.",
+};
+const notADraftRefusal = {
+	code: "NOT_A_DRAFT",
+	exit: 2,
+	stream: "stderr" as const,
+	description:
+		"--variant names a shelved or a historical variant. The lens reads only the current variant and a draft.",
+};
 
 /**
  * A count with its noun.
@@ -136,7 +156,7 @@ const semanticLocalityContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: [serverRefusal],
+	refusals: [serverRefusal, noCurrentVariantRefusal, unknownVariantRefusal, notADraftRefusal],
 	relationships: [
 		{
 			method: "GET",
@@ -162,7 +182,7 @@ const semanticLocalityContract = defineCommand({
 		const query = new URLSearchParams({ board: input.name });
 		if (input.variant !== undefined) query.set("variant", input.variant);
 		if (input.since !== undefined) query.set("since", input.since);
-		const result: LocalityReply = LocalityReplySchema.parse(
+		const result = LocalityReplySchema.parse(
 			await requestJson<unknown>(`/api/semantic-boards/locality?${query}`, {
 				signal: context.signal,
 			}),
@@ -171,4 +191,4 @@ const semanticLocalityContract = defineCommand({
 	},
 });
 
-export { semanticLocalityContract, LocalityReplySchema, type LocalityReply };
+export { semanticLocalityContract };

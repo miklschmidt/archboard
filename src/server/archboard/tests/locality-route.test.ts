@@ -89,34 +89,35 @@ beforeAll(async () => {
 	git("remote", "add", "origin", "https://github.com/test/route.git");
 	mkdirSync(vault, { recursive: true });
 	writeFileSync(join(checkout, "src", "a.ts"), "1\n");
+	const board = (name: string, variants: object[], current?: string) => ({
+		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+		kind: "semantic-board",
+		id: name === "Shop" ? "bd" : "pl",
+		name,
+		level: "system",
+		version: 1,
+		createdAt: "2026-10-06T00:00:00.000Z",
+		updatedAt: "2026-10-06T00:00:00.000Z",
+		...(current === undefined ? {} : { current }),
+		variants,
+	});
+	const content = { nodes: [node("pA", "Checkout", "src/a.ts")] };
 	writeFileSync(
 		join(vault, "Shop.semantic.json"),
-		JSON.stringify({
-			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
-			kind: "semantic-board",
-			id: "bd",
-			name: "Shop",
-			level: "system",
-			version: 1,
-			createdAt: "2026-10-06T00:00:00.000Z",
-			updatedAt: "2026-10-06T00:00:00.000Z",
-			current: "v2",
-			variants: [
-				{
-					id: "v1",
-					name: "Before",
-					lifecycle: "historical",
-					content: { nodes: [node("pA", "Checkout", "src/a.ts")] },
-				},
-				{
-					id: "v2",
-					name: "Built",
-					lifecycle: "current",
-					parent: "v1",
-					content: { nodes: [node("pA", "Checkout", "src/a.ts")] },
-				},
-			],
-		}),
+		JSON.stringify(
+			board(
+				"Shop",
+				[
+					{ id: "v1", name: "Before", lifecycle: "historical", content },
+					{ id: "v2", name: "Built", lifecycle: "current", parent: "v1", content },
+				],
+				"v2",
+			),
+		),
+	);
+	writeFileSync(
+		join(vault, "Plan.semantic.json"),
+		JSON.stringify(board("Plan", [{ id: "v1", name: "Idea", lifecycle: "draft", content }])),
 	);
 	git("add", "-A");
 	git("commit", "-q", "--no-gpg-sign", "-m", "the board and its code");
@@ -146,20 +147,21 @@ test("the application answers the hotspots of a board's current variant", async 
 	expect(answer.hotspots.map((one) => [one.subject.name, one.count])).toEqual([["Checkout", 2]]);
 });
 
-test("a request that cannot be read is refused with the reason, and nothing is walked", async () => {
+test("a request that cannot be read is refused with the code the command maps to its exit status", async () => {
 	const base = await listen(server.app);
 	const refused = async (query: string): Promise<[number, string]> => {
 		const reply = await fetch(`${base}/api/semantic-boards/locality?${query}`);
-		const body = (await reply.json()) as { success: boolean; error: string };
+		const body = (await reply.json()) as { success: boolean; code: string };
 		expect(body.success).toBe(false);
-		return [reply.status, body.error];
+		return [reply.status, body.code];
 	};
-	expect((await refused(""))[0]).toBe(400);
-	expect((await refused("board=Nobody"))[0]).toBe(404);
-	expect((await refused("board=Shop&since=last%20week"))[0]).toBe(400);
-	expect((await refused("board=Shop&since="))[0]).toBe(400);
-	expect((await refused("board=Shop&variant=Before"))[0]).toBe(400);
-	expect((await refused("board=Shop&variant=Nowhere"))[0]).toBe(400);
+	expect(await refused("")).toEqual([400, "BAD_REQUEST"]);
+	expect(await refused("board=Nobody")).toEqual([404, "BOARD_MISSING"]);
+	expect(await refused("board=Plan")).toEqual([422, "NO_CURRENT_VARIANT"]);
+	expect(await refused("board=Shop&since=last%20week")).toEqual([400, "BAD_REQUEST"]);
+	expect(await refused("board=Shop&since=")).toEqual([400, "BAD_REQUEST"]);
+	expect(await refused("board=Shop&variant=Before")).toEqual([422, "NOT_A_DRAFT"]);
+	expect(await refused("board=Shop&variant=Nowhere")).toEqual([422, "UNKNOWN_VARIANT"]);
 });
 
 test("a caller that hangs up cancels the reading", async () => {
