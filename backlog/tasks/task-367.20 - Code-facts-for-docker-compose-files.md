@@ -1,11 +1,11 @@
 ---
 id: TASK-367.20
 title: Code facts for docker-compose files
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:16'
-updated_date: '2026-10-06 15:33'
+updated_date: '2026-10-06 16:18'
 labels:
   - code-check
 dependencies:
@@ -26,10 +26,10 @@ docker-compose is the smallest infrastructure description, and many repositories
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Services, networks and volumes are definitions
-- [ ] #2 `depends_on`, links, and environment values that name another service are configured paths, and a shared volume is a data relationship
-- [ ] #3 Override files merge in the order compose uses, and an env file contributes names only, never values
-- [ ] #4 Parts bound to compose services get the anchor, binding and undrawn checks
+- [x] #1 Services, networks and volumes are definitions
+- [x] #2 `depends_on`, links, and environment values that name another service are configured paths, and a shared volume is a data relationship
+- [x] #3 Override files merge in the order compose uses, and an env file contributes names only, never values
+- [x] #4 Parts bound to compose services get the anchor, binding and undrawn checks
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -71,3 +71,9 @@ Closing: Archboard server@TASK-367.20 branched at v100 (parent TASK-367.27 serve
 
 Gate (lanes one at a time, working tree with other agents' uncommitted work): lint exit 1 only on c-facts.test.ts (TASK-367.09, uncommitted); lint:policy exit 1 only on other agents' uncommitted files (evidence.ts max-lines from TASK-367.09's hunks, c-*, swift-*); fmt:check and type-check exit 1/2 only on nix-library.ts (TASK-367.21, uncommitted parse error); test:modules 4186 pass 2 fail (code-check.test.ts text-only skip: infra/dns.tf is now read by TASK-367.17's uncommitted Terraform adapter; a renderer first-layout timing under load); test:system 195/0; test:repository 20/0; test:serial-browser exit 0 (24 pass). On a clean copy of HEAD 1709cf70a (with this task's commits): tsc root and frontend 0, oxfmt --check clean, lint:policy and lint:tests clean, code-facts and code-check owners pass with --isolate.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The code check now reads docker-compose files: services, networks and volumes are definitions, and depends_on, links, volumes_from, network_mode, joined networks and volumes, environment values whose host is a service, and shared writable volumes are configured paths. Files and overrides are found and merged the way compose-go does, with every value interpolated first, and env files are read by an adapter of their own that keeps names only, never values. Parts bound to compose services get the anchor, binding, undrawn and backwards checks. Verified by compose-facts.test.ts and compose-check.test.ts (pass with --isolate, each fix mutation-checked) and on awesome-compose and 16 more real projects, where 557 of 566 configured paths resolve and every host read names a real service.
+<!-- SECTION:FINAL_SUMMARY:END -->
