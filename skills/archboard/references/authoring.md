@@ -499,15 +499,17 @@ where the check matched it by name only. A finding that rests only on
 candidates is information. A call through a value, such as `ledger.post()`,
 is no evidence by itself. Anchor the relationship at that call: the language
 server then names the code that the call reaches. TypeScript needs no setup.
-The file
-`language-servers.json` sets another server, or none, for the machine
-(INSTALL.md). Without a server, the answer says `language-server-missing`
+Python uses pyright or basedpyright where the machine has one, with the
+checkout's own `.venv`. The file `language-servers.json` sets another server,
+or none, for the machine (INSTALL.md). Without a server, the answer says `language-server-missing`
 once and keeps the candidates. A server that did not answer is
 `language-server-failed`. Swift runs sourcekit-lsp only from an entry that the
 user writes there. The server reads the index that `swift build` writes, and
 the check never builds. So the answer says `language-server-unready` once for
 a Swift package with no index, and keeps its candidates. Unless the user asks,
-do not build a package to clear it.
+do not build a package to clear it. C# runs csharp-ls only from an entry that
+the user writes, and says `language-server-unready` once for a checkout with no
+`.sln`, `.slnx` or `.csproj` file.
 
 A relationship across a network hop shows no evidence in code alone. An
 example is an `http` call to another service. So `check --code` joins two

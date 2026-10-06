@@ -233,6 +233,18 @@ build. The check starts a server at most once for each checkout that it reads,
 or for Swift each package, on its first question. It stops the server before
 the check answers.
 
+For Python, install pyright or basedpyright, for example with
+`npm install -g pyright` or `pipx install basedpyright`. The check runs the
+first of `pyright-langserver` and `basedpyright-langserver` that is on your
+`PATH`. pyright reads `pyrightconfig.json` or `[tool.pyright]` in the
+`pyproject.toml` at the root of the checkout. If the checkout has a virtual
+environment in `.venv` or `venv` at its root, the check tells pyright to use
+it, so imports of installed packages resolve. It does this only when Git
+tracks no file in that directory, because pyright runs its interpreter once to
+find the packages. A virtual environment outside the checkout, such as one
+that Poetry or Hatch keeps elsewhere, needs a `venvPath` and `venv` in the
+pyright configuration. Without one, pyright uses the `python` on your `PATH`.
+
 To choose another server, or to turn one off, write `language-servers.json` in
 the state directory (see [Machine state and logs](#machine-state-and-logs)).
 Each key is a language, and each value is a command or `false`:
@@ -245,8 +257,31 @@ Each key is a language, and each value is a command or `false`:
 
 `command` is a program on your `PATH` or the absolute path of a program.
 `args` is optional. `false` turns the language off. The languages are
-`typescript` and `swift`. Each check reads the file again, so a change needs no
+`typescript`, `python`, `csharp` and `swift`. Each check reads the file again, so a change needs no
 restart. A file that is not valid turns every server off until you correct it.
+
+C# has no default server. csharp-ls evaluates the MSBuild files of the
+solution, and those can run code of the checkout. So the check starts it only
+from an entry that you write. Write that entry only for checkouts that you
+trust:
+
+```json
+{
+	"csharp": { "command": "csharp-ls" }
+}
+```
+
+Install csharp-ls with `dotnet tool install --global csharp-ls`. It needs the
+.NET SDK that it was built for on your `PATH`: csharp-ls 0.28 needs .NET 10.
+The check tells it to load the `.sln` or `.slnx` file that is nearest the root
+of the checkout. With no solution, csharp-ls loads every `.csproj` file. The
+check never asks it to build or to restore packages. Its MSBuild evaluation
+still writes files under the `obj` directory of each project. A checkout with
+no `.sln`, `.slnx` or `.csproj` file that Git lists starts no server. The
+check says `language-server-unready` once for it, and its uses stay
+candidates. The Roslyn language server is not supported: it loads nothing
+until the client opens a solution with a message of its own, and by default it
+restores packages from the network. This was measured with csharp-ls 0.28.0.
 
 Swift has no default server. sourcekit-lsp evaluates `Package.swift`, and that
 runs code of the checkout. So the check starts it only from an entry that you

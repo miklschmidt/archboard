@@ -1186,6 +1186,83 @@ anchor's `ledger.post`, outside both ends. In the last run, the check started
 no server and wrote nothing into the package. No `index-build` directory and
 no container were left after any run.
 
+#### Resolving Python and C# candidates with pyright and csharp-ls
+
+TASK-367.14 measured pyright 1.1.412, basedpyright 1.39.8 and csharp-ls 0.28.0
+on 2026-10-06, each from nixpkgs in a scratch shell. Nothing was added to the
+repository. A scratch script ran the real `checkCode` over a temporary vault
+with one board, with `language-servers.json` naming each server in turn.
+
+What pyright does:
+
+- It asks the client for its configuration (`workspace/configuration`, the
+  sections `python` and `pyright`) after `initialized`, and lists the project's
+  files after that. A question about a file that it has not opened, asked
+  before it has listed the files, gets `null`. On Flask that was the first
+  question, about 60 ms after the start. An opened file is answered once its
+  configuration has come. So the Python row opens each file once.
+- With `python.pythonPath` naming `.venv/bin/python` of the checkout,
+  `BadRequestKeyError` in `app.py` resolved to `werkzeug/exceptions.py` in
+  that environment's `site-packages`. Without it, the answer was empty: the
+  `python` on the `PATH` had no Werkzeug.
+- Its outline lists a function's parameters under the function, on the line
+  of its name. The outline rule took the innermost symbol on that line, a
+  parameter, and called the function unknown. It now takes the symbol whose
+  name starts where the definition does.
+
+Flask 3.0.0 (`735a470`), with a `.venv` that held its dependencies, had a board
+of nine parts bound to symbols of `ctx.py`, `helpers.py`, `sessions.py` and
+`templating.py`. One relationship was anchored at
+`session_interface.open_session` in `ctx.py`. The pass asked three questions:
+two candidates that join two parts, and the anchor. One process ran a cold pass
+and five warm passes for each table, at a load average of about 7.
+
+| Run                     | Cold   | Warm          | Findings                                           |
+| ----------------------- | ------ | ------------- | -------------------------------------------------- |
+| No server for Python    | 181 ms | 81 to 94 ms   | two `RELATIONSHIP_UNDRAWN` information (candidate) |
+| pyright-langserver      | 506 ms | 427 to 443 ms | the same two as warnings (resolved)                |
+| basedpyright-langserver | 537 ms | 450 to 654 ms | the same two as warnings (resolved)                |
+
+So pyright adds about 350 ms to each pass on Flask: its start, and the
+analysis of the three files it opened. The run with no server said
+`language-server-missing` once. No pyright process was left after any run.
+
+What csharp-ls does:
+
+- csharp-ls 0.28.0 needs .NET 10. With the .NET 8 SDK on the `PATH` it exits
+  at once, and the check says `language-server-failed`.
+- It asks for the `csharp` section after `initialized`.
+  `solutionPathOverride` names the solution that it loads. The first question
+  waits until it has loaded the solution, about 2.3 s for two projects. It
+  answers about files that it has not opened.
+- It resolved a member that a base class declares (`Audit` in a subclass of
+  `Ledger`), a member through a value (`_ledger.Post`) and an extension method
+  (`_ledger.Close`).
+- Its MSBuild evaluation wrote design-time files under each project's `obj`
+  (`AssemblyInfo.cs`, an `.editorconfig`). It built nothing and restored no
+  package.
+- The Roslyn language server (roslyn-ls 5.11.0) loads nothing until the client
+  sends its `solution/open` notification. It answers `null` until it sends
+  `workspace/projectInitializationComplete`, and by default it runs
+  `dotnet restore`, which reaches the network. So the check does not support
+  it.
+
+A two-project solution (`Shop.App` references `Shop.Core`) had a board of five
+parts. A relationship from the `AuditedLedger` part to the `Ledger extensions`
+part was anchored at `Post`, which `Ledger` declares.
+
+| Run                             | Pass              | Findings                                                     | Skipped                   |
+| ------------------------------- | ----------------- | ------------------------------------------------------------ | ------------------------- |
+| No entry for C#                 | 83 to 218 ms      | two `RELATIONSHIP_UNDRAWN` warnings                          | `language-server-missing` |
+| csharp-ls, with `Shop.sln`      | 2,659 to 2,808 ms | the same, and `ANCHOR_MISMATCH` warning (resolved) on `Post` | none                      |
+| csharp-ls, `.csproj` files only | 2,812 ms          | the same as with `Shop.sln`                                  | none                      |
+| csharp-ls, no project file      | 207 ms            | the two warnings                                             | `language-server-unready` |
+
+The server names `Ledger.Post` as the definition of the anchor's `Post`,
+outside both ends. The C# lookup cannot reach a member that a base class
+declares. The cost is the solution load, which every pass pays again because
+no answer is kept from one pass to the next.
+
 #### Swift and Nix have no upstream WebAssembly file on npm
 
 Swift: the npm package `tree-sitter-swift` stops at 0.7.1 and has no `.wasm`.
