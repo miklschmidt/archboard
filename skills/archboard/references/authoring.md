@@ -101,7 +101,8 @@ compose file. With a symbol, two parts can bind one file and stay told apart;
 without one, the part owns the whole file or directory. A changed symbol is a
 changed binding in a comparison. `archboard check` tests the path only;
 `archboard check --code` warns with `BINDING_SYMBOL_MISSING` when the bound
-file or directory does not hold the symbol.
+file or directory does not define the symbol; a file it reads only as text must
+hold the symbol's last name.
 "View in code" opens the file; the inspector shows the symbol under the path.
 
 A binding names the implementation owner: the file whose body does what the
@@ -268,8 +269,12 @@ an end can be unbound or external, and the proof can live in another
 repository. The anchor stores no line, because a line moves with every edit
 above it. It is bookkeeping: a comparison never reads a new or better anchor
 as a change, and a proposal merges it like `emphasis`. `archboard check --code`
-warns with `ANCHOR_PATH_MISSING` when its file is not in the checkout and with
-`ANCHOR_SYMBOL_MISSING` when the file does not hold the symbol.
+warns with `ANCHOR_PATH_MISSING` when its file is not in the checkout, with
+`ANCHOR_SYMBOL_MISSING` when the file neither defines nor uses the symbol (a
+name in a comment or a string does not count, except the name of an
+environment value or an event), and with `ANCHOR_MISMATCH` when the symbol is
+defined in the checkout outside the bound code of both ends and of every part
+inside them: cite what the code of an end defines or calls.
 That record decides what a valid payload cannot:
 
 - **Siblings are not a chain** (rule 3).

@@ -15,7 +15,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as CheckModule from "@/runtime/code-check/index";
 import type { CodeCheckOutcome } from "@/runtime/code-check/index";
-import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
+import {
+	board as fixtureBoard,
+	git as fixtureGit,
+	register,
+	write,
+	type FixtureVariant,
+} from "@/runtime/code-check/tests/fixture";
 
 const caller = {
 	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
@@ -31,66 +37,20 @@ const STRANGER = "github.com/test/stranger";
 let check: typeof CheckModule;
 
 /**
- * Run Git in the checkout with this owner's identity.
+ * Run Git in the checkout.
  * @param args Git's arguments.
  */
 function git(...args: string[]): void {
-	const run = Bun.spawnSync(["git", ...args], {
-		cwd: shop,
-		env: {
-			...process.env,
-			GIT_CONFIG_GLOBAL: join(scratch, "gitconfig"),
-			GIT_CONFIG_NOSYSTEM: "1",
-			GIT_AUTHOR_NAME: "Owner",
-			GIT_AUTHOR_EMAIL: "owner@example.com",
-			GIT_COMMITTER_NAME: "Owner",
-			GIT_COMMITTER_EMAIL: "owner@example.com",
-		},
-	});
-	if (run.exitCode !== 0) throw new Error(`git ${args.join(" ")}: ${run.stderr.toString()}`);
-}
-
-/**
- * Write files under a directory.
- * @param root The directory.
- * @param files Each path and its text.
- */
-function write(root: string, files: Record<string, string>): void {
-	for (const [file, text] of Object.entries(files)) {
-		mkdirSync(join(root, file, ".."), { recursive: true });
-		writeFileSync(join(root, file), text);
-	}
-}
-
-/** One variant of a fixture board: its name, lifecycle and content. */
-interface FixtureVariant {
-	readonly id: string;
-	readonly name: string;
-	readonly lifecycle: "current" | "draft" | "historical" | "shelved";
-	readonly content: Record<string, unknown>;
+	fixtureGit(scratch, shop, ...args);
 }
 
 /**
  * Write a board into the vault.
  * @param name The board's name.
- * @param variants Its variants; the current one, if any, is the one so marked.
+ * @param variants Its variants.
  */
 function board(name: string, variants: readonly FixtureVariant[]): void {
-	const current = variants.find((variant) => variant.lifecycle === "current");
-	write(vault, {
-		[`${name}.semantic.json`]: JSON.stringify({
-			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
-			kind: "semantic-board",
-			id: name.slice(0, 8).replaceAll(" ", ""),
-			name,
-			level: "system",
-			version: 1,
-			createdAt: "2026-10-06T00:00:00.000Z",
-			updatedAt: "2026-10-06T00:00:00.000Z",
-			...(current === undefined ? {} : { current: current.id }),
-			variants,
-		}),
-	});
+	fixtureBoard(vault, name, variants);
 }
 
 /**
@@ -140,11 +100,7 @@ beforeAll(async () => {
 	git("add", "-A");
 	git("add", "-f", "infra/prod.tfvars");
 	git("commit", "-q", "--no-gpg-sign", "-m", "the code");
-	write(scratch, {
-		"repos.json": JSON.stringify([
-			{ repo: SHOP, root: shop, source: "declared", addedAt: "2026-10-06T00:00:00.000Z" },
-		]),
-	});
+	register(scratch, { [SHOP]: shop });
 	board("Shop", [
 		{
 			id: "v1",

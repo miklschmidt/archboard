@@ -1,20 +1,24 @@
-// The code pass: every claim a board makes about code, held to the files on
-// disk (ADR 0046).
+// The code pass: every claim a board makes about code, held to the code facts
+// of the files on disk (ADR 0046).
 //
-// Each finding here says that something is missing, so the check is sure of
-// it, the code contradicts the board, and a right change clears it: each one
-// is a warning. A missing path or symbol is the only finding about its binding
-// or anchor. What the pass cannot read is listed with the reason, and never
-// reported as a finding.
+// A bound symbol must be a definition in the bound file or directory, and an
+// anchor's symbol a definition or a use in its file; a file no grammar reads
+// holds a symbol wherever its last name stands. A missing path or symbol says
+// that something is missing, so the check is sure of it, the code contradicts
+// the board, and a right change clears it: each one is a warning, and the only
+// finding about its binding or anchor. An anchor that holds, and whose symbol
+// is defined outside the bound code of both ends, is `ANCHOR_MISMATCH`
+// (support.ts). What the pass cannot read is listed with the reason, and never
+// reported as a finding: a symbol found only in code that did not parse too.
 
+import path from "node:path";
 import {
-	createTextFiles,
 	otherRefOf,
 	readCheckouts,
 	readableOf,
 	type Checkout,
 	type ReadCheckout,
-	type TextFiles,
+	type Readable,
 } from "@/runtime/code-check/lib/checkouts";
 import {
 	claimsOf,
@@ -24,13 +28,17 @@ import {
 	type ClaimSite,
 } from "@/runtime/code-check/lib/claims";
 import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
-import { textTest } from "@/runtime/code-check/lib/text-reading";
+import { judgeSupport } from "@/runtime/code-check/lib/support";
+import { heldInFiles, type Held } from "@/runtime/code-check/lib/symbols";
+import { createCodeFacts, lastName, type Accept, type FactsPass } from "@/runtime/code-facts/index";
 import {
 	resolveLocalCodeTarget,
 	snapshotCheckoutAccess,
 	type CheckoutSnapshot,
+	type LocalCodeTarget,
 } from "@/runtime/code-target/index";
 import type { CodeCheckSkip, CodeFinding } from "@/shared/code-check/index";
+import type { CodeBinding } from "@/shared/code-target/index";
 import { describeSubject } from "@/shared/semantic-policy/index";
 
 /** What one pass found and what it did not read. */
@@ -39,11 +47,19 @@ interface CodeCheckOutcome {
 	readonly skipped: CodeCheckSkip[];
 }
 
+/** The code facts of every pass, kept in the server's memory by file content. */
+const codeFacts = createCodeFacts();
+
+/** A checkout a claim reads, with the repository it is. */
+type ClaimCheckout = ReadCheckout & { readonly repo: string };
+
 /** What judging one claim needs. */
 interface Pass {
 	readonly snapshot: CheckoutSnapshot;
 	readonly checkouts: ReadonlyMap<string, Checkout>;
-	readonly text: TextFiles;
+	readonly facts: FactsPass;
+	/** The kinds of file read as text in each repository. */
+	readonly readAsText: Map<string, Set<string>>;
 	readonly outcome: CodeCheckOutcome;
 }
 
@@ -106,7 +122,7 @@ function pinOf(claim: Claim, snapshot: CheckoutSnapshot): Pick<CodeCheckSkip, "r
  * @param pass The pass.
  * @returns The checkout's root and files, or undefined when the claim is not read.
  */
-function checkoutFor(claim: Claim, pass: Pass): ReadCheckout | undefined {
+function checkoutFor(claim: Claim, pass: Pass): ClaimCheckout | undefined {
 	const repo = repoOf(claim);
 	const checkout = pass.checkouts.get(repo);
 	if (checkout?.status === "unregistered") {
@@ -114,35 +130,108 @@ function checkoutFor(claim: Claim, pass: Pass): ReadCheckout | undefined {
 	}
 	if (checkout?.status !== "read") return undefined;
 	const pin = pinOf(claim, pass.snapshot);
-	if (pin.ref === undefined) return checkout;
+	if (pin.ref === undefined) return { ...checkout, repo };
 	pass.outcome.skipped.push(skipped(claim.site, { reason: "ref-not-checked-out", repo, ...pin }));
 	return undefined;
 }
 
 /**
- * Whether the files of a path hold a symbol's name, or why they cannot be read.
+ * The skip of a path the pass may not read: one Git ignores, or one never read.
+ * @param claim The claim.
+ * @param readable Why the path cannot be read.
+ * @returns The skip.
+ */
+function unreadable(claim: Claim, readable: Exclude<Readable, { status: "files" }>): CodeCheckSkip {
+	const reason = readable.status === "ignored" ? "path-ignored" : "path-never-read";
+	const at = claim.kind === "binding" ? claim.binding.path : claim.anchor.path;
+	return skipped(claim.site, { reason, repo: repoOf(claim), detail: at });
+}
+
+/**
+ * The skip of a symbol found only in code that did not parse.
+ * @param claim The claim.
+ * @param held Where it was found.
+ * @returns The skip, which names the file and its lines.
+ */
+function unparsedSkip(claim: Claim, held: Extract<Held, { status: "unparsed" }>): CodeCheckSkip {
+	const { start, end } = held.unparsed;
+	const detail = `${held.file}:${start === end ? start : `${start}-${end}`}`;
+	return skipped(claim.site, { reason: "symbol-unparsed", repo: repoOf(claim), detail });
+}
+
+/**
+ * Where the files of a path hold a symbol, or why they cannot be read: a path
+ * Git ignores, one never read, or a symbol found only in code that did not
+ * parse, each a skip.
  * @param claim The claim, for its skip.
  * @param readable What the pass may read of the path.
  * @param checkout The checkout it is in.
  * @param symbol The symbol.
  * @param pass The pass.
- * @returns Whether a file holds it, or undefined when the path is skipped.
+ * @returns Where the files hold it, or undefined when it is skipped.
  */
-function holdsSymbol(
+async function findSymbolOf(
 	claim: Claim,
-	readable: ReturnType<typeof readableOf>,
-	checkout: ReadCheckout,
+	readable: Readable,
+	checkout: ClaimCheckout,
 	symbol: string,
 	pass: Pass,
-): boolean | undefined {
+): Promise<Held | undefined> {
 	if (readable.status !== "files") {
-		const reason = readable.status === "ignored" ? "path-ignored" : "path-never-read";
-		const at = claim.kind === "binding" ? claim.binding.path : claim.anchor.path;
-		pass.outcome.skipped.push(skipped(claim.site, { reason, repo: repoOf(claim), detail: at }));
+		pass.outcome.skipped.push(unreadable(claim, readable));
 		return undefined;
 	}
-	const test = textTest(symbol);
-	return readable.files.some((file) => test.holds(pass.text.read(checkout, file) ?? ""));
+	const accept: Accept = claim.kind === "binding" ? "definition" : "definition-or-reference";
+	const held = await heldInFiles(searchOf(checkout, pass), readable.files, symbol, accept);
+	if (held.status !== "unparsed") return held;
+	pass.outcome.skipped.push(unparsedSkip(claim, held));
+	return undefined;
+}
+
+/**
+ * How one claim searches its checkout, noting each file read as text.
+ * @param checkout The checkout.
+ * @param pass The pass.
+ * @returns The search.
+ */
+function searchOf(checkout: ClaimCheckout, pass: Pass) {
+	return {
+		facts: pass.facts,
+		checkout,
+		/**
+		 * Note a file read as text, by its kind.
+		 * @param file The file.
+		 */
+		readAsText: (file: string) => {
+			const kinds = pass.readAsText.get(checkout.repo) ?? new Set<string>();
+			kinds.add(path.posix.extname(file) || path.posix.basename(file));
+			pass.readAsText.set(checkout.repo, kinds);
+		},
+	};
+}
+
+/** What a missing symbol's message says the path lacks, by what it binds and how it was read. */
+const LACKS = {
+	file: { code: "the file does not define it", text: "the file does not hold the name" },
+	directory: {
+		code: "no file below the directory defines it",
+		text: "no file below the directory holds the name",
+	},
+	anchor: { code: "the file neither defines nor uses it", text: "the file does not hold the name" },
+} as const;
+
+/**
+ * What a path lacks of a symbol, in the words of how it was read: a file a
+ * grammar reads lacks a definition or a use, and a file read as text lacks
+ * the symbol's last name.
+ * @param lacks The phrases for the claim.
+ * @param held Where the search looked.
+ * @param symbol The symbol.
+ * @returns The phrase.
+ */
+function lacking(lacks: (typeof LACKS)[keyof typeof LACKS], held: Held, symbol: string): string {
+	const asText = held.status === "absent" && held.asText === true;
+	return asText ? `${lacks.text} ${JSON.stringify(lastName(symbol))}` : lacks.code;
 }
 
 /**
@@ -165,49 +254,79 @@ function bindingPathMissing(claim: BindingClaim, root: string): CodeFinding {
 }
 
 /**
- * The warning for a bound symbol that the bound file or directory does not hold.
+ * The warning for a bound symbol that the bound file or directory does not define.
  * @param claim The binding.
  * @param symbol Its symbol.
  * @param kind Whether it binds a file or a directory.
+ * @param held Where the search looked.
  * @returns The finding.
  */
 function bindingSymbolMissing(
 	claim: BindingClaim,
 	symbol: string,
 	kind: "file" | "directory",
+	held: Held,
 ): CodeFinding {
 	const { binding, site } = claim;
-	const where = kind === "file" ? "the file does not hold" : "no file below the directory holds";
 	return warning(
 		site,
 		"BINDING_SYMBOL_MISSING",
 		`Node ${JSON.stringify(site.subject.name)} is bound to ${JSON.stringify(symbol)} in ` +
-			`${JSON.stringify(binding.path)}, and ${where} the name ` +
-			`${JSON.stringify(textTest(symbol).name)}. Bind the part to the definition it stands for ` +
-			"now, or leave out the symbol to bind the whole file or directory.",
+			`${JSON.stringify(binding.path)}, and ${lacking(LACKS[kind], held, symbol)}. Bind the part ` +
+			"to the definition it stands for now, or leave out the symbol to bind the whole file or " +
+			"directory.",
 	);
 }
 
 /**
+ * What the pass reads of a binding, or nothing when its path is not in the
+ * checkout: on a named draft that is a finding, and on the current variant the
+ * plain check's to report.
+ * @param claim The binding.
+ * @param checkout Its checkout.
+ * @param pass The pass.
+ * @returns The resolved path, or undefined.
+ */
+function boundTarget(claim: BindingClaim, checkout: ClaimCheckout, pass: Pass) {
+	const target = resolveLocalCodeTarget(claim.binding, pass.snapshot);
+	if (target.ok) return target;
+	if (claim.path) pass.outcome.findings.push(bindingPathMissing(claim, checkout.root));
+	return undefined;
+}
+
+/**
  * Judge a part's binding: on a named draft that its path is in the checkout,
- * and that the bound file or directory holds its symbol. On the current variant
- * a missing path is the plain check's to report, so the pass says nothing more.
+ * and that the bound file or directory defines its symbol.
  * @param claim The binding.
  * @param pass The pass.
  */
-function judgeBinding(claim: BindingClaim, pass: Pass): void {
+async function judgeBinding(claim: BindingClaim, pass: Pass): Promise<void> {
 	const checkout = checkoutFor(claim, pass);
-	if (checkout === undefined) return;
-	const target = resolveLocalCodeTarget(claim.binding, pass.snapshot);
-	if (!target.ok) {
-		if (claim.path) pass.outcome.findings.push(bindingPathMissing(claim, checkout.root));
-		return;
+	const target = checkout === undefined ? undefined : boundTarget(claim, checkout, pass);
+	if (checkout !== undefined && target !== undefined) {
+		await judgeBoundSymbol(claim, target, checkout, pass);
 	}
+}
+
+/**
+ * Judge the symbol of a binding whose path is in the checkout.
+ * @param claim The binding.
+ * @param target Its resolved path.
+ * @param checkout Its checkout.
+ * @param pass The pass.
+ */
+async function judgeBoundSymbol(
+	claim: BindingClaim,
+	target: LocalCodeTarget,
+	checkout: ClaimCheckout,
+	pass: Pass,
+): Promise<void> {
 	const { symbol } = claim.binding;
 	if (symbol === undefined) return;
 	const readable = readableOf(target, checkout.files);
-	if (holdsSymbol(claim, readable, checkout, symbol, pass) === false) {
-		pass.outcome.findings.push(bindingSymbolMissing(claim, symbol, target.kind));
+	const held = await findSymbolOf(claim, readable, checkout, symbol, pass);
+	if (held?.status === "absent") {
+		pass.outcome.findings.push(bindingSymbolMissing(claim, symbol, target.kind, held));
 	}
 }
 
@@ -230,69 +349,116 @@ function anchorPathMissing(claim: AnchorClaim, root: string): CodeFinding {
 }
 
 /**
- * The warning for an anchor whose file does not hold its symbol.
+ * The warning for an anchor whose file neither defines nor uses its symbol.
  * @param claim The anchor.
+ * @param held Where the search looked.
  * @returns The finding.
  */
-function anchorSymbolMissing(claim: AnchorClaim): CodeFinding {
+function anchorSymbolMissing(claim: AnchorClaim, held: Held): CodeFinding {
 	const { anchor, site } = claim;
 	return warning(
 		site,
 		"ANCHOR_SYMBOL_MISSING",
 		`The anchor of ${describeSubject(site.subject)} names ${JSON.stringify(anchor.symbol)} in ` +
-			`${JSON.stringify(anchor.path)}, and the file does not hold the name ` +
-			`${JSON.stringify(textTest(anchor.symbol).name)}. Cite the symbol that proves it now, or ` +
-			"change the board to what the code does.",
+			`${JSON.stringify(anchor.path)}, and ${lacking(LACKS.anchor, held, anchor.symbol)}. Cite ` +
+			"the symbol that proves it now, or change the board to what the code does.",
 	);
 }
 
 /**
- * Judge an anchor: its file is in the checkout and holds its symbol.
+ * Judge an anchor: its file is in the checkout and defines or uses its
+ * symbol, and where the symbol is defined, an end's bound code holds it.
  * @param claim The anchor.
  * @param pass The pass.
  */
-function judgeAnchor(claim: AnchorClaim, pass: Pass): void {
+async function judgeAnchor(claim: AnchorClaim, pass: Pass): Promise<void> {
 	const checkout = checkoutFor(claim, pass);
 	if (checkout === undefined) return;
-	const { repo, path, symbol } = claim.anchor;
-	const target = resolveLocalCodeTarget({ repo, path }, pass.snapshot);
-	if (!target.ok || target.kind !== "file") {
-		pass.outcome.findings.push(anchorPathMissing(claim, checkout.root));
-		return;
-	}
-	const readable = readableOf(target, checkout.files);
-	if (holdsSymbol(claim, readable, checkout, symbol, pass) === false) {
-		pass.outcome.findings.push(anchorSymbolMissing(claim));
-	}
+	const { repo, path: file } = claim.anchor;
+	const target = resolveLocalCodeTarget({ repo, path: file }, pass.snapshot);
+	if (target.ok && target.kind === "file") {
+		await judgeAnchorSymbol(claim, readableOf(target, checkout.files), checkout, pass);
+	} else pass.outcome.findings.push(anchorPathMissing(claim, checkout.root));
+}
+
+/**
+ * Judge the symbol of an anchor whose file is in the checkout.
+ * @param claim The anchor.
+ * @param readable What the pass may read of its file.
+ * @param checkout Its checkout.
+ * @param pass The pass.
+ */
+async function judgeAnchorSymbol(
+	claim: AnchorClaim,
+	readable: Readable,
+	checkout: ClaimCheckout,
+	pass: Pass,
+): Promise<void> {
+	const held = await findSymbolOf(claim, readable, checkout, claim.anchor.symbol, pass);
+	if (held?.status === "absent") pass.outcome.findings.push(anchorSymbolMissing(claim, held));
+	if (held?.status !== "found") return;
+	const context = { search: searchOf(checkout, pass), snapshot: pass.snapshot };
+	const mismatch = await judgeSupport(claim, held.file, checkout, context);
+	if (mismatch !== undefined) pass.outcome.findings.push(mismatch);
 }
 
 /**
  * What the pass says once for each checkout: that it is unavailable, or that
- * it was read only as text, so nothing that needs references was judged.
+ * it read some of its files as text, so for those it judged anchors and bound
+ * symbols by name and nothing that needs references.
  * @param checkouts Each repository's checkout.
- * @returns One skip for each registered checkout.
+ * @param readAsText The kinds of file read as text in each repository.
+ * @returns The skips.
  */
-function checkoutSkips(checkouts: ReadonlyMap<string, Checkout>): CodeCheckSkip[] {
+function checkoutSkips(
+	checkouts: ReadonlyMap<string, Checkout>,
+	readAsText: ReadonlyMap<string, ReadonlySet<string>>,
+): CodeCheckSkip[] {
 	return [...checkouts].flatMap(([repo, checkout]): CodeCheckSkip[] => {
 		if (checkout.status === "unavailable") {
 			return [{ reason: "checkout-unavailable", repo, detail: checkout.detail }];
 		}
-		if (checkout.status === "unregistered") return [];
-		return [
-			{
-				reason: "text-only",
-				repo,
-				detail:
-					"Read as text: its anchors and bound symbols were judged, and nothing that needs references.",
-			},
-		];
+		const kinds = [...(readAsText.get(repo) ?? [])].toSorted();
+		if (kinds.length === 0) return [];
+		const detail =
+			`Read as text: ${kinds.join(", ")}. Their anchors and bound symbols were judged by ` +
+			"name, and nothing that needs references.";
+		return [{ reason: "text-only", repo, detail }];
 	});
 }
 
 /**
- * Hold every board's anchors and bound symbols to the files on disk.
+ * The paths a claim resolves: a binding's, or an anchor's and the bindings of
+ * the parts whose bound code can hold its symbol's definition.
+ * @param claim The claim.
+ * @returns Each path, as a binding names it.
+ */
+function pathsOf(claim: Claim): CodeBinding[] {
+	if (claim.kind === "binding") return [claim.binding];
+	const holders = claim.holders.flatMap((part) =>
+		part.binding === undefined ? [] : [part.binding],
+	);
+	return [{ repo: claim.anchor.repo, path: claim.anchor.path }, ...holders];
+}
+
+/**
+ * Judge every claim in the order the boards make them, so the answer keeps
+ * that order.
+ * @param claims The claims.
+ * @param pass The pass.
+ */
+async function judgeAll(claims: readonly Claim[], pass: Pass): Promise<void> {
+	for (const claim of claims) {
+		// oxlint-disable-next-line no-await-in-loop -- one claim at a time keeps the findings in board order, and a file one claim reads is cached for the next
+		await (claim.kind === "binding" ? judgeBinding(claim, pass) : judgeAnchor(claim, pass));
+	}
+}
+
+/**
+ * Hold every board's anchors and bound symbols to the code facts of the files
+ * on disk.
  * @param boards The boards, each at the variant the check reads.
- * @param signal Cancels the pass and every Git command it runs.
+ * @param signal Cancels the pass, every Git command it runs and every file it reads.
  * @returns The findings and what the pass did not read.
  */
 async function checkCode(
@@ -300,26 +466,17 @@ async function checkCode(
 	signal: AbortSignal,
 ): Promise<CodeCheckOutcome> {
 	const claims = boards.flatMap(claimsOf);
-	const snapshot = await snapshotCheckoutAccess({
-		signal,
-		bindings: claims.map((claim) =>
-			claim.kind === "binding"
-				? claim.binding
-				: { repo: claim.anchor.repo, path: claim.anchor.path },
-		),
-	});
+	const snapshot = await snapshotCheckoutAccess({ signal, bindings: claims.flatMap(pathsOf) });
 	const checkouts = await readCheckouts(claims.map(repoOf), snapshot, signal);
 	const pass: Pass = {
 		snapshot,
 		checkouts,
-		text: createTextFiles(),
+		facts: codeFacts.pass(signal),
+		readAsText: new Map(),
 		outcome: { findings: [], skipped: [] },
 	};
-	for (const claim of claims) {
-		if (claim.kind === "binding") judgeBinding(claim, pass);
-		else judgeAnchor(claim, pass);
-	}
-	pass.outcome.skipped.push(...checkoutSkips(checkouts));
+	await judgeAll(claims, pass);
+	pass.outcome.skipped.push(...checkoutSkips(checkouts, pass.readAsText));
 	return pass.outcome;
 }
 

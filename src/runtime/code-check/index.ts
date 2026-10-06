@@ -4,8 +4,9 @@
 // It reads every board through the store at its current variant, or at the
 // draft `--variant` names, and never a historical or a shelved variant. It
 // reads only files that Git does not ignore, in checkouts this machine has
-// registered, and reads them as text until code facts read a language
-// (TASK-367.06). It writes nothing anywhere.
+// registered, through code facts (`src/runtime/code-facts`): TypeScript and
+// TSX by their syntax, and every other file as text. It writes nothing
+// anywhere.
 
 export {
 	type BoardToCheck,

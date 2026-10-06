@@ -11,6 +11,8 @@
 //
 // TASK-369.02 built this answer with `behind` filled. TASK-367.05 fills
 // `findings` from the text reading and adds the skip reasons of the code pass.
+// TASK-367.06 reads TypeScript through code facts, which adds `ANCHOR_MISMATCH`
+// and the skip `symbol-unparsed`.
 
 import { z } from "zod";
 import { EvidenceKindSchema, VaultDiagnosticSchema } from "@/shared/semantic-policy/index";
@@ -75,8 +77,12 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *   directory, which can hold secrets in plain text.
  * - `checkout-unavailable`: a registered checkout that is gone, is no longer
  *   a Git checkout, or no longer identifies as its repository.
- * - `text-only`: the check read a checkout only as text, so it judged its
- *   anchors and bound symbols and nothing that needs references.
+ * - `symbol-unparsed`: a bound or anchored symbol the check found only inside
+ *   a part of a file that did not parse (ADR 0046). Its `detail` names the
+ *   file and the lines.
+ * - `text-only`: the check read files of a checkout that no grammar reads as
+ *   text, so it judged their anchors and bound symbols by name and nothing
+ *   that needs references. Its `detail` names the kinds of file.
  *
  * A reason that holds for a whole checkout names its `repo` and no subject,
  * which is how the check says a thing once.
@@ -91,6 +97,7 @@ const CodeCheckSkipSchema = z
 			"path-ignored",
 			"path-never-read",
 			"checkout-unavailable",
+			"symbol-unparsed",
 			"text-only",
 		]),
 		board: z.string().optional(),

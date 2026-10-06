@@ -4,8 +4,10 @@
 // bound file or directory defines that symbol, and on a named draft every
 // binding claims that its path is in the checkout, because to name a draft is
 // to say its code is built now. An anchor on a relationship or a flow step
-// claims that its file holds its symbol. A binding with no symbol on the
-// current variant claims only its path, which the plain check tests.
+// claims that its file holds its symbol, and that where the symbol is defined
+// in the checkout, the bound code of an end or of a part inside one holds it.
+// A binding with no symbol on the current variant claims only its path, which
+// the plain check tests.
 
 import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
 import { edgeSubjects, nodeSubject } from "@/runtime/semantic-board-store/index";
@@ -33,6 +35,8 @@ interface AnchorClaim {
 	readonly site: ClaimSite;
 	readonly anchor: CodeAnchor;
 	readonly ends: readonly SemanticNode[];
+	/** The parts at its ends and every part inside one: whose bound code counts as an end's. */
+	readonly holders: readonly SemanticNode[];
 }
 
 type Claim = BindingClaim | AnchorClaim;
@@ -41,6 +45,8 @@ type Claim = BindingClaim | AnchorClaim;
 interface ReadVariant {
 	readonly read: BoardToCheck;
 	readonly byId: ReadonlyMap<string, SemanticNode>;
+	/** The parts directly inside each part, by its id. */
+	readonly inside: ReadonlyMap<string, readonly SemanticNode[]>;
 	/** A relationship as every diagnostic names it, `From -> To`. */
 	readonly edgeSubject: ReturnType<typeof edgeSubjects>;
 }
@@ -75,6 +81,47 @@ function endsOf(variant: ReadVariant, from: string, to: string): SemanticNode[] 
 }
 
 /**
+ * The parts at the ends of a relationship or a step, and every part inside one.
+ * @param variant The variant read.
+ * @param ends The parts at its ends.
+ * @returns The parts, each once.
+ */
+function holdersOf(variant: ReadVariant, ends: readonly SemanticNode[]): SemanticNode[] {
+	const holders = new Map<string, SemanticNode>();
+	/**
+	 * Take a part and every part inside it.
+	 * @param node The part.
+	 */
+	const visit = (node: SemanticNode): void => {
+		if (holders.has(node.id)) return;
+		holders.set(node.id, node);
+		for (const child of variant.inside.get(node.id) ?? []) visit(child);
+	};
+	for (const end of ends) visit(end);
+	return [...holders.values()];
+}
+
+/**
+ * An anchor's claim.
+ * @param variant The variant read.
+ * @param site Where the anchor sits.
+ * @param anchor The anchor.
+ * @param ends The ids of its ends.
+ * @param ends.from The id of its start.
+ * @param ends.to The id of its end.
+ * @returns The claim.
+ */
+function anchorClaim(
+	variant: ReadVariant,
+	site: ClaimSite,
+	anchor: CodeAnchor,
+	ends: { readonly from: string; readonly to: string },
+): AnchorClaim {
+	const parts = endsOf(variant, ends.from, ends.to);
+	return { kind: "anchor", site, anchor, ends: parts, holders: holdersOf(variant, parts) };
+}
+
+/**
  * The claims of the parts: a binding with a symbol, and on a named draft every binding.
  * @param variant The variant read.
  * @returns The claims.
@@ -98,14 +145,7 @@ function edgeClaims(variant: ReadVariant): AnchorClaim[] {
 	return variant.read.variant.content.edges.flatMap((edge) => {
 		if (edge.anchor === undefined) return [];
 		const site = siteOf(variant, `edges.${edge.id}.anchor`, variant.edgeSubject(edge));
-		return [
-			{
-				kind: "anchor" as const,
-				site,
-				anchor: edge.anchor,
-				ends: endsOf(variant, edge.from, edge.to),
-			},
-		];
+		return [anchorClaim(variant, site, edge.anchor, edge)];
 	});
 }
 
@@ -122,14 +162,7 @@ function stepClaims(variant: ReadVariant): AnchorClaim[] {
 			const name = `${flow.name}: ${variant.edgeSubject(step).name}: ${step.label}`;
 			const subject = { kind: "step" as const, id: step.id, name };
 			const site = siteOf(variant, `flows.${flow.id}.steps.${step.id}.anchor`, subject);
-			return [
-				{
-					kind: "anchor" as const,
-					site,
-					anchor: step.anchor,
-					ends: endsOf(variant, step.from, step.to),
-				},
-			];
+			return [anchorClaim(variant, site, step.anchor, step)];
 		}),
 	);
 }
@@ -141,9 +174,15 @@ function stepClaims(variant: ReadVariant): AnchorClaim[] {
  */
 function claimsOf(read: BoardToCheck): Claim[] {
 	const { content } = read.variant;
+	const inside = new Map<string, SemanticNode[]>();
+	for (const node of content.nodes) {
+		if (node.parent !== undefined)
+			inside.set(node.parent, [...(inside.get(node.parent) ?? []), node]);
+	}
 	const variant = {
 		read,
 		byId: new Map(content.nodes.map((node) => [node.id, node])),
+		inside,
 		edgeSubject: edgeSubjects(content),
 	};
 	return [...bindingClaims(variant), ...edgeClaims(variant), ...stepClaims(variant)];
