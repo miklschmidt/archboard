@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:17'
-updated_date: '2026-10-06 10:44'
+updated_date: '2026-10-06 10:46'
 labels:
   - interfaces
   - architecture
@@ -113,4 +113,20 @@ Archboard server@TASK-368.05 (branched from TASK-373 at v21, adopted at v24). An
 - Summary: 'Service level: the Archboard server module, the routes and socket its callers reach, the one write boundary behind them, and the modules it calls outside itself. Follow linked subjects for related levels.'
 - Compare: one interface change (Archboard server gains the 9 entry points and the 3 callers), 1 node added, 17 parents changed, all 52 relationships unchanged.
 - Picture: 4767x3231 against 4028x3043. The container fills the board, and Agent CLI and Browser enter from the right edge. The store, the lease and the renderer sit outside in their own Board writes and Drawing regions, so those groups now draw one region inside the container and one outside, the renderer's one region per container. Crossing density is about what the current variant shows. No view needed an edit.
+
+Command interface@TASK-368.05 (branched from TASK-381 at v15, adopted at v18). Another task's draft, TASK-369.02, was already open here, branched from TASK-381. TASK-381 is now historical, so that draft's adoption needs the archboard-dev PARENT_SUPERSEDED step.
+- Container 1: Command contract (module), bound to src/cli/command-contract. Its children are Bootstrap (bootstrap.ts), Status (status.ts), Contract execution (lib/execution.ts) and a new entry point runCommand (function, runner.ts).
+- Container 2: Commands (module), bound to src/cli/commands. Its children are the 16 parts bound to its root files: Command catalogue (run.ts) and the 15 command families.
+- Outside: Entry point (src/bin.ts), Command routing (drawn whole, links to Command dispatch), Board client, Server client, Board rasterizer, Walkthrough recorder, Archboard server. Every existing id kept.
+- Moved: Command routing -> Contract execution (jKqNz2j3) now ends on runCommand, keeping its id, label, hero emphasis and traffic. Added: runCommand -> Contract execution, call 'executeCommand', hero with the same traffic, because it is on the same spine.
+- Evidence: command-routing/lib/session.ts:12 imports runCommand from the root file runner.ts and calls it at :75. runner.ts:2 imports the private executeCommand and calls it at :16. bin.ts runs applyCliBootstrap from bootstrap.ts (:18-19) and runCli from commands/run.ts (:30-31), both root files, so those two edges already landed on entry points.
+- The view 'One command's path' selected Command routing and Contract execution. It now also selects runCommand, or the moved call would drop out of the view. Views belong to the board, so this is the one view edit.
+- semantic inspect --container 'Command contract': 2 entry points (Bootstrap and runCommand), 2 hidden parts (Contract execution, Status), 2 callers (Command routing, Entry point), 17 outgoing, 1 pass-through (runCommand). The code agrees: runner.ts's body is the one call to executeCommand, and its comment calls it the module's public entry point.
+- semantic inspect --container 'Commands': 16 entry points, 0 hidden parts, 2 callers (Entry point, Contract execution), 16 outgoing. Every command file sits at the module root, and Contract execution calls each contract's handler through the contract value, so every child is an entry point. 12 of them read as pass-through by shape: each takes the validated input and sends one call to Board client or Server client. That is information, not a fault. Each handler shapes the request and presents its answer, which this service-level board does not draw.
+- Summary: 'Service level: the CLI application's modules, the entry points one command passes through, and its command groups. Not separate deployed services. Follow linked subjects for related levels.'
+- Compare: interface changes for both containers (Command contract gains Bootstrap and runCommand, with callers Command routing and Entry point; Commands gains its 16 entry points, with callers Entry point and Contract execution). 3 nodes added, 19 parents changed, 1 relationship changed (to: Contract execution -> runCommand), 1 added, 40 unchanged.
+- Picture: the full board draws 7210x1993 against 3431x2598. The renderer lays the Commands container's 16 children in one row under Contract execution's fan-out, so the board is now wide and short. That is a layout outcome of correct meaning, and the board was not bent to change it (ADR 0023). The view 'One command's path' draws 1651x1695: Commands, Command routing and Command contract read in order, with runCommand -> Contract execution inside the contract. 'What the CLI can be asked' draws 4802x1413, against 6365x834 before. Labels are legible in each picture.
+
+Archboard: no module seam. It is the system board. Its parts are the processes that run (Agent CLI, Archboard server, Browser, Skill evaluation, Codex app-server, Headless Chromium, ffmpeg) and what they keep (Board vault, Repository checkout, Codex home, Recorded talks). It is not a src/<area>/<module>. Each process card links down to the board that draws its modules as containers, so no container is drawn and no proposal was branched.
+- Its 3 measured crossings are kept on purpose. Archboard server -> Codex home, Codex app-server -> Codex home and Agent CLI -> Recorded talks are data relationships from a process to a store on disk, not imports. The store cards bind to the file that owns where the store lives and its format (codex-process/lib/storage.ts, walkthrough-recorder/lib/talk-files.ts), following evidence rule 2. Codex app-server is another program, which reads its home directly. Rebinding the stores to a module root would name a file that does not own them.
 <!-- SECTION:NOTES:END -->
