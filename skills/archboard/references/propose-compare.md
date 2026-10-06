@@ -96,7 +96,7 @@ nothing states where its code will live, so it stays unbound.
    drawn, or on a board nobody has built against the one it came from; the
    current variant itself, and a first draft on such a board, are refused.
    When the proposal adds or changes a board view, read [sequences, views and
-   walkthroughs](references/sequences-views-walkthroughs.md) for the two
+   walkthroughs](sequences-views-walkthroughs.md) for the two
    meanings of a selection scope before writing it.
 
 4. Only when asked, adopt with the version returned by the proposal edit:
@@ -167,7 +167,7 @@ row and what each draft costs a caller, and let the person choose. When told
 to keep `One index`, shelve `Entry per job` with the reason, for example "each
 caller then depends on how the store splits its work".
 
-Read [variants](references/variants.md) for what the comparison counts and
+Read [variants](variants.md) for what the comparison counts and
 what it is read against, for a proposal that holds disagreements after its
 predecessor moved
 (`semantic resolve`), and for adoption rules.

@@ -170,6 +170,6 @@ archboard semantic rasterize "Skill install" --view "Setup exchange" --out /tmp/
    when the steps carry anchors: each one holds in the files on disk.
 
 Read [sequences, views and
-walkthroughs](references/sequences-views-walkthroughs.md) for view scopes
+walkthroughs](sequences-views-walkthroughs.md) for view scopes
 (isolating one relationship, a region, the whole board), beat subjects and
 identity, and single-participant flows.
