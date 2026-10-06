@@ -6,14 +6,6 @@ import { lightDark } from "@/transformers/semantic-renderer/lib/svg/colour";
 interface Palette {
 	/** The page behind everything. */
 	readonly background: string;
-	/** A region band's fill. */
-	readonly band: string;
-	/** A region band's one-pixel rule. */
-	readonly bandBorder: string;
-	/** A card's fill. */
-	readonly card: string;
-	/** A card's one-pixel rule. */
-	readonly cardBorder: string;
 	/** A card's top face, before its group tints it (`lib/svg/slab.ts`). */
 	readonly slabFace: string;
 	/** A card's front edge, the thickness that shows along its foot. */
@@ -26,9 +18,11 @@ interface Palette {
 	readonly slabSheen: string;
 	/** One layer of the stacked shadow a part casts. */
 	readonly slabShadow: string;
-	/** A container's top face, before its kind tints it. */
+	/** A container's top face at the top level. */
 	readonly plinthFace: string;
-	/** The band of a container's face its heading is printed on. */
+	/** What a nested container's face rises toward, a step for each level. */
+	readonly plinthRise: string;
+	/** The nameplate across the top of a container's face, before its kind tints it. */
 	readonly plinthHead: string;
 	/** A container's front edge. */
 	readonly plinthEdge: string;
@@ -46,15 +40,11 @@ interface Palette {
 	readonly edge: string;
 	/** A connection deliberately pushed into the background. */
 	readonly edgeMuted: string;
-	/** The tile a kind glyph sits on. */
-	readonly chip: string;
 	/** A kind glyph. */
 	readonly glyph: string;
-	/** A label pill's fill, opaque so it can be read wherever it lands. */
+	/** A label chip's face, opaque so it can be read wherever it lands. */
 	readonly pill: string;
-	/** A label pill's rule. */
-	readonly pillBorder: string;
-	/** A label pill's text. */
+	/** A label chip's text. */
 	readonly pillText: string;
 	/** The ring around whatever the person has selected. */
 	readonly selection: string;
@@ -102,10 +92,6 @@ function token(name: string): string {
  */
 const PALETTE: Palette = {
 	background: token("--background"),
-	band: token("--sidebar"),
-	bandBorder: token("--sidebar-border"),
-	card: token("--muted"),
-	cardBorder: token("--diagram-edge"),
 	slabFace: token("--slab-face"),
 	slabEdge: token("--slab-edge"),
 	slabDeep: token("--slab-deep"),
@@ -113,6 +99,7 @@ const PALETTE: Palette = {
 	slabSheen: token("--slab-sheen"),
 	slabShadow: token("--slab-shadow"),
 	plinthFace: token("--plinth-face"),
+	plinthRise: token("--plinth-rise"),
 	plinthHead: token("--plinth-head"),
 	plinthEdge: token("--plinth-edge"),
 	matFace: token("--mat-face"),
@@ -122,10 +109,8 @@ const PALETTE: Palette = {
 	faint: token("--muted-foreground"),
 	edge: token("--diagram-edge"),
 	edgeMuted: token("--muted-foreground"),
-	chip: token("--muted"),
 	glyph: token("--muted-foreground"),
 	pill: token("--popover"),
-	pillBorder: token("--diagram-edge"),
 	pillText: token("--popover-foreground"),
 	selection: token("--diagram-selection"),
 	warning: lightDark(token("--warning-foreground"), token("--warning")),

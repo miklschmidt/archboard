@@ -34,7 +34,9 @@ import { slab, slabSeat, slabShadow } from "@/transformers/semantic-renderer/lib
 import { paintTraffic } from "@/transformers/semantic-renderer/lib/svg/traffic";
 import {
 	PART_ATTRIBUTE,
+	ghostOpacity,
 	markedBox,
+	standingPalette,
 	standingSwipe,
 	subjectGroup,
 	warningOnLine,
@@ -160,6 +162,7 @@ function paintEdgeLine(
 		"g",
 		{
 			...subjectGroup(lineKind(step), edge.id, standing),
+			opacity: ghostOpacity(standing),
 			mask: mask === undefined ? undefined : `url(#${mask})`,
 			"data-type-name": appearance.name,
 			"data-type-kind": edge.kind,
@@ -215,9 +218,9 @@ function paintEdgeWords(
 			? ""
 			: lines([
 					slabSeat(label.box, PILL_RADIUS),
-					slabShadow(label.box, PILL_RADIUS, "chip", palette),
-					slab(label.box, labelLook(palette), palette, standing),
-					paintTextRuns(label.measured.runs, label.box, palette),
+					slabShadow(label.box, PILL_RADIUS, "chip", palette, standing),
+					slab(label.box, labelLook(palette, standing), palette, standing),
+					paintTextRuns(label.measured.runs, label.box, standingPalette(palette, standing)),
 				]);
 	return pill === "" && badge === ""
 		? ""

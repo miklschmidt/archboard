@@ -19,17 +19,21 @@
 //   words — paths, not `<text>` — because a legend and a caption are the
 //   viewer's business and would be text this module invented.
 //
-//   **Lightness.** A removed subject, and only a removed subject, is ghosted:
-//   the whole group drops to half opacity, fill, words and all. That is the one
-//   thing a reader has to get right without looking twice, because a removed
-//   subject is drawn as context for the change and is *not on the proposal*. A
-//   thing you can see through is not a thing the design claims to have.
+//   **Lightness.** A removed subject, and only a removed subject, is ghosted.
+//   That is the one thing a reader has to get right without looking twice,
+//   because a removed subject is drawn as context for the change and is *not on
+//   the proposal*. A thing you can see through is not a thing the design claims
+//   to have. A line is ghosted whole: its group drops to under half opacity. A
+//   card, a container, a participant and a label are blocks (`slab.ts`), and a
+//   removed one has lost its thickness: a flat, see-through face with no front
+//   edge and no shadow, its words faded to the secondary ink, which still reads
+//   at 4.5:1 ({@link standingPalette}).
 //
-//   **Texture.** A ring says it a third time: solid for added, a long dash
-//   for changed and for removed. A card, a container and a label are blocks
-//   with no outline of their own (`slab.ts`), so the standing draws a ring
-//   inside the block's top face, in the standing's ink and texture, and leaves
-//   the block's front edge in the tone of the group it serves. On a line — where a dash already means
+//   **Texture.** The block's face says it a third time. The group's colour
+//   lives on a block's front edge and the kind's on a container's nameplate,
+//   which leaves the face free: an added block's face is washed in green, a
+//   changed one's washed in orange and hatched, and a removed block leaves a
+//   dashed footprint where it stood. On a line — where a dash already means
 //   what kind of relationship it is, and the stroke weight already means how much
 //   attention its author asked for — the texture is carried by a wide tinted
 //   swipe laid under the line instead, so neither of the two meanings the line
@@ -42,9 +46,9 @@
 // line and a dashed rule round the label said the same fact twice more, and a
 // page of them read as a column of dashed boxes.
 //
-// Only then colour, and colour never alone: green added, amber changed, red
+// Only then colour, and colour never alone: green added, orange changed, red
 // removed, from the palette. Take all three hues away and the picture still
-// reads — pin shape, ghosting and ring texture are each sufficient.
+// reads — pin shape, ghosting and the face's texture are each sufficient.
 //
 // ## What it deliberately does not touch
 //
@@ -57,9 +61,11 @@
 // ({@link markedBox}) and the whole drawing moves in by that much, as one.
 //
 // The selection halo. That ring sits three units *outside* a subject and is
-// invisible until a viewer puts `is-selected` on the group; the standing's ring
-// sits five units inside the subject's face and its pin on its corner. A
-// selected added node shows both, well apart, and neither is the other.
+// invisible until a viewer puts `is-selected` on the group; the standing is on
+// the subject's face and its pin on its corner, so a selected added node shows
+// one ring, never two. A removed block's footprint is the one outline a
+// standing draws, and its selection ring is drawn over that footprint rather
+// than around it.
 //
 // ## The warning, which is not a standing
 //
@@ -108,8 +114,13 @@ const PIN_INSET = 3;
 const PIN_RADIUS = 9.2;
 
 const PIN_STROKE = 1.7;
+/**
+ * The rim of the page's ground round a pin, which cuts it cleanly out of the
+ * edge, the highlight and the shadow of the corner it stands on.
+ */
+const PIN_RIM = 1.5;
 
-/** What a ghosted subject's ink is worth. */
+/** What a ghosted line's ink is worth. */
 const GHOST_OPACITY = 0.4;
 
 /**
@@ -137,20 +148,13 @@ const PIN_GLYPH: Readonly<Record<SubjectStanding, string>> = {
 	unchanged: "",
 };
 
-/** The texture each standing puts on the ring inside a subject's face (`slab.ts`). */
-const RING_DASH: Readonly<Record<SubjectStanding, string | undefined>> = {
-	added: undefined,
-	removed: "7 3.5",
-	changed: "7 3.5",
-	unchanged: undefined,
-};
-
 /**
- * The same three textures, at the scale a swipe under a line is drawn at.
+ * The texture a swipe under a line takes: solid for added, a dash for changed
+ * and for removed.
  *
- * Longer than the ring's, because a band several units wide with square ends
- * needs a dash longer than it is thick or the texture stops reading as a broken
- * line and starts reading as a row of beads.
+ * A dash longer than the band is thick, because a band several units wide with
+ * square ends needs one or the texture stops reading as a broken line and
+ * starts reading as a row of beads.
  */
 const SWIPE_DASH: Readonly<Record<SubjectStanding, string | undefined>> = {
 	added: undefined,
@@ -243,7 +247,7 @@ const PART_ATTRIBUTE = "data-semantic-part";
 
 /**
  * The attributes every drawn subject's group carries: what it is, which subject
- * it is, how it stands, and the ghosting that half of a removal is.
+ * it is, and how it stands.
  *
  * One place, so that a group a viewer can select is a group a viewer can select
  * by standing, without each painter having to remember to say so.
@@ -261,8 +265,32 @@ function subjectGroup(
 		"data-semantic-kind": kind,
 		"data-semantic-id": id,
 		"data-semantic-standing": standing,
-		opacity: standing === "removed" ? GHOST_OPACITY : undefined,
 	};
+}
+
+/**
+ * The ghosting of a removed line: a relationship's route, a message and its
+ * words, a participant's column of time. A block draws its own ghost
+ * (`slab.ts`) and its group stays at full strength.
+ * @param standing How the subject stands, or undefined when this is not a proposal.
+ * @returns The opacity its group takes, or undefined for a line still on the proposal.
+ */
+function ghostOpacity(standing: SubjectStanding | undefined): number | undefined {
+	return standing === "removed" ? GHOST_OPACITY : undefined;
+}
+
+/**
+ * The colours a subject's own words are drawn with: a removed block's names
+ * and notes are faded to the secondary ink, which reads at 4.5:1 on its
+ * see-through face as it does on every surface it can lie on.
+ * @param palette The theme's colours.
+ * @param standing How the subject stands, or undefined when this is not a proposal.
+ * @returns The palette its words take.
+ */
+function standingPalette(palette: Palette, standing: SubjectStanding | undefined): Palette {
+	return standing === "removed"
+		? { ...palette, foreground: palette.muted, pillText: palette.muted }
+		: palette;
 }
 
 /**
@@ -315,7 +343,12 @@ function standingPinAt(
 	return wrap(
 		"g",
 		{ transform: `translate(${coord(x)},${coord(y)})` },
-		tag("circle", { r: PIN_RADIUS, fill: ink }) +
+		tag("circle", {
+			r: PIN_RADIUS,
+			fill: ink,
+			stroke: palette.background,
+			"stroke-width": PIN_RIM,
+		}) +
 			tag("path", {
 				d: PIN_GLYPH[standing],
 				fill: "none",
@@ -513,14 +546,15 @@ export {
 	type UnsettledOf,
 	BADGE_DEPTH,
 	BADGE_SIZE,
-	RING_DASH,
 	PIN_INSET,
 	HEAD_ATTRIBUTE,
 	PART_ATTRIBUTE,
 	MEMBERS_ATTRIBUTE,
 	TRAFFIC_ATTRIBUTE,
+	ghostOpacity,
 	markedBox,
 	standingInk,
+	standingPalette,
 	standingsFrom,
 	subjectGroup,
 	standingPin,

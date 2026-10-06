@@ -98,12 +98,12 @@ describe("a card's body takes its group's colour and its chip its type's", () =>
 				expect(sameHue(hueOf(blockOf(markup).edge), green), id).toBeTrue();
 				expect(markup).toContain('data-body-color="green"');
 			}
-			// A container draws its own frame in its kind's colour and passes none to what it holds.
+			// A container draws its own nameplate in its kind's colour and passes none to what it holds.
 			expect(groupOf(drawn, "node", "side")!.markup).toContain('data-body-color="neutral"');
 			const frame = groupOf(drawn, "region", "cloud")!.markup;
 			expect(frame).toContain('data-body-color="blue"');
 			expect(
-				sameHue(hueOf(blockOf(frame).edge), hueOf(themeColor(theme, "--semantic-blue"))),
+				sameHue(hueOf(blockOf(frame).face), hueOf(themeColor(theme, "--semantic-blue"))),
 			).toBeTrue();
 			// A group's only member at its level still takes the group's colour (ADR 0038).
 			expect(groupOf(drawn, "node", "lone")!.markup).toContain('data-body-color="green"');
@@ -136,7 +136,7 @@ describe("a card's body takes its group's colour and its chip its type's", () =>
 		expect(groupOf(yellow.svg, "node", "gate")!.markup).toContain('data-body-color="yellow"');
 	});
 
-	test("comparison draws its ring while preserving the block's tones and type chips", async () => {
+	test("comparison washes the face while preserving the block's edge and type chip", async () => {
 		const rendered = await renderArchitecture({
 			content: orderedFixture({ nodes }),
 			policy,
@@ -145,13 +145,13 @@ describe("a card's body takes its group's colour and its chip its type's", () =>
 		const api = groupOf(paintedIn(rendered.svg), "node", "api")!.markup;
 		const unmarked = await renderArchitecture({ content: orderedFixture({ nodes }), policy });
 		const before = groupOf(paintedIn(unmarked.svg), "node", "api")!.markup;
-		expect(api).toMatch(
-			new RegExp(
-				`fill="none" stroke="${themeColor("light", "--standing-changed")}"[^>]*stroke-dasharray`,
-				"u",
-			),
-		);
-		expect(blockOf(api)).toEqual(blockOf(before));
+		// The face takes the standing's colour; the front edge keeps the block's.
+		expect(
+			sameHue(hueOf(blockOf(api).face), hueOf(themeColor("light", "--standing-changed"))),
+		).toBeTrue();
+		expect(blockOf(api).edge).toBe(blockOf(before).edge);
+		// No second box inside the block: nothing on it but the selection ring is outlined.
+		expect(api).not.toMatch(/<rect (?!class="ab-halo")[^>]*fill="none" stroke=/u);
 		expect(glyphOf(api)).toBe(glyphOf(before));
 		expect(
 			sameHue(hueOf(glyphOf(api)), hueOf(themeColor("light", "--semantic-violet"))),

@@ -2,7 +2,9 @@
 // left, as a keycap or a foam-core model is: a flat top face with a fine
 // highlight along its top edge and light that falls off down it, a front edge
 // along its foot that shows how thick the block is, and a soft shadow it casts
-// down and to the right on whatever it stands on.
+// down and to the right on whatever it stands on. A container's block carries a
+// nameplate: a plate lying across the top of its face, flush with its sides,
+// with a front edge of its own and a short shadow on the face below it.
 //
 // The layout box is the block's silhouette. Its thickness is drawn inside the
 // box, along its foot, so a line that ends on the foot of a box meets the edge a
@@ -11,16 +13,24 @@
 // depth is flat shapes, one shared gradient and stacked translucent copies of
 // the silhouette.
 //
-// Each shape a block is built of is a rect drawn at an offset from the part's
-// box, so a viewer that carries a card from one picture to the next
-// (`picture-cards.ts`) draws each one at the moving box. A card, a container
-// or a relationship's label opens with its seat, its box unpainted, which is
-// the one shape of it that takes the pointer and the first shape a reader of
-// the markup finds.
+// A proposal's standing is said on the face, which the block's own colour
+// leaves free: the group's or the kind's colour is its front edge's and its
+// nameplate's. An added block's face is washed in the standing's green, a
+// changed one's in its orange and hatched; a removed block has lost its
+// thickness. Its ghost is a flat, see-through face inside a dashed footprint
+// where the block stood, with no front edge and no shadow.
+//
+// Each shape a block is built of is a rect at an offset from the part's box, or
+// a line across it, so a viewer that carries a card from one picture to the
+// next (`picture-cards.ts`) draws each one at the moving box and stretches it
+// with the box. A card, a container or a relationship's label opens with its
+// seat, its box unpainted, which is the one shape of it that takes the pointer
+// and the first shape a reader of the markup finds.
 
+import { PLATE_THICKNESS } from "@/transformers/semantic-renderer/lib/design";
 import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
-import { lightDark, mixed } from "@/transformers/semantic-renderer/lib/svg/colour";
+import { lightDark, mixed, translucent } from "@/transformers/semantic-renderer/lib/svg/colour";
 import {
 	lines,
 	tag,
@@ -28,7 +38,6 @@ import {
 	type Attributes,
 } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
-	RING_DASH,
 	standingInk,
 	type SubjectStanding,
 } from "@/transformers/semantic-renderer/lib/svg/standing";
@@ -52,6 +61,32 @@ function tinted(base: string, ink: string | undefined, share: Share): string {
 	return share.light === share.dark ? light : lightDark(light, mixed(base, ink, share.dark));
 }
 
+/**
+ * How far an ink is shaded toward `--slab-deep` before it tints a face on the
+ * dark ground. A full-strength ink is far lighter than a dark face, so a tint
+ * of it would lift the face toward the secondary words on it; a deeper shade
+ * of the same hue carries as much colour and keeps the face's lightness.
+ */
+const DEEPEN = 0.45;
+
+/**
+ * A face washed with an ink: the ink itself on the light ground, a deeper
+ * shade of it on the dark ({@link DEEPEN}), so the words on the face keep
+ * their contrast on either.
+ * @param base The face.
+ * @param ink The ink, or none to leave the face as it is.
+ * @param share How much of it, on each ground.
+ * @param palette The theme's colours.
+ * @returns The washed face.
+ */
+function washed(base: string, ink: string | undefined, share: Share, palette: Palette): string {
+	if (ink === undefined) return base;
+	return lightDark(
+		mixed(base, ink, share.light),
+		mixed(base, mixed(ink, palette.slabDeep, DEEPEN), share.dark),
+	);
+}
+
 /** How a block looks: its two tones, how thick it is and how round its corners are. */
 interface SlabLook {
 	/** Its top face. */
@@ -64,17 +99,24 @@ interface SlabLook {
 	/** Whether light falls off down its face: a card's and a chip's, not a container's broad top. */
 	readonly sheen: boolean;
 	/**
-	 * A container's heading: how far down its face the heading's band reaches,
-	 * and the band's tone. What the container itself relates to leaves from the
-	 * band's lower edge, so the step in tone is that line's visible origin.
+	 * Whether a changed part's face is hatched: a card's and a container's. A
+	 * label's is not, since the swipe under its line carries that texture.
 	 */
-	readonly header?: { readonly height: number; readonly face: string } | undefined;
+	readonly hatch?: boolean;
 	/**
-	 * How far inside the face a standing's ring is drawn: by default far enough
-	 * that the selection ring, three units outside the box, stands well apart
-	 * from it, and closer for a label, which has no selection ring of its own.
+	 * A container's nameplate: how far down the face it reaches, from the top of
+	 * the box to the foot of its own front edge, its face and edge, and the
+	 * untinted ground its face is tinted from. What the container itself relates
+	 * to leaves from that foot, so the plate's front edge is that line's visible
+	 * origin. A standing washes the plate's ground in place of its kind's tint,
+	 * one tint to a face, and the kind keeps the plate's edge and the chip.
 	 */
-	readonly ringInset?: number | undefined;
+	readonly plate?: {
+		readonly height: number;
+		readonly face: string;
+		readonly edge: string;
+		readonly ground: string;
+	};
 }
 
 /** How wide the highlight along the top edge of a face is. */
@@ -96,6 +138,25 @@ function glintOf(face: string, palette: Palette): string {
 /** The light that falls off down a face, one gradient every face shares. */
 const SHEEN_ID = "ab-slab-sheen";
 
+/** The hatch over a changed block's face, one pattern every face shares. */
+const HATCH_ID = "ab-slab-hatch";
+/** How far apart the hatch's strokes are, and how wide each is. */
+const HATCH_PITCH = 6;
+const HATCH_STROKE = 1.25;
+/**
+ * How strong a hatch stroke is over the washed face, on each ground: a texture
+ * the words read through, there to say "changed" to a reader who cannot tell
+ * the orange wash from the green.
+ */
+const HATCH: Share = { light: 0.2, dark: 0.12 };
+
+/**
+ * How much of its standing's ink an added or changed face is washed with: a
+ * clear tint at a glance that still leaves the face the ground its words were
+ * chosen for.
+ */
+const WASH: Share = { light: 0.15, dark: 0.2 };
+
 /** One translucent copy of a silhouette: how far it is moved, how much larger, and how dark. */
 interface ShadowLayer {
 	readonly dx: number;
@@ -111,8 +172,9 @@ interface ShadowLayer {
  * so a near-white card keeps its top edge on the near-white page. None
  * reaches more than twelve units past the box. A group's region is a mat
  * lying flat on what holds it and casts none; the tab its caption is printed
- * on casts a short one on the mat, and none past the mat's own edge. A chip
- * and a relationship's label, many and small, cast only a contact shadow.
+ * on casts a short one on the mat, and none past the mat's own edge. A chip,
+ * a relationship's label and an activation bar, many and small, cast only a
+ * contact shadow.
  */
 const SHADOWS = {
 	card: [
@@ -139,6 +201,20 @@ const SHADOWS = {
 type Lift = keyof typeof SHADOWS;
 
 /**
+ * The short shadow a nameplate casts on the face below it: bands across the
+ * whole face, each a unit and a half deep and fainter than the one above.
+ * Lines rather than one gradient, so each stretches with the face it lies on.
+ */
+const LEDGE = [1, 0.6, 0.3, 0.12] as const;
+const LEDGE_BAND = 1.5;
+
+/** How much of a face a removed block's see-through ghost keeps. */
+const GHOST_FACE = 0.5;
+/** The dashed footprint a removed block leaves where it stood: its width and its dash. */
+const FOOTPRINT_WIDTH = 1.5;
+const FOOTPRINT_DASH = "6 4";
+
+/**
  * A rounded rect over a box, which takes no pointer unless it says so.
  * @param box Where it is.
  * @param radius Its corners.
@@ -158,6 +234,24 @@ function plate(box: Box, radius: number, paint: Attributes): string {
 }
 
 /**
+ * A line across a box at one height, which takes no pointer.
+ * @param box The box it spans.
+ * @param y Its height.
+ * @param paint How it is stroked.
+ * @returns The line.
+ */
+function across(box: Box, y: number, paint: Attributes): string {
+	return tag("line", {
+		x1: coord(box.x),
+		y1: coord(y),
+		x2: coord(box.x + box.width),
+		y2: coord(y),
+		"pointer-events": "none",
+		...paint,
+	});
+}
+
+/**
  * A part's seat: its box, unpainted, which takes the pointer for the whole of
  * it while every shape painted over it takes none.
  * @param box The part's box.
@@ -169,14 +263,63 @@ function slabSeat(box: Box, radius: number): string {
 }
 
 /**
- * The shadow a block casts, under it.
+ * The see-through face a ghost keeps.
+ * @param palette The theme's colours.
+ * @returns Its paint.
+ */
+function ghostFace(palette: Palette): Attributes {
+	return { fill: palette.slabFace, "fill-opacity": GHOST_FACE };
+}
+
+/**
+ * Where a removed block stood: its face, flat and see-through, and a dashed
+ * footprint in the standing's ink just inside its box.
+ * @param box The block's box.
+ * @param radius Its corners.
+ * @param palette The theme's colours.
+ * @returns The ghost.
+ */
+function ghost(box: Box, radius: number, palette: Palette): string {
+	const inset = FOOTPRINT_WIDTH / 2;
+	return lines([
+		plate(box, radius, ghostFace(palette)),
+		plate(
+			{
+				x: box.x + inset,
+				y: box.y + inset,
+				width: box.width - 2 * inset,
+				height: box.height - 2 * inset,
+			},
+			Math.max(0, radius - inset),
+			{
+				fill: "none",
+				stroke: palette.standingRemoved,
+				"stroke-width": FOOTPRINT_WIDTH,
+				"stroke-dasharray": FOOTPRINT_DASH,
+			},
+		),
+	]);
+}
+
+/**
+ * What a block leaves on what it stands on, under the selection ring: the
+ * shadow it casts; or, for a part a proposal removed, its ghost ({@link ghost}),
+ * which a selection ring drawn at its footprint covers rather than doubles.
  * @param box The block's box.
  * @param radius Its corners.
  * @param lift Which sort of block it is.
  * @param palette The theme's colours.
- * @returns The shadow's layers.
+ * @param standing How the part stands, when this is a proposal.
+ * @returns The shadow's layers, or the ghost.
  */
-function slabShadow(box: Box, radius: number, lift: Lift, palette: Palette): string {
+function slabShadow(
+	box: Box,
+	radius: number,
+	lift: Lift,
+	palette: Palette,
+	standing?: SubjectStanding,
+): string {
+	if (standing === "removed") return ghost(box, radius, palette);
 	return lines(
 		SHADOWS[lift].map(({ dx, dy, grow, share }) =>
 			plate(
@@ -194,81 +337,79 @@ function slabShadow(box: Box, radius: number, lift: Lift, palette: Palette): str
 }
 
 /**
- * The face below a container's heading band. The whole face is drawn in the
- * band's tone and this part over it, its rounded upper corners squared off by
- * a stroke as wide as the corners are round, so the step between the two is
- * one straight line across the face.
+ * The face from one height down to its foot, in one tone. It is drawn as the
+ * rounded face from that height and a stroke as wide as the corners are round
+ * along its top, which squares those corners off, so the step from the tone
+ * above is one straight line across the face.
  * @param face The top face.
- * @param look The block's look; nothing is drawn for a block with no heading.
- * @returns The part of the face below the band.
+ * @param top Where the tone starts.
+ * @param fill The tone.
+ * @param radius The face's corners.
+ * @returns The face below that height, or nothing when too little is left of it.
  */
-function belowHeader(face: Box, look: SlabLook): string {
-	if (look.header === undefined) return "";
-	const top = face.y + look.header.height;
+function faceFrom(face: Box, top: number, fill: string, radius: number): string {
 	const rest = { ...face, y: top, height: face.y + face.height - top };
-	if (rest.height <= 2 * look.radius) return "";
+	if (rest.height <= 2 * radius) return "";
 	return lines([
-		plate(rest, look.radius, { fill: look.face }),
-		tag("line", {
-			x1: coord(face.x),
-			y1: coord(top + look.radius / 2),
-			x2: coord(face.x + face.width),
-			y2: coord(top + look.radius / 2),
-			stroke: look.face,
-			"stroke-width": coord(look.radius),
-			"pointer-events": "none",
-		}),
+		plate(rest, radius, { fill }),
+		across(face, top + radius / 2, { stroke: fill, "stroke-width": coord(radius) }),
 	]);
 }
 
 /**
- * How far inside a block's top face a standing's ring is drawn by default, and
- * how wide: five units in, so its outer side stands six units inside the
- * selection ring's inner side, with the block's own edge between them.
+ * A container's nameplate, over the top of its face: the plate's own front
+ * edge, then the face below it, then the plate's short shadow on that face.
+ * The plate's face is the block's top face, drawn already.
+ * @param face The block's top face.
+ * @param look The block's look; nothing is drawn for a block with no plate.
+ * @param palette The theme's colours.
+ * @returns The plate's foot and the face below it.
  */
-const RING_INSET = 5;
-const RING_WIDTH = 2;
+function nameplate(face: Box, look: SlabLook, palette: Palette): string {
+	if (look.plate === undefined) return "";
+	const foot = face.y + look.plate.height;
+	return lines([
+		faceFrom(face, foot - PLATE_THICKNESS, look.plate.edge, look.radius),
+		faceFrom(face, foot, look.face, look.radius),
+		...LEDGE.map((share, index) =>
+			across(face, foot + (index + 0.5) * LEDGE_BAND, {
+				stroke: palette.slabShadow,
+				"stroke-opacity": share,
+				"stroke-width": LEDGE_BAND,
+			}),
+		),
+	]);
+}
 
 /**
- * What a standing does to a block, which has no outline for it to take over: a
- * ring inside its face in the standing's ink and texture. The front edge keeps
- * the block's own tone, which says what group it serves; the ring and the pin
- * on its corner say what the proposal did to it.
- * @param face The block's top face.
+ * What a standing does to a block's face: an added one washed in its ink, a
+ * changed one washed and, where the block takes one, hatched. A removed block
+ * draws no face ({@link ghost}).
  * @param look How the block looks.
  * @param standing How the part stands, or undefined when this is not a proposal.
  * @param palette The theme's colours.
- * @returns The ring, or nothing.
+ * @returns The face's colour, and whether it is hatched.
  */
-function standingRing(
-	face: Box,
+function standingFace(
 	look: SlabLook,
 	standing: SubjectStanding | undefined,
 	palette: Palette,
-): string {
+): { readonly fill: string; readonly hatched: boolean } {
+	const { face, ground } = look.plate ?? { face: look.face, ground: look.face };
 	const ink = standing === undefined ? undefined : standingInk(standing, palette);
-	if (standing === undefined || ink === undefined) return "";
-	const inset = look.ringInset ?? RING_INSET;
-	const ring = {
-		x: face.x + inset,
-		y: face.y + inset,
-		width: face.width - 2 * inset,
-		height: face.height - 2 * inset,
+	return {
+		fill: ink === undefined ? face : washed(ground, ink, WASH, palette),
+		hatched: standing === "changed" && look.hatch === true,
 	};
-	return plate(ring, Math.max(1, look.radius - inset), {
-		fill: "none",
-		stroke: ink,
-		"stroke-width": RING_WIDTH,
-		"stroke-dasharray": RING_DASH[standing],
-	});
 }
 
 /**
  * One block, standing in its box: its body in the tone of its front edge, its
- * face over that with the highlight along its top edge, and the light falling
- * off down it; a container's face carries its heading's band. A part a
- * proposal changed, added or removed is marked on its face
- * ({@link standingRing}).
+ * face over that with the highlight along its top edge and the light falling
+ * off down it, and a container's nameplate over the top of its face. The face
+ * says how a proposal treats the part ({@link standingFace}); a container's
+ * face is its nameplate. A removed part has lost its block: what is left of it
+ * is drawn under the selection ring ({@link slabShadow}), and this draws nothing.
  * @param box The part's box.
  * @param look How the block looks.
  * @param palette The theme's colours.
@@ -276,44 +417,66 @@ function standingRing(
  * @returns The block.
  */
 function slab(box: Box, look: SlabLook, palette: Palette, standing?: SubjectStanding): string {
-	const top = look.header?.face ?? look.face;
+	if (standing === "removed") return "";
+	const top = standingFace(look, standing, palette);
 	// The top face is the box without its front edge.
 	const face = { ...box, height: box.height - look.thickness };
 	const lit = { ...face, y: face.y + GLINT_WIDTH, height: face.height - GLINT_WIDTH };
 	return lines([
 		plate(box, look.radius, { fill: look.edge }),
-		plate(face, look.radius, { fill: glintOf(top, palette) }),
-		plate(lit, look.radius, { fill: top }),
-		belowHeader(lit, look),
+		plate(face, look.radius, { fill: glintOf(top.fill, palette) }),
+		plate(lit, look.radius, { fill: top.fill }),
 		look.sheen ? plate(lit, look.radius, { fill: `url(#${SHEEN_ID})` }) : "",
-		standingRing(face, look, standing, palette),
+		top.hatched ? plate(lit, look.radius, { fill: `url(#${HATCH_ID})` }) : "",
+		nameplate(face, look, palette),
 	]);
 }
 
 /**
  * The definitions every slab reaches for: the light that falls off down a face,
- * from the sheen at its top edge to nothing at its foot. One gradient, in the
- * face's own box, so every face of any size shares it.
+ * from the sheen at its top edge to nothing at its foot, one gradient in the
+ * face's own box so every face of any size shares it; and the hatch over a
+ * changed face, at one pitch across the page.
  * @param palette The theme's colours.
- * @returns The gradient.
+ * @returns The gradient and the pattern.
  */
 function slabDefinitions(palette: Palette): string {
-	return wrap(
-		"linearGradient",
-		{ id: SHEEN_ID, x1: 0, y1: 0, x2: 0, y2: 1 },
-		tag("stop", { offset: 0, "stop-color": palette.slabSheen }) +
-			tag("stop", { offset: 1, "stop-color": palette.slabSheen, "stop-opacity": 0 }),
+	const hatch = lightDark(
+		translucent(palette.standingChanged, HATCH.light),
+		translucent(palette.standingChanged, HATCH.dark),
+	);
+	return (
+		wrap(
+			"linearGradient",
+			{ id: SHEEN_ID, x1: 0, y1: 0, x2: 0, y2: 1 },
+			tag("stop", { offset: 0, "stop-color": palette.slabSheen }) +
+				tag("stop", { offset: 1, "stop-color": palette.slabSheen, "stop-opacity": 0 }),
+		) +
+		wrap(
+			"pattern",
+			{
+				id: HATCH_ID,
+				width: HATCH_PITCH,
+				height: HATCH_PITCH,
+				patternUnits: "userSpaceOnUse",
+				patternTransform: "rotate(45)",
+			},
+			tag("rect", { width: HATCH_STROKE, height: HATCH_PITCH, fill: hatch }),
+		)
 	);
 }
 
 export {
 	type Share,
 	type SlabLook,
+	FOOTPRINT_WIDTH,
 	GLINT_WIDTH,
+	ghostFace,
 	glintOf,
 	slab,
 	slabDefinitions,
 	slabSeat,
 	slabShadow,
 	tinted,
+	washed,
 };

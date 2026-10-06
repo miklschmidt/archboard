@@ -29,7 +29,11 @@ import type {
 	SemanticFlow,
 	SemanticNode,
 } from "@/shared/semantic-board/index";
-import { BAND_RADIUS, DIAGRAM_MARGIN } from "@/transformers/semantic-renderer/lib/design";
+import {
+	BAND_RADIUS,
+	DIAGRAM_MARGIN,
+	FLOW_PLATE_FOOT,
+} from "@/transformers/semantic-renderer/lib/design";
 import {
 	HEAD_REACH,
 	HEAD_SHADE_CLASS,
@@ -63,6 +67,7 @@ import {
 	type PlacedStep,
 } from "@/transformers/semantic-renderer/lib/layout/dataflow";
 import { endsFor, selfStart, travelOf } from "@/transformers/semantic-renderer/lib/layout/messages";
+import { plinthLook } from "@/transformers/semantic-renderer/lib/svg/appearance";
 import { halo, paintCard, paintHeader } from "@/transformers/semantic-renderer/lib/svg/cards";
 import { paintColumn } from "@/transformers/semantic-renderer/lib/svg/flow-columns";
 import {
@@ -79,8 +84,15 @@ import {
 	type Attributes,
 } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
+	ghostFace,
+	slab,
+	slabSeat,
+	slabShadow,
+} from "@/transformers/semantic-renderer/lib/svg/slab";
+import {
 	HEAD_ATTRIBUTE,
 	MEMBERS_ATTRIBUTE,
+	ghostOpacity,
 	markedBox,
 	standingPin,
 	subjectGroup,
@@ -243,7 +255,7 @@ function paintStep(
 	const ride = stepRide(placed, activeAt);
 	return wrap(
 		"g",
-		subjectGroup("step", placed.step.id, standing),
+		{ ...subjectGroup("step", placed.step.id, standing), opacity: ghostOpacity(standing) },
 		lines([
 			tag("path", {
 				class: "ab-halo",
@@ -289,9 +301,13 @@ function paintStep(
  * a reader clicks to mean "this exchange", and it is what keeps several flows on
  * one page from reading as one very long sequence.
  *
- * Its standing is the pin on its corner, and its rule stays the frame's own.
- * The frame is the page of its flow, and a page ruled in a standing's ink said
- * the flow's name or cast changed as loudly as every message inside it.
+ * It is built as an architecture's container is: a plinth the exchange stands
+ * on, with a nameplate across its top that the flow's name is printed on.
+ *
+ * Its standing is the pin on its corner, and its face stays the frame's own:
+ * the frame is the page of its flow, and a page washed in a standing's ink said
+ * the flow's name or cast changed as loudly as every message inside it. A
+ * removed flow is the one exception, a ghost like every removed block.
  * @param layout The flow.
  * @param palette The theme's colours.
  * @param standing How this flow stands against the variant it came from, when the caller said.
@@ -304,41 +320,44 @@ function paintFrame(
 	standing: SubjectStanding | undefined,
 	unsettled: boolean,
 ): string {
+	const { frame, header } = layout;
 	const styles = stylesFor(palette);
+	const ghosted = standing === "removed" ? standing : undefined;
+	const look = plinthLook(
+		undefined,
+		palette,
+		0,
+		header.y + header.height + FLOW_PLATE_FOOT - frame.y,
+	);
 	return wrap(
 		"g",
 		subjectGroup("flow", layout.flow.id, standing),
 		lines([
-			halo(layout.frame, BAND_RADIUS, styles),
-			tag("rect", {
-				x: coord(layout.frame.x),
-				y: coord(layout.frame.y),
-				width: coord(layout.frame.width),
-				height: coord(layout.frame.height),
-				rx: BAND_RADIUS,
-				...styles.band,
-			}),
-			paintHeader(layout.header, layout.flow.name, layout.flow.summary, styles),
-			standingPin(layout.frame, standing, palette),
-			warningBadge(layout.frame, unsettled, palette),
+			slabSeat(frame, BAND_RADIUS),
+			slabShadow(frame, BAND_RADIUS, "plinth", palette, ghosted),
+			halo(frame, BAND_RADIUS, styles, ghosted),
+			slab(frame, look, palette, ghosted),
+			paintHeader(header, layout.flow.name, layout.flow.summary, styles),
+			standingPin(frame, standing, palette),
+			warningBadge(frame, unsettled, palette),
 		]),
 	);
 }
 
 /**
- * The frame's own ground behind a flow's head of cards, and a strip of it
+ * The frame's own face behind a flow's head of cards, and a strip of it
  * above them, shown only while a viewer has moved the head down to keep it in
  * view over rows further down.
  *
  * A moved head stands over the columns of time and the rows it passes, and a
  * card a presented step veils is seen through: without this, what it stands
  * over would show through it and run on above it. So the page's ground is laid
- * first and the frame's band over it, standing with the frame (it lists the
+ * first and the frame's face over it, standing with the frame (it lists the
  * flow as its member): a frame a step veils is seen through to the page, and so
  * is this. Hidden in the picture (`visibility`), and shown under a head the
  * viewer marks as moved (`is-stuck`).
  * @param layout The flow.
- * @param standing How the flow stands, which ghosts the band as it ghosts the frame.
+ * @param standing How the flow stands: a removed flow's face is its ghost's.
  * @param palette The theme's colours.
  * @returns The shade.
  */
@@ -351,24 +370,20 @@ function headShade(
 	if (card === undefined) {
 		return "";
 	}
-	// Inside the frame's rule, which stays the frame's to draw.
 	const shape = {
-		x: coord(layout.frame.x + 1),
+		x: coord(layout.frame.x),
 		y: coord(card.y - HEAD_REACH),
-		width: coord(layout.frame.width - 2),
+		width: coord(layout.frame.width),
 		height: coord(card.height + HEAD_REACH),
 	};
-	const { opacity } = subjectGroup("flow", layout.flow.id, standing);
+	// A top-level plinth's face, which is the frame's (`paintFrame`).
+	const face = standing === "removed" ? ghostFace(palette) : { fill: palette.plinthFace };
 	return wrap(
 		"g",
 		{ class: HEAD_SHADE_CLASS, visibility: "hidden" },
 		lines([
 			tag("rect", { ...shape, fill: palette.background }),
-			wrap(
-				"g",
-				{ [MEMBERS_ATTRIBUTE]: layout.flow.id, opacity },
-				tag("rect", { ...shape, fill: palette.band }),
-			),
+			wrap("g", { [MEMBERS_ATTRIBUTE]: layout.flow.id }, tag("rect", { ...shape, ...face })),
 		]),
 	);
 }
@@ -407,7 +422,12 @@ function paintFlow(
 			{},
 			lines(
 				layout.columns.map((column) =>
-					paintColumn(column, layout, palette, standingOf(column.card.node.id)),
+					paintColumn(
+						column,
+						layout,
+						{ palette, appearance: appearances.get(column.card.node.id)! },
+						standingOf(column.card.node.id),
+					),
 				),
 			),
 		),

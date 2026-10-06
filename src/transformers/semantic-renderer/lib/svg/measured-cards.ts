@@ -16,6 +16,7 @@ import {
 	appearanceAttributes,
 	cardLook,
 	plinthLook,
+	semanticInk,
 	typeChip,
 } from "@/transformers/semantic-renderer/lib/svg/appearance";
 import { halo } from "@/transformers/semantic-renderer/lib/svg/cards";
@@ -28,6 +29,7 @@ import { stylesFor } from "@/transformers/semantic-renderer/lib/svg/styles";
 import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
 import {
 	PART_ATTRIBUTE,
+	standingPalette,
 	standingPin,
 	subjectGroup,
 	warningBadge,
@@ -103,6 +105,7 @@ function paintMeasuredCard(
 ): string {
 	const { measured, box } = placed;
 	const styles = stylesFor(palette);
+	const words = standingPalette(palette, standing);
 	const chipX = box.x + ARCHITECTURE_CARD_PADDING;
 	const chipY = box.y + ARCHITECTURE_CARD_PADDING;
 	return wrap(
@@ -113,15 +116,15 @@ function paintMeasuredCard(
 		},
 		lines([
 			slabSeat(box, SLAB_RADIUS),
-			slabShadow(box, SLAB_RADIUS, "card", palette),
-			halo(box, SLAB_RADIUS, styles),
+			slabShadow(box, SLAB_RADIUS, "card", palette, standing),
+			halo(box, SLAB_RADIUS, styles, standing),
 			slab(box, cardLook(appearance, palette), palette, standing),
 			nearLayer(
-				typeChip(chipX, chipY, appearance, palette) +
-					paintTextRuns(measured.runs, box, palette) +
+				typeChip(chipX, chipY, appearance, palette, standing) +
+					paintTextRuns(measured.runs, box, words) +
 					drillCorner(box, ARCHITECTURE_CARD_PADDING, appearance, palette),
 			),
-			paintFarCard(measured.node, box, { appearance, palette }, unsettled),
+			paintFarCard(measured.node, box, { appearance, palette: words }, unsettled),
 			standingPin(box, standing, palette),
 			warningBadge(box, unsettled, palette),
 		]),
@@ -130,9 +133,9 @@ function paintMeasuredCard(
 
 /**
  * Paint a containing frame below its children and all connections: a plinth
- * its children stand on, its heading printed on a band of its face. What the
- * frame itself relates to leaves from the band's lower edge, so such a line has
- * a visible origin inside the frame.
+ * its children stand on, with a nameplate across its top that its heading is
+ * printed on. What the frame itself relates to leaves from the foot of the
+ * nameplate's front edge, so such a line has a visible origin inside the frame.
  * @param placed Final frame geometry.
  * @param palette The selected theme.
  * @param standing Its architectural change.
@@ -147,7 +150,8 @@ function paintMeasuredFrame(
 ): string {
 	const { measured, box, depth } = placed;
 	const styles = stylesFor(palette);
-	const look = plinthLook(appearance, palette, depth, measured.headerHeight);
+	const ink = semanticInk(appearance.bodyColor);
+	const look = plinthLook(ink, palette, depth, measured.headerHeight);
 	return wrap(
 		"g",
 		{
@@ -156,8 +160,8 @@ function paintMeasuredFrame(
 		},
 		lines([
 			slabSeat(box, BAND_RADIUS),
-			slabShadow(box, BAND_RADIUS, "plinth", palette),
-			halo(box, BAND_RADIUS, styles),
+			slabShadow(box, BAND_RADIUS, "plinth", palette, standing),
+			halo(box, BAND_RADIUS, styles, standing),
 			slab(box, look, palette, standing),
 			standingPin(box, standing, palette),
 		]),
@@ -182,6 +186,7 @@ function paintMeasuredHeader(
 	appearance: NodeAppearance,
 	farSize: number,
 ): string {
+	const words = standingPalette(palette, standing);
 	return wrap(
 		"g",
 		{
@@ -196,11 +201,12 @@ function paintMeasuredHeader(
 					placed.box.y + ARCHITECTURE_HEADER_PADDING,
 					appearance,
 					palette,
+					standing,
 				) +
-					paintTextRuns(placed.measured.runs, placed.box, palette) +
+					paintTextRuns(placed.measured.runs, placed.box, words) +
 					drillCorner(placed.box, ARCHITECTURE_HEADER_PADDING, appearance, palette),
 			),
-			paintFarHeader(placed, farSize, { appearance, palette }, unsettled),
+			paintFarHeader(placed, farSize, { appearance, palette: words }, unsettled),
 			warningBadge(placed.box, unsettled, palette),
 		]),
 	);
