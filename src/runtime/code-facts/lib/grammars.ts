@@ -11,7 +11,8 @@
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { Language, Parser, Query } from "web-tree-sitter";
+import { Language, Parser, Query, type Tree } from "web-tree-sitter";
+import type { ParsedFacts, ParseFacts } from "@/runtime/code-facts/lib/facts";
 
 /** One grammar, ready: a parser set to its language, and its compiled query. */
 interface Grammar {
@@ -65,4 +66,29 @@ function grammar(source: GrammarSource): Promise<Grammar> {
 	return loading;
 }
 
-export { type Grammar, type GrammarSource, grammar };
+/**
+ * How an adapter reads a file through a tree-sitter grammar: parse the text
+ * with the grammar and read the facts from the tree and the query's captures.
+ * @param wasm The grammar's `.wasm` file, as its package publishes it.
+ * @param query The query file beside this one.
+ * @param facts The facts of one parsed file.
+ * @returns The adapter's parse.
+ */
+function treeSitter(
+	wasm: string,
+	query: string,
+	facts: (tree: Tree, grammar: Grammar) => ParsedFacts,
+): ParseFacts {
+	return async (text) => {
+		const ready = await grammar({ wasm, query });
+		const tree = ready.parser.parse(text);
+		if (tree === null) throw new Error(`The grammar ${wasm} gave no tree`);
+		try {
+			return facts(tree, ready);
+		} finally {
+			tree.delete();
+		}
+	};
+}
+
+export { type Grammar, treeSitter };

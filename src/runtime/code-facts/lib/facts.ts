@@ -93,7 +93,7 @@ interface ReferenceThroughImport {
 }
 
 /**
- * The facts a grammar gives one file, before its imports are resolved. These
+ * The facts an adapter gives one file, before its imports are resolved. These
  * depend on the file's bytes alone, so the cache keeps them.
  */
 interface ParsedFacts {
@@ -103,13 +103,20 @@ interface ParsedFacts {
 	readonly unparsed: readonly Unparsed[];
 }
 
+/**
+ * How an adapter reads one file: from its text to its facts, through a
+ * tree-sitter grammar (`treeSitter` in grammars.ts) or with a parser Bun has,
+ * such as `Bun.YAML.parse` for a compose file.
+ */
+type ParseFacts = (text: string) => ParsedFacts | Promise<ParsedFacts>;
+
 /** Where an import or a reference leads in the checkout: a file, and the name there. */
 interface Target {
 	readonly path: string;
 	readonly symbol: string;
 }
 
-/** The adapters a grammar reads files through, one for each entry of the table in adapters.ts. */
+/** The adapters that read files, one for each entry of the table in adapters.ts. */
 type AdapterName = "typescript" | "python";
 
 /**
@@ -133,7 +140,7 @@ interface ImportResolver {
 	resolve(from: string, found: Import): ResolvedImport;
 }
 
-/** The code facts of one file a grammar reads, with its imports resolved for this pass. */
+/** The code facts of one file an adapter reads, with its imports resolved for this pass. */
 interface SyntaxFacts {
 	readonly adapter: AdapterName;
 	readonly path: string;
@@ -145,7 +152,7 @@ interface SyntaxFacts {
 	readonly unparsed: readonly Unparsed[];
 }
 
-/** A file no grammar reads: its text, which the text reading tests (ADR 0046). */
+/** A file no adapter reads: its text, which the text reading tests (ADR 0046). */
 interface TextFacts {
 	readonly adapter: "text";
 	readonly path: string;
@@ -162,6 +169,7 @@ export type {
 	ImportedName,
 	ImportResolver,
 	ParsedFacts,
+	ParseFacts,
 	ReadText,
 	Reference,
 	ReferenceThroughImport,
