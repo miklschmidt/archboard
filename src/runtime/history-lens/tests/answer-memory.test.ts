@@ -5,9 +5,14 @@
 import { expect, test } from "bun:test";
 import { createAnswerMemory } from "@/runtime/history-lens/index";
 
-/** A piece of work a test finishes or watches being stopped. */
+/**
+ * A piece of work a test finishes, or watches being stopped. A stopped piece
+ * settles only when the test says so, as a Git command ends a moment after it
+ * is killed.
+ */
 function pending() {
 	let finish!: (answer: string) => void;
+	let fail!: (reason: unknown) => void;
 	let stopped: unknown;
 	let started = 0;
 	return {
@@ -16,14 +21,30 @@ function pending() {
 			signal.addEventListener("abort", () => {
 				stopped = signal.reason;
 			});
-			return new Promise<string>((resolve) => {
+			return new Promise<string>((resolve, reject) => {
 				finish = resolve;
+				fail = reject;
 			});
 		},
 		finish: (answer: string) => finish(answer),
+		settleStopped: () => fail(stopped),
 		started: () => started,
 		stopped: () => stopped,
 	};
+}
+
+/**
+ * Whether a promise has settled once every pending callback has run.
+ * @param promise The promise.
+ * @returns True when it has settled.
+ */
+async function settled(promise: Promise<unknown>): Promise<boolean> {
+	const turn = new Promise<boolean>((resolve) => setImmediate(() => resolve(false)));
+	const done = promise.then(
+		() => true,
+		() => true,
+	);
+	return await Promise.race([done, turn]);
 }
 
 /** Makes an answer that is a new object each time, which is how a test tells two makings apart. */
@@ -69,7 +90,7 @@ test("a caller that hangs up leaves the work to the caller that still waits", as
 	expect(await staying).toBe("done");
 });
 
-test("the work stops when the last caller that waits for it has gone", async () => {
+test("the work stops when the last caller that waits for it has gone, and that caller waits for it to settle", async () => {
 	const memory = createAnswerMemory<string>(4);
 	const work = pending();
 	const first = new AbortController();
@@ -80,8 +101,10 @@ test("the work stops when the last caller that waits for it has gone", async () 
 	await expect(one).rejects.toThrow("first");
 	expect(work.stopped()).toBeUndefined();
 	second.abort(new Error("second"));
-	await expect(two).rejects.toThrow("second");
+	expect(await settled(two)).toBe(false);
 	expect(work.stopped()).toBeInstanceOf(Error);
+	work.settleStopped();
+	await expect(two).rejects.toThrow("second");
 });
 
 test("a request after the work was stopped starts new work, and a failure is not kept", async () => {
@@ -90,6 +113,7 @@ test("a request after the work was stopped starts new work, and a failure is not
 	const hangUp = new AbortController();
 	const gone = memory.answer("k", stopped.make, hangUp.signal);
 	hangUp.abort(new Error("hung up"));
+	stopped.settleStopped();
 	await expect(gone).rejects.toThrow("hung up");
 	const fresh = pending();
 	const again = memory.answer("k", fresh.make);
