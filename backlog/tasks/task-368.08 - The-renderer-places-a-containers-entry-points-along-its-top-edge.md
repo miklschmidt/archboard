@@ -1,11 +1,11 @@
 ---
 id: TASK-368.08
 title: The renderer places a container's entry points along its top edge
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:17'
-updated_date: '2026-10-06 11:14'
+updated_date: '2026-10-06 11:15'
 labels:
   - interfaces
   - renderer
@@ -27,9 +27,9 @@ A board reads from the top down, and callers sit above what they call. When the 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 On the Track engine, a container's entry points take its first row, and its hidden parts sit below them
-- [ ] #2 The readability measures of the scorecard do not get worse on the fixture boards and the dogfood boards, or the user accepts the pictures in a review
-- [ ] #3 Every board still lays out under 1 second, and comparison and variant pictures keep working
+- [x] #1 On the Track engine, a container's entry points take its first row, and its hidden parts sit below them
+- [x] #2 The readability measures of the scorecard do not get worse on the fixture boards and the dogfood boards, or the user accepts the pictures in a review
+- [x] #3 Every board still lays out under 1 second, and comparison and variant pictures keep working
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -102,3 +102,9 @@ Board: Renderer layout adopted TASK-368.08 in b7132cb82. Entry row (entry-row.ts
 
 README: readme:check lists 12 stale assets. All 12 were stale at 155bdef83, which had 13. Every picture draws byte-identically, so I refreshed nothing.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+On the Track engine, a container's first entry points take its first row and its hidden parts sit below them, held by weight-0 invisible edges. Which entry points are first is read from the whole variant's relationships, not from the lines a view draws (ADR 0044). Where every entry point is called from inside the container, no first row is held, because callers sit above what they call. Verified by entry-row.test.ts (including a view that hides an inside caller) and by the reviewer on main: 494 renderBoard pictures and 81 scorecards byte-identical to before, first layout under 1 s on every board except Board viewer, which was already at about 950 ms and gained nothing measurable. Renderer layout draws the Entry row part (adopted at version 29).
+<!-- SECTION:FINAL_SUMMARY:END -->
