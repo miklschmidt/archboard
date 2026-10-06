@@ -225,7 +225,7 @@ function unusedFinding(judged: Judged): CodeFinding | undefined {
 		severity: "information",
 		code: "EXPOSED_UNUSED",
 		message:
-			`${describeSubject(subject)} binds the module ${JSON.stringify(exposure.directory)}, which ` +
+			`${describeSubject(subject)} binds the module ${JSON.stringify(exposure.directory || ".")}, which ` +
 			`exposes ${names.length} of its ${all} names to no file outside it: ` +
 			`${names.join(", ")}. A test is no caller. Each is interface that no caller needs: stop ` +
 			"exposing it, unless a caller outside this checkout uses it.",
@@ -279,7 +279,7 @@ function unexposedFinding(
 		code: "ENTRY_POINT_UNEXPOSED",
 		message:
 			`${describeSubject(subject)} is an entry point of ${JSON.stringify(judged.inspection.container.name)}, ` +
-			`and the module ${JSON.stringify(directory)} exposes none of its code: no name that ` +
+			`and the module ${JSON.stringify(directory || ".")} exposes none of its code: no name that ` +
 			`${rootFiles.map((file) => JSON.stringify(file)).join(", ")} export reaches it. The code ` +
 			"of its callers reaches it from outside the module all the same, past the interface. Make " +
 			"the callers use what the module exposes, or expose what they use from a root file.",
@@ -336,7 +336,7 @@ function callerFinding(
 		code: "CALLER_UNDRAWN",
 		message:
 			`${describeSubject(subject)} is a hidden part of ${container}, and code outside the module ` +
-			`${JSON.stringify(judged.module.exposure.directory)} uses what it exposes, in ${files} ` +
+			`${JSON.stringify(judged.module.exposure.directory || ".")} uses what it exposes, in ${files} ` +
 			`${files === 1 ? "file" : "files"} that no part on this board binds. Draw the caller this ` +
 			`board's question needs to it from outside ${container}, or stop exposing what no caller ` +
 			"should use.",

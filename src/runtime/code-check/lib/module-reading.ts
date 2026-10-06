@@ -10,9 +10,11 @@
 // passes the module its arguments and reads its outputs (TASK-368.11). Each
 // argument a call outside the module sets is a use of the variable it sets,
 // and each `module.<call>.<output>` that a file of the calling module names
-// is a use of that output. Outside configuration can reach a Terraform module
-// only through its outputs, so no caller reaches past them, and the reading
-// carries the module's shape (terraform-modules.ts).
+// is a use of that output. A reference to the whole call, as
+// `value = module.<call>` passes every output on, uses each of them, but in
+// `depends_on`, which only orders. Outside configuration can reach a Terraform
+// module only through its outputs, so no caller reaches past them, and the
+// reading carries the module's shape (terraform-modules.ts).
 
 import { isTestPath, type RepoCheckout } from "@/runtime/code-check/lib/part-code";
 import { type ModuleShape, terraformShape } from "@/runtime/code-check/lib/terraform-modules";
@@ -25,13 +27,12 @@ import {
 	type ExposedName,
 	type FactsPass,
 	type ModuleExposure,
+	type Reference,
 	type SyntaxFacts,
 } from "@/runtime/code-facts/index";
 
 /** A module call's argument, `module.queue.var.name`: the value it gives the variable `name`. */
 const ARGUMENT = /^(module\.[^.]+)\.var\.([^.]+)$/u;
-/** A module call's output, `module.queue.url`. */
-const OUTPUT = /^(module\.[^.]+)\.([^.]+)$/u;
 
 /** One use of a module's code by a file outside it. */
 interface OutsideUse {
@@ -118,6 +119,27 @@ async function outsideFacts(
 }
 
 /**
+ * The outputs of a Terraform module one reference in a calling module reads:
+ * the one `module.queue.url` names, and every output for a reference to the
+ * whole call, as `value = module.queue` passes them on. A reference in
+ * `depends_on` only orders, and reads none.
+ * @param reference The reference.
+ * @param calls The calls of the module its directory makes, `module.queue`.
+ * @param outputs The module's outputs, `output.url`.
+ * @returns The outputs it reads.
+ */
+function outputsRead(
+	reference: Reference,
+	calls: ReadonlySet<string>,
+	outputs: readonly string[],
+): readonly string[] {
+	if (reference.via !== "code" || reference.argument === "depends_on") return [];
+	const [module, call, output] = reference.symbol.split(".");
+	if (!calls.has(`${module}.${call}`)) return [];
+	return output === undefined ? outputs : [`output.${output}`];
+}
+
+/**
  * The uses of a Terraform module through its calls in one file of a calling
  * module: each argument a call sets, and each output a reference reads.
  * @param file The file.
@@ -135,12 +157,11 @@ function callUses(
 		const named = visibility === "argument" && calls.has(call);
 		return named ? [{ line: start, symbol, name: `var.${name}`, runs: true }] : [];
 	});
-	const read = file.references.flatMap(({ symbol, line, via, kind }) => {
-		const [, call = "", name] = OUTPUT.exec(symbol) ?? [];
+	const outputs = [...exposed.keys()].filter((name) => name.startsWith("output."));
+	const read = file.references.flatMap((reference) => {
+		const { symbol, line, kind } = reference;
 		const runs = kind === "call" || kind === "configured-path";
-		return via === "code" && calls.has(call)
-			? [{ line, symbol, name: `output.${name}`, runs }]
-			: [];
+		return outputsRead(reference, calls, outputs).map((name) => ({ line, symbol, name, runs }));
 	});
 	return [...set, ...read].flatMap(({ name, ...use }) => {
 		const site = exposed.get(name);

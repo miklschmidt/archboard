@@ -7,10 +7,14 @@
 //
 // The checkout `shop` holds the shallow module `modules/bucket`, which wraps
 // one bucket, passes three variables through and says with a fourth whether to
-// create it; the deep module
-// `modules/queue`, which computes a name and a retention from its variables
-// and passes only its timeout through; and the root module `infra`, which
-// calls both and reads one output of each.
+// create it; the deep module `modules/queue`, which computes a name and a
+// retention from its variables and passes only its timeout through; two
+// modules that pass every variable through to one resource and are not
+// shallow: `modules/alarms`, whose `for_each` carries a variable's data into
+// the alarm, and `modules/topic`, whose topic also reads a local; and the root
+// module `infra`, which calls all four, reads one output of the queue, passes
+// every output of the bucket on through the whole call, and depends on the
+// queue.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -131,6 +135,27 @@ beforeAll(async () => {
 			"}",
 			"",
 		].join("\n"),
+		"modules/alarms/main.tf": [
+			'resource "aws_cloudwatch_metric_alarm" "this" {',
+			"  for_each   = var.dimensions",
+			"  alarm_name = var.alarm_name",
+			"  dimensions = each.value",
+			"}",
+			'variable "dimensions" {}',
+			'variable "alarm_name" {}',
+			"",
+		].join("\n"),
+		"modules/topic/main.tf": [
+			"locals {",
+			'  key = "alias/aws/sns"',
+			"}",
+			'resource "aws_sns_topic" "this" {',
+			"  name              = var.name",
+			"  kms_master_key_id = local.key",
+			"}",
+			'variable "name" {}',
+			"",
+		].join("\n"),
 		"infra/main.tf": [
 			'module "bucket" {',
 			'  source        = "../modules/bucket"',
@@ -144,6 +169,18 @@ beforeAll(async () => {
 			"  retention_days = 4",
 			"  timeout        = 30",
 			"}",
+			'module "alarms" {',
+			'  source     = "../modules/alarms"',
+			"  dimensions = {}",
+			'  alarm_name = "depth"',
+			"}",
+			'module "topic" {',
+			'  source = "../modules/topic"',
+			'  name   = "orders"',
+			"}",
+			'output "bucket" {',
+			"  value = module.bucket",
+			"}",
 			"",
 		].join("\n"),
 		"infra/api.tf": [
@@ -155,6 +192,7 @@ beforeAll(async () => {
 			"      QUEUE  = module.queue.url",
 			"    }",
 			"  }",
+			"  depends_on = [module.queue]",
 			"}",
 			"",
 		].join("\n"),
@@ -175,6 +213,10 @@ beforeAll(async () => {
 					part("Jobs", "modules/queue"),
 					part("Queue", "modules/queue", "Jobs", "aws_sqs_queue.this"),
 					part("Dead", "modules/queue", "Jobs", "aws_sqs_queue.dead"),
+					part("Alarms", "modules/alarms"),
+					part("Alarm", "modules/alarms", "Alarms", "aws_cloudwatch_metric_alarm.this"),
+					part("Topics", "modules/topic"),
+					part("Topic", "modules/topic", "Topics", "aws_sns_topic.this"),
 				],
 				edges: [
 					{ id: "e1", order: 10, from: "API", to: "Bucket", kind: "data" },
@@ -207,18 +249,19 @@ function findings(code: string) {
 	return outcome.findings.filter((each) => each.code === code);
 }
 
-test("a module's variables and outputs are what it exposes, and a call uses the variables it sets and the outputs its module reads", () => {
+test("a module's variables and outputs are what it exposes, and a call uses the variables it sets and the outputs its module reads, every one through the whole call but in depends_on", () => {
 	const unused = findings("EXPOSED_UNUSED");
 	expect(unused.map((each) => [each.subject?.id, each.severity])).toEqual([
 		["Assets", "information"],
 		["Jobs", "information"],
 	]);
 	const [assets, jobs] = unused.map((each) => each.message);
-	// The call sets bucket and force_destroy, and the function reads arn; nothing sets tags or create or reads id.
-	for (const name of ["var.tags", "var.create", "output.id"]) expect(assets).toContain(name);
-	for (const name of ["var.bucket", "var.force_destroy", "output.arn"]) {
+	// The call sets bucket and force_destroy, and an output passes the whole call on; nothing sets tags or create.
+	for (const name of ["var.tags", "var.create"]) expect(assets).toContain(name);
+	for (const name of ["var.bucket", "var.force_destroy", "output.arn", "output.id"]) {
 		expect(assets).not.toContain(name);
 	}
+	// The function reads url, and its depends_on on the whole call reads no output.
 	expect(jobs).toContain("output.dead_arn");
 	expect(jobs).not.toContain("output.url");
 	expect(jobs).not.toContain("var.timeout");
@@ -229,8 +272,9 @@ test("a caller reaches a module's resource only through an output, so no entry p
 	expect(findings("ENTRY_POINT_UNEXPOSED")).toEqual([]);
 });
 
-test("a module that wraps one resource and passes every variable through, but the one that says whether to create it, is shallow, with each variable's one use as evidence", () => {
+test("a module that wraps one resource and passes every variable through, but the one that only sets its count, is shallow, with each variable's one use as evidence", () => {
 	const shallow = findings("MODULE_SHALLOW");
+	// Alarms' for_each carries var.dimensions into the alarm, and Topics' topic reads a local.
 	expect(shallow.map((each) => [each.subject?.id, each.severity])).toEqual([
 		["Assets", "information"],
 	]);
@@ -247,10 +291,12 @@ test("a module that wraps one resource and passes every variable through, but th
 	);
 });
 
-test("a module that computes from its variables is not shallow, and the variable it passes unchanged to one argument is a pass-through variable", () => {
+test("a module that is not shallow names the variables it passes unchanged to one argument as pass-through variables", () => {
 	const passed = findings("VARIABLE_PASSED_THROUGH");
 	expect(passed.map((each) => [each.subject?.id, each.severity])).toEqual([
 		["Jobs", "information"],
+		["Alarms", "information"],
+		["Topics", "information"],
 	]);
 	expect(passed[0]?.evidence).toEqual([
 		expect.objectContaining({
