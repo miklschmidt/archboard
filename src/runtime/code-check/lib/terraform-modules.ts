@@ -53,7 +53,6 @@ interface PassedVariable {
 
 /** What a Terraform module wraps, and the variables it passes through. */
 interface ModuleShape {
-	readonly repo: string;
 	readonly directory: string;
 	/** The one resource it manages, where it manages exactly one and calls no module. */
 	readonly wraps: string | undefined;
@@ -246,8 +245,7 @@ async function terraformShape(
 		(name) => wraps !== undefined && toggles(wraps, uses.get(name) ?? []),
 	);
 	const { directory } = exposure;
-	const counted = { variables: variables.length, passed, toggles: toggled };
-	return { repo, directory, wraps, ...counted };
+	return { directory, wraps, variables: variables.length, passed, toggles: toggled };
 }
 
 /**
