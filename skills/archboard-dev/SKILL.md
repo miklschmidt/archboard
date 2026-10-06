@@ -72,6 +72,15 @@ When the task closes, before you mark any acceptance criterion:
    Use `--force` only to drop the change of the other task on purpose.
 5. Run `./bin/dogfood check`.
    Done: it reports no diagnostics. Commit the vault files with the closing.
+6. Run `./bin/dogfood check --code` and read `behind` (ADR 0045). It lists,
+   for each board and each part, the commits to bound files after the
+   board's current variant last changed. An adoption moves that point, so
+   your adopted boards read clean. Read every other board that your task's
+   commits put behind. That board describes code the task changed, and no
+   proposal of the task names it. Read the parts that the commits changed
+   against the code. Correct a board that is now wrong, or say in the task
+   notes why it is still right. Behind is information: a count never fails
+   the check, and a board that is right stays behind until its next change.
 
 If a task closes without its change, shelve its proposals with the reason.
 
