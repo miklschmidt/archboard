@@ -1,4 +1,5 @@
 import {
+	LINE_TOKEN,
 	OpenerSelectionSchema,
 	PATH_TOKEN,
 	isAbsoluteOrBareOpenerExecutable,
@@ -38,7 +39,7 @@ const PLATFORM_EXECUTABLES: Readonly<Record<string, string | undefined>> = {
 function presetArguments(
 	preset: keyof typeof PRESET_EXECUTABLES,
 	target: string,
-	line: number | undefined,
+	line: PlanOptions["line"],
 ): string[] {
 	if (line === undefined) {
 		return [target];
@@ -73,8 +74,11 @@ function validateOpenerSelection(selection: unknown): OpenerSelection | OpenerSe
 
 /** What a plan may depend on besides the selection and the path. */
 interface PlanOptions {
-	/** The line to open at, where the binding's symbol was found. */
-	line?: number | undefined;
+	/**
+	 * The line to open at, where the binding's symbol was found, or `{line}` itself
+	 * where the command is shown with its tokens rather than run.
+	 */
+	line?: number | typeof LINE_TOKEN | undefined;
 	/** The platform whose native opener a platform selection maps to. */
 	platform?: string;
 }
@@ -86,11 +90,14 @@ interface PlanOptions {
  * @param line The line to open at, for `{line}`, which reads 1 where there is none.
  * @returns The arguments to run with.
  */
-function customArguments(argv: readonly string[], target: string, line: number | undefined) {
-	// Both tokens in one pass, so a path that happens to contain `{line}` is never read as one.
-	const tokens = /\{path\}|\{line\}/gu;
+function customArguments(argv: readonly string[], target: string, line: PlanOptions["line"]) {
+	const lineText = String(line ?? 1);
+	// The path goes in last, so a path that happens to contain `{line}` is never read as one.
 	return argv.map((argument) =>
-		argument.replace(tokens, (token) => (token === PATH_TOKEN ? target : String(line ?? 1))),
+		argument
+			.split(PATH_TOKEN)
+			.map((part) => part.replaceAll(LINE_TOKEN, lineText))
+			.join(target),
 	);
 }
 
@@ -100,7 +107,8 @@ function customArguments(argv: readonly string[], target: string, line: number |
  * line: `code` and `cursor` with `--goto path:line`, `zed` with `path:line`. The
  * native opener of a platform has no line, so it opens the file. A custom opener
  * gets the line only where its argument writes `{line}`, and reads 1 where the
- * binding has no line.
+ * binding has no line. Planned for `{path}` at `{line}`, it is the command as the
+ * opener settings show it.
  * @param selection The opener selection to plan for.
  * @param target The path to open, substituted for the path token in a custom argv.
  * @param options What else the plan depends on: the line to open at, and the
@@ -154,7 +162,6 @@ export {
 	type OpenerPlanFailure,
 	type OpenerPlan,
 	type OpenerSelectionInvalid,
-	type PlanOptions,
 	validateOpenerSelection,
 	planOpenerCommand,
 };

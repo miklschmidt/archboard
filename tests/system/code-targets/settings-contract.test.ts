@@ -38,7 +38,8 @@ describe("public opener settings contract", () => {
 		await using resources = new AsyncDisposableStack();
 		const fixture = await createOpenerFixture();
 		resources.defer(() => fixture.dispose());
-		const available = fixture.invocation("immediate");
+		// The command is reported as written, `{line}` included.
+		const available = fixture.invocation("immediate", ["--at={line}"]);
 		resources.defer(() => available.releaseAndWait());
 
 		expect(

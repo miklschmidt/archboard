@@ -1,6 +1,12 @@
 import { z } from "zod";
 
+/** What a custom opener argument holds where the file or directory to open goes. */
 const PATH_TOKEN = "{path}";
+/**
+ * What a custom opener argument may hold where the line goes: the line where the
+ * binding's symbol is defined, or 1 where there is none (TASK-367.25).
+ */
+const LINE_TOKEN = "{line}";
 const MAX_ARGV = 32;
 const MAX_ARG_BYTES = 16 * 1024;
 const NonemptyString = z.string().trim().min(1);
@@ -15,6 +21,11 @@ const PresetSelectionSchema = z
 		preset: z.enum(["vscode", "cursor", "zed"]),
 	})
 	.strict();
+/**
+ * A command of the person's own, run without a shell. Exactly one argument holds
+ * `{path}` ({@link PATH_TOKEN}), and any argument may hold `{line}`
+ * ({@link LINE_TOKEN}), as in `--goto` and `{path}:{line}`.
+ */
 const CustomSelectionSchema = z
 	.object({
 		version: z.literal(1),
@@ -284,6 +295,7 @@ function parseInternalCodeTargetUrl(value: string): CodeTargetOpenRequest | null
 }
 
 export {
+	LINE_TOKEN,
 	PATH_TOKEN,
 	OpenerSelectionSchema,
 	type OpenerSelection,

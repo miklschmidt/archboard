@@ -181,9 +181,9 @@ Then create a test board with `archboard semantic new`, and read it with
 ## Code bindings
 
 A node can bind to a file in a repository, as `binding: { repo, path }`, with an
-optional `branch` and `commit`. The board stores the identity of the repository
-and a path in the repository. It never stores an absolute path, so the same
-board opens the correct file on any machine.
+optional `symbol`, `branch` and `commit`. The board stores the identity of the
+repository and a path in the repository. It never stores an absolute path, so
+the same board opens the correct file on any machine.
 
 If a binding names a branch or a commit, the checkout must have that ref out for
 the local file to open. A named commit decides over a named branch. If the
@@ -206,8 +206,15 @@ list is in `repos.json` in the state directory, or in the file that
 
 If a checkout is registered, the browser opens the file with the opener in the
 browser configuration. By default, that is `xdg-open` on Linux and `open` on
-macOS. If
-there is no checkout of a GitHub repository, the browser opens the file on
+macOS. You can also choose Visual Studio Code, Cursor, Zed or a custom command.
+If a binding names a `symbol`, Archboard finds the line where the file defines
+it. For now, it reads TypeScript and TSX files only. Visual Studio Code, Cursor
+and Zed open the file at that line. A custom command is a list of arguments.
+Exactly one of them holds `{path}`, which becomes the file to open. Any of them
+can hold `{line}`, which becomes the line of the symbol. If there is no such
+line, `{line}` becomes 1. For example: `--goto` and `{path}:{line}`.
+
+If there is no checkout of a GitHub repository, the browser opens the file on
 GitHub. It uses the commit, then the branch, then the default branch.
 
 ## Rendering to a bitmap
