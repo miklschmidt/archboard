@@ -215,7 +215,7 @@ test("every message's arrowhead touches the bar or lifeline it arrives at", () =
 test("a flow's nameplate spans the whole of a frame its words widened", () => {
 	// A self-message's words on the last column reach past the columns, and the
 	// frame grows to hold them; the nameplate the flow's title is printed on
-	// grows with it, from one side of the frame to the other.
+	// grows with it, across the frame's floor from one wall to the other.
 	const long = "a label long enough to reach past every column of this flow";
 	const rendered = renderDataFlow({
 		theme: "light",
@@ -239,11 +239,15 @@ test("a flow's nameplate spans the whole of a frame its words widened", () => {
 	});
 	const flow = subjectGroups(rendered.svg).find((group) => group.kind === "flow")!;
 	const frame = numbersOf(flow, "rect", (tag) => !tag.includes("ab-halo"));
-	// The plate's foot, a line straight across the frame's face.
+	// The plate's foot, a line straight across the frame's floor: it stops at
+	// the frame's walls on either side, and no wall takes more room than this.
+	const wall = 10;
 	const plate = numbersOf(flow, "line");
 	expect(plate("y1")).toBe(plate("y2"));
-	expect(plate("x1")).toBeCloseTo(frame("x"), 2);
-	expect(plate("x2")).toBeCloseTo(frame("x") + frame("width"), 2);
+	for (const gap of [plate("x1") - frame("x"), frame("x") + frame("width") - plate("x2")]) {
+		expect(gap).toBeGreaterThan(0);
+		expect(gap).toBeLessThan(wall);
+	}
 });
 
 test("a message's words stand between the lifelines either side of them", () => {

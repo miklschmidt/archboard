@@ -2,7 +2,7 @@
 // (TASK-404).
 //
 // What this catches: a neutral line, a message or a lifeline that falls under
-// 3:1 against the page or a plinth face in either theme, a neutral line that is
+// 3:1 against the page or a tray's floor in either theme, a neutral line that is
 // as loud as text, and an arrowhead whose length depends on the emphasis of its
 // line. The numbers come from the drawn picture and the theme's tokens, so a
 // change of either is measured, not copied.
@@ -88,7 +88,7 @@ function headLength(svg: string, head: string, width: number): number {
 function grounds(theme: DiagramTheme) {
 	return {
 		page: themeColor(theme, "--background"),
-		plinth: themeColor(theme, "--plinth-face"),
+		floor: themeColor(theme, "--tray-floor"),
 		text: themeColor(theme, "--card-foreground"),
 	};
 }
@@ -96,19 +96,19 @@ function grounds(theme: DiagramTheme) {
 describe("a neutral line reads on every ground and stays quieter than text", () => {
 	test.each(THEMES)("a relationship and its head (%s)", async (theme) => {
 		const { svg } = seenIn(await renderArchitecture({ content: CONTENT }), theme);
-		const { page, plinth, text } = grounds(theme);
+		const { page, floor, text } = grounds(theme);
 		const lines = headedLines(svg).filter(({ id }) => id === "loud" || id === "plain");
 		expect(lines).toHaveLength(2);
 		for (const { ink } of lines) {
 			expect(contrast(ink, page)).toBeGreaterThanOrEqual(3);
-			expect(contrast(ink, plinth)).toBeGreaterThanOrEqual(3);
+			expect(contrast(ink, floor)).toBeGreaterThanOrEqual(3);
 			expect(contrast(ink, page)).toBeLessThan(contrast(text, page) / 2);
 		}
 	});
 
 	test.each(THEMES)("a message and a lifeline (%s)", (theme) => {
 		const { svg } = seenIn(renderDataFlow({ content: CONTENT }), theme);
-		const { page, plinth } = grounds(theme);
+		const { page, floor } = grounds(theme);
 		const messages = headedLines(svg).map(({ ink }) => ink);
 		const lifelines = [
 			...svg.matchAll(/<line (?![^>]*ab-halo)[^>]*stroke="(#[0-9a-f]{6})"[^>]*stroke-dasharray/gu),
@@ -117,7 +117,7 @@ describe("a neutral line reads on every ground and stays quieter than text", () 
 		expect(lifelines.length).toBeGreaterThan(0);
 		for (const ink of [...messages, ...lifelines]) {
 			expect(contrast(ink, page)).toBeGreaterThanOrEqual(3);
-			expect(contrast(ink, plinth)).toBeGreaterThanOrEqual(3);
+			expect(contrast(ink, floor)).toBeGreaterThanOrEqual(3);
 		}
 	});
 });

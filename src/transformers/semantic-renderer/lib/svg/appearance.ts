@@ -2,15 +2,12 @@ import type { PaletteColor } from "@/shared/semantic-policy/index";
 import type { NodeAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import { token, type Palette } from "@/transformers/semantic-renderer/lib/theme";
 import {
-	BAND_RADIUS,
 	CARD_THICKNESS,
 	CHIP_THICKNESS,
 	ICON_CHIP_SIZE,
 	ICON_CHIP_RADIUS,
 	PILL_RADIUS,
 	PILL_THICKNESS,
-	PLINTH_STEP,
-	PLINTH_THICKNESS,
 	SLAB_RADIUS,
 } from "@/transformers/semantic-renderer/lib/design";
 import { lightDark, mixed } from "@/transformers/semantic-renderer/lib/svg/colour";
@@ -29,6 +26,7 @@ import {
 	standingInk,
 	type SubjectStanding,
 } from "@/transformers/semantic-renderer/lib/svg/standing";
+import type { TrayLook } from "@/transformers/semantic-renderer/lib/svg/tray";
 
 /**
  * One named palette color, as the page's token for it.
@@ -54,22 +52,28 @@ const CARD_EDGE: Share = { light: 0.32, dark: 0.3 };
 const CARD_DEEPEN = 0.75;
 
 /**
- * How far each plinth nested in another rises toward `--plinth-rise`, a step
- * nearer the light, and the furthest any rises: two steps, so a third level
- * down stands as light as the second and never as light as the cards on it.
- * On the dark ground each step is a third of the way, long enough that the
- * face alone shows it, without the edges and the nameplates.
+ * How far each tray nested in another sinks toward `--tray-sink`, a step
+ * deeper, and the furthest any sinks: two steps, so a third level down lies as
+ * deep as the second.
  */
-const PLINTH_RISE: Share = { light: 0.3, dark: 1 / 3 };
-const PLINTH_RISE_MAX: Share = { light: 0.6, dark: 2 / 3 };
+const TRAY_SINK: Share = { light: 0.4, dark: 0.4 };
+const TRAY_SINK_MAX: Share = { light: 0.8, dark: 0.8 };
 
 /**
- * How much of its kind's colour a container carries: on its body a calm tint,
- * so the cards standing on it, tinted by their own groups, read over it, and
- * on its nameplate a related tone a step stronger, so the header belongs to
- * the body rather than standing out of it; and on the nameplate's front edge.
+ * How far a tray's walls are shaded from its floor toward `--slab-deep`: as far
+ * from the floor as a card's front edge is from its face.
  */
-const PLINTH_BODY: Share = { light: 0.045, dark: 0.12 };
+const WALL_SHADE: Share = { light: 0.8, dark: 0.55 };
+
+/**
+ * How much of its kind's colour a container carries: on its floor a calm
+ * tint, so the cards standing on it, tinted by their own groups, read over it;
+ * on its walls, so the tray is one thing of its kind; and on its nameplate a
+ * related tone a step stronger, so the header belongs to the floor rather than
+ * standing out of it, and on the nameplate's front edge.
+ */
+const TRAY_FLOOR: Share = { light: 0.045, dark: 0.12 };
+const WALL_KIND: Share = { light: 0.15, dark: 0.15 };
 const PLATE_FACE: Share = { light: 0.08, dark: 0.15 };
 const PLATE_EDGE: Share = { light: 0.3, dark: 0.3 };
 
@@ -146,44 +150,38 @@ function labelLook(palette: Palette, standing?: SubjectStanding): SlabLook {
 }
 
 /**
- * A container's plinth: a low, wide block quietly tinted by the colour of the
- * container's own kind, with a nameplate across the top of its face a step
- * stronger in that colour and a front edge of it. A container of no kind's
- * colour is neutral. Each plinth nested in another stands on it a step
- * thinner, down to a card's thickness, and a step nearer the light, its
- * nameplate with it.
+ * A container's tray: its floor and its walls quietly tinted by the colour of
+ * the container's own kind, with a nameplate a step stronger in that colour
+ * and a front edge of it. A container of no kind's colour is neutral. Each tray
+ * nested in another is cut a step deeper into that one's floor, its walls
+ * with it.
  * @param ink The colour of its kind, or none.
  * @param palette Selected theme.
- * @param depth How many containers it stands in.
- * @param plateHeight How far its nameplate reaches down its face.
- * @returns The plinth's look.
+ * @param depth How many containers it is nested in.
+ * @param plateHeight How far its nameplate reaches down its box.
+ * @returns The tray's look.
  */
-function plinthLook(
+function trayLook(
 	ink: string | undefined,
 	palette: Palette,
 	depth: number,
 	plateHeight: number,
-): SlabLook {
-	const rise: Share = {
-		light: Math.min(PLINTH_RISE_MAX.light, depth * PLINTH_RISE.light),
-		dark: Math.min(PLINTH_RISE_MAX.dark, depth * PLINTH_RISE.dark),
+): TrayLook {
+	const sink: Share = {
+		light: Math.min(TRAY_SINK_MAX.light, depth * TRAY_SINK.light),
+		dark: Math.min(TRAY_SINK_MAX.dark, depth * TRAY_SINK.dark),
 	};
-	const ground = tinted(palette.plinthFace, palette.plinthRise, rise);
+	const ground = tinted(palette.trayFloor, palette.traySink, sink);
+	const floor = washed(ground, ink, TRAY_FLOOR, palette);
+	const wall = washed(tinted(ground, palette.slabDeep, WALL_SHADE), ink, WALL_KIND, palette);
 	return {
-		face: washed(ground, ink, PLINTH_BODY, palette),
+		floor,
 		ground,
-		edge: palette.plinthEdge,
-		thickness: Math.max(CARD_THICKNESS, PLINTH_THICKNESS - depth * PLINTH_STEP),
-		radius: BAND_RADIUS,
-		sheen: false,
-		hatch: true,
-		plate: {
+		wall,
+		nameplate: {
 			height: plateHeight,
-			face: washed(tinted(palette.plinthHead, palette.plinthRise, rise), ink, PLATE_FACE, palette),
-			edge:
-				ink === undefined
-					? palette.plinthEdge
-					: inkedEdge(palette.plinthEdge, ink, PLATE_EDGE, palette),
+			face: washed(palette.trayPlate, ink, PLATE_FACE, palette),
+			edge: tinted(wall, ink, PLATE_EDGE),
 		},
 	};
 }
@@ -254,4 +252,4 @@ function typeChip(
 	return slabShadow(box, ICON_CHIP_RADIUS, "chip", palette) + slab(box, look, palette) + glyph;
 }
 
-export { semanticInk, cardLook, labelLook, plinthLook, appearanceAttributes, typeChip };
+export { semanticInk, cardLook, labelLook, trayLook, appearanceAttributes, typeChip };

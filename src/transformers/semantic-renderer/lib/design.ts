@@ -7,7 +7,7 @@
 
 import { ARCHITECTURE_NOTE_GAP } from "@/transformers/semantic-renderer/config";
 
-/** The corners of a container's plinth and of a group's region. */
+/** The corners of a container's tray and of a group's region. */
 const BAND_RADIUS = 10;
 
 /**
@@ -26,7 +26,7 @@ const HEADER_HEIGHT = PART_TITLE.line;
 const HEADER_HEIGHT_WITH_NOTE = PART_TITLE.line + ARCHITECTURE_NOTE_GAP + PART_NOTE.line;
 /**
  * How far a flow's nameplate reaches below its header's words, its front edge
- * included. The plate starts at the top of the flow's frame.
+ * included. The plate is seated against the top wall of the flow's frame.
  */
 const FLOW_PLATE_FOOT = 16;
 
@@ -63,12 +63,15 @@ const SLAB_RADIUS = 8;
 /** How thick a card's slab is: its front edge, inside its box along its foot. */
 const CARD_THICKNESS = 4;
 /**
- * How thick a container's plinth is at the top level, and how much thinner
- * each one nested in another stands, down to a card's.
+ * A container's tray (`lib/svg/tray.ts`), cut into what holds it: how thick
+ * its top and left walls show, a step thicker than a card's front edge; how
+ * wide the lit lip along its bottom and right walls is; and the crease outside
+ * that lip, where the tray meets what it is cut into.
  */
-const PLINTH_THICKNESS = 6;
-const PLINTH_STEP = 1;
-/** How thick the nameplate lying across the top of a container's plinth is. */
+const TRAY_WALL = 7;
+const TRAY_LIP = 2;
+const TRAY_CREASE = 1;
+/** How thick the nameplate seated against a tray's top wall shows at its foot. */
 const PLATE_THICKNESS = 3;
 /** How thick a group's region is, and the tab its caption is printed on. */
 const MAT_THICKNESS = 3;
@@ -121,8 +124,9 @@ export {
 	CARD_RADIUS,
 	SLAB_RADIUS,
 	CARD_THICKNESS,
-	PLINTH_THICKNESS,
-	PLINTH_STEP,
+	TRAY_WALL,
+	TRAY_LIP,
+	TRAY_CREASE,
 	PLATE_THICKNESS,
 	MAT_THICKNESS,
 	TAB_THICKNESS,
