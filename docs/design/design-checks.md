@@ -689,17 +689,19 @@ A part binds to a resource address as it binds to a code symbol. Examples are
 
 A Terraform module is a directory, so a binding's path names a root module and
 its symbol an address in that root's address space (TASK-367.17). The check
-reads the root module and every local module that it calls, and each call
-gives its instance of the module addresses of its own:
+reads the root module and every local module that it calls. Each call gives
+its instance of the module addresses of its own:
 `module.checkout.aws_lambda_function.api`. A reference reaches its address
 through the variables, module arguments, outputs and local values that pass
-the value on, so a function that names `module.queue.url` reaches the queue
+the value on. So a function that names `module.queue.url` reaches the queue
 that the output `url` of that module names. It never fetches a remote module
 and never reads the copy that `terraform init` keeps under `.terraform`. An
 address inside a remote module is skipped as `module-not-read`, unless a plan
-JSON that an agent names with `--plan` fills that module in. The configuration
-on disk decides every module that the check reads, so an older plan never
-brings back a declaration that the files removed.
+JSON that an agent names with `--plan` fills that module in. Without a plan,
+the call of a remote module reaches what its arguments name. No code of the
+module is read to take their values further. The configuration on disk decides
+every module that the check reads, so an older plan never brings back a
+declaration that the files removed.
 
 Nix says nothing about run time. It shows software dependencies that are not
 explicit anywhere else: flake inputs, and the packages that a derivation is

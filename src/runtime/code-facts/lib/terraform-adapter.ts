@@ -235,13 +235,17 @@ function siblingsAfter(node: Node | null): Node[] {
 
 /**
  * The names a reference writes from its first name: each attribute after it,
- * passing over index keys, up to anything else.
+ * passing over index keys and into a splat, up to anything else. So
+ * `module.topics[*].arn` names the output `arn` of the module call.
  * @param first The first name.
  * @returns The names.
  */
 function namesFrom(first: Node): string[] {
 	const names = [first.text];
-	for (const at of siblingsAfter(first.parent).filter((node) => node.type !== "index")) {
+	const after = siblingsAfter(first.parent).flatMap((node) =>
+		node.type === "splat" ? (node.namedChildren[0]?.namedChildren ?? []) : [node],
+	);
+	for (const at of after.filter((node) => node.type !== "index")) {
 		const name = at.type === "get_attr" ? at.namedChildren[0] : undefined;
 		if (name?.type !== "identifier") break;
 		names.push(name.text);
