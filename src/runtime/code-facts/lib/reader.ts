@@ -14,7 +14,9 @@
 // Which adapter reads a file is the adapter table's (adapters.ts). What
 // depends on other files, an import resolved through `tsconfig.json` or a
 // Python project's roots, is resolved again on each pass from the cached
-// facts, by the adapter's own resolver. A pass reads a file only
+// facts, by the adapter's own resolver. So is what a file's module says of
+// it where no import names it, such as a name another file of a C# project
+// declares: the resolver reads the facts of those files through the cache. A pass reads a file only
 // where its symbolic links lead to a file the caller lists for its checkout,
 // and never Terraform state, variable files or `.terraform`. Parsing is
 // synchronous, so parses run one at a time, also for files read together, and
@@ -119,31 +121,33 @@ function nameThere(symbol: string, local: string, imported: string): string {
 }
 
 /**
- * Where each reference and import of a file leads, for this pass.
+ * Where each reference and import of a file leads, for this pass: through an
+ * import, else where the file's module says.
  * @param parsed The cached facts.
  * @param file The file, relative to its checkout.
  * @param adapter The adapter that read it.
  * @param resolver The checkout's resolver of the adapter's imports.
  * @returns The facts.
  */
-function resolved(
+async function resolved(
 	parsed: ParsedFacts,
 	file: string,
 	adapter: SyntaxFacts["adapter"],
 	resolver: ImportResolver,
-): SyntaxFacts {
+): Promise<SyntaxFacts> {
 	const imports = parsed.imports.map((found) => resolver.resolve(file, found));
-	const references = parsed.references.map(({ through, ...reference }) => {
+	const moduleReading = await resolver.inModule?.(file, parsed);
+	const references = parsed.references.map(({ through, ...reference }, index) => {
 		const target =
 			through === undefined
-				? undefined
+				? moduleReading?.targets[index]
 				: targetOf(reference.symbol, through.local, imports[through.import]);
 		return target === undefined ? reference : { ...reference, target };
 	});
 	return {
 		adapter,
 		path: file,
-		definitions: parsed.definitions,
+		definitions: moduleReading?.definitions ?? parsed.definitions,
 		references,
 		imports,
 		unparsed: parsed.unparsed,
@@ -270,6 +274,24 @@ function createPass(context: PassContext): FactsPass {
 	const reads = new Map<string, Promise<FileFacts | undefined>>();
 	const resolvers = new Map<string, ImportResolver>();
 	/**
+	 * The facts an adapter gives a file before its imports are resolved, for
+	 * a resolver that reads what the files around a file declare.
+	 * @param checkout The checkout.
+	 * @param relative The file.
+	 * @returns Its facts, or undefined for a file the pass may not read or reads as text.
+	 */
+	const parsedOf = async (
+		checkout: CheckoutFiles,
+		relative: string,
+	): Promise<ParsedFacts | undefined> => {
+		signal.throwIfAborted();
+		const target = listedTarget(checkout, relative);
+		const reading = target === undefined ? undefined : adapterOf(target.relative);
+		if (target === undefined || reading === undefined) return undefined;
+		const bytes = await Bun.file(target.absolute).bytes();
+		return parsedFacts(context, target.absolute, bytes, reading, stats);
+	};
+	/**
 	 * The resolver of one adapter's imports in a checkout, made once in a pass.
 	 * @param checkout The checkout.
 	 * @param reading The adapter.
@@ -279,10 +301,14 @@ function createPass(context: PassContext): FactsPass {
 		const key = `${checkout.root}\0${reading.adapter.name}`;
 		let resolver = resolvers.get(key);
 		if (resolver === undefined) {
-			resolver = reading.adapter.resolver(checkout, (relative) => {
-				const target = listedTarget(checkout, relative);
-				return target === undefined ? undefined : fs.readFileSync(target.absolute, "utf8");
-			});
+			resolver = reading.adapter.resolver(
+				checkout,
+				(relative) => {
+					const target = listedTarget(checkout, relative);
+					return target === undefined ? undefined : fs.readFileSync(target.absolute, "utf8");
+				},
+				(relative) => parsedOf(checkout, relative),
+			);
 			resolvers.set(key, resolver);
 		}
 		return resolver;

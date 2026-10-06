@@ -19,7 +19,10 @@ interface DefinitionSite {
 	/** The file that defines it, relative to its checkout. */
 	readonly path: string;
 	readonly definition: Definition;
-	/** The files that pass it on, by `export ... from`, between the asking file and the definition. */
+	/**
+	 * The files that pass it on between the asking file and the definition:
+	 * each `export ... from`, and the project file of a C# project.
+	 */
 	readonly via: readonly string[];
 }
 
@@ -32,7 +35,7 @@ interface DefinitionSite {
  */
 function joined(target: Target, rest: readonly string[]): Target {
 	const names = [target.symbol, ...rest].filter((name) => name !== "*" && name !== "");
-	return { path: target.path, symbol: names.join(".") };
+	return { ...target, symbol: names.join(".") };
 }
 
 /**
@@ -62,6 +65,15 @@ function usedTargets(facts: SyntaxFacts, symbol: string): Target[] {
 			: [],
 	);
 	return [...byPrefix, ...byTail].filter((target) => target.symbol !== "");
+}
+
+/**
+ * The files that pass a target's name on to the file that uses it.
+ * @param target The target.
+ * @returns The files, none for a name an import reaches directly.
+ */
+function passedOnBy(target: Target): readonly string[] {
+	return target.via ?? [];
 }
 
 /**
@@ -153,7 +165,7 @@ async function follow(
 	if (facts === undefined || facts.adapter === "text") return undefined;
 	const symbol = ownSpelling(facts.definitions, target.symbol);
 	const definition = definitionsNamed(facts.definitions, symbol)[0];
-	if (definition !== undefined) return { path: facts.path, definition, via: [] };
+	if (definition !== undefined) return { path: facts.path, definition, via: passedOnBy(target) };
 	const site = await firstSite(reexportTargets(facts, symbol), (next) =>
 		follow(search, next, depth - 1),
 	);

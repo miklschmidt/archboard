@@ -21,6 +21,7 @@ import type {
 	AdapterName,
 	ImportResolver,
 	ParseFacts,
+	ReadParsed,
 	ReadText,
 } from "@/runtime/code-facts/lib/facts";
 import { composeFacts, envFileFacts } from "@/runtime/code-facts/lib/compose-adapter";
@@ -28,6 +29,9 @@ import {
 	COMPOSE_FILE_NAMES,
 	createComposeResolver,
 } from "@/runtime/code-facts/lib/compose-project";
+import { csharpFacts } from "@/runtime/code-facts/lib/csharp-adapter";
+import { projectFacts } from "@/runtime/code-facts/lib/csharp-project";
+import { createCSharpResolver } from "@/runtime/code-facts/lib/csharp-resolution";
 import { treeSitter } from "@/runtime/code-facts/lib/grammars";
 import {
 	createModuleResolver,
@@ -43,8 +47,15 @@ interface Adapter {
 	readonly name: AdapterName;
 	/** Each extension (`.ts`) or whole file name (`flake.lock`) it reads, and how it reads it. */
 	readonly reads: Readonly<Record<string, ParseFacts>>;
-	/** The resolver of one checkout's imports, made once in a pass. */
-	readonly resolver: (checkout: CheckoutFiles, read: ReadText) => ImportResolver;
+	/**
+	 * The resolver of one checkout's imports, made once in a pass. It reads
+	 * other files as text, or their facts, such as the files of a C# project.
+	 */
+	readonly resolver: (
+		checkout: CheckoutFiles,
+		read: ReadText,
+		parsed: ReadParsed,
+	) => ImportResolver;
 }
 
 /**
@@ -80,6 +91,11 @@ const TSX = treeSitter(
 	typeScriptFacts,
 );
 const PYTHON = treeSitter("tree-sitter-python/tree-sitter-python.wasm", "python.scm", pythonFacts);
+const CSHARP = treeSitter(
+	"tree-sitter-c-sharp/tree-sitter-c_sharp.wasm",
+	"csharp.scm",
+	csharpFacts,
+);
 
 /** Every adapter, one entry each. */
 const ADAPTERS: readonly Adapter[] = [
@@ -92,6 +108,11 @@ const ADAPTERS: readonly Adapter[] = [
 		name: "python",
 		reads: { ".py": PYTHON, ".pyi": PYTHON },
 		resolver: createPythonResolver,
+	},
+	{
+		name: "csharp",
+		reads: { ".cs": CSHARP, ".csproj": projectFacts },
+		resolver: createCSharpResolver,
 	},
 	{
 		name: "compose",
