@@ -168,11 +168,12 @@ recipe names.
   is information ([evidence](references/authoring.md#evidence-for-a-relationship)). For a draft whose
   code is written, add `--variant <draft>`. What it could not read (a
   repository this machine has not registered, a file Git ignores) is listed
-  as skipped, never as a finding. A language with no language server in a
-  checkout is `language-server-missing`, and its names stay matches by name.
-  Configure a server only for a repository you work in, because it runs that
-  repository's code as an editor does
-  ([setting one up](references/authoring.md#evidence-for-a-relationship)).
+  as skipped, never as a finding. If a checkout has
+  no configured language server for a language, the answer says
+  `language-server-missing`, and the names of that language stay matches by
+  name. A configured server runs the code of the repository, as an editor does.
+  Configure one only for a repository that you work in
+  ([how](references/authoring.md#evidence-for-a-relationship)).
 - **Open questions.** A question about the product (a field, a selector, what
   a refusal means, what a command accepts) is answered by the references
   below, the generated JSON Schemas under `references/generated/`, and

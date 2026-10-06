@@ -2,11 +2,11 @@
 // TASK-433).
 //
 // A server that can run code of a checkout runs only where the agent that
-// works in that repository configured it, as the entry of `repo
+// works in that repository configured it, as the server configuration of `repo
 // language-server` on the checkout's registration, and then as an editor runs
 // it: that command, those arguments, the user's environment. A bare command is
 // looked up on the `PATH`; an absolute path names the program itself. A
-// language with no entry has no server, and the pass says so once for the
+// language with no configured server has no server, and the pass says so once for the
 // checkout.
 //
 // TypeScript needs no configuration. Its server is the native `tsc --lsp`
@@ -134,18 +134,18 @@ function languageServerOf(
 	configured: LanguageServers,
 ): LanguageServer {
 	if (language === "typescript") return typescriptServer(root);
-	const entry = configured[language];
-	if (entry === undefined) {
+	const server = configured[language];
+	if (server === undefined) {
 		return { status: "missing", detail: "no server is configured" };
 	}
-	const program = Bun.which(entry.command);
+	const program = Bun.which(server.command);
 	if (program === null) {
 		return {
 			status: "missing",
-			detail: `${entry.command} (configured for ${language}) is not installed`,
+			detail: `${server.command} (configured for ${language}) is not installed`,
 		};
 	}
-	return { status: "command", argv: [program, ...entry.args] };
+	return { status: "command", argv: [program, ...server.args] };
 }
 
 export { type LanguageServer, languageServerOf };

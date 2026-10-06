@@ -506,43 +506,54 @@ the language server of the file names the definition. It is a `candidate`
 where the check matched it by name only. A finding that rests only on
 candidates is information. A call through a value, such as `ledger.post()`,
 is no evidence by itself. Anchor the relationship at that call: the language
-server then names the code that the call reaches. TypeScript needs no setup:
-the check runs the native `tsc --lsp` of the `typescript` package in the
-checkout's own `node_modules` when that is version 7 or later (an older one is
-no language server), and the one that archboard installs otherwise.
+server then names the code that the call reaches.
 
-Every other server is configured for one checkout, by the agent that works in
-that repository, and not before: a language server reads a project the way an
-editor does, which runs code of the repository (pyright runs the interpreter of
-its `.venv`, clangd the compilers and plugins that `compile_commands.json`
-names, csharp-ls and sourcekit-lsp the build files). The check then runs the
-server exactly as the editor would, with the command, arguments and environment
-you give it and nothing added. So configure one only for a repository you work
-in, never for one you only read, and say so to the user when you do:
+TypeScript needs no setup. The check runs the native `tsc --lsp` of the
+`typescript` package in the `node_modules` at the root of the checkout, when
+that package is version 7 or later. A TypeScript older than 7 is no language
+server, so the check runs the one that archboard installs instead.
 
-1. Install the server (for Python `pyright-langserver`, for C, C++ and
-   Objective-C `clangd`, for C# `csharp-ls`, for Swift `sourcekit-lsp`).
-2. For C, C++ and Objective-C, the server needs a `compile_commands.json`.
-   For CMake that is `cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`,
-   which builds nothing, and other build tools need `bear -- make`, which
-   builds. For Swift, `swift build` writes the index the server reads.
-3. Register the checkout if it is not (`archboard repo add <dir>`), then run
-   `archboard repo language-server <python|csharp|swift|c> <command>`, and
-   `--arg=<argument>` for each argument, such as `--arg=--stdio` for
-   pyright. `--remove` removes it, `--repo <identity>` names another
-   registered checkout, and `archboard repo list` shows what is configured.
-   The configuration stays on this machine and goes with `repo forget`.
+Every other language needs a configured server, one for each checkout. A
+language server reads a project the way an editor does, and that runs code of
+the repository. pyright runs the interpreter of the `.venv`. clangd runs the
+compilers and plugins that `compile_commands.json` names. csharp-ls and
+sourcekit-lsp evaluate the build files. The check runs a configured server as
+the editor would, with the command, the arguments and the environment that you
+give it, and adds nothing.
 
-With no server for a language the answer says `language-server-missing` once
-for the checkout and the language, names that command, and keeps the
-candidates. A server that did not answer is `language-server-failed`. A
-project the server cannot answer about yet is `language-server-unready` once,
-and the candidates stay: a Swift package with no index (the check never
-builds; unless the user asks, do not build to clear it), a C# checkout with no
-`.sln`, `.slnx` or `.csproj` file, or a C, C++ or Objective-C file with no
-`compile_commands.json` (generate it only for a repository you work in). With
-a server, clangd names the definition of a function that a header only
-declares, such as one that Redis declares in `server.h` and defines in
+Configure a server only for a repository that you work in. Never configure one
+for a repository that you only read. Tell the user when you do it. Follow these
+steps:
+
+1. Install the server: `pyright-langserver` for Python, `clangd` for C, C++ and
+   Objective-C, `csharp-ls` for C#, or `sourcekit-lsp` for Swift.
+2. For C, C++ and Objective-C, generate a `compile_commands.json`. For CMake,
+   run `cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`, which builds
+   nothing. Other build tools need `bear -- make`, which builds. For Swift,
+   `swift build` writes the index that the server reads.
+3. If the checkout is not registered, run `archboard repo add <dir>`.
+4. Run `archboard repo language-server <python|csharp|swift|c> <command>`. Add
+   `--arg=<argument>` for each argument, such as `--arg=--stdio` for pyright.
+
+`--remove` removes the server of a language. `--repo <identity>` names another
+registered checkout. `archboard repo list` shows each configured server. The
+configuration stays on this machine, and `repo forget` removes it.
+
+If a checkout has no configured server for a language, the answer says
+`language-server-missing` once for the checkout and the language. It names the
+command that configures one, and the candidates stay. A server that did not
+answer is `language-server-failed`. A project that the server cannot answer
+about yet is `language-server-unready` once, and the candidates stay. These are
+the cases:
+
+- A Swift package with no index. The check never builds. Do not build to clear
+  it, unless the user asks.
+- A C# checkout with no `.sln`, `.slnx` or `.csproj` file.
+- A C, C++ or Objective-C file with no `compile_commands.json`. Generate it
+  only for a repository that you work in.
+
+With a server, clangd names the definition of a function that a header only
+declares. Redis declares such a function in `server.h` and defines it in
 `evict.c`.
 
 A relationship across a network hop shows no evidence in code alone. An

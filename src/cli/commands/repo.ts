@@ -11,9 +11,9 @@ import { inspectCheckout } from "@/runtime/engine/git";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import {
 	CONFIGURABLE_LANGUAGES,
-	LanguageServerEntrySchema,
+	ConfiguredServerSchema,
 	LanguageServersSchema,
-	type LanguageServerEntry,
+	type ConfiguredServer,
 } from "@/shared/language-servers/index";
 
 const tail = z.array(z.string()).default([]);
@@ -473,7 +473,7 @@ const repoLanguageServerContract = defineCommand({
  * @returns The command and arguments to set, or undefined to remove the server.
  * @throws {CliUsageError} When the options ask for both or neither, or the command is not one.
  */
-function requestedServer(input: RepoLanguageServerInput): LanguageServerEntry | undefined {
+function requestedServer(input: RepoLanguageServerInput): ConfiguredServer | undefined {
 	if (input.remove) {
 		if (input.command === undefined && input.arg.length === 0) return undefined;
 		throw new CliUsageError("--remove takes no command and no --arg");
@@ -483,7 +483,7 @@ function requestedServer(input: RepoLanguageServerInput): LanguageServerEntry | 
 			`repo language-server ${input.language} needs the command that starts the server, or --remove`,
 		);
 	}
-	const parsed = LanguageServerEntrySchema.safeParse({ command: input.command, args: input.arg });
+	const parsed = ConfiguredServerSchema.safeParse({ command: input.command, args: input.arg });
 	if (!parsed.success) throw new CliUsageError(z.prettifyError(parsed.error));
 	return parsed.data;
 }
