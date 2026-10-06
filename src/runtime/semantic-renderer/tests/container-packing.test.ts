@@ -3,6 +3,7 @@ import { expect, test } from "bun:test";
 import { LayoutEngineSchema } from "@/shared/semantic-board/index";
 import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { measureArchitecture } from "@/runtime/semantic-renderer/measurement";
 import { routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import { labelsOffRuns, routesThroughCards } from "@/runtime/semantic-renderer/tests/drawn-ink";
 
@@ -55,8 +56,9 @@ test.each([
 		expect(left).toBe(CONTAINER_INSET);
 		expect(right).toBe(left);
 		expect(bottom).toBe(left);
-		// The title keeps its existing band and air even though the other insets shrink.
-		expect(Math.min(...cards.map(({ y }) => y)) - frame.y).toBe(72 + CONTAINER_INSET);
+		// The cards stand as far under the header as in from the sides.
+		const header = measureArchitecture(content).nodes.get("pool")!.headerHeight;
+		expect(Math.min(...cards.map(({ y }) => y)) - frame.y).toBe(header + CONTAINER_INSET);
 	},
 );
 

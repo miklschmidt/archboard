@@ -131,7 +131,7 @@ node, a standing takes over the outline of the top face, with the color, width
 and dash it had before the blocks: 1.8 units, solid green for added, dashed
 orange for changed. The border runs along the edge of the face, inside it. The
 card keeps its group's tint on its face and its group's color on its front
-edge. On a container, the border runs round the tray, and the floor, the
-nameplate and the walls keep their colors. A removed node has lost its depth: a
+edge. On a container, the border runs along the face of its header slab, as
+on a card, and the well is not marked (TASK-423). A removed node has lost its depth: a
 flat, see-through face inside a dashed red border round its footprint. The type
 chip still says the kind, and selection still adds a ring outside the part.

@@ -1,10 +1,8 @@
 // Paint measured cards and frames: the words at supplied baselines, near and far.
-import {
-	ARCHITECTURE_CARD_PADDING,
-	ARCHITECTURE_HEADER_PADDING,
-} from "@/transformers/semantic-renderer/config";
+import { ARCHITECTURE_CARD_PADDING } from "@/transformers/semantic-renderer/config";
 import {
 	BAND_RADIUS,
+	CARD_THICKNESS,
 	ICON_CHIP_SIZE,
 	SLAB_RADIUS,
 } from "@/transformers/semantic-renderer/lib/design";
@@ -14,7 +12,6 @@ import type { NodeAppearance } from "@/transformers/semantic-renderer/lib/semant
 import {
 	appearanceAttributes,
 	cardLook,
-	semanticInk,
 	trayLook,
 	typeChip,
 } from "@/transformers/semantic-renderer/lib/svg/appearance";
@@ -26,7 +23,7 @@ import { lines, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives
 import { slab, slabSeat, slabShadow } from "@/transformers/semantic-renderer/lib/svg/slab";
 import { stylesFor } from "@/transformers/semantic-renderer/lib/svg/styles";
 import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
-import { plateFace, tray } from "@/transformers/semantic-renderer/lib/svg/tray";
+import { headerOf, tray } from "@/transformers/semantic-renderer/lib/svg/tray";
 import {
 	PART_ATTRIBUTE,
 	standingPalette,
@@ -38,7 +35,7 @@ import {
 
 /**
  * A frame's header as it is drawn from far away: as a card is, on the face of
- * its nameplate, with its kind's tile grown to the plate, its name and the
+ * its header slab, with its kind's tile grown to the slab, its name and the
  * start of what it is responsible for, clear of its far mark.
  * @param placed The frame's geometry, name and responsibility.
  * @param look Its type chip's colour and glyph, and the selected theme.
@@ -52,8 +49,10 @@ function paintFarHeader(
 	look: { appearance: NodeAppearance; palette: Palette },
 	unsettled: boolean,
 ): string {
-	const plate = plateFace(placed.box, placed.measured.headerHeight);
-	return paintFarCard(placed.measured.node, plate, look, unsettled);
+	const header = headerOf(placed.box, placed.measured.headerHeight);
+	// The header slab's face, above its front edge.
+	const face = { ...header, height: header.height - CARD_THICKNESS };
+	return paintFarCard(placed.measured.node, face, look, unsettled);
 }
 
 /**
@@ -124,11 +123,11 @@ function paintMeasuredCard(
 }
 
 /**
- * Paint a containing frame below its children and all connections: a tray
- * its children stand in, with a nameplate seated against its top wall that its
- * heading is printed on. What the frame itself relates to leaves from the foot
- * of the nameplate's front edge, so such a line has a visible origin inside
- * the frame.
+ * Paint a containing frame below its children and all connections: a neutral
+ * well its children stand in, with a header slab standing on its floor that
+ * its heading is printed on, in the colour of the group that places it. What
+ * the frame itself relates to leaves from the foot of the slab's front edge,
+ * so such a line has a visible origin inside the frame.
  * @param placed Final frame geometry.
  * @param palette The selected theme.
  * @param standing Its architectural change.
@@ -143,8 +142,11 @@ function paintMeasuredFrame(
 ): string {
 	const { measured, box, depth } = placed;
 	const styles = stylesFor(palette);
-	const ink = semanticInk(appearance.bodyColor);
-	const look = trayLook(ink, palette, depth, measured.headerHeight);
+	const look = trayLook(
+		{ box: headerOf(box, measured.headerHeight), look: cardLook(appearance, palette) },
+		palette,
+		depth,
+	);
 	return wrap(
 		"g",
 		{
@@ -178,6 +180,8 @@ function paintMeasuredHeader(
 	appearance: NodeAppearance,
 ): string {
 	const words = standingPalette(palette, standing);
+	// The words stand on the header slab as a card's stand on its own.
+	const header = headerOf(placed.box, placed.measured.headerHeight);
 	return wrap(
 		"g",
 		{
@@ -188,17 +192,17 @@ function paintMeasuredHeader(
 		lines([
 			nearLayer(
 				typeChip(
-					placed.box.x + ARCHITECTURE_HEADER_PADDING,
-					placed.box.y + ARCHITECTURE_HEADER_PADDING,
+					header.x + ARCHITECTURE_CARD_PADDING,
+					header.y + ARCHITECTURE_CARD_PADDING,
 					appearance,
 					palette,
 					standing,
 				) +
 					paintTextRuns(placed.measured.runs, placed.box, words) +
-					drillCorner(placed.box, ARCHITECTURE_HEADER_PADDING, appearance, palette),
+					drillCorner(header, ARCHITECTURE_CARD_PADDING, appearance, palette),
 			),
 			paintFarHeader(placed, { appearance, palette: words }, unsettled),
-			warningBadge(placed.box, unsettled, palette),
+			warningBadge(header, unsettled, palette),
 		]),
 	);
 }

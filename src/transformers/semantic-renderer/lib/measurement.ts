@@ -1,12 +1,17 @@
 import {
 	ARCHITECTURE_CARD_PADDING,
-	ARCHITECTURE_HEADER_PADDING,
 	ARCHITECTURE_ICON_GAP,
 	ARCHITECTURE_NOTE_GAP,
 	ARCHITECTURE_LABEL_PADDING_X,
 	ARCHITECTURE_LABEL_PADDING_Y,
 } from "@/transformers/semantic-renderer/config";
-import { ICON_CHIP_SIZE, PART_NOTE, PART_TITLE } from "@/transformers/semantic-renderer/lib/design";
+import {
+	HEADER_SLAB_INSET,
+	HEADER_SLAB_TOP,
+	ICON_CHIP_SIZE,
+	PART_NOTE,
+	PART_TITLE,
+} from "@/transformers/semantic-renderer/lib/design";
 import { DRILL_MARK_ROOM } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
 // The words settle before placement. Pretext owns line breaking; the canvas of
 // the place drawing the picture measures the strings the SVG will paint.
@@ -129,14 +134,56 @@ function measureNoteLines(
 	return runsFor(prepare(text, style), style, width, 0, 0);
 }
 
+/** The narrowest a card is, and the widest it grows before its words wrap. */
+const CARD_WIDTH = { least: 260, most: 340 } as const;
+
 /**
  * Reserve all title and responsibility lines before a card gains neighbours.
+ * A container's header is a slab measured as a card is, standing in the
+ * container's well (`lib/svg/tray.ts`) a small gap inside its walls; it is as
+ * tall as its words need and no taller. Its width is the box's least width,
+ * between a card's least and most, and its words are placed relative to the
+ * box, on the slab.
  * @param node The semantic subject, including its complete authored words.
  * @param container Whether other subjects name this one as their parent.
  * @returns Its minimum box and all relative text positions.
  */
 function measureNode(node: SemanticNode, container: boolean): MeasuredNode {
-	const padding = container ? ARCHITECTURE_HEADER_PADDING : ARCHITECTURE_CARD_PADDING;
+	if (!container) return measureSlab(node, { ...CARD_WIDTH, height: 72 });
+	const slab = measureSlab(node, {
+		least: CARD_WIDTH.least - 2 * HEADER_SLAB_INSET,
+		most: CARD_WIDTH.most - 2 * HEADER_SLAB_INSET,
+		height: ICON_CHIP_SIZE + 2 * ARCHITECTURE_CARD_PADDING,
+	});
+	const headerHeight = HEADER_SLAB_TOP + slab.height;
+	return {
+		node,
+		width: slab.width + 2 * HEADER_SLAB_INSET,
+		height: headerHeight,
+		headerHeight,
+		runs: slab.runs.map((run) => ({
+			...run,
+			x: run.x + HEADER_SLAB_INSET,
+			y: run.y + HEADER_SLAB_TOP,
+		})),
+	};
+}
+
+/**
+ * A card's slab, or a container's header slab: its words set inside the
+ * card's padding, beside its type chip.
+ * @param node The semantic subject, including its complete authored words.
+ * @param size How wide it may be, and how tall at the least.
+ * @param size.least The least width.
+ * @param size.most The widest it grows before its words wrap.
+ * @param size.height The least height.
+ * @returns Its box and its words, relative to its top left.
+ */
+function measureSlab(
+	node: SemanticNode,
+	size: { readonly least: number; readonly most: number; readonly height: number },
+): MeasuredNode {
+	const padding = ARCHITECTURE_CARD_PADDING;
 	const left = padding + ICON_CHIP_SIZE + ARCHITECTURE_ICON_GAP;
 	// A part that opens another board keeps its name clear of the mark in its
 	// top-right corner; the words under the name run beneath the mark.
@@ -144,7 +191,7 @@ function measureNode(node: SemanticNode, container: boolean): MeasuredNode {
 	const title = prepare(node.name, TITLE);
 	const note = prepare(node.responsibility ?? "", NOTE);
 	const natural = Math.max(measureNaturalWidth(title) + marked, measureNaturalWidth(note));
-	const width = Math.min(340, Math.max(260, natural + left + padding));
+	const width = Math.min(size.most, Math.max(size.least, natural + left + padding));
 	const available = width - left - padding;
 	const titles = runsFor(title, TITLE, available - marked, left, padding);
 	const noteTop = padding + titles.length * TITLE.lineHeight + ARCHITECTURE_NOTE_GAP;
@@ -154,7 +201,7 @@ function measureNode(node: SemanticNode, container: boolean): MeasuredNode {
 		notes.length > 0
 			? noteTop + notes.length * NOTE.lineHeight
 			: padding + titles.length * TITLE.lineHeight;
-	const height = Math.max(72, bottom + padding);
+	const height = Math.max(size.height, bottom + padding);
 	// Pretext's segment sums can differ from whole-line kerning. The actual
 	// painted width wins, even when a single long identifier needs a little
 	// more space than the preferred maximum; no character is hidden or cut.
@@ -167,7 +214,7 @@ function measureNode(node: SemanticNode, container: boolean): MeasuredNode {
 		node,
 		width: Math.max(width, left + paintedWidth + padding),
 		height,
-		headerHeight: container ? height : 0,
+		headerHeight: 0,
 		runs,
 	};
 }

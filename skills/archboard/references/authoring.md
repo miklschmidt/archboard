@@ -60,9 +60,10 @@ Groups carry the color of the cards. Every configured group has a required
 `config.yaml` order; the cards placed with one group in one container (or at the
 board level) are gathered into a region drawn in that group's color, one
 region per container even round a single card, but none inside a container
-the same group places, and each takes its body color from it. A card placed with no group is neutral. A container's kind colors only
-the container, never the cards inside it, and each node's icon chip says its own
-kind (`nodeKinds.<kind>.color`). Color is configuration, never on a board or a
+the same group places, and each takes its body color from it. A card placed with no group is neutral. A container takes the
+color of the group that places it on its header, as a card does, and is
+neutral when no group places it; it colors nothing inside it. Each node's icon
+chip says its own kind in the kind's color (`nodeKinds.<kind>.color`). Color is configuration, never on a board or a
 node: a board drawn neutral is the vault owner's configuration question, not a
 reason to touch `config.yaml` while authoring a board.
 

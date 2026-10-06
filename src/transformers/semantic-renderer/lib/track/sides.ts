@@ -5,11 +5,8 @@
 // container's members. Each wall is pulled in to one inset from the outermost
 // thing its container holds.
 import type { ElkExtendedEdge } from "@archboard/elk-rs";
-import {
-	ARCHITECTURE_HEADER_PADDING,
-	CONTAINER_INSET,
-	REGION_INSET,
-} from "@/transformers/semantic-renderer/config";
+import { CONTAINER_INSET, REGION_INSET } from "@/transformers/semantic-renderer/config";
+import { ARCHITECTURE_HEADER_PADDING } from "@/transformers/semantic-renderer/lib/design";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { LANE, REGION_CLEARANCE } from "@/transformers/semantic-renderer/lib/track/chains";
 import {

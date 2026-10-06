@@ -63,32 +63,6 @@ function tinted(base: string, ink: string | undefined, share: Share): string {
 	return share.light === share.dark ? light : lightDark(light, mixed(base, ink, share.dark));
 }
 
-/**
- * How far an ink is shaded toward `--slab-deep` before it tints a face on the
- * dark ground. A full-strength ink is far lighter than a dark face, so a tint
- * of it would lift the face toward the secondary words on it; a deeper shade
- * of the same hue carries as much colour and keeps the face's lightness.
- */
-const DEEPEN = 0.55;
-
-/**
- * A face washed with an ink: the ink itself on the light ground, a deeper
- * shade of it on the dark ({@link DEEPEN}), so the words on the face keep
- * their contrast on either.
- * @param base The face.
- * @param ink The ink, or none to leave the face as it is.
- * @param share How much of it, on each ground.
- * @param palette The theme's colours.
- * @returns The washed face.
- */
-function washed(base: string, ink: string | undefined, share: Share, palette: Palette): string {
-	if (ink === undefined) return base;
-	return lightDark(
-		mixed(base, ink, share.light),
-		mixed(base, mixed(ink, palette.slabDeep, DEEPEN), share.dark),
-	);
-}
-
 /** How a block looks: its two tones, how thick it is and how round its corners are. */
 interface SlabLook {
 	/** Its top face. */
@@ -420,5 +394,4 @@ export {
 	slabShadow,
 	standingBorder,
 	tinted,
-	washed,
 };

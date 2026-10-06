@@ -51,8 +51,9 @@ const RelationshipPolicySchema = z
  * One configured group a node may belong to. The record key is the stable id
  * boards carry; the name is what a reader sees, and renaming it changes no
  * board and no comparison. The colour is required: a group colours the cards
- * placed with it and the region that gathers them (ADR 0038), so a group
- * without one could not be drawn. The refusal's path names the group.
+ * and the containers' headers placed with it and the region that gathers them
+ * (ADR 0038), so a group without one could not be drawn. A kind's colour is
+ * its icon chip's. The refusal's path names the group.
  */
 const GroupPolicySchema = z
 	.object({

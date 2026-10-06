@@ -21,13 +21,14 @@
 // is what lets several flows stack down one page and still be told apart.
 
 import type { FlowStep, SemanticFlow, SemanticNode } from "@/shared/semantic-board/index";
+import { ARCHITECTURE_CARD_PADDING } from "@/transformers/semantic-renderer/config";
 import {
 	CONTAINER_BOTTOM_PAD,
-	CONTAINER_TOP_PAD,
 	DIAGRAM_MARGIN,
-	HEADER_GAP,
 	HEADER_HEIGHT,
 	HEADER_HEIGHT_WITH_NOTE,
+	HEADER_SLAB_INSET,
+	HEADER_SLAB_TOP,
 	ICON_MIN_CARD_WIDTH,
 	NEST_INSET,
 	TITLE_SIZE,
@@ -133,6 +134,8 @@ interface FlowLayout {
 	readonly frame: Box;
 	/** Where the frame's name and summary go. */
 	readonly header: Box;
+	/** The header slab the name and summary stand on, its front edge included. */
+	readonly slab: Box;
 	/** Where the lifelines stop. */
 	readonly lifelineBottom: number;
 	/** Its participants, in the order the flow states them. */
@@ -387,9 +390,14 @@ function layoutFlow(
 	);
 	const contentWidth = columnWidth * nodes.length + COLUMN_GAP * (nodes.length - 1);
 
-	const headerTop = top + CONTAINER_TOP_PAD;
+	// The header slab stands in the frame's well as a container's does, with
+	// the words on it as a card's stand on its own, and the heads stand as far
+	// under its foot as in from the frame's sides.
+	const slabTop = top + HEADER_SLAB_TOP;
+	const headerTop = slabTop + ARCHITECTURE_CARD_PADDING;
 	const headerHeight = flow.summary === undefined ? HEADER_HEIGHT : HEADER_HEIGHT_WITH_NOTE;
-	const cardsTop = headerTop + headerHeight + HEADER_GAP;
+	const slabFoot = headerTop + headerHeight + ARCHITECTURE_CARD_PADDING;
+	const cardsTop = slabFoot + NEST_INSET;
 	const placedCards = nodes.map((node, index) =>
 		placeColumnCard(
 			node,
@@ -440,10 +448,16 @@ function layoutFlow(
 		flow,
 		frame: { ...span, y: top, height: lifelineBottom + CONTAINER_BOTTOM_PAD - top },
 		header: {
-			x: span.x + NEST_INSET,
+			x: span.x + HEADER_SLAB_INSET + ARCHITECTURE_CARD_PADDING,
 			y: headerTop,
-			width: span.width - NEST_INSET * 2,
+			width: span.width - (HEADER_SLAB_INSET + ARCHITECTURE_CARD_PADDING) * 2,
 			height: headerHeight,
+		},
+		slab: {
+			x: span.x + HEADER_SLAB_INSET,
+			y: slabTop,
+			width: span.width - HEADER_SLAB_INSET * 2,
+			height: slabFoot - slabTop,
 		},
 		lifelineBottom,
 		columns,

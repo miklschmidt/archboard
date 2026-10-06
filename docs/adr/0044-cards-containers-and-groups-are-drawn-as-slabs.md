@@ -75,18 +75,27 @@ in `lib/design.ts`.
    band, quieter than the top wall. The bottom wall faces the light and shows a
    2-unit lit lip, with a 1-unit crease below it. Where two walls meet, each
    turns round the rounded corner of the box, so the walls read as one carved
-   shape. The walls are neutral shades of the floor. The floor lies a step
-   below what holds it. A container nested in another is cut a step deeper
-   into that one's floor, for two levels at most. A tray casts no shadow
-   (TASK-414).
-4. **The heading of a container lies on a nameplate.** The nameplate is a
-   raised plate on the floor, against the top wall. It has a 3-unit front edge
-   of its own, and no shadow below that edge. The lines that the container
-   sends out leave from the foot of that front edge.
-5. **A container carries its kind.** The floor carries a calm tint of the
-   kind's color. The walls carry none of it. The nameplate carries a tone a
-   step stronger, and its front edge more again. A container of a kind with no
-   color is neutral.
+   shape. The tray is a neutral well: its floor is only just darker than what
+   holds it, about 1.5% in OKLCH lightness on either ground, and its walls
+   are neutral shades of the floor. A container nested in another is cut a
+   step deeper into that one's floor, for two levels at most. A tray casts no
+   shadow (TASK-414, TASK-423).
+4. **The heading of a container lies on a header slab.** The header slab is a
+   card's slab (rule 1), with a 4-unit front edge and a card's shadow,
+   standing on the floor with its face level with what the tray is cut into.
+   It stands inside the walls, a 5-unit gap of floor from the top wall and
+   from each side wall (`WELL_GAP`), just enough to see the walls and the depth
+   of the well round it. The owner found a wider margin too large. The first
+   row of cards stands 20 units under its foot when no line turns there, as
+   far as the cards stand from the sides and the bottom of the box
+   (`CONTAINER_INSET`). Its words stand on it as a card's do, 16 units in. The
+   lines that the container sends out leave from the foot of its front edge
+   (TASK-423).
+5. **A container's header takes its group's color, as a card does.** The
+   header slab looks as a card does: in the color of the group that places the
+   container, or neutral when no group places it. The well carries no color.
+   The container's kind shows on its icon chip alone, as every part's does
+   (TASK-423).
 6. **The region of a group has no face, and a frame with strong corners.**
    The page or the floor of a tray shows through it, so it looks the same
    wherever it lies (TASK-415). A 3-unit frame in a faded tone of the group's
@@ -132,8 +141,11 @@ in `lib/design.ts`.
    activation bar is a slim slab. It takes the front edge of its participant's
    card. The bar of a participant in no group is shaded toward the secondary
    ink, about as pale as the bar of a grouped participant.
-9. **A sequence frame is a tray with a nameplate,** built like a container and
-   always neutral. The name of the flow is printed on the nameplate as a
+9. **A sequence frame is a tray with a header slab,** built like a container
+   and always neutral. The slab stands the same 5-unit gap inside the frame's
+   walls, and the participants stand 18 units (`NEST_INSET`) under its foot,
+   as far as in from the frame's sides. The name of the flow is printed on the
+   slab as a
    container's name is: as written, not in capitals, in the medium face, 14
    units high. Its summary is 11 units high, in the secondary ink.
 10. **A change mark is the outline of the face.** The pin stays on the corner
@@ -145,9 +157,9 @@ in `lib/design.ts`.
       of the face, inside it, its outer edge on the face's edge and its corners
       the face's. The face keeps its group's tint and the front edge its
       group's color.
-    - On a container, the border runs along the edge of the tray's box, round
-      its walls, which are the container's own outline. The floor, the
-      nameplate and the walls keep their colors.
+    - On a container, the border runs along the face of its header slab, as on
+      a card, and the pin stands on the corner of the tray's box. The well is
+      not marked (TASK-423).
     - A selected marked part shows its border and the selection ring outside
       the part, never two rings.
     - A sequence frame shows its standing by the pin alone, unless the flow was
@@ -207,7 +219,8 @@ in `lib/design.ts`.
 ## What stays
 
 - **The five channels of ADR 0025 and ADR 0038.** The icon chip says the kind.
-  The card says its group. The container says its kind. The comparison standing
+  The card says its group, and so does a container's header slab
+  (TASK-423). The comparison standing
   says what a proposal changed. The selection ring says what is picked. Each
   channel keeps a place of its own on the part.
 - **The selection ring.** It still sits 3 units outside a part. Round a removed

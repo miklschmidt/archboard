@@ -8,11 +8,8 @@
 // every region on the block's root.
 import type { ElkNode } from "@archboard/elk-rs";
 import type { Edge, Graph, Subgraph } from "@viz-js/viz";
-import {
-	ARCHITECTURE_HEADER_PADDING,
-	CONTAINER_INSET,
-	REGION_INSET,
-} from "@/transformers/semantic-renderer/config";
+import { CONTAINER_INSET, REGION_INSET } from "@/transformers/semantic-renderer/config";
+import { ARCHITECTURE_HEADER_PADDING } from "@/transformers/semantic-renderer/lib/design";
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Block, Size } from "@/transformers/semantic-renderer/lib/blocks/tree";
 import {

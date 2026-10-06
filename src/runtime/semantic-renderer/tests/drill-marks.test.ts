@@ -144,6 +144,8 @@ const BADGE =
 
 /** A card's own box, or a frame's: the first shape that is not its halo. */
 const BOX = /<rect x="(-?[\d.]+)" y="(-?[\d.]+)" width="([\d.]+)" height="([\d.]+)"/u;
+/** A slab's body: its whole box, drawn first at a card's corner radius. */
+const SLAB = /<rect x="(-?[\d.]+)" y="(-?[\d.]+)" width="([\d.]+)" height="([\d.]+)" rx="8"/u;
 
 /**
  * The mark a subject draws from far away, if it draws one.
@@ -173,7 +175,7 @@ function badgeOf(group: DrawnGroup): DrawnPoint[] | undefined {
 
 /**
  * The box a subject's corner marks belong to: a card's own, or a frame's
- * header, which runs from the frame's top to the rule under its name.
+ * header slab, the slab its name stands on.
  * @param groups Every subject group of the drawing.
  * @param group The subject group that draws the marks.
  * @returns The box.
@@ -183,11 +185,8 @@ function boxOf(groups: readonly DrawnGroup[], group: DrawnGroup): DiagramBox {
 	const body = header
 		? groups.find((one) => one.kind === group.kind && one.id === group.id && one !== group)
 		: group;
-	const [x, y, width, height] = BOX.exec(body!.markup)!.slice(1).map(Number);
-	const bottom = header
-		? Number(/<line [^>]*y1="(-?[\d.]+)"/u.exec(body!.markup)![1])
-		: y! + height!;
-	return { x: x!, y: y!, width: width!, height: bottom - y! };
+	const [x, y, width, height] = (header ? SLAB : BOX).exec(body!.markup)!.slice(1).map(Number);
+	return { x: x!, y: y!, width: width!, height: height! };
 }
 
 for (const grammar of ["architecture", "data-flow"] satisfies DiagramGrammar[]) {

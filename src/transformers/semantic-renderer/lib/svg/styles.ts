@@ -292,7 +292,7 @@ function edgeAttributes(
  */
 function stylesFor(palette: Palette) {
 	return {
-		// A flow's heading, set as a container's nameplate is.
+		// A flow's heading, set as a container's header is.
 		headerName: {
 			"font-size": PART_TITLE.size,
 			fill: palette.foreground,
