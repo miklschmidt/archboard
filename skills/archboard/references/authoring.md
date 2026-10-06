@@ -515,7 +515,13 @@ knows which infrastructure runs which code in two ways:
 The value reaches the part whose code the named service runs, by the same two
 rules. Otherwise it reaches the part bound to the service or resource that it
 names. A Kubernetes Service that no part binds leads to the workloads that it
-picks. With both halves, the relationship needs no anchor.
+picks. With both halves, the relationship needs no anchor. Where the
+infrastructure leaves a choice, the halves are a candidate, never a warning.
+The named service runs the code of several parts, so the address does not say
+which of them it reaches. Or more than one service runs the code that reads
+the value, and they do not set it to the same address, as two services that
+build one directory to two targets do. Draw a relationship that such a
+finding names only where it is true.
 With one half, `RELATIONSHIP_UNSUPPORTED` names the side with no evidence in
 `missing`. If the infrastructure sets a value to the address of the end, and
 the code of the start reads none of those names, it is `code`. If the code of
