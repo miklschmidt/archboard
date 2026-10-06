@@ -37,17 +37,19 @@
 				},
 				{
 					"feature": "containment.parent",
-					"requirement": "app-internal parts are inside a single `Flask app` container; the WSGI server is outside it",
+					"requirement": "the app is the module the board describes, so its internal parts are inside a single `Flask app` container; the WSGI server, its caller, is outside it",
 					"skill": [
 						"SKILL.md#everything-the-code-shows",
+						"SKILL.md#evidence-before-a-write",
 						"references/authoring.md#containment-and-receivers"
 					]
 				},
 				{
 					"feature": "edge.actual-receiver",
-					"requirement": "each call lands on the internal function the source actually calls, from the function whose body calls it: full_dispatch_request calls preprocess_request, dispatch_request and finalize_request; finalize_request calls make_response and process_response; nothing lands on the container",
+					"requirement": "the WSGI server's call lands on the entry point it calls inside `Flask app` (`__call__`, or `wsgi_app` where the board folds in the one-line `__call__` that hands the call on), never on the container or on a function behind that entry point; each call behind it lands, inside the container, on the internal function the source actually calls, from the function whose body calls it: full_dispatch_request calls preprocess_request, dispatch_request and finalize_request; finalize_request calls make_response and process_response; nothing lands on the container",
 					"skill": [
 						"SKILL.md#evidence-before-a-write",
+						"references/create-architecture.md#create-an-architecture-diagram-from-code",
 						"references/authoring.md#containment-and-receivers"
 					]
 				},

@@ -85,8 +85,11 @@ impossible; it is reported as a waiver whatever its axis.
   vocabulary, is incorrect. Extending the configuration when the request asked
   for it is the feature.
 - **Containment and receivers**: `parent` says the child is part of the
-  parent. A relationship lands on the part that actually receives the call;
-  ending on a container that has children is incorrect unless the source
+  parent. A module the board describes is a container, with its callers
+  outside it. A call from outside lands on the entry point the caller names,
+  not on a helper behind it, and the calls behind that entry point land inside
+  the container on the part that actually receives them. Ending on a container
+  that has children names no entry point, and is incorrect unless the source
   really addresses the whole module.
 - **Identity**: a restated node or relationship keeps its id. A rename that
   produced a new id, or a removal beside an addition where the source shows a
