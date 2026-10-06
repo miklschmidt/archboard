@@ -7,10 +7,11 @@ request or job": a `flow` over the parts it moves between, drawn through a
 A sequence is a `flow` on the board that holds its participants. Create the
 parts, the relationships the messages travel and the flow in the same write. Add
 a `data-flow` view over the flow in that write too. If the reader needs
-narration, add a walkthrough to that write as well. Where no relationship joins
-the two parts of a message, the architecture picture draws that message as a
-dashed step line. So an exchange is never a row of
-unjoined cards. But a step line is a reading, not a relationship.
+narration, add a walkthrough to that write as well. On a board with no
+relationships, the architecture picture draws each message as a dashed step
+line, so an exchange is never a row of unjoined cards. On a board with
+relationships, a message shows only in the flow's data-flow view. A step line
+is a reading, not a relationship.
 
 Every call the exchange makes is also an `edge` with the same line of evidence.
 The reason is that the relationship carries the kind, the traffic and the
