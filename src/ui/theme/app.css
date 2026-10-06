@@ -308,9 +308,10 @@
 /* A relationship's label is never hidden (TASK-403). It is drawn at every zoom,
    seen from far as well as near. Where the rest of the picture recedes, under a
    poke or under a presented step's veil, a label that is not lit recedes to half
-   at most, so its words can still be read. */
+   at most, so its words can still be read. The board a flight carries inside a
+   card keeps no filter, as above. */
 [data-slot="semantic-board-surface"]:is(.is-probing, .is-presenting.is-veiled)
-	[data-semantic-kind="edge"][data-semantic-part="label"]:not(.is-lit) {
+	[data-semantic-kind="edge"][data-semantic-part="label"]:not(.is-lit, [data-dive-inset] *) {
 	filter: opacity(0.5);
 }
 
