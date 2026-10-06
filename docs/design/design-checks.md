@@ -642,12 +642,12 @@ files outside it.
 #### Reading Objective-C through its adapter
 
 TASK-367.10 reads `.m` files with `tree-sitter-objc` 3.0.2, and also each
-`.h` file in which a line starts with `@interface`, `@protocol`, `@class`,
-`@end`, `@import` or `#import`. Any other `.h` file is read as C++, as before.
-The facts of a file depend on its bytes alone, because the cache keeps them by
-the hash of the bytes. So the text of a header decides how it is read, and its
-pair does not. In AFNetworking, 30 of the 31 headers are read as Objective-C;
-the other one holds only macros. An Objective-C++ file (`.mm`) is read as text,
+`.h` file in which a line outside a comment starts with `@interface`,
+`@protocol`, `@class`, `@end`, `@import` or `#import`. Any other `.h` file is
+read as C++, as before. The text of a header decides how it is read, and its
+pair does not, because the cache keeps facts by the bytes of their file. In
+AFNetworking, 30 of the 31 headers are read as Objective-C; the other one holds
+only macros. An Objective-C++ file (`.mm`) is read as text,
 as ADR 0046 decides, and pairs with no header.
 
 The C adapter reads what an Objective-C file shares with C: functions,
@@ -661,9 +661,10 @@ variables, types, macros, the names that they use, and `#include` and
   the class. A binding can spell a method `Ledger.post:by:`.
 - Message sends. A send is a call of its selector. Where the syntax shows the
   class of the receiver, the send is qualified by it: a class name, `self`,
-  `[[Ledger alloc] init]`, or a parameter or a local that is declared as
-  `Ledger *`. Any other receiver gives `.post:by:`, which only a language
-  server can resolve (TASK-367.15).
+  `[[Ledger alloc] init]`, or a parameter, a local, a loop variable or an
+  `@catch` parameter that is declared as `Ledger *`. The nearest declaration
+  of the name counts. Any other receiver gives `.post:by:`, which only a
+  language server can resolve (TASK-367.15).
 - An `@interface` and its methods are declarations. Their code is the
   `@implementation`, which is in the same file or in the pair of the header.
   So a send that an `#import` finds is resolved at the method's code.
@@ -683,16 +684,25 @@ place. It blanks these macros:
 - The attribute macros of Apple's SDK, from its own list: availability,
   nullability regions such as `NS_ASSUME_NONNULL_BEGIN`, Swift names,
   initializer and ownership notes. The check reads no SDK header.
-- A macro that the same file defines only as one of those, or as nothing. A
-  log macro that one branch of an `#if` defines as code stays.
+- A macro that the same file defines only as one of those, or as nothing.
+- A macro that a header of the checkout defines as one of those, as ADR 0046
+  decides: Realm's `RLM_HEADER_AUDIT_BEGIN` is `NS_HEADER_AUDIT_BEGIN`.
 - A macro whose name ends with one of those after `_`, as a project wraps the
-  SDK's macro under its own prefix: `AF_API_AVAILABLE`.
+  SDK's macro under its own prefix: `AF_API_AVAILABLE`. This rule also works
+  where the header that defines the macro is not in the checkout.
 
-`NS_ENUM(NSInteger, Kind)` and its kin become `enum Kind`, with the name in its
-own place. ADR 0046 also adds to the list a macro that another header of the
-checkout defines as an SDK macro. That is not built, because the facts of a
-file depend on its bytes alone. The rule for the prefix covers the two wrappers
-that AFNetworking defines in `AFCompatibilityMacros.h`.
+A macro that a `#define` writes as other code is not blanked by the last three
+rules. So a log macro that one branch of an `#if` defines as code stays. A
+macro that is defined as the name of a macro with arguments takes the
+arguments too. `NS_ENUM(NSInteger, Kind)` and its kin become `enum Kind`, with
+the name in its own place.
+
+So the facts of an Objective-C file depend on its bytes and on the macros that
+its checkout's headers wrap. A pass reads the `.h` and `.pch` files of a
+checkout that has an `.m` or `.mm` file, once, for their `#define` lines: about
+2 ms for the 159 headers of SDWebImage. The cache keeps one reading for each
+set of these macros. When a header changes the set, the next pass reads every
+Objective-C file again.
 
 Measured on 2026-10-06 with Bun 1.4.2, on shallow clones of AFNetworking
 (`d9f589c`, 80 `.m` and `.h` files, 15,549 lines) and SDWebImage (`c3ad5e1`,
@@ -742,6 +752,36 @@ syntax shows. That class does not define the method, so the relationship from
 the image view to the view category is `RELATIONSHIP_UNSUPPORTED`, which is
 information. A send to a subclass, to `super`, or to a value whose class the
 syntax does not show needs clangd (TASK-367.15).
+
+The review of TASK-367.10 found these faults and fixed them:
+
+- A loop variable or an `@catch` parameter that has the name of a parameter
+  of another class gave the send the class of the parameter. So
+  `for (Audit *x in audits) [x post];` in a function that takes `Ledger *x`
+  was a resolved use of `Ledger`, and a false `RELATIONSHIP_UNDRAWN`. A
+  declaration under a `case` or an `#if` was missed in the same way.
+- An instance variable that a header declares `@package` was found by its bare
+  name. So another class's own `_queue` was a resolved use of that header.
+- A C++ header with `@class` in a documentation comment was read as
+  Objective-C, and lost its classes.
+- `#define RLM_HEADER_AUDIT_BEGIN NS_HEADER_AUDIT_BEGIN` blanked the name of a
+  use and left its arguments. The arguments then read as uses.
+- A character outside the Basic Multilingual Plane in a blanked macro, such as
+  an emoji in a deprecation message, and an enum with no name, such as
+  `CF_ENUM(uint32_t)`, changed the length of a line. A comment after the name
+  of an enum lost the name.
+
+The review measured the wrappers that the prefix rule does not find. It finds
+both wrappers of AFNetworking. SDWebImage, Mantle (`2a8e212`) and FMDB
+(`d3abf74`) define none. Realm (`realm-swift` `a40ced7`, `Realm/`) defines
+`RLM_HEADER_AUDIT_BEGIN` and `RLM_HEADER_AUDIT_END`, and 48 headers use them.
+So the join of the checkout's headers was built. On the 216 Objective-C files
+of `realm-swift`, it gives 16 more definitions and 25 fewer lines not parsed.
+`RLMLogger.h` went from 79 lines in error nodes to 0. It also removes 353
+references, mostly the names of these macros and their arguments. The macros
+that Realm defines as `__attribute__((...))`, such as `RLM_FINAL`, are not on
+the list, and they still put lines in error nodes. After the review, the real
+check ran both boards in 470 ms cold and 146 ms warm.
 
 #### Reading Terraform with the HCL grammar
 
