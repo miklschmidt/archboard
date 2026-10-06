@@ -113,7 +113,8 @@ impossible; it is reported as a waiver whatever its axis.
   relationships with direction, and immediate neighbours.
 - **Bindings**: `binding.repo` is the registered repository identity and
   `binding.path` is the repo-relative file that implements the node's stated
-  responsibility. An import, registration or invocation site is incorrect.
+  responsibility. A container drawn for a module binds to the module's
+  directory or file. An import, registration or invocation site is incorrect.
   An implementation unavailable for inspection stays unbound; a planned part,
   which belongs on a draft, binds only to a path the request states for it; an
   inspected implementation in another registered repository may bind there.
