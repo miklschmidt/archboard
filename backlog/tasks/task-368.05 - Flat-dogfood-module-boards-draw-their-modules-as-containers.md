@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:17'
-updated_date: '2026-10-06 10:43'
+updated_date: '2026-10-06 10:44'
 labels:
   - interfaces
   - architecture
@@ -101,4 +101,16 @@ Codex workhorse@TASK-368.05 (branched from TASK-373 at v13, adopted at v16).
 - Summary: 'Module level: the workhorse thread, its queue, and the coordinator's door; each module is drawn whole except the coordinator callbacks, whose tool is the entry point the workhorse start names. Follow linked subjects for related levels.'
 - Compare: one interface change (Coordinator callbacks gains Tell coordinator and the caller Workhorse start), 1 node added, 1 parent changed, all 17 relationships unchanged.
 - Picture: 2927x1197 against 2276x1337. The container sits inside the Voice region beside Coordinator tools, and the dotted 'archboard_coordinator, by digest' line from Workhorse start enters it to reach Tell coordinator. Labels legible.
+
+Archboard server@TASK-368.05 (branched from TASK-373 at v21, adopted at v24). Another task's draft, TASK-369.02, was already open here, branched from TASK-373. TASK-373 is now historical, so that draft's adoption needs the archboard-dev PARENT_SUPERSEDED step.
+- Container: Archboard server (kind service, as other boards draw it), bound to src/server/archboard. The 17 parts bound under its lib/ are its children; every id kept. Agent CLI, Browser, Semantic board store, Semantic renderer, Code opener (src/server/code-opener) and Board lease (src/runtime/engine/board-lock.ts, a root file of engine) stay outside.
+- semantic inspect --container 'Archboard server': 9 entry points, 8 hidden parts, 3 callers (Agent CLI, Browser, Board lease), 11 outgoing, 0 pass-through.
+  - Entry points: Board routes, Board write routes, Claim routes, Rename route, Discard route, Service routes, Pane routes, Pane socket, Board announcements.
+  - Hidden parts: HTTP application, Application lifetime, Mutation admission, Pane registry, Disk change watcher, Codex workbench, Change feed, Tab session presence.
+- Why no relationship moved: the CLI and the browser cross no import. They send HTTP requests and open one WebSocket per page, so each lands on the route or socket that handles it. That is the 'handled route' form of an entry point in evidence rule 3. Board lease -> Board announcements is the onBoardLockChanged subscription that board-announcements.ts imports from engine/board-lock.ts (a root file) at :10. The lease emits the event and the server handles it, so Board announcements is an entry point by subscription.
+- The board's 11 measured crossings into src/server/archboard/lib (10 HTTP or socket calls and the lease event) now end on entry points of the container.
+- Code opener is drawn whole as a card bound to its directory. HTTP application mounts it, and it calls the store, so it stays outside as another server module.
+- Summary: 'Service level: the Archboard server module, the routes and socket its callers reach, the one write boundary behind them, and the modules it calls outside itself. Follow linked subjects for related levels.'
+- Compare: one interface change (Archboard server gains the 9 entry points and the 3 callers), 1 node added, 17 parents changed, all 52 relationships unchanged.
+- Picture: 4767x3231 against 4028x3043. The container fills the board, and Agent CLI and Browser enter from the right edge. The store, the lease and the renderer sit outside in their own Board writes and Drawing regions, so those groups now draw one region inside the container and one outside, the renderer's one region per container. Crossing density is about what the current variant shows. No view needed an edit.
 <!-- SECTION:NOTES:END -->
