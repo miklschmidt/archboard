@@ -6,6 +6,8 @@
 // and writes each paint back as the literal attribute it stands for, so an
 // owner can compare colours as a reader sees them.
 
+import { APCAcontrast, sRGBtoY } from "apca-w3";
+
 import type { DiagramTheme } from "@/shared/semantic-board/index";
 import { themeColor } from "@/shared/theme/server";
 
@@ -303,28 +305,68 @@ function colourDistance(a: string, b: string): number {
 }
 
 /**
- * How light a hex colour is, as the contrast formula of WCAG measures it.
+ * How much light a hex colour gives on a screen, as APCA measures it.
  * @param hex The colour.
- * @returns Its relative luminance.
+ * @returns Its screen luminance, 0 to 1.
  */
 function luminance(hex: string): number {
-	const [r, g, b] = rgbOf(hex).map((channel) => {
-		const part = channel / 255;
-		return part <= 0.039_28 ? part / 12.92 : ((part + 0.055) / 1.055) ** 2.4;
-	}) as [number, number, number];
-	return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+	return sRGBtoY(rgbOf(hex));
 }
 
 /**
- * The contrast between two hex colours, as WCAG measures it.
- * @param one A colour.
- * @param other Another.
- * @returns The ratio, at least 1.
+ * How light a hex colour looks: its OKLCH lightness.
+ * @param hex The colour.
+ * @returns Its lightness, 0 to 1.
  */
-function contrast(one: string, other: string): number {
-	const [lighter, darker] = [luminance(one), luminance(other)].toSorted((a, b) => b - a);
-	return (lighter! + 0.05) / (darker! + 0.05);
+function lightnessOf(hex: string): number {
+	return oklchOf(literalColour(hex)).l;
 }
+
+/**
+ * The contrast of words or a mark against what lies under it, as APCA measures
+ * it (the owner's decision of 2026-10-07: the picture's contrast is judged with
+ * APCA, not with the WCAG 2 ratio). APCA tells the polarity apart, so the
+ * order counts: the words or the mark first, the ground second.
+ * @param text The words or the mark.
+ * @param ground What lies under it.
+ * @returns The lightness contrast, Lc, without its sign: 0 to about 108.
+ */
+function lightnessContrast(text: string, ground: string): number {
+	return Math.abs(APCAcontrast(luminance(text), luminance(ground)));
+}
+
+/**
+ * The APCA Bronze levels the picture keeps, in Lc. The picture is drawn at a
+ * camera's zoom, so a size is the size at 100 %: a card's name is 14 units at
+ * weight 500, its description, a label's words and a pin's mark are 11, and a
+ * group's caption is 15 at weight 500.
+ */
+const APCA = {
+	/** Body text, the words a reader reads first: a card's name, a label's words. Bronze: Lc 75. */
+	body: 75,
+	/**
+	 * Content text that is not body text, columns or blocks, and large or bold
+	 * text: a card's description, a group's caption on its tab. Bronze: Lc 60.
+	 */
+	content: 60,
+	/**
+	 * A small symbol a reader must make out, as a pin's mark inside its badge.
+	 * Bronze: Lc 45, the level of fine details and small pictograms.
+	 */
+	detail: 45,
+	/**
+	 * A mark that carries meaning: a line, an arrowhead, a group's corners, a
+	 * standing's outline, a kind's glyph. Bronze asks Lc 45 of fine marks and
+	 * holds Lc 30 as the floor for any mark that carries meaning; the picture
+	 * aims at 45 and keeps the floor in both themes.
+	 */
+	mark: 30,
+	/**
+	 * A mark that is quiet on purpose, a muted line, which still shows what it
+	 * joins. Bronze: Lc 15, the floor for anything a reader must see at all.
+	 */
+	quiet: 15,
+} as const;
 
 /**
  * A drawing as a reader sees it in one theme: every paint resolved to a literal.
@@ -340,11 +382,13 @@ function seenIn<Drawn extends { readonly svg: string }>(
 }
 
 export {
+	APCA,
 	chromaOf,
 	colourDistance,
 	colourIn,
-	contrast,
 	hueOf,
+	lightnessContrast,
+	lightnessOf,
 	luminance,
 	paintedIn,
 	seenIn,

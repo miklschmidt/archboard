@@ -44,7 +44,7 @@ function semanticInk(color: PaletteColor | undefined): string | undefined {
  * A card's face in its group's colour, and its front edge: the colour of the
  * edge and the face together are what say which concern a card serves, on
  * either ground. The face is a tone of the group's own hue (`toned`): a
- * clearly coloured card whose words keep 4.5:1. On the light ground each
+ * clearly coloured card whose words keep their APCA level. On the light ground each
  * colour has a tone of its own (`LIGHT_FACE`), so no colour is clipped into
  * another hue. The front edge is the same material turned from the light: the
  * group's hue in shade, darker than the face, so it reads as the foot of the
@@ -123,7 +123,8 @@ const LABEL_EDGE = 0.6;
 /**
  * How much of its type's colour an icon chip's face and edge carry. On the
  * light ground the face is a light, clean tone of the colour, light enough that
- * the glyph, drawn in the colour itself, clears 3:1 on it; the edge is that
+ * the glyph, drawn in the colour itself, keeps APCA Lc 30 or more on it, the
+ * floor for a mark; the edge is that
  * tone in shade, like a card's.
  */
 const CHIP_FACE: Inked = { light: { lightness: 0.955, chroma: 0.17 }, dark: 0.2 };

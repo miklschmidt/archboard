@@ -9,8 +9,9 @@ import { expect, test } from "bun:test";
 
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
-	contrast,
+	APCA,
 	hueOf,
+	lightnessContrast,
 	luminance,
 	seenIn,
 } from "@/runtime/semantic-renderer/tests/drawn-colours";
@@ -73,14 +74,16 @@ test.each(THEMES)(
 			const [normal, muted] = [lineOf(svg, loud), lineOf(svg, soft)];
 			expect(muted.width).toBe(normal.width);
 			expect(muted.tag).not.toMatch(/opacity/u);
-			expect(contrast(muted.ink, page)).toBeLessThan(contrast(normal.ink, page) * 0.8);
+			expect(lightnessContrast(muted.ink, page)).toBeLessThan(
+				lightnessContrast(normal.ink, page) * 0.8,
+			);
 			expect(muted.headInk).toBe(muted.ink);
 			const pulses = pulseInks(svg, soft);
 			expect(pulses.length).toBeGreaterThan(0);
 			for (const pulse of pulses) expect(luminance(pulse)).toBeGreaterThan(luminance(muted.ink));
 		}
 		// A muted neutral line still reads, and a muted coloured line keeps its hue.
-		expect(contrast(lineOf(svg, "quiet").ink, page)).toBeGreaterThanOrEqual(2);
+		expect(lightnessContrast(lineOf(svg, "quiet").ink, page)).toBeGreaterThanOrEqual(APCA.quiet);
 		expect(Math.abs(hueOf(lineOf(svg, "pale").ink) - hueOf(lineOf(svg, "sky").ink))).toBeLessThan(
 			6,
 		);

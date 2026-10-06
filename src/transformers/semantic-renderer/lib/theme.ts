@@ -54,10 +54,10 @@ interface Palette {
 	 * `--warning-foreground` is the one the shell uses for warning text on paper.
 	 * Which ground it is, is the page's `color-scheme`, so the choice is CSS's.
 	 * The badge needs the second on the light ground — at eleven units with the
-	 * page knocked out of it, the panel token reached only 2.5:1 against a white
-	 * card and 2.3:1 against its own mark, which is a badge a reader has to hunt
-	 * for. This one clears 3:1 against every surface it can land on and 4.5:1
-	 * against the mark inside it.
+	 * page knocked out of it, the panel token was too pale against a white
+	 * card and against its own mark, a badge a reader has to hunt for. This one
+	 * keeps APCA Lc 30, the floor for a mark, against every surface it can land
+	 * on, and Lc 45, the level of a fine detail, against the mark inside it.
 	 *
 	 * It is not one of the three standings and must not be read as one. What
 	 * tells them apart is the badge's silhouette and the corner it sits in; the

@@ -24,11 +24,11 @@
 //   because a removed subject is drawn as context for the change and is *not on
 //   the proposal*. A thing you can see through is not a thing the design claims
 //   to have. A line is ghosted whole: its group drops in opacity, its ink
-//   weakened less than a live line's so it stays a 3:1 mark
+//   weakened less than a live line's so it keeps APCA Lc 30, the floor for a mark
 //   ({@link ghostOpacity}, `drawnInk`). A card, a
 //   container, a participant and a label are blocks (`slab.ts`), and a removed
 //   one has lost its thickness: a flat, see-through face with no front edge and
-//   no shadow, its words faded to the secondary ink, which still reads at 4.5:1
+//   no shadow, its words faded to the secondary ink, which still keeps APCA Lc 60
 //   ({@link standingPalette}). A removed message's words are faded the same way.
 //
 //   **Texture.** The block's outline says it a third time. A standing takes
@@ -126,7 +126,7 @@ const PIN_RIM = 1.5;
 
 /**
  * What a ghosted line's ink is worth: clearly fainter than the proposal's own
- * lines, and still 3:1 on every ground it crosses, as a mark that means
+ * lines, and still APCA Lc 30 on every ground it crosses, as a mark that means
  * something must be. Its dashed swipe and the missing pulses say the rest.
  */
 const GHOST_OPACITY = 0.7;
@@ -298,7 +298,7 @@ function ghostOpacity(standing: SubjectStanding | undefined): number | undefined
 
 /**
  * The colours a subject's own words are drawn with: a removed block's names
- * and notes are faded to the secondary ink, which reads at 4.5:1 on its
+ * and notes are faded to the secondary ink, which keeps APCA Lc 60 on its
  * see-through face as it does on every surface it can lie on.
  * @param palette The theme's colours.
  * @param standing How the subject stands, or undefined when this is not a proposal.

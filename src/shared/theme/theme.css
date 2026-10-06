@@ -27,7 +27,7 @@
    --primary is the gold as a flat fill. --primary-mark is the gold as a mark:
    a 2px bar or underline, a ring, an icon, the edge of something chosen.
    --primary-text is the accent as text. On graphite it is the gold. On chalk
-   it is the ink: a gold dark enough to clear 4.5:1 there reads as brown, so
+   it is the ink: a gold dark enough to reach APCA Lc 60 there reads as brown, so
    text on chalk stays ink and a gold mark beside or under it (a bar, an
    underline) carries the accent. --primary-subtle is the gold as a quiet tint
    behind something chosen on a page. --diagram-selection is the gold on the
@@ -37,8 +37,8 @@
    (`primary-finish` in app.css): a subtle top-to-bottom gradient
    (--primary-top to --primary-bottom), a fine highlight along its top edge, a
    darker rim (--primary-edge) and a shadow that seats it. The ink on it
-   (--primary-foreground) clears 8.5:1 on every stop of the gradient, pressed
-   included, and 5:1 at 75%. The brand mark and the voice keep a gradient of
+   (--primary-foreground) keeps APCA Lc 66 or more on every stop of the
+   gradient, pressed included, and Lc 56 at 75%. The brand mark and the voice keep a gradient of
    their own (--mark-hi to --mark-lo). A card on the picture that opens another
    board is marked in the card's own ink, never in gold: the picture is the
    renderer's, and the shell does not paint on it.
@@ -74,14 +74,18 @@
    off-white and never pure white, a tray floor a step under the chalk ground,
    a front edge that is the face in shade, and a navy shadow. A colour on it is
    a clean tone of its own hue. Every named colour except the gold of
-   yellow is deep enough to clear 3:1 as a line on the ground and a tray's
+   yellow keeps APCA Lc 53 or more as a line on the ground and a tray's
    floor. --diagram-text and --diagram-text-muted are the picture's words: a
-   deep navy ink and a slate on the light ground, the shell's bone and grey on
-   the dark one.
+   deep navy ink and a slate on the light ground, the shell's bone and a light
+   warm grey on the dark one. On the dark ground the picture's neutrals are the
+   shell's warm graphite (hue 75, chroma near 0.006), so a container's well and
+   a card are the same material as the ground. The contrast of the picture's
+   words and marks is judged with APCA (PRODUCT.md, Accessibility).
 
    --diagram-edge is the ink of a neutral line, its arrowhead and a lifeline.
-   It keeps 3:1 or more against the ground and a tray's floor in both themes,
-   and it stays well under the contrast of text. --diagram-glow is the light
+   It keeps APCA Lc 30 or more, the floor for a mark, against the ground and
+   a tray's floor in both themes (Lc 58 on chalk, 34 on graphite), and it
+   stays well under the contrast of text. --diagram-glow is the light
    that a traffic pulse mixes into the colour of its line, white in both
    themes, so a pulse reads as light that travels along the line. */
 /* Light: chalk, warm ink, the gold. */
@@ -124,8 +128,8 @@
 	--secondary: oklch(0.955 0.004 85);
 	--secondary-foreground: oklch(0.2 0.006 75);
 	--muted: oklch(0.955 0.004 85);
-	/* Darker than the preset's 0.556: secondary text must clear 4.5:1 on the
-	   chrome (--sidebar), not only on the ground. */
+	/* Darker than the preset's 0.556: secondary text must keep APCA Lc 60 on
+	   the chrome (--sidebar), not only on the ground. */
 	--muted-foreground: oklch(0.48 0.008 75);
 	--accent: oklch(0.955 0.004 85);
 	--accent-foreground: oklch(0.2 0.006 75);
@@ -148,7 +152,7 @@
 	--diagram-edge: oklch(60% 0.015 286.067);
 	--diagram-glow: oklch(1 0 0);
 	--diagram-text: oklch(0.2 0.02 265);
-	--diagram-text-muted: oklch(0.47 0.028 262);
+	--diagram-text-muted: oklch(0.45 0.028 262);
 	--warning: oklch(79.5% 0.184 86.047);
 	--warning-foreground: oklch(0.43816934 0.09171983 76.864627);
 	--warning-subtle: oklch(0.95920698 0.03574366 89.442142);
@@ -232,12 +236,12 @@
 	--status-subtle: oklch(0.31354752 0.05775641 130.475651);
 	--standing-added: oklch(79.2% 0.209 151.711);
 	--standing-changed: oklch(0.77 0.17 52);
-	--standing-removed: oklch(70.4% 0.191 22.216);
+	--standing-removed: oklch(0.76 0.16 22);
 	--diagram-selection: oklch(0.831 0.134 84.5);
-	--diagram-edge: oklch(60% 0.017 285.786);
+	--diagram-edge: oklch(0.6 0.012 80);
 	--diagram-glow: oklch(1 0 0);
 	--diagram-text: oklch(0.955 0.006 90);
-	--diagram-text-muted: oklch(0.72 0.01 80);
+	--diagram-text-muted: oklch(0.81 0.01 80);
 	--warning: oklch(0.72131034 0.14180263 80.931184);
 	--warning-foreground: oklch(0.85278573 0.12194932 86.127776);
 	--warning-subtle: oklch(0.30488372 0.04761708 85.022106);
@@ -251,15 +255,15 @@
 	--sidebar-ring: oklch(0.831 0.134 84.5);
 	--raised: oklch(0.205 0.007 75);
 	--highlight: oklch(1 0.01 85 / 0.09);
-	--slab-face: oklch(0.31 0.002 75);
-	--slab-edge: oklch(0.215 0.002 75);
-	--slab-deep: oklch(0.06 0.002 75);
+	--slab-face: oklch(0.31 0.007 75);
+	--slab-edge: oklch(0.215 0.006 75);
+	--slab-deep: oklch(0.06 0.004 75);
 	--slab-glint: oklch(1 0.003 85);
 	--slab-sheen: oklch(1 0.003 85 / 0.05);
-	--slab-shadow: oklch(0.08 0.004 75 / 0.55);
-	--tray-floor: oklch(0.185 0.002 75);
-	--tray-sink: oklch(0.15 0.002 75);
-	--tray-lip: oklch(0.3 0.002 75);
-	--port-wall: oklch(0.13 0.002 75);
-	--port-deep: oklch(0.06 0.002 75);
+	--slab-shadow: oklch(0.08 0.006 75 / 0.55);
+	--tray-floor: oklch(0.185 0.006 75);
+	--tray-sink: oklch(0.15 0.005 75);
+	--tray-lip: oklch(0.3 0.007 75);
+	--port-wall: oklch(0.13 0.005 75);
+	--port-deep: oklch(0.06 0.004 75);
 }

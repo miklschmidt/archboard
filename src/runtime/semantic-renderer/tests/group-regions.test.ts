@@ -4,8 +4,9 @@
 // group does not place, a caption naming something other than the group, a
 // nested region's caption floating ranks above its members, a frame keeping
 // the strip Graphviz reserved for a label the router moved, a region that
-// paints a face of its own or changes colour with the ground it lies on, and a
-// caption that a light colour such as yellow leaves under 4.5:1 on its tab.
+// paints a face of its own or changes colour with the ground it lies on, a
+// caption under APCA Lc 60 on its tab in any colour (TASK-432), and corners
+// under the APCA floor for a mark on the page or a tray's floor.
 
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
@@ -17,8 +18,14 @@ import {
 	routeLabels,
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
-import { contrast, luminance, paintedIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
+import {
+	APCA,
+	lightnessContrast,
+	luminance,
+	paintedIn,
+} from "@/runtime/semantic-renderer/tests/drawn-colours";
 import { groupOf } from "@/runtime/semantic-renderer/tests/drawn-subjects";
+import { themeColor } from "@/shared/theme/server";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import codexWorkhorse from "./codex-workhorse.json";
 import nestedRegion from "./nested-region.json";
@@ -403,12 +410,24 @@ test.each(["light", "dark"] as const)(
 			expect(new Set(corners).size, group).toBe(1);
 			expect(frame, `${group}'s frame is quieter than its corners`).not.toBe(corners[0]);
 			expect(onFloor, group).toEqual(onPage);
+			for (const ground of ["--background", "--tray-floor"]) {
+				const under = themeColor(theme, ground);
+				expect(lightnessContrast(corners[0]!, under), `${group} corners`).toBeGreaterThanOrEqual(
+					APCA.mark,
+				);
+			}
 			for (const [, , tab] of regions) {
 				const face = [...tab!.matchAll(/<path [^>]*fill="(#[0-9a-f]{6})"/gu)].at(-1)![1]!;
 				const words = /<text [^>]*fill="(#[0-9a-f]{6})"/u.exec(tab!)![1]!;
-				expect(contrast(words, face), `${group} caption`).toBeGreaterThanOrEqual(4.5);
-				// On the light ground the words are a bright tint on a deep tab (TASK-427).
-				if (theme === "light") expect(luminance(words), group).toBeGreaterThan(luminance(face));
+				// The caption is 15 units at weight 500: large, bold text.
+				expect(lightnessContrast(words, face), `${group} caption`).toBeGreaterThanOrEqual(
+					APCA.content,
+				);
+				// On the light ground the words are a bright tint on the tab (TASK-427),
+				// but for the gold, which wears the dark ink of a primary button.
+				if (theme === "light" && group !== "pricing") {
+					expect(luminance(words), group).toBeGreaterThan(luminance(face));
+				}
 			}
 		}
 	},
