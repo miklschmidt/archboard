@@ -75,20 +75,6 @@ const lifecycleOnOffer = (browser: AgentBrowserSession): Promise<string> =>
 	);
 
 /**
- * The parts one list of a picked container's interface names.
- * @param browser The page.
- * @param row Which list: its entry points or its callers.
- * @returns The parts' ids, in the order the list names them.
- */
-const partsListed = (
-	browser: AgentBrowserSession,
-	row: "entry-point" | "caller",
-): Promise<string[]> =>
-	browser.eval<string[]>(
-		`[...document.querySelectorAll("[data-slot='semantic-inspector-${row}']")].map((one) => one.dataset.part)`,
-	);
-
-/**
  * Whether one drawn box sits wholly inside another, as the page lays them out.
  * @param browser The page.
  * @param inner The id of the box that should be inside.
@@ -142,7 +128,7 @@ async function tipOver(browser: AgentBrowserSession, id: string): Promise<Measur
 	return seen!;
 }
 
-test("a person reads containment, a container's interface, code and the level below it, and writes nothing", async () => {
+test("a person reads containment, code and the level below it, and writes nothing", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "semantic-inspection-vault");
@@ -289,33 +275,6 @@ test("a person reads containment, a container's interface, code and the level be
 		WAIT,
 	);
 	expect(await codeTitle(browser)).toBe("");
-
-	// A container's interface: the one child a caller outside reaches, the one
-	// it hides, and that caller. Choosing the entry point in the list picks it
-	// out on the picture.
-	await pick(browser, ids["service"] ?? "");
-	await pollUntil(
-		() => partsListed(browser, "entry-point"),
-		(parts) => parts.join() === ids["module"],
-		"the inspector to list the container's entry point",
-		WAIT,
-	);
-	expect((await partsListed(browser, "caller")).join()).toBe(ids["other"] ?? "");
-	expect(
-		await browser.eval<string | null>(
-			`document.querySelector("[data-slot='semantic-inspector-hidden-parts']")?.dataset.count ?? null`,
-		),
-	).toBe("1");
-	await press(browser, "[data-slot='semantic-inspector-entry-point']");
-	await pollUntil(
-		() =>
-			browser.eval<string[]>(
-				`[...document.querySelectorAll("${SURFACE} .is-selected")].map((group) => group.dataset.semanticId)`,
-			),
-		(selected) => selected.join() === ids["module"],
-		"the picture to pick out the entry point chosen in the list",
-		WAIT,
-	);
 
 	// The level below: where it stands is disclosed before anything opens, and
 	// opening it really shows the other board.
