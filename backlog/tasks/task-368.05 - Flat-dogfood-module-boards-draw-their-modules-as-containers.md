@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:17'
-updated_date: '2026-10-06 10:41'
+updated_date: '2026-10-06 10:42'
 labels:
   - interfaces
   - architecture
@@ -70,4 +70,16 @@ Skill evaluation@TASK-368.05 (branched from Initial at v9, adopted at v12).
 - The board had no summary. It now carries 'Service level: the harness that measures the consumer skill, the four entry points the eval CLI reaches, and the runs, grading and report behind them. Follow linked subjects for related levels.'
 - Compare: one interface change (Evaluation harness gains the 4 entry points and the caller Eval CLI), the container added, 21 parents changed, all 37 relationships unchanged.
 - Picture: 3860x1729 against 3438x1813. The container holds everything but the CLI and the externals, and the Grading region sits inside it. Eval CLI enters at the top left, and the outgoing lines leave right and down to the CLIs and the server.
+
+Correction to the Skill evaluation note: the script does not call executableVersion itself. It passes the function to pinVersions as versionOf (:295), so executableVersion is part of the pin subcommand as well.
+
+Semantic renderer@TASK-368.05 (branched from ADR 0040 at v23, adopted at v26).
+- Container: Renderer core (module), bound to src/transformers/semantic-renderer, the name its Bun wrapper gives it (src/runtime/semantic-renderer/index.ts:1). Its 12 parts are its children: the ones bound to its root files index.ts and board.ts, and those under lib/. Every id kept. Archboard server, Bun host (src/runtime/semantic-renderer, drawn whole), Browser application and Host canvas stay outside.
+- semantic inspect --container 'Renderer core': 2 entry points (Board answer and Renderer host, each reached by Bun host and Browser application), 10 hidden parts, 2 callers, 1 outgoing (Measured text -> Host canvas), 1 pass-through (Board answer).
+- Evidence. Bun host calls renderBoard of board.ts at runtime/semantic-renderer/index.ts:65, and installRendererHost through the root host.ts at lib/bun-host.ts:99. The browser renderer calls both at ui/browser-renderer/index.ts:98 and :69. host.ts re-exports installRendererHost from lib/host.ts, the file Renderer host binds. No relationship moved.
+- Pass-through: Board answer receives two calls and sends one, all of kind call, so the shape asks the deletion-test question. The code answers it: renderBoard chooses the variant, view, comparison and unsettled marks from shared/semantic-board helpers (board.ts:1-30) that this board does not draw. ADR 0044 reports this as information, never as a fault, so it stays as drawn.
+- Differences from what the core exposes: index.ts, engine.ts, engine-pool.ts, measurement.ts and layout.ts are also root files. Their callers (layout workers, the canvas tooltips, the measurement wrapper) are outside this board's question, so no part draws them.
+- Summary: 'Module level: the renderer core, the entry points its two hosts reach, and how meaning becomes SVG and interaction geometry behind them. Follow linked subjects for related levels.'
+- Compare: one interface change (Renderer core gains Board answer and Renderer host, and the callers Bun host and Browser application), 1 node added, 12 parents changed, all 25 relationships unchanged.
+- Picture: 2332x1570 against 1889x1561. The hosts sit to the right of the container and enter at its top. Host canvas sits outside at the bottom right. Labels legible.
 <!-- SECTION:NOTES:END -->
