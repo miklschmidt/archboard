@@ -534,8 +534,10 @@ _Avoid_: churn (that counts changed lines), heat, activity, hot path, window
 **Change coupling**:
 Two parts of one board whose bound files change in the same commits often
 enough to pass code-maat's filters. Its degree is their shared commits over the
-mean of their own. A pair that no relationship joins asks whether the board
-misses a dependency, or whether two parts carry one decision (ADR 0045).
+mean of their own. A pair that nothing on the board joins asks whether the
+board misses a dependency, or whether two parts carry one decision. A
+relationship or a flow step joins two parts, and so does one that ends on a
+container around either part, or containment itself (ADR 0045).
 _Avoid_: temporal coupling (it means three different things in three books),
 logical coupling, evolutionary coupling, co-change
 
