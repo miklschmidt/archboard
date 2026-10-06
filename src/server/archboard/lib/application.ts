@@ -12,6 +12,7 @@ import { diagramIconPaths } from "@/runtime/semantic-renderer/index";
 import { app } from "@/server/archboard/lib/server-app";
 import { checkoutWork } from "@/server/archboard/lib/server-owners";
 import { mountCodeCheckRoute } from "@/server/archboard/lib/code-check-route";
+import { mountFootprintRoute } from "@/server/archboard/lib/footprint-route";
 import { startServer } from "@/server/archboard/lib/server-startup";
 import { moduleDir } from "@/server/archboard/lib/module-paths";
 import { mountMutationAdmission, trackMutationWork } from "@/server/archboard/lib/mutation-work";
@@ -107,6 +108,7 @@ mountPaneRoutes(app);
 mountSemanticBoardRoutes(app);
 mountLocalityRoute(app);
 mountCodeCheckRoute(app);
+mountFootprintRoute(app);
 mountSemanticPaneContextRoutes(app);
 mountVoiceStartTraceRoute(app);
 

@@ -29,6 +29,7 @@ import {
 import { semanticCompareContract } from "@/cli/commands/semantic-compare";
 import { semanticRenameContract } from "@/cli/commands/semantic-rename";
 import { semanticInspectContract } from "@/cli/commands/semantic-inspect";
+import { semanticFootprintContract } from "@/cli/commands/semantic-footprint";
 import { semanticLocalityContract } from "@/cli/commands/semantic-locality";
 import { semanticRenderContract } from "@/cli/commands/semantic-render";
 import { semanticRasterizeContract } from "@/cli/commands/semantic-rasterize";
@@ -76,6 +77,9 @@ const COMMANDS: Record<string, CommandRoute> = {
 			show: child(contract(semanticShowContract, "src/cli/commands/semantic.ts")),
 			compare: child(contract(semanticCompareContract, "src/cli/commands/semantic-compare.ts")),
 			inspect: child(contract(semanticInspectContract, "src/cli/commands/semantic-inspect.ts")),
+			footprint: child(
+				contract(semanticFootprintContract, "src/cli/commands/semantic-footprint.ts"),
+			),
 			locality: child(contract(semanticLocalityContract, "src/cli/commands/semantic-locality.ts")),
 			render: child(contract(semanticRenderContract, "src/cli/commands/semantic-render.ts")),
 			rasterize: child(
