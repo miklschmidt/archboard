@@ -35,9 +35,9 @@ Amended by TASK-367.09 (2026-10-06): the refinement of TASK-367.09 #1 matched
 an include that resolves nowhere by its file name, as a candidate. That is not
 built. On Redis, a match by file name finds one file for 393 of the 1,686
 includes that resolve nowhere. 191 of those are system headers such as
-`<stdint.h>`, and the match finds jemalloc's own copies of them. An include that resolves nowhere reaches no
-file of the checkout. A checkout that needs exact includes lists them in
-`compile_commands.json`.
+`<stdint.h>`, and the match finds jemalloc's own copies of them. An include
+that resolves nowhere reaches no file of the checkout. A checkout that needs
+exact includes lists them in `compile_commands.json`.
 
 ## Context
 
