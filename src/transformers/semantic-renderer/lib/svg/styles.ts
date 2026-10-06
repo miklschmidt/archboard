@@ -142,15 +142,17 @@ function fullLineColour(palette: Palette, standing: SubjectStanding | undefined)
 
 /**
  * How strong a removed line's ink is over the page, on each ground: with its
- * group's ghosting, 3:1 on every ground it crosses, as a mark that says
- * something must be, and fainter than the reds of the pin and the footprint.
+ * group's ghosting, APCA Lc 30 or more, the floor for a mark, on every ground
+ * it crosses, as a mark that says something must be, and fainter than the reds
+ * of the pin and the footprint.
  */
 const REMOVED_STRENGTH = { light: 0.85, dark: 1 } as const;
 
 /**
  * How strong a muted line is, as its share of its default ink over the page,
- * on each ground. A muted neutral line is about 2.4:1 against the page on both
- * grounds, where a default one is 3.9:1 and 4.6:1 (TASK-409).
+ * on each ground. A muted neutral line is about APCA Lc 46 against the page
+ * on the light ground and Lc 16 on the dark, where a default one is Lc 65 and
+ * Lc 34 (TASK-409).
  */
 const MUTED_STRENGTH = { light: 0.7, dark: 0.6 } as const;
 

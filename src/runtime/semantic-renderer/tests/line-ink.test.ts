@@ -2,15 +2,15 @@
 // (TASK-404).
 //
 // What this catches: a neutral line, a message or a lifeline that falls under
-// 3:1 against the page or a tray's floor in either theme, a neutral line that is
-// as loud as text, and an arrowhead whose length depends on the emphasis of its
-// line. The numbers come from the drawn picture and the theme's tokens, so a
+// the APCA floor for a mark against the page or a tray's floor in either theme,
+// a neutral line that is as loud as text, and an arrowhead whose length depends
+// on the emphasis of its line. The numbers come from the drawn picture and the theme's tokens, so a
 // change of either is measured, not copied.
 
 import { describe, expect, test } from "bun:test";
 
 import { renderArchitecture, renderDataFlow } from "@/runtime/semantic-renderer/index";
-import { contrast, seenIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
+import { APCA, lightnessContrast, seenIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import type { DiagramTheme } from "@/shared/semantic-board/index";
 import { themeColor } from "@/shared/theme/server";
@@ -100,9 +100,10 @@ describe("a neutral line reads on every ground and stays quieter than text", () 
 		const lines = headedLines(svg).filter(({ id }) => id === "loud" || id === "plain");
 		expect(lines).toHaveLength(2);
 		for (const { ink } of lines) {
-			expect(contrast(ink, page)).toBeGreaterThanOrEqual(3);
-			expect(contrast(ink, floor)).toBeGreaterThanOrEqual(3);
-			expect(contrast(ink, page)).toBeLessThan(contrast(text, page) / 2);
+			expect(lightnessContrast(ink, page)).toBeGreaterThanOrEqual(APCA.mark);
+			expect(lightnessContrast(ink, floor)).toBeGreaterThanOrEqual(APCA.mark);
+			// Quieter than the words: at most three quarters of their contrast.
+			expect(lightnessContrast(ink, page)).toBeLessThan(lightnessContrast(text, page) * 0.75);
 		}
 	});
 
@@ -116,8 +117,8 @@ describe("a neutral line reads on every ground and stays quieter than text", () 
 		expect(messages.length).toBeGreaterThan(0);
 		expect(lifelines.length).toBeGreaterThan(0);
 		for (const ink of [...messages, ...lifelines]) {
-			expect(contrast(ink, page)).toBeGreaterThanOrEqual(3);
-			expect(contrast(ink, floor)).toBeGreaterThanOrEqual(3);
+			expect(lightnessContrast(ink, page)).toBeGreaterThanOrEqual(APCA.mark);
+			expect(lightnessContrast(ink, floor)).toBeGreaterThanOrEqual(APCA.mark);
 		}
 	});
 });

@@ -48,8 +48,8 @@ const BAR_SHADE = 0.4;
 
 /**
  * A bar of a participant in no group, which has no colour to carry it: its
- * face shaded toward the secondary ink until it reads at about 2:1 on the
- * frame's face, as a grouped bar's pale tint does, and its front edge a clear
+ * face shaded toward the secondary ink until it shows on the frame's face as
+ * a grouped bar's pale tint does, and its front edge a clear
  * step deeper. A bar says nothing its arrows do not, so it stays quiet.
  */
 const NEUTRAL_BAR: Share = { light: 0.5, dark: 0.25 };

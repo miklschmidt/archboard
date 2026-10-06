@@ -1,21 +1,23 @@
 // The words and the marks of every named colour, as a reader sees them on each
-// ground (TASK-422).
+// ground (TASK-422, TASK-432).
 //
-// What this catches: a card's words that fall under 4.5:1 on the face a group
-// tints, and, on the light ground, a face clipped out of its group's hue or
-// too pale to show it, a front edge no darker than its face, a type's glyph
-// under 3:1 on its chip or a line under 3:1 against the page or a tray's
-// floor. The light colours once
-// stayed pale to keep their words legible. These numbers say that deep ink
-// and strong colours keep them legible instead.
+// What this catches: a card's words or a kind's glyph or a line that falls
+// under its APCA level on the face a group tints or the ground it crosses, in
+// either theme, and, on the light ground, a face clipped out of its group's
+// hue or too pale to show it, and a front edge no darker than its face. The
+// light colours once stayed pale to keep their words legible. These numbers
+// say that deep ink and strong colours keep them legible instead. The levels
+// are APCA's (`APCA` in drawn-colours.ts), not the WCAG 2 ratio.
 
+import { APCAcontrast, sRGBtoY } from "apca-w3";
 import { describe, expect, test } from "bun:test";
 
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
+	APCA,
 	chromaOf,
-	contrast,
-	luminance,
+	lightnessContrast,
+	lightnessOf,
 	paintedIn,
 	toneHueOf,
 } from "@/runtime/semantic-renderer/tests/drawn-colours";
@@ -26,6 +28,7 @@ import { PaletteColorSchema, SemanticPolicySchema } from "@/shared/semantic-poli
 import { themeColor } from "@/shared/theme/server";
 
 const COLOURS = PaletteColorSchema.options;
+const THEMES: DiagramTheme[] = ["light", "dark"];
 
 /** One card for each colour: in a group of that colour, of a kind of that colour, and a line of it to the next. */
 const policy = SemanticPolicySchema.parse({
@@ -87,18 +90,25 @@ function hueApart(a: number, b: number): number {
 	return Math.min(apart, 360 - apart);
 }
 
+test("apca-w3 keeps the contract the contrast checks rely on", () => {
+	// The one local declaration of apca-w3 0.1.9 (apca-w3.d.ts) says the result
+	// is signed by polarity and reaches about 106 and 108 at the extremes.
+	const [black, white] = [sRGBtoY([0, 0, 0]), sRGBtoY([255, 255, 255])];
+	expect(APCAcontrast(black, white)).toBeCloseTo(106.04, 1);
+	expect(APCAcontrast(white, black)).toBeCloseTo(-107.88, 1);
+});
+
 describe("every named colour keeps its words and its marks legible", () => {
-	test.each(["light", "dark"] as DiagramTheme[])(
-		"the words on a grouped card (%s)",
-		async (theme) => {
-			const svg = paintedIn((await renderArchitecture({ content, policy })).svg, theme);
-			for (const color of COLOURS) {
-				const card = cardOf(groupOf(svg, "node", color)!.markup);
-				expect(contrast(card.name, card.face), `${color} name`).toBeGreaterThanOrEqual(4.5);
-				expect(contrast(card.description, card.face), `${color} words`).toBeGreaterThanOrEqual(4.5);
-			}
-		},
-	);
+	test.each(THEMES)("the words on a grouped card (%s)", async (theme) => {
+		const svg = paintedIn((await renderArchitecture({ content, policy })).svg, theme);
+		for (const color of COLOURS) {
+			const card = cardOf(groupOf(svg, "node", color)!.markup);
+			const name = lightnessContrast(card.name, card.face);
+			const description = lightnessContrast(card.description, card.face);
+			expect(name, `${color} name`).toBeGreaterThanOrEqual(APCA.body);
+			expect(description, `${color} description`).toBeGreaterThanOrEqual(APCA.content);
+		}
+	});
 
 	test("a grouped face is a clear tint in its group's hue (light)", async () => {
 		const svg = paintedIn((await renderArchitecture({ content, policy })).svg, "light");
@@ -112,16 +122,19 @@ describe("every named colour keeps its words and its marks legible", () => {
 		}
 	});
 
-	test.each(["light", "dark"] as DiagramTheme[])(
+	test.each(THEMES)(
 		"a grouped card's front edge is its face in shade, a step darker (%s)",
 		async (theme) => {
 			const svg = paintedIn((await renderArchitecture({ content, policy })).svg, theme);
 			for (const color of COLOURS) {
 				const card = cardOf(groupOf(svg, "node", color)!.markup);
-				// The front edge is turned from the light: darker than the face, by as
-				// clear a step as a neutral card's edge in the dark theme, about 1.33:1.
-				expect(luminance(card.edge), `${color} edge`).toBeLessThan(luminance(card.face));
-				expect(contrast(card.edge, card.face), `${color} step`).toBeGreaterThanOrEqual(1.3);
+				// The front edge is turned from the light: darker than the face in
+				// OKLCH lightness by as clear a step as a neutral card's edge in the
+				// dark theme, which is 0.095 under its face.
+				expect(
+					lightnessOf(card.face) - lightnessOf(card.edge),
+					`${color} step`,
+				).toBeGreaterThanOrEqual(0.09);
 				expect(
 					hueApart(toneHueOf(card.edge), toneHueOf(card.face)),
 					`${color} edge hue`,
@@ -130,21 +143,33 @@ describe("every named colour keeps its words and its marks legible", () => {
 		},
 	);
 
-	test("a glyph on its chip, and a line on the page and on a tray's floor (light)", async () => {
-		const svg = paintedIn((await renderArchitecture({ content, policy })).svg, "light");
-		const page = themeColor("light", "--background");
-		const floor = themeColor("light", "--tray-floor");
-		// Yellow is the product's gold (TASK-419), and its light value stays under
-		// 3:1 as a mark; the notes of TASK-422 hold its numbers.
-		for (const [index, color] of COLOURS.entries()) {
-			if (color === "yellow") continue;
-			const card = cardOf(groupOf(svg, "node", color)!.markup);
-			expect(contrast(card.glyph, card.chip), `${color} glyph`).toBeGreaterThanOrEqual(3);
-			const line = /marker-end="[^"]*" fill="none" stroke="(#[0-9a-f]{6})"/u.exec(
-				groupOf(svg, "edge", `line${index}`)!.markup,
-			)![1]!;
-			expect(contrast(line, page), `${color} line on the page`).toBeGreaterThanOrEqual(3);
-			expect(contrast(line, floor), `${color} line on a floor`).toBeGreaterThanOrEqual(3);
-		}
+	test.each(THEMES)(
+		"a glyph on its chip, and a line on the page and on a tray's floor (%s)",
+		async (theme) => {
+			const svg = paintedIn((await renderArchitecture({ content, policy })).svg, theme);
+			const page = themeColor(theme, "--background");
+			const floor = themeColor(theme, "--tray-floor");
+			for (const [index, color] of COLOURS.entries()) {
+				const card = cardOf(groupOf(svg, "node", color)!.markup);
+				const line = /marker-end="[^"]*" fill="none" stroke="(#[0-9a-f]{6})"/u.exec(
+					groupOf(svg, "edge", `line${index}`)!.markup,
+				)![1]!;
+				expect(lightnessContrast(card.glyph, card.chip), `${color} glyph`).toBeGreaterThanOrEqual(
+					APCA.mark,
+				);
+				expect(lightnessContrast(line, page), `${color} line, page`).toBeGreaterThanOrEqual(
+					APCA.mark,
+				);
+				expect(lightnessContrast(line, floor), `${color} line, floor`).toBeGreaterThanOrEqual(
+					APCA.mark,
+				);
+			}
+		},
+	);
+
+	test.each(THEMES)("the named yellow is the shell's gold as a mark (%s)", (theme) => {
+		// A kind, a line or a group's corners in yellow are the gold of the
+		// product's primary actions (DESIGN.md, the One Gold Rule).
+		expect(themeColor(theme, "--semantic-yellow")).toBe(themeColor(theme, "--primary-mark"));
 	});
 });

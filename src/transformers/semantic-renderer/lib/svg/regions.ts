@@ -11,12 +11,12 @@
 // before. It keeps clear of the lines itself, though: it stands in the corner no
 // route runs down through, and from far away it grows only as far as the
 // nearest route.
-import type { SemanticPolicy } from "@/shared/semantic-policy/index";
+import type { PaletteColor, SemanticPolicy } from "@/shared/semantic-policy/index";
 import { BAND_RADIUS } from "@/transformers/semantic-renderer/lib/design";
 import type { DrawingRegion, TextRun } from "@/transformers/semantic-renderer/lib/drawing";
 import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import { segmentStart, type Curve } from "@/transformers/semantic-renderer/lib/layout/curves";
-import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
+import { token, type Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { measure } from "@/transformers/semantic-renderer/lib/text";
 import { semanticInk } from "@/transformers/semantic-renderer/lib/svg/appearance";
 import {
@@ -35,18 +35,46 @@ import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-run
  * and on a nested floor: the full colour of the corner brackets and the tab,
  * the faded colour of the frame, and the words on the tab. On the light ground
  * the full colour is the named colour itself (`heldTone`), its hue and chroma
- * whole, its lightness held deep enough that the words, a very light tint of
- * the colour, keep 4.5:1 on it for every colour; the deepest hue for that is
- * green's. On the dark ground the full colour is a light tone of the colour
- * (`toned`), and the words a deep shade of it. The faded frame is a light tone
- * of the colour that keeps its hue and a lively chroma. The palette's yellow
- * is the gold of the product (DESIGN.md, the One Gold Rule), a deep gold on the
- * light ground.
+ * whole, at a lightness of its own (`LIGHT_CORNER`). On the dark ground the
+ * full colour is a light tone of the colour (`toned`), and the words a deep
+ * shade of it. The faded frame is a light tone of the colour that keeps its
+ * hue and a lively chroma.
  */
-const CORNER: Held = {
-	light: { least: 0.5, most: 0.525 },
-	dark: { lightness: 0.74, chroma: 0.95 },
+const DARK_CORNER: Held["dark"] = { lightness: 0.765, chroma: 0.95 };
+/**
+ * The lightness of a group's full colour on the light ground, by colour: the
+ * lightest at which the words on the tab, a very light tint of the colour,
+ * still reach APCA Lc 60, the level for large or bold text (the words are 15
+ * units at weight 500). A colour holds less light for the same contrast in
+ * some hues than in others, so the lightness differs from colour to colour
+ * within a narrow band, as the faces' does. Yellow is the gold (`GOLD`).
+ */
+const LIGHT_CORNER: Readonly<Record<Exclude<PaletteColor, "yellow">, number>> = {
+	red: 0.68,
+	orange: 0.66,
+	amber: 0.655,
+	lime: 0.64,
+	green: 0.635,
+	emerald: 0.635,
+	teal: 0.64,
+	cyan: 0.64,
+	sky: 0.645,
+	blue: 0.66,
+	indigo: 0.685,
+	violet: 0.685,
+	purple: 0.685,
+	fuchsia: 0.68,
+	pink: 0.665,
+	rose: 0.68,
 };
+/**
+ * The palette's yellow is the gold of the product (DESIGN.md, the One Gold
+ * Rule), and a yellow group is drawn as the product draws its primary button:
+ * the tab is the flat gold (`--primary`) and the words on it the gold's dark
+ * ink (`--primary-foreground`), the one tab whose words are dark. Its corners
+ * and frame are the gold as a mark: the named yellow is `--primary-mark`.
+ */
+const GOLD = { tab: token("--primary"), words: token("--primary-foreground") } as const;
 const FRAME: Tone = {
 	light: { lightness: 0.78, chroma: 0.875 },
 	dark: { lightness: 0.47, chroma: 0.6 },
@@ -74,9 +102,10 @@ const FAR_CAPTION_SHARE = 0.62;
 /** How far a caption's tab keeps from a route that crosses its row. */
 const ROUTE_ROOM = 8;
 
-/** A group's colours: its corners' and tab's, its frame's, and the words on its tab. */
+/** A group's colours: its corners', its tab's, its frame's, and the words on its tab. */
 interface GroupColours {
 	readonly corner: string;
+	readonly tab: string;
 	readonly frame: string;
 	readonly words: string;
 }
@@ -155,11 +184,22 @@ function tabBox(
 
 /**
  * The colours one group's region is drawn in.
- * @param ink The group's colour.
- * @returns The corners', the frame's and the tab's words'.
+ * @param color The group's colour, or none for a group with no colour of its own.
+ * @param palette The page's colours.
+ * @returns The corners', the tab's, the frame's and the tab's words'.
  */
-function groupColours(ink: string): GroupColours {
-	return { corner: heldTone(ink, CORNER), frame: toned(ink, FRAME), words: toned(ink, WORDS) };
+function groupColours(color: PaletteColor | undefined, palette: Palette): GroupColours {
+	const ink = semanticInk(color) ?? palette.muted;
+	// A group of no colour (one the policy no longer names) takes the deepest tone in the band.
+	const lightness = color === undefined || color === "yellow" ? 0.635 : LIGHT_CORNER[color];
+	const corner = heldTone(ink, {
+		light: { least: lightness, most: lightness },
+		dark: DARK_CORNER,
+	});
+	const frame = toned(ink, FRAME);
+	return color === "yellow"
+		? { corner: ink, tab: GOLD.tab, frame, words: GOLD.words }
+		: { corner, tab: corner, frame, words: toned(ink, WORDS) };
 }
 
 /**
@@ -183,7 +223,7 @@ function captionTab(
 ): string {
 	const { box, shift } = tabBox(region, run, corner, grown);
 	return lines([
-		tag("path", { d: tabPath(box, corner), fill: colours.corner }),
+		tag("path", { d: tabPath(box, corner), fill: colours.tab }),
 		paintTextRuns(
 			[run],
 			{ ...region.caption.box, x: region.caption.box.x + shift },
@@ -331,8 +371,7 @@ function paintRegion(
 		routes: readonly Curve[];
 	},
 ): string {
-	const ink = semanticInk(policy.groups[region.group]?.color) ?? palette.muted;
-	const colours = groupColours(ink);
+	const colours = groupColours(policy.groups[region.group]?.color, palette);
 	const near = region.caption.measured.runs[0];
 	const crossings = crossingsOf(region, routes);
 	const corner = near === undefined ? "start" : cornerOf(region, near, crossings);

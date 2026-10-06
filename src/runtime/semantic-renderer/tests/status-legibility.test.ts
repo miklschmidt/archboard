@@ -23,8 +23,9 @@ import {
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import {
-	contrast,
+	APCA,
 	hueOf,
+	lightnessContrast,
 	luminance,
 	seenIn,
 } from "@/runtime/semantic-renderer/tests/drawn-colours";
@@ -453,16 +454,19 @@ describe("what nobody has decided is said in its own corner", () => {
 			const ink = /<path d="M0,-5.2[^"]*" fill="(#[0-9a-f]{6})"/.exec(card.markup)![1]!;
 			// An eleven-unit badge is a small thing to notice, so it has to carry
 			// against the surface it lands on and its own mark has to carry against
-			// it. The numbers are the ordinary ones: 3:1 for a shape somebody has to
-			// see, 4.5:1 for a mark somebody has to read.
+			// it. The levels are APCA's: the floor for a shape somebody has to see,
+			// and the level of a fine detail for the mark somebody has to make out.
 			// The card's top face, after its edge and the highlight along its top.
 			const face = /class="ab-halo"[^>]*>\s*(?:<rect[^>]*>\s*){2}<rect [^>]*fill="(#[0-9a-f]{6})"/u;
 			const ground = face.exec(card.markup)![1]!;
 			const mark = /<path d="M0,-2.4[^"]*"[^>]*stroke="(#[0-9a-f]{6})"/.exec(card.markup)![1]!;
-			expect(contrast(ink, ground), `badge on a card, ${theme}`).toBeGreaterThanOrEqual(3);
-			expect(contrast(ink, mark), `the mark inside the badge, ${theme}`).toBeGreaterThanOrEqual(
-				4.5,
+			expect(lightnessContrast(ink, ground), `badge on a card, ${theme}`).toBeGreaterThanOrEqual(
+				APCA.mark,
 			);
+			expect(
+				lightnessContrast(mark, ink),
+				`the mark inside the badge, ${theme}`,
+			).toBeGreaterThanOrEqual(APCA.detail);
 			// And it is not the ink of any standing, or it would be a fourth way of
 			// saying the same thing as the pin beside it.
 			expect(ink).not.toBe(line(subject(drawn, "edge", "moved")).ink);
