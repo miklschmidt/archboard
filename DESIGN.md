@@ -125,7 +125,7 @@ file is stale.
 
 **Creative North Star: "The Lit Drafting Table"**
 
-The picture is a drawing that lies flat on a table. The shell is the furniture
+The picture is a model in low relief that lies on a table. The shell is the furniture
 around it: rails, a header under the lamp, a tray at the foot of each column
 and a few pieces of gold hardware. An agent drew the picture, and the architect
 reads it. Nothing in the shell competes with the picture for attention, and
@@ -260,6 +260,18 @@ The file app.css holds the values for both themes and gives each one a
 - **float** (`--elevation-float`, a highlight on top and three shadows): menus, tips, lists of matches, the floating sidebar, the walkthrough box and the voice box.
 - **dialog** (`--elevation-dialog`, a highlight on top and three shadows): dialogs.
 - **primary and primary-pressed** (`--elevation-primary*`): the gold finish at rest and pressed.
+
+### The Picture's Own Depth
+
+The picture has a depth vocabulary of its own, and the renderer draws it. Its
+light falls from the upper left. A card is a slab: a lit top face, a front edge
+along its foot and a soft shadow. A container is a plinth with a nameplate
+across its top. The region of a group is a mat with a caption tab. Each shadow
+is a stack of translucent shapes, with no filter or blur. The colors come from
+the `--slab-*`, `--plinth-*` and `--mat-*` tokens in theme.css, in both themes.
+The shell touches none of it, and the Untouched Picture Rule still holds.
+[ADR 0044](docs/adr/0044-cards-containers-and-groups-are-drawn-as-slabs.md)
+records the construction.
 
 ### Named Rules
 
