@@ -22,6 +22,7 @@ import {
 	write,
 	type FixtureVariant,
 } from "@/runtime/code-check/tests/fixture";
+import { ownServers } from "@/runtime/code-check/tests/servers";
 
 const caller = {
 	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
@@ -261,7 +262,7 @@ afterAll(() => {
 async function pass(variant?: string) {
 	const read = check.readBoardsToCheck(vault, variant);
 	if (!read.ok) throw new Error(`no draft ${variant}`);
-	const outcome = await check.checkCode(read.boards, new AbortController().signal);
+	const outcome = await check.checkCode(read.boards, new AbortController().signal, ownServers());
 	return { read, outcome };
 }
 

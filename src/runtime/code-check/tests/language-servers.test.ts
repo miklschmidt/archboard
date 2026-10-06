@@ -26,8 +26,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as CheckModule from "@/runtime/code-check/index";
 import type { CodeCheckOutcome } from "@/runtime/code-check/index";
-import { readLanguageServers } from "@/runtime/language-servers/index";
 import { board, git, register, write } from "@/runtime/code-check/tests/fixture";
+import { ownServers } from "@/runtime/code-check/tests/servers";
 
 const caller = {
 	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
@@ -39,7 +39,7 @@ const vault = join(scratch, "vault");
 process.env["ARCHBOARD_VAULT"] = vault;
 process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
 const SHOP = "github.com/test/shop";
-const servers = readLanguageServers(join(scratch, "language-servers.json"));
+const servers = ownServers();
 const native = servers.get("typescript")?.status === "command";
 let outcome: CodeCheckOutcome;
 

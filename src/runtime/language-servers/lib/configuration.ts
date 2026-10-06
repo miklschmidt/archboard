@@ -52,11 +52,16 @@ type LanguageServer =
 type LanguageServerTable = ReadonlyMap<Language, LanguageServer>;
 
 /**
- * Where this machine keeps its language server commands.
- * @returns The path of `language-servers.json` in Archboard's state directory.
+ * Where this machine keeps its language server commands. A test moves the
+ * file with `ARCHBOARD_LANGUAGE_SERVERS`, as `ARCHBOARD_REPOS` moves
+ * `repos.json`, so a pass in the test does not depend on this machine's file
+ * or on the servers its `PATH` holds.
+ * @returns The path of `language-servers.json`.
  */
 function languageServersFile(): string {
-	return path.join(stateDir(), "language-servers.json");
+	return (
+		process.env["ARCHBOARD_LANGUAGE_SERVERS"] || path.join(stateDir(), "language-servers.json")
+	);
 }
 
 /**

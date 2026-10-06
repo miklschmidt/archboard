@@ -27,6 +27,7 @@ import { join } from "node:path";
 import type * as CheckModule from "@/runtime/code-check/index";
 import type { CodeCheckOutcome } from "@/runtime/code-check/index";
 import { board, git, register, write } from "@/runtime/code-check/tests/fixture";
+import { ownServers } from "@/runtime/code-check/tests/servers";
 
 const caller = {
 	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
@@ -228,7 +229,7 @@ beforeAll(async () => {
 	check = await import("@/runtime/code-check/index");
 	const read = check.readBoardsToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
-	withoutPlan = await check.checkCode(read.boards, new AbortController().signal);
+	withoutPlan = await check.checkCode(read.boards, new AbortController().signal, ownServers());
 	const plans = await check.readPlans(
 		[join(shop, "infra", "plan.json")],
 		new AbortController().signal,
@@ -237,7 +238,7 @@ beforeAll(async () => {
 	withPlan = await check.checkCode(
 		read.boards,
 		new AbortController().signal,
-		undefined,
+		ownServers(),
 		plans.plans,
 	);
 });
