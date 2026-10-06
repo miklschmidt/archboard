@@ -1,6 +1,7 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
+import { headLength } from "@/transformers/semantic-renderer/index";
 import { announceSemanticBoardChange } from "@/ui/semantic-board-canvas";
 import { pressKey } from "@/ui/semantic-board-canvas/tests/camera-probes";
 import { sidebarSettled } from "@/ui/semantic-board-canvas/tests/sidebar-probes";
@@ -122,8 +123,12 @@ test("traffic changes are explained without animation numbers", async () => {
 	expect(text).not.toContain("83");
 });
 
-test("legend preserves kinds with shared display names and consolidates repeated samples", async () => {
-	const drawn = drawing(1);
+/**
+ * A picture of four cards of three kinds and two relationships of two kinds,
+ * one with a filled head and one with an open head.
+ * @returns A render answer at the same board version.
+ */
+function keyedDrawing(): Record<string, unknown> {
 	const nodes = [
 		{ id: "n1", kind: "public-api", color: "violet" },
 		{ id: "n2", kind: "private-api", color: "blue" },
@@ -144,10 +149,11 @@ test("legend preserves kinds with shared display names and consolidates repeated
 				`<g data-semantic-id="${edge.id}" data-type-kind="${edge.kind}" data-type-name="Message" data-line-dash="${edge.dash}" data-arrowhead="${edge.head}"/>`,
 		)
 		.join("");
-	server.reply = {
-		status: 200,
-		body: { ...drawn, svg: `<svg xmlns="http://www.w3.org/2000/svg">${nodes}${edges}</svg>` },
-	};
+	return { ...drawing(1), svg: `<svg xmlns="http://www.w3.org/2000/svg">${nodes}${edges}</svg>` };
+}
+
+test("legend preserves kinds with shared display names and consolidates repeated samples", async () => {
+	server.reply = { status: 200, body: keyedDrawing() };
 	mountStage();
 	await settle();
 	const labels = [...part("semantic-legend").querySelectorAll("li")].map(
@@ -155,4 +161,17 @@ test("legend preserves kinds with shared display names and consolidates repeated
 	);
 	expect(labels.filter((label) => label === "API")).toHaveLength(3);
 	expect(labels.filter((label) => label === "Message")).toHaveLength(2);
+});
+
+test("the legend draws each arrowhead as large as the picture draws the head of a plain line", async () => {
+	server.reply = { status: 200, body: keyedDrawing() };
+	mountStage();
+	await settle();
+	// A line sample draws its head as a square of its own inside the sample.
+	const heads = [...part("semantic-legend").querySelectorAll("svg > svg")];
+	expect(heads).toHaveLength(2);
+	for (const head of heads) {
+		expect(Number(head.getAttribute("width"))).toBe(headLength("normal"));
+		expect(Number(head.getAttribute("height"))).toBe(headLength("normal"));
+	}
 });
