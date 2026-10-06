@@ -1,11 +1,11 @@
 ---
 id: TASK-368.04
 title: Board persistence draws the semantic board store as a container
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:17'
-updated_date: '2026-10-06 10:32'
+updated_date: '2026-10-06 10:33'
 labels:
   - interfaces
   - architecture
@@ -28,9 +28,9 @@ Board persistence is the measured example: Archboard server calls eight of the s
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A proposal on Board persistence draws the store as a container, with the engine parts outside it, and is adopted
-- [ ] #2 `semantic inspect` on the container reports the entry points that the code's `index.ts` exposes and callers use, or the task notes explain each difference
-- [ ] #3 `./bin/dogfood check` reports no diagnostics
+- [x] #1 A proposal on Board persistence draws the store as a container, with the engine parts outside it, and is adopted
+- [x] #2 `semantic inspect` on the container reports the entry points that the code's `index.ts` exposes and callers use, or the task notes explain each difference
+- [x] #3 `./bin/dogfood check` reports no diagnostics
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -87,4 +87,12 @@ Held against what index.ts exports and what code outside the store calls (produc
 Picture: the full proposal draws 5032x1525, against 2566x1758 for the current variant. The container runs as one wide box with the server at its top right. Labels read at native scale. The Durable write boundary view draws the container around its selected parts, with the engine parts outside it. Neither view needed an edit.
 
 Adopted TASK-368.04 at version 24, with the summary 'Module level: the board store, the entry points its callers reach, and the reads, transitions and durable writes behind them. Follow linked subjects for related levels.'. TASK-332 is now historical. semantic inspect on the current variant gives the same 9 entry points and 10 hidden parts. ./bin/dogfood check reports diagnostics: []. Another agent branched the draft TASK-367.04 from TASK-332 at versions 21-22 while this proposal was open. That draft now descends from a historical variant, so its adoption needs the archboard-dev PARENT_SUPERSEDED step. Commit a2f56bbad holds the vault file and this task.
+
+Parent verified on 2026-10-06: ./bin/dogfood check exits 0 with no diagnostics, and semantic inspect --container 'Board store' on the current variant reports 9 entry points, 10 hidden parts and 1 caller. The added Vault configuration entry point stands on semantic-board-routes.ts:90 and :308.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Board persistence now draws the semantic board store as a container bound to src/runtime/semantic-board-store, with its lib parts inside, the engine's Board lease and Atomic file replacement outside, and Archboard server as its one caller. Adopted as the current variant at version 24. semantic inspect reports 9 entry points that match what index.ts exports and the server calls, and the task notes explain each difference from index.ts. Verified with ./bin/dogfood check (no diagnostics) and semantic inspect on the container.
+<!-- SECTION:FINAL_SUMMARY:END -->
