@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 155,
+	"version": 159,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-06T16:51:16.822Z",
+	"updatedAt": "2026-10-06T16:59:05.434Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -59135,7 +59135,7 @@
 		{
 			"id": "BXgFELXz",
 			"name": "TASK-367.27 layout after TASK-368.11",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "jRXxovj6",
 			"summary": "Service level: the Archboard server module, the routes and socket its callers reach, the one write boundary behind them, and the modules it calls outside itself. Follow linked subjects for related levels.",
 			"content": {
@@ -60875,9 +60875,1753 @@
 					}
 				]
 			}
+		},
+		{
+			"id": "xLa4QqhH",
+			"name": "TASK-367.16",
+			"lifecycle": "current",
+			"parent": "BXgFELXz",
+			"summary": "Service level: the Archboard server module, the routes and socket its callers reach, the one write boundary behind them, and the modules it calls outside itself. Follow linked subjects for related levels.",
+			"content": {
+				"nodes": [
+					{
+						"id": "2naazvac",
+						"order": 1000,
+						"name": "HTTP application",
+						"kind": "module",
+						"responsibility": "Composes the middleware and mounts every route on the one application",
+						"parent": "nmbXuHCg",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/application.ts"
+						}
+					},
+					{
+						"id": "J7yOKraz",
+						"order": 2000,
+						"name": "Application lifetime",
+						"kind": "module",
+						"responsibility": "Boots and stops the server: the vault and loopback refusals, the pidfile, the ordered shutdown",
+						"parent": "nmbXuHCg",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/server-startup.ts"
+						}
+					},
+					{
+						"id": "K6P74fM7",
+						"order": 3000,
+						"name": "Mutation admission",
+						"kind": "module",
+						"responsibility": "Admits changes while the server runs and counts each until it settles, so a stop drains every accepted write or refuses with SERVER_BUSY",
+						"parent": "nmbXuHCg",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/mutation-admission.ts"
+						}
+					},
+					{
+						"id": "Y70KOm9C",
+						"order": 4000,
+						"name": "Board routes",
+						"kind": "route",
+						"responsibility": "Mounts every board route and answers the reads: the family, the catalogue, one drawn view, the vault check",
+						"parent": "nmbXuHCg",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts"
+						}
+					},
+					{
+						"id": "wYcdVszt",
+						"order": 5000,
+						"name": "Semantic board store",
+						"kind": "module",
+						"responsibility": "The one place a board is read or written",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store"
+						},
+						"drillDown": {
+							"board": "Board persistence",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "xP18j2Co",
+						"order": 6000,
+						"name": "Semantic renderer",
+						"kind": "module",
+						"responsibility": "Draws one variant, view and theme as a self-contained document",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer"
+						},
+						"drillDown": {
+							"board": "Semantic renderer",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "yiSc1qWU",
+						"order": 7000,
+						"name": "Pane registry",
+						"kind": "module",
+						"responsibility": "The sockets, what each pane is showing, and the news broadcast to every one of them",
+						"parent": "nmbXuHCg",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/pane-registry.ts"
+						}
+					},
+					{
+						"id": "ZuLyutvj",
+						"order": 8000,
+						"name": "Disk change watcher",
+						"kind": "module",
+						"responsibility": "Notices a board changed on disk that this process did not write",
+						"parent": "nmbXuHCg",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-disk-watch.ts"
+						}
+					},
+					{
+						"id": "6a2R1ddu",
+						"order": 9000,
+						"name": "Code opener",
+						"kind": "module",
+						"responsibility": "Resolves a node's binding against this machine and opens it",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/code-opener"
+						}
+					},
+					{
+						"id": "9G6CmNgt",
+						"order": 10000,
+						"name": "Codex workbench",
+						"kind": "service",
+						"responsibility": "Owns the private Codex child and bridges it to the panes",
+						"parent": "nmbXuHCg",
+						"groups": [
+							"agent"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/codex-wiring.ts"
+						},
+						"drillDown": {
+							"board": "Agent workbench",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "mTtiV3hX",
+						"order": 11000,
+						"name": "Agent CLI",
+						"kind": "service",
+						"responsibility": "Sends every board operation over HTTP and never writes a vault file itself",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/bin.ts"
+						},
+						"drillDown": {
+							"board": "Command interface",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "Eh7icS73",
+						"order": 12000,
+						"name": "Browser",
+						"kind": "service",
+						"responsibility": "Reads boards, says what each pane is showing, and writes nothing",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application"
+						},
+						"drillDown": {
+							"board": "Browser application",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "8B8O9ZiT",
+						"order": 13000,
+						"name": "Board write routes",
+						"kind": "route",
+						"responsibility": "The one write boundary: every route that changes a board goes through here",
+						"description": "ADR 0023: the file is the board and nothing holds a copy of it. A write states the version it read, takes the board's lease, and is committed before it is answered.",
+						"parent": "nmbXuHCg",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-writes.ts"
+						}
+					},
+					{
+						"id": "Ck9cBsJC",
+						"order": 14000,
+						"name": "Claim routes",
+						"kind": "route",
+						"responsibility": "An agent's claim on a board, its release, and the person's override",
+						"description": "ADR 0016 and ADR 0022: one writer at a time, visible in every pane showing the board, and the one control a person has over it is taking it back.",
+						"parent": "nmbXuHCg",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-lock-routes.ts"
+						}
+					},
+					{
+						"id": "JPg03tjh",
+						"order": 15000,
+						"name": "Rename route",
+						"kind": "route",
+						"responsibility": "Renames a board or a variant as a write, and moves what the server keyed by the old name: its panes, its claim, what the agent said",
+						"description": "TASK-281, ADR 0036. The old name stays a former name, so a pane or a command that still uses it reaches the board.",
+						"parent": "nmbXuHCg",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-rename.ts"
+						}
+					},
+					{
+						"id": "lLWMHtNU",
+						"order": 16000,
+						"name": "Discard route",
+						"kind": "route",
+						"responsibility": "Lets a whole board go under the write's admission and lease, and tells every pane on it the board is gone",
+						"description": "TASK-304.02: a board made only to be recorded, discarded by semantic record --discard.",
+						"parent": "nmbXuHCg",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-discard.ts"
+						}
+					},
+					{
+						"id": "tirq1uzi",
+						"order": 17000,
+						"name": "Service routes",
+						"kind": "route",
+						"responsibility": "Serves the page, and the health answer naming the archboard-server service, its pid and whether it runs the source on disk",
+						"description": "The CLI signals a process for stop only when it both identifies as archboard-server and reports its own pid.",
+						"parent": "nmbXuHCg",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/service-routes.ts"
+						}
+					},
+					{
+						"id": "ws1UusCP",
+						"order": 18000,
+						"name": "Pane routes",
+						"kind": "route",
+						"responsibility": "What each pane shows and where, pushed by the browser; the CLI opens, closes and shows panes through it",
+						"parent": "nmbXuHCg",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/pane-routes.ts"
+						}
+					},
+					{
+						"id": "M9w3f93y",
+						"order": 19000,
+						"name": "Pane socket",
+						"kind": "module",
+						"responsibility": "One socket per page: registers it with the panes, notes which browser tab it belongs to, and passes its agent messages to the Codex workbench",
+						"parent": "nmbXuHCg",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/websocket-connection.ts"
+						}
+					},
+					{
+						"id": "8imgDQSw",
+						"order": 20000,
+						"name": "Board lease",
+						"kind": "module",
+						"responsibility": "One writer at a time per board: the lease file in the vault, an agent's claim, and news when the holder changes",
+						"description": "ADR 0016. The lease lives beside the board, so every server on the vault sees the same exclusion.",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/engine/board-lock.ts"
+						}
+					},
+					{
+						"id": "EAiFrCYk",
+						"order": 21000,
+						"name": "Board announcements",
+						"kind": "module",
+						"responsibility": "Tells every pane on a board who holds it and what they said they were doing",
+						"description": "ADR 0022: a claim is visible wherever the board is shown. Board content is never in the news; a pane reads the board again.",
+						"parent": "nmbXuHCg",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/board-announcements.ts"
+						}
+					},
+					{
+						"id": "jpk7aRzD",
+						"order": 22000,
+						"name": "Change feed",
+						"kind": "module",
+						"responsibility": "Every settled board change as one stream with a cursor, read off the panes' announcements, for the agent's context",
+						"parent": "nmbXuHCg",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-change-feed.ts"
+						}
+					},
+					{
+						"id": "FdJpjBq6",
+						"order": 23000,
+						"name": "Tab session presence",
+						"kind": "module",
+						"responsibility": "Which browser tab each pane on screen belongs to, and the end of a tab that no pane came back to within 60 seconds",
+						"description": "A socket names its tab in its address, and both panes of one tab name the same one. It lives as long as the server process, so a tab that was present before a Codex child restart is still present after it.",
+						"parent": "nmbXuHCg",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/tab-sessions.ts"
+						}
+					},
+					{
+						"id": "nmbXuHCg",
+						"order": 24000,
+						"name": "Archboard server",
+						"kind": "service",
+						"responsibility": "The one process that serves the vault: its routes, the one write boundary and the panes; callers reach it through the routes and the socket it handles",
+						"description": "The CLI and the browser reach the server over HTTP and one WebSocket per page, so the routes and the socket they request are its entry points. Its lib/ files are private: other modules import only src/server/archboard/index.ts. The board lease reaches it through the onBoardLockChanged subscription that Board announcements registers.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard"
+						}
+					},
+					{
+						"id": "HiPsSWiH",
+						"order": 25000,
+						"name": "Code check route",
+						"kind": "route",
+						"responsibility": "Runs the code check on request as checkout work, apart from the polled check",
+						"parent": "nmbXuHCg",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/code-check-route.ts"
+						}
+					},
+					{
+						"id": "adthSPYy",
+						"order": 26000,
+						"name": "History lens",
+						"kind": "module",
+						"responsibility": "Maps each checkout's commits onto the parts whose bound files they changed; says how far a board is behind, which parts change most or together, and what a branch changed against its proposal",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/history-lens"
+						}
+					},
+					{
+						"id": "uLRdM5Uy",
+						"order": 27000,
+						"name": "Locality route",
+						"kind": "route",
+						"responsibility": "Answers one board's hotspots and change coupling over a period on request as checkout work; keeps each answer in memory until a board version or a checkout HEAD moves",
+						"parent": "nmbXuHCg",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/locality-route.ts"
+						}
+					},
+					{
+						"id": "xqP5FDiH",
+						"order": 28000,
+						"name": "Footprint route",
+						"kind": "route",
+						"responsibility": "Answers one board's footprint on request as checkout work: reads the board and the proposal named, then asks the history lens for the parts a branch changed; keeps no answer",
+						"parent": "nmbXuHCg",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/footprint-route.ts"
+						}
+					},
+					{
+						"id": "nDQmpHQi",
+						"order": 29000,
+						"name": "Code check",
+						"kind": "module",
+						"responsibility": "Holds each board's anchors, bound symbols, relationships between bound parts and container interfaces to the code facts of the files on disk, at its current variant or the named draft",
+						"description": "ADR 0046's code pass over the files Git does not ignore in registered checkouts, through code facts: a bound symbol must be a definition, an anchor's symbol a definition or a use. It reports ANCHOR_PATH_MISSING, ANCHOR_SYMBOL_MISSING, BINDING_SYMBOL_MISSING, ANCHOR_MISMATCH (a symbol defined outside the bound code of both ends, or uses of an evidence kind the relationship kind does not accept) and, on a named draft, BINDING_PATH_MISSING. Evidence between a board's bound parts comes from the code facts of every bound file, owned by the narrowest binding (a C or C++ file's part owns its pair): a run-time use through an import or include is a call, a type-only use an import. It joins an environment value that bound code reads with the compose service, Kubernetes workload or Terraform resource that runs that code (by its build, or a part drawn inside the part bound to it) and sets the value to another part's address: configured-path evidence. It reports RELATIONSHIP_UNDRAWN once on the part code reaches with no relationship, and RELATIONSHIP_BACKWARDS and RELATIONSHIP_UNSUPPORTED (which, across a network hop, names the side without evidence) as information for a relationship with no anchor, judged by the evidence kinds its kind accepts. For a container bound to a module it holds ADR 0044's interface to what the module exposes: ENTRY_POINT_UNEXPOSED, CALLER_UNDRAWN, and as information EXPOSED_UNUSED and a Terraform module's VARIABLE_PASSED_THROUGH and MODULE_SHALLOW; an unreadable module is exposure-unknown. A binding to a Terraform root module names an address there (module-not-read in a remote module); references join resource-bound parts, and --plan names plan JSON files. Kubernetes Service selectors and NetworkPolicies join workload-bound parts by labels, and a reference to a Service no part binds reaches the workloads it picks. A language server resolves the uses no import resolves. It lists what it skipped and why, such as a symbol only in code that did not parse.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/code-check"
+						}
+					},
+					{
+						"id": "SmrySjjM",
+						"order": 30000,
+						"name": "Code findings memory",
+						"kind": "module",
+						"responsibility": "What the last code pass found on each board and variant, in memory only",
+						"description": "Each finished pass replaces the readings of the boards it read, with the version it read and when it ran; a cancelled pass changes nothing. GET /api/vault/code-findings answers from it alone, so a pane never starts a pass (ADR 0046).",
+						"parent": "nmbXuHCg",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/code-findings-memory.ts",
+							"symbol": "createCodeFindingsMemory"
+						}
+					},
+					{
+						"id": "aqjsNyJ9",
+						"order": 31000,
+						"name": "Code facts",
+						"kind": "module",
+						"responsibility": "Tells the code check what one file defines, references and imports, and what a module exposes, and keeps each file's facts in memory by its content",
+						"description": "ADR 0046's engine. One table of adapters, src/runtime/code-facts/lib/adapters.ts, says which files each language or format reads, by extension or file name, with its parser (a tree-sitter grammar or one Bun has) and its resolver; each adapter's own files say what it reads. A definition carries its qualified name and the visibility its language gives it. A reference carries its evidence kind: call, import, configured path or build dependency; the name of an environment value or an event in a string counts. A resolver leads a use to the file or address it reaches: through an import or an include, or through the names that a module, project or package declares. Each language's rule in module-exposure.ts says what a module exposes. Code that did not parse has no facts, and a name the reading cannot place there is unknown, never absent; a file no adapter reads is text. It finds a definition and a module's exposed names. One cache entry per file by content hash; grammars load on first use; a pass yields after each parse.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/code-facts"
+						}
+					},
+					{
+						"id": "1aoB46lM",
+						"order": 32000,
+						"name": "Language servers",
+						"kind": "module",
+						"responsibility": "Asks the language server of a file's language where a name the file uses is defined, and what the definition declares, for one pass of the code check",
+						"description": "TASK-367.13, TASK-367.16 and ADR 0046. One pass starts the server of each language once per project on its first question: the checkout, or for Swift the package that holds the file. It speaks JSON-RPC with Content-Length framing over the child's stdio, and asks textDocument/definition at the last name of a use's spelling on its line, and textDocument/documentSymbol once per file to tell code that runs from a member of a type. A language's row in languages.ts says what its server needs beyond that: Swift's sourcekit-lsp starts with backgroundIndexing false so it never builds, is asked workspace/synchronize once so its index is loaded, and has each file opened before a question. Every server it started has stopped before the pass returns: shutdown and exit, then a kill after a bound, or a kill at once when the pass is cancelled. The command of each language comes from language-servers.json in the state directory; TypeScript runs the native tsc --lsp --stdio of Archboard's own typescript package, never the TypeScript of a checkout, and Swift runs only from an entry there. A server that is missing or fails is said once, and so is a Swift package with no index, for which no server starts; their questions stay unanswered.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/language-servers"
+						}
+					},
+					{
+						"id": "WEawqdWG",
+						"order": 33000,
+						"name": "HTTP listener",
+						"kind": "module",
+						"responsibility": "The one Express application and the HTTP server that answers for it",
+						"parent": "nmbXuHCg",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/server-app.ts"
+						}
+					},
+					{
+						"id": "m4GMTKLW",
+						"order": 34000,
+						"name": "Server entry",
+						"kind": "function",
+						"responsibility": "The process entry that archboard start spawns: it starts the server and reports a startup failure",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server.ts"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "4TwcHVXq",
+						"order": 1000,
+						"from": "J7yOKraz",
+						"to": "WEawqdWG",
+						"kind": "dependency",
+						"label": "owns listener",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/server-startup.ts",
+							"symbol": "server"
+						}
+					},
+					{
+						"id": "W2BXIpq7",
+						"order": 2000,
+						"from": "2naazvac",
+						"to": "K6P74fM7",
+						"kind": "dependency",
+						"label": "admits writes",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/mutation-work.ts",
+							"symbol": "admit"
+						}
+					},
+					{
+						"id": "C9PQBOwg",
+						"order": 3000,
+						"from": "2naazvac",
+						"to": "Y70KOm9C",
+						"kind": "dependency",
+						"label": "mounts the read routes",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/application.ts",
+							"symbol": "mountSemanticBoardRoutes"
+						}
+					},
+					{
+						"id": "dHru8Ng6",
+						"order": 4000,
+						"from": "2naazvac",
+						"to": "ws1UusCP",
+						"kind": "dependency",
+						"label": "mounts the pane routes",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/application.ts",
+							"symbol": "mountPaneRoutes"
+						}
+					},
+					{
+						"id": "ibCZHaRq",
+						"order": 5000,
+						"from": "2naazvac",
+						"to": "6a2R1ddu",
+						"kind": "dependency",
+						"label": "mounts opener",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/application.ts",
+							"symbol": "createCodeOpenerRouter"
+						}
+					},
+					{
+						"id": "2SS8e4D0",
+						"order": 6000,
+						"from": "Y70KOm9C",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "read the board family",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"symbol": "readSemanticBoard"
+						}
+					},
+					{
+						"id": "4jlBP8Y2",
+						"order": 7000,
+						"from": "Y70KOm9C",
+						"to": "xP18j2Co",
+						"kind": "render",
+						"label": "render selected view",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"symbol": "renderBoard"
+						}
+					},
+					{
+						"id": "sgeiS1Hj",
+						"order": 8000,
+						"from": "ZuLyutvj",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "locate watched file",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-disk-watch.ts",
+							"symbol": "locateSemanticBoard"
+						}
+					},
+					{
+						"id": "4c7u4tN8",
+						"order": 9000,
+						"from": "ZuLyutvj",
+						"to": "yiSc1qWU",
+						"kind": "event",
+						"label": "announce file change",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-disk-watch.ts",
+							"symbol": "broadcast"
+						}
+					},
+					{
+						"id": "fISQ9jAX",
+						"order": 10000,
+						"from": "M9w3f93y",
+						"to": "9G6CmNgt",
+						"kind": "event",
+						"label": "the page's agent messages",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/websocket-connection.ts",
+							"symbol": "handleBrowserMessage"
+						}
+					},
+					{
+						"id": "oYfZ2qnC",
+						"order": 11000,
+						"from": "6a2R1ddu",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "resolve node binding",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/code-opener/lib/routes.ts",
+							"symbol": "readSemanticBoard"
+						}
+					},
+					{
+						"id": "elH6AHHL",
+						"order": 12000,
+						"from": "J7yOKraz",
+						"to": "9G6CmNgt",
+						"kind": "dependency",
+						"label": "start and stop",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/server-startup.ts",
+							"symbol": "prepareCodexWorkbench"
+						}
+					},
+					{
+						"id": "sn8CVTf4",
+						"order": 13000,
+						"from": "mTtiV3hX",
+						"to": "Y70KOm9C",
+						"kind": "http",
+						"label": "read a board",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"symbol": "readRoute"
+						}
+					},
+					{
+						"id": "BiJamQt9",
+						"order": 14000,
+						"from": "mTtiV3hX",
+						"to": "8B8O9ZiT",
+						"kind": "http",
+						"label": "one stated batch",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-writes.ts",
+							"symbol": "editRoute"
+						}
+					},
+					{
+						"id": "jNIxQ6gv",
+						"order": 15000,
+						"from": "mTtiV3hX",
+						"to": "Ck9cBsJC",
+						"kind": "http",
+						"label": "claim and release",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-lock-routes.ts",
+							"symbol": "claimRoute"
+						}
+					},
+					{
+						"id": "3verBPcG",
+						"order": 16000,
+						"from": "Eh7icS73",
+						"to": "Y70KOm9C",
+						"kind": "http",
+						"label": "a board and its picture",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"symbol": "renderRoute"
+						}
+					},
+					{
+						"id": "VkGzebtq",
+						"order": 17000,
+						"from": "Eh7icS73",
+						"to": "ws1UusCP",
+						"kind": "http",
+						"label": "what this pane is reading",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/pane-routes.ts",
+							"symbol": "postPaneRoute"
+						}
+					},
+					{
+						"id": "VO9ngl7m",
+						"order": 18000,
+						"from": "yiSc1qWU",
+						"to": "Eh7icS73",
+						"kind": "event",
+						"label": "board and agent news",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/pane-registry.ts",
+							"symbol": "sendToAllClients"
+						}
+					},
+					{
+						"id": "ppZ60bja",
+						"order": 19000,
+						"from": "Y70KOm9C",
+						"to": "8B8O9ZiT",
+						"kind": "dependency",
+						"label": "mounts the write routes",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"symbol": "editRoute"
+						}
+					},
+					{
+						"id": "Ep4ins2T",
+						"order": 20000,
+						"from": "2naazvac",
+						"to": "Ck9cBsJC",
+						"kind": "dependency",
+						"label": "mounts the claim routes",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/application.ts",
+							"symbol": "mountSemanticLockRoutes"
+						}
+					},
+					{
+						"id": "iG4T44Pd",
+						"order": 21000,
+						"from": "8B8O9ZiT",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "one batch under the board's lease",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-writes.ts",
+							"symbol": "writeSemanticBoard"
+						}
+					},
+					{
+						"id": "9wogU6N3",
+						"order": 22000,
+						"from": "8B8O9ZiT",
+						"to": "yiSc1qWU",
+						"kind": "event",
+						"label": "announce the accepted write",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-writes.ts",
+							"symbol": "broadcast"
+						}
+					},
+					{
+						"id": "JnPKFYwB",
+						"order": 23000,
+						"from": "Ck9cBsJC",
+						"to": "8imgDQSw",
+						"kind": "call",
+						"label": "take, release or take back the claim",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-lock-routes.ts",
+							"symbol": "claimBoard"
+						}
+					},
+					{
+						"id": "s7mFwrXO",
+						"order": 24000,
+						"from": "Ck9cBsJC",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "is there such a board",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-lock-routes.ts",
+							"symbol": "readSemanticBoard"
+						}
+					},
+					{
+						"id": "xjqxaA6G",
+						"order": 25000,
+						"from": "2naazvac",
+						"to": "tirq1uzi",
+						"kind": "dependency",
+						"label": "mounts the page and health",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/application.ts",
+							"symbol": "mountServiceRoutes"
+						}
+					},
+					{
+						"id": "zFPpXsbO",
+						"order": 26000,
+						"from": "Eh7icS73",
+						"to": "tirq1uzi",
+						"kind": "http",
+						"label": "the page",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/service-routes.ts",
+							"symbol": "frontendRoute"
+						}
+					},
+					{
+						"id": "VyIQhwhS",
+						"order": 27000,
+						"from": "mTtiV3hX",
+						"to": "tirq1uzi",
+						"kind": "http",
+						"label": "health: is this the Archboard server",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/service-routes.ts",
+							"symbol": "healthRoute"
+						}
+					},
+					{
+						"id": "FXbSibQJ",
+						"order": 28000,
+						"from": "Y70KOm9C",
+						"to": "JPg03tjh",
+						"kind": "dependency",
+						"label": "mounts",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"symbol": "renameRoute"
+						}
+					},
+					{
+						"id": "VF10KyMB",
+						"order": 29000,
+						"from": "Y70KOm9C",
+						"to": "lLWMHtNU",
+						"kind": "dependency",
+						"label": "mounts",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-routes.ts",
+							"symbol": "discardRoute"
+						}
+					},
+					{
+						"id": "Op6Hnezg",
+						"order": 30000,
+						"from": "mTtiV3hX",
+						"to": "JPg03tjh",
+						"kind": "http",
+						"label": "rename a board or a variant",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-rename.ts",
+							"symbol": "renameRoute"
+						}
+					},
+					{
+						"id": "oLrYwZPK",
+						"order": 31000,
+						"from": "mTtiV3hX",
+						"to": "lLWMHtNU",
+						"kind": "http",
+						"label": "discard a recorded board",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-discard.ts",
+							"symbol": "discardRoute"
+						}
+					},
+					{
+						"id": "25nn5k7O",
+						"order": 32000,
+						"from": "JPg03tjh",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "rename under the board's lease",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-rename.ts",
+							"symbol": "writeSemanticBoard"
+						}
+					},
+					{
+						"id": "NZRaUiVz",
+						"order": 33000,
+						"from": "JPg03tjh",
+						"to": "8B8O9ZiT",
+						"kind": "call",
+						"label": "the write envelope and answer",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-rename.ts",
+							"symbol": "statedWrite"
+						}
+					},
+					{
+						"id": "zlpNLCzO",
+						"order": 34000,
+						"from": "JPg03tjh",
+						"to": "yiSc1qWU",
+						"kind": "call",
+						"label": "point its panes at the new name",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-rename.ts",
+							"symbol": "sendToPane"
+						}
+					},
+					{
+						"id": "E9NIclM9",
+						"order": 35000,
+						"from": "JPg03tjh",
+						"to": "8imgDQSw",
+						"kind": "call",
+						"label": "carry the claim to the new name",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-rename.ts",
+							"symbol": "claimBoard"
+						}
+					},
+					{
+						"id": "iqwlU6YF",
+						"order": 36000,
+						"from": "lLWMHtNU",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "discard under the board's lease",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-discard.ts",
+							"symbol": "discardSemanticBoard"
+						}
+					},
+					{
+						"id": "0C4a5V24",
+						"order": 37000,
+						"from": "lLWMHtNU",
+						"to": "8B8O9ZiT",
+						"kind": "call",
+						"label": "the write envelope and refusal",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-discard.ts",
+							"symbol": "answerRefusal"
+						}
+					},
+					{
+						"id": "v0DTS3Av",
+						"order": 38000,
+						"from": "lLWMHtNU",
+						"to": "yiSc1qWU",
+						"kind": "event",
+						"label": "the board is gone",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-discard.ts",
+							"symbol": "broadcast"
+						}
+					},
+					{
+						"id": "HfrzUYSB",
+						"order": 39000,
+						"from": "wYcdVszt",
+						"to": "8imgDQSw",
+						"kind": "call",
+						"label": "hold the board for each write",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/write.ts",
+							"symbol": "withBoardLock"
+						}
+					},
+					{
+						"id": "Ac9VTagz",
+						"order": 40000,
+						"from": "8imgDQSw",
+						"to": "EAiFrCYk",
+						"kind": "event",
+						"label": "the holder changed",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/board-announcements.ts",
+							"symbol": "onBoardLockChanged"
+						}
+					},
+					{
+						"id": "AjWTGwUA",
+						"order": 41000,
+						"from": "EAiFrCYk",
+						"to": "yiSc1qWU",
+						"kind": "call",
+						"label": "tell the panes on the board",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/board-announcements.ts",
+							"symbol": "broadcast"
+						}
+					},
+					{
+						"id": "83xq2SSC",
+						"order": 42000,
+						"from": "8B8O9ZiT",
+						"to": "EAiFrCYk",
+						"kind": "call",
+						"label": "what the writer said it was doing",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-writes.ts",
+							"symbol": "announceDoing"
+						}
+					},
+					{
+						"id": "DcOrPKY2",
+						"order": 43000,
+						"from": "mTtiV3hX",
+						"to": "ws1UusCP",
+						"kind": "http",
+						"label": "open, close and show panes",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/pane-routes.ts",
+							"symbol": "mountPaneRoutes"
+						}
+					},
+					{
+						"id": "Hjes93OK",
+						"order": 44000,
+						"from": "ws1UusCP",
+						"to": "yiSc1qWU",
+						"kind": "call",
+						"label": "record the pane; send it a board",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/pane-routes.ts",
+							"symbol": "panes"
+						}
+					},
+					{
+						"id": "ENymHNDK",
+						"order": 45000,
+						"from": "Eh7icS73",
+						"to": "M9w3f93y",
+						"kind": "event",
+						"label": "one socket per page",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/websocket-connection.ts",
+							"symbol": "acceptWebSocketConnection"
+						}
+					},
+					{
+						"id": "9i6d5e2R",
+						"order": 46000,
+						"from": "M9w3f93y",
+						"to": "yiSc1qWU",
+						"kind": "call",
+						"label": "register the page's socket",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/websocket-connection.ts",
+							"symbol": "clients"
+						}
+					},
+					{
+						"id": "7kWTFGGA",
+						"order": 47000,
+						"from": "J7yOKraz",
+						"to": "M9w3f93y",
+						"kind": "dependency",
+						"label": "starts the socket server",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/server-startup.ts",
+							"symbol": "startWebSocketServer"
+						}
+					},
+					{
+						"id": "XsinJmCx",
+						"order": 48000,
+						"from": "yiSc1qWU",
+						"to": "jpk7aRzD",
+						"kind": "event",
+						"label": "every board broadcast",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-change-feed.ts",
+							"symbol": "onBoardBroadcast"
+						}
+					},
+					{
+						"id": "hjFA6kH4",
+						"order": 49000,
+						"from": "9G6CmNgt",
+						"to": "jpk7aRzD",
+						"kind": "data",
+						"label": "changes since its cursor",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/codex-wiring.ts",
+							"symbol": "semanticChangeFeed"
+						}
+					},
+					{
+						"id": "bJ8uGawI",
+						"order": 50000,
+						"from": "M9w3f93y",
+						"to": "FdJpjBq6",
+						"kind": "call",
+						"label": "note the pane's tab, and forget it on close",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/websocket-connection.ts",
+							"symbol": "noteTabSession"
+						}
+					},
+					{
+						"id": "fpTfPg1T",
+						"order": 51000,
+						"from": "9G6CmNgt",
+						"to": "FdJpjBq6",
+						"kind": "call",
+						"label": "a pane's tab, and the end of a tab gone for 60 s",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/codex-wiring.ts",
+							"symbol": "tabSessionOf"
+						}
+					},
+					{
+						"id": "HIiEo2LD",
+						"order": 53000,
+						"from": "2naazvac",
+						"to": "HiPsSWiH",
+						"kind": "dependency",
+						"label": "mounts the code check",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/application.ts",
+							"symbol": "mountCodeCheckRoute"
+						}
+					},
+					{
+						"id": "zgpfY1nk",
+						"order": 54000,
+						"from": "mTtiV3hX",
+						"to": "HiPsSWiH",
+						"kind": "http",
+						"label": "check --code",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/code-check-route.ts",
+							"symbol": "answerCodeCheck"
+						}
+					},
+					{
+						"id": "ZoDbUq63",
+						"order": 56000,
+						"from": "HiPsSWiH",
+						"to": "adthSPYy",
+						"kind": "call",
+						"label": "how far each board is behind",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/code-check-route.ts",
+							"symbol": "createBehindReading"
+						}
+					},
+					{
+						"id": "aV9kjTi1",
+						"order": 57000,
+						"from": "2naazvac",
+						"to": "uLRdM5Uy",
+						"kind": "dependency",
+						"label": "mounts the locality reading",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/application.ts",
+							"symbol": "mountLocalityRoute"
+						}
+					},
+					{
+						"id": "EaH8eTYn",
+						"order": 58000,
+						"from": "mTtiV3hX",
+						"to": "uLRdM5Uy",
+						"kind": "http",
+						"label": "semantic locality",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/locality-route.ts",
+							"symbol": "answerLocality"
+						}
+					},
+					{
+						"id": "7vfS2qIN",
+						"order": 59000,
+						"from": "uLRdM5Uy",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "the board and its variant",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/locality-route.ts",
+							"symbol": "readSemanticBoard"
+						}
+					},
+					{
+						"id": "ELnpXxr9",
+						"order": 60000,
+						"from": "uLRdM5Uy",
+						"to": "adthSPYy",
+						"kind": "call",
+						"label": "the hotspots of the variant over a period",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/locality-route.ts",
+							"symbol": "createLocalityReading"
+						}
+					},
+					{
+						"id": "sR2uKqUd",
+						"order": 61000,
+						"from": "2naazvac",
+						"to": "xqP5FDiH",
+						"kind": "dependency",
+						"label": "mounts the footprint",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/application.ts",
+							"symbol": "mountFootprintRoute"
+						}
+					},
+					{
+						"id": "Nl9aDo99",
+						"order": 62000,
+						"from": "mTtiV3hX",
+						"to": "xqP5FDiH",
+						"kind": "http",
+						"label": "semantic footprint",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/footprint-route.ts",
+							"symbol": "answerFootprint"
+						}
+					},
+					{
+						"id": "8aEFRiIo",
+						"order": 63000,
+						"from": "xqP5FDiH",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "the board and its proposal",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/footprint-route.ts",
+							"symbol": "readSemanticBoard"
+						}
+					},
+					{
+						"id": "TG2bQVR0",
+						"order": 64000,
+						"from": "xqP5FDiH",
+						"to": "adthSPYy",
+						"kind": "call",
+						"label": "the commits of a branch, mapped onto parts",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/footprint-route.ts",
+							"symbol": "readFootprint"
+						}
+					},
+					{
+						"id": "D9dCZCLo",
+						"order": 65000,
+						"from": "HiPsSWiH",
+						"to": "nDQmpHQi",
+						"kind": "call",
+						"label": "the boards to read, then their findings",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/code-check-route.ts",
+							"symbol": "checkCode"
+						}
+					},
+					{
+						"id": "rCuDH1LU",
+						"order": 66000,
+						"from": "nDQmpHQi",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "every board at its variant, and the relationship kinds",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/code-check/lib/boards.ts",
+							"symbol": "readSemanticBoardAt"
+						}
+					},
+					{
+						"id": "gjUcUvHu",
+						"order": 67000,
+						"from": "HiPsSWiH",
+						"to": "SmrySjjM",
+						"kind": "call",
+						"label": "keep what a finished pass found",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/code-check-route.ts",
+							"symbol": "createCodeFindingsMemory"
+						}
+					},
+					{
+						"id": "9y8bpNrE",
+						"order": 68000,
+						"from": "Eh7icS73",
+						"to": "HiPsSWiH",
+						"kind": "http",
+						"label": "what the last code pass found",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/code-check-route.ts",
+							"symbol": "mountCodeCheckRoute"
+						}
+					},
+					{
+						"id": "osnkOhpk",
+						"order": 69000,
+						"from": "nDQmpHQi",
+						"to": "aqjsNyJ9",
+						"kind": "call",
+						"label": "the facts of each file, and what each module exposes",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/code-check/lib/check.ts",
+							"symbol": "createCodeFacts"
+						}
+					},
+					{
+						"id": "ZAbHs2zZ",
+						"order": 70000,
+						"from": "6a2R1ddu",
+						"to": "aqjsNyJ9",
+						"kind": "call",
+						"label": "the line where a bound symbol is defined",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/code-opener/lib/symbol-line.ts",
+							"symbol": "findSymbol"
+						}
+					},
+					{
+						"id": "uZdil5lI",
+						"order": 71000,
+						"from": "nDQmpHQi",
+						"to": "1aoB46lM",
+						"kind": "call",
+						"label": "where a use no import resolves is defined",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/code-check/lib/resolution.ts",
+							"symbol": "openLanguageServers"
+						}
+					},
+					{
+						"id": "zcMW5JaE",
+						"order": 72000,
+						"from": "2naazvac",
+						"to": "WEawqdWG",
+						"kind": "dependency",
+						"label": "mounts every route on the one app",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/application.ts",
+							"symbol": "app"
+						}
+					},
+					{
+						"id": "GQKfoYtu",
+						"order": 73000,
+						"from": "M9w3f93y",
+						"to": "WEawqdWG",
+						"kind": "dependency",
+						"label": "upgrades on the same listener",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/websocket-connection.ts",
+							"symbol": "server"
+						}
+					},
+					{
+						"id": "RZ5ulVj7",
+						"order": 75000,
+						"from": "J7yOKraz",
+						"to": "K6P74fM7",
+						"kind": "call",
+						"label": "a stop waits for the admitted writes",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/server-startup.ts",
+							"symbol": "ServerApplicationBusyError"
+						}
+					},
+					{
+						"id": "k3GPy1bo",
+						"order": 81000,
+						"from": "ws1UusCP",
+						"to": "9G6CmNgt",
+						"kind": "call",
+						"label": "the pane's focus, for its agent",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/pane-routes.ts",
+							"symbol": "publishPaneContext"
+						}
+					},
+					{
+						"id": "UrQdgOTr",
+						"order": 83000,
+						"from": "JPg03tjh",
+						"to": "ws1UusCP",
+						"kind": "call",
+						"label": "the moved pane arrives on the new name",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-board-rename.ts",
+							"symbol": "arrivedOnBoard"
+						}
+					},
+					{
+						"id": "E5B3q1D8",
+						"order": 84000,
+						"from": "yiSc1qWU",
+						"to": "8imgDQSw",
+						"kind": "call",
+						"label": "watch the leases of the boards on screen",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/pane-registry.ts",
+							"symbol": "watchBoardLocks"
+						}
+					},
+					{
+						"id": "zrP3ZDwT",
+						"order": 85000,
+						"from": "8imgDQSw",
+						"to": "ZuLyutvj",
+						"kind": "event",
+						"label": "each sweep of a board on screen",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-disk-watch.ts",
+							"symbol": "onBoardSweep"
+						}
+					},
+					{
+						"id": "nmIgJ9sh",
+						"order": 86000,
+						"from": "ws1UusCP",
+						"to": "EAiFrCYk",
+						"kind": "call",
+						"label": "who holds the board a pane arrives on",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/pane-routes.ts",
+							"symbol": "tellPaneAboutLock"
+						}
+					},
+					{
+						"id": "PRXBp1Ur",
+						"order": 88000,
+						"from": "M9w3f93y",
+						"to": "EAiFrCYk",
+						"kind": "call",
+						"label": "who holds a new pane's board",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/websocket-connection.ts",
+							"symbol": "tellPaneAboutLock"
+						}
+					},
+					{
+						"id": "hCMo9jen",
+						"order": 89000,
+						"from": "Eh7icS73",
+						"to": "Ck9cBsJC",
+						"kind": "http",
+						"label": "take the board back",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/semantic-lock-routes.ts",
+							"symbol": "takeBackRoute"
+						}
+					},
+					{
+						"id": "AMc1w4Bb",
+						"order": 90000,
+						"from": "Eh7icS73",
+						"to": "uLRdM5Uy",
+						"kind": "http",
+						"label": "the hotspots of the shown variant",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/archboard/lib/locality-route.ts",
+							"symbol": "answerLocality"
+						}
+					},
+					{
+						"id": "dw2T12P3",
+						"order": 91000,
+						"from": "Eh7icS73",
+						"to": "6a2R1ddu",
+						"kind": "http",
+						"label": "open the code",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/code-opener/lib/routes.ts",
+							"symbol": "createCodeOpenerRouter"
+						}
+					},
+					{
+						"id": "PKAaizYP",
+						"order": 92000,
+						"from": "m4GMTKLW",
+						"to": "J7yOKraz",
+						"kind": "call",
+						"label": "start the server",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server.ts",
+							"symbol": "startServer"
+						}
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "rKhJWXwz",
+						"name": "How the backend serves a board",
+						"beats": [
+							{
+								"id": "V6wttd3K",
+								"heading": "One application, one admission",
+								"body": "Every request enters the same composed application, and every change is admitted and counted until it settles, so a stop drains what it has accepted rather than lose it, or refuses with SERVER_BUSY and goes on serving.",
+								"subjects": [
+									"2naazvac",
+									"K6P74fM7"
+								]
+							},
+							{
+								"id": "SCewKCv2",
+								"heading": "Meaning is read once and drawn here",
+								"body": "A read answers with the board family or with a drawing made on the server. The browser is a viewer: it holds board content only as a read-only cache of what this said.",
+								"subjects": [
+									"Y70KOm9C",
+									"wYcdVszt",
+									"xP18j2Co"
+								]
+							},
+							{
+								"id": "YWeWWUoZ",
+								"heading": "One write boundary, one lease",
+								"body": "Every change goes through one boundary: the writer states the version it read, the board's lease admits one writer at a time, and the file is committed before the write is answered.",
+								"subjects": [
+									"8B8O9ZiT",
+									"iG4T44Pd",
+									"wYcdVszt",
+									"8imgDQSw",
+									"Ck9cBsJC"
+								]
+							},
+							{
+								"id": "uKlyn7Bt",
+								"heading": "A claim is visible wherever the board is",
+								"body": "When the holder of a board's lease changes, every pane showing the board is told who has it and what they said they were doing, and a person's one control is taking the claim back.",
+								"subjects": [
+									"8imgDQSw",
+									"EAiFrCYk",
+									"yiSc1qWU",
+									"Ck9cBsJC"
+								]
+							},
+							{
+								"id": "5qNrPkqO",
+								"heading": "A rename carries what the server keyed by the name",
+								"body": "A rename is a write like any other, and then the panes on the board, the claim on it and what the agent said it was doing move to the new name. The old name stays a former name, so anything still using it reaches the board.",
+								"subjects": [
+									"JPg03tjh",
+									"wYcdVszt",
+									"yiSc1qWU",
+									"8imgDQSw"
+								]
+							},
+							{
+								"id": "HRtMJ3Oc",
+								"heading": "The file stays the truth while panes stay live",
+								"body": "A pane is told a new version exists and reads again; a change nobody here made is noticed on disk and announced the same way. The agent reads the same announcements as a feed with a cursor. Nothing about a board lives in a pane.",
+								"subjects": [
+									"ZuLyutvj",
+									"yiSc1qWU",
+									"VO9ngl7m",
+									"jpk7aRzD",
+									"9G6CmNgt"
+								]
+							},
+							{
+								"id": "WQhCQCMM",
+								"heading": "A tab keeps its conversation through a reload",
+								"body": "Each pane names its browser tab when its socket opens, and the close of that socket forgets it. When the last pane of a tab closes, the tab has 60 seconds to come back, so a reload keeps its conversation. After that, the Codex workbench ends the tab session.",
+								"subjects": [
+									"FdJpjBq6",
+									"bJ8uGawI",
+									"fpTfPg1T"
+								]
+							}
+						]
+					}
+				]
+			}
 		}
 	],
-	"current": "BXgFELXz",
+	"current": "xLa4QqhH",
 	"adoptions": [
 		{
 			"variant": "82cs8TFY",
@@ -61046,6 +62790,12 @@
 			"from": "jRXxovj6",
 			"at": "2026-10-06T16:51:16.822Z",
 			"reason": "TASK-367.27: lays out in time again. The two calls between Codex workbench and Tab session presence are one, and eight uses below the board's grain are no longer drawn; the task notes explain each."
+		},
+		{
+			"variant": "xLa4QqhH",
+			"from": "BXgFELXz",
+			"at": "2026-10-06T16:59:05.434Z",
+			"reason": "TASK-367.16: Language servers start sourcekit-lsp for Swift once per package, with background indexing off, and say once when a package has no index"
 		}
 	],
 	"shelvings": [
