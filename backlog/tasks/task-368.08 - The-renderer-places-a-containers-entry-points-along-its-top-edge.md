@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:17'
-updated_date: '2026-10-06 10:42'
+updated_date: '2026-10-06 11:14'
 labels:
   - interfaces
   - renderer
@@ -65,4 +65,40 @@ Layout time (timing.ts, first render, 3 runs each): Board viewer 917/924/930 ms 
 Comparison pictures: renderBoard of every variant with and without its comparison (126 pictures) succeeds. The slowest whole renderBoard (embedded fonts, paint included) is a Board viewer comparison at 1.2-1.8 s both with and without the change; it is not the layout and was already over 1 s before (TASK-377 owns the render budget).
 
 Gate side effect: src/runtime/semantic-renderer/tests/standing.test.ts 'keeps this simple fixture's cards stable while comparison channels change' failed. Its fixture's Legacy Bridge is a hidden part of Board Runtime that only writes to Vault; the rule now stands it below the entry points board-io and Edit Queue, and its line into Vault no longer shares a trunk with board-io's, so the comparison had nothing to split (channels still work). The test now adds gw -> legacy so Legacy Bridge is an entry point and the two lines share a trunk while they stand alike; a mutation that drops the relationship standing from the graph still fails it.
+
+Independent review of 9af57a33e on 2026-10-06. Main stood at 69f08b811, and the vault and the web shop were copied there. Verdict before the fixes: NOT CLEAN.
+
+Findings and fixes:
+- Must fix, 8438e2489. The layout read which entry points are first off the lines that a view draws. A view can hide the inside caller of an entry point, such as a composition root. Such a view then held a row that the whole variant does not hold. On main, three views moved and read worse, so criterion 2 failed:
+  - Archboard server, "One write lands": bends per route 1.1 to 2.2, shared corridor 0 to 195, shared ink 0 to 0.10.
+  - The same view: label reach 252 to 364, route length 4284 to 4817, megapixels 2.68 to 3.10.
+  - Archboard server, "Live server state": fit 0.59 to 0.55, route length 6608 to 6732.
+  - Agent workbench, "Owning the child": route length 702 to 1484, bends 0.5 to 1.0.
+- The fix derives which entry points are first with the interface, off the relationships of the whole variant (`entryPointsOf` in compound-graph.ts, ADR 0044). The `archboard.entry` option carries true or false. entry-row.ts no longer walks the drawn lines. A part inside a nested container now counts for the child that holds it. The line walk missed that part.
+- New test: "a view holds a container's first row only where the whole variant does". It fails on 9af57a33e.
+- Must fix, 230a46bc9. measure.ts stopped with a ZodError on the legacy fixtures. It now wraps them in `orderedFixture`, as timing.ts does.
+- standing.test.ts: the added `gw -> legacy` is a fair repair. It puts back what the fixture needs: two lines of one kind into Vault, from cards that stand alike. Every assertion stays as it was. A test run without `archboard.relationship.standing` in the graph still fails, as it must.
+
+Decision 2 is kept. The decision: when another part leads to every entry point, the container holds no first row. In such a container, criterion 1 and "callers sit above what they call" conflict. The board itself says that a hidden part, a composition root, calls the entry points.
+
+I measured one alternative. When no first entry point exists, it holds the other hidden parts below the entry points that no other entry point leads to. It reads worse:
+- Archboard server (current): crossings 68 to 91, bends 2.6 to 2.8, label strand 0.67 to 0.80, corridor routes 6 to 8.
+- Agent workbench, Current architecture: 6 measures worse, with fit 0.40 to 0.38, megapixels 5.27 to 5.58 and label reach 429 to 447.
+- Browser application, TASK-391: crossings 22 to 24, route length 6% longer.
+
+ADR 0039 puts crossings first, so I rejected it. On main, these containers are Archboard server, Agent workbench, Board viewer, Voice coordinator and Browser application on TASK-391. In each of them, every hidden part on the first row leads to an entry point.
+
+Measures on main. Before is 155bdef83, the commit is 9af57a33e, and the fix is 8438e2489.
+- measure.ts with ALL=1: default policy, 6 fixtures and every variant of the 15 boards, 73 drawings. Nothing changed for the commit or for the fix.
+- With the vault policy: 81 drawings, from the fixtures and every variant of the vault and of the web shop. Also 494 renderBoard pictures: every variant, every view, comparison on and off. The commit changed the 8 view pictures above and no whole drawing. With the fix, all 494 pictures and 81 scorecards are byte-identical to before. Criterion 2 passes.
+- Criterion 1 on main: no container that has a first entry point has a hidden part on its first row. Board persistence, which draws the store as a container, holds Vault diagnostics, Rename and Discard on that row.
+- Layout time, from timing.ts: the first render, 3 rounds each. Other agents kept the load average at 5 to 7.
+  - Board viewer: 964, 952 and 919 ms before. 917, 1019 and 938 ms with the commit. 936, 921 and 979 ms with the fix.
+  - Skill evaluation 496 to 539 ms. Command interface 317 to 356 ms. Archboard server 280 to 305 ms. Agent workbench 284 to 305 ms. Board persistence 235 to 261 ms. Codex workhorse 58 to 70 ms.
+  - Every other board and fixture: under 200 ms.
+  - `entryPointsOf` costs 0.13 ms on Board viewer. Board viewer stood at the 1 s line before this task. The rule adds nothing that can be measured. TASK-377 owns the render budget.
+
+Board: Renderer layout adopted TASK-368.08 in b7132cb82. Entry row (entry-row.ts) is called by Card blocks (card-layout.ts:261, `entryRowEdges`). View dispatcher calls Compound graph (index.ts:381, `entryPointsOf`). Semantic renderer draws the layout only as Layout engines, so it needs no change. `./bin/dogfood check` reports no diagnostics.
+
+README: readme:check lists 12 stale assets. All 12 were stale at 155bdef83, which had 13. Every picture draws byte-identically, so I refreshed nothing.
 <!-- SECTION:NOTES:END -->
