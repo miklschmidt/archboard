@@ -22,3 +22,4 @@ export {
 export { type PartReading, type ReadPart, partReading } from "@/runtime/history-lens/lib/parts";
 export { type LocalityReading, createLocalityReading } from "@/runtime/history-lens/lib/locality";
 export { type AnswerMemory, createAnswerMemory } from "@/runtime/history-lens/lib/answer-memory";
+export { type FootprintRequest, readFootprint } from "@/runtime/history-lens/lib/footprint";
