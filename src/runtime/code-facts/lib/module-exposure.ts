@@ -6,8 +6,9 @@
 // for it, and the root files callers may use. TypeScript's root files are
 // what its `package.json` `exports` names, else the files directly in the
 // directory (typescript-exposure.ts). A Python package's root file is its
-// `__init__.py`. A language with no rule here exposes nothing the check can
-// read, and the check says so.
+// `__init__.py`. A Swift module is a target of its package, and each of its
+// files is a root file (swift-exposure.ts). A language with no rule here
+// exposes nothing the check can read, and the check says so.
 //
 // What a root file exposes reads the same in every language, from its code
 // facts: each definition it exposes (an export, a name `__all__` lists or a
@@ -20,6 +21,7 @@
 import type { Definition, ImportedName, SyntaxFacts } from "@/runtime/code-facts/lib/facts";
 import type { CheckoutFiles } from "@/runtime/code-facts/lib/module-resolution";
 import type { FactsPass } from "@/runtime/code-facts/lib/reader";
+import { SWIFT_FILE, swiftRootFiles } from "@/runtime/code-facts/lib/swift-exposure";
 import {
 	ENTRY_FILE,
 	TYPESCRIPT_FILE,
@@ -106,8 +108,24 @@ const PYTHON: ExposureRule = {
 	},
 };
 
+/** Swift's rule: a target of a package, whose files expose its `open`, `public` and `package` declarations. */
+const SWIFT: ExposureRule = {
+	/**
+	 * Whether a file is Swift.
+	 * @param file The file.
+	 * @returns True when it is.
+	 */
+	writes: (file) => SWIFT_FILE.test(file),
+	/**
+	 * No file stands for a Swift module.
+	 * @returns False.
+	 */
+	entry: () => false,
+	rootFiles: swiftRootFiles,
+};
+
 /** The rule of each adapter that reads a language. */
-const RULES: readonly ExposureRule[] = [TYPESCRIPT, PYTHON];
+const RULES: readonly ExposureRule[] = [TYPESCRIPT, PYTHON, SWIFT];
 
 /** One name a module exposes, and the definition it reaches. */
 interface ExposedName {

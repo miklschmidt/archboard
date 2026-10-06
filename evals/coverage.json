@@ -217,7 +217,7 @@
 					"expectedUse": "after drawing a module as a container, run check --code; land the callers an ENTRY_POINT_UNEXPOSED names on the part that holds what the module exposes, and draw the caller a CALLER_UNDRAWN names where the board's question needs it",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/code-check/tests/interfaces.test.ts (each finding and its severity, a use by a part on the board left to RELATIONSHIP_UNDRAWN, a type-only use no caller, a container with no caller, a test no caller and no root file, exposure-unknown); src/runtime/code-facts/tests/module-exposure.test.ts (what a module is and exposes: TypeScript root files, re-exports, an imported name exported again, members, package.json exports; a Python package's __init__.py, __all__ or its public names, read from the fixture package python-shop)"
+					"owner": "src/runtime/code-check/tests/interfaces.test.ts (each finding and its severity, a use by a part on the board left to RELATIONSHIP_UNDRAWN, a type-only use no caller, a container with no caller, a test no caller and no root file, exposure-unknown); src/runtime/code-facts/tests/module-exposure.test.ts (what a module is and exposes: TypeScript root files, re-exports, an imported name exported again, members, package.json exports; a Python package's __init__.py, __all__ or its public names, read from the fixture package python-shop; a Swift target's files and their open, public and package declarations, read from the fixture package swift-shop)"
 				},
 				{
 					"path": "node.binding.branch, .commit, .confirmedAt",

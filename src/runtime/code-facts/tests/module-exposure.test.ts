@@ -2,7 +2,8 @@
 // expose, each followed through re-exports to its definition. A TypeScript
 // module's root files are what a package's `exports` names, else the files
 // directly in its directory; a Python package's is its `__init__.py`, read
-// from the fixture package `fixtures/python-shop`.
+// from the fixture package `fixtures/python-shop`; a Swift module is a target
+// of the package `fixtures/swift-shop`, all of whose files are root files.
 
 import { afterAll, expect, test } from "bun:test";
 import {
@@ -54,11 +55,13 @@ const checkout = fixtureCheckout({
 	].join("\n"),
 });
 const pythonShop = fixtureDirectory("python-shop");
+const swiftShop = fixtureDirectory("swift-shop");
 const facts = createCodeFacts();
 
 afterAll(() => {
 	checkout.remove();
 	pythonShop.remove();
+	swiftShop.remove();
 });
 
 /**
@@ -154,4 +157,21 @@ test("a Python package is its directory, and its __init__.py exposes what __all_
 	expect(ledger?.outside.some((file) => file.startsWith("lib/ledger/"))).toBe(false);
 	// A directory with no __init__.py is no package.
 	expect(await exposureOf("tools", pythonShop)).toBeUndefined();
+});
+
+test("a Swift module is a target of its package, and exposes the open, public and package declarations of its files", async () => {
+	expect(moduleOf("Sources/Core/Ledger.swift", "file")).toBeUndefined();
+	const core = await exposureOf("Sources/Core", swiftShop);
+	expect(core?.rootFiles).toContain("Sources/Core/Ledger+Refund.swift");
+	const exposed = new Map(core?.exposed.map((each) => [each.name, each.path]));
+	expect([...exposed.keys()].filter((name) => !name.includes(".")).toSorted()).toEqual(
+		["Base", "Ledger", "Money", "Store", "packaged"].toSorted(),
+	);
+	// A public extension's member is exposed from the extension's file.
+	expect(exposed.get("Ledger.refund")).toBe("Sources/Core/Ledger+Refund.swift");
+	expect(exposed.has("Ledger.audit")).toBe(false);
+	expect(core?.outside).toContain("Sources/App/main.swift");
+	expect(core?.outside.some((file) => file.startsWith("Sources/Core/"))).toBe(false);
+	// Sources holds every target and is none.
+	expect(await exposureOf("Sources", swiftShop)).toBeUndefined();
 });
