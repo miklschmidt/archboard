@@ -53,7 +53,6 @@ const PRODUCERS: Readonly<Record<string, Producer>> = {
 		vault: "examples/web-shop",
 		board: "Inventory service",
 		walkthrough: "How stock is reserved",
-		loop: { file: "newcomer.webp", from: 1, to: 3, width: 900 },
 		thumbnail: { file: "docs/readme/idx-newcomer.webp", step: 4 },
 	}),
 	"drill-down": drillDown,

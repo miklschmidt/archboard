@@ -4,7 +4,7 @@ Every file in `docs/readme` comes from one command, `bun run readme:assets`.
 The manifest `docs/readme/assets.json` lists each asset: its files, the command
 that makes it, whether it needs a Codex sign-in, the sources it shows, and a
 hash of those sources. The kit that makes them is `scripts/readme-assets`. The
-animated clips, the loops and the narrated videos are too large for the
+animated clips and the narrated videos are too large for the
 repository. The kit writes them to the scratch directory, and you attach them
 to the README (see Attached assets below).
 
@@ -44,17 +44,19 @@ Refresh an asset when `readme:check` lists it after your change. Then:
 | `architecture`, `sequence`, `web-shop`               | `semantic render` in light and dark, faces cut to the characters drawn; two add a thumbnail  | no    |
 | `hero`, `plan`, `history`, `drill-down`, `take-back` | the real shell filmed in headless Chromium while the CLI writes, encoded to a WebP to attach | no    |
 | `ask`                                                | the shell filmed while a Codex agent answers a question typed into the conversation          | yes   |
-| `explainer`, `pr-walkthrough`, `newcomer`            | `semantic record`, narrated by the Codex voice; the MP4 and the loop are attached            | yes   |
+| `explainer`, `pr-walkthrough`, `newcomer`            | `semantic record`, narrated by the Codex voice; the MP4 is attached                          | yes   |
 | `banner`                                             | `semantic render` of a web-shop proposal, laid as vector beside the lockup in Chromium       | no    |
 
 Most assets also write an index thumbnail (`idx-*.webp`), which stays in the
 repository. The manifest lists the files of each asset in the repository. The
-clips, the loops and the MP4s are not in it. `explainer` and `hero` write nothing
+clips and the MP4s are not in it. `explainer` and `hero` write nothing
 in the repository.
 
-The filmed clips and the loops cut from the narrated videos are lossless
-animated WebP at 30 frames a second. They are attached, so their size is no
-matter. An animated WebP stores each frame as the rectangle that changed, and a
+The filmed clips are lossless animated WebP at 30 frames a second. GitHub
+refuses an attached image over 10 MB (HTTP 422), so a clip must stay under it:
+the hero, at 7 MB, is the largest, and a clip that grows needs a narrower width
+or a shorter cut. A README section that has a narrated video does not also keep
+a loop of it. An animated WebP stores each frame as the rectangle that changed, and a
 lossy encoder counts a pixel that moved by a few levels as unchanged. A fading shadow or the glow of a pulse then leaves a ghost, in
 blocks, for the rest of the clip (the sidebar of `drill-down` did). ffmpeg
 offers no keyframe interval for it, so a lossy clip cannot be repaired. Check a
@@ -84,7 +86,7 @@ the account's Codex usage.
 - A recording keeps its talk (the board, the steps, the words and the voice)
   in the scratch directory. When only the renderer changed, the walkthrough and
   the voice did not, so `--replay` renders the kept talk again with
-  `semantic replay`, cuts the loop and the thumbnail from it, and spends no
+  `semantic replay`, cuts the thumbnail from it, and spends no
   Codex usage. It stops when no recording kept a talk. Record again only when
   the walkthrough or the voice should change.
 - GitHub plays a video with sound only from an attachment, so the narrated
@@ -93,7 +95,7 @@ the account's Codex usage.
 ## Attached assets
 
 After it makes an asset, the kit prints one line for each file to attach: the
-clips, the loops and the narrated MP4s. They are in `attachments` and
+clips and the narrated MP4s. They are in `attachments` and
 `narrated` in the scratch directory. Run `gh attach <file>` (the
 `joseustra/gh-attach` extension, which uploads to the current repository) on
 each, and put the address it prints in `README.md`: as the `src` of the clip's

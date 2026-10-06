@@ -124,11 +124,9 @@ Add a sequence diagram of what happens when a shopper places an order, from the 
 
 Give the tour once, and every new hire can play it back. A newcomer's walkthrough starts with two parts and adds one piece at a time until the whole path is on screen. It stops at the place where things go wrong and ends on the one sentence worth remembering.
 
-<img src="https://github.com/user-attachments/assets/644f6604-2306-4a3d-8920-499fb17933e6" width="100%" alt="A narrated newcomer walkthrough of the Inventory service board: the camera moves from the Reserve route to the Stock DB. The voice explains how items are set aside.">
-
-<p align="center"><sub>"How stock is reserved", six steps on the example Inventory service board. The player below has the voice.</sub></p>
-
 https://github.com/user-attachments/assets/bc1df523-ca4e-45ad-a237-01084cb8b1c5
+
+<p align="center"><sub>"How stock is reserved", six steps on the example Inventory service board. Turn the sound on.</sub></p>
 
 ```text
 I'm new here. Walk me through what happens to stock when a shopper presses Pay.
