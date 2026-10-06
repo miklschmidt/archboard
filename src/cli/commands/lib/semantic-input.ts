@@ -202,7 +202,7 @@ function targetedVariant(
 			inChange === undefined || written
 				? []
 				: [
-						`Warning: --variant "${asked}" overrides the stated change's \`variant\` ` +
+						`warning: --variant "${asked}" overrides the stated change's \`variant\` ` +
 							`${typeof inChange === "string" ? `"${inChange}"` : describeJson(inChange)}; ` +
 							`this write names "${asked}".`,
 					],

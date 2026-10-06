@@ -15,20 +15,20 @@ function nodeSubject(node: Pick<SemanticNode, "id" | "name">): DiagnosticSubject
 }
 
 /**
- * A relationship as a diagnostic names it: by the parts at its ends, since a
- * relationship has no name of its own.
- * @param edge The relationship.
- * @param content The state it belongs to, which names its ends.
- * @returns Its id and `From -> To`.
+ * How the relationships of one state are named as diagnostic subjects: by the
+ * parts at their ends, since a relationship has no name of its own.
+ * @param content The state the relationships belong to, which names their ends.
+ * @returns The subject of one of its relationships: its id and `From -> To`.
  */
-function edgeSubject(
-	edge: Pick<SemanticEdge, "id" | "from" | "to">,
+function edgeSubjects(
 	content: Pick<VariantContent, "nodes">,
-): DiagnosticSubject {
+): (edge: Pick<SemanticEdge, "id" | "from" | "to">) => DiagnosticSubject {
 	const names = new Map(content.nodes.map((node) => [node.id, node.name]));
-	const from = names.get(edge.from) ?? edge.from;
-	const to = names.get(edge.to) ?? edge.to;
-	return { kind: "edge", id: edge.id, name: `${from} -> ${to}` };
+	return (edge) => ({
+		kind: "edge",
+		id: edge.id,
+		name: `${names.get(edge.from) ?? edge.from} -> ${names.get(edge.to) ?? edge.to}`,
+	});
 }
 
-export { nodeSubject, edgeSubject };
+export { nodeSubject, edgeSubjects };

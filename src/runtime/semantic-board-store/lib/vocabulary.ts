@@ -4,7 +4,7 @@ import type {
 	SemanticPolicy,
 	VaultDiagnostic,
 } from "@/shared/semantic-policy/index";
-import { edgeSubject, nodeSubject } from "@/runtime/semantic-board-store/lib/subject";
+import { edgeSubjects, nodeSubject } from "@/runtime/semantic-board-store/lib/subject";
 
 interface Reference {
 	key: string;
@@ -49,6 +49,7 @@ function references(board: SemanticBoard, includeBases = true): Reference[] {
  * @returns References in this content.
  */
 function contentReferences(content: VariantContent, variant: string, prefix: string): Reference[] {
+	const edgeSubject = edgeSubjects(content);
 	return [
 		...content.nodes.map((node) => ({
 			key: `node:${node.id}:kind`,
@@ -77,7 +78,7 @@ function contentReferences(content: VariantContent, variant: string, prefix: str
 			value: edge.kind,
 			vocabulary: "relationshipKinds" as const,
 			variant,
-			subject: edgeSubject(edge, content),
+			subject: edgeSubject(edge),
 		})),
 	];
 }
