@@ -100,7 +100,9 @@ clips and the narrated MP4s. They are in `attachments` and
 `joseustra/gh-attach` extension, which uploads to the current repository) on
 each, and put the address it prints in `README.md`: as the `src` of the clip's
 `<img>`, or as the address of the video. An attachment is public once it is
-uploaded, so look at the file first.
+uploaded, so look at the file first. GitHub refuses an image over 10 MB, and
+the kit says so in place of the line to attach it. Make such a clip narrower or
+shorter.
 
 ## What the kit needs
 

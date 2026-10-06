@@ -37,6 +37,9 @@ import {
 	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 } from "./tools.ts";
 
+/** The largest image GitHub takes as an attachment: an upload of 21 MB was refused with HTTP 422. */
+const ATTACHED_IMAGE_LIMIT = 10_000_000;
+
 /** The encoders every filmed or rasterized asset is written with. */
 const ENCODERS = ["libwebp_anim", "libwebp", "libx264"] as const;
 
@@ -181,12 +184,17 @@ function sizes(asset: ReadmeAsset): string {
 }
 
 /**
- * Tell the reader to attach a file that was written in the scratch directory.
+ * Tell the reader to attach a file that was written in the scratch directory, or that GitHub will
+ * refuse it.
  * @param file The file.
  * @returns The line.
  */
 function attachLine(file: string): string {
-	return `attach ${file} (${Math.round(statSync(file).size / 1024)} KB): run gh attach on it, and put the address it prints in README.md`;
+	const { size } = statSync(file);
+	const said = `${file} (${Math.round(size / 1024)} KB)`;
+	return file.endsWith(".webp") && size > ATTACHED_IMAGE_LIMIT
+		? `${said} is over GitHub's 10 MB limit for an image: make it narrower or shorter before you attach it`
+		: `attach ${said}: run gh attach on it, and put the address it prints in README.md`;
 }
 
 /**
