@@ -115,10 +115,11 @@ Archboard server. Nothing here was dragged into place."
 ## Evidence on Hand
 
 - `docs/readme/`: the README's SVGs drawn by `archboard semantic render`, its
-  clips filmed from a running Archboard server, and its banner, which sets the
-  logo beside a proposal that `archboard semantic render` drew.
-  `bun run readme:assets` makes each of them (`docs/agents/readme-assets.md`).
-- Three narrated videos on GitHub, linked from the README.
+  index thumbnails, and its banner, which sets the logo beside a proposal that
+  `archboard semantic render` drew.
+- The README's clips, filmed from a running Archboard server, and three
+  narrated videos, attached on GitHub and linked from the README.
+  `bun run readme:assets` makes all of them (`docs/agents/readme-assets.md`).
 - `examples/web-shop`: the example vault with history, proposals, drill-down
   and walkthroughs.
 - `.archboard/vault`: Archboard's own 15 boards, with real adoption history.
