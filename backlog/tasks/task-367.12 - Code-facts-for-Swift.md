@@ -1,11 +1,11 @@
 ---
 id: TASK-367.12
 title: Code facts for Swift
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 16:33'
+updated_date: '2026-10-06 16:34'
 labels:
   - code-check
 dependencies:
@@ -26,10 +26,10 @@ In Swift, `import` names a module, and the files of one module see each other wi
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Type and function references resolve by name within a module, including extensions that span files
-- [ ] #2 `Package.swift` targets and their dependencies give module-level dependencies
-- [ ] #3 Definitions carry their access level: `open`, `public`, `package`, `internal`, `fileprivate` or `private`
-- [ ] #4 The anchor, binding, undrawn and backwards checks work for parts bound to Swift files or targets
+- [x] #1 Type and function references resolve by name within a module, including extensions that span files
+- [x] #2 `Package.swift` targets and their dependencies give module-level dependencies
+- [x] #3 Definitions carry their access level: `open`, `public`, `package`, `internal`, `fileprivate` or `private`
+- [x] #4 The anchor, binding, undrawn and backwards checks work for parts bound to Swift files or targets
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -95,3 +95,9 @@ Board: Archboard server@TASK-367.12 review changes only the description of Code 
 
 Gate of the review, lanes one at a time in the shared working tree: lint:tests exit 1, only on c-check.test.ts (another agent's uncommitted file). lint:policy exit 1, only in other agents' uncommitted files (checkouts.ts, evidence.ts, part-code.ts, c-definitions.ts, csharp-adapter.ts, csharp-resolution.ts, include-scope.ts, lookup.ts, and the C hunk of module-exposure.ts). fmt:check exit 1, only on c-check.test.ts, c-definitions.ts and definition-site.ts (other agents). My files pass lint, oxfmt and tsc. type-check 0. build:frontend 0. test:modules 4224 pass, 1 fail: wide-boards.test.ts, Archboard server (track) first layout 4,610 ms against 3,000 ms under load (the known timing failure). test:system 195/0. test:repository 20/0. test:serial-browser: the first run failed 3 tests of workspace-address.test.ts, because the owned server died on another agent's half-moved evidence.ts export (lineagesOf). The rerun passed 24/0. HEAD plus my patch, in an exported copy: the code-facts and code-check owners 122/0. eval:skill check: suite ok.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The code check now reads Swift and Package.swift through tree-sitter: declarations and type members with Swift's access levels and defaults, extension members under the extended type, references with call or type-only import evidence, and names resolved within a module across files, including extensions, unless the file itself binds the name. Package.swift is read statically for targets and their dependencies, never run, and code the grammar cannot read is skipped, never reported missing. A Swift target directory is also a module for the interface check. Verified by swift-facts.test.ts, swift-check.test.ts and module-exposure.test.ts (pass with --isolate) and on swift-argument-parser, swift-collections and swift-nio, where every type or function the check cannot find in Sources is a local.
+<!-- SECTION:FINAL_SUMMARY:END -->
