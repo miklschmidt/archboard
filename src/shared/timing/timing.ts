@@ -594,4 +594,7 @@ export {
 } from "@/shared/timing/lib/history-lens";
 
 // ── Code check (ADR 0046) ────────────────────────────────────────────────
-export { CODE_CHECK_GIT_TIMEOUT_MS } from "@/shared/timing/lib/code-check";
+export {
+	CODE_CHECK_GIT_TIMEOUT_MS,
+	LANGUAGE_SERVER_TIMEOUTS,
+} from "@/shared/timing/lib/code-check";
