@@ -324,17 +324,12 @@ const LOCALITY_URL = "/api/semantic-boards/locality";
  * asks only when somebody picks a part out (ADR 0045).
  * @param board The board's name.
  * @param variant The variant's id: the current one or a draft.
- * @param signal Cancels the read.
  * @returns The answer, about every part of the variant.
  */
-async function fetchLocality(
-	board: string,
-	variant: string,
-	signal?: AbortSignal,
-): Promise<LocalityAnswer> {
+async function fetchLocality(board: string, variant: string): Promise<LocalityAnswer> {
 	const search = new URLSearchParams({ board, variant });
 	const parsed = LocalityReplySchema.safeParse(
-		await readRoute(`${LOCALITY_URL}?${search.toString()}`, signal),
+		await readRoute(`${LOCALITY_URL}?${search.toString()}`),
 	);
 	if (!parsed.success) {
 		throw new SemanticBoardError(
