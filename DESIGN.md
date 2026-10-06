@@ -159,7 +159,7 @@ every role and changes the values. The file theme.css holds both themes.
 - **Wayfinding Gold** (oklch(0.831 0.134 84.5)): the gold as a flat fill. It fills the voice ring, a status dot, a checked box and, in the dark theme, the selection on the picture.
 - **Gold Top and Gold Bottom** (oklch(0.87 0.135 88) to oklch(0.805 0.142 81)): the subtle gradient from top to bottom of a primary action. The dark theme sets the bottom a step darker, at oklch(0.8 0.142 81).
 - **Gold Rim** (oklch(0.7 0.125 76), dark oklch(0.58 0.11 74)): the edge of a primary action, one pixel wide.
-- **Gold Ink** (oklch(0.2 0.02 70)): text and icons on gold. It has a contrast of at least 8.5:1 on every stop of the gradient.
+- **Gold Ink** (oklch(0.2 0.02 70)): text and icons on gold. It keeps APCA Lc 66 or more on every stop of the gradient.
 - **Gold Mark** (oklch(0.72 0.15 77), dark oklch(0.86 0.125 86)): the gold as a mark: a 2px bar or underline, a ring, an icon or the edge of something chosen. It lights the way to the chosen row, the active tab and the underline of a link.
 - **Gold Tint** (oklch(0.968 0.03 88), dark oklch(0.29 0.045 80)): a quiet wash behind something chosen on a page.
 
@@ -180,9 +180,9 @@ every role and changes the values. The file theme.css holds both themes.
 
 ### Named Rules
 
-**The One Gold Rule.** Gold marks what is chosen, the one primary action of a region, and the voice and the brand mark. Nothing else in the shell is gold. On the picture there is one shared use, on purpose: the color named yellow in a vault's palette is the gold (`--semantic-yellow` is the gold mark, oklch(0.72 0.15 77) on chalk and oklch(0.86 0.125 86) on graphite), so a group, a kind or a relationship colored yellow is drawn in the gold. The selection on the picture stays the only gold ring.
+**The One Gold Rule.** Gold marks what is chosen, the one primary action of a region, and the voice and the brand mark. Nothing else in the shell is gold. On the picture there is one shared use, on purpose: the color named yellow in a vault's palette is the gold (`--semantic-yellow` is the gold mark, oklch(0.72 0.15 77) on chalk and oklch(0.86 0.125 86) on graphite), so a group, a kind or a relationship colored yellow is drawn in the gold. A yellow group's tab is drawn as a primary action is: the flat gold (`--primary`) with Gold Ink on it. The selection on the picture stays the only gold ring.
 
-**The Ink On Chalk Rule.** Text on chalk is never gold. A gold dark enough to clear 4.5:1 on chalk reads as brown. Text stays in the ink, and a gold mark beside or under it carries the accent. On graphite, accent text is the gold itself (oklch(0.86 0.125 86)).
+**The Ink On Chalk Rule.** Text on chalk is never gold. A gold dark enough to reach APCA Lc 60 on chalk reads as brown. Text stays in the ink, and a gold mark beside or under it carries the accent. On graphite, accent text is the gold itself (oklch(0.86 0.125 86)).
 
 **The Untouched Picture Rule.** The renderer draws the picture. The shell never paints gold, shadow or decoration on a card in it.
 
@@ -280,18 +280,20 @@ shadow is a stack of translucent shapes, with no filter or blur. The colors
 come from the `--slab-*` and `--tray-*` tokens in theme.css, in both themes. A
 group region's frame, corners and tab and a grouped card's face are tones of
 the group's own color, set in OKLCH at one lightness for every color. On chalk
-the corners and the tab are the named color itself, its lightness held at 0.525,
-deep enough that the words on the tab, a very light tint of the color, keep
-4.5:1 for every color, and the faded frame is a light tone of the color that
-keeps its hue. A comparison marks a part by its outline: a
+the corners and the tab are the named color itself at a lightness of its own,
+0.635 to 0.685, the lightest at which the words on the tab, a very light tint of
+the color, reach APCA Lc 60 for every color, and the faded frame is a light tone
+of the color that keeps its hue. A yellow group's tab is the flat gold with Gold
+Ink on it. A comparison marks a part by its outline: a
 1.8-unit border in the comparison's green or Changed Orange along the inside edge of its
 top face, solid for added and dashed for changed, and a removed part's dashed
 red border round its footprint. The face and the front edge keep their colors.
 A line that meets the foot of a card runs into a port, a small slot cut
 through the card's front edge, dark inside, with a lit lower lip. The line comes
 out of it at its own width, over the lip, fades into its depth, and its pulses
-travel into and out of it. Ports are drawn near only. No shadow falls on a line:
-the shadows of cards and labels lie under the lines.
+travel into and out of it, over an arrowhead too. Ports are drawn near and far
+alike. No shadow falls on a line: the shadows of cards, labels and activation
+bars lie under the lines.
 The shell touches none of it, and the Untouched Picture Rule still holds.
 [ADR 0044](docs/adr/0044-cards-containers-and-groups-are-drawn-as-slabs.md)
 records the construction.
@@ -307,19 +309,22 @@ tone of its group's hue, an orange face a peach: at lightness 0.89 to 0.92 with
 nine tenths of the chroma its hue holds there (0.049 to 0.07), and its front
 edge is that hue in shade (lightness 0.78, chroma 0.096). On graphite a grouped
 face is a deep jewel tone (lightness 0.31, chroma 0.048), and its edge is a step
-under it, as a neutral one is (1.33 to 1). A chip is a light
+under it at lightness 0.212, as a neutral one is. A chip is a light
 tone of its type's color, with the glyph in the color itself. The words are
 **Diagram Ink** (`--diagram-text`, oklch(0.2 0.02 265)) and **Diagram Slate**
-(`--diagram-text-muted`, oklch(0.47 0.028 262)). On graphite they are the
-shell's bone and muted ink. Every named color but the gold of yellow is deep
-enough to keep 3:1 as a line on the ground and on a tray's floor. Contrast comes
-from deep ink and strong color, never from a washed-out color.
+(`--diagram-text-muted`, oklch(0.45 0.028 262)). On graphite they are the
+shell's bone and a light warm grey (oklch(0.81 0.01 80)). Every named color but
+the gold of yellow keeps APCA Lc 53 or more as a line on chalk and on a tray's
+floor, and every line keeps Lc 30 or more on graphite. Contrast comes from deep
+ink and strong color, never from a washed-out color. On graphite the picture's
+own neutrals are the shell's warm graphite (hue 75, chroma near 0.006), so a
+container's well and a card read as the same material as the ground.
 
 A neutral line, its arrowhead and a lifeline are drawn in **Line Ink**
-(`--diagram-edge`, oklch(60% 0.015 286), dark oklch(60% 0.017 286)). It has 3:1
-or more against the ground and a container's floor in both themes, and it stays far
-under the contrast of text. A colored line is drawn in its full color on chalk
-and at three quarters of its color on graphite. Every arrowhead is 11 units
+(`--diagram-edge`, oklch(60% 0.015 286), dark oklch(0.6 0.012 80)). It keeps
+APCA Lc 58 or more against the ground and a container's floor on chalk and Lc 34
+on graphite, and it stays far under the contrast of text. A colored line is
+drawn in its full color on chalk and at four fifths of its color on graphite. Every arrowhead is 11 units
 long, whatever the emphasis of its line. A muted line is as wide as a default
 one and paler: its ink keeps 70 % of its default ink over chalk and 60 % over
 graphite, never by opacity. A traffic pulse is the color of its
@@ -477,7 +482,7 @@ It has 20px of padding and 16px between its rows.
 
 The rail runs along the top of the plate, across its full width. It has one segment for each
 step. Each segment is a button, and a tooltip names its step. The segments are 4px high, in
-Muted Ink at 70%, which is 3:1 against the plate, because they are controls. One piece of
+Muted Ink at 70%, which is APCA Lc 60 against the plate on chalk and Lc 31 on graphite, over the floor of Lc 30 for a mark, because they are controls. One piece of
 Gold Mark marks the step shown. It is 6px high and as wide as a segment, with a paler wake of
 the same gold behind it.
 
@@ -599,7 +604,7 @@ Keyboard focus follows the subtitles control to the surface that takes it over.
 - **Do** draw the one primary action of a region with `primary-finish`, and only that one.
 - **Do** separate regions with tone steps and elevation tokens before you add a rule.
 - **Do** keep shadows warm and offset. Take them from the elevation tokens in app.css.
-- **Do** keep the ink on gold at Gold Ink (at least 8.5:1).
+- **Do** keep the ink on gold at Gold Ink (APCA Lc 66 or more).
 
 ### Don't:
 
