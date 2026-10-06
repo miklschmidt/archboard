@@ -731,8 +731,8 @@ not listed falls back to provisioning.
 - Azure permissions: the join of a role assignment, from its principal to its
   scope.
 - Kubernetes: an Ingress backend is a call. A Service selector, config map
-  data and the `set` and `values` of a `helm_release` are configured paths.
-  A NetworkPolicy spec is a permission.
+  data and the `set`, `set_list` and `values` of a `helm_release` are
+  configured paths. A NetworkPolicy spec is a permission.
 
 Some declarations fall back on purpose. ECS container definitions are one
 encoded string that holds environment values, an image and a log group
@@ -772,6 +772,29 @@ evidence. Three event source mappings of `terraform-aws-lambda` still have no
 evidence. That module takes its sources through
 `for_each = var.event_source_mapping` and `each.value`, and these name no
 address.
+
+The review of TASK-367.18 read each table entry against the documentation of
+its provider on 2026-10-06. Some entries named a whole block as the end of a
+join or as a configured path, and the block also names a credential. So the
+service account in a push subscription's `oidc_token` was a call from the
+topic, and a board that binds that account got an undrawn warning. The same
+was true of the account of a BigQuery or a Cloud Storage subscription, the
+network attachment of an Eventarc destination, and the access control,
+access identity and client certificate of a CloudFront origin. Each entry now
+names the argument that names the end: `push_config.push_endpoint`,
+`bigquery_config.table`, `cloud_storage_config.bucket`, the five targets of an
+Eventarc `destination`, and the `domain_name` and `vpc_origin_config` of an
+origin. An Eventarc trigger on the events of a bucket names the bucket in its
+`matching_criteria`, and a trigger on a third-party source names its
+`channel`. The trigger now runs from either one. azurerm 5 renamed the
+endpoints of an Event Grid subscription, for example `service_bus_queue_id`
+for `service_bus_queue_endpoint_id`. The table had only the old names, so a
+subscription written for azurerm 5 joined nothing. It now has both.
+`helm_release` gained `set_list`. One more fault was in the anchors. An anchor
+that named a declaration inside a local module, such as its variable, was
+judged outside a part bound to the module call, such as `module.worker`. Such
+a part holds every declaration of its module instance, so the anchor now
+supports its relationship. The nine boards give the same findings as before.
 
 #### Reading the interface of Terraform modules
 
