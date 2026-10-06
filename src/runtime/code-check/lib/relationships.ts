@@ -23,6 +23,13 @@
 // a call across a network, through an event bus or through a value a part
 // receives. A relationship with an anchor is judged only by its anchor.
 //
+// Where no accepted evidence supports a relationship whose kind accepts a
+// build dependency, and the code of its start holds a Nix expression the
+// static reading cannot follow, such as a package `callPackage` builds from
+// another file, what that code is built from is unknown. The relationship is
+// then skipped as `expression-not-followed`, never reported unsupported
+// (TASK-367.22).
+//
 // Across a network hop, the evidence is the join of code and infrastructure
 // (environment-join.ts): the code reads a value that the infrastructure that
 // runs it sets to another part's address. A piece of that join is shown with
@@ -363,7 +370,10 @@ function pairOf(piece: Piece): string {
  * @param edge The relationship.
  * @returns The finding, or undefined when accepted evidence supports it.
  */
-function judgeEdge(reading: RelationshipReading, edge: SemanticEdge): CodeFinding | undefined {
+function judgeEdge(
+	reading: RelationshipReading,
+	edge: SemanticEdge,
+): CodeFinding | Exclude<Unjudged, "silent"> | undefined {
 	const start = sideOf(reading, edge.from);
 	const end = sideOf(reading, edge.to);
 	const between = reading.evidence.pieces.filter(
@@ -389,7 +399,32 @@ function judgeEdge(reading: RelationshipReading, edge: SemanticEdge): CodeFindin
 			evidence: withPartners(reading, onePer(accepted, pairOf)),
 		};
 	}
-	return unsupportedFinding(reading, edge, onePer(between, pairOf));
+	return (
+		notFollowed(reading, edge, start) ?? unsupportedFinding(reading, edge, onePer(between, pairOf))
+	);
+}
+
+/**
+ * Why the check cannot tell that no build dependency supports a
+ * relationship: its kind accepts one, and the code of its start, or of a part
+ * inside it, holds a Nix expression the static reading cannot follow.
+ * @param reading The board.
+ * @param edge The relationship.
+ * @param start Its start and every part inside it.
+ * @returns The skip, which names the file and lines of the expression, or nothing.
+ */
+function notFollowed(
+	reading: RelationshipReading,
+	edge: SemanticEdge,
+	start: ReadonlySet<string>,
+): Exclude<Unjudged, "silent"> | undefined {
+	if (!accepts(reading, edge.kind, "build-dependency")) return undefined;
+	const { unfollowed } = reading.evidence;
+	const part = [...start].find((id) => unfollowed.has(id));
+	const code = part === undefined ? undefined : reading.codes.get(part);
+	if (!isRead(code)) return undefined;
+	const detail = [code.node.name, unfollowed.get(code.node.id)].join(": ");
+	return { reason: "expression-not-followed", repo: code.checkout.repo, detail };
 }
 
 /**
@@ -481,14 +516,15 @@ function judgeOrSkip(
 ): void {
 	const reason = unjudged(reading, edge);
 	if (reason === "silent") return;
-	if (reason === undefined) {
-		const finding = judgeEdge(reading, edge);
-		if (finding !== undefined) outcome.findings.push(finding);
+	const judged = reason ?? judgeEdge(reading, edge);
+	if (judged === undefined) return;
+	if ("code" in judged) {
+		outcome.findings.push(judged);
 		return;
 	}
 	const subject = edgeSubjects(reading.read.variant.content)(edge);
 	const { board, variant } = siteOf(reading.read, "", subject);
-	outcome.skipped.push({ board, variant, subject, ...reason });
+	outcome.skipped.push({ board, variant, subject, ...judged });
 }
 
 /**

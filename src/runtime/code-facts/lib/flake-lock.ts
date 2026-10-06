@@ -12,10 +12,15 @@
 // inside the checkout: the resolver leads it to that flake's `flake.nix`. Any
 // other input reaches code outside the checkout, and no part of the board.
 // A lock that does not parse holds no facts; the names written in it are kept.
+//
+// The same resolver leads an output that is built from another output of its
+// own flake, through an import whose specifier is `self`
+// (nix-build-inputs.ts), to the `flake.nix` that holds both (TASK-367.22).
 
 import path from "node:path";
 import type { ImportResolver, ParsedFacts } from "@/runtime/code-facts/lib/facts";
 import type { CheckoutFiles } from "@/runtime/code-facts/lib/module-resolution";
+import { SELF } from "@/runtime/code-facts/lib/nix-build-inputs";
 
 /** One token of JSON that the scan of keys reads, and its line. */
 interface Token {
@@ -207,9 +212,25 @@ function flakeLockFacts(text: string): ParsedFacts {
 }
 
 /**
+ * The flake of the checkout a lock input pins, where it is a relative path inside the checkout.
+ * @param checkout The checkout's files.
+ * @param from The lock, relative to the checkout.
+ * @param specifier The source the lock pins, such as `path:./tools`.
+ * @returns That flake's `flake.nix`, relative to the checkout, or undefined.
+ */
+function localFlake(checkout: CheckoutFiles, from: string, specifier: string): string | undefined {
+	const local = /^path:(?<where>\.{1,2}(?:\/[^?]*)?)$/u.exec(specifier)?.groups?.["where"];
+	if (local === undefined) return undefined;
+	const directory = path.posix.join(path.posix.dirname(from), local);
+	const flake = path.posix.join(directory, "flake.nix");
+	return directory.startsWith("..") || !checkout.files.has(flake) ? undefined : flake;
+}
+
+/**
  * The resolver of a checkout's lock inputs: an input that is a relative path
  * inside the checkout leads to that flake's `flake.nix`; every other input
- * reaches code outside the checkout.
+ * reaches code outside the checkout. An output of a flake that another output
+ * of it is built from is in the same file.
  * @param checkout The checkout's files.
  * @returns The resolver.
  */
@@ -222,15 +243,9 @@ function createFlakeResolver(checkout: CheckoutFiles): ImportResolver {
 		 * @returns The import, resolved to a flake of the checkout where it is one.
 		 */
 		resolve(from, found) {
-			const local = /^path:(?<where>\.{1,2}(?:\/[^?]*)?)$/u.exec(found.specifier)?.groups?.[
-				"where"
-			];
-			if (local === undefined) return found;
-			const directory = path.posix.join(path.posix.dirname(from), local);
-			const flake = path.posix.join(directory, "flake.nix");
-			return directory.startsWith("..") || !checkout.files.has(flake)
-				? found
-				: { ...found, resolved: flake };
+			const resolved =
+				found.specifier === SELF ? from : localFlake(checkout, from, found.specifier);
+			return resolved === undefined ? found : { ...found, resolved };
 		},
 	};
 }

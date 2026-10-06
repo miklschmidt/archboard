@@ -29,12 +29,17 @@
 import type { Node, Tree } from "web-tree-sitter";
 import type { Definition, ParsedFacts, Unparsed } from "@/runtime/code-facts/lib/facts";
 import type { Grammar } from "@/runtime/code-facts/lib/grammars";
+import { buildInputs, type Leaf } from "@/runtime/code-facts/lib/nix-build-inputs";
 import { MAX_DEPTH, readFile } from "@/runtime/code-facts/lib/nix-evaluation";
+import { updated } from "@/runtime/code-facts/lib/nix-library";
 import {
 	type AttrsValue,
+	type Budget,
+	type Entry,
 	type NixValue,
 	applied,
 	attrs,
+	lazy,
 	ready,
 	unknownAt,
 } from "@/runtime/code-facts/lib/nix-values";
@@ -75,6 +80,11 @@ const NIX_WORD = /[\p{L}\p{N}_'-]+/gu;
 interface Outputs {
 	readonly definitions: Map<string, Definition>;
 	readonly unknown: Unparsed[];
+	/** The outputs that hold no other output, for what each is built from (nix-build-inputs.ts). */
+	readonly leaves: Leaf[];
+	/** The attribute path of each output that may be a package, by its value. */
+	readonly packages: Map<NixValue, string[]>;
+	readonly budget: Budget;
 	/** The set where the reading stopped at its most definitions, if it did. */
 	stopped?: Node;
 }
@@ -113,12 +123,83 @@ function walk(
 	node: Node,
 	above: ReadonlySet<NixValue>,
 ): void {
-	define(outputs, path, node);
-	if (deepEnough(path) || above.has(value)) return;
+	define(outputs, path, node, value);
+	if (above.has(value)) return;
+	if (deepEnough(path)) {
+		atSchemaDepth(outputs, value, { path, node }, above);
+		return;
+	}
 	if (value.kind === "unknown") unknownBelow(outputs, path, value.node);
-	if (value.kind !== "attrs") return;
-	if (path.length >= MAX_DEPTH) unknownBelow(outputs, path, node);
+	if (value.kind !== "attrs") addLeaf(outputs, { path, node }, value);
+	else if (path.length >= MAX_DEPTH) unknownBelow(outputs, path, node);
 	else walkSet(outputs, value, { path, node }, above);
+}
+
+/**
+ * Note an output that holds no other output.
+ * @param outputs What the reading collects.
+ * @param place Its attribute path, and the node that gives it.
+ * @param value Its value.
+ */
+function addLeaf(outputs: Outputs, place: Place, value: NixValue): void {
+	if (place.path.length > 0) {
+		outputs.leaves.push({ symbol: place.path.join("."), value, node: place.node });
+	}
+}
+
+/**
+ * Note an output as deep as the flake schema names outputs of its kind: a
+ * leaf, or an overlay, whose packages are outputs below it.
+ * @param outputs What the reading collects.
+ * @param value Its value.
+ * @param place Its attribute path, and the node that gives it.
+ * @param above The sets on the path to it.
+ */
+function atSchemaDepth(
+	outputs: Outputs,
+	value: NixValue,
+	place: Place,
+	above: ReadonlySet<NixValue>,
+): void {
+	const packages = isOverlay(place.path)
+		? overlayPackages(value, place.node, outputs.budget)
+		: undefined;
+	if (packages === undefined) addLeaf(outputs, place, value);
+	else if (packages.kind === "attrs") walkSet(outputs, packages, place, above);
+	else if (packages.kind === "unknown") unknownBelow(outputs, place.path, packages.node);
+}
+
+/**
+ * Whether an output is an overlay: `overlays.<name>`, or the legacy `overlay`.
+ * @param path Its attribute path.
+ * @returns True for an overlay.
+ */
+function isOverlay(path: readonly string[]): boolean {
+	const [output] = path;
+	return (
+		(output === "overlays" && path.length === 2) || (output === "overlay" && path.length === 1)
+	);
+}
+
+/**
+ * The packages an overlay `final: prev: { ... }` adds: it is applied to
+ * `prev`, a package set whose names the reading cannot tell, and to
+ * `final`, `prev` with what the overlay adds, so that `final.lib` is the
+ * overlay's own `lib`.
+ * @param overlay The overlay.
+ * @param node The node that gives it.
+ * @param budget The reading's budget.
+ * @returns The packages; unknown for an overlay the reading cannot follow;
+ * undefined for a value that is no overlay.
+ */
+function overlayPackages(overlay: NixValue, node: Node, budget: Budget): NixValue | undefined {
+	if (overlay.kind === "unknown") return overlay;
+	if (overlay.kind !== "function") return undefined;
+	const prev = ready(attrs(new Map(), node));
+	let added: NixValue = unknownAt(node);
+	const final = lazy(() => updated(prev(), added, { deep: false, budget, node }), node);
+	added = applied(applied(overlay, final, node), prev, node);
+	return added;
 }
 
 /**
@@ -133,12 +214,14 @@ function deepEnough(path: readonly string[]): boolean {
 }
 
 /**
- * Note one output as a definition, once.
+ * Note one output as a definition, once, and, where its value is one the
+ * reading cannot follow as a set, as a package another output may be built from.
  * @param outputs What the reading collects.
  * @param path Its attribute path; empty for the outputs as a whole, which is none.
  * @param node The binding that names it, or the expression that makes it.
+ * @param value Its value.
  */
-function define(outputs: Outputs, path: readonly string[], node: Node): void {
+function define(outputs: Outputs, path: readonly string[], node: Node, value: NixValue): void {
 	const symbol = path.join(".");
 	if (path.length === 0 || outputs.definitions.has(symbol)) return;
 	outputs.definitions.set(symbol, {
@@ -147,6 +230,10 @@ function define(outputs: Outputs, path: readonly string[], node: Node): void {
 		visibility: "output",
 		exposed: true,
 	});
+	if (value.kind !== "unknown") return;
+	const named = outputs.packages.get(value);
+	if (named === undefined) outputs.packages.set(value, [symbol]);
+	else named.push(symbol);
 }
 
 /** Where a set of outputs is: its attribute path, and the node that gives it. */
@@ -156,20 +243,25 @@ interface Place {
 }
 
 /**
- * Whether one node lies inside another.
- * @param inner The inner node.
- * @param outer The outer node.
- * @returns True when the outer one spans it.
+ * Whether a name of a set spans its own node: the binding that writes it,
+ * `a.b = ...;` or its name in an `inherit`, wherever that is, or an
+ * expression that makes it inside the node that gives the set. A name an
+ * expression makes elsewhere, such as each system of a `forAllSystems` a
+ * `let` writes, spans the node that gives the set.
+ * @param name The node that gives the name.
+ * @param set The node that gives the set.
+ * @returns True when the name spans its own node.
  */
-function inside(inner: Node, outer: Node): boolean {
-	return outer.startIndex <= inner.startIndex && inner.endIndex <= outer.endIndex;
+function ownSpan(name: Node, set: Node): boolean {
+	const written = name.type === "binding" || name.parent?.type === "inherited_attrs";
+	return written || (set.startIndex <= name.startIndex && name.endIndex <= set.endIndex);
 }
 
 /**
  * Note the outputs a set holds, and that its names are unknown where it is
- * open. A name made outside the node that gives the set, such as each system
- * of a `forAllSystems` a `let` writes, spans that node, so that two outputs
- * made by one helper do not share its lines.
+ * open. A name an expression makes outside the node that gives the set, such
+ * as each system of a `forAllSystems` a `let` writes, spans that node, so
+ * that two outputs made by one helper do not share its lines.
  * @param outputs What the reading collects.
  * @param set The set.
  * @param place Its attribute path, and the node that gives it.
@@ -187,7 +279,7 @@ function walkSet(
 			outputs.stopped ??= place.node;
 			return;
 		}
-		const node = inside(entry.node, place.node) ? entry.node : place.node;
+		const node = ownSpan(entry.node, place.node) ? entry.node : place.node;
 		walk(outputs, entry.value(), [...place.path, name], node, within);
 	}
 	if (set.open !== undefined) unknownBelow(outputs, place.path, set.open);
@@ -195,7 +287,9 @@ function walkSet(
 
 /**
  * The value of the flake's outputs: what `outputs` gives for inputs the
- * reading cannot tell.
+ * reading cannot tell, but for `self`, which is those outputs. Nix gives
+ * `self` names besides the outputs, such as `rev`, so the reading is never
+ * sure `self` lacks a name.
  * @param flake The value of the file.
  * @param root The file's root node.
  * @returns The outputs, and the node that gives them; undefined for a flake with no outputs.
@@ -207,8 +301,17 @@ function outputsOf(
 	if (flake.kind !== "attrs") return { value: unknownAt(root), node: root };
 	const entry = flake.entries.get("outputs");
 	if (entry === undefined) return undefined;
-	const inputs = ready(attrs(new Map(), entry.node));
-	return { value: applied(entry.value(), inputs, entry.node), node: entry.node };
+	let value: NixValue = unknownAt(entry.node);
+	/**
+	 * The outputs, as `self` gives them: open to the names Nix adds.
+	 * @returns The value.
+	 */
+	const outputs = (): NixValue =>
+		value.kind === "attrs" ? attrs(value.entries, entry.node) : value;
+	const self: Entry = { node: entry.node, value: outputs };
+	const inputs = ready(attrs(new Map([["self", self]]), entry.node));
+	value = applied(entry.value(), inputs, entry.node);
+	return { value, node: entry.node };
 }
 
 /**
@@ -218,16 +321,24 @@ function outputsOf(
  * @returns Its outputs as definitions, and the parts whose names are unknown.
  */
 function flakeFacts(tree: Tree, grammar: Grammar): ParsedFacts {
-	const outputs: Outputs = { definitions: new Map(), unknown: [] };
-	const found = outputsOf(readFile(tree.rootNode), tree.rootNode);
+	const read = readFile(tree.rootNode);
+	const outputs: Outputs = {
+		definitions: new Map(),
+		unknown: [],
+		leaves: [],
+		packages: new Map(),
+		budget: read.budget,
+	};
+	const found = outputsOf(read.value, tree.rootNode);
 	if (found !== undefined) walk(outputs, found.value, [], found.node, new Set());
 	if (outputs.stopped !== undefined) unknownBelow(outputs, [], outputs.stopped);
+	const built = buildInputs(outputs.leaves, outputs.packages, read.budget);
 	const errors = grammar.query.captures(tree.rootNode).map((capture) => capture.node);
 	return {
 		definitions: [...outputs.definitions.values()],
-		references: [],
-		imports: [],
-		unparsed: [...unparsedOf(errors, NIX_WORD), ...outputs.unknown],
+		references: built.references,
+		imports: built.imports,
+		unparsed: [...unparsedOf(errors, NIX_WORD), ...outputs.unknown, ...built.unparsed],
 	};
 }
 

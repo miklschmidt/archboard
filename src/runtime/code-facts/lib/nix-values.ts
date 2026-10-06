@@ -163,15 +163,39 @@ function attrs(entries: ReadonlyMap<string, Entry>, open?: Node): AttrsValue {
 
 /**
  * The value one name of a value gives, as `value.name` reads it, or as the
- * name `*` gives every name.
+ * name `*` gives every name. A name the reading cannot tell, such as the
+ * system `self.packages.${system}` names under flake-utils'
+ * `eachDefaultSystem`, selects `*` from a set whose only name is `*`: both
+ * stand for a system the reading cannot tell.
  * @param value The value.
- * @param name The name.
+ * @param name The name, undefined where the reading cannot tell it.
  * @param node The expression, for an unknown value.
  * @returns The value, unknown when the reading cannot tell.
  */
-function selected(value: NixValue, name: string, node: Node): NixValue {
+function selected(value: NixValue, name: string | undefined, node: Node): NixValue {
 	if (value.kind !== "attrs") return unknownAt(node);
-	return (value.entries.get(name) ?? value.entries.get(ANY))?.value() ?? unknownAt(node);
+	const entry = name === undefined ? onlyAny(value) : entryOf(value, name);
+	return entry?.value() ?? unknownAt(node);
+}
+
+/**
+ * The entry of a name in a set, or the entry `*` that stands for it.
+ * @param set The set.
+ * @param name The name.
+ * @returns The entry, if any.
+ */
+function entryOf(set: AttrsValue, name: string): Entry | undefined {
+	return set.entries.get(name) ?? set.entries.get(ANY);
+}
+
+/**
+ * The entry `*` of a set whose only name it is, and to which no expression
+ * the reading cannot follow may add names.
+ * @param set The set.
+ * @returns The entry, if the set is such a set.
+ */
+function onlyAny(set: AttrsValue): Entry | undefined {
+	return set.open === undefined && set.entries.size === 1 ? set.entries.get(ANY) : undefined;
 }
 
 /**

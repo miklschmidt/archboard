@@ -25,9 +25,11 @@
 // for a system it cannot tell, such as `packages.*.default`.
 //
 // Each name or item a function copies or walks spends a step of the reading's
-// budget (nix-values.ts).
+// budget (nix-values.ts). The functions that give a derivation are known too
+// (nix-derivations.ts, TASK-367.22).
 
 import type { Node } from "web-tree-sitter";
+import { DERIVATIONS } from "@/runtime/code-facts/lib/nix-derivations";
 import {
 	type AttrsValue,
 	type Budget,
@@ -386,6 +388,7 @@ const LIBRARY: ReadonlyMap<string, (budget: Budget) => NixValue> = new Map<
 			unary((f) => curried((init, list, call) => foldLeft(f, init, list, { call, budget }))),
 	],
 	["mkFlake", (budget) => curried((_args, module, call) => mkFlake(module, { call, budget }))],
+	...DERIVATIONS,
 ]);
 
 /**

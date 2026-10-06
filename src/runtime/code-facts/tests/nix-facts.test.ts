@@ -238,6 +238,8 @@ test("a flake's outputs written out are definitions by attribute path, down to t
 		"nixosConfigurations.host",
 		"overlays",
 		"overlays.default",
+		// What an overlay adds is its packages.
+		"overlays.default.tool",
 		"packages",
 		"packages.x86_64-linux",
 		"packages.x86_64-linux.default",
@@ -250,7 +252,8 @@ test("a flake's outputs written out are definitions by attribute path, down to t
 		visibility: "output",
 		exposed: true,
 	});
-	expect(flake.unparsed).toEqual([]);
+	// No name is unknown; what the outputs are built from may be (nix-build-dependencies.test.ts).
+	expect(flake.unparsed.filter((part) => part.under !== undefined)).toEqual([]);
 	// Any other Nix file is read as text.
 	expect((await read("plain/tool.nix"))?.adapter).toBe("text");
 });
@@ -305,7 +308,9 @@ test("outputs given once per system are followed through genAttrs, flake-utils, 
 		"packages.x86_64-linux",
 		"packages.x86_64-linux.web",
 	]);
-	expect((await nix("utils/flake.nix")).unparsed).toEqual([]);
+	expect(
+		(await nix("utils/flake.nix")).unparsed.filter((part) => part.under !== undefined),
+	).toEqual([]);
 });
 
 test("names the static reading cannot tell are unknown, never absent", async () => {
