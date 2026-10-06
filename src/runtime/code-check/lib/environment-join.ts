@@ -26,9 +26,15 @@
 // A read of a name that a runner of its code sets to the address of a part is
 // one piece from the part that owns the read (the narrowest binding, as all
 // code evidence) to that part, with its partner: the piece where the
-// infrastructure sets it. Both are configured-path evidence and resolved,
-// because the name, the service and the build directory are all written in
-// files. Evidence never joins a part to a part inside it.
+// infrastructure sets it. Both are configured-path evidence. They are
+// resolved where the files leave no choice: the name, the service and the
+// build directory are all written in files. They are candidates where the
+// files leave a choice, because then a right board cannot clear a warning:
+// the address names a declaration whose code is several parts, and nothing
+// says which of them it reaches; or more than one runner runs the code that
+// reads the name, and they do not set it to the same parts, as two services
+// that build one directory to different targets. Evidence never joins a part
+// to a part inside it.
 //
 // The reads and runners also say which side of an unsupported relationship
 // has evidence: the infrastructure sets a value to the address of its end
@@ -53,6 +59,12 @@ import type { CodeEvidence } from "@/shared/code-check/index";
  */
 const INFRASTRUCTURE: ReadonlySet<string> = new Set(["compose", "env", "kubernetes", "terraform"]);
 
+/**
+ * The parts a value reaches through one declaration it names, and whether the
+ * files name them for sure.
+ */
+type Reach = Parameters<typeof piecesBetween>[1];
+
 /** One environment value an infrastructure declaration sets, and the parts its value names. */
 interface Setting {
 	readonly name: string;
@@ -60,11 +72,11 @@ interface Setting {
 	readonly path: string;
 	readonly line: number;
 	/**
-	 * The parts the value names. None for a value that names no part, such as
-	 * a host outside the project or a name an env file sets, whose value the
-	 * check never reads.
+	 * The parts the value names, one reach for each declaration it names.
+	 * None for a value that names no part, such as a host outside the project
+	 * or a name an env file sets, whose value the check never reads.
 	 */
-	readonly reaches: readonly ReadPart[];
+	readonly reaches: readonly Reach[];
 }
 
 /**
@@ -174,17 +186,25 @@ function partsByRepo(codes: ReadonlyMap<string, PartCode>): [ReadPart, ...ReadPa
 }
 
 /**
+ * How a value reaches the parts whose code a declaration runs: for sure when
+ * that code is one part's, and a candidate for each of several, because the
+ * address names the declaration and nothing says which of them it reaches.
+ * @param parts The parts.
+ * @returns The reach.
+ */
+function reachOf(parts: readonly ReadPart[]): Reach {
+	return { to: parts, resolution: parts.length > 1 ? "candidate" : "resolved" };
+}
+
+/**
  * The parts a value that names a declaration reaches, when no build says
  * which code the declaration runs: the parts the board draws inside a part
  * bound to it, whose code it runs, else the parts that own it.
  * @param codes Each part's bound code, by its id.
  * @param owners The parts that own the declaration.
- * @returns The parts.
+ * @returns The reach.
  */
-function runningParts(
-	codes: ReadonlyMap<string, PartCode>,
-	owners: readonly ReadPart[],
-): ReadPart[] {
+function runningParts(codes: ReadonlyMap<string, PartCode>, owners: readonly ReadPart[]): Reach {
 	const bound = new Set(
 		owners.flatMap((part) => (part.grain.kind === "symbol" ? [part.node.id] : [])),
 	);
@@ -192,105 +212,107 @@ function runningParts(
 		(code): code is ReadPart =>
 			code.status === "read" && code.node.parent !== undefined && bound.has(code.node.parent),
 	);
-	return inside.length > 0 ? inside : [...owners];
+	return inside.length > 0 ? reachOf(inside) : { to: owners, resolution: "resolved" };
 }
 
 /**
- * Whether a directory holds a file.
- * @param directory The directory; the empty string is the whole checkout.
- * @param file The file.
- * @returns True when it does.
+ * The directory that holds a path.
+ * @param path A file or directory of the checkout.
+ * @returns Its directory; the empty string is the whole checkout.
  */
-function holds(directory: string, file: string): boolean {
-	return directory === "" || file.startsWith(`${directory}/`);
+function parentOf(path: string): string {
+	const slash = path.lastIndexOf("/");
+	return slash === -1 ? "" : path.slice(0, slash);
+}
+
+/**
+ * Add a runner to the list of a key.
+ * @param map The lists.
+ * @param key The key.
+ * @param runner The runner.
+ */
+function addRunner(map: Map<string, Runner[]>, key: string, runner: Runner): void {
+	map.set(key, [...(map.get(key) ?? []), runner]);
 }
 
 /** Which runners run a file or a part. */
 interface Running {
 	/**
-	 * Whether a runner runs the code of a file that a part owns.
-	 * @param runner The runner.
+	 * The runners that run the code of a file that a part owns.
 	 * @param repo The file's repository.
 	 * @param file The file.
 	 * @param part The part that owns it.
-	 * @returns True when it does.
+	 * @returns Them, each once.
 	 */
-	readonly file: (runner: Runner, repo: string, file: string, part: ReadPart) => boolean;
+	readonly ofFile: (repo: string, file: string, part: ReadPart) => Runner[];
 	/**
-	 * Whether a runner runs some of the code of a part.
-	 * @param runner The runner.
+	 * The runners that run some of the code of a part.
 	 * @param part The part.
-	 * @returns True when it does.
+	 * @returns Them, each once.
 	 */
-	readonly part: (runner: Runner, part: ReadPart) => boolean;
+	readonly ofPart: (part: ReadPart) => Runner[];
 }
 
 /**
- * Which runners run what: the runner that builds the deepest directory that
- * holds a file, and a runner bound to a part that is, or holds, its owner.
+ * Which runners run what: the runners that build the deepest built directory
+ * that holds a file, and the runners bound to a part that is, or holds, its
+ * owner. Both are looked up, so a pass over many compose files and a part of
+ * many files costs the files times the depth of their directories.
  * @param runners Every runner.
  * @param lineages Each part and the parts that hold it, the part first.
- * @returns The tests.
+ * @returns The lookups.
  */
 function runningOf(
 	runners: readonly Runner[],
 	lineages: ReadonlyMap<string, ReadonlySet<string>>,
 ): Running {
-	const directories = new Map<string, Set<string>>();
+	const building = new Map<string, Runner[]>();
+	const bound = new Map<string, Runner[]>();
 	for (const runner of runners) {
-		const own = directories.get(runner.repo) ?? new Set();
-		runner.directories.forEach((directory) => own.add(directory));
-		directories.set(runner.repo, own);
+		runner.directories.forEach((directory) =>
+			addRunner(building, `${runner.repo}\0${directory}`, runner),
+		);
+		runner.parts.forEach((part) => addRunner(bound, part.node.id, runner));
 	}
 	/**
-	 * The deepest directory a runner builds that holds a file.
+	 * The runners that build the deepest built directory that holds a file.
 	 * @param repo The file's repository.
 	 * @param file The file.
-	 * @returns The directory, or undefined when none holds it.
+	 * @returns Them; none where no build holds it.
 	 */
-	const deepest = (repo: string, file: string): string | undefined =>
-		[...(directories.get(repo) ?? [])]
-			.filter((directory) => holds(directory, file))
-			.toSorted((left, right) => right.length - left.length)[0];
+	const builders = (repo: string, file: string): readonly Runner[] => {
+		for (let directory = parentOf(file); ; directory = parentOf(directory)) {
+			const found = building.get(`${repo}\0${directory}`);
+			if (found !== undefined || directory === "") return found ?? [];
+		}
+	};
 	/**
-	 * Whether a runner is bound to a part that is, or holds, a part.
-	 * @param runner The runner.
+	 * The runners bound to a part or to a part that holds it.
 	 * @param part The part.
-	 * @returns True when it is.
+	 * @returns Them.
 	 */
-	const contains = (runner: Runner, part: ReadPart): boolean => {
-		const lineage = lineages.get(part.node.id);
-		return runner.parts.some((bound) => lineage?.has(bound.node.id) === true);
-	};
-	/**
-	 * Whether a runner builds the deepest directory that holds a file.
-	 * @param runner The runner.
-	 * @param repo The file's repository.
-	 * @param file The file.
-	 * @returns True when it does.
-	 */
-	const builds = (runner: Runner, repo: string, file: string): boolean => {
-		const directory = runner.repo === repo ? deepest(repo, file) : undefined;
-		return directory !== undefined && runner.directories.includes(directory);
-	};
+	const holding = (part: ReadPart): Runner[] =>
+		[...(lineages.get(part.node.id) ?? [])].flatMap((id) => bound.get(id) ?? []);
 	return {
 		/**
-		 * Whether a runner runs the code of a file that a part owns.
-		 * @param runner The runner.
+		 * The runners that run the code of a file that a part owns.
 		 * @param repo The file's repository.
 		 * @param file The file.
 		 * @param part The part that owns it.
-		 * @returns True when it does.
+		 * @returns Them, each once.
 		 */
-		file: (runner, repo, file, part) => builds(runner, repo, file) || contains(runner, part),
+		ofFile: (repo, file, part) => [...new Set([...builders(repo, file), ...holding(part)])],
 		/**
-		 * Whether a runner runs some of the code of a part.
-		 * @param runner The runner.
+		 * The runners that run some of the code of a part.
 		 * @param part The part.
-		 * @returns True when it does.
+		 * @returns Them, each once.
 		 */
-		part: (runner, part) =>
-			contains(runner, part) || part.files.some((file) => builds(runner, part.checkout.repo, file)),
+		ofPart: (part) => [
+			...new Set([
+				...holding(part),
+				...part.files.flatMap((file) => builders(part.checkout.repo, file)),
+			]),
+		],
 	};
 }
 
@@ -323,26 +345,49 @@ function firstOf(evidence: readonly CodeEvidence[], keyOf: (each: CodeEvidence) 
 	return [...kept.values()];
 }
 
+/** A read, and the runners that run its code. */
+interface RunRead {
+	readonly read: Read;
+	readonly runners: readonly Runner[];
+}
+
 /**
- * The pieces a read gives through the runners of its code, each with its partner.
- * @param read The read.
- * @param runners The runners that run its code.
+ * What the settings of one runner reach for a name, as one key.
+ * @param settings The runner's settings of the name.
+ * @returns The ids of the parts reached, sorted.
+ */
+function reachedKey(settings: readonly Setting[]): string {
+	const ids = settings.flatMap((setting) =>
+		setting.reaches.flatMap((reach) => reach.to.map((part) => part.node.id)),
+	);
+	return [...new Set(ids)].toSorted().join("\0");
+}
+
+/**
+ * The pieces a read gives through the runners of its code, each with its
+ * partner. Where the runners do not set the name to the same parts, the check
+ * cannot tell which of them runs the code, so every piece is a candidate.
+ * @param run The read and the runners of its code.
  * @param lineages Each part and the parts that hold it.
  * @returns Each piece at the read and its partner at the setting.
  */
 function joinedAt(
-	read: Read,
-	runners: readonly Runner[],
+	run: RunRead,
 	lineages: ReadonlyMap<string, ReadonlySet<string>>,
 ): [Piece, Piece][] {
+	const { read } = run;
 	const evidence = sideEvidence(read, read.name);
-	return runners.flatMap((runner) =>
-		runner.settings
-			.filter((setting) => setting.name === read.name)
-			.flatMap((setting) =>
+	const named = run.runners.map((runner) =>
+		runner.settings.filter((setting) => setting.name === read.name),
+	);
+	const sure = new Set(named.map(reachedKey)).size === 1;
+	return named
+		.flat()
+		.flatMap((setting) =>
+			setting.reaches.flatMap((reach) =>
 				piecesBetween(
 					[read.part],
-					{ to: setting.reaches, resolution: "resolved" },
+					sure ? reach : { ...reach, resolution: "candidate" },
 					lineages,
 					evidence,
 				).map((piece): [Piece, Piece] => [
@@ -350,21 +395,15 @@ function joinedAt(
 					{ ...piece, repo: setting.repo, path: setting.path, line: setting.line },
 				]),
 			),
-	);
+		);
 }
 
 /** What the sides of a relationship are read from. */
 interface Joined {
 	readonly codes: ReadonlyMap<string, PartCode>;
 	readonly runners: readonly Runner[];
-	readonly reads: readonly Read[];
+	readonly runs: readonly RunRead[];
 	readonly running: Running;
-	/**
-	 * The runners that run the code of a read.
-	 * @param read The read.
-	 * @returns Them.
-	 */
-	readonly runnersOf: (read: Read) => Runner[];
 }
 
 /**
@@ -377,28 +416,51 @@ interface Joined {
  * @returns The evidence of each side.
  */
 function sidesOf(joined: Joined, start: ReadonlySet<string>, end: ReadonlySet<string>): HopSides {
-	const starting = [...start].flatMap((id) => {
-		const code = joined.codes.get(id);
-		return code?.status === "read" ? [code] : [];
-	});
+	const running = new Set(
+		[...start].flatMap((id) => {
+			const code = joined.codes.get(id);
+			return code?.status === "read" ? joined.running.ofPart(code) : [];
+		}),
+	);
 	const settings = joined.runners
-		.filter((runner) => starting.some((part) => joined.running.part(runner, part)))
+		.filter((runner) => running.has(runner))
 		.flatMap((runner) => runner.settings)
-		.filter((setting) => setting.reaches.some((part) => end.has(part.node.id)))
-		.map((setting) => sideEvidence(setting, setting.name));
-	const unset = joined.reads
-		.filter(
-			(read) =>
-				start.has(read.part.node.id) &&
-				!joined
-					.runnersOf(read)
-					.some((runner) => runner.settings.some((setting) => setting.name === read.name)),
+		.filter((setting) =>
+			setting.reaches.some((reach) => reach.to.some((part) => end.has(part.node.id))),
 		)
-		.map((read) => sideEvidence(read, read.name));
+		.map((setting) => sideEvidence(setting, setting.name));
+	const unset = joined.runs
+		.filter(
+			({ read, runners }) =>
+				start.has(read.part.node.id) &&
+				!runners.some((runner) => runner.settings.some((setting) => setting.name === read.name)),
+		)
+		.map(({ read }) => sideEvidence(read, read.name));
 	return {
 		settings: firstOf(settings, (each) => `${each.path}\0${each.line}\0${each.symbol}`),
 		unset: firstOf(unset, (each) => each.symbol),
 	};
+}
+
+/**
+ * The first join of each pair of parts, a resolved one before a candidate.
+ * @param joins Each piece at a read and its partner, in the order of the reads.
+ * @returns One of each pair.
+ */
+function firstJoins(joins: readonly [Piece, Piece][]): [Piece, Piece][] {
+	const kept = new Map<string, [Piece, Piece]>();
+	for (const join of joins) {
+		const [piece] = join;
+		const key = `${piece.from}\0${piece.to}`;
+		const held = kept.get(key)?.[0];
+		if (
+			held === undefined ||
+			(held.resolution === "candidate" && piece.resolution === "resolved")
+		) {
+			kept.set(key, join);
+		}
+	}
+	return [...kept.values()];
 }
 
 /**
@@ -415,28 +477,15 @@ async function joinEnvironment(
 	runners: readonly Runner[],
 ): Promise<EnvironmentJoin> {
 	const lineages = lineagesOf(codes);
-	const reads: Read[] = [];
+	const running = runningOf(runners, lineages);
+	const runs: RunRead[] = [];
 	for (const parts of partsByRepo(codes)) {
 		// oxlint-disable-next-line no-await-in-loop -- one repository at a time, in board order
-		reads.push(...(await readsIn(parts, facts)));
+		for (const read of await readsIn(parts, facts)) {
+			runs.push({ read, runners: running.ofFile(read.repo, read.path, read.part) });
+		}
 	}
-	const running = runningOf(runners, lineages);
-	/**
-	 * The runners that run the code of a read.
-	 * @param read The read.
-	 * @returns Them.
-	 */
-	const runnersOf = (read: Read) =>
-		runners.filter((runner) => running.file(runner, read.repo, read.path, read.part));
-	const partners = new Map<Piece, Piece>();
-	const pairs = new Set<string>();
-	for (const [piece, partner] of reads.flatMap((read) =>
-		joinedAt(read, runnersOf(read), lineages),
-	)) {
-		const pair = `${piece.from}\0${piece.to}`;
-		if (!pairs.has(pair)) partners.set(piece, partner);
-		pairs.add(pair);
-	}
+	const partners = new Map(firstJoins(runs.flatMap((run) => joinedAt(run, lineages))));
 	return {
 		pieces: [...partners.keys()],
 		partners,
@@ -446,16 +495,18 @@ async function joinEnvironment(
 		 * @param end The ids of its end and the parts inside it.
 		 * @returns The evidence of each side.
 		 */
-		sides: (start, end) => sidesOf({ codes, runners, reads, runnersOf, running }, start, end),
+		sides: (start, end) => sidesOf({ codes, runners, runs, running }, start, end),
 	};
 }
 
 export {
 	type EnvironmentJoin,
 	type HopSides,
+	type Reach,
 	type Runner,
 	type Setting,
 	joinEnvironment,
 	partsByRepo,
+	reachOf,
 	runningParts,
 };

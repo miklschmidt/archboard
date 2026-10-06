@@ -155,15 +155,35 @@ function withPartners(reading: RelationshipReading, pieces: readonly Piece[]): P
 }
 
 /**
- * What a finding says of its candidates.
- * @param candidates How many of its pieces are candidates.
- * @returns The sentence, or nothing when none is.
+ * How many pieces are candidates, as the start of a sentence.
+ * @param count How many.
+ * @returns The words.
  */
-function candidateSentence(candidates: number): string {
-	if (candidates === 0) return "";
-	const pieces =
-		candidates === 1 ? "One piece of it is a candidate" : `${candidates} pieces are candidates`;
-	return ` ${pieces}, matched by name only until a language server resolves it.`;
+function candidatesAre(count: number): string {
+	return count === 1 ? "One piece of it is a candidate" : `${count} pieces are candidates`;
+}
+
+/**
+ * What a finding says of its candidates: those of code, matched by name, and
+ * those of a join across a network hop, where the infrastructure leaves a
+ * choice (environment-join.ts).
+ * @param reading The board and its join.
+ * @param pieces The finding's pieces.
+ * @returns The sentences, or nothing when none is a candidate.
+ */
+function candidateSentence(reading: RelationshipReading, pieces: readonly Piece[]): string {
+	const candidates = pieces.filter((piece) => piece.resolution === "candidate");
+	const joined = candidates.filter((piece) => reading.hops.partners.has(piece)).length;
+	const named = candidates.length - joined;
+	return [
+		named === 0
+			? ""
+			: ` ${candidatesAre(named)}, matched by name only until a language server resolves it.`,
+		joined === 0
+			? ""
+			: ` ${candidatesAre(joined)}: the code that reads the value runs in more than one place ` +
+				"that sets it differently, or the address leads to more than one part.",
+	].join("");
 }
 
 /**
@@ -176,9 +196,8 @@ function candidateSentence(candidates: number): string {
 function undrawnFinding(reading: RelationshipReading, to: ReadPart, pieces: Piece[]): CodeFinding {
 	const subject = nodeSubject(to.node);
 	const from = pieces.map((piece) => nameOf(reading, piece.from)).join(", ");
-	const candidates = pieces.filter((piece) => piece.resolution === "candidate").length;
-	const resolved = candidates < pieces.length;
-	const unsure = candidateSentence(candidates);
+	const resolved = pieces.some((piece) => piece.resolution === "resolved");
+	const unsure = candidateSentence(reading, pieces);
 	return {
 		...siteOf(reading.read, `nodes.${to.node.id}`, subject),
 		severity: resolved ? "warning" : "information",

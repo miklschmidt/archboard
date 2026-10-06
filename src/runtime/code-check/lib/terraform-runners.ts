@@ -12,9 +12,9 @@
 //
 // A value a resource sets reaches what its references reach, through every
 // variable, module argument, output and local value on the way: the parts
-// drawn inside a part bound to the declaration at the end, whose code it runs,
-// else the parts that own it, as Terraform evidence owns it
-// (terraform-evidence.ts).
+// drawn inside a part bound to the declaration at the end, whose code it runs
+// (each a candidate where they are several, environment-join.ts), else the
+// parts that own it, as Terraform evidence owns it (terraform-evidence.ts).
 
 import { partsByRepo, runningParts, type Runner } from "@/runtime/code-check/lib/environment-join";
 import type { PartCode, ReadPart } from "@/runtime/code-check/lib/part-code";
@@ -82,15 +82,11 @@ async function runnersIn(
 				repo: checkout.repo,
 				path,
 				line,
-				reaches: [
-					...new Set(
-						reached.flatMap(({ to, link }) =>
-							link.path === path && link.line === line
-								? runningParts(codes, ownersAt(to.address))
-								: [],
-						),
-					),
-				],
+				reaches: reached.flatMap(({ to, link }) =>
+					link.path === path && link.line === line
+						? [runningParts(codes, ownersAt(to.address))]
+						: [],
+				),
 			})),
 		});
 	}

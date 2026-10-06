@@ -14,13 +14,17 @@
 // A value a service sets reaches the parts the address in it names: the
 // parts whose code the named service runs, the outermost bound inside the
 // directory it builds or those drawn inside a part bound to it, else the parts
-// that own the service's declaration, as all compose evidence. A name an env file sets is set to a value the check
-// never reads, so it reaches no part.
+// that own the service's declaration, as all compose evidence. Where the named
+// service runs the code of several parts, the value reaches each as a
+// candidate (environment-join.ts). A name an env file sets is set to a value
+// the check never reads, so it reaches no part.
 
 import path from "node:path";
 import {
 	partsByRepo,
+	reachOf,
 	runningParts,
+	type Reach,
 	type Runner,
 	type Setting,
 } from "@/runtime/code-check/lib/environment-join";
@@ -230,13 +234,13 @@ async function runnersIn(
 	 * else those drawn inside a part bound to it, else those that own its
 	 * declaration.
 	 * @param service The service.
-	 * @returns The parts.
+	 * @returns How a value that names it reaches them.
 	 */
-	const partsOf = (service: Service): ReadPart[] => {
+	const partsOf = (service: Service): Reach => {
 		const inside = directoriesOf(service).flatMap((directory) =>
 			directory === "" ? [] : outermostIn(parts, directory),
 		);
-		if (inside.length > 0) return inside;
+		if (inside.length > 0) return reachOf(inside);
 		const declaring = service.blocks.flatMap((block) =>
 			ownersOfSite(owners, { ...block, via: [] }),
 		);
@@ -250,14 +254,10 @@ async function runnersIn(
 		],
 		settings: service.sets.map(({ names, ...set }) => ({
 			...set,
-			reaches: [
-				...new Set(
-					names.flatMap((name) => {
-						const named = services.get(`${name.path}\0${name.symbol}`);
-						return named === undefined ? [] : partsOf(named);
-					}),
-				),
-			],
+			reaches: names.flatMap((name) => {
+				const named = services.get(`${name.path}\0${name.symbol}`);
+				return named === undefined ? [] : [partsOf(named)];
+			}),
 		})),
 	}));
 }
