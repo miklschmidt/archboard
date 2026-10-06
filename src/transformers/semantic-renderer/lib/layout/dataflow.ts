@@ -28,7 +28,6 @@ import {
 	HEADER_HEIGHT,
 	HEADER_HEIGHT_WITH_NOTE,
 	HEADER_SLAB_INSET,
-	HEADER_SLAB_TOP,
 	ICON_MIN_CARD_WIDTH,
 	NEST_INSET,
 	TITLE_SIZE,
@@ -393,7 +392,7 @@ function layoutFlow(
 	// The header slab stands in the frame's well as a container's does, with
 	// the words on it as a card's stand on its own, and the heads stand as far
 	// under its foot as in from the frame's sides.
-	const slabTop = top + HEADER_SLAB_TOP;
+	const slabTop = top + HEADER_SLAB_INSET;
 	const headerTop = slabTop + ARCHITECTURE_CARD_PADDING;
 	const headerHeight = flow.summary === undefined ? HEADER_HEIGHT : HEADER_HEIGHT_WITH_NOTE;
 	const slabFoot = headerTop + headerHeight + ARCHITECTURE_CARD_PADDING;

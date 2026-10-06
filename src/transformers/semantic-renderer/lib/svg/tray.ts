@@ -4,11 +4,11 @@
 // lit as they are, from straight above, like a tray cut into a table under a
 // lamp.
 //
-// Its walls show inside its box. The top wall faces the reader and turns away
-// from the light: a reader sees its face in shade, a band a step thicker than a
-// card's front edge, and it throws a short, soft shadow straight down on the
-// floor under it. The side walls are alike, a narrow band each, and quieter:
-// the light only grazes them. The bottom wall faces the light: a reader sees a
+// Its walls show inside its box, the top wall and the side walls alike in
+// thickness, a step thicker than a card's front edge. The top wall faces the
+// reader and turns away from the light: a reader sees its face in shade, and
+// it throws a short, soft shadow straight down on the floor under it. The side
+// walls are quieter: the light only grazes them. The bottom wall faces the light: a reader sees a
 // lip of it, and below that lip a crease where the tray meets what it is cut
 // into. The floor lies a step below what holds it, a neutral only just darker
 // than the page, and nothing about the well has a colour of its own. A tray
@@ -17,8 +17,9 @@
 //
 // Its header is a slab like a card's (`slab`), standing on the floor and rising
 // to the level of what the tray is cut into. It stands inside the walls, a
-// small gap from the top wall and from each side wall (`WELL_GAP`), so the
-// walls and the depth of the well show round it. It takes its colour from the group
+// gap of only two units from the top wall and from each side wall
+// (`WELL_GAP`), friction fit in the well, as far from the outer edge on the top
+// as on either side. It takes its colour from the group
 // that places the container, as a card does. What the container itself
 // relates to leaves from the foot of the header's front edge, so the edge is
 // the line's visible origin. A proposal's standing borders the header's face,
@@ -32,11 +33,9 @@
 import {
 	BAND_RADIUS,
 	HEADER_SLAB_INSET,
-	HEADER_SLAB_TOP,
 	SLAB_RADIUS,
 	TRAY_CREASE,
 	TRAY_LIP,
-	TRAY_SIDE,
 	TRAY_WALL,
 } from "@/transformers/semantic-renderer/lib/design";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
@@ -80,16 +79,16 @@ const SHADOW_BAND = 1.5;
  */
 function floorOf(box: Box): Box {
 	return {
-		x: box.x + TRAY_SIDE,
+		x: box.x + TRAY_WALL,
 		y: box.y + TRAY_WALL,
-		width: box.width - 2 * TRAY_SIDE,
+		width: box.width - 2 * TRAY_WALL,
 		height: box.height - TRAY_WALL - TRAY_LIP - TRAY_CREASE,
 	};
 }
 
 /**
- * The box of a tray's header slab: inside its walls, a small gap from the top
- * wall and from each side wall, and its foot where the header ends.
+ * The box of a tray's header slab: inside its walls, as far from the outer
+ * edge on the top as on either side, and its foot where the header ends.
  * @param box The tray's box.
  * @param height How far down the box the header reaches, to the slab's foot.
  * @returns The slab's box.
@@ -97,9 +96,9 @@ function floorOf(box: Box): Box {
 function headerOf(box: Box, height: number): Box {
 	return {
 		x: box.x + HEADER_SLAB_INSET,
-		y: box.y + HEADER_SLAB_TOP,
+		y: box.y + HEADER_SLAB_INSET,
 		width: box.width - 2 * HEADER_SLAB_INSET,
-		height: height - HEADER_SLAB_TOP,
+		height: height - HEADER_SLAB_INSET,
 	};
 }
 

@@ -62,27 +62,24 @@ const SLAB_RADIUS = 8;
 const CARD_THICKNESS = 4;
 /**
  * A container's tray (`lib/svg/tray.ts`), cut into what holds it and lit from
- * straight above: how thick its top wall shows, a step thicker than a card's
- * front edge; how thick each side wall shows, both alike; how wide the lit lip
- * along its bottom is; and the crease below that lip, where the tray meets
- * what it is cut into. A side wall is as wide as the lip and the crease
- * together, so the floor lies as far in from each side as from the bottom.
+ * straight above: how thick its walls show, the top wall and the two side
+ * walls alike, a step thicker than a card's front edge, so its header slab
+ * stands as far from the outer edge on the top as on either side; how wide
+ * the lit lip along its bottom is; and the crease below that lip, where the
+ * tray meets what it is cut into.
  */
-const TRAY_WALL = 7;
-const TRAY_SIDE = 3;
+const TRAY_WALL = 6;
 const TRAY_LIP = 2;
 const TRAY_CREASE = 1;
 /**
  * The floor a tray shows round its header slab, above it and at its sides: a
- * gap just wide enough to see, so the walls and the depth of the well show
- * round the header. The slab stands inside the walls, this far from each. The
- * room under it, down to the first row, is the container's inset as at its
- * sides (`CONTAINER_INSET`).
+ * gap only just there, so the slab looks friction fit in the well with the
+ * walls round it. The room under the slab, down to the first row, is the
+ * container's inset as at its sides (`CONTAINER_INSET`).
  */
-const WELL_GAP = 5;
-/** How far a header slab stands in from the sides of its tray's box, and how far below its top. */
-const HEADER_SLAB_INSET = TRAY_SIDE + WELL_GAP;
-const HEADER_SLAB_TOP = TRAY_WALL + WELL_GAP;
+const WELL_GAP = 2;
+/** How far a header slab stands in from the outer edge of its tray, on the top and on either side. */
+const HEADER_SLAB_INSET = TRAY_WALL + WELL_GAP;
 /**
  * How far a container's words stand in from the sides of its box: on its
  * header slab, as a card's stand on its own.
@@ -131,7 +128,6 @@ export {
 	HEADER_HEIGHT_WITH_NOTE,
 	ARCHITECTURE_HEADER_PADDING,
 	HEADER_SLAB_INSET,
-	HEADER_SLAB_TOP,
 	PART_TITLE,
 	PART_NOTE,
 	TEXT_LINE_HEIGHT,
@@ -139,7 +135,6 @@ export {
 	SLAB_RADIUS,
 	CARD_THICKNESS,
 	TRAY_WALL,
-	TRAY_SIDE,
 	TRAY_LIP,
 	TRAY_CREASE,
 	CHIP_THICKNESS,
