@@ -8,8 +8,11 @@
 // the board, and a right change clears it: each one is a warning, and the only
 // finding about its binding or anchor. An anchor that holds, and whose symbol
 // is defined outside the bound code of both ends, is `ANCHOR_MISMATCH`
-// (support.ts). What the pass cannot read is listed with the reason, and never
-// reported as a finding: a symbol found only in code that did not parse too.
+// (support.ts), and so is one whose uses are all of an evidence kind its
+// relationship kind does not accept (anchor-kind.ts). Then each board's
+// relationships are held to the evidence between its bound parts
+// (relationships.ts). What the pass cannot read is listed with the reason, and
+// never reported as a finding: a symbol found only in code that did not parse too.
 
 import path from "node:path";
 import {
@@ -27,7 +30,11 @@ import {
 	type Claim,
 	type ClaimSite,
 } from "@/runtime/code-check/lib/claims";
+import { judgeAnchorKind } from "@/runtime/code-check/lib/anchor-kind";
 import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
+import { evidenceOf, lineagesOf } from "@/runtime/code-check/lib/evidence";
+import { partCodesOf } from "@/runtime/code-check/lib/part-code";
+import { judgeRelationships } from "@/runtime/code-check/lib/relationships";
 import { judgeSupport } from "@/runtime/code-check/lib/support";
 import { heldInFiles, type Held } from "@/runtime/code-check/lib/symbols";
 import { createCodeFacts, lastName, type Accept, type FactsPass } from "@/runtime/code-facts/index";
@@ -397,9 +404,67 @@ async function judgeAnchorSymbol(
 	const held = await findSymbolOf(claim, readable, checkout, claim.anchor.symbol, pass);
 	if (held?.status === "absent") pass.outcome.findings.push(anchorSymbolMissing(claim, held));
 	if (held?.status !== "found") return;
-	const context = { search: searchOf(checkout, pass), snapshot: pass.snapshot };
-	const mismatch = await judgeSupport(claim, held.file, checkout, context);
+	const mismatch = await anchorMismatch(claim, held.file, checkout, pass);
 	if (mismatch !== undefined) pass.outcome.findings.push(mismatch);
+}
+
+/**
+ * Whether an anchor that holds does not support its relationship or step: its
+ * symbol is defined outside the bound code of both ends, or its uses are all
+ * of an evidence kind its relationship kind does not accept.
+ * @param claim The anchor.
+ * @param file The anchored file.
+ * @param checkout Its checkout.
+ * @param pass The pass.
+ * @returns The finding, or undefined when it supports it or the check cannot tell.
+ */
+async function anchorMismatch(
+	claim: AnchorClaim,
+	file: string,
+	checkout: ClaimCheckout,
+	pass: Pass,
+): Promise<CodeFinding | undefined> {
+	const context = { search: searchOf(checkout, pass), snapshot: pass.snapshot };
+	const outside = await judgeSupport(claim, file, checkout, context);
+	return outside ?? judgeAnchorKind(claim, await pass.facts.read(checkout, file));
+}
+
+/**
+ * Hold one board's relationships to the evidence between its bound parts.
+ * @param read The board, at the variant the check reads.
+ * @param pass The pass.
+ */
+async function judgeBoardRelationships(read: BoardToCheck, pass: Pass): Promise<void> {
+	const codes = await partCodesOf(read.variant.content.nodes, {
+		snapshot: pass.snapshot,
+		checkouts: pass.checkouts,
+		/**
+		 * How a search reads one checkout in this pass.
+		 * @param checkout The checkout.
+		 * @returns The search.
+		 */
+		searchOf: (checkout) => searchOf(checkout, pass),
+	});
+	const evidence = await evidenceOf(codes, {
+		facts: pass.facts,
+		/**
+		 * Note a file read as text, by its kind.
+		 * @param checkout Its checkout.
+		 * @param file The file.
+		 */
+		readAsText: (checkout, file) => {
+			searchOf(checkout, pass).readAsText(file);
+		},
+	});
+	const judged = judgeRelationships({
+		read,
+		codes,
+		evidence,
+		lineages: lineagesOf(codes),
+		relationshipKinds: read.relationshipKinds,
+	});
+	pass.outcome.findings.push(...judged.findings);
+	pass.outcome.skipped.push(...judged.skipped);
 }
 
 /**
@@ -455,8 +520,21 @@ async function judgeAll(claims: readonly Claim[], pass: Pass): Promise<void> {
 }
 
 /**
+ * Every bound part's binding on the boards.
+ * @param boards The boards.
+ * @returns Each binding.
+ */
+function partBindings(boards: readonly BoardToCheck[]): CodeBinding[] {
+	return boards.flatMap((read) =>
+		read.variant.content.nodes.flatMap((node) =>
+			node.binding === undefined ? [] : [node.binding],
+		),
+	);
+}
+
+/**
  * Hold every board's anchors and bound symbols to the code facts of the files
- * on disk.
+ * on disk, then its relationships to the evidence between its bound parts.
  * @param boards The boards, each at the variant the check reads.
  * @param signal Cancels the pass, every Git command it runs and every file it reads.
  * @returns The findings and what the pass did not read.
@@ -466,8 +544,11 @@ async function checkCode(
 	signal: AbortSignal,
 ): Promise<CodeCheckOutcome> {
 	const claims = boards.flatMap(claimsOf);
-	const snapshot = await snapshotCheckoutAccess({ signal, bindings: claims.flatMap(pathsOf) });
-	const checkouts = await readCheckouts(claims.map(repoOf), snapshot, signal);
+	const bound = partBindings(boards);
+	const bindings = [...claims.flatMap(pathsOf), ...bound];
+	const snapshot = await snapshotCheckoutAccess({ signal, bindings });
+	const repos = [...claims.map(repoOf), ...bound.map((binding) => binding.repo)];
+	const checkouts = await readCheckouts(repos, snapshot, signal);
 	const pass: Pass = {
 		snapshot,
 		checkouts,
@@ -476,6 +557,10 @@ async function checkCode(
 		outcome: { findings: [], skipped: [] },
 	};
 	await judgeAll(claims, pass);
+	for (const read of boards) {
+		// oxlint-disable-next-line no-await-in-loop -- one board at a time keeps the findings in board order, and a file one board reads is cached for the next
+		await judgeBoardRelationships(read, pass);
+	}
 	pass.outcome.skipped.push(...checkoutSkips(checkouts, pass.readAsText));
 	return pass.outcome;
 }

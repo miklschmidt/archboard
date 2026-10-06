@@ -13,7 +13,11 @@ import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
 import { edgeSubjects, nodeSubject } from "@/runtime/semantic-board-store/index";
 import type { CodeAnchor, CodeBinding } from "@/shared/code-target/index";
 import type { SemanticNode } from "@/shared/semantic-board/index";
-import type { DiagnosticSubject, VaultDiagnostic } from "@/shared/semantic-policy/index";
+import type {
+	DiagnosticSubject,
+	EvidenceKind,
+	VaultDiagnostic,
+} from "@/shared/semantic-policy/index";
 
 /** Where a claim sits: the board, its variant, the place in the document and its subject. */
 type ClaimSite = Pick<VaultDiagnostic, "file" | "board" | "variant" | "path"> & {
@@ -37,6 +41,11 @@ interface AnchorClaim {
 	readonly ends: readonly SemanticNode[];
 	/** The parts at its ends and every part inside one: whose bound code counts as an end's. */
 	readonly holders: readonly SemanticNode[];
+	/**
+	 * A relationship's kind, and the evidence kinds the vault lets it accept,
+	 * absent when the kind accepts every one. A flow step has none.
+	 */
+	readonly relationship?: { readonly kind: string; readonly accepts?: readonly EvidenceKind[] };
 }
 
 type Claim = BindingClaim | AnchorClaim;
@@ -145,7 +154,10 @@ function edgeClaims(variant: ReadVariant): AnchorClaim[] {
 	return variant.read.variant.content.edges.flatMap((edge) => {
 		if (edge.anchor === undefined) return [];
 		const site = siteOf(variant, `edges.${edge.id}.anchor`, variant.edgeSubject(edge));
-		return [anchorClaim(variant, site, edge.anchor, edge)];
+		const kinds = variant.read.relationshipKinds;
+		const accepts = Object.hasOwn(kinds, edge.kind) ? kinds[edge.kind]?.evidence : undefined;
+		const relationship = { kind: edge.kind, ...(accepts === undefined ? {} : { accepts }) };
+		return [{ ...anchorClaim(variant, site, edge.anchor, edge), relationship }];
 	});
 }
 

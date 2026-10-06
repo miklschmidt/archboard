@@ -1,5 +1,6 @@
 // The code check (ADR 0046): on request, the code that the bindings and
-// anchors of each board name, held to the files on disk.
+// anchors of each board name, held to the files on disk, and the relationships
+// between its bound parts held to the evidence that joins their code.
 //
 // It reads every board through the store at its current variant, or at the
 // draft `--variant` names, and never a historical or a shelved variant. It
