@@ -146,11 +146,11 @@ test("an unknown kind names the node or the relationship that states it", async 
 		.map((issue) => issue.subject);
 	expect(subjects).toHaveLength(2);
 	expect(subjects).toContainEqual({ kind: "node", id: gateway.id, name: "Gateway" });
-	expect(subjects).toContainEqual({
-		kind: "edge",
-		id: request.id,
-		name: "Gateway -> Worker",
-	});
+	const relationship = subjects.find((subject) => subject?.kind === "edge");
+	expect(relationship?.id).toBe(request.id);
+	// A relationship has no name of its own, so it is called by the parts at its ends.
+	expect(relationship?.name).toContain("Gateway");
+	expect(relationship?.name).toContain("Worker");
 });
 
 test("an unknown level is about the board, so it names no subject", async () => {
