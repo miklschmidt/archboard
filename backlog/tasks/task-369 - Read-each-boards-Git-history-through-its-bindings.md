@@ -1,9 +1,11 @@
 ---
 id: TASK-369
 title: Read each board's Git history through its bindings
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@claude'
 created_date: '2026-09-29 01:18'
+updated_date: '2026-10-06 14:31'
 labels:
   - history
 dependencies: []
@@ -26,9 +28,15 @@ The readings are derived on request, never stored in a board (ADR 0015) and neve
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `archboard check` says which boards and parts changed in code since the board last described them
-- [ ] #2 An agent can map a branch onto a board and see which parts it changed, set against the parts its proposal names
-- [ ] #3 An agent can list the hotspots of a board and the parts that change together with no relationship between them
-- [ ] #4 Parts that drill into their own board are skipped, and sweep commits do not make parts look coupled
-- [ ] #5 Nothing the lens derives is stored in a board or drawn as traffic
+- [x] #1 `archboard check` says which boards and parts changed in code since the board last described them
+- [x] #2 An agent can map a branch onto a board and see which parts it changed, set against the parts its proposal names
+- [x] #3 An agent can list the hotspots of a board and the parts that change together with no relationship between them
+- [x] #4 Parts that drill into their own board are skipped, and sweep commits do not make parts look coupled
+- [x] #5 Nothing the lens derives is stored in a board or drawn as traffic
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The history lens reads Git through bindings on request (ADR 0045). archboard check --code reports how many commits each board and part is behind its code. archboard semantic footprint maps a branch onto a board and splits the parts against its proposal, and archboard-dev reads it at a task's close. archboard semantic locality lists a board's hotspots and change coupling, marking pairs that nothing on the board joins, and the pane inspector shows a picked part's commits and coupled parts. Drill-down parts are skipped, large commits are left out of hotspots and coupling, and nothing is stored or drawn as traffic. Verified per subtask (369.01 to 369.07, each independently reviewed) and by real runs on the dogfood vault: Architecture painter and Sequence painter couple at 44% unjoined on Semantic renderer, and Claims and Panes do not couple on Command interface.
+<!-- SECTION:FINAL_SUMMARY:END -->
