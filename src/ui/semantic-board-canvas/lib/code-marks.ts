@@ -22,6 +22,14 @@
 // the mark.
 
 import { cornerWarning, lineWarning } from "@/transformers/semantic-renderer/index";
+import {
+	lineTo,
+	mix,
+	parsePath,
+	type Cubic,
+	type Outline,
+	type Point,
+} from "@/ui/semantic-board-canvas/lib/path-reading";
 
 /** The attribute on a group that draws one part of a subject drawn in two (the renderer's). */
 const PART_ATTRIBUTE_NAME = "data-semantic-part";
@@ -31,12 +39,6 @@ const CODE_MARK_ATTRIBUTE = "data-code-warning";
 
 /** The SVG namespace, for the one group the viewer makes. */
 const SVG_NS = "http://www.w3.org/2000/svg";
-
-/** A point in the units of the group that holds it. */
-interface Point {
-	readonly x: number;
-	readonly y: number;
-}
 
 /**
  * A numeric attribute of an element.
@@ -58,99 +60,84 @@ function bodyRect(group: Element): Element | null {
 	return group.querySelector(":scope > rect:not(.ab-halo)");
 }
 
-/** One command of a route: where it ends, and whether it runs straight there. */
-interface RouteStep {
-	readonly to: Point;
-	readonly straight: boolean;
-}
-
-/** The commands that run a straight line. */
-const STRAIGHT = new Set(["L", "H", "V"]);
-
 /**
- * The middle of two points.
- * @param from One.
- * @param to The other.
- * @returns The point halfway.
+ * Whether one segment of a read route is a straight run: the reader lifts a
+ * straight leg to the cubic whose control points stand a third and two thirds
+ * of the way along it, and a rounded corner's stand elsewhere.
+ * @param from Where the segment starts.
+ * @param segment The segment.
+ * @returns True for a straight run.
  */
-function middle(from: Point, to: Point): Point {
-	return { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
+function straight(from: Point, segment: Cubic): boolean {
+	const leg = lineTo(from, segment.to);
+	return (
+		Math.hypot(leg.c1.x - segment.c1.x, leg.c1.y - segment.c1.y) < 1e-6 &&
+		Math.hypot(leg.c2.x - segment.c2.x, leg.c2.y - segment.c2.y) < 1e-6
+	);
 }
 
 /**
- * Where a command along one axis ends.
- * @param command `H` or `V`.
- * @param numbers Its numbers.
- * @param at Where the route stood before it.
- * @returns The end.
+ * A point some way along one segment (de Casteljau).
+ * @param from Where the segment starts.
+ * @param segment The segment.
+ * @param t How far along, from 0 to 1.
+ * @returns The point.
  */
-function axisEnd(command: string, numbers: readonly number[], at: Point): Point {
-	const value = numbers.at(-1) ?? 0;
-	return command === "H" ? { x: value, y: at.y } : { x: at.x, y: value };
+function pointOn(from: Point, segment: Cubic, t: number): Point {
+	const a = mix(from, segment.c1, t);
+	const b = mix(segment.c1, segment.c2, t);
+	const c = mix(segment.c2, segment.to, t);
+	return mix(mix(a, b, t), mix(b, c, t), t);
 }
 
 /**
- * Where one command of a route ends.
- * @param command The command letter.
- * @param numbers Its numbers.
- * @param at Where the route stood before it, or null at its start.
- * @returns The end, or null for a command that does not move (`Z`) or says too little.
+ * The middle of a route counted by its segments, where the picture puts the
+ * words of a line that only bends (the renderer's `pointAt` at one half).
+ * @param outline The route.
+ * @returns The point, or null for a route with no segments.
  */
-function endOf(command: string, numbers: readonly number[], at: Point | null): Point | null {
-	if (at !== null && (command === "H" || command === "V")) return axisEnd(command, numbers, at);
-	return numbers.length < 2 ? null : { x: numbers.at(-2)!, y: numbers.at(-1)! };
-}
-
-/**
- * The commands of a route, as the picture spells one: absolute commands only.
- * @param d The route.
- * @returns Each command's letter and numbers, in order.
- */
-function commandsOf(d: string): { command: string; numbers: number[] }[] {
-	return [...d.matchAll(/([A-Za-z])([^A-Za-z]*)/g)].map((match) => ({
-		command: match[1] ?? "",
-		numbers: (match[2]?.match(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi) ?? []).map(Number),
-	}));
-}
-
-/**
- * Where each command of a route ends.
- * @param d The route.
- * @returns The ends, in order.
- */
-function stepsOf(d: string): RouteStep[] {
-	const steps: RouteStep[] = [];
-	for (const { command, numbers } of commandsOf(d)) {
-		const to = endOf(command, numbers, steps.at(-1)?.to ?? null);
-		if (to !== null) steps.push({ to, straight: STRAIGHT.has(command) });
-	}
-	return steps;
+function segmentMiddle(outline: Outline): Point | null {
+	const { segments } = outline;
+	const scaled = segments.length / 2;
+	const index = Math.min(Math.floor(scaled), segments.length - 1);
+	const segment = segments[index];
+	return segment === undefined
+		? null
+		: pointOn(segments[index - 1]?.to ?? outline.start, segment, scaled - index);
 }
 
 /**
  * The middle of the longest straight run of a route, the first of the longest
- * when two are as long, as the picture finds the place for the words of a line
- * that has none (`labelAnchorOf`); the middle of its two ends when it runs no
- * straight stretch at all.
- * @param d The route.
- * @returns The point, or null for a route with no points.
+ * when two are as long.
+ * @param outline The route.
+ * @returns The point, or null for a route that only bends.
  */
-function longestRunMiddle(d: string): Point | null {
-	const steps = stepsOf(d);
-	const runs = steps
-		.slice(1)
-		.map((step, index) => ({ from: steps[index]!.to, step }))
-		.filter(({ step }) => step.straight)
-		.map(({ from, step }) => ({
-			length: Math.hypot(step.to.x - from.x, step.to.y - from.y),
-			from,
-			to: step.to,
+function longestRunMiddle(outline: Outline): Point | null {
+	const runs = outline.segments
+		.map((segment, index) => ({ from: outline.segments[index - 1]?.to ?? outline.start, segment }))
+		.filter(({ from, segment }) => straight(from, segment))
+		.map(({ from, segment }) => ({
+			length: Math.hypot(segment.to.x - from.x, segment.to.y - from.y),
+			middle: mix(from, segment.to, 0.5),
 		}));
-	const longest = runs.toSorted((a, b) => b.length - a.length)[0];
-	if (longest !== undefined) return middle(longest.from, longest.to);
-	const [first] = steps;
-	const last = steps.at(-1);
-	return first === undefined || last === undefined ? null : middle(first.to, last.to);
+	// Longer wins and a tie keeps the first, as the picture's own search does.
+	const longest = runs.reduce<(typeof runs)[number] | null>(
+		(best, run) => (best === null || run.length > best.length ? run : best),
+		null,
+	);
+	return longest?.middle ?? null;
+}
+
+/**
+ * Where the picture puts the words of a line that has none, and so its badge
+ * (the renderer's `labelAnchorOf`): the middle of the longest straight run of
+ * its route, or the route's middle when it only bends.
+ * @param d The route.
+ * @returns The point, or null for a route it cannot read.
+ */
+function wordsAnchor(d: string): Point | null {
+	const outline = parsePath(d);
+	return outline === null ? null : (longestRunMiddle(outline) ?? segmentMiddle(outline));
 }
 
 /**
@@ -195,21 +182,25 @@ function groupFor(groups: readonly Element[], part: string | null): Element | un
  * Mark a part: on its body's top-right corner, in a container's header when it
  * has one, as the picture's own badge is, so that the mark stands over what the
  * container holds; else in the group of its body, which a participant's card
- * slides down its lifeline with.
+ * slides down its lifeline with. A participant of several exchanges on one
+ * page has a card in each, and the picture's badge stands on every one of
+ * them, so this does too.
  * @param groups The part's groups.
  */
 function markPart(groups: readonly Element[]): void {
-	const body = groupFor(groups, null);
-	const rect = body === undefined ? null : bodyRect(body);
-	const holder = groupFor(groups, "header") ?? body;
-	if (rect === null || holder === undefined) return;
-	const box = {
-		x: numberOf(rect, "x"),
-		y: numberOf(rect, "y"),
-		width: numberOf(rect, "width"),
-		height: numberOf(rect, "height"),
-	};
-	holder.append(markElement(cornerWarning(box), holder.ownerDocument));
+	const header = groupFor(groups, "header");
+	for (const body of groups.filter((group) => !group.hasAttribute(PART_ATTRIBUTE_NAME))) {
+		const rect = bodyRect(body);
+		const holder = header ?? body;
+		if (rect === null) continue;
+		const box = {
+			x: numberOf(rect, "x"),
+			y: numberOf(rect, "y"),
+			width: numberOf(rect, "width"),
+			height: numberOf(rect, "height"),
+		};
+		holder.append(markElement(cornerWarning(box), holder.ownerDocument));
+	}
 }
 
 /** What a group made to hold a line's warning takes from the line's own group. */
@@ -239,13 +230,15 @@ function wordsFor(line: Element): Element {
 }
 
 /**
- * Mark a line that has no words, at the middle of its longest straight run, in
- * a group of its words made for the mark, over the cards, as the picture's own
- * badge for such a line is.
+ * Mark a line that has no words where the picture would put them, in a group
+ * of its words made for the mark, over the cards, as the picture's own badge
+ * for such a line is. The route is the line's stroke: the last path the group
+ * draws itself with, past its halos, its swipe and the head it defines.
  * @param line The line's own group.
  */
 function markBareLine(line: Element): void {
-	const at = longestRunMiddle(line.querySelector("path:not(.ab-halo)")?.getAttribute("d") ?? "");
+	const stroke = [...line.querySelectorAll(":scope > path[d]:not(.ab-halo)")].at(-1);
+	const at = wordsAnchor(stroke?.getAttribute("d") ?? "");
 	if (at === null) return;
 	const holder = wordsFor(line);
 	holder.append(markElement(lineWarning(at), line.ownerDocument));
@@ -291,4 +284,4 @@ function markCodeWarnings(root: Element, warned: ReadonlySet<string>): void {
 	}
 }
 
-export { CODE_MARK_ATTRIBUTE, markCodeWarnings };
+export { markCodeWarnings };
