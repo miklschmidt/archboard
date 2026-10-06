@@ -73,6 +73,16 @@ test("a Python file defines its module-level names and class members, exposed by
 		_CENTS: ["non-public", false],
 		round_amount: ["public", true],
 	});
+	// __all__ grows through extend(); one built at run time leaves the names to the underscore.
+	expect(await visibility("lib/checkout/steps.py")).toMatchObject({
+		first: ["__all__", true],
+		second: ["__all__", true],
+		third: ["not in __all__", false],
+	});
+	expect(await visibility("lib/ledger/accounts.py")).toMatchObject({
+		Account: ["public", true],
+		CURRENCY: ["public", true],
+	});
 	const book = await python("lib/ledger/book.py");
 	expect(book.definitions.find((each) => each.symbol === "Ledger.post")).toMatchObject({
 		start: 20,
@@ -99,8 +109,18 @@ test("a use at run time is call evidence, a use in an annotation or under TYPE_C
 	// A local of a function body is no definition, and a parameter no use.
 	expect(findSymbol(book, "local", "definition").status).toBe("absent");
 	expect(use("account")).toBeUndefined();
+	// A string where Literal or Annotated takes a value names no type.
+	const account = await python("lib/ledger/accounts.py");
+	expect(findSymbol(account, "cash", "definition-or-reference").status).toBe("absent");
+	expect(findSymbol(account, "owner", "definition-or-reference").status).toBe("absent");
 	const pay = await python("lib/checkout/pay.py");
 	expect(findSymbol(pay, "postInString", "definition-or-reference").status).toBe("absent");
+	// Inside refund(), its parameter money hides the imported module money.
+	const money = pay.references.filter((each) => each.symbol === "money");
+	expect(money.map((each) => [each.line, each.target?.path])).toEqual([
+		[16, "lib/ledger/money.py"],
+		[29, undefined],
+	]);
 	const strings = [...book.references, ...pay.references]
 		.filter((each) => each.via !== "code")
 		.map((each) => [each.via, each.symbol, each.kind]);
