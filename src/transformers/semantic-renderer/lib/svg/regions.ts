@@ -27,6 +27,16 @@ import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primi
 import { GLINT_WIDTH, castShadow, glintOf } from "@/transformers/semantic-renderer/lib/svg/slab";
 import { MEMBERS_ATTRIBUTE } from "@/transformers/semantic-renderer/lib/svg/standing";
 import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
+import {
+	BANNER_SIDE,
+	FRAME,
+	GROUP_LOOK,
+	SOLID,
+	SOLID_INK,
+	banner,
+	brackets,
+	outline,
+} from "@/transformers/semantic-renderer/lib/svg/group-looks";
 
 /**
  * The group's colour on the region's boundary, its tab's face and its tab's
@@ -77,6 +87,9 @@ interface GroupColours {
 	readonly tab: string;
 	readonly tabEdge: string;
 	readonly words: string;
+	/** PROTOTYPE (TASK-416): the solid colour of looks a, b and c, and the words on it. */
+	readonly solid: string;
+	readonly solidInk: string;
 }
 
 /** Which of the region's top corners a tab stands in: the one its words start from, or the other. */
@@ -200,7 +213,78 @@ function matColours(ink: string): GroupColours {
 		tab: toned(ink, TAB_FACE),
 		tabEdge: toned(ink, TAB_EDGE),
 		words: toned(ink, CAPTION),
+		solid: toned(ink, SOLID),
+		solidInk: toned(ink, SOLID_INK),
 	};
+}
+
+/**
+ * PROTOTYPE (TASK-416), looks a and c: the caption on a flat tab of the solid
+ * colour, which merges with the frame or the corner bracket under it.
+ * @param region The region.
+ * @param run The caption's words as they are set, near or far.
+ * @param place Which corner the tab stands in, and how much larger than near the words are.
+ * @param place.corner Which of the region's top corners the tab stands in.
+ * @param place.grown How much larger than near the words are set.
+ * @param look The group's colours, and the page's.
+ * @param look.colours The group's colours.
+ * @param look.palette The page's colours.
+ * @returns The tab and its words.
+ */
+function solidTab(
+	region: DrawingRegion,
+	run: TextRun,
+	{ corner, grown }: { corner: Corner; grown: number },
+	{ colours, palette }: { colours: GroupColours; palette: Palette },
+): string {
+	const { box, shift } = tabBox(region, run, corner, grown);
+	return lines([
+		tag("path", { d: tabPath(box, corner), fill: colours.solid }),
+		paintTextRuns(
+			[run],
+			{ ...region.caption.box, x: region.caption.box.x + shift },
+			palette,
+			colours.solidInk,
+		),
+	]);
+}
+
+/**
+ * PROTOTYPE (TASK-416): the caption in the look the server was asked for.
+ * @param region The region.
+ * @param run The caption's words as they are set, near or far.
+ * @param place Which corner the tab stands in, how much larger than near the words are, and whether this is the far view.
+ * @param place.corner Which of the region's top corners the tab stands in.
+ * @param place.grown How much larger than near the words are set.
+ * @param place.far Whether the caption is drawn from far away.
+ * @param look The group's colours, and the page's.
+ * @param look.colours The group's colours.
+ * @param look.palette The page's colours.
+ * @returns The caption.
+ */
+function captionIn(
+	region: DrawingRegion,
+	run: TextRun,
+	place: { corner: Corner; grown: number; far: boolean },
+	look: { colours: GroupColours; palette: Palette },
+): string {
+	if (GROUP_LOOK === "b")
+		return banner(region, run, { atEnd: place.corner === "end", far: place.far }, look);
+	if (GROUP_LOOK === "a" || GROUP_LOOK === "c") return solidTab(region, run, place, look);
+	return captionTab(region, run, place, look);
+}
+
+/**
+ * PROTOTYPE (TASK-416): the region's boundary in the look the server was asked for.
+ * @param box The region's box.
+ * @param colours The group's colours.
+ * @returns The boundary.
+ */
+function boundaryIn(box: Box, colours: GroupColours): string {
+	if (GROUP_LOOK === "a") return outline(box, FRAME, colours.solid);
+	if (GROUP_LOOK === "b") return outline(box, BANNER_SIDE, colours.solid);
+	if (GROUP_LOOK === "c") return brackets(box, colours.solid);
+	return boundary(box, colours.boundary);
 }
 
 /**
@@ -336,10 +420,10 @@ function paintRegion(
 			"pointer-events": "none",
 		},
 		lines([
-			boundary(region.box, colours.boundary),
+			boundaryIn(region.box, colours),
 			near === undefined
 				? ""
-				: nearLayer(captionTab(region, near, { corner, grown: 1 }, look)) +
+				: nearLayer(captionIn(region, near, { corner, grown: 1, far: false }, look)) +
 					farCaption(region, near, { farSize, corner, crossings }, look),
 		]),
 	);
@@ -420,7 +504,9 @@ function farCaption(
 		// The baseline stands half a cap height below the row's middle.
 		y: caption.box.height / 2 + size * 0.35,
 	};
-	return farLayer(captionTab(region, grown, { corner, grown: size / run.fontSize }, look));
+	return farLayer(
+		captionIn(region, grown, { corner, grown: size / run.fontSize, far: true }, look),
+	);
 }
 
 export { paintRegion };
