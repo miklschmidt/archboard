@@ -8,9 +8,9 @@
 // `bare` has none. `ledger.c` calls `audit_check`, which `ledger.h` declares
 // and `audit.c` defines, and `main.c` calls `audit_log`, which `ledger.h`
 // declares and no file defines. Parts bind each source file, and one relationship,
-// from the ledger to a report, is anchored at that call. clangd is the
-// stand-in server of the language servers' owner, run as a program, which
-// answers as clangd does once its index has ended.
+// from the ledger to a report, is anchored at that call. clangd is this
+// owner's stand-in, run as a program, which answers as clangd does once its
+// index has ended.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -32,15 +32,8 @@ process.env["ARCHBOARD_VAULT"] = vault;
 process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
 const SHOP = "github.com/test/shop";
 const BARE = "github.com/test/bare";
-/** The language servers' stand-in, run as a program, never imported. */
-const STAND_IN = join(
-	import.meta.dir,
-	"..",
-	"..",
-	"language-servers",
-	"tests",
-	"fake-language-server.ts",
-);
+/** This owner's stand-in for clangd, run as a program. */
+const STAND_IN = join(import.meta.dir, "clangd-stand-in.ts");
 let outcome: CodeCheckOutcome;
 
 /** The C code both checkouts hold. */
@@ -154,7 +147,7 @@ beforeAll(async () => {
 	if (!read.ok) throw new Error("no boards");
 	const clangd = {
 		status: "command",
-		argv: [process.execPath, STAND_IN, state, "needs-open,indexes"],
+		argv: [process.execPath, STAND_IN, join(state, "answers.json")],
 	} as const;
 	const servers: LanguageServerTable = new Map(ownServers()).set("c", clangd);
 	outcome = await check.checkCode(read.boards, new AbortController().signal, servers);
