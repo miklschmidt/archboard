@@ -13,6 +13,16 @@ Amended by TASK-367.13 (2026-10-06): the language servers are their own
 module, `src/runtime/language-servers`, not a part of code facts, because a
 process to start and stop is a concern apart from the facts of a file.
 
+Amended by the review of TASK-367.16 (2026-10-06): the check itself writes
+nothing into a checkout. The user names some servers for trusted checkouts.
+Such a server can keep its own files in the build output of the project,
+which Git ignores. An editor that runs the server gets the same files.
+sourcekit-lsp 6.2.4 writes its index database and a module cache under the
+package's `.build`, and no option of version 6.2 moves them. The check must
+know whether sourcekit-lsp can answer. So it reads the package's
+`.sourcekit-lsp/config.json` and looks for an index unit under `.build`. It
+reads nothing else there.
+
 ## Context
 
 A board makes claims about code. Evidence rule 3 of the consumer skill makes an
@@ -663,7 +673,8 @@ The check reads files and nothing else.
   JSON can hold sensitive values in plain text.
 - The only programs that it starts are `git`, to list the files and the refs of
   a checkout, and the language servers that the rules above allow. By default
-  no code of the project runs.
+  no code of the project runs. A server that the user names can keep its own
+  files in the ignored build output of the project (the amendment above).
 
 The difference between the infrastructure code and the live cloud stays the job
 of `terraform plan`.
