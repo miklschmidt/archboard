@@ -216,6 +216,72 @@ resolved through an import, and nothing was read as text. The imports were
 relative (`from ..ctx import _AppCtxGlobals`), of a submodule
 (`from . import json`), or of a name that a package's `__init__.py` passes on.
 
+#### Resolving candidates with the TypeScript language server
+
+TASK-367.13 measured the language server on 2026-10-06. It used Bun 1.4.2 and
+the `tsc --lsp --stdio` of TypeScript 7.0.2. Other agents kept the machine at
+a load average of about 7 on 24 cores.
+
+The server is fast to start. It answered `initialize` in 3 to 4 ms. Its first
+definition request loaded the project of this repository in 240 to 300 ms.
+That project has 8,733 files. 200 more requests together took 20 to 25 ms. A
+`shutdown` and an `exit` ended the process in 19 to 27 ms. It starts no child
+process, and it reads each file from disk. Opening 600 files with `didOpen`
+cost about 400 ms more, so the check opens none.
+
+The pass asks about two kinds of use that no import resolves. A candidate is a
+use of a name the same file defines at module level. A use through a value is
+a name spelled through a parameter or a local, such as `ledger.post()`. The
+pass does not ask about a bare local, parameter or global. Its definition is
+in the same function or outside the checkout. Without those questions, the
+dogfood vault asks 24,349 questions instead of 42,837, with the same findings.
+
+Over the 1,447 TypeScript files of `src` that are not tests, the answers were:
+
+| Use             | Asked  | Code that runs | A type or data | Outside the checkout | No answer |
+| --------------- | ------ | -------------- | -------------- | -------------------- | --------- |
+| Candidate       | 12,438 | 11,450         | 384            | 581                  | 23        |
+| Through a value | 29,904 | 139            | 19,806         | 9,885                | 74        |
+
+For 58 candidates, the code is in another file than the name match said.
+
+Most uses through a value land on a member of a type. 13,443 land on an
+interface or a type literal, and 4,186 on a property or a field. 2,177 land on
+a name that the outline does not declare. A definition request names where a
+name is declared. So `memory.remember()` resolves to the method that the
+interface `CodeFindingsMemory` declares. It does not resolve to the method
+that `createCodeFindingsMemory` returns. Before the check read the outline,
+such answers made 10 undrawn warnings and one `ANCHOR_MISMATCH` on the dogfood
+vault. One of them made `entry.name` a call to the part that declares the
+type of `entry`. No right change clears such a warning.
+
+So a use at run time counts only where the outline of the server
+(`textDocument/documentSymbol`) declares code at exactly that place. Code is a
+class, function, method, constructor, variable, constant or enum, and no
+interface holds it. A use only as a type counts wherever its definition is.
+
+One process ran the same warm pass, each file from the cache, three times in
+each way:
+
+| Pass                         | No server     | With the server   |
+| ---------------------------- | ------------- | ----------------- |
+| Candidates and value uses    | 853 to 974 ms | 5,672 to 6,054 ms |
+| Candidates only (not chosen) | 779 to 974 ms | 3,948 to 3,997 ms |
+
+The server adds about 5 s to a warm pass. About 3 s is the type-checking of
+every bound file, which a candidate needs too. About 2 s is the uses through a
+value. The server used 60 s of processor time over 24,349 requests, about
+2.5 ms for each, on many threads. The real `./bin/dogfood check --code` took
+9,083 ms on its first run after a restart. Five later runs took 4,743 to
+7,141 ms. Before this task, a warm run took about 1,400 ms.
+
+On the dogfood vault, the server changed one finding. Board rasterizer has the
+relationship Raster session -> DevTools connection. It was
+`RELATIONSHIP_UNSUPPORTED`, with only a type import. Now the server shows that
+the session calls a method of the connection that it holds, so the code
+supports the relationship. No warning was added or removed. No finding rested
+on a candidate before, so no finding changed from a candidate to resolved.
+
 #### Swift and Nix have no upstream WebAssembly file on npm
 
 Swift: the npm package `tree-sitter-swift` stops at 0.7.1 and has no `.wasm`.
