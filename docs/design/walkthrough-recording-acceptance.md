@@ -40,7 +40,7 @@ Open the file in a browser.
 
 | #   | Observe                                                                                                                        |
 | --- | ------------------------------------------------------------------------------------------------------------------------------ |
-| a   | The video is 1920x1080 and shows only the board: no navigator, pane header, agent dock, sidebar or caption controls.           |
+| a   | The video is 1920x1080: the board and the shell's voice box, orb included. No navigator, pane header, agent dock or sidebar.   |
 | b   | It opens on the whole board, then glides into step 1 while the voice begins explaining it.                                     |
 | c   | The voice explains each step in English, in its own words, with names and no ids, and never says a step's number.              |
 | d   | After each explanation there is a short pause, then the next step glides in. No step starts while the voice is still speaking. |

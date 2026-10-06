@@ -295,8 +295,8 @@ holds the step's number, its heading and its words (the caption), the name of
 the walkthrough, the keys that step and leave, and a rail of steps that goes to
 any of them. At its foot is a pill for the voice: the key that starts a
 narration while voice is off, and the voice box while it is live. A recording
-and the replay of a kept talk draw it without keys. It is presentation: the
-browser's own, written nowhere.
+and the replay of a kept talk draw it without the keys that step and leave. It
+is presentation: the browser's own, written nowhere.
 _Avoid_: caption strip (its retired form), presentation bar (the bar over a
 fullscreen presentation), subtitle bar
 
