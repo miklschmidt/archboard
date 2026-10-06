@@ -67,6 +67,8 @@ const DECLARING = new Set([
 	"variadic_type_parameter_declaration",
 	"template_template_parameter_declaration",
 	"lambda_capture_specifier",
+	// An Objective-C method's parameter (objc-adapter.ts), which no C or C++ tree holds.
+	"method_parameter",
 ]);
 
 /** Parents whose `name` declares a name. */
@@ -495,7 +497,19 @@ function distinct(references: readonly Reference[]): Reference[] {
  * @returns The facts.
  */
 function cFacts(tree: Tree, grammar: Grammar): ParsedFacts {
-	const captured = sorted(grammar.query.captures(tree.rootNode));
+	return cFactsOf(tree, grammar.query.captures(tree.rootNode));
+}
+
+/**
+ * The code facts of one parsed file of the C family from the captures of a
+ * query that names them as `c.scm` does. Objective-C's adapter reads the C
+ * in its files so (objc-adapter.ts).
+ * @param tree The file's syntax tree.
+ * @param captures The query's captures, in document order; captures of other names are left out.
+ * @returns The facts.
+ */
+function cFactsOf(tree: Tree, captures: readonly QueryCapture[]): ParsedFacts {
+	const captured = sorted(captures);
 	const broken = cUnparsedOf(captured.unparsed);
 	const unparsed = spansOf(broken);
 	const outside = spansOf([...broken, ...captured.skip]);
@@ -522,4 +536,4 @@ function cFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 	};
 }
 
-export { cFacts };
+export { cFacts, cFactsOf };

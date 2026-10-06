@@ -43,6 +43,7 @@ import {
 	type CheckoutFiles,
 } from "@/runtime/code-facts/lib/module-resolution";
 import { kubernetesFacts } from "@/runtime/code-facts/lib/kubernetes-adapter";
+import { readingHeaders, readObjectiveC } from "@/runtime/code-facts/lib/objc-adapter";
 import { createKubernetesResolver } from "@/runtime/code-facts/lib/kubernetes-resolution";
 import { flakeFacts } from "@/runtime/code-facts/lib/nix-adapter";
 import { pythonFacts } from "@/runtime/code-facts/lib/python-adapter";
@@ -115,6 +116,12 @@ const FLAKE = treeSitter("@lumis-sh/wasm-nix/tree-sitter-nix.wasm", "nix.scm", f
 const C = treeSitter("tree-sitter-c/tree-sitter-c.wasm", "c.scm", cFacts);
 /** A `.h` is read as C++, which reads the C headers of Redis and SQLite as the C grammar does (TASK-367.09). */
 const CPP = treeSitter("tree-sitter-cpp/tree-sitter-cpp.wasm", "c.scm", cFacts);
+/**
+ * A `.h` that holds Objective-C is read as Objective-C, else as C++
+ * (TASK-367.10). Both share the include resolver, so the entry that lists
+ * `.h` only names the adapter of its facts.
+ */
+const HEADER = readingHeaders(CPP);
 
 /** A `Package.swift` is Swift, and its targets are read beside its code (TASK-367.12). */
 const SWIFT = treeSitter("@lumis-sh/wasm-swift/tree-sitter-swift.wasm", "swift.scm", swiftFacts);
@@ -153,13 +160,15 @@ const ADAPTERS: readonly Adapter[] = [
 			".cc": CPP,
 			".cpp": CPP,
 			".cxx": CPP,
-			".h": CPP,
+			".h": HEADER,
 			".hh": CPP,
 			".hpp": CPP,
 			".hxx": CPP,
 		},
 		resolver: createCResolver,
 	},
+	// An Objective-C++ file (`.mm`) has no grammar and is read as text (ADR 0046).
+	{ name: "objc", reads: { ".m": readObjectiveC }, resolver: createCResolver },
 	{
 		name: "csharp",
 		reads: { ".cs": readCSharp, ".csproj": projectFacts },

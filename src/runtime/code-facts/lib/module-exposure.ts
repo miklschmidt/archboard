@@ -7,8 +7,10 @@
 // what its `package.json` `exports` names, else the files directly in the
 // directory (typescript-exposure.ts). A Python package's root file is its
 // `__init__.py`. A Swift module is a target of its package, and each of its
-// files is a root file (swift-exposure.ts). A C or C++ module's root files
-// are its public headers (c-exposure.ts). A Terraform or OpenTofu module is
+// files is a root file (swift-exposure.ts). A C, C++ or Objective-C
+// module's root files are its public headers (c-exposure.ts): an `.m` file
+// is a source file that pairs with its header, and a class extension in it
+// exposes nothing. A Terraform or OpenTofu module is
 // the configuration files directly in its directory, and exposes its
 // variables and outputs (TASK-368.11). A language with no rule here
 // exposes nothing the check can read, and the check says so.
@@ -150,7 +152,10 @@ const SWIFT: ExposureRule = {
 	rootFiles: swiftRootFiles,
 };
 
-/** C and C++'s rule: a directory, whose public headers declare what it exposes. */
+/**
+ * C, C++ and Objective-C's rule: a directory, whose public headers declare
+ * what it exposes, each name at its code in the header's pair.
+ */
 const C: ExposureRule = {
 	writes: isCFile,
 	/**

@@ -187,6 +187,7 @@ type AdapterName =
 	| "csharp"
 	| "c"
 	| "cpp"
+	| "objc"
 	| "nix"
 	| "terraform"
 	| "swift";
