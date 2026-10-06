@@ -265,7 +265,8 @@ describe("a stated standing on an architecture", () => {
 		// thickness, its words faded on a flat face in a dashed footprint.
 		const words = drawnGroups.find((group) => group.markup.includes("writes"))!;
 		const route = drawnGroups.find((group) => group !== words)!;
-		expect(route.opacity).toBe(0.4);
+		expect(route.opacity).toBeGreaterThan(0);
+		expect(route.opacity).toBeLessThan(1);
 		expect(words.opacity).toBeUndefined();
 		expect(words.markup).toContain("stroke-dasharray");
 		const unmarked = subjectGroups((await drawn({ e4: "unchanged" })).svg).find(

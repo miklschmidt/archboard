@@ -67,7 +67,7 @@ function tinted(base: string, ink: string | undefined, share: Share): string {
  * of it would lift the face toward the secondary words on it; a deeper shade
  * of the same hue carries as much colour and keeps the face's lightness.
  */
-const DEEPEN = 0.45;
+const DEEPEN = 0.55;
 
 /**
  * A face washed with an ink: the ink itself on the light ground, a deeper
@@ -105,18 +105,13 @@ interface SlabLook {
 	readonly hatch?: boolean;
 	/**
 	 * A container's nameplate: how far down the face it reaches, from the top of
-	 * the box to the foot of its own front edge, its face and edge, and the
-	 * untinted ground its face is tinted from. What the container itself relates
-	 * to leaves from that foot, so the plate's front edge is that line's visible
-	 * origin. A standing washes the plate's ground in place of its kind's tint,
-	 * one tint to a face, and the kind keeps the plate's edge and the chip.
+	 * the box to the foot of its own front edge, and its face and edge, both in
+	 * the container's kind. What the container itself relates to leaves from
+	 * that foot, so the plate's front edge is that line's visible origin. The
+	 * plate keeps its kind under a standing: the face below it, which carries no
+	 * colour of its own, is what a standing washes.
 	 */
-	readonly plate?: {
-		readonly height: number;
-		readonly face: string;
-		readonly edge: string;
-		readonly ground: string;
-	};
+	readonly plate?: { readonly height: number; readonly face: string; readonly edge: string };
 }
 
 /** How wide the highlight along the top edge of a face is. */
@@ -149,13 +144,21 @@ const HATCH_STROKE = 1.25;
  * the orange wash from the green.
  */
 const HATCH: Share = { light: 0.2, dark: 0.12 };
+/**
+ * How much of the hatch's strength a nameplate takes: enough to texture it,
+ * little enough that its kind's tint still reads and the words on it, and a
+ * line that crosses it, keep their contrast.
+ */
+const PLATE_HATCH = 0.5;
 
 /**
  * How much of its standing's ink an added or changed face is washed with: a
  * clear tint at a glance that still leaves the face the ground its words were
- * chosen for.
+ * chosen for. A container's broad face below its nameplate takes less, so the
+ * cards standing on it still read over it.
  */
 const WASH: Share = { light: 0.15, dark: 0.2 };
+const PLINTH_WASH: Share = { light: 0.08, dark: 0.14 };
 
 /** One translucent copy of a silhouette: how far it is moved, how much larger, and how dark. */
 interface ShadowLayer {
@@ -362,15 +365,16 @@ function faceFrom(face: Box, top: number, fill: string, radius: number): string 
  * The plate's face is the block's top face, drawn already.
  * @param face The block's top face.
  * @param look The block's look; nothing is drawn for a block with no plate.
+ * @param below The face below the plate, as the block's standing washes it.
  * @param palette The theme's colours.
  * @returns The plate's foot and the face below it.
  */
-function nameplate(face: Box, look: SlabLook, palette: Palette): string {
+function nameplate(face: Box, look: SlabLook, below: string, palette: Palette): string {
 	if (look.plate === undefined) return "";
 	const foot = face.y + look.plate.height;
 	return lines([
 		faceFrom(face, foot - PLATE_THICKNESS, look.plate.edge, look.radius),
-		faceFrom(face, foot, look.face, look.radius),
+		faceFrom(face, foot, below, look.radius),
 		...LEDGE.map((share, index) =>
 			across(face, foot + (index + 0.5) * LEDGE_BAND, {
 				stroke: palette.slabShadow,
@@ -383,23 +387,30 @@ function nameplate(face: Box, look: SlabLook, palette: Palette): string {
 
 /**
  * What a standing does to a block's face: an added one washed in its ink, a
- * changed one washed and, where the block takes one, hatched. A removed block
- * draws no face ({@link ghost}).
+ * changed one washed and, where the block takes one, hatched. A container's
+ * nameplate keeps its kind's tint; the broad face below it takes a lighter
+ * wash, and the plate a fainter hatch. A removed block draws no face
+ * ({@link ghost}).
  * @param look How the block looks.
  * @param standing How the part stands, or undefined when this is not a proposal.
  * @param palette The theme's colours.
- * @returns The face's colour, and whether it is hatched.
+ * @returns The top face's colour, the colour of a container's face below its
+ * nameplate, and how strong the hatch over the top face is, 0 for none.
  */
 function standingFace(
 	look: SlabLook,
 	standing: SubjectStanding | undefined,
 	palette: Palette,
-): { readonly fill: string; readonly hatched: boolean } {
-	const { face, ground } = look.plate ?? { face: look.face, ground: look.face };
+): { readonly top: string; readonly below: string; readonly hatch: number } {
 	const ink = standing === undefined ? undefined : standingInk(standing, palette);
+	const hatch = standing === "changed" && look.hatch === true ? 1 : 0;
+	if (look.plate === undefined) {
+		return { top: washed(look.face, ink, WASH, palette), below: look.face, hatch };
+	}
 	return {
-		fill: ink === undefined ? face : washed(ground, ink, WASH, palette),
-		hatched: standing === "changed" && look.hatch === true,
+		top: look.plate.face,
+		below: washed(look.face, ink, PLINTH_WASH, palette),
+		hatch: hatch * PLATE_HATCH,
 	};
 }
 
@@ -407,9 +418,9 @@ function standingFace(
  * One block, standing in its box: its body in the tone of its front edge, its
  * face over that with the highlight along its top edge and the light falling
  * off down it, and a container's nameplate over the top of its face. The face
- * says how a proposal treats the part ({@link standingFace}); a container's
- * face is its nameplate. A removed part has lost its block: what is left of it
- * is drawn under the selection ring ({@link slabShadow}), and this draws nothing.
+ * says how a proposal treats the part ({@link standingFace}). A removed part
+ * has lost its block: what is left of it is drawn under the selection ring
+ * ({@link slabShadow}), and this draws nothing.
  * @param box The part's box.
  * @param look How the block looks.
  * @param palette The theme's colours.
@@ -418,17 +429,22 @@ function standingFace(
  */
 function slab(box: Box, look: SlabLook, palette: Palette, standing?: SubjectStanding): string {
 	if (standing === "removed") return "";
-	const top = standingFace(look, standing, palette);
+	const { top, below, hatch } = standingFace(look, standing, palette);
 	// The top face is the box without its front edge.
 	const face = { ...box, height: box.height - look.thickness };
 	const lit = { ...face, y: face.y + GLINT_WIDTH, height: face.height - GLINT_WIDTH };
 	return lines([
 		plate(box, look.radius, { fill: look.edge }),
-		plate(face, look.radius, { fill: glintOf(top.fill, palette) }),
-		plate(lit, look.radius, { fill: top.fill }),
+		plate(face, look.radius, { fill: glintOf(top, palette) }),
+		plate(lit, look.radius, { fill: top }),
 		look.sheen ? plate(lit, look.radius, { fill: `url(#${SHEEN_ID})` }) : "",
-		top.hatched ? plate(lit, look.radius, { fill: `url(#${HATCH_ID})` }) : "",
-		nameplate(face, look, palette),
+		hatch === 0
+			? ""
+			: plate(lit, look.radius, {
+					fill: `url(#${HATCH_ID})`,
+					"fill-opacity": hatch < 1 ? hatch : undefined,
+				}),
+		nameplate(face, look, below, palette),
 	]);
 }
 

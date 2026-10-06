@@ -2,9 +2,9 @@
 // under it, and the warning on a message nobody has decided yet.
 //
 // Drawn on the layer above every message's run, in a group that says it is the
-// message, so a viewer lights the words with the line. A plate is laid in full
-// under ghosted words, and a note's plate takes the tint of a marked row, so
-// neither a lifeline behind it nor the plate itself stands out of the row.
+// message, so a viewer lights the words with the line. Every plate is opaque, so
+// a lifeline behind the words is hidden, and a plate on a marked row takes the
+// row's tint, so it does not stand out of the row.
 
 import { PILL_HEIGHT, PILL_RADIUS } from "@/transformers/semantic-renderer/lib/design";
 import {
@@ -18,11 +18,22 @@ import type { ActiveAt, PlacedStep } from "@/transformers/semantic-renderer/lib/
 import { labelBox } from "@/transformers/semantic-renderer/lib/layout/messages";
 import { rowTint, type Stands } from "@/transformers/semantic-renderer/lib/svg/flow-rows";
 import { labelLook } from "@/transformers/semantic-renderer/lib/svg/appearance";
-import { lines, tag, textNode, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
-import { slab, slabSeat, slabShadow } from "@/transformers/semantic-renderer/lib/svg/slab";
+import {
+	lines,
+	tag,
+	textNode,
+	wrap,
+	type Attributes,
+} from "@/transformers/semantic-renderer/lib/svg/primitives";
+import {
+	ghostFace,
+	slab,
+	slabSeat,
+	slabShadow,
+} from "@/transformers/semantic-renderer/lib/svg/slab";
 import {
 	PART_ATTRIBUTE,
-	ghostOpacity,
+	standingPalette,
 	subjectGroup,
 	warningOnLine,
 	type SubjectStanding,
@@ -37,24 +48,29 @@ const PILL_BASELINE = 0.68;
 /**
  * One message's label, a line at a time, each centred, on a chip like a
  * relationship's label in an architecture: a low slab with a contact shadow.
- * A message the proposal removed has lost the chip's thickness: its words lie
- * on a flat plate, ghosted with them ({@link paintStepWords}).
+ * A message the proposal removed has lost the chip's thickness: its words, in
+ * the secondary ink, lie on a flat, see-through plate over the frame's face,
+ * which still hides a lifeline behind them.
  * @param words What the message is, wrapped.
  * @param box Where the chip goes.
  * @param palette The theme's colours.
- * @param removed Whether the proposal removed the message.
+ * @param stands How the message stands, and the standing its row is marked for.
+ * @param stands.standing How the message stands.
+ * @param stands.mark The standing its row is marked for, whose tint a removed message's plate takes.
  * @returns The chip and its words.
  */
 function paintLabel(
 	words: readonly { readonly text: string }[],
 	box: Box,
 	palette: Palette,
-	removed: boolean,
+	{ standing, mark }: Stands,
 ): string {
-	const styles = stylesFor(palette);
+	const styles = stylesFor(standingPalette(palette, standing));
 	return (
-		(removed
-			? plainPlate(box, palette.pill)
+		(standing === "removed"
+			? plainPlate(box, palette.plinthFace) +
+				tag("rect", { ...rectOf(box), ...ghostFace(palette) }) +
+				rowTint(box, mark, palette)
 			: slabSeat(box, PILL_RADIUS) +
 				slabShadow(box, PILL_RADIUS, "chip", palette) +
 				slab(box, labelLook(palette), palette)) +
@@ -86,20 +102,28 @@ function paintLabel(
 }
 
 /**
+ * A rounded plate's geometry.
+ * @param box Where it goes.
+ * @returns Its attributes.
+ */
+function rectOf(box: Box): Attributes {
+	return {
+		x: coord(box.x),
+		y: coord(box.y),
+		width: coord(box.width),
+		height: coord(box.height),
+		rx: PILL_RADIUS,
+	};
+}
+
+/**
  * A plain rounded plate, filled and unruled.
  * @param box Where it goes.
  * @param fill Its ground.
  * @returns The plate.
  */
 function plainPlate(box: Box, fill: string): string {
-	return tag("rect", {
-		x: coord(box.x),
-		y: coord(box.y),
-		width: coord(box.width),
-		height: coord(box.height),
-		rx: PILL_RADIUS,
-		fill,
-	});
+	return tag("rect", { ...rectOf(box), fill });
 }
 
 /**
@@ -163,8 +187,6 @@ function paintNote(
  * @param activeAt Whether a column is busy at a given height.
  * @param palette The theme's colours.
  * @param stands How this step stands, and the standing its marks are drawn for.
- * @param stands.standing Its own standing, which its group states and a removal ghosts.
- * @param stands.mark The standing its row is marked for.
  * @param unsettled Whether the board says nobody has decided this message yet.
  * @returns The message's words, or nothing when it has none to say.
  */
@@ -172,34 +194,18 @@ function paintStepWords(
 	placed: PlacedStep,
 	activeAt: ActiveAt,
 	palette: Palette,
-	{ standing, mark }: Stands,
+	stands: Stands,
 	unsettled: boolean,
 ): string {
 	const plate = labelBox(placed, activeAt);
-	const opacity = ghostOpacity(standing);
-	const words = lines([
-		paintLabel(placed.words.lines, plate, palette, opacity !== undefined),
-		paintNote(placed, palette, mark),
-		// On the leading edge of the plate, clear of its words.
-		warningOnLine({ x: plate.x, y: plate.y + plate.height / 2 }, unsettled, palette),
-	]);
-	const identity = {
-		...subjectGroup("step", placed.step.id, standing),
-		[PART_ATTRIBUTE]: "label",
-	};
-	if (opacity === undefined) {
-		return wrap("g", identity, words);
-	}
-	// Ghosted words lie on plates of the frame's face laid at full strength
-	// first, so a lifeline behind them is hidden rather than read through them;
-	// only the flat plate and the words on it are ghosted, see-through to it.
 	return wrap(
 		"g",
-		identity,
+		{ ...subjectGroup("step", placed.step.id, stands.standing), [PART_ATTRIBUTE]: "label" },
 		lines([
-			plainPlate(plate, palette.plinthFace),
-			placed.note === undefined ? "" : notePlate(placed.note.box, mark, palette),
-			wrap("g", { opacity }, words),
+			paintLabel(placed.words.lines, plate, palette, stands),
+			paintNote(placed, palette, stands.mark),
+			// On the leading edge of the plate, clear of its words.
+			warningOnLine({ x: plate.x, y: plate.y + plate.height / 2 }, unsettled, palette),
 		]),
 	);
 }

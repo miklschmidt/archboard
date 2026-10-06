@@ -42,25 +42,29 @@ function semanticInk(color: PaletteColor | undefined): string | undefined {
 /**
  * How much of its group's colour a card's face carries, and how much its front
  * edge carries over the shade it is mixed into (`--slab-deep`): the colour of
- * the edge is what says which concern a card serves, on either ground.
+ * the edge is what says which concern a card serves, on either ground. On the
+ * dark ground the face's tint is a deeper shade of the colour (`washed`), so a
+ * light group colour leaves the card's secondary words at 4.5:1.
  */
-const CARD_FACE: Share = { light: 0.06, dark: 0.08 };
+const CARD_FACE: Share = { light: 0.06, dark: 0.12 };
 const CARD_EDGE: Share = { light: 0.5, dark: 0.3 };
 
 /**
  * How far each plinth nested in another rises toward `--plinth-rise`, a step
- * nearer the light, and the furthest any rises. The dark ground's steps are
- * longer, where the same share of a dark tone is a smaller step of lightness.
+ * nearer the light, and the furthest any rises: two steps, so a third level
+ * down stands as light as the second and never as light as the cards on it.
+ * On the dark ground each step is a third of the way, long enough that the
+ * face alone shows it, without the edges and the nameplates.
  */
-const PLINTH_RISE: Share = { light: 0.3, dark: 0.34 };
-const PLINTH_RISE_MAX: Share = { light: 0.6, dark: 1 };
+const PLINTH_RISE: Share = { light: 0.3, dark: 1 / 3 };
+const PLINTH_RISE_MAX: Share = { light: 0.6, dark: 2 / 3 };
 
 /**
  * How much of its kind's colour a container's nameplate carries on its face
  * and on its front edge. The plinth under it stays neutral, so the cards
  * standing on it, tinted by their own groups, read over a quiet ground.
  */
-const PLATE_FACE: Share = { light: 0.11, dark: 0.22 };
+const PLATE_FACE: Share = { light: 0.11, dark: 0.18 };
 const PLATE_EDGE: Share = { light: 0.4, dark: 0.3 };
 
 /** How far a label's front edge is shaded from its face toward `--slab-deep`. */
@@ -103,7 +107,7 @@ function inkedEdge(light: string, ink: string, share: Share, palette: Palette): 
 function cardLook(appearance: NodeAppearance, palette: Palette): SlabLook {
 	const ink = semanticInk(appearance.bodyColor);
 	return {
-		face: tinted(palette.slabFace, ink, CARD_FACE),
+		face: washed(palette.slabFace, ink, CARD_FACE, palette),
 		edge: ink === undefined ? palette.slabEdge : tinted(palette.slabDeep, ink, CARD_EDGE),
 		thickness: CARD_THICKNESS,
 		radius: SLAB_RADIUS,
@@ -156,7 +160,6 @@ function plinthLook(
 		light: Math.min(PLINTH_RISE_MAX.light, depth * PLINTH_RISE.light),
 		dark: Math.min(PLINTH_RISE_MAX.dark, depth * PLINTH_RISE.dark),
 	};
-	const ground = tinted(palette.plinthHead, palette.plinthRise, rise);
 	return {
 		face: tinted(palette.plinthFace, palette.plinthRise, rise),
 		edge: palette.plinthEdge,
@@ -166,8 +169,7 @@ function plinthLook(
 		hatch: true,
 		plate: {
 			height: plateHeight,
-			face: washed(ground, ink, PLATE_FACE, palette),
-			ground,
+			face: washed(tinted(palette.plinthHead, palette.plinthRise, rise), ink, PLATE_FACE, palette),
 			edge:
 				ink === undefined
 					? palette.plinthEdge
