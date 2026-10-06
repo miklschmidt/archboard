@@ -50,14 +50,18 @@ function semanticInk(color: PaletteColor | undefined): string | undefined {
  * hue (`FACE_CHROMA`), so no colour is clipped into another hue. The front
  * edge is the same material turned from the light: the group's hue in shade,
  * darker than the face and quieter than the group's own colour, so it reads as
- * the foot of the card and not as a bright strip. On the dark ground the edge
- * is the colour mixed into the deep shade (`--slab-deep`).
+ * the foot of the card and not as a bright strip. On the dark ground it is as
+ * far below its face as a neutral card's edge is below its own (`--slab-edge`
+ * under `--slab-face`), with the group's hue still in it.
  */
 const CARD_FACE: Tone = {
 	light: { lightness: 0.93, chroma: 1 },
 	dark: { lightness: 0.31, chroma: 0.27 },
 };
-const CARD_EDGE: Inked = { light: { lightness: 0.78, chroma: 0.7 }, dark: 0.3 };
+const CARD_EDGE: Tone = {
+	light: { lightness: 0.78, chroma: 0.7 },
+	dark: { lightness: 0.212, chroma: 0.35 },
+};
 
 /**
  * How much chroma a grouped card's face takes on the light ground, by colour:
@@ -151,7 +155,7 @@ function cardLook(appearance: NodeAppearance, palette: Palette): SlabLook {
 	return {
 		face: appearance.bodyColor === undefined ? palette.slabFace : faceIn(appearance.bodyColor),
 		ground: palette.slabFace,
-		edge: ink === undefined ? palette.slabEdge : inkedOver(palette.slabDeep, ink, CARD_EDGE),
+		edge: ink === undefined ? palette.slabEdge : toned(ink, CARD_EDGE),
 		thickness: CARD_THICKNESS,
 		radius: SLAB_RADIUS,
 		sheen: true,
