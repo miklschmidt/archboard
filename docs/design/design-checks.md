@@ -216,6 +216,53 @@ resolved through an import, and nothing was read as text. The imports were
 relative (`from ..ctx import _AppCtxGlobals`), of a submodule
 (`from . import json`), or of a name that a package's `__init__.py` passes on.
 
+#### Reading swift-argument-parser through the Swift adapter
+
+TASK-367.12 measured the Swift adapter on 2026-10-06 with Bun 1.4.2 on
+`apple/swift-argument-parser` at `efd239f`, while other agents kept the machine
+at a load average of about 12 on 24 cores. One process read all 170 tracked
+`.swift` files in one pass: 435 to 562 ms cold, grammar load included, and 27
+to 30 ms warm, with every file from the cache. The files hold 3,958
+definitions, 7,929 references and 265 imports. 1,180 uses lead to a file or a
+module of the checkout: 540 at run time, 461 as types, and 179 imports of a
+local module that the importing target depends on. The static reading of
+`Package.swift` found all 21 targets and the 26 dependencies between them,
+without running the manifest.
+
+2,085 lines in 13 files fell in parts that did not parse, nearly all in tests
+and test helpers. Swift Testing's macro expressions (`#expect`, `#require`),
+the default argument `#_sourceLocation` and the shorthand `if let prefix {`
+put the rest of a file in one error node. The library itself lost 3 lines: a
+line that starts with the operator `<`, and an `#if` inside a struct body.
+
+A board of 13 parts ran through the real check in 435 to 612 ms cold and 161
+to 163 ms warm:
+the library's target directory and seven of its subdirectories as parts inside
+it, the tool-info target, the `math` example, the `generate-manual` tool, one
+part bound to the extension member `ParsableCommand.main`, and one planted
+binding. Every finding is right:
+
+- `BINDING_SYMBOL_MISSING` on the planted part, and `ANCHOR_SYMBOL_MISSING`
+  on a planted anchor.
+- `ANCHOR_MISMATCH` on `math example -> ArgumentParser`, a `call` anchored at
+  `ParsableCommand`: `Math.swift` only conforms to that protocol, which is
+  import evidence. The anchor named the wrong symbol.
+- `RELATIONSHIP_UNDRAWN` on `ArgumentParser`: `generate-manual` imports it
+  (`AuthorArgument.swift:12`), a build dependency that `Package.swift` declares.
+- `RELATIONSHIP_UNDRAWN` on six subdirectories of the library, every piece a
+  use of a type or a function that one other file of the module declares:
+  `CommandParser`, `MessageInfo`, `CompletionsGenerator`, `OptionGroup`,
+  the property wrapper `@Argument`, the free function `configurationFailure`,
+  `Platform`, `Tree`, and `JSONEncoder`, which the module declares itself and
+  so shadows Foundation's.
+- `RELATIONSHIP_BACKWARDS` on `Tool info -> ArgumentParser`: Completions and
+  Usage import the tool-info module and use `ToolInfoV0`.
+
+The first run resolved `String.init` in `Platform.swift` to an initializer that
+an extension of `String` in the library adds. The standard library's own
+initializers are not read, so a spelling resolves now only where the module
+or a module it imports declares its first name.
+
 #### Reading docker-compose files
 
 TASK-367.20 measured the compose adapter on 2026-10-06 with Bun 1.4.2 on
