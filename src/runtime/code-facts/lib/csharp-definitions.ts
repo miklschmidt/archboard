@@ -11,7 +11,11 @@
 // member and nested type. A definition is exposed outside its project when it
 // is `public` and every type that holds it is exposed. Which friends
 // `InternalsVisibleTo` gives an internal definition is a fact of the whole
-// project, so the resolver adds it on each pass (csharp-resolution.ts).
+// project, so the resolver adds it on each pass (csharp-resolution.ts). So is
+// the accessibility of a part of a partial type that writes none: C# gives it
+// what another part writes, and the default only where no part writes one. The
+// walk marks such a part `partial` before the default (`partial internal`),
+// and the resolver settles it.
 //
 // A constructor is spelled with its type's name (`Ledger.Ledger`). Locals,
 // local functions and lambdas are not definitions, and nor are indexers,
@@ -48,6 +52,13 @@ const VARIABLE_MEMBERS = new Set(["field_declaration", "event_field_declaration"
 
 /** The access modifiers, in the order C# writes a pair of them. */
 const ACCESS = ["private", "protected", "internal", "public", "file"];
+
+/**
+ * What the walk puts before the default of a part of a partial type that
+ * writes no access modifier, which the resolver replaces with what another
+ * part writes.
+ */
+const UNSETTLED = "partial ";
 
 /** The type that holds a declaration. */
 interface Holder {
@@ -86,7 +97,8 @@ function defaultAccessibility(holder: Holder | undefined): string {
 }
 
 /**
- * The accessibility a declaration writes or C# gives it there.
+ * The accessibility a declaration writes or C# gives it there; for a part of
+ * a partial type that writes none, the default marked as unsettled.
  * @param node The declaration.
  * @param holder The type that holds it, if any.
  * @returns The word.
@@ -96,7 +108,9 @@ function accessibility(node: Node, holder: Holder | undefined): string {
 		node.namedChildren.filter((child) => child.type === "modifier").map((child) => child.text),
 	);
 	const words = ACCESS.filter((word) => written.has(word));
-	return words.length > 0 ? words.join(" ") : defaultAccessibility(holder);
+	if (words.length > 0) return words.join(" ");
+	const partial = written.has("partial") && TYPE_KINDS[node.type] !== undefined;
+	return `${partial ? UNSETTLED : ""}${defaultAccessibility(holder)}`;
 }
 
 /**
@@ -232,4 +246,4 @@ function csharpDefinitions(root: Node): Definition[] {
 	return declarationsIn(root, { qualifier: [] });
 }
 
-export { csharpDefinitions };
+export { UNSETTLED, csharpDefinitions };

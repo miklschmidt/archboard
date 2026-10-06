@@ -16,6 +16,9 @@
 //    every file of the project. A `using static` type reads as a namespace
 //    does, so its members are found too.
 //
+// A use after `global::` is looked up from the global namespace alone, and
+// one after a using alias's `::` from what the alias names.
+//
 // Each lookup takes the longest run of the use's names that a project
 // declares: `Ledger.Post` leads to the method `Post` where it is declared,
 // and `Ledger.Instance.Post` to the property `Instance`, because what follows
@@ -41,16 +44,17 @@
 // file belongs to the loose files of the checkout. A `ProjectReference`
 // resolves against the directory of its project file, and the projects it
 // names are searched too, and theirs in turn, as the SDK passes project
-// references on. A name another project declares reaches the using file
-// through that project's file, as a name reaches a TypeScript file through
-// the `index.ts` it imports, so a part bound to a `.csproj` holds and owns what
-// its project declares for the code of other projects.
+// references on. A part bound to a `.csproj` binds its project, the files
+// below its directory, so it owns what the project declares and what its code
+// uses, as a part bound to the directory does (csharp-project.ts).
 //
 // An internal definition names the friends its project gives it: the
 // assemblies `InternalsVisibleTo` names, in an attribute of any of its files or
-// in its project file.
+// in its project file. A part of a partial type that writes no accessibility
+// gets the one another part writes.
 
 import path from "node:path";
+import { UNSETTLED } from "@/runtime/code-facts/lib/csharp-definitions";
 import type {
 	Definition,
 	Import,
@@ -64,16 +68,15 @@ import type {
 } from "@/runtime/code-facts/lib/facts";
 import type { CheckoutFiles } from "@/runtime/code-facts/lib/module-resolution";
 
-/** Where one name is declared. */
+/** Where one name is declared, and the accessibility the declaration writes or C# gives it. */
 interface Declared {
 	readonly file: string;
 	readonly start: number;
+	readonly visibility: string;
 }
 
 /** What one project declares, and what it builds with. */
 interface Project {
-	/** Its project file, or undefined for the loose files of the checkout. */
-	readonly file: string | undefined;
 	/** Each qualified name its files declare, and where. */
 	readonly declared: ReadonlyMap<string, readonly Declared[]>;
 	/** The `global using` directives of its files. */
@@ -158,7 +161,9 @@ function membershipOf(files: ReadonlySet<string>): Membership {
 		const project = nearestProject(file, projectIn);
 		if (OUTPUT.test(file.slice(directoryOf(project).length))) continue;
 		projectOf.set(file, project);
-		filesOf.set(project, [...(filesOf.get(project) ?? []), file]);
+		const members = filesOf.get(project) ?? [];
+		members.push(file);
+		filesOf.set(project, members);
 	}
 	return { projectOf, filesOf };
 }
@@ -173,8 +178,8 @@ function declaredIn(
 ): Map<string, Declared[]> {
 	const declared = new Map<string, Declared[]>();
 	for (const [file, facts] of files) {
-		for (const { symbol, start } of facts?.definitions ?? []) {
-			declared.set(symbol, [...(declared.get(symbol) ?? []), { file, start }]);
+		for (const { symbol, start, visibility } of facts?.definitions ?? []) {
+			declared.set(symbol, [...(declared.get(symbol) ?? []), { file, start, visibility }]);
 		}
 	}
 	return declared;
@@ -229,7 +234,6 @@ async function readProject(
 		...files.map((file) => parsed(file)),
 	]);
 	return {
-		file: project === "" ? undefined : project,
 		declared: declaredIn(files.map((file, index) => [file, read[index]] as const)),
 		globalUsings: read.flatMap((facts) => (facts?.imports ?? []).filter((found) => found.reexport)),
 		friends: friendsIn([own, ...read]),
@@ -277,8 +281,7 @@ function enclosing(definitions: readonly Definition[], line: number): string[] {
 type Seen = readonly Project[];
 
 /**
- * Where one qualified name is declared in the projects a file sees. A name
- * another project declares passes through that project's file.
+ * Where one qualified name is declared in the projects a file sees.
  * @param seen The projects, the file's own first.
  * @param symbol The qualified name.
  * @param from The using file.
@@ -288,9 +291,7 @@ function declaredAt(seen: Seen, symbol: string, from: string): Target | undefine
 	for (const project of seen) {
 		const declared = project.declared.get(symbol);
 		const file = declared === undefined ? undefined : chosenFile(declared, symbol, from);
-		if (file === undefined) continue;
-		const passing = project === seen[0] ? undefined : project.file;
-		return { path: file, symbol, ...(passing === undefined ? {} : { via: [passing] }) };
+		if (file !== undefined) return { path: file, symbol };
 	}
 	return undefined;
 }
@@ -345,18 +346,53 @@ function leastUnder(prefix: string, asType: boolean, seen: Seen): number {
 }
 
 /**
+ * What a using alias names.
+ * @param alias The alias.
+ * @param scope Where the use is.
+ * @returns The namespace or type of the first such alias of the file or its project, if any.
+ */
+function aliasOf(alias: string | undefined, scope: UseScope): string[] {
+	return scope.imports
+		.flatMap((found) => (found.names.some((name) => name.local === alias) ? [found.specifier] : []))
+		.slice(0, 1);
+}
+
+/**
+ * The lookup of a use whose first name follows an alias's `::`: from the
+ * global namespace alone for `global::`, from what a using alias names, and
+ * nowhere for an extern alias, which names another assembly.
+ * @param alias The alias.
+ * @param names The names after `::`.
+ * @param asType Whether only a type can stand where the use is.
+ * @param scope Where it is.
+ * @returns The lookups.
+ */
+function rooted(
+	alias: string,
+	names: readonly string[],
+	asType: boolean,
+	scope: UseScope,
+): Lookup[] {
+	if (alias === "global") return [{ prefix: "", names, least: leastUnder("", asType, scope.seen) }];
+	return aliasOf(alias, scope).map((specifier) => ({ prefix: specifier, names, least: 1 }));
+}
+
+/**
  * The ways a use is looked up, in C#'s order: the types and namespaces around
- * it, an alias its first name is, then each using.
+ * it, an alias its first name is, then each using. A use after `::` is looked
+ * up from what its alias names alone.
  * @param names The use's names.
  * @param asType Whether only a type can stand where the use is.
  * @param scope Where it is.
  * @returns The lookups.
  */
 function lookups(names: readonly string[], asType: boolean, scope: UseScope): Lookup[] {
-	const [first, ...rest] = names;
-	const aliased = scope.imports.flatMap((found) =>
-		found.names.some((name) => name.local === first) ? [found.specifier] : [],
-	);
+	const [first = "", ...rest] = names;
+	const colons = first.indexOf("::");
+	if (colons >= 0) {
+		return rooted(first.slice(0, colons), [first.slice(colons + 2), ...rest], asType, scope);
+	}
+	const aliased = aliasOf(first, scope);
 	const usings = scope.imports.flatMap((found) =>
 		found.names.some((name) => name.local === "*") ? [found.specifier] : [],
 	);
@@ -372,9 +408,7 @@ function lookups(names: readonly string[], asType: boolean, scope: UseScope): Lo
 	});
 	return [
 		...scope.enclosing.map(under),
-		...aliased
-			.slice(0, 1)
-			.map((specifier) => ({ prefix: "", names: [specifier, ...rest], least: 1 })),
+		...aliased.map((specifier) => ({ prefix: "", names: [specifier, ...rest], least: 1 })),
 		...usings.map(under),
 	];
 }
@@ -393,6 +427,53 @@ function lookup(use: Reference, scope: UseScope): Target | undefined {
 		if (target !== undefined) return target;
 	}
 	return undefined;
+}
+
+/**
+ * The accessibility of a definition as its project settles it: for a part of
+ * a partial type that writes none, what another part writes, else C#'s
+ * default; for any other, what the walk read.
+ * @param definition The definition.
+ * @param declared Where the project declares each name.
+ * @returns The word.
+ */
+function settledVisibility(
+	definition: Definition,
+	declared: ReadonlyMap<string, readonly Declared[]>,
+): string {
+	if (!definition.visibility.startsWith(UNSETTLED)) return definition.visibility;
+	const written = declared
+		.get(definition.symbol)
+		?.find((each) => !each.visibility.startsWith(UNSETTLED))?.visibility;
+	return written ?? definition.visibility.slice(UNSETTLED.length);
+}
+
+/**
+ * A file's definitions with the accessibility its project gives a part of a
+ * partial type that writes none, and whether each is exposed again: `public`
+ * in a holder that is exposed, the holder being the definition before it in
+ * the file whose name and lines hold it.
+ * @param definitions The file's definitions, each holder before what it holds.
+ * @param declared Where the project declares each name.
+ * @returns The definitions.
+ */
+function settledDefinitions(
+	definitions: readonly Definition[],
+	declared: ReadonlyMap<string, readonly Declared[]>,
+): readonly Definition[] {
+	if (!definitions.some((each) => each.visibility.startsWith(UNSETTLED))) return definitions;
+	const settled: Definition[] = [];
+	for (const definition of definitions) {
+		const visibility = settledVisibility(definition, declared);
+		const holderName = definition.symbol.slice(0, Math.max(definition.symbol.lastIndexOf("."), 0));
+		const holder = settled.findLast(
+			(each) =>
+				each.symbol === holderName && each.start <= definition.start && definition.end <= each.end,
+		);
+		const exposed = visibility === "public" && (holder?.exposed ?? true);
+		settled.push({ ...definition, visibility, exposed });
+	}
+	return settled;
 }
 
 /**
@@ -496,7 +577,9 @@ function createCSharpResolver(
 						})
 					: undefined,
 			);
-			const definitions = facts.definitions.map((each) => withFriends(each, own.friends));
+			const definitions = settledDefinitions(facts.definitions, own.declared).map((each) =>
+				withFriends(each, own.friends),
+			);
 			return { definitions, targets };
 		},
 	};

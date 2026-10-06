@@ -24,7 +24,9 @@
 // (`order?.Total` is `order.Total`); after `this.` or `base.` it is spelled
 // alone; and after a value the code does not name, such as a call's result or
 // a cast, it is spelled with the `.` alone (`.Command`): only a language server
-// can tell what such a value is.
+// can tell what such a value is. A name after `global::` or another alias's
+// `::` keeps it (`global::System.Console`), because C# looks it up from that
+// namespace alone, never from the namespaces around the use.
 //
 // A `using` names a namespace, or a type with `static`, never a file, so it
 // resolves to no file: each one is an import of every name there (`*`), and
@@ -32,19 +34,13 @@
 // file of the project, so it is a re-export. Where a name leads is the
 // project's to say (csharp-resolution.ts). Code in a part of the file that
 // did not parse holds no facts; the names written there are kept. Of each
-// `#if`, the first branch is read and the others are blanked
-// (csharp-preprocessor.ts).
+// `#if`, the first branch is read, and the others are parts the check did not
+// read, which keep their names too (csharp-preprocessor.ts).
 
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
 import { csharpDefinitions } from "@/runtime/code-facts/lib/csharp-definitions";
 import { firstBranches } from "@/runtime/code-facts/lib/csharp-preprocessor";
-import type {
-	Import,
-	ParsedFacts,
-	ParseFacts,
-	Reference,
-	ReferenceVia,
-} from "@/runtime/code-facts/lib/facts";
+import type { Import, ParsedFacts, Reference, ReferenceVia } from "@/runtime/code-facts/lib/facts";
 import { treeSitter, type Grammar } from "@/runtime/code-facts/lib/grammars";
 import { spansOf, type Span, type Spans } from "@/runtime/code-facts/lib/spans";
 import { unparsedOf } from "@/runtime/code-facts/lib/unparsed";
@@ -165,15 +161,26 @@ function joinedNames(before: string | undefined, name: string | undefined): stri
 }
 
 /**
+ * A name after an alias's `::`, with the alias: `global::System`.
+ * @param node An alias-qualified name.
+ * @returns The spelling, or undefined when either name is missing.
+ */
+function aliased(node: Node): string | undefined {
+	const alias = node.childForFieldName("alias")?.text;
+	const name = segment(node.childForFieldName("name"));
+	return alias === undefined || name === undefined ? undefined : `${alias}::${name}`;
+}
+
+/**
  * How code spells a chain of names through `.` or `?.`, from a name:
- * `Shop.Core.Ledger`, `ledger.Post`. `global::` is left out, and a chain from
+ * `Shop.Core.Ledger`, `ledger.Post`, `global::System.Console`. A chain from
  * `this`, `base`, a call or any other value without a name has no spelling.
  * @param node A name, a member access, a conditional access or a qualified name.
  * @returns The spelling, or undefined.
  */
 function chain(node: Node | null): string | undefined {
 	if (node === null) return undefined;
-	if (node.type === "alias_qualified_name") return segment(node.childForFieldName("name"));
+	if (node.type === "alias_qualified_name") return aliased(node);
 	const parts = joinedParts(node);
 	return parts === undefined ? segment(node) : joinedNames(chain(parts[0]), segment(parts[1]));
 }
@@ -187,41 +194,61 @@ const CHAINS = new Set([
 ]);
 
 /**
- * The chain a name ends, where it is the name after `.`.
- * @param named The name, or the generic name it is the name of.
- * @returns The member access, the conditional member or the qualified name, or undefined.
+ * The chain a name ends, where it is the name after `.` or `::`.
+ * @param node The name.
+ * @returns The member access, the conditional member, the qualified name or
+ * the alias-qualified name, or undefined.
  */
-function chainEndedBy(named: Node): Node | undefined {
+function chainEndedBy(node: Node): Node | undefined {
+	const named = genericOf(node);
 	const parent = named.parent;
 	if (parent === null || !CHAINS.has(parent.type)) return undefined;
 	return parent.childForFieldName("name")?.id === named.id ? parent : undefined;
 }
 
 /**
+ * A name, or the generic name it is the name of, as `Ledger` in `Ledger<T>`.
+ * @param node The name.
+ * @returns The node that stands where the name is used.
+ */
+function genericOf(node: Node): Node {
+	return node.parent?.type === "generic_name" ? node.parent : node;
+}
+
+/**
+ * What comes before the `.` that ends a chain.
+ * @param ended The chain a name ends, if any.
+ * @returns The node before, or null for a name no `.` comes before.
+ */
+function valueBefore(ended: Node | undefined): Node | null {
+	return ended === undefined ? null : (joinedParts(ended)?.[0] ?? null);
+}
+
+/**
  * How a used name is spelled: the name after `.` with the chain before it;
- * the name alone after `this.`, `base.`, `global::` and where no `.` comes
- * before it; and the name after a lone `.` where it is a member of a value the
- * code does not name, such as a call's result (`.Command`), which no lookup by
- * name can find.
+ * the name after `::` with its alias (`global::Ledger`); the name alone after
+ * `this.`, `base.` and where no `.` comes before it; and the name after a lone
+ * `.` where it is a member of a value the code does not name, such as a call's
+ * result (`.Command`), which no lookup by name can find.
  * @param node The name.
  * @returns The spelling.
  */
 function spelling(node: Node): string {
-	const start = valueBefore(node);
-	const spelled = joinedNames(chain(start), node.text);
-	if (spelled !== undefined) return spelled;
-	return start === null || OWN.has(start.type) ? node.text : `.${node.text}`;
+	const ended = chainEndedBy(node);
+	if (ended?.type === "alias_qualified_name") return aliased(ended) ?? node.text;
+	return spelledAfter(valueBefore(ended), node.text);
 }
 
 /**
- * What comes before the `.` a name follows.
- * @param node The name.
- * @returns The node before, or null for a name no `.` comes before.
+ * How a name is spelled after what comes before its `.`.
+ * @param start What comes before, or null for a name no `.` comes before.
+ * @param name The name.
+ * @returns The spelling.
  */
-function valueBefore(node: Node): Node | null {
-	const named = node.parent?.type === "generic_name" ? node.parent : node;
-	const ended = chainEndedBy(named);
-	return ended === undefined ? null : (joinedParts(ended)?.[0] ?? null);
+function spelledAfter(start: Node | null, name: string): string {
+	const spelled = joinedNames(chain(start), name);
+	if (spelled !== undefined) return spelled;
+	return start === null || OWN.has(start.type) ? name : `.${name}`;
 }
 
 /**
@@ -396,12 +423,16 @@ const PARSE = treeSitter("tree-sitter-c-sharp/tree-sitter-c_sharp.wasm", "csharp
 
 /**
  * How the adapter reads a `.cs` file: the first branch of each `#if`, through
- * the C# grammar (csharp-preprocessor.ts).
+ * the C# grammar, with every other branch a part the check did not read
+ * (csharp-preprocessor.ts).
  * @param text The file's text.
  * @returns Its facts.
  */
-function readCSharp(text: string): ReturnType<ParseFacts> {
-	return PARSE(firstBranches(text));
+async function readCSharp(text: string): Promise<ParsedFacts | undefined> {
+	const { text: read, blanked } = firstBranches(text);
+	const facts = await PARSE(read);
+	if (facts === undefined || blanked.length === 0) return facts;
+	return { ...facts, unparsed: [...facts.unparsed, ...blanked] };
 }
 
 export { readCSharp };

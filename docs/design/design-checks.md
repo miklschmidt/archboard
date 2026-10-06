@@ -765,6 +765,17 @@ of 9 parts over BenchmarkDotNet ran in 1,686 ms cold and 379 ms warm and gave
 six undrawn warnings and one backwards finding, each right, among them a test
 project's `ProjectReference` to the Windows diagnostics.
 
+The review of TASK-367.11 changed three things that these runs rest on. A
+part bound to a `.csproj` now binds its project: every file below its
+directory, as a part bound to that directory does. Before, it owned only the
+project file and, through it, what the code of other projects used of its
+project. The uses in its own code belonged to no part, so a `call` between two
+projects bound by their project files had only `build-dependency` evidence. A
+part of a partial type that writes no accessibility now takes the one that
+another part writes. The `.Designer.cs` parts of eShopOnWeb's migrations were
+`internal` before. A later branch of an `#if` is now code that the check did
+not read, so it skips a symbol that only that branch holds.
+
 #### Joining code and infrastructure across a network hop
 
 TASK-367.23 tried the join on 2026-10-06 with Bun 1.4.2, through the real

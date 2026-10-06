@@ -12,6 +12,10 @@
 // an `AssemblyAttribute` item of `InternalsVisibleTo` with its `_Parameter1`,
 // names a friend assembly, as the attribute in code does. A project file
 // declares no definition.
+//
+// A project file stands for its project: the SDK compiles the `.cs` files
+// below its directory by default. So a part bound to `Shop.Core.csproj` binds
+// the project as a part bound to its directory does, and owns its code.
 
 import path from "node:path";
 import type { Import, ParsedFacts } from "@/runtime/code-facts/lib/facts";
@@ -151,6 +155,17 @@ function builtWith(tag: Tag): { readonly specifier: string; readonly local: stri
 }
 
 /**
+ * The project a .NET project file stands for: its directory.
+ * @param file A path, relative to its checkout.
+ * @returns The directory, `""` for the checkout's root, or undefined for a file that is no project file.
+ */
+function projectDirectoryOf(file: string): string | undefined {
+	if (!file.endsWith(".csproj")) return undefined;
+	const directory = path.posix.dirname(file);
+	return directory === "." ? "" : directory;
+}
+
+/**
  * The code facts of one project file.
  * @param text The file's text.
  * @returns The facts.
@@ -181,4 +196,4 @@ function projectFacts(text: string): ParsedFacts {
 	return { definitions: [], references, imports, unparsed: [] };
 }
 
-export { projectFacts };
+export { projectDirectoryOf, projectFacts };

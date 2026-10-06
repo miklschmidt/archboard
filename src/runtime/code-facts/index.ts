@@ -31,6 +31,7 @@ export {
 	kubernetesLinks,
 } from "@/runtime/code-facts/lib/kubernetes-links";
 export { pairOf } from "@/runtime/code-facts/lib/c-pairs";
+export { projectDirectoryOf } from "@/runtime/code-facts/lib/csharp-project";
 export { type DefinitionSite, definitionSite } from "@/runtime/code-facts/lib/definition-site";
 export { type Accept, type Found, findSymbol } from "@/runtime/code-facts/lib/lookup";
 export {
