@@ -11,10 +11,11 @@
 // under a name that says it is a host (`REDIS_HOST: redis`). A host with a
 // dot (`smtp.example.com`) names a machine outside the project, and is never
 // read as a service, though compose allows a dot in a name. A value is read
-// only for that host: no entry and no fact keeps a value, because a compose
-// file can hold a password in plain text. An interpolation takes the default
-// the file writes (`${API_HOST:-api}`) and is otherwise empty, because the
-// variables it reads (the shell's and the project's `.env`) are never read.
+// only for that host: no entry and no fact keeps the rest of a value, because
+// a compose file can hold a password in plain text. As compose does, every
+// value is interpolated before anything reads it: an interpolation takes the
+// default the file writes (`${API_HOST:-api}`) and is otherwise empty, because
+// the variables it reads (the shell's and the project's `.env`) are never read.
 // A service that builds its image runs the code of the directory it builds
 // (`runs` on its definition), which TASK-367.23 joins with what it sets.
 
@@ -67,8 +68,8 @@ const HOST_NAME = /(?:HOST|HOSTS|HOSTNAME|SERVER|SERVERS|ADDR|ADDRESS)$/iu;
  */
 const ADDRESS =
 	/^(?<scheme>[^/]*:\/\/)?(?<user>[^@/]*@)?\[?(?!(?:localhost|true|false|yes|no|on|off|\d+)(?![\w-]))(?<host>[A-Za-z0-9][\w-]*)\]?(?::(?<port>\d+))?(?:[/?#]|$)/u;
-/** A mount of a named volume in the short syntax: `data:/var/lib/data:ro`. */
-const SHORT_MOUNT = /^(?<volume>[A-Za-z0-9][\w.-]*):(?<target>[^:]+):?(?<mode>.*)$/u;
+/** The source of a short mount that names a volume, not a path on the host: `data`. */
+const VOLUME_NAME = /^[A-Za-z0-9][\w.-]*$/u;
 
 /** Lines of one document, as a service's entries ask for them. */
 type At = (...path: YamlPath) => number;
@@ -109,6 +110,22 @@ function interpolated(value: string): string {
 }
 
 /**
+ * A document with every value interpolated, as compose interpolates it
+ * before it merges: `depends_on: [${DB:-db}]` depends on `db`. Keys stay as
+ * written.
+ * @param value The document, or a value in it.
+ * @returns It as the check reads it.
+ */
+function interpolatedValues(value: unknown): unknown {
+	if (typeof value === "string") return interpolated(value);
+	if (Array.isArray(value)) return value.map(interpolatedValues);
+	if (!isMapping(value)) return value;
+	return Object.fromEntries(
+		Object.entries(value).map(([key, each]) => [key, interpolatedValues(each)]),
+	);
+}
+
+/**
  * The host one item of an environment value names, where it names one: after
  * a scheme, after a user, or before a port, or the whole bare word under a
  * name that says it is a host.
@@ -130,7 +147,7 @@ function hostOf(name: string, item: string): string | undefined {
  */
 function hostsOf(name: string, value: unknown): string[] {
 	if (typeof value !== "string") return [];
-	const items = interpolated(value).split(/[\s,;]+/u);
+	const items = value.split(/[\s,;]+/u);
 	return [...new Set(items.flatMap((item) => hostOf(name, item) ?? []))];
 }
 
@@ -174,60 +191,61 @@ function namedEntries(service: string, field: string, value: unknown, at: At): C
 	const kind = field === "networks" ? "networks" : "services";
 	return entriesOf(value).flatMap(([key, item]) => {
 		const written = typeof key === "number" ? item : key;
-		if (typeof written !== "string" || written.startsWith("container:")) return [];
+		if (typeof written !== "string" || /^$|^container:/u.test(written)) return [];
 		const name = written.split(":")[0] ?? written;
 		return [{ service, line: at("services", service, field, key), targets: [`${kind}.${name}`] }];
 	});
 }
 
-/** A named volume a service mounts, where it mounts it, and whether only to read it. */
+/** A mount of a service: where it mounts, and the named volume and whether only to read it, if it mounts one. */
 interface Mount {
-	readonly volume: string;
 	readonly target: string;
-	readonly readOnly: boolean;
+	readonly named?: { readonly volume: string; readonly readOnly: boolean };
 }
 
 /**
- * The named volume a mount in the long syntax names, with `type: volume`.
+ * A mount in the long syntax, which names a volume with `type: volume`.
  * @param item The mount.
- * @returns The mount, or undefined for a bind mount, a tmpfs or an anonymous volume.
+ * @returns The mount, or undefined when it names no target.
  */
 function longMount(item: Record<string, unknown>): Mount | undefined {
 	const { type, source, target } = item;
-	const named = type === "volume" && typeof source === "string" && typeof target === "string";
-	return named ? { volume: source, target, readOnly: item["read_only"] === true } : undefined;
+	if (typeof target !== "string") return undefined;
+	if (type !== "volume" || typeof source !== "string") return { target };
+	return { target, named: { volume: source, readOnly: item["read_only"] === true } };
 }
 
 /**
- * The named volume a mount in the short syntax names: `data:/var/lib/data:ro`.
+ * A mount in the short syntax: `data:/var/lib/data:ro` mounts a named volume,
+ * `./data:/data` a path on the host, and `/data` alone an anonymous volume.
  * A source that starts with `.`, `/`, `~` or `$` is a path on the host.
  * @param item The mount.
- * @returns The mount, or undefined for a bind mount or an anonymous volume.
+ * @returns The mount.
  */
-function shortMount(item: string): Mount | undefined {
-	const groups = SHORT_MOUNT.exec(item)?.groups;
-	if (groups === undefined) return undefined;
-	const { volume = "", target = "", mode = "" } = groups;
-	return { volume, target, readOnly: mode.split(",").includes("ro") };
+function shortMount(item: string): Mount {
+	const [source = "", target, mode = ""] = item.split(":");
+	if (target === undefined) return { target: source };
+	if (!VOLUME_NAME.test(source)) return { target };
+	return { target, named: { volume: source, readOnly: mode.split(",").includes("ro") } };
 }
 
 /**
- * The entries of `volumes`: each named volume a service mounts.
+ * The entries of `volumes`: each mount, which a later file's mount at the
+ * same target replaces, and the named volume it mounts.
  * @param service The service.
  * @param value The `volumes` value.
  * @param at The lines of the document.
- * @returns One entry per named volume.
+ * @returns One entry per mount.
  */
 function mountEntries(service: string, value: unknown, at: At): ComposeEntry[] {
-	return entriesOf(value).flatMap(([index, item]) => {
+	return entriesOf(value).flatMap(([index, item]): ComposeEntry[] => {
 		const mount = isMapping(item) ? longMount(item) : shortMount(String(item));
 		if (mount === undefined) return [];
-		const { volume, readOnly } = mount;
 		const line = at("services", service, "volumes", index);
 		const replaces = `volumes ${mount.target}`;
-		return [
-			{ service, line, replaces, targets: [`volumes.${volume}`], mount: { volume, readOnly } },
-		];
+		const { named } = mount;
+		if (named === undefined) return [{ service, line, replaces, targets: [] }];
+		return [{ service, line, replaces, targets: [`volumes.${named.volume}`], mount: named }];
 	});
 }
 
@@ -250,16 +268,18 @@ function envFileEntries(service: string, value: unknown, at: At): ComposeEntry[]
 }
 
 /**
- * The entry of `network_mode: service:<name>`, which runs a service in another's network.
+ * The entry of `network_mode`, which a later file's mode replaces:
+ * `service:<name>` runs a service in another's network.
  * @param service The service.
  * @param value The `network_mode` value.
  * @param at The lines of the document.
- * @returns The entry, if the mode names a service.
+ * @returns The entry, naming the service the mode names, if any.
  */
 function networkModeEntries(service: string, value: unknown, at: At): ComposeEntry[] {
-	if (typeof value !== "string" || !value.startsWith("service:")) return [];
+	if (typeof value !== "string") return [];
 	const line = at("services", service, "network_mode");
-	return [{ service, line, replaces: "network_mode", targets: [`services.${value.slice(8)}`] }];
+	const targets = value.startsWith("service:") ? [`services.${value.slice(8)}`] : [];
+	return [{ service, line, replaces: "network_mode", targets }];
 }
 
 /**
@@ -357,7 +377,8 @@ function definitionsOf(
  * @returns The layer.
  */
 function layerOf(value: unknown, lines: YamlLines, document: number): ComposeLayer {
-	const top = isMapping(value) ? value : {};
+	const interpolatedTop = interpolatedValues(value);
+	const top = isMapping(interpolatedTop) ? interpolatedTop : {};
 	/**
 	 * The line of a path in this document, or of the nearest key that holds it.
 	 * @param path The path.

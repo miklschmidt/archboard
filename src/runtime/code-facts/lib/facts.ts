@@ -166,6 +166,7 @@ type AdapterName =
 	| "typescript"
 	| "python"
 	| "compose"
+	| "env"
 	| "csharp"
 	| "c"
 	| "cpp"

@@ -1,4 +1,4 @@
-# Local development: a cache for the front, and the API reports elsewhere.
+# Local development: a cache for the front, the API reports elsewhere and keeps uploads on the host.
 services:
   web:
     depends_on:
@@ -7,5 +7,7 @@ services:
     environment:
       DATABASE_URL: postgres://shop@database:5432/shop
       REPORTS_URL: https://reports.example.com
+    volumes:
+      - ./uploads:/srv/uploads
   cache:
     image: redis:7

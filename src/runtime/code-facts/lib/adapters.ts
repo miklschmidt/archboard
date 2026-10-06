@@ -26,11 +26,12 @@ import type {
 } from "@/runtime/code-facts/lib/facts";
 import { cFacts } from "@/runtime/code-facts/lib/c-adapter";
 import { createCResolver } from "@/runtime/code-facts/lib/c-resolution";
-import { composeFacts, envFileFacts } from "@/runtime/code-facts/lib/compose-adapter";
+import { composeFacts } from "@/runtime/code-facts/lib/compose-adapter";
 import {
 	COMPOSE_FILE_NAMES,
 	createComposeResolver,
 } from "@/runtime/code-facts/lib/compose-project";
+import { createEnvFileResolver, envFileFacts } from "@/runtime/code-facts/lib/env-file";
 import { readCSharp } from "@/runtime/code-facts/lib/csharp-adapter";
 import { projectFacts } from "@/runtime/code-facts/lib/csharp-project";
 import { createCSharpResolver } from "@/runtime/code-facts/lib/csharp-resolution";
@@ -163,12 +164,10 @@ const ADAPTERS: readonly Adapter[] = [
 	},
 	{
 		name: "compose",
-		reads: {
-			...Object.fromEntries(COMPOSE_FILE_NAMES.map((name) => [name, composeFacts])),
-			".env": envFileFacts,
-		},
+		reads: Object.fromEntries(COMPOSE_FILE_NAMES.map((name) => [name, composeFacts])),
 		resolver: createComposeResolver,
 	},
+	{ name: "env", reads: { ".env": envFileFacts }, resolver: createEnvFileResolver },
 	{
 		name: "nix",
 		reads: { "flake.nix": FLAKE, "flake.lock": flakeLockFacts },

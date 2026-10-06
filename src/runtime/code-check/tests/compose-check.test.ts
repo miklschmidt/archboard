@@ -6,8 +6,9 @@
 //
 // The checkout `shop`: `web` depends on `api` and reaches the ledger through
 // `LEDGER_URL`; `api` depends on `db`, reaches it through `DATABASE_URL` and
-// reads `api.env`, which holds a secret. The override adds `cache`, makes
-// `web` depend on it, and points `LEDGER_URL` at the host instead.
+// reads `api.env`, which holds a secret. A second YAML document of
+// `compose.yaml` makes `ledger` depend on `db`. The override adds `cache`,
+// makes `web` depend on it, and points `LEDGER_URL` at the host instead.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -90,6 +91,10 @@ beforeAll(async () => {
 			"    image: postgres:16",
 			"  ledger:",
 			"    image: ledger:1",
+			"---",
+			"services:",
+			"  ledger:",
+			"    depends_on: [db]",
 			"",
 		].join("\n"),
 		"compose.override.yml": [
@@ -155,14 +160,25 @@ test("anchors, binding symbols and the relationships between parts bound to comp
 			"BINDING_SYMBOL_MISSING pQ warning",
 			"RELATIONSHIP_BACKWARDS e3 information",
 			"RELATIONSHIP_UNDRAWN pC warning",
+			"RELATIONSHIP_UNDRAWN pD warning",
 		].toSorted(),
 	);
 	expect(outcome.skipped.map((each) => each.reason)).not.toContain("text-only");
 });
 
-test("a dependency the override adds belongs to the service it adds to, and a value the override replaces joins nothing", () => {
-	const undrawn = outcome.findings.find((each) => each.code === "RELATIONSHIP_UNDRAWN");
-	expect(undrawn?.evidence).toEqual([
+/**
+ * The evidence of the undrawn finding on a part.
+ * @param id The part's id.
+ * @returns Its pieces.
+ */
+function undrawnOn(id: string) {
+	return outcome.findings.find(
+		(each) => each.code === "RELATIONSHIP_UNDRAWN" && each.subject?.id === id,
+	)?.evidence;
+}
+
+test("a dependency the override or a later document adds belongs to the service it adds to, and a value the override replaces joins nothing", () => {
+	expect(undrawnOn("pC")).toEqual([
 		{
 			kind: "configured-path",
 			resolution: "resolved",
@@ -173,6 +189,9 @@ test("a dependency the override adds belongs to the service it adds to, and a va
 			line: 4,
 			symbol: "services.cache",
 		},
+	]);
+	expect(undrawnOn("pD")?.map((piece) => [piece.from, piece.path, piece.line])).toEqual([
+		["pL", "compose.yaml", 20],
 	]);
 	// Without the merge, web's LEDGER_URL in the base would reach the ledger, undrawn.
 	expect(outcome.findings.some((each) => each.subject?.id === "pL")).toBe(false);

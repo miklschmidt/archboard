@@ -28,7 +28,7 @@
 // gives no evidence.
 
 import {
-	definitionIn,
+	definitionsIn,
 	pairsOf,
 	type PartCode,
 	type ReadPart,
@@ -123,12 +123,11 @@ function narrowestSymbols(
 	file: string,
 	holds: (definition: Definition) => boolean,
 ): ReadPart[] {
-	const holding = parts.flatMap((part) => {
-		const definition = definitionIn(part, file);
-		return definition !== undefined && holds(definition)
-			? [{ part, span: definition.end - definition.start }]
-			: [];
-	});
+	const holding = parts.flatMap((part) =>
+		definitionsIn(part, file).flatMap((definition) =>
+			holds(definition) ? [{ part, span: definition.end - definition.start }] : [],
+		),
+	);
 	const least = Math.min(...holding.map((each) => each.span));
 	return holding.filter((each) => each.span === least).map((each) => each.part);
 }
