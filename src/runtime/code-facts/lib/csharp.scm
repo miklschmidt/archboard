@@ -17,7 +17,8 @@
 ; @using        a using directive: a namespace, a type with `static`, or an alias.
 ; @environment  the name of an environment value:
 ;               `Environment.GetEnvironmentVariable("NAME")`.
-; @friend       the assembly `[assembly: InternalsVisibleTo("Name")]` names.
+; @friend       the assembly `[assembly: InternalsVisibleTo("Name")]` names, also
+;               where its public key is added to the string.
 ; @skip         code where no name is a use: using directives, namespace names,
 ;               the members a property pattern names, preprocessor conditions.
 ; @unparsed     code that did not parse.
@@ -74,7 +75,10 @@
   (attribute
     name: (_) @_friends
     (attribute_argument_list
-      . (attribute_argument (string_literal (string_literal_content) @friend))))
+      . (attribute_argument [
+        (string_literal (string_literal_content) @friend)
+        (binary_expression left: (string_literal (string_literal_content) @friend))
+      ])))
   (#match? @_friends "InternalsVisibleTo(Attribute)?$"))
 
 ; ── Directives ──────────────────────────────────────────────────────────────
