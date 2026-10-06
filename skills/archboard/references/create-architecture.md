@@ -142,7 +142,9 @@ whole, with no children. Draw its functions inside it, and the call lands on
    to take in at once. A page thousands of pixels on both axes is the tangle
    this recipe opens with, and a second edit adding its views is the normal
    loop, not a repair. A request path the board carries is a `flow` drawn
-   through a `data-flow` view, not a row to declare inapplicable.
+   through a `data-flow` view, not a row to declare inapplicable. Run
+   `archboard check --code`: every anchor and bound symbol holds in the files
+   on disk.
 
 Read [authoring](authoring.md) for groups, drill-down links to
 detail boards, traffic, emphasis, descriptions, and what a refusal means.
