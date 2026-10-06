@@ -104,12 +104,15 @@ in `lib/design.ts`.
    on the light ground and 2.6:1 on the dark ground. The owner chose this look
    among four drawn side by side (TASK-416, TASK-419).
 7. **A card carries its group on its front edge and its face.** The front edge
-   of a card is a tone of the group's color, quieter on the light ground. Its
-   face is a quiet tone of the group's hue on both grounds. The secondary
-   words on it keep 5.2:1 or more.
+   of a card is a tone of the group's color. On the light ground it is a
+   clean, strong tone, at OKLCH lightness 0.76 and chroma 0.12. The face there
+   is nearly white with a trace of the group's hue, at lightness 0.972 and
+   chroma 0.011, because a light tint of a warm color reads as beige
+   (TASK-422). On the dark ground the face is a quiet tone of the group's hue.
+   The secondary words on a grouped face keep 6.2:1 or more on the light
+   ground and 5.2:1 or more on the dark ground.
    On the light ground a tinted face takes a softer light, so its color does
-   not pool at its foot. A card in no group has a grey front edge and a neutral
-   face.
+   not pool at its foot. A card in no group has a neutral front edge and face.
 8. **Small parts are low slabs.** An icon chip, the label of a relationship and
    the label of a sequence message are low tiles with a contact shadow. An
    activation bar is a slim slab. It takes the front edge of its participant's
@@ -149,13 +152,15 @@ in `lib/design.ts`.
 13. **A line reads on every ground.** A card has no border now, so a neutral
     line no longer matches one. A neutral line, its arrowhead and a lifeline
     are drawn in `--diagram-edge`. On the light ground it has a contrast of
-    3.9:1 against the page and 3.5:1 against the floor of a container
+    3.9:1 against the page and 3.7:1 against the floor of a container
     (`--tray-floor`). On the dark ground it has 4.6:1 and 4.8:1. Text has
-    about 16:1. A colored line is drawn in its full color on the light ground,
+    16:1 or more. A colored line is drawn in its full color on the light ground,
     and at three quarters of its color over the page on the dark ground
-    (`LINE_STRENGTH` in `lib/design.ts`). On the light page, orange, amber,
-    yellow, lime and sky stay under 3:1 even at full color (TASK-404). A muted
-    line is as wide as a default line. Its ink is its default ink with the page
+    (`LINE_STRENGTH` in `lib/design.ts`). On the light ground every named color
+    but yellow, the gold, is deep enough to keep 3.5:1 against the page and
+    3.2:1 against the floor of a tray, a nested one included (TASK-422). Yellow
+    keeps about 2.5:1. A muted line is as wide as a default line. Its ink is
+    its default ink with the page
     mixed in, so that it keeps 70 % of it on the light ground and 60 % on the
     dark ground (`MUTED_STRENGTH` in `lib/svg/styles.ts`). A muted neutral line
     has about 2.4:1 against the page on both grounds. It is never made
@@ -170,6 +175,16 @@ in `lib/design.ts`.
     near-white surface in sRGB turned its hue and lost most of its chroma,
     which made the group colors pale on the light ground and muddy on the dark
     ground (TASK-413).
+15. **The light ground is crisp and vivid, not pastel.** The owner found the
+    light picture dusty and pastel (TASK-422). Its own neutrals are now cool
+    and clean, near hue 255: a card face a hair under white, a tray floor a
+    step under the chalk ground, a slate front edge and a navy shadow. On the
+    light ground a front edge and an icon chip take a tone of their color in
+    OKLCH (`inkedOver` in `lib/svg/colour.ts`), and a chip's glyph is its
+    type's color itself, at 3.1:1 or more on the chip for every color but
+    yellow, which has 2.2:1. The words are in `--diagram-text` and
+    `--diagram-text-muted`, a deep navy and a slate. The dark ground keeps its
+    values.
 
 ## What stays
 

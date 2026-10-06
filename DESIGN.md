@@ -19,7 +19,7 @@ colors:
   gold-mark: "oklch(0.72 0.15 77)"
   gold-tint: "oklch(0.968 0.03 88)"
   live-lime: "oklch(0.849 0.207 128.8)"
-  changed-orange: "oklch(0.69 0.19 48)"
+  changed-orange: "oklch(0.631 0.167 48)"
 typography:
   display:
     fontFamily: "Archboard Display, Big Shoulders Display, sans-serif"
@@ -176,7 +176,7 @@ every role and changes the values. The file theme.css holds both themes.
 ### Status
 
 - **Live Lime** (oklch(0.849 0.207 128.8)): live state only. It marks the connection, claims and agent activity.
-- **Changed Orange** (oklch(0.69 0.19 48)): "changed" in a comparison. It moved off the shared amber because the amber has the hue of the gold.
+- **Changed Orange** (oklch(0.631 0.167 48) on chalk, oklch(0.77 0.17 52) on graphite): "changed" in a comparison. It moved off the shared amber because the amber has the hue of the gold.
 
 ### Named Rules
 
@@ -281,6 +281,19 @@ red border round its footprint. The face and the front edge keep their colors.
 The shell touches none of it, and the Untouched Picture Rule still holds.
 [ADR 0044](docs/adr/0044-cards-containers-and-groups-are-drawn-as-slabs.md)
 records the construction.
+
+On chalk the picture is crisp and vivid, never pastel or dusty. Its own
+neutrals are cool and clean, near hue 255, not the shell's warm ones: a card
+face a hair under white (oklch(0.988 0.003 255)), a tray floor a step under the
+ground (oklch(0.974 0.003 255)), a slate front edge (oklch(0.87 0.014 256)) and
+a navy shadow. A grouped card is nearly white with a trace of its group's hue,
+and its front edge carries the color as a clean, strong tone. A chip is a light
+tone of its type's color, with the glyph in the color itself. The words are
+**Diagram Ink** (`--diagram-text`, oklch(0.2 0.02 265)) and **Diagram Slate**
+(`--diagram-text-muted`, oklch(0.47 0.028 262)). On graphite they are the
+shell's bone and muted ink. Every named color but the gold of yellow is deep
+enough to keep 3:1 as a line on the ground and on a tray's floor. Contrast comes
+from deep ink and strong color, never from a washed-out color.
 
 A neutral line, its arrowhead and a lifeline are drawn in **Line Ink**
 (`--diagram-edge`, oklch(60% 0.015 286), dark oklch(60% 0.017 286)). It has 3:1
