@@ -7,5 +7,6 @@ int run_app() {
 	shop::Store *other = shop::Store::open();
 	shop::Item item;
 	store.save(item.id);
+	shop::Store::open()->save(2);
 	return 0;
 }

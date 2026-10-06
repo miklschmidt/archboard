@@ -29,7 +29,7 @@
 // (include-scope.ts).
 
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
-import { cDefinitionsOf, misreadNamespace, spell } from "@/runtime/code-facts/lib/c-definitions";
+import { cDefinitionsOf, isMisread, spell } from "@/runtime/code-facts/lib/c-definitions";
 import type { Import, ParsedFacts, Reference } from "@/runtime/code-facts/lib/facts";
 import type { Grammar } from "@/runtime/code-facts/lib/grammars";
 import { cUnparsedOf } from "@/runtime/code-facts/lib/c-unparsed";
@@ -383,14 +383,16 @@ function localsOf(named: readonly Named[]): Set<string> {
 }
 
 /**
- * How a used name is spelled: a field with its chain through `.`, else the
- * whole qualified name.
+ * How a used name is spelled: a field with its chain through `.`, or with the
+ * `.` alone after a value the code does not name, such as a call's result
+ * (`.Append` in `open()->Append()`), as C# and Swift spell it; else the whole
+ * qualified name.
  * @param top The whole name.
  * @returns The spelling.
  */
 function spellingOf(top: Node): string {
-	const chained = isFieldUse(top) && top.parent !== null ? chain(top.parent) : undefined;
-	return chained ?? spell(top);
+	if (!isFieldUse(top) || top.parent === null) return spell(top);
+	return chain(top.parent) ?? `.${spell(top)}`;
 }
 
 /**
@@ -481,8 +483,8 @@ function cFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 	const broken = cUnparsedOf(captured.unparsed);
 	const unparsed = spansOf(broken);
 	const outside = spansOf([...broken, ...captured.skip]);
-	// A namespace a macro hides from the grammar is no function whose names are its own.
-	const functions = captured.function.filter((node) => misreadNamespace(node) === undefined);
+	// A namespace or a class a macro hides from the grammar is no function whose names are its own.
+	const functions = captured.function.filter((node) => !isMisread(node));
 	const named = namedOf(captured.name, outside, functionSpans(functions));
 	const locals = localsOf(named);
 	const inCode = named.flatMap((each) => useOf(each, locals) ?? []);
