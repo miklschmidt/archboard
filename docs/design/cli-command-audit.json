@@ -1755,7 +1755,7 @@
 			"diagnostics": "a summary line, one line for each repository not read, and one line for each part of each list on stderr; usage/refusal on stderr",
 			"exits": [0, 1, 2, 3],
 			"prerequisites": ["server"],
-			"relationships": ["GET /api/vault/footprint"],
+			"relationships": ["GET /api/semantic-boards/footprint"],
 			"semantics": "information only: derived on request from Git and the board, never stored, no severity and no change to the exit status; --base is any ref that resolves in a registered checkout and nothing is fetched, so a checkout where it does not resolve is named and not read; HEAD of each checkout is read, with no uncommitted change; a proposal names a part that the comparison marks added, changed or removed and a part at either end of a relationship or step it marks; a part with no binding, a drill-down, an unregistered repository, a pinned ref the checkout does not have out, or an unread range is skipped and in none of the lists; --variant names a draft, and the current variant, a shelved or a historical variant is refused",
 			"ordering": "read the board, resolve the current variant and the proposal, resolve the ref and its merge base in each checkout, walk the commits, map them onto the bound paths, then print",
 			"nextFields": [
