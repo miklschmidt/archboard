@@ -385,6 +385,9 @@ test("an answer is kept until the board's version, the start of the period or a 
 	expect(
 		await reading.read(first, variantOf(first, "v1"), new Date(LAST * 1000 - DAY * 1000)),
 	).not.toBe(answer);
+	write(shop, edit("src/c.ts", 3));
+	commit(shop, 0, "a commit in a repository the board does not bind");
+	expect(await reading.read(first, variantOf(first, "v1"), undefined)).toBe(answer);
 	write(tiny, edit("t.ts", 1));
 	commit(tiny, 0, "tiny again");
 	const moved = await reading.read(first, variantOf(first, "v1"), undefined);

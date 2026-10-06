@@ -270,18 +270,22 @@ function createLocalityReading(): LocalityReading {
 		 * @returns The answer.
 		 */
 		async read(board, variant, since, signal) {
+			const bindings = variant.content.nodes.flatMap((node) =>
+				node.binding === undefined ? [] : [node.binding],
+			);
 			const snapshot = await snapshotCheckoutAccess({
 				...(signal === undefined ? {} : { signal }),
-				bindings: variant.content.nodes.flatMap((node) =>
-					node.binding === undefined ? [] : [node.binding],
-				),
+				bindings,
 			});
+			// Only the checkouts the parts are bound into: a commit in another
+			// registered repository changes nothing this answer says.
+			const repos = [...new Set(bindings.map((binding) => binding.repo))].toSorted();
 			const key = JSON.stringify({
 				board: board.id,
 				version: board.version,
 				variant: variant.id,
 				since: since?.toISOString() ?? null,
-				checkouts: snapshot.entries.map((entry) => [entry.repo, snapshot.inspection(entry.repo)]),
+				checkouts: repos.map((repo) => [repo, snapshot.inspection(repo) ?? null]),
 			});
 			return await memory.answer(
 				key,
