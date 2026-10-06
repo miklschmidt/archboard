@@ -1,11 +1,11 @@
 ---
 id: TASK-367.27
 title: The dogfood boards carry anchors and pass the code check
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:16'
-updated_date: '2026-10-06 15:05'
+updated_date: '2026-10-06 15:15'
 labels:
   - code-check
   - architecture
@@ -28,9 +28,9 @@ The dogfood vault is how the next agent learns this repository. Its relationship
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every relationship between bound parts on the current dogfood boards carries an anchor
-- [ ] #2 `./bin/dogfood check --code` reports no finding, or each remaining one is fixed on the board or explained in the task notes
-- [ ] #3 `.archboard/README.md` tells a maintainer to run the code check
+- [x] #1 Every relationship between bound parts on the current dogfood boards carries an anchor
+- [x] #2 `./bin/dogfood check --code` reports no finding, or each remaining one is fixed on the board or explained in the task notes
+- [x] #3 `.archboard/README.md` tells a maintainer to run the code check
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -57,4 +57,47 @@ Skill evaluation (2317c224b, adopted v15): all 37 relationships anchored; Agent 
 
 Command interface (c6b0e960d, adopted v42): all 60 relationships anchored. The 18 Contract execution -> <command> relationships share the anchor execution.ts handler (contract.handler(...), dispatch through the contract it is handed); it proves the mechanism, not which command. Server client -> Archboard server uses fetch in server-client-transport.ts, the same anchor as Agent CLI -> Archboard server on Archboard and Skill evaluation. Command routing binds src/cli/command-routing (its index.ts only re-exports). Command catalogue (run.ts) moved out of the Commands container to stand beside it, so one relationship Command catalogue -> Commands (a contract per command) covers the 17 commands, in place of 17 fan-out edges; Command dispatch already draws the catalogue as its own part. Added parts: Server launcher (src/runtime/engine/spawn.ts) and Prerequisites (command-contract/lib/prerequisites.ts, inside Command contract). Runtime control -> Server launcher (was -> Archboard server, same id) and Contract execution -> Prerequisites (was -> Archboard server, same id, label 'ensure what the command needs'), because ensureServerRunning and stopServer live in spawn.ts, which no part bound, so no anchor could hold before. Drawn: Command catalogue -> Commands and -> Status, Commands -> Command contract, -> Board client and -> Server client, Command contract -> Command catalogue (artifacts.ts cliContractRegistry, the registry the CLI audit generator reads), Command routing -> Command contract and -> Bootstrap, Prerequisites -> Server launcher and -> Server client, Server launcher -> Archboard server and -> Server client, Status -> Server launcher. Remaining: EXPOSED_UNUSED on Command contract (48 names) and on Commands (114 names); code, outside this task.
 Final run, after ./bin/dogfood stop && start: every relationship on the five group A boards carries an anchor (17 + 60 + 13 + 47 + 50, none unanchored). ./bin/dogfood check --code reports on these boards only five EXPOSED_UNUSED information findings: Board store, Command routing, Command contract, Commands and Evaluation harness. Each lists exported names that no file outside the module uses (most are exported for tests or for the barrel); the repair is to stop exporting them, a code change outside this task's fence, and no board change clears it. No skip names these boards. Whole vault at that moment: 31 RELATIONSHIP_UNDRAWN, 131 RELATIONSHIP_UNSUPPORTED, 5 RELATIONSHIP_BACKWARDS, 6 CALLER_UNDRAWN, 13 EXPOSED_UNUSED, all on groups B and C boards apart from the five above. Gate: ./bin/dogfood check no diagnostics; bun run test:repository 20 pass 0 fail; oxfmt --check on .archboard/README.md and the configuration passes.
+
+Group B did Archboard server, Agent workbench, Codex session, Codex workhorse and Voice coordinator on 2026-10-06. Every relationship on these boards carries an anchor (221 relationships). The commits are 94c93598f, 22506c2c1, 5c920152e, 013a2702b, 4a2fa8aaf and 3a7157874.
+
+Most parts bound to an index.ts that only re-exports now bind their module directory. Codex session gained 5 relationships, Agent workbench 8, Codex workhorse 7, Voice coordinator 5 and Archboard server 17. Archboard server gained two parts: HTTP listener (lib/server-app.ts), because the listener lives there and not in either end of the old relationship, and Server entry (src/server.ts), which starts Application lifetime. Two anchors were corrected: remember became createCodeFindingsMemory, and createCodeFacts became findSymbol. On Voice coordinator, the label of Realtime voice -> Spoken approval now reads "the user's spoken reply, as transcript events", because nothing in src calls the gate's arm (gate.ts:281); only its tests do.
+
+The remaining warnings are each read against their line. They are uses of a constant, a type guard, an error class or a shape helper, which the board does not draw as a dependency:
+- Codex session: CODEX_SESSION_THREAD_SOURCE (model.ts:23), requestParams, and an instanceof CodexTransportRemoteError test.
+- Agent workbench: ARCHBOARD_COORDINATOR_MANIFEST_SHA256, hashed into the workhorse profile.
+- Codex workhorse: ADDITIONAL_CONTEXT_POLICY, assertCanonicalInstructionBytes and createTextUserInput on Authored instructions.
+- Voice coordinator: a shared schema on Tool contract, input builders on Authored instructions, and container code whose call is drawn as Callback delivery -> Codex session.
+- Archboard server: codex-semantic-input.ts reads the board and the claim for the agent's brief, Service routes count boards and clients for /health, aggregateOf parses a key, settledChangeFields builds a broadcast, and Server entry calls serverStartupFailureMessage.
+EXPOSED_UNUSED (information) also remains on each board's containers.
+
+Group C did Browser application, Board viewer, Board rasterizer, Renderer layout and Semantic renderer on 2026-10-06. Every relationship between bound parts on these boards carries an anchor. The commits are c155d1552, c35ae00ab, 3ed1df153, 3e78aa510 and 1a2c8c782.
+
+Renderer layout (v33) gained 17 anchors and two relationships: Block placement -> Trunk router, and Architecture painter -> Measured text. One finding remains, EXPOSED_UNUSED on Renderer core. It is information about the code.
+
+Semantic renderer (v30): Bun host now binds src/runtime/semantic-renderer. A new part, Engine pool, sits inside Renderer core and binds engine-pool.ts. Nine anchored relationships were drawn. Theme palette -> Renderer host became SVG document -> Renderer host, because theme.ts never calls the host. View dispatcher, Measured text and Engine pool became entry points, which cleared both CALLER_UNDRAWN warnings. EXPOSED_UNUSED on Renderer core remains.
+
+Board rasterizer (v32): Frame renderer now binds walkthrough-recorder/lib/render.ts. Walkthrough recorder and Recording page bind their directories. Three relationships were drawn. Frame renderer -> Chromium executable moved to Frame renderer -> Walkthrough recorder, because tools.ts defines startBrowser. Two undrawn warnings remain, each read against its line:
+- DevTools connection: Chromium executable and Page readiness use only the isJsonRecord guard that devtools.ts exports. Neither one talks over the connection.
+- Headless browser: three parts only catch or throw HeadlessChromiumError from lib/errors.ts, which no child binds. The board draws their calls into the children.
+EXPOSED_UNUSED on Headless browser also remains.
+
+Browser application (v42): Browser client binds src/ui, and eleven module parts bind their directories instead of their index. Walkthrough replay -> Voice subtitles became Walkthrough replay -> Workbench client, because the replay renders VoiceBox. Four relationships were drawn. No finding remains. One exposure-unknown skip remains, because src/ui has no root file.
+
+Board viewer (v63): Render stage states binds components/. Control camera binds hooks/use-board-camera.ts. Walkthrough replay binds its directory. Three relationships were drawn, four corrected, and two removed, because no code makes them. These warnings remain, each read against its line:
+- Semantic viewer <- Browser client and Walkthrough replay: the uses are address parsing and overlay placement, not a read of the board.
+- Fetch semantic reads <- Render stage states and Local pictures: the uses are the SemanticBoardError class only.
+- Drive walkthrough focus, Refresh changed boards, Camera glide, Frame clock and Trace what a part reaches: each use goes through a path the board already draws, or is a detail below its grain.
+- CALLER_UNDRAWN on Picture source, Picture cache and Local pictures: frontend/main.tsx wires them once at page start, and the board begins at a mounted pane.
+- CALLER_UNDRAWN on Semantic queries: the catalog and the diagnostics share the query cache, and the board is about one pane.
+EXPOSED_UNUSED on Semantic viewer (63 of 89 names) also remains. Six anchors name a symbol that their own file defines, and three cite a helper hook that no part binds. The check allows these but does not judge them.
+
+Layout after adoption: every board lays out under 1 s. Board viewer took 657 ms on a restarted server, with a peak of 912 ms during the proposals.
+
+Parent verification on 2026-10-06: across the 15 current boards, 599 relationships join two bound parts and none lacks an anchor. After a server restart, ./bin/dogfood check reports no diagnostics, and ./bin/dogfood check --code reports 22 RELATIONSHIP_UNDRAWN and 4 CALLER_UNDRAWN warnings, 13 EXPOSED_UNUSED information findings, and the skips exposure-unknown (src/ui) and text-only. Each remaining warning is explained above by its group. They are uses of constants, error classes, guards and helpers that the boards do not draw as dependencies.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Every relationship between two bound parts on the 15 current dogfood boards carries an anchor (599 of 599), checked against the source by three agents in parallel. The vault configuration names the evidence kinds each relationship kind accepts, parts bound to index files that only re-export now bind their module, and missing dependencies the check found were drawn. The remaining code-check warnings are each explained in the notes. .archboard/README.md tells a maintainer to run ./bin/dogfood check --code. Verified by a scan of every current board for unanchored relationships and by check and check --code after a server restart.
+<!-- SECTION:FINAL_SUMMARY:END -->
