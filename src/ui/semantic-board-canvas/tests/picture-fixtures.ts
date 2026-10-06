@@ -40,6 +40,21 @@ interface Line {
 }
 
 /**
+ * A card's chip as the renderer draws one: one element both views share, drawn
+ * at its near place, with its near and far places as properties of its own.
+ * @param x Where its near place starts, across.
+ * @param y Where its near place starts, down.
+ * @returns Its group.
+ */
+function chipMarkup(x: number, y: number): string {
+	return (
+		`<g class="ab-chip" transform="translate(${x},${y}) scale(1)"` +
+		` style="--near:translate(${x}px,${y}px) scale(1);--far:translate(${x - 4}px,${y + 2}px) scale(2.1667)">` +
+		`<rect x="0" y="0" width="24" height="24" rx="5" fill="#888"/></g>`
+	);
+}
+
+/**
  * A card as the renderer draws one: a halo, a body, a chip and two texts.
  * @param card The card.
  * @returns Its group.
@@ -52,7 +67,7 @@ function cardMarkup(card: Card): string {
 		`<g data-semantic-kind="${card.label === true ? "edge" : "node"}" data-semantic-id="${card.id}"${card.ghost === true ? ' opacity="0.4"' : ""}>` +
 		`<rect class="ab-halo" x="${x - 3}" y="${y - 3}" width="${width + 6}" height="${height + 6}" rx="9" fill="none"/>` +
 		`<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="6" fill="#222"${outline}/>` +
-		`<rect x="${x + 16}" y="${y + 16}" width="24" height="24" rx="5" fill="#888"/>` +
+		chipMarkup(x + 16, y + 16) +
 		`<text x="${x + 52}" y="${y + 30}" font-size="14">${card.title}</text>` +
 		(card.rule === undefined
 			? ""
