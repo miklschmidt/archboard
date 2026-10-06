@@ -1,6 +1,7 @@
 // The default TypeScript server, Archboard's own `tsc --lsp`, on a checkout
 // whose tsconfig names a plugin that the checkout installs. It resolves a use
-// through a `paths` alias and through a value, and loads no plugin. This is
+// through a `paths` alias and through a value, its outline tells code that
+// runs from a member of a type, and it loads no plugin. This is
 // the one owner that runs a real server; the stand-in owns the lifecycle.
 
 import { afterEach, expect, test } from "bun:test";
@@ -22,7 +23,7 @@ afterEach(() => {
 	current = undefined;
 });
 
-test("Archboard's tsc --lsp resolves through an alias and a value, and loads no plugin of the checkout", async () => {
+test("Archboard's tsc --lsp resolves through an alias and a value, says which definitions are code that runs, and loads no plugin of the checkout", async () => {
 	current = workspace({
 		"tsconfig.json": JSON.stringify({
 			compilerOptions: {
@@ -45,13 +46,18 @@ test("Archboard's tsc --lsp resolves through an alias and a value, and loads no 
 			"}",
 			"export class Ledger {",
 			"  post(): void {}",
+			"  total = 0;",
 			"}",
+			"export interface Memory { remember(): void }",
+			"export type Drawn = Ledger & { readonly kind: 'drawn' };",
 		].join("\n"),
 		"src/write.ts": [
-			"import { newVocabularyProblem, Ledger } from '@/vocabulary';",
-			"export function write(ledger: Ledger): string {",
+			"import { newVocabularyProblem, Ledger, type Memory, type Drawn } from '@/vocabulary';",
+			"export function write(ledger: Ledger, memory: Memory, drawn: Drawn): number {",
 			"  ledger.post();",
-			"  return newVocabularyProblem();",
+			"  memory.remember();",
+			"  newVocabularyProblem();",
+			"  return drawn.kind.length + ledger.total;",
 			"}",
 		].join("\n"),
 	});
@@ -59,13 +65,34 @@ test("Archboard's tsc --lsp resolves through an alias and a value, and loads no 
 	const servers = readLanguageServers(join(at.state, "language-servers.json"));
 	const session = openLanguageServers({ servers, signal: new AbortController().signal });
 	const question = { root: at.root, file: "src/write.ts" };
-	const [alias, value] = await Promise.all([
-		session.definition({ ...question, line: 4, symbol: "newVocabularyProblem" }),
-		session.definition({ ...question, line: 3, symbol: "ledger.post" }),
+	const asked = await Promise.all(
+		[
+			[5, "newVocabularyProblem"],
+			[3, "ledger.post"],
+			[4, "memory.remember"],
+			[6, "drawn.kind"],
+			[6, "ledger.total"],
+		].map(async ([line, symbol]) => {
+			const answer = await session.definition({
+				...question,
+				line: Number(line),
+				symbol: String(symbol),
+			});
+			const [location] = answer.status === "answered" ? answer.locations : [];
+			const declares =
+				location === undefined ? undefined : await session.declaration(at.root, location);
+			return [location?.line, declares];
+		}),
+	);
+	// Each lands on its declaration in vocabulary.ts. Only code that runs reads as code: a
+	// member of an interface is a type, and a member of a type literal is not in the outline.
+	expect(asked).toEqual([
+		[1, "code"],
+		[5, "code"],
+		[8, "type"],
+		[9, "unknown"],
+		[6, "data"],
 	]);
-	const vocabulary = join(at.root, "src/vocabulary.ts");
-	expect(alias).toEqual({ status: "answered", locations: [{ path: vocabulary, line: 1 }] });
-	expect(value).toEqual({ status: "answered", locations: [{ path: vocabulary, line: 5 }] });
 	await session.close();
 	expect(session.unavailable()).toEqual([]);
 	expect(existsSync(join(at.root, "node_modules/mark-plugin/loaded"))).toBe(false);

@@ -23,6 +23,11 @@ import path from "node:path";
 import type { LanguageServerTable } from "@/runtime/language-servers/lib/configuration";
 import { RequestFailure } from "@/runtime/language-servers/lib/connection";
 import { languageOf, type Language } from "@/runtime/language-servers/lib/languages";
+import {
+	declarationAt,
+	type Declaration,
+	type OutlineSymbol,
+} from "@/runtime/language-servers/lib/outline";
 import { positionOf } from "@/runtime/language-servers/lib/position";
 import {
 	startServer,
@@ -67,6 +72,12 @@ interface UnavailableServer {
 interface LanguageServerSession {
 	/** Where the name a file uses on a line is defined. */
 	readonly definition: (question: DefinitionQuestion) => Promise<DefinitionAnswer>;
+	/**
+	 * What a definition a server named declares: code that runs, data, a type,
+	 * or unknown, as the outline of its file says. A file no server reads, or
+	 * whose server cannot answer, is unknown.
+	 */
+	readonly declaration: (root: string, location: DefinitionLocation) => Promise<Declaration>;
 	/** Each language the pass could not ask about, once for each reason and checkout. */
 	readonly unavailable: () => readonly UnavailableServer[];
 	/** Stop every server the session started, and return once each has ended. */
@@ -100,6 +111,7 @@ class Session {
 	readonly #starts = new Map<string, Promise<Server | undefined>>();
 	readonly #started = new Set<Server>();
 	readonly #texts = new Map<string, Promise<string | undefined>>();
+	readonly #outlines = new Map<string, Promise<readonly OutlineSymbol[] | undefined>>();
 	readonly #answers = new Map<string, Promise<DefinitionAnswer>>();
 	readonly #unavailable = new Map<string, UnavailableServer>();
 	#closed = false;
@@ -126,6 +138,23 @@ class Session {
 			this.#answers.set(key, answer);
 		}
 		return answer;
+	}
+
+	/**
+	 * What a definition a server named declares, from the outline of its file,
+	 * asked once for each file in the pass.
+	 * @param root The checkout whose server named it.
+	 * @param location The definition.
+	 * @returns What it declares.
+	 */
+	async declaration(root: string, location: DefinitionLocation): Promise<Declaration> {
+		let outline = this.#outlines.get(location.path);
+		if (outline === undefined) {
+			outline = this.#outlineOf(root, location.path);
+			this.#outlines.set(location.path, outline);
+		}
+		const symbols = await outline;
+		return symbols === undefined ? "unknown" : declarationAt(symbols, location);
 	}
 
 	/**
@@ -178,6 +207,25 @@ class Session {
 		const file = path.join(question.root, question.file);
 		const position = await this.#positionOf(file, question);
 		return position === undefined ? undefined : { language, server, file, position };
+	}
+
+	/**
+	 * Ask the server of a file's language for its outline.
+	 * @param root The checkout.
+	 * @param file The file, absolute.
+	 * @returns The outline, or undefined when no server answered.
+	 */
+	async #outlineOf(root: string, file: string): Promise<readonly OutlineSymbol[] | undefined> {
+		const language = this.#open() ? languageOf(file)?.language : undefined;
+		if (language === undefined) return undefined;
+		const server = await this.#serverFor(language, root);
+		if (server === undefined) return undefined;
+		try {
+			return await server.outline(file);
+		} catch (error) {
+			this.#failed(language, root, server, error);
+			return undefined;
+		}
 	}
 
 	/**

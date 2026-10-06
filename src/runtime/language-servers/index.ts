@@ -21,6 +21,7 @@ export {
 	readLanguageServers,
 } from "@/runtime/language-servers/lib/configuration";
 export { type Language } from "@/runtime/language-servers/lib/languages";
+export { type Declaration } from "@/runtime/language-servers/lib/outline";
 export { type DefinitionLocation } from "@/runtime/language-servers/lib/server";
 export {
 	type DefinitionAnswer,

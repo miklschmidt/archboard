@@ -2,7 +2,8 @@
 //
 // It starts in the root of a checkout and is told that root is its one
 // workspace, so it finds the project there itself. The client asks it only
-// for definitions, and never asks it to build or to run a command. It reads
+// for definitions and for the outline of a file, and never asks it to build
+// or to run a command. It reads
 // each file from disk, as the code check does, so the client opens none.
 // Stopping asks it to shut down and exit, and kills it if it has not ended
 // within the bound; a cancelled pass kills it at once. Either way the stop
@@ -15,6 +16,7 @@ import {
 	type Connection,
 	type ServerProcess,
 } from "@/runtime/language-servers/lib/connection";
+import { outlineOf, type OutlineSymbol } from "@/runtime/language-servers/lib/outline";
 import type { LANGUAGE_SERVER_TIMEOUTS } from "@/shared/timing/timing";
 
 /** How long a server is waited for. */
@@ -26,16 +28,19 @@ interface Position {
 	readonly character: number;
 }
 
-/** Where a server says a definition is: an absolute path and a line from 1. */
+/** Where a server says a definition is: an absolute path, a line from 1 and a column from 0. */
 interface DefinitionLocation {
 	readonly path: string;
 	readonly line: number;
+	readonly character: number;
 }
 
 /** A started server. */
 interface Server {
 	/** Where the name at a position of a file is defined; rejects when the server fails. */
 	readonly definition: (file: string, position: Position) => Promise<DefinitionLocation[]>;
+	/** The outline of a file: what it declares, and where; rejects when the server fails. */
+	readonly outline: (file: string) => Promise<OutlineSymbol[]>;
 	/** Stop it, and return once its process has ended. */
 	readonly stop: (graceful: boolean) => Promise<void>;
 }
@@ -49,16 +54,18 @@ interface ServerStart {
 }
 
 /** The start of a range, which is all of it the check reads. */
-const RangeSchema = z.object({ start: z.object({ line: z.int().nonnegative() }) });
+const RangeSchema = z.object({
+	start: z.object({ line: z.int().nonnegative(), character: z.int().nonnegative() }),
+});
 
 /** One location as a server spells it, a `LocationLink` or a `Location`, as a URI and a line from 0. */
 const SpelledLocationSchema = z.union([
 	z
 		.object({ targetUri: z.string(), targetSelectionRange: RangeSchema })
-		.transform((link) => ({ uri: link.targetUri, line: link.targetSelectionRange.start.line })),
+		.transform((link) => ({ uri: link.targetUri, ...link.targetSelectionRange.start })),
 	z
 		.object({ uri: z.string(), range: RangeSchema })
-		.transform((location) => ({ uri: location.uri, line: location.range.start.line })),
+		.transform((location) => ({ uri: location.uri, ...location.range.start })),
 ]);
 
 /** A definition answer: `null`, one `Location`, or a list of locations or links. */
@@ -78,7 +85,7 @@ function locationsOf(result: unknown): DefinitionLocation[] {
 	const spelled = answer.success ? [answer.data].flat() : [];
 	return spelled.flatMap((each) =>
 		each?.uri.startsWith("file:") === true
-			? [{ path: fileURLToPath(each.uri), line: each.line + 1 }]
+			? [{ path: fileURLToPath(each.uri), line: each.line + 1, character: each.character }]
 			: [],
 	);
 }
@@ -106,7 +113,10 @@ function initializeParams(root: string): object {
 		clientInfo: { name: "archboard" },
 		rootUri: uri,
 		workspaceFolders: [{ uri, name: "checkout" }],
-		capabilities: { general: { positionEncodings: ["utf-16"] } },
+		capabilities: {
+			general: { positionEncodings: ["utf-16"] },
+			textDocument: { documentSymbol: { hierarchicalDocumentSymbolSupport: true } },
+		},
 	};
 }
 
@@ -205,6 +215,15 @@ async function startServer(start: ServerStart): Promise<Server> {
 		definition: async (file, position) => {
 			const params = { textDocument: { uri: pathToFileURL(file).href }, position };
 			return locationsOf(await connection.request("textDocument/definition", params, bounds));
+		},
+		/**
+		 * The outline of a file.
+		 * @param file The file, absolute.
+		 * @returns Its symbols.
+		 */
+		outline: async (file) => {
+			const params = { textDocument: { uri: pathToFileURL(file).href } };
+			return outlineOf(await connection.request("textDocument/documentSymbol", params, bounds));
 		},
 		stop,
 	};
