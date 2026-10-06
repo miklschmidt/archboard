@@ -1,11 +1,11 @@
 ---
 id: TASK-367.21
 title: 'Code facts for Nix flakes: inputs and outputs'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:16'
-updated_date: '2026-10-06 15:43'
+updated_date: '2026-10-06 16:36'
 labels:
   - code-check
 dependencies:
@@ -26,10 +26,10 @@ Nix tells nothing about run time, but it shows software dependencies that no oth
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The inputs in `flake.lock` are build dependencies of the flake
-- [ ] #2 The outputs in `flake.nix` are definitions addressed by attribute path, such as `packages.x86_64-linux.archboard`, found by a static parse
-- [ ] #3 A part bound to a flake output gets the binding check, and a relationship to a flake input is supported by the lock
-- [ ] #4 The check never runs `nix`
+- [x] #1 The inputs in `flake.lock` are build dependencies of the flake
+- [x] #2 The outputs in `flake.nix` are definitions addressed by attribute path, such as `packages.x86_64-linux.archboard`, found by a static parse
+- [x] #3 A part bound to a flake output gets the binding check, and a relationship to a flake input is supported by the lock
+- [x] #4 The check never runs `nix`
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -68,3 +68,9 @@ TASK-367.22 plugs into nix-evaluation.ts: a derivation's argument set (buildInpu
 
 Gate (lanes one at a time, after a72de6966): lint first exit 1 only on another agent's transient debug file src/runtime/code-facts/tests/zz-debug-11.test.ts (no-console), rerun after it was gone: exit 0; fmt:check first exit 2 on the same file, rerun: exit 0; type-check 0; build:frontend 0; test:modules 4192 pass 1 fail: semantic-renderer/tests/wide-boards.test.ts 'Archboard server (track)' first layout 5.1 s over its 3 s bound at load average 14. Not this task: the variant that was current before this adoption (TASK-367.20) lays out in 6.0 s cold against 4.4 s for TASK-367.21 in the same process; test:system 195/0; test:repository 20/0; test:serial-browser exit 0. Owners nix-facts + nix-check 7/0, code-facts + code-check 106/0 with --isolate.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The code check now reads Nix flakes statically: the inputs of flake.lock are build dependencies of the flake, and the outputs of flake.nix are definitions by attribute path, found by a bounded reading that follows sets, let, with, inherit, the file's own functions and the common library helpers (genAttrs, flake-utils, flake-parts), and leaves what it cannot follow unknown under its own skip, never missing. A part bound to a flake output gets the binding check, and an anchor at a lock input is resolved evidence. The check never runs nix. Verified by nix-facts.test.ts (including six bound fixtures that once crashed or exhausted memory) and nix-check.test.ts with a spy on every process start (pass with --isolate), and on ten real flakes.
+<!-- SECTION:FINAL_SUMMARY:END -->
