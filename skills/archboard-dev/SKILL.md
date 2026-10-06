@@ -100,12 +100,13 @@ When the task closes, before you mark any acceptance criterion:
        symbol exists, not that the part does what its words say.
      - A relationship's kind and label. The check only tests the evidence kinds
        that the vault's `evidence` key lists for a kind, and never a flow step's.
-     - Code that the check reads only as text. Only TypeScript and TSX have an
-       adapter. In any other language, and in infrastructure, the skip
-       `text-only` says that anchors and symbols were tested by name and nothing
-       judged undrawn, backwards or unsupported. The skip `symbol-unparsed`
-       means a file did not parse. A part that was skipped has no finding, and
-       that is not the same as clear.
+     - Code that the check reads only as text: a file that no adapter reads.
+       The table in `src/runtime/code-facts/lib/adapters.ts` names the
+       extensions and file names that an adapter reads. For any other file, the
+       skip `text-only` says that anchors and symbols were tested by name and
+       nothing judged undrawn, backwards or unsupported. The skip
+       `symbol-unparsed` means a file did not parse. A part that was skipped
+       has no finding, and that is not the same as clear.
      - A relationship across a network hop, through an event bus or through a
        value that a part receives. Code shows no evidence for it (TASK-367.23
        reads an environment value that infrastructure sets), so the check
