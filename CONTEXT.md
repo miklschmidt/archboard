@@ -578,6 +578,13 @@ Each relationship kind can name the evidence kinds that it accepts (ADR 0046).
 _Avoid_: relationship kind (that is what the board claims), link type,
 dependency type, path alone (that is the file field of a binding)
 
+**Use as a value**:
+A use at run time of a name that runs none of its code. It reads a constant,
+passes the name on, or tests a value against a class, as `instanceof` and a
+catch do. It is call evidence, so it supports a relationship. The code check
+never calls a dependency undrawn on it alone (ADR 0046).
+_Avoid_: read, weak call, reference (that is any use)
+
 **Candidate**:
 Evidence that the code check matched by name only, so the name can stand for
 another definition. Two things make evidence resolved instead: a language
