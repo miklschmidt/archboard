@@ -170,6 +170,8 @@ test("a call, a construction and a base class are call evidence, a type name is 
 		"store.save false": "call",
 		// A member of a value the code does not name, a call's result, is spelled with the `.` alone.
 		".save false": "call",
+		// Braces construct a C++ value as parentheses do.
+		"shop::Register false": "call",
 	});
 	const store = await read("cpp/store.cpp");
 	const stores = store.references.filter((each) => each.symbol === "Store");
