@@ -1,11 +1,11 @@
 ---
 id: TASK-367.11
 title: Code facts for C# and .NET projects
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 15:51'
+updated_date: '2026-10-06 16:42'
 labels:
   - code-check
 dependencies:
@@ -26,10 +26,10 @@ In C#, the files of one project see each other without an import, and `using` na
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Type and member references resolve by name within a project, including partial classes that span files
-- [ ] #2 `ProjectReference` and `PackageReference` in `.csproj` files give project-level dependencies
-- [ ] #3 Definitions carry their visibility: `public`, `internal`, `private`, and `InternalsVisibleTo`
-- [ ] #4 The anchor, binding, undrawn and backwards checks work for parts bound to C# files or projects
+- [x] #1 Type and member references resolve by name within a project, including partial classes that span files
+- [x] #2 `ProjectReference` and `PackageReference` in `.csproj` files give project-level dependencies
+- [x] #3 Definitions carry their visibility: `public`, `internal`, `private`, and `InternalsVisibleTo`
+- [x] #4 The anchor, binding, undrawn and backwards checks work for parts bound to C# files or projects
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -72,4 +72,12 @@ Real repositories (scratch clones, temporary vaults, the real checkCode): System
 For TASK-367.14 (the C# language server): add a csharp row to language-servers/lib/languages.ts (.cs, languageId csharp, no default server: csharp-ls and Roslyn evaluate MSBuild, so only from language-servers.json); the uses to ask are those with no target: spellings through a value (x.Post, and the lone-dot .Command, whose last name positionOf finds), and value names the lookup refuses (members a base class declares). C# targets from the lookup are resolved and need no server.
 
 Closing: Archboard server@TASK-367.11 branched from w0PeUZWt; TASK-367.09 (and .27, .17, .12, .21) adopted after, so the change was restated on "TASK-367.11 after TASK-367.09" (the Code facts description, at its 2,000-character limit: the C# sentence is short and other sentences were tightened without dropping a fact), TASK-367.11 shelved with that reason, and the restated proposal adopted at v131. check --code with and without --variant: no line differs. Footprint against base 4f2485841 (parent of e8f1d0d61): namedAndChanged Code facts; changedNotNamed Code check (e8f1d0d61 only adds the test csharp-check.test.ts, the board stays true; the other commits are other tasks'), Archboard server, Code check route, Language servers (other tasks' commits); namedNotChanged none. ./bin/dogfood check: no diagnostics.
+
+Independent review (2026-10-06) supersedes decisions 6 and 11: a part bound to a .csproj now binds its project (every file below its directory, as the SDK compiles them), and Target.via is gone (cbe24a2b2). It also fixed a later #if branch's symbols being reported missing (they are now unparsed parts), partial types taking C#'s default accessibility instead of another part's, and global:: names looked up from enclosing namespaces. C#'s exposure rule was added for the interface check (1eaf25d28). Follow-up: the history lens still maps a .csproj binding to that one file.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The code check now reads C# and .NET projects through tree-sitter: types and members with C#'s accessibility, partial types merged, InternalsVisibleTo read from the attribute or the project file, and names resolved by C#'s lookup over a project and the projects it references, including global:: and using aliases. ProjectReference and PackageReference give build-dependency evidence, MSBuild is never evaluated, and a part bound to a .csproj binds its project. A C# project is also a module for the interface check. Verified by csharp-facts.test.ts and csharp-check.test.ts (pass with --isolate) and on System.CommandLine and eShopOnWeb, where every checked cross-file target and every undrawn warning was right.
+<!-- SECTION:FINAL_SUMMARY:END -->
