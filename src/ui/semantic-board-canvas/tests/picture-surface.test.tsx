@@ -86,6 +86,26 @@ describe("a picture with nothing to carry it from", () => {
 		expect(labelOf("e2")).toBe(1);
 	});
 
+	test("a line higher on the board draws on before one below it, whatever arrowhead it defines", () => {
+		const surface = surfaceElement();
+		const high = { id: "e1", d: "M110,40 L200,40" };
+		const low = { id: "e2", d: "M110,330 L200,330" };
+		const entrance = enterPicture(surface, picture([A, B, LOW], [high, low]));
+		/**
+		 * How much of a line's stroke is still to be drawn.
+		 * @param id The line.
+		 * @returns Its dash offset.
+		 */
+		const undrawn = (id: string): number =>
+			Number(
+				surface
+					.querySelector(`g[data-semantic-id="${id}"] > path:not(.ab-halo)`)!
+					.getAttribute("stroke-dashoffset"),
+			);
+		entrance.seek(PICTURE_ENTRY_PHASES.linesStartBy);
+		expect(undrawn("e1")).toBeLessThan(undrawn("e2"));
+	});
+
 	test("cards arrive down the board, lines draw on after the cards, and it lands untouched", () => {
 		const surface = surfaceElement();
 		// Drawn lowest first, so the order they arrive in is the board's, not the markup's.
@@ -94,7 +114,7 @@ describe("a picture with nothing to carry it from", () => {
 		const top = surface.querySelector<SVGGElement>(`g[data-semantic-id="n1"]`)!;
 		const low = surface.querySelector<SVGGElement>(`g[data-semantic-id="n3"]`)!;
 		const line = surface.querySelector<SVGGElement>(`g[data-semantic-id="e1"]`)!;
-		const stroke = line.querySelectorAll("path")[1]!;
+		const stroke = line.querySelectorAll<SVGPathElement>(":scope > path")[1]!;
 		expect(Number(top.style.opacity)).toBe(0);
 		expect(Number(low.style.opacity)).toBe(0);
 		expect(Number(line.style.opacity)).toBe(0);

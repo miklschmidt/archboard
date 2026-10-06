@@ -178,7 +178,7 @@ describe("carrying a line", () => {
 		surface.innerHTML = before.svg;
 		const transition = transitionPicture(surface, before, after);
 		const group = surface.querySelector(`g[data-semantic-id="e1"]`)!;
-		const stroke = group.querySelectorAll("path")[1]!;
+		const stroke = group.querySelectorAll<SVGPathElement>(":scope > path")[1]!;
 		expect(stroke.getAttribute("d")).toBe(AB.d);
 		// The crossing mask and the traffic riding the new route are parked
 		// while the route is somewhere between.
@@ -208,7 +208,7 @@ describe("a line taking a standing", () => {
 		surface.innerHTML = before.svg;
 		const transition = transitionPicture(surface, before, after);
 		const group = surface.querySelector(`g[data-semantic-id="e1"]`)!;
-		const paths = [...group.querySelectorAll("path")];
+		const paths = [...group.querySelectorAll<SVGPathElement>(":scope > path")];
 		// Swipe, halo, the borrowed old stroke, then the new stroke.
 		expect(paths.map((path) => path.getAttribute("stroke"))).toEqual([
 			"#05df72",
@@ -263,7 +263,7 @@ describe("leaving and arriving", () => {
 		const transition = transitionPicture(surface, before, after);
 		const card = surface.querySelector<SVGGElement>(`g[data-semantic-id="n2"]`)!;
 		const line = surface.querySelector<SVGGElement>(`g[data-semantic-id="e1"]`)!;
-		const stroke = line.querySelectorAll("path")[1]!;
+		const stroke = line.querySelectorAll<SVGPathElement>(":scope > path")[1]!;
 		expect(Number(card.style.opacity)).toBe(0);
 		expect(Number(line.style.opacity)).toBe(0);
 		// Its traffic, in a layer of its own, waits for the line to be drawn.
