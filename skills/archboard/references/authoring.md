@@ -155,8 +155,10 @@ So it skips an address inside a remote module (the registry, Git) as
 `check --code --plan <file>`: what `terraform show -json` or `tofu show -json`
 wrote into the root module's directory. A reference that joins two such parts
 is evidence. The reference can go through the variables and outputs of a
-module, and the call of a remote module reaches what its arguments name. What
-the reference proves depends on the provider of the declaration that writes it
+module, and the call of a remote module reaches what its arguments name. The
+check cannot see what that module does with an argument, so the reach is
+`provisioning` evidence, unless the argument is an environment value or a named
+plan shows the resource that it flows into. What the reference proves depends on the provider of the declaration that writes it
 and on the argument that holds it. For AWS (`aws_`), Google Cloud
 (`google_`), Azure (`azurerm_`) and Kubernetes (`kubernetes_`, `helm_`):
 
@@ -183,7 +185,9 @@ accepts only call evidence, and `http`, `event`, `queue` and `data` accept call
 and configured-path evidence. To anchor a relationship that a joining
 declaration makes, cite its `.tf` file and its address, such as
 `aws_lambda_event_source_mapping.jobs`: it need not be in the code of either
-end. Otherwise cite the `.tf` file and the address that the referring
+end. The check judges it by the kind of its join, so a grant such as
+`aws_lambda_permission.jobs` does not support a `call` (`ANCHOR_MISMATCH`).
+Otherwise cite the `.tf` file and the address that the referring
 declaration names. Some modules take their event sources through a map that
 `for_each` reads (`each.value`), as terraform-aws-modules' Lambda module
 does. Such a module names no source that the check can follow. Anchor such a relationship
