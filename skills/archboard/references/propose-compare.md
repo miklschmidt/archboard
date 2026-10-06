@@ -53,22 +53,28 @@ nothing states where its code will live, so it stays unbound.
    Open both pictures: the removal is drawn as removed in the proposal's, and
    the current one shows what it showed before.
 
-   The interface section has one entry for each container (a node with
-   children, such as a module, a package or a class and its members) whose
-   interface moved. The interface of a container is its entry points: the
-   children that parts outside it reach, such as the functions or methods that
-   other modules call. The other children are hidden parts. An entry lists the
-   entry points `added` and `removed`, the parts that moved between the
-   interface and the hidden parts (`becameEntryPoints`: a child that a caller
-   now reaches; `becameHidden`: one that no caller reaches any longer), and the
-   callers gained and lost (`callersGained`, `callersLost`). An interface change
-   costs every caller and an implementation change costs one module, so report
-   the interface changes first and name the callers each one costs. They set no
-   `standing`: the part a new caller reaches stays `unchanged`, and the new
-   relationship is what reads as `added`. `unchanged` lists the containers that
-   were read and did not move, so "no interface changed" can be checked. A
-   board that draws no container, or draws a module as one card, has no
-   interface to compare: say that, and do not report zero entry points.
+   A container is a node with children, such as a module, a package, or a
+   class and its members. Its interface is its entry points: the children that
+   parts outside it reach, such as the functions that other modules call. The
+   other children are hidden parts. The interface section lists under `changed`
+   each container whose interface moved. Each entry names:
+
+   - the entry points added and removed (`entryPointsAdded`,
+     `entryPointsRemoved`)
+   - the children that a caller now reaches (`becameEntryPoints`), and the
+     children that no caller reaches any longer (`becameHidden`)
+   - the callers gained and lost (`callersGained`, `callersLost`)
+   - on which side the node has children (`holdsParts`), so a new or emptied
+     container reads as one
+
+   An interface change costs every caller, and an implementation change costs
+   one module. So report the interface changes first, and name the callers that
+   each one costs. They set no `standing`. The part that a new caller reaches
+   stays `unchanged`, and the new relationship reads as `added`. `unchanged`
+   lists the containers that did not move, so a reader can check "no interface
+   changed". If no node has children on either variant, both lists are empty.
+   Then say that the board has no interface to compare, and do not report zero
+   entry points.
 
    Report from that answer, not from the change you meant to make: the
    interface changes, the parts removed, the parts added, and every
@@ -78,12 +84,12 @@ nothing states where its code will live, so it stays unbound.
    `Lock files` to `Lease table`), so the report is "the calls from `holdBoard`
    and `releaseHold` are the same two relationships, now landing on the table",
    not "two relationships went and two arrived": an endpoint that moved is the
-   change the comparison exists to show, so name it. Neither variant of the
-   lease board draws a container, so the interface section says that and the
-   report starts at the removed parts. Had the proposal drawn the table inside a
-   `Lease store` that `holdBoard` and `releaseHold` call, the section would say
-   that `Lease store` gained the table as an entry point and which callers reach
-   it, before it names the removed watcher.
+   change the comparison exists to show, so name it. No node of the lease board
+   has children. So the interface section is empty, and the report starts at
+   the removed parts. Suppose the proposal put the table inside a new
+   `Lease store`. Then the report starts there: a container only on the
+   proposal, with the table as its entry point, and `holdBoard` and
+   `releaseHold` as the callers that it gained.
 
    The command reads a variant against the current one, as its picture is
    drawn, or on a board nobody has built against the one it came from; the

@@ -38,6 +38,9 @@ reads it against any other variant you name. What is compared:
 - **Walkthroughs and beats**: a beat's heading, body, subjects (as a set), view
   and position.
 - **Views** belong to the board and are never a variant change.
+- **Interfaces** come first, in `interfaceChanges`: each container whose
+  interface moved. They set no standing ([propose and compare](propose-compare.md),
+  step 3).
 
 Kept ids read as continuing (unchanged or changed); ids only on the variant read
 against as removed; ids only on the variant being read as added. On history
