@@ -19,28 +19,35 @@ import { segmentStart, type Curve } from "@/transformers/semantic-renderer/lib/l
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { measure } from "@/transformers/semantic-renderer/lib/text";
 import { semanticInk } from "@/transformers/semantic-renderer/lib/svg/appearance";
-import { toned, type Tone } from "@/transformers/semantic-renderer/lib/svg/colour";
+import {
+	heldTone,
+	toned,
+	type Held,
+	type Tone,
+} from "@/transformers/semantic-renderer/lib/svg/colour";
 import { farLayer, nearLayer } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { MEMBERS_ATTRIBUTE } from "@/transformers/semantic-renderer/lib/svg/standing";
 import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
 
 /**
- * The group's colour on its region, each a tone of the group's own hue
- * (`toned`), the same on the page, on a tray's floor and on a nested floor:
- * the full colour of the corner brackets and the tab, the faded colour of the
- * frame, about a third as strong, and the words on the tab. The full colour
- * keeps 3:1 against the page and a tray's floor on either ground, and the words
- * on it, a deep shade of the colour on either ground, keep 4.5:1. The palette's
- * yellow is the gold of the product (DESIGN.md, the One Gold Rule), and these
- * tones keep it a gold on either ground.
+ * The group's colour on its region, the same on the page, on a tray's floor
+ * and on a nested floor: the full colour of the corner brackets and the tab,
+ * the faded colour of the frame, and the words on the tab. On the light ground
+ * the full colour is the named colour itself (`heldTone`), its lightness held
+ * only where the words, a deep shade of the colour, keep 4.5:1 on it and it
+ * keeps 3:1 on a nested floor; on the dark ground it is a tone of the colour
+ * (`toned`). The faded frame is a light tone of the colour that keeps its hue
+ * and a lively chroma. The palette's yellow is the gold of the product
+ * (DESIGN.md, the One Gold Rule), and these tones keep it a gold on either
+ * ground.
  */
-const CORNER: Tone = {
-	light: { lightness: 0.6, chroma: 1 },
+const CORNER: Held = {
+	light: { least: 0.615, most: 0.645 },
 	dark: { lightness: 0.74, chroma: 0.95 },
 };
 const FRAME: Tone = {
-	light: { lightness: 0.74, chroma: 0.6 },
+	light: { lightness: 0.78, chroma: 0.875 },
 	dark: { lightness: 0.47, chroma: 0.6 },
 };
 const WORDS: Tone = {
@@ -151,7 +158,7 @@ function tabBox(
  * @returns The corners', the frame's and the tab's words'.
  */
 function groupColours(ink: string): GroupColours {
-	return { corner: toned(ink, CORNER), frame: toned(ink, FRAME), words: toned(ink, WORDS) };
+	return { corner: heldTone(ink, CORNER), frame: toned(ink, FRAME), words: toned(ink, WORDS) };
 }
 
 /**

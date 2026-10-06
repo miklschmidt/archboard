@@ -97,20 +97,28 @@ in `lib/design.ts`.
    of the bracket of that corner, so the tab and the frame read as one shape.
    When a route runs down through that corner and no route runs through the
    other top corner, the tab moves to the other corner. Lines cross the region
-   and the tab. It casts no shadow. The full color keeps at least 3.2:1
-   against the page and the floors of trays, and the words on the tab, a deep
-   shade of the group's color, keep at least 4.6:1 on the light ground and
-   8:1 on the dark ground. The faded frame is quieter by design: about 2:1
-   on the light ground and 2.6:1 on the dark ground. The owner chose this look
-   among four drawn side by side (TASK-416, TASK-419).
+   and the tab. It casts no shadow. On the light ground the full color is
+   the named color itself, its hue and chroma whole, with its OKLCH lightness
+   held between 0.615 and 0.645, and the faded frame is a light tone of it at
+   lightness 0.78 that keeps its hue and a lively chroma (TASK-419, after
+   TASK-422 made the named colors vivid). On the dark ground both are tones of
+   the color. The full color keeps at least 3:1 against the page and the
+   floors of trays, and the words on the tab, a deep shade of the group's
+   color, keep at least 4.6:1 on the light ground and 8:1 on the dark ground.
+   The faded frame is quieter by design: about 2:1 on the light ground and
+   2.6:1 on the dark ground. The owner chose this look among four drawn side
+   by side (TASK-416, TASK-419).
 7. **A card carries its group on its front edge and its face.** The front edge
    of a card is a tone of the group's color. On the light ground it is a
    clean, strong tone, at OKLCH lightness 0.76 and chroma 0.12. The face there
-   is nearly white with a trace of the group's hue, at lightness 0.972 and
-   chroma 0.011, because a light tint of a warm color reads as beige
-   (TASK-422). On the dark ground the face is a quiet tone of the group's hue.
-   The secondary words on a grouped face keep 6.2:1 or more on the light
-   ground and 5.2:1 or more on the dark ground.
+   is a clean tint with its hue in plain sight, an orange face a peach, at
+   lightness 0.94 and chroma 0.028 for every color. That chroma is the most
+   that sRGB holds at that lightness for blue and indigo, so no color is
+   clipped into another hue, and every group reads as strongly as every
+   other. The owner asked for more of the group's color on a face than the
+   near-white face of TASK-422. On the dark ground the face is a quiet tone of
+   the group's hue. The secondary words on a grouped face keep 5.6:1 or more
+   on the light ground and 5.2:1 or more on the dark ground.
    On the light ground a tinted face takes a softer light, so its color does
    not pool at its foot. A card in no group has a neutral front edge and face.
 8. **Small parts are low slabs.** An icon chip, the label of a relationship and
@@ -171,7 +179,9 @@ in `lib/design.ts`.
     corners, its tab, its caption and a grouped card's face are tones of the
     group's own color token (`--semantic-*`). Each is a relative OKLCH color
     (`toned` in `lib/svg/colour.ts`): the token's hue, a lightness of its own
-    and a share of the token's chroma. Mixing the color into a grey or a
+    and a share of the token's chroma. On the light ground the corners and the
+    tab are the token itself with its lightness held in bounds (`heldTone`),
+    so a vivid color stays vivid. Mixing the color into a grey or a
     near-white surface in sRGB turned its hue and lost most of its chroma,
     which made the group colors pale on the light ground and muddy on the dark
     ground (TASK-413).

@@ -89,6 +89,26 @@ function inkedOver(base: string, ink: string, inked: Inked): string {
 	return lightDark(tone(ink, inked.light), mixed(base, ink, inked.dark));
 }
 
+/** How light an ink may be on the light ground, and a tone of it on the dark one. */
+interface Held {
+	readonly light: { readonly least: number; readonly most: number };
+	readonly dark: ToneStep;
+}
+
+/**
+ * An ink at its full colour: on the light ground the ink itself, its hue and
+ * its chroma whole, with its lightness only held between two bounds, so a mark
+ * in it keeps its contrast whichever named colour it is; on the dark ground a
+ * tone of it ({@link tone}).
+ * @param ink The ink.
+ * @param held The bounds on the light ground, and the tone on the dark.
+ * @returns The colour.
+ */
+function heldTone(ink: string, held: Held): string {
+	const { least, most } = held.light;
+	return lightDark(`oklch(from ${ink} clamp(${least}, l, ${most}) c h)`, tone(ink, held.dark));
+}
+
 /**
  * A colour at a share of its strength, the rest see-through: what a stroke's
  * opacity says, said in the colour itself.
@@ -125,4 +145,15 @@ function colourId(colour: string): string {
 	);
 }
 
-export { type Inked, type Tone, colourId, inkedOver, lightDark, mixed, toned, translucent };
+export {
+	type Held,
+	type Inked,
+	type Tone,
+	colourId,
+	heldTone,
+	inkedOver,
+	lightDark,
+	mixed,
+	toned,
+	translucent,
+};
