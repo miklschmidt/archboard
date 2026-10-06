@@ -89,6 +89,15 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  * - `ends-overlap`: a relationship with no anchor whose ends hold one another
  *   or bind the same code. Evidence never joins such parts, so the check
  *   cannot tell whether the code supports it (TASK-367.07).
+ * - `language-server-missing`: no language server for a language on this
+ *   machine: it is not installed, `language-servers.json` turns it off, or
+ *   that file is not valid. Said once for the language, with no subject and
+ *   no repo; its uses stay as code facts read them, candidates or no evidence
+ *   (TASK-367.13). Its `detail` names the language and why.
+ * - `language-server-failed`: a language server that did not start, did not
+ *   answer in time or ended in one checkout. Said once for the checkout and
+ *   the language; its uses there stay as code facts read them. Its `detail`
+ *   names the language, the program and what it did.
  *
  * A reason that holds for a whole checkout names its `repo` and no subject,
  * which is how the check says a thing once.
@@ -106,6 +115,8 @@ const CodeCheckSkipSchema = z
 			"symbol-unparsed",
 			"text-only",
 			"ends-overlap",
+			"language-server-missing",
+			"language-server-failed",
 		]),
 		board: z.string().optional(),
 		variant: z.string().optional(),
