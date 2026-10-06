@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 15:36'
+updated_date: '2026-10-06 15:45'
 labels:
   - code-check
 dependencies:
@@ -84,4 +84,6 @@ Other fixes: a server that ignores shutdown held the stop for twice stopMs, and 
 Verified: no tsc --lsp or stand-in process after a full test:modules. Stopping the dogfood server during a pass ended it in 397 ms with no tsc left. tsc --lsp exits when its input closes, so a killed Archboard server leaves none. The anchor of Code check -> Language servers at openLanguageServers in resolution.ts holds. Decisions 6, 7, 9 to 12 hold, and the outline's SymbolKinds are the protocol's, so the later servers can use them.
 
 For TASK-367.14 to .16: the code-check tests other than language-servers.test.ts and relationships.test.ts, and the route and CLI tests, run checkCode with this machine's language-servers.json. Once a default runs pyright or clangd from the PATH, they depend on what the machine has installed: give them a table, or the environment value that ADR 0046 lets a test add. A class field that holds an arrow function is a Property in the TypeScript outline, so a call to it is data and an anchor at it is not judged.
+
+Review, continued: two more fixes. 569313afc: a missing server's stderr line read 'skipped 1 checkout: language-server-missing ()'; a skip with no subject, board or checkout is now about a language, and its line names the language and why. 4511eefeb aligns the cost in the evidence.ts comments with the design note. Gate after the fixes, one lane at a time: lint, fmt:check, type-check and build:frontend pass; test:modules 4,192 pass and 1 fail, the first-layout bound of src/runtime/semantic-renderer/tests/wide-boards.test.ts (4,769 ms and, run alone, 5,567 ms against 3,000 ms at a load average of 9 to 12), outside this task; test:system 195 pass; test:repository 20 pass; test:serial-browser 24 pass. No tsc --lsp or stand-in process ran after any lane.
 <!-- SECTION:NOTES:END -->
