@@ -1,0 +1,174 @@
+// Asking a board which of its parts change most often (ADR 0045).
+//
+// The Archboard server reads Git through the files each part binds and answers
+// the hotspots of one variant: every part it read, ranked by the commits of a
+// period that changed those files. The command prints that answer, and on
+// standard error a ranked summary for a person. It reads, and it writes
+// nothing: not to the board, not to any file (ADR 0015).
+
+import { z } from "zod";
+import { serverRefusal } from "@/cli/command-contract/common";
+import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import { SelectorSchema } from "@/cli/commands/lib/semantic-input";
+import { requestJson } from "@/runtime/engine/server-client";
+import {
+	LocalityReplySchema,
+	PeriodStartSchema,
+	type LocalityAnswer,
+	type LocalityReply,
+} from "@/shared/locality/index";
+
+const LocalityInputSchema = z.object({
+	name: z.string(),
+	variant: SelectorSchema.optional(),
+	since: z.string().optional(),
+});
+
+/**
+ * A count with its noun.
+ * @param count How many.
+ * @param noun The singular noun.
+ * @returns The phrase.
+ */
+function plural(count: number, noun: string): string {
+	return `${count} ${noun}${count === 1 ? "" : "s"}`;
+}
+
+/**
+ * What to say about the answer on standard error, for a person.
+ * @param answer The answer.
+ * @returns The lines: the period of each repository, the parts that changed in
+ * it, most commits first, and what the lens left out or did not read.
+ */
+function locality(answer: LocalityAnswer): string[] {
+	const changed = answer.hotspots.filter((hotspot) => hotspot.count > 0);
+	const unchanged = answer.hotspots.length - changed.length;
+	const reasons = new Map<string, number>();
+	for (const skip of answer.skipped) reasons.set(skip.reason, (reasons.get(skip.reason) ?? 0) + 1);
+	return [
+		`hotspots: "${answer.board}" at "${answer.variant.name}"`,
+		...answer.periods.map(
+			(period) =>
+				`hotspots: ${period.repo}: commits from ${period.since.slice(0, 10)} to ${period.until.slice(0, 10)}`,
+		),
+		...changed.map(
+			(hotspot) =>
+				`hotspots: ${String(hotspot.count).padStart(4)} ${hotspot.subject.name} (${hotspot.path})`,
+		),
+		...(unchanged === 0
+			? []
+			: [`hotspots: ${plural(unchanged, "part")} with no commit in the period`]),
+		`hotspots: left out ${plural(answer.leftOut.largeCommits, "large commit")} of more than 30 files`,
+		...[...reasons].map(
+			([reason, count]) => `hotspots: skipped ${plural(count, "part")}: ${reason}`,
+		),
+	];
+}
+
+const semanticLocalityContract = defineCommand({
+	path: ["semantic", "locality"],
+	shared: ["url"],
+	summary: "Rank the parts of a board by how often their bound files changed",
+	description:
+		"Reads Git through the files that each part of one variant binds, and ranks every part " +
+		"by the number of commits that changed those files in a period. A hotspot is a part " +
+		"that many commits changed. The period of a repository is the commits on the HEAD of " +
+		"its registered checkout from a start up to the commit time of HEAD, the year before " +
+		"it by default, so one HEAD always gives one answer. Each part lists its commits, " +
+		"newest first. Commits of more than 30 files are left out of every count, and the " +
+		"answer says how many. A part with no binding, a part that opens another board, a part " +
+		"bound into a repository this machine has not registered and a part pinned to a ref " +
+		"that its checkout does not have out are not read; the answer lists them with the " +
+		"reason, so they never look like a part that no commit changed. The count is of " +
+		"commits, not of changed lines or of the complexity of the code. Nothing is written, " +
+		"and the reading never changes a board.",
+	examples: [
+		"archboard semantic locality payments",
+		'archboard semantic locality payments --variant "Read cache"',
+		"archboard semantic locality payments --since 2026-01-01",
+	],
+	parameters: [
+		{
+			kind: "positional",
+			key: "name",
+			name: "name",
+			required: true,
+			description: "The board's name",
+		},
+		{
+			kind: "option",
+			key: "variant",
+			spellings: ["--variant"],
+			value: "required",
+			placeholder: "variant",
+			description:
+				"A draft to read, by id or name; when absent, the board's current variant. " +
+				"The current variant and a draft are the only variants it reads",
+		},
+		{
+			kind: "option",
+			key: "since",
+			spellings: ["--since"],
+			value: "required",
+			placeholder: "date",
+			description:
+				"Where the period starts, a date such as 2026-01-31 or a date and time with its " +
+				"offset; when absent, one year before the commit time of each checkout's HEAD",
+		},
+	],
+	input: { ingress: LocalityInputSchema },
+	result: LocalityReplySchema,
+	output: {
+		cases: [
+			{
+				id: "json",
+				when: {},
+				mode: "json",
+				description: "The parts of the variant ranked by their commits in the period",
+				presentation: ["diagnostics", "result"],
+			},
+		],
+		/**
+		 * One answer: the ranked parts.
+		 * @returns The output case's id.
+		 */
+		select: () => "json",
+	},
+	prerequisites: ["server"],
+	effects: ["read"],
+	refusals: [serverRefusal],
+	relationships: [
+		{
+			method: "GET",
+			path: "/api/semantic-boards/locality",
+			cardinality: "one",
+			description: "The hotspots of one variant, read from Git through the parts' bindings",
+		},
+	],
+	/**
+	 * Rank the parts of the board.
+	 * @param input What the command was given.
+	 * @param context The command context.
+	 * @returns The answer.
+	 * @throws {CliUsageError} When the start of the period is not a date.
+	 */
+	async handler(input, context) {
+		if (input.since !== undefined && !PeriodStartSchema.safeParse(input.since).success) {
+			throw new CliUsageError(
+				`"${input.since}" is not a date. Give one such as 2026-01-31, or a date and time with its offset.`,
+			);
+		}
+		await context.require("server", "semantic locality");
+		const query = new URLSearchParams({ board: input.name });
+		if (input.variant !== undefined) query.set("variant", input.variant);
+		if (input.since !== undefined) query.set("since", input.since);
+		const result: LocalityReply = LocalityReplySchema.parse(
+			await requestJson<unknown>(`/api/semantic-boards/locality?${query}`, {
+				signal: context.signal,
+			}),
+		);
+		return { result, diagnostics: locality(result) };
+	},
+});
+
+export { semanticLocalityContract, LocalityReplySchema, type LocalityReply };
