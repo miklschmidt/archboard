@@ -25,12 +25,11 @@
 //   subject is drawn as context for the change and is *not on the proposal*. A
 //   thing you can see through is not a thing the design claims to have.
 //
-//   **Texture.** The outline says it a third time: solid for added, a long dash
-//   for changed and for removed. A card or a container is a block with no
-//   outline of its own (`slab.ts`), so there the standing takes over the
-//   block's front edge and draws a ring just inside its top face, in the
-//   standing's ink and texture; a label's pill keeps its outline and the
-//   standing takes it over. On a line — where a dash already means
+//   **Texture.** A ring says it a third time: solid for added, a long dash
+//   for changed and for removed. A card, a container and a label are blocks
+//   with no outline of their own (`slab.ts`), so the standing draws a ring
+//   inside the block's top face, in the standing's ink and texture, and leaves
+//   the block's front edge in the tone of the group it serves. On a line — where a dash already means
 //   what kind of relationship it is, and the stroke weight already means how much
 //   attention its author asked for — the texture is carried by a wide tinted
 //   swipe laid under the line instead, so neither of the two meanings the line
@@ -45,7 +44,7 @@
 //
 // Only then colour, and colour never alone: green added, amber changed, red
 // removed, from the palette. Take all three hues away and the picture still
-// reads — pin shape, ghosting and outline texture are each sufficient.
+// reads — pin shape, ghosting and ring texture are each sufficient.
 //
 // ## What it deliberately does not touch
 //
@@ -58,9 +57,9 @@
 // ({@link markedBox}) and the whole drawing moves in by that much, as one.
 //
 // The selection halo. That ring sits three units *outside* a subject and is
-// invisible until a viewer puts `is-selected` on the group; the standing sits on
-// the subject's own edge, inside its face and on its own corner. A selected
-// added node shows both, concentric, and neither is the other.
+// invisible until a viewer puts `is-selected` on the group; the standing's ring
+// sits five units inside the subject's face and its pin on its corner. A
+// selected added node shows both, well apart, and neither is the other.
 //
 // ## The warning, which is not a standing
 //
@@ -113,9 +112,6 @@ const PIN_STROKE = 1.7;
 /** What a ghosted subject's ink is worth. */
 const GHOST_OPACITY = 0.4;
 
-/** How heavy a standing makes a subject's own outline. */
-const OUTLINE_WIDTH = 1.8;
-
 /**
  * How much wider than its line a standing's swipe is drawn.
  *
@@ -141,8 +137,8 @@ const PIN_GLYPH: Readonly<Record<SubjectStanding, string>> = {
 	unchanged: "",
 };
 
-/** The texture each standing puts on a subject's own outline. */
-const OUTLINE_DASH: Readonly<Record<SubjectStanding, string | undefined>> = {
+/** The texture each standing puts on the ring inside a subject's face (`slab.ts`). */
+const RING_DASH: Readonly<Record<SubjectStanding, string | undefined>> = {
 	added: undefined,
 	removed: "7 3.5",
 	changed: "7 3.5",
@@ -152,7 +148,7 @@ const OUTLINE_DASH: Readonly<Record<SubjectStanding, string | undefined>> = {
 /**
  * The same three textures, at the scale a swipe under a line is drawn at.
  *
- * Longer than the outline's, because a band several units wide with square ends
+ * Longer than the ring's, because a band several units wide with square ends
  * needs a dash longer than it is thick or the texture stops reading as a broken
  * line and starts reading as a row of beads.
  */
@@ -266,33 +262,6 @@ function subjectGroup(
 		"data-semantic-id": id,
 		"data-semantic-standing": standing,
 		opacity: standing === "removed" ? GHOST_OPACITY : undefined,
-	};
-}
-
-/**
- * What a standing does to a subject's own outline: takes it over, heavier and in
- * the standing's ink and texture.
- *
- * Taking the outline over rather than adding a second rule around it is what
- * keeps the subject's geometry untouched — the rule was already being drawn,
- * and it is drawn differently. Relationship-channel allocation happens in the
- * layout owner, not in this paint-only helper.
- * @param standing How the subject stands, or undefined when this is not a proposal.
- * @param palette The theme's colours.
- * @returns Attributes to spread over the subject's own, empty when there is nothing to say.
- */
-function standingOutline(
-	standing: SubjectStanding | undefined,
-	palette: Palette,
-): Readonly<Attributes> {
-	const ink = standing === undefined ? undefined : standingInk(standing, palette);
-	if (standing === undefined || ink === undefined) {
-		return {};
-	}
-	return {
-		stroke: ink,
-		"stroke-width": OUTLINE_WIDTH,
-		"stroke-dasharray": OUTLINE_DASH[standing],
 	};
 }
 
@@ -544,7 +513,7 @@ export {
 	type UnsettledOf,
 	BADGE_DEPTH,
 	BADGE_SIZE,
-	OUTLINE_DASH,
+	RING_DASH,
 	PIN_INSET,
 	HEAD_ATTRIBUTE,
 	PART_ATTRIBUTE,
@@ -554,7 +523,6 @@ export {
 	standingInk,
 	standingsFrom,
 	subjectGroup,
-	standingOutline,
 	standingPin,
 	standingPinAt,
 	standingSwipe,

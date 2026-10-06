@@ -18,6 +18,8 @@ interface Palette {
 	readonly slabFace: string;
 	/** A card's front edge, the thickness that shows along its foot. */
 	readonly slabEdge: string;
+	/** What a group's colour is shaded into for the front edge of a card or a label. */
+	readonly slabDeep: string;
 	/** What the fine highlight along the top edge of a face mixes toward. */
 	readonly slabGlint: string;
 	/** The light at the top of a face, which falls off down it. */
@@ -106,6 +108,7 @@ const PALETTE: Palette = {
 	cardBorder: token("--diagram-edge"),
 	slabFace: token("--slab-face"),
 	slabEdge: token("--slab-edge"),
+	slabDeep: token("--slab-deep"),
 	slabGlint: token("--slab-glint"),
 	slabSheen: token("--slab-sheen"),
 	slabShadow: token("--slab-shadow"),

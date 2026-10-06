@@ -53,10 +53,11 @@
    a soft shadow it casts down and to the right. A card is a slab (--slab-face
    on --slab-edge), a container a deeper plinth (--plinth-face, its heading on
    --plinth-head, on --plinth-edge), and a group's region a thin mat
-   (--mat-face, --mat-edge), each tinted by its own colour. --slab-glint is
-   what the fine highlight on a face's top edge mixes toward, --slab-sheen the
-   light that falls off down a face, and --slab-shadow one layer of the
-   stacked shadow. */
+   (--mat-face, --mat-edge), each tinted by its own colour. --slab-deep is what
+   a group's colour is shaded into for the front edge of a card or a label.
+   --slab-glint is what the fine highlight on a face's top edge mixes toward,
+   --slab-sheen the light that falls off down a face, and --slab-shadow one
+   layer of the stacked shadow. */
 /* Light: chalk, warm ink, the gold. */
 :root {
 	/* Named colors used by node types, groups and relationships. */
@@ -132,14 +133,15 @@
 	--sidebar-ring: oklch(0.62 0.13 78);
 	--raised: oklch(0.986 0.003 88);
 	--highlight: oklch(1 0 0 / 0.85);
-	--slab-face: oklch(0.976 0.003 85);
-	--slab-edge: oklch(0.84 0.007 80);
+	--slab-face: oklch(0.97 0.003 85);
+	--slab-edge: oklch(0.79 0.007 80);
+	--slab-deep: oklch(0.79 0.007 80);
 	--slab-glint: oklch(1 0 0);
-	--slab-sheen: oklch(1 0 0 / 0.6);
-	--slab-shadow: oklch(0.3 0.025 65 / 0.18);
-	--plinth-face: oklch(0.962 0.004 85);
-	--plinth-head: oklch(0.951 0.005 85);
-	--plinth-edge: oklch(0.8 0.008 80);
+	--slab-sheen: oklch(1 0 0 / 0.8);
+	--slab-shadow: oklch(0.3 0.025 65 / 0.2);
+	--plinth-face: oklch(0.956 0.004 85);
+	--plinth-head: oklch(0.938 0.005 85);
+	--plinth-edge: oklch(0.78 0.006 80);
 	--mat-face: oklch(0.985 0.003 85);
 	--mat-edge: oklch(0.42 0.02 70);
 }
@@ -217,14 +219,15 @@
 	--sidebar-ring: oklch(0.831 0.134 84.5);
 	--raised: oklch(0.205 0.007 75);
 	--highlight: oklch(1 0.01 85 / 0.09);
-	--slab-face: oklch(0.29 0.007 75);
-	--slab-edge: oklch(0.205 0.006 75);
+	--slab-face: oklch(0.295 0.003 75);
+	--slab-edge: oklch(0.215 0.003 75);
+	--slab-deep: oklch(0.06 0.003 75);
 	--slab-glint: oklch(1 0.01 85);
 	--slab-sheen: oklch(1 0.01 85 / 0.05);
 	--slab-shadow: oklch(0.08 0.005 75 / 0.55);
-	--plinth-face: oklch(0.24 0.007 75);
-	--plinth-head: oklch(0.255 0.007 75);
-	--plinth-edge: oklch(0.17 0.005 75);
+	--plinth-face: oklch(0.235 0.004 75);
+	--plinth-head: oklch(0.262 0.004 75);
+	--plinth-edge: oklch(0.185 0.004 75);
 	--mat-face: oklch(0.235 0.006 75);
-	--mat-edge: oklch(0.08 0.006 75);
+	--mat-edge: oklch(0.22 0.006 75);
 }

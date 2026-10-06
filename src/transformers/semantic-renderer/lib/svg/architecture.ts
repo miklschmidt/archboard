@@ -8,13 +8,7 @@ import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 import type { DiagramAtlas } from "@/shared/semantic-board/index";
 import type { DrawingEdge, PaintedDrawing } from "@/transformers/semantic-renderer/lib/drawing";
 import { DIAGRAM_MARGIN, PILL_RADIUS } from "@/transformers/semantic-renderer/lib/design";
-import {
-	canvasFor,
-	coord,
-	inflate,
-	union,
-	type Box,
-} from "@/transformers/semantic-renderer/lib/geometry";
+import { canvasFor, inflate, union, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { atlasBoxes } from "@/transformers/semantic-renderer/lib/atlas";
 import { farSizeFor } from "@/transformers/semantic-renderer/lib/measurement";
@@ -31,15 +25,16 @@ import {
 	paintMeasuredHeader,
 } from "@/transformers/semantic-renderer/lib/svg/measured-cards";
 import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
+import { labelLook } from "@/transformers/semantic-renderer/lib/svg/appearance";
 import { colourId } from "@/transformers/semantic-renderer/lib/svg/colour";
 import { shifted } from "@/transformers/semantic-renderer/lib/svg/document";
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { junctionMarks } from "@/transformers/semantic-renderer/lib/svg/junctions";
+import { slab, slabSeat, slabShadow } from "@/transformers/semantic-renderer/lib/svg/slab";
 import { paintTraffic } from "@/transformers/semantic-renderer/lib/svg/traffic";
 import {
 	PART_ATTRIBUTE,
 	markedBox,
-	standingOutline,
 	standingSwipe,
 	subjectGroup,
 	warningOnLine,
@@ -209,25 +204,19 @@ function paintEdgeWords(
 	step: boolean,
 ): string {
 	const { label, edge } = routed;
-	const styles = stylesFor(palette);
 	const at =
 		label === undefined
 			? labelAnchorOf(routed.curve)
 			: { x: label.box.x, y: label.box.y + label.box.height / 2 };
 	const badge = warningOnLine(at, unsettled, palette);
+	// A low tile like a chip, with a chip's short shadow: labels are many and sit on their lines.
 	const pill =
 		label === undefined
 			? ""
 			: lines([
-					tag("rect", {
-						x: coord(label.box.x),
-						y: coord(label.box.y),
-						width: coord(label.box.width),
-						height: coord(label.box.height),
-						rx: PILL_RADIUS,
-						...styles.pill,
-						...standingOutline(standing, palette),
-					}),
+					slabSeat(label.box, PILL_RADIUS),
+					slabShadow(label.box, PILL_RADIUS, "chip", palette),
+					slab(label.box, labelLook(palette), palette, standing),
 					paintTextRuns(label.measured.runs, label.box, palette),
 				]);
 	return pill === "" && badge === ""

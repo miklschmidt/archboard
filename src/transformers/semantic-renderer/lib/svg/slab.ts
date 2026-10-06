@@ -13,9 +13,10 @@
 //
 // Each shape a block is built of is a rect drawn at an offset from the part's
 // box, so a viewer that carries a card from one picture to the next
-// (`picture-cards.ts`) draws each one at the moving box. A card or a container
-// opens with its seat, its box unpainted, which is the one shape of it that
-// takes the pointer and the first shape a reader of the markup finds.
+// (`picture-cards.ts`) draws each one at the moving box. A card, a container
+// or a relationship's label opens with its seat, its box unpainted, which is
+// the one shape of it that takes the pointer and the first shape a reader of
+// the markup finds.
 
 import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
@@ -27,7 +28,7 @@ import {
 	type Attributes,
 } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
-	OUTLINE_DASH,
+	RING_DASH,
 	standingInk,
 	type SubjectStanding,
 } from "@/transformers/semantic-renderer/lib/svg/standing";
@@ -68,6 +69,12 @@ interface SlabLook {
 	 * band's lower edge, so the step in tone is that line's visible origin.
 	 */
 	readonly header?: { readonly height: number; readonly face: string } | undefined;
+	/**
+	 * How far inside the face a standing's ring is drawn: by default far enough
+	 * that the selection ring, three units outside the box, stands well apart
+	 * from it, and closer for a label, which has no selection ring of its own.
+	 */
+	readonly ringInset?: number | undefined;
 }
 
 /** How wide the highlight along the top edge of a face is. */
@@ -104,7 +111,8 @@ interface ShadowLayer {
  * so a near-white card keeps its top edge on the near-white page. None
  * reaches more than twelve units past the box. A group's region is a mat
  * lying flat on what holds it and casts none; the tab its caption is printed
- * on casts a short one on the mat, and none past the mat's own edge.
+ * on casts a short one on the mat, and none past the mat's own edge. A chip
+ * and a relationship's label, many and small, cast only a contact shadow.
  */
 const SHADOWS = {
 	card: [
@@ -213,52 +221,54 @@ function belowHeader(face: Box, look: SlabLook): string {
 	]);
 }
 
-/** How far inside a block's top face a standing's ring is drawn, and how wide. */
-const RING_INSET = 2;
-const RING_WIDTH = 1.5;
+/**
+ * How far inside a block's top face a standing's ring is drawn by default, and
+ * how wide: five units in, so its outer side stands six units inside the
+ * selection ring's inner side, with the block's own edge between them.
+ */
+const RING_INSET = 5;
+const RING_WIDTH = 2;
 
 /**
- * What a standing does to a block, which has no outline for it to take over:
- * the block's front edge takes the standing's ink, and a ring just inside its
- * face takes its ink and texture. The ring stays inside the box, clear of the
- * selection halo outside it.
+ * What a standing does to a block, which has no outline for it to take over: a
+ * ring inside its face in the standing's ink and texture. The front edge keeps
+ * the block's own tone, which says what group it serves; the ring and the pin
+ * on its corner say what the proposal did to it.
  * @param face The block's top face.
  * @param look How the block looks.
  * @param standing How the part stands, or undefined when this is not a proposal.
  * @param palette The theme's colours.
- * @returns The front edge's colour, and the ring or nothing.
+ * @returns The ring, or nothing.
  */
-function standingMarks(
+function standingRing(
 	face: Box,
 	look: SlabLook,
 	standing: SubjectStanding | undefined,
 	palette: Palette,
-): { readonly edge: string; readonly ring: string } {
+): string {
 	const ink = standing === undefined ? undefined : standingInk(standing, palette);
-	if (standing === undefined || ink === undefined) return { edge: look.edge, ring: "" };
+	if (standing === undefined || ink === undefined) return "";
+	const inset = look.ringInset ?? RING_INSET;
 	const ring = {
-		x: face.x + RING_INSET,
-		y: face.y + RING_INSET,
-		width: face.width - 2 * RING_INSET,
-		height: face.height - 2 * RING_INSET,
+		x: face.x + inset,
+		y: face.y + inset,
+		width: face.width - 2 * inset,
+		height: face.height - 2 * inset,
 	};
-	return {
-		edge: ink,
-		ring: plate(ring, Math.max(0, look.radius - RING_INSET), {
-			fill: "none",
-			stroke: ink,
-			"stroke-width": RING_WIDTH,
-			"stroke-dasharray": OUTLINE_DASH[standing],
-		}),
-	};
+	return plate(ring, Math.max(1, look.radius - inset), {
+		fill: "none",
+		stroke: ink,
+		"stroke-width": RING_WIDTH,
+		"stroke-dasharray": RING_DASH[standing],
+	});
 }
 
 /**
  * One block, standing in its box: its body in the tone of its front edge, its
  * face over that with the highlight along its top edge, and the light falling
  * off down it; a container's face carries its heading's band. A part a
- * proposal changed, added or removed is marked on its edge and its face
- * ({@link standingMarks}).
+ * proposal changed, added or removed is marked on its face
+ * ({@link standingRing}).
  * @param box The part's box.
  * @param look How the block looks.
  * @param palette The theme's colours.
@@ -270,14 +280,13 @@ function slab(box: Box, look: SlabLook, palette: Palette, standing?: SubjectStan
 	// The top face is the box without its front edge.
 	const face = { ...box, height: box.height - look.thickness };
 	const lit = { ...face, y: face.y + GLINT_WIDTH, height: face.height - GLINT_WIDTH };
-	const marks = standingMarks(face, look, standing, palette);
 	return lines([
-		plate(box, look.radius, { fill: marks.edge }),
+		plate(box, look.radius, { fill: look.edge }),
 		plate(face, look.radius, { fill: glintOf(top, palette) }),
 		plate(lit, look.radius, { fill: top }),
 		belowHeader(lit, look),
 		look.sheen ? plate(lit, look.radius, { fill: `url(#${SHEEN_ID})` }) : "",
-		marks.ring,
+		standingRing(face, look, standing, palette),
 	]);
 }
 
