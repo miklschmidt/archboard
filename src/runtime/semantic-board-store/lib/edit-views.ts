@@ -214,14 +214,15 @@ function stepId(had: readonly FlowStep[], stated: FlowStepInput, batch: Batch): 
 }
 
 /**
- * The optional prose a step carries, present only where the agent wrote it.
+ * The optional fields a step carries, present only where the agent wrote them.
  * @param stated The step as the agent wrote it.
- * @returns The note and repeat fields it actually has.
+ * @returns The note, repeat and anchor fields it actually has.
  */
-function stepProse(stated: FlowStepInput): Pick<FlowStep, "note" | "repeat"> {
+function stepProse(stated: FlowStepInput): Pick<FlowStep, "note" | "repeat" | "anchor"> {
 	return {
 		...(stated.note === undefined ? {} : { note: stated.note }),
 		...(stated.repeat === undefined ? {} : { repeat: stated.repeat }),
+		...(stated.anchor === undefined ? {} : { anchor: stated.anchor }),
 	};
 }
 

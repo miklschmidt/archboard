@@ -80,7 +80,12 @@ interface ThreeStates {
 	readonly theirs: VariantContent;
 }
 
-/** The fields that say what each kind of subject is. */
+/**
+ * The fields each kind of subject merges. Wider than what comparison reads:
+ * authored presentation intent (`order`, `emphasis`) and bookkeeping (`anchor`)
+ * do not mark a subject as changed, but they are still somebody's decision, so
+ * a merge carries them and holds two different answers as a disagreement.
+ */
 const MERGED = {
 	node: [
 		"order",
@@ -93,7 +98,7 @@ const MERGED = {
 		"binding",
 		"drillDown",
 	],
-	edge: ["order", "from", "to", "kind", "label", "description", "emphasis", "traffic"],
+	edge: ["order", "from", "to", "kind", "label", "description", "emphasis", "traffic", "anchor"],
 	flow: ["name", "summary", "participants"],
 	walkthrough: ["name", "summary"],
 } as const;

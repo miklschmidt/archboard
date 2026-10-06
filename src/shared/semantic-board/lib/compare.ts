@@ -138,6 +138,12 @@ interface VariantComparison {
  * Views are absent from the comparison entirely: naming a second way to read a
  * board is not a redesign of it.
  *
+ * `anchor` is absent from the relationship and step lists: it is bookkeeping,
+ * the author's citation of the code that proves the mechanism, so a proposal
+ * that only adds or improves anchors does not read as a redesign (ADR 0046). A
+ * binding's `symbol` needs no rule of its own: the binding is compared as one
+ * record by value, so a changed symbol is a changed binding.
+ *
  * A walkthrough does not compare its `beats`, and a flow does not compare its
  * `steps`, for one reason: each of those is a subject with an identity of its
  * own and is compared as one. A container that also compared its contents would

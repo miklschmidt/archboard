@@ -13,6 +13,7 @@
 // carries two opinions eventually carries two different ones.
 
 import { z } from "zod";
+import { CodeAnchorSchema } from "@/shared/code-target/index";
 import {
 	DescriptionSchema,
 	DisplayNameSchema,
@@ -36,6 +37,9 @@ const StepLabelSchema = z.string().trim().min(1).max(MAX_STEP_LABEL);
  * `repeat` is how many times the step happens in one run — four batched
  * requests rather than four steps — because a reader counting identical rows
  * learns nothing the number would not have told them.
+ *
+ * `anchor` is the place in code the author cites as proof of the message, and
+ * is bookkeeping like a relationship's (ADR 0046).
  */
 const FlowStepSchema = z
 	.object({
@@ -46,6 +50,7 @@ const FlowStepSchema = z
 		kind: MessageKindSchema.default("sync"),
 		note: DescriptionSchema.optional(),
 		repeat: z.int().min(2).optional(),
+		anchor: CodeAnchorSchema.optional(),
 	})
 	.strict()
 	.refine((step) => (step.kind === "self") === (step.from === step.to), {

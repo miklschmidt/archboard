@@ -79,7 +79,8 @@ function githubRef(binding: CodeBinding): string {
 /**
  * Builds the GitHub tree URL a binding points at, pinned to its commit, else
  * its branch, else HEAD. It exists so a binding can still be opened when no
- * local checkout resolves.
+ * local checkout resolves. It names the file or directory and ignores a
+ * binding's `symbol`, as the local opener does (TASK-367.25).
  * @param binding - The binding to present.
  * @returns A validated GitHub URL, or undefined when the binding has none.
  */

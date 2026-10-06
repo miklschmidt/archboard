@@ -28,6 +28,10 @@
 //   - nothing about a historical variant. A binding that named a file which
 //     existed then is a correct record; flagging it would push somebody toward
 //     rebinding history to today's files, and that would make the record lie.
+//
+// It tests the path only and ignores a binding's `symbol`. Whether the file
+// still holds that definition means reading code, which the polled check never
+// does; the code check reads it on request (ADR 0046).
 
 import fs from "node:fs";
 import path from "node:path";

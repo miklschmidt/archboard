@@ -96,7 +96,10 @@ function partsOf(board: SearchedBoard, document: unknown): readonly IndexedPart[
 		id: node.id,
 		name: node.name,
 		kind: node.kind,
-		rest: `${node.responsibility ?? ""} ${node.description ?? ""} ${node.binding?.path ?? ""}`.toLowerCase(),
+		rest: [node.responsibility, node.description, node.binding?.path, node.binding?.symbol]
+			.filter((said) => said !== undefined)
+			.join(" ")
+			.toLowerCase(),
 	}));
 }
 

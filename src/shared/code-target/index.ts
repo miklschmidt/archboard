@@ -54,16 +54,33 @@ const OpenerCommandSchema = z
 	.object({ executable: NonemptyString, argv: z.array(z.string()).max(MAX_ARGV) })
 	.strict();
 type OpenerCommand = z.infer<typeof OpenerCommandSchema>;
+/**
+ * A node's one primary code location. `symbol` names the definition at `path`
+ * that the node stands for, spelled as its language or tool spells a qualified
+ * name, or the address of a declaration in infrastructure or Nix (ADR 0046).
+ * Without it the node owns the whole file or directory.
+ */
 const CodeBindingSchema = z
 	.object({
 		repo: NonemptyString,
 		path: z.string(),
+		symbol: NonemptyString.optional(),
 		branch: NonemptyString.optional(),
 		commit: NonemptyString.optional(),
 		confirmedAt: NonemptyString.optional(),
 	})
 	.strict();
 type CodeBinding = z.infer<typeof CodeBindingSchema>;
+/**
+ * The one place in code an author cites as proof of a relationship or a flow
+ * step: a repository, a file in it and a symbol in that file (ADR 0046). Every
+ * field is required, and no line is stored: a line moves with every edit above
+ * it, and the code check finds it from the symbol.
+ */
+const CodeAnchorSchema = z
+	.object({ repo: NonemptyString, path: NonemptyString, symbol: NonemptyString })
+	.strict();
+type CodeAnchor = z.infer<typeof CodeAnchorSchema>;
 const CodeTargetOpenRequestSchema = z
 	.object({ board: NonemptyString, element: NonemptyString })
 	.strict();
@@ -274,6 +291,8 @@ export {
 	type OpenerCommand,
 	CodeBindingSchema,
 	type CodeBinding,
+	CodeAnchorSchema,
+	type CodeAnchor,
 	CodeTargetOpenRequestSchema,
 	type CodeTargetOpenRequest,
 	OpenerSettingsTestRequestSchema,
