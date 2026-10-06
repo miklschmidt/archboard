@@ -10,6 +10,13 @@ group clause of
 [ADR 0024](0024-vault-configuration-owns-vocabulary-and-presentation.md).
 Tracked as TASK-347. The user decided it on 2026-09-25.
 
+[ADR 0044](0044-cards-containers-and-groups-are-drawn-as-slabs.md) supersedes
+how this decision draws its colors. A region is now a filled mat with a caption
+tab, not an outline. A card carries its group's color on its front edge, not on
+a border. A container carries its kind's color on its nameplate. Which group
+places a card, and which cards a region gathers, stand. The amendment of
+2026-10-06 at the end says what is true now.
+
 Until now a group was meaning only. Grouping changed nothing that was drawn, and
 a group had no color. A card took its body color from the nearest colored
 container around it. On a board, that tells a reader where a card is hosted. The
@@ -131,3 +138,31 @@ be repaired once for every board.
 A third alternative is to keep the container color scope beside the group color.
 Two sources of body color need a rule for which wins, and the reader must know
 that rule to read a card. The container still shows hosting by containment.
+
+## Amendment of 2026-10-06: a region is a mat, and a card carries its group on its front edge
+
+ADR 0044 draws every part as a slab. The owner chose it on 2026-10-06. With it,
+the owner chose a filled region over the outline chosen on 2026-09-26. Three
+passages of this record no longer hold.
+
+"The layout draws each such region as an outline in the color of the group. The
+outline is twice as wide as the border of a card and has no fill." A region is
+now a mat, a low slab. Its face carries a light share of the group's color, and
+its front edge is in the group's color. The caption is printed on a raised
+tab in the corner of the mat. Lines still cross a region.
+
+"A card's body color comes from its placing group. Its border and tint are the
+color of the group, and a card with no placing group is neutral." The first
+sentence holds. The front edge of a card now carries the group's color, shaded
+deeper, and its face carries a light share of it. A card with no placing group
+has a grey front edge and a neutral face.
+
+"A container's frame takes the color of its own kind. Its border and faint tint
+are the color of its kind, and a kind without a color draws it neutral." The
+first sentence holds. The plinth of a container is now neutral. Its nameplate
+carries the color of its kind on its face and on its front edge. A kind without
+a color draws a neutral nameplate.
+
+Where this record speaks of the outline of a region, read the mat and its
+caption tab. A reader finds every member of a group by its mat and by the front
+edge of each card.

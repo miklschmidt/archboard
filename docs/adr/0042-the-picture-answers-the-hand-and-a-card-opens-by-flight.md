@@ -4,6 +4,10 @@ status: accepted
 
 # The picture answers the hand, and a card opens by flight
 
+The amendment of 2026-10-06 at the end replaces one sentence of answer 1 and
+one sentence of answer 2. [ADR 0044](0044-cards-containers-and-groups-are-drawn-as-slabs.md)
+records the change to the picture's surfaces that came from the same request.
+
 A reader who does not know a system learns it by poking at its picture. A still
 drawing leaves the work to the reader. They must find what a part is wired to,
 follow a line with the eye, and find their place again when a board changes.
