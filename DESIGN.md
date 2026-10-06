@@ -274,7 +274,10 @@ group's color, thick corner brackets and a caption tab in its full color. Each
 shadow is a stack of translucent shapes, with no filter or blur. The colors
 come from the `--slab-*` and `--tray-*` tokens in theme.css, in both themes. A
 group region's frame, corners and tab and a grouped card's face are tones of
-the group's own color, set in OKLCH at one lightness for every color. A comparison marks a part by its outline: a
+the group's own color, set in OKLCH at one lightness for every color. On chalk
+the corners and the tab are the named color itself, its lightness held between
+0.615 and 0.645 so the words on the tab keep 4.5:1 and the corners keep 3:1, and
+the faded frame is a light tone of the color that keeps its hue. A comparison marks a part by its outline: a
 1.8-unit border in the comparison's green or Changed Orange along the inside edge of its
 top face, solid for added and dashed for changed, and a removed part's dashed
 red border round its footprint. The face and the front edge keep their colors.
@@ -286,7 +289,8 @@ On chalk the picture is crisp and vivid, never pastel or dusty. Its own
 neutrals are cool and clean, near hue 255, not the shell's warm ones: a card
 face a hair under white (oklch(0.988 0.003 255)), a tray floor a step under the
 ground (oklch(0.974 0.003 255)), a slate front edge (oklch(0.87 0.014 256)) and
-a navy shadow. A grouped card is nearly white with a trace of its group's hue,
+a navy shadow. A grouped card's face is a clean tint of its group's hue, an
+orange face a peach, at one chroma for every color (oklch 0.94, chroma 0.028),
 and its front edge carries the color as a clean, strong tone. A chip is a light
 tone of its type's color, with the glyph in the color itself. The words are
 **Diagram Ink** (`--diagram-text`, oklch(0.2 0.02 265)) and **Diagram Slate**

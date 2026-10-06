@@ -44,14 +44,17 @@ function semanticInk(color: PaletteColor | undefined): string | undefined {
  * A card's face in its group's colour, and its front edge: the colour of the
  * edge and the face together are what say which concern a card serves, on
  * either ground. The face is a tone of the group's own hue (`toned`), as quiet
- * as a tint, so its words keep 4.5:1. On the light ground the face is nearly
- * white with a trace of the hue, since a light tint of a warm colour reads as
- * beige. The edge carries the colour: a clean, strong tone of it, at a
- * lightness where sRGB holds that chroma for every colour. On the dark ground
- * the edge is the colour mixed into the deep shade (`--slab-deep`).
+ * as a tint, so its words keep 4.5:1. On the light ground it is a clean tint
+ * with its hue in plain sight, an orange face a peach: one chroma for every
+ * colour, the most that sRGB holds at that lightness for the narrowest hues
+ * (blue and indigo), so no colour is clipped into another hue and every group
+ * reads as strongly as every other. The edge carries the colour: a clean,
+ * strong tone of it, at a lightness where sRGB holds that chroma for every
+ * colour. On the dark ground the edge is the colour mixed into the deep shade
+ * (`--slab-deep`).
  */
 const CARD_FACE: Tone = {
-	light: { lightness: 0.972, chroma: 0.09 },
+	light: { lightness: 0.94, chroma: 0.235 },
 	dark: { lightness: 0.31, chroma: 0.27 },
 };
 const CARD_EDGE: Inked = { light: { lightness: 0.76, chroma: 1 }, dark: 0.3 };

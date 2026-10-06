@@ -147,6 +147,9 @@ function fromOklch(
 const RELATIVE_OKLCH =
 	/^from\s+([\s\S]+)\s+([\d.]+)\s+calc\(min\(c,\s*([\d.]+)\)\s*\*\s*([\d.]+)\)\s+h$/u;
 
+/** A relative OKLCH colour that keeps its origin's chroma and hue, its lightness held between two bounds. */
+const HELD_OKLCH = /^from\s+([\s\S]+)\s+clamp\(([\d.]+),\s*l,\s*([\d.]+)\)\s+c\s+h$/u;
+
 /**
  * One colour expression, resolved for one theme.
  * @param expression A colour the renderer painted with.
@@ -178,6 +181,13 @@ function resolve(expression: string, theme: DiagramTheme): Rgba {
 			{ l: Number(lightness), c: Math.min(c, Number(cap)) * Number(share), h },
 			colour.a,
 		);
+	}
+	const held = name === "oklch" ? HELD_OKLCH.exec(inner!) : null;
+	if (held !== null) {
+		const [, origin, least, most] = held;
+		const colour = resolve(origin!, theme);
+		const { l, c, h } = oklchOf(colour);
+		return fromOklch({ l: Math.min(Number(most), Math.max(Number(least), l)), c, h }, colour.a);
 	}
 	throw new Error(`Not a colour the renderer paints with: ${text}`);
 }
