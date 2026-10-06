@@ -106,6 +106,13 @@ interface TerraformConfiguration {
 	 * @param address The address.
 	 */
 	siteOf(address: string): Site | undefined;
+	/**
+	 * The addresses of the declaration a file declares at a line: one for each
+	 * module instance that reads the file.
+	 * @param path The file, relative to the checkout.
+	 * @param line The first line of the declaration.
+	 */
+	addressesAt(path: string, line: number): readonly string[];
 }
 
 /** The kinds of declaration that only pass a value on. */
@@ -140,6 +147,11 @@ interface Reading {
 	/** Module calls whose module the check does not read, by their address. */
 	readonly unread: Set<string>;
 	readonly unparsed: Map<string, { readonly path: string; readonly unparsed: Unparsed }[]>;
+	/**
+	 * Every address each file declares at each line, by `path\0line`, a
+	 * variable that a module call's argument already declares at its address too.
+	 */
+	readonly sites: Map<string, string[]>;
 }
 
 /**
@@ -195,6 +207,8 @@ function readFile(reading: Reading, facts: SyntaxFacts, scope: string): void {
 	for (const definition of facts.definitions) {
 		const address = `${scope}${definition.symbol}`;
 		declare(reading, { address, kind: definition.visibility, path: facts.path, definition });
+		const at = `${facts.path}\0${definition.start}`;
+		reading.sites.set(at, [...(reading.sites.get(at) ?? []), address]);
 	}
 	reading.written.push(...writtenIn(facts, scope));
 	const parts = facts.unparsed.map((unparsed) => ({ path: facts.path, unparsed }));
@@ -449,6 +463,15 @@ function configurationOf(reading: Reading, root: string): TerraformConfiguration
 			return siteIn(declarations, address);
 		},
 		/**
+		 * The addresses declared at a line of a file.
+		 * @param path The file.
+		 * @param line The line.
+		 * @returns The addresses.
+		 */
+		addressesAt(path, line) {
+			return reading.sites.get(`${path}\0${line}`) ?? [];
+		},
+		/**
 		 * What the configuration declares at a symbol.
 		 * @param symbol The address.
 		 * @returns What it holds there.
@@ -491,6 +514,7 @@ async function readConfiguration(
 		scopes: new Map(),
 		unread: new Set(),
 		unparsed: new Map(),
+		sites: new Map(),
 	};
 	if (reading.modules.has(root)) await readScope(reading, root, "", []);
 	for (const plan of pass.plans) {

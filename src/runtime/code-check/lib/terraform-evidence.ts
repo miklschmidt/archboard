@@ -72,6 +72,27 @@ function holds(holder: string, address: string): boolean {
 }
 
 /**
+ * Whether a part bound to an address of a root module holds the declaration
+ * that a file declares at a line: the address is that declaration, or holds
+ * it in a module instance that reads the file, as `module.queue` holds every
+ * declaration of its instance.
+ * @param configuration The root module's address space.
+ * @param symbol The part's binding symbol.
+ * @param site Where the declaration is.
+ * @param site.path The file, relative to the checkout.
+ * @param site.line The declaration's first line.
+ * @returns True when it holds it.
+ */
+function holdsDeclarationAt(
+	configuration: TerraformConfiguration,
+	symbol: string,
+	site: { readonly path: string; readonly line: number },
+): boolean {
+	const address = declarationAddress(symbol);
+	return configuration.addressesAt(site.path, site.line).some((each) => holds(address, each));
+}
+
+/**
  * Who owns each declaration of one root module.
  * @param configuration The root module's address space.
  * @param parts The read parts of the board in the root's checkout.
@@ -236,4 +257,4 @@ async function terraformEvidenceOf(
 	return firstPerPair(pieces);
 }
 
-export { ownershipIn, terraformEvidenceOf };
+export { holdsDeclarationAt, ownershipIn, terraformEvidenceOf };

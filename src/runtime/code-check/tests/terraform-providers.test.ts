@@ -56,6 +56,20 @@ resource "aws_lb_listener" "web" {
     target_group_arn = aws_lb_target_group.web.arn
   }
 }
+
+module "worker" {
+  source    = "./modules/worker"
+  queue_url = aws_sqs_queue.jobs.url
+}
+`;
+
+const AWS_WORKER = `variable "queue_url" {}
+
+resource "aws_lambda_function" "this" {
+  environment {
+    variables = { QUEUE_URL = var.queue_url }
+  }
+}
 `;
 
 const GOOGLE = `resource "google_pubsub_topic" "orders" {}
@@ -187,6 +201,7 @@ beforeAll(async () => {
 	write(shop, {
 		"aws/main.tf": AWS,
 		"aws/iam.tf": 'resource "aws_iam_role" "worker" {}\n',
+		"aws/modules/worker/main.tf": AWS_WORKER,
 		"google/main.tf": GOOGLE,
 		"azure/main.tf": AZURE,
 		"kubernetes/main.tf": KUBERNETES,
@@ -215,6 +230,12 @@ beforeAll(async () => {
 		// The function's use of its role only sets it up, which a dependency does not accept.
 		edge("e3", ["F", "R"], "dependency", ["aws/main.tf", "aws_iam_role.worker"]),
 	]);
+	current(
+		"AWS module",
+		[part("W", "aws", "module.worker"), part("Q", "aws", "aws_sqs_queue.jobs")],
+		// The module's variable, which the call's argument also declares, is in the code of the part bound to the call.
+		[edge("e1", ["W", "Q"], "queue", ["aws/modules/worker/main.tf", "var.queue_url"])],
+	);
 	current(
 		"Google Cloud",
 		[
@@ -301,6 +322,10 @@ test("an anchor may name a joining declaration, any other Terraform declaration 
 	expect(findings.find((each) => each.includes(" e3 "))).toContain(
 		"provisioning aws/main.tf:6 aws_iam_role.worker",
 	);
+});
+
+test("an anchor may name a declaration inside the module instance that an end's module call binds", () => {
+	expect(found("AWS module")).toEqual([]);
 });
 
 test("Google Cloud: a function's event trigger runs from its topic to the function, and a push subscription from its topic to the endpoint", () => {
