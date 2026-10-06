@@ -27,7 +27,7 @@ import { isRecord, stringAt } from "@/runtime/engine/lib/unknown-record";
 import {
 	LanguageServersSchema,
 	type ConfigurableLanguage,
-	type LanguageServerEntry,
+	type ConfiguredServer,
 	type LanguageServers,
 } from "@/shared/language-servers/index";
 
@@ -328,7 +328,7 @@ function forgetRepo(repo: string): boolean {
 function setLanguageServer(
 	repo: string,
 	language: ConfigurableLanguage,
-	server: LanguageServerEntry | undefined,
+	server: ConfiguredServer | undefined,
 ): RegisteredRepo | undefined {
 	const entries = readRegistry();
 	const entry = entries.find((candidate) => candidate.repo === repo);

@@ -1,6 +1,6 @@
 // Which command starts the server of a language in a checkout (TASK-433):
 // a language with no configured server has none, a configured one runs
-// exactly its entry, and TypeScript runs the native `tsc` of the checkout's
+// exactly its command and arguments, and TypeScript runs the native `tsc` of the checkout's
 // own TypeScript 7 or later, else Archboard's.
 
 import { afterEach, expect, test } from "bun:test";
@@ -71,7 +71,7 @@ test("TypeScript runs the native tsc of the checkout's own TypeScript 7 or later
 	}
 });
 
-test("a language with no configured server has none, and a configured one runs exactly its entry", () => {
+test("a language with no configured server has none, and a configured one runs exactly its command and arguments", () => {
 	for (const language of ["python", "csharp", "swift", "c"] as const) {
 		expect(languageServerOf(language, "/checkout", {}).status).toBe("missing");
 	}

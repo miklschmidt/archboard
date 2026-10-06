@@ -1,7 +1,7 @@
 // The language servers an agent configures for a checkout (ADR 0046, TASK-433).
 //
 // A server that can run code of a checkout runs only where the agent that works
-// in that repository configured it. The configuration is one entry per
+// in that repository configured it. The configuration is one server per
 // language on the checkout's registration, so the registry that stores it, the
 // command that sets it and the code check that runs it name one shape.
 
@@ -31,15 +31,15 @@ const CommandSchema = z
 	});
 
 /** The server of one language: its command and the arguments after it. */
-const LanguageServerEntrySchema = z.object({ command: CommandSchema, args: z.array(z.string()) });
+const ConfiguredServerSchema = z.object({ command: CommandSchema, args: z.array(z.string()) });
 
 /** The server of one language. */
-type LanguageServerEntry = z.infer<typeof LanguageServerEntrySchema>;
+type ConfiguredServer = z.infer<typeof ConfiguredServerSchema>;
 
 /** The servers configured for a checkout, by language. */
 const LanguageServersSchema = z.partialRecord(
 	z.enum(CONFIGURABLE_LANGUAGES),
-	LanguageServerEntrySchema,
+	ConfiguredServerSchema,
 );
 
 /** The servers configured for a checkout. */
@@ -47,9 +47,9 @@ type LanguageServers = z.infer<typeof LanguageServersSchema>;
 
 export {
 	type ConfigurableLanguage,
-	type LanguageServerEntry,
+	type ConfiguredServer,
 	type LanguageServers,
 	CONFIGURABLE_LANGUAGES,
-	LanguageServerEntrySchema,
+	ConfiguredServerSchema,
 	LanguageServersSchema,
 };
