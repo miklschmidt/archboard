@@ -1,11 +1,11 @@
 ---
 id: TASK-367.17
 title: Code facts for Terraform and OpenTofu configurations
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:16'
-updated_date: '2026-10-06 16:16'
+updated_date: '2026-10-06 16:17'
 labels:
   - code-check
 dependencies:
@@ -26,11 +26,11 @@ Infrastructure declares the relationships that code analysis cannot see: the que
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Resources, data sources, modules, variables and outputs are definitions with their addresses, and the references in expressions are references
-- [ ] #2 A part bound to a resource address is reported when the configuration no longer declares it
-- [ ] #3 A relationship between two resource-bound parts is supported when a reference joins them, and references that the board does not draw are reported as in the undrawn check
-- [ ] #4 A plan JSON from `terraform show -json` or `tofu show -json` is an optional input when an agent names one
-- [ ] #5 The check never reads state, never runs `terraform` or `tofu`, and never reads a secret value
+- [x] #1 Resources, data sources, modules, variables and outputs are definitions with their addresses, and the references in expressions are references
+- [x] #2 A part bound to a resource address is reported when the configuration no longer declares it
+- [x] #3 A relationship between two resource-bound parts is supported when a reference joins them, and references that the board does not draw are reported as in the undrawn check
+- [x] #4 A plan JSON from `terraform show -json` or `tofu show -json` is an optional input when an agent names one
+- [x] #5 The check never reads state, never runs `terraform` or `tofu`, and never reads a secret value
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -74,3 +74,9 @@ Gate (lanes one at a time, working tree with other agents' uncommitted work): li
 
 Independent review (verdict before fixes: NOT CLEAN). 506cf1247: a call of a remote module reached nothing through its arguments without a plan, so a part bound to a registry module and the queue its argument names had no evidence; the call now reaches what its arguments name, citing each argument's line. A splat over module instances (module.x[*].out) stopped the reading at the call; it now reaches the output. A plan reference's evidence symbol is now its address, with no attribute or index key of the plan. e95550169: the check owner refuses a plan that is inside the checkout as named and outside it once its link resolves, and the fixture's remote module has a Git source with a credential that no answer may quote. 928602761: check --code help and its audit entry no longer say that only TypeScript, TSX and Python are read by their syntax. Probes that held: a plan linked out of the checkout, a plan linked to state, state renamed .json, a plan under .terraform or terraform.tfstate.d, relative and ~ paths, a directory named as a plan, sensitive values in a plan's configuration (variable defaults, provider_config, constant values, module source and arguments), secret literals and heredocs in .tf, git:: and registry sources, a ./.terraform/modules source, a module that calls itself. terraform-aws-vpc gives the same findings (186 ms cold, 91 ms warm). terraform-aws-eks e072462, root examples/karpenter (local ../.. calling ./modules/eks-managed-node-group, remote vpc and kms): 87 files, 2,023 definitions, 2,244 references, none unparsed, 276 ms through the real check, findings right. For TASK-367.18: a resource that only passes a value on, such as time_sleep, ends the reach (the node group reaches time_sleep.this, not the cluster); terraform-configuration.ts is at 588 of 600 lines.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The code check now reads Terraform and OpenTofu configurations statically through tree-sitter: resources, data sources, module calls and their arguments, variables, outputs and locals are definitions by address, and the addresses expressions name are configured-path references, followed through local modules, variables and outputs. A part bound to an address the root module no longer declares is reported, and a reference between resource-bound parts supports or, undrawn, flags their relationship. --plan reads a plan JSON from inside a registered checkout for addresses and references only. The check never reads state, .tfvars or .terraform, never runs terraform or tofu, and never quotes a value. Verified by the terraform-facts and terraform-check tests, including tempting state, .tfvars, .terraform, a credential in a module source and stand-in terraform and tofu programs, and on terraform-aws-vpc and terraform-aws-eks.
+<!-- SECTION:FINAL_SUMMARY:END -->
