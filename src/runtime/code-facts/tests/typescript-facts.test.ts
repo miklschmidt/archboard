@@ -54,6 +54,13 @@ const checkout = fixtureCheckout({
 		"}",
 		"",
 	].join("\n"),
+	"src/barrel.ts": [
+		'import { Ledger } from "./ledger";',
+		'import { round } from "./money";',
+		"export { Ledger, round as rounded };",
+		"export default Ledger;",
+		"",
+	].join("\n"),
 	"src/panel.tsx": [
 		'import { Badge } from "./badge";',
 		'export function Panel() { return <div><Badge tone="calm" /></div>; }',
@@ -146,6 +153,13 @@ test("a use at run time is call evidence, a use only as a type is import evidenc
 	expect(imports["./types"]?.typeOnly).toBe(true);
 	expect(imports["@/ports"]).toMatchObject({ typeOnly: true, resolved: "src/ports.ts" });
 	expect(imports["./money"]).toMatchObject({ typeOnly: false, resolved: "src/money.ts" });
+});
+
+test("an export passes a name on and never uses it, also a name an import brought in, as export ... from does", async () => {
+	const barrel = await syntax("src/barrel.ts");
+	expect(barrel.references).toEqual([]);
+	const ledger = await syntax("src/ledger.ts");
+	expect(ledger.references.some((reference) => reference.symbol === "api")).toBe(false);
 });
 
 test("a name in a comment or an ordinary string is no use, and the names of environment values and events are", async () => {
