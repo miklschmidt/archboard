@@ -186,11 +186,15 @@ describe("the interface measures of competing proposals, side by side", () => {
 
 	test("the measures are said after the interface changes and before the other changes", () => {
 		const lines = described(answer);
-		const measured = lines.filter((line) => line.includes('"Forwarded"'));
-		expect(measured).toHaveLength(2);
-		const other = lines.findIndex((line) => line.startsWith("Other changes"));
-		expect(lines.indexOf(measured[0]!)).toBeGreaterThan(0);
-		expect(lines.indexOf(measured[1]!)).toBeLessThan(other);
+		// Only the measures name "Forwarded", a variant put beside the comparison. The first line
+		// that names the watcher is the interface change that gained it as a caller.
+		const measuredAt = lines.flatMap((line, at) => (line.includes('"Forwarded"') ? [at] : []));
+		const changedAt = lines.findIndex((line) => line.includes("Lock watcher"));
+		const otherAt = lines.findIndex((line) => line.startsWith("Other changes"));
+		expect(measuredAt).toHaveLength(2);
+		expect(changedAt).toBeGreaterThan(0);
+		expect(Math.min(...measuredAt)).toBeGreaterThan(changedAt);
+		expect(Math.max(...measuredAt)).toBeLessThan(otherAt);
 	});
 });
 

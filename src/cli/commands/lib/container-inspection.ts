@@ -13,6 +13,7 @@ import {
 	interfaceMeasures,
 	RenderedVariantSchema,
 	type ContainerInspection,
+	type InterfaceMeasures,
 	type SemanticBoard,
 	type SemanticEdge,
 	type SemanticNode,
@@ -30,14 +31,18 @@ import {
 /** A relationship with both its ends named, because one end is often outside the container. */
 const NamedEdgeSchema = InspectedEdgeSchema.extend({ fromName: z.string(), toName: z.string() });
 
-/** The five interface measures (ADR 0044): counts, never combined into one number. */
+/**
+ * The five interface measures (ADR 0044): counts, never combined into one
+ * number. Held to the shared model's type, so a measure it adds cannot drop out
+ * of the answer.
+ */
 const InterfaceMeasuresSchema = z.object({
 	entryPoints: z.int(),
 	hiddenParts: z.int(),
 	callers: z.int(),
 	outgoing: z.int(),
 	passThrough: z.int(),
-});
+}) satisfies z.ZodType<InterfaceMeasures>;
 
 /** What every answer about a container says first. */
 const containerHead = {
