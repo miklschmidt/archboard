@@ -10,14 +10,14 @@ import { layoutBlocks, layoutTracks } from "@/transformers/semantic-renderer/lib
 
 /**
  * One way of laying an architecture out: the content, its measured text, the
- * comparison standings when it is read against another variant, and the
- * children that are entry points of their containers on the variant.
+ * comparison standings when it is read against another variant, and each
+ * child that is an entry point of its container on the variant, true when first.
  */
 type LayoutEngine = (
 	content: VariantContent,
 	measured: MeasuredArchitecture,
 	standings: Readonly<Record<string, ChangeKind>> | undefined,
-	entries: ReadonlySet<string>,
+	entries: ReadonlyMap<string, boolean>,
 ) => Promise<PaintedDrawing>;
 
 const ENGINES: Readonly<Record<LayoutEngineName, LayoutEngine>> = {
