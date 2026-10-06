@@ -98,8 +98,8 @@ When the task closes, before you mark any acceptance criterion:
        its module's interface
        ([ADR 0044](../../docs/adr/0044-a-containers-interface-is-what-relationships-from-outside-reach.md)).
        For the first, make the callers use what the module exposes, or expose
-       what they use. For the second, if the board's question needs the
-       caller, draw it. `EXPOSED_UNUSED` is information: a `>` line names an export
+       what they use. If the board's question needs the caller that the
+       second names, draw it. `EXPOSED_UNUSED` is information: a `>` line names an export
        that your commits added and nothing outside the module uses. Remove it,
        unless a caller is part of the task.
    - Read by hand what the check does not cover, with the evidence rules of the
