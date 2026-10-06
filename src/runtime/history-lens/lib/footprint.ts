@@ -10,7 +10,7 @@
 // skipped is in none of them.
 
 import { snapshotCheckoutAccess } from "@/runtime/code-target/index";
-import { answerCommit } from "@/runtime/history-lens/lib/answer-commit";
+import { markedCommit } from "@/runtime/history-lens/lib/answer-commit";
 import {
 	commitsByBoundPath,
 	walkCommits,
@@ -205,7 +205,7 @@ function mappedRepository(
 		skipped: [],
 		commits: walked
 			.filter((commit) => used.has(commit.commit))
-			.map((commit) => answerCommit(repo, commit)),
+			.map((commit) => markedCommit(repo, commit)),
 	};
 }
 

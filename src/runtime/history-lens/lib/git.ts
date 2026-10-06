@@ -5,8 +5,9 @@
 // file versions. So the lens runs its commands here, with the whole output, a
 // timeout from `timing.ts`, and the caller's signal: a request that hangs up,
 // or a server that stops, ends the command. The lens runs only `git log`,
-// `git rev-list`, `git rev-parse`, `git cat-file` and `git check-ignore`. None
-// of them starts another program, so killing the one process ends the work.
+// `git rev-list`, `git rev-parse`, `git merge-base`, `git cat-file` and
+// `git check-ignore`. None of them starts another program, so killing the one
+// process ends the work.
 
 import { HISTORY_LENS_GIT_TIMEOUT_MS } from "@/shared/timing/timing";
 

@@ -17,6 +17,7 @@
 // that work. Nothing is written anywhere.
 
 import { snapshotCheckoutAccess, type CheckoutSnapshot } from "@/runtime/code-target/index";
+import { answerCommit, isoTime } from "@/runtime/history-lens/lib/answer-commit";
 import { createAnswerMemory } from "@/runtime/history-lens/lib/answer-memory";
 import {
 	commitsByBoundPath,
@@ -38,15 +39,6 @@ import { LOCALITY_DEFAULT_PERIOD_MS } from "@/shared/timing/locality";
 
 /** How many answers the server keeps: the boards that somebody selects parts on. */
 const KEPT_ANSWERS = 32;
-
-/**
- * A time in seconds as the answer writes it.
- * @param seconds Seconds since the epoch.
- * @returns The ISO time.
- */
-function isoTime(seconds: number): string {
-	return new Date(seconds * 1000).toISOString();
-}
 
 /** The parts the lens reads in one repository, and the HEAD it reads them at. */
 interface RepositoryToRead {
@@ -128,22 +120,6 @@ async function walkPeriod(
 			walked,
 			parts.map((part) => part.path),
 		),
-	};
-}
-
-/**
- * One commit as the answer carries it.
- * @param repo Its repository.
- * @param commit The walked commit.
- * @returns The answer's commit.
- */
-function answerCommit(repo: string, commit: WalkedCommit): LocalityCommit {
-	return {
-		repo,
-		commit: commit.commit,
-		committedAt: isoTime(commit.committedAt),
-		subject: commit.subject,
-		files: commit.changes.length,
 	};
 }
 
