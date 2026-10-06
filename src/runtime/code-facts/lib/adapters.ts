@@ -24,6 +24,8 @@ import type {
 	ReadParsed,
 	ReadText,
 } from "@/runtime/code-facts/lib/facts";
+import { cFacts } from "@/runtime/code-facts/lib/c-adapter";
+import { createCResolver } from "@/runtime/code-facts/lib/c-resolution";
 import { composeFacts, envFileFacts } from "@/runtime/code-facts/lib/compose-adapter";
 import {
 	COMPOSE_FILE_NAMES,
@@ -91,6 +93,9 @@ const TSX = treeSitter(
 	typeScriptFacts,
 );
 const PYTHON = treeSitter("tree-sitter-python/tree-sitter-python.wasm", "python.scm", pythonFacts);
+const C = treeSitter("tree-sitter-c/tree-sitter-c.wasm", "c.scm", cFacts);
+/** A `.h` is read as C++, which reads the C headers of Redis and SQLite as the C grammar does (TASK-367.09). */
+const CPP = treeSitter("tree-sitter-cpp/tree-sitter-cpp.wasm", "c.scm", cFacts);
 const CSHARP = treeSitter(
 	"tree-sitter-c-sharp/tree-sitter-c_sharp.wasm",
 	"csharp.scm",
@@ -108,6 +113,20 @@ const ADAPTERS: readonly Adapter[] = [
 		name: "python",
 		reads: { ".py": PYTHON, ".pyi": PYTHON },
 		resolver: createPythonResolver,
+	},
+	{ name: "c", reads: { ".c": C }, resolver: createCResolver },
+	{
+		name: "cpp",
+		reads: {
+			".cc": CPP,
+			".cpp": CPP,
+			".cxx": CPP,
+			".h": CPP,
+			".hh": CPP,
+			".hpp": CPP,
+			".hxx": CPP,
+		},
+		resolver: createCResolver,
 	},
 	{
 		name: "csharp",

@@ -79,6 +79,12 @@ interface Import {
 	readonly typeOnly: boolean;
 	/** An `export ... from`: it passes names on rather than using them. */
 	readonly reexport: boolean;
+	/**
+	 * Every name its file defines, and every name that file has in scope, is in
+	 * scope here too, as a C or C++ `#include` puts it: a use names no import,
+	 * and is found through these imports in order (include-scope.ts).
+	 */
+	readonly inScope?: true;
 }
 
 /** A part of the file that did not parse: its lines, and the names written there. */
@@ -130,7 +136,7 @@ interface Target {
 }
 
 /** The adapters that read files, one for each entry of the table in adapters.ts. */
-type AdapterName = "typescript" | "python" | "compose" | "csharp";
+type AdapterName = "typescript" | "python" | "compose" | "csharp" | "c" | "cpp";
 
 /**
  * An import with the checkout file it resolves to, where the adapter can
