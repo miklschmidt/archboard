@@ -67,7 +67,7 @@ through the CLI, report it in the board's own terms, and change nothing.
    rank the variants by them.
 5. For where a board's code changes most often (which parts churn, what to
    look at first in a refactor, whether the board's busiest parts are the ones
-   it draws as central), run
+   it draws as central), or which parts change together, run
    `archboard semantic locality <board> [--variant <name>] [--since <date>]`.
    It reads the Git history of the files that each part's `binding` names.
    `hotspots` ranks every part it read by the number of commits that changed
@@ -92,6 +92,26 @@ through the CLI, report it in the board's own terms, and change nothing.
      level of containment with each other.
    - The ranking describes the code, not the board: it says nothing about
      whether the board is right. Change nothing because of it.
+
+   `coupling` lists pairs of parts that changed together: at least 5 shared
+   commits, and a `degree` of at least 30%, which is the shared commits over
+   the mean of the two parts' own counts. The thresholds are fixed. Each pair
+   names its two `subjects` and its shared `commits`. Report it with these
+   cautions:
+   - A pair with `unjoined: true` has no relationship or flow step between
+     the two parts, between their containers, or between parts inside them,
+     and neither part holds the other. It asks a question: does the board miss
+     a dependency (a call, an import, a shared data format), or does one
+     decision live in both parts? Read the subjects of the shared commits
+     before you say which, and say it as a question, never as a fault.
+   - A pair with `unjoined: false` changes together along a dependency the
+     board already draws. That is expected, and it is not a finding.
+   - Parts whose bound paths overlap (one file, or one directory above the
+     other) are never paired, and large commits never count, so neither can
+     make a pair. Parts in `skipped` are in no pair.
+   - Coupling describes the code, like the ranking. Change nothing because of
+     it.
+
 6. Answer from what the CLI printed, naming subjects as the board names them:
    members with their containers, internal relationships, boundary
    relationships as incoming or outgoing, neighbours, a container's entry

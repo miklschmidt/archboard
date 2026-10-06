@@ -1572,7 +1572,7 @@
 				"src/flask/ctx.py",
 				"src/flask/sessions.py"
 			],
-			"prompt": "On the `Flask application` board, which parts change most often in the code they are bound to? Rank them by how many commits changed their files in the year before this checkout, say which parts could not be ranked and why, and say whether any commits were left out of the count. Answer from the saved board and the history of its bound files using the CLI. Change nothing.",
+			"prompt": "On the `Flask application` board, which parts change most often in the code they are bound to? Rank them by how many commits changed their files in the year before this checkout, say which parts could not be ranked and why, and say whether any commits were left out of the count. Also say which parts change together in the same commits. Answer from the saved board and the history of its bound files using the CLI. Change nothing.",
 			"expectedFeatures": [
 				{
 					"feature": "locality.hotspots",
@@ -1587,6 +1587,11 @@
 				{
 					"feature": "locality.skipped",
 					"requirement": "`Development server` is reported as not ranked because it has no binding, never as a part that no commit changed; the answer says that the count left out no large commit",
+					"skill": ["references/read.md#answer-a-question-from-a-saved-board"]
+				},
+				{
+					"feature": "locality.coupling",
+					"requirement": "the answer reports from the same `semantic locality` answer that no pair of parts passes the change-coupling thresholds (its `coupling` list is empty), and does not report the parts that bind one file, such as the five of `src/flask/app.py`, as changing together",
 					"skill": ["references/read.md#answer-a-question-from-a-saved-board"]
 				},
 				{
