@@ -23,9 +23,9 @@ import {
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import {
-	colourDistance,
 	contrast,
 	hueOf,
+	luminance,
 	seenIn,
 } from "@/runtime/semantic-renderer/tests/drawn-colours";
 import { arrangementOf } from "@/runtime/semantic-renderer/tests/drawn-atlas";
@@ -266,24 +266,24 @@ function badges(rendered: RenderedDiagram): Map<string, At> {
 }
 
 describe("a relationship is drawn in one colour from end to end", () => {
-	test("the line and its arrowhead agree, and its pulses carry the same colour at full strength", async () => {
-		const drawn = await architecture();
-		// The light page is near white, so a weaker line sits nearer white.
-		const page = "#ffffff";
-		for (const id of ["moved", "new"]) {
-			const drawnLine = line(subject(drawn, "edge", id));
-			// Every channel of the same relationship, asked separately.
-			expect(headInk(drawn.svg, drawnLine.head)).toBe(drawnLine.ink);
-			const pulses = pulseInks(drawn.svg, id);
-			expect(pulses.length).toBeGreaterThan(0);
-			// The same colour, never a grey over it: every stop of a pulse has the
-			// line's hue, and its head stands farther from the page than the line.
-			for (const pulse of pulses) {
-				expect(Math.abs(hueOf(pulse) - hueOf(drawnLine.ink))).toBeLessThan(6);
+	test("the line and its arrowhead agree, and its pulses are its colour with white mixed in", async () => {
+		for (const theme of ["light", "dark"] as const) {
+			const drawn = await architecture([], theme);
+			for (const id of ["moved", "new"]) {
+				const drawnLine = line(subject(drawn, "edge", id));
+				// Every channel of the same relationship, asked separately.
+				expect(headInk(drawn.svg, drawnLine.head)).toBe(drawnLine.ink);
+				const pulses = pulseInks(drawn.svg, id);
+				expect(pulses.length).toBeGreaterThan(0);
+				// The same colour, never a grey over it: every stop of a pulse has the
+				// line's hue, and it is lighter than the line it rides, on both grounds.
+				for (const pulse of pulses) {
+					expect(Math.abs(hueOf(pulse) - hueOf(drawnLine.ink))).toBeLessThan(6);
+					expect(luminance(pulse)).toBeGreaterThan(luminance(drawnLine.ink));
+				}
 			}
-			const strongest = Math.max(...pulses.map((pulse) => colourDistance(pulse, page)));
-			expect(strongest).toBeGreaterThan(colourDistance(drawnLine.ink, page));
 		}
+		const drawn = await architecture();
 		// A plain board uses another colour, and two standings do not share one;
 		// otherwise three agreeing channels would say nothing.
 		const plain = seenIn(await renderArchitecture({ content: CONTENT }));

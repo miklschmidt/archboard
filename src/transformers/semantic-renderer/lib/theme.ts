@@ -36,6 +36,8 @@ interface Palette {
 	readonly muted: string;
 	/** A neutral line, its arrowhead and a lifeline. */
 	readonly edge: string;
+	/** The light a traffic pulse mixes into the colour of its line. */
+	readonly glow: string;
 	/** A kind glyph. */
 	readonly glyph: string;
 	/** A label chip's face, opaque so it can be read wherever it lands. */
@@ -103,6 +105,7 @@ const PALETTE: Palette = {
 	foreground: token("--card-foreground"),
 	muted: token("--muted-foreground"),
 	edge: token("--diagram-edge"),
+	glow: token("--diagram-glow"),
 	glyph: token("--muted-foreground"),
 	pill: token("--popover"),
 	pillText: token("--popover-foreground"),

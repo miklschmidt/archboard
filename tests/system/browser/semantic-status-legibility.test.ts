@@ -360,7 +360,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	const added = await edgeInks(browser, SURFACE, ids["added"] ?? "");
 	expect(added.head).toBe(added.line);
 	expect(sameHue(added.line, added.band)).toBe(true);
-	// The pulses carry the relationship's colour, the band's hue; the line is drawn weaker.
+	// The pulses carry the relationship's colour with white mixed in, the band's hue.
 	expect(added.streams.length).toBe(1);
 	for (const stream of added.streams) {
 		for (const part of stream.split("|")) {

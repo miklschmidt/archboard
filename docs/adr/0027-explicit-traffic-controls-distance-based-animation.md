@@ -14,14 +14,17 @@ off state, a traffic change is one property for identity, and reduced motion
 hides every pulse.
 
 A pulse is a beam of light, and it is a real gradient. It has a short, hot head
-about 12 units long, in the relationship's colour with some of the page's text
-colour mixed in, and a front that fades out over 3 units. Behind the head is a
-tail of up to 56 units that fades smoothly away to nothing: faint at its far end
-and gathering toward the head. Across the line the light falls off in a soft
-glow, so the beam has no edge. On a dark page the glow is light. On a light page
-it is weak, because a glow there can only darken, and the beam reads as a crisp
-gradient streak. A pulse is as thick as its line plus 0.6 units at its core. It
-follows every bend of its line.
+about 12 units long, in the relationship's colour with white mixed in
+(`--diagram-glow`, TASK-407), and a front that fades out over 3 units. The body
+of the head is half white on the dark ground and 65 % white on the light
+ground. Its front is 80 % and 90 % white. So a pulse is lighter than its line on
+both grounds. Behind the head is a tail of up to 56 units that fades smoothly
+away to nothing: faint at its far end and gathering toward the head. Across the
+line the light falls off in a soft glow, so the beam has no edge. On a dark page
+the glow is light. On a light page the beam shows against its own line as a
+light streak, and its glow shows only on a face that is darker than the page.
+A pulse is as thick as its line plus 0.6 units at its core. It follows every
+bend of its line.
 
 The renderer paints the gradient onto a bar that slides along each straight run
 and each bend of the route. A mask in the shape of that piece of the route lets

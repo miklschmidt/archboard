@@ -278,7 +278,9 @@ A neutral line, its arrowhead and a lifeline are drawn in **Line Ink**
 or more against the ground and a plinth face in both themes, and it stays far
 under the contrast of text. A colored line is drawn in its full color on chalk
 and at three quarters of its color on graphite. Every arrowhead is 11 units
-long, whatever the emphasis of its line.
+long, whatever the emphasis of its line. A traffic pulse is the color of its
+line with white mixed in (`--diagram-glow`), so it reads as light that travels
+along the line on both grounds.
 
 ### Named Rules
 
