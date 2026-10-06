@@ -9,7 +9,7 @@ services:
     image: nginx:1.27
     ports:
       - "8080:80"
-    depends_on:
+    links:
       - ${API_SERVICE:-api}
     environment:
       CACHE_URL: redis://cache:6379/0
