@@ -101,6 +101,10 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *   language the check reads has, or whose `package.json` `exports` names no
  *   file of the checkout, so its interface is not held to what the module
  *   exposes (TASK-368.10). Its `detail` names the module.
+ * - `module-not-read`: a binding's address inside a Terraform or OpenTofu
+ *   module the check does not read: a remote module, which the check never
+ *   fetches, with no plan JSON named for its root module (TASK-367.17). Its
+ *   `detail` names the module call.
  * - `language-server-missing`: no language server for a language on this
  *   machine: it is not installed, `language-servers.json` turns it off, or
  *   that file is not valid. Said once for the language, with no subject and
@@ -130,6 +134,7 @@ const CodeCheckSkipSchema = z
 			"language-server-missing",
 			"language-server-failed",
 			"exposure-unknown",
+			"module-not-read",
 		]),
 		board: z.string().optional(),
 		variant: z.string().optional(),

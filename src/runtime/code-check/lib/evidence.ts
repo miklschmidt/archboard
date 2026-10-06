@@ -594,4 +594,5 @@ export {
 	ownersAtLine,
 	ownersOf,
 	ownersOfSite,
+	piecesBetween,
 };

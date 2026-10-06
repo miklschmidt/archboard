@@ -6,6 +6,7 @@
 // route reads. Only the Archboard server is a stand-in.
 
 import { afterAll, expect, spyOn, test } from "bun:test";
+import { resolve } from "node:path";
 import {
 	CodeCheckAnswerSchema,
 	type CodeCheckAnswer,
@@ -227,6 +228,25 @@ test("--variant names the draft the code check reads, and a draft no board has i
 	asked.length = 0;
 	const alone = await run(["check", "--variant", "TASK-1"]);
 	expect(alone.exited).not.toBe(0);
+	expect(asked).toEqual([]);
+});
+
+test("--plan names each plan JSON by its absolute path, and means nothing without --code", async () => {
+	plain = clean;
+	asked.length = 0;
+	const named = await run([
+		"check",
+		"--code",
+		"--plan",
+		"infra/plan.json",
+		"--plan",
+		"/abs/plan.json",
+	]);
+	expect(named.exited).toBe(0);
+	const query = new URL(`http://host${asked[1] ?? ""}`).searchParams;
+	expect(query.getAll("plan")).toEqual([resolve("infra/plan.json"), "/abs/plan.json"]);
+	asked.length = 0;
+	expect((await run(["check", "--plan", "infra/plan.json"])).exited).not.toBe(0);
 	expect(asked).toEqual([]);
 });
 

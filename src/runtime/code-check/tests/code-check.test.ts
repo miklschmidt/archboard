@@ -120,7 +120,7 @@ beforeAll(async () => {
 						6000,
 					),
 					{ id: "pX", name: "Stranger", kind: "module", order: 7000 },
-					// A key that holds a separator is no part of the last name, `www`.
+					// An instance key, which can hold a separator, names an instance of the declaration `aws_route53_record.www`.
 					part(
 						"pD",
 						"Records",
@@ -312,7 +312,6 @@ test("what the pass cannot read is skipped with its reason, and a reason for a w
 			"ref-not-checked-out pP",
 			"ref-not-checked-out e8",
 			"repository-unregistered e5",
-			`text-only ${SHOP}`,
 		].toSorted(),
 	);
 	// A repository this machine has not registered stays silent.

@@ -5,9 +5,11 @@
 // It reads every board through the store at its current variant, or at the
 // draft `--variant` names, and never a historical or a shelved variant. It
 // reads only files that Git does not ignore, in checkouts this machine has
-// registered, through code facts (`src/runtime/code-facts`): TypeScript and
-// TSX by their syntax, and every other file as text. It writes nothing
-// anywhere.
+// registered, through code facts (`src/runtime/code-facts`): each language an
+// adapter reads by its syntax, and every other file as text. A Terraform or
+// OpenTofu root module is read as one address space, with the plan JSON files
+// an agent named (`readPlans`) for the modules it does not read. It writes
+// nothing anywhere.
 
 export {
 	type BoardToCheck,
@@ -16,3 +18,4 @@ export {
 	readBoardsToCheck,
 } from "@/runtime/code-check/lib/boards";
 export { type CodeCheckOutcome, checkCode } from "@/runtime/code-check/lib/check";
+export { type PlanRefused, readPlans } from "@/runtime/code-check/lib/plans";

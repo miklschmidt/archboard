@@ -18,6 +18,12 @@
 // file, or every file below the directory. A file that passes the symbol on,
 // such as a module's `index.ts`, holds it for a part bound to that file
 // without a symbol, because that is where the code that uses it reaches it.
+//
+// In infrastructure, the anchor is the declaration that joins the two parts
+// (ADR 0046), and a Terraform declaration that neither end binds, such as an
+// event source mapping, can be that declaration. Which declarations join two
+// parts is a rule of each provider (TASK-367.18), so until then the check does
+// not judge where a Terraform anchor's symbol is declared.
 
 import { otherRefOf, readableOf, type ReadCheckout } from "@/runtime/code-check/lib/checkouts";
 import type { AnchorClaim } from "@/runtime/code-check/lib/claims";
@@ -238,6 +244,7 @@ async function judgeSupport(
 	context: SupportContext,
 ): Promise<CodeFinding | undefined> {
 	const { facts } = context.search;
+	if ((await facts.read(checkout, file))?.adapter === "terraform") return undefined;
 	const site =
 		(await definitionSite(facts, checkout, file, claim.anchor.symbol)) ??
 		(await serverSite(claim, file, checkout, context));

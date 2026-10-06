@@ -32,7 +32,7 @@ import {
 	type Checkout,
 	type ReadCheckout,
 } from "@/runtime/code-check/lib/checkouts";
-import { heldInFiles, type Search } from "@/runtime/code-check/lib/symbols";
+import { heldInFiles, terraformRootOfTarget, type Search } from "@/runtime/code-check/lib/symbols";
 import { mergedDefinitions, type Definition } from "@/runtime/code-facts/index";
 import {
 	resolveLocalCodeTarget,
@@ -98,6 +98,8 @@ interface ReadPart {
 	readonly grain: Grain;
 	/** The binding as one value: two parts with the same key bind the same code. */
 	readonly key: string;
+	/** The Terraform root module its bound path names, whose address its symbol is. */
+	readonly root?: string;
 }
 
 /** A part the pass does not read, and the reason the answer gives. */
@@ -216,16 +218,18 @@ function wholeGrainOf(
  * @param symbol The binding's symbol, if any.
  * @param located Where its path is.
  * @param reading The pass.
+ * @param root The Terraform root module its path names, if any.
  * @returns The grain and the files, or undefined when the symbol is not defined there.
  */
 async function grainOf(
 	symbol: string | undefined,
 	located: Extract<Located, { status: "located" }>,
 	reading: PartReading,
+	root: string | undefined,
 ): Promise<Pick<ReadPart, "grain" | "files"> | undefined> {
 	if (symbol === undefined) return wholeGrainOf(located);
 	const search = reading.searchOf(located.checkout);
-	const held = await heldInFiles(search, located.files, symbol, "definition");
+	const held = await heldInFiles(search, located.files, symbol, "definition", root);
 	if (held.status !== "found" || held.definition === undefined) return undefined;
 	const { file, definition } = held;
 	const merged = await mergedDefinitions(search.facts, search.checkout, file, definition.symbol);
@@ -258,10 +262,12 @@ async function partCodeOf(node: SemanticNode, reading: PartReading): Promise<Par
 	if (binding === undefined) return { status: "unbound", node };
 	const located = locate(binding, reading);
 	if (located.status !== "located") return { ...located, node };
-	const code = await grainOf(binding.symbol, located, reading);
+	const root = terraformRootOfTarget(located.target, located.checkout.files);
+	const code = await grainOf(binding.symbol, located, reading, root);
 	if (code === undefined) return { status: "unread", node };
 	const key = `${binding.repo}\0${located.where}\0${binding.symbol ?? ""}`;
-	return { status: "read", node, checkout: located.checkout, key, ...code };
+	const read = { status: "read", node, checkout: located.checkout, key, ...code } as const;
+	return root === undefined ? read : { ...read, root };
 }
 
 /**
