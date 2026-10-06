@@ -113,28 +113,32 @@ in `lib/design.ts`.
    When a route runs down through that corner and no route runs through the
    other top corner, the tab moves to the other corner. Lines cross the region
    and the tab. It casts no shadow. On the light ground the full color is
-   the named color itself, its hue and chroma whole, with its OKLCH lightness
-   held at 0.525, and the faded frame is a light tone of it at lightness 0.78
-   that keeps its hue and a lively chroma (TASK-419, after TASK-422 made the
-   named colors vivid). The words on the tab there are a very light tint of
-   the group's color, at lightness 0.98, near and far. The owner found dark
-   words hard to read on the deep tab (TASK-427). The tab is held as deep as
-   green needs, the color that needs the deepest tab, so the gold's tab is a
-   deep gold. On
-   the dark ground the tab is a light tone of the color and its words a deep
-   shade of it. The full color keeps at least 4.4:1 against the page and the
-   floors of trays on the light ground and 3.2:1 on the dark ground, and the
-   words on the tab keep at least 4.69:1 on the light ground and 8:1 on the
-   dark ground.
-   The faded frame is quieter by design: about 2:1 on the light ground and
-   2.6:1 on the dark ground. The owner chose this look among four drawn side
-   by side (TASK-416, TASK-419).
+   the named color itself, its hue and chroma whole, at an OKLCH lightness of
+   its own between 0.635 and 0.685 (`LIGHT_CORNER` in `lib/svg/regions.ts`),
+   and the faded frame is a light tone of it at lightness 0.78 that keeps its
+   hue and a lively chroma (TASK-419, after TASK-422 made the named colors
+   vivid). The words on the tab there are a very light tint of the group's
+   color, at lightness 0.98, near and far. The owner found dark words hard to
+   read on the deep tab (TASK-427), and then found the deep tabs terrible
+   (TASK-432): each color's tab is the lightest at which its bright words
+   still reach APCA Lc 60. On the dark ground the tab is a light tone of the
+   color at lightness 0.765 and its words a deep shade of it. The words keep
+   Lc 60 or more on every tab in both themes, and the corners keep Lc 57 or
+   more against the page and 53 against the floors of trays on the light
+   ground (the gold 47 and 43), and 58 on the dark ground. The faded frame is quieter by design: about
+   Lc 37 on the light ground and Lc 18 on the dark ground. A yellow group is
+   the gold of the product's primary button (DESIGN.md, the One Gold Rule):
+   its tab is the flat gold (`--primary`) with the gold's dark ink on it
+   (`--primary-foreground`, Lc 72), the one tab whose words are dark, and its
+   corners and frame are the gold as a mark (`--primary-mark`, which the named
+   yellow equals). The owner chose this look among four drawn side by side
+   (TASK-416, TASK-419).
 7. **A card carries its group on its front edge and its face.** The front edge
    of a card is the face turned from the light: the group's hue in shade,
    darker than the face, so it reads as the foot of the block and not as a
    bright strip. On the light ground it is at OKLCH lightness 0.78 and chroma
-   0.096, 1.4:1 or more under its face. On the dark ground it is at lightness
-   0.212 and chroma 0.054, 1.33:1 under its face, the step of a neutral card
+   0.096, 0.11 or more under its face. On the dark ground it is at lightness
+   0.212 and chroma 0.054, 0.098 under its face, the step of a neutral card
    (TASK-422). The face is a clearly colored card in a clean tone of its
    group's hue, an orange face a peach. On the light ground each color has a
    tone of its own (`LIGHT_FACE` in `lib/svg/appearance.ts`), because sRGB
@@ -144,8 +148,9 @@ in `lib/design.ts`.
    from 0.049 for blue to 0.07 for lime to teal, cyan and fuchsia, and 0.055
    for yellow. So no color is clipped into another hue or goes neon. On the
    dark ground the face is a tone of the group's hue at lightness 0.31 and
-   chroma 0.048. The secondary words on a grouped face keep 4.8:1 or more on
-   the light ground and 5.2:1 or more on the dark ground.
+   chroma 0.048. A card's name keeps APCA Lc 82 or more on a grouped face,
+   and its description, in the secondary ink, Lc 62 or more on the light
+   ground and Lc 63 on the dark ground (TASK-432).
    On the light ground a tinted face takes a softer light, so its color does
    not pool at its foot. A card in no group has a neutral front edge and face.
 8. **Small parts are low slabs.** An icon chip, the label of a relationship and
@@ -182,26 +187,29 @@ in `lib/design.ts`.
     shadow. Its words are faded to the
     secondary ink. A removed message's words are in the secondary ink on a flat,
     opaque plate. A removed line is drawn whole at 70 % opacity. Its ink is
-    weakened less than a live line's, so it keeps a contrast of 3:1 on every
-    ground it crosses.
+    weakened less than a live line's, so it keeps APCA Lc 30 or more, the
+    floor for a mark, on every ground it crosses.
 12. **Every arrowhead has one length.** Every head takes its length from
     `HEAD_LENGTH` in `lib/svg/styles.ts`. A head is 11 units long whatever the
     emphasis of its line (TASK-404). Boards and sequences both read it.
 13. **A line reads on every ground.** A card has no border now, so a neutral
     line no longer matches one. A neutral line, its arrowhead and a lifeline
-    are drawn in `--diagram-edge`. On the light ground it has a contrast of
-    3.9:1 against the page and 3.7:1 against the floor of a container
-    (`--tray-floor`). On the dark ground it has 4.6:1 and 4.8:1. Text has
-    16:1 or more. A colored line is drawn in its full color on the light ground,
-    and at three quarters of its color over the page on the dark ground
-    (`LINE_STRENGTH` in `lib/design.ts`). On the light ground every named color
-    but yellow, the gold, is deep enough to keep 3.5:1 against the page and
-    3.2:1 against the floor of a tray, a nested one included (TASK-422). Yellow
-    keeps about 2.5:1. A muted line is as wide as a default line. Its ink is
+    are drawn in `--diagram-edge`. On the light ground it keeps APCA Lc 65
+    against the page and Lc 61 against the floor of a container
+    (`--tray-floor`). On the dark ground it keeps Lc 34, a warm grey since
+    TASK-432. Text keeps Lc 97 or more on the page. A colored line is
+    drawn in its full color on the light ground, and at four fifths of its
+    color over the page on the dark ground (`LINE_STRENGTH` in
+    `lib/design.ts`). On the light ground every named color but yellow, the
+    gold, keeps Lc 53 or more against the page and the floor of a tray, a
+    nested one included (TASK-422); yellow keeps Lc 40. On the dark ground
+    every colored line keeps Lc 31 or more. A muted line is as wide as a
+    default line. Its ink is
     its default ink with the page
     mixed in, so that it keeps 70 % of it on the light ground and 60 % on the
     dark ground (`MUTED_STRENGTH` in `lib/svg/styles.ts`). A muted neutral line
-    has about 2.4:1 against the page on both grounds. It is never made
+    has about Lc 46 against the page on the light ground and Lc 16 on the
+    dark ground. It is never made
     translucent, and its head and its pulses take the same ink (TASK-409).
 14. **The colors are tokens.** The faces, edges, walls, floors, highlights and
     shadows come from the `--slab-*` and `--tray-*` tokens in
@@ -210,7 +218,7 @@ in `lib/design.ts`.
     group's own color token (`--semantic-*`). Each is a relative OKLCH color
     (`toned` in `lib/svg/colour.ts`): the token's hue, a lightness of its own
     and a share of the token's chroma. On the light ground the corners and the
-    tab are the token itself with its lightness held in bounds (`heldTone`),
+    tab are the token itself at a lightness set for each color (`heldTone`),
     so a vivid color stays vivid. Mixing the color into a grey or a
     near-white surface in sRGB turned its hue and lost most of its chroma,
     which made the group colors pale on the light ground and muddy on the dark
@@ -227,10 +235,10 @@ in `lib/design.ts`.
     light ground an
     icon chip takes a tone of its color in OKLCH (`inkedOver` in
     `lib/svg/colour.ts`), and a chip's glyph is its type's color itself, at
-    3.1:1 or more on the chip for every color but yellow, which has 2.2:1. The
-    words are in `--diagram-text` and `--diagram-text-muted`, a deep navy and
-    a slate. The dark ground keeps its values, except a grouped card's front
-    edge (rule 7).
+    APCA Lc 53 or more on the chip for every color but yellow, which has
+    Lc 40. The words are in `--diagram-text` and `--diagram-text-muted`, a
+    deep navy and a slate. The dark ground keeps its values, except a grouped
+    card's front edge (rule 7) and what rule 17 changed.
 16. **A line that meets the foot of a card runs into a port** (TASK-424). The
     port is a slot cut through the card's front edge where the line meets the
     foot: 2.7 units tall, under a 0.6-unit lid and over a 0.7-unit sill, as
@@ -258,6 +266,27 @@ in `lib/design.ts`.
     group) and four for each card with a port, 2.2% to 2.4% more SVG on the
     Codex session and the Web shop boards. The layout, the routes and the
     atlas do not change.
+
+17. **The picture's contrast is judged with APCA** (TASK-432). The owner
+    decided on 2026-10-07 that APCA, the Accessible Perceptual Contrast
+    Algorithm, judges the contrast of the picture's words and marks, in place
+    of the WCAG 2 contrast ratio (PRODUCT.md, Accessibility & Inclusion). The
+    WCAG 2 ratio had held the light group tabs so dark that the owner found
+    them terrible. The levels are APCA's Bronze levels, in Lc, at the size of
+    the picture at 100 %: Lc 75 for a card's name and a label's words, Lc 60
+    for a card's description and a group's caption, Lc 45 for a pin's mark,
+    and Lc 30 as the floor for a line, a corner, an outline or a glyph, which
+    aim at Lc 45 (`APCA` in the tests' `drawn-colours.ts`). APCA measures the
+    words or the mark against what lies under it, in that order, since its
+    result depends on the polarity. To keep these levels, the dark ground
+    changed in three places: the secondary ink is lighter (`--diagram-text-muted`,
+    lightness 0.81), a colored line is drawn at four fifths of its color in
+    place of three quarters, and the red of a removal is lighter (lightness
+    0.76). The dark ground's own neutrals became the warm graphite of the
+    shell, hue 75 at the shell's chroma, with every lightness kept: a well
+    and a card read as a cool, bluish grey beside the warm ground. The ratios
+    written as X:1 in this record before 2026-10-07 were WCAG 2 contrast
+    ratios.
 
 ## What stays
 

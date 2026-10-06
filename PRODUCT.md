@@ -148,14 +148,25 @@ rates. Future work must not invent any of these.
 
 ## Accessibility & Inclusion
 
-WCAG 2.2 AA is the required standard for every surface:
+WCAG 2.2 AA is the required standard for every surface, except for contrast:
 
-- text contrast of 4.5:1, and 3:1 for large text and for the parts of a control
 - every action reachable and operable from the keyboard
 - the reduced-motion preference honored by every animation, including traffic
   and camera glides
 - an accessible name and state for every mark that carries meaning, such as a
   variant's lifecycle or a board's level
+
+The contrast of text and of marks is judged with APCA (the Accessible
+Perceptual Contrast Algorithm), not with the WCAG 2 contrast ratio. The owner
+decided this on 2026-10-07: the WCAG 2 ratio made colors dark and dull where
+they read well. The levels are APCA's Bronze levels, in Lc, for a size at
+100 %:
+
+- Lc 75 for body text: the words a reader reads first, such as a card's name
+- Lc 60 for other content text and for large or bold text, such as a card's
+  description or a group's caption
+- Lc 45 as the aim for a mark that carries meaning, such as a line, a corner,
+  a pin or the parts of a control, and Lc 30 as its floor
 
 The standard applies at the supported desktop size. Screens smaller than 1080p
 and extreme zoom, such as 400%, are out of scope. Thus success criterion 1.4.10
