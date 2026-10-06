@@ -10,6 +10,7 @@ import { useId, useMemo, type CSSProperties, type JSX, type ReactNode } from "re
 import {
 	headLength,
 	lineInk,
+	pulseInk,
 	lineWidth,
 	standingMark,
 	type SubjectStanding,
@@ -154,6 +155,9 @@ function EmphasisSample(props: { readonly width: number }): JSX.Element {
 /** The picture's own proportions of a pulse in small: how thick its core is, and how long its light runs. */
 const PULSE = { width: PLAIN_WIDTH + 0.6, span: 40, glow: 3 } as const;
 
+/** The light of a pulse on the neutral line: the line's colour with white mixed in, as the picture draws it. */
+const PULSE_LIGHT: CSSProperties = { stopColor: pulseInk(NEUTRAL_LINE) };
+
 /**
  * The light of a pulse along its length: nothing, a tail that gathers toward a
  * bright head, and a short soft front.
@@ -191,7 +195,7 @@ function TrafficSample(props: { readonly width: number }): JSX.Element {
 					y2="0"
 				>
 					{PULSE_STOPS.map(([offset, light]) => (
-						<stop key={offset} offset={offset} stopColor="var(--foreground)" stopOpacity={light} />
+						<stop key={offset} offset={offset} style={PULSE_LIGHT} stopOpacity={light} />
 					))}
 				</linearGradient>
 			</defs>
