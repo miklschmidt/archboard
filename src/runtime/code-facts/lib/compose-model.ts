@@ -342,7 +342,7 @@ function visibilityOf(kind: string, body: unknown): Pick<Definition, "visibility
  * @returns `runs` for a service that builds here, else nothing.
  */
 function runsOfDeclaration(kind: string, body: unknown): Pick<Definition, "runs"> {
-	const runs = kind === "services" && isMapping(body) ? runsOf(body, interpolated) : undefined;
+	const runs = kind === "services" && isMapping(body) ? runsOf(body) : undefined;
 	return runs === undefined ? {} : { runs };
 }
 
