@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 44,
+	"version": 46,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-06T11:54:56.220Z",
+	"updatedAt": "2026-10-06T12:07:09.582Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -7363,7 +7363,7 @@
 		{
 			"id": "kcVcykKS",
 			"name": "TASK-369.05 after TASK-369.03",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "43ocjw4I",
 			"summary": "An agent can map a branch onto a board and set it against the branch's proposal",
 			"content": {
@@ -8463,9 +8463,9 @@
 		{
 			"id": "nwOSzaDS",
 			"name": "TASK-367.05",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "kcVcykKS",
-			"summary": "archboard check --code reports anchors and bound symbols that no longer hold",
+			"summary": "Service level: the Archboard server module, the routes and socket its callers reach, the one write boundary behind them, and the modules it calls outside itself. Follow linked subjects for related levels.",
 			"content": {
 				"nodes": [
 					{
@@ -9592,7 +9592,7 @@
 			}
 		}
 	],
-	"current": "kcVcykKS",
+	"current": "nwOSzaDS",
 	"adoptions": [
 		{
 			"variant": "82cs8TFY",
@@ -9623,6 +9623,12 @@
 			"from": "43ocjw4I",
 			"at": "2026-10-06T11:39:33.838Z",
 			"reason": "Adds the footprint route and command: the parts a branch changed, set against the parts its proposal names"
+		},
+		{
+			"variant": "nwOSzaDS",
+			"from": "kcVcykKS",
+			"at": "2026-10-06T12:07:09.582Z",
+			"reason": "TASK-367.05 adds the code check module: the code check route asks it for the boards to read and their findings, and it reads every board through the store at its current variant or the named draft"
 		}
 	],
 	"shelvings": [
