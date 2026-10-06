@@ -108,12 +108,18 @@ in `lib/design.ts`.
    other top corner, the tab moves to the other corner. Lines cross the region
    and the tab. It casts no shadow. On the light ground the full color is
    the named color itself, its hue and chroma whole, with its OKLCH lightness
-   held between 0.615 and 0.645, and the faded frame is a light tone of it at
-   lightness 0.78 that keeps its hue and a lively chroma (TASK-419, after
-   TASK-422 made the named colors vivid). On the dark ground both are tones of
-   the color. The full color keeps at least 3:1 against the page and the
-   floors of trays, and the words on the tab, a deep shade of the group's
-   color, keep at least 4.6:1 on the light ground and 8:1 on the dark ground.
+   held at 0.525, and the faded frame is a light tone of it at lightness 0.78
+   that keeps its hue and a lively chroma (TASK-419, after TASK-422 made the
+   named colors vivid). The words on the tab there are a very light tint of
+   the group's color, at lightness 0.98, near and far. The owner found dark
+   words hard to read on the deep tab (TASK-427). The tab is held as deep as
+   green needs, the color that needs the deepest tab, so the gold's tab is a
+   deep gold. On
+   the dark ground the tab is a light tone of the color and its words a deep
+   shade of it. The full color keeps at least 4.4:1 against the page and the
+   floors of trays on the light ground and 3.2:1 on the dark ground, and the
+   words on the tab keep at least 4.69:1 on the light ground and 8:1 on the
+   dark ground.
    The faded frame is quieter by design: about 2:1 on the light ground and
    2.6:1 on the dark ground. The owner chose this look among four drawn side
    by side (TASK-416, TASK-419).

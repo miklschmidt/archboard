@@ -279,9 +279,10 @@ shadow is a stack of translucent shapes, with no filter or blur. The colors
 come from the `--slab-*` and `--tray-*` tokens in theme.css, in both themes. A
 group region's frame, corners and tab and a grouped card's face are tones of
 the group's own color, set in OKLCH at one lightness for every color. On chalk
-the corners and the tab are the named color itself, its lightness held between
-0.615 and 0.645 so the words on the tab keep 4.5:1 and the corners keep 3:1, and
-the faded frame is a light tone of the color that keeps its hue. A comparison marks a part by its outline: a
+the corners and the tab are the named color itself, its lightness held at 0.525,
+deep enough that the words on the tab, a very light tint of the color, keep
+4.5:1 for every color, and the faded frame is a light tone of the color that
+keeps its hue. A comparison marks a part by its outline: a
 1.8-unit border in the comparison's green or Changed Orange along the inside edge of its
 top face, solid for added and dashed for changed, and a removed part's dashed
 red border round its footprint. The face and the front edge keep their colors.

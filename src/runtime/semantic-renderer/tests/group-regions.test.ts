@@ -17,7 +17,7 @@ import {
 	routeLabels,
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
-import { contrast, paintedIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
+import { contrast, luminance, paintedIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
 import { groupOf } from "@/runtime/semantic-renderer/tests/drawn-subjects";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import codexWorkhorse from "./codex-workhorse.json";
@@ -352,9 +352,10 @@ test.each(["light", "dark"] as const)(
 				pricing: { name: "Pricing", color: "yellow" },
 				jobs: { name: "Jobs", color: "amber" },
 				stock: { name: "Stock", color: "lime" },
+				growth: { name: "Growth", color: "green" },
 			},
 		});
-		const groups = ["pricing", "jobs", "stock"];
+		const groups = ["pricing", "jobs", "stock", "growth"];
 		const drawn = await renderArchitecture({
 			content: orderedFixture({
 				nodes: [
@@ -406,6 +407,8 @@ test.each(["light", "dark"] as const)(
 				const face = [...tab!.matchAll(/<path [^>]*fill="(#[0-9a-f]{6})"/gu)].at(-1)![1]!;
 				const words = /<text [^>]*fill="(#[0-9a-f]{6})"/u.exec(tab!)![1]!;
 				expect(contrast(words, face), `${group} caption`).toBeGreaterThanOrEqual(4.5);
+				// On the light ground the words are a bright tint on a deep tab (TASK-427).
+				if (theme === "light") expect(luminance(words), group).toBeGreaterThan(luminance(face));
 			}
 		}
 	},
