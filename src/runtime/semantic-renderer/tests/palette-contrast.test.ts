@@ -2,15 +2,23 @@
 // ground (TASK-422).
 //
 // What this catches: a card's words that fall under 4.5:1 on the face a group
-// tints, and, on the light ground, a type's glyph under 3:1 on its chip or a
-// line under 3:1 against the page or a tray's floor. The light colours once
+// tints, and, on the light ground, a face clipped out of its group's hue or
+// too pale to show it, a front edge no darker than its face, a type's glyph
+// under 3:1 on its chip or a line under 3:1 against the page or a tray's
+// floor. The light colours once
 // stayed pale to keep their words legible. These numbers say that deep ink
 // and strong colours keep them legible instead.
 
 import { describe, expect, test } from "bun:test";
 
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { contrast, paintedIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
+import {
+	chromaOf,
+	contrast,
+	luminance,
+	paintedIn,
+	toneHueOf,
+} from "@/runtime/semantic-renderer/tests/drawn-colours";
 import { groupOf } from "@/runtime/semantic-renderer/tests/drawn-subjects";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import type { DiagramTheme } from "@/shared/semantic-board/index";
@@ -58,7 +66,25 @@ function cardOf(markup: string) {
 	const rects = [...afterHalo.matchAll(/<rect[^>]* fill="(#[0-9a-f]{6})"\/>/gu)].map((m) => m[1]!);
 	const words = [...markup.matchAll(/<text [^>]*fill="(#[0-9a-f]{6})"/gu)].map((m) => m[1]!);
 	const glyph = /data-type-icon="[^"]+"><svg[^>]* fill="(#[0-9a-f]{6})"/u.exec(markup)![1]!;
-	return { face: rects[2]!, chip: rects[5]!, glyph, name: words[0]!, description: words[1]! };
+	return {
+		edge: rects[0]!,
+		face: rects[2]!,
+		chip: rects[5]!,
+		glyph,
+		name: words[0]!,
+		description: words[1]!,
+	};
+}
+
+/**
+ * How far apart two hues are, round the circle.
+ * @param a One hue, in degrees.
+ * @param b The other.
+ * @returns The angle between them.
+ */
+function hueApart(a: number, b: number): number {
+	const apart = Math.abs(a - b) % 360;
+	return Math.min(apart, 360 - apart);
 }
 
 describe("every named colour keeps its words and its marks legible", () => {
@@ -73,6 +99,20 @@ describe("every named colour keeps its words and its marks legible", () => {
 			}
 		},
 	);
+
+	test("a grouped face is a clear tint in its group's hue, over an edge in shade (light)", async () => {
+		const svg = paintedIn((await renderArchitecture({ content, policy })).svg, "light");
+		for (const color of COLOURS) {
+			const card = cardOf(groupOf(svg, "node", color)!.markup);
+			const ink = themeColor("light", `--semantic-${color}`);
+			// A tint sRGB cannot hold is clipped into a neighbouring hue: a blue face
+			// turns sky. The face keeps the hue of its colour and a tint that shows.
+			expect(hueApart(toneHueOf(card.face), toneHueOf(ink)), `${color} face hue`).toBeLessThan(6);
+			expect(chromaOf(card.face), `${color} face tint`).toBeGreaterThan(0.028);
+			// The front edge is the face's material turned from the light: darker.
+			expect(luminance(card.edge), `${color} edge`).toBeLessThan(luminance(card.face) * 0.75);
+		}
+	});
 
 	test("a glyph on its chip, and a line on the page and on a tray's floor (light)", async () => {
 		const svg = paintedIn((await renderArchitecture({ content, policy })).svg, "light");

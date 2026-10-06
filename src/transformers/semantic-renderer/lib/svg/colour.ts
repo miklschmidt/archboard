@@ -29,6 +29,12 @@ function mixed(from: string, to: string, amount: number): string {
 interface ToneStep {
 	readonly lightness: number;
 	readonly chroma: number;
+	/**
+	 * The most of the ink's chroma it counts, when not {@link CHROMA_CAP}: a
+	 * tone that holds as much chroma as sRGB has room for at its lightness and
+	 * hue, which differs from hue to hue.
+	 */
+	readonly cap?: number;
 }
 
 /** A tone of an ink on the light ground and on the dark one. */
@@ -54,10 +60,11 @@ const CHROMA_CAP = 0.12;
  * @param step Its lightness and its share of the ink's chroma.
  * @param step.lightness Its lightness.
  * @param step.chroma Its share of the ink's chroma.
+ * @param step.cap The most of the ink's chroma it counts.
  * @returns The tone.
  */
-function tone(ink: string, { lightness, chroma }: ToneStep): string {
-	return `oklch(from ${ink} ${lightness} calc(min(c, ${CHROMA_CAP}) * ${chroma}) h)`;
+function tone(ink: string, { lightness, chroma, cap = CHROMA_CAP }: ToneStep): string {
+	return `oklch(from ${ink} ${lightness} calc(min(c, ${cap}) * ${chroma}) h)`;
 }
 
 /**
@@ -149,6 +156,7 @@ export {
 	type Held,
 	type Inked,
 	type Tone,
+	type ToneStep,
 	colourId,
 	heldTone,
 	inkedOver,

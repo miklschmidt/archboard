@@ -45,19 +45,59 @@ function semanticInk(color: PaletteColor | undefined): string | undefined {
  * edge and the face together are what say which concern a card serves, on
  * either ground. The face is a tone of the group's own hue (`toned`), as quiet
  * as a tint, so its words keep 4.5:1. On the light ground it is a clean tint
- * with its hue in plain sight, an orange face a peach: one chroma for every
- * colour, the most that sRGB holds at that lightness for the narrowest hues
- * (blue and indigo), so no colour is clipped into another hue and every group
- * reads as strongly as every other. The edge carries the colour: a clean,
- * strong tone of it, at a lightness where sRGB holds that chroma for every
- * colour. On the dark ground the edge is the colour mixed into the deep shade
- * (`--slab-deep`).
+ * with its hue in plain sight, an orange face a peach. Every colour has one
+ * lightness, and as much chroma as sRGB has room for at that lightness in its
+ * hue (`FACE_CHROMA`), so no colour is clipped into another hue. The front
+ * edge is the same material turned from the light: the group's hue in shade,
+ * darker than the face and quieter than the group's own colour, so it reads as
+ * the foot of the card and not as a bright strip. On the dark ground the edge
+ * is the colour mixed into the deep shade (`--slab-deep`).
  */
 const CARD_FACE: Tone = {
-	light: { lightness: 0.94, chroma: 0.235 },
+	light: { lightness: 0.93, chroma: 1 },
 	dark: { lightness: 0.31, chroma: 0.27 },
 };
-const CARD_EDGE: Inked = { light: { lightness: 0.76, chroma: 1 }, dark: 0.3 };
+const CARD_EDGE: Inked = { light: { lightness: 0.78, chroma: 0.7 }, dark: 0.3 };
+
+/**
+ * How much chroma a grouped card's face takes on the light ground, by colour:
+ * nine tenths of what sRGB holds at the face's lightness in the colour's hue,
+ * and no more than 0.055, so the hues with room to spare (lime to teal) do not
+ * outshout the ones without (red, blue, violet). Yellow, the gold, takes less,
+ * so its face is a warm gold-white and not an apricot.
+ */
+const FACE_CHROMA: Readonly<Record<PaletteColor, number>> = {
+	red: 0.033,
+	orange: 0.035,
+	amber: 0.043,
+	yellow: 0.042,
+	lime: 0.055,
+	green: 0.055,
+	emerald: 0.055,
+	teal: 0.055,
+	cyan: 0.046,
+	sky: 0.034,
+	blue: 0.031,
+	indigo: 0.031,
+	violet: 0.034,
+	purple: 0.039,
+	fuchsia: 0.052,
+	pink: 0.037,
+	rose: 0.033,
+};
+
+/**
+ * A grouped card's face: a tone of its group's colour, as much chroma as its
+ * hue holds on the light ground ({@link FACE_CHROMA}).
+ * @param color The group's colour.
+ * @returns The face.
+ */
+function faceIn(color: PaletteColor): string {
+	return toned(token(`--semantic-${color}`), {
+		...CARD_FACE,
+		light: { ...CARD_FACE.light, cap: FACE_CHROMA[color] },
+	});
+}
 
 /**
  * How far each tray nested in another sinks toward `--tray-sink`, a step
@@ -93,11 +133,11 @@ const LABEL_EDGE = 0.6;
 /**
  * How much of its type's colour an icon chip's face and edge carry. On the
  * light ground the face is a light, clean tone of the colour, light enough that
- * the glyph, drawn in the colour itself, clears 3:1 on it; the edge is a
- * strong tone of it, like a card's.
+ * the glyph, drawn in the colour itself, clears 3:1 on it; the edge is that
+ * tone in shade, like a card's.
  */
 const CHIP_FACE: Inked = { light: { lightness: 0.945, chroma: 0.21 }, dark: 0.2 };
-const CHIP_EDGE: Inked = { light: { lightness: 0.78, chroma: 0.85 }, dark: 0.2 };
+const CHIP_EDGE: Inked = { light: { lightness: 0.78, chroma: 0.5 }, dark: 0.2 };
 
 /**
  * A card's slab: its face tinted and its front edge toned by the group it is
@@ -109,7 +149,7 @@ const CHIP_EDGE: Inked = { light: { lightness: 0.78, chroma: 0.85 }, dark: 0.2 }
 function cardLook(appearance: NodeAppearance, palette: Palette): SlabLook {
 	const ink = semanticInk(appearance.bodyColor);
 	return {
-		face: ink === undefined ? palette.slabFace : toned(ink, CARD_FACE),
+		face: appearance.bodyColor === undefined ? palette.slabFace : faceIn(appearance.bodyColor),
 		ground: palette.slabFace,
 		edge: ink === undefined ? palette.slabEdge : inkedOver(palette.slabDeep, ink, CARD_EDGE),
 		thickness: CARD_THICKNESS,
