@@ -23,7 +23,8 @@ interface Definition {
 	 * `public`, `protected`, `private` or `#private` for a member. Python:
 	 * `__all__` or `not in __all__` in a module that sets `__all__`, else
 	 * `public` or `non-public` (`_name`); `public`, `non-public` or
-	 * `name-mangled` (`__name`) for a class member.
+	 * `name-mangled` (`__name`) for a class member. Nix: `output` for an
+	 * output of a flake.
 	 */
 	readonly visibility: string;
 	/**
@@ -92,6 +93,12 @@ interface Unparsed {
 	readonly start: number;
 	readonly end: number;
 	readonly names: readonly string[];
+	/**
+	 * The attribute path below which a static reading cannot tell the names,
+	 * as a Nix expression it cannot follow gives them: a symbol below it is
+	 * unknown, never absent. The empty path is every name of the file.
+	 */
+	readonly under?: string;
 }
 
 /**
@@ -136,7 +143,7 @@ interface Target {
 }
 
 /** The adapters that read files, one for each entry of the table in adapters.ts. */
-type AdapterName = "typescript" | "python" | "compose" | "csharp" | "c" | "cpp";
+type AdapterName = "typescript" | "python" | "compose" | "csharp" | "c" | "cpp" | "nix";
 
 /**
  * An import with the checkout file it resolves to, where the adapter can

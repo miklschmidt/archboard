@@ -34,11 +34,13 @@ import {
 import { csharpFacts } from "@/runtime/code-facts/lib/csharp-adapter";
 import { projectFacts } from "@/runtime/code-facts/lib/csharp-project";
 import { createCSharpResolver } from "@/runtime/code-facts/lib/csharp-resolution";
+import { createFlakeResolver, flakeLockFacts } from "@/runtime/code-facts/lib/flake-lock";
 import { treeSitter } from "@/runtime/code-facts/lib/grammars";
 import {
 	createModuleResolver,
 	type CheckoutFiles,
 } from "@/runtime/code-facts/lib/module-resolution";
+import { flakeFacts } from "@/runtime/code-facts/lib/nix-adapter";
 import { pythonFacts } from "@/runtime/code-facts/lib/python-adapter";
 import { createPythonResolver } from "@/runtime/code-facts/lib/python-resolution";
 import { typeScriptFacts } from "@/runtime/code-facts/lib/typescript-adapter";
@@ -93,6 +95,8 @@ const TSX = treeSitter(
 	typeScriptFacts,
 );
 const PYTHON = treeSitter("tree-sitter-python/tree-sitter-python.wasm", "python.scm", pythonFacts);
+/** Only `flake.nix` is read: its outputs. Every other `.nix` file is read as text (TASK-367.21). */
+const FLAKE = treeSitter("@lumis-sh/wasm-nix/tree-sitter-nix.wasm", "nix.scm", flakeFacts);
 const C = treeSitter("tree-sitter-c/tree-sitter-c.wasm", "c.scm", cFacts);
 /** A `.h` is read as C++, which reads the C headers of Redis and SQLite as the C grammar does (TASK-367.09). */
 const CPP = treeSitter("tree-sitter-cpp/tree-sitter-cpp.wasm", "c.scm", cFacts);
@@ -140,6 +144,11 @@ const ADAPTERS: readonly Adapter[] = [
 			".env": envFileFacts,
 		},
 		resolver: createComposeResolver,
+	},
+	{
+		name: "nix",
+		reads: { "flake.nix": FLAKE, "flake.lock": flakeLockFacts },
+		resolver: createFlakeResolver,
 	},
 ];
 
