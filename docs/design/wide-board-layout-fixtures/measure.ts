@@ -19,9 +19,10 @@
 // running again with the experiment applied and AGAINST pointing at the save.
 import fs from "node:fs";
 import path from "node:path";
-import { parseSemanticBoard, VariantContentSchema } from "@/shared/semantic-board/index";
+import { parseSemanticBoard } from "@/shared/semantic-board/index";
 import { REFERENCE_PANE } from "@/shared/shell-geometry/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
+import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import {
 	scorecardOf,
 	verdictOf,
@@ -100,7 +101,8 @@ const results: Record<string, Result> = {};
 console.log(`reference pane ${REFERENCE_PANE.width}x${REFERENCE_PANE.height}`);
 let header = false;
 for (const item of items) {
-	const content = VariantContentSchema.parse(item.content);
+	// A fixture authored before subjects carried an order is given one by position.
+	const content = orderedFixture(item.content);
 	const drawn = await renderArchitecture({ content, theme: "light", fonts: "embedded" });
 	const key = `${item.name} ${item.variant}`;
 	const measures = scorecardOf(drawn, content);
