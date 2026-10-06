@@ -100,7 +100,7 @@ describe("every named colour keeps its words and its marks legible", () => {
 		},
 	);
 
-	test("a grouped face is a clear tint in its group's hue, over an edge in shade (light)", async () => {
+	test("a grouped face is a clear tint in its group's hue (light)", async () => {
 		const svg = paintedIn((await renderArchitecture({ content, policy })).svg, "light");
 		for (const color of COLOURS) {
 			const card = cardOf(groupOf(svg, "node", color)!.markup);
@@ -109,10 +109,26 @@ describe("every named colour keeps its words and its marks legible", () => {
 			// turns sky. The face keeps the hue of its colour and a tint that shows.
 			expect(hueApart(toneHueOf(card.face), toneHueOf(ink)), `${color} face hue`).toBeLessThan(6);
 			expect(chromaOf(card.face), `${color} face tint`).toBeGreaterThan(0.028);
-			// The front edge is the face's material turned from the light: darker.
-			expect(luminance(card.edge), `${color} edge`).toBeLessThan(luminance(card.face) * 0.75);
 		}
 	});
+
+	test.each(["light", "dark"] as DiagramTheme[])(
+		"a grouped card's front edge is its face in shade, a step darker (%s)",
+		async (theme) => {
+			const svg = paintedIn((await renderArchitecture({ content, policy })).svg, theme);
+			for (const color of COLOURS) {
+				const card = cardOf(groupOf(svg, "node", color)!.markup);
+				// The front edge is turned from the light: darker than the face, by as
+				// clear a step as a neutral card's edge in the dark theme, about 1.33:1.
+				expect(luminance(card.edge), `${color} edge`).toBeLessThan(luminance(card.face));
+				expect(contrast(card.edge, card.face), `${color} step`).toBeGreaterThanOrEqual(1.3);
+				expect(
+					hueApart(toneHueOf(card.edge), toneHueOf(card.face)),
+					`${color} edge hue`,
+				).toBeLessThan(8);
+			}
+		},
+	);
 
 	test("a glyph on its chip, and a line on the page and on a tray's floor (light)", async () => {
 		const svg = paintedIn((await renderArchitecture({ content, policy })).svg, "light");
