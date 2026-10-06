@@ -116,8 +116,9 @@ function recordFlight(
 			` await new Promise((r) => setTimeout(r, 150));` +
 			` watch.disconnect();` +
 			` const landed = surface.querySelector(":scope > svg").getBoundingClientRect();` +
+			// The card's own box, its first rect: the shadow it casts reaches further down and right.
 			` const found = ${JSON.stringify(card)} === null ? null` +
-			`   : surface.querySelector("[data-semantic-id='" + ${JSON.stringify(card)} + "']")?.getBoundingClientRect() ?? null;` +
+			`   : surface.querySelector("[data-semantic-id='" + ${JSON.stringify(card)} + "'] > rect:not(.ab-halo)")?.getBoundingClientRect() ?? null;` +
 			` return { before, after: stage.dataset.board, frames, filters: [...filters], last,` +
 			`   landed: [landed.x, landed.y, landed.width, landed.height],` +
 			`   card: found === null ? null : [found.x, found.y, found.width, found.height],` +

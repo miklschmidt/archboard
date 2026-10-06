@@ -483,7 +483,9 @@ describe("what nobody has decided is said in its own corner", () => {
 			// against the surface it lands on and its own mark has to carry against
 			// it. The numbers are the ordinary ones: 3:1 for a shape somebody has to
 			// see, 4.5:1 for a mark somebody has to read.
-			const ground = /<rect [^>]*rx="6" fill="(#[0-9a-f]{6})"/.exec(card.markup)![1]!;
+			// The card's top face, after its edge and the highlight along its top.
+			const face = /class="ab-halo"[^>]*>\s*(?:<rect[^>]*>\s*){2}<rect [^>]*fill="(#[0-9a-f]{6})"/u;
+			const ground = face.exec(card.markup)![1]!;
 			const mark = /<path d="M0,-2.4[^"]*"[^>]*stroke="(#[0-9a-f]{6})"/.exec(card.markup)![1]!;
 			expect(contrast(ink, ground), `badge on a card, ${theme}`).toBeGreaterThanOrEqual(3);
 			expect(contrast(ink, mark), `the mark inside the badge, ${theme}`).toBeGreaterThanOrEqual(

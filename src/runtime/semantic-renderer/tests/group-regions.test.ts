@@ -127,12 +127,13 @@ test.each(["track", "blocks"] as const)(
 			for (const id of members) expect(inside(id), `${id} inside ${group}`).toBeTrue();
 			for (const id of ["cli", "feed"]) expect(inside(id), `${id} outside ${group}`).toBeFalse();
 			expect(drawn.svg).toContain(`>${name}</text>`);
-			// An outline, never a tinted band: what it holds reads on the page as elsewhere.
-			const outline = new RegExp(
+			// A mat of the group's colour, which what it holds stands on.
+			const mat = new RegExp(
 				`<g data-semantic-kind="group-region" data-group="${group}"[^>]*>\\s*<rect[^>]*>`,
 				"u",
 			).exec(drawn.svg)![0];
-			expect(outline).toMatch(/fill(:|=")none/u);
+			expect(mat).not.toMatch(/fill(:|=")none/u);
+			expect(mat).toContain("var(--semantic-");
 			// From far away its caption grows with the cards' names.
 			const sizes = [
 				...new RegExp(

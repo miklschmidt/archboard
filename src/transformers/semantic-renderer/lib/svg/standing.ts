@@ -26,7 +26,11 @@
 //   thing you can see through is not a thing the design claims to have.
 //
 //   **Texture.** The outline says it a third time: solid for added, a long dash
-//   for changed, a fine dot for removed. On a line — where a dash already means
+//   for changed and for removed. A card or a container is a block with no
+//   outline of its own (`slab.ts`), so there the standing takes over the
+//   block's front edge and draws a ring just inside its top face, in the
+//   standing's ink and texture; a label's pill keeps its outline and the
+//   standing takes it over. On a line — where a dash already means
 //   what kind of relationship it is, and the stroke weight already means how much
 //   attention its author asked for — the texture is carried by a wide tinted
 //   swipe laid under the line instead, so neither of the two meanings the line
@@ -55,8 +59,8 @@
 //
 // The selection halo. That ring sits three units *outside* a subject and is
 // invisible until a viewer puts `is-selected` on the group; the standing sits on
-// the subject's own outline and inside its own corner. A selected added node
-// shows both, concentric, and neither is the other.
+// the subject's own edge, inside its face and on its own corner. A selected
+// added node shows both, concentric, and neither is the other.
 //
 // ## The warning, which is not a standing
 //
@@ -540,6 +544,7 @@ export {
 	type UnsettledOf,
 	BADGE_DEPTH,
 	BADGE_SIZE,
+	OUTLINE_DASH,
 	PIN_INSET,
 	HEAD_ATTRIBUTE,
 	PART_ATTRIBUTE,

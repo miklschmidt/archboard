@@ -7,6 +7,41 @@ import { groupOf } from "@/runtime/semantic-renderer/tests/drawn-subjects";
 import { hueOf, paintedIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
 
 /**
+ * A card's or a container's block as painted: the front edge is its body, the
+ * first rect after its selection ring, and the face is the third, over the
+ * highlight along its top edge.
+ * @param markup The subject's group, painted in literals.
+ * @returns The two colours.
+ */
+function blockOf(markup: string): { edge: string; face: string } {
+	const afterHalo = markup.slice(markup.indexOf('class="ab-halo"'));
+	const [edge, , face] = [...afterHalo.matchAll(/<rect[^>]* fill="(#[0-9a-f]{6})"\/>/gu)].map(
+		(found) => found[1]!,
+	);
+	return { edge: edge!, face: face! };
+}
+
+/**
+ * Whether two hues are within a few degrees of each other, round the circle.
+ * @param a One hue.
+ * @param b The other.
+ * @returns True when they are.
+ */
+function sameHue(a: number, b: number): boolean {
+	const apart = Math.abs(a - b) % 360;
+	return Math.min(apart, 360 - apart) <= 15;
+}
+
+/**
+ * The ink a card's type glyph is drawn in.
+ * @param markup The card's group, painted in literals.
+ * @returns The ink.
+ */
+function glyphOf(markup: string): string {
+	return /data-type-icon="[^"]+"><svg[^>]* fill="(#[0-9a-f]{6})"/u.exec(markup)![1]!;
+}
+
+/**
  * The colour a relationship's line is stroked in: the path that ends in its arrowhead.
  * @param markup The relationship's group.
  * @returns The stroke colour.
@@ -56,20 +91,20 @@ describe("a card's body takes its group's colour and its chip its type's", () =>
 					.svg,
 				theme,
 			);
+			const green = hueOf(themeColor(theme, "--semantic-green"));
 			for (const id of ["gate", "work"]) {
 				const markup = groupOf(drawn, "node", id)!.markup;
-				const body = markup.match(/<rect(?![^>]*class="ab-halo")[^>]*>/)![0];
-				expect(body).toContain(`fill="${themeColor(theme, "--semantic-green")}"`);
-				expect(body).toContain('fill-opacity="0.07"');
+				// The slab's front edge is a tone of its group's colour.
+				expect(sameHue(hueOf(blockOf(markup).edge), green), id).toBeTrue();
 				expect(markup).toContain('data-body-color="green"');
 			}
 			// A container draws its own frame in its kind's colour and passes none to what it holds.
 			expect(groupOf(drawn, "node", "side")!.markup).toContain('data-body-color="neutral"');
 			const frame = groupOf(drawn, "region", "cloud")!.markup;
 			expect(frame).toContain('data-body-color="blue"');
-			expect(frame.match(/<rect(?![^>]*class="ab-halo")[^>]*>/)![0]).toContain(
-				`fill="${themeColor(theme, "--semantic-blue")}"`,
-			);
+			expect(
+				sameHue(hueOf(blockOf(frame).edge), hueOf(themeColor(theme, "--semantic-blue"))),
+			).toBeTrue();
 			// A group's only member at its level still takes the group's colour (ADR 0038).
 			expect(groupOf(drawn, "node", "lone")!.markup).toContain('data-body-color="green"');
 			// The chip keeps its type's colour.
@@ -101,7 +136,7 @@ describe("a card's body takes its group's colour and its chip its type's", () =>
 		expect(groupOf(yellow.svg, "node", "gate")!.markup).toContain('data-body-color="yellow"');
 	});
 
-	test("comparison overrides the border while preserving body tint and type chips", async () => {
+	test("comparison takes over the front edge while preserving the face's tint and type chips", async () => {
 		const rendered = await renderArchitecture({
 			content: orderedFixture({ nodes }),
 			policy,
@@ -110,10 +145,12 @@ describe("a card's body takes its group's colour and its chip its type's", () =>
 		const api = groupOf(paintedIn(rendered.svg), "node", "api")!.markup;
 		const unmarked = await renderArchitecture({ content: orderedFixture({ nodes }), policy });
 		const before = groupOf(paintedIn(unmarked.svg), "node", "api")!.markup;
-		expect(api.match(/rx="6" fill="([^"]+)"/)?.[1]).toBe(
-			before.match(/rx="6" fill="([^"]+)"/)?.[1],
-		);
-		expect(api).toContain(`stroke="${themeColor("light", "--semantic-violet")}"`);
+		expect(blockOf(api).edge).toBe(themeColor("light", "--standing-changed"));
+		expect(blockOf(api).face).toBe(blockOf(before).face);
+		expect(glyphOf(api)).toBe(glyphOf(before));
+		expect(
+			sameHue(hueOf(glyphOf(api)), hueOf(themeColor("light", "--semantic-violet"))),
+		).toBeTrue();
 		expect(api).toContain('class="ab-halo"');
 		expect(api).toContain('data-semantic-standing="changed"');
 	});

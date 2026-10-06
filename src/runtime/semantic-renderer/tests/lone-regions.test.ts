@@ -136,7 +136,8 @@ function regionsOf(svg: string, group: string): { box: Box; caption: Box }[] {
 	const shift = bodyShift(svg);
 	const found = svg.matchAll(
 		new RegExp(
-			`<g data-semantic-kind="group-region" data-group="${group}"[^>]*>\\s*<rect([^>]*)>\\s*<g class="ab-near"><text([^>]*)>([^<]*)<`,
+			// The region's box is its mat's first shape; its words follow the tab they are printed on.
+			`<g data-semantic-kind="group-region" data-group="${group}"[^>]*>\\s*<rect([^>]*)>[\\s\\S]*?<g class="ab-near">(?:<(?!text)[^>]*>\\s*)*<text([^>]*)>([^<]*)<`,
 			"gu",
 		),
 	);
