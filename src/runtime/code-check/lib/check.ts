@@ -35,6 +35,8 @@ import {
 } from "@/runtime/code-check/lib/claims";
 import { judgeAnchorKind } from "@/runtime/code-check/lib/anchor-kind";
 import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
+import { composeRunners } from "@/runtime/code-check/lib/compose-runners";
+import { joinEnvironment } from "@/runtime/code-check/lib/environment-join";
 import { evidenceOf, lineagesOf } from "@/runtime/code-check/lib/evidence";
 import { judgeInterfaces, type ModuleReadings } from "@/runtime/code-check/lib/interfaces";
 import { partCodesOf } from "@/runtime/code-check/lib/part-code";
@@ -484,12 +486,14 @@ async function judgeBoardRelationships(read: BoardToCheck, pass: Pass): Promise<
 	});
 	const infrastructure = await terraformEvidenceOf(codes, pass.facts, lineages);
 	const evidence = { ...code, pieces: [...code.pieces, ...infrastructure] };
+	const hops = await joinEnvironment(codes, pass.facts, await composeRunners(codes, pass.facts));
 	const judged = judgeRelationships({
 		read,
 		codes,
-		evidence,
+		evidence: { ...evidence, pieces: [...evidence.pieces, ...hops.pieces] },
 		lineages,
 		relationshipKinds: read.relationshipKinds,
+		hops,
 	});
 	const interfaces = await judgeInterfaces({
 		read,

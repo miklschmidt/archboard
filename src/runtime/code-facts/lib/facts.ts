@@ -33,6 +33,14 @@ interface Definition {
 	 * their module, whether another module can: `open`, `public` or `package`.
 	 */
 	readonly exposed: boolean;
+	/**
+	 * The directory whose code an infrastructure declaration runs, as its file
+	 * writes it, relative to the file's own directory: the build context of a
+	 * compose service, or, where that context is the compose file's own
+	 * directory, the directory of its Dockerfile. The code check joins what the
+	 * code there reads with what the declaration sets (TASK-367.23).
+	 */
+	readonly runs?: string;
 }
 
 /**

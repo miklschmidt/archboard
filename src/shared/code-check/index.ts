@@ -23,7 +23,9 @@
 // a hidden part whose exposed code a file outside the module uses at run time
 // with no caller on the board; `EXPOSED_UNUSED`, information on the container,
 // for exposed names no file outside the module uses; and the skip
-// `exposure-unknown`.
+// `exposure-unknown`. TASK-367.23 joins an environment value the code reads
+// with infrastructure that sets it to another part's address, and says which
+// side of an unsupported relationship has evidence (`missing`).
 
 import { z } from "zod";
 import { EvidenceKindSchema, VaultDiagnosticSchema } from "@/shared/semantic-policy/index";
@@ -61,10 +63,18 @@ const CodeEvidenceSchema = z
  * One thing the code pass found. It has the shape of a vault diagnostic, and
  * its severity is warning or information, never error (ADR 0046). A finding
  * that says something is missing rests on nothing, so it has no `evidence`.
+ *
+ * `missing` is on a `RELATIONSHIP_UNSUPPORTED` across a network hop where only
+ * one side has evidence (TASK-367.23): `code` when the infrastructure sets a
+ * value to the address of its end for the code of its start and that code
+ * reads none of those names, `infrastructure` when the code of its start reads
+ * names that nothing the check reads sets for it. Its evidence is then that
+ * side's.
  */
 const CodeFindingSchema = VaultDiagnosticSchema.extend({
 	severity: z.enum(["warning", "information"]),
 	evidence: z.array(CodeEvidenceSchema).min(1).optional(),
+	missing: z.enum(["code", "infrastructure"]).optional(),
 });
 
 /** A pinned binding's ref, and what its checkout has out instead. */

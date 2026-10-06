@@ -22,13 +22,24 @@
 // the direction of a kind is the vault's convention, and code does not prove
 // a call across a network, through an event bus or through a value a part
 // receives. A relationship with an anchor is judged only by its anchor.
+//
+// Across a network hop, the evidence is the join of code and infrastructure
+// (environment-join.ts): the code reads a value that the infrastructure that
+// runs it sets to another part's address. A piece of that join is shown with
+// its partner, where the value is set. Where nothing supports a relationship
+// whose kind accepts a configured path, `RELATIONSHIP_UNSUPPORTED` says which
+// side has no evidence: the code, when the infrastructure sets a value to the
+// address of the end for the code of the start and that code reads none of
+// those names, or the infrastructure, when the code of the start reads names
+// that nothing the check reads sets for it.
 
 import type { BoardToCheck } from "@/runtime/code-check/lib/boards";
 import type { ClaimSite } from "@/runtime/code-check/lib/claims";
+import type { EnvironmentJoin } from "@/runtime/code-check/lib/environment-join";
 import type { BoardEvidence, Piece } from "@/runtime/code-check/lib/evidence";
 import type { PartCode, ReadPart, SkippedPart } from "@/runtime/code-check/lib/part-code";
 import { edgeSubjects, nodeSubject } from "@/runtime/semantic-board-store/index";
-import type { CodeCheckSkip, CodeFinding } from "@/shared/code-check/index";
+import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "@/shared/code-check/index";
 import type { SemanticEdge } from "@/shared/semantic-board/index";
 import {
 	describeSubject,
@@ -51,6 +62,8 @@ interface RelationshipReading {
 	/** Each part and the parts that hold it, the part first. */
 	readonly lineages: ReadonlyMap<string, ReadonlySet<string>>;
 	readonly relationshipKinds: SemanticPolicy["relationshipKinds"];
+	/** The join of code and infrastructure: each joined piece's partner, and the sides of a hop. */
+	readonly hops: Pick<EnvironmentJoin, "partners" | "sides">;
 }
 
 /** What the relationships of one board give. */
@@ -128,6 +141,20 @@ function onePer(pieces: readonly Piece[], keyOf: (piece: Piece) => string): Piec
 }
 
 /**
+ * Pieces with the partner of each piece of a join across a network hop: the
+ * place where the infrastructure sets the value that the code reads.
+ * @param reading The board.
+ * @param pieces The pieces.
+ * @returns Each piece, followed by its partner where it has one.
+ */
+function withPartners(reading: RelationshipReading, pieces: readonly Piece[]): Piece[] {
+	return pieces.flatMap((piece) => {
+		const partner = reading.hops.partners.get(piece);
+		return partner === undefined ? [piece] : [piece, partner];
+	});
+}
+
+/**
  * What a finding says of its candidates.
  * @param candidates How many of its pieces are candidates.
  * @returns The sentence, or nothing when none is.
@@ -161,7 +188,7 @@ function undrawnFinding(reading: RelationshipReading, to: ReadPart, pieces: Piec
 			`${pieces.length === 1 ? "them" : "each of them to it"}.${unsure} Draw the relationship ` +
 			"this board's question needs, between these parts or parts that hold them, or change " +
 			`the code if it should not reach ${nameOf(reading, to.node.id)}.`,
-		evidence: pieces,
+		evidence: withPartners(reading, pieces),
 	};
 }
 
@@ -340,24 +367,86 @@ function judgeEdge(reading: RelationshipReading, edge: SemanticEdge): CodeFindin
 				`${nameOf(reading, edge.to)} to ${nameOf(reading, edge.from)}. Turn it around if the ` +
 				"code runs that way. If the direction is the convention of its kind, as a subscription " +
 				"runs from the handler to the part that sends the event, anchor it to the code that proves it.",
-			evidence: onePer(accepted, pairOf),
+			evidence: withPartners(reading, onePer(accepted, pairOf)),
 		};
 	}
-	const others = onePer(between, pairOf);
-	const found =
-		others.length === 0
-			? ""
-			: ` The code joins them only by ${[...new Set(others.map((piece) => piece.kind))].join(" and ")} evidence.`;
+	return unsupportedFinding(reading, edge, onePer(between, pairOf));
+}
+
+/**
+ * The names a side's evidence quotes, each once.
+ * @param evidence The evidence.
+ * @returns The names, joined.
+ */
+function namesIn(evidence: readonly CodeEvidence[]): string {
+	return [...new Set(evidence.map((each) => each.symbol))].join(", ");
+}
+
+/**
+ * Which side of a relationship across a network hop has evidence, where only one has.
+ * @param reading The board.
+ * @param edge The relationship.
+ * @returns The side with none, what the other side says, and its evidence; nothing where neither or both have some.
+ */
+function oneSided(
+	reading: RelationshipReading,
+	edge: SemanticEdge,
+): Pick<CodeFinding, "missing"> & { says: string; evidence: CodeEvidence[] } {
+	const neither = { says: "", evidence: [] };
+	if (!accepts(reading, edge.kind, "configured-path")) return neither;
+	const sides = reading.hops.sides(sideOf(reading, edge.from), sideOf(reading, edge.to));
+	const start = nameOf(reading, edge.from);
+	if (sides.settings.length > 0) {
+		return {
+			missing: "code",
+			says:
+				` Only the infrastructure has evidence: it sets ${namesIn(sides.settings)} to the address of ` +
+				`${nameOf(reading, edge.to)} for the code of ${start}, and that code reads none of them.`,
+			evidence: [...sides.settings],
+		};
+	}
+	if (sides.unset.length === 0) return neither;
 	return {
-		...site,
+		missing: "infrastructure",
+		says:
+			` Only the code has evidence: the code of ${start} reads ${namesIn(sides.unset)}, and nothing ` +
+			"the check reads sets them for that code.",
+		evidence: [...sides.unset],
+	};
+}
+
+/**
+ * The finding about a relationship with no anchor that no accepted evidence
+ * joins: with the pieces of other kinds between its ends, and, across a
+ * network hop, the side that has evidence.
+ * @param reading The board.
+ * @param edge The relationship.
+ * @param others One piece of each pair and kind between its ends.
+ * @returns The finding.
+ */
+function unsupportedFinding(
+	reading: RelationshipReading,
+	edge: SemanticEdge,
+	others: readonly Piece[],
+): CodeFinding {
+	const subject = edgeSubjects(reading.read.variant.content)(edge);
+	const kinds = [...new Set(others.map((piece) => piece.kind))].join(" and ");
+	const found = others.length === 0 ? "" : ` The code joins them only by ${kinds} evidence.`;
+	const side = oneSided(reading, edge);
+	const evidence = [...withPartners(reading, others), ...side.evidence];
+	const finding: CodeFinding = {
+		...siteOf(reading.read, `edges.${edge.id}`, subject),
 		severity: "information",
 		code: "RELATIONSHIP_UNSUPPORTED",
 		message:
-			`The ${about} no evidence its kind ${kind} accepts joins the code of its ends.${found} ` +
+			`The ${describeSubject(subject)} has no anchor, and no evidence its kind ` +
+			`${JSON.stringify(edge.kind)} accepts joins the code of its ends.${found}${side.says} ` +
 			"A call across a network, through an event bus or through a value a part receives shows " +
 			"none in code: anchor it to the code that proves it, or change it to what the code does.",
-		...(others.length === 0 ? {} : { evidence: others }),
 	};
+	if (evidence.length > 0) finding.evidence = evidence;
+	if (side.missing !== undefined) finding.missing = side.missing;
+	return finding;
 }
 
 /**

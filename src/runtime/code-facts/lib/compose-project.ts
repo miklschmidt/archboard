@@ -48,6 +48,15 @@ const OVERRIDE_FILES = [
 /** Every name of a compose file the adapter reads. */
 const COMPOSE_FILE_NAMES = [...COMPOSE_FILES, ...OVERRIDE_FILES];
 
+/**
+ * Whether the adapter reads a file as compose.
+ * @param file A path.
+ * @returns True when its name is one of the eight compose file names.
+ */
+function isComposeFile(file: string): boolean {
+	return COMPOSE_FILE_NAMES.includes(path.posix.basename(file));
+}
+
 /** One layer of a project: a document of one of its files, in merge order. */
 interface Layered {
 	readonly path: string;
@@ -240,4 +249,4 @@ function envFileImport(
 	return { ...found, resolved: file, names };
 }
 
-export { COMPOSE_FILE_NAMES, createComposeResolver, projectFiles };
+export { COMPOSE_FILE_NAMES, createComposeResolver, isComposeFile, projectFiles };
