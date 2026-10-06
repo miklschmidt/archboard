@@ -137,10 +137,14 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
   and sections as the Board tab, in the order a reader asks:
   1. **What is it?** The title, the line the subject is responsible for and
      its longer account. Nothing says that either is missing.
-  2. **How does it stand?** Only in a comparison, or with a disagreement still
-     open: what nobody has decided about it, and how it differs from the
-     variant it is read against, with the fields that moved shown whole, each
-     as what it was and what it is.
+  2. **How does it stand?** Only in a comparison, with an open disagreement,
+     or with findings of the last code check. First comes what nobody decided
+     about it. Then Against the code lists each finding of the last pass about
+     the subject, in the words of the check. Warnings come first and wear the
+     warning triangle of the picture. Information has no mark. Each finding
+     shows the code it rests on, and the section gives the time of the pass.
+     Last comes how it differs from the variant it is read against, with the
+     fields that moved shown whole, each as what it was and what it is.
   3. **What does it offer the parts outside it?** Only for a part that holds
      parts: its interface (ADR 0044), read off the variant that holds the part.
      Entry points and Callers each have their count and one row for each part.
@@ -163,6 +167,21 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
   control that copies the path. The repository, branch and commit are on its
   title. This is the one place a binding is shown, and a part with none has no
   such row and no sentence about it.
+
+A subject that the last code check warns about wears a warning triangle
+(TASK-367.24, ADR 0046). It is the triangle that the picture draws on a subject
+that nobody decided, in the same place. On a part, it is the top-right corner,
+and on a container, the header. On a relationship or a message, it is the
+leading edge of the words. One triangle means one thing: look at this before
+you trust it. The selection tab says why.
+
+The pane draws the triangle inside the group of the subject, so the triangle
+moves and recedes with the subject. The picture stays drawn from the board
+alone. The pane reads what the server keeps of the last pass, and it never
+starts a pass. It draws only warnings, and only on the version of the board
+that the pass read. A change to the board thus clears them until the next
+pass. Information draws nothing, and the diagnostics bell stays with the plain
+check.
 
 Both tabs share one frame. Text starts 16 px from either edge of the sidebar,
 and so do the tab labels. A section heading is 12 px semibold in the muted
