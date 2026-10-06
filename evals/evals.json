@@ -63,6 +63,20 @@
 					]
 				},
 				{
+					"feature": "edge.anchor",
+					"requirement": "every relationship carries an `anchor` with the registered repository identity, the repo-relative src/flask file whose body makes the call and the name it calls there (full_dispatch_request's anchor in src/flask/app.py names preprocess_request, dispatch_request or finalize_request); a relationship from the WSGI server, which is outside the checkout, may carry none; no anchor names a line",
+					"skill": [
+						"SKILL.md#evidence-before-a-write",
+						"references/authoring.md#evidence-for-a-relationship",
+						"references/create-architecture.md#create-an-architecture-diagram-from-code"
+					]
+				},
+				{
+					"feature": "binding.symbol",
+					"requirement": "a part that is one function or method of a file holding others (full_dispatch_request, preprocess_request, dispatch_request, finalize_request, make_response, process_response in src/flask/app.py) names it in `binding.symbol`, spelled as Python qualifies it (`Flask.full_dispatch_request`, or the bare method name); the `Flask app` container, drawn for the whole module, names none",
+					"skill": ["SKILL.md#evidence-before-a-write", "references/authoring.md#bindings"]
+				},
+				{
 					"feature": "render.svg",
 					"requirement": "pipeline.svg is written from the saved board",
 					"skill": ["SKILL.md#evidence-before-a-write", "SKILL.md#essentials"]
@@ -744,6 +758,14 @@
 						"SKILL.md#everything-the-code-shows",
 						"references/create-sequence.md#create-a-sequence-diagram",
 						"references/sequences-views-walkthroughs.md#flows"
+					]
+				},
+				{
+					"feature": "step.anchor",
+					"requirement": "every step whose message the source makes carries an `anchor` with the registered repository identity, the file whose body sends it and the name it calls or returns from (run_command's anchor in src/flask/cli.py names run_simple or load_app); the Shell's first step, which no file of the checkout sends, may carry none",
+					"skill": [
+						"SKILL.md#evidence-before-a-write",
+						"references/create-sequence.md#create-a-sequence-diagram"
 					]
 				},
 				{
@@ -1657,6 +1679,91 @@
 				{
 					"label": "application",
 					"board": "Flask application"
+				}
+			]
+		},
+		{
+			"id": "S17",
+			"name": "compare the interfaces of competing proposals",
+			"report": "primary",
+			"workflow": "propose-compare",
+			"flask": "3.0.0",
+			"fixture": "fixtures/S17.json",
+			"sources": ["src/flask/app.py", "src/flask/testing.py"],
+			"prompt": "On the `Flask application` board, two competing proposals add Flask's test client (`FlaskClient` in src/flask/testing.py) as a `Test client` part: in `Client at the entry` it calls `WSGI entry`, as a WSGI server does, and in `Client at dispatch` it calls `Dispatch` directly. Before we choose, show me what each proposal changes about the interface of the `Flask app` container, and its entry points, hidden parts, callers, outgoing relationships and pass-through entry points on the current architecture and on both proposals, side by side. We keep `Client at the entry`: shelve `Client at dispatch` with the reason `the test client should enter where a server does`. Change nothing else.",
+			"expectedFeatures": [
+				{
+					"feature": "compare.interface-changes",
+					"requirement": "the answer reports from `semantic compare`'s interface section that `Client at the entry` gains `Test client` as a caller of `Flask app` and moves no part between the interface and the hidden parts, and that `Client at dispatch` gains `Test client` as a caller and makes `Dispatch` an entry point",
+					"skill": [
+						"references/propose-compare.md#propose-and-compare-a-change",
+						"references/read.md#answer-a-question-from-a-saved-board"
+					]
+				},
+				{
+					"feature": "compare.measures-side-by-side",
+					"requirement": "one `semantic compare` call that names both proposals puts the interface measures of the current variant and both proposals side by side, and the answer reports them for `Flask app`: on the current variant 1 entry point (`WSGI entry`), 3 hidden parts, 1 caller, 2 outgoing relationships, 0 pass-through entry points; on `Client at the entry` 1, 3, 2, 2, 0; on `Client at dispatch` 2 entry points (`WSGI entry`, `Dispatch`), 2 hidden parts, 2 callers, 2 outgoing relationships and 1 pass-through entry point (`Dispatch`)",
+					"skill": [
+						"references/propose-compare.md#design-it-twice",
+						"references/read.md#answer-a-question-from-a-saved-board"
+					]
+				},
+				{
+					"feature": "measures.unranked",
+					"requirement": "the answer combines no counts into one score, ranks neither proposal by them and calls no module deep or shallow; `Dispatch` as a pass-through entry point is reported as a question for the reader, not as a fault",
+					"skill": ["references/propose-compare.md#design-it-twice"]
+				},
+				{
+					"feature": "variant.shelve",
+					"requirement": "`Client at dispatch` is shelved with the reason the request gives; `Client at the entry` stays a draft, nothing is adopted and no proposal's content changes",
+					"skill": [
+						"references/propose-compare.md#design-it-twice",
+						"references/variants.md#adoption"
+					]
+				}
+			],
+			"outcomes": [
+				{
+					"check": "variant-exists",
+					"board": "Flask application",
+					"variant": "Client at dispatch",
+					"lifecycle": "shelved"
+				},
+				{
+					"check": "variant-exists",
+					"board": "Flask application",
+					"variant": "Client at the entry",
+					"lifecycle": "draft"
+				},
+				{
+					"check": "current-untouched",
+					"board": "Flask application"
+				},
+				{
+					"check": "version-advanced-by",
+					"board": "Flask application",
+					"max": 1
+				},
+				{
+					"check": "check-clean"
+				}
+			],
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"],
+			"guidance": ["references/propose-compare.md"],
+			"captures": [
+				{
+					"label": "application-current",
+					"board": "Flask application"
+				},
+				{
+					"label": "application-entry",
+					"board": "Flask application",
+					"variant": "Client at the entry"
+				},
+				{
+					"label": "application-dispatch",
+					"board": "Flask application",
+					"variant": "Client at dispatch"
 				}
 			]
 		}
