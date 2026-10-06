@@ -71,6 +71,15 @@ export {
 	placingGroups,
 } from "@/shared/semantic-board/lib/groups";
 export {
+	type Caller,
+	type ContainerInspection,
+	type ContainerInterface,
+	type EntryPoint,
+	type InterfaceMeasures,
+	inspectContainer,
+	interfaceMeasures,
+} from "@/shared/semantic-board/lib/container-interface";
+export {
 	FlowStepSchema,
 	type FlowStep,
 	SemanticFlowSchema,
