@@ -348,17 +348,35 @@ function slabShadow(
 	standing?: SubjectStanding,
 ): string {
 	if (standing === "removed") return ghost(box, radius, palette);
+	return castShadow(box, lift, palette, (layer, grow, paint) => plate(layer, radius + grow, paint));
+}
+
+/**
+ * The layers of the shadow a block casts, each drawn in the block's own
+ * shape, so a block that is not a rounded rect casts a shadow of its shape.
+ * @param box The block's box.
+ * @param lift Which sort of block it is.
+ * @param palette The theme's colours.
+ * @param shape Draws the block's shape over a box grown by some amount, painted as asked.
+ * @returns The shadow's layers.
+ */
+function castShadow(
+	box: Box,
+	lift: Lift,
+	palette: Palette,
+	shape: (layer: Box, grow: number, paint: Attributes) => string,
+): string {
 	return lines(
 		SHADOWS[lift].map(({ dx, dy, grow, share }) =>
-			plate(
+			shape(
 				{
 					x: box.x + dx - grow,
 					y: box.y + dy - grow,
 					width: box.width + 2 * grow,
 					height: box.height + 2 * grow,
 				},
-				radius + grow,
-				{ fill: palette.slabShadow, "fill-opacity": share },
+				grow,
+				{ fill: palette.slabShadow, "fill-opacity": share, "pointer-events": "none" },
 			),
 		),
 	);
@@ -541,6 +559,7 @@ export {
 	type SlabLook,
 	FOOTPRINT_WIDTH,
 	GLINT_WIDTH,
+	castShadow,
 	ghostFace,
 	glintOf,
 	slab,

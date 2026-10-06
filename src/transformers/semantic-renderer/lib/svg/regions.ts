@@ -25,9 +25,9 @@ import { farLayer, nearLayer } from "@/transformers/semantic-renderer/lib/svg/fa
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
 	GLINT_WIDTH,
+	castShadow,
 	glintOf,
 	slab,
-	slabShadow,
 	tinted,
 	type Share,
 } from "@/transformers/semantic-renderer/lib/svg/slab";
@@ -46,7 +46,7 @@ const MAT_FACE: Share = { light: 0.09, dark: 0.11 };
 const MAT_EDGE: Share = { light: 0.45, dark: 0.45 };
 const TAB_FACE: Share = { light: 0.17, dark: 0.17 };
 const TAB_EDGE: Share = { light: 0.4, dark: 0.35 };
-/** The tab's own corners; the one it shares with the mat is the mat's. */
+/** The tab's own rounded corner; the rounded one it shares with the mat is the mat's. */
 const TAB_RADIUS = 8;
 /** How far the caption's words lean from the group's colour toward the text colour. */
 const CAPTION_DEPTH = 0.5;
@@ -79,17 +79,21 @@ interface Crossing {
 }
 
 /**
- * A tab's outline: the corner it shares with the mat the mat's, its outer
- * corners its own, and square where its foot meets the mat's wall, so the tab
- * reads as cut from the mat.
- * @param box The tab.
+ * A tab's outline, the one shape every layer of the tab is drawn in (its
+ * shadow, its foot, its highlight and its face), so they cannot disagree: the
+ * top corner on the mat's wall rounded as the mat's own corner, the corner
+ * diagonally across from it rounded as the tab's own, and the other two
+ * square, where its foot meets the mat's wall and where its top meets the
+ * mat's top edge.
+ * @param box The tab, or a layer of its shadow.
  * @param corner Which of the mat's top corners it stands in.
+ * @param grow How much larger a shadow's layer is, which rounds its corners as much more.
  * @returns Its path.
  */
-function tabPath(box: Box, corner: Corner): string {
+function tabPath(box: Box, corner: Corner, grow = 0): string {
 	const { x, y, width, height } = box;
-	const shared = Math.min(BAND_RADIUS, width / 2, height / 2);
-	const own = Math.min(TAB_RADIUS, width / 2, height / 2);
+	const shared = Math.min(BAND_RADIUS + grow, width / 2, height / 2);
+	const own = Math.min(TAB_RADIUS + grow, width / 2, height / 2);
 	const foot = y + height;
 	/**
 	 * A distance in from the mat's wall, as a page coordinate.
@@ -104,8 +108,7 @@ function tabPath(box: Box, corner: Corner): string {
 		`M${at(0)},${coord(foot)}`,
 		`V${coord(y + shared)}`,
 		`A${coord(shared)},${coord(shared)} 0 0 ${sweep} ${at(shared)},${coord(y)}`,
-		`H${at(width - own)}`,
-		`A${coord(own)},${coord(own)} 0 0 ${sweep} ${at(width)},${coord(y + own)}`,
+		`H${at(width)}`,
 		`V${coord(foot - own)}`,
 		`A${coord(own)},${coord(own)} 0 0 ${sweep} ${at(width - own)},${coord(foot)}`,
 		"Z",
@@ -161,7 +164,9 @@ function captionTab(
 	const face = { ...whole, height: whole.height - TAB_THICKNESS };
 	const lit = { ...face, y: face.y + GLINT_WIDTH, height: face.height - GLINT_WIDTH };
 	return lines([
-		slabShadow(whole, TAB_RADIUS, "tab", palette),
+		castShadow(whole, "tab", palette, (layer, grow, paint) =>
+			tag("path", { d: tabPath(layer, corner, grow), ...paint }),
+		),
 		tag("path", { d: tabPath(whole, corner), fill: colours.tabEdge }),
 		tag("path", { d: tabPath(face, corner), fill: glintOf(colours.tab, palette) }),
 		tag("path", { d: tabPath(lit, corner), fill: colours.tab }),
