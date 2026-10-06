@@ -5,7 +5,7 @@
 // ARCHBOARD_REPOS, so nothing here reads or writes the machine's real one.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
@@ -24,6 +24,8 @@ process.env["ARCHBOARD_REPOS"] = registry;
 const REPO = "github.com/test/bound";
 const PRESENT = "src/present.ts";
 const GONE = "src/gone.ts";
+/** A link inside the checkout to a file beside it, which the code opener refuses to open. */
+const LEAVES = "src/leaves.ts";
 let store: typeof StoreModule;
 let contract: typeof ContractModule;
 const writer = { kind: "agent" as const };
@@ -31,6 +33,9 @@ const writer = { kind: "agent" as const };
 beforeAll(async () => {
 	mkdirSync(join(checkout, "src"), { recursive: true });
 	writeFileSync(join(checkout, PRESENT), "export {};\n");
+	const outside = join(registry, "..", "outside.ts");
+	writeFileSync(outside, "export {};\n");
+	symlinkSync(outside, join(checkout, LEAVES));
 	writeFileSync(
 		registry,
 		JSON.stringify([
@@ -108,6 +113,19 @@ test("a binding whose path has left the repository is reported, and one that is 
 	expect(missing?.path).toContain(moved?.id ?? "no node");
 	// The canvas and the code check find the part by id, not by parsing a path.
 	expect(missing?.subject).toEqual({ kind: "node", id: moved?.id ?? "no node", name: "Moved" });
+}, 30_000);
+
+test("a binding whose symbolic link leaves the checkout is reported, as the code opener refuses it", async () => {
+	await create({
+		name: "linked-system",
+		level: "system",
+		nodes: [
+			{ name: "Kept", kind: "module", binding: { repo: REPO, path: PRESENT } },
+			{ name: "Linked", kind: "module", binding: { repo: REPO, path: LEAVES } },
+		],
+		edges: [{ from: "Kept", to: "Linked", kind: "call" }],
+	});
+	expect(bindingFindings("linked-system").map((issue) => issue.subject?.name)).toEqual(["Linked"]);
 }, 30_000);
 
 test("a repository this machine has not registered is not something the vault got wrong", async () => {

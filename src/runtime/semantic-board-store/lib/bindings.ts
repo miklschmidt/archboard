@@ -59,14 +59,21 @@ function createCheckoutLookup(): CheckoutLookup {
 }
 
 /**
- * Whether the binding's path is a file or directory inside its checkout.
+ * Whether the binding's path is a file or directory inside its checkout, before
+ * and after its symbolic links resolve, as the code opener tests it: a path
+ * whose link leaves the checkout opens nothing.
  * @param root The checkout root on this machine.
  * @param bound The repository-relative path the binding names.
  * @returns True when something is there and it is inside the checkout.
  */
 function insideCheckout(root: string, bound: string): boolean {
 	const target = path.resolve(root, bound);
-	return isPathWithin(root, target) && fs.existsSync(target);
+	if (!isPathWithin(root, target)) return false;
+	try {
+		return isPathWithin(fs.realpathSync.native(root), fs.realpathSync.native(target));
+	} catch {
+		return false;
+	}
 }
 
 /**
