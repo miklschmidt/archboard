@@ -100,10 +100,10 @@ interface SlabLook {
 	/** Its top face. */
 	readonly face: string;
 	/**
-	 * Its top face before its group tinted it, when it did. A standing washes
-	 * this rather than the tinted face, one tint to a face, so a green or an
-	 * orange wash reads as itself and not as a muddy mix with the group's colour,
-	 * which the front edge still carries.
+	 * Its top face before a card's group or a container's kind tinted it. A
+	 * standing washes this rather than the tinted face, one tint to a face, so a
+	 * green or an orange wash reads as itself and not as a muddy mix with the
+	 * other colour, which the front edge or the nameplate still carries.
 	 */
 	readonly ground?: string;
 	/** Its front edge, the side of the block that faces the reader. */
@@ -447,16 +447,17 @@ function standingFace(
 ): { readonly top: string; readonly below: string; readonly hatch: number } {
 	const ink = standing === undefined ? undefined : standingInk(standing, palette);
 	const hatch = Number(standing === "changed" && look.hatch === true);
-	if (look.plate === undefined) {
-		const top =
-			ink === undefined ? look.face : washed(look.ground ?? look.face, ink, WASH, palette);
-		return { top, below: look.face, hatch };
-	}
-	return {
-		top: look.plate.face,
-		below: washed(look.face, ink, PLINTH_WASH, palette),
-		hatch: hatch * PLATE_HATCH,
-	};
+	/**
+	 * The face a standing washes: in place of the tint of its group or its
+	 * kind, one tint to a face, which its edge or its nameplate still carries.
+	 * @param share How much of the standing's ink.
+	 * @returns The face's colour.
+	 */
+	const wash = (share: Share): string =>
+		ink === undefined ? look.face : washed(look.ground ?? look.face, ink, share, palette);
+	return look.plate === undefined
+		? { top: wash(WASH), below: look.face, hatch }
+		: { top: look.plate.face, below: wash(PLINTH_WASH), hatch: hatch * PLATE_HATCH };
 }
 
 /**
