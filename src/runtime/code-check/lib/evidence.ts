@@ -13,7 +13,7 @@
 // reaches no part, and with no answer it stays a candidate. A use through a
 // value, such as `ledger.post()`, gives no evidence. The server is asked about
 // one only for an anchor (anchor-kind.ts, support.ts): asking about every one
-// cost 3 to 4 s of each pass on the dogfood vault and changed no finding. An
+// cost 3 to 5 s of each pass on the dogfood vault and changed no finding. An
 // `import()`, a `require()` or an import for its side effects loads the whole
 // file at run time, so it is a call to the file.
 //
@@ -332,7 +332,7 @@ async function includedSiteOf(repo: RepoReading, facts: SyntaxFacts, symbol: str
  * parts that hold the definition it names in the checkout, resolved, or
  * nothing when it names one only outside; with no answer the candidate stays.
  * Only there can the answer change a finding, since a match that joins a part
- * to itself is no evidence, and asking about every candidate cost 3 to 4 s of
+ * to itself is no evidence, and asking about every candidate cost 3 to 5 s of
  * each pass on the dogfood vault and changed no finding. Any other use gives
  * no evidence: a bare name the file does not define at module level is a
  * local, a parameter or a global, whose definition is in the same function or
