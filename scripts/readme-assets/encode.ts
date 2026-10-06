@@ -42,8 +42,6 @@ interface ClipCut {
 	readonly hold: number;
 	/** The clip's width; its height follows. */
 	readonly width: number;
-	/** WebP quality, 0 to 100. */
-	readonly quality: number;
 	/** A stretch played faster, in seconds from the take's first: the wait for an answer. */
 	readonly fast?:
 		| { readonly from: number; readonly to: number; readonly speed: number }
@@ -126,7 +124,13 @@ function stackFilter(pages: readonly Size[], stack: ClipCut["stack"]): string {
 }
 
 /**
- * Encode a take into an animated WebP clip.
+ * Encode a take into an animated WebP clip. The clip is lossless. An animated WebP stores each
+ * frame as the rectangle that changed since the one before, and a lossy encoder counts a pixel that
+ * moved by a few levels as unchanged, so a fading shadow or the glow of a pulse leaves a ghost behind
+ * for the rest of the clip, in blocks. A lossless clip leaves none: measured against the filmed
+ * frames, an empty part of the canvas was exact in the lossless clip, and off by up to three levels in
+ * blocks at quality 90. (ffmpeg's libwebp_anim offers no keyframe interval, and `-preset` resets the
+ * lossless setting, so none is given.)
  * @param cut The take and how it is cut.
  */
 async function encodeClip(cut: ClipCut): Promise<void> {
@@ -147,10 +151,8 @@ async function encodeClip(cut: ClipCut): Promise<void> {
 		"[clip]",
 		"-c:v",
 		"libwebp_anim",
-		"-quality",
-		String(cut.quality),
-		"-preset",
-		"drawing",
+		"-lossless",
+		"1",
 		"-compression_level",
 		"6",
 		"-loop",
@@ -226,7 +228,8 @@ async function encodeThumbnail(source: ThumbnailSource, crop: Crop, out: string)
 }
 
 /**
- * Cut a stretch of a recording into an animated WebP loop with no sound.
+ * Cut a stretch of a recording into an animated WebP loop with no sound. The loop is lossless for
+ * the reason a clip is ({@link encodeClip}). It is attached to the README, so its size is no matter.
  * @param video The recording.
  * @param from The first second.
  * @param to The last second.
@@ -251,10 +254,8 @@ async function encodeExcerpt(
 		`fps=${CLIP_FPS},scale=${width}:-2:flags=lanczos`,
 		"-c:v",
 		"libwebp_anim",
-		"-quality",
-		"90",
-		"-preset",
-		"drawing",
+		"-lossless",
+		"1",
 		"-compression_level",
 		"6",
 		"-loop",

@@ -11,6 +11,7 @@ import {
 	now,
 	present,
 	readBoard,
+	attachmentFile,
 	readmeFile,
 	stageUrl,
 	withTake,
@@ -20,7 +21,7 @@ import {
 } from "./kit.ts";
 
 const BOARD = "Renderer layout";
-const CLIP = readmeFile("history.webp");
+const CLIP = attachmentFile("history.webp");
 const THUMBNAIL = readmeFile("idx-history.webp");
 const PANE = { width: 1440, height: 900 } as const;
 const STRIP = { width: 1440, height: 180 } as const;
@@ -79,13 +80,14 @@ function stopsOf(board: SemanticBoard): readonly Stop[] {
 const history: Producer = {
 	kind: "clip",
 	codex: false,
-	files: [CLIP, THUMBNAIL],
+	files: [THUMBNAIL],
+	attachments: [CLIP],
 	needs: ["chromium", "ffmpeg"],
 	plan: [
 		`Start an Archboard server over a copy of .archboard/vault, and read the states of "${BOARD}", their adoption dates and reasons with archboard semantic show.`,
 		`Open the shell on the first state in a private headless Chromium at ${PANE.width}x${PANE.height}, dark, turn the comparison marks off and present the pane; open the timeline strip beside it at ${STRIP.width}x${STRIP.height}.`,
 		"Film archboard browser show moving the pane to each later state while the strip lights it.",
-		`Encode the pane above the strip as a 1280 px WebP at 30 frames a second, and cut ${THUMBNAIL} from the second state.`,
+		`Encode the pane above the strip as a 1280 px lossless WebP at 30 frames a second, in the scratch directory to attach by hand, and cut ${THUMBNAIL} from the second state.`,
 	],
 	/**
 	 * Film the take and encode it.

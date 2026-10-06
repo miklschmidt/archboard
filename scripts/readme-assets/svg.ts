@@ -182,6 +182,7 @@ function diagramProducer(spec: DiagramSpec): Producer {
 			readmeFile(`${spec.name}-dark.svg`),
 			...(spec.thumbnail === undefined ? [] : [spec.thumbnail.file]),
 		],
+		attachments: [],
 		needs: spec.thumbnail === undefined ? ["pyftsubset"] : ["pyftsubset", "chromium", "ffmpeg"],
 		plan: [
 			`Start an Archboard server over a copy of ${spec.vault}.`,

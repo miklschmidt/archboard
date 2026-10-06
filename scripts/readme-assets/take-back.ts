@@ -9,6 +9,7 @@ import {
 	moment,
 	present,
 	readBoard,
+	attachmentFile,
 	readmeFile,
 	withTake,
 	type Producer,
@@ -18,7 +19,7 @@ import {
 const BOARD = "Web shop";
 const REASON = "proposing event-sourced orders";
 const PROPOSAL = "Order events";
-const CLIP = readmeFile("take-back.webp");
+const CLIP = attachmentFile("take-back.webp");
 const THUMBNAIL = readmeFile("idx-safety.webp");
 const TERMINAL_WIDTH = 600;
 const PANE = { width: 1320, height: 1080 } as const;
@@ -27,12 +28,13 @@ const BANNER = "[data-slot='claim-banner']";
 const takeBack: Producer = {
 	kind: "clip",
 	codex: false,
-	files: [CLIP, THUMBNAIL],
+	files: [THUMBNAIL],
+	attachments: [CLIP],
 	needs: ["chromium", "ffmpeg"],
 	plan: [
 		`Start an Archboard server over a copy of examples/web-shop; open the agent's terminal page and the shell on ${BOARD}, presented, side by side in a private headless Chromium, dark.`,
 		`Film archboard claim on ${BOARD}, the pointer pressing Take back control in the pane, and the agent's next write (archboard semantic branch) refused.`,
-		`Encode the two windows side by side as a 1440 px WebP at 30 frames a second, opening on its last frame, and cut ${THUMBNAIL} from the claim banner.`,
+		`Encode the two windows side by side as a 1440 px lossless WebP at 30 frames a second, in the scratch directory to attach by hand, opening on its last frame, and cut ${THUMBNAIL} from the claim banner.`,
 	],
 	/**
 	 * Film the take and encode it.

@@ -7,7 +7,7 @@ import { join } from "node:path";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 import type { ReadmeAsset } from "./manifest.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { ROOT } from "./tools.ts";
+import { ROOT, scratch } from "./tools.ts";
 
 /** A tool an asset is made with. */
 type Need = "chromium" | "ffmpeg" | "pyftsubset" | "codex";
@@ -33,6 +33,11 @@ interface Producer {
 	readonly codex: boolean;
 	/** The files it writes, from the repository root. */
 	readonly files: readonly string[];
+	/**
+	 * The files it writes in the scratch directory, which are too large for the repository and are
+	 * attached to the README by hand with `gh attach`, an absolute path each.
+	 */
+	readonly attachments: readonly string[];
 	readonly needs: readonly Need[];
 	/** What it does, one sentence a step; the dry run prints these and does nothing else. */
 	readonly plan: readonly string[];
@@ -50,6 +55,15 @@ interface Producer {
  */
 function readmeFile(name: string): string {
 	return `docs/readme/${name}`;
+}
+
+/**
+ * Where a file that is attached to the README is written: the scratch directory, not the repository.
+ * @param name The file's name.
+ * @returns Its absolute path.
+ */
+function attachmentFile(name: string): string {
+	return join(scratch("attachments"), name);
 }
 
 /**
@@ -79,4 +93,12 @@ function disagreements(asset: ReadmeAsset, producer: Producer | undefined): read
 	return said.length === 0 ? [] : [`${asset.name}: the manifest says ${said.join("; ")}.`];
 }
 
-export { disagreements, inRepository, readmeFile, type MakeContext, type Need, type Producer };
+export {
+	attachmentFile,
+	disagreements,
+	inRepository,
+	readmeFile,
+	type MakeContext,
+	type Need,
+	type Producer,
+};

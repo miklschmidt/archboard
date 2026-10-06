@@ -11,6 +11,7 @@ import { readTalk } from "@/runtime/walkthrough-recorder";
 import { TALK_SAMPLE_RATE, type Talk } from "@/shared/walkthrough-recording/talk";
 
 import {
+	attachmentFile,
 	encodeExcerpt,
 	encodeThumbnail,
 	holding,
@@ -85,13 +86,22 @@ async function cutFrom(spec: NarratedSpec, video: string, talk: Talk): Promise<v
 			secondOf(seconds, from),
 			secondOf(seconds, to),
 			width,
-			inRepository(file),
+			attachmentFile(file),
 		);
 	}
 	if (spec.thumbnail !== undefined) {
 		const at = secondOf(seconds, spec.thumbnail.step) + 3;
 		await encodeThumbnail({ video, at }, CAPTION_CROP, inRepository(spec.thumbnail.file));
 	}
+}
+
+/**
+ * Where a video's recording is written: the scratch directory, to attach to the README by hand.
+ * @param spec The video.
+ * @returns The MP4's path.
+ */
+function videoOf(spec: NarratedSpec): string {
+	return join(scratch("narrated", spec.name), `${spec.name}.mp4`);
 }
 
 /**
@@ -119,7 +129,7 @@ function walkthroughArguments(spec: NarratedSpec): readonly string[] {
 async function record(spec: NarratedSpec, context: MakeContext): Promise<void> {
 	const work = scratch("narrated", spec.name);
 	const talk = join(work, "talk");
-	const video = join(work, `${spec.name}.mp4`);
+	const video = videoOf(spec);
 	if (context.replay && !existsSync(join(talk, "talk.json"))) {
 		throw new Error(
 			`No recording kept a talk of ${spec.name} in ${talk}. Make it without --replay once.`,
@@ -158,18 +168,19 @@ function narratedProducer(spec: NarratedSpec): Producer {
 	return {
 		kind: "narrated",
 		codex: true,
-		files: [
-			...(spec.loop === undefined ? [] : [spec.loop.file]),
-			...(spec.thumbnail === undefined ? [] : [spec.thumbnail.file]),
+		files: spec.thumbnail === undefined ? [] : [spec.thumbnail.file],
+		attachments: [
+			videoOf(spec),
+			...(spec.loop === undefined ? [] : [attachmentFile(spec.loop.file)]),
 		],
 		needs: ["chromium", "ffmpeg", "codex"],
 		plan: [
 			`Start an Archboard server over a copy of ${spec.vault} that uses this machine's Archboard Codex sign-in.`,
-			`Record "${spec.walkthrough}" on "${spec.board}"${variant} with archboard semantic record --theme dark, narrated by the Codex voice; this spends Codex usage. With --replay, render the talk that the last recording kept again with archboard semantic replay instead, which spends none. The MP4 stays in the scratch directory, to attach to the README by hand.`,
+			`Record "${spec.walkthrough}" on "${spec.board}"${variant} with archboard semantic record --theme dark, narrated by the Codex voice; this spends Codex usage. With --replay, render the talk that the last recording kept again with archboard semantic replay instead, which spends none. The MP4 stays in the scratch directory, to attach to the README by hand with gh attach.`,
 			...(spec.loop === undefined
 				? []
 				: [
-						`Cut steps ${spec.loop.from + 1} to ${spec.loop.to} into ${spec.loop.file}, a silent ${spec.loop.width} px WebP loop.`,
+						`Cut steps ${spec.loop.from + 1} to ${spec.loop.to} into ${spec.loop.file} in the scratch directory, a silent ${spec.loop.width} px lossless WebP loop, to attach by hand.`,
 					]),
 			...(spec.thumbnail === undefined
 				? []

@@ -111,7 +111,7 @@ async function moment(
 
 /** What a take is encoded into. */
 interface ClipOutput {
-	/** The clip, from the repository root. */
+	/** The clip, as an absolute path: a clip is attached to the README, not kept in the repository. */
 	readonly clip: string;
 	readonly width: number;
 	readonly stack?: ClipCut["stack"];
@@ -139,8 +139,7 @@ async function encodeTake(take: Take<Moment | null>, output: ClipOutput): Promis
 		windows: take.footage,
 		from: take.from,
 		to: take.to,
-		quality: 90,
-		out: inRepository(clip),
+		out: clip,
 	});
 	const { noted } = take;
 	if (thumbnail === undefined || noted === null) return;
