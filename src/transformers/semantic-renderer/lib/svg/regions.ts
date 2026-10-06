@@ -34,16 +34,17 @@ import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-run
  * The group's colour on its region, the same on the page, on a tray's floor
  * and on a nested floor: the full colour of the corner brackets and the tab,
  * the faded colour of the frame, and the words on the tab. On the light ground
- * the full colour is the named colour itself (`heldTone`), its lightness held
- * only where the words, a deep shade of the colour, keep 4.5:1 on it and it
- * keeps 3:1 on a nested floor; on the dark ground it is a tone of the colour
- * (`toned`). The faded frame is a light tone of the colour that keeps its hue
- * and a lively chroma. The palette's yellow is the gold of the product
- * (DESIGN.md, the One Gold Rule), and these tones keep it a gold on either
- * ground.
+ * the full colour is the named colour itself (`heldTone`), its hue and chroma
+ * whole, its lightness held deep enough that the words, a very light tint of
+ * the colour, keep 4.5:1 on it for every colour; the deepest hue for that is
+ * green's. On the dark ground the full colour is a light tone of the colour
+ * (`toned`), and the words a deep shade of it. The faded frame is a light tone
+ * of the colour that keeps its hue and a lively chroma. The palette's yellow
+ * is the gold of the product (DESIGN.md, the One Gold Rule), a deep gold on the
+ * light ground.
  */
 const CORNER: Held = {
-	light: { least: 0.615, most: 0.645 },
+	light: { least: 0.5, most: 0.525 },
 	dark: { lightness: 0.74, chroma: 0.95 },
 };
 const FRAME: Tone = {
@@ -51,7 +52,7 @@ const FRAME: Tone = {
 	dark: { lightness: 0.47, chroma: 0.6 },
 };
 const WORDS: Tone = {
-	light: { lightness: 0.16, chroma: 0.2 },
+	light: { lightness: 0.98, chroma: 0.15 },
 	dark: { lightness: 0.16, chroma: 0.2 },
 };
 /**
