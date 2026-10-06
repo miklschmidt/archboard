@@ -173,7 +173,7 @@ recipe names.
   `language-server-missing`, and the names of that language stay matches by
   name. A configured server runs the code of the repository, as an editor does.
   Configure one only for a repository that you work in
-  ([how](references/authoring.md#evidence-for-a-relationship)).
+  ([setup](references/setup.md)).
 - **Open questions.** A question about the product (a field, a selector, what
   a refusal means, what a command accepts) is answered by the references
   below, the generated JSON Schemas under `references/generated/`, and
@@ -450,6 +450,8 @@ are what a branch of one needs on top of it.
 
 - [authoring](references/authoring.md): groups, bindings with branch/commit,
   drill-down, traffic, emphasis, removals and handles, refusals.
+- [setup](references/setup.md): configure a language server for a repository that
+  you work in, and which TypeScript the check runs.
 - [sequences, views and walkthroughs](references/sequences-views-walkthroughs.md):
   view scopes and grammars, message kinds, repeat/note, walkthrough beats and
   their identity, recording a walkthrough to a narrated video, and rendering a
