@@ -12,6 +12,7 @@ import {
 	repoAddContract,
 	repoContract,
 	repoForgetContract,
+	repoLanguageServerContract,
 	repoListContract,
 } from "@/cli/commands/repo";
 import {
@@ -114,6 +115,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 			list: child(contract(repoListContract, "src/cli/commands/repo.ts")),
 			add: child(contract(repoAddContract, "src/cli/commands/repo.ts")),
 			forget: child(contract(repoForgetContract, "src/cli/commands/repo.ts")),
+			"language-server": child(contract(repoLanguageServerContract, "src/cli/commands/repo.ts")),
 		},
 		bare: { kind: "default", child: "list", withLeadingOptions: true },
 	},

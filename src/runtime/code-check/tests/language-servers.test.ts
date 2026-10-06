@@ -27,7 +27,7 @@ import { join } from "node:path";
 import type * as CheckModule from "@/runtime/code-check/index";
 import type { CodeCheckOutcome } from "@/runtime/code-check/index";
 import { board, git, register, write } from "@/runtime/code-check/tests/fixture";
-import { ownServers } from "@/runtime/code-check/tests/servers";
+import { languageServerOf } from "@/runtime/language-servers/index";
 
 const caller = {
 	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
@@ -39,8 +39,7 @@ const vault = join(scratch, "vault");
 process.env["ARCHBOARD_VAULT"] = vault;
 process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
 const SHOP = "github.com/test/shop";
-const servers = ownServers();
-const native = servers.get("typescript")?.status === "command";
+const native = languageServerOf("typescript", scratch, {}).status === "command";
 let outcome: CodeCheckOutcome;
 
 /**
@@ -139,7 +138,7 @@ beforeAll(async () => {
 	const check: typeof CheckModule = await import("@/runtime/code-check/index");
 	const read = check.readBoardsToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
-	outcome = await check.checkCode(read.boards, new AbortController().signal, servers);
+	outcome = await check.checkCode(read.boards, new AbortController().signal);
 });
 
 afterAll(() => {

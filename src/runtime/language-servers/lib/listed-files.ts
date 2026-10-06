@@ -1,39 +1,37 @@
 // The files of a checkout that Git lists under some pathspecs, for a row that
-// finds what its server needs in a checkout: the solution of a .NET checkout,
-// or whether Git tracks a virtual environment, which would make its
-// interpreter a file the checkout ships.
+// finds what its server needs in a checkout: the solution of a .NET checkout.
 //
 // Git reads the index and the working tree and starts no other program. It
 // takes no index lock, so it never makes a commit in the checkout fail, and a
 // timeout from `timing.ts` ends a Git that hangs. A checkout Git cannot list
-// gives no answer, which is not the same as no file: a row that looks for a
-// file the checkout ships must then assume that it ships one.
+// gives no answer, which is not the same as no file.
 
 import { CODE_CHECK_GIT_TIMEOUT_MS } from "@/shared/timing/timing";
 
 /**
- * The files Git lists in a checkout under pathspecs.
+ * The files Git lists in a checkout under pathspecs: the tracked ones, and
+ * the new ones that Git does not ignore.
  * @param root The checkout.
  * @param pathspecs What to list, as Git's pathspecs.
- * @param untracked Also list the new files Git does not ignore, not only the tracked ones.
  * @returns Each path relative to the checkout, with `/` between names, or
  * undefined when Git cannot list the checkout or runs past its timeout.
  */
 async function listedFiles(
 	root: string,
 	pathspecs: readonly string[],
-	untracked: boolean,
 ): Promise<string[] | undefined> {
-	const which = untracked ? ["--cached", "--others", "--exclude-standard"] : ["--cached"];
 	try {
-		const child = Bun.spawn(["git", "ls-files", "-z", ...which, "--", ...pathspecs], {
-			cwd: root,
-			stdin: "ignore",
-			stdout: "pipe",
-			stderr: "ignore",
-			env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
-			timeout: CODE_CHECK_GIT_TIMEOUT_MS,
-		});
+		const child = Bun.spawn(
+			["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", ...pathspecs],
+			{
+				cwd: root,
+				stdin: "ignore",
+				stdout: "pipe",
+				stderr: "ignore",
+				env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
+				timeout: CODE_CHECK_GIT_TIMEOUT_MS,
+			},
+		);
 		const [listed, exitCode] = await Promise.all([new Response(child.stdout).text(), child.exited]);
 		if (exitCode !== 0 || child.signalCode !== null) return undefined;
 		return listed.split("\0").filter((file) => file !== "");

@@ -136,20 +136,21 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *   module the check does not read: a remote module, which the check never
  *   fetches, with no plan JSON named for its root module (TASK-367.17). Its
  *   `detail` names the module call.
- * - `language-server-missing`: no language server for a language on this
- *   machine: it is not installed, `language-servers.json` turns it off, or
- *   that file is not valid. Said once for the language, with no subject and
- *   no repo; its uses stay as code facts read them, candidates or no evidence
- *   (TASK-367.13). Its `detail` names the language and why.
+ * - `language-server-missing`: a language that has no server in a checkout.
+ *   Python, C, C++, Objective-C, C# and Swift have no default server: an agent
+ *   that works in the repository configures one for its checkout (`archboard
+ *   repo language-server`), so the check runs no code of a checkout that
+ *   nobody agreed to run. Also a configured command that is not installed. Said once for the checkout and the language,
+ *   with its `repo` and no subject; its uses stay as code facts read them,
+ *   candidates or no evidence (TASK-367.13, TASK-433). Its `detail` names the
+ *   language, why, and the command that configures one.
  * - `language-server-unready`: a project the language server cannot answer
  *   about yet, such as a Swift package that no build has indexed, which the
  *   check never builds (TASK-367.16), a C# checkout with no solution or
- *   project file for csharp-ls to load, or a checkout whose `.venv` holds a
- *   Python interpreter that Git tracks, which basedpyright would run
- *   (TASK-367.14), or a C, C++ or Objective-C file with no
- *   `compile_commands.json` in its checkout, or one that lists no command,
- *   without which clangd only guesses its flags (TASK-367.15). Said once for the
- *   project, with its checkout's `repo`; its uses stay as code facts read
+ *   project file for csharp-ls to load, or a C, C++ or Objective-C file with
+ *   no `compile_commands.json` in its checkout, or one that lists no command,
+ *   without which clangd only guesses its flags (TASK-367.15). Said once for
+ *   the project, with its checkout's `repo`; its uses stay as code facts read
  *   them. Its `detail` names the language, the project and why.
  * - `language-server-failed`: a language server that did not start, did not
  *   answer in time or ended in one checkout. Said once for the checkout and

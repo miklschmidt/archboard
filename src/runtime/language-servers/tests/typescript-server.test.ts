@@ -3,17 +3,20 @@
 // through a `paths` alias and through a value, its outline tells code that
 // runs from a member of a type, and it loads no plugin. This is
 // the one owner that runs a real server; the stand-in owns the lifecycle.
-// Where this platform has no native tsc, the owner of the default command in
-// session.test.ts fails, and this skips.
+// Where this platform has no native tsc, this skips.
 
 import { afterEach, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { openLanguageServers, readLanguageServers } from "@/runtime/language-servers/index";
+import {
+	languageServerOf,
+	openLanguageServers,
+	type Language,
+} from "@/runtime/language-servers/index";
 import { workspace, type Workspace } from "@/runtime/language-servers/tests/fixture";
 
-/** Archboard's own TypeScript server, as it runs with no `language-servers.json`. */
-const servers = readLanguageServers(join(import.meta.dir, "no-language-servers.json"));
+/** The TypeScript server of a checkout that installs no TypeScript: Archboard's own. */
+const servers = (language: Language, root: string) => languageServerOf(language, root, {});
 
 /** A plugin that leaves a mark wherever it is loaded. */
 const PLUGIN = [
@@ -28,7 +31,7 @@ afterEach(() => {
 	current = undefined;
 });
 
-test.skipIf(servers.get("typescript")?.status !== "command")(
+test.skipIf(servers("typescript", import.meta.dir).status !== "command")(
 	"Archboard's tsc --lsp resolves through an alias and a value, says which definitions are code that runs, and loads no plugin of the checkout",
 	async () => {
 		current = workspace({

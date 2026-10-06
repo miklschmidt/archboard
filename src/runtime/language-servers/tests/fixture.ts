@@ -12,7 +12,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import type { Language, LanguageServerTable } from "@/runtime/language-servers/index";
+import type { Language, LanguageServer } from "@/runtime/language-servers/index";
 
 /** The stand-in server. */
 const FAKE_SERVER = join(import.meta.dir, "fake-language-server.ts");
@@ -21,8 +21,8 @@ const FAKE_SERVER = join(import.meta.dir, "fake-language-server.ts");
 interface Workspace {
 	readonly root: string;
 	readonly state: string;
-	/** A table whose server for a language, TypeScript by default, is the stand-in, in a mode. */
-	readonly table: (mode?: string, language?: Language) => LanguageServerTable;
+	/** The servers of a session: the stand-in, in a mode, for one language (TypeScript by default). */
+	readonly table: (mode?: string, language?: Language) => (language: Language) => LanguageServer;
 	/** The pids of every stand-in that started. */
 	readonly pids: () => number[];
 	/** Where each stand-in started, and the options it was given. */
@@ -33,9 +33,7 @@ interface Workspace {
 	readonly configurations: () => unknown[];
 	/** The arguments each stand-in started with after its mode. */
 	readonly argvs: () => string[][];
-	/** The compilation database each stand-in was pointed at. */
-	readonly databases: () => unknown[];
-	/** The variables `TMPDIR` and `CLANGD_FLAGS` each stand-in started with, or null. */
+	/** The variable `CLANGD_FLAGS` each stand-in started with, or null. */
 	readonly environments: () => Record<string, string | null>[];
 	readonly remove: () => void;
 }
@@ -71,17 +69,18 @@ function workspace(
 	return {
 		root,
 		state,
-		table: (mode = "normal", language = "typescript") =>
-			new Map([
-				[language, { status: "command", argv: [process.execPath, FAKE_SERVER, state, mode] }],
-			]),
+		table:
+			(mode = "normal", only: Language = "typescript") =>
+			(language) =>
+				language === only
+					? { status: "command", argv: [process.execPath, FAKE_SERVER, state, mode] }
+					: { status: "missing", detail: `no ${language} server` },
 		pids: () => lines("pids").map(Number),
 		starts: () =>
 			lines("starts").map((line) => JSON.parse(line) as { cwd: string; options: unknown }),
 		methods: () => lines("methods"),
 		configurations: () => lines("configuration").map((line): unknown => JSON.parse(line)),
 		argvs: () => lines("argvs").map((line) => JSON.parse(line) as string[]),
-		databases: () => lines("databases").map((line): unknown => JSON.parse(line)),
 		environments: () =>
 			lines("environments").map((line) => JSON.parse(line) as Record<string, string | null>),
 		remove: () => {

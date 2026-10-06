@@ -14,8 +14,9 @@
 // project, such as a package's index, once for that project.
 //
 // A question the session cannot put gets no answer, and the use stays as code
-// facts read it. The reason is said once: once for a language whose server is
-// not installed, is turned off or cannot be configured (`missing`), once for
+// facts read it. The reason is said once: once for each checkout and language
+// that has no server (`missing`: none configured for the checkout, or not
+// installed), once for
 // each project where the server cannot answer yet, such as a package with no
 // index or a C file with no compilation database (`unready`), and once for each checkout where a server did not start,
 // did not answer in time or ended (`failed`). No server starts for a project
@@ -29,7 +30,6 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { LanguageServerTable } from "@/runtime/language-servers/lib/configuration";
 import { RequestFailure } from "@/runtime/language-servers/lib/connection";
 import {
 	LANGUAGES,
@@ -44,6 +44,7 @@ import {
 	type OutlineSymbol,
 } from "@/runtime/language-servers/lib/outline";
 import { positionOf } from "@/runtime/language-servers/lib/position";
+import type { LanguageServer } from "@/runtime/language-servers/lib/server-command";
 import {
 	startServer,
 	type DefinitionLocation,
@@ -77,11 +78,11 @@ type DefinitionAnswer =
 interface UnavailableServer {
 	readonly language: Language;
 	/**
-	 * `missing`: no server on this machine; `unready`: a project the server
+	 * `missing`: no server for the language in the checkout; `unready`: a project the server
 	 * cannot answer about yet; `failed`: a server that did not answer.
 	 */
 	readonly reason: "missing" | "unready" | "failed";
-	/** The checkout where a project is not ready or a server failed. */
+	/** The checkout that has no server, where a project is not ready or a server failed. */
 	readonly root?: string;
 	readonly detail: string;
 }
@@ -104,8 +105,8 @@ interface LanguageServerSession {
 
 /** What opening a session needs. */
 interface SessionOptions {
-	/** The server of each language, as the pass read `language-servers.json`. */
-	readonly servers: LanguageServerTable;
+	/** The server of a language in a checkout, by its root. */
+	readonly servers: (language: Language, root: string) => LanguageServer;
 	/** The pass's signal: a cancelled pass asks nothing more and kills every server. */
 	readonly signal: AbortSignal;
 	readonly timeouts?: ServerTimeouts;
@@ -116,6 +117,7 @@ interface Running {
 	readonly language: Language;
 	readonly root: string;
 	readonly key: string;
+	readonly argv: readonly [string, ...string[]];
 	readonly server: Server;
 }
 
@@ -135,6 +137,7 @@ class Session {
 	readonly #timeouts: ServerTimeouts;
 	readonly #projects = new Map<string, Promise<Project>>();
 	readonly #starts = new Map<string, Promise<Server | undefined>>();
+	readonly #commands = new Map<string, LanguageServer>();
 	readonly #started = new Set<Server>();
 	readonly #texts = new Map<string, Promise<string | undefined>>();
 	readonly #outlines = new Map<string, Promise<readonly OutlineSymbol[] | undefined>>();
@@ -332,7 +335,7 @@ class Session {
 			this.#starts.set(key, start);
 		}
 		const server = await start;
-		return server === undefined ? undefined : { language, root, key, server };
+		return server === undefined ? undefined : { language, root, key, argv, server };
 	}
 
 	/**
@@ -355,7 +358,7 @@ class Session {
 
 	/**
 	 * The command of a language's server in a checkout, noting once that the
-	 * language has none. Once a server of the language failed in the checkout,
+	 * checkout has none for the language. Once a server of the language failed in the checkout,
 	 * there is none there for the rest of the pass.
 	 * @param language The language.
 	 * @param root The checkout.
@@ -363,10 +366,14 @@ class Session {
 	 */
 	#commandOf(language: Language, root: string): readonly [string, ...string[]] | undefined {
 		if (this.#unavailable.has(keyOf({ language, reason: "failed", root }))) return undefined;
-		const configured = this.#options.servers.get(language);
-		if (configured?.status === "command") return configured.argv;
-		const detail = configured?.detail ?? `no server is configured for ${language}`;
-		this.#note({ language, reason: "missing", detail });
+		const key = `${language}\0${root}`;
+		let server = this.#commands.get(key);
+		if (server === undefined) {
+			server = this.#options.servers(language, root);
+			this.#commands.set(key, server);
+		}
+		if (server.status === "command") return server.argv;
+		this.#note({ language, reason: "missing", root, detail: server.detail });
 		return undefined;
 	}
 
@@ -421,9 +428,7 @@ class Session {
 	#failed(running: Running, error: unknown): void {
 		const refused = error instanceof RequestFailure && error.kind === "answered";
 		if (refused || this.#options.signal.aborted) return;
-		const { language, root } = running;
-		const configured = this.#options.servers.get(language);
-		const argv = configured?.status === "command" ? configured.argv : [language];
+		const { language, root, argv } = running;
 		this.#note({ language, reason: "failed", root, detail: failure(argv, error) });
 		this.#starts.set(running.key, Promise.resolve(undefined));
 		void running.server.stop(false);

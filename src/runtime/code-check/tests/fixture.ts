@@ -3,6 +3,7 @@
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import type { LanguageServers } from "@/shared/language-servers/index";
 import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
 
 /**
@@ -75,8 +76,13 @@ function board(vault: string, name: string, variants: readonly FixtureVariant[])
  * Register checkouts in an owner's own registry.
  * @param scratch The scratch directory that holds `repos.json`.
  * @param checkouts Each repository and its checkout.
+ * @param servers The language servers configured for every checkout.
  */
-function register(scratch: string, checkouts: Readonly<Record<string, string>>): void {
+function register(
+	scratch: string,
+	checkouts: Readonly<Record<string, string>>,
+	servers: LanguageServers = {},
+): void {
 	write(scratch, {
 		"repos.json": JSON.stringify(
 			Object.entries(checkouts).map(([repo, root]) => ({
@@ -84,6 +90,7 @@ function register(scratch: string, checkouts: Readonly<Record<string, string>>):
 				root,
 				source: "declared",
 				addedAt: "2026-10-06T00:00:00.000Z",
+				servers,
 			})),
 		),
 	});

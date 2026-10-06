@@ -28,6 +28,8 @@ process.env["ARCHBOARD_VAULT"] = vault;
 process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
 const MALL = "github.com/test/mall";
 let check: typeof CheckModule;
+/** No server for any language, so the judgement reads the evidence code facts give alone. */
+const NO_SERVER = () => ({ status: "missing", detail: "turned off" }) as const;
 let outcome: CodeCheckOutcome;
 
 /**
@@ -224,8 +226,7 @@ beforeAll(async () => {
 	const read = check.readBoardsToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
 	// No language server, so the judgement reads the evidence code facts give alone.
-	const servers = new Map([["typescript", { status: "missing", detail: "turned off" }] as const]);
-	outcome = await check.checkCode(read.boards, new AbortController().signal, servers);
+	outcome = await check.checkCode(read.boards, new AbortController().signal, [], NO_SERVER);
 });
 
 afterAll(() => {
@@ -316,7 +317,7 @@ test("with no language server, a use of a name the same file defines is a candid
 	]);
 	const missing = outcome.skipped.filter((each) => each.reason === "language-server-missing");
 	expect(missing).toEqual([
-		{ reason: "language-server-missing", detail: "typescript: turned off" },
+		{ reason: "language-server-missing", repo: MALL, detail: "typescript: turned off" },
 	]);
 });
 

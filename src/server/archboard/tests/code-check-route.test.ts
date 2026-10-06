@@ -23,16 +23,12 @@ import { VaultCheckSchema } from "@/shared/semantic-policy/index";
 const caller = {
 	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
-	ARCHBOARD_LANGUAGE_SERVERS: process.env["ARCHBOARD_LANGUAGE_SERVERS"],
 };
 const scratch = mkdtempSync(join(tmpdir(), "archboard-code-check-route-"));
 const checkout = join(scratch, "checkout");
 const vault = join(checkout, "vault");
 process.env["ARCHBOARD_VAULT"] = vault;
 process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
-// No language-servers.json, so a pass runs the defaults whatever this machine's
-// file names; the checkout holds only TypeScript, whose server comes with Archboard.
-process.env["ARCHBOARD_LANGUAGE_SERVERS"] = join(scratch, "language-servers.json");
 let server: typeof ServerModule;
 let route: typeof RouteModule;
 const listening: Server[] = [];

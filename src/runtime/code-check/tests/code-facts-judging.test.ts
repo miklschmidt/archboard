@@ -16,7 +16,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as CheckModule from "@/runtime/code-check/index";
 import { board, git, register, write } from "@/runtime/code-check/tests/fixture";
-import { ownServers } from "@/runtime/code-check/tests/servers";
 
 const caller = {
 	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
@@ -153,7 +152,7 @@ afterAll(() => {
 async function pass() {
 	const read = check.readBoardsToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
-	return check.checkCode(read.boards, new AbortController().signal, ownServers());
+	return check.checkCode(read.boards, new AbortController().signal);
 }
 
 test("a TypeScript file holds a bound symbol it defines and an anchored one it defines or uses, never one in a comment or a string", async () => {

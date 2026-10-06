@@ -5,8 +5,16 @@ import {
 	listRepos,
 	registryPath,
 	RepoRegistryError,
+	setLanguageServer,
 } from "@/runtime/engine/repo-registry";
+import { inspectCheckout } from "@/runtime/engine/git";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import {
+	CONFIGURABLE_LANGUAGES,
+	LanguageServerEntrySchema,
+	LanguageServersSchema,
+	type LanguageServerEntry,
+} from "@/shared/language-servers/index";
 
 const tail = z.array(z.string()).default([]);
 
@@ -58,7 +66,7 @@ const repoContract = defineCommand({
 	 * @returns Never; the usage error is the whole behaviour.
 	 */
 	async handler() {
-		throw new CliUsageError("repo needs a subcommand: list, add, or forget");
+		throw new CliUsageError("repo needs a subcommand: list, add, forget, or language-server");
 	},
 });
 
@@ -68,6 +76,7 @@ const RegisteredRepoResultSchema = z.object({
 	source: z.enum(["declared", "observed"]),
 	addedAt: z.string(),
 	exists: z.boolean().optional(),
+	servers: LanguageServersSchema.optional(),
 });
 type RegisteredRepoResult = z.infer<typeof RegisteredRepoResultSchema>;
 const RepoListInputSchema = z.object({ text: z.boolean().default(false), tail });
@@ -150,10 +159,13 @@ const repoListContract = defineCommand({
 		}
 		return {
 			result: repos
-				.map(
-					(entry) =>
-						`${entry.repo}\n  ${entry.root}${entry.exists ? "" : "  (gone)"}  [${entry.source}]`,
-				)
+				.map((entry) => {
+					const servers = Object.entries(entry.servers ?? {}).map(
+						([language, server]) =>
+							`\n  ${language}: ${[server.command, ...server.args].join(" ")}`,
+					);
+					return `${entry.repo}\n  ${entry.root}${entry.exists ? "" : "  (gone)"}  [${entry.source}]${servers.join("")}`;
+				})
 				.join("\n"),
 		};
 	},
@@ -322,7 +334,204 @@ const repoForgetContract = defineCommand({
 	},
 });
 
+const RepoLanguageServerInputSchema = z.object({
+	language: z.enum(CONFIGURABLE_LANGUAGES, {
+		error: `repo language-server needs a language: ${CONFIGURABLE_LANGUAGES.join(", ")}`,
+	}),
+	command: z.string().min(1).optional(),
+	arg: z.array(z.string()).default([]),
+	remove: z.boolean().default(false),
+	repo: z.string().min(1).optional(),
+	tail,
+});
+type RepoLanguageServerInput = z.infer<typeof RepoLanguageServerInputSchema>;
+const RepoLanguageServerResultSchema = z.object({
+	success: z.literal(true),
+	repo: z.string(),
+	language: z.enum(CONFIGURABLE_LANGUAGES),
+	servers: LanguageServersSchema,
+	registry: z.string(),
+});
+type RepoLanguageServerResult = z.infer<typeof RepoLanguageServerResultSchema>;
+const repoLanguageServerContract = defineCommand({
+	path: ["repo", "language-server"],
+	shared: [],
+	summary: "Set or remove the language server of one language for a registered checkout",
+	description:
+		"A language server resolves what the code check can only match by name. Python, C, C++, Objective-C, C# and Swift have no default server, because a server there runs code of the checkout as your editor's does: configure one only for a repository you work in. The check then runs exactly this command, its arguments and your environment. The language is python, csharp, swift or c (C, C++ and Objective-C). TypeScript needs no configuration. The checkout is the working directory's, unless --repo names another registered one.",
+	examples: [
+		"archboard repo language-server c clangd",
+		"archboard repo language-server python pyright-langserver --arg=--stdio",
+		"archboard repo language-server swift --remove",
+	],
+	parameters: [
+		{
+			kind: "positional",
+			key: "language",
+			name: "language",
+			required: true,
+			description: `One of ${CONFIGURABLE_LANGUAGES.join(", ")}`,
+		},
+		{
+			kind: "positional",
+			key: "command",
+			name: "command",
+			description:
+				"A program on the PATH or the absolute path of one; required unless --remove is given",
+		},
+		{
+			kind: "option",
+			key: "arg",
+			spellings: ["--arg"],
+			value: "required",
+			occurrences: "append",
+			placeholder: "argument",
+			description:
+				"An argument after the command; write one that starts with - as --arg=<argument>",
+		},
+		{
+			kind: "option",
+			key: "remove",
+			spellings: ["--remove"],
+			value: "none",
+			description: "Remove the language's server instead of setting it",
+		},
+		{
+			kind: "option",
+			key: "repo",
+			spellings: ["--repo"],
+			value: "required",
+			placeholder: "identity",
+			description:
+				"The registered repository, such as github.com/acme/payments; the working directory's checkout when absent",
+		},
+		{
+			kind: "positional",
+			key: "tail",
+			name: "ignored",
+			repeatable: true,
+			route: "pass-through",
+			hidden: true,
+			description: "Legacy ignored positional content",
+		},
+	],
+	input: { ingress: RepoLanguageServerInputSchema },
+	result: RepoLanguageServerResultSchema,
+	output: {
+		cases: [
+			{
+				id: "json",
+				when: {},
+				mode: "json",
+				description: "The servers now configured for the checkout",
+				presentation: ["diagnostics", "result"],
+			},
+		],
+		/**
+		 * Selects the only output case.
+		 * @returns The json case id.
+		 */
+		select: () => "json",
+	},
+	prerequisites: [],
+	effects: ["local-read", "local-write"],
+	refusals: [],
+	relationships: [],
+	/**
+	 * Sets or removes one language's server on a registered checkout.
+	 * @param input - The parsed options.
+	 * @param context - The command context.
+	 * @returns The checkout's servers after the change.
+	 */
+	async handler(input, context) {
+		const server = requestedServer(input);
+		const repo =
+			input.repo ??
+			(await workingDirectoryRepo(context.resolvePath(process.cwd()), context.signal));
+		const entry = setLanguageServer(repo, input.language, server);
+		if (entry === undefined) throw new CliUsageError(notRegistered(repo));
+		return {
+			result: {
+				success: true as const,
+				repo,
+				language: input.language,
+				servers: entry.servers ?? {},
+				registry: registryPath(),
+			},
+			diagnostics: [
+				server === undefined
+					? `Removed the ${input.language} server of "${repo}". check --code starts none there.`
+					: `check --code runs ${[server.command, ...server.args].join(" ")} for ${input.language} in "${repo}", with your environment, as your editor would. It runs code of that checkout.`,
+			],
+		};
+	},
+});
+
+/**
+ * The server a `repo language-server` call asks for.
+ * @param input The parsed options.
+ * @returns The command and arguments to set, or undefined to remove the server.
+ * @throws {CliUsageError} When the options ask for both or neither, or the command is not one.
+ */
+function requestedServer(input: RepoLanguageServerInput): LanguageServerEntry | undefined {
+	if (input.remove) {
+		if (input.command === undefined && input.arg.length === 0) return undefined;
+		throw new CliUsageError("--remove takes no command and no --arg");
+	}
+	if (input.command === undefined) {
+		throw new CliUsageError(
+			`repo language-server ${input.language} needs the command that starts the server, or --remove`,
+		);
+	}
+	const parsed = LanguageServerEntrySchema.safeParse({ command: input.command, args: input.arg });
+	if (!parsed.success) throw new CliUsageError(z.prettifyError(parsed.error));
+	return parsed.data;
+}
+
+/**
+ * Why a repository cannot be configured: it is not registered.
+ * @param repo The identity.
+ * @returns The refusal.
+ */
+function notRegistered(repo: string): string {
+	const known = listRepos().map((each) => each.repo);
+	const registered = known.length > 0 ? ` (registered: ${known.join(", ")})` : "";
+	return `"${repo}" is not registered on this machine${registered}. Register its checkout with archboard repo add <dir>.`;
+}
+
+/**
+ * The repository identity of the working directory's checkout, when this
+ * machine registered that checkout.
+ * @param dir The working directory.
+ * @param signal Cancels the git call.
+ * @returns The identity.
+ * @throws {CliUsageError} When the directory is in no repository, or its
+ * checkout is not the registered one.
+ */
+async function workingDirectoryRepo(dir: string, signal: AbortSignal): Promise<string> {
+	const checkout = await inspectCheckout(dir, { signal });
+	if (checkout === undefined) {
+		throw new CliUsageError(
+			`${dir} is in no git repository: run this in a checkout, or name one with --repo.`,
+		);
+	}
+	const registered = listRepos().find((entry) => entry.repo === checkout.identity);
+	if (registered === undefined || registered.root !== checkout.root) {
+		throw new CliUsageError(
+			registered === undefined
+				? `"${checkout.identity}" is not registered on this machine. Register this checkout with archboard repo add ${checkout.root}.`
+				: `"${checkout.identity}" is registered at ${registered.root}, not here. Run this there, or register this checkout with archboard repo add ${checkout.root}.`,
+		);
+	}
+	return checkout.identity;
+}
+
 export {
+	RepoLanguageServerInputSchema,
+	type RepoLanguageServerInput,
+	RepoLanguageServerResultSchema,
+	type RepoLanguageServerResult,
+	repoLanguageServerContract,
 	RepoNamespaceInputSchema,
 	type RepoNamespaceInput,
 	RepoNamespaceResultSchema,

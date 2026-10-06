@@ -30,10 +30,10 @@
 //
 // One pass opens one resolution. Its servers start on their first question,
 // and closing it stops every one, killing them at once when the pass was
-// cancelled, and only then answers. It says once for each language with no
-// server on this machine, once for each project its server cannot answer
-// about yet, such as a Swift package with no index or a C file with no
-// `compile_commands.json`, and once for each
+// cancelled, and only then answers. It says once for each checkout and language
+// with no server, naming the command that configures one, once for each
+// project its server cannot answer about yet, such as a Swift package with no
+// index or a C file with no `compile_commands.json`, and once for each
 // checkout where a server failed.
 
 import path from "node:path";
@@ -45,12 +45,15 @@ import {
 	type Reference,
 } from "@/runtime/code-facts/index";
 import {
+	type Language,
+	type LanguageServer,
+	languageServerOf,
 	openLanguageServers,
 	type LanguageServerSession,
-	type LanguageServerTable,
 	type UnavailableServer,
 } from "@/runtime/language-servers/index";
 import type { CodeCheckSkip } from "@/shared/code-check/index";
+import { CONFIGURABLE_LANGUAGES, type LanguageServers } from "@/shared/language-servers/index";
 
 /** Where a server says a use is defined, as the pass reads the checkout. */
 type UseResolution =
@@ -165,11 +168,14 @@ async function siteAt(
 	return code === undefined ? UNKNOWN : { status: "site", ...code };
 }
 
+/** The server of a language in a checkout, by its root. */
+type ServerOf = (language: Language, root: string) => LanguageServer;
+
 /** The resolution of one pass. */
 interface PassResolution {
 	readonly resolve: Resolve;
 	/** Stop every server; then the skips of what could not be asked, by checkout. */
-	readonly close: (checkouts: ReadonlyMap<string, Checkout>) => Promise<CodeCheckSkip[]>;
+	readonly close: () => Promise<CodeCheckSkip[]>;
 }
 
 /**
@@ -188,39 +194,58 @@ function serverSkips(
 		),
 	);
 	return unavailable.map((entry): CodeCheckSkip => {
-		const detail = `${entry.language}: ${entry.detail}`;
-		if (entry.reason === "missing") return { reason: "language-server-missing", detail };
 		const repo = repoAt.get(entry.root ?? "");
 		const reason = `language-server-${entry.reason}` as const;
-		return { reason, ...(repo === undefined ? {} : { repo }), detail };
+		const configure =
+			entry.reason === "missing" && CONFIGURABLE_LANGUAGES.some((each) => each === entry.language)
+				? `. Configure one with \`archboard repo language-server ${entry.language} <command>${repo === undefined ? "" : ` --repo ${repo}`}\``
+				: "";
+		return {
+			reason,
+			...(repo === undefined ? {} : { repo }),
+			detail: `${entry.language}: ${entry.detail}${configure}`,
+		};
 	});
 }
 
 /**
  * Open the resolution of one pass.
- * @param servers The server of each language.
+ * @param servers The servers configured for each repository's checkout.
  * @param signal The pass's signal.
  * @param facts The pass's code facts, which say whether a site declares or defines.
+ * @param checkouts Each repository's checkout, which says where its servers run.
+ * @param serverOf The server of a language in a checkout, where an owner fixes
+ * it; by default the registration's own (`languageServerOf`).
  * @returns The resolution.
  */
 function openResolution(
-	servers: LanguageServerTable,
+	servers: ReadonlyMap<string, LanguageServers>,
 	signal: AbortSignal,
 	facts: FactsPass,
+	checkouts: ReadonlyMap<string, Checkout>,
+	serverOf?: ServerOf,
 ): PassResolution {
-	const session = openLanguageServers({ servers, signal });
+	const byRoot = new Map(
+		[...checkouts].flatMap(([repo, checkout]) =>
+			checkout.status === "read" ? [[checkout.root, servers.get(repo) ?? {}] as const] : [],
+		),
+	);
+	const session = openLanguageServers({
+		servers:
+			serverOf ?? ((language, root) => languageServerOf(language, root, byRoot.get(root) ?? {})),
+		signal,
+	});
 	return {
 		resolve: resolverOf(session, facts),
 		/**
 		 * Stop every server the pass started.
-		 * @param checkouts Each repository's checkout.
 		 * @returns What could not be asked, and why.
 		 */
-		close: async (checkouts) => {
+		close: async () => {
 			await session.close();
 			return serverSkips(session.unavailable(), checkouts);
 		},
 	};
 }
 
-export { type Resolve, type UseResolution, openResolution };
+export { type Resolve, type ServerOf, type UseResolution, openResolution };

@@ -49,7 +49,7 @@ import { lineagesOf } from "@/runtime/code-check/lib/ownership";
 import { kubernetesEvidenceOf } from "@/runtime/code-check/lib/kubernetes-evidence";
 import { partCodesOf } from "@/runtime/code-check/lib/part-code";
 import { judgeRelationships } from "@/runtime/code-check/lib/relationships";
-import { openResolution, type Resolve } from "@/runtime/code-check/lib/resolution";
+import { openResolution, type Resolve, type ServerOf } from "@/runtime/code-check/lib/resolution";
 import { judgeSupport } from "@/runtime/code-check/lib/support";
 import { heldInFiles, terraformRootOfTarget, type Held } from "@/runtime/code-check/lib/symbols";
 import { terraformEvidenceOf } from "@/runtime/code-check/lib/terraform-evidence";
@@ -62,7 +62,6 @@ import {
 } from "@/runtime/code-target/index";
 import type { CodeCheckSkip, CodeFinding } from "@/shared/code-check/index";
 import type { CodeBinding } from "@/shared/code-target/index";
-import { readLanguageServers, type LanguageServerTable } from "@/runtime/language-servers/index";
 
 /** What one pass found and what it did not read. */
 interface CodeCheckOutcome {
@@ -449,16 +448,16 @@ function partBindings(boards: readonly BoardToCheck[]): CodeBinding[] {
  * @param boards The boards, each at the variant the check reads.
  * @param signal Cancels the pass, every Git command it runs, every file it
  * reads and every language server it started.
- * @param servers The language server of each language; by default as this
- * machine's `language-servers.json` names them, read again for each pass.
  * @param plans The Terraform or OpenTofu plans an agent named (`--plan`).
+ * @param serverOf The server of a language in a checkout, where an owner fixes
+ * it; by default each checkout's registration decides (ADR 0046).
  * @returns The findings and what the pass did not read.
  */
 async function checkCode(
 	boards: readonly BoardToCheck[],
 	signal: AbortSignal,
-	servers: LanguageServerTable = readLanguageServers(),
 	plans: FactsPass["plans"] = [],
+	serverOf?: ServerOf,
 ): Promise<CodeCheckOutcome> {
 	const claims = boards.flatMap(claimsOf);
 	const bound = partBindings(boards);
@@ -467,7 +466,12 @@ async function checkCode(
 	const repos = [...claims.map(repoOf), ...bound.map((binding) => binding.repo)];
 	const checkouts = await readCheckouts(repos, snapshot, signal);
 	const facts = codeFacts.pass(signal, plans);
-	const resolution = openResolution(servers, signal, facts);
+	const servers = new Map(
+		snapshot.entries.flatMap((entry) =>
+			entry.servers === undefined ? [] : [[entry.repo, entry.servers] as const],
+		),
+	);
+	const resolution = openResolution(servers, signal, facts, checkouts, serverOf);
 	const pass: Pass = {
 		snapshot,
 		checkouts,
@@ -484,7 +488,7 @@ async function checkCode(
 			await judgeBoardRelationships(read, pass);
 		}
 	} finally {
-		pass.outcome.skipped.push(...(await resolution.close(checkouts)));
+		pass.outcome.skipped.push(...(await resolution.close()));
 	}
 	pass.outcome.skipped.push(...checkoutSkips(checkouts, pass.readAsText));
 	return pass.outcome;

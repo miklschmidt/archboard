@@ -18,8 +18,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CodeCheckOutcome } from "@/runtime/code-check/index";
 import { board, git, register, write } from "@/runtime/code-check/tests/fixture";
-import { ownServers } from "@/runtime/code-check/tests/servers";
-import type { LanguageServerTable } from "@/runtime/language-servers/index";
 
 const caller = {
 	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
@@ -85,7 +83,12 @@ beforeAll(async () => {
 	}));
 	const shop = checkout(SHOP, { ...CODE, "compile_commands.json": JSON.stringify(database) });
 	const bare = checkout(BARE, CODE);
-	register(scratch, { [SHOP]: shop, [BARE]: bare });
+	// Both checkouts configure the stand-in, as `repo language-server c` would.
+	register(
+		scratch,
+		{ [SHOP]: shop, [BARE]: bare },
+		{ c: { command: process.execPath, args: [STAND_IN, join(state, "answers.json")] } },
+	);
 	mkdirSync(state);
 	// What clangd answers in `shop`: `audit_check` is defined in audit.c, and
 	// `audit_log` only declared in ledger.h; each outline declares a function.
@@ -145,12 +148,7 @@ beforeAll(async () => {
 	const check = await import("@/runtime/code-check/index");
 	const read = check.readBoardsToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
-	const clangd = {
-		status: "command",
-		argv: [process.execPath, STAND_IN, join(state, "answers.json")],
-	} as const;
-	const servers: LanguageServerTable = new Map(ownServers()).set("c", clangd);
-	outcome = await check.checkCode(read.boards, new AbortController().signal, servers);
+	outcome = await check.checkCode(read.boards, new AbortController().signal);
 });
 
 afterAll(() => {

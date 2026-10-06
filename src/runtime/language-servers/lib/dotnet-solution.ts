@@ -39,7 +39,7 @@ function nearest(solutions: readonly string[]): string | undefined {
  * @returns The project.
  */
 async function solutionOf(root: string): Promise<Project> {
-	const files = await listedFiles(root, ["*.sln", "*.slnx", "*.csproj"], true);
+	const files = await listedFiles(root, ["*.sln", "*.slnx", "*.csproj"]);
 	if (files === undefined) return { root, unready: "Git cannot list the checkout's files" };
 	const solution = nearest(files.filter((file) => /\.slnx?$/u.test(file)));
 	if (solution !== undefined) {

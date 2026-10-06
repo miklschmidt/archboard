@@ -8,23 +8,19 @@
 // of code facts, a file, a line and a spelling, and gets locations back; it
 // never sees the protocol, a process or a position.
 //
-// Each server is a separate program that a machine may not have, named for
-// this machine in `language-servers.json` in Archboard's state directory.
-// TypeScript needs nothing more: it runs the `tsc --lsp` of Archboard's own
-// `typescript` package, never the TypeScript of a checkout. Python runs
-// pyright, or basedpyright, from the `PATH` with the checkout's own virtual
-// environment. A server that evaluates project files, csharp-ls for C# or
-// sourcekit-lsp for Swift, runs only from an entry in that file. C, C++ and
-// Objective-C run clangd from the `PATH` with the checkout's
-// `compile_commands.json`, its index kept outside the checkout. A pass starts
-// each server it needs once, and stops every one before it returns.
+// Each server is a separate program that a machine may not have, and one that
+// can run code of a checkout runs only where the agent that works in that
+// repository configured it, on the checkout's registration (`archboard repo
+// language-server`), and then as an editor runs it. TypeScript needs no
+// configuration: it runs the native `tsc --lsp` of the checkout's own
+// `typescript` package from TypeScript 7 on, and Archboard's own before that.
+// A pass starts each server it needs once, and stops every one before it
+// returns.
 
 export {
 	type LanguageServer,
-	type LanguageServerTable,
-	languageServersFile,
-	readLanguageServers,
-} from "@/runtime/language-servers/lib/configuration";
+	languageServerOf,
+} from "@/runtime/language-servers/lib/server-command";
 export { type Language } from "@/runtime/language-servers/lib/languages";
 export { type Declaration } from "@/runtime/language-servers/lib/outline";
 export { type DefinitionLocation } from "@/runtime/language-servers/lib/server";

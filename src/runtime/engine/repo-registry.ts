@@ -24,6 +24,12 @@ import { writeFileAtomic } from "@/runtime/engine/atomic-write";
 import { inspectCheckout } from "@/runtime/engine/git";
 import { stateDir } from "@/runtime/engine/state-dir";
 import { isRecord, stringAt } from "@/runtime/engine/lib/unknown-record";
+import {
+	LanguageServersSchema,
+	type ConfigurableLanguage,
+	type LanguageServerEntry,
+	type LanguageServers,
+} from "@/shared/language-servers/index";
 
 type RepoSource = "declared" | "observed";
 
@@ -34,6 +40,12 @@ interface RegisteredRepo {
 	root: string;
 	source: RepoSource;
 	addedAt: string;
+	/**
+	 * The language servers an agent configured for this checkout (ADR 0046,
+	 * TASK-433). Forgetting the checkout forgets them, and registering the same
+	 * root again keeps them.
+	 */
+	servers?: LanguageServers;
 }
 
 interface RegisteredRepoStatus extends RegisteredRepo {
@@ -78,7 +90,20 @@ function normalize(entry: unknown): RegisteredRepo | null {
 		root: path.resolve(root),
 		source: entry["source"] === "declared" ? "declared" : "observed",
 		addedAt: stringAt(entry, "addedAt") ?? new Date().toISOString(),
+		...serversOf(entry["servers"]),
 	};
+}
+
+/**
+ * The servers a stored entry holds, as the field they go in. A server that is
+ * not valid says nothing, so it is dropped with its siblings, and the entry
+ * stays.
+ * @param stored The stored value.
+ * @returns The field, or none when there are no servers.
+ */
+function serversOf(stored: unknown): { servers?: LanguageServers } {
+	const parsed = LanguageServersSchema.safeParse(stored);
+	return parsed.success && Object.keys(parsed.data).length > 0 ? { servers: parsed.data } : {};
 }
 
 /**
@@ -191,13 +216,17 @@ function write(entries: RegisteredRepo[]): boolean {
 
 /**
  * Record one entry, replacing whatever the registry held for that identity.
+ * The servers an agent configured stay while the checkout stays: a checkout
+ * at another root is another place, where nobody configured a server.
  * @param entry The entry to record.
  */
 function upsert(entry: RegisteredRepo): void {
-	const entries = readRegistry().filter((existing) => existing.repo !== entry.repo);
-	entries.push(entry);
-	entries.toSorted(byRepo);
-	write(entries);
+	const before = readRegistry();
+	const previous = before.find((existing) => existing.repo === entry.repo);
+	const servers = entry.servers ?? (previous?.root === entry.root ? previous.servers : undefined);
+	const entries = before.filter((existing) => existing.repo !== entry.repo);
+	entries.push(servers === undefined ? entry : { ...entry, servers });
+	write(entries.toSorted(byRepo));
 }
 
 /**
@@ -290,6 +319,30 @@ function forgetRepo(repo: string): boolean {
 }
 
 /**
+ * Set the server of one language for a registered checkout, or remove it.
+ * @param repo The repository identity.
+ * @param language The language.
+ * @param server Its command and arguments, or undefined to remove it.
+ * @returns The entry as it now stands, or undefined when the identity is not registered.
+ */
+function setLanguageServer(
+	repo: string,
+	language: ConfigurableLanguage,
+	server: LanguageServerEntry | undefined,
+): RegisteredRepo | undefined {
+	const entries = readRegistry();
+	const entry = entries.find((candidate) => candidate.repo === repo);
+	if (entry === undefined) return undefined;
+	const { [language]: _replaced, ...others } = entry.servers ?? {};
+	const servers: LanguageServers =
+		server === undefined ? others : { ...others, [language]: server };
+	const { servers: _before, ...bare } = entry;
+	const updated = Object.keys(servers).length === 0 ? bare : { ...bare, servers };
+	write(entries.map((candidate) => (candidate.repo === repo ? updated : candidate)));
+	return updated;
+}
+
+/**
  * The identities the caller can name right now, for a message that has to list
  * them.
  * @returns The identities whose checkouts are still on this machine.
@@ -312,5 +365,6 @@ export {
 	declareRepo,
 	rememberRepo,
 	forgetRepo,
+	setLanguageServer,
 	knownRepoNames,
 };
