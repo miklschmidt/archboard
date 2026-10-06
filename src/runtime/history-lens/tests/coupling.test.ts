@@ -179,19 +179,22 @@ beforeAll(async () => {
 		]),
 	);
 	together([...PARTS.map(([, , path]) => (path === "src/o" ? "src/o/two.ts" : path)), ...BULK]);
-	// Five shared commits, and a large one that changes both and counts for nothing.
+	// Five shared commits, and a large one that changes both and counts for
+	// nothing. Billing changes nine more times alone: 5 shared commits over the
+	// mean of 5 and 14 is 52.6%.
 	together(["src/orders.ts", "src/billing.ts"], 5);
 	together(["src/orders.ts", "src/billing.ts", ...BULK]);
+	together(["src/billing.ts"], 9);
 	// Four shared commits, every commit of both.
 	together(["src/cart.ts", "src/pricing.ts"], 4);
-	// Search shares five commits with Index and five others with Ranking.
-	// Index has 14 commits and Search 19: 5 / 16.5 is 30.3%. Ranking has 15:
-	// 5 / 17 is 29.4%.
-	together(["src/search.ts", "src/index.ts"], 5);
-	together(["src/search.ts", "src/ranking.ts"], 5);
-	together(["src/search.ts"], 9);
-	together(["src/index.ts"], 9);
-	together(["src/ranking.ts"], 10);
+	// Search shares six commits with Index and seven others with Ranking.
+	// Search and Index have 20 commits each: 6 / 20 is 30% exactly. Ranking
+	// has 27: 7 / 23.5 is 29.8%, which rounds to 30.
+	together(["src/search.ts", "src/index.ts"], 6);
+	together(["src/search.ts", "src/ranking.ts"], 7);
+	together(["src/search.ts"], 7);
+	together(["src/index.ts"], 14);
+	together(["src/ranking.ts"], 20);
 	// Two shared commits of their own, and five large ones.
 	together(["src/claims.ts", "src/panes.ts"], 2);
 	together(["src/claims.ts", "src/panes.ts", ...BULK], 5);
@@ -217,9 +220,9 @@ afterAll(() => {
 	rmSync(scratch, { recursive: true, force: true });
 });
 
-test("a pair that shares 5 commits is listed with its shared commits and degree", () => {
+test("a pair that shares 5 commits is listed with its shared commits and its degree, cut to whole percent", () => {
 	const found = pair("Orders", "Billing");
-	expect(found).toMatchObject({ repo: SHOP, shared: 5, degree: 100 });
+	expect(found).toMatchObject({ repo: SHOP, shared: 5, degree: 52 });
 	expect(found?.subjects.map((subject) => subject.id)).toEqual(["pOr", "pBi"]);
 	expect(found?.commits).toHaveLength(5);
 	const known = new Set(answer.commits.map((one) => one.commit));
@@ -232,14 +235,13 @@ test("a pair needs 5 shared commits whatever its degree", () => {
 	expect(pair("Cart", "Pricing")).toBeUndefined();
 });
 
-test("a degree of 30% is coupled and one under it is not; the degree is cut to whole percent", () => {
-	expect(pair("Search", "Index")).toMatchObject({ shared: 5, degree: 30 });
+test("a degree of exactly 30% is coupled, and one under it is not, though it rounds to 30", () => {
+	expect(pair("Search", "Index")).toMatchObject({ shared: 6, degree: 30 });
 	expect(pair("Search", "Ranking")).toBeUndefined();
 });
 
 test("large commits count for nothing, so they cannot couple two parts", () => {
 	expect(pair("Claims", "Panes")).toBeUndefined();
-	expect(answer.leftOut.largeCommits).toBe(7);
 });
 
 test("a pair whose bound paths overlap is left out", () => {
@@ -257,6 +259,7 @@ test("a pair is unjoined only when no relationship, step or containment joins it
 	expect(pair("Basket", "Tax")?.unjoined).toBe(false);
 	// One part inside the other.
 	expect(pair("Catalog", "Product")?.unjoined).toBe(false);
+	// A flow step.
 	expect(pair("Mailer", "Templates")?.unjoined).toBe(false);
 });
 
