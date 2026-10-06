@@ -334,7 +334,6 @@ function judgeEdge(reading: RelationshipReading, edge: SemanticEdge): CodeFindin
 		return {
 			...site,
 			severity: "information",
-			// oxlint-disable-next-line archboard/no-compatibility-identifiers -- the finding code ADR 0046 names: a relationship drawn backwards, not a backwards-compatible shim
 			code: "RELATIONSHIP_BACKWARDS",
 			message:
 				`The ${about} the evidence its kind ${kind} accepts runs only from ` +

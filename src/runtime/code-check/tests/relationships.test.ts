@@ -28,8 +28,6 @@ process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
 const MALL = "github.com/test/mall";
 let check: typeof CheckModule;
 let outcome: CodeCheckOutcome;
-// oxlint-disable-next-line archboard/no-compatibility-identifiers -- the finding code ADR 0046 names: a relationship drawn backwards, not a backwards-compatible shim
-const TURNED = "RELATIONSHIP_BACKWARDS";
 
 /**
  * A part bound to code in the checkout.
@@ -257,7 +255,7 @@ test("a use of a name the same file defines is a candidate, so its finding is in
 });
 
 test("a relationship drawn one way while the code runs only the other way is backwards, with the evidence that runs back", () => {
-	const turned = finding(TURNED, "e3");
+	const turned = finding("RELATIONSHIP_BACKWARDS", "e3");
 	expect(turned?.evidence?.map((piece) => [piece.from, piece.to, piece.kind])).toEqual([
 		["pI", "pN", "call"],
 	]);
