@@ -230,7 +230,8 @@ For TypeScript you need nothing more. The check runs `tsc --lsp --stdio` from
 the `typescript` package that archboard installs, never the TypeScript of the
 checkout. It loads no plugin of the checkout, and it never asks a server to
 build. The check starts a server at most once for each checkout that it reads,
-on its first question, and stops it before the check answers.
+or for Swift each package, on its first question. It stops the server before
+the check answers.
 
 To choose another server, or to turn one off, write `language-servers.json` in
 the state directory (see [Machine state and logs](#machine-state-and-logs)).
@@ -243,9 +244,37 @@ Each key is a language, and each value is a command or `false`:
 ```
 
 `command` is a program on your `PATH` or the absolute path of a program.
-`args` is optional. `false` turns the language off. Today the only language is
-`typescript`. Each check reads the file again, so a change needs no restart. A
-file that is not valid turns every server off until you correct it.
+`args` is optional. `false` turns the language off. The languages are
+`typescript` and `swift`. Each check reads the file again, so a change needs no
+restart. A file that is not valid turns every server off until you correct it.
+
+Swift has no default server. sourcekit-lsp evaluates `Package.swift`, and that
+runs code of the checkout. So the check starts it only from an entry that you
+write. Write that entry only for checkouts that you trust:
+
+```json
+{
+	"swift": { "command": "sourcekit-lsp" }
+}
+```
+
+sourcekit-lsp finds a definition in another file through an index. A build
+writes that index. So build each Swift package once with `swift build`. Swift
+6.2 writes the index on Linux by default. Swift 5.10 on Linux writes it only
+with `--enable-index-store`.
+
+The check never builds. It starts sourcekit-lsp in the package that holds the
+file, with background indexing off. Then the server reads the index under
+`.build/debug/index/store`, and it never runs `swift build` itself. The check
+says `language-server-unready` once for each package that it cannot ask:
+
+- a package that has no index
+- a package whose `.sourcekit-lsp/config.json` turns background indexing on
+- a Swift file that no `Package.swift` holds
+
+The uses in such a package stay candidates. The index holds only what the last
+build saw, so build again after you add code. This was measured with
+sourcekit-lsp 6.2.4.
 
 A server can be absent: not installed, turned off, or named in a file that is
 not valid. Then the check says so once for each language with the reason

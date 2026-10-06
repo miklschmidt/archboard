@@ -1070,6 +1070,56 @@ After the review, at a load average of 11 to 12, the real command took
 runs. The answer had 39 findings and named no missing or failed server, and
 no `tsc` process ran after it.
 
+#### Resolving Swift candidates with sourcekit-lsp
+
+TASK-367.16 measured sourcekit-lsp on 2026-10-06. nixpkgs has only Swift
+5.10.1. Its sourcekit-lsp cannot find a toolchain, and its sourcekitd library
+does not load (an undefined symbol, `OStream_write`). So the run used the
+official `swift:6.2` image (Swift 6.2.4) through podman. A script in a scratch
+directory ran `sourcekit-lsp` in the image, with the checkout mounted at its
+own path, and `language-servers.json` named that script. The package had two
+targets: `Core` with `Ledger.swift`, and `App`, whose `main.swift` calls
+`ledger.post` through a value.
+
+What sourcekit-lsp 6.2.4 does:
+
+- It answers only about a file that the client opened. For a closed file, it
+  refuses with "No language service". So the Swift row opens each file once,
+  with its text on disk.
+- Background indexing is on by default. At the start, the server ran
+  `swift build` to prepare each target and wrote `.build/index-build`. With
+  `initializationOptions` `{ "backgroundIndexing": false }`, it runs no build.
+  It then reads the index that `swift build` wrote under
+  `.build/debug/index/store`, and keeps its database in `.build/debug/index/db`.
+- These options win over `~/.sourcekit-lsp/config.json`. A
+  `.sourcekit-lsp/config.json` in the package wins over them: with
+  `backgroundIndexing: true` there, the server built again. So the check does
+  not ask about such a package.
+- It loads the index after it answers `initialize`. A question about another
+  module before that gets `null`. `workspace/synchronize` with
+  `{ "index": true }` answers when the index is loaded, in about 100 ms here.
+- Started at the checkout root, it did not resolve a use across modules in a
+  package one directory down. So the check starts one server in each package.
+- Swift 6.2 `swift build` writes the index on Linux by default. Swift 5.10
+  writes it only with `--enable-index-store`.
+
+Through the real `checkCode`, a board bound `Ledger.post`, `normalize` and the
+`App` directory. It also had a `call` from App to the part of `normalize`,
+anchored at `ledger.post` in `main.swift`. The table shows each run. Each pass
+took the time shown, with podman starting the image.
+
+| Run                        | Pass   | Findings                                                                        | Skipped                   |
+| -------------------------- | ------ | ------------------------------------------------------------------------------- | ------------------------- |
+| Built, sourcekit-lsp       | 777 ms | `RELATIONSHIP_UNDRAWN` warning (resolved), `ANCHOR_MISMATCH` warning (resolved) | none                      |
+| Built, no entry for Swift  | 221 ms | `RELATIONSHIP_UNDRAWN` information (candidate)                                  | `language-server-missing` |
+| Never built, sourcekit-lsp | 257 ms | `RELATIONSHIP_UNDRAWN` information (candidate)                                  | `language-server-unready` |
+
+In the first run, `post` calls `normalize`, a name of the same file, and the
+server resolved it. It also named `Ledger.post` as the definition of the
+anchor's `ledger.post`, outside both ends. In the last run, the check started
+no server and wrote nothing into the package. No `index-build` directory and
+no container were left after any run.
+
 #### Swift and Nix have no upstream WebAssembly file on npm
 
 Swift: the npm package `tree-sitter-swift` stops at 0.7.1 and has no `.wasm`.

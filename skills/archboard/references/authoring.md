@@ -485,7 +485,11 @@ The file
 `language-servers.json` sets another server, or none, for the machine
 (INSTALL.md). Without a server, the answer says `language-server-missing`
 once and keeps the candidates. A server that did not answer is
-`language-server-failed`.
+`language-server-failed`. Swift runs sourcekit-lsp only from an entry that the
+user writes there. The server reads the index that `swift build` writes, and
+the check never builds. So the answer says `language-server-unready` once for
+a Swift package with no index, and keeps its candidates. Unless the user asks,
+do not build a package to clear it.
 
 A relationship across a network hop shows no evidence in code alone. An
 example is an `http` call to another service. So `check --code` joins two
