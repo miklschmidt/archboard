@@ -230,8 +230,8 @@ For TypeScript you need nothing more. The check runs `tsc --lsp --stdio` from
 the `typescript` package that archboard installs, never the TypeScript of the
 checkout. It loads no plugin of the checkout, and it never asks a server to
 build. The check starts a server at most once for each checkout that it reads,
-or for Swift each package, on its first question. It stops the server before
-the check answers.
+or for Swift each package and for C each compilation database, on its first
+question. It stops the server before the check answers.
 
 For Python, install pyright or basedpyright, for example with
 `npm install -g pyright` or `pipx install basedpyright`. The check runs the
@@ -250,6 +250,58 @@ environment outside the checkout, such as one that Poetry or Hatch keeps
 elsewhere, needs a `venvPath` and `venv` in the pyright configuration. Without
 one, pyright uses the `python3` on your `PATH`.
 
+For C, C++ and Objective-C, install clangd, for example with
+`apt install clangd`, `brew install llvm` or `nix profile install
+nixpkgs#clang-tools`. The check runs the `clangd` that is on your `PATH`. It
+reads `.c`, `.h`, `.cc`, `.cpp`, `.cxx`, `.hh`, `.hpp`, `.hxx` and `.m` files.
+It reads `.mm` files only as text.
+
+clangd needs the `compile_commands.json` of the checkout. That file gives the
+flags of each file: its include directories, its defines and its language.
+Without it, clangd guesses, and a guess is no better than a candidate. So
+generate it once:
+
+- CMake: `cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`. This writes
+  `build/compile_commands.json` and builds nothing.
+- Make and other build tools: `bear -- make`. This builds the project once.
+- Meson: it writes `compile_commands.json` into the build directory.
+
+The check uses the `compile_commands.json` that clangd would find: in the
+directory of the file or a directory above it, up to the root of the checkout,
+or in a `build` directory there. It also uses that file when Git ignores it.
+It does not use one whose real path is outside the checkout. A file with no
+such `compile_commands.json`, or with one that lists no command, gets no
+server. The check says `language-server-unready` once for it, and its uses
+stay candidates. Generate the file again after you add source files.
+
+clangd finds a definition in another file through an index of every file that
+`compile_commands.json` lists. The check gives clangd a copy of the file in a
+temporary directory, and clangd keeps that index there. The check removes the
+directory when clangd stops, so nothing is written into the checkout. The
+copy also moves the module cache of each command into that directory. The
+check waits until clangd has indexed every file, then asks it. On 24 cores
+that took about 1.5 seconds for Redis and 0.1 seconds for libuv.
+
+clangd runs no code of the checkout. The check turns off what could:
+
+- It never passes `--query-driver`, so clangd never runs a compiler that
+  `compile_commands.json` names. On some systems, such as NixOS, only the
+  compiler knows where the standard headers are. There clangd parses a file
+  without them, and some uses stay candidates.
+- It passes `--enable-config=false`, so clangd reads no `.clangd` file of the
+  checkout and no `config.yaml` of your own. A `.clangd` file can add flags,
+  and it can name a remote index, which clangd would reach over the network.
+  Put the flags that clangd needs into `compile_commands.json`.
+- It passes `--clang-tidy=false`, so clangd reads no `.clang-tidy` file.
+- clangd loads no plugin that a command names with `-fplugin=`,
+  `-fpass-plugin=` or `-Xclang -load`, and it writes no file that a flag such
+  as `-MF` or `-o` names. This was measured with clangd 21.1.8.
+
+clangd also reads flags from the `CLANGD_FLAGS` variable in the environment
+of the Archboard server. The check's own flags come after them, so its flags
+win. But if `CLANGD_FLAGS` holds `--query-driver`, clangd runs the compilers
+that it allows.
+
 To choose another server, or to turn one off, write `language-servers.json` in
 the state directory (see [Machine state and logs](#machine-state-and-logs)).
 Each key is a language, and each value is a command or `false`:
@@ -262,8 +314,9 @@ Each key is a language, and each value is a command or `false`:
 
 `command` is a program on your `PATH` or the absolute path of a program.
 `args` is optional. `false` turns the language off. The languages are
-`typescript`, `python`, `csharp` and `swift`. Each check reads the file again, so a change needs no
-restart. A file that is not valid turns every server off until you correct it.
+`typescript`, `python`, `csharp`, `swift` and `c`, which is C, C++ and
+Objective-C together. For `c`, the check adds its own flags after `args`.
+Each check reads the file again, so a change needs no restart. A file that is not valid turns every server off until you correct it.
 
 C# has no default server. csharp-ls evaluates the MSBuild files of the
 solution, and those can run code of the checkout. So the check starts it only
@@ -328,7 +381,8 @@ not valid. Then the check says so once for each language with the reason
 `language-server-missing`, and reports candidates. If a server does not start,
 does not answer within 30 seconds or stops, the check says so once for that
 checkout with `language-server-failed`. Then that check starts no other
-server of the language in that checkout, also not in its other Swift packages.
+server of the language in that checkout, also not in its other Swift packages
+or C compilation databases.
 
 ## Rendering to a bitmap
 

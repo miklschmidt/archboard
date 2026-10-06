@@ -13,6 +13,25 @@ Amended by TASK-367.13 (2026-10-06): the language servers are their own
 module, `src/runtime/language-servers`, not a part of code facts, because a
 process to start and stop is a concern apart from the facts of a file.
 
+Amended by TASK-367.15 (2026-10-06): clangd is a default server, because
+with the flags the check gives it, it runs no code of the project. It runs no
+compiler without `--query-driver`, which the check never passes. It loads no
+plugin that a compile command names, and it reads no `.clangd` file with
+`--enable-config=false`. A `.clangd` file can name a remote index, which
+clangd would reach over the network. That flag also turns off the user's own
+clangd configuration, because no flag turns off only the project's file.
+clangd names a definition in another file only through its background index.
+Without that index, an answer depends on which files the pass opened before.
+So the check keeps the index on and waits until it is complete. clangd writes
+the index beside the database that it reads. So the check gives it a copy of
+the checkout's `compile_commands.json` in a temporary directory of its own,
+and removes that directory when clangd stops. The copy moves the module cache
+of each command into that directory, because clangd builds modules into the
+cache that a command names, which can be inside the checkout. To know whether
+clangd can answer and to make that copy, the check reads the
+`compile_commands.json` that clangd would find, also where Git ignores it, as
+in CMake's `build`. It reads nothing else that Git ignores.
+
 Amended by the review of TASK-367.16 (2026-10-06): the check itself writes
 nothing into a checkout. The user names some servers for trusted checkouts.
 Such a server can keep its own files in the build output of the project,
