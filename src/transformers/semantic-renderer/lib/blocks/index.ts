@@ -144,31 +144,36 @@ async function drawnBlocks(
  * @param content The architecture.
  * @param measured Its measured cards and labels.
  * @param standings Comparison standings, which keep marked relationships off one trunk.
+ * @param entries The children that are entry points of their containers; Blocks does not read them.
  * @returns The drawing painting and the atlas read.
  */
 async function layoutBlocks(
 	content: VariantContent,
 	measured: MeasuredArchitecture,
-	standings?: Readonly<Record<string, ChangeKind>>,
+	standings: Readonly<Record<string, ChangeKind>> | undefined,
+	entries: ReadonlySet<string>,
 ): Promise<PaintedDrawing> {
-	return drawnBlocks(content, measured, compoundGraph(content, measured, standings));
+	return drawnBlocks(content, measured, compoundGraph(content, measured, standings, entries));
 }
 
 /**
  * The track engine: the board laid out as one block with its containers and
- * group regions drawn inline, its cards ranked across them as one board, its
- * wide ranks wrapped and its tall columns folded when that reads better.
+ * group regions drawn inline, its cards ranked across them as one board, each
+ * container's entry points on its first row over its hidden parts, its wide
+ * ranks wrapped and its tall columns folded when that reads better.
  * @param content The architecture.
  * @param measured Its measured cards and labels.
  * @param standings Comparison standings, which keep marked relationships off one trunk.
+ * @param entries The children that are entry points of their containers (ADR 0044).
  * @returns The drawing painting and the atlas read.
  */
 async function layoutTracks(
 	content: VariantContent,
 	measured: MeasuredArchitecture,
-	standings?: Readonly<Record<string, ChangeKind>>,
+	standings: Readonly<Record<string, ChangeKind>> | undefined,
+	entries: ReadonlySet<string>,
 ): Promise<PaintedDrawing> {
-	return drawnBlocks(content, measured, compoundGraph(content, measured, standings), true);
+	return drawnBlocks(content, measured, compoundGraph(content, measured, standings, entries), true);
 }
 
 export { layoutBlocks, layoutTracks };

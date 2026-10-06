@@ -42,6 +42,7 @@ import {
 	type VariantContent,
 } from "@/shared/semantic-board/index";
 import { layoutEngine } from "@/transformers/semantic-renderer/lib/layout/engines";
+import { entryPointsOf } from "@/transformers/semantic-renderer/lib/layout/compound-graph";
 import type {
 	PaintedDrawing,
 	ReadingDirection,
@@ -152,6 +153,14 @@ interface DiagramRenderRequest {
 	 */
 	readonly held?: VariantContent | undefined;
 	/**
+	 * The whole variant the picture reads, before a view narrows it and without
+	 * what a comparison puts back. The layout reads each container's interface
+	 * from it (ADR 0044): an entry point keeps its container's first row in a
+	 * view that hides its caller, and a child a comparison puts back is never
+	 * one. Absent, the variant's own reading of the view stands in for it.
+	 */
+	readonly variant?: VariantContent | undefined;
+	/**
 	 * Which of this variant's subjects the board says nobody has decided yet.
 	 *
 	 * Derived on every render exactly as the standings are, from the same
@@ -253,6 +262,7 @@ const layouts = new Map<string, Promise<PaintedDrawing>>();
  * @param policy The vault's groups, in order, which place and caption regions, and its
  * relationship kinds, which say how each line is drawn.
  * @param steps The lines that are flow steps drawn on the board.
+ * @param entries The children that are entry points of their containers, sorted.
  * @returns Its deterministic layout.
  */
 function layoutRemembered(
@@ -261,6 +271,7 @@ function layoutRemembered(
 	engine: LayoutEngineName,
 	policy: Pick<SemanticPolicy, "groups" | "relationshipKinds">,
 	steps: ReadonlySet<string>,
+	entries: readonly string[],
 ): Promise<PaintedDrawing> {
 	const standings =
 		standing === undefined
@@ -276,7 +287,7 @@ function layoutRemembered(
 	]);
 	// Which lines a flow draws depends on the variant's own reading as well as
 	// on the content, so the key is the content with those lines added.
-	const key = JSON.stringify([engine, expanded, [...steps], standings, named, lines]);
+	const key = JSON.stringify([engine, expanded, [...steps], standings, named, lines, entries]);
 	const known = layouts.get(key);
 	if (known !== undefined) {
 		layouts.delete(key);
@@ -287,6 +298,7 @@ function layoutRemembered(
 		expanded,
 		measureArchitecture(expanded, policy, steps),
 		standings,
+		new Set(entries),
 	);
 	layouts.set(key, layout);
 	// A failed layout is not remembered: the next request tries again.
@@ -302,16 +314,18 @@ function layoutRemembered(
  * What a request draws of what it lays out.
  * @param request What to draw.
  * @returns The variant's own reading of the view; whether the picture is
- * without its comparison, and so draws only that; and what it then draws.
+ * without its comparison, and so draws only that; what it then draws; and the
+ * whole variant whose interface the layout reads.
  */
 function readingOf(request: DiagramRenderRequest): {
 	readonly held: VariantContent;
 	readonly plain: boolean;
 	readonly told: VariantContent;
+	readonly variant: VariantContent;
 } {
 	const held = request.held ?? request.content;
 	const plain = request.paintStanding === false;
-	return { held, plain, told: plain ? held : request.content };
+	return { held, plain, told: plain ? held : request.content, variant: request.variant ?? held };
 }
 
 /**
@@ -364,6 +378,7 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		request.layout ?? DEFAULT_LAYOUT_ENGINE,
 		policy,
 		stepLines.derived,
+		entryPointsOf(stepLines.content, reading.variant),
 	);
 	const shown = shownOf(drawing, stepLines, reading, policy);
 	const painting = paintArchitecture(

@@ -42,6 +42,7 @@ import { routeScene, trunkKind } from "@/transformers/semantic-renderer/lib/trac
 import { fitSides } from "@/transformers/semantic-renderer/lib/track/sides";
 import { Clusters, isTitle, titleOf } from "@/transformers/semantic-renderer/lib/blocks/clusters";
 import { frameShape } from "@/transformers/semantic-renderer/lib/blocks/lone";
+import { entryRowEdges } from "@/transformers/semantic-renderer/lib/blocks/entry-row";
 import { leavingPull } from "@/transformers/semantic-renderer/lib/blocks/leaving";
 import { gridEdges, wrapEdges } from "@/transformers/semantic-renderer/lib/track/grid";
 import { anchored, lapsOf } from "@/transformers/semantic-renderer/lib/track/score";
@@ -102,9 +103,8 @@ class CardLayout {
 	) {
 		this.arranged = { lowered: new Map(), grid: false, columns: false, stacked: false, ...options };
 		this.clusters = new Clusters(block, this.graph);
-		// Ranks cross the clusters a block draws inline, as one board; a block
-		// without any keeps Graphviz's own ranking, which holds its header alone
-		// on the first rank.
+		// Ranks cross the clusters a block draws inline, as one board; a block without
+		// any keeps Graphviz's own ranking, which holds its header alone on the first rank.
 		if (block.clusters.size > 0)
 			this.graph.graphAttributes = { ...this.graph.graphAttributes, newrank: true };
 	}
@@ -242,10 +242,9 @@ class CardLayout {
 	}
 
 	/**
-	 * Hold the block's items where its clusters, a grid or a wrap put them:
-	 * every title above its cluster's members, loose cards in a grid, and a
-	 * wrapped item a row of cards and its labels below the rank's first row for
-	 * each row it is lowered.
+	 * Hold the block's items where its clusters, a grid, a wrap or an interface put
+	 * them: titles above their members, loose cards in a grid, a wrapped item a row
+	 * of cards and its labels lower per row, hidden parts below entry points.
 	 */
 	arrange(): void {
 		const { graph } = this;
@@ -259,6 +258,7 @@ class CardLayout {
 			...(stacked ? this.clusters.enteringEdges(links) : []),
 			...this.wrapHolds(),
 		);
+		graph.edges.push(...entryRowEdges(this));
 		this.clusters.untie(graph.edges);
 		holdSources(this.block, this.graph, (name) => this.nodeOf(name));
 	}
