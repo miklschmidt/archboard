@@ -35,6 +35,8 @@ interface Workspace {
 	readonly argvs: () => string[][];
 	/** The compilation database each stand-in was pointed at. */
 	readonly databases: () => unknown[];
+	/** The variables `TMPDIR` and `CLANGD_FLAGS` each stand-in started with, or null. */
+	readonly environments: () => Record<string, string | null>[];
 	readonly remove: () => void;
 }
 
@@ -80,6 +82,8 @@ function workspace(
 		configurations: () => lines("configuration").map((line): unknown => JSON.parse(line)),
 		argvs: () => lines("argvs").map((line) => JSON.parse(line) as string[]),
 		databases: () => lines("databases").map((line): unknown => JSON.parse(line)),
+		environments: () =>
+			lines("environments").map((line) => JSON.parse(line) as Record<string, string | null>),
 		remove: () => {
 			rmSync(base, { recursive: true, force: true });
 		},

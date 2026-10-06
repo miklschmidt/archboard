@@ -55,6 +55,14 @@ interface Request {
  */
 type Once = (key: string, look: () => Promise<Project>) => Promise<Project>;
 
+/** What a server starts with in a project beyond its command. */
+interface ServerSetup {
+	/** The arguments after the command's own. */
+	readonly args: readonly string[];
+	/** The variables its environment sets, or leaves out where undefined, over Archboard's. */
+	readonly environment: Readonly<Record<string, string | undefined>>;
+}
+
 /** What one language needs from a language server. */
 interface LanguageRow {
 	/** The `languageId` of each extension the language's files have. */
@@ -64,12 +72,13 @@ interface LanguageRow {
 	/** Options sent in `initialize`, whatever command runs the server. */
 	readonly initializationOptions?: object;
 	/**
-	 * The arguments the server starts with in a project after its command's
-	 * own, whatever command runs it. `own` is a directory of the server's own,
-	 * which the client makes before the start and removes once the server has
-	 * ended, so what the server writes stays out of the checkout.
+	 * What the server starts with in a project, whatever command runs it: the
+	 * arguments after its command's own, and its environment. `own` is a
+	 * directory of the server's own, which the client makes before the start
+	 * and removes once the server has ended, so what the server writes stays
+	 * out of the checkout.
 	 */
-	readonly prepare?: (project: string, own: string) => Promise<readonly string[]>;
+	readonly prepare?: (project: string, own: string) => Promise<ServerSetup>;
 	/**
 	 * The token of the work-done progress by which the server reports the index
 	 * it builds once it has opened its first file. The client waits for that
@@ -213,7 +222,9 @@ const LANGUAGES: Readonly<Record<Language, LanguageRow>> = {
 	// (compile-database.ts), and ends its progress `backgroundIndexProgress`.
 	// It runs no compiler without `--query-driver`, loads no plugin a command
 	// names, and reads no `.clangd` or user configuration with
-	// `--enable-config=false`. Objective-C++ (`.mm`) stays text (ADR 0046).
+	// `--enable-config=false`; what else in a command could run a program or
+	// write a file, the copy of the database takes out. Objective-C++ (`.mm`)
+	// stays text (ADR 0046).
 	c: {
 		languageIds: {
 			".c": "c",
@@ -253,6 +264,7 @@ export {
 	type Once,
 	type Project,
 	type ServerCommand,
+	type ServerSetup,
 	LANGUAGES,
 	LANGUAGE_KEYS,
 	languageOf,
