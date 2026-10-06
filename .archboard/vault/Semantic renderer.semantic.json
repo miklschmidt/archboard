@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 25,
+	"version": 27,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-06T02:26:18.143Z",
+	"updatedAt": "2026-10-06T03:44:37.494Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -1342,7 +1342,7 @@
 		{
 			"id": "bYt4adrf",
 			"name": "ADR 0040",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "1gSwIfid",
 			"summary": "Module level: meaning to SVG and interaction geometry. Follow linked subjects for related levels.",
 			"content": {
@@ -2004,7 +2004,7 @@
 		{
 			"id": "mKcge41F",
 			"name": "TASK-402",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "bYt4adrf",
 			"summary": "Module level: meaning to SVG and interaction geometry. Follow linked subjects for related levels.",
 			"content": {
@@ -2214,7 +2214,8 @@
 						"order": 17000,
 						"name": "Slab surfaces",
 						"kind": "function",
-						"responsibility": "Draws the body of a card, a container and a group region as a slab: a lit face, a front edge and a soft shadow",
+						"responsibility": "Draws a part's body as a slab: a lit face, a front edge and a soft shadow, with a container's nameplate and a proposal's standing on the face",
+						"description": "A card, a container, a group region, a relationship label, a flow's frame and a participant's activation bar are all drawn through it. Each shape is a rect at an offset from the part's box, so the viewer can carry a card from one picture to the next. It uses no filter, blur or mask.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/transformers/semantic-renderer/lib/svg/slab.ts"
@@ -2481,7 +2482,8 @@
 						"from": "J7mPrUeP",
 						"to": "Ga3k1AaP",
 						"kind": "call",
-						"label": "draws card, container, region and label bodies through it",
+						"label": "label chips directly, cards and regions through helpers",
+						"description": "architecture.ts calls slab, slabSeat and slabShadow for each relationship's label chip. It reaches cards and containers through measured-cards.ts and group regions through regions.ts, which call the same functions.",
 						"emphasis": "normal"
 					},
 					{
@@ -2490,7 +2492,8 @@
 						"from": "CtoOMxca",
 						"to": "Ga3k1AaP",
 						"kind": "call",
-						"label": "draws card bodies through it (paintCard)",
+						"label": "the flow frame directly, the rest through helpers",
+						"description": "dataflow.ts calls slab, slabSeat and slabShadow for the flow's frame. Its cards come from cards.ts, its activation bars from flow-columns.ts and its message labels from flow-words.ts, which call the same functions.",
 						"emphasis": "normal"
 					},
 					{
@@ -2499,7 +2502,16 @@
 						"from": "u1OXg3Yy",
 						"to": "Ga3k1AaP",
 						"kind": "data",
-						"label": "glint, sheen and shadow colours",
+						"label": "the face, glint, sheen and shadow colours it is passed",
+						"emphasis": "normal"
+					},
+					{
+						"id": "FBttxPdB",
+						"order": 30000,
+						"from": "eECDrhMc",
+						"to": "Ga3k1AaP",
+						"kind": "call",
+						"label": "slabDefinitions: the shared sheen gradient and hatch",
 						"emphasis": "normal"
 					}
 				],
@@ -2702,13 +2714,19 @@
 			}
 		}
 	],
-	"current": "bYt4adrf",
+	"current": "mKcge41F",
 	"adoptions": [
 		{
 			"variant": "bYt4adrf",
 			"from": "1gSwIfid",
 			"at": "2026-09-27T22:27:17.204Z",
 			"reason": "The layout stage is the engine seam for Track and Blocks, not the deleted compound layout (ADR 0040)"
+		},
+		{
+			"variant": "mKcge41F",
+			"from": "bYt4adrf",
+			"at": "2026-10-06T03:44:37.494Z",
+			"reason": "The picture now draws every part as a slab, and the slab module is a part of the renderer."
 		}
 	],
 	"shelvings": [
