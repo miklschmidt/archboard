@@ -10,7 +10,8 @@ records the change to the picture's surfaces that came from the same request.
 The second amendment of 2026-10-06 takes the ease away from a pinch, says when
 the camera is at rest, and replaces the sentence of "How the picture is marked"
 about the board inside a card. The third makes the swap between the near and
-the far view a shared element transition.
+the far view a shared element transition. The amendment of 2026-10-07 changes
+how its words fade, so the swap does not flash.
 
 A reader who does not know a system learns it by poking at its picture. A still
 drawing leaves the work to the reader. They must find what a part is wired to,
@@ -303,3 +304,56 @@ the stylesheet moves them only while the picture is far and not for a reader
 who asked for less motion. The theme owner holds that the places are no tokens
 of the page. The picture-transition owner holds that a card that moved keeps
 its shared chip.
+
+## Amendment of 2026-10-07: the swap of the views does not flash
+
+The owner saw the swap of the third amendment of 2026-10-06 and said: "the
+transition between far view and near view makes the card content flash and it
+sucks." The words of the leaving view faded out in the first 60 percent of the
+swap and the words of the coming view faded in during the last 60 percent. In
+the middle almost no words were drawn, and the ink of a card's words fell to
+about a tenth of its steady value, while the chip grew or shrank at the same
+time. That dip was the flash.
+
+**Both views fade over the whole swap.** This replaces the sentence of the
+third amendment about the 60 percent. The leaving view fades out and the coming
+view fades in over the same 280 ms, with the same easing and no delay, so at
+every moment the coming view is as opaque as the leaving view is clear. The
+first lines of the two views stand on one baseline at one size all the way, as
+before, so they read as one block that changes. The coming view is drawn from
+the first frame, still clear, and the leaving view is hidden only when its fade
+has ended. The easing does not overshoot.
+
+**A zoom comes to rest over two frames.** After a zoom, the camera's own layer
+goes in one frame, and the browser draws the whole picture again at its new
+size. The far view follows the rest in the next frame. So the swap starts in a
+frame of its own and not in the one that draws the whole picture again. A pan
+changes no size and comes to rest at once.
+
+**Measured.** The ink of a card's words is the summed change of luminance
+against the same card with no content, in the area right of the chip. The
+numbers are the lowest and the highest ink of a swap, against the lower and the
+higher of the two steady values. They are for two cards and a container's header
+of the board "Board viewer", in Chromium on the GPU, in both themes. "Seeked"
+pauses the swap's transitions and draws them every 16 ms from 32 ms before the
+swap to 320 ms after it. "Real" records every frame the page draws with a
+screencast, after a fit glide to the whole board (far) and after a wheel zoom
+in (near).
+
+| Swap            | Before, lowest | After, lowest | After, highest |
+| --------------- | -------------- | ------------- | -------------- |
+| Seeked, to far  | 0.10 to 0.16   | 1.00          | 1.02           |
+| Seeked, to near | 0.07 to 0.12   | 1.00          | 1.02           |
+| Real, to far    | 0.12 to 0.41   | 1.00          | 1.18           |
+| Real, to near   | 0.08 to 0.13   | 0.96          | 1.03           |
+
+After a wheel zoom out, one real frame at the start of the swap has 0.72 to 0.96
+of the ink before it. That frame is the picture drawn sharp at its new size
+after the camera's layer goes. A zoom out that ends with no swap shows a step of
+the same size, up or down, so it does not come from the swap. In the middle of a
+swap the count of pixels with ink rises to between 1.1 and 1.4 times, because
+the faint words of both views are counted at once. The ink itself stays steady.
+
+Owners: the module owner `far-view-swap` also holds that both views fade over
+one span with one easing and no delay, that a coming view is drawn at once and
+a leaving view hidden only after its fade.

@@ -229,6 +229,39 @@ describe("a part's near and far views", () => {
 		expect(reduced?.split(",")).toEqual(expect.arrayContaining([".ab-chip", ".ab-words"]));
 	});
 
+	test("the two views fade over one span with one easing, so the words never fade out together, and a view hides only after it has faded", async () => {
+		const { svg } = await renderSemanticView({ grammar: "architecture", content, theme: "light" });
+		const sheet = /<style>([^]*?)<\/style>/u.exec(svg)?.[1] ?? "";
+		/**
+		 * One rule's transitions, by property.
+		 * @param selector The rule's selector, as written.
+		 * @returns Each property's duration, easing and delay.
+		 */
+		const transitionsOf = (selector: string): Map<string, string> => {
+			const body = new RegExp(`(?:^|\\})${selector.replaceAll(".", "\\.")}\\{([^}]*)\\}`, "u").exec(
+				sheet,
+			)?.[1];
+			const list = /transition:([^;]*)/u.exec(body ?? "")?.[1] ?? "";
+			return new Map(
+				list.split(/,(?![^(]*\))/u).map((one) => {
+					const [property = "", ...rest] = one.trim().split(/\s+/u);
+					return [property, rest.join(" ")];
+				}),
+			);
+		};
+		const shown = [transitionsOf(".ab-near"), transitionsOf(".is-far .ab-far")];
+		const hidden = [transitionsOf(".ab-far"), transitionsOf(".is-far .ab-near")];
+		// Every opacity fade is the same, with no delay: the coming view is as opaque as the leaving view is clear.
+		const fades = new Set([...shown, ...hidden].map((rule) => rule.get("opacity")));
+		expect(fades.size).toBe(1);
+		const [fade] = fades;
+		expect(fade).toMatch(/^\d+ms \S+$/u);
+		const span = fade!.split(" ")[0];
+		// A view that comes is drawn at once, still clear. A view that leaves is hidden once its fade has ended.
+		for (const rule of shown) expect(rule.get("visibility")).toBe("0s");
+		for (const rule of hidden) expect(rule.get("visibility")).toBe(`0s linear ${span}`);
+	});
+
 	test("a picture that stands alone in one theme sets no theme colour for the places of its chips", async () => {
 		const { svg } = await renderSemanticView({ grammar: "architecture", content, theme: "dark" });
 		const root = /<svg[^>]*style="([^"]*)"/u.exec(svg)?.[1] ?? "";

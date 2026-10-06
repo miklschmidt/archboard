@@ -163,13 +163,16 @@ const PRESENTATION_BOX_STEP_MS = 520;
  * responsibility) for the cards seen from far away (a large tile, a larger name
  * and the start of the responsibility), and back. The chip moves and grows into
  * the tile and the words move between their places while they fade (TASK-428).
- * The swap happens once the camera has come to rest (TASK-405).
+ * Both views fade over the whole of it, one in as the other goes out, so the
+ * words never fade out together. The swap happens once the camera has come to
+ * rest (TASK-405).
  *
  * Pulls against the eye that follows the chip. Shorter than about 200 ms the
- * chip jumps rather than travels, and the words of the two views are seen
- * through each other. Longer than about 400 ms the reader, who has stopped
- * zooming to read, waits for the words to settle. It also pulls against the
- * cost: every card's chip and words move in the same frames.
+ * chip jumps rather than travels, and the change of the words reads as a cut.
+ * Longer than about 400 ms the reader, who has stopped zooming to read, waits
+ * for the words to settle, and reads two sets of words through each other for
+ * too long. It also pulls against the cost: every card's chip and words move in
+ * the same frames.
  */
 const FAR_VIEW_SWAP_MS = 280;
 

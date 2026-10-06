@@ -186,31 +186,27 @@ function stylesheet(palette: Palette, fonts: FontSource): string {
 	);
 }
 
-/** How every part of a swap between the near and the far view moves: quick to leave, gentle to land. */
+/** How every part of a swap between the near and the far view moves: quick to leave, gentle to land, never past its end. */
 const SWAP_EASE = "cubic-bezier(.4,0,.2,1)";
-
-/**
- * The share of a swap the leaving view takes to fade out, and the share the
- * coming view takes to fade in, at its end. The two overlap little, so the words
- * of the two views are not read through each other while they move.
- */
-const SWAP_FADE = 0.6;
 
 /**
  * How a picture swaps its cards' near and far views (TASK-428). A card's chip
  * is one element that moves and grows between its near and its far place. The
- * words of each view move to where the other view's words start while they
- * fade: the leaving view fades out in the first part of the swap, the coming
- * view fades in at its end, and each is hidden once it has faded out so it is
- * not painted at all. The mark of a board a part opens fades where it stands. A
- * reader asking for less motion gets the swap at once.
+ * words of each view move to where the other view's words start, so the first
+ * lines of the two views stand on one baseline at one size all the way, and
+ * read as one block that changes. The two views fade over the same span with
+ * the same easing, so at every moment the coming view is as opaque as the
+ * leaving view is clear, and the words never fade out together. A view that
+ * comes is drawn at once, still clear, and a view that leaves is hidden only
+ * once it has faded out, so it is not painted after. The mark of a board a part
+ * opens fades where it stands. A reader asking for less motion gets the swap at
+ * once.
  * @returns The rules.
  */
 function farViewRules(): string[] {
-	const fade = Math.round(FAR_VIEW_SWAP_MS * SWAP_FADE);
-	const wait = FAR_VIEW_SWAP_MS - fade;
-	const shown = `opacity:1;visibility:visible;transition:opacity ${fade}ms ${SWAP_EASE} ${wait}ms,visibility 0s`;
-	const hidden = `opacity:0;visibility:hidden;transition:opacity ${fade}ms ${SWAP_EASE},visibility 0s linear ${fade}ms`;
+	const fade = `opacity ${FAR_VIEW_SWAP_MS}ms ${SWAP_EASE}`;
+	const shown = `opacity:1;visibility:visible;transition:${fade},visibility 0s`;
+	const hidden = `opacity:0;visibility:hidden;transition:${fade},visibility 0s linear ${FAR_VIEW_SWAP_MS}ms`;
 	const move = `transition:transform ${FAR_VIEW_SWAP_MS}ms ${SWAP_EASE}`;
 	const far = `.${FAR_VIEW_CLASS}`;
 	return [
