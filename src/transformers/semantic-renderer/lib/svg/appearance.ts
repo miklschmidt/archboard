@@ -16,6 +16,7 @@ import {
 	toned,
 	type Inked,
 	type Tone,
+	type ToneStep,
 } from "@/transformers/semantic-renderer/lib/svg/colour";
 import { glyphGroup } from "@/transformers/semantic-renderer/lib/svg/icons";
 import { tag, type Attributes } from "@/transformers/semantic-renderer/lib/svg/primitives";
@@ -43,63 +44,60 @@ function semanticInk(color: PaletteColor | undefined): string | undefined {
 /**
  * A card's face in its group's colour, and its front edge: the colour of the
  * edge and the face together are what say which concern a card serves, on
- * either ground. The face is a tone of the group's own hue (`toned`), as quiet
- * as a tint, so its words keep 4.5:1. On the light ground it is a clean tint
- * with its hue in plain sight, an orange face a peach. Every colour has one
- * lightness, and as much chroma as sRGB has room for at that lightness in its
- * hue (`FACE_CHROMA`), so no colour is clipped into another hue. The front
- * edge is the same material turned from the light: the group's hue in shade,
- * darker than the face and quieter than the group's own colour, so it reads as
- * the foot of the card and not as a bright strip. On the dark ground it is as
- * far below its face as a neutral card's edge is below its own (`--slab-edge`
- * under `--slab-face`), with the group's hue still in it.
+ * either ground. The face is a tone of the group's own hue (`toned`): a
+ * clearly coloured card whose words keep 4.5:1. On the light ground each
+ * colour has a tone of its own (`LIGHT_FACE`), so no colour is clipped into
+ * another hue. The front edge is the same material turned from the light: the
+ * group's hue in shade, darker than the face, so it reads as the foot of the
+ * card and not as a bright strip. On the dark ground it is as far below its
+ * face as a neutral card's edge is below its own (`--slab-edge` under
+ * `--slab-face`), with the group's hue still in it.
  */
-const CARD_FACE: Tone = {
-	light: { lightness: 0.93, chroma: 1 },
-	dark: { lightness: 0.31, chroma: 0.27 },
-};
+const DARK_FACE: ToneStep = { lightness: 0.31, chroma: 0.4 };
 const CARD_EDGE: Tone = {
-	light: { lightness: 0.78, chroma: 0.7 },
-	dark: { lightness: 0.212, chroma: 0.35 },
+	light: { lightness: 0.78, chroma: 0.8 },
+	dark: { lightness: 0.212, chroma: 0.45 },
 };
 
 /**
- * How much chroma a grouped card's face takes on the light ground, by colour:
- * nine tenths of what sRGB holds at the face's lightness in the colour's hue,
- * and no more than 0.055, so the hues with room to spare (lime to teal) do not
- * outshout the ones without (red, blue, violet). Yellow, the gold, takes less,
- * so its face is a warm gold-white and not an apricot.
+ * A grouped card's face on the light ground, by colour: its lightness and its
+ * chroma. sRGB holds far less chroma near white in some hues than in others,
+ * so the colours that hold little (red to amber, cyan to rose) sit at 0.89 and
+ * the ones that hold much (yellow to teal) at 0.92. Each takes nine tenths of
+ * the chroma its hue holds there, and no more than 0.07, so no colour goes
+ * neon. Yellow, the gold, takes less, a pale gold.
  */
-const FACE_CHROMA: Readonly<Record<PaletteColor, number>> = {
-	red: 0.033,
-	orange: 0.035,
-	amber: 0.043,
-	yellow: 0.042,
-	lime: 0.055,
-	green: 0.055,
-	emerald: 0.055,
-	teal: 0.055,
-	cyan: 0.046,
-	sky: 0.034,
-	blue: 0.031,
-	indigo: 0.031,
-	violet: 0.034,
-	purple: 0.039,
-	fuchsia: 0.052,
-	pink: 0.037,
-	rose: 0.033,
+const LIGHT_FACE: Readonly<Record<PaletteColor, readonly [lightness: number, chroma: number]>> = {
+	red: [0.89, 0.053],
+	orange: [0.89, 0.057],
+	amber: [0.89, 0.069],
+	yellow: [0.92, 0.055],
+	lime: [0.92, 0.07],
+	green: [0.92, 0.07],
+	emerald: [0.92, 0.07],
+	teal: [0.92, 0.07],
+	cyan: [0.89, 0.07],
+	sky: [0.89, 0.055],
+	blue: [0.89, 0.049],
+	indigo: [0.89, 0.05],
+	violet: [0.89, 0.054],
+	purple: [0.89, 0.062],
+	fuchsia: [0.89, 0.07],
+	pink: [0.89, 0.06],
+	rose: [0.89, 0.053],
 };
 
 /**
- * A grouped card's face: a tone of its group's colour, as much chroma as its
- * hue holds on the light ground ({@link FACE_CHROMA}).
+ * A grouped card's face: a tone of its group's colour ({@link LIGHT_FACE} on
+ * the light ground).
  * @param color The group's colour.
  * @returns The face.
  */
 function faceIn(color: PaletteColor): string {
+	const [lightness, chroma] = LIGHT_FACE[color];
 	return toned(token(`--semantic-${color}`), {
-		...CARD_FACE,
-		light: { ...CARD_FACE.light, cap: FACE_CHROMA[color] },
+		light: { lightness, chroma: 1, cap: chroma },
+		dark: DARK_FACE,
 	});
 }
 

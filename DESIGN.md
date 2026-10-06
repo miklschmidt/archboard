@@ -290,11 +290,12 @@ neutrals are cool and clean, near hue 255, not the shell's warm ones: a card
 face a hair under white (oklch(0.988 0.003 255)), a tray floor a step under the
 ground (oklch(0.974 0.003 255)) and a navy shadow. A front edge is the face in
 shade, never a lighter strip: the neutral face's own neutral at lightness 0.83
-(oklch(0.83 0.003 255)). A grouped card's face is a clean tint of its group's
-hue, an orange face a peach, at lightness 0.93 with as much chroma as its hue
-holds there (0.031 to 0.055), and its front edge is that hue in shade
-(lightness 0.78, chroma 0.084). On graphite a grouped edge is a step under its
-face, as a neutral one is (1.33 to 1). A chip is a light
+(oklch(0.83 0.003 255)). A grouped card is a clearly colored card in a clean
+tone of its group's hue, an orange face a peach: at lightness 0.89 to 0.92 with
+nine tenths of the chroma its hue holds there (0.049 to 0.07), and its front
+edge is that hue in shade (lightness 0.78, chroma 0.096). On graphite a grouped
+face is a deep jewel tone (lightness 0.31, chroma 0.048), and its edge is a step
+under it, as a neutral one is (1.33 to 1). A chip is a light
 tone of its type's color, with the glyph in the color itself. The words are
 **Diagram Ink** (`--diagram-text`, oklch(0.2 0.02 265)) and **Diagram Slate**
 (`--diagram-text-muted`, oklch(0.47 0.028 262)). On graphite they are the

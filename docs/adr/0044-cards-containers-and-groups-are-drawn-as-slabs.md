@@ -112,15 +112,19 @@ in `lib/design.ts`.
    of a card is the face turned from the light: the group's hue in shade,
    darker than the face, so it reads as the foot of the block and not as a
    bright strip. On the light ground it is at OKLCH lightness 0.78 and chroma
-   0.084, 1.6:1 or more under its face. On the dark ground it is at lightness
-   0.212 and chroma 0.042, 1.33:1 under its face, the step of a neutral card
-   (TASK-422). The face on the light ground is a clean tint with its hue in
-   plain sight, an orange face a peach, at lightness 0.93. Its chroma is nine
-   tenths of what sRGB holds there in its hue, at most 0.055: 0.031 for blue
-   and indigo, 0.055 for lime to teal, 0.042 for the gold of yellow. So no
-   color is clipped into another hue. On the dark ground the face is a quiet
-   tone of the group's hue. The secondary words on a grouped face keep 5.4:1
-   or more on the light ground and 5.2:1 or more on the dark ground.
+   0.096, 1.4:1 or more under its face. On the dark ground it is at lightness
+   0.212 and chroma 0.054, 1.33:1 under its face, the step of a neutral card
+   (TASK-422). The face is a clearly colored card in a clean tone of its
+   group's hue, an orange face a peach. On the light ground each color has a
+   tone of its own (`LIGHT_FACE` in `lib/svg/appearance.ts`), because sRGB
+   holds far less chroma near white in some hues than in others. Lime to teal
+   and the gold of yellow are at lightness 0.92, the other colors at 0.89.
+   Each takes nine tenths of the chroma its hue holds there, at most 0.07:
+   from 0.049 for blue to 0.07 for lime to teal, cyan and fuchsia, and 0.055
+   for yellow. So no color is clipped into another hue or goes neon. On the
+   dark ground the face is a tone of the group's hue at lightness 0.31 and
+   chroma 0.048. The secondary words on a grouped face keep 4.8:1 or more on
+   the light ground and 5.2:1 or more on the dark ground.
    On the light ground a tinted face takes a softer light, so its color does
    not pool at its foot. A card in no group has a neutral front edge and face.
 8. **Small parts are low slabs.** An icon chip, the label of a relationship and
