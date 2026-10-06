@@ -165,6 +165,7 @@ test("a kind that disagrees with the level of the board it opens is reported", a
 		(entry) => entry.name === "Checkout",
 	);
 	expect(mismatch?.path).toContain(node?.id ?? "no node");
+	expect(mismatch?.subject).toEqual({ kind: "node", id: node?.id ?? "no node", name: "Checkout" });
 });
 
 test("a node that is on the board only to carry its link is reported", async () => {

@@ -106,6 +106,8 @@ test("a binding whose path has left the repository is reported, and one that is 
 		(node) => node.name === "Moved",
 	);
 	expect(missing?.path).toContain(moved?.id ?? "no node");
+	// The canvas and the code check find the part by id, not by parsing a path.
+	expect(missing?.subject).toEqual({ kind: "node", id: moved?.id ?? "no node", name: "Moved" });
 }, 30_000);
 
 test("a repository this machine has not registered is not something the vault got wrong", async () => {

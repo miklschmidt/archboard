@@ -1,4 +1,8 @@
-import { VaultDiagnosticSchema, type VaultDiagnostic } from "@/shared/semantic-policy/index";
+import {
+	diagnosticLine,
+	VaultDiagnosticSchema,
+	type VaultDiagnostic,
+} from "@/shared/semantic-policy/index";
 // What a person types into a semantic board command, before it is a command.
 //
 // Reading a stated architecture off a file or standard input, refusing what is
@@ -310,7 +314,7 @@ function describedWrite(written: SemanticWriteAnswer): string[] {
 	const board = written.board;
 	const lines = [
 		`Semantic board "${board.name}" is now at version ${board.version}.`,
-		...written.warnings.map((warning) => `Warning: ${warning.file}: ${warning.message}`),
+		...written.warnings.map(diagnosticLine),
 	];
 	const report = written.reconciliation;
 	if (report === null) {

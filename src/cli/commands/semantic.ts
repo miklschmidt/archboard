@@ -14,6 +14,7 @@
 // before it is sent.
 
 import { z } from "zod";
+import { diagnosticLine } from "@/shared/semantic-policy/index";
 import {
 	BoardBranchInputSchema,
 	BoardCreateInputSchema,
@@ -142,7 +143,7 @@ const semanticNewContract = defineCommand({
 		return {
 			result: writeResult(written),
 			diagnostics: [
-				...written.warnings.map((warning) => `Warning: ${warning.file}: ${warning.message}`),
+				...written.warnings.map(diagnosticLine),
 				`Semantic board "${board.name}" is at version ${board.version} with ` +
 					`${board.variants[0]?.content.nodes.length ?? 0} nodes.`,
 			],
@@ -388,7 +389,7 @@ const semanticBranchContract = defineCommand({
 		return {
 			result: writeResult(written),
 			diagnostics: [
-				...written.warnings.map((warning) => `Warning: ${warning.file}: ${warning.message}`),
+				...written.warnings.map(diagnosticLine),
 				`Semantic board "${board.name}" is now at version ${board.version} with ` +
 					`"${input.as}" derived from ${proposal?.parent ?? "its predecessor"}.`,
 			],
@@ -509,7 +510,7 @@ const semanticShowContract = defineCommand({
 		const answer = await readSemanticBoardAnswerOnServer(input.name);
 		return {
 			result: answer,
-			diagnostics: answer.warnings.map((warning) => `Warning: ${warning.file}: ${warning.message}`),
+			diagnostics: answer.warnings.map(diagnosticLine),
 		};
 	},
 });
