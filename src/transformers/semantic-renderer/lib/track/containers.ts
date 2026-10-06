@@ -4,16 +4,13 @@
 // below the band a container ends on starts its tracks below that edge, so no
 // line runs along the inside of a container it has nothing to do with.
 import type { ElkExtendedEdge } from "@archboard/elk-rs";
-import { CONTAINER_INSET } from "@/transformers/semantic-renderer/config";
+import { CONTAINER_INSET, REGION_INSET } from "@/transformers/semantic-renderer/config";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import {
 	TRACK_BELOW,
 	type Item,
 	type Scene,
 } from "@/transformers/semantic-renderer/lib/track/scene";
-
-/** Room a group region keeps below its lowest member. */
-const REGION_BOTTOM = 14;
 
 /** A frame's box once the scene is spaced, and how deep in frames it sits. */
 interface FrameShape {
@@ -66,10 +63,7 @@ class Containers {
 			this.frames.set(id, this.container(inset, scene.titles.get(id)!, members, walls));
 		}
 		this.regions = scene.regions.map(({ caption, members, box }) =>
-			this.container(REGION_BOTTOM, caption, this.regionInside(members), [
-				box.x,
-				box.x + box.width,
-			]),
+			this.container(REGION_INSET, caption, this.regionInside(members), [box.x, box.x + box.width]),
 		);
 		for (const [id, frame] of this.frames)
 			frame.inner.push(...this.within(new Set(scene.frames.get(id)!.members), id));

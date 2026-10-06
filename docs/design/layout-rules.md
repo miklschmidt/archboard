@@ -2355,3 +2355,77 @@ the cards for both, and libavoid still routes Blocks' trunks.
 
 Every Track and Blocks drawing of the dogfood vault and of the work vault is
 byte-identical before and after the removal.
+
+## 46. As much room under a tab and a nameplate as at the sides (2026-10-06, TASK-420)
+
+The owner saw the first row of cards stand too close under a group's caption
+tab, and asked for the same margin there as at the sides and the bottom of the
+box. A region keeps 14 px at its sides and below its members, and a container
+keeps 20 px. A container's nameplate already kept 20 px over its first row
+where nothing ran between, on both engines. A region's tab did not.
+
+Measured on every variant of every board of both review vault copies (the
+shop vault and this repository's), from the foot of the tab as drawn to the
+top of the first member, where no line turns and no label stands in between:
+
+| Room under the tab or nameplate | Track before | Track after | Blocks before | Blocks after |
+| ------------------------------- | ------------ | ----------- | ------------- | ------------ |
+| Region round one node, median   | 4            | 14          | 4             | 14           |
+| Region, median (min)            | 4 (4)        | 14 (14)     | 4 (4)         | 14 (14)      |
+| Container, median (min)         | 20 (20)      | 20 (20)     | 20 (20)       | 20 (20)      |
+
+The cause was in three places, and each is now the same rule: under its
+header, a box keeps the inset it keeps at its sides.
+
+- **A region round one node** (`lone.ts` `bandOf`) gave its caption a band of
+  the caption and 4 px above and below it, so the card stood 4 px under the
+  tab. The band is now the tab, which reaches the caption's foot, and the
+  region's inset under it: 10 px taller.
+- **A region's header is its tab** (`laid.ts` `tabOf`). A region's block
+  ranked its caption as its header, 42 px tall, while the caption is drawn
+  4 px down from the region's top. A block of cards then kept 24 px under the
+  header (`leaves.ts` `rimOf`, a container's inset and the caption's 4), 20 px
+  under the tab; a block of blocks closed its strip to 14 px under the header,
+  10 px under the tab. The header is now the caption and the 4 px above it,
+  and every block keeps its own side inset under its header: `rimOf`, the
+  strip a block of blocks closes (`pack.ts` `closeStrips`) and the channel
+  over a folded block's columns (`fold-layout.ts` `headRoom`), which kept the
+  24 px of an empty channel. Where a line turns under the header, the channel
+  starts at the tab's foot, so such a room is 4 px more than it was.
+- **Track's band of captions** (`spacing.ts` `spaceBands`): a channel no line
+  crosses under a band of titles kept a container's inset, captions alone
+  included. A band of captions alone keeps a region's inset; a band holding a
+  title keeps a container's.
+
+`REGION_INSET` (14) in `config.ts` replaces five copies of the number
+(`place.ts`, `clusters.ts`, `lone.ts`'s `LONE_INSET`, `sides.ts` and
+`containers.ts`'s `REGION_BOTTOM`). `CONTAINER_INSET` (20) does not move.
+
+A region packed round containers on Track stood its caption over their title
+rows: ranked across clusters, a title nothing held lower shared the header's
+rank. Every outermost title is now held below the block's header
+(`card-layout.ts` `build`). No board of either vault drew one; the region
+test's fixture did.
+
+Some rooms stay larger than the inset where something needs them. On Track
+a band's channel spans the board, so a line turning in the same row
+elsewhere, a container ending there or a card sharing the caption's band
+keeps the room it needs (Archboard server's panes, 108 px). On Blocks the
+row of pins over a cluster of a block of blocks keeps an arrowhead's channel
+(Board viewer's Semantic viewer, 45 px). No room is smaller than its side
+inset.
+
+The drawings, against `d290d63f`: on Track, crossings are as they were
+(930), bends 4294 to 4288, and the pages 0.2% larger. On Blocks the 10 px of
+a region round one node turns some choices: crossings 2523 to 2528, bends
+5288 to 5276, line length 0.5% more. Synchronous checkout in the shop vault
+keeps its joins into Checkout API (10 to 12 crossings, 13% more line), and
+Archboard server's TASK-373 crosses 3 more lines; Browser application's
+TASK-381 and TASK-385.01 each cross one fewer. No card, line or label stands on a tab or a
+nameplate that did not before. First renders on Track stay under 1 s in a
+warm process (Board viewer TASK-387 at 0.92 s, as before); Blocks is as slow
+as it was.
+
+`region-room.test.ts` holds the room under the tab of a region round
+several cards, one card, several containers and one container to the inset
+below it, on both engines.

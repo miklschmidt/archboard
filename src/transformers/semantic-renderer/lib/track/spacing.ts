@@ -5,6 +5,7 @@ import {
 	APPROACH_STRAIGHT,
 	BEND_RADIUS,
 	CONTAINER_INSET,
+	REGION_INSET,
 } from "@/transformers/semantic-renderer/config";
 import { LANE } from "@/transformers/semantic-renderer/lib/track/chains";
 import { assignTracks, type Net } from "@/transformers/semantic-renderer/lib/track/channels";
@@ -103,9 +104,11 @@ function rimOf(
 
 /**
  * Lay out every band and channel again, from the tracks each channel needs.
- * A channel no line crosses below a band of titles alone keeps the room a
- * container keeps around its cards: no frame ends there, so a container's
- * cards stand as far below its title as in from its sides. A channel below
+ * A channel no line crosses below a band of titles and captions alone keeps
+ * the room a container keeps around its cards, or below captions alone the
+ * room a region keeps round its members: no frame ends there, so a
+ * container's cards stand as far below its title, and a region's members as
+ * far below its caption, as in from its sides. A channel below
  * containers that end on its band starts its tracks below their edges, and
  * keeps a container's inset between a container ending on its band and one
  * opening under it.
@@ -129,6 +132,7 @@ function spaceBands(
 	rim?: Rim,
 ): void {
 	const held = new Set([...scene.cards.values(), ...scene.labels.values()].map(({ band }) => band));
+	const titles = new Set([...scene.titles.values()].map(({ band }) => band));
 	let top = margin;
 	scene.bands.forEach((band, index) => {
 		band.newTop = top;
@@ -140,8 +144,8 @@ function spaceBands(
 		const titled = crossing.length === 0 && !held.has(index);
 		const faces = ends.facing.has(index);
 		const rimmed = tracks === 0 ? rimOf(scene, index, closing, rim) : undefined;
-		const channel =
-			rimmed ?? (titled ? CONTAINER_INSET : channelHeight(tracks, closing, rises, faces));
+		const headed = titles.has(index) ? CONTAINER_INSET : REGION_INSET;
+		const channel = rimmed ?? (titled ? headed : channelHeight(tracks, closing, rises, faces));
 		top += band.bottom - band.top + channel;
 	});
 	centreLabelBands(scene, nets, ends.closings);

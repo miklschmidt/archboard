@@ -8,6 +8,7 @@
 import type { Box, Point } from "@/transformers/semantic-renderer/lib/geometry";
 import { MIN_GUTTER } from "@/transformers/semantic-renderer/lib/blocks/fold";
 import type { Insets, Laid } from "@/transformers/semantic-renderer/lib/blocks/laid";
+import { rimOf } from "@/transformers/semantic-renderer/lib/blocks/leaves";
 import {
 	headerOf,
 	type Block,
@@ -279,6 +280,17 @@ class FoldLayout {
 	}
 
 	/**
+	 * The room above the columns: the channel its runs need, or where no line
+	 * turns under the header, the block's own inset, as at its sides (`rimOf`).
+	 * @param top The runs above the columns.
+	 * @returns The room.
+	 */
+	headRoom(top: Stacked): number {
+		const rim = top.count === 0 ? rimOf(this.block, this.insets) : undefined;
+		return rim?.head ?? channelHeight(top.count);
+	}
+
+	/**
 	 * Put every column, own port and channel at its height.
 	 * @param top The runs above the columns.
 	 * @param bottom The runs below them.
@@ -288,7 +300,7 @@ class FoldLayout {
 		const tops = this.portsOn("top");
 		const row = Math.max(this.block.header?.height ?? 0, tops.length > 0 ? PORT : 0);
 		const channelTop = this.insets.top + row;
-		const columnsTop = channelTop + channelHeight(top.count);
+		const columnsTop = channelTop + this.headRoom(top);
 		// Every column's first card stands on one line, as newspaper columns do,
 		// whatever ports and channel a column keeps above it.
 		const heads = this.columns.map((column) => firstCardTop(this.laid.get(column.id)!));
