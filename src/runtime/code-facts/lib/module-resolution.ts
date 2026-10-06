@@ -200,8 +200,19 @@ function starOf(pattern: string, specifier: string): string | undefined {
 }
 
 /**
+ * How long a pattern's prefix is, where a pattern with no star is exact and
+ * comes before every other.
+ * @param pattern The pattern.
+ * @returns The length of the text before its star.
+ */
+function prefixLength(pattern: string): number {
+	const star = pattern.indexOf("*");
+	return star === -1 ? Number.POSITIVE_INFINITY : star;
+}
+
+/**
  * The candidates the `paths` of a configuration give a specifier, from the
- * pattern with the longest prefix, as TypeScript picks.
+ * pattern TypeScript picks: an exact one, else the one with the longest prefix.
  * @param config The configuration.
  * @param specifier The specifier.
  * @returns Each candidate path, relative to the checkout.
@@ -209,7 +220,7 @@ function starOf(pattern: string, specifier: string): string | undefined {
 function pathCandidates(config: PathConfig, specifier: string): string[] {
 	const matching = Object.keys(config.paths)
 		.filter((pattern) => starOf(pattern, specifier) !== undefined)
-		.toSorted((left, right) => right.indexOf("*") - left.indexOf("*"));
+		.toSorted((left, right) => prefixLength(right) - prefixLength(left));
 	const pattern = matching[0];
 	if (pattern === undefined) return [];
 	const star = starOf(pattern, specifier) ?? "";
