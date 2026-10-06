@@ -61,7 +61,7 @@ lossy encoder counts a pixel that moved by a few levels as unchanged. A fading s
 blocks, for the rest of the clip (the sidebar of `drill-down` did). ffmpeg
 offers no keyframe interval for it, so a lossy clip cannot be repaired. Check a
 new clip by brightening an empty part of the canvas in a frame (`magick
-clip.webp -coalesce -delete 0-99 -delete 1--1 frame.png`): it must be flat.
+clip.webp -coalesce -delete 0-99 -delete 1--1 -level 94%,100% frame.png`): it must be flat.
 
 The banner's lockup, the mark beside the name, comes from
 `scripts/readme-assets/lockup.ts`. A test in the repository lane holds that mark
@@ -88,7 +88,9 @@ the account's Codex usage.
   the voice did not, so `--replay` renders the kept talk again with
   `semantic replay`, cuts the thumbnail from it, and spends no
   Codex usage. It stops when no recording kept a talk. Record again only when
-  the walkthrough or the voice should change.
+  the walkthrough or the voice should change. A replay records the hash of all
+  the sources, so `readme:check` cannot tell that the board or the walkthrough
+  changed after the talk was recorded: check that yourself before you replay.
 - GitHub plays a video with sound only from an attachment, so the narrated
   MP4s are attached like the clips (see below).
 

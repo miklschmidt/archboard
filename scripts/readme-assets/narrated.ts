@@ -4,7 +4,7 @@
 // sound only from a user attachment, uploaded through its editor. The README's index thumbnail is
 // cut from the same recording, at the step the kept talk says it reached.
 
-import { existsSync, rmSync } from "node:fs";
+import { existsSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 import { readTalk } from "@/runtime/walkthrough-recorder";
@@ -101,7 +101,8 @@ function walkthroughArguments(spec: NarratedSpec): readonly string[] {
 /**
  * Record the walkthrough, or render the talk its last recording kept again, and cut what the README
  * shows from the video. A replay draws the frames again with today's renderer and spends no Codex
- * usage, since the voice and the board are in the kept talk.
+ * usage, since the voice and the board are in the kept talk. A new recording is made beside the kept
+ * talk and replaces it only once it is whole, so a refused or failed recording keeps the old one.
  * @param spec The video.
  * @param context What the producer is given.
  * @throws {Error} When a replay is asked for and no recording kept a talk.
@@ -115,7 +116,9 @@ async function record(spec: NarratedSpec, context: MakeContext): Promise<void> {
 			`No recording kept a talk of ${spec.name} in ${talk}. Make it without --replay once.`,
 		);
 	}
-	if (!context.replay) rmSync(talk, { recursive: true, force: true });
+	const next = join(work, "talk-next");
+	rmSync(next, { recursive: true, force: true });
+	const recorded = context.replay ? talk : next;
 	const server = await startServer(`narrated-${spec.name}`, spec.vault, !context.replay);
 	await holding(server.stop, async () => {
 		await server.cli(
@@ -128,12 +131,16 @@ async function record(spec: NarratedSpec, context: MakeContext): Promise<void> {
 						"--theme",
 						"dark",
 						"--talk",
-						talk,
+						recorded,
 						"--out",
 						video,
 					],
 		);
 	});
+	if (!context.replay) {
+		rmSync(talk, { recursive: true, force: true });
+		renameSync(recorded, talk);
+	}
 	await cutThumbnail(spec, video, readTalk(talk));
 }
 
@@ -151,7 +158,7 @@ function narratedProducer(spec: NarratedSpec): Producer {
 		attachments: [videoOf(spec)],
 		needs: ["chromium", "ffmpeg", "codex"],
 		plan: [
-			`Start an Archboard server over a copy of ${spec.vault} that uses this machine's Archboard Codex sign-in.`,
+			`Start an Archboard server over a copy of ${spec.vault} that uses this machine's Archboard Codex sign-in unless it is a --replay, which uses none.`,
 			`Record "${spec.walkthrough}" on "${spec.board}"${variant} with archboard semantic record --theme dark, narrated by the Codex voice; this spends Codex usage. With --replay, render the talk that the last recording kept again with archboard semantic replay instead, which spends none. The MP4 stays in the scratch directory, to attach to the README by hand with gh attach.`,
 			...(spec.thumbnail === undefined
 				? []
