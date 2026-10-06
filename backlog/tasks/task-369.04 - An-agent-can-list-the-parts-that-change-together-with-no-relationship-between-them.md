@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:19'
-updated_date: '2026-10-06 12:19'
+updated_date: '2026-10-06 12:27'
 labels:
   - history
   - cli
@@ -72,4 +72,8 @@ Two parts that change in the same commits depend on each other, whether or not t
 
 - Semantic renderer: Architecture painter (lib/svg/architecture.ts, 29 commits) and Sequence painter (lib/svg/dataflow.ts, 21), both inside Renderer core, share 11 commits, degree 44%, unjoined. The design note's 6 commits and 36% (20 and 13 commits) at 048312ee did not follow renames: both files moved from src/runtime/semantic-renderer in 853a8a462 on 2026-09-17. The lens follows renames (ADR 0045), so at 048312ee it reads 24 and 15 commits, 7 shared (3c5713293, 2026-09-12, before the move), 35%. Since then 4 more shared commits (dd0e007d4, 925c97330, 57f614d8d, cc52a5cdb, all renderer pulse and far-view work) make 11 and 44%. Other pairs: View dispatcher and Board answer 59% (joined), SVG document and Sequence painter 36% (unjoined), Data-flow layout and Sequence painter 36% (joined), Architecture painter and SVG document 30% (joined). Renderer core binds the whole directory and overlaps every painter, so it pairs with none. 19 large commits left out.
 - Command interface: Claims (claim.ts, 7) and Panes (pane.ts, 11) are not reported. They share 12 commits, 10 of them large (50 to 864 files), as the note says, and 2 small ones: degree 22%, under both thresholds. Reported pairs: Command catalogue and Server client 44%, 26 commits, unjoined; Server client and Commands 35%, 34 commits, joined through the commands inside Commands. 36 large commits left out.
+
+Dogfood: the proposals Archboard server@TASK-369.04 and Command interface@TASK-369.04 already state what was built (three responsibilities, nothing else in semantic compare); they are left as drafts for the closing step to adopt. ./bin/dogfood check reports no diagnostics. Gate (2026-10-06): lint 0, fmt:check 0, type-check 0, test:modules 4046 pass, test:system 192 pass, test:repository 20 pass; bun run eval:skill check: 20 scenarios, 20 fixtures, 14 coverage parts. Commits: 28f849d71 (proposals), ae06ac9f3 (feature), 4a6095740 (skill, evals, audit).
+
+test:serial-browser exit 0 (after build:frontend).
 <!-- SECTION:NOTES:END -->
