@@ -2,11 +2,13 @@
 // a bound symbol must be a definition, an anchor's symbol a definition or a
 // use, a name in a comment or a string is neither, a symbol found only in code
 // that did not parse is skipped, and an anchor whose symbol is defined outside
-// the bound code of both ends does not support its relationship.
+// the bound code of both ends does not support its relationship, unless an end
+// has no binding to say where its code is.
 //
 // The checkout `mart` is registered. Web binds `src/web`, Orders the module
 // index that passes `placeOrder` on, Billing the `charge` definition, and
-// Logger a file no relationship from Web reaches through its anchors.
+// Logger a file no relationship from Web reaches through its anchors. Provider
+// is bound to nothing.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -81,6 +83,7 @@ beforeAll(async () => {
 			'import { charge } from "../billing/charge";',
 			'import { log } from "@/shared/log";',
 			"// refundOrder is not called here.",
+			"type Sink = typeof log;",
 			'const label = "cancelOrder";',
 			"export function submit(): string { placeOrder(); charge(); log(); return label; }",
 			"",
@@ -108,6 +111,8 @@ beforeAll(async () => {
 					part("pU", "Uses", { path: "src/web/checkout.ts", symbol: "placeOrder" }),
 					part("pK", "Broken", { path: "src/web/broken.ts", symbol: "onlyHere" }),
 					part("pA", "Audit", { path: "src/billing/charge.ts", symbol: "audit" }),
+					// An external system, which no binding places in the checkout.
+					{ id: "pX", name: "Provider", kind: "module", order: 880 },
 				],
 				edges: [
 					// Defined behind the index Orders binds, which passes it on.
@@ -123,6 +128,8 @@ beforeAll(async () => {
 					call("e7", ["pB", "pW"], "src/billing/charge.ts", "charge"),
 					call("e8", web, "README.md", "placeOrder"),
 					call("e9", ["pW", "pL"], "src/web/broken.ts", "onlyHere"),
+					// Defined outside Web, and the check cannot tell whether it is Provider's code.
+					call("e10", ["pW", "pX"], "src/web/checkout.ts", "log"),
 				],
 			},
 		},
@@ -163,7 +170,7 @@ test("a TypeScript file holds a bound symbol it defines and an anchored one it d
 	expect(outcome.findings.every((finding) => finding.severity === "warning")).toBe(true);
 });
 
-test("an anchor whose symbol is defined outside both ends names the use it rests on", async () => {
+test("an anchor whose symbol is defined outside both ends names the use it rests on, a use at run time before a use as a type", async () => {
 	const outcome = await pass();
 	const mismatch = (id: string) =>
 		outcome.findings.find(
@@ -175,7 +182,7 @@ test("an anchor whose symbol is defined outside both ends names the use it rests
 			resolution: "resolved",
 			repo: MART,
 			path: "src/web/checkout.ts",
-			line: 6,
+			line: 7,
 			symbol: "log",
 		},
 	]);

@@ -7,8 +7,11 @@
 // so the import path names the file and the finding is a warning. A symbol
 // the code reaches only through a value, such as `ledger.post()`, has no such
 // definition, and the check does not judge it until a language server
-// resolves it (TASK-367.13). Where the bound code of a part that could hold
-// the definition cannot be read, the check cannot tell, and says nothing.
+// resolves it (TASK-367.13). Where the code of a part that could hold the
+// definition is unknown, the check cannot tell, and says nothing: a part with
+// no binding, such as a person, an external system or a part not bound yet,
+// and a binding the pass cannot read. A warning needs the check to be sure,
+// and only the bindings say where the code of a part is.
 //
 // The bound code of a part is the definition its symbol names, else the whole
 // file, or every file below the directory. A file that passes the symbol on,
@@ -24,6 +27,7 @@ import {
 	type Definition,
 	type DefinitionSite,
 	type FileFacts,
+	type Reference,
 } from "@/runtime/code-facts/index";
 import { resolveLocalCodeTarget, type CheckoutSnapshot } from "@/runtime/code-target/index";
 import type { CodeEvidence, CodeFinding } from "@/shared/code-check/index";
@@ -54,8 +58,8 @@ function within(inner: Definition, outer: Definition): boolean {
  * @param part The part.
  * @param checkout The anchor's checkout.
  * @param context The pass.
- * @returns The files; `elsewhere` for a part bound to nothing in the checkout;
- * `unknown` for a binding the pass cannot read there.
+ * @returns The files; `elsewhere` for a part bound in another repository;
+ * `unknown` for a part with no binding, or a binding the pass cannot read.
  */
 function boundFiles(
 	part: SemanticNode,
@@ -63,7 +67,8 @@ function boundFiles(
 	context: SupportContext,
 ): readonly string[] | "elsewhere" | "unknown" {
 	const { binding } = part;
-	if (binding?.repo !== checkout.repo) return "elsewhere";
+	if (binding === undefined) return "unknown";
+	if (binding.repo !== checkout.repo) return "elsewhere";
 	const target = resolveLocalCodeTarget(binding, context.snapshot);
 	if (!target.ok || otherRefOf(binding, context.snapshot) !== undefined) return "unknown";
 	const readable = readableOf(target, checkout.files);
@@ -112,9 +117,27 @@ async function holdingAt(
 }
 
 /**
- * The anchored use of a symbol, as evidence: the first use of its spelling or
- * its last name. A symbol the anchored file only defines has no use, and no
- * evidence kind (ADR 0046).
+ * A file's uses of a symbol that give an evidence kind: a use of its spelling
+ * before a use of its last name, and a use at run time before a use only as a
+ * type.
+ * @param references The file's references.
+ * @param symbol The symbol.
+ * @returns The uses, in that order.
+ */
+function usesOf(references: readonly Reference[], symbol: string): Reference[] {
+	const name = lastName(symbol);
+	const exact = references.filter((each) => each.kind !== undefined && each.symbol === symbol);
+	const named = references.filter(
+		(each) => each.kind !== undefined && lastName(each.symbol) === name,
+	);
+	return [...exact, ...named].toSorted(
+		(left, right) => Number(left.typeOnly) - Number(right.typeOnly),
+	);
+}
+
+/**
+ * The anchored use of a symbol, as evidence. A symbol the anchored file only
+ * defines has no use, and no evidence kind (ADR 0046).
  * @param facts The anchored file's facts.
  * @param claim The anchor.
  * @returns The evidence, or undefined.
@@ -122,10 +145,7 @@ async function holdingAt(
 function anchoredUse(facts: FileFacts | undefined, claim: AnchorClaim): CodeEvidence | undefined {
 	if (facts?.adapter !== "typescript") return undefined;
 	const { symbol, repo } = claim.anchor;
-	const name = lastName(symbol);
-	const use =
-		facts.references.find((reference) => reference.symbol === symbol && reference.kind) ??
-		facts.references.find((reference) => lastName(reference.symbol) === name && reference.kind);
+	const use = usesOf(facts.references, symbol)[0];
 	if (use?.kind === undefined) return undefined;
 	return { kind: use.kind, resolution: "resolved", repo, path: facts.path, line: use.line, symbol };
 }
