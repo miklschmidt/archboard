@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-config
+data:
+  SEARCH_URL: http://search:9200
+  LOG_LEVEL: debug
+  nginx.conf: |
+    upstream cart { server cart:7070; }
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: web-secrets
+type: Opaque
+data:
+  DB_PASSWORD: aHVudGVyMi10ZW1wdGluZw==
+stringData:
+  API_TOKEN: hunter2-tempting-token

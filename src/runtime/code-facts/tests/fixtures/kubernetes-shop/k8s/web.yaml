@@ -1,0 +1,47 @@
+# The web front end and the Service that names it.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: web
+          image: shop/web:1
+          env:
+            - name: CART_ADDR
+              value: "cart:7070"
+            - name: LEDGER_URL
+              value: http://ledger.payments.svc.cluster.local:9000
+            - name: DOCS_URL
+              value: https://docs.example.com
+            - name: CATALOG_HOST
+              value: catalog
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: web-secrets
+                  key: DB_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: web-config
+              prefix: WEB_
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+spec:
+  type: LoadBalancer
+  selector:
+    app: web
+  ports:
+    - port: 80
+      targetPort: 8080

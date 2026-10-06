@@ -39,6 +39,7 @@ import { joinEnvironment } from "@/runtime/code-check/lib/environment-join";
 import { evidenceOf, lineagesOf } from "@/runtime/code-check/lib/evidence";
 import { infrastructureRunners } from "@/runtime/code-check/lib/infrastructure-runners";
 import { judgeInterfaces, type ModuleReadings } from "@/runtime/code-check/lib/interfaces";
+import { kubernetesEvidenceOf } from "@/runtime/code-check/lib/kubernetes-evidence";
 import { partCodesOf } from "@/runtime/code-check/lib/part-code";
 import { judgeRelationships } from "@/runtime/code-check/lib/relationships";
 import { openResolution, type Resolve } from "@/runtime/code-check/lib/resolution";
@@ -485,7 +486,8 @@ async function judgeBoardRelationships(read: BoardToCheck, pass: Pass): Promise<
 		resolve: pass.resolve,
 	});
 	const infrastructure = await terraformEvidenceOf(codes, pass.facts, lineages);
-	const evidence = { ...code, pieces: [...code.pieces, ...infrastructure] };
+	const manifests = await kubernetesEvidenceOf(codes, pass.facts, lineages);
+	const evidence = { ...code, pieces: [...code.pieces, ...infrastructure, ...manifests] };
 	const runners = await infrastructureRunners(codes, pass.facts);
 	const hops = await joinEnvironment(codes, pass.facts, runners);
 	const judged = judgeRelationships({

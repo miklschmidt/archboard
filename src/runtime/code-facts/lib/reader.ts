@@ -9,7 +9,9 @@
 // than one entry for a file. Each pass drops the entries of files that no
 // longer exist, so a deleted or renamed file leaves nothing behind. A file
 // read as text is not kept: its facts are its bytes, which the pass reads
-// anyway.
+// anyway. A file whose adapter finds it of another format, such as a `.yaml`
+// file that holds no Kubernetes object, is read as text, and its entry keeps
+// that answer.
 //
 // Which adapter reads a file is the adapter table's (adapters.ts). What
 // depends on other files, an import resolved through `tsconfig.json` or a
@@ -43,7 +45,8 @@ import type { TerraformPlan } from "@/runtime/code-facts/lib/terraform-plan";
 interface Entry {
 	readonly hash: bigint | number;
 	readonly parse: ParseFacts;
-	readonly facts: ParsedFacts;
+	/** None where the adapter found the file of another format, which is read as text. */
+	readonly facts: ParsedFacts | undefined;
 }
 
 /** How one pass read its files. */
@@ -75,6 +78,17 @@ function listedTarget(
 	} catch {
 		return undefined;
 	}
+}
+
+/**
+ * A file's text, if the pass may read it.
+ * @param checkout The checkout and the files it may read.
+ * @param relative The file, relative to the checkout.
+ * @returns The text, or undefined.
+ */
+function readListed(checkout: CheckoutFiles, relative: string): string | undefined {
+	const target = listedTarget(checkout, relative);
+	return target === undefined ? undefined : fs.readFileSync(target.absolute, "utf8");
 }
 
 /**
@@ -245,7 +259,7 @@ interface PassContext {
  * @param bytes Its bytes.
  * @param reading The adapter and how it reads the file.
  * @param stats The pass's counts.
- * @returns The facts.
+ * @returns The facts, or undefined for a file of a format the adapter does not read.
  */
 async function parsedFacts(
 	context: PassContext,
@@ -253,7 +267,7 @@ async function parsedFacts(
 	bytes: Uint8Array,
 	reading: AdapterReading,
 	stats: PassStats,
-): Promise<ParsedFacts> {
+): Promise<ParsedFacts | undefined> {
 	const hash = Bun.hash(bytes);
 	const entry = context.cache.get(absolute);
 	if (entry?.hash === hash && entry.parse === reading.parse) {
@@ -279,19 +293,19 @@ function createPass(context: PassContext): FactsPass {
 	const stats: PassStats = { read: 0, parsed: 0, cached: 0 };
 	const reads = new Map<string, Promise<FileFacts | undefined>>();
 	const resolvers = new Map<string, ImportResolver>();
-	const parses = new Map<string, Promise<ParsedFacts>>();
+	const parses = new Map<string, Promise<ParsedFacts | undefined>>();
 	/**
 	 * The facts an adapter gives a file's bytes, read and parsed once in the
 	 * pass, whether the pass reads the file or a resolver reads it first.
 	 * @param target The real file.
 	 * @param target.absolute Its absolute path.
 	 * @param reading The adapter and how it reads the file.
-	 * @returns The facts.
+	 * @returns The facts, or undefined for a file of a format the adapter does not read.
 	 */
 	const parsedOnce = (
 		target: { readonly absolute: string },
 		reading: AdapterReading,
-	): Promise<ParsedFacts> => {
+	): Promise<ParsedFacts | undefined> => {
 		let parsing = parses.get(target.absolute);
 		if (parsing === undefined) {
 			parsing = Bun.file(target.absolute)
@@ -329,10 +343,7 @@ function createPass(context: PassContext): FactsPass {
 		if (resolver === undefined) {
 			resolver = reading.adapter.resolver(
 				checkout,
-				(relative) => {
-					const target = listedTarget(checkout, relative);
-					return target === undefined ? undefined : fs.readFileSync(target.absolute, "utf8");
-				},
+				(relative) => readListed(checkout, relative),
 				(relative) => parsedOf(checkout, relative),
 			);
 			resolvers.set(key, resolver);
@@ -354,11 +365,11 @@ function createPass(context: PassContext): FactsPass {
 		if (target === undefined) return undefined;
 		stats.read += 1;
 		const reading = adapterOf(target.relative);
-		if (reading === undefined) {
+		const parsed = reading === undefined ? undefined : await parsedOnce(target, reading);
+		if (reading === undefined || parsed === undefined) {
 			const bytes = await Bun.file(target.absolute).bytes();
 			return { adapter: "text", path: target.relative, text: new TextDecoder().decode(bytes) };
 		}
-		const parsed = await parsedOnce(target, reading);
 		const resolver = resolverOf(checkout, reading);
 		return resolved(parsed, target.relative, reading.adapter.name, resolver);
 	};
@@ -383,4 +394,4 @@ function createPass(context: PassContext): FactsPass {
 	};
 }
 
-export { type CodeFacts, type FactsPass, type PassStats, createCodeFacts };
+export { type CodeFacts, type FactsPass, type PassStats, createCodeFacts, readListed };

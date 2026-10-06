@@ -25,6 +25,11 @@ export {
 } from "@/runtime/code-facts/lib/facts";
 export { mergedDefinitions } from "@/runtime/code-facts/lib/compose-merged";
 export { isComposeFile } from "@/runtime/code-facts/lib/compose-project";
+export {
+	type KubernetesLink,
+	type ManifestSite,
+	kubernetesLinks,
+} from "@/runtime/code-facts/lib/kubernetes-links";
 export { pairOf } from "@/runtime/code-facts/lib/c-pairs";
 export { type DefinitionSite, definitionSite } from "@/runtime/code-facts/lib/definition-site";
 export { type Accept, type Found, findSymbol } from "@/runtime/code-facts/lib/lookup";

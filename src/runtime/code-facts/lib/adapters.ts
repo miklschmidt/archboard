@@ -8,7 +8,8 @@
 // Kubernetes manifests are YAML (`Bun.YAML.parse`) and `flake.lock` is JSON.
 // An entry names a file by its extension (`.py`) or by its whole name
 // (`flake.lock`), and a whole name wins over an extension. No two entries
-// read the same file.
+// read the same file. Where other formats share an extension, the adapter
+// answers no facts for a file of another format, and it is read as text.
 //
 // A new language or format adds its own files (its facts and its import
 // resolver, and a query file for a grammar), its name to `AdapterName`
@@ -41,6 +42,8 @@ import {
 	createModuleResolver,
 	type CheckoutFiles,
 } from "@/runtime/code-facts/lib/module-resolution";
+import { kubernetesFacts } from "@/runtime/code-facts/lib/kubernetes-adapter";
+import { createKubernetesResolver } from "@/runtime/code-facts/lib/kubernetes-resolution";
 import { flakeFacts } from "@/runtime/code-facts/lib/nix-adapter";
 import { pythonFacts } from "@/runtime/code-facts/lib/python-adapter";
 import { createPythonResolver } from "@/runtime/code-facts/lib/python-resolution";
@@ -168,6 +171,12 @@ const ADAPTERS: readonly Adapter[] = [
 		resolver: createComposeResolver,
 	},
 	{ name: "env", reads: { ".env": envFileFacts }, resolver: createEnvFileResolver },
+	{
+		// A `.yaml` file that holds no Kubernetes object is read as text (TASK-367.19).
+		name: "kubernetes",
+		reads: { ".yaml": kubernetesFacts, ".yml": kubernetesFacts },
+		resolver: createKubernetesResolver,
+	},
 	{
 		name: "nix",
 		reads: { "flake.nix": FLAKE, "flake.lock": flakeLockFacts },
