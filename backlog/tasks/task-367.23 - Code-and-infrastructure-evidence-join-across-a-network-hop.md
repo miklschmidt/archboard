@@ -1,11 +1,11 @@
 ---
 id: TASK-367.23
 title: Code and infrastructure evidence join across a network hop
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:16'
-updated_date: '2026-10-06 16:25'
+updated_date: '2026-10-06 17:10'
 labels:
   - code-check
 dependencies:
@@ -27,9 +27,9 @@ Code shows that a part reads a configuration value such as `QUEUE_URL`. Infrastr
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A code anchor that reads an environment value, together with a compose file that sets the value for that part's service to another part's address, supports the relationship between the two parts as a configured path
-- [ ] #2 The same join works for Kubernetes environment values and Terraform settings when those adapters are present
-- [ ] #3 A relationship across a network hop that no evidence supports is reported as unsupported, and one with evidence only on one side says which side is missing
+- [x] #1 A code anchor that reads an environment value, together with a compose file that sets the value for that part's service to another part's address, supports the relationship between the two parts as a configured path
+- [x] #2 The same join works for Kubernetes environment values and Terraform settings when those adapters are present
+- [x] #3 A relationship across a network hop that no evidence supports is reported as unsupported, and one with evidence only on one side says which side is missing
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -78,3 +78,9 @@ Gate (lanes one at a time, working tree holding other agents' uncommitted C, C#,
 
 Correction to the closing: the vault file at version 140, with TASK-367.23 current on Archboard server, was committed in 7b3e6ae13 (TASK-367.19's closing commit, which carried the whole file).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+check --code now joins code and infrastructure across a network hop. Where code reads an environment value and a compose service, Kubernetes workload or Terraform resource that runs that code sets the value to another part's address, the relationship between the two parts is supported as a configured path, cited at the read and at the setting. Where the infrastructure leaves a choice (several parts behind one address, several runners of one directory), the piece is a candidate, not a resolved warning. A network hop with no evidence is unsupported, and one with evidence on only one side names the missing side (code or infrastructure). Only names reach evidence, never a value. The independent review fixed false resolved warnings and a lookup that took 499 s on a large repository (now under 1 s). Owner: network-hop.test.ts and terraform-environment.test.ts.
+<!-- SECTION:FINAL_SUMMARY:END -->

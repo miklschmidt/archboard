@@ -1,11 +1,11 @@
 ---
 id: TASK-367.18
 title: Classify Terraform evidence for the cloud providers in use
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:16'
-updated_date: '2026-10-06 17:08'
+updated_date: '2026-10-06 17:10'
 labels:
   - code-check
   - needs-info
@@ -27,9 +27,9 @@ Most references in a Terraform configuration are about provisioning, such as a r
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The user named the providers to cover first
-- [ ] #2 For each named provider, triggers, subscriptions and event mappings are calls, listeners, target groups and network rules are configured paths, grants are permissions, and the rest is provisioning
-- [ ] #3 Provisioning references are not reported as missing relationships
+- [x] #1 The user named the providers to cover first
+- [x] #2 For each named provider, triggers, subscriptions and event mappings are calls, listeners, target groups and network rules are configured paths, grants are permissions, and the rest is provisioning
+- [x] #3 Provisioning references are not reported as missing relationships
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -79,3 +79,9 @@ Gate (lanes one at a time, shared working tree with other agents' uncommitted wo
 
 Review gaps closed (b3210e93e code and tests, d6339ad84 docs). A: an argument of a call of a module the check does not read (registry, Git) reached what it names as a configured path, so module "eks" { vpc_id = aws_vpc.main.id } gave RELATIONSHIP_UNDRAWN from the call to the VPC. That reach is now provisioning, as every unlisted reference of a named provider, unless the argument is an environment shape (isEnvironmentArgument), which stays a configured path; a named plan that fills the module in removes the call's reach and classifies by the resource the argument flows into. The call keeps its reach (anchors, ownership); only the kind changes, in terraform-configuration.ts linksFrom through terraform-providers.ts unreadModuleArgumentKind, from the argument path the adapter already writes on each reference. The argument's own link and the adapter's kind for module arguments stay configured-path, so an anchor at a module call's argument (authoring.md's advice for for_each event sources) still holds for queue and event relationships. B: an anchor naming a joining declaration the anchored file defines is judged by its join's kind, read from the declaration's references that name an end of the join (they carry the kind from the provider table), cited at the declaration's first line; a declaration whose ends no reference names is not judged. This needs no new code-facts export. Owners: code-check/tests/terraform-providers.test.ts 'a call of a module the check does not read is set up with what its arguments name, unless an argument is an environment value' (vpc_id no warning, environment_variables configured-path undrawn) and the AWS anchored case e4 (aws_lambda_permission.jobs on a call: ANCHOR_MISMATCH warning, permission evidence); code-facts/tests/terraform-providers.test.ts 'a plan that fills in a module the check does not read classifies an argument of its call by the resource the argument flows into'. Real configurations, before and after through the real checkCode: the nine boards (with undrawn twins) give the same 16 findings; terraform-aws-eks e072462 drops 3 warnings and adds none: examples/eks-managed-node-group module.eks_al2023 and module.eks_bottlerocket (registry eks module) -> module.vpc by vpc_id, and in examples/karpenter module.eks.module.kms -> module.eks.aws_iam_role.this by key_users (a grant to the cluster role, not a configured path), on the drawn board and its twin. Gate: type-check exit 1 and lint:tests exit 1 only in other agents' uncommitted files (language-servers/tests/python-csharp.test.ts, ui/semantic-board-canvas/tests/picture-transition.test.tsx); lint:policy exit 1 only in objc-macros.ts, language-servers connection.ts, dotnet-solution.ts, python-environment.ts; touched files lint and fmt clean; Terraform and anchor test files 49 pass 0 fail.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Terraform references now carry the evidence kind of the provider the user named first: AWS, Google Cloud, Azure and the Kubernetes provider. Triggers, subscriptions and event source mappings are calls, listeners, target groups and network rules are configured paths, grants are permissions, and every other reference is provisioning, which is never reported as a missing relationship. A joining declaration (an event source mapping, a subscription) joins the two ends it names, and an anchor that names one is judged by the kind of its join. An argument of a module call the check does not read is provisioning unless it is an environment value. Verified on nine boards over terraform-aws-lambda, terraform-aws-vpc, terraform-docs-samples, terraform-provider-azurerm and terraform-provider-kubernetes examples (23 findings with 14 false undrawn warnings before, 8 information findings after) and on terraform-aws-eks (3 false warnings removed, none added). Owners: code-facts and code-check terraform-providers.test.ts.
+<!-- SECTION:FINAL_SUMMARY:END -->
