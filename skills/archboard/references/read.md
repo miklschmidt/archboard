@@ -56,7 +56,15 @@ through the CLI, report it in the board's own terms, and change nothing.
    on a board nobody has built, have nothing to be read against and are
    refused unless `--against <id|name>` names a variant. Report a
    relationship whose end moved as one relationship that moved, not as a
-   removal beside an addition.
+   removal beside an addition. The answer starts with the interface section,
+   `interfaceChanges`. It lists each container whose interface moved. For
+   each, it names the entry points added and removed, the children that
+   became entry points or hidden parts, and the callers gained and lost.
+   Report those first. They set no `standing`.
+   `interfaceMeasures` gives the five counts of each container on each variant
+   read. Each `--beside <id|name>` adds one more variant, such as a competing
+   proposal. Report the counts side by side as the answer gives them. Never
+   rank the variants by them.
 5. Answer from what the CLI printed, naming subjects as the board names them:
    members with their containers, internal relationships, boundary
    relationships as incoming or outgoing, neighbours, a container's entry
