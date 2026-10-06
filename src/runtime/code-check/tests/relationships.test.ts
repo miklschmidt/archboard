@@ -124,6 +124,12 @@ beforeAll(async () => {
 			'import { send } from "./sender";\nexport function listen(): void { send(); }\n',
 		"src/notify/mailer.ts":
 			'import { send } from "./sender";\nexport function mail(): void { send(); }\n',
+		// Loads the sender's file at run time, which is a call to the whole file.
+		"src/notify/digest.ts":
+			'export async function digest(): Promise<void> { await import("./sender"); }\n',
+		// Calls the sender, which the flow draws as a step.
+		"src/notify/relay.ts":
+			'import { send } from "./sender";\nexport function relay(): void { send(); }\n',
 	});
 	git(scratch, mall, "add", "-A");
 	git(scratch, mall, "commit", "-q", "--no-gpg-sign", "-m", "the code");
@@ -146,6 +152,8 @@ beforeAll(async () => {
 					part("pN", "Sender", { path: "src/notify/sender.ts" }),
 					part("pI", "Listener", { path: "src/notify/listener.ts" }),
 					part("pM", "Mailer", { path: "src/notify/mailer.ts" }),
+					part("pD", "Digest", { path: "src/notify/digest.ts" }),
+					part("pY", "Relay", { path: "src/notify/relay.ts" }),
 				],
 				edges: [
 					// Drawn to the store, which holds the parts the server's code reaches.
@@ -172,7 +180,7 @@ beforeAll(async () => {
 					{
 						id: "f1",
 						name: "Route",
-						participants: ["pS", "pB"],
+						participants: ["pS", "pB", "pY", "pN"],
 						steps: [
 							// A step has no relationship kind, so its evidence kind is never judged.
 							{
@@ -182,6 +190,8 @@ beforeAll(async () => {
 								label: "names the shelf",
 								anchor: { repo: MALL, path: "src/server/routes.ts", symbol: "Shelf" },
 							},
+							// A step draws the relay's call to the sender.
+							{ id: "s2", from: "pY", to: "pN", label: "relays" },
 						],
 					},
 				],
@@ -220,6 +230,7 @@ test("every finding of the relationship judgement, and nothing about a relations
 		[
 			"RELATIONSHIP_UNDRAWN pA warning",
 			"RELATIONSHIP_UNDRAWN pZ information",
+			"RELATIONSHIP_UNDRAWN pN warning",
 			"RELATIONSHIP_BACKWARDS e3 information",
 			"RELATIONSHIP_UNSUPPORTED e4 information",
 			"RELATIONSHIP_UNSUPPORTED e7 information",
@@ -243,8 +254,13 @@ test("the parts that use one shared part make one finding on it, one resolved pi
 	expect(undrawn?.evidence?.[0]).toMatchObject({ repo: MALL, symbol: "addressOf" });
 	// Server, List and Write name the Shelf type only as a type, which is never a dependency at run time.
 	expect(finding("RELATIONSHIP_UNDRAWN", "pB")).toBeUndefined();
-	// The store's tests call the sender, and a test is not the store's code at run time.
-	expect(finding("RELATIONSHIP_UNDRAWN", "pN")).toBeUndefined();
+	// Only the digest reaches the sender undrawn, by an import() that loads its whole file.
+	// The store's tests call it, and a test is not the store's code at run time. The relay
+	// calls it, and a step draws that.
+	const sender = finding("RELATIONSHIP_UNDRAWN", "pN")?.evidence;
+	expect(sender?.map((piece) => [piece.from, piece.kind, piece.symbol])).toEqual([
+		["pD", "call", "./sender"],
+	]);
 });
 
 test("a use of a name the same file defines is a candidate, so its finding is information", () => {
