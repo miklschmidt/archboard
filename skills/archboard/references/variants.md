@@ -32,7 +32,9 @@ reads it against any other variant you name. What is compared:
   drill-down. A renamed group changes nothing (the name is in `config.yaml`).
 - **Relationships**: from, to, kind, label, description and effective traffic
   (`{}` and the explicit defaults are equal). `emphasis` is presentation intent
-  and never a change.
+  and never a change, and an `anchor`, on a relationship or a step, is
+  bookkeeping and never a change. A binding is compared whole, so a new
+  `symbol` changes its node.
 - **Flows and steps**: a flow's name, summary and participants (as a set); a
   step's ends, label, kind, note, repeat and its position in the sequence.
 - **Walkthroughs and beats**: a beat's heading, body, subjects (as a set), view

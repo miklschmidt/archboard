@@ -63,6 +63,12 @@ Keep the real relationship kind when judging routing.
    they are its hidden parts. Each function's two calls come from its own
    body, so they are siblings, not a chain. The agent running the command is
    the inbound caller and lives outside the checkout, so it stays unbound.
+   Each relationship carries that line of evidence as its `anchor`: the file
+   whose body makes the call and the name it calls. The agent's request
+   reaches `editRoute` through the route table in
+   `src/server/archboard/lib/semantic-board-routes.ts`, so that file anchors
+   it. Five functions share `write.ts`, so each binding names its function in
+   `symbol`; `Board lease` is drawn whole and owns its file.
 
 ```bash
 archboard semantic new "Semantic board writes" --doing "describing how one board edit reaches disk" <<'JSON'
@@ -71,36 +77,44 @@ archboard semantic new "Semantic board writes" --doing "describing how one board
   "nodes": [
     { "name": "Agent", "kind": "external", "responsibility": "Runs archboard semantic edit" },
     { "name": "Edit route", "kind": "function", "responsibility": "Accepts one edit and hands it to the store",
-      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/server/archboard/lib/semantic-board-writes.ts" } },
+      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/server/archboard/lib/semantic-board-writes.ts", "symbol": "editRoute" } },
     { "name": "Board store", "kind": "module", "responsibility": "The one place a board is read or written",
       "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store" } },
     { "name": "editVariantTransition", "kind": "function", "parent": "Board store",
       "responsibility": "Builds the change one edit makes to a board",
-      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/transitions.ts" } },
+      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/transitions.ts", "symbol": "editVariantTransition" } },
     { "name": "writeSemanticBoard", "kind": "function", "parent": "Board store",
       "responsibility": "Runs one write under the board's lease",
-      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/write.ts" } },
+      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/write.ts", "symbol": "writeSemanticBoard" } },
     { "name": "underBoardLease", "kind": "function", "parent": "Board store",
       "responsibility": "Admits the writer and holds the lease around one pass",
-      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/write.ts" } },
+      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/write.ts", "symbol": "underBoardLease" } },
     { "name": "applyUnderLease", "kind": "function", "parent": "Board store",
       "responsibility": "Reads, applies, validates and persists one command",
-      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/write.ts" } },
+      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/write.ts", "symbol": "applyUnderLease" } },
     { "name": "persisted", "kind": "function", "parent": "Board store",
       "responsibility": "Writes the board atomically and answers with its warnings",
-      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/write.ts" } },
+      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/write.ts", "symbol": "persisted" } },
     { "name": "Board lease", "kind": "module", "responsibility": "One writer at a time per board",
       "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/engine/lib/board-lock-acquisition.ts" } }
   ],
   "edges": [
-    { "from": "Agent", "to": "Edit route", "kind": "http", "label": "POST /api/semantic-boards/edit" },
-    { "from": "Edit route", "to": "editVariantTransition", "kind": "call", "label": "builds the edit" },
-    { "from": "Edit route", "to": "writeSemanticBoard", "kind": "call", "label": "edit transition" },
-    { "from": "writeSemanticBoard", "to": "underBoardLease", "kind": "call" },
-    { "from": "writeSemanticBoard", "to": "applyUnderLease", "kind": "call", "label": "as the leased pass" },
-    { "from": "underBoardLease", "to": "Board lease", "kind": "call", "label": "withBoardLock" },
-    { "from": "applyUnderLease", "to": "editVariantTransition", "kind": "call", "label": "transition.apply" },
-    { "from": "applyUnderLease", "to": "persisted", "kind": "call" }
+    { "from": "Agent", "to": "Edit route", "kind": "http", "label": "POST /api/semantic-boards/edit",
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/server/archboard/lib/semantic-board-routes.ts", "symbol": "editRoute" } },
+    { "from": "Edit route", "to": "editVariantTransition", "kind": "call", "label": "builds the edit",
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/server/archboard/lib/semantic-board-writes.ts", "symbol": "editVariantTransition" } },
+    { "from": "Edit route", "to": "writeSemanticBoard", "kind": "call", "label": "edit transition",
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/server/archboard/lib/semantic-board-writes.ts", "symbol": "writeSemanticBoard" } },
+    { "from": "writeSemanticBoard", "to": "underBoardLease", "kind": "call",
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/write.ts", "symbol": "underBoardLease" } },
+    { "from": "writeSemanticBoard", "to": "applyUnderLease", "kind": "call", "label": "as the leased pass",
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/write.ts", "symbol": "applyUnderLease" } },
+    { "from": "underBoardLease", "to": "Board lease", "kind": "call", "label": "withBoardLock",
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/write.ts", "symbol": "withBoardLock" } },
+    { "from": "applyUnderLease", "to": "editVariantTransition", "kind": "call", "label": "transition.apply",
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/write.ts", "symbol": "apply" } },
+    { "from": "applyUnderLease", "to": "persisted", "kind": "call",
+      "anchor": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/write.ts", "symbol": "persisted" } }
   ]
 }
 JSON
@@ -119,7 +133,7 @@ whole, with no children. Draw its functions inside it, and the call lands on
 
 4. Check the answer against your record: every part you meant is there with a
    configured `kind`; every relationship's `from`, `to` and `kind` match its
-   line of evidence, and none exists without one; a call from outside a
+   line of evidence, and none exists without one or without its `anchor`; a call from outside a
    container ends on an entry point that its caller names; bound parts name the
    identity from step 2 and the owning file. Open the picture and read it as
    the audience will: labels legible, nothing cut off, each arrow ending on the

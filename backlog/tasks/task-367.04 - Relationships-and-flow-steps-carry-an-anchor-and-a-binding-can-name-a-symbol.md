@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 10:33'
+updated_date: '2026-10-06 10:39'
 labels:
   - code-check
   - semantic-model
@@ -55,4 +55,7 @@ Proposal: Board persistence@TASK-367.04 branched (v21) and drawn (v22): Dropped 
 Decision: the contract version stays 2.4.0. ADR 0046 is silent; ADR 0036 and ADR 0037 keep the version for additive optional fields, and moving it rewrites every board of every vault on its first read.
 
 TASK-368.04 adopted a container redraw (v24) under my first proposal. Shelved Board persistence@TASK-367.04 (PARENT_SUPERSEDED would refuse it) and redrew the change as Board persistence@"TASK-367.04 redrawn" (a shelved variant keeps its name, so the new proposal needs another): Dropped anchors inside Board store, called by Edit semantic content. compare reports exactly that.
+
+Built: CodeAnchorSchema {repo, path, symbol} beside CodeBindingSchema (src/shared/code-target), binding.symbol optional; anchor on SemanticEdgeSchema, FlowStepSchema and both input schemas. Edges carry the stated input whole; buildStep carries a step anchor. dropped-anchors.ts: ANCHOR_DROPPED notice (path edges.<id>.anchor or flows.<flow>.steps.<step>.anchor) with the dropped anchor spelled out, beside RELATIONSHIP_* from editContent. COMPARED unchanged (comment says why); anchor in MERGED.edge and TOLD_FIELDS.step. Readers: plain check (bindings.ts), opener route and resolver, GitHub fallback say they ignore the symbol until TASK-367.25; inspector CodeRow shows the symbol (data-slot semantic-inspector-symbol); part search matches it. Skill: runbook step 6, evidence rules 2 and 3, catalogue binding and relationship rows, step keys, planning (a sentence is not an anchor), authoring (bindings symbol, anchor key, evidence example, ANCHOR_DROPPED), create-architecture worked example (anchors on every edge, symbols on the write.ts functions), create-sequence step anchor, variants comparison list. Evals: S00 edge.anchor and binding.symbol, S07 step.anchor, rubric Bindings and Anchors, coverage part 4 rows.
+Decisions the ADR left open: (1) anchor path is nonempty (a binding path may be empty for a repo root; an anchor names a file). (2) No catalogue row for anchor: it is part of the relationship row, and CATALOGUE_ROWS in src/runtime/skill-evaluation is a closed set outside this task. (3) A dropped anchor is detected by id only (same id before and after, anchor gone); a step restated without its id is a new step, as before. (4) ANCHOR_DROPPED lives in its own module rather than replaced-relationships.ts, because it covers steps too; WriteNotice's code union gains it. (5) The inspector shows the binding symbol only; a relationship's anchor is not shown in the UI (TASK-367.24 marks the canvas). (6) skill-evaluation's outcomes-board reads binding.path only; it is the eval harness, outside the fence, and the symbol does not change its counts.
 <!-- SECTION:NOTES:END -->
