@@ -22,15 +22,16 @@ function insideAnotherError(node: Node): boolean {
 /**
  * The parts of a file that did not parse, with the names written there.
  * @param nodes The error nodes, nested or not.
+ * @param word A whole name as the language spells one, where it is not the text reading's word.
  * @returns One entry per outermost error node.
  */
-function unparsedOf(nodes: readonly Node[]): Unparsed[] {
+function unparsedOf(nodes: readonly Node[], word: RegExp = WORD): Unparsed[] {
 	return nodes
 		.filter((node) => !insideAnotherError(node))
 		.map((node) => ({
 			start: node.startPosition.row + 1,
 			end: node.endPosition.row + 1,
-			names: [...new Set(node.text.match(WORD) ?? [])],
+			names: [...new Set(node.text.match(word) ?? [])],
 		}));
 }
 

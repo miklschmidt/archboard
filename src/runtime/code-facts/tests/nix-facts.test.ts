@@ -47,7 +47,8 @@ const checkout = fixtureCheckout({
 	"library/flake.nix": `{
   outputs = { self, nixpkgs }:
     let
-      forAllSystems = nixpkgs.lib.genAttrs [ "x86_64-linux" ];
+      inherit (nixpkgs.lib) genAttrs;
+      forAllSystems = genAttrs [ "x86_64-linux" ];
       linux = forAllSystems (system: { server = 1; });
     in {
       checks = builtins.mapAttrs (system: set: { unit = set.server; }) linux;
@@ -97,6 +98,16 @@ const checkout = fixtureCheckout({
   outputs = inputs: import ./outputs.nix inputs;
 }
 `,
+	"defaults/flake.nix": `{
+  outputs = { self, nixpkgs, systems ? [ "x86_64-linux" ] }: {
+    packages = nixpkgs.lib.genAttrs systems (system: { app = 1; });
+    legacyPackages.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux or { };
+    lib = let known = { a = 1; }; in known.b or { c = 2; };
+    checks.x86_64-linux.unit = 1;
+    checks.x86_64-linux.broken-test = (( ;
+  };
+}
+`,
 	"locked/flake.lock": `{
   "nodes": {
     "nixpkgs": {
@@ -128,8 +139,49 @@ const checkout = fixtureCheckout({
 	"locked/flake.nix": "{ outputs = { self, ... }: { }; }\n",
 	"locked/tools/flake.nix": "{ outputs = { self }: { }; }\n",
 	"broken/flake.lock": '{ "nodes": { "root": { "inputs": { "nixpkgs": ',
+	...blowUps(),
 });
 const facts = createCodeFacts();
+
+/**
+ * Names written one after another.
+ * @param count How many.
+ * @param name The name at each place.
+ * @returns The names, with a space between each two.
+ */
+function names(count: number, name: (at: number) => string): string {
+	return Array.from({ length: count }, (_, at) => name(at)).join(" ");
+}
+
+/**
+ * An attribute path under `lib` of one name, many times.
+ * @param count How many names below `lib`.
+ * @returns The path.
+ */
+function deep(count: number): string {
+	return ["lib", ...Array.from({ length: count }, () => "a")].join(".");
+}
+
+/**
+ * Flakes that try to blow the bounds of the static reading: a recursion that
+ * gives a new set at each level, a list doubled to a million items, an
+ * attribute path of 20,000 names, a set of 3,000 names that a fold makes
+ * 3,000 times, and 12,000 outputs, more than the reading gives. And a lock
+ * nested 50,000 keys deep.
+ * @returns Each file and its text.
+ */
+function blowUps(): Record<string, string> {
+	const doubled = names(20, (at) => `l${at + 1} = l${at} ++ l${at};`);
+	return {
+		"recursion/flake.nix":
+			"{ outputs = { self }: let f = n: { a = f n; b = f n; }; in { lib = f 1; }; }",
+		"doubling/flake.nix": `{ outputs = { self, nixpkgs }: let l0 = [ "x86_64-linux" ]; ${doubled} in { packages = nixpkgs.lib.genAttrs l20 (system: { app = 1; }); }; }`,
+		"path/flake.nix": `{ outputs = { self }: { lib.${names(20_000, (at) => `n${at}`)} = 1; }; }`,
+		"fold/flake.nix": `{ outputs = { self }: let set = system: { ${names(3000, (at) => `p${at} = 1;`)} }; in { lib.last = builtins.foldl' (last: system: (set system).p0) 0 [ ${names(3000, (at) => `"s${at}"`)} ]; }; }`,
+		"outputs/flake.nix": `{ outputs = { self, nixpkgs }: { packages = nixpkgs.lib.genAttrs [ "s0" "s1" "s2" "s3" ] (system: { ${names(3000, (at) => `p${at} = 1;`)} }); }; }`,
+		"deep/flake.lock": `{ "nodes": { "root": { "inputs": { "a": "a" } }, "a": { "original": { "type": "github", "owner": "o", "repo": "a" } }, "x": ${'{ "k": '.repeat(50_000)}1${" }".repeat(50_000)} }, "root": "root", "version": 7 }`,
+	};
+}
 
 afterAll(() => {
 	checkout.remove();
@@ -224,18 +276,18 @@ test("outputs given once per system are followed through genAttrs, flake-utils, 
 		["packages.x86_64-linux", 7, 9],
 		["devShells.x86_64-linux", 10, 10],
 	]);
-	const systems = ["aarch64-darwin", "aarch64-linux", "x86_64-darwin", "x86_64-linux"];
-	expect(await outputs("utils/flake.nix")).toEqual(
-		[
-			"apps",
-			...systems.flatMap((system) => [`apps.${system}`, `apps.${system}.cli`]),
-			"overlays",
-			"overlays.default",
-			"packages",
-			...systems.flatMap((system) => [`packages.${system}`, `packages.${system}.cli`]),
-		].toSorted(),
-	);
-	// mapAttrs, foldl' with recursiveUpdate, and optionalAttrs, whose condition the reading cannot tell.
+	// flake-utils' default systems are its `systems` input, which a flake can change.
+	expect(await outputs("utils/flake.nix")).toEqual([
+		"apps",
+		"apps.*",
+		"apps.*.cli",
+		"overlays",
+		"overlays.default",
+		"packages",
+		"packages.*",
+		"packages.*.cli",
+	]);
+	// inherit (from), mapAttrs, foldl' with recursiveUpdate, and optionalAttrs, whose condition the reading cannot tell.
 	expect(await outputs("library/flake.nix")).toEqual([
 		"apps",
 		"apps.x86_64-linux",
@@ -294,6 +346,44 @@ test("names the static reading cannot tell are unknown, never absent", async () 
 	const opaque = await nix("opaque/flake.nix");
 	expect(opaque.definitions).toEqual([]);
 	expect(findSymbol(opaque, "packages.x86_64-linux.default", "definition").status).toBe("unparsed");
+	// A default stands only where the name is surely absent, and never for an
+	// input, which Nix always gives; a name written where the file does not
+	// parse is unknown, as Nix spells it.
+	expect(
+		await held("defaults/flake.nix", [
+			"packages.aarch64-linux.app",
+			"legacyPackages.x86_64-linux.hello",
+			"lib.c",
+			"lib.d",
+			"checks.x86_64-linux.broken-test",
+		]),
+	).toEqual({
+		"packages.aarch64-linux.app": "found",
+		"legacyPackages.x86_64-linux.hello": "unparsed",
+		"lib.c": "found",
+		"lib.d": "absent",
+		"checks.x86_64-linux.broken-test": "unparsed",
+	});
+});
+
+test("a flake that tries to blow the reading's bounds is read in bounded work, and what the reading does not reach is unknown, never absent", async () => {
+	expect(await held("recursion/flake.nix", [deep(3), deep(500)])).toEqual({
+		[deep(3)]: "found",
+		[deep(500)]: "unparsed",
+	});
+	// The million items spend the budget, so the packages are not read.
+	expect(await held("doubling/flake.nix", ["packages.x86_64-linux.app"])).toEqual({
+		"packages.x86_64-linux.app": "unparsed",
+	});
+	const path = ["lib", ...Array.from({ length: 1000 }, (_, at) => `n${at}`)].join(".");
+	expect(await held("path/flake.nix", [path])).toEqual({ [path]: "unparsed" });
+	expect(await held("fold/flake.nix", ["lib.last"])).toEqual({ "lib.last": "found" });
+	expect(await held("outputs/flake.nix", ["packages.s0.p0", "packages.s3.p2999"])).toEqual({
+		"packages.s0.p0": "found",
+		"packages.s3.p2999": "unparsed",
+	});
+	const lock = await nix("deep/flake.lock");
+	expect(lock.references.map((each) => [each.symbol, each.line])).toEqual([["inputs.a", 1]]);
 });
 
 test("the inputs of flake.lock are build dependencies of the flake, and a path input leads to its flake", async () => {
