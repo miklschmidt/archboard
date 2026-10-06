@@ -18,7 +18,8 @@
 // of `ANCHOR_MISMATCH`, and the skip `ends-overlap`. TASK-368.10 holds each
 // container's interface (ADR 0044) against what the module it binds exposes:
 // `ENTRY_POINT_UNEXPOSED`, a warning on an entry point whose code the module
-// does not expose; `CALLER_UNDRAWN`, a warning (information on a candidate) on
+// does not expose while the code of a caller drawn to it reaches it from a
+// file outside the module; `CALLER_UNDRAWN`, a warning (information on a candidate) on
 // a hidden part whose exposed code a file outside the module uses at run time
 // with no caller on the board; `EXPOSED_UNUSED`, information on the container,
 // for exposed names no file outside the module uses; and the skip
