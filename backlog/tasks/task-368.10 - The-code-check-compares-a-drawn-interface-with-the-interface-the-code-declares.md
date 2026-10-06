@@ -1,11 +1,11 @@
 ---
 id: TASK-368.10
 title: The code check compares a drawn interface with the interface the code declares
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:18'
-updated_date: '2026-10-06 15:33'
+updated_date: '2026-10-06 15:34'
 labels:
   - interfaces
   - code-check
@@ -28,10 +28,10 @@ The board says which children callers reach. The code says which names a module 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An entry point bound to a definition that the code does not expose is reported, because the board draws a caller that reaches past the interface
-- [ ] #2 A hidden part bound to an exposed definition that an outside file uses is reported as a caller the board does not draw
-- [ ] #3 Exposed names that nothing outside the module uses are reported as information, not as a warning
-- [ ] #4 It works for TypeScript first, and for each language whose adapter gives visibility
+- [x] #1 An entry point bound to a definition that the code does not expose is reported, because the board draws a caller that reaches past the interface
+- [x] #2 A hidden part bound to an exposed definition that an outside file uses is reported as a caller the board does not draw
+- [x] #3 Exposed names that nothing outside the module uses are reported as information, not as a warning
+- [x] #4 It works for TypeScript first, and for each language whose adapter gives visibility
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -104,3 +104,9 @@ Board: these commits change Code facts and Code check on Archboard server (89a48
 
 Gate after the fixes, one lane at a time, in the shared working tree. lint, fmt:check and type-check exit 1. Each failure is in another agent's uncommitted file: c-facts.test.ts, the C, Swift and Nix adapter files, .probe17*.ts and terraform-configuration.ts. My files pass lint, oxfmt and tsc. build:frontend 0. test:modules 4167 pass, 2 fail. One is code-check.test.ts (skip text-only), from another agent's uncommitted adapters. It passes at HEAD. The other is wide-boards.test.ts. The first layout of the dogfood Archboard server board took 5.4 s, and 4.6 s on a rerun, against a bound of 3 s. The load average was 11.8, and other tasks redrew that board today. test:system 193 pass, 1 fail: evidence.ts imports an uncommitted code-check/lib/module-level of another agent. test:repository 20/0. test:serial-browser 24/0. A HEAD snapshot (1709cf70a) passes the code-check, code-facts and check-code owners 74/0. eval:skill check: suite ok.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The code check now holds each container's drawn interface against what its module exposes. ENTRY_POINT_UNEXPOSED warns when a drawn caller's code reaches an entry point from outside the module through a name no root file exposes. CALLER_UNDRAWN warns when outside code uses a hidden part's exposed code and no part on the board draws that caller. EXPOSED_UNUSED lists exposed names nothing outside uses, as information. Exposure rules sit behind one seam per language: TypeScript (root files or package.json exports, re-exports followed) and Python (__init__.py, __all__ or the underscore rule). Verified by interfaces.test.ts and module-exposure.test.ts (pass with --isolate) and on the dogfood vault: 0 ENTRY_POINT_UNEXPOSED, 4 CALLER_UNDRAWN explained in TASK-367.27, 13 EXPOSED_UNUSED, with Board store leaving 19 of its 42 names unused.
+<!-- SECTION:FINAL_SUMMARY:END -->
