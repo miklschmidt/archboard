@@ -27,7 +27,9 @@
 // One pass opens one resolution. Its servers start on their first question,
 // and closing it stops every one, killing them at once when the pass was
 // cancelled, and only then answers. It says once for each language with no
-// server on this machine, and once for each checkout where a server failed.
+// server on this machine, once for each project its server cannot answer
+// about yet, such as a Swift package with no index, and once for each
+// checkout where a server failed.
 
 import path from "node:path";
 import type { Checkout, ReadCheckout } from "@/runtime/code-check/lib/checkouts";
@@ -121,7 +123,8 @@ function serverSkips(
 		const detail = `${entry.language}: ${entry.detail}`;
 		if (entry.reason === "missing") return { reason: "language-server-missing", detail };
 		const repo = repoAt.get(entry.root ?? "");
-		return { reason: "language-server-failed", ...(repo === undefined ? {} : { repo }), detail };
+		const reason = `language-server-${entry.reason}` as const;
+		return { reason, ...(repo === undefined ? {} : { repo }), detail };
 	});
 }
 

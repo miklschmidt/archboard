@@ -133,6 +133,11 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *   that file is not valid. Said once for the language, with no subject and
  *   no repo; its uses stay as code facts read them, candidates or no evidence
  *   (TASK-367.13). Its `detail` names the language and why.
+ * - `language-server-unready`: a project the language server cannot answer
+ *   about yet, such as a Swift package that no build has indexed, which the
+ *   check never builds (TASK-367.16). Said once for the project, with its
+ *   checkout's `repo`; its uses stay as code facts read them. Its `detail`
+ *   names the language, the project and why.
  * - `language-server-failed`: a language server that did not start, did not
  *   answer in time or ended in one checkout. Said once for the checkout and
  *   the language; its uses there stay as code facts read them. Its `detail`
@@ -156,6 +161,7 @@ const CodeCheckSkipSchema = z
 			"text-only",
 			"ends-overlap",
 			"language-server-missing",
+			"language-server-unready",
 			"language-server-failed",
 			"exposure-unknown",
 			"module-not-read",

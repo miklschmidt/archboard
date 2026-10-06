@@ -12,7 +12,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import type { LanguageServerTable } from "@/runtime/language-servers/index";
+import type { Language, LanguageServerTable } from "@/runtime/language-servers/index";
 
 /** The stand-in server. */
 const FAKE_SERVER = join(import.meta.dir, "fake-language-server.ts");
@@ -21,10 +21,12 @@ const FAKE_SERVER = join(import.meta.dir, "fake-language-server.ts");
 interface Workspace {
 	readonly root: string;
 	readonly state: string;
-	/** A table whose TypeScript server is the stand-in, in a mode. */
-	readonly table: (mode?: string) => LanguageServerTable;
+	/** A table whose server for a language, TypeScript by default, is the stand-in, in a mode. */
+	readonly table: (mode?: string, language?: Language) => LanguageServerTable;
 	/** The pids of every stand-in that started. */
 	readonly pids: () => number[];
+	/** Where each stand-in started, and the options it was given. */
+	readonly starts: () => { cwd: string; options: unknown }[];
 	/** The methods the stand-ins received, in order. */
 	readonly methods: () => string[];
 	readonly remove: () => void;
@@ -61,11 +63,13 @@ function workspace(
 	return {
 		root,
 		state,
-		table: (mode = "normal") =>
+		table: (mode = "normal", language = "typescript") =>
 			new Map([
-				["typescript", { status: "command", argv: [process.execPath, FAKE_SERVER, state, mode] }],
+				[language, { status: "command", argv: [process.execPath, FAKE_SERVER, state, mode] }],
 			]),
 		pids: () => lines("pids").map(Number),
+		starts: () =>
+			lines("starts").map((line) => JSON.parse(line) as { cwd: string; options: unknown }),
 		methods: () => lines("methods"),
 		remove: () => {
 			rmSync(base, { recursive: true, force: true });

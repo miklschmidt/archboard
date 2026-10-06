@@ -7,11 +7,17 @@
 // never from one pass to the next: an answer depends on every file of the
 // project.
 //
+// A server starts in the project of the file: the checkout, or for a language
+// whose row names projects, such as a Swift package, the one that holds the
+// file. One server runs for each language and project.
+//
 // A question the session cannot put gets no answer, and the use stays as code
 // facts read it. The reason is said once: once for a language whose server is
-// not installed, is turned off or cannot be configured (`missing`), and once
-// for each checkout where a server did not start, did not answer in time or
-// ended (`failed`). A server that failed is stopped at once and never asked
+// not installed, is turned off or cannot be configured (`missing`), once for
+// each project where the server cannot answer yet, such as a package with no
+// index (`unready`), and once for each checkout where a server did not start,
+// did not answer in time or ended (`failed`). No server starts for a project
+// that is not ready. A server that failed is stopped at once and never asked
 // again in the pass, so a pass waits for a hung server at most once.
 //
 // `close` stops every server the session started, and returns only once each
@@ -22,7 +28,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { LanguageServerTable } from "@/runtime/language-servers/lib/configuration";
 import { RequestFailure } from "@/runtime/language-servers/lib/connection";
-import { languageOf, type Language } from "@/runtime/language-servers/lib/languages";
+import {
+	LANGUAGES,
+	languageOf,
+	type Language,
+	type Project,
+} from "@/runtime/language-servers/lib/languages";
 import {
 	declarationAt,
 	type Declaration,
@@ -61,9 +72,12 @@ type DefinitionAnswer =
 /** A language a pass could not ask about, and why. */
 interface UnavailableServer {
 	readonly language: Language;
-	/** `missing`: no server on this machine; `failed`: one that did not answer. */
-	readonly reason: "missing" | "failed";
-	/** The checkout where a server failed. */
+	/**
+	 * `missing`: no server on this machine; `unready`: a project the server
+	 * cannot answer about yet; `failed`: a server that did not answer.
+	 */
+	readonly reason: "missing" | "unready" | "failed";
+	/** The checkout where a project is not ready or a server failed. */
 	readonly root?: string;
 	readonly detail: string;
 }
@@ -93,10 +107,17 @@ interface SessionOptions {
 	readonly timeouts?: ServerTimeouts;
 }
 
+/** A started server: its language, its checkout, and the key it is kept under. */
+interface Running {
+	readonly language: Language;
+	readonly root: string;
+	readonly key: string;
+	readonly server: Server;
+}
+
 /** The server to ask, the file as it knows it, and where the use stands. */
 interface Target {
-	readonly language: Language;
-	readonly server: Server;
+	readonly running: Running;
 	readonly file: string;
 	readonly position: Position;
 }
@@ -108,6 +129,7 @@ const UNASKED: DefinitionAnswer = { status: "unasked" };
 class Session {
 	readonly #options: SessionOptions;
 	readonly #timeouts: ServerTimeouts;
+	readonly #projects = new Map<string, Promise<Project>>();
 	readonly #starts = new Map<string, Promise<Server | undefined>>();
 	readonly #started = new Set<Server>();
 	readonly #texts = new Map<string, Promise<string | undefined>>();
@@ -185,10 +207,10 @@ class Session {
 		const target = await this.#target(question);
 		if (target === undefined) return UNASKED;
 		try {
-			const locations = await target.server.definition(target.file, target.position);
+			const locations = await target.running.server.definition(target.file, target.position);
 			return { status: "answered", locations };
 		} catch (error) {
-			this.#failed(target.language, question.root, target.server, error);
+			this.#failed(target.running, error);
 			return UNASKED;
 		}
 	}
@@ -196,17 +218,15 @@ class Session {
 	/**
 	 * The server to ask a question, and where the use stands.
 	 * @param question The question.
-	 * @returns Both, or undefined when no server reads the file, the pass is
-	 * over, the language has no server, or the line does not hold the use.
+	 * @returns Both, or undefined when no server can be asked about the file or
+	 * the line does not hold the use.
 	 */
 	async #target(question: DefinitionQuestion): Promise<Target | undefined> {
-		const language = this.#open() ? languageOf(question.file)?.language : undefined;
-		if (language === undefined) return undefined;
-		const server = await this.#serverFor(language, question.root);
-		if (server === undefined) return undefined;
+		const running = await this.#serverOf(question.root, question.file);
+		if (running === undefined) return undefined;
 		const file = path.join(question.root, question.file);
 		const position = await this.#positionOf(file, question);
-		return position === undefined ? undefined : { language, server, file, position };
+		return position === undefined ? undefined : { running, file, position };
 	}
 
 	/**
@@ -216,14 +236,12 @@ class Session {
 	 * @returns The outline, or undefined when no server answered.
 	 */
 	async #outlineOf(root: string, file: string): Promise<readonly OutlineSymbol[] | undefined> {
-		const language = this.#open() ? languageOf(file)?.language : undefined;
-		if (language === undefined) return undefined;
-		const server = await this.#serverFor(language, root);
-		if (server === undefined) return undefined;
+		const running = await this.#serverOf(root, path.relative(root, file));
+		if (running === undefined) return undefined;
 		try {
-			return await server.outline(file);
+			return await running.server.outline(file);
 		} catch (error) {
-			this.#failed(language, root, server, error);
+			this.#failed(running, error);
 			return undefined;
 		}
 	}
@@ -253,42 +271,109 @@ class Session {
 	}
 
 	/**
-	 * The server of a language in a checkout, started on the first question.
+	 * The server of a file's language and project, started on the first
+	 * question there.
+	 * @param root The checkout.
+	 * @param file The file, relative to the checkout.
+	 * @returns The server, or undefined when no server reads the file, the pass
+	 * is over, the language has no server, the project is not ready or the
+	 * server failed.
+	 */
+	async #serverOf(root: string, file: string): Promise<Running | undefined> {
+		const language = this.#open() ? languageOf(file)?.language : undefined;
+		if (language === undefined) return undefined;
+		const argv = this.#commandOf(language);
+		if (argv === undefined) return undefined;
+		const project = await this.#readyProject(language, root, file);
+		return project === undefined ? undefined : this.#running(language, root, project, argv);
+	}
+
+	/**
+	 * The server of a language in a project, started once.
 	 * @param language The language.
 	 * @param root The checkout.
-	 * @returns The server, or undefined when there is none or it failed.
+	 * @param project The project, where it starts.
+	 * @param argv Its command.
+	 * @returns The server, or undefined when it failed.
 	 */
-	#serverFor(language: Language, root: string): Promise<Server | undefined> {
-		const configured = this.#options.servers.get(language);
-		if (configured?.status !== "command") {
-			const detail = configured?.detail ?? `no server is configured for ${language}`;
-			this.#note({ language, reason: "missing", detail });
-			return Promise.resolve(undefined);
-		}
-		const key = `${language}\0${root}`;
+	async #running(
+		language: Language,
+		root: string,
+		project: string,
+		argv: readonly [string, ...string[]],
+	): Promise<Running | undefined> {
+		const key = `${language}\0${project}`;
 		let start = this.#starts.get(key);
 		if (start === undefined) {
-			start = this.#start(language, root, configured.argv);
+			start = this.#start(language, root, project, argv);
 			this.#starts.set(key, start);
 		}
-		return start;
+		const server = await start;
+		return server === undefined ? undefined : { language, root, key, server };
+	}
+
+	/**
+	 * The project of a file, noting once that its server cannot answer there.
+	 * @param language The file's language.
+	 * @param root The checkout.
+	 * @param file The file, relative to the checkout.
+	 * @returns The project's root, or undefined when it is not ready.
+	 */
+	async #readyProject(language: Language, root: string, file: string): Promise<string | undefined> {
+		const project = await this.#projectOf(language, root, file);
+		if (project.unready === undefined) return project.root;
+		this.#note({ language, reason: "unready", root, detail: project.unready }, project.root);
+		return undefined;
+	}
+
+	/**
+	 * The command of a language's server, noting once that it has none.
+	 * @param language The language.
+	 * @returns The command, or undefined when the language has no server.
+	 */
+	#commandOf(language: Language): readonly [string, ...string[]] | undefined {
+		const configured = this.#options.servers.get(language);
+		if (configured?.status === "command") return configured.argv;
+		const detail = configured?.detail ?? `no server is configured for ${language}`;
+		this.#note({ language, reason: "missing", detail });
+		return undefined;
+	}
+
+	/**
+	 * The project a file's server starts in, asked once for each directory.
+	 * @param language The file's language.
+	 * @param root The checkout.
+	 * @param file The file, relative to the checkout.
+	 * @returns The project: the checkout, unless the language's row names another.
+	 */
+	#projectOf(language: Language, root: string, file: string): Promise<Project> {
+		const key = `${language}\0${root}\0${path.dirname(file)}`;
+		let project = this.#projects.get(key);
+		if (project === undefined) {
+			project = LANGUAGES[language].project?.(root, file) ?? Promise.resolve({ root });
+			this.#projects.set(key, project);
+		}
+		return project;
 	}
 
 	/**
 	 * Start a server, noting it as failed if it does not start.
 	 * @param language Its language.
 	 * @param root Its checkout.
+	 * @param project Its project, where it starts.
 	 * @param argv Its command.
 	 * @returns The server, or undefined when it failed.
 	 */
 	async #start(
 		language: Language,
 		root: string,
+		project: string,
 		argv: readonly [string, ...string[]],
 	): Promise<Server | undefined> {
 		const { signal } = this.#options;
 		try {
-			const server = await startServer({ argv, root, signal, timeouts: this.#timeouts });
+			const start = { language, argv, root: project, signal, timeouts: this.#timeouts };
+			const server = await startServer(start);
 			this.#started.add(server);
 			return server;
 		} catch (error) {
@@ -301,27 +386,28 @@ class Session {
 	/**
 	 * Note a server that stopped answering, stop it, and never ask it again.
 	 * A server that only refused one question stays.
-	 * @param language Its language.
-	 * @param root Its checkout.
-	 * @param server The server.
+	 * @param running The server.
 	 * @param error Why the request failed.
 	 */
-	#failed(language: Language, root: string, server: Server, error: unknown): void {
+	#failed(running: Running, error: unknown): void {
 		const refused = error instanceof RequestFailure && error.kind === "answered";
 		if (refused || this.#options.signal.aborted) return;
+		const { language, root } = running;
 		const configured = this.#options.servers.get(language);
 		const argv = configured?.status === "command" ? configured.argv : [language];
 		this.#note({ language, reason: "failed", root, detail: failure(argv, error) });
-		this.#starts.set(`${language}\0${root}`, Promise.resolve(undefined));
-		void server.stop(false);
+		this.#starts.set(running.key, Promise.resolve(undefined));
+		void running.server.stop(false);
 	}
 
 	/**
-	 * Say once that a language could not be asked about.
+	 * Say once that a language could not be asked about: once for the
+	 * language, the checkout, or the project that is not ready.
 	 * @param entry Which, why and where.
+	 * @param project The project, for a project that is not ready.
 	 */
-	#note(entry: UnavailableServer): void {
-		const key = `${entry.reason}\0${entry.language}\0${entry.root ?? ""}`;
+	#note(entry: UnavailableServer, project = ""): void {
+		const key = `${entry.reason}\0${entry.language}\0${entry.root ?? ""}\0${project}`;
 		if (!this.#unavailable.has(key)) this.#unavailable.set(key, entry);
 	}
 }

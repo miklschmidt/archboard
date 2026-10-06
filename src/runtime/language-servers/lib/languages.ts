@@ -8,13 +8,33 @@
 // default runs only a server that reads a project without running any of it.
 // A server that evaluates project files, such as MSBuild or `Package.swift`,
 // has no default and runs only from an entry in `language-servers.json`.
+//
+// A row also says what its server needs beyond the protocol: options it must
+// start with whatever command runs it, files opened before it answers about
+// them, a request that waits until it has loaded what it reads, and the
+// project it starts in for a file, with why it cannot answer there yet.
 
 import path from "node:path";
+import { swiftPackageOf } from "@/runtime/language-servers/lib/swift-package";
 
 /** A command that starts a server, as a program and its arguments. */
 interface ServerCommand {
 	readonly command: string;
 	readonly args: readonly string[];
+}
+
+/** The project a server answers about for a file. */
+interface Project {
+	/** The directory the server starts in, absolute. */
+	readonly root: string;
+	/** Why the server cannot answer about the project's files, when it cannot. */
+	readonly unready?: string;
+}
+
+/** A request, as its method and its params. */
+interface Request {
+	readonly method: string;
+	readonly params: object;
 }
 
 /** What one language needs from a language server. */
@@ -23,6 +43,17 @@ interface LanguageRow {
 	readonly languageIds: Readonly<Record<string, string>>;
 	/** The server this language uses with no entry, or why it has none. */
 	readonly defaultServer: () => ServerCommand | string;
+	/** Options sent in `initialize`, whatever command runs the server. */
+	readonly initializationOptions?: object;
+	/** The server answers only about a file the client opened. */
+	readonly opensFiles?: boolean;
+	/**
+	 * Asked once after the start; it answers when the server has loaded what
+	 * it reads. A server that does not know the request only refuses it.
+	 */
+	readonly settle?: Request;
+	/** The project of a file of a checkout; with none, the checkout. */
+	readonly project?: (root: string, file: string) => Promise<Project>;
 }
 
 /**
@@ -46,8 +77,17 @@ function archboardTypeScript(): ServerCommand | string {
 	}
 }
 
+/**
+ * Why Swift has no default server: sourcekit-lsp evaluates `Package.swift`,
+ * which runs code of the checkout.
+ * @returns The reason.
+ */
+function noSourcekitLsp(): string {
+	return "sourcekit-lsp evaluates Package.swift, so it runs only from an entry in language-servers.json";
+}
+
 /** Every language a server can resolve, by its key in `language-servers.json`. */
-const LANGUAGE_KEYS = ["typescript"] as const;
+const LANGUAGE_KEYS = ["typescript", "swift"] as const;
 
 /** A language a server can resolve. */
 type Language = (typeof LANGUAGE_KEYS)[number];
@@ -62,6 +102,19 @@ const LANGUAGES: Readonly<Record<Language, LanguageRow>> = {
 			".tsx": "typescriptreact",
 		},
 		defaultServer: archboardTypeScript,
+	},
+	// sourcekit-lsp evaluates `Package.swift`, which runs code of the
+	// checkout. Measured with Swift 6.2.4: it answers only about an open file;
+	// with background indexing on, its default from 6.1, it runs `swift build`
+	// to prepare targets; with it off, it reads the index a build wrote under
+	// `.build`, which `workspace/synchronize` waits for it to load.
+	swift: {
+		languageIds: { ".swift": "swift" },
+		defaultServer: noSourcekitLsp,
+		initializationOptions: { backgroundIndexing: false },
+		opensFiles: true,
+		settle: { method: "workspace/synchronize", params: { index: true } },
+		project: swiftPackageOf,
 	},
 };
 
@@ -79,4 +132,4 @@ function languageOf(file: string): { language: Language; languageId: string } | 
 	return undefined;
 }
 
-export { type Language, type ServerCommand, LANGUAGES, LANGUAGE_KEYS, languageOf };
+export { type Language, type Project, type ServerCommand, LANGUAGES, LANGUAGE_KEYS, languageOf };
