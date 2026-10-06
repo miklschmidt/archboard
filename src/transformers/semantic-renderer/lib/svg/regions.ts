@@ -3,9 +3,11 @@
 // The mat is a thin block like every other part (`slab.ts`): a face of the
 // group's colour at a light tint over a front edge of the full colour, lying
 // flat on what holds it, and the cards in it stand on it. The tab is cut from
-// the same block and raised a step off the mat's corner, inside the region's
-// box. It is never an obstacle: lines cross it, and it takes no pointer, so
-// whatever lies inside it is picked as before.
+// the same block and raised a step off one of the mat's top corners, inside the
+// region's box. It is never an obstacle for the layout: lines cross it, and it
+// takes no pointer, so whatever lies inside it is picked as before. It keeps
+// clear of the lines itself, though: it stands in the corner no route runs
+// down through, and from far away it grows only as far as the nearest route.
 import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 import {
 	BAND_RADIUS,
@@ -53,6 +55,9 @@ const CAPTION_DEPTH = 0.5;
  */
 const FAR_CAPTION_SHARE = 0.62;
 
+/** How far a caption's tab keeps from a route that crosses its row. */
+const ROUTE_ROOM = 8;
+
 /** A group's colours: its mat's face and edge, its tab's face and edge, and its caption's words. */
 interface MatColours {
 	readonly face: string;
@@ -62,62 +67,108 @@ interface MatColours {
 	readonly words: string;
 }
 
+/** Which of the mat's top corners a tab stands in: the one its words start from, or the other. */
+type Corner = "start" | "end";
+
+/** Where a route crosses a caption's row, from its leftmost ink to its rightmost. */
+interface Crossing {
+	readonly left: number;
+	readonly right: number;
+}
+
 /**
- * A tab's outline: its top-left corner the mat's, its outer corners its own,
- * and square where its foot meets the mat's left edge, so the tab reads as cut
- * from the mat.
+ * A tab's outline: the corner it shares with the mat the mat's, its outer
+ * corners its own, and square where its foot meets the mat's wall, so the tab
+ * reads as cut from the mat.
  * @param box The tab.
+ * @param corner Which of the mat's top corners it stands in.
  * @returns Its path.
  */
-function tabPath(box: Box): string {
+function tabPath(box: Box, corner: Corner): string {
 	const { x, y, width, height } = box;
 	const shared = Math.min(BAND_RADIUS, width / 2, height / 2);
 	const own = Math.min(TAB_RADIUS, width / 2, height / 2);
-	const right = x + width;
 	const foot = y + height;
+	/**
+	 * A distance in from the mat's wall, as a page coordinate.
+	 * @param inward How far in.
+	 * @returns The coordinate.
+	 */
+	const at = (inward: number): string =>
+		coord(corner === "start" ? x + inward : x + width - inward);
+	// A tab in the end corner is the start corner's mirror, so it turns the other way.
+	const sweep = corner === "start" ? 1 : 0;
 	return [
-		`M${coord(x)},${coord(foot)}`,
+		`M${at(0)},${coord(foot)}`,
 		`V${coord(y + shared)}`,
-		`A${coord(shared)},${coord(shared)} 0 0 1 ${coord(x + shared)},${coord(y)}`,
-		`H${coord(right - own)}`,
-		`A${coord(own)},${coord(own)} 0 0 1 ${coord(right)},${coord(y + own)}`,
+		`A${coord(shared)},${coord(shared)} 0 0 ${sweep} ${at(shared)},${coord(y)}`,
+		`H${at(width - own)}`,
+		`A${coord(own)},${coord(own)} 0 0 ${sweep} ${at(width)},${coord(y + own)}`,
 		`V${coord(foot - own)}`,
-		`A${coord(own)},${coord(own)} 0 0 1 ${coord(right - own)},${coord(foot)}`,
+		`A${coord(own)},${coord(own)} 0 0 ${sweep} ${at(width - own)},${coord(foot)}`,
 		"Z",
 	].join(" ");
 }
 
 /**
- * The tab a caption is printed on, as wide as its words and their margin on
- * either side and as tall as the caption's row: a small slab of its own on the
- * mat's corner, casting a short shadow on the mat. Words grown for the far
- * view keep a margin after them grown as much.
+ * Where a tab for some words stands: as wide as the words and their margin on
+ * either side, the margin grown with the words, and as tall as the caption's
+ * row, in the corner it is given. Its words move with it.
  * @param region The region.
  * @param run The caption's words as they are set, near or far.
- * @param colours The group's colours.
- * @param palette The page's colours.
+ * @param corner Which of the mat's top corners it stands in.
  * @param grown How much larger than near the words are set.
- * @returns The tab.
+ * @returns The tab's box, and how far right of where they were measured its words stand.
  */
-function tab(
+function tabBox(
 	region: DrawingRegion,
 	run: TextRun,
-	colours: MatColours,
-	palette: Palette,
-	grown = 1,
-): string {
+	corner: Corner,
+	grown: number,
+): { readonly box: Box; readonly shift: number } {
 	const { box, caption } = region;
 	const margin = caption.box.x + run.x - box.x;
 	const width = Math.min(box.width, margin * (1 + grown) + run.width);
-	const height = caption.box.y + caption.box.height - box.y;
-	const whole = { x: box.x, y: box.y, width, height };
-	const face = { ...whole, height: height - TAB_THICKNESS };
+	const x = corner === "start" ? box.x : box.x + box.width - width;
+	return {
+		box: { x, y: box.y, width, height: caption.box.y + caption.box.height - box.y },
+		shift: x - box.x,
+	};
+}
+
+/**
+ * A caption on its tab: the tab a small slab of its own on the mat's corner,
+ * casting a short shadow on the mat, and the words on it.
+ * @param region The region.
+ * @param run The caption's words as they are set, near or far.
+ * @param place Which corner the tab stands in, and how much larger than near the words are.
+ * @param place.corner Which of the mat's top corners the tab stands in.
+ * @param place.grown How much larger than near the words are set.
+ * @param look The group's colours, and the page's.
+ * @param look.colours The group's colours.
+ * @param look.palette The page's colours.
+ * @returns The tab and its words.
+ */
+function captionTab(
+	region: DrawingRegion,
+	run: TextRun,
+	{ corner, grown }: { corner: Corner; grown: number },
+	{ colours, palette }: { colours: MatColours; palette: Palette },
+): string {
+	const { box: whole, shift } = tabBox(region, run, corner, grown);
+	const face = { ...whole, height: whole.height - TAB_THICKNESS };
 	const lit = { ...face, y: face.y + GLINT_WIDTH, height: face.height - GLINT_WIDTH };
 	return lines([
 		slabShadow(whole, TAB_RADIUS, "tab", palette),
-		tag("path", { d: tabPath(whole), fill: colours.tabEdge }),
-		tag("path", { d: tabPath(face), fill: glintOf(colours.tab, palette) }),
-		tag("path", { d: tabPath(lit), fill: colours.tab }),
+		tag("path", { d: tabPath(whole, corner), fill: colours.tabEdge }),
+		tag("path", { d: tabPath(face, corner), fill: glintOf(colours.tab, palette) }),
+		tag("path", { d: tabPath(lit, corner), fill: colours.tab }),
+		paintTextRuns(
+			[run],
+			{ ...region.caption.box, x: region.caption.box.x + shift },
+			palette,
+			colours.words,
+		),
 	]);
 }
 
@@ -142,6 +193,59 @@ function matColours(ink: string, palette: Palette): MatColours {
 }
 
 /**
+ * Where the picture's routes cross a caption's row, the band from the top of
+ * the region to the foot of its tab.
+ * @param region The region.
+ * @param routes Every route the picture draws.
+ * @returns Each piece of a route that crosses the row, by how far across it reaches.
+ */
+function crossingsOf(region: DrawingRegion, routes: readonly Curve[]): Crossing[] {
+	const top = region.box.y;
+	const bottom = region.caption.box.y + region.caption.box.height;
+	return routes.flatMap((curve) =>
+		curve.segments.flatMap((segment, index) => {
+			const points = [segmentStart(curve, index), segment.to];
+			if (segment.kind === "cubic") points.push(segment.first, segment.second);
+			const ys = points.map(({ y }) => y);
+			if (Math.min(...ys) >= bottom || Math.max(...ys) <= top) return [];
+			const xs = points.map(({ x }) => x);
+			return [{ left: Math.min(...xs), right: Math.max(...xs) }];
+		}),
+	);
+}
+
+/**
+ * Whether no route crosses a tab, with room to spare either side of it.
+ * @param box The tab.
+ * @param crossings Where routes cross its row.
+ * @returns True when the tab is clear.
+ */
+function clearOf(box: Box, crossings: readonly Crossing[]): boolean {
+	return crossings.every(
+		({ left, right }) => right < box.x - ROUTE_ROOM || left > box.x + box.width + ROUTE_ROOM,
+	);
+}
+
+/**
+ * The corner a caption's tab stands in: the one its words start from, unless
+ * a route runs down through the tab there and none would at the other.
+ * @param region The region.
+ * @param run The caption's words as drawn near.
+ * @param crossings Where routes cross its row.
+ * @returns The corner.
+ */
+function cornerOf(region: DrawingRegion, run: TextRun, crossings: readonly Crossing[]): Corner {
+	/**
+	 * Whether a route runs through the near tab in a corner.
+	 * @param corner The corner.
+	 * @returns True when one does.
+	 */
+	const blocked = (corner: Corner): boolean =>
+		!clearOf(tabBox(region, run, corner, 1).box, crossings);
+	return blocked("start") && !blocked("end") ? "end" : "start";
+}
+
+/**
  * Paint one group's region: its mat, and its caption on its tab, drawn near
  * and from far away. The mat's body is its first shape, in the region's box.
  * @param region The region.
@@ -150,7 +254,7 @@ function matColours(ink: string, palette: Palette): MatColours {
  * @param look.palette The page's colours.
  * @param look.policy The vault's policy.
  * @param look.farSize The size of the picture's card names from far away.
- * @param look.routes Every route the picture draws, which a far caption keeps clear of.
+ * @param look.routes Every route the picture draws, which a caption's tab keeps clear of.
  * @returns The region's SVG.
  */
 function paintRegion(
@@ -169,8 +273,10 @@ function paintRegion(
 ): string {
 	const ink = semanticInk(policy.groups[region.group]?.color) ?? palette.muted;
 	const colours = matColours(ink, palette);
-	const { box, caption } = region;
-	const near = caption.measured.runs[0];
+	const near = region.caption.measured.runs[0];
+	const crossings = crossingsOf(region, routes);
+	const corner = near === undefined ? "start" : cornerOf(region, near, crossings);
+	const look = { colours, palette };
 	return wrap(
 		"g",
 		{
@@ -181,7 +287,7 @@ function paintRegion(
 		},
 		lines([
 			slab(
-				box,
+				region.box,
 				{
 					face: colours.face,
 					edge: colours.edge,
@@ -191,77 +297,80 @@ function paintRegion(
 				},
 				palette,
 			),
-			nearLayer(
-				(near === undefined ? "" : tab(region, near, colours, palette)) +
-					paintTextRuns(caption.measured.runs, caption.box, palette, colours.words),
-			),
-			farCaption(region, { farSize, routes }, colours, palette),
+			near === undefined
+				? ""
+				: nearLayer(captionTab(region, near, { corner, grown: 1 }, look)) +
+					farCaption(region, near, { farSize, corner, crossings }, look),
 		]),
 	);
 }
 
-/** How far a far caption's tab stops short of a route that crosses its row. */
-const ROUTE_ROOM = 8;
-
 /**
- * How far right a caption's tab may reach from far away: a little short of
- * the nearest route that crosses the caption's row to the right of its near
- * words, or the region's far wall. A route that crosses the row before the
- * words end crosses the near tab too, and is the layout's to keep clear.
+ * How wide a caption's tab may grow from far away: from its corner to a little
+ * short of the nearest route that crosses the caption's row beyond its near
+ * words, or to the region's far wall. A route that crosses the row within the
+ * near words crosses the near tab too, and is the layout's to keep clear.
  * @param region The region.
- * @param words Where the caption's near words end.
- * @param routes Every route the picture draws.
- * @returns The rightmost the tab may reach.
+ * @param run The caption's words as drawn near.
+ * @param corner Which of the mat's top corners the tab stands in.
+ * @param crossings Where routes cross the caption's row.
+ * @returns The widest the tab may be.
  */
-function farReach(region: DrawingRegion, words: number, routes: readonly Curve[]): number {
-	const { box, caption } = region;
-	const row = { top: caption.box.y, bottom: caption.box.y + caption.box.height };
-	const crossings = routes.flatMap((curve) =>
-		curve.segments.flatMap((segment, index) => {
-			const points = [segmentStart(curve, index), segment.to];
-			if (segment.kind === "cubic") points.push(segment.first, segment.second);
-			const left = Math.min(...points.map(({ x }) => x));
-			const crosses =
-				Math.min(...points.map(({ y }) => y)) < row.bottom &&
-				Math.max(...points.map(({ y }) => y)) > row.top;
-			return crosses && left > words ? [left - ROUTE_ROOM] : [];
-		}),
-	);
-	return Math.min(box.x + box.width, ...crossings);
+function farRoom(
+	region: DrawingRegion,
+	run: TextRun,
+	corner: Corner,
+	crossings: readonly Crossing[],
+): number {
+	const { box } = region;
+	const near = tabBox(region, run, corner, 1).box;
+	if (corner === "start") {
+		const words = near.x + near.width;
+		const stops = crossings.filter(({ left }) => left > words).map(({ left }) => left);
+		return Math.min(box.x + box.width, ...stops.map((stop) => stop - ROUTE_ROOM)) - box.x;
+	}
+	const stops = crossings.filter(({ right }) => right < near.x).map(({ right }) => right);
+	return box.x + box.width - Math.max(box.x, ...stops.map((stop) => stop + ROUTE_ROOM));
 }
 
 /**
  * A group's caption from far away: one line as large as its row holds, up to
- * the size of the picture's card names, on a tab grown to hold it that never
- * reaches past its region's wall or into a route crossing its row
- * ({@link farReach}). It is never set smaller than near.
+ * the size of the picture's card names, on a tab grown to hold it in the same
+ * corner, which never reaches past its region's wall or into a route crossing
+ * its row ({@link farRoom}). It is never set smaller than near.
  * @param region The region.
- * @param far The size of the picture's card names from far away, and the picture's routes.
+ * @param run The caption's words as drawn near.
+ * @param far The size of the picture's card names from far away, the tab's corner,
+ * and where routes cross the caption's row.
  * @param far.farSize The size of the picture's card names from far away.
- * @param far.routes Every route the picture draws.
- * @param colours The group's colours.
- * @param palette The page's colours.
+ * @param far.corner Which of the mat's top corners the tab stands in.
+ * @param far.crossings Where routes cross the caption's row.
+ * @param look The group's colours, and the page's.
+ * @param look.colours The group's colours.
+ * @param look.palette The page's colours.
  * @returns The far layer.
  */
 function farCaption(
 	region: DrawingRegion,
-	{ farSize, routes }: { farSize: number; routes: readonly Curve[] },
-	colours: MatColours,
-	palette: Palette,
+	run: TextRun,
+	{
+		farSize,
+		corner,
+		crossings,
+	}: { farSize: number; corner: Corner; crossings: readonly Crossing[] },
+	look: { colours: MatColours; palette: Palette },
 ): string {
 	const { box, caption } = region;
-	const run = caption.measured.runs[0];
-	if (run === undefined) return "";
 	// The tab is the words' margin before them and as much again after them,
-	// both grown with the words (`tab`): its width at a size is linear in it.
+	// both grown with the words (`tabBox`): its width at a size is linear in it.
 	const margin = caption.box.x + run.x - box.x;
-	const reach = farReach(region, caption.box.x + run.x + run.width, routes);
+	const room = farRoom(region, run, corner, crossings);
 	const size = Math.max(
 		run.fontSize,
 		Math.min(
 			farSize,
 			caption.box.height * FAR_CAPTION_SHARE,
-			(run.fontSize * (reach - box.x - margin)) / Math.max(1, margin + run.width),
+			(run.fontSize * (room - margin)) / Math.max(1, margin + run.width),
 		),
 	);
 	const grown = {
@@ -271,10 +380,7 @@ function farCaption(
 		// The baseline stands half a cap height below the row's middle.
 		y: caption.box.height / 2 + size * 0.35,
 	};
-	return farLayer(
-		tab(region, grown, colours, palette, size / run.fontSize) +
-			paintTextRuns([grown], caption.box, palette, colours.words),
-	);
+	return farLayer(captionTab(region, grown, { corner, grown: size / run.fontSize }, look));
 }
 
 export { paintRegion };
