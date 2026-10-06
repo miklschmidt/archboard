@@ -26,6 +26,7 @@ import {
 	trunkCutouts,
 } from "@/transformers/semantic-renderer/lib/svg/crossings";
 import {
+	paintCardShadow,
 	paintMeasuredCard,
 	paintMeasuredFrame,
 	paintMeasuredHeader,
@@ -36,15 +37,22 @@ import { colourId } from "@/transformers/semantic-renderer/lib/svg/colour";
 import { shifted } from "@/transformers/semantic-renderer/lib/svg/document";
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import { junctionMarks } from "@/transformers/semantic-renderer/lib/svg/junctions";
-import { slab, slabSeat, slabShadow } from "@/transformers/semantic-renderer/lib/svg/slab";
+import {
+	SHADOW_CLASS,
+	slab,
+	slabSeat,
+	slabShadow,
+} from "@/transformers/semantic-renderer/lib/svg/slab";
 import { paintTraffic } from "@/transformers/semantic-renderer/lib/svg/traffic";
 import {
-	portCut,
 	portInside,
+	portPlan,
 	portsOf,
+	rideInto,
 	type Port,
 } from "@/transformers/semantic-renderer/lib/svg/ports";
 import {
+	MEMBERS_ATTRIBUTE,
 	PART_ATTRIBUTE,
 	ghostOpacity,
 	markedBox,
@@ -157,7 +165,8 @@ function edgeMarker(
  * @param policy Current vault policy.
  * @param mask Optional narrow cutouts beneath higher connections.
  * @param step Whether this line is a flow step drawn on the board, not an authored relationship.
- * @param ports The ports its ends run into, cut through the feet of the cards it joins.
+ * @param ports The ports its ends run into, cut through the feet of the cards it joins, and
+ * whether it is the first line into each, which draws its well.
  * @returns The connection group.
  */
 function paintEdgeLine(
@@ -167,7 +176,7 @@ function paintEdgeLine(
 	policy: SemanticPolicy,
 	mask: string | undefined,
 	step: boolean,
-	ports: readonly Port[],
+	ports: readonly { readonly port: Port; readonly well: boolean }[],
 ): string {
 	const { edge, path } = routed;
 	const styles = stylesFor(palette);
@@ -210,7 +219,7 @@ function paintEdgeLine(
 				"marker-end": appearance.arrowhead === "none" ? undefined : `url(#${markerId})`,
 				...attributes,
 			}),
-			...ports.map((port) => portInside(port, attributes, palette)),
+			...ports.map(({ port, well }) => portInside(port, well, attributes, palette)),
 		]),
 	);
 }
@@ -243,7 +252,10 @@ function paintEdgeWords(
 			? ""
 			: lines([
 					slabSeat(label.box, PILL_RADIUS),
-					slabShadow(label.box, PILL_RADIUS, "chip", palette, standing),
+					// A removed label's ghost; a label's shadow lies under the lines (`labelShadow`).
+					standing === "removed"
+						? slabShadow(label.box, PILL_RADIUS, "chip", palette, standing)
+						: "",
 					slab(label.box, labelLook(palette), palette, standing),
 					paintTextRuns(label.measured.runs, label.box, standingPalette(palette, standing)),
 				]);
@@ -253,6 +265,35 @@ function paintEdgeWords(
 				"g",
 				{ ...subjectGroup(lineKind(step), edge.id, standing), [PART_ATTRIBUTE]: "label" },
 				lines([pill, badge]),
+			);
+}
+
+/**
+ * The shadow a relationship's label casts, in a layer of its own under every
+ * line, so no line is shadowed by a label, its own included. It lists its
+ * relationship, so a viewer veils and lights it with the line; a viewer holds
+ * it back while the picture is in flight. A removed label casts none: its ghost
+ * is drawn with it.
+ * @param routed The relationship's route and label.
+ * @param palette The selected theme.
+ * @param standing How it stands against the variant it is read against.
+ * @returns The shadow's group, or nothing for a line with no label.
+ */
+function labelShadow(
+	routed: DrawingEdge,
+	palette: Palette,
+	standing: SubjectStanding | undefined,
+): string {
+	return routed.label === undefined || standing === "removed"
+		? ""
+		: wrap(
+				"g",
+				{
+					class: SHADOW_CLASS,
+					[MEMBERS_ATTRIBUTE]: routed.edge.id,
+					"pointer-events": "none",
+				},
+				slabShadow(routed.label.box, PILL_RADIUS, "chip", palette),
 			);
 }
 
@@ -355,12 +396,7 @@ function paintArchitecture(
 	// Where a line meets the foot of a card, it runs into a port cut through the
 	// card's front edge; a removed card is a ghost and has no edge to cut.
 	const ports = portsOf(cards, edges, (id) => standingOf(id) !== "removed");
-	const cuts = new Map(
-		[...ports.byCard].flatMap(([id, slots]) => {
-			const cut = portCut(slots);
-			return cut === undefined ? [] : [[id, { slots, ...cut }] as const];
-		}),
-	);
+	const { wells, cuts } = portPlan(ports, edges);
 	// Every node the page lays out, drawn or not, so leaving some out changes
 	// no kept card's colour or whether it draws as a container.
 	const appearances = nodeAppearances(
@@ -382,6 +418,11 @@ function paintArchitecture(
 					routed,
 					traffic: edge.traffic,
 					headReach: arrowheadReach(appearance.arrowhead, weightOf(edge)),
+					into: rideInto(
+						routed.curve,
+						ports.byEdge.get(edge.id) ?? [],
+						appearance.arrowhead !== "none",
+					),
 					ink: quietened(
 						relationshipInk(edge, palette, standingOf(edge.id), policy, appearance),
 						palette,
@@ -429,6 +470,11 @@ function paintArchitecture(
 			.map((region) =>
 				paintRegion(region, { palette, policy, farSize, routes: edges.map(({ curve }) => curve) }),
 			),
+		// The cards' and the labels' shadows, under every line, so no line is shadowed.
+		...orderedCards.map((card) =>
+			paintCardShadow(card, palette, standingOf(card.measured.node.id)),
+		),
+		...edges.map((edge) => labelShadow(edge, palette, standingOf(edge.edge.id))),
 		...edges.map((edge) =>
 			paintEdgeLine(
 				edge,
@@ -437,7 +483,10 @@ function paintArchitecture(
 				policy,
 				masks.get(edge.edge.id),
 				derived.has(edge.edge.id),
-				ports.byEdge.get(edge.edge.id) ?? [],
+				(ports.byEdge.get(edge.edge.id) ?? []).map((port) => ({
+					port,
+					well: wells.get(port) === edge.edge.id,
+				})),
 			),
 		),
 		// Over the lines they join, under the cards and every relationship's words.

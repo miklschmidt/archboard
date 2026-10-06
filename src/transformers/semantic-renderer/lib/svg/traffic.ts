@@ -3,6 +3,7 @@
 import { type SemanticEdge } from "@/shared/semantic-board/index";
 import type { DrawingEdge } from "@/transformers/semantic-renderer/lib/drawing";
 import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
+import type { Curve } from "@/transformers/semantic-renderer/lib/layout/curves";
 import { rimLength } from "@/transformers/semantic-renderer/lib/svg/card-rim";
 import { wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
@@ -21,6 +22,8 @@ interface TrafficLine {
 	readonly traffic: NonNullable<SemanticEdge["traffic"]>;
 	/** How far back from the route's end its arrowhead's ink reaches. */
 	readonly headReach: number;
+	/** The route its pulses ride, when it runs on into the ports at its ends (`ports.ts`). */
+	readonly into?: Curve;
 	/** The relationship's colour at full strength; its line is drawn weaker. */
 	readonly ink: string;
 	readonly lineWidth: number;
@@ -47,7 +50,10 @@ function paintTraffic(
 	palette: Palette,
 ): ReadonlyMap<string, string> {
 	const rides = new Map(
-		lines.map(({ routed, headReach }) => [routed.edge.id, rideOf(routed.curve, headReach)]),
+		lines.map(({ routed, headReach, into }) => [
+			routed.edge.id,
+			rideOf(into ?? routed.curve, headReach),
+		]),
 	);
 	const rhythms = relayRhythms(
 		lines.map(({ routed, traffic }) => ({

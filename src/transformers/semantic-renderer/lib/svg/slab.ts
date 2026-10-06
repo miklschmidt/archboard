@@ -149,6 +149,13 @@ const SHADOWS = {
 	chip: [{ dx: 0, dy: 1, grow: 0.5, share: 0.45 }],
 } as const satisfies Readonly<Record<string, readonly ShadowLayer[]>>;
 
+/**
+ * The class of a card's or a label's shadow, drawn under the lines, so a
+ * viewer that carries the card or the label from one picture to the next can
+ * hold it back until the picture lands.
+ */
+const SHADOW_CLASS = "ab-shadow";
+
 /** Which block casts a shadow. */
 type Lift = keyof typeof SHADOWS;
 
@@ -270,7 +277,6 @@ function ghost(box: Box, radius: number, palette: Palette): string {
  * @param lift Which sort of block it is.
  * @param palette The theme's colours.
  * @param standing How the part stands, when this is a proposal.
- * @param cut The clip a card's ports are cut through, if it has any (`ports.ts`).
  * @returns The shadow's layers, or the ghost.
  */
 function slabShadow(
@@ -279,12 +285,9 @@ function slabShadow(
 	lift: Lift,
 	palette: Palette,
 	standing?: SubjectStanding,
-	cut?: string,
 ): string {
 	if (standing === "removed") return ghost(box, radius, palette);
-	return castShadow(box, lift, palette, (layer, grow, paint) =>
-		plate(layer, radius + grow, { "clip-path": clipped(cut), ...paint }),
-	);
+	return castShadow(box, lift, palette, (layer, grow, paint) => plate(layer, radius + grow, paint));
 }
 
 /**
@@ -407,6 +410,7 @@ export {
 	type Share,
 	type SlabLook,
 	GLINT_WIDTH,
+	SHADOW_CLASS,
 	across,
 	castShadow,
 	ghostFace,

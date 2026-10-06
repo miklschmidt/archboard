@@ -1,7 +1,8 @@
 // A line that meets the foot of a card runs into a port, a slot cut through the
 // card's front edge (TASK-424). What this catches: a port drawn where no line
-// meets a card's foot, a line that meets one with no port, and a slot that is
-// drawn on the edge rather than cut through it.
+// meets a card's foot, a line that meets one with no port, a slot that is drawn
+// on the edge rather than cut through it, a line that goes into it at another
+// width than its own, and a card's shadow drawn over a line (TASK-425).
 
 import { expect, test } from "bun:test";
 
@@ -38,6 +39,14 @@ test("a port is cut where a line meets the foot of a card, and nowhere else", as
 	expect((left! + right!) / 2 + shift.x).toBeCloseTo(route[0]!.x, 1);
 	expect(top! + shift.y).toBeGreaterThan(foot - 4);
 	expect(top! + 2 * round! + shift.y).toBeLessThan(foot);
+
+	// The line's end runs into the port at the line's own width (TASK-425).
+	const width = /<path d="[^"]*" marker-end="[^"]*"[^>]* stroke-width="([\d.]+)"/u.exec(line)![1];
+	expect(/ab-port"[\s\S]*?<line [^>]* stroke-width="([\d.]+)"/u.exec(line)![1]).toBe(width);
+	// No card casts its shadow on a line: the shadows lie under every line.
+	const shadow = drawing.svg.indexOf('data-members="upper"');
+	expect(shadow).toBeGreaterThan(-1);
+	expect(shadow).toBeLessThan(drawing.svg.indexOf('data-semantic-kind="edge"'));
 
 	// The slot is cut through the card it leaves, and the card it arrives at is whole.
 	const cut = /<clipPath id="(ab-port-[\da-f]+)"/u.exec(drawing.svg)?.[1];
