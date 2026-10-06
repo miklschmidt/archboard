@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 14:51'
+updated_date: '2026-10-06 14:58'
 labels:
   - code-check
 dependencies:
@@ -71,4 +71,6 @@ Left open: (1) module-exposure.ts (TASK-368.10) says Python adds its exposure ru
 Correction to Left open (2): code-facts/index.ts was clean again later, so its header now names Python and the adapter table.
 
 Gate (lanes one at a time, after a665606e1): lint exit 1 only on evidence.ts reachedBy complexity, an uncommitted hunk of another agent (TASK-367.13); fmt:check exit 1 only on INSTALL.md, another agent's uncommitted edit; type-check 0; build:frontend 0; test:modules 4133 pass 0 fail, exit 1 from one unhandled React teardown error (window is not defined) in a UI test; test:system 195/0; test:repository 20/0; test:serial-browser exit 0. code-facts and code-check owners 43/0 with --isolate; eval:skill check: suite ok.
+
+Review (4d782f721), the table's contract changed: an entry is { name, reads, resolver }. reads maps each extension (.py) or whole file name (flake.lock, compose.yaml; a whole name wins) to a ParseFacts (facts.ts): (text) => ParsedFacts | Promise<ParsedFacts>. A tree-sitter language builds it with treeSitter(wasm, query file, facts(tree, grammar)) from grammars.ts; a YAML, JSON or TOML adapter writes its own over Bun's parsers, with no grammar. Two entries that read the same name throw when adapters.ts loads. What a later language adds is otherwise unchanged: its files, its name in AdapterName (facts.ts), one entry in ADAPTERS.
 <!-- SECTION:NOTES:END -->
