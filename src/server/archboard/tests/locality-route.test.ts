@@ -70,6 +70,21 @@ const node = (id: string, name: string, path: string) => ({
 	order: 1000,
 	binding: { repo: "github.com/test/route", path },
 });
+const content = { nodes: [node("pA", "Checkout", "src/a.ts")] };
+
+/** A board of the owner's vault: a current one names its current variant. */
+const board = (name: string, variants: object[], current?: string) => ({
+	schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+	kind: "semantic-board",
+	id: name === "Shop" ? "bd" : "pl",
+	name,
+	level: "system",
+	version: 1,
+	createdAt: "2026-10-06T00:00:00.000Z",
+	updatedAt: "2026-10-06T00:00:00.000Z",
+	...(current === undefined ? {} : { current }),
+	variants,
+});
 
 beforeAll(async () => {
 	mkdirSync(join(checkout, "src"), { recursive: true });
@@ -89,19 +104,6 @@ beforeAll(async () => {
 	git("remote", "add", "origin", "https://github.com/test/route.git");
 	mkdirSync(vault, { recursive: true });
 	writeFileSync(join(checkout, "src", "a.ts"), "1\n");
-	const board = (name: string, variants: object[], current?: string) => ({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
-		kind: "semantic-board",
-		id: name === "Shop" ? "bd" : "pl",
-		name,
-		level: "system",
-		version: 1,
-		createdAt: "2026-10-06T00:00:00.000Z",
-		updatedAt: "2026-10-06T00:00:00.000Z",
-		...(current === undefined ? {} : { current }),
-		variants,
-	});
-	const content = { nodes: [node("pA", "Checkout", "src/a.ts")] };
 	writeFileSync(
 		join(vault, "Shop.semantic.json"),
 		JSON.stringify(
