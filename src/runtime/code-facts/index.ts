@@ -56,4 +56,5 @@ export {
 	terraformRootOf,
 } from "@/runtime/code-facts/lib/terraform-configuration";
 export { type TerraformPlan, readTerraformPlan } from "@/runtime/code-facts/lib/terraform-plan";
+export { isJoiningDeclaration } from "@/runtime/code-facts/lib/terraform-providers";
 export { lastName } from "@/runtime/code-facts/lib/text-reading";

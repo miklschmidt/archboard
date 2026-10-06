@@ -12,10 +12,12 @@
 // (`terraform`, `provider`, `moved`, `import`, `check`) declare nothing.
 //
 // A reference is each address an expression names, at the line it names it,
-// with the attributes, index keys and splats after it dropped. Until provider
-// rules say otherwise (TASK-367.18), every reference is a configured path. A
-// name that a `for` or a `dynamic` block binds, `count`, `each`, `path`,
-// `terraform` and `self` name no address. A `provider`, `providers` or
+// with the attributes, index keys and splats after it dropped. Its evidence
+// kind comes from the rules of the provider of the resource or data source
+// that writes it, by the argument it sits in (terraform-providers.ts); every
+// other reference is a configured path. A name that a `for` or a `dynamic`
+// block binds, `count`, `each`, `path`, `terraform` and `self` name no
+// address. A `provider`, `providers` or
 // `ignore_changes` argument names a provider configuration or attributes, and
 // a `moved`, `import` or `removed` block refactors addresses rather than using
 // them, so none of them is a reference. A name in a comment or a string is
@@ -35,6 +37,7 @@ import type { Grammar } from "@/runtime/code-facts/lib/grammars";
 import { spansOf, type Spans } from "@/runtime/code-facts/lib/spans";
 import { addressOf } from "@/runtime/code-facts/lib/terraform-address";
 import { environmentOf } from "@/runtime/code-facts/lib/terraform-environment";
+import { classifyReference } from "@/runtime/code-facts/lib/terraform-providers";
 import { unparsedOf } from "@/runtime/code-facts/lib/unparsed";
 
 /** What each kind of block declares: the address's first names, and its visibility. */
@@ -328,8 +331,68 @@ function notAReference(first: Node): boolean {
 	return false;
 }
 
+/** The top-level blocks whose first label is a provider's type. */
+const TYPED = new Set(["resource", "data", "ephemeral"]);
+
 /**
- * The reference one first name makes, if it names an address.
+ * Whether a block is the `content` of a `dynamic` block, which adds no name
+ * to an argument's path.
+ * @param block A nested block.
+ * @returns True when it is.
+ */
+function isDynamicContent(block: Node): boolean {
+	const holder = block.parent?.parent;
+	return (
+		partsOf(block).kind === "content" &&
+		holder?.type === "block" &&
+		partsOf(holder).kind === "dynamic"
+	);
+}
+
+/**
+ * The name a node adds to the path of the argument a reference sits in: an
+ * attribute's name, a nested block's kind, or the label of a `dynamic` block,
+ * which stands for the blocks it makes.
+ * @param node A node around the reference.
+ * @returns The name, or undefined for a node that adds none.
+ */
+function nameAt(node: Node): string | undefined {
+	if (node.type === "attribute") return node.namedChildren[0]?.text;
+	if (node.type !== "block" || isDynamicContent(node)) return undefined;
+	const { kind, labels } = partsOf(node);
+	return kind === "dynamic" ? labels[0] : kind;
+}
+
+/**
+ * The type of a top-level block that a provider's resource or data source has.
+ * @param block The top-level block, if any.
+ * @returns Its first label, or undefined for any other block.
+ */
+function typeOf(block: Node | null): string | undefined {
+	if (block === null) return undefined;
+	const { kind, labels } = partsOf(block);
+	return TYPED.has(kind) ? labels[0] : undefined;
+}
+
+/**
+ * Where a name stands: the type of the resource or data source that holds it,
+ * and the path of the argument it sits in.
+ * @param first The first name of a reference.
+ * @returns The type, undefined in any other top-level block, and the argument's path.
+ */
+function placeOf(first: Node): { readonly type: string | undefined; readonly argument: string[] } {
+	const around: Node[] = [];
+	let at = first.parent;
+	while (at !== null && at.parent?.parent?.type !== "config_file") {
+		around.unshift(at);
+		at = at.parent;
+	}
+	return { type: typeOf(at), argument: around.flatMap((node) => nameAt(node) ?? []) };
+}
+
+/**
+ * The reference one first name makes, if it names an address, with what its
+ * provider's rules make of it.
  * @param first The first name.
  * @param unparsed The file's unparsed code.
  * @returns The reference, or undefined.
@@ -338,11 +401,14 @@ function referenceAt(first: Node, unparsed: Spans): Reference | undefined {
 	if (unparsed.holds(first.startIndex) || notAReference(first)) return undefined;
 	const symbol = addressOf(namesFrom(first));
 	if (symbol === undefined) return undefined;
+	const { type, argument } = placeOf(first);
+	const { kind, joins } = classifyReference(type, argument);
 	return {
 		symbol,
 		line: first.startPosition.row + 1,
 		via: "code",
-		kind: "configured-path",
+		kind,
+		...(joins === undefined ? {} : { joins }),
 		typeOnly: false,
 	};
 }

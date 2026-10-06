@@ -21,19 +21,23 @@
 //
 // In infrastructure, the anchor is the declaration that joins the two parts
 // (ADR 0046), and a Terraform declaration that neither end binds, such as an
-// event source mapping, can be that declaration. Which declarations join two
-// parts is a rule of each provider (TASK-367.18), so until then the check does
-// not judge where a Terraform anchor's symbol is declared. Nor where a
-// Kubernetes anchor's is: a Service, an Ingress, a route or a NetworkPolicy
-// joins two workloads that a board draws, and neither end need bind it
-// (TASK-367.19).
+// event source mapping, can be that declaration. A provider's rules say which
+// declarations join two others (TASK-367.18), so an anchor that names one is
+// not judged by where it is declared; any other Terraform declaration is, and
+// a part bound to an address holds what that address declares in its root
+// module's address space. The check does not judge where a Kubernetes
+// anchor's symbol is declared: a Service, an Ingress, a route or a
+// NetworkPolicy joins two workloads that a board draws, and neither end need
+// bind it (TASK-367.19).
 
 import { otherRefOf, readableOf, type ReadCheckout } from "@/runtime/code-check/lib/checkouts";
 import type { AnchorClaim } from "@/runtime/code-check/lib/claims";
 import type { Resolve } from "@/runtime/code-check/lib/resolution";
-import { heldInFiles, type Search } from "@/runtime/code-check/lib/symbols";
+import { heldInFiles, terraformRootOfTarget, type Search } from "@/runtime/code-check/lib/symbols";
 import {
 	definitionSite,
+	isJoiningDeclaration,
+	isTerraformFile,
 	lastName,
 	mergedDefinitions,
 	type Definition,
@@ -47,10 +51,7 @@ import type { SemanticNode } from "@/shared/semantic-board/index";
 import { describeSubject } from "@/shared/semantic-policy/index";
 
 /** The adapters whose anchor may name a declaration that joins two parts and that neither end binds. */
-const JOINED_BY_DECLARATION = new Set<FileFacts["adapter"] | undefined>([
-	"terraform",
-	"kubernetes",
-]);
+const JOINED_BY_DECLARATION = new Set<FileFacts["adapter"] | undefined>(["kubernetes"]);
 
 /** Whether a part's bound code holds a definition, or the check cannot tell. */
 type Holding = "holds" | "elsewhere" | "unknown";
@@ -81,6 +82,12 @@ function within(inner: Site["definition"], outer: Site["definition"]): boolean {
 	return outer.start <= inner.start && inner.end <= outer.end;
 }
 
+/** The files a binding names, and the Terraform root module its path names, if any. */
+interface Bound {
+	readonly files: readonly string[];
+	readonly root: string | undefined;
+}
+
 /**
  * The files a part's binding names in the anchor's checkout.
  * @param part The part.
@@ -93,14 +100,15 @@ function boundFiles(
 	part: SemanticNode,
 	checkout: { readonly repo: string } & ReadCheckout,
 	context: SupportContext,
-): readonly string[] | "elsewhere" | "unknown" {
+): Bound | "elsewhere" | "unknown" {
 	const { binding } = part;
 	if (binding === undefined) return "unknown";
 	if (binding.repo !== checkout.repo) return "elsewhere";
 	const target = resolveLocalCodeTarget(binding, context.snapshot);
 	if (!target.ok || otherRefOf(binding, context.snapshot) !== undefined) return "unknown";
 	const readable = readableOf(target, checkout.files, true);
-	return readable.status === "files" ? readable.files : "unknown";
+	if (readable.status !== "files") return "unknown";
+	return { files: readable.files, root: terraformRootOfTarget(target, checkout.files) };
 }
 
 /**
@@ -117,32 +125,34 @@ async function holding(
 	checkout: { readonly repo: string } & ReadCheckout,
 	context: SupportContext,
 ): Promise<Holding> {
-	const files = boundFiles(part, checkout, context);
-	if (typeof files === "string") return files;
+	const bound = boundFiles(part, checkout, context);
+	if (typeof bound === "string") return bound;
 	const symbol = part.binding?.symbol;
-	if (symbol !== undefined) return holdingAt(files, symbol, site, context);
-	return [site.path, ...site.via].some((file) => files.includes(file)) ? "holds" : "elsewhere";
+	if (symbol !== undefined) return holdingAt(bound, symbol, site, context);
+	const held = [site.path, ...site.via].some((file) => bound.files.includes(file));
+	return held ? "holds" : "elsewhere";
 }
 
 /**
  * Whether the definition a binding's symbol names holds another one, in its
- * file or in a file its tool merges with it.
- * @param files The bound files.
+ * file or in a file its tool merges with it. In a Terraform root module, the
+ * symbol is an address of its address space.
+ * @param bound The bound files, and their Terraform root module.
  * @param symbol The binding's symbol.
  * @param site Where the other definition is.
  * @param context The pass.
  * @returns Whether it holds it, or that the check cannot tell where the bound symbol is.
  */
 async function holdingAt(
-	files: readonly string[],
+	bound: Bound,
 	symbol: string,
 	site: Site,
 	context: SupportContext,
 ): Promise<Holding> {
 	const { search } = context;
-	const bound = await heldInFiles(search, files, symbol, "definition");
-	if (bound.status !== "found" || bound.definition === undefined) return "unknown";
-	const { file, definition } = bound;
+	const held = await heldInFiles(search, bound.files, symbol, "definition", bound.root);
+	if (held.status !== "found" || held.definition === undefined) return "unknown";
+	const { file, definition } = held;
 	const merged = await mergedDefinitions(search.facts, search.checkout, file, definition.symbol);
 	const inside = [{ path: file, definition }, ...merged].some(
 		(each) => each.path === site.path && within(site.definition, each.definition),
@@ -239,6 +249,30 @@ async function serverSite(
 }
 
 /**
+ * Where an anchor's symbol is defined, when the check judges it: a definition
+ * code facts find, else the line a language server names. A Terraform
+ * declaration that joins two others by its provider's rules, such as an event
+ * source mapping, is in neither end's code by design (ADR 0046), so it is not
+ * judged.
+ * @param claim The anchor.
+ * @param file The anchored file.
+ * @param checkout Its checkout.
+ * @param context The pass.
+ * @returns The site, or undefined when the check does not judge it.
+ */
+async function anchoredSite(
+	claim: AnchorClaim,
+	file: string,
+	checkout: { readonly repo: string } & ReadCheckout,
+	context: SupportContext,
+): Promise<Site | undefined> {
+	const declared = await definitionSite(context.search.facts, checkout, file, claim.anchor.symbol);
+	if (declared === undefined) return serverSite(claim, file, checkout, context);
+	const joins = isTerraformFile(declared.path) && isJoiningDeclaration(declared.definition.symbol);
+	return joins ? undefined : declared;
+}
+
+/**
  * Judge whether an anchor that holds supports its relationship or step.
  * @param claim The anchor.
  * @param file The anchored file, relative to its checkout.
@@ -254,9 +288,7 @@ async function judgeSupport(
 ): Promise<CodeFinding | undefined> {
 	const { facts } = context.search;
 	if (JOINED_BY_DECLARATION.has((await facts.read(checkout, file))?.adapter)) return undefined;
-	const site =
-		(await definitionSite(facts, checkout, file, claim.anchor.symbol)) ??
-		(await serverSite(claim, file, checkout, context));
+	const site = await anchoredSite(claim, file, checkout, context);
 	if (site === undefined) return undefined;
 	const holdings = await Promise.all(
 		claim.holders.map((part) => holding(part, site, checkout, context)),

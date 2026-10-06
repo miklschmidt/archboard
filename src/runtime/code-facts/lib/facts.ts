@@ -67,9 +67,17 @@ interface Reference {
 	 * that a project file builds with, such as a .NET `ProjectReference`, is
 	 * `build-dependency` evidence. In
 	 * infrastructure, configuration that names another declaration, such as a
-	 * compose service's `depends_on`, is `configured-path` evidence.
+	 * compose service's `depends_on`, is `configured-path` evidence. The rules of
+	 * a Terraform provider make a reference a call, a permission or
+	 * provisioning (TASK-367.18).
 	 */
-	readonly kind?: Extract<EvidenceKind, "call" | "import" | "configured-path" | "build-dependency">;
+	readonly kind?: EvidenceKind;
+	/**
+	 * In infrastructure, the reference names an end of the declaration that
+	 * holds it, which joins two others, as an event source mapping joins a queue
+	 * and a function: the end the join runs from, or the one it runs to.
+	 */
+	readonly joins?: "from" | "to";
 	readonly typeOnly: boolean;
 	/**
 	 * The syntax lets only a type stand here: a declared type, or C#'s

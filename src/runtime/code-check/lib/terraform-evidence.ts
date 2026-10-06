@@ -4,11 +4,19 @@
 //
 // A declaration that a reference of another reaches, directly or through the
 // variables, module arguments, outputs and local values that pass a value on,
-// is configured-path evidence from the part that owns the referring
-// declaration to the part that owns the one it reaches. It is resolved,
-// because a reference names the address it reaches. TASK-367.18 makes most of
-// it provisioning, and some of it calls or permissions, by the rules of each
-// provider.
+// is evidence from the part that owns the referring declaration to the part
+// that owns the one it reaches. It is resolved, because a reference names the
+// address it reaches. Its kind is what the rules of the referring
+// declaration's provider make of the argument the reference sits in
+// (TASK-367.18): most of it is provisioning, some of it a call, a configured
+// path or a permission, and a provider with no rules gives a configured path.
+//
+// A joining declaration, such as an event source mapping, gives no evidence
+// from itself to the ends it names. It gives evidence from the owners of what
+// its from-arguments reach to the owners of what its to-arguments reach, of
+// the join's kind, and the piece cites the joining declaration, which an
+// anchor names to prove the relationship (ADR 0046). An end its arguments
+// reach nothing for is the joining declaration itself.
 //
 // A declaration belongs to the part bound in the same root module to the
 // longest address that is it or holds it: `module.queue` holds every
@@ -34,6 +42,12 @@ import {
 	type FactsPass,
 	type TerraformConfiguration,
 } from "@/runtime/code-facts/index";
+
+/** One declaration of a root module's address space. */
+type Declaration = TerraformConfiguration["endpoints"][number];
+
+/** What a declaration reaches, each with the reference that starts the way there. */
+type Reached = ReturnType<TerraformConfiguration["reached"]>;
 
 /** A part bound to an address of a root module, and the address without its instance key. */
 interface AddressedPart {
@@ -87,6 +101,59 @@ function ownershipIn(
 	};
 }
 
+/** What the pieces of one root module are made from. */
+interface RootReading {
+	readonly ownersAt: (address: string) => ReadPart[];
+	readonly lineages: ReadonlyMap<string, ReadonlySet<string>>;
+	readonly repo: string;
+}
+
+/**
+ * What one end of a joining declaration reaches: what the arguments that
+ * name it reach, else the declaration itself.
+ * @param declaration The joining declaration.
+ * @param ends What its arguments that name an end reach.
+ * @param end Which end.
+ * @returns The addresses at that end.
+ */
+function endOf(declaration: Declaration, ends: Reached, end: "from" | "to"): string[] {
+	const named = ends.filter(({ link }) => link.joins === end).map(({ to }) => to.address);
+	return named.length === 0 ? [declaration.address] : named;
+}
+
+/**
+ * The evidence a joining declaration gives: from the owners of what its
+ * from-arguments reach to the owners of what its to-arguments reach, an end
+ * they reach nothing for being the declaration itself.
+ * @param declaration The declaration.
+ * @param reached What it reaches.
+ * @param reading The root module's owners, the board's lineages and the repository.
+ * @returns The pieces; none for a declaration that joins nothing.
+ */
+function joinedBy(declaration: Declaration, reached: Reached, reading: RootReading): Piece[] {
+	const ends = reached.filter(({ link }) => link.joins !== undefined);
+	const [first] = ends;
+	if (first === undefined) return [];
+	const cited =
+		declaration.path === undefined || declaration.definition === undefined
+			? { path: first.link.path, line: first.link.line, symbol: declaration.address }
+			: {
+					path: declaration.path,
+					line: declaration.definition.start,
+					symbol: declaration.definition.symbol,
+				};
+	return endOf(declaration, ends, "from").flatMap((start) =>
+		endOf(declaration, ends, "to").flatMap((end) =>
+			piecesBetween(
+				reading.ownersAt(start),
+				{ to: reading.ownersAt(end), resolution: "resolved" },
+				reading.lineages,
+				{ repo: reading.repo, kind: first.link.kind, ...cited },
+			),
+		),
+	);
+}
+
 /**
  * The evidence one root module gives between the parts of a board.
  * @param configuration The root module's address space.
@@ -99,32 +166,43 @@ function piecesIn(
 	parts: readonly [ReadPart, ...ReadPart[]],
 	lineages: ReadonlyMap<string, ReadonlySet<string>>,
 ): Piece[] {
-	const ownersAt = ownershipIn(configuration, parts);
-	const { repo } = parts[0].checkout;
+	const reading: RootReading = {
+		ownersAt: ownershipIn(configuration, parts),
+		lineages,
+		repo: parts[0].checkout.repo,
+	};
 	return configuration.endpoints.flatMap((declaration) => {
-		const from = ownersAt(declaration.address);
-		if (from.length === 0) return [];
-		return configuration.reached(declaration.address).flatMap(({ to, link }) =>
-			piecesBetween(from, { to: ownersAt(to.address), resolution: "resolved" }, lineages, {
-				repo,
-				path: link.path,
-				kind: "configured-path",
-				line: link.line,
-				symbol: link.symbol,
-			}),
-		);
+		const reached = configuration.reached(declaration.address);
+		const from = reading.ownersAt(declaration.address);
+		const direct = reached
+			.filter(({ link }) => link.joins === undefined)
+			.flatMap(({ to, link }) =>
+				piecesBetween(
+					from,
+					{ to: reading.ownersAt(to.address), resolution: "resolved" },
+					lineages,
+					{
+						repo: reading.repo,
+						path: link.path,
+						kind: link.kind,
+						line: link.line,
+						symbol: link.symbol,
+					},
+				),
+			);
+		return [...direct, ...joinedBy(declaration, reached, reading)];
 	});
 }
 
 /**
- * Keep the first piece between two parts.
+ * Keep the first piece of each kind between two parts.
  * @param pieces The pieces, in the order they were read.
- * @returns One piece for each pair of parts.
+ * @returns One piece for each pair of parts and evidence kind.
  */
 function firstPerPair(pieces: readonly Piece[]): Piece[] {
 	const seen = new Map<string, Piece>();
 	for (const piece of pieces) {
-		const key = `${piece.from}\0${piece.to}`;
+		const key = `${piece.from}\0${piece.to}\0${piece.kind}`;
 		if (!seen.has(key)) seen.set(key, piece);
 	}
 	return [...seen.values()];
