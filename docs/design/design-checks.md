@@ -263,6 +263,54 @@ an extension of `String` in the library adds. The standard library's own
 initializers are not read, so a spelling resolves now only where the module
 or a module it imports declares its first name.
 
+The review of TASK-367.12 read two more packages on 2026-10-06:
+`apple/swift-collections` at `3b69ced` (733 `.swift` files, 136,308 lines) and
+`apple/swift-nio` at `6db9d9a` (555 files, 208,386 lines). Four readings led a
+use to the wrong file, or reported a symbol missing that its file declares:
+
+- A file can bind a name itself: as a parameter, a local, a closure's or a
+  generic parameter, or a member of its types. A use of such a name was led to
+  a declaration of the same name in another file of the module. This was true
+  of 7 of 991 resolved uses in swift-argument-parser, 381 of 1,750 in
+  swift-collections and 727 of 6,057 in swift-nio. Such a use now leads
+  nowhere.
+- A member reached through `self`, a call's result or a literal was spelled
+  with its name alone. So `self.close()` reached a function `close` of the
+  module. Such a member is spelled `.close` now, as C# spells it.
+- `!ready`, `-offset` and `&buffer` were no use of their name.
+- tree-sitter-swift 0.7.3 cannot read `unsafe` (Swift 6.2). Inside a type body,
+  it cannot read an `#if` condition such as `_pointerBitWidth(_64)`. It
+  recovers with a guess about where the code after that place belongs. It puts
+  later members inside the function that it broke. Or it closes the type early
+  and reads its members at file level, and the locals of a broken function
+  too. 35 files of swift-collections parse to a tree that is one error. In
+  `_HTable+Bitmap.swift`, `collisionChainEnd` is in no definition and in no
+  error. So a binding to `_HTable.Bitmap.collisionChainEnd` was reported
+  missing, a warning that no change can clear.
+
+Now the part of a Swift file that did not parse starts at the first place
+that the grammar does not read. It ends with the last declaration at file
+level that holds such a place, so it also holds the `}` that a type closed
+early leaves behind. A name that the check does not find in that part is
+skipped as `symbol-unparsed`. No use in another file leads to a definition in
+that part. A file whose tree is one error has no definitions. The part covers
+6,868 lines of swift-argument-parser, 60,243 of swift-collections and 65,537
+of swift-nio. The `Sources` of the three packages declare 460, 3,534 and 5,554
+types and functions. The check does not find 2, 2 and 23 of them, and each of
+those is a local function or type.
+
+After these changes, 1,161 uses in swift-argument-parser lead to a file or a
+module, 1,276 in swift-collections and 5,547 in swift-nio. An implicit `self`
+misleads a use by its bare name inside a type that another file gives a
+member of that name. No such use leads anywhere. The board of 13 parts gives
+the same findings as before, in 540 ms cold and 137 ms warm. Its container
+`ArgumentParser` is now held to what the module exposes (TASK-368.10). It gets
+`EXPOSED_UNUSED`, and `CALLER_UNDRAWN` on Parsable properties and Parsable
+types: examples and tools that the board does not draw use their property
+wrappers and `CommandConfiguration`. On a board of swift-nio, the grammar
+reads `SocketChannel.connectSocket` at file level. A binding to it is skipped
+as `symbol-unparsed` at `SocketChannel.swift:132-1316`.
+
 #### Reading Kubernetes manifests
 
 TASK-367.19 measured the Kubernetes adapter on 2026-10-06 with Bun 1.4.2 on

@@ -261,15 +261,20 @@ type or a member by its qualified name: `Ledger`, `Ledger.post`, and
 `Ledger.refund` for a member that an extension in another file adds. A Swift
 file sees the names of its module with no import, so a use of a name that one
 other file of the module declares reaches that file, and so does a use of a
-name that an imported module exposes (`open`, `public` or `package`). An
-`import` of a local module that `Package.swift` makes a dependency of the
-importing target is build-dependency evidence, which `dependency` accepts and
-`call` does not: anchor a `call` at a name the code uses, such as the type it
-constructs. `Package.swift` defines each target by its name, so a part can
-also bind `Package.swift` with a target's name as `symbol`. A name or a path
-that the manifest computes is not read, and a Swift file that no target of a
-`Package.swift` holds, as in an Xcode project, belongs to no module, so its
-uses of other files' names give no evidence.
+name that an imported module exposes (`open`, `public` or `package`). A use of
+a name that the file also binds, as a parameter, a local or a member, reaches
+nothing, and neither does a member reached through `self` or another value:
+only a language server can tell what such a use means. After a place where
+the grammar cannot read a Swift file, such as an `unsafe` expression, a name
+that the check does not find is skipped as `symbol-unparsed`, never reported
+missing. An `import` of a local module that `Package.swift` makes a dependency
+of the importing target is build-dependency evidence, which `dependency`
+accepts and `call` does not: anchor a `call` at a name the code uses, such as
+the type it constructs. `Package.swift` defines each target by its name, so a
+part can also bind `Package.swift` with a target's name as `symbol`. A name or
+a path that the manifest computes is not read, and a Swift file that no target
+of a `Package.swift` holds, as in an Xcode project, belongs to no module, so
+its uses of other files' names give no evidence.
 
 A binding names the implementation owner: the file whose body does what the
 node's responsibility says, not a file that imports the unit, registers it (a
