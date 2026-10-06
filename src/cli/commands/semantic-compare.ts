@@ -11,21 +11,23 @@
 // answer, so an agent that cannot see a picture can still say where the
 // proposal leaves each relationship.
 //
+// What changed about each container's interface (ADR 0044) is read first, and
+// has a place of its own in the answer: one interface change costs every
+// caller, one implementation change costs one module. It sets no standing, so
+// a part a new caller reaches is not badged.
+//
 // It needs no browser and no second route: the server holds the aggregate, the
 // comparison is pure, and it is done here — the way `semantic inspect` runs the
 // pure group inspection here.
 
 import { z } from "zod";
 import {
-	comparedWith,
 	compareVariants,
-	resolveVariant,
 	RenderedVariantSchema,
 	SubjectStandingSchema,
 	type FieldChange,
 	type PlacedBeat,
 	type PlacedStep,
-	type SemanticBoard,
 	type SemanticEdge,
 	type SemanticFlow,
 	type SemanticNode,
@@ -41,8 +43,14 @@ import {
 	type VaultDiagnostic,
 } from "@/shared/semantic-policy/index";
 import { readSemanticBoardAnswerOnServer } from "@/runtime/semantic-board-client/index";
-import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import { defineCommand } from "@/cli/command-contract/contract";
 import { serverRefusal } from "@/cli/command-contract/common";
+import {
+	comparedInterfaces,
+	describedInterfaces,
+	InterfaceChangesSchema,
+} from "@/cli/commands/lib/compared-interfaces";
+import { readAgainst } from "@/cli/commands/lib/read-against";
 import { askedVariant, SelectorSchema, UNNAMED_VARIANT } from "@/cli/commands/lib/semantic-input";
 
 /** One field that moved, and what it moved between. */
@@ -144,6 +152,8 @@ const VariantComparisonResultSchema = z.object({
 	variant: RenderedVariantSchema,
 	/** The variant it is read against. */
 	against: RenderedVariantSchema,
+	/** The interface changes of each container. They come before every other change. */
+	interfaceChanges: InterfaceChangesSchema,
 	nodes: z.array(ComparedNodeSchema),
 	edges: z.array(ComparedEdgeSchema),
 	flows: z.array(ComparedFlowSchema),
@@ -347,6 +357,7 @@ function comparisonAnswer(
 		version: board.version,
 		variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
 		against: { id: against.id, name: against.name, lifecycle: against.lifecycle },
+		interfaceChanges: comparedInterfaces(against.content, variant.content),
 		nodes: compared(comparison.nodes, comparedNode),
 		edges: compared(comparison.edges, (change) => comparedEdge(change, names)),
 		flows: compared(comparison.flows, comparedFlow),
@@ -417,9 +428,11 @@ function relationshipLine(
 /**
  * What to say about the comparison on standard error, for a person.
  *
- * Every relationship that moved gets its own line. A report that gave only
- * counts would be one an author could write without reading the relationships,
- * which is the failure this command was added for.
+ * Interface changes come first, because one costs every caller and an
+ * implementation change costs one module. Every relationship that moved gets
+ * its own line. A report that gave only counts would be one an author could
+ * write without reading the relationships, which is the failure this command
+ * was added for.
  * @param result The comparison.
  * @returns The lines.
  */
@@ -440,52 +453,13 @@ function described(result: VariantComparisonResult): string[] {
 	const names = new Map(result.nodes.map((node) => [node.id, node.name]));
 	return [
 		`"${result.variant.name}" against "${result.against.name}" on "${result.board}" ` +
-			`at version ${result.version}: ${counts || "nothing on either"}.`,
+			`at version ${result.version}.`,
+		...describedInterfaces(result.interfaceChanges),
+		`Other changes: ${counts || "nothing on either"}.`,
 		...result.edges
 			.filter((edge) => edge.standing !== "unchanged")
 			.map((edge) => relationshipLine(edge, names, result.against.name)),
 	];
-}
-
-/**
- * The variant one is read against: the one named, or the one its picture is
- * drawn against.
- *
- * With nothing named, the current variant and a first draft on a board with no
- * current one have nothing to be read against, and an answer that invented one
- * would call every part either "added" or the whole board unchanged. So it is
- * refused, naming the variants that can be read against something, since one
- * of them is what the reader meant.
- * @param board The board as read.
- * @param variant The variant asked about.
- * @param named The variant `--against` named, if any.
- * @returns The variant to read it against.
- * @throws {CliUsageError} When the named one is not on the board, or nothing was named and
- * there is nothing to read it against.
- */
-function readAgainst(
-	board: SemanticBoard,
-	variant: SemanticVariant,
-	named: string | undefined,
-): SemanticVariant {
-	const found = named === undefined ? comparedWith(board, variant) : resolveVariant(board, named);
-	if (found !== undefined) {
-		return found;
-	}
-	if (named !== undefined) {
-		throw new CliUsageError(
-			`"${board.name}" has no variant "${named}" to read against. Its variants: ${board.variants.map((one) => `"${one.name}"`).join(", ")}.`,
-		);
-	}
-	const comparable = board.variants.filter((one) => comparedWith(board, one) !== undefined);
-	throw new CliUsageError(
-		`"${variant.name}" has nothing to be read against on "${board.name}": ` +
-			(variant.lifecycle === "current"
-				? "it is the current variant, and every other variant is read against it. "
-				: "the board has no current variant and this draft came from nothing. ") +
-			`Name another variant with --variant, or what to read this one against with --against. ` +
-			`Variants that have a comparison: ${comparable.map((one) => `"${one.name}"`).join(", ") || "none yet"}.`,
-	);
 }
 
 const CompareInputSchema = z.object({
@@ -506,8 +480,10 @@ const semanticCompareContract = defineCommand({
 		"unchanged — and, for anything changed, which fields moved and what they moved between. " +
 		"Relationships and steps carry the endpoints they now have, named as well as identified, so " +
 		"a connection whose end moved onto a replacing part reads as one relationship that moved " +
-		"rather than as a deletion beside an addition. Read over the whole variant before any view " +
-		"narrows it. With no --against, the current variant and a first draft on a board with no " +
+		"rather than as a deletion beside an addition. Before them, for each container, the interface " +
+		"changes: the entry points added and removed, the parts that moved between the interface and " +
+		"the hidden parts, and the callers gained and lost; they set no standing on any part. Read over " +
+		"the whole variant before any view narrows it. With no --against, the current variant and a first draft on a board with no " +
 		"current one have nothing to be read against and are refused.",
 	examples: [
 		'archboard semantic compare payments --variant "Queued ingest"',

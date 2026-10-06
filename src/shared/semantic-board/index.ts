@@ -168,6 +168,11 @@ export {
 	withRemoved,
 	standingOf,
 } from "@/shared/semantic-board/lib/compare";
+export {
+	type InterfaceChange,
+	type InterfaceComparison,
+	compareInterfaces,
+} from "@/shared/semantic-board/lib/compare-interface";
 export { type SemanticBoardParse, parseSemanticBoard };
 export {
 	BoardBranchInputSchema,

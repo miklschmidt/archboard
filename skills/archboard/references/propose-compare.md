@@ -42,24 +42,49 @@ exclusively (`board-lock-acquisition.ts`), `releaseHold` unlinks it
 cannot notify another server. The table is a proposal nobody has built, and
 nothing states where its code will live, so it stays unbound.
 
-3. Read `semantic compare`'s answer against your change map. It reports every
-   part, relationship, sequence, step, walkthrough and beat either state has,
-   each as `added`, `removed`, `changed` or `unchanged`, and for anything
-   changed the fields that moved and what they moved between; relationships
-   and steps carry the endpoints they now have, named as well as identified.
+3. Read `semantic compare`'s answer against your change map. Read its
+   interface section (`interfaceChanges`) first. The rest reports every part,
+   relationship, sequence, step, walkthrough and beat either state has, each as
+   `added`, `removed`, `changed` or `unchanged`, and for anything changed the
+   fields that moved and what they moved between; relationships and steps carry
+   the endpoints they now have, named as well as identified.
    Check that those subjects are the ones you intended, that the current
    variant is untouched, and that a continuing exchange compares step by step.
    Open both pictures: the removal is drawn as removed in the proposal's, and
    the current one shows what it showed before.
 
-   Report from that answer, not from the change you meant to make: the parts
-   removed, the parts added, and every relationship the answer does not call
-   `unchanged`, with where it now lands. Here `Lock files` and `Lock watcher`
-   are `removed`, `Lease table` is `added`, and both calls are `changed` in one
-   field (`to` moved from `Lock files` to `Lease table`), so the report is "the
-   calls from `holdBoard` and `releaseHold` are the same two relationships, now
-   landing on the table", not "two relationships went and two arrived": an
-   endpoint that moved is the change the comparison exists to show, so name it.
+   The interface section has one entry for each container (a node with
+   children, such as a module, a package or a class and its members) whose
+   interface moved. The interface of a container is its entry points: the
+   children that parts outside it reach, such as the functions or methods that
+   other modules call. The other children are hidden parts. An entry lists the
+   entry points `added` and `removed`, the parts that moved between the
+   interface and the hidden parts (`becameEntryPoints`: a child that a caller
+   now reaches; `becameHidden`: one that no caller reaches any longer), and the
+   callers gained and lost (`callersGained`, `callersLost`). An interface change
+   costs every caller and an implementation change costs one module, so report
+   the interface changes first and name the callers each one costs. They set no
+   `standing`: the part a new caller reaches stays `unchanged`, and the new
+   relationship is what reads as `added`. `unchanged` lists the containers that
+   were read and did not move, so "no interface changed" can be checked. A
+   board that draws no container, or draws a module as one card, has no
+   interface to compare: say that, and do not report zero entry points.
+
+   Report from that answer, not from the change you meant to make: the
+   interface changes, the parts removed, the parts added, and every
+   relationship the answer does not call `unchanged`, with where it now lands.
+   Here `Lock files` and `Lock watcher` are `removed`, `Lease table` is
+   `added`, and both calls are `changed` in one field (`to` moved from
+   `Lock files` to `Lease table`), so the report is "the calls from `holdBoard`
+   and `releaseHold` are the same two relationships, now landing on the table",
+   not "two relationships went and two arrived": an endpoint that moved is the
+   change the comparison exists to show, so name it. Neither variant of the
+   lease board draws a container, so the interface section says that and the
+   report starts at the removed parts. Had the proposal drawn the table inside a
+   `Lease store` that `holdBoard` and `releaseHold` call, the section would say
+   that `Lease store` gained the table as an entry point and which callers reach
+   it, before it names the removed watcher.
+
    The command reads a variant against the current one, as its picture is
    drawn, or on a board nobody has built against the one it came from; the
    current variant itself, and a first draft on such a board, are refused.
