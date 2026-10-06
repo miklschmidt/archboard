@@ -4,33 +4,16 @@
 // that Git does not ignore. So a binding to a directory never reads
 // `node_modules`, build output or an ignored `.env` file. One `git ls-files`
 // per checkout lists them, with uncommitted edits, because the check reads the
-// files on disk. It never reads Terraform state, its backups, variable files or
-// the `.terraform` directory, even where Git tracks them: they can hold secrets
-// in plain text, and the Archboard server answers any request from this
-// machine.
+// files on disk. Code facts never read Terraform state, its backups, variable
+// files or the `.terraform` directory, even where Git tracks them
+// (`neverRead`): they can hold secrets in plain text, and the Archboard server
+// answers any request from this machine.
 //
 // The command reads the index and the working tree and starts no other
 // program. The caller's signal ends it, a request that hangs up or a stop, and
 // a timeout from `timing.ts` ends a Git that hangs.
 
 import { CODE_CHECK_GIT_TIMEOUT_MS } from "@/shared/timing/timing";
-
-/**
- * Paths the check never reads, whatever Git says about them: the `.terraform`
- * directory, state with every backup Terraform writes beside it
- * (`terraform.tfstate.backup`, `terraform.tfstate.<time>.backup`) and the
- * workspaces under `terraform.tfstate.d/`, and variable files.
- */
-const NEVER_READ = [/(^|\/)\.terraform(\/|$)/u, /\.tfstate(\.|\/|$)/u, /\.tfvars(\.json)?$/u];
-
-/**
- * Whether the check never reads a path.
- * @param relative The path, relative to its checkout, with `/` between names.
- * @returns True for Terraform state, a variable file or the `.terraform` directory.
- */
-function neverRead(relative: string): boolean {
-	return NEVER_READ.some((pattern) => pattern.test(relative));
-}
 
 /**
  * The files of one checkout that Git does not ignore, relative to its root.
@@ -67,4 +50,4 @@ async function listReadableFiles(root: string, signal: AbortSignal): Promise<Set
 	return new Set(listed.split("\0").filter((path) => path !== ""));
 }
 
-export { listReadableFiles, neverRead };
+export { listReadableFiles };

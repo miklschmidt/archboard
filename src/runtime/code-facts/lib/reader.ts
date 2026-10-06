@@ -51,10 +51,6 @@ interface PassStats {
 	parsed: number;
 	/** Files whose facts came from the cache. */
 	cached: number;
-	/** Files read as text. */
-	text: number;
-	/** The extensions of the files read as text. */
-	readonly textExtensions: Set<string>;
 }
 
 /**
@@ -212,7 +208,7 @@ async function parse(bytes: Uint8Array, grammar: GrammarName): Promise<ParsedFac
  * @returns The pass.
  */
 function createPass(cache: Map<string, Entry>, signal: AbortSignal): FactsPass {
-	const stats: PassStats = { read: 0, parsed: 0, cached: 0, text: 0, textExtensions: new Set() };
+	const stats: PassStats = { read: 0, parsed: 0, cached: 0 };
 	const reads = new Map<string, Promise<FileFacts | undefined>>();
 	const resolvers = new Map<string, ModuleResolver>();
 	/**
@@ -249,8 +245,6 @@ function createPass(cache: Map<string, Entry>, signal: AbortSignal): FactsPass {
 		const extension = path.posix.extname(target.relative);
 		const grammar = GRAMMAR_OF[extension];
 		if (grammar === undefined) {
-			stats.text += 1;
-			stats.textExtensions.add(extension === "" ? path.posix.basename(target.relative) : extension);
 			return { adapter: "text", path: target.relative, text: new TextDecoder().decode(bytes) };
 		}
 		const parsed = await parsedFacts(cache, target.absolute, bytes, grammar, stats);
