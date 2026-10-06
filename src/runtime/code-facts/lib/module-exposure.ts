@@ -7,7 +7,8 @@
 // what its `package.json` `exports` names, else the files directly in the
 // directory (typescript-exposure.ts). A Python package's root file is its
 // `__init__.py`. A Swift module is a target of its package, and each of its
-// files is a root file (swift-exposure.ts). A language with no rule here
+// files is a root file (swift-exposure.ts). A C or C++ module's root files
+// are its public headers (c-exposure.ts). A language with no rule here
 // exposes nothing the check can read, and the check says so.
 //
 // What a root file exposes reads the same in every language, from its code
@@ -16,8 +17,12 @@
 // through a re-export, followed to the file that defines it. Each adapter
 // records the names a file passes on as re-exports: `export ... from` and
 // `export { name }` of an imported name in TypeScript, and in Python each
-// imported name that `from module import *` would pass on.
+// imported name that `from module import *` would pass on. A declaration,
+// such as a C prototype in a public header, is exposed where its code is,
+// passed on by the file that declares it (definition-site.ts).
 
+import { cRootFiles, isCFile } from "@/runtime/code-facts/lib/c-exposure";
+import { codeSiteOf } from "@/runtime/code-facts/lib/definition-site";
 import type { Definition, ImportedName, SyntaxFacts } from "@/runtime/code-facts/lib/facts";
 import type { CheckoutFiles } from "@/runtime/code-facts/lib/module-resolution";
 import type { FactsPass } from "@/runtime/code-facts/lib/reader";
@@ -124,8 +129,19 @@ const SWIFT: ExposureRule = {
 	rootFiles: swiftRootFiles,
 };
 
+/** C and C++'s rule: a directory, whose public headers declare what it exposes. */
+const C: ExposureRule = {
+	writes: isCFile,
+	/**
+	 * No file stands for a C or C++ module.
+	 * @returns False.
+	 */
+	entry: () => false,
+	rootFiles: cRootFiles,
+};
+
 /** The rule of each adapter that reads a language. */
-const RULES: readonly ExposureRule[] = [TYPESCRIPT, PYTHON, SWIFT];
+const RULES: readonly ExposureRule[] = [TYPESCRIPT, PYTHON, SWIFT, C];
 
 /** One name a module exposes, and the definition it reaches. */
 interface ExposedName {
@@ -224,11 +240,24 @@ function exposedBy(search: Search, file: string): Promise<ExposedName[]> {
 			const facts = await search.pass.read(search.checkout, file);
 			if (facts === undefined || facts.adapter === "text") return [];
 			const deeper: Search = { ...search, chain: [...search.chain, file] };
-			return [...ownExposed(facts), ...(await passedExposed(deeper, facts))];
+			const own = await Promise.all(ownExposed(facts).map((name) => withCode(search, name)));
+			return [...own, ...(await passedExposed(deeper, facts))];
 		})();
 		search.read.set(file, names);
 	}
 	return names;
+}
+
+/**
+ * A name exposed where its code is: a declaration, such as a C prototype,
+ * at the definition its file's pair holds, which the declaring file passes on.
+ * @param search The search.
+ * @param name A name a file exposes that it declares itself.
+ * @returns The name, at its code where the pair defines it.
+ */
+async function withCode(search: Search, name: ExposedName): Promise<ExposedName> {
+	if (name.definition.declaration !== true) return name;
+	return { ...name, ...(await codeSiteOf(search.pass, search.checkout, name)) };
 }
 
 /**

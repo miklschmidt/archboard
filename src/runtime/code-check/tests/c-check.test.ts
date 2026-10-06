@@ -143,6 +143,11 @@ beforeAll(async () => {
 		].join("\n"),
 		"cpp/app.cpp":
 			'#include "store.hpp"\n\nint run() { shop::Store::open()->save(1); return 0; }\n',
+		// Callers of the `src` module from outside it, through its public header `money.h`.
+		"tools/report.c":
+			'#include "../src/money.h"\n\nlong report(long a) { return money_round(a); }\n',
+		"tools/batch.c":
+			'#include "../src/money.h"\n\nlong batch(long a) { return money_round(a) * 2; }\n',
 	});
 	git(scratch, shop, "add", "-A");
 	git(scratch, shop, "commit", "-q", "--no-gpg-sign", "-m", "the code");
@@ -183,6 +188,22 @@ beforeAll(async () => {
 			},
 		},
 	]);
+	// A container bound to the `src` module, whose money part no drawn caller reaches.
+	board(vault, "Modules", [
+		{
+			id: "v1",
+			name: "Built",
+			lifecycle: "current",
+			content: {
+				nodes: [
+					part("pK", "Ledger library", "src"),
+					{ ...part("pR", "Money", "src/money.h"), parent: "pK" },
+					part("pT", "Report", "tools/report.c"),
+				],
+				edges: [edge("e1", ["pT", "pK"], "call")],
+			},
+		},
+	]);
 	const check = await import("@/runtime/code-check/index");
 	const read = check.readBoardsToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
@@ -207,6 +228,8 @@ test("anchors, binding symbols and the relationships between parts bound to C an
 			"RELATIONSHIP_UNDRAWN pM warning",
 			// The ledger's header only declares the audit, and its source defines none of it.
 			"RELATIONSHIP_UNDRAWN pL information",
+			"CALLER_UNDRAWN pR warning",
+			"EXPOSED_UNUSED pK information",
 		].toSorted(),
 	);
 	// Nothing was read as text.
@@ -233,4 +256,16 @@ test("a use reaches the part bound to the pair of the header its include names, 
 	expect(turned?.evidence?.map((piece) => [piece.from, piece.to, piece.kind])).toEqual([
 		["pA", "pN", "call"],
 	]);
+});
+
+test("a C module exposes what its public headers declare, and an outside file uses it through an include", () => {
+	const undrawn = outcome.findings.find((each) => each.code === "CALLER_UNDRAWN");
+	// The report's use is drawn through its part; the batch file no part binds uses the money part's code.
+	expect(undrawn?.evidence?.map((piece) => [piece.path, piece.symbol, piece.resolution])).toEqual([
+		["tools/batch.c", "money_round", "resolved"],
+	]);
+	// `notify.h` is a public header too, and no file outside `src` calls the notifier.
+	const unused = outcome.findings.find((each) => each.code === "EXPOSED_UNUSED");
+	expect(unused?.message).toContain("notify");
+	expect(unused?.message).not.toContain("money_round");
 });
