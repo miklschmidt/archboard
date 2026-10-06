@@ -202,6 +202,25 @@ describe("a pass's language servers", () => {
 		expect(session.unavailable()).toEqual([]);
 		expect(running(at.pids()[0] ?? 0)).toBe(false);
 	});
+
+	test("start no server for a question that was still looking at its project when the session closed", async () => {
+		// Python's row looks for the checkout's virtual environment before a start.
+		current = workspace({ "src/app.py": "def pay():\n    return post(1)\n" });
+		const session = openLanguageServers({
+			servers: current.table("normal", "python"),
+			signal: new AbortController().signal,
+			timeouts: SHORT,
+		});
+		const asked = session.definition({
+			root: current.root,
+			file: "src/app.py",
+			line: 2,
+			symbol: "post",
+		});
+		await session.close();
+		expect(await asked).toEqual({ status: "unasked" });
+		expect(current.pids()).toEqual([]);
+	});
 });
 
 describe("language-servers.json", () => {

@@ -325,6 +325,9 @@ class Session {
 		const key = `${language}\0${project.root}`;
 		let start = this.#starts.get(key);
 		if (start === undefined) {
+			// The pass can end while a row looks at the project, and a server
+			// started after `close` would never be stopped.
+			if (!this.#open()) return undefined;
 			start = this.#start(language, root, project, argv);
 			this.#starts.set(key, start);
 		}
