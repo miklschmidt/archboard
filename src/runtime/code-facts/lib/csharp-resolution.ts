@@ -169,6 +169,17 @@ function membershipOf(files: ReadonlySet<string>): Membership {
 }
 
 /**
+ * The `.cs` files of the project whose project file is directly in a directory.
+ * @param files The checkout's files.
+ * @param directory The directory, `""` for the checkout's root.
+ * @returns The files, in path order; none where the directory holds no project file.
+ */
+function projectFilesIn(files: ReadonlySet<string>, directory: string): readonly string[] {
+	const project = projectDirectories([...files].toSorted()).get(directory);
+	return project === undefined ? [] : (membershipOf(files).filesOf.get(project) ?? []);
+}
+
+/**
  * Each qualified name the files of a project declare, and where.
  * @param files The files, with their facts.
  * @returns Where each name is declared, in the files' order.
@@ -585,4 +596,4 @@ function createCSharpResolver(
 	};
 }
 
-export { createCSharpResolver };
+export { createCSharpResolver, projectFilesIn };

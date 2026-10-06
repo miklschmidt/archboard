@@ -225,12 +225,15 @@ function reaches(name: ExposedName, use: OutsideUse): boolean {
 }
 
 /**
- * Whether an exposed name is a declaration of its file, not a member of one.
+ * Whether an exposed name is a declaration of its file, not a member of one,
+ * as its language's rule says where its names say more than their dots: a C#
+ * type is qualified by its namespace.
  * @param name The exposed name.
  * @param exposed Every name its module exposes.
  * @returns True for a top-level name.
  */
 function topLevel(name: ExposedName, exposed: readonly ExposedName[]): boolean {
+	if (name.member !== undefined) return !name.member;
 	const member = exposed.some((holder) => memberOf(name.definition, holder.definition));
 	return !name.definition.symbol.includes(".") && !member;
 }
@@ -309,8 +312,11 @@ async function parsedAny(facts: FactsPass, code: ReadPart): Promise<boolean> {
 function unusedFinding(judged: Judged): CodeFinding | undefined {
 	const { exposure, uses } = judged.module;
 	const declared = exposure.exposed.filter((name) => topLevel(name, exposure.exposed));
-	const unused = declared.filter((name) => !uses.some((use) => reaches(name, use)));
-	const names = [...new Set(unused.map((name) => name.name))];
+	// A name declared in several places, a C# partial type or an overload, is used where any is.
+	const used = new Set(
+		declared.filter((name) => uses.some((use) => reaches(name, use))).map((name) => name.name),
+	);
+	const names = [...new Set(declared.map((name) => name.name))].filter((name) => !used.has(name));
 	if (names.length === 0) return undefined;
 	const all = new Set(declared.map((name) => name.name)).size;
 	const { container } = judged.inspection;

@@ -128,7 +128,9 @@ base class declares. A `ProjectReference` is `build-dependency` evidence on
 the project it names, and a `PackageReference` on a package outside the
 checkout. The check runs no build and evaluates no MSBuild. Of each `#if`, it
 reads the first branch. It skips a symbol that only another branch holds, as
-`symbol-unparsed`.
+`symbol-unparsed`. For the interface check, a project exposes the public types
+of all its files and their public members. `InternalsVisibleTo` lets the
+projects it names use internal code, and exposes nothing more.
 "View in code" opens a bound file in a local checkout at the line where the
 file defines the symbol, so code facts must read the file and find that
 definition. The opener must take a line: Visual Studio Code, Cursor, Zed, or
@@ -513,7 +515,7 @@ the code can hold the address.
 
 For a container bound to a module, `check --code` also holds the interface
 that the board derives against what the module exposes. The module is a bound
-directory, or the `index.ts` or `__init__.py` that stands for one. In
+directory, or the `index.ts`, `__init__.py` or `.csproj` that stands for one. In
 TypeScript, the module exposes what its root files export, also the names that
 they import and export again. The root files are the files that its
 `package.json` `exports` names, or else the files directly in its directory. A
