@@ -211,7 +211,7 @@ const semanticFootprintContract = defineCommand({
 	relationships: [
 		{
 			method: "GET",
-			path: "/api/vault/footprint",
+			path: "/api/semantic-boards/footprint",
 			cardinality: "one",
 			description: "The footprint, read from Git in each registered checkout",
 		},
@@ -230,7 +230,9 @@ const semanticFootprintContract = defineCommand({
 			...(input.variant === undefined ? {} : { variant: input.variant }),
 		});
 		const reply = FootprintReplySchema.parse(
-			await requestJson<unknown>(`/api/vault/footprint?${query}`, { signal: context.signal }),
+			await requestJson<unknown>(`/api/semantic-boards/footprint?${query}`, {
+				signal: context.signal,
+			}),
 		);
 		return { result: reply, diagnostics: described(reply) };
 	},

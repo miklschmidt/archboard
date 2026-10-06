@@ -1,5 +1,5 @@
 // The answer of a footprint, `archboard semantic footprint` and
-// `GET /api/vault/footprint` (ADR 0045).
+// `GET /api/semantic-boards/footprint` (ADR 0045).
 //
 // A footprint reads the commits from the merge base of a named ref and HEAD up
 // to HEAD, in each checkout, and says which parts of a board's current variant
@@ -14,12 +14,10 @@
 
 import { z } from "zod";
 import { BehindCommitSchema, BehindPartSchema, BehindSkipSchema } from "@/shared/code-check/index";
+import { SubjectStandingSchema } from "@/shared/semantic-board/index";
 
-/** The part, relationship or step an entry is about, as every diagnostic names it. */
-const FootprintSubjectSchema = BehindPartSchema.shape.subject;
-
-/** How the comparison marks a part, relationship or step. */
-const NamedStatusSchema = z.enum(["added", "changed", "removed"]);
+/** How the comparison marks a part, relationship or step that it names. */
+const NamedStatusSchema = SubjectStandingSchema.exclude(["unchanged"]);
 
 /** One end of a relationship or a step. */
 const FootprintEndSchema = z.object({ id: z.string(), name: z.string() }).strict();
@@ -55,18 +53,14 @@ const NamedReasonSchema = z.discriminatedUnion("by", [
 		.strict(),
 ]);
 
-/** One part the footprint read. */
-const FootprintPartSchema = z
-	.object({
-		subject: FootprintSubjectSchema,
-		repo: z.string(),
-		path: z.string(),
-		/** The commits of the answer's `commits` that changed this part, newest first; none for a part nothing changed. */
-		commits: z.array(z.string()),
-		/** Why the proposal names it; none for a part it does not name. */
-		named: z.array(NamedReasonSchema),
-	})
-	.strict();
+/**
+ * One part the footprint read, and the commits of the answer's `commits` that
+ * changed it, newest first: none for a part that nothing changed.
+ */
+const FootprintPartSchema = BehindPartSchema.extend({
+	/** Why the proposal names it; none for a part it does not name. */
+	named: z.array(NamedReasonSchema),
+});
 
 /** Why a checkout's range was not read. */
 const UNREAD_REASONS = ["base-unresolved", "no-merge-base"] as const;

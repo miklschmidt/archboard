@@ -1,16 +1,19 @@
-// The footprint's route, `GET /api/vault/footprint?board=&base=&variant=`
+// The footprint's route, `GET /api/semantic-boards/footprint?board=&base=&variant=`
 // (ADR 0045).
 //
-// `archboard semantic footprint` asks it. It reads Git in every checkout that
-// holds a part of the board, so it runs only on a request, as checkout work,
-// the admission the code opener and the code check use: a caller that hangs up
-// cancels it, and a stop cancels it and waits for it to settle, so a stop never
-// refuses because of it. A reading changes nothing, so the route is a GET. It
-// never runs inside `/api/vault/check`, which every open canvas polls.
+// `archboard semantic footprint` asks it. It is about one board, so it sits
+// beside the board routes, as the locality route does, and not under
+// `/api/vault/`. It reads Git in every checkout that holds a part of the board,
+// so it runs only on a request, as checkout work, the admission the code opener
+// and the code check use: a caller that hangs up cancels it, and a stop cancels
+// it and waits for it to settle, so a stop never refuses because of it. A
+// reading changes nothing, so the route is a GET. It never runs inside
+// `/api/vault/check`, which every open canvas polls.
 //
-// The answer is not kept in memory. A footprint is asked once for one branch,
-// and a stale answer for a base that moved would cost more than a walk of the
-// commits between a merge base and HEAD.
+// The answer is not kept in memory (ADR 0045). A footprint is asked once for
+// one branch, and a ref such as `origin/main` can move while every HEAD stays,
+// so a kept answer would also need the commit the ref resolves to in each
+// checkout: most of the work of a walk between a merge base and HEAD.
 
 import type { Express, Request, Response } from "express";
 import { readFootprint, type FootprintRequest } from "@/runtime/history-lens/index";
@@ -192,7 +195,7 @@ async function answerFootprint(
 			status: 400,
 			code: "BAD_REQUEST",
 			error:
-				"Name the board and the base: /api/vault/footprint?board=<name>&base=<ref>[&variant=<proposal>]",
+				"Name the board and the base: /api/semantic-boards/footprint?board=<name>&base=<ref>[&variant=<proposal>]",
 		});
 		return;
 	}
@@ -205,7 +208,7 @@ async function answerFootprint(
 		const answer = await dependencies.runCheckout(
 			request,
 			response,
-			"GET /api/vault/footprint",
+			"GET /api/semantic-boards/footprint",
 			(signal) => dependencies.read({ ...readable, signal }),
 		);
 		if (!callerGone(request, response)) {
@@ -219,7 +222,7 @@ async function answerFootprint(
 }
 
 /**
- * Mount `GET /api/vault/footprint`.
+ * Mount `GET /api/semantic-boards/footprint`.
  * @param app The application.
  * @param overrides Dependencies a test replaces.
  */
@@ -241,7 +244,7 @@ function mountFootprintRoute(
 		read: readFootprint,
 		...overrides,
 	};
-	app.get("/api/vault/footprint", (request, response) => {
+	app.get("/api/semantic-boards/footprint", (request, response) => {
 		void answerFootprint(dependencies, request, response);
 	});
 }

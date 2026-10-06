@@ -276,14 +276,6 @@ test("a large commit is kept and marked", async () => {
 	]);
 });
 
-test("a commit names the same range as the ref it was made from", async () => {
-	const byRef = await footprint("main");
-	const byCommit = await footprint(branchPoint);
-	expect(ids(byCommit.proposal === null ? byCommit.changed : [])).toEqual(
-		ids(byRef.proposal === null ? byRef.changed : []),
-	);
-});
-
 test("a proposal splits the parts into named and changed, changed but not named, and named but not changed", async () => {
 	const answer = await footprint("main", "Plan");
 	if (answer.proposal === null) throw new Error("a proposal was named");

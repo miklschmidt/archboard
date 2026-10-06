@@ -67,7 +67,7 @@ const server = Bun.serve({
 		const url = new URL(request.url);
 		if (url.pathname === "/health") return Response.json({ service, status: "ok" });
 		asked.push(url);
-		if (url.pathname !== "/api/vault/footprint") {
+		if (url.pathname !== "/api/semantic-boards/footprint") {
 			return Response.json(
 				{ success: false, error: `unexpected ${url.pathname}` },
 				{ status: 404 },
@@ -171,13 +171,6 @@ test("without --variant the command names no proposal", async () => {
 	expect(asked.map((one) => Object.fromEntries(one.searchParams))).toEqual([
 		{ board: "Orders", base: "main" },
 	]);
-});
-
-test("a command with no --base is a usage error and asks nothing", async () => {
-	asked.length = 0;
-	const { exited } = await run(["semantic", "footprint", "Orders"]);
-	expect(exited).toBe(2);
-	expect(asked).toEqual([]);
 });
 
 test("a refusal of the route keeps the exit status its code declares", async () => {

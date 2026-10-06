@@ -1,7 +1,7 @@
-// The footprint's route, `GET /api/vault/footprint` (ADR 0045): the production
-// application answers it over a vault this owner makes in a Git repository of
-// its own, it turns a request away with a code the CLI maps to an exit
-// status, and a caller that hangs up cancels the reading, because it runs as
+// The footprint's route, `GET /api/semantic-boards/footprint` (ADR 0045): the
+// production application answers it over a vault this owner makes in a Git
+// repository of its own, it turns a request away with a code the CLI maps to an
+// exit status, and a caller that hangs up cancels the reading, because it runs as
 // checkout work. A stand-in reading proves the cancellation without depending
 // on how long a real one takes.
 
@@ -160,7 +160,7 @@ afterAll(() => {
 test("the production application answers the footprint of a proposal against a commit", async () => {
 	const base = await listen(server.app);
 	const query = new URLSearchParams({ board: "Shop", base: before, variant: "Plan" });
-	const reply = await fetch(`${base}/api/vault/footprint?${query}`);
+	const reply = await fetch(`${base}/api/semantic-boards/footprint?${query}`);
 	expect(reply.status).toBe(200);
 	const answer = FootprintReplySchema.parse(await reply.json());
 	if (answer.proposal === null) throw new Error("a proposal was named");
@@ -171,7 +171,9 @@ test("the production application answers the footprint of a proposal against a c
 test("a request that cannot be read is turned away with the code the CLI maps to its exit status", async () => {
 	const base = await listen(server.app);
 	const refusal = async (params: Record<string, string>) => {
-		const reply = await fetch(`${base}/api/vault/footprint?${new URLSearchParams(params)}`);
+		const reply = await fetch(
+			`${base}/api/semantic-boards/footprint?${new URLSearchParams(params)}`,
+		);
 		const body: unknown = await reply.json();
 		return { status: reply.status, body };
 	};
@@ -214,7 +216,7 @@ test("a caller that hangs up cancels the reading", async () => {
 	});
 	const base = await listen(app);
 	const hangUp = new AbortController();
-	const request = fetch(`${base}/api/vault/footprint?board=Shop&base=${before}`, {
+	const request = fetch(`${base}/api/semantic-boards/footprint?board=Shop&base=${before}`, {
 		signal: hangUp.signal,
 	}).catch((error: unknown) => error);
 	await running;
