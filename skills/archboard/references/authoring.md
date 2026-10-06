@@ -176,7 +176,7 @@ one names its relationship in its `path`.
 - `label`: What crosses, in a few words.
 - `description`: Longer prose.
 - `emphasis`: `normal` (default), `hero` for the board's spine, `muted` for
-  context. Line weight only.
+  context. A hero line is drawn heavier, and a muted line paler.
 - `traffic`: `{}` for moving marks at the defaults (speed 80, volume 1);
   `{ "speed", "volume" }` positive finite numbers; omit for none.
 

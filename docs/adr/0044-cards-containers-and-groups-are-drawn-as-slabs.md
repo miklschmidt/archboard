@@ -118,7 +118,12 @@ are in `lib/design.ts`.
     full color on the light ground, and at three quarters of its color over the
     page on the dark ground (`LINE_STRENGTH` in `lib/design.ts`). On the light
     page, orange, amber, yellow, lime and sky stay under 3:1 even at full
-    color (TASK-404).
+    color (TASK-404). A muted line is as wide as a default line. Its ink is
+    its default ink with the page mixed in, so that it keeps 70 % of it on the
+    light ground and 60 % on the dark ground (`MUTED_STRENGTH` in
+    `lib/svg/styles.ts`). A muted neutral line has about 2.4:1 against the
+    page on both grounds. It is never made translucent, and its head and its
+    pulses take the same ink (TASK-409).
 13. **The colors are tokens.** The faces, edges, highlights and shadows come
     from the `--slab-*`, `--plinth-*` and `--mat-*` tokens in
     `src/shared/theme/theme.css`, in both themes.

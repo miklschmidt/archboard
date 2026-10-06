@@ -54,6 +54,7 @@ import {
 	HEAD_LENGTH,
 	edgeAttributes,
 	headWidths,
+	quietened,
 	relationshipInk,
 	strokeWidthOf,
 	stylesFor,
@@ -363,7 +364,11 @@ function paintArchitecture(
 					routed,
 					traffic: edge.traffic,
 					headReach: arrowheadReach(appearance.arrowhead, weightOf(edge)),
-					ink: relationshipInk(edge, palette, standingOf(edge.id), policy, appearance),
+					ink: quietened(
+						relationshipInk(edge, palette, standingOf(edge.id), policy, appearance),
+						palette,
+						weightOf(edge),
+					),
 					lineWidth: width,
 				},
 			];
