@@ -6,9 +6,11 @@
 // and `.` when the mapping names none). Where the context is the compose
 // file's own directory, it is the directory of the Dockerfile inside it, as a
 // monorepo builds each service from its root with `dockerfile:
-// api/Dockerfile`. A context that is a Git URL or
-// an absolute path names no directory of the checkout. An interpolation takes
-// the default the file writes, as everywhere in a compose file.
+// api/Dockerfile`. A context that is a Git URL or an absolute path names no
+// directory of the checkout. The service's mapping comes interpolated, as
+// everywhere in a compose file: an interpolation takes the default the file
+// writes, and a context that only an interpolation with no default writes is
+// empty, which names no directory the check can read.
 
 import { posix } from "node:path";
 
@@ -26,32 +28,27 @@ function isMapping(value: unknown): value is Record<string, unknown> {
 
 /**
  * The build context a service writes.
- * @param build Its `build` value.
- * @param interpolated Reads an interpolation as the check reads it.
+ * @param build Its `build` value, interpolated.
  * @returns The context, normalized, or undefined when it names no directory here.
  */
-function contextOf(build: unknown, interpolated: (value: string) => string): string | undefined {
+function contextOf(build: unknown): string | undefined {
 	const written = isMapping(build) ? (build["context"] ?? ".") : build;
-	if (typeof written !== "string") return undefined;
-	const context = posix.normalize(interpolated(written) || ".");
+	if (typeof written !== "string" || written === "") return undefined;
+	const context = posix.normalize(written);
 	return ELSEWHERE.test(context) ? undefined : context;
 }
 
 /**
  * The directory whose code a service runs, relative to its compose file.
- * @param body The service's mapping.
- * @param interpolated Reads an interpolation as the check reads it.
+ * @param body The service's mapping, interpolated.
  * @returns The directory, or undefined for a service that builds nothing here.
  */
-function runsOf(
-	body: Record<string, unknown>,
-	interpolated: (value: string) => string,
-): string | undefined {
+function runsOf(body: Record<string, unknown>): string | undefined {
 	const { build } = body;
-	const context = contextOf(build, interpolated);
+	const context = contextOf(build);
 	const dockerfile = isMapping(build) ? build["dockerfile"] : undefined;
 	if (context !== "." || typeof dockerfile !== "string") return context;
-	const directory = posix.dirname(posix.normalize(interpolated(dockerfile)));
+	const directory = posix.dirname(posix.normalize(dockerfile));
 	return directory.startsWith("..") || directory.startsWith("/") ? context : directory;
 }
 
