@@ -29,7 +29,7 @@
 				"scripts/readme-assets/lockup.ts",
 				"scripts/readme-assets/browser.ts"
 			],
-			"hash": "45c0a65437bd6b6a0a5f641d3803d1c2745ea74421092b88b7ef5fe7439a3d34"
+			"hash": "c7ad9dbbc748f656840d3a28e404a9fca4e9442aa5b21927950ccf0a3d96d77d"
 		},
 		{
 			"name": "hero",
@@ -52,7 +52,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "03571051f67a42b90878e61e22023dff907ac132e10fffbd6bab810d703a8bb2"
+			"hash": "0fe86d85759eb1c2b605fb44a5353a72cad325b496b5caa77db8bdec90c63cc8"
 		},
 		{
 			"name": "explainer",
@@ -74,7 +74,7 @@
 				"src/server/archboard/lib/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts"
 			],
-			"hash": "52e9e08593d7121a9f11a7dff701267b6554e7881c09053a9b6e92bbf8b25c31"
+			"hash": "4dc5f26580b6e746b2abc9512d488c8dc80c44c08b1e17eb83a9f3788b46e325"
 		},
 		{
 			"name": "plan",
@@ -93,7 +93,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "671b15dbf044424687067cb0d54610454678ae6e24eca23fddf1dbcb41211795"
+			"hash": "d4453f6cee5e34bce3fd9fa179439ced4e19584bf98c6314663e15572878832a"
 		},
 		{
 			"name": "history",
@@ -114,7 +114,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "aa3a4545aef1bb15dc74b97b57b24682b0bd5849c77503cbd1e5646f56c473f2"
+			"hash": "d694d61aa65392f99cd465af263525140e8c05fd5d851f67f98961c21475496c"
 		},
 		{
 			"name": "pr-walkthrough",
@@ -136,7 +136,7 @@
 				"scripts/readme-assets/narrated.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "3abd1fb2e454d86864aef733a233f31bdf0ad679f2c9a783eee5c33181d1197b"
+			"hash": "122e6d1968220e84792b62f3e8c2e0aed03f624b106f8bf68f9149b2ec1e5903"
 		},
 		{
 			"name": "sequence",
@@ -165,7 +165,7 @@
 				"scripts/readme-assets/svg.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "64366ce2dca38926ad53c82e20fd12211791fd09a4a85bc6ce79795029d2687f"
+			"hash": "8ca4826c9d8e1d1810d12e34a7a355c778d2b5615898857b429f67aeefc0c9b9"
 		},
 		{
 			"name": "newcomer",
@@ -187,7 +187,7 @@
 				"scripts/readme-assets/narrated.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "3abd1fb2e454d86864aef733a233f31bdf0ad679f2c9a783eee5c33181d1197b"
+			"hash": "122e6d1968220e84792b62f3e8c2e0aed03f624b106f8bf68f9149b2ec1e5903"
 		},
 		{
 			"name": "drill-down",
@@ -206,7 +206,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "a7261b371728b68b54eb61037566e2fb396ed7d54f1692086c1f98f13eb56b47"
+			"hash": "fc4c4d6dfa3a5bcadc9613be12f853050e7c8c4fb4d1b8f718752c694c0c5dae"
 		},
 		{
 			"name": "ask",
@@ -247,7 +247,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "c9513bbea0576dfe5a6755cb630aae2155e517467f62b943076d7e7a04ca45aa"
+			"hash": "cd8cd1516b2dff353a19080e351a565325b439fe54e682e61399c73eed2144f8"
 		},
 		{
 			"name": "web-shop",
@@ -276,7 +276,7 @@
 				"scripts/readme-assets/svg.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "64366ce2dca38926ad53c82e20fd12211791fd09a4a85bc6ce79795029d2687f"
+			"hash": "8ca4826c9d8e1d1810d12e34a7a355c778d2b5615898857b429f67aeefc0c9b9"
 		},
 		{
 			"name": "architecture",
@@ -299,7 +299,7 @@
 				"src/ui/shell/assets/fonts",
 				"scripts/readme-assets/svg.ts"
 			],
-			"hash": "f42890db7cacf7775d9a8c966d1f33a6c370daf203efbd10b61257f84ddae79e"
+			"hash": "698e6dfbb9c1412b06190b6690e2bd05f203fe4cf463324e30d35206e50893f1"
 		}
 	]
 }
