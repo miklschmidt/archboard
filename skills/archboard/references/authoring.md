@@ -103,7 +103,9 @@ changed binding in a comparison. `archboard check` tests the path only;
 `archboard check --code` warns with `BINDING_SYMBOL_MISSING` when the bound
 file or directory does not define the symbol; a file it reads only as text must
 hold the symbol's last name.
-"View in code" opens the file; the inspector shows the symbol under the path.
+"View in code" opens the file in a local checkout at the line where the symbol is
+defined, when code facts find it there (TypeScript and TSX for now), and the
+file otherwise. The inspector shows the symbol under the path.
 
 A binding names the implementation owner: the file whose body does what the
 node's responsibility says, not a file that imports the unit, registers it (a

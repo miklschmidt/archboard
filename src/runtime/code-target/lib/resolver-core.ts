@@ -204,8 +204,10 @@ function locateTarget(
 /**
  * Resolves a binding's path inside its checkout, refusing anything that is
  * absolute, escapes the checkout lexically or through links, or is neither a
- * file nor a directory. A binding's `symbol` is ignored: the target is the
- * file or directory until opening at the definition lands (TASK-367.25).
+ * file nor a directory. The target is the file or directory the binding names,
+ * whatever its `symbol`: the line where a symbol is defined is the opener's to
+ * find in that file (`src/server/code-opener`, TASK-367.25), and no other reader
+ * of a resolved target needs it.
  * @param binding - The validated binding.
  * @param checkout - The resolved checkout, or its failure to pass through.
  * @param dependencies - The filesystem view to resolve with.

@@ -35,3 +35,25 @@ test.each([
 ])("rejects an ineligible remote target %#", (binding) => {
 	expect(githubUrlForBinding(binding)).toBeUndefined();
 });
+
+test.each([
+	[
+		{ repo: "github.com/acme/repo", path: "src/a b.ts", commit: "deadbeef" },
+		"https://github.com/acme/repo/blob/deadbeef/src/a%20b.ts#L12",
+	],
+	[
+		{ repo: "github.com/acme/repo", path: "src/a.ts", branch: "release/2.1" },
+		"https://github.com/acme/repo/blob/release%2F2.1/src/a.ts#L12",
+	],
+	[
+		{ repo: "github.com/acme/repo", path: "src/a.ts" },
+		"https://github.com/acme/repo/blob/HEAD/src/a.ts#L12",
+	],
+	// The repository root is a directory, which has no line to link to.
+	[{ repo: "github.com/acme/repo", path: "" }, "https://github.com/acme/repo/tree/HEAD"],
+] as const)(
+	"links a file at the line the caller found, on the ref the binding names %#",
+	(binding, expected) => {
+		expect(githubUrlForBinding(binding, 12)).toBe(expected);
+	},
+);

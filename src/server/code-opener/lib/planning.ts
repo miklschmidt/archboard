@@ -29,6 +29,24 @@ const PLATFORM_EXECUTABLES: Readonly<Record<string, string | undefined>> = {
 };
 
 /**
+ * The arguments with which a named editor opens a path, at a line where there is one.
+ * @param preset The editor.
+ * @param target The path to open.
+ * @param line The line to open at, if there is one.
+ * @returns Its arguments.
+ */
+function presetArguments(
+	preset: keyof typeof PRESET_EXECUTABLES,
+	target: string,
+	line: number | undefined,
+): string[] {
+	if (line === undefined) {
+		return [target];
+	}
+	return preset === "zed" ? [`${target}:${line}`] : ["--goto", `${target}:${line}`];
+}
+
+/**
  * Builds the failure that names an unusable opener selection.
  * @param error Why the selection is refused.
  * @returns The configuration-invalid failure.
@@ -53,45 +71,82 @@ function validateOpenerSelection(selection: unknown): OpenerSelection | OpenerSe
 	return parsed.data;
 }
 
+/** What a plan may depend on besides the selection and the path. */
+interface PlanOptions {
+	/** The line to open at, where the binding's symbol was found. */
+	line?: number | undefined;
+	/** The platform whose native opener a platform selection maps to. */
+	platform?: string;
+}
+
 /**
- * Turns a selection into the command line that opens one target path.
+ * The arguments of a custom opener, with its tokens replaced.
+ * @param argv The arguments as the selection spells them.
+ * @param target The path to open, for `{path}`.
+ * @param line The line to open at, for `{line}`, which reads 1 where there is none.
+ * @returns The arguments to run with.
+ */
+function customArguments(argv: readonly string[], target: string, line: number | undefined) {
+	// Both tokens in one pass, so a path that happens to contain `{line}` is never read as one.
+	const tokens = /\{path\}|\{line\}/gu;
+	return argv.map((argument) =>
+		argument.replace(tokens, (token) => (token === PATH_TOKEN ? target : String(line ?? 1))),
+	);
+}
+
+/**
+ * Turns a selection into the command line that opens one target path, at a
+ * line where the opener can say so. The editors that Archboard names open at a
+ * line: `code` and `cursor` with `--goto path:line`, `zed` with `path:line`. The
+ * native opener of a platform has no line, so it opens the file. A custom opener
+ * gets the line only where its argument writes `{line}`, and reads 1 where the
+ * binding has no line.
  * @param selection The opener selection to plan for.
  * @param target The path to open, substituted for the path token in a custom argv.
- * @param platform The platform whose native opener a platform selection maps to.
+ * @param options What else the plan depends on: the line to open at, and the
+ * platform whose native opener a platform selection maps to.
  * @returns The planned command, or the failure when the selection cannot be planned here.
  */
 function planOpenerCommand(
 	selection: OpenerSelection,
 	target: string,
-	platform: string = process.platform,
+	options: PlanOptions = {},
 ): OpenerPlan {
 	const validated = validateOpenerSelection(selection);
 	if ("ok" in validated) {
 		return validated;
 	}
 	if (validated.kind === "platform") {
-		const executable = PLATFORM_EXECUTABLES[platform];
-		return executable
-			? { ok: true, command: { executable, argv: [target] } }
+		return planPlatformOpener(target, options.platform ?? process.platform);
+	}
+	const command =
+		validated.kind === "preset"
+			? {
+					executable: PRESET_EXECUTABLES[validated.preset],
+					argv: presetArguments(validated.preset, target, options.line),
+				}
 			: {
-					ok: false,
-					code: "OPENER_PLATFORM_UNSUPPORTED",
-					error: `Archboard has no native opener for ${platform}. Choose a custom opener.`,
+					executable: validated.executable,
+					argv: customArguments(validated.argv, target, options.line),
 				};
-	}
-	if (validated.kind === "preset") {
-		return {
-			ok: true,
-			command: { executable: PRESET_EXECUTABLES[validated.preset], argv: [target] },
-		};
-	}
-	return {
-		ok: true,
-		command: {
-			executable: validated.executable,
-			argv: validated.argv.map((argument) => argument.replace(PATH_TOKEN, target)),
-		},
-	};
+	return { ok: true, command };
+}
+
+/**
+ * The plan for the native opener of a platform, which has no line.
+ * @param target The path to open.
+ * @param platform The platform.
+ * @returns The command, or the failure when Archboard knows no native opener there.
+ */
+function planPlatformOpener(target: string, platform: string): OpenerPlan {
+	const executable = PLATFORM_EXECUTABLES[platform];
+	return executable
+		? { ok: true, command: { executable, argv: [target] } }
+		: {
+				ok: false,
+				code: "OPENER_PLATFORM_UNSUPPORTED",
+				error: `Archboard has no native opener for ${platform}. Choose a custom opener.`,
+			};
 }
 
 export {
@@ -99,6 +154,7 @@ export {
 	type OpenerPlanFailure,
 	type OpenerPlan,
 	type OpenerSelectionInvalid,
+	type PlanOptions,
 	validateOpenerSelection,
 	planOpenerCommand,
 };

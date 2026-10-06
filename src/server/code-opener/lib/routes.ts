@@ -41,6 +41,7 @@ import {
 	resolveOpenerCommand,
 	type LaunchResult,
 } from "@/server/code-opener/lib/launch";
+import { symbolLine } from "@/server/code-opener/lib/symbol-line";
 import {
 	planOpenerCommand,
 	validateOpenerSelection,
@@ -146,8 +147,8 @@ function canonicalBinding(boardKey: string, subjectId: string): BindingLookup {
 			error: `${subjectId} is not a node on this board.`,
 		};
 	}
-	// The opener opens the bound file or directory and ignores a binding's
-	// `symbol` until opening at the definition lands (TASK-367.25, ADR 0046).
+	// The binding keeps its `symbol`: the opener opens the bound file at the line that
+	// defines it where code facts find one (ADR 0046).
 	const parsed = CodeBindingSchema.safeParse(node.binding);
 	return parsed.success
 		? { ok: true, binding: parsed.data }
@@ -258,14 +259,16 @@ function statusFor(code: CodeTargetFailureCode): number {
  * @param failure The failure code and message.
  * @param status The HTTP status; defaults to the code's status.
  * @param binding The binding whose GitHub link is offered as a fallback, when known.
+ * @param line The line of its symbol in a checkout that has the bound ref out, which the link names.
  */
 function sendFailure(
 	response: Response,
 	failure: RouteFailure,
 	status = statusFor(failure.code),
 	binding?: CodeBinding,
+	line?: number,
 ): void {
-	const github = binding ? githubUrlForBinding(binding) : undefined;
+	const github = binding ? githubUrlForBinding(binding, line) : undefined;
 	const actions = [
 		...(failure.code.startsWith("OPENER_")
 			? [{ kind: "settings" as const, label: "Opener settings" as const }]
@@ -397,14 +400,16 @@ export function createCodeOpenerPreguard(): Router {
  * @param selection The opener selection to plan with.
  * @param target The path to open.
  * @param launch The launcher to run the planned command.
+ * @param line The line to open at, when the opener can.
  * @returns The launch result, or the plan failure that prevented a launch.
  */
 async function planAndLaunch(
 	selection: OpenerSelection,
 	target: string,
 	launch: CodeOpenerRouteDependencies["launch"],
+	line?: number,
 ): Promise<OpenerPlan | LaunchResult> {
-	const plan = planOpenerCommand(selection, target);
+	const plan = planOpenerCommand(selection, target, { line });
 	return plan.ok ? launch(plan.command) : plan;
 }
 
@@ -556,12 +561,20 @@ export function createCodeOpenerRouter(
 				if (!opening.ok)
 					return sendFailure(response, opening.failure, opening.status, found.binding);
 				const { target } = opening;
+				// A checkout on another ref never gets here with a GitHub link, because it was
+				// refused above, so a line found in this checkout is the line at the linked ref.
+				const line = await symbolLine(found.binding, target, signal);
 				const current = readOpenerSelection();
 				if (!current.ok)
-					return sendFailure(response, current, statusFor(current.code), found.binding);
-				const launched = await planAndLaunch(current.selection, target.target, dependencies.launch);
+					return sendFailure(response, current, statusFor(current.code), found.binding, line);
+				const launched = await planAndLaunch(
+					current.selection,
+					target.target,
+					dependencies.launch,
+					line,
+				);
 				if (!launched.ok)
-					return sendFailure(response, launched, statusFor(launched.code), found.binding);
+					return sendFailure(response, launched, statusFor(launched.code), found.binding, line);
 				response.json(openedReply(target));
 			}),
 		),

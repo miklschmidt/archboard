@@ -3,6 +3,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import type { OpenerSelection } from "@/shared/code-target";
 import {
 	planOpenerCommand,
 	readOpenerSelection,
@@ -69,20 +70,34 @@ describe("machine opener state", () => {
 	});
 });
 
+/**
+ * A custom opener selection.
+ * @param argv Its arguments.
+ * @returns The selection.
+ */
+const custom = (argv: string[]): OpenerSelection => ({
+	version: 1,
+	kind: "custom",
+	executable: "/opt/editor",
+	argv,
+});
+
 describe("pure opener plans", () => {
 	test.each([
 		["darwin", "open"],
 		["linux", "xdg-open"],
 		["win32", "explorer.exe"],
 	] as const)("uses the %s native default", (platform, executable) => {
-		expect(planOpenerCommand({ version: 1, kind: "platform" }, "/repo/a b", platform)).toEqual({
+		expect(planOpenerCommand({ version: 1, kind: "platform" }, "/repo/a b", { platform })).toEqual({
 			ok: true,
 			command: { executable, argv: ["/repo/a b"] },
 		});
 	});
 
 	test("returns a typed unsupported-platform result", () => {
-		expect(planOpenerCommand({ version: 1, kind: "platform" }, "/repo", "freebsd")).toMatchObject({
+		expect(
+			planOpenerCommand({ version: 1, kind: "platform" }, "/repo", { platform: "freebsd" }),
+		).toMatchObject({
 			ok: false,
 			code: "OPENER_PLATFORM_UNSUPPORTED",
 		});
@@ -93,10 +108,43 @@ describe("pure opener plans", () => {
 		["cursor", "cursor"],
 		["zed", "zed"],
 	] as const)("plans the %s preset", (preset, executable) => {
-		expect(planOpenerCommand({ version: 1, kind: "preset", preset }, "/repo", "linux")).toEqual({
+		expect(
+			planOpenerCommand({ version: 1, kind: "preset", preset }, "/repo", { platform: "linux" }),
+		).toEqual({
 			ok: true,
 			command: { executable, argv: ["/repo"] },
 		});
+	});
+
+	test.each([
+		["vscode", ["--goto", "/repo/a b.ts:42"]],
+		["cursor", ["--goto", "/repo/a b.ts:42"]],
+		["zed", ["/repo/a b.ts:42"]],
+	] as const)("opens the %s preset at the line", (preset, argv) => {
+		const plan = planOpenerCommand({ version: 1, kind: "preset", preset }, "/repo/a b.ts", {
+			line: 42,
+		});
+		expect(plan).toMatchObject({ ok: true, command: { argv } });
+	});
+
+	test("the native opener has no line, and a custom one gets it only where it writes {line}", () => {
+		expect(
+			planOpenerCommand({ version: 1, kind: "platform" }, "/repo/a.ts", {
+				line: 7,
+				platform: "linux",
+			}),
+		).toMatchObject({ ok: true, command: { argv: ["/repo/a.ts"] } });
+		const goto = custom(["--goto", "{path}:{line}", "--again={line}"]);
+		expect(planOpenerCommand(goto, "/repo/a.ts", { line: 7 })).toMatchObject({
+			command: { argv: ["--goto", "/repo/a.ts:7", "--again=7"] },
+		});
+		expect(planOpenerCommand(goto, "/repo/a.ts")).toMatchObject({
+			command: { argv: ["--goto", "/repo/a.ts:1", "--again=1"] },
+		});
+		// A path that spells the token is a path, not a second substitution.
+		expect(
+			planOpenerCommand(custom(["{path}", "{line}"]), "/repo/{line}.ts", { line: 3 }),
+		).toMatchObject({ command: { argv: ["/repo/{line}.ts", "3"] } });
 	});
 
 	test("substitutes one custom path without shell parsing", () => {
@@ -109,7 +157,7 @@ describe("pure opener plans", () => {
 					argv: ["--literal=$HOME;touch /tmp/no", "prefix={path}"],
 				},
 				"/repo/a b",
-				"linux",
+				{ platform: "linux" },
 			),
 		).toEqual({
 			ok: true,
@@ -125,7 +173,7 @@ describe("pure opener plans", () => {
 			planOpenerCommand(
 				{ version: 1, kind: "custom", executable: "./editor", argv: ["{path}"] },
 				"/repo",
-				"linux",
+				{ platform: "linux" },
 			),
 		).toMatchObject({ ok: false, code: "OPENER_CONFIG_INVALID" });
 	});

@@ -285,7 +285,9 @@ describe("shell-free launcher lifecycle", () => {
 		resources.defer(() => fixture.dispose());
 		const invocation = fixture.invocation("hold");
 		resources.defer(() => invocation.releaseAndWaitForNonrunning());
-		const plan = planOpenerCommand(invocation.selection, fixture.checkout, process.platform);
+		const plan = planOpenerCommand(invocation.selection, fixture.checkout, {
+			platform: process.platform,
+		});
 		if (!plan.ok) {
 			throw new Error(`${plan.code}: ${plan.error}`);
 		}
