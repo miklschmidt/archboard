@@ -136,9 +136,10 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *   (TASK-367.13). Its `detail` names the language and why.
  * - `language-server-unready`: a project the language server cannot answer
  *   about yet, such as a Swift package that no build has indexed, which the
- *   check never builds (TASK-367.16). Said once for the project, with its
- *   checkout's `repo`; its uses stay as code facts read them. Its `detail`
- *   names the language, the project and why.
+ *   check never builds (TASK-367.16), or a C# checkout with no solution or
+ *   project file for csharp-ls to load (TASK-367.14). Said once for the
+ *   project, with its checkout's `repo`; its uses stay as code facts read
+ *   them. Its `detail` names the language, the project and why.
  * - `language-server-failed`: a language server that did not start, did not
  *   answer in time or ended in one checkout. Said once for the checkout and
  *   the language; its uses there stay as code facts read them. Its `detail`
