@@ -1,3 +1,4 @@
+import path from "node:path";
 import { z } from "zod";
 import { defineCommand } from "@/cli/command-contract/contract";
 import { serverRefusal } from "@/cli/command-contract/common";
@@ -26,25 +27,37 @@ const output = {
 /**
  * Run the code check on the Archboard server.
  * @param variant The draft to read on every board that has one, if any.
+ * @param plans The plan JSON files named, resolved against this directory,
+ * because the server runs elsewhere.
  * @param signal Cancels the request, which cancels the check.
  * @returns Its answer.
  */
 async function codeCheckOnServer(
 	variant: string | undefined,
+	plans: readonly string[],
 	signal: AbortSignal,
 ): Promise<CodeCheckAnswer> {
-	const query = variant === undefined ? "" : `?${new URLSearchParams({ variant })}`;
+	const asked = new URLSearchParams(variant === undefined ? [] : [["variant", variant]]);
+	for (const plan of plans) asked.append("plan", path.resolve(plan));
+	const query = asked.toString() === "" ? "" : `?${asked}`;
 	return CodeCheckAnswerSchema.parse(
 		await requestJson<unknown>(`/api/vault/code-check${query}`, { signal }),
 	);
 }
 
-const CheckInputSchema = z.object({ code: z.boolean().optional(), variant: z.string().optional() });
+const CheckInputSchema = z.object({
+	code: z.boolean().optional(),
+	variant: z.string().optional(),
+	plan: z.array(z.string()).optional(),
+});
 
-/** `--variant` names the draft the code check reads, so it means nothing without `--code`. */
+/** `--variant` and `--plan` name what the code check reads, so they mean nothing without `--code`. */
 const CheckRequestSchema = CheckInputSchema.refine(
 	(input) => input.variant === undefined || input.code === true,
 	"--variant names the draft the code check reads: use it with --code",
+).refine(
+	(input) => input.plan === undefined || input.code === true,
+	"--plan names a plan JSON the code check reads: use it with --code",
 );
 
 const noSuchDraftRefusal = {
@@ -52,6 +65,14 @@ const noSuchDraftRefusal = {
 	exit: 2,
 	stream: "stderr" as const,
 	description: "--variant names no draft on any board. The refusal names the drafts that exist.",
+};
+
+const planRefusal = {
+	code: "PLAN_REFUSED",
+	exit: 2,
+	stream: "stderr" as const,
+	description:
+		"--plan names a file outside every registered checkout, Terraform state, a variable file or a file under .terraform, or a file that is not a plan JSON. The refusal names the plan and why.",
 };
 
 /**
@@ -75,11 +96,12 @@ const checkContract = defineCommand({
 	shared: ["url"],
 	summary: "Check configuration and every board family in the vault",
 	description:
-		"Reports invalid configuration, unreadable boards and removed vocabulary references. With --code it then runs the code check over the current variant of every board: an anchor whose file is not in its checkout or does not hold its symbol, a bound symbol that the bound file or directory does not define, and an anchor whose symbol is defined outside the bound code of both ends or that the file uses only as evidence the relationship's kind does not accept (ANCHOR_MISMATCH), each a warning. From the code that joins the bound parts of a board it reports a part that other bound parts reach with no relationship between them (RELATIONSHIP_UNDRAWN), a warning unless its evidence is only matched by name, and, as information, a relationship with no anchor whose accepted evidence runs only the other way (RELATIONSHIP_BACKWARDS) or does not join its ends (RELATIONSHIP_UNSUPPORTED); the evidence list of each relationship kind in the vault configuration says what it accepts. It reads TypeScript and TSX by their syntax and every other file as text, only files Git does not ignore, in checkouts this machine has registered, and lists what it skipped with the reason, such as a symbol found only in code that did not parse (symbol-unparsed). It also says how far each board is behind the commits to its bound files, which is information. --variant reads the named draft on every board that has one and the current variant elsewhere, and also warns about a bound path the draft names that is not in its checkout. Exit 1 means the vault still has diagnostics or the code check a warning; no board is changed.",
+		"Reports invalid configuration, unreadable boards and removed vocabulary references. With --code it then runs the code check over the current variant of every board: an anchor whose file is not in its checkout or does not hold its symbol, a bound symbol that the bound file or directory does not define, and an anchor whose symbol is defined outside the bound code of both ends or that the file uses only as evidence the relationship's kind does not accept (ANCHOR_MISMATCH), each a warning. From the code that joins the bound parts of a board it reports a part that other bound parts reach with no relationship between them (RELATIONSHIP_UNDRAWN), a warning unless its evidence is only matched by name, and, as information, a relationship with no anchor whose accepted evidence runs only the other way (RELATIONSHIP_BACKWARDS) or does not join its ends (RELATIONSHIP_UNSUPPORTED); the evidence list of each relationship kind in the vault configuration says what it accepts. For a container bound to a module (a directory, or the index.ts or __init__.py that stands for it) it holds the interface the board derives against what the module exposes: an entry point that owns nothing the module exposes while the code of a caller drawn to it reaches it from outside the module (ENTRY_POINT_UNEXPOSED) and a hidden part whose exposed code a file outside the module that no part binds uses at run time (CALLER_UNDRAWN) are warnings, and the exposed names that no file outside the module uses (EXPOSED_UNUSED) are information; a module whose root files it cannot read is skipped (exposure-unknown). It reads TypeScript, TSX and Python by their syntax and every other file as text, only files Git does not ignore, in checkouts this machine has registered, and lists what it skipped with the reason, such as a symbol found only in code that did not parse (symbol-unparsed). A part bound to a Terraform or OpenTofu root module, a directory of .tf or .tofu files, names an address there as its symbol, such as module.queue.aws_sqs_queue.this: the check reads the root module and the local modules it calls, never state, a variable file or .terraform, and never runs terraform or tofu; a reference that joins two such parts is configured-path evidence, and an address inside a remote module is skipped (module-not-read) unless --plan names a plan for that root. It also says how far each board is behind the commits to its bound files, which is information. --variant reads the named draft on every board that has one and the current variant elsewhere, and also warns about a bound path the draft names that is not in its checkout. Exit 1 means the vault still has diagnostics or the code check a warning; no board is changed.",
 	examples: [
 		"archboard check",
 		"archboard check --code",
 		"archboard check --code --variant TASK-123",
+		"archboard check --code --plan infra/plan.json",
 	],
 	parameters: [
 		{
@@ -87,7 +109,7 @@ const checkContract = defineCommand({
 			key: "code",
 			spellings: ["--code"],
 			value: "none",
-			requiredWhen: "with --variant",
+			requiredWhen: "with --variant or --plan",
 			description:
 				"Then run the code check, which reads the code and Git history of every registered checkout",
 		},
@@ -100,6 +122,16 @@ const checkContract = defineCommand({
 			description:
 				"With --code, read this draft on every board that has one, and the current variant elsewhere",
 		},
+		{
+			kind: "option",
+			key: "plan",
+			spellings: ["--plan"],
+			value: "required",
+			occurrences: "append",
+			placeholder: "file",
+			description:
+				"With --code, read this plan JSON from terraform show -json or tofu show -json, inside a registered checkout, for the root module of its directory: only its addresses and references, for the modules the check does not read",
+		},
 	],
 	input: {
 		ingress: CheckInputSchema,
@@ -107,8 +139,8 @@ const checkContract = defineCommand({
 			{
 				name: "code-check-variant",
 				when: "before-server",
-				description: "A named draft is read by the code check only",
-				rules: ["Refuse --variant without --code"],
+				description: "A named draft and a named plan are read by the code check only",
+				rules: ["Refuse --variant without --code", "Refuse --plan without --code"],
 				schema: CheckRequestSchema,
 			},
 		],
@@ -140,7 +172,7 @@ const checkContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: [serverRefusal, noSuchDraftRefusal],
+	refusals: [serverRefusal, noSuchDraftRefusal, planRefusal],
 	relationships: [
 		{
 			method: "GET",
@@ -175,7 +207,9 @@ const checkContract = defineCommand({
 		await context.require("server", "check");
 		const result = await checkSemanticVaultOnServer();
 		const codeCheck =
-			request.code === true ? await codeCheckOnServer(request.variant, context.signal) : undefined;
+			request.code === true
+				? await codeCheckOnServer(request.variant, request.plan ?? [], context.signal)
+				: undefined;
 		return {
 			result: codeCheck === undefined ? result : { ...result, codeCheck },
 			...(failsCheck(result, codeCheck) ? { outcome: "issues" } : {}),
