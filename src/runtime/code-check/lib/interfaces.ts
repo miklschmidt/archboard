@@ -149,6 +149,23 @@ async function usesIn(
 }
 
 /**
+ * What a module exposes, leaving out a file of tests at its root, such as
+ * `ledger.test.ts` beside `ledger.ts`: a test exposes nothing to a caller.
+ * @param exposure What the module's root files expose.
+ * @returns It without the tests, or undefined when only tests are at its root.
+ */
+function withoutTests(exposure: ModuleExposure | undefined): ModuleExposure | undefined {
+	if (exposure === undefined) return undefined;
+	const { directory } = exposure;
+	const rootFiles = exposure.rootFiles.filter(
+		(file) => !isTestPath(directory === "" ? file : file.slice(directory.length + 1)),
+	);
+	if (rootFiles.length === 0) return undefined;
+	const exposed = exposure.exposed.filter((name) => rootFiles.includes(name.via[0] ?? name.path));
+	return { ...exposure, rootFiles, exposed };
+}
+
+/**
  * What a module exposes and how the files outside it use it, read once in a pass.
  * @param reading The board and the pass.
  * @param checkout The module's checkout.
@@ -164,7 +181,7 @@ function moduleReading(
 	let found = reading.modules.get(key);
 	if (found === undefined) {
 		found = (async () => {
-			const exposure = await moduleExposure(reading.facts, checkout, directory);
+			const exposure = withoutTests(await moduleExposure(reading.facts, checkout, directory));
 			if (exposure === undefined) return undefined;
 			const uses: OutsideUse[] = [];
 			for (const file of exposure.outside) {
