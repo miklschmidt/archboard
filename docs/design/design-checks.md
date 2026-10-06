@@ -244,6 +244,59 @@ right:
   because the proxy depends on the backend. An anchor at `services.dbx` is
   `ANCHOR_SYMBOL_MISSING`.
 
+#### Reading Nix flakes
+
+TASK-367.21 measured the Nix adapter on 2026-10-06 with Bun 1.4.2. It read the
+flakes of six public repositories, cloned into a scratch directory: helix
+(`ba40e54`), ghostty (`c3203ea`), home-manager (`0e11b7b`), disko
+(`725ea35`), nixvim (`8fbc7d3`) and nixpkgs (`9af746aa`, `flake.nix` only).
+One process read the six `flake.nix` files and five `flake.lock` files. The
+first `flake.nix`, with the grammar load, took 13 to 17 ms. Each other one
+took 0.4 to 4.2 ms, and each lock less than 1 ms. The next pass took every
+file from the cache.
+
+What the static reading found:
+
+- helix: every output. Its systems are `lib.systems.flakeExposed`, so `*`
+  stands for each system: `packages.*.helix`, `packages.*.default`,
+  `checks.*.helix` and `devShells.*.default`, which come through
+  `lib.mapAttrs`, and `overlays.helix` and `overlays.default`.
+- ghostty: 34 outputs. Its systems come from an input
+  (`lib.attrNames zig.packages`), and its packages from
+  `builtins.foldl' lib.recursiveUpdate` over a list of sets. Only the names
+  below `checks.*` are unknown.
+- home-manager: 69 outputs. A list names the four systems that get a shell.
+  `lib` is an `import`, so its names are unknown.
+- disko: 89 outputs for the five systems that a list names. The names that
+  `//` adds to the packages and checks of each system from a call of a local
+  function are unknown.
+- nixvim: no output. Its flake-parts module imports `./flake`, which the check
+  does not read, so every name is unknown.
+- nixpkgs: 18 outputs. The names below `lib`, `legacyPackages.*` and the
+  `formatter` that `lib.filterAttrs` gives are unknown.
+
+A temporary vault with six boards bound 27 parts to outputs and to
+`flake.lock`. Six relationships had anchors at lock inputs. The real check
+took 445 ms cold and 372 ms warm. Most of that time is Git listing the files
+of the nixpkgs checkout. Each finding was right:
+
+- `BINDING_SYMBOL_MISSING`: `packages.x86_64-linux.hx-lsp` in helix and
+  `nixosModules.readOnlyPkgz` in nixpkgs, which are not outputs, and
+  `devShells.x86_64-darwin.default` in home-manager, which gives a shell only
+  for the four systems of its list.
+- The anchors at `inputs.nixpkgs` and `rust-overlay` (helix), `inputs.zig`
+  (ghostty) and `inputs.flake-parts` (nixvim) hold and support their
+  `dependency` relationships. The same input as the anchor of a `call` is
+  `ANCHOR_MISMATCH`, information, because a lock input is build-dependency
+  evidence. An anchor at `inputs.flake-utils`, which helix does not use, is
+  `ANCHOR_SYMBOL_MISSING`.
+- Six parts were skipped as `symbol-unparsed`, each with the lines of the
+  expression that the reading cannot follow: a check of ghostty and one of
+  disko, `lib.hm.dag` of home-manager, nixvim's
+  `packages.x86_64-linux.default`, and `legacyPackages.x86_64-linux.hello` and
+  `lib.nixosSystem` of nixpkgs.
+- Every other part held its output.
+
 #### Resolving candidates with the TypeScript language server
 
 TASK-367.13 measured the language server on 2026-10-06. It used Bun 1.4.2 and
@@ -435,6 +488,25 @@ A part binds to a resource address as it binds to a code symbol. Examples are
 Nix says nothing about run time. It shows software dependencies that are not
 explicit anywhere else: flake inputs, and the packages that a derivation is
 built from.
+
+The check reads a flake without evaluating it (TASK-367.21). `flake.lock` is
+JSON. Each input of its root node is build-dependency evidence of the flake,
+at the line that names the input. The inputs of an input are not the flake's.
+An input reaches code that the check reads only where it is a path in the same
+checkout, and then it reaches the part bound to that flake. `flake.nix` is
+parsed with the Nix grammar, and a static reading gives each output by its
+attribute path. The reading follows attribute sets, `let ... in`, `with`, the
+functions that the file writes and applies, `//` and `++`. It also follows the
+library functions that flakes use to give outputs for each system: `genAttrs`,
+`mapAttrs`, `foldl'`, `recursiveUpdate`, `optionalAttrs`, flake-utils'
+`eachSystem`, `eachDefaultSystem` and `defaultSystems`, and flake-parts'
+`mkFlake`. A list of systems that it cannot read gives the name `*`, which
+stands for each system. Everything else is unknown at its lines: an `import`,
+a builtin, an `if`, the value of an input. A name below an unknown expression
+is skipped as `symbol-unparsed`, never reported missing. The reading stops
+where the flake schema names an output, such as `packages.<system>.<name>` or
+`overlays.<name>`, because what a derivation or a module holds is not an
+output. Other `.nix` files are read as text.
 
 A compose file is one that compose finds by itself in a directory:
 `compose.yaml`, `compose.yml`, `docker-compose.yml` or `docker-compose.yaml`,
