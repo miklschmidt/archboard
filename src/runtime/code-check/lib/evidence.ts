@@ -30,8 +30,9 @@
 // In a Nix flake, the code of a part may hold an expression the static
 // reading cannot follow, such as a package `callPackage` builds from another
 // file: what that code is built from is unknown there (TASK-367.22). The
-// evidence notes, for each part, the first such expression its code holds, so
-// that the relationships it starts are not judged unsupported.
+// evidence notes, for each part that owns a line of such an expression, the
+// first one in each flake, so that a relationship it starts to an output of
+// that flake is not judged unsupported.
 
 import { moduleLevelDefinition } from "@/runtime/code-check/lib/module-level";
 import {
@@ -63,9 +64,10 @@ interface BoardEvidence {
 	readonly parsed: ReadonlyMap<string, ReadonlySet<string>>;
 	/**
 	 * For each part whose code holds a Nix expression the static reading cannot
-	 * follow, by its id: the file and lines of the first one.
+	 * follow, by its id: each Nix file that holds one, by its repository and
+	 * path, with the file and the lines of the first (`flake.nix:12-14`).
 	 */
-	readonly unfollowed: ReadonlyMap<string, string>;
+	readonly unfollowed: ReadonlyMap<string, ReadonlyMap<string, string>>;
 }
 
 /** What reading the evidence needs. */
@@ -95,7 +97,7 @@ interface RepoReading {
 	/** Each part and its containers. */
 	readonly lineages: ReadonlyMap<string, ReadonlySet<string>>;
 	/** The parts whose code holds a Nix expression the reading cannot follow, which the reading adds to. */
-	readonly unfollowed: Map<string, string>;
+	readonly unfollowed: Map<string, Map<string, string>>;
 }
 
 /**
@@ -378,20 +380,39 @@ async function piecesOfPath(
 }
 
 /**
- * Note the parts whose code holds a part of a Nix file that the static
+ * Note the parts that own a line of a part of a Nix file that the static
  * reading cannot follow, or that did not parse: what that code is built from
- * is unknown there.
+ * is unknown there, and a piece of evidence at any of its lines would be
+ * theirs.
  * @param repo The repository's reading, which this adds to.
  * @param facts The file's facts.
  */
 function noteUnfollowed(repo: RepoReading, facts: SyntaxFacts): void {
 	if (facts.adapter !== "nix") return;
 	for (const { start, end } of facts.unparsed) {
-		const detail = `${facts.path}:${start === end ? start : `${start}-${end}`}`;
-		for (const owner of ownersAtLine(repo.owners, facts.path, start)) {
-			if (!repo.unfollowed.has(owner.node.id)) repo.unfollowed.set(owner.node.id, detail);
+		const at = `${facts.path}:${start === end ? start : `${start}-${end}`}`;
+		const file = `${repo.checkout.repo}\0${facts.path}`;
+		for (const owner of ownersOfLines(repo.owners, facts.path, start, end)) {
+			const files = repo.unfollowed.get(owner.node.id) ?? new Map<string, string>();
+			repo.unfollowed.set(owner.node.id, new Map([[file, at], ...files]));
 		}
 	}
+}
+
+/**
+ * The parts that own some line of a file.
+ * @param owners The repository's parts.
+ * @param file The file.
+ * @param start The first line.
+ * @param end The last line.
+ * @returns Each part that owns one of the lines, once.
+ */
+function ownersOfLines(owners: Owners, file: string, start: number, end: number): Set<ReadPart> {
+	const found = new Set<ReadPart>();
+	for (let line = start; line <= end; line += 1) {
+		for (const owner of ownersAtLine(owners, file, line)) found.add(owner);
+	}
+	return found;
 }
 
 /**
@@ -420,7 +441,7 @@ async function evidenceInRepo(
 	parts: readonly [ReadPart, ...ReadPart[]],
 	reading: EvidenceReading,
 	lineages: ReadonlyMap<string, ReadonlySet<string>>,
-	unfollowed: Map<string, string>,
+	unfollowed: Map<string, Map<string, string>>,
 ): Promise<{ pieces: Piece[]; parsed: Set<string> }> {
 	const repo: RepoReading = {
 		reading,
@@ -458,7 +479,7 @@ async function evidenceOf(
 	const lineages = lineagesOf(codes);
 	const pieces: Piece[] = [];
 	const parsed = new Map<string, ReadonlySet<string>>();
-	const unfollowed = new Map<string, string>();
+	const unfollowed = new Map<string, Map<string, string>>();
 	for (const [repo, parts] of byRepo) {
 		// oxlint-disable-next-line no-await-in-loop -- one repository at a time, in board order
 		const read = await evidenceInRepo(parts, reading, lineages, unfollowed);
