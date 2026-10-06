@@ -10,23 +10,44 @@ import { cameraTransform, type Size } from "@/ui/semantic-board-canvas/lib/camer
 /** Where a press on the diagram stands: none, pressed, or moving the diagram. */
 type Gesture = "idle" | "pressed" | "dragging";
 
+/** The surface's own classes, whatever moves it. */
+const SURFACE_CLASS = "absolute top-0 left-0 origin-top-left select-none";
+
+/** The short ease of a keyed move or a fit. */
+const EASED_CLASS = "transition-transform duration-100 ease-out motion-reduce:transition-none";
+
+/**
+ * The class that makes the surface a layer of its own while a hand moves it: a
+ * drag, a wheel, a pinch or a key. The browser then moves and scales the picture
+ * it already drew instead of painting it again on every frame. At rest the
+ * layer goes, and the picture is drawn sharp once at its new size (TASK-405).
+ * @param gesture Where a press on the diagram stands.
+ * @param moving Whether a hand moves the camera and it has not come to rest.
+ * @returns The class, with the space before it, or nothing.
+ */
+function layerClass(gesture: Gesture, moving: boolean): string {
+	return gesture === "dragging" || moving ? " will-change-transform" : "";
+}
+
 /**
  * The surface's classes: a transition for a keyed move or a fit, and none
  * while the diagram is pressed, since a pan is meant to track the pointer, nor
  * for a move that follows the picture, which must land in the frame the picture
- * does. While a drag moves it, the surface is a layer of its own, so the browser
- * moves the picture it already drew instead of drawing it again on every frame.
+ * does.
  * @param gesture Where a press on the diagram stands.
  * @param reducedMotion Whether the person asked for reduced motion.
  * @param following Whether the camera last moved to follow the picture.
+ * @param moving Whether a hand moves the camera and it has not come to rest.
  * @returns The class list.
  */
-function surfaceClass(gesture: Gesture, reducedMotion: boolean, following = false): string {
-	const base = "absolute top-0 left-0 origin-top-left select-none";
-	if (gesture === "dragging") return `${base} will-change-transform`;
-	return gesture === "pressed" || reducedMotion || following
-		? base
-		: `${base} transition-transform duration-100 ease-out motion-reduce:transition-none`;
+function surfaceClass(
+	gesture: Gesture,
+	reducedMotion: boolean,
+	following: boolean,
+	moving: boolean,
+): string {
+	const base = `${SURFACE_CLASS}${layerClass(gesture, moving)}`;
+	return gesture !== "idle" || reducedMotion || following ? base : `${base} ${EASED_CLASS}`;
 }
 
 /** What the surface the camera moves is drawn with. */
@@ -53,7 +74,7 @@ interface CameraSurfaceProps {
  */
 function CameraSurface(props: CameraSurfaceProps): JSX.Element {
 	const { attach, size, gesture, reducedMotion, marks } = props;
-	const { camera, instant } = useCameraView(props.camera);
+	const { camera, instant, moving } = useCameraView(props.camera);
 	const { width, height } = size;
 	const style = useMemo<CSSProperties>(
 		() => ({
@@ -71,7 +92,7 @@ function CameraSurface(props: CameraSurfaceProps): JSX.Element {
 			ref={attach}
 			data-slot="semantic-board-surface"
 			style={style}
-			className={`${surfaceClass(gesture, reducedMotion, instant)}${marks}`}
+			className={`${surfaceClass(gesture, reducedMotion, instant, moving)}${marks}`}
 		/>
 	);
 }

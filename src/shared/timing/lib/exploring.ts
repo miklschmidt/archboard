@@ -5,14 +5,17 @@
 /** The durations of exploring a board, in milliseconds. */
 const EXPLORING_MS = Object.freeze({
 	/**
-	 * How long the camera takes to cover most of the way to where a wheel, a
-	 * pinch or a key asked it to go: it covers 63 percent of what is left in this
-	 * time, and is within 5 percent of the end after three times it.
+	 * How long the camera takes to cover most of the way to where a wheel or a
+	 * key asked it to go: it covers 63 percent of what is left in this time, and
+	 * is within 5 percent of the end after three times it.
 	 *
 	 * Pulls against the hand. At 40 ms or less a wheel notch is a jump again; past
 	 * about 120 ms the picture is seen to trail a pointer that has stopped moving.
 	 * Because every input only moves where the camera is going, a hard flick of
 	 * the wheel adds up and eases once, instead of stuttering notch by notch.
+	 *
+	 * A pinch has no ease (TASK-405). The picture follows the fingers at once, as
+	 * it follows a drag.
 	 */
 	cameraEase: 80,
 	/**
@@ -30,15 +33,17 @@ const EXPLORING_MS = Object.freeze({
 	 */
 	cameraFrameLongest: 64,
 	/**
-	 * How long a wheel or a key must have left the camera alone before the traffic
-	 * of the picture begins to move again. A drag does not wait: traffic starts as
-	 * the hand lets go.
+	 * How long a hand must have left the camera alone before the camera is at
+	 * rest. At rest the picture is drawn sharp at its new size, the far view
+	 * follows the new zoom, and the traffic of the picture begins to move again.
+	 * A drag does not wait for its traffic: traffic starts as the hand lets go.
 	 *
-	 * Pulls against the hand. A wheel is a run of turns with no end of its own, so
-	 * at 150 ms or less traffic wakes up between two turns of one zoom; past about
-	 * 600 ms a board the reader has let go of looks stalled.
+	 * Pulls against the hand. A wheel or a pinch is a run of turns with no end of
+	 * its own, so at 150 ms or less the picture is drawn again and its traffic
+	 * wakes up between two turns of one zoom. Past about 600 ms the picture stays
+	 * soft and a board the reader has let go of looks stalled.
 	 */
-	trafficRest: 400,
+	cameraRest: 400,
 	/**
 	 * How long traffic takes to come back to its full speed, from standing still.
 	 *

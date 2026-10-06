@@ -290,12 +290,14 @@ function drawnReading(
 }
 
 /**
- * Whether the camera is far enough away to draw each card's name in place of what it says.
- * @param view Where the camera is.
+ * Whether the camera, where it last came to rest, is far enough away to draw
+ * each card's name in place of what it says. Read at rest, so a zoom or a
+ * flight that crosses the line swaps the two once, when it is over.
+ * @param view Where the camera is, and where it last came to rest.
  * @returns True when it is.
  */
 function seenFromFar(view: CameraView): boolean {
-	return view.camera.scale < FAR_SCALE;
+	return view.rest.scale < FAR_SCALE;
 }
 
 /**
@@ -353,8 +355,9 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	useSweep(picture, lighting.light, lighting.reach, reducedMotion);
 	useStickyHeads(picture, drawing.atlas);
 	// Seen from far away, each card's name is drawn larger in place of what it
-	// says it does, which nobody reads at that size. Read as a yes or no, so the
-	// diagram is drawn again only when it flips, not on every move of the camera.
+	// says it does, which nobody reads at that size. Read as a yes or no where the
+	// camera rests, so the diagram is drawn again only when it flips, and never in
+	// the middle of a move.
 	const far = useCameraWith(camera, seenFromFar);
 	const marks = surfaceMarks({ veiled: props.veil !== null, far, probing: lighting.mode });
 	const tip = useSubjectTip({ drawing, camera });
@@ -384,7 +387,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	useEffect(() => {
 		if (gesture === "dragging") leave();
 	}, [gesture, leave]);
-	// A drag, a throw, a wheel or a key draws a frame for every move, and moving
+	// A drag, a pinch, a wheel or a key draws a frame for every move, and moving
 	// traffic paints its lines again in each of them. The traffic stands still until
 	// the camera has rested, and then comes back gently.
 	useTrafficRest(surface, camera, gesture === "dragging");
@@ -435,7 +438,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 					{...pointer}
 					onPointerLeave={onPointerLeave}
 					onWheel={dismissTip}
-					className={`relative flex min-h-0 min-w-0 flex-1 overflow-hidden outline-none ${
+					className={`relative flex min-h-0 min-w-0 flex-1 touch-none overflow-hidden outline-none ${
 						gesture === "idle" ? "cursor-grab" : "cursor-grabbing"
 					}`}
 				>
