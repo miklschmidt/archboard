@@ -11,7 +11,8 @@
 //
 // A use that reaches its name through an import is resolved, because the
 // import path names the file, and so is a Terraform reference, which names its
-// address. Any other use is resolved once the language
+// address, and a flake input, which `flake.lock` pins to its source. Any other
+// use is resolved once the language
 // server of the file names its definition (TASK-367.13); until then it is a
 // candidate, and the finding is then information.
 
@@ -22,6 +23,9 @@ import { findSymbol, lastName, type FileFacts, type SyntaxFacts } from "@/runtim
 import type { CodeEvidence, CodeFinding } from "@/shared/code-check/index";
 import type { CodeAnchor } from "@/shared/code-target/index";
 import { describeSubject } from "@/shared/semantic-policy/index";
+
+/** The adapters whose every use names the address it reaches: a Terraform reference, a flake input. */
+const ADDRESSED: ReadonlySet<string> = new Set(["terraform", "nix"]);
 
 /** How the pass resolves the anchored file's uses through a language server. */
 interface KindResolution {
@@ -57,7 +61,7 @@ async function usesOf(
 			kind: use.kind,
 			resolution:
 				use.target !== undefined ||
-				facts.adapter === "terraform" ||
+				ADDRESSED.has(facts.adapter) ||
 				(await resolution.resolve(resolution.checkout, facts.path, use)).status !== "unknown"
 					? ("resolved" as const)
 					: ("candidate" as const),
