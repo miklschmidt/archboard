@@ -172,6 +172,44 @@ test("a wheel over the diagram zooms about the pointer, by how far it turned", a
 	}
 });
 
+test("a pinch, on a trackpad or with two fingers, moves the camera at once and asks for no frame", async () => {
+	server.reply = { status: 200, body: drawing(1) };
+	mountStage();
+	await settle();
+	const frames = takeFrames();
+	try {
+		// A trackpad pinches with a wheel that holds Control, ten times finer than a notch.
+		const pointer = [200, 150] as const;
+		const before = cameraNow();
+		act(() => {
+			viewport().dispatchEvent(wheelAt(-10, pointer, true));
+		});
+		const pinched = cameraNow();
+		expect(pinched.scale).toBeCloseTo(before.scale * 1.1, 6);
+		const [wasX, wasY] = diagramPointUnder(before, pointer);
+		const [isX, isY] = diagramPointUnder(pinched, pointer);
+		expect(isX).toBeCloseTo(wasX, 6);
+		expect(isY).toBeCloseTo(wasY, 6);
+
+		// Two fingers spread to twice as far apart: the picture is twice the size at once.
+		const touch = { pointerType: "touch", button: 0, buttons: 1, clientY: 200 };
+		act(() => {
+			fireEvent.pointerDown(viewport(), { ...touch, pointerId: 11, clientX: 300 });
+			fireEvent.pointerDown(viewport(), { ...touch, pointerId: 12, clientX: 400 });
+			fireEvent.pointerMove(viewport(), { ...touch, pointerId: 12, clientX: 500 });
+		});
+		expect(cameraNow().scale).toBeCloseTo(pinched.scale * 2, 6);
+		act(() => {
+			fireEvent.pointerUp(viewport(), { ...touch, pointerId: 12, clientX: 500 });
+			fireEvent.pointerUp(viewport(), { ...touch, pointerId: 11, clientX: 300 });
+		});
+		// Nothing was left for a frame to do.
+		expect(frames.asked()).toBe(0);
+	} finally {
+		frames.restore();
+	}
+});
+
 test("a camera at rest asks for no more frames", async () => {
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage();
@@ -380,16 +418,24 @@ test("a picture seen from far away is told so through a pan, and told again when
 		fireEvent.pointerUp(viewport(), { pointerId: 1, clientX: 90, clientY: 40 });
 	});
 	expect(surface().classList.contains("is-far")).toBe(true);
-	// Twenty presses ask for a zoom, and the far view ends as the camera comes close enough to read.
+	// Twenty presses ask for a zoom. While the hand moves the camera the surface
+	// is a layer of its own, and the far view holds, so nothing is swapped in the
+	// middle of the zoom.
 	const frames = takeFrames();
 	try {
 		for (let press = 0; press < 20; press += 1)
 			act(() => {
 				fireEvent.keyDown(viewport(), { key: "+" });
 			});
+		frames.run(EXPLORING_MS.cameraEase * 3);
+		expect(cameraNow().scale).toBeGreaterThan(0.75);
+		expect(surface().classList.contains("is-far")).toBe(true);
+		expect(surface().classList.contains("will-change-transform")).toBe(true);
 		frames.run(EXPLORING_MS.cameraEase * 20);
 	} finally {
 		frames.restore();
 	}
+	// At rest, close enough to read: the far view ends, and the picture is drawn again at its size.
 	expect(surface().classList.contains("is-far")).toBe(false);
+	expect(surface().classList.contains("will-change-transform")).toBe(false);
 });

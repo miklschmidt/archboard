@@ -4,7 +4,8 @@
 // what it landed on. One that travels further pans the diagram and picks
 // nothing. When the drag is let go the camera stops where it is drawn, however
 // fast the hand was moving: a picture that carries on alone moves the part the
-// reader aimed at out from under them.
+// reader aimed at out from under them. A second finger on a touch screen turns
+// the press into a pinch, which the picture follows at once.
 
 import {
 	useCallback,
@@ -17,6 +18,7 @@ import {
 import type { SemanticAtlas } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import type { Gesture } from "@/ui/semantic-board-canvas/components/CameraSurface";
 import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
+import { useTouchPinch } from "@/ui/semantic-board-canvas/hooks/use-touch-pinch";
 import {
 	capturePointer,
 	hasTravelled,
@@ -80,9 +82,18 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 	// box is null when no press is waiting to be spent, which is how a
 	// synthesised click is told from a real one.
 	const pressed = useRef<{ readonly subject: string | null } | null>(null);
+	const pinch = useTouchPinch(camera);
 
 	const onPointerDown = useCallback(
 		(event: PointerEvent<HTMLElement>): void => {
+			// A second finger makes the press a pinch, which moves the picture and picks nothing.
+			if (pinch.down(event)) {
+				drag.current = null;
+				dragged.current = true;
+				pressed.current = null;
+				setGesture("dragging");
+				return;
+			}
 			if (event.button !== 0) {
 				return;
 			}
@@ -105,7 +116,7 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 			setGesture("pressed");
 			dismissTip();
 		},
-		[atlas, camera, dismissTip],
+		[atlas, camera, dismissTip, pinch],
 	);
 
 	// A press whose end this viewport never saw, so it is over: forgotten, and
@@ -136,6 +147,9 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 
 	const onPointerMove = useCallback(
 		(event: PointerEvent<HTMLElement>): void => {
+			if (pinch.move(event)) {
+				return;
+			}
 			const started = drag.current;
 			if (started === null) {
 				onHover(event);
@@ -155,32 +169,43 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 			}
 			panStep(started, event);
 		},
-		[abandon, onHover, panStep],
+		[abandon, onHover, panStep, pinch],
 	);
 
-	const onPointerUp = useCallback((event: PointerEvent<HTMLElement>): void => {
-		const started = drag.current;
-		if (started?.pointerId !== event.pointerId) {
-			return;
-		}
-		pressed.current = { subject: started.pressed };
-		drag.current = null;
-		setGesture("idle");
-		if (started.captured) {
-			capturePointer(event.currentTarget, event.pointerId, false);
-		}
-	}, []);
+	const onPointerUp = useCallback(
+		(event: PointerEvent<HTMLElement>): void => {
+			if (pinch.up(event)) {
+				setGesture("idle");
+				return;
+			}
+			const started = drag.current;
+			if (started?.pointerId !== event.pointerId) {
+				return;
+			}
+			pressed.current = { subject: started.pressed };
+			drag.current = null;
+			setGesture("idle");
+			if (started.captured) {
+				capturePointer(event.currentTarget, event.pointerId, false);
+			}
+		},
+		[pinch],
+	);
 
 	// A gesture the browser took away never became a pick. Whatever the press
 	// landed on is forgotten, so the next click cannot inherit it.
 	const onPointerCancel = useCallback(
 		(event: PointerEvent<HTMLElement>): void => {
+			if (pinch.up(event)) {
+				setGesture("idle");
+				return;
+			}
 			if (drag.current?.pointerId !== event.pointerId) {
 				return;
 			}
 			abandon();
 		},
-		[abandon],
+		[abandon, pinch],
 	);
 
 	// A drag that ends on a card is not a pick: the person was moving the

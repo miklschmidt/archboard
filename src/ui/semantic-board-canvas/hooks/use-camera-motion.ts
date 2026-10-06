@@ -31,11 +31,13 @@ interface CameraStage {
 	 */
 	readonly read: () => Camera;
 	/**
-	 * Draw the camera somewhere, as a hand's move: a wheel, a pinch or a key.
+	 * Draw the camera somewhere, as a hand's move: a wheel or a key.
 	 * @param camera Where.
 	 * @param instant Whether the surface lands there at once, rather than easing there itself.
 	 */
 	readonly draw: (camera: Camera, instant: boolean) => void;
+	/** The ease has ended: the camera got where it was going, or was stopped on the way. */
+	readonly still: () => void;
 }
 
 /** The moves of a camera that run over many frames. */
@@ -54,6 +56,11 @@ interface CameraMotion {
 	readonly ease: (dx: number, dy: number) => void;
 	/** Stop where the camera is drawn, so whatever moves next starts from what was seen. */
 	readonly halt: () => void;
+	/**
+	 * Whether an ease is under way.
+	 * @returns True while the camera still runs toward where it was sent.
+	 */
+	readonly easing: () => boolean;
 }
 
 /**
@@ -68,12 +75,14 @@ function useCameraMotion(stage: CameraStage, reducedMotion: boolean): CameraMoti
 	const lastAt = useRef(0);
 
 	const halt = useCallback((): void => {
+		const easing = frame.current !== null;
 		if (frame.current !== null) {
 			frameClock().cancelFrame(frame.current);
 			frame.current = null;
 		}
 		motion.current = null;
-	}, []);
+		if (easing) stage.still();
+	}, [stage]);
 
 	const run = useCallback(
 		(next: Motion): void => {
@@ -100,7 +109,9 @@ function useCameraMotion(stage: CameraStage, reducedMotion: boolean): CameraMoti
 				stage.draw(stepped.camera, true);
 				if (stepped.motion !== null) {
 					frame.current = clock.requestFrame(tick);
+					return;
 				}
+				stage.still();
 			}
 			frame.current = clock.requestFrame(tick);
 		},
@@ -136,7 +147,9 @@ function useCameraMotion(stage: CameraStage, reducedMotion: boolean): CameraMoti
 		[reducedMotion, run, stage],
 	);
 
-	return useMemo(() => ({ zoomAt, ease, halt }), [zoomAt, ease, halt]);
+	const easing = useCallback((): boolean => frame.current !== null, []);
+
+	return useMemo(() => ({ zoomAt, ease, halt, easing }), [zoomAt, ease, halt, easing]);
 }
 
 export { useCameraMotion, type CameraMotion, type CameraStage };

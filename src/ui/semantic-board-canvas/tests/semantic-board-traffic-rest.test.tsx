@@ -120,7 +120,7 @@ test("a drag that rests with the pointer held down keeps the traffic still", asy
 	const frames = takeFrames();
 	try {
 		dragPicture();
-		frames.run(EXPLORING_MS.trafficRest * 4);
+		frames.run(EXPLORING_MS.cameraRest * 4);
 
 		expect(traffic.playState).toBe("paused");
 	} finally {

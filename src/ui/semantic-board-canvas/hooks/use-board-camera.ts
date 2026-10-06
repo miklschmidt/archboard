@@ -7,10 +7,10 @@
 // also why a fit is told the diagram's size rather than remembering it: the
 // camera knows where the person is looking and nothing about what they see.
 //
-// Where the camera is lives in a store of its own rather than in React state.
-// A pan or a zoom moves it on every frame, and nothing the pane draws around
-// the picture depends on it: only what subscribes, the surface it moves, is
-// drawn again (TASK-385.02).
+// Where the camera is lives in a store of its own rather than in React state
+// (`lib/camera-store`). A hand that moves the camera keeps it moving until the
+// hand has left it alone for a moment and its ease has ended. This hook says when
+// that is (TASK-405).
 
 import {
 	useCallback,
@@ -22,7 +22,7 @@ import {
 	useSyncExternalStore,
 } from "react";
 
-import { BOARD_RESIZE_SETTLE_MS } from "@/shared/timing/timing";
+import { BOARD_RESIZE_SETTLE_MS, EXPLORING_MS } from "@/shared/timing/timing";
 import { frameClock } from "@/ui/frame-clock";
 import { useCameraGlide } from "@/ui/semantic-board-canvas/hooks/use-camera-glide";
 import {
@@ -30,28 +30,18 @@ import {
 	type CameraStage,
 } from "@/ui/semantic-board-canvas/hooks/use-camera-motion";
 import {
-	IDENTITY_CAMERA,
 	ZOOM_STEP,
 	cameraFor,
 	panCamera,
+	pinchCamera,
+	zoomCameraAbout,
 	type Camera,
+	type Fingers,
 	type FitTarget,
 	type Size,
 } from "@/ui/semantic-board-canvas/lib/camera";
 import { wheelZoomFactor } from "@/ui/semantic-board-canvas/lib/camera-motion";
-
-/** Where the pane is looking, and how its last move goes there. */
-interface CameraView {
-	/** Where the pane is looking. */
-	readonly camera: Camera;
-	/** Whether the last move was one that must land at once, rather than be eased. */
-	readonly instant: boolean;
-	/**
-	 * Whether a hand made the last move: a drag, a wheel or a key. A fit, a glide
-	 * and the camera following its picture are not a hand's, and leave it unsaid.
-	 */
-	readonly hand?: boolean;
-}
+import { createCameraStore, type CameraView } from "@/ui/semantic-board-canvas/lib/camera-store";
 
 /** How a person moves the camera, and where it is now. */
 interface BoardCamera {
@@ -92,6 +82,20 @@ interface BoardCamera {
 	 * @param dy How far down, in viewport pixels.
 	 */
 	readonly panBy: (dx: number, dy: number) => void;
+	/**
+	 * Follow two fingers that pinch, at once and with no ease, as a drag is
+	 * followed. It stops any move the camera was making first.
+	 * @param before Where the fingers were, in viewport pixels.
+	 * @param after Where they are now.
+	 */
+	readonly pinch: (before: Fingers, after: Fingers) => void;
+	/**
+	 * Keep the camera's rest where it is until the hold is let go, however the
+	 * camera moves meanwhile. A flight holds it, so the far view does not change
+	 * in the flight or while the pane takes over from it.
+	 * @returns Let the hold go. The rest then follows the camera, unless a hand still moves it.
+	 */
+	readonly hold: () => () => void;
 	/**
 	 * Move the diagram by easing it there, as a key does. A move asked for while
 	 * another is under way adds to it.
@@ -232,48 +236,6 @@ function pointIn(element: HTMLElement, event: WheelEvent): readonly [number, num
 	return [event.clientX - box.left, event.clientY - box.top];
 }
 
-/** Where a camera is, kept outside React, and who hears it move. */
-interface CameraStore {
-	readonly read: () => CameraView;
-	readonly write: (next: CameraView) => void;
-	readonly subscribe: (listener: () => void) => () => void;
-}
-
-/**
- * A camera's store, at the identity camera.
- * @returns The store.
- */
-function createCameraStore(): CameraStore {
-	let view: CameraView = { camera: IDENTITY_CAMERA, instant: false };
-	const listeners = new Set<() => void>();
-	return {
-		/**
-		 * Where the camera is.
-		 * @returns The camera and how its last move goes.
-		 */
-		read: () => view,
-		/**
-		 * Move the camera, and tell whoever listens.
-		 * @param next Where it is now.
-		 */
-		write: (next) => {
-			view = next;
-			for (const listener of listeners) listener();
-		},
-		/**
-		 * Hear every move.
-		 * @param listener Called after each move.
-		 * @returns How to stop hearing them.
-		 */
-		subscribe: (listener) => {
-			listeners.add(listener);
-			return (): void => {
-				listeners.delete(listener);
-			};
-		},
-	};
-}
-
 /**
  * The camera for one diagram.
  * @param reducedMotion Whether the person asked for no motion: a zoom or a move then lands at once.
@@ -287,6 +249,8 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 	const [bottom, setBottom] = useState(0);
 	const room = useMemo(() => usable(measured, bottom), [measured, bottom]);
 	const flight = useCameraGlide();
+	// The timer that brings a camera moved by hand to rest, while it runs.
+	const resting = useRef<number | null>(null);
 	/** Stop a glide where it is drawn, so whatever moves next starts from what was seen. */
 	const settle = useCallback((): void => {
 		const stopped = flight.stop();
@@ -309,14 +273,37 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 			draw: (camera, instant) => {
 				write({ camera, instant, hand: true });
 			},
+			/** The ease has ended: the camera is at rest, unless a hand moved it a moment ago. */
+			still: () => {
+				if (resting.current === null) store.settle();
+			},
 		}),
-		[read, write],
+		[read, write, store],
 	);
 	const motion = useCameraMotion(stage, reducedMotion);
 	// Whether the person has said where to look since the last fit. A ref rather
 	// than state: nothing is drawn from it, and it must be true for the very next
 	// gesture rather than for the next render.
 	const moved = useRef(false);
+
+	// A hand moved the camera: it comes to rest once the hand has left it alone
+	// for a moment and its ease, if it has one, has ended.
+	const restLater = useCallback((): void => {
+		const clock = frameClock();
+		if (resting.current !== null) clock.cancelAfter(resting.current);
+		resting.current = clock.after(EXPLORING_MS.cameraRest, () => {
+			resting.current = null;
+			if (!motion.easing()) store.settle();
+		});
+	}, [motion, store]);
+	// A camera that goes away takes its timer with it.
+	useEffect(
+		() => () => {
+			if (resting.current !== null) frameClock().cancelAfter(resting.current);
+			resting.current = null;
+		},
+		[],
+	);
 
 	// A pane can paint before it has been laid out, and a stage that fitted to
 	// nothing then would stay unfitted for as long as nobody touched it. So the
@@ -360,8 +347,20 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 			motion.halt();
 			moved.current = true;
 			write({ camera: panCamera(read().camera, dx, dy), instant: false, hand: true });
+			restLater();
 		},
-		[settle, motion, read, write],
+		[settle, motion, read, write, restLater],
+	);
+
+	const pinch = useCallback(
+		(before: Fingers, after: Fingers): void => {
+			settle();
+			motion.halt();
+			moved.current = true;
+			write({ camera: pinchCamera(read().camera, before, after), instant: true, hand: true });
+			restLater();
+		},
+		[settle, motion, read, write, restLater],
 	);
 
 	const ease = useCallback(
@@ -369,8 +368,9 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 			settle();
 			moved.current = true;
 			motion.ease(dx, dy);
+			restLater();
 		},
-		[settle, motion],
+		[settle, motion, restLater],
 	);
 
 	const measure = useCallback(
@@ -390,8 +390,9 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 				x: size.width / 2,
 				y: size.height / 2,
 			});
+			restLater();
 		},
-		[measure, settle, motion],
+		[measure, settle, motion, restLater],
 	);
 
 	const fit = useCallback(
@@ -452,7 +453,8 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 			return undefined;
 		}
 		/**
-		 * Zoom about the pointer.
+		 * Zoom about the pointer: a turn of the wheel eases there, and a pinch on a
+		 * trackpad, which arrives as a wheel with Control held, is followed at once.
 		 * @param event The wheel event.
 		 */
 		function onWheel(event: WheelEvent): void {
@@ -463,11 +465,18 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 			settle();
 			const [x, y] = pointIn(element, event);
 			moved.current = true;
-			motion.zoomAt(wheelZoomFactor(event), { x, y });
+			if (event.ctrlKey) {
+				motion.halt();
+				const camera = zoomCameraAbout(read().camera, wheelZoomFactor(event), x, y);
+				write({ camera, instant: true, hand: true });
+			} else {
+				motion.zoomAt(wheelZoomFactor(event), { x, y });
+			}
+			restLater();
 		}
 		element.addEventListener("wheel", onWheel, { passive: false });
 		return (): void => element.removeEventListener("wheel", onWheel);
-	}, [viewport, settle, motion]);
+	}, [viewport, settle, motion, read, write, restLater]);
 
 	const handled = useCallback((): boolean => moved.current, []);
 	const followPicture = useCallback(
@@ -490,6 +499,8 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 			measure,
 			attachViewport: setViewport,
 			panBy,
+			pinch,
+			hold: store.hold,
 			ease,
 			stop: motion.halt,
 			zoomCentre,
@@ -505,6 +516,7 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 			room,
 			measure,
 			panBy,
+			pinch,
 			ease,
 			motion,
 			zoomCentre,

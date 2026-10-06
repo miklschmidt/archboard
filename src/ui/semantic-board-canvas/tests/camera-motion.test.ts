@@ -2,13 +2,15 @@
 //
 // What these catch: a pinch that zooms by hundreds of times per second because
 // every event zooms by a fixed step, a zoom that drifts sideways on its way in,
-// and a move that lands somewhere else when the frames are slower.
+// a move that lands somewhere else when the frames are slower, and two fingers
+// that pinch with the picture sliding out from between them.
 
 import { describe, expect, test } from "bun:test";
 
 import {
 	STILL,
 	easeMotion,
+	pinchCamera,
 	stepMotion,
 	wheelZoomFactor,
 	zoomMotion,
@@ -176,5 +178,58 @@ describe("an ease", () => {
 		// The part under the pointer when the zoom began is now 50 pixels to the right of it.
 		const was = under(START, POINTER);
 		expect(camera.x + was.x * camera.scale).toBeCloseTo(POINTER.x + 50, 6);
+	});
+});
+
+describe("two fingers that pinch", () => {
+	test("grow the picture by as much as they spread, and keep the part between them between them", () => {
+		const held = under(START, { x: 150, y: 100 });
+		const camera = pinchCamera(
+			START,
+			[
+				{ x: 100, y: 100 },
+				{ x: 200, y: 100 },
+			],
+			[
+				{ x: 50, y: 100 },
+				{ x: 250, y: 100 },
+			],
+		);
+		expect(camera.scale).toBeCloseTo(START.scale * 2, 9);
+		const now = under(camera, { x: 150, y: 100 });
+		expect(now.x).toBeCloseTo(held.x, 9);
+		expect(now.y).toBeCloseTo(held.y, 9);
+	});
+
+	test("carry the picture with them when they move together, at the same size", () => {
+		const camera = pinchCamera(
+			START,
+			[
+				{ x: 100, y: 100 },
+				{ x: 200, y: 140 },
+			],
+			[
+				{ x: 130, y: 110 },
+				{ x: 230, y: 150 },
+			],
+		);
+		expect(camera.scale).toBeCloseTo(START.scale, 9);
+		expect(camera.x).toBeCloseTo(START.x + 30, 9);
+		expect(camera.y).toBeCloseTo(START.y + 10, 9);
+	});
+
+	test("go no further than the limits", () => {
+		const camera = pinchCamera(
+			START,
+			[
+				{ x: 100, y: 100 },
+				{ x: 101, y: 100 },
+			],
+			[
+				{ x: 0, y: 100 },
+				{ x: 1000, y: 100 },
+			],
+		);
+		expect(camera.scale).toBe(8);
 	});
 });

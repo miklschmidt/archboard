@@ -1,11 +1,12 @@
 // How the camera moves between a gesture and rest, as arithmetic.
 //
-// A wheel, a pinch or a key does not put the camera somewhere: it changes where
-// the camera is going, and the camera runs toward it. Every input adds to what
-// is left of the last, so a hard flick of the wheel is one long ease and not a
-// row of short ones. A zoom keeps one part of the diagram under one point of the
-// viewport all the way, so it never drifts sideways on the way in. A drag is not
-// here: it moves the camera at once, and the camera stops where the hand lets go.
+// A wheel or a key does not put the camera somewhere: it changes where the
+// camera is going, and the camera runs toward it. Every input adds to what is
+// left of the last, so a hard flick of the wheel is one long ease and not a row
+// of short ones. A zoom keeps one part of the diagram under one point of the
+// viewport all the way, so it never drifts sideways on the way in. A drag and a
+// pinch are not here: they move the camera at once, and the camera stops where
+// the hand lets go.
 //
 // Pure, like the rest of the camera: a step is a function from the camera as it
 // was drawn, what it is still doing and how long the frame was, to the camera as
