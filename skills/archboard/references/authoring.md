@@ -243,11 +243,12 @@ evaluating it, and never runs `nix`. It follows an attribute set, `let ... in`,
 the file's own functions such as `forAllSystems`, `genAttrs`, flake-utils'
 `eachSystem` and `eachDefaultSystem`, and flake-parts' `mkFlake` with
 `perSystem` and `flake`. Where the systems come from a place it does not read,
-such as `nixpkgs.lib.systems.flakeExposed` or `import systems`, every system
-holds the outputs that the function gives. An output that it cannot follow,
-such as one that `import` gives or that a flake-parts module adds, is skipped
-as `symbol-unparsed` and never reported missing; `BINDING_SYMBOL_MISSING` means
-the flake gives no such output. The inputs are in `flake.lock`: each input of
+such as `nixpkgs.lib.systems.flakeExposed`, `import systems` or flake-utils'
+default systems, every system holds the outputs that the function gives. An
+output that it cannot follow, such as one that `import` gives or that a
+flake-parts module adds, is skipped as `expression-not-followed` and never
+reported missing; `BINDING_SYMBOL_MISSING` means the flake gives no such
+output. The inputs are in `flake.lock`: each input of
 the flake is build-dependency evidence, which `dependency` accepts and `call`
 does not. Anchor a relationship to an input at `flake.lock` with
 `inputs.<name>` as `symbol`. A part bound to `flake.lock`, or to a directory

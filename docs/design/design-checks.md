@@ -404,15 +404,40 @@ of the nixpkgs checkout. Each finding was right:
 - The anchors at `inputs.nixpkgs` and `rust-overlay` (helix), `inputs.zig`
   (ghostty) and `inputs.flake-parts` (nixvim) hold and support their
   `dependency` relationships. The same input as the anchor of a `call` is
-  `ANCHOR_MISMATCH`, information, because a lock input is build-dependency
-  evidence. An anchor at `inputs.flake-utils`, which helix does not use, is
+  `ANCHOR_MISMATCH`, because a lock input is build-dependency evidence. It is a
+  warning: the lock names the source that it pins, so the evidence is
+  resolved. An anchor at `inputs.flake-utils`, which helix does not use, is
   `ANCHOR_SYMBOL_MISSING`.
-- Six parts were skipped as `symbol-unparsed`, each with the lines of the
-  expression that the reading cannot follow: a check of ghostty and one of
+- Six parts were skipped as `expression-not-followed`, each with the lines of
+  the expression that the reading cannot follow: a check of ghostty and one of
   disko, `lib.hm.dag` of home-manager, nixvim's
   `packages.x86_64-linux.default`, and `legacyPackages.x86_64-linux.hello` and
   `lib.nixosSystem` of nixpkgs.
 - Every other part held its output.
+
+The independent review read four more flakes: nixos-hardware (`31cc5f4`, 499
+outputs), crane (`47b6b27`, whose own `eachSystem` folds over
+`builtins.attrNames`, so every name is unknown), devenv (`fe20b5c`, 54) and
+treefmt-nix (`03d8ee1`, 10). No real flake spent 5,000 of the 200,000 steps of
+the reading. Flakes written to break the bounds broke them at first. A
+recursion that makes a new set at each level, and an attribute path of 20,000
+names, overflowed the stack and failed the whole pass. A list doubled 24 times
+held 5 GB, and a set of 20,000 names that a function gives for each of 20,000
+systems ran out of memory. Now each name or item that the reading binds,
+copies or walks spends a step, the outputs stop 400 names deep, and each of
+those flakes reads in less than 200 ms.
+
+The review also found five ways in which the check reported an output missing
+without being sure of it:
+
+- an `or` default that stood where the name may be present;
+- a formal's default that stood for an input, which Nix always gives;
+- an output past the 10,000th;
+- a name with a `-` in a part that did not parse;
+- a system that flake-utils' default systems leave out, though a flake can
+  change them through its `systems` input.
+
+The check now skips the first four and finds the fifth.
 
 #### Reading C and C++ through their adapters
 
@@ -941,11 +966,16 @@ attribute path. The reading follows attribute sets, `let ... in`, `with`, the
 functions that the file writes and applies, `//` and `++`. It also follows the
 library functions that flakes use to give outputs for each system: `genAttrs`,
 `mapAttrs`, `foldl'`, `recursiveUpdate`, `optionalAttrs`, flake-utils'
-`eachSystem`, `eachDefaultSystem` and `defaultSystems`, and flake-parts'
-`mkFlake`. A list of systems that it cannot read gives the name `*`, which
-stands for each system. Everything else is unknown at its lines: an `import`,
-a builtin, an `if`, the value of an input. A name below an unknown expression
-is skipped as `symbol-unparsed`, never reported missing. The reading stops
+`eachSystem` and `eachDefaultSystem`, and flake-parts' `mkFlake`. A list of
+systems that it cannot read gives the name `*`, which stands for each system.
+flake-utils' default systems are such a list, because a flake can change them
+through its `systems` input. Everything else is unknown at its lines: an
+`import`, a builtin, an `if`, the value of an input. A default, `a.b or c` or
+a formal's `? c`, stands only where the reading is sure that the name is
+absent. Each expression, name or item that the reading reads spends one of
+200,000 steps, and it nests at most 400 deep. A name below an unknown
+expression, or one that the reading did not reach, is skipped as
+`expression-not-followed`, never reported missing. The reading stops
 where the flake schema names an output, such as `packages.<system>.<name>` or
 `overlays.<name>`, because what a derivation or a module holds is not an
 output. Other `.nix` files are read as text.
