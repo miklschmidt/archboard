@@ -67,9 +67,30 @@ const checkout = fixtureCheckout({
       });
 }
 `,
-	// 150,000 inputs, and 100 inputs that each name a package 3,000 outputs give.
-	"budget/flake.nix": `{ outputs = { self, nixpkgs }: let lib = nixpkgs.stdenv.mkDerivation { }; in { packages.x86_64-linux = { inherit lib; app = nixpkgs.stdenv.mkDerivation { buildInputs = [ ${"lib ".repeat(150_000)}]; }; }; }; }`,
-	"aliases/flake.nix": `{ outputs = { self, nixpkgs }: let lib = nixpkgs.stdenv.mkDerivation { }; in { packages.s = { ${Array.from({ length: 3000 }, (_, at) => `p${at} = lib;`).join(" ")} app = nixpkgs.stdenv.mkDerivation { buildInputs = [ ${"lib ".repeat(100)}]; }; }; }; }`,
+	"shared/flake.nix": `{
+  outputs = { self, nixpkgs }:
+    let
+      forAllSystems = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ];
+    in {
+      packages = forAllSystems (system:
+        let
+          mk = nixpkgs.legacyPackages.\${system}.stdenv.mkDerivation;
+          core = mk { pname = "core"; };
+          lib = mk { pname = "lib"; };
+          app = mk { pname = "app"; buildInputs = [ lib ]; };
+          patched = lib // { meta = { }; };
+        in {
+          inherit core lib app;
+          tool = mk { buildInputs = [ self.packages.\${system}.core ]; };
+          docs = mk { buildInputs = [ self.packages.\${system}.tool ]; };
+          cli = mk { buildInputs = [ patched ]; };
+        });
+    };
+}
+`,
+	// 150,000 inputs, and 100 inputs that each name a package 3,000 outputs give, each output on a line of its own.
+	"budget/flake.nix": `{ outputs = { self, nixpkgs }: let lib = nixpkgs.stdenv.mkDerivation { }; in { packages.x86_64-linux = {\ninherit lib;\napp = nixpkgs.stdenv.mkDerivation { buildInputs = [ ${"lib ".repeat(150_000)}]; };\n}; }; }`,
+	"aliases/flake.nix": `{ outputs = { self, nixpkgs }: let lib = nixpkgs.stdenv.mkDerivation { }; in { packages.s = {\n${Array.from({ length: 3000 }, (_, at) => `p${at} = lib;`).join("\n")}\napp = nixpkgs.stdenv.mkDerivation { buildInputs = [ ${"lib ".repeat(100)}]; };\n}; }; }`,
 });
 const facts = createCodeFacts();
 
@@ -167,10 +188,31 @@ test("a system the reading cannot tell, and a derivation that is no output, pass
 	expect(unknownInputs(read)).toEqual([]);
 });
 
+test("a line that two packages share gives no build dependency: it is unknown there", async () => {
+	const read = await flake("shared/flake.nix");
+	const file = "shared/flake.nix";
+	// docs from tool, whose lines only tool shares, with itself for the other system.
+	expect(dependencies(read).toSorted()).toEqual(
+		[
+			["packages.aarch64-linux.tool", 16, "build-dependency", file, "packages.aarch64-linux.tool"],
+			["packages.x86_64-linux.tool", 16, "build-dependency", file, "packages.x86_64-linux.tool"],
+		].toSorted(),
+	);
+	// app from lib at the line app shares with core and lib; tool from core, whose line lib and app share; cli from a set lib's value is merged into.
+	expect(unknownInputs(read)).toEqual([
+		[14, 14],
+		[15, 15],
+		[17, 17],
+	]);
+});
+
 test("reading the inputs spends the reading's budget, and what it does not reach is unknown", async () => {
-	for (const file of ["budget/flake.nix", "aliases/flake.nix"]) {
+	for (const [file, line] of [
+		["budget/flake.nix", 3],
+		["aliases/flake.nix", 3002],
+	] as const) {
 		const read = await flake(file);
 		expect(read.definitions.length).toBeGreaterThan(1);
-		expect(unknownInputs(read)).toEqual([[1, 1]]);
+		expect(unknownInputs(read)).toEqual([[line, line]]);
 	}
 });

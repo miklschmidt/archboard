@@ -142,9 +142,8 @@ function walk(
  * @param value Its value.
  */
 function addLeaf(outputs: Outputs, place: Place, value: NixValue): void {
-	if (place.path.length > 0) {
-		outputs.leaves.push({ symbol: place.path.join("."), value, node: place.node });
-	}
+	const { path, node } = place;
+	if (path.length > 0) outputs.leaves.push({ path, symbol: path.join("."), value, node });
 }
 
 /**
