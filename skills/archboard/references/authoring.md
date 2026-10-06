@@ -102,11 +102,20 @@ without one, the part owns the whole file or directory. A changed symbol is a
 changed binding in a comparison. `archboard check` tests the path only;
 `archboard check --code` warns with `BINDING_SYMBOL_MISSING` when the bound
 file or directory does not define the symbol. Code facts read TypeScript, TSX
-and Python files (`.ts`, `.mts`, `.cts`, `.tsx`, `.py`, `.pyi`); a file of any
-other language is read only as text and must hold the symbol's last name.
+and Python files (`.ts`, `.mts`, `.cts`, `.tsx`, `.py`, `.pyi`) and C and C++
+files (`.c`, `.h`, `.cc`, `.cpp`, `.cxx`, `.hh`, `.hpp`, `.hxx`); a file of any
+other language is read only as text and must hold the symbol's last name. A
+C or C++ part bound to a source file also owns its header, and one bound to a
+header owns its source file: the file of the other kind with the same name
+beside it, or the only one of that name in the checkout. So `symbol` can name
+what either file defines, and a C++ name is spelled with `::` or `.`:
+`shop::Ledger::post`, `Ledger.post`, `post`. Includes resolve through the
+nearest `compile_commands.json` that Git lists; without one, against the
+including file's directory, the checkout root and each directory named
+`include`.
 "View in code" opens a bound file in a local checkout at the line where the
-file defines the symbol. Code facts must find that definition (TypeScript, TSX
-and Python for now). The opener must take a line: Visual Studio Code, Cursor, Zed, or
+file defines the symbol. Code facts must find that definition (TypeScript, TSX,
+Python, C and C++ for now). The opener must take a line: Visual Studio Code, Cursor, Zed, or
 a custom command with `{line}`. Otherwise it opens the file or directory. The
 inspector shows the symbol under the path.
 
