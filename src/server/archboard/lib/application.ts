@@ -18,6 +18,7 @@ import { mountMutationAdmission, trackMutationWork } from "@/server/archboard/li
 import { mountPaneRoutes } from "@/server/archboard/lib/pane-routes";
 import { mountSemanticLockRoutes } from "@/server/archboard/lib/semantic-lock-routes";
 import { mountSemanticBoardRoutes } from "@/server/archboard/lib/semantic-board-routes";
+import { mountLocalityRoute } from "@/server/archboard/lib/locality-route";
 import { mountVoiceStartTraceRoute } from "@/server/archboard/lib/voice-start-trace";
 import { mountSemanticPaneContextRoutes } from "@/server/archboard/lib/semantic-pane-context";
 import { watchSemanticBoardFiles } from "@/server/archboard/lib/semantic-disk-watch";
@@ -104,6 +105,7 @@ app.use(
 mountSemanticLockRoutes(app);
 mountPaneRoutes(app);
 mountSemanticBoardRoutes(app);
+mountLocalityRoute(app);
 mountCodeCheckRoute(app);
 mountSemanticPaneContextRoutes(app);
 mountVoiceStartTraceRoute(app);
