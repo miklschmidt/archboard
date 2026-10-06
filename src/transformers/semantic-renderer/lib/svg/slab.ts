@@ -172,10 +172,10 @@ interface ShadowLayer {
  * the right, fading to nothing; a card's first layer reaches a unit round it,
  * so a near-white card keeps its top edge on the near-white page. None
  * reaches more than twelve units past the box. A container's tray is cut into
- * what holds it and casts none. A group's region is a mat lying flat on what
- * holds it and casts none; the tab its caption is printed on casts a short one
- * on the mat, and none past the mat's own edge. A chip, a relationship's label
- * and an activation bar, many and small, cast only a contact shadow.
+ * what holds it and casts none. A group's region is a boundary with no face
+ * and casts none; the tab its caption is printed on casts a short one on what
+ * the region lies on. A chip, a relationship's label and an activation bar,
+ * many and small, cast only a contact shadow.
  */
 const SHADOWS = {
 	card: [

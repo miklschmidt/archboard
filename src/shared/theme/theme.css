@@ -57,11 +57,11 @@
    seated against its top wall. The walls are shades of the floor with no
    colour of their own; the floor and the nameplate are tinted by the
    container's kind. A container nested in another is cut a step deeper, its
-   floor sinking toward --tray-sink. A group's region is a thin mat with no token of its own: its
-   faces are tones of the group's colour (--semantic-*) at a set lightness, in
-   OKLCH, and so is a grouped card's face. --slab-deep is
-   what a colour is shaded into for a front edge, and for a tint on the dark
-   ground. --slab-glint is what the fine highlight on a face's top edge mixes
+   floor sinking toward --tray-sink. A group's region has no face and no token
+   of its own: its boundary, its caption tab and a grouped card's face are
+   tones of the group's colour (--semantic-*) at a set lightness, in OKLCH.
+   --slab-deep is what a colour is shaded into for a front edge, and for a tint
+   on the dark ground. --slab-glint is what the fine highlight on a face's top edge mixes
    toward, --slab-sheen the light that falls off down a face, and --slab-shadow
    one layer of the stacked shadow.
 

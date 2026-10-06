@@ -76,8 +76,8 @@ const TRAY_LIP = 2;
 const TRAY_CREASE = 1;
 /** How thick the nameplate seated against a tray's top wall shows at its foot. */
 const PLATE_THICKNESS = 3;
-/** How thick a group's region is, and the tab its caption is printed on. */
-const MAT_THICKNESS = 3;
+/** How thick the foot along a group region's bottom is, and the tab its caption is printed on. */
+const REGION_FOOT = 3;
 const TAB_THICKNESS = 2;
 /** How thick an icon chip is: a small tile raised off the face it sits on. */
 const CHIP_THICKNESS = 1.5;
@@ -132,7 +132,7 @@ export {
 	TRAY_LIP,
 	TRAY_CREASE,
 	PLATE_THICKNESS,
-	MAT_THICKNESS,
+	REGION_FOOT,
 	TAB_THICKNESS,
 	CHIP_THICKNESS,
 	PILL_THICKNESS,

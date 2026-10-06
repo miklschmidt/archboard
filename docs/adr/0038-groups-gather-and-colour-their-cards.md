@@ -11,10 +11,10 @@ group clause of
 Tracked as TASK-347. The user decided it on 2026-09-25.
 
 [ADR 0044](0044-cards-containers-and-groups-are-drawn-as-slabs.md) supersedes
-how this decision draws its colors. A region is now a filled mat with a caption
-tab, not an outline. A card carries its group's color on its front edge, not on
-a border. A container is a tray that carries its kind's color on its floor,
-its walls and its nameplate. Which group
+how this decision draws its colors. A region is now a hairline and a foot in
+its group's color, with a caption tab and no fill. A card carries its group's
+color on its front edge and its face, not on a border. A container is a tray
+that carries its kind's color on its floor and its nameplate. Which group
 places a card, and which cards a region gathers, stand. The amendment of
 2026-10-06 at the end says what is true now.
 
@@ -140,36 +140,35 @@ A third alternative is to keep the container color scope beside the group color.
 Two sources of body color need a rule for which wins, and the reader must know
 that rule to read a card. The container still shows hosting by containment.
 
-## Amendment of 2026-10-06: a region is a mat, and a card carries its group on its front edge
+## Amendment of 2026-10-06: a region has a foot and a tab, and a card carries its group on its front edge
 
-ADR 0044 draws a card and a region as slabs and a container as a tray. The
-owner chose it on 2026-10-06. With it,
-the owner chose a filled region over the outline chosen on 2026-09-26. Three
-passages of this record no longer hold.
+ADR 0044 draws a card as a slab and a container as a tray. The owner chose it
+on 2026-10-06. With it, the owner first chose a filled region. Later that day
+the owner asked for no background color behind a group, and for the tint on
+its cards to stay (TASK-415). Three passages of this record no longer hold.
 
 "The layout draws each such region as an outline in the color of the group. The
-outline is twice as wide as the border of a card and has no fill." A region is
-now a mat, a low slab. Its face is an opaque tone of the group's color, so it
-looks the same on the page and on the floor of a tray. Its front edge is a
-deeper tone of the group's color. The caption is printed on a raised tab in a
-top corner of the mat. It is the corner where the words start,
-unless a route runs down through it and none through the other top corner.
-Lines still cross a region.
+outline is twice as wide as the border of a card and has no fill." A region
+still has no fill, so it looks the same on the page and on the floor of a tray.
+A 1-unit hairline of the group's color runs round it, and a 3-unit foot of the
+color runs along its bottom. The caption is printed on a raised tab in a top
+corner of the region. It is the corner where the words start, unless a route
+runs down through it and none through the other top corner. Lines still cross
+a region.
 
 "A card's body color comes from its placing group. Its border and tint are the
 color of the group, and a card with no placing group is neutral." The first
 sentence holds. The front edge of a card now carries a tone of the group's
-color, and its face is a quiet tone of the group's color, a step lighter than
-the mat it stands on. A card with no placing group has a grey front edge and a
-neutral face.
+color, and its face is a quiet tone of the group's color. A card with no
+placing group has a grey front edge and a neutral face.
 
 "A container's frame takes the color of its own kind. Its border and faint tint
 are the color of its kind, and a kind without a color draws it neutral." The
 first sentence holds. A container is now a tray cut into the page. Its floor
-carries a calm tint of its kind, and its walls carry some of it. Its nameplate
+carries a calm tint of its kind, and its walls are neutral. Its nameplate
 carries a tone a step stronger on its face and on its front edge. A kind without
 a color draws a neutral tray.
 
-Where this record speaks of the outline of a region, read the mat and its
-caption tab. A reader finds every member of a group by its mat and by the front
-edge of each card.
+Where this record speaks of the outline of a region, read the hairline, the foot
+and the caption tab. A reader finds every member of a group by the color of the
+region's foot and tab, and by the face and the front edge of each card.

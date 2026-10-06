@@ -3,9 +3,9 @@
 // members scattered among other cards, a region drawn around a card the
 // group does not place, a caption naming something other than the group, a
 // nested region's caption floating ranks above its members, a frame keeping
-// the strip Graphviz reserved for a label the router moved, a mat whose colour
-// changes with the ground it lies on, and a caption that a light colour such
-// as yellow leaves under 4.5:1 on its tab.
+// the strip Graphviz reserved for a label the router moved, a region that
+// paints a face of its own or changes colour with the ground it lies on, and a
+// caption that a light colour such as yellow leaves under 4.5:1 on its tab.
 
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
@@ -130,13 +130,13 @@ test.each(["track", "blocks"] as const)(
 			for (const id of members) expect(inside(id), `${id} inside ${group}`).toBeTrue();
 			for (const id of ["cli", "feed"]) expect(inside(id), `${id} outside ${group}`).toBeFalse();
 			expect(drawn.svg).toContain(`>${name}</text>`);
-			// A mat of the group's colour, which what it holds stands on.
-			const mat = new RegExp(
+			// A boundary of the group's colour round what it holds, with nothing filling it.
+			const hairline = new RegExp(
 				`<g data-semantic-kind="group-region" data-group="${group}"[^>]*>\\s*<rect[^>]*>`,
 				"u",
 			).exec(drawn.svg)![0];
-			expect(mat).not.toMatch(/fill(:|=")none/u);
-			expect(mat).toContain("var(--semantic-");
+			expect(hairline).toMatch(/fill(:|=")none/u);
+			expect(hairline).toContain("var(--semantic-");
 			// From far away its caption grows with the cards' names.
 			const sizes = [
 				...new RegExp(
@@ -339,12 +339,12 @@ test("a line into a container grouped with its members is drawn", async () => {
 	expect(routePoints(drawn.svg).get("in")?.length).toBeGreaterThan(1);
 });
 
-// The owner's request of 2026-10-06 (TASK-413): a mat was a pale tint that
-// looked muddy on a tinted tray floor. It is one opaque board of its group's
-// colour wherever it lies, and its caption reads on its tab in the lightest
-// colours too.
+// The owner's requests of 2026-10-06: a group's region has no background
+// colour (TASK-415), so its boundary is the same on the page and on a tinted
+// tray floor, and its caption reads on its tab in the lightest colours too
+// (TASK-413).
 test.each(["light", "dark"] as const)(
-	"a mat is the same opaque board on the page and on a tray's floor, and its caption reads on its tab (%s)",
+	"a region has no face, its boundary is the same on the page and on a tray's floor, and its caption reads on its tab (%s)",
 	async (theme) => {
 		const light = SemanticPolicySchema.parse({
 			...policy,
@@ -392,12 +392,12 @@ test.each(["light", "dark"] as const)(
 				),
 			];
 			expect(regions, group).toHaveLength(2);
-			// The mat's edge, highlight and face, as a reader sees them.
-			const [onPage, onFloor] = regions.map(([, mat]) =>
-				[...mat!.matchAll(/<rect [^>]*fill="(#[0-9a-f]+)"/gu)].map(([, fill]) => fill!),
-			);
-			expect(onPage, group).toHaveLength(3);
-			for (const fill of onPage!) expect(fill, `${group} is opaque`).toMatch(/^#[0-9a-f]{6}$/u);
+			// The boundary as a reader sees it: nothing filled but its foot.
+			const [onPage, onFloor] = regions.map(([, region]) => {
+				expect(region, `${group} paints no face`).not.toMatch(/<rect [^>]*fill="#/u);
+				return [...region!.matchAll(/(?:stroke|fill)="(#[0-9a-f]{6})"/gu)].map(([, ink]) => ink!);
+			});
+			expect(onPage, group).toHaveLength(2);
 			expect(onFloor, group).toEqual(onPage);
 			for (const [, , tab] of regions) {
 				const face = [...tab!.matchAll(/<path [^>]*fill="(#[0-9a-f]{6})"/gu)].at(-1)![1]!;

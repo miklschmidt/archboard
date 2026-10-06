@@ -53,9 +53,10 @@ This record decides the version with all of these changes.
 
 ## Decision
 
-The picture is lit from above. A card, a chip, a label and a group's
-region stand on the page as blocks (`src/transformers/semantic-renderer/lib/svg/slab.ts`).
-A container is cut into the page as a tray (`lib/svg/tray.ts`). The sizes are
+The picture is lit from above. A card, a chip and a label stand on the page as
+blocks (`src/transformers/semantic-renderer/lib/svg/slab.ts`). A container is
+cut into the page as a tray (`lib/svg/tray.ts`). A group's region is drawn on
+what holds it, with no face of its own (`lib/svg/regions.ts`). The sizes are
 in `lib/design.ts`.
 
 1. **A card is a slab.** It has a top face, a fine highlight along the top edge
@@ -86,22 +87,21 @@ in `lib/design.ts`.
    kind's color. The walls carry none of it. The nameplate carries a tone a
    step stronger, and its front edge more again. A container of a kind with no
    color is neutral.
-6. **The region of a group is a mat.** The mat is 3 units thick. Its face is
-   opaque: a tone of the group's own hue, at one lightness for every color. On
-   the light ground it is a clean pastel, and on the dark ground a deep shade of
-   the color. So a mat looks the same on the page, on the floor of a tray and on
-   a nested floor. Its tab is a step deeper and more colored than its face, and
-   its front edge is the group's color at a middle lightness. It casts no
-   shadow. Its caption is printed on the tab in the top corner where the words
+6. **The region of a group has no face.** The page or the floor of a tray
+   shows through it, so it looks the same wherever it lies (TASK-415). A
+   1-unit hairline of the group's color runs round it, and a 3-unit foot of the
+   color runs along its bottom, both at a middle lightness. It casts no shadow.
+   Its caption is printed on a raised tab in the top corner where the words
    start. When a route runs down through that corner and no route runs through
-   the other top corner, the tab moves to the other corner. Lines cross the mat
-   and the tab. The caption is in the group's color, dark on the light ground
-   and light on the dark ground. It keeps at least 5:1 against its tab for
-   every color, light yellow, amber and lime included (TASK-413).
+   the other top corner, the tab moves to the other corner. Lines cross the
+   region and the tab. The tab is a clear tone of the group's color. The
+   caption is in the group's color, dark on the light ground and light on the
+   dark ground. It keeps at least 5:1 against its tab for every color, light
+   yellow, amber and lime included (TASK-413).
 7. **A card carries its group on its front edge and its face.** The front edge
    of a card is a tone of the group's color, quieter on the light ground. Its
-   face is a quiet tone of the group's hue, a step lighter than the mat it
-   stands on, on both grounds. The secondary words on it keep 5.2:1 or more.
+   face is a quiet tone of the group's hue on both grounds. The secondary
+   words on it keep 5.2:1 or more.
    On the light ground a tinted face takes a softer light, so its color does
    not pool at its foot. A card in no group has a grey front edge and a neutral
    face.
@@ -151,14 +151,14 @@ in `lib/design.ts`.
     translucent, and its head and its pulses take the same ink (TASK-409).
 14. **The colors are tokens.** The faces, edges, walls, floors, highlights and
     shadows come from the `--slab-*` and `--tray-*` tokens in
-    `src/shared/theme/theme.css`, in both themes. A group's mat, its tab, its
-    caption and a grouped card's face are tones of the group's own color token
-    (`--semantic-*`). Each is a relative OKLCH color (`toned` in
-    `lib/svg/colour.ts`): the token's hue, a lightness of its own and a share
-    of the token's chroma. Mixing the color into a grey or a near-white surface
-    in sRGB turned its hue and lost most of its chroma. That made a mat pale on
-    the light ground, and muddy on the dark ground and on a tinted tray floor
-    (TASK-413).
+    `src/shared/theme/theme.css`, in both themes. A group region's hairline
+    and foot, its tab, its caption and a grouped card's face are tones of the
+    group's own color token (`--semantic-*`). Each is a relative OKLCH color
+    (`toned` in `lib/svg/colour.ts`): the token's hue, a lightness of its own
+    and a share of the token's chroma. Mixing the color into a grey or a
+    near-white surface in sRGB turned its hue and lost most of its chroma,
+    which made the group colors pale on the light ground and muddy on the dark
+    ground (TASK-413).
 
 ## What stays
 
