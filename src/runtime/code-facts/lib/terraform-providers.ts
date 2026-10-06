@@ -448,6 +448,21 @@ function classifyReference(type: string | undefined, argument: readonly string[]
 }
 
 /**
+ * What an argument of a call of a module the check does not read proves of
+ * the call, which reaches what the argument names (terraform-configuration.ts).
+ * No rule knows what the module does with the value, so it is provisioning,
+ * as every unlisted reference of a named provider is: most such arguments
+ * place or name what the module creates, as `vpc_id` does. An environment
+ * value is a configured path, as in every resource. A plan that fills the
+ * module in classifies the reference by the resource it flows into instead.
+ * @param argument The argument's path.
+ * @returns The kind.
+ */
+function unreadModuleArgumentKind(argument: readonly string[]): TerraformKind {
+	return isEnvironmentArgument(argument) ? "configured-path" : "provisioning";
+}
+
+/**
  * Whether a declaration joins two others by its provider's rules, as an
  * event source mapping joins a queue and a function.
  * @param address The declaration's address, as its module writes it:
@@ -467,4 +482,5 @@ export {
 	classifyReference,
 	isJoiningDeclaration,
 	isMetaArgument,
+	unreadModuleArgumentKind,
 };

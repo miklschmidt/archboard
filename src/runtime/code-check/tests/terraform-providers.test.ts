@@ -73,6 +73,21 @@ resource "aws_lambda_function" "this" {
 }
 `;
 
+// A call of a registry module, which the check does not read: what the module
+// does with an argument is unknown, so only an environment value is a path.
+const AWS_REMOTE = `resource "aws_vpc" "main" {}
+
+resource "aws_sqs_queue" "jobs" {}
+
+module "worker" {
+  source = "terraform-aws-modules/lambda/aws"
+  vpc_id = aws_vpc.main.id
+  environment_variables = {
+    QUEUE_URL = aws_sqs_queue.jobs.url
+  }
+}
+`;
+
 const GOOGLE = `resource "google_pubsub_topic" "orders" {}
 
 resource "google_service_account" "worker" {}
@@ -203,6 +218,7 @@ beforeAll(async () => {
 		"aws/main.tf": AWS,
 		"aws/iam.tf": 'resource "aws_iam_role" "worker" {}\n',
 		"aws/modules/worker/main.tf": AWS_WORKER,
+		"aws-remote/main.tf": AWS_REMOTE,
 		"google/main.tf": GOOGLE,
 		"azure/main.tf": AZURE,
 		"kubernetes/main.tf": KUBERNETES,
@@ -230,12 +246,23 @@ beforeAll(async () => {
 		edge("e2", ["B", "T"], "http", ["aws/iam.tf", "aws_iam_role.worker"]),
 		// The function's use of its role only sets it up, which a dependency does not accept.
 		edge("e3", ["F", "R"], "dependency", ["aws/main.tf", "aws_iam_role.worker"]),
+		// A joining declaration proves its join's kind: a grant is no call.
+		edge("e4", ["Q", "F"], "call", ["aws/main.tf", "aws_lambda_permission.jobs"]),
 	]);
 	current(
 		"AWS module",
 		[part("W", "aws", "module.worker"), part("Q", "aws", "aws_sqs_queue.jobs")],
 		// The module's variable, which the call's argument also declares, is in the code of the part bound to the call.
 		[edge("e1", ["W", "Q"], "queue", ["aws/modules/worker/main.tf", "var.queue_url"])],
+	);
+	current(
+		"AWS remote module",
+		[
+			part("W", "aws-remote", "module.worker"),
+			part("V", "aws-remote", "aws_vpc.main"),
+			part("Q", "aws-remote", "aws_sqs_queue.jobs"),
+		],
+		[],
 	);
 	current(
 		"Google Cloud",
@@ -314,15 +341,25 @@ test("AWS: an event source mapping is a call from its queue to its function, a l
 	);
 });
 
-test("an anchor may name a joining declaration, any other Terraform declaration outside both ends does not support its relationship, and a provisioning use does not prove a dependency", () => {
+test("an anchor may name a joining declaration of its relationship's kind, any other Terraform declaration outside both ends does not support its relationship, and a provisioning use or a grant does not prove a dependency or a call", () => {
 	const findings = found("AWS anchored");
 	expect(findings.map((each) => each.split(" | ").slice(0, 3).join(" "))).toEqual([
 		"ANCHOR_MISMATCH e2 warning",
 		"ANCHOR_MISMATCH e3 warning",
+		"ANCHOR_MISMATCH e4 warning",
 	]);
 	expect(findings.find((each) => each.includes(" e3 "))).toContain(
 		"provisioning aws/main.tf:6 aws_iam_role.worker",
 	);
+	expect(findings.find((each) => each.includes(" e4 "))).toContain(
+		"permission aws/main.tf:17 aws_lambda_permission.jobs",
+	);
+});
+
+test("a call of a module the check does not read is set up with what its arguments name, unless an argument is an environment value", () => {
+	expect(found("AWS remote module")).toEqual([
+		"RELATIONSHIP_UNDRAWN | Q | warning | configured-path W->Q aws-remote/main.tf:9 aws_sqs_queue.jobs",
+	]);
 });
 
 test("an anchor may name a declaration inside the module instance that an end's module call binds", () => {

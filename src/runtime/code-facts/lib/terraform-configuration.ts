@@ -20,7 +20,8 @@
 // and a module call's output what the output's expression names. A reference
 // into a module the check does not read reaches the module call itself, and
 // that call reaches what its arguments name, as no code of the module is read
-// to take their values further.
+// to take their values further. What such an argument is for is unknown, so
+// it proves provisioning, unless it is an environment value (TASK-367.18).
 
 import type {
 	Definition,
@@ -37,7 +38,10 @@ import {
 	namesOf,
 } from "@/runtime/code-facts/lib/terraform-address";
 import type { PlanModule, TerraformPlan } from "@/runtime/code-facts/lib/terraform-plan";
-import type { JoinEnd } from "@/runtime/code-facts/lib/terraform-providers";
+import {
+	type JoinEnd,
+	unreadModuleArgumentKind,
+} from "@/runtime/code-facts/lib/terraform-providers";
 import { reachedFrom } from "@/runtime/code-facts/lib/terraform-reach";
 import { directoryOf, terraformModules } from "@/runtime/code-facts/lib/terraform-resolution";
 import { lastName } from "@/runtime/code-facts/lib/text-reading";
@@ -132,6 +136,8 @@ interface Written {
 	readonly symbol: string;
 	readonly kind: EvidenceKind;
 	readonly joins?: JoinEnd;
+	/** The path of the argument it sits in, for a reference a file writes. */
+	readonly argument?: string;
 }
 
 /** What the reading of one root module collects. */
@@ -189,11 +195,12 @@ function writtenIn(facts: SyntaxFacts, scope: string): Written[] {
 	return facts.references.flatMap((reference) => {
 		const holder = holderAt(facts, reference.line);
 		if (holder === undefined || reference.via !== "code") return [];
-		const { symbol, line, joins } = reference;
+		const { symbol, line, joins, argument } = reference;
 		const names = symbol.split(".");
 		const kind = reference.kind ?? "configured-path";
 		const from = `${scope}${holder.symbol}`;
-		return [{ from, scope, names, path: facts.path, line, symbol, kind, ...(joins && { joins }) }];
+		const where = { path: facts.path, line, symbol, ...(argument !== undefined && { argument }) };
+		return [{ from, scope, names, ...where, kind, ...(joins && { joins }) }];
 	});
 }
 
@@ -337,18 +344,23 @@ function reachedAddress(reading: Reading, written: Written): string | undefined 
 }
 
 /**
- * The declarations a reference is a link of: the one it is written in, and
- * for an argument of a module call whose module the check does not read, the
- * call too. No code of that module is read to take the value further, so the
- * call itself reaches what the argument names.
+ * The links a reference makes, by the declaration each is from: the one it is
+ * written in, and for an argument of a module call whose module the check
+ * does not read, the call too. No code of that module is read to take the
+ * value further, so the call itself reaches what the argument names, with the
+ * kind such an argument proves (terraform-providers.ts).
  * @param reading What the reading collects.
- * @param from The declaration the reference is written in.
- * @returns The declarations.
+ * @param written The reference.
+ * @param link Its link from the declaration it is written in.
+ * @returns Each declaration with its link.
  */
-function linkedFrom(reading: Reading, from: string): string[] {
-	if (reading.declarations.get(from)?.kind !== "argument") return [from];
-	const call = from.split(".").slice(0, -2).join(".");
-	return reading.unread.has(call) ? [from, call] : [from];
+function linksFrom(reading: Reading, written: Written, link: Link): [string, Link][] {
+	const own: [string, Link] = [written.from, link];
+	if (reading.declarations.get(written.from)?.kind !== "argument") return [own];
+	const call = written.from.split(".").slice(0, -2).join(".");
+	if (!reading.unread.has(call)) return [own];
+	const kind = unreadModuleArgumentKind(written.argument?.split(".") ?? []);
+	return [own, [call, { ...link, kind }]];
 }
 
 /**
@@ -361,8 +373,7 @@ function linksOf(reading: Reading): Map<string, Link[]> {
 	for (const written of reading.written) {
 		const to = reachedAddress(reading, written);
 		if (to === undefined || to === written.from) continue;
-		const link: Link = { ...written, to };
-		for (const from of linkedFrom(reading, written.from)) {
+		for (const [from, link] of linksFrom(reading, written, { ...written, to })) {
 			links.set(from, [...(links.get(from) ?? []), link]);
 		}
 	}

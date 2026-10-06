@@ -6,6 +6,9 @@
 // file uses the symbol in more than one way, one accepted kind is enough. A
 // file read as text gives no kind, and nor does a name the file only defines,
 // such as the event one end defines, so the check does not judge those. A
+// declaration that joins two parts, such as an event source mapping, is the
+// exception: an anchor may name it (ADR 0046), and it proves its join's kind,
+// so a grant does not prove a call. A
 // flow step has a message kind and no relationship kind, and a relationship
 // kind without the `evidence` key accepts every kind, so neither is judged.
 //
@@ -19,7 +22,13 @@
 import type { ReadCheckout } from "@/runtime/code-check/lib/checkouts";
 import type { AnchorClaim } from "@/runtime/code-check/lib/claims";
 import type { Resolve } from "@/runtime/code-check/lib/resolution";
-import { findSymbol, lastName, type FileFacts, type SyntaxFacts } from "@/runtime/code-facts/index";
+import {
+	findSymbol,
+	lastName,
+	type Definition,
+	type FileFacts,
+	type SyntaxFacts,
+} from "@/runtime/code-facts/index";
 import type { CodeEvidence, CodeFinding } from "@/shared/code-check/index";
 import type { CodeAnchor } from "@/shared/code-target/index";
 import { describeSubject } from "@/shared/semantic-policy/index";
@@ -74,13 +83,45 @@ async function usesOf(
 }
 
 /**
+ * What a joining declaration the anchored file defines proves: the kind of
+ * the join, which its references to the ends it joins carry (TASK-367.18),
+ * cited at the declaration. A Terraform reference is resolved.
+ * @param facts The anchored file's facts.
+ * @param definition The declaration, where code facts give one.
+ * @param anchor The anchor.
+ * @returns One use per kind, or none for a declaration that joins nothing.
+ */
+function joinUses(
+	facts: SyntaxFacts,
+	definition: Definition | undefined,
+	anchor: CodeAnchor,
+): CodeEvidence[] {
+	if (definition === undefined) return [];
+	const ends = facts.references.filter(
+		(reference) =>
+			reference.joins !== undefined &&
+			definition.start <= reference.line &&
+			reference.line <= definition.end,
+	);
+	const kinds = new Set(ends.flatMap((end) => end.kind ?? []));
+	return [...kinds].map((kind) => ({
+		kind,
+		resolution: "resolved",
+		repo: anchor.repo,
+		path: facts.path,
+		line: definition.start,
+		symbol: definition.symbol,
+	}));
+}
+
+/**
  * The uses that decide the evidence kind of an anchor, when the check judges it.
  * @param claim The anchor.
  * @param facts The anchored file's facts.
  * @param resolution How a use that no import resolves is resolved.
  * @returns The uses, or none when the kind is not judged: on a step, on a
  * relationship kind that accepts every evidence kind, in a file read as text,
- * or for a name the file defines itself.
+ * or for a name the file defines itself, unless it is a joining declaration.
  */
 async function judgedUses(
 	claim: AnchorClaim,
@@ -89,8 +130,9 @@ async function judgedUses(
 ): Promise<readonly CodeEvidence[]> {
 	if (claim.relationship?.accepts === undefined || facts === undefined) return [];
 	if (facts.adapter === "text") return [];
-	const defined = findSymbol(facts, claim.anchor.symbol, "definition").status === "found";
-	return defined ? [] : usesOf(facts, claim.anchor, resolution);
+	const defined = findSymbol(facts, claim.anchor.symbol, "definition");
+	if (defined.status !== "found") return usesOf(facts, claim.anchor, resolution);
+	return joinUses(facts, defined.definition, claim.anchor);
 }
 
 /**
