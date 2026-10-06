@@ -266,6 +266,20 @@ does not. Anchor a relationship to an input at `flake.lock` with
 that holds it, owns that evidence, and an input that is a path in the same
 checkout (`path:./tools`) reaches the part bound to that flake.
 
+A package of the flake that is built from another is build-dependency evidence
+too. The check reads `buildInputs`, `nativeBuildInputs` and
+`propagatedBuildInputs` of `mkDerivation`, `buildGoModule`,
+`buildPythonPackage`, `buildPythonApplication` and `buildRustPackage`, and the
+arguments that `callPackage` names. An input that is another output of the flake
+reaches that output, however the flake names it: `self.packages.${system}.lib`,
+a name that a `let` binds, or an overlay's `final.lib`. Bind an overlay's
+package as `overlays.<name>.<package>`. Anchor a build dependency at `flake.nix`
+with the output it is built from as `symbol`. The check does not follow the file
+that `callPackage` builds, a package of nixpkgs or `prev`, `mkShell`, or
+`overrideAttrs`. A relationship with no anchor that starts at such an output and
+that no evidence supports is skipped as `expression-not-followed`, and never
+reported unsupported.
+
 Code facts also read Swift (`.swift`), and `Package.swift` without running it.
 Bind a Swift module to its target's directory, such as `Sources/Core`, and a
 type or a member by its qualified name: `Ledger`, `Ledger.post`, and

@@ -861,6 +861,54 @@ judged:
 
 No entry point was reported unexposed, and no caller undrawn.
 
+#### Reading build dependencies between Nix packages
+
+TASK-367.22 measured the reading of derivations on 2026-10-06 with Bun 1.4.2.
+It read the `flake.nix` of 16 public repositories, cloned into a scratch
+directory: nixd (`bdb4670`), deploy-rs (`cf64c8c`), nix-index (`dd6792b`),
+helix (`ba40e54`), devenv (`fe20b5c`), nixvim (`8fbc7d3`), treefmt-nix
+(`03d8ee1`), crane (`47b6b27`), rust-overlay (`b962e5d`), Nix (`bea853d`),
+lanzaboote (`ba33415`), Hydra (`6e99f07`), nil (`205c8ba`), microvm.nix
+(`52860fa`), fenix (`eff70f3`) and attic (`7a19204`). The first file, with the
+grammar load, took 14 ms. Each other one took 0.4 to 4.8 ms.
+
+Few flakes write a build dependency between their own packages in
+`flake.nix`. Most build each package with `callPackage` from a file of its own,
+or take the packages from an `import nixpkgs` with the flake's overlay. Only
+nixd names its packages to each other. In its flake-parts `perSystem`,
+`callPackage ./nixd` gets `nixf` and `nixt` as arguments, so `nixd` is built
+from `nixf` and `nixt`. The reading found those two, the same two for
+`packages.default`, which is `nixd`, and `nixd` in the arguments of the
+editor shells.
+
+A temporary vault with six boards bound 21 parts to outputs of six of these
+flakes: nixd, helix, deploy-rs, nix-index, microvm.nix and nil. It drew 11
+`dependency` relationships with no anchor. The real check took 362 ms cold and
+320 ms warm. The code before this task found 9 `RELATIONSHIP_UNSUPPORTED` and
+3 `BINDING_SYMBOL_MISSING` in the same vault. Now:
+
+- nixd's `nixd` to `nixf` is supported by the build dependency at the line that
+  names `nixf`.
+- 4 `RELATIONSHIP_UNDRAWN` warnings, all resolved and all right: `nixd` and
+  `default` are built from `nixf` and `nixt`, and the editor shells from
+  `nixd`, which is also `default`.
+- 10 relationships are skipped as `expression-not-followed`. Each names the
+  output and the lines of what the reading cannot follow. Some are packages
+  that `callPackage` builds from a file: nixd's `nixf`, microvm.nix's
+  `build-microvm` and nil's `coc-nil`. Some come from an `import nixpkgs` with
+  an overlay (helix, deploy-rs). The others are an `overrideAttrs` (a
+  deploy-rs check) and shells that `mkShell` makes (helix, nix-index, nixd).
+- The parts bound to an overlay's package, `overlays.helix.helix` and
+  `overlays.default.deploy-rs`, now hold. nil's `overlays.default` is
+  `lib.composeExtensions` of two overlays, which the reading does not follow,
+  so `overlays.default.nil` is skipped, not missing.
+
+Before this task, some packages of flake-parts and flake-utils shared the
+lines of one binding. This occurred where several bindings, such as
+`packages.a` and `packages.b`, or one `inherit` of three names, gave the
+packages of one system. So every package owned the inputs of every other. Now
+a name that a binding or an `inherit` writes has its own lines.
+
 #### Reading .NET projects through the C# adapter
 
 TASK-367.11 measured the C# adapter on 2026-10-06 with Bun 1.4.2, on shallow
@@ -1276,7 +1324,32 @@ expression, or one that the reading did not reach, is skipped as
 `expression-not-followed`, never reported missing. The reading stops
 where the flake schema names an output, such as `packages.<system>.<name>` or
 `overlays.<name>`, because what a derivation or a module holds is not an
-output. Other `.nix` files are read as text.
+output. Only an overlay goes one name deeper: its packages are outputs
+`overlays.<name>.<package>`. Other `.nix` files are read as text.
+
+The same reading gives the build dependencies between the packages of a flake
+(TASK-367.22). A derivation is a call of `mkDerivation`, `buildGoModule`,
+`buildPythonPackage`, `buildPythonApplication`, `buildRustPackage` or
+`callPackage`. The reading knows each by the last name of the selection, where
+the flake does not bind that name itself. The inputs of a
+derivation are the items of its `buildInputs`, `nativeBuildInputs` and
+`propagatedBuildInputs`, and the arguments that `callPackage` names. An input
+whose value is another output of the flake is build-dependency evidence. It
+goes from the output that is built to the output that it names, at the line
+that names the input. The reading compares values, not spellings. So
+`self.packages.${system}.lib` reaches the output whose value it is. A name that
+a `let` binds, an `inherit`, a `callPackage` argument and an overlay's
+`final.lib` do the same. `self` is the flake's own outputs. An overlay is applied to a
+`prev` whose names are unknown, and to a `final` that adds the overlay's own
+packages. A derivation that is no output, such as a helper that a `let` builds,
+passes on its inputs. What the reading cannot follow is unknown at its lines.
+That is an input that is a package of nixpkgs or of `prev`, and the file that
+`callPackage` builds. It is also an output that is no derivation that the
+reading knows, such as a shell that `mkShell` makes. Such an expression can
+hide a build dependency. Take a relationship with no anchor whose kind accepts
+build dependencies. If it starts at such an expression and no evidence
+supports it, the check skips it as `expression-not-followed`. It never reports
+it unsupported. Each input, and each output that an input names, spends a step.
 
 A Kubernetes manifest is a `.yaml` or `.yml` file with a document that has an
 `apiVersion` and a `kind` (TASK-367.19). The check reads other YAML files as
