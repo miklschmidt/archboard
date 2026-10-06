@@ -288,10 +288,13 @@ records the construction.
 On chalk the picture is crisp and vivid, never pastel or dusty. Its own
 neutrals are cool and clean, near hue 255, not the shell's warm ones: a card
 face a hair under white (oklch(0.988 0.003 255)), a tray floor a step under the
-ground (oklch(0.974 0.003 255)), a slate front edge (oklch(0.87 0.014 256)) and
-a navy shadow. A grouped card's face is a clean tint of its group's hue, an
-orange face a peach, at one chroma for every color (oklch 0.94, chroma 0.028),
-and its front edge carries the color as a clean, strong tone. A chip is a light
+ground (oklch(0.974 0.003 255)) and a navy shadow. A front edge is the face in
+shade, never a lighter strip: the neutral face's own neutral at lightness 0.83
+(oklch(0.83 0.003 255)). A grouped card's face is a clean tint of its group's
+hue, an orange face a peach, at lightness 0.93 with as much chroma as its hue
+holds there (0.031 to 0.055), and its front edge is that hue in shade
+(lightness 0.78, chroma 0.084). On graphite a grouped edge is a step under its
+face, as a neutral one is (1.33 to 1). A chip is a light
 tone of its type's color, with the glyph in the color itself. The words are
 **Diagram Ink** (`--diagram-text`, oklch(0.2 0.02 265)) and **Diagram Slate**
 (`--diagram-text-muted`, oklch(0.47 0.028 262)). On graphite they are the

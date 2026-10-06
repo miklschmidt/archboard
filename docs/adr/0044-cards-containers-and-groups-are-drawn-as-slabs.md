@@ -109,16 +109,18 @@ in `lib/design.ts`.
    2.6:1 on the dark ground. The owner chose this look among four drawn side
    by side (TASK-416, TASK-419).
 7. **A card carries its group on its front edge and its face.** The front edge
-   of a card is a tone of the group's color. On the light ground it is a
-   clean, strong tone, at OKLCH lightness 0.76 and chroma 0.12. The face there
-   is a clean tint with its hue in plain sight, an orange face a peach, at
-   lightness 0.94 and chroma 0.028 for every color. That chroma is the most
-   that sRGB holds at that lightness for blue and indigo, so no color is
-   clipped into another hue, and every group reads as strongly as every
-   other. The owner asked for more of the group's color on a face than the
-   near-white face of TASK-422. On the dark ground the face is a quiet tone of
-   the group's hue. The secondary words on a grouped face keep 5.6:1 or more
-   on the light ground and 5.2:1 or more on the dark ground.
+   of a card is the face turned from the light: the group's hue in shade,
+   darker than the face, so it reads as the foot of the block and not as a
+   bright strip. On the light ground it is at OKLCH lightness 0.78 and chroma
+   0.084, 1.6:1 or more under its face. On the dark ground it is at lightness
+   0.212 and chroma 0.042, 1.33:1 under its face, the step of a neutral card
+   (TASK-422). The face on the light ground is a clean tint with its hue in
+   plain sight, an orange face a peach, at lightness 0.93. Its chroma is nine
+   tenths of what sRGB holds there in its hue, at most 0.055: 0.031 for blue
+   and indigo, 0.055 for lime to teal, 0.042 for the gold of yellow. So no
+   color is clipped into another hue. On the dark ground the face is a quiet
+   tone of the group's hue. The secondary words on a grouped face keep 5.4:1
+   or more on the light ground and 5.2:1 or more on the dark ground.
    On the light ground a tinted face takes a softer light, so its color does
    not pool at its foot. A card in no group has a neutral front edge and face.
 8. **Small parts are low slabs.** An icon chip, the label of a relationship and
@@ -188,13 +190,15 @@ in `lib/design.ts`.
 15. **The light ground is crisp and vivid, not pastel.** The owner found the
     light picture dusty and pastel (TASK-422). Its own neutrals are now cool
     and clean, near hue 255: a card face a hair under white, a tray floor a
-    step under the chalk ground, a slate front edge and a navy shadow. On the
-    light ground a front edge and an icon chip take a tone of their color in
-    OKLCH (`inkedOver` in `lib/svg/colour.ts`), and a chip's glyph is its
-    type's color itself, at 3.1:1 or more on the chip for every color but
-    yellow, which has 2.2:1. The words are in `--diagram-text` and
-    `--diagram-text-muted`, a deep navy and a slate. The dark ground keeps its
-    values.
+    step under the chalk ground and a navy shadow. A neutral front edge is the
+    face's own neutral in shade (`--slab-edge`, lightness 0.83). The owner
+    found a pale blue-grey edge read as a highlight. On the light ground an
+    icon chip takes a tone of its color in OKLCH (`inkedOver` in
+    `lib/svg/colour.ts`), and a chip's glyph is its type's color itself, at
+    3.1:1 or more on the chip for every color but yellow, which has 2.2:1. The
+    words are in `--diagram-text` and `--diagram-text-muted`, a deep navy and
+    a slate. The dark ground keeps its values, except a grouped card's front
+    edge (rule 7).
 
 ## What stays
 
