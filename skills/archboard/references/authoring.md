@@ -282,9 +282,11 @@ a name that a `let` binds, or an overlay's `final.lib`. Bind an overlay's
 package as `overlays.<name>.<package>`. Anchor a build dependency at `flake.nix`
 with the output it is built from as `symbol`. The check does not follow the file
 that `callPackage` builds, a package of nixpkgs or `prev`, `mkShell`, or
-`overrideAttrs`. A relationship with no anchor that starts at such an output and
-that no evidence supports is skipped as `expression-not-followed`, and never
-reported unsupported.
+`overrideAttrs`. Where two packages share a line, as `inherit core lib app;`
+does, the check cannot tell whose inputs the line names, so they are unknown
+there too. Take a relationship with no anchor that no evidence supports, from
+such an output to another output of the same flake. The check skips it as
+`expression-not-followed`, and never reports it unsupported.
 
 Code facts also read Swift (`.swift`), and `Package.swift` without running it.
 Bind a Swift module to its target's directory, such as `Sources/Core`, and a
