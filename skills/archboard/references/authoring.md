@@ -276,7 +276,9 @@ warns with `ANCHOR_PATH_MISSING` when its file is not in the checkout, with
 name in a comment or a string does not count, except the name of an
 environment value or an event), and with `ANCHOR_MISMATCH` when the symbol is
 defined in the checkout outside the bound code of both ends and of every part
-inside them: cite what the code of an end defines or calls.
+inside them: cite what the code of an end defines or calls. Where one of those
+parts has no binding, the check cannot tell where its code is and does not
+judge this.
 That record decides what a valid payload cannot:
 
 - **Siblings are not a chain** (rule 3).

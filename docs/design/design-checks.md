@@ -173,7 +173,16 @@ runs of one process:
 A warm pass still reads and hashes every file, so it sees every edit. The pass
 yields to the event loop after each parse. So a poll or a socket of the server
 waits for one file at most. The longest single parse in this repository took
-14 ms. The grammars load once per process. Over all 2,032 tracked TypeScript
+14 ms.
+
+The rows above read one file after another. The check also reads files
+together: every file below a directory that a part binds with a symbol. Their
+bytes then arrive together, and the first build parsed them back to back in
+one turn of the event loop. The review of TASK-367.06 measured it through the
+real check, with one part bound to `src` and a symbol (2,068 files). The event
+loop waited 2,963 ms. Parses now run one at a time through one queue, with a
+turn of the event loop after each one. With the grammars loaded, the longest
+wait was 14 to 16 ms in the same check. The grammars load once per process. Over all 2,032 tracked TypeScript
 and TSX files of `src`, parsing took 1,220 ms and reading the facts from the
 trees 1,612 ms.
 

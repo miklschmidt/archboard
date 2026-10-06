@@ -206,11 +206,11 @@
 					"owner": "grader edge.anchor, step.anchor; src/runtime/semantic-board-store/tests/anchors.test.ts; src/shared/semantic-board/tests/comparison.test.ts and reconciliation.test.ts"
 				},
 				{
-					"path": "archboard check --code [--variant <draft>]: ANCHOR_PATH_MISSING, ANCHOR_SYMBOL_MISSING, BINDING_SYMBOL_MISSING and, on a named draft, BINDING_PATH_MISSING, each a warning whose subject is a node, an edge or a step; skipped subjects and checkouts listed with the reason; a --variant no board has as a draft refused NO_SUCH_DRAFT",
+					"path": "archboard check --code [--variant <draft>]: ANCHOR_PATH_MISSING, ANCHOR_SYMBOL_MISSING, ANCHOR_MISMATCH (the anchor's symbol is defined in the checkout outside the bound code of both ends), BINDING_SYMBOL_MISSING and, on a named draft, BINDING_PATH_MISSING, each a warning whose subject is a node, an edge or a step; skipped subjects and checkouts listed with the reason, symbol-unparsed (found only in code that did not parse) among them; a --variant no board has as a draft refused NO_SUCH_DRAFT",
 					"expectedUse": "after a write that adds or changes an anchor or a binding symbol, run check --code and repair the anchor or binding each warning names; a draft whose code is written is read with --variant",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "src/runtime/code-check/tests/code-check.test.ts (each finding, every skip reason, the named draft, historical and shelved variants never read); src/server/archboard/tests/code-check-route.test.ts (its own route, never the polled check; NO_SUCH_DRAFT); src/cli/commands/tests/check-code.test.ts (exit status, finding and evidence lines, --variant). Mechanical validation: whether a run's anchors are right is graded per anchor on edge.anchor and step.anchor, and no author run is asked to run the command"
+					"owner": "src/runtime/code-check/tests/code-check.test.ts (each finding, every skip reason, the named draft, historical and shelved variants never read); src/runtime/code-check/tests/code-facts-judging.test.ts (a definition or a use and never a comment or a string, ANCHOR_MISMATCH and its unbound end, symbol-unparsed, text-only); src/runtime/code-facts/tests (TypeScript facts, import resolution, re-exports, the cache); src/server/archboard/tests/code-check-route.test.ts (its own route, never the polled check; NO_SUCH_DRAFT); src/cli/commands/tests/check-code.test.ts (exit status, finding and evidence lines, --variant). Mechanical validation: whether a run's anchors are right is graded per anchor on edge.anchor and step.anchor, and no author run is asked to run the command"
 				},
 				{
 					"path": "node.binding.branch, .commit, .confirmedAt",
