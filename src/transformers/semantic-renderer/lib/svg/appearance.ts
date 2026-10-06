@@ -42,12 +42,16 @@ function semanticInk(color: PaletteColor | undefined): string | undefined {
 /**
  * How much of its group's colour a card's face carries, and how much its front
  * edge carries over the shade it is mixed into (`--slab-deep`): the colour of
- * the edge is what says which concern a card serves, on either ground. On the
- * dark ground the face's tint is a deeper shade of the colour (`washed`), so a
- * light group colour leaves the card's secondary words at 4.5:1.
+ * the edge and the face together are what say which concern a card serves, on
+ * either ground. On the light ground the edge is a lighter tint of the colour,
+ * a step from the face rather than a bar under it. On the dark ground the
+ * face's tint is a deep shade of the colour ({@link CARD_DEEPEN}), so it can
+ * carry as much of the colour as the light face does and still leave the
+ * card's secondary words at 4.5:1, a standing's wash over it included.
  */
-const CARD_FACE: Share = { light: 0.06, dark: 0.12 };
-const CARD_EDGE: Share = { light: 0.5, dark: 0.3 };
+const CARD_FACE: Share = { light: 0.12, dark: 0.35 };
+const CARD_EDGE: Share = { light: 0.32, dark: 0.3 };
+const CARD_DEEPEN = 0.75;
 
 /**
  * How far each plinth nested in another rises toward `--plinth-rise`, a step
@@ -65,7 +69,7 @@ const PLINTH_RISE_MAX: Share = { light: 0.6, dark: 2 / 3 };
  * standing on it, tinted by their own groups, read over a quiet ground.
  */
 const PLATE_FACE: Share = { light: 0.11, dark: 0.18 };
-const PLATE_EDGE: Share = { light: 0.4, dark: 0.3 };
+const PLATE_EDGE: Share = { light: 0.3, dark: 0.3 };
 
 /** How far a label's front edge is shaded from its face toward `--slab-deep`. */
 const LABEL_EDGE = 0.6;
@@ -74,7 +78,7 @@ const LABEL_STANDING_EDGE: Share = { light: 0.75, dark: 0.55 };
 
 /** How much of its type's colour an icon chip's face and edge carry. */
 const CHIP_FACE: Share = { light: 0.14, dark: 0.2 };
-const CHIP_EDGE: Share = { light: 0.45, dark: 0.2 };
+const CHIP_EDGE: Share = { light: 0.32, dark: 0.2 };
 
 /**
  * How far a glyph's ink leans toward the text colour on the light ground, so
@@ -107,7 +111,8 @@ function inkedEdge(light: string, ink: string, share: Share, palette: Palette): 
 function cardLook(appearance: NodeAppearance, palette: Palette): SlabLook {
 	const ink = semanticInk(appearance.bodyColor);
 	return {
-		face: washed(palette.slabFace, ink, CARD_FACE, palette),
+		face: washed(palette.slabFace, ink, CARD_FACE, palette, CARD_DEEPEN),
+		ground: palette.slabFace,
 		edge: ink === undefined ? palette.slabEdge : tinted(palette.slabDeep, ink, CARD_EDGE),
 		thickness: CARD_THICKNESS,
 		radius: SLAB_RADIUS,

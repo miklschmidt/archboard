@@ -34,8 +34,9 @@
 //   **Texture.** The block's face says it a third time. The group's colour
 //   lives on a block's front edge and the kind's on a container's nameplate,
 //   which leaves the face free: an added block's face is washed in green, a
-//   changed one's washed in orange and hatched (a container's broad face below
-//   its nameplate washed, the plate faintly hatched), and a removed block
+//   changed one's washed in orange and hatched (a grouped card's wash in place
+//   of its group's tint, which its edge still carries; a container's broad face
+//   below its nameplate washed, the plate faintly hatched), and a removed block
 //   leaves a dashed footprint where it stood. On a line — where a dash already means
 //   what kind of relationship it is, and the stroke weight already means how much
 //   attention its author asked for — the texture is carried by a wide tinted

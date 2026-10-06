@@ -36,12 +36,14 @@ import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-run
 
 /**
  * How much of the group's colour the mat's face, its front edge, its tab's
- * face and its tab's edge carry. The mat's edge is the group's colour at a
- * middle lightness on either ground, a coloured foot under a quiet face; the
- * tab's edge is quieter, the thickness of a label rather than a rule under it.
+ * face and its tab's edge carry. The mat's face carries less than the faces of
+ * the cards on it, so they read over it. Its edge is a coloured foot under that
+ * quiet face: on the light ground a quiet tint of the group's colour, about
+ * 2:1 to its face, and on the dark the colour at a middle lightness. The tab's
+ * edge is quieter, the thickness of a label rather than a rule under it.
  */
-const MAT_FACE: Share = { light: 0.12, dark: 0.11 };
-const MAT_EDGE: Share = { light: 0.8, dark: 0.45 };
+const MAT_FACE: Share = { light: 0.09, dark: 0.11 };
+const MAT_EDGE: Share = { light: 0.45, dark: 0.45 };
 const TAB_FACE: Share = { light: 0.17, dark: 0.17 };
 const TAB_EDGE: Share = { light: 0.4, dark: 0.35 };
 /** The tab's own corners; the one it shares with the mat is the mat's. */

@@ -136,17 +136,17 @@
 	--raised: oklch(0.986 0.003 88);
 	--highlight: oklch(1 0 0 / 0.85);
 	--slab-face: oklch(0.97 0.003 85);
-	--slab-edge: oklch(0.79 0.007 80);
-	--slab-deep: oklch(0.79 0.007 80);
+	--slab-edge: oklch(0.87 0.006 80);
+	--slab-deep: oklch(0.87 0.006 80);
 	--slab-glint: oklch(1 0 0);
 	--slab-sheen: oklch(1 0 0 / 0.8);
-	--slab-shadow: oklch(0.3 0.025 65 / 0.2);
+	--slab-shadow: oklch(0.3 0.025 65 / 0.15);
 	--plinth-face: oklch(0.956 0.004 85);
 	--plinth-rise: oklch(0.972 0.003 85);
 	--plinth-head: oklch(0.938 0.005 85);
-	--plinth-edge: oklch(0.78 0.006 80);
+	--plinth-edge: oklch(0.87 0.005 80);
 	--mat-face: oklch(0.985 0.003 85);
-	--mat-edge: oklch(0.42 0.02 70);
+	--mat-edge: oklch(0.86 0.008 80);
 }
 
 /* Dark: warm graphite, bone-white text, the same gold. */
