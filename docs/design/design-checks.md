@@ -350,6 +350,21 @@ Each finding was right:
 `shopping-assistant` component. That is the nearest manifest that declares the
 Service, though the default manifests do not deploy it.
 
+The review of TASK-367.19 read three more checkouts on 2026-10-06:
+`argoproj/argocd-example-apps`, `kubernetes/examples` and
+`kubernetes-sigs/kustomize`. Some Helm and Go templates parse as YAML, because
+`{{ .Values.name }}` is a YAML mapping. The adapter had read such a template as
+a manifest that declares nothing. So a part bound to `Service/helm-guestbook`
+in `helm-guestbook/templates/service.yaml` got `BINDING_SYMBOL_MISSING`, and an
+anchor there got `ANCHOR_SYMBOL_MISSING`, both warnings. Now the adapter reads
+a Helm action where YAML expects a value, or in a name, as a template. Of the
+three checkouts, 18 templates that parse as YAML are now skipped, and no plain
+manifest is read as a template. In `kustomize`, 8 references in test data name
+a ConfigMap of which two to four copies stand at the same distance. Each test
+case has its own copy. Path order had picked the first copy, which was the
+wrong one for 6 of the 8. Now they resolve to none. No Secret value of the four
+checkouts is in a fact.
+
 #### Reading docker-compose files
 
 TASK-367.20 measured the compose adapter on 2026-10-06 with Bun 1.4.2 on
@@ -1201,8 +1216,12 @@ output. Other `.nix` files are read as text.
 
 A Kubernetes manifest is a `.yaml` or `.yml` file with a document that has an
 `apiVersion` and a `kind` (TASK-367.19). The check reads other YAML files as
-text. A Helm template that does not parse is one part that did not parse, so
-its symbols are skipped and never missing. Each object is addressed as kind
+text. Helm gives the names in a template only when it renders it. So a
+manifest that does not parse, or that writes a Helm action (`{{ ... }}`) where
+YAML expects a value or in a name, is one part whose names are unknown. Its
+symbols are skipped as `expression-not-followed` and never missing. A Go
+template that a manifest holds as quoted text or in a block scalar, such as a
+Prometheus rule's, is no Helm action. Each object is addressed as kind
 and name, `Deployment/checkout`, without its namespace: a namespace that
 `kubectl -n` or Kustomize gives is in no file. An Ingress backend and a
 Gateway API route's `backendRefs` are calls to a Service. These are configured
@@ -1210,7 +1229,9 @@ paths: an environment value whose host is a Service (`cart`, or
 `cart.<namespace>.svc` with or without the cluster's domain), and the
 ConfigMap, Secret or claim that a pod reads. A name resolves to the nearest
 manifest that declares it: the same file, its directory, then the directories
-one step further away. A selector names no address, so the check joins
+one step further away. Where two manifests at the nearest step declare it,
+such as the copies of two environments, it resolves to neither, because the
+check cannot tell which one the cluster holds. A selector names no address, so the check joins
 objects by labels. A Service is a configured path to each workload whose pod
 labels its selector matches. A NetworkPolicy is a permission from each
 workload that it lets send to each workload that receives. A reference to a

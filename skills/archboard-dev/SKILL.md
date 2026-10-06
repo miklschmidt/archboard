@@ -105,10 +105,12 @@ When the task closes, before you mark any acceptance criterion:
        extensions and file names that an adapter reads. For any other file, the
        skip `text-only` says that anchors and symbols were tested by name and
        nothing judged undrawn, backwards or unsupported. The skip
-       `symbol-unparsed` means a file did not parse, and
-       `expression-not-followed` means that the static reading of a flake
-       could not follow a Nix expression. A part that was skipped has no
-       finding, and that is not the same as clear.
+       `symbol-unparsed` means a file did not parse. The skip
+       `expression-not-followed` means that the check cannot tell the names
+       there. They come from a Nix expression that the static reading of a
+       flake did not follow, or from a Helm template, which only Helm renders.
+       A part that was skipped has no finding, and that is not the same as
+       clear.
      - A relationship across a network hop, through an event bus or through a
        value that a part receives. Anchor the code that sends or subscribes.
      - A part with no binding, and a binding into a repository that this
