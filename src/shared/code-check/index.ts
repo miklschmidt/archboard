@@ -196,7 +196,29 @@ const CodeCheckAnswerSchema = z.object({
 	behind: z.array(BoardBehindSchema),
 });
 
+/**
+ * What the last pass that read one board at one variant found there, as the
+ * Archboard server remembers it for a pane (TASK-367.24, ADR 0046): the
+ * version of the board the pass read, when the pass ran, and its findings on
+ * that board. A pane draws them only over the version they were found on.
+ */
+const RememberedReadingSchema = CodeCheckBoardSchema.extend({
+	checkedAt: z.iso.datetime(),
+	findings: z.array(CodeFindingSchema),
+}).strict();
+
+/**
+ * The answer of `GET /api/vault/code-findings`: one reading for each board and
+ * variant that a pass has read since the server started. The route only reads
+ * the server's memory and never starts a pass, so it is empty until somebody
+ * runs `archboard check --code`. The route answers it beside `success: true`,
+ * and a parse keeps only the answer.
+ */
+const RememberedFindingsSchema = z.object({ readings: z.array(RememberedReadingSchema) });
+
 type CodeCheckAnswer = z.infer<typeof CodeCheckAnswerSchema>;
+type RememberedReading = z.infer<typeof RememberedReadingSchema>;
+type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
 type CodeCheckBoard = z.infer<typeof CodeCheckBoardSchema>;
 type CodeCheckSkip = z.infer<typeof CodeCheckSkipSchema>;
 type CodeFinding = z.infer<typeof CodeFindingSchema>;
@@ -225,4 +247,8 @@ export {
 	type CodeEvidence,
 	CodeFindingSchema,
 	type CodeFinding,
+	RememberedFindingsSchema,
+	type RememberedFindings,
+	RememberedReadingSchema,
+	type RememberedReading,
 };

@@ -73,6 +73,8 @@ import {
 	standingPinAt,
 	standingsFrom,
 	unsettledFrom,
+	cornerWarning,
+	lineWarning,
 	type StatedStandings,
 	type SubjectStanding,
 } from "@/transformers/semantic-renderer/lib/svg/standing";
@@ -576,6 +578,8 @@ export {
 	lineInk,
 	lineWidth,
 	standingMark,
+	cornerWarning,
+	lineWarning,
 	PALETTE,
 	type Palette,
 };

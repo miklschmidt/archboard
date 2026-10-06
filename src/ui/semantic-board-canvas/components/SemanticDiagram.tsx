@@ -33,6 +33,7 @@ import {
 	type CameraView,
 } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import type { VariantReading } from "@/ui/semantic-board-canvas/lib/board-document";
+import { useCodeMarks } from "@/ui/semantic-board-canvas/hooks/use-code-marks";
 import { useDiagramGestures } from "@/ui/semantic-board-canvas/hooks/use-diagram-gestures";
 import { useDrillOpen } from "@/ui/semantic-board-canvas/hooks/use-drill-open";
 import { useLighting } from "@/ui/semantic-board-canvas/hooks/use-lighting";
@@ -343,6 +344,9 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		group: props.group,
 		departure,
 	});
+	// Before the viewer's marks, so a line's group made to hold a warning is
+	// there to be lit and veiled with the rest.
+	useCodeMarks(picture, drawing);
 	useViewerMarks(picture, {
 		selection,
 		focus,

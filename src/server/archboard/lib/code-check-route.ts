@@ -13,12 +13,22 @@
 // `skipped`. Behind (ADR 0045, TASK-369.02) reads the current variant of each
 // board, whatever the pass reads. A `variant` that names no draft on any board
 // is refused with the drafts that exist.
+//
+// A pane never starts a pass (TASK-367.24). Each pass that finishes leaves its
+// findings in the server's memory, and `GET /api/vault/code-findings` answers
+// from that memory alone, so the panes that read it on a timer never cost a
+// reading of code. A pass the caller cancelled, or a refusal, leaves the memory
+// as it was.
 
 import type { Express, Request, Response } from "express";
 import { checkCode, readBoardsToCheck, type NoSuchDraft } from "@/runtime/code-check/index";
 import { requireVaultRoot } from "@/runtime/engine/board";
 import { createBehindReading } from "@/runtime/history-lens/index";
 import { queryString } from "@/server/archboard/lib/request-board";
+import {
+	createCodeFindingsMemory,
+	type CodeFindingsMemory,
+} from "@/server/archboard/lib/code-findings-memory";
 import { checkoutWork } from "@/server/archboard/lib/server-owners";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@/shared/code-check/index";
 import { errorMessage } from "@/shared/thrown-error/index";
@@ -40,10 +50,15 @@ interface CodeCheckRouteDependencies {
 	): Promise<T>;
 	/** Run the code check, or say that no board has the named draft. */
 	readonly check: (request: CodeCheckRequest) => Promise<CodeCheckAnswer | NoSuchDraft>;
+	/** What the finished passes found, which the panes read. */
+	readonly memory: CodeFindingsMemory;
 }
 
 /** The server's one reading of behind, so its memory serves every request. */
 const behindReading = createBehindReading();
+
+/** The server's one memory of the last passes, so every pane reads what any pass found. */
+const codeFindings = createCodeFindingsMemory();
 
 /**
  * Run the code check over every board of the vault, at its current variant or
@@ -124,12 +139,20 @@ async function answerCodeCheck(
 	response: Response,
 ): Promise<void> {
 	const variant = variantOf(request);
+	const checkedAt = new Date();
 	try {
 		const answer = await dependencies.runCheckout(
 			request,
 			response,
 			"GET /api/vault/code-check",
-			(signal) => dependencies.check({ variant, signal }),
+			async (signal) => {
+				const checked = await dependencies.check({ variant, signal });
+				// A cancelled pass may have stopped short, so it is nobody's news.
+				if ("boards" in checked && !signal.aborted) {
+					dependencies.memory.remember(checked, checkedAt);
+				}
+				return checked;
+			},
 		);
 		if (callerGone(request, response)) return;
 		if ("boards" in answer) response.json({ success: true, ...answer });
@@ -142,7 +165,8 @@ async function answerCodeCheck(
 }
 
 /**
- * Mount `GET /api/vault/code-check`.
+ * Mount `GET /api/vault/code-check`, and `GET /api/vault/code-findings`, which
+ * answers what the finished passes found from memory and never starts one.
  * @param app The application.
  * @param overrides Dependencies a test replaces.
  */
@@ -162,10 +186,14 @@ function mountCodeCheckRoute(
 		runCheckout: (request, response, name, work) =>
 			checkoutWork.trackRequest(request, response, name, work),
 		check: runCodeCheck,
+		memory: codeFindings,
 		...overrides,
 	};
 	app.get("/api/vault/code-check", (request, response) => {
 		void answerCodeCheck(dependencies, request, response);
+	});
+	app.get("/api/vault/code-findings", (_request, response) => {
+		response.json({ success: true, ...dependencies.memory.recall() });
 	});
 }
 

@@ -2,8 +2,9 @@
 //
 // Plain `fetch` on purpose: the browser never imports the board store or the
 // vault (ADR 0023). The reads are the whole of what a viewer is allowed to
-// know — which boards exist, what one board says, the vault policy, and what
-// one variant looks like when the page draws no pictures of its own — and every
+// know — which boards exist, what one board says, the vault policy, what the
+// last code check found, and what one variant looks like when the page draws
+// no pictures of its own — and every
 // one of them is answered by the server. There is no write call, because the
 // viewer never writes a board.
 //
@@ -12,6 +13,7 @@
 // shrug for all of them.
 
 import { z } from "zod";
+import { RememberedFindingsSchema, type RememberedFindings } from "@/shared/code-check/index";
 import { VaultCheckSchema, type VaultCheck } from "@/shared/semantic-policy/index";
 import {
 	BoardListingSchema,
@@ -289,8 +291,30 @@ async function fetchVaultCheck(signal?: AbortSignal): Promise<VaultCheck> {
 	return VaultCheckSchema.parse(await response.json());
 }
 
+/** The route the server answers the findings of the last code pass on. */
+const CODE_FINDINGS_URL = "/api/vault/code-findings";
+
+/**
+ * What the last code pass found on each board it read, as the server remembers
+ * it. The route reads the server's memory and never starts a pass (ADR 0046),
+ * so asking it costs a read of memory however often a pane asks.
+ * @param signal Cancels the read.
+ * @returns The remembered readings.
+ */
+async function fetchCodeFindings(signal?: AbortSignal): Promise<RememberedFindings> {
+	const parsed = RememberedFindingsSchema.safeParse(await readRoute(CODE_FINDINGS_URL, signal));
+	if (!parsed.success) {
+		throw new SemanticBoardError(
+			"REPLY_INVALID",
+			"The Archboard server sent no findings of the code check.",
+		);
+	}
+	return parsed.data;
+}
+
 export {
 	SemanticBoardError,
+	fetchCodeFindings,
 	fetchSemanticBoardDocument,
 	fetchSemanticBoards,
 	fetchSemanticRender,

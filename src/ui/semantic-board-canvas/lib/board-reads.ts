@@ -1,12 +1,15 @@
-// Where a pane reads a board's document and the vault's policy from.
+// Where a pane reads a board's document, the vault's policy and the findings of
+// the last code check from.
 //
-// A page reads both from the Archboard server. A page rendering a recording
+// A page reads them from the Archboard server. A page rendering a recording
 // frame by frame reads them from the talk it recorded instead, so the picture
 // is the one the voice spoke over, whatever the board says now (TASK-381). The
 // page chooses once, at start, before anything is read.
 
+import type { RememberedFindings } from "@/shared/code-check/index";
 import type { VaultCheck } from "@/shared/semantic-policy/index";
 import {
+	fetchCodeFindings,
 	fetchSemanticBoardDocument,
 	fetchVaultCheck,
 } from "@/ui/semantic-board-canvas/api/semantic-boards";
@@ -26,11 +29,18 @@ interface BoardReads {
 	 * @returns The check.
 	 */
 	readonly vaultCheck: (signal?: AbortSignal) => Promise<VaultCheck>;
+	/**
+	 * What the last code pass found on each board it read. Never a pass.
+	 * @param signal Cancels the read.
+	 * @returns The remembered readings.
+	 */
+	readonly codeFindings: (signal?: AbortSignal) => Promise<RememberedFindings>;
 }
 
 const fromServer: BoardReads = {
 	document: fetchSemanticBoardDocument,
 	vaultCheck: fetchVaultCheck,
+	codeFindings: fetchCodeFindings,
 };
 
 let current: BoardReads = fromServer;
