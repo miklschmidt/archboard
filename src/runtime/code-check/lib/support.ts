@@ -26,6 +26,7 @@ import { heldInFiles, type Search } from "@/runtime/code-check/lib/symbols";
 import {
 	definitionSite,
 	lastName,
+	mergedDefinitions,
 	type Definition,
 	type DefinitionSite,
 	type FileFacts,
@@ -109,7 +110,8 @@ async function holding(
 }
 
 /**
- * Whether the definition a binding's symbol names holds another one.
+ * Whether the definition a binding's symbol names holds another one, in its
+ * file or in a file its tool merges with it.
  * @param files The bound files.
  * @param symbol The binding's symbol.
  * @param site Where the other definition is.
@@ -122,9 +124,14 @@ async function holdingAt(
 	site: Site,
 	context: SupportContext,
 ): Promise<Holding> {
-	const bound = await heldInFiles(context.search, files, symbol, "definition");
+	const { search } = context;
+	const bound = await heldInFiles(search, files, symbol, "definition");
 	if (bound.status !== "found" || bound.definition === undefined) return "unknown";
-	const inside = bound.file === site.path && within(site.definition, bound.definition);
+	const { file, definition } = bound;
+	const merged = await mergedDefinitions(search.facts, search.checkout, file, definition.symbol);
+	const inside = [{ path: file, definition }, ...merged].some(
+		(each) => each.path === site.path && within(site.definition, each.definition),
+	);
 	return inside ? "holds" : "elsewhere";
 }
 
