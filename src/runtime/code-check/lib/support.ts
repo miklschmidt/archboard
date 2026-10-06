@@ -37,12 +37,14 @@ import { otherRefOf, readableOf, type ReadCheckout } from "@/runtime/code-check/
 import type { AnchorClaim } from "@/runtime/code-check/lib/claims";
 import type { Resolve } from "@/runtime/code-check/lib/resolution";
 import { heldInFiles, terraformRootOfTarget, type Search } from "@/runtime/code-check/lib/symbols";
+import { holdsDeclarationAt } from "@/runtime/code-check/lib/terraform-evidence";
 import {
 	definitionSite,
 	isJoiningDeclaration,
 	isTerraformFile,
 	lastName,
 	mergedDefinitions,
+	terraformConfiguration,
 	type Definition,
 	type DefinitionSite,
 	type FileFacts,
@@ -140,7 +142,8 @@ async function holding(
 /**
  * Whether the definition a binding's symbol names holds another one, in its
  * file or in a file its tool merges with it. In a Terraform root module, the
- * symbol is an address of its address space.
+ * symbol is an address of its address space, and it holds every declaration
+ * of the module instance it names.
  * @param bound The bound files, and their Terraform root module.
  * @param symbol The binding's symbol.
  * @param site Where the other definition is.
@@ -154,6 +157,11 @@ async function holdingAt(
 	context: SupportContext,
 ): Promise<Holding> {
 	const { search } = context;
+	if (bound.root !== undefined) {
+		const configuration = await terraformConfiguration(search.facts, search.checkout, bound.root);
+		const at = { path: site.path, line: site.definition.start };
+		if (holdsDeclarationAt(configuration, symbol, at)) return "holds";
+	}
 	const held = await heldInFiles(search, bound.files, symbol, "definition", bound.root);
 	if (held.status !== "found" || held.definition === undefined) return "unknown";
 	const { file, definition } = held;
