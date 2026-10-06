@@ -211,10 +211,14 @@ in `lib/design.ts`.
     ground (TASK-413).
 15. **The light ground is crisp and vivid, not pastel.** The owner found the
     light picture dusty and pastel (TASK-422). Its own neutrals are now cool
-    and clean, near hue 255: a card face a hair under white, a tray floor a
-    step under the chalk ground and a navy shadow. A neutral front edge is the
-    face's own neutral in shade (`--slab-edge`, lightness 0.83). The owner
-    found a pale blue-grey edge read as a highlight. On the light ground an
+    and clean, near hue 255: a tray floor a step under the chalk ground and a
+    navy shadow. A card face is a soft off-white (`--slab-face`, lightness
+    0.96), never pure white: the light on it rises to 0.97 at its top and its
+    fine top edge to 0.98 (TASK-426). A relationship's label takes the same
+    face. A neutral front edge is the face's own neutral in shade
+    (`--slab-edge`, lightness 0.815). The owner found a pale blue-grey edge
+    read as a highlight, and a card that started at white too bright. On the
+    light ground an
     icon chip takes a tone of its color in OKLCH (`inkedOver` in
     `lib/svg/colour.ts`), and a chip's glyph is its type's color itself, at
     3.1:1 or more on the chip for every color but yellow, which has 2.2:1. The

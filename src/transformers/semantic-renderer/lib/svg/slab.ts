@@ -84,8 +84,12 @@ interface SlabLook {
 /** How wide the highlight along the top edge of a face is. */
 const GLINT_WIDTH = 1;
 
-/** How far the highlight mixes a face toward the glint, on each ground. */
-const GLINT: Share = { light: 0.85, dark: 0.09 };
+/**
+ * How far the highlight mixes a face toward the glint, on each ground. On the
+ * light ground it is a soft highlight, under half way to white, so no face
+ * starts at white.
+ */
+const GLINT: Share = { light: 0.45, dark: 0.09 };
 
 /**
  * The fine highlight along the top edge of a face: the face, mixed toward the glint.

@@ -126,7 +126,7 @@ const LABEL_EDGE = 0.6;
  * the glyph, drawn in the colour itself, clears 3:1 on it; the edge is that
  * tone in shade, like a card's.
  */
-const CHIP_FACE: Inked = { light: { lightness: 0.945, chroma: 0.21 }, dark: 0.2 };
+const CHIP_FACE: Inked = { light: { lightness: 0.955, chroma: 0.17 }, dark: 0.2 };
 const CHIP_EDGE: Inked = { light: { lightness: 0.78, chroma: 0.5 }, dark: 0.2 };
 
 /**
