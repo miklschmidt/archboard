@@ -438,3 +438,24 @@ serve. Its terms map onto this decision as follows.
   entry point and interface measures. Its Container entry names the node with
   children, and no longer only the expanded drawing of it. Its Comparison
   entry stays as it is.
+
+## Amendment of 2026-10-06: a shallow Terraform module may have a count toggle
+
+TASK-368.11 and its review amended the shallow rule in Consequences. Everything
+else stands.
+
+A Terraform module is shallow when it manages exactly one resource, calls no
+module, and passes every variable through. One more variable is allowed: a
+variable that only sets the `count` of that resource. Every
+terraform-aws-modules wrapper has such a `create` variable. Under the rule as
+first written, none of them was shallow. A caller can write the same toggle as
+`count` on the module call, so the toggle makes the module no deeper.
+
+A variable in `for_each` does not count as a toggle. It carries data into the
+resource's arguments through `each.value`, and no reference shows that. A
+module whose resource reads a local or a data source is not shallow, because
+the module decides that argument for its callers.
+
+One case reads as shallow without being shallow. A literal argument such as
+`block_public_acls = true` makes no reference. So a wrapper that fixes a
+setting to a constant still reads as shallow.
