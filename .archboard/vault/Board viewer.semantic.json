@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 47,
+	"version": 49,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-10-06T12:36:25.720Z",
+	"updatedAt": "2026-10-06T12:43:53.442Z",
 	"views": [],
 	"variants": [
 		{
@@ -7651,7 +7651,7 @@
 		{
 			"id": "Cyf4MMEd",
 			"name": "TASK-387",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "GdYerxyU",
 			"summary": "A lit relationship is lit along its whole route, including the stretch a shared lane draws with another relationship",
 			"content": {
@@ -8890,9 +8890,9 @@
 		{
 			"id": "7eeang66",
 			"name": "TASK-367.24",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "Cyf4MMEd",
-			"summary": "The canvas marks the parts and relationships that the code check warns about",
+			"summary": "Module level: how a pane reads one board and draws it, and what it owns on top: the reads and the picture, the camera, the pick and its light, walkthroughs, drilling into cards, and the marks the viewer puts on the picture.",
 			"content": {
 				"nodes": [
 					{
@@ -10183,7 +10183,7 @@
 			}
 		}
 	],
-	"current": "Cyf4MMEd",
+	"current": "7eeang66",
 	"adoptions": [
 		{
 			"variant": "hmI4YrBL",
@@ -10238,6 +10238,12 @@
 			"from": "GdYerxyU",
 			"at": "2026-10-03T19:01:02.794Z",
 			"reason": "A lit relationship is lit along its whole route, though the picture has another route draw a stretch of a shared lane"
+		},
+		{
+			"variant": "7eeang66",
+			"from": "Cyf4MMEd",
+			"at": "2026-10-06T12:43:53.442Z",
+			"reason": "A pane marks the subjects the last code check warns about, and its selection tab lists their findings, from the server's memory of the last pass"
 		}
 	]
 }
