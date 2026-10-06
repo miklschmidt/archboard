@@ -229,9 +229,10 @@ never does.
 For TypeScript you need nothing more. The check runs `tsc --lsp --stdio` from
 the `typescript` package that archboard installs, never the TypeScript of the
 checkout. It loads no plugin of the checkout, and it never asks a server to
-build. The check starts a server at most once for each checkout that it reads,
-or for Swift each package and for C each compilation database, on its first
-question. It stops the server before the check answers.
+build. On its first question, the check starts a server once for each
+checkout that it reads. For Swift, it starts one for each package, and for C,
+one for each compilation database. It stops the server before the check
+answers.
 
 For Python, install pyright or basedpyright, for example with
 `npm install -g pyright` or `pipx install basedpyright`. The check runs the
@@ -266,41 +267,69 @@ generate it once:
 - Make and other build tools: `bear -- make`. This builds the project once.
 - Meson: it writes `compile_commands.json` into the build directory.
 
-The check uses the `compile_commands.json` that clangd would find: in the
+The check uses the `compile_commands.json` that clangd finds: in the
 directory of the file or a directory above it, up to the root of the checkout,
-or in a `build` directory there. It also uses that file when Git ignores it.
-It does not use one whose real path is outside the checkout. A file with no
-such `compile_commands.json`, or with one that lists no command, gets no
-server. The check says `language-server-unready` once for it, and its uses
-stay candidates. Generate the file again after you add source files.
+or in a `build` directory there. Git can ignore that file, and the check still
+uses it. In these cases a file gets no server:
+
+- No such `compile_commands.json` exists.
+- Its real path, after its links, is outside the checkout.
+- It is not a list of commands, or it lists no command.
+
+The check then says `language-server-unready` once for it, and its uses stay
+candidates. Generate the file again after you add source files.
 
 clangd finds a definition in another file through an index of every file that
 `compile_commands.json` lists. The check gives clangd a copy of the file in a
-temporary directory, and clangd keeps that index there. The check removes the
-directory when clangd stops, so nothing is written into the checkout. The
-copy also moves the module cache of each command into that directory. The
-check waits until clangd has indexed every file, then asks it. On 24 cores
-that took about 1.5 seconds for Redis and 0.1 seconds for libuv.
+temporary directory. clangd keeps that index and its temporary files there.
+When clangd stops, the check removes the directory, so nothing is written into
+the checkout. The check waits until clangd indexed every file, then asks it.
+These are the times on 24 cores:
 
-clangd runs no code of the checkout. The check turns off what could:
+- libuv: 0.1 seconds.
+- The 168 commands of LLVM's `lib/Support`: 0.9 seconds.
+- The 303 commands of Redis: 1.5 seconds.
+- The 2,283 commands of the whole of LLVM: 54 seconds.
+
+The check builds the index again on each run. So a check of a board on Redis
+took 3.1 seconds, against 0.2 seconds without clangd. The check waits at most
+30 seconds. So for a checkout as large as LLVM, it says
+`language-server-failed` once and keeps the candidates. To skip that wait,
+turn `c` off in `language-servers.json`.
+
+clangd runs no code of the checkout. The check turns off what can:
 
 - It never passes `--query-driver`, so clangd never runs a compiler that
   `compile_commands.json` names. On some systems, such as NixOS, only the
   compiler knows where the standard headers are. There clangd parses a file
   without them, and some uses stay candidates.
+- It starts clangd without the `CLANGD_FLAGS` variable of the Archboard
+  server's environment, because a `--query-driver` there runs those
+  compilers. To give clangd flags of your own, write them in `args` of a `c`
+  entry in `language-servers.json` (see below).
 - It passes `--enable-config=false`, so clangd reads no `.clangd` file of the
   checkout and no `config.yaml` of your own. A `.clangd` file can add flags,
-  and it can name a remote index, which clangd would reach over the network.
-  Put the flags that clangd needs into `compile_commands.json`.
+  and it can name a remote index. clangd then reaches that index over the
+  network. Put the flags that clangd needs into `compile_commands.json`.
 - It passes `--clang-tidy=false`, so clangd reads no `.clang-tidy` file.
+- The copy of `compile_commands.json` keeps nothing in a command that can run
+  a program of the checkout or write outside the temporary directory. When a
+  CUDA, HIP or OpenMP command asks for the `native` GPU, clang runs a program
+  to find it. The copy names a program that does not exist for that, and
+  keeps no `-B` program directory. It moves the compiler that a command names
+  into the temporary directory, so clang finds no program and no
+  configuration file beside it. The compiler keeps its name, which tells
+  clang the language and the target. A compiler outside the usual places,
+  such as a cross compiler in `/opt`, can keep its own headers beside it.
+  clangd then does not find them, and some uses stay candidates.
+- The copy keeps no response file (`@file`) and no driver configuration file
+  (`--config`), because either can hold any flag. If your build keeps its
+  flags in response files, clangd reads fewer of them.
+- The copy replaces each module cache (`-fmodules-cache-path`, also through
+  `-Xclang`) with one in the temporary directory.
 - clangd loads no plugin that a command names with `-fplugin=`,
   `-fpass-plugin=` or `-Xclang -load`, and it writes no file that a flag such
   as `-MF` or `-o` names. This was measured with clangd 21.1.8.
-
-clangd also reads flags from the `CLANGD_FLAGS` variable in the environment
-of the Archboard server. The check's own flags come after them, so its flags
-win. But if `CLANGD_FLAGS` holds `--query-driver`, clangd runs the compilers
-that it allows.
 
 To choose another server, or to turn one off, write `language-servers.json` in
 the state directory (see [Machine state and logs](#machine-state-and-logs)).
