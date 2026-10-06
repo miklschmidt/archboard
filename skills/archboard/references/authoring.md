@@ -180,6 +180,22 @@ does not. Anchor a relationship to an input at `flake.lock` with
 that holds it, owns that evidence, and an input that is a path in the same
 checkout (`path:./tools`) reaches the part bound to that flake.
 
+Code facts also read Swift (`.swift`), and `Package.swift` without running it.
+Bind a Swift module to its target's directory, such as `Sources/Core`, and a
+type or a member by its qualified name: `Ledger`, `Ledger.post`, and
+`Ledger.refund` for a member that an extension in another file adds. A Swift
+file sees the names of its module with no import, so a use of a name that one
+other file of the module declares reaches that file, and so does a use of a
+name that an imported module exposes (`open`, `public` or `package`). An
+`import` of a local module that `Package.swift` makes a dependency of the
+importing target is build-dependency evidence, which `dependency` accepts and
+`call` does not: anchor a `call` at a name the code uses, such as the type it
+constructs. `Package.swift` defines each target by its name, so a part can
+also bind `Package.swift` with a target's name as `symbol`. A name or a path
+that the manifest computes is not read, and a Swift file that no target of a
+`Package.swift` holds, as in an Xcode project, belongs to no module, so its
+uses of other files' names give no evidence.
+
 A binding names the implementation owner: the file whose body does what the
 node's responsibility says, not a file that imports the unit, registers it (a
 command table, a plugin table, a route mount) or calls it. A command's handler
