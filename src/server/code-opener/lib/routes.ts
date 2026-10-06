@@ -146,6 +146,8 @@ function canonicalBinding(boardKey: string, subjectId: string): BindingLookup {
 			error: `${subjectId} is not a node on this board.`,
 		};
 	}
+	// The opener opens the bound file or directory and ignores a binding's
+	// `symbol` until opening at the definition lands (TASK-367.25, ADR 0046).
 	const parsed = CodeBindingSchema.safeParse(node.binding);
 	return parsed.success
 		? { ok: true, binding: parsed.data }

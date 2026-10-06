@@ -72,7 +72,7 @@ const NODES: readonly Node[] = [
 		id: "n3",
 		name: "Voice Bridge",
 		kind: "external",
-		binding: { repo: "coordinator", path: "src/voice/bridge.ts" },
+		binding: { repo: "coordinator", path: "src/voice/bridge.ts", symbol: "VoiceBridge.connect" },
 	},
 ];
 
@@ -161,6 +161,8 @@ test("picking a node shows what its card cannot: the description and the code", 
 	expect(slot("semantic-inspector-code")?.textContent).toContain("src/runtime/engine/board-io.ts");
 	expect(slot("semantic-inspector-open-code")?.getAttribute("title")).toContain("archboard");
 	expect(slot("semantic-inspector-copy")).not.toBeNull();
+	// It names no symbol, so none is shown.
+	expect(slot("semantic-inspector-symbol")).toBeNull();
 });
 
 test("an unbound node with nothing written says nothing of what it does not have", async () => {
@@ -190,6 +192,13 @@ test("two nodes of one board can name two different repositories", async () => {
 	expect(open?.getAttribute("title")).toContain("coordinator");
 	expect(open?.getAttribute("title")).not.toContain("archboard");
 	expect(slot("semantic-inspector-code")?.textContent).toContain("src/voice/bridge.ts");
+});
+
+test("a binding that names a symbol shows it beside the file", async () => {
+	serving();
+	mountStage("n3", { onOpenCode: record });
+	await settled();
+	expect(slot("semantic-inspector-symbol")?.textContent).toBe("VoiceBridge.connect");
 });
 
 test("opening a part's code hands the shell the binding the board states", async () => {

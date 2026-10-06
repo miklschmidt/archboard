@@ -83,6 +83,17 @@ describe("what a proposal changed about the variant it came from", () => {
 	});
 });
 
+/**
+ * An anchor in the gateway's file.
+ * @param symbol The symbol it names.
+ * @returns The anchor.
+ */
+const cite = (symbol: string): { repo: string; path: string; symbol: string } => ({
+	repo: "github.com/acme/shop",
+	path: "src/gateway.ts",
+	symbol,
+});
+
 describe("what is not a change to the architecture", () => {
 	test("changing only node and relationship order keeps their standing unchanged", () => {
 		const before = content({
@@ -110,6 +121,43 @@ describe("what is not a change to the architecture", () => {
 		const after = content({ nodes: [GATEWAY, ORDERS], edges: [{ ...WIRE, emphasis: "hero" }] });
 		const comparison = compareVariants(BASELINE, after);
 		expect(comparison.edges.get("w1")?.kind).toBe("unchanged");
+	});
+
+	test("adding or changing the anchor of a relationship or a step is bookkeeping", () => {
+		const step = { id: "s1", from: "gw", to: "or", label: "place", kind: "sync" };
+		const flow = { id: "f1", name: "One order", participants: ["gw", "or"], steps: [step] };
+		const before = content({ nodes: [GATEWAY, ORDERS], edges: [WIRE], flows: [flow] });
+		const anchored = content({
+			nodes: [GATEWAY, ORDERS],
+			edges: [{ ...WIRE, anchor: cite("placeOrder") }],
+			flows: [{ ...flow, steps: [{ ...step, anchor: cite("placeOrder") }] }],
+		});
+		const recited = content({
+			nodes: [GATEWAY, ORDERS],
+			edges: [{ ...WIRE, anchor: cite("submitOrder") }],
+			flows: [{ ...flow, steps: [{ ...step, anchor: cite("submitOrder") }] }],
+		});
+
+		for (const [from, to] of [
+			[before, anchored],
+			[anchored, recited],
+		] as const) {
+			const comparison = compareVariants(from, to);
+			expect(standingOf(comparison, "w1")).toBe("unchanged");
+			expect(standingOf(comparison, "s1")).toBe("unchanged");
+		}
+	});
+
+	test("a binding that names another symbol in the same file is a changed binding", () => {
+		const bound = (symbol: string): Record<string, unknown> => ({
+			...ORDERS,
+			binding: { repo: "github.com/acme/shop", path: "src/orders.ts", symbol },
+		});
+		const before = content({ nodes: [GATEWAY, bound("Orders.place")], edges: [WIRE] });
+		const after = content({ nodes: [GATEWAY, bound("Orders.cancel")], edges: [WIRE] });
+
+		const comparison = compareVariants(before, after);
+		expect(comparison.nodes.get("or")?.fields.map((one) => one.field)).toEqual(["binding"]);
 	});
 });
 

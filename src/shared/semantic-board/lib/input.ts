@@ -36,7 +36,7 @@ import {
 	NodeKindSchema,
 	VariantLifecycleSchema,
 } from "@/shared/semantic-board/lib/vocabulary";
-import { CodeBindingSchema } from "@/shared/code-target/index";
+import { CodeAnchorSchema, CodeBindingSchema } from "@/shared/code-target/index";
 import { SemanticBoardLevelSchema } from "@/shared/semantic-board/lib/aggregate";
 
 /**
@@ -114,6 +114,10 @@ const SemanticEdgeInputSchema = z
 		description: DescriptionSchema.optional(),
 		emphasis: EdgeEmphasisSchema.optional(),
 		traffic: EdgeTrafficSchema.optional(),
+		// Stated in full or not at all, and never filled in from a binding at an
+		// end: an end can be unbound or external, and evidence in infrastructure
+		// often lives in another repository (ADR 0046).
+		anchor: CodeAnchorSchema.optional(),
 	})
 	.strict();
 type SemanticEdgeInput = z.infer<typeof SemanticEdgeInputSchema>;
@@ -129,6 +133,7 @@ const FlowStepInputSchema = z
 		kind: MessageKindSchema.optional(),
 		note: DescriptionSchema.optional(),
 		repeat: z.int().min(2).optional(),
+		anchor: CodeAnchorSchema.optional(),
 	})
 	.strict();
 type FlowStepInput = z.infer<typeof FlowStepInputSchema>;

@@ -51,6 +51,7 @@ import {
 	type Batch,
 	type MintedId,
 } from "@/runtime/semantic-board-store/lib/batch";
+import { droppedAnchors } from "@/runtime/semantic-board-store/lib/dropped-anchors";
 import { editViews } from "@/runtime/semantic-board-store/lib/edit-views";
 import { editWalkthroughs } from "@/runtime/semantic-board-store/lib/edit-walkthroughs";
 import {
@@ -380,13 +381,16 @@ function editContent(
 	return placed.ok
 		? {
 				...placed,
-				notices: replacedRelationships(
-					before.edges,
-					planned.removals.edges,
-					edges.edges,
-					restorable.edges,
-					planned.removals.statedEdges,
-				),
+				notices: [
+					...replacedRelationships(
+						before.edges,
+						planned.removals.edges,
+						edges.edges,
+						restorable.edges,
+						planned.removals.statedEdges,
+					),
+					...droppedAnchors(before, placed.content),
+				],
 			}
 		: placed;
 }

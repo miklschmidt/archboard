@@ -37,9 +37,9 @@ interface OrderedIssue {
 	readonly repair: string;
 }
 
-/** The fields that say what a step and a beat are. */
+/** The fields a step and a beat merge, a step's bookkeeping `anchor` included. */
 const TOLD_FIELDS = {
-	step: ["from", "to", "label", "kind", "note", "repeat"],
+	step: ["from", "to", "label", "kind", "note", "repeat", "anchor"],
 	beat: ["heading", "body", "subjects", "view"],
 } as const;
 

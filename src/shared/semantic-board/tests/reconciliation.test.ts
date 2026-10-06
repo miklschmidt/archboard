@@ -246,6 +246,79 @@ describe("a real disagreement", () => {
 	});
 });
 
+/**
+ * An anchor in the API's file.
+ * @param symbol The symbol it names.
+ * @returns The anchor.
+ */
+const cite = (symbol: string): { repo: string; path: string; symbol: string } => ({
+	repo: "github.com/acme/shop",
+	path: "src/api.ts",
+	symbol,
+});
+
+describe("an anchor", () => {
+	const STEP = { id: "s1", from: "n1", to: "n2", label: "read" };
+	/**
+	 * A content whose relationship and step carry one anchor.
+	 * @param symbol The anchored symbol, or nothing for no anchor.
+	 * @returns The content.
+	 */
+	const anchored = (symbol?: string): VariantContent => {
+		const anchor = symbol === undefined ? {} : { anchor: cite(symbol) };
+		return content({
+			nodes: [API, STORE],
+			edges: [{ ...WIRE, ...anchor }],
+			flows: [
+				{ id: "f1", name: "Read", participants: ["n1", "n2"], steps: [{ ...STEP, ...anchor }] },
+			],
+		});
+	};
+
+	test("the predecessor gave is inherited, and one this proposal gave is kept", () => {
+		const inherited = reconcileVariant({
+			base: anchored(),
+			mine: anchored(),
+			theirs: anchored("read"),
+		});
+		expect(inherited.issues).toEqual([]);
+		expect(inherited.content.edges[0]?.anchor).toEqual(cite("read"));
+		expect(inherited.content.flows[0]?.steps[0]?.anchor).toEqual(cite("read"));
+
+		const kept = reconcileVariant({ base: anchored(), mine: anchored("read"), theirs: anchored() });
+		expect(kept.issues).toEqual([]);
+		expect(kept.content.edges[0]?.anchor).toEqual(cite("read"));
+		expect(kept.content.flows[0]?.steps[0]?.anchor).toEqual(cite("read"));
+	});
+
+	test("two different citations are a disagreement on the field", () => {
+		const settled = reconcileVariant({
+			base: anchored(),
+			mine: anchored("read"),
+			theirs: anchored("fetch"),
+		});
+		expect(about(settled.issues, "e1")[0]).toMatchObject({
+			kind: "competing-field",
+			field: "anchor",
+			mine: cite("read"),
+			theirs: cite("fetch"),
+		});
+		expect(about(settled.issues, "s1")[0]).toMatchObject({
+			kind: "competing-field",
+			field: "anchor",
+		});
+	});
+
+	test("a relationship anchored here and removed there is a deletion against a change", () => {
+		const settled = reconcileVariant({
+			base: anchored(),
+			mine: anchored("read"),
+			theirs: content({ nodes: [API, STORE], edges: [] }),
+		});
+		expect(about(settled.issues, "e1")[0]).toMatchObject({ kind: "deleted-and-changed" });
+	});
+});
+
 describe("what a proposal added to something the predecessor removed", () => {
 	test("keeps the relationship it added and says what is wrong", () => {
 		// The proposal wired the API to the store; the predecessor took the store out.

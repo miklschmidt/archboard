@@ -3,8 +3,9 @@
 // picture (a ring around an arrow up, down or across) and the same words the
 // card's hover tip uses for which way it lies; it is the panel's primary
 // action, in gold. The other views the part's code through the shell's own
-// open-code action. It names the file it opens, which makes it the one place
-// the part's binding is shown, and it comes with the way to copy that path.
+// open-code action. It names the file it opens and the symbol the binding
+// names in it, which makes it the one place the part's binding is shown, and
+// it comes with the way to copy that path.
 //
 // The foot has no heading: its rows say what they do, and a part that leads
 // nowhere has no foot.
@@ -362,7 +363,8 @@ interface CodeRowProps {
 
 /**
  * The way to the code: the file the part is bound to, opened in the person's
- * editor, and its path to copy.
+ * editor, and its path to copy. A binding that names a symbol shows it under
+ * the path; the editor still opens the file (TASK-367.25).
  * @param props The binding and the shell's way of opening it.
  * @returns The row.
  */
@@ -383,6 +385,14 @@ function CodeRow(props: CodeRowProps): JSX.Element {
 				<span className="text-technical font-mono">
 					<BreakablePath path={binding.path} />
 				</span>
+				{binding.symbol !== undefined && (
+					<span
+						data-slot="semantic-inspector-symbol"
+						className="text-technical text-foreground block font-mono"
+					>
+						{binding.symbol}
+					</span>
+				)}
 			</Go>
 			<CopyPath path={binding.path} />
 		</div>

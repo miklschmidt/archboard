@@ -62,7 +62,7 @@ function effectiveTraffic(
 				volume: traffic.volume ?? DEFAULT_TRAFFIC_VOLUME,
 			};
 }
-import { CodeBindingSchema } from "@/shared/code-target/index";
+import { CodeAnchorSchema, CodeBindingSchema } from "@/shared/code-target/index";
 import {
 	DescriptionSchema,
 	DisplayNameSchema,
@@ -154,6 +154,10 @@ type SemanticNode = z.infer<typeof SemanticNodeSchema>;
  * `traffic` asks for ongoing illustrative flow at a distance-based speed and
  * entry rate. What either presentation signal looks like is the renderer's to
  * decide.
+ *
+ * `anchor` is the place in code the author cites as proof of the mechanism. It
+ * is bookkeeping (ADR 0046): comparison ignores it, so a better citation never
+ * reads as a changed relationship, and reconciliation merges it like `emphasis`.
  */
 const SemanticEdgeSchema = z
 	.object({
@@ -166,6 +170,7 @@ const SemanticEdgeSchema = z
 		description: DescriptionSchema.optional(),
 		emphasis: EdgeEmphasisSchema.default("normal"),
 		traffic: EdgeTrafficSchema.optional(),
+		anchor: CodeAnchorSchema.optional(),
 	})
 	.strict();
 type SemanticEdge = z.infer<typeof SemanticEdgeSchema>;
