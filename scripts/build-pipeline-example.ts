@@ -19,7 +19,7 @@ import {
 	BoardBranchInputSchema,
 	BoardCreateInputSchema,
 	VariantEditInputSchema,
-	drawingOf,
+	wasDrawn,
 } from "@/shared/semantic-board/index";
 import {
 	branchVariantTransition,
@@ -29,7 +29,7 @@ import {
 	readSemanticBoardConfiguration,
 	writeSemanticBoard,
 } from "@/runtime/semantic-board-store/index";
-import { renderSemanticView } from "@/runtime/semantic-renderer/index";
+import { renderBoard } from "@/runtime/semantic-renderer/index";
 
 /** Where the statements live, relative to the checkout. */
 const STATED = "docs/design/semantic-pipeline";
@@ -146,21 +146,20 @@ async function draw(board: string): Promise<string[]> {
 	if (!read.ok) {
 		throw new Error(`${board}: ${read.problem}`);
 	}
+	const policy = readSemanticBoardConfiguration().configuration;
 	const pictures = await Promise.all(
 		read.board.variants.flatMap((variant) =>
 			read.board.views.map(async (view) => {
-				// The route and artifact use the same scoped comparison depiction.
-				const proposal = drawingOf(read.board, variant, view.scope);
-				const picture = await renderSemanticView({
-					content: proposal.content,
-					grammar: view.grammar,
-					policy: readSemanticBoardConfiguration().configuration,
-					theme: "light",
+				// The render route draws the artifact, so the two cannot differ.
+				const drawn = await renderBoard(
+					read.board,
 					// The file outlives the server that drew it, so it carries its faces.
-					fonts: "embedded",
-					...(proposal.changes === null ? {} : { standing: proposal.changes.standing }),
-				});
-				return { variant, view, picture };
+					{ variant: variant.id, view: view.id, theme: "light", fonts: "embedded" },
+					policy,
+				);
+				if (!drawn.ok) throw new Error(`${board}: ${drawn.error}`);
+				if (!wasDrawn(drawn.reply)) throw new Error(`${board}: ${view.name} draws nothing`);
+				return { variant, view, picture: drawn.reply };
 			}),
 		),
 	);
