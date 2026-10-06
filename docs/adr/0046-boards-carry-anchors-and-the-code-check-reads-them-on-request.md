@@ -10,27 +10,48 @@ TASK-368.11 and TASK-369.02, and Proposal 1 of the
 [design checks](../design/design-checks.md).
 
 Amended by TASK-367.13 (2026-10-06): the language servers are their own
-module, `src/runtime/language-servers`, not a part of code facts, because a
-process to start and stop is a concern apart from the facts of a file.
+module, `src/runtime/language-servers`. They are not a part of code facts,
+because a process to start and stop is a concern apart from the facts of a
+file.
 
-Amended by TASK-367.15 (2026-10-06): clangd is a default server, because
-with the flags the check gives it, it runs no code of the project. It runs no
-compiler without `--query-driver`, which the check never passes. It loads no
-plugin that a compile command names, and it reads no `.clangd` file with
-`--enable-config=false`. A `.clangd` file can name a remote index, which
-clangd would reach over the network. That flag also turns off the user's own
-clangd configuration, because no flag turns off only the project's file.
-clangd names a definition in another file only through its background index.
-Without that index, an answer depends on which files the pass opened before.
-So the check keeps the index on and waits until it is complete. clangd writes
-the index beside the database that it reads. So the check gives it a copy of
-the checkout's `compile_commands.json` in a temporary directory of its own,
-and removes that directory when clangd stops. The copy moves the module cache
-of each command into that directory, because clangd builds modules into the
-cache that a command names, which can be inside the checkout. To know whether
-clangd can answer and to make that copy, the check reads the
-`compile_commands.json` that clangd would find, also where Git ignores it, as
-in CMake's `build`. It reads nothing else that Git ignores.
+Amended by TASK-367.15 (2026-10-06): clangd is a default server. With the
+flags and the copy of the database that the check gives it, it runs no code
+of the project. It runs no compiler without `--query-driver`, which
+the check never passes. It loads no plugin that a compile command names. With
+`--enable-config=false`, it reads no `.clangd` file. A `.clangd` file can
+name a remote index, and clangd then reaches that index over the network.
+That flag also turns off the user's own clangd configuration, because no flag
+turns off only the project's file. clangd names a definition in another file
+only through its background index. Without that index, an answer depends on
+which files the pass opened before. So the check keeps the index on and waits
+until it is complete. clangd writes the index beside the database that it
+reads. So the check gives it a copy of the checkout's `compile_commands.json`
+in a temporary directory of its own. When clangd stops, the check removes
+that directory. clangd builds modules into the cache that a command names,
+which can be inside the checkout. So the copy moves the module cache of each
+command into that directory. The check must know whether clangd can answer,
+and it must make that copy. So it reads the `compile_commands.json` that
+clangd finds, also where Git ignores it, as in CMake's `build`. It reads
+nothing else that Git ignores.
+
+Amended by the review of TASK-367.15 (2026-10-06): those flags were not
+enough. A compile command comes from the checkout. clangd runs clang's driver
+on each command. When a CUDA, HIP or OpenMP command asks for the `native`
+GPU, the driver runs a program to find it. The command can name that program
+(`--nvptx-arch-tool=`). It can also put the program where the driver looks:
+in a `-B` directory, in a `--cuda-path`, or beside the compiler that the
+command names. clangd 21.1.8 ran such a script of a scratch checkout up to
+six times for one command. A response file or a driver configuration file can
+hold any of these flags. `-Xclang=` and a response file each moved the module
+cache back into the checkout. `--query-driver` in the `CLANGD_FLAGS`
+environment variable ran the compiler that a command names. So the copy of
+the database names a GPU program that does not exist. It keeps no `-B`, no
+response file and no configuration file. It moves the compiler into the
+temporary directory under the same name, and it drops every module cache but
+its own. Its own flags stand right after the compiler, where no flag of the
+command can take one as its value. clangd starts without `CLANGD_FLAGS`, and
+keeps its temporary files in the same directory. With these, clangd ran
+nothing of the checkout and wrote only into that directory.
 
 Amended by the review of TASK-367.16 (2026-10-06): the check itself writes
 nothing into a checkout. The user names some servers for trusted checkouts.

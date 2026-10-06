@@ -1621,6 +1621,79 @@ in `server.h`, so its passes ask many such uses, which is most of the 3 s.
 Every pass left no clangd process and no temporary directory, and `git status
 --ignored` showed nothing new in any checkout.
 
+The review of TASK-367.15 ran clangd 21.1.8 through the check's own session
+on a scratch checkout, under `strace -f`, which listed each program started
+and each file opened for writing. It read the clang 21.1.8 sources of the
+driver and of clangd. It found that the flags above did not keep clangd from
+running code of the checkout:
+
+- clang's driver runs a program to find the GPU when a CUDA, HIP or OpenMP
+  command asks for the `native` one (`getSystemGPUArchs` in
+  `ToolChains/Cuda.cpp` and `ToolChains/AMDGPU.cpp`, the only programs that
+  the driver runs before it compiles). A script of the checkout ran 1 to 6
+  times for one command when the command named it with
+  `--nvptx-arch-tool=` or `--amdgpu-arch-tool=`, or put it in a `-B`
+  directory, in a `--cuda-path`, or beside the compiler that the command
+  names. It also ran for `-mcpu=native` on an AMD GPU target, for
+  `-march=native` on an NVIDIA target, and for an OpenMP target with no
+  architecture. It ran when a response file held the flags, when a driver
+  configuration file beside the compiler (`clang.cfg`) held them, and when
+  `--config` named such a file. A `-sectcreate` at the end of a command took
+  the next three arguments as its values. So a flag that the copy added at
+  the end was lost, and the command's own program ran.
+- `CLANGD_FLAGS=--query-driver=**` in the environment ran the compiler that
+  a command names.
+- `-Xclang=-fmodules-cache-path=` and a response file that holds
+  `-Xclang -fmodules-cache-path=` each made clangd write the module cache
+  into the checkout. `-Wp,` and `-Xpreprocessor` did not.
+- clangd wrote its preambles (`preamble-*.pch`) and the driver's
+  `toolchain-program-*.txt` into the system's temporary directory. They stay
+  there when clangd is killed.
+
+The copy of the database now drops every response file, `-B`, `--prefix`,
+`--config`, and every argument that names a module cache or a GPU program in
+any spelling. It also drops everything from `--` on, which clangd replaces
+with the file. It moves a compiler named with a directory into the server's
+own directory under the same name. Right after the compiler it puts its own
+module cache and a GPU program that does not exist, spelled `/clang:` for
+clang-cl. clangd starts with `TMPDIR` and `XDG_CACHE_HOME` set to the
+server's own directory, and without `CLANGD_FLAGS`. After the fix, the same
+30 commands ran nothing of the checkout. clangd tried the missing GPU program
+and failed. Every file that clangd wrote was in the server's own directory,
+`git status --ignored` was clean, and nothing new was under `~/.cache`.
+
+The readiness of a database, measured through the session: no database, a
+database `[]`, one that is not valid JSON, and one whose link leads outside
+the checkout were each said once, with no server and the candidates kept.
+A database in `build/`, which Git ignored, was read and answered. A
+`compile_flags.txt` alone counts as no database. A database that lists only a
+file that no longer exists still ended its index progress, after 52 ms.
+
+The real `checkCode` after the fix gave the same findings on the libuv,
+leveldb and Redis boards above. Redis took 3,125 to 3,238 ms warm, and 170 ms
+without clangd.
+
+What the index costs, on 24 cores: LLVM 21.1.8, configured with CMake for the
+X86 target only and not built, so some generated headers were missing, lists
+2,283 commands. Its index took 53.8 s, longer than the 30 s that the check
+waits, so such a checkout fails once in each pass, after 30 s, and keeps its
+candidates. The 168 commands of `llvm/lib/Support` alone took 0.93 to 0.96 s.
+The cost stands for now, and INSTALL.md states it. With an index of only the
+files that bound code holds, a checkout as large as LLVM can answer. But the
+code check must then give the session the files of every board's bound code.
+It also changes answers: an anchor whose definition is in code that no part
+binds then reads as its declaration. And a file that the pass opens adds its
+definitions, so the order of the questions matters again for that code.
+
+Limits that the review left:
+
+- A selector part is asked at the first word on its line that a colon
+  follows. In `c ? post : 1; [ledger post:2];` that is the `post` of the
+  conditional.
+- clangd before version 16 has no flag that names the GPU program. The other
+  measures still apply, so it runs only a program on the `PATH` or in clang's
+  own directory.
+
 #### Swift and Nix have no upstream WebAssembly file on npm
 
 Swift: the npm package `tree-sitter-swift` stops at 0.7.1 and has no `.wasm`.
