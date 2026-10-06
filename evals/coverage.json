@@ -128,7 +128,7 @@
 					"expectedUse": "design it twice: put the measures of competing drafts side by side in one answer and report them unranked, with no score and no deep or shallow verdict",
 					"scenarios": ["S17"],
 					"evidence": "grader",
-					"owner": "grader compare.measures-side-by-side, measures.unranked; src/cli/commands/tests/comparison-answer.test.ts; src/cli/command-contract/tests/parameters.test.ts (an appending option)"
+					"owner": "grader compare.measures-side-by-side, measures.unranked; src/cli/commands/tests/interface-measures.test.ts; src/cli/command-contract/tests/parameters.test.ts (an appending option)"
 				}
 			]
 		},
