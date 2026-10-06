@@ -52,6 +52,7 @@ import { lineLooks } from "@/transformers/semantic-renderer/lib/semantic-appeara
 import { shownDrawing, unshownOf } from "@/transformers/semantic-renderer/lib/shown";
 import { PALETTE, type Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { paintArchitecture } from "@/transformers/semantic-renderer/lib/svg/architecture";
+import { pulseLook } from "@/transformers/semantic-renderer/lib/svg/beam-light";
 import { paintDataFlow } from "@/transformers/semantic-renderer/lib/svg/dataflow";
 import { svgDocument } from "@/transformers/semantic-renderer/lib/svg/document";
 import {
@@ -526,6 +527,16 @@ function lineInk(ink: string): string {
 }
 
 /**
+ * The colour of the body of a pulse that rides a line of one colour: the one
+ * expression the picture draws it in, for a key beside it to draw the same.
+ * @param ink The line's colour at full strength.
+ * @returns The pulse's colour.
+ */
+function pulseInk(ink: string): string {
+	return pulseLook(ink, STROKE_WIDTH.normal, PALETTE).head;
+}
+
+/**
  * How wide a page draws a line of one emphasis, in diagram units: for a key
  * that has to draw a line the way the picture does (TASK-383).
  * @param emphasis How loudly its author asked the line to speak.
@@ -573,6 +584,7 @@ export {
 	headLength,
 	lineInk,
 	lineWidth,
+	pulseInk,
 	standingMark,
 	PALETTE,
 	type Palette,
