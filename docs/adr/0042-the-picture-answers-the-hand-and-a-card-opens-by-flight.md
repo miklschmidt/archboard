@@ -7,6 +7,9 @@ status: accepted
 The amendment of 2026-10-06 at the end replaces one sentence of answer 1 and
 one sentence of answer 2. [ADR 0044](0044-cards-containers-and-groups-are-drawn-as-slabs.md)
 records the change to the picture's surfaces that came from the same request.
+The second amendment of 2026-10-06 takes the ease away from a pinch, says when
+the camera is at rest, and replaces the sentence of "How the picture is marked"
+about the board inside a card.
 
 A reader who does not know a system learns it by poking at its picture. A still
 drawing leaves the work to the reader. They must find what a part is wired to,
@@ -146,3 +149,88 @@ The browser owner `semantic-board-exploring` now holds that every label is
 drawn from far, and that a label that a poke does not light keeps half its
 strength. A module owner of the stage holds that a released drag leaves the
 camera where it is drawn and asks for no frame.
+
+## Amendment of 2026-10-06: a pinch follows the hand, and the picture changes its look at rest
+
+The owner asked for two more changes on 2026-10-06 (TASK-405 and TASK-406). In
+the owner's words: "I don't think we should have easing on pinch to zoom at all,
+that just feels bad, so that needs to die like the drag momentum." And of the
+flight into a card: "If we could make a nicer transition on those and delay the
+update to after the transition completed, that would help a lot on the
+experience."
+
+**A pinch has no ease.** This replaces what answer 1 and the first amendment say
+of a pinch. A pinch on a trackpad arrives as a wheel event with the Control key
+held. A pinch on a touch screen arrives as two pointers. Both move the camera at
+once, as a drag does. The picture grows by as much as the fingers asked, and the
+part of the diagram under them stays under them. Two fingers on a touch screen
+also pan the picture as they move together. The viewport takes touch input for
+itself (`touch-action: none`), so a touch screen pinches the picture and not the
+page. A turn of the wheel and the keys keep their ease (`EXPLORING_MS.cameraEase`),
+because the measurement below showed that the ease was not the cost.
+
+**The camera comes to rest once a hand has left it alone.** The camera store says
+whether a hand moves the camera, and where the camera last came to rest. A drag,
+a wheel, a pinch or a key sets it moving. It is at rest when its ease has ended
+and the hand has left it alone for `EXPLORING_MS.cameraRest` (400 ms). That
+duration replaces `trafficRest`, which the traffic waited for before. Three
+things follow the rest and not each frame:
+
+- While the camera moves, the surface is a layer of its own (`will-change`), as
+  it already was under a drag. The browser scales the picture it already drew
+  instead of painting it again. At rest the layer goes, and the picture is drawn
+  sharp once at its new size.
+- The far view (`is-far`) follows the zoom where the camera comes to rest. A zoom
+  that crosses the far line swaps the cards' words for their names once, with
+  the picture's own fade, when the zoom is over. Before, the swap and the fade of
+  every card ran in the middle of the zoom.
+- The traffic waits for the rest, as before.
+
+Measured on the board "Archboard server" of the dogfood vault (about 4000 by 3000
+units, fitted at a scale of 0.32), in headless Chromium at 1920 by 1080, with real
+input events sent over the DevTools protocol. Each zoom went in, out, in and out,
+across the far line. A slow frame is one that took more than 25 ms. Raster is
+the time the browser spent drawing tiles. Each number is the median of three runs.
+
+| Zoom                     | GPU before                     | GPU after        | Software before          | Software after    |
+| ------------------------ | ------------------------------ | ---------------- | ------------------------ | ----------------- |
+| Wheel, 60 notches        | 14 of 328 slow, 1000 ms raster | 0 of 275, 298 ms | 73 of 465, 17825 ms      | 1 of 378, 2109 ms |
+| Trackpad pinch, 60 steps | 7 of 327, 968 ms               | 1 of 173, 127 ms | 52 of 467, 16617 ms      | 1 of 199, 1964 ms |
+| Keys, 20 presses         | 0 of 132, 372 ms               | 0 of 122, 15 ms  | 1 of 147, 4576 ms        | 1 of 121, 424 ms  |
+| Touch pinch, 60 moves    | the picture did not move       | 0 of 97          | the picture did not move | 0 of 106          |
+
+The GPU is the machine's own, through ANGLE and Vulkan. Software is Chromium
+with no GPU, so its numbers are worse than any reader's, and they compare only
+with each other. After the change, the one slow frame in software is the frame at
+rest that draws the picture sharp again. A released drag had that frame before.
+
+**A flight holds the far view until the pane has taken over.** This replaces the
+last sentence of "How the picture is marked". The board inside a card no longer
+carries `is-far` of its own: it is drawn as the picture around it is. The flight
+holds the camera's rest from takeoff until the pane shows the board it flew to,
+fitted. So no card, header or caption swaps between its near and far layers in
+the air or while the pane takes over. Then the far view follows the opened
+board's own fit once, with the picture's own fade. Before, the end of the flight
+wrote a camera that was close up. The board inside the card went near, the board
+took over drawn near, and its fit sent it far again. In a flight into "Semantic
+renderer" that was two swaps and 32 fades of card layers in the 600 ms after the
+flight. Now there are none. A reader who asked for no motion and the plain way of
+opening a board are not changed.
+
+The frame time of the flight itself did not change. Its mean on the GPU was
+20.9 ms before and 21.7 ms after, and the spread from run to run is larger than
+the difference. The flight scales two pictures by more than ten times, and the
+browser draws them again at each frame. A layer of its own for the surface in the
+flight cut that cost by about a third, but it drew the lines of the board inside
+the card faint until the board took over sharp. That is a visible event of its
+own, so it was not kept.
+
+Owners: the module owner `camera-motion` holds the arithmetic of a pinch. The
+stage owner holds that a pinch from a trackpad and from two fingers moves the
+camera at once and asks for no frame, and that a keyed zoom keeps the far view
+and the layer until it comes to rest. The dive owner holds that a flight between
+two boards seen from far changes no far view, and that a board seen from far
+that opens from a board seen near swaps once, after it has taken over. The
+browser owner `semantic-board-exploring` holds the same in a real page: no card
+fades between its layers while the board flown from is on screen, and the board
+flown to fades once.
