@@ -129,4 +129,11 @@ Command interface@TASK-368.05 (branched from TASK-381 at v15, adopted at v18). A
 
 Archboard: no module seam. It is the system board. Its parts are the processes that run (Agent CLI, Archboard server, Browser, Skill evaluation, Codex app-server, Headless Chromium, ffmpeg) and what they keep (Board vault, Repository checkout, Codex home, Recorded talks). It is not a src/<area>/<module>. Each process card links down to the board that draws its modules as containers, so no container is drawn and no proposal was branched.
 - Its 3 measured crossings are kept on purpose. Archboard server -> Codex home, Codex app-server -> Codex home and Agent CLI -> Recorded talks are data relationships from a process to a store on disk, not imports. The store cards bind to the file that owns where the store lives and its format (codex-process/lib/storage.ts, walkthrough-recorder/lib/talk-files.ts), following evidence rule 2. Codex app-server is another program, which reads its home directly. Rebinding the stores to a module root would name a file that does not own them.
+
+Final measurements, current variants, 2026-10-06:
+- Containers: 14 of 15 boards draw at least one. Command interface draws two. Archboard draws none, for the system-level reason above.
+- Crossings: relationships from outside a module that end on a part bound to that module's private file, where the part is not a child of a container bound to the module. The seven flat boards this task changed now have 0, against 13 before: Archboard server 10 (now entry points by HTTP, socket and subscription), Skill evaluation 4, Command dispatch 2, Semantic renderer 2, Command interface 1, Codex workhorse 1. Archboard keeps 3, for the reason above.
+- Left for another task: 36 crossings remain on boards that already drew a container and were not flat, so they are outside this task's scope. They are Board rasterizer 12 (headless-chromium and walkthrough-recorder lib files), Agent workbench 8, Voice coordinator 7, Board viewer 6 and Codex session 3.
+- Correction to the Archboard server note: board-announcements.ts imports onBoardLockChanged at :10 and registers its handler at :65.
+- ./bin/dogfood check: diagnostics [] after the last adoption.
 <!-- SECTION:NOTES:END -->
