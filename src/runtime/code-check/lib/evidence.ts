@@ -136,26 +136,54 @@ function siteOf(
  * same file is it only under the name the import leads to, as a compose file
  * defines the service that another of its services depends on. A C or C++
  * include that leads to a declaration whose code is in no file the check can
- * name matches by name only: a candidate.
+ * name matches by name only: a candidate. The declaration is often in the
+ * header of the using part's own file, as Redis declares nearly everything in
+ * `server.h`, so the match cannot say which part the code is in: where a part
+ * makes the use, the language server of the file is asked.
  * @param repo The repository's reading.
  * @param facts The file's facts.
- * @param symbol The use as the file spells it.
+ * @param reference The use.
  * @param target Where its import leads.
- * @returns The parts that hold what it reaches.
+ * @returns The parts that hold what it reaches, or undefined when the server
+ * names its definition only outside the checkout.
  */
 async function targetReached(
 	repo: RepoReading,
 	facts: SyntaxFacts,
-	symbol: string,
+	reference: SyntaxFacts["references"][number],
 	target: Target,
-): Promise<Reached> {
-	const site = await siteOf(repo, facts.path, symbol);
+): Promise<Reached | undefined> {
+	const site = await siteOf(repo, facts.path, reference.symbol);
+	const reached: Reached = {
+		to: ownersOfTarget(repo, facts, site, target),
+		resolution: resolutionAt(site),
+	};
+	const made = ownersAtLine(repo.owners, facts.path, reference.line).length > 0;
+	return reached.resolution === "candidate" && made
+		? serverResolved(repo, facts, reference, reached)
+		: reached;
+}
+
+/**
+ * The parts that hold what an import leads to: those that hold its site, or
+ * those that own its file where the site is none, or a definition of the same
+ * file under another name.
+ * @param repo The repository's reading.
+ * @param facts The using file's facts.
+ * @param site The site, if any.
+ * @param target Where the import leads.
+ * @returns The parts.
+ */
+function ownersOfTarget(
+	repo: RepoReading,
+	facts: SyntaxFacts,
+	site: DefinitionSite | undefined,
+	target: Target,
+): readonly ReadPart[] {
 	const other = site?.path === facts.path && site.definition.symbol !== target.symbol;
-	const to =
-		site === undefined || other
-			? ownersOfFile(repo.owners, target.path)
-			: ownersOfSite(repo.owners, site);
-	return { to, resolution: resolutionAt(site) };
+	return site === undefined || other
+		? ownersOfFile(repo.owners, target.path)
+		: ownersOfSite(repo.owners, site);
 }
 
 /**
@@ -183,7 +211,7 @@ async function reachedBy(
 	imported: ReadonlySet<string>,
 ): Promise<Reached | undefined> {
 	if (reference.target !== undefined) {
-		return targetReached(repo, facts, reference.symbol, reference.target);
+		return targetReached(repo, facts, reference, reference.target);
 	}
 	if (imported.has(reference.symbol.split(".")[0] ?? "")) return undefined;
 	return serverReached(repo, facts, reference, imported);
@@ -221,6 +249,25 @@ async function serverReached(
 	if (!from.some((start) => candidate.to.some((end) => joins(start, end, lineages)))) {
 		return candidate;
 	}
+	return serverResolved(repo, facts, reference, candidate);
+}
+
+/**
+ * A candidate as the language server of its file resolves it: the parts that
+ * hold the definition the server names in the checkout, resolved, or nothing
+ * when it names one only outside; with no answer the candidate stays.
+ * @param repo The repository's reading.
+ * @param facts The file's facts.
+ * @param reference The use.
+ * @param candidate What the use reaches by name.
+ * @returns What it reaches.
+ */
+async function serverResolved(
+	repo: RepoReading,
+	facts: SyntaxFacts,
+	reference: SyntaxFacts["references"][number],
+	candidate: Reached,
+): Promise<Reached | undefined> {
 	const resolved = await repo.reading.resolve(repo.checkout, facts.path, reference);
 	if (resolved.status === "unknown") return candidate;
 	if (resolved.status === "elsewhere") return undefined;
@@ -228,6 +275,7 @@ async function serverReached(
 	const site = { path: resolved.path, definition, via: [] };
 	return { to: ownersOfSite(repo.owners, site), resolution: "resolved" };
 }
+
 /**
  * What a use no server resolved reaches by name: the definition of a
  * module-level name of the same file, a candidate.

@@ -336,4 +336,4 @@ function createCResolver(
 	};
 }
 
-export { createCResolver };
+export { createCResolver, splitCommand };

@@ -466,11 +466,12 @@ async function checkCode(
 	const snapshot = await snapshotCheckoutAccess({ signal, bindings });
 	const repos = [...claims.map(repoOf), ...bound.map((binding) => binding.repo)];
 	const checkouts = await readCheckouts(repos, snapshot, signal);
-	const resolution = openResolution(servers, signal);
+	const facts = codeFacts.pass(signal, plans);
+	const resolution = openResolution(servers, signal, facts);
 	const pass: Pass = {
 		snapshot,
 		checkouts,
-		facts: codeFacts.pass(signal, plans),
+		facts,
 		resolve: resolution.resolve,
 		readAsText: new Map(),
 		modules: new Map(),

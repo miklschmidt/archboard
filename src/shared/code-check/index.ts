@@ -146,7 +146,9 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *   check never builds (TASK-367.16), a C# checkout with no solution or
  *   project file for csharp-ls to load, or a checkout whose `.venv` holds a
  *   Python interpreter that Git tracks, which basedpyright would run
- *   (TASK-367.14). Said once for the
+ *   (TASK-367.14), or a C, C++ or Objective-C file with no
+ *   `compile_commands.json` in its checkout, or one that lists no command,
+ *   without which clangd only guesses its flags (TASK-367.15). Said once for the
  *   project, with its checkout's `repo`; its uses stay as code facts read
  *   them. Its `detail` names the language, the project and why.
  * - `language-server-failed`: a language server that did not start, did not

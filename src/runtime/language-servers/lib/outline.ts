@@ -12,9 +12,12 @@
 // type literal shares a line with the type alias that holds it, and the
 // outline declares the alias and not the member. What the declaration holds
 // on its own line, such as the parameters pyright lists under a function,
-// does not hide it. A property or a field holds
-// data. Anything in an interface is a type. A name the outline does not
-// declare, such as that member or a local, is unknown.
+// does not hide it. clangd puts an Objective-C method's name at its sign, the
+// `-` or `+` that starts its line, while a definition answer names its first
+// selector part, so such a method names the definition on its line after its
+// sign. A property or a field holds data. Anything in an interface is a type.
+// A name the outline does not declare, such as that member or a local, is
+// unknown.
 
 import { z } from "zod";
 
@@ -24,6 +27,8 @@ type Declaration = "code" | "data" | "type" | "unknown";
 /** One symbol of an outline: its kind, its lines, and the symbols it holds. */
 interface OutlineSymbol {
 	readonly kind: number;
+	/** Whether it is an Objective-C method, whose name the outline puts at its sign. */
+	readonly signed: boolean;
 	/** The first and last line of the whole declaration, from 0. */
 	readonly start: number;
 	readonly end: number;
@@ -77,6 +82,7 @@ const RangeSchema = z.object({
 
 /** One `DocumentSymbol` as a server spells it. */
 interface SpelledSymbol {
+	readonly name?: string | undefined;
 	readonly kind: number;
 	readonly range: z.infer<typeof RangeSchema>;
 	readonly selectionRange: z.infer<typeof RangeSchema>;
@@ -85,6 +91,7 @@ interface SpelledSymbol {
 
 const DocumentSymbolSchema: z.ZodType<SpelledSymbol> = z.lazy(() =>
 	z.object({
+		name: z.string().optional(),
 		kind: z.int(),
 		range: RangeSchema,
 		selectionRange: RangeSchema,
@@ -100,6 +107,7 @@ const DocumentSymbolSchema: z.ZodType<SpelledSymbol> = z.lazy(() =>
 function outlined(symbol: SpelledSymbol): OutlineSymbol {
 	return {
 		kind: symbol.kind,
+		signed: symbol.kind === KIND.method && /^[-+]/u.test(symbol.name ?? ""),
 		start: symbol.range.start.line,
 		end: symbol.range.end.line,
 		line: symbol.selectionRange.start.line,
@@ -136,13 +144,15 @@ function holdersOf(symbols: readonly OutlineSymbol[], line: number): OutlineSymb
  * @param at The place: its line from 1, and its column from 0.
  * @param at.line Its line, from 1.
  * @param at.character Its column, from 0.
- * @returns True when the place is where its name starts.
+ * @returns True when the place is where its name starts, or after the sign
+ * of an Objective-C method on its line.
  */
 function names(
 	symbol: OutlineSymbol,
 	at: { readonly line: number; readonly character: number },
 ): boolean {
-	return symbol.line === at.line - 1 && symbol.character === at.character;
+	if (symbol.line !== at.line - 1) return false;
+	return symbol.signed ? symbol.character <= at.character : symbol.character === at.character;
 }
 
 /**

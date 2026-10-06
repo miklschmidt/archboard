@@ -8,8 +8,8 @@
 // project.
 //
 // A server starts in the project of the file: the checkout, or for a language
-// whose row names projects, such as a Swift package, the one that holds the
-// file. One server runs for each language and project. The project of a
+// whose row names projects, such as a Swift package or the directory of a
+// `compile_commands.json`, the one that holds the file. One server runs for each language and project. The project of a
 // directory is looked up once in the pass, and what a row looks at for a
 // project, such as a package's index, once for that project.
 //
@@ -17,7 +17,7 @@
 // facts read it. The reason is said once: once for a language whose server is
 // not installed, is turned off or cannot be configured (`missing`), once for
 // each project where the server cannot answer yet, such as a package with no
-// index (`unready`), and once for each checkout where a server did not start,
+// index or a C file with no compilation database (`unready`), and once for each checkout where a server did not start,
 // did not answer in time or ended (`failed`). No server starts for a project
 // that is not ready. A server that failed is stopped at once, and no server of
 // its language is asked in that checkout again in the pass, however many

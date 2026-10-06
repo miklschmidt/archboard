@@ -10,13 +10,15 @@
 // has no default and runs only from an entry in `language-servers.json`.
 //
 // A row also says what its server needs beyond the protocol: options it must
-// start with whatever command runs it, files opened before it answers about
-// them, a request that waits until it has loaded what it reads, and the
-// project it starts in for a file, with why it cannot answer there yet and
-// what it is told when it asks for its configuration, such as the Python
-// environment or the .NET solution to read.
+// start with whatever command runs it, arguments after the command's own with
+// a directory of the server's own to keep what it writes, files opened before
+// it answers about them, a request or an index that it is waited for until it
+// has loaded what it reads, and the project it starts in for a file, with why
+// it cannot answer there yet and what it is told when it asks for its
+// configuration, such as the Python environment or the .NET solution to read.
 
 import path from "node:path";
+import { clangdStart, compileDatabaseOf } from "@/runtime/language-servers/lib/compile-database";
 import { dotnetProjectOf } from "@/runtime/language-servers/lib/dotnet-solution";
 import { pythonProjectOf } from "@/runtime/language-servers/lib/python-environment";
 import { swiftPackageOf } from "@/runtime/language-servers/lib/swift-package";
@@ -61,6 +63,19 @@ interface LanguageRow {
 	readonly defaultServer: () => ServerCommand | string;
 	/** Options sent in `initialize`, whatever command runs the server. */
 	readonly initializationOptions?: object;
+	/**
+	 * The arguments the server starts with in a project after its command's
+	 * own, whatever command runs it. `own` is a directory of the server's own,
+	 * which the client makes before the start and removes once the server has
+	 * ended, so what the server writes stays out of the checkout.
+	 */
+	readonly prepare?: (project: string, own: string) => Promise<readonly string[]>;
+	/**
+	 * The token of the work-done progress by which the server reports the index
+	 * it builds once it has opened its first file. The client waits for that
+	 * progress to end before it asks about any file.
+	 */
+	readonly indexProgress?: string;
 	/** The server answers only about a file the client opened. */
 	readonly opensFiles?: boolean;
 	/**
@@ -130,8 +145,20 @@ function noCSharpServer(): string {
 	return "csharp-ls evaluates MSBuild files, so it runs only from an entry in language-servers.json";
 }
 
-/** Every language a server can resolve, by its key in `language-servers.json`. */
-const LANGUAGE_KEYS = ["typescript", "python", "csharp", "swift"] as const;
+/**
+ * clangd, which reads the flags of each file from the checkout's
+ * `compile_commands.json` and runs none of the compilers it names.
+ * @returns The command.
+ */
+function clangd(): ServerCommand {
+	return { command: "clangd", args: [] };
+}
+
+/**
+ * Every language a server can resolve, by its key in `language-servers.json`.
+ * `c` is the whole C family: C, C++ and Objective-C, which one clangd reads.
+ */
+const LANGUAGE_KEYS = ["typescript", "python", "csharp", "swift", "c"] as const;
 
 /** A language a server can resolve. */
 type Language = (typeof LANGUAGE_KEYS)[number];
@@ -176,6 +203,34 @@ const LANGUAGES: Readonly<Record<Language, LanguageRow>> = {
 		opensFiles: true,
 		settle: { method: "workspace/synchronize", params: { index: true } },
 		project: swiftPackageOf,
+	},
+	// Measured with clangd 21.1.8: it refuses a question about a file it has
+	// not opened, and answers one about an opened file once it has parsed it.
+	// It takes a file's language from its compile command, not from the
+	// `languageId`, so a `.h` is read as the command of its sources says. Its
+	// background index of every file the database lists is what names a
+	// definition in another file; it is kept in the server's own directory
+	// (compile-database.ts), and ends its progress `backgroundIndexProgress`.
+	// It runs no compiler without `--query-driver`, loads no plugin a command
+	// names, and reads no `.clangd` or user configuration with
+	// `--enable-config=false`. Objective-C++ (`.mm`) stays text (ADR 0046).
+	c: {
+		languageIds: {
+			".c": "c",
+			".h": "c",
+			".cc": "cpp",
+			".cpp": "cpp",
+			".cxx": "cpp",
+			".hh": "cpp",
+			".hpp": "cpp",
+			".hxx": "cpp",
+			".m": "objective-c",
+		},
+		defaultServer: clangd,
+		opensFiles: true,
+		prepare: clangdStart,
+		indexProgress: "backgroundIndexProgress",
+		project: compileDatabaseOf,
 	},
 };
 

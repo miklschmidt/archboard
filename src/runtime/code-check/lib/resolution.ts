@@ -22,18 +22,28 @@
 // only as a type counts wherever its definition is.
 //
 // A server names the line of a definition, not its extent, so a site is that
-// one line: the bound code that holds the line holds the definition.
+// one line: the bound code that holds the line holds the definition. A line
+// that code facts read as a declaration, such as a C prototype in a header,
+// names code that is elsewhere: the site is the definition in the header's
+// pair, as an include leads (definition-site.ts), and where the pair defines
+// nothing of the name the use stays as code facts read it.
 //
 // One pass opens one resolution. Its servers start on their first question,
 // and closing it stops every one, killing them at once when the pass was
 // cancelled, and only then answers. It says once for each language with no
 // server on this machine, once for each project its server cannot answer
-// about yet, such as a Swift package with no index, and once for each
+// about yet, such as a Swift package with no index or a C file with no
+// `compile_commands.json`, and once for each
 // checkout where a server failed.
 
 import path from "node:path";
 import type { Checkout, ReadCheckout } from "@/runtime/code-check/lib/checkouts";
-import type { Reference } from "@/runtime/code-facts/index";
+import {
+	codeSiteOf,
+	type Definition,
+	type FactsPass,
+	type Reference,
+} from "@/runtime/code-facts/index";
 import {
 	openLanguageServers,
 	type LanguageServerSession,
@@ -75,11 +85,50 @@ function listedIn(checkout: ReadCheckout, file: string): string | undefined {
 }
 
 /**
+ * The definition code facts read innermost at a line of a file.
+ * @param definitions The file's definitions.
+ * @param line The line.
+ * @returns The definition, or undefined when none holds the line.
+ */
+function innermostAt(definitions: readonly Definition[], line: number): Definition | undefined {
+	return definitions
+		.filter((each) => each.start <= line && line <= each.end)
+		.toSorted((left, right) => left.end - left.start - (right.end - right.start))[0];
+}
+
+/**
+ * The line of the code a server's site names: the site itself, or for a
+ * declaration, the definition its pair passes on.
+ * @param facts The pass's code facts.
+ * @param checkout The checkout.
+ * @param file The site's file, relative to the checkout.
+ * @param line The site's line.
+ * @returns The file and line of the code, or undefined for a declaration
+ * whose code is in no file the check can name.
+ */
+async function codeAt(
+	facts: FactsPass,
+	checkout: ReadCheckout,
+	file: string,
+	line: number,
+): Promise<{ path: string; line: number } | undefined> {
+	const read = await facts.read(checkout, file);
+	const definitions = read === undefined || read.adapter === "text" ? [] : read.definitions;
+	const definition = innermostAt(definitions, line);
+	if (definition?.declaration !== true) return { path: file, line };
+	const code = await codeSiteOf(facts, checkout, { path: file, definition, via: [] });
+	return code.definition.declaration === true
+		? undefined
+		: { path: code.path, line: code.definition.start };
+}
+
+/**
  * How the pass resolves a use through its language servers.
  * @param servers The pass's servers.
+ * @param facts The pass's code facts.
  * @returns The resolution.
  */
-function resolverOf(servers: LanguageServerSession): Resolve {
+function resolverOf(servers: LanguageServerSession, facts: FactsPass): Resolve {
 	return async (checkout, file, use) => {
 		const question = { root: checkout.root, file, line: use.line, symbol: use.symbol };
 		const answer = await servers.definition(question);
@@ -92,9 +141,28 @@ function resolverOf(servers: LanguageServerSession): Resolve {
 		if (first === undefined) return { status: "elsewhere" };
 		const declares =
 			use.kind === "call" ? await servers.declaration(checkout.root, first.location) : "code";
-		if (declares !== "code") return UNKNOWN;
-		return { status: "site", path: first.listed, line: first.location.line };
+		return declares === "code"
+			? siteAt(facts, checkout, first.listed, first.location.line)
+			: UNKNOWN;
 	};
+}
+
+/**
+ * The site of the code a server named, as code facts read its line.
+ * @param facts The pass's code facts.
+ * @param checkout The checkout.
+ * @param file The named file, relative to the checkout.
+ * @param line The named line.
+ * @returns The site, or unknown for a declaration whose code no file the check can name holds.
+ */
+async function siteAt(
+	facts: FactsPass,
+	checkout: ReadCheckout,
+	file: string,
+	line: number,
+): Promise<UseResolution> {
+	const code = await codeAt(facts, checkout, file, line);
+	return code === undefined ? UNKNOWN : { status: "site", ...code };
 }
 
 /** The resolution of one pass. */
@@ -132,12 +200,17 @@ function serverSkips(
  * Open the resolution of one pass.
  * @param servers The server of each language.
  * @param signal The pass's signal.
+ * @param facts The pass's code facts, which say whether a site declares or defines.
  * @returns The resolution.
  */
-function openResolution(servers: LanguageServerTable, signal: AbortSignal): PassResolution {
+function openResolution(
+	servers: LanguageServerTable,
+	signal: AbortSignal,
+	facts: FactsPass,
+): PassResolution {
 	const session = openLanguageServers({ servers, signal });
 	return {
-		resolve: resolverOf(session),
+		resolve: resolverOf(session, facts),
 		/**
 		 * Stop every server the pass started.
 		 * @param checkouts Each repository's checkout.
