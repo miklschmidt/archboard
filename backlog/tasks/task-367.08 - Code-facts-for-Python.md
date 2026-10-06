@@ -1,11 +1,11 @@
 ---
 id: TASK-367.08
 title: Code facts for Python
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 15:17'
+updated_date: '2026-10-06 15:32'
 labels:
   - code-check
 dependencies:
@@ -26,10 +26,10 @@ The second adapter makes the seam between the check and the languages real, and 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Imports resolve for absolute, relative and package imports, including `__init__.py`
-- [ ] #2 Definitions carry their visibility: listed in `__all__`, or not starting with `_`
-- [ ] #3 The anchor, binding, undrawn and backwards checks work for parts bound to Python files
-- [ ] #4 A small fixture package owns the behaviour in tests
+- [x] #1 Imports resolve for absolute, relative and package imports, including `__init__.py`
+- [x] #2 Definitions carry their visibility: listed in `__all__`, or not starting with `_`
+- [x] #3 The anchor, binding, undrawn and backwards checks work for parts bound to Python files
+- [x] #4 A small fixture package owns the behaviour in tests
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -76,3 +76,9 @@ Review (4d782f721), the table's contract changed: an entry is { name, reads, res
 
 Review, Python semantics (43e8e8262): (1) The Flask finding Wrappers <- Helpers (helpers.py:253 Response) was wrong: that Response is the parameter of redirect(), and helpers.py imports wrappers.Response only under TYPE_CHECKING. A name that a function, a lambda or a comprehension binds for itself (parameter, local, loop or as target, nested def) now hides an import of the same name inside it (python-scopes.ts); a name the scope imports itself still reaches its import (app.py test_client imports FlaskClient as cls). On Flask the rerun gives the other findings unchanged and drops that one. (2) Decision 2: __all__.extend([...]) was never read (the adapter looked for strings directly in the arguments); it is now, and a module that builds __all__ any other way (base.__all__ + [...], a comprehension) is read by the leading underscore instead of hiding every name. (3) Decision 3: a string in an annotation is a forward reference only where a type stands; Literal's values, Annotated's metadata and strings in a call inside an annotation named words as types. (4) Decision 6: Python finds a package before a module of the same name, so a/b/__init__.py now wins over a/b.py. (5) Decision 1: a name assigned under a module-level for, while or match is a module-level definition too. Facts of Flask's 82 files: about 8 ms more (60 to 68 ms, minimum of 12 rounds). skills/archboard-dev step 1 now points at the table of adapters (38784a4a6).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Code facts now read Python through tree-sitter-python: definitions at module level and class members with visibility by __all__ or the leading underscore, references with call or type-only import evidence (a name a function binds for itself hides an import), environment and signal names, and imports resolved for absolute, relative and package imports through the file's own root, pyproject.toml and setup.cfg source roots. The grammar table became a table of adapters that maps an extension or a whole file name to a function over the file's text, so YAML and JSON adapters need no grammar. Verified by python-facts.test.ts and python-check.test.ts on the python-shop fixture (pass with --isolate) and on Flask 3.0.0, where every import of Flask's own code resolves and each finding on a sample board was checked against the code.
+<!-- SECTION:FINAL_SUMMARY:END -->
