@@ -33,8 +33,12 @@ interface Definition {
 	readonly exposed: boolean;
 }
 
-/** How a reference reaches its name: written as code, or as a string the adapter counts. */
-type ReferenceVia = "code" | "environment" | "event";
+/**
+ * How a reference reaches its name: written as code, or as a string the
+ * adapter counts: the name of an environment value, of an event, or of an
+ * assembly, as C#'s `InternalsVisibleTo` names a friend.
+ */
+type ReferenceVia = "code" | "environment" | "event" | "assembly";
 
 /**
  * One use of a name, at the first line the file uses it that way. `symbol` is
@@ -47,11 +51,13 @@ interface Reference {
 	/**
 	 * A use at run time is `call` evidence, a use only as a type `import`
 	 * evidence. A name in a string has no kind of its own: an environment value
-	 * joins two parts only once infrastructure sets it (TASK-367.23). In
+	 * joins two parts only once infrastructure sets it (TASK-367.23). A project
+	 * that a project file builds with, such as a .NET `ProjectReference`, is
+	 * `build-dependency` evidence. In
 	 * infrastructure, configuration that names another declaration, such as a
 	 * compose service's `depends_on`, is `configured-path` evidence.
 	 */
-	readonly kind?: Extract<EvidenceKind, "call" | "import" | "configured-path">;
+	readonly kind?: Extract<EvidenceKind, "call" | "import" | "configured-path" | "build-dependency">;
 	readonly typeOnly: boolean;
 }
 
@@ -116,10 +122,15 @@ type ParseFacts = (text: string) => ParsedFacts | Promise<ParsedFacts>;
 interface Target {
 	readonly path: string;
 	readonly symbol: string;
+	/**
+	 * The files that pass the name on to the file that uses it, as the project
+	 * file of a C# project passes on every name its files declare.
+	 */
+	readonly via?: readonly string[];
 }
 
 /** The adapters that read files, one for each entry of the table in adapters.ts. */
-type AdapterName = "typescript" | "python" | "compose";
+type AdapterName = "typescript" | "python" | "compose" | "csharp";
 
 /**
  * An import with the checkout file it resolves to, where the adapter can
@@ -131,6 +142,20 @@ type ResolvedImport = Import & { readonly resolved?: string };
 /** Reads one file of a checkout as text, or says it cannot. */
 type ReadText = (relative: string) => string | undefined;
 
+/**
+ * Reads the facts an adapter gives another file of the checkout, before its
+ * imports are resolved: from the cache, or parsed now, one parse at a time.
+ */
+type ReadParsed = (relative: string) => Promise<ParsedFacts | undefined>;
+
+/** A file's facts as the files of its module see them, which no import of the file says. */
+interface ModuleReading {
+	/** Its definitions, with the visibility its module gives them. */
+	readonly definitions: readonly Definition[];
+	/** For each of its references, by index, where it leads, if anywhere. */
+	readonly targets: readonly (Target | undefined)[];
+}
+
 /** Resolves the imports of one checkout for one pass, as one adapter's language does. */
 interface ImportResolver {
 	/**
@@ -140,6 +165,16 @@ interface ImportResolver {
 	 * @returns The import, resolved where it names a file of the checkout.
 	 */
 	resolve(from: string, found: Import): ResolvedImport;
+	/**
+	 * For a language whose files see the names of their module without an
+	 * import, as the files of one C# project see each other: where the uses
+	 * of one file lead that no import names, and its definitions with the
+	 * visibility the module gives them.
+	 * @param from The file, relative to the checkout.
+	 * @param parsed Its facts.
+	 * @returns What its module says of it.
+	 */
+	readonly inModule?: (from: string, parsed: ParsedFacts) => Promise<ModuleReading>;
 }
 
 /** The code facts of one file an adapter reads, with its imports resolved for this pass. */
@@ -170,8 +205,10 @@ export type {
 	Import,
 	ImportedName,
 	ImportResolver,
+	ModuleReading,
 	ParsedFacts,
 	ParseFacts,
+	ReadParsed,
 	ReadText,
 	Reference,
 	ReferenceThroughImport,
