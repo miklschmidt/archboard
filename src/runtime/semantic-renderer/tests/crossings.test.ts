@@ -43,7 +43,7 @@ function routes(svg: string) {
 					[
 						...group[3]!
 							.replace(/<defs>[\s\S]*?<\/defs>/gu, "")
-							.split('<g class="ab-pulse"')[0]!
+							.split(/<g class="ab-(?:pulse|near)[ "]/u)[0]!
 							.matchAll(/<path[^>]* d="([^"]+)"/gu),
 					].map((path) => path[1]!),
 				),
@@ -56,11 +56,12 @@ function routes(svg: string) {
 					),
 				),
 			],
-			// The line's own paths; its traffic is painted apart, over every line.
+			// The line's own paths; its traffic is painted apart, over every line, and
+			// the ports its ends run into are drawn near only, after them.
 			own: [
 				...group[3]!
 					.replace(/<defs>[\s\S]*?<\/defs>/gu, "")
-					.split('<g class="ab-pulse"')[0]!
+					.split(/<g class="ab-(?:pulse|near)[ "]/u)[0]!
 					.matchAll(/<path[^>]* d="([^"]+)"/gu),
 			].length,
 		}));

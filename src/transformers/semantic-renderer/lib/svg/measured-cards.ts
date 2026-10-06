@@ -24,6 +24,7 @@ import { slab, slabSeat, slabShadow } from "@/transformers/semantic-renderer/lib
 import { stylesFor } from "@/transformers/semantic-renderer/lib/svg/styles";
 import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
 import { headerOf, tray } from "@/transformers/semantic-renderer/lib/svg/tray";
+import { portFront, type Port } from "@/transformers/semantic-renderer/lib/svg/ports";
 import {
 	PART_ATTRIBUTE,
 	standingPalette,
@@ -85,6 +86,9 @@ function drillCorner(
  * @param standing How it stands against the variant it is read against.
  * @param unsettled Whether its architecture needs reconciliation.
  * @param appearance Resolved containment and type channels.
+ * @param ports Its ports, cut through its front edge, and the clip that cuts them (`ports.ts`).
+ * @param ports.slots Its slots.
+ * @param ports.cut The id of the clip.
  * @returns The card group.
  */
 function paintMeasuredCard(
@@ -93,10 +97,12 @@ function paintMeasuredCard(
 	standing: SubjectStanding | undefined,
 	unsettled: boolean,
 	appearance: NodeAppearance,
+	ports?: { readonly slots: readonly Port[]; readonly cut: string },
 ): string {
 	const { measured, box } = placed;
 	const styles = stylesFor(palette);
 	const words = standingPalette(palette, standing);
+	const look = cardLook(appearance, palette);
 	const chipX = box.x + ARCHITECTURE_CARD_PADDING;
 	const chipY = box.y + ARCHITECTURE_CARD_PADDING;
 	return wrap(
@@ -107,15 +113,16 @@ function paintMeasuredCard(
 		},
 		lines([
 			slabSeat(box, SLAB_RADIUS),
-			slabShadow(box, SLAB_RADIUS, "card", palette, standing),
+			slabShadow(box, SLAB_RADIUS, "card", palette, standing, ports?.cut),
 			halo(box, SLAB_RADIUS, styles, standing),
-			slab(box, cardLook(appearance, palette), palette, standing),
+			slab(box, look, palette, standing, ports?.cut),
 			nearLayer(
 				typeChip(chipX, chipY, appearance, palette, standing) +
 					paintTextRuns(measured.runs, box, words) +
 					drillCorner(box, ARCHITECTURE_CARD_PADDING, appearance, palette),
 			),
 			paintFarCard(measured.node, box, { appearance, palette: words }, unsettled),
+			portFront(ports?.slots, look.edge),
 			standingPin(box, standing, palette),
 			warningBadge(box, unsettled, palette),
 		]),

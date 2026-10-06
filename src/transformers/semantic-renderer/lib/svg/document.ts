@@ -24,6 +24,7 @@ import { faceRules, SANS_STACK } from "@/transformers/semantic-renderer/lib/font
 import { themeColor } from "@/transformers/semantic-renderer/lib/host";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { escapeXml, lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
+import { portDefinitions } from "@/transformers/semantic-renderer/lib/svg/ports";
 import { slabDefinitions } from "@/transformers/semantic-renderer/lib/svg/slab";
 import {
 	FAR_CLASS,
@@ -256,7 +257,7 @@ function svgDocument(input: DocumentInput): string {
 	const { width, height, palette, title, description, fonts, body, reading, theme } = input;
 	const painted = lines([
 		stylesheet(palette, fonts),
-		wrap("defs", {}, markers(palette) + slabDefinitions(palette)),
+		wrap("defs", {}, markers(palette) + slabDefinitions(palette) + portDefinitions(palette)),
 		tag("rect", {
 			x: 0,
 			y: 0,

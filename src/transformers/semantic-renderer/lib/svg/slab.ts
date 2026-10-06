@@ -266,6 +266,7 @@ function ghost(box: Box, radius: number, palette: Palette): string {
  * @param lift Which sort of block it is.
  * @param palette The theme's colours.
  * @param standing How the part stands, when this is a proposal.
+ * @param cut The clip a card's ports are cut through, if it has any (`ports.ts`).
  * @returns The shadow's layers, or the ghost.
  */
 function slabShadow(
@@ -274,9 +275,21 @@ function slabShadow(
 	lift: Lift,
 	palette: Palette,
 	standing?: SubjectStanding,
+	cut?: string,
 ): string {
 	if (standing === "removed") return ghost(box, radius, palette);
-	return castShadow(box, lift, palette, (layer, grow, paint) => plate(layer, radius + grow, paint));
+	return castShadow(box, lift, palette, (layer, grow, paint) =>
+		plate(layer, radius + grow, { "clip-path": clipped(cut), ...paint }),
+	);
+}
+
+/**
+ * A clip as paint refers to it.
+ * @param cut The clip's id, if any.
+ * @returns The reference, or nothing.
+ */
+function clipped(cut: string | undefined): string | undefined {
+	return cut === undefined ? undefined : `url(#${cut})`;
 }
 
 /**
@@ -320,15 +333,22 @@ function castShadow(
  * @param look How the block looks.
  * @param palette The theme's colours.
  * @param standing How the part stands, when this is a proposal.
+ * @param cut The clip a card's ports are cut through its front edge by, if it has any (`ports.ts`).
  * @returns The block.
  */
-function slab(box: Box, look: SlabLook, palette: Palette, standing?: SubjectStanding): string {
+function slab(
+	box: Box,
+	look: SlabLook,
+	palette: Palette,
+	standing?: SubjectStanding,
+	cut?: string,
+): string {
 	if (standing === "removed") return "";
 	// The top face is the box without its front edge.
 	const face = { ...box, height: box.height - look.thickness };
 	const lit = { ...face, y: face.y + GLINT_WIDTH, height: face.height - GLINT_WIDTH };
 	return lines([
-		plate(box, look.radius, { fill: look.edge }),
+		plate(box, look.radius, { "clip-path": clipped(cut), fill: look.edge }),
 		plate(face, look.radius, { fill: glintOf(look.face, palette) }),
 		plate(lit, look.radius, { fill: look.face }),
 		look.sheen ? plate(lit, look.radius, { fill: `url(#${sheenOf(look)})` }) : "",

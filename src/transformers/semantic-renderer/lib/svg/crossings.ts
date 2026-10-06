@@ -216,4 +216,4 @@ function crossingMasks(
 	};
 }
 
-export { crossingCutouts, crossingMasks, labelCutouts, trunkCutouts };
+export { contentId, crossingCutouts, crossingMasks, labelCutouts, trunkCutouts };

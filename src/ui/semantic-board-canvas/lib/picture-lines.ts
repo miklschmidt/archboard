@@ -27,6 +27,7 @@ import {
 } from "@/ui/semantic-board-canvas/lib/picture-motion";
 import { cloneElement, type SubjectGroup } from "@/ui/semantic-board-canvas/lib/picture-pairing";
 import {
+	PORT_CLASS,
 	PULSE_CLASS,
 	SUBJECT_ATTRIBUTE,
 	TRAFFIC_ATTRIBUTE,
@@ -89,14 +90,26 @@ function parkPulses(group: Element): void {
 }
 
 /**
+ * Park the ports a line's ends run into until the picture lands: they are cut
+ * where the cards land, not where they are in flight.
+ * @param group The line's group.
+ */
+function parkPorts(group: Element): void {
+	for (const port of group.querySelectorAll<SVGElement>(`.${PORT_CLASS}`)) {
+		port.style.opacity = "0";
+	}
+}
+
+/**
  * Park what would draw wrongly while a line is in flight: the crossing mask,
- * which cuts gaps where the route used to cross others, and the pulses, which
- * ride the new route.
+ * which cuts gaps where the route used to cross others, the pulses, which
+ * ride the new route, and the ports its ends run into.
  * @param group The line's group.
  */
 function parkLineDressing(group: Element): void {
 	group.removeAttribute("mask");
 	parkPulses(group);
+	parkPorts(group);
 }
 
 /**
@@ -345,6 +358,7 @@ function drawOn(
 ): Updater {
 	const strokes = drawnPaths(group.element).flatMap((path) => prepareStroke(path) ?? []);
 	parkPulses(group.element);
+	parkPorts(group.element);
 	return (progress: number): void => {
 		const arrived = phase(progress, start, end);
 		setOpacity(group.element, easeOut(phase(arrived, 0, ARRIVE_FADE_SHARE)));
