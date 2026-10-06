@@ -13,8 +13,9 @@
 // - A type name is a use only as a type, import evidence: a declaration, a
 //   parameter, a cast, a template argument.
 // - A type name that constructs is a call: `new Ledger(...)`,
-//   `Ledger ledger(...)` and a base class, whose constructor runs. A plain
-//   `Ledger ledger;` is a type, because a C struct runs no code there.
+//   `Ledger ledger(...)`, C++'s `Ledger ledger{...}` and `Ledger{...}`, and a
+//   base class, whose constructor runs. A plain `Ledger ledger;` and
+//   `Ledger ledger = {...}` are a type, because a C struct runs no code there.
 // - Every other name is a use at run time, a call: a function called, a
 //   variable or a macro read, a function passed on as a value.
 // A name after `::` is spelled with its qualifier (`shop::util::run`), and a
@@ -318,24 +319,39 @@ function fieldChain(node: Node): string | undefined {
 	return base === undefined || field === null ? undefined : `${base}.${spell(field)}`;
 }
 
+/** Where a type name constructs a value: `new T(...)`, a base class, and C++'s `T{...}`. */
+const CONSTRUCTING = new Set([
+	"new_expression",
+	"base_class_clause",
+	"compound_literal_expression",
+]);
+
+/**
+ * Whether a declarator constructs what it declares: `value(...)`, and C++'s
+ * `value{...}`. With `=`, `value = {...}` fills a C struct, which runs no code.
+ * @param declarator The declarator.
+ * @returns True when it does.
+ */
+function constructsValue(declarator: Node): boolean {
+	if (declarator.type !== "init_declarator") return false;
+	const value = declarator.childForFieldName("value")?.type;
+	const assigned = declarator.children.some((child) => child.type === "=");
+	return value === "argument_list" || (value === "initializer_list" && !assigned);
+}
+
 /**
  * Whether a type name constructs a value, so a constructor runs: `new T(...)`,
- * `T value(...)`, and a base class.
+ * `T value(...)`, `T value{...}`, `T{...}` and a base class. C writes a
+ * compound literal with the type in parentheses, `(T){...}`, which runs no code.
  * @param top The whole type name.
  * @returns True when it does.
  */
 function constructs(top: Node): boolean {
 	const parent = top.parent;
 	if (parent === null) return false;
-	if (parent.type === "new_expression" || parent.type === "base_class_clause") return true;
+	if (CONSTRUCTING.has(parent.type)) return true;
 	if (parent.type !== "declaration" || !isField(parent, "type", top)) return false;
-	return parent
-		.childrenForFieldName("declarator")
-		.some(
-			(declarator) =>
-				declarator.type === "init_declarator" &&
-				declarator.childForFieldName("value")?.type === "argument_list",
-		);
+	return parent.childrenForFieldName("declarator").some(constructsValue);
 }
 
 /** One name, as the file writes it and where. */
