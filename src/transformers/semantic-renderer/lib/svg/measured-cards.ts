@@ -4,30 +4,30 @@ import {
 	ARCHITECTURE_HEADER_PADDING,
 } from "@/transformers/semantic-renderer/config";
 import {
-	CARD_RADIUS,
 	BAND_RADIUS,
 	ICON_CHIP_SIZE,
+	SLAB_RADIUS,
 } from "@/transformers/semantic-renderer/lib/design";
 import { farSizeOf } from "@/transformers/semantic-renderer/lib/measurement";
 import type { DrawingNode } from "@/transformers/semantic-renderer/lib/drawing";
-import { coord } from "@/transformers/semantic-renderer/lib/geometry";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import type { NodeAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import {
-	bodyAttributes,
 	appearanceAttributes,
+	cardLook,
+	plinthLook,
 	typeChip,
 } from "@/transformers/semantic-renderer/lib/svg/appearance";
 import { halo } from "@/transformers/semantic-renderer/lib/svg/cards";
 import { cornerDrillMark } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
 import { paintFarCard } from "@/transformers/semantic-renderer/lib/svg/far-card";
 import { nearLayer, paintFarTitle } from "@/transformers/semantic-renderer/lib/svg/far-view";
-import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
+import { lines, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
+import { slab, slabSeat, slabShadow } from "@/transformers/semantic-renderer/lib/svg/slab";
 import { stylesFor } from "@/transformers/semantic-renderer/lib/svg/styles";
 import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
 import {
 	PART_ATTRIBUTE,
-	standingOutline,
 	standingPin,
 	subjectGroup,
 	warningBadge,
@@ -112,17 +112,10 @@ function paintMeasuredCard(
 			...appearanceAttributes(appearance),
 		},
 		lines([
-			halo(box, CARD_RADIUS, styles),
-			tag("rect", {
-				x: coord(box.x),
-				y: coord(box.y),
-				width: coord(box.width),
-				height: coord(box.height),
-				rx: CARD_RADIUS,
-				...styles.card,
-				...bodyAttributes(appearance),
-				...standingOutline(standing, palette),
-			}),
+			slabSeat(box, SLAB_RADIUS),
+			slabShadow(box, SLAB_RADIUS, "card", palette),
+			halo(box, SLAB_RADIUS, styles),
+			slab(box, cardLook(appearance, palette), palette, standing),
 			nearLayer(
 				typeChip(chipX, chipY, appearance, palette) +
 					paintTextRuns(measured.runs, box, palette) +
@@ -136,7 +129,10 @@ function paintMeasuredCard(
 }
 
 /**
- * Paint a containing frame below its children and all connections.
+ * Paint a containing frame below its children and all connections: a plinth
+ * its children stand on, its heading printed on a band of its face. What the
+ * frame itself relates to leaves from the band's lower edge, so such a line has
+ * a visible origin inside the frame.
  * @param placed Final frame geometry.
  * @param palette The selected theme.
  * @param standing Its architectural change.
@@ -149,8 +145,9 @@ function paintMeasuredFrame(
 	standing: SubjectStanding | undefined,
 	appearance: NodeAppearance,
 ): string {
-	const { measured, box } = placed;
+	const { measured, box, depth } = placed;
 	const styles = stylesFor(palette);
+	const look = plinthLook(appearance, palette, depth, measured.headerHeight);
 	return wrap(
 		"g",
 		{
@@ -158,27 +155,10 @@ function paintMeasuredFrame(
 			...appearanceAttributes(appearance),
 		},
 		lines([
+			slabSeat(box, BAND_RADIUS),
+			slabShadow(box, BAND_RADIUS, "plinth", palette),
 			halo(box, BAND_RADIUS, styles),
-			tag("rect", {
-				x: coord(box.x),
-				y: coord(box.y),
-				width: coord(box.width),
-				height: coord(box.height),
-				rx: BAND_RADIUS,
-				...styles.band,
-				...bodyAttributes(appearance),
-				...standingOutline(standing, palette),
-			}),
-			// The rule under the title: what the frame itself relates to leaves from
-			// here, so such a line has a visible origin inside the frame.
-			tag("line", {
-				x1: coord(box.x),
-				y1: coord(box.y + measured.headerHeight),
-				x2: coord(box.x + box.width),
-				y2: coord(box.y + measured.headerHeight),
-				stroke: bodyAttributes(appearance)["stroke"] ?? styles.band.stroke,
-				"stroke-width": 1,
-			}),
+			slab(box, look, palette, standing),
 			standingPin(box, standing, palette),
 		]),
 	);

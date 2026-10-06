@@ -1,11 +1,12 @@
 // Typography and visual styling. Layout clearances live in ../config.ts.
 //
-// Forked from PR Lens's `design.ts` and retuned for Archboard's operator shell,
-// which is flat and dense: small corner radii, one-pixel rules, no shadow and
-// no gradient. Anything to do with a pull request — badge strips, dead bands,
-// pulse timings — is gone rather than retuned.
+// Forked from PR Lens's `design.ts` and retuned for Archboard's operator shell.
+// Anything to do with a pull request — badge strips, dead bands, pulse timings —
+// is gone rather than retuned. Its parts are drawn as blocks with a visible
+// thickness (`lib/svg/slab.ts`): the thicknesses and the corners are here.
 
-const BAND_RADIUS = 6;
+/** The corners of a container's plinth and of a group's region. */
+const BAND_RADIUS = 10;
 
 /** A flow header's height with a name alone, and with a summary under it. */
 const HEADER_HEIGHT = 19;
@@ -42,7 +43,30 @@ const BASELINE_RATIO = 1.02;
  */
 const LINE_STRENGTH = 0.75;
 
+/**
+ * How round a card's corner is to the layout, which keeps a line's port clear
+ * of it, and to a pulse, which is held in a card for the way round its edge.
+ */
 const CARD_RADIUS = 6;
+/**
+ * How round a card is drawn: rounder than the layout's corner, which changes
+ * no route. A port the layout keeps clear of its own corner stands at most a
+ * quarter unit off this one's curve.
+ */
+const SLAB_RADIUS = 8;
+/** How thick a card's slab is: its front edge, inside its box along its foot. */
+const CARD_THICKNESS = 4;
+/**
+ * How thick a container's plinth is at the top level, and how much thinner
+ * each one nested in another stands, down to a card's.
+ */
+const PLINTH_THICKNESS = 8;
+const PLINTH_STEP = 2;
+/** How thick a group's region is, and the tab its caption is printed on. */
+const MAT_THICKNESS = 3;
+const TAB_THICKNESS = 2;
+/** How thick an icon chip is: a small tile raised off the face it sits on. */
+const CHIP_THICKNESS = 1.5;
 /** Minimum participant-card heights; each additional responsibility line adds its line height. */
 const CARD_HEIGHT = 46;
 const CARD_HEIGHT_WITH_NOTE = 58;
@@ -86,6 +110,13 @@ export {
 	TEXT_LINE_HEIGHT,
 	BASELINE_RATIO,
 	CARD_RADIUS,
+	SLAB_RADIUS,
+	CARD_THICKNESS,
+	PLINTH_THICKNESS,
+	PLINTH_STEP,
+	MAT_THICKNESS,
+	TAB_THICKNESS,
+	CHIP_THICKNESS,
 	CARD_HEIGHT,
 	CARD_HEIGHT_WITH_NOTE,
 	ICON_CHIP_SIZE,

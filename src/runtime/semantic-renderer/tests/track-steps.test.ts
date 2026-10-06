@@ -286,7 +286,7 @@ function frameWalls(svg: string): Walls[] {
 	const shift = bodyShift(svg);
 	return [
 		...svg.matchAll(
-			/data-depiction="container"[^>]*><rect class="ab-halo" x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/gu,
+			/data-depiction="container"[^>]*>(?:(?!<\/g>)[\s\S])*?<rect class="ab-halo" x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/gu,
 		),
 	].map(([, x, y, width, height]) => ({
 		left: Number(x) + 3 + shift.x,

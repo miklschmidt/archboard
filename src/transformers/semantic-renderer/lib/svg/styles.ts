@@ -242,13 +242,8 @@ function edgeAttributes(
  */
 function stylesFor(palette: Palette) {
 	return {
+		// A sequence's frame. A card and a container are blocks (`slab.ts`).
 		band: { fill: palette.band, stroke: palette.bandBorder, "stroke-width": 1 },
-		// A container inside a container, drawn on the page's own ground. That
-		// puts the surfaces in order in both themes — column darkest, then the
-		// box inside it, then the card — without inventing a fourth colour that
-		// would have to be tuned twice.
-		nest: { fill: palette.background, stroke: palette.bandBorder, "stroke-width": 1 },
-		card: { fill: palette.card, stroke: palette.cardBorder, "stroke-width": 1 },
 		headerName: {
 			"font-size": HEADER_NAME_SIZE,
 			"letter-spacing": `${HEADER_NAME_TRACKING}em`,

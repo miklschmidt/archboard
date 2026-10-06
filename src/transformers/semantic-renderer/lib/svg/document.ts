@@ -1,8 +1,7 @@
 // The file the painted body is wrapped in.
 //
-// Forked from PR Lens's `svg/document.ts`. The dot-grid ground went: the
-// operator shell is flat, and a texture behind a diagram of one-pixel rules
-// fights it. What is new is the small stylesheet — upstream had none, because
+// Forked from PR Lens's `svg/document.ts`. The dot-grid ground went: a
+// texture behind the picture fights the parts that stand on it. What is new is the small stylesheet — upstream had none, because
 // GitHub's image proxy can ignore CSS, and Archboard shows these in its own
 // pane. It carries the `@font-face` rules that make the picture draw in the
 // faces it was measured in, plus the pointer cursor and the selection ring a
@@ -25,6 +24,7 @@ import { faceRules, SANS_STACK } from "@/transformers/semantic-renderer/lib/font
 import { themeColor } from "@/transformers/semantic-renderer/lib/host";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { escapeXml, lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
+import { slabDefinitions } from "@/transformers/semantic-renderer/lib/svg/slab";
 import {
 	FAR_CLASS,
 	FAR_VIEW_CLASS,
@@ -256,7 +256,7 @@ function svgDocument(input: DocumentInput): string {
 	const { width, height, palette, title, description, fonts, body, reading, theme } = input;
 	const painted = lines([
 		stylesheet(palette, fonts),
-		wrap("defs", {}, markers(palette)),
+		wrap("defs", {}, markers(palette) + slabDefinitions(palette)),
 		tag("rect", {
 			x: 0,
 			y: 0,

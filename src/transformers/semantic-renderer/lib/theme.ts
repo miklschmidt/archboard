@@ -14,6 +14,26 @@ interface Palette {
 	readonly card: string;
 	/** A card's one-pixel rule. */
 	readonly cardBorder: string;
+	/** A card's top face, before its group tints it (`lib/svg/slab.ts`). */
+	readonly slabFace: string;
+	/** A card's front edge, the thickness that shows along its foot. */
+	readonly slabEdge: string;
+	/** What the fine highlight along the top edge of a face mixes toward. */
+	readonly slabGlint: string;
+	/** The light at the top of a face, which falls off down it. */
+	readonly slabSheen: string;
+	/** One layer of the stacked shadow a part casts. */
+	readonly slabShadow: string;
+	/** A container's top face, before its kind tints it. */
+	readonly plinthFace: string;
+	/** The band of a container's face its heading is printed on. */
+	readonly plinthHead: string;
+	/** A container's front edge. */
+	readonly plinthEdge: string;
+	/** What a group's region mixes its colour into for its face. */
+	readonly matFace: string;
+	/** What a group's region mixes its colour into for its front edge. */
+	readonly matEdge: string;
 	/** Text that carries the meaning: a card's name. */
 	readonly foreground: string;
 	/** Secondary text: a responsibility, a region name. */
@@ -84,6 +104,16 @@ const PALETTE: Palette = {
 	bandBorder: token("--sidebar-border"),
 	card: token("--muted"),
 	cardBorder: token("--diagram-edge"),
+	slabFace: token("--slab-face"),
+	slabEdge: token("--slab-edge"),
+	slabGlint: token("--slab-glint"),
+	slabSheen: token("--slab-sheen"),
+	slabShadow: token("--slab-shadow"),
+	plinthFace: token("--plinth-face"),
+	plinthHead: token("--plinth-head"),
+	plinthEdge: token("--plinth-edge"),
+	matFace: token("--mat-face"),
+	matEdge: token("--mat-edge"),
 	foreground: token("--card-foreground"),
 	muted: token("--muted-foreground"),
 	faint: token("--muted-foreground"),

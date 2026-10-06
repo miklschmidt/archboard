@@ -3,9 +3,10 @@
 // Forked from PR Lens's `svg/architecture.ts`, minus its badge strip and its
 // strike-through for a removed node. Two things were added: the selection halo
 // every subject carries, and the `data-semantic-*` attributes that let a pane
-// map a click back onto the board. What a proposal's standing does to either
-// shape — the outline it takes over and the pin on its corner — is decided in
-// `lib/svg/standing.ts` and applied here without moving anything.
+// map a click back onto the board. A card is drawn as a slab (`lib/svg/slab.ts`).
+// What a proposal's standing does to it — the front edge and the ring it takes
+// over and the pin on its corner — is decided in `lib/svg/standing.ts` and
+// applied here without moving anything.
 //
 // Hierarchy here is built from weight, size, colour, case, tracking and space,
 // in that order. A card's name is the medium face and its responsibility the
@@ -22,13 +23,13 @@
 import {
 	BASELINE_RATIO,
 	CARD_PADDING_X,
-	CARD_RADIUS,
 	HEADER_NAME_SIZE,
 	HEADER_NAME_TRACKING,
 	HEADER_NOTE_SIZE,
 	ICON_CHIP_GAP,
 	ICON_CHIP_SIZE,
 	NOTE_SIZE,
+	SLAB_RADIUS,
 	TEXT_LINE_HEIGHT,
 } from "@/transformers/semantic-renderer/lib/design";
 import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
@@ -45,16 +46,16 @@ import {
 } from "@/transformers/semantic-renderer/lib/layout/sequence-card";
 import type { NodeAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import {
-	bodyAttributes,
 	appearanceAttributes,
+	cardLook,
 	typeChip,
 } from "@/transformers/semantic-renderer/lib/svg/appearance";
 import { cornerDrillMark } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
 import { paintFarCard } from "@/transformers/semantic-renderer/lib/svg/far-card";
 import { nearLayer } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { lines, tag, textNode, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
+import { slab, slabSeat, slabShadow } from "@/transformers/semantic-renderer/lib/svg/slab";
 import {
-	standingOutline,
 	standingPin,
 	subjectGroup,
 	warningBadge,
@@ -150,17 +151,10 @@ function paintCard(
 		"g",
 		{ ...subjectGroup("node", node.id, standing), ...appearanceAttributes(appearance) },
 		lines([
-			halo(box, CARD_RADIUS, styles),
-			tag("rect", {
-				x: coord(box.x),
-				y: coord(box.y),
-				width: coord(box.width),
-				height: coord(box.height),
-				rx: CARD_RADIUS,
-				...styles.card,
-				...bodyAttributes(appearance),
-				...standingOutline(standing, palette),
-			}),
+			slabSeat(box, SLAB_RADIUS),
+			slabShadow(box, SLAB_RADIUS, "card", palette),
+			halo(box, SLAB_RADIUS, styles),
+			slab(box, cardLook(appearance, palette), palette, standing),
 			nearLayer(
 				lines([
 					typeChip(
