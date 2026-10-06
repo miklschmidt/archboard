@@ -202,24 +202,6 @@ function slotOf(port: Port): Box {
 }
 
 /**
- * A slot's outline, its ends round.
- * @param slot Its box.
- * @param paint How it is painted.
- * @returns The rect.
- */
-function rounded(slot: Box, paint: Attributes): string {
-	return tag("rect", {
-		x: coord(slot.x),
-		y: coord(slot.y),
-		width: coord(slot.width),
-		height: coord(slot.height),
-		rx: coord(slot.height / 2),
-		"pointer-events": "none",
-		...paint,
-	});
-}
-
-/**
  * A slot's outline, its ends round: a path, so a viewer that carries a line
  * from one picture to the next never reads it as the line's label.
  * @param slot The slot.
@@ -234,6 +216,16 @@ function outlineOf(slot: Box): string {
 		`${arc} ${coord(x + width - round)},${coord(y + height)}` +
 		`H${coord(x + round)}${arc} ${coord(x + round)},${coord(y)}Z`
 	);
+}
+
+/**
+ * A slot filled, its ends round.
+ * @param slot The slot.
+ * @param fill How it is filled.
+ * @returns The path.
+ */
+function outlined(slot: Box, fill: string): string {
+	return tag("path", { d: outlineOf(slot), fill, "pointer-events": "none" });
 }
 
 /**
@@ -272,7 +264,7 @@ function portInside(port: Port, stroke: Attributes, palette: Palette): string {
 		"g",
 		{ class: `${NEAR_CLASS} ${PORT_CLASS}` },
 		lines([
-			tag("path", { d: outlineOf(slot), fill: `url(#${WELL_ID})`, "pointer-events": "none" }),
+			outlined(slot, `url(#${WELL_ID})`),
 			tag("path", { d: floorOf(slot), fill: palette.trayLip, "pointer-events": "none" }),
 			tag("line", {
 				x1: coord(port.x),
@@ -319,8 +311,8 @@ function portFront(ports: readonly Port[] | undefined, edge: string): string {
 	if (ports === undefined || ports.length === 0) return "";
 	const slots = ports.map(slotOf);
 	return (
-		nearLayer(lines(slots.map((slot) => rounded(slot, { fill: `url(#${FADE_ID})` })))) +
-		farLayer(lines(slots.map((slot) => rounded(slot, { fill: edge }))))
+		nearLayer(lines(slots.map((slot) => outlined(slot, `url(#${FADE_ID})`)))) +
+		farLayer(lines(slots.map((slot) => outlined(slot, edge))))
 	);
 }
 

@@ -300,21 +300,6 @@ function extentOf(
 	]);
 }
 
-/**
- * A card's ports as its painter takes them: its slots and the id of the clip
- * that cuts them.
- * @param cut The card's slots and its clip, if it has any.
- * @param cut.slots Its slots.
- * @param cut.cut Its clip.
- * @param cut.cut.id The clip's id.
- * @returns The ports, or none.
- */
-function portsFor(
-	cut: { readonly slots: readonly Port[]; readonly cut: { readonly id: string } } | undefined,
-): { readonly slots: readonly Port[]; readonly cut: string } | undefined {
-	return cut === undefined ? undefined : { slots: cut.slots, cut: cut.cut.id };
-}
-
 /** The drawing a page is fitted to, and how its subjects stand for the marks it holds. */
 interface HeldPage {
 	readonly drawing: PaintedDrawing;
@@ -373,7 +358,7 @@ function paintArchitecture(
 	const cuts = new Map(
 		[...ports.byCard].flatMap(([id, slots]) => {
 			const cut = portCut(slots);
-			return cut === undefined ? [] : [[id, { slots, cut }] as const];
+			return cut === undefined ? [] : [[id, { slots, ...cut }] as const];
 		}),
 	);
 	// Every node the page lays out, drawn or not, so leaving some out changes
@@ -429,7 +414,7 @@ function paintArchitecture(
 		definitions,
 		cuts.size === 0
 			? ""
-			: wrap("defs", {}, [...cuts.values()].map(({ cut }) => cut.markup).join("")),
+			: wrap("defs", {}, [...cuts.values()].map(({ markup }) => markup).join("")),
 		...boxes.map((held) =>
 			paintMeasuredFrame(
 				held,
@@ -482,7 +467,7 @@ function paintArchitecture(
 				standingOf(card.measured.node.id),
 				unsettledOf(card.measured.node.id),
 				appearances.get(card.measured.node.id)!,
-				portsFor(cuts.get(card.measured.node.id)),
+				cuts.get(card.measured.node.id),
 			),
 		),
 		...edges.map((edge) =>
