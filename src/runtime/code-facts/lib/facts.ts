@@ -47,9 +47,11 @@ interface Reference {
 	/**
 	 * A use at run time is `call` evidence, a use only as a type `import`
 	 * evidence. A name in a string has no kind of its own: an environment value
-	 * joins two parts only once infrastructure sets it (TASK-367.23).
+	 * joins two parts only once infrastructure sets it (TASK-367.23). In
+	 * infrastructure, configuration that names another declaration, such as a
+	 * compose service's `depends_on`, is `configured-path` evidence.
 	 */
-	readonly kind?: Extract<EvidenceKind, "call" | "import">;
+	readonly kind?: Extract<EvidenceKind, "call" | "import" | "configured-path">;
 	readonly typeOnly: boolean;
 }
 
@@ -117,7 +119,7 @@ interface Target {
 }
 
 /** The adapters that read files, one for each entry of the table in adapters.ts. */
-type AdapterName = "typescript" | "python";
+type AdapterName = "typescript" | "python" | "compose";
 
 /**
  * An import with the checkout file it resolves to, where the adapter can
