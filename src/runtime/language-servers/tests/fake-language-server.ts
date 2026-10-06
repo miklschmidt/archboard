@@ -1,6 +1,6 @@
 // A stand-in language server: it speaks the Language Server Protocol over
 // stdio, so the suite never needs a real one. Run it as
-// `bun fake-language-server.ts <state-dir> [mode]`.
+// `bun fake-language-server.ts <state-dir> [mode] [argument...]`.
 //
 // It answers `textDocument/definition` from `<state-dir>/answers.json`, keyed
 // by `<file>:<line>:<word>`: the file relative to its working directory, the
@@ -11,11 +11,13 @@
 // each method it receives to `<state-dir>/methods`, and its working directory
 // and the `initializationOptions` it was given to `<state-dir>/starts`, one
 // JSON line each, so a test can see what was asked, where, and whether the
-// process still runs. Once initialized it asks for its configuration of the
-// sections `python` and `csharp`, and appends the client's answer to
-// `<state-dir>/configuration` as one JSON line. It refuses a request it does
-// not know, as a server does. A mode, or several joined by `,`, makes it
-// misbehave:
+// process still runs. It appends the arguments after its mode to
+// `<state-dir>/argvs`, and the database a `--compile-commands-dir=<dir>`
+// names to `<state-dir>/databases`, one JSON line each. Once initialized it
+// asks for its configuration of the sections `python` and `csharp`, and
+// appends the client's answer to `<state-dir>/configuration` as one JSON line.
+// It refuses a request it does not know, as a server does. A mode, or several
+// joined by `,`, makes it behave as a server does, or misbehave:
 //
 // - `needs-open`: refuses a definition in a file the client has not opened,
 //   as sourcekit-lsp does.
@@ -24,6 +26,11 @@
 // - `exit-on-definition`: exits with code 3 on the first definition.
 // - `deaf`: ignores `shutdown` and `exit`, so only a kill ends it.
 // - `refuse-definition`: answers every definition with an error.
+// - `indexes`: as clangd does, after the first file opened it reports the
+//   work-done progress `backgroundIndexProgress`, if the client declared
+//   `window.workDoneProgress`, and ends it 200 ms later; until then it knows
+//   no definition.
+// - `indexes-never`: reports that progress and never ends it.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -37,6 +44,15 @@ const answers = JSON.parse(
 		: "{}",
 ) as Record<string, unknown>;
 fs.appendFileSync(path.join(stateDir, "pids"), `${process.pid}\n`);
+const extra = process.argv.slice(4);
+fs.appendFileSync(path.join(stateDir, "argvs"), `${JSON.stringify(extra)}\n`);
+const databaseDirectory = extra
+	.find((arg) => arg.startsWith("--compile-commands-dir="))
+	?.slice("--compile-commands-dir=".length);
+if (databaseDirectory !== undefined) {
+	const database = fs.readFileSync(path.join(databaseDirectory, "compile_commands.json"), "utf8");
+	fs.appendFileSync(path.join(stateDir, "databases"), `${database}\n`);
+}
 
 /** One message the client sent. */
 interface Message {
@@ -47,7 +63,36 @@ interface Message {
 		readonly textDocument?: { readonly uri: string };
 		readonly position?: { readonly line: number; readonly character: number };
 		readonly initializationOptions?: unknown;
+		readonly capabilities?: { readonly window?: { readonly workDoneProgress?: boolean } };
 	};
+}
+
+/** The token of the index progress, as clangd names it. */
+const INDEX = "backgroundIndexProgress";
+/** Whether the client asked for work-done progress. */
+let reportsProgress = false;
+/** Whether the index is complete; a server that builds none knows every definition at once. */
+let indexed = !modes.has("indexes") && !modes.has("indexes-never");
+/** Whether the index has started. */
+let indexing = false;
+
+/**
+ * Start the index once, after the first file opened: report its progress, and
+ * end it a little later unless the mode says it never ends.
+ */
+function startIndex(): void {
+	if (indexed || indexing || !reportsProgress) return;
+	indexing = true;
+	send({ id: "create-1", method: "window/workDoneProgress/create", params: { token: INDEX } });
+	send({
+		method: "$/progress",
+		params: { token: INDEX, value: { kind: "begin", title: "indexing" } },
+	});
+	if (modes.has("indexes-never")) return;
+	setTimeout(() => {
+		indexed = true;
+		send({ method: "$/progress", params: { token: INDEX, value: { kind: "end" } } });
+	}, 200);
 }
 
 /** The files the client opened. */
@@ -109,7 +154,8 @@ function answerDefinition(message: Message): void {
 	const closed = modes.has("needs-open") && !opened.has(message.params?.textDocument?.uri ?? "");
 	if (modes.has("refuse-definition") || closed)
 		send({ id: message.id, error: { code: -32_603, message: "no" } });
-	else if (!modes.has("hang-definition")) send({ id: message.id, result: definition(message) });
+	else if (!modes.has("hang-definition"))
+		send({ id: message.id, result: indexed ? definition(message) : [] });
 }
 
 /**
@@ -120,6 +166,7 @@ function receive(message: Message): void {
 	fs.appendFileSync(path.join(stateDir, "methods"), `${message.method ?? "answer"}\n`);
 	if (message.method === "initialize") {
 		const start = { cwd: process.cwd(), options: message.params?.initializationOptions ?? null };
+		reportsProgress = message.params?.capabilities?.window?.workDoneProgress === true;
 		fs.appendFileSync(path.join(stateDir, "starts"), `${JSON.stringify(start)}\n`);
 		if (modes.has("hang-initialize")) return;
 		send({ id: message.id, result: { capabilities: { definitionProvider: true } } });
@@ -129,6 +176,7 @@ function receive(message: Message): void {
 		fs.appendFileSync(path.join(stateDir, "configuration"), `${JSON.stringify(message.result)}\n`);
 	} else if (message.method === "textDocument/didOpen") {
 		opened.add(message.params?.textDocument?.uri ?? "");
+		startIndex();
 	} else if (message.method === "textDocument/documentSymbol") {
 		const file = fileURLToPath(message.params?.textDocument?.uri ?? "");
 		const outline = answers[`outline:${path.relative(process.cwd(), file)}`] ?? [];

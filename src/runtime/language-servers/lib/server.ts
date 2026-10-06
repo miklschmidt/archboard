@@ -10,17 +10,24 @@
 // a request. A server that reads
 // each file from disk, as the code check does, gets no file opened; one whose
 // row says it answers only about an open file gets each file opened once,
-// with its text on disk. Stopping asks it to shut down and exit, and kills it
-// if it has not ended within the bound; a cancelled pass kills it at once.
-// Either way the stop returns only once the process has ended.
+// with its text on disk. A server whose row names the progress of its index
+// is asked nothing until that index is complete, after its first file opened.
+// A row can give a server a directory of its own, in the system's temporary
+// directory, for what it writes; it is removed once the server has ended.
+// Stopping asks it to shut down and exit, and kills it if it has not ended
+// within the bound; a cancelled pass kills it at once. Either way the stop
+// returns only once the process has ended.
 
 import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { z } from "zod";
 import {
 	connect,
 	RequestFailure,
 	type Connection,
+	type RequestBounds,
 	type ServerProcess,
 } from "@/runtime/language-servers/lib/connection";
 import { LANGUAGES, languageOf, type Language } from "@/runtime/language-servers/lib/languages";
@@ -122,7 +129,7 @@ function exitReason(code: number, signal: string | null): string {
  */
 function initializeParams(root: string, language: Language): object {
 	const uri = pathToFileURL(root).href;
-	const { initializationOptions } = LANGUAGES[language];
+	const { initializationOptions, indexProgress } = LANGUAGES[language];
 	return {
 		processId: process.pid,
 		clientInfo: { name: "archboard" },
@@ -132,6 +139,7 @@ function initializeParams(root: string, language: Language): object {
 			general: { positionEncodings: ["utf-16"] },
 			workspace: { configuration: true },
 			textDocument: { documentSymbol: { hierarchicalDocumentSymbolSupport: true } },
+			...(indexProgress === undefined ? {} : { window: { workDoneProgress: true } }),
 		},
 		...(initializationOptions === undefined ? {} : { initializationOptions }),
 	};
@@ -166,32 +174,46 @@ async function settle(
  * server refuses to answer about it.
  * @param connection The server's connection.
  * @param file The file, absolute.
+ * @returns Whether it opened.
  */
-async function openFile(connection: Connection, file: string): Promise<void> {
+async function openFile(connection: Connection, file: string): Promise<boolean> {
 	const text = await fs.readFile(file, "utf8").catch(() => undefined);
-	if (text === undefined) return;
+	if (text === undefined) return false;
 	const languageId = languageOf(file)?.languageId ?? "plaintext";
 	const textDocument = { uri: pathToFileURL(file).href, languageId, version: 0, text };
 	connection.notify("textDocument/didOpen", { textDocument });
+	return true;
 }
 
 /**
  * A function that opens a file once, for a server that answers only about an
- * open file, and does nothing for any other.
+ * open file, and does nothing for any other. Where the row names the progress
+ * of the index the server builds once it has opened a file, it resolves only
+ * once that index is complete, so no answer depends on which files the pass
+ * happened to open before.
  * @param connection The server's connection.
  * @param language Its language.
+ * @param bounds How long to wait for the index, and the pass's signal.
  * @returns The function.
  */
-function opener(connection: Connection, language: Language): (file: string) => Promise<void> {
-	if (LANGUAGES[language].opensFiles !== true) return () => Promise.resolve();
-	const opened = new Map<string, Promise<void>>();
-	return (file) => {
+function opener(
+	connection: Connection,
+	language: Language,
+	bounds: RequestBounds,
+): (file: string) => Promise<void> {
+	const { opensFiles, indexProgress } = LANGUAGES[language];
+	if (opensFiles !== true) return () => Promise.resolve();
+	const opened = new Map<string, Promise<boolean>>();
+	let indexed: Promise<void> | undefined;
+	return async (file) => {
 		let open = opened.get(file);
 		if (open === undefined) {
 			open = openFile(connection, file);
 			opened.set(file, open);
 		}
-		return open;
+		if (!(await open) || indexProgress === undefined) return;
+		indexed ??= connection.progressEnd(indexProgress, bounds);
+		await indexed;
 	};
 }
 
@@ -249,12 +271,50 @@ async function stopProcess(
 }
 
 /**
+ * What removes the own directory of a server that has none.
+ * @returns At once.
+ */
+function nothingToRemove(): Promise<void> {
+	return Promise.resolve();
+}
+
+/** What a server starts with beyond its command, and how to remove its own directory. */
+interface Prepared {
+	readonly args: readonly string[];
+	readonly removeOwn: () => Promise<void>;
+}
+
+/**
+ * Make a server's own directory and the arguments its row starts it with,
+ * where its row names them.
+ * @param start The command, the project and the language.
+ * @returns The arguments, and what removes the directory once the server has ended.
+ */
+async function prepared(start: ServerStart): Promise<Prepared> {
+	const { prepare } = LANGUAGES[start.language];
+	if (prepare === undefined) return { args: [], removeOwn: nothingToRemove };
+	const own = await fs.mkdtemp(path.join(os.tmpdir(), "archboard-language-server-"));
+	/**
+	 * Remove the server's own directory.
+	 * @returns Once it is gone.
+	 */
+	const removeOwn = (): Promise<void> => fs.rm(own, { recursive: true, force: true });
+	try {
+		return { args: await prepare(start.root, own), removeOwn };
+	} catch (error) {
+		await removeOwn();
+		throw error;
+	}
+}
+
+/**
  * Start a server in a checkout and initialize it.
  * @param start The command, the checkout, the pass's signal and the bounds.
  * @returns The server, or a rejection that says why it did not start.
  */
 async function startServer(start: ServerStart): Promise<Server> {
-	const child = Bun.spawn([...start.argv], {
+	const { args, removeOwn } = await prepared(start);
+	const child = Bun.spawn([...start.argv, ...args], {
 		cwd: start.root,
 		stdin: "pipe",
 		stdout: "pipe",
@@ -264,12 +324,13 @@ async function startServer(start: ServerStart): Promise<Server> {
 	const connection = connect(child, closed, start.settings ?? {});
 	let stopping: Promise<void> | undefined;
 	/**
-	 * Stop the process, once, and wait until it has ended.
+	 * Stop the process, once, and wait until it has ended and its own
+	 * directory is gone.
 	 * @param graceful Ask it to exit first, rather than kill it at once.
 	 * @returns Once it has ended.
 	 */
 	const stop = (graceful: boolean): Promise<void> => {
-		stopping ??= stopProcess(child, connection, graceful, start.timeouts);
+		stopping ??= stopProcess(child, connection, graceful, start.timeouts).then(removeOwn);
 		return stopping;
 	};
 	const bounds = { timeoutMs: start.timeouts.requestMs, signal: start.signal };
@@ -282,7 +343,7 @@ async function startServer(start: ServerStart): Promise<Server> {
 		await stop(false);
 		throw error;
 	}
-	const open = opener(connection, start.language);
+	const open = opener(connection, start.language, bounds);
 	return {
 		/**
 		 * Where the name at a position of a file is defined.

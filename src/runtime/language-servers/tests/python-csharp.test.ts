@@ -290,6 +290,14 @@ describe("the default servers", () => {
 		expect(withPrograms()["python"]).toMatchObject({ status: "missing" });
 	});
 
+	test("run clangd for C, C++ and Objective-C from the PATH, and nothing without it", () => {
+		expect(withPrograms("clangd")["c"]).toEqual({
+			status: "command",
+			argv: [join(directory, "clangd")],
+		});
+		expect(withPrograms()["c"]).toMatchObject({ status: "missing" });
+	});
+
 	test("run no C# server without an entry, even where csharp-ls is installed", () => {
 		expect(withPrograms("csharp-ls")["csharp"]).toMatchObject({ status: "missing" });
 	});

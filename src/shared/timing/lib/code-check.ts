@@ -30,7 +30,11 @@ const CODE_CHECK_GIT_TIMEOUT_MS = 60_000;
  * - `requestMs`: one definition request. The first one also loads the
  *   project: 240 to 300 ms for this repository's 8,733 files on 2026-10-06,
  *   and 200 more requests together took 20 to 25 ms. A project many times
- *   larger stays well inside it.
+ *   larger stays well inside it. It also bounds the wait for clangd's index of
+ *   every file a `compile_commands.json` lists (TASK-367.15): 1.4 to 1.6 s for
+ *   Redis's 303 commands on 24 cores at a load average of 5 to 7 on
+ *   2026-10-06, and about 0.1 s for libuv and leveldb. A project whose index
+ *   takes longer is said once as failed, and keeps its candidates.
  * - `stopMs`: from `shutdown` to the end of the process, after which the
  *   server is killed. `tsc --lsp` took 19 to 27 ms.
  */

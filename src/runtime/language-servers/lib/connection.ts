@@ -5,8 +5,11 @@
 // The client asks, and answers what the server asks with nothing: `null`,
 // except `workspace/configuration`, whose each item gets the settings the
 // project gives its section, or `null`, which tells a server to use its own
-// default. It ignores every notification, such as a log line or diagnostics. Each request is bounded, and rejects when its time runs
-// out, when the pass is cancelled, or when the process ends.
+// default. Of the notifications it notes only the end of a work-done
+// progress, which a client can wait for, and ignores every other, such as a
+// log line or diagnostics. Each request and each wait is bounded, and rejects
+// when its time runs out, when the pass is cancelled, or when the process
+// ends.
 
 import { z } from "zod";
 
@@ -66,7 +69,15 @@ interface Connection {
 	readonly request: (method: string, params: unknown, bounds: RequestBounds) => Promise<unknown>;
 	/** Tell the server something that needs no answer. */
 	readonly notify: (method: string, params?: unknown) => void;
+	/** Wait, within the bounds, until the server has ended the work-done progress of a token. */
+	readonly progressEnd: (token: string, bounds: RequestBounds) => Promise<void>;
 }
+
+/** The end of a work-done progress, as `$/progress` reports it. */
+const ProgressEndSchema = z.object({
+	token: z.union([z.string(), z.number()]),
+	value: z.object({ kind: z.literal("end") }).loose(),
+});
 
 /** The blank line that ends a header. */
 const HEADER_END = "\r\n\r\n";
@@ -208,6 +219,14 @@ class PendingRequests {
 	}
 
 	/**
+	 * Settle a wait that is no request, such as one for the end of a progress.
+	 * @param id Its id.
+	 */
+	release(id: number): void {
+		this.#waiting.get(id)?.resolve(null);
+	}
+
+	/**
 	 * Settle the request an answer is for.
 	 * @param message The answer.
 	 */
@@ -264,6 +283,23 @@ function connect(
 ): Connection {
 	const pending = new PendingRequests();
 	let ended: string | undefined;
+	const progressEnded = new Set<string>();
+	const progressWaits = new Map<string, number[]>();
+
+	/**
+	 * Note a notification: the end of a work-done progress releases whoever
+	 * waits for it.
+	 * @param message The notification.
+	 */
+	const noted = (message: Incoming): void => {
+		if (message.method !== "$/progress") return;
+		const progress = ProgressEndSchema.safeParse(message.params);
+		if (!progress.success) return;
+		const token = String(progress.data.token);
+		progressEnded.add(token);
+		for (const id of progressWaits.get(token) ?? []) pending.release(id);
+		progressWaits.delete(token);
+	};
 
 	/**
 	 * Write one message, or note that the process can no longer take one.
@@ -285,8 +321,8 @@ function connect(
 	void (async () => {
 		await readAll(child, (message) => {
 			if (message.method === undefined) pending.settle(message);
-			else if (message.id !== undefined)
-				write({ id: message.id, result: answerTo(message, settings) });
+			else if (message.id === undefined) noted(message);
+			else write({ id: message.id, result: answerTo(message, settings) });
 		});
 		ended ??= await closed;
 		pending.end(ended);
@@ -313,6 +349,19 @@ function connect(
 		 */
 		notify: (method, params) => {
 			write(params === undefined ? { method } : { method, params });
+		},
+		/**
+		 * Wait until the server has ended the work-done progress of a token.
+		 * @param token The token.
+		 * @param bounds How long to wait, and the signal that ends the wait.
+		 * @returns Once it has ended.
+		 */
+		progressEnd: async (token, bounds) => {
+			if (progressEnded.has(token)) return;
+			if (ended !== undefined) throw new RequestFailure("ended", ended);
+			const { id, answer } = pending.open(`$/progress ${token}`, bounds);
+			progressWaits.set(token, [...(progressWaits.get(token) ?? []), id]);
+			await answer;
 		},
 	};
 }

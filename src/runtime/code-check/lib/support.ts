@@ -265,7 +265,10 @@ async function serverSite(
 
 /**
  * Where an anchor's symbol is defined, when the check judges it: a definition
- * code facts find, else the line a language server names. A Terraform
+ * code facts find, else the line a language server names. Where code facts
+ * find only a declaration whose code is in no file they can name, such as a C
+ * prototype defined outside its header's pair, the line the server names
+ * wins when it names one. A Terraform
  * declaration that joins two others by its provider's rules, such as an event
  * source mapping, is in neither end's code by design (ADR 0046), so it is not
  * judged.
@@ -283,6 +286,9 @@ async function anchoredSite(
 ): Promise<Site | undefined> {
 	const declared = await definitionSite(context.search.facts, checkout, file, claim.anchor.symbol);
 	if (declared === undefined) return serverSite(claim, file, checkout, context);
+	if (declared.definition.declaration === true) {
+		return (await serverSite(claim, file, checkout, context)) ?? declared;
+	}
 	const joins = isTerraformFile(declared.path) && isJoiningDeclaration(declared.definition.symbol);
 	return joins ? undefined : declared;
 }
