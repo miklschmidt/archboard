@@ -1,11 +1,11 @@
 ---
 id: TASK-367.14
 title: Language servers resolve Python and C# candidates
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 19:59'
+updated_date: '2026-10-06 20:00'
 labels:
   - code-check
 dependencies:
@@ -28,9 +28,9 @@ Python and C# have mature language servers, but each needs its project found fir
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A Python candidate resolves through pyright or basedpyright with the project's environment
-- [ ] #2 A C# candidate resolves through csharp-ls or the Roslyn language server with the solution or project file
-- [ ] #3 A missing server or project file is reported once, and the candidates stay
+- [x] #1 A Python candidate resolves through pyright or basedpyright with the project's environment
+- [x] #2 A C# candidate resolves through csharp-ls or the Roslyn language server with the solution or project file
+- [x] #3 A missing server or project file is reported once, and the candidates stay
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -94,3 +94,9 @@ Row contract (boundary with TASK-367.16): languageIds, defaultServer, initializa
 
 Gate after the fixes, one lane at a time: lint 0, fmt:check 0, type-check 0, build:frontend 0, test:modules 4,268 pass 0 fail, test:system 195 pass 0 fail (a first run had 44 failures from another agent's half-written code-facts edit, Export named 'distinct' not found in c-adapter.ts; the rerun passed), test:repository 21 pass, test:serial-browser 24 pass. No pyright, csharp-ls, roslyn-ls, stand-in or tsc --lsp process left.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Python candidates resolve through pyright by default (basedpyright where only it is installed), and C# candidates through csharp-ls when language-servers.json names it. pyright is told the interpreter of the checkout's own .venv or venv only when Git tracks neither the directory nor the interpreter; a checkout that ships its interpreter, or that Git cannot list, starts no Python server, because basedpyright otherwise runs that interpreter by itself. csharp-ls loads the solution nearest the checkout root, or the project files. With nothing to load, or no server, the check says so once and keeps the candidates. Roslyn is not supported: it answers nothing until a notification csharp-ls never needs, and it restores packages by default; the criterion's 'or' is met by csharp-ls, and INSTALL.md states the gap. Code-check tests now run a server table they control. The review also stopped a server starting after a pass closed, and made each project look run once per pass. Verified by python-csharp.test.ts and session.test.ts, on Flask with pyright 1.1.412 and basedpyright 1.39.8, and on a .NET solution with csharp-ls 0.28.0.
+<!-- SECTION:FINAL_SUMMARY:END -->
