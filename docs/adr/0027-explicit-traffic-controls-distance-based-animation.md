@@ -25,11 +25,13 @@ follows every bend of its line.
 
 The renderer paints the gradient onto a bar that slides along each straight run
 and each bend of the route. A mask in the shape of that piece of the route lets
-the light through, and a clip to the box of the mask keeps it there: Chromium
-let light out of the box when it moved the bar on its compositor (TASK-401).
-The sliding is one transform for each piece, which a browser runs off its main
-thread. A train of pulses is one repeating gradient, so a line costs one
-animation for each piece of its route, however many pulses it carries.
+the light through, and a clip to the box of the mask, inside the mask, keeps it
+there: Chromium let light out of the box when it moved the bar on its
+compositor, and a clip beside the mask still let a row of pixels through at the
+edge of the box (TASK-401). The sliding is one transform for each piece, which a
+browser runs off its main thread. A train of pulses is one repeating gradient,
+so a line costs one animation for each piece of its route, however many pulses
+it carries.
 The earlier strokes, dash patterns, rings, blobs and flat-cut bars are gone.
 
 A line with traffic carries a steady train of pulses. They are evenly spaced by

@@ -118,9 +118,10 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 		expect(new Set(beam!.pieces.map(({ cycleWritten }) => cycleWritten)).size).toBe(1);
 	});
 
-	test("the light of every piece is clipped to the box of its mask", async () => {
+	test("the light of every piece is clipped to the box of its mask, inside the mask", async () => {
 		// The page slides each bar on the compositor, and there Chromium let light
-		// through outside the box of the mask: stray marks in empty canvas.
+		// through outside the box of the mask: stray marks in empty canvas. A clip
+		// beside the mask, on the same group, still let one row through at its edge.
 		for (const grammar of ["architecture", "data-flow"] as const) {
 			const svg = await drawn(grammar);
 			const masks = new Map(
@@ -134,11 +135,13 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 					([, id, box]) => [id!, boxIn(box!)],
 				),
 			);
-			const pieces = [...svg.matchAll(/<g ([^>]*mask="url\(#ab-mask-[^>]*)>/gu)].map(([, tag]) => ({
-				mask: /mask="url\(#([^)]+)\)"/u.exec(tag!)![1]!,
-				clip: /clip-path="url\(#([^)]+)\)"/u.exec(tag!)?.[1] ?? "",
-			}));
-			expect(pieces.length).toBeGreaterThan(0);
+			const masked = [...svg.matchAll(/mask="url\(#ab-mask-/gu)].length;
+			// Each masked group holds one group, and that group is the clip.
+			const pieces = [
+				...svg.matchAll(/<g mask="url\(#(ab-mask-[^)]+)\)"><g clip-path="url\(#([^)]+)\)">/gu),
+			].map(([, mask, clip]) => ({ mask: mask!, clip: clip! }));
+			expect(masked).toBeGreaterThan(0);
+			expect(pieces).toHaveLength(masked);
 			for (const { mask, clip } of pieces) expect(clips.get(clip)).toEqual(masks.get(mask)!);
 		}
 	});

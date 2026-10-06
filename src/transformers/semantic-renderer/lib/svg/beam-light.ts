@@ -186,8 +186,9 @@ function boxOf(leg: Leg, core: number): { x: string; y: string; width: string; h
  * nothing a browser draws as it should. But the page slides the bar on the
  * compositor (a Web Animation, `picture-traffic.ts`), and there Chromium let
  * slivers of the bar through outside the box while a pulse went by: stray marks
- * in empty canvas, tens of pixels past a bend. A clip to the same box holds
- * them in, and the bar still slides on the compositor.
+ * in empty canvas, tens of pixels past a bend. A clip to the same box, inside
+ * the mask (`legMarkup` in `pulse.ts`), holds them in, and the bar still slides
+ * on the compositor.
  * @param leg The piece.
  * @param core How thick the pulse's core is.
  * @returns The clip's id and its markup.

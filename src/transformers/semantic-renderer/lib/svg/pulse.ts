@@ -102,8 +102,11 @@ function within(value: number, period: number): number {
 }
 
 /**
- * One piece of a pulse: the mask in the shape of a piece of the route, the clip
- * to the mask's box, and the bar of light that slides behind them.
+ * One piece of a pulse: the mask in the shape of a piece of the route, and
+ * inside it the clip to the mask's box and the bar of light that slides behind
+ * them. The clip is inside the mask so that the mask covers it to its last
+ * pixel: a clip on the masked group itself let one row of the bar through, at
+ * full light, where the edge of its box fell part way across a pixel.
  * @param leg The piece.
  * @param bar The bar: how it sits in the piece's frame, and what it is painted with.
  * @param bar.mask The piece's mask.
@@ -130,24 +133,25 @@ function legMarkup(
 	},
 ): string {
 	const shift = bar.shift === 0 ? "" : ` translate(${plain(bar.shift, 2)} 0)`;
+	const slide = wrap(
+		"g",
+		{ transform: `${leg.frame}${shift}` },
+		wrap(
+			"rect",
+			{
+				x: plain(bar.from, 2),
+				y: plain(-bar.height / 2, 2),
+				width: plain(bar.width, 2),
+				height: plain(bar.height, 2),
+				fill: `url(#${bar.gradient})`,
+			},
+			bar.motion,
+		),
+	);
 	return wrap(
 		"g",
-		{ "clip-path": `url(#${bar.clip})`, mask: `url(#${bar.mask})` },
-		wrap(
-			"g",
-			{ transform: `${leg.frame}${shift}` },
-			wrap(
-				"rect",
-				{
-					x: plain(bar.from, 2),
-					y: plain(-bar.height / 2, 2),
-					width: plain(bar.width, 2),
-					height: plain(bar.height, 2),
-					fill: `url(#${bar.gradient})`,
-				},
-				bar.motion,
-			),
-		),
+		{ mask: `url(#${bar.mask})` },
+		wrap("g", { "clip-path": `url(#${bar.clip})` }, slide),
 	);
 }
 
