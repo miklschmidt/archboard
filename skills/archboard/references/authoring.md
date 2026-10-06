@@ -134,6 +134,25 @@ relationship between two services, cite the compose file and the address of
 the service it reaches: `services.db` in the file where `api` depends on `db`.
 An env file gives the check the names it sets, never their values.
 
+Bind a Nix flake output to `flake.nix`, with its attribute path as `symbol`,
+written whole from the output's name: `packages.x86_64-linux.archboard`,
+`devShells.aarch64-darwin.default`, `nixosConfigurations.host`,
+`overlays.default`. `check --code` reads the outputs from the file without
+evaluating it, and never runs `nix`. It follows an attribute set, `let ... in`,
+the file's own functions such as `forAllSystems`, `genAttrs`, flake-utils'
+`eachSystem` and `eachDefaultSystem`, and flake-parts' `mkFlake` with
+`perSystem` and `flake`. Where the systems come from a place it does not read,
+such as `nixpkgs.lib.systems.flakeExposed` or `import systems`, every system
+holds the outputs that the function gives. An output that it cannot follow,
+such as one that `import` gives or that a flake-parts module adds, is skipped
+as `symbol-unparsed` and never reported missing; `BINDING_SYMBOL_MISSING` means
+the flake gives no such output. The inputs are in `flake.lock`: each input of
+the flake is build-dependency evidence, which `dependency` accepts and `call`
+does not. Anchor a relationship to an input at `flake.lock` with
+`inputs.<name>` as `symbol`. A part bound to `flake.lock`, or to a directory
+that holds it, owns that evidence, and an input that is a path in the same
+checkout (`path:./tools`) reaches the part bound to that flake.
+
 A binding names the implementation owner: the file whose body does what the
 node's responsibility says, not a file that imports the unit, registers it (a
 command table, a plugin table, a route mount) or calls it. A command's handler
