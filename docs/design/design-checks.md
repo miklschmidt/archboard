@@ -588,9 +588,20 @@ before a namespace, such as abseil's `ABSL_NAMESPACE_BEGIN` or fmt's
 named `namespace::detail`, with no error node, and every declaration inside it
 was lost: 505 such functions over 108,713 lines of abseil, and 9 over 1,933
 lines of fmt. No function can have that name, so the adapter now reads it as
-the namespace it is, and abseil went from 13,769 definitions to 24,233. Two
-more readings were wrong everywhere: an include guard was an exposed macro of
-every header, and a destructor's name read as a call to its class.
+the namespace it is. A macro between `class` and its name, as leveldb's
+`class LEVELDB_EXPORT WriteBatch`, makes the grammar read a function named
+`WriteBatch`, and every member was lost too. A function's declarator names its
+parameters, so a bare name after a class with no body is the class, and its
+members are read with the access words that the grammar takes for labels.
+With both, leveldb went from 3,233 definitions to 3,416, fmt from 8,383 to
+9,336 and abseil from 13,769 to 25,113. Three more readings were wrong
+everywhere: an include guard was an exposed macro of every header, a
+destructor's name read as a call to its class, and a member of a value that the
+code does not name, as in `open()->Append()`, read as the bare name `Append`,
+which the includes then led to a function of that name. It is now spelled
+`.Append`, as C# and Swift spell it. Braces construct a C++ value as
+parentheses do, so `Ledger ledger{...}` is call evidence, and C's
+`Ledger ledger = {...}` stays a type.
 
 ADR 0046 matches an include that resolves nowhere by its file name, as a
 candidate. It is not built. On Redis, 393 of the 1,686 includes that resolve
@@ -599,7 +610,9 @@ nowhere would match one file by name. 279 of them are in angle brackets, and
 `<stdbool.h>`) that would match jemalloc's own copies. The rest are in
 `modules/`, `tests/` and `deps/`, which resolve with a `compile_commands.json`.
 SQLite would gain 84 such matches, leveldb none, fmt 22 (gtest and gmock) and
-abseil 16.
+abseil 16. A `compile_commands.json` that Git ignores, as a CMake build
+directory usually is, is not read either, because the check reads only what
+Git does not ignore. Such a checkout resolves its includes by the fallback.
 
 A C or C++ module is a directory (TASK-368.10). Its public headers are the
 headers below its `include` directory, or else the headers directly in it
