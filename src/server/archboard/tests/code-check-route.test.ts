@@ -1,7 +1,8 @@
 // The code check runs on a route of its own, never inside the check that
 // every open canvas polls every 5 seconds (ADR 0045, ADR 0046), and the caller
 // that hangs up cancels it, because it runs as checkout work. A variant that
-// names no draft is refused with the drafts that exist.
+// names no draft is refused with the drafts that exist, and so is a plan JSON
+// outside every registered checkout.
 //
 // The production application answers both routes over a vault this owner
 // makes in a Git repository of its own; a stand-in check proves the
@@ -159,6 +160,17 @@ test("a variant that names no draft is refused", async () => {
 	const refused = await fetch(`${base}/api/vault/code-check?variant=TASK-0`);
 	expect(refused.status).toBe(422);
 	expect(await refused.json()).toMatchObject({ success: false, code: "NO_SUCH_DRAFT" });
+});
+
+test("a plan outside every registered checkout is refused before the pass", async () => {
+	const base = await listen(server.app);
+	const outside = join(scratch, "plan.json");
+	writeFileSync(outside, '{"configuration":{"root_module":{}}}');
+	const refused = await fetch(
+		`${base}/api/vault/code-check?${new URLSearchParams({ plan: outside })}`,
+	);
+	expect(refused.status).toBe(422);
+	expect(await refused.json()).toMatchObject({ success: false, code: "PLAN_REFUSED" });
 });
 
 test("a caller that hangs up cancels the code check", async () => {

@@ -10,7 +10,8 @@
 // kind without the `evidence` key accepts every kind, so neither is judged.
 //
 // A use that reaches its name through an import is resolved, because the
-// import path names the file. Any other use is resolved once the language
+// import path names the file, and so is a Terraform reference, which names its
+// address. Any other use is resolved once the language
 // server of the file names its definition (TASK-367.13); until then it is a
 // candidate, and the finding is then information.
 
@@ -56,6 +57,7 @@ async function usesOf(
 			kind: use.kind,
 			resolution:
 				use.target !== undefined ||
+				facts.adapter === "terraform" ||
 				(await resolution.resolve(resolution.checkout, facts.path, use)).status !== "unknown"
 					? ("resolved" as const)
 					: ("candidate" as const),

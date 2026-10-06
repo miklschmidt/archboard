@@ -18,6 +18,7 @@
 
 import path from "node:path";
 import {
+	checkoutSkips,
 	otherRefOf,
 	readCheckouts,
 	readableOf,
@@ -40,7 +41,8 @@ import { partCodesOf } from "@/runtime/code-check/lib/part-code";
 import { judgeRelationships } from "@/runtime/code-check/lib/relationships";
 import { openResolution, type Resolve } from "@/runtime/code-check/lib/resolution";
 import { judgeSupport } from "@/runtime/code-check/lib/support";
-import { heldInFiles, type Held } from "@/runtime/code-check/lib/symbols";
+import { heldInFiles, terraformRootOfTarget, type Held } from "@/runtime/code-check/lib/symbols";
+import { terraformEvidenceOf } from "@/runtime/code-check/lib/terraform-evidence";
 import { createCodeFacts, lastName, type Accept, type FactsPass } from "@/runtime/code-facts/index";
 import {
 	resolveLocalCodeTarget,
@@ -164,26 +166,35 @@ function unreadable(claim: Claim, readable: Exclude<Readable, { status: "files" 
 }
 
 /**
- * The skip of a symbol found only in code that did not parse.
+ * The skip of a symbol found only in code that did not parse, or of an
+ * address inside a Terraform module the check does not read.
  * @param claim The claim.
  * @param held Where it was found.
- * @returns The skip, which names the file and its lines.
+ * @returns The skip, which names the file and its lines, or the module call.
  */
-function unparsedSkip(claim: Claim, held: Extract<Held, { status: "unparsed" }>): CodeCheckSkip {
+function unparsedSkip(
+	claim: Claim,
+	held: Extract<Held, { status: "unparsed" | "module-unread" }>,
+): CodeCheckSkip {
+	const repo = repoOf(claim);
+	if (held.status === "module-unread") {
+		return skipped(claim.site, { reason: "module-not-read", repo, detail: held.module });
+	}
 	const { start, end } = held.unparsed;
 	const detail = `${held.file}:${start === end ? start : `${start}-${end}`}`;
-	return skipped(claim.site, { reason: "symbol-unparsed", repo: repoOf(claim), detail });
+	return skipped(claim.site, { reason: "symbol-unparsed", repo, detail });
 }
 
 /**
  * Where the files of a path hold a symbol, or why they cannot be read: a path
- * Git ignores, one never read, or a symbol found only in code that did not
- * parse, each a skip.
+ * Git ignores, one never read, a symbol found only in code that did not parse,
+ * or an address inside a Terraform module the check does not read, each a skip.
  * @param claim The claim, for its skip.
  * @param readable What the pass may read of the path.
  * @param checkout The checkout it is in.
  * @param symbol The symbol.
  * @param pass The pass.
+ * @param root For a binding, the Terraform root module its path names, if any.
  * @returns Where the files hold it, or undefined when it is skipped.
  */
 async function findSymbolOf(
@@ -192,14 +203,15 @@ async function findSymbolOf(
 	checkout: ClaimCheckout,
 	symbol: string,
 	pass: Pass,
+	root?: string,
 ): Promise<Held | undefined> {
 	if (readable.status !== "files") {
 		pass.outcome.skipped.push(unreadable(claim, readable));
 		return undefined;
 	}
 	const accept: Accept = claim.kind === "binding" ? "definition" : "definition-or-reference";
-	const held = await heldInFiles(searchOf(checkout, pass), readable.files, symbol, accept);
-	if (held.status !== "unparsed") return held;
+	const held = await heldInFiles(searchOf(checkout, pass), readable.files, symbol, accept, root);
+	if (held.status !== "unparsed" && held.status !== "module-unread") return held;
 	pass.outcome.skipped.push(unparsedSkip(claim, held));
 	return undefined;
 }
@@ -340,7 +352,8 @@ async function judgeBoundSymbol(
 	const { symbol } = claim.binding;
 	if (symbol === undefined) return;
 	const readable = readableOf(target, checkout.files, true);
-	const held = await findSymbolOf(claim, readable, checkout, symbol, pass);
+	const root = terraformRootOfTarget(target, checkout.files);
+	const held = await findSymbolOf(claim, readable, checkout, symbol, pass, root);
 	if (held?.status === "absent") {
 		pass.outcome.findings.push(bindingSymbolMissing(claim, symbol, target.kind, held));
 	}
@@ -456,7 +469,8 @@ async function judgeBoardRelationships(read: BoardToCheck, pass: Pass): Promise<
 		 */
 		searchOf: (checkout) => searchOf(checkout, pass),
 	});
-	const evidence = await evidenceOf(codes, {
+	const lineages = lineagesOf(codes);
+	const code = await evidenceOf(codes, {
 		facts: pass.facts,
 		/**
 		 * Note a file read as text, by its kind.
@@ -468,7 +482,8 @@ async function judgeBoardRelationships(read: BoardToCheck, pass: Pass): Promise<
 		},
 		resolve: pass.resolve,
 	});
-	const lineages = lineagesOf(codes);
+	const infrastructure = await terraformEvidenceOf(codes, pass.facts, lineages);
+	const evidence = { ...code, pieces: [...code.pieces, ...infrastructure] };
 	const judged = judgeRelationships({
 		read,
 		codes,
@@ -486,31 +501,6 @@ async function judgeBoardRelationships(read: BoardToCheck, pass: Pass): Promise<
 	});
 	pass.outcome.findings.push(...judged.findings, ...interfaces.findings);
 	pass.outcome.skipped.push(...judged.skipped, ...interfaces.skipped);
-}
-
-/**
- * What the pass says once for each checkout: that it is unavailable, or that
- * it read some of its files as text, so for those it judged anchors and bound
- * symbols by name and nothing that needs references.
- * @param checkouts Each repository's checkout.
- * @param readAsText The kinds of file read as text in each repository.
- * @returns The skips.
- */
-function checkoutSkips(
-	checkouts: ReadonlyMap<string, Checkout>,
-	readAsText: ReadonlyMap<string, ReadonlySet<string>>,
-): CodeCheckSkip[] {
-	return [...checkouts].flatMap(([repo, checkout]): CodeCheckSkip[] => {
-		if (checkout.status === "unavailable") {
-			return [{ reason: "checkout-unavailable", repo, detail: checkout.detail }];
-		}
-		const kinds = [...(readAsText.get(repo) ?? [])].toSorted();
-		if (kinds.length === 0) return [];
-		const detail =
-			`Read as text: ${kinds.join(", ")}. Their anchors and bound symbols were judged by ` +
-			"name, and nothing that needs references.";
-		return [{ reason: "text-only", repo, detail }];
-	});
 }
 
 /**
@@ -561,12 +551,14 @@ function partBindings(boards: readonly BoardToCheck[]): CodeBinding[] {
  * reads and every language server it started.
  * @param servers The language server of each language; by default as this
  * machine's `language-servers.json` names them, read again for each pass.
+ * @param plans The Terraform or OpenTofu plans an agent named (`--plan`).
  * @returns The findings and what the pass did not read.
  */
 async function checkCode(
 	boards: readonly BoardToCheck[],
 	signal: AbortSignal,
 	servers: LanguageServerTable = readLanguageServers(),
+	plans: FactsPass["plans"] = [],
 ): Promise<CodeCheckOutcome> {
 	const claims = boards.flatMap(claimsOf);
 	const bound = partBindings(boards);
@@ -578,7 +570,7 @@ async function checkCode(
 	const pass: Pass = {
 		snapshot,
 		checkouts,
-		facts: codeFacts.pass(signal),
+		facts: codeFacts.pass(signal, plans),
 		resolve: resolution.resolve,
 		readAsText: new Map(),
 		modules: new Map(),

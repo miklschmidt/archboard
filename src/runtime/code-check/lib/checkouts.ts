@@ -19,6 +19,7 @@ import {
 } from "@/runtime/code-target/index";
 import { listReadableFiles } from "@/runtime/code-check/lib/readable-files";
 import { neverRead, pairOf } from "@/runtime/code-facts/index";
+import type { CodeCheckSkip } from "@/shared/code-check/index";
 import type { CodeBinding } from "@/shared/code-target/index";
 import { errorMessage } from "@/shared/thrown-error/index";
 
@@ -137,4 +138,37 @@ function readableOf(target: LocalCodeTarget, files: ReadonlySet<string>, bound =
 	return { status: "files", files: [...new Set([...readable.files, ...pair])] };
 }
 
-export { type Checkout, type ReadCheckout, type Readable, otherRefOf, readCheckouts, readableOf };
+/**
+ * What the pass says once for each checkout: that it is unavailable, or that
+ * it read some of its files as text, so for those it judged anchors and bound
+ * symbols by name and nothing that needs references.
+ * @param checkouts Each repository's checkout.
+ * @param readAsText The kinds of file read as text in each repository.
+ * @returns The skips.
+ */
+function checkoutSkips(
+	checkouts: ReadonlyMap<string, Checkout>,
+	readAsText: ReadonlyMap<string, ReadonlySet<string>>,
+): CodeCheckSkip[] {
+	return [...checkouts].flatMap(([repo, checkout]): CodeCheckSkip[] => {
+		if (checkout.status === "unavailable") {
+			return [{ reason: "checkout-unavailable", repo, detail: checkout.detail }];
+		}
+		const kinds = [...(readAsText.get(repo) ?? [])].toSorted();
+		if (kinds.length === 0) return [];
+		const detail =
+			`Read as text: ${kinds.join(", ")}. Their anchors and bound symbols were judged by ` +
+			"name, and nothing that needs references.";
+		return [{ reason: "text-only", repo, detail }];
+	});
+}
+
+export {
+	type Checkout,
+	type ReadCheckout,
+	type Readable,
+	checkoutSkips,
+	otherRefOf,
+	readCheckouts,
+	readableOf,
+};

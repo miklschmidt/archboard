@@ -1,5 +1,5 @@
-// The code check's route, `GET /api/vault/code-check[?variant=<draft>]`
-// (ADR 0046).
+// The code check's route,
+// `GET /api/vault/code-check[?variant=<draft>][&plan=<file>]...` (ADR 0046).
 //
 // `archboard check --code` asks it after the plain check. It reads code and
 // Git, which takes seconds, so it runs only on a request and never inside
@@ -12,7 +12,10 @@
 // variant, or at the draft `variant` names, and gives `boards`, `findings` and
 // `skipped`. Behind (ADR 0045, TASK-369.02) reads the current variant of each
 // board, whatever the pass reads. A `variant` that names no draft on any board
-// is refused with the drafts that exist.
+// is refused with the drafts that exist. Each `plan` names a Terraform or
+// OpenTofu plan JSON by its absolute path (TASK-367.17); one outside every
+// registered checkout, one the check never reads or one that is not a plan
+// JSON refuses the check, as `PLAN_REFUSED`, before the pass starts.
 //
 // A pane never starts a pass (TASK-367.24). Each pass that finishes leaves its
 // findings in the server's memory, and `GET /api/vault/code-findings` answers
@@ -21,7 +24,13 @@
 // as it was.
 
 import type { Express, Request, Response } from "express";
-import { checkCode, readBoardsToCheck, type NoSuchDraft } from "@/runtime/code-check/index";
+import {
+	checkCode,
+	readBoardsToCheck,
+	readPlans,
+	type NoSuchDraft,
+	type PlanRefused,
+} from "@/runtime/code-check/index";
 import { requireVaultRoot } from "@/runtime/engine/board";
 import { createBehindReading } from "@/runtime/history-lens/index";
 import { queryString } from "@/server/archboard/lib/request-board";
@@ -33,11 +42,18 @@ import { checkoutWork } from "@/server/archboard/lib/server-owners";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@/shared/code-check/index";
 import { errorMessage } from "@/shared/thrown-error/index";
 
-/** What one request asks for: the draft to read where a board has one, and how to cancel. */
+/**
+ * What one request asks for: the draft to read where a board has one, the
+ * plans an agent named, and how to cancel.
+ */
 interface CodeCheckRequest {
 	readonly variant: string | undefined;
+	readonly plans: readonly string[];
 	readonly signal: AbortSignal;
 }
+
+/** Why a request is refused: a draft no board has, or a plan the check does not read. */
+type CodeCheckRefusal = NoSuchDraft | PlanRefused;
 
 /** What the route needs, which the Archboard server supplies and a test can replace. */
 interface CodeCheckRouteDependencies {
@@ -48,8 +64,8 @@ interface CodeCheckRouteDependencies {
 		name: string,
 		work: (signal: AbortSignal) => Promise<T>,
 	): Promise<T>;
-	/** Run the code check, or say that no board has the named draft. */
-	readonly check: (request: CodeCheckRequest) => Promise<CodeCheckAnswer | NoSuchDraft>;
+	/** Run the code check, or say that no board has the named draft or that a plan is refused. */
+	readonly check: (request: CodeCheckRequest) => Promise<CodeCheckAnswer | CodeCheckRefusal>;
 	/** What the finished passes found, which the panes read. */
 	readonly memory: CodeFindingsMemory;
 }
@@ -63,16 +79,21 @@ const codeFindings = createCodeFindingsMemory();
 /**
  * Run the code check over every board of the vault, at its current variant or
  * the named draft, with behind beside it.
- * @param request The draft to read, and the signal that cancels the check and
- * every Git command it runs.
- * @returns The answer, or the drafts that exist when no board has the named one.
+ * @param request The draft to read, the plans named, and the signal that
+ * cancels the check and every Git command it runs.
+ * @returns The answer, the drafts that exist when no board has the named one,
+ * or the plan the check refuses.
  */
-async function runCodeCheck(request: CodeCheckRequest): Promise<CodeCheckAnswer | NoSuchDraft> {
+async function runCodeCheck(
+	request: CodeCheckRequest,
+): Promise<CodeCheckAnswer | CodeCheckRefusal> {
 	const vault = requireVaultRoot();
 	const read = readBoardsToCheck(vault, request.variant);
 	if (!read.ok) return read;
+	const plans = await readPlans(request.plans, request.signal);
+	if (!plans.ok) return plans;
 	const [code, behind] = await Promise.all([
-		checkCode(read.boards, request.signal),
+		checkCode(read.boards, request.signal, undefined, plans.plans),
 		behindReading.read(
 			vault,
 			read.boards.map(({ board, file }) => ({ board, file })),
@@ -108,6 +129,22 @@ function noSuchDraft(refused: NoSuchDraft): { code: string; error: string } {
 }
 
 /**
+ * The refusal's body.
+ * @param refused The draft or the plan refused.
+ * @returns Its code and what it says.
+ */
+function refusalOf(refused: CodeCheckRefusal): { code: string; error: string } {
+	if (!("refused" in refused)) return noSuchDraft(refused);
+	return {
+		code: "PLAN_REFUSED",
+		error:
+			`The check does not read the plan ${JSON.stringify(refused.plan)}: ${refused.reason}. ` +
+			"Name a plan JSON that terraform show -json or tofu show -json wrote inside a " +
+			"registered checkout, by its path.",
+	};
+}
+
+/**
  * Whether the caller has gone, so nothing is left to answer.
  * @param request The request.
  * @param response Its response.
@@ -128,6 +165,17 @@ function variantOf(request: Request): string | undefined {
 }
 
 /**
+ * The plans a request names.
+ * @param request The request.
+ * @returns Each `plan`, in order.
+ */
+function plansOf(request: Request): string[] {
+	const named = request.query["plan"];
+	const each = Array.isArray(named) ? named : [named];
+	return each.filter((plan): plan is string => typeof plan === "string" && plan.trim() !== "");
+}
+
+/**
  * Answer one request with a code check run as checkout work.
  * @param dependencies How the pass runs.
  * @param request The request.
@@ -139,6 +187,7 @@ async function answerCodeCheck(
 	response: Response,
 ): Promise<void> {
 	const variant = variantOf(request);
+	const plans = plansOf(request);
 	const checkedAt = new Date();
 	try {
 		const answer = await dependencies.runCheckout(
@@ -146,7 +195,7 @@ async function answerCodeCheck(
 			response,
 			"GET /api/vault/code-check",
 			async (signal) => {
-				const checked = await dependencies.check({ variant, signal });
+				const checked = await dependencies.check({ variant, plans, signal });
 				// A cancelled pass may have stopped short, so it is nobody's news.
 				if ("boards" in checked && !signal.aborted) {
 					dependencies.memory.remember(checked, checkedAt);
@@ -156,7 +205,7 @@ async function answerCodeCheck(
 		);
 		if (callerGone(request, response)) return;
 		if ("boards" in answer) response.json({ success: true, ...answer });
-		else response.status(422).json({ success: false, ...noSuchDraft(answer) });
+		else response.status(422).json({ success: false, ...refusalOf(answer) });
 	} catch (error) {
 		if (!callerGone(request, response)) {
 			response.status(500).json({ success: false, error: errorMessage(error) });
