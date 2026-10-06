@@ -19,8 +19,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CodeCheckOutcome } from "@/runtime/code-check/index";
 import { board, git, register, write } from "@/runtime/code-check/tests/fixture";
-import { ownServers } from "@/runtime/code-check/tests/servers";
-import type { LanguageServerTable } from "@/runtime/language-servers/index";
 
 const caller = {
 	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
@@ -126,7 +124,9 @@ beforeAll(async () => {
 	});
 	git(scratch, shop, "add", "-A");
 	git(scratch, shop, "commit", "-q", "--no-gpg-sign", "-m", "the code");
-	register(scratch, { [SHOP]: shop });
+	// A server that fails if a pass starts it, as it must not for a package with no index.
+	const fails = { command: process.execPath, args: ["-e", "process.exit(7)"] };
+	register(scratch, { [SHOP]: shop }, { swift: fails });
 	board(vault, "Shop", [
 		{
 			id: "v1",
@@ -157,10 +157,7 @@ beforeAll(async () => {
 	const check = await import("@/runtime/code-check/index");
 	const read = check.readBoardsToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
-	// A program no machine has: a pass that started it would say it failed.
-	const sourcekitLsp = { status: "command", argv: ["/nonexistent/sourcekit-lsp"] } as const;
-	const servers: LanguageServerTable = new Map(ownServers()).set("swift", sourcekitLsp);
-	outcome = await check.checkCode(read.boards, new AbortController().signal, servers);
+	outcome = await check.checkCode(read.boards, new AbortController().signal);
 });
 
 afterAll(() => {

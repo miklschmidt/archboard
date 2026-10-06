@@ -2,11 +2,10 @@
 // server: each answers in the checkout once it is told what it needs to read
 // it, the Python environment or the .NET solution, and a .NET checkout with
 // nothing to load is said once and starts nothing. Which program each
-// language runs by default comes from `language-servers.json` and the `PATH`.
+// language runs is server-command.test.ts.
 
 import { afterEach, describe, expect, test } from "bun:test";
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { openLanguageServers } from "@/runtime/language-servers/index";
 import { workspace, type Workspace } from "@/runtime/language-servers/tests/fixture";
@@ -161,39 +160,18 @@ describe("pyright", () => {
 		await session.close();
 	});
 
+	test("is told the interpreter of a .venv that the checkout tracks, as an editor's would be", async () => {
+		const at = committed({ ...PYTHON, ...VENV }, answers);
+		expect((await ask(at, "python", use)).answer.status).toBe("answered");
+		expect(at.configurations()).toEqual([
+			[{ pythonPath: join(at.root, ".venv/bin/python") }, null],
+		]);
+	});
+
 	test("is told no interpreter in a checkout that has none", async () => {
 		const none = committed(PYTHON, answers);
 		expect((await ask(none, "python", use)).answer.status).toBe("answered");
 		expect(none.configurations()).toEqual([[null, null]]);
-	});
-
-	test("starts nowhere a checkout ships the interpreter of its .venv, also through a link or in another case, and says so once", async () => {
-		// basedpyright runs .venv/bin/python by itself when it is told no interpreter.
-		const shipping = [
-			() => committed({ ...PYTHON, ...VENV }, answers),
-			() => {
-				const at = committed({ ...PYTHON, "tools/env/bin/python": "" }, answers, [".venv"]);
-				symlinkSync("tools/env", join(at.root, ".venv"));
-				return at;
-			},
-			// On a disk that ignores case, .VENV and .venv are one directory.
-			() => {
-				const at = committed({ ...PYTHON, ".VENV/bin/python": "" }, answers, [".venv/"]);
-				place(at, VENV);
-				return at;
-			},
-		];
-		for (const checkout of shipping) {
-			const at = checkout();
-			expect(await ask(at, "python", use)).toEqual({
-				answer: { status: "unasked" },
-				unavailable: [
-					{ language: "python", reason: "unready", root: at.root, detail: expect.any(String) },
-				],
-			});
-			expect(at.pids()).toEqual([]);
-			at.remove();
-		}
 	});
 });
 
@@ -242,63 +220,5 @@ describe("csharp-ls", () => {
 			{ language: "csharp", reason: "unready", root: at.root, detail: expect.any(String) },
 		]);
 		expect(at.pids()).toEqual([]);
-	});
-});
-
-describe("the default servers", () => {
-	const directories: string[] = [];
-	let directory = "";
-	afterEach(() => {
-		for (const each of directories.splice(0)) rmSync(each, { recursive: true, force: true });
-	});
-
-	/**
-	 * The server of each language with no `language-servers.json`, read by a
-	 * process whose `PATH` holds only these programs: a process looks the
-	 * `PATH` up as it started.
-	 * @param programs The programs.
-	 * @returns The table, by language.
-	 */
-	const withPrograms = (...programs: string[]): Record<string, unknown> => {
-		directory = mkdtempSync(join(tmpdir(), "archboard-language-server-path-"));
-		directories.push(directory);
-		for (const program of programs) {
-			writeFileSync(join(directory, program), "#!/bin/sh\n");
-			chmodSync(join(directory, program), 0o755);
-		}
-		const read = [
-			'import { readLanguageServers } from "@/runtime/language-servers/index";',
-			`const table = readLanguageServers(${JSON.stringify(join(directory, "none.json"))});`,
-			"console.log(JSON.stringify(Object.fromEntries(table)));",
-		].join("\n");
-		const run = Bun.spawnSync([process.execPath, "-e", read], {
-			cwd: join(import.meta.dir, "..", "..", "..", ".."),
-			env: { PATH: directory },
-		});
-		return JSON.parse(run.stdout.toString()) as Record<string, unknown>;
-	};
-
-	test("run pyright for Python, or basedpyright where only it is installed, and nothing without either", () => {
-		expect(withPrograms("pyright-langserver", "basedpyright-langserver")["python"]).toEqual({
-			status: "command",
-			argv: [join(directory, "pyright-langserver"), "--stdio"],
-		});
-		expect(withPrograms("basedpyright-langserver")["python"]).toEqual({
-			status: "command",
-			argv: [join(directory, "basedpyright-langserver"), "--stdio"],
-		});
-		expect(withPrograms()["python"]).toMatchObject({ status: "missing" });
-	});
-
-	test("run clangd for C, C++ and Objective-C from the PATH, and nothing without it", () => {
-		expect(withPrograms("clangd")["c"]).toEqual({
-			status: "command",
-			argv: [join(directory, "clangd")],
-		});
-		expect(withPrograms()["c"]).toMatchObject({ status: "missing" });
-	});
-
-	test("run no C# server without an entry, even where csharp-ls is installed", () => {
-		expect(withPrograms("csharp-ls")["csharp"]).toMatchObject({ status: "missing" });
 	});
 });

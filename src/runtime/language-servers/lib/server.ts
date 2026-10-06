@@ -12,17 +12,13 @@
 // row says it answers only about an open file gets each file opened once,
 // with its text on disk. A server whose row names the progress of its index
 // is asked nothing until that index is complete, after its first file opened.
-// A row can give a server a directory of its own, in the system's temporary
-// directory, for what it writes, and set its environment; the directory is
-// removed once the server has ended, or when it cannot start.
-// It runs in a process group of its own. Stopping asks it to shut down and
+// It runs the command it is given with the user's environment, in a process
+// group of its own. Stopping asks it to shut down and
 // exit, and kills the group if it has not ended within the bound; a cancelled
 // pass kills it at once. Either way the stop returns only once the process
 // has ended.
 
 import fs from "node:fs/promises";
-import os from "node:os";
-import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { z } from "zod";
 import {
@@ -33,12 +29,7 @@ import {
 	type RequestBounds,
 	type ServerProcess,
 } from "@/runtime/language-servers/lib/connection";
-import {
-	LANGUAGES,
-	languageOf,
-	type Language,
-	type ServerSetup,
-} from "@/runtime/language-servers/lib/languages";
+import { LANGUAGES, languageOf, type Language } from "@/runtime/language-servers/lib/languages";
 import { outlineOf, type OutlineSymbol } from "@/runtime/language-servers/lib/outline";
 import type { LANGUAGE_SERVER_TIMEOUTS } from "@/shared/timing/timing";
 
@@ -280,99 +271,29 @@ async function stopProcess(
 }
 
 /**
- * What removes the own directory of a server that has none.
- * @returns At once.
- */
-function nothingToRemove(): Promise<void> {
-	return Promise.resolve();
-}
-
-/** What a server starts with beyond its command, and how to remove its own directory. */
-interface Prepared extends ServerSetup {
-	readonly removeOwn: () => Promise<void>;
-}
-
-/**
- * Make a server's own directory and what its row starts it with, where its
- * row names that.
- * @param start The command, the project and the language.
- * @returns The arguments and the environment, and what removes the directory
- * once the server has ended.
- */
-async function prepared(start: ServerStart): Promise<Prepared> {
-	const { prepare } = LANGUAGES[start.language];
-	if (prepare === undefined) return { args: [], environment: {}, removeOwn: nothingToRemove };
-	const own = await fs.mkdtemp(path.join(os.tmpdir(), "archboard-language-server-"));
-	/**
-	 * Remove the server's own directory.
-	 * @returns Once it is gone.
-	 */
-	const removeOwn = (): Promise<void> =>
-		fs.rm(own, { recursive: true, force: true, maxRetries: 5 });
-	try {
-		return { ...(await prepare(start.root, own)), removeOwn };
-	} catch (error) {
-		await removeOwn();
-		throw error;
-	}
-}
-
-/**
- * Archboard's environment with a row's variables set over it, and those it
- * leaves out removed.
- * @param environment The row's variables.
- * @returns The environment.
- */
-function environmentOf(environment: ServerSetup["environment"]): Record<string, string> {
-	const merged: Record<string, string | undefined> = { ...process.env, ...environment };
-	return Object.fromEntries(
-		Object.entries(merged).flatMap(([key, value]) => (value === undefined ? [] : [[key, value]])),
-	);
-}
-
-/**
- * Start a server's process, and remove its own directory when it cannot
- * start, as when its project's directory has gone.
- * @param start The command and the project.
- * @param setup What it starts with, and what removes its own directory.
- * @returns The process.
- */
-async function spawned(start: ServerStart, setup: Prepared) {
-	try {
-		return Bun.spawn([...start.argv, ...setup.args], {
-			cwd: start.root,
-			env: environmentOf(setup.environment),
-			detached: true,
-			stdin: "pipe",
-			stdout: "pipe",
-			stderr: "ignore",
-		});
-	} catch (error) {
-		await setup.removeOwn();
-		throw error;
-	}
-}
-
-/**
  * Start a server in a checkout and initialize it.
  * @param start The command, the checkout, the pass's signal and the bounds.
  * @returns The server, or a rejection that says why it did not start.
  */
 async function startServer(start: ServerStart): Promise<Server> {
-	const setup = await prepared(start);
-	const { removeOwn } = setup;
-	const child = await spawned(start, setup);
+	const child = Bun.spawn([...start.argv], {
+		cwd: start.root,
+		env: process.env,
+		detached: true,
+		stdin: "pipe",
+		stdout: "pipe",
+		stderr: "ignore",
+	});
 	const closed = child.exited.then((code) => exitReason(code, child.signalCode));
 	const connection = connect(child, closed, start.settings ?? {});
 	let stopping: Promise<void> | undefined;
 	/**
-	 * Stop the process, once, and wait until it has ended and its own
-	 * directory is gone.
+	 * Stop the process, once, and wait until it has ended.
 	 * @param graceful Ask it to exit first, rather than kill it at once.
 	 * @returns Once it has ended.
 	 */
 	const stop = (graceful: boolean): Promise<void> => {
-		stopping ??= stopProcess(child, connection, graceful, start.timeouts).then(removeOwn);
+		stopping ??= stopProcess(child, connection, graceful, start.timeouts);
 		return stopping;
 	};
 	const bounds = { timeoutMs: start.timeouts.requestMs, signal: start.signal };

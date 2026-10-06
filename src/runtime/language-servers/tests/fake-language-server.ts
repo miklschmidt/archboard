@@ -12,10 +12,8 @@
 // and the `initializationOptions` it was given to `<state-dir>/starts`, one
 // JSON line each, so a test can see what was asked, where, and whether the
 // process still runs. It appends the arguments after its mode to
-// `<state-dir>/argvs`, the database a `--compile-commands-dir=<dir>` names
-// to `<state-dir>/databases`, and the variables `TMPDIR` and `CLANGD_FLAGS`
-// of its environment, or null, to `<state-dir>/environments`, one JSON line
-// each. Once initialized it
+// `<state-dir>/argvs`, and the variable `CLANGD_FLAGS` of its environment, or
+// null, to `<state-dir>/environments`, one JSON line each. Once initialized it
 // asks for its configuration of the sections `python` and `csharp`, and
 // appends the client's answer to `<state-dir>/configuration` as one JSON line.
 // It refuses a request it does not know, as a server does. A mode, or several
@@ -35,8 +33,6 @@
 // - `indexes-never`: reports that progress and never ends it.
 // - `wrapped`: only runs the stand-in as its child, in the other modes, and
 //   waits for it, as nixpkgs' `clangd` script runs `clangd-unwrapped`.
-// - `writes`: writes a file every 10 ms into the directory that
-//   `--compile-commands-dir` names, as clangd's index does.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -57,25 +53,8 @@ if (modes.has("wrapped")) {
 }
 const extra = process.argv.slice(4);
 fs.appendFileSync(path.join(stateDir, "argvs"), `${JSON.stringify(extra)}\n`);
-const environment = {
-	TMPDIR: process.env["TMPDIR"] ?? null,
-	CLANGD_FLAGS: process.env["CLANGD_FLAGS"] ?? null,
-};
+const environment = { CLANGD_FLAGS: process.env["CLANGD_FLAGS"] ?? null };
 fs.appendFileSync(path.join(stateDir, "environments"), `${JSON.stringify(environment)}\n`);
-const databaseDirectory = extra
-	.find((arg) => arg.startsWith("--compile-commands-dir="))
-	?.slice("--compile-commands-dir=".length);
-if (databaseDirectory !== undefined) {
-	const database = fs.readFileSync(path.join(databaseDirectory, "compile_commands.json"), "utf8");
-	fs.appendFileSync(path.join(stateDir, "databases"), `${database}\n`);
-	if (modes.has("writes")) {
-		const index = path.join(databaseDirectory, "index");
-		setInterval(() => {
-			fs.mkdirSync(index, { recursive: true });
-			fs.writeFileSync(path.join(index, `${Date.now()}`), "");
-		}, 10);
-	}
-}
 
 /** One message the client sent. */
 interface Message {

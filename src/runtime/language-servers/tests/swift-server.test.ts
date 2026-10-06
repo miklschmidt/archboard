@@ -7,7 +7,7 @@
 
 import { afterEach, expect, test } from "bun:test";
 import { join } from "node:path";
-import { openLanguageServers, readLanguageServers } from "@/runtime/language-servers/index";
+import { openLanguageServers } from "@/runtime/language-servers/index";
 import { workspace, type Workspace } from "@/runtime/language-servers/tests/fixture";
 
 /** Short bounds, so a stand-in that fails costs the suite little. */
@@ -158,9 +158,4 @@ test("a server that failed in one package is not started in another package of t
 		["failed", current.root],
 	]);
 	expect(current.starts().map((start) => start.cwd)).toEqual([join(current.root, "one")]);
-});
-
-test("Swift has no server until language-servers.json names one", () => {
-	const swift = readLanguageServers(join(import.meta.dir, "no-language-servers.json")).get("swift");
-	expect(swift?.status).toBe("missing");
 });

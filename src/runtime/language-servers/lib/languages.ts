@@ -1,33 +1,21 @@
 // The languages a language server can resolve candidates for, and what each
 // one needs (ADR 0046). This table is the seam the later servers plug into:
-// Python and C# (TASK-367.14), C, C++ and Objective-C (TASK-367.15) and Swift
-// (TASK-367.16) each add a row.
+// each language adds a row.
 //
-// A row names the files of the language by extension, the `languageId` the
-// protocol gives each, and the default server, if the language has one. A
-// default runs only a server that reads a project without running any of it.
-// A server that evaluates project files, such as MSBuild or `Package.swift`,
-// has no default and runs only from an entry in `language-servers.json`.
-//
-// A row also says what its server needs beyond the protocol: options it must
-// start with whatever command runs it, arguments after the command's own with
-// a directory of the server's own to keep what it writes, files opened before
-// it answers about them, a request or an index that it is waited for until it
-// has loaded what it reads, and the project it starts in for a file, with why
-// it cannot answer there yet and what it is told when it asks for its
+// A row names the files of the language by extension and the `languageId` the
+// protocol gives each. It also says what its server needs beyond the protocol:
+// options it must start with whatever command runs it, files opened before it
+// answers about them, a request or an index that it is waited for until it has
+// loaded what it reads, and the project it starts in for a file, with why it
+// cannot answer there yet and what it is told when it asks for its
 // configuration, such as the Python environment or the .NET solution to read.
+// Which command runs the server is no part of a row (server-command.ts).
 
 import path from "node:path";
-import { clangdStart, compileDatabaseOf } from "@/runtime/language-servers/lib/compile-database";
+import { compileDatabaseOf } from "@/runtime/language-servers/lib/compile-database";
 import { dotnetProjectOf } from "@/runtime/language-servers/lib/dotnet-solution";
 import { pythonProjectOf } from "@/runtime/language-servers/lib/python-environment";
 import { swiftPackageOf } from "@/runtime/language-servers/lib/swift-package";
-
-/** A command that starts a server, as a program and its arguments. */
-interface ServerCommand {
-	readonly command: string;
-	readonly args: readonly string[];
-}
 
 /** The project a server answers about for a file. */
 interface Project {
@@ -55,30 +43,12 @@ interface Request {
  */
 type Once = (key: string, look: () => Promise<Project>) => Promise<Project>;
 
-/** What a server starts with in a project beyond its command. */
-interface ServerSetup {
-	/** The arguments after the command's own. */
-	readonly args: readonly string[];
-	/** The variables its environment sets, or leaves out where undefined, over Archboard's. */
-	readonly environment: Readonly<Record<string, string | undefined>>;
-}
-
 /** What one language needs from a language server. */
 interface LanguageRow {
 	/** The `languageId` of each extension the language's files have. */
 	readonly languageIds: Readonly<Record<string, string>>;
-	/** The server this language uses with no entry, or why it has none. */
-	readonly defaultServer: () => ServerCommand | string;
 	/** Options sent in `initialize`, whatever command runs the server. */
 	readonly initializationOptions?: object;
-	/**
-	 * What the server starts with in a project, whatever command runs it: the
-	 * arguments after its command's own, and its environment. `own` is a
-	 * directory of the server's own, which the client makes before the start
-	 * and removes once the server has ended, so what the server writes stays
-	 * out of the checkout.
-	 */
-	readonly prepare?: (project: string, own: string) => Promise<ServerSetup>;
 	/**
 	 * The token of the work-done progress by which the server reports the index
 	 * it builds once it has opened its first file. The client waits for that
@@ -101,70 +71,7 @@ interface LanguageRow {
 }
 
 /**
- * The native `tsc` of Archboard's own `typescript` package, which is a
- * language server with `--lsp --stdio` from TypeScript 7. It is resolved from
- * Archboard's install, never from a checkout, so no TypeScript of the checkout
- * runs. The package's `bin/tsc` only finds this program and replaces itself
- * with it, so the check starts the program itself and stops exactly the
- * process it started.
- * @returns The command, or why it cannot be found.
- */
-function archboardTypeScript(): ServerCommand | string {
-	try {
-		const typescript = path.dirname(Bun.resolveSync("typescript/package.json", import.meta.dir));
-		const native = `@typescript/typescript-${process.platform}-${process.arch}/package.json`;
-		const lib = path.join(path.dirname(Bun.resolveSync(native, typescript)), "lib");
-		const program = path.join(lib, process.platform === "win32" ? "tsc.exe" : "tsc");
-		return { command: program, args: ["--lsp", "--stdio"] };
-	} catch {
-		return `Archboard's typescript package has no native tsc for ${process.platform}-${process.arch}`;
-	}
-}
-
-/**
- * Why Swift has no default server: sourcekit-lsp evaluates `Package.swift`,
- * which runs code of the checkout.
- * @returns The reason.
- */
-function noSourcekitLsp(): string {
-	return "sourcekit-lsp evaluates Package.swift, so it runs only from an entry in language-servers.json";
-}
-
-/** The Python servers a default looks for on the `PATH`, in order: pyright, then its fork basedpyright. */
-const PYRIGHTS = ["pyright-langserver", "basedpyright-langserver"] as const;
-
-/**
- * pyright or basedpyright, which read a project's files and environment
- * without running the project.
- * @returns The first of them on the `PATH`, or why there is none.
- */
-function pyright(): ServerCommand | string {
-	const command = PYRIGHTS.find((name) => Bun.which(name) !== null);
-	return command === undefined
-		? `neither ${PYRIGHTS.join(" nor ")} is installed`
-		: { command, args: ["--stdio"] };
-}
-
-/**
- * Why C# has no default server: csharp-ls and the Roslyn language server
- * evaluate MSBuild files, which can run code of the checkout.
- * @returns The reason.
- */
-function noCSharpServer(): string {
-	return "csharp-ls evaluates MSBuild files, so it runs only from an entry in language-servers.json";
-}
-
-/**
- * clangd, which reads the flags of each file from the checkout's
- * `compile_commands.json` and runs none of the compilers it names.
- * @returns The command.
- */
-function clangd(): ServerCommand {
-	return { command: "clangd", args: [] };
-}
-
-/**
- * Every language a server can resolve, by its key in `language-servers.json`.
+ * Every language a server can resolve, by its key.
  * `c` is the whole C family: C, C++ and Objective-C, which one clangd reads.
  */
 const LANGUAGE_KEYS = ["typescript", "python", "csharp", "swift", "c"] as const;
@@ -181,14 +88,12 @@ const LANGUAGES: Readonly<Record<Language, LanguageRow>> = {
 			".cts": "typescript",
 			".tsx": "typescriptreact",
 		},
-		defaultServer: archboardTypeScript,
 	},
 	// Measured with pyright 1.1.412: it answers about a file it has not opened
 	// only once it has listed the project's files, and before that answers
 	// none; an opened file is answered once it has its configuration.
 	python: {
 		languageIds: { ".py": "python", ".pyi": "python" },
-		defaultServer: pyright,
 		opensFiles: true,
 		project: pythonProjectOf,
 	},
@@ -197,17 +102,17 @@ const LANGUAGES: Readonly<Record<Language, LanguageRow>> = {
 	// MSBuild evaluation writes design-time files under each project's `obj`.
 	csharp: {
 		languageIds: { ".cs": "csharp" },
-		defaultServer: noCSharpServer,
 		project: dotnetProjectOf,
 	},
-	// sourcekit-lsp evaluates `Package.swift`, which runs code of the
-	// checkout. Measured with Swift 6.2.4: it answers only about an open file;
-	// with background indexing on, its default from 6.1, it runs `swift build`
-	// to prepare targets; with it off, it reads the index a build wrote under
-	// `.build`, which `workspace/synchronize` waits for it to load.
+	// Measured with Swift 6.2.4: sourcekit-lsp answers only about an open
+	// file; with background indexing on, its default from 6.1, it runs
+	// `swift build` to prepare targets, which the check never asks for; with
+	// it off, it reads the index a build wrote under `.build`, which
+	// `workspace/synchronize` waits for it to load. No Swift toolchain was on
+	// the machine that dropped the other guards (TASK-433), so the option
+	// stays.
 	swift: {
 		languageIds: { ".swift": "swift" },
-		defaultServer: noSourcekitLsp,
 		initializationOptions: { backgroundIndexing: false },
 		opensFiles: true,
 		settle: { method: "workspace/synchronize", params: { index: true } },
@@ -218,13 +123,8 @@ const LANGUAGES: Readonly<Record<Language, LanguageRow>> = {
 	// It takes a file's language from its compile command, not from the
 	// `languageId`, so a `.h` is read as the command of its sources says. Its
 	// background index of every file the database lists is what names a
-	// definition in another file; it is kept in the server's own directory
-	// (compile-database.ts), and ends its progress `backgroundIndexProgress`.
-	// It runs no compiler without `--query-driver`, loads no plugin a command
-	// names, and reads no `.clangd` or user configuration with
-	// `--enable-config=false`; what else in a command could run a program or
-	// write a file, the copy of the database takes out. Objective-C++ (`.mm`)
-	// stays text (ADR 0046).
+	// definition in another file; it ends its progress
+	// `backgroundIndexProgress`. Objective-C++ (`.mm`) stays text (ADR 0046).
 	c: {
 		languageIds: {
 			".c": "c",
@@ -237,9 +137,7 @@ const LANGUAGES: Readonly<Record<Language, LanguageRow>> = {
 			".hxx": "cpp",
 			".m": "objective-c",
 		},
-		defaultServer: clangd,
 		opensFiles: true,
-		prepare: clangdStart,
 		indexProgress: "backgroundIndexProgress",
 		project: compileDatabaseOf,
 	},
@@ -259,13 +157,4 @@ function languageOf(file: string): { language: Language; languageId: string } | 
 	return undefined;
 }
 
-export {
-	type Language,
-	type Once,
-	type Project,
-	type ServerCommand,
-	type ServerSetup,
-	LANGUAGES,
-	LANGUAGE_KEYS,
-	languageOf,
-};
+export { type Language, type Once, type Project, LANGUAGES, LANGUAGE_KEYS, languageOf };

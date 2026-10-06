@@ -17,7 +17,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CodeCheckOutcome } from "@/runtime/code-check/index";
 import { board, git, register, write } from "@/runtime/code-check/tests/fixture";
-import { ownServers } from "@/runtime/code-check/tests/servers";
 
 const caller = {
 	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
@@ -208,7 +207,7 @@ beforeAll(async () => {
 	const check = await import("@/runtime/code-check/index");
 	const read = check.readBoardsToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
-	outcome = await check.checkCode(read.boards, new AbortController().signal, ownServers());
+	outcome = await check.checkCode(read.boards, new AbortController().signal);
 });
 
 afterAll(() => {
@@ -269,4 +268,15 @@ test("a C module exposes what its public headers declare, and an outside file us
 	const unused = outcome.findings.find((each) => each.code === "EXPOSED_UNUSED");
 	expect(unused?.message).toContain("notify");
 	expect(unused?.message).not.toContain("money_round");
+});
+
+test("a checkout with no configured C server says language-server-missing once for it, and names the command that configures one", () => {
+	const missing = outcome.skipped.filter((each) => each.reason === "language-server-missing");
+	expect(missing).toEqual([
+		{
+			reason: "language-server-missing",
+			repo: SHOP,
+			detail: expect.stringContaining(`repo language-server c <command> --repo ${SHOP}`),
+		},
+	]);
 });

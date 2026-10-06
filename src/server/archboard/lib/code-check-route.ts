@@ -93,7 +93,7 @@ async function runCodeCheck(
 	const plans = await readPlans(request.plans, request.signal);
 	if (!plans.ok) return plans;
 	const [code, behind] = await Promise.all([
-		checkCode(read.boards, request.signal, undefined, plans.plans),
+		checkCode(read.boards, request.signal, plans.plans),
 		behindReading.read(
 			vault,
 			read.boards.map(({ board, file }) => ({ board, file })),

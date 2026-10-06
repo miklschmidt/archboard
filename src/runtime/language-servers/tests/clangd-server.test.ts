@@ -1,17 +1,15 @@
-// clangd for C, C++ and Objective-C (TASK-367.15), against a stand-in server
-// that, as clangd does, answers only about an open file and knows a
+// clangd for C, C++ and Objective-C (TASK-367.15, TASK-433), against a stand-in
+// server that, as clangd does, answers only about an open file and knows a
 // definition in another file only once the index it reports has ended: the
-// server starts in the directory of the file's `compile_commands.json`, reads
-// a copy of it whose module cache, index and temporary files stay in a
-// directory of its own, with no `CLANGD_FLAGS`, and is asked only once its
-// index ended; the copy keeps nothing of a command that could run a program
-// or write elsewhere; a file with no database, or a database with no command,
-// is said once and starts nothing; an index that never ends fails the server
-// once.
+// server starts in the directory of the file's `compile_commands.json` with
+// exactly the arguments and the environment it is given, and is asked only
+// once its index ended; a file with no database, or a database with no
+// command, is said once and starts nothing; an index that never ends fails the
+// server once.
 
 import { afterEach, expect, test } from "bun:test";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { openLanguageServers } from "@/runtime/language-servers/index";
 import { running, workspace, type Workspace } from "@/runtime/language-servers/tests/fixture";
 
@@ -51,35 +49,28 @@ function clangdSession(at: Workspace, mode = "needs-open,indexes") {
 	});
 }
 
-/**
- * A database as CMake writes it into `build`: one command listed with a module
- * cache inside the checkout, and one spelled as a command line.
- * @param root The checkout.
- * @returns Its text.
- */
-function database(root: string): string {
-	return JSON.stringify([
-		{
-			directory: ".",
-			file: "../src/ledger.c",
-			arguments: ["cc", "-I../include", `-fmodules-cache-path=${root}/mc`, "-c", "../src/ledger.c"],
-		},
-		{
-			directory: join(root, "build"),
-			file: "../src/sends.m",
-			command: "cc -x objective-c -Xclang -fmodules-cache-path=mc -- ../src/sends.m",
-		},
-	]);
-}
+/** A database as CMake writes it into `build`: one command listed, and one spelled as a command line. */
+const DATABASE = JSON.stringify([
+	{
+		directory: ".",
+		file: "../src/ledger.c",
+		arguments: ["cc", "-I../include", "-c", "../src/ledger.c"],
+	},
+	{
+		directory: "build",
+		file: "../src/sends.m",
+		command: "cc -x objective-c -- ../src/sends.m",
+	},
+]);
 
-test("clangd starts in the directory of the file's database, reads a copy whose module cache and index stay in its own directory, and is asked about an opened file once its index ended", async () => {
+test("clangd starts in the directory of the file's database with the arguments and the environment it is given, and is asked about an opened file once its index ended", async () => {
 	current = workspace(
 		{ "include/ledger.h": HEADER, "src/ledger.c": LEDGER, "src/audit.c": "int audit_check;\n" },
 		{ "../src/ledger.c:3:audit_check": { path: "../src/audit.c", line: 1 } },
 	);
 	const at = current;
 	mkdirSync(join(at.root, "build"));
-	writeFileSync(join(at.root, "build/compile_commands.json"), database(at.root));
+	writeFileSync(join(at.root, "build/compile_commands.json"), DATABASE);
 	const flags = process.env["CLANGD_FLAGS"];
 	process.env["CLANGD_FLAGS"] = "--query-driver=**";
 	const session = clangdSession(at);
@@ -96,93 +87,17 @@ test("clangd starts in the directory of the file's database, reads a copy whose 
 	}
 	expect(session.unavailable()).toEqual([]);
 	expect(at.starts().map((start) => start.cwd)).toEqual([join(at.root, "build")]);
-	const [args = []] = at.argvs();
-	expect(args).toEqual(expect.arrayContaining(["--background-index", "--enable-config=false"]));
-	const own = args.find((arg) => arg.startsWith("--compile-commands-dir="))?.split("=")[1] ?? "";
-	expect(relative(at.root, own).startsWith("..")).toBe(true);
-	expect(existsSync(own)).toBe(false);
-	expect(at.environments()).toEqual([{ TMPDIR: own, CLANGD_FLAGS: null }]);
-	const [copy] = at.databases() as { directory: string; arguments: string[] }[][];
-	expect(copy?.map((command) => command.directory)).toEqual([
-		join(at.root, "build"),
-		join(at.root, "build"),
-	]);
-	for (const command of copy ?? []) {
-		const caches = command.arguments.filter((arg) => arg.includes("-fmodules-cache-path"));
-		expect(caches).toEqual([`-fmodules-cache-path=${join(own, "modules")}`]);
-	}
+	expect(at.argvs()).toEqual([[]]);
+	expect(at.environments()).toEqual([{ CLANGD_FLAGS: "--query-driver=**" }]);
 	const asked = at.methods().filter((method) => method !== "answer");
 	expect(asked.indexOf("textDocument/didOpen")).toBeLessThan(
 		asked.indexOf("textDocument/definition"),
 	);
 });
 
-test("the copy keeps nothing of a command that could run a program of the checkout or write outside the server's own directory", async () => {
-	const hostile = [
-		"tools/clang",
-		"-Iinclude",
-		"-Xclang=-fmodules-cache-path=mc",
-		"-Wp,-fmodules-cache-path=mc",
-		"@tools/flags.rsp",
-		"-Btools",
-		"-B",
-		"tools",
-		"--config=tools/x.cfg",
-		"-Xopenmp-target",
-		"--nvptx-arch-tool=tools/arch",
-		"-x",
-		"cuda",
-		"--offload-arch=native",
-		"-c",
-		"src/ledger.c",
-		"-sectcreate",
-		"--",
-		"src/ledger.c",
-		"--amdgpu-arch-tool=tools/arch",
-	];
-	const cl = [
-		"C:\\VS\\bin\\clang-cl.exe",
-		"/clang:--nvptx-arch-tool=tools\\arch",
-		"/c",
-		"ledger.c",
-	];
-	current = workspace({
-		"src/ledger.c": LEDGER,
-		"compile_commands.json": JSON.stringify([
-			{ directory: ".", file: "src/ledger.c", arguments: hostile },
-			{ directory: ".", file: "src/audit.c", arguments: cl },
-		]),
-	});
-	const at = current;
-	const session = clangdSession(at);
-	await session.definition({ root: at.root, file: "src/ledger.c", line: 3, symbol: "audit_check" });
-	await session.close();
-	const own = at
-		.argvs()[0]
-		?.find((arg) => arg.startsWith("--compile-commands-dir="))
-		?.split("=")[1];
-	const [copy = []] = at.databases() as { arguments: string[] }[][];
-	const [gcc = [], clangCl = []] = copy.map((command) => command.arguments);
-	// The compiler moves into the server's own directory under its name, and
-	// the copy's own flags stand right after it, where no flag of the command
-	// can take one as its value.
-	expect(gcc[0]).toBe(join(own ?? "", "compiler", "clang"));
-	expect(gcc.slice(1, 4).every((arg) => arg.includes(own ?? "?"))).toBe(true);
-	expect(clangCl.slice(1, 4).every((arg) => arg.startsWith("/clang:"))).toBe(true);
-	for (const args of [gcc, clangCl]) {
-		const named = args.filter((arg) => /fmodules-cache-path|arch-tool/u.test(arg));
-		expect(named.every((arg) => arg.includes(own ?? "?"))).toBe(true);
-		const kept = args.filter((arg) => /^(?:@|-B|--config|--prefix|--$)/u.test(arg));
-		expect(kept).toEqual([]);
-	}
-	expect(gcc).toEqual(
-		expect.arrayContaining(["-Iinclude", "--offload-arch=native", "-sectcreate"]),
-	);
-});
-
 test("a C++ name through its class and an Objective-C selector are asked where their last name stands", async () => {
 	current = workspace(
-		{ "src/sends.m": SENDS, "compile_commands.json": database("/elsewhere") },
+		{ "src/sends.m": SENDS, "compile_commands.json": DATABASE },
 		{
 			"src/sends.m:2:post": { path: "src/sends.m", line: 1 },
 			"src/sends.m:3:Append": { path: "src/sends.m", line: 1 },
@@ -225,14 +140,14 @@ test("a file with no database in its checkout, and a database that lists no comm
 	expect(at.pids()).toEqual([]);
 });
 
-test("a server whose index never ends is said once as failed, and is stopped with the server it runs as its child, so nothing writes into its own directory once that is removed", async () => {
+test("a server whose index never ends is said once as failed, and is stopped with the server it runs as its child", async () => {
 	current = workspace({
-		"compile_commands.json": database("/elsewhere"),
+		"compile_commands.json": DATABASE,
 		"src/ledger.c": LEDGER,
 		"src/audit.c": LEDGER,
 	});
 	const at = current;
-	const session = clangdSession(at, "wrapped,needs-open,indexes-never,writes");
+	const session = clangdSession(at, "wrapped,needs-open,indexes-never");
 	const ask = (file: string) =>
 		session.definition({ root: at.root, file, line: 3, symbol: "audit_check" });
 	expect(await Promise.all([ask("src/ledger.c"), ask("src/audit.c")])).toEqual([
@@ -244,8 +159,6 @@ test("a server whose index never ends is said once as failed, and is stopped wit
 	await Bun.sleep(100);
 	expect(at.pids()).toHaveLength(2);
 	expect(at.pids().filter(running)).toEqual([]);
-	const own = at.argvs()[0]?.find((arg) => arg.startsWith("--compile-commands-dir="));
-	expect(existsSync(own?.split("=")[1] ?? "")).toBe(false);
 });
 
 test("an Objective-C method of clangd's outline, whose name it puts at the method's sign, declares code at its selector", async () => {
@@ -263,7 +176,7 @@ test("an Objective-C method of clangd's outline, whose name it puts at the metho
 		children: [method],
 	};
 	current = workspace(
-		{ "compile_commands.json": database("/elsewhere"), "Shop/Ledger.m": SENDS },
+		{ "compile_commands.json": DATABASE, "Shop/Ledger.m": SENDS },
 		{ "outline:Shop/Ledger.m": [implementation] },
 	);
 	const at = current;

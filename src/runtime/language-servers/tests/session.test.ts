@@ -4,10 +4,8 @@
 // session closes.
 
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { openLanguageServers, readLanguageServers } from "@/runtime/language-servers/index";
+import { openLanguageServers } from "@/runtime/language-servers/index";
 import { running, workspace, type Workspace } from "@/runtime/language-servers/tests/fixture";
 
 /** Short bounds, so a hung stand-in costs the suite little. */
@@ -88,12 +86,12 @@ describe("a pass's language servers", () => {
 		expect(at.pids().every((pid) => !running(pid))).toBe(true);
 	});
 
-	test("say once that a language has no server, and start nothing", async () => {
+	test("say once for the checkout that a language has no server, and start nothing", async () => {
 		const at = withFile();
-		const servers = new Map([
-			["typescript", { status: "missing", detail: "tsc is not installed" }] as const,
-		]);
-		const session = openLanguageServers({ servers, signal: new AbortController().signal });
+		const session = openLanguageServers({
+			servers: () => ({ status: "missing", detail: "tsc is not installed" }),
+			signal: new AbortController().signal,
+		});
 		const question = { root: at.root, file: "src/load.ts", line: 3 };
 		expect(await session.definition({ ...question, symbol: "store.read" })).toEqual({
 			status: "unasked",
@@ -103,7 +101,7 @@ describe("a pass's language servers", () => {
 		});
 		await session.close();
 		expect(session.unavailable()).toEqual([
-			{ language: "typescript", reason: "missing", detail: "tsc is not installed" },
+			{ language: "typescript", reason: "missing", root: at.root, detail: "tsc is not installed" },
 		]);
 		expect(at.pids()).toEqual([]);
 	});
@@ -220,53 +218,5 @@ describe("a pass's language servers", () => {
 		await session.close();
 		expect(await asked).toEqual({ status: "unasked" });
 		expect(current.pids()).toEqual([]);
-	});
-});
-
-describe("language-servers.json", () => {
-	let directory: string | undefined;
-	afterEach(() => {
-		if (directory !== undefined) rmSync(directory, { recursive: true, force: true });
-		directory = undefined;
-	});
-
-	/**
-	 * The table a file of this text gives.
-	 * @param text The file's text, or undefined for no file.
-	 * @returns The table.
-	 */
-	const read = (text: string | undefined) => {
-		directory = mkdtempSync(join(tmpdir(), "archboard-language-servers-json-"));
-		const file = join(directory, "language-servers.json");
-		if (text !== undefined) writeFileSync(file, text);
-		return readLanguageServers(file);
-	};
-
-	test("run Archboard's own tsc for TypeScript with no file", () => {
-		const typescript = read(undefined).get("typescript");
-		expect(typescript?.status === "command" && typescript.argv.slice(1)).toEqual([
-			"--lsp",
-			"--stdio",
-		]);
-	});
-
-	test("run the command an entry names, found on the PATH, with its arguments", () => {
-		const typescript = read(JSON.stringify({ typescript: { command: "bun", args: ["x"] } })).get(
-			"typescript",
-		);
-		expect(typescript).toEqual({ status: "command", argv: [Bun.which("bun") ?? "", "x"] });
-	});
-
-	test.each([
-		["turned off", { typescript: false }],
-		["not installed", { typescript: { command: "archboard-no-such-language-server" } }],
-		["named by a relative path", { typescript: { command: "node_modules/.bin/tsc" } }],
-		["in a file that names no language", { cobol: { command: "bun" } }],
-	])("have no server for a language %s", (_, entries) => {
-		expect(read(JSON.stringify(entries)).get("typescript")?.status).toBe("missing");
-	});
-
-	test("have no server in a file that is not JSON", () => {
-		expect(read("{").get("typescript")?.status).toBe("missing");
 	});
 });
