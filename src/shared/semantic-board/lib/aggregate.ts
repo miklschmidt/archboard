@@ -43,10 +43,12 @@ import { VariantLifecycleSchema } from "@/shared/semantic-board/lib/vocabulary";
  * nobody has built has none (ADR 0031).
  *
  * `formerNames` on a board and on a variant (TASK-281, ADR 0036) did not move
- * the version. Both are optional and additive, so every document this build
- * wrote before them is already a document it reads, and an older build meets
- * the field in its strict parse and refuses it by name. A bump would only have
- * made every board of every vault rewrite itself on its first read.
+ * the version, and neither did `anchor` on a relationship and a step and
+ * `symbol` on a binding (TASK-367.04, ADR 0046). Each is optional and
+ * additive, so every document this build wrote before them is already a
+ * document it reads, and an older build meets the field in its strict parse
+ * and refuses it by name. A bump would only have made every board of every
+ * vault rewrite itself on its first read.
  */
 const SEMANTIC_BOARD_SCHEMA_VERSION = "2.4.0";
 

@@ -187,7 +187,7 @@ function buildStep(
 			to: to.node.id,
 			label: stated.label,
 			kind: from.node.id === to.node.id ? "self" : (stated.kind ?? "sync"),
-			...stepProse(stated),
+			...optionalStepFields(stated),
 		},
 	};
 }
@@ -218,7 +218,7 @@ function stepId(had: readonly FlowStep[], stated: FlowStepInput, batch: Batch): 
  * @param stated The step as the agent wrote it.
  * @returns The note, repeat and anchor fields it actually has.
  */
-function stepProse(stated: FlowStepInput): Pick<FlowStep, "note" | "repeat" | "anchor"> {
+function optionalStepFields(stated: FlowStepInput): Pick<FlowStep, "note" | "repeat" | "anchor"> {
 	return {
 		...(stated.note === undefined ? {} : { note: stated.note }),
 		...(stated.repeat === undefined ? {} : { repeat: stated.repeat }),
