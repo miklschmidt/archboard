@@ -37,7 +37,10 @@ interface Palette {
 	readonly glow: string;
 	/** A kind glyph. */
 	readonly glyph: string;
-	/** A label chip's face, opaque so it can be read wherever it lands. */
+	/**
+	 * A label chip's face, opaque so it can be read wherever it lands: a card's
+	 * face on the light ground, so no tile of the picture is pure white.
+	 */
 	readonly pill: string;
 	/** A label chip's text. */
 	readonly pillText: string;
@@ -103,7 +106,7 @@ const PALETTE: Palette = {
 	edge: token("--diagram-edge"),
 	glow: token("--diagram-glow"),
 	glyph: token("--diagram-text-muted"),
-	pill: token("--popover"),
+	pill: lightDark(token("--slab-face"), token("--popover")),
 	pillText: token("--diagram-text"),
 	selection: token("--diagram-selection"),
 	warning: lightDark(token("--warning-foreground"), token("--warning")),
