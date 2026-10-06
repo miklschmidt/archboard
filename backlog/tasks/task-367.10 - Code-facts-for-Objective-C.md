@@ -1,11 +1,11 @@
 ---
 id: TASK-367.10
 title: Code facts for Objective-C
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 20:11'
+updated_date: '2026-10-06 20:14'
 labels:
   - code-check
 dependencies:
@@ -26,10 +26,10 @@ Objective-C shares the include model of C, and adds classes, protocols and messa
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `#import`, `@import` and `#include` resolve as in C
-- [ ] #2 `@interface`, `@implementation` and `@protocol` are definitions, and message sends are references by selector
-- [ ] #3 Declarations in a class extension inside an `.m` file are internal, and declarations in a public header are exported
-- [ ] #4 The anchor, binding, undrawn and backwards checks work for parts bound to Objective-C files, including files that mix C
+- [x] #1 `#import`, `@import` and `#include` resolve as in C
+- [x] #2 `@interface`, `@implementation` and `@protocol` are definitions, and message sends are references by selector
+- [x] #3 Declarations in a class extension inside an `.m` file are internal, and declarations in a public header are exported
+- [x] #4 The anchor, binding, undrawn and backwards checks work for parts bound to Objective-C files, including files that mix C
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -107,4 +107,12 @@ Acceptance evidence:
 For the closer: the Code check part of the Archboard server board says that the part of a C or C++ file owns its pair. An `.m` file now pairs too.
 
 Gate after the fixes, one lane at a time, in the shared working tree: lint 0, fmt:check 0, type-check 0, build:frontend 0. test:modules has 4,269 pass and 0 fail. test:system has 195 pass and 0 fail. test:repository has 21 pass and 0 fail. test:serial-browser has 24 pass and 0 fail. A snapshot of HEAD with only the code patch type-checks (0 errors), and its code-facts and code-check owners pass (165 pass). With its fix taken out, each new assertion fails.
+
+Closing: Archboard server@TASK-367.10 branched at v166 from the current variant, the Code check description now says a C, C++ or Objective-C file's part owns its pair (compare: that one description changed), check --code identical with and without --variant, adopted at v171, ./bin/dogfood check: no diagnostics (ab2319a0e).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The code check reads Objective-C. One query run feeds the C adapter, and the Objective-C reading adds classes, categories, protocols and their members (qualified with ::, so a binding can say Ledger.post:by:) and message sends as calls of their selector, qualified by the receiver's class only where the syntax shows it. #import, #include and @import resolve as a C include does, and an .m file pairs with its header. A header reads as Objective-C by its text. Class extensions stay internal and public headers export. Before the parse, the SDK's attribute macros, and the wrappers a header of the checkout defines as one of them, are blanked with spaces of the same length, and NS_ENUM and its kin are rewritten in place, which took AFNetworking from 2,562 lines in error nodes to 3. .mm files stay text. The review fixed false resolved warnings from shadowed loop and @catch variables and @package ivars, a C++ header read as Objective-C through a comment, and five blanking faults, and built the cross-file macro join after Realm showed two wrappers the suffix rule missed. Verified by objc-facts.test.ts and objc-check.test.ts, and on AFNetworking, SDWebImage and realm-swift.
+<!-- SECTION:FINAL_SUMMARY:END -->
