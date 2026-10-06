@@ -12,9 +12,9 @@
 // relationship kind does not accept (anchor-kind.ts). Then each board's
 // relationships are held to the evidence between its bound parts
 // (relationships.ts), and each container's interface to what the module it
-// binds exposes (interfaces.ts). What the pass cannot read is listed with the
-// reason, and never reported as a finding: a symbol found only in code that
-// did not parse too.
+// binds exposes (interfaces.ts). Language servers resolve the uses no import
+// resolves, and every one has stopped when the pass returns (resolution.ts).
+// What the pass cannot read is listed with the reason, never as a finding.
 
 import path from "node:path";
 import {
@@ -38,6 +38,7 @@ import { evidenceOf, lineagesOf } from "@/runtime/code-check/lib/evidence";
 import { judgeInterfaces, type ModuleReadings } from "@/runtime/code-check/lib/interfaces";
 import { partCodesOf } from "@/runtime/code-check/lib/part-code";
 import { judgeRelationships } from "@/runtime/code-check/lib/relationships";
+import { openResolution, type Resolve } from "@/runtime/code-check/lib/resolution";
 import { judgeSupport } from "@/runtime/code-check/lib/support";
 import { heldInFiles, type Held } from "@/runtime/code-check/lib/symbols";
 import { createCodeFacts, lastName, type Accept, type FactsPass } from "@/runtime/code-facts/index";
@@ -49,6 +50,7 @@ import {
 } from "@/runtime/code-target/index";
 import type { CodeCheckSkip, CodeFinding } from "@/shared/code-check/index";
 import type { CodeBinding } from "@/shared/code-target/index";
+import { readLanguageServers, type LanguageServerTable } from "@/runtime/language-servers/index";
 import { describeSubject } from "@/shared/semantic-policy/index";
 
 /** What one pass found and what it did not read. */
@@ -68,6 +70,8 @@ interface Pass {
 	readonly snapshot: CheckoutSnapshot;
 	readonly checkouts: ReadonlyMap<string, Checkout>;
 	readonly facts: FactsPass;
+	/** Where the pass's language servers say a use that no import resolves is defined. */
+	readonly resolve: Resolve;
 	/** The kinds of file read as text in each repository. */
 	readonly readAsText: Map<string, Set<string>>;
 	/** What each module a container binds exposes, read once for every board. */
@@ -429,9 +433,10 @@ async function anchorMismatch(
 	checkout: ClaimCheckout,
 	pass: Pass,
 ): Promise<CodeFinding | undefined> {
-	const context = { search: searchOf(checkout, pass), snapshot: pass.snapshot };
+	const context = { ...pass, search: searchOf(checkout, pass) };
 	const outside = await judgeSupport(claim, file, checkout, context);
-	return outside ?? judgeAnchorKind(claim, await pass.facts.read(checkout, file));
+	const facts = await pass.facts.read(checkout, file);
+	return outside ?? judgeAnchorKind(claim, facts, { resolve: pass.resolve, checkout });
 }
 
 /**
@@ -461,6 +466,7 @@ async function judgeBoardRelationships(read: BoardToCheck, pass: Pass): Promise<
 		readAsText: (checkout, file) => {
 			searchOf(checkout, pass).readAsText(file);
 		},
+		resolve: pass.resolve,
 	});
 	const lineages = lineagesOf(codes);
 	const judged = judgeRelationships({
@@ -551,12 +557,16 @@ function partBindings(boards: readonly BoardToCheck[]): CodeBinding[] {
  * Hold every board's anchors and bound symbols to the code facts of the files
  * on disk, then its relationships to the evidence between its bound parts.
  * @param boards The boards, each at the variant the check reads.
- * @param signal Cancels the pass, every Git command it runs and every file it reads.
+ * @param signal Cancels the pass, every Git command it runs, every file it
+ * reads and every language server it started.
+ * @param servers The language server of each language; by default as this
+ * machine's `language-servers.json` names them, read again for each pass.
  * @returns The findings and what the pass did not read.
  */
 async function checkCode(
 	boards: readonly BoardToCheck[],
 	signal: AbortSignal,
+	servers: LanguageServerTable = readLanguageServers(),
 ): Promise<CodeCheckOutcome> {
 	const claims = boards.flatMap(claimsOf);
 	const bound = partBindings(boards);
@@ -564,18 +574,24 @@ async function checkCode(
 	const snapshot = await snapshotCheckoutAccess({ signal, bindings });
 	const repos = [...claims.map(repoOf), ...bound.map((binding) => binding.repo)];
 	const checkouts = await readCheckouts(repos, snapshot, signal);
+	const resolution = openResolution(servers, signal);
 	const pass: Pass = {
 		snapshot,
 		checkouts,
 		facts: codeFacts.pass(signal),
+		resolve: resolution.resolve,
 		readAsText: new Map(),
 		modules: new Map(),
 		outcome: { findings: [], skipped: [] },
 	};
-	await judgeAll(claims, pass);
-	for (const read of boards) {
-		// oxlint-disable-next-line no-await-in-loop -- one board at a time keeps the findings in board order, and a file one board reads is cached for the next
-		await judgeBoardRelationships(read, pass);
+	try {
+		await judgeAll(claims, pass);
+		for (const read of boards) {
+			// oxlint-disable-next-line no-await-in-loop -- one board at a time keeps the findings in board order, and a file one board reads is cached for the next
+			await judgeBoardRelationships(read, pass);
+		}
+	} finally {
+		pass.outcome.skipped.push(...(await resolution.close(checkouts)));
 	}
 	pass.outcome.skipped.push(...checkoutSkips(checkouts, pass.readAsText));
 	return pass.outcome;

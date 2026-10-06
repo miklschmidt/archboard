@@ -6,8 +6,9 @@
 // the anchored file, or where an import of it leads through every re-export,
 // so the import path names the file and the finding is a warning. A symbol
 // the code reaches only through a value, such as `ledger.post()`, has no such
-// definition, and the check does not judge it until a language server
-// resolves it (TASK-367.13). Where the code of a part that could hold the
+// definition. The language server of the anchored file then names it
+// (TASK-367.13): a definition in a file of the checkout is judged the same
+// way, and without the server's answer the check does not judge it. Where the code of a part that could hold the
 // definition is unknown, the check cannot tell, and says nothing: a part with
 // no binding, such as a person, an external system or a part not bound yet,
 // and a binding the pass cannot read. A warning needs the check to be sure,
@@ -20,6 +21,7 @@
 
 import { otherRefOf, readableOf, type ReadCheckout } from "@/runtime/code-check/lib/checkouts";
 import type { AnchorClaim } from "@/runtime/code-check/lib/claims";
+import type { Resolve } from "@/runtime/code-check/lib/resolution";
 import { heldInFiles, type Search } from "@/runtime/code-check/lib/symbols";
 import {
 	definitionSite,
@@ -41,7 +43,17 @@ type Holding = "holds" | "elsewhere" | "unknown";
 interface SupportContext {
 	readonly search: Search;
 	readonly snapshot: CheckoutSnapshot;
+	/** Where a language server says a use that no import resolves is defined. */
+	readonly resolve: Resolve;
 }
+
+/**
+ * Where a symbol is defined: a definition code facts found, or the one line a
+ * language server named.
+ */
+type Site = Pick<DefinitionSite, "path" | "via"> & {
+	readonly definition: Pick<Definition, "start" | "end">;
+};
 
 /**
  * Whether one definition lies inside another, as a method inside its class.
@@ -49,7 +61,7 @@ interface SupportContext {
  * @param outer The outer definition.
  * @returns True when the outer one spans the inner one's lines.
  */
-function within(inner: Definition, outer: Definition): boolean {
+function within(inner: Site["definition"], outer: Site["definition"]): boolean {
 	return outer.start <= inner.start && inner.end <= outer.end;
 }
 
@@ -85,7 +97,7 @@ function boundFiles(
  */
 async function holding(
 	part: SemanticNode,
-	site: DefinitionSite,
+	site: Site,
 	checkout: { readonly repo: string } & ReadCheckout,
 	context: SupportContext,
 ): Promise<Holding> {
@@ -107,7 +119,7 @@ async function holding(
 async function holdingAt(
 	files: readonly string[],
 	symbol: string,
-	site: DefinitionSite,
+	site: Site,
 	context: SupportContext,
 ): Promise<Holding> {
 	const bound = await heldInFiles(context.search, files, symbol, "definition");
@@ -159,7 +171,7 @@ function anchoredUse(facts: FileFacts | undefined, claim: AnchorClaim): CodeEvid
  */
 function anchorMismatch(
 	claim: AnchorClaim,
-	site: DefinitionSite,
+	site: Site,
 	use: CodeEvidence | undefined,
 ): CodeFinding {
 	const ends = claim.ends.map((end) => JSON.stringify(end.name)).join(" nor ");
@@ -178,6 +190,33 @@ function anchorMismatch(
 }
 
 /**
+ * Where the language server of the anchored file says the anchored use is
+ * defined, when that is in a file of the checkout.
+ * @param claim The anchor.
+ * @param file The anchored file.
+ * @param checkout Its checkout.
+ * @param context The pass.
+ * @returns The site, or undefined when no server named one in the checkout.
+ */
+async function serverSite(
+	claim: AnchorClaim,
+	file: string,
+	checkout: { readonly repo: string } & ReadCheckout,
+	context: SupportContext,
+): Promise<Site | undefined> {
+	const facts = await context.search.facts.read(checkout, file);
+	const use =
+		facts === undefined || facts.adapter === "text"
+			? undefined
+			: usesOf(facts.references, claim.anchor.symbol)[0];
+	if (use === undefined) return undefined;
+	const resolved = await context.resolve(checkout, file, use);
+	if (resolved.status !== "site") return undefined;
+	const definition = { start: resolved.line, end: resolved.line };
+	return { path: resolved.path, definition, via: [] };
+}
+
+/**
  * Judge whether an anchor that holds supports its relationship or step.
  * @param claim The anchor.
  * @param file The anchored file, relative to its checkout.
@@ -192,7 +231,9 @@ async function judgeSupport(
 	context: SupportContext,
 ): Promise<CodeFinding | undefined> {
 	const { facts } = context.search;
-	const site = await definitionSite(facts, checkout, file, claim.anchor.symbol);
+	const site =
+		(await definitionSite(facts, checkout, file, claim.anchor.symbol)) ??
+		(await serverSite(claim, file, checkout, context));
 	if (site === undefined) return undefined;
 	const holdings = await Promise.all(
 		claim.holders.map((part) => holding(part, site, checkout, context)),

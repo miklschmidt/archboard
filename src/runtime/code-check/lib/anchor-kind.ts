@@ -10,23 +10,37 @@
 // kind without the `evidence` key accepts every kind, so neither is judged.
 //
 // A use that reaches its name through an import is resolved, because the
-// import path names the file; one through a value is a candidate, and the
-// finding is then information.
+// import path names the file. Any other use is resolved once the language
+// server of the file names its definition (TASK-367.13); until then it is a
+// candidate, and the finding is then information.
 
+import type { ReadCheckout } from "@/runtime/code-check/lib/checkouts";
 import type { AnchorClaim } from "@/runtime/code-check/lib/claims";
+import type { Resolve } from "@/runtime/code-check/lib/resolution";
 import { findSymbol, lastName, type FileFacts, type SyntaxFacts } from "@/runtime/code-facts/index";
 import type { CodeEvidence, CodeFinding } from "@/shared/code-check/index";
 import type { CodeAnchor } from "@/shared/code-target/index";
 import { describeSubject } from "@/shared/semantic-policy/index";
+
+/** How the pass resolves the anchored file's uses through a language server. */
+interface KindResolution {
+	readonly resolve: Resolve;
+	readonly checkout: ReadCheckout;
+}
 
 /**
  * The uses of an anchor's symbol in its file that carry an evidence kind, one
  * of each kind: the uses of its spelling, else of its last name.
  * @param facts The anchored file's facts.
  * @param anchor The anchor.
+ * @param resolution How a use that no import resolves is resolved.
  * @returns The uses, as evidence.
  */
-function usesOf(facts: SyntaxFacts, anchor: CodeAnchor): CodeEvidence[] {
+async function usesOf(
+	facts: SyntaxFacts,
+	anchor: CodeAnchor,
+	resolution: KindResolution,
+): Promise<CodeEvidence[]> {
 	const typed = facts.references.flatMap((reference) =>
 		reference.kind === undefined ? [] : [{ ...reference, kind: reference.kind }],
 	);
@@ -37,32 +51,40 @@ function usesOf(facts: SyntaxFacts, anchor: CodeAnchor): CodeEvidence[] {
 	const first = uses.filter(
 		(use, index) => uses.findIndex((other) => other.kind === use.kind) === index,
 	);
-	return first.map((use) => ({
-		kind: use.kind,
-		resolution: use.target === undefined ? "candidate" : "resolved",
-		repo: anchor.repo,
-		path: facts.path,
-		line: use.line,
-		symbol: use.symbol,
-	}));
+	return Promise.all(
+		first.map(async (use) => ({
+			kind: use.kind,
+			resolution:
+				use.target !== undefined ||
+				(await resolution.resolve(resolution.checkout, facts.path, use)).status !== "unknown"
+					? ("resolved" as const)
+					: ("candidate" as const),
+			repo: anchor.repo,
+			path: facts.path,
+			line: use.line,
+			symbol: use.symbol,
+		})),
+	);
 }
 
 /**
  * The uses that decide the evidence kind of an anchor, when the check judges it.
  * @param claim The anchor.
  * @param facts The anchored file's facts.
- * @returns The uses, or undefined when the kind is not judged: on a step, on a
+ * @param resolution How a use that no import resolves is resolved.
+ * @returns The uses, or none when the kind is not judged: on a step, on a
  * relationship kind that accepts every evidence kind, in a file read as text,
  * or for a name the file defines itself.
  */
-function judgedUses(
+async function judgedUses(
 	claim: AnchorClaim,
 	facts: FileFacts | undefined,
-): readonly CodeEvidence[] | undefined {
-	if (claim.relationship?.accepts === undefined || facts === undefined) return undefined;
-	if (facts.adapter === "text") return undefined;
+	resolution: KindResolution,
+): Promise<readonly CodeEvidence[]> {
+	if (claim.relationship?.accepts === undefined || facts === undefined) return [];
+	if (facts.adapter === "text") return [];
 	const defined = findSymbol(facts, claim.anchor.symbol, "definition").status === "found";
-	return defined ? undefined : usesOf(facts, claim.anchor);
+	return defined ? [] : usesOf(facts, claim.anchor, resolution);
 }
 
 /**
@@ -102,13 +124,15 @@ function kindMismatch(
  * kinds its relationship's kind does not accept, if any.
  * @param claim The anchor, with its relationship's kind and what that kind accepts.
  * @param facts The anchored file's facts.
+ * @param resolution How a use that no import resolves is resolved.
  * @returns The finding, or undefined when a use is accepted or the check cannot tell.
  */
-function judgeAnchorKind(
+async function judgeAnchorKind(
 	claim: AnchorClaim,
 	facts: FileFacts | undefined,
-): CodeFinding | undefined {
-	const uses = judgedUses(claim, facts) ?? [];
+	resolution: KindResolution,
+): Promise<CodeFinding | undefined> {
+	const uses = await judgedUses(claim, facts, resolution);
 	const accepted = claim.relationship?.accepts ?? [];
 	const supported = uses.some((use) => accepted.includes(use.kind));
 	return uses.length === 0 || supported ? undefined : kindMismatch(claim, accepted, uses);
