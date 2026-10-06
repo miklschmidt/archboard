@@ -1,11 +1,11 @@
 ---
 id: TASK-367.28
 title: The dogfood vault passes `archboard check --code`
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-06 20:48'
-updated_date: '2026-10-06 22:48'
+updated_date: '2026-10-06 22:49'
 labels:
   - code-check
 dependencies: []
@@ -22,9 +22,9 @@ TASK-367 #5 asks that the dogfood vault pass the code check. After TASK-367.27 c
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Each of the 31 warnings is cleared by a board that draws what the code does, or by a check rule that ADR 0046 records, and the task notes say which for each
-- [ ] #2 A use that is no call or construction (a constant read, an error class caught or tested, a type-only use) is not call evidence, if the check changes, and a call or construction still is
-- [ ] #3 `./bin/dogfood check --code` exits 0 on the current variants, and every board still lays out under 1 second
+- [x] #1 Each of the 31 warnings is cleared by a board that draws what the code does, or by a check rule that ADR 0046 records, and the task notes say which for each
+- [x] #2 A use that runs none of a name's code (a constant read, a name passed on, an error class caught or tested) never makes RELATIONSHIP_UNDRAWN or CALLER_UNDRAWN on its own, and stays call evidence that supports an anchor and a relationship; a call or construction still makes a dependency undrawn
+- [x] #3 `./bin/dogfood check --code` exits 0 on the current variants, and every board still lays out under 1 second
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -129,4 +129,12 @@ Tests. tests/uses.ts imports only the module root and the checkout helper of its
 Gate, one lane at a time: bun run lint exit 0. bun run fmt:check exit 0. bun run type-check exit 0. bun run build:frontend exit 0. bun run test:modules: 4287 pass, 0 fail. bun run test:system: 195 pass, 0 fail. bun run test:repository: 21 pass, 0 fail. bun run test:serial-browser: exit 0, 24 pass and 0 fail over its 19 files.
 
 Acceptance: #1 holds. A relationship or a step on a board clears each of the 31 warnings, or the rule that ADR 0046 records clears it. The build notes list each one, and I read the (b) items against their lines. #2 holds as built: judgement 1 gives the wording. #3 holds: exit 0, and every board lays out under 1 s.
+
+Criterion 2 reworded by the coordinator on 2026-10-07 to the rule as built. The original wording (a use that is no call is not call evidence) turned 39 right anchors into ANCHOR_MISMATCH warnings, and the review judged the rule as built right: ADR 0046 lets an anchor cite the value it passes on. Also corrected after the review (d67ee4eb1): create-sequence.md and the ADR 0045 amendment said any step no relationship joins draws as a step line; step-lines.ts draws them only on a board with no relationships.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The dogfood vault passes the code check: ./bin/dogfood check --code exits 0 with no warning and 13 EXPOSED_UNUSED information findings, and ./bin/dogfood check reports no diagnostics. Of the 31 warnings, 10 were uses that run none of a name's code (a constant read, a name passed on, an instanceof test, a catch). A new rule in code facts (runs.ts, all five code adapters) marks such a use as a value: it stays call evidence for anchors and relationships but never makes RELATIONSHIP_UNDRAWN or CALLER_UNDRAWN on its own, recorded in ADR 0046 with its cost (a handler passed on to a framework no longer warns undrawn). The other 21 were real calls that six boards now draw: relationships on Board viewer, Board rasterizer, Codex session, Codex workhorse and Voice coordinator, a Page start part that wires the pictures, and on Archboard server, whose layout budget had no room for more lines, steps of eight anchored flows in three new data-flow views. Every board lays out under 1 second. The review fixed subscript calls and generic bases in the rule, landed Page start on the picture entry points, and added the missing workbench step.
+<!-- SECTION:FINAL_SUMMARY:END -->
