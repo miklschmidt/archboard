@@ -157,7 +157,9 @@ in `lib/design.ts`.
    the label of a sequence message are low tiles with a contact shadow. An
    activation bar is a slim slab. It takes the front edge of its participant's
    card. The bar of a participant in no group is shaded toward the secondary
-   ink, about as pale as the bar of a grouped participant.
+   ink, about as pale as the bar of a grouped participant. A bar's shadow lies
+   under its lifeline and under every message, so neither is shadowed by a bar
+   (TASK-430).
 9. **A sequence frame is a tray with a header slab,** built like a container
    and always neutral. The slab stands the same 8 units in from the frame's
    outer edge, and the participants stand 18 units (`NEST_INSET`) under its foot,
@@ -247,19 +249,28 @@ in `lib/design.ts`.
     line, so the hole shows what lies under the card. The line's own group
     draws the inside of the port there: a well that darkens from its rim into
     its depth (`--port-wall` to `--port-deep`), a lit crescent of floor by the
-    sill (`--tray-lip`), and the end of the line, at the line's own width,
+    sill (`--port-lip`, a step brighter than a tray's lip on the dark ground,
+    so it reads at 2x), and the end of the line, at the line's own width,
     running up over the floor and the sill into it and fading into the depth.
     Nothing of the card lies over the line below the lid (TASK-425). So the
     end of the line takes the line's veil and light. Its pulses ride on up
     into the hole to the lid, over the well, so a pulse is seen to come out of
-    the hole and to go into it; a pulse that arrives in an arrowhead stops
-    short of the head. Each line has its own slot; two lines that meet the
+    the hole and to go into it. A pulse that arrives in an arrowhead at a
+    port rides on over the head into the hole, since the head's tip stands on
+    the sill; the pulses are drawn over the lines, so it passes over the head
+    (TASK-430). Each line has its own slot; two lines that meet the
     foot at one place share it, and the first of them draws its well. A
     slot narrows as it nears a rounded corner, keeps at least 1.5 units of
     edge between it and the next, and is left out where that leaves too
     little room round the line. A removed line, drawn for context, runs into
-    no port. Ports are drawn near only: from far away the hole is closed in
-    the card's front edge. They are on a card's foot only:
+    no port. Ports are drawn near and far alike: from far away a card keeps
+    its front edge and its holes, and they belong to neither view's layer, so
+    the swap between the views neither moves nor fades them. The cut is a clip
+    in the card's own box (`objectBoundingBox`), so a card a viewer carries
+    from one picture to the next carries its holes with it. A selected line a
+    viewer draws over the others goes under the cards, so its ring and its
+    pulses never lie on a card's face and show only in its ports (TASK-430).
+    They are on a card's foot only:
     a sequence's lifelines start a gap under their cards and meet no edge. A
     port is a clip, the one clip the picture uses for depth, not a filter,
     blur or mask. It adds six elements for each port (five shapes and a

@@ -43,7 +43,7 @@ function routes(svg: string) {
 					[
 						...group[3]!
 							.replace(/<defs>[\s\S]*?<\/defs>/gu, "")
-							.split(/<g class="ab-(?:pulse|near)[ "]/u)[0]!
+							.split(/<g class="ab-(?:pulse|near|port)[ "]/u)[0]!
 							.matchAll(/<path[^>]* d="([^"]+)"/gu),
 					].map((path) => path[1]!),
 				),
@@ -61,7 +61,7 @@ function routes(svg: string) {
 			own: [
 				...group[3]!
 					.replace(/<defs>[\s\S]*?<\/defs>/gu, "")
-					.split(/<g class="ab-(?:pulse|near)[ "]/u)[0]!
+					.split(/<g class="ab-(?:pulse|near|port)[ "]/u)[0]!
 					.matchAll(/<path[^>]* d="([^"]+)"/gu),
 			].length,
 		}));

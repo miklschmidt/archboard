@@ -143,11 +143,12 @@ function paintColumn(
 			[PART_ATTRIBUTE]: "lifeline",
 		},
 		lines([
+			// The bars' shadows under the lifeline, which no bar shadows; the
+			// messages are drawn after every column.
+			...bars.map((bar) => slabShadow(bar, ACTIVATION_RADIUS, "chip", palette)),
 			tag("line", lifeline),
 			tag("line", { class: "ab-halo", ...lifeline, ...halo, "stroke-width": LIT_LIFELINE_WIDTH }),
-			...bars.map(
-				(bar) => slabShadow(bar, ACTIVATION_RADIUS, "chip", palette) + slab(bar, look, palette),
-			),
+			...bars.map((bar) => slab(bar, look, palette)),
 			...bars.map((bar) =>
 				tag("rect", {
 					class: "ab-halo",

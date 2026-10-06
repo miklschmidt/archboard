@@ -48,9 +48,44 @@ test("a port is cut where a line meets the foot of a card, and nowhere else", as
 	expect(shadow).toBeGreaterThan(-1);
 	expect(shadow).toBeLessThan(drawing.svg.indexOf('data-semantic-kind="edge"'));
 
+	// The port is drawn near and far alike: it belongs to neither view's layer (TASK-430).
+	expect(line).not.toMatch(/ab-(?:near|far)[^"]*ab-port|ab-port[^"]*ab-(?:near|far)/u);
+
 	// The slot is cut through the card it leaves, and the card it arrives at is whole.
-	const cut = /<clipPath id="(ab-port-[\da-f]+)"/u.exec(drawing.svg)?.[1];
+	// The cut is in the card's own box, so it moves with the card.
+	const cut = /<clipPath id="(ab-port-[\da-f]+)" clipPathUnits="objectBoundingBox"/u.exec(
+		drawing.svg,
+	)?.[1];
 	expect(cut).toBeDefined();
 	expect(groupOf(drawing.svg, "node", "upper")!.markup).toContain(`clip-path="url(#${cut})"`);
 	expect(groupOf(drawing.svg, "node", "lower")!.markup).not.toContain("clip-path");
+});
+
+test("a pulse that arrives in an arrowhead at a card's foot rides on over the head into the hole", async () => {
+	const content = orderedFixture({
+		nodes: [
+			{ id: "upper", name: "Upper", kind: "service" },
+			{ id: "lower", name: "Lower", kind: "service" },
+		],
+		// The answer goes back up, and arrives in its head at the upper card's foot.
+		edges: [
+			{ id: "down", from: "upper", to: "lower", kind: "call" },
+			{ id: "up", from: "lower", to: "upper", kind: "call", traffic: {} },
+		],
+	});
+	const drawing = await renderArchitecture({ content, theme: "light" });
+	const shift = bodyShift(drawing.svg);
+	const upper = drawing.atlas.nodes["upper"]!;
+	const foot = upper.y + upper.height;
+	expect(routePoints(drawing.svg).get("up")!.at(-1)!.y).toBeCloseTo(foot, 0);
+	// The highest point the pulses ride: past the head, up to the lid of the slot.
+	const traffic = (drawing.svg.split('data-traffic="up"')[1] ?? "").split(
+		/data-(?:semantic-id|traffic)=/u,
+	)[0]!;
+	const ys = [...traffic.matchAll(/<path d="([^"]+)"/gu)].flatMap(([, d]) =>
+		[...d!.matchAll(/-?[\d.]+,(-?[\d.]+)/gu)].map(([, y]) => Number(y) + shift.y),
+	);
+	expect(ys.length).toBeGreaterThan(0);
+	expect(Math.min(...ys)).toBeLessThan(foot - 2);
+	expect(Math.min(...ys)).toBeGreaterThan(foot - 4);
 });

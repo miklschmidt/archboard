@@ -27,7 +27,7 @@ import {
 } from "@/transformers/semantic-renderer/lib/svg/slab";
 import { stylesFor } from "@/transformers/semantic-renderer/lib/svg/styles";
 import { headerOf, tray } from "@/transformers/semantic-renderer/lib/svg/tray";
-import { portClosed, type Port } from "@/transformers/semantic-renderer/lib/svg/ports";
+import type { Port } from "@/transformers/semantic-renderer/lib/svg/ports";
 import {
 	MEMBERS_ATTRIBUTE,
 	PART_ATTRIBUTE,
@@ -110,7 +110,6 @@ function paintMeasuredCard(
 				},
 				unsettled,
 			),
-			portClosed(ports?.slots, look.edge),
 			standingPin(box, standing, palette),
 			warningBadge(box, unsettled, palette),
 		]),
