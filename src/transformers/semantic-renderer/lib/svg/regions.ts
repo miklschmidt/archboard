@@ -1,17 +1,18 @@
 // Group regions (TASK-347): the cards one group places inside one container,
-// on a mat of the group's colour with the group's name on a tab in its corner.
-// The mat is a thin block like every other part (`slab.ts`): an opaque face in
-// a tone of the group's colour over a front edge in a deeper tone of it, lying
-// flat on what holds it, and the cards in it stand on it. The tab is cut from
-// the same block and raised a step off one of the mat's top corners, inside the
-// region's box. It is never an obstacle for the layout: lines cross it, and it
-// takes no pointer, so whatever lies inside it is picked as before. It keeps
-// clear of the lines itself, though: it stands in the corner no route runs
-// down through, and from far away it grows only as far as the nearest route.
+// gathered inside a boundary of the group's colour with the group's name on a
+// tab in its corner. The region has no face of its own (TASK-415): what it lies
+// on, the page or a tray's floor, shows through it, and the group's colour is
+// carried by the cards in it, by a hairline round it and by a foot along its
+// bottom, as thick as a thin block's front edge (`slab.ts`). The tab is a small
+// block raised a step off one of the region's top corners, inside the region's
+// box. It is never an obstacle for the layout: lines cross it, and it takes no
+// pointer, so whatever lies inside it is picked as before. It keeps clear of the
+// lines itself, though: it stands in the corner no route runs down through, and
+// from far away it grows only as far as the nearest route.
 import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 import {
 	BAND_RADIUS,
-	MAT_THICKNESS,
+	REGION_FOOT,
 	TAB_THICKNESS,
 } from "@/transformers/semantic-renderer/lib/design";
 import type { DrawingRegion, TextRun } from "@/transformers/semantic-renderer/lib/drawing";
@@ -23,30 +24,19 @@ import { semanticInk } from "@/transformers/semantic-renderer/lib/svg/appearance
 import { toned, type Tone } from "@/transformers/semantic-renderer/lib/svg/colour";
 import { farLayer, nearLayer } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
-import {
-	GLINT_WIDTH,
-	castShadow,
-	glintOf,
-	slab,
-} from "@/transformers/semantic-renderer/lib/svg/slab";
+import { GLINT_WIDTH, castShadow, glintOf } from "@/transformers/semantic-renderer/lib/svg/slab";
 import { MEMBERS_ATTRIBUTE } from "@/transformers/semantic-renderer/lib/svg/standing";
 import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
 
 /**
- * The group's colour on its mat's face, its front edge, its tab's face and its
- * tab's edge: each a tone of the group's own hue, opaque, so a mat is the same
- * board on the page, on a tray's floor and on a nested floor (`toned`). The
- * mat's face is a clear pastel on the light ground and a deep shade of the
- * colour on the dark, a step darker than the cards on it on either, so they
- * read over it. The tab is a step deeper and more coloured than the face. The
- * edges are the colour at a middle lightness, a coloured foot under the face;
- * the tab's is quieter, the thickness of a label rather than a rule under it.
+ * The group's colour on the region's boundary, its tab's face and its tab's
+ * edge: each a tone of the group's own hue (`toned`), the same on the page, on
+ * a tray's floor and on a nested floor. The boundary, the hairline round the
+ * region and the foot along its bottom, is the colour at a middle lightness.
+ * The tab is a clear tone of it, and its edge is quieter than the foot, the
+ * thickness of a label rather than a rule under it.
  */
-const MAT_FACE: Tone = {
-	light: { lightness: 0.93, chroma: 0.27 },
-	dark: { lightness: 0.25, chroma: 0.3 },
-};
-const MAT_EDGE: Tone = {
+const BOUNDARY: Tone = {
 	light: { lightness: 0.8, chroma: 0.7 },
 	dark: { lightness: 0.43, chroma: 0.62 },
 };
@@ -58,7 +48,9 @@ const TAB_EDGE: Tone = {
 	light: { lightness: 0.83, chroma: 0.6 },
 	dark: { lightness: 0.4, chroma: 0.55 },
 };
-/** The tab's own rounded corner; the rounded one it shares with the mat is the mat's. */
+/** How wide the hairline round a region is. */
+const HAIRLINE = 1;
+/** The tab's own rounded corner; the rounded one it shares with the region is the region's. */
 const TAB_RADIUS = 8;
 /**
  * The caption's words: the group's colour, deep on the light ground and light
@@ -79,16 +71,15 @@ const FAR_CAPTION_SHARE = 0.62;
 /** How far a caption's tab keeps from a route that crosses its row. */
 const ROUTE_ROOM = 8;
 
-/** A group's colours: its mat's face and edge, its tab's face and edge, and its caption's words. */
-interface MatColours {
-	readonly face: string;
-	readonly edge: string;
+/** A group's colours: its region's boundary, its tab's face and edge, and its caption's words. */
+interface GroupColours {
+	readonly boundary: string;
 	readonly tab: string;
 	readonly tabEdge: string;
 	readonly words: string;
 }
 
-/** Which of the mat's top corners a tab stands in: the one its words start from, or the other. */
+/** Which of the region's top corners a tab stands in: the one its words start from, or the other. */
 type Corner = "start" | "end";
 
 /** Where a route crosses a caption's row, from its leftmost ink to its rightmost. */
@@ -100,12 +91,12 @@ interface Crossing {
 /**
  * A tab's outline, the one shape every layer of the tab is drawn in (its
  * shadow, its foot, its highlight and its face), so they cannot disagree: the
- * top corner on the mat's wall rounded as the mat's own corner, the corner
+ * top corner on the region's wall rounded as the region's own corner, the corner
  * diagonally across from it rounded as the tab's own, and the other two
- * square, where its foot meets the mat's wall and where its top meets the
- * mat's top edge.
+ * square, where its foot meets the region's wall and where its top meets the
+ * region's top edge.
  * @param box The tab, or a layer of its shadow.
- * @param corner Which of the mat's top corners it stands in.
+ * @param corner Which of the region's top corners it stands in.
  * @param grow How much larger a shadow's layer is, which rounds its corners as much more.
  * @returns Its path.
  */
@@ -115,7 +106,7 @@ function tabPath(box: Box, corner: Corner, grow = 0): string {
 	const own = Math.min(TAB_RADIUS + grow, width / 2, height / 2);
 	const foot = y + height;
 	/**
-	 * A distance in from the mat's wall, as a page coordinate.
+	 * A distance in from the region's wall, as a page coordinate.
 	 * @param inward How far in.
 	 * @returns The coordinate.
 	 */
@@ -140,7 +131,7 @@ function tabPath(box: Box, corner: Corner, grow = 0): string {
  * row, in the corner it is given. Its words move with it.
  * @param region The region.
  * @param run The caption's words as they are set, near or far.
- * @param corner Which of the mat's top corners it stands in.
+ * @param corner Which of the region's top corners it stands in.
  * @param grown How much larger than near the words are set.
  * @returns The tab's box, and how far right of where they were measured its words stand.
  */
@@ -161,12 +152,12 @@ function tabBox(
 }
 
 /**
- * A caption on its tab: the tab a small slab of its own on the mat's corner,
- * casting a short shadow on the mat, and the words on it.
+ * A caption on its tab: the tab a small slab of its own on the region's corner,
+ * casting a short shadow on what the region lies on, and the words on it.
  * @param region The region.
  * @param run The caption's words as they are set, near or far.
  * @param place Which corner the tab stands in, and how much larger than near the words are.
- * @param place.corner Which of the mat's top corners the tab stands in.
+ * @param place.corner Which of the region's top corners the tab stands in.
  * @param place.grown How much larger than near the words are set.
  * @param look The group's colours, and the page's.
  * @param look.colours The group's colours.
@@ -177,7 +168,7 @@ function captionTab(
 	region: DrawingRegion,
 	run: TextRun,
 	{ corner, grown }: { corner: Corner; grown: number },
-	{ colours, palette }: { colours: MatColours; palette: Palette },
+	{ colours, palette }: { colours: GroupColours; palette: Palette },
 ): string {
 	const { box: whole, shift } = tabBox(region, run, corner, grown);
 	const face = { ...whole, height: whole.height - TAB_THICKNESS };
@@ -201,16 +192,54 @@ function captionTab(
 /**
  * The colours one group's region is drawn in.
  * @param ink The group's colour.
- * @returns The mat's, the tab's and the caption's.
+ * @returns The boundary's, the tab's and the caption's.
  */
-function matColours(ink: string): MatColours {
+function matColours(ink: string): GroupColours {
 	return {
-		face: toned(ink, MAT_FACE),
-		edge: toned(ink, MAT_EDGE),
+		boundary: toned(ink, BOUNDARY),
 		tab: toned(ink, TAB_FACE),
 		tabEdge: toned(ink, TAB_EDGE),
 		words: toned(ink, CAPTION),
 	};
+}
+
+/**
+ * A region's boundary: a hairline round its box, and a foot along its bottom
+ * as thick as a thin block's front edge, following the box's rounded corners.
+ * Nothing fills it.
+ * @param box The region's box.
+ * @param ink The boundary's colour.
+ * @returns The hairline and the foot.
+ */
+function boundary(box: Box, ink: string): string {
+	const { x, y, width, height } = box;
+	const foot = y + height - REGION_FOOT;
+	// Where the foot's top meets the curve of a bottom corner.
+	const reach = BAND_RADIUS - Math.sqrt(BAND_RADIUS ** 2 - (BAND_RADIUS - REGION_FOOT) ** 2);
+	return lines([
+		// On the box's own edge, so the region's first shape is its box.
+		tag("rect", {
+			x: coord(x),
+			y: coord(y),
+			width: coord(width),
+			height: coord(height),
+			rx: BAND_RADIUS,
+			fill: "none",
+			stroke: ink,
+			"stroke-width": HAIRLINE,
+		}),
+		tag("path", {
+			d: [
+				`M${coord(x + reach)},${coord(foot)}`,
+				`H${coord(x + width - reach)}`,
+				`A${BAND_RADIUS},${BAND_RADIUS} 0 0 1 ${coord(x + width - BAND_RADIUS)},${coord(y + height)}`,
+				`H${coord(x + BAND_RADIUS)}`,
+				`A${BAND_RADIUS},${BAND_RADIUS} 0 0 1 ${coord(x + reach)},${coord(foot)}`,
+				"Z",
+			].join(" "),
+			fill: ink,
+		}),
+	]);
 }
 
 /**
@@ -267,8 +296,8 @@ function cornerOf(region: DrawingRegion, run: TextRun, crossings: readonly Cross
 }
 
 /**
- * Paint one group's region: its mat, and its caption on its tab, drawn near
- * and from far away. The mat's body is its first shape, in the region's box.
+ * Paint one group's region: its boundary, and its caption on its tab, drawn
+ * near and from far away. The hairline is its first shape, in the region's box.
  * @param region The region.
  * @param look The page's colours, the vault's policy for the group's colour,
  * the size of the picture's card names from far away, and the picture's routes.
@@ -307,17 +336,7 @@ function paintRegion(
 			"pointer-events": "none",
 		},
 		lines([
-			slab(
-				region.box,
-				{
-					face: colours.face,
-					edge: colours.edge,
-					thickness: MAT_THICKNESS,
-					radius: BAND_RADIUS,
-					sheen: false,
-				},
-				palette,
-			),
+			boundary(region.box, colours.boundary),
 			near === undefined
 				? ""
 				: nearLayer(captionTab(region, near, { corner, grown: 1 }, look)) +
@@ -333,7 +352,7 @@ function paintRegion(
  * near words crosses the near tab too, and is the layout's to keep clear.
  * @param region The region.
  * @param run The caption's words as drawn near.
- * @param corner Which of the mat's top corners the tab stands in.
+ * @param corner Which of the region's top corners the tab stands in.
  * @param crossings Where routes cross the caption's row.
  * @returns The widest the tab may be.
  */
@@ -364,7 +383,7 @@ function farRoom(
  * @param far The size of the picture's card names from far away, the tab's corner,
  * and where routes cross the caption's row.
  * @param far.farSize The size of the picture's card names from far away.
- * @param far.corner Which of the mat's top corners the tab stands in.
+ * @param far.corner Which of the region's top corners the tab stands in.
  * @param far.crossings Where routes cross the caption's row.
  * @param look The group's colours, and the page's.
  * @param look.colours The group's colours.
@@ -379,7 +398,7 @@ function farCaption(
 		corner,
 		crossings,
 	}: { farSize: number; corner: Corner; crossings: readonly Crossing[] },
-	look: { colours: MatColours; palette: Palette },
+	look: { colours: GroupColours; palette: Palette },
 ): string {
 	const { box, caption } = region;
 	// The tab is the words' margin before them and as much again after them,
