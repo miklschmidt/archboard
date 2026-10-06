@@ -237,7 +237,7 @@ Each key is a language, and each value is a command or `false`:
 
 ```json
 {
-  "typescript": { "command": "/opt/tsgo/bin/tsgo", "args": ["--lsp", "--stdio"] }
+	"typescript": { "command": "/opt/tsgo/bin/tsgo", "args": ["--lsp", "--stdio"] }
 }
 ```
 
