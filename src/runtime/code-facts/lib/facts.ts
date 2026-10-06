@@ -143,12 +143,13 @@ interface Target {
 }
 
 /** The adapters that read files, one for each entry of the table in adapters.ts. */
-type AdapterName = "typescript" | "python" | "compose" | "csharp" | "c" | "cpp" | "nix";
+type AdapterName = "typescript" | "python" | "compose" | "csharp" | "c" | "cpp" | "nix" | "terraform";
 
 /**
  * An import with the checkout file it resolves to, where the adapter can
  * resolve it. Its names are as the resolved file names them: a Python name
- * that is a submodule becomes `*`, the whole submodule.
+ * that is a submodule becomes `*`, the whole submodule. A Terraform module is
+ * a directory, so a module call resolves to the module's directory.
  */
 type ResolvedImport = Import & { readonly resolved?: string };
 
