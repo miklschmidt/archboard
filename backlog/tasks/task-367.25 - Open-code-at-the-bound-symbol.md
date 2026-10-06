@@ -1,11 +1,11 @@
 ---
 id: TASK-367.25
 title: Open code at the bound symbol
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:16'
-updated_date: '2026-10-06 13:14'
+updated_date: '2026-10-06 13:36'
 labels:
   - code-check
   - ui
@@ -27,9 +27,9 @@ A binding with a symbol names more than a file, but Open code still opens the fi
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Open code opens a local checkout at the line where the bound symbol is defined, when code facts find it
-- [ ] #2 The GitHub target links to that line
-- [ ] #3 Without a symbol, or when the symbol is not found, it opens the file as today
+- [x] #1 Open code opens a local checkout at the line where the bound symbol is defined, when code facts find it
+- [x] #2 The GitHub target links to that line
+- [x] #3 Without a symbol, or when the symbol is not found, it opens the file as today
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -54,4 +54,12 @@ Decisions: (1) the lookup lives in the opener, not runtime/code-target, so the b
 Board close: Archboard server@TASK-367.25 (parent l8We8gCC, TASK-367.24 anchors) draws Code opener -> Code facts (call, anchor createCodeFacts in src/server/code-opener/lib/symbol-line.ts); adopted at v71 (dca91aea1) with the board's scope as its summary. Footprint against base 0db035f15 (parent of 9a10b54dd): namedAndChanged Code opener (9a10b54dd); changedNotNamed none; namedNotChanged Code facts, which is normal (a new caller does not change the file of what it calls); skipped five drill-downs. current was the proposal's parent. ./bin/dogfood check: no diagnostics. ./bin/dogfood check --code: no findings, no skips, and no board is behind 9a10b54dd (no board binds src/runtime/code-target). Hand test on a server of its own (port 3519, a temporary copy of web-shop, a temporary checkout and a custom opener that appends its arguments to a file, stopped afterwards): Ledger.post opened with --goto <file>:5, a symbol the file lacks and a symbol-less binding both with :1 (the file as today); with the opener executable missing the failure carried https://github.com/acme/payments/blob/HEAD/src/ledger.ts#L5. Not done by hand: the code, cursor and zed presets (owned by the planning test, no real editor opened). Left out: directory with a symbol; following a re-export; INSTALL.md and the settings page text do not yet mention {line} (outside the write scope).
 
 Gate (lanes one at a time, after 9a10b54dd): lint fails only on src/ui files of other agents (PartHistory.tsx, SemanticInspector.tsx, stage-harness.tsx, semantic-board-history.test.tsx: complexity, react-perf, max-lines), none in this task's files; fmt:check 0; type-check 0; build:frontend 0; test:modules 4087 pass 0 fail; test:system 197 pass 0 fail (includes code-targets/open-at-symbol.test.ts); test:repository 20 pass 0 fail; test:serial-browser exit 0.
+
+Independent review (2026-10-06): the {line} token was a user-facing contract that nothing a user reads mentioned; LINE_TOKEN now sits beside PATH_TOKEN in src/shared/code-target, and INSTALL.md, the settings help and the schema name it (3188f924b). GET /api/settings/opener planned commands without a line, so a saved custom command showed as path:1; it now shows each command as written. {line} stays 1 where there is no line, because an empty value turns path:{line} into a file name with a colon. Comments and authoring.md now say exactly when a line applies (de6d17ea9), and duplicate test owners were removed (929d8d871).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Open code now opens a local checkout at the line where the bound symbol is defined, when code facts find it in the bound file: code and cursor with --goto path:line, zed with path:line, and a custom opener through the {line} token. The GitHub fallback links the file at #L<n> on the bound ref. Without a symbol, or when it is not found, the file opens as before. Verified by symbol-line.test.ts, open-at-symbol.test.ts, presentation.test.ts and the settings contract test (pass with --isolate), and by a hand test with a recording opener.
+<!-- SECTION:FINAL_SUMMARY:END -->
