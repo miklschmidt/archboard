@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:17'
-updated_date: '2026-10-06 10:31'
+updated_date: '2026-10-06 10:32'
 labels:
   - interfaces
   - architecture
@@ -85,4 +85,6 @@ Held against what index.ts exports and what code outside the store calls (produc
 - Difference 3: Former names, Place the file and Propagate descendant edits are hidden parts. Their files export names, but only the store calls them. ADR 0044 counts relationships, not exports.
 
 Picture: the full proposal draws 5032x1525, against 2566x1758 for the current variant. The container runs as one wide box with the server at its top right. Labels read at native scale. The Durable write boundary view draws the container around its selected parts, with the engine parts outside it. Neither view needed an edit.
+
+Adopted TASK-368.04 at version 24, with the summary 'Module level: the board store, the entry points its callers reach, and the reads, transitions and durable writes behind them. Follow linked subjects for related levels.'. TASK-332 is now historical. semantic inspect on the current variant gives the same 9 entry points and 10 hidden parts. ./bin/dogfood check reports diagnostics: []. Another agent branched the draft TASK-367.04 from TASK-332 at versions 21-22 while this proposal was open. That draft now descends from a historical variant, so its adoption needs the archboard-dev PARENT_SUPERSEDED step. Commit a2f56bbad holds the vault file and this task.
 <!-- SECTION:NOTES:END -->
