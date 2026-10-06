@@ -131,7 +131,9 @@ function measuredInterfaces(variants: readonly SemanticVariant[]): InterfaceMeas
 
 /**
  * What to say about the measures, for a person: one line per container, each
- * variant's five counts in the same order and nothing ranked.
+ * variant's five counts in the same order and nothing ranked. A variant that
+ * draws no caller says so, so that its zero entry points do not read as the
+ * deepest module there is (ADR 0044).
  * @param section The measures section of the answer.
  * @returns The lines; none when no variant has a container.
  */
@@ -142,11 +144,11 @@ function describedMeasures(section: InterfaceMeasuresSection): string[] {
 			const called = `"${names.get(on.variant) ?? on.variant}"`;
 			if (!on.holdsParts) return `${called} holds no parts`;
 			const { entryPoints, hiddenParts, callers, outgoing, passThrough } = on.measures;
-			const asked =
-				on.passThrough.length === 0
-					? ""
-					: ` (pass-through: ${on.passThrough.map((part) => part.name).join(", ")})`;
-			return `${called} ${entryPoints}, ${hiddenParts}, ${callers}, ${outgoing}, ${passThrough}${asked}`;
+			const counts = `${called} ${entryPoints}, ${hiddenParts}, ${callers}, ${outgoing}, ${passThrough}`;
+			// With no caller there is no entry point, so no pass-through entry point either.
+			if (callers === 0) return `${counts} (draws no caller)`;
+			if (on.passThrough.length === 0) return counts;
+			return `${counts} (pass-through: ${on.passThrough.map((part) => part.name).join(", ")})`;
 		});
 		return (
 			`Interface measures of "${container.name}" ` +
