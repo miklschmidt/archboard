@@ -46,17 +46,83 @@ While you plan, before `backlog task edit --plan`:
 
 When the task closes, before you mark any acceptance criterion:
 
-1. Inspect each proposal against the code as built.
-   Apply the evidence rules of the consumer skill to every part and relationship that the
-   comparison reports as added or changed. Each relationship needs a source line, and each
-   part needs a binding to the file that owns it. Every place where the build
-   left the plan
-   is a deviation.
+1. Inspect each proposal against the code as built. The code check reads most
+   of it ([ADR 0046](../../docs/adr/0046-boards-carry-anchors-and-the-code-check-reads-them-on-request.md)),
+   and you read the rest.
+   - Run `./bin/dogfood check --code --variant TASK-123`. It reads the draft
+     of that name on every board that has one, and the current variant on every
+     other board, so one run covers every proposal of the task. A restated
+     proposal (`TASK-123 after TASK-122`) has a name of its own: the run for
+     `TASK-123` does not read it, and its board reads at the current variant
+     there. Run the check once for each name that the task's proposals carry. A
+     name that no board has is refused, and the refusal lists the drafts that
+     exist.
+   - Separate what your proposals change from what was already there. The
+     dogfood boards carry findings that no task introduced (TASK-367.27 corrects
+     them), and the exit status is 1 for any warning in the vault. So compare
+     the run with the same run without `--variant`:
+     ```bash
+     findings() { ./bin/dogfood check --code "$@" 2>/dev/null | jq -r '.codeCheck.findings[] | [.severity, .code, .board, (.path | sub("^variants\\.[^.]+\\."; "")), .subject.name, .message] | @tsv' | sort; }
+     diff <(findings) <(findings --variant TASK-123)
+     ```
+     `>` is a finding that your proposals introduce. `<` is one that they clear,
+     as they should when they draw what the code does. A finding in both runs
+     is not about your proposals: leave it, unless it is about a part that your
+     commits changed (step 7 reads those boards). Only the JSON on stdout holds
+     the finding's `code`.
+   - Act on each `>` line by its code. Correct the proposal to what the code
+     does. If the code is wrong, fix the code and run the check again.
+     - `ANCHOR_PATH_MISSING`, `ANCHOR_SYMBOL_MISSING`, `BINDING_SYMBOL_MISSING`
+       and `BINDING_PATH_MISSING` are warnings: the proposal names code that is
+       not there. A named draft says that its code is built, so a planned part
+       that nobody built, or built elsewhere, reads `BINDING_PATH_MISSING`. That
+       is a deviation. Cite or bind what was built, or drop the part.
+     - `ANCHOR_MISMATCH` holds the anchor against its relationship. Its message
+       says why. A symbol that is defined outside the code of both ends needs
+       an anchor that cites what an end defines or calls, or the binding of the
+       part whose code it is. An evidence kind that the relationship's kind
+       refuses (a name used only as a type, under `call`) needs the kind that
+       names what the code does, or the anchor of the real use. Information on
+       a candidate: read the line that its evidence names, and then decide.
+     - `RELATIONSHIP_UNDRAWN` is a warning when the use is resolved, and
+       information on a candidate. The code of one bound part reaches another
+       with no relationship or step between them, or between parts that hold
+       them. Draw it with its anchor if the board's question needs it. Change
+       the code if it should not reach. One finding lists every part that
+       reaches its subject.
+     - `RELATIONSHIP_BACKWARDS` and `RELATIONSHIP_UNSUPPORTED` are information,
+       about a relationship with no anchor: the code runs it the other way, or
+       shows no accepted evidence. Anchor every relationship that you add or
+       change. A relationship with an anchor is judged only by its anchor.
+   - Read by hand what the check does not cover, with the evidence rules of the
+     consumer skill:
+     - A part's responsibility and `description`. The binding proves a file or
+       symbol exists, not that the part does what its words say.
+     - A relationship's kind and label. The check only tests the evidence kinds
+       that the vault's `evidence` key lists for a kind, and never a flow step's.
+     - Code that the check reads only as text. Only TypeScript and TSX have an
+       adapter. In any other language, and in infrastructure, the skip
+       `text-only` says that anchors and symbols were tested by name and nothing
+       judged undrawn, backwards or unsupported. The skip `symbol-unparsed`
+       means a file did not parse. A part that was skipped has no finding, and
+       that is not the same as clear.
+     - A relationship across a network hop, through an event bus or through a
+       value that a part receives. Code shows no evidence for it (TASK-367.23
+       reads an environment value that infrastructure sets), so the check
+       reports it as information at most. Anchor the code that sends or
+       subscribes.
+     - A part with no binding, and a binding into a repository that this
+       machine has not registered (`./bin/dogfood repo add`).
+
+     Every place where the build left the plan is a deviation.
 2. Correct the proposal to what was built, not to what was planned.
    In the same edit, give it the `summary` that the board will carry as the
    current variant:
    the board's scope, not the task title and not a date.
-   Done: every entry that `semantic compare` reports has a source line behind it.
+   Done: every `>` finding of step 1 is corrected or explained in the task
+   notes (a candidate that you read, a network hop), and every entry that
+   `semantic compare` reports has a source line behind it: an anchor for a
+   relationship, a binding for a part.
 3. Set the task's commits against each proposal
    ([ADR 0045](../../docs/adr/0045-git-history-is-read-through-bindings-on-request.md)).
    The footprint says which parts the commits changed and which of them the
@@ -86,14 +152,14 @@ When the task closes, before you mark any acceptance criterion:
    - `changedNotNamed`, for a part that your commits changed. Ask what step 1
      of planning asks: did the commit add, remove, rename or rewire something
      that the board draws, or change what the part is for? Then add it to the
-     proposal with the evidence of step 1, and run the footprint again until the
-     part is in `namedAndChanged`. Otherwise the commit changed how the part
-     works inside (a fix, a refactor, a test), and the board stays true: write
-     one line in the task notes with the part, the commit and why. Decide it
-     here, because after adoption an addition costs a second proposal. A
-     container bound to a directory reads as changed whenever anything inside
-     changed, so it needs a line only for what the proposal does not name
-     inside it.
+     proposal with the evidence of step 1, and run the footprint and the code
+     check again until the part is in `namedAndChanged`. Otherwise the commit
+     changed how the part works inside (a fix, a refactor, a test), and the
+     board stays true: write one line in the task notes with the part, the
+     commit and why. Decide it here, because after adoption an addition costs a
+     second proposal. A container bound to a directory reads as changed whenever
+     anything inside changed, so it needs a line only for what the proposal does
+     not name inside it.
    - `namedNotChanged`, read with `named`. A part named by `part` (added,
      changed, removed) that no commit changed is a deviation: the plan was not
      built, or its code is not where the binding says. Correct the proposal, as
@@ -124,8 +190,8 @@ When the task closes, before you mark any acceptance criterion:
    On it, restate the change of this task from the change of the old proposal.
    Read that change with
    `semantic compare "<board>" --variant TASK-123 --against <its parent>`.
-   Shelve the old proposal with that reason, run step 3 on the new one, and
-   adopt it.
+   Shelve the old proposal with that reason, run steps 1 and 3 on the new one by
+   its own name, and adopt it.
    Use `--force` only to drop the change of the other task on purpose.
 6. Run `./bin/dogfood check`.
    Done: it reports no diagnostics. Commit the vault files with the closing.
@@ -135,9 +201,13 @@ When the task closes, before you mark any acceptance criterion:
    your adopted boards read clean. Read every other board that your task's
    commits put behind. That board describes code the task changed, and no
    proposal of the task names it. Read the parts that the commits changed
-   against the code. Correct a board that is now wrong, or say in the task
-   notes why it is still right. Behind is information: a count never fails
-   the check, and a board that is right stays behind until its next change.
+   against the code, and the findings of this run on that board. The
+   comparison of step 1 cannot show them, because it reads the same code in
+   both runs: code of the task that reaches a bound part of that board shows
+   only here, as `RELATIONSHIP_UNDRAWN` or an anchor that no longer holds.
+   Correct a board that is now wrong, or say in the task notes why it is still
+   right. Behind is information: a count never fails the check, and a board
+   that is right stays behind until its next change.
 
 If a task closes without its change, shelve its proposals with the reason.
 
