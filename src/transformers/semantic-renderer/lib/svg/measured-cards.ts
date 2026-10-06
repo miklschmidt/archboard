@@ -88,7 +88,7 @@ function drillCorner(
  * @param appearance Resolved containment and type channels.
  * @param ports Its ports, cut through its front edge, and the clip that cuts them (`ports.ts`).
  * @param ports.slots Its slots.
- * @param ports.cut The id of the clip.
+ * @param ports.id The id of the clip.
  * @returns The card group.
  */
 function paintMeasuredCard(
@@ -97,7 +97,7 @@ function paintMeasuredCard(
 	standing: SubjectStanding | undefined,
 	unsettled: boolean,
 	appearance: NodeAppearance,
-	ports?: { readonly slots: readonly Port[]; readonly cut: string },
+	ports?: { readonly slots: readonly Port[]; readonly id: string },
 ): string {
 	const { measured, box } = placed;
 	const styles = stylesFor(palette);
@@ -113,9 +113,9 @@ function paintMeasuredCard(
 		},
 		lines([
 			slabSeat(box, SLAB_RADIUS),
-			slabShadow(box, SLAB_RADIUS, "card", palette, standing, ports?.cut),
+			slabShadow(box, SLAB_RADIUS, "card", palette, standing, ports?.id),
 			halo(box, SLAB_RADIUS, styles, standing),
-			slab(box, look, palette, standing, ports?.cut),
+			slab(box, look, palette, standing, ports?.id),
 			nearLayer(
 				typeChip(chipX, chipY, appearance, palette, standing) +
 					paintTextRuns(measured.runs, box, words) +
