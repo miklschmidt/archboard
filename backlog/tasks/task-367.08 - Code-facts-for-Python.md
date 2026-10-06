@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 14:58'
+updated_date: '2026-10-06 15:17'
 labels:
   - code-check
 dependencies:
@@ -73,4 +73,6 @@ Correction to Left open (2): code-facts/index.ts was clean again later, so its h
 Gate (lanes one at a time, after a665606e1): lint exit 1 only on evidence.ts reachedBy complexity, an uncommitted hunk of another agent (TASK-367.13); fmt:check exit 1 only on INSTALL.md, another agent's uncommitted edit; type-check 0; build:frontend 0; test:modules 4133 pass 0 fail, exit 1 from one unhandled React teardown error (window is not defined) in a UI test; test:system 195/0; test:repository 20/0; test:serial-browser exit 0. code-facts and code-check owners 43/0 with --isolate; eval:skill check: suite ok.
 
 Review (4d782f721), the table's contract changed: an entry is { name, reads, resolver }. reads maps each extension (.py) or whole file name (flake.lock, compose.yaml; a whole name wins) to a ParseFacts (facts.ts): (text) => ParsedFacts | Promise<ParsedFacts>. A tree-sitter language builds it with treeSitter(wasm, query file, facts(tree, grammar)) from grammars.ts; a YAML, JSON or TOML adapter writes its own over Bun's parsers, with no grammar. Two entries that read the same name throw when adapters.ts loads. What a later language adds is otherwise unchanged: its files, its name in AdapterName (facts.ts), one entry in ADAPTERS.
+
+Review, Python semantics (43e8e8262): (1) The Flask finding Wrappers <- Helpers (helpers.py:253 Response) was wrong: that Response is the parameter of redirect(), and helpers.py imports wrappers.Response only under TYPE_CHECKING. A name that a function, a lambda or a comprehension binds for itself (parameter, local, loop or as target, nested def) now hides an import of the same name inside it (python-scopes.ts); a name the scope imports itself still reaches its import (app.py test_client imports FlaskClient as cls). On Flask the rerun gives the other findings unchanged and drops that one. (2) Decision 2: __all__.extend([...]) was never read (the adapter looked for strings directly in the arguments); it is now, and a module that builds __all__ any other way (base.__all__ + [...], a comprehension) is read by the leading underscore instead of hiding every name. (3) Decision 3: a string in an annotation is a forward reference only where a type stands; Literal's values, Annotated's metadata and strings in a call inside an annotation named words as types. (4) Decision 6: Python finds a package before a module of the same name, so a/b/__init__.py now wins over a/b.py. (5) Decision 1: a name assigned under a module-level for, while or match is a module-level definition too. Facts of Flask's 82 files: about 8 ms more (60 to 68 ms, minimum of 12 rounds). skills/archboard-dev step 1 now points at the table of adapters (38784a4a6).
 <!-- SECTION:NOTES:END -->
