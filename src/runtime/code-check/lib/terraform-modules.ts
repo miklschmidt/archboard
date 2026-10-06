@@ -7,12 +7,16 @@
 // with no expression around it. A meta-argument, such as `count`, is no
 // argument of the resource. A use inside the variable's own block, such as a
 // validation, is no use. A module wraps one resource when it manages exactly
-// one and calls no module; its data sources and locals are aside, because they
-// only feed what it manages. A module that wraps one resource is shallow when
-// it passes at least one variable through and every other variable only says
-// whether or how often to create the resource, in its `count` or `for_each`,
-// as `count = var.create ? 1 : 0` does: a caller can say that on the call
-// itself. Its interface is then the resource's, and the code proves it.
+// one and calls no module. A module that wraps one resource is shallow when
+// it passes at least one variable through, the resource reads no other
+// address, and every other variable only sets the resource's `count`, as
+// `count = var.create ? 1 : 0` does: a caller can say that on the call
+// itself. Its interface is then the resource's, and the code proves it. An
+// argument that a local or a data source sets is one the module decides for
+// its callers. A `for_each` is no such toggle: `each.value` carries the
+// variable's data into arguments where no reference shows it. A literal
+// argument shows no reference either, so a module that fixes an argument to a
+// constant still reads as shallow.
 //
 // Both findings are information on the container bound to the module, beside
 // `EXPOSED_UNUSED`:
@@ -51,16 +55,14 @@ interface PassedVariable {
 	readonly evidence: CodeEvidence;
 }
 
-/** What a Terraform module wraps, and the variables it passes through. */
+/** The variables a Terraform module passes through, and whether it is shallow. */
 interface ModuleShape {
 	readonly directory: string;
-	/** The one resource it manages, where it manages exactly one and calls no module. */
-	readonly wraps: string | undefined;
 	/** How many variables it declares. */
 	readonly variables: number;
 	readonly passed: readonly PassedVariable[];
-	/** The variables it uses only in the `count` or `for_each` of the resource it wraps. */
-	readonly toggles: readonly string[];
+	/** Where it is shallow: the one resource it wraps, and the variables that only set its `count`. */
+	readonly shallow?: { readonly wraps: string; readonly counts: readonly string[] };
 }
 
 /** One use of a variable in the module's own configuration. */
@@ -165,20 +167,65 @@ function resourceAt(file: SyntaxFacts, line: number): Definition | undefined {
 
 /**
  * Whether a variable only says whether or how often to create the resource a
- * module wraps: every use is in its `count` or `for_each`.
+ * module wraps: every use is in its `count`.
  * @param wraps The resource the module wraps.
  * @param uses The variable's uses.
  * @returns True when it does.
  */
-function toggles(wraps: string, uses: readonly VariableUse[]): boolean {
+function onlyCounts(wraps: string, uses: readonly VariableUse[]): boolean {
 	return (
 		uses.length > 0 &&
-		uses.every(({ file, reference }) => {
-			const [first] = reference.argument?.split(".") ?? [];
-			const shapes = first === "count" || first === "for_each";
-			return shapes && resourceAt(file, reference.line)?.symbol === wraps;
-		})
+		uses.every(
+			({ file, reference }) =>
+				reference.argument === "count" && resourceAt(file, reference.line)?.symbol === wraps,
+		)
 	);
+}
+
+/**
+ * Whether the resource a module wraps reads no address but the variables the
+ * module passes through, outside its meta-arguments.
+ * @param files The module's files.
+ * @param wraps The resource.
+ * @param passed The variables passed through.
+ * @returns True when it reads nothing else.
+ */
+function readsOnly(
+	files: readonly SyntaxFacts[],
+	wraps: string,
+	passed: readonly PassedVariable[],
+): boolean {
+	const names = new Set(passed.map((each) => each.name));
+	const reads = files.flatMap((file) =>
+		file.references.filter((reference) => resourceAt(file, reference.line)?.symbol === wraps),
+	);
+	return reads.every(
+		({ via, symbol, argument = "" }) =>
+			via !== "code" || names.has(symbol) || isMetaArgument(argument.split(".")),
+	);
+}
+
+/**
+ * Where a module is shallow: it wraps one resource that reads only the
+ * variables it passes through, at least one, and every other variable only
+ * sets that resource's `count`.
+ * @param files The module's files.
+ * @param variables The variables it declares.
+ * @param uses Each variable's uses.
+ * @param passed The variables it passes through.
+ * @returns The resource and the variables that only count it, or undefined.
+ */
+function shallowShape(
+	files: readonly SyntaxFacts[],
+	variables: readonly string[],
+	uses: ReadonlyMap<string, readonly VariableUse[]>,
+	passed: readonly PassedVariable[],
+): ModuleShape["shallow"] {
+	const wraps = wrapped(files);
+	if (wraps === undefined || passed.length === 0) return undefined;
+	const counts = variables.filter((name) => onlyCounts(wraps, uses.get(name) ?? []));
+	const every = passed.length + counts.length === variables.length;
+	return every && readsOnly(files, wraps, passed) ? { wraps, counts } : undefined;
 }
 
 /**
@@ -240,12 +287,10 @@ async function terraformShape(
 	const uses = variableUses(files);
 	const { repo } = checkout;
 	const passed = variables.flatMap((name) => passedThrough(repo, name, uses.get(name) ?? []) ?? []);
-	const wraps = wrapped(files);
-	const toggled = variables.filter(
-		(name) => wraps !== undefined && toggles(wraps, uses.get(name) ?? []),
-	);
+	const shallow = shallowShape(files, variables, uses, passed);
 	const { directory } = exposure;
-	return { directory, wraps, variables: variables.length, passed, toggles: toggled };
+	const counted = { variables: variables.length, passed };
+	return { directory, ...counted, ...(shallow === undefined ? {} : { shallow }) };
 }
 
 /**
@@ -258,6 +303,30 @@ function listed(passed: readonly PassedVariable[], resource: boolean): string {
 	return passed
 		.map((each) => `${each.name} (${resource ? `${each.resource}.` : ""}${each.argument})`)
 		.join(", ");
+}
+
+/**
+ * What the finding on a shallow module says.
+ * @param binds Its start: the container, and the module it binds.
+ * @param shape The module's shape.
+ * @param shallow Where the module is shallow.
+ * @returns The message.
+ */
+function shallowMessage(
+	binds: string,
+	shape: ModuleShape,
+	shallow: NonNullable<ModuleShape["shallow"]>,
+): string {
+	const { variables, passed } = shape;
+	const { wraps, counts } = shallow;
+	const sets = counts.length === 1 ? "only sets" : "each only sets";
+	const only = counts.length === 0 ? "" : `; ${counts.join(", ")} ${sets} its count`;
+	return (
+		`${binds} wraps one resource, ${wraps}, and passes ${passed.length} of its ${variables} ` +
+		`variables to one of its arguments each, unchanged: ${listed(passed, false)}${only}. ` +
+		"Its interface is the resource's own, so it hides nothing (a shallow module): let " +
+		"callers declare the resource, or let the module decide what its callers need not."
+	);
 }
 
 /**
@@ -275,18 +344,12 @@ function terraformFindings(
 ): CodeFinding[] {
 	if (shape === undefined || shape.passed.length === 0) return [];
 	const subject = nodeSubject(container);
-	const { directory, wraps, variables, passed, toggles: toggled } = shape;
+	const { directory, variables, passed, shallow } = shape;
 	const site = siteOf(read, `nodes.${container.id}`, subject);
-	const binds = `${describeSubject(subject)} binds the module ${JSON.stringify(directory)}, which`;
+	const binds = `${describeSubject(subject)} binds the module ${JSON.stringify(directory || ".")}, which`;
 	const evidence = passed.map((each) => each.evidence);
-	if (wraps !== undefined && passed.length + toggled.length === variables) {
-		const only =
-			toggled.length === 0 ? "" : `; ${toggled.join(", ")} only says whether to create it`;
-		const message =
-			`${binds} wraps one resource, ${wraps}, and passes ${passed.length} of its ${variables} ` +
-			`variables to one of its arguments each, unchanged: ${listed(passed, false)}${only}. ` +
-			"Its interface is the resource's own, so it hides nothing (a shallow module): let " +
-			"callers declare the resource, or let the module decide what its callers need not.";
+	if (shallow !== undefined) {
+		const message = shallowMessage(binds, shape, shallow);
 		return [{ ...site, severity: "information", code: "MODULE_SHALLOW", message, evidence }];
 	}
 	const message =

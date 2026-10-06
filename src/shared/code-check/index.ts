@@ -28,9 +28,9 @@
 // on the container bound to it: `VARIABLE_PASSED_THROUGH`, for variables the
 // module uses once, as the whole value of one argument of a resource it
 // manages; and `MODULE_SHALLOW`, for a module that manages exactly one
-// resource, calls no module and passes every variable through, but those
-// that only set the resource's `count` or `for_each`, which then names the
-// variables it passes through itself. TASK-367.23 joins an environment value the
+// resource, which reads nothing else, calls no module and passes every
+// variable through but those that only set the resource's `count`, which then
+// names the variables it passes through itself. TASK-367.23 joins an environment value the
 // code reads with infrastructure that sets it to another part's address, and
 // says which side of an unsupported relationship has evidence (`missing`).
 
