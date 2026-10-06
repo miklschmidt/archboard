@@ -25,14 +25,34 @@ const output = {
 } as const;
 /**
  * Run the code check on the Archboard server.
+ * @param variant The draft to read on every board that has one, if any.
  * @param signal Cancels the request, which cancels the check.
  * @returns Its answer.
  */
-async function codeCheckOnServer(signal: AbortSignal): Promise<CodeCheckAnswer> {
+async function codeCheckOnServer(
+	variant: string | undefined,
+	signal: AbortSignal,
+): Promise<CodeCheckAnswer> {
+	const query = variant === undefined ? "" : `?${new URLSearchParams({ variant })}`;
 	return CodeCheckAnswerSchema.parse(
-		await requestJson<unknown>("/api/vault/code-check", { signal }),
+		await requestJson<unknown>(`/api/vault/code-check${query}`, { signal }),
 	);
 }
+
+const CheckInputSchema = z.object({ code: z.boolean().optional(), variant: z.string().optional() });
+
+/** `--variant` names the draft the code check reads, so it means nothing without `--code`. */
+const CheckRequestSchema = CheckInputSchema.refine(
+	(input) => input.variant === undefined || input.code === true,
+	"--variant names the draft the code check reads: use it with --code",
+);
+
+const noSuchDraftRefusal = {
+	code: "NO_SUCH_DRAFT",
+	exit: 2,
+	stream: "stderr" as const,
+	description: "--variant names no draft on any board. The refusal names the drafts that exist.",
+};
 
 /**
  * Whether the check fails: the plain check has a diagnostic, or the code
@@ -55,8 +75,12 @@ const checkContract = defineCommand({
 	shared: ["url"],
 	summary: "Check configuration and every board family in the vault",
 	description:
-		"Reports invalid configuration, unreadable boards and removed vocabulary references. With --code it then runs the code check: how far each board is behind the commits to its bound files, which is information. Exit 1 means the vault still has diagnostics or the code check a warning; no board is changed.",
-	examples: ["archboard check", "archboard check --code"],
+		"Reports invalid configuration, unreadable boards and removed vocabulary references. With --code it then runs the code check over the current variant of every board: an anchor whose file is not in its checkout or does not hold its symbol, and a bound symbol that the bound file or directory does not hold, each a warning. It reads only files Git does not ignore, in checkouts this machine has registered, and lists what it skipped with the reason. It also says how far each board is behind the commits to its bound files, which is information. --variant reads the named draft on every board that has one and the current variant elsewhere, and also warns about a bound path the draft names that is not in its checkout. Exit 1 means the vault still has diagnostics or the code check a warning; no board is changed.",
+	examples: [
+		"archboard check",
+		"archboard check --code",
+		"archboard check --code --variant TASK-123",
+	],
 	parameters: [
 		{
 			kind: "option",
@@ -66,8 +90,28 @@ const checkContract = defineCommand({
 			description:
 				"Then run the code check, which reads the code and Git history of every registered checkout",
 		},
+		{
+			kind: "option",
+			key: "variant",
+			spellings: ["--variant"],
+			value: "required",
+			placeholder: "draft",
+			description:
+				"With --code, read this draft on every board that has one, and the current variant elsewhere",
+		},
 	],
-	input: { ingress: z.object({ code: z.boolean().optional() }) },
+	input: {
+		ingress: CheckInputSchema,
+		stages: [
+			{
+				name: "code-check-variant",
+				when: "before-server",
+				description: "A named draft is read by the code check only",
+				rules: ["Refuse --variant without --code"],
+				schema: CheckRequestSchema,
+			},
+		],
+	},
 	result: CheckResultSchema,
 	output: {
 		cases: [
@@ -95,7 +139,7 @@ const checkContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: [serverRefusal],
+	refusals: [serverRefusal, noSuchDraftRefusal],
 	relationships: [
 		{
 			method: "GET",
@@ -126,9 +170,11 @@ const checkContract = defineCommand({
 	 * @returns Check results and a failure exit when issues remain.
 	 */
 	async handler(input, context) {
+		const request = context.parse(CheckRequestSchema, input);
 		await context.require("server", "check");
 		const result = await checkSemanticVaultOnServer();
-		const codeCheck = input.code === true ? await codeCheckOnServer(context.signal) : undefined;
+		const codeCheck =
+			request.code === true ? await codeCheckOnServer(request.variant, context.signal) : undefined;
 		return {
 			result: codeCheck === undefined ? result : { ...result, codeCheck },
 			...(failsCheck(result, codeCheck) ? { outcome: "issues" } : {}),

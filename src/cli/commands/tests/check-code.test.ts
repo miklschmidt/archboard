@@ -2,8 +2,8 @@
 // (ADR 0046): it asks the plain check and then the code check route, prints
 // both, and only a diagnostic or a warning fails it. Behind is information
 // (ADR 0045), so a board many commits behind never does. Without `--code` the
-// command never asks the code check route. Only the Archboard server is a
-// stand-in.
+// command never asks the code check route. `--variant` names the draft the
+// route reads. Only the Archboard server is a stand-in.
 
 import { afterAll, expect, spyOn, test } from "bun:test";
 import {
@@ -74,15 +74,22 @@ const codeCheck: CodeCheckAnswer = {
 let service = "";
 let plain = clean;
 let answered = codeCheck;
+let refuseDraft = false;
 const asked: string[] = [];
 const server = Bun.serve({
 	hostname: "127.0.0.1",
 	port: 0,
 	fetch(request) {
-		const { pathname } = new URL(request.url);
+		const { pathname, search } = new URL(request.url);
 		if (pathname === "/health") return Response.json({ service, status: "ok" });
-		asked.push(pathname);
+		asked.push(pathname + search);
 		if (pathname === "/api/vault/check") return Response.json({ success: true, ...plain });
+		if (pathname === "/api/vault/code-check" && refuseDraft) {
+			return Response.json(
+				{ success: false, code: "NO_SUCH_DRAFT", error: "No such draft." },
+				{ status: 422 },
+			);
+		}
 		if (pathname === "/api/vault/code-check") return Response.json({ success: true, ...answered });
 		return Response.json({ success: false, error: `unexpected ${pathname}` }, { status: 404 });
 	},
@@ -170,22 +177,57 @@ test("check --code fails when the plain check has a diagnostic", async () => {
 	expect(exited).toBe(1);
 });
 
-test("check --code fails on a code check warning and never on information", async () => {
+test("check --code prints each finding with its subject and evidence, fails on a warning and never on information", async () => {
 	plain = clean;
 	const finding: CodeFinding = {
 		severity: "warning",
-		code: "ANCHOR_PATH_MISSING",
+		code: "ANCHOR_MISMATCH",
 		file: "/vault/Orders.semantic.json",
-		message: "Gone.",
+		board: "Orders",
+		variant: "v1",
+		subject: { kind: "step", id: "s1", name: "Pay: Api -> Ledger: post" },
+		message: "Elsewhere.",
+		evidence: [
+			{
+				kind: "call",
+				resolution: "candidate",
+				repo: "github.com/test/orders",
+				path: "src/api.ts",
+				line: 12,
+				symbol: "post",
+			},
+		],
 	};
 	try {
 		answered = { ...codeCheck, findings: [finding] };
-		expect((await run(["check", "--code"])).exited).toBe(1);
+		const failed = await run(["check", "--code"]);
+		expect(failed.exited).toBe(1);
+		const lines = failed.stderr.split("\n");
+		const at = lines.findIndex((line) => line.includes("Pay: Api -> Ledger: post"));
+		expect(at).toBeGreaterThanOrEqual(0);
+		expect(lines[at + 1]).toContain("src/api.ts:12");
 		answered = { ...codeCheck, findings: [{ ...finding, severity: "information" }] };
 		expect((await run(["check", "--code"])).exited).toBe(0);
 	} finally {
 		answered = codeCheck;
 	}
+});
+
+test("--variant names the draft the code check reads, and a draft no board has is refused", async () => {
+	plain = clean;
+	asked.length = 0;
+	expect((await run(["check", "--code", "--variant", "TASK-1"])).exited).toBe(0);
+	expect(asked).toEqual(["/api/vault/check", "/api/vault/code-check?variant=TASK-1"]);
+	refuseDraft = true;
+	try {
+		expect((await run(["check", "--code", "--variant", "TASK-0"])).exited).toBe(2);
+	} finally {
+		refuseDraft = false;
+	}
+	asked.length = 0;
+	const alone = await run(["check", "--variant", "TASK-1"]);
+	expect(alone.exited).not.toBe(0);
+	expect(asked).toEqual([]);
 });
 
 test("check without --code never asks the code check", async () => {

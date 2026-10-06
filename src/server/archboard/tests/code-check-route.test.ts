@@ -1,6 +1,7 @@
 // The code check runs on a route of its own, never inside the check that
 // every open canvas polls every 5 seconds (ADR 0045, ADR 0046), and the caller
-// that hangs up cancels it, because it runs as checkout work.
+// that hangs up cancels it, because it runs as checkout work. A variant that
+// names no draft is refused with the drafts that exist.
 //
 // The production application answers both routes over a vault this owner
 // makes in a Git repository of its own; a stand-in check proves the
@@ -16,6 +17,7 @@ import type * as ServerModule from "@/server/archboard/index";
 import type * as RouteModule from "@/server/archboard/code-check";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@/shared/code-check/index";
 import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
+import { VaultCheckSchema } from "@/shared/semantic-policy/index";
 
 const caller = {
 	ARCHBOARD_VAULT: process.env["ARCHBOARD_VAULT"],
@@ -107,7 +109,7 @@ beforeAll(async () => {
 								name: "Checkout",
 								kind: "module",
 								order: 1000,
-								binding: { repo: "github.com/test/route", path: "src/a.ts" },
+								binding: { repo: "github.com/test/route", path: "src/a.ts", symbol: "settle" },
 							},
 						],
 					},
@@ -134,17 +136,29 @@ afterAll(() => {
 	rmSync(scratch, { recursive: true, force: true });
 });
 
-test("the polled check never says how far a board is behind, and the code check route does", async () => {
+test("the polled check never reads code or says how far a board is behind, and the code check route does", async () => {
 	const base = await listen(server.app);
-	const polled: unknown = await (await fetch(`${base}/api/vault/check`)).json();
-	expect(polled).toMatchObject({ success: true });
-	expect(Object.keys(polled ?? {})).not.toContain("behind");
+	const polled = VaultCheckSchema.passthrough().parse(
+		await (await fetch(`${base}/api/vault/check`)).json(),
+	);
+	expect(Object.keys(polled)).not.toContain("behind");
+	expect(polled.diagnostics.map((one) => one.code)).not.toContain("BINDING_SYMBOL_MISSING");
 	const answer = CodeCheckAnswerSchema.parse(
 		await (await fetch(`${base}/api/vault/code-check`)).json(),
 	);
 	expect(answer.boards.map((one) => one.board)).toEqual(["Shop"]);
+	expect(answer.findings.map((one) => [one.code, one.subject?.id])).toEqual([
+		["BINDING_SYMBOL_MISSING", "pA"],
+	]);
 	const [shop] = answer.behind;
 	expect(shop !== undefined && "parts" in shop ? shop.parts[0]?.commits.length : undefined).toBe(1);
+});
+
+test("a variant that names no draft is refused", async () => {
+	const base = await listen(server.app);
+	const refused = await fetch(`${base}/api/vault/code-check?variant=TASK-0`);
+	expect(refused.status).toBe(422);
+	expect(await refused.json()).toMatchObject({ success: false, code: "NO_SUCH_DRAFT" });
 });
 
 test("a caller that hangs up cancels the code check", async () => {
@@ -155,7 +169,7 @@ test("a caller that hangs up cancels the code check", async () => {
 	});
 	const cancelled = new Promise<unknown>((resolve) => {
 		route.mountCodeCheckRoute(app, {
-			check: async (signal): Promise<CodeCheckAnswer> => {
+			check: async ({ signal }): Promise<CodeCheckAnswer> => {
 				started();
 				await new Promise<void>((settle) => {
 					signal.addEventListener("abort", () => settle(), { once: true });

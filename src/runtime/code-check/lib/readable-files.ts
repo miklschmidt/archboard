@@ -1,0 +1,55 @@
+// The files of a checkout that the code check may read (ADR 0046).
+//
+// It reads only what Git does not ignore: the tracked files, and the new files
+// that Git does not ignore. So a binding to a directory never reads
+// `node_modules`, build output or an ignored `.env` file. One `git ls-files`
+// per checkout lists them, with uncommitted edits, because the check reads the
+// files on disk. It never reads Terraform state, variable files or the
+// `.terraform` directory, even where Git tracks them: they can hold secrets in
+// plain text, and the Archboard server answers any request from this machine.
+//
+// The command reads the index and the working tree and starts no other
+// program. The caller's signal ends it: a request that hangs up, or a stop.
+
+/** Paths the check never reads, whatever Git says about them. */
+const NEVER_READ = [/(^|\/)\.terraform(\/|$)/u, /\.tfstate(\.backup)?$/u, /\.tfvars(\.json)?$/u];
+
+/**
+ * Whether the check never reads a path.
+ * @param relative The path, relative to its checkout, with `/` between names.
+ * @returns True for Terraform state, a variable file or the `.terraform` directory.
+ */
+function neverRead(relative: string): boolean {
+	return NEVER_READ.some((pattern) => pattern.test(relative));
+}
+
+/**
+ * The files of one checkout that Git does not ignore, relative to its root.
+ * @param root The checkout's root.
+ * @param signal Cancels the listing.
+ * @returns Each path, with `/` between names.
+ * @throws {Error} When Git cannot list the checkout.
+ */
+async function listReadableFiles(root: string, signal: AbortSignal): Promise<Set<string>> {
+	signal.throwIfAborted();
+	const child = Bun.spawn(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"], {
+		cwd: root,
+		stdin: "ignore",
+		stdout: "pipe",
+		stderr: "pipe",
+		// A reading must not take the index lock that a refresh takes, or it
+		// would make somebody's commit in that checkout fail.
+		env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
+		signal,
+	});
+	const [listed, stderr, exitCode] = await Promise.all([
+		new Response(child.stdout).text(),
+		new Response(child.stderr).text(),
+		child.exited,
+	]);
+	signal.throwIfAborted();
+	if (exitCode !== 0) throw new Error(`git ls-files in ${root} failed: ${stderr.trim()}`);
+	return new Set(listed.split("\0").filter((path) => path !== ""));
+}
+
+export { listReadableFiles, neverRead };
