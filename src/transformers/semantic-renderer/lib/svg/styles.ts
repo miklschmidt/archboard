@@ -50,7 +50,11 @@ type Head = "filled" | "open";
 
 const WEIGHTS: readonly Weight[] = ["hero", "normal", "muted"];
 
-const STROKE_WIDTH: Readonly<Record<Weight, number>> = { hero: 2.2, normal: 1.4, muted: 1.2 };
+/**
+ * How thick a line of each weight is drawn. A muted line is as thick as a
+ * default one and is quieter by its ink alone ({@link MUTED_STRENGTH}).
+ */
+const STROKE_WIDTH: Readonly<Record<Weight, number>> = { hero: 2.2, normal: 1.4, muted: 1.4 };
 
 /**
  * How long an arrowhead of each weight is, from its base to its tip, in the
@@ -144,23 +148,45 @@ function fullLineColour(palette: Palette, standing: SubjectStanding | undefined)
 const REMOVED_STRENGTH = { light: 0.85, dark: 1 } as const;
 
 /**
+ * How strong a muted line is, as its share of its default ink over the page,
+ * on each ground. A muted neutral line is about 2.4:1 against the page on both
+ * grounds, where a default one is 3.9:1 and 4.6:1 (TASK-409).
+ */
+const MUTED_STRENGTH = { light: 0.7, dark: 0.6 } as const;
+
+/**
+ * A colour as a line of one weight carries it: a muted line's with some of the
+ * page mixed in, every other line's as it is. The line, its head and its pulses
+ * all start from it, so a muted line is quieter by its colour alone and never
+ * by opacity, and two lines sharing a lane draw no darker where they overlap.
+ * @param ink The colour.
+ * @param palette The theme's colours.
+ * @param weight How loudly the line speaks.
+ * @returns The colour the line carries.
+ */
+function quietened(ink: string, palette: Palette, weight: Weight): string {
+	return weight === "muted" ? tinted(palette.background, ink, MUTED_STRENGTH) : ink;
+}
+
+/**
  * The colour a line is drawn in, from the colour it stands for: a coloured line
  * at its line strength over the page ({@link LINE_STRENGTH}), the neutral line
- * as it is. Mixed rather than made translucent, so two lines sharing a lane
- * draw no darker where they overlap. A removed line carries no pulses and its
- * group is ghosted already (`ghostOpacity`), so its ink has a strength of its
- * own ({@link REMOVED_STRENGTH}).
+ * as it is, and a muted line quieter still ({@link quietened}). Mixed rather
+ * than made translucent, so two lines sharing a lane draw no darker where they
+ * overlap. A removed line carries no pulses and its group is ghosted already
+ * (`ghostOpacity`), so its ink has a strength of its own, whatever its weight
+ * ({@link REMOVED_STRENGTH}).
  * @param ink The colour at full strength.
  * @param palette The theme's colours.
+ * @param weight How loudly the line speaks.
  * @returns The line's colour.
  */
-function drawnInk(ink: string, palette: Palette): string {
-	if (ink === palette.edge) return ink;
-	return tinted(
-		palette.background,
-		ink,
-		ink === palette.standingRemoved ? REMOVED_STRENGTH : LINE_STRENGTH,
-	);
+function drawnInk(ink: string, palette: Palette, weight: Weight = "normal"): string {
+	if (ink === palette.standingRemoved) {
+		return tinted(palette.background, ink, REMOVED_STRENGTH);
+	}
+	const line = ink === palette.edge ? ink : tinted(palette.background, ink, LINE_STRENGTH);
+	return quietened(line, palette, weight);
 }
 
 /**
@@ -251,7 +277,7 @@ function edgeAttributes(
 	const weight = weightOf(edge);
 	return {
 		fill: "none",
-		stroke: drawnInk(relationshipInk(edge, palette, standing, policy, appearance), palette),
+		stroke: drawnInk(relationshipInk(edge, palette, standing, policy, appearance), palette, weight),
 		"stroke-width": STROKE_WIDTH[weight],
 		"stroke-linecap": "round",
 		"stroke-linejoin": "round",
@@ -299,6 +325,7 @@ export {
 	lineColour,
 	drawnInk,
 	fullLineColour,
+	quietened,
 	relationshipInk,
 	weightOf,
 	markerFor,
