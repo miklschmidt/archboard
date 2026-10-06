@@ -249,6 +249,8 @@ interface BodyProps {
 	held: SemanticVariant | undefined;
 	/** The level of the board drawn, which places the boards its parts open. */
 	level: string | undefined;
+	/** The board, variant and version on screen, which a part's history is read at. */
+	on: ReadingOnScreen | null;
 	/** How the vault's kinds look. */
 	look: KindLook;
 	/**
@@ -277,13 +279,14 @@ function InspectorBody(props: BodyProps): JSX.Element {
 		return (
 			<DetailsPanel
 				subject={subject}
-				content={props.held.content}
 				look={props.look}
 				groups={props.groups}
 				onPick={props.onPick}
 				onOpen={props.onOpen}
 				onOpenCode={props.onOpenCode}
 				level={props.level}
+				on={props.on}
+				held={props.held}
 			>
 				{standing}
 			</DetailsPanel>
@@ -509,6 +512,7 @@ function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 				code={code}
 				held={explained.held}
 				level={explained.level}
+				on={explained.on}
 				look={props.look}
 				onPick={props.onPick}
 				notice={explained.notice}

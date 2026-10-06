@@ -2,8 +2,8 @@
 // reader asks: what it is (its title, the line it is responsible for and the
 // longer account), where it stands against the variant it is read against (only
 // in a comparison), for a part that holds parts what it offers the parts outside
-// it (`ContainerInterface`), and what it is wired to. At the foot are the ways
-// to go deeper (`GoDeeper`).
+// it (`ContainerInterface`), what it is wired to, and how it has changed in code
+// (`PartHistory`). At the foot are the ways to go deeper (`GoDeeper`).
 //
 // It is the selection tab of the pane's sidebar, so it has the sidebar's one
 // width and its regions, sections and rows (`SemanticSidebarParts`): a rule
@@ -12,10 +12,11 @@
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@/shared/code-target";
-import type { VariantContent } from "@/shared/semantic-board/index";
+import type { SemanticVariant, VariantContent } from "@/shared/semantic-board/index";
 import { KindIcon, RelationshipChip } from "@/ui/semantic-board-canvas/components/BoardPageParts";
 import { ContainerInterface } from "@/ui/semantic-board-canvas/components/ContainerInterface";
 import { GoDeeper } from "@/ui/semantic-board-canvas/components/GoDeeper";
+import { PartHistory } from "@/ui/semantic-board-canvas/components/PartHistory";
 import {
 	Account,
 	Membership,
@@ -31,6 +32,7 @@ import {
 	SidebarMeta,
 	SidebarRegion,
 } from "@/ui/semantic-board-canvas/components/SemanticSidebarParts";
+import type { ReadingOnScreen } from "@/ui/semantic-board-canvas/hooks/use-code-findings";
 import { usePeekControl, usePeeked } from "@/ui/semantic-board-canvas/hooks/use-peek";
 import type { NodeSubject } from "@/ui/semantic-board-canvas/lib/board-document";
 import { connectionsOf, type Link } from "@/ui/semantic-board-canvas/lib/connections";
@@ -270,8 +272,8 @@ function Relationships(props: RelationshipsProps): JSX.Element {
 /** Inputs for the details panel. */
 interface DetailsPanelProps {
 	readonly subject: NodeSubject;
-	/** What the variant that holds the part says. */
-	readonly content: VariantContent;
+	/** The variant that holds the part: what it says, and whose history is read. */
+	readonly held: SemanticVariant;
 	readonly look: KindLook;
 	/** What the vault calls each group, and how to select one. */
 	readonly groups: GroupControls;
@@ -286,6 +288,8 @@ interface DetailsPanelProps {
 	readonly level: string | undefined;
 	/** Where the part stands, set between what it is and what it is wired to. */
 	readonly children?: ReactNode;
+	/** The board, variant and version on screen, which its history is read at; null for none. */
+	readonly on: ReadingOnScreen | null;
 }
 
 /**
@@ -305,20 +309,30 @@ function DetailsPanel(props: DetailsPanelProps): JSX.Element {
 				</SidebarRegion>
 				{props.children}
 				<ContainerInterface
-					content={props.content}
+					content={props.held.content}
 					node={node}
 					look={props.look}
 					onPick={props.onPick}
 				/>
 				<SidebarRegion slot="semantic-inspector-wiring">
 					<Relationships
-						content={props.content}
+						content={props.held.content}
 						partId={node.id}
 						name={node.name}
 						look={props.look}
 						onPick={props.onPick}
 					/>
 				</SidebarRegion>
+				{props.on !== null && (
+					<PartHistory
+						board={props.on.board}
+						version={props.on.version}
+						variant={props.held}
+						node={node}
+						look={props.look}
+						onPick={props.onPick}
+					/>
+				)}
 			</div>
 			<GoDeeper
 				target={node.drillDown}

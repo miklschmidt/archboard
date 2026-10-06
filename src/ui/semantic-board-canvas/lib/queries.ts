@@ -11,6 +11,7 @@ import {
 	fetchSemanticBoards,
 	type SemanticRenderRequest,
 } from "@/ui/semantic-board-canvas/api/semantic-boards";
+import type { ReadingOnScreen } from "@/ui/semantic-board-canvas/hooks/use-code-findings";
 import { boardReads } from "@/ui/semantic-board-canvas/lib/board-reads";
 import { pictureSource } from "@/ui/semantic-board-canvas/lib/picture-source";
 
@@ -25,6 +26,14 @@ const semanticBoardKeys = {
 	vaultCheck: ["vault-check"] as const,
 	/** What the last code pass found on each board it read, as the server remembers it. */
 	codeFindings: ["code-findings"] as const,
+	/**
+	 * Where one variant of one board changes in code, at one version of the
+	 * board. Under a root of its own, so no sweep of the board's pictures or
+	 * documents asks Git again.
+	 * @param on The board, the variant by id and the version on screen.
+	 * @returns Its cache key.
+	 */
+	locality: (on: ReadingOnScreen) => ["locality", on.board, on.variant, on.version] as const,
 	/** The vault's semantic boards. */
 	boards: [SEMANTIC_KEY, "boards"] as const,
 	/** Every drawing of every board. */
@@ -240,8 +249,41 @@ function codeFindingsQuery() {
 	});
 }
 
+/**
+ * Where change concentrates in one variant of one board (ADR 0045): asked when
+ * somebody picks a part out, and never on a timer.
+ *
+ * The selection tab is drawn again for each pick, so each pick subscribes
+ * anew, and an answer is stale at once: every pick asks the server, which
+ * answers from its memory unless a checkout's HEAD moved, so a pick after a
+ * commit reads the new history. Nothing else asks again: no interval, no
+ * return to the tab and no reconnect, because each of those is a request
+ * nobody made. A new version of the board is a new key, so the next read is of
+ * the board as it now stands. A failed read is not tried again by itself; the
+ * region offers that to the person.
+ * @param on The board, the variant by id and the version on screen.
+ * @returns The query options.
+ */
+function localityQuery(on: ReadingOnScreen) {
+	return queryOptions({
+		queryKey: semanticBoardKeys.locality(on),
+		/**
+		 * Ask the server for the board's locality.
+		 * @param context The query context, carrying this read's cancellation.
+		 * @returns The answer.
+		 */
+		queryFn: (context) => boardReads().locality(on.board, on.variant, context.signal),
+		staleTime: 0,
+		refetchOnMount: true,
+		refetchOnWindowFocus: false,
+		refetchOnReconnect: false,
+		retry: false,
+	});
+}
+
 export {
 	codeFindingsQuery,
+	localityQuery,
 	semanticBoardKeys,
 	semanticBoardDocumentQuery,
 	semanticBoardListQuery,
