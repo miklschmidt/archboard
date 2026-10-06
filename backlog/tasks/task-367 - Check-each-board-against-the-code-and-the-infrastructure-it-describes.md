@@ -1,9 +1,10 @@
 ---
 id: TASK-367
 title: Check each board against the code and the infrastructure it describes
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-29 01:13'
+updated_date: '2026-10-06 22:50'
 labels:
   - code-check
 dependencies: []
@@ -26,9 +27,15 @@ The check is derived and never stored. It reads the current variant, and a draft
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `archboard check --code` reports, on the current variant of every board, anchors and bound symbols that no longer hold, relationships the code runs the other way, and dependencies between bound parts that the board does not draw
-- [ ] #2 The check reads TypeScript, C# and .NET, Python, Swift, Objective-C, C and C++, Terraform and OpenTofu, Kubernetes manifests, docker-compose files and Nix flakes
-- [ ] #3 Every finding names the evidence kind it rests on and says whether a language server resolved it or it is a candidate
-- [ ] #4 The check reads files only: never Terraform state, cloud APIs, secret values, or commands that need credentials or run code
-- [ ] #5 The dogfood vault passes the code check, and archboard-dev closes a task with it
+- [x] #1 `archboard check --code` reports, on the current variant of every board, anchors and bound symbols that no longer hold, relationships the code runs the other way, and dependencies between bound parts that the board does not draw
+- [x] #2 The check reads TypeScript, C# and .NET, Python, Swift, Objective-C, C and C++, Terraform and OpenTofu, Kubernetes manifests, docker-compose files and Nix flakes
+- [x] #3 Every finding names the evidence kind it rests on and says whether a language server resolved it or it is a candidate
+- [x] #4 The check reads files only: never Terraform state, cloud APIs, secret values, or commands that need credentials or run code
+- [x] #5 The dogfood vault passes the code check, and archboard-dev closes a task with it
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+archboard check --code holds every board against the code and the infrastructure it describes (ADR 0046). Boards carry anchors {repo, path, symbol} on relationships and steps, and a binding can name a symbol. The check reports anchors and bound symbols that no longer hold, relationships the code runs the other way or does not support, dependencies between bound parts the board does not draw, and a container's interface against what its module exposes (ADR 0044). Code facts read TypeScript, Python, Swift, C, C++, Objective-C, C# and .NET, Terraform and OpenTofu with provider tables for AWS, Google Cloud, Azure and Kubernetes, Kubernetes manifests, docker-compose and Nix flakes, and join code to infrastructure across a network hop. Language servers (tsc, pyright, csharp-ls, sourcekit-lsp, clangd) resolve candidates without running project code: a server that evaluates project files runs only from an entry the user writes, and clangd runs nothing from the checkout. Every finding names its evidence kind and whether it is resolved or a candidate. The check reads files only: never Terraform state, cloud APIs, secret values or commands. The pane marks code warnings, the inspector lists findings and opens code at the bound symbol, archboard-dev closes a task with the check, and the dogfood vault passes it with exit 0.
+<!-- SECTION:FINAL_SUMMARY:END -->
