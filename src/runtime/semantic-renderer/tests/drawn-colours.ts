@@ -282,6 +282,16 @@ function chromaOf(hex: string): number {
 }
 
 /**
+ * The hue of a hex colour in OKLCH, in degrees: the hue every tone of an ink
+ * keeps (`toned` in `lib/svg/colour.ts`) unless sRGB clips it.
+ * @param hex The colour.
+ * @returns Its hue.
+ */
+function toneHueOf(hex: string): number {
+	return ((oklchOf(literalColour(hex)).h * 180) / Math.PI + 360) % 360;
+}
+
+/**
  * How far apart two hex colours are, channel by channel.
  * @param a One colour.
  * @param b The other.
@@ -329,4 +339,14 @@ function seenIn<Drawn extends { readonly svg: string }>(
 	return { ...drawn, svg: paintedIn(drawn.svg, theme) };
 }
 
-export { chromaOf, colourDistance, colourIn, contrast, hueOf, luminance, paintedIn, seenIn };
+export {
+	chromaOf,
+	colourDistance,
+	colourIn,
+	contrast,
+	hueOf,
+	luminance,
+	paintedIn,
+	seenIn,
+	toneHueOf,
+};

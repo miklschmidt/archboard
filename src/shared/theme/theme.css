@@ -159,11 +159,11 @@
 	--raised: oklch(0.986 0.003 88);
 	--highlight: oklch(1 0 0 / 0.85);
 	--slab-face: oklch(0.988 0.003 255);
-	--slab-edge: oklch(0.87 0.014 256);
+	--slab-edge: oklch(0.83 0.003 255);
 	--slab-deep: oklch(0.86 0.008 256);
 	--slab-glint: oklch(1 0 0);
 	--slab-sheen: oklch(1 0 0 / 0.8);
-	--slab-shadow: oklch(0.3 0.05 264 / 0.15);
+	--slab-shadow: oklch(0.3 0.05 264 / 0.16);
 	--tray-floor: oklch(0.974 0.003 255);
 	--tray-sink: oklch(0.95 0.005 255);
 	--tray-plate: oklch(0.988 0.003 255);
