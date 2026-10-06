@@ -350,8 +350,10 @@ abstract to one system, that abstraction is the node, with its own
 relationships. Which way the link points says where it sits:
 
 - **Up**, to the board this board is a part of, goes on the container the board
-  describes — never on a card standing beside the parts. Often there is no such
-  container and therefore no upward link, which is the right board.
+  describes — never on a card standing beside the parts. A board that describes
+  a module draws that module as a container, so the link goes there. A board
+  whose parts stand side by side with no container around them has no upward
+  link, which is the right board.
 - **Down or sideways** goes on a card: a module board that shows
   `calls this module` draws an edge to a node of kind `module` whose drill-down
   opens it.
@@ -397,11 +399,11 @@ one names its relationship in its `path`.
   A step takes one too.
 
 Emphasis answers "what am I looking at": `hero` marks the spine, the path or
-backbone the board exists to show. On a board of how one write lands, that is
-the CLI's call into the Archboard server, the server's write through the board store and
-the store's atomic write to the file; the lease, the version check and the
-broadcast are the context that path runs through. Keep `hero` to about a third
-of the relationships and never past half: weight is a contrast and spends
+backbone the board exists to show. On a board of how one request is saved,
+that is the client's call into the service, the service's write through its
+store and the store's write to disk. Authentication, validation and the notice
+to other clients are the context that path runs through. Keep `hero` to about
+a third of the relationships and never past half: weight is a contrast and spends
 itself, and ten hero lines out of twelve make a heavier board, not an emphasised
 one, sending the reader back to every label to find the line that matters.
 
