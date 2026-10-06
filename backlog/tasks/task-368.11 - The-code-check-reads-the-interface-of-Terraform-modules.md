@@ -1,11 +1,11 @@
 ---
 id: TASK-368.11
 title: The code check reads the interface of Terraform modules
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:18'
-updated_date: '2026-10-06 19:42'
+updated_date: '2026-10-06 19:43'
 labels:
   - interfaces
   - code-check
@@ -28,8 +28,8 @@ A Terraform module's variables and outputs are its interface. A module that wrap
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A module's variables and outputs are reported as its interface
-- [ ] #2 A variable passed unchanged to one resource argument is reported as a pass-through variable, and a module that wraps one resource is reported as shallow, both as information
+- [x] #1 A module's variables and outputs are reported as its interface
+- [x] #2 A variable passed unchanged to one resource argument is reported as a pass-through variable, and a module that wraps one resource is reported as shallow, both as information
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -98,3 +98,9 @@ Board: the Code check description listed every finding code at 1,999 to 2,000 of
 
 Gate after the fixes, one lane at a time, in the shared working tree: lint 0, fmt:check 0, type-check 0, build:frontend 0, test:modules 4265 pass and 0 fail, test:system 195 and 0, test:repository 21 and 0, test:serial-browser 24 and 0. src/runtime/skill-evaluation with install-targets.test.ts: 242 and 0. eval:skill check: suite ok (20 scenarios, 20 fixtures, 14 coverage parts).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A Terraform or OpenTofu module is the configuration directly in its directory, and it exposes its variables and outputs, so the interface checks of TASK-368.10 judge a container bound to one (never ENTRY_POINT_UNEXPOSED, because outside configuration names only outputs). Two information codes measure depth: VARIABLE_PASSED_THROUGH names variables that are the whole value of one argument of a managed resource, and MODULE_SHALLOW names a module that wraps one resource, reads nothing else, and passes every variable through, a variable used only in that resource's count excepted. A reference to a whole module call uses every output. The review narrowed the toggle rule to count (for_each carries data), made a resource that reads a local or data source deep, and named a root module '.'. Verified by terraform-modules.test.ts and module-exposure.test.ts, and on 17 containers over terraform-aws-cloudwatch, -iam, -security-group, -s3-bucket and -key-pair (6 MODULE_SHALLOW and 10 VARIABLE_PASSED_THROUGH, each read against the source).
+<!-- SECTION:FINAL_SUMMARY:END -->
