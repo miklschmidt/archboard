@@ -57,8 +57,9 @@ test("where the other line turns just past a crossing, the straight line hops it
 
 // Board persistence, Board viewer and Voice coordinator: a corner cut beneath
 // a straight line left its route ending where the line past the turn began.
-// Here the corner runs on beside the line, under where a hop's shoulder would be.
-test("a rounded corner that turns beside a straight line stays whole, and the line is cut beneath it", () => {
+// Here the corner runs on beside the line, under where a hop's shoulder would
+// be. A gap cut in the straight line instead had no arc over it (TASK-408).
+test("a rounded corner that turns beside a straight line crosses it plainly, and both stay whole", () => {
 	const before = drawing([
 		[
 			{ x: -20, y: -64 },
@@ -74,12 +75,7 @@ test("a rounded corner that turns beside a straight line stays whole, and the li
 	]);
 	const result = bridged(before);
 	expect(result.edges).toEqual(before.edges);
-	expect(result.bridges).toHaveLength(1);
-	expect(result.bridges[0]!.edgeId).toBe("1");
-	expect(result.bridges[0]!.under).toEqual(["0"]);
-	const [corner] = result.bridges[0]!.curve.segments;
-	expect(result.bridges[0]!.curve.segments).toHaveLength(1);
-	expect(corner?.kind).toBe("cubic");
+	expect(result.bridges).toEqual([]);
 });
 
 // Track and Blocks draw a trunk as one route per relationship, on top of each
@@ -129,8 +125,9 @@ test("routes that run together through a turn, and part from each other, cut not
 
 // Opposing rounded turns from the cloud board's VM → DB and API → DB
 // connections cross between their orthogonal runs: neither straight line
-// contains the contact: separation must not deform the rounded corners.
-test("opposing rounded corners clear unrelated ink without deforming either route", () => {
+// contains the contact, and no hop stands on a turn. The corners cross plainly,
+// neither deformed nor cut (TASK-408).
+test("opposing rounded corners cross plainly without deforming or cutting either route", () => {
 	const routes = [
 		[
 			{ x: 12, y: 0 },
@@ -165,22 +162,7 @@ test("opposing rounded corners clear unrelated ink without deforming either rout
 	};
 	const result = bridged(before);
 	expect(result.edges).toEqual(edges);
-	expect(result.bridges).toHaveLength(1);
-	expect(result.bridges[0]!.edgeId).toBe("1");
-	expect(result.bridges[0]!.under).toEqual(["0"]);
-	expect(result.bridges[0]!.curve.segments).toEqual([
-		edges[1]!.curve.segments.find((segment) => segment.kind === "cubic")!,
-	]);
-
-	// The same geometric contact can be an intentional fan-in trunk.
-	const shared = structuredClone(edges);
-	for (const edge of shared) edge.edge.to = "target";
-	expect(bridged({ ...before, edges: shared }).bridges).toEqual([]);
-	// Different kinds use distinct ports, even when they name the same target.
-	shared[0]!.edge.kind = "event";
-	const distinct = bridged({ ...before, edges: shared });
-	expect(distinct.bridges).toHaveLength(1);
-	expect(distinct.edges).toEqual(shared);
+	expect(result.bridges).toEqual([]);
 });
 
 // Codex workhorse: two routes finish on one row between two cards, each turning
