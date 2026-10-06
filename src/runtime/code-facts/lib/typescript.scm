@@ -14,7 +14,9 @@
 ; @export.name a local name an `export { ... }` without a source exports.
 ; @export.default a local name `export default <name>` exports.
 ; @type        code where every name is a type.
-; @skip        code where no name is a use: the clauses of imports and re-exports.
+; @skip        code where no name is a use: the clauses of imports and exports,
+;              and the name `export default <name>` exports. An export passes
+;              a name on, also one an import brought in, and never uses it.
 ; @unparsed    code that did not parse.
 
 ; ── Definitions ─────────────────────────────────────────────────────────────
@@ -111,5 +113,7 @@
 
 (import_statement) @skip
 (export_statement source: (string)) @skip
+(export_clause) @skip
+(export_statement value: (identifier) @skip)
 
 (ERROR) @unparsed
