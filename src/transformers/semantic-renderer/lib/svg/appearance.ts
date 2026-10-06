@@ -10,7 +10,12 @@ import {
 	PILL_THICKNESS,
 	SLAB_RADIUS,
 } from "@/transformers/semantic-renderer/lib/design";
-import { lightDark, mixed } from "@/transformers/semantic-renderer/lib/svg/colour";
+import {
+	lightDark,
+	mixed,
+	toned,
+	type Tone,
+} from "@/transformers/semantic-renderer/lib/svg/colour";
 import { glyphGroup } from "@/transformers/semantic-renderer/lib/svg/icons";
 import { tag, type Attributes } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
@@ -38,18 +43,19 @@ function semanticInk(color: PaletteColor | undefined): string | undefined {
 }
 
 /**
- * How much of its group's colour a card's face carries, and how much its front
+ * A card's face in its group's colour, and how much of the colour its front
  * edge carries over the shade it is mixed into (`--slab-deep`): the colour of
  * the edge and the face together are what say which concern a card serves, on
- * either ground. On the light ground the edge is a lighter tint of the colour,
- * a step from the face rather than a bar under it. On the dark ground the
- * face's tint is a deep shade of the colour ({@link CARD_DEEPEN}), so it can
- * carry as much of the colour as the light face does and still leave the
- * card's secondary words at 4.5:1, a standing's wash over it included.
+ * either ground. The face is a tone of the group's own hue (`toned`), a step
+ * lighter than the mat it stands on and as quiet as a tint, so its words keep
+ * 4.5:1, a standing's wash over it included. On the light ground the edge is
+ * a lighter tint of the colour, a step from the face rather than a bar under it.
  */
-const CARD_FACE: Share = { light: 0.1, dark: 0.35 };
+const CARD_FACE: Tone = {
+	light: { lightness: 0.955, chroma: 0.18 },
+	dark: { lightness: 0.31, chroma: 0.27 },
+};
 const CARD_EDGE: Share = { light: 0.32, dark: 0.3 };
-const CARD_DEEPEN = 0.75;
 
 /**
  * How far each tray nested in another sinks toward `--tray-sink`, a step
@@ -117,7 +123,7 @@ function inkedEdge(light: string, ink: string, share: Share, palette: Palette): 
 function cardLook(appearance: NodeAppearance, palette: Palette): SlabLook {
 	const ink = semanticInk(appearance.bodyColor);
 	return {
-		face: washed(palette.slabFace, ink, CARD_FACE, palette, CARD_DEEPEN),
+		face: ink === undefined ? palette.slabFace : toned(ink, CARD_FACE),
 		ground: palette.slabFace,
 		edge: ink === undefined ? palette.slabEdge : tinted(palette.slabDeep, ink, CARD_EDGE),
 		thickness: CARD_THICKNESS,

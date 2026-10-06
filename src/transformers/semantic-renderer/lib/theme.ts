@@ -26,10 +26,6 @@ interface Palette {
 	readonly trayPlate: string;
 	/** The lit lip along a container's bottom and right walls. */
 	readonly trayLip: string;
-	/** What a group's region mixes its colour into for its face. */
-	readonly matFace: string;
-	/** What a group's region mixes its colour into for its front edge. */
-	readonly matEdge: string;
 	/** Text that carries the meaning: a card's name. */
 	readonly foreground: string;
 	/** Secondary text: a responsibility, a region name. */
@@ -100,8 +96,6 @@ const PALETTE: Palette = {
 	traySink: token("--tray-sink"),
 	trayPlate: token("--tray-plate"),
 	trayLip: token("--tray-lip"),
-	matFace: token("--mat-face"),
-	matEdge: token("--mat-edge"),
 	foreground: token("--card-foreground"),
 	muted: token("--muted-foreground"),
 	edge: token("--diagram-edge"),

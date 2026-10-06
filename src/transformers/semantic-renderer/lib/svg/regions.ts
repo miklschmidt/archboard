@@ -1,7 +1,7 @@
 // Group regions (TASK-347): the cards one group places inside one container,
 // on a mat of the group's colour with the group's name on a tab in its corner.
-// The mat is a thin block like every other part (`slab.ts`): a face of the
-// group's colour at a light tint over a front edge of the full colour, lying
+// The mat is a thin block like every other part (`slab.ts`): an opaque face in
+// a tone of the group's colour over a front edge in a deeper tone of it, lying
 // flat on what holds it, and the cards in it stand on it. The tab is cut from
 // the same block and raised a step off one of the mat's top corners, inside the
 // region's box. It is never an obstacle for the layout: lines cross it, and it
@@ -20,7 +20,7 @@ import { segmentStart, type Curve } from "@/transformers/semantic-renderer/lib/l
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { measure } from "@/transformers/semantic-renderer/lib/text";
 import { semanticInk } from "@/transformers/semantic-renderer/lib/svg/appearance";
-import { lightDark, mixed } from "@/transformers/semantic-renderer/lib/svg/colour";
+import { toned, type Tone } from "@/transformers/semantic-renderer/lib/svg/colour";
 import { farLayer, nearLayer } from "@/transformers/semantic-renderer/lib/svg/far-view";
 import { lines, tag, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
@@ -28,28 +28,47 @@ import {
 	castShadow,
 	glintOf,
 	slab,
-	tinted,
-	type Share,
 } from "@/transformers/semantic-renderer/lib/svg/slab";
 import { MEMBERS_ATTRIBUTE } from "@/transformers/semantic-renderer/lib/svg/standing";
 import { paintTextRuns } from "@/transformers/semantic-renderer/lib/svg/text-runs";
 
 /**
- * How much of the group's colour the mat's face, its front edge, its tab's
- * face and its tab's edge carry. The mat's face carries less than the faces of
- * the cards on it, so they read over it. Its edge is a coloured foot under that
- * quiet face: on the light ground a quiet tint of the group's colour, about
- * 2:1 to its face, and on the dark the colour at a middle lightness. The tab's
- * edge is quieter, the thickness of a label rather than a rule under it.
+ * The group's colour on its mat's face, its front edge, its tab's face and its
+ * tab's edge: each a tone of the group's own hue, opaque, so a mat is the same
+ * board on the page, on a tray's floor and on a nested floor (`toned`). The
+ * mat's face is a clear pastel on the light ground and a deep shade of the
+ * colour on the dark, a step darker than the cards on it on either, so they
+ * read over it. The tab is a step deeper and more coloured than the face. The
+ * edges are the colour at a middle lightness, a coloured foot under the face;
+ * the tab's is quieter, the thickness of a label rather than a rule under it.
  */
-const MAT_FACE: Share = { light: 0.09, dark: 0.11 };
-const MAT_EDGE: Share = { light: 0.45, dark: 0.45 };
-const TAB_FACE: Share = { light: 0.17, dark: 0.17 };
-const TAB_EDGE: Share = { light: 0.4, dark: 0.35 };
+const MAT_FACE: Tone = {
+	light: { lightness: 0.93, chroma: 0.27 },
+	dark: { lightness: 0.25, chroma: 0.3 },
+};
+const MAT_EDGE: Tone = {
+	light: { lightness: 0.8, chroma: 0.7 },
+	dark: { lightness: 0.43, chroma: 0.62 },
+};
+const TAB_FACE: Tone = {
+	light: { lightness: 0.885, chroma: 0.46 },
+	dark: { lightness: 0.315, chroma: 0.48 },
+};
+const TAB_EDGE: Tone = {
+	light: { lightness: 0.83, chroma: 0.6 },
+	dark: { lightness: 0.4, chroma: 0.55 },
+};
 /** The tab's own rounded corner; the rounded one it shares with the mat is the mat's. */
 const TAB_RADIUS = 8;
-/** How far the caption's words lean from the group's colour toward the text colour. */
-const CAPTION_DEPTH = 0.5;
+/**
+ * The caption's words: the group's colour, deep on the light ground and light
+ * on the dark, one lightness for every colour, so a light colour such as yellow
+ * keeps its words at 4.5:1 on its tab as a deep one does.
+ */
+const CAPTION: Tone = {
+	light: { lightness: 0.44, chroma: 0.9 },
+	dark: { lightness: 0.88, chroma: 0.6 },
+};
 
 /**
  * How much of its row a group's caption may take from far away: set larger,
@@ -182,20 +201,15 @@ function captionTab(
 /**
  * The colours one group's region is drawn in.
  * @param ink The group's colour.
- * @param palette The page's colours.
  * @returns The mat's, the tab's and the caption's.
  */
-function matColours(ink: string, palette: Palette): MatColours {
+function matColours(ink: string): MatColours {
 	return {
-		face: tinted(palette.matFace, ink, MAT_FACE),
-		edge: tinted(palette.matEdge, ink, MAT_EDGE),
-		tab: tinted(palette.matFace, ink, TAB_FACE),
-		// A tint of the face on the light ground, a shade of the edge on the dark.
-		tabEdge: lightDark(
-			mixed(palette.matFace, ink, TAB_EDGE.light),
-			mixed(palette.matEdge, ink, TAB_EDGE.dark),
-		),
-		words: mixed(ink, palette.foreground, CAPTION_DEPTH),
+		face: toned(ink, MAT_FACE),
+		edge: toned(ink, MAT_EDGE),
+		tab: toned(ink, TAB_FACE),
+		tabEdge: toned(ink, TAB_EDGE),
+		words: toned(ink, CAPTION),
 	};
 }
 
@@ -279,7 +293,7 @@ function paintRegion(
 	},
 ): string {
 	const ink = semanticInk(policy.groups[region.group]?.color) ?? palette.muted;
-	const colours = matColours(ink, palette);
+	const colours = matColours(ink);
 	const near = region.caption.measured.runs[0];
 	const crossings = crossingsOf(region, routes);
 	const corner = near === undefined ? "start" : cornerOf(region, near, crossings);

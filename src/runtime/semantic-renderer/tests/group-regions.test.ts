@@ -2,8 +2,10 @@
 // drawn in its colour with its name (TASK-347). What this catches: a group's
 // members scattered among other cards, a region drawn around a card the
 // group does not place, a caption naming something other than the group, a
-// nested region's caption floating ranks above its members, and a frame
-// keeping the strip Graphviz reserved for a label the router moved.
+// nested region's caption floating ranks above its members, a frame keeping
+// the strip Graphviz reserved for a label the router moved, a mat whose colour
+// changes with the ground it lies on, and a caption that a light colour such
+// as yellow leaves under 4.5:1 on its tab.
 
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@/shared/semantic-policy/index";
@@ -15,6 +17,7 @@ import {
 	routeLabels,
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import { contrast, paintedIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
 import { groupOf } from "@/runtime/semantic-renderer/tests/drawn-subjects";
 import { orderedFixture } from "@/runtime/semantic-renderer/tests/ordered-fixture";
 import codexWorkhorse from "./codex-workhorse.json";
@@ -335,3 +338,72 @@ test("a line into a container grouped with its members is drawn", async () => {
 	});
 	expect(routePoints(drawn.svg).get("in")?.length).toBeGreaterThan(1);
 });
+
+// The owner's request of 2026-10-06 (TASK-413): a mat was a pale tint that
+// looked muddy on a tinted tray floor. It is one opaque board of its group's
+// colour wherever it lies, and its caption reads on its tab in the lightest
+// colours too.
+test.each(["light", "dark"] as const)(
+	"a mat is the same opaque board on the page and on a tray's floor, and its caption reads on its tab (%s)",
+	async (theme) => {
+		const light = SemanticPolicySchema.parse({
+			...policy,
+			groups: {
+				pricing: { name: "Pricing", color: "yellow" },
+				jobs: { name: "Jobs", color: "amber" },
+				stock: { name: "Stock", color: "lime" },
+			},
+		});
+		const groups = ["pricing", "jobs", "stock"];
+		const drawn = await renderArchitecture({
+			content: orderedFixture({
+				nodes: [
+					{ id: "shop", name: "Shop service", kind: "service" },
+					...groups.flatMap((group) => [
+						{
+							id: `${group.slice(0, 3)}-p`,
+							name: `${group} on the page`,
+							kind: "module",
+							groups: [group],
+						},
+						{
+							id: `${group.slice(0, 3)}-t`,
+							name: `${group} on the floor`,
+							kind: "module",
+							parent: "shop",
+							groups: [group],
+						},
+					]),
+				],
+				edges: [],
+			}),
+			theme,
+			policy: light,
+			layout: "track",
+		});
+		const svg = paintedIn(drawn.svg, theme);
+		for (const group of groups) {
+			const regions = [
+				...svg.matchAll(
+					new RegExp(
+						`"group-region" data-group="${group}"[^>]*>([\\s\\S]*?)<g class="ab-near">([\\s\\S]*?)</g>`,
+						"gu",
+					),
+				),
+			];
+			expect(regions, group).toHaveLength(2);
+			// The mat's edge, highlight and face, as a reader sees them.
+			const [onPage, onFloor] = regions.map(([, mat]) =>
+				[...mat!.matchAll(/<rect [^>]*fill="(#[0-9a-f]+)"/gu)].map(([, fill]) => fill!),
+			);
+			expect(onPage, group).toHaveLength(3);
+			for (const fill of onPage!) expect(fill, `${group} is opaque`).toMatch(/^#[0-9a-f]{6}$/u);
+			expect(onFloor, group).toEqual(onPage);
+			for (const [, , tab] of regions) {
+				const face = [...tab!.matchAll(/<path [^>]*fill="(#[0-9a-f]{6})"/gu)].at(-1)![1]!;
+				const words = /<text [^>]*fill="(#[0-9a-f]{6})"/u.exec(tab!)![1]!;
+				expect(contrast(words, face), `${group} caption`).toBeGreaterThanOrEqual(4.5);
+			}
+		}
+	},
+);
