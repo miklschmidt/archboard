@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 128,
+	"version": 131,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-06T15:48:47.664Z",
+	"updatedAt": "2026-10-06T15:50:49.098Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -26368,7 +26368,7 @@
 		{
 			"id": "Bim7QT8V",
 			"name": "TASK-367.11",
-			"lifecycle": "draft",
+			"lifecycle": "shelved",
 			"parent": "w0PeUZWt",
 			"summary": "Code facts for C# and .NET projects",
 			"content": {
@@ -44421,7 +44421,7 @@
 		{
 			"id": "rRJ0t8ZE",
 			"name": "TASK-367.09 after TASK-367.12",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "mxvxZr96",
 			"summary": "Code facts for C and C++",
 			"content": {
@@ -46292,7 +46292,7 @@
 		{
 			"id": "0VXIMuRY",
 			"name": "TASK-367.11 after TASK-367.09",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "rRJ0t8ZE",
 			"summary": "Code facts for C# and .NET projects",
 			"content": {
@@ -46747,7 +46747,7 @@
 						"name": "Code facts",
 						"kind": "module",
 						"responsibility": "Tells the code check what one file defines, references and imports, and what a module exposes, and keeps each file's facts in memory by its content",
-						"description": "ADR 0046's engine. A table of adapters names, for each language or format, the files it reads, how it reads them (tree-sitter, or a parser Bun has) and its import resolver. TypeScript and TSX: definitions qualified by what holds them; imports through the nearest tsconfig.json and the @/ alias. Python: module names and class members, exposed by __all__ or a name without _; absolute, relative and package imports against the file's root, the source roots of pyproject.toml or setup.cfg, and src. docker-compose (Bun.YAML): services, networks and volumes are definitions (services.web); depends_on, links, networks, named and shared volumes and environment values that name a service are configured paths, merged with the override in compose order; an env file gives names, never values. Nix: flake.nix read statically; each output is a definition by attribute path (packages.x86_64-linux.archboard), * standing for each system of a list it cannot read; names below what it cannot follow are unknown, never missing; each flake.lock input is a build dependency. C and C++: names qualified with ::, with C's visibility; an #include puts its header's names in scope, resolved through compile_commands.json or else relative paths; a header and its source file are a pair. Terraform and OpenTofu (.tf, .tofu): declarations by address (aws_sqs_queue.jobs, module.q.var.x for a call's argument) and each address an expression names; a root module is one address space across its local modules, a named plan JSON filling in remote ones. Swift: access levels; names resolve across a module and its imports; Package.swift, read statically, gives modules and build dependencies. References carry their evidence kind; environment values and events written as strings count. Code that did not parse holds no facts; other files are text. It finds a symbol's definition and what a module exposes. One cache entry per file, keyed on its bytes' hash; grammars load on first use; a pass yields after each parse.",
+						"description": "ADR 0046's engine: a table of adapters, each naming its files, how it reads them (tree-sitter or a Bun parser) and its import resolver. TypeScript and TSX: names qualified by what holds them; imports through the nearest tsconfig.json and the @/ alias. Python: module names and class members, exposed by __all__ or a name without _; absolute, relative and package imports against the file's root, pyproject.toml or setup.cfg source roots, and src. docker-compose (Bun.YAML): services, networks and volumes are definitions (services.web); depends_on, links, networks, shared volumes and environment values naming a service are configured paths, overrides merged in order; an env file gives names, never values. Nix: flake.nix read statically; each output is a definition by attribute path (packages.x86_64-linux.archboard), * for each system of an unread list; names below what it cannot follow are unknown, not missing; each flake.lock input is a build dependency. C and C++: names qualified with ::, with C's visibility; an #include puts its header's names in scope, resolved through compile_commands.json or relative paths; a header and its source are a pair. Terraform and OpenTofu (.tf, .tofu): declarations by address (aws_sqs_queue.jobs, module.q.var.x for a call's argument) and the addresses expressions name; a root module and its local modules are one address space, a named plan JSON filling in remote ones. Swift: access levels; names resolve across a module and its imports; Package.swift, read statically, gives modules and build dependencies. C#: names by namespace, with accessibility and InternalsVisibleTo, resolved across a project and its ProjectReferences (build dependencies). References carry their evidence kind; environment and event names in strings count. Unparsed code holds no facts; other files are text. It finds a symbol's definition and a module's exposed names. One cache entry per file, by its bytes' hash; grammars load on first use; a pass yields after each parse.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/runtime/code-facts"
@@ -48161,7 +48161,7 @@
 			}
 		}
 	],
-	"current": "rRJ0t8ZE",
+	"current": "0VXIMuRY",
 	"adoptions": [
 		{
 			"variant": "82cs8TFY",
@@ -48294,6 +48294,12 @@
 			"from": "mxvxZr96",
 			"at": "2026-10-06T15:48:19.016Z",
 			"reason": "TASK-367.09: code facts read C and C++ through their includes, and a part bound to a C or C++ file owns its pair"
+		},
+		{
+			"variant": "0VXIMuRY",
+			"from": "rRJ0t8ZE",
+			"at": "2026-10-06T15:50:49.098Z",
+			"reason": "TASK-367.11 adds the C# and .NET adapter to Code facts"
 		}
 	],
 	"shelvings": [
@@ -48351,6 +48357,11 @@
 			"variant": "2APJTsjo",
 			"at": "2026-10-06T15:48:04.384Z",
 			"reason": "TASK-367.12 adopted after this proposal branched; restated as TASK-367.09 after TASK-367.12"
+		},
+		{
+			"variant": "Bim7QT8V",
+			"at": "2026-10-06T15:50:21.752Z",
+			"reason": "TASK-367.09 adopted after this proposal branched; the change is restated on TASK-367.11 after TASK-367.09"
 		}
 	]
 }
