@@ -8,6 +8,10 @@ TASK-369.01 tracks this decision, accepted on 2026-10-06 after an independent
 review. It serves TASK-369, its subtasks TASK-369.02
 to TASK-369.07, and Proposal 3 of `docs/design/design-checks.md`.
 
+TASK-369.04 amended this ADR on 2026-10-06. A flow step joins two coupled
+parts, and a container counts as at an end inside it. The amendment after the
+section on hotspots and change coupling gives the reasons.
+
 The history lens maps each commit onto the parts whose bound files it changed.
 One mapping gives four readings. A board is behind its code by the commits that
 changed its parts after the board last changed. A footprint says what a branch
@@ -202,6 +206,31 @@ leakage).
 The thresholds are fixed, and the period is the one option. Fixed thresholds
 keep two answers comparable and keep the measurement of the design note
 reproducible.
+
+## Amendment of 2026-10-06: what joins two coupled parts
+
+TASK-369.04 amended the rule above for an unjoined pair. Two more things join
+two coupled parts. Everything else stands.
+
+A flow step joins the two parts at its ends, in either direction, as a
+relationship does. The board draws the message, and the architecture picture
+draws a step that no relationship joins as a step line. So the board does not
+miss that dependency. ADR 0044 leaves steps out of a container's interface,
+because a return travels against the dependency. Change coupling has no
+direction, so that reason does not apply here.
+
+A container counts as at an end inside it. ADR 0044 counts a relationship
+that starts inside a container and ends outside it as an outgoing relationship
+of the container. A relationship from outside to a part inside makes its
+source a caller of the container. So the board draws that dependency for the
+container too. On Command interface on 2026-10-06, Commands and Server client
+changed together in 34 commits (35%). Five commands inside Commands call
+Server client. Without this rule, the pair read as unjoined, although the board
+draws the dependency.
+
+So one end of the relationship or step must be the first part, a container
+above it or a part inside it. The other end must be the second part, a
+container above it or a part inside it. Then the two parts are joined.
 
 ## Footprint sets a range of commits against a proposal
 
