@@ -5,7 +5,7 @@
 // language runs by default comes from `language-servers.json` and the `PATH`.
 
 import { afterEach, describe, expect, test } from "bun:test";
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openLanguageServers } from "@/runtime/language-servers/index";
@@ -83,6 +83,18 @@ function committed(
 }
 
 /**
+ * Write files into a checkout after its commit, as this machine makes them.
+ * @param at The workspace.
+ * @param files Each file and its text.
+ */
+function place(at: Workspace, files: Readonly<Record<string, string>>): void {
+	for (const [file, text] of Object.entries(files)) {
+		mkdirSync(join(at.root, file, ".."), { recursive: true });
+		writeFileSync(join(at.root, file), text);
+	}
+}
+
+/**
  * Ask the stand-in, as the server of a language, where a use is defined, and close the session.
  * @param at The workspace.
  * @param language The language it stands in for.
@@ -113,10 +125,7 @@ describe("pyright", () => {
 
 	test("is told the interpreter of the checkout's own virtual environment, and answers about a file it opened", async () => {
 		const at = committed(PYTHON, answers, [".venv/"]);
-		for (const [file, text] of Object.entries(VENV)) {
-			mkdirSync(join(at.root, file, ".."), { recursive: true });
-			writeFileSync(join(at.root, file), text);
-		}
+		place(at, VENV);
 		expect(await ask(at, "python", use)).toEqual({
 			answer: {
 				status: "answered",
@@ -152,14 +161,39 @@ describe("pyright", () => {
 		await session.close();
 	});
 
-	test("is told no interpreter that the checkout ships, or that it does not have", async () => {
-		const shipped = committed({ ...PYTHON, ...VENV }, answers);
-		expect((await ask(shipped, "python", use)).answer.status).toBe("answered");
-		expect(shipped.configurations()).toEqual([[null, null]]);
-		shipped.remove();
+	test("is told no interpreter in a checkout that has none", async () => {
 		const none = committed(PYTHON, answers);
 		expect((await ask(none, "python", use)).answer.status).toBe("answered");
 		expect(none.configurations()).toEqual([[null, null]]);
+	});
+
+	test("starts nowhere a checkout ships the interpreter of its .venv, also through a link or in another case, and says so once", async () => {
+		// basedpyright runs .venv/bin/python by itself when it is told no interpreter.
+		const shipping = [
+			() => committed({ ...PYTHON, ...VENV }, answers),
+			() => {
+				const at = committed({ ...PYTHON, "tools/env/bin/python": "" }, answers, [".venv"]);
+				symlinkSync("tools/env", join(at.root, ".venv"));
+				return at;
+			},
+			// On a disk that ignores case, .VENV and .venv are one directory.
+			() => {
+				const at = committed({ ...PYTHON, ".VENV/bin/python": "" }, answers, [".venv/"]);
+				place(at, VENV);
+				return at;
+			},
+		];
+		for (const checkout of shipping) {
+			const at = checkout();
+			expect(await ask(at, "python", use)).toEqual({
+				answer: { status: "unasked" },
+				unavailable: [
+					{ language: "python", reason: "unready", root: at.root, detail: expect.any(String) },
+				],
+			});
+			expect(at.pids()).toEqual([]);
+			at.remove();
+		}
 	});
 });
 
