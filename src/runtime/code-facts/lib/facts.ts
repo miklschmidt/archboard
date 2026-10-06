@@ -144,9 +144,12 @@ interface ParsedFacts {
 /**
  * How an adapter reads one file: from its text to its facts, through a
  * tree-sitter grammar (`treeSitter` in grammars.ts) or with a parser Bun has,
- * such as `Bun.YAML.parse` for a compose file.
+ * such as `Bun.YAML.parse` for a compose file. An adapter that reads an
+ * extension other formats share answers undefined for a file of another
+ * format, which is then read as text: a `.yaml` file that holds no
+ * Kubernetes object.
  */
-type ParseFacts = (text: string) => ParsedFacts | Promise<ParsedFacts>;
+type ParseFacts = (text: string) => ParsedFacts | undefined | Promise<ParsedFacts | undefined>;
 
 /** Where an import or a reference leads in the checkout: a file, and the name there. */
 interface Target {
@@ -166,6 +169,7 @@ type AdapterName =
 	| "typescript"
 	| "python"
 	| "compose"
+	| "kubernetes"
 	| "env"
 	| "csharp"
 	| "c"

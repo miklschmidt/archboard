@@ -23,7 +23,10 @@
 // (ADR 0046), and a Terraform declaration that neither end binds, such as an
 // event source mapping, can be that declaration. Which declarations join two
 // parts is a rule of each provider (TASK-367.18), so until then the check does
-// not judge where a Terraform anchor's symbol is declared.
+// not judge where a Terraform anchor's symbol is declared. Nor where a
+// Kubernetes anchor's is: a Service, an Ingress, a route or a NetworkPolicy
+// joins two workloads that a board draws, and neither end need bind it
+// (TASK-367.19).
 
 import { otherRefOf, readableOf, type ReadCheckout } from "@/runtime/code-check/lib/checkouts";
 import type { AnchorClaim } from "@/runtime/code-check/lib/claims";
@@ -42,6 +45,12 @@ import { resolveLocalCodeTarget, type CheckoutSnapshot } from "@/runtime/code-ta
 import type { CodeEvidence, CodeFinding } from "@/shared/code-check/index";
 import type { SemanticNode } from "@/shared/semantic-board/index";
 import { describeSubject } from "@/shared/semantic-policy/index";
+
+/** The adapters whose anchor may name a declaration that joins two parts and that neither end binds. */
+const JOINED_BY_DECLARATION = new Set<FileFacts["adapter"] | undefined>([
+	"terraform",
+	"kubernetes",
+]);
 
 /** Whether a part's bound code holds a definition, or the check cannot tell. */
 type Holding = "holds" | "elsewhere" | "unknown";
@@ -244,7 +253,7 @@ async function judgeSupport(
 	context: SupportContext,
 ): Promise<CodeFinding | undefined> {
 	const { facts } = context.search;
-	if ((await facts.read(checkout, file))?.adapter === "terraform") return undefined;
+	if (JOINED_BY_DECLARATION.has((await facts.read(checkout, file))?.adapter)) return undefined;
 	const site =
 		(await definitionSite(facts, checkout, file, claim.anchor.symbol)) ??
 		(await serverSite(claim, file, checkout, context));
