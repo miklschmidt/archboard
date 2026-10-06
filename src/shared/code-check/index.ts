@@ -110,8 +110,10 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *   file and the lines.
  * - `expression-not-followed`: a bound or anchored symbol that may lie below a
  *   Nix expression the static reading of a flake cannot follow, such as an
- *   `import` or a list of systems that an input gives (TASK-367.21). Its
- *   `detail` names the file and the lines of the expression.
+ *   `import` or a list of systems that an input gives (TASK-367.21), or in a
+ *   Helm template, whose names only Helm gives when it renders it
+ *   (TASK-367.19). Its `detail` names the file and the lines of the
+ *   expression or the template.
  * - `text-only`: the check read files of a checkout that no grammar reads as
  *   text, so it judged their anchors and bound symbols by name and nothing
  *   that needs references. Its `detail` names the kinds of file.

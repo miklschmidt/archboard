@@ -221,9 +221,12 @@ its kind and name as `symbol`: `Deployment/checkout`, `Service/checkout`,
 namespace out. Code facts read a `.yaml` or `.yml` file as a manifest when one
 of its documents has an `apiVersion` and a `kind`, also the items of a `List`
 and Helm or Kustomize output that somebody rendered to files. Any other YAML
-file is read as text. A Helm template that does not parse is skipped as
-`symbol-unparsed`. The check never runs `kubectl`, `helm` or `kustomize`, and
-it reads only the names of a Secret's keys, never a value. This is evidence:
+file is read as text. Until Helm renders a chart's templates, the names in
+them are unknown. So the check skips a symbol in a Helm template as
+`expression-not-followed`, and never reports it missing. To have it checked,
+bind the output that Helm rendered. The check never runs `kubectl`, `helm` or
+`kustomize`, and it reads only the names of a Secret's keys, never a value.
+This is evidence:
 
 - A call: an Ingress backend, and an HTTPRoute or GRPCRoute `backendRefs`
   entry, each to the Service it routes to.
@@ -235,7 +238,9 @@ it reads only the names of a Secret's keys, never a value. This is evidence:
   one that receives. No default kind accepts it.
 
 A name resolves to the nearest manifest that declares it: the same file, then
-its directory, then the directories further out. A reference to a Service that
+its directory, then the directories further out. Where two manifests at the
+same distance declare it, such as two environments' copies, it resolves to
+neither and gives no evidence. A reference to a Service that
 no part binds reaches the workloads that the Service picks, so a board can
 bind only its workloads. To anchor a relationship between two workloads, cite
 the caller's manifest and the Service that it names: `Service/cart` in
