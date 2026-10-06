@@ -39,12 +39,36 @@ const NodePolicySchema = z
 		color: PaletteColorSchema.optional(),
 	})
 	.strict();
+/**
+ * What one piece of code or infrastructure proves about two parts (ADR 0046).
+ * They live beside the vocabulary because the vault configuration names the
+ * ones each relationship kind accepts.
+ */
+const EvidenceKindSchema = z.enum([
+	"call",
+	"configured-path",
+	"permission",
+	"import",
+	"build-dependency",
+	"provisioning",
+]);
+type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
 const RelationshipPolicySchema = z
 	.object({
 		name: PolicyDisplayNameSchema,
 		color: PaletteColorSchema.optional(),
 		dash: z.enum(["solid", "dashed", "dotted"]),
 		arrowhead: z.enum(["filled", "open", "none"]),
+		evidence: z
+			.array(EvidenceKindSchema)
+			.min(1)
+			.refine((values) => new Set(values).size === values.length, "Evidence kinds must be unique")
+			.optional()
+			.meta({
+				uniqueItems: true,
+				description:
+					"The evidence kinds that prove a relationship of this kind to `archboard check --code` (ADR 0046). A kind without the key accepts every evidence kind, and the check never judges the evidence of its relationships.",
+			}),
 	})
 	.strict();
 /**
@@ -95,6 +119,12 @@ function createSemanticPolicySchema(icon: z.ZodType<string> = NodePolicySchema.s
 const SemanticPolicySchema = createSemanticPolicySchema();
 type SemanticPolicy = z.infer<typeof SemanticPolicySchema>;
 /**
+ * What proves a relationship across a network, an event bus or a queue: a use
+ * in code, a trigger or a route in infrastructure, or configuration that
+ * points one part at the other (ADR 0046).
+ */
+const NETWORK: EvidenceKind[] = ["call", "configured-path"];
+/**
  * The vocabulary a vault has before its owner writes config.yaml. Every kind
  * a board is likely to draw carries a colour, so a fresh vault is not neutral
  * gray (ADR 0025 makes containment colour mandatory once configured);
@@ -105,6 +135,10 @@ type SemanticPolicy = z.infer<typeof SemanticPolicySchema>;
  * what another board describes carries that board's level as its kind
  * (ADR 0029). Without `system` beside `service` and `module`, a board could
  * not say that one of its parts is a whole system described elsewhere.
+ *
+ * Every relationship kind but `other` names the evidence kinds that prove it
+ * to the code check (ADR 0046). Permission and provisioning show no need, so
+ * no kind here accepts them; `other` has no key, so it accepts every kind.
  */
 const DEFAULT_SEMANTIC_POLICY: SemanticPolicy = {
 	levels: ["system", "service", "module"],
@@ -127,14 +161,25 @@ const DEFAULT_SEMANTIC_POLICY: SemanticPolicy = {
 		other: { name: "Other", icon: "RiPuzzleLine" },
 	},
 	relationshipKinds: {
-		call: { name: "Call", dash: "solid", arrowhead: "filled" },
-		http: { name: "HTTP", color: "sky", dash: "solid", arrowhead: "filled" },
-		rpc: { name: "RPC", color: "blue", dash: "solid", arrowhead: "filled" },
-		event: { name: "Event", color: "amber", dash: "dashed", arrowhead: "open" },
-		queue: { name: "Queue", color: "orange", dash: "dashed", arrowhead: "open" },
-		data: { name: "Data", color: "emerald", dash: "solid", arrowhead: "filled" },
-		dependency: { name: "Dependency", dash: "dotted", arrowhead: "open" },
-		render: { name: "Render", color: "pink", dash: "solid", arrowhead: "filled" },
+		call: { name: "Call", dash: "solid", arrowhead: "filled", evidence: ["call"] },
+		http: { name: "HTTP", color: "sky", dash: "solid", arrowhead: "filled", evidence: NETWORK },
+		rpc: { name: "RPC", color: "blue", dash: "solid", arrowhead: "filled", evidence: NETWORK },
+		event: { name: "Event", color: "amber", dash: "dashed", arrowhead: "open", evidence: NETWORK },
+		queue: { name: "Queue", color: "orange", dash: "dashed", arrowhead: "open", evidence: NETWORK },
+		data: { name: "Data", color: "emerald", dash: "solid", arrowhead: "filled", evidence: NETWORK },
+		dependency: {
+			name: "Dependency",
+			dash: "dotted",
+			arrowhead: "open",
+			evidence: ["call", "configured-path", "import", "build-dependency"],
+		},
+		render: {
+			name: "Render",
+			color: "pink",
+			dash: "solid",
+			arrowhead: "filled",
+			evidence: ["call"],
+		},
 		other: { name: "Other", dash: "solid", arrowhead: "filled" },
 	},
 	groups: {},
@@ -194,20 +239,6 @@ function diagnosticLine(issue: DiagnosticOfAnySeverity): string {
 	const about = issue.subject === undefined ? "" : `${describeSubject(issue.subject)}: `;
 	return `${issue.severity}: ${where}: ${about}${issue.message}`;
 }
-/**
- * What one piece of code or infrastructure proves about two parts (ADR 0046).
- * They live beside the vocabulary because the vault configuration will name
- * the ones each relationship kind accepts (TASK-367.07).
- */
-const EvidenceKindSchema = z.enum([
-	"call",
-	"configured-path",
-	"permission",
-	"import",
-	"build-dependency",
-	"provisioning",
-]);
-type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
 const VaultCheckSchema = z.object({
 	policy: SemanticPolicySchema,
 	configurationValid: z.boolean(),
