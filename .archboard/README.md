@@ -101,8 +101,19 @@ Read with `./bin/dogfood semantic show <board>` and edit with the reported versi
 and `--doing`. The historical migration example in `docs/design/semantic-pipeline`
 is separate from this living vault.
 
-To find the boards that the code has moved away from, run
-`./bin/dogfood check --code` and read `behind`. For each board, it lists the
+After board work, also run `./bin/dogfood check --code`. When a task closes,
+run it as the closing steps of `archboard-dev` say. The code check reads the
+bound code
+([ADR 0046](../docs/adr/0046-boards-carry-anchors-and-the-code-check-reads-them-on-request.md)).
+It finds an anchor or a bound symbol that no longer holds. It finds a
+relationship that the code does not support or runs the other way. It also
+finds code of one bound part that reaches another part with no relationship
+drawn. Every relationship between two bound parts carries an anchor: the one
+place in code that proves it. The check judges the relationship by that line.
+If a finding stays, the notes of the task that left it explain it.
+
+To find the boards that the code has moved away from, read `behind` in the
+same answer. For each board, it lists the
 commits that changed a part's bound files after the board's current variant
 last changed, and it lists those commits for each part
 ([ADR 0045](../docs/adr/0045-git-history-is-read-through-bindings-on-request.md)).
