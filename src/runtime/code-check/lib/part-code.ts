@@ -35,8 +35,15 @@ import type { CodeCheckSkip } from "@/shared/code-check/index";
 import type { CodeBinding } from "@/shared/code-target/index";
 import type { SemanticNode } from "@/shared/semantic-board/index";
 
-/** A directory that holds tests, by the conventions of common languages. */
-const TEST_DIRECTORY = /^(?:tests?|__tests__|specs?)$/u;
+/**
+ * A directory that holds tests, by the conventions of common languages: `test`,
+ * `tests`, `__tests__`, `spec` or `specs` in any case, alone or after a
+ * separator (`Tests` of a Swift package, `e2e-tests`, `Payments.Tests` of a
+ * .NET solution).
+ */
+const TEST_DIRECTORY = /^(?:.*[._-])?(?:tests?|__tests__|specs?)$/iu;
+/** A test target named in camel case, as Xcode names one: `AFNetworkingTests`. */
+const TEST_TARGET = /[\p{Ll}\d]Tests$/u;
 /** A file of tests: `x.test.ts`, `x.spec.ts`, `x_test.go`, `test_x.py`. */
 const TEST_FILE = /\.(?:test|spec)\.[^.]+$|_test\.[^.]+$|^test_[^/]+$/u;
 
@@ -48,7 +55,11 @@ const TEST_FILE = /\.(?:test|spec)\.[^.]+$|_test\.[^.]+$|^test_[^/]+$/u;
 function isTestPath(file: string): boolean {
 	const names = file.split("/");
 	const last = names.at(-1) ?? "";
-	return TEST_FILE.test(last) || names.slice(0, -1).some((name) => TEST_DIRECTORY.test(name));
+	const directories = names.slice(0, -1);
+	return (
+		TEST_FILE.test(last) ||
+		directories.some((name) => TEST_DIRECTORY.test(name) || TEST_TARGET.test(name))
+	);
 }
 
 /** A registered checkout the pass reads, with the repository it is. */

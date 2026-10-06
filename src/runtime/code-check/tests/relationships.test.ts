@@ -110,8 +110,14 @@ beforeAll(async () => {
 			"export function route(shelf: Shelf): string { return readShelf(shelf) + writeShelf(shelf); }",
 			"",
 		].join("\n"),
-		// A test below the store exercises its code and is not its code at run time.
-		"src/store/tests/store.test.ts":
+		// Tests below the store exercise its code and are not its code at run time:
+		// a test file beside the code, a Tests directory of a Swift package or a
+		// .NET solution, and a test target as Xcode names one.
+		"src/store/read.test.ts":
+			'import { send } from "../notify/sender";\nexport function probe(): void { send(); }\n',
+		"src/store/Tests/probe.ts":
+			'import { send } from "../../notify/sender";\nexport function probe(): void { send(); }\n',
+		"src/store/StoreTests/probe.ts":
 			'import { send } from "../../notify/sender";\nexport function probe(): void { send(); }\n',
 		"src/notify/sender.ts": "export function send(): void {}\n",
 		"src/notify/listener.ts":
@@ -235,7 +241,7 @@ test("the parts that use one shared part make one finding on it, one resolved pi
 	expect(undrawn?.evidence?.[0]).toMatchObject({ repo: MALL, symbol: "addressOf" });
 	// Server, List and Write name the Shelf type only as a type, which is never a dependency at run time.
 	expect(finding("RELATIONSHIP_UNDRAWN", "pB")).toBeUndefined();
-	// The store's test calls the sender, and a test is not the store's code at run time.
+	// The store's tests call the sender, and a test is not the store's code at run time.
 	expect(finding("RELATIONSHIP_UNDRAWN", "pN")).toBeUndefined();
 });
 
