@@ -1,11 +1,11 @@
 ---
 id: TASK-368.06
 title: semantic compare reports interface changes before implementation changes
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:17'
-updated_date: '2026-10-06 10:20'
+updated_date: '2026-10-06 10:38'
 labels:
   - interfaces
   - cli
@@ -28,9 +28,9 @@ An interface change costs every caller, and an implementation change costs one m
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 For each container, the comparison reports entry points added and removed, parts that moved between the interface and the hidden parts, and callers gained and lost
-- [ ] #2 The interface changes come before the other changes in the human answer, and have their own place in the machine-readable answer
-- [ ] #3 The propose-and-compare recipe of the consumer skill shows the interface section
+- [x] #1 For each container, the comparison reports entry points added and removed, parts that moved between the interface and the hidden parts, and callers gained and lost
+- [x] #2 The interface changes come before the other changes in the human answer, and have their own place in the machine-readable answer
+- [x] #3 The propose-and-compare recipe of the consumer skill shows the interface section
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -61,4 +61,12 @@ Decisions the ADR did not settle:
 - Evals: no scenario added. A scenario needs a fixture with a container plus a grader, and S16 and evals.json are being edited by the TASK-368.02 review and TASK-368.03. Coverage row maps the feature to its runtime owners (scenarios []), as TASK-368.02 did for its empty-container cases.
 - The recipe describes the section in portable terms (container = node with children; module, package, class); archboard's names (Lease store) only in the worked example, as a counterfactual because the lease board draws no container.
 Gate: type-check 0, lint 0, fmt:check 0, test:modules 3963 pass, test:system 192 pass, test:repository 20 pass, test:serial-browser pass.
+
+Independent review (2026-10-06): a container that appeared, emptied or was removed with no outside caller was reported unchanged. It now always counts as changed, and its line names the variant that holds it (fe97e0cbf). propose-compare.md named the fields wrongly and said a card-drawn module has no interface; it was rewritten, and variants.md points at the section (d12b3c5eb). The README hero clip read the counts from line 1, so it now finds the 'Other changes:' line (ece1d9b6d). Follow-up left: no eval scenario owns the interface section yet, and read.md step 4 does not mention it.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+semantic compare now reports, for every container, entry points added and removed, parts that moved between the interface and the hidden parts, and callers gained and lost, from compareInterfaces in the shared model. The interface section comes first in the human answer and has its own place, interfaceChanges, in the machine answer, and it never sets a comparison status. propose-compare.md shows the section. Verified by compare-interface.test.ts and comparison-answer.test.ts (pass with --isolate), and the reviewer reported every gate lane passing.
+<!-- SECTION:FINAL_SUMMARY:END -->
