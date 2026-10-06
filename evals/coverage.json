@@ -75,15 +75,15 @@
 					"owner": "src/shared/semantic-board/tests integrity (cycle)"
 				},
 				{
-					"path": "edge.from/to on real receivers, not containers",
-					"expectedUse": "calls land on the internal part that receives them",
+					"path": "edge.from/to at a module's edge: callers outside the container, entry points and hidden parts inside it",
+					"expectedUse": "a module the board describes is a container with its callers outside it; a call from outside lands on the entry point the caller names, never on the container or a helper behind it; the calls behind that entry point land inside the container on the part whose body runs",
 					"scenarios": ["S00", "S05", "S14"],
 					"evidence": "harness-check",
 					"owner": "no-edge-to-container-with-children; grader edge.actual-receiver"
 				},
 				{
 					"path": "whole-module endpoints where appropriate",
-					"expectedUse": "a leaf module is a fine endpoint",
+					"expectedUse": "a leaf module is a fine endpoint; a relationship that ends on a container makes no entry point and is only for a dependency on the whole module",
 					"scenarios": ["S01", "S02", "S13"],
 					"evidence": "author-run",
 					"owner": "grader edge.actual-receiver"

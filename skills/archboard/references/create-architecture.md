@@ -47,15 +47,21 @@ Keep the real relationship kind when judging routing.
    (`github.com/miklschmidt/archboard`); bindings use that identity and a
    repo-relative path.
 3. State the architecture in one payload and create the board. The evidence
-   behind this one, from archboard's own source: the Archboard server's `editRoute`
-   (`src/server/archboard/lib/semantic-board-writes.ts`) calls
-   `writeSemanticBoard` (`src/runtime/semantic-board-store/lib/write.ts`), which
-   takes the board's lease through `withBoardLock`
-   (`src/runtime/engine/lib/board-lock-acquisition.ts`) and runs
-   `applyUnderLease` inside it; `applyUnderLease` reads the board, applies the
-   edit transition, then calls `persisted`, one after another from its own
-   body, so those are siblings, not a chain. The agent running the command is
-   the inbound caller and lives outside the checkout, so it stays unbound.
+   behind this one comes from archboard's own source. The Archboard server's
+   `editRoute` (`src/server/archboard/lib/semantic-board-writes.ts`) imports
+   two functions from `src/runtime/semantic-board-store/index.ts`, the board
+   store's interface. It builds the edit with `editVariantTransition`
+   (`lib/transitions.ts`) and hands it to `writeSemanticBoard`
+   (`lib/write.ts`). So the store is a container, bound to its directory, and
+   those two are its entry points. Behind them, inside the store,
+   `writeSemanticBoard` calls `underBoardLease`, which takes the board's lease
+   through `withBoardLock` (`src/runtime/engine/lib/board-lock-acquisition.ts`).
+   It also passes `underBoardLease` a callback that calls `applyUnderLease`.
+   `applyUnderLease` applies the edit through `transition.apply`, then calls
+   `persisted`. No file outside the store calls those three, so they are its
+   hidden parts. Each function's two calls come from its own body, so they are
+   siblings, not a chain. The agent running the command is the inbound caller
+   and lives outside the checkout, so it stays unbound.
 
 ```bash
 archboard semantic new "Semantic board writes" --doing "describing how one board edit reaches disk" <<'JSON'
@@ -66,9 +72,15 @@ archboard semantic new "Semantic board writes" --doing "describing how one board
     { "name": "Edit route", "kind": "function", "responsibility": "Accepts one edit and hands it to the store",
       "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/server/archboard/lib/semantic-board-writes.ts" } },
     { "name": "Board store", "kind": "module", "responsibility": "The one place a board is read or written",
-      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/write.ts" } },
+      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store" } },
+    { "name": "editVariantTransition", "kind": "function", "parent": "Board store",
+      "responsibility": "Builds the change one edit makes to a board",
+      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/transitions.ts" } },
     { "name": "writeSemanticBoard", "kind": "function", "parent": "Board store",
       "responsibility": "Runs one write under the board's lease",
+      "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/write.ts" } },
+    { "name": "underBoardLease", "kind": "function", "parent": "Board store",
+      "responsibility": "Admits the writer and holds the lease around one pass",
       "binding": { "repo": "github.com/miklschmidt/archboard", "path": "src/runtime/semantic-board-store/lib/write.ts" } },
     { "name": "applyUnderLease", "kind": "function", "parent": "Board store",
       "responsibility": "Reads, applies, validates and persists one command",
@@ -81,24 +93,34 @@ archboard semantic new "Semantic board writes" --doing "describing how one board
   ],
   "edges": [
     { "from": "Agent", "to": "Edit route", "kind": "http", "label": "POST /api/semantic-boards/edit" },
+    { "from": "Edit route", "to": "editVariantTransition", "kind": "call", "label": "builds the edit" },
     { "from": "Edit route", "to": "writeSemanticBoard", "kind": "call", "label": "edit transition" },
-    { "from": "writeSemanticBoard", "to": "Board lease", "kind": "call", "label": "withBoardLock" },
-    { "from": "writeSemanticBoard", "to": "applyUnderLease", "kind": "call" },
+    { "from": "writeSemanticBoard", "to": "underBoardLease", "kind": "call" },
+    { "from": "writeSemanticBoard", "to": "applyUnderLease", "kind": "call", "label": "as the leased pass" },
+    { "from": "underBoardLease", "to": "Board lease", "kind": "call", "label": "withBoardLock" },
+    { "from": "applyUnderLease", "to": "editVariantTransition", "kind": "call", "label": "transition.apply" },
     { "from": "applyUnderLease", "to": "persisted", "kind": "call" }
   ]
 }
 JSON
+archboard semantic inspect "Semantic board writes" --container "Board store"
 archboard semantic rasterize "Semantic board writes" --out /tmp/writes.png
 ```
 
-Each relationship lands on the part that receives the call ([evidence rule
-3](../SKILL.md#evidence-before-a-write)): `Board lease` receives `withBoardLock`
-here because it has no children; the moment you draw its functions inside it,
-the call lands on `withBoardLock`.
+`Edit route` lands on the two functions that the store's `index.ts` exports,
+and not on `applyUnderLease` or `persisted`, although their bodies do the write
+([evidence rule 3](../SKILL.md#evidence-before-a-write)). The inspection reads
+that back: `editVariantTransition` and `writeSemanticBoard` are the entry
+points, the other three are hidden parts, `Edit route` is the one caller and
+the call to `Board lease` is the one outgoing relationship. `Board lease`
+receives `withBoardLock` itself because this board draws it whole, with no
+children. Draw its functions inside it, and the call lands on `withBoardLock`,
+its entry point.
 
 4. Check the answer against your record: every part you meant is there with a
    configured `kind`; every relationship's `from`, `to` and `kind` match its
-   line of evidence, and none exists without one; bound parts name the
+   line of evidence, and none exists without one; a call from outside a
+   container ends on an entry point that its caller names; bound parts name the
    identity from step 2 and the owning file. Open the picture and read it as
    the audience will: labels legible, nothing cut off, each arrow ending on the
    part its evidence names, and the reported `width` and `height` small enough
