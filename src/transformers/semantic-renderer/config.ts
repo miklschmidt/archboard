@@ -43,12 +43,11 @@ export const SELF_LOOP_REACH = 26;
 export const NEST_INSET = 18;
 /**
  * How far a flow's heads stand under its title row: past the foot of the
- * nameplate the title is printed on, and as far again as its sides stand from
- * them.
+ * nameplate the title is printed on (`FLOW_PLATE_FOOT`), and 14 more.
  */
-export const HEADER_GAP = 24;
+export const HEADER_GAP = 30;
 /** How far a flow's title stands under the top of its frame's nameplate. */
-export const CONTAINER_TOP_PAD = 14;
+export const CONTAINER_TOP_PAD = 16;
 export const CONTAINER_BOTTOM_PAD = 14;
 export const CARD_PADDING_X = 13;
 
