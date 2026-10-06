@@ -569,6 +569,37 @@ of 9 parts over BenchmarkDotNet ran in 1,686 ms cold and 379 ms warm and gave
 six undrawn warnings and one backwards finding, each right, among them a test
 project's `ProjectReference` to the Windows diagnostics.
 
+#### Joining code and infrastructure across a network hop
+
+TASK-367.23 tried the join on 2026-10-06 with Bun 1.4.2, through the real
+check and a temporary vault:
+
+- docker's `awesome-compose` (`30f4b7f`): no sample reads an address from the
+  environment in a language that the check parses. The code that reads one is
+  JavaScript, Java, Rust or an nginx template that `envsubst` fills.
+  `react-express-mysql/backend/src/config.js` reads `DATABASE_HOST`, which
+  compose sets to `db`, but JavaScript is read as text. So the join has no
+  read there, and the relationships of that board are skipped as `text-only`.
+  The Python samples read only a port (`FLASK_SERVER_PORT`) and write their
+  hosts in the code (`mongo:27017`).
+- testdriven.io's `fastapi-tdd-docker` (`16433b6`): `project/app/db.py` reads
+  `DATABASE_URL` at line 12. Line 13 of `docker-compose.yml` sets it for `web`,
+  which builds `./project`, to `web-db`, which builds `./project/db`. The
+  board has DB setup (`db.py`), API routes, Models and Database
+  (`services.web-db`). The two pieces support DB setup -> Database. Without
+  that relationship, the check warns `RELATIONSHIP_UNDRAWN` on Database with
+  both pieces. API routes -> Database is `RELATIONSHIP_UNSUPPORTED` with
+  `missing: code`. Compose sets `DATABASE_URL` and `DATABASE_TEST_URL` to the
+  database for the code of the routes. The routes reach the database through
+  the ORM that `db.py` sets up. An anchor at the ORM call is the repair. The pass
+  over these boards and the `awesome-compose` board took 194 ms cold and 125
+  to 129 ms warm.
+- The dogfood vault: the join changed no finding. The repository has no
+  compose file, and no relationship of the vault is unsupported.
+- Terraform and Kubernetes were not tried on a real project. Their join is
+  owned by `src/runtime/code-check/tests/network-hop.test.ts`: a Lambda
+  function's `environment` block, and a Deployment's `env` and `envFrom`.
+
 #### Resolving candidates with the TypeScript language server
 
 TASK-367.13 measured the language server on 2026-10-06. It used Bun 1.4.2 and
@@ -842,10 +873,39 @@ host that it reads as an address. An env file (`.env`, `<name>.env`) is a
 format of its own, which dotenv libraries and Kustomize read too: its adapter
 gives the names that it sets and never a value.
 
-The strongest result joins code and infrastructure. The code reads
-`QUEUE_URL`, and the infrastructure sets `QUEUE_URL` for that service to the
+The strongest result joins code and infrastructure (TASK-367.23). The code
+reads `QUEUE_URL`, and the infrastructure sets `QUEUE_URL` for that code to the
 address of a queue. Together they prove a relationship across a network hop,
-which no code analysis can prove alone.
+which no code analysis can prove alone. A read is an environment name in a
+file that a language adapter reads. A setting is an environment name in
+infrastructure. In compose, it is in a service's `environment`, or in an env
+file that the service names. In Kubernetes, it is in a workload's `env`, or in
+a ConfigMap or Secret key that `envFrom` passes on. In Terraform, it is in a
+resource: a map under `variables` in an `environment` block, an
+`environment_variables`, `runtime_environment_variables` or `app_settings`
+map, or an `env` block with a literal `name`.
+
+Infrastructure runs code in two ways. First, a compose service runs the code
+of the directory that it builds. That is its build context. If the context is
+the directory of the compose file, it is the directory of its Dockerfile, as
+a monorepo builds each service from its root. The deepest build that holds a
+file runs it. Second, a declaration runs the code of a part that the board
+draws inside a part bound to it. A Kubernetes workload's image, a Lambda
+function's archive or an image built elsewhere names no directory, so the
+board must say it. A value reaches the parts whose code the named declaration
+runs, by the same two rules. Otherwise it reaches the part that owns that
+declaration. In Kubernetes, a Service that no part binds leads to the
+workloads that it picks. In Terraform, a value reaches what its references
+reach through variables, module arguments, outputs and locals. The
+read and the setting are two pieces of resolved configured-path evidence. Both
+go from the part that reads to the part reached.
+
+Some relationships have a kind that accepts a configured path, and nothing
+supports them. For such a relationship, `RELATIONSHIP_UNSUPPORTED` says which
+side has no evidence in `missing`. Take a value that the infrastructure sets
+to the address of the end, for the code of the start. If that code reads none
+of those names, `missing` is `code`. If the code of the start reads names that
+nothing sets for it, `missing` is `infrastructure`.
 
 ### Safety
 

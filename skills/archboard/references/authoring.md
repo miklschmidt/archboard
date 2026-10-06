@@ -439,6 +439,40 @@ The file
 once and keeps the candidates. A server that did not answer is
 `language-server-failed`.
 
+A relationship across a network hop shows no evidence in code alone. An
+example is an `http` call to another service. So `check --code` joins two
+halves. The code of the start reads an environment value, such as
+`process.env.ORDERS_URL` or `os.environ["DATABASE_URL"]`. The infrastructure
+that runs that code sets the value to the address of the end. In compose, that
+is a service's `environment` or `env_file`. In Kubernetes, it is a workload's
+`env` or `envFrom`. In Terraform, it is a resource's
+`environment { variables = { ... } }`, `environment_variables`, `app_settings`
+or `env` block. Together the halves are configured-path evidence. By default,
+`http`, `rpc`, `event`, `queue`, `data` and `dependency` accept it. The check
+knows which infrastructure runs which code in two ways:
+
+- A compose service runs the code of the directory that it builds, such as
+  `build: ./orders`. If the build context is the directory of the compose
+  file, the directory of its Dockerfile counts, such as
+  `dockerfile: orders/Dockerfile`. The deepest build that holds a file runs it.
+- Code inside a part bound to a service, a workload or a resource runs there.
+  Use this for an image built elsewhere, a Kubernetes workload or a Lambda
+  function: draw the code inside the part bound to `services.worker`,
+  `Deployment/worker` or `aws_lambda_function.worker`.
+
+The value reaches the part whose code the named service runs, by the same two
+rules. Otherwise it reaches the part bound to the service or resource that it
+names. A Kubernetes Service that no part binds leads to the workloads that it
+picks. With both halves, the relationship needs no anchor.
+With one half, `RELATIONSHIP_UNSUPPORTED` names the side with no evidence in
+`missing`. If the infrastructure sets a value to the address of the end, and
+the code of the start reads none of those names, it is `code`. If the code of
+the start reads names that nothing sets for it, it is `infrastructure`. Then
+anchor the relationship at the file that reads the value, with the
+name of the value as `symbol`, such as `DATABASE_URL`. If the code reads no
+value, anchor the line that makes the call. A library can read the value, or
+the code can hold the address.
+
 For a container bound to a module, `check --code` also holds the interface
 that the board derives against what the module exposes. The module is a bound
 directory, or the `index.ts` or `__init__.py` that stands for one. In
