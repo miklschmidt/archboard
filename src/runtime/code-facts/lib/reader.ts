@@ -6,15 +6,18 @@
 // and hashes every file again; where hash and adapter match it takes the facts
 // from the entry, and otherwise it parses and replaces the entry. So a pass
 // always sees an edit, an uncommitted one too, and the cache never holds more
-// than one entry for a file. A file read as text is not kept: its facts are
-// its bytes, which the pass reads anyway.
+// than one entry for a file. Each pass drops the entries of files that no
+// longer exist, so a deleted or renamed file leaves nothing behind. A file
+// read as text is not kept: its facts are its bytes, which the pass reads
+// anyway.
 //
 // What depends on other files, an import resolved through `tsconfig.json`, is
 // resolved again on each pass from the cached facts. A pass reads a file only
 // where its symbolic links lead to a file the caller lists for its checkout,
 // and never Terraform state, variable files or `.terraform`. Parsing is
-// synchronous, so the pass yields to the event loop after each parse, and the
-// server's polls and sockets wait for one file at most.
+// synchronous, so parses run one at a time, also for files read together, and
+// each one yields to the event loop before the next starts: the server's polls
+// and sockets wait for one file at most.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -135,12 +138,39 @@ interface CodeFacts {
 	pass(signal: AbortSignal): FactsPass;
 }
 
+/** Runs parses one at a time, each followed by a turn of the event loop. */
+type Serial = <T>(work: () => Promise<T>) => Promise<T>;
+
+/**
+ * A queue that runs work one at a time and lets the event loop run between
+ * two pieces of work. Files read together resolve their bytes together, and
+ * without it their parses run back to back in one turn of the loop.
+ * @returns The queue.
+ */
+function serialQueue(): Serial {
+	let tail: Promise<void> = Promise.resolve();
+	return (work) => {
+		const run = tail.then(work);
+		tail = run.then(yieldToEventLoop, yieldToEventLoop);
+		return run;
+	};
+}
+
+/**
+ * Drop the entries of files that no longer exist.
+ * @param cache The cache.
+ */
+function dropGone(cache: Map<string, Entry>): void {
+	for (const absolute of cache.keys()) if (!fs.existsSync(absolute)) cache.delete(absolute);
+}
+
 /**
  * The cache and its passes.
  * @returns An empty cache.
  */
 function createCodeFacts(): CodeFacts {
 	const cache = new Map<string, Entry>();
+	const serial = serialQueue();
 	return {
 		/**
 		 * Start a pass.
@@ -148,15 +178,24 @@ function createCodeFacts(): CodeFacts {
 		 * @returns The pass.
 		 */
 		pass(signal) {
-			return createPass(cache, signal);
+			dropGone(cache);
+			return createPass({ cache, serial, signal });
 		},
 	};
 }
 
+/** What reading one file needs from its pass. */
+interface PassContext {
+	readonly cache: Map<string, Entry>;
+	readonly serial: Serial;
+	readonly signal: AbortSignal;
+}
+
 /**
  * The parsed facts of a file's bytes: from the cache when it holds them,
- * else parsed now, replacing the file's entry.
- * @param cache The cache.
+ * else parsed now, after every parse queued before it, replacing the file's
+ * entry.
+ * @param context The cache, its queue and the pass's signal.
  * @param absolute The real file.
  * @param bytes Its bytes.
  * @param grammar The grammar that reads it.
@@ -164,22 +203,24 @@ function createCodeFacts(): CodeFacts {
  * @returns The facts.
  */
 async function parsedFacts(
-	cache: Map<string, Entry>,
+	context: PassContext,
 	absolute: string,
 	bytes: Uint8Array,
 	grammar: GrammarName,
 	stats: PassStats,
 ): Promise<ParsedFacts> {
 	const hash = Bun.hash(bytes);
-	const entry = cache.get(absolute);
+	const entry = context.cache.get(absolute);
 	if (entry?.hash === hash && entry.grammar === grammar) {
 		stats.cached += 1;
 		return entry.facts;
 	}
-	const facts = await parse(bytes, grammar);
-	cache.set(absolute, { hash, grammar, facts });
+	const facts = await context.serial(() => {
+		context.signal.throwIfAborted();
+		return parse(bytes, grammar);
+	});
+	context.cache.set(absolute, { hash, grammar, facts });
 	stats.parsed += 1;
-	await yieldToEventLoop();
 	return facts;
 }
 
@@ -203,11 +244,11 @@ async function parse(bytes: Uint8Array, grammar: GrammarName): Promise<ParsedFac
 
 /**
  * One pass through the cache.
- * @param cache The cache.
- * @param signal Cancels the pass between two files.
+ * @param context The cache, its queue, and the signal that cancels the pass between two files.
  * @returns The pass.
  */
-function createPass(cache: Map<string, Entry>, signal: AbortSignal): FactsPass {
+function createPass(context: PassContext): FactsPass {
+	const { signal } = context;
 	const stats: PassStats = { read: 0, parsed: 0, cached: 0 };
 	const reads = new Map<string, Promise<FileFacts | undefined>>();
 	const resolvers = new Map<string, ModuleResolver>();
@@ -247,7 +288,7 @@ function createPass(cache: Map<string, Entry>, signal: AbortSignal): FactsPass {
 		if (grammar === undefined) {
 			return { adapter: "text", path: target.relative, text: new TextDecoder().decode(bytes) };
 		}
-		const parsed = await parsedFacts(cache, target.absolute, bytes, grammar, stats);
+		const parsed = await parsedFacts(context, target.absolute, bytes, grammar, stats);
 		return resolved(parsed, target.relative, resolverOf(checkout));
 	};
 	return {

@@ -247,13 +247,17 @@ function definitionOf(
 
 /**
  * The names a file exports by name, with no declaration of their own there:
- * `export { name }` and `export default name`.
+ * `export { name }`, `export { name as default }` and `export default name`.
  * @param names The names of `export { ... }`.
  * @param defaults The names of `export default`.
  * @returns Each name and its visibility.
  */
 function exportedNames(names: readonly Node[], defaults: readonly Node[]): Map<string, string> {
-	const exported = new Map<string, string>(names.map((name) => [name.text, "export"]));
+	const exported = new Map<string, string>();
+	for (const name of names) {
+		const alias = name.parent?.childForFieldName("alias")?.text;
+		exported.set(name.text, alias === "default" ? "export default" : "export");
+	}
 	for (const name of defaults) exported.set(name.text, "export default");
 	return exported;
 }

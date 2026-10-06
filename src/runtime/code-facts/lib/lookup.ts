@@ -96,4 +96,4 @@ function notFound(unparsed: readonly Unparsed[], symbol: string): Found {
 	return part === undefined ? { status: "absent" } : { status: "unparsed", unparsed: part };
 }
 
-export { type Accept, type Found, definitionsNamed, findSymbol };
+export { type Accept, type Found, definitionsNamed, endsWithNames, findSymbol };

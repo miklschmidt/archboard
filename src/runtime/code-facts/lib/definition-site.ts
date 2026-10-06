@@ -7,10 +7,9 @@
 // (TASK-367.13).
 
 import type { Definition, SyntaxFacts, Target } from "@/runtime/code-facts/lib/facts";
-import { definitionsNamed } from "@/runtime/code-facts/lib/lookup";
+import { definitionsNamed, endsWithNames } from "@/runtime/code-facts/lib/lookup";
 import type { CheckoutFiles } from "@/runtime/code-facts/lib/module-resolution";
 import type { FactsPass } from "@/runtime/code-facts/lib/reader";
-import { lastName } from "@/runtime/code-facts/lib/text-reading";
 
 /** How many files a chain of re-exports may pass through before the search gives up. */
 const CHAIN_DEPTH = 16;
@@ -39,7 +38,9 @@ function joined(target: Target, rest: readonly string[]): Target {
 /**
  * Where the asking file's uses of a symbol lead: a use of the symbol or of
  * its first names that an import names, the longest spelling first, then a
- * use of its last name.
+ * use whose spelling ends with the symbol's names, as `Ledger.post` ends with
+ * `post`. A use that only shares the last name, as `read` does with
+ * `store.read`, is another name, and leads nowhere.
  * @param facts The asking file's facts.
  * @param symbol The symbol.
  * @returns Each target, in that order.
@@ -55,11 +56,26 @@ function usedTargets(facts: SyntaxFacts, symbol: string): Target[] {
 				: [],
 		);
 	});
-	const name = lastName(symbol);
-	const byLastName = facts.references.flatMap((reference) =>
-		lastName(reference.symbol) === name && reference.target !== undefined ? [reference.target] : [],
+	const byTail = facts.references.flatMap((reference) =>
+		endsWithNames(reference.symbol, symbol) && reference.target !== undefined
+			? [reference.target]
+			: [],
 	);
-	return [...byPrefix, ...byLastName].filter((target) => target.symbol !== "");
+	return [...byPrefix, ...byTail].filter((target) => target.symbol !== "");
+}
+
+/**
+ * A symbol as the file that defines it names it: `default`, what an import of
+ * the default export reaches, is the name the file exports by default.
+ * @param definitions The file's definitions.
+ * @param symbol The symbol in the file.
+ * @returns The symbol, with `default` replaced where the file names it.
+ */
+function ownSpelling(definitions: readonly Definition[], symbol: string): string {
+	const [first, ...rest] = symbol.split(".");
+	if (first !== "default") return symbol;
+	const exported = definitions.find((definition) => definition.visibility === "export default");
+	return exported === undefined ? symbol : [exported.symbol, ...rest].join(".");
 }
 
 /**
@@ -98,26 +114,48 @@ async function firstSite(
 	return undefined;
 }
 
+/** One search for a definition: the pass, the checkout, and each file and name it has looked in. */
+interface Search {
+	readonly pass: FactsPass;
+	readonly checkout: CheckoutFiles;
+	readonly seen: Set<string>;
+}
+
+/**
+ * Whether a search looks in a file for a name: not past the depth of a chain,
+ * and not where it has looked already, so a cycle of re-exports ends.
+ * @param search The search, which notes the file and the name.
+ * @param target The file and the name.
+ * @param depth How many more files the chain may pass through.
+ * @returns True the first time, within the depth.
+ */
+function looksIn(search: Search, target: Target, depth: number): boolean {
+	const key = `${target.path}\0${target.symbol}`;
+	if (depth < 0 || search.seen.has(key)) return false;
+	search.seen.add(key);
+	return true;
+}
+
 /**
  * Follow a symbol to the file that defines it.
- * @param pass The pass.
- * @param checkout The checkout.
+ * @param search The search.
  * @param target The file and the name to find there.
  * @param depth How many more files the chain may pass through.
  * @returns The site, or undefined when no file on the chain defines it.
  */
 async function follow(
-	pass: FactsPass,
-	checkout: CheckoutFiles,
+	search: Search,
 	target: Target,
 	depth: number,
 ): Promise<DefinitionSite | undefined> {
-	const facts = depth < 0 ? undefined : await pass.read(checkout, target.path);
+	if (!looksIn(search, target, depth)) return undefined;
+	const facts = await search.pass.read(search.checkout, target.path);
 	if (facts?.adapter !== "typescript") return undefined;
-	const definition = definitionsNamed(facts.definitions, target.symbol)[0];
+	const symbol = ownSpelling(facts.definitions, target.symbol);
+	const definition = definitionsNamed(facts.definitions, symbol)[0];
 	if (definition !== undefined) return { path: facts.path, definition, via: [] };
-	const site = await firstSite(reexportTargets(facts, target.symbol), (next) =>
-		follow(pass, checkout, next, depth - 1),
+	const site = await firstSite(reexportTargets(facts, symbol), (next) =>
+		follow(search, next, depth - 1),
 	);
 	return site === undefined ? undefined : { ...site, via: [facts.path, ...site.via] };
 }
@@ -141,9 +179,8 @@ async function definitionSite(
 	if (facts?.adapter !== "typescript") return undefined;
 	const own = definitionsNamed(facts.definitions, symbol)[0];
 	if (own !== undefined) return { path: facts.path, definition: own, via: [] };
-	return firstSite(usedTargets(facts, symbol), (target) =>
-		follow(pass, checkout, target, CHAIN_DEPTH),
-	);
+	const search: Search = { pass, checkout, seen: new Set() };
+	return firstSite(usedTargets(facts, symbol), (target) => follow(search, target, CHAIN_DEPTH));
 }
 
 export { type DefinitionSite, definitionSite };
