@@ -1,9 +1,10 @@
-// What a pointer does on the diagram: press, drag, throw, pick and open.
+// What a pointer does on the diagram: press, drag, pick and open.
 //
 // A press that travels no further than a small tolerance is a click that picks
 // what it landed on. One that travels further pans the diagram and picks
-// nothing, and a drag let go while it was still moving is thrown: the camera
-// carries on at the speed it had and slows to rest.
+// nothing. When the drag is let go the camera stops where it is drawn, however
+// fast the hand was moving: a picture that carries on alone moves the part the
+// reader aimed at out from under them.
 
 import {
 	useCallback,
@@ -16,7 +17,6 @@ import {
 import type { SemanticAtlas } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import type { Gesture } from "@/ui/semantic-board-canvas/components/CameraSurface";
 import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
-import { throwOf, trailWith, type Sample } from "@/ui/semantic-board-canvas/lib/camera-motion";
 import {
 	capturePointer,
 	hasTravelled,
@@ -74,8 +74,6 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 	const [gesture, setGesture] = useState<Gesture>("idle");
 	const drag = useRef<Drag | null>(null);
 	const dragged = useRef(false);
-	// Where the pointer was in the last moments of a drag, which is how fast it was going.
-	const trail = useRef<readonly Sample[]>([]);
 	// What the last press landed on, carried from pointerup to the click that
 	// follows it. A click is the only event that means "the person picked this",
 	// and it is the one event whose target cannot be trusted to say what. The
@@ -101,9 +99,8 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 				pressed: subjectAt(event.target, atlas),
 				captured: false,
 			};
-			trail.current = [{ t: event.timeStamp, x: event.clientX, y: event.clientY }];
 			dragged.current = false;
-			// A press stops a thrown drag where it is, before anything else is decided.
+			// A press stops a zoom or an ease where it is, before anything else is decided.
 			camera.stop();
 			setGesture("pressed");
 			dismissTip();
@@ -117,7 +114,6 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 		drag.current = null;
 		dragged.current = false;
 		pressed.current = null;
-		trail.current = [];
 		setGesture("idle");
 	}, []);
 
@@ -133,11 +129,6 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 				y: event.clientY,
 				captured: takePointerToPan(event, started, panned),
 			};
-			trail.current = trailWith(trail.current, {
-				t: event.timeStamp,
-				x: event.clientX,
-				y: event.clientY,
-			});
 			camera.panBy(event.clientX - started.x, event.clientY - started.y);
 		},
 		[camera],
@@ -167,24 +158,18 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 		[abandon, onHover, panStep],
 	);
 
-	const onPointerUp = useCallback(
-		(event: PointerEvent<HTMLElement>): void => {
-			const started = drag.current;
-			if (started?.pointerId !== event.pointerId) {
-				return;
-			}
-			pressed.current = { subject: started.pressed };
-			drag.current = null;
-			setGesture("idle");
-			if (started.captured) {
-				capturePointer(event.currentTarget, event.pointerId, false);
-			}
-			const thrown = dragged.current ? throwOf(trail.current, event.timeStamp) : null;
-			trail.current = [];
-			if (thrown !== null) camera.fling(thrown);
-		},
-		[camera],
-	);
+	const onPointerUp = useCallback((event: PointerEvent<HTMLElement>): void => {
+		const started = drag.current;
+		if (started?.pointerId !== event.pointerId) {
+			return;
+		}
+		pressed.current = { subject: started.pressed };
+		drag.current = null;
+		setGesture("idle");
+		if (started.captured) {
+			capturePointer(event.currentTarget, event.pointerId, false);
+		}
+	}, []);
 
 	// A gesture the browser took away never became a pick. Whatever the press
 	// landed on is forgotten, so the next click cannot inherit it.

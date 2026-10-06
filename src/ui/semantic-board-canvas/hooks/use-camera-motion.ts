@@ -1,4 +1,4 @@
-// Driving a camera's zooms, eases and thrown drags, one frame at a time.
+// Driving a camera's zooms and eases, one frame at a time.
 //
 // The loop runs only while the camera is moving: a wheel starts it, rest ends
 // it, and an idle page carries no timer (TASK-385). Each frame is drawn through
@@ -7,7 +7,7 @@
 // It runs on the frame clock, like every glide, so a stepped clock can drive it.
 //
 // A person who asked for reduced motion gets none of it: a zoom or a move lands
-// at once and a thrown drag stops where it is let go.
+// at once.
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
@@ -17,14 +17,13 @@ import { panCamera, zoomCameraAbout, type Camera } from "@/ui/semantic-board-can
 import {
 	STILL,
 	easeMotion,
-	flingMotion,
 	stepMotion,
 	zoomMotion,
 	type Motion,
 	type Pair,
 } from "@/ui/semantic-board-canvas/lib/camera-motion";
 
-/** Where the camera is drawn, and how to draw it somewhere else. */
+/** Where the camera is drawn, and how a hand draws it somewhere else. */
 interface CameraStage {
 	/**
 	 * Where the camera is drawn now.
@@ -32,13 +31,11 @@ interface CameraStage {
 	 */
 	readonly read: () => Camera;
 	/**
-	 * Draw the camera somewhere.
+	 * Draw the camera somewhere, as a hand's move: a wheel, a pinch or a key.
 	 * @param camera Where.
 	 * @param instant Whether the surface lands there at once, rather than easing there itself.
-	 * @param byHand Whether a hand is still moving the camera: a wheel or a key, and not a
-	 * thrown drag coasting on after the hand let go of it.
 	 */
-	readonly draw: (camera: Camera, instant: boolean, byHand: boolean) => void;
+	readonly draw: (camera: Camera, instant: boolean) => void;
 }
 
 /** The moves of a camera that run over many frames. */
@@ -55,17 +52,12 @@ interface CameraMotion {
 	 * @param dy How far down, in viewport pixels.
 	 */
 	readonly ease: (dx: number, dy: number) => void;
-	/**
-	 * Carry on at the speed a drag was let go at.
-	 * @param speed How fast, in pixels per millisecond.
-	 */
-	readonly fling: (speed: Pair) => void;
 	/** Stop where the camera is drawn, so whatever moves next starts from what was seen. */
 	readonly halt: () => void;
 }
 
 /**
- * The frame loop behind a camera's zooms, eases and thrown drags.
+ * The frame loop behind a camera's zooms and eases.
  * @param stage Where the camera is drawn.
  * @param reducedMotion Whether the person asked for no motion.
  * @returns How to start a move, and how to stop one.
@@ -105,7 +97,7 @@ function useCameraMotion(stage: CameraStage, reducedMotion: boolean): CameraMoti
 				lastAt.current = now;
 				const stepped = stepMotion(stage.read(), current, dt);
 				motion.current = stepped.motion;
-				stage.draw(stepped.camera, true, current.fling === null);
+				stage.draw(stepped.camera, true);
 				if (stepped.motion !== null) {
 					frame.current = clock.requestFrame(tick);
 				}
@@ -121,7 +113,7 @@ function useCameraMotion(stage: CameraStage, reducedMotion: boolean): CameraMoti
 	const zoomAt = useCallback(
 		(factor: number, at: Pair): void => {
 			if (reducedMotion || !frameClock().animates) {
-				stage.draw(zoomCameraAbout(stage.read(), factor, at.x, at.y), false, true);
+				stage.draw(zoomCameraAbout(stage.read(), factor, at.x, at.y), false);
 				return;
 			}
 			const before = motion.current ?? STILL;
@@ -136,7 +128,7 @@ function useCameraMotion(stage: CameraStage, reducedMotion: boolean): CameraMoti
 	const ease = useCallback(
 		(dx: number, dy: number): void => {
 			if (reducedMotion || !frameClock().animates) {
-				stage.draw(panCamera(stage.read(), dx, dy), false, true);
+				stage.draw(panCamera(stage.read(), dx, dy), false);
 				return;
 			}
 			run(easeMotion(motion.current ?? STILL, dx, dy));
@@ -144,16 +136,7 @@ function useCameraMotion(stage: CameraStage, reducedMotion: boolean): CameraMoti
 		[reducedMotion, run, stage],
 	);
 
-	const fling = useCallback(
-		(speed: Pair): void => {
-			if (!reducedMotion && frameClock().animates) {
-				run(flingMotion(speed));
-			}
-		},
-		[reducedMotion, run],
-	);
-
-	return useMemo(() => ({ zoomAt, ease, fling, halt }), [zoomAt, ease, fling, halt]);
+	return useMemo(() => ({ zoomAt, ease, halt }), [zoomAt, ease, halt]);
 }
 
 export { useCameraMotion, type CameraMotion, type CameraStage };
