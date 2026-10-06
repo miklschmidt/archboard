@@ -24,11 +24,13 @@
 // receives. A relationship with an anchor is judged only by its anchor.
 //
 // Where no accepted evidence supports a relationship whose kind accepts a
-// build dependency, and the code of its start holds a Nix expression the
-// static reading cannot follow, such as a package `callPackage` builds from
-// another file, what that code is built from is unknown. The relationship is
-// then skipped as `expression-not-followed`, never reported unsupported
-// (TASK-367.22).
+// build dependency, the code of its start holds a Nix expression the static
+// reading cannot follow, such as a package `callPackage` builds from another
+// file, and the code of its end holds an output of the same flake, what the
+// start is built from is unknown. The relationship is then skipped as
+// `expression-not-followed`, never reported unsupported (TASK-367.22). A
+// build dependency in a flake reaches only that flake's outputs, so a
+// relationship to any other code is judged.
 //
 // Across a network hop, the evidence is the join of code and infrastructure
 // (environment-join.ts): the code reads a value that the infrastructure that
@@ -400,31 +402,46 @@ function judgeEdge(
 		};
 	}
 	return (
-		notFollowed(reading, edge, start) ?? unsupportedFinding(reading, edge, onePer(between, pairOf))
+		notFollowed(reading, edge, { start, end }) ??
+		unsupportedFinding(reading, edge, onePer(between, pairOf))
 	);
 }
 
 /**
  * Why the check cannot tell that no build dependency supports a
- * relationship: its kind accepts one, and the code of its start, or of a part
- * inside it, holds a Nix expression the static reading cannot follow.
+ * relationship: its kind accepts one, the code of its start, or of a part
+ * inside it, holds a Nix expression the static reading cannot follow, and the
+ * code of its end holds an output of the same flake, which that expression
+ * may name. A build dependency in a flake reaches only the outputs of that
+ * flake, so a relationship to any other code is judged.
  * @param reading The board.
  * @param edge The relationship.
- * @param start Its start and every part inside it.
- * @returns The skip, which names the file and lines of the expression, or nothing.
+ * @param ends Its start and its end, each with every part inside it.
+ * @param ends.start Its start and every part inside it.
+ * @param ends.end Its end and every part inside it.
+ * @returns The skip, which names the part, the file and the lines of the expression, or nothing.
  */
 function notFollowed(
 	reading: RelationshipReading,
 	edge: SemanticEdge,
-	start: ReadonlySet<string>,
+	ends: { readonly start: ReadonlySet<string>; readonly end: ReadonlySet<string> },
 ): Exclude<Unjudged, "silent"> | undefined {
 	if (!accepts(reading, edge.kind, "build-dependency")) return undefined;
-	const { unfollowed } = reading.evidence;
-	const part = [...start].find((id) => unfollowed.has(id));
-	const code = part === undefined ? undefined : reading.codes.get(part);
-	if (!isRead(code)) return undefined;
-	const detail = [code.node.name, unfollowed.get(code.node.id)].join(": ");
-	return { reason: "expression-not-followed", repo: code.checkout.repo, detail };
+	const reached = new Set(
+		[...ends.end].flatMap((id) => {
+			const code = reading.codes.get(id);
+			return isRead(code) ? code.files.map((file) => `${code.checkout.repo}\0${file}`) : [];
+		}),
+	);
+	for (const id of ends.start) {
+		const found = [...(reading.evidence.unfollowed.get(id) ?? [])].find(([at]) => reached.has(at));
+		const code = reading.codes.get(id);
+		if (found !== undefined && isRead(code)) {
+			const detail = `${code.node.name}: ${found[1]}`;
+			return { reason: "expression-not-followed", repo: code.checkout.repo, detail };
+		}
+	}
+	return undefined;
 }
 
 /**

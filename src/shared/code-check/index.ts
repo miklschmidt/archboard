@@ -115,8 +115,13 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *   Nix expression the static reading of a flake cannot follow, such as an
  *   `import` or a list of systems that an input gives (TASK-367.21), or in a
  *   Helm template, whose names only Helm gives when it renders it
- *   (TASK-367.19). Its `detail` names the file and the lines of the
- *   expression or the template.
+ *   (TASK-367.19). Also a relationship with no anchor that no evidence its
+ *   kind accepts supports, whose kind accepts a build dependency, whose start
+ *   holds a Nix expression the reading cannot follow, such as a package that
+ *   `callPackage` builds from another file, and whose end holds an output of
+ *   the same flake: what the start is built from is unknown (TASK-367.22).
+ *   Its `detail` names the file and the lines of the expression or the
+ *   template, after the part that holds the expression for a relationship.
  * - `text-only`: the check read files of a checkout that no grammar reads as
  *   text, so it judged their anchors and bound symbols by name and nothing
  *   that needs references. Its `detail` names the kinds of file.
