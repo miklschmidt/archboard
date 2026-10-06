@@ -21,10 +21,12 @@ import type { Box } from "@/transformers/semantic-renderer/lib/geometry";
 import type { NodeAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
 import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
 import { measure, truncate } from "@/transformers/semantic-renderer/lib/text";
-import { DRILL_MARK_ROOM } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
+import {
+	DRILL_MARK_ROOM,
+	cornerDrillMark,
+} from "@/transformers/semantic-renderer/lib/svg/drill-mark";
 import {
 	farLayer,
-	farMark,
 	movingWords,
 	nearLayer,
 	sharedChip,
@@ -266,8 +268,6 @@ interface NearCard {
 	readonly chip: { readonly markup: string; readonly x: number; readonly y: number };
 	/** Its name and responsibility. */
 	readonly words: Words;
-	/** The mark of a board it opens, or nothing. It stays where it is and fades. */
-	readonly mark: string;
 }
 
 /**
@@ -302,7 +302,8 @@ function wordsOf(runs: readonly TextRun[], box: Box, palette: Palette): Words {
  * away the chip grows to a tile down the card's start, and beside it stand the
  * name and the start of the responsibility, at a size that still reads. The
  * stylesheet moves the chip and the words between the two places when the
- * picture swaps its views.
+ * picture swaps its views. The mark of a board the card opens stands at one
+ * place in both views, larger from far away, and fades with its view.
  * @param node What the card says.
  * @param node.name The card's name.
  * @param node.responsibility What it is responsible for, when it says.
@@ -311,7 +312,6 @@ function wordsOf(runs: readonly TextRun[], box: Box, palette: Palette): Words {
  * @param look.appearance Its type chip's colour and glyph, and whether it opens a board.
  * @param look.palette The selected theme for its words.
  * @param near What the card draws near.
- * @param unsettled Whether the card wears the warning badge.
  * @returns The chip, the near layer and the far layer.
  */
 function paintCardViews(
@@ -319,12 +319,18 @@ function paintCardViews(
 	box: Box,
 	look: { appearance: NodeAppearance; palette: Palette },
 	near: NearCard,
-	unsettled: boolean,
 ): string {
+	const { drill } = look.appearance;
+	/**
+	 * The mark of a board the card opens, at one size, or nothing.
+	 * @param scale How much larger than near it is drawn.
+	 * @returns The mark.
+	 */
+	const mark = (scale: number): string =>
+		drill === null ? "" : cornerDrillMark(box, drill, look.palette.glyph, scale);
 	const tile = Math.min(TILE, box.height - EDGE * 2);
 	const x = EDGE + tile + EDGE;
-	const room =
-		box.width - x - END - (look.appearance.drill === null ? 0 : DRILL_MARK_ROOM * MARK_SCALE);
+	const room = box.width - x - END - (drill === null ? 0 : DRILL_MARK_ROOM * MARK_SCALE);
 	const gist = node.responsibility?.trim() === "" ? undefined : node.responsibility;
 	const stack = settle(node.name, gist, room, box.height - PAD_Y * 2);
 	const far = wordsOf(runsOf(stack, x, (box.height - stack.height) / 2), box, look.palette);
@@ -332,11 +338,8 @@ function paintCardViews(
 	const farChip: ChipPlace = { x: box.x + EDGE, y: box.y + (box.height - tile) / 2, size: tile };
 	return fragments([
 		sharedChip(near.chip.markup, nearChip, farChip),
-		nearLayer(movingWords(near.words.markup, near.words.anchor, far.anchor) + near.mark),
-		farLayer(
-			movingWords(far.markup, far.anchor, near.words.anchor) +
-				farMark(box, MARK_SCALE, look, unsettled),
-		),
+		nearLayer(movingWords(near.words.markup, near.words.anchor, far.anchor) + mark(1)),
+		farLayer(movingWords(far.markup, far.anchor, near.words.anchor) + mark(MARK_SCALE)),
 	]);
 }
 

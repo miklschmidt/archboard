@@ -3,8 +3,8 @@
 // far class on the picture, when the picture's stylesheet swaps it for the near
 // one. A card's, and a container's header, which reads like a card from far
 // away, are drawn by far-card.ts; a group's caption by regions.ts. This file
-// holds the layers and the parts they share: the shared chip, the words that
-// move and the grown mark.
+// holds the layers and the parts they share: the shared chip and the words
+// that move.
 //
 // A card's swap is a shared element transition (TASK-428). Its kind's chip is
 // one element, outside both layers, drawn at its near place. The picture's
@@ -14,16 +14,8 @@
 // and fade between the two places. A reader that ignores the stylesheet draws
 // the chip and the words where they stand near.
 import { ICON_CHIP_SIZE } from "@/transformers/semantic-renderer/lib/design";
-import { coord, type Box } from "@/transformers/semantic-renderer/lib/geometry";
-import type { NodeAppearance } from "@/transformers/semantic-renderer/lib/semantic-appearance";
-import type { Palette } from "@/transformers/semantic-renderer/lib/theme";
-import {
-	DRILL_MARK_RADIUS,
-	DRILL_MARK_REACH,
-	drillMark,
-} from "@/transformers/semantic-renderer/lib/svg/drill-mark";
+import { coord } from "@/transformers/semantic-renderer/lib/geometry";
 import { wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
-import { BADGE_DEPTH } from "@/transformers/semantic-renderer/lib/svg/standing";
 
 /** The part of a card drawn when the picture is seen near: its name, responsibility and mark. */
 const NEAR_CLASS = "ab-near";
@@ -41,8 +33,6 @@ const NEAR_PLACE = "--near";
 const FAR_PLACE = "--far";
 /** The property that holds where a layer's words stand while their layer is hidden. */
 const AWAY_PLACE = "--away";
-/** The room a far mark keeps below the warning badge in its corner. */
-const BADGE_GAP = 2;
 
 /** Where a chip stands: its top left corner and its side. */
 interface ChipPlace {
@@ -145,32 +135,6 @@ function farLayer(markup: string): string {
 	return wrap("g", { class: FAR_CLASS, display: "none" }, markup);
 }
 
-/**
- * The mark of a part that opens another board, grown, in the corner it keeps
- * from near: its centre a radius and a half in from the top and the side.
- * The warning badge does not grow and stands in the same corner, so on an
- * unsettled part the mark stands lower, its ring starting {@link BADGE_GAP}
- * below the badge.
- * @param box The card's box, or a container's header.
- * @param scale How much larger than near it is drawn.
- * @param look Which way the board it opens lies, and the selected theme.
- * @param look.appearance Whether the part opens a board and which way.
- * @param look.palette The selected theme.
- * @param unsettled Whether the part wears the warning badge.
- * @returns The mark, or nothing for a part that opens none.
- */
-function farMark(
-	box: Box,
-	scale: number,
-	{ appearance, palette }: { appearance: NodeAppearance; palette: Palette },
-	unsettled: boolean,
-): string {
-	if (appearance.drill === null) return "";
-	const inset = DRILL_MARK_RADIUS * scale * 1.5;
-	const down = unsettled ? BADGE_DEPTH + BADGE_GAP + DRILL_MARK_REACH * scale : inset;
-	return drillMark(box.x + box.width - inset, box.y + down, appearance.drill, palette.glyph, scale);
-}
-
 export {
 	AWAY_PLACE,
 	CHIP_CLASS,
@@ -181,7 +145,6 @@ export {
 	NEAR_PLACE,
 	WORDS_CLASS,
 	farLayer,
-	farMark,
 	movingWords,
 	nearLayer,
 	sharedChip,

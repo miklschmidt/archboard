@@ -3,7 +3,6 @@ import { ARCHITECTURE_CARD_PADDING } from "@/transformers/semantic-renderer/conf
 import {
 	BAND_RADIUS,
 	CARD_THICKNESS,
-	ICON_CHIP_SIZE,
 	SLAB_RADIUS,
 } from "@/transformers/semantic-renderer/lib/design";
 import type { DrawingNode } from "@/transformers/semantic-renderer/lib/drawing";
@@ -16,7 +15,6 @@ import {
 	typeChip,
 } from "@/transformers/semantic-renderer/lib/svg/appearance";
 import { halo } from "@/transformers/semantic-renderer/lib/svg/cards";
-import { cornerDrillMark } from "@/transformers/semantic-renderer/lib/svg/drill-mark";
 import { paintCardViews, wordsOf } from "@/transformers/semantic-renderer/lib/svg/far-card";
 import { lines, wrap } from "@/transformers/semantic-renderer/lib/svg/primitives";
 import {
@@ -37,29 +35,6 @@ import {
 	warningBadge,
 	type SubjectStanding,
 } from "@/transformers/semantic-renderer/lib/svg/standing";
-
-/**
- * The mark of a part that opens another board, in the corner opposite its
- * chip and level with it; nothing for a part that opens none.
- * @param box The part's box, or its header's.
- * @param box.x Its left edge.
- * @param box.y Its top edge.
- * @param box.width Its width.
- * @param padding How far in its chip sits.
- * @param appearance Its channels, which say whether it opens a board and which way.
- * @param palette The selected theme.
- * @returns The mark, or nothing.
- */
-function drillCorner(
-	box: { readonly x: number; readonly y: number; readonly width: number },
-	padding: number,
-	appearance: NodeAppearance,
-	palette: Palette,
-): string {
-	return appearance.drill === null
-		? ""
-		: cornerDrillMark(box, padding, padding + ICON_CHIP_SIZE / 2, appearance.drill, palette.glyph);
-}
 
 /**
  * Paint one measured card with its kind glyph and semantic change treatment.
@@ -106,9 +81,7 @@ function paintMeasuredCard(
 				{
 					chip: { markup: typeChip(0, 0, appearance, palette, standing), x: chipX, y: chipY },
 					words: wordsOf(measured.runs, box, words),
-					mark: drillCorner(box, ARCHITECTURE_CARD_PADDING, appearance, palette),
 				},
-				unsettled,
 			),
 			standingPin(box, standing, palette),
 			warningBadge(box, unsettled, palette),
@@ -226,9 +199,7 @@ function paintMeasuredHeader(
 						y: header.y + ARCHITECTURE_CARD_PADDING,
 					},
 					words: wordsOf(placed.measured.runs, placed.box, words),
-					mark: drillCorner(header, ARCHITECTURE_CARD_PADDING, appearance, palette),
 				},
-				unsettled,
 			),
 			warningBadge(header, unsettled, palette),
 		]),
