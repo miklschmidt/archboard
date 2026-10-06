@@ -96,9 +96,11 @@ whose fake Codex narrates. The owner checks the kept talk, the frames, the order
 in which the steps reached the voice, and `--discard`.
 `walkthrough-replay.test.ts` owns `semantic replay`. It renders a talk of a
 discarded board three times through the real replay page. The frames are the
-same each time, move at a step and hold still after it, and differ in the dark
-theme. `walkthrough-render.test.ts` owns a render that fails. Against a
-stand-in page it is `RENDER_FAILED`, keeps the talk and writes no file.
+same each time, on one page or split across two. The last frames all differ,
+because the voice box in the walkthrough box holds the orb, which never stands
+still. The dark theme is another picture from the first frame.
+`walkthrough-render.test.ts` owns a render that fails. Against a stand-in page
+it is `RENDER_FAILED`, keeps the talk and writes no file.
 `walkthrough-recording-refusals.test.ts` owns the refusals that start no browser
 and no voice. These module owners hold the parts:
 
