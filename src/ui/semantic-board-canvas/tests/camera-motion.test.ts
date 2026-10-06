@@ -2,19 +2,14 @@
 //
 // What these catch: a pinch that zooms by hundreds of times per second because
 // every event zooms by a fixed step, a zoom that drifts sideways on its way in,
-// a move that lands somewhere else when the frames are slower, and a drag let
-// go after a pause that flies off with the speed it had a moment before.
+// and a move that lands somewhere else when the frames are slower.
 
 import { describe, expect, test } from "bun:test";
 
-import { EXPLORING_MS } from "@/shared/timing/timing";
 import {
 	STILL,
 	easeMotion,
-	flingMotion,
 	stepMotion,
-	throwOf,
-	trailWith,
 	wheelZoomFactor,
 	zoomMotion,
 	type Motion,
@@ -92,16 +87,6 @@ function turn(
 	extra: Partial<{ deltaMode: number; ctrlKey: boolean }> = {},
 ): number {
 	return wheelZoomFactor({ deltaY, deltaMode: 0, ctrlKey: false, ...extra });
-}
-
-/**
- * Where a pointer was, and when.
- * @param t When, in milliseconds.
- * @param x Across.
- * @returns The sample.
- */
-function pointerAt(t: number, x: number): { t: number; x: number; y: number } {
-	return { t, x, y: 100 };
 }
 
 describe("a turn of the wheel", () => {
@@ -191,50 +176,5 @@ describe("an ease", () => {
 		// The part under the pointer when the zoom began is now 50 pixels to the right of it.
 		const was = under(START, POINTER);
 		expect(camera.x + was.x * camera.scale).toBeCloseTo(POINTER.x + 50, 6);
-	});
-});
-
-describe("a thrown drag", () => {
-	test("keeps its direction, slows to rest and goes about its speed times the fling time", () => {
-		const { camera, frames } = runToRest(START, flingMotion({ x: 1.5, y: -0.5 }), 4);
-		expect(frames).toBeGreaterThan(10);
-		expect(camera.x - START.x).toBeCloseTo(1.5 * EXPLORING_MS.cameraFling, -1);
-		expect(camera.y - START.y).toBeCloseTo(-0.5 * EXPLORING_MS.cameraFling, -1);
-	});
-
-	test("is taken over by the next zoom, and stopped by one at a limit of the zoom", () => {
-		const flung = flingMotion({ x: 1, y: 0 });
-		expect(zoomMotion(START, flung, 1.5, { x: 100, y: 100 }).fling).toBeNull();
-		const closest = { ...START, scale: 8 };
-		expect(zoomMotion(closest, flung, 1.5, { x: 100, y: 100 }).fling).toBeNull();
-	});
-});
-
-describe("letting a drag go", () => {
-	test("throws it at the speed it had in its last moments", () => {
-		let trail = trailWith([], pointerAt(0, 0));
-		for (let t = 16; t <= 96; t += 16) trail = trailWith(trail, pointerAt(t, t * 2));
-		const speed = throwOf(trail, 100);
-		expect(speed?.x).toBeCloseTo(2, 6);
-		expect(speed?.y).toBeCloseTo(0, 6);
-	});
-
-	test("does not throw a drag that had come to rest, or one that was slow", () => {
-		let trail = trailWith([], pointerAt(0, 0));
-		for (let t = 16; t <= 96; t += 16) trail = trailWith(trail, pointerAt(t, t * 2));
-		expect(throwOf(trail, 96 + 200)).toBeNull();
-		let slow = trailWith([], pointerAt(0, 0));
-		for (let t = 16; t <= 96; t += 16) slow = trailWith(slow, pointerAt(t, t * 0.1));
-		expect(throwOf(slow, 100)).toBeNull();
-		expect(throwOf([], 100)).toBeNull();
-	});
-
-	test("forgets where it was too long ago to say how fast it goes, and caps a wild flick", () => {
-		let trail = trailWith([], pointerAt(0, 0));
-		trail = trailWith(trail, pointerAt(500, 10_000));
-		trail = trailWith(trail, pointerAt(540, 10_000 + 40 * 20));
-		const speed = throwOf(trail, 545);
-		expect(speed).not.toBeNull();
-		expect(Math.hypot(speed?.x ?? 0, speed?.y ?? 0)).toBeCloseTo(3, 6);
 	});
 });

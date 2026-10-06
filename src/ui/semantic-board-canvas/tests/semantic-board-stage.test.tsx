@@ -219,61 +219,46 @@ test("a reader who asked for reduced motion has the camera land at once", async 
 	}
 });
 
-test("a drag let go while it is moving is thrown, and a press stops it where it is", async () => {
+test("a drag let go while it is moving fast stops where it is drawn", async () => {
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage();
 	await settle();
 	const frames = takeFrames();
 	try {
+		const before = cameraNow().x;
 		// 200 pixels in 80 milliseconds, let go at once: 2.5 pixels a millisecond.
 		pointerAt("pointerdown", { x: 100, t: 1000 });
 		for (let step = 1; step <= 5; step += 1) {
 			pointerAt("pointermove", { x: 100 + step * 40, t: 1000 + step * 16 });
 		}
+		const asked = frames.asked();
 		pointerAt("pointerup", { x: 300, t: 1082 });
 		const letGo = cameraNow().x;
-		frames.run(100);
-		const drifting = cameraNow().x;
-		expect(drifting).toBeGreaterThan(letGo + 50);
-		frames.run(EXPLORING_MS.cameraFling * 5);
-		const stopped = cameraNow().x;
-		expect(stopped).toBeGreaterThan(drifting);
-		// Slowed to rest: nothing moves it now.
-		frames.run(500);
-		expect(cameraNow().x).toBe(stopped);
-
-		// The same throw, stopped by a press.
-		pointerAt("pointerdown", { x: 100, t: 5000 });
-		for (let step = 1; step <= 5; step += 1) {
-			pointerAt("pointermove", { x: 100 + step * 40, t: 5000 + step * 16 });
-		}
-		pointerAt("pointerup", { x: 300, t: 5082 });
-		frames.run(100);
-		pointerAt("pointerdown", { x: 300, t: 5200 });
-		pointerAt("pointerup", { x: 300, t: 5210 });
-		const held = cameraNow().x;
-		frames.run(500);
-		expect(cameraNow().x).toBe(held);
+		expect(letGo - before).toBeCloseTo(200, 6);
+		frames.run(1000);
+		expect(cameraNow().x).toBe(letGo);
+		// Nothing carries the camera on: the release asks for no frame.
+		expect(frames.asked()).toBe(asked);
 	} finally {
 		frames.restore();
 	}
 });
 
-test("a drag let go after resting, or a slow one, is not thrown", async () => {
+test("a press stops a wheel's zoom where it is drawn", async () => {
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage();
 	await settle();
 	const frames = takeFrames();
 	try {
-		pointerAt("pointerdown", { x: 100, t: 1000 });
-		for (let step = 1; step <= 5; step += 1) {
-			pointerAt("pointermove", { x: 100 + step * 40, t: 1000 + step * 16 });
-		}
-		// The pointer rested for a good while before it was let go.
-		pointerAt("pointerup", { x: 300, t: 1400 });
-		const letGo = cameraNow().x;
-		frames.run(800);
-		expect(cameraNow().x).toBe(letGo);
+		act(() => {
+			viewport().dispatchEvent(wheelAt(-100, [200, 150]));
+		});
+		frames.run(32);
+		pointerAt("pointerdown", { x: 300, t: 5000 });
+		pointerAt("pointerup", { x: 300, t: 5010 });
+		const held = cameraNow();
+		frames.run(500);
+		expect(cameraNow()).toEqual(held);
 	} finally {
 		frames.restore();
 	}

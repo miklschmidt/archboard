@@ -18,10 +18,7 @@ export { revealCamera } from "@/ui/semantic-board-canvas/lib/reveal";
 export {
 	STILL,
 	easeMotion,
-	flingMotion,
 	stepMotion,
-	throwOf,
-	trailWith,
 	wheelZoomFactor,
 	zoomMotion,
 	type Motion,

@@ -1,7 +1,7 @@
 // The pace of a picture's traffic while the camera moves.
 //
 // Moving traffic paints its lines again on every frame, and a camera that is
-// being dragged or thrown already asks for every frame, more of them the closer
+// being dragged or eased already asks for every frame, more of them the closer
 // it is. So the traffic stands still for as long as the camera moves, and once
 // the camera has rested it does not jump back to its speed: it starts as a creep
 // and gathers speed, so a line that was still is seen to wake up.

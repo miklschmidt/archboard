@@ -3,8 +3,7 @@
 // A drag, a wheel and a key move the picture, and a hand that moves it has no use
 // for traffic that draws the eye. So the traffic of the picture stops with the first
 // move and stays stopped for as long as the hand moves it. It comes back the moment a
-// drag is let go, even if the picture is thrown and coasts on, and a moment after the
-// last turn of a wheel or press of a key. It never returns at its speed: it starts as
+// drag is let go, and a moment after the last turn of a wheel or press of a key. It never returns at its speed: it starts as
 // a creep and gathers it. What the stage moves itself, a fit or a glide to a step,
 // leaves it alone.
 

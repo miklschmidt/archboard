@@ -38,7 +38,7 @@ import {
 	type FitTarget,
 	type Size,
 } from "@/ui/semantic-board-canvas/lib/camera";
-import { wheelZoomFactor, type Pair } from "@/ui/semantic-board-canvas/lib/camera-motion";
+import { wheelZoomFactor } from "@/ui/semantic-board-canvas/lib/camera-motion";
 
 /** Where the pane is looking, and how its last move goes there. */
 interface CameraView {
@@ -47,9 +47,8 @@ interface CameraView {
 	/** Whether the last move was one that must land at once, rather than be eased. */
 	readonly instant: boolean;
 	/**
-	 * Whether a hand made the last move: a drag, a wheel or a key. A throw
-	 * coasting on after the hand let go, a fit, a glide and the camera following
-	 * its picture are not a hand's, and leave it unsaid.
+	 * Whether a hand made the last move: a drag, a wheel or a key. A fit, a glide
+	 * and the camera following its picture are not a hand's, and leave it unsaid.
 	 */
 	readonly hand?: boolean;
 }
@@ -87,7 +86,8 @@ interface BoardCamera {
 	readonly attachViewport: (element: HTMLElement | null) => void;
 	/**
 	 * Move the diagram at once, as a pointer dragging it does. It stops any move
-	 * the camera was making, so the drag starts from what was seen.
+	 * the camera was making, so the drag starts from what was seen, and the camera
+	 * stays where the drag leaves it.
 	 * @param dx How far right, in viewport pixels.
 	 * @param dy How far down, in viewport pixels.
 	 */
@@ -100,13 +100,8 @@ interface BoardCamera {
 	 */
 	readonly ease: (dx: number, dy: number) => void;
 	/**
-	 * Carry on at the speed a drag was let go at, and slow to rest.
-	 * @param speed How fast, in viewport pixels per millisecond.
-	 */
-	readonly fling: (speed: Pair) => void;
-	/**
-	 * Stop a zoom, an ease or a thrown drag where it is drawn. A glide is not
-	 * stopped, and the camera does not count as the person's.
+	 * Stop a zoom or an ease where it is drawn. A glide is not stopped, and the
+	 * camera does not count as the person's.
 	 */
 	readonly stop: () => void;
 	/**
@@ -307,13 +302,12 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 			 */
 			read: () => read().camera,
 			/**
-			 * Draw the camera somewhere.
+			 * Draw the camera somewhere, as a hand's move.
 			 * @param camera Where.
 			 * @param instant Whether the surface lands there at once.
-			 * @param byHand Whether a hand is still moving it.
 			 */
-			draw: (camera, instant, byHand) => {
-				write({ camera, instant, hand: byHand });
+			draw: (camera, instant) => {
+				write({ camera, instant, hand: true });
 			},
 		}),
 		[read, write],
@@ -497,7 +491,6 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 			attachViewport: setViewport,
 			panBy,
 			ease,
-			fling: motion.fling,
 			stop: motion.halt,
 			zoomCentre,
 			fit,
