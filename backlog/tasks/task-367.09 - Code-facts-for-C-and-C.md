@@ -1,11 +1,11 @@
 ---
 id: TASK-367.09
 title: Code facts for C and C++
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 16:50'
+updated_date: '2026-10-06 16:51'
 labels:
   - code-check
 dependencies:
@@ -26,10 +26,10 @@ In C and C++, a dependency is an include, and what an include names depends on t
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `#include` resolves through `compile_commands.json` when the checkout has one, and through relative paths and configured include directories when it has none
-- [ ] #2 Definitions carry their visibility: declared in a public header, or `static` and anonymous-namespace names that are internal
-- [ ] #3 A part bound to a header or to its source file finds the definitions of the pair
-- [ ] #4 The anchor, binding, undrawn and backwards checks work for parts bound to C and C++ files
+- [x] #1 `#include` resolves through `compile_commands.json` when the checkout has one, and through relative paths and configured include directories when it has none
+- [x] #2 Definitions carry their visibility: declared in a public header, or `static` and anonymous-namespace names that are internal
+- [x] #3 A part bound to a header or to its source file finds the definitions of the pair
+- [x] #4 The anchor, binding, undrawn and backwards checks work for parts bound to C and C++ files
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -97,4 +97,12 @@ Known gaps left:
 For TASK-367.10: Objective-C reuses createCResolver. Its inModule gives every use its target through #import and #include. It also reuses the declaration flag and the pair: an @interface in a .h declares, and an @implementation in a .m defines.
 
 Gate after the fixes, one lane at a time, in the shared working tree. fmt:check 0, type-check 0, build:frontend 0. lint exits 1, only on files of other agents that they have not committed: languages.ts (language servers) and kubernetes-model.ts. test:modules has 4,228 pass and 3 fail. Two are terraform-modules.test.ts and terraform-facts.test.ts, which other agents are changing. The third is the known timing of wide-boards.test.ts (Archboard server, track). test:system has 192 pass and 2 fail. One is command-contract-artifacts.test.ts, because other agents changed the working tree while it ran. The other is a module that languages.ts imports and that its agent has not written yet. test:repository has 20 pass and 0 fail. test:serial-browser has 24 pass and 0 fail. A snapshot of HEAD at 23665f66c type-checks, passes the code-facts, code-check and language-servers owners (160 pass), and lints clean on every file of this review.
+
+Independent review (2026-10-06) supersedes decision 7: a use that reaches only a declaration through an include is resolved where the header's pair defines the name, and is a candidate (information) otherwise, until clangd resolves it (2dec8840e). It also read macro-prefixed namespaces and export-macro classes as what they are (abseil definitions 13,769 to 25,113), moved includes onto the shared inModule seam with a name index, split check.ts and evidence.ts along their seams, and added C and C++'s exposure rule for the interface check (49877d859). The ADR's last fallback step, matching an unresolved include by file name, is not built: on Redis most matches were system headers matching vendored copies.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The code check now reads C and C++ through tree-sitter: functions, variables, types, macros and class members with their linkage and access, includes resolved through compile_commands.json or the file's directory, the checkout root and include directories, and a header and its source file read as one pair. A use found through an include is resolved where the pair defines it and a candidate otherwise. Parts bound to C and C++ files get the anchor, binding, undrawn and backwards checks, and a C or C++ directory is a module for the interface check. Verified by c-facts.test.ts and c-check.test.ts (pass with --isolate) and on Redis, SQLite, leveldb, fmt and abseil.
+<!-- SECTION:FINAL_SUMMARY:END -->
