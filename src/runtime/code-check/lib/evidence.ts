@@ -22,7 +22,6 @@
 import type { PartCode, ReadPart, RepoCheckout } from "@/runtime/code-check/lib/part-code";
 import {
 	definitionSite,
-	findSymbol,
 	type Definition,
 	type DefinitionSite,
 	type FactsPass,
@@ -202,8 +201,13 @@ interface RepoReading {
 	readonly owners: Owners;
 	/** Each part and its containers. */
 	readonly lineages: ReadonlyMap<string, ReadonlySet<string>>;
-	readonly sites: Map<string, Promise<DefinitionSite | undefined>>;
 }
+
+/**
+ * The definition sites each pass has asked for, by checkout, file and name. A
+ * site depends on the files alone, so every board of a pass shares them.
+ */
+const SITES = new WeakMap<FactsPass, Map<string, Promise<DefinitionSite | undefined>>>();
 
 /**
  * Where a name a file uses is defined, asked once in a pass.
@@ -217,11 +221,14 @@ function siteOf(
 	file: string,
 	symbol: string,
 ): Promise<DefinitionSite | undefined> {
-	const key = `${file}\0${symbol}`;
-	let site = repo.sites.get(key);
+	const { facts } = repo.reading;
+	const sites = SITES.get(facts) ?? new Map<string, Promise<DefinitionSite | undefined>>();
+	SITES.set(facts, sites);
+	const key = `${repo.checkout.root}\0${file}\0${symbol}`;
+	let site = sites.get(key);
 	if (site === undefined) {
-		site = definitionSite(repo.reading.facts, repo.checkout, file, symbol);
-		repo.sites.set(key, site);
+		site = definitionSite(facts, repo.checkout, file, symbol);
+		sites.set(key, site);
 	}
 	return site;
 }
@@ -262,10 +269,7 @@ async function reachedBy(
  * @returns The definition, or undefined.
  */
 function definedAs(facts: SyntaxFacts, name: string): Definition | undefined {
-	const found = findSymbol(facts, name, "definition");
-	return found.status === "found" && found.definition?.symbol === name
-		? found.definition
-		: undefined;
+	return facts.definitions.find((definition) => definition.symbol === name);
 }
 
 /**
@@ -432,7 +436,6 @@ async function evidenceInRepo(
 		checkout: parts[0].checkout,
 		owners: ownersOf(parts),
 		lineages,
-		sites: new Map(),
 	};
 	const parsed = new Set<string>();
 	const pieces: Piece[] = [];
