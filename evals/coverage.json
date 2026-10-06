@@ -119,9 +119,16 @@
 				{
 					"path": "semantic compare reports each container's interface changes before the other changes: entry points added and removed, parts moved between the interface and the hidden parts, callers gained and lost, and no comparison status",
 					"expectedUse": "report the interface changes of a proposal first, naming the callers each one costs",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "src/shared/semantic-board/tests/compare-interface.test.ts; src/cli/commands/tests/comparison-answer.test.ts"
+					"scenarios": ["S17"],
+					"evidence": "grader",
+					"owner": "grader compare.interface-changes; src/shared/semantic-board/tests/compare-interface.test.ts; src/cli/commands/tests/comparison-answer.test.ts"
+				},
+				{
+					"path": "semantic compare interfaceMeasures and --beside: the five interface measures of each container on the variant, the one it is read against and each competing proposal, side by side, with the entry points and pass-through entry points named",
+					"expectedUse": "design it twice: put the measures of competing drafts side by side in one answer and report them unranked, with no score and no deep or shallow verdict",
+					"scenarios": ["S17"],
+					"evidence": "grader",
+					"owner": "grader compare.measures-side-by-side, measures.unranked; src/cli/commands/tests/comparison-answer.test.ts; src/cli/command-contract/tests/parameters.test.ts (an appending option)"
 				}
 			]
 		},
@@ -183,6 +190,20 @@
 					"scenarios": ["S00", "S01", "S03", "S14"],
 					"evidence": "harness-check",
 					"owner": "node-binding, binding-count-at-least"
+				},
+				{
+					"path": "node.binding.symbol (definition or infrastructure address at the path)",
+					"expectedUse": "a part that is one definition among others in its file names it; a changed symbol is a changed binding",
+					"scenarios": ["S00"],
+					"evidence": "author-run",
+					"owner": "grader binding.symbol; src/shared/semantic-board/tests/comparison.test.ts (a changed symbol is a changed binding)"
+				},
+				{
+					"path": "edge.anchor, step.anchor {repo, path, symbol}",
+					"expectedUse": "every relationship and step carries its line of evidence; restating one without it drops it with ANCHOR_DROPPED; comparison ignores it",
+					"scenarios": ["S00", "S07"],
+					"evidence": "author-run",
+					"owner": "grader edge.anchor, step.anchor; src/runtime/semantic-board-store/tests/anchors.test.ts; src/shared/semantic-board/tests/comparison.test.ts and reconciliation.test.ts"
 				},
 				{
 					"path": "node.binding.branch, .commit, .confirmedAt",
@@ -535,6 +556,13 @@
 					"scenarios": ["S06"],
 					"evidence": "harness-check",
 					"owner": "current-variant, variant-exists historical"
+				},
+				{
+					"path": "lifecycle shelved, with its reason",
+					"expectedUse": "shelve, when asked, each competing draft not kept, with the reason it lost; the kept draft stays a draft",
+					"scenarios": ["S17"],
+					"evidence": "harness-check",
+					"owner": "variant-exists shelved and draft; grader variant.shelve"
 				},
 				{
 					"path": "current designation versus lasting identity",
