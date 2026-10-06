@@ -151,8 +151,25 @@ _Avoid_: traffic volume, line weight
 
 **Binding**:
 The optional association between a node and its primary code location. Each node
-has at most one binding, and nodes on the same board may name different repositories.
+has at most one binding, and two nodes on one board can name different repositories.
+A binding can name a symbol: the definition at its path that the node stands for
+(ADR 0046).
 _Avoid_: link, mapping, reference, pointer, association
+
+**Anchor**:
+The one place in code that an author cites as proof of a relationship or a flow
+step: a repository, a file in it and a symbol in that file. It is bookkeeping.
+Comparison ignores it, and the code check holds it to the code (ADR 0046).
+_Avoid_: evidence (that is what the code check finds), citation, source line,
+proof, location, binding (that belongs to a node)
+
+**Symbol**:
+A name that code or infrastructure defines or references: a definition or a
+reference in code, or the address of a declaration in infrastructure or Nix,
+such as `Deployment/checkout`. A binding can name the definition that its node
+stands for, and an anchor always names a symbol (ADR 0046).
+_Avoid_: identifier, address alone (a logical address names code on any
+machine), line, fragment
 
 **Code target**:
 The action offered when a user activates a binding. It is derived anew for
@@ -165,8 +182,9 @@ inside a registered checkout.
 _Avoid_: editor, file handler, command
 
 **Logical address**:
-A machine-independent way of naming code: a repository identity, a path within
-it, and the branch and commit at which the binding was last confirmed.
+A machine-independent way of naming code: a repository identity and a path
+within it. A binding can also name the symbol at that path, and the branch and
+commit at which the binding was last confirmed.
 _Avoid_: path, file reference, location, URI
 
 **Repository identity**:
@@ -534,6 +552,44 @@ look coupled. Behind and a footprint keep them and say which ones are large
 (ADR 0045).
 _Avoid_: sweep (the archboard-dev pass after a removal or a rename), bulk
 commit, big commit
+
+### Evidence
+
+**Code check**:
+Reading, on request, the code and the infrastructure that the bindings and
+anchors of a board name. It reports findings on the current variant or on a
+named draft. `archboard check --code` runs it, and the check that canvases poll
+never does (ADR 0046).
+_Avoid_: lint, scan, drift detection, the check alone (that is the plain
+`archboard check`)
+
+**Code facts**:
+What one file tells the code check: what it defines, with the visibility of each
+definition, what it references, and what it imports. They are derived from the
+file on request and never written to a file (ADR 0046).
+_Avoid_: index, symbol table, syntax tree, parse result
+
+**Evidence kind**:
+What one piece of code or infrastructure proves about two parts: a call, a
+configured path, a permission, an import, a build dependency or provisioning.
+Each relationship kind can name the evidence kinds that it accepts (ADR 0046).
+_Avoid_: relationship kind (that is what the board claims), link type,
+dependency type, path alone (that is the file field of a binding)
+
+**Candidate**:
+Evidence that the code check matched by name only, so the name can stand for
+another definition. Two things make evidence resolved instead: a language
+server that named its definition, or code that names the file or the address
+that it reaches, as an import path does. A finding on a candidate is
+information, never a warning (ADR 0046).
+_Avoid_: match, hit, guess, possible finding, unresolved evidence
+
+**Finding**:
+One thing that the code check reports about one part, relationship or flow
+step. It has the shape of a vault diagnostic, with the evidence that it rests
+on, and its severity is warning or information (ADR 0046).
+_Avoid_: diagnostic (what `archboard check` reports without `--code`), issue,
+violation, drift, problem
 
 ### Working
 

@@ -243,9 +243,10 @@ its diagnostics. Both `semantic` commands take `--variant` for a draft, and
 against.
 
 Behind answers in the code check, because TASK-369.02 asks the check for it.
-The code check also reads every board against its code at HEAD. One
-command then says how each board stands against its code: the findings say
-what is wrong, and behind says where to look.
+The code check also reads every board against its code: the files of each
+checkout as they are on disk, with uncommitted edits (ADR 0046). Behind counts
+the commits on HEAD. One command then says how each board stands against its
+code: the findings say what is wrong, and behind says where to look.
 
 `semantic locality` answers hotspots and change coupling together, because one
 walk of one period gives both and the pane inspector shows both for one part.
