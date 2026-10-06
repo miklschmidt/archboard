@@ -71,10 +71,31 @@ function meetAtOnePoint(one: Net, other: Net): boolean {
  * @returns The count.
  */
 function collinearPairs(nets: readonly Net[]): number {
-	return nets.reduce(
-		(count, leaving) => count + nets.filter((entering) => collinear(leaving, entering)).length,
-		0,
-	);
+	let count = 0;
+	for (const channel of byChannel(nets, (net) => net).values())
+		for (const leaving of channel)
+			for (const entering of channel) if (collinear(leaving, entering)) count += 1;
+	return count;
+}
+
+/**
+ * Items by the channel their net runs in, each in the order given: only nets
+ * of one channel can read as one or swap sides, so a search over pairs need
+ * not weigh nets of two channels. On the Archboard server board, weighing
+ * every pair made parting a quarter of its layout (TASK-367.27).
+ * @param items The items.
+ * @param netOf Each item's net.
+ * @returns Each channel's items, by channel.
+ */
+function byChannel<Item>(items: readonly Item[], netOf: (item: Item) => Net): Map<number, Item[]> {
+	const channels = new Map<number, Item[]>();
+	for (const item of items) {
+		const { channel } = netOf(item);
+		const held = channels.get(channel);
+		if (held === undefined) channels.set(channel, [item]);
+		else held.push(item);
+	}
+	return channels;
 }
 
 /**
@@ -84,16 +105,12 @@ function collinearPairs(nets: readonly Net[]): number {
  * @returns The count.
  */
 function swapped(nets: readonly Net[]): number {
-	return nets.reduce(
-		(count, one) =>
-			count +
-			nets.filter(
-				(other) =>
-					other.channel === one.channel &&
-					(one.topX - other.topX) * (one.bottomX - other.bottomX) < 0,
-			).length,
-		0,
-	);
+	let count = 0;
+	for (const channel of byChannel(nets, (net) => net).values())
+		for (const one of channel)
+			for (const other of channel)
+				if ((one.topX - other.topX) * (one.bottomX - other.bottomX) < 0) count += 1;
+	return count;
 }
 
 /**
@@ -196,10 +213,12 @@ function partCollinear(
 	routes: readonly (readonly Net[])[],
 ): void {
 	const places = routes.flatMap((route) => route.map((net, index) => ({ net, route, index })));
+	const channels = byChannel(places, ({ net }) => net);
 	for (const piece of [false, true])
 		for (let pass = 0; pass < PASSES; pass += 1) {
 			const parted = places.flatMap((leaving) =>
-				places
+				channels
+					.get(leaving.net.channel)!
 					.filter((entering) => collinear(leaving.net, entering.net))
 					.map((entering) => part(scene, chains, routes, leaving, entering, piece)),
 			);
