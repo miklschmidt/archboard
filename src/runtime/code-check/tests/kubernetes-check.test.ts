@@ -7,7 +7,8 @@
 //
 // The checkout `shop`: `web` reads the cart and the ledger through its
 // environment and a password from a Secret; the Ingress routes to the
-// Service `web`; a NetworkPolicy lets `web` reach `cart`.
+// Service `web`; a NetworkPolicy lets `web` reach `cart`. A Helm chart's
+// template names its worker only when Helm renders it.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -141,6 +142,7 @@ beforeAll(async () => {
 		].join("\n"),
 		"k8s/secret.yaml": `apiVersion: v1\nkind: Secret\nmetadata: { name: db }\nstringData:\n  password: ${SECRET}\n`,
 		"payments/ledger.yaml": `${deployment("ledger")}\n---\n${service("ledger")}\n`,
+		"chart/templates/worker.yaml": deployment("{{ .Release.Name }}"),
 	});
 	git(scratch, shop, "add", "-A");
 	git(scratch, shop, "commit", "-q", "--no-gpg-sign", "-m", "the manifests");
@@ -158,6 +160,7 @@ beforeAll(async () => {
 					part("pR", "k8s/web.yaml", "Service/web"),
 					part("pI", "k8s/routes.yaml", "Ingress/shop"),
 					part("pQ", "k8s/web.yaml", "Deployment/queue"),
+					part("pH", "chart/templates/worker.yaml", "Deployment/shop-worker"),
 				],
 				edges: [
 					// The anchor holds: web's environment names the Service that picks the cart.
@@ -196,6 +199,8 @@ test("anchors, binding symbols and the relationships between parts bound to Kube
 		].toSorted(),
 	);
 	expect(outcome.skipped.map((each) => each.reason)).not.toContain("text-only");
+	const template = outcome.skipped.find((each) => each.subject?.id === "pH");
+	expect(template?.reason).toBe("expression-not-followed");
 });
 
 test("a Service's selector joins it to its workload, and a Service no part binds passes the reference on to the workloads it picks", () => {

@@ -4,12 +4,19 @@
 // A YAML file is a manifest when one of its documents is an object: a mapping
 // with a string `apiVersion` and `kind`. Every other YAML file, such as a
 // GitHub workflow, an OpenAPI document or a Helm chart's `values.yaml`, is not
-// one, and code facts read it as text. A file that does not parse as YAML is
-// a manifest when a document writes `apiVersion` and `kind` at its top, as a
-// Helm template does; it is then one part that did not parse, with the names
-// of its keys and never a value, where every address is unknown and none is
-// absent. A `List` (`kind: List`, `kind: ServiceList`)
-// holds its objects as `items`.
+// one, and code facts read it as text. A Helm template is a manifest whose
+// names only Helm gives, when it renders it: one part whose every address is
+// unknown and none absent, and no name or value of its text is kept, since a
+// line of a quoted value can look like a key. A
+// file is one when a document writes `apiVersion` and `kind` at its top and
+// the file does not parse as YAML, writes a Helm action (`{{ ... }}`) where
+// YAML expects a value, or names an object with one. A Go template that a
+// manifest holds as text, such as a Prometheus rule's `{{ $labels.pod }}`, is
+// quoted or in a block scalar, so it is no action. A file is one part whose
+// every address is unknown too where an object stands on no line, as when
+// the parser and the reading of lines count its documents apart (a `%YAML`
+// directive, or an empty first document): no line of it can be trusted. A
+// `List` (`kind: List`, `kind: ServiceList`) holds its objects as `items`.
 //
 // Each object with a `metadata.name` is a definition addressed as kind and
 // name, `Deployment/checkout`, spanning its document or its item of a list.
@@ -82,6 +89,12 @@ const EVERY_POD: LabelSelector = { matchLabels: {}, matchExpressions: [] };
 const ROUTES = new Set(["HTTPRoute", "GRPCRoute", "TLSRoute", "TCPRoute", "UDPRoute"]);
 /** The kinds that take traffic from outside the cluster. */
 const ENTRANCES = new Set([...ROUTES, "Ingress", "Gateway"]);
+/** A Helm action where YAML expects a value: at a line's start, after an item's dash or after a key. */
+const HELM_ACTION = /^\s*(?:-\s+)*(?:[^\s#'"{}[\],][^#'"{}[\]]*?:\s+)?\{\{/u;
+/** A key or an item whose value is a block scalar, whose deeper lines are text: `key: |`, `- >-`. */
+const BLOCK_SCALAR = /(?:^\s*-|:)\s+[|>][-+0-9]*\s*(?:#.*)?$/u;
+/** A line that starts a document. */
+const DOCUMENT_MARKER = /^---(?:\s|$)/mu;
 
 /**
  * Whether a document is an object of the Kubernetes API.
@@ -328,16 +341,23 @@ interface Root {
 	readonly body: Readonly<Record<string, unknown>>;
 }
 
+/** The first and last line of an object. */
+interface Span {
+	readonly start: number;
+	readonly end: number;
+}
+
 /**
  * The lines an object spans: its item of a list, or its whole document,
  * from its first key to its last.
  * @param root The object.
  * @param lines The file's lines.
- * @returns The first and last line.
+ * @returns The first and last line, or undefined where no key of it stands on a line.
  */
-function spanOf(root: Root, lines: YamlLines): { start: number; end: number } {
+function spanOf(root: Root, lines: YamlLines): Span | undefined {
 	const keys = root.path.length > 0 ? [root.path] : Object.keys(root.body).map((key) => [key]);
 	const spans = keys.flatMap((key) => lines.spanOf(root.document, key) ?? []);
+	if (spans.length === 0) return undefined;
 	return {
 		start: Math.min(...spans.map((span) => span.start)),
 		end: Math.max(...spans.map((span) => span.end)),
@@ -345,16 +365,45 @@ function spanOf(root: Root, lines: YamlLines): { start: number; end: number } {
 }
 
 /**
+ * Whether Helm writes an object's kind or name, which only Helm renders: a
+ * name Kubernetes accepts never holds `{{`.
+ * @param root The object.
+ * @returns True when it does.
+ */
+function templated(root: Root): boolean {
+	return [["kind"], ["metadata", "name"]].some(
+		(path) => stringAt(root.body, path)?.includes("{{") === true,
+	);
+}
+
+/**
+ * Whether a file writes a Helm action where YAML expects a value, outside
+ * the lines of a block scalar.
+ * @param text The file's text.
+ * @returns True when it does.
+ */
+function writesHelmAction(text: string): boolean {
+	let scalar: number | undefined;
+	return text.split(/\r?\n/u).some((line) => {
+		const indent = line.length - line.trimStart().length;
+		if (line.trim() === "" || indent > (scalar ?? Infinity)) return false;
+		scalar = BLOCK_SCALAR.test(line) ? indent : undefined;
+		return HELM_ACTION.test(line);
+	});
+}
+
+/**
  * One object of a manifest.
  * @param root The object where its document holds it.
+ * @param span The lines it spans.
  * @param lines The file's lines.
  * @returns It, or none for an object with no name.
  */
-function objectOf(root: Root, lines: YamlLines): ManifestObject[] {
+function objectOf(root: Root, span: Span, lines: YamlLines): ManifestObject[] {
 	const kind = String(root.body["kind"]);
 	const name = stringAt(root.body, ["metadata", "name"]);
 	if (name === undefined) return [];
-	const { start, end } = spanOf(root, lines);
+	const { start, end } = span;
 	const reading: ObjectReading = {
 		body: root.body,
 		/**
@@ -398,8 +447,9 @@ function rootsOf(value: unknown, document: number): Root[] {
 }
 
 /**
- * A file that does not parse as YAML: a manifest that did not parse when a
- * document writes `apiVersion` and `kind` at its top, else no manifest.
+ * A file whose objects the check cannot read, such as a Helm template: a
+ * manifest whose every address is unknown when a document writes
+ * `apiVersion` and `kind` at its top, else no manifest.
  * @param text The file's text.
  * @param lines The file's lines.
  * @returns The manifest as one part that did not parse, or no manifest.
@@ -418,7 +468,38 @@ function unparsedManifest(text: string, lines: YamlLines): Manifest {
 		return { status: "other" };
 	}
 	const end = text.split(/\r?\n/u).length;
-	return { status: "unparsed", unparsed: { start: 1, end, names: lines.names, under: "" } };
+	return { status: "unparsed", unparsed: { start: 1, end, names: [], under: "" } };
+}
+
+/**
+ * The documents of a file as the parser reads them.
+ * @param text The file's text.
+ * @returns Each document, or undefined for a file that does not parse.
+ */
+function documentsOf(text: string): unknown[] | undefined {
+	let parsed: unknown;
+	try {
+		parsed = Bun.YAML.parse(text);
+	} catch {
+		return undefined;
+	}
+	return DOCUMENT_MARKER.test(text) && Array.isArray(parsed) ? parsed : [parsed];
+}
+
+/**
+ * The objects of a file's documents, each on its lines.
+ * @param documents The documents.
+ * @param lines The file's lines.
+ * @returns The objects, or undefined where one stands on no line or Helm writes its name.
+ */
+function objectsIn(documents: readonly unknown[], lines: YamlLines): ManifestObject[] | undefined {
+	const objects: ManifestObject[] = [];
+	for (const root of documents.flatMap((value, index) => rootsOf(value, index))) {
+		const span = spanOf(root, lines);
+		if (span === undefined || templated(root)) return undefined;
+		objects.push(...objectOf(root, span, lines));
+	}
+	return objects;
 }
 
 /**
@@ -427,17 +508,14 @@ function unparsedManifest(text: string, lines: YamlLines): Manifest {
  * @returns Its objects, the whole file as a part that did not parse, or that it is no manifest.
  */
 function readManifest(text: string): Manifest {
+	// No object without this key, so a lockfile or a workflow is never parsed.
+	if (!text.includes("apiVersion")) return { status: "other" };
 	const lines = yamlLines(text);
-	let parsed: unknown;
-	try {
-		parsed = Bun.YAML.parse(text);
-	} catch {
-		return unparsedManifest(text, lines);
-	}
-	const documents: unknown[] = lines.documents > 1 && Array.isArray(parsed) ? parsed : [parsed];
+	const documents = writesHelmAction(text) ? undefined : documentsOf(text);
+	if (documents === undefined) return unparsedManifest(text, lines);
 	if (!documents.some(isObject)) return { status: "other" };
-	const roots = documents.flatMap((value, index) => rootsOf(value, index));
-	return { status: "manifest", objects: roots.flatMap((root) => objectOf(root, lines)) };
+	const objects = objectsIn(documents, lines);
+	return objects === undefined ? unparsedManifest(text, lines) : { status: "manifest", objects };
 }
 
 export { type LabelSelector, type Manifest, type ManifestObject, readManifest, selects };
