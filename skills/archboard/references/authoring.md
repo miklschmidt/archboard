@@ -110,6 +110,30 @@ and Python for now). The opener must take a line: Visual Studio Code, Cursor, Ze
 a custom command with `{line}`. Otherwise it opens the file or directory. The
 inspector shows the symbol under the path.
 
+Bind a docker-compose service with the symbol `services.<name>`. The path is
+the file that compose reads in that directory: `compose.yaml`, `compose.yml`,
+`docker-compose.yml` or `docker-compose.yaml`. A network is
+`networks.<name>`, and a named volume is `volumes.<name>`. Compose merges the
+override file (such as `compose.override.yml`) over the base, so the part also
+owns the service's block there. Code facts read these files and env files
+(`.env`, `<name>.env`). A file that only `-f` names, such as
+`compose.prod.yaml`, is read as text. These entries are configured-path
+evidence:
+
+- `depends_on`, `links`, `volumes_from` and `network_mode: service:<name>`.
+- A network or a named volume that a service uses.
+- An environment value whose host is another service, such as
+  `postgres://app@db:5432/app` or `REDIS_HOST: redis`. A `container_name`,
+  `hostname` or network alias names its service too.
+- A named volume that one service writes and another mounts.
+
+An override's environment value replaces the base's value of that name.
+`http`, `data` and `dependency` accept configured-path evidence by default,
+and `call` does not. To anchor a
+relationship between two services, cite the compose file and the address of
+the service it reaches: `services.db` in the file where `api` depends on `db`.
+An env file gives the check the names it sets, never their values.
+
 A binding names the implementation owner: the file whose body does what the
 node's responsibility says, not a file that imports the unit, registers it (a
 command table, a plugin table, a route mount) or calls it. A command's handler
