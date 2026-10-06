@@ -135,7 +135,6 @@ async function record(spec: NarratedSpec, context: MakeContext): Promise<void> {
 		);
 	});
 	await cutThumbnail(spec, video, readTalk(talk));
-	context.say(`The narrated MP4 is ${video}. Attach it to the README's player by hand.`);
 }
 
 /**
