@@ -1016,9 +1016,10 @@ Few flakes write a build dependency between their own packages in
 or take the packages from an `import nixpkgs` with the flake's overlay. Only
 nixd names its packages to each other. In its flake-parts `perSystem`,
 `callPackage ./nixd` gets `nixf` and `nixt` as arguments, so `nixd` is built
-from `nixf` and `nixt`. The reading found those two, the same two for
-`packages.default`, which is `nixd`, and `nixd` in the arguments of the
-editor shells.
+from `nixf` and `nixt`. The reading found those two, and the same two for
+`packages.default`, which is `nixd`. It also found `nixd` in the arguments of
+the editor shells `nvim` and `vscodium`. One `genAttrs` call gives both
+shells, so they share its lines, and that dependency is unknown (see below).
 
 A temporary vault with six boards bound 21 parts to outputs of six of these
 flakes: nixd, helix, deploy-rs, nix-index, microvm.nix and nil. It drew 11
@@ -1028,9 +1029,9 @@ flakes: nixd, helix, deploy-rs, nix-index, microvm.nix and nil. It drew 11
 
 - nixd's `nixd` to `nixf` is supported by the build dependency at the line that
   names `nixf`.
-- 4 `RELATIONSHIP_UNDRAWN` warnings, all resolved and all right: `nixd` and
-  `default` are built from `nixf` and `nixt`, and the editor shells from
-  `nixd`, which is also `default`.
+- 2 `RELATIONSHIP_UNDRAWN` warnings, both resolved and both right: `nixd` and
+  `default` are built from `nixf` and `nixt`. Before the review there were
+  4: the editor shells were also built from `nixd`, which is also `default`.
 - 10 relationships are skipped as `expression-not-followed`. Each names the
   output and the lines of what the reading cannot follow. Some are packages
   that `callPackage` builds from a file: nixd's `nixf`, microvm.nix's
@@ -1047,6 +1048,26 @@ lines of one binding. This occurred where several bindings, such as
 `packages.a` and `packages.b`, or one `inherit` of three names, gave the
 packages of one system. So every package owned the inputs of every other. Now
 a name that a binding or an `inherit` writes has its own lines.
+
+The review of TASK-367.22 found that one line can still hold several
+packages. Examples are `inherit core lib app;` on one line, as devenv writes
+`inherit (workspace.crates) devenv devenv-tasks;`, a set written on one line,
+and the shells of one `genAttrs` call. The check gives a piece of evidence to
+every part whose output holds the line that names the input. It takes the
+evidence to every part whose output holds the lines of the output it names.
+So in a temporary vault, `app` built from `lib` on such a line gave 4 false
+`RELATIONSHIP_UNDRAWN` warnings, such as `core` built from `lib`. Now a build
+dependency is evidence only where no other package shares those lines. The
+same package under another name (`default = nixd`) or for another system can
+share them. Elsewhere the dependency is unknown at that line. The review also
+narrowed the skip. A build dependency in a flake reaches only the outputs of
+that flake. So if the end of a relationship holds an output of the same
+flake, the check skips it. Otherwise the check judges it. Before, take a part
+bound to a directory with a flake that makes a shell with `mkShell`. Every
+unsupported `dependency` from that part was skipped, also one to TypeScript.
+An input that is a set merged with a value that the reading cannot follow,
+such as `pkgs.hello // { ... }`, is now unknown too. Before, it was left out,
+and the relationship was reported unsupported.
 
 #### Reading .NET projects through the C# adapter
 
@@ -1622,14 +1643,22 @@ a `let` binds, an `inherit`, a `callPackage` argument and an overlay's
 `final.lib` do the same. `self` is the flake's own outputs. An overlay is applied to a
 `prev` whose names are unknown, and to a `final` that adds the overlay's own
 packages. A derivation that is no output, such as a helper that a `let` builds,
-passes on its inputs. What the reading cannot follow is unknown at its lines.
-That is an input that is a package of nixpkgs or of `prev`, and the file that
-`callPackage` builds. It is also an output that is no derivation that the
-reading knows, such as a shell that `mkShell` makes. Such an expression can
-hide a build dependency. Take a relationship with no anchor whose kind accepts
-build dependencies. If it starts at such an expression and no evidence
-supports it, the check skips it as `expression-not-followed`. It never reports
-it unsupported. Each input, and each output that an input names, spends a step.
+passes on its inputs. The check knows an output by its lines. So a build
+dependency is evidence only where no other package shares two sets of lines:
+the line that names the input, and the lines of the output that it names. The
+same package under another name, or for another system, can share them.
+Where another package shares them, as in `inherit core lib app;` on one line,
+the dependency is unknown at that line. What the reading cannot follow is
+unknown at its lines. That is an input that is a package of nixpkgs or of
+`prev`, or a set merged with such a package. It is also the file that
+`callPackage` builds. If an output is no derivation that the reading knows,
+such as a shell that `mkShell` makes, it is unknown too. Such an expression
+can hide a build dependency on another output of the same flake. Take a
+relationship with no anchor whose kind accepts build dependencies, and that
+no evidence supports. If its start holds such an expression and its end
+holds an output of the same flake, the check skips it as
+`expression-not-followed`. It never reports it unsupported. Each input, each
+output that an input names, and each line of each output spends a step.
 
 A Kubernetes manifest is a `.yaml` or `.yml` file with a document that has an
 `apiVersion` and a `kind` (TASK-367.19). The check reads other YAML files as
