@@ -90,8 +90,8 @@ are in `lib/design.ts`.
    frame shows its standing by the pin alone, unless the flow was removed.
 10. **A removed part has lost its thickness.** It is a flat, see-through face
     inside a dashed red footprint, with no front edge and no shadow. Its words
-    are faded to the secondary ink. A removed line is still drawn whole at less
-    than half strength.
+    are faded to the secondary ink. A removed line is not a block. It is still
+    drawn whole, at a lower opacity.
 11. **A default arrowhead is as long as an emphasized one.** Every head takes its
     length from one table, `HEAD_LENGTH` in `lib/svg/styles.ts`. A head is 11
     units long on an emphasized line, 11 on a default line and 6 on a muted
