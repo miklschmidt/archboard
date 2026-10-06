@@ -189,9 +189,11 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
 A subject that the last code check warns about wears a warning triangle
 (TASK-367.24, ADR 0046). It is the triangle that the picture draws on a subject
 that nobody decided, in the same place. On a part, it is the top-right corner,
-and on a container, the header. On a relationship or a message, it is the
-leading edge of the words. One triangle means one thing: look at this before
-you trust it. The selection tab says why.
+and on a container, the header. A participant of several exchanges has a card
+in each, and each card wears it. On a relationship or a message, it is the
+leading edge of the words. A line with no words wears it in the middle of its
+longest straight run. One triangle means one thing: look at this before you
+trust it. The selection tab says why.
 
 The pane draws the triangle inside the group of the subject, so the triangle
 moves and recedes with the subject. The picture stays drawn from the board

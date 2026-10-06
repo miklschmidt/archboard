@@ -53,6 +53,15 @@ function finding(
 }
 
 /**
+ * A subject of these pictures by its id: `n…` names a part, `e…` a relationship.
+ * @param id The id.
+ * @returns The subject.
+ */
+function nodeOrEdge(id: string): { id: string; kind: "node" | "edge" } {
+	return { id, kind: id.startsWith("n") ? "node" : "edge" };
+}
+
+/**
  * What the server remembers of one pass over the pane's board.
  * @param version The version of the board the pass read.
  * @param findings What it found.
@@ -158,27 +167,19 @@ test("a warning wears the picture's own warning where the picture puts one; info
 	expect(server.calls.some((url) => url.includes("code-check"))).toBe(false);
 });
 
-test("a line with no words wears the warning at the middle of its longest straight run", async () => {
-	serving(remembered(1, [finding("warning", { id: "e1", kind: "edge" }, "The anchor is gone.")]));
-	mountStage();
-	await settled();
-
-	// The fake line runs straight from (0,0) to (10,10).
-	const marks = surface().querySelectorAll(`${MARK}[data-semantic-id='e1'] > *`);
-	expect(marks.length).toBe(1);
-	expect(centreOf(marks[0]!)).toBe(centreOf(lineWarning({ x: 5, y: 5 })));
-});
-
-test("a container wears it on its header and a labelled line on the leading edge of its words", async () => {
+test("each warning stands where the picture puts its own badge, in the group that holds it", async () => {
 	serving(
-		remembered(1, [
-			finding("warning", { id: "n1", kind: "node" }, "Gone."),
-			finding("warning", { id: "e1", kind: "edge" }, "Gone."),
-		]),
+		remembered(
+			1,
+			["n1", "n2", "e1", "e2"].map((id) => finding("warning", nodeOrEdge(id), "Gone.")),
+		),
 	);
-	// The groups as the renderer draws a container and a labelled line, at a
-	// shift of the canvas: its frame, its header over what it holds, the line,
-	// and the line's words on their plate.
+	// The groups as the renderer draws them, at a shift of the canvas: a
+	// container's frame and its header over what it holds; a labelled line and
+	// its words on their plate; a line with no words, which defines its head
+	// before its halo and its stroke; and a participant of two exchanges, with
+	// a lifeline and a card in each.
+	const route = "M20,150 L20,250 C20,256 24,260 30,260 L60,260";
 	server.reply = {
 		status: 200,
 		body: {
@@ -189,6 +190,17 @@ test("a container wears it on its header and a labelled line on the leading edge
 				`<rect class="ab-halo" x="17" y="17" width="206" height="126"></rect>` +
 				`<rect x="20" y="20" width="200" height="120"></rect></g>` +
 				`<g data-semantic-kind="edge" data-semantic-id="e1"><path d="M0,0 L10,10"></path></g>` +
+				`<g data-semantic-kind="edge" data-semantic-id="e2"><defs><marker id="head">` +
+				`<path d="M0,0 L10,5 L0,10 z"></path></marker></defs>` +
+				`<path class="ab-halo" d="${route}"></path><path d="${route}" marker-end="url(#head)"></path></g>` +
+				[150, 220]
+					.map(
+						(top) =>
+							`<g data-semantic-kind="node" data-semantic-id="n2" data-semantic-part="lifeline"></g>` +
+							`<g data-flow-head="f${top}"><g data-semantic-kind="node" data-semantic-id="n2">` +
+							`<rect x="250" y="${top}" width="80" height="40"></rect></g></g>`,
+					)
+					.join("") +
 				`<g data-semantic-kind="region" data-semantic-id="n1" data-semantic-part="header"><text>Box</text></g>` +
 				`<g data-semantic-kind="edge" data-semantic-id="e1" data-semantic-part="label">` +
 				`<rect x="300" y="50" width="60" height="30"></rect><text>writes</text></g>` +
@@ -198,15 +210,21 @@ test("a container wears it on its header and a labelled line on the leading edge
 	mountStage();
 	await settled();
 
-	const header = surface().querySelectorAll(`[data-semantic-part='header'] > ${MARK}`);
-	expect(header.length).toBe(1);
-	expect(centreOf(header[0]!)).toBe(
-		centreOf(cornerWarning({ x: 20, y: 20, width: 200, height: 120 })),
+	const placed = [...surface().querySelectorAll(`${MARK}[transform]`)].map((mark) => {
+		const holder = mark.parentElement;
+		const part = holder?.getAttribute("data-semantic-part") ?? "body";
+		return `${holder?.getAttribute("data-semantic-id")}/${part} ${centreOf(mark)}`;
+	});
+	expect(placed.toSorted()).toEqual(
+		[
+			`n1/header ${centreOf(cornerWarning({ x: 20, y: 20, width: 200, height: 120 }))}`,
+			`e1/label ${centreOf(lineWarning({ x: 300, y: 65 }))}`,
+			// The middle of the longest straight run, as the picture puts the words.
+			`e2/label ${centreOf(lineWarning({ x: 20, y: 200 }))}`,
+			`n2/body ${centreOf(cornerWarning({ x: 250, y: 150, width: 80, height: 40 }))}`,
+			`n2/body ${centreOf(cornerWarning({ x: 250, y: 220, width: 80, height: 40 }))}`,
+		].toSorted(),
 	);
-	const words = surface().querySelectorAll(`[data-semantic-part='label'] > ${MARK}`);
-	expect(words.length).toBe(1);
-	expect(centreOf(words[0]!)).toBe(centreOf(lineWarning({ x: 300, y: 65 })));
-	expect(surface().querySelectorAll(MARK).length).toBe(2);
 });
 
 test("findings about another version of the board draw nothing", async () => {
