@@ -259,16 +259,26 @@ test("check without --code never asks the code check", async () => {
 	expect(JSON.parse(stdout)).not.toHaveProperty("codeCheck");
 });
 
-test("a skip that holds for a whole language says once which language and why", async () => {
+test("a skip that holds for a whole language says once which language and why, and one said for each project of a checkout names the checkout once", async () => {
 	plain = clean;
 	const detail = "typescript: tsc is not installed";
+	const repo = "github.com/test/shop";
 	try {
-		answered = { ...codeCheck, skipped: [{ reason: "language-server-missing", detail }] };
+		answered = {
+			...codeCheck,
+			skipped: [
+				{ reason: "language-server-missing", detail },
+				{ reason: "language-server-unready", repo, detail: "swift: the package a has no index" },
+				{ reason: "language-server-unready", repo, detail: "swift: the package b has no index" },
+			],
+		};
 		const { stderr, exited } = await run(["check", "--code"]);
 		expect(exited).toBe(0);
-		const lines = stderr.split("\n").filter((line) => line.includes("language-server-missing"));
-		expect(lines).toHaveLength(1);
-		expect(lines[0]).toContain(detail);
+		const lines = (reason: string) => stderr.split("\n").filter((line) => line.includes(reason));
+		expect(lines("language-server-missing")).toHaveLength(1);
+		expect(lines("language-server-missing")[0]).toContain(detail);
+		expect(lines("language-server-unready")).toHaveLength(1);
+		expect(lines("language-server-unready")[0]?.split(repo)).toHaveLength(2);
 	} finally {
 		answered = codeCheck;
 	}

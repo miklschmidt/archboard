@@ -93,6 +93,21 @@ function skippedNoun(skip: CodeCheckSkip): string {
 }
 
 /**
+ * What a line names for the skips of one reason: each checkout once, since a
+ * reason can be said once for each project of a checkout, such as a Swift
+ * package with no index; or each language with why. Skips of subjects and
+ * boards name nothing.
+ * @param same The skips of one reason.
+ * @param noun What they are about.
+ * @returns The names.
+ */
+function namesOf(same: readonly CodeCheckSkip[], noun: string): string[] {
+	if (noun === "language") return same.flatMap((skip) => skip.detail ?? []);
+	if (noun !== "checkout") return [];
+	return [...new Set(same.flatMap((skip) => skip.repo ?? []))];
+}
+
+/**
  * One line for each reason the check skipped something, with a count. A
  * reason that holds for whole checkouts names them, and one that holds for a
  * whole language says which and why, since it names no subject.
@@ -108,9 +123,10 @@ function skippedLines(skipped: readonly CodeCheckSkip[]): string[] {
 	return [...byReason.values()].map((same) => {
 		const [first] = same;
 		const noun = first === undefined ? "" : skippedNoun(first);
-		const named = same.map((skip) => (noun === "language" ? skip.detail : skip.repo));
-		const list = noun === "checkout" || noun === "language" ? ` (${named.join("; ")})` : "";
-		return `code check: skipped ${plural(same.length, noun)}: ${first?.reason}${list}`;
+		const named = namesOf(same, noun);
+		const count = named.length > 0 ? named.length : same.length;
+		const list = named.length > 0 ? ` (${named.join("; ")})` : "";
+		return `code check: skipped ${plural(count, noun)}: ${first?.reason}${list}`;
 	});
 }
 
