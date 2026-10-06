@@ -22,22 +22,20 @@ test("the more emphasised line rises, wherever it is painted", () => {
 
 // Archboard server (blocks): a dotted line rose over a solid one; its arc barely
 // showed, and the solid line read as broken.
-test("a solid line rises over a dashed one, and a dashed line never rises over a solid one", () => {
+test("a solid line rises over a dashed one, and where no hop fits the two cross plainly", () => {
 	// The dashed line is painted later and would rise between equals.
 	const over = bridged(drawing([down(50), across(50)], [{}, { kind: "event" }]));
 	expect(over.bridges).toHaveLength(1);
 	expect(over.bridges[0]).toMatchObject({ edgeId: "0", under: ["1"] });
 	expect(hops(over.bridges[0]!)).toBe(true);
-	// Where the solid line has no room to rise, the dashed one is cut beneath it.
+	// The solid line turns just past the crossing: neither line has room to rise,
+	// and a gap with no arc over it would read as a break (TASK-408).
 	const turning = [
 		{ x: 50, y: 0 },
 		{ x: 50, y: 58 },
 		{ x: 100, y: 58 },
 	];
-	const cut = bridged(drawing([turning, across(50)], [{}, { kind: "event" }]));
-	expect(cut.bridges).toHaveLength(1);
-	expect(cut.bridges[0]).toMatchObject({ edgeId: "0", under: ["1"] });
-	expect(hops(cut.bridges[0]!)).toBe(false);
+	expect(bridged(drawing([turning, across(50)], [{}, { kind: "event" }])).bridges).toEqual([]);
 });
 
 // Every engine: between two lines that both have all the room a hop wants,
@@ -88,8 +86,7 @@ test("a hop keeps a card's or a label's clearance from it, bulging away where it
 // its approach, was refused a hop and cut (the user, 2026-09-27).
 test("a hop keeps clear of another line's arrowhead, and stands across its approach past the head", () => {
 	const near = bridged(drawing([down(50, 0, 200), across(100, 150, 35)]));
-	expect(near.bridges).toHaveLength(1);
-	expect(hops(near.bridges[0]!)).toBe(false);
+	expect(near.bridges).toEqual([]);
 	const past = bridged(drawing([down(50, 0, 200), across(100, 150, 28)]));
 	expect(past.bridges).toHaveLength(1);
 	expect(hops(past.bridges[0]!)).toBe(true);

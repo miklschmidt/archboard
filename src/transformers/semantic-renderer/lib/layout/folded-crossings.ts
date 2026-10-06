@@ -562,4 +562,4 @@ function unfoldCrossings(drawing: ArchitectureDrawing): ArchitectureDrawing {
 	return scene.drawing;
 }
 
-export { sharedTrunk, unfoldCrossings };
+export { unfoldCrossings };
