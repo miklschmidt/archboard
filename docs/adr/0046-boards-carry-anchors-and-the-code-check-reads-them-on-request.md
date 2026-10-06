@@ -9,6 +9,10 @@ serves TASK-367 and its subtasks TASK-367.03 to TASK-367.27, TASK-368.10,
 TASK-368.11 and TASK-369.02, and Proposal 1 of the
 [design checks](../design/design-checks.md).
 
+Amended by TASK-367.13 (2026-10-06): the language servers are their own
+module, `src/runtime/language-servers`, not a part of code facts, because a
+process to start and stop is a concern apart from the facts of a file.
+
 ## Context
 
 A board makes claims about code. Evidence rule 3 of the consumer skill makes an

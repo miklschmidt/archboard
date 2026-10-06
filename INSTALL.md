@@ -221,15 +221,16 @@ GitHub. It uses the commit, then the branch, then the default branch.
 
 `archboard check --code` reads the registered checkouts and matches the names
 that the code uses. A match by name only is a _candidate_. A language server
-resolves a use to its real definition, also a use through a value such as
-`ledger.post()`. Evidence that a server resolved can make a warning, and a
-candidate never does.
+resolves a candidate that joins two parts to its real definition. It also
+resolves the use that an anchor names, such as `ledger.post()` through a
+value. Evidence that a server resolved can make a warning, and a candidate
+never does.
 
 For TypeScript you need nothing more. The check runs `tsc --lsp --stdio` from
 the `typescript` package that archboard installs, never the TypeScript of the
 checkout. It loads no plugin of the checkout, and it never asks a server to
-build. The check starts each server once for each checkout that it reads, and
-stops it before the check answers.
+build. The check starts a server at most once for each checkout that it reads,
+on its first question, and stops it before the check answers.
 
 To choose another server, or to turn one off, write `language-servers.json` in
 the state directory (see [Machine state and logs](#machine-state-and-logs)).
@@ -241,14 +242,16 @@ Each key is a language, and each value is a command or `false`:
 }
 ```
 
-`command` is a program on your `PATH` or the path of a program. `args` is
-optional. `false` turns the language off. Today the only language is
-`typescript`. Each check reads the file again, so a change needs no restart.
+`command` is a program on your `PATH` or the absolute path of a program.
+`args` is optional. `false` turns the language off. Today the only language is
+`typescript`. Each check reads the file again, so a change needs no restart. A
+file that is not valid turns every server off until you correct it.
 
 A server can be absent: not installed, turned off, or named in a file that is
-not valid. Then the check says so once with the reason
-`language-server-missing`, and reports candidates. If a server does not start, does not answer within 30 seconds or
-stops, the check says so once for that checkout with `language-server-failed`.
+not valid. Then the check says so once for each language with the reason
+`language-server-missing`, and reports candidates. If a server does not start,
+does not answer within 30 seconds or stops, the check says so once for that
+checkout with `language-server-failed`.
 
 ## Rendering to a bitmap
 

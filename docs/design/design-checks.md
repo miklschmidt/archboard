@@ -257,12 +257,13 @@ That project has 8,733 files. 200 more requests together took 20 to 25 ms. A
 process, and it reads each file from disk. Opening 600 files with `didOpen`
 cost about 400 ms more, so the check opens none.
 
-The pass asks about two kinds of use that no import resolves. A candidate is a
-use of a name the same file defines at module level. A use through a value is
-a name spelled through a parameter or a local, such as `ledger.post()`. The
-pass does not ask about a bare local, parameter or global. Its definition is
-in the same function or outside the checkout. Without those questions, the
-dogfood vault asks 24,349 questions instead of 42,837, with the same findings.
+The first build asked about two kinds of use that no import resolves. A
+candidate is a use of a name the same file defines at module level. A use
+through a value is a name spelled through a parameter or a local, such as
+`ledger.post()`. The pass does not ask about a bare local, parameter or
+global. Its definition is in the same function or outside the checkout.
+Without those questions, the dogfood vault asked 24,349 questions instead of
+42,837, with the same findings.
 
 Over the 1,447 TypeScript files of `src` that are not tests, the answers were:
 
@@ -288,27 +289,48 @@ So a use at run time counts only where the outline of the server
 class, function, method, constructor, variable, constant or enum, and no
 interface holds it. A use only as a type counts wherever its definition is.
 
-One process ran the same warm pass, each file from the cache, three times in
-each way:
-
-| Pass                         | No server     | With the server   |
-| ---------------------------- | ------------- | ----------------- |
-| Candidates and value uses    | 853 to 974 ms | 5,672 to 6,054 ms |
-| Candidates only (not chosen) | 779 to 974 ms | 3,948 to 3,997 ms |
-
-The server adds about 5 s to a warm pass. About 3 s is the type-checking of
-every bound file, which a candidate needs too. About 2 s is the uses through a
-value. The server used 60 s of processor time over 24,349 requests, about
-2.5 ms for each, on many threads. The real `./bin/dogfood check --code` took
-9,083 ms on its first run after a restart. Five later runs took 4,743 to
-7,141 ms. Before this task, a warm run took about 1,400 ms.
-
-On the dogfood vault, the server changed one finding. Board rasterizer has the
+The first build added about 5 s to a warm pass: 5,672 to 6,054 ms, and 853 to
+974 ms with no server. It changed one finding. Board rasterizer has the
 relationship Raster session -> DevTools connection. It was
-`RELATIONSHIP_UNSUPPORTED`, with only a type import. Now the server shows that
-the session calls a method of the connection that it holds, so the code
-supports the relationship. No warning was added or removed. No finding rested
-on a candidate before, so no finding changed from a candidate to resolved.
+`RELATIONSHIP_UNSUPPORTED`, with only a type import, and the server showed
+that the session calls a method of the connection that it holds.
+
+The review of TASK-367.13 measured again, after TASK-367.27 had given that
+relationship and most others an anchor. It used a copy of the dogfood vault
+and a clone of this repository, both at `3a7157874`, and the code check at
+`4a2fa8aaf`. One process ran a cold pass and then four warm passes, each file
+from the cache, in each of four ways. Other agents kept the load average at 7
+to 14 on 24 cores.
+
+| The server is asked about                                 | Questions | Warm pass          | Findings |
+| --------------------------------------------------------- | --------- | ------------------ | -------- |
+| Nothing (no server)                                       | 0         | 988 to 1,025 ms    | 40       |
+| Each anchor's use and each candidate that joins two parts | 95        | 1,583 to 1,666 ms  | 40       |
+| Also every other candidate                                | 11,284    | 4,935 to 6,809 ms  | 40       |
+| Also every use through a value (the first build)          | 39,453    | 9,118 to 10,223 ms | 40       |
+
+All four ways gave the same 40 findings. So the pass asks only where the
+answer can change a finding, the second row:
+
+- A candidate whose name match joins a part to itself, or to a part that holds
+  it, is no evidence, whatever the server answers. The pass asks about a
+  candidate only where the match joins two parts. On the dogfood vault, one
+  candidate does.
+- A use through a value gives no evidence. The server is asked about one only
+  where an anchor names it, so Raster session -> DevTools connection is
+  judged through its anchor `DevTools.evaluate`. A question about every use
+  through a value finds a call that no import shows: an undrawn dependency
+  through a value that a part holds. On the dogfood vault it found none, and
+  it cost 3 to 5 s of every pass.
+
+The first build's real `./bin/dogfood check --code` took 9,083 ms on its first
+run after a restart. Five later runs took 4,743 to 7,141 ms. Before
+TASK-367.13, a warm run took about 1,400 ms.
+
+After the review, at a load average of 11 to 12, the real command took
+4,738 ms on its first run after a restart, and 2,913 to 4,209 ms on five later
+runs. The answer had 39 findings and named no missing or failed server, and
+no `tsc` process ran after it.
 
 #### Swift and Nix have no upstream WebAssembly file on npm
 

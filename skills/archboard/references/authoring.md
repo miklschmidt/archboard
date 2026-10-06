@@ -325,9 +325,10 @@ code. Its anchor makes the relationship a claim the check holds to the code.
 Evidence is `resolved` where the import names the file it reaches, or where
 the language server of the file names the definition. It is a `candidate`
 where the check matched it by name only. A finding that rests only on
-candidates is information. A language server also follows a use through a
-value, such as `ledger.post()`. So with a server, the check sees calls that
-the imports do not show. TypeScript needs no setup. The file
+candidates is information. A call through a value, such as `ledger.post()`,
+is no evidence by itself. Anchor the relationship at that call: the language
+server then names the code that the call reaches. TypeScript needs no setup.
+The file
 `language-servers.json` sets another server, or none, for the machine
 (INSTALL.md). Without a server, the answer says `language-server-missing`
 once and keeps the candidates. A server that did not answer is
