@@ -447,7 +447,7 @@ const CODEX_QUEUE_REREAD_FLOOR_MS = 1000;
 // ── Server subprocesses owned by checks (TASK-086) ───────────────────────
 
 export {
-	FAR_VIEW_FADE_MS,
+	FAR_VIEW_SWAP_MS,
 	FLOW_CYCLE_CAP_MS,
 	PICTURE_ENTRY_MS,
 	PICTURE_ENTRY_PHASES,

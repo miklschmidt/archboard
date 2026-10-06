@@ -34,8 +34,7 @@ import {
 	CARD_THICKNESS,
 	DIAGRAM_MARGIN,
 } from "@/transformers/semantic-renderer/lib/design";
-import { paintFarHeading } from "@/transformers/semantic-renderer/lib/svg/far-card";
-import { nearLayer } from "@/transformers/semantic-renderer/lib/svg/far-view";
+import { paintHeadingViews } from "@/transformers/semantic-renderer/lib/svg/far-card";
 import {
 	HEAD_REACH,
 	HEAD_SHADE_CLASS,
@@ -70,7 +69,12 @@ import {
 } from "@/transformers/semantic-renderer/lib/layout/dataflow";
 import { endsFor, selfStart, travelOf } from "@/transformers/semantic-renderer/lib/layout/messages";
 import { cardLook, trayLook } from "@/transformers/semantic-renderer/lib/svg/appearance";
-import { halo, paintCard, paintHeader } from "@/transformers/semantic-renderer/lib/svg/cards";
+import {
+	halo,
+	headerAnchor,
+	paintCard,
+	paintHeader,
+} from "@/transformers/semantic-renderer/lib/svg/cards";
 import { paintColumn } from "@/transformers/semantic-renderer/lib/svg/flow-columns";
 import {
 	markedWithin,
@@ -333,8 +337,10 @@ function paintFrame(
 			slabShadow(frame, BAND_RADIUS, "tray", palette, ghosted),
 			halo(frame, BAND_RADIUS, styles, ghosted),
 			tray(frame, look, palette, ghosted),
-			nearLayer(paintHeader(header, layout.flow.name, layout.flow.summary, styles)),
-			paintFarHeading(layout.flow.name, layout.flow.summary, plate, palette),
+			paintHeadingViews(layout.flow, plate, palette, {
+				markup: paintHeader(header, layout.flow.name, layout.flow.summary, styles),
+				anchor: headerAnchor(header),
+			}),
 			standingPin(frame, standing, palette),
 			warningBadge(frame, unsettled, palette),
 		]),

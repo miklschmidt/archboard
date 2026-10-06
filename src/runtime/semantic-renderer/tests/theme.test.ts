@@ -26,10 +26,25 @@ function rootDeclarations(svg: string): Map<string, string> {
 	);
 }
 
+/**
+ * Every token a document names: what it reads with `var()`, less the properties
+ * it sets on its own elements, such as where a card's chip stands near and far.
+ * @param svg The document.
+ * @returns The tokens' names.
+ */
+function namedTokens(svg: string): Set<string> {
+	const own = new Set([...svg.matchAll(/[";](--[\w-]+):/gu)].map((found) => found[1]!));
+	return new Set(
+		[...svg.matchAll(/var\((--[\w-]+)\)/gu)]
+			.map((found) => found[1]!)
+			.filter((name) => !own.has(name)),
+	);
+}
+
 test("a page's picture is one picture for both themes, and names only the page's tokens", async () => {
 	const { svg } = await renderArchitecture({ content, standing: { edge: "added" } });
 	expect(rootDeclarations(svg).size).toBe(0);
-	const named = new Set([...svg.matchAll(/var\((--[\w-]+)\)/gu)].map((found) => found[1]!));
+	const named = namedTokens(svg);
 	expect(named.size).toBeGreaterThan(0);
 	// Every token is one the page's stylesheet defines in both themes.
 	for (const name of named) {
@@ -44,7 +59,7 @@ test("a document that stands alone carries its theme's value of every token it n
 		const { svg } = await renderArchitecture({ content, theme, standing: { edge: "added" } });
 		const declared = rootDeclarations(svg);
 		expect(declared.get("color-scheme")).toBe(theme);
-		const named = new Set([...svg.matchAll(/var\((--[\w-]+)\)/gu)].map((found) => found[1]!));
+		const named = namedTokens(svg);
 		for (const name of named) {
 			expect(declared.get(name)).toBe(themeColor(theme, name));
 		}
