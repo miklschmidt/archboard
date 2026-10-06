@@ -123,16 +123,19 @@ test("a use at run time is call evidence, a use in an annotation or under TYPE_C
 	);
 });
 
-test("a call, a construction, a decorator and a base class run what they name, and a constant read, an isinstance test and a name passed on use it as a value", async () => {
+test("a call, also through a member or a subscript, a construction, a decorator and a base class, also a generic one, run what they name, and a constant read, an isinstance test and a name passed on use it as a value", async () => {
 	const asValue = await asValueOf("uses.py", [
-		"from runs import Base, Failure, LIMIT, Made, call, passed, decorate, api",
+		"from runs import Base, Typed, Failure, LIMIT, Made, call, passed, decorate, api, handlers",
 		"@decorate",
 		"class Child(Base):",
+		"    pass",
+		"class Other(Typed[int]):",
 		"    pass",
 		"def use(error):",
 		"    call()",
 		"    Made()",
 		"    api.read()",
+		'    handlers["kind"]()',
 		"    schedule(passed)",
 		"    if isinstance(error, Failure):",
 		"        return LIMIT",
@@ -140,10 +143,12 @@ test("a call, a construction, a decorator and a base class run what they name, a
 	expect(asValue).toMatchObject({
 		decorate: false,
 		Base: false,
+		Typed: false,
 		call: false,
 		Made: false,
 		api: false,
 		"api.read": false,
+		handlers: false,
 		passed: true,
 		Failure: true,
 		LIMIT: true,

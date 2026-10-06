@@ -182,11 +182,12 @@ test("a call, a construction and a base class are call evidence, a type name is 
 	]);
 });
 
-test("a call, a construction and a base class run what they name, and a variable or macro read and a function passed on use it as a value", async () => {
+test("a call, also through a field or a subscript, a construction and a base class run what they name, and a variable or macro read and a function passed on use it as a value", async () => {
 	const c = await asValueOf("uses.c", [
 		"void use(void) {",
 		"\tcall();",
 		"\tapi.read();",
+		"\tcommands[0].proc();",
 		"\tschedule(passed);",
 		"\tint n = LIMIT + table.count;",
 		"}",
@@ -195,6 +196,7 @@ test("a call, a construction and a base class run what they name, and a variable
 		call: false,
 		api: false,
 		"api.read": false,
+		commands: false,
 		passed: true,
 		LIMIT: true,
 		table: true,

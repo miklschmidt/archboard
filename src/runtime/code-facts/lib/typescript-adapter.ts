@@ -81,7 +81,7 @@ const RUN_SYNTAX: RunSyntax = {
 		decorator: ANY,
 		extends_clause: "value",
 	},
-	chains: { member_expression: ["object", "property"] },
+	chains: { member_expression: ["object", "property"], subscript_expression: ["object"] },
 };
 
 /** The syntax in which each kind of name is part of a qualified spelling. */

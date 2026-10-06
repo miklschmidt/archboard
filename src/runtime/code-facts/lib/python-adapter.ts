@@ -160,10 +160,14 @@ function namesBases(list: Node): boolean {
 	return list.parent?.type === "class_definition";
 }
 
-/** How Python runs a name: a call, also a construction, a decorator, a base class. */
+/**
+ * How Python runs a name: a call, also a construction, a decorator, a base
+ * class. A subscript links a chain, so a generic base, `Base[int]`, derives
+ * from `Base`.
+ */
 const RUN_SYNTAX: RunSyntax = {
 	runners: { call: "function", decorator: ANY, argument_list: namesBases },
-	chains: { attribute: ["object", "attribute"] },
+	chains: { attribute: ["object", "attribute"], subscript: ["value"] },
 };
 
 /** What deciding whether a captured name is a use needs. */

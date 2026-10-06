@@ -178,13 +178,17 @@ function spelling(node: Node): string {
 }
 
 /**
- * Whether a name is what a call calls, its first child.
+ * Whether a name is what a call calls, its first child. The grammar writes a
+ * subscript, `table["k"]`, as a call whose arguments stand in brackets; it
+ * reads and calls nothing.
  * @param call The call.
  * @param name The name.
  * @returns True when the call calls it.
  */
 function callee(call: Node, name: Node): boolean {
-	return call.namedChildren[0]?.id === name.id;
+	const suffix = call.namedChildren.find((child) => child.type === "call_suffix");
+	const subscript = suffix?.namedChildren[0]?.firstChild?.type === "[";
+	return call.namedChildren[0]?.id === name.id && !subscript;
 }
 
 /** How Swift runs a name: a call, which is also how it constructs. */

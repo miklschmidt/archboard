@@ -169,7 +169,7 @@ test("a use leads into a module the file imports only to what that module expose
 	]);
 });
 
-test("a call, a construction and an attribute run what they name, and a static member read and a name passed on use it as a value", async () => {
+test("a call, a construction and an attribute run what they name, and a static member read, a subscript read and a name passed on use it as a value", async () => {
 	const asValue = await asValueOf("Uses.swift", [
 		"@Wrapped var wrapped = 1",
 		"func use() -> Int {",
@@ -177,6 +177,7 @@ test("a call, a construction and an attribute run what they name, and a static m
 		"\tlet made = Made()",
 		"\tApi.shared.read()",
 		"\tschedule(passed)",
+		'\tlet first = Table["k"]',
 		"\treturn Limits.max",
 		"}",
 	]);
@@ -187,6 +188,7 @@ test("a call, a construction and an attribute run what they name, and a static m
 		Api: false,
 		"Api.shared.read": false,
 		passed: true,
+		Table: true,
 		Limits: true,
 		"Limits.max": true,
 	});
