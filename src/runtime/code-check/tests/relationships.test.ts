@@ -225,8 +225,9 @@ function finding(code: string, id: string) {
 }
 
 test("every finding of the relationship judgement, and nothing about a relationship the evidence supports", () => {
-	// The store's root files expose `list`, which nothing outside uses: the interface judgement's to own.
-	const judged = outcome.findings.filter((each) => each.code !== "EXPOSED_UNUSED");
+	// The store is a container too, whose interface interfaces.test.ts owns.
+	const interfaceCodes = new Set(["ENTRY_POINT_UNEXPOSED", "CALLER_UNDRAWN", "EXPOSED_UNUSED"]);
+	const judged = outcome.findings.filter((each) => !interfaceCodes.has(each.code));
 	const found = judged.map((each) => `${each.code} ${each.subject?.id} ${each.severity}`);
 	expect(found.toSorted()).toEqual(
 		[

@@ -5,7 +5,8 @@
 // Write, Audit and Util but not Cache or Hook; a server that calls Read and
 // Write through the index and Cache past it; a file of the store drawn outside
 // it that calls Hook; a report no part binds that calls Audit and names Util's
-// type; and a system test that calls an exposed helper nothing else uses.
+// type; a system test that calls an exposed helper nothing else uses; and a
+// file of tests beside the index.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -80,6 +81,8 @@ beforeAll(async () => {
 			'import { hook } from "./hook";\nexport function inner(): void { hook(); }\n',
 		"src/store/lib/util.ts":
 			"export function unusedHelper(): void {}\nexport interface ShelfType { name: string }\n",
+		// A file of tests at the store's root, which is no root file.
+		"src/store/index.test.ts": "export function shelfFixture(): void {}\n",
 		"src/server/routes.ts": [
 			'import { readShelf, writeShelf } from "../store";',
 			'import { cached } from "../store/lib/cache";',
@@ -235,7 +238,7 @@ test("a container with no caller on its board has no caller to miss", () => {
 	expect(findings("CALLER_UNDRAWN", "Store alone")).toEqual([]);
 });
 
-test("exposed names no file outside the module uses are information on the container, and a test is no caller", () => {
+test("exposed names no file outside the module uses are information on the container, and a test is no caller and no root file", () => {
 	for (const boardName of ["Shop", "Store alone"]) {
 		const unused = findings("EXPOSED_UNUSED", boardName);
 		expect(unused.map((each) => [each.subject?.id, each.severity])).toEqual([
@@ -244,6 +247,7 @@ test("exposed names no file outside the module uses are information on the conta
 		// The system test calls the helper, and the report names the type.
 		expect(unused[0]?.message).toContain("unusedHelper");
 		expect(unused[0]?.message).not.toContain("ShelfType");
+		expect(unused[0]?.message).not.toContain("shelfFixture");
 	}
 });
 
