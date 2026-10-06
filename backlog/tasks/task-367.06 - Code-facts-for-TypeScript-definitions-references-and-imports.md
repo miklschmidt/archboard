@@ -1,11 +1,11 @@
 ---
 id: TASK-367.06
 title: 'Code facts for TypeScript: definitions, references and imports'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-29 01:15'
-updated_date: '2026-10-06 13:25'
+updated_date: '2026-10-06 13:26'
 labels:
   - code-check
 dependencies:
@@ -27,10 +27,10 @@ The first language adapter, and the engine behind all of them. Tree-sitter finds
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A runtime module answers, for a TypeScript or TSX file in a checkout: its definitions with their visibility (exported or not), its references, and its imports resolved through `tsconfig` paths and aliases such as `@/`
-- [ ] #2 Results are cached by file content, and a second run over unchanged files reads the cache
-- [ ] #3 The anchor and binding checks use definitions and references for TypeScript files instead of text
-- [ ] #4 The time to read the dogfood vault's bound files is measured and recorded in the design note
+- [x] #1 A runtime module answers, for a TypeScript or TSX file in a checkout: its definitions with their visibility (exported or not), its references, and its imports resolved through `tsconfig` paths and aliases such as `@/`
+- [x] #2 Results are cached by file content, and a second run over unchanged files reads the cache
+- [x] #3 The anchor and binding checks use definitions and references for TypeScript files instead of text
+- [x] #4 The time to read the dogfood vault's bound files is measured and recorded in the design note
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -82,4 +82,12 @@ Independent review (2026-10-06): NOT CLEAN before its fixes, which are bf952f228
 7. Loose ends: the check --code help names ANCHOR_MISMATCH and symbol-unparsed. The check --code row of evals/coverage.json names both and their owners, and bun run eval:skill check passes.
 Kept: the EmscriptenModule declaration. Its one use is Partial<EmscriptenModule> in Parser.init, and its locateFile matches @types/emscripten, so it merges if that package ever arrives. The pins are exact runtime dependencies, and trustedDependencies is absent. Known gaps, not fixed: an extends array replaces earlier entries instead of layering them; a root tsconfig.json that only holds references is not followed to tsconfig.app.json; a constructor parameter property is no definition; import x = require() is no import.
 Real check: at HEAD the dogfood vault gives no finding and no skip (a direct pass from a HEAD snapshot). ./bin/dogfood check --code against the running server exits 0 with 0 findings and 0 skips. Gate after the fixes, lanes one at a time: lint 0; fmt:check fails only on .tmp-t07-show.ts, an untracked scratch file of TASK-367.07; type-check 0; build:frontend 0; test:modules 4095/0; test:system 197/0; test:repository 20/0; test:serial-browser 24/0 (exit 0).
+
+Independent review (2026-10-06): files read together under a directory binding parsed back to back in one loop turn (the server waited 2,963 ms); parses now go one at a time through one queue with a loop turn after each (longest wait 14 to 16 ms). The cache drops entries of files that are gone. ANCHOR_MISMATCH no longer warns when a part that could hold the definition has no binding, because the check cannot be sure and binding a person is no right change. definitionSite now follows default exports, leaves a call through a value unresolved, and stops at export * cycles; an exact tsconfig paths pattern now wins over a star pattern (bf952f228, 5bc3ebc6b, e95d45189). Known gaps left: extends arrays, a root tsconfig with only references, constructor parameter properties, import x = require().
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+src/runtime/code-facts reads TypeScript and TSX through web-tree-sitter and tree-sitter-typescript loaded from node_modules with no build step: definitions with visibility, references with call or import evidence and type-only, and imports resolved through tsconfig paths, extends, baseUrl and the @/ alias. Facts are cached by content, and parses run one at a time with a loop turn after each. The code check judges TypeScript anchors and binding symbols with these facts, so comments and strings no longer count, and reports ANCHOR_MISMATCH. Verified by the code-facts and judging tests (pass with --isolate), and by the measurement in the design note: cold 1.7 s, warm 50 ms over the vault's 1,154 bound files.
+<!-- SECTION:FINAL_SUMMARY:END -->
