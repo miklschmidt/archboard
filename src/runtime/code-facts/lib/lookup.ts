@@ -5,8 +5,10 @@
 // `Ledger.post` never finds a function `post`. A reference matches by its last
 // name, `post` in `ledger.post()`, because the code does not say what a value
 // is: only a language server can (TASK-367.13). A file read as text holds a
-// symbol wherever its last name stands as a whole word. A symbol a file holds
-// only in code that did not parse is neither found nor absent.
+// symbol wherever its last name stands as a whole word. A Terraform address
+// names one declaration, so it is matched whole, without an instance key:
+// `aws_sqs_queue.jobs` never finds `data.aws_sqs_queue.jobs`. A symbol a file
+// holds only in code that did not parse is neither found nor absent.
 //
 // A Nix expression a static reading cannot follow leaves the names below its
 // attribute path unknown (`under`): a symbol below it, or one not spelled from
@@ -14,7 +16,14 @@
 // `*` in a Nix definition stands for every name of a list the reading cannot
 // tell, such as a flake's systems, and matches any one name.
 
-import type { Definition, FileFacts, Reference, Unparsed } from "@/runtime/code-facts/lib/facts";
+import type {
+	Definition,
+	FileFacts,
+	Reference,
+	SyntaxFacts,
+	Unparsed,
+} from "@/runtime/code-facts/lib/facts";
+import { declarationAddress } from "@/runtime/code-facts/lib/terraform-address";
 import { lastName, textTest } from "@/runtime/code-facts/lib/text-reading";
 
 /** What a file holds of a symbol. */
@@ -112,9 +121,8 @@ function referenceNamed(references: readonly Reference[], symbol: string): Refer
  * @returns Where it was found, that it is only in unparsed code, or that it is absent.
  */
 function findSymbol(facts: FileFacts, symbol: string, accept: Accept): Found {
-	if (facts.adapter === "text") {
-		return textTest(symbol).holds(facts.text) ? { status: "found" } : { status: "absent" };
-	}
+	if (facts.adapter === "text") return textFound(facts.text, symbol);
+	if (facts.adapter === "terraform") return addressFound(facts, symbol, accept);
 	const definition = definitionsNamed(facts.definitions, symbol)[0];
 	if (definition !== undefined) return { status: "found", line: definition.start, definition };
 	const reference = accept === "definition" ? undefined : referenceNamed(facts.references, symbol);
@@ -141,6 +149,36 @@ function mayBeBelow(part: Unparsed, symbol: string, definitions: readonly Defini
 		under.every((name, index) => name === "*" || names[index] === name) ||
 		!definitions.some((definition) => definition.symbol.split(".")[0] === names[0])
 	);
+}
+
+/**
+ * What a file read as text holds of a symbol: its last name as a whole word.
+ * @param text The file's text.
+ * @param symbol The symbol.
+ * @returns Found, with no line, or absent.
+ */
+function textFound(text: string, symbol: string): Found {
+	return textTest(symbol).holds(text) ? { status: "found" } : { status: "absent" };
+}
+
+/**
+ * What a Terraform file holds of an address: the declaration, or with
+ * `definition-or-reference` a reference too, matched whole.
+ * @param facts The file's facts.
+ * @param symbol The address, with or without an instance key.
+ * @param accept What counts.
+ * @returns Where it was found, that it is only in unparsed code, or that it is absent.
+ */
+function addressFound(facts: SyntaxFacts, symbol: string, accept: Accept): Found {
+	const address = declarationAddress(symbol);
+	const declared = facts.definitions.find((each) => each.symbol === address);
+	if (declared !== undefined)
+		return { status: "found", line: declared.start, definition: declared };
+	const used =
+		accept === "definition" ? undefined : facts.references.find((each) => each.symbol === address);
+	return used === undefined
+		? notFound(facts.unparsed, address)
+		: { status: "found", line: used.line };
 }
 
 /**

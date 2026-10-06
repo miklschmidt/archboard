@@ -1,0 +1,118 @@
+{
+	"format_version": "1.2",
+	"terraform_version": "1.9.5",
+	"variables": {
+		"region": { "value": "eu-west-1" },
+		"environment": { "value": "plan-secret-value" }
+	},
+	"planned_values": {
+		"root_module": {
+			"resources": [
+				{
+					"address": "aws_lambda_function.api",
+					"values": { "environment": [{ "variables": { "TOKEN": "plan-secret-value" } }] }
+				}
+			]
+		}
+	},
+	"resource_changes": [
+		{
+			"address": "module.network.aws_subnet.private[0]",
+			"change": { "after": { "tags": { "Secret": "plan-secret-value" } } }
+		}
+	],
+	"prior_state": {
+		"values": { "root_module": { "resources": [{ "address": "aws_secret.from_state" }] } }
+	},
+	"configuration": {
+		"provider_config": {
+			"aws": { "name": "aws", "expressions": { "region": { "references": ["var.region"] } } }
+		},
+		"root_module": {
+			"resources": [
+				{
+					"address": "aws_lambda_function.api",
+					"mode": "managed",
+					"type": "aws_lambda_function",
+					"name": "api",
+					"expressions": {
+						"role": { "references": ["aws_iam_role.api.arn", "aws_iam_role.api"] },
+						"environment": [
+							{ "variables": { "references": ["module.queue.url", "module.queue"] } }
+						],
+						"vpc_config": [
+							{
+								"subnet_ids": { "references": ["module.network.private_subnets", "module.network"] }
+							}
+						],
+						"tags": { "constant_value": { "Secret": "plan-secret-value" } }
+					}
+				},
+				{
+					"address": "aws_iam_role.api",
+					"mode": "managed",
+					"type": "aws_iam_role",
+					"name": "api",
+					"expressions": {
+						"assume_role_policy": {
+							"references": [
+								"data.aws_iam_policy_document.assume.json",
+								"data.aws_iam_policy_document.assume"
+							]
+						}
+					}
+				}
+			],
+			"module_calls": {
+				"queue": {
+					"source": "./modules/queue",
+					"expressions": { "name": { "references": ["local.name"] } },
+					"module": {
+						"resources": [
+							{
+								"address": "aws_sqs_queue.stale",
+								"mode": "managed",
+								"type": "aws_sqs_queue",
+								"name": "stale",
+								"expressions": { "name": { "references": ["var.name"] } }
+							}
+						]
+					}
+				},
+				"network": {
+					"source": "terraform-aws-modules/vpc/aws",
+					"expressions": { "name": { "references": ["local.name"] } },
+					"module": {
+						"resources": [
+							{
+								"address": "aws_vpc.this",
+								"mode": "managed",
+								"type": "aws_vpc",
+								"name": "this",
+								"expressions": { "cidr_block": { "constant_value": "10.0.0.0/16" } }
+							},
+							{
+								"address": "aws_subnet.private",
+								"mode": "managed",
+								"type": "aws_subnet",
+								"name": "private",
+								"count_expression": { "references": ["var.azs"] },
+								"expressions": { "vpc_id": { "references": ["aws_vpc.this.id", "aws_vpc.this"] } }
+							}
+						],
+						"outputs": {
+							"private_subnets": { "expression": { "references": ["aws_subnet.private"] } }
+						},
+						"variables": { "azs": { "default": ["a", "b"] }, "name": {} }
+					}
+				}
+			},
+			"outputs": {
+				"api_arn": {
+					"expression": { "references": ["aws_lambda_function.api.arn", "aws_lambda_function.api"] }
+				}
+			},
+			"variables": { "region": {}, "environment": { "default": "test" } }
+		}
+	}
+}

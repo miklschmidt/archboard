@@ -43,6 +43,8 @@ import {
 import { flakeFacts } from "@/runtime/code-facts/lib/nix-adapter";
 import { pythonFacts } from "@/runtime/code-facts/lib/python-adapter";
 import { createPythonResolver } from "@/runtime/code-facts/lib/python-resolution";
+import { terraformFacts } from "@/runtime/code-facts/lib/terraform-adapter";
+import { createTerraformResolver } from "@/runtime/code-facts/lib/terraform-resolution";
 import { typeScriptFacts } from "@/runtime/code-facts/lib/typescript-adapter";
 
 /** What one adapter reads, and how. */
@@ -95,6 +97,12 @@ const TSX = treeSitter(
 	typeScriptFacts,
 );
 const PYTHON = treeSitter("tree-sitter-python/tree-sitter-python.wasm", "python.scm", pythonFacts);
+/** The `terraform` dialect of the HCL grammar, which Terraform's and OpenTofu's templates follow (TASK-367.17). */
+const TERRAFORM = treeSitter(
+	"@tree-sitter-grammars/tree-sitter-hcl/tree-sitter-terraform.wasm",
+	"terraform.scm",
+	terraformFacts,
+);
 /** Only `flake.nix` is read: its outputs. Every other `.nix` file is read as text (TASK-367.21). */
 const FLAKE = treeSitter("@lumis-sh/wasm-nix/tree-sitter-nix.wasm", "nix.scm", flakeFacts);
 const C = treeSitter("tree-sitter-c/tree-sitter-c.wasm", "c.scm", cFacts);
@@ -117,6 +125,11 @@ const ADAPTERS: readonly Adapter[] = [
 		name: "python",
 		reads: { ".py": PYTHON, ".pyi": PYTHON },
 		resolver: createPythonResolver,
+	},
+	{
+		name: "terraform",
+		reads: { ".tf": TERRAFORM, ".tofu": TERRAFORM },
+		resolver: createTerraformResolver,
 	},
 	{ name: "c", reads: { ".c": C }, resolver: createCResolver },
 	{

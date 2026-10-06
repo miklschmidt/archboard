@@ -7,7 +7,9 @@
 // parser. Which files an adapter reads is the table of adapters
 // (lib/adapters.ts), one entry for each language or format; every other file
 // gets the text reading. Each language says what its module exposes
-// (TASK-368.10).
+// (TASK-368.10). A Terraform or OpenTofu root module is read as one address
+// space across its module directories, with the plans an agent named filling
+// in the modules the check does not read (TASK-367.17).
 
 export {
 	type Definition,
@@ -40,4 +42,12 @@ export {
 	type PassStats,
 	createCodeFacts,
 } from "@/runtime/code-facts/lib/reader";
+export { declarationAddress, isTerraformFile } from "@/runtime/code-facts/lib/terraform-address";
+export {
+	type Declared,
+	type TerraformConfiguration,
+	terraformConfiguration,
+	terraformRootOf,
+} from "@/runtime/code-facts/lib/terraform-configuration";
+export { type TerraformPlan, readTerraformPlan } from "@/runtime/code-facts/lib/terraform-plan";
 export { lastName } from "@/runtime/code-facts/lib/text-reading";
