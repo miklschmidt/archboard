@@ -122,7 +122,7 @@ function paintColumn(
 		y1: coord(column.lifelineTop),
 		x2: coord(column.centreX),
 		y2: coord(layout.lifelineBottom),
-		stroke: palette.edgeMuted,
+		stroke: palette.edge,
 		"stroke-width": 1,
 		"stroke-dasharray": LIFELINE_DASH,
 	};

@@ -34,10 +34,8 @@ interface Palette {
 	readonly foreground: string;
 	/** Secondary text: a responsibility, a region name. */
 	readonly muted: string;
-	/** An ordinary connection. */
+	/** A neutral line, its arrowhead and a lifeline. */
 	readonly edge: string;
-	/** A connection deliberately pushed into the background. */
-	readonly edgeMuted: string;
 	/** A kind glyph. */
 	readonly glyph: string;
 	/** A label chip's face, opaque so it can be read wherever it lands. */
@@ -105,7 +103,6 @@ const PALETTE: Palette = {
 	foreground: token("--card-foreground"),
 	muted: token("--muted-foreground"),
 	edge: token("--diagram-edge"),
-	edgeMuted: token("--muted-foreground"),
 	glyph: token("--muted-foreground"),
 	pill: token("--popover"),
 	pillText: token("--popover-foreground"),

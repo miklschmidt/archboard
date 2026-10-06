@@ -273,6 +273,13 @@ The shell touches none of it, and the Untouched Picture Rule still holds.
 [ADR 0044](docs/adr/0044-cards-containers-and-groups-are-drawn-as-slabs.md)
 records the construction.
 
+A neutral line, its arrowhead and a lifeline are drawn in **Line Ink**
+(`--diagram-edge`, oklch(60% 0.015 286), dark oklch(60% 0.017 286)). It has 3:1
+or more against the ground and a plinth face in both themes, and it stays far
+under the contrast of text. A colored line is drawn in its full color on chalk
+and at three quarters of its color on graphite. Every arrowhead is 11 units
+long, whatever the emphasis of its line.
+
 ### Named Rules
 
 **The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar, the walkthrough box or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. The floating sidebar takes at most 160ms, the walkthrough box 220ms to arrive and 520ms to hand one step to the next, with the wake on its rail settling by about 700ms, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off, in a layer of its own, over 680ms.

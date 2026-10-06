@@ -22,7 +22,12 @@ import {
 	distanceToRoute,
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
-import { colourDistance, hueOf, seenIn } from "@/runtime/semantic-renderer/tests/drawn-colours";
+import {
+	colourDistance,
+	contrast,
+	hueOf,
+	seenIn,
+} from "@/runtime/semantic-renderer/tests/drawn-colours";
 import { arrangementOf } from "@/runtime/semantic-renderer/tests/drawn-atlas";
 
 /** Two parts and every sort of relationship a standing can be drawn on. */
@@ -192,39 +197,6 @@ function pulseInks(svg: string, id: string): string[] {
 	return [...traffic.matchAll(/<stop [^>]*?stop-color="(#[0-9a-f]{6})(?:[0-9a-f]{2})?"/gu)].map(
 		(found) => found[1]!,
 	);
-}
-
-/**
- * One channel of a colour, as the contrast formula wants it.
- * @param channel The channel, 0 to 255.
- * @returns Its linear value.
- */
-function linear(channel: number): number {
-	const part = channel / 255;
-	return part <= 0.039_28 ? part / 12.92 : ((part + 0.055) / 1.055) ** 2.4;
-}
-
-/**
- * How light one drawn colour is.
- * @param colour A six-digit hex colour.
- * @returns Its relative luminance.
- */
-function luminance(colour: string): number {
-	const channels = [1, 3, 5].map((at) => Number.parseInt(colour.slice(at, at + 2), 16));
-	return (
-		0.2126 * linear(channels[0]!) + 0.7152 * linear(channels[1]!) + 0.0722 * linear(channels[2]!)
-	);
-}
-
-/**
- * The contrast between two drawn colours, as everybody measures it.
- * @param one A six-digit hex colour.
- * @param other Another.
- * @returns The ratio, at least 1.
- */
-function contrast(one: string, other: string): number {
-	const [lighter, darker] = [luminance(one), luminance(other)].toSorted((a, b) => b - a);
-	return (lighter! + 0.05) / (darker! + 0.05);
 }
 
 /** How far from a badge's centre a word has to stay, which is its own radius. */
