@@ -17,14 +17,18 @@ const NAME_SEPARATOR = /::|[./#]/u;
 const WORD_CHARACTER = "[\\p{L}\\p{N}_$]";
 
 /**
- * The last name of a symbol: what follows its last separator, without an
- * index or a call, such as `web` for `aws_instance.web[0]`.
+ * The last name of a symbol: what follows its last separator once an index or
+ * a call is gone, such as `web` for `aws_instance.web[0]` and `www` for
+ * `aws_route53_record.www["example.com"]`, whose key holds a separator.
  * @param symbol The symbol as a binding or an anchor spells it.
  * @returns Its last name, or the empty string when it has none.
  */
 function lastName(symbol: string): string {
-	const names = symbol.split(NAME_SEPARATOR).filter((name) => name.trim() !== "");
-	return (names.at(-1) ?? "").replace(/[[(].*$/u, "").trim();
+	const names = symbol
+		.replace(/[[(].*$/u, "")
+		.split(NAME_SEPARATOR)
+		.filter((name) => name.trim() !== "");
+	return (names.at(-1) ?? "").trim();
 }
 
 /**

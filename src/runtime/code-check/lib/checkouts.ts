@@ -6,12 +6,12 @@
 // no longer a Git checkout or no longer identifies as its repository is said
 // once, with no subject, because the reason holds for the whole checkout. Every
 // path is resolved through the code opener's rules, so it stays inside its
-// checkout before and after symbolic links resolve.
+// checkout before and after symbolic links resolve, and a file is read only
+// where its links lead to a file Git lists in that checkout.
 
 import fs from "node:fs";
 import path from "node:path";
 import {
-	isPathWithin,
 	resolveLocalCodeTarget,
 	resolveRegisteredCheckout,
 	type CheckoutSnapshot,
@@ -22,11 +22,18 @@ import { listReadableFiles, neverRead } from "@/runtime/code-check/lib/readable-
 import type { CodeBinding } from "@/shared/code-target/index";
 import { errorMessage } from "@/shared/thrown-error/index";
 
+/** A registered checkout the pass reads: its canonical root, and the files Git does not ignore. */
+interface ReadCheckout {
+	readonly status: "read";
+	readonly root: string;
+	readonly files: ReadonlySet<string>;
+}
+
 /** One repository as the pass finds it on this machine. */
 type Checkout =
 	| { readonly status: "unregistered" }
 	| { readonly status: "unavailable"; readonly detail: string }
-	| { readonly status: "read"; readonly root: string; readonly files: ReadonlySet<string> };
+	| ReadCheckout;
 
 /** What the pass may read of one bound or anchored path. */
 type Readable =
@@ -91,6 +98,8 @@ function normalized(relative: string): string {
 /**
  * What the pass may read of a resolved path: the file, or every file below the
  * directory, that Git does not ignore and that is not one the pass never reads.
+ * A file is judged where its symbolic links lead, so a tracked link to an
+ * ignored file is ignored.
  * @param target The resolved path.
  * @param files The files Git does not ignore in its checkout.
  * @returns The files to read, or why there are none.
@@ -98,13 +107,12 @@ function normalized(relative: string): string {
 function readableOf(target: LocalCodeTarget, files: ReadonlySet<string>): Readable {
 	const lexical = normalized(target.path);
 	const real = normalized(path.relative(target.root, target.target));
-	const spellings = [...new Set([lexical, real])];
-	if (spellings.some(neverRead)) return { status: "never-read" };
+	if (neverRead(lexical) || neverRead(real)) return { status: "never-read" };
 	const listed =
 		target.kind === "file"
-			? spellings.filter((spelling) => files.has(spelling))
+			? [real].filter((file) => files.has(file))
 			: [...files].filter((file) =>
-					spellings.some((dir) => dir === "" || file.startsWith(`${dir}/`)),
+					[lexical, real].some((dir) => dir === "" || file.startsWith(`${dir}/`)),
 				);
 	if (listed.length === 0) return { status: "ignored" };
 	const readable = listed.filter((file) => !neverRead(file));
@@ -115,16 +123,37 @@ function readableOf(target: LocalCodeTarget, files: ReadonlySet<string>): Readab
 interface TextFiles {
 	/**
 	 * The text of one file.
-	 * @param root The checkout's root.
-	 * @param relative The file, relative to the root.
-	 * @returns Its text, or undefined when it is not a file inside the checkout.
+	 * @param checkout The checkout and the files Git lists in it.
+	 * @param relative The file, relative to the checkout's root.
+	 * @returns Its text, or undefined when the pass may not read it.
 	 */
-	read(root: string, relative: string): string | undefined;
+	read(checkout: ReadCheckout, relative: string): string | undefined;
 }
 
 /**
- * A reader of the files of one pass. It follows a symbolic link only to a
- * file inside the same checkout.
+ * The text of one file, if the pass may read where its symbolic links lead: a
+ * file Git lists in the same checkout, so never outside it, and never one the
+ * pass never reads. This is the one place the pass reads the bytes of a file,
+ * so a tracked link below a bound directory cannot reach an ignored file or
+ * Terraform state either.
+ * @param checkout The checkout and the files Git lists in it.
+ * @param file The file's absolute path.
+ * @returns Its text, or undefined.
+ */
+function readListed(checkout: ReadCheckout, file: string): string | undefined {
+	try {
+		const real = fs.realpathSync.native(file);
+		const listed = normalized(path.relative(checkout.root, real));
+		return checkout.files.has(listed) && !neverRead(listed)
+			? fs.readFileSync(real, "utf8")
+			: undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * A reader of the files of one pass.
  * @returns The reader.
  */
 function createTextFiles(): TextFiles {
@@ -132,21 +161,13 @@ function createTextFiles(): TextFiles {
 	return {
 		/**
 		 * The text of one file, read once in a pass.
-		 * @param root The checkout's root.
-		 * @param relative The file, relative to the root.
-		 * @returns Its text, or undefined when it is not a file inside the checkout.
+		 * @param checkout The checkout and the files Git lists in it.
+		 * @param relative The file, relative to the checkout's root.
+		 * @returns Its text, or undefined when the pass may not read it.
 		 */
-		read(root, relative) {
-			const file = path.join(root, relative);
-			if (!read.has(file)) {
-				try {
-					const real = fs.realpathSync.native(file);
-					const inside = isPathWithin(root, real) && fs.statSync(real).isFile();
-					read.set(file, inside ? fs.readFileSync(real, "utf8") : undefined);
-				} catch {
-					read.set(file, undefined);
-				}
-			}
+		read(checkout, relative) {
+			const file = path.join(checkout.root, relative);
+			if (!read.has(file)) read.set(file, readListed(checkout, file));
 			return read.get(file);
 		},
 	};
@@ -154,6 +175,7 @@ function createTextFiles(): TextFiles {
 
 export {
 	type Checkout,
+	type ReadCheckout,
 	type Readable,
 	type TextFiles,
 	createTextFiles,
