@@ -773,6 +773,56 @@ evidence. That module takes its sources through
 `for_each = var.event_source_mapping` and `each.value`, and these name no
 address.
 
+#### Reading the interface of Terraform modules
+
+TASK-368.11 gives Terraform and OpenTofu a rule of the interface check
+(TASK-368.10). A module is the `.tf` and `.tofu` files directly in a
+directory, and it exposes its variables and outputs. A module in a directory
+below it, such as an example, is a module of its own that can call it. A call
+of the module uses the variables that its arguments set and the outputs that
+the calling module reads, such as `module.queue.url`. Configuration outside a
+module reaches it only through its outputs. So the check never reports an
+entry point of a Terraform module as unexposed: a drawn caller cannot reach
+past the outputs.
+
+Two more findings read what the module does with its variables. Both are
+information on the container bound to the module. A variable is a
+pass-through variable when the module uses it once, as the whole value of one
+argument of a resource that it manages, such as `bucket = var.bucket`. A
+meta-argument, such as `count`, is no argument of the resource, and a use in
+the variable's own validation is no use. `VARIABLE_PASSED_THROUGH` names these
+variables. A module is shallow when it manages exactly one resource, calls no
+module and passes every variable through. A variable that only sets the
+`count` or `for_each` of that resource, such as `create`, is allowed, because
+a caller can say that on the call itself. `MODULE_SHALLOW` says so and names
+each variable that the module passes through, so a shallow module gets no
+`VARIABLE_PASSED_THROUGH`.
+
+On 2026-10-06, with Bun 1.4.2, the real check read terraform-aws-modules
+`terraform-aws-s3-bucket` (`5dc2f1f`, version 5.16.1) and
+`terraform-aws-key-pair` (`f3221d3`, version 3.0.1) through a temporary vault.
+Containers were bound to the root module of each repository and to
+`modules/account-public-access`, `modules/object` and `modules/notification`,
+and examples drawn as their callers. The pass took 302 ms. Before this task,
+each of the 5 containers was skipped as `exposure-unknown`. Now each is
+judged:
+
+- `modules/account-public-access` is shallow. It manages one
+  `aws_s3_account_public_access_block` and passes 5 of its 6 variables through.
+  The sixth, `create`, only sets `count`.
+- `modules/object` passes 22 of its 27 variables through to its one
+  `aws_s3_object`, and it is not shallow. It changes `storage_class` and the
+  two object lock variables with `upper`, and `override_default_tags` decides
+  whether a block is made.
+- The root module of `terraform-aws-s3-bucket` passes 15 of its 72 variables
+  through. Its examples and `wrappers/` call it, and they set every variable,
+  so `EXPOSED_UNUSED` names only 3 outputs that nothing reads.
+  `modules/notification` passes 1 of 11 through, and nothing reads 1 output.
+- The root module of `terraform-aws-key-pair` passes 5 of its 10 variables
+  through to its two resources.
+
+No entry point was reported unexposed, and no caller undrawn.
+
 #### Reading .NET projects through the C# adapter
 
 TASK-367.11 measured the C# adapter on 2026-10-06 with Bun 1.4.2, on shallow

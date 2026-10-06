@@ -530,7 +530,13 @@ start with `_`. In Swift, the module is the directory of a target that
 declarations of all its files. In C and C++, the module is a bound directory.
 Its public headers are the headers below its `include` directory, or else the
 headers directly in it whose source file is in it too. It exposes what they
-declare. The check gives three findings:
+declare. In Terraform and OpenTofu, the module is a directory of `.tf` or
+`.tofu` files, and a module in a directory below it is another module. It
+exposes its variables and outputs. A call of the module uses the variables that
+its arguments set and the outputs that its own module reads, such as
+`module.queue.url`. Configuration outside a Terraform module reaches it only
+through its outputs, so the check gives no `ENTRY_POINT_UNEXPOSED` for one. The
+check gives these findings:
 
 - `ENTRY_POINT_UNEXPOSED`, a warning: an entry point owns nothing that the
   module exposes, and the code of a caller drawn to it reaches it from outside
@@ -541,6 +547,17 @@ declare. The check gives three findings:
   the board draws a caller of the container.
 - `EXPOSED_UNUSED`, information on the container: the exposed names that no
   file outside the module uses. A test is not a caller.
+- `VARIABLE_PASSED_THROUGH`, information on a container bound to a Terraform
+  module: the variables that the module uses only once, as the whole value of
+  one argument of a resource that it manages, such as `bucket = var.bucket`.
+  Each is a pass-through variable: the caller decides what the module could
+  decide.
+- `MODULE_SHALLOW`, information on such a container: the module manages
+  exactly one resource, calls no module, and passes every variable through,
+  except a variable that only sets the `count` or `for_each` of that resource.
+  Its interface is the interface of the resource. This finding names each
+  variable that the module passes through, so the module gets no
+  `VARIABLE_PASSED_THROUGH`.
 
 The check skips a container whose module has no root file that it reads, as
 `exposure-unknown`.
